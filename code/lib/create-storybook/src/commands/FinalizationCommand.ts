@@ -7,6 +7,14 @@ import { ErrorCollector } from 'storybook/internal/telemetry';
 import * as find from 'empathic/find';
 import { dedent } from 'ts-dedent';
 
+export type FinalizationCommandOptions = {
+  logfile: string | boolean | undefined;
+  /** When true, show the agent follow-up message ("run npx storybook ai prepare") instead of the normal success message */
+  showAgentFollowUp: boolean;
+  /** When true, show the "paste this prompt to your AI agent" instructions */
+  showAiInstructions: boolean;
+};
+
 type ExecuteFinalizationParams = {
   storybookCommand?: string | null;
 };
@@ -22,7 +30,8 @@ type ExecuteFinalizationParams = {
  * - Show next steps
  */
 export class FinalizationCommand {
-  constructor(private logfile: string | boolean | undefined) {}
+  constructor(private options: FinalizationCommandOptions) {}
+
   /** Execute finalization steps */
   async execute({ storybookCommand }: ExecuteFinalizationParams): Promise<void> {
     // Update .gitignore
@@ -69,33 +78,52 @@ export class FinalizationCommand {
     this.printNextSteps(storybookCommand);
 
     try {
-      const logFile = await logTracker.writeToFile(this.logfile);
+      const logFile = await logTracker.writeToFile(this.options.logfile);
       logger.warn(`Debug logs are written to: ${logFile}`);
     } catch {}
   }
 
   /** Print success message with feature summary */
   private printSuccessMessage(storybookCommand?: string | null): void {
-    logger.step(CLI_COLORS.success('Storybook was successfully installed in your project!'));
+    if (this.options.showAgentFollowUp) {
+      logger.step(
+        CLI_COLORS.storybook(
+          dedent`Storybook is installed but is not entirely set up yet.
+          To finish setting up, now run \`npx storybook ai prepare\` and follow its instructions precisely.`
+        )
+      );
+    } else {
+      logger.step(CLI_COLORS.success('Storybook was successfully installed in your project!'));
+    }
     this.printNextSteps(storybookCommand);
   }
 
   private printNextSteps(storybookCommand?: string | null): void {
     if (storybookCommand) {
-      logger.log(
-        `To run Storybook manually, run ${CLI_COLORS.cta(storybookCommand)}. CTRL+C to stop.`
-      );
+      logger.log(`To run Storybook, run ${CLI_COLORS.cta(storybookCommand)}. CTRL+C to stop.`);
     }
 
     logger.log(dedent`
       Want to learn more about Storybook? ${CLI_COLORS.cta('https://storybook.js.org/')}
       Having trouble or want to chat? ${CLI_COLORS.cta('https://discord.gg/storybook/')}
     `);
+
+    if (this.options.showAiInstructions) {
+      logger.step(dedent`To finalize setting up with AI, paste this prompt to your AI agent:
+
+        ${CLI_COLORS.storybook(`Run \`npx storybook ai prepare\` and follow its instructions precisely.`)}
+      `);
+    }
   }
 }
+
 export const executeFinalization = ({
   logfile,
+  showAgentFollowUp,
+  showAiInstructions,
   ...params
-}: ExecuteFinalizationParams & { logfile: string | boolean | undefined }) => {
-  return new FinalizationCommand(logfile).execute(params);
+}: ExecuteFinalizationParams & FinalizationCommandOptions) => {
+  return new FinalizationCommand({ logfile, showAgentFollowUp, showAiInstructions }).execute(
+    params
+  );
 };

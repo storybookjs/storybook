@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { AddonVitestService, ProjectType } from 'storybook/internal/cli';
 import type { JsPackageManager } from 'storybook/internal/common';
-import { SupportedBuilder, SupportedFramework } from 'storybook/internal/types';
+import { SupportedBuilder, SupportedFramework, SupportedRenderer } from 'storybook/internal/types';
 
 import { FeatureCompatibilityService } from './FeatureCompatibilityService.ts';
 
@@ -41,6 +41,51 @@ describe('FeatureCompatibilityService', () => {
       expect(FeatureCompatibilityService.supportsOnboarding(ProjectType.SVELTE)).toBe(false);
       expect(FeatureCompatibilityService.supportsOnboarding(ProjectType.EMBER)).toBe(false);
       expect(FeatureCompatibilityService.supportsOnboarding(ProjectType.HTML)).toBe(false);
+    });
+  });
+
+  describe('supportsAIPrepareFeature', () => {
+    it('should return true for react renderer with vite builder', () => {
+      expect(
+        FeatureCompatibilityService.supportsAIPrepareFeature(
+          SupportedRenderer.REACT,
+          SupportedBuilder.VITE
+        )
+      ).toBe(true);
+    });
+
+    it('should return false for vue3 renderer with vite builder', () => {
+      expect(
+        FeatureCompatibilityService.supportsAIPrepareFeature(
+          SupportedRenderer.VUE3,
+          SupportedBuilder.VITE
+        )
+      ).toBe(false);
+    });
+
+    it('should return false for react renderer with webpack5 builder', () => {
+      expect(
+        FeatureCompatibilityService.supportsAIPrepareFeature(
+          SupportedRenderer.REACT,
+          SupportedBuilder.WEBPACK5
+        )
+      ).toBe(false);
+    });
+
+    it('should return false for non-react renderer with non-vite builder', () => {
+      expect(
+        FeatureCompatibilityService.supportsAIPrepareFeature(
+          SupportedRenderer.ANGULAR,
+          SupportedBuilder.WEBPACK5
+        )
+      ).toBe(false);
+
+      expect(
+        FeatureCompatibilityService.supportsAIPrepareFeature(
+          SupportedRenderer.SVELTE,
+          SupportedBuilder.WEBPACK5
+        )
+      ).toBe(false);
     });
   });
 

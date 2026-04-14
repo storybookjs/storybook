@@ -2,6 +2,7 @@ import { cp, rm, writeFile } from 'node:fs/promises';
 
 import { stringifyProcessEnvs } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
+import { getLastEvents, getSessionId } from 'storybook/internal/telemetry';
 
 import { globalExternals } from '@fal-works/esbuild-plugin-global-externals';
 import { resolveModulePath } from 'exsolve';
@@ -199,6 +200,9 @@ const starter: StarterFunction = async function* starterGeneratorFn({
 
   // Build additional global values
   const globals: Record<string, any> = await buildFrameworkGlobalsFromOptions(options);
+  // Pass along recent CLI events to customise user onboarding and telemetry after `sb ai` commands.
+  globals.STORYBOOK_LAST_EVENTS = await getLastEvents();
+  globals.STORYBOOK_SESSION_ID = await getSessionId();
 
   yield;
 
@@ -297,6 +301,9 @@ const builder: BuilderFunction = async function* builderGeneratorFn({ startTime,
 
   // Build additional global values
   const globals: Record<string, any> = await buildFrameworkGlobalsFromOptions(options);
+  // Builds are long-lasting and shouldn't account for CLI events prior to building.
+  globals.STORYBOOK_LAST_EVENTS = {};
+  globals.STORYBOOK_SESSION_ID = undefined;
 
   yield;
 

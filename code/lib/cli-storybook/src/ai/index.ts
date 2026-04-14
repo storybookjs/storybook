@@ -2,7 +2,14 @@ import { writeFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 
 import type { PackageManagerName } from 'storybook/internal/common';
+import { cache } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
+import {
+  getSessionId,
+  snapshotPreviewFile,
+  telemetry,
+  type AiPreparePendingRecord,
+} from 'storybook/internal/telemetry';
 import { SupportedLanguage } from 'storybook/internal/types';
 
 import { ProjectTypeService } from '../../../create-storybook/src/services/ProjectTypeService.ts';
@@ -72,7 +79,37 @@ export async function aiPrepare(options: AiPrepareOptions): Promise<void> {
     return;
   }
 
-  const markdownOutput = generateMarkdownOutput(projectInfo);
+  const result = generateMarkdownOutput(projectInfo);
+  const markdownOutput = result.markdown;
+
+  await telemetry('ai-prepare', {
+    cliOptions: {
+      output: output ? 'file' : undefined,
+      configDir: projectInfo.configDir,
+      packageManager: packageManagerName,
+    },
+    project: {
+      framework: projectInfo.framework,
+      renderer: projectInfo.rendererPackage,
+      builder: projectInfo.builderPackage,
+      language: projectInfo.language,
+      hasCsfFactoryPreview: projectInfo.hasCsfFactoryPreview,
+    },
+  });
+
+  // Snapshot the preview file baseline and cache the pending setup record.
+  // Subsequent CLI entry points (dev, build, doctor, etc.) read this to
+  // collect evidence of what the agent accomplished.
+  const resolvedConfigDir = resolve(projectInfo.configDir);
+  const previewSnapshot = await snapshotPreviewFile(resolvedConfigDir);
+  const sessionId = await getSessionId();
+  const pendingRecord: AiPreparePendingRecord = {
+    timestamp: Date.now(),
+    sessionId,
+    configDir: resolvedConfigDir,
+    ...previewSnapshot,
+  };
+  await cache.set('ai-prepare-pending', pendingRecord);
 
   if (output) {
     const outputPath = resolve(output);

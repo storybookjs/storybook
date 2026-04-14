@@ -91,6 +91,9 @@ enum events {
   // Story discovery and testing flow
   GHOST_STORIES_REQUEST = 'ghostStoriesRequest',
   GHOST_STORIES_RESPONSE = 'ghostStoriesResponse',
+  // AI analytics - ai prepare command
+  AI_PREPARE_ANALYTICS_RESPONSE = 'aiPrepareAnalyticsResponse',
+  AI_PREPARE_ANALYTICS_REQUEST = 'aiPrepareAnalyticsRequest',
   // Open a file in the code editor
   OPEN_IN_EDITOR_REQUEST = 'openInEditorRequest',
   OPEN_IN_EDITOR_RESPONSE = 'openInEditorResponse',
@@ -170,6 +173,8 @@ export const {
   ARGTYPES_INFO_RESPONSE,
   GHOST_STORIES_REQUEST,
   GHOST_STORIES_RESPONSE,
+  AI_PREPARE_ANALYTICS_RESPONSE,
+  AI_PREPARE_ANALYTICS_REQUEST,
   OPEN_IN_EDITOR_REQUEST,
   OPEN_IN_EDITOR_RESPONSE,
   MANAGER_INERT_ATTRIBUTE_CHANGED,

@@ -2,7 +2,12 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { cache, isCI, loadAllPresets } from 'storybook/internal/common';
 import { prompt } from 'storybook/internal/node-logger';
-import { ErrorCollector, oneWayHash, telemetry } from 'storybook/internal/telemetry';
+import {
+  ErrorCollector,
+  collectAiPrepareEvidence,
+  oneWayHash,
+  telemetry,
+} from 'storybook/internal/telemetry';
 
 import { getErrorLevel, sendTelemetryError, withTelemetry } from './withTelemetry.ts';
 
@@ -29,6 +34,7 @@ describe('withTelemetry', () => {
     vi.resetAllMocks();
     vi.mocked(ErrorCollector.getErrors).mockReturnValue([]);
     vi.mocked(telemetry).mockResolvedValue(undefined);
+    vi.mocked(collectAiPrepareEvidence).mockResolvedValue(undefined);
   });
   it('works in happy path', async () => {
     const run = vi.fn();
@@ -36,6 +42,7 @@ describe('withTelemetry', () => {
     await withTelemetry('dev', { cliOptions }, run);
 
     expect(telemetry).toHaveBeenCalledTimes(1);
+    expect(collectAiPrepareEvidence).toHaveBeenCalledTimes(1);
     expect(telemetry).toHaveBeenCalledWith('boot', { eventType: 'dev' }, { stripMetadata: true });
   });
 
@@ -45,6 +52,7 @@ describe('withTelemetry', () => {
     await withTelemetry('dev', { cliOptions: { disableTelemetry: true } }, run);
 
     expect(telemetry).toHaveBeenCalledTimes(0);
+    expect(collectAiPrepareEvidence).toHaveBeenCalledTimes(0);
   });
 
   describe('when command fails', () => {
@@ -59,6 +67,7 @@ describe('withTelemetry', () => {
       ).rejects.toThrow(error);
 
       expect(telemetry).toHaveBeenCalledWith('boot', { eventType: 'dev' }, { stripMetadata: true });
+      expect(collectAiPrepareEvidence).toHaveBeenCalledTimes(1);
     });
 
     it('does not send boot when cli option is passed', async () => {
@@ -67,6 +76,7 @@ describe('withTelemetry', () => {
       ).rejects.toThrow(error);
 
       expect(telemetry).toHaveBeenCalledTimes(0);
+      expect(collectAiPrepareEvidence).toHaveBeenCalledTimes(0);
     });
 
     it('sends error message when no options are passed', async () => {
@@ -75,6 +85,7 @@ describe('withTelemetry', () => {
       ).rejects.toThrow(error);
 
       expect(telemetry).toHaveBeenCalledTimes(2);
+      expect(collectAiPrepareEvidence).toHaveBeenCalledTimes(1);
       expect(telemetry).toHaveBeenCalledWith(
         'error',
         expect.objectContaining({
@@ -138,6 +149,7 @@ describe('withTelemetry', () => {
       ).rejects.toThrow(error);
 
       expect(telemetry).toHaveBeenCalledTimes(0);
+      expect(collectAiPrepareEvidence).toHaveBeenCalledTimes(0);
       expect(telemetry).not.toHaveBeenCalledWith(
         'error',
         expect.objectContaining({}),

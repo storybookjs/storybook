@@ -152,7 +152,9 @@ describe('normalizeTrialData', () => {
           screenshots: [],
         }),
       })
-    ).toThrow(/data\.json\.schemaVersion 4 must not include screenshot-era fields: data\.json\.screenshots/);
+    ).toThrow(
+      /data\.json\.schemaVersion 4 must not include screenshot-era fields: data\.json\.screenshots/
+    );
   });
 
   it('rejects v4 payloads that still include screenshot artifacts', async () => {

@@ -1344,7 +1344,10 @@ function normalizeStoryRenderSummary(
   return {
     total: getRequiredInteger(summary.total, `${label}.total`),
     passed: getRequiredInteger(summary.passed, `${label}.passed`),
-    emptyRenderFailures: getOptionalInteger(summary.emptyRenderFailures, `${label}.emptyRenderFailures`),
+    emptyRenderFailures: getOptionalInteger(
+      summary.emptyRenderFailures,
+      `${label}.emptyRenderFailures`
+    ),
   };
 }
 

@@ -160,8 +160,6 @@ describe('claudeAgent.execute', () => {
 
     expect(logger.log).toHaveBeenCalledWith(expect.stringContaining('🔧 Bash('));
     expect(logger.log).toHaveBeenCalledWith(expect.stringContaining('… 28 more lines …'));
-    expect(logger.log).toHaveBeenCalledWith(
-      expect.stringContaining('📎 tool_result(12345678):')
-    );
+    expect(logger.log).toHaveBeenCalledWith(expect.stringContaining('📎 tool_result(12345678):'));
   });
 });

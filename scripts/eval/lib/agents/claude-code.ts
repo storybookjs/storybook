@@ -106,9 +106,7 @@ function logMessage(message: SDKMessage, logger: Logger) {
                     )
                     .join('')
                 : '[no content]';
-          logger.log(
-            `📎 tool_result(${block.tool_use_id?.slice(-8)}): ${trimNonChatOutput(text)}`
-          );
+          logger.log(`📎 tool_result(${block.tool_use_id?.slice(-8)}): ${trimNonChatOutput(text)}`);
         }
       }
       break;

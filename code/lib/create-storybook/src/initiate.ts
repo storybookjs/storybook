@@ -5,8 +5,13 @@ import {
   executeCommand,
 } from 'storybook/internal/common';
 import { getServerPort, withTelemetry } from 'storybook/internal/core-server';
-import { CLI_COLORS, logTracker, logger } from 'storybook/internal/node-logger';
+import { logTracker, logger } from 'storybook/internal/node-logger';
 import { Feature } from 'storybook/internal/types';
+import type {
+  SupportedBuilder,
+  SupportedFramework,
+  SupportedRenderer,
+} from 'storybook/internal/types';
 
 import {
   executeAddonConfiguration,
@@ -23,7 +28,32 @@ import { registerAllGenerators } from './generators/index.ts';
 import type { CommandOptions } from './generators/types.ts';
 import { FeatureCompatibilityService } from './services/FeatureCompatibilityService.ts';
 import { TelemetryService } from './services/TelemetryService.ts';
-import { dedent } from 'ts-dedent';
+
+/** Validate test feature compatibility and check AI prepare support */
+async function checkFeatureSupport(
+  packageManager: JsPackageManager,
+  framework: SupportedFramework | null,
+  builder: SupportedBuilder,
+  renderer: SupportedRenderer
+): Promise<{
+  isTestFeatureAvailable: boolean;
+  isAiPrepareAvailable: boolean;
+}> {
+  const featureService = new FeatureCompatibilityService(packageManager);
+
+  const result = await featureService.validateTestFeatureCompatibility(
+    framework,
+    builder,
+    process.cwd()
+  );
+
+  const aiPrepare = FeatureCompatibilityService.supportsAIPrepareFeature(renderer, builder);
+
+  return {
+    isTestFeatureAvailable: result.compatible,
+    isAiPrepareAvailable: aiPrepare,
+  };
+}
 
 /**
  * Main entry point for Storybook initialization
@@ -67,13 +97,21 @@ export async function doInitiate(options: CommandOptions): Promise<
   );
 
   // Step 4: Get user preferences and feature selections (with framework/builder for validation)
-  const { newUser, selectedFeatures } = await executeUserPreferences({
+  const { isTestFeatureAvailable, isAiPrepareAvailable } = await checkFeatureSupport(
     packageManager,
+    framework,
+    builder,
+    renderer
+  );
+
+  const { newUser, selectedFeatures } = await executeUserPreferences({
     options,
     framework,
     builder,
     renderer,
     projectType,
+    isTestFeatureAvailable,
+    isAiPrepareAvailable,
   });
 
   // Step 5: Execute generator with dependency collector (now with frameworkInfo)
@@ -109,22 +147,13 @@ export async function doInitiate(options: CommandOptions): Promise<
   });
 
   // Step 8: Print final summary
+  const hasAiFeature = selectedFeatures.has(Feature.AI);
   await executeFinalization({
+    showAgentFollowUp: !!options.agent && hasAiFeature,
+    showAiInstructions: hasAiFeature,
     logfile: options.logfile,
     storybookCommand,
   });
-
-  if (selectedFeatures.has(Feature.AI)) {
-    if (options.agent) {
-      const { aiPrepare } = await import('../../cli-storybook/src/ai/index.ts');
-      await aiPrepare({ configDir: configDir ?? '.storybook' });
-    } else {
-      logger.step(
-        CLI_COLORS.storybook(dedent`To finalize setting up with AI, paste this prompt to your AI agent:
-        Run \`npx storybook ai prepare\` and follow its instructions precisely.`)
-      );
-    }
-  }
 
   // Step 9: Track telemetry
   await telemetryService.trackInitWithContext(projectType, selectedFeatures, newUser);
@@ -173,6 +202,7 @@ export async function initiate(options: CommandOptions): Promise<void> {
     handleCommandFailure(options.logfile);
   });
 
+  // Launch dev server only if --dev was explicitly passed
   if (!options.agent && initiateResult?.shouldRunDev) {
     await runStorybookDev(initiateResult);
   }

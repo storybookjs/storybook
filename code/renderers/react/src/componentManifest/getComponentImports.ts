@@ -71,11 +71,13 @@ export const getComponents = async ({
   storyFilePath,
   typescriptOptions = {},
   docgenEngine,
+  additionalComponentNames = [],
 }: {
   csf: CsfFile;
   storyFilePath?: string;
   typescriptOptions?: Partial<TypescriptOptions>;
   docgenEngine: DocgenEngine;
+  additionalComponentNames?: string[];
 }): Promise<ComponentRef[]> => {
   const { reactDocgenTypescriptOptions } = typescriptOptions;
   const program: NodePath<t.Program> = csf._file.path;
@@ -129,6 +131,10 @@ export const getComponents = async ({
   const metaComp = csf._meta?.component;
   if (metaComp) {
     componentSet.add(metaComp);
+  }
+
+  for (const componentName of additionalComponentNames) {
+    componentSet.add(componentName);
   }
 
   const components = Array.from(componentSet).sort((a, b) => a.localeCompare(b));

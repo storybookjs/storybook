@@ -9,6 +9,7 @@ import { expect as rawExpect } from './expect.ts';
 import { type queries } from './testing-library.ts';
 
 export * from './spy.ts';
+export type { Assertion, Expect } from './expect.ts';
 
 type Queries = BoundFunctions<typeof queries>;
 

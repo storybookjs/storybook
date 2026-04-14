@@ -1,46 +1,48 @@
-import type { Decorator } from '@storybook/react';
 import type { LoaderFunction, Renderer } from 'storybook/internal/types';
 import { Route, RootRoute } from '@tanstack/react-router';
+
+import type { RouterParameters } from './types';
 
 function isRoute(value: unknown): value is InstanceType<typeof Route> {
   return value instanceof Route || value instanceof RootRoute;
 }
 
+function getComponentFromRoute(route: InstanceType<typeof Route>) {
+  if (route.options?.component) {
+    return route.options.component;
+  }
+
+  if (route instanceof RootRoute) {
+    return (route.children as Route[] | undefined)?.[0]?.options?.component;
+  }
+
+  return undefined;
+}
+
 /**
- * Loader that detects when a TanStack Route is passed as `component` in meta, if so, extract the component from route and set the route as a parameter for the story.
+ * Loader that extracts the render component from a TanStack Route when the
+ * story uses either `component: Route` or `parameters.tanstack.router.route`.
  */
 export const routeComponentLoader: LoaderFunction<Renderer> = (context) => {
-  if (isRoute(context.component)) {
-    const route = context.component;
-    const component = route.options?.component;
-    if (component) {
+  const componentRoute = isRoute(context.component) ? context.component : undefined;
+  const routerParameters: RouterParameters = context.parameters.tanstack?.router ?? {};
+  const parameterRoute = isRoute(routerParameters.route) ? routerParameters.route : undefined;
+  const resolvedRoute = parameterRoute ?? componentRoute;
+
+  if (!resolvedRoute) {
+    return;
+  }
+
+  if (!context.component) {
+    const component = getComponentFromRoute(resolvedRoute);
+
+    if (component && (componentRoute || !context.component)) {
       context.component = component;
     }
-    if (!context.route) {
-      context.route = route;
-    }
-    // Apply route options from args to the route instance
-    const routeOptionKeys = [
-      'loader',
-      'beforeLoad',
-      'validateSearch',
-      'loaderDeps',
-      'context',
-      'params',
-      'head',
-      'search',
-      'parseParams',
-    ] as const;
-    const overrides: Record<string, unknown> = {};
+  }
 
-    for (const key of routeOptionKeys) {
-      if (key in (context.args ?? {}) && context.args[key] !== undefined) {
-        overrides[key] = context.args[key];
-      }
-    }
-
-    if (Object.keys(overrides).length > 0) {
-      route.update(overrides);
-    }
+  if (!context.route) {
+    // don't override parameters route with component route, as parameters take priority
+    context.route = resolvedRoute;
   }
 };

@@ -79,9 +79,7 @@ export function definePreview<
 export type Meta<TCmpOrArgs = Args> =
   IsRoute<TCmpOrArgs> extends true
     ? Omit<ComponentAnnotations<ReactRenderer, Args>, 'component'> &
-        Partial<TanStackTypes<TCmpOrArgs>> & {
-          component?: TCmpOrArgs;
-        }
+        Partial<TanStackTypes<TCmpOrArgs>>
     : _Meta<TCmpOrArgs>;
 
 /**

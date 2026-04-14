@@ -1,5 +1,11 @@
 # @storybook/mcp
 
+## 0.7.0
+
+### Minor Changes
+
+- [#209](https://github.com/storybookjs/mcp/pull/209) [`f59e38c`](https://github.com/storybookjs/mcp/commit/f59e38c1b91500f886cd923141b6ce45fa6c5822) Thanks [@kasperpeulen](https://github.com/kasperpeulen)! - Add support for subcomponent docs
+
 ## 0.6.2
 
 ### Patch Changes

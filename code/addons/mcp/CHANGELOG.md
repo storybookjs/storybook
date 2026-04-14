@@ -1,5 +1,18 @@
 # @storybook/addon-mcp
 
+## 0.6.0
+
+### Minor Changes
+
+- [#209](https://github.com/storybookjs/mcp/pull/209) [`f59e38c`](https://github.com/storybookjs/mcp/commit/f59e38c1b91500f886cd923141b6ce45fa6c5822) Thanks [@kasperpeulen](https://github.com/kasperpeulen)! - Add support for subcomponent docs
+
+### Patch Changes
+
+- [#212](https://github.com/storybookjs/mcp/pull/212) [`27a53b3`](https://github.com/storybookjs/mcp/commit/27a53b3f941240174a33442e17f9c258e5d87345) Thanks [@yannbf](https://github.com/yannbf)! - Add support for Storybook canaries
+
+- Updated dependencies [[`f59e38c`](https://github.com/storybookjs/mcp/commit/f59e38c1b91500f886cd923141b6ce45fa6c5822)]:
+  - @storybook/mcp@0.7.0
+
 ## 0.5.0
 
 ### Minor Changes

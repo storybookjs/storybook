@@ -199,9 +199,7 @@ describe('buildBatchVariants', () => {
   });
 
   it('supports multiple Claude variants when multiple efforts are requested', () => {
-    expect(
-      buildBatchVariants({ agents: ['claude'], claudeEfforts: ['max', 'high'] })
-    ).toEqual([
+    expect(buildBatchVariants({ agents: ['claude'], claudeEfforts: ['max', 'high'] })).toEqual([
       { agent: 'claude', model: 'opus-4.6', effort: 'max' },
       { agent: 'claude', model: 'opus-4.6', effort: 'high' },
     ]);

@@ -16,7 +16,12 @@ import {
 } from 'storybook/internal/common';
 import { CLI_COLORS, deprecate, logger, prompt } from 'storybook/internal/node-logger';
 import { MissingBuilderError, NoStatsForViteDevError } from 'storybook/internal/server-errors';
-import { oneWayHash, setTelemetryEnabled, telemetry } from 'storybook/internal/telemetry';
+import {
+  detectAgent,
+  oneWayHash,
+  setTelemetryEnabled,
+  telemetry,
+} from 'storybook/internal/telemetry';
 import type { BuilderOptions, CLIOptions, LoadOptions, Options } from 'storybook/internal/types';
 
 import { global } from '@storybook/global';
@@ -45,13 +50,14 @@ import { warnWhenUsingArgTypesRegex } from './utils/warnWhenUsingArgTypesRegex.t
 /**
  * Resolves the initialPath for the browser open URL.
  * CLI-provided initialPath always wins. If not set, checks the project cache for
- * an `onboarding-pending` entry written by `storybook init`. If found, returns
- * '/onboarding' and removes the cache entry so it only triggers once.
+ * an `onboarding-pending` entry written by `storybook init`. If found, and if the
+ * user is human rather than an agent, returns '/onboarding' and removes the cache
+ * entry so it only triggers once.
  */
 export async function resolveOnboardingInitialPath(
   cliInitialPath: string | undefined
 ): Promise<string | undefined> {
-  if (cliInitialPath) {
+  if (cliInitialPath || detectAgent()) {
     // Explicit CLI flag wins; leave cache intact for next run
     return cliInitialPath;
   }

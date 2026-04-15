@@ -118,9 +118,7 @@ export async function isWithinInitialSession(events: EventType | EventType[]): P
     const eventTypes = Array.isArray(events) ? events : [events];
     const lastEvents = await getLastEvents();
 
-    const lastRelevantEvent = eventTypes
-      .map((type) => lastEvents?.[type])
-      .find((event) => event !== undefined);
+    const lastRelevantEvent = lastEvent(lastEvents, eventTypes);
 
     if (!lastRelevantEvent) {
       return false;

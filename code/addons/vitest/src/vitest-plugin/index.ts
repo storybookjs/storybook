@@ -468,8 +468,7 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
         // When an agent is running vitest via CLI, inject a reporter that sends
         // detailed test result telemetry (pass/fail, error analysis, empty renders)
         const agent = detectAgent();
-        withinAgenticSetupSession =
-          !!agent && (await isWithinInitialSession(['init', 'ai-prepare']));
+        withinAgenticSetupSession = !!agent && (await isWithinInitialSession('ai-prepare'));
         if (agent && withinAgenticSetupSession) {
           context.vitest.config.reporters.push(
             new AgentTelemetryReporter({

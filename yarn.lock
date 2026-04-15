@@ -29384,9 +29384,12 @@ __metadata:
     ws: "npm:^8.18.0"
     zod: "npm:^3.25.76"
   peerDependencies:
+    "@storybook/react-vite": ^10
     prettier: ^2 || ^3
     vite-plus: ^0.1.15
   peerDependenciesMeta:
+    "@storybook/react-vite":
+      optional: true
     prettier:
       optional: true
     vite-plus:

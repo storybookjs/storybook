@@ -50,7 +50,7 @@ const EVAL_SUPPORT_SUMMARY_MDX = `import data from '../eval-results/data.json';
     <tr><td><strong>Agent</strong></td><td>{data.variant?.agent ?? '-'}</td></tr>
     <tr><td><strong>Model</strong></td><td>{data.variant?.model ?? '-'}</td></tr>
     <tr><td><strong>Effort</strong></td><td>{data.variant?.effort ?? '-'}</td></tr>
-    <tr><td><strong>Score</strong></td><td>{data.score?.score ?? '-'}</td></tr>
+    <tr><td><strong>Score</strong></td><td>{typeof data.score?.score === 'number' ? \`\${Math.round(data.score.score * 100)}%\` : '-'}</td></tr>
     <tr><td><strong>Build</strong></td><td>{data.grade?.buildSuccess === true ? 'PASS' : data.grade?.buildSuccess === false ? 'FAIL' : '-'}</td></tr>
     <tr><td><strong>TypeScript errors</strong></td><td>{data.grade?.typeCheckErrors ?? '-'}</td></tr>
     <tr><td><strong>Ghost stories</strong></td><td>{data.grade?.ghostStories ? \`\${data.grade.ghostStories.passed}/\${data.grade.ghostStories.total} (\${Math.round(data.grade.ghostStories.successRate * 100)}%)\` : '-'}</td></tr>

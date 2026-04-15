@@ -242,12 +242,12 @@ describe('publishTrialBranch', () => {
     const prBody = prCreateCall!.args[prCreateCall!.args.indexOf('--body') + 1];
     expect(prBody).toContain('ID: `trial-123`');
     expect(prBody).toContain('Created at: `Apr 2 2026 00:00:00 UTC`');
-    expect(prBody).toContain('Score (preview gain): `0.5`');
+    expect(prBody).toContain('Score (preview gain): `50%`');
     expect(prBody).toContain('Ghost stories before: `1/4 (25%)`');
     expect(prBody).toContain('Ghost stories after: `3/4 (75%)`');
     expect(prBody).toContain('Vitest pass rate before preview changes: `4/8 (50%)`');
     expect(prBody).toContain('Vitest pass rate after preview changes: `6/8 (75%)`');
-    expect(prBody).toContain('Preview gain: `0.5`');
+    expect(prBody).toContain('Preview gain: `50%`');
     expect(prBody).toContain('[.storybook/eval-results/data.json](');
     expect(prBody).toContain('<summary>Full prompt</summary>');
     expect(prBody.match(/<details>/g)).toHaveLength(1);

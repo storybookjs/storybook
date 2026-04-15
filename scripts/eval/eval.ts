@@ -37,7 +37,7 @@ import {
   createLogger,
   formatCost,
   formatDuration,
-  formatScore,
+  formatScorePercent,
   generateTrialId,
   listPrompts,
   loadPrompt,
@@ -180,7 +180,7 @@ if (args.manual) {
   logger.log(`  Stories: ${storyRenderStr}`);
   logger.log(`  Ghost:   ${ghostStoriesStr}`);
   logger.log(`  TS Err:  ${result.grade.typeCheckErrors}`);
-  logger.log(`  Score:   ${formatScore(result.score.score)} preview gain`);
+  logger.log(`  Score:   ${formatScorePercent(result.score.score)} (normalized preview gain)`);
   logger.log(`  Cost:    ${formatCost(result.execution.cost)}`);
   logger.log(`  Time:    ${formatDuration(result.execution.duration)}`);
   logger.log(`  Turns:   ${result.execution.turns}`);

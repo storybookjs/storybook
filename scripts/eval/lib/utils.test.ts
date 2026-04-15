@@ -4,6 +4,7 @@ import {
   formatDuration,
   formatCost,
   formatScore,
+  formatScorePercent,
   formatReadableUtcTimestamp,
   generateTrialId,
   loadPrompt,
@@ -54,6 +55,20 @@ describe('formatScore', () => {
     expect(formatScore(0.25)).toBe('0.25');
     expect(formatScore(1 / 3)).toBe('0.333');
     expect(formatScore(-0.125)).toBe('-0.125');
+  });
+});
+
+describe('formatScorePercent', () => {
+  it('formats 0-1 scores as whole-number percentages when exact', () => {
+    expect(formatScorePercent(0)).toBe('0%');
+    expect(formatScorePercent(1)).toBe('100%');
+    expect(formatScorePercent(0.5)).toBe('50%');
+    expect(formatScorePercent(0.75)).toBe('75%');
+  });
+
+  it('uses one decimal when the percentage is not an integer', () => {
+    expect(formatScorePercent(1 / 3)).toBe('33.3%');
+    expect(formatScorePercent(-0.125)).toBe('-12.5%');
   });
 });
 

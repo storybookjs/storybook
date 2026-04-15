@@ -78,15 +78,11 @@ describe('buildBatchRunDescriptors', () => {
     }
   });
 
-  it('can opt back into codex runs when explicitly requested', () => {
-    const descriptors = buildBatchRunDescriptors({ agents: ['claude', 'codex'] });
+  it('can restrict the batch to Claude only when explicitly requested', () => {
+    const descriptors = buildBatchRunDescriptors({ agents: ['claude'] });
 
-    expect(descriptors).toHaveLength(
-      BATCH_PROJECT_NAMES.length * BATCH_AGENT_IDS.length * BATCH_REPETITIONS
-    );
-    expect(new Set(descriptors.map((descriptor) => descriptor.agent))).toEqual(
-      new Set(BATCH_AGENT_IDS)
-    );
+    expect(descriptors).toHaveLength(BATCH_PROJECT_NAMES.length * BATCH_REPETITIONS);
+    expect(new Set(descriptors.map((descriptor) => descriptor.agent))).toEqual(new Set(['claude']));
   });
 
   it('uses the configured Claude effort override when building descriptors', () => {
@@ -102,7 +98,10 @@ describe('buildBatchRunDescriptors', () => {
   });
 
   it('supports multiple Claude efforts in a single batch', () => {
-    const descriptors = buildBatchRunDescriptors({ claudeEfforts: ['max', 'high'] });
+    const descriptors = buildBatchRunDescriptors({
+      agents: ['claude'],
+      claudeEfforts: ['max', 'high'],
+    });
 
     expect(descriptors).toHaveLength(BATCH_PROJECT_NAMES.length * 2 * BATCH_REPETITIONS);
     expect(
@@ -158,6 +157,12 @@ describe('buildBatchRunDescriptors', () => {
       { project: 'echarts', agent: 'claude', repetition: 1 },
       { project: 'evergreen-ci', agent: 'claude', repetition: 1 },
       { project: 'excalidraw', agent: 'claude', repetition: 1 },
+      { project: 'mealdrop', agent: 'codex', repetition: 1 },
+      { project: 'edgy', agent: 'codex', repetition: 1 },
+      { project: 'wikitok', agent: 'codex', repetition: 1 },
+      { project: 'echarts', agent: 'codex', repetition: 1 },
+      { project: 'evergreen-ci', agent: 'codex', repetition: 1 },
+      { project: 'excalidraw', agent: 'codex', repetition: 1 },
     ]);
   });
 });
@@ -167,11 +172,12 @@ describe('buildBatchVariants', () => {
     expect(buildBatchVariants()).toEqual(BATCH_VARIANTS);
     expect(BATCH_VARIANTS).toEqual([
       { agent: 'claude', model: 'opus-4.6', effort: BATCH_DEFAULT_CLAUDE_EFFORTS[0] },
+      { agent: 'codex', model: 'gpt-5.4', effort: BATCH_DEFAULT_EFFORTS.codex },
     ]);
   });
 
-  it('keeps claude-only as the default enabled agent set', () => {
-    expect(BATCH_DEFAULT_AGENT_IDS).toEqual(['claude']);
+  it('enables both Claude and Codex by default', () => {
+    expect(BATCH_DEFAULT_AGENT_IDS).toEqual(['claude', 'codex']);
   });
 
   it('excludes baklava from the default batch projects', () => {
@@ -186,15 +192,16 @@ describe('buildBatchVariants', () => {
     ]);
   });
 
-  it('supports enabling codex variants when requested', () => {
-    expect(buildBatchVariants({ agents: ['claude', 'codex'] })).toEqual([
+  it('supports Claude-only variants when requested', () => {
+    expect(buildBatchVariants({ agents: ['claude'] })).toEqual([
       { agent: 'claude', model: 'opus-4.6', effort: BATCH_DEFAULT_CLAUDE_EFFORTS[0] },
-      { agent: 'codex', model: 'gpt-5.4', effort: BATCH_DEFAULT_EFFORTS.codex },
     ]);
   });
 
   it('supports multiple Claude variants when multiple efforts are requested', () => {
-    expect(buildBatchVariants({ claudeEfforts: ['max', 'high'] })).toEqual([
+    expect(
+      buildBatchVariants({ agents: ['claude'], claudeEfforts: ['max', 'high'] })
+    ).toEqual([
       { agent: 'claude', model: 'opus-4.6', effort: 'max' },
       { agent: 'claude', model: 'opus-4.6', effort: 'high' },
     ]);

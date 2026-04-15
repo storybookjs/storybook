@@ -28,34 +28,34 @@ Each trial follows this lifecycle:
 
 ## Running a single trial
 
-All commands run from the `scripts/` directory.
+All commands run from the repo root.
 
 ```sh
 # Default settings (Claude, sonnet-4.6, medium effort)
-node eval/eval.ts -p mealdrop
+node scripts/eval/eval.ts -p mealdrop
 
 # Specific agent
-node eval/eval.ts -p mealdrop -a codex
+node scripts/eval/eval.ts -p mealdrop -a codex
 
 # Specific model (agent is inferred)
-node eval/eval.ts -p mealdrop -m opus-4.6
+node scripts/eval/eval.ts -p mealdrop -m opus-4.6
 
 # Specific effort level
-node eval/eval.ts -p mealdrop -a claude -e max
+node scripts/eval/eval.ts -p mealdrop -a claude -e max
 
 # Different prompt
-node eval/eval.ts -p mealdrop --prompt setup
+node scripts/eval/eval.ts -p mealdrop --prompt setup
 
 # Manual mode — prepare workspace, print the command to run yourself
-node eval/eval.ts -p mealdrop --manual
+node scripts/eval/eval.ts -p mealdrop --manual
 
 # Verbose output
-node eval/eval.ts -p mealdrop -v
+node scripts/eval/eval.ts -p mealdrop -v
 
 # List available projects, models, or prompts
-node eval/eval.ts --list-projects
-node eval/eval.ts --list-models
-node eval/eval.ts --list-prompts
+node scripts/eval/eval.ts --list-projects
+node scripts/eval/eval.ts --list-models
+node scripts/eval/eval.ts --list-prompts
 ```
 
 When a trial completes, it prints a summary:
@@ -66,7 +66,7 @@ Result
   Stories: 8/12 (67%) -> 11/12 (92%)
   Ghost:   5/8 (63%) -> 7/8 (88%)
   TS Err:  0
-  Score:   0.75 preview gain
+  Score:   75% (normalized preview gain)
   Cost:    $1.23
   Time:    4m32s
   Turns:   18
@@ -76,20 +76,20 @@ Result
 ## Running a batch
 
 ```sh
-# Default: Claude, max effort, 10 repetitions, concurrency 8
-node eval/run-batch.ts
+# Default: Claude (Opus) + Codex, high effort on both, 10 repetitions, concurrency 8
+node scripts/eval/run-batch.ts
 
-# Specific agents
-node eval/run-batch.ts --agents claude,codex
+# Claude only
+node scripts/eval/run-batch.ts --agents claude
 
 # Specific effort levels
-node eval/run-batch.ts --claude-effort high
-node eval/run-batch.ts --claude-efforts high,max
-node eval/run-batch.ts --agents codex --codex-effort xhigh
+node scripts/eval/run-batch.ts --claude-effort max
+node scripts/eval/run-batch.ts --claude-efforts max,high
+node scripts/eval/run-batch.ts --agents codex --codex-effort xhigh
 
 # Different prompt or concurrency
-node eval/run-batch.ts --prompt setup
-node eval/run-batch.ts --concurrency 4
+node scripts/eval/run-batch.ts --prompt setup
+node scripts/eval/run-batch.ts --concurrency 4
 ```
 
 Batch results are written to `storybook-eval/batches/<timestamp>/`, with per-run log files and a `summary.json`.
@@ -100,13 +100,13 @@ Before running evals, the benchmark repos need a consistent `.storybook` baselin
 
 ```sh
 # Sync all projects
-node eval/sync-baselines.ts
+node scripts/eval/sync-baselines.ts
 
 # Sync specific projects
-node eval/sync-baselines.ts --project mealdrop --project edgy
+node scripts/eval/sync-baselines.ts --project mealdrop --project edgy
 
 # Dry run (commit locally but don't push)
-node eval/sync-baselines.ts --skip-push
+node scripts/eval/sync-baselines.ts --skip-push
 ```
 
 The script ensures each repo is on its default branch with no local changes, fetches the latest from origin, replaces the `.storybook` directory with the canonical baseline, and commits/pushes if anything changed.
@@ -117,17 +117,17 @@ After running trials, `collect-pr-data.ts` scrapes the published draft PRs and l
 
 ```sh
 # Collect from all projects
-node eval/collect-pr-data.ts
+node scripts/eval/collect-pr-data.ts
 
 # Collect from a specific project
-node eval/collect-pr-data.ts --project mealdrop
+node scripts/eval/collect-pr-data.ts --project mealdrop
 
 # Limit PRs fetched or filter by state
-node eval/collect-pr-data.ts --limit 50
-node eval/collect-pr-data.ts --state open
+node scripts/eval/collect-pr-data.ts --limit 50
+node scripts/eval/collect-pr-data.ts --state open
 
 # Custom database path (default: scripts/eval/.cache/eval-pr-data.sqlite)
-node eval/collect-pr-data.ts --db-path ./my-eval-data.sqlite
+node scripts/eval/collect-pr-data.ts --db-path ./my-eval-data.sqlite
 ```
 
 ## Querying results
@@ -180,7 +180,7 @@ Each trial produces several metrics:
 - **Story render (before/after)** — how many stories pass Vitest rendering. The "before" measurement temporarily restores the baseline preview config to isolate the agent's contribution.
 - **Ghost stories (before/after)** — auto-generated tests that check whether components render without crashing.
 
-The headline metric is **normalized preview gain** — how much of the remaining room for improvement did the agent capture:
+The headline metric is **normalized preview gain** — how much of the remaining room for improvement did the agent capture. It is stored in `data.json` as a **0–1 index**; the CLI, draft PR, and eval summary UI show the same value as a **percentage** for readability.
 
 ```
 gain = (after_rate - before_rate) / (1 - before_rate)
@@ -196,24 +196,14 @@ The agent captured 50% of the possible improvement. A score of 1.0 means the age
 
 ## Projects
 
-The eval suite runs against benchmark repos hosted under the `storybook-tmp` GitHub org:
+Benchmark apps live in repos under the `storybook-tmp` GitHub org. The authoritative list is in `scripts/eval/lib/projects.ts` — use `node scripts/eval/eval.ts --list-projects` to see names and descriptions.
 
+## Adding a new benchmark project
 
-| Project        | Description                            |
-| -------------- | -------------------------------------- |
-| `mealdrop`     | Styled components, Redux, React Router |
-| `edgy`         | Tailwind, HeadlessUI, React Router     |
-| `wikitok`      | Simple project with Tailwind           |
-| `baklava`      | Component library with Zustand         |
-| `echarts`      | ECharts React wrapper                  |
-| `evergreen-ci` | GraphQL                                |
-| `excalidraw`   | Monorepo with canvas-based drawing app |
-
-
-### Adding a new project
+To benchmark a new app, register it in the harness and sync baselines. Follow these steps in order:
 
 1. Create a repo under `storybook-tmp` on GitHub with the app you want to benchmark.
-2. Set up a `.storybook` directory with a `main.ts` (or `.js`/`.mts`/`.mjs`/`.cjs`) config.
+2. Install Storybook with a **fresh** init (for example `npx storybook@latest init`). The repo must not include custom stories yet—only the base example stories that the Storybook CLI creates. Remove or avoid any extra story files beyond that scaffold.
 3. Add an entry to `scripts/eval/lib/projects.ts`:
 
 ```ts
@@ -227,8 +217,8 @@ The eval suite runs against benchmark repos hosted under the `storybook-tmp` Git
 }
 ```
 
-1. Run `node eval/sync-baselines.ts --project my-project` to push the baseline config.
-2. Run a trial to verify: `node eval/eval.ts -p my-project`
+1. Run `node scripts/eval/sync-baselines.ts --project my-project` to push the eval baseline `.storybook` config (this replaces the init scaffold in the benchmark repo).
+2. Run a trial to verify: `node scripts/eval/eval.ts -p my-project`
 
 ## Prompts
 
@@ -243,6 +233,6 @@ Prompts are markdown files in `scripts/eval/prompts/` that tell the agent what t
 
 1. Create a markdown file in `scripts/eval/prompts/`, e.g. `my-strategy.md`.
 2. Write the instructions the agent should follow. The prompt is passed directly to the agent as its task.
-3. Use it: `node eval/eval.ts -p mealdrop --prompt my-strategy`
+3. Use it: `node scripts/eval/eval.ts -p mealdrop --prompt my-strategy`
 
 The prompt should tell the agent how to analyze the codebase, configure `.storybook/preview.ts`, write story files matching the `stories` glob, and verify with `npx vitest --project storybook`.

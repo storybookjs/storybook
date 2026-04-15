@@ -33,8 +33,18 @@ export const formatDuration = (s: number) =>
 
 export const formatCost = (cost?: number) => (cost == null ? '-' : `$${cost.toFixed(2)}`);
 
+/** Raw 0-1 index (used in data.json and when you need the exact ratio). */
 export const formatScore = (score: number) =>
   score.toFixed(3).replace(/(?:\.0+|(\.\d*?)0+)$/, '$1');
+
+/** Human-readable percentage for the same 0-1 score (data.json keeps the ratio). */
+export function formatScorePercent(score: number): string {
+  if (!Number.isFinite(score)) return String(score);
+  const pct = score * 100;
+  const rounded = Math.round(pct);
+  if (Math.abs(pct - rounded) < 1e-6) return `${rounded}%`;
+  return `${pct.toFixed(1)}%`;
+}
 
 export function getProjectPath(repoRoot: string, projectDir?: string) {
   return projectDir ? join(repoRoot, projectDir) : repoRoot;

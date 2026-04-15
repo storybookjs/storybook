@@ -19,10 +19,10 @@ export const BATCH_PROJECT_NAMES = PROJECTS.filter((project) => project.name !==
   (project) => project.name
 );
 export const BATCH_AGENT_IDS = ['claude', 'codex'] as const;
-export const BATCH_DEFAULT_AGENT_IDS = ['claude'] as const;
-export const BATCH_DEFAULT_CLAUDE_EFFORTS = ['max'] as const;
+export const BATCH_DEFAULT_AGENT_IDS = ['claude', 'codex'] as const;
+export const BATCH_DEFAULT_CLAUDE_EFFORTS = ['high'] as const;
 export const BATCH_DEFAULT_EFFORTS = {
-  codex: 'xhigh',
+  codex: 'high',
 } as const;
 export const BATCH_VARIANTS = buildBatchVariants();
 export const BATCH_REPETITIONS = 10;

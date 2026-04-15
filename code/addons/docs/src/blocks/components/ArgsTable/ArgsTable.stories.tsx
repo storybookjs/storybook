@@ -3,6 +3,7 @@ import React from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
 import { action } from 'storybook/actions';
+import { expect, fireEvent } from 'storybook/test';
 import { styled } from 'storybook/theming';
 
 import * as ArgRow from './ArgRow.stories';
@@ -119,6 +120,44 @@ export const AllControls = {
       multiSelect: { ...ArgRow.MultiSelect.args.row, key: 'multiSelect' },
       object: ArgRow.ObjectOf.args.row,
       func: ArgRow.Func.args.row,
+    },
+  },
+};
+
+export const AllControlsObjectSet: Story = {
+  args: AllControls.args,
+  play: async ({ canvas, step }) => {
+    await step('Switch the object control from empty to filled', async () => {
+      await fireEvent.click(canvas.getByRole('button', { name: 'Set object' }));
+
+      const rawInput = canvas.getByRole('textbox', { name: 'Edit someObject as JSON' });
+      await expect(rawInput).toBeVisible();
+      await expect(rawInput).toHaveValue('{}');
+    });
+  },
+};
+
+export const AllControlsFilled: Story = {
+  args: {
+    ...AllControls.args,
+    args: {
+      someArray: [1, 2, 3],
+      someBoolean: true,
+      someColor: '#ff4785',
+      someDate: new Date('2020-10-20T09:30:02'),
+      someObject: {
+        name: 'Storybook',
+        nested: { enabled: true, count: 2 },
+      },
+      someString: 'Filled string control',
+      number: 42,
+      range: 24,
+      radio: 'b',
+      inlineRadio: 'c',
+      check: ['a'],
+      inlineCheck: ['b', 'c'],
+      select: 'b',
+      multiSelect: ['a', 'c'],
     },
   },
 };

@@ -247,6 +247,18 @@ export const ObjectControl: FC<ObjectProps> = ({ name, storyId, value, onChange,
     setRawValue(jsonString);
   }, [jsonString, showRaw]);
 
+  const rawJsonEditorLabel = `Edit ${name} as JSON`;
+
+  useEffect(() => {
+    if (parseError) {
+      announce(`Invalid JSON: ${parseError.message}`);
+    } else {
+      destroyAnnouncer();
+    }
+
+    return () => destroyAnnouncer();
+  }, [parseError]);
+
   if (!hasData) {
     return (
       <Button
@@ -259,18 +271,6 @@ export const ObjectControl: FC<ObjectProps> = ({ name, storyId, value, onChange,
       </Button>
     );
   }
-
-  const rawJsonEditorLabel = `Edit ${name} as JSON`;
-
-  useEffect(() => {
-    if (parseError) {
-      announce(`Invalid JSON: ${parseError.message}`);
-    } else {
-      destroyAnnouncer();
-    }
-
-    return () => destroyAnnouncer();
-  }, [parseError]);
 
   const rawJSONForm = (
     <RawInputWrapper>

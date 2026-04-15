@@ -54,6 +54,9 @@ export class AgentTelemetryReporter implements Reporter {
 
   onInit(ctx: Vitest) {
     this.ctx = ctx;
+  }
+
+  onTestRunStart() {
     this.startTime = Date.now();
   }
 
@@ -126,6 +129,5 @@ export class AgentTelemetryReporter implements Reporter {
 
     // Reset for next run (watch mode)
     this.testResults = [];
-    this.startTime = Date.now();
   }
 }

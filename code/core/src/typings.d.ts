@@ -16,6 +16,8 @@ declare var STORYBOOK_FRAMEWORK:
 declare var STORYBOOK_RENDERER: import('./types/modules/renderers').SupportedRenderer | undefined;
 declare var STORYBOOK_HOOKS_CONTEXT: any;
 declare var STORYBOOK_CURRENT_TASK_LOG: undefined | null | Array<any>;
+declare var SB_TELEMETRY_STATE: 'enabled' | 'disabled' | undefined;
+declare var PAYLOAD_ERROR_HANDLER: PayloadErrorHandler | undefined;
 
 declare var STORYBOOK_LAST_EVENTS: Record<
   import('./telemetry').EventType,

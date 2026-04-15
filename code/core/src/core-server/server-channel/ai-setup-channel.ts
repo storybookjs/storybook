@@ -9,7 +9,7 @@ import {
   isStoryCreatedByAISetup,
   telemetry,
 } from 'storybook/internal/telemetry';
-import type { CoreConfig, Options } from 'storybook/internal/types';
+import type { Options } from 'storybook/internal/types';
 import { logger } from 'storybook/internal/node-logger';
 
 import { runGhostStories } from '../utils/ghost-stories/run-story-tests.ts';
@@ -19,13 +19,8 @@ import { waitForIdleVitest } from '../utils/wait-for-idle-vitest.ts';
 export function initAIAnalyticsChannel(
   channel: Channel,
   options: Options,
-  coreOptions: CoreConfig,
   getStoryIndexGeneratorPromise?: () => Promise<StoryIndexGenerator> | undefined
 ) {
-  if (coreOptions.disableTelemetry) {
-    return channel;
-  }
-
   /** Send analytics about the ai setup workflow when requested*/
   channel.on(AI_SETUP_ANALYTICS_REQUEST, async () => {
     const stats: {

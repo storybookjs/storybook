@@ -5,7 +5,9 @@ import { prompt } from 'storybook/internal/node-logger';
 import {
   ErrorCollector,
   collectAiSetupEvidence,
+  isTelemetryStateResolved,
   oneWayHash,
+  setTelemetryEnabled,
   telemetry,
 } from 'storybook/internal/telemetry';
 
@@ -51,7 +53,8 @@ describe('withTelemetry', () => {
 
     await withTelemetry('dev', { cliOptions: { disableTelemetry: true } }, run);
 
-    expect(telemetry).toHaveBeenCalledTimes(0);
+    expect(setTelemetryEnabled).toHaveBeenCalledWith(false);
+    expect(telemetry).toHaveBeenCalled();
     expect(collectAiSetupEvidence).toHaveBeenCalledTimes(0);
   });
 
@@ -75,7 +78,8 @@ describe('withTelemetry', () => {
         withTelemetry('dev', { cliOptions: { disableTelemetry: true }, printError: vi.fn() }, run)
       ).rejects.toThrow(error);
 
-      expect(telemetry).toHaveBeenCalledTimes(0);
+      expect(setTelemetryEnabled).toHaveBeenCalledWith(false);
+      expect(telemetry).toHaveBeenCalled();
       expect(collectAiSetupEvidence).toHaveBeenCalledTimes(0);
     });
 
@@ -148,7 +152,8 @@ describe('withTelemetry', () => {
         withTelemetry('dev', { cliOptions: { disableTelemetry: true }, printError: vi.fn() }, run)
       ).rejects.toThrow(error);
 
-      expect(telemetry).toHaveBeenCalledTimes(0);
+      expect(setTelemetryEnabled).toHaveBeenCalledWith(false);
+      expect(telemetry).toHaveBeenCalled();
       expect(collectAiSetupEvidence).toHaveBeenCalledTimes(0);
       expect(telemetry).not.toHaveBeenCalledWith(
         'error',
@@ -244,7 +249,7 @@ describe('withTelemetry', () => {
           error: expect.objectContaining({ message: 'An Error!', name: 'Error' }),
           isErrorInstance: true,
         }),
-        expect.objectContaining({ enableCrashReports: true })
+        expect.objectContaining({ enableCrashReports: true, force: true })
       );
     });
 
@@ -366,6 +371,20 @@ describe('withTelemetry', () => {
         expect.objectContaining({})
       );
     });
+  });
+
+  it('resolves telemetry state to disabled when run() throws and state is still uninitialized', async () => {
+    vi.mocked(isTelemetryStateResolved).mockReturnValue(false);
+
+    const run = vi.fn(async () => {
+      throw new Error('preset loading failed');
+    });
+
+    await expect(async () =>
+      withTelemetry('dev', { cliOptions: {}, printError: vi.fn() }, run)
+    ).rejects.toThrow('preset loading failed');
+
+    expect(setTelemetryEnabled).toHaveBeenCalledWith(false);
   });
 });
 

@@ -15,7 +15,7 @@ import {
 } from 'storybook/internal/common';
 import { CLI_COLORS, deprecate, logger, prompt } from 'storybook/internal/node-logger';
 import { MissingBuilderError, NoStatsForViteDevError } from 'storybook/internal/server-errors';
-import { oneWayHash, telemetry } from 'storybook/internal/telemetry';
+import { oneWayHash, setTelemetryEnabled, telemetry } from 'storybook/internal/telemetry';
 import type { BuilderOptions, CLIOptions, LoadOptions, Options } from 'storybook/internal/types';
 
 import { global } from '@storybook/global';
@@ -181,6 +181,8 @@ export async function buildDevStandalone(
 
   const { allowedHosts, renderer, builder, disableTelemetry } = await presets.apply('core', {});
 
+  await setTelemetryEnabled(!disableTelemetry);
+
   // '0.0.0.0' binds to all interfaces, which is useful for Docker and other containerized environments.
   // By default we allow requests from all hosts in this case, but the user should be made aware of the risk.
   if (
@@ -198,10 +200,8 @@ export async function buildDevStandalone(
     throw new MissingBuilderError();
   }
 
-  if (!options.disableTelemetry && !disableTelemetry) {
-    if (versionCheck.success && !versionCheck.cached) {
-      telemetry('version-update');
-    }
+  if (versionCheck.success && !versionCheck.cached) {
+    telemetry('version-update');
   }
 
   const resolvedPreviewBuilder = typeof builder === 'string' ? builder : builder.name;

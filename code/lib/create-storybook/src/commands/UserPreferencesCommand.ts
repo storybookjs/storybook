@@ -52,7 +52,7 @@ export interface UserPreferencesOptions {
 export class UserPreferencesCommand {
   constructor(
     private readonly commandOptions: CommandOptions,
-    private readonly telemetryService = new TelemetryService(commandOptions.disableTelemetry)
+    private readonly telemetryService = new TelemetryService()
   ) {}
 
   /** Execute user preferences gathering */

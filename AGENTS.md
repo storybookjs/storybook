@@ -96,7 +96,7 @@ For routine agent work, prefer the faster non-production commands first. Add `-c
 yarn
 yarn task compile
 yarn nx run-many -t compile
-yarn nx compile <package-name>
+yarn nx compile <nx-project-name>
 ```
 
 ### Lint and typecheck
@@ -123,7 +123,7 @@ yarn storybook:vitest
 | Scenario                        | Command                                                                        |
 | ------------------------------- | ------------------------------------------------------------------------------ |
 | Compile everything quickly      | `yarn nx run-many -t compile`                                                  |
-| Compile one package             | `yarn nx compile <package-name>`                                               |
+| Compile one project             | `yarn nx compile <nx-project-name>`                                            |
 | Check TypeScript errors quickly | `yarn nx run-many -t check`                                                    |
 | Start the internal Storybook UI | `cd code && yarn storybook:ui`                                                 |
 | Build the internal Storybook UI | `cd code && yarn storybook:ui:build`                                           |
@@ -161,6 +161,8 @@ Key points:
 - `react-vite/default-ts` is the default sandbox template
 - `--no-link` is opt-in, not the default
 - NX handles task dependencies via `nx.json`
+- NX target commands use Nx project names (from `project.json` / Nx graph), not `package.json` names
+- Example: `yarn nx compile core` (project `core` is published as package `storybook`)
 
 ## Sandbox Notes
 

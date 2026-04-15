@@ -76,7 +76,7 @@ export async function doInitiate(options: CommandOptions): Promise<
   }
 
   // Initialize services
-  const telemetryService = new TelemetryService(options.disableTelemetry);
+  const telemetryService = new TelemetryService();
 
   // Register all framework generators
   registerAllGenerators();

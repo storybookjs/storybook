@@ -480,55 +480,53 @@ export async function upgrade(options: UpgradeOptions): Promise<void> {
     logUpgradeResults(automigrationResults, detectedAutomigrations, doctorResults);
 
     // TELEMETRY
-    if (!options.disableTelemetry) {
-      for (const project of storybookProjects) {
-        const resultData = automigrationResults[project.configDir] || {
-          automigrationStatuses: {},
-          automigrationErrors: {},
-        };
-        let doctorFailureCount = 0;
-        let doctorErrorCount = 0;
-        Object.values(doctorResults[project.configDir]?.diagnostics || {}).forEach((status) => {
-          if (status === 'has_issues') {
-            doctorFailureCount++;
-          }
+    for (const project of storybookProjects) {
+      const resultData = automigrationResults[project.configDir] || {
+        automigrationStatuses: {},
+        automigrationErrors: {},
+      };
+      let doctorFailureCount = 0;
+      let doctorErrorCount = 0;
+      Object.values(doctorResults[project.configDir]?.diagnostics || {}).forEach((status) => {
+        if (status === 'has_issues') {
+          doctorFailureCount++;
+        }
 
-          if (status === 'check_error') {
-            doctorErrorCount++;
-          }
-        });
-        const automigrationFailureCount = Object.keys(resultData.automigrationErrors).length;
-        const automigrationPreCheckFailure =
-          project.autoblockerCheckResults && project.autoblockerCheckResults.length > 0
-            ? project.autoblockerCheckResults
-                ?.map((result) => {
-                  if (result.result !== null) {
-                    return result.blocker.id;
-                  }
-                  return null;
-                })
-                .filter(Boolean)
-            : null;
-        await telemetry('upgrade', {
-          beforeVersion: project.beforeVersion,
-          afterVersion: project.currentCLIVersion,
-          automigrationResults: resultData.automigrationStatuses,
-          automigrationErrors: resultData.automigrationErrors,
-          automigrationFailureCount,
-          automigrationPreCheckFailure,
-          doctorResults: doctorResults[project.configDir]?.diagnostics || {},
-          doctorFailureCount,
-          doctorErrorCount,
-        });
-      }
-
-      await sendMultiUpgradeTelemetry({
-        allProjects,
-        selectedProjects: storybookProjects,
-        projectResults: automigrationResults,
-        doctorResults,
+        if (status === 'check_error') {
+          doctorErrorCount++;
+        }
+      });
+      const automigrationFailureCount = Object.keys(resultData.automigrationErrors).length;
+      const automigrationPreCheckFailure =
+        project.autoblockerCheckResults && project.autoblockerCheckResults.length > 0
+          ? project.autoblockerCheckResults
+              ?.map((result) => {
+                if (result.result !== null) {
+                  return result.blocker.id;
+                }
+                return null;
+              })
+              .filter(Boolean)
+          : null;
+      await telemetry('upgrade', {
+        beforeVersion: project.beforeVersion,
+        afterVersion: project.currentCLIVersion,
+        automigrationResults: resultData.automigrationStatuses,
+        automigrationErrors: resultData.automigrationErrors,
+        automigrationFailureCount,
+        automigrationPreCheckFailure,
+        doctorResults: doctorResults[project.configDir]?.diagnostics || {},
+        doctorFailureCount,
+        doctorErrorCount,
       });
     }
+
+    await sendMultiUpgradeTelemetry({
+      allProjects,
+      selectedProjects: storybookProjects,
+      projectResults: automigrationResults,
+      doctorResults,
+    });
   } finally {
     // Clean up signal handlers
     process.removeListener('SIGINT', handleInterruption);

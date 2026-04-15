@@ -12,11 +12,13 @@
  * Options:
  *   --include <regex>   Only collect events whose eventType matches the regex
  *   --exclude <regex>   Skip events whose eventType matches the regex
+ *   --no-metadata       Hide the metadata property when logging events
  *
  * Examples:
  *   node scripts/event-log-collector.ts --include "ai-.*"
  *   node scripts/event-log-collector.ts --exclude "mocking"
  *   node scripts/event-log-collector.ts --include "ai-.*" --exclude "ai-debug"
+ *   node scripts/event-log-collector.ts --no-metadata
  *
  * Endpoints:
  *   POST /event-log          — receives telemetry events (logs + stores)
@@ -42,6 +44,7 @@ const includePattern = getFlag('--include');
 const excludePattern = getFlag('--exclude');
 const includeRegex = includePattern ? new RegExp(includePattern) : null;
 const excludeRegex = excludePattern ? new RegExp(excludePattern) : null;
+const hideMetadata = args.includes('--no-metadata');
 
 const matchesFilter = (eventType: string): boolean => {
   if (includeRegex && !includeRegex.test(eventType)) return false;
@@ -70,8 +73,9 @@ const server = createServer(async (req, res) => {
         events.push(entry);
 
         if (matchesFilter(eventType)) {
-          console.log(`\n[telemetry] ${eventType}`);
-          console.log(JSON.stringify(data, null, 2));
+          console.log(`\n\x1b[1;32m[telemetry] ${eventType}\x1b[0m`);
+          const logged = hideMetadata ? { ...data, metadata: undefined } : data;
+          console.log(JSON.stringify(logged, null, 2));
         }
 
         await writeFile(

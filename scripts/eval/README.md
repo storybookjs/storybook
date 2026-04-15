@@ -31,31 +31,31 @@ Each trial follows this lifecycle:
 All commands run from the repo root.
 
 ```sh
-# Default settings (Claude, sonnet-4.6, medium effort)
-node scripts/eval/eval.ts -p mealdrop
+# Prompt file is required (scripts/eval/prompts/{name}.md). Example: pattern-copy-play
+yarn eval -- -p mealdrop --prompt pattern-copy-play
 
 # Specific agent
-node scripts/eval/eval.ts -p mealdrop -a codex
+yarn eval -- -p mealdrop --prompt pattern-copy-play -a codex
 
 # Specific model (agent is inferred)
-node scripts/eval/eval.ts -p mealdrop -m opus-4.6
+yarn eval -- -p mealdrop --prompt pattern-copy-play -m opus-4.6
 
 # Specific effort level
-node scripts/eval/eval.ts -p mealdrop -a claude -e max
+yarn eval -- -p mealdrop --prompt pattern-copy-play -a claude -e max
 
 # Different prompt
-node scripts/eval/eval.ts -p mealdrop --prompt setup
+yarn eval -- -p mealdrop --prompt setup
 
 # Manual mode — prepare workspace, print the command to run yourself
-node scripts/eval/eval.ts -p mealdrop --manual
+yarn eval -- -p mealdrop --prompt pattern-copy-play --manual
 
 # Verbose output
-node scripts/eval/eval.ts -p mealdrop -v
+yarn eval -- -p mealdrop --prompt pattern-copy-play -v
 
 # List available projects, models, or prompts
-node scripts/eval/eval.ts --list-projects
-node scripts/eval/eval.ts --list-models
-node scripts/eval/eval.ts --list-prompts
+yarn eval -- --list-projects
+yarn eval -- --list-models
+yarn eval -- --list-prompts
 ```
 
 When a trial completes, it prints a summary:
@@ -76,20 +76,20 @@ Result
 ## Running a batch
 
 ```sh
-# Default: Claude (Opus) + Codex, high effort on both, 10 repetitions, concurrency 8
-node scripts/eval/run-batch.ts
+# Prompt is required. Confirms interactively unless you pass --yes (CI / automation).
+yarn eval:run-batch -- --prompt pattern-copy-play --yes
 
 # Claude only
-node scripts/eval/run-batch.ts --agents claude
+yarn eval:run-batch -- --prompt pattern-copy-play --yes --agents claude
 
 # Specific effort levels
-node scripts/eval/run-batch.ts --claude-effort max
-node scripts/eval/run-batch.ts --claude-efforts max,high
-node scripts/eval/run-batch.ts --agents codex --codex-effort xhigh
+yarn eval:run-batch -- --prompt pattern-copy-play --yes --claude-effort max
+yarn eval:run-batch -- --prompt pattern-copy-play --yes --claude-efforts max,high
+yarn eval:run-batch -- --prompt pattern-copy-play --yes --agents codex --codex-effort xhigh
 
 # Different prompt or concurrency
-node scripts/eval/run-batch.ts --prompt setup
-node scripts/eval/run-batch.ts --concurrency 4
+yarn eval:run-batch -- --prompt setup --yes
+yarn eval:run-batch -- --prompt pattern-copy-play --yes --concurrency 4
 ```
 
 Batch results are written to `storybook-eval/batches/<timestamp>/`, with per-run log files and a `summary.json`.
@@ -100,13 +100,13 @@ Before running evals, the benchmark repos need a consistent `.storybook` baselin
 
 ```sh
 # Sync all projects
-node scripts/eval/sync-baselines.ts
+yarn eval:sync-baselines
 
 # Sync specific projects
-node scripts/eval/sync-baselines.ts --project mealdrop --project edgy
+yarn eval:sync-baselines -- --project mealdrop --project edgy
 
 # Dry run (commit locally but don't push)
-node scripts/eval/sync-baselines.ts --skip-push
+yarn eval:sync-baselines -- --skip-push
 ```
 
 The script ensures each repo is on its default branch with no local changes, fetches the latest from origin, replaces the `.storybook` directory with the canonical baseline, and commits/pushes if anything changed.
@@ -117,17 +117,17 @@ After running trials, `collect-pr-data.ts` scrapes the published draft PRs and l
 
 ```sh
 # Collect from all projects
-node scripts/eval/collect-pr-data.ts
+yarn eval:collect-pr-data
 
 # Collect from a specific project
-node scripts/eval/collect-pr-data.ts --project mealdrop
+yarn eval:collect-pr-data -- --project mealdrop
 
 # Limit PRs fetched or filter by state
-node scripts/eval/collect-pr-data.ts --limit 50
-node scripts/eval/collect-pr-data.ts --state open
+yarn eval:collect-pr-data -- --limit 50
+yarn eval:collect-pr-data -- --state open
 
 # Custom database path (default: scripts/eval/.cache/eval-pr-data.sqlite)
-node scripts/eval/collect-pr-data.ts --db-path ./my-eval-data.sqlite
+yarn eval:collect-pr-data -- --db-path ./my-eval-data.sqlite
 ```
 
 ## Querying results
@@ -182,6 +182,8 @@ Each trial produces several metrics:
 
 The headline metric is **normalized preview gain** — how much of the remaining room for improvement did the agent capture. It is stored in `data.json` as a **0–1 index**; the CLI, draft PR, and eval summary UI show the same value as a **percentage** for readability.
 
+If the baseline already passes every story (**before_rate = 100%**), there is no remaining gap — the gain and headline score are **0**.
+
 ```
 gain = (after_rate - before_rate) / (1 - before_rate)
 ```
@@ -196,7 +198,7 @@ The agent captured 50% of the possible improvement. A score of 1.0 means the age
 
 ## Projects
 
-Benchmark apps live in repos under the `storybook-tmp` GitHub org. The authoritative list is in `scripts/eval/lib/projects.ts` — use `node scripts/eval/eval.ts --list-projects` to see names and descriptions.
+Benchmark apps live in repos under the `storybook-tmp` GitHub org. The authoritative list is in `scripts/eval/lib/projects.ts` — use `yarn eval -- --list-projects` to see names and descriptions.
 
 ## Adding a new benchmark project
 
@@ -217,8 +219,8 @@ To benchmark a new app, register it in the harness and sync baselines. Follow th
 }
 ```
 
-1. Run `node scripts/eval/sync-baselines.ts --project my-project` to push the eval baseline `.storybook` config (this replaces the init scaffold in the benchmark repo).
-2. Run a trial to verify: `node scripts/eval/eval.ts -p my-project`
+4. Run `yarn eval:sync-baselines -- --project my-project` to push the eval baseline `.storybook` config (this replaces the init scaffold in the benchmark repo).
+5. Run a trial to verify: `yarn eval -- -p my-project --prompt pattern-copy-play`
 
 ## Prompts
 
@@ -226,13 +228,13 @@ Prompts are markdown files in `scripts/eval/prompts/` that tell the agent what t
 
 ### Available prompts
 
-- `**pattern-copy-play**` (default) — analyze the codebase, copy real usage patterns, configure preview with providers and MSW mocks, write ~10 story files with play functions, verify each with Vitest.
+- `**pattern-copy-play**` — analyze the codebase, copy real usage patterns, configure preview with providers and MSW mocks, write ~10 story files with play functions, verify each with Vitest.
 - `**setup**` — structured step-by-step: analyze, configure preview, write 9 stories (3 simple / 3 medium / 3 complex), verify each with Vitest.
 
 ### Writing a new prompt
 
 1. Create a markdown file in `scripts/eval/prompts/`, e.g. `my-strategy.md`.
 2. Write the instructions the agent should follow. The prompt is passed directly to the agent as its task.
-3. Use it: `node scripts/eval/eval.ts -p mealdrop --prompt my-strategy`
+3. Use it: `yarn eval -- -p mealdrop --prompt my-strategy`
 
 The prompt should tell the agent how to analyze the codebase, configure `.storybook/preview.ts`, write story files matching the `stories` glob, and verify with `npx vitest --project storybook`.

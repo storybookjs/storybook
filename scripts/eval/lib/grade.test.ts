@@ -94,13 +94,13 @@ describe('computeQualityScore', () => {
     expect(result.breakdown.gain).toBeCloseTo(0.5);
   });
 
-  it('returns 1 when baseline and final are both perfect', () => {
+  it('returns 0 when baseline and final are both perfect (no remaining gap to improve)', () => {
     const result = computeQualityScore({
       baselinePreviewStories: { passed: 4, total: 4 },
       storyRender: { passed: 4, total: 4 },
     });
-    expect(result.score).toBe(1);
-    expect(result.breakdown.gain).toBe(1);
+    expect(result.score).toBe(0);
+    expect(result.breakdown.gain).toBe(0);
   });
 });
 

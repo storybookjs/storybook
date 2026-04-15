@@ -15,6 +15,8 @@ export const EVAL_ROOT = resolve(REPO_ROOT, '..', 'storybook-eval');
 export const REPOS_DIR = resolve(EVAL_ROOT, 'repos');
 export const TRIALS_DIR = resolve(EVAL_ROOT, 'trials');
 export const PROMPTS_DIR = resolve(import.meta.dirname, '..', 'prompts');
+/** Basename (no `.md`) used in docs and tests when a concrete prompt must be named. */
+export const EXAMPLE_PROMPT_BASENAME = 'pattern-copy-play';
 export const STORYBOOK_DIRNAME = '.storybook';
 export const EVAL_RESULTS_DIRNAME = 'eval-results';
 
@@ -82,6 +84,11 @@ export function generateTrialId() {
   return `${timestamp}-${crypto.randomUUID().replace(/-/g, '').slice(0, 8)}`;
 }
 
+/** Uppercase first character only (shared eval string helper). */
+export function capitalizeFirst(value: string) {
+  return value.charAt(0).toUpperCase() + value.slice(1);
+}
+
 export function formatReadableUtcTimestamp(timestamp: string) {
   const date = new Date(timestamp);
   if (Number.isNaN(date.getTime())) {
@@ -130,7 +137,7 @@ export function formatTable(headers: string[], rows: string[][]): string {
 }
 
 /** Load a prompt by name from prompts/{name}.md. */
-export function loadPrompt(name = 'pattern-copy-play'): string {
+export function loadPrompt(name: string): string {
   const file = resolve(PROMPTS_DIR, `${name}.md`);
   if (!existsSync(file)) {
     throw new Error(`Prompt not found: ${file}\nAvailable: ${listPrompts().join(', ')}`);

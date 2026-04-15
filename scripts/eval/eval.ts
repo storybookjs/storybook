@@ -5,11 +5,11 @@
  * via type stripping. Import specifiers use explicit .ts extensions.
  *
  * Usage:
- *   node eval/eval.ts -p mealdrop                       # claude defaults
- *   node eval/eval.ts -p mealdrop -a codex             # codex defaults
- *   node eval/eval.ts -p mealdrop -m gpt-5.4           # codex (inferred)
- *   node eval/eval.ts -p mealdrop -a claude -e max     # claude with max effort
- *   node eval/eval.ts -p mealdrop --manual             # prepare only, print instructions
+ *   node eval/eval.ts -p mealdrop --prompt pattern-copy-play   # claude defaults
+ *   node eval/eval.ts -p mealdrop --prompt setup -a codex      # codex defaults
+ *   node eval/eval.ts -p mealdrop --prompt setup -m gpt-5.4    # codex (inferred)
+ *   node eval/eval.ts -p mealdrop --prompt setup -a claude -e max
+ *   node eval/eval.ts -p mealdrop --prompt setup --manual      # prepare only, print instructions
  *   node eval/eval.ts --list-projects
  *   node eval/eval.ts --list-models
  *   node eval/eval.ts --list-prompts
@@ -42,13 +42,14 @@ import {
   generateTrialId,
   listPrompts,
   loadPrompt,
+  EXAMPLE_PROMPT_BASENAME,
 } from './lib/utils.ts';
 
 const PROJECT_NAMES = PROJECTS.map((p) => p.name) as [string, ...string[]];
 
 const base = {
   project: z.enum(PROJECT_NAMES).optional(),
-  prompt: z.string().default('pattern-copy-play'),
+  prompt: z.string().optional(),
   verbose: z.boolean().default(false),
   manual: z.boolean().default(false),
   listProjects: z.boolean().default(false),
@@ -56,20 +57,40 @@ const base = {
   listPrompts: z.boolean().default(false),
 };
 
-const argsSchema = z.discriminatedUnion('agent', [
-  z.object({
-    ...base,
-    agent: z.literal('claude'),
-    model: z.enum(CLAUDE_MODELS).default(AGENTS.claude.defaultModel),
-    effort: z.enum(CLAUDE_EFFORTS).default(AGENTS.claude.defaultEffort),
-  }),
-  z.object({
-    ...base,
-    agent: z.literal('codex'),
-    model: z.enum(CODEX_MODELS).default(AGENTS.codex.defaultModel),
-    effort: z.enum(CODEX_EFFORTS).default(AGENTS.codex.defaultEffort),
-  }),
-]);
+// `parseArgs` cannot require `--prompt` only when `-p` is used; Zod `superRefine` applies that rule after parse.
+const argsSchema = z
+  .discriminatedUnion('agent', [
+    z.object({
+      ...base,
+      agent: z.literal('claude'),
+      model: z.enum(CLAUDE_MODELS).default(AGENTS.claude.defaultModel),
+      effort: z.enum(CLAUDE_EFFORTS).default(AGENTS.claude.defaultEffort),
+    }),
+    z.object({
+      ...base,
+      agent: z.literal('codex'),
+      model: z.enum(CODEX_MODELS).default(AGENTS.codex.defaultModel),
+      effort: z.enum(CODEX_EFFORTS).default(AGENTS.codex.defaultEffort),
+    }),
+  ])
+  .superRefine((data, ctx) => {
+    const needsPromptForTrial =
+      data.project != null &&
+      !data.listProjects &&
+      !data.listModels &&
+      !data.listPrompts;
+    if (!needsPromptForTrial) {
+      return;
+    }
+    const prompt = data.prompt?.trim() ?? '';
+    if (prompt === '') {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: `Specify --prompt <name> (markdown file in scripts/eval/prompts/). Example: --prompt ${EXAMPLE_PROMPT_BASENAME}. Run with --list-prompts to see available names.`,
+        path: ['prompt'],
+      });
+    }
+  });
 
 const evalOptions = {
   project: { type: 'string' as const, short: 'p', description: 'Project to evaluate' },
@@ -82,7 +103,7 @@ const evalOptions = {
   effort: { type: 'string' as const, short: 'e', description: 'Effort level' },
   prompt: {
     type: 'string' as const,
-    description: 'Prompt template name (default: pattern-copy-play)',
+    description: `Prompt template name — required with -p (file: prompts/{name}.md; e.g. ${EXAMPLE_PROMPT_BASENAME})`,
   },
   verbose: { type: 'boolean' as const, short: 'v', description: 'Enable verbose output' },
   manual: {
@@ -157,10 +178,11 @@ if (!args.project) {
 }
 const project = PROJECTS.find((p) => p.name === args.project)!;
 const variant = toVariant(args);
+const promptName = args.prompt!.trim();
 
 logger.log(pc.bold(`\nStorybook Setup Eval — ${project.name}`));
 logger.log(
-  `Agent: ${variant.agent} | Model: ${variant.model} | Effort: ${variant.effort} | Prompt: ${args.prompt}\n`
+  `Agent: ${variant.agent} | Model: ${variant.model} | Effort: ${variant.effort} | Prompt: ${promptName}\n`
 );
 
 if (args.manual) {
@@ -168,7 +190,7 @@ if (args.manual) {
   const workspace = await prepareTrial(project, trialId, logger);
   await captureEnvironment();
 
-  const prompt = loadPrompt(args.prompt);
+  const prompt = loadPrompt(promptName);
   const promptPath = join(workspace.resultsDir, 'prompt.md');
   await writeFile(promptPath, prompt);
 
@@ -186,7 +208,7 @@ if (args.manual) {
     {
       project,
       variant,
-      prompt: args.prompt,
+      prompt: promptName,
       verbose: args.verbose,
     } satisfies TrialConfig,
     logger

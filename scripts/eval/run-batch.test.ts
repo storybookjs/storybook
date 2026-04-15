@@ -11,6 +11,7 @@ import {
   BATCH_DEFAULT_EFFORTS,
   BATCH_DEFAULT_AGENT_IDS,
   BATCH_EXCLUDED_PROJECT_NAMES,
+  BATCH_MATRIX_MODELS,
   BATCH_PROJECT_NAMES,
   BATCH_REPETITIONS,
   BATCH_VARIANTS,
@@ -21,6 +22,8 @@ import {
   runBatch,
   type SpawnedBatchChild,
 } from './run-batch.ts';
+
+const TEST_PROMPT = 'pattern-copy-play';
 
 let TMP = '';
 
@@ -33,7 +36,7 @@ afterEach(() => {
 
 describe('buildBatchRunDescriptors', () => {
   it('creates the default batch matrix with full repetition coverage', () => {
-    const descriptors = buildBatchRunDescriptors();
+    const descriptors = buildBatchRunDescriptors({ prompt: TEST_PROMPT });
     const combinations = new Map<string, number[]>();
 
     expect(descriptors).toHaveLength(
@@ -78,14 +81,14 @@ describe('buildBatchRunDescriptors', () => {
   });
 
   it('can restrict the batch to Claude only when explicitly requested', () => {
-    const descriptors = buildBatchRunDescriptors({ agents: ['claude'] });
+    const descriptors = buildBatchRunDescriptors({ prompt: TEST_PROMPT, agents: ['claude'] });
 
     expect(descriptors).toHaveLength(BATCH_PROJECT_NAMES.length * BATCH_REPETITIONS);
     expect(new Set(descriptors.map((descriptor) => descriptor.agent))).toEqual(new Set(['claude']));
   });
 
   it('uses the configured Claude effort override when building descriptors', () => {
-    const descriptors = buildBatchRunDescriptors({ claudeEffort: 'high' });
+    const descriptors = buildBatchRunDescriptors({ prompt: TEST_PROMPT, claudeEffort: 'high' });
 
     expect(
       new Set(
@@ -98,6 +101,7 @@ describe('buildBatchRunDescriptors', () => {
 
   it('supports multiple Claude efforts in a single batch', () => {
     const descriptors = buildBatchRunDescriptors({
+      prompt: TEST_PROMPT,
       agents: ['claude'],
       claudeEfforts: ['max', 'high'],
     });
@@ -114,6 +118,7 @@ describe('buildBatchRunDescriptors', () => {
 
   it('uses the configured codex effort override when codex is enabled', () => {
     const descriptors = buildBatchRunDescriptors({
+      prompt: TEST_PROMPT,
       agents: ['claude', 'codex'],
       codexEffort: 'medium',
     });
@@ -128,7 +133,7 @@ describe('buildBatchRunDescriptors', () => {
   });
 
   it('uses a prompt override for every batch run descriptor', () => {
-    const descriptors = buildBatchRunDescriptors({ prompt: 'pattern-copy-play' });
+    const descriptors = buildBatchRunDescriptors({ prompt: TEST_PROMPT });
 
     expect(new Set(descriptors.map((descriptor) => descriptor.prompt))).toEqual(
       new Set(['pattern-copy-play'])
@@ -139,7 +144,7 @@ describe('buildBatchRunDescriptors', () => {
   });
 
   it('interleaves projects first so batch startup spreads across repos', () => {
-    const descriptors = buildBatchRunDescriptors();
+    const descriptors = buildBatchRunDescriptors({ prompt: TEST_PROMPT });
 
     expect(
       descriptors
@@ -170,8 +175,8 @@ describe('buildBatchVariants', () => {
   it('returns the default benchmark variants when no overrides are provided', () => {
     expect(buildBatchVariants()).toEqual(BATCH_VARIANTS);
     expect(BATCH_VARIANTS).toEqual([
-      { agent: 'claude', model: 'opus-4.6', effort: BATCH_DEFAULT_CLAUDE_EFFORTS[0] },
-      { agent: 'codex', model: 'gpt-5.4', effort: BATCH_DEFAULT_EFFORTS.codex },
+      { agent: 'claude', model: BATCH_MATRIX_MODELS.claude, effort: BATCH_DEFAULT_CLAUDE_EFFORTS[0] },
+      { agent: 'codex', model: BATCH_MATRIX_MODELS.codex, effort: BATCH_DEFAULT_EFFORTS.codex },
     ]);
   });
 
@@ -193,14 +198,14 @@ describe('buildBatchVariants', () => {
 
   it('supports Claude-only variants when requested', () => {
     expect(buildBatchVariants({ agents: ['claude'] })).toEqual([
-      { agent: 'claude', model: 'opus-4.6', effort: BATCH_DEFAULT_CLAUDE_EFFORTS[0] },
+      { agent: 'claude', model: BATCH_MATRIX_MODELS.claude, effort: BATCH_DEFAULT_CLAUDE_EFFORTS[0] },
     ]);
   });
 
   it('supports multiple Claude variants when multiple efforts are requested', () => {
     expect(buildBatchVariants({ agents: ['claude'], claudeEfforts: ['max', 'high'] })).toEqual([
-      { agent: 'claude', model: 'opus-4.6', effort: 'max' },
-      { agent: 'claude', model: 'opus-4.6', effort: 'high' },
+      { agent: 'claude', model: BATCH_MATRIX_MODELS.claude, effort: 'max' },
+      { agent: 'claude', model: BATCH_MATRIX_MODELS.claude, effort: 'high' },
     ]);
   });
 });
@@ -230,7 +235,10 @@ describe('parseRunBatchArgs', () => {
   });
 
   it('parses multiple Claude efforts from the CLI', () => {
-    expect(parseRunBatchArgs(['--claude-efforts', 'max,high'])).toEqual({
+    expect(
+      parseRunBatchArgs(['--prompt', TEST_PROMPT, '--claude-efforts', 'max,high'])
+    ).toEqual({
+      prompt: TEST_PROMPT,
       claudeEfforts: ['max', 'high'],
     });
   });
@@ -239,7 +247,7 @@ describe('parseRunBatchArgs', () => {
 describe('runBatch', () => {
   it('caps concurrency and keeps queued work moving as slots free up', async () => {
     TMP = mkdtempSync(join(tmpdir(), 'eval-run-batch-concurrency-'));
-    const descriptors = buildBatchRunDescriptors().slice(0, 5);
+    const descriptors = buildBatchRunDescriptors({ prompt: TEST_PROMPT }).slice(0, 5);
     const controller = createControlledSpawn();
 
     const batchPromise = runBatch(
@@ -290,7 +298,7 @@ describe('runBatch', () => {
 
   it('continues after failures and returns a nonzero main result when any run fails', async () => {
     TMP = mkdtempSync(join(tmpdir(), 'eval-run-batch-failure-'));
-    const descriptors = buildBatchRunDescriptors().slice(0, 3);
+    const descriptors = buildBatchRunDescriptors({ prompt: TEST_PROMPT }).slice(0, 3);
     const spawn = createAutoSpawn([0, 2, 0]);
 
     const exitCode = await main(
@@ -320,7 +328,7 @@ describe('runBatch', () => {
 
   it('writes summary metadata and per-run logs under the batch directory', async () => {
     TMP = mkdtempSync(join(tmpdir(), 'eval-run-batch-summary-'));
-    const descriptor = buildBatchRunDescriptors({ prompt: 'pattern-copy-play' })[0];
+    const descriptor = buildBatchRunDescriptors({ prompt: TEST_PROMPT })[0];
     const spawn = createAutoSpawn([0]);
 
     const summary = await runBatch(
@@ -443,11 +451,9 @@ function getDescriptorFromArgs(args: string[]) {
   const agent = agentIndex === -1 ? undefined : args[agentIndex + 1];
   const effortIndex = args.indexOf('-e');
   const effort = effortIndex === -1 ? undefined : args[effortIndex + 1];
-  const options: Parameters<typeof buildBatchRunDescriptors>[0] = {};
-
-  if (prompt) {
-    options.prompt = prompt;
-  }
+  const options: Parameters<typeof buildBatchRunDescriptors>[0] = {
+    prompt: prompt ?? TEST_PROMPT,
+  };
 
   if (agent === 'claude') {
     options.agents = ['claude'];

@@ -93,15 +93,20 @@ export async function publishTrialBranch(opts: {
     )
   ).stdout.trim();
 
-  for (const label of labels) {
-    await x(
-      'gh',
-      ['pr', 'edit', prUrl, '--repo', opts.data.project.githubSlug, '--add-label', label],
-      {
-        nodeOptions: { cwd: opts.workspace.repoRoot },
-      }
-    );
-  }
+  await x(
+    'gh',
+    [
+      'pr',
+      'edit',
+      prUrl,
+      '--repo',
+      opts.data.project.githubSlug,
+      ...labels.flatMap((label) => ['--add-label', label]),
+    ],
+    {
+      nodeOptions: { cwd: opts.workspace.repoRoot },
+    }
+  );
 
   opts.logger.logSuccess(`Draft PR opened: ${prUrl}`);
 

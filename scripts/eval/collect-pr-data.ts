@@ -1,3 +1,11 @@
+/**
+ * Ingests eval draft PRs into SQLite for analysis (queries, exports, dashboards).
+ *
+ * **Maintenance:** This file mixes SQL, GitHub API shapes, and `data.json` schema assumptions.
+ * Prefer updating it with AI assistance and keep changes aligned with `scripts/eval/lib/result-docs.ts`
+ * (`EvalData` / `schemaVersion`). When agent SDKs or transcript formats change, revisit the
+ * parsers and migrations together.
+ */
 import { execFileSync } from 'node:child_process';
 import { mkdirSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';

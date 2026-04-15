@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  EXAMPLE_PROMPT_BASENAME,
   formatDuration,
   formatCost,
   formatScore,
@@ -112,12 +113,6 @@ describe('listPrompts', () => {
 });
 
 describe('loadPrompt', () => {
-  it('loads pattern-copy-play prompt by default', () => {
-    const prompt = loadPrompt();
-    expect(prompt).toContain('play function');
-    expect(prompt.length).toBeGreaterThan(0);
-  });
-
   it('loads setup prompt by name', () => {
     const prompt = loadPrompt('setup');
     expect(prompt).toContain('Storybook');
@@ -125,7 +120,7 @@ describe('loadPrompt', () => {
   });
 
   it('loads the play-driven pattern-copy prompt by name', () => {
-    const prompt = loadPrompt('pattern-copy-play');
+    const prompt = loadPrompt(EXAMPLE_PROMPT_BASENAME);
     expect(prompt).toContain('play function');
     expect(prompt).toContain('The purpose of the `play` function is to prove');
   });
@@ -135,7 +130,7 @@ describe('loadPrompt', () => {
   });
 
   it('returns trimmed content', () => {
-    const prompt = loadPrompt('pattern-copy-play');
+    const prompt = loadPrompt(EXAMPLE_PROMPT_BASENAME);
     expect(prompt).toBe(prompt.trim());
   });
 });

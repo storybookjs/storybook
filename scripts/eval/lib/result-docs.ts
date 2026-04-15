@@ -604,6 +604,9 @@ interface ClaudeResultEntry {
   costUSD?: number;
 }
 
+// --- Transcript narrowing helpers (Claude / Codex SDK message shapes) ---
+// If upstream SDKs add new message kinds, extend these predicates and any consumers in lockstep.
+
 interface CodexCommandEntry {
   type: 'command_execution';
   command: string;

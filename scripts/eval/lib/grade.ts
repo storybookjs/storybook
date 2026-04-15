@@ -3,7 +3,7 @@ import { join } from 'node:path';
 import { x } from 'tinyexec';
 import { getComponentCandidates } from '../../../code/core/src/core-server/utils/ghost-stories/get-candidates.ts';
 import { runGhostStories } from '../../../code/core/src/core-server/utils/ghost-stories/run-story-tests.ts';
-import type { Logger } from './utils.ts';
+import { capitalizeFirst, type Logger } from './utils.ts';
 import type { TrialWorkspace } from './prepare-trial.ts';
 import {
   getGeneratedStoryFiles,
@@ -64,6 +64,8 @@ export function filterStorybookFiles(fileChanges: FileChange[]): FileChange[] {
  *
  * Build, typecheck, runtime, and ghost stories are still recorded in the eval output,
  * but they no longer contribute to the score itself.
+ *
+ * When the baseline is already at 100% story coverage, the score is **0** (no remaining gap).
  */
 export function computeQualityScore(opts: {
   baselinePreviewStories?: Pick<StoryRenderGrade, 'passed' | 'total'>;
@@ -264,7 +266,7 @@ export async function collectGhostStoriesGrade(
     const result = await runGhostStories(candidates, { cwd: projectPath });
 
     if (result.runError) {
-      logger.logError(`${capitalize(label)}: ${result.runError}`);
+      logger.logError(`${capitalizeFirst(label)}: ${result.runError}`);
       return undefined;
     }
 
@@ -273,7 +275,7 @@ export async function collectGhostStoriesGrade(
     if (summary && summary.total > 0) {
       const realPassed = summary.passed - summary.passedButEmptyRender;
       logger.logSuccess(
-        `${capitalize(label)}: ${realPassed}/${summary.total} passed (${Math.round(summary.successRateWithoutEmptyRender * 100)}%)${summary.passedButEmptyRender > 0 ? ` (${summary.passedButEmptyRender} empty renders excluded)` : ''}`
+        `${capitalizeFirst(label)}: ${realPassed}/${summary.total} passed (${Math.round(summary.successRateWithoutEmptyRender * 100)}%)${summary.passedButEmptyRender > 0 ? ` (${summary.passedButEmptyRender} empty renders excluded)` : ''}`
       );
     }
 
@@ -285,25 +287,29 @@ export async function collectGhostStoriesGrade(
     };
   } catch (error) {
     logger.logError(
-      `${capitalize(label)}: ${error instanceof Error ? error.message : String(error)}`
+      `${capitalizeFirst(label)}: ${error instanceof Error ? error.message : String(error)}`
     );
     return undefined;
   }
 }
 
+/**
+ * Normalized preview gain: fraction of the remaining gap to 100% pass rate that this run closed.
+ *
+ * - Missing rates → 0
+ * - Baseline already at 100% → 0 (no remaining improvement; avoids scoring a no-op as full gain)
+ * - Otherwise → (after − before) / (1 − before), clamped to [0, 1]. When `before` is 0, this is
+ *   just `after` (all improvement from zero).
+ */
 function computeNormalizedGain(beforeRate?: number, afterRate?: number) {
   if (beforeRate == null || afterRate == null) {
     return 0;
   }
 
   if (beforeRate >= 1) {
-    return afterRate >= 1 ? 1 : 0;
+    return 0;
   }
 
   const gain = (afterRate - beforeRate) / (1 - beforeRate);
   return Math.max(0, Math.min(1, Number.isNaN(gain) ? 0 : gain));
-}
-
-function capitalize(value: string) {
-  return value.charAt(0).toUpperCase() + value.slice(1);
 }

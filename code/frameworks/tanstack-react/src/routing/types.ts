@@ -1,5 +1,4 @@
-import type React from 'react';
-import type { AnyRootRoute, AnyRoute, Route, FileRoutesByPath } from '@tanstack/react-router';
+import type { AnyRoute, FileRoutesByPath } from '@tanstack/react-router';
 import type { RouteOptions } from '@tanstack/router-core';
 
 export type IsRoute<T> = T extends AnyRoute
@@ -95,12 +94,9 @@ export type StoryRouteOptions<TRoute = undefined> = CreateStoryRouteOptions<TRou
 
 /**
  * Per-route override options for use inside `RouteTreeOverrides`.
- * Users can override `component`, `loader`, `beforeLoad`, etc. for a specific route.
- * Set `component: 'story'` to mark which route should render the Story component.
+ * Users can override `loader`, `beforeLoad`, etc. for a specific route.
  */
 export interface RouteOverrideOptions {
-  /** The component to render for this route. Use `'story'` to insert the Story. */
-  component?: (() => React.JSX.Element) | 'story';
   /** Override the route's loader function. */
   loader?: (() => unknown) | (() => Promise<unknown>);
   /** Override the route's beforeLoad function. */
@@ -111,30 +107,23 @@ export interface RouteOverrideOptions {
   loaderDeps?: (opts: { search: Record<string, unknown> }) => Record<string, unknown>;
   /** Override the route's context function. */
   context?: (() => Record<string, unknown>) | Record<string, unknown>;
-  /** Override the route's error component. */
-  errorComponent?: () => React.JSX.Element;
-  /** Override the route's pending component. */
-  pendingComponent?: () => React.JSX.Element;
-  /** Override the route's not-found component. */
-  notFoundComponent?: () => React.JSX.Element;
 }
 
 /**
  * A map of route overrides keyed by route ID.
- * Each entry can override `component`, `loader`, `beforeLoad`, etc. for that route.
+ * Each entry can override `loader`, `beforeLoad`, etc. for that route.
  *
  * @example
  * ```ts
  * routeOverrides: {
  *   '/_authed': { beforeLoad: () => {} },
  *   '/demo/form/simple/$id': {
- *     component: 'story',
  *     loader: async () => ({ name: 'Mock User' }),
  *   },
  * }
  * ```
  */
-export type RouteTreeOverrides = Record<string, RouteOverrideOptions>;
+export type RouteTreeOverrides = Record<keyof FileRoutesByPath, RouteOverrideOptions>;
 
 export interface RouterParameters<TRoute = undefined> {
   /** A route object or route options to use for this story. */
@@ -149,16 +138,13 @@ export interface RouterParameters<TRoute = undefined> {
    * Override options for specific routes in the app route tree (route tree mode only).
    *
    * Each key is a route ID (e.g. `'/about'`, `'__root__'`, `'/demo/form/simple/$id'`).
-   * Values can override `component`, `loader`, `beforeLoad`, etc. for that route.
-   *
-   * Use `component: 'story'` to explicitly mark which route should render the Story.
+   * Values can override `loader`, `beforeLoad`, etc. for that route.
    *
    * @example
    * ```ts
    * routeOverrides: {
    *   '/_authed': { beforeLoad: () => {} },
    *   '/demo/form/simple/$id': {
-   *     component: 'story',
    *     loader: async () => ({ name: 'Mock User' }),
    *   },
    * }

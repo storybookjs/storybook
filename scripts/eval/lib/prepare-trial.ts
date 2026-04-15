@@ -1,11 +1,11 @@
 import { existsSync } from 'node:fs';
-import { cp, mkdir, rm } from 'node:fs/promises';
+import { mkdir, rm } from 'node:fs/promises';
 import { join } from 'node:path';
 import type { Logger } from './utils.ts';
 import type { Project } from './projects.ts';
 import { x } from 'tinyexec';
 import { installDeps } from './package-manager.ts';
-import { getEvalResultsDir, getProjectPath, REPO_ROOT, REPOS_DIR, TRIALS_DIR } from './utils.ts';
+import { getEvalResultsDir, getProjectPath, REPOS_DIR, TRIALS_DIR } from './utils.ts';
 
 export interface TrialWorkspace {
   trialDir: string;
@@ -16,19 +16,6 @@ export interface TrialWorkspace {
   baselineCommit: string;
   trialBranch: string;
 }
-
-const LOCAL_PACKAGE_DIST_SYNC = [
-  {
-    label: 'storybook',
-    sourceDist: join(REPO_ROOT, 'code', 'core', 'dist'),
-    targetDist: ['node_modules', 'storybook', 'dist'],
-  },
-  {
-    label: '@storybook/addon-vitest',
-    sourceDist: join(REPO_ROOT, 'code', 'addons', 'vitest', 'dist'),
-    targetDist: ['node_modules', '@storybook', 'addon-vitest', 'dist'],
-  },
-] as const;
 
 /**
  * Maintain one persistent source clone per project and create a fresh worktree for every trial.
@@ -58,7 +45,6 @@ export async function prepareTrial(
   const resultsDir = getEvalResultsDir(projectPath);
   await mkdir(resultsDir, { recursive: true });
   await installDeps(projectPath, logger, undefined, { stopAt: repoRoot });
-  await syncLocalBuildsToTrial(projectPath, logger);
 
   logger.logSuccess('Trial ready');
   return { trialDir, sourceDir, repoRoot, projectPath, resultsDir, baselineCommit, trialBranch };
@@ -120,28 +106,4 @@ async function createTrialWorktree({
     timeout: 120_000,
     nodeOptions: { cwd: sourceDir },
   });
-}
-
-async function syncLocalBuildsToTrial(projectPath: string, logger: Logger) {
-  if (process.env.EVAL_SYNC_LOCAL_STORYBOOK_PACKAGES !== 'true') {
-    return;
-  }
-
-  const synced: string[] = [];
-
-  for (const entry of LOCAL_PACKAGE_DIST_SYNC) {
-    const targetDist = join(projectPath, ...entry.targetDist);
-    if (!existsSync(entry.sourceDist) || !existsSync(targetDist)) {
-      continue;
-    }
-
-    logger.logStep(`Syncing local ${entry.label} build into trial...`);
-    await rm(targetDist, { recursive: true, force: true });
-    await cp(entry.sourceDist, targetDist, { recursive: true });
-    synced.push(entry.label);
-  }
-
-  if (synced.length > 0) {
-    logger.logSuccess(`Synced local builds to trial: ${synced.join(', ')}`);
-  }
 }

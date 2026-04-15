@@ -2,9 +2,9 @@ import {
   experimental_loadStorybook,
   type StoryIndexGenerator,
 } from 'storybook/internal/core-server';
-
+import { getPort } from 'get-port-please';
 import type { InlineConfig, Plugin, PluginOption } from 'vite';
-
+import { createProxyMiddleware } from 'http-proxy-middleware';
 import { pluginConfig } from '../../builder-vite/src/vite-config';
 import { bundlerOptionsKey } from '../../builder-vite/src/utils/vite-features';
 import { buildStorybookPlugin } from './build';
@@ -18,7 +18,7 @@ import { buildManager, registerManagerMiddleware } from './middlewares/manager';
 import { createStaticMiddlewares } from './middlewares/static';
 import { registerStoryIndexMiddleware } from './middlewares/story-index';
 import type { UserOptions } from './types';
-
+import polka from 'polka';
 import { fileURLToPath } from 'node:url';
 
 import { join, resolve } from 'pathe';
@@ -96,8 +96,22 @@ export async function SbMain(options?: UserOptions): Promise<PluginOption> {
           server.middlewares.use(middleware);
         }
 
+        const port = await getPort();
+        const polkaServer = polka();
+        polkaServer.listen(port);
+        sb.port = server.config.server.port;
+        await sb.presets.apply('experimental_devServer', polkaServer, sb);
         registerStoryIndexMiddleware(server, storyIndexGenerator, basePath);
 
+        server.middlewares.use(
+          '/__storybook',
+          createProxyMiddleware({
+            target: `http://localhost:${port}`,
+            changeOrigin: true,
+            ws: true,
+            pathRewrite: (path) => path.replace(/^\/__storybook/, ''),
+          })
+        );
         if (server.httpServer) {
           const channel = createServerChannel(
             server.httpServer as Parameters<typeof createServerChannel>[0],

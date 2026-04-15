@@ -3,6 +3,9 @@ import { describe, expect, it } from 'vitest';
 import {
   formatDuration,
   formatCost,
+  formatScore,
+  formatScorePercent,
+  formatReadableUtcTimestamp,
   generateTrialId,
   loadPrompt,
   listPrompts,
@@ -42,30 +45,61 @@ describe('formatCost', () => {
   });
 });
 
-describe('generateTrialId', () => {
-  it('contains project, agent, model, and prompt', () => {
-    const id = generateTrialId('mealdrop', 'claude', 'sonnet-4.6', 'setup');
-    expect(id).toContain('mealdrop');
-    expect(id).toContain('claude');
-    expect(id).toContain('sonnet-4.6');
-    expect(id).toContain('setup');
+describe('formatScore', () => {
+  it('keeps integer scores compact', () => {
+    expect(formatScore(1)).toBe('1');
+    expect(formatScore(0)).toBe('0');
   });
 
-  it('starts with an ISO-like timestamp', () => {
-    const id = generateTrialId('proj', 'agent', 'model', 'prompt');
-    expect(id).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2}/);
+  it('formats gain scores without unnecessary trailing zeroes', () => {
+    expect(formatScore(0.25)).toBe('0.25');
+    expect(formatScore(1 / 3)).toBe('0.333');
+    expect(formatScore(-0.125)).toBe('-0.125');
+  });
+});
+
+describe('formatScorePercent', () => {
+  it('formats 0-1 scores as whole-number percentages when exact', () => {
+    expect(formatScorePercent(0)).toBe('0%');
+    expect(formatScorePercent(1)).toBe('100%');
+    expect(formatScorePercent(0.5)).toBe('50%');
+    expect(formatScorePercent(0.75)).toBe('75%');
+  });
+
+  it('uses one decimal when the percentage is not an integer', () => {
+    expect(formatScorePercent(1 / 3)).toBe('33.3%');
+    expect(formatScorePercent(-0.125)).toBe('-12.5%');
+  });
+});
+
+describe('generateTrialId', () => {
+  it('starts with a readable branch-safe UTC timestamp', () => {
+    const id = generateTrialId();
+    expect(id).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2}Z-[a-f0-9]{8}$/);
   });
 
   it('generates unique IDs', () => {
-    const a = generateTrialId('p', 'a', 'm', 'pr');
-    const b = generateTrialId('p', 'a', 'm', 'pr');
+    const a = generateTrialId();
+    const b = generateTrialId();
     expect(a).not.toBe(b);
+  });
+});
+
+describe('formatReadableUtcTimestamp', () => {
+  it('formats ISO timestamps in UTC for PR output', () => {
+    expect(formatReadableUtcTimestamp('2026-04-02T10:23:40.000Z')).toBe('Apr 2 2026 10:23:40 UTC');
+  });
+
+  it('falls back to the original value for invalid dates', () => {
+    expect(formatReadableUtcTimestamp('not-a-date')).toBe('not-a-date');
   });
 });
 
 describe('listPrompts', () => {
   it('lists available prompt names', () => {
     const prompts = listPrompts();
+    expect(prompts).toContain('pattern-copy-play');
+    expect(prompts).not.toContain('pattern-copy');
     expect(prompts).toContain('setup');
   });
 
@@ -77,9 +111,9 @@ describe('listPrompts', () => {
 });
 
 describe('loadPrompt', () => {
-  it('loads setup prompt by default', () => {
+  it('loads pattern-copy-play prompt by default', () => {
     const prompt = loadPrompt();
-    expect(prompt).toContain('Storybook');
+    expect(prompt).toContain('play function');
     expect(prompt.length).toBeGreaterThan(0);
   });
 
@@ -89,12 +123,18 @@ describe('loadPrompt', () => {
     expect(prompt).toContain('### Step 1');
   });
 
+  it('loads the play-driven pattern-copy prompt by name', () => {
+    const prompt = loadPrompt('pattern-copy-play');
+    expect(prompt).toContain('play function');
+    expect(prompt).toContain('The purpose of the `play` function is to prove');
+  });
+
   it('throws for unknown prompt', () => {
     expect(() => loadPrompt('nonexistent-prompt-xyz')).toThrow('Prompt not found');
   });
 
   it('returns trimmed content', () => {
-    const prompt = loadPrompt('setup');
+    const prompt = loadPrompt('pattern-copy-play');
     expect(prompt).toBe(prompt.trim());
   });
 });

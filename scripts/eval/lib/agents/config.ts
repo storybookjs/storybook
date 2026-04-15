@@ -31,6 +31,12 @@ export interface Execution {
   duration: number;
   durationApi?: number;
   turns: number;
+  terminalResultSubtype?: string;
+}
+
+export interface AgentExecutionResult {
+  execution: Execution;
+  transcript: unknown[];
 }
 
 export interface AgentExecuteParams {
@@ -43,7 +49,7 @@ export interface AgentExecuteParams {
 
 export interface AgentDriver {
   name: AgentId;
-  execute(params: AgentExecuteParams): Promise<Execution>;
+  execute(params: AgentExecuteParams): Promise<AgentExecutionResult>;
 }
 
 export interface TokenPricing {
@@ -61,7 +67,6 @@ export interface TokenUsage {
 export type ClaudeTool = 'Read' | 'Write' | 'Edit' | 'Bash' | 'Glob' | 'Grep';
 
 export interface ClaudeExecutionConfig {
-  maxTurns: number;
   /**
    * Bash is toggled here at the harness level, but individual shell commands still execute through
    * Claude's Bash tool rather than through a separate command allowlist.
@@ -112,7 +117,6 @@ export const AGENTS: AgentDefinitions = {
     efforts: CLAUDE_EFFORTS,
     defaultEffort: 'medium',
     execution: {
-      maxTurns: 50,
       allowedTools: ['Read', 'Write', 'Edit', 'Bash', 'Glob', 'Grep'],
       debug: true,
       systemPrompt: { type: 'preset', preset: 'claude_code' },

@@ -1,12 +1,4 @@
-import { describe, expect, it, vi } from 'vitest';
-
-vi.mock('../../../code/core/src/core-server/utils/ghost-stories/get-candidates.ts', () => ({
-  getComponentCandidates: vi.fn(),
-}));
-
-vi.mock('../../../code/core/src/core-server/utils/ghost-stories/run-story-tests.ts', () => ({
-  runGhostStories: vi.fn(),
-}));
+import { describe, expect, it } from 'vitest';
 
 import {
   filterStorybookFiles,
@@ -65,148 +57,50 @@ describe('filterStorybookFiles', () => {
 });
 
 describe('computeQualityScore', () => {
-  // Weights: 40% ghost, 25% build, 25% typecheck, 10% performance
-
-  it('returns 1.0 when everything passes and agent is fast', () => {
+  it('uses normalized preview gain as the score', () => {
     const result = computeQualityScore({
-      buildSuccess: true,
-      typeCheckErrors: 0,
-      ghostSuccessRate: 1.0,
-      durationSeconds: 60,
+      baselinePreviewStories: { passed: 1, total: 4 },
+      storyRender: { passed: 4, total: 4 },
     });
     expect(result.score).toBe(1);
-    expect(result.breakdown).toEqual({ build: 1, typecheck: 1, ghostStories: 1, performance: 1 });
+    expect(result.breakdown.beforeRate).toBeCloseTo(0.25);
+    expect(result.breakdown.afterRate).toBeCloseTo(1);
+    expect(result.breakdown.gain).toBe(1);
   });
 
-  it('ghost stories have 40% weight', () => {
-    const result = computeQualityScore({
-      buildSuccess: false,
-      typeCheckErrors: 20,
-      ghostSuccessRate: 1.0,
-      durationSeconds: 600,
-    });
-    expect(result.score).toBe(0.4);
+  it('returns 0 when either baseline or post-run story data is missing', () => {
+    expect(computeQualityScore({ baselinePreviewStories: { passed: 1, total: 5 } }).score).toBe(0);
+    expect(computeQualityScore({ storyRender: { passed: 4, total: 5 } }).score).toBe(0);
+    expect(computeQualityScore({}).score).toBe(0);
   });
 
-  it('build has 25% weight', () => {
+  it('returns 0 when story render coverage regresses', () => {
     const result = computeQualityScore({
-      buildSuccess: true,
-      typeCheckErrors: 20,
-      ghostSuccessRate: 0,
-      durationSeconds: 600,
-    });
-    expect(result.score).toBe(0.25);
-  });
-
-  it('performance has 10% weight', () => {
-    const result = computeQualityScore({
-      buildSuccess: false,
-      typeCheckErrors: 20,
-      ghostSuccessRate: 0,
-      durationSeconds: 60,
-    });
-    expect(result.score).toBe(0.1);
-  });
-
-  it('returns 0 when everything fails', () => {
-    const result = computeQualityScore({
-      buildSuccess: false,
-      typeCheckErrors: 20,
-      ghostSuccessRate: 0,
-      durationSeconds: 600,
+      baselinePreviewStories: { passed: 3, total: 4 },
+      storyRender: { passed: 2, total: 4 },
     });
     expect(result.score).toBe(0);
+    expect(result.breakdown.gain).toBe(0);
   });
 
-  it('scales typecheck score linearly', () => {
+  it('uses normalized gain for partial improvements', () => {
     const result = computeQualityScore({
-      buildSuccess: true,
-      typeCheckErrors: 10,
-      ghostSuccessRate: 1.0,
-      durationSeconds: 60,
+      baselinePreviewStories: { passed: 2, total: 6 },
+      storyRender: { passed: 4, total: 6 },
     });
-    expect(result.breakdown.typecheck).toBe(0.5);
+    expect(result.score).toBeCloseTo(0.5);
+    expect(result.breakdown.beforeRate).toBe(2 / 6);
+    expect(result.breakdown.afterRate).toBe(4 / 6);
+    expect(result.breakdown.gain).toBeCloseTo(0.5);
   });
 
-  it('clamps typecheck score at 0 for >= 20 errors', () => {
-    const a = computeQualityScore({
-      buildSuccess: true,
-      typeCheckErrors: 20,
-      ghostSuccessRate: 1.0,
-      durationSeconds: 60,
+  it('returns 1 when baseline and final are both perfect', () => {
+    const result = computeQualityScore({
+      baselinePreviewStories: { passed: 4, total: 4 },
+      storyRender: { passed: 4, total: 4 },
     });
-    const b = computeQualityScore({
-      buildSuccess: true,
-      typeCheckErrors: 50,
-      ghostSuccessRate: 1.0,
-      durationSeconds: 60,
-    });
-    expect(a.breakdown.typecheck).toBe(0);
-    expect(b.breakdown.typecheck).toBe(0);
-  });
-
-  it('treats undefined ghost stories as 0', () => {
-    const a = computeQualityScore({
-      buildSuccess: true,
-      typeCheckErrors: 0,
-      ghostSuccessRate: 0,
-      durationSeconds: 60,
-    });
-    const b = computeQualityScore({ buildSuccess: true, typeCheckErrors: 0, durationSeconds: 60 });
-    expect(a.score).toBe(b.score);
-  });
-
-  it('performance: ≤120s scores 1.0', () => {
-    const a = computeQualityScore({
-      buildSuccess: true,
-      typeCheckErrors: 0,
-      ghostSuccessRate: 1.0,
-      durationSeconds: 0,
-    });
-    const b = computeQualityScore({
-      buildSuccess: true,
-      typeCheckErrors: 0,
-      ghostSuccessRate: 1.0,
-      durationSeconds: 120,
-    });
-    expect(a.breakdown.performance).toBe(1);
-    expect(b.breakdown.performance).toBe(1);
-  });
-
-  it('performance: 360s scores 0.5', () => {
-    const r = computeQualityScore({
-      buildSuccess: true,
-      typeCheckErrors: 0,
-      ghostSuccessRate: 1.0,
-      durationSeconds: 360,
-    });
-    expect(r.breakdown.performance).toBe(0.5);
-  });
-
-  it('performance: ≥600s scores 0', () => {
-    const a = computeQualityScore({
-      buildSuccess: true,
-      typeCheckErrors: 0,
-      ghostSuccessRate: 1.0,
-      durationSeconds: 600,
-    });
-    const b = computeQualityScore({
-      buildSuccess: true,
-      typeCheckErrors: 0,
-      ghostSuccessRate: 1.0,
-      durationSeconds: 1000,
-    });
-    expect(a.breakdown.performance).toBe(0);
-    expect(b.breakdown.performance).toBe(0);
-  });
-
-  it('performance: undefined duration scores 0', () => {
-    const r = computeQualityScore({
-      buildSuccess: true,
-      typeCheckErrors: 0,
-      ghostSuccessRate: 1.0,
-    });
-    expect(r.breakdown.performance).toBe(0);
+    expect(result.score).toBe(1);
+    expect(result.breakdown.gain).toBe(1);
   });
 });
 

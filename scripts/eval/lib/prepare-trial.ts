@@ -1,166 +1,109 @@
 import { existsSync } from 'node:fs';
-import { cp, mkdir, readFile, rm, writeFile } from 'node:fs/promises';
-import { join } from 'node:path';
+import { mkdir, rm } from 'node:fs/promises';
+import { dirname, join } from 'node:path';
 import type { Logger } from './utils.ts';
 import type { Project } from './projects.ts';
 import { x } from 'tinyexec';
 import { installDeps } from './package-manager.ts';
-import { CACHE_DIR, TRIALS_DIR } from './utils.ts';
-
-const CACHE_INFO_SUFFIX = '.json';
+import { getEvalResultsDir, getProjectPath, REPOS_DIR, TRIALS_DIR } from './utils.ts';
 
 export interface TrialWorkspace {
   trialDir: string;
+  sourceDir: string;
   repoRoot: string;
   projectPath: string;
   resultsDir: string;
   baselineCommit: string;
-}
-
-export interface TrialCacheInfo {
-  repo: string;
-  branch: string;
-  baselineCommit: string;
+  trialBranch: string;
 }
 
 /**
- * First run: clone eval-baseline -> install deps -> cache it.
- * Subsequent runs: copy from cache. Agent starts immediately.
+ * Maintain one persistent source clone per project and create a fresh worktree for every trial.
  */
 export async function prepareTrial(
   project: Project,
   trialId: string,
   logger: Logger
 ): Promise<TrialWorkspace> {
-  const cacheDir = join(CACHE_DIR, project.name);
-  const cacheInfoPath = join(CACHE_DIR, `${project.name}${CACHE_INFO_SUFFIX}`);
+  const sourceDir = join(REPOS_DIR, project.name);
   const trialDir = join(TRIALS_DIR, trialId);
   const repoRoot = join(trialDir, 'project');
+  const trialBranch = `trial/${trialId}`;
   await mkdir(trialDir, { recursive: true });
 
-  if (await canReuseCache(project, cacheDir, cacheInfoPath, logger)) {
-    logger.logStep('Copying from cache...');
-    await cp(cacheDir, repoRoot, { recursive: true });
-  } else {
-    logger.logStep(`Cloning ${project.repo}#${project.branch}...`);
-    await mkdir(CACHE_DIR, { recursive: true });
-    await x('git', ['clone', '--depth', '1', '--branch', project.branch, project.repo, repoRoot], {
-      timeout: 120_000,
-    });
-    const projectPath = project.projectDir ? join(repoRoot, project.projectDir) : repoRoot;
-    await installDeps(projectPath, logger, undefined, { stopAt: repoRoot });
-    logger.logSuccess('Dependencies installed');
-    logger.logStep('Caching for future runs...');
-    const baselineCommit = await getGitHead(repoRoot);
-    await persistCache(cacheDir, cacheInfoPath, repoRoot, {
-      repo: project.repo,
-      branch: project.branch,
-      baselineCommit,
-    });
-  }
+  await ensureSourceClone(project, sourceDir, logger);
+  const baselineCommit = await syncSourceClone(project, sourceDir, logger);
+  await createTrialWorktree({
+    sourceDir,
+    trialBranch,
+    repoRoot,
+    baseBranch: project.branch,
+    logger,
+  });
 
-  const baselineCommit = await getGitHead(repoRoot);
-  const projectPath = project.projectDir ? join(repoRoot, project.projectDir) : repoRoot;
-  const resultsDir = join(trialDir, 'results');
+  const projectPath = getProjectPath(repoRoot, project.projectDir);
+  const resultsDir = getEvalResultsDir(projectPath);
   await mkdir(resultsDir, { recursive: true });
+  await installDeps(projectPath, logger, undefined, { stopAt: repoRoot });
 
   logger.logSuccess('Trial ready');
-  return { trialDir, repoRoot, projectPath, resultsDir, baselineCommit };
+  return { trialDir, sourceDir, repoRoot, projectPath, resultsDir, baselineCommit, trialBranch };
 }
 
-export function getCacheRefreshReason(
-  project: Project,
-  cacheInfo: TrialCacheInfo,
-  remoteHead?: string
-): string | undefined {
-  if (cacheInfo.repo !== project.repo) {
-    return `repo changed (${cacheInfo.repo} → ${project.repo})`;
+export async function ensureSourceClone(project: Project, sourceDir: string, logger: Logger) {
+  await mkdir(dirname(sourceDir), { recursive: true });
+
+  if (existsSync(join(sourceDir, '.git'))) {
+    return;
   }
-  if (cacheInfo.branch !== project.branch) {
-    return `branch changed (${cacheInfo.branch} → ${project.branch})`;
+
+  if (existsSync(sourceDir)) {
+    await rm(sourceDir, { recursive: true, force: true });
   }
-  if (remoteHead && cacheInfo.baselineCommit !== remoteHead) {
-    return `baseline branch advanced (${cacheInfo.baselineCommit.slice(0, 7)} → ${remoteHead.slice(0, 7)})`;
-  }
-  return undefined;
+
+  logger.logStep(`Cloning source repo ${project.repo}#${project.branch}...`);
+  await x('git', ['clone', '--branch', project.branch, project.repo, sourceDir], {
+    timeout: 120_000,
+  });
 }
 
-async function canReuseCache(
-  project: Project,
-  cacheDir: string,
-  cacheInfoPath: string,
-  logger: Logger
-): Promise<boolean> {
-  if (!existsSync(join(cacheDir, '.git'))) {
-    return false;
-  }
+async function syncSourceClone(project: Project, sourceDir: string, logger: Logger) {
+  logger.logStep(`Syncing ${project.name} source clone...`);
+  await x('git', ['remote', 'set-url', 'origin', project.repo], {
+    nodeOptions: { cwd: sourceDir },
+  });
+  await x('git', ['fetch', 'origin', '--prune'], {
+    timeout: 120_000,
+    nodeOptions: { cwd: sourceDir },
+  });
+  await x('git', ['checkout', project.branch], { nodeOptions: { cwd: sourceDir } });
+  await x('git', ['reset', '--hard', `origin/${project.branch}`], {
+    nodeOptions: { cwd: sourceDir },
+  });
 
-  const cacheInfo = await readCacheInfo(cacheInfoPath);
-  if (!cacheInfo) {
-    logger.logStep('Refreshing cache (missing or invalid cache metadata)...');
-    await clearCache(cacheDir, cacheInfoPath);
-    return false;
-  }
-
-  const remoteHead = await getRemoteBranchHead(project.repo, project.branch, logger);
-  const refreshReason = getCacheRefreshReason(project, cacheInfo, remoteHead);
-  if (!refreshReason) {
-    return true;
-  }
-
-  logger.logStep(`Refreshing cache (${refreshReason})...`);
-  await clearCache(cacheDir, cacheInfoPath);
-  return false;
-}
-
-async function persistCache(
-  cacheDir: string,
-  cacheInfoPath: string,
-  repoRoot: string,
-  cacheInfo: TrialCacheInfo
-) {
-  await clearCache(cacheDir, cacheInfoPath);
-  await cp(repoRoot, cacheDir, { recursive: true });
-  await writeFile(cacheInfoPath, JSON.stringify(cacheInfo, null, 2));
-}
-
-async function readCacheInfo(cacheInfoPath: string): Promise<TrialCacheInfo | undefined> {
-  if (!existsSync(cacheInfoPath)) {
-    return undefined;
-  }
-
-  try {
-    return JSON.parse(await readFile(cacheInfoPath, 'utf-8')) as TrialCacheInfo;
-  } catch {
-    return undefined;
-  }
+  return getGitHead(sourceDir);
 }
 
 async function getGitHead(cwd: string): Promise<string> {
   return (await x('git', ['rev-parse', 'HEAD'], { nodeOptions: { cwd } })).stdout.trim();
 }
 
-async function getRemoteBranchHead(
-  repo: string,
-  branch: string,
-  logger: Logger
-): Promise<string | undefined> {
-  const result = await x('git', ['ls-remote', repo, `refs/heads/${branch}`], {
-    throwOnError: false,
+async function createTrialWorktree({
+  sourceDir,
+  trialBranch,
+  repoRoot,
+  baseBranch,
+  logger,
+}: {
+  sourceDir: string;
+  trialBranch: string;
+  repoRoot: string;
+  baseBranch: string;
+  logger: Logger;
+}) {
+  logger.logStep(`Creating worktree for ${trialBranch}...`);
+  await x('git', ['worktree', 'add', '-b', trialBranch, repoRoot, baseBranch], {
     timeout: 120_000,
+    nodeOptions: { cwd: sourceDir },
   });
-  if (result.exitCode !== 0) {
-    logger.logStep(`Could not verify remote HEAD for ${repo}#${branch}; reusing cache as-is.`);
-    return undefined;
-  }
-
-  const line = result.stdout.trim().split('\n').find(Boolean);
-  return line?.split('\t')[0]?.trim() || undefined;
-}
-
-async function clearCache(cacheDir: string, cacheInfoPath: string) {
-  await Promise.all([
-    rm(cacheDir, { recursive: true, force: true }),
-    rm(cacheInfoPath, { force: true }),
-  ]);
 }

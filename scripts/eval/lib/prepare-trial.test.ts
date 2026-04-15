@@ -1,48 +1,239 @@
-import { describe, expect, it } from 'vitest';
+import { existsSync, mkdirSync, mkdtempSync, rmSync } from 'node:fs';
+import { join } from 'node:path';
+import { tmpdir } from 'node:os';
 
-import { getCacheRefreshReason, type TrialCacheInfo } from './prepare-trial.ts';
-import type { Project } from './projects.ts';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-const project: Project = {
-  name: 'mealdrop',
-  repo: 'https://github.com/example/mealdrop',
-  branch: 'eval-baseline',
-};
+let TMP = '';
 
-const cacheInfo: TrialCacheInfo = {
-  repo: project.repo,
-  branch: project.branch,
-  baselineCommit: '0123456789abcdef',
-};
+beforeEach(() => {
+  TMP = mkdtempSync(join(tmpdir(), 'eval-prepare-trial-'));
+  vi.resetModules();
+});
 
-describe('getCacheRefreshReason', () => {
-  it('keeps the cache when repo, branch, and baseline still match', () => {
-    expect(getCacheRefreshReason(project, cacheInfo, cacheInfo.baselineCommit)).toBeUndefined();
-  });
+afterEach(() => {
+  vi.doUnmock('tinyexec');
+  vi.doUnmock('./package-manager.ts');
+  vi.doUnmock('./utils.ts');
+  vi.restoreAllMocks();
+  vi.resetModules();
 
-  it('refreshes when the repo URL changes', () => {
-    expect(
-      getCacheRefreshReason(
-        { ...project, repo: 'https://github.com/example/mealdrop-fork' },
-        cacheInfo,
-        cacheInfo.baselineCommit
-      )
-    ).toContain('repo changed');
-  });
+  if (TMP) {
+    rmSync(TMP, { recursive: true, force: true });
+    TMP = '';
+  }
+});
 
-  it('refreshes when the tracked branch changes', () => {
-    expect(
-      getCacheRefreshReason({ ...project, branch: 'next' }, cacheInfo, cacheInfo.baselineCommit)
-    ).toContain('branch changed');
-  });
+function createLogger() {
+  return {
+    log: vi.fn(),
+    logStep: vi.fn(),
+    logSuccess: vi.fn(),
+    logError: vi.fn(),
+  };
+}
 
-  it('refreshes when the remote branch head advances', () => {
-    expect(getCacheRefreshReason(project, cacheInfo, 'fedcba9876543210')).toContain(
-      'baseline branch advanced'
+function createExecResult(stdout = '', exitCode = 0) {
+  return { stdout, stderr: '', exitCode };
+}
+
+describe('prepareTrial', () => {
+  it('clones missing source repos, creates a worktree, and installs from the trial repo root', async () => {
+    const reposDir = join(TMP, 'repos');
+    const trialsDir = join(TMP, 'trials');
+    const installDeps = vi.fn().mockResolvedValue(undefined);
+    const calls: Array<{ cmd: string; args: string[]; cwd?: string }> = [];
+
+    vi.doMock('tinyexec', () => ({
+      x: vi.fn(
+        async (cmd: string, args: string[], options?: { nodeOptions?: { cwd?: string } }) => {
+          calls.push({ cmd, args, cwd: options?.nodeOptions?.cwd });
+
+          if (cmd === 'git' && args[0] === 'rev-parse') {
+            return createExecResult('deadbeef\n');
+          }
+
+          return createExecResult();
+        }
+      ),
+    }));
+
+    vi.doMock('./package-manager.ts', () => ({ installDeps }));
+    vi.doMock('./utils.ts', async () => {
+      const actual = await vi.importActual<typeof import('./utils.ts')>('./utils.ts');
+      return {
+        ...actual,
+        REPOS_DIR: reposDir,
+        TRIALS_DIR: trialsDir,
+      };
+    });
+
+    const { prepareTrial } = await import('./prepare-trial.ts');
+    const logger = createLogger();
+    const project = {
+      name: 'evergreen-ci',
+      repo: 'https://github.com/storybook-tmp/ui',
+      branch: 'main',
+      githubSlug: 'storybook-tmp/ui',
+      projectDir: 'packages/lib',
+    };
+
+    const workspace = await prepareTrial(project, 'trial-123', logger);
+
+    expect(workspace).toEqual({
+      trialDir: join(trialsDir, 'trial-123'),
+      sourceDir: join(reposDir, 'evergreen-ci'),
+      repoRoot: join(trialsDir, 'trial-123', 'project'),
+      projectPath: join(trialsDir, 'trial-123', 'project', 'packages/lib'),
+      resultsDir: join(
+        trialsDir,
+        'trial-123',
+        'project',
+        'packages/lib',
+        '.storybook',
+        'eval-results'
+      ),
+      baselineCommit: 'deadbeef',
+      trialBranch: 'trial/trial-123',
+    });
+    expect(existsSync(workspace.resultsDir)).toBe(true);
+    expect(installDeps).toHaveBeenCalledWith(
+      join(trialsDir, 'trial-123', 'project', 'packages/lib'),
+      logger,
+      undefined,
+      { stopAt: join(trialsDir, 'trial-123', 'project') }
+    );
+
+    expect(calls).toEqual(
+      expect.arrayContaining([
+        {
+          cmd: 'git',
+          args: ['clone', '--branch', 'main', project.repo, join(reposDir, 'evergreen-ci')],
+          cwd: undefined,
+        },
+        {
+          cmd: 'git',
+          args: ['remote', 'set-url', 'origin', project.repo],
+          cwd: join(reposDir, 'evergreen-ci'),
+        },
+        {
+          cmd: 'git',
+          args: ['fetch', 'origin', '--prune'],
+          cwd: join(reposDir, 'evergreen-ci'),
+        },
+        {
+          cmd: 'git',
+          args: ['checkout', 'main'],
+          cwd: join(reposDir, 'evergreen-ci'),
+        },
+        {
+          cmd: 'git',
+          args: ['reset', '--hard', 'origin/main'],
+          cwd: join(reposDir, 'evergreen-ci'),
+        },
+        {
+          cmd: 'git',
+          args: ['rev-parse', 'HEAD'],
+          cwd: join(reposDir, 'evergreen-ci'),
+        },
+        {
+          cmd: 'git',
+          args: [
+            'worktree',
+            'add',
+            '-b',
+            'trial/trial-123',
+            join(trialsDir, 'trial-123', 'project'),
+            'main',
+          ],
+          cwd: join(reposDir, 'evergreen-ci'),
+        },
+      ])
     );
   });
 
-  it('keeps the cache if the remote branch cannot be verified', () => {
-    expect(getCacheRefreshReason(project, cacheInfo)).toBeUndefined();
+  it('reuses an existing source clone without recloning it', async () => {
+    const reposDir = join(TMP, 'repos');
+    const trialsDir = join(TMP, 'trials');
+    const sourceDir = join(reposDir, 'mealdrop');
+    const installDeps = vi.fn().mockResolvedValue(undefined);
+    const calls: Array<{ cmd: string; args: string[]; cwd?: string }> = [];
+
+    mkdirSync(join(sourceDir, '.git'), { recursive: true });
+
+    vi.doMock('tinyexec', () => ({
+      x: vi.fn(
+        async (cmd: string, args: string[], options?: { nodeOptions?: { cwd?: string } }) => {
+          calls.push({ cmd, args, cwd: options?.nodeOptions?.cwd });
+
+          if (cmd === 'git' && args[0] === 'rev-parse') {
+            return createExecResult('cafebabe\n');
+          }
+
+          return createExecResult();
+        }
+      ),
+    }));
+
+    vi.doMock('./package-manager.ts', () => ({ installDeps }));
+    vi.doMock('./utils.ts', async () => {
+      const actual = await vi.importActual<typeof import('./utils.ts')>('./utils.ts');
+      return {
+        ...actual,
+        REPOS_DIR: reposDir,
+        TRIALS_DIR: trialsDir,
+      };
+    });
+
+    const { prepareTrial } = await import('./prepare-trial.ts');
+    const logger = createLogger();
+    const project = {
+      name: 'mealdrop',
+      repo: 'https://github.com/storybook-tmp/mealdrop',
+      branch: 'main',
+      githubSlug: 'storybook-tmp/mealdrop',
+    };
+
+    const workspace = await prepareTrial(project, 'trial-456', logger);
+
+    expect(workspace.baselineCommit).toBe('cafebabe');
+    expect(calls.some((call) => call.args[0] === 'clone')).toBe(false);
+    expect(calls).toEqual(
+      expect.arrayContaining([
+        {
+          cmd: 'git',
+          args: ['remote', 'set-url', 'origin', project.repo],
+          cwd: sourceDir,
+        },
+        {
+          cmd: 'git',
+          args: ['fetch', 'origin', '--prune'],
+          cwd: sourceDir,
+        },
+        {
+          cmd: 'git',
+          args: ['checkout', 'main'],
+          cwd: sourceDir,
+        },
+        {
+          cmd: 'git',
+          args: ['reset', '--hard', 'origin/main'],
+          cwd: sourceDir,
+        },
+        {
+          cmd: 'git',
+          args: [
+            'worktree',
+            'add',
+            '-b',
+            'trial/trial-456',
+            join(trialsDir, 'trial-456', 'project'),
+            'main',
+          ],
+          cwd: sourceDir,
+        },
+      ])
+    );
+    expect(installDeps).toHaveBeenCalledTimes(1);
   });
 });

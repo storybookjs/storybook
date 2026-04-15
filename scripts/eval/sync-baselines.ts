@@ -1,12 +1,14 @@
 import { existsSync } from 'node:fs';
-import { mkdir, rm, stat, writeFile } from 'node:fs/promises';
+import { mkdir, rm, writeFile } from 'node:fs/promises';
 import { join, relative, resolve } from 'node:path';
 import { parseArgs } from 'node:util';
 import pc from 'picocolors';
 import { x } from 'tinyexec';
 import { BASELINE_STORYBOOK_FILES } from './lib/baseline-template-files.ts';
+import { ensureSourceClone } from './lib/prepare-trial.ts';
 import { PROJECTS, type Project } from './lib/projects.ts';
 import {
+  createLogger,
   formatTable,
   getEvalResultsDir,
   getEvalSupportDir,
@@ -117,9 +119,6 @@ export async function resolveProjectPaths(
 ): Promise<ProjectPaths> {
   const projectPath = getProjectPath(repoRoot, project.projectDir);
   const storybookDir = getStorybookDir(projectPath);
-  if (!(await findStorybookMainFile(projectPath))) {
-    throw new Error(`No .storybook/main.* found for ${project.name}`);
-  }
 
   return {
     repoRoot,
@@ -130,11 +129,12 @@ export async function resolveProjectPaths(
   };
 }
 
-async function preflightRepos(projects: Array<{ project: Project; paths: ProjectPaths }>) {
+async function preflightRepos(
+  projects: Array<{ project: Project; paths: ProjectPaths }>
+) {
+  const logger = createLogger();
   for (const { project, paths } of projects) {
-    if (!existsSync(paths.repoRoot)) {
-      throw new Error(`Repo missing for ${project.name}: ${paths.repoRoot}`);
-    }
+    await ensureSourceClone(project, paths.repoRoot, logger);
 
     const currentBranch = await getCurrentBranch(paths.repoRoot);
     if (currentBranch !== project.branch) {
@@ -222,19 +222,6 @@ async function syncStorybookDir(targetDir: string, sourceFiles: Map<string, stri
     );
     await writeFile(targetPath, rewritten);
   }
-}
-
-async function findStorybookMainFile(projectPath: string) {
-  const candidates = ['main.ts', 'main.js', 'main.mts', 'main.mjs', 'main.cjs'].map((file) =>
-    join(projectPath, '.storybook', file)
-  );
-  for (const candidate of candidates) {
-    if (existsSync(candidate) && (await stat(candidate)).isFile()) {
-      return candidate;
-    }
-  }
-
-  return undefined;
 }
 
 function getManagedPaths(paths: ProjectPaths, extraPaths: string[] = []) {

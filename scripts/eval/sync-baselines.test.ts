@@ -347,6 +347,77 @@ describe('syncBaselines', () => {
     );
   });
 
+  it('auto-clones repos that have not been cloned yet', async () => {
+    TMP = mkdtempSync(join(tmpdir(), 'eval-sync-baselines-auto-clone-'));
+    const reposRoot = join(TMP, 'repos');
+    const remotesRoot = join(TMP, 'remotes');
+    await mkdir(reposRoot, { recursive: true });
+    await mkdir(remotesRoot, { recursive: true });
+
+    const projects: Project[] = [
+      {
+        name: 'mealdrop',
+        repo: join(remotesRoot, 'mealdrop.git'),
+        branch: 'main',
+        githubSlug: 'storybook-tmp/mealdrop',
+      },
+      {
+        name: 'wikitok',
+        repo: join(remotesRoot, 'wikitok.git'),
+        branch: 'main',
+        githubSlug: 'storybook-tmp/wikitok',
+        projectDir: 'frontend',
+      },
+    ];
+
+    // Set up bare remotes with some initial content, but do NOT clone them locally.
+    setupBareRemoteWithContent({
+      remoteRoot: join(remotesRoot, 'mealdrop.git'),
+      files: { 'src/index.ts': 'export {};\n' },
+    });
+    setupBareRemoteWithContent({
+      remoteRoot: join(remotesRoot, 'wikitok.git'),
+      files: { 'frontend/src/index.ts': 'export {};\n' },
+    });
+
+    expect(existsSync(join(reposRoot, 'mealdrop'))).toBe(false);
+    expect(existsSync(join(reposRoot, 'wikitok'))).toBe(false);
+
+    await syncBaselines({
+      reposRoot,
+      projects,
+      push: true,
+      log: () => {},
+    });
+
+    expect(existsSync(join(reposRoot, 'mealdrop', '.git'))).toBe(true);
+    expect(existsSync(join(reposRoot, 'wikitok', '.git'))).toBe(true);
+
+    expect(
+      readFileSync(join(reposRoot, 'mealdrop', '.storybook', 'main.ts'), 'utf-8')
+    ).toContain('./eval-support/*.mdx');
+    expect(
+      readFileSync(join(reposRoot, 'mealdrop', '.storybook', 'eval-results', 'data.json'), 'utf-8')
+    ).toBe('{}\n');
+
+    expect(
+      readFileSync(join(reposRoot, 'wikitok', 'frontend', '.storybook', 'main.ts'), 'utf-8')
+    ).toContain('./eval-support/*.mdx');
+    expect(
+      readFileSync(
+        join(reposRoot, 'wikitok', 'frontend', '.storybook', 'eval-results', 'data.json'),
+        'utf-8'
+      )
+    ).toBe('{}\n');
+
+    expect(getHead(join(reposRoot, 'mealdrop'))).toBe(
+      getRemoteHead(join(remotesRoot, 'mealdrop.git'))
+    );
+    expect(getHead(join(reposRoot, 'wikitok'))).toBe(
+      getRemoteHead(join(remotesRoot, 'wikitok.git'))
+    );
+  });
+
   it('fast-forwards a clean target repo before copying the baseline', async () => {
     TMP = mkdtempSync(join(tmpdir(), 'eval-sync-baselines-target-behind-'));
     const reposRoot = join(TMP, 'repos');
@@ -492,4 +563,24 @@ function baselineTemplate(path: string) {
 
 function resultDocTemplate(file: 'transcript.tsx' | 'transcript.types.ts') {
   return baselineTemplate(`eval-support/${file}`);
+}
+
+/** Create a bare remote repo with initial file content (no local clone). */
+function setupBareRemoteWithContent(opts: {
+  remoteRoot: string;
+  files: Record<string, string>;
+}) {
+  const staging = mkdtempSync(join(tmpdir(), 'eval-sync-staging-'));
+  execFileSync('git', ['init', '--bare', '--initial-branch=main', opts.remoteRoot]);
+  execFileSync('git', ['clone', opts.remoteRoot, staging]);
+  execFileSync('git', ['-C', staging, 'config', 'user.name', 'Test User']);
+  execFileSync('git', ['-C', staging, 'config', 'user.email', 'test@example.com']);
+  for (const [path, contents] of Object.entries(opts.files)) {
+    mkdirSyncRecursive(join(staging, dirname(path)));
+    writeFileSync(join(staging, path), contents);
+  }
+  execFileSync('git', ['-C', staging, 'add', '-A']);
+  execFileSync('git', ['-C', staging, 'commit', '-m', 'initial']);
+  execFileSync('git', ['-C', staging, 'push', 'origin', 'main']);
+  rmSync(staging, { recursive: true, force: true });
 }

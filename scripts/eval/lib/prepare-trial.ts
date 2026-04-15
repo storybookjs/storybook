@@ -1,6 +1,6 @@
 import { existsSync } from 'node:fs';
 import { mkdir, rm } from 'node:fs/promises';
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
 import type { Logger } from './utils.ts';
 import type { Project } from './projects.ts';
 import { x } from 'tinyexec';
@@ -50,8 +50,8 @@ export async function prepareTrial(
   return { trialDir, sourceDir, repoRoot, projectPath, resultsDir, baselineCommit, trialBranch };
 }
 
-async function ensureSourceClone(project: Project, sourceDir: string, logger: Logger) {
-  await mkdir(REPOS_DIR, { recursive: true });
+export async function ensureSourceClone(project: Project, sourceDir: string, logger: Logger) {
+  await mkdir(dirname(sourceDir), { recursive: true });
 
   if (existsSync(join(sourceDir, '.git'))) {
     return;

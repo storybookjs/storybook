@@ -2,7 +2,7 @@ import { writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { x } from 'tinyexec';
 import { getComponentCandidates } from '../../../code/core/src/core-server/utils/ghost-stories/get-candidates.ts';
-import { runGhostStories } from '../../../code/core/src/core-server/utils/ghost-stories/run-story-tests.ts';
+import { runStoryTests } from '../../../code/core/src/core-server/utils/ghost-stories/run-story-tests.ts';
 import type { Logger } from './utils.ts';
 import type { TrialWorkspace } from './prepare-trial.ts';
 import {
@@ -261,7 +261,7 @@ export async function collectGhostStoriesGrade(
     }
     logger.logStep(`Found ${candidates.length} candidate component(s) for ${label}`);
 
-    const result = await runGhostStories(candidates, { cwd: projectPath });
+    const result = await runStoryTests(candidates, { cwd: projectPath });
 
     if (result.runError) {
       logger.logError(`${capitalize(label)}: ${result.runError}`);

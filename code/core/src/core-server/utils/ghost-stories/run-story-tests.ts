@@ -15,14 +15,14 @@ import type { TestRunSummary } from './types.ts';
  * @param componentFilePaths - Absolute paths to component files to test.
  * @param options.cwd - Working directory for vitest. Defaults to process.cwd().
  */
-export async function runGhostStories(
+export async function runStoryTests(
   componentFilePaths: string[],
-  options?: { cwd?: string }
+  options?: { cwd?: string; ghostRun?: boolean }
 ): Promise<TestRunSummary> {
   const cwd = options?.cwd;
   try {
     // Create the cache directory for story discovery tests
-    const cacheDir = resolvePathInStorybookCache('ghost-stories-tests');
+    const cacheDir = resolvePathInStorybookCache('story-tests');
     await mkdir(cacheDir, { recursive: true });
 
     // Create timestamped output file
@@ -47,9 +47,9 @@ export async function runGhostStories(
         ],
         cwd,
         stdio: 'pipe',
-        env: {
-          STORYBOOK_COMPONENT_PATHS: componentFilePaths.join(';'),
-        },
+        ...(options?.ghostRun
+          ? { env: { STORYBOOK_COMPONENT_PATHS: componentFilePaths.join(';') } }
+          : {}),
       });
 
       await testProcess;

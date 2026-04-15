@@ -37,6 +37,7 @@ import {
   createLogger,
   formatCost,
   formatDuration,
+  formatHelp,
   formatScorePercent,
   generateTrialId,
   listPrompts,
@@ -70,22 +71,46 @@ const argsSchema = z.discriminatedUnion('agent', [
   }),
 ]);
 
-const { values } = parseArgs({
-  options: {
-    project: { type: 'string', short: 'p' },
-    agent: { type: 'string', short: 'a' },
-    model: { type: 'string', short: 'm' },
-    effort: { type: 'string', short: 'e' },
-    prompt: { type: 'string' },
-    verbose: { type: 'boolean', short: 'v' },
-    manual: { type: 'boolean' },
-    'list-projects': { type: 'boolean' },
-    'list-models': { type: 'boolean' },
-    'list-prompts': { type: 'boolean' },
+const evalOptions = {
+  project: { type: 'string' as const, short: 'p', description: 'Project to evaluate' },
+  agent: { type: 'string' as const, short: 'a', description: 'Agent to use (claude or codex)' },
+  model: {
+    type: 'string' as const,
+    short: 'm',
+    description: 'Model to use (agent inferred if omitted)',
   },
+  effort: { type: 'string' as const, short: 'e', description: 'Effort level' },
+  prompt: {
+    type: 'string' as const,
+    description: 'Prompt template name (default: pattern-copy-play)',
+  },
+  verbose: { type: 'boolean' as const, short: 'v', description: 'Enable verbose output' },
+  manual: {
+    type: 'boolean' as const,
+    description: 'Prepare workspace only, print instructions',
+  },
+  'list-projects': { type: 'boolean' as const, description: 'List available projects' },
+  'list-models': { type: 'boolean' as const, description: 'List available models' },
+  'list-prompts': { type: 'boolean' as const, description: 'List available prompts' },
+  help: { type: 'boolean' as const, short: 'h', description: 'Show this help and exit' },
+};
+
+const { values } = parseArgs({
+  options: evalOptions,
   args: process.argv.slice(2),
   strict: true,
 });
+
+if (values.help) {
+  console.log(
+    formatHelp(
+      'node scripts/eval/eval.ts [options]',
+      'Run a single eval trial against a benchmark project.',
+      evalOptions
+    )
+  );
+  process.exit(0);
+}
 
 // Resolve the discriminator: explicit --agent, inferred from --model, or default to claude.
 const agent = values.agent ?? (values.model ? inferAgent(values.model) : 'claude');

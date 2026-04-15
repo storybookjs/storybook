@@ -9,6 +9,7 @@ import { ensureSourceClone } from './lib/prepare-trial.ts';
 import { PROJECTS, type Project } from './lib/projects.ts';
 import {
   createLogger,
+  formatHelp,
   formatTable,
   getEvalResultsDir,
   getEvalSupportDir,
@@ -41,17 +42,38 @@ export interface SyncResult {
   commitSha?: string;
 }
 
-const main = import.meta.url === `file://${process.argv[1]}`;
+const syncBaselinesOptions = {
+  project: {
+    type: 'string' as const,
+    multiple: true,
+    description: 'Project(s) to sync (repeatable)',
+  },
+  'skip-push': {
+    type: 'boolean' as const,
+    description: 'Commit locally but do not push',
+  },
+  help: { type: 'boolean' as const, short: 'h', description: 'Show this help and exit' },
+};
 
-if (main) {
+const isMain = import.meta.url === `file://${process.argv[1]}`;
+
+if (isMain) {
   const { values } = parseArgs({
     args: process.argv.slice(2),
-    options: {
-      project: { type: 'string', multiple: true },
-      'skip-push': { type: 'boolean' },
-    },
+    options: syncBaselinesOptions,
     strict: true,
   });
+
+  if (values.help) {
+    console.log(
+      formatHelp(
+        'node scripts/eval/sync-baselines.ts [options]',
+        'Push the canonical .storybook baseline to each benchmark repo.',
+        syncBaselinesOptions
+      )
+    );
+    process.exit(0);
+  }
 
   const selectedProjects = values.project?.length
     ? PROJECTS.filter((project) => values.project?.includes(project.name))

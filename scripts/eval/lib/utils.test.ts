@@ -10,6 +10,7 @@ import {
   loadPrompt,
   listPrompts,
   formatTable,
+  formatHelp,
 } from './utils.ts';
 
 describe('formatDuration', () => {
@@ -136,6 +137,45 @@ describe('loadPrompt', () => {
   it('returns trimmed content', () => {
     const prompt = loadPrompt('pattern-copy-play');
     expect(prompt).toBe(prompt.trim());
+  });
+});
+
+describe('formatHelp', () => {
+  it('formats usage, description, and options into a help message', () => {
+    const result = formatHelp('node eval.ts [options]', 'Run an eval trial.', {
+      project: { type: 'string', short: 'p', description: 'Project name' },
+      verbose: { type: 'boolean', short: 'v', description: 'Verbose output' },
+      help: { type: 'boolean', short: 'h', description: 'Show this help and exit' },
+    });
+
+    expect(result).toContain('Usage: node eval.ts [options]');
+    expect(result).toContain('Run an eval trial.');
+    expect(result).toContain('-p, --project <value>');
+    expect(result).toContain('-v, --verbose');
+    expect(result).toContain('-h, --help');
+    expect(result).toContain('Project name');
+  });
+
+  it('pads options without a short flag', () => {
+    const result = formatHelp('node tool.ts', 'A tool.', {
+      verbose: { type: 'boolean', short: 'v', description: 'Verbose' },
+      'dry-run': { type: 'boolean', description: 'Dry run' },
+    });
+
+    expect(result).toContain('-v, --verbose');
+    expect(result).toContain('    --dry-run');
+  });
+
+  it('aligns descriptions across options of different name lengths', () => {
+    const result = formatHelp('node tool.ts', 'A tool.', {
+      x: { type: 'boolean', description: 'Short name' },
+      'very-long-option': { type: 'boolean', description: 'Long name' },
+    });
+
+    const lines = result.split('\n').filter((l) => l.includes('--'));
+    const descStartX = lines[0].indexOf('Short name');
+    const descStartLong = lines[1].indexOf('Long name');
+    expect(descStartX).toBe(descStartLong);
   });
 });
 

@@ -166,6 +166,41 @@ export async function captureEnvironment(): Promise<EvalEnvironment> {
   return { nodeVersion: process.version, evalBranch, evalCommit };
 }
 
+export interface HelpOption {
+  type: 'string' | 'boolean';
+  short?: string;
+  description?: string;
+}
+
+/**
+ * Format a --help message from the same options object passed to parseArgs.
+ * Each option may carry a `description` field (ignored by parseArgs at runtime).
+ */
+export function formatHelp(
+  usage: string,
+  description: string,
+  options: Record<string, HelpOption>
+): string {
+  const entries = Object.entries(options);
+
+  const formatted = entries.map(([name, opt]) => {
+    const short = opt.short ? `-${opt.short}, ` : '    ';
+    const long = opt.type === 'string' ? `--${name} <value>` : `--${name}`;
+    return { short, long, desc: opt.description ?? '' };
+  });
+
+  const maxLong = Math.max(...formatted.map((f) => f.long.length));
+
+  return [
+    `Usage: ${usage}`,
+    '',
+    description,
+    '',
+    'Options:',
+    ...formatted.map((f) => `  ${f.short}${f.long.padEnd(maxLong)}  ${f.desc}`),
+  ].join('\n');
+}
+
 /** Strip ANSI escape codes for accurate width calculation. */
 function stripAnsi(str: string) {
   return str.replace(/\x1b\[[0-9;]*m/g, '');

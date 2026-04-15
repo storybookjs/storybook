@@ -12,7 +12,7 @@ import { z } from 'zod';
 import { esMain } from '../utils/esmain.ts';
 import { CLAUDE_EFFORTS, CODEX_EFFORTS, type AgentVariant } from './lib/agents/config.ts';
 import { PROJECTS } from './lib/projects.ts';
-import { EVAL_ROOT, REPO_ROOT } from './lib/utils.ts';
+import { EVAL_ROOT, formatHelp, REPO_ROOT } from './lib/utils.ts';
 
 export const BATCH_EXCLUDED_PROJECT_NAMES = ['baklava'] as const;
 export const BATCH_PROJECT_NAMES = PROJECTS.filter((project) => project.name !== 'baklava').map(
@@ -357,24 +357,42 @@ const runBatchArgsSchema = z.object({
   codexEffort: z.enum(CODEX_EFFORTS).optional(),
 });
 
+const runBatchOptions = {
+  concurrency: { type: 'string' as const, description: 'Max concurrent runs (default: 8)' },
+  prompt: {
+    type: 'string' as const,
+    description: 'Prompt template name (default: pattern-copy-play)',
+  },
+  agents: {
+    type: 'string' as const,
+    description: 'Comma-separated agent list (claude,codex)',
+  },
+  'claude-efforts': {
+    type: 'string' as const,
+    description: 'Comma-separated Claude effort levels',
+  },
+  'claude-effort': { type: 'string' as const, description: 'Single Claude effort level' },
+  'codex-effort': { type: 'string' as const, description: 'Single Codex effort level' },
+  help: { type: 'boolean' as const, short: 'h', description: 'Show this help and exit' },
+};
+
 export function parseRunBatchArgs(
   argv: string[]
-): Pick<
-  RunBatchOptions,
-  'agents' | 'claudeEfforts' | 'claudeEffort' | 'codexEffort' | 'concurrency' | 'prompt'
-> {
+):
+  | Pick<
+      RunBatchOptions,
+      'agents' | 'claudeEfforts' | 'claudeEffort' | 'codexEffort' | 'concurrency' | 'prompt'
+    >
+  | { help: true } {
   const { values } = parseArgs({
     args: argv,
     strict: true,
-    options: {
-      concurrency: { type: 'string' },
-      prompt: { type: 'string' },
-      agents: { type: 'string' },
-      'claude-efforts': { type: 'string' },
-      'claude-effort': { type: 'string' },
-      'codex-effort': { type: 'string' },
-    },
+    options: runBatchOptions,
   });
+
+  if (values.help) {
+    return { help: true };
+  }
 
   const parsed = runBatchArgsSchema.safeParse({
     concurrency: values.concurrency,
@@ -490,7 +508,18 @@ function formatError(error: Error) {
 
 if (esMain(import.meta.url)) {
   try {
-    process.exitCode = await main(parseRunBatchArgs(process.argv.slice(2)));
+    const parsed = parseRunBatchArgs(process.argv.slice(2));
+    if ('help' in parsed) {
+      console.log(
+        formatHelp(
+          'node scripts/eval/run-batch.ts [options]',
+          'Run a batch of eval trials across all benchmark projects.',
+          runBatchOptions
+        )
+      );
+      process.exit(0);
+    }
+    process.exitCode = await main(parsed);
   } catch (error) {
     console.error(error);
     process.exitCode = 1;

@@ -386,7 +386,16 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
                   manual: !shouldRunA11yTests,
                 };
 
-                if (process.env.STORYBOOK_COMPONENT_PATHS || withinAgenticSetupSession) {
+                if (process.env.STORYBOOK_COMPONENT_PATHS) {
+                  globals.ghostStories = {
+                    enabled: true,
+                  };
+                  globals.renderAnalysis = {
+                    enabled: true,
+                  };
+                }
+
+                if (withinAgenticSetupSession) {
                   globals.renderAnalysis = {
                     enabled: true,
                   };

@@ -133,9 +133,7 @@ command('add <addon>')
 
       await add(addonName, options);
 
-      if (!options.disableTelemetry) {
-        await telemetry('add', { addon: addonName, source: 'cli' });
-      }
+      await telemetry('add', { addon: addonName, source: 'cli' });
       logger.outro('Done!');
     }).catch(handleCommandFailure);
   });
@@ -161,9 +159,7 @@ command('remove <addon>')
         packageManager,
         skipInstall: options.skipInstall,
       });
-      if (!options.disableTelemetry) {
-        await telemetry('remove', { addon: addonName, source: 'cli' });
-      }
+      await telemetry('remove', { addon: addonName, source: 'cli' });
       logger.outro('Done!');
     }).catch(handleCommandFailure(options.logfile))
   );

@@ -154,6 +154,13 @@ const StatusSlots = styled.div({
   alignItems: 'center',
 });
 
+export const ContextMenu = {
+  ListItem,
+};
+
+const getStatusLabel = (status: StatusValue) =>
+  status.split(':')[1].replace(/^./, (char) => char.toUpperCase());
+
 interface NodeProps {
   item: Item;
   refId: string;
@@ -171,31 +178,6 @@ interface NodeProps {
   api: API;
   collapsedData: Record<string, API_HashEntry>;
 }
-
-export const ContextMenu = {
-  ListItem,
-};
-
-const statusOrder: StatusValue[] = [
-  'status-value:success',
-  'status-value:error',
-  'status-value:warning',
-  'status-value:pending',
-  'status-value:unknown',
-];
-
-const HIDDEN_STORY_STATUSES: ReadonlySet<StatusValue> = new Set([
-  'status-value:modified',
-  'status-value:affected',
-]);
-
-const getDisplayStatus = (
-  itemType: Item['type'],
-  status: StatusValue
-): { status: StatusValue; label: string } =>
-  (itemType === 'story' || itemType === 'docs') && HIDDEN_STORY_STATUSES.has(status)
-    ? { status: 'status-value:unknown', label: 'Unknown' }
-    : { status, label: status.split(':')[1].replace(/^./, (char) => char.toUpperCase()) };
 
 const Node = React.memo<NodeProps>(function Node(props) {
   const {
@@ -241,10 +223,6 @@ const Node = React.memo<NodeProps>(function Node(props) {
   let contextMenu = useContextMenu(item, statusLinks, api);
   if (refId !== 'storybook_internal') {
     contextMenu = { node: null, onMouseEnter: () => {} };
-  }
-
-  if (!isDisplayed) {
-    return null;
   }
 
   const id = createId(item.id, refId);
@@ -305,7 +283,7 @@ const Node = React.memo<NodeProps>(function Node(props) {
         {contextMenu.node}
         {testIcon ? (
           <StatusButton
-            ariaLabel={`${storyStatus === testStatus ? 'Test status' : 'Status'}: ${getDisplayStatus(item.type, storyStatus).label}`}
+            ariaLabel={`${storyStatus === testStatus ? 'Test status' : 'Status'}: ${getStatusLabel(storyStatus)}`}
             data-testid="tree-status-button"
             type="button"
             status={storyStatus}
@@ -451,7 +429,7 @@ const Node = React.memo<NodeProps>(function Node(props) {
         {branchChangeIcon && branchTestIcon ? (
           <StatusSlots>
             <StatusButton
-              ariaLabel={`Change status: ${getDisplayStatus(item.type, branchChange).label}`}
+              ariaLabel={`Change status: ${getStatusLabel(branchChange)}`}
               data-testid="tree-change-status-button"
               type="button"
               status={branchChange}
@@ -460,7 +438,7 @@ const Node = React.memo<NodeProps>(function Node(props) {
               {branchChangeIcon}
             </StatusButton>
             <StatusButton
-              ariaLabel={`Test status: ${getDisplayStatus(item.type, branchTest).label}`}
+              ariaLabel={`Test status: ${getStatusLabel(branchTest)}`}
               data-testid="tree-status-button"
               type="button"
               status={branchTest}
@@ -471,7 +449,7 @@ const Node = React.memo<NodeProps>(function Node(props) {
           </StatusSlots>
         ) : branchChangeIcon ? (
           <StatusButton
-            ariaLabel={`Change status: ${getDisplayStatus(item.type, branchChange).label}`}
+            ariaLabel={`Change status: ${getStatusLabel(branchChange)}`}
             data-testid="tree-change-status-button"
             type="button"
             status={branchChange}
@@ -481,7 +459,7 @@ const Node = React.memo<NodeProps>(function Node(props) {
           </StatusButton>
         ) : branchTestIcon ? (
           <StatusButton
-            ariaLabel={`Test status: ${getDisplayStatus(item.type, branchTest).label}`}
+            ariaLabel={`Test status: ${getStatusLabel(branchTest)}`}
             data-testid="tree-status-button"
             type="button"
             status={branchTest}
@@ -510,7 +488,7 @@ const Node = React.memo<NodeProps>(function Node(props) {
   const { icon: leafIcon, textColor: leafColor } = getStatus(theme, leafStatus);
   const leafStatusButton = leafIcon ? (
     <StatusButton
-      ariaLabel={`Status: ${getDisplayStatus(item.type, leafStatus).label}`}
+      ariaLabel={`Status: ${getStatusLabel(leafStatus)}`}
       data-testid="tree-status-button"
       role="status"
       type="button"

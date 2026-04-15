@@ -1,6 +1,6 @@
 import { watch, type FSWatcher } from 'node:fs';
 import { readFile, stat } from 'node:fs/promises';
-import { dirname, join, resolve as resolvePath } from 'node:path';
+import { dirname, join, resolve as resolvePath } from 'pathe';
 
 // eslint-disable-next-line depend/ban-dependencies
 import { execa, type ExecaError } from 'execa';

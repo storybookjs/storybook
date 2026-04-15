@@ -1,28 +1,37 @@
 {
-  "[javascript][javascriptreact][typescript][typescriptreact][json][jsonc]": {
-    "editor.defaultFormatter": "oxc.oxc-vscode",
-    "editor.formatOnSave": true
+  "editor.formatOnSave": true,
+  "[mdx]": {
+    "editor.formatOnSave": false
+  },
+  // We're defining the language-specific settings separately here,
+  // because using the multi-language syntax like "[javascript][typescript]" doesn't override user settings that are specified for single languages.
+  "[javascript]": {
+    "editor.defaultFormatter": "oxc.oxc-vscode"
+  },
+  "[javascriptreact]": {
+    "editor.defaultFormatter": "oxc.oxc-vscode"
+  },
+  "[typescript]": {
+    "editor.defaultFormatter": "oxc.oxc-vscode"
+  },
+  "[typescriptreact]": {
+    "editor.defaultFormatter": "oxc.oxc-vscode"
+  },
+  "[json]": {
+    "editor.defaultFormatter": "oxc.oxc-vscode"
+  },
+  "[jsonc]": {
+    "editor.defaultFormatter": "oxc.oxc-vscode"
   },
   "editor.codeActionsOnSave": {
     "source.fixAll.eslint": "explicit",
     "source.fixAll.oxc": "explicit"
   },
-  "editor.formatOnSave": true,
-  "[mdx]": {
-    "editor.formatOnSave": false
-  },
   "editor.tabSize": 2,
   "eslint.options": {
     "cache": true,
     "cacheLocation": ".cache/eslint",
-    "extensions": [
-      ".js",
-      ".jsx",
-      ".mjs",
-      ".json",
-      ".ts",
-      ".tsx"
-    ]
+    "extensions": [".js", ".jsx", ".mjs", ".json", ".ts", ".tsx"]
   },
   "eslint.useESLintClass": true,
   "eslint.validate": [
@@ -33,10 +42,7 @@
     "typescript",
     "typescriptreact"
   ],
-  "eslint.workingDirectories": [
-    "./code",
-    "./scripts"
-  ],
+  "eslint.workingDirectories": ["./code", "./scripts"],
   "files.associations": {
     "*.js": "javascriptreact",
     ".oxfmtrc.json": "json"
@@ -54,5 +60,5 @@
   "vitest.workspaceConfig": "./code/vitest.workspace.ts",
   "vitest.rootConfig": "./code/vitest.workspace.ts",
   "oxc.fmt.configPath": ".oxfmtrc.json",
-  "oxc.enable.oxlint": false,
+  "oxc.enable.oxlint": false
 }

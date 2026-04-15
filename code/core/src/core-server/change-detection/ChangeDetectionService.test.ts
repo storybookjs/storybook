@@ -1,4 +1,4 @@
-import { join } from 'node:path';
+import { join } from 'pathe';
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -686,17 +686,20 @@ describe('ChangeDetectionService', () => {
   });
 
   it('stores changed files as normalized repo-relative paths', async () => {
-    const buttonCss = createModuleNode(join(workingDir, 'src', 'Button.module.css'));
-    const buttonComponent = createModuleNode(join(workingDir, 'src', 'Button.tsx'));
-    const buttonStory = createModuleNode(join(workingDir, 'src', 'Button.stories.tsx'));
+    const buttonCssPath = join(workingDir, 'src', 'Button.module.css');
+    const buttonComponentPath = join(workingDir, 'src', 'Button.tsx');
+    const buttonStoryPath = join(workingDir, 'src', 'Button.stories.tsx');
+    const buttonCss = createModuleNode(buttonCssPath);
+    const buttonComponent = createModuleNode(buttonComponentPath);
+    const buttonStory = createModuleNode(buttonStoryPath);
 
     buttonCss.importers.add(buttonComponent);
     buttonComponent.importers.add(buttonStory);
 
     const moduleGraph: ModuleGraph = new Map([
-      [join(workingDir, 'src', 'Button.module.css'), new Set([buttonCss])],
-      [join(workingDir, 'src', 'Button.tsx'), new Set([buttonComponent])],
-      [join(workingDir, 'src', 'Button.stories.tsx'), new Set([buttonStory])],
+      [buttonCssPath, new Set([buttonCss])],
+      [buttonComponentPath, new Set([buttonComponent])],
+      [buttonStoryPath, new Set([buttonStory])],
     ]);
     const storyIndex = createStoryIndex([
       { storyId: 'button--primary', importPath: './src/Button.stories.tsx', title: 'Button' },

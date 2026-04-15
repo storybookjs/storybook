@@ -8,17 +8,15 @@ import { VersionService } from './VersionService.ts';
 
 /** Service for tracking telemetry events during Storybook initialization */
 export class TelemetryService {
-  private disableTelemetry: boolean;
   private versionService: VersionService;
 
-  constructor(disableTelemetry: boolean = false) {
-    this.disableTelemetry = disableTelemetry;
+  constructor() {
     this.versionService = new VersionService();
   }
 
   /** Track a new user check step */
   async trackNewUserCheck(newUser: boolean): Promise<void> {
-    await this.runTelemetryIfEnabled('init-step', {
+    await telemetry('init-step', {
       step: 'new-user-check',
       newUser,
     });
@@ -26,7 +24,7 @@ export class TelemetryService {
 
   /** Track install type selection */
   async trackInstallType(installType: 'recommended' | 'light'): Promise<void> {
-    await this.runTelemetryIfEnabled('init-step', {
+    await telemetry('init-step', {
       step: 'install-type',
       installType,
     });
@@ -36,7 +34,7 @@ export class TelemetryService {
   async trackPlaywrightPromptDecision(
     result: 'installed' | 'skipped' | 'aborted' | 'failed'
   ): Promise<void> {
-    await this.runTelemetryIfEnabled('init-step', {
+    await telemetry('init-step', {
       step: 'playwright-install',
       result,
     });
@@ -55,12 +53,12 @@ export class TelemetryService {
     versionSpecifier?: string;
     cliIntegration?: string;
   }): Promise<void> {
-    await this.runTelemetryIfEnabled('init', data);
+    await telemetry('init', data);
   }
 
   /** Track empty directory scaffolding event */
   async trackScaffolded(data: { packageManager: string; projectType: string }): Promise<void> {
-    await this.runTelemetryIfEnabled('scaffolded-empty', data);
+    await telemetry('scaffolded-empty', data);
   }
 
   /**
@@ -72,10 +70,6 @@ export class TelemetryService {
     selectedFeatures: Set<Feature>,
     newUser: boolean
   ): Promise<void> {
-    if (this.disableTelemetry) {
-      return;
-    }
-
     // Get telemetry info from process ancestry
     let versionSpecifier: string | undefined;
     let cliIntegration: string | undefined;
@@ -103,13 +97,5 @@ export class TelemetryService {
       versionSpecifier,
       cliIntegration,
     });
-  }
-
-  private runTelemetryIfEnabled(...args: Parameters<typeof telemetry>): Promise<void> {
-    if (this.disableTelemetry) {
-      return Promise.resolve();
-    }
-
-    return telemetry(...args);
   }
 }

@@ -379,10 +379,14 @@
     "zod": "^3.25.76"
   },
   "peerDependencies": {
+    "@storybook/react-vite": "^10",
     "prettier": "^2 || ^3",
     "vite-plus": "^0.1.15"
   },
   "peerDependenciesMeta": {
+    "@storybook/react-vite": {
+      "optional": true
+    },
     "prettier": {
       "optional": true
     },

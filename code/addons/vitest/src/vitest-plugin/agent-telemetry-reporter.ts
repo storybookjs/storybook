@@ -4,32 +4,10 @@ import type { Reporter } from 'vitest/reporters';
 
 import type { TaskMeta } from '@vitest/runner';
 import type { Report } from 'storybook/preview-api';
-import { analyzeTestResults } from 'storybook/internal/core-server';
+import { analyzeTestResults, toStoryTestResult } from 'storybook/internal/core-server';
 import type { StoryTestResult } from 'storybook/internal/core-server';
 import { isExampleStoryId, telemetry } from 'storybook/internal/telemetry';
 import type { AgentInfo } from 'storybook/internal/telemetry';
-
-/**
- * Extracts a clean single-line error message from a Vitest error.
- *
- * Important to handle scenarios e.g. stripping out a "Click to debug" banner and extracting the actual error message.
- */
-export function extractErrorMessage(
-  message: string | undefined,
-  stack: string | undefined
-): string {
-  let rawMessage = message ?? '';
-
-  // Strip the Storybook debug banner if present
-  if (rawMessage.startsWith('\n\x1B[34m')) {
-    const bannerEnd = rawMessage.indexOf('\n\n');
-    if (bannerEnd !== -1) {
-      rawMessage = rawMessage.slice(bannerEnd + 2);
-    }
-  }
-
-  return rawMessage.split('\n')[0] || stack?.split('\n')[0] || 'unknown error';
-}
 
 interface AgentTelemetryReporterOptions {
   configDir: string;
@@ -64,44 +42,21 @@ export class AgentTelemetryReporter implements Reporter {
     const { storyId, reports } = testCase.meta() as TaskMeta &
       Partial<{ storyId: string; reports: Report[] }>;
 
-    // Silently skip non-story tests
-    if (!storyId) {
-      return;
-    }
-
-    // Filter out scaffold example stories
-    if (isExampleStoryId(storyId)) {
+    if (!storyId || isExampleStoryId(storyId)) {
       return;
     }
 
     const testResult = testCase.result();
-    const status =
-      testResult.state === 'passed' ? 'PASS' : testResult.state === 'failed' ? 'FAIL' : 'PENDING';
-
-    // Detect empty render from reports
-    const emptyRender =
-      status === 'PASS' &&
-      reports?.some(
-        (report) =>
-          report.type === 'render-analysis' && (report.result as any)?.emptyRender === true
-      );
-
-    // Extract error message (first line) and stack
-    let error: string | undefined;
-    let stack: string | undefined;
-    if (testResult.errors && testResult.errors.length > 0) {
-      const firstError = testResult.errors[0];
-      error = extractErrorMessage(firstError.message, firstError.stack);
-      stack = firstError.stack;
-    }
-
-    this.testResults.push({
+    const result = toStoryTestResult({
       storyId,
-      status,
-      error,
-      stack,
-      emptyRender: emptyRender || undefined,
+      statusRaw: testResult.state,
+      reports,
+      errors: testResult.errors,
     });
+
+    if (result) {
+      this.testResults.push(result);
+    }
   }
 
   async onTestRunEnd(

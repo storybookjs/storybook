@@ -45,11 +45,6 @@ export function getChangedStoryFiles(repoRoot: string, fileChanges: FileChange[]
     .map((change) => resolve(repoRoot, change.path));
 }
 
-/**
- * Paths that affect the preview bundle for baseline rollback. We only track `.storybook/preview.*`
- * here; if you need global HTML injection, prefer Storybook **decorators** in preview over
- * `preview-head.html` / `preview-body.html` so behavior stays in normal JS/TS.
- */
 export function getPreviewEnvironmentFiles(fileChanges: FileChange[]): string[] {
   return fileChanges
     .flatMap((change) => [change.path, change.previousPath].filter(Boolean) as string[])

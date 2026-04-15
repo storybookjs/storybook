@@ -7,7 +7,6 @@ import { PassThrough } from 'node:stream';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import {
-  BATCH_AGENT_IDS,
   BATCH_DEFAULT_CLAUDE_EFFORTS,
   BATCH_DEFAULT_EFFORTS,
   BATCH_DEFAULT_AGENT_IDS,

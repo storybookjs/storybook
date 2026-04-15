@@ -33,8 +33,8 @@ export class FeatureCompatibilityService {
     );
   }
 
-  /** Check if AI-assisted setup (storybook ai prepare) is supported for this project configuration */
-  static supportsAIPrepareFeature(renderer: SupportedRenderer, builder: SupportedBuilder): boolean {
+  /** Check if AI-assisted setup (storybook ai setup) is supported for this project configuration */
+  static supportsAISetupFeature(renderer: SupportedRenderer, builder: SupportedBuilder): boolean {
     return renderer === SupportedRenderer.REACT && builder === SupportedBuilder.VITE;
   }
 

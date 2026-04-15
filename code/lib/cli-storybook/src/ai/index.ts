@@ -8,7 +8,7 @@ import {
   getSessionId,
   snapshotPreviewFile,
   telemetry,
-  type AiPreparePendingRecord,
+  type AiSetupPendingRecord,
 } from 'storybook/internal/telemetry';
 import { SupportedLanguage } from 'storybook/internal/types';
 
@@ -16,9 +16,9 @@ import { ProjectTypeService } from '../../../create-storybook/src/services/Proje
 
 import { getStorybookData } from '../automigrate/helpers/mainConfigFile.ts';
 import { generateMarkdownOutput } from './prompt.ts';
-import type { ProjectInfo, AiPrepareOptions } from './types.ts';
+import type { ProjectInfo, AiSetupOptions } from './types.ts';
 
-export async function aiPrepare(options: AiPrepareOptions): Promise<void> {
+export async function aiSetup(options: AiSetupOptions): Promise<void> {
   const { configDir: userConfigDir, packageManager: packageManagerName, output } = options;
 
   let projectInfo: ProjectInfo;
@@ -82,7 +82,7 @@ export async function aiPrepare(options: AiPrepareOptions): Promise<void> {
   const result = generateMarkdownOutput(projectInfo);
   const markdownOutput = result.markdown;
 
-  await telemetry('ai-prepare', {
+  await telemetry('ai-setup', {
     cliOptions: {
       output: output ? 'file' : undefined,
       configDir: projectInfo.configDir,
@@ -103,13 +103,13 @@ export async function aiPrepare(options: AiPrepareOptions): Promise<void> {
   const resolvedConfigDir = resolve(projectInfo.configDir);
   const previewSnapshot = await snapshotPreviewFile(resolvedConfigDir);
   const sessionId = await getSessionId();
-  const pendingRecord: AiPreparePendingRecord = {
+  const pendingRecord: AiSetupPendingRecord = {
     timestamp: Date.now(),
     sessionId,
     configDir: resolvedConfigDir,
     ...previewSnapshot,
   };
-  await cache.set('ai-prepare-pending', pendingRecord);
+  await cache.set('ai-setup-pending', pendingRecord);
 
   if (output) {
     const outputPath = resolve(output);

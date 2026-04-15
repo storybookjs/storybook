@@ -29,7 +29,7 @@ const userSettingSchema = z.object({
       items: z
         .object({
           accessibilityTests: statusValue,
-          aiPrepare: statusValue,
+          aiSetup: statusValue,
           autodocs: statusValue,
           ciTests: statusValue,
           controls: statusValue,

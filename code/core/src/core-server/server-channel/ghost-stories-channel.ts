@@ -38,11 +38,11 @@ export function initGhostStoriesChannel(
       const ghostRunStart = Date.now();
       const lastEvents = await getLastEvents();
       const lastInit = lastEvents?.init;
-      const lastAIPrepare = lastEvents?.['ai-prepare'];
+      const lastAISetup = lastEvents?.['ai-setup'];
       const lastGhostStoriesRun = lastEvents?.['ghost-stories'];
 
-      // We only want to run ghost stories immediately after init or ai prepare.
-      const lastRelevantEvent = lastAIPrepare ?? lastInit;
+      // We only want to run ghost stories immediately after init or ai setup.
+      const lastRelevantEvent = lastAISetup ?? lastInit;
       if (!lastRelevantEvent) {
         return;
       }
@@ -53,7 +53,7 @@ export function initGhostStoriesChannel(
       }
 
       const sessionId = await getSessionId();
-      // We only capture ghost stories in the first ever session since init or ai prepare.
+      // We only capture ghost stories in the first ever session since init or ai setup.
       if (lastRelevantEvent.body?.sessionId && lastRelevantEvent.body.sessionId !== sessionId) {
         return;
       }

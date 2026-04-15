@@ -1,12 +1,12 @@
 import type { Channel } from 'storybook/internal/channels';
 import {
-  AI_PREPARE_ANALYTICS_REQUEST,
-  AI_PREPARE_ANALYTICS_RESPONSE,
+  AI_SETUP_ANALYTICS_REQUEST,
+  AI_SETUP_ANALYTICS_RESPONSE,
 } from 'storybook/internal/core-events';
 import {
   getLastEvents,
   getStorybookMetadata,
-  isStoryCreatedByAIPrepare,
+  isStoryCreatedByAISetup,
   telemetry,
 } from 'storybook/internal/telemetry';
 import type { CoreConfig, Options } from 'storybook/internal/types';
@@ -26,8 +26,8 @@ export function initAIAnalyticsChannel(
     return channel;
   }
 
-  /** Send analytics about the ai prepare workflow when requested*/
-  channel.on(AI_PREPARE_ANALYTICS_REQUEST, async () => {
+  /** Send analytics about the ai setup workflow when requested*/
+  channel.on(AI_SETUP_ANALYTICS_REQUEST, async () => {
     const stats: {
       fileCount?: number;
       storyCount?: number;
@@ -36,16 +36,16 @@ export function initAIAnalyticsChannel(
 
     try {
       const lastEvents = await getLastEvents();
-      const lastAIPrepare = lastEvents?.['ai-prepare'];
-      const lastPrepareStoryScoringRun = lastEvents?.['ai-prepare-story-scoring'];
+      const lastAISetup = lastEvents?.['ai-setup'];
+      const lastSetupStoryScoringRun = lastEvents?.['ai-setup-story-scoring'];
 
-      // Only run if sb ai prepare has been called
-      if (!lastAIPrepare) {
+      // Only run if sb ai setup has been called
+      if (!lastAISetup) {
         return;
       }
 
       // Already ran once for this project — never run again
-      if (lastPrepareStoryScoringRun) {
+      if (lastSetupStoryScoringRun) {
         return;
       }
 
@@ -66,7 +66,7 @@ export function initAIAnalyticsChannel(
       // disturb end user activities.
       const isIdle = await waitForIdleVitest();
       if (!isIdle) {
-        logger.debug('AI_PREPARE_ANALYTICS_REQUEST timed out waiting for vitest to be available.');
+        logger.debug('AI_SETUP_ANALYTICS_REQUEST timed out waiting for vitest to be available.');
         return;
       }
 
@@ -74,7 +74,7 @@ export function initAIAnalyticsChannel(
       const generatorPromise = getStoryIndexGeneratorPromise?.();
       if (!generatorPromise) {
         logger.debug(
-          'AI_PREPARE_ANALYTICS_REQUEST could not proceed as the index generator is not ready.'
+          'AI_SETUP_ANALYTICS_REQUEST could not proceed as the index generator is not ready.'
         );
         return;
       }
@@ -82,14 +82,14 @@ export function initAIAnalyticsChannel(
       const generator = await generatorPromise;
       const indexAndStats = await generator.getIndexAndStats();
       if (!indexAndStats) {
-        logger.debug('AI_PREPARE_ANALYTICS_REQUEST could not proceed as the index is not ready.');
+        logger.debug('AI_SETUP_ANALYTICS_REQUEST could not proceed as the index is not ready.');
         return;
       }
 
       const aiStoryFiles = new Set<string>();
       let aiStoryCount = 0;
       for (const entry of Object.values(indexAndStats.storyIndex.entries)) {
-        if (isStoryCreatedByAIPrepare(entry)) {
+        if (isStoryCreatedByAISetup(entry)) {
           aiStoryFiles.add(entry.importPath);
           aiStoryCount++;
         }
@@ -97,7 +97,7 @@ export function initAIAnalyticsChannel(
 
       if (aiStoryFiles.size > 0) {
         const aiTestRunResult = await runGhostStories([...aiStoryFiles]);
-        telemetry('ai-prepare-story-scoring', {
+        telemetry('ai-setup-story-scoring', {
           stats: {
             fileCount: aiStoryFiles.size,
             storyCount: aiStoryCount,
@@ -107,7 +107,7 @@ export function initAIAnalyticsChannel(
           ...(aiTestRunResult.runError ? { runError: aiTestRunResult.runError } : {}),
         });
       } else {
-        telemetry('ai-prepare-story-scoring', {
+        telemetry('ai-setup-story-scoring', {
           stats: {
             fileCount: 0,
             storyCount: 0,
@@ -117,13 +117,13 @@ export function initAIAnalyticsChannel(
         });
       }
     } catch {
-      telemetry('ai-prepare-story-scoring', {
+      telemetry('ai-setup-story-scoring', {
         stats,
         runError: 'Unknown error during AI story scoring',
       });
     } finally {
       // we don't currently do anything with this, but will be useful in the future
-      channel.emit(AI_PREPARE_ANALYTICS_RESPONSE);
+      channel.emit(AI_SETUP_ANALYTICS_RESPONSE);
     }
   });
 

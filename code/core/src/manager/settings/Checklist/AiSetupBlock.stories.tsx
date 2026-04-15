@@ -23,14 +23,14 @@ const managerContext: any = {
   },
 };
 
-// Get the raw aiPrepare item. Cast through unknown to avoid deep discriminated-union issues
+// Get the raw aiSetup item. Cast through unknown to avoid deep discriminated-union issues
 // with the as-const typed checklistData — the shape is correct at runtime.
-const rawAiPrepareItem = checklistData.sections
+const rawAiSetupItem = checklistData.sections
   .flatMap((s) => s.items as unknown as ChecklistItem[])
-  .find((item) => item.id === 'aiPrepare')!;
+  .find((item) => item.id === 'aiSetup')!;
 
 const makeItem = (overrides: Partial<ChecklistItem> = {}): ChecklistItem => ({
-  ...rawAiPrepareItem,
+  ...rawAiSetupItem,
   itemIndex: 0,
   sectionId: 'basics',
   sectionIndex: 0,

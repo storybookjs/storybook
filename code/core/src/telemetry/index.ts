@@ -16,21 +16,21 @@ export * from './sanitize.ts';
 
 export * from './error-collector.ts';
 
-export * from './ai-prepare-utils.ts';
+export * from './ai-setup-utils.ts';
 
 export {
   getPrecedingUpgrade,
   getLastEvents,
   type CacheEntry,
-  getAiPreparePending,
-  type AiPreparePendingRecord,
+  getAiSetupPending,
+  type AiSetupPendingRecord,
 } from './event-cache.ts';
 
 export { getSessionId, SESSION_TIMEOUT } from './session-id.ts';
 
 export { addToGlobalContext } from './telemetry.ts';
 
-export { detectAgent } from './detect-agent.ts';
+export { detectAgent, type AgentInfo } from './detect-agent.ts';
 
 /** Is this story part of the CLI generated examples, including user-created stories in those files */
 export const isExampleStoryId = (storyId: string) =>

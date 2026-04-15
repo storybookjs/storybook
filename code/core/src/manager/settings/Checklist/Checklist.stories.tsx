@@ -84,27 +84,27 @@ export const Default = meta.story({
   args: { availableItems, ...checklistStore },
 });
 
-export const WithAiPrepare = meta.story({
+export const WithAiSetup = meta.story({
   args: {
     availableItems: buildItems({
       controls: 'accepted',
       renderComponent: 'done',
       whatsNewStorybook10: 'done',
       viewports: 'skipped',
-      // aiPrepare is intentionally omitted → status 'open'
+      // aiSetup is intentionally omitted → status 'open'
     }),
     ...checklistStore,
   },
 });
 
-export const WithAiPrepareSkipped = meta.story({
+export const WithAiSetupSkipped = meta.story({
   args: {
     availableItems: buildItems({
       controls: 'accepted',
       renderComponent: 'done',
       whatsNewStorybook10: 'done',
       viewports: 'skipped',
-      aiPrepare: 'skipped',
+      aiSetup: 'skipped',
     }),
     ...checklistStore,
   },

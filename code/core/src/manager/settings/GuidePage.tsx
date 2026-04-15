@@ -38,7 +38,7 @@ const Intro = styled.div(({ theme }) => ({
 export const GuidePage = () => {
   const checklist = useChecklist();
 
-  const aiPrepareItem = checklist.availableItems.find((item) => item.id === 'aiPrepare');
+  const aiSetupItem = checklist.availableItems.find((item) => item.id === 'aiSetup');
 
   return (
     <Container>
@@ -49,10 +49,10 @@ export const GuidePage = () => {
           will help you make the most of your Storybook.
         </p>
       </Intro>
-      {aiPrepareItem && (
-        <AiSetupBlock item={aiPrepareItem} reset={checklist.reset} skip={checklist.skip} />
+      {aiSetupItem && (
+        <AiSetupBlock item={aiSetupItem} reset={checklist.reset} skip={checklist.skip} />
       )}
-      <Checklist {...checklist} forceCollapsed={aiPrepareItem?.isOpen} />
+      <Checklist {...checklist} forceCollapsed={aiSetupItem?.isOpen} />
       {global.FEATURES?.sidebarOnboardingChecklist !== false && (
         <>
           {checklist.openItems.length === 0 ? (

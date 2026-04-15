@@ -4,10 +4,10 @@ import type { IndexEntry, StoryIndex } from 'storybook/internal/types';
 
 import {
   checkPreviewChanged,
-  collectAiPrepareEvidence,
+  collectAiSetupEvidence,
   countAiAuthoredStories,
-  isStoryCreatedByAIPrepare,
-} from './ai-prepare-utils.ts';
+  isStoryCreatedByAISetup,
+} from './ai-setup-utils.ts';
 
 // Mock modules with spy pattern
 vi.mock('storybook/internal/common', async (importOriginal) => {
@@ -26,7 +26,7 @@ vi.mock('./event-cache.ts', async (importOriginal) => {
   const actual = await importOriginal<typeof import('./event-cache.ts')>();
   return {
     ...actual,
-    getAiPreparePending: vi.fn(() => undefined),
+    getAiSetupPending: vi.fn(() => undefined),
   };
 });
 
@@ -42,7 +42,7 @@ vi.mock('./index.ts', async (importOriginal) => {
 import { findConfigFile } from 'storybook/internal/common';
 import { readFile } from 'node:fs/promises';
 import { detectAgent } from './detect-agent.ts';
-import { getAiPreparePending } from './event-cache.ts';
+import { getAiSetupPending } from './event-cache.ts';
 import { SESSION_TIMEOUT } from './session-id.ts';
 import { telemetry } from './index.ts';
 
@@ -73,10 +73,10 @@ beforeEach(() => {
   vi.mocked(telemetry).mockResolvedValue(undefined);
 });
 
-describe('isStoryCreatedByAIPrepare', () => {
+describe('isStoryCreatedByAISetup', () => {
   it('returns true for stories with the ai-generated tag', () => {
     expect(
-      isStoryCreatedByAIPrepare({
+      isStoryCreatedByAISetup({
         type: 'story',
         title: 'Foo',
         tags: ['ai-generated', 'dev', 'play-fn'],
@@ -85,7 +85,7 @@ describe('isStoryCreatedByAIPrepare', () => {
   });
 
   it('returns false for regular stories', () => {
-    expect(isStoryCreatedByAIPrepare({ type: 'story', title: 'Foo' } as IndexEntry)).toBe(false);
+    expect(isStoryCreatedByAISetup({ type: 'story', title: 'Foo' } as IndexEntry)).toBe(false);
   });
 });
 
@@ -192,53 +192,53 @@ describe('checkPreviewChanged', () => {
   });
 });
 
-describe('collectAiPrepareEvidence', () => {
+describe('collectAiSetupEvidence', () => {
   it('does not fire when no agent detected', async () => {
     vi.mocked(detectAgent).mockReturnValue(undefined);
 
-    await collectAiPrepareEvidence('dev', '/test/config');
+    await collectAiSetupEvidence('dev', '/test/config');
     expect(telemetry).not.toHaveBeenCalled();
   });
 
   it('does not fire when no pending record', async () => {
     vi.mocked(detectAgent).mockReturnValue({ name: 'claude' });
-    vi.mocked(getAiPreparePending).mockResolvedValue(undefined);
+    vi.mocked(getAiSetupPending).mockResolvedValue(undefined);
 
-    await collectAiPrepareEvidence('dev', '/test/config');
+    await collectAiSetupEvidence('dev', '/test/config');
     expect(telemetry).not.toHaveBeenCalled();
   });
 
   it('does not fire when pending record is expired', async () => {
     vi.mocked(detectAgent).mockReturnValue({ name: 'claude' });
-    vi.mocked(getAiPreparePending).mockResolvedValue(
+    vi.mocked(getAiSetupPending).mockResolvedValue(
       makePendingRecord({ timestamp: Date.now() - SESSION_TIMEOUT - 1000 })
     );
 
-    await collectAiPrepareEvidence('dev', '/test/config');
+    await collectAiSetupEvidence('dev', '/test/config');
     expect(telemetry).not.toHaveBeenCalled();
   });
 
   it('does not fire when configDir does not match', async () => {
     vi.mocked(detectAgent).mockReturnValue({ name: 'claude' });
-    vi.mocked(getAiPreparePending).mockResolvedValue(
+    vi.mocked(getAiSetupPending).mockResolvedValue(
       makePendingRecord({ configDir: '/other/project/.storybook' })
     );
 
-    await collectAiPrepareEvidence('dev', '/test/config');
+    await collectAiSetupEvidence('dev', '/test/config');
     expect(telemetry).not.toHaveBeenCalled();
   });
 
   it('fires event with correct payload when all gates pass', async () => {
     vi.mocked(detectAgent).mockReturnValue({ name: 'claude' });
     const pending = makePendingRecord({ configDir: '/test/config' });
-    vi.mocked(getAiPreparePending).mockResolvedValue(pending);
+    vi.mocked(getAiSetupPending).mockResolvedValue(pending);
     vi.mocked(findConfigFile).mockReturnValue(pending.previewPath);
     vi.mocked(readFile).mockRejectedValue(new Error('ENOENT'));
 
-    await collectAiPrepareEvidence('dev', '/test/config');
+    await collectAiSetupEvidence('dev', '/test/config');
 
     expect(telemetry).toHaveBeenCalledWith(
-      'ai-prepare-evidence',
+      'ai-setup-evidence',
       expect.objectContaining({
         previewChanged: true,
         aiAuthoredStories: undefined,
@@ -254,13 +254,13 @@ describe('collectAiPrepareEvidence', () => {
   it('reports aiAuthoredStories as undefined when no story index provided', async () => {
     vi.mocked(detectAgent).mockReturnValue({ name: 'claude' });
     const pending = makePendingRecord({ configDir: '/test/config' });
-    vi.mocked(getAiPreparePending).mockResolvedValue(pending);
+    vi.mocked(getAiSetupPending).mockResolvedValue(pending);
     vi.mocked(findConfigFile).mockReturnValue(null);
 
-    await collectAiPrepareEvidence('dev', '/test/config');
+    await collectAiSetupEvidence('dev', '/test/config');
 
     expect(telemetry).toHaveBeenCalledWith(
-      'ai-prepare-evidence',
+      'ai-setup-evidence',
       expect.objectContaining({
         aiAuthoredStories: undefined,
       }),
@@ -275,7 +275,7 @@ describe('collectAiPrepareEvidence', () => {
       previewFile: null,
       previewHash: null,
     });
-    vi.mocked(getAiPreparePending).mockResolvedValue(pending);
+    vi.mocked(getAiSetupPending).mockResolvedValue(pending);
     vi.mocked(findConfigFile).mockReturnValue(null);
 
     const storyIndex = makeStoryIndex({
@@ -296,10 +296,10 @@ describe('collectAiPrepareEvidence', () => {
       },
     });
 
-    await collectAiPrepareEvidence('dev', '/test/config', storyIndex);
+    await collectAiSetupEvidence('dev', '/test/config', storyIndex);
 
     expect(telemetry).toHaveBeenCalledWith(
-      'ai-prepare-evidence',
+      'ai-setup-evidence',
       expect.objectContaining({
         aiAuthoredStories: 1,
       }),

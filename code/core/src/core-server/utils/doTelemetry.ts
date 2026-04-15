@@ -1,5 +1,5 @@
 import {
-  collectAiPrepareEvidence,
+  collectAiSetupEvidence,
   getPrecedingUpgrade,
   telemetry,
 } from 'storybook/internal/telemetry';
@@ -45,7 +45,7 @@ export async function doTelemetry(
     // directly. This is the entry point for collecting evidence about those side effects and
     // recording them in telemetry.
     if (indexAndStats) {
-      collectAiPrepareEvidence('dev', options.configDir, indexAndStats.storyIndex);
+      collectAiSetupEvidence('dev', options.configDir, indexAndStats.storyIndex);
     }
 
     const { versionCheck, versionUpdates } = options;

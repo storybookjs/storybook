@@ -33,9 +33,9 @@ export class TelemetryService {
   }
 
   /** Track when a user accepts the AI setup nudge prompt */
-  async trackAiPromptNudge(context: { skipPrompt: boolean }): Promise<void> {
+  async trackAiSetupNudge(context: { skipPrompt: boolean }): Promise<void> {
     await this.runTelemetryIfEnabled('ai-prompt-nudge', {
-      id: 'prepare',
+      id: 'setup',
       origin: 'init',
       context,
     });

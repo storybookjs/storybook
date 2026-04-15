@@ -63,7 +63,7 @@ const CopyButton = ({ api }: { api: API }) => {
     ),
     content: AI_SETUP_PROMPT,
     onCopy: () => {
-      api.emit(AI_PROMPT_NUDGE, { id: 'prepare', origin: 'onboarding-guide-page' });
+      api.emit(AI_PROMPT_NUDGE, { id: 'setup', origin: 'onboarding-guide-page' });
     },
   });
 

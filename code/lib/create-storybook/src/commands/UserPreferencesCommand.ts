@@ -226,7 +226,7 @@ export class UserPreferencesCommand {
         });
 
     if (useAi) {
-      await this.telemetryService.trackAiPromptNudge({ skipPrompt });
+      await this.telemetryService.trackAiSetupNudge({ skipPrompt });
     }
 
     return useAi;

@@ -172,7 +172,7 @@ export const checklistData = {
             label: 'Copy prompt',
             copyContent: AI_SETUP_PROMPT,
             onClick: ({ api }) => {
-              api.emit(AI_PROMPT_NUDGE, { id: 'prepare', origin: 'onboarding-checklist-side' });
+              api.emit(AI_PROMPT_NUDGE, { id: 'setup', origin: 'onboarding-checklist-side' });
             },
           },
         },

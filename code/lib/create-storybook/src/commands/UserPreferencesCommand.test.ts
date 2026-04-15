@@ -21,7 +21,7 @@ interface CommandWithPrivates {
   telemetryService: {
     trackNewUserCheck: ReturnType<typeof vi.fn>;
     trackInstallType: ReturnType<typeof vi.fn>;
-    trackAiPromptNudge: ReturnType<typeof vi.fn>;
+    trackAiSetupNudge: ReturnType<typeof vi.fn>;
   };
 }
 
@@ -93,7 +93,7 @@ describe('UserPreferencesCommand', () => {
     const mockTelemetryService = {
       trackNewUserCheck: vi.fn(),
       trackInstallType: vi.fn(),
-      trackAiPromptNudge: vi.fn(),
+      trackAiSetupNudge: vi.fn(),
     };
 
     // Inject mocked services
@@ -287,7 +287,7 @@ describe('UserPreferencesCommand', () => {
       (yesCommand as unknown as CommandWithPrivates).telemetryService = {
         trackNewUserCheck: vi.fn(),
         trackInstallType: vi.fn(),
-        trackAiPromptNudge: vi.fn(),
+        trackAiSetupNudge: vi.fn(),
       };
 
       const result = await yesCommand.execute({
@@ -374,7 +374,7 @@ describe('UserPreferencesCommand', () => {
       });
 
       const telemetryService = (command as unknown as CommandWithPrivates).telemetryService;
-      expect(telemetryService.trackAiPromptNudge).toHaveBeenCalledWith({ skipPrompt: false });
+      expect(telemetryService.trackAiSetupNudge).toHaveBeenCalledWith({ skipPrompt: false });
     });
 
     it('should not track ai-prompt-nudge telemetry when user declines AI setup', async () => {
@@ -392,7 +392,7 @@ describe('UserPreferencesCommand', () => {
       });
 
       const telemetryService = (command as unknown as CommandWithPrivates).telemetryService;
-      expect(telemetryService.trackAiPromptNudge).not.toHaveBeenCalled();
+      expect(telemetryService.trackAiSetupNudge).not.toHaveBeenCalled();
     });
 
     it('should track ai-prompt-nudge telemetry when AI is auto-accepted in non-interactive mode', async () => {
@@ -404,7 +404,7 @@ describe('UserPreferencesCommand', () => {
 
       expect(result.selectedFeatures.has(Feature.AI)).toBe(true);
       const telemetryService = (command as unknown as CommandWithPrivates).telemetryService;
-      expect(telemetryService.trackAiPromptNudge).toHaveBeenCalledWith({ skipPrompt: true });
+      expect(telemetryService.trackAiSetupNudge).toHaveBeenCalledWith({ skipPrompt: true });
     });
   });
 

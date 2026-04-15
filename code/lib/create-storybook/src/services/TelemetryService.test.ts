@@ -73,20 +73,20 @@ describe('TelemetryService', () => {
     });
 
     it('should track ai-prompt-nudge event with context when prompt was shown', async () => {
-      await telemetryService.trackAiPromptNudge({ skipPrompt: false });
+      await telemetryService.trackAiSetupNudge({ skipPrompt: false });
 
       expect(telemetry).toHaveBeenCalledWith('ai-prompt-nudge', {
-        id: 'prepare',
+        id: 'setup',
         origin: 'init',
         context: { skipPrompt: false },
       });
     });
 
     it('should track ai-prompt-nudge event with context when prompt was skipped', async () => {
-      await telemetryService.trackAiPromptNudge({ skipPrompt: true });
+      await telemetryService.trackAiSetupNudge({ skipPrompt: true });
 
       expect(telemetry).toHaveBeenCalledWith('ai-prompt-nudge', {
-        id: 'prepare',
+        id: 'setup',
         origin: 'init',
         context: { skipPrompt: true },
       });
@@ -137,7 +137,7 @@ describe('TelemetryService', () => {
     });
 
     it('should not track ai-prompt-nudge event', async () => {
-      await telemetryService.trackAiPromptNudge({ skipPrompt: false });
+      await telemetryService.trackAiSetupNudge({ skipPrompt: false });
 
       expect(telemetry).not.toHaveBeenCalled();
     });

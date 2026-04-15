@@ -223,7 +223,7 @@ describe('categorize-render-errors', () => {
             ERROR_CATEGORIES.MISSING_PROVIDER
           );
 
-          expect(categorizeError('Component must be used without a provider').category).toBe(
+          expect(categorizeError('Component cannot be rendered without a provider').category).toBe(
             ERROR_CATEGORIES.MISSING_PROVIDER
           );
 

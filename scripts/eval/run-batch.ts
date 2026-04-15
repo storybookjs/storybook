@@ -373,13 +373,19 @@ async function runBatchDescriptor(
   };
 }
 
+function sanitizeLabelSegment(value: string) {
+  return value.replace(/[^a-zA-Z0-9._-]/g, '_');
+}
+
 function createBatchRunDescriptor(
   project: BatchRunDescriptor['project'],
   variant: AgentVariant,
   repetition: number,
   prompt: string
 ): BatchRunDescriptor {
-  const label = `${project}-${variant.agent}-${variant.model}-${variant.effort}-${prompt}-r${String(repetition).padStart(2, '0')}`;
+  const label = [project, variant.agent, variant.model, variant.effort, prompt, `r${String(repetition).padStart(2, '0')}`]
+    .map(sanitizeLabelSegment)
+    .join('-');
   return {
     project,
     agent: variant.agent,

@@ -260,7 +260,6 @@ function renderPrBody(opts: { branch: string; data: EvalData }) {
     `- Ghost stories after: \`${postAgentGhostStories}\``,
     `- Vitest pass rate before preview changes: \`${baselinePreviewStories}\``,
     `- Vitest pass rate after preview changes: \`${postAgentStoryRender}\``,
-    `- Preview gain: \`${formatScorePercent(opts.data.score.score)}\``,
     `- Duration: \`${formatDuration(opts.data.execution.duration)}\``,
     `- Cost: \`${formatCost(opts.data.execution.cost)}\``,
     `- Raw data: [${getEvalResultsRelativePath('data.json', opts.data.project.projectDir)}](${dataUrl})`,

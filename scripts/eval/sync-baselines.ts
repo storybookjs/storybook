@@ -4,6 +4,7 @@ import { dirname, join, relative, resolve } from 'node:path';
 import { parseArgs } from 'node:util';
 import pc from 'picocolors';
 import { x } from 'tinyexec';
+import { esMain } from '../utils/esmain.ts';
 import { BASELINE_STORYBOOK_FILES } from './lib/baseline-template-files.ts';
 import { ensureSourceClone } from './lib/prepare-trial.ts';
 import { PROJECTS, type Project } from './lib/projects.ts';
@@ -56,9 +57,7 @@ const syncBaselinesOptions = {
   help: { type: 'boolean' as const, short: 'h', description: 'Show this help and exit' },
 };
 
-const isMain = import.meta.url === `file://${process.argv[1]}`;
-
-if (isMain) {
+if (esMain(import.meta.url)) {
   const { values } = parseArgs({
     args: process.argv.slice(2),
     options: syncBaselinesOptions,

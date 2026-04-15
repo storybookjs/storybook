@@ -113,7 +113,7 @@ export class AgentTelemetryReporter implements Reporter {
 
     // Fire and forget — same pattern as the existing test-run telemetry
     telemetry(
-      'agent-test-run',
+      'ai-setup-self-healing-scoring',
       {
         agent: this.agent,
         analysis,

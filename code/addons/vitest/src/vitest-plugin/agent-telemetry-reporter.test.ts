@@ -164,7 +164,7 @@ describe('AgentTelemetryReporter', () => {
       await reporter.onTestRunEnd(createMockTestModules({ passed: 2, failed: 1 }) as any, []);
 
       expect(telemetry).toHaveBeenCalledWith(
-        'agent-test-run',
+        'ai-setup-self-healing-scoring',
         expect.objectContaining({
           agent: { name: 'claude' },
           analysis: expect.objectContaining({
@@ -195,7 +195,7 @@ describe('AgentTelemetryReporter', () => {
       await reporter.onTestRunEnd(createMockTestModules({ passed: 2, failed: 0 }) as any, []);
 
       expect(telemetry).toHaveBeenCalledWith(
-        'agent-test-run',
+        'ai-setup-self-healing-scoring',
         expect.objectContaining({
           analysis: expect.objectContaining({
             total: 1,
@@ -215,7 +215,7 @@ describe('AgentTelemetryReporter', () => {
       );
 
       expect(telemetry).toHaveBeenCalledWith(
-        'agent-test-run',
+        'ai-setup-self-healing-scoring',
         expect.objectContaining({
           unhandledErrorCount: 2,
         }),

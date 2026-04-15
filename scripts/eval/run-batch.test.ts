@@ -6,6 +6,7 @@ import { PassThrough } from 'node:stream';
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
+import { NODE_EVAL_TRIAL_SCRIPT } from './lib/utils.ts';
 import {
   BATCH_DEFAULT_CLAUDE_EFFORTS,
   BATCH_DEFAULT_EFFORTS,
@@ -57,7 +58,7 @@ describe('buildBatchRunDescriptors', () => {
       const key = `${descriptor.project}:${descriptor.agent}:${descriptor.model}:${descriptor.effort}`;
       combinations.set(key, [...(combinations.get(key) ?? []), descriptor.repetition]);
       expect(descriptor.args).toEqual([
-        './scripts/eval/eval.ts',
+        NODE_EVAL_TRIAL_SCRIPT,
         '-p',
         descriptor.project,
         '-a',
@@ -360,7 +361,7 @@ describe('runBatch', () => {
     expect(existsSync(logPath)).toBe(true);
 
     const logContents = readFileSync(logPath, 'utf-8');
-    expect(logContents).toContain('$ node ./scripts/eval/eval.ts');
+    expect(logContents).toContain(`$ node ${NODE_EVAL_TRIAL_SCRIPT}`);
     expect(logContents).toContain('--prompt pattern-copy-play');
     expect(logContents).toContain(`stdout:${descriptor.label}`);
     expect(logContents).toContain(`stderr:${descriptor.label}`);

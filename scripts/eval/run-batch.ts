@@ -19,7 +19,13 @@ import {
   type AgentVariant,
 } from './lib/agents/config.ts';
 import { PROJECTS } from './lib/projects.ts';
-import { EVAL_ROOT, formatHelp, REPO_ROOT } from './lib/utils.ts';
+import {
+  EVAL_ROOT,
+  formatHelp,
+  NODE_EVAL_RUN_BATCH_SCRIPT,
+  NODE_EVAL_TRIAL_SCRIPT,
+  REPO_ROOT,
+} from './lib/utils.ts';
 
 export const BATCH_EXCLUDED_PROJECT_NAMES = ['baklava'] as const;
 export const BATCH_PROJECT_NAMES = PROJECTS.filter((project) => project.name !== 'baklava').map(
@@ -383,7 +389,7 @@ function createBatchRunDescriptor(
     repetition,
     label,
     args: [
-      './scripts/eval/eval.ts',
+      NODE_EVAL_TRIAL_SCRIPT,
       '-p',
       project,
       '-a',
@@ -579,7 +585,7 @@ if (esMain(import.meta.url)) {
     if ('help' in parsed) {
       console.log(
         formatHelp(
-          'node scripts/eval/run-batch.ts [options]',
+          `node ${NODE_EVAL_RUN_BATCH_SCRIPT} [options]`,
           'Run a batch of eval trials across all benchmark projects.',
           runBatchOptions
         )

@@ -15,6 +15,7 @@ import {
   getEvalSupportDir,
   getProjectPath,
   getStorybookDir,
+  NODE_EVAL_SYNC_BASELINES_SCRIPT,
   REPOS_DIR,
 } from './lib/utils.ts';
 
@@ -67,7 +68,7 @@ if (isMain) {
   if (values.help) {
     console.log(
       formatHelp(
-        'node scripts/eval/sync-baselines.ts [options]',
+        `node ${NODE_EVAL_SYNC_BASELINES_SCRIPT} [options]`,
         'Push the canonical .storybook baseline to each benchmark repo.',
         syncBaselinesOptions
       )

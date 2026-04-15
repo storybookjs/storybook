@@ -1,18 +1,18 @@
 /**
  * Eval harness entry point.
  *
- * Runs with `node ./eval/eval.ts` (no jiti). Node 22+ supports .ts natively
- * via type stripping. Import specifiers use explicit .ts extensions.
+ * Run from the monorepo root with Node (no jiti): `node ./scripts/eval/eval.ts …`. Node 22+
+ * supports .ts natively via type stripping. Import specifiers use explicit .ts extensions.
  *
- * Usage:
- *   node eval/eval.ts -p mealdrop --prompt pattern-copy-play   # claude defaults
- *   node eval/eval.ts -p mealdrop --prompt setup -a codex      # codex defaults
- *   node eval/eval.ts -p mealdrop --prompt setup -m gpt-5.4    # codex (inferred)
- *   node eval/eval.ts -p mealdrop --prompt setup -a claude -e max
- *   node eval/eval.ts -p mealdrop --prompt setup --manual      # prepare only, print instructions
- *   node eval/eval.ts --list-projects
- *   node eval/eval.ts --list-models
- *   node eval/eval.ts --list-prompts
+ * Usage (from monorepo root):
+ *   node ./scripts/eval/eval.ts -p mealdrop --prompt pattern-copy-play   # claude defaults
+ *   node ./scripts/eval/eval.ts -p mealdrop --prompt setup -a codex      # codex defaults
+ *   node ./scripts/eval/eval.ts -p mealdrop --prompt setup -m gpt-5.4    # codex (inferred)
+ *   node ./scripts/eval/eval.ts -p mealdrop --prompt setup -a claude -e max
+ *   node ./scripts/eval/eval.ts -p mealdrop --prompt setup --manual      # prepare only, print instructions
+ *   node ./scripts/eval/eval.ts --list-projects
+ *   node ./scripts/eval/eval.ts --list-models
+ *   node ./scripts/eval/eval.ts --list-prompts
  */
 import { writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
@@ -43,6 +43,7 @@ import {
   listPrompts,
   loadPrompt,
   EXAMPLE_PROMPT_BASENAME,
+  NODE_EVAL_TRIAL_SCRIPT,
 } from './lib/utils.ts';
 
 const PROJECT_NAMES = PROJECTS.map((p) => p.name) as [string, ...string[]];
@@ -125,7 +126,7 @@ const { values } = parseArgs({
 if (values.help) {
   console.log(
     formatHelp(
-      'node scripts/eval/eval.ts [options]',
+      `node ${NODE_EVAL_TRIAL_SCRIPT} [options]`,
       'Run a single eval trial against a benchmark project.',
       evalOptions
     )

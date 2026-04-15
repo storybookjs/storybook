@@ -15,7 +15,7 @@ import { parseArgs } from 'node:util';
 import pLimit from 'p-limit';
 import type { Project } from './lib/projects.ts';
 import { PROJECTS } from './lib/projects.ts';
-import { createLogger, formatHelp } from './lib/utils.ts';
+import { createLogger, formatHelp, NODE_EVAL_COLLECT_PR_DATA_SCRIPT } from './lib/utils.ts';
 
 const DEFAULT_DB_PATH = resolve(import.meta.dirname, '.cache', 'eval-pr-data.sqlite');
 const GH_PAGE_SIZE = 200;
@@ -287,7 +287,7 @@ export function parseCliArgs(argv = process.argv.slice(2)) {
   if (values.help) {
     console.log(
       formatHelp(
-        'node scripts/eval/collect-pr-data.ts [options]',
+        `node ${NODE_EVAL_COLLECT_PR_DATA_SCRIPT} [options]`,
         'Scrape eval draft PRs and load results into a local SQLite database.',
         collectOptions
       )

@@ -2,6 +2,7 @@ import { ProjectType } from 'storybook/internal/cli';
 import {
   type JsPackageManager,
   PackageManagerName,
+  cache,
   executeCommand,
 } from 'storybook/internal/common';
 import { getServerPort, withTelemetry } from 'storybook/internal/core-server';
@@ -157,6 +158,12 @@ export async function doInitiate(options: CommandOptions): Promise<
 
   // Step 9: Track telemetry
   await telemetryService.trackInitWithContext(projectType, selectedFeatures, newUser);
+
+  // Signal dev to redirect to onboarding on first run
+  const shouldOnboard = newUser;
+  if (shouldOnboard && FeatureCompatibilityService.supportsOnboarding(projectType)) {
+    await cache.set('onboarding-pending', true);
+  }
 
   return {
     shouldRunDev:

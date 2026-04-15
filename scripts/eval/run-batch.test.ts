@@ -176,7 +176,11 @@ describe('buildBatchVariants', () => {
   it('returns the default benchmark variants when no overrides are provided', () => {
     expect(buildBatchVariants()).toEqual(BATCH_VARIANTS);
     expect(BATCH_VARIANTS).toEqual([
-      { agent: 'claude', model: BATCH_MATRIX_MODELS.claude, effort: BATCH_DEFAULT_CLAUDE_EFFORTS[0] },
+      {
+        agent: 'claude',
+        model: BATCH_MATRIX_MODELS.claude,
+        effort: BATCH_DEFAULT_CLAUDE_EFFORTS[0],
+      },
       { agent: 'codex', model: BATCH_MATRIX_MODELS.codex, effort: BATCH_DEFAULT_EFFORTS.codex },
     ]);
   });
@@ -199,7 +203,11 @@ describe('buildBatchVariants', () => {
 
   it('supports Claude-only variants when requested', () => {
     expect(buildBatchVariants({ agents: ['claude'] })).toEqual([
-      { agent: 'claude', model: BATCH_MATRIX_MODELS.claude, effort: BATCH_DEFAULT_CLAUDE_EFFORTS[0] },
+      {
+        agent: 'claude',
+        model: BATCH_MATRIX_MODELS.claude,
+        effort: BATCH_DEFAULT_CLAUDE_EFFORTS[0],
+      },
     ]);
   });
 
@@ -236,9 +244,7 @@ describe('parseRunBatchArgs', () => {
   });
 
   it('parses multiple Claude efforts from the CLI', () => {
-    expect(
-      parseRunBatchArgs(['--prompt', TEST_PROMPT, '--claude-efforts', 'max,high'])
-    ).toEqual({
+    expect(parseRunBatchArgs(['--prompt', TEST_PROMPT, '--claude-efforts', 'max,high'])).toEqual({
       prompt: TEST_PROMPT,
       claudeEfforts: ['max', 'high'],
     });

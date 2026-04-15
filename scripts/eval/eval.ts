@@ -76,10 +76,7 @@ const argsSchema = z
   ])
   .superRefine((data, ctx) => {
     const needsPromptForTrial =
-      data.project != null &&
-      !data.listProjects &&
-      !data.listModels &&
-      !data.listPrompts;
+      data.project != null && !data.listProjects && !data.listModels && !data.listPrompts;
     if (!needsPromptForTrial) {
       return;
     }

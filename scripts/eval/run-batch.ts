@@ -12,12 +12,7 @@ import { z } from 'zod';
 import { createInterface } from 'node:readline/promises';
 
 import { esMain } from '../utils/esmain.ts';
-import {
-  AGENTS,
-  CLAUDE_EFFORTS,
-  CODEX_EFFORTS,
-  type AgentVariant,
-} from './lib/agents/config.ts';
+import { AGENTS, CLAUDE_EFFORTS, CODEX_EFFORTS, type AgentVariant } from './lib/agents/config.ts';
 import { PROJECTS } from './lib/projects.ts';
 import {
   EVAL_ROOT,
@@ -268,15 +263,13 @@ export function buildBatchVariants(
   return variants;
 }
 
-export function buildBatchRunDescriptors(
-  options: {
-    prompt: string;
-    agents?: RunBatchOptions['agents'];
-    claudeEfforts?: RunBatchOptions['claudeEfforts'];
-    claudeEffort?: RunBatchOptions['claudeEffort'];
-    codexEffort?: RunBatchOptions['codexEffort'];
-  }
-): BatchRunDescriptor[] {
+export function buildBatchRunDescriptors(options: {
+  prompt: string;
+  agents?: RunBatchOptions['agents'];
+  claudeEfforts?: RunBatchOptions['claudeEfforts'];
+  claudeEffort?: RunBatchOptions['claudeEffort'];
+  codexEffort?: RunBatchOptions['codexEffort'];
+}): BatchRunDescriptor[] {
   const knownProjects = new Set(PROJECTS.map((project) => project.name));
 
   for (const project of BATCH_PROJECT_NAMES) {
@@ -383,7 +376,14 @@ function createBatchRunDescriptor(
   repetition: number,
   prompt: string
 ): BatchRunDescriptor {
-  const label = [project, variant.agent, variant.model, variant.effort, prompt, `r${String(repetition).padStart(2, '0')}`]
+  const label = [
+    project,
+    variant.agent,
+    variant.model,
+    variant.effort,
+    prompt,
+    `r${String(repetition).padStart(2, '0')}`,
+  ]
     .map(sanitizeLabelSegment)
     .join('-');
   return {
@@ -453,13 +453,7 @@ export function parseRunBatchArgs(
 ):
   | Pick<
       RunBatchOptions,
-      | 'agents'
-      | 'claudeEfforts'
-      | 'claudeEffort'
-      | 'codexEffort'
-      | 'concurrency'
-      | 'prompt'
-      | 'yes'
+      'agents' | 'claudeEfforts' | 'claudeEffort' | 'codexEffort' | 'concurrency' | 'prompt' | 'yes'
     >
   | { help: true } {
   const { values } = parseArgs({

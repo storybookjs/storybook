@@ -21,7 +21,7 @@ export interface VitestLikeInput {
 // Matches the "Click to debug" banner prepended by addons/vitest/src/vitest-plugin/setup-file.ts,
 // with or without the surrounding ANSI color codes — environments that strip ANSI (CI wrappers,
 // NO_COLOR) shouldn't leave the banner as the reported error.
-const DEBUG_BANNER_RE = /^\n(?:\x1B\[\d+m)?Click to debug:[^\n]*\n\n/;
+const DEBUG_BANNER_RE = /^\n(?:\x1B\[\d+m)?Click to debug\b[^\n]*\n\n/;
 
 /**
  * Extracts a clean single-line error message from a Vitest error.

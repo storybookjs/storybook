@@ -45,11 +45,11 @@ export type EventType =
   | 'doctor'
   | 'share'
   | 'ghost-stories'
-  | 'ai-prepare'
-  | 'ai-prepare-evidence'
-  | 'ai-prepare-story-scoring'
+  | 'ai-setup'
+  | 'ai-setup-evidence'
+  | 'ai-setup-story-scoring'
   | 'ai-prompt-nudge'
-  | 'agent-test-run';
+  | 'ai-setup-self-healing-scoring';
 
 export interface Dependency {
   version: string | undefined;
@@ -109,6 +109,10 @@ export interface Payload {
   [key: string]: any;
 }
 
+export type PayloadFactory = () => Payload | Promise<Payload>;
+
+export type PayloadInput = Payload | PayloadFactory;
+
 export interface Context {
   [key: string]: any;
 }
@@ -120,6 +124,10 @@ export interface Options {
   enableCrashReports?: boolean;
   stripMetadata?: boolean;
   notify?: boolean;
+  /** Override the event timestamp. Used when flushing queued events to preserve original timing. */
+  timestamp?: number;
+  /** When true, bypass the disabled state. Used for error telemetry with enableCrashReports. */
+  force?: boolean;
 }
 
 export interface TelemetryData {

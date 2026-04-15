@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
 
 import {
-  AI_PREPARE_ANALYTICS_REQUEST,
+  AI_SETUP_ANALYTICS_REQUEST,
   GHOST_STORIES_REQUEST,
   PREVIEW_INITIALIZED,
 } from 'storybook/internal/core-events';
@@ -33,12 +33,12 @@ export function useDelayedAnalyticsTrigger(): void {
       }
       fired.current = true;
 
-      // if `ai prepare` is in the same session, we run ghost stories and ai prepare analytics.
+      // if `ai setup` is in the same session, we run ghost stories and ai setup analytics.
       if (
-        global.STORYBOOK_LAST_EVENTS?.['ai-prepare']?.body.sessionId === global.STORYBOOK_SESSION_ID
+        global.STORYBOOK_LAST_EVENTS?.['ai-setup']?.body.sessionId === global.STORYBOOK_SESSION_ID
       ) {
         api.emit(GHOST_STORIES_REQUEST);
-        api.emit(AI_PREPARE_ANALYTICS_REQUEST);
+        api.emit(AI_SETUP_ANALYTICS_REQUEST);
       }
     };
 

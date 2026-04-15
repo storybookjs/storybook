@@ -35,7 +35,7 @@ export interface UserPreferencesOptions {
   renderer: SupportedRenderer;
   projectType: ProjectType;
   isTestFeatureAvailable: boolean;
-  isAiPrepareAvailable: boolean;
+  isAiSetupAvailable: boolean;
 }
 
 /**
@@ -52,7 +52,7 @@ export interface UserPreferencesOptions {
 export class UserPreferencesCommand {
   constructor(
     private readonly commandOptions: CommandOptions,
-    private readonly telemetryService = new TelemetryService(commandOptions.disableTelemetry)
+    private readonly telemetryService = new TelemetryService()
   ) {}
 
   /** Execute user preferences gathering */
@@ -80,9 +80,7 @@ export class UserPreferencesCommand {
         : 'recommended';
 
     // Ask about AI setup (only available for compatible projects, e.g. React + Vite)
-    const useAiForSetup = options.isAiPrepareAvailable
-      ? await this.promptAiSetup(skipPrompt)
-      : false;
+    const useAiForSetup = options.isAiSetupAvailable ? await this.promptAiSetup(skipPrompt) : false;
 
     const selectedFeatures = this.determineFeatures(
       installType,
@@ -228,7 +226,7 @@ export class UserPreferencesCommand {
         });
 
     if (useAi) {
-      await this.telemetryService.trackAiPromptNudge({ skipPrompt });
+      await this.telemetryService.trackAiSetupNudge({ skipPrompt });
     }
 
     return useAi;

@@ -37,6 +37,7 @@ import {
   createLogger,
   formatCost,
   formatDuration,
+  formatScorePercent,
   generateTrialId,
   listPrompts,
   loadPrompt,
@@ -46,7 +47,7 @@ const PROJECT_NAMES = PROJECTS.map((p) => p.name) as [string, ...string[]];
 
 const base = {
   project: z.enum(PROJECT_NAMES).optional(),
-  prompt: z.string().default('setup'),
+  prompt: z.string().default('pattern-copy-play'),
   verbose: z.boolean().default(false),
   manual: z.boolean().default(false),
   listProjects: z.boolean().default(false),
@@ -138,9 +139,9 @@ logger.log(
 );
 
 if (args.manual) {
-  const trialId = generateTrialId(project.name, variant.agent, variant.model, args.prompt);
+  const trialId = generateTrialId();
   const workspace = await prepareTrial(project, trialId, logger);
-  await captureEnvironment(workspace.resultsDir);
+  await captureEnvironment();
 
   const prompt = loadPrompt(args.prompt);
   const promptPath = join(workspace.resultsDir, 'prompt.md');
@@ -157,23 +158,33 @@ if (args.manual) {
   logger.log(`  ${pc.green(cliCommand)}\n`);
 } else {
   const result = await runTrial(
-    { project, variant, prompt: args.prompt, verbose: args.verbose } satisfies TrialConfig,
+    {
+      project,
+      variant,
+      prompt: args.prompt,
+      verbose: args.verbose,
+    } satisfies TrialConfig,
     logger
   );
 
-  const ghost = result.grade.ghostStories;
-  const ghostStr = ghost
-    ? `${ghost.passed}/${ghost.total} (${Math.round(ghost.successRate * 100)}%)`
-    : '-';
-
+  const storyRenderStr = formatPassedTotalSummary(
+    result.grade.baselinePreviewStories,
+    result.grade.storyRender
+  );
+  const ghostStoriesStr = formatPassedTotalSummary(
+    result.grade.baselineGhostStories,
+    result.grade.ghostStories
+  );
   logger.log(pc.bold('\nResult'));
   logger.log(`  Build:   ${result.grade.buildSuccess ? pc.green('PASS') : pc.red('FAIL')}`);
-  logger.log(`  Ghost:   ${ghostStr}`);
+  logger.log(`  Stories: ${storyRenderStr}`);
+  logger.log(`  Ghost:   ${ghostStoriesStr}`);
   logger.log(`  TS Err:  ${result.grade.typeCheckErrors}`);
-  logger.log(`  Score:   ${result.score.score}`);
+  logger.log(`  Score:   ${formatScorePercent(result.score.score)} (normalized preview gain)`);
   logger.log(`  Cost:    ${formatCost(result.execution.cost)}`);
   logger.log(`  Time:    ${formatDuration(result.execution.duration)}`);
   logger.log(`  Turns:   ${result.execution.turns}`);
+  logger.log(`  PR:      ${result.publish.url}`);
 
   logger.log('\nDone.');
 }
@@ -198,4 +209,27 @@ function toVariant(args: z.infer<typeof argsSchema>): AgentVariant {
   return args.agent === 'claude'
     ? { agent: 'claude', model: args.model, effort: args.effort }
     : { agent: 'codex', model: args.model, effort: args.effort };
+}
+
+function formatPassedTotalSummary(
+  before?: { passed: number; total: number },
+  after?: { passed: number; total: number }
+) {
+  const beforeSummary = formatPassedTotal(before);
+  const afterSummary = formatPassedTotal(after);
+
+  if (beforeSummary === '-' && afterSummary === '-') {
+    return '-';
+  }
+
+  return `${beforeSummary} -> ${afterSummary}`;
+}
+
+function formatPassedTotal(summary?: { passed: number; total: number }) {
+  if (!summary) {
+    return '-';
+  }
+
+  const rate = summary.total > 0 ? summary.passed / summary.total : 0;
+  return `${summary.passed}/${summary.total} (${Math.round(rate * 100)}%)`;
 }

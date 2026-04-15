@@ -5,6 +5,12 @@ import { getComponentCandidates } from '../../../code/core/src/core-server/utils
 import { runGhostStories } from '../../../code/core/src/core-server/utils/ghost-stories/run-story-tests.ts';
 import type { Logger } from './utils.ts';
 import type { TrialWorkspace } from './prepare-trial.ts';
+import {
+  getGeneratedStoryFiles,
+  runStoryRenderPass,
+  type StoryRenderGrade,
+  withBaselinePreviewEnvironment,
+} from './story-render.ts';
 
 /** Git `--name-status` codes: A=added, M=modified, D=deleted, R=renamed. */
 export type GitDiffStatus = 'A' | 'M' | 'D' | 'R';
@@ -23,27 +29,12 @@ export interface GhostStoryGrade {
   successRate: number;
 }
 
-export interface ScoreWeights {
-  ghostStories: number;
-  build: number;
-  typecheck: number;
-  performance: number;
-}
-
-export const DEFAULT_SCORE_WEIGHTS: ScoreWeights = {
-  ghostStories: 0.4,
-  build: 0.25,
-  typecheck: 0.25,
-  performance: 0.1,
-};
-
 export interface QualityScore {
   score: number;
   breakdown: {
-    build: number;
-    typecheck: number;
-    ghostStories: number;
-    performance: number;
+    beforeRate: number;
+    afterRate: number;
+    gain: number;
   };
 }
 
@@ -54,15 +45,11 @@ export interface Grade {
   typeCheckOutput?: string;
   fileChanges: FileChange[];
   storybookChanges: FileChange[];
+  baselineGhostStories?: GhostStoryGrade;
   ghostStories?: GhostStoryGrade;
+  baselinePreviewStories?: StoryRenderGrade;
+  storyRender?: StoryRenderGrade;
 }
-
-/** Maximum TypeScript errors before the typecheck score reaches 0. */
-const MAX_TYPECHECK_ERRORS = 20;
-/** Agent duration (seconds) at or below which performance scores 1.0. */
-const PERFECT_DURATION_S = 120;
-/** Agent duration (seconds) at or above which performance scores 0. */
-const ZERO_SCORE_DURATION_S = 600;
 
 /** Filter file changes to only storybook-related ones. */
 export function filterStorybookFiles(fileChanges: FileChange[]): FileChange[] {
@@ -73,47 +60,25 @@ export function filterStorybookFiles(fileChanges: FileChange[]): FileChange[] {
 }
 
 /**
- * Compute quality score with configurable weights.
+ * Compute the eval score from normalized preview gain on generated stories.
  *
- * Default weights: 40% ghost stories, 25% build, 25% typecheck, 10% performance.
- *
- * Performance is scored on a curve: <=120s -> 1.0, 600s -> 0, linear between.
+ * Build, typecheck, runtime, and ghost stories are still recorded in the eval output,
+ * but they no longer contribute to the score itself.
  */
-export function computeQualityScore(
-  opts: {
-    buildSuccess: boolean;
-    typeCheckErrors: number;
-    ghostSuccessRate?: number;
-    durationSeconds?: number;
-  },
-  weights: ScoreWeights = DEFAULT_SCORE_WEIGHTS
-): QualityScore {
-  const buildScore = opts.buildSuccess ? 1 : 0;
-  const tcScore = Math.max(0, 1 - opts.typeCheckErrors / MAX_TYPECHECK_ERRORS);
-  const ghostScore = opts.ghostSuccessRate ?? 0;
-  const d = opts.durationSeconds;
-  const perfScore =
-    d == null
-      ? 0
-      : Math.max(
-          0,
-          Math.min(1, 1 - (d - PERFECT_DURATION_S) / (ZERO_SCORE_DURATION_S - PERFECT_DURATION_S))
-        );
-  const score =
-    Math.round(
-      (ghostScore * weights.ghostStories +
-        buildScore * weights.build +
-        tcScore * weights.typecheck +
-        perfScore * weights.performance) *
-        100
-    ) / 100;
+export function computeQualityScore(opts: {
+  baselinePreviewStories?: Pick<StoryRenderGrade, 'passed' | 'total'>;
+  storyRender?: Pick<StoryRenderGrade, 'passed' | 'total'>;
+}): QualityScore {
+  const beforeRate = getStoryRenderRate(opts.baselinePreviewStories);
+  const afterRate = getStoryRenderRate(opts.storyRender);
+  const gain = computeNormalizedGain(beforeRate, afterRate);
+
   return {
-    score,
+    score: gain,
     breakdown: {
-      build: buildScore,
-      typecheck: Math.round(tcScore * 100) / 100,
-      ghostStories: Math.round(ghostScore * 100) / 100,
-      performance: Math.round(perfScore * 100) / 100,
+      beforeRate: beforeRate ?? 0,
+      afterRate: afterRate ?? 0,
+      gain,
     },
   };
 }
@@ -145,7 +110,7 @@ export function parseChangedFiles(gitOutput: string): FileChange[] {
 export async function grade(
   workspace: TrialWorkspace,
   logger: Logger,
-  agentDuration?: number
+  baselineGhostStories?: GhostStoryGrade
 ): Promise<{ grade: Grade; score: QualityScore }> {
   const { repoRoot, projectPath, resultsDir, baselineCommit } = workspace;
 
@@ -197,8 +162,33 @@ export async function grade(
     logger.logError(`${typeCheckErrors} TypeScript error(s)`);
   }
 
-  // Ghost stories (only if build passed)
-  const ghostStories = buildSuccess ? await gradeGhostStories(projectPath, logger) : undefined;
+  const generatedStoryFiles = getGeneratedStoryFiles(repoRoot, projectPath, fileChanges);
+
+  const ghostStories = buildSuccess
+    ? await collectGhostStoriesGrade(projectPath, logger)
+    : undefined;
+
+  const storyRenderRun = await runStoryRenderPass({
+    projectPath,
+    resultsDir,
+    storyFiles: generatedStoryFiles,
+    outputBaseName: 'story-render',
+    logger,
+  });
+
+  const baselinePreviewRun = await withBaselinePreviewEnvironment({
+    repoRoot,
+    baselineCommit,
+    fileChanges,
+    fn: () =>
+      runStoryRenderPass({
+        projectPath,
+        resultsDir,
+        storyFiles: generatedStoryFiles,
+        outputBaseName: 'baseline-story-render',
+        logger,
+      }),
+  });
 
   const trialGrade: Grade = {
     buildSuccess,
@@ -207,70 +197,27 @@ export async function grade(
     typeCheckOutput: typeCheckErrors > 0 ? truncateEnd(tscOutput, 2000) : undefined,
     fileChanges,
     storybookChanges,
+    baselineGhostStories,
     ghostStories,
+    baselinePreviewStories: baselinePreviewRun.summary,
+    storyRender: storyRenderRun.summary,
   };
 
   const score = computeQualityScore({
-    buildSuccess,
-    typeCheckErrors,
-    ghostSuccessRate: ghostStories?.successRate,
-    durationSeconds: agentDuration,
+    baselinePreviewStories: baselinePreviewRun.summary,
+    storyRender: storyRenderRun.summary,
   });
 
   return { grade: trialGrade, score };
 }
 
-async function getChangedFiles(repoRoot: string, baseline: string): Promise<FileChange[]> {
-  // Stage all files so `git diff --cached` picks up new files the agent created.
-  // Safe: this runs on an ephemeral trial copy, not the real repo.
-  await x('git', ['add', '-A'], { nodeOptions: { cwd: repoRoot } });
-  const { stdout } = await x('git', ['diff', '--cached', '--name-status', baseline], {
-    throwOnError: false,
-    nodeOptions: { cwd: repoRoot },
-  });
-  return parseChangedFiles(stdout);
-}
-
-async function gradeGhostStories(
-  projectPath: string,
-  logger: Logger
-): Promise<GhostStoryGrade | undefined> {
-  logger.logStep('Running ghost stories...');
-
-  try {
-    const { candidates } = await getComponentCandidates({ sampleSize: 20, cwd: projectPath });
-    if (candidates.length === 0) {
-      logger.logError('No candidate components found');
-      return undefined;
-    }
-    logger.logStep(`Found ${candidates.length} candidate component(s)`);
-
-    const result = await runGhostStories(candidates, { cwd: projectPath });
-
-    if (result.runError) {
-      logger.logError(`Ghost stories: ${result.runError}`);
-      return undefined;
-    }
-
-    const summary = 'summary' in result ? result.summary : undefined;
-
-    if (summary && summary.total > 0) {
-      const realPassed = summary.passed - summary.passedButEmptyRender;
-      logger.logSuccess(
-        `Ghost stories: ${realPassed}/${summary.total} passed (${Math.round(summary.successRateWithoutEmptyRender * 100)}%)${summary.passedButEmptyRender > 0 ? ` (${summary.passedButEmptyRender} empty renders excluded)` : ''}`
-      );
-    }
-
-    return {
-      candidateCount: candidates.length,
-      total: summary?.total ?? 0,
-      passed: (summary?.passed ?? 0) - (summary?.passedButEmptyRender ?? 0),
-      successRate: summary?.successRateWithoutEmptyRender ?? 0,
-    };
-  } catch (error) {
-    logger.logError(`Ghost stories: ${error instanceof Error ? error.message : String(error)}`);
+function getStoryRenderRate(storyRender?: Pick<StoryRenderGrade, 'passed' | 'total'>) {
+  if (!storyRender || storyRender.total <= 0) {
     return undefined;
   }
+
+  const rate = storyRender.passed / storyRender.total;
+  return Number.isNaN(rate) ? undefined : rate;
 }
 
 /** Truncate text to approximately maxChars, snapping to a line boundary. */
@@ -286,4 +233,77 @@ function parseGitDiffStatus(rawStatus?: string): GitDiffStatus {
   return firstChar === 'A' || firstChar === 'M' || firstChar === 'D' || firstChar === 'R'
     ? firstChar
     : 'M';
+}
+
+async function getChangedFiles(repoRoot: string, baseline: string): Promise<FileChange[]> {
+  // Stage all files so `git diff --cached` picks up new files the agent created.
+  // Safe: this runs on an ephemeral trial copy, not the real repo.
+  await x('git', ['add', '-A'], { nodeOptions: { cwd: repoRoot } });
+  const { stdout } = await x('git', ['diff', '--cached', '--name-status', baseline], {
+    throwOnError: false,
+    nodeOptions: { cwd: repoRoot },
+  });
+  return parseChangedFiles(stdout);
+}
+
+export async function collectGhostStoriesGrade(
+  projectPath: string,
+  logger: Logger,
+  label = 'ghost stories'
+): Promise<GhostStoryGrade | undefined> {
+  logger.logStep(`Running ${label}...`);
+
+  try {
+    const { candidates } = await getComponentCandidates({ sampleSize: 20, cwd: projectPath });
+    if (candidates.length === 0) {
+      logger.logError(`No candidate components found for ${label}`);
+      return undefined;
+    }
+    logger.logStep(`Found ${candidates.length} candidate component(s) for ${label}`);
+
+    const result = await runGhostStories(candidates, { cwd: projectPath });
+
+    if (result.runError) {
+      logger.logError(`${capitalize(label)}: ${result.runError}`);
+      return undefined;
+    }
+
+    const summary = 'summary' in result ? result.summary : undefined;
+
+    if (summary && summary.total > 0) {
+      const realPassed = summary.passed - summary.passedButEmptyRender;
+      logger.logSuccess(
+        `${capitalize(label)}: ${realPassed}/${summary.total} passed (${Math.round(summary.successRateWithoutEmptyRender * 100)}%)${summary.passedButEmptyRender > 0 ? ` (${summary.passedButEmptyRender} empty renders excluded)` : ''}`
+      );
+    }
+
+    return {
+      candidateCount: candidates.length,
+      total: summary?.total ?? 0,
+      passed: (summary?.passed ?? 0) - (summary?.passedButEmptyRender ?? 0),
+      successRate: summary?.successRateWithoutEmptyRender ?? 0,
+    };
+  } catch (error) {
+    logger.logError(
+      `${capitalize(label)}: ${error instanceof Error ? error.message : String(error)}`
+    );
+    return undefined;
+  }
+}
+
+function computeNormalizedGain(beforeRate?: number, afterRate?: number) {
+  if (beforeRate == null || afterRate == null) {
+    return 0;
+  }
+
+  if (beforeRate >= 1) {
+    return afterRate >= 1 ? 1 : 0;
+  }
+
+  const gain = (afterRate - beforeRate) / (1 - beforeRate);
+  return Math.max(0, Math.min(1, Number.isNaN(gain) ? 0 : gain));
+}
+
+function capitalize(value: string) {
+  return value.charAt(0).toUpperCase() + value.slice(1);
 }

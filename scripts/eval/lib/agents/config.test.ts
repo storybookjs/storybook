@@ -19,7 +19,6 @@ describe('AGENTS', () => {
       defaultModel: 'sonnet-4.6',
       defaultEffort: 'medium',
       execution: {
-        maxTurns: 50,
         allowedTools: ['Read', 'Write', 'Edit', 'Bash', 'Glob', 'Grep'],
         permissionModel: 'tool-allowlist',
       },

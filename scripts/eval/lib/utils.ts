@@ -1,6 +1,5 @@
 import { readFileSync, existsSync, readdirSync } from 'node:fs';
-import { writeFile } from 'node:fs/promises';
-import { resolve, basename, join } from 'node:path';
+import { basename, join, resolve, sep } from 'node:path';
 import pc from 'picocolors';
 import { x } from 'tinyexec';
 
@@ -13,9 +12,11 @@ export interface Logger {
 
 export const REPO_ROOT = resolve(import.meta.dirname, '..', '..', '..');
 export const EVAL_ROOT = resolve(REPO_ROOT, '..', 'storybook-eval');
-export const CACHE_DIR = resolve(EVAL_ROOT, '.cache', 'repos');
+export const REPOS_DIR = resolve(EVAL_ROOT, 'repos');
 export const TRIALS_DIR = resolve(EVAL_ROOT, 'trials');
 export const PROMPTS_DIR = resolve(import.meta.dirname, '..', 'prompts');
+export const STORYBOOK_DIRNAME = '.storybook';
+export const EVAL_RESULTS_DIRNAME = 'eval-results';
 
 export function createLogger(prefix?: string): Logger {
   const p = prefix ? pc.dim(`[${prefix}]`) + ' ' : '';
@@ -32,9 +33,81 @@ export const formatDuration = (s: number) =>
 
 export const formatCost = (cost?: number) => (cost == null ? '-' : `$${cost.toFixed(2)}`);
 
-export function generateTrialId(project: string, agent: string, model: string, prompt: string) {
-  const ts = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
-  return `${ts}-${project}-${agent}-${model}-${prompt}-${crypto.randomUUID().slice(0, 8)}`;
+/** Raw 0-1 index (used in data.json and when you need the exact ratio). */
+export const formatScore = (score: number) =>
+  score.toFixed(3).replace(/(?:\.0+|(\.\d*?)0+)$/, '$1');
+
+/** Human-readable percentage for the same 0-1 score (data.json keeps the ratio). */
+export function formatScorePercent(score: number): string {
+  if (!Number.isFinite(score)) return String(score);
+  const pct = score * 100;
+  const rounded = Math.round(pct);
+  if (Math.abs(pct - rounded) < 1e-6) return `${rounded}%`;
+  return `${pct.toFixed(1)}%`;
+}
+
+export function getProjectPath(repoRoot: string, projectDir?: string) {
+  return projectDir ? join(repoRoot, projectDir) : repoRoot;
+}
+
+export function getStorybookDir(projectPath: string) {
+  return join(projectPath, STORYBOOK_DIRNAME);
+}
+
+export function getEvalSupportDir(projectPath: string) {
+  return join(getStorybookDir(projectPath), 'eval-support');
+}
+
+export function getEvalResultsDir(projectPath: string) {
+  return join(getStorybookDir(projectPath), EVAL_RESULTS_DIRNAME);
+}
+
+export function getEvalResultsRelativeDir(projectDir?: string) {
+  return toPosixPath(
+    projectDir
+      ? join(projectDir, STORYBOOK_DIRNAME, EVAL_RESULTS_DIRNAME)
+      : join(STORYBOOK_DIRNAME, EVAL_RESULTS_DIRNAME)
+  );
+}
+
+export function getEvalResultsRelativePath(fileName: string, projectDir?: string) {
+  return `${getEvalResultsRelativeDir(projectDir)}/${fileName}`;
+}
+
+export function generateTrialId() {
+  const timestamp = new Date()
+    .toISOString()
+    .replace(/\.\d{3}Z$/, 'Z')
+    .replace(/:/g, '-');
+  return `${timestamp}-${crypto.randomUUID().replace(/-/g, '').slice(0, 8)}`;
+}
+
+export function formatReadableUtcTimestamp(timestamp: string) {
+  const date = new Date(timestamp);
+  if (Number.isNaN(date.getTime())) {
+    return timestamp;
+  }
+
+  const month = [
+    'Jan',
+    'Feb',
+    'Mar',
+    'Apr',
+    'May',
+    'Jun',
+    'Jul',
+    'Aug',
+    'Sep',
+    'Oct',
+    'Nov',
+    'Dec',
+  ][date.getUTCMonth()];
+  const day = date.getUTCDate();
+  const year = date.getUTCFullYear();
+  const hour = `${date.getUTCHours()}`.padStart(2, '0');
+  const minute = `${date.getUTCMinutes()}`.padStart(2, '0');
+  const second = `${date.getUTCSeconds()}`.padStart(2, '0');
+  return `${month} ${day} ${year} ${hour}:${minute}:${second} UTC`;
 }
 
 /** Format data as an aligned table with automatic column widths. */
@@ -57,7 +130,7 @@ export function formatTable(headers: string[], rows: string[][]): string {
 }
 
 /** Load a prompt by name from prompts/{name}.md. */
-export function loadPrompt(name = 'setup'): string {
+export function loadPrompt(name = 'pattern-copy-play'): string {
   const file = resolve(PROMPTS_DIR, `${name}.md`);
   if (!existsSync(file)) {
     throw new Error(`Prompt not found: ${file}\nAvailable: ${listPrompts().join(', ')}`);
@@ -81,7 +154,7 @@ export interface EvalEnvironment {
   evalCommit: string;
 }
 
-export async function captureEnvironment(resultsDir: string): Promise<EvalEnvironment> {
+export async function captureEnvironment(): Promise<EvalEnvironment> {
   let evalBranch = 'unknown';
   let evalCommit = 'unknown';
   try {
@@ -90,12 +163,14 @@ export async function captureEnvironment(resultsDir: string): Promise<EvalEnviro
   } catch {
     /* not in a git repo */
   }
-  const env: EvalEnvironment = { nodeVersion: process.version, evalBranch, evalCommit };
-  await writeFile(join(resultsDir, 'environment.json'), JSON.stringify(env, null, 2));
-  return env;
+  return { nodeVersion: process.version, evalBranch, evalCommit };
 }
 
 /** Strip ANSI escape codes for accurate width calculation. */
 function stripAnsi(str: string) {
   return str.replace(/\x1b\[[0-9;]*m/g, '');
+}
+
+function toPosixPath(value: string) {
+  return value.split(sep).join('/');
 }

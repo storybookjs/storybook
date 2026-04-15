@@ -1,6 +1,6 @@
 import type { SupportedRenderer } from 'storybook/internal/types';
 
-export interface AiPrepareOptions {
+export interface AiSetupOptions {
   configDir?: string;
   packageManager?: string;
   output?: string;

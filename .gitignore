@@ -87,3 +87,6 @@ scripts/eval/results
 
 # review-pr skill output
 .pr-review
+
+# Unknown
+.omc

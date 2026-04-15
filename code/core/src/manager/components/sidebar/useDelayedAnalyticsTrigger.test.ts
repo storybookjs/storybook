@@ -3,7 +3,7 @@ import { renderHook } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import {
-  AI_PREPARE_ANALYTICS_REQUEST,
+  AI_SETUP_ANALYTICS_REQUEST,
   GHOST_STORIES_REQUEST,
   PREVIEW_INITIALIZED,
 } from 'storybook/internal/core-events';
@@ -66,7 +66,7 @@ describe('useDelayedAnalyticsTrigger', () => {
     expect(api.emit).not.toHaveBeenCalled();
   });
 
-  it('emits GHOST_STORIES_REQUEST and AI_PREPARE_ANALYTICS_REQUEST after delay', () => {
+  it('emits GHOST_STORIES_REQUEST and AI_SETUP_ANALYTICS_REQUEST after delay', () => {
     const api = createMockApi();
     mockUseStorybookApi.mockReturnValue(api as any);
 
@@ -75,21 +75,21 @@ describe('useDelayedAnalyticsTrigger', () => {
     api._trigger(PREVIEW_INITIALIZED);
     expect(api.emit).not.toHaveBeenCalled();
 
-    vi.advanceTimersByTime(10 * 60 * 1000);
+    vi.advanceTimersByTime(4 * 60 * 1000);
 
     expect(api.emit).toHaveBeenCalledWith(GHOST_STORIES_REQUEST);
-    expect(api.emit).toHaveBeenCalledWith(AI_PREPARE_ANALYTICS_REQUEST);
+    expect(api.emit).toHaveBeenCalledWith(AI_SETUP_ANALYTICS_REQUEST);
     expect(api.emit).toHaveBeenCalledTimes(2);
   });
 
-  it('does not emit before the 10-minute delay elapses', () => {
+  it('does not emit before the 4-minute delay elapses', () => {
     const api = createMockApi();
     mockUseStorybookApi.mockReturnValue(api as any);
 
     renderHook(() => useDelayedAnalyticsTrigger());
 
     api._trigger(PREVIEW_INITIALIZED);
-    vi.advanceTimersByTime(9 * 60 * 1000);
+    vi.advanceTimersByTime(3 * 60 * 1000);
 
     expect(api.emit).not.toHaveBeenCalled();
   });
@@ -120,10 +120,10 @@ describe('useDelayedAnalyticsTrigger', () => {
     const { unmount } = renderHook(() => useDelayedAnalyticsTrigger());
 
     api._trigger(PREVIEW_INITIALIZED);
-    vi.advanceTimersByTime(5 * 60 * 1000);
+    vi.advanceTimersByTime(2 * 60 * 1000);
 
     unmount();
-    vi.advanceTimersByTime(10 * 60 * 1000);
+    vi.advanceTimersByTime(4 * 60 * 1000);
 
     expect(api.emit).not.toHaveBeenCalled();
   });

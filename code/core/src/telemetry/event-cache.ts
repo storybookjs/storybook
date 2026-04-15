@@ -82,11 +82,11 @@ export const getPrecedingUpgrade = async (
     : undefined;
 };
 /**
- * Record cached at ai-prepare time.
+ * Record cached at ai-setup time.
  * Read by subsequent CLI entry points for evidence collection.
  * Canonical definition — imported by event-cache.ts and prepare-requirements.ts.
  */
-export interface AiPreparePendingRecord {
+export interface AiSetupPendingRecord {
   timestamp: number;
   sessionId: string;
   configDir: string;
@@ -94,16 +94,16 @@ export interface AiPreparePendingRecord {
   previewHash: string | null;
 }
 
-export const getAiPreparePending = async (): Promise<AiPreparePendingRecord | undefined> => {
+export const getAiSetupPending = async (): Promise<AiSetupPendingRecord | undefined> => {
   // Wait for any pending set operations to complete before reading
   await processingPromise;
-  return (await cache.get('ai-prepare-pending')) ?? undefined;
+  return (await cache.get('ai-setup-pending')) ?? undefined;
 };
 
-export const flushAiPreparePending = async (): Promise<undefined> => {
+export const flushAiSetupPending = async (): Promise<undefined> => {
   // Wait for any pending set operations to complete before removing
   await processingPromise;
-  await cache.remove('ai-prepare-pending');
+  await cache.remove('ai-setup-pending');
   return undefined;
 };
 

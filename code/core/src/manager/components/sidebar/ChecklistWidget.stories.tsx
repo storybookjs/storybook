@@ -94,3 +94,18 @@ export const Narrow = meta.story({
   decorators: [(Story) => <div style={{ width: 200, height: 250 }}>{Story()}</div>],
   play,
 });
+
+export const WithAiSetup = meta.story({
+  beforeEach: async () => {
+    mockStore.setState({
+      loaded: true,
+      widget: {},
+      items: {
+        ...initialState.items,
+        // aiSetup is intentionally left 'open' so it appears in the widget's task list
+        controls: { status: 'accepted' },
+        renderComponent: { status: 'done' },
+      },
+    });
+  },
+});

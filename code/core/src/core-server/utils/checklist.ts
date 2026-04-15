@@ -7,6 +7,7 @@ import { throttle } from 'es-toolkit/function';
 import { toMerged } from 'es-toolkit/object';
 
 import { globalSettings } from '../../cli/index.ts';
+import { get as getEventCacheEntry } from '../../telemetry/event-cache.ts';
 import {
   type ChecklistState,
   type StoreEvent,
@@ -61,6 +62,18 @@ export async function initializeChecklist() {
           loaded: true,
         }) satisfies StoreState
     );
+
+    // Check if ai-setup has ever been run and mark it as done
+    const aiSetupEvent = await getEventCacheEntry('ai-setup');
+    if (aiSetupEvent) {
+      const currentState = store.getState();
+      if (currentState.items.aiSetup?.status === 'open') {
+        store.setState((state) => ({
+          ...state,
+          items: { ...state.items, aiSetup: { ...state.items.aiSetup, status: 'done' } },
+        }));
+      }
+    }
 
     store.onStateChange((state: StoreState, previousState: StoreState) => {
       const entries = Object.entries(state.items);

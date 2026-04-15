@@ -1,14 +1,19 @@
 import type { SDKMessage } from '@anthropic-ai/claude-agent-sdk';
 import { query } from '@anthropic-ai/claude-agent-sdk';
-import { writeFile } from 'node:fs/promises';
-import { join } from 'node:path';
-import { AGENTS, resolveClaudeSdkModel, type AgentDriver, type Execution } from './config.ts';
+import {
+  AGENTS,
+  resolveClaudeSdkModel,
+  type AgentDriver,
+  type AgentExecutionResult,
+  type Execution,
+} from './config.ts';
+import { trimNonChatOutput } from '../output-preview.ts';
 import type { Logger } from '../utils.ts';
 
 export const claudeAgent: AgentDriver = {
   name: 'claude',
 
-  async execute({ prompt, projectPath, variant, resultsDir, logger }): Promise<Execution> {
+  async execute({ prompt, projectPath, variant, logger }): Promise<AgentExecutionResult> {
     if (variant.agent !== 'claude') {
       throw new Error(`Claude driver received unsupported variant: ${variant.agent}`);
     }
@@ -30,8 +35,11 @@ export const claudeAgent: AgentDriver = {
         options: {
           model: sdkModel,
           cwd: projectPath,
+          env: {
+            ...process.env,
+            STORYBOOK_DISABLE_TELEMETRY: '1',
+          },
           allowedTools: [...settings.allowedTools],
-          maxTurns: settings.maxTurns,
           effort,
           debug: settings.debug,
           systemPrompt: settings.systemPrompt,
@@ -40,7 +48,7 @@ export const claudeAgent: AgentDriver = {
         logMessage(message, logger);
         messages.push(message);
 
-        if (message.type === 'result' && message.subtype === 'success') {
+        if (message.type === 'result') {
           cost = message.total_cost_usd as number | undefined;
           turns = (message.num_turns as number) ?? 0;
           durationApi =
@@ -49,18 +57,22 @@ export const claudeAgent: AgentDriver = {
               : undefined;
         }
       }
-    } finally {
-      await writeTranscript(resultsDir, messages, logger);
+    } catch (error) {
+      logger.logError(
+        `Claude execution failed: ${error instanceof Error ? error.message : String(error)}`
+      );
+      throw error;
     }
 
-    const duration = (Date.now() - startTime) / 1000;
-
-    return {
+    const execution: Execution = {
       cost,
-      duration,
+      duration: (Date.now() - startTime) / 1000,
       durationApi,
       turns,
+      terminalResultSubtype: getLastResultSubtype(messages),
     };
+
+    return { execution, transcript: messages };
   },
 };
 
@@ -71,7 +83,7 @@ function logMessage(message: SDKMessage, logger: Logger) {
         if (block.type === 'text') {
           logger.log(`💬 ${block.text}`);
         } else if (block.type === 'tool_use') {
-          logger.log(`🔧 ${block.name}(${JSON.stringify(block.input).slice(0, 200)})`);
+          logger.log(`🔧 ${block.name}(${formatToolInput(block.input)})`);
         }
       }
       if (message.error) {
@@ -86,16 +98,15 @@ function logMessage(message: SDKMessage, logger: Logger) {
         if (block.type === 'tool_result') {
           const text =
             typeof block.content === 'string'
-              ? block.content.slice(0, 200)
+              ? block.content
               : Array.isArray(block.content)
                 ? block.content
                     .map((b: { type: string; text?: string }) =>
-                      'text' in b ? b.text : `[${b.type}]`
+                      'text' in b ? (b.text ?? '') : `[${b.type}]`
                     )
                     .join('')
-                    .slice(0, 200)
                 : '[no content]';
-          logger.log(`📎 tool_result(${block.tool_use_id?.slice(-8)}): ${text}`);
+          logger.log(`📎 tool_result(${block.tool_use_id?.slice(-8)}): ${trimNonChatOutput(text)}`);
         }
       }
       break;
@@ -119,7 +130,7 @@ function logMessage(message: SDKMessage, logger: Logger) {
       }
       break;
     case 'tool_use_summary':
-      logger.log(`📋 ${message.summary.slice(0, 200)}`);
+      logger.log(`📋 ${message.summary}`);
       break;
     case 'rate_limit_event':
       logger.log(
@@ -131,12 +142,28 @@ function logMessage(message: SDKMessage, logger: Logger) {
   }
 }
 
-async function writeTranscript(resultsDir: string, messages: unknown[], logger: Logger) {
+function formatToolInput(value: unknown) {
   try {
-    await writeFile(join(resultsDir, 'transcript.json'), JSON.stringify(messages, null, 2));
-  } catch (error) {
-    logger.logError(
-      `Failed to persist transcript: ${error instanceof Error ? error.message : String(error)}`
-    );
+    return trimNonChatOutput(JSON.stringify(value, null, 2));
+  } catch {
+    return trimNonChatOutput(String(value));
   }
+}
+
+function getLastResultSubtype(messages: unknown[]): string | undefined {
+  for (let index = messages.length - 1; index >= 0; index -= 1) {
+    const message = messages[index];
+    if (
+      message &&
+      typeof message === 'object' &&
+      'type' in message &&
+      message.type === 'result' &&
+      'subtype' in message &&
+      typeof message.subtype === 'string'
+    ) {
+      return message.subtype;
+    }
+  }
+
+  return undefined;
 }

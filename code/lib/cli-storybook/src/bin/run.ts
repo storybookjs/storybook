@@ -23,7 +23,7 @@ import { doctor } from '../doctor/index.ts';
 import { link } from '../link.ts';
 import { migrate } from '../migrate.ts';
 import { sandbox } from '../sandbox.ts';
-import { aiPrepare } from '../ai/index.ts';
+import { aiSetup } from '../ai/index.ts';
 import { type UpgradeOptions, upgrade } from '../upgrade.ts';
 
 addToGlobalContext('cliVersion', versions.storybook);
@@ -129,9 +129,7 @@ command('add <addon>')
 
       await add(addonName, options);
 
-      if (!options.disableTelemetry) {
-        await telemetry('add', { addon: addonName, source: 'cli' });
-      }
+      await telemetry('add', { addon: addonName, source: 'cli' });
       logger.outro('Done!');
     }).catch(handleCommandFailure);
   });
@@ -157,9 +155,7 @@ command('remove <addon>')
         packageManager,
         skipInstall: options.skipInstall,
       });
-      if (!options.disableTelemetry) {
-        await telemetry('remove', { addon: addonName, source: 'cli' });
-      }
+      await telemetry('remove', { addon: addonName, source: 'cli' });
       logger.outro('Done!');
     }).catch(handleCommandFailure(options.logfile))
   );
@@ -307,7 +303,7 @@ const aiCommand = command('ai')
   );
 
 aiCommand
-  .command('prepare')
+  .command('setup')
   .description('Generate setup instructions to write stories for real components')
   .addOption(
     new Option('--package-manager <type>', 'Force package manager for installing deps').choices(
@@ -318,8 +314,8 @@ aiCommand
   .action(async (options, cmd) => {
     const parentOptions = cmd.parent?.opts() ?? {};
     const mergedOptions = { ...parentOptions, ...options };
-    await withTelemetry('ai-prepare', { cliOptions: mergedOptions }, async () => {
-      await aiPrepare(mergedOptions);
+    await withTelemetry('ai-setup', { cliOptions: mergedOptions }, async () => {
+      await aiSetup(mergedOptions);
     }).catch(handleCommandFailure(mergedOptions.logfile));
   });
 

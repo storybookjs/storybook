@@ -21,7 +21,7 @@ interface CommandWithPrivates {
   telemetryService: {
     trackNewUserCheck: ReturnType<typeof vi.fn>;
     trackInstallType: ReturnType<typeof vi.fn>;
-    trackAiPromptNudge: ReturnType<typeof vi.fn>;
+    trackAiSetupNudge: ReturnType<typeof vi.fn>;
   };
 }
 
@@ -35,7 +35,7 @@ describe('UserPreferencesCommand', () => {
     renderer: 'react' as SupportedRenderer,
     projectType: ProjectType.REACT,
     isTestFeatureAvailable: true,
-    isAiPrepareAvailable: false,
+    isAiSetupAvailable: false,
   };
 
   afterAll(() => {
@@ -93,7 +93,7 @@ describe('UserPreferencesCommand', () => {
     const mockTelemetryService = {
       trackNewUserCheck: vi.fn(),
       trackInstallType: vi.fn(),
-      trackAiPromptNudge: vi.fn(),
+      trackAiSetupNudge: vi.fn(),
     };
 
     // Inject mocked services
@@ -225,7 +225,7 @@ describe('UserPreferencesCommand', () => {
 
       const result = await command.execute({
         ...defaultExecuteOptions,
-        isAiPrepareAvailable: true,
+        isAiSetupAvailable: true,
       });
 
       expect(prompt.confirm).toHaveBeenCalledWith(
@@ -249,7 +249,7 @@ describe('UserPreferencesCommand', () => {
 
       const result = await command.execute({
         ...defaultExecuteOptions,
-        isAiPrepareAvailable: true,
+        isAiSetupAvailable: true,
       });
 
       expect(result.selectedFeatures.has(Feature.AI)).toBe(false);
@@ -263,7 +263,7 @@ describe('UserPreferencesCommand', () => {
 
       const result = await command.execute({
         ...defaultExecuteOptions,
-        isAiPrepareAvailable: true,
+        isAiSetupAvailable: true,
       });
 
       expect(prompt.confirm).not.toHaveBeenCalled();
@@ -287,19 +287,19 @@ describe('UserPreferencesCommand', () => {
       (yesCommand as unknown as CommandWithPrivates).telemetryService = {
         trackNewUserCheck: vi.fn(),
         trackInstallType: vi.fn(),
-        trackAiPromptNudge: vi.fn(),
+        trackAiSetupNudge: vi.fn(),
       };
 
       const result = await yesCommand.execute({
         ...defaultExecuteOptions,
-        isAiPrepareAvailable: true,
+        isAiSetupAvailable: true,
       });
 
       expect(prompt.confirm).not.toHaveBeenCalled();
       expect(result.selectedFeatures.has(Feature.AI)).toBe(true);
     });
 
-    it('should not prompt for AI setup when isAiPrepareAvailable is false', async () => {
+    it('should not prompt for AI setup when isAiSetupAvailable is false', async () => {
       Object.defineProperty(process.stdout, 'isTTY', {
         value: true,
         configurable: true,
@@ -309,7 +309,7 @@ describe('UserPreferencesCommand', () => {
 
       const result = await command.execute({
         ...defaultExecuteOptions,
-        isAiPrepareAvailable: false,
+        isAiSetupAvailable: false,
       });
 
       expect(prompt.confirm).not.toHaveBeenCalled();
@@ -329,7 +329,7 @@ describe('UserPreferencesCommand', () => {
 
       const result = await command.execute({
         ...defaultExecuteOptions,
-        isAiPrepareAvailable: true,
+        isAiSetupAvailable: true,
       });
 
       expect(result.selectedFeatures.has(Feature.AI)).toBe(true);
@@ -351,7 +351,7 @@ describe('UserPreferencesCommand', () => {
 
       const result = await command.execute({
         ...defaultExecuteOptions,
-        isAiPrepareAvailable: true,
+        isAiSetupAvailable: true,
       });
 
       expect(result.selectedFeatures.has(Feature.AI)).toBe(false);
@@ -370,11 +370,11 @@ describe('UserPreferencesCommand', () => {
 
       await command.execute({
         ...defaultExecuteOptions,
-        isAiPrepareAvailable: true,
+        isAiSetupAvailable: true,
       });
 
       const telemetryService = (command as unknown as CommandWithPrivates).telemetryService;
-      expect(telemetryService.trackAiPromptNudge).toHaveBeenCalledWith({ skipPrompt: false });
+      expect(telemetryService.trackAiSetupNudge).toHaveBeenCalledWith({ skipPrompt: false });
     });
 
     it('should not track ai-prompt-nudge telemetry when user declines AI setup', async () => {
@@ -388,23 +388,23 @@ describe('UserPreferencesCommand', () => {
 
       await command.execute({
         ...defaultExecuteOptions,
-        isAiPrepareAvailable: true,
+        isAiSetupAvailable: true,
       });
 
       const telemetryService = (command as unknown as CommandWithPrivates).telemetryService;
-      expect(telemetryService.trackAiPromptNudge).not.toHaveBeenCalled();
+      expect(telemetryService.trackAiSetupNudge).not.toHaveBeenCalled();
     });
 
     it('should track ai-prompt-nudge telemetry when AI is auto-accepted in non-interactive mode', async () => {
       // Non-interactive (no TTY) with AI available — auto-accepts
       const result = await command.execute({
         ...defaultExecuteOptions,
-        isAiPrepareAvailable: true,
+        isAiSetupAvailable: true,
       });
 
       expect(result.selectedFeatures.has(Feature.AI)).toBe(true);
       const telemetryService = (command as unknown as CommandWithPrivates).telemetryService;
-      expect(telemetryService.trackAiPromptNudge).toHaveBeenCalledWith({ skipPrompt: true });
+      expect(telemetryService.trackAiSetupNudge).toHaveBeenCalledWith({ skipPrompt: true });
     });
   });
 

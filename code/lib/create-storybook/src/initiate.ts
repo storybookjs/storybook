@@ -29,7 +29,7 @@ import type { CommandOptions } from './generators/types.ts';
 import { FeatureCompatibilityService } from './services/FeatureCompatibilityService.ts';
 import { TelemetryService } from './services/TelemetryService.ts';
 
-/** Validate test feature compatibility and check AI prepare support */
+/** Validate test feature compatibility and check AI setup support */
 async function checkFeatureSupport(
   packageManager: JsPackageManager,
   framework: SupportedFramework | null,
@@ -37,7 +37,7 @@ async function checkFeatureSupport(
   renderer: SupportedRenderer
 ): Promise<{
   isTestFeatureAvailable: boolean;
-  isAiPrepareAvailable: boolean;
+  isAiSetupAvailable: boolean;
 }> {
   const featureService = new FeatureCompatibilityService(packageManager);
 
@@ -47,11 +47,11 @@ async function checkFeatureSupport(
     process.cwd()
   );
 
-  const aiPrepare = FeatureCompatibilityService.supportsAIPrepareFeature(renderer, builder);
+  const aiSetup = FeatureCompatibilityService.supportsAISetupFeature(renderer, builder);
 
   return {
     isTestFeatureAvailable: result.compatible,
-    isAiPrepareAvailable: aiPrepare,
+    isAiSetupAvailable: aiSetup,
   };
 }
 
@@ -76,7 +76,7 @@ export async function doInitiate(options: CommandOptions): Promise<
   }
 
   // Initialize services
-  const telemetryService = new TelemetryService(options.disableTelemetry);
+  const telemetryService = new TelemetryService();
 
   // Register all framework generators
   registerAllGenerators();
@@ -97,7 +97,7 @@ export async function doInitiate(options: CommandOptions): Promise<
   );
 
   // Step 4: Get user preferences and feature selections (with framework/builder for validation)
-  const { isTestFeatureAvailable, isAiPrepareAvailable } = await checkFeatureSupport(
+  const { isTestFeatureAvailable, isAiSetupAvailable } = await checkFeatureSupport(
     packageManager,
     framework,
     builder,
@@ -111,7 +111,7 @@ export async function doInitiate(options: CommandOptions): Promise<
     renderer,
     projectType,
     isTestFeatureAvailable,
-    isAiPrepareAvailable,
+    isAiSetupAvailable,
   });
 
   // Step 5: Execute generator with dependency collector (now with frameworkInfo)

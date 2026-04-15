@@ -22,9 +22,11 @@ import { componentTransform, readConfig, vitestTransform } from 'storybook/inter
 import { MainFileMissingError } from 'storybook/internal/server-errors';
 import {
   detectAgent,
+  isTelemetryModuleEnabled,
   isWithinInitialSession,
   oneWayHash,
   telemetry,
+  setTelemetryEnabled,
 } from 'storybook/internal/telemetry';
 import type { Presets } from 'storybook/internal/types';
 
@@ -222,6 +224,8 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
     presets.apply('core'),
     presets.apply('features', {}),
   ]);
+
+  await setTelemetryEnabled(!core?.disableTelemetry);
 
   const pluginsToIgnore = [
     'storybook:react-docgen-plugin',
@@ -458,26 +462,23 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
     async configureVitest(context) {
       context.vitest.config.coverage.exclude.push('storybook-static');
 
-      if (
-        !core?.disableTelemetry &&
-        !optionalEnvToBoolean(process.env.STORYBOOK_DISABLE_TELEMETRY)
-      ) {
-        // NOTE: we start telemetry immediately but do not wait on it. Typically it should complete
-        // before the tests do. If not we may miss the event, we are OK with that.
-        telemetry(
-          'test-run',
-          {
-            runner: 'vitest',
-            watch: context.vitest.config.watch,
-            coverage: !!context.vitest.config.coverage?.enabled,
-          },
-          { configDir: finalOptions.configDir }
-        );
+      // NOTE: we start telemetry immediately but do not wait on it. Typically it should complete
+      // before the tests do. If not we may miss the event, we are OK with that.
+      telemetry(
+        'test-run',
+        {
+          runner: 'vitest',
+          watch: context.vitest.config.watch,
+          coverage: !!context.vitest.config.coverage?.enabled,
+        },
+        { configDir: finalOptions.configDir }
+      );
 
+      if (isTelemetryModuleEnabled()) {
         // When an agent is running vitest via CLI, inject a reporter that sends
         // detailed test result telemetry (pass/fail, error analysis, empty renders)
         const agent = detectAgent();
-        withinAgenticSetupSession = !!agent && (await isWithinInitialSession('ai-prepare'));
+        withinAgenticSetupSession = !!agent && (await isWithinInitialSession('ai-setup'));
         if (agent && withinAgenticSetupSession) {
           context.vitest.config.reporters.push(
             new AgentTelemetryReporter({

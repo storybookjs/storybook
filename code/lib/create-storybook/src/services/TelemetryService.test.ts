@@ -21,7 +21,7 @@ describe('TelemetryService', () => {
     let telemetryService: TelemetryService;
 
     beforeEach(() => {
-      telemetryService = new TelemetryService(false);
+      telemetryService = new TelemetryService();
     });
 
     it('should track new user check', async () => {
@@ -73,79 +73,29 @@ describe('TelemetryService', () => {
     });
 
     it('should track ai-prompt-nudge event with context when prompt was shown', async () => {
-      await telemetryService.trackAiPromptNudge({ skipPrompt: false });
+      await telemetryService.trackAiSetupNudge({ skipPrompt: false });
 
       expect(telemetry).toHaveBeenCalledWith('ai-prompt-nudge', {
-        id: 'prepare',
+        id: 'setup',
         origin: 'init',
         context: { skipPrompt: false },
       });
     });
 
     it('should track ai-prompt-nudge event with context when prompt was skipped', async () => {
-      await telemetryService.trackAiPromptNudge({ skipPrompt: true });
+      await telemetryService.trackAiSetupNudge({ skipPrompt: true });
 
       expect(telemetry).toHaveBeenCalledWith('ai-prompt-nudge', {
-        id: 'prepare',
+        id: 'setup',
         origin: 'init',
         context: { skipPrompt: true },
       });
     });
   });
 
-  describe('when telemetry is disabled', () => {
-    let telemetryService: TelemetryService;
-
-    beforeEach(() => {
-      telemetryService = new TelemetryService(true);
-    });
-
-    it('should not track new user check', async () => {
-      await telemetryService.trackNewUserCheck(true);
-
-      expect(telemetry).not.toHaveBeenCalled();
-    });
-
-    it('should not track install type', async () => {
-      await telemetryService.trackInstallType('light');
-
-      expect(telemetry).not.toHaveBeenCalled();
-    });
-
-    it('should not track init event', async () => {
-      await telemetryService.trackInit({
-        projectType: ProjectType.VUE3,
-        features: {
-          dev: true,
-          docs: false,
-          test: false,
-          onboarding: false,
-        },
-        newUser: false,
-      });
-
-      expect(telemetry).not.toHaveBeenCalled();
-    });
-
-    it('should not track scaffolded event', async () => {
-      await telemetryService.trackScaffolded({
-        packageManager: 'yarn',
-        projectType: 'vue-vite-ts',
-      });
-
-      expect(telemetry).not.toHaveBeenCalled();
-    });
-
-    it('should not track ai-prompt-nudge event', async () => {
-      await telemetryService.trackAiPromptNudge({ skipPrompt: false });
-
-      expect(telemetry).not.toHaveBeenCalled();
-    });
-  });
-
   describe('trackInitWithContext', () => {
     it('should track init with version and CLI integration from ancestry', async () => {
-      const telemetryService = new TelemetryService(false);
+      const telemetryService = new TelemetryService();
       const selectedFeatures = new Set([Feature.DOCS, Feature.TEST]);
 
       vi.mocked(getProcessAncestry).mockReturnValue([
@@ -170,7 +120,7 @@ describe('TelemetryService', () => {
     });
 
     it('should handle ancestry errors gracefully', async () => {
-      const telemetryService = new TelemetryService(false);
+      const telemetryService = new TelemetryService();
       const selectedFeatures = new Set([]);
 
       vi.mocked(getProcessAncestry).mockImplementation(() => {
@@ -193,18 +143,8 @@ describe('TelemetryService', () => {
       });
     });
 
-    it('should not track when telemetry is disabled', async () => {
-      const telemetryService = new TelemetryService(true);
-      const selectedFeatures = new Set([Feature.DOCS]);
-
-      await telemetryService.trackInitWithContext(ProjectType.ANGULAR, selectedFeatures, true);
-
-      expect(getProcessAncestry).not.toHaveBeenCalled();
-      expect(telemetry).not.toHaveBeenCalled();
-    });
-
     it('should detect CLI integration from ancestry', async () => {
-      const telemetryService = new TelemetryService(false);
+      const telemetryService = new TelemetryService();
       const selectedFeatures = new Set([]);
 
       vi.mocked(getProcessAncestry).mockReturnValue([{ command: 'sv create my-app' }] as any);

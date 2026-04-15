@@ -1,4 +1,4 @@
-import { flushAiPreparePending, getAiPreparePending } from './event-cache.ts';
+import { flushAiSetupPending, getAiSetupPending } from './event-cache.ts';
 import { SESSION_TIMEOUT } from './session-id.ts';
 import { createHash } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
@@ -10,19 +10,19 @@ import type { EventType } from './types.ts';
 import type { IndexEntry, StoryIndex } from 'storybook/internal/types';
 
 /**
- * Determines whether a story index entry was authored by the `sb ai prepare` flow.
+ * Determines whether a story index entry was authored by the `sb ai setup` flow.
  * Currently checks title prefix. When we migrate to a tag-based approach,
  * swap this to check for the tag instead — this is the single swap point.
  */
-export function isStoryCreatedByAIPrepare(entry: IndexEntry): boolean {
+export function isStoryCreatedByAISetup(entry: IndexEntry): boolean {
   return entry.type === 'story' && (entry.tags?.includes('ai-generated') ?? false);
 }
 
 /**
- * Count stories in the index that were created by `sb ai prepare`.
+ * Count stories in the index that were created by `sb ai setup`.
  */
 export function countAiAuthoredStories(storyIndex: StoryIndex): number {
-  return Object.values(storyIndex.entries).filter(isStoryCreatedByAIPrepare).length;
+  return Object.values(storyIndex.entries).filter(isStoryCreatedByAISetup).length;
 }
 
 /**
@@ -48,7 +48,7 @@ export async function snapshotPreviewFile(
 }
 
 /**
- * Check whether the preview file has changed from an ai-prepare baseline.
+ * Check whether the preview file has changed from an ai-setup baseline.
  * Returns true if: hash differs, file appeared, file disappeared, or file is unreadable.
  */
 export async function checkPreviewChanged(
@@ -73,7 +73,7 @@ export async function checkPreviewChanged(
 }
 
 /**
- * Check for a pending ai-prepare record and fire an evidence event if found.
+ * Check for a pending ai-setup record and fire an evidence event if found.
  *
  * Called from:
  * - `withTelemetry` after the boot event for non-dev/build CLI commands (no story index)
@@ -81,7 +81,7 @@ export async function checkPreviewChanged(
  *
  * Gated on: agent detected → pending record exists → within session window → configDir matches.
  */
-export async function collectAiPrepareEvidence(
+export async function collectAiSetupEvidence(
   eventType: EventType,
   configDir: string | undefined,
   storyIndex?: StoryIndex
@@ -93,8 +93,8 @@ export async function collectAiPrepareEvidence(
       return;
     }
 
-    // Gate 2: Is there a pending ai-prepare record?
-    const pending = await getAiPreparePending();
+    // Gate 2: Is there a pending ai-setup record?
+    const pending = await getAiSetupPending();
     if (!pending) {
       return;
     }
@@ -105,17 +105,17 @@ export async function collectAiPrepareEvidence(
     }
 
     // Gate 4: Is it within the session window?
-    const timeSincePrepare = Date.now() - pending.timestamp;
-    if (timeSincePrepare > SESSION_TIMEOUT) {
+    const timeSinceSetup = Date.now() - pending.timestamp;
+    if (timeSinceSetup > SESSION_TIMEOUT) {
       // Session expired, clean up pending record.
-      await flushAiPreparePending();
+      await flushAiSetupPending();
       return;
     }
 
-    // Don't fire evidence for ai-prepare itself — the prepare command gives the
+    // Don't fire evidence for ai-setup itself — the setup command gives the
     // prompt to the agent and exits, so we only expect changes after the agent
     // has started processing it.
-    if (eventType === 'ai-prepare') {
+    if (eventType === 'ai-setup') {
       return;
     }
 
@@ -126,12 +126,12 @@ export async function collectAiPrepareEvidence(
     const aiAuthoredStories = storyIndex ? countAiAuthoredStories(storyIndex) : undefined;
 
     await telemetry(
-      'ai-prepare-evidence',
+      'ai-setup-evidence',
       {
         previewChanged,
         aiAuthoredStories,
         sessionId: pending.sessionId,
-        timeSincePrepare,
+        timeSinceSetup,
       },
       {
         immediate: true,

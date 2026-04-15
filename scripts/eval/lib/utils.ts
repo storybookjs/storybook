@@ -17,13 +17,10 @@ export const TRIALS_DIR = resolve(EVAL_ROOT, 'trials');
 export const PROMPTS_DIR = resolve(import.meta.dirname, '..', 'prompts');
 /** Basename (no `.md`) used in docs and tests when a concrete prompt must be named. */
 export const EXAMPLE_PROMPT_BASENAME = 'pattern-copy-play';
-/**
- * Eval CLI paths relative to the monorepo root — invoke as `node ./scripts/eval/…`.
- */
-export const NODE_EVAL_TRIAL_SCRIPT = './scripts/eval/eval.ts' as const;
-export const NODE_EVAL_RUN_BATCH_SCRIPT = './scripts/eval/run-batch.ts' as const;
-export const NODE_EVAL_SYNC_BASELINES_SCRIPT = './scripts/eval/sync-baselines.ts' as const;
-export const NODE_EVAL_COLLECT_PR_DATA_SCRIPT = './scripts/eval/collect-pr-data.ts' as const;
+export const NODE_EVAL_TRIAL_SCRIPT = 'scripts/eval/eval.ts' as const;
+export const NODE_EVAL_RUN_BATCH_SCRIPT = 'scripts/eval/run-batch.ts' as const;
+export const NODE_EVAL_SYNC_BASELINES_SCRIPT = 'scripts/eval/sync-baselines.ts' as const;
+export const NODE_EVAL_COLLECT_PR_DATA_SCRIPT = 'scripts/eval/collect-pr-data.ts' as const;
 export const STORYBOOK_DIRNAME = '.storybook';
 export const EVAL_RESULTS_DIRNAME = 'eval-results';
 

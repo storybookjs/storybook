@@ -1,18 +1,18 @@
 /**
  * Eval harness entry point.
  *
- * Run from the monorepo root with Node (no jiti): `node ./scripts/eval/eval.ts …`. Node 22+
- * supports .ts natively via type stripping. Import specifiers use explicit .ts extensions.
+ * Runs with `node scripts/eval/eval.ts` (no jiti). Node 22+ supports .ts natively
+ * via type stripping. Import specifiers use explicit .ts extensions.
  *
- * Usage (from monorepo root):
- *   node ./scripts/eval/eval.ts -p mealdrop --prompt pattern-copy-play   # claude defaults
- *   node ./scripts/eval/eval.ts -p mealdrop --prompt setup -a codex      # codex defaults
- *   node ./scripts/eval/eval.ts -p mealdrop --prompt setup -m gpt-5.4    # codex (inferred)
- *   node ./scripts/eval/eval.ts -p mealdrop --prompt setup -a claude -e max
- *   node ./scripts/eval/eval.ts -p mealdrop --prompt setup --manual      # prepare only, print instructions
- *   node ./scripts/eval/eval.ts --list-projects
- *   node ./scripts/eval/eval.ts --list-models
- *   node ./scripts/eval/eval.ts --list-prompts
+ * Usage:
+ *   node scripts/eval/eval.ts -p mealdrop --prompt pattern-copy-play   # claude defaults
+ *   node scripts/eval/eval.ts -p mealdrop --prompt setup -a codex      # codex defaults
+ *   node scripts/eval/eval.ts -p mealdrop --prompt setup -m gpt-5.4    # codex (inferred)
+ *   node scripts/eval/eval.ts -p mealdrop --prompt setup -a claude -e max
+ *   node scripts/eval/eval.ts -p mealdrop --prompt setup --manual      # prepare only, print instructions
+ *   node scripts/eval/eval.ts --list-projects
+ *   node scripts/eval/eval.ts --list-models
+ *   node scripts/eval/eval.ts --list-prompts
  */
 import { writeFile } from 'node:fs/promises';
 import { join } from 'node:path';

@@ -1,4 +1,3 @@
-/** Optional `String.raw` tags for editor extensions that highlight embedded TS/JS (e.g. es6-string-javascript). */
 const ts = String.raw;
 
 const MAIN_TS = ts`import type { StorybookConfig } from '@storybook/react-vite';
@@ -73,7 +72,7 @@ const EVAL_SUPPORT_SUMMARY_MDX = `import data from '../eval-results/data.json';
 </ul>
 `;
 
-const EVAL_SUPPORT_TRANSCRIPT_MDX = `{/* Transcript renderer — keep aligned with scripts/eval/lib/result-doc-templates */}
+const EVAL_SUPPORT_TRANSCRIPT_MDX = `{/* Transcript renderer copied directly from https://github.com/storybookjs/mcp/tree/main/eval/templates/result-docs/transcript.tsx and transcript.types.ts */}
 import data from '../eval-results/data.json';
 import { Transcript } from './transcript';
 
@@ -83,8 +82,8 @@ import { Transcript } from './transcript';
 `;
 
 const EVAL_SUPPORT_TRANSCRIPT_TSX = `/*
- * Transcript UI for eval results — keep aligned with scripts/eval/lib/result-doc-templates/transcript.tsx.
- * This baseline copy keeps only the minimum lint shims required by Storybook's monorepo.
+ * Keep the baseline copies exact to https://github.com/storybookjs/mcp/blob/main/eval/templates/result-docs/transcript.tsx.
+ * This repo-local template keeps only the minimum lint shims required by Storybook's monorepo.
  */
 import { useEffect, useRef, useState } from 'react';
 import type {

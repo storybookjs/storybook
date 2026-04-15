@@ -166,6 +166,12 @@ export const checklistData = {
           id: 'aiSetup',
           label: 'Set up with AI',
           icon: WandIcon,
+          available: () => {
+            // Show only if the user opted into AI during `storybook init`
+            // OR if they've run `storybook ai setup`. Both events live in STORYBOOK_LAST_EVENTS.
+            const events = globalThis?.STORYBOOK_LAST_EVENTS;
+            return !!(events?.['ai-init-opt-in'] || events?.['ai-setup']);
+          },
           criteria: 'ai setup command has been run',
           showOnGuidePage: false,
           action: {

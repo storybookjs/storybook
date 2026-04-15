@@ -48,7 +48,8 @@ export type EventType =
   | 'ai-setup'
   | 'ai-setup-evidence'
   | 'ai-setup-final-scoring'
-  | 'ai-prompt-nudge';
+  | 'ai-prompt-nudge'
+  | 'ai-init-opt-in';
 
 export interface Dependency {
   version: string | undefined;

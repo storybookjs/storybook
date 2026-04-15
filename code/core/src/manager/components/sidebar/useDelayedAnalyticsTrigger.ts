@@ -33,10 +33,17 @@ export function useDelayedAnalyticsTrigger(): void {
       }
       fired.current = true;
 
+      const lastEvents = global.STORYBOOK_LAST_EVENTS;
+
+      // Only fire if the user has opted into AI (during `storybook init`) or run `sb ai setup`.
+      if (!lastEvents?.['ai-init-opt-in'] && !lastEvents?.['ai-setup']) {
+        return;
+      }
+
+      const aiSetupEvent = lastEvents?.['ai-setup'];
+
       // if `ai setup` is in the same session, we run ghost stories and ai setup analytics.
-      if (
-        global.STORYBOOK_LAST_EVENTS?.['ai-setup']?.body.sessionId === global.STORYBOOK_SESSION_ID
-      ) {
+      if (aiSetupEvent && aiSetupEvent.body.sessionId === global.STORYBOOK_SESSION_ID) {
         api.emit(GHOST_STORIES_REQUEST);
         api.emit(AI_SETUP_ANALYTICS_REQUEST);
       }

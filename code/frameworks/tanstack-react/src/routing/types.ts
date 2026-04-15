@@ -1,3 +1,4 @@
+import type React from 'react';
 import type { AnyRootRoute, AnyRoute, Route, FileRoutesByPath } from '@tanstack/react-router';
 import type { RouteOptions } from '@tanstack/router-core';
 
@@ -93,17 +94,47 @@ export type CreateStoryRouteOptions<TRoute = undefined> = StoryRouteFileOptions<
 export type StoryRouteOptions<TRoute = undefined> = CreateStoryRouteOptions<TRoute> | AnyRoute;
 
 /**
- * Extracts a single route option type directly from the route's options,
- * avoiding indexing into deferred conditional types (which causes DTS errors).
+ * Per-route override options for use inside `RouteTreeOverrides`.
+ * Users can override `component`, `loader`, `beforeLoad`, etc. for a specific route.
+ * Set `component: 'story'` to mark which route should render the Story component.
  */
-type RouteOption<TRoute, K extends string> =
-  IsRoute<TRoute> extends true
-    ? TRoute extends { options: Record<K, infer V> }
-      ? V
-      : undefined
-    : K extends keyof RouteOptions<unknown>
-      ? RouteOptions<unknown>[K]
-      : undefined;
+export interface RouteOverrideOptions {
+  /** The component to render for this route. Use `'story'` to insert the Story. */
+  component?: (() => React.JSX.Element) | 'story';
+  /** Override the route's loader function. */
+  loader?: (() => unknown) | (() => Promise<unknown>);
+  /** Override the route's beforeLoad function. */
+  beforeLoad?: (() => void) | (() => Promise<void>) | (() => Record<string, unknown>);
+  /** Override the route's search params validation. */
+  validateSearch?: (input: Record<string, unknown>) => Record<string, unknown>;
+  /** Override the route's loader dependencies. */
+  loaderDeps?: (opts: { search: Record<string, unknown> }) => Record<string, unknown>;
+  /** Override the route's context function. */
+  context?: (() => Record<string, unknown>) | Record<string, unknown>;
+  /** Override the route's error component. */
+  errorComponent?: () => React.JSX.Element;
+  /** Override the route's pending component. */
+  pendingComponent?: () => React.JSX.Element;
+  /** Override the route's not-found component. */
+  notFoundComponent?: () => React.JSX.Element;
+}
+
+/**
+ * A map of route overrides keyed by route ID.
+ * Each entry can override `component`, `loader`, `beforeLoad`, etc. for that route.
+ *
+ * @example
+ * ```ts
+ * routeOverrides: {
+ *   '/_authed': { beforeLoad: () => {} },
+ *   '/demo/form/simple/$id': {
+ *     component: 'story',
+ *     loader: async () => ({ name: 'Mock User' }),
+ *   },
+ * }
+ * ```
+ */
+export type RouteTreeOverrides = Record<string, RouteOverrideOptions>;
 
 export interface RouterParameters<TRoute = undefined> {
   /** A route object or route options to use for this story. */
@@ -114,14 +145,24 @@ export interface RouterParameters<TRoute = undefined> {
   params?: StoryRouteParams<TRoute>;
   /** Search/query params to append to the URL (e.g. `{ tab: 'details' }`). */
   query?: Partial<StoryRouteSearch<TRoute>>;
-  /** Override the route's loader function. */
-  loader?: RouteOption<TRoute, 'loader'>;
-  /** Override the route's beforeLoad function. */
-  beforeLoad?: RouteOption<TRoute, 'beforeLoad'>;
-  /** Override the route's search params validation. */
-  validateSearch?: RouteOption<TRoute, 'validateSearch'>;
-  /** Override the route's loader dependencies. */
-  loaderDeps?: RouteOption<TRoute, 'loaderDeps'>;
-  /** Override the route's context. */
-  context?: Record<string, unknown>;
+  /**
+   * Override options for specific routes in the app route tree (route tree mode only).
+   *
+   * Each key is a route ID (e.g. `'/about'`, `'__root__'`, `'/demo/form/simple/$id'`).
+   * Values can override `component`, `loader`, `beforeLoad`, etc. for that route.
+   *
+   * Use `component: 'story'` to explicitly mark which route should render the Story.
+   *
+   * @example
+   * ```ts
+   * routeOverrides: {
+   *   '/_authed': { beforeLoad: () => {} },
+   *   '/demo/form/simple/$id': {
+   *     component: 'story',
+   *     loader: async () => ({ name: 'Mock User' }),
+   *   },
+   * }
+   * ```
+   */
+  routeOverrides?: RouteTreeOverrides;
 }

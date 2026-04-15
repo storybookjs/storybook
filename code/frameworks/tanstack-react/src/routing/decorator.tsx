@@ -12,7 +12,7 @@ import {
   defaultStringifySearch,
 } from '@tanstack/react-router';
 import type { Router, AnyRootRoute } from '@tanstack/react-router';
-import type { RouterParameters } from './types';
+import type { RouterParameters } from './types.ts';
 
 export type MockRouterOptions = {
   Story: ComponentType;
@@ -27,7 +27,6 @@ function isRoute(value: unknown): value is InstanceType<typeof Route> {
   return value instanceof Route || value instanceof RootRoute;
 }
 
-// Priority: route from parameters > route from context meta > create new route
 function getRouteFromContext(
   Story: ComponentType,
   context: Parameters<Decorator>[1]
@@ -45,13 +44,24 @@ function getRouteFromContext(
       : undefined;
 
   if (resolvedRoute instanceof RootRoute) {
+    // Clone to avoid mutating the original route object across stories.
+    const clonedRoot = createRootRoute({ ...(resolvedRoute as any).options });
     const children = resolvedRoute.children as Route[] | undefined;
     if (children?.length) {
-      children[0].update({ component: () => <Story />, ...routeOverrides } as any);
+      const clonedChildren = children.map((child) => {
+        const { id: _id, getParentRoute: _g, ...childOpts } = (child as any).options ?? {};
+        return createRoute({
+          ...childOpts,
+          ...routeOverrides,
+          component: () => <Story />,
+          getParentRoute: () => clonedRoot,
+        });
+      });
+      clonedRoot.addChildren(clonedChildren);
     } else {
-      resolvedRoute.update({ component: () => <Story />, ...routeOverrides } as any);
+      clonedRoot.update({ component: () => <Story />, ...routeOverrides } as any);
     }
-    return resolvedRoute;
+    return clonedRoot;
   }
 
   if (resolvedRoute instanceof Route) {
@@ -69,8 +79,7 @@ function getRouteFromContext(
     return root;
   }
 
-  // No route instance
-  // create from plain options or default
+  // No route instance — create from plain options or default.
   const root = createRootRoute();
   // @ts-expect-error route options spread
   const child = createRoute({
@@ -90,9 +99,9 @@ function createStoryRouter({ Story, context }: MockRouterOptions): Router<AnyRoo
 
   const inferredPath =
     routerParameters?.path ||
-    routeTree.children[0]?.fullPath ||
-    routeTree.children[0]?.path ||
-    routeTree.children[0]?.options?.path;
+    routeTree.children?.[0]?.fullPath ||
+    routeTree.children?.[0]?.path ||
+    routeTree.children?.[0]?.options?.path;
 
   const initialPath = inferredPath ?? '/';
 

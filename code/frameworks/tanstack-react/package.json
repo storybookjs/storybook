@@ -82,8 +82,7 @@
   "dependencies": {
     "@storybook/builder-vite": "workspace:*",
     "@storybook/react": "workspace:*",
-    "@storybook/react-vite": "workspace:*",
-    "unenv": "^2.0.0-rc.24"
+    "@storybook/react-vite": "workspace:*"
   },
   "devDependencies": {
     "@tanstack/react-router": "^1.168.10",

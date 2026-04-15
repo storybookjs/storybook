@@ -129,9 +129,7 @@ export async function resolveProjectPaths(
   };
 }
 
-async function preflightRepos(
-  projects: Array<{ project: Project; paths: ProjectPaths }>
-) {
+async function preflightRepos(projects: Array<{ project: Project; paths: ProjectPaths }>) {
   const logger = createLogger();
   for (const { project, paths } of projects) {
     await ensureSourceClone(project, paths.repoRoot, logger);

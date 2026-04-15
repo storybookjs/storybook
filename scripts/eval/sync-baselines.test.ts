@@ -393,9 +393,9 @@ describe('syncBaselines', () => {
     expect(existsSync(join(reposRoot, 'mealdrop', '.git'))).toBe(true);
     expect(existsSync(join(reposRoot, 'wikitok', '.git'))).toBe(true);
 
-    expect(
-      readFileSync(join(reposRoot, 'mealdrop', '.storybook', 'main.ts'), 'utf-8')
-    ).toContain('./eval-support/*.mdx');
+    expect(readFileSync(join(reposRoot, 'mealdrop', '.storybook', 'main.ts'), 'utf-8')).toContain(
+      './eval-support/*.mdx'
+    );
     expect(
       readFileSync(join(reposRoot, 'mealdrop', '.storybook', 'eval-results', 'data.json'), 'utf-8')
     ).toBe('{}\n');
@@ -566,10 +566,7 @@ function resultDocTemplate(file: 'transcript.tsx' | 'transcript.types.ts') {
 }
 
 /** Create a bare remote repo with initial file content (no local clone). */
-function setupBareRemoteWithContent(opts: {
-  remoteRoot: string;
-  files: Record<string, string>;
-}) {
+function setupBareRemoteWithContent(opts: { remoteRoot: string; files: Record<string, string> }) {
   const staging = mkdtempSync(join(tmpdir(), 'eval-sync-staging-'));
   execFileSync('git', ['init', '--bare', '--initial-branch=main', opts.remoteRoot]);
   execFileSync('git', ['clone', opts.remoteRoot, staging]);

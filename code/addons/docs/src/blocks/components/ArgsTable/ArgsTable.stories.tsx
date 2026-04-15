@@ -126,9 +126,11 @@ export const AllControls = {
 
 export const AllControlsObjectSet: Story = {
   args: AllControls.args,
-  play: async ({ canvas, step }) => {
+  play: async ({ canvas, canvasElement, step }) => {
     await step('Switch the object control from empty to filled', async () => {
-      await fireEvent.click(canvas.getByRole('button', { name: 'Set object' }));
+      const setObjectButton = canvasElement.querySelector('#set-someObject') as HTMLButtonElement;
+
+      await fireEvent.click(setObjectButton);
 
       const rawInput = canvas.getByRole('textbox', { name: 'Edit someObject as JSON' });
       await expect(rawInput).toBeVisible();

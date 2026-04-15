@@ -157,6 +157,7 @@ describe('buildBatchRunDescriptors', () => {
       { project: 'wikitok', agent: 'claude', repetition: 1 },
       { project: 'echarts', agent: 'claude', repetition: 1 },
       { project: 'evergreen-ci', agent: 'claude', repetition: 1 },
+      { project: 'excalidraw', agent: 'claude', repetition: 1 },
     ]);
   });
 });
@@ -175,7 +176,14 @@ describe('buildBatchVariants', () => {
 
   it('excludes baklava from the default batch projects', () => {
     expect(BATCH_EXCLUDED_PROJECT_NAMES).toEqual(['baklava']);
-    expect(BATCH_PROJECT_NAMES).toEqual(['mealdrop', 'edgy', 'wikitok', 'echarts', 'evergreen-ci']);
+    expect(BATCH_PROJECT_NAMES).toEqual([
+      'mealdrop',
+      'edgy',
+      'wikitok',
+      'echarts',
+      'evergreen-ci',
+      'excalidraw',
+    ]);
   });
 
   it('supports enabling codex variants when requested', () => {

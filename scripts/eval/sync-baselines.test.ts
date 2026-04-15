@@ -1,7 +1,7 @@
 import { execFileSync } from 'node:child_process';
 import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { mkdir } from 'node:fs/promises';
-import { dirname, join, resolve } from 'node:path';
+import { dirname, join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { afterEach, describe, expect, it } from 'vitest';
 import { BASELINE_STORYBOOK_FILES } from './lib/baseline-template-files.ts';
@@ -483,7 +483,7 @@ function getRemoteHead(remoteRoot: string) {
 
 function baselineTemplate(path: string) {
   const normalizedPath = path.replace(/^\.storybook\//, '');
-  const template = BASELINE_STORYBOOK_FILES[normalizedPath];
+  const template = (BASELINE_STORYBOOK_FILES as Record<string, string>)[normalizedPath];
   if (template == null) {
     throw new Error(`Missing baseline template for ${path}`);
   }

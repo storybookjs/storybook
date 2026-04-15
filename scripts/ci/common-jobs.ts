@@ -128,7 +128,7 @@ export const storybookChromatic = defineJob(
       class: 'medium+',
     },
     steps: [
-      ...workflow.restoreLinux(),
+      ...workflow.restoreLinux({ shallow: false }),
       {
         run: {
           name: 'Build internal storybook',

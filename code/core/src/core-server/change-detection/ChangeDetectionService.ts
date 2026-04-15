@@ -1,4 +1,4 @@
-import { relative, resolve } from 'node:path';
+import { join, relative } from 'pathe';
 
 import { logger } from 'storybook/internal/node-logger';
 import type {
@@ -41,23 +41,14 @@ function getStoryIdsByAbsolutePath(
   workingDir: string
 ): Map<string, Set<string>> {
   const storyIdsByFile = new Map<string, Set<string>>();
-  const addStoryId = (filePath: string, storyId: string) => {
-    const storyIds = storyIdsByFile.get(filePath) ?? new Set<string>();
-    storyIds.add(storyId);
-    storyIdsByFile.set(filePath, storyIds);
-  };
-
   Object.values(storyIndex.entries).forEach((entry) => {
-    if (entry.type !== 'story' || entry.importPath.startsWith('virtual:')) {
-      return;
+    if (entry.type === 'story' && !entry.importPath.startsWith('virtual:')) {
+      const filePath = join(workingDir, entry.importPath);
+      const storyIds = storyIdsByFile.get(filePath) ?? new Set<string>();
+      storyIds.add(entry.id);
+      storyIdsByFile.set(filePath, storyIds);
     }
-
-    const absolutePath = resolve(workingDir, entry.importPath);
-    const normalizedAbsolutePath = normalizePath(absolutePath);
-    addStoryId(absolutePath, entry.id);
-    addStoryId(normalizedAbsolutePath, entry.id);
   });
-
   return storyIdsByFile;
 }
 
@@ -78,11 +69,6 @@ function mergeStatusValues(
   }
 
   return nextValue;
-}
-
-function toRepoRelativePath(repoRoot: string, filePath: string): string {
-  const relativePath = relative(repoRoot, filePath);
-  return relativePath.startsWith('\\\\?\\') ? relativePath : relativePath.replace(/\\/g, '/');
 }
 
 /**
@@ -255,12 +241,8 @@ export class ChangeDetectionService {
       this.options.storyIndexGeneratorPromise,
     ]);
 
-    const changedFiles = new Set(
-      Array.from(changes.changed).map((filePath) => normalizePath(resolve(repoRoot, filePath)))
-    );
-    const newFiles = new Set(
-      Array.from(changes.new).map((filePath) => normalizePath(resolve(repoRoot, filePath)))
-    );
+    const changedFiles = new Set(Array.from(changes.changed).map((path) => join(repoRoot, path)));
+    const newFiles = new Set(Array.from(changes.new).map((path) => join(repoRoot, path)));
     const scannedFiles = new Set([...changedFiles, ...newFiles]);
     const normalizedModuleGraph = new Map<string, Set<ModuleNode>>();
     moduleGraph.forEach((nodes, filePath) => {
@@ -302,7 +284,7 @@ export class ChangeDetectionService {
         storyIds.forEach((storyId) => {
           const existingStatus = statuses.get(storyId);
           const changedStoryFiles = new Set<string>(existingStatus?.data?.changedFiles ?? []);
-          changedStoryFiles.add(toRepoRelativePath(repoRoot, changedFile));
+          changedStoryFiles.add(relative(repoRoot, changedFile));
 
           statuses.set(storyId, {
             storyId,

@@ -131,7 +131,15 @@ const extractEnumValues = (compodocType: any) => {
   }
 
   try {
-    return compodocType.split('|').map((value) => JSON.parse(value));
+    return compodocType.split('|').map((value) => {
+      const trimmed = value.trim();
+      // Handle quoted string literals like 'S' or "S"
+      if ((trimmed.startsWith("'") && trimmed.endsWith("'")) ||
+          (trimmed.startsWith('"') && trimmed.endsWith('"'))) {
+        return trimmed.slice(1, -1);
+      }
+      return JSON.parse(trimmed);
+    });
   } catch (e) {
     return null;
   }

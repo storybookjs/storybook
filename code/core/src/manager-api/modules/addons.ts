@@ -79,11 +79,11 @@ export interface SubAPI {
 }
 
 export function ensurePanel(
-  panels: Addon_Collection<Addon_BaseType>,
+  panels: Addon_Collection<Addon_BaseType> | null | undefined,
   selectedPanel?: string,
   currentPanel?: string
 ) {
-  const keys = Object.keys(panels);
+  const keys = Object.keys(panels ?? {});
 
   if (keys.indexOf(selectedPanel!) >= 0) {
     return selectedPanel;
@@ -104,7 +104,11 @@ export const init: ModuleFn<SubAPI, SubState> = ({ provider, store, fullAPI }): 
         try {
           testProvider.clear?.();
         } catch (e) {
-          logger.warn(`Failed to clear test provider "${testProvider.id}":`, e);
+          try {
+            logger.warn(`Failed to clear test provider "${testProvider.id}":`, e);
+          } catch {
+            // noop
+          }
         }
       });
     },

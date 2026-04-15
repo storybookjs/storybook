@@ -133,7 +133,7 @@ describe.skip('Build Storybook Builder', () => {
     );
   });
 
-  it('should build storybook with webpack stats.json', async () => {
+  it('should build storybook with stats.json', async () => {
     const run = await architect.scheduleBuilder('@storybook/angular:build-storybook', {
       tsConfig: 'path/to/tsConfig.json',
       compodoc: false,
@@ -158,6 +158,35 @@ describe.skip('Build Storybook Builder', () => {
         mode: 'static',
         tsConfig: 'path/to/tsConfig.json',
         statsJson: true,
+      })
+    );
+  });
+
+  it('should build storybook with custom stats.json path', async () => {
+    const run = await architect.scheduleBuilder('@storybook/angular:build-storybook', {
+      tsConfig: 'path/to/tsConfig.json',
+      compodoc: false,
+      statsJson: './custom-stats.json',
+    });
+
+    const output = await run.result;
+
+    await run.stop();
+
+    expect(output.success).toBeTruthy();
+    expect(mockRunScript).not.toHaveBeenCalledWith();
+    expect(buildStaticStandaloneMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        angularBrowserTarget: null,
+        angularBuilderContext: expect.any(Object),
+        configDir: '.storybook',
+        loglevel: undefined,
+        quiet: false,
+        outputDir: 'storybook-static',
+        packageJson: expect.any(Object),
+        mode: 'static',
+        tsConfig: 'path/to/tsConfig.json',
+        statsJson: './custom-stats.json',
       })
     );
   });

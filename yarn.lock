@@ -8999,7 +8999,6 @@ __metadata:
     "@types/node": "npm:^22.19.1"
     prop-types: "npm:^15.7.2"
     typescript: "npm:^5.9.3"
-    unenv: "npm:^2.0.0-rc.24"
     vite: "npm:^7.0.4"
   peerDependencies:
     "@tanstack/react-router": ^1.168.10
@@ -30671,15 +30670,6 @@ __metadata:
   version: 7.24.6
   resolution: "undici@npm:7.24.6"
   checksum: 10c0/0f5413ccb20bafe27637a3a02cada731c53ee75f1df79029099db3af1eaaed410488489d9f430c09bd30bf0b925cb75fc30c39dff0689f656fd6fb7d75ded95f
-  languageName: node
-  linkType: hard
-
-"unenv@npm:^2.0.0-rc.24":
-  version: 2.0.0-rc.24
-  resolution: "unenv@npm:2.0.0-rc.24"
-  dependencies:
-    pathe: "npm:^2.0.3"
-  checksum: 10c0/e8556b4287fcf647f23db790eea2782cc79f182370718680e3aba4753d5fb7177abf5d6df489c8f74f7e3ad6cd554b8623cc01caf3e6f2d5548e69178adb1691
   languageName: node
   linkType: hard
 

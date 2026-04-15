@@ -220,17 +220,14 @@ async function runStorybookDev(result: {
   projectType: ProjectType;
   packageManager: JsPackageManager;
   storybookCommand?: string | null;
-  shouldOnboard: boolean;
 }): Promise<void> {
-  const { projectType, packageManager, storybookCommand, shouldOnboard } = result;
+  const { projectType, packageManager, storybookCommand } = result;
 
   if (!storybookCommand) {
     return;
   }
 
   try {
-    const supportsOnboarding = FeatureCompatibilityService.supportsOnboarding(projectType);
-
     const parts = storybookCommand.split(' ');
 
     // Angular CLI throws "Unknown argument: silent"
@@ -257,10 +254,6 @@ async function runStorybookDev(result: {
 
       if (useAlternativePort) {
         parts.push(`-p`, `${availablePort}`);
-      }
-
-      if (supportsOnboarding && shouldOnboard) {
-        parts.push('--initial-path=/onboarding');
       }
 
       parts.push('--quiet');

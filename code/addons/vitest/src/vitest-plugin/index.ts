@@ -20,8 +20,14 @@ import {
 } from 'storybook/internal/core-server';
 import { componentTransform, readConfig, vitestTransform } from 'storybook/internal/csf-tools';
 import { MainFileMissingError } from 'storybook/internal/server-errors';
-import { setTelemetryEnabled, telemetry } from 'storybook/internal/telemetry';
-import { oneWayHash } from 'storybook/internal/telemetry';
+import {
+  detectAgent,
+  isTelemetryModuleEnabled,
+  isWithinInitialSession,
+  oneWayHash,
+  telemetry,
+  setTelemetryEnabled,
+} from 'storybook/internal/telemetry';
 import type { Presets } from 'storybook/internal/types';
 
 import { match } from 'micromatch';
@@ -36,6 +42,7 @@ import type { PluginOption } from 'vite';
 import { withoutVitePlugins } from '../../../../builders/builder-vite/src/utils/without-vite-plugins.ts';
 import type { InternalOptions, UserOptions } from './types.ts';
 import { requiresProjectAnnotations } from './utils.ts';
+import { AgentTelemetryReporter } from './agent-telemetry-reporter.ts';
 
 const WORKING_DIR = process.cwd();
 
@@ -241,6 +248,8 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
     plugins.push(mdxStubPlugin);
   }
 
+  let withinAgenticSetupSession = false;
+
   const storybookTestPlugin: Plugin = {
     name: 'vite-plugin-storybook-test',
     async transformIndexHtml(html) {
@@ -385,6 +394,15 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
                   globals.ghostStories = {
                     enabled: true,
                   };
+                  globals.renderAnalysis = {
+                    enabled: true,
+                  };
+                }
+
+                if (withinAgenticSetupSession) {
+                  globals.renderAnalysis = {
+                    enabled: true,
+                  };
                 }
 
                 return globals;
@@ -441,7 +459,7 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
       // return the new config, it will be deep-merged by vite
       return config;
     },
-    configureVitest(context) {
+    async configureVitest(context) {
       context.vitest.config.coverage.exclude.push('storybook-static');
 
       // NOTE: we start telemetry immediately but do not wait on it. Typically it should complete
@@ -455,6 +473,21 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
         },
         { configDir: finalOptions.configDir }
       );
+
+      if (isTelemetryModuleEnabled()) {
+        // When an agent is running vitest via CLI, inject a reporter that sends
+        // detailed test result telemetry (pass/fail, error analysis, empty renders)
+        const agent = detectAgent();
+        withinAgenticSetupSession = !!agent && (await isWithinInitialSession('ai-setup'));
+        if (agent && withinAgenticSetupSession) {
+          context.vitest.config.reporters.push(
+            new AgentTelemetryReporter({
+              configDir: finalOptions.configDir,
+              agent,
+            })
+          );
+        }
+      }
     },
     async configureServer(server) {
       if (staticDirs) {

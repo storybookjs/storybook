@@ -5,7 +5,7 @@ import { readFile } from 'node:fs/promises';
 
 import { findConfigFile } from 'storybook/internal/common';
 import { detectAgent } from './detect-agent.ts';
-import { telemetry } from './index.ts';
+import { isTelemetryModuleEnabled, telemetry } from './index.ts';
 import type { EventType } from './types.ts';
 import type { IndexEntry, StoryIndex } from 'storybook/internal/types';
 
@@ -119,19 +119,21 @@ export async function collectAiSetupEvidence(
       return;
     }
 
-    // Check if preview file changed from baseline
-    const previewChanged = await checkPreviewChanged(pending.configDir, pending);
-
-    // Count AI-authored stories if story index is available
-    const aiAuthoredStories = storyIndex ? countAiAuthoredStories(storyIndex) : undefined;
-
     await telemetry(
       'ai-setup-evidence',
-      {
-        previewChanged,
-        aiAuthoredStories,
-        sessionId: pending.sessionId,
-        timeSinceSetup,
+      async () => {
+        // Check if preview file changed from baseline
+        const previewChanged = await checkPreviewChanged(pending.configDir, pending);
+
+        // Count AI-authored stories if story index is available
+        const aiAuthoredStories = storyIndex ? countAiAuthoredStories(storyIndex) : undefined;
+
+        return {
+          previewChanged,
+          aiAuthoredStories,
+          sessionId: pending.sessionId,
+          timeSinceSetup,
+        };
       },
       {
         immediate: true,

@@ -150,9 +150,7 @@ describe('ghostStoriesChannel', () => {
       });
 
       // Has ran tests successfully and written reports to JSON file in cache directory
-      vi.mocked(mockCommon.resolvePathInStorybookCache).mockReturnValue(
-        '/cache/ghost-stories-tests'
-      );
+      vi.mocked(mockCommon.resolvePathInStorybookCache).mockReturnValue('/cache/story-tests');
       vi.mocked(mockCommon.executeCommand).mockResolvedValue({} as any);
       mockFs.existsSync.mockReturnValue(true);
       mockFs.readFile.mockResolvedValue(
@@ -193,7 +191,7 @@ describe('ghostStoriesChannel', () => {
           'run',
           '--reporter=json',
           '--testTimeout=1000',
-          expect.stringContaining('--outputFile=/cache/ghost-stories-tests/test-results-'),
+          expect.stringContaining('--outputFile=/cache/story-tests/test-results-'),
           'component1.tsx',
           'component2.tsx',
         ],
@@ -247,9 +245,7 @@ describe('ghostStoriesChannel', () => {
       });
 
       // Has ran tests but with failures, reports written to JSON file in cache directory
-      vi.mocked(mockCommon.resolvePathInStorybookCache).mockReturnValue(
-        '/cache/ghost-stories-tests'
-      );
+      vi.mocked(mockCommon.resolvePathInStorybookCache).mockReturnValue('/cache/story-tests');
       vi.mocked(mockCommon.executeCommand).mockResolvedValue({} as any);
       mockFs.existsSync.mockReturnValue(true);
       mockFs.readFile.mockResolvedValue(
@@ -292,7 +288,7 @@ describe('ghostStoriesChannel', () => {
           'run',
           '--reporter=json',
           '--testTimeout=1000',
-          expect.stringContaining('--outputFile=/cache/ghost-stories-tests/test-results-'),
+          expect.stringContaining('--outputFile=/cache/story-tests/test-results-'),
           'component1.tsx',
           'component2.tsx',
         ],
@@ -518,9 +514,7 @@ describe('ghostStoriesChannel', () => {
           analyzedCount: 2,
           avgComplexity: 1.0,
         });
-        vi.mocked(mockCommon.resolvePathInStorybookCache).mockReturnValue(
-          '/cache/ghost-stories-tests'
-        );
+        vi.mocked(mockCommon.resolvePathInStorybookCache).mockReturnValue('/cache/story-tests');
         vi.mocked(mockCommon.executeCommand).mockRejectedValue(new Error('Test execution failed'));
         mockFs.existsSync.mockReturnValue(false);
 
@@ -563,9 +557,7 @@ describe('ghostStoriesChannel', () => {
           analyzedCount: 2,
           avgComplexity: 1.0,
         });
-        vi.mocked(mockCommon.resolvePathInStorybookCache).mockReturnValue(
-          '/cache/ghost-stories-tests'
-        );
+        vi.mocked(mockCommon.resolvePathInStorybookCache).mockReturnValue('/cache/story-tests');
         vi.mocked(mockCommon.executeCommand).mockRejectedValue(new Error('Startup Error'));
         mockFs.existsSync.mockReturnValue(true);
         mockFs.readFile.mockResolvedValue(

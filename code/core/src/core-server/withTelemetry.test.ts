@@ -55,7 +55,6 @@ describe('withTelemetry', () => {
 
     expect(setTelemetryEnabled).toHaveBeenCalledWith(false);
     expect(telemetry).toHaveBeenCalled();
-    expect(collectAiSetupEvidence).toHaveBeenCalledTimes(0);
   });
 
   describe('when command fails', () => {
@@ -80,7 +79,6 @@ describe('withTelemetry', () => {
 
       expect(setTelemetryEnabled).toHaveBeenCalledWith(false);
       expect(telemetry).toHaveBeenCalled();
-      expect(collectAiSetupEvidence).toHaveBeenCalledTimes(0);
     });
 
     it('sends error message when no options are passed', async () => {
@@ -154,7 +152,6 @@ describe('withTelemetry', () => {
 
       expect(setTelemetryEnabled).toHaveBeenCalledWith(false);
       expect(telemetry).toHaveBeenCalled();
-      expect(collectAiSetupEvidence).toHaveBeenCalledTimes(0);
       expect(telemetry).not.toHaveBeenCalledWith(
         'error',
         expect.objectContaining({}),

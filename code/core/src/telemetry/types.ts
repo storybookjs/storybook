@@ -47,7 +47,7 @@ export type EventType =
   | 'ghost-stories'
   | 'ai-setup'
   | 'ai-setup-evidence'
-  | 'ai-setup-story-scoring'
+  | 'ai-setup-final-scoring'
   | 'ai-prompt-nudge';
 
 export interface Dependency {

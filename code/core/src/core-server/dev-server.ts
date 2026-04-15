@@ -129,7 +129,7 @@ export async function storybookDevServer(
       workingDir,
     });
 
-    if (features?.changeDetection === false) {
+    if (!features.changeDetection) {
       changeDetectionService.start(previewBuilder.onModuleGraphChange, false);
     }
 
@@ -158,7 +158,7 @@ export async function storybookDevServer(
         throw e;
       });
 
-    if (features?.changeDetection !== false) {
+    if (features.changeDetection) {
       let changeDetectionStarted = false;
       const startChangeDetection = () => {
         if (changeDetectionStarted) {

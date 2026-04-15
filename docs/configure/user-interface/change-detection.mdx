@@ -1,64 +1,62 @@
 ---
-title: 'Change detection'
+title: Change detection
+hideRendererSelector: true
 sidebar:
-  order: 5
-  title: Change detection
+  order: 3
 ---
 
 During development, Storybook monitors your git working tree and the builder's module graph to identify which stories are affected by your uncommitted changes. Status icons appear next to stories and components in the sidebar so you can focus your review and testing on what has actually changed.
 
-## Requirements and availability
+![Sidebar showing change detection status icons](TK)
+
+## Requirements
 
 Change detection is a **development-only** feature. It is active when running `storybook dev` and is not available in static builds (`storybook build`).
 
 The following are required for change detection to work:
 
-- **A git repository.** Storybook uses `git diff` to detect changed files. Change detection is unavailable outside a git repository.
-- **A builder that exposes a module graph** (e.g., Vite). Storybook traces changed files through the module import graph to identify all affected stories. Builders that do not expose a module graph will cause change detection to be unavailable.
+- **Git repository**: Storybook uses `git diff` to detect changed files.
+- **Vite builder**: (or other builders that use a similar module graph): Storybook traces changed files through the module import graph to identify all affected stories.
 
-Change detection starts in one of three readiness states:
-
-| State | Meaning |
-| --- | --- |
-| **ready** | Change detection is operational and scanning for changes |
-| **unavailable** | Change detection cannot run; a reason is provided (e.g., feature disabled, builder does not support module graph, not a git repository) |
-| **error** | An unexpected error occurred during initialization or scanning |
-
-If change detection icons never appear in your sidebar, check that both requirements above are met and that the feature has not been disabled (see [Configuration](#configuration) below).
+If change detection status indicators never appear in your sidebar, check that both requirements above are met and that the feature has not been [disabled](#configuration).
 
 ## Status indicators
 
-Three status values are used by change detection, displayed as accent-colored icons in the sidebar:
+When a change is detected, Storybook shows one of the following status icons next to the affected story in the sidebar:
 
-| Icon | Status | Meaning |
-| --- | --- | --- |
-| ✦ Sparkle | **new** | The story file is untracked or newly added in git |
-| ● Filled circle | **modified** | A file imported (directly or transitively) by this story was changed |
-| ◉ Circle with arcs | **affected** | A story is affected by changes in its dependencies. Difference to **modified**: **affected** indicates indirect changes, while **modified** indicates direct changes |
+| Icon                  | Status       | Definition                                                            |
+| --------------------- | ------------ | --------------------------------------------------------------------- |
+| ✦ Sparkle             | **new**      | The story file is untracked or newly added in git.                    |
+| ● Filled circle       | **modified** | A file imported (directly or transitively) by this story was changed. |
+| ◉ Circle with outline | **affected** | A story is affected by changes in its dependencies.                   |
 
-All three icons use the accent color from your Storybook theme.
+<Callout variant="info" icon="💡">
+
+**Modified vs. affected**
+
+These statuses are intended to help you differentiate between stories for components that were changed directly (**modified**) versus those that only consume the modified components (**affected**). This can be especially helpful in larger codebases where a single change may impact many stories. By focusing on modified stories first, you can review the most relevant changes before testing the broader impact on affected stories.
+
+</Callout>
 
 The priority ordering when multiple statuses apply is: **new** > **modified** > **affected**.
 
 ## Sidebar display
 
-Change detection statuses are displayed alongside test statuses in the sidebar using a dual-slot design.
+Change detection statuses are displayed alongside [test statuses](../../writing-tests/integrations/vitest-addon/index.mdx#storybook-ui) in the sidebar.
+
+![Sidebar showing change detection and test status icons](TK)
 
 ## Filtering
 
-You can filter the sidebar to show only stories with a specific change detection status using the filter panel. This lets you quickly isolate new, modified, or affected stories when reviewing a change.
+You can filter the sidebar to show only stories with a specific change detection status using the filter menu. This lets you quickly isolate changed stories when reviewing a change.
+
+![Filter menu showing change detection status options](TK)
 
 ## Configuration
 
-Change detection is enabled by default. To disable it, set `features.changeDetection` to `false` in your Storybook configuration:
-
-{/* prettier-ignore-start */}
+Change detection is enabled by default. To disable it, set [`features.changeDetection`](../../api/main-config/main-config-features.mdx#changedetection) to `false` in your Storybook configuration:
 
 <CodeSnippets path="main-config-features-change-detection.md" />
-
-{/* prettier-ignore-end */}
-
-See the [`features.changeDetection` API reference](../../api/main-config/main-config-features.mdx#changedetection) for details.
 
 ## How it works
 

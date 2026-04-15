@@ -1,9 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 // Use vi.hoisted so these are available when vi.mock factory runs
-const { mockCacheGet, mockCacheRemove } = vi.hoisted(() => ({
+const { mockCacheGet, mockCacheRemove, mockDetectAgent } = vi.hoisted(() => ({
   mockCacheGet: vi.fn(),
   mockCacheRemove: vi.fn(),
+  mockDetectAgent: vi.fn(),
 }));
 
 vi.mock('storybook/internal/common', async (importOriginal) => {
@@ -18,50 +19,45 @@ vi.mock('storybook/internal/common', async (importOriginal) => {
   };
 });
 
-import { resolveOnboardingInitialPath } from './build-dev.ts';
+vi.mock('storybook/internal/telemetry', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('storybook/internal/telemetry')>();
+  return { ...actual, detectAgent: mockDetectAgent };
+});
 
-const ADDONS_WITH_ONBOARDING = ['@storybook/addon-onboarding'];
-const ADDONS_WITHOUT_ONBOARDING = ['@storybook/addon-essentials'];
+import { resolveOnboardingInitialPath } from './build-dev.ts';
 
 describe('resolveOnboardingInitialPath', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockDetectAgent.mockReturnValue(undefined); // default: not an agent
   });
 
-  it('returns /onboarding and removes cache entry when onboarding-pending is set, no CLI initialPath, and addon is present', async () => {
+  it('returns /onboarding and removes cache entry when onboarding-pending is set and no CLI initialPath', async () => {
     mockCacheGet.mockResolvedValue(true);
-    const result = await resolveOnboardingInitialPath(undefined, ADDONS_WITH_ONBOARDING);
+    const result = await resolveOnboardingInitialPath(undefined);
     expect(result).toBe('/onboarding');
     expect(mockCacheRemove).toHaveBeenCalledWith('onboarding-pending');
   });
 
   it('returns undefined and does not remove cache when onboarding-pending is absent', async () => {
     mockCacheGet.mockResolvedValue(undefined);
-    const result = await resolveOnboardingInitialPath(undefined, ADDONS_WITH_ONBOARDING);
+    const result = await resolveOnboardingInitialPath(undefined);
     expect(result).toBeUndefined();
     expect(mockCacheRemove).not.toHaveBeenCalled();
   });
 
   it('returns CLI initialPath and does NOT remove cache when CLI initialPath is already set', async () => {
     mockCacheGet.mockResolvedValue(true);
-    const result = await resolveOnboardingInitialPath('/my-story', ADDONS_WITH_ONBOARDING);
+    const result = await resolveOnboardingInitialPath('/my-story');
     expect(result).toBe('/my-story');
     expect(mockCacheRemove).not.toHaveBeenCalled();
   });
 
-  it('returns undefined and does NOT remove cache when addon-onboarding is not installed', async () => {
+  it('returns undefined and does NOT remove cache when running in an agent context', async () => {
+    mockDetectAgent.mockReturnValue({ name: 'claude' });
     mockCacheGet.mockResolvedValue(true);
-    const result = await resolveOnboardingInitialPath(undefined, ADDONS_WITHOUT_ONBOARDING);
+    const result = await resolveOnboardingInitialPath(undefined);
     expect(result).toBeUndefined();
     expect(mockCacheRemove).not.toHaveBeenCalled();
-  });
-
-  it('works with object-form addon entries', async () => {
-    mockCacheGet.mockResolvedValue(true);
-    const result = await resolveOnboardingInitialPath(undefined, [
-      { name: '@storybook/addon-onboarding' },
-    ]);
-    expect(result).toBe('/onboarding');
-    expect(mockCacheRemove).toHaveBeenCalledWith('onboarding-pending');
   });
 });

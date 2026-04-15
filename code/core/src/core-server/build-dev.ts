@@ -16,7 +16,12 @@ import {
 } from 'storybook/internal/common';
 import { CLI_COLORS, deprecate, logger, prompt } from 'storybook/internal/node-logger';
 import { MissingBuilderError, NoStatsForViteDevError } from 'storybook/internal/server-errors';
-import { oneWayHash, setTelemetryEnabled, telemetry } from 'storybook/internal/telemetry';
+import {
+  detectAgent,
+  oneWayHash,
+  setTelemetryEnabled,
+  telemetry,
+} from 'storybook/internal/telemetry';
 import type { BuilderOptions, CLIOptions, LoadOptions, Options } from 'storybook/internal/types';
 
 import { global } from '@storybook/global';
@@ -44,30 +49,24 @@ import { warnWhenUsingArgTypesRegex } from './utils/warnWhenUsingArgTypesRegex.t
 
 /**
  * Resolves the initialPath for the browser open URL.
- * CLI-provided initialPath always wins. If not set, checks the project cache for
- * an `onboarding-pending` entry written by `storybook init`. If found AND
- * `@storybook/addon-onboarding` is present in the project's addon list, returns
- * '/onboarding' and removes the cache entry so it only triggers once.
- * If the addon is not present, the cache entry is left intact for a future run
- * once the addon is installed.
+ * CLI-provided initialPath always wins. If not set and not running in an agent context,
+ * checks the project cache for an `onboarding-pending` entry written by `storybook init`.
+ * If found, returns '/onboarding' and removes the cache entry so it only triggers once.
+ * The cache entry is only written by init when onboarding is known to be supported,
+ * so no further addon check is needed here.
  */
 export async function resolveOnboardingInitialPath(
-  cliInitialPath: string | undefined,
-  addons: Array<string | { name: string }> = []
+  cliInitialPath: string | undefined
 ): Promise<string | undefined> {
-  if (cliInitialPath) {
-    // Explicit CLI flag wins; leave cache intact for next run
+  if (cliInitialPath || detectAgent()) {
+    // Explicit CLI flag wins; leave cache intact for next run.
+    // Agent environments skip onboarding (no browser to open).
     return cliInitialPath;
   }
   const onboardingPending = await cache.get('onboarding-pending');
   if (onboardingPending) {
-    const hasOnboardingAddon = addons.some((addon) =>
-      (typeof addon === 'string' ? addon : addon.name).includes('@storybook/addon-onboarding')
-    );
-    if (hasOnboardingAddon) {
-      await cache.remove('onboarding-pending');
-      return '/onboarding';
-    }
+    await cache.remove('onboarding-pending');
+    return '/onboarding';
   }
   return undefined;
 }
@@ -118,6 +117,17 @@ export async function buildDevStandalone(
 
   const cacheKey = oneWayHash(relative(getProjectRoot(), configDir));
 
+  // Resolve initialPath: CLI flag takes precedence; fall back to onboarding-pending cache entry.
+  invariant(port, 'expected options to have a port');
+  options.initialPath = await resolveOnboardingInitialPath(options.initialPath);
+
+  const { address: localAddress, networkAddress } = getServerAddresses(
+    port,
+    options.host,
+    options.https ? 'https' : 'http',
+    options.initialPath
+  );
+
   const cacheOutputDir = resolvePathInStorybookCache('public', cacheKey);
   let outputDir = resolve(options.outputDir || cacheOutputDir);
   if (options.smokeTest) {
@@ -130,6 +140,9 @@ export async function buildDevStandalone(
   options.configDir = configDir;
   options.cacheKey = cacheKey;
   options.outputDir = outputDir;
+  options.serverChannelUrl = getServerChannelUrl(port, options);
+  options.localAddress = localAddress;
+  options.networkAddress = networkAddress;
 
   // TODO: Remove in SB11
   options.pnp = await detectPnp();
@@ -144,23 +157,6 @@ export async function buildDevStandalone(
 
   const config = await loadMainConfig(options);
   const { core, framework } = config;
-
-  // Resolve initialPath after config is loaded so we can check for addon-onboarding.
-  // CLI flag takes precedence; falls back to onboarding-pending cache entry.
-  invariant(port, 'expected options to have a port');
-  options.initialPath = await resolveOnboardingInitialPath(
-    options.initialPath,
-    config.addons ?? []
-  );
-  const { address: localAddress, networkAddress } = getServerAddresses(
-    port,
-    options.host,
-    options.https ? 'https' : 'http',
-    options.initialPath
-  );
-  options.serverChannelUrl = getServerChannelUrl(port, options);
-  options.localAddress = localAddress;
-  options.networkAddress = networkAddress;
 
   const corePresets = [];
 

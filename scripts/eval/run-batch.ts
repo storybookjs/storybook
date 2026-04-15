@@ -17,6 +17,7 @@ import { PROJECTS } from './lib/projects.ts';
 import {
   EVAL_ROOT,
   formatHelp,
+  listPrompts,
   NODE_EVAL_RUN_BATCH_SCRIPT,
   NODE_EVAL_TRIAL_SCRIPT,
   REPO_ROOT,
@@ -299,12 +300,20 @@ export function buildBatchRunDescriptors(options: {
 }
 
 function requireBatchPrompt(options: RunBatchOptions): string {
-  if (options.prompt != null && options.prompt.trim() !== '') {
-    return options.prompt.trim();
+  if (options.prompt == null || options.prompt.trim() === '') {
+    throw new Error(
+      'runBatch: pass `prompt` (prompt template basename) or provide `descriptors` explicitly.'
+    );
   }
-  throw new Error(
-    'runBatch: pass `prompt` (prompt template basename) or provide `descriptors` explicitly.'
-  );
+
+  const prompt = options.prompt.trim();
+  const available = listPrompts();
+
+  if (!available.some((name) => name.toLowerCase() === prompt.toLowerCase())) {
+    throw new Error(`Unknown prompt "${prompt}". Available prompts: ${available.join(', ')}`);
+  }
+
+  return prompt;
 }
 
 async function runBatchDescriptor(

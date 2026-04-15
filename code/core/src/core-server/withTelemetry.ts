@@ -229,11 +229,9 @@ export async function withTelemetry<T>(
 
   telemetry('boot', { eventType }, { stripMetadata: true });
 
-  if (isTelemetryModuleEnabled()) {
-    // Fire-and-forget: don't await, don't block the command
-    const configDir = options.cliOptions.configDir || options.presetOptions?.configDir;
-    collectAiSetupEvidence(eventType, configDir);
-  }
+  // Fire-and-forget: don't await, don't block the command
+  const configDir = options.cliOptions.configDir || options.presetOptions?.configDir;
+  collectAiSetupEvidence(eventType, configDir);
 
   try {
     const result = await run();

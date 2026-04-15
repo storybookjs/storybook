@@ -32,7 +32,7 @@ export function initAIAnalyticsChannel(
     try {
       const lastEvents = await getLastEvents();
       const lastAISetup = lastEvents?.['ai-setup'];
-      const lastSetupStoryScoringRun = lastEvents?.['ai-setup-story-scoring'];
+      const lastSetupStoryScoringRun = lastEvents?.['ai-setup-final-scoring'];
 
       // Only run if sb ai setup has been called
       if (!lastAISetup) {
@@ -92,7 +92,7 @@ export function initAIAnalyticsChannel(
 
       if (aiStoryFiles.size > 0) {
         const aiTestRunResult = await runGhostStories([...aiStoryFiles]);
-        telemetry('ai-setup-story-scoring', {
+        telemetry('ai-setup-final-scoring', {
           stats: {
             fileCount: aiStoryFiles.size,
             storyCount: aiStoryCount,
@@ -102,7 +102,7 @@ export function initAIAnalyticsChannel(
           ...(aiTestRunResult.runError ? { runError: aiTestRunResult.runError } : {}),
         });
       } else {
-        telemetry('ai-setup-story-scoring', {
+        telemetry('ai-setup-final-scoring', {
           stats: {
             fileCount: 0,
             storyCount: 0,
@@ -112,7 +112,7 @@ export function initAIAnalyticsChannel(
         });
       }
     } catch {
-      telemetry('ai-setup-story-scoring', {
+      telemetry('ai-setup-final-scoring', {
         stats,
         runError: 'Unknown error during AI story scoring',
       });

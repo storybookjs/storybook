@@ -2,6 +2,7 @@ import { readFile } from 'node:fs/promises';
 
 import {
   JsPackageManagerFactory,
+  cache,
   getConfigInfo,
   getInterpretedFile,
   getProjectRoot,
@@ -40,6 +41,27 @@ import { stripCommentsAndStrings } from './utils/strip-comments-and-strings.ts';
 import { updateCheck } from './utils/update-check.ts';
 import { warnOnIncompatibleAddons } from './utils/warnOnIncompatibleAddons.ts';
 import { warnWhenUsingArgTypesRegex } from './utils/warnWhenUsingArgTypesRegex.ts';
+
+/**
+ * Resolves the initialPath for the browser open URL.
+ * CLI-provided initialPath always wins. If not set, checks the project cache for
+ * an `onboarding-pending` entry written by `storybook init`. If found, returns
+ * '/onboarding' and removes the cache entry so it only triggers once.
+ */
+export async function resolveOnboardingInitialPath(
+  cliInitialPath: string | undefined
+): Promise<string | undefined> {
+  if (cliInitialPath) {
+    // Explicit CLI flag wins; leave cache intact for next run
+    return cliInitialPath;
+  }
+  const onboardingPending = await cache.get('onboarding-pending');
+  if (onboardingPending) {
+    await cache.remove('onboarding-pending');
+    return '/onboarding';
+  }
+  return undefined;
+}
 
 export async function buildDevStandalone(
   options: CLIOptions &
@@ -86,6 +108,9 @@ export async function buildDevStandalone(
   }
 
   const cacheKey = oneWayHash(relative(getProjectRoot(), configDir));
+
+  // Resolve initialPath: CLI flag takes precedence; fall back to onboarding-pending cache entry
+  options.initialPath = await resolveOnboardingInitialPath(options.initialPath);
 
   const cacheOutputDir = resolvePathInStorybookCache('public', cacheKey);
   let outputDir = resolve(options.outputDir || cacheOutputDir);

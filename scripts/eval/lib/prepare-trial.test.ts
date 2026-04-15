@@ -236,5 +236,4 @@ describe('prepareTrial', () => {
     );
     expect(installDeps).toHaveBeenCalledTimes(1);
   });
-
 });

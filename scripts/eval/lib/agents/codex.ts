@@ -11,7 +11,7 @@ import { countLines } from '../output-preview.ts';
 export const codexAgent: AgentDriver = {
   name: 'codex',
 
-  async execute({ prompt, projectPath, variant, logger }): Promise<AgentExecutionResult> {
+  async execute({ prompt, projectPath, variant, logger, verbose }): Promise<AgentExecutionResult> {
     if (variant.agent !== 'codex') {
       throw new Error(`Codex driver received unsupported variant: ${variant.agent}`);
     }
@@ -56,6 +56,9 @@ export const codexAgent: AgentDriver = {
               logger.log(
                 `🔧 $ ${item.command} → exit ${item.exit_code ?? '?'}${lines > 0 ? ` (${lines} lines)` : ''}`
               );
+              if (verbose && item.aggregated_output) {
+                logger.log(`   ${item.aggregated_output}`);
+              }
               break;
             }
             case 'file_change':

@@ -77,6 +77,7 @@ export async function runTrial(config: TrialConfig, logger?: Logger): Promise<Ru
     variant,
     resultsDir: workspace.resultsDir,
     logger: log,
+    verbose: config.verbose,
   });
   log.logSuccess(
     `Agent completed (${Math.round(execution.duration)}s, ${execution.cost ? `$${execution.cost.toFixed(2)}` : 'cost N/A'}, ${execution.turns} turns)`

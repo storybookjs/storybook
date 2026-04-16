@@ -13,7 +13,7 @@ import type { Logger } from '../utils.ts';
 export const claudeAgent: AgentDriver = {
   name: 'claude',
 
-  async execute({ prompt, projectPath, variant, logger }): Promise<AgentExecutionResult> {
+  async execute({ prompt, projectPath, variant, logger, verbose }): Promise<AgentExecutionResult> {
     if (variant.agent !== 'claude') {
       throw new Error(`Claude driver received unsupported variant: ${variant.agent}`);
     }
@@ -45,7 +45,7 @@ export const claudeAgent: AgentDriver = {
           systemPrompt: settings.systemPrompt,
         },
       })) {
-        logMessage(message, logger);
+        logMessage(message, logger, verbose);
         messages.push(message);
 
         if (message.type === 'result') {
@@ -76,7 +76,7 @@ export const claudeAgent: AgentDriver = {
   },
 };
 
-function logMessage(message: SDKMessage, logger: Logger) {
+function logMessage(message: SDKMessage, logger: Logger, verbose?: boolean) {
   switch (message.type) {
     case 'assistant': {
       for (const block of message.message.content) {
@@ -106,10 +106,14 @@ function logMessage(message: SDKMessage, logger: Logger) {
                     )
                     .join('')
                 : '[no content]';
-          const lines = countLines(text);
-          logger.log(
-            `📎 tool_result(${block.tool_use_id?.slice(-8)}): ${lines > 0 ? `${lines} lines` : '(empty)'}`
-          );
+          if (verbose) {
+            logger.log(`📎 tool_result(${block.tool_use_id?.slice(-8)}): ${text}`);
+          } else {
+            const lines = countLines(text);
+            logger.log(
+              `📎 tool_result(${block.tool_use_id?.slice(-8)}): ${lines > 0 ? `${lines} lines` : '(empty)'}`
+            );
+          }
         }
       }
       break;

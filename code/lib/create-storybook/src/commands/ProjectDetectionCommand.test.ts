@@ -35,7 +35,9 @@ describe('ProjectDetectionCommand', () => {
       validateProvidedType: vi.fn(),
       autoDetectProjectType: vi.fn(),
       isStorybookInstantiated: vi.fn().mockReturnValue(false),
-      detectLanguage: vi.fn().mockResolvedValue(SupportedLanguage.JAVASCRIPT),
+      detectLanguage: vi
+        .fn()
+        .mockResolvedValue({ language: SupportedLanguage.JAVASCRIPT, incompatibleReasons: [] }),
     };
 
     vi.mocked(ProjectTypeService).mockImplementation(function () {
@@ -227,14 +229,37 @@ describe('ProjectDetectionCommand', () => {
       options.type = undefined;
       options.language = undefined;
       vi.mocked(mockProjectTypeService.autoDetectProjectType).mockResolvedValue(ProjectType.REACT);
-      vi.mocked(mockProjectTypeService.detectLanguage).mockResolvedValue(
-        SupportedLanguage.TYPESCRIPT
-      );
+      vi.mocked(mockProjectTypeService.detectLanguage).mockResolvedValue({
+        language: SupportedLanguage.TYPESCRIPT,
+        incompatibleReasons: [],
+      });
 
       const result = await command.execute();
 
       expect(result.language).toBe(SupportedLanguage.TYPESCRIPT);
       expect(mockProjectTypeService.detectLanguage).toHaveBeenCalled();
+    });
+
+    it('should warn about incompatible packages when falling back to JavaScript', async () => {
+      options.type = undefined;
+      options.language = undefined;
+      vi.mocked(mockProjectTypeService.autoDetectProjectType).mockResolvedValue(ProjectType.REACT);
+      vi.mocked(mockProjectTypeService.detectLanguage).mockResolvedValue({
+        language: SupportedLanguage.JAVASCRIPT,
+        incompatibleReasons: ['prettier 2.6.2 is below 2.8.0'],
+      });
+
+      const result = await command.execute();
+
+      expect(result.language).toBe(SupportedLanguage.JAVASCRIPT);
+      expect(logger.warn).toHaveBeenCalledWith(
+        expect.stringContaining(
+          'Populating with JavaScript examples due to incompatible package versions'
+        )
+      );
+      expect(logger.warn).toHaveBeenCalledWith(
+        expect.stringContaining('prettier 2.6.2 is below 2.8.0')
+      );
     });
   });
 });

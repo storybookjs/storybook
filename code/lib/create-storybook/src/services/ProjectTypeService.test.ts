@@ -229,10 +229,12 @@ describe('ProjectTypeService', () => {
         return { version: versions[name] } as any;
       });
       const service = new ProjectTypeService(pm);
-      await expect(service.detectLanguage()).resolves.toBe('typescript');
+      const result = await service.detectLanguage();
+      expect(result.language).toBe('typescript');
+      expect(result.incompatibleReasons).toEqual([]);
     });
 
-    it('warns and returns javascript when TS/tooling versions incompatible', async () => {
+    it('returns javascript with incompatible reasons when TS/tooling versions are incompatible', async () => {
       (pm.getAllDependencies as any) = vi.fn(() => ({ typescript: '^4.8.0' }));
       (pm.getModulePackageJSON as any) = vi.fn(async (name: string) => {
         const versions: Record<string, string> = {
@@ -244,18 +246,18 @@ describe('ProjectTypeService', () => {
         };
         return { version: versions[name] } as any;
       });
-      const warnSpy = vi.spyOn(logger, 'warn');
       const service = new ProjectTypeService(pm);
-      await expect(service.detectLanguage()).resolves.toBe('javascript');
-      expect(warnSpy).toHaveBeenCalledWith(
+      const result = await service.detectLanguage();
+      expect(result.language).toBe('javascript');
+      expect(result.incompatibleReasons).toContainEqual(
         expect.stringContaining('typescript 4.8.4 is below 4.9.0')
       );
-      expect(warnSpy).toHaveBeenCalledWith(
+      expect(result.incompatibleReasons).toContainEqual(
         expect.stringContaining('prettier 2.7.1 is below 2.8.0')
       );
     });
 
-    it('warns with specific failing check when only one tool is incompatible', async () => {
+    it('returns specific failing reason when only one tool is incompatible', async () => {
       (pm.getAllDependencies as any) = vi.fn(() => ({ typescript: '^5.0.0' }));
       (pm.getModulePackageJSON as any) = vi.fn(async (name: string) => {
         const versions: Record<string, string> = {
@@ -267,13 +269,12 @@ describe('ProjectTypeService', () => {
         };
         return { version: versions[name] } as any;
       });
-      const warnSpy = vi.spyOn(logger, 'warn');
       const service = new ProjectTypeService(pm);
-      await expect(service.detectLanguage()).resolves.toBe('javascript');
-      expect(warnSpy).toHaveBeenCalledWith(
-        expect.stringContaining('prettier 2.6.2 is below 2.8.0')
-      );
-      expect(warnSpy).not.toHaveBeenCalledWith(expect.stringContaining('typescript'));
+      const result = await service.detectLanguage();
+      expect(result.language).toBe('javascript');
+      expect(result.incompatibleReasons).toEqual([
+        expect.stringContaining('prettier 2.6.2 is below 2.8.0'),
+      ]);
     });
 
     it('treats canary eslint-plugin-storybook versions as compatible', async () => {
@@ -289,7 +290,9 @@ describe('ProjectTypeService', () => {
         return { version: versions[name] } as any;
       });
       const service = new ProjectTypeService(pm);
-      await expect(service.detectLanguage()).resolves.toBe('typescript');
+      const result = await service.detectLanguage();
+      expect(result.language).toBe('typescript');
+      expect(result.incompatibleReasons).toEqual([]);
     });
   });
 });

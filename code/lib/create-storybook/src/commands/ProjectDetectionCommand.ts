@@ -48,9 +48,22 @@ export class ProjectDetectionCommand {
     // Check for existing installation
     await this.checkExistingInstallation(projectType);
 
-    const language = this.options.language || (await this.projectTypeService.detectLanguage());
+    const language = this.options.language || (await this.detectAndReportLanguage());
 
     return { projectType, language };
+  }
+
+  /** Detect language and warn about incompatible packages */
+  private async detectAndReportLanguage(): Promise<SupportedLanguage> {
+    const { language, incompatibleReasons } = await this.projectTypeService.detectLanguage();
+
+    if (incompatibleReasons.length > 0) {
+      logger.warn(
+        `Populating with JavaScript examples due to incompatible package versions:\n${incompatibleReasons.map((r) => `  - ${r}`).join('\n')}`
+      );
+    }
+
+    return language;
   }
 
   /** Prompt user to select React Native variant */

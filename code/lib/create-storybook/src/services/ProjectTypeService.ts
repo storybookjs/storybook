@@ -197,11 +197,14 @@ export class ProjectTypeService {
     }
   }
 
-  async detectLanguage(): Promise<SupportedLanguage> {
+  async detectLanguage(): Promise<{
+    language: SupportedLanguage;
+    incompatibleReasons: string[];
+  }> {
     let language = SupportedLanguage.JAVASCRIPT;
 
     if (existsSync('jsconfig.json')) {
-      return language;
+      return { language, incompatibleReasons: [] };
     }
 
     const isTypescriptDirectDependency = !!this.jsPackageManager.getAllDependencies().typescript;
@@ -266,11 +269,9 @@ export class ProjectTypeService {
 
       if (incompatibleReasons.length === 0) {
         language = SupportedLanguage.TYPESCRIPT;
-      } else {
-        logger.warn(
-          `Detected incompatible package versions, falling back to JavaScript:\n${incompatibleReasons.map((r) => `  - ${r}`).join('\n')}`
-        );
       }
+
+      return { language, incompatibleReasons };
     } else {
       // No direct dependency on TypeScript, but could be a transitive dependency
       // This is eg the case for Nuxt projects, which support a recent version of TypeScript
@@ -280,7 +281,7 @@ export class ProjectTypeService {
       }
     }
 
-    return language;
+    return { language, incompatibleReasons: [] };
   }
 
   private eqMajor(versionRange: string, major: number) {

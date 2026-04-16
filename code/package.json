@@ -48,7 +48,7 @@
     "node >= 20"
   ],
   "dependencies": {
-    "@chromatic-com/storybook": "^5.0.0",
+    "@chromatic-com/storybook": "^5.1.2",
     "@playwright/test": "1.58.2",
     "@storybook/addon-a11y": "workspace:*",
     "@storybook/addon-designs": "^11.0.3",
@@ -195,5 +195,6 @@
         "Dependency Upgrades"
       ]
     ]
-  }
+  },
+  "deferredNextVersion": "10.4.0-alpha.10"
 }

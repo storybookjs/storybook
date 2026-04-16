@@ -51,11 +51,11 @@ Storybook for Vue 3 with Vite is designed to work out of the box with minimal co
 
 ### Extending the Vue application
 
-Storybook creates a [Vue 3 application](https://vuejs.org/api/application.html#application-api) for your component preview. When using global custom components (`app.component`), directives (`app.directive`), extensions (`app.use`), or other application methods, you will need to configure those in the `./storybook/preview.js|ts` file.
+Storybook creates a [Vue 3 application](https://vuejs.org/api/application.html#application-api) for your component preview. When using global custom components (`app.component`), directives (`app.directive`), extensions (`app.use`), or other application methods, you will need to configure those in the `./storybook/preview.ts` file.
 
 Therefore, Storybook provides you with a `setup` function exported from this package. This function receives your Storybook instance as a callback, which you can interact with and add your custom configuration.
 
-```js title=".storybook/preview.js|ts"
+```js title=".storybook/preview.ts"
 import { setup } from '@storybook/vue3-vite';
 
 setup((app) => {

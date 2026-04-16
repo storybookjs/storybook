@@ -1,6 +1,6 @@
 {
   "name": "@storybook/code",
-  "version": "10.4.0-alpha.7",
+  "version": "10.4.0-alpha.10",
   "private": true,
   "description": "Storybook root",
   "homepage": "https://storybook.js.org/",
@@ -48,7 +48,7 @@
     "node >= 20"
   ],
   "dependencies": {
-    "@chromatic-com/storybook": "^5.0.0",
+    "@chromatic-com/storybook": "^5.1.2",
     "@playwright/test": "1.58.2",
     "@storybook/addon-a11y": "workspace:*",
     "@storybook/addon-designs": "^11.0.3",

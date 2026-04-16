@@ -15,7 +15,7 @@ import {
 import { StoryIndexGenerator } from 'storybook/internal/core-server';
 import { loadCsf } from 'storybook/internal/csf-tools';
 import { logger } from 'storybook/internal/node-logger';
-import { telemetry } from 'storybook/internal/telemetry';
+import { setTelemetryEnabled, telemetry } from 'storybook/internal/telemetry';
 import type {
   CoreConfig,
   Indexer,
@@ -176,12 +176,10 @@ export const experimental_serverAPI = (extension: Record<string, Function>, opti
   const packageManager = JsPackageManagerFactory.getPackageManager({
     configDir: options.configDir,
   });
-  if (!options.disableTelemetry) {
-    removeAddon = async (id: string, opts: RemoveAddonOptions) => {
-      await telemetry('remove', { addon: id, source: 'api' });
-      return removeAddonBase(id, { ...opts, packageManager });
-    };
-  }
+  removeAddon = async (id: string, opts: RemoveAddonOptions) => {
+    await telemetry('remove', { addon: id, source: 'api' });
+    return removeAddonBase(id, { ...opts, packageManager });
+  };
   return { ...extension, removeAddon };
 };
 
@@ -197,7 +195,8 @@ export const core = async (existing: CoreConfig, options: Options): Promise<Core
     ...(existing?.channelOptions ?? {}),
     ...(options.configType === 'DEVELOPMENT' ? { wsToken: getWsToken() } : {}),
   },
-  disableTelemetry: options.disableTelemetry === true,
+  disableTelemetry:
+    options.disableTelemetry || optionalEnvToBoolean(process.env.STORYBOOK_DISABLE_TELEMETRY),
   enableCrashReports:
     options.enableCrashReports || optionalEnvToBoolean(process.env.STORYBOOK_ENABLE_CRASH_REPORTS),
 });
@@ -208,7 +207,7 @@ export const features: PresetProperty<'features'> = async (existing) => ({
   argTypeTargetsV7: true,
   backgrounds: true,
   changeDetection: false,
-  componentsManifest: true,
+  componentsManifest: false,
   controls: true,
   disallowImplicitActionsInRenderV8: true,
   highlight: true,
@@ -274,14 +273,16 @@ export const experimental_serverChannel = async (
 ) => {
   const coreOptions = await options.presets.apply('core');
 
-  initializeChecklist();
-  initializeWhatsNew(channel, options, coreOptions);
-  initializeSaveStory(channel, options, coreOptions);
+  await setTelemetryEnabled(!coreOptions?.disableTelemetry);
 
-  initFileSearchChannel(channel, options, coreOptions);
-  initCreateNewStoryChannel(channel, options, coreOptions);
-  initGhostStoriesChannel(channel, options, coreOptions);
-  initOpenInEditorChannel(channel, options, coreOptions);
+  initializeChecklist();
+  initializeWhatsNew(channel, options);
+  initializeSaveStory(channel, options);
+
+  initFileSearchChannel(channel, options);
+  initCreateNewStoryChannel(channel, options);
+  initGhostStoriesChannel(channel, options);
+  initOpenInEditorChannel(channel);
   initTelemetryChannel(channel, options);
 
   return channel;

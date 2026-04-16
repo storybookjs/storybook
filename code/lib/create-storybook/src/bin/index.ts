@@ -1,20 +1,18 @@
 #!/usr/bin/env node
-import { logger } from 'storybook/internal/node-logger';
+export {};
 
-import { dedent } from 'ts-dedent';
+const { isNodeVersionSupported } = await import('storybook/internal/common');
+const [major, minor, patch] = process.versions.node.split('.').map(Number);
 
-const [majorNodeVersion, minorNodeVersion] = process.versions.node.split('.').map(Number);
-
-if (
-  majorNodeVersion < 20 ||
-  (majorNodeVersion === 20 && minorNodeVersion < 19) ||
-  (majorNodeVersion === 22 && minorNodeVersion < 12)
-) {
+if (!isNodeVersionSupported(major, minor, patch)) {
+  const { MIN_SUPPORTED_NODE_DESCRIPTION } = await import('storybook/internal/common');
+  const { logger } = await import('storybook/internal/node-logger');
   logger.error(
-    dedent`To run Storybook, you need Node.js version 20.19+ or 22.12+.
-      You are currently running Node.js ${process.version}. Please upgrade your Node.js installation.`
+    `To run Storybook, you need Node.js version ${MIN_SUPPORTED_NODE_DESCRIPTION}.\n` +
+      `You are currently running Node.js ${process.version}.`
   );
+  logger.outro('');
   process.exit(1);
 }
 
-import('./run.ts');
+await import('./run.ts');

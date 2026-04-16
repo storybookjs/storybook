@@ -93,3 +93,26 @@ Type: `(name?: string) => void`
 Allows you to create an action that appears in the actions panel of the Storybook UI when clicked. The action function takes an optional name parameter, which is used to identify the action in the UI.
 
 <CodeSnippets path="addon-actions-action-function.md" />
+
+#### `configureActions`
+
+```js
+import { configureActions } from 'storybook/actions';
+```
+
+Type: `(options?: ActionOptions) => void`
+
+Configures the global behavior of the actions addon. Call this in your `.storybook/preview.*` file or anywhere before actions are used. Available options:
+
+- **`limit`** (`number`, default: `50`): Maximum number of action entries to display. When the limit is reached, the oldest actions are discarded.
+- **`clearOnStoryChange`** (`boolean`, default: `true`): Clear the actions panel when navigating to a different story.
+- **`depth`** (`number`, default: `10`): Serialization depth for action arguments.
+
+```js title=".storybook/preview.ts|tsx"
+import { configureActions } from 'storybook/actions';
+
+configureActions({
+  limit: 20,
+  clearOnStoryChange: false,
+});
+```

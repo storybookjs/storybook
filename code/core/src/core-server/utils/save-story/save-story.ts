@@ -18,7 +18,7 @@ import { storyNameFromExport, toId } from 'storybook/internal/csf';
 import { printCsf, readCsf } from 'storybook/internal/csf-tools';
 import { logger } from 'storybook/internal/node-logger';
 import { isExampleStoryId, telemetry } from 'storybook/internal/telemetry';
-import type { CoreConfig, Options } from 'storybook/internal/types';
+import type { Options } from 'storybook/internal/types';
 
 import { duplicateStoryWithNewName } from './duplicate-story-with-new-name.ts';
 import { updateArgsInCsfFile } from './update-args-in-csf-file.ts';
@@ -49,7 +49,7 @@ const removeExtraNewlines = (code: string, name: string) => {
     : code;
 };
 
-export function initializeSaveStory(channel: Channel, options: Options, coreConfig: CoreConfig) {
+export function initializeSaveStory(channel: Channel, options: Options) {
   channel.on(SAVE_STORY_REQUEST, async ({ id, payload }: RequestData<SaveStoryRequestPayload>) => {
     const { csfId, importPath, args, name } = payload;
 
@@ -122,7 +122,7 @@ export function initializeSaveStory(channel: Channel, options: Options, coreConf
 
       // don't take credit for save-from-controls actions against CLI example stories
       const isCLIExample = isExampleStoryId(newStoryId ?? csfId);
-      if (!coreConfig.disableTelemetry && !isCLIExample) {
+      if (!isCLIExample) {
         await telemetry('save-story', {
           action: name ? 'createStory' : 'updateStory',
           success: true,
@@ -139,7 +139,7 @@ export function initializeSaveStory(channel: Channel, options: Options, coreConf
         `Error writing to ${sourceFilePath}:\n${error.stack || error.message || error.toString()}`
       );
 
-      if (!coreConfig.disableTelemetry && !(error instanceof SaveStoryError)) {
+      if (!(error instanceof SaveStoryError)) {
         await telemetry('save-story', {
           action: name ? 'createStory' : 'updateStory',
           success: false,

@@ -1,4 +1,5 @@
 import { logConfig, normalizeStories } from 'storybook/internal/common';
+import { DOCS_PREPARED, STORY_RENDERED } from 'storybook/internal/core-events';
 import { logger } from 'storybook/internal/node-logger';
 import { MissingBuilderError } from 'storybook/internal/server-errors';
 import { CHANGE_DETECTION_STATUS_TYPE_ID } from 'storybook/internal/types';
@@ -7,8 +8,9 @@ import type { Options } from 'storybook/internal/types';
 import compression from '@polka/compression';
 import polka from 'polka';
 
-import { telemetry } from '../telemetry/index.ts';
+import { isTelemetryModuleEnabled, telemetry } from '../telemetry/index.ts';
 import { ChangeDetectionService } from './change-detection/index.ts';
+import { setChangeDetectionReadiness } from './change-detection/readiness.ts';
 import { getStatusStoreByTypeId } from './stores/status.ts';
 import type { StoryIndexGenerator } from './utils/StoryIndexGenerator.ts';
 import { doTelemetry } from './utils/doTelemetry.ts';
@@ -120,7 +122,10 @@ export async function storybookDevServer(
       statusStore: getStatusStoreByTypeId(CHANGE_DETECTION_STATUS_TYPE_ID),
       workingDir,
     });
-    changeDetectionService.start(previewBuilder.onModuleGraphChange, features?.changeDetection);
+
+    if (features?.changeDetection === false) {
+      changeDetectionService.start(previewBuilder.onModuleGraphChange, false);
+    }
 
     logger.debug('Starting preview..');
     previewResult = await previewBuilder
@@ -146,6 +151,29 @@ export async function storybookDevServer(
         // re-throw the error
         throw e;
       });
+
+    if (features?.changeDetection !== false) {
+      let changeDetectionStarted = false;
+      const startChangeDetection = () => {
+        if (changeDetectionStarted) {
+          return;
+        }
+        try {
+          changeDetectionStarted = true;
+          changeDetectionService.start(previewBuilder.onModuleGraphChange, true);
+        } catch (error) {
+          logger.error('Failed to start change detection');
+          logger.error(error instanceof Error ? error : String(error));
+          setChangeDetectionReadiness({
+            status: 'error',
+            error: error instanceof Error ? error : new Error(String(error)),
+          });
+        }
+      };
+
+      options.channel.once(STORY_RENDERED, startChangeDetection);
+      options.channel.once(DOCS_PREPARED, startChangeDetection);
+    }
   }
 
   const listening = new Promise<void>((resolve, reject) => {
@@ -175,6 +203,10 @@ export async function storybookDevServer(
   doTelemetry(app, core, storyIndexGeneratorPromise, options);
 
   async function cancelTelemetry() {
+    if (!isTelemetryModuleEnabled()) {
+      return;
+    }
+
     const payload = { eventType: 'dev' };
     try {
       const generator = await storyIndexGeneratorPromise;
@@ -191,10 +223,8 @@ export async function storybookDevServer(
     process.exit(0);
   }
 
-  if (!core?.disableTelemetry) {
-    process.on('SIGINT', cancelTelemetry);
-    process.on('SIGTERM', cancelTelemetry);
-  }
+  process.on('SIGINT', cancelTelemetry);
+  process.on('SIGTERM', cancelTelemetry);
 
   return { previewResult, managerResult };
 }

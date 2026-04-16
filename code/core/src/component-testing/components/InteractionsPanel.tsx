@@ -1,8 +1,9 @@
 import * as React from 'react';
 
 import { transparentize } from 'polished';
+import { announce } from '@react-aria/live-announcer';
 import type { API } from 'storybook/manager-api';
-import { styled } from 'storybook/theming';
+import { srOnlyStyles, styled } from 'storybook/theming';
 
 import { type Call, type CallStates, type ControlStates } from '../../instrumenter/types.ts';
 import { INTERNAL_RENDER_CALL_ID } from '../constants.ts';
@@ -55,6 +56,17 @@ const Container = styled.div(({ theme }) => ({
   background: theme.background.content,
 }));
 
+const InteractionsSection = styled.section({
+  position: 'relative',
+});
+
+const InteractionsHeading = styled.h3(srOnlyStyles);
+
+const InteractionsList = styled.ol({
+  margin: 0,
+  padding: 0,
+});
+
 const CaughtException = styled.div(({ theme }) => ({
   borderBottom: `1px solid ${theme.appBorderColor}`,
   backgroundColor:
@@ -91,6 +103,21 @@ const CaughtExceptionStack = styled.pre(({ theme }) => ({
   fontSize: theme.typography.size.s1 - 1,
 }));
 
+const StatusAnnouncementMapping: Record<PlayStatus, string> = {
+  rendering: 'Component test is rendering.',
+  playing: 'Component test is running.',
+  completed: 'Component test completed successfully.',
+  errored: 'Component test failed.',
+  aborted: 'Component test was aborted.',
+} as const;
+
+const getStatusAnnouncement = (status: PlayStatus, hasException?: boolean) => {
+  if (status === 'completed' && hasException) {
+    return StatusAnnouncementMapping.errored;
+  }
+  return StatusAnnouncementMapping[status];
+};
+
 export const InteractionsPanel: React.FC<InteractionsPanelProps> = React.memo(
   function InteractionsPanel({
     storyUrl,
@@ -114,6 +141,13 @@ export const InteractionsPanel: React.FC<InteractionsPanelProps> = React.memo(
   }) {
     const filter = useAnsiToHtmlFilter();
     const hasRealInteractions = interactions.some((i) => i.id !== INTERNAL_RENDER_CALL_ID);
+    const isListBusy = status === 'rendering' || status === 'playing';
+    const statusAnnouncement = getStatusAnnouncement(status, hasException);
+    const isStatusAlert = status === 'errored' || (status === 'completed' && hasException);
+
+    React.useEffect(() => {
+      announce(statusAnnouncement, isStatusAlert ? 'assertive' : 'polite');
+    }, [statusAnnouncement, isStatusAlert]);
 
     return (
       <Container>
@@ -131,22 +165,25 @@ export const InteractionsPanel: React.FC<InteractionsPanelProps> = React.memo(
           canOpenInEditor={canOpenInEditor}
           api={api}
         />
-        <div aria-label="Interactions list">
-          {interactions.map((call) => (
-            <Interaction
-              key={call.id}
-              call={call}
-              callsById={calls}
-              controls={controls}
-              controlStates={controlStates}
-              childCallIds={call.childCallIds}
-              isHidden={call.isHidden}
-              isCollapsed={call.isCollapsed}
-              toggleCollapsed={call.toggleCollapsed}
-              pausedAt={pausedAt}
-            />
-          ))}
-        </div>
+        <InteractionsSection>
+          <InteractionsHeading>Interaction steps</InteractionsHeading>
+          <InteractionsList aria-busy={isListBusy}>
+            {interactions.map((call) => (
+              <Interaction
+                key={call.id}
+                call={call}
+                callsById={calls}
+                controls={controls}
+                controlStates={controlStates}
+                childCallIds={call.childCallIds}
+                isHidden={call.isHidden}
+                isCollapsed={call.isCollapsed}
+                toggleCollapsed={call.toggleCollapsed}
+                pausedAt={pausedAt}
+              />
+            ))}
+          </InteractionsList>
+        </InteractionsSection>
         {caughtException && !isTestAssertionError(caughtException) && (
           <CaughtException>
             <CaughtExceptionTitle>

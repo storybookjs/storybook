@@ -81,3 +81,8 @@ launch-templates:
     image: 'ubuntu22.04-node20.19-v2'
     init-steps: *linux-browsers-init-steps
     env: *common-env-vars
+  windows-js:
+    resource-class: 'windows/medium'
+    image: 'windows-2022'
+    # TODO init-steps:
+    env: *common-env-vars

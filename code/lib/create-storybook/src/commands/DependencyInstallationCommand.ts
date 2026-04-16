@@ -4,7 +4,7 @@ import { logger, prompt } from 'storybook/internal/node-logger';
 import { ErrorCollector } from 'storybook/internal/telemetry';
 import { Feature } from 'storybook/internal/types';
 
-import type { DependencyCollector } from '../dependency-collector';
+import type { DependencyCollector } from '../dependency-collector.ts';
 
 type DependencyInstallationCommandParams = {
   skipInstall: boolean;

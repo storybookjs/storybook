@@ -19,21 +19,21 @@ import picocolors from 'picocolors';
 import semver, { clean, lt } from 'semver';
 import { dedent } from 'ts-dedent';
 
-import { processAutoblockerResults } from './autoblock/utils';
+import { processAutoblockerResults } from './autoblock/utils.ts';
 import {
   type AutomigrationCheckResult,
   type AutomigrationResult,
   runAutomigrations,
-} from './automigrate/multi-project';
-import { FixStatus } from './automigrate/types';
-import { displayDoctorResults, runMultiProjectDoctor } from './doctor';
-import type { ProjectDoctorData, ProjectDoctorResults } from './doctor/types';
+} from './automigrate/multi-project.ts';
+import { FixStatus } from './automigrate/types.ts';
+import { displayDoctorResults, runMultiProjectDoctor } from './doctor/index.ts';
+import type { ProjectDoctorData, ProjectDoctorResults } from './doctor/types.ts';
 import {
   type CollectProjectsSuccessResult,
   getProjects,
   shortenPath,
   upgradeStorybookDependencies,
-} from './util';
+} from './util.ts';
 
 type Package = {
   package: string;
@@ -480,55 +480,53 @@ export async function upgrade(options: UpgradeOptions): Promise<void> {
     logUpgradeResults(automigrationResults, detectedAutomigrations, doctorResults);
 
     // TELEMETRY
-    if (!options.disableTelemetry) {
-      for (const project of storybookProjects) {
-        const resultData = automigrationResults[project.configDir] || {
-          automigrationStatuses: {},
-          automigrationErrors: {},
-        };
-        let doctorFailureCount = 0;
-        let doctorErrorCount = 0;
-        Object.values(doctorResults[project.configDir]?.diagnostics || {}).forEach((status) => {
-          if (status === 'has_issues') {
-            doctorFailureCount++;
-          }
+    for (const project of storybookProjects) {
+      const resultData = automigrationResults[project.configDir] || {
+        automigrationStatuses: {},
+        automigrationErrors: {},
+      };
+      let doctorFailureCount = 0;
+      let doctorErrorCount = 0;
+      Object.values(doctorResults[project.configDir]?.diagnostics || {}).forEach((status) => {
+        if (status === 'has_issues') {
+          doctorFailureCount++;
+        }
 
-          if (status === 'check_error') {
-            doctorErrorCount++;
-          }
-        });
-        const automigrationFailureCount = Object.keys(resultData.automigrationErrors).length;
-        const automigrationPreCheckFailure =
-          project.autoblockerCheckResults && project.autoblockerCheckResults.length > 0
-            ? project.autoblockerCheckResults
-                ?.map((result) => {
-                  if (result.result !== null) {
-                    return result.blocker.id;
-                  }
-                  return null;
-                })
-                .filter(Boolean)
-            : null;
-        await telemetry('upgrade', {
-          beforeVersion: project.beforeVersion,
-          afterVersion: project.currentCLIVersion,
-          automigrationResults: resultData.automigrationStatuses,
-          automigrationErrors: resultData.automigrationErrors,
-          automigrationFailureCount,
-          automigrationPreCheckFailure,
-          doctorResults: doctorResults[project.configDir]?.diagnostics || {},
-          doctorFailureCount,
-          doctorErrorCount,
-        });
-      }
-
-      await sendMultiUpgradeTelemetry({
-        allProjects,
-        selectedProjects: storybookProjects,
-        projectResults: automigrationResults,
-        doctorResults,
+        if (status === 'check_error') {
+          doctorErrorCount++;
+        }
+      });
+      const automigrationFailureCount = Object.keys(resultData.automigrationErrors).length;
+      const automigrationPreCheckFailure =
+        project.autoblockerCheckResults && project.autoblockerCheckResults.length > 0
+          ? project.autoblockerCheckResults
+              ?.map((result) => {
+                if (result.result !== null) {
+                  return result.blocker.id;
+                }
+                return null;
+              })
+              .filter(Boolean)
+          : null;
+      await telemetry('upgrade', {
+        beforeVersion: project.beforeVersion,
+        afterVersion: project.currentCLIVersion,
+        automigrationResults: resultData.automigrationStatuses,
+        automigrationErrors: resultData.automigrationErrors,
+        automigrationFailureCount,
+        automigrationPreCheckFailure,
+        doctorResults: doctorResults[project.configDir]?.diagnostics || {},
+        doctorFailureCount,
+        doctorErrorCount,
       });
     }
+
+    await sendMultiUpgradeTelemetry({
+      allProjects,
+      selectedProjects: storybookProjects,
+      projectResults: automigrationResults,
+      doctorResults,
+    });
   } finally {
     // Clean up signal handlers
     process.removeListener('SIGINT', handleInterruption);

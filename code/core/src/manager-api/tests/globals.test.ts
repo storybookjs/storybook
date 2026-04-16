@@ -11,11 +11,11 @@ import type { GlobalsUpdatedPayload, SetGlobalsPayload } from 'storybook/interna
 
 import { EventEmitter } from 'events';
 
-import { getEventMetadata as _getEventData } from '../lib/events';
-import type { ModuleArgs } from '../lib/types';
-import type { SubAPI } from '../modules/globals';
-import { init as initModule } from '../modules/globals';
-import type { API } from '../root';
+import { getEventMetadata as _getEventData } from '../lib/events.ts';
+import type { ModuleArgs } from '../lib/types.tsx';
+import type { SubAPI } from '../modules/globals.ts';
+import { init as initModule } from '../modules/globals.ts';
+import type { API } from '../root.tsx';
 
 const getEventMetadata = vi.mocked(_getEventData, true);
 const logger = vi.mocked(_logger, true);

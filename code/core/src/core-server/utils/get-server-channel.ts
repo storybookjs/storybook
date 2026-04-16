@@ -6,10 +6,10 @@ import { Channel, HEARTBEAT_INTERVAL } from 'storybook/internal/channels';
 import { isJSON, parse, stringify } from 'telejson';
 import WebSocket, { WebSocketServer } from 'ws';
 
-import { logger } from '../../node-logger';
-import { UniversalStore } from '../../shared/universal-store';
-import { type HostValidationOptions, isValidHost } from './getHostValidationMiddleware';
-import { isValidToken } from './validate-token';
+import { logger } from '../../node-logger/index.ts';
+import { UniversalStore } from '../../shared/universal-store/index.ts';
+import { type HostValidationOptions, isValidHost } from './getHostValidationMiddleware.ts';
+import { isValidToken } from './validate-token.ts';
 
 type Server = NonNullable<NonNullable<ConstructorParameters<typeof WebSocketServer>[0]>['server']>;
 

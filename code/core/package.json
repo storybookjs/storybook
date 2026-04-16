@@ -1,6 +1,6 @@
 {
   "name": "storybook",
-  "version": "10.4.0-alpha.3",
+  "version": "10.4.0-alpha.9",
   "description": "Storybook: Develop, document, and test UI components in isolation",
   "keywords": [
     "storybook",
@@ -264,6 +264,7 @@
     "@radix-ui/react-slot": "^1.0.2",
     "@react-aria/interactions": "^3.25.5",
     "@react-aria/landmark": "^3.0.8",
+    "@react-aria/live-announcer": "^3.4.4",
     "@react-aria/overlays": "^3.29.1",
     "@react-aria/tabs": "^3.10.7",
     "@react-aria/toolbar": "3.0.0-beta.20",
@@ -315,6 +316,7 @@
     "esbuild": "^0.18.0 || ^0.19.0 || ^0.20.0 || ^0.21.0 || ^0.22.0 || ^0.23.0 || ^0.24.0 || ^0.25.0 || ^0.26.0 || ^0.27.0",
     "execa": "^9.6.1",
     "exsolve": "^1.0.7",
+    "extend-to-be-announced": "^2.0.0",
     "fetch-retry": "^6.0.0",
     "flush-promises": "^1.0.2",
     "fuse.js": "^3.6.1",
@@ -376,10 +378,14 @@
     "zod": "^3.25.76"
   },
   "peerDependencies": {
-    "prettier": "^2 || ^3"
+    "prettier": "^2 || ^3",
+    "vite-plus": "^0.1.15"
   },
   "peerDependenciesMeta": {
     "prettier": {
+      "optional": true
+    },
+    "vite-plus": {
       "optional": true
     }
   },

@@ -10,9 +10,9 @@ import { transformFileSync, transformSync } from '@babel/core';
 import requireFromString from 'require-from-string';
 import { inferControls } from 'storybook/preview-api';
 
-import { extractArgTypes } from './extractArgTypes';
-import { extractProps } from './extractProps';
-import type { StoryContext } from './types';
+import { extractArgTypes } from './extractArgTypes.ts';
+import { extractProps } from './extractProps.ts';
+import type { StoryContext } from './types.ts';
 
 // File hierarchy:
 // __testfixtures__ / some-test-case / input.*

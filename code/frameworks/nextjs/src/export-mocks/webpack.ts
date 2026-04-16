@@ -1,6 +1,6 @@
 import type { Configuration as WebpackConfig } from 'webpack';
 
-import { getCompatibilityAliases } from '../compatibility/compatibility-map';
+import { getCompatibilityAliases } from '../compatibility/compatibility-map.ts';
 
 const mapping = {
   'next/headers': '@storybook/nextjs/headers.mock',

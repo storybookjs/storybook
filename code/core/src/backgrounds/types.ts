@@ -1,4 +1,4 @@
-import type { PARAM_KEY } from './constants';
+import type { PARAM_KEY } from './constants.ts';
 
 export interface Background {
   name: string;

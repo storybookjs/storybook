@@ -16,6 +16,7 @@ Type:
   actions?: boolean;
   argTypeTargetsV7?: boolean;
   backgrounds?: boolean;
+  changeDetection?: boolean;
   componentsManifest?: boolean;
   controls?: boolean;
   developmentModeForBuild?: boolean;
@@ -41,6 +42,7 @@ Type:
   angularFilterNonInputControls?: boolean;
   argTypeTargetsV7?: boolean;
   backgrounds?: boolean;
+  changeDetection?: boolean;
   controls?: boolean;
   developmentModeForBuild?: boolean;
   highlight?: boolean;
@@ -62,6 +64,7 @@ Type:
   actions?: boolean;
   argTypeTargetsV7?: boolean;
   backgrounds?: boolean;
+  changeDetection?: boolean;
   controls?: boolean;
   developmentModeForBuild?: boolean;
   highlight?: boolean;
@@ -127,13 +130,21 @@ Enable the [Backgrounds](../../essentials/backgrounds.mdx) feature.
 
 Type: `boolean`
 
-Default: `true`
+Default: `false`
 
 Generate [manifests](../../ai/manifests.mdx), used by the [MCP server](../../ai/mcp/overview.mdx).
 
 <CodeSnippets path="main-config-features-components-manifest.md" />
 
 </If>
+
+## `changeDetection`
+
+Type: `boolean`
+
+Default: `true`
+
+Enable change detection.
 
 ## `controls`
 

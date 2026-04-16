@@ -4,8 +4,8 @@ import type { StoryContext } from 'storybook/internal/types';
 import { addons, useParameter } from 'storybook/preview-api';
 import { dedent } from 'ts-dedent';
 
-import { DEFAULT_THEME_PARAMETERS, GLOBAL_KEY, PARAM_KEY, THEMING_EVENTS } from '../constants';
-import type { ThemesParameters as Parameters } from '../types';
+import { DEFAULT_THEME_PARAMETERS, GLOBAL_KEY, PARAM_KEY, THEMING_EVENTS } from '../constants.ts';
+import type { ThemesParameters as Parameters } from '../types.ts';
 
 type ThemesParameters = Parameters['themes'];
 

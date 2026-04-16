@@ -3,7 +3,7 @@ import { InjectionToken, NgZone } from '@angular/core';
 import type { Subject, Subscriber } from 'rxjs';
 import { Observable } from 'rxjs';
 
-import type { ICollection } from '../types';
+import type { ICollection } from '../types.ts';
 
 export const STORY_PROPS = new InjectionToken<Subject<ICollection | undefined>>('STORY_PROPS');
 

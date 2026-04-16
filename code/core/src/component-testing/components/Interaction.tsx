@@ -7,13 +7,13 @@ import { ChevronDownIcon, ChevronUpIcon } from '@storybook/icons';
 import { transparentize } from 'polished';
 import { styled, typography } from 'storybook/theming';
 
-import { type Call, CallStates, type ControlStates } from '../../instrumenter/types';
-import { INTERNAL_RENDER_CALL_ID } from '../constants';
-import { isChaiError, isJestError, useAnsiToHtmlFilter } from '../utils';
-import type { Controls } from './InteractionsPanel';
-import { MatcherResult } from './MatcherResult';
-import { MethodCall } from './MethodCall';
-import { StatusIcon } from './StatusIcon';
+import { type Call, CallStates, type ControlStates } from '../../instrumenter/types.ts';
+import { INTERNAL_RENDER_CALL_ID } from '../constants.ts';
+import { isChaiError, isJestError, useAnsiToHtmlFilter } from '../utils.ts';
+import type { Controls } from './InteractionsPanel.tsx';
+import { MatcherResult } from './MatcherResult.tsx';
+import { MethodCall } from './MethodCall.tsx';
+import { StatusIcon } from './StatusIcon.tsx';
 
 const MethodCallWrapper = styled.div({
   fontFamily: typography.fonts.mono,
@@ -22,10 +22,11 @@ const MethodCallWrapper = styled.div({
   inlineSize: 'calc( 100% - 40px )',
 });
 
-const RowContainer = styled('div', {
+const RowContainer = styled('li', {
   shouldForwardProp: (prop) => !['call', 'pausedAt'].includes(prop.toString()),
 })<{ call: Call; pausedAt: Call['id'] | undefined }>(
   ({ theme, call }) => ({
+    listStyle: 'none',
     position: 'relative',
     display: 'flex',
     flexDirection: 'column',
@@ -62,10 +63,12 @@ const RowContainer = styled('div', {
     }
 );
 
-const RowHeader = styled.div<{ isInteractive: boolean }>(({ theme, isInteractive }) => ({
-  display: 'flex',
-  '&:hover': isInteractive ? {} : { background: theme.background.hoverable },
-}));
+const RowHeader = styled.div<{ $isNavigationDisabled: boolean }>(
+  ({ theme, $isNavigationDisabled }) => ({
+    display: 'flex',
+    '&:hover': $isNavigationDisabled ? {} : { background: theme.background.hoverable },
+  })
+);
 
 const RowLabel = styled('button', {
   shouldForwardProp: (prop) => !['call'].includes(prop.toString()),
@@ -128,6 +131,59 @@ const ErrorExplainer = styled.p(({ theme }) => ({
   maxWidth: 500,
   textWrap: 'balance',
 }));
+
+/**
+ * Human-readable name for an interaction row (visible text and ARIA), matching instrumented data.
+ *
+ * Play-function `step('…')` calls are recorded with `method === 'step'` and the user-facing
+ * description in `args[0]`. For a **top-level** step (`path` is empty) with a non-empty string
+ * there, that string is used so the UI matches what the author wrote.
+ *
+ * Otherwise we use `call.method` (e.g. `click`, `expect`, nested steps without their own title).
+ */
+export const extractStepName = (call: Call) => {
+  if (call.method === 'step' && call.path?.length === 0 && typeof call.args?.[0] === 'string') {
+    const label = call.args[0].trim();
+    if (label.length > 0) {
+      return label;
+    }
+  }
+
+  return call.method;
+};
+
+/**
+ * Accessible name for the main row control. Uses "interaction row" wording so we never combine
+ * "Interaction step" with a `stepName` of `step` (awkward "step … step" for screen readers).
+ */
+export const getRowAriaLabel = ({
+  isNavigationDisabled,
+  stepName,
+  statusText,
+}: {
+  isNavigationDisabled: boolean;
+  stepName: string;
+  statusText: string;
+}) =>
+  `${isNavigationDisabled ? 'Interaction row' : 'Go to interaction row'}: ${stepName}. Status: ${statusText}.`;
+
+export const getExpandButtonAriaLabel = ({
+  isCollapsed,
+  stepName,
+}: {
+  isCollapsed: boolean;
+  stepName: string;
+}) => `${isCollapsed ? 'Expand' : 'Collapse'} nested interaction steps for ${stepName}`;
+
+const stepStatusTextMap: Record<Exclude<Call['status'], undefined>, string> = {
+  [CallStates.DONE]: 'passed',
+  [CallStates.ERROR]: 'failed',
+  [CallStates.ACTIVE]: 'running',
+  [CallStates.WAITING]: 'pending',
+};
+
+const getInteractionStatusText = (call: Call) =>
+  call.status ? stepStatusTextMap[call.status] : 'not run';
 
 const Exception = ({ exception }: { exception: Call['exception'] }) => {
   const filter = useAnsiToHtmlFilter();
@@ -194,7 +250,10 @@ export const Interaction = ({
   pausedAt?: Call['id'];
 }) => {
   const [isHovered, setIsHovered] = React.useState(false);
-  const isInteractive = !controlStates.goto || !call.interceptable || !!call.ancestors?.length;
+  const isNavigationDisabled =
+    !controlStates.goto || !call.interceptable || !!call.ancestors?.length;
+  const stepName = extractStepName(call);
+  const interactionStatus = getInteractionStatusText(call);
 
   if (isHidden) {
     return null;
@@ -206,12 +265,16 @@ export const Interaction = ({
 
   return (
     <RowContainer call={call} pausedAt={pausedAt}>
-      <RowHeader isInteractive={isInteractive}>
+      <RowHeader $isNavigationDisabled={isNavigationDisabled}>
         <RowLabel
-          aria-label="Interaction step"
+          aria-label={getRowAriaLabel({
+            isNavigationDisabled,
+            stepName,
+            statusText: interactionStatus,
+          })}
           call={call}
           onClick={() => controls.goto(call.id)}
-          disabled={isInteractive}
+          disabled={isNavigationDisabled}
           onMouseEnter={() => controlStates.goto && setIsHovered(true)}
           onMouseLeave={() => controlStates.goto && setIsHovered(false)}
         >
@@ -226,10 +289,10 @@ export const Interaction = ({
               padding="small"
               variant="ghost"
               onClick={toggleCollapsed}
-              ariaLabel={`${isCollapsed ? 'Show' : 'Hide'} steps`}
+              ariaLabel={getExpandButtonAriaLabel({ isCollapsed, stepName })}
+              aria-expanded={!isCollapsed}
             >
-              {/* FIXME: accordion pattern */}
-              {isCollapsed ? <ChevronDownIcon /> : <ChevronUpIcon />}
+              {isCollapsed ? <ChevronUpIcon /> : <ChevronDownIcon />}
             </StyledButton>
           )}
         </RowActions>

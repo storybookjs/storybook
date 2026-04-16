@@ -14,8 +14,8 @@ import { ManagerContext, mockChannel } from 'storybook/manager-api';
 import { expect, fireEvent, fn, waitFor } from 'storybook/test';
 import { styled } from 'storybook/theming';
 
-import { internal_fullTestProviderStore } from '../../manager-stores.mock';
-import { TestingWidget } from './TestingWidget';
+import { internal_fullTestProviderStore } from '../../manager-stores.mock.ts';
+import { TestingWidget } from './TestingWidget.tsx';
 
 const Wrapper = styled.div(({ theme }) => ({
   maxWidth: 250,

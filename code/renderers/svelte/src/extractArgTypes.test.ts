@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest';
 
 import svelteDoc from 'sveltedoc-parser';
 
-import { createArgTypes } from './extractArgTypes';
+import { createArgTypes } from './extractArgTypes.ts';
 
 const content = readFileSync(`${__dirname}/sample/MockButton.svelte`, 'utf-8');
 describe('Extracting Arguments', () => {

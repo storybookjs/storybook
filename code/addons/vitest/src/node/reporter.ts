@@ -5,8 +5,8 @@ import { type Reporter } from 'vitest/reporters';
 import type { TaskMeta } from '@vitest/runner';
 import type { Report } from 'storybook/preview-api';
 
-import type { VitestError } from '../types';
-import type { TestManager } from './test-manager';
+import type { VitestError } from '../types.ts';
+import type { TestManager } from './test-manager.ts';
 
 export class StorybookReporter implements Reporter {
   ctx!: Vitest;

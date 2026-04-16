@@ -10,9 +10,9 @@ import type {
   StoryIndexEntry,
 } from 'storybook/internal/types';
 
-import { ReporterAPI, type StoryStore } from '../../store';
-import { PREPARE_ABORTED } from './Render';
-import { StoryRender, serializeError } from './StoryRender';
+import { ReporterAPI, type StoryStore } from '../../store/index.ts';
+import { PREPARE_ABORTED } from './Render.ts';
+import { StoryRender, serializeError } from './StoryRender.ts';
 
 const entry = {
   type: 'story',

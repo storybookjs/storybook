@@ -1,6 +1,22 @@
-import { expect, test, vi } from 'vitest';
+import { beforeEach, describe, expect, test, vi } from 'vitest';
 
-import { asyncCache, cached, groupBy, invalidateCache, invariant } from './utils';
+vi.mock('empathic/find', { spy: true });
+vi.mock('storybook/internal/common', { spy: true });
+vi.mock('storybook/internal/node-logger', { spy: true });
+
+import { getProjectRoot } from 'storybook/internal/common';
+import { logger } from 'storybook/internal/node-logger';
+
+import * as find from 'empathic/find';
+
+import {
+  asyncCache,
+  cached,
+  findTsconfigPath,
+  groupBy,
+  invalidateCache,
+  invariant,
+} from './utils.ts';
 
 // Helpers
 const calls = () => {
@@ -176,4 +192,77 @@ test('invalidateCache clears async module-level memo store', async () => {
   invalidateCache();
   expect(await m(2)).toBe(4);
   expect(c.count()).toBe(2);
+});
+
+describe('findTsconfigPath', () => {
+  beforeEach(() => {
+    invalidateCache();
+    vi.mocked(getProjectRoot).mockReturnValue('/project-root');
+  });
+
+  test('returns tsconfig.json when found', () => {
+    vi.mocked(find.up).mockImplementation((name) => {
+      if (name === 'tsconfig.json') {
+        return '/project-root/tsconfig.json';
+      }
+      return undefined;
+    });
+
+    const result = findTsconfigPath('/project-root');
+
+    expect(result).toBe('/project-root/tsconfig.json');
+    expect(logger.warn).not.toHaveBeenCalled();
+  });
+
+  test('falls back to tsconfig.base.json when tsconfig.json is not found', () => {
+    vi.mocked(find.up).mockImplementation((name) => {
+      if (name === 'tsconfig.base.json') {
+        return '/project-root/tsconfig.base.json';
+      }
+      return undefined;
+    });
+
+    const result = findTsconfigPath('/project-root');
+
+    expect(result).toBe('/project-root/tsconfig.base.json');
+  });
+
+  test('falls back to tsconfig.app.json when neither tsconfig.json nor tsconfig.base.json is found', () => {
+    vi.mocked(find.up).mockImplementation((name) => {
+      if (name === 'tsconfig.app.json') {
+        return '/project-root/tsconfig.app.json';
+      }
+      return undefined;
+    });
+
+    const result = findTsconfigPath('/project-root');
+
+    expect(result).toBe('/project-root/tsconfig.app.json');
+  });
+
+  test('returns undefined when no tsconfig variant is found', () => {
+    vi.mocked(find.up).mockReturnValue(undefined);
+
+    const result = findTsconfigPath('/project-root');
+
+    expect(result).toBeUndefined();
+    expect(logger.warn).not.toHaveBeenCalled();
+  });
+
+  test('prefers tsconfig.json over fallback variants', () => {
+    vi.mocked(find.up).mockImplementation((name) => {
+      if (name === 'tsconfig.json') {
+        return '/project-root/tsconfig.json';
+      }
+      if (name === 'tsconfig.base.json') {
+        return '/project-root/tsconfig.base.json';
+      }
+      return undefined;
+    });
+
+    const result = findTsconfigPath('/project-root');
+
+    expect(result).toBe('/project-root/tsconfig.json');
+    expect(logger.warn).not.toHaveBeenCalled();
+  });
 });

@@ -6,7 +6,7 @@ import { ButtonIcon } from '@storybook/icons';
 
 import { useGlobals } from 'storybook/manager-api';
 
-import { PARAM_KEY, PSEUDO_STATES } from '../constants';
+import { PARAM_KEY, PSEUDO_STATES } from '../constants.ts';
 
 const pseudoStates = Object.keys(PSEUDO_STATES).sort() as (keyof typeof PSEUDO_STATES)[];
 

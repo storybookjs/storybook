@@ -76,7 +76,7 @@ Internal exports include:
 ### Key flow
 
 - `.storybook/main.ts` is loaded at startup
-- `.storybook/preview.ts` is bundled into preview
+- `.storybook/preview.ts` is bundled into preview (TSX for React-based frameworks)
 - `.storybook/manager.ts` is bundled into manager
 - `*.stories.*` files are indexed by AST before runtime
 - Story selection loads the module, prepares the story, and renders it
@@ -95,7 +95,7 @@ For routine agent work, prefer the faster non-production commands first. Add `-c
 yarn
 yarn task compile
 yarn nx run-many -t compile
-yarn nx compile <package-name>
+yarn nx compile <nx-project-name>
 ```
 
 ### Lint and typecheck
@@ -122,7 +122,7 @@ yarn storybook:vitest
 | Scenario                        | Command                                                                        |
 | ------------------------------- | ------------------------------------------------------------------------------ |
 | Compile everything quickly      | `yarn nx run-many -t compile`                                                  |
-| Compile one package             | `yarn nx compile <package-name>`                                               |
+| Compile one project             | `yarn nx compile <nx-project-name>`                                            |
 | Check TypeScript errors quickly | `yarn nx run-many -t check`                                                    |
 | Start the internal Storybook UI | `cd code && yarn storybook:ui`                                                 |
 | Build the internal Storybook UI | `cd code && yarn storybook:ui:build`                                           |
@@ -160,6 +160,8 @@ Key points:
 - `react-vite/default-ts` is the default sandbox template
 - `--no-link` is opt-in, not the default
 - NX handles task dependencies via `nx.json`
+- NX target commands use Nx project names (from `project.json` / Nx graph), not `package.json` names
+- Example: `yarn nx compile core` (project `core` is published as package `storybook`)
 
 ## Sandbox Notes
 
@@ -243,6 +245,8 @@ Use Storybook loggers instead of raw `console.*` in normal code paths:
 - Server-side: `storybook/internal/node-logger`
 - Client-side: `storybook/internal/client-logger`
 
+For TypeScript source in the repo, prefer explicit file extensions for relative code imports and exports such as `./foo.ts` or `./bar.tsx` when the target is another TS/JS module in this repository. Keep framework-specific component imports like `.vue` and `.svelte` in the form already expected by their package tooling.
+
 The pre-commit hook automatically detects AI agents (via `std-env`) and switches from check-only to write mode, so formatting is auto-fixed when agents commit.
 
 Avoid `console.log`, `console.warn`, and `console.error` unless the file is isolated enough that importing the logger is not reasonable.
@@ -264,6 +268,7 @@ Avoid `console.log`, `console.warn`, and `console.error` unless the file is isol
 | `STORYBOOK_DISABLE_TELEMETRY` | Disable telemetry           |
 | `STORYBOOK_TELEMETRY_DEBUG`   | Log telemetry events        |
 | `DEBUG`                       | Enable debug logging        |
+| `FIX_ON_COMMIT`               | Force autofix for fmt & lint in pre-commit hook |
 
 ## Commands To Avoid
 

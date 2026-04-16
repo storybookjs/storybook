@@ -9,7 +9,7 @@ import { transformSync } from 'esbuild';
 import { walk } from 'estree-walker';
 import { basename, normalize } from 'pathe';
 
-import { resolveMock } from './resolve';
+import { resolveMock } from './resolve.ts';
 
 const DEFAULT_MODULE_DIRECTORIES = ['/node_modules/'];
 
@@ -183,17 +183,15 @@ export function extractMockCalls(
       },
     });
 
-    if (!options.coreOptions?.disableTelemetry) {
-      telemetry(
-        'mocking',
-        {
-          modulesMocked: mocks.length,
-          modulesSpied: mocks.map((mock) => mock.spy).filter(Boolean).length,
-          modulesManuallyMocked: mocks.map((mock) => !!mock.redirectPath).filter(Boolean).length,
-        },
-        { configDir: options.configDir }
-      );
-    }
+    telemetry(
+      'mocking',
+      {
+        modulesMocked: mocks.length,
+        modulesSpied: mocks.map((mock) => mock.spy).filter(Boolean).length,
+        modulesManuallyMocked: mocks.map((mock) => !!mock.redirectPath).filter(Boolean).length,
+      },
+      { configDir: options.configDir }
+    );
     return mocks;
   } catch (error) {
     logger.debug('Error extracting mock calls: ' + String(error));

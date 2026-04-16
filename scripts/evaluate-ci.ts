@@ -2,6 +2,7 @@
  * CI Evaluation Script: NX Cloud vs CircleCI
  *
  * Compares flakiness, speed, and cost across evaluation branches.
+ * Caches all run data in a local SQLite database for fast re-runs.
  *
  * Required env vars:
  *   CIRCLE_TOKEN          — CircleCI personal API token
@@ -15,6 +16,8 @@
  *   yarn jiti scripts/evaluate-ci.ts
  *   yarn jiti scripts/evaluate-ci.ts --workflow normal
  *   yarn jiti scripts/evaluate-ci.ts --workflow daily --limit 50
+ *   yarn jiti scripts/evaluate-ci.ts --report-only
+ *   yarn jiti scripts/evaluate-ci.ts --show-runs
  */
 
 import { readFileSync } from 'node:fs';
@@ -22,6 +25,7 @@ import { join } from 'node:path';
 // @ts-expect-error - no type declarations for ini
 import { parse as parseIni } from 'ini';
 import { parse as parseYaml } from 'yaml';
+import { DatabaseSync } from 'node:sqlite';
 
 // ─── Configuration ───────────────────────────────────────────────────────────
 
@@ -30,27 +34,32 @@ const NX_CLOUD_URL = 'https://cloud.nx.app';
 const NX_CLOUD_ID = '6929fbef73e98d8094d2a343';
 
 const WORKSPACE_ROOT = join(import.meta.dirname, '..');
+const DB_PATH = join(import.meta.dirname, 'ci-eval.db');
 
 const EVAL_BRANCHES: Record<string, string[]> = {
   normal: ['kasper/nx-eval-normal'],
   merged: ['kasper/nx-eval-merged'],
   daily: ['kasper/nx-eval-daily-1', 'kasper/nx-eval-daily-2'],
+  'base (nx-ai)': ['kasper/nx-ai'],
+  'next:merged': ['next'],
+  'next:daily': ['next'],
 };
 
 const WORKFLOW_NAMES: Record<string, string> = {
   normal: 'normal-generated',
   merged: 'merged-generated',
   daily: 'daily-generated',
+  'base (nx-ai)': 'daily-generated',
+  'next:merged': 'merged-generated',
+  'next:daily': 'daily-generated',
 };
 
 // ─── Pricing ─────────────────────────────────────────────────────────────────
 
-// Both platforms use identical credit rates per resource class.
-const CREDIT_TO_USD = 0.0006;
-
+const CIRCLECI_CREDIT_TO_USD = 0.0006;
+const NX_CREDIT_TO_USD = 0.0005;
 const NX_CREDITS_PER_CIPE = 500;
 
-// NX Cloud credits/min per resource class (from https://nx.dev/docs/reference/nx-cloud/credits-pricing)
 const NX_RESOURCE_CLASS_CREDITS: Record<string, number> = {
   'docker_linux_amd64/small': 5,
   'docker_linux_amd64/medium': 10,
@@ -65,10 +74,6 @@ const NX_RESOURCE_CLASS_CREDITS: Record<string, number> = {
   'docker_windows/medium': 40,
 };
 
-/**
- * Read .nx/workflows/agents.yaml to build a map from launch template name
- * to credits/min based on the actual resource-class configured.
- */
 function loadNxAgentCreditsPerMin(): Record<string, number> {
   const agentsPath = join(WORKSPACE_ROOT, '.nx/workflows/agents.yaml');
   const yaml = parseYaml(readFileSync(agentsPath, 'utf-8'));
@@ -91,7 +96,137 @@ function loadNxAgentCreditsPerMin(): Record<string, number> {
   return result;
 }
 
-// CircleCI Insights API returns credits_used directly — no estimation needed.
+// ─── SQLite Database ─────────────────────────────────────────────────────────
+
+function initDB() {
+  const db = new DatabaseSync(DB_PATH);
+
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS runs (
+      id TEXT PRIMARY KEY,
+      system TEXT NOT NULL,
+      workflow TEXT NOT NULL,
+      branch TEXT NOT NULL,
+      status TEXT NOT NULL,
+      created_at TEXT NOT NULL,
+      duration_sec REAL NOT NULL,
+      credits_used INTEGER NOT NULL,
+      cost_usd REAL NOT NULL
+    );
+    CREATE TABLE IF NOT EXISTS failed_tasks (
+      run_id TEXT NOT NULL,
+      task_name TEXT NOT NULL,
+      FOREIGN KEY (run_id) REFERENCES runs(id)
+    );
+    CREATE TABLE IF NOT EXISTS nx_template_credits (
+      run_id TEXT NOT NULL,
+      template TEXT NOT NULL,
+      credits INTEGER NOT NULL,
+      credit_multiplier INTEGER NOT NULL,
+      FOREIGN KEY (run_id) REFERENCES runs(id)
+    );
+    CREATE INDEX IF NOT EXISTS idx_runs_system_workflow ON runs(system, workflow);
+    CREATE INDEX IF NOT EXISTS idx_failed_tasks_run_id ON failed_tasks(run_id);
+    CREATE INDEX IF NOT EXISTS idx_nx_template_credits_run_id ON nx_template_credits(run_id);
+  `);
+
+  return db;
+}
+
+function dbInsertRun(
+  db: InstanceType<typeof DatabaseSync>,
+  system: string,
+  workflow: string,
+  branch: string,
+  run: CIRun
+) {
+  const insertRun = db.prepare(
+    `INSERT OR IGNORE INTO runs (id, system, workflow, branch, status, created_at, duration_sec, credits_used, cost_usd)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
+  );
+  insertRun.run(
+    run.id,
+    system,
+    workflow,
+    branch,
+    run.status,
+    run.createdAt,
+    run.durationSec,
+    run.creditsUsed,
+    run.costUsd
+  );
+
+  if (run.failedJobs.length > 0) {
+    const insertTask = db.prepare(`INSERT INTO failed_tasks (run_id, task_name) VALUES (?, ?)`);
+    for (const task of run.failedJobs) {
+      insertTask.run(run.id, task);
+    }
+  }
+
+  if (run.nxPerTemplate && run.nxResourceClasses) {
+    const insertCredit = db.prepare(
+      `INSERT INTO nx_template_credits (run_id, template, credits, credit_multiplier) VALUES (?, ?, ?, ?)`
+    );
+    for (const [tmpl, credits] of Object.entries(run.nxPerTemplate)) {
+      const multiplier = run.nxResourceClasses[tmpl] ?? 0;
+      insertCredit.run(run.id, tmpl, credits, multiplier);
+    }
+  }
+}
+
+function dbGetExistingIds(
+  db: InstanceType<typeof DatabaseSync>,
+  system: string,
+  workflow: string
+): Set<string> {
+  const rows = db
+    .prepare(`SELECT id FROM runs WHERE system = ? AND workflow = ?`)
+    .all(system, workflow) as { id: string }[];
+  return new Set(rows.map((r) => r.id));
+}
+
+function dbGetRuns(
+  db: InstanceType<typeof DatabaseSync>,
+  system: string,
+  workflow: string
+): CIRun[] {
+  const rows = db
+    .prepare(
+      `SELECT id, status, created_at, duration_sec, credits_used, cost_usd
+       FROM runs WHERE system = ? AND workflow = ? ORDER BY created_at ASC`
+    )
+    .all(system, workflow) as any[];
+
+  return rows.map((row) => {
+    const failedRows = db
+      .prepare(`SELECT task_name FROM failed_tasks WHERE run_id = ?`)
+      .all(row.id) as { task_name: string }[];
+
+    const creditRows = db
+      .prepare(
+        `SELECT template, credits, credit_multiplier FROM nx_template_credits WHERE run_id = ?`
+      )
+      .all(row.id) as { template: string; credits: number; credit_multiplier: number }[];
+
+    const nxPerTemplate: Record<string, number> = {};
+    const nxResourceClasses: Record<string, number> = {};
+    for (const cr of creditRows) {
+      nxPerTemplate[cr.template] = cr.credits;
+      nxResourceClasses[cr.template] = cr.credit_multiplier;
+    }
+
+    return {
+      id: row.id,
+      status: row.status,
+      createdAt: row.created_at,
+      durationSec: row.duration_sec,
+      creditsUsed: row.credits_used,
+      costUsd: row.cost_usd,
+      failedJobs: failedRows.map((r) => r.task_name),
+      ...(creditRows.length > 0 ? { nxPerTemplate, nxResourceClasses } : {}),
+    };
+  });
+}
 
 // ─── Auth ────────────────────────────────────────────────────────────────────
 
@@ -162,6 +297,8 @@ interface CIRun {
   creditsUsed: number;
   costUsd: number;
   failedJobs: string[];
+  nxPerTemplate?: Record<string, number>;
+  nxResourceClasses?: Record<string, number>;
 }
 
 interface CIReport {
@@ -203,17 +340,22 @@ interface CircleJob {
   status: string;
 }
 
-async function getCircleCIRuns(
+async function syncCircleCIRuns(
+  db: InstanceType<typeof DatabaseSync>,
+  workflow: string,
   branches: string[],
   workflowName: string,
   limit: number
 ): Promise<CIRun[]> {
-  const runs: CIRun[] = [];
+  const existingIds = dbGetExistingIds(db, 'circleci', workflow);
+  const newRuns: CIRun[] = [];
+  let skipped = 0;
 
   for (const branch of branches) {
     let pageToken: string | undefined;
+    let fetched = 0;
 
-    while (runs.length < limit) {
+    while (fetched < limit) {
       const params = new URLSearchParams({ branch });
       if (pageToken) params.set('page-token', pageToken);
 
@@ -223,7 +365,14 @@ async function getCircleCIRuns(
       }>(`/insights/${CIRCLECI_PROJECT}/workflows/${workflowName}?${params}`);
 
       for (const run of data.items) {
-        if (runs.length >= limit) break;
+        if (fetched >= limit) break;
+        if (run.status === 'canceled' || run.status === 'not_run') continue;
+
+        if (existingIds.has(run.id)) {
+          skipped++;
+          fetched++;
+          continue;
+        }
 
         const failedJobs: string[] = [];
         if (run.status === 'failed') {
@@ -235,15 +384,19 @@ async function getCircleCIRuns(
           } catch {}
         }
 
-        runs.push({
+        const ciRun: CIRun = {
           id: run.id,
           status: run.status,
           createdAt: run.created_at,
           durationSec: run.duration,
           creditsUsed: run.credits_used,
-          costUsd: run.credits_used * CREDIT_TO_USD,
+          costUsd: run.credits_used * CIRCLECI_CREDIT_TO_USD,
           failedJobs,
-        });
+        };
+
+        dbInsertRun(db, 'circleci', workflow, branch, ciRun);
+        newRuns.push(ciRun);
+        fetched++;
       }
 
       pageToken = data.next_page_token ?? undefined;
@@ -251,7 +404,10 @@ async function getCircleCIRuns(
     }
   }
 
-  return runs.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+  if (skipped > 0) console.log(`    CircleCI: ${skipped} cached, ${newRuns.length} new`);
+  else console.log(`    CircleCI: ${newRuns.length} new runs`);
+
+  return dbGetRuns(db, 'circleci', workflow);
 }
 
 // ─── NX Cloud Data ───────────────────────────────────────────────────────────
@@ -290,6 +446,7 @@ interface NxPipelineSearchResult {
 interface NxDashboardCredits {
   totalCredits: number;
   perTemplate: Record<string, number>;
+  resourceClasses: Record<string, number>;
 }
 
 async function fetchNxDashboardCredits(
@@ -312,48 +469,129 @@ async function fetchNxDashboardCredits(
       | undefined;
     if (!usages) return null;
 
+    const rcData = data?.resourceClasses as
+      | Record<string, { creditMultiplier: number }>
+      | undefined;
+    const resourceClasses: Record<string, number> = {};
+    if (rcData) {
+      for (const [tmpl, info] of Object.entries(rcData)) {
+        resourceClasses[tmpl] = info.creditMultiplier;
+      }
+    }
+
     let total = NX_CREDITS_PER_CIPE;
     const perTemplate: Record<string, number> = {};
     for (const [tmpl, info] of Object.entries(usages)) {
       perTemplate[tmpl] = info.totalCredits;
       total += info.totalCredits;
     }
-    return { totalCredits: total, perTemplate };
+    return { totalCredits: total, perTemplate, resourceClasses };
   } catch {
     return null;
   }
 }
 
-async function getNxCloudRuns(
+const prNumberCache = new Map<string, string>();
+
+async function resolvePRNumber(branch: string): Promise<string> {
+  if (prNumberCache.has(branch)) return prNumberCache.get(branch)!;
+
+  try {
+    const data = await fetchJSON<{ number: number }[]>(
+      `https://api.github.com/repos/storybookjs/storybook/pulls?head=storybookjs:${branch}&state=open&per_page=1`,
+      { headers: { Authorization: `token ${process.env.GITHUB_TOKEN ?? ''}` } }
+    );
+    const num = data[0]?.number?.toString() ?? branch;
+    prNumberCache.set(branch, num);
+    return num;
+  } catch {
+    return branch;
+  }
+}
+
+async function syncNxCloudRuns(
+  db: InstanceType<typeof DatabaseSync>,
+  workflow: string,
   branches: string[],
   limit: number,
   agentCreditsPerMin: Record<string, number>
 ): Promise<CIRun[]> {
-  const runs: CIRun[] = [];
+  const existingIds = dbGetExistingIds(db, 'nx', workflow);
+  const newRuns: CIRun[] = [];
+  let skipped = 0;
   const hasDashboardAccess = !!process.env.NX_CLOUD_SESSION;
 
+  const prNumbers = await Promise.all(branches.map(resolvePRNumber));
+
   const searchResult = await nxCloudFetch<NxPipelineSearchResult>('/pipeline-executions/search', {
-    branches: branches.map(branchToPRNumber),
+    branches: prNumbers,
+    statuses: ['SUCCEEDED', 'FAILED'],
     limit,
   });
 
   for (const item of searchResult.items) {
     if (!item.completedAtMs) continue;
-    if (item.status === 'IN_PROGRESS' || item.status === 'NOT_STARTED') continue;
+    if (
+      item.status === 'IN_PROGRESS' ||
+      item.status === 'NOT_STARTED' ||
+      item.status === 'CANCELED'
+    )
+      continue;
 
-    const ref = item.vcsContext?.ref ?? '';
-    if (!branches.some((b) => ref === b || item.branch === branchToPRNumber(b))) continue;
+    if (!prNumbers.includes(item.branch)) continue;
+
+    if (existingIds.has(item.id)) {
+      skipped++;
+      continue;
+    }
 
     const details = await nxCloudFetch<NxPipelineExecution>(`/pipeline-executions/${item.id}`);
 
-    const durationSec = details.durationMs / 1000;
-    const failedJobs: string[] = [];
+    // Fetch runs once — used for duration, command tag matching, and failed task names
+    let runItems: { id: string; status: string; durationMs: number; command: string }[] = [];
+    try {
+      const runSearch = await nxCloudFetch<{
+        items: { id: string; status: string; durationMs: number; command: string }[];
+      }>('/runs/search', { pipelineExecutionId: item.id, limit: 5 });
+      runItems = runSearch.items;
+    } catch {}
 
-    for (const rg of details.runGroups) {
-      if (rg.status === 'FAILED') failedJobs.push(rg.runGroupName);
+    // Match workflow by checking the tag in the nx command (e.g. tag:ci:daily vs tag:ci:merged)
+    const NX_TAG_MAP: Record<string, string> = {
+      normal: 'ci:normal',
+      merged: 'ci:merged',
+      daily: 'ci:daily',
+      'base (nx-ai)': 'ci:daily',
+      'next:merged': 'ci:merged',
+      'next:daily': 'ci:daily',
+    };
+    const expectedTag = NX_TAG_MAP[workflow];
+    if (expectedTag) {
+      const mainRun = runItems.find((r) => r.command?.includes('tag:'));
+      if (mainRun && !mainRun.command.includes(`tag:${expectedTag}`)) continue;
     }
 
-    // Try exact credits from dashboard API first, fall back to estimation
+    // Use run duration instead of CIPE duration (CIPE includes queueing time)
+    const maxRunDuration = Math.max(0, ...runItems.map((r) => r.durationMs || 0));
+    const durationSec = maxRunDuration > 0 ? maxRunDuration / 1000 : details.durationMs / 1000;
+
+    const failedJobs: string[] = [];
+    for (const run of runItems) {
+      if (run.status !== 'Failed') continue;
+      try {
+        const runDetails = await nxCloudFetch<{
+          tasks: { projectName: string; target: string; status: string }[];
+        }>(`/runs/${run.id}`);
+        for (const task of runDetails.tasks ?? []) {
+          if (task.status === 'Failed') {
+            failedJobs.push(`${task.projectName}:${task.target}`);
+          }
+        }
+      } catch {
+        failedJobs.push(run.id);
+      }
+    }
+
     let totalNxCredits: number;
     const firstRunGroup = details.runGroups[0];
 
@@ -377,33 +615,31 @@ async function getNxCloudRuns(
       }
     }
 
-    runs.push({
+    const ciRun: CIRun = {
       id: item.id,
       status: item.status,
       createdAt: new Date(item.createdAtMs).toISOString(),
       durationSec,
       creditsUsed: Math.round(totalNxCredits),
-      costUsd: totalNxCredits * CREDIT_TO_USD,
+      costUsd: totalNxCredits * NX_CREDIT_TO_USD,
       failedJobs,
-    });
+      nxPerTemplate: dashboardCredits?.perTemplate,
+      nxResourceClasses: dashboardCredits?.resourceClasses,
+    };
+
+    dbInsertRun(db, 'nx', workflow, branches[0], ciRun);
+    newRuns.push(ciRun);
   }
 
   if (hasDashboardAccess) {
-    console.log(`    NX Cloud: using exact credits from dashboard API`);
+    console.log(`    NX Cloud: exact credits from dashboard API`);
   } else {
-    console.log(`    NX Cloud: using estimated credits (set NX_CLOUD_SESSION for exact data)`);
+    console.log(`    NX Cloud: estimated credits (set NX_CLOUD_SESSION for exact)`);
   }
+  if (skipped > 0) console.log(`    NX Cloud: ${skipped} cached, ${newRuns.length} new`);
+  else console.log(`    NX Cloud: ${newRuns.length} new runs`);
 
-  return runs.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
-}
-
-/**
- * NX Cloud stores branch as PR number. We need to resolve branch names
- * to PR numbers for filtering. For now, we return the branch name and
- * also check the vcsContext.ref in the results.
- */
-function branchToPRNumber(branch: string): string {
-  return branch;
+  return dbGetRuns(db, 'nx', workflow);
 }
 
 // ─── Analysis ────────────────────────────────────────────────────────────────
@@ -498,6 +734,96 @@ function printReport(report: CIReport) {
   }
 }
 
+function printRunsTable(report: CIReport) {
+  console.log(`\n  Individual runs (${report.system} — ${report.workflow}):`);
+  console.log(
+    `  ${'#'.padStart(3)}  ${'Status'.padEnd(10)}  ${'Duration'.padStart(10)}  ${'Credits'.padStart(10)}  ${'Cost'.padStart(8)}  Created`
+  );
+  console.log(`  ${'─'.repeat(70)}`);
+  for (let i = 0; i < report.runs.length; i++) {
+    const r = report.runs[i];
+    const status = r.status === 'success' || r.status === 'SUCCEEDED' ? '✓' : '✗';
+    console.log(
+      `  ${(i + 1).toString().padStart(3)}  ${status.padEnd(10)}  ${formatDuration(r.durationSec).padStart(10)}  ${r.creditsUsed.toLocaleString().padStart(10)}  ${('$' + r.costUsd.toFixed(2)).padStart(8)}  ${r.createdAt.slice(0, 19)}`
+    );
+  }
+}
+
+function computePredictedMediumPlusCost(
+  runs: CIRun[]
+): { totalCredits: number; avgPerRun: number } | null {
+  const TARGET_RATE = 15;
+  let total = 0;
+  let count = 0;
+
+  for (const run of runs) {
+    if (!run.nxPerTemplate || !run.nxResourceClasses) continue;
+    let predicted = NX_CREDITS_PER_CIPE;
+    for (const [tmpl, credits] of Object.entries(run.nxPerTemplate)) {
+      const actualRate = run.nxResourceClasses[tmpl];
+      if (actualRate && actualRate !== TARGET_RATE) {
+        predicted += (credits / actualRate) * TARGET_RATE;
+      } else {
+        predicted += credits;
+      }
+    }
+    total += predicted;
+    count++;
+  }
+
+  if (count === 0) return null;
+  return { totalCredits: Math.round(total), avgPerRun: Math.round((total / count) * 100) / 100 };
+}
+
+function printFlakeAnalysis(circleReport: CIReport, nxReport: CIReport) {
+  const circleFlakes: Record<string, number> = {};
+  const nxFlakes: Record<string, number> = {};
+
+  for (const run of circleReport.runs) {
+    for (const job of run.failedJobs) {
+      circleFlakes[job] = (circleFlakes[job] ?? 0) + 1;
+    }
+  }
+  for (const run of nxReport.runs) {
+    for (const job of run.failedJobs) {
+      nxFlakes[job] = (nxFlakes[job] ?? 0) + 1;
+    }
+  }
+
+  const circleTotal = circleReport.runs.filter(
+    (r) => r.status === 'failed' || r.status === 'FAILED'
+  ).length;
+  const nxTotal = nxReport.runs.filter(
+    (r) => r.status === 'failed' || r.status === 'FAILED'
+  ).length;
+
+  if (circleTotal === 0 && nxTotal === 0) return;
+
+  console.log(`\n${'─'.repeat(60)}`);
+  console.log(`  FLAKE ANALYSIS: ${circleReport.workflow}`);
+  console.log(`${'─'.repeat(60)}`);
+
+  if (circleTotal > 0) {
+    const circleRuns = circleReport.summary.totalRuns;
+    console.log(`\n  CircleCI (${circleTotal} failed runs out of ${circleRuns}):`);
+    const sorted = Object.entries(circleFlakes).sort(([, a], [, b]) => b - a);
+    for (const [job, count] of sorted.slice(0, 15)) {
+      const pct = ((count / circleRuns) * 100).toFixed(1);
+      console.log(`    ${count.toString().padStart(3)}x (${pct.padStart(5)}%)  ${job}`);
+    }
+  }
+
+  if (nxTotal > 0) {
+    const nxRuns = nxReport.summary.totalRuns;
+    console.log(`\n  NX Cloud (${nxTotal} failed runs out of ${nxRuns}):`);
+    const sorted = Object.entries(nxFlakes).sort(([, a], [, b]) => b - a);
+    for (const [job, count] of sorted.slice(0, 15)) {
+      const pct = ((count / nxRuns) * 100).toFixed(1);
+      console.log(`    ${count.toString().padStart(3)}x (${pct.padStart(5)}%)  ${job}`);
+    }
+  }
+}
+
 function printComparison(circleReport: CIReport, nxReport: CIReport) {
   const c = circleReport.summary;
   const n = nxReport.summary;
@@ -548,6 +874,20 @@ function printComparison(circleReport: CIReport, nxReport: CIReport) {
   );
   row('Total cost', `$${c.totalCostUsd.toFixed(2)}`, `$${n.totalCostUsd.toFixed(2)}`);
   row('Total credits', c.totalCredits.toLocaleString(), n.totalCredits.toLocaleString());
+
+  const predicted = computePredictedMediumPlusCost(nxReport.runs);
+  if (predicted) {
+    const predCostPerRun = predicted.avgPerRun * NX_CREDIT_TO_USD;
+    console.log('');
+    row(
+      'NX if medium+',
+      '',
+      `$${predCostPerRun.toFixed(2)}/run`,
+      predCostPerRun < c.avgCostPerRun ? 'nx' : 'circle'
+    );
+    row('  total predicted', '', `$${(predicted.totalCredits * NX_CREDIT_TO_USD).toFixed(2)}`);
+    row('  credits predicted', '', predicted.totalCredits.toLocaleString());
+  }
 }
 
 // ─── Main ────────────────────────────────────────────────────────────────────
@@ -558,9 +898,12 @@ async function main() {
     ? args[args.indexOf('--workflow') + 1]
     : undefined;
   const limit = args.includes('--limit') ? parseInt(args[args.indexOf('--limit') + 1], 10) : 100;
+  const reportOnly = args.includes('--report-only');
+  const showRuns = args.includes('--show-runs');
 
   const workflows = workflowFilter ? [workflowFilter] : Object.keys(EVAL_BRANCHES);
 
+  const db = initDB();
   const agentCreditsPerMin = loadNxAgentCreditsPerMin();
 
   console.log('╔══════════════════════════════════════════════════════════╗');
@@ -569,6 +912,8 @@ async function main() {
   console.log(`  Date: ${new Date().toISOString()}`);
   console.log(`  Workflows: ${workflows.join(', ')}`);
   console.log(`  Limit: ${limit} runs per system per workflow`);
+  console.log(`  Mode: ${reportOnly ? 'report-only (from cache)' : 'sync + report'}`);
+  console.log(`  DB: ${DB_PATH}`);
   console.log(`  NX agent rates (from .nx/workflows/agents.yaml):`);
   for (const [name, rate] of Object.entries(agentCreditsPerMin)) {
     console.log(`    ${name}: ${rate} credits/min`);
@@ -588,20 +933,27 @@ async function main() {
     let circleRuns: CIRun[] = [];
     let nxRuns: CIRun[] = [];
 
-    try {
-      console.log(`    CircleCI: querying branches ${branches.join(', ')}...`);
-      circleRuns = await getCircleCIRuns(branches, workflowName, limit);
-      console.log(`    CircleCI: found ${circleRuns.length} completed runs`);
-    } catch (e: any) {
-      console.log(`    CircleCI: error — ${e.message}`);
-    }
+    if (reportOnly) {
+      circleRuns = dbGetRuns(db, 'circleci', workflow);
+      nxRuns = dbGetRuns(db, 'nx', workflow);
+      console.log(`    CircleCI: ${circleRuns.length} runs (from cache)`);
+      console.log(`    NX Cloud: ${nxRuns.length} runs (from cache)`);
+    } else {
+      try {
+        console.log(`    CircleCI: querying branches ${branches.join(', ')}...`);
+        circleRuns = await syncCircleCIRuns(db, workflow, branches, workflowName, limit);
+      } catch (e: any) {
+        console.log(`    CircleCI: error — ${e.message}`);
+        circleRuns = dbGetRuns(db, 'circleci', workflow);
+      }
 
-    try {
-      console.log(`    NX Cloud: querying branches ${branches.join(', ')}...`);
-      nxRuns = await getNxCloudRuns(branches, limit, agentCreditsPerMin);
-      console.log(`    NX Cloud: found ${nxRuns.length} completed runs`);
-    } catch (e: any) {
-      console.log(`    NX Cloud: error — ${e.message}`);
+      try {
+        console.log(`    NX Cloud: querying branches ${branches.join(', ')}...`);
+        nxRuns = await syncNxCloudRuns(db, workflow, branches, limit, agentCreditsPerMin);
+      } catch (e: any) {
+        console.log(`    NX Cloud: error — ${e.message}`);
+        nxRuns = dbGetRuns(db, 'nx', workflow);
+      }
     }
 
     const circleReport = buildReport('CircleCI', workflow, branches, circleRuns);
@@ -613,6 +965,14 @@ async function main() {
     if (circleRuns.length > 0 && nxRuns.length > 0) {
       printComparison(circleReport, nxReport);
     }
+    if (circleRuns.length > 0 || nxRuns.length > 0) {
+      printFlakeAnalysis(circleReport, nxReport);
+    }
+
+    if (showRuns) {
+      if (circleRuns.length > 0) printRunsTable(circleReport);
+      if (nxRuns.length > 0) printRunsTable(nxReport);
+    }
   }
 
   console.log(`\n${'═'.repeat(60)}`);
@@ -622,8 +982,14 @@ async function main() {
     `  - NX Cloud credits: ${process.env.NX_CLOUD_SESSION ? 'actual from dashboard API (exact)' : 'estimated from agent timing (~6% overcount)'}`
   );
   console.log('  - Both platforms use identical credits/min per resource class');
-  console.log(`  - Dollar estimates use $${CREDIT_TO_USD}/credit for both`);
+  console.log(`  - CircleCI cost: $${CIRCLECI_CREDIT_TO_USD}/credit (Performance plan)`);
+  console.log(
+    `  - NX Cloud cost: $${NX_CREDIT_TO_USD}/credit + ${NX_CREDITS_PER_CIPE} credits/CIPE (Enterprise plan)`
+  );
+  console.log(`  - Data cached in ${DB_PATH}`);
   console.log(`${'═'.repeat(60)}\n`);
+
+  db.close();
 }
 
 main().catch((err) => {

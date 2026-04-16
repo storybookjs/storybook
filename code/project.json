@@ -21,9 +21,9 @@
     "test": {
       "dependsOn": [{ "projects": ["*"], "target": "compile" }],
       "executor": "nx:run-commands",
-      "options": { "command": "yarn test" },
+      "options": { "command": "bash -c 'yarn test'" },
       "cache": true,
-      "inputs": ["default", "{workspaceRoot}/vitest.config.ts"],
+      "inputs": ["{workspaceRoot}/code/**/*", "{workspaceRoot}/vitest.config.ts"],
       "configurations": { "production": {} }
     },
     "knip": {
@@ -32,6 +32,28 @@
       "options": { "cwd": "{projectRoot}", "command": "yarn knip --no-exit-code" },
       "cache": true,
       "inputs": ["default"],
+      "configurations": { "production": {} }
+    },
+    "storybook-build": {
+      "dependsOn": [{ "projects": ["*"], "target": "compile" }],
+      "executor": "nx:run-commands",
+      "options": {
+        "cwd": "{projectRoot}",
+        "command": "yarn storybook:ui:build"
+      },
+      "cache": true,
+      "inputs": ["default", "^production"],
+      "outputs": ["{projectRoot}/storybook-static"],
+      "configurations": { "production": {} }
+    },
+    "storybook-chromatic": {
+      "dependsOn": ["storybook-build"],
+      "executor": "nx:run-commands",
+      "options": {
+        "cwd": "{projectRoot}",
+        "command": "yarn storybook:ui:chromatic"
+      },
+      "cache": true,
       "configurations": { "production": {} }
     }
   }

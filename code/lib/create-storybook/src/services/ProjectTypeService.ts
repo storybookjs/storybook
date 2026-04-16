@@ -268,7 +268,7 @@ export class ProjectTypeService {
         language = SupportedLanguage.TYPESCRIPT;
       } else {
         logger.warn(
-          `Populating with JavaScript examples due to incompatible package versions:\n${incompatibleReasons.map((r) => `  - ${r}`).join('\n')}`
+          `Detected incompatible package versions, falling back to JavaScript:\n${incompatibleReasons.map((r) => `  - ${r}`).join('\n')}`
         );
       }
     } else {

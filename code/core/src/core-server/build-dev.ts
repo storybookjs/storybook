@@ -63,9 +63,9 @@ export async function resolveOnboardingInitialPath(
     // Agent environments skip onboarding (no browser to open).
     return cliInitialPath;
   }
-  const onboardingPending = await cache.get('onboarding-pending');
+  const onboardingPending = await cache.get('onboarding-pending').catch(() => {});
   if (onboardingPending) {
-    await cache.remove('onboarding-pending');
+    await cache.remove('onboarding-pending').catch(() => {});
     return '/onboarding';
   }
   return undefined;

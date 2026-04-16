@@ -162,7 +162,7 @@ export async function doInitiate(options: CommandOptions): Promise<
   // Signal dev to redirect to onboarding on first run
   const shouldOnboard = newUser;
   if (shouldOnboard && FeatureCompatibilityService.supportsOnboarding(projectType)) {
-    await cache.set('onboarding-pending', true);
+    await cache.set('onboarding-pending', true).catch(() => {});
   }
 
   return {

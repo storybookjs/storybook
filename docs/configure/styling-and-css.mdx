@@ -87,7 +87,7 @@ Storybook recreates your Next.js configuration, so you can use Sass in your stor
 
 </If>
 
-If you're using Webpack and want to use Sass or less, you'll need some extra configuration. We recommend installing [`@storybook/addon-styling-webpack`](https://storybook.js.org/addons/@storybook/addon-styling-webpack/) to help you configure these tools. Or if you'd prefer, you can customize [Storybook's webpack configuration yourself](../builders/webpack.mdx#override-the-default-configuration) to include the appropriate loader(s).
+If you're using Webpack and want to use Sass or Less, you'll need some extra configuration. We recommend installing [`@storybook/addon-styling-webpack`](https://storybook.js.org/addons/@storybook/addon-styling-webpack/) to help you configure these tools. Or if you'd prefer, you can customize [Storybook's webpack configuration yourself](../builders/webpack.mdx#override-the-default-configuration) to include the appropriate loader(s).
 
 ## CSS-in-JS
 
@@ -186,7 +186,7 @@ For earlier Nx versions (before 14.1.8), your configuration would look like this
 }
 ```
 
-Starting with version 14.1.8, Nx uses the Storybook builder directly, which means any configuration supplied to the builder also applies to the NX setup. If you're working with a library, you'll need to configure the styling options ( e.g., preprocessors) inside the `build-storybook` options configuration object. For example:
+Starting with version 14.1.8, Nx uses the Storybook builder directly, which means any configuration supplied to the builder also applies to the NX setup. If you're working with a library, you'll need to configure the styling options (e.g., preprocessors) inside the `build-storybook` options configuration object. For example:
 
 ```json title="workspace.json"
 {

@@ -269,6 +269,7 @@ Avoid `console.log`, `console.warn`, and `console.error` unless the file is isol
 | `STORYBOOK_DISABLE_TELEMETRY` | Disable telemetry           |
 | `STORYBOOK_TELEMETRY_DEBUG`   | Log telemetry events        |
 | `DEBUG`                       | Enable debug logging        |
+| `FIX_ON_COMMIT`               | Force autofix for fmt & lint in pre-commit hook |
 
 ## Commands To Avoid
 

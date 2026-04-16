@@ -70,7 +70,12 @@ const makeStoryIndex = (entries: Record<string, any> = {}): StoryIndex => ({
 
 beforeEach(() => {
   vi.resetAllMocks();
-  vi.mocked(telemetry).mockResolvedValue(undefined);
+  vi.mocked(telemetry).mockImplementation(async (_eventType, payloadOrFactory) => {
+    if (typeof payloadOrFactory === 'function') {
+      return payloadOrFactory();
+    }
+    return payloadOrFactory;
+  });
 });
 
 describe('isStoryCreatedByAISetup', () => {
@@ -239,16 +244,19 @@ describe('collectAiSetupEvidence', () => {
 
     expect(telemetry).toHaveBeenCalledWith(
       'ai-setup-evidence',
-      expect.objectContaining({
-        previewChanged: true,
-        aiAuthoredStories: undefined,
-        sessionId: 'test-session-id',
-      }),
+      expect.any(Function),
       expect.objectContaining({
         immediate: true,
         configDir: '/test/config',
       })
     );
+
+    const factory = vi.mocked(telemetry).mock.calls[0][1] as () => Promise<unknown>;
+    await expect(factory()).resolves.toMatchObject({
+      previewChanged: true,
+      aiAuthoredStories: undefined,
+      sessionId: 'test-session-id',
+    });
   });
 
   it('reports aiAuthoredStories as undefined when no story index provided', async () => {
@@ -261,11 +269,14 @@ describe('collectAiSetupEvidence', () => {
 
     expect(telemetry).toHaveBeenCalledWith(
       'ai-setup-evidence',
-      expect.objectContaining({
-        aiAuthoredStories: undefined,
-      }),
+      expect.any(Function),
       expect.anything()
     );
+
+    const factory = vi.mocked(telemetry).mock.calls[0][1] as () => Promise<unknown>;
+    await expect(factory()).resolves.toMatchObject({
+      aiAuthoredStories: undefined,
+    });
   });
 
   it('counts aiAuthoredStories when story index provided', async () => {
@@ -300,10 +311,13 @@ describe('collectAiSetupEvidence', () => {
 
     expect(telemetry).toHaveBeenCalledWith(
       'ai-setup-evidence',
-      expect.objectContaining({
-        aiAuthoredStories: 1,
-      }),
+      expect.any(Function),
       expect.anything()
     );
+
+    const factory = vi.mocked(telemetry).mock.calls[0][1] as () => Promise<unknown>;
+    await expect(factory()).resolves.toMatchObject({
+      aiAuthoredStories: 1,
+    });
   });
 });

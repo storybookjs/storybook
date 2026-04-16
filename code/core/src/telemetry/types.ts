@@ -49,7 +49,8 @@ export type EventType =
   | 'ai-setup-evidence'
   | 'ai-setup-final-scoring'
   | 'ai-prompt-nudge'
-  | 'ai-init-opt-in';
+  | 'ai-init-opt-in'
+  | 'ai-setup-self-healing-scoring';
 
 export interface Dependency {
   version: string | undefined;

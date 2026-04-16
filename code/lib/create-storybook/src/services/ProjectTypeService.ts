@@ -232,18 +232,43 @@ export class ProjectTypeService {
     };
 
     if (isTypescriptDirectDependency && typescriptVersion) {
+      const incompatibleReasons: string[] = [];
+
+      if (!satisfies(typescriptVersion, '>=4.9.0')) {
+        incompatibleReasons.push(`typescript ${typescriptVersion} is below 4.9.0`);
+      }
+      if (prettierVersion && !semver.gte(prettierVersion, '2.8.0')) {
+        incompatibleReasons.push(`prettier ${prettierVersion} is below 2.8.0`);
+      }
       if (
-        satisfies(typescriptVersion, '>=4.9.0') &&
-        (!prettierVersion || semver.gte(prettierVersion, '2.8.0')) &&
-        (!babelPluginTransformTypescriptVersion ||
-          satisfies(babelPluginTransformTypescriptVersion, '>=7.20.0')) &&
-        (!typescriptEslintParserVersion || satisfies(typescriptEslintParserVersion, '>=5.44.0')) &&
-        (!eslintPluginStorybookVersion || satisfies(eslintPluginStorybookVersion, '>=0.6.8'))
+        babelPluginTransformTypescriptVersion &&
+        !satisfies(babelPluginTransformTypescriptVersion, '>=7.20.0')
       ) {
+        incompatibleReasons.push(
+          `@babel/plugin-transform-typescript ${babelPluginTransformTypescriptVersion} is below 7.20.0`
+        );
+      }
+      if (typescriptEslintParserVersion && !satisfies(typescriptEslintParserVersion, '>=5.44.0')) {
+        incompatibleReasons.push(
+          `@typescript-eslint/parser ${typescriptEslintParserVersion} is below 5.44.0`
+        );
+      }
+      // Treat Storybook canary/prerelease versions (e.g. 0.0.0-pr-*) as compatible
+      if (
+        eslintPluginStorybookVersion &&
+        !eslintPluginStorybookVersion.startsWith('0.0.0-') &&
+        !satisfies(eslintPluginStorybookVersion, '>=0.6.8')
+      ) {
+        incompatibleReasons.push(
+          `eslint-plugin-storybook ${eslintPluginStorybookVersion} is below 0.6.8`
+        );
+      }
+
+      if (incompatibleReasons.length === 0) {
         language = SupportedLanguage.TYPESCRIPT;
       } else {
         logger.warn(
-          'Detected TypeScript < 4.9 or incompatible tooling, populating with JavaScript examples'
+          `Populating with JavaScript examples due to incompatible package versions:\n${incompatibleReasons.map((r) => `  - ${r}`).join('\n')}`
         );
       }
     } else {

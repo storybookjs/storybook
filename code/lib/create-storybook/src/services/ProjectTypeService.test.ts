@@ -247,7 +247,49 @@ describe('ProjectTypeService', () => {
       const warnSpy = vi.spyOn(logger, 'warn');
       const service = new ProjectTypeService(pm);
       await expect(service.detectLanguage()).resolves.toBe('javascript');
-      expect(warnSpy).toHaveBeenCalled();
+      expect(warnSpy).toHaveBeenCalledWith(
+        expect.stringContaining('typescript 4.8.4 is below 4.9.0')
+      );
+      expect(warnSpy).toHaveBeenCalledWith(
+        expect.stringContaining('prettier 2.7.1 is below 2.8.0')
+      );
+    });
+
+    it('warns with specific failing check when only one tool is incompatible', async () => {
+      (pm.getAllDependencies as any) = vi.fn(() => ({ typescript: '^5.0.0' }));
+      (pm.getModulePackageJSON as any) = vi.fn(async (name: string) => {
+        const versions: Record<string, string> = {
+          typescript: '5.2.0',
+          prettier: '2.6.2', // only prettier is below 2.8.0
+          '@babel/plugin-transform-typescript': '7.23.0',
+          '@typescript-eslint/parser': '6.7.0',
+          'eslint-plugin-storybook': '0.7.0',
+        };
+        return { version: versions[name] } as any;
+      });
+      const warnSpy = vi.spyOn(logger, 'warn');
+      const service = new ProjectTypeService(pm);
+      await expect(service.detectLanguage()).resolves.toBe('javascript');
+      expect(warnSpy).toHaveBeenCalledWith(
+        expect.stringContaining('prettier 2.6.2 is below 2.8.0')
+      );
+      expect(warnSpy).not.toHaveBeenCalledWith(expect.stringContaining('typescript'));
+    });
+
+    it('treats canary eslint-plugin-storybook versions as compatible', async () => {
+      (pm.getAllDependencies as any) = vi.fn(() => ({ typescript: '^5.0.0' }));
+      (pm.getModulePackageJSON as any) = vi.fn(async (name: string) => {
+        const versions: Record<string, string> = {
+          typescript: '5.2.0',
+          prettier: '3.3.0',
+          '@babel/plugin-transform-typescript': '7.23.0',
+          '@typescript-eslint/parser': '6.7.0',
+          'eslint-plugin-storybook': '0.0.0-pr-34552-sha-a34e9165',
+        };
+        return { version: versions[name] } as any;
+      });
+      const service = new ProjectTypeService(pm);
+      await expect(service.detectLanguage()).resolves.toBe('typescript');
     });
   });
 });

@@ -142,10 +142,11 @@ export function formatTable(headers: string[], rows: string[][]): string {
 
 /** Load a prompt by name from prompts/{name}.md. */
 export function loadPrompt(name: string): string {
-  const file = resolve(PROMPTS_DIR, `${name}.md`);
-  if (!existsSync(file)) {
-    throw new Error(`Prompt not found: ${file}\nAvailable: ${listPrompts().join(', ')}`);
+  const available = listPrompts();
+  if (!available.includes(name)) {
+    throw new Error(`Prompt not found: ${name}\nAvailable: ${available.join(', ')}`);
   }
+  const file = resolve(PROMPTS_DIR, `${name}.md`);
   return readFileSync(file, 'utf-8').trim();
 }
 

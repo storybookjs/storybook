@@ -95,7 +95,14 @@ export async function publishTrialBranch(opts: {
 
   await x(
     'gh',
-    ['pr', 'edit', prUrl, '--repo', opts.data.project.githubSlug, '--add-label', labels.join(',')],
+    [
+      'pr',
+      'edit',
+      prUrl,
+      '--repo',
+      opts.data.project.githubSlug,
+      ...labels.flatMap((label) => ['--add-label', label]),
+    ],
     {
       nodeOptions: { cwd: opts.workspace.repoRoot },
     }

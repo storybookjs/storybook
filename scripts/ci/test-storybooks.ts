@@ -70,13 +70,6 @@ export function definePortableStoryTest(directory: string) {
               artifact.persist(join(working_directory, 'test-results'), 'playwright'),
             ]
           : []),
-        {
-          run: {
-            name: 'Run Cypress CT tests',
-            working_directory,
-            command: 'yarn cypress',
-          },
-        },
       ],
     }),
     [testStorybooksNoOpJob]

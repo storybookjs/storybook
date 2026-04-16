@@ -35,15 +35,6 @@ import { type Workflow, isWorkflowOrAbove } from './utils/types.ts';
 const dirname = import.meta.dirname;
 
 /**
- * When true, disables jobs that are not part of the NX vs CircleCI evaluation:
- * - Chromatic jobs (require auth token, not ported to NX)
- * - Benchmark packages (require auth token, not ported to NX)
- * - Windows jobs (not ported to NX yet)
- * - Init-empty / init-features jobs (not working reliably yet)
- */
-const NX_EXPERIMENT = true;
-
-/**
  * Generate the CircleCI config for a given workflow.
  *
  * @param workflow - The workflow to generate the config for.
@@ -54,11 +45,11 @@ function generateConfig(workflow: Workflow) {
   if (isWorkflowOrAbove(workflow, 'docs')) {
     jobs.push(fmt);
   } else {
-    const sandboxes = getSandboxes(workflow, { nxExperiment: NX_EXPERIMENT });
+    const sandboxes = getSandboxes(workflow);
     const testStorybooks = getTestStorybooks(workflow);
-    const initEmpty = getInitEmpty(workflow, { nxExperiment: NX_EXPERIMENT });
+    const initEmpty = getInitEmpty(workflow);
 
-    if (!NX_EXPERIMENT && isWorkflowOrAbove(workflow, 'daily')) {
+    if (isWorkflowOrAbove(workflow, 'daily')) {
       jobs.push(build_windows, testUnit_windows);
     }
 
@@ -73,7 +64,8 @@ function generateConfig(workflow: Workflow) {
       check,
       knip,
 
-      ...(NX_EXPERIMENT ? [] : [storybookChromatic, benchmarkPackages]),
+      storybookChromatic,
+      benchmarkPackages,
 
       sandboxesNoOpJob,
       ...sandboxes,
@@ -81,7 +73,8 @@ function generateConfig(workflow: Workflow) {
       testStorybooksNoOpJob,
       ...testStorybooks,
 
-      ...(NX_EXPERIMENT ? [] : [initEmptyNoOpJob, ...initEmpty])
+      initEmptyNoOpJob,
+      ...initEmpty
     );
   }
 

@@ -139,8 +139,6 @@ function defineSandboxJob_dev({
   );
 }
 
-let nxExperiment = false;
-
 export function defineSandboxFlow<Key extends string>(key: Key) {
   const id = toId(key);
   const data = sandboxTemplates.allTemplates[key as keyof typeof sandboxTemplates.allTemplates];
@@ -354,7 +352,7 @@ export function defineSandboxFlow<Key extends string>(key: Key) {
     createJob,
     buildJob,
     devJob,
-    !nxExperiment && !skipTasks?.includes('chromatic') ? chromaticJob : undefined,
+    !skipTasks?.includes('chromatic') ? chromaticJob : undefined,
     !skipTasks?.includes('vitest-integration') ? vitestJob : undefined,
     !skipTasks?.includes('e2e-tests') ? e2eJob : undefined,
 
@@ -518,13 +516,12 @@ const getListOfSandboxes = (workflow: Workflow) => {
   }
 };
 
-export function getSandboxes(workflow: Workflow, options: { nxExperiment?: boolean } = {}) {
-  nxExperiment = options.nxExperiment ?? false;
+export function getSandboxes(workflow: Workflow) {
   const sandboxes = getListOfSandboxes(workflow).map(defineSandboxFlow);
 
   const list: JobOrNoOpJob[] = sandboxes.flatMap((sandbox) => sandbox.jobs);
 
-  if (!nxExperiment && isWorkflowOrAbove(workflow, 'daily')) {
+  if (isWorkflowOrAbove(workflow, 'daily')) {
     const windows_sandbox_build = defineWindowsSandboxBuild(sandboxes[0]);
     const windows_sandbox_dev = defineWindowsSandboxDev(sandboxes[0]);
     const testRunner = defineSandboxTestRunner(sandboxes[0]);

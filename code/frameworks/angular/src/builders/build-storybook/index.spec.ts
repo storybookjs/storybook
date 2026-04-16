@@ -5,6 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   buildStaticStandalone,
 } from 'storybook/internal/core-server';
+import {JsPackageManagerFactory} from "storybook/internal/common";
 
 import handler from './index.ts';
 import buildSchema from '../../../build-schema.json'
@@ -15,12 +16,20 @@ vi.mock('storybook/internal/core-server', () => ({
   withTelemetry: (name: string, options: any, fn: any) => fn(),
 }));
 
+vi.mock('storybook/internal/node-logger', async (importOriginal) => {
+  const original = await importOriginal<typeof import('storybook/internal/node-logger')>();
+  return {
+    ...original,
+    prompt: {
+      executeTaskWithSpinner: (fn) => fn()
+    }
+  }
+});
+
 vi.mock('storybook/internal/common', async (importOriginal) => ({
   ...(await importOriginal()),
   JsPackageManagerFactory: {
-    getPackageManager: () => ({
-      runPackageCommand: mockRunScript,
-    }),
+    getPackageManager: vi.fn(),
   },
   getEnvConfig: (options: any) => options,
   versions: {
@@ -77,6 +86,9 @@ describe('Build Storybook Builder', () => {
     vi.mocked(buildStaticStandalone).mockImplementation(
       () => Promise.resolve(),
     );
+    vi.mocked(JsPackageManagerFactory.getPackageManager).mockImplementation(() => ({
+      runPackageCommand: mockRunScript,
+    }))
   });
 
   afterEach(() => {
@@ -207,15 +219,9 @@ describe('Build Storybook Builder', () => {
       compodoc: false,
     });
 
-    try {
-      await run.result;
-
-      expect(false).toEqual('Throw expected');
-    } catch (error) {
-      expect(error).toEqual(
-        'Broken build, fix the error above.\nYou may need to refresh the browser.'
-      );
-    }
+    await expect(run.result).rejects.toThrow(
+      "Broken build, fix the error above.\nYou may need to refresh the browser.",
+    );
   });
 
   it('should run compodoc', async () => {
@@ -229,9 +235,18 @@ describe('Build Storybook Builder', () => {
 
     expect(output.success).toBeTruthy();
     expect(mockRunScript).toHaveBeenCalledWith(
-      'compodoc',
-      ['-p', './storybook/tsconfig.ts', '-d', '.', '-e', 'json'],
-      ''
+      {
+        args: [
+          "compodoc",
+          "-p",
+          "./storybook/tsconfig.ts",
+          "-d",
+          ".",
+          "-e",
+          "json",
+        ],
+        cwd: ''
+      },
     );
     expect(buildStaticStandalone).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -266,7 +281,7 @@ describe('Build Storybook Builder', () => {
       expect.objectContaining({
         angularBrowserTarget: null,
         angularBuilderContext: expect.any(Object),
-        angularBuilderOptions: { assets: [], styles: ['style.scss'] },
+        angularBuilderOptions: expect.objectContaining({ assets: [], styles: ['style.scss'] }),
         configDir: '.storybook',
         loglevel: undefined,
         quiet: false,

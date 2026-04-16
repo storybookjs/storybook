@@ -64,15 +64,17 @@ export async function runStoryRenderPass(opts: {
   resultsDir: string;
   storyFiles: string[];
   outputBaseName: string;
+  label?: string;
   logger: Logger;
 }): Promise<StoryRenderRunResult> {
+  const tag = opts.label ?? 'story-render';
   const runnableStoryFiles = opts.storyFiles.filter((storyFile) => {
     const rel = relative(opts.projectPath, storyFile);
     return rel !== '' && !rel.startsWith('..');
   });
 
   if (runnableStoryFiles.length === 0) {
-    opts.logger.logStep('No generated story files found for story-render evaluation.');
+    opts.logger.logStep(`No generated story files found for ${tag}.`);
     return {
       attempted: false,
       success: true,
@@ -88,7 +90,7 @@ export async function runStoryRenderPass(opts: {
   const outputPath = join(opts.resultsDir, `${opts.outputBaseName}-output.txt`);
 
   opts.logger.logStep(
-    `Running story-render evaluation for ${runnableStoryFiles.length} story file(s)...`
+    `Running ${tag} for ${runnableStoryFiles.length} story file(s)...`
   );
 
   const pm = detectPackageManager(resolveInstallRoot(opts.projectPath));
@@ -123,9 +125,10 @@ export async function runStoryRenderPass(opts: {
     : undefined;
 
   if (result.exitCode === 0) {
-    opts.logger.logSuccess('Story-render evaluation passed');
+    opts.logger.logSuccess(`${tag}: passed`);
   } else {
-    opts.logger.logError(`Story-render evaluation failed (exit ${result.exitCode})`);
+    const rate = summary ? `${summary.passed}/${summary.total} passed` : `exit ${result.exitCode}`;
+    opts.logger.logError(`${tag}: ${rate}`);
   }
 
   return {

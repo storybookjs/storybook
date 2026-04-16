@@ -495,10 +495,19 @@ Also verify types so you catch missing required props, broken imports, and previ
 
 After verification passes, review every changed file and remove anything that is not needed for the final solution, especially debug fixes, overly broad mocks, unnecessary dependencies, and eval artifacts.
 
+Once all stories pass and types are clean, run a full Storybook build as a final check:
+
+```bash
+npx storybook build
+```
+
+If the build fails, fix the issue before finishing. Common build failures include missing dependencies, broken imports that only surface during static analysis, or configuration issues in `.storybook/main.ts`.
+
 Keep iterating until:
 - every story you wrote passes
 - every story you wrote has a meaningful passing `play` function
 - the changed stories and preview setup pass the project's real TypeScript check
+- `storybook build` succeeds
 - the rendered output looks sensible
 - the default global mocked environment is strong enough that stories do not need manual fetch overrides
 - stories no longer fail because the shared preview setup and story JSX are fixed

@@ -221,8 +221,18 @@ To benchmark a new app, register it in the harness and sync baselines. Follow th
 }
 ```
 
-4. Run `node scripts/eval/sync-baselines.ts --project my-project` to push the eval baseline `.storybook` config (this replaces the init scaffold in the benchmark repo).
-5. Run a trial to verify: `node scripts/eval/eval.ts -p my-project --prompt pattern-copy-play`
+4. Add a `vitest:storybook` script to the project's `package.json` that runs the storybook vitest project. The grading harness calls this script and appends `--reporter=json --outputFile=... <storyFiles>`. The exact command depends on the repo's vitest setup:
+
+```jsonc
+// Most repos (inline vitest project):
+"vitest:storybook": "vitest run --project=storybook"
+
+// Repos with a dedicated config file (e.g. excalidraw):
+"vitest:storybook": "vitest run --config vitest.storybook.config.mts"
+```
+
+5. Run `node scripts/eval/sync-baselines.ts --project my-project` to push the eval baseline `.storybook` config (this replaces the init scaffold in the benchmark repo).
+6. Run a trial to verify: `node scripts/eval/eval.ts -p my-project --prompt pattern-copy-play`
 
 ## Prompts
 

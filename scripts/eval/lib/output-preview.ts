@@ -2,6 +2,12 @@ const OUTPUT_TRUNCATED_MARKER = '… output truncated …';
 const DEFAULT_MAX_LINES = 12;
 const DEFAULT_MAX_CHARS = 700;
 
+export function countLines(text: string | undefined | null): number {
+  const trimmed = text?.trim();
+  if (!trimmed) return 0;
+  return trimmed.split('\n').length;
+}
+
 export function trimNonChatOutput(
   text: string,
   {

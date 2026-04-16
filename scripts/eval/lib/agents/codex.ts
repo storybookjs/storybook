@@ -6,7 +6,7 @@ import {
   type AgentExecutionResult,
   type Execution,
 } from './config.ts';
-import { trimNonChatOutput } from '../output-preview.ts';
+import { countLines } from '../output-preview.ts';
 
 export const codexAgent: AgentDriver = {
   name: 'codex',
@@ -51,12 +51,13 @@ export const codexAgent: AgentDriver = {
               agentMessageTurns += 1;
               logger.log(`💬 ${item.text}`);
               break;
-            case 'command_execution':
-              logger.log(`🔧 $ ${item.command} → exit ${item.exit_code ?? '?'}`);
-              if (item.aggregated_output) {
-                logger.log(`   ${trimNonChatOutput(item.aggregated_output)}`);
-              }
+            case 'command_execution': {
+              const lines = countLines(item.aggregated_output);
+              logger.log(
+                `🔧 $ ${item.command} → exit ${item.exit_code ?? '?'}${lines > 0 ? ` (${lines} lines)` : ''}`
+              );
               break;
+            }
             case 'file_change':
               for (const c of item.changes) logger.log(`📝 ${c.kind} ${c.path}`);
               break;

@@ -7,7 +7,7 @@ import {
   type AgentExecutionResult,
   type Execution,
 } from './config.ts';
-import { trimNonChatOutput } from '../output-preview.ts';
+import { countLines, trimNonChatOutput } from '../output-preview.ts';
 import type { Logger } from '../utils.ts';
 
 export const claudeAgent: AgentDriver = {
@@ -106,7 +106,10 @@ function logMessage(message: SDKMessage, logger: Logger) {
                     )
                     .join('')
                 : '[no content]';
-          logger.log(`📎 tool_result(${block.tool_use_id?.slice(-8)}): ${trimNonChatOutput(text)}`);
+          const lines = countLines(text);
+          logger.log(
+            `📎 tool_result(${block.tool_use_id?.slice(-8)}): ${lines > 0 ? `${lines} lines` : '(empty)'}`
+          );
         }
       }
       break;

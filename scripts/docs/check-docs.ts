@@ -367,7 +367,6 @@ export async function checkBareUrls(docsDir: string): Promise<DocLineError[]> {
       const urlRegex = /https?:\/\/[^\s)>\]]+/g;
       let match;
       while ((match = urlRegex.exec(line))) {
-        const url = match[0];
         const start = match.index;
 
         // Check if inside markdown link syntax: [text](url) or ](url)

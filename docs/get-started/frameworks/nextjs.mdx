@@ -13,9 +13,11 @@ Storybook for Next.js (Webpack) is a [framework](../../contribute/framework.mdx)
 **We recommend using [`@storybook/nextjs-vite`](./nextjs-vite.mdx)** for most Next.js projects. The Vite-based framework is faster, more modern, and offers better support for testing features.
 
 Use this Webpack-based framework (`@storybook/nextjs`) only if:
+
 - Your project has custom Webpack configurations that are incompatible with Vite
 - Your project has custom Babel configurations that require Webpack
 - You need specific Webpack features not available in Vite
+
 </Callout>
 
 ## Install
@@ -30,15 +32,20 @@ You can then get started [writing stories](../whats-a-story.mdx), [running tests
 
 ### Requirements
 
-<GetStartedVersions versions={[{
-  name: 'Next.js',
-  range: '≥ 14.1',
-  icon: '/images/logos/renderers/logo-nextjs.svg'
-}, {
-  name: 'Webpack',
-  range: '5',
-  icon: '/images/logos/builders/webpack.svg'
-}]} />
+<GetStartedVersions
+  versions={[
+    {
+      name: 'Next.js',
+      range: '≥ 14.1',
+      icon: '/images/logos/renderers/logo-nextjs.svg',
+    },
+    {
+      name: 'Webpack',
+      range: '5',
+      icon: '/images/logos/builders/webpack.svg',
+    },
+  ]}
+/>
 
 ## Run Storybook
 
@@ -54,16 +61,16 @@ You will find the output in the configured `outputDir` (default is `storybook-st
 
 ## Configure
 
-Storybook for Next.js with Vite supports many Next.js features including:
+Storybook for Next.js supports many Next.js features including:
 
-* 🖼 [Image optimization](#nextjss-image-component)
-* 🔤 [Font optimization](#nextjs-font-optimization)
-* 🔀 [Routing and navigation](#nextjs-routing)
-* 🌐 [`next/head`](#nextjs-head)
-* ⤵️ [Absolute imports](#imports)
-* 🎨 [Styling](#styling)
-* 🎭 [Module mocking](#mocking-modules)
-* ☁️ [React Server Component (experimental)](#react-server-components-rsc)
+- 🖼 [Image optimization](#nextjss-image-component)
+- 🔤 [Font optimization](#nextjs-font-optimization)
+- 🔀 [Routing and navigation](#nextjs-routing)
+- 🌐 [`next/head`](#nextjs-head)
+- ⤵️ [Absolute imports](#imports)
+- 🎨 [Styling](#styling)
+- 🎭 [Module mocking](#mocking-modules)
+- ☁️ [React Server Component (experimental)](#react-server-components-rsc)
 
 ### Next.js's Image component
 
@@ -138,21 +145,17 @@ const localRubikStorm = localFont({ src: './fonts/RubikStorm-Regular.ttf' });
 
 You have to tell Storybook where the `fonts` directory is located, via the [`staticDirs` configuration](../../api/main-config/main-config-static-dirs.mdx#with-configuration-objects). The `from` value is relative to the `.storybook` directory. The `to` value is relative to the execution context of Storybook. Very likely it is the root of your project.
 
-{/* prettier-ignore-start */}
-
 <CodeSnippets path="nextjs-image-static-dirs.md" />
-
-{/* prettier-ignore-end */}
 
 #### Not supported features of `next/font`
 
 The following features are not supported (yet). Support for these features might be planned for the future:
 
-* [Support font loaders configuration in next.config.js](https://nextjs.org/docs/pages/building-your-application/optimizing/fonts#local-fonts)
-* [fallback](https://nextjs.org/docs/pages/api-reference/components/font#fallback) option
-* [adjustFontFallback](https://nextjs.org/docs/pages/api-reference/components/font#adjustfontfallback) option
-* [preload](https://nextjs.org/docs/pages/api-reference/components/font#preload) option gets ignored. Storybook handles Font loading its own way.
-* [display](https://nextjs.org/docs/pages/api-reference/components/font#display) option gets ignored. All fonts are loaded with display set to "block" to make Storybook load the font properly.
+- [Support font loaders configuration in next.config.js](https://nextjs.org/docs/pages/building-your-application/optimizing/fonts#local-fonts)
+- [fallback](https://nextjs.org/docs/pages/api-reference/components/font#fallback) option
+- [adjustFontFallback](https://nextjs.org/docs/pages/api-reference/components/font#adjustfontfallback) option
+- [preload](https://nextjs.org/docs/pages/api-reference/components/font#preload) option gets ignored. Storybook handles Font loading its own way.
+- [display](https://nextjs.org/docs/pages/api-reference/components/font#display) option gets ignored. All fonts are loaded with display set to "block" to make Storybook load the font properly.
 
 #### Mocking fonts during testing
 
@@ -202,22 +205,22 @@ module.exports = {
 
 [Next.js's router](https://nextjs.org/docs/pages/building-your-application/routing) is automatically stubbed for you so that when the router is interacted with, all of its interactions are automatically logged to the [Actions panel](../../essentials/actions.mdx).
 
-<Callout>
-  You should only use `next/router` in the `pages` directory. In the `app` directory, it is necessary to use `next/navigation`.
+<Callout variant="info">
+
+You should only use `next/router` in the `pages` directory. In the `app` directory, it is necessary to use `next/navigation`.
+
 </Callout>
 
 #### Overriding defaults
 
 Per-story overrides can be done by adding a `nextjs.router` property onto the story [parameters](../../writing-stories/parameters.mdx). The framework will shallowly merge whatever you put here into the router.
 
-{/* prettier-ignore-start */}
-
 <CodeSnippets path="nextjs-router-override-in-story.md" />
 
-{/* prettier-ignore-end */}
+<Callout variant="info">
 
-<Callout>
-  These overrides can also be applied to [all stories for a component](../../api/parameters.mdx#meta-parameters) or [all stories in your project](../../api/parameters.mdx#project-parameters). Standard [parameter inheritance](../../api/parameters.mdx#parameter-inheritance) rules apply.
+These overrides can also be applied to [all stories for a component](../../api/parameters.mdx#meta-parameters) or [all stories in your project](../../api/parameters.mdx#project-parameters). Standard [parameter inheritance](../../api/parameters.mdx#parameter-inheritance) rules apply.
+
 </Callout>
 
 #### Default router
@@ -249,47 +252,37 @@ To override these defaults, you can use [parameters](../../writing-stories/param
 
 ### Next.js navigation
 
-<Callout>
-  Please note that [`next/navigation`](https://nextjs.org/docs/app/building-your-application/routing) can only be used in components/pages in the `app` directory.
+<Callout variant="info">
+
+Please note that [`next/navigation`](https://nextjs.org/docs/app/building-your-application/routing) can only be used in components/pages in the `app` directory.
+
 </Callout>
 
 #### Set `nextjs.appDirectory` to `true`
 
 If your story imports components that use `next/navigation`, you need to set the parameter `nextjs.appDirectory` to `true` in for that component's stories:
 
-{/* prettier-ignore-start */}
-
 <CodeSnippets path="nextjs-app-directory-in-meta.md" />
-
-{/* prettier-ignore-end */}
 
 If your Next.js project uses the `app` directory for every page (in other words, it does not have a `pages` directory), you can set the parameter `nextjs.appDirectory` to `true` in the [`.storybook/preview.tsx`](../../configure/index.mdx#configure-story-rendering) file to apply it to all stories.
 
-{/* prettier-ignore-start */}
-
 <CodeSnippets path="nextjs-app-directory-in-preview.md" />
-
-{/* prettier-ignore-end */}
 
 #### Overriding defaults
 
 Per-story overrides can be done by adding a `nextjs.navigation` property onto the story [parameters](../../writing-stories/parameters.mdx). The framework will shallowly merge whatever you put here into the router.
 
-{/* prettier-ignore-start */}
-
 <CodeSnippets path="nextjs-navigation-override-in-story.md" />
 
-{/* prettier-ignore-end */}
+<Callout variant="info">
 
-<Callout>
-  These overrides can also be applied to [all stories for a component](../../api/parameters.mdx#meta-parameters) or [all stories in your project](../../api/parameters.mdx#project-parameters). Standard [parameter inheritance](../../api/parameters.mdx#parameter-inheritance) rules apply.
+These overrides can also be applied to [all stories for a component](../../api/parameters.mdx#meta-parameters) or [all stories in your project](../../api/parameters.mdx#project-parameters). Standard [parameter inheritance](../../api/parameters.mdx#parameter-inheritance) rules apply.
+
 </Callout>
 
 #### `useSelectedLayoutSegment`, `useSelectedLayoutSegments`, and `useParams` hooks
 
 The `useSelectedLayoutSegment`, `useSelectedLayoutSegments`, and `useParams` hooks are supported in Storybook. You have to set the `nextjs.navigation.segments` parameter to return the segments or the params you want to use.
-
-{/* prettier-ignore-start */}
 
 <CodeSnippets path="nextjs-navigation-segments-override-in-meta.md" />
 
@@ -306,15 +299,9 @@ export default function NavigationBasedComponent() {
 }
 ```
 
-{/* prettier-ignore-end */}
-
 To use `useParams`, you have to use a segments array where each element is an array containing two strings. The first string is the param key and the second string is the param value.
 
-{/* prettier-ignore-start */}
-
 <CodeSnippets path="nextjs-navigation-segments-for-use-params-override-in-meta.md" />
-
-{/* prettier-ignore-end */}
 
 With the above configuration, the component rendered in the stories would receive the following values from the hooks:
 
@@ -329,8 +316,10 @@ export default function ParamsBasedComponent() {
 }
 ```
 
-<Callout>
-  These overrides can also be applied to [a single story](../../api/parameters.mdx#story-parameters) or [all stories in your project](../../api/parameters.mdx#project-parameters). Standard [parameter inheritance](../../api/parameters.mdx#parameter-inheritance) rules apply.
+<Callout variant="info">
+
+These overrides can also be applied to [a single story](../../api/parameters.mdx#story-parameters) or [all stories in your project](../../api/parameters.mdx#project-parameters). Standard [parameter inheritance](../../api/parameters.mdx#parameter-inheritance) rules apply.
+
 </Callout>
 
 The default value of `nextjs.navigation.segments` is `[]` if not set.
@@ -363,39 +352,23 @@ To override these defaults, you can use [parameters](../../writing-stories/param
 
 [Global Sass/SCSS stylesheets](https://nextjs.org/docs/pages/building-your-application/styling/sass) are also supported without any additional configuration. Just import them into [the preview config file](../../configure/index.mdx#configure-story-rendering).
 
-{/* prettier-ignore-start */}
-
 <CodeSnippets path="nextjs-styling-sass-preview.md" />
-
-{/* prettier-ignore-end */}
 
 This will automatically include any of your [custom Sass configurations](https://nextjs.org/docs/pages/building-your-application/styling/sass#customizing-sass-options) in your Next.js config file.
 
-{/* prettier-ignore-start */}
-
 <CodeSnippets path="nextjs-styling-sass-config.md" />
-
-{/* prettier-ignore-end */}
 
 ### CSS/Sass/Scss Modules
 
 [CSS modules](https://nextjs.org/docs/pages/building-your-application/styling/css-modules) work as expected.
 
-{/* prettier-ignore-start */}
-
 <CodeSnippets path="nextjs-styling-css-modules.md" />
-
-{/* prettier-ignore-end */}
 
 ### Styled JSX
 
 The built-in CSS-in-JS solution for Next.js is [styled-jsx](https://nextjs.org/docs/pages/building-your-application/styling/css-in-js), and this framework supports that out of the box, too, with zero config.
 
-{/* prettier-ignore-start */}
-
 <CodeSnippets path="nextjs-styling-styled-jsx-component.md" />
-
-{/* prettier-ignore-end */}
 
 You can use your own Babel config, too. This is an example of how you can customize styled-jsx.
 
@@ -407,11 +380,11 @@ You can use your own Babel config, too. This is an example of how you can custom
       "next/babel",
       {
         "styled-jsx": {
-          "plugins": ["@styled-jsx/plugin-sass"]
-        }
-      }
-    ]
-  ]
+          "plugins": ["@styled-jsx/plugin-sass"],
+        },
+      },
+    ],
+  ],
 }
 ```
 
@@ -419,17 +392,14 @@ You can use your own Babel config, too. This is an example of how you can custom
 
 Tailwind in Next.js [is supported via PostCSS](https://nextjs.org/docs/app/getting-started/css#tailwind-css). Storybook will automatically handle the PostCSS config for you, including any custom PostCSS configuration, so that you can import your global CSS directly into [the preview config file](../../configure/index.mdx#configure-story-rendering):
 
-{/* prettier-ignore-start */}
-
 <CodeSnippets path="nextjs-styling-tailwind.md" />
-
-{/* prettier-ignore-end */}
 
 ### PostCSS
 
 Next.js lets you [customize PostCSS config](https://nextjs.org/docs/pages/building-your-application/configuring/post-css). Thus this framework will automatically handle your PostCSS config for you.
 
 ### Imports
+
 #### Absolute imports
 
 [Absolute imports](https://nextjs.org/docs/pages/building-your-application/configuring/absolute-imports-and-module-aliases#absolute-imports) from the root directory are supported.
@@ -459,7 +429,9 @@ import 'styles/globals.scss';
 ```
 
 <Callout variant="warning">
-  Absolute imports **cannot** be mocked in stories/tests. See the [Mocking modules](#mocking-modules) section for more information.
+
+Absolute imports **cannot** be mocked in stories/tests. See the [Mocking modules](#mocking-modules) section for more information.
+
 </Callout>
 
 #### Module aliases
@@ -497,7 +469,9 @@ To configure subpath imports, you define the `imports` property in your project'
 ```
 
 <Callout variant="info">
-  Because subpath imports replace module aliases, you can remove the path aliases from your TypeScript configuration.
+
+Because subpath imports replace module aliases, you can remove the path aliases from your TypeScript configuration.
+
 </Callout>
 
 Which can then be used like this:
@@ -562,8 +536,8 @@ Calls to `getConfig` would return the following object when called within Storyb
 {
   "serverRuntimeConfig": {},
   "publicRuntimeConfig": {
-    "staticFolder": "/static"
-  }
+    "staticFolder": "/static",
+  },
 }
 ```
 
@@ -571,17 +545,13 @@ Calls to `getConfig` would return the following object when called within Storyb
 
 Next.js comes with a lot of things for free out of the box like Sass support, but sometimes you add [custom Webpack config modifications to Next.js](https://nextjs.org/docs/pages/api-reference/next-config-js/webpack). This framework takes care of most of the Webpack modifications you would want to add. If Next.js supports a feature out of the box, then that feature will work out of the box in Storybook. If Next.js doesn't support something out of the box, but makes it easy to configure, then this framework will do the same for that thing for Storybook.
 
-Any Webpack modifications desired for Storybook should be made in [`.storybook/main.js|ts`](../../builders/webpack.mdx#extending-storybooks-webpack-config).
+Any Webpack modifications desired for Storybook should be made in [`.storybook/main.js|ts`](../../builders/webpack.mdx#override-the-default-configuration).
 
 Note: Not all Webpack modifications are copy/paste-able between `next.config.js` and `.storybook/main.js|ts`. It is recommended to do your research on how to properly make your modification to Storybook's Webpack config and on how [Webpack works](https://webpack.js.org/concepts/).
 
 Below is an example of how to add SVGR support to Storybook with this framework.
 
-{/* prettier-ignore-start */}
-
 <CodeSnippets path="nextjs-configure-svgr.md" />
-
-{/* prettier-ignore-end */}
 
 ### Typescript
 
@@ -606,33 +576,19 @@ If your app uses [React Server Components (RSC)](https://nextjs.org/docs/app/bui
 
 To enable this set the `experimentalRSC` feature flag in your `.storybook/main.js|ts` config:
 
-{/* prettier-ignore-start */}
-
 <CodeSnippets path="rsc-feature-flag.md" />
-
-{/* prettier-ignore-end */}
 
 Setting this flag automatically wraps your story in a [Suspense](https://react.dev/reference/react/Suspense) wrapper, which is able to render asynchronous components in NextJS's version of React.
 
 If this wrapper causes problems in any of your existing stories, you can selectively disable it using the `react.rsc` [parameter](../../writing-stories/parameters.mdx) at the global/component/story level:
 
-{/* prettier-ignore-start */}
-
 <CodeSnippets path="rsc-parameter-in-meta.md" />
-
-{/* prettier-ignore-end */}
 
 Note that wrapping your server components in Suspense does not help if your server components access server-side resources like the file system or Node-specific libraries. To work around this, you'll need to mock out your data access layer using [Webpack aliases](https://webpack.js.org/configuration/resolve/#resolvealias) or an addon like [storybook-addon-module-mock](https://storybook.js.org/addons/storybook-addon-module-mock).
 
 If your server components access data via the network, we recommend using the [MSW Storybook Addon](https://storybook.js.org/addons/msw-storybook-addon) to mock network requests.
 
 In the future we will provide better mocking support in Storybook and support for [Server Actions](https://nextjs.org/docs/app/api-reference/functions/server-actions).
-
-{/* ## Portable stories
-
-You can test your stories in a Jest environment by using the [portable stories](../../api/portable-stories/portable-stories-jest.mdx) API.
-
-When using portable stories with Next.js, you need to mock the Next.js modules on which your components depend. You can use the [`@storybook/nextjs/export-mocks` module](#storybooknextjsexport-mocks) to generate the aliases needed to set up portable stories in a Jest environment. This is needed because, to replicate Next.js configuration, Storybook sets up aliases in Webpack to make testing and developing your components easier. If you make use of the advanced functionality like the built-in mocks for common Next.js modules, you need to set up this aliasing in your Jest environment as well. */}
 
 ## Notes for Yarn v2 and v3 users
 
@@ -651,27 +607,15 @@ This is because those versions of Yarn have different package resolution rules t
 
 First, install the framework:
 
-{/* prettier-ignore-start */}
-
 <CodeSnippets path="nextjs-install.md" />
-
-{/* prettier-ignore-end */}
 
 Then, update your `.storybook/main.js|ts` to change the framework property:
 
-{/* prettier-ignore-start */}
-
 <CodeSnippets path="nextjs-add-framework.md" />
-
-{/* prettier-ignore-end */}
 
 Finally, if you were using Storybook plugins to integrate with Next.js, those are no longer necessary when using this framework and can be removed:
 
-{/* prettier-ignore-start */}
-
 <CodeSnippets path="nextjs-remove-addons.md" />
-
-{/* prettier-ignore-end */}
 
 ### How do I migrate to the Next.js Vite framework?
 
@@ -679,7 +623,7 @@ Please refer to the [migration instructions for `@storybook/nextjs-vite`](./next
 
 ### Stories for pages/components which fetch data
 
-Next.js pages can fetch data directly within server components in the `app` directory, which often include module imports that only run in a node environment. This does not (currently) work within Storybook, because if you import from a Next.js page file containing those node module imports in your stories, your Storybook's Webpack will crash because those modules will not run in a browser. To get around this, you can extract the component in your page file into a separate file and import that pure component in your stories. Or, if that's not feasible for some reason, you can [polyfill those modules](https://webpack.js.org/configuration/node/) in your Storybook's [`webpackFinal` configuration](../../builders/webpack.mdx#extending-storybooks-webpack-config).
+Next.js pages can fetch data directly within server components in the `app` directory, which often include module imports that only run in a Node.js environment. This does not (currently) work within Storybook, because if you import from a Next.js page file containing those node module imports in your stories, your Storybook's Webpack will crash because those modules will not run in a browser. To get around this, you can extract the component in your page file into a separate file and import that pure component in your stories. Or, if that's not feasible for some reason, you can [polyfill those modules](https://webpack.js.org/configuration/node/) in your Storybook's [`webpackFinal` configuration](../../builders/webpack.mdx#override-the-default-configuration).
 
 **Before**
 
@@ -727,7 +671,7 @@ Before using this framework, image imports would import the raw path to the imag
   "src": "static/media/stories/assets/logo.svg",
   "height": 48,
   "width": 48,
-  "blurDataURL": "static/media/stories/assets/logo.svg"
+  "blurDataURL": "static/media/stories/assets/logo.svg",
 }
 ```
 
@@ -801,33 +745,25 @@ Type: `typeof import('next/cache')`
 
 This module exports mocked implementations of the `next/cache` module's exports. You can use it to create your own mock implementations or assert on mock calls in a story's [play function](../../writing-stories/play-function.mdx).
 
-{/* prettier-ignore-start */}
-
 <CodeSnippets path="nextjs-cache-mock.md" />
-
-{/* prettier-ignore-end */}
 
 #### `@storybook/nextjs/headers.mock`
 
 Type: [`cookies`](https://nextjs.org/docs/app/api-reference/functions/cookies#cookiessetname-value-options), [`headers`](https://nextjs.org/docs/app/api-reference/functions/headers) and [`draftMode`](https://nextjs.org/docs/app/api-reference/functions/draft-mode) from Next.js
 
-This module exports *writable* mocked implementations of the `next/headers` module's exports. You can use it to set up cookies or headers that are read in your story, and to later assert that they have been called.
+This module exports _writable_ mocked implementations of the `next/headers` module's exports. You can use it to set up cookies or headers that are read in your story, and to later assert that they have been called.
 
 Next.js's default [`headers()`](https://nextjs.org/docs/app/api-reference/functions/headers) export is read-only, but this module exposes methods allowing you to write to the headers:
 
-* **`headers().append(name: string, value: string)`**: Appends the value to the header if it exists already.
-* **`headers().delete(name: string)`**: Deletes the header
-* **`headers().set(name: string, value: string)`**: Sets the header to the value provided.
+- **`headers().append(name: string, value: string)`**: Appends the value to the header if it exists already.
+- **`headers().delete(name: string)`**: Deletes the header
+- **`headers().set(name: string, value: string)`**: Sets the header to the value provided.
 
 For cookies, you can use the existing API to write them. E.g., `cookies().set('firstName', 'Jane')`.
 
 Because `headers()`, `cookies()` and their sub-functions are all mocks you can use any [mock utilities](https://vitest.dev/api/mock.html) in your stories, like `headers().getAll.mock.calls`.
 
-{/* prettier-ignore-start */}
-
 <CodeSnippets path="nextjs-headers-mock.md" />
-
-{/* prettier-ignore-end */}
 
 #### `@storybook/nextjs/navigation.mock`
 
@@ -835,11 +771,7 @@ Type: `typeof import('next/navigation') & getRouter: () => ReturnType<typeof imp
 
 This module exports mocked implementations of the `next/navigation` module's exports. It also exports a `getRouter` function that returns a mocked version of [Next.js's `router` object from `useRouter`](https://nextjs.org/docs/app/api-reference/functions/use-router#userouter), allowing the properties to be manipulated and asserted on. You can use it mock implementations or assert on mock calls in a story's [play function](../../writing-stories/play-function.mdx).
 
-{/* prettier-ignore-start */}
-
 <CodeSnippets path="nextjs-navigation-mock.md" />
-
-{/* prettier-ignore-end */}
 
 #### `@storybook/nextjs/router.mock`
 
@@ -847,11 +779,7 @@ Type: `typeof import('next/router') & getRouter: () => ReturnType<typeof import(
 
 This module exports mocked implementations of the `next/router` module's exports. It also exports a `getRouter` function that returns a mocked version of [Next.js's `router` object from `useRouter`](https://nextjs.org/docs/pages/api-reference/functions/use-router#router-object), allowing the properties to be manipulated and asserted on. You can use it mock implementations or assert on mock calls in a story's [play function](../../writing-stories/play-function.mdx).
 
-{/* prettier-ignore-start */}
-
 <CodeSnippets path="nextjs-router-mock.md" />
-
-{/* prettier-ignore-end */}
 
 ### Options
 

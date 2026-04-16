@@ -17,6 +17,7 @@
   },
   "scripts": {
     "ci-tests": "cd code; yarn ci-tests",
+    "docs:check": "yarn --cwd scripts docs:check",
     "fmt:check": "oxfmt --check .",
     "fmt:write": "oxfmt .",
     "get-report-message": "cd scripts; yarn get-report-message",

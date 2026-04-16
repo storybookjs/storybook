@@ -10,6 +10,7 @@ import {
   collectAiSetupEvidence,
   ErrorCollector,
   getPrecedingUpgrade,
+  isTelemetryModuleEnabled,
   isTelemetryStateResolved,
   oneWayHash,
   onPayloadError,

@@ -1,34 +1,8 @@
-export interface StoryTestResult {
-  storyId: string;
-  status: 'PASS' | 'FAIL' | 'PENDING';
-  error?: string;
-  stack?: string;
-}
-
-export interface CategorizedError {
-  category: string;
-  count: number;
-  uniqueCount: number;
-  matchedDependencies: string[];
-}
-
-export interface ErrorCategorizationResult {
-  totalErrors: number;
-  categorizedErrors: Record<string, CategorizedError>;
-  uniqueErrorCount: number;
-}
+import type { TestRunAnalysis } from '../../../shared/utils/test-result-types.ts';
 
 export interface TestRunSummary {
   duration?: number;
-  summary?: {
-    total: number;
-    passed: number;
-    passedButEmptyRender: number;
-    successRate: number;
-    successRateWithoutEmptyRender: number;
-    uniqueErrorCount: number;
-    categorizedErrors: Record<string, CategorizedError>;
-  };
+  summary?: TestRunAnalysis;
   // Error message if the operation failed
   runError?: string;
 }

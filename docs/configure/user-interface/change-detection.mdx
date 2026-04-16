@@ -16,7 +16,7 @@ Change detection is a **development-only** feature. It is active when running `s
 The following are required for change detection to work:
 
 - **Git repository**: Storybook uses `git diff` to detect changed files.
-- **Vite builder**: (or other builders that use a similar module graph): Storybook traces changed files through the module import graph to identify all affected stories.
+- **Vite builder**: Storybook traces changed files through the builder's module import graph to identify all affected stories.
 
 If change detection status indicators never appear in your sidebar, check that both requirements above are met and that the feature has not been [disabled](#configuration).
 
@@ -24,23 +24,21 @@ If change detection status indicators never appear in your sidebar, check that b
 
 When a change is detected, Storybook shows one of the following status icons next to the affected story in the sidebar:
 
-| Icon                  | Status       | Definition                                                            |
-| --------------------- | ------------ | --------------------------------------------------------------------- |
-| ✦ Sparkle             | **new**      | The story file is untracked or newly added in git.                    |
-| ● Filled circle       | **modified** | A file imported (directly or transitively) by this story was changed. |
-| ◉ Circle with outline | **affected** | A story is affected by changes in its dependencies.                   |
+| Icon                  | Status       | Definition                                                                            |
+| --------------------- | ------------ | ------------------------------------------------------------------------------------- |
+| ✦ Sparkle             | **new**      | The story file is untracked or newly added in git.                                    |
+| ● Filled circle       | **modified** | The story's own file, or a file it directly imports, was changed.                     |
+| ◉ Circle with outline | **affected** | A file further up the story's dependency chain was changed (a transitive dependency). |
+
+When multiple statuses apply to the same story, the highest priority wins: **new** > **modified** > **affected**.
 
 <Callout variant="info" icon="💡">
 
 **Modified vs. affected**
 
-These statuses are intended to help you differentiate between stories for components that were changed directly (**modified**) versus those that only consume the modified components (**affected**). This can be especially helpful in larger codebases where a single change may impact many stories. By focusing on modified stories first, you can review the most relevant changes before testing the broader impact on affected stories.
+This distinction helps you prioritize your review. **Modified** stories are closest to the change, so you should typically review them first. **Affected** stories depend on the changed code indirectly, so review them after you've verified the directly modified stories look correct. This can be especially helpful in larger codebases where a single change may impact many stories.
 
 </Callout>
-
-The priority ordering when multiple statuses apply is: **new** > **modified** > **affected**.
-
-## Sidebar display
 
 Change detection statuses are displayed alongside [test statuses](../../writing-tests/integrations/vitest-addon/index.mdx#storybook-ui) in the sidebar.
 

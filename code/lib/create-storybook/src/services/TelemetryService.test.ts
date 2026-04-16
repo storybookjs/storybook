@@ -50,6 +50,7 @@ describe('TelemetryService', () => {
           docs: true,
           test: false,
           onboarding: true,
+          ai: false,
         },
         newUser: true,
         versionSpecifier: '8.0.0',
@@ -112,6 +113,7 @@ describe('TelemetryService', () => {
           docs: true,
           test: true,
           onboarding: false,
+          ai: false,
         },
         newUser: true,
         versionSpecifier: '8.0.5',
@@ -136,6 +138,7 @@ describe('TelemetryService', () => {
           docs: false,
           test: false,
           onboarding: false,
+          ai: false,
         },
         newUser: false,
         versionSpecifier: undefined,
@@ -155,6 +158,22 @@ describe('TelemetryService', () => {
         'init',
         expect.objectContaining({
           cliIntegration: 'sv create',
+        })
+      );
+    });
+
+    it('should set ai: true when AI feature is selected', async () => {
+      const telemetryService = new TelemetryService();
+      const selectedFeatures = new Set([Feature.AI]);
+
+      vi.mocked(getProcessAncestry).mockReturnValue([]);
+
+      await telemetryService.trackInitWithContext(ProjectType.REACT, selectedFeatures, true);
+
+      expect(telemetry).toHaveBeenCalledWith(
+        'init',
+        expect.objectContaining({
+          features: expect.objectContaining({ ai: true }),
         })
       );
     });

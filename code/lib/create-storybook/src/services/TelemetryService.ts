@@ -57,6 +57,7 @@ export class TelemetryService {
       docs: boolean;
       test: boolean;
       onboarding: boolean;
+      ai: boolean;
     };
     newUser: boolean;
     versionSpecifier?: string;
@@ -97,6 +98,7 @@ export class TelemetryService {
       docs: selectedFeatures.has(Feature.DOCS),
       test: selectedFeatures.has(Feature.TEST),
       onboarding: selectedFeatures.has(Feature.ONBOARDING),
+      ai: selectedFeatures.has(Feature.AI),
     };
 
     await telemetry('init', {

@@ -70,6 +70,16 @@ export async function initializeChecklist(channel?: Channel) {
         }) satisfies StoreState
     );
 
+    // AI-specific: check if the user opted into AI during `storybook init`.
+    // Non-blocking — a failure here must never hide the checklist.
+    getEventCacheEntry('ai-init-opt-in')
+      .then((event) => {
+        if (event) {
+          store.setState((state) => ({ ...state, aiOptIn: true }));
+        }
+      })
+      .catch(() => {});
+
     // AI-specific: detect `storybook ai setup` completion and react to it.
     // This runs both at startup and mid-session (on index changes triggered by new story files).
     // Intentionally non-blocking — a failure here must never hide the checklist.

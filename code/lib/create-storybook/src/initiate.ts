@@ -151,13 +151,9 @@ export async function doInitiate(options: CommandOptions): Promise<
   // Step 8: Print final summary
   const hasAiFeature = selectedFeatures.has(Feature.AI);
   if (hasAiFeature) {
-    // Record the init-time AI opt-in in the telemetry event cache so the manager can gate
-    // AI-related UI (checklist item, delayed analytics) via STORYBOOK_LAST_EVENTS.
-    try {
-      await telemetry('ai-init-opt-in', {});
-    } catch (err) {
-      logger.warn(`Failed to record AI init opt-in: ${err}`);
-    }
+    // Record the init-time AI opt-in in the telemetry event cache so the server can gate
+    // AI-related UI (checklist item, analytics) via the universal checklist store.
+    await telemetry('ai-init-opt-in', {}).catch(() => {});
   }
   await executeFinalization({
     showAgentFollowUp: !!options.agent && hasAiFeature,

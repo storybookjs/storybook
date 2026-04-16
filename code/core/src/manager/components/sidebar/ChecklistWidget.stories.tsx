@@ -45,9 +45,6 @@ const meta = preview.meta({
       },
     });
   },
-  afterEach: async () => {
-    delete (globalThis as any).STORYBOOK_LAST_EVENTS;
-  },
 });
 
 const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -100,11 +97,9 @@ export const Narrow = meta.story({
 
 export const WithAiSetup = meta.story({
   beforeEach: async () => {
-    (globalThis as any).STORYBOOK_LAST_EVENTS = {
-      'ai-init-opt-in': { body: {}, timestamp: Date.now() },
-    };
     mockStore.setState({
       loaded: true,
+      aiOptIn: true,
       widget: {},
       items: {
         ...initialState.items,

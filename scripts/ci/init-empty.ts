@@ -138,13 +138,16 @@ export function defineEmptyInitWindows() {
 
 export const initEmptyNoOpJob = defineNoOpJob('init-empty', [build_linux]);
 
-export function getInitEmpty(workflow: Workflow) {
+export function getInitEmpty(
+  workflow: Workflow,
+  options: { nxExperiment?: boolean } = {}
+) {
   const initEmpty: JobOrNoOpJob[] = ['react-vite-ts'].map(defineEmptyInitFlow);
 
   if (isWorkflowOrAbove(workflow, 'merged')) {
     initEmpty.push(...['nextjs-ts', 'vue-vite-ts', 'lit-vite-ts'].map(defineEmptyInitFlow));
   }
-  if (isWorkflowOrAbove(workflow, 'daily')) {
+  if (!options.nxExperiment && isWorkflowOrAbove(workflow, 'daily')) {
     initEmpty.push(defineEmptyInitWindows());
   }
   if (isWorkflowOrAbove(workflow, 'normal')) {

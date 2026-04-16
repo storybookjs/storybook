@@ -35,6 +35,14 @@ import { type Workflow, isWorkflowOrAbove } from './utils/types.ts';
 const dirname = import.meta.dirname;
 
 /**
+ * When true, disables jobs that are not part of the NX vs CircleCI evaluation:
+ * - Chromatic jobs (require auth token, not ported to NX)
+ * - Benchmark packages (require auth token, not ported to NX)
+ * - Windows jobs (not ported to NX yet)
+ */
+const NX_EXPERIMENT = true;
+
+/**
  * Generate the CircleCI config for a given workflow.
  *
  * @param workflow - The workflow to generate the config for.
@@ -45,11 +53,11 @@ function generateConfig(workflow: Workflow) {
   if (isWorkflowOrAbove(workflow, 'docs')) {
     jobs.push(fmt);
   } else {
-    const sandboxes = getSandboxes(workflow);
+    const sandboxes = getSandboxes(workflow, { nxExperiment: NX_EXPERIMENT });
     const testStorybooks = getTestStorybooks(workflow);
-    const initEmpty = getInitEmpty(workflow);
+    const initEmpty = getInitEmpty(workflow, { nxExperiment: NX_EXPERIMENT });
 
-    if (isWorkflowOrAbove(workflow, 'daily')) {
+    if (!NX_EXPERIMENT && isWorkflowOrAbove(workflow, 'daily')) {
       jobs.push(build_windows, testUnit_windows);
     }
 
@@ -64,8 +72,7 @@ function generateConfig(workflow: Workflow) {
       check,
       knip,
 
-      storybookChromatic,
-      benchmarkPackages,
+      ...(NX_EXPERIMENT ? [] : [storybookChromatic, benchmarkPackages]),
 
       sandboxesNoOpJob,
       ...sandboxes,

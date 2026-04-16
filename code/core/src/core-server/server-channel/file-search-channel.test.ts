@@ -42,7 +42,7 @@ describe('file-search-channel', () => {
       const mockOptions = {};
       const data = { searchQuery: 'es-module' };
 
-      await initFileSearchChannel(mockChannel, mockOptions as any, { disableTelemetry: true });
+      await initFileSearchChannel(mockChannel, mockOptions as any);
 
       mockChannel.addListener(FILE_COMPONENT_SEARCH_RESPONSE, searchResultChannelListener);
       mockChannel.emit(FILE_COMPONENT_SEARCH_REQUEST, {
@@ -102,7 +102,7 @@ describe('file-search-channel', () => {
         const mockOptions = {};
         const data = { searchQuery: 'no-file-for-search-query' };
 
-        await initFileSearchChannel(mockChannel, mockOptions as any, { disableTelemetry: true });
+        await initFileSearchChannel(mockChannel, mockOptions as any);
 
         mockChannel.addListener(FILE_COMPONENT_SEARCH_RESPONSE, searchResultChannelListener);
         mockChannel.emit(FILE_COMPONENT_SEARCH_REQUEST, {
@@ -133,7 +133,7 @@ describe('file-search-channel', () => {
     it('should emit an error message if an error occurs while searching for components in the project', async () => {
       const mockOptions = {} as any;
       const data = { searchQuery: 'commonjs' };
-      await initFileSearchChannel(mockChannel, mockOptions, { disableTelemetry: true });
+      await initFileSearchChannel(mockChannel, mockOptions);
 
       mockChannel.addListener(FILE_COMPONENT_SEARCH_RESPONSE, searchResultChannelListener);
 

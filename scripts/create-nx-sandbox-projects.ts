@@ -1,3 +1,4 @@
+import { execSync } from 'node:child_process';
 import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 
@@ -145,4 +146,14 @@ function ensureDirectoryExistence(filePath: string): void {
   }
   ensureDirectoryExistence(dir);
   mkdirSync(dir);
+}
+
+// Apply oxfmt so generated files match the repo format rules (e.g. short arrays on one line)
+try {
+  execSync('yarn fmt:write code/sandbox', {
+    cwd: join(process.cwd(), '..'),
+    stdio: 'inherit',
+  });
+} catch (err) {
+  console.warn('oxfmt pass failed or not available; sandbox JSON may need manual formatting.');
 }

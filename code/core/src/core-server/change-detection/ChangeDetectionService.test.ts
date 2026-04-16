@@ -329,6 +329,90 @@ describe('ChangeDetectionService', () => {
     await service.dispose();
   });
 
+  it('replaces prior scan status data instead of cumulatively merging with store state', async () => {
+    const depA = createModuleNode('/repo/src/depA.ts');
+    const depB = createModuleNode('/repo/src/depB.ts');
+    const buttonStory = createModuleNode('/repo/src/Button.stories.tsx');
+
+    depA.importers.add(buttonStory);
+    depB.importers.add(buttonStory);
+
+    const moduleGraph: ModuleGraph = new Map([
+      ['/repo/src/depA.ts', new Set([depA])],
+      ['/repo/src/depB.ts', new Set([depB])],
+      ['/repo/src/Button.stories.tsx', new Set([buttonStory])],
+    ]);
+    const storyIndex = createStoryIndex([
+      { storyId: 'button--primary', importPath: './src/Button.stories.tsx', title: 'Button' },
+    ]);
+    const { getStatusStoreByTypeId } = createStatusStore({
+      universalStatusStore: new MockUniversalStore(UNIVERSAL_STATUS_STORE_OPTIONS),
+      environment: 'server',
+    });
+    const gitDiffProvider = createMockGitDiffProvider((provider) => {
+      provider.getChangedFilesMock
+        .mockResolvedValueOnce({
+          changed: new Set(),
+          new: new Set(['src/Button.stories.tsx']),
+        })
+        .mockResolvedValueOnce({
+          changed: new Set(['src/depB.ts']),
+          new: new Set(),
+        });
+    });
+    const { builder, emit } = createBuilder();
+    const service = new ChangeDetectionService({
+      storyIndexGeneratorPromise: Promise.resolve({
+        getIndex: vi.fn().mockResolvedValue(storyIndex),
+      } as never),
+      statusStore: getStatusStoreByTypeId(CHANGE_DETECTION_STATUS_TYPE_ID),
+      gitDiffProvider,
+      indexBaselineService: createMockStoryIndexBaselineService(),
+      workingDir,
+      debounceMs: 10,
+    });
+
+    service.start(builder.onModuleGraphChange, true);
+    emit(moduleGraph);
+    await vi.runAllTimersAsync();
+
+    expect(getStatusStoreByTypeId(CHANGE_DETECTION_STATUS_TYPE_ID).getAll()).toEqual({
+      'button--primary': {
+        [CHANGE_DETECTION_STATUS_TYPE_ID]: {
+          storyId: 'button--primary',
+          typeId: CHANGE_DETECTION_STATUS_TYPE_ID,
+          value: 'status-value:new',
+          title: '',
+          description: '',
+          data: {
+            changedFiles: ['src/Button.stories.tsx'],
+          },
+          sidebarContextMenu: false,
+        },
+      },
+    });
+
+    emit(moduleGraph);
+    await vi.runAllTimersAsync();
+
+    expect(getStatusStoreByTypeId(CHANGE_DETECTION_STATUS_TYPE_ID).getAll()).toEqual({
+      'button--primary': {
+        [CHANGE_DETECTION_STATUS_TYPE_ID]: {
+          storyId: 'button--primary',
+          typeId: CHANGE_DETECTION_STATUS_TYPE_ID,
+          value: 'status-value:modified',
+          title: '',
+          description: '',
+          data: {
+            changedFiles: ['src/depB.ts'],
+          },
+          sidebarContextMenu: false,
+        },
+      },
+    });
+    await service.dispose();
+  });
+
   it('rescans on git state changes using the normal debounce', async () => {
     const buttonStory = createModuleNode('/repo/src/Button.stories.tsx');
     const moduleGraph: ModuleGraph = new Map([

@@ -406,18 +406,10 @@ export class ChangeDetectionService {
   }
 
   private applyStatusStorePatch(nextStatuses: Map<string, Status>): void {
-    const mergedNextStatuses = new Map<string, Status>();
-    const allCurrentStatuses = this.options.statusStore.getAll();
-
-    nextStatuses.forEach((status, storyId) => {
-      const existingStatus = allCurrentStatuses[storyId]?.[CHANGE_DETECTION_STATUS_TYPE_ID];
-      mergedNextStatuses.set(storyId, mergeChangeDetectionStatuses(existingStatus, status));
-    });
-
     const removedStoryIds = Array.from(this.previousStatuses.keys()).filter(
-      (storyId) => !mergedNextStatuses.has(storyId)
+      (storyId) => !nextStatuses.has(storyId)
     );
-    const changedStatuses = Array.from(mergedNextStatuses.values()).filter(
+    const changedStatuses = Array.from(nextStatuses.values()).filter(
       (status) => !isSameStatus(this.previousStatuses.get(status.storyId), status)
     );
 
@@ -429,7 +421,7 @@ export class ChangeDetectionService {
       this.options.statusStore.set(changedStatuses);
     }
 
-    this.previousStatuses = mergedNextStatuses;
+    this.previousStatuses = new Map(nextStatuses);
   }
 
   private resolveReadiness(

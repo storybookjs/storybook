@@ -10,6 +10,10 @@ on:
   schedule:
     - cron: '0 23 * * *'
 
+concurrency:
+  group: nx-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: false
+
 permissions:
   actions: read
   contents: read

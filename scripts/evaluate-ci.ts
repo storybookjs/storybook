@@ -19,6 +19,7 @@
 
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
+// @ts-expect-error - no type declarations for ini
 import { parse as parseIni } from 'ini';
 import { parse as parseYaml } from 'yaml';
 

@@ -89,21 +89,14 @@ export async function runStoryRenderPass(opts: {
   const reportPath = join(opts.resultsDir, `${opts.outputBaseName}-report.json`);
   const outputPath = join(opts.resultsDir, `${opts.outputBaseName}-output.txt`);
 
-  opts.logger.logStep(
-    `Running ${tag} for ${runnableStoryFiles.length} story file(s)...`
-  );
+  opts.logger.logStep(`Running ${tag} for ${runnableStoryFiles.length} story file(s)...`);
 
   const pm = detectPackageManager(resolveInstallRoot(opts.projectPath));
   const [runCmd, ...runArgs] = getScriptRunCommand(pm);
 
   const result = await x(
     runCmd,
-    [
-      ...runArgs,
-      '--reporter=json',
-      `--outputFile=${reportPath}`,
-      ...runnableStoryFiles,
-    ],
+    [...runArgs, '--reporter=json', `--outputFile=${reportPath}`, ...runnableStoryFiles],
     {
       throwOnError: false,
       timeout: 300_000,

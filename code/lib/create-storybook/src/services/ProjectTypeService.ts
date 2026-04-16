@@ -197,18 +197,34 @@ export class ProjectTypeService {
     }
   }
 
-  async detectLanguage(): Promise<{
-    language: SupportedLanguage;
-    incompatibleReasons: string[];
-  }> {
+  async detectLanguage(): Promise<SupportedLanguage> {
     let language = SupportedLanguage.JAVASCRIPT;
 
     if (existsSync('jsconfig.json')) {
-      return { language, incompatibleReasons: [] };
+      return language;
     }
 
     const isTypescriptDirectDependency = !!this.jsPackageManager.getAllDependencies().typescript;
 
+    if (isTypescriptDirectDependency) {
+      const incompatibleReasons = await this.detectIncompatiblePackageVersions();
+      if (incompatibleReasons.length === 0) {
+        language = SupportedLanguage.TYPESCRIPT;
+      }
+    } else {
+      // No direct dependency on TypeScript, but could be a transitive dependency
+      // This is eg the case for Nuxt projects, which support a recent version of TypeScript
+      // Check for tsconfig.json (https://www.typescriptlang.org/docs/handbook/tsconfig-json.html)
+      if (existsSync('tsconfig.json')) {
+        language = SupportedLanguage.TYPESCRIPT;
+      }
+    }
+
+    return language;
+  }
+
+  /** Check installed tooling versions for TypeScript compatibility constraints */
+  async detectIncompatiblePackageVersions(): Promise<string[]> {
     const getModulePackageJSONVersion = async (pkg: string) => {
       return (await this.jsPackageManager.getModulePackageJSON(pkg))?.version ?? null;
     };
@@ -234,54 +250,39 @@ export class ProjectTypeService {
       return semver.satisfies(version, range, { includePrerelease: true });
     };
 
-    if (isTypescriptDirectDependency && typescriptVersion) {
-      const incompatibleReasons: string[] = [];
+    const incompatibleReasons: string[] = [];
 
-      if (!satisfies(typescriptVersion, '>=4.9.0')) {
-        incompatibleReasons.push(`typescript ${typescriptVersion} is below 4.9.0`);
-      }
-      if (prettierVersion && !semver.gte(prettierVersion, '2.8.0')) {
-        incompatibleReasons.push(`prettier ${prettierVersion} is below 2.8.0`);
-      }
-      if (
-        babelPluginTransformTypescriptVersion &&
-        !satisfies(babelPluginTransformTypescriptVersion, '>=7.20.0')
-      ) {
-        incompatibleReasons.push(
-          `@babel/plugin-transform-typescript ${babelPluginTransformTypescriptVersion} is below 7.20.0`
-        );
-      }
-      if (typescriptEslintParserVersion && !satisfies(typescriptEslintParserVersion, '>=5.44.0')) {
-        incompatibleReasons.push(
-          `@typescript-eslint/parser ${typescriptEslintParserVersion} is below 5.44.0`
-        );
-      }
-      // Treat Storybook canary/prerelease versions (e.g. 0.0.0-pr-*) as compatible
-      if (
-        eslintPluginStorybookVersion &&
-        !eslintPluginStorybookVersion.startsWith('0.0.0-') &&
-        !satisfies(eslintPluginStorybookVersion, '>=0.6.8')
-      ) {
-        incompatibleReasons.push(
-          `eslint-plugin-storybook ${eslintPluginStorybookVersion} is below 0.6.8`
-        );
-      }
-
-      if (incompatibleReasons.length === 0) {
-        language = SupportedLanguage.TYPESCRIPT;
-      }
-
-      return { language, incompatibleReasons };
-    } else {
-      // No direct dependency on TypeScript, but could be a transitive dependency
-      // This is eg the case for Nuxt projects, which support a recent version of TypeScript
-      // Check for tsconfig.json (https://www.typescriptlang.org/docs/handbook/tsconfig-json.html)
-      if (existsSync('tsconfig.json')) {
-        language = SupportedLanguage.TYPESCRIPT;
-      }
+    if (typescriptVersion && !satisfies(typescriptVersion, '>=4.9.0')) {
+      incompatibleReasons.push(`typescript ${typescriptVersion} is below 4.9.0`);
+    }
+    if (prettierVersion && !semver.gte(prettierVersion, '2.8.0')) {
+      incompatibleReasons.push(`prettier ${prettierVersion} is below 2.8.0`);
+    }
+    if (
+      babelPluginTransformTypescriptVersion &&
+      !satisfies(babelPluginTransformTypescriptVersion, '>=7.20.0')
+    ) {
+      incompatibleReasons.push(
+        `@babel/plugin-transform-typescript ${babelPluginTransformTypescriptVersion} is below 7.20.0`
+      );
+    }
+    if (typescriptEslintParserVersion && !satisfies(typescriptEslintParserVersion, '>=5.44.0')) {
+      incompatibleReasons.push(
+        `@typescript-eslint/parser ${typescriptEslintParserVersion} is below 5.44.0`
+      );
+    }
+    // Treat Storybook canary/prerelease versions (e.g. 0.0.0-pr-*) as compatible
+    if (
+      eslintPluginStorybookVersion &&
+      !eslintPluginStorybookVersion.startsWith('0.0.0-') &&
+      !satisfies(eslintPluginStorybookVersion, '>=0.6.8')
+    ) {
+      incompatibleReasons.push(
+        `eslint-plugin-storybook ${eslintPluginStorybookVersion} is below 0.6.8`
+      );
     }
 
-    return { language, incompatibleReasons: [] };
+    return incompatibleReasons;
   }
 
   private eqMajor(versionRange: string, major: number) {

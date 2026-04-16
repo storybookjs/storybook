@@ -23,6 +23,7 @@ describe('ProjectDetectionCommand', () => {
     autoDetectProjectType: ReturnType<typeof vi.fn>;
     isStorybookInstantiated: ReturnType<typeof vi.fn>;
     detectLanguage: ReturnType<typeof vi.fn>;
+    detectIncompatiblePackageVersions: ReturnType<typeof vi.fn>;
   };
   let options: CommandOptions;
 
@@ -35,9 +36,8 @@ describe('ProjectDetectionCommand', () => {
       validateProvidedType: vi.fn(),
       autoDetectProjectType: vi.fn(),
       isStorybookInstantiated: vi.fn().mockReturnValue(false),
-      detectLanguage: vi
-        .fn()
-        .mockResolvedValue({ language: SupportedLanguage.JAVASCRIPT, incompatibleReasons: [] }),
+      detectLanguage: vi.fn().mockResolvedValue(SupportedLanguage.JAVASCRIPT),
+      detectIncompatiblePackageVersions: vi.fn().mockResolvedValue([]),
     };
 
     vi.mocked(ProjectTypeService).mockImplementation(function () {
@@ -229,10 +229,9 @@ describe('ProjectDetectionCommand', () => {
       options.type = undefined;
       options.language = undefined;
       vi.mocked(mockProjectTypeService.autoDetectProjectType).mockResolvedValue(ProjectType.REACT);
-      vi.mocked(mockProjectTypeService.detectLanguage).mockResolvedValue({
-        language: SupportedLanguage.TYPESCRIPT,
-        incompatibleReasons: [],
-      });
+      vi.mocked(mockProjectTypeService.detectLanguage).mockResolvedValue(
+        SupportedLanguage.TYPESCRIPT
+      );
 
       const result = await command.execute();
 
@@ -244,10 +243,12 @@ describe('ProjectDetectionCommand', () => {
       options.type = undefined;
       options.language = undefined;
       vi.mocked(mockProjectTypeService.autoDetectProjectType).mockResolvedValue(ProjectType.REACT);
-      vi.mocked(mockProjectTypeService.detectLanguage).mockResolvedValue({
-        language: SupportedLanguage.JAVASCRIPT,
-        incompatibleReasons: ['prettier 2.6.2 is below 2.8.0'],
-      });
+      vi.mocked(mockProjectTypeService.detectLanguage).mockResolvedValue(
+        SupportedLanguage.JAVASCRIPT
+      );
+      vi.mocked(mockProjectTypeService.detectIncompatiblePackageVersions).mockResolvedValue([
+        'prettier 2.6.2 is below 2.8.0',
+      ]);
 
       const result = await command.execute();
 

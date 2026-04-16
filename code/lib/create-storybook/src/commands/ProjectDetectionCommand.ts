@@ -2,7 +2,7 @@ import { ProjectType } from 'storybook/internal/cli';
 import type { JsPackageManager } from 'storybook/internal/common';
 import { logger, prompt } from 'storybook/internal/node-logger';
 import { telemetry } from 'storybook/internal/telemetry';
-import type { SupportedLanguage } from 'storybook/internal/types';
+import { SupportedLanguage } from 'storybook/internal/types';
 
 import picocolors from 'picocolors';
 import { dedent } from 'ts-dedent';
@@ -55,12 +55,15 @@ export class ProjectDetectionCommand {
 
   /** Detect language and warn about incompatible packages */
   private async detectAndReportLanguage(): Promise<SupportedLanguage> {
-    const { language, incompatibleReasons } = await this.projectTypeService.detectLanguage();
+    const language = await this.projectTypeService.detectLanguage();
 
-    if (incompatibleReasons.length > 0) {
-      logger.warn(
-        `Populating with JavaScript examples due to incompatible package versions:\n${incompatibleReasons.map((r) => `  - ${r}`).join('\n')}`
-      );
+    if (language === SupportedLanguage.JAVASCRIPT) {
+      const incompatibleReasons = await this.projectTypeService.detectIncompatiblePackageVersions();
+      if (incompatibleReasons.length > 0) {
+        logger.warn(
+          `Populating with JavaScript examples due to incompatible package versions:\n${incompatibleReasons.map((r) => `  - ${r}`).join('\n')}`
+        );
+      }
     }
 
     return language;

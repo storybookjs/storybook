@@ -5,14 +5,14 @@ sidebar:
   title: Environment variables
 ---
 
-You can use environment variables in Storybook to change its behavior in different “modes”.
+You can use environment variables in Storybook to change its behavior in different "modes".
 If you supply an environment variable prefixed with `STORYBOOK_`, it will be available in `process.env` when using Webpack, or `import.meta.env` when using the Vite builder:
 
 ```shell
 STORYBOOK_THEME=red STORYBOOK_DATA_KEY=12345 npm run storybook
 ```
 
-<Callout variant=”info” icon=”💡”>
+<Callout variant="info" icon="💡">
   Do not store any secrets (e.g., private API keys) or other types of sensitive information in your Storybook. Environment variables are embedded into the build, meaning anyone can view them by inspecting your files.
 </Callout>
 
@@ -21,9 +21,9 @@ Then we can access these environment variables anywhere inside our preview JavaS
 <IfRenderer renderer={['angular', 'ember' ]}>
   {/* prettier-ignore-start */}
 
-  <CodeSnippets path=”storybook-read-environment-variables.md” />
+  <CodeSnippets path="storybook-read-environment-variables.md" />
 
-  <Callout variant=”warning”>
+  <Callout variant="warning">
     With Webpack 5, `process.env` is only injected into the browser bundle for environment variables that are **actually defined** at build time. If a `STORYBOOK_*` variable is not set in your environment or `.env` file, referencing `process.env` will throw a `Can't find variable: process` runtime error.
 
     To avoid this, make sure all `STORYBOOK_*` variables you reference are always defined — either in a `.env` file, on the command line, or by providing defaults in your `.storybook/main.ts` using the [`env` configuration field](#using-storybook-configuration).

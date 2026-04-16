@@ -153,31 +153,30 @@ jobs:
         name: 'Run nx'
         run: |
           set -o pipefail
-          echo 'nx_output<<EOF' >> "$GITHUB_OUTPUT"
+          status=0
+          output_file=$(mktemp)
 
           # Main tasks (library + sandbox standard cadence)
-          yarn nx run-many -t $ALL_TASKS -c production -p="tag:library,tag:ci:${{ steps.tag.outputs.tag }}" | tee -a "$GITHUB_OUTPUT"
-          status=${PIPESTATUS[0]}
+          yarn nx run-many -t $ALL_TASKS -c production -p="tag:library,tag:ci:${{ steps.tag.outputs.tag }}" | tee -a "$output_file" || status=$?
 
           # init-empty: react-vite always, others merged+
-          if [ $status -eq 0 ]; then
-            yarn nx run-many -t init-empty -c production -p="tag:ci:init-empty-${{ steps.tag.outputs.tag }}" | tee -a "$GITHUB_OUTPUT"
-            status=${PIPESTATUS[0]}
-          fi
+          yarn nx run-many -t init-empty -c production -p="tag:ci:init-empty-${{ steps.tag.outputs.tag }}" | tee -a "$output_file" || status=$?
 
           # init-features: only on react-vite/default-ts, all tiers
-          if [ $status -eq 0 ]; then
-            yarn nx run-many -t init-features -c production -p="tag:ci:init-features" | tee -a "$GITHUB_OUTPUT"
-            status=${PIPESTATUS[0]}
-          fi
+          yarn nx run-many -t init-features -c production -p="tag:ci:init-features" | tee -a "$output_file" || status=$?
 
           # test-runner: only on react-vite/default-ts, only daily (matches CircleCI daily first-template extra)
-          if [ $status -eq 0 ] && [ "${{ steps.tag.outputs.tag }}" = "daily" ]; then
-            yarn nx run-many -t test-runner -c production -p="tag:ci:test-runner-daily" | tee -a "$GITHUB_OUTPUT"
-            status=${PIPESTATUS[0]}
+          if [ "${{ steps.tag.outputs.tag }}" = "daily" ]; then
+            yarn nx run-many -t test-runner -c production -p="tag:ci:test-runner-daily" | tee -a "$output_file" || status=$?
           fi
 
-          echo 'EOF' >> "$GITHUB_OUTPUT"
+          # Use a random delimiter so EOF lines in nx output don't terminate the heredoc early.
+          delim="NXOUTPUT_$(openssl rand -hex 8)"
+          {
+            echo "nx_output<<${delim}"
+            cat "$output_file"
+            echo "${delim}"
+          } >> "$GITHUB_OUTPUT"
           exit $status
 
       - name: Create per-task Nx statuses

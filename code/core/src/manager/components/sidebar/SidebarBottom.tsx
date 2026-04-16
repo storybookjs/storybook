@@ -10,7 +10,6 @@ import {
 import {
   experimental_useStatusStore,
   experimental_useTestProviderStore,
-  internal_fullStatusStore,
   internal_fullTestProviderStore,
 } from '#manager-stores';
 import { type API, type State, useStorybookApi, useStorybookState } from 'storybook/manager-api';
@@ -153,8 +152,7 @@ export const SidebarBottomBase = ({
               },
               hasStatuses,
               clearStatuses: () => {
-                internal_fullStatusStore.unset();
-                internal_fullTestProviderStore.clearAll();
+                api.clearStatuses();
                 setErrorsActive(false);
                 setWarningsActive(false);
               },

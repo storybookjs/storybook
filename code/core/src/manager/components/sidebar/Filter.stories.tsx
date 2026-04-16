@@ -12,6 +12,7 @@ import { expect, screen, waitFor } from 'storybook/test';
 import { internal_fullStatusStore } from '../../manager-stores.mock.ts';
 
 import { Filter } from './Filter.tsx';
+import { IconSymbolsDecorator } from './Filter.story-helpers.tsx';
 
 const getDefaultTagFilters = () => {
   const tagOptions = global.TAGS_OPTIONS ?? {};
@@ -54,6 +55,7 @@ const meta = {
   title: 'Sidebar/Filter',
   tags: ['haha', 'this-is-a-very-long-tag-that-will-be-truncated-after-a-while'],
   decorators: [
+    IconSymbolsDecorator,
     (Story, { args, parameters }) => {
       const [state, setState] = useState(() =>
         createInitialState(parameters?.initialStoryState as Record<string, unknown> | undefined)

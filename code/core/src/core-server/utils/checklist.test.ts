@@ -94,8 +94,19 @@ describe('initializeChecklist', () => {
     expect(state.items.aiSetup.status).toBe('done');
   });
 
-  it('does not overwrite aiSetup status if already done from persisted state', async () => {
-    // Simulate persisted user state where aiSetup is already 'skipped'
+  it('still initializes when reading ai-setup from the event cache fails', async () => {
+    const { get: getEventCacheEntry } = await import('../../telemetry/event-cache.ts');
+    vi.mocked(getEventCacheEntry).mockRejectedValue(new Error('cache read failed'));
+
+    const { initializeChecklist } = await import('./checklist.ts');
+    await expect(initializeChecklist()).resolves.toBeUndefined();
+
+    const state = mockStore.getState();
+    expect(state.loaded).toBe(true);
+    expect(state.items.aiSetup.status).toBe('open');
+  });
+
+  it('marks aiSetup as done when ai-setup ran even if persisted status was skipped', async () => {
     mockSettingsValue.checklist = {
       items: { aiSetup: { status: 'skipped' } },
       widget: {},
@@ -111,7 +122,6 @@ describe('initializeChecklist', () => {
     await initializeChecklist();
 
     const state = mockStore.getState();
-    // The ai-setup event was found, but status was 'skipped' (not 'open'), so it stays 'skipped'
-    expect(state.items.aiSetup.status).toBe('skipped');
+    expect(state.items.aiSetup.status).toBe('done');
   });
 });

@@ -47,12 +47,18 @@ const meta = preview.meta({
       },
     });
   },
+  afterEach: async () => {
+    delete (globalThis as any).STORYBOOK_LAST_EVENTS;
+  },
 });
 
 export const Default = meta.story({});
 
 export const AiCtaSkipped = meta.story({
   beforeEach: async () => {
+    (globalThis as any).STORYBOOK_LAST_EVENTS = {
+      'ai-init-opt-in': { body: {}, timestamp: Date.now() },
+    };
     mockStore.setState({
       loaded: true,
       widget: {},
@@ -69,6 +75,9 @@ export const AiCtaSkipped = meta.story({
 
 export const AiCtaDone = meta.story({
   beforeEach: async () => {
+    (globalThis as any).STORYBOOK_LAST_EVENTS = {
+      'ai-init-opt-in': { body: {}, timestamp: Date.now() },
+    };
     mockStore.setState({
       loaded: true,
       widget: {},

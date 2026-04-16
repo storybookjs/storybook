@@ -12,9 +12,9 @@ import { useStorybookApi } from 'storybook/manager-api';
 const TRIGGER_DELAY_MS = 4 * 60 * 1000;
 
 /**
- * Fires one-time analytics events 10 minutes after the preview initializes.
- * The server-side handlers for those events enforce the once-ever-per-project
- * gate via lastEvents cache, so this hook is fire-and-forget.
+ * After the preview initializes, waits then may request ghost-story capture and AI-setup
+ * analytics. Emissions only occur when `ai-setup` telemetry exists for the current session;
+ * server-side handlers apply additional lastEvents gates.
  */
 export function useDelayedAnalyticsTrigger(): void {
   const api = useStorybookApi();
@@ -34,15 +34,8 @@ export function useDelayedAnalyticsTrigger(): void {
       fired.current = true;
 
       const lastEvents = global.STORYBOOK_LAST_EVENTS;
-
-      // Only fire if the user has opted into AI (during `storybook init`) or run `sb ai setup`.
-      if (!lastEvents?.['ai-init-opt-in'] && !lastEvents?.['ai-setup']) {
-        return;
-      }
-
       const aiSetupEvent = lastEvents?.['ai-setup'];
 
-      // if `ai setup` is in the same session, we run ghost stories and ai setup analytics.
       if (aiSetupEvent && aiSetupEvent.body.sessionId === global.STORYBOOK_SESSION_ID) {
         api.emit(GHOST_STORIES_REQUEST);
         api.emit(AI_SETUP_ANALYTICS_REQUEST);

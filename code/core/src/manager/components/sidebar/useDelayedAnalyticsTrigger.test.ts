@@ -39,19 +39,24 @@ function createMockApi() {
   };
 }
 
+const TEST_SESSION_ID = 'test-session';
+
 describe('useDelayedAnalyticsTrigger', () => {
   beforeEach(() => {
     vi.useFakeTimers();
-    // Simulate `sb ai setup` having been run in the same session so both the
-    // AI opt-in gate and the session-match check pass.
+    global.STORYBOOK_SESSION_ID = TEST_SESSION_ID;
     global.STORYBOOK_LAST_EVENTS = {
-      'ai-setup': { body: { sessionId: undefined as any } as any, timestamp: Date.now() },
+      'ai-setup': {
+        body: { sessionId: TEST_SESSION_ID } as any,
+        timestamp: Date.now(),
+      },
     } as any;
   });
 
   afterEach(() => {
     vi.useRealTimers();
     delete (global as any).STORYBOOK_LAST_EVENTS;
+    delete (global as any).STORYBOOK_SESSION_ID;
   });
 
   it('registers a PREVIEW_INITIALIZED listener on mount', () => {
@@ -147,7 +152,7 @@ describe('useDelayedAnalyticsTrigger', () => {
     expect(api.off).toHaveBeenCalledWith(PREVIEW_INITIALIZED, expect.any(Function));
   });
 
-  it('does not emit when neither ai-init-opt-in nor ai-setup events are present', () => {
+  it('does not emit when there is no ai-setup last event', () => {
     delete (global as any).STORYBOOK_LAST_EVENTS;
     const api = createMockApi();
     mockUseStorybookApi.mockReturnValue(api as any);
@@ -160,9 +165,27 @@ describe('useDelayedAnalyticsTrigger', () => {
     expect(api.emit).not.toHaveBeenCalled();
   });
 
-  it('does not emit ghost/setup analytics when only ai-init-opt-in is present (no same-session ai-setup)', () => {
+  it('does not emit when ai-init-opt-in is present but ai-setup is not', () => {
     global.STORYBOOK_LAST_EVENTS = {
       'ai-init-opt-in': { body: {} as any, timestamp: Date.now() },
+    } as any;
+    const api = createMockApi();
+    mockUseStorybookApi.mockReturnValue(api as any);
+
+    renderHook(() => useDelayedAnalyticsTrigger());
+
+    api._trigger(PREVIEW_INITIALIZED);
+    vi.advanceTimersByTime(4 * 60 * 1000);
+
+    expect(api.emit).not.toHaveBeenCalled();
+  });
+
+  it('does not emit when ai-setup sessionId does not match the current session', () => {
+    global.STORYBOOK_LAST_EVENTS = {
+      'ai-setup': {
+        body: { sessionId: 'other-session' } as any,
+        timestamp: Date.now(),
+      },
     } as any;
     const api = createMockApi();
     mockUseStorybookApi.mockReturnValue(api as any);

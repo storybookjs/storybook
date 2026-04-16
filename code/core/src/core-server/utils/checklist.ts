@@ -27,41 +27,44 @@ export async function initializeChecklist() {
       ns: 'storybook',
     });
 
-    const [[userState, saveUserState], [projectState, saveProjectState], aiSetupEvent] =
-      await Promise.all([
-        globalSettings().then((settings) => {
-          const save = throttle(() => settings.save(), 1000);
-          const state = {
-            items: settings.value.checklist?.items ?? {},
-            widget: settings.value.checklist?.widget ?? {},
-          };
-          const setState = ({
-            items = state.items,
-            widget = state.widget,
-          }: {
-            items?: typeof state.items;
-            widget?: typeof state.widget;
-          }) => {
-            settings.value.checklist = { items, widget };
-            save();
-          };
-          return [state, setState] as const;
-        }),
+    const [[userState, saveUserState], [projectState, saveProjectState]] = await Promise.all([
+      globalSettings().then((settings) => {
+        const save = throttle(() => settings.save(), 1000);
+        const state = {
+          items: settings.value.checklist?.items ?? {},
+          widget: settings.value.checklist?.widget ?? {},
+        };
+        const setState = ({
+          items = state.items,
+          widget = state.widget,
+        }: {
+          items?: typeof state.items;
+          widget?: typeof state.widget;
+        }) => {
+          settings.value.checklist = { items, widget };
+          save();
+        };
+        return [state, setState] as const;
+      }),
 
-        cache.get<Pick<ChecklistState, 'items'>>('state').then((cachedState) => {
-          const state = { items: cachedState?.items ?? {} };
-          const setState = ({ items }: Pick<ChecklistState, 'items'>) =>
-            cache.set('state', { items });
-          return [state, setState] as const;
-        }),
+      cache.get<Pick<ChecklistState, 'items'>>('state').then((cachedState) => {
+        const state = { items: cachedState?.items ?? {} };
+        const setState = ({ items }: Pick<ChecklistState, 'items'>) =>
+          cache.set('state', { items });
+        return [state, setState] as const;
+      }),
+    ]);
 
-        // Check if ai-setup has ever been run so first-load UI state reflects it
-        getEventCacheEntry('ai-setup'),
-      ]);
+    let aiSetupEvent: Awaited<ReturnType<typeof getEventCacheEntry>> | undefined;
+    try {
+      aiSetupEvent = await getEventCacheEntry('ai-setup');
+    } catch {
+      aiSetupEvent = undefined;
+    }
 
     store.setState((value) => {
       const merged = toMerged(value, toMerged(userState, projectState));
-      if (aiSetupEvent && merged.items.aiSetup?.status === 'open') {
+      if (aiSetupEvent && merged.items.aiSetup?.status !== 'done') {
         merged.items = {
           ...merged.items,
           aiSetup: { ...merged.items.aiSetup, status: 'done' },

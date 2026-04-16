@@ -8,6 +8,7 @@ import type {
   ModuleGraph,
   ModuleGraphChangeEvent,
   ModuleNode,
+  Status,
   StoryIndex,
 } from 'storybook/internal/types';
 import { CHANGE_DETECTION_STATUS_TYPE_ID } from 'storybook/internal/types';
@@ -149,10 +150,9 @@ function createMockStoryIndexBaselineService(
   entryIds: Set<string> = new Set()
 ): IndexBaselineService {
   return {
-    initialize: vi.fn(async () => undefined),
+    start: vi.fn(async () => undefined),
     getBaselineEntryIds: vi.fn(async () => new Set(entryIds)),
     handleGitStateChange: vi.fn(async () => undefined),
-    shouldSuppressGitEvent: vi.fn(() => false),
   } as unknown as IndexBaselineService;
 }
 
@@ -225,7 +225,7 @@ describe('ChangeDetectionService', () => {
       } as never),
       statusStore: getStatusStoreByTypeId(CHANGE_DETECTION_STATUS_TYPE_ID),
       gitDiffProvider,
-      storyIndexBaselineService: createMockStoryIndexBaselineService(),
+      indexBaselineService: createMockStoryIndexBaselineService(),
       workingDir,
     });
 
@@ -295,7 +295,7 @@ describe('ChangeDetectionService', () => {
       } as never),
       statusStore: getStatusStoreByTypeId(CHANGE_DETECTION_STATUS_TYPE_ID),
       gitDiffProvider,
-      storyIndexBaselineService: createMockStoryIndexBaselineService(),
+      indexBaselineService: createMockStoryIndexBaselineService(),
       workingDir,
       debounceMs: 10,
     });
@@ -358,7 +358,7 @@ describe('ChangeDetectionService', () => {
       } as never),
       statusStore: getStatusStoreByTypeId(CHANGE_DETECTION_STATUS_TYPE_ID),
       gitDiffProvider,
-      storyIndexBaselineService: createMockStoryIndexBaselineService(),
+      indexBaselineService: createMockStoryIndexBaselineService(),
       workingDir,
       debounceMs: 10,
     });
@@ -395,7 +395,7 @@ describe('ChangeDetectionService', () => {
       } as never),
       statusStore: getStatusStoreByTypeId(CHANGE_DETECTION_STATUS_TYPE_ID),
       gitDiffProvider,
-      storyIndexBaselineService: createMockStoryIndexBaselineService(),
+      indexBaselineService: createMockStoryIndexBaselineService(),
       workingDir,
     });
 
@@ -421,7 +421,7 @@ describe('ChangeDetectionService', () => {
       } as never),
       statusStore: getStatusStoreByTypeId(CHANGE_DETECTION_STATUS_TYPE_ID),
       gitDiffProvider: createMockGitDiffProvider(),
-      storyIndexBaselineService: createMockStoryIndexBaselineService(),
+      indexBaselineService: createMockStoryIndexBaselineService(),
       workingDir,
     });
 
@@ -450,7 +450,7 @@ describe('ChangeDetectionService', () => {
       } as never),
       statusStore: getStatusStoreByTypeId(CHANGE_DETECTION_STATUS_TYPE_ID),
       gitDiffProvider,
-      storyIndexBaselineService: createMockStoryIndexBaselineService(),
+      indexBaselineService: createMockStoryIndexBaselineService(),
       workingDir,
     });
 
@@ -492,7 +492,7 @@ describe('ChangeDetectionService', () => {
       } as never),
       statusStore: getStatusStoreByTypeId(CHANGE_DETECTION_STATUS_TYPE_ID),
       gitDiffProvider,
-      storyIndexBaselineService: createMockStoryIndexBaselineService(),
+      indexBaselineService: createMockStoryIndexBaselineService(),
       workingDir,
       debounceMs: 10,
     });
@@ -548,7 +548,7 @@ describe('ChangeDetectionService', () => {
       } as never),
       statusStore: getStatusStoreByTypeId(CHANGE_DETECTION_STATUS_TYPE_ID),
       gitDiffProvider,
-      storyIndexBaselineService: createMockStoryIndexBaselineService(),
+      indexBaselineService: createMockStoryIndexBaselineService(),
       workingDir,
       debounceMs: 0,
     });
@@ -594,7 +594,7 @@ describe('ChangeDetectionService', () => {
       } as never),
       statusStore: getStatusStoreByTypeId(CHANGE_DETECTION_STATUS_TYPE_ID),
       gitDiffProvider,
-      storyIndexBaselineService: createMockStoryIndexBaselineService(),
+      indexBaselineService: createMockStoryIndexBaselineService(),
       workingDir,
       debounceMs: 0,
     });
@@ -659,7 +659,7 @@ describe('ChangeDetectionService', () => {
       } as never),
       statusStore: getStatusStoreByTypeId(CHANGE_DETECTION_STATUS_TYPE_ID),
       gitDiffProvider,
-      storyIndexBaselineService: createMockStoryIndexBaselineService(),
+      indexBaselineService: createMockStoryIndexBaselineService(),
       workingDir,
     });
 
@@ -721,7 +721,7 @@ describe('ChangeDetectionService', () => {
       } as never),
       statusStore: getStatusStoreByTypeId(CHANGE_DETECTION_STATUS_TYPE_ID),
       gitDiffProvider,
-      storyIndexBaselineService: createMockStoryIndexBaselineService(),
+      indexBaselineService: createMockStoryIndexBaselineService(),
       workingDir,
     });
 

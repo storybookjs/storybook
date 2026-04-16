@@ -138,10 +138,7 @@ export function defineEmptyInitWindows() {
 
 export const initEmptyNoOpJob = defineNoOpJob('init-empty', [build_linux]);
 
-export function getInitEmpty(
-  workflow: Workflow,
-  options: { nxExperiment?: boolean } = {}
-) {
+export function getInitEmpty(workflow: Workflow, options: { nxExperiment?: boolean } = {}) {
   const initEmpty: JobOrNoOpJob[] = ['react-vite-ts'].map(defineEmptyInitFlow);
 
   if (isWorkflowOrAbove(workflow, 'merged')) {

@@ -518,10 +518,7 @@ const getListOfSandboxes = (workflow: Workflow) => {
   }
 };
 
-export function getSandboxes(
-  workflow: Workflow,
-  options: { nxExperiment?: boolean } = {}
-) {
+export function getSandboxes(workflow: Workflow, options: { nxExperiment?: boolean } = {}) {
   nxExperiment = options.nxExperiment ?? false;
   const sandboxes = getListOfSandboxes(workflow).map(defineSandboxFlow);
 

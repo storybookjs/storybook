@@ -1,5 +1,11 @@
+import type { Channel } from 'storybook/internal/channels';
 import { createFileSystemCache, resolvePathInStorybookCache } from 'storybook/internal/common';
 import { experimental_UniversalStore } from 'storybook/internal/core-server';
+import {
+  AI_SETUP_ANALYTICS_REQUEST,
+  GHOST_STORIES_REQUEST,
+  STORY_INDEX_INVALIDATED,
+} from 'storybook/internal/core-events';
 import { logger } from 'storybook/internal/node-logger';
 import { telemetry } from 'storybook/internal/telemetry';
 
@@ -15,7 +21,7 @@ import {
   UNIVERSAL_CHECKLIST_STORE_OPTIONS,
 } from '../../shared/checklist-store/index.ts';
 
-export async function initializeChecklist() {
+export async function initializeChecklist(channel?: Channel) {
   try {
     const store = experimental_UniversalStore.create<StoreState, StoreEvent>({
       ...UNIVERSAL_CHECKLIST_STORE_OPTIONS,
@@ -55,23 +61,103 @@ export async function initializeChecklist() {
       }),
     ]);
 
-    let aiSetupEvent: Awaited<ReturnType<typeof getEventCacheEntry>> | undefined;
-    try {
-      aiSetupEvent = await getEventCacheEntry('ai-setup');
-    } catch {
-      aiSetupEvent = undefined;
-    }
+    // Load the checklist immediately so the UI is never blocked.
+    store.setState(
+      (value) =>
+        ({
+          ...toMerged(value, toMerged(userState, projectState)),
+          loaded: true,
+        }) satisfies StoreState
+    );
 
-    store.setState((value) => {
-      const merged = toMerged(value, toMerged(userState, projectState));
-      if (aiSetupEvent && merged.items.aiSetup?.status !== 'done') {
-        merged.items = {
-          ...merged.items,
-          aiSetup: { ...merged.items.aiSetup, status: 'done' },
-        };
+    // AI-specific: detect `storybook ai setup` completion and react to it.
+    // This runs both at startup and mid-session (on index changes triggered by new story files).
+    // Intentionally non-blocking — a failure here must never hide the checklist.
+    const markAiSetupDone = async () => {
+      try {
+        const aiSetupEvent = await getEventCacheEntry('ai-setup');
+        if (!aiSetupEvent || store.getState().items.aiSetup?.status === 'done') {
+          return false;
+        }
+        store.setState((state) => ({
+          ...state,
+          items: {
+            ...state.items,
+            aiSetup: { ...state.items.aiSetup, status: 'done' },
+          },
+        }));
+        return true;
+      } catch {
+        return false;
       }
-      return { ...merged, loaded: true } satisfies StoreState;
+    };
+
+    // Debounced analytics & ghost stories: the agent may be creating many files
+    // progressively. We want to score the final state, not intermediate states.
+    // Each story index change resets the timer; events only fire after 4 minutes
+    // of no story changes — matching the original useDelayedAnalyticsTrigger delay.
+    const AI_IDLE_DELAY_MS = 4 * 60 * 1000;
+    let analyticsTimer: ReturnType<typeof setTimeout> | undefined;
+    let analyticsEmitted = false;
+    let cleanupIndexListener: (() => void) | undefined;
+
+    const scheduleAnalytics = () => {
+      if (!channel || analyticsEmitted) {
+        return;
+      }
+      clearTimeout(analyticsTimer);
+      analyticsTimer = setTimeout(() => {
+        analyticsEmitted = true;
+        cleanupIndexListener?.();
+        channel.emit(GHOST_STORIES_REQUEST);
+        channel.emit(AI_SETUP_ANALYTICS_REQUEST);
+      }, AI_IDLE_DELAY_MS);
+    };
+
+    // Check once at startup (non-blocking).
+    markAiSetupDone().then((detected) => {
+      if (detected) {
+        // ai-setup already existed at startup — schedule debounced analytics.
+        // The server may have just restarted while the agent is still working.
+        scheduleAnalytics();
+      }
     });
+
+    // Also listen for mid-session completion: when `storybook ai setup` creates story files,
+    // the file watcher fires STORY_INDEX_INVALIDATED. Re-check the event cache on each
+    // invalidation until we detect the event, then stop listening.
+    if (channel) {
+      let aiSetupDetected = store.getState().items.aiSetup?.status === 'done';
+
+      const onIndexInvalidated = () => {
+        if (analyticsEmitted) {
+          return;
+        }
+
+        if (!aiSetupDetected) {
+          // Haven't detected ai-setup yet — check the event cache.
+          markAiSetupDone().then((detected) => {
+            if (detected) {
+              aiSetupDetected = true;
+              scheduleAnalytics();
+            }
+          });
+        } else {
+          // ai-setup already detected but agent is still creating files —
+          // reset the debounce timer so we score the final state.
+          scheduleAnalytics();
+        }
+      };
+      channel.on(STORY_INDEX_INVALIDATED, onIndexInvalidated);
+      cleanupIndexListener = () => channel.off(STORY_INDEX_INVALIDATED, onIndexInvalidated);
+
+      // Update the detected flag when the store changes (e.g. startup check resolved).
+      store.onStateChange((state: StoreState) => {
+        if (state.items.aiSetup?.status === 'done') {
+          aiSetupDetected = true;
+        }
+      });
+    }
 
     store.onStateChange((state: StoreState, previousState: StoreState) => {
       const entries = Object.entries(state.items);

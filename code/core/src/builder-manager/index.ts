@@ -201,8 +201,9 @@ const starter: StarterFunction = async function* starterGeneratorFn({
   // Build additional global values
   const globals: Record<string, any> = await buildFrameworkGlobalsFromOptions(options);
   // Pass along recent CLI events to customise user onboarding and telemetry after `sb ai` commands.
-  globals.STORYBOOK_LAST_EVENTS = await getLastEvents();
-  globals.STORYBOOK_SESSION_ID = await getSessionId();
+  // Failures must never block the manager build.
+  globals.STORYBOOK_LAST_EVENTS = await getLastEvents().catch(() => ({}));
+  globals.STORYBOOK_SESSION_ID = await getSessionId().catch(() => undefined);
 
   yield;
 

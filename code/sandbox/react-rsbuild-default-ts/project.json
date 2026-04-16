@@ -27,5 +27,9 @@
     "test-runner": {},
     "test-runner-dev": {}
   },
-  "tags": ["ci:normal", "ci:merged", "ci:daily"]
+  "tags": [
+    "ci:normal",
+    "ci:merged",
+    "ci:daily"
+  ]
 }

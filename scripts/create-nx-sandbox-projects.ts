@@ -109,12 +109,25 @@ await Promise.all(
       : undefined;
     console.log(project);
     console.log();
+    const isInitEmpty = key in INIT_EMPTY_TEMPLATES;
+    const isReactViteDefault = key === 'react-vite/default-ts';
+
     const tags = [
       ...(normal.includes(key as any) && !value.inDevelopment ? ['ci:normal'] : []),
       ...(merged.includes(key as any) && !value.inDevelopment ? ['ci:merged'] : []),
       ...(daily.includes(key as any) && !value.inDevelopment ? ['ci:daily'] : []),
       // Windows CI uses the first sandbox (react-vite/default-ts)
-      ...(key === 'react-vite/default-ts' ? ['ci:windows'] : []),
+      ...(isReactViteDefault ? ['ci:windows'] : []),
+      // init-empty cadence (mirrors scripts/ci/init-empty.ts getInitEmpty()):
+      //   react-vite/default-ts: normal+, merged+, daily+
+      //   nextjs/default-ts, vue3-vite/default-ts, lit-vite/default-ts: merged+, daily+
+      ...(isReactViteDefault ? ['ci:init-empty-normal'] : []),
+      ...(isInitEmpty ? ['ci:init-empty-merged', 'ci:init-empty-daily'] : []),
+      // init-features: only react-vite/default-ts, all tiers (mirrors defineEmptyInitFeatures)
+      ...(isReactViteDefault ? ['ci:init-features'] : []),
+      // test-runner: only react-vite/default-ts, only daily (mirrors
+      // CircleCI's defineSandboxTestRunner emitted as first-template daily extra)
+      ...(isReactViteDefault ? ['ci:test-runner-daily'] : []),
     ];
     ensureDirectoryExistence(full);
     console.log(full);

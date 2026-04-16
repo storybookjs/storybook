@@ -38,5 +38,11 @@
       }
     }
   },
-  "tags": ["ci:normal", "ci:merged", "ci:daily"]
+  "tags": [
+    "ci:normal",
+    "ci:merged",
+    "ci:daily",
+    "ci:init-empty-merged",
+    "ci:init-empty-daily"
+  ]
 }

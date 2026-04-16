@@ -30,5 +30,7 @@
     "test-runner": {},
     "test-runner-dev": {}
   },
-  "tags": ["ci:daily"]
+  "tags": [
+    "ci:daily"
+  ]
 }

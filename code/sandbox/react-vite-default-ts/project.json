@@ -46,5 +46,15 @@
       }
     }
   },
-  "tags": ["ci:normal", "ci:merged", "ci:daily", "ci:windows"]
+  "tags": [
+    "ci:normal",
+    "ci:merged",
+    "ci:daily",
+    "ci:windows",
+    "ci:init-empty-normal",
+    "ci:init-empty-merged",
+    "ci:init-empty-daily",
+    "ci:init-features",
+    "ci:test-runner-daily"
+  ]
 }

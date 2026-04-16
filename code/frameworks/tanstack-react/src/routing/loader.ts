@@ -1,7 +1,7 @@
 import type { LoaderFunction, Renderer } from 'storybook/internal/types';
 import { Route, RootRoute } from '@tanstack/react-router';
 
-import type { RouterParameters } from './types';
+import type { RouterParameters } from './types.ts';
 
 function isRoute(value: unknown): value is InstanceType<typeof Route> {
   return value instanceof Route || value instanceof RootRoute;

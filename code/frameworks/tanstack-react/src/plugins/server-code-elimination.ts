@@ -15,6 +15,12 @@ import {
 } from '@babel/types';
 import type { Plugin } from 'vite';
 
+interface TransformState {
+  code: string;
+  modified: boolean;
+  needsFnImport: boolean;
+}
+
 // Same strategy as TanStack's `detectKindsInCode`.
 const SERVER_FN_RE = /\bcreateServerFn\b/;
 const MIDDLEWARE_RE = /\bcreateMiddleware\b/;
@@ -99,7 +105,6 @@ function serverCodeElimination(state: TransformState): PluginObj {
         const resolves = (name: string, factory: string) =>
           resolvesToFactory(tanstackImports, name, factory);
 
-        // ─── Main transformation pass ─────────────────────────
         programPath.traverse({
           CallExpression(path) {
             const node = path.node;
@@ -129,7 +134,6 @@ function serverCodeElimination(state: TransformState): PluginObj {
               return;
             }
 
-            // ─── Method-chain patterns ────────────────────────
             const methodName = getMethodName(node);
             if (!methodName) {
               return;
@@ -278,7 +282,7 @@ function findChainRoot(
   node: ReturnType<typeof callExpression>
 ): { rootCall: ReturnType<typeof callExpression>; rootName: string } | null {
   let current: ReturnType<typeof callExpression> = node;
-  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+
   while (true) {
     const callee = current.callee;
     if (isIdentifier(callee)) {
@@ -329,12 +333,4 @@ function eliminateDeadImports(programPath: NodePath<import('@babel/types').Progr
       }
     },
   });
-}
-
-// ─── Babel plugin ─────────────────────────────────────────────────────────────
-
-interface TransformState {
-  code: string;
-  modified: boolean;
-  needsFnImport: boolean;
 }

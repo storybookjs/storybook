@@ -17,21 +17,21 @@ import type { ReactMeta, ReactPreview } from '@storybook/react';
 import { __definePreview } from '@storybook/react';
 import type { ReactTypes } from '@storybook/react';
 
-import * as tanstackPreview from './preview';
-import type { TanStackTypes } from './types';
-import type { IsRoute } from './routing/types';
+import * as tanstackPreview from './preview.tsx';
+import type { TanStackTypes } from './types.ts';
+import type { IsRoute } from './routing/types.ts';
 import type { ReactRenderer } from '@storybook/react';
 
 import type { StoryObj as _StoryObj, Meta as _Meta } from '@storybook/react';
 export * from '@storybook/react';
-export * from './types';
+export * from './types.ts';
 export type {
   CreateStoryRouteOptions,
   IsRoute,
   StoryRouteFileOptions,
   StoryRouteOptions,
   RouterParameters,
-} from './routing/types';
+} from './routing/types.ts';
 
 // -- Helper types replicating private types from @storybook/react --
 

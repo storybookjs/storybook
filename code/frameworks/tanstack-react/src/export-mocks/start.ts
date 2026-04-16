@@ -1,7 +1,7 @@
 import React from 'react';
 import { fn } from 'storybook/test';
 import type { createServerFn as _createServerFn } from '@tanstack/start-client-core';
-import { onNavigate } from './spies';
+import { onNavigate } from './spies.ts';
 export * from '@tanstack/start-client-core';
 export * from '@tanstack/react-start';
 

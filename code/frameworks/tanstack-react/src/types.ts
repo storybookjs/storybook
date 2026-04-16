@@ -2,7 +2,7 @@ import type { CompatibleString } from 'storybook/internal/types';
 
 import type { BuilderOptions } from '@storybook/builder-vite';
 import type { StorybookConfig as StorybookConfigReactVite } from '@storybook/react-vite';
-import type { RouterParameters } from './routing/types';
+import type { RouterParameters } from './routing/types.ts';
 
 type FrameworkName = CompatibleString<'@storybook/tanstack-react'>;
 type BuilderName = CompatibleString<'@storybook/builder-vite'>;

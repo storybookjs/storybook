@@ -8,7 +8,7 @@ import type { Options } from 'storybook/internal/types';
 import compression from '@polka/compression';
 import polka from 'polka';
 
-import { telemetry } from '../telemetry/index.ts';
+import { isTelemetryModuleEnabled, telemetry } from '../telemetry/index.ts';
 import { ChangeDetectionService } from './change-detection/index.ts';
 import { setChangeDetectionReadiness } from './change-detection/readiness.ts';
 import { getStatusStoreByTypeId } from './stores/status.ts';
@@ -203,6 +203,10 @@ export async function storybookDevServer(
   doTelemetry(app, core, storyIndexGeneratorPromise, options);
 
   async function cancelTelemetry() {
+    if (!isTelemetryModuleEnabled()) {
+      return;
+    }
+
     const payload = { eventType: 'dev' };
     try {
       const generator = await storyIndexGeneratorPromise;
@@ -219,10 +223,8 @@ export async function storybookDevServer(
     process.exit(0);
   }
 
-  if (!core?.disableTelemetry) {
-    process.on('SIGINT', cancelTelemetry);
-    process.on('SIGTERM', cancelTelemetry);
-  }
+  process.on('SIGINT', cancelTelemetry);
+  process.on('SIGTERM', cancelTelemetry);
 
   return { previewResult, managerResult };
 }

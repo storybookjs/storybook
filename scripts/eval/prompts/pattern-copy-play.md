@@ -3,6 +3,8 @@
 Your goal is to make Storybook fully functional in this project by analyzing the codebase,
 configuring the preview with the right decorators, and writing stories for some components.
 
+The end state should be a Storybook where any component — from a small button to a full page — can be added without story-specific workarounds. All necessary providers, CSS, browser state, and network mocks should live in the shared preview so that new stories only need the component import and a render call.
+
 After each created story, run Vitest to verify it renders.
 If the test fails, read the error, fix the issue, and re-run until it passes before moving on.
 
@@ -280,29 +282,43 @@ It can have more when the real usage supports it, up to 10 story exports in one 
 Always show all imports explicitly in story and preview files.
 Do not rely on omitted or implied imports in examples or generated code.
 
-Example:
+For simple components where props drive the state, prefer `args` stories — no `render` function needed:
 
 ```tsx
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { expect } from 'storybook/test';
-import { SomeComponent } from './SomeComponent';
+import { Button } from './Button';
 
 const meta = {
-  component: SomeComponent,
-} satisfies Meta<typeof SomeComponent>;
+  component: Button,
+} satisfies Meta<typeof Button>;
 
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-export const Default: Story = {
-  render: () => <SomeComponent variant="primary" disabled={false} />,
+export const Primary: Story = {
+  args: {
+    variant: 'primary',
+    children: 'Save',
+  },
   play: async ({ canvas }) => {
-    await expect(canvas.getByRole('button')).toBeVisible();
+    await expect(canvas.getByRole('button', { name: /save/i })).toBeVisible();
+  },
+};
+
+export const Disabled: Story = {
+  args: {
+    variant: 'primary',
+    disabled: true,
+    children: 'Save',
+  },
+  play: async ({ canvas }) => {
+    await expect(canvas.getByRole('button')).toBeDisabled();
   },
 };
 ```
 
-If the codebase already contains real JSX, copy that shape almost directly:
+Use `render` when the story needs composition — wrapping the component in layout, combining multiple components, or passing children as JSX:
 
 ```tsx
 import type { Meta, StoryObj } from '@storybook/react-vite';
@@ -317,7 +333,7 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-export const Default: Story = {
+export const InsideCard: Story = {
   render: () => (
     <Card>
       <Button disabled={false}>Save</Button>

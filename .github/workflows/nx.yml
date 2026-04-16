@@ -36,7 +36,6 @@ jobs:
 
     runs-on: ubuntu-latest
     env:
-      NX_CI_EXECUTION_ENV: 'linux'
       ALL_TASKS: compile,check,knip,test,lint,fmt,sandbox,build,e2e-tests,e2e-tests-dev,test-runner,vitest-integration,check-sandbox,e2e-ui,jest,vitest,playwright-ct
     steps:
       - uses: actions/checkout@v4
@@ -163,70 +162,3 @@ jobs:
                 : 'Nx Cloud run finished successfully',
               context: `nx: ${tag}`,
             });
-
-  # TODO: Re-enable Windows NX CI after Linux evaluation is complete
-#  nx-windows:
-#    if: >
-#      github.repository == 'storybookjs/storybook' &&
-#        ((github.event_name == 'pull_request' &&
-#          github.event.pull_request.head.repo.full_name == github.repository &&
-#          contains(github.event.pull_request.labels.*.name, 'ci:daily')
-#        ) || (github.event_name == 'schedule'))
-#    runs-on: windows-latest
-#    defaults:
-#      run:
-#        shell: bash
-#    env:
-#      NX_CI_EXECUTION_ENV: 'windows'
-#      WINDOWS_TASKS: compile,test,init-empty
-#      NX_CLOUD_VERBOSE_LOGGING: true
-#    steps:
-#      - uses: actions/checkout@v4
-#        with:
-#          filter: tree:0
-#          fetch-depth: 0
-#      - uses: actions/setup-node@v4
-#        with:
-#          node-version: 22
-#          cache: 'yarn'
-#      - uses: nrwl/nx-set-shas@v4
-#      - run: npx nx-cloud@latest start-ci-run --distribute-on="manual" --assignment-rules=".nx/workflows/assignment-rules-windows.yaml" --stop-agents-after="$WINDOWS_TASKS"
-#      - run: yarn install --immutable
-#      - name: 'Run nx'
-#        run: yarn nx run-many -t $WINDOWS_TASKS -c production -p="tag:library,tag:ci:windows"
-#      - name: Stop all running agents
-#        if: always()
-#        run: npx nx-cloud stop-all-agents
-#  nx-windows-agents:
-#    name: Nx Cloud - Windows Agent ${{ matrix.agent }}
-#    if: >
-#      github.repository == 'storybookjs/storybook' &&
-#        ((github.event_name == 'pull_request' &&
-#          github.event.pull_request.head.repo.full_name == github.repository &&
-#          contains(github.event.pull_request.labels.*.name, 'ci:daily')
-#        ) || (github.event_name == 'schedule'))
-#    runs-on: windows-latest
-#    defaults:
-#      run:
-#        shell: bash
-#    strategy:
-#      matrix:
-#        agent: [1, 2, 3]
-#    env:
-#      NX_CI_EXECUTION_ENV: 'windows'
-#      NX_CLOUD_VERBOSE_LOGGING: true
-#    steps:
-#      - uses: actions/checkout@v4
-#        with:
-#          filter: tree:0
-#          fetch-depth: 0
-#      - uses: actions/setup-node@v4
-#        with:
-#          node-version: 22
-#          cache: 'yarn'
-#      - run: yarn install --immutable
-#      - name: Start Nx Agent ${{ matrix.agent }}
-#        run: npx nx-cloud start-agent
-#        env:
-#          NX_AGENT_LAUNCH_TEMPLATE: 'windows-latest'
-#          NX_AGENT_NAME: ${{ matrix.agent }}

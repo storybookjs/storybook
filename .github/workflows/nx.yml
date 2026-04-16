@@ -37,7 +37,49 @@ jobs:
     runs-on: ubuntu-latest
     env:
       NX_CI_EXECUTION_ENV: 'linux'
-      ALL_TASKS: compile,check,knip,test,lint,fmt,sandbox,build,e2e-tests,e2e-tests-dev,test-runner,vitest-integration,check-sandbox,e2e-ui,jest,vitest,playwright-ct
+      ALL_TASKS: compile,check,knip,test,lint,fmt,sandbox,build,e2e-tests,e2e-tests-dev,vitest-integration,e2e-ui,jest,vitest,playwright-ct,chromatic,storybook-chromatic,bench-packages
+      # Benchmark packages upload to BigQuery
+      GCP_CREDENTIALS: ${{ secrets.GCP_CREDENTIALS }}
+      GH_BASE_BRANCH: ${{ github.event.pull_request.base.ref || 'next' }}
+      GH_PR_NUMBER: ${{ github.event.pull_request.number || '0' }}
+      # Per-sandbox Chromatic tokens (must exist as GitHub repo secrets;
+      # mirror of the CircleCI CHROMATIC_TOKEN_* project env vars)
+      CHROMATIC_TOKEN_ANGULAR_CLI_DEFAULT_TS: ${{ secrets.CHROMATIC_TOKEN_ANGULAR_CLI_DEFAULT_TS }}
+      CHROMATIC_TOKEN_ANGULAR_CLI_PRERELEASE: ${{ secrets.CHROMATIC_TOKEN_ANGULAR_CLI_PRERELEASE }}
+      CHROMATIC_TOKEN_BENCH_REACT_VITE_DEFAULT_TS_TEST_BUILD: ${{ secrets.CHROMATIC_TOKEN_BENCH_REACT_VITE_DEFAULT_TS_TEST_BUILD }}
+      CHROMATIC_TOKEN_BENCH_REACT_WEBPACK_18_TS_TEST_BUILD: ${{ secrets.CHROMATIC_TOKEN_BENCH_REACT_WEBPACK_18_TS_TEST_BUILD }}
+      CHROMATIC_TOKEN_HTML_RSBUILD_DEFAULT_TS: ${{ secrets.CHROMATIC_TOKEN_HTML_RSBUILD_DEFAULT_TS }}
+      CHROMATIC_TOKEN_HTML_VITE_DEFAULT_JS: ${{ secrets.CHROMATIC_TOKEN_HTML_VITE_DEFAULT_JS }}
+      CHROMATIC_TOKEN_HTML_VITE_DEFAULT_TS: ${{ secrets.CHROMATIC_TOKEN_HTML_VITE_DEFAULT_TS }}
+      CHROMATIC_TOKEN_INTERNAL_REACT16_WEBPACK: ${{ secrets.CHROMATIC_TOKEN_INTERNAL_REACT16_WEBPACK }}
+      CHROMATIC_TOKEN_INTERNAL_REACT18_WEBPACK_BABEL: ${{ secrets.CHROMATIC_TOKEN_INTERNAL_REACT18_WEBPACK_BABEL }}
+      CHROMATIC_TOKEN_LIT_RSBUILD_DEFAULT_TS: ${{ secrets.CHROMATIC_TOKEN_LIT_RSBUILD_DEFAULT_TS }}
+      CHROMATIC_TOKEN_LIT_VITE_DEFAULT_JS: ${{ secrets.CHROMATIC_TOKEN_LIT_VITE_DEFAULT_JS }}
+      CHROMATIC_TOKEN_LIT_VITE_DEFAULT_TS: ${{ secrets.CHROMATIC_TOKEN_LIT_VITE_DEFAULT_TS }}
+      CHROMATIC_TOKEN_NEXTJS_14_TS: ${{ secrets.CHROMATIC_TOKEN_NEXTJS_14_TS }}
+      CHROMATIC_TOKEN_NEXTJS_15_TS: ${{ secrets.CHROMATIC_TOKEN_NEXTJS_15_TS }}
+      CHROMATIC_TOKEN_NEXTJS_DEFAULT_TS: ${{ secrets.CHROMATIC_TOKEN_NEXTJS_DEFAULT_TS }}
+      CHROMATIC_TOKEN_NEXTJS_PRERELEASE: ${{ secrets.CHROMATIC_TOKEN_NEXTJS_PRERELEASE }}
+      CHROMATIC_TOKEN_NEXTJS_VITE_14_TS: ${{ secrets.CHROMATIC_TOKEN_NEXTJS_VITE_14_TS }}
+      CHROMATIC_TOKEN_NEXTJS_VITE_15_TS: ${{ secrets.CHROMATIC_TOKEN_NEXTJS_VITE_15_TS }}
+      CHROMATIC_TOKEN_NEXTJS_VITE_DEFAULT_TS: ${{ secrets.CHROMATIC_TOKEN_NEXTJS_VITE_DEFAULT_TS }}
+      CHROMATIC_TOKEN_PREACT_VITE_DEFAULT_JS: ${{ secrets.CHROMATIC_TOKEN_PREACT_VITE_DEFAULT_JS }}
+      CHROMATIC_TOKEN_PREACT_VITE_DEFAULT_TS: ${{ secrets.CHROMATIC_TOKEN_PREACT_VITE_DEFAULT_TS }}
+      CHROMATIC_TOKEN_REACT_NATIVE_WEB_VITE_EXPO_TS: ${{ secrets.CHROMATIC_TOKEN_REACT_NATIVE_WEB_VITE_EXPO_TS }}
+      CHROMATIC_TOKEN_REACT_RSBUILD_DEFAULT_TS: ${{ secrets.CHROMATIC_TOKEN_REACT_RSBUILD_DEFAULT_TS }}
+      CHROMATIC_TOKEN_REACT_VITE_DEFAULT_JS: ${{ secrets.CHROMATIC_TOKEN_REACT_VITE_DEFAULT_JS }}
+      CHROMATIC_TOKEN_REACT_VITE_DEFAULT_TS: ${{ secrets.CHROMATIC_TOKEN_REACT_VITE_DEFAULT_TS }}
+      CHROMATIC_TOKEN_REACT_VITE_PRERELEASE_TS: ${{ secrets.CHROMATIC_TOKEN_REACT_VITE_PRERELEASE_TS }}
+      CHROMATIC_TOKEN_REACT_WEBPACK_17_TS: ${{ secrets.CHROMATIC_TOKEN_REACT_WEBPACK_17_TS }}
+      CHROMATIC_TOKEN_REACT_WEBPACK_18_TS: ${{ secrets.CHROMATIC_TOKEN_REACT_WEBPACK_18_TS }}
+      CHROMATIC_TOKEN_REACT_WEBPACK_PRERELEASE_TS: ${{ secrets.CHROMATIC_TOKEN_REACT_WEBPACK_PRERELEASE_TS }}
+      CHROMATIC_TOKEN_SOLID_VITE_DEFAULT_TS: ${{ secrets.CHROMATIC_TOKEN_SOLID_VITE_DEFAULT_TS }}
+      CHROMATIC_TOKEN_SVELTE_KIT_SKELETON_TS: ${{ secrets.CHROMATIC_TOKEN_SVELTE_KIT_SKELETON_TS }}
+      CHROMATIC_TOKEN_SVELTE_VITE_DEFAULT_JS: ${{ secrets.CHROMATIC_TOKEN_SVELTE_VITE_DEFAULT_JS }}
+      CHROMATIC_TOKEN_SVELTE_VITE_DEFAULT_TS: ${{ secrets.CHROMATIC_TOKEN_SVELTE_VITE_DEFAULT_TS }}
+      CHROMATIC_TOKEN_VUE3_RSBUILD_DEFAULT_TS: ${{ secrets.CHROMATIC_TOKEN_VUE3_RSBUILD_DEFAULT_TS }}
+      CHROMATIC_TOKEN_VUE3_VITE_DEFAULT_JS: ${{ secrets.CHROMATIC_TOKEN_VUE3_VITE_DEFAULT_JS }}
+      CHROMATIC_TOKEN_VUE3_VITE_DEFAULT_TS: ${{ secrets.CHROMATIC_TOKEN_VUE3_VITE_DEFAULT_TS }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -73,7 +115,17 @@ jobs:
           else
             echo "config=./.nx/workflows/distribution-config.yaml" >> "$GITHUB_OUTPUT"
           fi
-      - run: npx nx-cloud@latest start-ci-run --distribute-on="${{ steps.dist.outputs.config }}" --stop-agents-after="$ALL_TASKS"
+      - name: Build --with-env-vars list
+        id: envvars
+        run: |
+          # Forward Chromatic + benchmark secrets from primary to NX Cloud agents.
+          # List stays in sync with the env: block above.
+          vars="GCP_CREDENTIALS,GH_BASE_BRANCH,GH_PR_NUMBER"
+          for key in $(env | grep -oE '^CHROMATIC_TOKEN_[A-Z0-9_]+'); do
+            vars="${vars},${key}"
+          done
+          echo "vars=$vars" >> "$GITHUB_OUTPUT"
+      - run: npx nx-cloud@latest start-ci-run --distribute-on="${{ steps.dist.outputs.config }}" --stop-agents-after="$ALL_TASKS,init-empty,init-features,test-runner" --with-env-vars="${{ steps.envvars.outputs.vars }}"
       - name: Create Nx Cloud Status (pending)
         uses: actions/github-script@v7
         with:
@@ -100,9 +152,31 @@ jobs:
       - id: nx
         name: 'Run nx'
         run: |
+          set -o pipefail
           echo 'nx_output<<EOF' >> "$GITHUB_OUTPUT"
+
+          # Main tasks (library + sandbox standard cadence)
           yarn nx run-many -t $ALL_TASKS -c production -p="tag:library,tag:ci:${{ steps.tag.outputs.tag }}" | tee -a "$GITHUB_OUTPUT"
           status=${PIPESTATUS[0]}
+
+          # init-empty: react-vite always, others merged+
+          if [ $status -eq 0 ]; then
+            yarn nx run-many -t init-empty -c production -p="tag:ci:init-empty-${{ steps.tag.outputs.tag }}" | tee -a "$GITHUB_OUTPUT"
+            status=${PIPESTATUS[0]}
+          fi
+
+          # init-features: only on react-vite/default-ts, all tiers
+          if [ $status -eq 0 ]; then
+            yarn nx run-many -t init-features -c production -p="tag:ci:init-features" | tee -a "$GITHUB_OUTPUT"
+            status=${PIPESTATUS[0]}
+          fi
+
+          # test-runner: only on react-vite/default-ts, only daily (matches CircleCI daily first-template extra)
+          if [ $status -eq 0 ] && [ "${{ steps.tag.outputs.tag }}" = "daily" ]; then
+            yarn nx run-many -t test-runner -c production -p="tag:ci:test-runner-daily" | tee -a "$GITHUB_OUTPUT"
+            status=${PIPESTATUS[0]}
+          fi
+
           echo 'EOF' >> "$GITHUB_OUTPUT"
           exit $status
 
@@ -177,8 +251,11 @@ jobs:
         shell: bash
     env:
       NX_CI_EXECUTION_ENV: 'windows'
-      WINDOWS_TASKS: compile,test,init-empty
+      # Matches CircleCI daily Windows jobs: common build/test + init-empty + per-first-template sandbox build/dev/e2e
+      WINDOWS_TASKS: compile,test,init-empty,sandbox,build,e2e-tests,e2e-tests-dev
       NX_CLOUD_VERBOSE_LOGGING: true
+      # Chromatic token only needed for react-vite/default-ts on Windows (the only ci:windows-tagged sandbox)
+      CHROMATIC_TOKEN_REACT_VITE_DEFAULT_TS: ${{ secrets.CHROMATIC_TOKEN_REACT_VITE_DEFAULT_TS }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -189,7 +266,7 @@ jobs:
           node-version: 22
           cache: 'yarn'
       - uses: nrwl/nx-set-shas@v4
-      - run: npx nx-cloud@latest start-ci-run --distribute-on="manual" --assignment-rules=".nx/workflows/assignment-rules-windows.yaml" --stop-agents-after="$WINDOWS_TASKS"
+      - run: npx nx-cloud@latest start-ci-run --distribute-on="manual" --assignment-rules=".nx/workflows/assignment-rules-windows.yaml" --stop-agents-after="$WINDOWS_TASKS" --with-env-vars="CHROMATIC_TOKEN_REACT_VITE_DEFAULT_TS"
       - run: yarn install --immutable
       - name: 'Run nx'
         run: yarn nx run-many -t $WINDOWS_TASKS -c production -p="tag:library,tag:ci:windows"

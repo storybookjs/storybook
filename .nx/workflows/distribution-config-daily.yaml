@@ -22,14 +22,17 @@ assignment-rules:
   - targets:
       - check
       - lint
-      - pretty-docs
       - knip
+      - fmt
     run-on:
       - agent: linux-js
         parallelism: 6
   - targets:
       - init-empty
       - init-features
+      - bench-packages
+      - storybook-chromatic
+      - storybook-build
     run-on:
       - agent: linux-js
         parallelism: 1

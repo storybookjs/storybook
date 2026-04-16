@@ -35,7 +35,14 @@ function getRouteFromContext(
   const routerParameters: RouterParameters = context.parameters.tanstack?.router ?? {};
   const routerParameterRoute = routerParameters.route;
 
-  const { route: _route, ...routeOverrides } = routerParameters ?? {};
+  const {
+    route: _route,
+    context: _context,
+    path: _path,
+    params: _params,
+    query: _query,
+    ...routeOverrides
+  } = routerParameters ?? {};
 
   const resolvedRoute = isRoute(routerParameterRoute)
     ? routerParameterRoute
@@ -126,6 +133,7 @@ function createStoryRouter({ Story, context }: MockRouterOptions): Router<AnyRoo
     defaultNotFoundComponent(props) {
       return <div>Route not found: {props.routeId}</div>;
     },
+    context: routerParameters?.context,
   });
   return router;
 }

@@ -151,4 +151,6 @@ export interface RouterParameters<TRoute = undefined> {
    * ```
    */
   routeOverrides?: RouteTreeOverrides;
+
+  context?: Record<string, unknown>;
 }

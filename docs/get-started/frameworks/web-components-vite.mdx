@@ -37,6 +37,25 @@ To build Storybook, run:
 You will find the output in the configured `outputDir` (default is `storybook-static`).
 
 ## FAQ
+
+### How do I use Stencil with static Storybook builds?
+
+If you register Stencil components with `defineCustomElements()` from the generated loader, enable Stencil's import injection so Vite can include the lazy-loaded component entry files in the static Storybook build.
+
+For Stencil 4.26 and later:
+
+```ts
+import type { Config } from '@stencil/core';
+
+export const config: Config = {
+  extras: {
+    enableImportInjection: true,
+  },
+};
+```
+
+For older Stencil versions, use `experimentalImportInjection: true` instead.
+
 ### How do I manually install the Web Components framework?
 
 First, install the framework:

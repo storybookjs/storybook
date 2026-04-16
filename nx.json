@@ -189,7 +189,9 @@
       "executor": "nx:run-commands",
       "options": {
         "commands": [
-          "cd .. && mkdir empty-react-vite-ts && cd empty-react-vite-ts && npm set registry http://localhost:6001 && npx --yes create-storybook@latest --yes --package-manager npm --loglevel=debug"
+          "bash -c 'rm -rf /tmp/empty-$STORYBOOK_INIT_EMPTY_TYPE && mkdir -p /tmp/empty-$STORYBOOK_INIT_EMPTY_TYPE'",
+          "bash -c 'cd /tmp/empty-$STORYBOOK_INIT_EMPTY_TYPE && npm set registry http://localhost:6001 && npx storybook init --yes --package-manager npm'",
+          "bash -c 'cd /tmp/empty-$STORYBOOK_INIT_EMPTY_TYPE && npm run storybook -- --smoke-test'"
         ],
         "parallel": false
       },

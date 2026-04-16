@@ -67,9 +67,24 @@ const projectJson = (
       : {
           'e2e-tests-dev': {},
         }),
-    // Note: init-empty / init-features / test-runner are NOT emitted per-sandbox here.
+    ...(template.skipTasks && template.skipTasks.includes('test-runner')
+      ? {}
+      : {
+          'test-runner': {},
+        }),
+    ...(template.skipTasks && template.skipTasks.includes('test-runner-dev')
+      ? {}
+      : {
+          'test-runner-dev': {},
+        }),
+    // Note: init-empty / init-features are NOT emitted per-sandbox here.
     // They live on dedicated virtual projects in test-storybooks/ci-jobs/* so that a
     // single `nx run-many` per tier selects them with the right cadence via tags.
+    //
+    // test-runner / test-runner-dev ARE emitted per-sandbox so `yarn nx test-runner
+    // <sandbox>` works locally, but they are NOT in ALL_TASKS for CI — the CI daily
+    // first-template test-runner is driven by test-storybooks/ci-jobs/test-runner-daily
+    // via its `daily-test-runner` target (different name to avoid clashing).
   },
   tags,
 });

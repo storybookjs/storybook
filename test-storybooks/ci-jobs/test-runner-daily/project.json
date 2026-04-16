@@ -1,9 +1,9 @@
 {
   "name": "ci-test-runner-daily",
-  "description": "CI-only virtual project. Runs `yarn task test-runner` for react-vite/default-ts on daily runs only. Mirrors the CircleCI daily first-template test-runner extra (scripts/ci/sandboxes.ts defineSandboxTestRunner).",
+  "description": "CI-only virtual project. Runs `yarn task test-runner` for react-vite/default-ts on daily runs only. Mirrors the CircleCI daily first-template test-runner extra (scripts/ci/sandboxes.ts defineSandboxTestRunner). Uses the distinct target name `daily-test-runner` so it doesn't collide with per-sandbox `test-runner` (which is kept for local `yarn nx test-runner <sandbox>` use).",
   "projectType": "application",
   "targets": {
-    "test-runner": {
+    "daily-test-runner": {
       "dependsOn": [{ "projects": ["react-vite/default-ts"], "target": "build" }],
       "executor": "nx:run-commands",
       "options": {

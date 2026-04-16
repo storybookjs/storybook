@@ -80,6 +80,8 @@
     "!src/**/*"
   ],
   "dependencies": {
+    "@babel/core": "7.29.0",
+    "@babel/types": "7.29.0",
     "@storybook/builder-vite": "workspace:*",
     "@storybook/react": "workspace:*",
     "@storybook/react-vite": "workspace:*"

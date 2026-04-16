@@ -4,6 +4,7 @@ import type { PresetProperty } from 'storybook/internal/types';
 
 import type { StorybookConfigVite } from '@storybook/builder-vite';
 import { viteFinal as reactViteFinal } from '@storybook/react-vite/preset';
+import { serverCodeEliminationPlugin } from './plugins/server-code-elimination.ts';
 
 const INTERCEPTED_PATTERNS = ['virtual:cloudflare', 'server-entry', 'worker-entry'];
 const INTERCEPTED_MODULES = ['@tanstack/react-start'];
@@ -65,6 +66,7 @@ export const viteFinal: StorybookConfigVite['viteFinal'] = async (config, option
   const basePlugins = reactConfig.plugins ?? [];
   const plugins = [
     ...basePlugins.filter((p) => !isTanStackStartPlugin(p)),
+    serverCodeEliminationPlugin(),
     {
       name: 'tanstack-start-plugin-remover',
       enforce: 'pre' as const,

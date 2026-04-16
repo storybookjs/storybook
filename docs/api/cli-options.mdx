@@ -151,15 +151,15 @@ storybook add [addon] [options]
 
 Options include:
 
-| Option                     | Description                                                                                                                                                                                    |
-| -------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `-h`, `--help`             | Output usage information.<br />`storybook add --help`                                                                                                                                          |
-| `-c`, `--config-dir`       | Storybook configuration directory.<br />`storybook add --config-dir .storybook`                                                                                                            |
-| `--package-manager`        | Sets the package manager to use when installing the addon.<br />Available package managers include `npm`, `yarn`, and `pnpm`.<br />`storybook add [addon] --package-manager pnpm`              |
-| `-s`, `--skip-postinstall` | Skips post-install configuration. Used only when you need to configure the addon yourself.<br />`storybook add [addon] --skip-postinstall`                                                     |
-| `--debug`                  | Outputs more logs in the CLI to assist debugging.<br />`storybook add --debug`                                                                                                                 |
-| `--loglevel <level>`       | Controls level of logging during addon installation.<br />Available options: `trace`, `debug`, `info` (default), `warn`, `error`, `silent`<br />`storybook add [addon] --loglevel debug`       |
-| `--logfile [path]`         | Write all debug logs to the specified file at the end of the run. Defaults to debug-storybook.log when [path] is not provided.<br />`storybook add [addon] --logfile /tmp/debug-storybook.log` |
+| Option                          | Description                                                                                                                                                                                    |
+| ------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `-h`, `--help`                  | Output usage information.<br />`storybook add --help`                                                                                                                                          |
+| `-c`, `--config-dir [dir-name]` | Storybook configuration directory.<br />`storybook add --config-dir .storybook`                                                                                                                |
+| `--package-manager`             | Sets the package manager to use when installing the addon.<br />Available package managers include `npm`, `yarn`, and `pnpm`.<br />`storybook add [addon] --package-manager pnpm`              |
+| `-s`, `--skip-postinstall`      | Skips post-install configuration. Used only when you need to configure the addon yourself.<br />`storybook add [addon] --skip-postinstall`                                                     |
+| `--debug`                       | Outputs more logs in the CLI to assist debugging.<br />`storybook add --debug`                                                                                                                 |
+| `--loglevel <level>`            | Controls level of logging during addon installation.<br />Available options: `trace`, `debug`, `info` (default), `warn`, `error`, `silent`<br />`storybook add [addon] --loglevel debug`       |
+| `--logfile [path]`              | Write all debug logs to the specified file at the end of the run. Defaults to debug-storybook.log when [path] is not provided.<br />`storybook add [addon] --logfile /tmp/debug-storybook.log` |
 
 ### `remove`
 
@@ -226,16 +226,16 @@ For example, `storybook@latest migrate csf-2-to-3 --dry-run`, checks your projec
 
 Options include:
 
-| Option                     | Description                                                                                                                                                                                      |
-| -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `-h`, `--help`             | Output usage information.<br />`storybook migrate --help`                                                                                                                                        |
-| `-c`, `--config-dir`       | Storybook configuration directory.<br />`storybook migrate --config-dir .storybook`                                                                                                              |
-| `-n`, `--dry-run`          | Verify the migration exists and show the files to which it will be applied.<br />`storybook migrate --dry-run`                                                                                   |
-| `-l`, `--list`             | Shows a list of available codemods.<br />`storybook migrate --list`                                                                                                                              |
-| `-g`, `--glob`             | Glob for files upon which to apply the codemods.<br />`storybook migrate --glob src/**/*.stories.tsx`                                                                                            |
-| `-p`, `--parser`           | Sets the [jscodeshift parser](https://github.com/facebook/jscodeshift#parser).<br />Available parsers include `babel`, `babylon`, `flow`, `ts`, and `tsx`.<br />`storybook migrate --parser tsx` |
-| `-r`, `--rename [from-to]` | Renames the files affected by the codemod to include the provided suffix.<br />`storybook migrate --rename ".js:.ts"`                                                                            |
-| `--debug`                  | Outputs more logs in the CLI to assist debugging.<br />`storybook migrate --debug`                                                                                                               |
+| Option                          | Description                                                                                                                                                                                      |
+| ------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `-h`, `--help`                  | Output usage information.<br />`storybook migrate --help`                                                                                                                                        |
+| `-c`, `--config-dir [dir-name]` | Storybook configuration directory.<br />`storybook migrate --config-dir .storybook`                                                                                                              |
+| `-n`, `--dry-run`               | Verify the migration exists and show the files to which it will be applied.<br />`storybook migrate --dry-run`                                                                                   |
+| `-l`, `--list`                  | Shows a list of available codemods.<br />`storybook migrate --list`                                                                                                                              |
+| `-g`, `--glob`                  | Glob for files upon which to apply the codemods.<br />`storybook migrate --glob src/**/*.stories.tsx`                                                                                            |
+| `-p`, `--parser`                | Sets the [jscodeshift parser](https://github.com/facebook/jscodeshift#parser).<br />Available parsers include `babel`, `babylon`, `flow`, `ts`, and `tsx`.<br />`storybook migrate --parser tsx` |
+| `-r`, `--rename [from-to]`      | Renames the files affected by the codemod to include the provided suffix.<br />`storybook migrate --rename ".js:.ts"`                                                                            |
+| `--debug`                       | Outputs more logs in the CLI to assist debugging.<br />`storybook migrate --debug`                                                                                                               |
 
 ### `automigrate`
 
@@ -249,19 +249,19 @@ For example, `storybook@latest automigrate --dry-run` scans your project for pot
 
 Options include:
 
-| Option                   | Description                                                                                                                                                                                                               |
-| ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `-h`, `--help`           | Output usage information.<br />`storybook automigrate --help`                                                                                                                                                             |
-| `-c`, `--config-dir`     | Storybook configuration directory.<br />`storybook automigrate --config-dir .storybook`                                                                                                                                   |
-| `-n`, `--dry-run`        | Checks for available migrations without applying them.<br />`storybook automigrate --dry-run`                                                                                                                             |
-| `-s`, `--skip-install`   | Skip installing dependencies whenever applicable.<br />`storybook automigrate --skip-install`                                                                                                                             |
-| `-y`, `--yes`            | Applies available migrations automatically without prompting for confirmation.<br />`storybook automigrate --yes`                                                                                                         |
-| `-l`, `--list`           | Shows a list of available automigrations.<br />`storybook automigrate --list`                                                                                                                                             |
-| `--package-manager`      | Sets the package manager to use when running the auto migration.<br />Available package managers include `npm`, `yarn`, and `pnpm`.<br />`storybook automigrate --package-manager pnpm`                                   |
-| `--renderer`             | Specifies Storybook's renderer to use when running the automigration.<br />Useful for monorepo environments where multiple Storybook instances can exist in the same project.<br />`storybook automigrate --renderer vue` |
-| `--debug`                | Outputs more logs in the CLI to assist debugging.<br />`storybook automigrate --debug`                                                                                                                                    |
-| `--disable-telemetry`    | Disables Storybook's telemetry. Learn more about it [here](../configure/telemetry.mdx#how-to-opt-out).<br />`storybook automigrate --disable-telemetry`                                                                   |
-| `--enable-crash-reports` | Enables sending crash reports to Storybook's telemetry. Learn more about it [here](../configure/telemetry.mdx#crash-reports-disabled-by-default).<br />`storybook automigrate --enable-crash-reports`                     |
+| Option                          | Description                                                                                                                                                                                                               |
+| ------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `-h`, `--help`                  | Output usage information.<br />`storybook automigrate --help`                                                                                                                                                             |
+| `-c`, `--config-dir [dir-name]` | Storybook configuration directory.<br />`storybook automigrate --config-dir .storybook`                                                                                                                                   |
+| `-n`, `--dry-run`               | Checks for available migrations without applying them.<br />`storybook automigrate --dry-run`                                                                                                                             |
+| `-s`, `--skip-install`          | Skip installing dependencies whenever applicable.<br />`storybook automigrate --skip-install`                                                                                                                             |
+| `-y`, `--yes`                   | Applies available migrations automatically without prompting for confirmation.<br />`storybook automigrate --yes`                                                                                                         |
+| `-l`, `--list`                  | Shows a list of available automigrations.<br />`storybook automigrate --list`                                                                                                                                             |
+| `--package-manager`             | Sets the package manager to use when running the auto migration.<br />Available package managers include `npm`, `yarn`, and `pnpm`.<br />`storybook automigrate --package-manager pnpm`                                   |
+| `--renderer`                    | Specifies Storybook's renderer to use when running the automigration.<br />Useful for monorepo environments where multiple Storybook instances can exist in the same project.<br />`storybook automigrate --renderer vue` |
+| `--debug`                       | Outputs more logs in the CLI to assist debugging.<br />`storybook automigrate --debug`                                                                                                                                    |
+| `--disable-telemetry`           | Disables Storybook's telemetry. Learn more about it [here](../configure/telemetry.mdx#how-to-opt-out).<br />`storybook automigrate --disable-telemetry`                                                                   |
+| `--enable-crash-reports`        | Enables sending crash reports to Storybook's telemetry. Learn more about it [here](../configure/telemetry.mdx#crash-reports-disabled-by-default).<br />`storybook automigrate --enable-crash-reports`                     |
 
 ### `doctor`
 
@@ -273,12 +273,12 @@ storybook doctor [options]
 
 Options include:
 
-| Option               | Description                                                                                                                                                                      |
-| -------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `-h`, `--help`       | Output usage information.<br />`storybook doctor --help`                                                                                                                         |
-| `-c`, `--config-dir` | Storybook configuration directory.<br />`storybook doctor --config-dir .storybook`                                                                                               |
-| `--package-manager`  | Sets the package manager to use when running the health check.<br />Available package managers include `npm`, `yarn`, and `pnpm`.<br />`storybook doctor --package-manager pnpm` |
-| `--debug`            | Outputs more logs in the CLI to assist debugging.<br />`storybook doctor --debug`                                                                                                |
+| Option                          | Description                                                                                                                                                                      |
+| ------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `-h`, `--help`                  | Output usage information.<br />`storybook doctor --help`                                                                                                                         |
+| `-c`, `--config-dir [dir-name]` | Storybook configuration directory.<br />`storybook doctor --config-dir .storybook`                                                                                               |
+| `--package-manager`             | Sets the package manager to use when running the health check.<br />Available package managers include `npm`, `yarn`, and `pnpm`.<br />`storybook doctor --package-manager pnpm` |
+| `--debug`                       | Outputs more logs in the CLI to assist debugging.<br />`storybook doctor --debug`                                                                                                |
 
 ### `info`
 
@@ -388,6 +388,6 @@ Options include:
 | `--debug`                | Outputs more logs in the CLI to assist debugging.<br />`create storybook --debug`                                                                                                                |
 | `--disable-telemetry`    | Disables Storybook's telemetry. Learn more about it [here](../configure/telemetry.mdx#how-to-opt-out).<br />`create storybook --disable-telemetry`                                               |
 | `--enable-crash-reports` | Enables sending crash reports to Storybook's telemetry. Learn more about it [here](../configure/telemetry.mdx#crash-reports-disabled-by-default).<br />`create storybook --enable-crash-reports` |
-| `--loglevel <level>`     | Controls level of logging during initialization.<br />Available options: `trace`, `debug`, `info` (default), `warn`, `error`, `silent`<br />`create storybook --loglevel debug`                    |
-| `--logfile [path]`       | Write all debug logs to the specified file at the end of the run. Defaults to debug-storybook.log when [path] is not provided.<br />`create storybook --logfile /tmp/debug-storybook.log`          |
+| `--loglevel <level>`     | Controls level of logging during initialization.<br />Available options: `trace`, `debug`, `info` (default), `warn`, `error`, `silent`<br />`create storybook --loglevel debug`                  |
+| `--logfile [path]`       | Write all debug logs to the specified file at the end of the run. Defaults to debug-storybook.log when [path] is not provided.<br />`create storybook --logfile /tmp/debug-storybook.log`        |
 | `--no-dev`               | Complete the initialization of Storybook without running the Storybook dev server.<br />`create storybook --no-dev`                                                                              |

@@ -623,7 +623,7 @@ Please refer to the [migration instructions for `@storybook/nextjs-vite`](./next
 
 ### Stories for pages/components which fetch data
 
-Next.js pages can fetch data directly within server components in the `app` directory, which often include module imports that only run in a node environment. This does not (currently) work within Storybook, because if you import from a Next.js page file containing those node module imports in your stories, your Storybook's Webpack will crash because those modules will not run in a browser. To get around this, you can extract the component in your page file into a separate file and import that pure component in your stories. Or, if that's not feasible for some reason, you can [polyfill those modules](https://webpack.js.org/configuration/node/) in your Storybook's [`webpackFinal` configuration](../../builders/webpack.mdx#override-the-default-configuration).
+Next.js pages can fetch data directly within server components in the `app` directory, which often include module imports that only run in a Node.js environment. This does not (currently) work within Storybook, because if you import from a Next.js page file containing those node module imports in your stories, your Storybook's Webpack will crash because those modules will not run in a browser. To get around this, you can extract the component in your page file into a separate file and import that pure component in your stories. Or, if that's not feasible for some reason, you can [polyfill those modules](https://webpack.js.org/configuration/node/) in your Storybook's [`webpackFinal` configuration](../../builders/webpack.mdx#override-the-default-configuration).
 
 **Before**
 

@@ -66,7 +66,6 @@ describe('REACT_NATIVE generator module', () => {
       expect.arrayContaining(['cross-env'])
     );
     expect(packageManager.addScripts).toHaveBeenCalledWith({
-      'storybook-generate': 'sb-rn-get-stories',
       'storybook:ios': 'cross-env STORYBOOK_ENABLED=true react-native run-ios',
       'storybook:android': 'cross-env STORYBOOK_ENABLED=true react-native run-android',
     });
@@ -138,9 +137,7 @@ describe('REACT_NATIVE generator module', () => {
     });
     await reactNativeGenerator.postConfigure?.({ packageManager });
 
-    expect(packageManager.addScripts).toHaveBeenCalledWith({
-      'storybook-generate': 'sb-rn-get-stories',
-    });
+    expect(packageManager.addScripts).toHaveBeenCalledWith({});
     expect(packageManager.getVersionedPackages).toHaveBeenCalledWith(
       expect.not.arrayContaining(['cross-env'])
     );

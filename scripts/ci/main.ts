@@ -39,6 +39,7 @@ const dirname = import.meta.dirname;
  * - Chromatic jobs (require auth token, not ported to NX)
  * - Benchmark packages (require auth token, not ported to NX)
  * - Windows jobs (not ported to NX yet)
+ * - Init-empty / init-features jobs (not working reliably yet)
  */
 const NX_EXPERIMENT = true;
 
@@ -80,8 +81,7 @@ function generateConfig(workflow: Workflow) {
       testStorybooksNoOpJob,
       ...testStorybooks,
 
-      initEmptyNoOpJob,
-      ...initEmpty
+      ...(NX_EXPERIMENT ? [] : [initEmptyNoOpJob, ...initEmpty])
     );
   }
 

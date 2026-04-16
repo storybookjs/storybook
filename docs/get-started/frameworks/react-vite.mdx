@@ -71,6 +71,50 @@ Then, update your `.storybook/main.js|ts` to change the framework property:
 
 {/* prettier-ignore-end */}
 
+### How do I set up Storybook for React and Vite without the CLI?
+
+If `npm create storybook@latest` isn't working for your project, you can set up Storybook manually in a few steps.
+
+**1. Install the required packages**
+
+{/* prettier-ignore-start */}
+
+<CodeSnippets path="react-vite-manual-install.md" />
+
+{/* prettier-ignore-end */}
+
+**2. Create `.storybook/main.js|ts`**
+
+{/* prettier-ignore-start */}
+
+<CodeSnippets path="react-vite-manual-main.md" />
+
+{/* prettier-ignore-end */}
+
+**3. Create `.storybook/preview.js|ts`**
+
+{/* prettier-ignore-start */}
+
+<CodeSnippets path="react-vite-manual-preview.md" />
+
+{/* prettier-ignore-end */}
+
+**4. Add Storybook scripts to your `package.json`**
+
+{/* prettier-ignore-start */}
+
+<CodeSnippets path="storybook-package-scripts.md" />
+
+{/* prettier-ignore-end */}
+
+**5. Run Storybook**
+
+{/* prettier-ignore-start */}
+
+<CodeSnippets path="storybook-run-dev.md" />
+
+{/* prettier-ignore-end */}
+
 ## API
 
 ### Options

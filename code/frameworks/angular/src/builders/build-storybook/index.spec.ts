@@ -2,13 +2,11 @@ import { Architect, createBuilder } from '@angular-devkit/architect';
 import { TestingArchitectHost } from '@angular-devkit/architect/testing';
 import { schema } from '@angular-devkit/core';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import {
-  buildStaticStandalone,
-} from 'storybook/internal/core-server';
-import {JsPackageManagerFactory} from "storybook/internal/common";
+import { buildStaticStandalone } from 'storybook/internal/core-server';
+import { JsPackageManagerFactory } from 'storybook/internal/common';
 
 import handler from './index.ts';
-import buildSchema from '../../../build-schema.json'
+import buildSchema from '../../../build-schema.json';
 
 vi.mock('storybook/internal/core-server', () => ({
   buildDevStandalone: vi.fn(),
@@ -21,9 +19,9 @@ vi.mock('storybook/internal/node-logger', async (importOriginal) => {
   return {
     ...original,
     prompt: {
-      executeTaskWithSpinner: (fn) => fn()
-    }
-  }
+      executeTaskWithSpinner: (fn) => fn(),
+    },
+  };
 });
 
 vi.mock('storybook/internal/common', async (importOriginal) => ({
@@ -74,21 +72,15 @@ describe('Build Storybook Builder', () => {
     );
 
     // Manually add the builder, as angular uses `require` calls in addBuilderFromPackage which bypass mocking
-    architectHost.addBuilder(
-      "@storybook/angular:build-storybook",
-      handler,
-      "",
-      buildSchema,
-    );
+    architectHost.addBuilder('@storybook/angular:build-storybook', handler, '', buildSchema);
   });
 
   beforeEach(() => {
-    vi.mocked(buildStaticStandalone).mockImplementation(
-      () => Promise.resolve(),
-    );
+    vi.mocked(buildStaticStandalone).mockImplementation(() => Promise.resolve());
+    // @ts-expect-error mocked module
     vi.mocked(JsPackageManagerFactory.getPackageManager).mockImplementation(() => ({
       runPackageCommand: mockRunScript,
-    }))
+    }));
   });
 
   afterEach(() => {
@@ -220,7 +212,7 @@ describe('Build Storybook Builder', () => {
     });
 
     await expect(run.result).rejects.toThrow(
-      "Broken build, fix the error above.\nYou may need to refresh the browser.",
+      'Broken build, fix the error above.\nYou may need to refresh the browser.'
     );
   });
 
@@ -234,20 +226,10 @@ describe('Build Storybook Builder', () => {
     await run.stop();
 
     expect(output.success).toBeTruthy();
-    expect(mockRunScript).toHaveBeenCalledWith(
-      {
-        args: [
-          "compodoc",
-          "-p",
-          "./storybook/tsconfig.ts",
-          "-d",
-          ".",
-          "-e",
-          "json",
-        ],
-        cwd: ''
-      },
-    );
+    expect(mockRunScript).toHaveBeenCalledWith({
+      args: ['compodoc', '-p', './storybook/tsconfig.ts', '-d', '.', '-e', 'json'],
+      cwd: '',
+    });
     expect(buildStaticStandalone).toHaveBeenCalledWith(
       expect.objectContaining({
         angularBrowserTarget: 'angular-cli:build-2',

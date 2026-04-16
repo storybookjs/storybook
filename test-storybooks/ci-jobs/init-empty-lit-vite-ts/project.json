@@ -1,0 +1,11 @@
+{
+  "name": "ci-init-empty-lit-vite-ts",
+  "description": "CI-only virtual project. Runs `yarn task init-empty` for the lit-vite/default-ts template in merged+ and daily+ tiers. Mirrors the CircleCI init-empty-lit-vite-ts job.",
+  "projectType": "application",
+  "targets": {
+    "init-empty": {
+      "options": { "env": { "STORYBOOK_INIT_EMPTY_TYPE": "lit-vite-ts" } }
+    }
+  },
+  "tags": ["ci:merged", "ci:daily"]
+}

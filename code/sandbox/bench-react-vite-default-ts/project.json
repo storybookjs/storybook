@@ -23,7 +23,6 @@
         "dir": "bench-react-vite-default-ts"
       }
     },
-    "chromatic": {},
     "serve": {}
   },
   "tags": ["ci:normal", "ci:merged", "ci:daily"]

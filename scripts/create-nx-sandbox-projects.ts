@@ -9,14 +9,6 @@ import * as templates from '../code/lib/cli-storybook/src/sandbox-templates.ts';
 const { allTemplates, merged, daily, normal } = (templates.default ||
   templates) as typeof templates;
 
-// Sandboxes that also run `storybook init` from an empty directory
-const INIT_EMPTY_TEMPLATES: Record<string, string> = {
-  'react-vite/default-ts': 'react-vite-ts',
-  'nextjs/default-ts': 'nextjs-ts',
-  'vue3-vite/default-ts': 'vue-vite-ts',
-  'lit-vite/default-ts': 'lit-vite-ts',
-};
-
 const projectJson = (
   name: string,
   framework: string | undefined,
@@ -59,7 +51,11 @@ const projectJson = (
         dir: name.replaceAll('/', '-'),
       },
     },
-    chromatic: {},
+    ...(template.skipTasks && template.skipTasks.includes('chromatic')
+      ? {}
+      : {
+          chromatic: {},
+        }),
     serve: {},
     ...(template.skipTasks && template.skipTasks.includes('e2e-tests')
       ? {}
@@ -71,30 +67,9 @@ const projectJson = (
       : {
           'e2e-tests-dev': {},
         }),
-    ...(template.skipTasks && template.skipTasks.includes('test-runner')
-      ? {}
-      : {
-          'test-runner': {},
-        }),
-    ...(template.skipTasks && template.skipTasks.includes('test-runner-dev')
-      ? {}
-      : {
-          'test-runner-dev': {},
-        }),
-    ...(name in INIT_EMPTY_TEMPLATES
-      ? {
-          'init-empty': {
-            options: { env: { STORYBOOK_INIT_EMPTY_TYPE: INIT_EMPTY_TEMPLATES[name] } },
-          },
-        }
-      : {}),
-    ...(name === 'react-vite/default-ts'
-      ? {
-          'init-features': {
-            options: { env: { STORYBOOK_INIT_EMPTY_TYPE: 'react-vite-ts' } },
-          },
-        }
-      : {}),
+    // Note: init-empty / init-features / test-runner are NOT emitted per-sandbox here.
+    // They live on dedicated virtual projects in test-storybooks/ci-jobs/* so that a
+    // single `nx run-many` per tier selects them with the right cadence via tags.
   },
   tags,
 });
@@ -110,25 +85,12 @@ await Promise.all(
       : undefined;
     console.log(project);
     console.log();
-    const isInitEmpty = key in INIT_EMPTY_TEMPLATES;
-    const isReactViteDefault = key === 'react-vite/default-ts';
-
     const tags = [
       ...(normal.includes(key as any) && !value.inDevelopment ? ['ci:normal'] : []),
       ...(merged.includes(key as any) && !value.inDevelopment ? ['ci:merged'] : []),
       ...(daily.includes(key as any) && !value.inDevelopment ? ['ci:daily'] : []),
       // Windows CI uses the first sandbox (react-vite/default-ts)
-      ...(isReactViteDefault ? ['ci:windows'] : []),
-      // init-empty cadence (mirrors scripts/ci/init-empty.ts getInitEmpty()):
-      //   react-vite/default-ts: normal+, merged+, daily+
-      //   nextjs/default-ts, vue3-vite/default-ts, lit-vite/default-ts: merged+, daily+
-      ...(isReactViteDefault ? ['ci:init-empty-normal'] : []),
-      ...(isInitEmpty ? ['ci:init-empty-merged', 'ci:init-empty-daily'] : []),
-      // init-features: only react-vite/default-ts, all tiers (mirrors defineEmptyInitFeatures)
-      ...(isReactViteDefault ? ['ci:init-features'] : []),
-      // test-runner: only react-vite/default-ts, only daily (mirrors
-      // CircleCI's defineSandboxTestRunner emitted as first-template daily extra)
-      ...(isReactViteDefault ? ['ci:test-runner-daily'] : []),
+      ...(key === 'react-vite/default-ts' ? ['ci:windows'] : []),
     ];
     ensureDirectoryExistence(full);
     console.log(full);

@@ -37,7 +37,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       NX_CI_EXECUTION_ENV: 'linux'
-      ALL_TASKS: compile,check,knip,test,lint,fmt,sandbox,build,e2e-tests,e2e-tests-dev,vitest-integration,e2e-ui,jest,vitest,playwright-ct,chromatic,storybook-chromatic,bench-packages
+      ALL_TASKS: compile,check,knip,test,lint,fmt,sandbox,build,e2e-tests,e2e-tests-dev,vitest-integration,e2e-ui,jest,vitest,playwright-ct,chromatic,storybook-chromatic,bench-packages,init-empty,init-features,test-runner
       # Benchmark packages upload to BigQuery
       GCP_CREDENTIALS: ${{ secrets.GCP_CREDENTIALS }}
       GH_BASE_BRANCH: ${{ github.event.pull_request.base.ref || 'next' }}
@@ -125,7 +125,7 @@ jobs:
             vars="${vars},${key}"
           done
           echo "vars=$vars" >> "$GITHUB_OUTPUT"
-      - run: npx nx-cloud@latest start-ci-run --distribute-on="${{ steps.dist.outputs.config }}" --stop-agents-after="$ALL_TASKS,init-empty,init-features,test-runner" --with-env-vars="${{ steps.envvars.outputs.vars }}"
+      - run: npx nx-cloud@latest start-ci-run --distribute-on="${{ steps.dist.outputs.config }}" --stop-agents-after="$ALL_TASKS" --with-env-vars="${{ steps.envvars.outputs.vars }}"
       - name: Create Nx Cloud Status (pending)
         uses: actions/github-script@v7
         with:
@@ -153,24 +153,13 @@ jobs:
         name: 'Run nx'
         run: |
           set -o pipefail
-          status=0
           output_file=$(mktemp)
 
-          # Main tasks (library + sandbox standard cadence)
-          yarn nx run-many -t $ALL_TASKS -c production -p="tag:library,tag:ci:${{ steps.tag.outputs.tag }}" | tee -a "$output_file" || status=$?
+          yarn nx run-many -t $ALL_TASKS -c production -p="tag:library,tag:ci:${{ steps.tag.outputs.tag }}" | tee "$output_file"
+          status=${PIPESTATUS[0]}
 
-          # init-empty: react-vite always, others merged+
-          yarn nx run-many -t init-empty -c production -p="tag:ci:init-empty-${{ steps.tag.outputs.tag }}" | tee -a "$output_file" || status=$?
-
-          # init-features: only on react-vite/default-ts, all tiers
-          yarn nx run-many -t init-features -c production -p="tag:ci:init-features" | tee -a "$output_file" || status=$?
-
-          # test-runner: only on react-vite/default-ts, only daily (matches CircleCI daily first-template extra)
-          if [ "${{ steps.tag.outputs.tag }}" = "daily" ]; then
-            yarn nx run-many -t test-runner -c production -p="tag:ci:test-runner-daily" | tee -a "$output_file" || status=$?
-          fi
-
-          # Use a random delimiter so EOF lines in nx output don't terminate the heredoc early.
+          # Use a random delimiter so any "EOF" lines inside nx output
+          # cannot terminate the GITHUB_OUTPUT heredoc prematurely.
           delim="NXOUTPUT_$(openssl rand -hex 8)"
           {
             echo "nx_output<<${delim}"

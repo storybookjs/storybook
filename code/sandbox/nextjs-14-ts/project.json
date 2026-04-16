@@ -24,9 +24,7 @@
       }
     },
     "chromatic": {},
-    "serve": {},
-    "test-runner": {},
-    "test-runner-dev": {}
+    "serve": {}
   },
   "tags": ["ci:daily"]
 }

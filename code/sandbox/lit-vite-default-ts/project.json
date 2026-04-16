@@ -26,16 +26,7 @@
     },
     "chromatic": {},
     "serve": {},
-    "e2e-tests-dev": {},
-    "test-runner": {},
-    "test-runner-dev": {},
-    "init-empty": {
-      "options": {
-        "env": {
-          "STORYBOOK_INIT_EMPTY_TYPE": "lit-vite-ts"
-        }
-      }
-    }
+    "e2e-tests-dev": {}
   },
-  "tags": ["ci:normal", "ci:merged", "ci:daily", "ci:init-empty-merged", "ci:init-empty-daily"]
+  "tags": ["ci:normal", "ci:merged", "ci:daily"]
 }

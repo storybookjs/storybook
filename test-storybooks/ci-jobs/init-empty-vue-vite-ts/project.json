@@ -1,0 +1,11 @@
+{
+  "name": "ci-init-empty-vue-vite-ts",
+  "description": "CI-only virtual project. Runs `yarn task init-empty` for the vue3-vite/default-ts template in merged+ and daily+ tiers. Mirrors the CircleCI init-empty-vue-vite-ts job.",
+  "projectType": "application",
+  "targets": {
+    "init-empty": {
+      "options": { "env": { "STORYBOOK_INIT_EMPTY_TYPE": "vue-vite-ts" } }
+    }
+  },
+  "tags": ["ci:merged", "ci:daily"]
+}

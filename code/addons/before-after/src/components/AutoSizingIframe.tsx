@@ -1,0 +1,144 @@
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+
+import { styled } from 'storybook/theming';
+
+const StyledIframe = styled.iframe({
+  width: '100%',
+  border: 'none',
+  display: 'block',
+  borderRadius: '4px',
+});
+
+const ErrorState = styled.div(({ theme }) => ({
+  display: 'flex',
+  flexDirection: 'column' as const,
+  alignItems: 'center',
+  justifyContent: 'center',
+  minHeight: '200px',
+  color: theme.color.mediumdark,
+  fontSize: '13px',
+  gap: '8px',
+}));
+
+const RetryButton = styled.button(({ theme }) => ({
+  padding: '4px 12px',
+  borderRadius: '4px',
+  border: `1px solid ${theme.color.border}`,
+  background: theme.background.content,
+  color: theme.color.defaultText,
+  cursor: 'pointer',
+  fontSize: '12px',
+  '&:hover': {
+    background: theme.background.hoverable,
+  },
+}));
+
+interface AutoSizingIframeProps {
+  src: string;
+  storyId: string;
+  title: string;
+}
+
+const DEFAULT_HEIGHT = 200;
+const FALLBACK_HEIGHT = 400;
+const FALLBACK_TIMEOUT = 3000;
+
+export const AutoSizingIframe = ({ src, storyId, title }: AutoSizingIframeProps) => {
+  const iframeRef = useRef<HTMLIFrameElement>(null);
+  const [height, setHeight] = useState(DEFAULT_HEIGHT);
+  const [error, setError] = useState(false);
+  const [retryKey, setRetryKey] = useState(0);
+  const heightSetRef = useRef(false);
+
+  // Listen for postMessage height reports (cross-origin before-server iframes)
+  useEffect(() => {
+    const handleMessage = (event: MessageEvent) => {
+      // Only accept messages from localhost origins (the before-server)
+      if (!event.origin.startsWith('http://localhost:')) return;
+
+      if (event.data?.type === 'storybook-iframe-height' && event.data?.storyId === storyId) {
+        const height = Number(event.data.height);
+        if (!Number.isFinite(height) || height < 0) return;
+        const newHeight = Math.max(height, DEFAULT_HEIGHT);
+        setHeight(newHeight);
+        heightSetRef.current = true;
+      }
+    };
+    window.addEventListener('message', handleMessage);
+    return () => window.removeEventListener('message', handleMessage);
+  }, [storyId]);
+
+  // ResizeObserver for same-origin iframes
+  useEffect(() => {
+    const iframe = iframeRef.current;
+    if (!iframe) return;
+
+    let observer: ResizeObserver | null = null;
+
+    const handleLoad = () => {
+      try {
+        const doc = iframe.contentDocument;
+        if (!doc?.body) return;
+
+        observer = new ResizeObserver(() => {
+          const newHeight = Math.max(doc.body.scrollHeight, DEFAULT_HEIGHT);
+          setHeight(newHeight);
+          heightSetRef.current = true;
+        });
+        observer.observe(doc.body);
+
+        const initialHeight = doc.body.scrollHeight;
+        if (initialHeight > 0) {
+          setHeight(Math.max(initialHeight, DEFAULT_HEIGHT));
+          heightSetRef.current = true;
+        }
+      } catch {
+        // Cross-origin — rely on postMessage
+      }
+    };
+
+    iframe.addEventListener('load', handleLoad);
+    return () => {
+      iframe.removeEventListener('load', handleLoad);
+      observer?.disconnect();
+    };
+  }, [retryKey]);
+
+  // Fallback height after timeout
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (!heightSetRef.current) {
+        setHeight(FALLBACK_HEIGHT);
+      }
+    }, FALLBACK_TIMEOUT);
+    return () => clearTimeout(timer);
+  }, [retryKey]);
+
+  const handleError = useCallback(() => {
+    setError(true);
+  }, []);
+  const handleRetry = useCallback(() => {
+    setError(false);
+    setRetryKey((k) => k + 1);
+  }, []);
+
+  if (error) {
+    return (
+      <ErrorState>
+        Failed to load story preview
+        <RetryButton onClick={handleRetry}>Retry</RetryButton>
+      </ErrorState>
+    );
+  }
+
+  return (
+    <StyledIframe
+      key={retryKey}
+      ref={iframeRef}
+      src={src}
+      title={title}
+      style={{ height: `${height}px` }}
+      onError={handleError}
+    />
+  );
+};

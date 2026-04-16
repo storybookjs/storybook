@@ -1,0 +1,76 @@
+{
+  "name": "@storybook/addon-before-after",
+  "version": "10.4.0-alpha.6",
+  "description": "Storybook addon for comparing stories before and after uncommitted changes",
+  "keywords": [
+    "storybook",
+    "storybook-addon",
+    "before-after",
+    "diff",
+    "comparison",
+    "visual-regression"
+  ],
+  "homepage": "https://github.com/storybookjs/storybook/tree/next/code/addons/before-after",
+  "bugs": {
+    "url": "https://github.com/storybookjs/storybook/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/storybookjs/storybook.git",
+    "directory": "code/addons/before-after"
+  },
+  "funding": {
+    "type": "opencollective",
+    "url": "https://opencollective.com/storybook"
+  },
+  "license": "MIT",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "code": "./src/index.ts",
+      "default": "./dist/index.js"
+    },
+    "./manager": "./dist/manager.js",
+    "./package.json": "./package.json",
+    "./preset": "./dist/preset.js"
+  },
+  "files": [
+    "dist/**/*",
+    "README.md",
+    "*.js",
+    "*.d.ts",
+    "!src/**/*"
+  ],
+  "dependencies": {
+    "execa": "^9.6.1"
+  },
+  "devDependencies": {
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "typescript": "^5.9.3",
+    "vite": "^5.0.0 || ^6.0.0 || ^7.0.0 || ^8.0.0"
+  },
+  "peerDependencies": {
+    "@storybook/builder-vite": "workspace:^",
+    "storybook": "workspace:^",
+    "vite": "^5.0.0 || ^6.0.0 || ^7.0.0 || ^8.0.0"
+  },
+  "peerDependenciesMeta": {
+    "@storybook/builder-vite": {
+      "optional": true
+    },
+    "vite": {
+      "optional": true
+    }
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "storybook": {
+    "displayName": "Before/After",
+    "unsupportedFrameworks": [
+      "react-native"
+    ]
+  }
+}

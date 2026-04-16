@@ -363,7 +363,17 @@ export interface SubAPI {
    * @param statuses The status values to remove from filters.
    */
   removeStatusFilters(statuses: StatusValue[]): void;
+  /** Registers a callback that intercepts story selection. If the callback returns true, navigation is skipped. */
+  setSelectStoryInterceptor(
+    fn: (args: { storyId: string; type: string; viewMode: string }) => boolean
+  ): void;
+  /** Clears the current story selection interceptor. */
+  clearSelectStoryInterceptor(): void;
 }
+
+let _selectStoryInterceptor:
+  | ((args: { storyId: string; type: string; viewMode: string }) => boolean)
+  | null = null;
 
 const removedOptions = ['enableShortcuts', 'theme', 'showRoots'];
 
@@ -560,6 +570,15 @@ export const init: ModuleFn<SubAPI, SubState> = ({
 
       const gotoStory = (entry?: API_HashEntry) => {
         if (entry?.type === 'docs' || entry?.type === 'story') {
+          if (_selectStoryInterceptor && !entry.refId) {
+            const { viewMode } = store.getState();
+            const handled = _selectStoryInterceptor({
+              storyId: entry.id,
+              type: entry.type,
+              viewMode: viewMode ?? '',
+            });
+            if (handled) return true;
+          }
           store.setState({ settings: { ...settings, lastTrackedStoryId: entry.id } });
           navigateWithQueryParams(
             `/${entry.type}/${entry.refId ? `${entry.refId}_${entry.id}` : entry.id}`
@@ -918,6 +937,18 @@ export const init: ModuleFn<SubAPI, SubState> = ({
         excludedStatusFilters: state.excludedStatusFilters.filter((s) => !statuses.includes(s)),
       });
       recomputeStatusFilter();
+    },
+
+    setSelectStoryInterceptor: (fn) => {
+      if (_selectStoryInterceptor) {
+        logger.warn(
+          'setSelectStoryInterceptor: overwriting an existing interceptor. Only one interceptor is supported at a time.'
+        );
+      }
+      _selectStoryInterceptor = fn;
+    },
+    clearSelectStoryInterceptor: () => {
+      _selectStoryInterceptor = null;
     },
   };
 

@@ -109,6 +109,7 @@ const config = defineMain({
     },
   ],
   addons: [
+    '@storybook/addon-before-after',
     '@storybook/addon-onboarding',
     '@storybook/addon-themes',
     '@storybook/addon-docs',

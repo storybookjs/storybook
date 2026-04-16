@@ -1,6 +1,7 @@
 // auto generated file, do not edit
 export default {
   '@storybook/addon-a11y': '10.4.0-alpha.10',
+  '@storybook/addon-before-after': '10.4.0-alpha.10',
   '@storybook/addon-docs': '10.4.0-alpha.10',
   '@storybook/addon-links': '10.4.0-alpha.10',
   '@storybook/addon-onboarding': '10.4.0-alpha.10',

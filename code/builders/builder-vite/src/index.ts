@@ -22,6 +22,7 @@ import { buildModuleGraph } from './utils/build-module-graph.ts';
 
 export { withoutVitePlugins } from './utils/without-vite-plugins.ts';
 export { hasVitePlugins } from './utils/has-vite-plugins.ts';
+export { commonConfig } from './vite-config.ts';
 
 export * from './types.ts';
 

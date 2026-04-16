@@ -12,7 +12,7 @@ If you supply an environment variable prefixed with `STORYBOOK_`, it will be ava
 STORYBOOK_THEME=red STORYBOOK_DATA_KEY=12345 npm run storybook
 ```
 
-<Callout variant="info" icon="💡">
+<Callout variant=”info” icon=”💡”>
   Do not store any secrets (e.g., private API keys) or other types of sensitive information in your Storybook. Environment variables are embedded into the build, meaning anyone can view them by inspecting your files.
 </Callout>
 
@@ -21,7 +21,13 @@ Then we can access these environment variables anywhere inside our preview JavaS
 <IfRenderer renderer={['angular', 'ember' ]}>
   {/* prettier-ignore-start */}
 
-  <CodeSnippets path="storybook-read-environment-variables.md" />
+  <CodeSnippets path=”storybook-read-environment-variables.md” />
+
+  <Callout variant=”warning”>
+    With Webpack 5, `process.env` is only injected into the browser bundle for environment variables that are **actually defined** at build time. If a `STORYBOOK_*` variable is not set in your environment or `.env` file, referencing `process.env` will throw a `Can't find variable: process` runtime error.
+
+    To avoid this, make sure all `STORYBOOK_*` variables you reference are always defined — either in a `.env` file, on the command line, or by providing defaults in your `.storybook/main.ts` using the [`env` configuration field](#using-storybook-configuration).
+  </Callout>
 </IfRenderer>
 
 {/* prettier-ignore-end */}
@@ -111,6 +117,16 @@ The table below lists the available options:
 </Callout>
 
 ## Troubleshooting
+
+### Can't find variable: process (Webpack)
+
+When using a Webpack-based framework (e.g., Angular with Webpack 5), you may see a `Can't find variable: process` runtime error if you reference `process.env.STORYBOOK_*` for a variable that is not actually set at build time. Unlike Vite, Webpack only injects `process.env` into the browser bundle when at least one matching environment variable is defined. If the variable is missing, `process` itself is not available in the browser and any reference to it will throw.
+
+To fix this, make sure all `STORYBOOK_*` variables you reference are always defined. You can:
+
+- Set them in a `.env` file at the root of your project
+- Pass them on the command line when running Storybook
+- Provide defaults in your `.storybook/main.ts` using the [`env` configuration field](#using-storybook-configuration)
 
 ### Environment variables are not working
 

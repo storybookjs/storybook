@@ -102,7 +102,7 @@ describe('Start Storybook Builder', () => {
     await run.stop();
 
     expect(output.success).toBeTruthy();
-    expect(mockRunScript).not.toHaveBeenCalledWith();
+    expect(mockRunScript).not.toHaveBeenCalled();
     expect(buildDevStandalone).toHaveBeenCalledWith(
       expect.objectContaining({
         angularBrowserTarget: 'angular-cli:build-2',
@@ -136,7 +136,7 @@ describe('Start Storybook Builder', () => {
     await run.stop();
 
     expect(output.success).toBeTruthy();
-    expect(mockRunScript).not.toHaveBeenCalledWith();
+    expect(mockRunScript).not.toHaveBeenCalled();
     expect(buildDevStandalone).toHaveBeenCalledWith(
       expect.objectContaining({
         angularBrowserTarget: undefined,
@@ -220,7 +220,7 @@ describe('Start Storybook Builder', () => {
     await run.stop();
 
     expect(output.success).toBeTruthy();
-    expect(mockRunScript).not.toHaveBeenCalledWith();
+    expect(mockRunScript).not.toHaveBeenCalled();
     expect(buildDevStandalone).toHaveBeenCalledWith(
       expect.objectContaining({
         angularBrowserTarget: undefined,

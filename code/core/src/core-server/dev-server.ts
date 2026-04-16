@@ -48,6 +48,7 @@ export async function storybookDevServer(
 
   const storyIndexGeneratorPromise =
     options.presets.apply<StoryIndexGenerator>('storyIndexGenerator');
+
   const changeDetectionService = new ChangeDetectionService({
     storyIndexGeneratorPromise,
     statusStore: getStatusStoreByTypeId(CHANGE_DETECTION_STATUS_TYPE_ID),
@@ -123,12 +124,6 @@ export async function storybookDevServer(
     await Promise.resolve();
 
   if (!options.ignorePreview) {
-    const changeDetectionService = new ChangeDetectionService({
-      storyIndexGeneratorPromise,
-      statusStore: getStatusStoreByTypeId(CHANGE_DETECTION_STATUS_TYPE_ID),
-      workingDir,
-    });
-
     if (!features.changeDetection) {
       changeDetectionService.start(previewBuilder.onModuleGraphChange, false);
     }

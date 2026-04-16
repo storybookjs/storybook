@@ -1,3 +1,4 @@
+import { logger } from 'storybook/internal/client-logger';
 import { Addon_TypesEnum } from 'storybook/internal/types';
 import type {
   API_StateMerger,
@@ -33,6 +34,10 @@ export interface SubAPI {
   >(
     type: T
   ) => Addon_Collection<Addon_TypesMapping[T]>;
+  /**
+   * Clears statuses for all registered test providers by calling each provider's `clear` function.
+   */
+  clearStatuses: () => void;
   /**
    * Returns the id of the currently selected panel.
    *
@@ -74,11 +79,11 @@ export interface SubAPI {
 }
 
 export function ensurePanel(
-  panels: Addon_Collection<Addon_BaseType>,
+  panels: Addon_Collection<Addon_BaseType> | null | undefined,
   selectedPanel?: string,
   currentPanel?: string
 ) {
-  const keys = Object.keys(panels);
+  const keys = Object.keys(panels ?? {});
 
   if (keys.indexOf(selectedPanel!) >= 0) {
     return selectedPanel;
@@ -93,6 +98,20 @@ export function ensurePanel(
 export const init: ModuleFn<SubAPI, SubState> = ({ provider, store, fullAPI }): any => {
   const api: SubAPI = {
     getElements: (type) => provider.getElements(type),
+    clearStatuses: () => {
+      const testProviders = api.getElements(Addon_TypesEnum.experimental_TEST_PROVIDER);
+      Object.values(testProviders).forEach((testProvider) => {
+        try {
+          testProvider.clear?.();
+        } catch (e) {
+          try {
+            logger.warn(`Failed to clear test provider "${testProvider.id}":`, e);
+          } catch {
+            // noop
+          }
+        }
+      });
+    },
     getSelectedPanel: (): any => {
       const { selectedPanel } = store.getState();
       return ensurePanel(api.getElements(Addon_TypesEnum.PANEL), selectedPanel, selectedPanel);

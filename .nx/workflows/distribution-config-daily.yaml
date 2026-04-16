@@ -28,12 +28,6 @@ assignment-rules:
       - agent: linux-js
         parallelism: 6
   - targets:
-      - init-empty
-      - init-features
-    run-on:
-      - agent: linux-js
-        parallelism: 1
-  - targets:
       - '*'
     run-on:
       - agent: linux-browsers-js

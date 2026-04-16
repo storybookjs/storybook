@@ -183,33 +183,6 @@
       "inputs": ["default", "^production"],
       "outputs": ["{workspaceRoot}/test-results"],
       "configurations": { "production": {} }
-    },
-    "init-empty": {
-      "dependsOn": [{ "projects": ["scripts"], "target": "run-registry" }],
-      "executor": "nx:run-commands",
-      "options": {
-        "commands": [
-          "cd .. && mkdir empty-react-vite-ts && cd empty-react-vite-ts && npm set registry http://localhost:6001 && npx --yes create-storybook@latest --yes --package-manager npm --loglevel=debug"
-        ],
-        "parallel": false
-      },
-      "cache": true,
-      "configurations": { "production": {} }
-    },
-    "init-features": {
-      "dependsOn": [{ "projects": ["scripts"], "target": "run-registry" }],
-      "executor": "nx:run-commands",
-      "options": {
-        "commands": [
-          "bash -c 'rm -rf /tmp/sb-init-features && mkdir /tmp/sb-init-features'",
-          "bash -c 'cd /tmp/sb-init-features && npm set registry http://localhost:6001'",
-          "bash -c 'cd /tmp/sb-init-features && npx create-storybook --yes --package-manager npm --features docs test a11y --loglevel=debug'",
-          "bash -c 'cd /tmp/sb-init-features && npx vitest'"
-        ],
-        "parallel": false
-      },
-      "cache": true,
-      "configurations": { "production": {} }
     }
   },
   "namedInputs": {
@@ -232,5 +205,5 @@
     ]
   },
   "analytics": false,
-  "codexCacheBust": "2026-03-24T13:51:59Z"
+  "codexCacheBust": "2026-03-23T12:57:22Z"
 }

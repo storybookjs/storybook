@@ -2,12 +2,12 @@ import path from 'node:path';
 
 import { BigQuery } from '@google-cloud/bigquery';
 import { InvalidArgumentError, program } from 'commander';
-import detectFreePort from 'detect-port';
 import { mkdir, readdir, rm, stat, writeFile } from 'fs/promises';
 import pLimit from 'p-limit';
 import picocolors from 'picocolors';
 import { x } from 'tinyexec';
 import { dedent } from 'ts-dedent';
+import waitOn from 'wait-on';
 
 import versions from '../../code/core/src/common/versions.ts';
 import { maxConcurrentTasks } from '../utils/concurrency.ts';
@@ -446,15 +446,30 @@ const run = async () => {
   ) as PackageName[];
   const options = program.opts<{ pullRequest?: number; baseBranch?: string; upload?: boolean }>();
 
-  if (options.upload === true || typeof options.baseBranch === 'string') {
-    if (!GCP_CREDENTIALS.project_id) {
-      throw new Error(
-        'GCP_CREDENTIALS env var is required to upload to BigQuery or compare against a base branch'
-      );
-    }
+  // Gracefully disable upload/compare paths when GCP_CREDENTIALS isn't provisioned
+  // (e.g., on GitHub Actions forks or workflows where the secret is not yet mirrored
+  // from CircleCI). Bench still runs locally and writes results.json; it just won't
+  // upload to BigQuery or post a PR comparison comment.
+  const hasGcpCredentials = Boolean(GCP_CREDENTIALS.project_id);
+  if ((options.upload === true || typeof options.baseBranch === 'string') && !hasGcpCredentials) {
+    console.warn(
+      'GCP_CREDENTIALS env var is not set; skipping BigQuery upload and base-branch comparison.'
+    );
+    options.upload = false;
+    options.baseBranch = undefined;
   }
 
-  if ((await detectFreePort(REGISTRY_PORT)) === REGISTRY_PORT) {
+  // Wait for the local verdaccio registry (same pattern as scripts/prepare-sandbox.ts
+  // and scripts/tasks/run-registry.ts). On NX Cloud the registry is started as a
+  // `continuous` dependency, and on CircleCI/locally it's started by a prior step.
+  // Either way we race startup, so wait up to 30s before giving up.
+  try {
+    await waitOn({
+      resources: [`http://localhost:${REGISTRY_PORT}`],
+      interval: 1000,
+      timeout: 30_000,
+    });
+  } catch {
     throw new Error(dedent`The local verdaccio registry must be running in the background for package benching to work,
       and packages must be published to it in --no-link mode with 'yarn --task publish --no-link'
       Then run the registry with 'yarn --task run-registry --no-link'`);

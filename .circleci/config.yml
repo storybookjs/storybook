@@ -1,0 +1,54 @@
+version: 2.1
+
+# https://circleci.com/docs/guides/orchestrate/dynamic-config/
+setup: true
+
+orbs:
+  git-shallow-clone: guitarrapc/git-shallow-clone@2.8.0
+  continuation: circleci/continuation@2.0.1
+  node: circleci/node@7.2.1
+
+parameters:
+  ghBaseBranch:
+    default: next
+    description: The name of the base branch (the target of the PR)
+    type: string
+  ghPrNumber:
+    default: ''
+    description: The PR number
+    type: string
+  workflow:
+    default: skipped
+    description: Which workflow to run
+    enum:
+      - normal
+      - merged
+      - daily
+      - skipped
+      - docs
+    type: enum
+
+jobs:
+  generate-and-run-config:
+    executor: 
+      name: node/default
+      resource_class: small
+    steps:
+      - node/install:
+          install-yarn: true
+      - git-shallow-clone/checkout_advanced:
+          clone_options: '--depth 1'
+      - run:
+          name: Install dependencies
+          command: yarn workspaces focus @storybook/scripts
+      - run:
+          name: Generate config
+          command: |
+            yarn dlx jiti ./scripts/ci/main.ts --workflow=<< pipeline.parameters.workflow >>
+      - continuation/continue:
+          configuration_path: .circleci/config.generated.yml
+workflows:
+  setup:
+    jobs:
+      - generate-and-run-config
+    when: pipeline.parameters.workflow != "skipped"

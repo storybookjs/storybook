@@ -92,7 +92,13 @@
     },
     "chromatic": {
       "dependsOn": ["build", { "projects": ["scripts"], "target": "run-registry" }],
-      "command": "yarn task chromatic -s task --debug --no-link --template={projectName}",
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "yarn task chromatic -s task --debug --no-link --template={projectName}",
+        "env": {
+          "STORYBOOK_SANDBOX_ROOT": "sandbox"
+        }
+      },
       "cache": true,
       "inputs": ["^production"],
       "configurations": { "production": {} }
@@ -182,6 +188,35 @@
       "cache": true,
       "inputs": ["default", "^production"],
       "outputs": ["{workspaceRoot}/test-results"],
+      "configurations": { "production": {} }
+    },
+    "init-empty": {
+      "dependsOn": [{ "projects": ["scripts"], "target": "run-registry" }],
+      "executor": "nx:run-commands",
+      "options": {
+        "commands": [
+          "bash -c 'DIR=\"${STORYBOOK_INIT_TMPDIR:-/tmp}/empty-$STORYBOOK_INIT_EMPTY_TYPE\" && rm -rf \"$DIR\" && mkdir -p \"$DIR\"'",
+          "bash -c 'DIR=\"${STORYBOOK_INIT_TMPDIR:-/tmp}/empty-$STORYBOOK_INIT_EMPTY_TYPE\" && cd \"$DIR\" && npm set registry http://localhost:6001 && npx storybook init --yes --package-manager npm'",
+          "bash -c 'DIR=\"${STORYBOOK_INIT_TMPDIR:-/tmp}/empty-$STORYBOOK_INIT_EMPTY_TYPE\" && cd \"$DIR\" && npm run storybook -- --smoke-test'"
+        ],
+        "parallel": false
+      },
+      "cache": true,
+      "configurations": { "production": {} }
+    },
+    "init-features": {
+      "dependsOn": [{ "projects": ["scripts"], "target": "run-registry" }],
+      "executor": "nx:run-commands",
+      "options": {
+        "commands": [
+          "bash -c 'DIR=\"${STORYBOOK_INIT_TMPDIR:-/tmp}/sb-init-features\" && rm -rf \"$DIR\" && mkdir -p \"$DIR\"'",
+          "bash -c 'DIR=\"${STORYBOOK_INIT_TMPDIR:-/tmp}/sb-init-features\" && cd \"$DIR\" && npm set registry http://localhost:6001'",
+          "bash -c 'DIR=\"${STORYBOOK_INIT_TMPDIR:-/tmp}/sb-init-features\" && cd \"$DIR\" && npx create-storybook --yes --package-manager npm --features docs test a11y --loglevel=debug'",
+          "bash -c 'DIR=\"${STORYBOOK_INIT_TMPDIR:-/tmp}/sb-init-features\" && cd \"$DIR\" && npx vitest'"
+        ],
+        "parallel": false
+      },
+      "cache": true,
       "configurations": { "production": {} }
     }
   },

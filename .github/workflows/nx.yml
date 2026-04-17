@@ -41,7 +41,50 @@ jobs:
 
     runs-on: ubuntu-latest
     env:
-      ALL_TASKS: compile,check,knip,test,lint,fmt,sandbox,build,e2e-tests,e2e-tests-dev,test-runner,vitest-integration,check-sandbox,e2e-ui,jest,vitest,playwright-ct
+      NX_CI_EXECUTION_ENV: 'linux'
+      ALL_TASKS: compile,check,knip,test,lint,fmt,sandbox,build,e2e-tests,e2e-tests-dev,vitest-integration,e2e-ui,jest,vitest,playwright-ct,chromatic,storybook-chromatic,bench-packages,init-empty,init-features,daily-test-runner
+      # Benchmark packages upload to BigQuery
+      GCP_CREDENTIALS: ${{ secrets.GCP_CREDENTIALS }}
+      GH_BASE_BRANCH: ${{ github.event.pull_request.base.ref || 'next' }}
+      GH_PR_NUMBER: ${{ github.event.pull_request.number || '0' }}
+      # Per-sandbox Chromatic tokens (must exist as GitHub repo secrets;
+      # mirror of the CircleCI CHROMATIC_TOKEN_* project env vars)
+      CHROMATIC_TOKEN_ANGULAR_CLI_DEFAULT_TS: ${{ secrets.CHROMATIC_TOKEN_ANGULAR_CLI_DEFAULT_TS }}
+      CHROMATIC_TOKEN_ANGULAR_CLI_PRERELEASE: ${{ secrets.CHROMATIC_TOKEN_ANGULAR_CLI_PRERELEASE }}
+      CHROMATIC_TOKEN_BENCH_REACT_VITE_DEFAULT_TS_TEST_BUILD: ${{ secrets.CHROMATIC_TOKEN_BENCH_REACT_VITE_DEFAULT_TS_TEST_BUILD }}
+      CHROMATIC_TOKEN_BENCH_REACT_WEBPACK_18_TS_TEST_BUILD: ${{ secrets.CHROMATIC_TOKEN_BENCH_REACT_WEBPACK_18_TS_TEST_BUILD }}
+      CHROMATIC_TOKEN_HTML_RSBUILD_DEFAULT_TS: ${{ secrets.CHROMATIC_TOKEN_HTML_RSBUILD_DEFAULT_TS }}
+      CHROMATIC_TOKEN_HTML_VITE_DEFAULT_JS: ${{ secrets.CHROMATIC_TOKEN_HTML_VITE_DEFAULT_JS }}
+      CHROMATIC_TOKEN_HTML_VITE_DEFAULT_TS: ${{ secrets.CHROMATIC_TOKEN_HTML_VITE_DEFAULT_TS }}
+      CHROMATIC_TOKEN_INTERNAL_REACT16_WEBPACK: ${{ secrets.CHROMATIC_TOKEN_INTERNAL_REACT16_WEBPACK }}
+      CHROMATIC_TOKEN_INTERNAL_REACT18_WEBPACK_BABEL: ${{ secrets.CHROMATIC_TOKEN_INTERNAL_REACT18_WEBPACK_BABEL }}
+      CHROMATIC_TOKEN_LIT_RSBUILD_DEFAULT_TS: ${{ secrets.CHROMATIC_TOKEN_LIT_RSBUILD_DEFAULT_TS }}
+      CHROMATIC_TOKEN_LIT_VITE_DEFAULT_JS: ${{ secrets.CHROMATIC_TOKEN_LIT_VITE_DEFAULT_JS }}
+      CHROMATIC_TOKEN_LIT_VITE_DEFAULT_TS: ${{ secrets.CHROMATIC_TOKEN_LIT_VITE_DEFAULT_TS }}
+      CHROMATIC_TOKEN_NEXTJS_14_TS: ${{ secrets.CHROMATIC_TOKEN_NEXTJS_14_TS }}
+      CHROMATIC_TOKEN_NEXTJS_15_TS: ${{ secrets.CHROMATIC_TOKEN_NEXTJS_15_TS }}
+      CHROMATIC_TOKEN_NEXTJS_DEFAULT_TS: ${{ secrets.CHROMATIC_TOKEN_NEXTJS_DEFAULT_TS }}
+      CHROMATIC_TOKEN_NEXTJS_PRERELEASE: ${{ secrets.CHROMATIC_TOKEN_NEXTJS_PRERELEASE }}
+      CHROMATIC_TOKEN_NEXTJS_VITE_14_TS: ${{ secrets.CHROMATIC_TOKEN_NEXTJS_VITE_14_TS }}
+      CHROMATIC_TOKEN_NEXTJS_VITE_15_TS: ${{ secrets.CHROMATIC_TOKEN_NEXTJS_VITE_15_TS }}
+      CHROMATIC_TOKEN_NEXTJS_VITE_DEFAULT_TS: ${{ secrets.CHROMATIC_TOKEN_NEXTJS_VITE_DEFAULT_TS }}
+      CHROMATIC_TOKEN_PREACT_VITE_DEFAULT_JS: ${{ secrets.CHROMATIC_TOKEN_PREACT_VITE_DEFAULT_JS }}
+      CHROMATIC_TOKEN_PREACT_VITE_DEFAULT_TS: ${{ secrets.CHROMATIC_TOKEN_PREACT_VITE_DEFAULT_TS }}
+      CHROMATIC_TOKEN_REACT_NATIVE_WEB_VITE_EXPO_TS: ${{ secrets.CHROMATIC_TOKEN_REACT_NATIVE_WEB_VITE_EXPO_TS }}
+      CHROMATIC_TOKEN_REACT_RSBUILD_DEFAULT_TS: ${{ secrets.CHROMATIC_TOKEN_REACT_RSBUILD_DEFAULT_TS }}
+      CHROMATIC_TOKEN_REACT_VITE_DEFAULT_JS: ${{ secrets.CHROMATIC_TOKEN_REACT_VITE_DEFAULT_JS }}
+      CHROMATIC_TOKEN_REACT_VITE_DEFAULT_TS: ${{ secrets.CHROMATIC_TOKEN_REACT_VITE_DEFAULT_TS }}
+      CHROMATIC_TOKEN_REACT_VITE_PRERELEASE_TS: ${{ secrets.CHROMATIC_TOKEN_REACT_VITE_PRERELEASE_TS }}
+      CHROMATIC_TOKEN_REACT_WEBPACK_17_TS: ${{ secrets.CHROMATIC_TOKEN_REACT_WEBPACK_17_TS }}
+      CHROMATIC_TOKEN_REACT_WEBPACK_18_TS: ${{ secrets.CHROMATIC_TOKEN_REACT_WEBPACK_18_TS }}
+      CHROMATIC_TOKEN_REACT_WEBPACK_PRERELEASE_TS: ${{ secrets.CHROMATIC_TOKEN_REACT_WEBPACK_PRERELEASE_TS }}
+      CHROMATIC_TOKEN_SOLID_VITE_DEFAULT_TS: ${{ secrets.CHROMATIC_TOKEN_SOLID_VITE_DEFAULT_TS }}
+      CHROMATIC_TOKEN_SVELTE_KIT_SKELETON_TS: ${{ secrets.CHROMATIC_TOKEN_SVELTE_KIT_SKELETON_TS }}
+      CHROMATIC_TOKEN_SVELTE_VITE_DEFAULT_JS: ${{ secrets.CHROMATIC_TOKEN_SVELTE_VITE_DEFAULT_JS }}
+      CHROMATIC_TOKEN_SVELTE_VITE_DEFAULT_TS: ${{ secrets.CHROMATIC_TOKEN_SVELTE_VITE_DEFAULT_TS }}
+      CHROMATIC_TOKEN_VUE3_RSBUILD_DEFAULT_TS: ${{ secrets.CHROMATIC_TOKEN_VUE3_RSBUILD_DEFAULT_TS }}
+      CHROMATIC_TOKEN_VUE3_VITE_DEFAULT_JS: ${{ secrets.CHROMATIC_TOKEN_VUE3_VITE_DEFAULT_JS }}
+      CHROMATIC_TOKEN_VUE3_VITE_DEFAULT_TS: ${{ secrets.CHROMATIC_TOKEN_VUE3_VITE_DEFAULT_TS }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -77,7 +120,17 @@ jobs:
           else
             echo "config=./.nx/workflows/distribution-config.yaml" >> "$GITHUB_OUTPUT"
           fi
-      - run: npx nx-cloud@latest start-ci-run --distribute-on="${{ steps.dist.outputs.config }}" --stop-agents-after="$ALL_TASKS"
+      - name: Build --with-env-vars list
+        id: envvars
+        run: |
+          # Forward Chromatic + benchmark secrets from primary to NX Cloud agents.
+          # List stays in sync with the env: block above.
+          vars="GCP_CREDENTIALS,GH_BASE_BRANCH,GH_PR_NUMBER"
+          for key in $(env | grep -oE '^CHROMATIC_TOKEN_[A-Z0-9_]+'); do
+            vars="${vars},${key}"
+          done
+          echo "vars=$vars" >> "$GITHUB_OUTPUT"
+      - run: npx nx-cloud@latest start-ci-run --distribute-on="${{ steps.dist.outputs.config }}" --stop-agents-after="$ALL_TASKS" --with-env-vars="${{ steps.envvars.outputs.vars }}"
       - name: Create Nx Cloud Status (pending)
         uses: actions/github-script@v7
         with:
@@ -104,10 +157,20 @@ jobs:
       - id: nx
         name: 'Run nx'
         run: |
-          echo 'nx_output<<EOF' >> "$GITHUB_OUTPUT"
-          yarn nx run-many -t $ALL_TASKS -c production -p="tag:library,tag:ci:${{ steps.tag.outputs.tag }}" | tee -a "$GITHUB_OUTPUT"
+          set -o pipefail
+          output_file=$(mktemp)
+
+          yarn nx run-many -t $ALL_TASKS -c production -p="tag:library,tag:ci:${{ steps.tag.outputs.tag }}" | tee "$output_file"
           status=${PIPESTATUS[0]}
-          echo 'EOF' >> "$GITHUB_OUTPUT"
+
+          # Use a random delimiter so any "EOF" lines inside nx output
+          # cannot terminate the GITHUB_OUTPUT heredoc prematurely.
+          delim="NXOUTPUT_$(openssl rand -hex 8)"
+          {
+            echo "nx_output<<${delim}"
+            cat "$output_file"
+            echo "${delim}"
+          } >> "$GITHUB_OUTPUT"
           exit $status
 
       - name: Create per-task Nx statuses
@@ -167,3 +230,106 @@ jobs:
                 : 'Nx Cloud run finished successfully',
               context: `nx: ${tag}`,
             });
+
+  nx-windows:
+    if: >
+      github.repository == 'storybookjs/storybook' &&
+        ((github.event_name == 'pull_request' &&
+          github.event.pull_request.head.repo.full_name == github.repository &&
+          contains(github.event.pull_request.labels.*.name, 'ci:daily')
+        ) || (github.event_name == 'schedule'))
+    runs-on: windows-latest
+    # GH will auto-cancel the job when the timeout expires. Needed because
+    # NX Cloud manual agents on Windows occasionally fail to stop after the
+    # primary finishes, which would otherwise leave the job running for
+    # hours (confirmed w/ James Henry on NX side).
+    timeout-minutes: 60
+    defaults:
+      run:
+        shell: bash
+    env:
+      NX_CI_EXECUTION_ENV: 'windows'
+      # Matches CircleCI daily Windows jobs: common build/test + init-empty + per-first-template sandbox build/e2e.
+      # e2e-tests-dev is intentionally excluded: it depends on the continuous `dev` task which
+      # crashes with exit code 1 when NX Cloud tries to stop it on Windows agents (known NX
+      # team-side bug, being tracked). Without it the Windows pipeline reliably terminates;
+      # with it the primary waits forever for a misbehaving agent. Keep `e2e-tests` (which
+      # uses `serve` — same continuous pattern but stops cleanly).
+      # TODO: re-add e2e-tests-dev once NX fixes continuous-task cleanup on Windows.
+      WINDOWS_TASKS: compile,test,init-empty,sandbox,build,e2e-tests
+      # NX_BRANCH links the primary and the agents to the same CI pipeline execution
+      NX_BRANCH: ${{ github.event.pull_request.number || github.ref_name }}
+      # Verbose logging for the first Windows runs — drop once it's green
+      NX_CLOUD_VERBOSE_LOGGING: 'true'
+      # Short tmp paths without username avoid e.g. empty-init storybook init
+      # running into Windows MAX_PATH limits. Matches lerna's pattern.
+      TEMP: 'C:\temp'
+      TMP: 'C:\temp'
+      # Git Bash path form of TEMP for the `bash -c` commands in the init-empty /
+      # init-features NX targets (nx.json). On Linux the default of /tmp kicks in.
+      STORYBOOK_INIT_TMPDIR: '/c/temp'
+    steps:
+      - name: Ensure C:\temp exists
+        run: mkdir -p /c/temp
+      - uses: actions/checkout@v4
+        with:
+          filter: tree:0
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'yarn'
+      - uses: nrwl/nx-set-shas@v4
+      - run: npx nx-cloud@latest start-ci-run --distribute-on="manual" --stop-agents-after="$WINDOWS_TASKS"
+      - run: yarn install --immutable
+      - name: 'Run nx'
+        run: yarn nx run-many -t $WINDOWS_TASKS -c production -p="tag:library,tag:ci:windows"
+      - name: Stop all running agents
+        if: always()
+        run: npx nx-cloud stop-all-agents
+  nx-windows-agents:
+    name: Nx Cloud - Windows Agent ${{ matrix.agent }}
+    if: >
+      github.repository == 'storybookjs/storybook' &&
+        ((github.event_name == 'pull_request' &&
+          github.event.pull_request.head.repo.full_name == github.repository &&
+          contains(github.event.pull_request.labels.*.name, 'ci:daily')
+        ) || (github.event_name == 'schedule'))
+    runs-on: windows-latest
+    # See nx-windows job: agents sometimes don't shut down cleanly.
+    # Timeout lets GH reclaim the runner instead of burning 6h.
+    timeout-minutes: 60
+    defaults:
+      run:
+        shell: bash
+    strategy:
+      matrix:
+        agent: [1, 2, 3]
+    env:
+      NX_CI_EXECUTION_ENV: 'windows'
+      # Must match nx-windows primary so NX Cloud pairs them into the same pipeline execution
+      NX_BRANCH: ${{ github.event.pull_request.number || github.ref_name }}
+      NX_CLOUD_VERBOSE_LOGGING: 'true'
+      # Short tmp paths (same as primary) so any cache/install work the
+      # agent does stays under Windows MAX_PATH.
+      TEMP: 'C:\temp'
+      TMP: 'C:\temp'
+      # See nx-windows primary: this is the Git-Bash form agents use when
+      # running init-empty / init-features tasks.
+      STORYBOOK_INIT_TMPDIR: '/c/temp'
+    steps:
+      - name: Ensure C:\temp exists
+        run: mkdir -p /c/temp
+      - uses: actions/checkout@v4
+        with:
+          filter: tree:0
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'yarn'
+      - run: yarn install --immutable
+      - name: Start Nx Agent ${{ matrix.agent }}
+        run: npx nx-cloud start-agent
+        env:
+          NX_AGENT_NAME: windows-agent-${{ matrix.agent }}

@@ -19,6 +19,16 @@
       "configurations": { "production": {} }
     },
     "run-registry": {},
-    "publish": {}
+    "publish": {},
+    "bench-packages": {
+      "dependsOn": ["run-registry"],
+      "executor": "nx:run-commands",
+      "options": {
+        "cwd": "{projectRoot}",
+        "command": "yarn bench-packages --base-branch ${GH_BASE_BRANCH:-next} --pull-request ${GH_PR_NUMBER:-0} --upload"
+      },
+      "cache": true,
+      "configurations": { "production": {} }
+    }
   }
 }

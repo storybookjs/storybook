@@ -1,0 +1,68 @@
+name: Trigger CircleCI workflow
+
+on:
+  # Use pull_request_target, as we don't need to check out the actual code of the fork in this script.
+  # And this is the only way to trigger the Circle CI API on forks as well.
+  pull_request_target:
+    types: [opened, synchronize, labeled, reopened]
+  push:
+    branches:
+      - next
+      - main
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  get-branch:
+    if: github.repository_owner == 'storybookjs'
+    runs-on: ubuntu-latest
+    steps:
+      - id: get-branch
+        env:
+          # Stored as environment variable to prevent script injection
+          REF_NAME: ${{ github.ref_name }}
+          PR_REF_NAME: ${{ github.event.pull_request.head.ref }}
+        run: |
+          if  [ "${{ github.event.pull_request.head.repo.fork }}" = "true" ]; then
+            export BRANCH=pull/${{ github.event.pull_request.number }}/head
+            elif [ "${{ github.event_name }}" = "push" ]; then
+            export BRANCH="$REF_NAME"
+            else
+            export BRANCH="$PR_REF_NAME"
+          fi
+          echo "$BRANCH"
+          echo "branch=$BRANCH" >> $GITHUB_ENV
+    outputs:
+      branch: ${{ env.branch }}
+
+  get-parameters:
+    if: github.repository_owner == 'storybookjs'
+    runs-on: ubuntu-latest
+    steps:
+      - if: github.event_name == 'pull_request_target' && (contains(github.event.pull_request.labels.*.name, 'ci:normal'))
+        run: echo "workflow=normal" >> $GITHUB_ENV
+      - if: github.event_name == 'pull_request_target' && (contains(github.event.pull_request.labels.*.name, 'ci:docs'))
+        run: echo "workflow=docs" >> $GITHUB_ENV
+      - if: github.event_name == 'push' || contains(github.event.pull_request.labels.*.name, 'ci:merged')
+        run: echo "workflow=merged" >> $GITHUB_ENV
+      - if: github.event_name == 'pull_request_target' && (contains(github.event.pull_request.labels.*.name, 'ci:daily'))
+        run: echo "workflow=daily" >> $GITHUB_ENV
+    outputs:
+      workflow: ${{ env.workflow }}
+      ghBaseBranch: ${{ github.event.pull_request.base.ref }}
+      ghPrNumber: ${{ github.event.pull_request.number }}
+
+  trigger-circle-ci-workflow:
+    runs-on: ubuntu-latest
+    needs: [get-branch, get-parameters]
+    if: github.repository_owner == 'storybookjs' && needs.get-parameters.outputs.workflow != ''
+    steps:
+      - name: Trigger Normal tests
+        uses: fjogeleit/http-request-action@v1
+        with:
+          url: 'https://circleci.com/api/v2/project/gh/storybookjs/storybook/pipeline'
+          method: 'POST'
+          customHeaders: '{"Content-Type": "application/json", "Circle-Token": "${{ secrets.CIRCLE_CI_TOKEN }}"}'
+          data: '{ "branch": "${{needs.get-branch.outputs.branch}}", "parameters": ${{toJson(needs.get-parameters.outputs)}} }'

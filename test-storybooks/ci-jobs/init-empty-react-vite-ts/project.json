@@ -1,0 +1,11 @@
+{
+  "name": "ci-init-empty-react-vite-ts",
+  "description": "CI-only virtual project. Runs `yarn task init-empty` for the react-vite/default-ts template in every cadence tier (normal+, merged+, daily+). Mirrors the CircleCI init-empty-react-vite-ts job.",
+  "projectType": "application",
+  "targets": {
+    "init-empty": {
+      "options": { "env": { "STORYBOOK_INIT_EMPTY_TYPE": "react-vite-ts" } }
+    }
+  },
+  "tags": ["ci:normal", "ci:merged", "ci:daily", "ci:windows"]
+}

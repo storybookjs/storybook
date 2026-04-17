@@ -1,3 +1,4 @@
+import { execSync } from 'node:child_process';
 import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 
@@ -50,7 +51,11 @@ const projectJson = (
         dir: name.replaceAll('/', '-'),
       },
     },
-    chromatic: {},
+    ...(template.skipTasks && template.skipTasks.includes('chromatic')
+      ? {}
+      : {
+          chromatic: {},
+        }),
     serve: {},
     ...(template.skipTasks && template.skipTasks.includes('e2e-tests')
       ? {}
@@ -72,6 +77,14 @@ const projectJson = (
       : {
           'test-runner-dev': {},
         }),
+    // Note: init-empty / init-features are NOT emitted per-sandbox here.
+    // They live on dedicated virtual projects in test-storybooks/ci-jobs/* so that a
+    // single `nx run-many` per tier selects them with the right cadence via tags.
+    //
+    // test-runner / test-runner-dev ARE emitted per-sandbox so `yarn nx test-runner
+    // <sandbox>` works locally, but they are NOT in ALL_TASKS for CI — the CI daily
+    // first-template test-runner is driven by test-storybooks/ci-jobs/test-runner-daily
+    // via its `daily-test-runner` target (different name to avoid clashing).
   },
   tags,
 });
@@ -91,6 +104,8 @@ await Promise.all(
       ...(normal.includes(key as any) && !value.inDevelopment ? ['ci:normal'] : []),
       ...(merged.includes(key as any) && !value.inDevelopment ? ['ci:merged'] : []),
       ...(daily.includes(key as any) && !value.inDevelopment ? ['ci:daily'] : []),
+      // Windows CI uses the first sandbox (react-vite/default-ts)
+      ...(key === 'react-vite/default-ts' ? ['ci:windows'] : []),
     ];
     ensureDirectoryExistence(full);
     console.log(full);
@@ -108,4 +123,14 @@ function ensureDirectoryExistence(filePath: string): void {
   }
   ensureDirectoryExistence(dir);
   mkdirSync(dir);
+}
+
+// Apply oxfmt so generated files match the repo format rules (e.g. short arrays on one line)
+try {
+  execSync('yarn fmt:write code/sandbox', {
+    cwd: join(process.cwd(), '..'),
+    stdio: 'inherit',
+  });
+} catch (err) {
+  console.warn('oxfmt pass failed or not available; sandbox JSON may need manual formatting.');
 }

@@ -1,0 +1,25 @@
+{
+  "name": "ci-test-runner-daily",
+  "description": "CI-only virtual project. Runs `yarn task test-runner` for react-vite/default-ts on daily runs only. Mirrors the CircleCI daily first-template test-runner extra (scripts/ci/sandboxes.ts defineSandboxTestRunner). Uses the distinct target name `daily-test-runner` so it doesn't collide with per-sandbox `test-runner` (which is kept for local `yarn nx test-runner <sandbox>` use).",
+  "projectType": "application",
+  "targets": {
+    "daily-test-runner": {
+      "dependsOn": [
+        { "projects": ["react-vite/default-ts"], "target": "sandbox" },
+        { "projects": ["react-vite/default-ts"], "target": "build" }
+      ],
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "yarn task test-runner --template react-vite/default-ts --no-link -s test-runner --junit",
+        "env": {
+          "STORYBOOK_SANDBOX_ROOT": "sandbox"
+        }
+      },
+      "cache": true,
+      "inputs": ["^production"],
+      "outputs": ["{workspaceRoot}/test-results", "{workspaceRoot}/code/playwright-results"],
+      "configurations": { "production": {} }
+    }
+  },
+  "tags": ["ci:daily"]
+}

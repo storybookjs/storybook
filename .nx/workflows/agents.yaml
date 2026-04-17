@@ -52,7 +52,12 @@ linux-browsers-init-steps: &linux-browsers-init-steps
       rm -f ~/.yarn/berry/cache/@storybook-*.zip 2>/dev/null || true
   - name: Install Browsers
     script: |
-      yarn exec playwright install chromium --with-deps
+      # Intentionally no --with-deps: the NX base image already carries enough
+      # X/audio/font libraries for Chromium to launch, and --with-deps forces
+      # apt-get update which frequently races against Ubuntu mirror sync and
+      # fails the whole CIPE. If Chromium starts erroring with missing .so
+      # files, revert to --with-deps or switch to a pre-baked image.
+      yarn exec playwright install chromium
   - name: Verify
     script: |
       echo "node:         $(node --version)"

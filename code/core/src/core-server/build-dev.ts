@@ -65,7 +65,9 @@ export async function resolveOnboardingInitialPath(
   }
   const onboardingPending = await cache.get('onboarding-pending').catch(() => {});
   if (onboardingPending) {
-    await cache.remove('onboarding-pending').catch(() => {});
+    try {
+      await cache.remove('onboarding-pending');
+    } catch {}
     return '/onboarding';
   }
   return undefined;

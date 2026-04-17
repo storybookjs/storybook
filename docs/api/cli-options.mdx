@@ -291,7 +291,9 @@ Options include:
 Generates a detailed, project-aware Markdown prompt that instructs an AI agent to configure Storybook in your project and write initial stories for real components. The prompt is built from your detected Storybook configuration (framework, renderer, builder, language, addons) and covers analyzing the codebase, configuring the preview, mocking side effects, writing stories, and verifying them with Vitest.
 
 <Callout variant="info">
-  `storybook ai setup` is currently only available for projects using the React renderer with the Vite builder.
+
+`storybook ai setup` is currently only available for projects using the React renderer with the Vite builder.
+
 </Callout>
 
 ```shell
@@ -308,7 +310,7 @@ Options include:
 | `--disable-telemetry`           | Disables Storybook's telemetry. Learn more about it [here](../configure/telemetry.mdx#how-to-opt-out).<br />`storybook ai setup --disable-telemetry`                     |
 | `--debug`                       | Outputs more logs in the CLI to assist debugging.<br />`storybook ai setup --debug`                                                                                      |
 | `--loglevel [level]`            | Controls level of logging.<br />Available options: `trace`, `debug`, `info` (default), `warn`, `error`, `silent`.<br />`storybook ai setup --loglevel warn`              |
-| `--logfile <path>`              | Write debug logs to a file.<br />`storybook ai setup --logfile ./sb.log`                                                                                                 |
+| `--logfile [path]`              | Write debug logs to a file.<br />`storybook ai setup --logfile ./sb.log`                                                                                                 |
 
 When run without `--output`, the generated prompt is printed to stdout. This is how AI agents typically consume it, by running the command directly and reading the result. When run with `--output`, the prompt is written to the given file path so you can paste or attach it to an agent that doesn't have shell access. See the [agentic setup](../ai/setup.mdx#user-initiated-setup) docs for details on both flows.
 

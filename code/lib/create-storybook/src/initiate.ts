@@ -2,6 +2,7 @@ import { ProjectType } from 'storybook/internal/cli';
 import {
   type JsPackageManager,
   PackageManagerName,
+  cache,
   executeCommand,
 } from 'storybook/internal/common';
 import { getServerPort, withTelemetry } from 'storybook/internal/core-server';
@@ -47,7 +48,7 @@ async function checkFeatureSupport(
     process.cwd()
   );
 
-  const aiSetup = FeatureCompatibilityService.supportsAISetupFeature(renderer, builder);
+  const aiSetup = FeatureCompatibilityService.supportsAISetupFeature(renderer, builder, framework);
 
   return {
     isTestFeatureAvailable: result.compatible,
@@ -84,7 +85,7 @@ export async function doInitiate(options: CommandOptions): Promise<
   let dependencyCollector: DependencyCollector | null = new DependencyCollector();
 
   // Step 1: Run preflight checks
-  const { packageManager } = await executePreflightCheck(options);
+  const { packageManager, isEmptyProject } = await executePreflightCheck(options);
 
   // Step 2: Detect project type
   const { projectType, language } = await executeProjectDetection(packageManager, options);
@@ -111,7 +112,9 @@ export async function doInitiate(options: CommandOptions): Promise<
     renderer,
     projectType,
     isTestFeatureAvailable,
-    isAiSetupAvailable,
+    // Skip AI feature recommendation when scaffolding into an empty directory,
+    // since the user hasn't yet committed to a project setup where AI tooling adds value.
+    isAiSetupAvailable: isAiSetupAvailable && !isEmptyProject,
   });
 
   // Step 5: Execute generator with dependency collector (now with frameworkInfo)
@@ -157,6 +160,12 @@ export async function doInitiate(options: CommandOptions): Promise<
 
   // Step 9: Track telemetry
   await telemetryService.trackInitWithContext(projectType, selectedFeatures, newUser);
+
+  // Signal dev to redirect to onboarding on first run
+  const shouldOnboard = newUser;
+  if (shouldOnboard && FeatureCompatibilityService.supportsOnboarding(projectType)) {
+    await cache.set('onboarding-pending', true).catch(() => {});
+  }
 
   return {
     shouldRunDev:
@@ -213,17 +222,14 @@ async function runStorybookDev(result: {
   projectType: ProjectType;
   packageManager: JsPackageManager;
   storybookCommand?: string | null;
-  shouldOnboard: boolean;
 }): Promise<void> {
-  const { projectType, packageManager, storybookCommand, shouldOnboard } = result;
+  const { projectType, packageManager, storybookCommand } = result;
 
   if (!storybookCommand) {
     return;
   }
 
   try {
-    const supportsOnboarding = FeatureCompatibilityService.supportsOnboarding(projectType);
-
     const parts = storybookCommand.split(' ');
 
     // Angular CLI throws "Unknown argument: silent"
@@ -250,10 +256,6 @@ async function runStorybookDev(result: {
 
       if (useAlternativePort) {
         parts.push(`-p`, `${availablePort}`);
-      }
-
-      if (supportsOnboarding && shouldOnboard) {
-        parts.push('--initial-path=/onboarding');
       }
 
       parts.push('--quiet');

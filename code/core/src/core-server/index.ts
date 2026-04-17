@@ -37,5 +37,9 @@ export {
 } from './stores/test-provider.ts';
 
 export { getComponentCandidates } from './utils/ghost-stories/get-candidates.ts';
-export { runGhostStories } from './utils/ghost-stories/run-story-tests.ts';
+export { runStoryTests } from './utils/ghost-stories/run-story-tests.ts';
 export { getServerPort } from './utils/server-address.ts';
+
+export { analyzeTestResults } from '../shared/utils/analyze-test-results.ts';
+export type { StoryTestResult } from '../shared/utils/test-result-types.ts';
+export { toStoryTestResult } from '../shared/utils/to-story-test-result.ts';

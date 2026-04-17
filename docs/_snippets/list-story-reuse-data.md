@@ -304,9 +304,9 @@ export const ManyItems = {
     },
     template: `
       <List v-bind="args">
-        <list-item :isSelected="Selected"/>
-        <list-item :isSelected="Unselected"/>
-        <list-item :isSelected="Unselected"/>
+        <list-item :isSelected="Selected" />
+        <list-item :isSelected="Unselected" />
+        <list-item :isSelected="Unselected" />
       </List>`,
   }),
   args: {
@@ -340,9 +340,9 @@ export const ManyItems: Story = {
     },
     template: `
       <List v-bind="args">
-        <list-item :isSelected="Selected"/>
-        <list-item :isSelected="Unselected"/>
-        <list-item :isSelected="Unselected"/>
+        <list-item :isSelected="Selected" />
+        <list-item :isSelected="Unselected" />
+        <list-item :isSelected="Unselected" />
       </List>`,
   }),
   args: {
@@ -373,9 +373,9 @@ export const ManyItems = meta.story({
     },
     template: `
       <List v-bind="args">
-        <list-item :isSelected="Selected"/>
-        <list-item :isSelected="Unselected"/>
-        <list-item :isSelected="Unselected"/>
+        <list-item :isSelected="Selected" />
+        <list-item :isSelected="Unselected" />
+        <list-item :isSelected="Unselected" />
       </List>`,
   }),
   args: {
@@ -408,9 +408,9 @@ export const ManyItems = meta.story({
     },
     template: `
       <List v-bind="args">
-        <list-item :isSelected="Selected"/>
-        <list-item :isSelected="Unselected"/>
-        <list-item :isSelected="Unselected"/>
+        <list-item :isSelected="Selected" />
+        <list-item :isSelected="Unselected" />
+        <list-item :isSelected="Unselected" />
       </List>`,
   }),
   args: {

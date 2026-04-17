@@ -1,3 +1,4 @@
+import { join } from 'pathe';
 import { describe, expect, it } from 'vitest';
 
 import {
@@ -17,8 +18,8 @@ describe('getChangedStoryFiles', () => {
     ];
 
     expect(getChangedStoryFiles('/repo', fileChanges)).toEqual([
-      '/repo/src/Button.stories.tsx',
-      '/repo/src/Header.story.ts',
+      join('/repo', 'src', 'Button.stories.tsx'),
+      join('/repo', 'src', 'Header.story.ts'),
     ]);
   });
 });
@@ -32,10 +33,12 @@ describe('getGeneratedStoryFiles', () => {
       { path: 'docs/Button.stories.tsx', gitStatus: 'A' },
     ];
 
-    expect(getGeneratedStoryFiles('/repo', '/repo/frontend', fileChanges).sort()).toEqual([
-      '/repo/frontend/src/App.stories.tsx',
-      '/repo/frontend/src/components/Button.stories.tsx',
-    ]);
+    expect(getGeneratedStoryFiles('/repo', '/repo/frontend', fileChanges).sort()).toEqual(
+      [
+        join('/repo', 'frontend', 'src', 'App.stories.tsx'),
+        join('/repo', 'frontend', 'src', 'components', 'Button.stories.tsx'),
+      ].sort()
+    );
   });
 });
 

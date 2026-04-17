@@ -12,7 +12,7 @@ import {
 import type { Options } from 'storybook/internal/types';
 import { logger } from 'storybook/internal/node-logger';
 
-import { runGhostStories } from '../utils/ghost-stories/run-story-tests.ts';
+import { runStoryTests } from '../utils/ghost-stories/run-story-tests.ts';
 import type { StoryIndexGenerator } from 'storybook/internal/core-server';
 import { waitForIdleVitest } from '../utils/wait-for-idle-vitest.ts';
 
@@ -91,7 +91,7 @@ export function initAIAnalyticsChannel(
       }
 
       if (aiStoryFiles.size > 0) {
-        const aiTestRunResult = await runGhostStories([...aiStoryFiles]);
+        const aiTestRunResult = await runStoryTests([...aiStoryFiles]);
         telemetry('ai-setup-final-scoring', {
           stats: {
             fileCount: aiStoryFiles.size,

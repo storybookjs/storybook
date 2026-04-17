@@ -1,12 +1,15 @@
-import { writeFile } from 'node:fs/promises';
+import { existsSync } from 'node:fs';
+import { readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { x } from 'tinyexec';
 import { getComponentCandidates } from '../../../code/core/src/core-server/utils/ghost-stories/get-candidates.ts';
-import { runGhostStories } from '../../../code/core/src/core-server/utils/ghost-stories/run-story-tests.ts';
-import type { Logger } from './utils.ts';
+import { parseVitestResults } from '../../../code/core/src/core-server/utils/ghost-stories/parse-vitest-report.ts';
+import { detectPackageManager, resolveInstallRoot } from './package-manager.ts';
+import { capitalizeFirst, type Logger } from './utils.ts';
 import type { TrialWorkspace } from './prepare-trial.ts';
 import {
   getGeneratedStoryFiles,
+  getScriptRunCommand,
   runStoryRenderPass,
   type StoryRenderGrade,
   withBaselinePreviewEnvironment,
@@ -64,6 +67,8 @@ export function filterStorybookFiles(fileChanges: FileChange[]): FileChange[] {
  *
  * Build, typecheck, runtime, and ghost stories are still recorded in the eval output,
  * but they no longer contribute to the score itself.
+ *
+ * When the baseline is already at 100% story coverage, the score is **0** (no remaining gap).
  */
 export function computeQualityScore(opts: {
   baselinePreviewStories?: Pick<StoryRenderGrade, 'passed' | 'total'>;
@@ -164,15 +169,14 @@ export async function grade(
 
   const generatedStoryFiles = getGeneratedStoryFiles(repoRoot, projectPath, fileChanges);
 
-  const ghostStories = buildSuccess
-    ? await collectGhostStoriesGrade(projectPath, logger)
-    : undefined;
+  const ghostStories = await collectGhostStoriesGrade(projectPath, logger);
 
   const storyRenderRun = await runStoryRenderPass({
     projectPath,
     resultsDir,
     storyFiles: generatedStoryFiles,
     outputBaseName: 'story-render',
+    label: 'story tests',
     logger,
   });
 
@@ -186,6 +190,7 @@ export async function grade(
         resultsDir,
         storyFiles: generatedStoryFiles,
         outputBaseName: 'baseline-story-render',
+        label: 'baseline story tests (original preview)',
         logger,
       }),
   });
@@ -261,49 +266,100 @@ export async function collectGhostStoriesGrade(
     }
     logger.logStep(`Found ${candidates.length} candidate component(s) for ${label}`);
 
-    const result = await runGhostStories(candidates, { cwd: projectPath });
+    const pm = detectPackageManager(resolveInstallRoot(projectPath));
+    const [runCmd, ...runArgs] = getScriptRunCommand(pm);
+    const outputFile = join(projectPath, `ghost-stories-report-${Date.now()}.json`);
 
-    if (result.runError) {
-      logger.logError(`${capitalize(label)}: ${result.runError}`);
+    const result = await x(
+      runCmd,
+      [
+        ...runArgs,
+        '--reporter=json',
+        '--testTimeout=1000',
+        `--outputFile=${outputFile}`,
+        ...candidates,
+      ],
+      {
+        throwOnError: false,
+        timeout: 300_000,
+        nodeOptions: {
+          cwd: projectPath,
+          env: {
+            ...process.env,
+            STORYBOOK_DISABLE_TELEMETRY: '1',
+            STORYBOOK_COMPONENT_PATHS: candidates.join(';'),
+          },
+        },
+      }
+    );
+
+    const stderr = result.stderr.toLowerCase();
+    if (result.exitCode !== 0 && !existsSync(outputFile)) {
+      const runError = stderr.includes('no tests found')
+        ? 'No tests found'
+        : stderr.includes('browsertype.launch')
+          ? 'Playwright is not installed'
+          : stderr.includes('startup error')
+            ? 'Startup Error'
+            : `Exit ${result.exitCode}`;
+      logger.logError(`${capitalizeFirst(label)}: ${runError}`);
       return undefined;
     }
 
-    const summary = 'summary' in result ? result.summary : undefined;
-
-    if (summary && summary.total > 0) {
-      const realPassed = summary.passed - summary.passedButEmptyRender;
-      logger.logSuccess(
-        `${capitalize(label)}: ${realPassed}/${summary.total} passed (${Math.round(summary.successRateWithoutEmptyRender * 100)}%)${summary.passedButEmptyRender > 0 ? ` (${summary.passedButEmptyRender} empty renders excluded)` : ''}`
-      );
+    if (!existsSync(outputFile)) {
+      logger.logError(`${capitalizeFirst(label)}: JSON report not found`);
+      return undefined;
     }
+
+    const rawReport = JSON.parse(await readFile(outputFile, 'utf8'));
+    const parsed = parseVitestResults(rawReport);
+    const emptyRenders = parsed.summary?.passedButEmptyRender ?? 0;
+
+    // Suite-level: each file either loaded and rendered or it didn't.
+    const total: number = rawReport.numTotalTestSuites ?? 0;
+    const passed = (rawReport.numPassedTestSuites ?? 0) - emptyRenders;
+    const successRate = total > 0 ? passed / total : 0;
+
+    if (total === 0) {
+      logger.logError(`${capitalizeFirst(label)}: No tests found`);
+      return undefined;
+    }
+
+    logger.logSuccess(
+      `${capitalizeFirst(label)}: ${passed}/${total} passed (${Math.round(successRate * 100)}%)${emptyRenders > 0 ? ` (${emptyRenders} empty renders excluded)` : ''}`
+    );
 
     return {
       candidateCount: candidates.length,
-      total: summary?.total ?? 0,
-      passed: (summary?.passed ?? 0) - (summary?.passedButEmptyRender ?? 0),
-      successRate: summary?.successRateWithoutEmptyRender ?? 0,
+      total,
+      passed,
+      successRate,
     };
   } catch (error) {
     logger.logError(
-      `${capitalize(label)}: ${error instanceof Error ? error.message : String(error)}`
+      `${capitalizeFirst(label)}: ${error instanceof Error ? error.message : String(error)}`
     );
     return undefined;
   }
 }
 
+/**
+ * Normalized preview gain: fraction of the remaining gap to 100% pass rate that this run closed.
+ *
+ * - Missing rates → 0
+ * - Baseline already at 100% → 0 (no remaining improvement; avoids scoring a no-op as full gain)
+ * - Otherwise → (after − before) / (1 − before), clamped to [0, 1]. When `before` is 0, this is
+ *   just `after` (all improvement from zero).
+ */
 function computeNormalizedGain(beforeRate?: number, afterRate?: number) {
   if (beforeRate == null || afterRate == null) {
     return 0;
   }
 
   if (beforeRate >= 1) {
-    return afterRate >= 1 ? 1 : 0;
+    return 0;
   }
 
   const gain = (afterRate - beforeRate) / (1 - beforeRate);
   return Math.max(0, Math.min(1, Number.isNaN(gain) ? 0 : gain));
-}
-
-function capitalize(value: string) {
-  return value.charAt(0).toUpperCase() + value.slice(1);
 }

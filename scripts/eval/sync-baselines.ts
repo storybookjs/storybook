@@ -1,19 +1,22 @@
 import { existsSync } from 'node:fs';
 import { mkdir, rm, writeFile } from 'node:fs/promises';
-import { join, relative, resolve } from 'node:path';
+import { dirname, join, relative, resolve } from 'node:path';
 import { parseArgs } from 'node:util';
 import pc from 'picocolors';
 import { x } from 'tinyexec';
+import { esMain } from '../utils/esmain.ts';
 import { BASELINE_STORYBOOK_FILES } from './lib/baseline-template-files.ts';
 import { ensureSourceClone } from './lib/prepare-trial.ts';
 import { PROJECTS, type Project } from './lib/projects.ts';
 import {
   createLogger,
+  formatHelp,
   formatTable,
   getEvalResultsDir,
   getEvalSupportDir,
   getProjectPath,
   getStorybookDir,
+  NODE_EVAL_SYNC_BASELINES_SCRIPT,
   REPOS_DIR,
 } from './lib/utils.ts';
 
@@ -41,17 +44,36 @@ export interface SyncResult {
   commitSha?: string;
 }
 
-const main = import.meta.url === `file://${process.argv[1]}`;
+const syncBaselinesOptions = {
+  project: {
+    type: 'string' as const,
+    multiple: true,
+    description: 'Project(s) to sync (repeatable)',
+  },
+  'skip-push': {
+    type: 'boolean' as const,
+    description: 'Commit locally but do not push',
+  },
+  help: { type: 'boolean' as const, short: 'h', description: 'Show this help and exit' },
+};
 
-if (main) {
+if (esMain(import.meta.url)) {
   const { values } = parseArgs({
     args: process.argv.slice(2),
-    options: {
-      project: { type: 'string', multiple: true },
-      'skip-push': { type: 'boolean' },
-    },
+    options: syncBaselinesOptions,
     strict: true,
   });
+
+  if (values.help) {
+    console.log(
+      formatHelp(
+        `node ${NODE_EVAL_SYNC_BASELINES_SCRIPT} [options]`,
+        'Push the canonical .storybook baseline to each benchmark repo.',
+        syncBaselinesOptions
+      )
+    );
+    process.exit(0);
+  }
 
   const selectedProjects = values.project?.length
     ? PROJECTS.filter((project) => values.project?.includes(project.name))
@@ -78,7 +100,7 @@ export async function syncBaselines(options: SyncBaselinesOptions = {}) {
     })
   );
 
-  await preflightRepos(resolvedProjects);
+  await ensureReposAreClean(resolvedProjects);
   const baselineFiles = await readBaselineStorybookDir();
   const results: SyncResult[] = [];
 
@@ -129,7 +151,7 @@ export async function resolveProjectPaths(
   };
 }
 
-async function preflightRepos(projects: Array<{ project: Project; paths: ProjectPaths }>) {
+async function ensureReposAreClean(projects: Array<{ project: Project; paths: ProjectPaths }>) {
   const logger = createLogger();
   for (const { project, paths } of projects) {
     await ensureSourceClone(project, paths.repoRoot, logger);
@@ -213,7 +235,7 @@ async function syncStorybookDir(targetDir: string, sourceFiles: Map<string, stri
 
   for (const [name, contents] of sourceFiles) {
     const targetPath = join(targetDir, name);
-    await mkdir(join(targetPath, '..'), { recursive: true });
+    await mkdir(dirname(targetPath), { recursive: true });
     const rewritten = contents.replace(
       /(?:\.\.\/)+eval-results\/data\.json/g,
       '../eval-results/data.json'
@@ -284,5 +306,5 @@ async function getHead(repoRoot: string) {
 }
 
 function normalizeRepoPath(value: string) {
-  return value.replace(/^\.\//, '').replace(/^\.(?=\/)/, '');
+  return value.replace(/^\.\/?/, '');
 }

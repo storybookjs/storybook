@@ -60,4 +60,11 @@ export const PROJECTS: Project[] = [
     projectDir: 'excalidraw-app',
     description: 'Monorepo with canvas based drawing app',
   },
+  {
+    name: 'bluesky',
+    repo: 'https://github.com/storybook-tmp/bluesky',
+    branch: 'main',
+    githubSlug: 'storybook-tmp/bluesky',
+    description: 'React Native + React app with highly complex providers setup',
+  },
 ];

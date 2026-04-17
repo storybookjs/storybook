@@ -1,9 +1,10 @@
 import { existsSync } from 'node:fs';
 import { mkdir, readFile, rm, writeFile } from 'node:fs/promises';
-import { dirname, join, relative, resolve } from 'node:path';
+import { dirname, join, relative, resolve } from 'pathe';
 import { x } from 'tinyexec';
 import { parseVitestResults } from '../../../code/core/src/core-server/utils/ghost-stories/parse-vitest-report.ts';
 import type { FileChange } from './grade.ts';
+import { detectPackageManager, resolveInstallRoot } from './package-manager.ts';
 import type { Logger } from './utils.ts';
 
 const STORY_FILE_PATTERN = /\.(stories|story)\.[tj]sx?$/;
@@ -53,19 +54,27 @@ export function getPreviewEnvironmentFiles(fileChanges: FileChange[]): string[] 
     .sort();
 }
 
+/**
+ * Each benchmark repo must define a `vitest:storybook` script in its package.json
+ * that knows how to run the storybook vitest project for that repo.
+ * The grading harness appends `--reporter=json --outputFile=... <storyFiles>`.
+ */
 export async function runStoryRenderPass(opts: {
   projectPath: string;
   resultsDir: string;
   storyFiles: string[];
   outputBaseName: string;
+  label?: string;
   logger: Logger;
 }): Promise<StoryRenderRunResult> {
-  const runnableStoryFiles = opts.storyFiles
-    .map((storyFile) => relative(opts.projectPath, storyFile))
-    .filter((storyFile) => storyFile !== '' && !storyFile.startsWith('..'));
+  const tag = opts.label ?? 'story-render';
+  const runnableStoryFiles = opts.storyFiles.filter((storyFile) => {
+    const rel = relative(opts.projectPath, storyFile);
+    return rel !== '' && !rel.startsWith('..');
+  });
 
   if (runnableStoryFiles.length === 0) {
-    opts.logger.logStep('No generated story files found for story-render evaluation.');
+    opts.logger.logStep(`No generated story files found for ${tag}.`);
     return {
       attempted: false,
       success: true,
@@ -80,19 +89,14 @@ export async function runStoryRenderPass(opts: {
   const reportPath = join(opts.resultsDir, `${opts.outputBaseName}-report.json`);
   const outputPath = join(opts.resultsDir, `${opts.outputBaseName}-output.txt`);
 
-  opts.logger.logStep(
-    `Running story-render evaluation for ${runnableStoryFiles.length} story file(s)...`
-  );
+  opts.logger.logStep(`Running ${tag} for ${runnableStoryFiles.length} story file(s)...`);
+
+  const pm = detectPackageManager(resolveInstallRoot(opts.projectPath));
+  const [runCmd, ...runArgs] = getScriptRunCommand(pm);
+
   const result = await x(
-    'npx',
-    [
-      'vitest',
-      'run',
-      '--project=storybook',
-      '--reporter=json',
-      `--outputFile=${reportPath}`,
-      ...runnableStoryFiles,
-    ],
+    runCmd,
+    [...runArgs, '--reporter=json', `--outputFile=${reportPath}`, ...runnableStoryFiles],
     {
       throwOnError: false,
       timeout: 300_000,
@@ -114,9 +118,10 @@ export async function runStoryRenderPass(opts: {
     : undefined;
 
   if (result.exitCode === 0) {
-    opts.logger.logSuccess('Story-render evaluation passed');
+    opts.logger.logSuccess(`${tag}: passed`);
   } else {
-    opts.logger.logError(`Story-render evaluation failed (exit ${result.exitCode})`);
+    const rate = summary ? `${summary.passed}/${summary.total} passed` : `exit ${result.exitCode}`;
+    opts.logger.logError(`${tag}: ${rate}`);
   }
 
   return {
@@ -127,6 +132,20 @@ export async function runStoryRenderPass(opts: {
     runError: summary ? undefined : output || 'Story-render report not found',
     summary,
   };
+}
+
+/** Build the full command tokens for `<pm> run vitest:storybook [--] <extra args>`. */
+export function getScriptRunCommand(pm: string): string[] {
+  switch (pm) {
+    case 'pnpm':
+      return ['pnpm', 'run', 'vitest:storybook'];
+    case 'yarn':
+      return ['yarn', 'vitest:storybook'];
+    case 'bun':
+      return ['bun', 'run', 'vitest:storybook'];
+    default:
+      return ['npm', 'run', 'vitest:storybook', '--'];
+  }
 }
 
 export async function withBaselinePreviewEnvironment<T>(opts: {

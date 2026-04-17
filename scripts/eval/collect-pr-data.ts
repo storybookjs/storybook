@@ -1,3 +1,11 @@
+/**
+ * Ingests eval draft PRs into SQLite for analysis (queries, exports, dashboards).
+ *
+ * **Maintenance:** This file mixes SQL, GitHub API shapes, and `data.json` schema assumptions.
+ * Prefer updating it with AI assistance and keep changes aligned with `scripts/eval/lib/result-docs.ts`
+ * (`EvalData` / `schemaVersion`). When agent SDKs or transcript formats change, revisit the
+ * parsers and migrations together.
+ */
 import { execFileSync } from 'node:child_process';
 import { mkdirSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
@@ -7,7 +15,7 @@ import { parseArgs } from 'node:util';
 import pLimit from 'p-limit';
 import type { Project } from './lib/projects.ts';
 import { PROJECTS } from './lib/projects.ts';
-import { createLogger } from './lib/utils.ts';
+import { createLogger, formatHelp, NODE_EVAL_COLLECT_PR_DATA_SCRIPT } from './lib/utils.ts';
 
 const DEFAULT_DB_PATH = resolve(import.meta.dirname, '.cache', 'eval-pr-data.sqlite');
 const GH_PAGE_SIZE = 200;
@@ -257,18 +265,35 @@ export async function main() {
   }
 }
 
+const collectOptions = {
+  'db-path': {
+    type: 'string' as const,
+    description: 'SQLite database path (default: .cache/eval-pr-data.sqlite)',
+  },
+  project: { type: 'string' as const, description: 'Collect from a specific project only' },
+  limit: { type: 'string' as const, description: 'Max PRs to fetch (default: 200)' },
+  state: { type: 'string' as const, description: 'PR state filter: all or open (default: all)' },
+  help: { type: 'boolean' as const, short: 'h', description: 'Show this help and exit' },
+};
+
 export function parseCliArgs(argv = process.argv.slice(2)) {
   const { values } = parseArgs({
     args: argv,
-    options: {
-      'db-path': { type: 'string' },
-      project: { type: 'string' },
-      limit: { type: 'string' },
-      state: { type: 'string' },
-    },
+    options: collectOptions,
     strict: true,
     allowPositionals: false,
   });
+
+  if (values.help) {
+    console.log(
+      formatHelp(
+        `node ${NODE_EVAL_COLLECT_PR_DATA_SCRIPT} [options]`,
+        'Scrape eval draft PRs and load results into a local SQLite database.',
+        collectOptions
+      )
+    );
+    process.exit(0);
+  }
 
   const limit = values.limit == null ? GH_PAGE_SIZE : Number(values.limit);
   if (!Number.isInteger(limit) || limit <= 0) {

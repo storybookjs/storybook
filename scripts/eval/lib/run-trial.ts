@@ -1,5 +1,5 @@
 import { writeFile } from 'node:fs/promises';
-import { join } from 'node:path';
+import { join } from 'pathe';
 import type { Logger } from './utils.ts';
 import type { AgentId, AgentDriver, AgentVariant } from './agents/config.ts';
 import type { Project } from './projects.ts';
@@ -46,7 +46,6 @@ export async function runTrial(config: TrialConfig, logger?: Logger): Promise<Ru
   const { project, variant, prompt: promptName } = config;
   const { agent: agentName, model } = variant;
   const log = logger ?? createLogger();
-  const resolvedPromptName = promptName || 'pattern-copy-play';
   const trialId = generateTrialId();
   const timestamp = new Date().toISOString();
 
@@ -66,7 +65,7 @@ export async function runTrial(config: TrialConfig, logger?: Logger): Promise<Ru
   );
 
   // 4. Load the prompt
-  const prompt = loadPrompt(resolvedPromptName);
+  const prompt = loadPrompt(promptName);
   await writeFile(join(workspace.resultsDir, 'prompt.md'), prompt);
 
   // 5. Execute the agent
@@ -78,6 +77,7 @@ export async function runTrial(config: TrialConfig, logger?: Logger): Promise<Ru
     variant,
     resultsDir: workspace.resultsDir,
     logger: log,
+    verbose: config.verbose,
   });
   log.logSuccess(
     `Agent completed (${Math.round(execution.duration)}s, ${execution.cost ? `$${execution.cost.toFixed(2)}` : 'cost N/A'}, ${execution.turns} turns)`
@@ -101,7 +101,7 @@ export async function runTrial(config: TrialConfig, logger?: Logger): Promise<Ru
     project,
     variant,
     prompt: {
-      name: resolvedPromptName,
+      name: promptName,
       content: prompt,
     },
     baselineCommit: workspace.baselineCommit,

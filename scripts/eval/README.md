@@ -9,7 +9,7 @@ The eval harness benchmarks how well AI coding agents (Claude, Codex) can set up
 
 ## How it works
 
-E2E Data Flow
+![End-to-End Data Flow](https://github.com/user-attachments/assets/e2f12c18-85f0-4f94-830e-2f4742823fcb)
 
 The system forms a cycle:
 
@@ -31,26 +31,26 @@ Each trial follows this lifecycle:
 All commands run from the repo root.
 
 ```sh
-# Default settings (Claude, sonnet-4.6, medium effort)
-node scripts/eval/eval.ts -p mealdrop
+# Prompt file is required (scripts/eval/prompts/{name}.md). Example: pattern-copy-play
+node scripts/eval/eval.ts -p mealdrop --prompt pattern-copy-play
 
 # Specific agent
-node scripts/eval/eval.ts -p mealdrop -a codex
+node scripts/eval/eval.ts -p mealdrop --prompt pattern-copy-play -a codex
 
 # Specific model (agent is inferred)
-node scripts/eval/eval.ts -p mealdrop -m opus-4.6
+node scripts/eval/eval.ts -p mealdrop --prompt pattern-copy-play -m opus-4.6
 
 # Specific effort level
-node scripts/eval/eval.ts -p mealdrop -a claude -e max
+node scripts/eval/eval.ts -p mealdrop --prompt pattern-copy-play -a claude -e max
 
 # Different prompt
 node scripts/eval/eval.ts -p mealdrop --prompt setup
 
 # Manual mode — prepare workspace, print the command to run yourself
-node scripts/eval/eval.ts -p mealdrop --manual
+node scripts/eval/eval.ts -p mealdrop --prompt pattern-copy-play --manual
 
 # Verbose output
-node scripts/eval/eval.ts -p mealdrop -v
+node scripts/eval/eval.ts -p mealdrop --prompt pattern-copy-play -v
 
 # List available projects, models, or prompts
 node scripts/eval/eval.ts --list-projects
@@ -76,20 +76,20 @@ Result
 ## Running a batch
 
 ```sh
-# Default: Claude (Opus) + Codex, high effort on both, 10 repetitions, concurrency 8
-node scripts/eval/run-batch.ts
+# Prompt is required. Confirms interactively unless you pass --yes (CI / automation).
+node scripts/eval/run-batch.ts --prompt pattern-copy-play --yes
 
 # Claude only
-node scripts/eval/run-batch.ts --agents claude
+node scripts/eval/run-batch.ts --prompt pattern-copy-play --yes --agents claude
 
 # Specific effort levels
-node scripts/eval/run-batch.ts --claude-effort max
-node scripts/eval/run-batch.ts --claude-efforts max,high
-node scripts/eval/run-batch.ts --agents codex --codex-effort xhigh
+node scripts/eval/run-batch.ts --prompt pattern-copy-play --yes --claude-effort max
+node scripts/eval/run-batch.ts --prompt pattern-copy-play --yes --claude-efforts max,high
+node scripts/eval/run-batch.ts --prompt pattern-copy-play --yes --agents codex --codex-effort xhigh
 
 # Different prompt or concurrency
-node scripts/eval/run-batch.ts --prompt setup
-node scripts/eval/run-batch.ts --concurrency 4
+node scripts/eval/run-batch.ts --prompt setup --yes
+node scripts/eval/run-batch.ts --prompt pattern-copy-play --yes --concurrency 4
 ```
 
 Batch results are written to `storybook-eval/batches/<timestamp>/`, with per-run log files and a `summary.json`.
@@ -173,6 +173,8 @@ The SQLite database is a great target for LLM-assisted analysis. Point Claude or
 
 ## Understanding scores
 
+![grade.ts: Four-dimensional grading](https://github.com/user-attachments/assets/2cb8be16-88cf-4365-846a-f9385e10a0e7)
+
 Each trial produces several metrics:
 
 - **Build** — whether `storybook build` succeeds (pass/fail)
@@ -181,6 +183,8 @@ Each trial produces several metrics:
 - **Ghost stories (before/after)** — auto-generated tests that check whether components render without crashing.
 
 The headline metric is **normalized preview gain** — how much of the remaining room for improvement did the agent capture. It is stored in `data.json` as a **0–1 index**; the CLI, draft PR, and eval summary UI show the same value as a **percentage** for readability.
+
+If the baseline already passes every story (**before_rate = 100%**), there is no remaining gap — the gain and headline score are **0**.
 
 ```
 gain = (after_rate - before_rate) / (1 - before_rate)
@@ -217,8 +221,18 @@ To benchmark a new app, register it in the harness and sync baselines. Follow th
 }
 ```
 
-1. Run `node scripts/eval/sync-baselines.ts --project my-project` to push the eval baseline `.storybook` config (this replaces the init scaffold in the benchmark repo).
-2. Run a trial to verify: `node scripts/eval/eval.ts -p my-project`
+4. Add a `vitest:storybook` script to the project's `package.json` that runs the storybook vitest project. The grading harness calls this script and appends `--reporter=json --outputFile=... <storyFiles>`. The exact command depends on the repo's vitest setup:
+
+```jsonc
+// Most repos (inline vitest project):
+"vitest:storybook": "vitest run --project=storybook"
+
+// Repos with a dedicated config file (e.g. excalidraw):
+"vitest:storybook": "vitest run --config vitest.storybook.config.mts"
+```
+
+5. Run `node scripts/eval/sync-baselines.ts --project my-project` to push the eval baseline `.storybook` config (this replaces the init scaffold in the benchmark repo).
+6. Run a trial to verify: `node scripts/eval/eval.ts -p my-project --prompt pattern-copy-play`
 
 ## Prompts
 
@@ -226,7 +240,7 @@ Prompts are markdown files in `scripts/eval/prompts/` that tell the agent what t
 
 ### Available prompts
 
-- `**pattern-copy-play**` (default) — analyze the codebase, copy real usage patterns, configure preview with providers and MSW mocks, write ~10 story files with play functions, verify each with Vitest.
+- `**pattern-copy-play**` — analyze the codebase, copy real usage patterns, configure preview with providers and MSW mocks, write ~10 story files with play functions, verify each with Vitest.
 - `**setup**` — structured step-by-step: analyze, configure preview, write 9 stories (3 simple / 3 medium / 3 complex), verify each with Vitest.
 
 ### Writing a new prompt

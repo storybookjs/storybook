@@ -28,6 +28,7 @@ export * from './ai-setup-utils.ts';
 export {
   getPrecedingUpgrade,
   getLastEvents,
+  isWithinInitialSession,
   type CacheEntry,
   getAiSetupPending,
   type AiSetupPendingRecord,

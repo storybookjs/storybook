@@ -15,6 +15,12 @@ export const EVAL_ROOT = resolve(REPO_ROOT, '..', 'storybook-eval');
 export const REPOS_DIR = resolve(EVAL_ROOT, 'repos');
 export const TRIALS_DIR = resolve(EVAL_ROOT, 'trials');
 export const PROMPTS_DIR = resolve(import.meta.dirname, '..', 'prompts');
+/** Basename (no `.md`) used in docs and tests when a concrete prompt must be named. */
+export const EXAMPLE_PROMPT_BASENAME = 'pattern-copy-play';
+export const NODE_EVAL_TRIAL_SCRIPT = 'scripts/eval/eval.ts' as const;
+export const NODE_EVAL_RUN_BATCH_SCRIPT = 'scripts/eval/run-batch.ts' as const;
+export const NODE_EVAL_SYNC_BASELINES_SCRIPT = 'scripts/eval/sync-baselines.ts' as const;
+export const NODE_EVAL_COLLECT_PR_DATA_SCRIPT = 'scripts/eval/collect-pr-data.ts' as const;
 export const STORYBOOK_DIRNAME = '.storybook';
 export const EVAL_RESULTS_DIRNAME = 'eval-results';
 
@@ -82,6 +88,11 @@ export function generateTrialId() {
   return `${timestamp}-${crypto.randomUUID().replace(/-/g, '').slice(0, 8)}`;
 }
 
+/** Uppercase first character only (shared eval string helper). */
+export function capitalizeFirst(value: string) {
+  return value.charAt(0).toUpperCase() + value.slice(1);
+}
+
 export function formatReadableUtcTimestamp(timestamp: string) {
   const date = new Date(timestamp);
   if (Number.isNaN(date.getTime())) {
@@ -130,11 +141,12 @@ export function formatTable(headers: string[], rows: string[][]): string {
 }
 
 /** Load a prompt by name from prompts/{name}.md. */
-export function loadPrompt(name = 'pattern-copy-play'): string {
-  const file = resolve(PROMPTS_DIR, `${name}.md`);
-  if (!existsSync(file)) {
-    throw new Error(`Prompt not found: ${file}\nAvailable: ${listPrompts().join(', ')}`);
+export function loadPrompt(name: string): string {
+  const available = listPrompts();
+  if (!available.includes(name)) {
+    throw new Error(`Prompt not found: ${name}\nAvailable: ${available.join(', ')}`);
   }
+  const file = resolve(PROMPTS_DIR, `${name}.md`);
   return readFileSync(file, 'utf-8').trim();
 }
 
@@ -164,6 +176,41 @@ export async function captureEnvironment(): Promise<EvalEnvironment> {
     /* not in a git repo */
   }
   return { nodeVersion: process.version, evalBranch, evalCommit };
+}
+
+export interface HelpOption {
+  type: 'string' | 'boolean';
+  short?: string;
+  description?: string;
+}
+
+/**
+ * Format a --help message from the same options object passed to parseArgs.
+ * Each option may carry a `description` field (ignored by parseArgs at runtime).
+ */
+export function formatHelp(
+  usage: string,
+  description: string,
+  options: Record<string, HelpOption>
+): string {
+  const entries = Object.entries(options);
+
+  const formatted = entries.map(([name, opt]) => {
+    const short = opt.short ? `-${opt.short}, ` : '    ';
+    const long = opt.type === 'string' ? `--${name} <value>` : `--${name}`;
+    return { short, long, desc: opt.description ?? '' };
+  });
+
+  const maxLong = Math.max(...formatted.map((f) => f.long.length));
+
+  return [
+    `Usage: ${usage}`,
+    '',
+    description,
+    '',
+    'Options:',
+    ...formatted.map((f) => `  ${f.short}${f.long.padEnd(maxLong)}  ${f.desc}`),
+  ].join('\n');
 }
 
 /** Strip ANSI escape codes for accurate width calculation. */

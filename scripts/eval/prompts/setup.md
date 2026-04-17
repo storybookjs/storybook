@@ -178,6 +178,13 @@ After all 9 story files pass individually, run the full suite:
 npx vitest --project storybook
 ```
 
+Once all stories pass, run a full Storybook build as a final check:
+```bash
+npx storybook build
+```
+
+If the build fails, fix the issue before finishing.
+
 ### Checklist
 
 - [ ] Analyzed codebase for providers, global styles, and path aliases
@@ -193,4 +200,5 @@ npx vitest --project storybook
 - [ ] Complex component 2: story written and passing
 - [ ] Complex component 3: story written and passing
 - [ ] Full Vitest suite passes: `npx vitest --project storybook`
+- [ ] `npx storybook build` succeeds
 - [ ] Run `npx storybook doctor` to check for common issues (version mismatches, duplicated deps, etc.)

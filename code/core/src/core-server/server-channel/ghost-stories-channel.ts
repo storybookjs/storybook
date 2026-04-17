@@ -10,7 +10,7 @@ import { logger } from 'storybook/internal/node-logger';
 import type { Options } from 'storybook/internal/types';
 
 import { getComponentCandidates } from '../utils/ghost-stories/get-candidates.ts';
-import { runGhostStories } from '../utils/ghost-stories/run-story-tests.ts';
+import { runStoryTests } from '../utils/ghost-stories/run-story-tests.ts';
 import { waitForIdleVitest } from '../utils/wait-for-idle-vitest.ts';
 
 class SkipGhostStoriesTelemetry extends Error {}
@@ -102,7 +102,9 @@ export function initGhostStoriesChannel(channel: Channel, options: Options) {
 
           // Phase 2: Run tests on those candidates Vitest. The components will be transformed directly to tests
           // If they pass, it means that creating a story file for them would succeed.
-          const testRunResult = await runGhostStories(candidatesResult.candidates);
+          const testRunResult = await runStoryTests(candidatesResult.candidates, {
+            ghostRun: true,
+          });
           stats.totalRunDuration = Date.now() - ghostRunStart;
           stats.testRunDuration = testRunResult.duration;
           if (testRunResult.runError) {

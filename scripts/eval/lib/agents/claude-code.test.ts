@@ -113,7 +113,7 @@ describe('claudeAgent.execute', () => {
     ]);
   });
 
-  it('trims verbose tool input and tool result logs', async () => {
+  it('shows line count for tool results and trims tool input', async () => {
     const longText = Array.from({ length: 40 }, (_, index) => `line ${index + 1}`).join('\n');
 
     queryMock.mockImplementation(async function* () {
@@ -159,7 +159,6 @@ describe('claudeAgent.execute', () => {
     });
 
     expect(logger.log).toHaveBeenCalledWith(expect.stringContaining('🔧 Bash('));
-    expect(logger.log).toHaveBeenCalledWith(expect.stringContaining('… 28 more lines …'));
-    expect(logger.log).toHaveBeenCalledWith(expect.stringContaining('📎 tool_result(12345678):'));
+    expect(logger.log).toHaveBeenCalledWith('📎 tool_result(12345678): 40 lines');
   });
 });

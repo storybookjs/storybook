@@ -133,7 +133,7 @@ describe('codexAgent.execute', () => {
     expect(result.execution.turns).toBe(2);
   });
 
-  it('trims verbose command output in logs', async () => {
+  it('shows line count instead of command output content', async () => {
     const longOutput = Array.from({ length: 40 }, (_, index) => `line ${index + 1}`).join('\n');
 
     runStreamedMock.mockResolvedValue({
@@ -166,8 +166,7 @@ describe('codexAgent.execute', () => {
       logger,
     });
 
-    expect(logger.log).toHaveBeenCalledWith(expect.stringContaining('🔧 $ cat huge.log → exit 0'));
-    expect(logger.log).toHaveBeenCalledWith(expect.stringContaining('… 28 more lines …'));
-    expect(logger.log).not.toHaveBeenCalledWith(expect.stringContaining('line 13'));
+    expect(logger.log).toHaveBeenCalledWith('🔧 $ cat huge.log → exit 0 (40 lines)');
+    expect(logger.log).not.toHaveBeenCalledWith(expect.stringContaining('line 1'));
   });
 });

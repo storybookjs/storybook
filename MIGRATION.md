@@ -526,7 +526,7 @@
 
 ### React Native: on-device addons moved to `deviceAddons`
 
-In Storybook 9, on-device addons (those whose package name contains `"ondevice"`, such as `@storybook/addon-ondevice-controls` and `@storybook/addon-ondevice-actions`) must be listed under the `deviceAddons` key in your `.rnstorybook/main.ts` instead of the shared `addons` key.
+In Storybook 10.4, on-device addons (those whose package name contains `"ondevice"`, such as `@storybook/addon-ondevice-controls` and `@storybook/addon-ondevice-actions`) must be listed under the `deviceAddons` key in your `.rnstorybook/main.ts` instead of the shared `addons` key.
 
 Listing them in `addons` caused `storybook extract` to fail because Storybook Core tries to evaluate every entry in `addons` as a Node.js preset, which these on-device addons are not.
 

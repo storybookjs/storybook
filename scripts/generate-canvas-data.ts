@@ -36,7 +36,9 @@ const TARGET_RATE = 15;
 // ─── Argument parsing ────────────────────────────────────────────────────────
 
 const args = process.argv.slice(2);
-const sinceArg = args.includes('--since') ? args[args.indexOf('--since') + 1] : '2026-03-23T13:54:53Z';
+const sinceArg = args.includes('--since')
+  ? args[args.indexOf('--since') + 1]
+  : '2026-03-23T13:54:53Z';
 const flakyRange = args.includes('--flaky-range')
   ? parseInt(args[args.indexOf('--flaky-range') + 1], 10)
   : 30;
@@ -139,7 +141,7 @@ function computeWorkflowStats(
     runs: rows.length,
     passed,
     failed,
-    flakeRate: rows.length ? round(failed / rows.length * 100, 1) : 0,
+    flakeRate: rows.length ? round((failed / rows.length) * 100, 1) : 0,
     avgDurSec: rows.length ? Math.round(durs.reduce((a, b) => a + b, 0) / durs.length) : 0,
     p50Sec: Math.round(percentile(durs, 50)),
     p90Sec: Math.round(percentile(durs, 90)),
@@ -209,8 +211,7 @@ function computeWorkflowStats(
     // default 60 credits/min on both linux-js and linux-browsers-js.
     const AVG_RETRY_SEC = 146;
     const AVG_CREDITS_PER_MIN = 60;
-    const retryCredits =
-      (stats.taskRetries * AVG_RETRY_SEC * AVG_CREDITS_PER_MIN) / 60 + 0; // minutes * credits/min
+    const retryCredits = (stats.taskRetries * AVG_RETRY_SEC * AVG_CREDITS_PER_MIN) / 60 + 0; // minutes * credits/min
     stats.retryCostUsd = round(retryCredits * NX_CREDIT_TO_USD, 2);
     stats.avgCostWithoutRetry = round(stats.avgCost - stats.retryCostUsd / rows.length, 2);
 
@@ -308,7 +309,8 @@ function computeWorkflowStats(
       runs_with_tasks: number | null;
     };
 
-    const derivedUsd = (savedRow.runs_with_tasks ?? 0) > 0 ? round(savedRow.saved_usd ?? 0, 2) : null;
+    const derivedUsd =
+      (savedRow.runs_with_tasks ?? 0) > 0 ? round(savedRow.saved_usd ?? 0, 2) : null;
     if (derivedUsd != null) stats.costSavedByCacheUsd = derivedUsd;
 
     // Cross-check against NX Cloud's direct
@@ -608,7 +610,9 @@ function main() {
   const cciOnlyJobs = computeCCIOnlyJobs(db, 'normal:prs', sinceArg);
 
   console.log(`Computed:`);
-  console.log(`  next:merged — CCI ${nextMerged.circleci.runs} runs, NX ${nextMerged.nx.runs} runs`);
+  console.log(
+    `  next:merged — CCI ${nextMerged.circleci.runs} runs, NX ${nextMerged.nx.runs} runs`
+  );
   console.log(`  normal:prs  — CCI ${normalPrs.circleci.runs} runs, NX ${normalPrs.nx.runs} runs`);
   console.log(`  paired      — ${pairedPrs.commits} on PRs, ${pairedNext.commits} on next:merged`);
   console.log(

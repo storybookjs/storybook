@@ -62,15 +62,13 @@ async function fetchNxDashboardCipeAnalysis(
   cipeId: string,
   runGroupName: string
 ): Promise<{
-  retryStats:
-    | {
-        totalTasks: number;
-        totalTaskRetries: number;
-        successfulRetries: number;
-        failedRetries: number;
-        hypotheticalNoCacheMs: number | null;
-      }
-    | null;
+  retryStats: {
+    totalTasks: number;
+    totalTaskRetries: number;
+    successfulRetries: number;
+    failedRetries: number;
+    hypotheticalNoCacheMs: number | null;
+  } | null;
 }> {
   const session = process.env.NX_CLOUD_SESSION;
   if (!session) return { retryStats: null };

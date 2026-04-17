@@ -176,9 +176,7 @@ function initDB() {
   // from the same endpoint in the same HTTP round-trip. Used as a cross-check
   // against the per-task derivation in nx_run_tasks.
   try {
-    db.exec(
-      `ALTER TABLE nx_cipe_retry_stats ADD COLUMN hypothetical_no_cache_ms INTEGER`
-    );
+    db.exec(`ALTER TABLE nx_cipe_retry_stats ADD COLUMN hypothetical_no_cache_ms INTEGER`);
   } catch {}
 
   db.exec(`
@@ -701,7 +699,12 @@ async function fetchNxDashboardCipeAnalysis(
 
     // --- Retry stats (per-CIPE) ---
     const retryRaw = data?.ciPipelineExecution?.ttgImpactMetadata?.taskRetryStats as
-      | { totalTasks: number; totalTaskRetries: number; successfulRetries: number; failedRetries: number }
+      | {
+          totalTasks: number;
+          totalTaskRetries: number;
+          successfulRetries: number;
+          failedRetries: number;
+        }
       | undefined;
     const hypoMs = data?.ciPipelineExecution?.duration?.hypotheticalNoCacheMs;
     const hypothetical =
@@ -722,7 +725,6 @@ async function fetchNxDashboardCipeAnalysis(
     return { credits: null, retryStats: null };
   }
 }
-
 
 const prNumberCache = new Map<string, string>();
 
@@ -974,9 +976,7 @@ async function syncNxCloudRuns(
  *
  * Idempotent — re-running only hits the API for CIPEs still missing data.
  */
-async function backfillNxCipeRetryStats(
-  db: InstanceType<typeof DatabaseSync>
-): Promise<void> {
+async function backfillNxCipeRetryStats(db: InstanceType<typeof DatabaseSync>): Promise<void> {
   if (!process.env.NX_CLOUD_SESSION) {
     console.log(`    NX retry backfill: skipped (NX_CLOUD_SESSION not set)`);
     return;
@@ -993,7 +993,9 @@ async function backfillNxCipeRetryStats(
     .all() as { id: string }[];
 
   if (missing.length === 0) {
-    console.log(`    NX retry backfill: up to date (all CIPEs have retry stats + hypotheticalNoCacheMs)`);
+    console.log(
+      `    NX retry backfill: up to date (all CIPEs have retry stats + hypotheticalNoCacheMs)`
+    );
     return;
   }
 
@@ -1047,9 +1049,7 @@ async function backfillNxCipeRetryStats(
  * `continuous-*` hashed tasks (serve / run-registry) which aren't cacheable.
  * Idempotent backfill — re-run only fetches CIPEs still missing.
  */
-async function backfillNxCacheStats(
-  db: InstanceType<typeof DatabaseSync>
-): Promise<void> {
+async function backfillNxCacheStats(db: InstanceType<typeof DatabaseSync>): Promise<void> {
   const missing = db
     .prepare(
       `SELECT r.id FROM runs r
@@ -1094,7 +1094,10 @@ async function backfillNxCacheStats(
       let misses = 0;
       for (const t of tasks) {
         // Skip non-cacheable continuous tasks (serve / run-registry).
-        if (t.taskId.endsWith(':serve:production') || t.taskId.endsWith(':run-registry:production')) {
+        if (
+          t.taskId.endsWith(':serve:production') ||
+          t.taskId.endsWith(':run-registry:production')
+        ) {
           continue;
         }
         const cs = t.cacheStatus ?? '';
@@ -1142,9 +1145,7 @@ function inferAgentTemplate(target: string): 'linux-js' | 'linux-browsers-js' {
  * Two API calls per missing CIPE (`/runs/search` then `/runs/{runId}`).
  * Idempotent on `(run_id, task_id)` primary key.
  */
-async function backfillNxRunTasks(
-  db: InstanceType<typeof DatabaseSync>
-): Promise<void> {
+async function backfillNxRunTasks(db: InstanceType<typeof DatabaseSync>): Promise<void> {
   const missing = db
     .prepare(
       `SELECT r.id FROM runs r
@@ -1314,7 +1315,9 @@ async function syncNxFlakyAnalytics(
     )
     .get(today, rangeDays) as { n: number };
   if (existing.n > 0) {
-    console.log(`    NX flaky analytics: already synced today (${existing.n} rows for range=${rangeDays}d)`);
+    console.log(
+      `    NX flaky analytics: already synced today (${existing.n} rows for range=${rangeDays}d)`
+    );
     return;
   }
 
@@ -1403,7 +1406,9 @@ async function syncNxFlakyAnalytics(
 
   // 3. Store workspace-wide KPIs.
   const kpis = summary.flakyTaskKPIs;
-  const proportionPct = parseFloat(String(kpis?.proportionTasksFlaky?.current ?? '0').replace('%', ''));
+  const proportionPct = parseFloat(
+    String(kpis?.proportionTasksFlaky?.current ?? '0').replace('%', '')
+  );
 
   db.prepare(
     `INSERT OR REPLACE INTO nx_flaky_task_kpis (
@@ -1747,7 +1752,9 @@ async function main() {
     } else {
       const isWildBranch = branches.length === 0;
       const excludeBranches = isWildBranch ? MEDIUM_PLUS_BRANCHES : undefined;
-      const branchLabel = isWildBranch ? 'ALL branches (excluding eval/medium+)' : branches.join(', ');
+      const branchLabel = isWildBranch
+        ? 'ALL branches (excluding eval/medium+)'
+        : branches.join(', ');
 
       try {
         console.log(`    CircleCI: querying branches ${branchLabel}...`);

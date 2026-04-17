@@ -52,8 +52,14 @@ function findCacheKeys(obj: unknown, path: string[] = [], out: string[] = []): s
   }
   for (const [k, v] of Object.entries(obj as Record<string, unknown>)) {
     const lk = k.toLowerCase();
-    if (lk.includes('cache') || lk.includes('saving') || lk.includes('saved') || lk.includes('ttg')) {
-      const shown = typeof v === 'object' ? `<${Array.isArray(v) ? 'array' : 'object'}>` : JSON.stringify(v);
+    if (
+      lk.includes('cache') ||
+      lk.includes('saving') ||
+      lk.includes('saved') ||
+      lk.includes('ttg')
+    ) {
+      const shown =
+        typeof v === 'object' ? `<${Array.isArray(v) ? 'array' : 'object'}>` : JSON.stringify(v);
       out.push(`${[...path, k].join('.')} = ${shown}`);
     }
     findCacheKeys(v, [...path, k], out);
@@ -72,9 +78,12 @@ async function main() {
   console.log(`Investigating CIPE ${cipeId}`);
 
   // First, find the runGroupName for this CIPE.
-  const details = await fetch(`${NX_CLOUD_URL}/nx-cloud/mcp-context/pipeline-executions/${cipeId}`, {
-    headers: getNxCloudHeaders(),
-  }).then((r) => r.json());
+  const details = await fetch(
+    `${NX_CLOUD_URL}/nx-cloud/mcp-context/pipeline-executions/${cipeId}`,
+    {
+      headers: getNxCloudHeaders(),
+    }
+  ).then((r) => r.json());
   const rg = details?.runGroups?.[0]?.runGroupName;
   console.log(`  runGroup: ${rg}`);
   console.log(`  CIPE keys: ${Object.keys(details).join(', ')}`);
@@ -82,7 +91,9 @@ async function main() {
   // Analysis endpoint.
   console.log(`\n─── /cipes/${cipeId}/analysis ───`);
   const analysisUrl = `${NX_CLOUD_URL}/cipes/${cipeId}/analysis?runGroup=${encodeURIComponent(rg)}&_data=routes%2F_auth.cipes.%24cipeId.analysis`;
-  const analysisRes = await fetch(analysisUrl, { headers: { Cookie: `_nxCloudSession=${session}` } });
+  const analysisRes = await fetch(analysisUrl, {
+    headers: { Cookie: `_nxCloudSession=${session}` },
+  });
   if (!analysisRes.ok) {
     console.log(`  HTTP ${analysisRes.status}`);
     process.exit(1);
@@ -90,12 +101,18 @@ async function main() {
   const analysis = await analysisRes.json();
   console.log(`  top-level keys: ${Object.keys(analysis).join(', ')}`);
   if (analysis?.ciPipelineExecution) {
-    console.log(`  ciPipelineExecution keys: ${Object.keys(analysis.ciPipelineExecution).join(', ')}`);
+    console.log(
+      `  ciPipelineExecution keys: ${Object.keys(analysis.ciPipelineExecution).join(', ')}`
+    );
   }
   if (analysis?.ciPipelineExecution?.ttgImpactMetadata) {
-    console.log(`  ttgImpactMetadata keys: ${Object.keys(analysis.ciPipelineExecution.ttgImpactMetadata).join(', ')}`);
+    console.log(
+      `  ttgImpactMetadata keys: ${Object.keys(analysis.ciPipelineExecution.ttgImpactMetadata).join(', ')}`
+    );
     console.log(`  ttgImpactMetadata:`);
-    console.log(JSON.stringify(analysis.ciPipelineExecution.ttgImpactMetadata, null, 2).slice(0, 4000));
+    console.log(
+      JSON.stringify(analysis.ciPipelineExecution.ttgImpactMetadata, null, 2).slice(0, 4000)
+    );
   }
   if (analysis?.ciPipelineExecution?.duration) {
     console.log(`\n  duration: ${JSON.stringify(analysis.ciPipelineExecution.duration, null, 2)}`);
@@ -144,8 +161,12 @@ async function main() {
     console.log(`  tasks[0] keys: ${Object.keys(runDetail.tasks[0]).join(', ')}`);
     console.log(`  tasks[0]: ${JSON.stringify(runDetail.tasks[0], null, 2)}`);
     console.log(`  total tasks: ${runDetail.tasks.length}`);
-    const cacheHitCount = runDetail.tasks.filter((t: any) => (t.cacheStatus ?? '').includes('cache-hit')).length;
-    const cacheMissCount = runDetail.tasks.filter((t: any) => t.cacheStatus === 'cache-miss').length;
+    const cacheHitCount = runDetail.tasks.filter((t: any) =>
+      (t.cacheStatus ?? '').includes('cache-hit')
+    ).length;
+    const cacheMissCount = runDetail.tasks.filter(
+      (t: any) => t.cacheStatus === 'cache-miss'
+    ).length;
     console.log(`  hits: ${cacheHitCount}, misses: ${cacheMissCount}`);
 
     const statuses: Record<string, number> = {};
@@ -160,11 +181,13 @@ async function main() {
     const misses = runDetail.tasks.filter((t: any) => t.cacheStatus === 'cache-miss');
     const hitsMs = hits.reduce((s: number, t: any) => s + (t.durationMs ?? 0), 0);
     const missMs = misses.reduce((s: number, t: any) => s + (t.durationMs ?? 0), 0);
-    console.log(`  sum(durationMs) for hits:   ${hitsMs}  (avg ${Math.round(hitsMs / Math.max(hits.length, 1))}ms)`);
-    console.log(`  sum(durationMs) for misses: ${missMs}  (avg ${Math.round(missMs / Math.max(misses.length, 1))}ms)`);
     console.log(
-      `  sample hit task: ${JSON.stringify(hits[0] ?? null, null, 2)}`
+      `  sum(durationMs) for hits:   ${hitsMs}  (avg ${Math.round(hitsMs / Math.max(hits.length, 1))}ms)`
     );
+    console.log(
+      `  sum(durationMs) for misses: ${missMs}  (avg ${Math.round(missMs / Math.max(misses.length, 1))}ms)`
+    );
+    console.log(`  sample hit task: ${JSON.stringify(hits[0] ?? null, null, 2)}`);
   }
 
   console.log(`\n  ─── cache-related keys anywhere in /runs/${mainRun.id} ───`);

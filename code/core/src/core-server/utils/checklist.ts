@@ -13,6 +13,7 @@ import { throttle } from 'es-toolkit/function';
 import { toMerged } from 'es-toolkit/object';
 
 import { globalSettings } from '../../cli/index.ts';
+import { universalTestProviderStore } from '../stores/test-provider.ts';
 import { get as getEventCacheEntry } from '../../telemetry/event-cache.ts';
 import {
   type ChecklistState,
@@ -106,19 +107,32 @@ export async function initializeChecklist(channel?: Channel) {
     // progressively. We want to score the final state, not intermediate states.
     // Each story index change resets the timer; events only fire after 4 minutes
     // of no story changes — matching the original useDelayedAnalyticsTrigger delay.
+    //
+    // Important: the `ai-setup` event is written to the cache AFTER `storybook ai setup`
+    // finishes creating files, so we must NOT check for it during the flurry of
+    // STORY_INDEX_INVALIDATED events. Instead, we wait for idle and check then.
     const AI_IDLE_DELAY_MS = 4 * 60 * 1000;
     let analyticsTimer: ReturnType<typeof setTimeout> | undefined;
     let analyticsEmitted = false;
-    let cleanupIndexListener: (() => void) | undefined;
 
-    const scheduleAnalytics = () => {
+    const scheduleIdleCheck = () => {
       if (!channel || analyticsEmitted) {
         return;
       }
       clearTimeout(analyticsTimer);
-      analyticsTimer = setTimeout(() => {
+      analyticsTimer = setTimeout(async () => {
+        // Only proceed if the user opted into AI
+        if (!store.getState().aiOptIn) {
+          return;
+        }
+        // Check the event cache at idle time — ai-setup may have been written
+        // after the last STORY_INDEX_INVALIDATED fired.
+        await markAiSetupDone();
+        if (store.getState().items.aiSetup?.status !== 'done') {
+          return;
+        }
         analyticsEmitted = true;
-        cleanupIndexListener?.();
+        channel.off(STORY_INDEX_INVALIDATED, onIndexInvalidated);
         channel.emit(GHOST_STORIES_REQUEST);
         channel.emit(AI_SETUP_ANALYTICS_REQUEST);
       }, AI_IDLE_DELAY_MS);
@@ -129,45 +143,34 @@ export async function initializeChecklist(channel?: Channel) {
       if (detected) {
         // ai-setup already existed at startup — schedule debounced analytics.
         // The server may have just restarted while the agent is still working.
-        scheduleAnalytics();
+        scheduleIdleCheck();
       }
     });
 
-    // Also listen for mid-session completion: when `storybook ai setup` creates story files,
-    // the file watcher fires STORY_INDEX_INVALIDATED. Re-check the event cache on each
-    // invalidation until we detect the event, then stop listening.
+    // Listen for mid-session story changes. Every change resets the 4-minute idle
+    // timer. When the timer fires, we check the event cache for `ai-setup` and
+    // emit analytics if found. This avoids the race condition where `ai-setup` is
+    // written to cache after the last file change.
+    const onIndexInvalidated = () => {
+      if (analyticsEmitted) {
+        return;
+      }
+      scheduleIdleCheck();
+    };
     if (channel) {
-      let aiSetupDetected = store.getState().items.aiSetup?.status === 'done';
-
-      const onIndexInvalidated = () => {
-        if (analyticsEmitted) {
-          return;
-        }
-
-        if (!aiSetupDetected) {
-          // Haven't detected ai-setup yet — check the event cache.
-          markAiSetupDone().then((detected) => {
-            if (detected) {
-              aiSetupDetected = true;
-              scheduleAnalytics();
-            }
-          });
-        } else {
-          // ai-setup already detected but agent is still creating files —
-          // reset the debounce timer so we score the final state.
-          scheduleAnalytics();
-        }
-      };
       channel.on(STORY_INDEX_INVALIDATED, onIndexInvalidated);
-      cleanupIndexListener = () => channel.off(STORY_INDEX_INVALIDATED, onIndexInvalidated);
-
-      // Update the detected flag when the store changes (e.g. startup check resolved).
-      store.onStateChange((state: StoreState) => {
-        if (state.items.aiSetup?.status === 'done') {
-          aiSetupDetected = true;
-        }
-      });
     }
+
+    // Also reset the idle timer when test provider state changes. During an agentic
+    // session the agent may pause modifying story files for extended periods while
+    // running tests. Without this, the 4-minute idle timer based solely on story
+    // index changes would fire prematurely while the agent is still active.
+    universalTestProviderStore.onStateChange(() => {
+      if (analyticsEmitted) {
+        return;
+      }
+      scheduleIdleCheck();
+    });
 
     store.onStateChange((state: StoreState, previousState: StoreState) => {
       const entries = Object.entries(state.items);

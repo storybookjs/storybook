@@ -1,12 +1,6 @@
 import type { Channel } from 'storybook/internal/channels';
 import { GHOST_STORIES_REQUEST, GHOST_STORIES_RESPONSE } from 'storybook/internal/core-events';
-import {
-  getLastEvents,
-  getSessionId,
-  getStorybookMetadata,
-  telemetry,
-} from 'storybook/internal/telemetry';
-import { logger } from 'storybook/internal/node-logger';
+import { getLastEvents, getStorybookMetadata, telemetry } from 'storybook/internal/telemetry';
 import type { Options } from 'storybook/internal/types';
 
 import { getComponentCandidates } from '../utils/ghost-stories/get-candidates.ts';
@@ -48,11 +42,13 @@ export function initGhostStoriesChannel(channel: Channel, options: Options) {
             throw new SkipGhostStoriesTelemetry();
           }
 
-          const sessionId = await getSessionId();
-          // We only capture ghost stories in the first ever session since init or ai setup.
-          if (lastRelevantEvent.body?.sessionId && lastRelevantEvent.body.sessionId !== sessionId) {
-            throw new SkipGhostStoriesTelemetry();
-          }
+          // We only capture ghost stories in the first dev-server session after init or
+          // ai-setup. When the trigger is mid-session (ai-setup ran while the dev server
+          // was already running), the event's sessionId belongs to the ai-setup CLI
+          // process, not the dev server. Comparing against the dev-server sessionId
+          // would incorrectly skip. Instead, check that this is the FIRST dev-server
+          // session by verifying no ghost-stories run has ever happened (line 47 above).
+          // The "already ran" guard is sufficient to ensure we only run once.
 
           const metadata = await getStorybookMetadata(options.configDir);
           const isReactStorybook = metadata?.renderer?.includes('@storybook/react');
@@ -71,7 +67,6 @@ export function initGhostStoriesChannel(channel: Channel, options: Options) {
           // disturb end user activities.
           const isIdle = await waitForIdleVitest();
           if (!isIdle) {
-            logger.debug('GHOST_STORIES_REQUEST timed out waiting for vitest to be available.');
             return;
           }
 

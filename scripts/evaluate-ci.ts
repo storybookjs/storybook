@@ -64,6 +64,43 @@ const EVAL_BRANCHES: Record<string, string[]> = {
   'normal:prs': [],
   'merged:prs': [],
   'daily:prs': [],
+  // RC sweep (cohort 1 + cohort 2). Each branch varies exactly one line in
+  // .nx/workflows/agents.yaml (linux-browsers-js resource-class); linux-js
+  // stays at extra_large+ everywhere. All PRs carry the ci:normal label.
+  'rc:xlarge-plus': ['kasper/nx-rc-xlarge-plus'],
+  'rc:xlarge': ['kasper/nx-rc-xlarge'],
+  'rc:large-plus': ['kasper/nx-rc-large-plus'],
+  'rc:large': ['kasper/nx-rc-large'],
+  'rc:medium-plus': ['kasper/nx-rc-medium-plus'],
+  'rc:medium': ['kasper/nx-rc-medium'],
+  'rc2:xlarge-plus': ['kasper/nx-rc-xlarge-plus-2'],
+  'rc2:xlarge': ['kasper/nx-rc-xlarge-2'],
+  'rc2:large-plus': ['kasper/nx-rc-large-plus-2'],
+  'rc2:large': ['kasper/nx-rc-large-2'],
+  'rc2:medium-plus': ['kasper/nx-rc-medium-plus-2'],
+  'rc2:medium': ['kasper/nx-rc-medium-2'],
+};
+
+// Per-branch linux-browsers-js credit multipliers. Used by the syncNxCloudRuns
+// fallback path when the dashboard /cipes/{id}/analysis endpoint returns an
+// empty computeCreditUsages (happens for some CIPEs). Without this, the
+// fallback reads from the LOCAL worktree's agents.yaml which only knows the
+// current branch's class — wrong for cross-branch sweeps.
+//
+// linux-js is extra_large+ (60 credits/min) on every rc branch.
+const RC_BRANCH_LINUX_BROWSERS_CPM: Record<string, number> = {
+  'kasper/nx-rc-xlarge-plus': 60,
+  'kasper/nx-rc-xlarge': 40,
+  'kasper/nx-rc-large-plus': 30,
+  'kasper/nx-rc-large': 20,
+  'kasper/nx-rc-medium-plus': 15,
+  'kasper/nx-rc-medium': 10,
+  'kasper/nx-rc-xlarge-plus-2': 60,
+  'kasper/nx-rc-xlarge-2': 40,
+  'kasper/nx-rc-large-plus-2': 30,
+  'kasper/nx-rc-large-2': 20,
+  'kasper/nx-rc-medium-plus-2': 15,
+  'kasper/nx-rc-medium-2': 10,
 };
 
 const WORKFLOW_NAMES: Record<string, string> = {
@@ -76,6 +113,18 @@ const WORKFLOW_NAMES: Record<string, string> = {
   'normal:prs': 'normal-generated',
   'merged:prs': 'merged-generated',
   'daily:prs': 'daily-generated',
+  'rc:xlarge-plus': 'normal-generated',
+  'rc:xlarge': 'normal-generated',
+  'rc:large-plus': 'normal-generated',
+  'rc:large': 'normal-generated',
+  'rc:medium-plus': 'normal-generated',
+  'rc:medium': 'normal-generated',
+  'rc2:xlarge-plus': 'normal-generated',
+  'rc2:xlarge': 'normal-generated',
+  'rc2:large-plus': 'normal-generated',
+  'rc2:large': 'normal-generated',
+  'rc2:medium-plus': 'normal-generated',
+  'rc2:medium': 'normal-generated',
 };
 
 /**
@@ -771,6 +820,18 @@ async function syncNxCloudRuns(
     'normal:prs': 'ci:normal',
     'merged:prs': 'ci:merged',
     'daily:prs': 'ci:daily',
+    'rc:xlarge-plus': 'ci:normal',
+    'rc:xlarge': 'ci:normal',
+    'rc:large-plus': 'ci:normal',
+    'rc:large': 'ci:normal',
+    'rc:medium-plus': 'ci:normal',
+    'rc:medium': 'ci:normal',
+    'rc2:xlarge-plus': 'ci:normal',
+    'rc2:xlarge': 'ci:normal',
+    'rc2:large-plus': 'ci:normal',
+    'rc2:large': 'ci:normal',
+    'rc2:medium-plus': 'ci:normal',
+    'rc2:medium': 'ci:normal',
   };
   const expectedTag = NX_TAG_MAP[workflow];
 
@@ -894,12 +955,22 @@ async function syncNxCloudRuns(
         totalNxCredits = dashboardCredits.totalCredits;
       } else {
         totalNxCredits = NX_CREDITS_PER_CIPE;
+        // For rc:* / rc2:* sweep workflows, override linux-browsers-js rate
+        // from the per-branch table so we don't read the local worktree's
+        // agents.yaml (which only knows the currently-checked-out class).
+        const rcLbRate =
+          (workflow.startsWith('rc:') || workflow.startsWith('rc2:')) && branches.length === 1
+            ? (RC_BRANCH_LINUX_BROWSERS_CPM[branches[0]] ?? null)
+            : null;
         for (const rg of details.runGroups) {
           if (rg.agentsMetadataSummary) {
             const cipeStartMs = details.createdAtMs;
             for (const [, agent] of Object.entries(rg.agentsMetadataSummary)) {
               const billableMin = (agent.offlineAtMs - cipeStartMs) / 60000;
-              const creditsPerMin = agentCreditsPerMin[agent.launchTemplate] ?? 15;
+              const creditsPerMin =
+                rcLbRate !== null && agent.launchTemplate === 'linux-browsers-js'
+                  ? rcLbRate
+                  : (agentCreditsPerMin[agent.launchTemplate] ?? 15);
               totalNxCredits += Math.max(0, billableMin) * creditsPerMin;
             }
           }

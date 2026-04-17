@@ -2,12 +2,35 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 
 import { styled } from 'storybook/theming';
 
+const IframeWrapper = styled.div({
+  position: 'relative',
+  width: '100%',
+});
+
 const StyledIframe = styled.iframe({
   width: '100%',
   border: 'none',
   display: 'block',
   borderRadius: '4px',
 });
+
+const LoadingOverlay = styled.div(({ theme }) => ({
+  position: 'absolute',
+  inset: 0,
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  background: `linear-gradient(90deg, ${theme.background.hoverable} 25%, ${theme.background.app} 50%, ${theme.background.hoverable} 75%)`,
+  backgroundSize: '200% 100%',
+  animation: 'shimmer 1.5s infinite',
+  borderRadius: '4px',
+  color: theme.color.mediumdark,
+  fontSize: '12px',
+  '@keyframes shimmer': {
+    '0%': { backgroundPosition: '200% 0' },
+    '100%': { backgroundPosition: '-200% 0' },
+  },
+}));
 
 const ErrorState = styled.div(({ theme }) => ({
   display: 'flex',
@@ -47,6 +70,7 @@ export const AutoSizingIframe = ({ src, storyId, title }: AutoSizingIframeProps)
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const [height, setHeight] = useState(DEFAULT_HEIGHT);
   const [error, setError] = useState(false);
+  const [loaded, setLoaded] = useState(false);
   const [retryKey, setRetryKey] = useState(0);
   const heightSetRef = useRef(false);
 
@@ -66,6 +90,7 @@ export const AutoSizingIframe = ({ src, storyId, title }: AutoSizingIframeProps)
         if (!Number.isFinite(height) || height < 0) return;
         const newHeight = Math.max(height, DEFAULT_HEIGHT);
         setHeight(newHeight);
+        setLoaded(true);
         heightSetRef.current = true;
       }
     };
@@ -81,6 +106,7 @@ export const AutoSizingIframe = ({ src, storyId, title }: AutoSizingIframeProps)
     let observer: ResizeObserver | null = null;
 
     const handleLoad = () => {
+      setLoaded(true);
       try {
         const doc = iframe.contentDocument;
         if (!doc?.body) return;
@@ -124,6 +150,7 @@ export const AutoSizingIframe = ({ src, storyId, title }: AutoSizingIframeProps)
   }, []);
   const handleRetry = useCallback(() => {
     setError(false);
+    setLoaded(false);
     setRetryKey((k) => k + 1);
   }, []);
 
@@ -137,13 +164,16 @@ export const AutoSizingIframe = ({ src, storyId, title }: AutoSizingIframeProps)
   }
 
   return (
-    <StyledIframe
-      key={retryKey}
-      ref={iframeRef}
-      src={src}
-      title={title}
-      style={{ height: `${height}px` }}
-      onError={handleError}
-    />
+    <IframeWrapper>
+      {!loaded && <LoadingOverlay>Loading preview...</LoadingOverlay>}
+      <StyledIframe
+        key={retryKey}
+        ref={iframeRef}
+        src={src}
+        title={title}
+        style={{ height: `${height}px`, opacity: loaded ? 1 : 0 }}
+        onError={handleError}
+      />
+    </IframeWrapper>
   );
 };

@@ -346,24 +346,6 @@ export const db = new Proxy({} as ReturnType<typeof drizzle<typeof schema>>, {
 
 </Callout>
 
-#### Layer 3 — Bare npm packages (optimizeDeps)
-
-Some Node.js-only packages (e.g. `postgres`, `drizzle-orm`) may still be discovered by Vite's dependency optimizer before any plugin or mock can intercept them. Exclude them in `.storybook/main.ts`:
-
-```ts title=".storybook/main.ts"
-import { defineMain } from '@storybook/tanstack-react/node';
-
-export default defineMain({
-  // ...
-  async viteFinal(config) {
-    config.optimizeDeps ??= {};
-    config.optimizeDeps.exclude ??= [];
-    config.optimizeDeps.exclude.push('postgres', 'drizzle-orm');
-    return config;
-  },
-});
-```
-
 #### Identifying what to mock
 
 If Storybook throws a browser error like `does not provide an export named 'default'` or `AsyncLocalStorage is not defined`, open the error stack trace and find the deepest module that imports a Node.js API. That module is what needs to be mocked at its point of entry.

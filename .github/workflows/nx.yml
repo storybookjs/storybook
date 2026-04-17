@@ -260,7 +260,12 @@ jobs:
       # running into Windows MAX_PATH limits. Matches lerna's pattern.
       TEMP: 'C:\temp'
       TMP: 'C:\temp'
+      # Git Bash path form of TEMP for the `bash -c` commands in the init-empty /
+      # init-features NX targets (nx.json). On Linux the default of /tmp kicks in.
+      STORYBOOK_INIT_TMPDIR: '/c/temp'
     steps:
+      - name: Ensure C:\temp exists
+        run: mkdir -p /c/temp
       - uses: actions/checkout@v4
         with:
           filter: tree:0
@@ -304,7 +309,12 @@ jobs:
       # agent does stays under Windows MAX_PATH.
       TEMP: 'C:\temp'
       TMP: 'C:\temp'
+      # See nx-windows primary: this is the Git-Bash form agents use when
+      # running init-empty / init-features tasks.
+      STORYBOOK_INIT_TMPDIR: '/c/temp'
     steps:
+      - name: Ensure C:\temp exists
+        run: mkdir -p /c/temp
       - uses: actions/checkout@v4
         with:
           filter: tree:0

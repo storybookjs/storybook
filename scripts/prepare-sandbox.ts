@@ -27,7 +27,27 @@ import { isNxTaskExecution } from './utils/nx.ts';
  * No-op when not running under NX (i.e. when using `yarn task` directly),
  * or when the sandbox is already prepared (node_modules exist).
  */
-export async function prepareSandbox({ key, link }: { key: string; link: boolean }): Promise<void> {
+export async function prepareSandbox({
+  key,
+  link,
+  immutable = true,
+}: {
+  key: string;
+  link: boolean;
+  /**
+   * Whether to pass `--immutable` to yarn install.
+   *
+   * Defaults to `true`: downstream tasks like `build`, `serve`, `e2e-tests`
+   * expect the lockfile the sandbox was created with to be the one yarn
+   * resolves, so any drift means something's wrong.
+   *
+   * Set to `false` for tasks that restore the sandbox across a verdaccio
+   * republish (e.g. `chromatic`), where the cached yarn.lock references
+   * the snapshot-versioned @storybook/* packages from the original agent's
+   * verdaccio and the chromatic agent's verdaccio serves different shas.
+   */
+  immutable?: boolean;
+}): Promise<void> {
   // When running via `yarn task`, the sandbox task already fully initializes
   // the sandbox (including node_modules), so no preparation is needed.
   if (!isNxTaskExecution()) {
@@ -70,15 +90,11 @@ export async function prepareSandbox({ key, link }: { key: string; link: boolean
 
     // Restore node_modules — the NX cache deliberately excludes them to keep
     // the remote cache small. The yarn cache is shared, so this is fast.
-    //
-    // No `--immutable` here: the lockfile lives inside the cached sandbox
-    // and references whichever snapshot-versioned @storybook/* packages the
-    // *original* agent published to verdaccio. Every agent republishes with
-    // a new snapshot hash, so `--immutable` would always refuse with
-    // "lockfile would have been modified". The lockfile is ephemeral
-    // (we rebuild the sandbox each CI run), so letting yarn refresh it is
-    // safe and matches the intent.
-    await exec('yarn install', { cwd: sandboxDir }, { debug: true });
+    await exec(
+      immutable ? 'yarn install --immutable' : 'yarn install',
+      { cwd: sandboxDir },
+      { debug: true }
+    );
   }
 
   // SvelteKit requires a sync step to generate types after install

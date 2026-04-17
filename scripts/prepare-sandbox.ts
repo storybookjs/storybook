@@ -70,7 +70,15 @@ export async function prepareSandbox({ key, link }: { key: string; link: boolean
 
     // Restore node_modules — the NX cache deliberately excludes them to keep
     // the remote cache small. The yarn cache is shared, so this is fast.
-    await exec('yarn install --immutable', { cwd: sandboxDir }, { debug: true });
+    //
+    // No `--immutable` here: the lockfile lives inside the cached sandbox
+    // and references whichever snapshot-versioned @storybook/* packages the
+    // *original* agent published to verdaccio. Every agent republishes with
+    // a new snapshot hash, so `--immutable` would always refuse with
+    // "lockfile would have been modified". The lockfile is ephemeral
+    // (we rebuild the sandbox each CI run), so letting yarn refresh it is
+    // safe and matches the intent.
+    await exec('yarn install', { cwd: sandboxDir }, { debug: true });
   }
 
   // SvelteKit requires a sync step to generate types after install

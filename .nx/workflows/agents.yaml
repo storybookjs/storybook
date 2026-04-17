@@ -68,10 +68,13 @@ common-env-vars: &common-env-vars
   STORYBOOK_NX_CLOUD_AGENT: true
   CI: true
   NODE_OPTIONS: --max_old_space_size=6144
-  # Chromatic + nx-set-shas need a real commit history — the nrwl checkout
+  # Chromatic + nx-set-shas need real commit history — the nrwl checkout
   # step defaults to GIT_CHECKOUT_DEPTH=1 (shallow), which makes chromatic
   # fail with "Found only one commit" even when the build is perfect.
-  GIT_CHECKOUT_DEPTH: '0'
+  # Mirror CircleCI's `--depth 500` instead of `0` (all refs) because on PRs
+  # NX_COMMIT_SHA is GitHub's synthetic merge-ref which is reachable as a
+  # commit but not on any branch, so "+refs/heads/*" fetch can't find it.
+  GIT_CHECKOUT_DEPTH: '500'
 
 launch-templates:
   linux-js:

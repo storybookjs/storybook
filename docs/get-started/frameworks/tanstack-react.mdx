@@ -117,11 +117,11 @@ This is useful for documenting loading, success, and error states without changi
 
 TanStack Start apps often import server-only packages (e.g. database clients, auth libraries) at module scope inside route files. When Storybook loads the route tree, those imports can crash the browser. The integration handles this at three layers:
 
-#### Layer 1 — Framework-level mocks (automatic)
+#### Framework-level mocks (automatic)
 
 The preset already intercepts `@tanstack/react-start`, `@tanstack/react-start/server`, `@tanstack/start-storage-context`, and related TanStack modules. It also replaces `createServerFn()` handlers with mock functions. You do not need to do anything for these.
 
-#### Layer 2 — App-level server modules
+#### App-level server modules
 
 When your routes import app-specific server code (e.g. `~/db/client`, `~/auth/index.server`), use Storybook's mocking with a `__mocks__` file to prevent the real module — and its Node.js dependencies — from loading in the browser.
 
@@ -153,7 +153,7 @@ Common patterns in TanStack Start apps:
 
 ## FAQ
 
-### How do I manually install the TanStack React framework?
+#### How do I manually install the TanStack React framework?
 
 First, install the framework:
 
@@ -167,17 +167,14 @@ If you want typed preview helpers, switch your preview file to use `definePrevie
 
 <CodeSnippets path="tanstack-react-preview-empty.md" />
 
-### Story fails to render with an error about modules not providing a default export
 
-This usually means a server-only module is being imported in the browser. Check the error stack trace to find the module and add a Storybook mock for it as described in [Handling server-only dependencies](#handling-server-only-dependencies).
-
-### When should I use `@storybook/tanstack-react` instead of `@storybook/react-vite`?
+#### When should I use `@storybook/tanstack-react` instead of `@storybook/react-vite`?
 
 Use `@storybook/tanstack-react` when your components rely on TanStack Router or TanStack Start APIs and you want Storybook to provide router context, typed route parameters, automatic router mocking, and mocked TanStack Start server-function behavior.
 
 Use [`@storybook/react-vite`](./react-vite.mdx) when your app is a standard React and Vite project without TanStack Router.
 
-### How do I write a story for a route with dynamic params (e.g. `/$id`)?
+#### How do I write a story for a route with dynamic params (e.g. `/$id`)?
 
 Import the route object and supply `params` alongside `routeOverrides` under `parameters.tanstack.router`. The `params` object is interpolated into the URL, and `routeOverrides` lets you stub the loader without touching the original route.
 
@@ -203,7 +200,79 @@ const meta = {
 
 For the full set of options, see [`RouterParameters`](#parameters).
 
-### My route loader calls `queryClient.ensureQueryData(...)` and it fails with "data is undefined"
+#### Where do I import doc blocks (`Meta`, `Canvas`, `Controls`) in MDX pages?
+
+In Storybook 10, import doc blocks from `@storybook/addon-docs/blocks`:
+
+```mdx
+import { Meta, Canvas, Controls } from '@storybook/addon-docs/blocks'
+```
+
+Do not import from `@storybook/blocks` (used in Storybook 8/9) or `storybook/blocks` (not a valid export in Storybook 10).
+
+#### My styles are missing in Storybook
+
+Import your application CSS in `.storybook/preview.ts` so it is bundled with the preview:
+
+```ts
+import '../src/styles/app.css'
+```
+
+### TanStack Router
+
+#### How do I set search params or a hash in a route story?
+
+Use `path` for a URL hash and `query` for search params under `parameters.tanstack.router`:
+
+```tsx
+export const WithHash: Story = {
+  parameters: {
+    tanstack: {
+      router: { path: '/#section' },
+    },
+  },
+}
+
+export const WithSearch: Story = {
+  parameters: {
+    tanstack: {
+      router: { query: { tab: 'details', page: '2' } },
+    },
+  },
+}
+```
+
+`path` is not required as it is defaulted to the route's path, so you can use `query` and `params` without setting `path` if you just want to add search params or route params.
+
+#### How do I provide React context providers (theme, toast, auth) to all stories?
+
+Add decorators in `.storybook/preview.ts` for providers that every story needs, or apply them per story file for narrower scope:
+
+```tsx
+// .storybook/preview.tsx — global providers
+const preview = definePreview({
+  decorators: [
+    (Story) => (
+      <ThemeProvider>
+        <Story />
+      </ThemeProvider>
+    ),
+  ],
+})
+```
+
+```tsx
+// In a story file — additional providers scoped to that file
+decorators: [
+  (Story: React.ComponentType) => (
+    <ThemeProvider>
+        <Story />
+    </ThemeProvider>
+  ),
+],
+```
+
+#### My route loader calls `queryClient.ensureQueryData(...)` and it fails with "data is undefined"
 
 **Why does this happen?** The route loader runs inside the Storybook router and calls your real query function. When that function is a `createServerFn` stub (a no-op), it returns nothing, so the QueryClient cache is empty and `ensureQueryData` finds no data.
 
@@ -220,7 +289,14 @@ loaders: [
 
 The QueryClient instance must be provided via `parameters.tanstack.router.context` **and** wrapped with a `QueryClientProvider` decorator so the same instance is available to both the loader and the component tree.
 
-### How do I mock server functions (`createServerFn`) in stories?
+
+### TanStack Start
+
+#### Story fails to render with an error about modules not providing a default export
+
+This usually means a server-only module is being imported in the browser. Check the error stack trace to find the module and add a Storybook mock for it as described in [Handling server-only dependencies](#handling-server-only-dependencies).
+
+#### How do I mock server functions (`createServerFn`) in stories?
 
 The framework stubs TanStack Start entry points automatically (see [Automatic TanStack Router and Start mocks](#automatic-tanstack-router-and-start-mocks)), so most `createServerFn` calls are already replaced with mock functions you can override per story. For app-level server modules not covered by the preset, add a Vite plugin in `viteFinal` that replaces server files with no-op proxy exports:
 
@@ -247,88 +323,6 @@ config.plugins.push({
 ```
 
 This replaces every named export with a callable proxy so imports from server files never crash in the browser.
-
-### I get `Buffer is not defined` or `getRequest is not found`
-
-**Why does this happen?** A component import chain reaches Node-only code (for example an auth utility that imports `postgres`). The browser does not have these built-ins.
-
-**Fix:** Either stub the entire module using a `__mocks__` file (see [Handling server-only dependencies](#handling-server-only-dependencies)), or alias specific packages to empty mocks in `viteFinal`:
-
-```ts
-config.resolve.alias = {
-  ...config.resolve.alias,
-  postgres: path.resolve(__dirname, '../__mocks__/postgres.ts'),
-}
-```
-
-### How do I set search params or a hash in a route story?
-
-Use `path` for a URL hash and `query` for search params under `parameters.tanstack.router`:
-
-```tsx
-export const WithHash: Story = {
-  parameters: {
-    tanstack: {
-      router: { path: '/#section' },
-    },
-  },
-}
-
-export const WithSearch: Story = {
-  parameters: {
-    tanstack: {
-      router: { query: { tab: 'details', page: '2' } },
-    },
-  },
-}
-```
-
-### Where do I import doc blocks (`Meta`, `Canvas`, `Controls`) in MDX pages?
-
-In Storybook 10, import doc blocks from `@storybook/addon-docs/blocks`:
-
-```mdx
-import { Meta, Canvas, Controls } from '@storybook/addon-docs/blocks'
-```
-
-Do not import from `@storybook/blocks` (used in Storybook 8/9) or `storybook/blocks` (not a valid export in Storybook 10).
-
-### How do I provide React context providers (theme, toast, auth) to all stories?
-
-Add decorators in `.storybook/preview.ts` for providers that every story needs, or apply them per story file for narrower scope:
-
-```tsx
-// .storybook/preview.ts — global providers
-const preview = definePreview({
-  decorators: [
-    (Story) =>
-      React.createElement(QueryClientProvider, { client: queryClient },
-        React.createElement(Story, null),
-      ),
-  ],
-})
-```
-
-```tsx
-// In a story file — additional providers scoped to that file
-decorators: [
-  (Story: React.ComponentType) => (
-    <LoginModalProvider>
-      <ToastProvider>
-        <Story />
-      </ToastProvider>
-    </LoginModalProvider>
-  ),
-],
-```
-
-### My styles are missing in Storybook
-
-Import your application CSS in `.storybook/preview.ts` so it is bundled with the preview:
-
-```ts
-import '../src/styles/app.css'
-```
 
 ## API
 

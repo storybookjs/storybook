@@ -63,13 +63,7 @@ export class GitDiffProvider {
 
   async getChangedFiles(): Promise<GitDiffResult> {
     const repoRoot = await this.getRepoRoot();
-    const runGitCommand = async (args: string[]) => {
-      try {
-        return await execa('git', args, { cwd: repoRoot, stdio: 'pipe' });
-      } catch (error) {
-        throw this.toGitError(error, `git ${args.join(' ')}`);
-      }
-    };
+    const runGitCommand = (args: string[]) => this.runGitCommand(repoRoot, args);
 
     const [staged, unstaged, added, intentToAdd, untracked] = await Promise.all([
       runGitCommand(['diff', '--name-only', '--diff-filter=ad', '--cached']),
@@ -90,6 +84,18 @@ export class GitDiffProvider {
         ...parseChangedFiles(untracked.stdout),
       ]),
     };
+  }
+
+  async getHeadCommit(): Promise<string> {
+    const repoRoot = await this.getRepoRoot();
+    const { stdout } = await this.runGitCommand(repoRoot, ['rev-parse', 'HEAD']);
+    return stdout.trim();
+  }
+
+  async isWorkingTreeClean(): Promise<boolean> {
+    const repoRoot = await this.getRepoRoot();
+    const { stdout } = await this.runGitCommand(repoRoot, ['status', '--porcelain']);
+    return stdout.trim().length === 0;
   }
 
   onGitStateChange(callback: GitStateChangeCallback): void {
@@ -255,6 +261,14 @@ export class GitDiffProvider {
       if (!this.isEnoentError(error)) {
         throw error;
       }
+    }
+  }
+
+  private async runGitCommand(repoRoot: string, args: string[]) {
+    try {
+      return await execa('git', args, { cwd: repoRoot, stdio: 'pipe' });
+    } catch (error) {
+      throw this.toGitError(error, `git ${args.join(' ')}`);
     }
   }
 

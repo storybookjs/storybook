@@ -7,6 +7,7 @@ import type { Preset, StorybookConfigRaw } from 'storybook/internal/types';
 
 import { updateMainConfig } from '../helpers/mainConfigFile.ts';
 import type { Fix } from '../types.ts';
+import { RN_STORYBOOK_DIR } from '../../../../../core/src/shared/constants/config-folder.ts';
 
 interface RnOndeviceAddonsTarget {
   mainConfigPath: string;
@@ -33,10 +34,10 @@ const getSiblingStorybookConfigDir = (configDirAbs: string): string | null => {
   const base = basename(configDirAbs);
   const parent = dirname(configDirAbs);
   if (base === '.storybook') {
-    const rn = join(parent, '.rnstorybook');
+    const rn = join(parent, RN_STORYBOOK_DIR);
     return existsSync(rn) ? rn : null;
   }
-  if (base === '.rnstorybook') {
+  if (base === RN_STORYBOOK_DIR) {
     const web = join(parent, '.storybook');
     return existsSync(web) ? web : null;
   }
@@ -123,7 +124,7 @@ export const rnOndeviceAddonsToDeviceAddons: Fix<RnOndeviceAddonsOptions> = {
   },
 
   prompt() {
-    return 'On-device addons detected. Moving to `deviceAddons` for on-device injection (Skipping Storybook preset loading);
+    return 'On-device addons detected. Moving to `deviceAddons` for on-device injection (Skipping Storybook preset loading)';
   },
 
   async run({ result, dryRun }) {

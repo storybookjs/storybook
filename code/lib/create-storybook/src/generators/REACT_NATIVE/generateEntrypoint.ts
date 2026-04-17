@@ -2,6 +2,7 @@ import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import path, { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import { RN_STORYBOOK_DIR } from '../../../../../core/src/shared/constants/config-folder.ts';
 import { SupportedLanguage } from 'storybook/internal/types';
 
 const ENTRYPOINT_TEMPLATE_DIR = join(
@@ -9,7 +10,6 @@ const ENTRYPOINT_TEMPLATE_DIR = join(
   'templates',
   'react-native'
 );
-const RN_STORYBOOK_DIR = '.rnstorybook';
 
 export const getEntrypointExtension = (language: SupportedLanguage) => {
   return language === SupportedLanguage.TYPESCRIPT ? 'ts' : 'js';

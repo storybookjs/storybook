@@ -82,7 +82,7 @@ launch-templates:
     init-steps: *linux-init-steps
     env: *common-env-vars
   linux-browsers-js:
-    resource-class: 'docker_linux_amd64/medium+'
+    resource-class: 'docker_linux_amd64/extra_large'
     image: 'ubuntu22.04-node20.19-v2'
     init-steps: *linux-browsers-init-steps
     env: *common-env-vars

@@ -85,7 +85,7 @@ export default preview;
 
 ### Using a route as the story component
 
-You can pass a TanStack Route object directly as the story `component`. When you do, Storybook extracts the route's React component and keeps the route available for typed router configuration.
+You can supply a TanStack Route object via `parameters.tanstack.router.route`. When you do, Storybook extracts the route's React component and keeps the route available for typed router configuration.
 
 ```ts title="Page.stories.ts"
 import type { Meta, StoryObj } from '@storybook/tanstack-react';
@@ -94,11 +94,11 @@ import { Route } from './Page';
 
 const meta = {
   title: 'Example/Page',
-  component: Route,
   parameters: {
     layout: 'fullscreen',
     tanstack: {
       router: {
+        route: Route,
         params: { id: '42' },
         query: { tab: 'details' },
       },
@@ -116,10 +116,10 @@ export const WithCustomLoader: Story = {
   parameters: {
     tanstack: {
       router: {
+        route: Route,
         params: { id: '42' },
         routeOverrides: {
           '/items/$id': {
-            component: 'story',
             loader: async () => ({
               item: { id: '42', name: 'Loaded inside Storybook' },
             }),
@@ -131,7 +131,7 @@ export const WithCustomLoader: Story = {
 };
 ```
 
-When a route is used as the `component`, TanStack route option fields can also be supplied through story args, which keeps overrides type-safe for route-based stories.
+When a route is supplied via `parameters.tanstack.router.route`, TanStack route option fields can also be supplied through story args, which keeps overrides type-safe for route-based stories.
 
 ### Using router parameters with a plain component
 
@@ -157,7 +157,6 @@ export const Default = meta.story({
         query: { view: 'list' },
         routeOverrides: {
           '/demo/form/address': {
-            component: 'story',
             loader: async () => ({
               featuredItems: [
                 { name: 'Item A', description: 'First featured item' },
@@ -449,11 +448,12 @@ This framework contributes the following [parameters](../../writing-stories/para
 
 | Parameter | Type | Description |
 | --- | --- | --- |
-| `route` | `AnyRoute \| route options object` | Supplies a route instance directly or creates a temporary story route from route options. |
+| `route` | `AnyRoute \| route options object` | Supplies a route instance directly or creates a temporary story route from route options. Storybook extracts the route's React component automatically when no `component` is set on the meta. |
 | `path` | `string` | Sets the initial URL path for the story router. |
 | `params` | `Record<string, string>` | Interpolates route params into the current path. |
 | `query` | `Record<string, unknown>` | Appends search params to the initial URL. |
-| `routeOverrides` | `Record<string, RouteOverrideOptions>` | Per-route overrides keyed by route ID. Each entry can override `loader`, `beforeLoad`, `validateSearch`, `loaderDeps`, and `context`. |
+| `routeOverrides` | `Partial<Record<string, RouteOverrideOptions>>` | Per-route overrides keyed by route ID. Only supply the routes you want to change. Use `'__root__'` to target the root route. Each entry can override `loader`, `beforeLoad`, `validateSearch`, `loaderDeps`, and `context`. |
+| `context` | `Record<string, unknown>` | Router context values injected into the story router. |
 
 If `route` is supplied as a plain object, it may also include TanStack route options such as `context`, `head`, `search`, and `parseParams`.
 

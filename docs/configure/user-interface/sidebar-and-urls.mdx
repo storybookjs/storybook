@@ -80,3 +80,7 @@ When Storybook generates the titles for all matching stories, they'll retain the
 [Story Indexers](../../api/main-config/main-config-indexers.mdx) are a set of heuristics used by Storybook to crawl your filesystem based on a given glob pattern searching for matching stories, which is then used to generate an `index.json` (formerly `stories.json`) file responsible for populating the sidebar with the necessary information. By default, this heuristic will look for files that contain the following scheme `*.stories.@(js|jsx|mjs|ts|tsx)`.
 
 You can provide your own indexer to include stories with a different naming convention, adjust the automatic title generation beyond a prefix, and many other use cases. For more information, see the [Story Indexers API reference](../../api/main-config/main-config-indexers.mdx).
+
+## Change detection
+
+Storybook can show status icons in the sidebar to highlight new and modified stories. See [change detection](./change-detection.mdx) for setup and details.

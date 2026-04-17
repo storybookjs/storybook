@@ -122,16 +122,21 @@ By default, Storybook displays a toolbar at the top of the UI, allowing you to a
 
 <CodeSnippets path="storybook-manager-toolbar-hide-on-docs.md" />
 
+## Change detection
+
+Storybook can show status icons in the sidebar to highlight new and modified stories. See [change detection](./change-detection.mdx) for setup and details.
+
 ## Configuring through URL parameters
 
 You can use URL parameters to configure some of the available features:
 
-| Config option       | Query param  | Supported values               |
-| ------------------- | ------------ | ------------------------------ |
-| **enableShortcuts** | `shortcuts`  | `false`                        |
-| --- (fullscreen)    | `full`       | `true`, `false`                |
-| --- (show sidebar)  | `nav`        | `true`, `false`                |
-| --- (show panel)    | `panel`      | `false`, `'right'`, `'bottom'` |
-| **selectedPanel**   | `addonPanel` | Any panel ID                   |
-| **showTabs**        | `tabs`       | `true`                         |
-| ---                 | `instrument` | `false`, `true`                |
+| Config option       | Query param  | Supported values                                                                              |
+| ------------------- | ------------ | --------------------------------------------------------------------------------------------- |
+| **enableShortcuts** | `shortcuts`  | `false`                                                                                       |
+| --- (fullscreen)    | `full`       | `true`, `false`                                                                               |
+| --- (show sidebar)  | `nav`        | `true`, `false`                                                                               |
+| --- (show panel)    | `panel`      | `false`, `'right'`, `'bottom'`                                                                |
+| **selectedPanel**   | `addonPanel` | Any panel ID                                                                                  |
+| **showTabs**        | `tabs`       | `true`                                                                                        |
+| ---                 | `instrument` | `false`, `true`                                                                               |
+| ---                 | `statuses`   | Semicolon-separated status values: `new`, `modified`, `affected` (prefix with `!` to exclude) |

@@ -45,6 +45,7 @@ export interface AgentExecuteParams {
   variant: AgentVariant;
   resultsDir: string;
   logger: Logger;
+  verbose?: boolean;
 }
 
 export interface AgentDriver {

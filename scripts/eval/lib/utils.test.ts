@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  EXAMPLE_PROMPT_BASENAME,
   formatDuration,
   formatCost,
   formatScore,
@@ -10,6 +11,7 @@ import {
   loadPrompt,
   listPrompts,
   formatTable,
+  formatHelp,
 } from './utils.ts';
 
 describe('formatDuration', () => {
@@ -111,12 +113,6 @@ describe('listPrompts', () => {
 });
 
 describe('loadPrompt', () => {
-  it('loads pattern-copy-play prompt by default', () => {
-    const prompt = loadPrompt();
-    expect(prompt).toContain('play function');
-    expect(prompt.length).toBeGreaterThan(0);
-  });
-
   it('loads setup prompt by name', () => {
     const prompt = loadPrompt('setup');
     expect(prompt).toContain('Storybook');
@@ -124,7 +120,7 @@ describe('loadPrompt', () => {
   });
 
   it('loads the play-driven pattern-copy prompt by name', () => {
-    const prompt = loadPrompt('pattern-copy-play');
+    const prompt = loadPrompt(EXAMPLE_PROMPT_BASENAME);
     expect(prompt).toContain('play function');
     expect(prompt).toContain('The purpose of the `play` function is to prove');
   });
@@ -134,8 +130,47 @@ describe('loadPrompt', () => {
   });
 
   it('returns trimmed content', () => {
-    const prompt = loadPrompt('pattern-copy-play');
+    const prompt = loadPrompt(EXAMPLE_PROMPT_BASENAME);
     expect(prompt).toBe(prompt.trim());
+  });
+});
+
+describe('formatHelp', () => {
+  it('formats usage, description, and options into a help message', () => {
+    const result = formatHelp('node eval.ts [options]', 'Run an eval trial.', {
+      project: { type: 'string', short: 'p', description: 'Project name' },
+      verbose: { type: 'boolean', short: 'v', description: 'Verbose output' },
+      help: { type: 'boolean', short: 'h', description: 'Show this help and exit' },
+    });
+
+    expect(result).toContain('Usage: node eval.ts [options]');
+    expect(result).toContain('Run an eval trial.');
+    expect(result).toContain('-p, --project <value>');
+    expect(result).toContain('-v, --verbose');
+    expect(result).toContain('-h, --help');
+    expect(result).toContain('Project name');
+  });
+
+  it('pads options without a short flag', () => {
+    const result = formatHelp('node tool.ts', 'A tool.', {
+      verbose: { type: 'boolean', short: 'v', description: 'Verbose' },
+      'dry-run': { type: 'boolean', description: 'Dry run' },
+    });
+
+    expect(result).toContain('-v, --verbose');
+    expect(result).toContain('    --dry-run');
+  });
+
+  it('aligns descriptions across options of different name lengths', () => {
+    const result = formatHelp('node tool.ts', 'A tool.', {
+      x: { type: 'boolean', description: 'Short name' },
+      'very-long-option': { type: 'boolean', description: 'Long name' },
+    });
+
+    const lines = result.split('\n').filter((l) => l.includes('--'));
+    const descStartX = lines[0].indexOf('Short name');
+    const descStartLong = lines[1].indexOf('Long name');
+    expect(descStartX).toBe(descStartLong);
   });
 });
 

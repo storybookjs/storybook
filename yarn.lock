@@ -8921,6 +8921,7 @@ __metadata:
     oxfmt: "npm:^0.41.0"
     p-limit: "npm:^7.2.0"
     p-retry: "npm:^7.1.0"
+    pathe: "npm:^1.1.2"
     picocolors: "npm:^1.1.0"
     playwright: "npm:1.58.2"
     playwright-core: "npm:1.58.2"

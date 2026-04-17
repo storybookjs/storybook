@@ -30,6 +30,7 @@ describe('resolveOnboardingInitialPath', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockDetectAgent.mockReturnValue(undefined); // default: not an agent
+    mockCacheRemove.mockResolvedValue(undefined);
   });
 
   it('returns /onboarding and removes cache entry when onboarding-pending is set and no CLI initialPath', async () => {

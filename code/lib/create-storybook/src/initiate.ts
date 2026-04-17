@@ -48,7 +48,7 @@ async function checkFeatureSupport(
     process.cwd()
   );
 
-  const aiSetup = FeatureCompatibilityService.supportsAISetupFeature(renderer, builder);
+  const aiSetup = FeatureCompatibilityService.supportsAISetupFeature(renderer, builder, framework);
 
   return {
     isTestFeatureAvailable: result.compatible,

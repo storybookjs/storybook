@@ -49,7 +49,8 @@ describe('FeatureCompatibilityService', () => {
       expect(
         FeatureCompatibilityService.supportsAISetupFeature(
           SupportedRenderer.REACT,
-          SupportedBuilder.VITE
+          SupportedBuilder.VITE,
+          SupportedFramework.REACT_VITE
         )
       ).toBe(true);
     });
@@ -58,7 +59,8 @@ describe('FeatureCompatibilityService', () => {
       expect(
         FeatureCompatibilityService.supportsAISetupFeature(
           SupportedRenderer.VUE3,
-          SupportedBuilder.VITE
+          SupportedBuilder.VITE,
+          SupportedFramework.VUE3_VITE
         )
       ).toBe(false);
     });
@@ -67,7 +69,8 @@ describe('FeatureCompatibilityService', () => {
       expect(
         FeatureCompatibilityService.supportsAISetupFeature(
           SupportedRenderer.REACT,
-          SupportedBuilder.WEBPACK5
+          SupportedBuilder.WEBPACK5,
+          SupportedFramework.REACT_WEBPACK5
         )
       ).toBe(false);
     });
@@ -76,14 +79,26 @@ describe('FeatureCompatibilityService', () => {
       expect(
         FeatureCompatibilityService.supportsAISetupFeature(
           SupportedRenderer.ANGULAR,
-          SupportedBuilder.WEBPACK5
+          SupportedBuilder.WEBPACK5,
+          SupportedFramework.ANGULAR
         )
       ).toBe(false);
 
       expect(
         FeatureCompatibilityService.supportsAISetupFeature(
           SupportedRenderer.SVELTE,
-          SupportedBuilder.WEBPACK5
+          SupportedBuilder.WEBPACK5,
+          null
+        )
+      ).toBe(false);
+    });
+
+    it('should return false for react-native-web-vite framework', () => {
+      expect(
+        FeatureCompatibilityService.supportsAISetupFeature(
+          SupportedRenderer.REACT,
+          SupportedBuilder.VITE,
+          SupportedFramework.REACT_NATIVE_WEB_VITE
         )
       ).toBe(false);
     });

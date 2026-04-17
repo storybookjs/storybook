@@ -203,24 +203,28 @@ export async function storybookDevServer(
   doTelemetry(app, core, storyIndexGeneratorPromise, options);
 
   async function cancelTelemetry() {
-    if (!isTelemetryModuleEnabled()) {
-      return;
-    }
-
-    const payload = { eventType: 'dev' };
     try {
-      const generator = await storyIndexGeneratorPromise;
-      const indexAndStats = await generator?.getIndexAndStats();
-      // compute stats so we can get more accurate story counts
-      if (indexAndStats) {
-        Object.assign(payload, {
-          storyIndex: summarizeIndex(indexAndStats.storyIndex),
-          storyStats: indexAndStats.stats,
-        });
+      if (!isTelemetryModuleEnabled()) {
+        return;
       }
-    } catch {}
-    await telemetry('canceled', payload, { immediate: true });
-    process.exit(0);
+
+      const payload = { eventType: 'dev' };
+      try {
+        const generator = await storyIndexGeneratorPromise;
+        const indexAndStats = await generator?.getIndexAndStats();
+        // compute stats so we can get more accurate story counts
+        if (indexAndStats) {
+          Object.assign(payload, {
+            storyIndex: summarizeIndex(indexAndStats.storyIndex),
+            storyStats: indexAndStats.stats,
+          });
+        }
+      } catch {}
+      await telemetry('canceled', payload, { immediate: true });
+    } finally {
+      // Always terminate on signal, even when telemetry is disabled.
+      process.exit(0);
+    }
   }
 
   process.on('SIGINT', cancelTelemetry);

@@ -54,8 +54,7 @@ Out of the box, it supports these workflows:
 
 * Pass a TanStack Route directly as a story `component`
 * Set the initial route, params, and query string per story
-* Clone the app's route tree and override specific routes via `routeOverrides`
-  * Customize `loader`, `beforeLoad`, `component`, and more per route ID
+* Override `loader`, `beforeLoad`, and more on the story route without modifying the original route object via `routeOverrides`
 * Automatically mock `@tanstack/react-router` so navigation hooks work in stories and navigation attempts can be observed
 * Automatically stub TanStack Start server/runtime entry points so components using server functions can render in Storybook
 * Use typed preview helpers through `definePreview()` and `preview.meta()`
@@ -66,70 +65,13 @@ The generated setup uses this framework in `.storybook/main.ts` and the typed pr
 
 <CodeSnippets path="tanstack-react-add-framework.md" />
 
-```ts title=".storybook/preview.ts"
-import { definePreview } from '@storybook/tanstack-react';
-
-const preview = definePreview({
-  parameters: {
-    controls: {
-      matchers: {
-        color: /(background|color)$/i,
-        date: /Date$/i,
-      },
-    },
-  },
-});
-
-export default preview;
-```
+<CodeSnippets path="tanstack-react-preview-setup.md" />
 
 ### Using a route as the story component
 
 You can supply a TanStack Route object via `parameters.tanstack.router.route`. When you do, Storybook extracts the route's React component and keeps the route available for typed router configuration.
 
-```ts title="Page.stories.ts"
-import type { Meta, StoryObj } from '@storybook/tanstack-react';
-
-import { Route } from './Page';
-
-const meta = {
-  title: 'Example/Page',
-  parameters: {
-    layout: 'fullscreen',
-    tanstack: {
-      router: {
-        route: Route,
-        params: { id: '42' },
-        query: { tab: 'details' },
-      },
-    },
-  },
-} satisfies Meta<typeof Route>;
-
-export default meta;
-
-type Story = StoryObj<typeof meta>;
-
-export const Default: Story = {};
-
-export const WithCustomLoader: Story = {
-  parameters: {
-    tanstack: {
-      router: {
-        route: Route,
-        params: { id: '42' },
-        routeOverrides: {
-          '/items/$id': {
-            loader: async () => ({
-              item: { id: '42', name: 'Loaded inside Storybook' },
-            }),
-          },
-        },
-      },
-    },
-  },
-};
-```
+<CodeSnippets path="tanstack-react-route-story.md" />
 
 When a route is supplied via `parameters.tanstack.router.route`, TanStack route option fields can also be supplied through story args, which keeps overrides type-safe for route-based stories.
 
@@ -137,115 +79,17 @@ When a route is supplied via `parameters.tanstack.router.route`, TanStack route 
 
 If your story renders a regular React component instead of a route object, you can still provide routing context through `parameters.tanstack.router`.
 
-```ts title="Page.stories.ts"
-import preview from '../.storybook/preview';
-
-import { Page } from './Page';
-
-const meta = preview.meta({
-  title: 'Example/Page',
-  component: Page,
-});
-
-export default meta;
-
-export const Default = meta.story({
-  parameters: {
-    tanstack: {
-      router: {
-        path: '/demo/form/address',
-        query: { view: 'list' },
-        routeOverrides: {
-          '/demo/form/address': {
-            loader: async () => ({
-              featuredItems: [
-                { name: 'Item A', description: 'First featured item' },
-                { name: 'Item B', description: 'Second featured item' },
-              ],
-            }),
-          },
-        },
-      },
-    },
-  },
-});
-```
+<CodeSnippets path="tanstack-react-plain-component-story.md" />
 
 This is useful when your component reads from hooks such as `useRouterState`, `useSearch`, `useParams`, or `useLoaderData`, but you do not want to make the route itself the story component.
 
-### Using typed preview helpers
+### Overriding route options per story
 
-The framework exports `definePreview()` so you can keep route-aware typing in your preview and stories.
+When a route has a `loader` or `beforeLoad` that calls real APIs, you can override those options per story without modifying the original route object. Pass `routeOverrides` under `parameters.tanstack.router`. Each key is a route ID and the value can override `loader`, `beforeLoad`, `validateSearch`, `loaderDeps`, and `context`.
 
-```ts title="UserCard.stories.ts"
-import preview from '../.storybook/preview';
-import { Route as UserRoute } from '../src/routes/users.$userId';
-import { UserCard } from './UserCard';
+Use `'__root__'` as the key to target the root route.
 
-const meta = preview.meta({
-  title: 'Users/UserCard',
-  component: UserCard,
-});
-
-export default meta;
-
-export const Loaded = meta.story({
-  parameters: {
-    tanstack: {
-      router: {
-        params: { userId: '42' },
-      },
-    },
-  },
-});
-```
-
-Use this approach when you want TanStack route types to flow through `preview.meta()` and `meta.story()` without switching to route-as-component stories everywhere.
-
-### Route tree cloning and per-route overrides
-
-When your app has a generated route tree (`routeTree.gen.ts`), the integration automatically detects it and clones the entire tree for each story. The cloned tree replaces every route's `loader`, `beforeLoad`, and `component` with safe defaults (noops / `undefined`), so stories render in isolation without hitting real APIs or running auth guards.
-
-Use `routeOverrides` to selectively restore or replace options for specific routes. Each key is a route ID (matching TanStack Router's route IDs, e.g. `'/'`, `'/_authed'`, `'/users/$userId'`) and the value can override `loader`, `beforeLoad`, `validateSearch`, `loaderDeps`, and `context`.
-
-```ts title="UserProfile.stories.ts"
-import type { Meta, StoryObj } from '@storybook/tanstack-react';
-
-import { UserProfile } from './UserProfile';
-
-const meta = {
-  component: UserProfile,
-  parameters: {
-    tanstack: {
-      router: {
-        path: '/admin/users/42',
-        params: { userId: '42' },
-        routeOverrides: {
-          // Bypass auth guard on layout route
-          '/_authed': { beforeLoad: () => {} },
-          // Mock loader data for parent route
-          '/_authed/admin/$companyId': {
-            beforeLoad: () => ({ company: { id: '1', name: 'Acme' } }),
-          },
-          // Mock the loader for the target route
-          '/_authed/admin/$companyId/users/$userId': {
-            loader: async () => ({
-              user: { id: '42', name: 'Ada Lovelace' },
-            }),
-          },
-        },
-      },
-    },
-  },
-} satisfies Meta<typeof UserProfile>;
-
-export default meta;
-type Story = StoryObj<typeof meta>;
-
-export const Default: Story = {};
-```
-
-Without `routeOverrides`, you would only be able to customize one route — but nested layouts with auth guards or data-loading parent routes would crash the story.
+<CodeSnippets path="tanstack-react-route-tree-overrides.md" />
 
 ### Automatic TanStack Router and Start mocks
 
@@ -261,50 +105,11 @@ If your component imports a TanStack Start server function, Storybook turns that
 
 For example, imagine your application code exports a server function like this:
 
-```ts title="src/lib/updateProfile.ts"
-import { createServerFn } from '@tanstack/start-client-core';
-
-export const updateProfile = createServerFn({ method: 'POST' }).handler(
-  async ({ data }: { data: { name: string } }) => {
-    return { ok: true, name: data.name };
-  }
-);
-```
+<CodeSnippets path="tanstack-react-server-fn.md" />
 
 In Storybook, you can override that function for each story:
 
-```ts title="ProfileForm.stories.ts"
-import type { Meta, StoryObj } from '@storybook/tanstack-react';
-import { expect, mocked } from 'storybook/test';
-
-import { ProfileForm } from './ProfileForm';
-import { updateProfile } from '../lib/updateProfile';
-
-const meta = {
-  component: ProfileForm,
-} satisfies Meta<typeof ProfileForm>;
-
-export default meta;
-type Story = StoryObj<typeof meta>;
-
-export const Success: Story = {
-  beforeEach: async () => {
-    mocked(updateProfile).mockResolvedValue({ ok: true, name: 'Ada Lovelace' });
-  },
-  play: async ({ canvas, userEvent }) => {
-    await userEvent.type(canvas.getByLabelText('Name'), 'Ada Lovelace');
-    await userEvent.click(canvas.getByRole('button', { name: 'Save profile' }));
-
-    await expect(updateProfile).toHaveBeenCalled();
-  },
-};
-
-export const Failure: Story = {
-  beforeEach: async () => {
-    mocked(updateProfile).mockRejectedValue(new Error('Could not save profile'));
-  },
-};
-```
+<CodeSnippets path="tanstack-react-mock-server-fn-stories.md" />
 
 This is useful for documenting loading, success, and error states without changing your application code.
 
@@ -322,23 +127,11 @@ When your routes import app-specific server code (e.g. `~/db/client`, `~/auth/in
 
 **Step 1**: Register the mock in `.storybook/preview.ts`:
 
-```ts title=".storybook/preview.ts"
-import { sb } from 'storybook/test';
-
-// Prevents postgres (Node-only) from loading in the browser
-sb.mock(import('../src/db/client.ts'));
-```
+<CodeSnippets path="tanstack-react-mock-module-preview.md" />
 
 **Step 2**: Create `src/db/__mocks__/client.ts` next to the real module. Use only `import type` so no server packages are pulled in:
 
-```ts title="src/db/__mocks__/client.ts"
-import type { drizzle } from 'drizzle-orm/postgres-js';
-import type * as schema from '../schema';
-
-export const db = new Proxy({} as ReturnType<typeof drizzle<typeof schema>>, {
-  get: () => () => Promise.resolve([]),
-});
-```
+<CodeSnippets path="tanstack-react-mock-db-client.md" />
 
 <Callout variant="info">
 
@@ -358,32 +151,6 @@ Common patterns in TanStack Start apps:
 | `~/auth/index.server` | imports `~/db/client` | already covered if `db/client` is mocked |
 | `~/utils/*.functions` | imports `createServerFn` | already handled by the preset (Layer 1) |
 
-### Reusing the mocks in external tests
-
-You do not need to configure these aliases for Storybook itself. The TanStack React integration already applies the router and Start mocks for you.
-
-This package also exports the underlying mocks so you can reuse the same behavior in a separate test environment:
-
-* `@storybook/tanstack-react/react-router`
-* `@storybook/tanstack-react/start`
-
-They are useful when you want Storybook-compatible mocks in a separate test environment, for example with Vitest:
-
-```ts title="vitest.config.ts"
-import { defineConfig } from 'vitest/config';
-
-export default defineConfig({
-  resolve: {
-    alias: {
-      '@tanstack/react-router': '@storybook/tanstack-react/react-router',
-      '@tanstack/start-client-core': '@storybook/tanstack-react/start',
-    },
-  },
-});
-```
-
-The router mock re-exports TanStack Router APIs while wrapping key navigation hooks with Storybook spies. The Start mock provides a mock `createServerFn()` builder whose `.handler()` returns a Storybook mock function.
-
 ## FAQ
 
 ### How do I manually install the TanStack React framework?
@@ -398,31 +165,172 @@ Then, update your `.storybook/main.js|ts` to set the framework:
 
 If you want typed preview helpers, switch your preview file to use `definePreview()`:
 
-```ts title=".storybook/preview.ts"
-import { definePreview } from '@storybook/tanstack-react';
+<CodeSnippets path="tanstack-react-preview-empty.md" />
 
-export default definePreview({});
-```
+### Story fails to render with an error about modules not providing a default export
+
+This usually means a server-only module is being imported in the browser. Check the error stack trace to find the module and add a Storybook mock for it as described in [Handling server-only dependencies](#handling-server-only-dependencies).
 
 ### When should I use `@storybook/tanstack-react` instead of `@storybook/react-vite`?
 
 Use `@storybook/tanstack-react` when your components rely on TanStack Router or TanStack Start APIs and you want Storybook to provide router context, typed route parameters, automatic router mocking, and mocked TanStack Start server-function behavior.
 
-Use [`@storybook/react-vite`](./react-vite.mdx) when your app is a standard React and Vite project without TanStack Router-specific behavior.
+Use [`@storybook/react-vite`](./react-vite.mdx) when your app is a standard React and Vite project without TanStack Router.
+
+### How do I write a story for a route with dynamic params (e.g. `/$id`)?
+
+Import the route object and supply `params` alongside `routeOverrides` under `parameters.tanstack.router`. The `params` object is interpolated into the URL, and `routeOverrides` lets you stub the loader without touching the original route.
+
+```tsx
+import { Route } from './$id'
+
+const meta = {
+  parameters: {
+    tanstack: {
+      router: {
+        route: Route,
+        params: { id: '42' },
+        routeOverrides: {
+          '/showcase/$id': {
+            loader: () => ({ item: mockItem }),
+          },
+        },
+      },
+    },
+  },
+} satisfies Meta<typeof Route>
+```
+
+For the full set of options, see [`RouterParameters`](#parameters).
+
+### My route loader calls `queryClient.ensureQueryData(...)` and it fails with "data is undefined"
+
+**Why does this happen?** The route loader runs inside the Storybook router and calls your real query function. When that function is a `createServerFn` stub (a no-op), it returns nothing, so the QueryClient cache is empty and `ensureQueryData` finds no data.
+
+**Fix:** Pre-seed the QueryClient in a story-level `loaders` hook so the cache is warm before the loader runs:
+
+```tsx
+loaders: [
+  async ({ parameters }) => {
+    const qc: QueryClient = parameters.tanstack?.router?.context?.queryClient
+    qc.setQueryData(['items', 'detail', itemId], { item: mockItem })
+  },
+],
+```
+
+The QueryClient instance must be provided via `parameters.tanstack.router.context` **and** wrapped with a `QueryClientProvider` decorator so the same instance is available to both the loader and the component tree.
+
+### How do I mock server functions (`createServerFn`) in stories?
+
+The framework stubs TanStack Start entry points automatically (see [Automatic TanStack Router and Start mocks](#automatic-tanstack-router-and-start-mocks)), so most `createServerFn` calls are already replaced with mock functions you can override per story. For app-level server modules not covered by the preset, add a Vite plugin in `viteFinal` that replaces server files with no-op proxy exports:
+
+```ts
+// .storybook/main.ts → viteFinal
+config.plugins.push({
+  name: 'storybook:stub-server-files',
+  enforce: 'pre',
+  transform: {
+    filter: { id: /\.server\.[mc]?[jt]sx?$/ },
+    handler(code, id) {
+      if (id.includes('node_modules')) return null
+      // Extract named exports and re-export them as callable proxies
+      const names = /* ...parse named exports from `code`... */
+      const lines = [
+        `const _noop = () => {}`,
+        `const _proxy = new Proxy(_noop, { get: () => _proxy, apply: () => _proxy })`,
+      ]
+      for (const name of names) lines.push(`export const ${name} = _proxy`)
+      return { code: lines.join('\n'), map: null }
+    },
+  },
+})
+```
+
+This replaces every named export with a callable proxy so imports from server files never crash in the browser.
+
+### I get `Buffer is not defined` or `getRequest is not found`
+
+**Why does this happen?** A component import chain reaches Node-only code (for example an auth utility that imports `postgres`). The browser does not have these built-ins.
+
+**Fix:** Either stub the entire module using a `__mocks__` file (see [Handling server-only dependencies](#handling-server-only-dependencies)), or alias specific packages to empty mocks in `viteFinal`:
+
+```ts
+config.resolve.alias = {
+  ...config.resolve.alias,
+  postgres: path.resolve(__dirname, '../__mocks__/postgres.ts'),
+}
+```
+
+### How do I set search params or a hash in a route story?
+
+Use `path` for a URL hash and `query` for search params under `parameters.tanstack.router`:
+
+```tsx
+export const WithHash: Story = {
+  parameters: {
+    tanstack: {
+      router: { path: '/#section' },
+    },
+  },
+}
+
+export const WithSearch: Story = {
+  parameters: {
+    tanstack: {
+      router: { query: { tab: 'details', page: '2' } },
+    },
+  },
+}
+```
+
+### Where do I import doc blocks (`Meta`, `Canvas`, `Controls`) in MDX pages?
+
+In Storybook 10, import doc blocks from `@storybook/addon-docs/blocks`:
+
+```mdx
+import { Meta, Canvas, Controls } from '@storybook/addon-docs/blocks'
+```
+
+Do not import from `@storybook/blocks` (used in Storybook 8/9) or `storybook/blocks` (not a valid export in Storybook 10).
+
+### How do I provide React context providers (theme, toast, auth) to all stories?
+
+Add decorators in `.storybook/preview.ts` for providers that every story needs, or apply them per story file for narrower scope:
+
+```tsx
+// .storybook/preview.ts — global providers
+const preview = definePreview({
+  decorators: [
+    (Story) =>
+      React.createElement(QueryClientProvider, { client: queryClient },
+        React.createElement(Story, null),
+      ),
+  ],
+})
+```
+
+```tsx
+// In a story file — additional providers scoped to that file
+decorators: [
+  (Story: React.ComponentType) => (
+    <LoginModalProvider>
+      <ToastProvider>
+        <Story />
+      </ToastProvider>
+    </LoginModalProvider>
+  ),
+],
+```
+
+### My styles are missing in Storybook
+
+Import your application CSS in `.storybook/preview.ts` so it is bundled with the preview:
+
+```ts
+import '../src/styles/app.css'
+```
 
 ## API
-
-### Options
-
-You can pass an options object for additional configuration if needed:
-
-<CodeSnippets path="tanstack-react-framework-options.md" />
-
-#### `builder`
-
-Type: `Record<string, any>`
-
-Configure options for the [framework's builder](../../api/main-config/main-config-framework.mdx#optionsbuilder). For this framework, available options can be found in the [Vite builder docs](../../builders/vite.mdx).
 
 ### Parameters
 
@@ -434,7 +342,7 @@ This framework contributes the following [parameters](../../writing-stories/para
 | `path` | `string` | Sets the initial URL path for the story router. |
 | `params` | `Record<string, string>` | Interpolates route params into the current path. |
 | `query` | `Record<string, unknown>` | Appends search params to the initial URL. |
-| `routeOverrides` | `Partial<Record<string, RouteOverrideOptions>>` | Per-route overrides keyed by route ID. Only supply the routes you want to change. Use `'__root__'` to target the root route. Each entry can override `loader`, `beforeLoad`, `validateSearch`, `loaderDeps`, and `context`. |
+| `routeOverrides` | `Partial<Record<string, RouteOverrideOptions>>` | Per-route overrides keyed by route ID, applied to the story's route and root route. Use `'__root__'` to target the root route. Each entry can override `loader`, `beforeLoad`, `validateSearch`, `loaderDeps`, and `context`. |
 | `context` | `Record<string, unknown>` | Router context values injected into the story router. |
 
 If `route` is supplied as a plain object, it may also include TanStack route options such as `context`, `head`, `search`, and `parseParams`.

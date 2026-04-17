@@ -162,20 +162,24 @@ describe('TelemetryService', () => {
       );
     });
 
-    it('should set ai: true when AI feature is selected', async () => {
-      const telemetryService = new TelemetryService();
-      const selectedFeatures = new Set([Feature.AI]);
+    describe('when AI feature is selected', () => {
+      beforeEach(() => {
+        vi.mocked(getProcessAncestry).mockReturnValue([]);
+      });
 
-      vi.mocked(getProcessAncestry).mockReturnValue([]);
+      it('should set ai: true when AI feature is selected', async () => {
+        const telemetryService = new TelemetryService();
+        const selectedFeatures = new Set([Feature.AI]);
 
-      await telemetryService.trackInitWithContext(ProjectType.REACT, selectedFeatures, true);
+        await telemetryService.trackInitWithContext(ProjectType.REACT, selectedFeatures, true);
 
-      expect(telemetry).toHaveBeenCalledWith(
-        'init',
-        expect.objectContaining({
-          features: expect.objectContaining({ ai: true }),
-        })
-      );
+        expect(telemetry).toHaveBeenCalledWith(
+          'init',
+          expect.objectContaining({
+            features: expect.objectContaining({ ai: true }),
+          })
+        );
+      });
     });
   });
 });

@@ -87,16 +87,18 @@ export async function initializeChecklist(channel?: Channel) {
     const markAiSetupDone = async () => {
       try {
         const aiSetupEvent = await getEventCacheEntry('ai-setup');
-        if (!aiSetupEvent || store.getState().items.aiSetup?.status === 'done') {
+        if (!aiSetupEvent) {
           return false;
         }
-        store.setState((state) => ({
-          ...state,
-          items: {
-            ...state.items,
-            aiSetup: { ...state.items.aiSetup, status: 'done' },
-          },
-        }));
+        if (store.getState().items.aiSetup?.status !== 'done') {
+          store.setState((state) => ({
+            ...state,
+            items: {
+              ...state.items,
+              aiSetup: { ...state.items.aiSetup, status: 'done' },
+            },
+          }));
+        }
         return true;
       } catch {
         return false;
@@ -119,6 +121,9 @@ export async function initializeChecklist(channel?: Channel) {
       if (!channel || analyticsEmitted) {
         return;
       }
+      // Sync aiSetup UI state immediately — don't make the user wait 4 minutes
+      // for the copy prompt / AI story UI to disappear after setup completes.
+      markAiSetupDone().catch(() => {});
       clearTimeout(analyticsTimer);
       analyticsTimer = setTimeout(async () => {
         // Only proceed if the user opted into AI

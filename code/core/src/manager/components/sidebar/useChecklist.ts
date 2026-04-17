@@ -167,7 +167,7 @@ export const useChecklist = () => {
         isMuted,
       };
     });
-  }, [itemsById, items, widget, api, index]);
+  }, [itemsById, items, widget, api, index, checklistState]);
 
   const itemCollections = useMemo(() => {
     const availableItems = allItems.filter((item) => item.isAvailable);

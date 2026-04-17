@@ -49,7 +49,7 @@ async function checkFeatureSupport(
     process.cwd()
   );
 
-  const aiSetup = FeatureCompatibilityService.supportsAISetupFeature(renderer, builder);
+  const aiSetup = FeatureCompatibilityService.supportsAISetupFeature(renderer, builder, framework);
 
   return {
     isTestFeatureAvailable: result.compatible,
@@ -86,7 +86,7 @@ export async function doInitiate(options: CommandOptions): Promise<
   let dependencyCollector: DependencyCollector | null = new DependencyCollector();
 
   // Step 1: Run preflight checks
-  const { packageManager } = await executePreflightCheck(options);
+  const { packageManager, isEmptyProject } = await executePreflightCheck(options);
 
   // Step 2: Detect project type
   const { projectType, language } = await executeProjectDetection(packageManager, options);
@@ -113,7 +113,9 @@ export async function doInitiate(options: CommandOptions): Promise<
     renderer,
     projectType,
     isTestFeatureAvailable,
-    isAiSetupAvailable,
+    // Skip AI feature recommendation when scaffolding into an empty directory,
+    // since the user hasn't yet committed to a project setup where AI tooling adds value.
+    isAiSetupAvailable: isAiSetupAvailable && !isEmptyProject,
   });
 
   // Step 5: Execute generator with dependency collector (now with frameworkInfo)

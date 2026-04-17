@@ -183,15 +183,17 @@ export function extractMockCalls(
       },
     });
 
-    telemetry(
-      'mocking',
-      {
-        modulesMocked: mocks.length,
-        modulesSpied: mocks.map((mock) => mock.spy).filter(Boolean).length,
-        modulesManuallyMocked: mocks.map((mock) => !!mock.redirectPath).filter(Boolean).length,
-      },
-      { configDir: options.configDir }
-    );
+    if (mocks.length > 0) {
+      telemetry(
+        'mocking',
+        {
+          modulesMocked: mocks.length,
+          modulesSpied: mocks.map((mock) => mock.spy).filter(Boolean).length,
+          modulesManuallyMocked: mocks.map((mock) => !!mock.redirectPath).filter(Boolean).length,
+        },
+        { configDir: options.configDir }
+      );
+    }
     return mocks;
   } catch (error) {
     logger.debug('Error extracting mock calls: ' + String(error));

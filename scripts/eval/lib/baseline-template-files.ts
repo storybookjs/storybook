@@ -1,4 +1,6 @@
-const MAIN_TS = `import type { StorybookConfig } from '@storybook/react-vite';
+const ts = String.raw;
+
+const MAIN_TS = ts`import type { StorybookConfig } from '@storybook/react-vite';
 
 const config: StorybookConfig = {
   stories: [
@@ -19,7 +21,7 @@ const config: StorybookConfig = {
 export default config;
 `;
 
-const PREVIEW_TSX = `import type { Preview } from '@storybook/react-vite';
+const PREVIEW_TSX = ts`import type { Preview } from '@storybook/react-vite';
 
 const preview: Preview = {
   parameters: {
@@ -70,7 +72,7 @@ const EVAL_SUPPORT_SUMMARY_MDX = `import data from '../eval-results/data.json';
 </ul>
 `;
 
-const EVAL_SUPPORT_TRANSCRIPT_MDX = `{/* Transcript renderer copied directly from ~/code/github/mcp/eval/templates/result-docs/transcript.tsx and transcript.types.ts */}
+const EVAL_SUPPORT_TRANSCRIPT_MDX = `{/* Transcript renderer copied directly from https://github.com/storybookjs/mcp/tree/main/eval/templates/result-docs/transcript.tsx and transcript.types.ts */}
 import data from '../eval-results/data.json';
 import { Transcript } from './transcript';
 
@@ -80,7 +82,7 @@ import { Transcript } from './transcript';
 `;
 
 const EVAL_SUPPORT_TRANSCRIPT_TSX = `/*
- * Keep the baseline copies exact to ~/code/github/mcp/eval/templates/result-docs/transcript.tsx.
+ * Keep the baseline copies exact to https://github.com/storybookjs/mcp/blob/main/eval/templates/result-docs/transcript.tsx.
  * This repo-local template keeps only the minimum lint shims required by Storybook's monorepo.
  */
 import { useEffect, useRef, useState } from 'react';

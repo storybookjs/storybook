@@ -9,10 +9,19 @@ import { parseArgs } from 'node:util';
 import pLimit from 'p-limit';
 import { z } from 'zod';
 
+import { createInterface } from 'node:readline/promises';
+
 import { esMain } from '../utils/esmain.ts';
-import { CLAUDE_EFFORTS, CODEX_EFFORTS, type AgentVariant } from './lib/agents/config.ts';
+import { AGENTS, CLAUDE_EFFORTS, CODEX_EFFORTS, type AgentVariant } from './lib/agents/config.ts';
 import { PROJECTS } from './lib/projects.ts';
-import { EVAL_ROOT, REPO_ROOT } from './lib/utils.ts';
+import {
+  EVAL_ROOT,
+  formatHelp,
+  listPrompts,
+  NODE_EVAL_RUN_BATCH_SCRIPT,
+  NODE_EVAL_TRIAL_SCRIPT,
+  REPO_ROOT,
+} from './lib/utils.ts';
 
 export const BATCH_EXCLUDED_PROJECT_NAMES = ['baklava'] as const;
 export const BATCH_PROJECT_NAMES = PROJECTS.filter((project) => project.name !== 'baklava').map(
@@ -24,6 +33,12 @@ export const BATCH_DEFAULT_CLAUDE_EFFORTS = ['high'] as const;
 export const BATCH_DEFAULT_EFFORTS = {
   codex: 'high',
 } as const;
+/** Default models for the batch matrix — single place to change (codex follows AGENTS). */
+export const BATCH_MATRIX_MODELS = {
+  claude: 'opus-4.6',
+  codex: AGENTS.codex.defaultModel,
+} as const satisfies Record<'claude' | 'codex', string>;
+
 export const BATCH_VARIANTS = buildBatchVariants();
 export const BATCH_REPETITIONS = 10;
 export const BATCH_CONCURRENCY = 8;
@@ -71,7 +86,10 @@ export interface RunBatchOptions {
   repoRoot?: string;
   evalRoot?: string;
   batchTimestamp?: string;
+  /** Required when `descriptors` are not provided — prompt template basename (prompts/{name}.md). */
   prompt?: string;
+  /** Skip interactive confirmation (large API / token usage). */
+  yes?: boolean;
   agents?: (typeof BATCH_AGENT_IDS)[number][];
   claudeEfforts?: (typeof CLAUDE_EFFORTS)[number][];
   claudeEffort?: (typeof CLAUDE_EFFORTS)[number];
@@ -100,6 +118,30 @@ export async function main(options: RunBatchOptions = {}, deps: BatchRunnerDeps 
   return summary.failed > 0 ? 1 : 0;
 }
 
+export async function confirmBatchStart(runCount: number, options: { yes?: boolean } = {}) {
+  if (options.yes) {
+    return;
+  }
+  if (!process.stdin.isTTY) {
+    throw new Error(
+      'This batch runs many trials and can consume substantial API quota. In non-interactive mode, pass --yes to confirm.'
+    );
+  }
+  const rl = createInterface({ input: process.stdin, output: process.stdout });
+  try {
+    const answer = (
+      await rl.question(
+        `This will launch ${runCount} eval trial(s) and may use significant API quota. Type "yes" to continue: `
+      )
+    ).trim();
+    if (answer.toLowerCase() !== 'yes') {
+      throw new Error('Batch aborted.');
+    }
+  } finally {
+    rl.close();
+  }
+}
+
 export async function runBatch(
   options: RunBatchOptions = {},
   deps: BatchRunnerDeps = {}
@@ -107,12 +149,17 @@ export async function runBatch(
   const descriptors =
     options.descriptors ??
     buildBatchRunDescriptors({
-      prompt: options.prompt,
+      prompt: requireBatchPrompt(options),
       agents: options.agents,
       claudeEfforts: options.claudeEfforts,
       claudeEffort: options.claudeEffort,
       codexEffort: options.codexEffort,
     });
+
+  if (!options.yes && options.descriptors === undefined) {
+    await confirmBatchStart(descriptors.length, { yes: false });
+  }
+
   const concurrency = options.concurrency ?? BATCH_CONCURRENCY;
   const repoRoot = resolve(options.repoRoot ?? REPO_ROOT);
   const evalRoot = resolve(options.evalRoot ?? EVAL_ROOT);
@@ -200,7 +247,7 @@ export function buildBatchVariants(
       for (const effort of claudeEfforts) {
         variants.push({
           agent: 'claude',
-          model: 'opus-4.6',
+          model: BATCH_MATRIX_MODELS.claude,
           effort,
         });
       }
@@ -209,7 +256,7 @@ export function buildBatchVariants(
 
     variants.push({
       agent: 'codex',
-      model: 'gpt-5.4',
+      model: BATCH_MATRIX_MODELS.codex,
       effort: options.codexEffort ?? BATCH_DEFAULT_EFFORTS.codex,
     });
   }
@@ -217,15 +264,13 @@ export function buildBatchVariants(
   return variants;
 }
 
-export function buildBatchRunDescriptors(
-  options: {
-    prompt?: RunBatchOptions['prompt'];
-    agents?: RunBatchOptions['agents'];
-    claudeEfforts?: RunBatchOptions['claudeEfforts'];
-    claudeEffort?: RunBatchOptions['claudeEffort'];
-    codexEffort?: RunBatchOptions['codexEffort'];
-  } = {}
-): BatchRunDescriptor[] {
+export function buildBatchRunDescriptors(options: {
+  prompt: string;
+  agents?: RunBatchOptions['agents'];
+  claudeEfforts?: RunBatchOptions['claudeEfforts'];
+  claudeEffort?: RunBatchOptions['claudeEffort'];
+  codexEffort?: RunBatchOptions['codexEffort'];
+}): BatchRunDescriptor[] {
   const knownProjects = new Set(PROJECTS.map((project) => project.name));
 
   for (const project of BATCH_PROJECT_NAMES) {
@@ -252,6 +297,23 @@ export function buildBatchRunDescriptors(
   }
 
   return descriptors;
+}
+
+function requireBatchPrompt(options: RunBatchOptions): string {
+  if (options.prompt == null || options.prompt.trim() === '') {
+    throw new Error(
+      'runBatch: pass `prompt` (prompt template basename) or provide `descriptors` explicitly.'
+    );
+  }
+
+  const prompt = options.prompt.trim();
+  const available = listPrompts();
+
+  if (!available.some((name) => name.toLowerCase() === prompt.toLowerCase())) {
+    throw new Error(`Unknown prompt "${prompt}". Available prompts: ${available.join(', ')}`);
+  }
+
+  return prompt;
 }
 
 async function runBatchDescriptor(
@@ -313,13 +375,26 @@ async function runBatchDescriptor(
   };
 }
 
+function sanitizeLabelSegment(value: string) {
+  return value.replace(/[^a-zA-Z0-9._-]/g, '_');
+}
+
 function createBatchRunDescriptor(
   project: BatchRunDescriptor['project'],
   variant: AgentVariant,
   repetition: number,
-  prompt = 'pattern-copy-play'
+  prompt: string
 ): BatchRunDescriptor {
-  const label = `${project}-${variant.agent}-${variant.model}-${variant.effort}-${prompt}-r${String(repetition).padStart(2, '0')}`;
+  const label = [
+    project,
+    variant.agent,
+    variant.model,
+    variant.effort,
+    prompt,
+    `r${String(repetition).padStart(2, '0')}`,
+  ]
+    .map(sanitizeLabelSegment)
+    .join('-');
   return {
     project,
     agent: variant.agent,
@@ -329,7 +404,7 @@ function createBatchRunDescriptor(
     repetition,
     label,
     args: [
-      './scripts/eval/eval.ts',
+      NODE_EVAL_TRIAL_SCRIPT,
       '-p',
       project,
       '-a',
@@ -350,35 +425,60 @@ function defaultSpawn(command: string, args: string[], options: SpawnOptions) {
 
 const runBatchArgsSchema = z.object({
   concurrency: z.coerce.number().int().positive().optional(),
-  prompt: z.string().optional(),
+  prompt: z.string().min(1),
+  yes: z.boolean().optional(),
   agents: z.array(z.enum(BATCH_AGENT_IDS)).nonempty().optional(),
   claudeEfforts: z.array(z.enum(CLAUDE_EFFORTS)).nonempty().optional(),
   claudeEffort: z.enum(CLAUDE_EFFORTS).optional(),
   codexEffort: z.enum(CODEX_EFFORTS).optional(),
 });
 
+const runBatchOptions = {
+  concurrency: { type: 'string' as const, description: 'Max concurrent runs (default: 8)' },
+  prompt: {
+    type: 'string' as const,
+    description: 'Prompt template name (required; file: scripts/eval/prompts/{name}.md)',
+  },
+  agents: {
+    type: 'string' as const,
+    description: 'Comma-separated agent list (claude,codex)',
+  },
+  'claude-efforts': {
+    type: 'string' as const,
+    description: 'Comma-separated Claude effort levels',
+  },
+  'claude-effort': { type: 'string' as const, description: 'Single Claude effort level' },
+  'codex-effort': { type: 'string' as const, description: 'Single Codex effort level' },
+  yes: {
+    type: 'boolean' as const,
+    short: 'y',
+    description: 'Skip the confirmation prompt (non-interactive / CI)',
+  },
+  help: { type: 'boolean' as const, short: 'h', description: 'Show this help and exit' },
+};
+
 export function parseRunBatchArgs(
   argv: string[]
-): Pick<
-  RunBatchOptions,
-  'agents' | 'claudeEfforts' | 'claudeEffort' | 'codexEffort' | 'concurrency' | 'prompt'
-> {
+):
+  | Pick<
+      RunBatchOptions,
+      'agents' | 'claudeEfforts' | 'claudeEffort' | 'codexEffort' | 'concurrency' | 'prompt' | 'yes'
+    >
+  | { help: true } {
   const { values } = parseArgs({
     args: argv,
     strict: true,
-    options: {
-      concurrency: { type: 'string' },
-      prompt: { type: 'string' },
-      agents: { type: 'string' },
-      'claude-efforts': { type: 'string' },
-      'claude-effort': { type: 'string' },
-      'codex-effort': { type: 'string' },
-    },
+    options: runBatchOptions,
   });
+
+  if (values.help) {
+    return { help: true };
+  }
 
   const parsed = runBatchArgsSchema.safeParse({
     concurrency: values.concurrency,
     prompt: values.prompt,
+    yes: values.yes,
     agents: parseAgentArgs(values.agents),
     claudeEfforts: parseClaudeEfforts(values['claude-efforts']),
     claudeEffort: values['claude-effort'],
@@ -490,7 +590,18 @@ function formatError(error: Error) {
 
 if (esMain(import.meta.url)) {
   try {
-    process.exitCode = await main(parseRunBatchArgs(process.argv.slice(2)));
+    const parsed = parseRunBatchArgs(process.argv.slice(2));
+    if ('help' in parsed) {
+      console.log(
+        formatHelp(
+          `node ${NODE_EVAL_RUN_BATCH_SCRIPT} [options]`,
+          'Run a batch of eval trials across all benchmark projects.',
+          runBatchOptions
+        )
+      );
+      process.exit(0);
+    }
+    process.exitCode = await main(parsed);
   } catch (error) {
     console.error(error);
     process.exitCode = 1;

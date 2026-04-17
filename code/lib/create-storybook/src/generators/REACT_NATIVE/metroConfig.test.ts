@@ -94,6 +94,25 @@ export default async function makeMetroConfig() {
     }
   });
 
+  it('does not treat import/export text inside template literals as ESM for .ts import injection', () => {
+    const source = `
+const hint = \`
+import { something } from 'somewhere'
+export default {}
+\`;
+module.exports = {};
+`;
+    const transformed = transformMetroConfigSource(source, path.join(tempDir, 'metro.config.ts'));
+
+    expect(transformed.action).toBe('updated');
+    if (transformed.action === 'updated') {
+      expect(transformed.code).toContain("require('@storybook/react-native/withStorybook')");
+      expect(transformed.code).not.toContain(
+        "import { withStorybook } from '@storybook/react-native/withStorybook'"
+      );
+    }
+  });
+
   it('preserves TypeScript return type and type parameters on default exported functions', () => {
     const source = `
 import type { MetroConfig } from 'metro-config';

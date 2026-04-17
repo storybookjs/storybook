@@ -62,8 +62,14 @@ const parseConfig = (source: string) => {
   }) as t.File;
 };
 
-const usesEsmSyntax = (source: string) => {
-  return /^\s*import\s+/m.test(source) || /^\s*export\s+/m.test(source);
+const usesEsmSyntax = (program: t.Program) => {
+  return program.body.some(
+    (node) =>
+      t.isImportDeclaration(node) ||
+      t.isExportDefaultDeclaration(node) ||
+      t.isExportNamedDeclaration(node) ||
+      t.isExportAllDeclaration(node)
+  );
 };
 
 export const containsStorybookImport = (source: string) => {
@@ -261,7 +267,7 @@ export const transformMetroConfigSource = (source: string, filePath: string): Tr
   }
 
   if (!hasWithStorybookBinding(program)) {
-    const shouldUseEsmImport = filePath.endsWith('.ts') && usesEsmSyntax(source);
+    const shouldUseEsmImport = filePath.endsWith('.ts') && usesEsmSyntax(program);
     injectWithStorybookImport(program, shouldUseEsmImport);
   }
 

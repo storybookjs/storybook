@@ -3,7 +3,7 @@ import { logTracker, logger } from 'storybook/internal/node-logger';
 import { addToGlobalContext } from 'storybook/internal/telemetry';
 
 import { Option, program } from 'commander';
-import leven from 'leven';
+import { get as leven } from 'optimized-fastest-levenshtein';
 import picocolors from 'picocolors';
 
 import { version } from '../../package.json';

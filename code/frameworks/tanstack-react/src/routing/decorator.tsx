@@ -41,7 +41,7 @@ function getRouteFromContext(
     path: _path,
     params: _params,
     query: _query,
-    ...routeOverrides
+    routeOverrides,
   } = routerParameters ?? {};
 
   const resolvedRoute = isRoute(routerParameterRoute)
@@ -52,32 +52,38 @@ function getRouteFromContext(
 
   if (resolvedRoute instanceof RootRoute) {
     // Clone to avoid mutating the original route object across stories.
-    const clonedRoot = createRootRoute({ ...(resolvedRoute as any).options });
+    const clonedRoot = createRootRoute({
+      ...(resolvedRoute as any).options,
+      ...(routeOverrides as any).__root__,
+    });
     const children = resolvedRoute.children as Route[] | undefined;
     if (children?.length) {
       const clonedChildren = children.map((child) => {
         const { id: _id, getParentRoute: _g, ...childOpts } = (child as any).options ?? {};
         return createRoute({
           ...childOpts,
-          ...routeOverrides,
+          ...(routeOverrides as any)?.[child.id],
           component: () => <Story />,
           getParentRoute: () => clonedRoot,
         });
       });
       clonedRoot.addChildren(clonedChildren);
     } else {
-      clonedRoot.update({ component: () => <Story />, ...routeOverrides } as any);
+      clonedRoot.update({
+        component: () => <Story />,
+        ...(routeOverrides as any).__root__,
+      } as any);
     }
     return clonedRoot;
   }
 
   if (resolvedRoute instanceof Route) {
-    const root = createRootRoute();
+    const root = createRootRoute((routeOverrides as any)?.__root__);
     const { id: _id, ...routeOpts } = (resolvedRoute as any).options ?? {};
 
     const child = createRoute({
       ...routeOpts,
-      ...routeOverrides,
+      ...(routeOverrides as any)?.[resolvedRoute.id],
       component: () => <Story />,
       getParentRoute: () => root,
     });
@@ -87,7 +93,7 @@ function getRouteFromContext(
   }
 
   // No route instance — create from plain options or default.
-  const root = createRootRoute();
+  const root = createRootRoute((routeOverrides as any)?.__root__);
   // @ts-expect-error route options spread
   const child = createRoute({
     component: () => <Story />,

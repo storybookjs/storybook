@@ -68,6 +68,10 @@ common-env-vars: &common-env-vars
   STORYBOOK_NX_CLOUD_AGENT: true
   CI: true
   NODE_OPTIONS: --max_old_space_size=6144
+  # Chromatic + nx-set-shas need a real commit history — the nrwl checkout
+  # step defaults to GIT_CHECKOUT_DEPTH=1 (shallow), which makes chromatic
+  # fail with "Found only one commit" even when the build is perfect.
+  GIT_CHECKOUT_DEPTH: '0'
 
 launch-templates:
   linux-js:

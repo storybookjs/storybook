@@ -37,7 +37,6 @@ jobs:
     runs-on: ubuntu-latest
     env:
       NX_CI_EXECUTION_ENV: 'linux'
-      NX_CLOUD_VERBOSE_LOGGING: 'true'
       ALL_TASKS: compile,check,knip,test,lint,fmt,sandbox,build,e2e-tests,e2e-tests-dev,vitest-integration,e2e-ui,jest,vitest,playwright-ct,chromatic,storybook-chromatic,bench-packages,init-empty,init-features,daily-test-runner
       # Benchmark packages upload to BigQuery
       GCP_CREDENTIALS: ${{ secrets.GCP_CREDENTIALS }}

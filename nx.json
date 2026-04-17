@@ -92,7 +92,13 @@
     },
     "chromatic": {
       "dependsOn": ["build", { "projects": ["scripts"], "target": "run-registry" }],
-      "command": "yarn task chromatic -s task --debug --no-link --template={projectName}",
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "yarn task chromatic -s task --debug --no-link --template={projectName}",
+        "env": {
+          "STORYBOOK_SANDBOX_ROOT": "sandbox"
+        }
+      },
       "cache": true,
       "inputs": ["^production"],
       "configurations": { "production": {} }

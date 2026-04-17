@@ -1,5 +1,5 @@
 import type { FC, PropsWithChildren } from 'react';
-import React, { useEffect } from 'react';
+import React, { useEffect, useMemo } from 'react';
 
 import type { Renderer } from 'storybook/internal/types';
 
@@ -26,7 +26,7 @@ export const DocsContainer: FC<PropsWithChildren<DocsContainerProps>> = ({
   theme,
   children,
 }) => {
-  const slugger = createDocsSlugger();
+  const slugger = useMemo(() => createDocsSlugger(), []);
   let toc;
 
   try {

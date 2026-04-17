@@ -8,6 +8,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { JsPackageManager } from 'storybook/internal/common';
 
+import { getDiff } from '../../../../../core/src/core-server/utils/save-story/getDiff.ts';
 import {
   METRO_FALLBACK_COMMENT_MARKER,
   containsStorybookImport,
@@ -44,21 +45,30 @@ describe('metroConfig codemod', () => {
 
   it('wraps module.exports object config and injects require import', async () => {
     const filePath = path.join(tempDir, 'metro.config.js');
-    await writeFile(
-      filePath,
-      'const defaultConfig = {};\nmodule.exports = defaultConfig;\n',
-      'utf-8'
-    );
+    const before = 'const defaultConfig = {};\nmodule.exports = defaultConfig;\n';
+    await writeFile(filePath, before, 'utf-8');
 
     const result = await runMetroCodemodOrFallback({
       packageManager,
       yes: true,
     });
-    const updatedSource = await readFile(filePath, 'utf-8');
+    const after = await readFile(filePath, 'utf-8');
 
     expect(result.status).toBe('updated');
-    expect(updatedSource).toContain("require('@storybook/react-native/withStorybook');");
-    expect(updatedSource).toContain('module.exports = withStorybook(defaultConfig);');
+    expect(after).not.toBe(before);
+    expect(getDiff(before, after)).toMatchInlineSnapshot(`
+      "+ const {
+      +   withStorybook,
+      + } = require('@storybook/react-native/withStorybook');
+      + 
+      + 
+        const defaultConfig = {};
+        
+      - module.exports = defaultConfig;
+      - 
+      + module.exports = withStorybook(defaultConfig);
+      + "
+    `);
   });
 
   it('wraps existing wrapper as outermost withStorybook', async () => {

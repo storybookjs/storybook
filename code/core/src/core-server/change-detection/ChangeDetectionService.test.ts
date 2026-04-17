@@ -156,14 +156,14 @@ function createMockStoryIndexBaselineService(
   } as unknown as IndexBaselineService;
 }
 
-function createStatus(value: Status['value'], data: Status['data'] = { changedFiles: [] }): Status {
+function createStatus(value: Status['value'], data?: Status['data']): Status {
   return {
     storyId: 'story-1',
     typeId: 'storybook/change-detection',
     value,
     title: '',
     description: '',
-    data,
+    ...(data ? { data } : {}),
     sidebarContextMenu: false,
   };
 }
@@ -241,9 +241,6 @@ describe('ChangeDetectionService', () => {
           value: 'status-value:modified',
           title: '',
           description: '',
-          data: {
-            changedFiles: ['src/Button.module.css'],
-          },
           sidebarContextMenu: false,
         },
       },
@@ -254,9 +251,6 @@ describe('ChangeDetectionService', () => {
           value: 'status-value:affected',
           title: '',
           description: '',
-          data: {
-            changedFiles: ['src/Button.module.css'],
-          },
           sidebarContextMenu: false,
         },
       },
@@ -312,9 +306,6 @@ describe('ChangeDetectionService', () => {
           value: 'status-value:new',
           title: '',
           description: '',
-          data: {
-            changedFiles: ['src/NewButton.stories.tsx'],
-          },
           sidebarContextMenu: false,
         },
       },
@@ -384,9 +375,6 @@ describe('ChangeDetectionService', () => {
           value: 'status-value:new',
           title: '',
           description: '',
-          data: {
-            changedFiles: ['src/Button.stories.tsx'],
-          },
           sidebarContextMenu: false,
         },
       },
@@ -403,9 +391,6 @@ describe('ChangeDetectionService', () => {
           value: 'status-value:modified',
           title: '',
           description: '',
-          data: {
-            changedFiles: ['src/depB.ts'],
-          },
           sidebarContextMenu: false,
         },
       },
@@ -595,9 +580,6 @@ describe('ChangeDetectionService', () => {
           value: 'status-value:modified',
           title: '',
           description: '',
-          data: {
-            changedFiles: ['src/Button.stories.tsx'],
-          },
           sidebarContextMenu: false,
         },
       },
@@ -759,9 +741,6 @@ describe('ChangeDetectionService', () => {
           value: 'status-value:modified',
           title: '',
           description: '',
-          data: {
-            changedFiles: ['src/direct.ts', 'src/indirect.ts'],
-          },
           sidebarContextMenu: false,
         },
       },
@@ -769,7 +748,7 @@ describe('ChangeDetectionService', () => {
     await service.dispose();
   });
 
-  it('stores changed files as normalized repo-relative paths', async () => {
+  it('handles normalized paths when assigning statuses', async () => {
     const buttonCssPath = join(workingDir, 'src', 'Button.module.css');
     const buttonComponentPath = join(workingDir, 'src', 'Button.tsx');
     const buttonStoryPath = join(workingDir, 'src', 'Button.stories.tsx');
@@ -821,9 +800,6 @@ describe('ChangeDetectionService', () => {
           value: 'status-value:modified',
           title: '',
           description: '',
-          data: {
-            changedFiles: ['src/Button.module.css'],
-          },
           sidebarContextMenu: false,
         },
       },
@@ -855,19 +831,13 @@ describe('mergeChangeDetectionStatuses', () => {
     expect(result.value).toBe('status-value:new');
   });
 
-  it('unions and sorts changedFiles from both statuses', () => {
-    const existing = createStatus('status-value:new', {
-      changedFiles: ['src/a.ts', 'src/c.ts'],
-    });
-    const incoming = createStatus('status-value:modified', {
-      changedFiles: ['src/b.ts', 'src/a.ts'],
-    });
+  it('prefers incoming data without merging previous payloads', () => {
+    const existing = createStatus('status-value:new', { source: 'previous' });
+    const incoming = createStatus('status-value:modified', { source: 'next' });
 
     const result = mergeChangeDetectionStatuses(existing, incoming);
 
-    expect(result.data).toEqual({
-      changedFiles: ['src/a.ts', 'src/b.ts', 'src/c.ts'],
-    });
+    expect(result.data).toEqual({ source: 'next' });
   });
 });
 

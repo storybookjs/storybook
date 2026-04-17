@@ -1,4 +1,4 @@
-import { join, relative } from 'pathe';
+import { join } from 'pathe';
 
 import { logger } from 'storybook/internal/node-logger';
 import type {
@@ -55,19 +55,6 @@ function getStoryIdsByAbsolutePath(
   return storyIdsByFile;
 }
 
-function getChangedFiles(status: Status | undefined): string[] {
-  const changedFiles = status?.data?.changedFiles;
-  if (!Array.isArray(changedFiles)) {
-    return [];
-  }
-
-  return changedFiles.filter((filePath): filePath is string => typeof filePath === 'string');
-}
-
-function mergeChangedFiles(existing: Status | undefined, incoming: Status): string[] {
-  return Array.from(new Set([...getChangedFiles(existing), ...getChangedFiles(incoming)])).sort();
-}
-
 export function mergeStatusValues(
   previousValue: StatusValue | undefined,
   nextValue: StatusValue
@@ -91,20 +78,12 @@ export function mergeChangeDetectionStatuses(
   existing: Status | undefined,
   incoming: Status
 ): Status {
-  const changedFiles = mergeChangedFiles(existing, incoming);
-  const mergedData = {
-    ...(existing?.data ?? {}),
-    ...(incoming.data ?? {}),
-    ...(changedFiles.length > 0 ? { changedFiles } : {}),
-  };
-
   return {
     ...incoming,
     value: mergeStatusValues(existing?.value, incoming.value),
     title: incoming.title || existing?.title || '',
     description: incoming.description || existing?.description || '',
     sidebarContextMenu: incoming.sidebarContextMenu ?? existing?.sidebarContextMenu ?? false,
-    data: Object.keys(mergedData).length > 0 ? mergedData : undefined,
   };
 }
 
@@ -364,8 +343,6 @@ export class ChangeDetectionService {
 
         storyIds.forEach((storyId) => {
           const existingStatus = statuses.get(storyId);
-          const changedStoryFiles = new Set<string>(existingStatus?.data?.changedFiles ?? []);
-          changedStoryFiles.add(relative(repoRoot, changedFile));
 
           const nextStatus: Status = {
             storyId,
@@ -373,9 +350,6 @@ export class ChangeDetectionService {
             value: mergeStatusValues(existingStatus?.value, value),
             title: '',
             description: '',
-            data: {
-              changedFiles: Array.from(changedStoryFiles).sort(),
-            },
             sidebarContextMenu: false,
           };
 

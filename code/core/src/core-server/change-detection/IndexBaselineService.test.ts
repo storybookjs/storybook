@@ -59,10 +59,10 @@ type BaselineCache = {
 function createCache(initial: Record<string, unknown> = {}) {
   const store = new Map<string, unknown>(Object.entries(initial));
   const cache: BaselineCache = {
-    get: vi.fn(async (key: string) => store.get(key)),
+    get: vi.fn(async (key: string) => store.get(key)) as BaselineCache['get'],
     set: vi.fn(async (key: string, value: unknown) => {
       store.set(key, value);
-    }),
+    }) as BaselineCache['set'],
   };
 
   return { cache, store };

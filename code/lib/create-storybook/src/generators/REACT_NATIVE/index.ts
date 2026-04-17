@@ -99,7 +99,7 @@ export default defineGeneratorModule({
       storybookConfigFolder: RN_STORYBOOK_DIR,
       skipGenerator: true,
       storybookCommand: null,
-      shouldRunDev: false, // React Native needs additional manual steps to configure the project
+      shouldRunDev: false, // React Native is started via platform scripts (see postConfigure), not `storybook dev`
     };
   },
   postConfigure: ({ packageManager }) => {
@@ -148,9 +148,18 @@ export default defineGeneratorModule({
       return 'No Metro config file was selected; please update Metro manually.';
     })();
 
+    const metroStatus = lastMetroCodemodResult?.status;
+    const showWithStorybookManualSnippet =
+      !lastMetroCodemodResult ||
+      metroStatus === 'fallback-commented' ||
+      metroStatus === 'skipped-missing-file';
+
+    const mayNeedFollowUp = !!scriptWarningSummary || showWithStorybookManualSnippet;
+
     logger.log(dedent`
-      ${CLI_COLORS.warning('The Storybook for React Native installation is not 100% automated.')}
-  
+      ${CLI_COLORS.success('Storybook for React Native has been configured.')}
+
+      ${mayNeedFollowUp ? `${CLI_COLORS.info('If anything below could not be applied automatically, follow the guidance or the docs link.')}\n` : ''}
       Storybook run scripts:
 
       ${CLI_COLORS.cta(' ' + platformRunGuidance + ' ')}
@@ -159,13 +168,18 @@ export default defineGeneratorModule({
 
       ${CLI_COLORS.info(' ' + metroCodemodSummary + ' ')}
 
-      If manual setup is needed, wrap your Metro config with withStorybook like this:
-  
+      ${
+        showWithStorybookManualSnippet
+          ? dedent`
+      If your Metro config still needs wiring, wrap the default export with withStorybook:
+
       ${CLI_COLORS.info(' ' + "const { withStorybook } = require('@storybook/react-native/withStorybook');" + ' ')}
       ${CLI_COLORS.info(' ' + 'module.exports = withStorybook(defaultConfig);' + ' ')}
-
+      `
+          : ''
+      }
       ${scriptWarningSummary ? `${CLI_COLORS.warning(scriptWarningSummary)}\n` : ''}
-  
+
       For more details go to:
       ${METRO_SETUP_DOCS_LINK}
     `);

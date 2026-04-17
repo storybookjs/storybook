@@ -177,10 +177,14 @@ export const ChangesPage: React.FC = () => {
 
     return () => {
       // On unmount: restore previous filters and clear interceptor
-      api.setAllStatusFilters(
-        previousIncludedFiltersRef.current,
-        previousExcludedFiltersRef.current
-      );
+      try {
+        api.setAllStatusFilters(
+          previousIncludedFiltersRef.current,
+          previousExcludedFiltersRef.current
+        );
+      } catch {
+        // Store may not be ready during teardown — safe to ignore
+      }
       api.clearSelectStoryInterceptor();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps

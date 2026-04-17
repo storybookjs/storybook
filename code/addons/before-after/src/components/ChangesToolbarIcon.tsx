@@ -22,10 +22,7 @@ export const ChangesToolbarIcon = () => {
   }
 
   const handleClick = () => {
-    api.setAllStatusFilters(
-      ['status-value:new', 'status-value:modified', 'status-value:affected'],
-      []
-    );
+    // Don't set filters here — ChangesPage manages filter save/restore on mount/unmount
     api.navigate(CHANGES_URL);
   };
 

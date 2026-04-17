@@ -51,6 +51,36 @@ const meta = preview.meta({
 
 export const Default = meta.story({});
 
+const aiCtaOpenState = {
+  loaded: true,
+  aiOptIn: true,
+  widget: {},
+  items: {
+    ...initialState.items,
+    // aiSetup is intentionally omitted → status 'open', AiSetupBlock shows Copy prompt button
+    controls: { status: 'accepted' as const },
+    renderComponent: { status: 'done' as const },
+    viewports: { status: 'skipped' as const },
+  },
+};
+
+export const AiCtaOpen = meta.story({
+  beforeEach: async () => {
+    mockStore.setState(aiCtaOpenState);
+  },
+});
+
+export const AiCtaOpenCopied = meta.story({
+  beforeEach: async () => {
+    Object.assign(navigator, { clipboard: { writeText: fn().mockResolvedValue(undefined) } });
+    mockStore.setState(aiCtaOpenState);
+  },
+  play: async ({ canvas, userEvent }) => {
+    const copyButton = await canvas.findByRole('button', { name: 'Copy prompt' });
+    await userEvent.click(copyButton);
+  },
+});
+
 export const AiCtaSkipped = meta.story({
   beforeEach: async () => {
     mockStore.setState({

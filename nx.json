@@ -195,9 +195,9 @@
       "executor": "nx:run-commands",
       "options": {
         "commands": [
-          "bash -c 'rm -rf /tmp/empty-$STORYBOOK_INIT_EMPTY_TYPE && mkdir -p /tmp/empty-$STORYBOOK_INIT_EMPTY_TYPE'",
-          "bash -c 'cd /tmp/empty-$STORYBOOK_INIT_EMPTY_TYPE && npm set registry http://localhost:6001 && npx storybook init --yes --package-manager npm'",
-          "bash -c 'cd /tmp/empty-$STORYBOOK_INIT_EMPTY_TYPE && npm run storybook -- --smoke-test'"
+          "bash -c 'TMP=\"${RUNNER_TEMP:-/tmp}/empty-$STORYBOOK_INIT_EMPTY_TYPE\" && rm -rf \"$TMP\" && mkdir -p \"$TMP\"'",
+          "bash -c 'TMP=\"${RUNNER_TEMP:-/tmp}/empty-$STORYBOOK_INIT_EMPTY_TYPE\" && cd \"$TMP\" && npm set registry http://localhost:6001 && npx storybook init --yes --package-manager npm'",
+          "bash -c 'TMP=\"${RUNNER_TEMP:-/tmp}/empty-$STORYBOOK_INIT_EMPTY_TYPE\" && cd \"$TMP\" && npm run storybook -- --smoke-test'"
         ],
         "parallel": false
       },
@@ -209,10 +209,10 @@
       "executor": "nx:run-commands",
       "options": {
         "commands": [
-          "bash -c 'rm -rf /tmp/sb-init-features && mkdir /tmp/sb-init-features'",
-          "bash -c 'cd /tmp/sb-init-features && npm set registry http://localhost:6001'",
-          "bash -c 'cd /tmp/sb-init-features && npx create-storybook --yes --package-manager npm --features docs test a11y --loglevel=debug'",
-          "bash -c 'cd /tmp/sb-init-features && npx vitest'"
+          "bash -c 'TMP=\"${RUNNER_TEMP:-/tmp}/sb-init-features\" && rm -rf \"$TMP\" && mkdir -p \"$TMP\"'",
+          "bash -c 'TMP=\"${RUNNER_TEMP:-/tmp}/sb-init-features\" && cd \"$TMP\" && npm set registry http://localhost:6001'",
+          "bash -c 'TMP=\"${RUNNER_TEMP:-/tmp}/sb-init-features\" && cd \"$TMP\" && npx create-storybook --yes --package-manager npm --features docs test a11y --loglevel=debug'",
+          "bash -c 'TMP=\"${RUNNER_TEMP:-/tmp}/sb-init-features\" && cd \"$TMP\" && npx vitest'"
         ],
         "parallel": false
       },

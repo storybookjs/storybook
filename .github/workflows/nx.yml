@@ -241,9 +241,12 @@ jobs:
       NX_CI_EXECUTION_ENV: 'windows'
       # Matches CircleCI daily Windows jobs: common build/test + init-empty + per-first-template sandbox build/dev/e2e
       WINDOWS_TASKS: compile,test,init-empty,sandbox,build,e2e-tests,e2e-tests-dev
-      NX_CLOUD_VERBOSE_LOGGING: true
-      # Chromatic token only needed for react-vite/default-ts on Windows (the only ci:windows-tagged sandbox)
-      CHROMATIC_TOKEN_REACT_VITE_DEFAULT_TS: ${{ secrets.CHROMATIC_TOKEN_REACT_VITE_DEFAULT_TS }}
+      # NX_BRANCH links the primary and the agents to the same CI pipeline execution
+      NX_BRANCH: ${{ github.event.pull_request.number || github.ref_name }}
+      # Tell NX how many manual agents to expect so it doesn't over-allocate work
+      NX_CLOUD_DISTRIBUTED_EXECUTION_AGENT_COUNT: '3'
+      # Verbose logging for the first Windows runs — drop once it's green
+      NX_CLOUD_VERBOSE_LOGGING: 'true'
     steps:
       - uses: actions/checkout@v4
         with:
@@ -254,7 +257,7 @@ jobs:
           node-version: 22
           cache: 'yarn'
       - uses: nrwl/nx-set-shas@v4
-      - run: npx nx-cloud@latest start-ci-run --distribute-on="manual" --assignment-rules=".nx/workflows/assignment-rules-windows.yaml" --stop-agents-after="$WINDOWS_TASKS" --with-env-vars="CHROMATIC_TOKEN_REACT_VITE_DEFAULT_TS"
+      - run: npx nx-cloud@latest start-ci-run --distribute-on="manual" --stop-agents-after="$WINDOWS_TASKS"
       - run: yarn install --immutable
       - name: 'Run nx'
         run: yarn nx run-many -t $WINDOWS_TASKS -c production -p="tag:library,tag:ci:windows"
@@ -278,7 +281,9 @@ jobs:
         agent: [1, 2, 3]
     env:
       NX_CI_EXECUTION_ENV: 'windows'
-      NX_CLOUD_VERBOSE_LOGGING: true
+      # Must match nx-windows primary so NX Cloud pairs them into the same pipeline execution
+      NX_BRANCH: ${{ github.event.pull_request.number || github.ref_name }}
+      NX_CLOUD_VERBOSE_LOGGING: 'true'
     steps:
       - uses: actions/checkout@v4
         with:
@@ -292,5 +297,4 @@ jobs:
       - name: Start Nx Agent ${{ matrix.agent }}
         run: npx nx-cloud start-agent
         env:
-          NX_AGENT_LAUNCH_TEMPLATE: 'windows-latest'
-          NX_AGENT_NAME: ${{ matrix.agent }}
+          NX_AGENT_NAME: windows-agent-${{ matrix.agent }}

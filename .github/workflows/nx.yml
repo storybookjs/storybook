@@ -244,8 +244,14 @@ jobs:
         shell: bash
     env:
       NX_CI_EXECUTION_ENV: 'windows'
-      # Matches CircleCI daily Windows jobs: common build/test + init-empty + per-first-template sandbox build/dev/e2e
-      WINDOWS_TASKS: compile,test,init-empty,sandbox,build,e2e-tests,e2e-tests-dev
+      # Matches CircleCI daily Windows jobs: common build/test + init-empty + per-first-template sandbox build/e2e.
+      # e2e-tests-dev is intentionally excluded: it depends on the continuous `dev` task which
+      # crashes with exit code 1 when NX Cloud tries to stop it on Windows agents (known NX
+      # team-side bug, being tracked). Without it the Windows pipeline reliably terminates;
+      # with it the primary waits forever for a misbehaving agent. Keep `e2e-tests` (which
+      # uses `serve` — same continuous pattern but stops cleanly).
+      # TODO: re-add e2e-tests-dev once NX fixes continuous-task cleanup on Windows.
+      WINDOWS_TASKS: compile,test,init-empty,sandbox,build,e2e-tests
       # NX_BRANCH links the primary and the agents to the same CI pipeline execution
       NX_BRANCH: ${{ github.event.pull_request.number || github.ref_name }}
       # Verbose logging for the first Windows runs — drop once it's green

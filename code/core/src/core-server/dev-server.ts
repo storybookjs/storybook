@@ -49,6 +49,12 @@ export async function storybookDevServer(
   const storyIndexGeneratorPromise =
     options.presets.apply<StoryIndexGenerator>('storyIndexGenerator');
 
+  const changeDetectionService = new ChangeDetectionService({
+    storyIndexGeneratorPromise,
+    statusStore: getStatusStoreByTypeId(CHANGE_DETECTION_STATUS_TYPE_ID),
+    workingDir,
+  });
+
   app.use(compression({ level: 1 }));
 
   if (typeof options.extendServer === 'function') {
@@ -73,6 +79,7 @@ export async function storybookDevServer(
     channel: options.channel,
     workingDir,
     configDir,
+    onStoryIndexInvalidated: () => changeDetectionService.onStoryIndexInvalidated(),
   });
 
   (await getMiddleware(options.configDir))(app);
@@ -117,13 +124,7 @@ export async function storybookDevServer(
     await Promise.resolve();
 
   if (!options.ignorePreview) {
-    const changeDetectionService = new ChangeDetectionService({
-      storyIndexGeneratorPromise,
-      statusStore: getStatusStoreByTypeId(CHANGE_DETECTION_STATUS_TYPE_ID),
-      workingDir,
-    });
-
-    if (features?.changeDetection === false) {
+    if (!features.changeDetection) {
       changeDetectionService.start(previewBuilder.onModuleGraphChange, false);
     }
 
@@ -152,7 +153,7 @@ export async function storybookDevServer(
         throw e;
       });
 
-    if (features?.changeDetection !== false) {
+    if (features.changeDetection) {
       let changeDetectionStarted = false;
       const startChangeDetection = () => {
         if (changeDetectionStarted) {

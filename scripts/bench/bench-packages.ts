@@ -446,12 +446,17 @@ const run = async () => {
   ) as PackageName[];
   const options = program.opts<{ pullRequest?: number; baseBranch?: string; upload?: boolean }>();
 
-  if (options.upload === true || typeof options.baseBranch === 'string') {
-    if (!GCP_CREDENTIALS.project_id) {
-      throw new Error(
-        'GCP_CREDENTIALS env var is required to upload to BigQuery or compare against a base branch'
-      );
-    }
+  // Gracefully disable upload/compare paths when GCP_CREDENTIALS isn't provisioned
+  // (e.g., on GitHub Actions forks or workflows where the secret is not yet mirrored
+  // from CircleCI). Bench still runs locally and writes results.json; it just won't
+  // upload to BigQuery or post a PR comparison comment.
+  const hasGcpCredentials = Boolean(GCP_CREDENTIALS.project_id);
+  if ((options.upload === true || typeof options.baseBranch === 'string') && !hasGcpCredentials) {
+    console.warn(
+      'GCP_CREDENTIALS env var is not set; skipping BigQuery upload and base-branch comparison.'
+    );
+    options.upload = false;
+    options.baseBranch = undefined;
   }
 
   if ((await detectFreePort(REGISTRY_PORT)) === REGISTRY_PORT) {

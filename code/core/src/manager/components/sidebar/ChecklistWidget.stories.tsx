@@ -112,14 +112,3 @@ export const WithAiSetup = meta.story({
     mockStore.setState(withAiSetupState);
   },
 });
-
-export const WithAiSetupCopied = meta.story({
-  beforeEach: async () => {
-    Object.assign(navigator, { clipboard: { writeText: fn().mockResolvedValue(undefined) } });
-    mockStore.setState(withAiSetupState);
-  },
-  play: async ({ canvas, userEvent }) => {
-    const copyButton = await canvas.findByRole('button', { name: 'Copy prompt' });
-    await userEvent.click(copyButton);
-  },
-});

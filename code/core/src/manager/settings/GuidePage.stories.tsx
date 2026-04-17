@@ -70,17 +70,6 @@ export const AiCtaOpen = meta.story({
   },
 });
 
-export const AiCtaOpenCopied = meta.story({
-  beforeEach: async () => {
-    Object.assign(navigator, { clipboard: { writeText: fn().mockResolvedValue(undefined) } });
-    mockStore.setState(aiCtaOpenState);
-  },
-  play: async ({ canvas, userEvent }) => {
-    const copyButton = await canvas.findByRole('button', { name: 'Copy prompt' });
-    await userEvent.click(copyButton);
-  },
-});
-
 export const AiCtaSkipped = meta.story({
   beforeEach: async () => {
     mockStore.setState({

@@ -234,6 +234,11 @@ jobs:
           contains(github.event.pull_request.labels.*.name, 'ci:daily')
         ) || (github.event_name == 'schedule'))
     runs-on: windows-latest
+    # GH will auto-cancel the job when the timeout expires. Needed because
+    # NX Cloud manual agents on Windows occasionally fail to stop after the
+    # primary finishes, which would otherwise leave the job running for
+    # hours (confirmed w/ James Henry on NX side).
+    timeout-minutes: 60
     defaults:
       run:
         shell: bash
@@ -243,10 +248,12 @@ jobs:
       WINDOWS_TASKS: compile,test,init-empty,sandbox,build,e2e-tests,e2e-tests-dev
       # NX_BRANCH links the primary and the agents to the same CI pipeline execution
       NX_BRANCH: ${{ github.event.pull_request.number || github.ref_name }}
-      # Tell NX how many manual agents to expect so it doesn't over-allocate work
-      NX_CLOUD_DISTRIBUTED_EXECUTION_AGENT_COUNT: '3'
       # Verbose logging for the first Windows runs — drop once it's green
       NX_CLOUD_VERBOSE_LOGGING: 'true'
+      # Short tmp paths without username avoid e.g. empty-init storybook init
+      # running into Windows MAX_PATH limits. Matches lerna's pattern.
+      TEMP: 'C:\temp'
+      TMP: 'C:\temp'
     steps:
       - uses: actions/checkout@v4
         with:
@@ -273,6 +280,9 @@ jobs:
           contains(github.event.pull_request.labels.*.name, 'ci:daily')
         ) || (github.event_name == 'schedule'))
     runs-on: windows-latest
+    # See nx-windows job: agents sometimes don't shut down cleanly.
+    # Timeout lets GH reclaim the runner instead of burning 6h.
+    timeout-minutes: 60
     defaults:
       run:
         shell: bash
@@ -284,6 +294,10 @@ jobs:
       # Must match nx-windows primary so NX Cloud pairs them into the same pipeline execution
       NX_BRANCH: ${{ github.event.pull_request.number || github.ref_name }}
       NX_CLOUD_VERBOSE_LOGGING: 'true'
+      # Short tmp paths (same as primary) so any cache/install work the
+      # agent does stays under Windows MAX_PATH.
+      TEMP: 'C:\temp'
+      TMP: 'C:\temp'
     steps:
       - uses: actions/checkout@v4
         with:

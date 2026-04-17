@@ -395,5 +395,91 @@ describe('initializeChecklist', () => {
       expect(channel.emit).not.toHaveBeenCalledWith(AI_SETUP_ANALYTICS_REQUEST);
       expect(channel.emit).not.toHaveBeenCalledWith(GHOST_STORIES_REQUEST);
     });
+
+    it('reschedules when a recent external test-run is detected (e.g. npx vitest by AI agent)', async () => {
+      const { AI_SETUP_ANALYTICS_REQUEST, GHOST_STORIES_REQUEST } =
+        await import('storybook/internal/core-events');
+      const { get: getEventCacheEntry } = await import('../../telemetry/event-cache.ts');
+
+      vi.mocked(getEventCacheEntry).mockImplementation(
+        mockEventCache({
+          'ai-setup': aiSetupCacheEntry,
+          'ai-init-opt-in': aiInitOptInCacheEntry,
+        })
+      );
+
+      const { channel } = createMockChannel();
+      const { initializeChecklist } = await import('./checklist.ts');
+      await initializeChecklist(channel as any);
+      await vi.advanceTimersByTimeAsync(0);
+
+      // 2 minutes in: agent starts running `npx vitest` — a test-run event is recorded
+      await vi.advanceTimersByTimeAsync(2 * 60 * 1000);
+      const testRunEntry = {
+        timestamp: Date.now(),
+        body: {} as any,
+      } satisfies CacheEntry;
+      vi.mocked(getEventCacheEntry).mockImplementation(
+        mockEventCache({
+          'ai-setup': aiSetupCacheEntry,
+          'ai-init-opt-in': aiInitOptInCacheEntry,
+          'test-run': testRunEntry,
+        })
+      );
+
+      // 2 more minutes: idle timer fires (4 min total). test-run was only 2 min ago
+      // → still within the idle window → reschedule, don't emit yet
+      await vi.advanceTimersByTimeAsync(2 * 60 * 1000);
+      expect(channel.emit).not.toHaveBeenCalledWith(AI_SETUP_ANALYTICS_REQUEST);
+      expect(channel.emit).not.toHaveBeenCalledWith(GHOST_STORIES_REQUEST);
+
+      // Another 4 minutes (8 min total). test-run was 6 min ago — older than the
+      // idle window → agent is done → emit events
+      await vi.advanceTimersByTimeAsync(AI_IDLE_DELAY_MS);
+      expect(channel.emit).toHaveBeenCalledWith(GHOST_STORIES_REQUEST);
+      expect(channel.emit).toHaveBeenCalledWith(AI_SETUP_ANALYTICS_REQUEST);
+    });
+
+    it('reschedules when a recent ai-setup-self-healing-scoring event is detected', async () => {
+      const { AI_SETUP_ANALYTICS_REQUEST, GHOST_STORIES_REQUEST } =
+        await import('storybook/internal/core-events');
+      const { get: getEventCacheEntry } = await import('../../telemetry/event-cache.ts');
+
+      vi.mocked(getEventCacheEntry).mockImplementation(
+        mockEventCache({
+          'ai-setup': aiSetupCacheEntry,
+          'ai-init-opt-in': aiInitOptInCacheEntry,
+        })
+      );
+
+      const { channel } = createMockChannel();
+      const { initializeChecklist } = await import('./checklist.ts');
+      await initializeChecklist(channel as any);
+      await vi.advanceTimersByTimeAsync(0);
+
+      // 2 minutes in: agent finishes a vitest run — self-healing scoring event recorded
+      await vi.advanceTimersByTimeAsync(2 * 60 * 1000);
+      const selfHealingEntry = {
+        timestamp: Date.now(),
+        body: {} as any,
+      } satisfies CacheEntry;
+      vi.mocked(getEventCacheEntry).mockImplementation(
+        mockEventCache({
+          'ai-setup': aiSetupCacheEntry,
+          'ai-init-opt-in': aiInitOptInCacheEntry,
+          'ai-setup-self-healing-scoring': selfHealingEntry,
+        })
+      );
+
+      // Timer fires (4 min total). self-healing was 2 min ago → reschedule
+      await vi.advanceTimersByTimeAsync(2 * 60 * 1000);
+      expect(channel.emit).not.toHaveBeenCalledWith(AI_SETUP_ANALYTICS_REQUEST);
+      expect(channel.emit).not.toHaveBeenCalledWith(GHOST_STORIES_REQUEST);
+
+      // Another 4 minutes: self-healing was 6 min ago → emit
+      await vi.advanceTimersByTimeAsync(AI_IDLE_DELAY_MS);
+      expect(channel.emit).toHaveBeenCalledWith(GHOST_STORIES_REQUEST);
+      expect(channel.emit).toHaveBeenCalledWith(AI_SETUP_ANALYTICS_REQUEST);
+    });
   });
 });

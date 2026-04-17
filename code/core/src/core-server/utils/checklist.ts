@@ -106,9 +106,10 @@ export async function initializeChecklist(channel?: Channel) {
     };
 
     // Debounced analytics & ghost stories: the agent may be creating many files
-    // progressively. We want to score the final state, not intermediate states.
-    // Each story index change resets the timer; events only fire after 4 minutes
-    // of no story changes — matching the original useDelayedAnalyticsTrigger delay.
+    // progressively, then run tests for an extended period. We want to score the
+    // final state, not intermediate states. The timer resets on story index changes,
+    // test provider state changes, and detected external vitest runs (from `npx vitest`
+    // invocations by an AI agent). Events only fire after 4 minutes of inactivity.
     //
     // Important: the `ai-setup` event is written to the cache AFTER `storybook ai setup`
     // finishes creating files, so we must NOT check for it during the flurry of
@@ -128,6 +129,22 @@ export async function initializeChecklist(channel?: Channel) {
       analyticsTimer = setTimeout(async () => {
         // Only proceed if the user opted into AI
         if (!store.getState().aiOptIn) {
+          return;
+        }
+        // An AI agent may spend many minutes running `npx vitest` after writing
+        // story files. Check the event cache for recent test activity: if a
+        // 'test-run' or 'ai-setup-self-healing-scoring' event was recorded within
+        // the idle window, the agent is still active — reschedule and wait.
+        const now = Date.now();
+        const [lastTestRun, lastSelfHealing] = await Promise.all([
+          getEventCacheEntry('test-run').catch(() => undefined),
+          getEventCacheEntry('ai-setup-self-healing-scoring').catch(() => undefined),
+        ]);
+        const hasRecentTestActivity = [lastTestRun, lastSelfHealing].some(
+          (e) => e && now - e.timestamp < AI_IDLE_DELAY_MS
+        );
+        if (hasRecentTestActivity) {
+          scheduleIdleCheck();
           return;
         }
         // Check the event cache at idle time — ai-setup may have been written

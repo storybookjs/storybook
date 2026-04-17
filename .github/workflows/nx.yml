@@ -11,11 +11,12 @@ on:
     - cron: '0 23 * * *'
 
 concurrency:
-  # Per-SHA group so consecutive pushes to the same PR do NOT queue behind
-  # each other — each cache-bust gets its own NX Cloud CIPE in parallel.
-  # Different PRs already have different SHAs, so cross-PR isolation is
-  # preserved too.
-  group: nx-${{ github.event.pull_request.head.sha || github.sha }}
+  # Per-PR queue: consecutive pushes to the same PR queue behind an
+  # in-progress run (cancel-in-progress: false). This protects against NX
+  # Cloud's self-cancellation behaviour — we never start a new CIPE on a
+  # branch while the previous one is still running, so nothing gets
+  # auto-cancelled mid-flight. Different PRs keep their own queues.
+  group: nx-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: false
 
 permissions:

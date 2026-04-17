@@ -123,7 +123,7 @@ export const rnOndeviceAddonsToDeviceAddons: Fix<RnOndeviceAddonsOptions> = {
   },
 
   prompt() {
-    return 'We detected on-device addons (addons with "ondevice" in their name) in your `addons` config. For `@storybook/react-native`, these should be placed in `deviceAddons` so they are only injected on-device and not evaluated as Storybook Core presets.';
+    return 'On-device addons detected. Moving to `deviceAddons` for on-device injection (Skipping Storybook preset loading);
   },
 
   async run({ result, dryRun }) {

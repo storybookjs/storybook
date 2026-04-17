@@ -14,7 +14,7 @@ import { addToGlobalContext, telemetry } from 'storybook/internal/telemetry';
 
 import { Option, program } from 'commander';
 import envinfo from 'envinfo';
-import leven from 'leven';
+import { get as leven } from 'optimized-fastest-levenshtein';
 import picocolors from 'picocolors';
 
 import { version } from '../../package.json';

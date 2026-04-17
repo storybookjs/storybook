@@ -132,6 +132,13 @@ export const experimental_devServer = async (_app: Record<string, unknown>, opti
     await closeBeforeServer();
   };
 
-  process.once('SIGINT', cleanup);
-  process.once('SIGTERM', cleanup);
+  process.once('SIGINT', async () => {
+    await cleanup();
+    // Re-raise signal so the default handler (process exit) runs
+    process.kill(process.pid, 'SIGINT');
+  });
+  process.once('SIGTERM', async () => {
+    await cleanup();
+    process.kill(process.pid, 'SIGTERM');
+  });
 };

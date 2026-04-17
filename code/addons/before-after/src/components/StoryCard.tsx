@@ -103,6 +103,22 @@ const Placeholder = styled.div(({ theme }) => ({
   fontSize: '12px',
 }));
 
+const LoadingPlaceholder = styled.div(({ theme }) => ({
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  minHeight: '200px',
+  background: `linear-gradient(90deg, ${theme.background.hoverable} 25%, ${theme.background.app} 50%, ${theme.background.hoverable} 75%)`,
+  backgroundSize: '200% 100%',
+  animation: 'shimmer 1.5s infinite',
+  color: theme.color.mediumdark,
+  fontSize: '12px',
+  '@keyframes shimmer': {
+    '0%': { backgroundPosition: '200% 0' },
+    '100%': { backgroundPosition: '-200% 0' },
+  },
+}));
+
 const Divider = styled.div(({ theme }) => ({
   width: '1px',
   background: theme.color.border,
@@ -145,8 +161,10 @@ export const StoryCard = ({
         <IframeRow>
           <IframeCol>
             <IframeColLabel>Before</IframeColLabel>
-            {status === 'new' || beforeSrc === null ? (
+            {status === 'new' ? (
               <Placeholder>No previous version</Placeholder>
+            ) : beforeSrc === null ? (
+              <LoadingPlaceholder>Starting before server...</LoadingPlaceholder>
             ) : (
               <AutoSizingIframe
                 src={beforeSrc}

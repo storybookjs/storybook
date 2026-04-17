@@ -400,15 +400,13 @@ export const Empty: Story = {
   },
 };
 
-/** Production is equal to development now */
-export const EmptyProduction: Story = {
-  parameters: {
-    initialStoryState: {
-      internal_index: {
-        v: 6,
-        entries: {},
-      } as StoryIndex,
-    },
+export const EmptyNoChangeDetection: Story = {
+  ...Empty,
+  beforeEach: () => {
+    const features = global.FEATURES;
+    global.FEATURES = { ...features, changeDetection: false };
+    return () => {
+      global.FEATURES = features;
+    };
   },
-  play: Empty.play,
 };

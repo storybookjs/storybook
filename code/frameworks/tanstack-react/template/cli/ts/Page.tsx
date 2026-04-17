@@ -8,13 +8,7 @@ type User = {
   name: string;
 };
 
-declare module '@tanstack/react-router' {
-  interface FileRoutesByPath {
-    '/storybook': {};
-  }
-}
-
-export const Route = createFileRoute('/storybook')({
+export const Route = createFileRoute('/')({
   loader: async () => {
     return {
       featuredItems: [

@@ -6,10 +6,16 @@ import { Route } from './Page';
 
 const meta = {
   title: 'Example/Page',
-  component: Route,
   parameters: {
     // More on how to position stories at: https://storybook.js.org/docs/configure/story-layout
     layout: 'fullscreen',
+    tanstack: {
+      router: {
+        // Example of providing a custom route for a story.
+        // The page component is extracted if a component is not set for the story.
+        route: Route,
+      },
+    },
   },
 } satisfies Meta<typeof Route>;
 

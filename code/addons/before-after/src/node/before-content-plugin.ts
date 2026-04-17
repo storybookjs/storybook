@@ -37,8 +37,8 @@ export function beforeContentPlugin({ repoRoot }: BeforeContentPluginOptions): P
         return null;
       }
 
-      // Get the repo-relative path
-      const repoRelativePath = relative(repoRoot, filePath);
+      // Get the repo-relative path (normalize to forward slashes for git on Windows)
+      const repoRelativePath = relative(repoRoot, filePath).replaceAll('\\', '/');
 
       // Skip node_modules — deps are identical between HEAD and working tree
       if (repoRelativePath.includes('node_modules')) {

@@ -119,7 +119,7 @@ async function createBeforeServer(options: Options, repoRoot: string): Promise<B
         type: 'storybook-iframe-height',
         height: height,
         storyId: storyId
-      }, window.location.origin);
+      }, '*');
     }
   }
   if (document.readyState === 'complete') reportHeight();
@@ -221,6 +221,13 @@ async function readIframeTemplate(): Promise<string> {
       import.meta.resolve('@storybook/builder-vite/input/iframe.html')
     );
     return await readFile(templatePath, { encoding: 'utf8' });
+  }
+}
+
+/** Invalidates the Vite module graph so stale transforms are discarded after a git HEAD change. */
+export function invalidateModuleGraph(): void {
+  if (beforeServerResult?.viteServer) {
+    beforeServerResult.viteServer.moduleGraph.invalidateAll();
   }
 }
 

@@ -56,7 +56,12 @@ export const AutoSizingIframe = ({ src, storyId, title }: AutoSizingIframeProps)
       // Only accept messages from localhost origins (the before-server)
       if (!event.origin.startsWith('http://localhost:')) return;
 
-      if (event.data?.type === 'storybook-iframe-height' && event.data?.storyId === storyId) {
+      if (
+        event.data?.type === 'storybook-iframe-height' &&
+        (event.data?.storyId === storyId ||
+          // Match the raw storyId from the URL for before-server iframes (which use __before suffix)
+          `${event.data?.storyId}__before` === storyId)
+      ) {
         const height = Number(event.data.height);
         if (!Number.isFinite(height) || height < 0) return;
         const newHeight = Math.max(height, DEFAULT_HEIGHT);

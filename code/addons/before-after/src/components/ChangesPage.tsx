@@ -127,6 +127,7 @@ export const ChangesPage: React.FC = () => {
 
   const [compareMode, setCompareMode] = useState(false);
   const [beforeServerPort, setBeforeServerPort] = useState<number | null>(null);
+  const [refreshKey, setRefreshKey] = useState(0);
 
   const statuses = experimental_useStatusStore((allStatuses: StatusesByStoryIdAndTypeId) =>
     Object.fromEntries(
@@ -144,7 +145,8 @@ export const ChangesPage: React.FC = () => {
       setBeforeServerPort(null);
     },
     [EVENTS.HEAD_CHANGED]: () => {
-      // server will re-emit SERVER_READY with updated port if needed
+      // Increment key to force iframe remount so they re-fetch from the before-server
+      setRefreshKey((k) => k + 1);
     },
   });
 
@@ -220,6 +222,9 @@ export const ChangesPage: React.FC = () => {
   }, [changedStories]);
 
   const handleExit = () => {
+    // Clear the interceptor first — otherwise it blocks our own selectStory call
+    // since viewMode is still 'changes' at this point.
+    api.clearSelectStoryInterceptor();
     if (lastStoryIdRef.current) {
       api.selectStory(lastStoryIdRef.current);
     } else {
@@ -257,6 +262,7 @@ export const ChangesPage: React.FC = () => {
                 {group.stories.map((story) => (
                   <LazyMount key={story.storyId}>
                     <StoryCard
+                      key={`${story.storyId}-${refreshKey}`}
                       storyId={story.storyId}
                       title={story.title}
                       name={story.name}

@@ -7,7 +7,11 @@ import type { Options } from 'storybook/internal/types';
 
 import { EVENTS } from './constants.ts';
 import { invalidateCache } from './node/git-file-at-head.ts';
-import { getOrCreateBeforeServer, closeBeforeServer } from './node/before-server.ts';
+import {
+  getOrCreateBeforeServer,
+  closeBeforeServer,
+  invalidateModuleGraph,
+} from './node/before-server.ts';
 
 // Store the options reference for lazy server creation.
 // Re-entrance guard: viteFinal is re-invoked when the second server applies
@@ -71,28 +75,49 @@ export const experimental_devServer = async (_app: Record<string, unknown>, opti
   if (repoRoot) {
     try {
       const gitDir = join(repoRoot, '.git');
+      let refWatcher: ReturnType<typeof watch> | null = null;
 
-      const onGitChange = () => {
-        logger.info('[before-after] Git ref changed, refreshing...');
+      /** Set up a watcher on the current branch's ref file. */
+      const watchCurrentBranchRef = () => {
+        // Close any previous ref watcher (e.g. after a branch switch)
+        if (refWatcher) {
+          refWatcher.close();
+          refWatcher = null;
+        }
+        try {
+          const headContent = readFileSync(join(gitDir, 'HEAD'), 'utf8').trim();
+          const refMatch = headContent.match(/^ref: (.+)$/);
+          if (refMatch) {
+            const refPath = join(gitDir, refMatch[1]);
+            refWatcher = watch(refPath, onRefChange);
+            gitWatchers.push(refWatcher);
+          }
+        } catch {
+          // Detached HEAD or ref file not readable — HEAD watcher alone is sufficient
+        }
+      };
+
+      const onRefChange = () => {
+        logger.info('[before-after] Branch ref changed, refreshing...');
         invalidateCache();
+        invalidateModuleGraph();
         channel.emit(EVENTS.HEAD_CHANGED);
       };
 
-      const headWatcher = watch(join(gitDir, 'HEAD'), onGitChange);
+      const onHeadChange = () => {
+        logger.info('[before-after] HEAD changed, refreshing...');
+        invalidateCache();
+        invalidateModuleGraph();
+        channel.emit(EVENTS.HEAD_CHANGED);
+        // Re-read HEAD and update the ref watcher (branch may have changed)
+        watchCurrentBranchRef();
+      };
+
+      const headWatcher = watch(join(gitDir, 'HEAD'), onHeadChange);
       gitWatchers.push(headWatcher);
 
-      // Watch the current branch ref file (e.g. .git/refs/heads/main) for commits/amends
-      try {
-        const headContent = readFileSync(join(gitDir, 'HEAD'), 'utf8').trim();
-        const refMatch = headContent.match(/^ref: (.+)$/);
-        if (refMatch) {
-          const refPath = join(gitDir, refMatch[1]);
-          const refWatcher = watch(refPath, onGitChange);
-          gitWatchers.push(refWatcher);
-        }
-      } catch {
-        // Detached HEAD or ref file not readable — HEAD watcher alone is sufficient
-      }
+      // Set up initial ref watcher for the current branch
+      watchCurrentBranchRef();
     } catch {
       logger.info('[before-after] Unable to watch git refs for changes');
     }

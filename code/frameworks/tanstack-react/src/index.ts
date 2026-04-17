@@ -116,8 +116,6 @@ interface TanStackPreview<
         TArgs & (TanStackTypes<TMetaRoute> & T)['args']
       >;
       component?: ComponentType<TArgs>;
-      /** Provide a route to enable type-safe params/query/loader inference for this meta. */
-      route: TMetaRoute;
       decorators?: Decorators | Decorators[];
       args?: TMetaArgs;
     } & Omit<

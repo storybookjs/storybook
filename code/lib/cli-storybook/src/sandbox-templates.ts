@@ -1049,6 +1049,7 @@ export const normal: TemplateKey[] = [
   'bench/react-webpack-18-ts-test-build',
   // 'ember/default-js',
   'react-rsbuild/default-ts',
+  'tanstack-react/default-ts',
 ];
 
 export const merged: TemplateKey[] = [

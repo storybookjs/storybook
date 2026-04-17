@@ -1,5 +1,5 @@
 import type { AnyRoute, FileRoutesByPath } from '@tanstack/react-router';
-import type { RouteOptions } from '@tanstack/router-core';
+import type { ResolveParams, ResolveSearchSchema, RouteOptions } from '@tanstack/router-core';
 
 export type IsRoute<T> = T extends AnyRoute
   ? true
@@ -7,29 +7,29 @@ export type IsRoute<T> = T extends AnyRoute
     ? true
     : false;
 
-type StoryRoutePathForRoute<TRoute> = TRoute extends { path: infer P }
-  ? unknown extends P
-    ? keyof FileRoutesByPath | (string & {})
-    : P extends '/'
-      ? `/${string}`
-      : P extends string
-        ? P | `${P}/${string}`
-        : keyof FileRoutesByPath | (string & {})
-  : keyof FileRoutesByPath | (string & {});
+export type IsFileRoute<TRoute> = TRoute extends FileRoutesByPath[keyof FileRoutesByPath]
+  ? true
+  : false;
+
+type ExtractAllPathsFromFileRoutes<
+  TRoute extends FileRoutesByPath[keyof FileRoutesByPath]['preLoaderRoute'] | AnyRoute,
+> = TRoute['path'];
 
 export type StoryRoutePath<TRoute = undefined> =
-  IsRoute<TRoute> extends true
-    ? StoryRoutePathForRoute<TRoute>
-    : keyof FileRoutesByPath | (string & {});
+  TRoute extends FileRoutesByPath[keyof FileRoutesByPath]
+    ? ExtractAllPathsFromFileRoutes<TRoute>
+    : keyof FileRoutesByPath | `/${string}`;
 
 type StoryRouteParams<TRoute> =
-  IsRoute<TRoute> extends true
-    ? TRoute extends { types: { allParams: infer P } }
-      ? unknown extends P
-        ? Record<string, string>
-        : P
-      : Record<string, string>
-    : Record<string, string>;
+  TRoute extends FileRoutesByPath[keyof FileRoutesByPath]['preLoaderRoute']
+    ? ResolveParams<ExtractAllPathsFromFileRoutes<TRoute>>
+    : IsRoute<TRoute> extends true
+      ? TRoute extends { types: { allParams: infer P } }
+        ? unknown extends P
+          ? never
+          : P
+        : never
+      : never;
 
 type StoryRouteSearch<TRoute> =
   IsRoute<TRoute> extends true
@@ -123,7 +123,7 @@ export interface RouteOverrideOptions {
  * }
  * ```
  */
-export type RouteTreeOverrides = Record<keyof FileRoutesByPath, RouteOverrideOptions>;
+export type RouteTreeOverrides = Partial<Record<keyof FileRoutesByPath, RouteOverrideOptions>>;
 
 export interface RouterParameters<TRoute = undefined> {
   /** A route object or route options to use for this story. */

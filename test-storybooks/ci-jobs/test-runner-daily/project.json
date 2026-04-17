@@ -4,10 +4,16 @@
   "projectType": "application",
   "targets": {
     "daily-test-runner": {
-      "dependsOn": [{ "projects": ["react-vite/default-ts"], "target": "build" }],
+      "dependsOn": [
+        { "projects": ["react-vite/default-ts"], "target": "sandbox" },
+        { "projects": ["react-vite/default-ts"], "target": "build" }
+      ],
       "executor": "nx:run-commands",
       "options": {
-        "command": "yarn task test-runner --template react-vite/default-ts --no-link -s test-runner --junit"
+        "command": "yarn task test-runner --template react-vite/default-ts --no-link -s test-runner --junit",
+        "env": {
+          "STORYBOOK_SANDBOX_ROOT": "sandbox"
+        }
       },
       "cache": true,
       "inputs": ["^production"],

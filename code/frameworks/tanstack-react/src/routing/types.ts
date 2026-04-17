@@ -1,5 +1,11 @@
 import type { AnyRoute, FileRoutesByPath } from '@tanstack/react-router';
-import type { ResolveParams, ResolveSearchSchema, RouteOptions } from '@tanstack/router-core';
+import type {
+  AnyContext,
+  ResolveLoaderData,
+  ResolveParams,
+  ResolveSearchSchema,
+  RouteOptions,
+} from '@tanstack/router-core';
 
 export type IsRoute<T> = T extends AnyRoute
   ? true
@@ -96,17 +102,29 @@ export type StoryRouteOptions<TRoute = undefined> = CreateStoryRouteOptions<TRou
  * Per-route override options for use inside `RouteTreeOverrides`.
  * Users can override `loader`, `beforeLoad`, etc. for a specific route.
  */
-export interface RouteOverrideOptions {
+export interface RouteOverrideOptions<
+  TRoute extends FileRoutesByPath[keyof FileRoutesByPath]['preLoaderRoute'] | undefined = undefined,
+> {
   /** Override the route's loader function. */
-  loader?: (() => unknown) | (() => Promise<unknown>);
+  loader?: TRoute extends FileRoutesByPath[keyof FileRoutesByPath]['preLoaderRoute']
+    ? TRoute['options']['loader'] | ((ctx: unknown) => Promise<unknown> | unknown)
+    : (ctx: unknown) => Promise<unknown> | unknown;
   /** Override the route's beforeLoad function. */
-  beforeLoad?: (() => void) | (() => Promise<void>) | (() => Record<string, unknown>);
+  beforeLoad?: TRoute extends FileRoutesByPath[keyof FileRoutesByPath]['preLoaderRoute']
+    ? TRoute['options']['beforeLoad'] | ((ctx: unknown) => Promise<void> | void)
+    : (ctx: unknown) => Promise<void> | void;
   /** Override the route's search params validation. */
-  validateSearch?: (input: Record<string, unknown>) => Record<string, unknown>;
+  validateSearch?: TRoute extends FileRoutesByPath[keyof FileRoutesByPath]['preLoaderRoute']
+    ? TRoute['options']['validateSearch'] | ((search: unknown) => Promise<void> | void)
+    : (search: unknown) => Promise<void> | void;
   /** Override the route's loader dependencies. */
-  loaderDeps?: (opts: { search: Record<string, unknown> }) => Record<string, unknown>;
+  loaderDeps?: TRoute extends FileRoutesByPath[keyof FileRoutesByPath]['preLoaderRoute']
+    ? TRoute['options']['loaderDeps'] | string[]
+    : string[];
   /** Override the route's context function. */
-  context?: (() => Record<string, unknown>) | Record<string, unknown>;
+  context?: TRoute extends FileRoutesByPath[keyof FileRoutesByPath]['preLoaderRoute']
+    ? TRoute['options']['context'] | ((ctx: unknown) => Promise<unknown> | unknown)
+    : (ctx: unknown) => Promise<unknown> | unknown;
 }
 
 /**
@@ -123,7 +141,11 @@ export interface RouteOverrideOptions {
  * }
  * ```
  */
-export type RouteTreeOverrides = Partial<Record<keyof FileRoutesByPath, RouteOverrideOptions>>;
+export type RouteTreeOverrides = Partial<{
+  [routePath in keyof FileRoutesByPath]:
+    | RouteOverrideOptions<FileRoutesByPath[routePath]['preLoaderRoute']>
+    | undefined;
+}>;
 
 export interface RouterParameters<TRoute = undefined> {
   /** A route object or route options to use for this story. */

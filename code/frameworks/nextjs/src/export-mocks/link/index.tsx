@@ -2,8 +2,6 @@ import React from 'react';
 
 import { fn } from 'storybook/test';
 
-export type LinkStatus = { pending: boolean };
-
 const linkAction = fn().mockName('next/link::Link');
 
 const MockLink = React.forwardRef<HTMLAnchorElement, any>(function MockLink(
@@ -67,6 +65,6 @@ MockLink.displayName = 'NextLink';
 export default MockLink;
 export { MockLink as Link };
 
-export const useLinkStatus = fn((): LinkStatus => ({ pending: false })).mockName(
+export const useLinkStatus = fn((): { pending: boolean } => ({ pending: false })).mockName(
   'next/link::useLinkStatus'
 );

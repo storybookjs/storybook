@@ -93,6 +93,7 @@ export interface ChecklistData {
         api: API;
         index: API_IndexHash | undefined;
         item: ChecklistData['sections'][number]['items'][number];
+        storeState: import('./index.ts').StoreState;
       }) => boolean;
 
       /** Function returning content to display in the checklist item's collapsible area. */
@@ -166,7 +167,12 @@ export const checklistData = {
           id: 'aiSetup',
           label: 'Set up with AI',
           icon: WandIcon,
-          criteria: 'ai setup command has been run',
+          available: ({ storeState }) => {
+            // Show only if the user opted into AI during `storybook init` and has not run
+            // `storybook ai setup` yet. Both flags are populated server-side from the event cache.
+            return !!storeState.aiOptIn && storeState.items.aiSetup?.status !== 'done';
+          },
+          criteria: 'ai setup command has not been run yet',
           showOnGuidePage: false,
           action: {
             label: 'Copy prompt',

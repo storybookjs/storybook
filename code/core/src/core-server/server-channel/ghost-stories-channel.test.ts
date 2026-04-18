@@ -359,6 +359,8 @@ describe('ghostStoriesChannel', () => {
         });
 
         expect(mockTelemetry.getLastEvents).toHaveBeenCalled();
+        // getSessionId is no longer checked by ghost stories — session matching
+        // was removed to support mid-session ai-setup triggers.
         expect(mockTelemetry.getSessionId).not.toHaveBeenCalled();
         expect(mockTelemetry.getStorybookMetadata).not.toHaveBeenCalled();
         expect(mockStoryGeneration.getComponentCandidates).not.toHaveBeenCalled();
@@ -385,7 +387,6 @@ describe('ghostStoriesChannel', () => {
         });
 
         expect(mockTelemetry.getLastEvents).toHaveBeenCalled();
-        expect(mockTelemetry.getSessionId).toHaveBeenCalled();
         expect(mockTelemetry.getStorybookMetadata).toHaveBeenCalled();
         expect(mockStoryGeneration.getComponentCandidates).not.toHaveBeenCalled();
       });
@@ -411,7 +412,6 @@ describe('ghostStoriesChannel', () => {
         });
 
         expect(mockTelemetry.getLastEvents).toHaveBeenCalled();
-        expect(mockTelemetry.getSessionId).toHaveBeenCalled();
         expect(mockTelemetry.getStorybookMetadata).toHaveBeenCalled();
         expect(mockStoryGeneration.getComponentCandidates).not.toHaveBeenCalled();
       });

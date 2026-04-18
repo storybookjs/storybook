@@ -277,7 +277,7 @@ export const experimental_serverChannel = async (
   await setTelemetryEnabled(!coreOptions?.disableTelemetry);
 
   initAIAnalyticsChannel(channel, options, () => storyIndexGeneratorPromise);
-  initializeChecklist();
+  initializeChecklist(channel);
   initializeWhatsNew(channel, options);
   initializeSaveStory(channel, options);
   initFileSearchChannel(channel, options);

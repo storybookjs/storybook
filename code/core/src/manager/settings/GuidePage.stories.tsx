@@ -51,10 +51,30 @@ const meta = preview.meta({
 
 export const Default = meta.story({});
 
+const aiCtaOpenState = {
+  loaded: true,
+  aiOptIn: true,
+  widget: {},
+  items: {
+    ...initialState.items,
+    // aiSetup is intentionally omitted → status 'open', AiSetupBlock shows Copy prompt button
+    controls: { status: 'accepted' as const },
+    renderComponent: { status: 'done' as const },
+    viewports: { status: 'skipped' as const },
+  },
+};
+
+export const AiCtaOpen = meta.story({
+  beforeEach: async () => {
+    mockStore.setState(aiCtaOpenState);
+  },
+});
+
 export const AiCtaSkipped = meta.story({
   beforeEach: async () => {
     mockStore.setState({
       loaded: true,
+      aiOptIn: true,
       widget: {},
       items: {
         ...initialState.items,
@@ -71,6 +91,7 @@ export const AiCtaDone = meta.story({
   beforeEach: async () => {
     mockStore.setState({
       loaded: true,
+      aiOptIn: true,
       widget: {},
       items: {
         ...initialState.items,

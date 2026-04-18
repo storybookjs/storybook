@@ -95,17 +95,20 @@ export const Narrow = meta.story({
   play,
 });
 
+const withAiSetupState = {
+  loaded: true,
+  aiOptIn: true,
+  widget: {},
+  items: {
+    ...initialState.items,
+    // aiSetup is intentionally left 'open' so it appears in the widget's task list
+    controls: { status: 'accepted' as const },
+    renderComponent: { status: 'done' as const },
+  },
+};
+
 export const WithAiSetup = meta.story({
   beforeEach: async () => {
-    mockStore.setState({
-      loaded: true,
-      widget: {},
-      items: {
-        ...initialState.items,
-        // aiSetup is intentionally left 'open' so it appears in the widget's task list
-        controls: { status: 'accepted' },
-        renderComponent: { status: 'done' },
-      },
-    });
+    mockStore.setState(withAiSetupState);
   },
 });

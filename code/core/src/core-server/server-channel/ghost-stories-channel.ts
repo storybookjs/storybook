@@ -1,12 +1,6 @@
 import type { Channel } from 'storybook/internal/channels';
 import { GHOST_STORIES_REQUEST, GHOST_STORIES_RESPONSE } from 'storybook/internal/core-events';
-import {
-  getLastEvents,
-  getSessionId,
-  getStorybookMetadata,
-  telemetry,
-} from 'storybook/internal/telemetry';
-import { logger } from 'storybook/internal/node-logger';
+import { getLastEvents, getStorybookMetadata, telemetry } from 'storybook/internal/telemetry';
 import type { Options } from 'storybook/internal/types';
 
 import { getComponentCandidates } from '../utils/ghost-stories/get-candidates.ts';
@@ -48,11 +42,9 @@ export function initGhostStoriesChannel(channel: Channel, options: Options) {
             throw new SkipGhostStoriesTelemetry();
           }
 
-          const sessionId = await getSessionId();
-          // We only capture ghost stories in the first ever session since init or ai setup.
-          if (lastRelevantEvent.body?.sessionId && lastRelevantEvent.body.sessionId !== sessionId) {
-            throw new SkipGhostStoriesTelemetry();
-          }
+          // No session-ID match: `storybook ai setup` runs as a separate CLI
+          // process, so its sessionId never matches the dev server's. The
+          // `lastGhostStoriesRun` guard above is enough to enforce once-per-project.
 
           const metadata = await getStorybookMetadata(options.configDir);
           const isReactStorybook = metadata?.renderer?.includes('@storybook/react');
@@ -71,7 +63,6 @@ export function initGhostStoriesChannel(channel: Channel, options: Options) {
           // disturb end user activities.
           const isIdle = await waitForIdleVitest();
           if (!isIdle) {
-            logger.debug('GHOST_STORIES_REQUEST timed out waiting for vitest to be available.');
             return;
           }
 

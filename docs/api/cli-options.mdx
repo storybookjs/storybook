@@ -290,9 +290,9 @@ storybook ai [options] [command]
 
 Options include:
 
-| Option                | Description                                                                                                              |
-| --------------------- | ------------------------------------------------------------------------------------------------------------------------ |
-| `-h`, `--help`        | Output usage information.<br />`storybook ai --help`                                                                     |
+| Option                  | Description                                                                                                               |
+| ----------------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| `-h`, `--help`          | Output usage information.<br />`storybook ai --help`                                                                      |
 | `-o`, `--output <path>` | Write the prompt output to a file instead of printing it to stdout.<br />`storybook ai setup --output storybook-setup.md` |
 
 #### `ai setup`
@@ -311,15 +311,15 @@ storybook ai setup [options]
 
 Options include:
 
-| Option                          | Description                                                                                                                                                              |
-| ------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `-h`, `--help`                  | Output usage information.<br />`storybook ai setup --help`                                                                                                               |
-| `-c`, `--config-dir [dir-name]` | Storybook configuration directory.<br />`storybook ai setup -c .storybook`                                                                                               |
+| Option                          | Description                                                                                                                                                                          |
+| ------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `-h`, `--help`                  | Output usage information.<br />`storybook ai setup --help`                                                                                                                           |
+| `-c`, `--config-dir [dir-name]` | Storybook configuration directory.<br />`storybook ai setup -c .storybook`                                                                                                           |
 | `--package-manager <type>`      | Force package manager to use when detecting project information.<br />Available package managers include `npm`, `yarn`, and `pnpm`.<br />`storybook ai setup --package-manager pnpm` |
-| `--disable-telemetry`           | Disables Storybook's telemetry. Learn more about it [here](../configure/telemetry.mdx#how-to-opt-out).<br />`storybook ai setup --disable-telemetry`                     |
-| `--debug`                       | Outputs more logs in the CLI to assist debugging.<br />`storybook ai setup --debug`                                                                                      |
-| `--loglevel [level]`            | Controls level of logging.<br />Available options: `trace`, `debug`, `info` (default), `warn`, `error`, `silent`.<br />`storybook ai setup --loglevel warn`              |
-| `--logfile [path]`              | Write debug logs to a file.<br />`storybook ai setup --logfile ./sb.log`                                                                                                 |
+| `--disable-telemetry`           | Disables Storybook's telemetry. Learn more about it [here](../configure/telemetry.mdx#how-to-opt-out).<br />`storybook ai setup --disable-telemetry`                                 |
+| `--debug`                       | Outputs more logs in the CLI to assist debugging.<br />`storybook ai setup --debug`                                                                                                  |
+| `--loglevel [level]`            | Controls level of logging.<br />Available options: `trace`, `debug`, `info` (default), `warn`, `error`, `silent`.<br />`storybook ai setup --loglevel warn`                          |
+| `--logfile [path]`              | Write debug logs to a file.<br />`storybook ai setup --logfile ./sb.log`                                                                                                             |
 
 When run without `--output`, the generated prompt is printed to stdout. This is how AI agents typically consume it, by running the command directly and reading the result. When run with `--output`, the prompt is written to the given file path so you can paste or attach it to an agent that doesn't have shell access. See the [agentic setup](../ai/setup.mdx#user-initiated-setup) docs for details on both flows.
 

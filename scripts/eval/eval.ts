@@ -225,6 +225,7 @@ if (args.manual) {
   logger.log(`  Stories: ${storyRenderStr}`);
   logger.log(`  Ghost:   ${ghostStoriesStr}`);
   logger.log(`  TS Err:  ${result.grade.typeCheckErrors}`);
+  logger.log(`  CSS:     ${formatCssApplied(result.grade.storyRender)}`);
   logger.log(`  Score:   ${formatScorePercent(result.score.score)} (normalized preview gain)`);
   logger.log(`  Cost:    ${formatCost(result.execution.cost)}`);
   logger.log(`  Time:    ${formatDuration(result.execution.duration)}`);
@@ -277,4 +278,17 @@ function formatPassedTotal(summary?: { passed: number; total: number }) {
 
   const rate = summary.total > 0 ? summary.passed / summary.total : 0;
   return `${summary.passed}/${summary.total} (${Math.round(rate * 100)}%)`;
+}
+
+function formatCssApplied(storyRender?: { passed: number; passedButNoCss?: number }) {
+  if (!storyRender || storyRender.passed <= 0) {
+    return '-';
+  }
+
+  const noCss = storyRender.passedButNoCss ?? 0;
+  if (noCss <= 0) {
+    return pc.green(`${storyRender.passed}/${storyRender.passed} stories show user CSS`);
+  }
+
+  return pc.yellow(`${noCss}/${storyRender.passed} passing stories had no detected user CSS`);
 }

@@ -13,6 +13,17 @@ export interface StoryRenderGrade {
   total: number;
   passed: number;
   storyFiles: number;
+  /**
+   * Stories that passed but rendered to a zero-sized / hidden DOM element.
+   * Optional for backward compatibility with older serialized data.
+   */
+  passedButEmptyRender?: number;
+  /**
+   * Stories that passed but where the CSS-applied probe found no user CSS at the canvas
+   * root. Useful for catching the "stylesheet imported but never applied" case.
+   * Optional for backward compatibility with older serialized data.
+   */
+  passedButNoCss?: number;
 }
 
 export interface StoryRenderRunResult {
@@ -82,6 +93,8 @@ export async function runStoryRenderPass(opts: {
         total: 0,
         passed: 0,
         storyFiles: 0,
+        passedButEmptyRender: 0,
+        passedButNoCss: 0,
       },
     };
   }
@@ -181,6 +194,8 @@ async function readStoryRenderSummary(reportPath: string, storyFiles: number) {
     total: parsed.total,
     passed: parsed.passed,
     storyFiles,
+    passedButEmptyRender: parsed.passedButEmptyRender,
+    passedButNoCss: parsed.passedButNoCss,
   } satisfies StoryRenderGrade;
 }
 

@@ -260,6 +260,7 @@ function renderPrBody(opts: { branch: string; data: EvalData }) {
     `- Ghost stories after: \`${postAgentGhostStories}\``,
     `- Vitest pass rate before preview changes: \`${baselinePreviewStories}\``,
     `- Vitest pass rate after preview changes: \`${postAgentStoryRender}\``,
+    `- CSS-applied warnings (after): \`${formatCssWarnings(opts.data.grade.storyRender)}\``,
     `- Duration: \`${formatDuration(opts.data.execution.duration)}\``,
     `- Cost: \`${formatCost(opts.data.execution.cost)}\``,
     `- Raw data: [${getEvalResultsRelativePath('data.json', opts.data.project.projectDir)}](${dataUrl})`,
@@ -296,6 +297,19 @@ function formatStoryRender(storyRender?: EvalData['grade']['storyRender']) {
 
   const rate = storyRender.total > 0 ? storyRender.passed / storyRender.total : 0;
   return `${storyRender.passed}/${storyRender.total} (${Math.round(rate * 100)}%)`;
+}
+
+function formatCssWarnings(storyRender?: EvalData['grade']['storyRender']) {
+  if (!storyRender || storyRender.passed <= 0) {
+    return '-';
+  }
+
+  const noCss = storyRender.passedButNoCss ?? 0;
+  if (noCss <= 0) {
+    return `0/${storyRender.passed}`;
+  }
+
+  return `${noCss}/${storyRender.passed} passing stories rendered with no detected user CSS`;
 }
 
 function formatGhostStories(ghost?: EvalData['grade']['ghostStories']) {

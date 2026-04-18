@@ -73,6 +73,7 @@ describe('analyze-test-results', () => {
         total: 3,
         passed: 3,
         passedButEmptyRender: 0,
+        passedButNoCss: 0,
         successRate: 1.0,
         successRateWithoutEmptyRender: 1.0,
         uniqueErrorCount: 0,
@@ -103,6 +104,18 @@ describe('analyze-test-results', () => {
       expect(analysis.passedButEmptyRender).toBe(2);
       expect(analysis.successRate).toBe(1.0);
       expect(analysis.successRateWithoutEmptyRender).toBe(0.33);
+    });
+
+    it('should count passedButNoCss only when cssApplied is explicitly false', () => {
+      const results: StoryTestResult[] = [
+        { storyId: 's1', status: 'PASS', cssApplied: true },
+        { storyId: 's2', status: 'PASS', cssApplied: false },
+        { storyId: 's3', status: 'PASS', cssApplied: false },
+        { storyId: 's4', status: 'PASS' }, // probe didn't run -> not counted
+        { storyId: 's5', status: 'FAIL', cssApplied: false }, // failed -> not counted
+      ];
+      const analysis = analyzeTestResults(results);
+      expect(analysis.passedButNoCss).toBe(2);
     });
 
     it('should handle zero tests', () => {

@@ -64,6 +64,9 @@ export function analyzeTestResults(results: StoryTestResult[]): TestRunAnalysis 
   const total = results.length;
   const passed = results.filter((r) => r.status === 'PASS').length;
   const passedButEmptyRender = results.filter((r) => r.status === 'PASS' && r.emptyRender).length;
+  const passedButNoCss = results.filter(
+    (r) => r.status === 'PASS' && r.cssApplied === false
+  ).length;
 
   const successRate = total > 0 ? parseFloat((passed / total).toFixed(2)) : 0;
   const successRateWithoutEmptyRender =
@@ -75,6 +78,7 @@ export function analyzeTestResults(results: StoryTestResult[]): TestRunAnalysis 
     total,
     passed,
     passedButEmptyRender,
+    passedButNoCss,
     successRate,
     successRateWithoutEmptyRender,
     uniqueErrorCount: errorClassification.uniqueErrorCount,

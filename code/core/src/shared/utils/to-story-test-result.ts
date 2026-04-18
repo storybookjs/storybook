@@ -2,7 +2,7 @@ import type { StoryTestResult } from './test-result-types.ts';
 
 export interface VitestLikeReport {
   type: string;
-  result?: { emptyRender?: boolean } | unknown;
+  result?: { emptyRender?: boolean; cssApplied?: boolean } | unknown;
 }
 
 export interface VitestLikeError {
@@ -47,6 +47,23 @@ export function detectEmptyRender(reports: readonly VitestLikeReport[] | undefin
   );
 }
 
+/**
+ * Read the `cssApplied` signal from the first render-analysis report that carries one.
+ *
+ * Returns `undefined` when no report includes the field — callers should treat this as
+ * "no signal" rather than "CSS missing", because the probe may not have run.
+ */
+export function detectCssApplied(
+  reports: readonly VitestLikeReport[] | undefined
+): boolean | undefined {
+  const report = reports?.find((r) => {
+    if (r.type !== 'render-analysis') return false;
+    const result = r.result as { cssApplied?: boolean } | undefined;
+    return typeof result?.cssApplied === 'boolean';
+  });
+  return (report?.result as { cssApplied?: boolean } | undefined)?.cssApplied;
+}
+
 function normalizeStatus(statusRaw: string | undefined): StoryTestResult['status'] {
   if (statusRaw === 'passed') return 'PASS';
   if (statusRaw === 'failed') return 'FAIL';
@@ -65,6 +82,7 @@ export function toStoryTestResult(input: VitestLikeInput): StoryTestResult | nul
 
   const status = normalizeStatus(input.statusRaw);
   const emptyRender = status === 'PASS' && detectEmptyRender(input.reports);
+  const cssApplied = status === 'PASS' ? detectCssApplied(input.reports) : undefined;
 
   let error: string | undefined;
   let stack: string | undefined;
@@ -80,5 +98,6 @@ export function toStoryTestResult(input: VitestLikeInput): StoryTestResult | nul
     error,
     stack,
     emptyRender: emptyRender || undefined,
+    cssApplied,
   };
 }

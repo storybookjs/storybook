@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  detectCssApplied,
   detectEmptyRender,
   extractErrorMessage,
   toStoryTestResult,
@@ -82,6 +83,34 @@ describe('detectEmptyRender', () => {
   });
 });
 
+describe('detectCssApplied', () => {
+  it('returns undefined for missing/empty reports', () => {
+    expect(detectCssApplied(undefined)).toBeUndefined();
+    expect(detectCssApplied([])).toBeUndefined();
+  });
+
+  it('returns undefined when no render-analysis report carries cssApplied', () => {
+    expect(detectCssApplied([{ type: 'render-analysis', result: { emptyRender: false } }])).toBe(
+      undefined
+    );
+  });
+
+  it('returns the cssApplied value when present', () => {
+    expect(detectCssApplied([{ type: 'render-analysis', result: { cssApplied: true } }])).toBe(
+      true
+    );
+    expect(detectCssApplied([{ type: 'render-analysis', result: { cssApplied: false } }])).toBe(
+      false
+    );
+  });
+
+  it('ignores cssApplied on non-render-analysis reports', () => {
+    expect(detectCssApplied([{ type: 'other', result: { cssApplied: false } as any }])).toBe(
+      undefined
+    );
+  });
+});
+
 describe('toStoryTestResult', () => {
   it('returns null when storyId is missing', () => {
     expect(toStoryTestResult({ storyId: undefined, statusRaw: 'passed' })).toBeNull();
@@ -102,6 +131,20 @@ describe('toStoryTestResult', () => {
     expect(
       toStoryTestResult({ storyId: 's', statusRaw: 'failed', reports })?.emptyRender
     ).toBeUndefined();
+  });
+
+  it('records cssApplied only when status is PASS', () => {
+    const reports = [{ type: 'render-analysis', result: { cssApplied: false } }];
+    expect(toStoryTestResult({ storyId: 's', statusRaw: 'passed', reports })?.cssApplied).toBe(
+      false
+    );
+    expect(
+      toStoryTestResult({ storyId: 's', statusRaw: 'failed', reports })?.cssApplied
+    ).toBeUndefined();
+  });
+
+  it('leaves cssApplied undefined when no probe ran', () => {
+    expect(toStoryTestResult({ storyId: 's', statusRaw: 'passed' })?.cssApplied).toBeUndefined();
   });
 
   it('extracts error message and stack from runtime-style error objects', () => {

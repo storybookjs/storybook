@@ -45,6 +45,7 @@ describe('parse-vitest-report', () => {
         total: 3,
         passed: 3,
         passedButEmptyRender: 0,
+        passedButNoCss: 0,
         successRate: 1.0,
         successRateWithoutEmptyRender: 1.0,
         uniqueErrorCount: 0,
@@ -201,6 +202,51 @@ describe('parse-vitest-report', () => {
       expect(result.summary?.passedButEmptyRender).toBe(2);
       expect(result.summary?.successRate).toBe(1.0);
       expect(result.summary?.successRateWithoutEmptyRender).toBe(0.33);
+    });
+
+    it('should detect missing-css render-analysis reports', () => {
+      const mockVitestResults = {
+        success: true,
+        numTotalTests: 3,
+        numPassedTests: 3,
+        numFailedTests: 0,
+        testResults: [
+          {
+            assertionResults: [
+              {
+                fullName: 'Story1',
+                status: 'passed',
+                meta: {
+                  reports: [{ type: 'render-analysis', result: { cssApplied: true } }],
+                },
+                failureMessages: [],
+              },
+              {
+                fullName: 'Story2',
+                status: 'passed',
+                meta: {
+                  reports: [{ type: 'render-analysis', result: { cssApplied: false } }],
+                },
+                failureMessages: [],
+              },
+              {
+                fullName: 'Story3',
+                status: 'passed',
+                meta: {
+                  // No probe result -> not counted as missing CSS.
+                  reports: [],
+                },
+                failureMessages: [],
+              },
+            ],
+          },
+        ],
+      };
+
+      const result = parseVitestResults(mockVitestResults);
+
+      expect(result.summary?.passed).toBe(3);
+      expect(result.summary?.passedButNoCss).toBe(1);
     });
 
     it('should handle multiple test suites', () => {

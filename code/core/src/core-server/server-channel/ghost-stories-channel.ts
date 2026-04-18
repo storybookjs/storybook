@@ -42,13 +42,9 @@ export function initGhostStoriesChannel(channel: Channel, options: Options) {
             throw new SkipGhostStoriesTelemetry();
           }
 
-          // We only capture ghost stories in the first dev-server session after init or
-          // ai-setup. When the trigger is mid-session (ai-setup ran while the dev server
-          // was already running), the event's sessionId belongs to the ai-setup CLI
-          // process, not the dev server. Comparing against the dev-server sessionId
-          // would incorrectly skip. Instead, check that this is the FIRST dev-server
-          // session by verifying no ghost-stories run has ever happened (line 47 above).
-          // The "already ran" guard is sufficient to ensure we only run once.
+          // No session-ID match: `storybook ai setup` runs as a separate CLI
+          // process, so its sessionId never matches the dev server's. The
+          // `lastGhostStoriesRun` guard above is enough to enforce once-per-project.
 
           const metadata = await getStorybookMetadata(options.configDir);
           const isReactStorybook = metadata?.renderer?.includes('@storybook/react');

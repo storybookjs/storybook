@@ -71,8 +71,8 @@ export async function initializeChecklist(channel?: Channel) {
         }) satisfies StoreState
     );
 
-    // AI-specific: check if the user opted into AI during `storybook init`.
-    // Non-blocking — a failure here must never hide the checklist.
+    // AI opt-in flag (set during `storybook init`). Non-blocking so a cache
+    // failure cannot hide the checklist.
     getEventCacheEntry('ai-init-opt-in')
       .then((event) => {
         if (event) {
@@ -81,9 +81,8 @@ export async function initializeChecklist(channel?: Channel) {
       })
       .catch(() => {});
 
-    // AI-specific: detect `storybook ai setup` completion and react to it.
-    // This runs both at startup and mid-session (on index changes triggered by new story files).
-    // Intentionally non-blocking — a failure here must never hide the checklist.
+    // Mark the aiSetup item done if `storybook ai setup` has ever run. Called
+    // at startup and on story index changes; errors are swallowed.
     const markAiSetupDone = async () => {
       try {
         const aiSetupEvent = await getEventCacheEntry('ai-setup');
@@ -105,36 +104,36 @@ export async function initializeChecklist(channel?: Channel) {
       }
     };
 
-    // Debounced analytics & ghost stories: the agent may be creating many files
-    // progressively, then run tests for an extended period. We want to score the
-    // final state, not intermediate states. The timer resets on story index changes,
-    // test provider state changes, and detected external vitest runs (from `npx vitest`
-    // invocations by an AI agent). Events only fire after 4 minutes of inactivity.
-    //
-    // Important: the `ai-setup` event is written to the cache AFTER `storybook ai setup`
-    // finishes creating files, so we must NOT check for it during the flurry of
-    // STORY_INDEX_INVALIDATED events. Instead, we wait for idle and check then.
+    // Debounced analytics + ghost stories: emit exactly once, 4 minutes after
+    // activity stops. The timer resets on story-index changes, test-provider
+    // state changes, and detected external vitest runs (`npx vitest`). We check
+    // for `ai-setup` at idle time rather than eagerly, because the event is
+    // cached AFTER `storybook ai setup` finishes its file writes.
     const AI_IDLE_DELAY_MS = 4 * 60 * 1000;
     let analyticsTimer: ReturnType<typeof setTimeout> | undefined;
     let analyticsEmitted = false;
+
+    // Story-index invalidations can arrive in flurries. Throttle the
+    // fire-and-forget cache read so we don't hit disk on every tick. The
+    // timer-internal markAiSetupDone() below is awaited separately.
+    const throttledSyncAiSetupStatus = throttle(() => markAiSetupDone().catch(() => {}), 1000);
 
     const scheduleIdleCheck = () => {
       if (!channel || analyticsEmitted) {
         return;
       }
-      // Sync aiSetup UI state immediately — don't make the user wait 4 minutes
-      // for the copy prompt / AI story UI to disappear after setup completes.
-      markAiSetupDone().catch(() => {});
+      // Sync aiSetup UI immediately so the copy-prompt button disappears as
+      // soon as setup completes, instead of after the 4-minute delay.
+      throttledSyncAiSetupStatus();
       clearTimeout(analyticsTimer);
       analyticsTimer = setTimeout(async () => {
-        // Only proceed if the user opted into AI
         if (!store.getState().aiOptIn) {
           return;
         }
-        // An AI agent may spend many minutes running `npx vitest` after writing
-        // story files. Check the event cache for recent test activity: if a
-        // 'test-run' or 'ai-setup-self-healing-scoring' event was recorded within
-        // the idle window, the agent is still active — reschedule and wait.
+        // Agents often run `npx vitest` for many minutes. If a recent
+        // `test-run` or `ai-setup-self-healing-scoring` event is in the cache,
+        // the agent is still active — reschedule. `CacheEntry.timestamp` is
+        // the cache-write time (= event-firing time, writes are synchronous).
         const now = Date.now();
         const [lastTestRun, lastSelfHealing] = await Promise.all([
           getEventCacheEntry('test-run').catch(() => undefined),
@@ -147,32 +146,27 @@ export async function initializeChecklist(channel?: Channel) {
           scheduleIdleCheck();
           return;
         }
-        // Check the event cache at idle time — ai-setup may have been written
-        // after the last STORY_INDEX_INVALIDATED fired.
+        // Final re-check: ai-setup may have been cached after the last trigger.
         await markAiSetupDone();
         if (store.getState().items.aiSetup?.status !== 'done') {
           return;
         }
         analyticsEmitted = true;
         channel.off(STORY_INDEX_INVALIDATED, onIndexInvalidated);
+        unsubscribeTestProvider();
         channel.emit(GHOST_STORIES_REQUEST);
         channel.emit(AI_SETUP_ANALYTICS_REQUEST);
       }, AI_IDLE_DELAY_MS);
     };
 
-    // Check once at startup (non-blocking).
+    // Startup check: covers the case where the dev server was restarted
+    // mid-agentic-session and `ai-setup` was already cached.
     markAiSetupDone().then((detected) => {
       if (detected) {
-        // ai-setup already existed at startup — schedule debounced analytics.
-        // The server may have just restarted while the agent is still working.
         scheduleIdleCheck();
       }
     });
 
-    // Listen for mid-session story changes. Every change resets the 4-minute idle
-    // timer. When the timer fires, we check the event cache for `ai-setup` and
-    // emit analytics if found. This avoids the race condition where `ai-setup` is
-    // written to cache after the last file change.
     const onIndexInvalidated = () => {
       if (analyticsEmitted) {
         return;
@@ -183,11 +177,10 @@ export async function initializeChecklist(channel?: Channel) {
       channel.on(STORY_INDEX_INVALIDATED, onIndexInvalidated);
     }
 
-    // Also reset the idle timer when test provider state changes. During an agentic
-    // session the agent may pause modifying story files for extended periods while
-    // running tests. Without this, the 4-minute idle timer based solely on story
-    // index changes would fire prematurely while the agent is still active.
-    universalTestProviderStore.onStateChange(() => {
+    // Test-provider state changes also reset the timer — an agent can spend
+    // long stretches running tests without touching story files. Captured so
+    // we can unsubscribe symmetrically when analytics fires.
+    const unsubscribeTestProvider = universalTestProviderStore.onStateChange(() => {
       if (analyticsEmitted) {
         return;
       }

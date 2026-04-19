@@ -328,6 +328,7 @@ describe('runTrial pipeline', () => {
           typeCheckErrors: 0,
           fileChanges: [],
           storybookChanges: [],
+          hasComputedStyleAssertion: false,
         },
         score: {
           score: 0,
@@ -419,6 +420,7 @@ function setupMocks(overrides?: {
         { path: '.storybook/preview.tsx', gitStatus: 'A' },
         { path: 'src/Button.stories.tsx', gitStatus: 'A' },
       ],
+      hasComputedStyleAssertion: true,
       ...(buildSuccess
         ? {
             storyRender: {

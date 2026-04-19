@@ -462,7 +462,21 @@ Examples of useful checks:
 - a toast, alert, or badge has the expected accessible text and visual state
 - a CSS class or computed style confirms the real state that matters
 
-## 7. Cover the patterns you found
+## 7. Prove CSS is loaded in exactly one story
+
+In exactly one story, assert a component-specific computed style. `toBeVisible` passes on an unstyled component; a concrete style value proves the shared preview loaded the app's CSS.
+
+Read a styling value from the component's source and assert it with `getComputedStyle`:
+
+```tsx
+play: async ({ canvas }) => {
+  const button = canvas.getByRole('button', { name: /submit/i });
+  // PrimaryButton uses bg-blue-600 — fails if Tailwind / global CSS did not load.
+  await expect(getComputedStyle(button).backgroundColor).toBe('rgb(37, 99, 235)');
+},
+```
+
+## 8. Cover the patterns you found
 
 Write stories for the real patterns in the codebase, for example:
 - a low-level reusable component in real JSX usage
@@ -495,7 +509,7 @@ export const Default: Story = {
 };
 ```
 
-## 8. Verify both rendering and types
+## 9. Verify both rendering and types
 
 As you work, verify the stories with Vitest:
 

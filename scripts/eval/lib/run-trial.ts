@@ -113,6 +113,7 @@ export async function runTrial(config: TrialConfig, logger?: Logger): Promise<Ru
       typeCheckErrors: 0,
       fileChanges: [],
       storybookChanges: [],
+      hasComputedStyleAssertion: false,
     },
     score: {
       score: 0,

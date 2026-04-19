@@ -52,6 +52,8 @@ export interface Grade {
   ghostStories?: GhostStoryGrade;
   baselinePreviewStories?: StoryRenderGrade;
   storyRender?: StoryRenderGrade;
+  /** True when the agent added at least one `getComputedStyle` call (CSS-loaded assertion). */
+  hasComputedStyleAssertion: boolean;
 }
 
 /** Filter file changes to only storybook-related ones. */
@@ -121,11 +123,18 @@ export async function grade(
 
   // Changed files
   logger.logStep('Collecting agent changes...');
-  const fileChanges = await getChangedFiles(repoRoot, baselineCommit);
+  const { changes: fileChanges, rawDiff } = await getChangedFiles(repoRoot, baselineCommit);
   const storybookChanges = filterStorybookFiles(fileChanges);
   logger.logSuccess(
     `${fileChanges.length} files changed (${storybookChanges.length} storybook-related)`
   );
+
+  const hasComputedStyleAssertion = rawDiff.includes('getComputedStyle');
+  if (hasComputedStyleAssertion) {
+    logger.logSuccess('CSS-loaded assertion present (getComputedStyle found in diff)');
+  } else {
+    logger.logError('CSS-loaded assertion missing (no getComputedStyle in diff)');
+  }
 
   // Storybook build + TypeScript check in parallel
   logger.logStep('Running storybook build + typecheck...');
@@ -206,6 +215,7 @@ export async function grade(
     ghostStories,
     baselinePreviewStories: baselinePreviewRun.summary,
     storyRender: storyRenderRun.summary,
+    hasComputedStyleAssertion,
   };
 
   const score = computeQualityScore({
@@ -240,15 +250,27 @@ function parseGitDiffStatus(rawStatus?: string): GitDiffStatus {
     : 'M';
 }
 
-async function getChangedFiles(repoRoot: string, baseline: string): Promise<FileChange[]> {
+async function getChangedFiles(
+  repoRoot: string,
+  baseline: string
+): Promise<{ changes: FileChange[]; rawDiff: string }> {
   // Stage all files so `git diff --cached` picks up new files the agent created.
   // Safe: this runs on an ephemeral trial copy, not the real repo.
   await x('git', ['add', '-A'], { nodeOptions: { cwd: repoRoot } });
-  const { stdout } = await x('git', ['diff', '--cached', '--name-status', baseline], {
-    throwOnError: false,
-    nodeOptions: { cwd: repoRoot },
-  });
-  return parseChangedFiles(stdout);
+  const [nameStatus, patch] = await Promise.all([
+    x('git', ['diff', '--cached', '--name-status', baseline], {
+      throwOnError: false,
+      nodeOptions: { cwd: repoRoot },
+    }),
+    x('git', ['diff', '--cached', baseline], {
+      throwOnError: false,
+      nodeOptions: { cwd: repoRoot },
+    }),
+  ]);
+  return {
+    changes: parseChangedFiles(nameStatus.stdout),
+    rawDiff: patch.stdout,
+  };
 }
 
 export async function collectGhostStoriesGrade(

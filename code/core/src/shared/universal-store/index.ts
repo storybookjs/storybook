@@ -1,6 +1,13 @@
 import { dedent } from 'ts-dedent';
 
 import { instances } from './instances';
+import {
+  UniversalStoreFollowerTimeoutError,
+  UniversalStoreIdRequiredError,
+  UniversalStoreMissingSubscribeArgumentError,
+  UniversalStoreNotConstructableError,
+  UniversalStoreNotReadyError,
+} from './errors';
 import type {
   Actor,
   ChannelEvent,
@@ -251,9 +258,7 @@ export class UniversalStore<
     // it can only be called from within the static factory method create()
     // See: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Classes/Private_propertiessimulating_private_constructors
     if (!UniversalStore.isInternalConstructing) {
-      throw new TypeError(
-        'UniversalStore is not constructable - use UniversalStore.create() instead'
-      );
+      throw new UniversalStoreNotConstructableError();
     }
     UniversalStore.isInternalConstructing = false;
 
@@ -336,7 +341,7 @@ export class UniversalStore<
     CustomEvent extends { type: string; payload?: any } = { type: string; payload?: any },
   >(options: StoreOptions<State>): UniversalStore<State, CustomEvent> {
     if (!options || typeof options?.id !== 'string') {
-      throw new TypeError('id is required and must be a string, when creating a UniversalStore');
+      throw new UniversalStoreIdRequiredError();
     }
     if (options.debug) {
       console.debug(
@@ -390,24 +395,11 @@ export class UniversalStore<
     this.debug('setState', { newState, previousState, updater });
 
     if (this.status !== UniversalStore.Status.READY) {
-      throw new TypeError(
-        dedent`Cannot set state before store is ready. You can get the current status with store.status,
-        or await store.readyPromise to wait for the store to be ready before sending events.
-        ${JSON.stringify(
-          {
-            newState,
-            id: this.id,
-            actor: this.actor,
-            environment: this.environment,
-          },
-          null,
-          2
-        )}`
-      );
+      throw new UniversalStoreNotReadyError({ id: this.id, action: 'set state' });
     }
 
     this.state = newState;
-    const event = {
+    const event: SetStateEvent<State> = {
       type: UniversalStore.InternalEventType.SET_STATE,
       payload: {
         state: newState,
@@ -442,9 +434,7 @@ export class UniversalStore<
     this.debug('subscribe', { eventType, listener });
 
     if (!listener) {
-      throw new TypeError(
-        `Missing first subscribe argument, or second if first is the event type, when subscribing to a UniversalStore with id '${this.id}'`
-      );
+      throw new UniversalStoreMissingSubscribeArgumentError({ id: this.id });
     }
 
     if (!this.listeners.has(eventType)) {
@@ -485,20 +475,7 @@ export class UniversalStore<
   public send = (event: CustomEvent) => {
     this.debug('send', { event });
     if (this.status !== UniversalStore.Status.READY) {
-      throw new TypeError(
-        dedent`Cannot send event before store is ready. You can get the current status with store.status,
-        or await store.readyPromise to wait for the store to be ready before sending events.
-        ${JSON.stringify(
-          {
-            event,
-            id: this.id,
-            actor: this.actor,
-            environment: this.environment,
-          },
-          null,
-          2
-        )}`
-      );
+      throw new UniversalStoreNotReadyError({ id: this.id, action: 'send event' });
     }
     this.emitToListeners(event, { actor: this.actor });
     this.emitToChannel(event, { actor: this.actor });
@@ -544,11 +521,7 @@ export class UniversalStore<
       setTimeout(() => {
         // if the state is already resolved by a response before this timeout,
         // rejecting it doesn't do anything, it will be ignored
-        this.syncing!.reject!(
-          new TypeError(
-            `No existing state found for follower with id: '${this.id}'. Make sure a leader with the same id exists before creating a follower.`
-          )
-        );
+        this.syncing!.reject!(new UniversalStoreFollowerTimeoutError({ id: this.id }));
       }, 1000);
     }
   }

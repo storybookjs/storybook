@@ -92,14 +92,14 @@ describe('UniversalStore', () => {
               leader: true,
             })
         ).toThrowErrorMatchingInlineSnapshot(
-          `[TypeError: UniversalStore is not constructable - use UniversalStore.create() instead]`
+          `[SB_MANAGER_UNIVERSAL-STORE_1001 (UniversalStoreNotConstructableError): UniversalStore is not constructable - use UniversalStore.create() instead]`
         );
       });
 
       it('should throw when id is not provided', () => {
         // Arrange, Act, Assert - creating an instance without an id and expect it to throw
         expect(() => (UniversalStore as any).create()).toThrowErrorMatchingInlineSnapshot(
-          `[TypeError: id is required and must be a string, when creating a UniversalStore]`
+          `[SB_MANAGER_UNIVERSAL-STORE_1002 (UniversalStoreIdRequiredError): id is required and must be a string, when creating a UniversalStore]`
         );
       });
 
@@ -691,7 +691,7 @@ You should reuse the existing instance instead of trying to create a new one.`);
         // Assert - eventually the follower.untilReady() promise should throw an error when the timeout is reached
         vi.advanceTimersToNextTimer();
         await expect(follower.untilReady()).rejects.toThrowErrorMatchingInlineSnapshot(
-          `[TypeError: No existing state found for follower with id: 'env1:test'. Make sure a leader with the same id exists before creating a follower.]`
+          `[SB_MANAGER_UNIVERSAL-STORE_0001 (UniversalStoreFollowerTimeoutError): No existing state found for follower with id: 'env1:test'. Make sure a leader with the same id exists before creating a follower.]`
         );
         expect(follower.status).toBe(UniversalStore.Status.ERROR);
       });
@@ -942,22 +942,7 @@ You should reuse the existing instance instead of trying to create a new one.`);
       expect(follower.status).toBe(UniversalStore.Status.SYNCING);
 
       // Act & Assert - set state on the follower before it is ready and expect it to throw
-      expect(() => follower.setState({ count: 1 })).toThrowErrorMatchingInlineSnapshot(`
-        [TypeError: Cannot set state before store is ready. You can get the current status with store.status,
-        or await store.readyPromise to wait for the store to be ready before sending events.
-        {
-          "newState": {
-            "count": 1
-          },
-          "id": "env2:test",
-          "actor": {
-            "id": "m7405c0077777777778",
-            "type": "FOLLOWER",
-            "environment": "MANAGER"
-          },
-          "environment": "MANAGER"
-        }]
-      `);
+      expect(() => follower.setState({ count: 1 })).toThrowErrorMatchingInlineSnapshot(`[SB_MANAGER_UNIVERSAL-STORE_1003 (UniversalStoreNotReadyError): Cannot set state before store with id 'env2:test' is ready. You can get the current status with store.status, or await store.readyPromise to wait for the store to be ready before sending events.]`);
     });
   });
 
@@ -1127,22 +1112,7 @@ You should reuse the existing instance instead of trying to create a new one.`);
       expect(follower.status).toBe(UniversalStore.Status.SYNCING);
 
       // Act & Assert - send an event with the follower before it is ready and expect it to throw
-      expect(() => follower.send({ type: 'TOO_EARLY' })).toThrowErrorMatchingInlineSnapshot(`
-        [TypeError: Cannot send event before store is ready. You can get the current status with store.status,
-        or await store.readyPromise to wait for the store to be ready before sending events.
-        {
-          "event": {
-            "type": "TOO_EARLY"
-          },
-          "id": "env2:test",
-          "actor": {
-            "id": "m7405c0077777777778",
-            "type": "FOLLOWER",
-            "environment": "MANAGER"
-          },
-          "environment": "MANAGER"
-        }]
-      `);
+      expect(() => follower.send({ type: 'TOO_EARLY' })).toThrowErrorMatchingInlineSnapshot(`[SB_MANAGER_UNIVERSAL-STORE_1003 (UniversalStoreNotReadyError): Cannot send event before store with id 'env2:test' is ready. You can get the current status with store.status, or await store.readyPromise to wait for the store to be ready before sending events.]`);
     });
   });
 

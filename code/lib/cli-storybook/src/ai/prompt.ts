@@ -49,6 +49,8 @@ function getSetupInstructions(projectInfo: ProjectInfo): string {
     Your goal is to make Storybook fully functional in this project by analyzing the codebase,
     configuring the preview with the right decorators, and writing stories for some components.
 
+    The end state should be a Storybook where any component — from a small button to a full page — can be added without story-specific workarounds. All necessary providers, CSS, browser state, and network mocks should live in the shared preview so that new stories only need the component import and a render call.
+
     After each created story, run Vitest to verify it renders.
     If the test fails, read the error, fix the issue, and re-run until it passes before moving on.
 
@@ -286,6 +288,16 @@ function getSetupInstructions(projectInfo: ProjectInfo): string {
     or the rendering is incomplete), add the \`needs-work\` tag alongside \`ai-generated\`:
 
     ${getNeedsWorkTagExample(projectInfo)}
+
+    #### Args vs render
+
+    For simple components where props drive the state, prefer \`args\` stories — no \`render\` function needed:
+
+    ${getArgsStoryExample(projectInfo)}
+
+    Use \`render\` when the story needs composition — wrapping the component in layout, combining multiple components, or passing children as JSX:
+
+    ${getRenderCompositionExample(projectInfo)}
 
     Keep app mocking and runtime setup in preview, not in the stories.
     Do not build large story-specific harnesses.
@@ -661,6 +673,144 @@ function getNeedsWorkTagExample(projectInfo: ProjectInfo): string {
       component: SomeComponent,
       tags: ['ai-generated', 'needs-work'],
     } satisfies Meta<typeof SomeComponent>;
+    \`\`\`
+  `;
+}
+
+function getArgsStoryExample(projectInfo: ProjectInfo): string {
+  if (projectInfo.hasCsfFactoryPreview) {
+    return dedent`
+      \`\`\`tsx
+      import preview from '#.storybook/preview';
+      import { expect } from 'storybook/test';
+      import { Button } from './Button';
+
+      const meta = preview.meta({
+        component: Button,
+        tags: ['ai-generated'],
+      });
+
+      export const Primary = meta.story({
+        args: {
+          variant: 'primary',
+          children: 'Save',
+        },
+        play: async ({ canvas }) => {
+          await expect(canvas.getByRole('button', { name: /save/i })).toBeVisible();
+        },
+      });
+
+      export const Disabled = meta.story({
+        args: {
+          variant: 'primary',
+          disabled: true,
+          children: 'Save',
+        },
+        play: async ({ canvas }) => {
+          await expect(canvas.getByRole('button')).toBeDisabled();
+        },
+      });
+      \`\`\`
+    `;
+  }
+
+  const typeImport = getTypeImportSource(projectInfo);
+
+  return dedent`
+    \`\`\`tsx
+    import type { Meta, StoryObj } from '${typeImport}';
+    import { expect } from 'storybook/test';
+    import { Button } from './Button';
+
+    const meta = {
+      component: Button,
+      tags: ['ai-generated'],
+    } satisfies Meta<typeof Button>;
+
+    export default meta;
+    type Story = StoryObj<typeof meta>;
+
+    export const Primary: Story = {
+      args: {
+        variant: 'primary',
+        children: 'Save',
+      },
+      play: async ({ canvas }) => {
+        await expect(canvas.getByRole('button', { name: /save/i })).toBeVisible();
+      },
+    };
+
+    export const Disabled: Story = {
+      args: {
+        variant: 'primary',
+        disabled: true,
+        children: 'Save',
+      },
+      play: async ({ canvas }) => {
+        await expect(canvas.getByRole('button')).toBeDisabled();
+      },
+    };
+    \`\`\`
+  `;
+}
+
+function getRenderCompositionExample(projectInfo: ProjectInfo): string {
+  if (projectInfo.hasCsfFactoryPreview) {
+    return dedent`
+      \`\`\`tsx
+      import preview from '#.storybook/preview';
+      import { expect } from 'storybook/test';
+      import { Button } from './Button';
+      import { Card } from './Card';
+
+      const meta = preview.meta({
+        component: Button,
+        tags: ['ai-generated'],
+      });
+
+      export const InsideCard = meta.story({
+        render: () => (
+          <Card>
+            <Button disabled={false}>Save</Button>
+          </Card>
+        ),
+        play: async ({ canvas, userEvent }) => {
+          await expect(canvas.getByRole('button', { name: /save/i })).toBeVisible();
+          await userEvent.click(canvas.getByRole('button', { name: /save/i }));
+        },
+      });
+      \`\`\`
+    `;
+  }
+
+  const typeImport = getTypeImportSource(projectInfo);
+
+  return dedent`
+    \`\`\`tsx
+    import type { Meta, StoryObj } from '${typeImport}';
+    import { expect } from 'storybook/test';
+    import { Button } from './Button';
+    import { Card } from './Card';
+
+    const meta = {
+      component: Button,
+      tags: ['ai-generated'],
+    } satisfies Meta<typeof Button>;
+
+    export default meta;
+    type Story = StoryObj<typeof meta>;
+
+    export const InsideCard: Story = {
+      render: () => (
+        <Card>
+          <Button disabled={false}>Save</Button>
+        </Card>
+      ),
+      play: async ({ canvas, userEvent }) => {
+        await expect(canvas.getByRole('button', { name: /save/i })).toBeVisible();
+        await userEvent.click(canvas.getByRole('button', { name: /save/i }));
+      },
+    };
     \`\`\`
   `;
 }

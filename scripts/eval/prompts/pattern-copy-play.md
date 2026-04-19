@@ -3,7 +3,7 @@
 Your goal is to make Storybook fully functional in this project by analyzing the codebase,
 configuring the preview with the right decorators, and writing stories for some components.
 
-The end state should be a Storybook where any component — from a small button to a full page — can be added without story-specific workarounds. All necessary providers, CSS, browser state, and network mocks should live in the shared preview so that new stories only need the component import and a render call.
+The end state should be a Storybook where any component — from a small button to a full page — can be added without story-specific workarounds. All necessary providers, CSS, browser state, and network mocks should live in the shared preview so that just rendering the component in the story is enough.
 
 After each created story, run Vitest to verify it renders.
 If the test fails, read the error, fix the issue, and re-run until it passes before moving on.

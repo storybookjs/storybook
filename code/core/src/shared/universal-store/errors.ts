@@ -1,4 +1,4 @@
-import { StorybookError } from '../../storybook-error';
+import { StorybookError } from '../../storybook-error.ts';
 
 export abstract class UniversalStoreError extends StorybookError {
   constructor(props: { code: number; message: string; name: string }) {
@@ -44,7 +44,7 @@ export class UniversalStoreNotReadyError extends UniversalStoreError {
     super({
       name: 'UniversalStoreNotReadyError',
       code: 1003,
-      message: `Cannot ${data.action} before store with id '${data.id}' is ready. You can get the current status with store.status, or await store.readyPromise to wait for the store to be ready before sending events.`,
+      message: `Cannot ${data.action} before store with id '${data.id}' is ready. You can get the current status with store.status, or await store.untilReady() to wait for the store to be ready before sending events.`,
     });
   }
 }

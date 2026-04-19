@@ -54,7 +54,7 @@ export {
   UniversalStoreMissingSubscribeArgumentError,
   UniversalStoreNotConstructableError,
   UniversalStoreNotReadyError,
-} from './shared/universal-store/errors';
+} from './shared/universal-store/errors.ts';
 
 export class StatusTypeIdMismatchError extends StorybookError {
   constructor(

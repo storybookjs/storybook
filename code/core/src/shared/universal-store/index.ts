@@ -16,6 +16,7 @@ import type {
   StatusType,
   StoreOptions,
 } from './types.ts';
+import { UniversalStoreFollowerTimeoutError } from '../../manager-errors.ts';
 
 const CHANNEL_EVENT_PREFIX = 'UNIVERSAL_STORE:' as const;
 
@@ -542,13 +543,7 @@ export class UniversalStore<
       );
       // 2. Wait 1 sec for a response, then reject the syncing promise if not already resolved
       setTimeout(() => {
-        // if the state is already resolved by a response before this timeout,
-        // rejecting it doesn't do anything, it will be ignored
-        this.syncing!.reject!(
-          new TypeError(
-            `No existing state found for follower with id: '${this.id}'. Make sure a leader with the same id exists before creating a follower.`
-          )
-        );
+        this.syncing!.reject!(new UniversalStoreFollowerTimeoutError(this.id));
       }, 1000);
     }
   }

@@ -18,6 +18,7 @@ export enum Category {
   MANAGER_CORE_EVENTS = 'MANAGER_CORE-EVENTS',
   MANAGER_ROUTER = 'MANAGER_ROUTER',
   MANAGER_THEMING = 'MANAGER_THEMING',
+  MANAGER_UNIVERSAL_STORE = 'MANAGER_UNIVERSAL-STORE',
 }
 
 export class ProviderDoesNotExtendBaseProviderError extends StorybookError {
@@ -46,6 +47,14 @@ export class UncaughtManagerError extends StorybookError {
     this.stack = data.error.stack;
   }
 }
+
+export {
+  UniversalStoreFollowerTimeoutError,
+  UniversalStoreIdRequiredError,
+  UniversalStoreMissingSubscribeArgumentError,
+  UniversalStoreNotConstructableError,
+  UniversalStoreNotReadyError,
+} from './shared/universal-store/errors';
 
 export class StatusTypeIdMismatchError extends StorybookError {
   constructor(

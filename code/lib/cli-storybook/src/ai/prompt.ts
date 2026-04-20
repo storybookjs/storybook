@@ -378,18 +378,21 @@ function getSetupInstructions(projectInfo: ProjectInfo): string {
     - a toast, alert, or badge has the expected accessible text and visual state
     - a CSS class or computed style confirms the real state that matters
 
-    ### Step 7: Prove CSS is loaded in exactly one story
+    ### Step 7: Prove CSS is loaded in exactly one story named \`CssCheck\`
 
-    In exactly one story, assert a component-specific computed style. \`toBeVisible\` passes on an unstyled component; a concrete style value proves the shared preview loaded the app's CSS.
+    In exactly one story, named \`CssCheck\`, assert a component-specific computed style. \`toBeVisible\` passes on an unstyled component; a concrete style value proves the shared preview loaded the app's CSS.
 
-    Read a styling value from the component's source and assert it with \`getComputedStyle\`:
+    Pick a visually distinctive component, read a styling value from its source, and assert it with \`getComputedStyle\`:
 
     \`\`\`tsx
-    play: async ({ canvas }) => {
-      const button = canvas.getByRole("button", { name: /submit/i });
-      // PrimaryButton uses bg-blue-600 — fails if Tailwind / global CSS did not load.
-      await expect(getComputedStyle(button).backgroundColor).toBe("rgb(37, 99, 235)");
-    },
+    export const CssCheck: Story = {
+      args: { children: "Submit" },
+      play: async ({ canvas }) => {
+        const button = canvas.getByRole("button", { name: /submit/i });
+        // PrimaryButton uses bg-blue-600 — fails if Tailwind / global CSS did not load.
+        await expect(getComputedStyle(button).backgroundColor).toBe("rgb(37, 99, 235)");
+      },
+    };
     \`\`\`
 
     ### Step 8: Cover the patterns you found

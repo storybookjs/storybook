@@ -305,7 +305,7 @@ describe('groupArgsByTarget', () => {
     });
   });
 
-  it('groups non-targetted args into a group with no name', () => {
+  it('groups non-targeted args into a group with no name', () => {
     const groups = groupArgsByTarget({
       args: { a: 1, b: 2, c: 3 },
       argTypes: { a: { name: 'a' }, b: { name: 'b', target: 'group2' }, c: { name: 'c' } },

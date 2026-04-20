@@ -686,7 +686,7 @@ describe('prepareStory', () => {
       );
     });
 
-    it('always sets args, even when all are targetted', () => {
+    it('always sets args, even when all are targeted', () => {
       const renderMock = vi.fn();
       const firstStory = prepareStory(
         {

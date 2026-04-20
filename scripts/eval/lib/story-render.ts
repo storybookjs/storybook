@@ -7,7 +7,7 @@ import type { FileChange } from './grade.ts';
 import { detectPackageManager, resolveInstallRoot } from './package-manager.ts';
 import type { Logger } from './utils.ts';
 
-const STORY_FILE_PATTERN = /\.(stories|story)\.[tj]sx?$/;
+export const STORY_FILE_PATTERN = /\.(stories|story)\.[tj]sx?$/;
 
 export interface StoryRenderGrade {
   total: number;

@@ -11,6 +11,7 @@ import {
   getGeneratedStoryFiles,
   getScriptRunCommand,
   runStoryRenderPass,
+  STORY_FILE_PATTERN,
   type StoryRenderGrade,
   withBaselinePreviewEnvironment,
 } from './story-render.ts';
@@ -95,6 +96,40 @@ export function countTypeCheckErrors(tscOutput: string): number {
   return (tscOutput.match(/error TS\d+/g) || []).length;
 }
 
+/**
+ * Walks a unified `git diff` patch and returns true if any added line (`+`, not the `+++` header)
+ * inside a story file contains `token`.
+ *
+ * Guards against false positives from the prompt markdown, the agent transcript, and other
+ * artifacts that end up in the diff because we stage every file in the trial worktree.
+ */
+export function diffAddsTokenInStoryFiles(
+  rawDiff: string,
+  storybookChanges: FileChange[],
+  token: string
+): boolean {
+  const changedStoryPaths = new Set(
+    storybookChanges
+      .filter((change) => change.gitStatus !== 'D' && STORY_FILE_PATTERN.test(change.path))
+      .map((change) => change.path)
+  );
+  if (changedStoryPaths.size === 0) return false;
+
+  let currentPathIsStory = false;
+  for (const line of rawDiff.split('\n')) {
+    if (line.startsWith('+++ ')) {
+      // `+++ b/<path>` (or `+++ /dev/null` for deletions). Track whether we're now inside a story file.
+      const path = line.slice(4).replace(/^b\//, '');
+      currentPathIsStory = changedStoryPaths.has(path);
+      continue;
+    }
+    if (!currentPathIsStory) continue;
+    if (!line.startsWith('+') || line.startsWith('+++')) continue;
+    if (line.includes(token)) return true;
+  }
+  return false;
+}
+
 /** Parse git diff --name-status output into FileChange objects. */
 export function parseChangedFiles(gitOutput: string): FileChange[] {
   return gitOutput
@@ -129,11 +164,15 @@ export async function grade(
     `${fileChanges.length} files changed (${storybookChanges.length} storybook-related)`
   );
 
-  const hasComputedStyleAssertion = rawDiff.includes('getComputedStyle');
+  const hasComputedStyleAssertion = diffAddsTokenInStoryFiles(
+    rawDiff,
+    storybookChanges,
+    'getComputedStyle'
+  );
   if (hasComputedStyleAssertion) {
-    logger.logSuccess('CSS-loaded assertion present (getComputedStyle found in diff)');
+    logger.logSuccess('CSS-loaded assertion present (getComputedStyle added in a story file)');
   } else {
-    logger.logError('CSS-loaded assertion missing (no getComputedStyle in diff)');
+    logger.logError('CSS-loaded assertion missing (no getComputedStyle added in a story file)');
   }
 
   // Storybook build + TypeScript check in parallel

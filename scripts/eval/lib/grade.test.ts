@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  diffAddsTokenInStoryFiles,
   filterStorybookFiles,
   computeQualityScore,
   countTypeCheckErrors,
@@ -53,6 +54,70 @@ describe('filterStorybookFiles', () => {
     ];
 
     expect(filterStorybookFiles(files)).toMatchObject(files.slice(0, 2));
+  });
+});
+
+describe('diffAddsTokenInStoryFiles', () => {
+  const storyChanges: FileChange[] = [
+    { path: 'src/Button.stories.tsx', gitStatus: 'A' },
+    { path: '.storybook/preview.tsx', gitStatus: 'M' },
+  ];
+
+  it('returns true when the token is added inside a story file', () => {
+    const diff = [
+      'diff --git a/src/Button.stories.tsx b/src/Button.stories.tsx',
+      '--- a/src/Button.stories.tsx',
+      '+++ b/src/Button.stories.tsx',
+      '@@ -0,0 +1,3 @@',
+      '+  const button = canvas.getByRole("button");',
+      '+  await expect(getComputedStyle(button).backgroundColor).toBe("rgb(37, 99, 235)");',
+    ].join('\n');
+    expect(diffAddsTokenInStoryFiles(diff, storyChanges, 'getComputedStyle')).toBe(true);
+  });
+
+  it('ignores the token when it only appears in non-story files (prompt.md, data.json)', () => {
+    const diff = [
+      '+++ b/.storybook/eval-results/prompt.md',
+      '+Use getComputedStyle to prove CSS loaded',
+      '+++ b/.storybook/eval-results/data.json',
+      '+"content": "...getComputedStyle..."',
+    ].join('\n');
+    expect(diffAddsTokenInStoryFiles(diff, storyChanges, 'getComputedStyle')).toBe(false);
+  });
+
+  it('ignores the token on removed lines', () => {
+    const diff = [
+      '+++ b/src/Button.stories.tsx',
+      '-  await expect(getComputedStyle(button).backgroundColor).toBe("red");',
+    ].join('\n');
+    expect(diffAddsTokenInStoryFiles(diff, storyChanges, 'getComputedStyle')).toBe(false);
+  });
+
+  it('does not match the `+++ b/...` file header itself', () => {
+    const diff = ['+++ b/src/getComputedStyle-notes.stories.tsx'].join('\n');
+    // The header mentions the token, but no content line does. Also the file is not in changes.
+    expect(diffAddsTokenInStoryFiles(diff, storyChanges, 'getComputedStyle')).toBe(false);
+  });
+
+  it('only considers files present in storybookChanges as story files', () => {
+    const diff = [
+      '+++ b/src/Button.stories.tsx',
+      '+  await expect(getComputedStyle(button).backgroundColor).toBe("red");',
+    ].join('\n');
+    // Pass an empty list — even though the file is named like a story, it is not in changes.
+    expect(diffAddsTokenInStoryFiles(diff, [], 'getComputedStyle')).toBe(false);
+  });
+
+  it('ignores non-story storybook files like .storybook/preview.tsx', () => {
+    const diff = [
+      '+++ b/.storybook/preview.tsx',
+      '+import { initialize } from "getComputedStyle";',
+    ].join('\n');
+    expect(diffAddsTokenInStoryFiles(diff, storyChanges, 'getComputedStyle')).toBe(false);
+  });
+
+  it('returns false for an empty diff', () => {
+    expect(diffAddsTokenInStoryFiles('', storyChanges, 'getComputedStyle')).toBe(false);
   });
 });
 

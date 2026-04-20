@@ -31,7 +31,7 @@ Each trial follows this lifecycle:
 All commands run from the repo root.
 
 ```sh
-# Prompt file is required (scripts/eval/prompts/{name}.md). Example: pattern-copy-play
+# Prompt variant is required. Example: pattern-copy-play (the CLI default)
 node scripts/eval/eval.ts -p mealdrop --prompt pattern-copy-play
 
 # Specific agent
@@ -236,17 +236,39 @@ To benchmark a new app, register it in the harness and sync baselines. Follow th
 
 ## Prompts
 
-Prompts are markdown files in `scripts/eval/prompts/` that tell the agent what to do during a trial. The `--prompt` flag selects one by filename (without `.md`).
+The eval mirrors the real user flow exactly:
+
+1. A real user copies the "Set up Storybook with AI" prompt from the Storybook UI — a one-line nudge (`AI_SETUP_PROMPT`) that just says _"Run `npx storybook ai setup` and follow its instructions precisely."_
+2. The user pastes that into their AI agent.
+3. The **agent** runs `npx storybook ai setup` itself as a tool call.
+4. The agent reads the resulting project-aware markdown and follows it.
+
+The harness hands step (1) to the trial agent as its task. It never spawns `ai setup` itself — that's the agent's job, just like with real users.
+
+### How variant selection works
+
+Prompt variants live in [`code/lib/cli-storybook/src/ai/prompts/`](../../code/lib/cli-storybook/src/ai/prompts/). Each variant is a self-contained `.ts` file that exports an `instructions(projectInfo)` function. The registry in `prompts/index.ts` lists every variant.
+
+The eval selects a variant by injecting the `EVAL_SETUP_PROMPT` env var into the agent's spawn environment. When the agent later runs `npx storybook ai setup`, the CLI reads that env var and returns the matching variant. Real users never set this env var, so they always get the default (`pattern-copy-play`).
+
+```
+eval.ts --prompt setup
+  → run-trial.ts calls driver.execute({ env: { EVAL_SETUP_PROMPT: 'setup' } })
+    → agent spawns with that env
+      → agent's `npx storybook ai setup` tool call inherits EVAL_SETUP_PROMPT
+        → CLI's getPrompts() picks the 'setup' variant
+```
 
 ### Available prompts
 
-- `**pattern-copy-play**` — analyze the codebase, copy real usage patterns, configure preview with providers and MSW mocks, write ~10 story files with play functions, verify each with Vitest.
-- `**setup**` — structured step-by-step: analyze, configure preview, write 9 stories (3 simple / 3 medium / 3 complex), verify each with Vitest.
+- `**pattern-copy-play**` *(default)* — analyze the codebase, copy real usage patterns, configure preview with providers and MSW mocks, write ~10 story files with play functions, verify each with Vitest. This is the only prompt users ever see when they run `npx storybook ai setup`.
+- `**setup**` — structured step-by-step: analyze, configure preview, write 9 stories (3 simple / 3 medium / 3 complex), verify each with Vitest. Available only to the eval harness for A/B comparison against the default.
 
-### Writing a new prompt
+### Adding a new prompt variant
 
-1. Create a markdown file in `scripts/eval/prompts/`, e.g. `my-strategy.md`.
-2. Write the instructions the agent should follow. The prompt is passed directly to the agent as its task.
-3. Use it: `node scripts/eval/eval.ts -p mealdrop --prompt my-strategy`
+1. Create `code/lib/cli-storybook/src/ai/prompts/<name>.ts`. Make it fully self-contained — keep its own `getTypeImportSource`, code-example helpers, and any other private utilities so changing one variant can never accidentally change another. Duplication is deliberate here.
+2. Export an `instructions(projectInfo: ProjectInfo): string` function.
+3. Register it in `code/lib/cli-storybook/src/ai/prompts/index.ts` by adding an entry to `PROMPT_BUILDERS`.
+4. Use it from the eval: `node scripts/eval/eval.ts -p mealdrop --prompt <name>`.
 
-The prompt should tell the agent how to analyze the codebase, configure `.storybook/preview.ts`, write story files matching the `stories` glob, and verify with `npx vitest --project storybook`.
+To promote a variant to be the default users see, change `DEFAULT_PROMPT_NAME` in the same registry file.

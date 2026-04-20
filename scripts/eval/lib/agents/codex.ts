@@ -11,7 +11,14 @@ import { countLines } from '../output-preview.ts';
 export const codexAgent: AgentDriver = {
   name: 'codex',
 
-  async execute({ prompt, projectPath, variant, logger, verbose }): Promise<AgentExecutionResult> {
+  async execute({
+    prompt,
+    projectPath,
+    variant,
+    logger,
+    verbose,
+    env,
+  }): Promise<AgentExecutionResult> {
     if (variant.agent !== 'codex') {
       throw new Error(`Codex driver received unsupported variant: ${variant.agent}`);
     }
@@ -23,6 +30,7 @@ export const codexAgent: AgentDriver = {
     const codex = new Codex({
       env: {
         ...process.env,
+        ...env,
         STORYBOOK_DISABLE_TELEMETRY: '1',
       },
     });

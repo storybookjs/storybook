@@ -22,7 +22,7 @@ export interface TrialConfig {
   project: Project;
   /** Agent, model, and effort level. */
   variant: AgentVariant;
-  /** Prompt name — maps to `prompts/{name}.md` (e.g. "setup"). */
+  /** Prompt variant name — registered in `code/lib/cli-storybook/src/ai/prompts/` (e.g. "pattern-copy-play"). */
   prompt: string;
   /** Log agent messages to stdout. */
   verbose?: boolean;
@@ -64,11 +64,15 @@ export async function runTrial(config: TrialConfig, logger?: Logger): Promise<Ru
     'baseline ghost stories'
   );
 
-  // 4. Load the prompt
+  // 4. Load the nudge prompt the agent will receive. The agent itself runs
+  //    `npx storybook ai setup` as a tool call — mirroring what real users do
+  //    when they copy the "Set up Storybook with AI" prompt from the UI.
   const prompt = loadPrompt(promptName);
   await writeFile(join(workspace.resultsDir, 'prompt.md'), prompt);
 
-  // 5. Execute the agent
+  // 5. Execute the agent. EVAL_SETUP_PROMPT is forwarded into the agent's
+  //    environment so its `ai setup` tool call resolves to the selected
+  //    prompt variant (unset for real users → always the default).
   log.log(`  Running ${agentName} (${model}, effort=${variant.effort})...`);
   const driver = drivers[agentName];
   const { execution, transcript } = await driver.execute({
@@ -78,6 +82,7 @@ export async function runTrial(config: TrialConfig, logger?: Logger): Promise<Ru
     resultsDir: workspace.resultsDir,
     logger: log,
     verbose: config.verbose,
+    env: { EVAL_SETUP_PROMPT: promptName },
   });
   log.logSuccess(
     `Agent completed (${Math.round(execution.duration)}s, ${execution.cost ? `$${execution.cost.toFixed(2)}` : 'cost N/A'}, ${execution.turns} turns)`

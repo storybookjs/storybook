@@ -46,6 +46,14 @@ export interface AgentExecuteParams {
   resultsDir: string;
   logger: Logger;
   verbose?: boolean;
+  /**
+   * Extra env vars to forward to the agent's spawn. Merged on top of
+   * `process.env` and under the driver's fixed entries (e.g.
+   * `STORYBOOK_DISABLE_TELEMETRY`). Used by the harness to inject
+   * `EVAL_SETUP_PROMPT` so that the agent's own `npx storybook ai setup`
+   * tool call resolves to the selected prompt variant.
+   */
+  env?: Record<string, string>;
 }
 
 export interface AgentDriver {

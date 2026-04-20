@@ -99,7 +99,7 @@ async function createBeforeServer(options: Options, repoRoot: string): Promise<B
     // The main Storybook server port — needed to proxy API requests like /index.json
     const mainServerPort = options.port;
 
-    const vite = viteServer;
+    const vite = viteServer!;
     httpServer.on('request', async (req, res) => {
       const url = req.url || '';
 
@@ -194,7 +194,7 @@ async function createBeforeServer(options: Options, repoRoot: string): Promise<B
 
     logger.info(`[before-after] "Before" server listening on port ${port}`);
 
-    return { port, viteServer, httpServer };
+    return { port, viteServer: viteServer!, httpServer: httpServer! };
   } catch (error) {
     // Clean up partial resources on failure
     if (viteServer) {

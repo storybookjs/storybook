@@ -1,6 +1,6 @@
 {
   "name": "@storybook/addon-before-after",
-  "version": "10.4.0-alpha.6",
+  "version": "10.4.0-alpha.10",
   "description": "Storybook addon for comparing stories before and after uncommitted changes",
   "keywords": [
     "storybook",
@@ -31,6 +31,7 @@
       "code": "./src/index.ts",
       "default": "./dist/index.js"
     },
+    "./before-server-subprocess": "./dist/node/before-server-subprocess.js",
     "./manager": "./dist/manager.js",
     "./package.json": "./package.json",
     "./preset": "./dist/preset.js"

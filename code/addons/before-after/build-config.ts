@@ -19,6 +19,11 @@ const config: BuildEntries = {
         entryPoint: './src/preset.ts',
         dts: false,
       },
+      {
+        exportEntries: ['./before-server-subprocess'],
+        entryPoint: './src/node/before-server-subprocess.ts',
+        dts: false,
+      },
     ],
   },
 };

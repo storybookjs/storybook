@@ -178,7 +178,7 @@ describe('publishTrialBranch', () => {
           typeCheckErrors: 0,
           fileChanges: [],
           storybookChanges: [],
-          hasComputedStyleAssertion: false,
+          hasCssCheckStory: false,
           ghostStories: {
             candidateCount: 6,
             total: 4,
@@ -342,7 +342,7 @@ describe('publishTrialBranch', () => {
             typeCheckErrors: 0,
             fileChanges: [],
             storybookChanges: [],
-            hasComputedStyleAssertion: false,
+            hasCssCheckStory: false,
           },
           score: {
             score: 1,
@@ -462,7 +462,7 @@ describe('publishTrialBranch', () => {
           typeCheckErrors: 0,
           fileChanges: [],
           storybookChanges: [],
-          hasComputedStyleAssertion: false,
+          hasCssCheckStory: false,
         },
         score: {
           score: 1,

@@ -19,6 +19,7 @@ Read enough of the app to understand the full runtime environment before writing
 
 Do not stop at `main.tsx` or `App.tsx`.
 Follow imports into providers, pages, hooks, and shared components until you know:
+
 - which providers exist
 - which CSS files are injected
 - which queries fetch data
@@ -42,6 +43,7 @@ createRoot(document.getElementById('root')!).render(
 ```
 
 That means Storybook should copy:
+
 - the `index.css` import
 - the `SessionProvider`
 - the same provider order
@@ -68,6 +70,7 @@ const savedTheme = localStorage.getItem('theme');
 ```
 
 That means the default Storybook setup should discover and prepare:
+
 - provider state
 - MSW handlers for queries
 - browser-state values that are actually read during render
@@ -77,6 +80,7 @@ That means the default Storybook setup should discover and prepare:
 Set up Storybook once so most stories work without story-specific setup.
 
 Start with the smallest faithful environment:
+
 - the real provider tree
 - the real root CSS
 - seeded browser state if the app reads it during render
@@ -116,6 +120,7 @@ export default preview;
 ```
 
 Use this same idea for:
+
 - providers
 - root CSS
 - browser state
@@ -141,6 +146,7 @@ export default preview;
 If the app uses portals, copy that setup into Storybook too.
 
 Look for patterns like:
+
 - `createPortal(...)`
 - modal, dialog, drawer, popover, tooltip, toast, or dropdown portal components
 - hard-coded roots such as `#portal-root`, `#modal-root`, `#drawer-root`, or `#toast-root`
@@ -270,6 +276,7 @@ Write colocated stories for top-level components, from low-level reusable compon
 Write up to 10 story files, or fewer only if the codebase clearly has fewer meaningful targets.
 
 The stories should use JSX copied from real usage patterns in:
+
 - pages
 - app shells
 - routes
@@ -401,6 +408,7 @@ Every named story export must have a `play` function.
 The `play` function is not optional, even for simple stories.
 
 The purpose of the `play` function is to prove that the story actually works in the copied Storybook environment:
+
 - the story renders something real and non-empty
 - the decorators provide the needed context
 - the CSS is applied well enough for the intended state to be visible
@@ -411,6 +419,7 @@ Use `play` functions to verify behavior, not just to click around.
 A story without assertions is incomplete.
 
 Use tools from `storybook/test` such as:
+
 - `expect`
 - `waitFor`
 
@@ -448,6 +457,7 @@ export const FilledForm: Story = {
 ```
 
 The assertions should match the real pattern you copied:
+
 - for provider-backed stories, assert the provider-dependent UI appears correctly
 - for mocked-data stories, wait for the mocked data to appear and assert on it
 - for CSS-sensitive states, assert on visibility, text layout, class-driven states, or meaningful computed styles
@@ -455,6 +465,7 @@ The assertions should match the real pattern you copied:
 - for portal stories, query from `canvasElement.ownerDocument` when the UI renders outside the canvas
 
 Examples of useful checks:
+
 - a themed button has the expected label and is visibly enabled or disabled
 - a modal opened through a decorator or provider is visible in the portal root
 - mocked API data appears in the page instead of a loading spinner forever
@@ -462,23 +473,27 @@ Examples of useful checks:
 - a toast, alert, or badge has the expected accessible text and visual state
 - a CSS class or computed style confirms the real state that matters
 
-## 7. Prove CSS is loaded in exactly one story
+## 7. Prove CSS is loaded in exactly one story named `CssCheck`
 
-In exactly one story, assert a component-specific computed style. `toBeVisible` passes on an unstyled component; a concrete style value proves the shared preview loaded the app's CSS.
+In exactly one story, named `CssCheck`, assert a component-specific computed style. `toBeVisible` passes on an unstyled component; a concrete style value proves the shared preview loaded the app's CSS.
 
-Read a styling value from the component's source and assert it with `getComputedStyle`:
+Pick a visually distinctive component, read a styling value from its source, and assert it with `getComputedStyle`:
 
 ```tsx
-play: async ({ canvas }) => {
-  const button = canvas.getByRole('button', { name: /submit/i });
-  // PrimaryButton uses bg-blue-600 — fails if Tailwind / global CSS did not load.
-  await expect(getComputedStyle(button).backgroundColor).toBe('rgb(37, 99, 235)');
-},
+export const CssCheck: Story = {
+  args: { children: 'Submit' },
+  play: async ({ canvas }) => {
+    const button = canvas.getByRole('button', { name: /submit/i });
+    // PrimaryButton uses bg-blue-600 — fails if Tailwind / global CSS did not load.
+    await expect(getComputedStyle(button).backgroundColor).toBe('rgb(37, 99, 235)');
+  },
+};
 ```
 
 ## 8. Cover the patterns you found
 
 Write stories for the real patterns in the codebase, for example:
+
 - a low-level reusable component in real JSX usage
 - a provider-backed component
 - a browser-state-backed component
@@ -534,6 +549,7 @@ npx storybook build
 If the build fails, fix the issue before finishing. Common build failures include missing dependencies, broken imports that only surface during static analysis, or configuration issues in `.storybook/main.ts`.
 
 Keep iterating until:
+
 - every story you wrote passes
 - every story you wrote has a meaningful passing `play` function
 - the changed stories and preview setup pass the project's real TypeScript check
@@ -541,3 +557,4 @@ Keep iterating until:
 - the rendered output looks sensible
 - the default global mocked environment is strong enough that stories do not need manual fetch overrides
 - stories no longer fail because the shared preview setup and story JSX are fixed
+

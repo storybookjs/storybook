@@ -119,6 +119,29 @@ describe('diffAddsTokenInStoryFiles', () => {
   it('returns false for an empty diff', () => {
     expect(diffAddsTokenInStoryFiles('', storyChanges, 'getComputedStyle')).toBe(false);
   });
+
+  it('detects an `export const CssCheck` story added in a story file', () => {
+    const diff = [
+      '+++ b/src/Button.stories.tsx',
+      '@@ -0,0 +1,6 @@',
+      '+export const CssCheck: Story = {',
+      '+  args: { children: "Submit" },',
+      '+  play: async ({ canvas }) => {',
+      '+    const button = canvas.getByRole("button");',
+      '+    await expect(getComputedStyle(button).backgroundColor).toBe("rgb(37, 99, 235)");',
+      '+  },',
+      '+};',
+    ].join('\n');
+    expect(diffAddsTokenInStoryFiles(diff, storyChanges, 'export const CssCheck')).toBe(true);
+  });
+
+  it('ignores `export const CssCheck` added outside of story files (e.g. prompt.md)', () => {
+    const diff = [
+      '+++ b/.storybook/eval-results/prompt.md',
+      '+Name this story `CssCheck`, for example `export const CssCheck: Story = { ... }`.',
+    ].join('\n');
+    expect(diffAddsTokenInStoryFiles(diff, storyChanges, 'export const CssCheck')).toBe(false);
+  });
 });
 
 describe('computeQualityScore', () => {

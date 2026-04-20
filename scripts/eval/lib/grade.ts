@@ -53,8 +53,11 @@ export interface Grade {
   ghostStories?: GhostStoryGrade;
   baselinePreviewStories?: StoryRenderGrade;
   storyRender?: StoryRenderGrade;
-  /** True when the agent added at least one `getComputedStyle` call (CSS-loaded assertion). */
-  hasComputedStyleAssertion: boolean;
+  /**
+   * True when the agent added a story named `CssCheck` (a `play` function that asserts a
+   * component-specific computed style, to prove the shared preview loaded the app's CSS).
+   */
+  hasCssCheckStory: boolean;
 }
 
 /** Filter file changes to only storybook-related ones. */
@@ -164,15 +167,15 @@ export async function grade(
     `${fileChanges.length} files changed (${storybookChanges.length} storybook-related)`
   );
 
-  const hasComputedStyleAssertion = diffAddsTokenInStoryFiles(
+  const hasCssCheckStory = diffAddsTokenInStoryFiles(
     rawDiff,
     storybookChanges,
-    'getComputedStyle'
+    'export const CssCheck'
   );
-  if (hasComputedStyleAssertion) {
-    logger.logSuccess('CSS-loaded assertion present (getComputedStyle added in a story file)');
+  if (hasCssCheckStory) {
+    logger.logSuccess('CssCheck story present (export const CssCheck added in a story file)');
   } else {
-    logger.logError('CSS-loaded assertion missing (no getComputedStyle added in a story file)');
+    logger.logError('CssCheck story missing (no export const CssCheck added in a story file)');
   }
 
   // Storybook build + TypeScript check in parallel
@@ -254,7 +257,7 @@ export async function grade(
     ghostStories,
     baselinePreviewStories: baselinePreviewRun.summary,
     storyRender: storyRenderRun.summary,
-    hasComputedStyleAssertion,
+    hasCssCheckStory,
   };
 
   const score = computeQualityScore({

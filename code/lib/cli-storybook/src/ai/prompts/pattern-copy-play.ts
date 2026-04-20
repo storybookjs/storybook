@@ -265,6 +265,144 @@ function getNeedsWorkTagExample(projectInfo: ProjectInfo): string {
   `;
 }
 
+function getArgsStoryExample(projectInfo: ProjectInfo): string {
+  if (projectInfo.hasCsfFactoryPreview) {
+    return dedent`
+      \`\`\`tsx
+      import preview from '#.storybook/preview';
+      import { expect } from 'storybook/test';
+      import { Button } from './Button';
+
+      const meta = preview.meta({
+        component: Button,
+        tags: ['ai-generated'],
+      });
+
+      export const Primary = meta.story({
+        args: {
+          variant: 'primary',
+          children: 'Save',
+        },
+        play: async ({ canvas }) => {
+          await expect(canvas.getByRole('button', { name: /save/i })).toBeVisible();
+        },
+      });
+
+      export const Disabled = meta.story({
+        args: {
+          variant: 'primary',
+          disabled: true,
+          children: 'Save',
+        },
+        play: async ({ canvas }) => {
+          await expect(canvas.getByRole('button')).toBeDisabled();
+        },
+      });
+      \`\`\`
+    `;
+  }
+
+  const typeImport = getTypeImportSource(projectInfo);
+
+  return dedent`
+    \`\`\`tsx
+    import type { Meta, StoryObj } from '${typeImport}';
+    import { expect } from 'storybook/test';
+    import { Button } from './Button';
+
+    const meta = {
+      component: Button,
+      tags: ['ai-generated'],
+    } satisfies Meta<typeof Button>;
+
+    export default meta;
+    type Story = StoryObj<typeof meta>;
+
+    export const Primary: Story = {
+      args: {
+        variant: 'primary',
+        children: 'Save',
+      },
+      play: async ({ canvas }) => {
+        await expect(canvas.getByRole('button', { name: /save/i })).toBeVisible();
+      },
+    };
+
+    export const Disabled: Story = {
+      args: {
+        variant: 'primary',
+        disabled: true,
+        children: 'Save',
+      },
+      play: async ({ canvas }) => {
+        await expect(canvas.getByRole('button')).toBeDisabled();
+      },
+    };
+    \`\`\`
+  `;
+}
+
+function getRenderCompositionExample(projectInfo: ProjectInfo): string {
+  if (projectInfo.hasCsfFactoryPreview) {
+    return dedent`
+      \`\`\`tsx
+      import preview from '#.storybook/preview';
+      import { expect } from 'storybook/test';
+      import { Button } from './Button';
+      import { Card } from './Card';
+
+      const meta = preview.meta({
+        component: Button,
+        tags: ['ai-generated'],
+      });
+
+      export const InsideCard = meta.story({
+        render: () => (
+          <Card>
+            <Button disabled={false}>Save</Button>
+          </Card>
+        ),
+        play: async ({ canvas, userEvent }) => {
+          await expect(canvas.getByRole('button', { name: /save/i })).toBeVisible();
+          await userEvent.click(canvas.getByRole('button', { name: /save/i }));
+        },
+      });
+      \`\`\`
+    `;
+  }
+
+  const typeImport = getTypeImportSource(projectInfo);
+
+  return dedent`
+    \`\`\`tsx
+    import type { Meta, StoryObj } from '${typeImport}';
+    import { expect } from 'storybook/test';
+    import { Button } from './Button';
+    import { Card } from './Card';
+
+    const meta = {
+      component: Button,
+      tags: ['ai-generated'],
+    } satisfies Meta<typeof Button>;
+
+    export default meta;
+    type Story = StoryObj<typeof meta>;
+
+    export const InsideCard: Story = {
+      render: () => (
+        <Card>
+          <Button disabled={false}>Save</Button>
+        </Card>
+      ),
+      play: async ({ canvas, userEvent }) => {
+        await expect(canvas.getByRole('button', { name: /save/i })).toBeVisible();
+        await userEvent.click(canvas.getByRole('button', { name: /save/i }));
+      },
+    };
+    \`\`\`
+  `;
+}
+
 function getPageStoryExample(projectInfo: ProjectInfo): string {
   if (projectInfo.hasCsfFactoryPreview) {
     return dedent`
@@ -327,6 +465,8 @@ export function patternCopyPlayInstructions(projectInfo: ProjectInfo): string {
 
     Your goal is to make Storybook fully functional in this project by analyzing the codebase,
     configuring the preview with the right decorators, and writing stories for some components.
+
+    The end state should be a Storybook where any component — from a small button to a full page — can be added without story-specific workarounds. All necessary providers, CSS, browser state, and network mocks should live in the shared preview so that just rendering the component in the story is enough.
 
     After each created story, run Vitest to verify it renders.
     If the test fails, read the error, fix the issue, and re-run until it passes before moving on.
@@ -566,6 +706,16 @@ export function patternCopyPlayInstructions(projectInfo: ProjectInfo): string {
 
     ${getNeedsWorkTagExample(projectInfo)}
 
+    #### Args vs render
+
+    For simple components where props drive the state, prefer \`args\` stories — no \`render\` function needed:
+
+    ${getArgsStoryExample(projectInfo)}
+
+    Use \`render\` when the story needs composition — wrapping the component in layout, combining multiple components, or passing children as JSX:
+
+    ${getRenderCompositionExample(projectInfo)}
+
     Keep app mocking and runtime setup in preview, not in the stories.
     Do not build large story-specific harnesses.
     Do not write story files for subcomponents, hooks, contexts, or helpers.
@@ -645,7 +795,24 @@ export function patternCopyPlayInstructions(projectInfo: ProjectInfo): string {
     - a toast, alert, or badge has the expected accessible text and visual state
     - a CSS class or computed style confirms the real state that matters
 
-    ### Step 7: Cover the patterns you found
+    ### Step 7: Prove CSS is loaded in exactly one story named \`CssCheck\`
+
+    In exactly one story, named \`CssCheck\`, assert a component-specific computed style. \`toBeVisible\` passes on an unstyled component; a concrete style value proves the shared preview loaded the app's CSS.
+
+    Pick a visually distinctive component, read a styling value from its source, and assert it with \`getComputedStyle\`:
+
+    \`\`\`tsx
+    export const CssCheck: Story = {
+      args: { children: "Submit" },
+      play: async ({ canvas }) => {
+        const button = canvas.getByRole("button", { name: /submit/i });
+        // PrimaryButton uses bg-blue-600 — fails if Tailwind / global CSS did not load.
+        await expect(getComputedStyle(button).backgroundColor).toBe("rgb(37, 99, 235)");
+      },
+    };
+    \`\`\`
+
+    ### Step 8: Cover the patterns you found
 
     Write stories for the real patterns in the codebase, for example:
 
@@ -661,7 +828,7 @@ export function patternCopyPlayInstructions(projectInfo: ProjectInfo): string {
 
     ${getPageStoryExample(projectInfo)}
 
-    ### Step 8: Verify both rendering and types
+    ### Step 9: Verify both rendering and types
 
     As you work, verify the stories with Vitest:
 

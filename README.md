@@ -13,6 +13,7 @@
 | Issue                                                           | Resources                           |
 | --------------------------------------------------------------- | ----------------------------------- |
 | [#34258](https://github.com/storybookjs/storybook/issues/34258) | [Report doc](issue-34258-report.md) |
+| [#34566](https://github.com/storybookjs/storybook/issues/34566) | [Report doc](issue-34566-report.md) |
 
 ## Rest of the Original README
 

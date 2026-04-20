@@ -261,5 +261,46 @@ describe('parse-vitest-report', () => {
       expect(result.summary?.total).toBe(0);
       expect(result.summary?.successRate).toBe(0);
     });
+
+    it('should return individual story results alongside the summary', () => {
+      const mockVitestResults = {
+        success: false,
+        numTotalTests: 2,
+        numPassedTests: 1,
+        numFailedTests: 1,
+        testResults: [
+          {
+            assertionResults: [
+              {
+                fullName: 'components-button--primary',
+                status: 'passed',
+                meta: { storyId: 'components-button--primary' },
+                failureMessages: [],
+              },
+              {
+                fullName: 'components-button--css-check',
+                status: 'failed',
+                meta: { storyId: 'components-button--css-check' },
+                failureMessages: ['Error: expected rgb(37, 99, 235) but got rgba(0, 0, 0, 0)'],
+              },
+            ],
+          },
+        ],
+      };
+
+      const result = parseVitestResults(mockVitestResults);
+
+      expect(result.storyResults).toHaveLength(2);
+      expect(result.storyResults).toEqual([
+        expect.objectContaining({
+          storyId: 'components-button--primary',
+          status: 'PASS',
+        }),
+        expect.objectContaining({
+          storyId: 'components-button--css-check',
+          status: 'FAIL',
+        }),
+      ]);
+    });
   });
 });

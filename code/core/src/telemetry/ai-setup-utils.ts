@@ -7,6 +7,7 @@ import { findConfigFile } from 'storybook/internal/common';
 import { detectAgent } from './detect-agent.ts';
 import { isTelemetryModuleEnabled, telemetry } from './index.ts';
 import type { EventType } from './types.ts';
+import type { StoryTestResult } from '../shared/utils/test-result-types.ts';
 import type { IndexEntry, StoryIndex } from 'storybook/internal/types';
 
 /**
@@ -23,6 +24,48 @@ export function isStoryCreatedByAISetup(entry: IndexEntry): boolean {
  */
 export function countAiAuthoredStories(storyIndex: StoryIndex): number {
   return Object.values(storyIndex.entries).filter(isStoryCreatedByAISetup).length;
+}
+
+/**
+ * Result of the CssCheck story in an AI-authored story test run.
+ *
+ * The AI setup prompt instructs the agent to create exactly one story named
+ * `CssCheck`, whose `play` function asserts a component-specific computed style
+ * (via `getComputedStyle`). That assertion catches the "component mounts with
+ * real dimensions but user CSS never loaded" failure mode — something the
+ * aggregated pass/fail summary does not distinguish on its own.
+ *
+ * A known name means telemetry can attribute the CSS result to that one story
+ * without adding a separate tag or event.
+ */
+export interface CssCheckStoryResult {
+  storyId: string;
+  status: StoryTestResult['status'];
+}
+
+/**
+ * Story ID suffix for a story named `CssCheck` (after Storybook's CSF
+ * `toStartCaseStr` + `sanitize`: `CssCheck` → `Css Check` → `css-check`).
+ */
+const CSS_CHECK_STORY_ID_SUFFIX = '--css-check';
+
+/**
+ * Locate the result of the `CssCheck` story in an AI-story test run.
+ *
+ * @param storyResults Individual story test results from {@link parseVitestResults}.
+ * @returns The storyId + status of the first story whose id ends in `--css-check`, or
+ *          `undefined` when the agent did not create a `CssCheck` story (or it was
+ *          filtered out of the run).
+ */
+export function findCssCheckStoryResult(
+  storyResults: readonly StoryTestResult[] | undefined
+): CssCheckStoryResult | undefined {
+  if (!storyResults) return undefined;
+  const match = storyResults.find((result) =>
+    result.storyId.toLowerCase().endsWith(CSS_CHECK_STORY_ID_SUFFIX)
+  );
+  if (!match) return undefined;
+  return { storyId: match.storyId, status: match.status };
 }
 
 /**

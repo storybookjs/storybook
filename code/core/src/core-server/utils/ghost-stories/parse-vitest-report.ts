@@ -24,5 +24,6 @@ export function parseVitestResults(report: any): TestRunSummary {
 
   return {
     summary: analyzeTestResults(storyTestResults),
+    storyResults: storyTestResults,
   };
 }

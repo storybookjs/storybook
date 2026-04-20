@@ -2,10 +2,12 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { IndexEntry, StoryIndex } from 'storybook/internal/types';
 
+import type { StoryTestResult } from '../shared/utils/test-result-types.ts';
 import {
   checkPreviewChanged,
   collectAiSetupEvidence,
   countAiAuthoredStories,
+  findCssCheckStoryResult,
   isStoryCreatedByAISetup,
 } from './ai-setup-utils.ts';
 
@@ -91,6 +93,76 @@ describe('isStoryCreatedByAISetup', () => {
 
   it('returns false for regular stories', () => {
     expect(isStoryCreatedByAISetup({ type: 'story', title: 'Foo' } as IndexEntry)).toBe(false);
+  });
+});
+
+describe('findCssCheckStoryResult', () => {
+  const makeResult = (overrides: Partial<StoryTestResult> = {}): StoryTestResult => ({
+    storyId: 'components-button--primary',
+    status: 'PASS',
+    ...overrides,
+  });
+
+  it('returns the matching story by `--css-check` suffix', () => {
+    const results = [
+      makeResult({ storyId: 'components-button--primary' }),
+      makeResult({ storyId: 'components-button--css-check', status: 'PASS' }),
+      makeResult({ storyId: 'components-button--disabled' }),
+    ];
+
+    expect(findCssCheckStoryResult(results)).toEqual({
+      storyId: 'components-button--css-check',
+      status: 'PASS',
+    });
+  });
+
+  it('returns the FAIL status when the CssCheck story failed', () => {
+    const results = [makeResult({ storyId: 'ai-generated-button--css-check', status: 'FAIL' })];
+
+    expect(findCssCheckStoryResult(results)).toEqual({
+      storyId: 'ai-generated-button--css-check',
+      status: 'FAIL',
+    });
+  });
+
+  it('returns undefined when no CssCheck story is present', () => {
+    const results = [
+      makeResult({ storyId: 'components-button--primary' }),
+      makeResult({ storyId: 'components-card--default' }),
+    ];
+
+    expect(findCssCheckStoryResult(results)).toBeUndefined();
+  });
+
+  it('returns undefined for an empty result list', () => {
+    expect(findCssCheckStoryResult([])).toBeUndefined();
+  });
+
+  it('returns undefined when storyResults is undefined (no run)', () => {
+    expect(findCssCheckStoryResult(undefined)).toBeUndefined();
+  });
+
+  it('is case-insensitive on the suffix to be defensive about storyId casing', () => {
+    // Storybook already sanitizes to lowercase, so this is defensive only —
+    // but it keeps the helper resilient if upstream changes.
+    const results = [makeResult({ storyId: 'components-button--CSS-CHECK', status: 'PASS' })];
+
+    expect(findCssCheckStoryResult(results)).toEqual({
+      storyId: 'components-button--CSS-CHECK',
+      status: 'PASS',
+    });
+  });
+
+  it('returns the first match when multiple stories end in `--css-check`', () => {
+    const results = [
+      makeResult({ storyId: 'components-button--css-check', status: 'PASS' }),
+      makeResult({ storyId: 'components-card--css-check', status: 'FAIL' }),
+    ];
+
+    expect(findCssCheckStoryResult(results)).toEqual({
+      storyId: 'components-button--css-check',
+      status: 'PASS',
+    });
   });
 });
 

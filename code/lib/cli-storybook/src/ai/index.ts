@@ -19,7 +19,12 @@ import { generateMarkdownOutput } from './prompt.ts';
 import type { ProjectInfo, AiSetupOptions } from './types.ts';
 
 export async function aiSetup(options: AiSetupOptions): Promise<void> {
-  const { configDir: userConfigDir, packageManager: packageManagerName, output } = options;
+  const {
+    configDir: userConfigDir,
+    packageManager: packageManagerName,
+    output,
+    disableTelemetry,
+  } = options;
 
   let projectInfo: ProjectInfo;
 
@@ -99,17 +104,21 @@ export async function aiSetup(options: AiSetupOptions): Promise<void> {
 
   // Snapshot the preview file baseline and cache the pending setup record.
   // Subsequent CLI entry points (dev, build, doctor, etc.) read this to
-  // collect evidence of what the agent accomplished.
-  const resolvedConfigDir = resolve(projectInfo.configDir);
-  const previewSnapshot = await snapshotPreviewFile(resolvedConfigDir);
-  const sessionId = await getSessionId();
-  const pendingRecord: AiSetupPendingRecord = {
-    timestamp: Date.now(),
-    sessionId,
-    configDir: resolvedConfigDir,
-    ...previewSnapshot,
-  };
-  await cache.set('ai-setup-pending', pendingRecord);
+  // collect evidence of what the agent accomplished — but only via telemetry
+  // (the `ai-setup-evidence` event). Skip the snapshot + cache write when
+  // telemetry is disabled so there's nobody to read it.
+  if (!disableTelemetry) {
+    const resolvedConfigDir = resolve(projectInfo.configDir);
+    const previewSnapshot = await snapshotPreviewFile(resolvedConfigDir);
+    const sessionId = await getSessionId();
+    const pendingRecord: AiSetupPendingRecord = {
+      timestamp: Date.now(),
+      sessionId,
+      configDir: resolvedConfigDir,
+      ...previewSnapshot,
+    };
+    await cache.set('ai-setup-pending', pendingRecord);
+  }
 
   if (output) {
     const outputPath = resolve(output);

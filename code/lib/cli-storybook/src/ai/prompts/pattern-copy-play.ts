@@ -456,7 +456,7 @@ function getPageStoryExample(projectInfo: ProjectInfo): string {
   `;
 }
 
-export function patternCopyPlayInstructions(projectInfo: ProjectInfo): string {
+export function instructions(projectInfo: ProjectInfo): string {
   const configDir = projectInfo.configDir;
   const typeImport = getTypeImportSource(projectInfo);
 

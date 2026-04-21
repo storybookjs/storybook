@@ -1,7 +1,14 @@
 import React, { Fragment, useCallback, useMemo } from 'react';
 
 import { ActionList } from 'storybook/internal/components';
-import type { StatusValue, StatusesByStoryIdAndTypeId, StoryIndex } from 'storybook/internal/types';
+import type {
+  API_IndexHash,
+  API_LeafEntry,
+  StatusValue,
+  StatusesByStoryIdAndTypeId,
+  StoryIndex,
+  Tag,
+} from 'storybook/internal/types';
 
 import { BatchAcceptIcon, DocumentIcon, ShareAltIcon, SweepIcon, UndoIcon } from '@storybook/icons';
 
@@ -10,7 +17,12 @@ import { styled, useTheme } from 'storybook/theming';
 
 import { getStatus } from '../../utils/status.tsx';
 import { createFilterLink, StatusIcon } from './FilterPanelLink.tsx';
-import { type FilterItem, areFiltersEqual } from './FilterPanel.utils.ts';
+import {
+  BUILT_IN_TAGS,
+  type FilterItem,
+  areFiltersEqual,
+  getFilterFunction,
+} from './FilterPanel.utils.ts';
 import {
   type StatusFilterEntry,
   type TagFilterEntry,
@@ -30,6 +42,7 @@ const Wrapper = styled.div({
 export interface FilterPanelProps {
   api: API;
   indexJson: StoryIndex;
+  filteredIndex: API_IndexHash | undefined;
   defaultIncludedFilters: string[];
   defaultExcludedFilters: string[];
   includedFilters: string[];
@@ -42,6 +55,7 @@ export interface FilterPanelProps {
 export const FilterPanel = ({
   api,
   indexJson,
+  filteredIndex,
   defaultIncludedFilters,
   defaultExcludedFilters,
   includedFilters,
@@ -55,8 +69,63 @@ export const FilterPanel = ({
   const { builtInEntries, tagEntries } = useTagFilterEntries(indexJson);
   const statusEntries = useStatusFilterEntries(allStatuses);
 
+  // Compute filtered counts for custom tags
+  const filteredTagCounts = useMemo(() => {
+    return Object.values(filteredIndex || {}).reduce<{
+      [key: Tag]: number;
+    }>((acc, entry) => {
+      if (['story', 'docs'].includes(entry.type)) {
+        entry.tags?.forEach((tag: Tag) => {
+          if (!BUILT_IN_TAGS.has(tag)) {
+            acc[tag] = (acc[tag] || 0) + 1;
+          }
+        });
+      }
+      return acc;
+    }, {});
+  }, [filteredIndex]);
+
+  // Compute filtered counts for built-in tag filters
+  const filteredBuiltInCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    const filteredEntries = Object.values(filteredIndex || {}).filter(
+      (e): e is API_LeafEntry => e.type === 'story' || e.type === 'docs'
+    );
+
+    builtInEntries.forEach((entry) => {
+      const filterFn = getFilterFunction(entry.id);
+      // Filter functions only use properties that exist on API_LeafEntry (type, tags, subtype)
+      // so the type assertion is safe even though the full type signature doesn't match
+      counts[entry.id] = filteredEntries.filter((e) =>
+        filterFn?.(e as unknown as Parameters<typeof filterFn>[0])
+      ).length;
+    });
+
+    return counts;
+  }, [filteredIndex, builtInEntries]);
+
+  // Compute filtered counts for status filters
+  const filteredStatusCounts = useMemo(() => {
+    if (!filteredIndex || !globalThis?.FEATURES?.changeDetection) {
+      return {} as Record<StatusValue, number>;
+    }
+
+    const counts = {} as Record<StatusValue, number>;
+    const filteredStoryIds = new Set(Object.keys(filteredIndex));
+
+    Object.entries(allStatuses).forEach(([storyId, statusByTypeId]) => {
+      if (filteredStoryIds.has(storyId)) {
+        Object.values(statusByTypeId).forEach((status) => {
+          counts[status.value] = (counts[status.value] ?? 0) + 1;
+        });
+      }
+    });
+
+    return counts;
+  }, [filteredIndex, allStatuses]);
+
   const toTagFilterItem = useCallback(
-    (entry: TagFilterEntry): FilterItem | null => {
+    (entry: TagFilterEntry, visibleCount: number): FilterItem | null => {
       if (entry.count === 0 && entry.type === 'built-in') return null;
       const isIncluded = includedFilters.includes(entry.id);
       const isExcluded = excludedFilters.includes(entry.id);
@@ -66,6 +135,7 @@ export const FilterPanel = ({
         type: entry.type,
         title: entry.title,
         count: entry.count,
+        visibleCount,
         icon: entry.icon,
         isIncluded,
         isExcluded,
@@ -83,7 +153,7 @@ export const FilterPanel = ({
   );
 
   const toStatusFilterItem = useCallback(
-    (entry: StatusFilterEntry): FilterItem => {
+    (entry: StatusFilterEntry, visibleCount: number): FilterItem => {
       const isIncluded = includedStatusFilters.includes(entry.statusValue);
       const isExcluded = excludedStatusFilters.includes(entry.statusValue);
       const isChecked = isIncluded || isExcluded;
@@ -93,6 +163,7 @@ export const FilterPanel = ({
         type: 'status',
         title: entry.shortName.charAt(0).toUpperCase() + entry.shortName.slice(1),
         count: entry.count,
+        visibleCount,
         icon: statusIconEl ? <StatusIcon $iconColor={iconColor}>{statusIconEl}</StatusIcon> : null,
         isIncluded,
         isExcluded,
@@ -113,23 +184,26 @@ export const FilterPanel = ({
     () =>
       builtInEntries
         .sort((a, b) => a.id.localeCompare(b.id))
-        .map(toTagFilterItem)
+        .map((entry) => toTagFilterItem(entry, filteredBuiltInCounts[entry.id] ?? 0))
         .filter((f): f is FilterItem => f !== null),
-    [builtInEntries, toTagFilterItem]
+    [builtInEntries, toTagFilterItem, filteredBuiltInCounts]
   );
 
   const tagItems = useMemo(
     () =>
       tagEntries
         .sort((a, b) => a.id.localeCompare(b.id))
-        .map(toTagFilterItem)
+        .map((entry) => toTagFilterItem(entry, filteredTagCounts[entry.id] ?? 0))
         .filter((f): f is FilterItem => f !== null),
-    [tagEntries, toTagFilterItem]
+    [tagEntries, toTagFilterItem, filteredTagCounts]
   );
 
   const statusItems = useMemo(
-    () => statusEntries.map(toStatusFilterItem),
-    [statusEntries, toStatusFilterItem]
+    () =>
+      statusEntries.map((entry) =>
+        toStatusFilterItem(entry, filteredStatusCounts[entry.statusValue] ?? 0)
+      ),
+    [statusEntries, toStatusFilterItem, filteredStatusCounts]
   );
 
   const filterIds = useMemo(

@@ -11,6 +11,7 @@ export type FilterItem = {
   type: string;
   title: string;
   count: number;
+  visibleCount: number;
   icon: ReactElement | null;
   isIncluded: boolean;
   isExcluded: boolean;

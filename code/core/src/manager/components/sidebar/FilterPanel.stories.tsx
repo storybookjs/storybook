@@ -1,4 +1,5 @@
 import type {
+  API_IndexHash,
   DocsIndexEntry,
   StoryIndex,
   StoryIndexEntry,
@@ -116,6 +117,7 @@ const meta = {
       v: 6,
       entries: getEntries(true),
     } as StoryIndex,
+    filteredIndex: undefined,
     defaultExcludedFilters: [],
     defaultIncludedFilters: [],
     includedFilters: [],
@@ -297,5 +299,99 @@ export const OnlyAffectedStatus: Story = {
       statusValue: 'status-value:affected',
       title: 'Affected',
     }),
+  },
+};
+
+export const WithFilteredIndex: Story = {
+  args: {
+    indexJson: {
+      v: 6,
+      entries: getEntries(true),
+    } as StoryIndex,
+    filteredIndex: {
+      'c1-autodocs': { tags: ['tag1', 'autodocs'], type: 'docs' },
+      'c1-story1': { tags: ['tag1', 'dev'], type: 'story' },
+      'c1-story2': { tags: ['tag1'], type: 'story' },
+      'c2-autodocs': { tags: ['tag1', 'autodocs'], type: 'docs' },
+      'c2-story1': { tags: ['tag1', 'play-fn'], type: 'story' },
+      'c2-story2': { tags: ['tag1'], type: 'story' },
+      'c2-story3': { tags: ['tag1'], type: 'story' },
+      'c3-autodocs': { tags: ['tag1', 'autodocs'], type: 'docs' },
+      'c3-story1': { tags: ['tag1', 'play-fn'], type: 'story' },
+      'c3-story2': { tags: ['tag1', 'play-fn'], type: 'story' },
+      'c3-story3': { tags: ['tag1', 'play-fn'], type: 'story' },
+      'c4-autodocs': { tags: ['tag1', 'autodocs'], type: 'docs' },
+      'c4-story1': { tags: ['tag1'], type: 'story' },
+      'c4-story2': { tags: ['tag1'], type: 'story' },
+      'c5-autodocs': { tags: ['tag2', 'autodocs'], type: 'docs' },
+      'c5-story1': { tags: ['tag2', 'play-fn'], type: 'story' },
+      'c5-story2': { tags: ['tag2', 'play-fn'], type: 'story' },
+      'c5-story3': { tags: ['tag2', 'play-fn'], type: 'story' },
+    } as unknown as API_IndexHash,
+  },
+};
+
+export const WithFilteredBuiltIn: Story = {
+  args: {
+    indexJson: {
+      v: 6,
+      entries: getEntries(false),
+    } as StoryIndex,
+    filteredIndex: {
+      'c1-autodocs': { tags: ['autodocs'], type: 'docs' },
+      'c2-autodocs': { tags: ['autodocs'], type: 'docs' },
+      'c2-story1': { tags: ['play-fn'], type: 'story' },
+      'c3-story1': { tags: ['play-fn'], type: 'story' },
+      'c3-story2': { tags: ['play-fn'], type: 'story' },
+      'c12-s1-test1': { tags: ['test-fn'], type: 'story', subtype: 'test' },
+      'c12-s1-test2': { tags: ['test-fn'], type: 'story', subtype: 'test' },
+    } as unknown as API_IndexHash,
+  },
+};
+
+export const WithFilteredStatuses: Story = {
+  args: {
+    indexJson: {
+      v: 6,
+      entries: getEntries(true),
+    } as StoryIndex,
+    filteredIndex: {
+      'c1-story1': { tags: ['tag1', 'dev'], type: 'story' },
+      'c1-story2': { tags: ['tag1'], type: 'story' },
+      'c2-story1': { tags: ['tag1', 'play-fn'], type: 'story' },
+    } as unknown as API_IndexHash,
+    allStatuses: makeStatuses(
+      {
+        storyId: 'c1-story1',
+        typeId: 'change-detection',
+        statusValue: 'status-value:new',
+        title: 'New',
+      },
+      {
+        storyId: 'c1-story2',
+        typeId: 'change-detection',
+        statusValue: 'status-value:modified',
+        title: 'Modified',
+      },
+      {
+        storyId: 'c2-story1',
+        typeId: 'change-detection',
+        statusValue: 'status-value:affected',
+        title: 'Affected',
+      },
+      // These stories are not in filteredIndex, so won't be counted in visible
+      {
+        storyId: 'c3-story1',
+        typeId: 'change-detection',
+        statusValue: 'status-value:new',
+        title: 'New',
+      },
+      {
+        storyId: 'c3-story2',
+        typeId: 'change-detection',
+        statusValue: 'status-value:new',
+        title: 'New',
+      }
+    ),
   },
 };

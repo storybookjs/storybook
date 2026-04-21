@@ -77,13 +77,19 @@ export function analyzeTestResults(results: StoryTestResult[]): TestRunAnalysis 
 
   const errorClassification = extractCategorizedErrors(results);
 
-  // Only `PASS` / `FAIL` produce a boolean; `PENDING` or no match leaves the
-  // field absent so consumers can treat it as "unknown" instead of a failure.
+  // `'not-run'` covers both "no CssCheck story in the suite" and "story
+  // existed but wasn't executed" — they're the same signal for consumers
+  // (no pass/fail outcome available). Collapsing them avoids a fourth
+  // state and keeps dashboards from interpreting an absent field.
   const cssCheckMatch = results.find((r) =>
     r.storyId.toLowerCase().endsWith(CSS_CHECK_STORY_ID_SUFFIX)
   );
-  const cssCheck =
-    cssCheckMatch?.status === 'PASS' ? true : cssCheckMatch?.status === 'FAIL' ? false : undefined;
+  const cssCheck: TestRunAnalysis['cssCheck'] =
+    cssCheckMatch?.status === 'PASS'
+      ? 'pass'
+      : cssCheckMatch?.status === 'FAIL'
+        ? 'fail'
+        : 'not-run';
 
   return {
     total,
@@ -93,6 +99,6 @@ export function analyzeTestResults(results: StoryTestResult[]): TestRunAnalysis 
     successRateWithoutEmptyRender,
     uniqueErrorCount: errorClassification.uniqueErrorCount,
     categorizedErrors: errorClassification.categorizedErrors,
-    ...(cssCheck !== undefined ? { cssCheck } : {}),
+    cssCheck,
   };
 }

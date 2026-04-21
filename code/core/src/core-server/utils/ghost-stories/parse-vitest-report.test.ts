@@ -49,6 +49,7 @@ describe('parse-vitest-report', () => {
         successRateWithoutEmptyRender: 1.0,
         uniqueErrorCount: 0,
         categorizedErrors: {},
+        cssCheck: 'not-run',
       });
     });
 
@@ -290,7 +291,7 @@ describe('parse-vitest-report', () => {
 
       const result = parseVitestResults(mockVitestResults);
 
-      expect(result.summary?.cssCheck).toBe(false);
+      expect(result.summary?.cssCheck).toBe('fail');
     });
   });
 });

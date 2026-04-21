@@ -77,6 +77,7 @@ describe('analyze-test-results', () => {
         successRateWithoutEmptyRender: 1.0,
         uniqueErrorCount: 0,
         categorizedErrors: {},
+        cssCheck: 'not-run',
       });
     });
 
@@ -124,15 +125,15 @@ describe('analyze-test-results', () => {
     });
 
     describe('cssCheck', () => {
-      it('is true when a --css-check story passed', () => {
+      it("is 'pass' when a --css-check story passed", () => {
         const results: StoryTestResult[] = [
           { storyId: 'components-button--primary', status: 'PASS' },
           { storyId: 'components-button--css-check', status: 'PASS' },
         ];
-        expect(analyzeTestResults(results).cssCheck).toBe(true);
+        expect(analyzeTestResults(results).cssCheck).toBe('pass');
       });
 
-      it('is false when a --css-check story failed', () => {
+      it("is 'fail' when a --css-check story failed", () => {
         const results: StoryTestResult[] = [
           {
             storyId: 'components-button--css-check',
@@ -140,31 +141,28 @@ describe('analyze-test-results', () => {
             error: 'expected rgb(37, 99, 235) but got rgba(0, 0, 0, 0)',
           },
         ];
-        expect(analyzeTestResults(results).cssCheck).toBe(false);
+        expect(analyzeTestResults(results).cssCheck).toBe('fail');
       });
 
-      it('is absent when no --css-check story is present', () => {
+      it("is 'not-run' when no --css-check story is present", () => {
         const results: StoryTestResult[] = [
           { storyId: 'components-button--primary', status: 'PASS' },
         ];
-        const analysis = analyzeTestResults(results);
-        expect(analysis.cssCheck).toBeUndefined();
-        expect('cssCheck' in analysis).toBe(false);
+        expect(analyzeTestResults(results).cssCheck).toBe('not-run');
       });
 
-      it('is absent when the --css-check story is PENDING (did not run)', () => {
-        // PENDING is "unknown" — collapsing it to false would inflate CSS
-        // failure rates in telemetry. Absent is the correct signal.
+      it("is 'not-run' when the --css-check story was skipped / pending / todo", () => {
+        // PENDING covers any non-pass / non-fail Vitest status (skipped,
+        // pending, todo, filtered out). No pass/fail signal available →
+        // 'not-run', same bucket as "story wasn't authored at all".
         const results: StoryTestResult[] = [
           { storyId: 'components-button--css-check', status: 'PENDING' },
         ];
-        const analysis = analyzeTestResults(results);
-        expect(analysis.cssCheck).toBeUndefined();
-        expect('cssCheck' in analysis).toBe(false);
+        expect(analyzeTestResults(results).cssCheck).toBe('not-run');
       });
 
-      it('is absent for an empty result list', () => {
-        expect(analyzeTestResults([]).cssCheck).toBeUndefined();
+      it("is 'not-run' for an empty result list", () => {
+        expect(analyzeTestResults([]).cssCheck).toBe('not-run');
       });
 
       it('uses the first match when multiple --css-check stories exist', () => {
@@ -174,7 +172,7 @@ describe('analyze-test-results', () => {
           { storyId: 'components-button--css-check', status: 'PASS' },
           { storyId: 'components-card--css-check', status: 'FAIL', error: 'style mismatch' },
         ];
-        expect(analyzeTestResults(results).cssCheck).toBe(true);
+        expect(analyzeTestResults(results).cssCheck).toBe('pass');
       });
 
       it('is case-insensitive on the suffix (defensive)', () => {
@@ -183,7 +181,7 @@ describe('analyze-test-results', () => {
         const results: StoryTestResult[] = [
           { storyId: 'components-button--CSS-CHECK', status: 'PASS' },
         ];
-        expect(analyzeTestResults(results).cssCheck).toBe(true);
+        expect(analyzeTestResults(results).cssCheck).toBe('pass');
       });
     });
   });

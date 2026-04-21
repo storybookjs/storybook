@@ -29,21 +29,19 @@ export interface TestRunAnalysis {
   uniqueErrorCount: number;
   categorizedErrors: Record<string, CategorizedError>;
   /**
-   * Whether the `CssCheck` story passed its computed-style assertion.
+   * Outcome of the `CssCheck` story — a story (id suffix `--css-check`)
+   * whose `play` asserts a component-specific computed style via
+   * `getComputedStyle`. Distinguishes "component mounted" from "the
+   * user's CSS actually loaded".
    *
-   * The AI setup prompt asks the agent to author exactly one story named
-   * `CssCheck` (storyId suffix `--css-check`) whose `play` asserts a
-   * component-specific computed style. That distinguishes "component
-   * mounted" from "the user's CSS actually loaded".
+   * - `'pass'`    — a `CssCheck` story ran and passed.
+   * - `'fail'`    — a `CssCheck` story ran and failed.
+   * - `'not-run'` — no pass/fail signal available: either no `CssCheck`
+   *                 story is in the suite, or the story existed but was
+   *                 not executed (skipped, pending, todo, filtered out).
    *
-   * - `true`  — a `CssCheck` story ran and passed.
-   * - `false` — a `CssCheck` story ran and failed.
-   * - absent  — no `CssCheck` story in the suite, or the story existed
-   *             but was not executed (`PENDING`). The absent case is
-   *             treated as "unknown", not as a health signal.
-   *
-   * Only a boolean is emitted — no storyId or component name — so no
-   * user-specific data leaks into telemetry.
+   * Only the three-valued enum is emitted — no storyId or component
+   * name — so no user-authored data enters telemetry.
    */
-  cssCheck?: boolean;
+  cssCheck: 'pass' | 'fail' | 'not-run';
 }

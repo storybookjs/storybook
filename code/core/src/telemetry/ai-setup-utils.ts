@@ -37,6 +37,11 @@ export function countAiAuthoredStories(storyIndex: StoryIndex): number {
  *
  * A known name means telemetry can attribute the CSS result to that one story
  * without adding a separate tag or event.
+ *
+ * `status` is `'PASS' | 'FAIL' | 'PENDING'`. `PENDING` means the story
+ * existed but Vitest skipped it (for example, when `--testNamePattern` or an
+ * upstream crash kept it from running); downstream consumers should treat
+ * that as "unknown", not as a health signal.
  */
 export interface CssCheckStoryResult {
   storyId: string;
@@ -53,9 +58,14 @@ const CSS_CHECK_STORY_ID_SUFFIX = '--css-check';
  * Locate the result of the `CssCheck` story in an AI-story test run.
  *
  * @param storyResults Individual story test results from {@link parseVitestResults}.
- * @returns The storyId + status of the first story whose id ends in `--css-check`, or
- *          `undefined` when the agent did not create a `CssCheck` story (or it was
- *          filtered out of the run).
+ * @returns The storyId + status of the first story whose id ends in `--css-check`,
+ *          or `undefined` when the agent did not create a `CssCheck` story.
+ *
+ * The prompt asks for exactly one such story. If the agent created more than one
+ * (prompt violation), only the first match is reported here — the aggregate
+ * pass/fail counts in `summary` still reflect all of them. A match with
+ * `status: 'PENDING'` is distinct from a missing story (`undefined`): the
+ * story existed but Vitest did not run it.
  */
 export function findCssCheckStoryResult(
   storyResults: readonly StoryTestResult[] | undefined

@@ -1,7 +1,12 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { Badge, Button, PopoverProvider } from 'storybook/internal/components';
-import type { API_PreparedIndexEntry, StoryIndex, TagsOptions } from 'storybook/internal/types';
+import type {
+  API_IndexHash,
+  API_PreparedIndexEntry,
+  StoryIndex,
+  TagsOptions,
+} from 'storybook/internal/types';
 
 import { BeakerIcon, DocumentIcon, FilterIcon, PlayHollowIcon } from '@storybook/icons';
 
@@ -60,10 +65,11 @@ const TagSelected = styled(Badge)(({ theme }) => ({
 export interface TagsFilterProps {
   api: API;
   indexJson: StoryIndex;
+  filteredIndex: API_IndexHash | undefined;
   tagPresets: TagsOptions;
 }
 
-export const TagsFilter = ({ api, indexJson, tagPresets }: TagsFilterProps) => {
+export const TagsFilter = ({ api, indexJson, filteredIndex, tagPresets }: TagsFilterProps) => {
   const filtersById = useMemo<{ [id: string]: Filter }>(() => {
     const userTagsCounts = Object.values(indexJson.entries).reduce<{ [key: Tag]: number }>(
       (acc, entry) => {
@@ -126,6 +132,24 @@ export const TagsFilter = ({ api, indexJson, tagPresets }: TagsFilterProps) => {
 
     return { ...userFilters, ...builtInFilters };
   }, [indexJson.entries]);
+
+  const filteredCounts = useMemo(() => {
+    return Object.values(filteredIndex || {}).reduce<{
+      [key: Tag]: number;
+    }>((acc, entry) => {
+      if (['story', 'docs'].includes(entry.type)) {
+        entry.tags?.forEach((tag: Tag) => {
+          if (!BUILT_IN_TAGS.has(tag)) {
+            acc[tag] = (acc[tag] || 0) + 1;
+          }
+        });
+      }
+      return acc;
+    }, {});
+  }, [filteredIndex]);
+
+  const filteredIndexLength = Object.keys(filteredIndex || {}).length;
+  console.log(filteredIndexLength, filteredIndex, filteredCounts);
 
   const { defaultIncluded, defaultExcluded } = useMemo(() => {
     return Object.entries(tagPresets).reduce(
@@ -221,6 +245,7 @@ export const TagsFilter = ({ api, indexJson, tagPresets }: TagsFilterProps) => {
         <TagsFilterPanel
           api={api}
           filtersById={filtersById}
+          filteredCounts={filteredCounts}
           includedFilters={includedFilters}
           excludedFilters={excludedFilters}
           toggleFilter={toggleFilter}

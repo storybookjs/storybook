@@ -52,6 +52,7 @@ export type Filter = {
 interface TagsFilterPanelProps {
   api: API;
   filtersById: { [id: string]: Filter };
+  filteredCounts: { [id: string]: number };
   includedFilters: Set<string>;
   excludedFilters: Set<string>;
   toggleFilter: (key: string, selected: boolean, excluded?: boolean) => void;
@@ -64,6 +65,7 @@ interface TagsFilterPanelProps {
 export const TagsFilterPanel = ({
   api,
   filtersById,
+  filteredCounts,
   includedFilters,
   excludedFilters,
   toggleFilter,
@@ -80,12 +82,14 @@ export const TagsFilterPanel = ({
     title,
     icon,
     count,
+    visibleCount,
   }: {
     id: string;
     type: string;
     title: string;
     icon?: React.ReactNode;
     count: number;
+    visibleCount: number;
   }): Link | undefined => {
     const onToggle = (selected: boolean, excluded?: boolean) =>
       toggleFilter(id, selected, excluded);
@@ -97,9 +101,11 @@ export const TagsFilterPanel = ({
     const invertButtonLabel = `${isExcluded ? 'Include' : 'Exclude'} ${type}: ${title}`;
 
     // for built-in filters (docs, play, test), don't show if there are no matches
-    if (count === 0 && type === 'built-in') {
+    if (visibleCount === 0 && type === 'built-in') {
       return undefined;
     }
+
+    const countString = `${visibleCount} / ${count}`;
 
     return {
       id: `filter-${type}-${id}`,
@@ -121,7 +127,8 @@ export const TagsFilterPanel = ({
                 {isExcluded && <MutedText> (excluded)</MutedText>}
               </span>
             </ActionList.Text>
-            {isExcluded ? <s>{count}</s> : <span>{count}</span>}
+            {}
+            {isExcluded ? <s>{countString}</s> : <span>{countString}</span>}
           </ActionList.Action>
           <ActionList.Button
             data-target-id={`filter-${type}-${id}`}
@@ -140,7 +147,7 @@ export const TagsFilterPanel = ({
     .map((group) =>
       group
         .sort((a, b) => a.id.localeCompare(b.id))
-        .map((filter) => renderLink(filter))
+        .map((filter) => renderLink({ ...filter, visibleCount: filteredCounts[filter.id] ?? 0 }))
         .filter((value): value is Link => !!value)
     )
     .filter((value): value is Link[] => value.length > 0);

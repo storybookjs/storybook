@@ -64,6 +64,14 @@ const meta = {
       },
       ...builtInFilters,
     },
+    filteredCounts: {
+      tag1: 11,
+      tag2: 24,
+      'tag3-which-is-very-long-and-will-be-truncated-after-a-while': 2,
+      _docs: 8,
+      _play: 21,
+      _test: 42,
+    },
     includedFilters: new Set(),
     excludedFilters: new Set(),
     resetFilters: fn(),
@@ -85,6 +93,11 @@ export const Basic: Story = {};
 export const BuiltInOnly: Story = {
   args: {
     filtersById: builtInFilters,
+    filteredCounts: {
+      _docs: 8,
+      _play: 21,
+      _test: 42,
+    },
   },
 };
 
@@ -106,9 +119,70 @@ export const Included: Story = {
   },
 };
 
+export const PartiallyFiltered: Story = {
+  args: {
+    includedFilters: new Set(['tag1']),
+    filteredCounts: {
+      tag1: 11,
+      tag2: 5,
+      'tag3-which-is-very-long-and-will-be-truncated-after-a-while': 1,
+      _docs: 3,
+      _play: 8,
+      _test: 11,
+    },
+    isDefaultSelection: false,
+  },
+};
+
+/**
+ * Built-in filters with zero visible count are hidden from the panel. Tag filters always show even
+ * with zero count.
+ */
+export const BuiltInFiltersHiddenWhenZero: Story = {
+  args: {
+    filtersById: {
+      tag1: {
+        id: 'tag1',
+        type: 'tag',
+        title: 'Tag1',
+        count: 11,
+        filterFn: fn(),
+      },
+      ...builtInFilters,
+    },
+    includedFilters: new Set(['tag1']),
+    filteredCounts: {
+      tag1: 11,
+      _docs: 0, // Hidden because built-in with zero count
+      _play: 0, // Hidden because built-in with zero count
+      _test: 5, // Shown because it has matches
+    },
+    isDefaultSelection: false,
+  },
+};
+
 export const Excluded: Story = {
   args: {
     excludedFilters: new Set(['tag1', '_play']),
+    isDefaultSelection: false,
+  },
+};
+
+/**
+ * When filters are excluded, their counts are shown with strikethrough. The visible count reflects
+ * items that DON'T have the excluded tag.
+ */
+export const ExcludedWithFilteredCounts: Story = {
+  args: {
+    excludedFilters: new Set(['tag2']),
+    filteredCounts: {
+      tag1: 11, // All tag1 items shown (none are excluded)
+      tag2: 0, // No tag2 items shown (all excluded)
+      'tag3-which-is-very-long-and-will-be-truncated-after-a-while': 2,
+      _docs: 5, // Only 5 docs don't have tag2
+      _play: 17, // Only 17 play items don't have tag2
+      _test: 30, // Only 30 test items don't have tag2
+    },
     isDefaultSelection: false,
   },
 };
@@ -134,5 +208,21 @@ export const DefaultSelectionModified: Story = {
     ...Mixed.args,
     isDefaultSelection: false,
     hasDefaultSelection: true,
+  },
+};
+
+export const NoMatches: Story = {
+  args: {
+    includedFilters: new Set(['tag1', 'tag2']),
+    excludedFilters: new Set(['tag3-which-is-very-long-and-will-be-truncated-after-a-while']),
+    filteredCounts: {
+      tag1: 0,
+      tag2: 0,
+      'tag3-which-is-very-long-and-will-be-truncated-after-a-while': 0,
+      _docs: 0,
+      _play: 0,
+      _test: 0,
+    },
+    isDefaultSelection: false,
   },
 };

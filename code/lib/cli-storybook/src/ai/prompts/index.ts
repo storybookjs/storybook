@@ -35,7 +35,7 @@ const EVAL_SETUP_PROMPT_ENV = 'EVAL_SETUP_PROMPT';
 
 function resolvePromptName(): PromptName {
   const requested = process.env[EVAL_SETUP_PROMPT_ENV]?.trim();
-  if (requested && requested in PROMPT_BUILDERS) {
+  if (requested && Object.hasOwn(PROMPT_BUILDERS, requested)) {
     return requested as PromptName;
   }
   return DEFAULT_PROMPT_NAME;

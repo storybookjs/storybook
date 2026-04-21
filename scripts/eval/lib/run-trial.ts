@@ -187,33 +187,46 @@ export async function runTrial(config: TrialConfig, logger?: Logger): Promise<Ru
 /**
  * Run `npx storybook ai setup` inside the prepared trial workspace and return
  * its stdout — the exact project-aware markdown the agent will receive from
- * the same CLI invocation. `EVAL_SETUP_PROMPT` selects the variant.
+ * the same CLI invocation. `EVAL_SETUP_PROMPT` selects the variant;
+ * `STORYBOOK_DISABLE_TELEMETRY` keeps the harness's capture invocation out of
+ * telemetry.
+ *
+ * Failures (spawn errors, timeouts, non-zero exit) are logged and swallowed:
+ * capturing the prompt content is bookkeeping, not the thing being measured,
+ * so it must never abort the trial.
  */
 async function captureAiSetupMarkdown(
   projectPath: string,
   promptName: string,
   log: Logger
 ): Promise<string> {
-  const result = await x('npx', ['storybook', 'ai', 'setup'], {
-    throwOnError: false,
-    timeout: 60_000,
-    nodeOptions: {
-      cwd: projectPath,
-      env: {
-        ...process.env,
-        STORYBOOK_DISABLE_TELEMETRY: '1',
-        EVAL_SETUP_PROMPT: promptName,
+  try {
+    const result = await x('npx', ['storybook', 'ai', 'setup'], {
+      throwOnError: false,
+      timeout: 60_000,
+      nodeOptions: {
+        cwd: projectPath,
+        env: {
+          ...process.env,
+          EVAL_SETUP_PROMPT: promptName,
+          STORYBOOK_DISABLE_TELEMETRY: '1',
+        },
       },
-    },
-  });
+    });
 
-  if (result.exitCode !== 0) {
+    if (result.exitCode !== 0) {
+      log.logError(
+        `Failed to capture ai setup markdown (exit ${result.exitCode}). Falling back to nudge-only record.`
+      );
+      log.logError(result.stderr.trim() || result.stdout.trim());
+      return '';
+    }
+
+    return result.stdout.trim();
+  } catch (error) {
     log.logError(
-      `Failed to capture ai setup markdown (exit ${result.exitCode}). Falling back to nudge-only record.`
+      `Failed to capture ai setup markdown (${error instanceof Error ? error.message : String(error)}). Falling back to nudge-only record.`
     );
-    log.logError(result.stderr.trim() || result.stdout.trim());
     return '';
   }
-
-  return result.stdout.trim();
 }

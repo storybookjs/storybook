@@ -180,7 +180,10 @@ describe('runTrial pipeline', () => {
       expect.objectContaining({
         nodeOptions: expect.objectContaining({
           cwd: TMP,
-          env: expect.objectContaining({ EVAL_SETUP_PROMPT: 'setup' }),
+          env: expect.objectContaining({
+            EVAL_SETUP_PROMPT: 'setup',
+            STORYBOOK_DISABLE_TELEMETRY: '1',
+          }),
         }),
       })
     );

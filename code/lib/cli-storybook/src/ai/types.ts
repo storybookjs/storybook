@@ -4,6 +4,8 @@ export interface AiSetupOptions {
   configDir?: string;
   packageManager?: string;
   output?: string;
+  /** Populated from the program-level `--disable-telemetry` flag (defaults from `STORYBOOK_DISABLE_TELEMETRY`). */
+  disableTelemetry?: boolean;
 }
 
 export interface ProjectInfo {

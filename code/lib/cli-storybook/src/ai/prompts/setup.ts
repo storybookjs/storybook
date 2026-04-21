@@ -142,7 +142,7 @@ function getNeedsWorkTagExample(projectInfo: ProjectInfo): string {
   `;
 }
 
-export function setupInstructions(projectInfo: ProjectInfo): string {
+export function instructions(projectInfo: ProjectInfo): string {
   const configDir = projectInfo.configDir;
 
   return dedent`

@@ -241,11 +241,7 @@ function inferAgent(model: string): AgentId {
   throw new Error(`No agent found for model: ${model}`);
 }
 
-function buildManualCommand(
-  variant: AgentVariant,
-  promptPath: string,
-  promptName: string
-): string {
+function buildManualCommand(variant: AgentVariant, promptPath: string, promptName: string): string {
   // EVAL_SETUP_PROMPT must be in the env the agent inherits, so that the
   // agent's own `npx storybook ai setup` tool call picks the right variant.
   const envPrefix = `EVAL_SETUP_PROMPT=${promptName} `;

@@ -1,5 +1,6 @@
 import { writeFile } from 'node:fs/promises';
 import { join } from 'pathe';
+import { x } from 'tinyexec';
 import type { Logger } from './utils.ts';
 import type { AgentId, AgentDriver, AgentVariant } from './agents/config.ts';
 import type { Project } from './projects.ts';
@@ -70,7 +71,13 @@ export async function runTrial(config: TrialConfig, logger?: Logger): Promise<Ru
   const prompt = loadPrompt(promptName);
   await writeFile(join(workspace.resultsDir, 'prompt.md'), prompt);
 
-  // 5. Execute the agent. EVAL_SETUP_PROMPT is forwarded into the agent's
+  // 5. Capture the full markdown the agent will receive from `ai setup` so
+  //    the trial record contains a reproducible, project-aware snapshot of
+  //    the instructions (not just the one-line nudge). Runs the same CLI the
+  //    agent will run, in the same workspace, with the same env.
+  const promptContent = await captureAiSetupMarkdown(workspace.projectPath, promptName, log);
+
+  // 6. Execute the agent. EVAL_SETUP_PROMPT is forwarded into the agent's
   //    environment so its `ai setup` tool call resolves to the selected
   //    prompt variant (unset for real users → always the default).
   log.log(`  Running ${agentName} (${model}, effort=${variant.effort})...`);
@@ -99,7 +106,7 @@ export async function runTrial(config: TrialConfig, logger?: Logger): Promise<Ru
     },
   };
 
-  // 6. Write provisional data so the baseline-owned MDX files can resolve it during grading.
+  // 7. Write provisional data so the baseline-owned MDX files can resolve it during grading.
   const provisionalData = buildEvalData({
     id: trialId,
     timestamp,
@@ -107,7 +114,7 @@ export async function runTrial(config: TrialConfig, logger?: Logger): Promise<Ru
     variant,
     prompt: {
       name: promptName,
-      content: prompt,
+      content: promptContent,
     },
     baselineCommit: workspace.baselineCommit,
     environment,
@@ -136,10 +143,10 @@ export async function runTrial(config: TrialConfig, logger?: Logger): Promise<Ru
     JSON.stringify(provisionalData, null, 2)
   );
 
-  // 6. Grade the results using story-render preview gain as the score.
+  // 8. Grade the results using story-render preview gain as the score.
   const { grade: trialGrade, score } = await grade(workspace, log, baselineGhostStories);
 
-  // 7. Rewrite the provisional data with the final grade.
+  // 9. Rewrite the provisional data with the final grade.
   const reportForCommit = buildEvalData({
     ...provisionalData,
     grade: trialGrade,
@@ -162,7 +169,7 @@ export async function runTrial(config: TrialConfig, logger?: Logger): Promise<Ru
     JSON.stringify(reportForCommit, null, 2)
   );
 
-  // 8. Commit, push, and open the benchmark PR
+  // 10. Commit, push, and open the benchmark PR
   const publish = await publishTrialBranch({
     data: reportForCommit,
     workspace,
@@ -175,4 +182,38 @@ export async function runTrial(config: TrialConfig, logger?: Logger): Promise<Ru
     ...reportForCommit,
     publish,
   };
+}
+
+/**
+ * Run `npx storybook ai setup` inside the prepared trial workspace and return
+ * its stdout — the exact project-aware markdown the agent will receive from
+ * the same CLI invocation. `EVAL_SETUP_PROMPT` selects the variant.
+ */
+async function captureAiSetupMarkdown(
+  projectPath: string,
+  promptName: string,
+  log: Logger
+): Promise<string> {
+  const result = await x('npx', ['storybook', 'ai', 'setup'], {
+    throwOnError: false,
+    timeout: 60_000,
+    nodeOptions: {
+      cwd: projectPath,
+      env: {
+        ...process.env,
+        STORYBOOK_DISABLE_TELEMETRY: '1',
+        EVAL_SETUP_PROMPT: promptName,
+      },
+    },
+  });
+
+  if (result.exitCode !== 0) {
+    log.logError(
+      `Failed to capture ai setup markdown (exit ${result.exitCode}). Falling back to nudge-only record.`
+    );
+    log.logError(result.stderr.trim() || result.stdout.trim());
+    return '';
+  }
+
+  return result.stdout.trim();
 }

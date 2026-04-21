@@ -1,16 +1,18 @@
 import type { AiPrompt, ProjectInfo } from '../types.ts';
 
-import { patternCopyPlayInstructions } from './pattern-copy-play.ts';
-import { setupInstructions } from './setup.ts';
+import * as patternCopyPlay from './pattern-copy-play.ts';
+import * as setup from './setup.ts';
 
 /**
  * Registry of all prompt builders. Each key is a prompt identifier used only
  * internally (by the eval harness via `EVAL_SETUP_PROMPT`); users never see
- * these names.
+ * these names. Each variant file exports an `instructions(projectInfo)`
+ * function; namespace imports keep the registry self-describing and make the
+ * convention uniform.
  */
 const PROMPT_BUILDERS = {
-  'pattern-copy-play': patternCopyPlayInstructions,
-  setup: setupInstructions,
+  'pattern-copy-play': patternCopyPlay.instructions,
+  setup: setup.instructions,
 } satisfies Record<string, (projectInfo: ProjectInfo) => string>;
 
 export type PromptName = keyof typeof PROMPT_BUILDERS;

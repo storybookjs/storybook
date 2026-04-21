@@ -45,7 +45,15 @@ vi.mock('./agents/claude-code', () => ({
 vi.mock('./agents/codex', () => ({
   codexAgent: { name: 'codex', execute: vi.fn() },
 }));
+vi.mock('tinyexec', () => ({
+  x: vi.fn().mockResolvedValue({
+    exitCode: 0,
+    stdout: '# Storybook Setup\n\nFull project-aware instructions...',
+    stderr: '',
+  }),
+}));
 
+import { x } from 'tinyexec';
 import { claudeAgent } from './agents/claude-code.ts';
 import { collectGhostStoriesGrade, grade } from './grade.ts';
 import { prepareTrial } from './prepare-trial.ts';
@@ -158,12 +166,24 @@ describe('runTrial pipeline', () => {
 
     const params = vi.mocked(claudeAgent.execute).mock.calls[0][0];
     expect(params).toMatchObject({
-      prompt: expect.stringContaining('set up Storybook'),
+      prompt: expect.stringContaining('npx storybook ai setup'),
       projectPath: TMP,
       variant: { agent: 'claude', model: 'sonnet-4.6', effort: 'high' },
       resultsDir: join(TMP, '.storybook', 'eval-results'),
+      env: { EVAL_SETUP_PROMPT: 'setup' },
     });
     expect(params.logger).toBeDefined();
+
+    expect(vi.mocked(x)).toHaveBeenCalledWith(
+      'npx',
+      ['storybook', 'ai', 'setup'],
+      expect.objectContaining({
+        nodeOptions: expect.objectContaining({
+          cwd: TMP,
+          env: expect.objectContaining({ EVAL_SETUP_PROMPT: 'setup' }),
+        }),
+      })
+    );
 
     const gradeWorkspace = vi.mocked(grade).mock.calls[0][0];
     expect(gradeWorkspace).toMatchObject({
@@ -217,6 +237,7 @@ describe('runTrial pipeline', () => {
       },
       prompt: {
         name: 'setup',
+        content: expect.stringContaining('Full project-aware instructions'),
       },
       artifacts: {
         buildOutput: { path: '.storybook/eval-results/build-output.txt', success: true },
@@ -227,7 +248,7 @@ describe('runTrial pipeline', () => {
       },
       docs: {
         transcript: {
-          prompt: expect.stringContaining('set up Storybook'),
+          prompt: expect.stringContaining('Full project-aware instructions'),
         },
       },
     });
@@ -235,7 +256,7 @@ describe('runTrial pipeline', () => {
     expect(data).not.toHaveProperty('artifacts.screenshotOutput');
 
     const promptContent = readFileSync(join(resultsDir, 'prompt.md'), 'utf-8');
-    expect(promptContent).toContain('set up Storybook');
+    expect(promptContent).toContain('npx storybook ai setup');
     expect(() => readFileSync(join(resultsDir, 'summary.json'), 'utf-8')).toThrow();
     expect(() => readFileSync(join(resultsDir, 'transcript.json'), 'utf-8')).toThrow();
   });

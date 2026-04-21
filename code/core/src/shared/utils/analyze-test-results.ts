@@ -57,6 +57,12 @@ export function extractCategorizedErrors(
 }
 
 /**
+ * StoryId suffix for a story named `CssCheck` (after Storybook's CSF
+ * `toStartCaseStr` + `sanitize`: `CssCheck` → `Css Check` → `css-check`).
+ */
+const CSS_CHECK_STORY_ID_SUFFIX = '--css-check';
+
+/**
  * Analyze a list of story test results and produce a TestRunAnalysis with pass/fail counts, success
  * rates, empty render detection, and categorized errors.
  */
@@ -71,6 +77,14 @@ export function analyzeTestResults(results: StoryTestResult[]): TestRunAnalysis 
 
   const errorClassification = extractCategorizedErrors(results);
 
+  // Only `PASS` / `FAIL` produce a boolean; `PENDING` or no match leaves the
+  // field absent so consumers can treat it as "unknown" instead of a failure.
+  const cssCheckMatch = results.find((r) =>
+    r.storyId.toLowerCase().endsWith(CSS_CHECK_STORY_ID_SUFFIX)
+  );
+  const cssCheck =
+    cssCheckMatch?.status === 'PASS' ? true : cssCheckMatch?.status === 'FAIL' ? false : undefined;
+
   return {
     total,
     passed,
@@ -79,5 +93,6 @@ export function analyzeTestResults(results: StoryTestResult[]): TestRunAnalysis 
     successRateWithoutEmptyRender,
     uniqueErrorCount: errorClassification.uniqueErrorCount,
     categorizedErrors: errorClassification.categorizedErrors,
+    ...(cssCheck !== undefined ? { cssCheck } : {}),
   };
 }

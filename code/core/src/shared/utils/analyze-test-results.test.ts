@@ -122,5 +122,69 @@ describe('analyze-test-results', () => {
       expect(analysis.passed).toBe(1);
       expect(analysis.successRate).toBe(0.5);
     });
+
+    describe('cssCheck', () => {
+      it('is true when a --css-check story passed', () => {
+        const results: StoryTestResult[] = [
+          { storyId: 'components-button--primary', status: 'PASS' },
+          { storyId: 'components-button--css-check', status: 'PASS' },
+        ];
+        expect(analyzeTestResults(results).cssCheck).toBe(true);
+      });
+
+      it('is false when a --css-check story failed', () => {
+        const results: StoryTestResult[] = [
+          {
+            storyId: 'components-button--css-check',
+            status: 'FAIL',
+            error: 'expected rgb(37, 99, 235) but got rgba(0, 0, 0, 0)',
+          },
+        ];
+        expect(analyzeTestResults(results).cssCheck).toBe(false);
+      });
+
+      it('is absent when no --css-check story is present', () => {
+        const results: StoryTestResult[] = [
+          { storyId: 'components-button--primary', status: 'PASS' },
+        ];
+        const analysis = analyzeTestResults(results);
+        expect(analysis.cssCheck).toBeUndefined();
+        expect('cssCheck' in analysis).toBe(false);
+      });
+
+      it('is absent when the --css-check story is PENDING (did not run)', () => {
+        // PENDING is "unknown" — collapsing it to false would inflate CSS
+        // failure rates in telemetry. Absent is the correct signal.
+        const results: StoryTestResult[] = [
+          { storyId: 'components-button--css-check', status: 'PENDING' },
+        ];
+        const analysis = analyzeTestResults(results);
+        expect(analysis.cssCheck).toBeUndefined();
+        expect('cssCheck' in analysis).toBe(false);
+      });
+
+      it('is absent for an empty result list', () => {
+        expect(analyzeTestResults([]).cssCheck).toBeUndefined();
+      });
+
+      it('uses the first match when multiple --css-check stories exist', () => {
+        // Prompt violation: the AI setup prompt asks for exactly one.
+        // First match wins; downstream aggregates still reflect all of them.
+        const results: StoryTestResult[] = [
+          { storyId: 'components-button--css-check', status: 'PASS' },
+          { storyId: 'components-card--css-check', status: 'FAIL', error: 'style mismatch' },
+        ];
+        expect(analyzeTestResults(results).cssCheck).toBe(true);
+      });
+
+      it('is case-insensitive on the suffix (defensive)', () => {
+        // CSF already lowercases storyIds. This keeps the check resilient
+        // to a future upstream change in sanitization.
+        const results: StoryTestResult[] = [
+          { storyId: 'components-button--CSS-CHECK', status: 'PASS' },
+        ];
+        expect(analyzeTestResults(results).cssCheck).toBe(true);
+      });
+    });
   });
 });

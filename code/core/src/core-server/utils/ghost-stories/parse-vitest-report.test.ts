@@ -262,7 +262,7 @@ describe('parse-vitest-report', () => {
       expect(result.summary?.successRate).toBe(0);
     });
 
-    it('should return individual story results alongside the summary', () => {
+    it('surfaces the CssCheck story outcome via summary.cssCheck', () => {
       const mockVitestResults = {
         success: false,
         numTotalTests: 2,
@@ -290,17 +290,7 @@ describe('parse-vitest-report', () => {
 
       const result = parseVitestResults(mockVitestResults);
 
-      expect(result.storyResults).toHaveLength(2);
-      expect(result.storyResults).toEqual([
-        expect.objectContaining({
-          storyId: 'components-button--primary',
-          status: 'PASS',
-        }),
-        expect.objectContaining({
-          storyId: 'components-button--css-check',
-          status: 'FAIL',
-        }),
-      ]);
+      expect(result.summary?.cssCheck).toBe(false);
     });
   });
 });

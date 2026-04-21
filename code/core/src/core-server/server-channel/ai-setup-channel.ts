@@ -4,7 +4,6 @@ import {
   AI_SETUP_ANALYTICS_RESPONSE,
 } from 'storybook/internal/core-events';
 import {
-  findCssCheckStoryResult,
   getLastEvents,
   getStorybookMetadata,
   isStoryCreatedByAISetup,
@@ -93,7 +92,6 @@ export function initAIAnalyticsChannel(
 
       if (aiStoryFiles.size > 0) {
         const aiTestRunResult = await runStoryTests([...aiStoryFiles]);
-        const cssCheck = findCssCheckStoryResult(aiTestRunResult.storyResults);
         telemetry('ai-setup-final-scoring', {
           stats: {
             fileCount: aiStoryFiles.size,
@@ -101,7 +99,6 @@ export function initAIAnalyticsChannel(
             testRunDuration: aiTestRunResult.duration,
           },
           results: aiTestRunResult.summary,
-          ...(cssCheck ? { cssCheck } : {}),
           ...(aiTestRunResult.runError ? { runError: aiTestRunResult.runError } : {}),
         });
       } else {

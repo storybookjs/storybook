@@ -5,8 +5,8 @@ import type { RenderContext } from 'storybook/internal/types';
 
 import { global } from '@storybook/global';
 
-import { getAct } from './act-compat';
-import type { ReactRenderer, StoryContext } from './types';
+import { getAct } from './act-compat.ts';
+import type { ReactRenderer, StoryContext } from './types.ts';
 
 const { FRAMEWORK_OPTIONS } = global;
 

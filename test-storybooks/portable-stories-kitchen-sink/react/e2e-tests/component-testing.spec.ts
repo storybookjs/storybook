@@ -1,7 +1,7 @@
 import { promises as fs } from "node:fs";
 import path from "node:path";
 
-import { expect, test } from "@playwright/test";
+import { expect, test, type Page } from "@playwright/test";
 
 import { SbPage } from "../../../../code/e2e-tests/util";
 
@@ -66,6 +66,11 @@ const restoreAllFiles = async () => {
   await new Promise((resolve) => setTimeout(resolve, 2000));
 };
 
+const closeTestingModuleOverlays = async ({ page }: { page: Page }) => {
+  await page.keyboard.press("Escape").catch(() => undefined);
+  await page.click("body", { force: true }).catch(() => undefined);
+};
+
 test.describe("component testing", () => {
   test.describe.configure({ mode: "serial" });
   test.beforeEach(async ({ page }) => {
@@ -82,7 +87,7 @@ test.describe("component testing", () => {
   });
 
   test.afterEach(async ({ page }) => {
-    await page.click("body");
+    await closeTestingModuleOverlays({ page });
     try {
       const descriptionButton = page.locator("#testing-module-description button");
       if (
@@ -106,12 +111,12 @@ test.describe("component testing", () => {
     }
 
     // Make sure any popover is closed
-    await page.click("body");
+    await closeTestingModuleOverlays({ page });
 
     // Ensure that all test results are removed and features are disabled, as previous tests might have enabled them
     const clearStatusesButton = page.getByLabel("Clear all statuses");
     if (await clearStatusesButton.isVisible()) {
-      await clearStatusesButton.click();
+      await clearStatusesButton.click({ force: true });
     }
 
     const watchModeToggle = page.getByRole("switch", { name: "Watch mode" });
@@ -119,7 +124,7 @@ test.describe("component testing", () => {
       (await watchModeToggle.isVisible()) &&
       (await watchModeToggle.getAttribute("aria-checked")) === "true"
     ) {
-      await watchModeToggle.click();
+      await watchModeToggle.click({ force: true });
     }
 
     const configs = [
@@ -128,7 +133,7 @@ test.describe("component testing", () => {
     ];
     for (const config of configs) {
       if (await config.isChecked()) {
-        await config.click();
+        await config.click({ force: true });
       }
     }
   });
@@ -182,7 +187,7 @@ test.describe("component testing", () => {
     );
     await expect(failingStoryElement).toHaveAttribute(
       "aria-label",
-      "Status: success"
+      "Test status: Success"
     );
     await expect(sbPage.panelContent()).toContainText(
       /This interaction test passed in the CLI, but the tests failed in this browser/
@@ -195,7 +200,7 @@ test.describe("component testing", () => {
     );
     await expect(successfulStoryElement).toHaveAttribute(
       "aria-label",
-      "Status: error"
+      "Test status: Error"
     );
     await expect(sbPage.panelContent()).toContainText(
       /This interaction test passed in this browser, but the tests failed in the CLI/
@@ -253,7 +258,7 @@ test.describe("component testing", () => {
     );
     await expect(successfulStoryElement).toHaveAttribute(
       "aria-label",
-      "Status: success"
+      "Test status: Success"
     );
 
     // Assert for expected failure
@@ -262,7 +267,7 @@ test.describe("component testing", () => {
     );
     await expect(failingStoryElement).toHaveAttribute(
       "aria-label",
-      "Status: error"
+      "Test status: Error"
     );
 
     // Assert that filter works as intended
@@ -312,7 +317,7 @@ test.describe("component testing", () => {
     );
     await expect(successfulStoryElement).toHaveAttribute(
       "aria-label",
-      "Status: success"
+      "Test status: Success"
     );
 
     // Assert for expected failure
@@ -321,7 +326,7 @@ test.describe("component testing", () => {
     );
     await expect(failingStoryElement).toHaveAttribute(
       "aria-label",
-      "Status: error"
+      "Test status: Error"
     );
 
     // Assert that filter works as intended
@@ -368,7 +373,7 @@ test.describe("component testing", () => {
     );
     await expect(failingStoryElement).toHaveAttribute(
       "aria-label",
-      "Status: error"
+      "Test status: Error"
     );
   });
 
@@ -408,7 +413,7 @@ test.describe("component testing", () => {
 
     await expect(failingStoryElement).toHaveAttribute(
       "aria-label",
-      "Status: error"
+      "Test status: Error"
     );
   });
 
@@ -544,7 +549,7 @@ test.describe("component testing", () => {
     await page.click("body");
     await expect(
       page.locator(
-        '#storybook-explorer-menu [data-testid="tree-status-button"][aria-label="Status: success"]'
+        '#storybook-explorer-menu [data-testid="tree-status-button"][aria-label="Test status: Success"]'
       )
     ).toHaveCount(1);
   });
@@ -655,12 +660,12 @@ test.describe("component testing", () => {
     await page.click("body");
     await expect(
       page.locator(
-        '#storybook-explorer-menu [data-testid="tree-status-button"][aria-label="Status: success"]'
+        '#storybook-explorer-menu [data-testid="tree-status-button"][aria-label="Test status: Success"]'
       )
     ).toHaveCount(8);
     await expect(
       page.locator(
-        '#storybook-explorer-menu [data-testid="tree-status-button"][aria-label="Status: error"]'
+        '#storybook-explorer-menu [data-testid="tree-status-button"][aria-label="Test status: Error"]'
       )
     ).toHaveCount(3); // 1 story, 1 component, 1 group
   });
@@ -716,19 +721,19 @@ test.describe("component testing", () => {
     );
     await expect(
       page.locator(
-        '#storybook-explorer-menu [data-testid="tree-status-button"][aria-label="Status: error"]'
+        '#storybook-explorer-menu [data-testid="tree-status-button"][aria-label="Test status: Error"]'
       )
     ).toHaveCount(4); // 1 visible/expanded story, 1 expanded component, 1 collapsed component, 1 group
 
     await page.click("body");
     await expect(
       page.locator(
-        '#storybook-explorer-menu [data-testid="tree-status-button"][aria-label="Status: success"]'
+        '#storybook-explorer-menu [data-testid="tree-status-button"][aria-label="Test status: Success"]'
       )
     ).toHaveCount(8);
     await expect(
       page.locator(
-        '#storybook-explorer-menu [data-testid="tree-status-button"][aria-label="Status: error"]'
+        '#storybook-explorer-menu [data-testid="tree-status-button"][aria-label="Test status: Error"]'
       )
     ).toHaveCount(4);
   });

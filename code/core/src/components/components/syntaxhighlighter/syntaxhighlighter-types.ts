@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 
-import type { supportedLanguages } from './syntaxhighlighter';
+import type { supportedLanguages } from './syntaxhighlighter.tsx';
 
 export interface SyntaxHighlighterRendererProps {
   rows: any[];

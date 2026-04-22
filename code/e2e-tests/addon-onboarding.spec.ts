@@ -5,7 +5,7 @@ import { expect, test } from '@playwright/test';
 import { join } from 'pathe';
 import process from 'process';
 
-import { SbPage, hasOnboardingFeature } from './util';
+import { SbPage, hasOnboardingFeature } from './util.ts';
 
 const storybookUrl = process.env.STORYBOOK_URL || 'http://localhost:8001';
 const templateName = process.env.STORYBOOK_TEMPLATE_NAME || '';

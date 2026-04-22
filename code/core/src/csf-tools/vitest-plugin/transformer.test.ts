@@ -5,8 +5,8 @@ import { logger } from 'storybook/internal/node-logger';
 
 import { type RawSourceMap, SourceMapConsumer } from 'source-map';
 
-import { Tag } from '../../shared/constants/tags';
-import { vitestTransform as originalTransform } from './transformer';
+import { Tag } from '../../shared/constants/tags.ts';
+import { vitestTransform as originalTransform } from './transformer.ts';
 
 vi.mock('storybook/internal/common', async (importOriginal) => {
   const actual = await importOriginal<typeof import('storybook/internal/common')>();

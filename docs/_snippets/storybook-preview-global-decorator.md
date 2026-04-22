@@ -1,4 +1,4 @@
-```ts filename=".storybook/preview.ts" renderer="angular" language="ts"
+```ts filename=".storybook/preview.ts|tsx" renderer="angular" language="ts"
 import { type Preview, componentWrapperDecorator } from '@storybook/angular';
 
 const preview: Preview = {

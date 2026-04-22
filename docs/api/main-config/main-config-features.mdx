@@ -1,8 +1,7 @@
 ---
-title: 'features'
+title: features
 sidebar:
   order: 11
-  title: features
 ---
 
 Parent: [main.js|ts configuration](./main-config.mdx)
@@ -32,6 +31,7 @@ Type:
   viewport?: boolean;
 }
 ```
+
 </If>
 
 <If renderer="angular">
@@ -55,6 +55,7 @@ Type:
   viewport?: boolean;
 }
 ```
+
 </If>
 
 <If notRenderer={['react','angular']}>
@@ -77,8 +78,8 @@ Type:
   viewport?: boolean;
 }
 ```
-</If>
 
+</If>
 
 Enables Storybook's additional features.
 
@@ -110,11 +111,7 @@ Default: `true`
 
 Filter args with a "target" on the type from the render function.
 
-{/* prettier-ignore-start */}
-
 <CodeSnippets path="main-config-features-arg-type-targets-v7.md" />
-
-{/* prettier-ignore-end */}
 
 ## `backgrounds`
 
@@ -130,7 +127,7 @@ Enable the [Backgrounds](../../essentials/backgrounds.mdx) feature.
 
 Type: `boolean`
 
-Default: `true`
+Default: `false`
 
 Generate [manifests](../../ai/manifests.mdx), used by the [MCP server](../../ai/mcp/overview.mdx).
 
@@ -144,7 +141,13 @@ Type: `boolean`
 
 Default: `true`
 
-Enable change detection.
+Enable [change detection](../../configure/user-interface/change-detection.mdx). When enabled, Storybook monitors your git working tree and the builder's module graph to show which stories are new, modified, or affected by uncommitted changes. Changed stories are displayed with status icons in the sidebar.
+
+{/* prettier-ignore-start */}
+
+<CodeSnippets path="main-config-features-change-detection.md" />
+
+{/* prettier-ignore-end */}
 
 ## `controls`
 
@@ -160,11 +163,7 @@ Type: `boolean`
 
 Set `NODE_ENV` to `'development'` in built Storybooks for better testing and debugging capabilities.
 
-{/* prettier-ignore-start */}
-
 <CodeSnippets path="main-config-features-development-mode-for-build.md" />
-
-{/* prettier-ignore-end */}
 
 <If renderer="react">
 
@@ -186,13 +185,9 @@ Unlike the current implementation, this method reads the actual stories source f
 
 Type: `boolean`
 
-Enable the [experimental `.test` method with the CSF Next format](../csf/csf-next#storytest).
-
-{/* prettier-ignore-start */}
+Enable the [experimental `.test` method with the CSF Next format](../csf/csf-next.mdx#storytest).
 
 <CodeSnippets path="main-config-features-experimental-test-syntax.md" />
-
-{/* prettier-ignore-end */}
 
 </If>
 
@@ -218,11 +213,7 @@ Type: `boolean`
 
 Apply decorators from preview.js before decorators from addons or frameworks. [More information](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#changed-decorator-order-between-previewjs-and-addonsframeworks).
 
-{/* prettier-ignore-start */}
-
 <CodeSnippets path="main-config-features-legacy-decorator-file-order.md" />
-
-{/* prettier-ignore-end */}
 
 ## `measure`
 

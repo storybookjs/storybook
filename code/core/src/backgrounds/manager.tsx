@@ -2,8 +2,8 @@ import React from 'react';
 
 import { addons, types } from 'storybook/manager-api';
 
-import { BackgroundTool } from './components/Tool';
-import { ADDON_ID } from './constants';
+import { BackgroundTool } from './components/Tool.tsx';
+import { ADDON_ID } from './constants.ts';
 
 export default addons.register(ADDON_ID, () => {
   if (globalThis?.FEATURES?.backgrounds) {

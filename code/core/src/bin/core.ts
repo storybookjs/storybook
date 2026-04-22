@@ -7,10 +7,10 @@ import leven from 'leven';
 import picocolors from 'picocolors';
 
 import { version } from '../../package.json';
-import { build } from '../cli/build';
-import { buildIndex as index } from '../cli/buildIndex';
-import { dev } from '../cli/dev';
-import { globalSettings } from '../cli/globalSettings';
+import { build } from '../cli/build.ts';
+import { buildIndex as index } from '../cli/buildIndex.ts';
+import { dev } from '../cli/dev.ts';
+import { globalSettings } from '../cli/globalSettings.ts';
 
 addToGlobalContext('cliVersion', version);
 process.env.STORYBOOK = 'true';

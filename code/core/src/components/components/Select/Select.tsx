@@ -10,11 +10,11 @@ import { useOverlayTriggerState } from '@react-stately/overlays';
 import { darken, transparentize } from 'polished';
 import { styled, useTheme } from 'storybook/theming';
 
-import { Button, type ButtonProps } from '../Button/Button';
-import { Form } from '../Form/Form';
-import { Popover } from '../Popover/Popover';
-import { SelectOption } from './SelectOption';
-import type { InternalOption, Option, ResetOption, Value } from './helpers';
+import { Button, type ButtonProps } from '../Button/Button.tsx';
+import { Form } from '../Form/Form.tsx';
+import { Popover } from '../Popover/Popover.tsx';
+import { SelectOption } from './SelectOption.tsx';
+import type { InternalOption, Option, ResetOption, Value } from './helpers.tsx';
 import {
   Listbox,
   PAGE_STEP_SIZE,
@@ -23,7 +23,7 @@ import {
   optionOrResetToInternal,
   optionToInternal,
   valueToExternal,
-} from './helpers';
+} from './helpers.tsx';
 
 export interface SelectProps extends Omit<
   ButtonProps,

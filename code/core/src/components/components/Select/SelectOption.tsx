@@ -1,6 +1,6 @@
 import React from 'react';
 
-import { ActionList } from '../..';
+import { ActionList } from '../../index.ts';
 
 export interface SelectOptionProps {
   /**

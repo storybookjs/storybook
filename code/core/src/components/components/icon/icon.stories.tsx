@@ -3,8 +3,8 @@ import React from 'react';
 
 import { css, styled } from 'storybook/theming';
 
-import type { IconType } from './icon';
-import { Icons, icons } from './icon';
+import type { IconType } from './icon.tsx';
+import { Icons, icons } from './icon.tsx';
 
 const Meta = styled.div`
   color: #666;

@@ -2,7 +2,7 @@ import { expect, it } from 'vitest';
 
 import { dedent } from 'ts-dedent';
 
-import { extractJSDocInfo } from './jsdocTags';
+import { extractJSDocInfo } from './jsdocTags.ts';
 
 it('should extract @summary tag', () => {
   const code = dedent`description\n@summary\n my summary`;

@@ -2,7 +2,7 @@ import type { LoaderFunction } from 'storybook/internal/types';
 
 import { onMockCall } from 'storybook/test';
 
-import { action } from './runtime';
+import { action } from './runtime/index.ts';
 
 let subscribed = false;
 

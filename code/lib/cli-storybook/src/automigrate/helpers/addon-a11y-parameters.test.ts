@@ -7,7 +7,7 @@ import { dedent } from 'ts-dedent';
 import {
   transformPreviewA11yParameters,
   transformStoryA11yParameters,
-} from './addon-a11y-parameters';
+} from './addon-a11y-parameters.ts';
 
 expect.addSnapshotSerializer({
   serialize: (val: any) => (typeof val === 'string' ? val : val.toString()),

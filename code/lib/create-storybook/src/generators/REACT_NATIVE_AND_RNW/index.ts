@@ -1,9 +1,9 @@
 import { ProjectType } from 'storybook/internal/cli';
 import { SupportedBuilder, SupportedFramework, SupportedRenderer } from 'storybook/internal/types';
 
-import reactNativeGeneratorModule from '../REACT_NATIVE';
-import reactNativeWebGeneratorModule from '../REACT_NATIVE_WEB';
-import { defineGeneratorModule } from '../modules/GeneratorModule';
+import reactNativeGeneratorModule from '../REACT_NATIVE/index.ts';
+import reactNativeWebGeneratorModule from '../REACT_NATIVE_WEB/index.ts';
+import { defineGeneratorModule } from '../modules/GeneratorModule.ts';
 
 export default defineGeneratorModule({
   metadata: {

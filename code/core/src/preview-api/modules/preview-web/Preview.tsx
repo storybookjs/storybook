@@ -45,11 +45,11 @@ import type {
 
 import { global } from '@storybook/global';
 
-import { StoryStore } from '../../store';
-import { addons } from '../addons';
-import type { CsfDocsRender } from './render/CsfDocsRender';
-import type { MdxDocsRender } from './render/MdxDocsRender';
-import { StoryRender } from './render/StoryRender';
+import { StoryStore } from '../../store.ts';
+import { addons } from '../addons/index.ts';
+import type { CsfDocsRender } from './render/CsfDocsRender.ts';
+import type { MdxDocsRender } from './render/MdxDocsRender.ts';
+import { StoryRender } from './render/StoryRender.ts';
 
 const { fetch } = global;
 

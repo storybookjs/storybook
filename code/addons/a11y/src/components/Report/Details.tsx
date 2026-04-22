@@ -7,9 +7,9 @@ import { CheckIcon, CopyIcon, LocationIcon } from '@storybook/icons';
 import * as Tabs from '@radix-ui/react-tabs';
 import { styled } from 'storybook/theming';
 
-import { getFriendlySummaryForAxeResult } from '../../axeRuleMappingHelper';
-import type { EnhancedNodeResult, EnhancedResult, RuleType } from '../../types';
-import { useA11yContext } from '../A11yContext';
+import { getFriendlySummaryForAxeResult } from '../../axeRuleMappingHelper.ts';
+import type { EnhancedNodeResult, EnhancedResult, RuleType } from '../../types.ts';
+import { useA11yContext } from '../A11yContext.tsx';
 
 const StyledSyntaxHighlighter = styled(SyntaxHighlighter)(
   ({ theme }) => ({

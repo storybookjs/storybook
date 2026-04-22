@@ -30,19 +30,21 @@
     "code/lib/codemod/src/transforms/__testfixtures__",
     "code/frameworks/angular/template/**",
     "code/lib/eslint-plugin",
+    "docs/versions/*.json",
     ".prettierrc",
     "test-storybooks",
     "*.yml",
     "*.yaml",
     "*.md",
     "*.mdx",
-    "!docs/_snippets/**",
-    "!docs/versions/*.json"
+    "!docs/**",
+    "docs/versions/**"
   ],
   "overrides": [
     {
-      "files": ["docs/_snippets/**"],
+      "files": ["docs/**"],
       "options": {
+        "singleQuote": true,
         "trailingComma": "all"
       }
     },

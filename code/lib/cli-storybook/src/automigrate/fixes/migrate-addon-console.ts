@@ -5,7 +5,7 @@ import { formatFileContent, getAddonNames, removeAddon } from 'storybook/interna
 import { formatConfig, loadConfig } from 'storybook/internal/csf-tools';
 import { logger } from 'storybook/internal/node-logger';
 
-import type { Fix } from '../types';
+import type { Fix } from '../types.ts';
 
 export interface MigrateAddonConsoleOptions {
   transformedPreviewCode: string | undefined;

@@ -3,8 +3,8 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { type API } from 'storybook/manager-api';
 import { ThemeProvider, convert } from 'storybook/theming';
 
-import { ADDON_ONBOARDING_CHANNEL } from './constants';
-import { IntentSurvey } from './features/IntentSurvey/IntentSurvey';
+import { ADDON_ONBOARDING_CHANNEL } from './constants.ts';
+import { IntentSurvey } from './features/IntentSurvey/IntentSurvey.tsx';
 
 const theme = convert();
 

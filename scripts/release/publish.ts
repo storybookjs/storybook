@@ -10,7 +10,7 @@ import semver from 'semver';
 import { dedent } from 'ts-dedent';
 import { z } from 'zod';
 
-import { esMain } from '../utils/esmain';
+import { esMain } from '../utils/esmain.ts';
 
 program
   .name('publish')

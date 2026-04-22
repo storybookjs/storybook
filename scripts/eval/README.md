@@ -111,6 +111,33 @@ node scripts/eval/sync-baselines.ts --skip-push
 
 The script ensures each repo is on its default branch with no local changes, fetches the latest from origin, replaces the `.storybook` directory with the canonical baseline, and commits/pushes if anything changed.
 
+## Syncing the Storybook version
+
+`sync-storybook-version.ts` bumps every benchmark repo to a specific Storybook version. It mirrors the shape of `sync-baselines.ts`: for each project it ensures the source clone is present and clean, checks out and fast-forwards the default branch, runs `npx storybook@<version> upgrade --yes --force --skip-check --skip-automigrations -c <projectDir>/.storybook` from the **repo root**, then commits and pushes any resulting changes. Running from the repo root (with `-c` pointing at the project's `.storybook` dir) lets the Storybook CLI discover the correct workspace `package.json` in pnpm/yarn monorepos where the Storybook deps live at the workspace root and the config lives in a sub-package.
+
+```sh
+# Upgrade every benchmark repo to a stable version
+node scripts/eval/sync-storybook-version.ts --version 9.1.0
+
+# Upgrade to a canary published from a Storybook PR
+node scripts/eval/sync-storybook-version.ts --version 0.0.0-pr-34297-sha-abcdef12
+
+# Upgrade a subset of projects
+node scripts/eval/sync-storybook-version.ts --version latest --project mealdrop --project edgy
+
+# Dry run (commit locally but don't push)
+node scripts/eval/sync-storybook-version.ts --version 9.1.0 --skip-push
+```
+
+The upgrade passes the following flags:
+
+- `--yes` — auto-accepts prompts.
+- `--force` — skips the autoblocker gate (useful for canary or major-version bumps).
+- `--skip-check` — skips the postinstall self-check.
+- `--skip-automigrations` — prevents the CLI from rewriting source files (e.g. the `wrap-getAbsolutePath` migration).
+
+The commit message defaults to `Eval: upgrade Storybook to <version>`. Run `sync-baselines.ts` afterwards if you also need to refresh the canonical `.storybook` config in every repo.
+
 ## Collecting results
 
 After running trials, `collect-pr-data.ts` scrapes the published draft PRs and loads the data into a local SQLite database.

@@ -228,6 +228,7 @@
     "!src/**/*"
   ],
   "dependencies": {
+    "@mdx-js/mdx": "^3.0.0",
     "@storybook/global": "^5.0.0",
     "@storybook/icons": "^2.0.1",
     "@testing-library/jest-dom": "^6.9.1",
@@ -236,6 +237,7 @@
     "@vitest/spy": "3.2.4",
     "@webcontainer/env": "^1.1.1",
     "esbuild": "^0.18.0 || ^0.19.0 || ^0.20.0 || ^0.21.0 || ^0.22.0 || ^0.23.0 || ^0.24.0 || ^0.25.0 || ^0.26.0 || ^0.27.0",
+    "hast-util-to-estree": "^3.0.0",
     "open": "^10.2.0",
     "recast": "^0.23.5",
     "semver": "^7.7.3",
@@ -273,7 +275,6 @@
     "@react-stately/tabs": "^3.8.5",
     "@react-types/shared": "^3.32.0",
     "@rolldown/pluginutils": "1.0.0-beta.18",
-    "@storybook/docs-mdx": "4.0.0-next.3",
     "@tanstack/react-virtual": "^3.3.0",
     "@testing-library/dom": "^10.4.1",
     "@testing-library/react": "^14.0.0",

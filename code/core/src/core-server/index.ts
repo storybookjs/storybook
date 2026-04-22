@@ -16,7 +16,7 @@ export type { ComponentArgTypesData } from './utils/get-dummy-args-from-argtypes
 export { loadStorybook as experimental_loadStorybook } from './load.ts';
 
 export { Tag } from '../shared/constants/tags.ts';
-export { analyze as analyzeMdx } from '@storybook/docs-mdx';
+export { analyze as analyzeMdx } from './utils/docs-mdx.ts';
 
 export { UniversalStore as experimental_UniversalStore } from '../shared/universal-store/index.ts';
 export { MockUniversalStore as experimental_MockUniversalStore } from '../shared/universal-store/mock.ts';

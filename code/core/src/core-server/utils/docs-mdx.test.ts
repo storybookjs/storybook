@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest';
 
 import { analyze, extractImports } from './docs-mdx.ts';
 
-export const estreeParse = (code: string) =>
+const estreeParse = (code: string) =>
   parse(code, { sourceType: 'module', plugins: ['jsx', 'estree'] }).program;
 
 describe('extractImports', () => {

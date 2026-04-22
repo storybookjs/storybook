@@ -14,7 +14,7 @@ export type AnalyzeResult = {
   name: string | undefined;
   summary: string | undefined;
   isTemplate: boolean;
-  metaTags: string[] | undefined;
+  metaTags?: string[];
   imports: string[];
 };
 
@@ -182,7 +182,7 @@ export const extractImports = (root: Program) => {
   return varToImport;
 };
 
-export const plugin = (store: any) => (root: any) => {
+export const plugin = (store: AnalyzeResult) => (root: any) => {
   const estree = toEstree(root);
   const varToImport = extractImports(estree);
   const { title, of, name, summary, isTemplate, metaTags } = extractTitle(estree, varToImport);
@@ -198,15 +198,15 @@ export const plugin = (store: any) => (root: any) => {
 };
 
 export const analyze = async (code: string): Promise<AnalyzeResult> => {
-  const store = {
+  const store: AnalyzeResult = {
     title: undefined,
     of: undefined,
     name: undefined,
     summary: undefined,
     isTemplate: false,
     metaTags: undefined,
-    imports: undefined,
-  } as any;
+    imports: [],
+  };
   const { compile } = await import('@mdx-js/mdx');
   await compile(code, {
     rehypePlugins: [[plugin, store]],

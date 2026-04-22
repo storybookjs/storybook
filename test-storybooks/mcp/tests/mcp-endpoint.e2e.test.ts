@@ -100,7 +100,7 @@ describe('MCP Endpoint E2E Tests', () => {
 
 			expect(response.result).toHaveProperty('tools');
 			// Dev, docs, and test tools should be present
-			expect(response.result.tools).toHaveLength(6);
+			expect(response.result.tools).toHaveLength(7);
 
 			expect(response.result.tools).toMatchInlineSnapshot(`
 				[
@@ -338,6 +338,75 @@ describe('MCP Endpoint E2E Tests', () => {
 				      "type": "object",
 				    },
 				    "title": "Get story preview URLs",
+				  },
+				  {
+				    "description": "Get Storybook stories marked as new, modified, or affected.
+				Returns story metadata only (no URLs).",
+				    "inputSchema": {
+				      "properties": {},
+				      "type": "object",
+				    },
+				    "name": "get-changed-stories",
+				    "outputSchema": {
+				      "$schema": "http://json-schema.org/draft-07/schema#",
+				      "properties": {
+				        "counts": {
+				          "properties": {
+				            "affected": {
+				              "type": "number",
+				            },
+				            "modified": {
+				              "type": "number",
+				            },
+				            "new": {
+				              "type": "number",
+				            },
+				          },
+				          "required": [
+				            "new",
+				            "modified",
+				            "affected",
+				          ],
+				          "type": "object",
+				        },
+				        "stories": {
+				          "items": {
+				            "properties": {
+				              "importPath": {
+				                "type": "string",
+				              },
+				              "name": {
+				                "type": "string",
+				              },
+				              "statusValue": {
+				                "type": "string",
+				              },
+				              "storyId": {
+				                "type": "string",
+				              },
+				              "title": {
+				                "type": "string",
+				              },
+				            },
+				            "required": [
+				              "storyId",
+				              "title",
+				              "name",
+				              "importPath",
+				              "statusValue",
+				            ],
+				            "type": "object",
+				          },
+				          "type": "array",
+				        },
+				      },
+				      "required": [
+				        "stories",
+				        "counts",
+				      ],
+				      "type": "object",
+				    },
+				    "title": "Get changed stories metadata",
 				  },
 				  {
 				    "description": "Get comprehensive instructions for writing, testing, and fixing Storybook stories (.stories.tsx, .stories.ts, .stories.jsx, .stories.js, .stories.svelte, .stories.vue files).
@@ -889,6 +958,7 @@ describe('MCP Endpoint E2E Tests', () => {
 			expect(toolNames).toMatchInlineSnapshot(`
 				[
 				  "preview-stories",
+				  "get-changed-stories",
 				  "get-storybook-story-instructions",
 				]
 			`);

@@ -6,9 +6,9 @@ import storyTestingInstructionsTemplate from '../instructions/story-testing-inst
 import a11yInstructionsTemplate from '../instructions/a11y-instructions.md';
 import { errorToMCPContent } from '../utils/errors.ts';
 import type { AddonContext } from '../types.ts';
-import { isAddonA11yEnabled } from '../utils/is-addon-a11y-enabled.ts';
 import {
 	GET_UI_BUILDING_INSTRUCTIONS_TOOL_NAME,
+	GET_CHANGED_STORIES_TOOL_NAME,
 	PREVIEW_STORIES_TOOL_NAME,
 	RUN_STORY_TESTS_TOOL_NAME,
 } from './tool-names.ts';
@@ -84,7 +84,8 @@ Even if you're familiar with Storybook, call this tool to ensure you're followin
 				let uiInstructions = storyInstructionsTemplate
 					.replace('{{FRAMEWORK}}', framework)
 					.replace('{{RENDERER}}', renderer ?? framework)
-					.replace('{{PREVIEW_STORIES_TOOL_NAME}}', PREVIEW_STORIES_TOOL_NAME);
+					.replace('{{PREVIEW_STORIES_TOOL_NAME}}', PREVIEW_STORIES_TOOL_NAME)
+					.replace('{{GET_CHANGED_STORIES_TOOL_NAME}}', GET_CHANGED_STORIES_TOOL_NAME);
 
 				// Conditionally append story testing instructions if test toolset is enabled and addon-vitest is available
 				const testToolsetAvailable =

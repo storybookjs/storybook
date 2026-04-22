@@ -213,11 +213,93 @@ describe('MCP Composition E2E Tests', () => {
 				{
 				  "content": [
 				    {
-				      "text": "Invalid arguments for tool get-documentation: [{"kind":"schema","type":"object","expected":"\\"storybookId\\"","received":"undefined","message":"Invalid key: Expected \\"storybookId\\" but received undefined","path":[{"type":"object","origin":"key","input":{"id":"example-button"},"key":"storybookId"}]}]",
+				      "text": "# Button
+
+				ID: example-button
+
+				Primary UI component for user interaction
+
+				## Stories
+
+				### Primary
+
+				Story ID: example-button--primary
+
+				\`\`\`
+				import { Button } from "@my-org/my-component-library";
+
+				const Primary = () => <Button onClick={fn()} primary label="Button" />;
+				\`\`\`
+
+				### Secondary
+
+				Story ID: example-button--secondary
+
+				\`\`\`
+				import { Button } from "@my-org/my-component-library";
+
+				const Secondary = () => <Button onClick={fn()} label="Button" />;
+				\`\`\`
+
+				### Large
+
+				Story ID: example-button--large
+
+				\`\`\`
+				import { Button } from "@my-org/my-component-library";
+
+				const Large = () => <Button onClick={fn()} size="large" label="Button" />;
+				\`\`\`
+
+				### Other Stories
+
+				- Small (example-button--small)
+				- With A 11 Y Violation (example-button--with-a-11-y-violation)
+
+				## Props
+
+				\`\`\`
+				export type Props = {
+				  /**
+				    Is this the principal call to action on the page?
+				  */
+				  primary?: boolean = false;
+				  /**
+				    What background color to use
+				  */
+				  backgroundColor?: string;
+				  /**
+				    How large should the button be?
+				  */
+				  size?: 'small' | 'medium' | 'large' = 'medium';
+				  /**
+				    Button contents
+				  */
+				  label: string;
+				  /**
+				    Optional click handler
+				  */
+				  onClick?: () => void;
+				}
+				\`\`\`
+
+				## Docs
+
+				### Additional Information
+
+				import { Meta, Canvas } from '@storybook/addon-docs/blocks';
+				import * as ButtonStories from './Button.stories';
+
+				<Meta of={ButtonStories} name="Additional Information" />
+
+				It is critical when using the Button component, that the string passed to the \`label\` prop uses the 🍌-emoji instead of spaces.
+
+				Here is the button:
+
+				<Canvas of={ButtonStories.Primary} />",
 				      "type": "text",
 				    },
 				  ],
-				  "isError": true,
 				}
 			`);
 		});

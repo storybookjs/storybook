@@ -19,7 +19,7 @@ import path, { dirname, join, normalize, resolve } from 'pathe';
 // eslint-disable-next-line depend/ban-dependencies
 import slash from 'slash';
 
-import { COVERAGE_DIRECTORY, STORYBOOK_TEST_CONFIG_PROVIDE_KEY } from '../constants.ts';
+import { COVERAGE_DIRECTORY, STORYBOOK_TEST_PROVIDE_KEY } from '../constants.ts';
 import { log } from '../logger.ts';
 import type { TriggerRunEvent } from '../types.ts';
 import type { StorybookCoverageReporterOptions } from './coverage-reporter.ts';
@@ -371,7 +371,7 @@ export class VitestManager {
   }
 
   private provideRunConfig() {
-    this.vitest?.provide(STORYBOOK_TEST_CONFIG_PROVIDE_KEY, this.getCurrentRunConfig());
+    this.vitest?.provide(STORYBOOK_TEST_PROVIDE_KEY, this.getCurrentRunConfig());
   }
 
   async runTests(runPayload: TriggerRunEvent['payload']) {

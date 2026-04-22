@@ -15,7 +15,7 @@ import type { Report } from 'storybook/preview-api';
 import {
   STATUS_TYPE_ID_A11Y,
   STATUS_TYPE_ID_COMPONENT_TEST,
-  STORYBOOK_TEST_CONFIG_PROVIDE_KEY,
+  STORYBOOK_TEST_PROVIDE_KEY,
   storeOptions,
 } from '../constants.ts';
 import type { StoreEvent, StoreState } from '../types.ts';
@@ -222,7 +222,7 @@ describe('TestManager', () => {
       },
     });
     expect(createVitest).toHaveBeenCalledTimes(1);
-    expect(vitest.provide).toHaveBeenCalledWith(STORYBOOK_TEST_CONFIG_PROVIDE_KEY, {
+    expect(vitest.provide).toHaveBeenCalledWith(STORYBOOK_TEST_PROVIDE_KEY, {
       coverage: false,
       a11y: false,
     });
@@ -245,7 +245,7 @@ describe('TestManager', () => {
       },
     });
 
-    expect(vitest.provide).toHaveBeenLastCalledWith(STORYBOOK_TEST_CONFIG_PROVIDE_KEY, {
+    expect(vitest.provide).toHaveBeenLastCalledWith(STORYBOOK_TEST_PROVIDE_KEY, {
       coverage: false,
       a11y: true,
       customFlag: 'custom-value',

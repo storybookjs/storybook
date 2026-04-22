@@ -7,7 +7,7 @@ import { type Report, composeStory, getCsfFactoryAnnotations } from 'storybook/p
 
 import {
   STORYBOOK_CORE_GHOST_STORIES_PROVIDE_KEY,
-  STORYBOOK_TEST_CONFIG_PROVIDE_KEY,
+  STORYBOOK_TEST_PROVIDE_KEY,
 } from '../constants.ts';
 import { setViewport } from './viewports.ts';
 
@@ -57,7 +57,7 @@ export const testStory = ({
 
     let runConfig: Record<string, unknown> = { a11y: true };
     try {
-      runConfig = inject(STORYBOOK_TEST_CONFIG_PROVIDE_KEY) ?? { a11y: true };
+      runConfig = inject(STORYBOOK_TEST_PROVIDE_KEY) ?? { a11y: true };
     } catch {
       // Standalone Vitest runs might not provide Storybook run config.
     }
@@ -71,7 +71,7 @@ export const testStory = ({
 
     const shouldRunA11yTests = !!runConfig.a11y;
     const initialGlobals = {
-      sbConfig: runConfig,
+      [STORYBOOK_TEST_PROVIDE_KEY]: runConfig,
       ...(ghostStoriesEnabled
         ? {
             ghostStories: {

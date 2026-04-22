@@ -2,7 +2,7 @@ import { toEstree } from 'hast-util-to-estree';
 
 type EstreeNode = {
   type: string;
-  [key: string]: any;
+  [key: string]: unknown;
 };
 
 type AnalyzeResult = {
@@ -16,8 +16,8 @@ type AnalyzeResult = {
 };
 
 const getAttr = (elt: EstreeNode, what: string) =>
-  elt.attributes?.find(
-    (node: EstreeNode) => node.type === 'JSXAttribute' && node.name.name === what
+  (elt.attributes as EstreeNode[] | undefined)?.find(
+    (node) => node.type === 'JSXAttribute' && (node.name as EstreeNode).name === what
   );
 
 const getAttrValue = (elt: EstreeNode, what: string) => getAttr(elt, what)?.value;
@@ -74,7 +74,7 @@ const getTags = (elt: EstreeNode) => {
     throw new Error(`Expected tags array, received ${tagsArray.type}`);
   }
 
-  return tagsArray.elements.map((tag: EstreeNode) => {
+  return (tagsArray.elements as EstreeNode[]).map((tag) => {
     if (tag.type === 'Literal' && typeof tag.value === 'string') {
       return tag.value;
     }
@@ -95,7 +95,7 @@ const getIsTemplate = (elt: EstreeNode) => {
   }
 
   if (isTemplate.type === 'JSXExpressionContainer') {
-    const expression = isTemplate.expression;
+    const expression = isTemplate.expression as EstreeNode;
     if (expression.type === 'Literal' && typeof expression.value === 'boolean') {
       return expression.value;
     }
@@ -116,7 +116,7 @@ const extractTitle = (root: EstreeNode, varToImport: Record<string, string>) => 
     metaTags: undefined,
   };
 
-  const fragments = root.body.filter(
+  const fragments = (root.body as EstreeNode[]).filter(
     (child: EstreeNode) =>
       child.type === 'ExpressionStatement' && child.expression?.type === 'JSXFragment'
   );
@@ -130,10 +130,10 @@ const extractTitle = (root: EstreeNode, varToImport: Record<string, string>) => 
     return result;
   }
 
-  fragment.children.forEach((child: EstreeNode) => {
+  (fragment.children as EstreeNode[]).forEach((child) => {
     if (child.type === 'JSXElement') {
-      const { openingElement } = child;
-      const name = openingElement.name.name;
+      const openingElement = child.openingElement as EstreeNode;
+      const name = (openingElement.name as EstreeNode).name;
 
       if (name === 'Meta') {
         if (result.title || result.name || result.of) {
@@ -158,7 +158,7 @@ const extractTitle = (root: EstreeNode, varToImport: Record<string, string>) => 
 export const extractImports = (root: EstreeNode) => {
   const varToImport: Record<string, string> = {};
 
-  root.body.forEach((child: EstreeNode) => {
+  (root.body as EstreeNode[]).forEach((child) => {
     if (child.type !== 'ImportDeclaration') {
       return;
     }
@@ -168,8 +168,8 @@ export const extractImports = (root: EstreeNode) => {
       throw new Error('MDX: unexpected import source');
     }
 
-    specifiers.forEach((specifier: EstreeNode) => {
-      varToImport[specifier.local.name] = source.value.toString();
+    (specifiers as EstreeNode[]).forEach((specifier) => {
+      varToImport[(specifier.local as EstreeNode).name as string] = source.value.toString();
     });
   });
 
@@ -192,6 +192,8 @@ export const plugin = (store: AnalyzeResult) => (root: unknown) => {
   return root;
 };
 
+const mdxModule = import('@mdx-js/mdx');
+
 export const analyze = async (code: string): Promise<AnalyzeResult> => {
   const store: AnalyzeResult = {
     title: undefined,
@@ -203,7 +205,7 @@ export const analyze = async (code: string): Promise<AnalyzeResult> => {
     imports: [],
   };
 
-  const { compile } = await import('@mdx-js/mdx');
+  const { compile } = await mdxModule;
   await compile(code, {
     rehypePlugins: [[plugin, store]],
   });

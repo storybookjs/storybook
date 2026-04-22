@@ -213,7 +213,7 @@ describe('analyze', () => {
     `);
   });
 
-  it('handles bad MDX formatting the same way as the external package', async () => {
+  it('matches the external package result for malformed MDX', async () => {
     const input = dedent`
       import meta, { Basic } from './Button.stories';
 

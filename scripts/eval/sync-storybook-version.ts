@@ -192,7 +192,11 @@ export async function syncStorybookVersion(
   return results;
 }
 
-const defaultRunUpgrade: RunUpgrade = async ({ version, repoRoot, configDir }) => {
+async function defaultRunUpgrade({
+  version,
+  repoRoot,
+  configDir,
+}: Parameters<RunUpgrade>[0]): Promise<void> {
   // `--yes`/`--force` already disable prompts. `CI`, `YARN_ENABLE_IMMUTABLE_INSTALLS`,
   // and `npm_config_frozen_lockfile` would refuse lockfile updates and leave
   // package.json and the lockfile out of sync, so unset them here.
@@ -217,8 +221,11 @@ const defaultRunUpgrade: RunUpgrade = async ({ version, repoRoot, configDir }) =
     ],
     { timeout: 900_000, nodeOptions: { cwd: repoRoot, env, stdio: 'inherit' } }
   );
-};
+}
 
-const defaultInstallProjectDeps: RunInstall = async ({ repoRoot, projectPath }) => {
+async function defaultInstallProjectDeps({
+  repoRoot,
+  projectPath,
+}: Parameters<RunInstall>[0]): Promise<void> {
   await installDeps(projectPath, createLogger(), undefined, { stopAt: repoRoot });
-};
+}

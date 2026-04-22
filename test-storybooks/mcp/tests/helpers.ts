@@ -80,8 +80,20 @@ export async function stopStorybook(storybookProcess: ReturnType<typeof x> | nul
 	if (!storybookProcess || !storybookProcess.process) {
 		return;
 	}
-	const kill = Promise.withResolvers<void>();
-	storybookProcess.process.on('exit', kill.resolve);
+	const exitSignal = Promise.withResolvers<void>();
+	storybookProcess.process.on('exit', exitSignal.resolve);
 	storybookProcess.kill('SIGTERM');
-	await kill.promise;
+
+	// Storybook can ignore SIGTERM while workers are shutting down.
+	// Escalate to SIGKILL after a short grace period to keep tests bounded.
+	const killTimeout = setTimeout(() => {
+		try {
+			storybookProcess.kill('SIGKILL');
+		} catch {
+			// Process may already be gone.
+		}
+	}, 10_000);
+
+	await exitSignal.promise;
+	clearTimeout(killTimeout);
 }

@@ -12,7 +12,7 @@ import {
 const PORT = 6008;
 const MCP_ENDPOINT = `http://localhost:${PORT}/mcp`;
 const WELL_KNOWN_ENDPOINT = `http://localhost:${PORT}/.well-known/oauth-protected-resource`;
-const STARTUP_TIMEOUT = 30_000;
+const STARTUP_TIMEOUT = 60_000;
 
 let storybookProcess: ReturnType<typeof x> | null = null;
 

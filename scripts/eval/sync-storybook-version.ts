@@ -161,8 +161,22 @@ export async function syncStorybookVersion(
       nodeOptions: { cwd: repoRoot },
     });
     if (diff.exitCode === 0) {
-      log(`  ${pc.dim('already on target version')}`);
-      results.push({ project: project.name, changed: false });
+      const ahead = await x('git', ['rev-list', '--count', `origin/${project.branch}..HEAD`], {
+        nodeOptions: { cwd: repoRoot },
+      });
+      if (push && ahead.stdout.trim() !== '0') {
+        await x('git', ['push', 'origin', project.branch], {
+          timeout: 120_000,
+          nodeOptions: { cwd: repoRoot },
+        });
+        const head = await x('git', ['rev-parse', 'HEAD'], { nodeOptions: { cwd: repoRoot } });
+        const commitSha = head.stdout.trim();
+        log(`  ${pc.dim('already on target version; pushed existing local commit')}`);
+        results.push({ project: project.name, changed: true, commitSha });
+      } else {
+        log(`  ${pc.dim('already on target version')}`);
+        results.push({ project: project.name, changed: false });
+      }
       continue;
     }
 

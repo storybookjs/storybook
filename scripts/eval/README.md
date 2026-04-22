@@ -125,7 +125,7 @@ node scripts/eval/sync-storybook-version.ts --version 0.0.0-pr-34297-sha-abcdef1
 # Upgrade a subset of projects
 node scripts/eval/sync-storybook-version.ts --version latest --project mealdrop --project edgy
 
-# Dry run (commit locally but don't push)
+# Commit locally without pushing yet
 node scripts/eval/sync-storybook-version.ts --version 9.1.0 --skip-push
 ```
 
@@ -136,7 +136,7 @@ The upgrade passes the following flags:
 - `--skip-check` — skips the postinstall self-check.
 - `--skip-automigrations` — prevents the CLI from rewriting source files (e.g. the `wrap-getAbsolutePath` migration).
 
-The commit message defaults to `Eval: upgrade Storybook to <version>`. Run `sync-baselines.ts` afterwards if you also need to refresh the canonical `.storybook` config in every repo.
+The commit message defaults to `Eval: upgrade Storybook to <version>`. If you review a `--skip-push` run first, rerun the same command without `--skip-push` to push the existing local upgrade commits. Run `sync-baselines.ts` afterwards if you also need to refresh the canonical `.storybook` config in every repo.
 
 ## Collecting results
 

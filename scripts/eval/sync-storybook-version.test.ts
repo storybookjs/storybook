@@ -343,6 +343,72 @@ describe('syncStorybookVersion', () => {
     expect(localHead).not.toBe(remoteHeadBefore);
     expect(getRemoteHead(join(remotesRoot, 'mealdrop.git'))).toBe(remoteHeadBefore);
   });
+
+  it('pushes an existing local upgrade commit on a rerun after skip-push', async () => {
+    TMP = mkdtempSync(join(tmpdir(), 'eval-sync-storybook-version-resume-push-'));
+    const reposRoot = join(TMP, 'repos');
+    const remotesRoot = join(TMP, 'remotes');
+    await mkdir(reposRoot, { recursive: true });
+    await mkdir(remotesRoot, { recursive: true });
+
+    const projects: Project[] = [
+      {
+        name: 'mealdrop',
+        repo: join(remotesRoot, 'mealdrop.git'),
+        branch: 'main',
+        githubSlug: 'storybook-tmp/mealdrop',
+      },
+    ];
+
+    setupRepo({
+      repoRoot: join(reposRoot, 'mealdrop'),
+      remoteRoot: join(remotesRoot, 'mealdrop.git'),
+      packageJsonPath: 'package.json',
+      packageJson: {
+        name: 'mealdrop',
+        dependencies: { storybook: '9.0.0' },
+      },
+    });
+
+    const remoteHeadBefore = getRemoteHead(join(remotesRoot, 'mealdrop.git'));
+
+    await syncStorybookVersion({
+      version: '9.1.0',
+      reposRoot,
+      projects,
+      push: false,
+      log: () => {},
+      installProjectDeps: async () => {},
+      runUpgrade: async ({ version, projectPath }) => {
+        const pkgPath = join(projectPath, 'package.json');
+        const pkg = JSON.parse(readFileSync(pkgPath, 'utf-8'));
+        pkg.dependencies.storybook = version;
+        writeFileSync(pkgPath, `${JSON.stringify(pkg, null, 2)}\n`);
+      },
+    });
+
+    const localHead = getHead(join(reposRoot, 'mealdrop'));
+    expect(localHead).not.toBe(remoteHeadBefore);
+    expect(getRemoteHead(join(remotesRoot, 'mealdrop.git'))).toBe(remoteHeadBefore);
+
+    const results = await syncStorybookVersion({
+      version: '9.1.0',
+      reposRoot,
+      projects,
+      push: true,
+      log: () => {},
+      installProjectDeps: async () => {},
+      runUpgrade: async ({ version, projectPath }) => {
+        const pkgPath = join(projectPath, 'package.json');
+        const pkg = JSON.parse(readFileSync(pkgPath, 'utf-8'));
+        pkg.dependencies.storybook = version;
+        writeFileSync(pkgPath, `${JSON.stringify(pkg, null, 2)}\n`);
+      },
+    });
+
+    expect(results).toEqual([{ project: 'mealdrop', changed: true, commitSha: localHead }]);
+    expect(getRemoteHead(join(remotesRoot, 'mealdrop.git'))).toBe(localHead);
+  });
 });
 
 function setupRepo(opts: {

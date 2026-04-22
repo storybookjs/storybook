@@ -218,6 +218,7 @@ describe('ghostStoriesChannel', () => {
           successRate: 1,
           successRateWithoutEmptyRender: 1,
           categorizedErrors: expect.any(Object),
+          cssCheck: 'not-run',
           uniqueErrorCount: 0,
           passedButEmptyRender: 0,
         },
@@ -316,6 +317,7 @@ describe('ghostStoriesChannel', () => {
             successRate: 0,
             // categorizedErrors is now an object with categories as keys
             categorizedErrors: expect.any(Object),
+            cssCheck: 'not-run',
             uniqueErrorCount: expect.any(Number),
             passedButEmptyRender: 0,
           }),

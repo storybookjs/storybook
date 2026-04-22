@@ -192,7 +192,7 @@ export const plugin = (store: AnalyzeResult) => (root: unknown) => {
   return root;
 };
 
-const mdxModule = import('@mdx-js/mdx');
+let mdxModule: Promise<typeof import('@mdx-js/mdx')> | undefined;
 
 export const analyze = async (code: string): Promise<AnalyzeResult> => {
   const store: AnalyzeResult = {
@@ -205,6 +205,7 @@ export const analyze = async (code: string): Promise<AnalyzeResult> => {
     imports: [],
   };
 
+  mdxModule ||= import('@mdx-js/mdx');
   const { compile } = await mdxModule;
   await compile(code, {
     rehypePlugins: [[plugin, store]],

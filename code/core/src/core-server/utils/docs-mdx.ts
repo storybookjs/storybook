@@ -1,11 +1,12 @@
 import { toEstree } from 'hast-util-to-estree';
-import type { Program, ExpressionStatement } from 'hast-util-to-estree/lib';
+import type { ExpressionStatement, Program } from 'estree';
 import type {
   JSXFragment,
   JSXAttribute,
-  JSXSimpleAttribute,
   JSXElement,
+  JSXIdentifier,
   JSXOpeningElement,
+  JSXSpreadAttribute,
 } from 'estree-jsx';
 
 export type AnalyzeResult = {
@@ -18,13 +19,16 @@ export type AnalyzeResult = {
   imports: string[];
 };
 
-const getAttr = (elt: JSXOpeningElement, what: string): JSXAttribute | undefined =>
-  elt.attributes.find((node) => node.type === 'JSXAttribute' && node.name.name === what);
+const isJsxAttribute = (node: JSXAttribute | JSXSpreadAttribute): node is JSXAttribute =>
+  node.type === 'JSXAttribute';
 
-const getAttrValue = (
-  elt: JSXOpeningElement,
-  what: string
-): JSXSimpleAttribute['value'] | undefined => {
+const getAttr = (elt: JSXOpeningElement, what: string): JSXAttribute | undefined =>
+  elt.attributes.find(
+    (node): node is JSXAttribute =>
+      isJsxAttribute(node) && node.name.type === 'JSXIdentifier' && node.name.name === what
+  );
+
+const getAttrValue = (elt: JSXOpeningElement, what: string): JSXAttribute['value'] | undefined => {
   const attr = getAttr(elt, what);
   return (attr as any)?.value;
 };
@@ -71,7 +75,11 @@ const getTags = (elt: JSXOpeningElement): string[] | undefined => {
     return undefined;
   }
 
-  const tagsContainer = (tagsAttr as JSXSimpleAttribute).value;
+  const tagsContainer = tagsAttr.value;
+  if (!tagsContainer) {
+    throw new Error('Expected JSX expression tags, received null');
+  }
+
   if (tagsContainer.type === 'JSXExpressionContainer') {
     const tagsArray = (tagsContainer as any).expression;
     if (tagsArray.type === 'ArrayExpression') {
@@ -93,7 +101,7 @@ const getTags = (elt: JSXOpeningElement): string[] | undefined => {
 };
 
 const getIsTemplate = (elt: JSXOpeningElement): boolean => {
-  const isTemplateAttr = getAttr(elt, 'isTemplate') as JSXSimpleAttribute | undefined;
+  const isTemplateAttr = getAttr(elt, 'isTemplate');
   if (!isTemplateAttr) {
     return false;
   }
@@ -125,7 +133,7 @@ const extractTitle = (root: Program, varToImport: Record<string, string>) => {
   } as Omit<AnalyzeResult, 'imports'>;
 
   const fragments = root.body.filter(
-    (child) =>
+    (child: Program['body'][number]) =>
       child.type === 'ExpressionStatement' && (child.expression as any).type === 'JSXFragment'
   ) as ExpressionStatement[];
 
@@ -141,7 +149,9 @@ const extractTitle = (root: Program, varToImport: Record<string, string>) => {
   fragment.children.forEach((child) => {
     if (child.type === 'JSXElement') {
       const { openingElement } = child as JSXElement;
-      const name = openingElement.name.name;
+      const elementName = openingElement.name;
+      const name =
+        elementName.type === 'JSXIdentifier' ? (elementName as JSXIdentifier).name : undefined;
 
       if (name === 'Meta') {
         if (result.title || result.name || result.of) {
@@ -166,12 +176,13 @@ const extractTitle = (root: Program, varToImport: Record<string, string>) => {
 export const extractImports = (root: Program) => {
   const varToImport = {} as Record<string, string>;
 
-  root.body.forEach((child) => {
+  root.body.forEach((child: Program['body'][number]) => {
     if (child.type === 'ImportDeclaration') {
       const { source, specifiers } = child;
-      if (source.type === 'Literal') {
+      const importPath = source.value;
+      if (source.type === 'Literal' && typeof importPath === 'string') {
         specifiers.forEach((specifier) => {
-          varToImport[specifier.local.name] = source.value.toString();
+          varToImport[specifier.local.name] = importPath;
         });
       } else {
         throw new Error('MDX: unexpected import source');

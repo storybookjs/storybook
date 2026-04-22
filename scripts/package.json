@@ -14,6 +14,7 @@
     "eval:collect-pr-data": "node ./eval/collect-pr-data.ts",
     "eval:run-batch": "node ./eval/run-batch.ts",
     "eval:sync-baselines": "node ./eval/sync-baselines.ts",
+    "eval:sync-storybook-version": "node ./eval/sync-storybook-version.ts",
     "generate-sandboxes": "jiti ./sandbox/generate.ts",
     "get-report-message": "jiti ./get-report-message.ts",
     "get-sandbox-dir": "jiti ./get-sandbox-dir.ts",

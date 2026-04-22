@@ -8179,8 +8179,6 @@ __metadata:
     "@storybook/preact": "workspace:*"
     "@storybook/preact-vite": "workspace:*"
     "@storybook/preset-create-react-app": "workspace:*"
-    "@storybook/preset-react-webpack": "workspace:*"
-    "@storybook/preset-server-webpack": "workspace:*"
     "@storybook/react": "workspace:*"
     "@storybook/react-vite": "workspace:*"
     "@storybook/react-webpack5": "workspace:*"
@@ -8429,8 +8427,8 @@ __metadata:
     "@babel/types": "npm:^7.28.5"
     "@pmmmwh/react-refresh-webpack-plugin": "npm:^0.5.11"
     "@storybook/builder-webpack5": "workspace:*"
-    "@storybook/preset-react-webpack": "workspace:*"
     "@storybook/react": "workspace:*"
+    "@storybook/react-webpack5": "workspace:*"
     "@types/babel__core": "npm:^7"
     "@types/babel__plugin-transform-runtime": "npm:^7"
     "@types/babel__preset-env": "npm:^7"
@@ -8516,48 +8514,6 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@storybook/preset-react-webpack@workspace:*, @storybook/preset-react-webpack@workspace:code/presets/react-webpack":
-  version: 0.0.0-use.local
-  resolution: "@storybook/preset-react-webpack@workspace:code/presets/react-webpack"
-  dependencies:
-    "@storybook/core-webpack": "workspace:*"
-    "@storybook/react-docgen-typescript-plugin": "npm:1.0.6--canary.9.0c3f3b7.0"
-    "@types/node": "npm:^22.19.1"
-    "@types/semver": "npm:^7.7.1"
-    empathic: "npm:^2.0.0"
-    magic-string: "npm:^0.30.5"
-    react-docgen: "npm:^7.1.1"
-    resolve: "npm:^1.22.8"
-    semver: "npm:^7.7.3"
-    tsconfig-paths: "npm:^4.2.0"
-    typescript: "npm:^5.9.3"
-    webpack: "npm:5"
-  peerDependencies:
-    react: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
-    react-dom: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
-    storybook: "workspace:^"
-  peerDependenciesMeta:
-    typescript:
-      optional: true
-  languageName: unknown
-  linkType: soft
-
-"@storybook/preset-server-webpack@workspace:*, @storybook/preset-server-webpack@workspace:code/presets/server-webpack":
-  version: 0.0.0-use.local
-  resolution: "@storybook/preset-server-webpack@workspace:code/presets/server-webpack"
-  dependencies:
-    "@storybook/core-webpack": "workspace:*"
-    "@types/node": "npm:^22.19.1"
-    safe-identifier: "npm:^0.4.2"
-    ts-dedent: "npm:^2.0.0"
-    typescript: "npm:^5.9.3"
-    yaml: "npm:^2.8.1"
-    yaml-loader: "npm:^0.8.1"
-  peerDependencies:
-    storybook: "workspace:^"
-  languageName: unknown
-  linkType: soft
-
 "@storybook/react-docgen-typescript-plugin@npm:1.0.6--canary.9.0c3f3b7.0":
   version: 1.0.6--canary.9.0c3f3b7.0
   resolution: "@storybook/react-docgen-typescript-plugin@npm:1.0.6--canary.9.0c3f3b7.0"
@@ -8638,9 +8594,18 @@ __metadata:
   resolution: "@storybook/react-webpack5@workspace:code/frameworks/react-webpack5"
   dependencies:
     "@storybook/builder-webpack5": "workspace:*"
-    "@storybook/preset-react-webpack": "workspace:*"
+    "@storybook/core-webpack": "workspace:*"
     "@storybook/react": "workspace:*"
+    "@storybook/react-docgen-typescript-plugin": "npm:1.0.6--canary.9.0c3f3b7.0"
     "@types/node": "npm:^22.19.1"
+    "@types/semver": "npm:^7.7.1"
+    empathic: "npm:^2.0.0"
+    magic-string: "npm:^0.30.5"
+    react-docgen: "npm:^7.1.1"
+    resolve: "npm:^1.22.8"
+    semver: "npm:^7.7.3"
+    tsconfig-paths: "npm:^4.2.0"
+    webpack: "npm:5"
   peerDependencies:
     react: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
     react-dom: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
@@ -8851,10 +8816,13 @@ __metadata:
   resolution: "@storybook/server-webpack5@workspace:code/frameworks/server-webpack5"
   dependencies:
     "@storybook/builder-webpack5": "workspace:*"
-    "@storybook/preset-server-webpack": "workspace:*"
+    "@storybook/core-webpack": "workspace:*"
     "@storybook/server": "workspace:*"
     "@types/node": "npm:^22.19.1"
+    safe-identifier: "npm:^0.4.2"
+    ts-dedent: "npm:^2.0.0"
     typescript: "npm:^5.9.3"
+    yaml-loader: "npm:^0.8.1"
   peerDependencies:
     storybook: "workspace:^"
   languageName: unknown

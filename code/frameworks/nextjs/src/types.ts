@@ -9,7 +9,7 @@ import type {
   ReactOptions,
   StorybookConfig as StorybookConfigBase,
   TypescriptOptions as TypescriptOptionsReact,
-} from '@storybook/preset-react-webpack';
+} from '@storybook/react-webpack5';
 
 import type * as NextImage from 'next/image';
 import type { NextRouter } from 'next/router';

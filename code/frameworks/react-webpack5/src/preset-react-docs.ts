@@ -28,7 +28,7 @@ export const webpackFinal: StorybookConfig['webpackFinal'] = async (
             test: /\.(cjs|mjs|tsx?|jsx?)$/,
             enforce: 'pre',
             loader: fileURLToPath(
-              import.meta.resolve('@storybook/preset-react-webpack/react-docgen-loader')
+              import.meta.resolve('@storybook/react-webpack5/react-docgen-loader')
             ),
             options: {
               debug,
@@ -52,7 +52,7 @@ export const webpackFinal: StorybookConfig['webpackFinal'] = async (
           test: /\.(cjs|mjs|jsx?)$/,
           enforce: 'pre',
           loader: fileURLToPath(
-            import.meta.resolve('@storybook/preset-react-webpack/react-docgen-loader')
+            import.meta.resolve('@storybook/react-webpack5/react-docgen-loader')
           ),
           options: {
             debug,
@@ -65,7 +65,6 @@ export const webpackFinal: StorybookConfig['webpackFinal'] = async (
       ...(config.plugins || []),
       new ReactDocgenTypeScriptPlugin({
         ...reactDocgenTypescriptOptions,
-        // We *need* this set so that RDT returns default values in the same format as react-docgen
         savePropValueAsString: true,
       }),
     ],

@@ -29,8 +29,6 @@
     "@storybook/preact": "file:../../code/renderers/preact",
     "@storybook/preact-vite": "file:../../code/frameworks/preact-vite",
     "@storybook/preset-create-react-app": "file:../../code/presets/create-react-app",
-    "@storybook/preset-react-webpack": "file:../../code/presets/react-webpack",
-    "@storybook/preset-server-webpack": "file:../../code/presets/server-webpack",
     "@storybook/react": "file:../../code/renderers/react",
     "@storybook/react-dom-shim": "file:../../code/lib/react-dom-shim",
     "@storybook/react-vite": "file:../../code/frameworks/react-vite",

@@ -7,7 +7,8 @@ import { WebpackDefinePlugin } from '@storybook/builder-webpack5';
 import type { StorybookConfig } from './types.ts';
 
 export const addons: PresetProperty<'addons'> = [
-  fileURLToPath(import.meta.resolve('@storybook/preset-react-webpack')),
+  fileURLToPath(import.meta.resolve('@storybook/react-webpack5/preset-cra')),
+  fileURLToPath(import.meta.resolve('@storybook/react-webpack5/preset-react-docs')),
 ];
 
 export const core: PresetProperty<'core'> = {

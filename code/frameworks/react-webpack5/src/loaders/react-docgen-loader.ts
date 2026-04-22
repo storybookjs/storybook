@@ -56,7 +56,6 @@ const actualNameHandler: Handler = function actualNameHandler(documentation, com
 
       currentPath = currentPath.parentPath;
     }
-    // Could not find an actual name
     documentation.set('actualName', '');
   }
 };
@@ -76,7 +75,6 @@ export default async function reactDocgenLoader(
   map: any
 ) {
   const callback = this.async();
-  // get options
   const options = this.getOptions() || {};
   const { debug = false } = options;
 

@@ -15,6 +15,21 @@ const config: BuildEntries = {
         dts: false,
       },
       {
+        exportEntries: ['./preset-cra'],
+        entryPoint: './src/preset-cra.ts',
+        dts: false,
+      },
+      {
+        exportEntries: ['./preset-react-docs'],
+        entryPoint: './src/preset-react-docs.ts',
+        dts: false,
+      },
+      {
+        exportEntries: ['./react-docgen-loader'],
+        entryPoint: './src/loaders/react-docgen-loader.ts',
+        dts: false,
+      },
+      {
         exportEntries: ['./node'],
         entryPoint: './src/node/index.ts',
       },

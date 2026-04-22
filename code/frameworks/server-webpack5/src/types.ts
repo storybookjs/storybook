@@ -8,7 +8,9 @@ import type {
 import type {
   StorybookConfig as StorybookConfigBase,
   TypescriptOptions as TypescriptOptionsReact,
-} from '@storybook/preset-server-webpack';
+} from '@storybook/core-webpack';
+
+export type { BuilderResult, TypescriptOptions } from '@storybook/core-webpack';
 
 type FrameworkName = CompatibleString<'@storybook/server-webpack5'>;
 type BuilderName = CompatibleString<'@storybook/builder-webpack5'>;

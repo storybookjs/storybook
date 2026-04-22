@@ -18,7 +18,7 @@ import type { FrameworkOptions, StorybookConfig } from './types.ts';
 import { isNextVersionGte } from './utils.ts';
 
 export const addons: PresetProperty<'addons'> = [
-  fileURLToPath(import.meta.resolve('@storybook/preset-react-webpack')),
+  fileURLToPath(import.meta.resolve('@storybook/react-webpack5/preset')),
 ];
 
 export const core: PresetProperty<'core'> = async (config, options) => {

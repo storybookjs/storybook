@@ -8310,15 +8310,6 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@storybook/docs-mdx@npm:4.0.0-next.3":
-  version: 4.0.0-next.3
-  resolution: "@storybook/docs-mdx@npm:4.0.0-next.3"
-  dependencies:
-    acorn: "npm:^8.12.1"
-  checksum: 10c0/7d9e689df6a098b0c294f3e835a5a1323460c80b8a33195f811f7de215c6abaf452988851a219ebd59fa472107747b8f54ab2b82d6044c81a76a7e4dc09e506c
-  languageName: node
-  linkType: hard
-
 "@storybook/ember@workspace:*, @storybook/ember@workspace:code/frameworks/ember":
   version: 0.0.0-use.local
   resolution: "@storybook/ember@workspace:code/frameworks/ember"
@@ -28577,6 +28568,7 @@ __metadata:
     "@emotion/styled": "npm:^11.14.0"
     "@fal-works/esbuild-plugin-global-externals": "npm:^2.1.2"
     "@happy-dom/global-registrator": "npm:^20.0.11"
+    "@mdx-js/mdx": "npm:^3.0.0"
     "@ngard/tiny-isequal": "npm:^1.1.0"
     "@polka/compression": "npm:^1.0.0-next.28"
     "@radix-ui/react-scroll-area": "npm:1.2.0-rc.7"
@@ -28592,7 +28584,6 @@ __metadata:
     "@react-stately/tabs": "npm:^3.8.5"
     "@react-types/shared": "npm:^3.32.0"
     "@rolldown/pluginutils": "npm:1.0.0-beta.18"
-    "@storybook/docs-mdx": "npm:4.0.0-next.3"
     "@storybook/global": "npm:^5.0.0"
     "@storybook/icons": "npm:^2.0.1"
     "@tanstack/react-virtual": "npm:^3.3.0"
@@ -28649,6 +28640,7 @@ __metadata:
     get-npm-tarball-url: "npm:^2.1.0"
     glob: "npm:^10.5.0"
     globby: "npm:^14.1.0"
+    hast-util-to-estree: "npm:^3.0.0"
     host-validation-middleware: "npm:^0.1.2"
     jiti: "npm:^2.6.1"
     js-yaml: "npm:^4.1.0"

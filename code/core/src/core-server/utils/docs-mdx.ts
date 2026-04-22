@@ -1,101 +1,110 @@
 import { toEstree } from 'hast-util-to-estree';
+import type { Program, ExpressionStatement } from 'hast-util-to-estree/lib';
+import type {
+  JSXFragment,
+  JSXAttribute,
+  JSXSimpleAttribute,
+  JSXElement,
+  JSXOpeningElement,
+} from 'estree-jsx';
 
-type EstreeNode = {
-  type: string;
-  [key: string]: unknown;
-};
-
-type AnalyzeResult = {
-  title?: string;
-  of?: string;
-  name?: string;
-  summary?: string;
+export type AnalyzeResult = {
+  title: string | undefined;
+  of: string | undefined;
+  name: string | undefined;
+  summary: string | undefined;
   isTemplate: boolean;
-  metaTags?: string[];
+  metaTags: string[] | undefined;
   imports: string[];
 };
 
-const getAttr = (elt: EstreeNode, what: string) =>
-  (elt.attributes as EstreeNode[] | undefined)?.find(
-    (node) => node.type === 'JSXAttribute' && (node.name as EstreeNode).name === what
-  );
+const getAttr = (elt: JSXOpeningElement, what: string): JSXAttribute | undefined =>
+  elt.attributes.find((node) => node.type === 'JSXAttribute' && node.name.name === what);
 
-const getAttrValue = (elt: EstreeNode, what: string) => getAttr(elt, what)?.value;
+const getAttrValue = (
+  elt: JSXOpeningElement,
+  what: string
+): JSXSimpleAttribute['value'] | undefined => {
+  const attr = getAttr(elt, what);
+  return (attr as any)?.value;
+};
 
-const getAttrLiteral = (elt: EstreeNode, what: string) => {
+const getAttrLiteral = (elt: JSXOpeningElement, what: string): any | undefined => {
   const attrValue = getAttrValue(elt, what);
   if (!attrValue) {
     return undefined;
   }
 
   if (attrValue.type === 'Literal') {
-    return attrValue.value;
+    return (attrValue as any).value;
   }
 
   throw new Error(`Expected string literal ${what}, received ${attrValue.type}`);
 };
 
-const getOf = (elt: EstreeNode, varToImport: Record<string, string>) => {
+const getOf = (elt: JSXOpeningElement, varToImport: Record<string, string>): string | undefined => {
   const ofAttrValue = getAttrValue(elt, 'of');
-
   if (!ofAttrValue) {
     return undefined;
   }
 
-  if (ofAttrValue.type !== 'JSXExpressionContainer') {
-    throw new Error(`Expected JSX expression, received ${ofAttrValue.type}`);
-  }
+  if (ofAttrValue.type === 'JSXExpressionContainer') {
+    const of = (ofAttrValue as any).expression;
+    if (of?.type === 'Identifier') {
+      const importName = varToImport[of.name];
+      if (importName) {
+        return importName;
+      }
 
-  const of = ofAttrValue.expression;
-  if (of?.type !== 'Identifier') {
+      throw new Error(`Unknown identifier ${of.name}`);
+    }
+
     throw new Error(`Expected identifier, received ${of.type}`);
   }
 
-  const importName = varToImport[of.name];
-  if (!importName) {
-    throw new Error(`Unknown identifier ${of.name}`);
-  }
-
-  return importName;
+  throw new Error(`Expected JSX expression, received ${ofAttrValue.type}`);
 };
 
-const getTags = (elt: EstreeNode) => {
-  const tagsContainer = getAttrValue(elt, 'tags');
-  if (!tagsContainer) {
+const getTags = (elt: JSXOpeningElement): string[] | undefined => {
+  const tagsAttr = getAttr(elt, 'tags');
+  if (!tagsAttr) {
     return undefined;
   }
 
-  if (tagsContainer.type !== 'JSXExpressionContainer') {
-    throw new Error(`Expected JSX expression tags, received ${tagsContainer.type}`);
-  }
+  const tagsContainer = (tagsAttr as JSXSimpleAttribute).value;
+  if (tagsContainer.type === 'JSXExpressionContainer') {
+    const tagsArray = (tagsContainer as any).expression;
+    if (tagsArray.type === 'ArrayExpression') {
+      const metaTags = (tagsArray as any).elements.map((tag: any) => {
+        if (tag.type === 'Literal' && typeof tag.value === 'string') {
+          return tag.value;
+        }
 
-  const tagsArray = tagsContainer.expression;
-  if (tagsArray.type !== 'ArrayExpression') {
+        throw new Error(`Expected string literal tag, received ${tag.type}`);
+      });
+
+      return metaTags;
+    }
+
     throw new Error(`Expected tags array, received ${tagsArray.type}`);
   }
 
-  return (tagsArray.elements as EstreeNode[]).map((tag) => {
-    if (tag.type === 'Literal' && typeof tag.value === 'string') {
-      return tag.value;
-    }
-
-    throw new Error(`Expected string literal tag, received ${tag.type}`);
-  });
+  throw new Error(`Expected JSX expression tags, received ${tagsContainer.type}`);
 };
 
-const getIsTemplate = (elt: EstreeNode) => {
-  const isTemplateAttr = getAttr(elt, 'isTemplate');
+const getIsTemplate = (elt: JSXOpeningElement): boolean => {
+  const isTemplateAttr = getAttr(elt, 'isTemplate') as JSXSimpleAttribute | undefined;
   if (!isTemplateAttr) {
     return false;
   }
 
-  const isTemplate = isTemplateAttr.value;
+  const isTemplate = (isTemplateAttr as any).value;
   if (isTemplate == null) {
     return true;
   }
 
   if (isTemplate.type === 'JSXExpressionContainer') {
-    const expression = isTemplate.expression as EstreeNode;
+    const expression = isTemplate.expression;
     if (expression.type === 'Literal' && typeof expression.value === 'boolean') {
       return expression.value;
     }
@@ -106,34 +115,33 @@ const getIsTemplate = (elt: EstreeNode) => {
   throw new Error(`Expected expression isTemplate, received ${isTemplate.type}`);
 };
 
-const extractTitle = (root: EstreeNode, varToImport: Record<string, string>) => {
-  const result: Omit<AnalyzeResult, 'imports'> = {
+const extractTitle = (root: Program, varToImport: Record<string, string>) => {
+  const result = {
     title: undefined,
     of: undefined,
     name: undefined,
     summary: undefined,
     isTemplate: false,
-    metaTags: undefined,
-  };
+  } as Omit<AnalyzeResult, 'imports'>;
 
-  const fragments = (root.body as EstreeNode[]).filter(
-    (child: EstreeNode) =>
-      child.type === 'ExpressionStatement' && child.expression?.type === 'JSXFragment'
-  );
+  const fragments = root.body.filter(
+    (child) =>
+      child.type === 'ExpressionStatement' && (child.expression as any).type === 'JSXFragment'
+  ) as ExpressionStatement[];
 
   if (fragments.length > 1) {
     throw new Error('duplicate contents');
   }
 
-  const fragment = fragments[0]?.expression;
-  if (!fragment) {
+  if (fragments.length === 0) {
     return result;
   }
 
-  (fragment.children as EstreeNode[]).forEach((child) => {
+  const fragment = fragments[0].expression as any as JSXFragment;
+  fragment.children.forEach((child) => {
     if (child.type === 'JSXElement') {
-      const openingElement = child.openingElement as EstreeNode;
-      const name = (openingElement.name as EstreeNode).name;
+      const { openingElement } = child as JSXElement;
+      const name = openingElement.name.name;
 
       if (name === 'Meta') {
         if (result.title || result.name || result.of) {
@@ -155,32 +163,29 @@ const extractTitle = (root: EstreeNode, varToImport: Record<string, string>) => 
   return result;
 };
 
-export const extractImports = (root: EstreeNode) => {
-  const varToImport: Record<string, string> = {};
+export const extractImports = (root: Program) => {
+  const varToImport = {} as Record<string, string>;
 
-  (root.body as EstreeNode[]).forEach((child) => {
-    if (child.type !== 'ImportDeclaration') {
-      return;
+  root.body.forEach((child) => {
+    if (child.type === 'ImportDeclaration') {
+      const { source, specifiers } = child;
+      if (source.type === 'Literal') {
+        specifiers.forEach((specifier) => {
+          varToImport[specifier.local.name] = source.value.toString();
+        });
+      } else {
+        throw new Error('MDX: unexpected import source');
+      }
     }
-
-    const { source, specifiers } = child;
-    if (source.type !== 'Literal') {
-      throw new Error('MDX: unexpected import source');
-    }
-
-    (specifiers as EstreeNode[]).forEach((specifier) => {
-      varToImport[(specifier.local as EstreeNode).name as string] = source.value.toString();
-    });
   });
 
   return varToImport;
 };
 
-export const plugin = (store: AnalyzeResult) => (root: unknown) => {
-  const estree = toEstree(root) as EstreeNode;
+export const plugin = (store: any) => (root: any) => {
+  const estree = toEstree(root);
   const varToImport = extractImports(estree);
   const { title, of, name, summary, isTemplate, metaTags } = extractTitle(estree, varToImport);
-
   store.title = title;
   store.of = of;
   store.name = name;
@@ -192,24 +197,21 @@ export const plugin = (store: AnalyzeResult) => (root: unknown) => {
   return root;
 };
 
-let mdxModule: Promise<typeof import('@mdx-js/mdx')> | undefined;
-
 export const analyze = async (code: string): Promise<AnalyzeResult> => {
-  const store: AnalyzeResult = {
+  const store = {
     title: undefined,
     of: undefined,
     name: undefined,
     summary: undefined,
     isTemplate: false,
     metaTags: undefined,
-    imports: [],
-  };
-
-  mdxModule ||= import('@mdx-js/mdx');
-  const { compile } = await mdxModule;
+    imports: undefined,
+  } as any;
+  const { compile } = await import('@mdx-js/mdx');
   await compile(code, {
     rehypePlugins: [[plugin, store]],
   });
 
-  return store;
+  const { title, of, name, summary, isTemplate, metaTags, imports = [] } = store;
+  return { title, of, name, summary, isTemplate, metaTags, imports };
 };

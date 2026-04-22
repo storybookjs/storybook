@@ -5,6 +5,10 @@ import type { ComponentAnnotations, ComposedStoryFn, Renderer } from 'storybook/
 
 import { type Report, composeStory, getCsfFactoryAnnotations } from 'storybook/preview-api';
 
+import {
+  STORYBOOK_CORE_GHOST_STORIES_PROVIDE_KEY,
+  STORYBOOK_TEST_CONFIG_PROVIDE_KEY,
+} from '../constants.ts';
 import { setViewport } from './viewports.ts';
 
 /**
@@ -53,14 +57,14 @@ export const testStory = ({
 
     let runConfig: Record<string, unknown> = { a11y: true };
     try {
-      runConfig = inject('sb-config') ?? { a11y: true };
+      runConfig = inject(STORYBOOK_TEST_CONFIG_PROVIDE_KEY) ?? { a11y: true };
     } catch {
       // Standalone Vitest runs might not provide Storybook run config.
     }
 
     let ghostStoriesEnabled = false;
     try {
-      ghostStoriesEnabled = inject('sb-ghost-stories') ?? false;
+      ghostStoriesEnabled = inject(STORYBOOK_CORE_GHOST_STORIES_PROVIDE_KEY) ?? false;
     } catch {
       // Standalone Vitest runs might not provide Storybook ghost stories config.
     }

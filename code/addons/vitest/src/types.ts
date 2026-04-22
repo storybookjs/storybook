@@ -30,6 +30,8 @@ export type RunTrigger =
   | Extract<API_HashEntry['type'], string>
   | `external:${string}`;
 
+export type A11yRunReport = Report['result'];
+
 export type CurrentRun = {
   triggeredBy: RunTrigger | undefined;
   config: RunConfig;
@@ -44,6 +46,8 @@ export type CurrentRun = {
     warning: number;
     error: number;
   };
+  // Backwards compatibility for consumers that still read the legacy a11y-only shape.
+  a11yReports: Record<StoryId, A11yRunReport[]>;
   reports: Record<StoryId, Report[]>;
   totalTestCount: number | undefined;
   storyIds: StoryId[] | undefined;

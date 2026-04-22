@@ -225,6 +225,7 @@ export class TestManager {
 
     this.componentTestStatusStore.set(componentTestStatuses);
 
+    const a11yReportsByStoryId: CurrentRun['a11yReports'] = {};
     const reportsByStoryId: CurrentRun['reports'] = {};
     const a11yStatuses: typeof componentTestStatuses = [];
 
@@ -237,6 +238,7 @@ export class TestManager {
       if (!storyA11yReports?.length) {
         continue;
       }
+      a11yReportsByStoryId[storyId] = storyA11yReports.map((report) => report.result);
       for (const a11yReport of storyA11yReports) {
         a11yStatuses.push({
           storyId,
@@ -288,6 +290,14 @@ export class TestManager {
           },
           componentTestStatuses: s.currentRun.componentTestStatuses.concat(componentTestStatuses),
           a11yStatuses: s.currentRun.a11yStatuses.concat(a11yStatuses),
+          /*
+            TODO: a11yReports is just here for backwards compatibility with older versions of addon-mcp.
+            They are also part of the more generic reports property, so we can remove this in a future major release when we can break compatibility.
+          */
+          a11yReports: {
+            ...s.currentRun.a11yReports,
+            ...a11yReportsByStoryId,
+          },
           reports: {
             ...s.currentRun.reports,
             ...reportsByStoryId,

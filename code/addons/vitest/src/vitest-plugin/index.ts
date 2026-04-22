@@ -34,6 +34,7 @@ import type { PluginOption } from 'vite';
 
 // Shared plugins from builder-vite (relative import to prebundle without adding a package dependency)
 import { withoutVitePlugins } from '../../../../builders/builder-vite/src/utils/without-vite-plugins.ts';
+import { STORYBOOK_CORE_GHOST_STORIES_PROVIDE_KEY } from '../constants.ts';
 import type { InternalOptions, UserOptions } from './types.ts';
 import { requiresProjectAnnotations } from './utils.ts';
 
@@ -351,7 +352,7 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
           },
 
           provide: {
-            'sb-ghost-stories': !!process.env.STORYBOOK_COMPONENT_PATHS,
+            [STORYBOOK_CORE_GHOST_STORIES_PROVIDE_KEY]: !!process.env.STORYBOOK_COMPONENT_PATHS,
           },
 
           include: [...includeStories, ...getComponentTestPaths()],

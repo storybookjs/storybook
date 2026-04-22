@@ -10,8 +10,14 @@ import type {
 } from 'storybook/internal/types';
 
 import path from 'pathe';
+import type { Report } from 'storybook/preview-api';
 
-import { STATUS_TYPE_ID_A11Y, STATUS_TYPE_ID_COMPONENT_TEST, storeOptions } from '../constants.ts';
+import {
+  STATUS_TYPE_ID_A11Y,
+  STATUS_TYPE_ID_COMPONENT_TEST,
+  STORYBOOK_TEST_CONFIG_PROVIDE_KEY,
+  storeOptions,
+} from '../constants.ts';
 import type { StoreEvent, StoreState } from '../types.ts';
 import { TestManager, type TestManagerOptions } from './test-manager.ts';
 import { DOUBLE_SPACES } from './vitest-manager.ts';
@@ -216,7 +222,7 @@ describe('TestManager', () => {
       },
     });
     expect(createVitest).toHaveBeenCalledTimes(1);
-    expect(vitest.provide).toHaveBeenCalledWith('sb-config', {
+    expect(vitest.provide).toHaveBeenCalledWith(STORYBOOK_TEST_CONFIG_PROVIDE_KEY, {
       coverage: false,
       a11y: false,
     });
@@ -239,7 +245,7 @@ describe('TestManager', () => {
       },
     });
 
-    expect(vitest.provide).toHaveBeenLastCalledWith('sb-config', {
+    expect(vitest.provide).toHaveBeenLastCalledWith(STORYBOOK_TEST_CONFIG_PROVIDE_KEY, {
       coverage: false,
       a11y: true,
       customFlag: 'custom-value',
@@ -264,13 +270,13 @@ describe('TestManager', () => {
             {
               type: 'a11y',
               status: 'passed',
-              result: { id: 'a11y-report' } as any,
-            } as any,
+              result: { id: 'a11y-report' },
+            } as Report,
             {
               type: 'custom',
               status: 'passed',
-              result: { id: 'custom-report' } as any,
-            } as any,
+              result: { id: 'custom-report' },
+            } as Report,
           ],
         });
         testManager.onTestRunEnd({

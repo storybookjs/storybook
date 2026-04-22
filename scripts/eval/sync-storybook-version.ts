@@ -214,7 +214,7 @@ async function defaultRunUpgrade({
   // `--yes`/`--force` already disable prompts. `CI`, `YARN_ENABLE_IMMUTABLE_INSTALLS`,
   // and `npm_config_frozen_lockfile` would refuse lockfile updates and leave
   // package.json and the lockfile out of sync, so unset them here.
-  const env = {
+  const env: NodeJS.ProcessEnv = {
     ...process.env,
     YARN_ENABLE_IMMUTABLE_INSTALLS: 'false',
     npm_config_frozen_lockfile: 'false',

@@ -24,6 +24,8 @@ export const EXAMPLE_PROMPT_BASENAME = DEFAULT_PROMPT_NAME;
 export const NODE_EVAL_TRIAL_SCRIPT = 'scripts/eval/eval.ts' as const;
 export const NODE_EVAL_RUN_BATCH_SCRIPT = 'scripts/eval/run-batch.ts' as const;
 export const NODE_EVAL_SYNC_BASELINES_SCRIPT = 'scripts/eval/sync-baselines.ts' as const;
+export const NODE_EVAL_SYNC_STORYBOOK_VERSION_SCRIPT =
+  'scripts/eval/sync-storybook-version.ts' as const;
 export const NODE_EVAL_COLLECT_PR_DATA_SCRIPT = 'scripts/eval/collect-pr-data.ts' as const;
 export const STORYBOOK_DIRNAME = '.storybook';
 export const EVAL_RESULTS_DIRNAME = 'eval-results';

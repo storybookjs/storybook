@@ -819,6 +819,57 @@ describe('registerIndexJsonRoute', () => {
       });
       expect(renameRedirectStore.getState().chains['b--primary']).toBeUndefined();
     });
+
+    it('does not classify a modification when the same path is also deleted in the same cycle', async () => {
+      const mockServerChannel = { emit: vi.fn() } as any as ServerChannel;
+      const storyIndexGeneratorPromise = getStoryIndexGeneratorPromise();
+      registerIndexJsonRoute({
+        app,
+        channel: mockServerChannel,
+        workingDir,
+        normalizedStories,
+        storyIndexGeneratorPromise,
+      });
+
+      const generator = await storyIndexGeneratorPromise;
+      await generator.getIndex();
+
+      const absPath = `${workingDir}/src/B.stories.ts`;
+      // Prime the cache as stale so the batched invalidate calls below don't
+      // overwrite the snapshots we seed next.
+      generator.invalidate('./src/B.stories.ts', false);
+      // Seed a modified snapshot that would otherwise classify as orphan…
+      generator.getModifiedFileSnapshots().set(absPath, {
+        stories: {
+          StoryOne: { id: 'b--story-one' },
+          Primary: { id: 'b--primary' },
+        },
+        docs: [],
+      });
+      // …and a removed snapshot carrying the same IDs so the deletion path
+      // has something to walk.
+      generator.getRemovedFileSnapshots().set(absPath, {
+        stories: {
+          StoryOne: { id: 'b--story-one' },
+          Primary: { id: 'b--primary' },
+        },
+        docs: [],
+      });
+
+      const watcher = Watchpack.mock.instances[0];
+      const onChange = watcher.on.mock.calls[0][1];
+      const onRemove = watcher.on.mock.calls[1][1];
+      onChange(absPath, 1234, undefined);
+      onRemove(absPath);
+
+      await vi.waitFor(() => {
+        // Both IDs should have null-chain deletion entries; the same-path
+        // guard prevents the modification path from emitting orphan events
+        // for them first.
+        expect(renameRedirectStore.getState().chains['b--primary']).toEqual([null]);
+        expect(renameRedirectStore.getState().chains['b--story-one']).toEqual([null]);
+      });
+    });
   });
 });
 

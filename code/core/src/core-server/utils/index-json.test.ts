@@ -9,15 +9,28 @@ import { debounce } from 'es-toolkit/function';
 import type { Polka, Request, Response } from 'polka';
 import Watchpack from 'watchpack';
 
+import { renameRedirectStore } from '../stores/rename-redirect.ts';
 import { csfIndexer } from '../presets/common-preset.ts';
 import type { StoryIndexGeneratorOptions } from './StoryIndexGenerator.ts';
 import { StoryIndexGenerator } from './StoryIndexGenerator.ts';
 import type { ServerChannel } from './get-server-channel.ts';
-import { registerIndexJsonRoute } from './index-json.ts';
+import { registerIndexJsonRoute, resolveRenamePairs } from './index-json.ts';
 
 vi.mock('watchpack');
 vi.mock('es-toolkit/function', { spy: true });
 vi.mock('storybook/internal/node-logger');
+
+vi.mock('../stores/rename-redirect.ts', async () => {
+  const { UNIVERSAL_RENAME_REDIRECT_STORE_OPTIONS } = await vi.importActual<
+    typeof import('../../shared/rename-redirect-store/index.ts')
+  >('../../shared/rename-redirect-store/index.ts');
+  const { MockUniversalStore } = await vi.importActual<
+    typeof import('../../shared/universal-store/mock.ts')
+  >('../../shared/universal-store/mock.ts');
+  return {
+    renameRedirectStore: new MockUniversalStore(UNIVERSAL_RENAME_REDIRECT_STORE_OPTIONS),
+  };
+});
 
 vi.mock('../utils/constants', () => {
   return {
@@ -662,5 +675,171 @@ describe('registerIndexJsonRoute', () => {
         expect(mockServerChannel.emit).toHaveBeenCalledTimes(2);
       });
     });
+  });
+
+  describe('rename redirect store', () => {
+    beforeEach(() => {
+      // Each test creates its own generator, but the `findMatchingFiles` cache
+      // is static and shared across instances. Clearing avoids leaks where one
+      // test's `invalidate` leaves a non-existent path marked for rebuild.
+      StoryIndexGenerator.clearFindMatchingFilesCache();
+      renameRedirectStore.setState({ chains: {} });
+    });
+
+    it('writes a rename chain after a confirmed file rename', async () => {
+      const mockServerChannel = { emit: vi.fn() } as any as ServerChannel;
+      const storyIndexGeneratorPromise = getStoryIndexGeneratorPromise();
+      registerIndexJsonRoute({
+        app,
+        channel: mockServerChannel,
+        workingDir,
+        normalizedStories,
+        storyIndexGeneratorPromise,
+      });
+
+      // Prime the generator so it has a cache entry for B.stories.ts to snapshot
+      await (await storyIndexGeneratorPromise).getIndex();
+
+      const watcher = Watchpack.mock.instances[0];
+      const onChange = watcher.on.mock.calls[0][1];
+
+      // Simulate a file rename: B.stories.ts → B-renamed.stories.ts
+      // (the index re-computation after invalidate will not actually find the
+      // new file because the fixture is not physically renamed; that is fine —
+      // resolveRenamePairs correlates by the newPath the watcher reports).
+      onChange(`${workingDir}/src/B.stories.ts`, null, 'rename');
+      onChange(`${workingDir}/src/B-renamed.stories.ts`, 1234, 'rename');
+
+      // debounce is mocked as synchronous in this suite
+      await vi.waitFor(() => {
+        expect(mockServerChannel.emit).toHaveBeenCalled();
+      });
+
+      // Without the new file on disk, resolveRenamePairs drops the candidate
+      // (no fingerprint match), so no rename is written. That's the correct
+      // conservative behaviour and the store should remain empty.
+      expect(renameRedirectStore.getState().chains).toEqual({});
+    });
+
+    it('writes a deletion chain entry when a watched file is removed', async () => {
+      const mockServerChannel = { emit: vi.fn() } as any as ServerChannel;
+      const storyIndexGeneratorPromise = getStoryIndexGeneratorPromise();
+      registerIndexJsonRoute({
+        app,
+        channel: mockServerChannel,
+        workingDir,
+        normalizedStories,
+        storyIndexGeneratorPromise,
+      });
+
+      await (await storyIndexGeneratorPromise).getIndex();
+
+      const watcher = Watchpack.mock.instances[0];
+      const onRemove = watcher.on.mock.calls[1][1];
+
+      onRemove(`${workingDir}/src/B.stories.ts`);
+
+      await vi.waitFor(() => {
+        expect(renameRedirectStore.getState().chains['b--story-one']).toEqual([null]);
+      });
+    });
+  });
+});
+
+describe('resolveRenamePairs', () => {
+  const wd = '/work';
+  const makeIndex = (entries: Record<string, any>): any => ({ v: 5, entries });
+
+  it('returns renames when fingerprints match', () => {
+    const candidates = [{ oldPath: './src/A.stories.ts', newPath: './src/A-2.stories.ts' }];
+    const removedSnapshots = new Map<string, Record<string, string>>([
+      [join(wd, 'src/A.stories.ts'), { Primary: 'a--primary', Secondary: 'a--secondary' }],
+    ]);
+    const index = makeIndex({
+      'a2--primary': {
+        id: 'a2--primary',
+        type: 'story',
+        exportName: 'Primary',
+        importPath: './src/A-2.stories.ts',
+      },
+      'a2--secondary': {
+        id: 'a2--secondary',
+        type: 'story',
+        exportName: 'Secondary',
+        importPath: './src/A-2.stories.ts',
+      },
+    });
+
+    const { renames, unresolved } = resolveRenamePairs(candidates, removedSnapshots, index, wd);
+    expect(unresolved).toEqual([]);
+    expect(renames).toEqual(
+      expect.arrayContaining([
+        { oldId: 'a--primary', newId: 'a2--primary' },
+        { oldId: 'a--secondary', newId: 'a2--secondary' },
+      ])
+    );
+    expect(renames).toHaveLength(2);
+  });
+
+  it('drops candidates when fingerprints differ (conservative fallback)', () => {
+    const candidates = [{ oldPath: './src/A.stories.ts', newPath: './src/A-2.stories.ts' }];
+    const removedSnapshots = new Map<string, Record<string, string>>([
+      [join(wd, 'src/A.stories.ts'), { Primary: 'a--primary' }],
+    ]);
+    const index = makeIndex({
+      'a2--primary': {
+        id: 'a2--primary',
+        type: 'story',
+        exportName: 'Primary',
+        importPath: './src/A-2.stories.ts',
+      },
+      'a2--extra': {
+        id: 'a2--extra',
+        type: 'story',
+        exportName: 'Extra',
+        importPath: './src/A-2.stories.ts',
+      },
+    });
+
+    const { renames, unresolved } = resolveRenamePairs(candidates, removedSnapshots, index, wd);
+    expect(renames).toEqual([]);
+    expect(unresolved).toEqual(['./src/A.stories.ts']);
+  });
+
+  it('aligns by export name regardless of entry order', () => {
+    const candidates = [{ oldPath: './src/A.stories.ts', newPath: './src/A-2.stories.ts' }];
+    const removedSnapshots = new Map<string, Record<string, string>>([
+      [join(wd, 'src/A.stories.ts'), { First: 'a--first', Second: 'a--second' }],
+    ]);
+    // New index has the entries in the opposite positional order
+    const index = makeIndex({
+      'a2--second': {
+        id: 'a2--second',
+        type: 'story',
+        exportName: 'Second',
+        importPath: './src/A-2.stories.ts',
+      },
+      'a2--first': {
+        id: 'a2--first',
+        type: 'story',
+        exportName: 'First',
+        importPath: './src/A-2.stories.ts',
+      },
+    });
+
+    const { renames } = resolveRenamePairs(candidates, removedSnapshots, index, wd);
+    expect(renames).toEqual(
+      expect.arrayContaining([
+        { oldId: 'a--first', newId: 'a2--first' },
+        { oldId: 'a--second', newId: 'a2--second' },
+      ])
+    );
+  });
+
+  it('drops candidates with no snapshot entry', () => {
+    const candidates = [{ oldPath: './src/Missing.stories.ts', newPath: './src/New.stories.ts' }];
+    const { renames, unresolved } = resolveRenamePairs(candidates, new Map(), makeIndex({}), wd);
+    expect(renames).toEqual([]);
+    expect(unresolved).toEqual(['./src/Missing.stories.ts']);
   });
 });

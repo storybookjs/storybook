@@ -4,8 +4,7 @@ declare module 'vue/dist/vue';
 
 declare var FEATURES: import('storybook/internal/types').StorybookConfigRaw['features'];
 declare var __DOCS_CONTEXT__: import('react').Context<
-  | import('storybook/internal/types').DocsContextProps<import('storybook/internal/types').Renderer>
-  | null
+  import('storybook/internal/types').DocsContextProps<import('storybook/internal/types').Renderer>
 >;
 declare var PREVIEW_URL: string | undefined;
 declare var LOGLEVEL: 'trace' | 'debug' | 'info' | 'warn' | 'error' | 'silent' | undefined;

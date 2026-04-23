@@ -2461,5 +2461,25 @@ describe('StoryIndexGenerator', () => {
         expect(generator.getRemovedFileSnapshots().size).toBe(0);
       });
     });
+
+    describe('modified file snapshots', () => {
+      it('captures stories+docs before marking the cache entry stale (invalidate with removed=false)', async () => {
+        const specifier: NormalizedStoriesSpecifier = normalizeStoriesEntry(
+          './src/**/*.stories.(ts|js|mjs|jsx)',
+          options
+        );
+        const generator = new StoryIndexGenerator([specifier], options);
+        await generator.initialize();
+        await generator.getIndex();
+
+        generator.invalidate('./src/B.stories.ts', false);
+
+        const snapshots = generator.getModifiedFileSnapshots();
+        const absolutePath = join(options.workingDir, 'src/B.stories.ts');
+        const snapshot = snapshots.get(absolutePath);
+        expect(snapshot).toBeDefined();
+        expect(snapshot!.stories).toEqual({ StoryOne: { id: 'b--story-one' } });
+      });
+    });
   });
 });

@@ -127,6 +127,12 @@ export class StoryIndexGenerator {
   // chains after re-indexing completes.
   private removedFileSnapshots: Map<Path, FileSnapshot> = new Map();
 
+  // Tracks snapshots of story files that were modified (invalidated without
+  // removal). Populated in `invalidate()` before the cache entry is marked
+  // stale so the orchestrator can compare pre-change story/docs shapes with
+  // the freshly re-indexed output when classifying rename candidates.
+  private modifiedFileSnapshots: Map<Path, FileSnapshot> = new Map();
+
   constructor(
     public readonly specifiers: NormalizedStoriesSpecifier[],
     public readonly options: StoryIndexGeneratorOptions
@@ -849,6 +855,7 @@ export class StoryIndexGenerator {
       });
     }
 
+    const snapshot = this.captureSnapshot(cacheEntry);
     if (removed) {
       if (cacheEntry && cacheEntry.type === 'docs') {
         const absoluteImports = cacheEntry.storiesImports.map((p) =>
@@ -859,22 +866,14 @@ export class StoryIndexGenerator {
           dep.dependents.splice(dep.dependents.indexOf(absolutePath), 1)
         );
       }
-      if (cacheEntry && cacheEntry.type === 'stories') {
-        const stories: FileSnapshot['stories'] = {};
-        const docs: FileSnapshot['docs'] = [];
-        for (const entry of cacheEntry.entries) {
-          if (entry.type === 'story' && 'exportName' in entry && entry.exportName) {
-            stories[entry.exportName] = { id: entry.id };
-          } else if (entry.type === 'docs') {
-            docs.push({ id: entry.id, name: entry.name });
-          }
-        }
-        if (Object.keys(stories).length > 0 || docs.length > 0) {
-          this.removedFileSnapshots.set(absolutePath, { stories, docs });
-        }
+      if (snapshot) {
+        this.removedFileSnapshots.set(absolutePath, snapshot);
       }
       delete cache[absolutePath];
     } else {
+      if (snapshot) {
+        this.modifiedFileSnapshots.set(absolutePath, snapshot);
+      }
       cache[absolutePath] = false;
     }
     this.lastIndex = null;
@@ -890,6 +889,32 @@ export class StoryIndexGenerator {
   }
 
   /**
+   * Captures a `FileSnapshot` view of a story cache entry before the entry is
+   * mutated (either deleted or marked stale) in `invalidate()`. Returns
+   * undefined for non-story entries or when the file has no story/docs
+   * entries to record. Shared by both the removed-file and modified-file
+   * snapshot paths so rename detection sees consistent pre-change state.
+   */
+  private captureSnapshot(cacheEntry: CacheEntry | undefined): FileSnapshot | undefined {
+    if (!cacheEntry || cacheEntry === false || cacheEntry.type !== 'stories') {
+      return undefined;
+    }
+    const stories: FileSnapshot['stories'] = {};
+    const docs: FileSnapshot['docs'] = [];
+    for (const entry of cacheEntry.entries) {
+      if (entry.type === 'story' && 'exportName' in entry && entry.exportName) {
+        stories[entry.exportName] = { id: entry.id };
+      } else if (entry.type === 'docs') {
+        docs.push({ id: entry.id, name: entry.name });
+      }
+    }
+    if (Object.keys(stories).length === 0 && docs.length === 0) {
+      return undefined;
+    }
+    return { stories, docs };
+  }
+
+  /**
    * Returns the current map of removed-file snapshots keyed by absolute path.
    *
    * Each snapshot carries the file's story entries (exportName → {id}) plus
@@ -901,6 +926,19 @@ export class StoryIndexGenerator {
    */
   getRemovedFileSnapshots(): Map<Path, FileSnapshot> {
     return this.removedFileSnapshots;
+  }
+
+  /**
+   * Returns the current map of modified-file snapshots keyed by absolute
+   * path.
+   *
+   * Each snapshot captures the file's story/docs entries just before its
+   * cache entry was marked stale by `invalidate()` with `removed=false`.
+   * Rename detection compares this pre-change shape against the
+   * freshly-indexed entries to classify renamed vs. added/removed exports.
+   */
+  getModifiedFileSnapshots(): Map<Path, FileSnapshot> {
+    return this.modifiedFileSnapshots;
   }
 
   /** Clears all captured removed-file snapshots. Call after draining a cycle. */

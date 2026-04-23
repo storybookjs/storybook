@@ -58,4 +58,25 @@ describe('classifyFileChange', () => {
       orphans: ['button--primary'],
     });
   });
+
+  it('handles a mix of shared ID change, orphan, and ignored new export', () => {
+    const old: FileSnapshot = {
+      stories: {
+        Primary: { id: 'old--primary' },
+        Secondary: { id: 'old--secondary' },
+      },
+      docs: [],
+    };
+    const next: FileSnapshot = {
+      stories: {
+        Primary: { id: 'new--primary' }, // shared + id-changed → rename
+        Tertiary: { id: 'new--tertiary' }, // added → ignored
+      },
+      docs: [],
+    };
+    expect(classifyFileChange(old, next)).toEqual({
+      renames: [{ oldId: 'old--primary', newId: 'new--primary' }],
+      orphans: ['old--secondary'],
+    });
+  });
 });

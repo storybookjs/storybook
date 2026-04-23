@@ -1,13 +1,17 @@
-import type { StoryId } from '../../types/index.ts';
+import type { Path, StoryId } from '../../types/index.ts';
 import type { StoreOptions } from '../universal-store/types.ts';
 
 export type RenameRedirectChain = (StoryId | null)[];
 
 export type RenameRedirectState = {
   chains: Record<StoryId, RenameRedirectChain>;
+  origins: Record<StoryId, Path>;
 };
 
-export const INITIAL_RENAME_REDIRECT_STATE: RenameRedirectState = { chains: {} };
+export const INITIAL_RENAME_REDIRECT_STATE: RenameRedirectState = {
+  chains: {},
+  origins: {},
+};
 
 export const UNIVERSAL_RENAME_REDIRECT_STORE_OPTIONS: StoreOptions<RenameRedirectState> = {
   id: 'storybook/rename-redirect',
@@ -46,5 +50,5 @@ export function applyRenameChains(
     }
     chains[deletedId] = [...(chains[deletedId] ?? []), null];
   }
-  return { chains };
+  return { chains, origins: current.origins };
 }

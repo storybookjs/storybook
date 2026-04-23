@@ -159,6 +159,75 @@ describe('watchStorySpecifiers', () => {
     expect(onInvalidate).toHaveBeenCalledWith(`./src/nested/Button.mdx`, true);
   });
 
+  describe('rename detection', () => {
+    it('pairs rename-explanation remove + add events into a renameHint', async () => {
+      const specifier = normalizeStoriesEntry('../src/**/*.stories.@(ts|js)', options);
+
+      const onInvalidate = vi.fn();
+      close = watchStorySpecifiers([specifier], { workingDir }, onInvalidate);
+
+      const watcher = Watchpack.mock.instances[0];
+      const baseOnChange = watcher.on.mock.calls[0][1];
+      const onChange = (filename: string, ...args: any[]) =>
+        baseOnChange(abspath(filename), ...args);
+
+      // Simulate Watchpack firing both halves of a rename within the batch window
+      onChange('src/nested/Button.stories.ts', null, 'rename');
+      onChange('src/nested/Button-2.stories.ts', 1234, 'rename');
+      await flushEvents();
+
+      expect(onInvalidate).toHaveBeenCalledWith(`./src/nested/Button.stories.ts`, true, {
+        pairedWith: `./src/nested/Button-2.stories.ts`,
+      });
+      expect(onInvalidate).toHaveBeenCalledWith(`./src/nested/Button-2.stories.ts`, false);
+    });
+
+    it('produces no renameHint when multiple removals and additions arrive together', async () => {
+      const specifier = normalizeStoriesEntry('../src/**/*.stories.@(ts|js)', options);
+
+      const onInvalidate = vi.fn();
+      close = watchStorySpecifiers([specifier], { workingDir }, onInvalidate);
+
+      const watcher = Watchpack.mock.instances[0];
+      const baseOnChange = watcher.on.mock.calls[0][1];
+      const onChange = (filename: string, ...args: any[]) =>
+        baseOnChange(abspath(filename), ...args);
+
+      // Two rename pairs (folder rename) — ambiguous at this layer, defer disambiguation
+      onChange('src/nested/Button.stories.ts', null, 'rename');
+      onChange('src/nested/Other.stories.ts', null, 'rename');
+      onChange('src/nested/Button-2.stories.ts', 1234, 'rename');
+      onChange('src/nested/Other-2.stories.ts', 1234, 'rename');
+      await flushEvents();
+
+      // All four callbacks fire; multi-pair case is disambiguated later in index-json
+      expect(onInvalidate).toHaveBeenCalledTimes(4);
+      for (const call of onInvalidate.mock.calls) {
+        expect(call[2]).toBeUndefined();
+      }
+    });
+
+    it('does not emit a renameHint when the explanation is missing', async () => {
+      const specifier = normalizeStoriesEntry('../src/**/*.stories.@(ts|js)', options);
+
+      const onInvalidate = vi.fn();
+      close = watchStorySpecifiers([specifier], { workingDir }, onInvalidate);
+
+      const watcher = Watchpack.mock.instances[0];
+      const baseOnChange = watcher.on.mock.calls[0][1];
+      const onChange = (filename: string, ...args: any[]) =>
+        baseOnChange(abspath(filename), ...args);
+
+      // Legacy path: no explanation — existing behaviour must be unchanged
+      onChange('src/nested/Button.stories.ts', null);
+      onChange('src/nested/Button-2.stories.ts', 1234);
+      await flushEvents();
+
+      expect(onInvalidate).toHaveBeenCalledWith(`./src/nested/Button.stories.ts`, true);
+      expect(onInvalidate).toHaveBeenCalledWith(`./src/nested/Button-2.stories.ts`, false);
+    });
+  });
+
   it('multiplexes between two specifiers on the same directory', async () => {
     const globSpecifier = normalizeStoriesEntry('../src/**/*.stories.@(ts|js)', options);
     const fileSpecifier = normalizeStoriesEntry('../src/nested/Button.mdx', options);

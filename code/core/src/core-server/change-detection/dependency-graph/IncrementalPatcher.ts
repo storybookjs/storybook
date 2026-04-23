@@ -6,6 +6,7 @@ import { logger as defaultLogger } from 'storybook/internal/node-logger';
 
 import type { FileChangeEvent } from '../adapters/types.ts';
 import type { ParserRegistry } from '../parser-registry/index.ts';
+import { profiler } from '../profiling.ts';
 import type { ReverseIndexImpl } from './ReverseIndex.ts';
 import type { ChangeDetectionResolverFactory } from './ResolverFactory.ts';
 import type { DependencyGraph, ImportEdge } from './types.ts';
@@ -82,88 +83,97 @@ export class IncrementalPatcher {
 
   /** Apply a single FileChangeEvent. Idempotent — safe to call multiple times for the same event. */
   async patch(event: FileChangeEvent): Promise<void> {
-    const path = normalize(event.path);
-    if (event.kind === 'add') {
-      if (this.isStoryFile(path)) {
-        await this.walkFromStory(path);
+    profiler.patchStart({ kind: event.kind, path: event.path });
+    let storiesReWalked = 0;
+    try {
+      const path = normalize(event.path);
+      if (event.kind === 'add') {
+        if (this.isStoryFile(path)) {
+          storiesReWalked += 1;
+          await this.walkFromStory(path);
+        }
+        // non-story add: no-op until something imports it.
+        return;
       }
-      // non-story add: no-op until something imports it.
-      return;
-    }
 
-    if (event.kind === 'unlink') {
-      // Stories that previously reached `path`.
-      const dependents = Array.from(this.reverseIndex.lookup(path).keys());
-      this.graph.delete(path);
-      if (this.isStoryFile(path)) {
-        this.reverseIndex.removeStory(path);
-      } else {
-        // Remove path itself from index entries that referenced it.
+      if (event.kind === 'unlink') {
+        // Stories that previously reached `path`.
+        const dependents = Array.from(this.reverseIndex.lookup(path).keys());
+        this.graph.delete(path);
+        if (this.isStoryFile(path)) {
+          this.reverseIndex.removeStory(path);
+        } else {
+          // Remove path itself from index entries that referenced it.
+          for (const story of dependents) {
+            this.reverseIndex.removeEdge(path, story);
+          }
+        }
+        // Re-walk every story that previously reached `path` so transitive deps reachable only
+        // through `path` are pruned correctly.
         for (const story of dependents) {
-          this.reverseIndex.removeEdge(path, story);
+          if (story === path) {
+            continue;
+          }
+          if (this.isStoryFile(story)) {
+            this.reverseIndex.removeStory(story);
+            storiesReWalked += 1;
+            await this.walkFromStory(story);
+          }
+        }
+        return;
+      }
+
+      // 'change'
+      const previousDeps = this.graph.get(path) ?? new Set<string>();
+      const newEdges = await this.parseFile(path);
+      const newDeps = new Set<string>();
+      if (newEdges) {
+        for (const edge of newEdges) {
+          const resolved = await this.resolver.resolve(path, edge.specifier);
+          if (resolved === null) {
+            this.logger.warn(`Could not resolve ${edge.specifier} from ${path}`);
+            continue;
+          }
+          const normalised = normalize(resolved);
+          if (!isInScope(normalised, this.projectRoot, this.workspaceRoots)) {
+            continue;
+          }
+          newDeps.add(normalised);
         }
       }
-      // Re-walk every story that previously reached `path` so transitive deps reachable only
-      // through `path` are pruned correctly.
+      this.graph.set(path, newDeps);
+
+      // Stories whose dependency-set reaches `path`.
+      const dependents = Array.from(this.reverseIndex.lookup(path).keys());
+      if (this.isStoryFile(path) && !dependents.includes(path)) {
+        dependents.push(path);
+      }
+      if (dependents.length === 0) {
+        return;
+      }
+
+      const removedDeps = new Set<string>();
+      for (const dep of previousDeps) {
+        if (!newDeps.has(dep)) {
+          removedDeps.add(dep);
+        }
+      }
+
+      // For each story that reaches `path`: prune obsolete (dep, story) edges and re-walk to
+      // recompute depths through the new outgoing-edge set.
       for (const story of dependents) {
-        if (story === path) {
-          continue;
+        for (const removedDep of removedDeps) {
+          this.reverseIndex.removeEdge(removedDep, story);
         }
         if (this.isStoryFile(story)) {
+          // Conservative re-walk: clear the story's contribution from index then redo BFS.
           this.reverseIndex.removeStory(story);
+          storiesReWalked += 1;
           await this.walkFromStory(story);
         }
       }
-      return;
-    }
-
-    // 'change'
-    const previousDeps = this.graph.get(path) ?? new Set<string>();
-    const newEdges = await this.parseFile(path);
-    const newDeps = new Set<string>();
-    if (newEdges) {
-      for (const edge of newEdges) {
-        const resolved = await this.resolver.resolve(path, edge.specifier);
-        if (resolved === null) {
-          this.logger.warn(`Could not resolve ${edge.specifier} from ${path}`);
-          continue;
-        }
-        const normalised = normalize(resolved);
-        if (!isInScope(normalised, this.projectRoot, this.workspaceRoots)) {
-          continue;
-        }
-        newDeps.add(normalised);
-      }
-    }
-    this.graph.set(path, newDeps);
-
-    // Stories whose dependency-set reaches `path`.
-    const dependents = Array.from(this.reverseIndex.lookup(path).keys());
-    if (this.isStoryFile(path) && !dependents.includes(path)) {
-      dependents.push(path);
-    }
-    if (dependents.length === 0) {
-      return;
-    }
-
-    const removedDeps = new Set<string>();
-    for (const dep of previousDeps) {
-      if (!newDeps.has(dep)) {
-        removedDeps.add(dep);
-      }
-    }
-
-    // For each story that reaches `path`: prune obsolete (dep, story) edges and re-walk to
-    // recompute depths through the new outgoing-edge set.
-    for (const story of dependents) {
-      for (const removedDep of removedDeps) {
-        this.reverseIndex.removeEdge(removedDep, story);
-      }
-      if (this.isStoryFile(story)) {
-        // Conservative re-walk: clear the story's contribution from index then redo BFS.
-        this.reverseIndex.removeStory(story);
-        await this.walkFromStory(story);
-      }
+    } finally {
+      profiler.patchEnd({ storiesReWalked });
     }
   }
 

@@ -40,4 +40,22 @@ describe('classifyFileChange', () => {
       orphans: [],
     });
   });
+
+  it('emits an orphan for each removed export', () => {
+    const old: FileSnapshot = {
+      stories: {
+        Primary: { id: 'button--primary' },
+        Secondary: { id: 'button--secondary' },
+      },
+      docs: [],
+    };
+    const next: FileSnapshot = {
+      stories: { Secondary: { id: 'button--secondary' } },
+      docs: [],
+    };
+    expect(classifyFileChange(old, next)).toEqual({
+      renames: [],
+      orphans: ['button--primary'],
+    });
+  });
 });

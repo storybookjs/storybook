@@ -23,6 +23,8 @@ export function classifyFileChange(old: FileSnapshot, next: FileSnapshot): Class
       if (before.id !== after.id) {
         renames.push({ oldId: before.id, newId: after.id });
       }
+    } else {
+      orphans.push(before.id);
     }
   }
 

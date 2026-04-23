@@ -2438,7 +2438,10 @@ describe('StoryIndexGenerator', () => {
         const snapshots = generator.getRemovedFileSnapshots();
         const snapshot = snapshots.get(absolutePath);
         expect(snapshot).toBeDefined();
-        expect(snapshot).toEqual({ StoryOne: 'b--story-one' });
+        expect(snapshot).toEqual({
+          stories: { StoryOne: { id: 'b--story-one' } },
+          docs: [{ id: 'b--docs', name: 'docs' }],
+        });
       });
 
       it('clearRemovedFileSnapshots() empties the snapshot map', async () => {

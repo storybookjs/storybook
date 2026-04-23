@@ -9,6 +9,7 @@ import { debounce } from 'es-toolkit/function';
 import type { Polka, Request, Response } from 'polka';
 import Watchpack from 'watchpack';
 
+import type { FileSnapshot } from '../../shared/rename-redirect-store/classify.ts';
 import { renameRedirectStore } from '../stores/rename-redirect.ts';
 import { csfIndexer } from '../presets/common-preset.ts';
 import type { StoryIndexGeneratorOptions } from './StoryIndexGenerator.ts';
@@ -752,8 +753,17 @@ describe('resolveRenamePairs', () => {
 
   it('returns renames when fingerprints match', () => {
     const candidates = [{ oldPath: './src/A.stories.ts', newPath: './src/A-2.stories.ts' }];
-    const removedSnapshots = new Map<string, Record<string, string>>([
-      [join(wd, 'src/A.stories.ts'), { Primary: 'a--primary', Secondary: 'a--secondary' }],
+    const removedSnapshots = new Map<string, FileSnapshot>([
+      [
+        join(wd, 'src/A.stories.ts'),
+        {
+          stories: {
+            Primary: { id: 'a--primary' },
+            Secondary: { id: 'a--secondary' },
+          },
+          docs: [],
+        },
+      ],
     ]);
     const index = makeIndex({
       'a2--primary': {
@@ -783,8 +793,8 @@ describe('resolveRenamePairs', () => {
 
   it('drops candidates when fingerprints differ (conservative fallback)', () => {
     const candidates = [{ oldPath: './src/A.stories.ts', newPath: './src/A-2.stories.ts' }];
-    const removedSnapshots = new Map<string, Record<string, string>>([
-      [join(wd, 'src/A.stories.ts'), { Primary: 'a--primary' }],
+    const removedSnapshots = new Map<string, FileSnapshot>([
+      [join(wd, 'src/A.stories.ts'), { stories: { Primary: { id: 'a--primary' } }, docs: [] }],
     ]);
     const index = makeIndex({
       'a2--primary': {
@@ -808,8 +818,14 @@ describe('resolveRenamePairs', () => {
 
   it('aligns by export name regardless of entry order', () => {
     const candidates = [{ oldPath: './src/A.stories.ts', newPath: './src/A-2.stories.ts' }];
-    const removedSnapshots = new Map<string, Record<string, string>>([
-      [join(wd, 'src/A.stories.ts'), { First: 'a--first', Second: 'a--second' }],
+    const removedSnapshots = new Map<string, FileSnapshot>([
+      [
+        join(wd, 'src/A.stories.ts'),
+        {
+          stories: { First: { id: 'a--first' }, Second: { id: 'a--second' } },
+          docs: [],
+        },
+      ],
     ]);
     // New index has the entries in the opposite positional order
     const index = makeIndex({

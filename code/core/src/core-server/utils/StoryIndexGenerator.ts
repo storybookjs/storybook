@@ -36,6 +36,7 @@ import { resolveImport, supportedExtensions } from '../../common/index.ts';
 import { userOrAutoTitleFromSpecifier } from '../../preview-api/modules/store/autoTitle.ts';
 import { sortStoriesV7 } from '../../preview-api/modules/store/sortStories.ts';
 import { Tag } from '../../shared/constants/tags.ts';
+import type { FileSnapshot } from '../../shared/rename-redirect-store/classify.ts';
 import { IndexingError, MultipleIndexingError } from './IndexingError.ts';
 import { autoName } from './autoName.ts';
 import { type IndexStatsSummary, addStats } from './summarizeStats.ts';
@@ -120,11 +121,11 @@ export class StoryIndexGenerator {
 
   private invalidationListeners: Set<() => void> = new Set();
 
-  // Tracks export-name → story-ID maps for story files that were just removed
-  // or about to be replaced by a rename. Populated in `invalidate()` before the
-  // cache entry is deleted; drained by the orchestrator that writes rename
-  // redirect chains after re-indexing completes.
-  private removedFileSnapshots: Map<Path, Record<string, StoryId>> = new Map();
+  // Tracks snapshots of story files that were just removed or about to be
+  // replaced by a rename. Populated in `invalidate()` before the cache entry
+  // is deleted; drained by the orchestrator that writes rename redirect
+  // chains after re-indexing completes.
+  private removedFileSnapshots: Map<Path, FileSnapshot> = new Map();
 
   constructor(
     public readonly specifiers: NormalizedStoriesSpecifier[],
@@ -859,14 +860,17 @@ export class StoryIndexGenerator {
         );
       }
       if (cacheEntry && cacheEntry.type === 'stories') {
-        const snapshot: Record<string, StoryId> = {};
+        const stories: FileSnapshot['stories'] = {};
+        const docs: FileSnapshot['docs'] = [];
         for (const entry of cacheEntry.entries) {
           if (entry.type === 'story' && 'exportName' in entry && entry.exportName) {
-            snapshot[entry.exportName] = entry.id;
+            stories[entry.exportName] = { id: entry.id };
+          } else if (entry.type === 'docs') {
+            docs.push({ id: entry.id, name: entry.name });
           }
         }
-        if (Object.keys(snapshot).length > 0) {
-          this.removedFileSnapshots.set(absolutePath, snapshot);
+        if (Object.keys(stories).length > 0 || docs.length > 0) {
+          this.removedFileSnapshots.set(absolutePath, { stories, docs });
         }
       }
       delete cache[absolutePath];
@@ -888,12 +892,14 @@ export class StoryIndexGenerator {
   /**
    * Returns the current map of removed-file snapshots keyed by absolute path.
    *
-   * Each snapshot is a record of exportName → storyId captured just before the
-   * corresponding cache entry was deleted in `invalidate()`. The orchestrator
-   * that processes rename candidates calls this to learn both the old story
-   * IDs and the export-name fingerprint used to confirm rename pairs.
+   * Each snapshot carries the file's story entries (exportName → {id}) plus
+   * any docs entries, captured just before the corresponding cache entry was
+   * deleted in `invalidate()`. The orchestrator that processes rename
+   * candidates calls this to learn the old story IDs and the export-name
+   * fingerprint used to confirm rename pairs, and to surface docs entries
+   * in the followup 404 UI.
    */
-  getRemovedFileSnapshots(): Map<Path, Record<string, StoryId>> {
+  getRemovedFileSnapshots(): Map<Path, FileSnapshot> {
     return this.removedFileSnapshots;
   }
 

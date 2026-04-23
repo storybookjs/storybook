@@ -14,6 +14,7 @@ import type {
 import { debounce } from 'es-toolkit/function';
 import type { Polka } from 'polka';
 
+import type { FileSnapshot } from '../../shared/rename-redirect-store/classify.ts';
 import { extendRenameMaps } from '../../shared/rename-redirect-store/index.ts';
 import { renameRedirectStore } from '../stores/rename-redirect.ts';
 import type { StoryIndexGenerator } from './StoryIndexGenerator.ts';
@@ -34,7 +35,7 @@ export async function writeIndexJson(
 type RenameCandidate = { oldPath: Path; newPath: Path };
 
 /** Sorted export-name fingerprint string, used to match removed files to their new location. */
-function fingerprintOf(exportMap: Record<string, StoryId>): string {
+function fingerprintOf(exportMap: Record<string, unknown>): string {
   return Object.keys(exportMap).sort().join(',');
 }
 
@@ -50,7 +51,7 @@ function fingerprintOf(exportMap: Record<string, StoryId>): string {
  */
 export function resolveRenamePairs(
   candidates: RenameCandidate[],
-  removedSnapshots: Map<Path, Record<string, StoryId>>,
+  removedSnapshots: Map<Path, FileSnapshot>,
   index: StoryIndex,
   workingDir: string
 ): { renames: { oldId: StoryId; newId: StoryId }[]; unresolved: Path[] } {
@@ -77,14 +78,14 @@ export function resolveRenamePairs(
     const oldSnap = removedSnapshots.get(absOld);
     const newSnap = newExportsByPath.get(newPath);
 
-    if (!oldSnap || !newSnap || fingerprintOf(oldSnap) !== fingerprintOf(newSnap)) {
+    if (!oldSnap || !newSnap || fingerprintOf(oldSnap.stories) !== fingerprintOf(newSnap)) {
       unresolved.push(oldPath);
       continue;
     }
 
     // Align old/new story IDs by export name — robust against any reordering.
-    for (const exportName of Object.keys(oldSnap)) {
-      const oldId = oldSnap[exportName];
+    for (const exportName of Object.keys(oldSnap.stories)) {
+      const oldId = oldSnap.stories[exportName].id;
       const newId = newSnap[exportName];
       if (oldId && newId) {
         renames.push({ oldId, newId });
@@ -170,7 +171,9 @@ export function registerIndexJsonRoute({
         const absDeleted = resolve(workingDir, deletedPath);
         const snap = removedSnapshots.get(absDeleted);
         if (snap) {
-          deletedIds.push(...Object.values(snap));
+          for (const { id } of Object.values(snap.stories)) {
+            deletedIds.push(id);
+          }
         }
       }
 

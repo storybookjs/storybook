@@ -106,4 +106,14 @@ describe('extendRenameMaps', () => {
     expect(result.origins).toEqual({ 'orphan--x': './src/Orphan.stories.ts' });
     expect(result.chains).toEqual({});
   });
+
+  it('writes origin for a deletion alongside the null chain', () => {
+    const result = extendRenameMaps(INITIAL_RENAME_REDIRECT_STATE, {
+      renames: [],
+      orphans: [],
+      deletions: [{ id: 'gone--story', origin: './src/Gone.stories.ts' }],
+    });
+    expect(result.origins).toEqual({ 'gone--story': './src/Gone.stories.ts' });
+    expect(result.chains).toEqual({ 'gone--story': [null] });
+  });
 });

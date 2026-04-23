@@ -73,5 +73,11 @@ export function extendRenameMaps(
     chains[deletedId] = [...(chains[deletedId] ?? []), null];
   }
 
+  for (const { id, origin } of events.deletions) {
+    if (!(id in origins)) {
+      origins[id] = origin;
+    }
+  }
+
   return { chains, origins };
 }

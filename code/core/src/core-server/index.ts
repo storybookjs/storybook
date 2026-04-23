@@ -28,6 +28,8 @@ export {
 export {
   getChangeDetectionReadiness as experimental_getChangeDetectionReadiness,
   type ChangeDetectionReadiness as Experimental_ChangeDetectionReadiness,
+  ChangeDetectionFailureError,
+  ChangeDetectionUnavailableError,
 } from './change-detection/index.ts';
 export type {
   ChangeDetectionAdapter,

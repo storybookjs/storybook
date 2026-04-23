@@ -16,4 +16,28 @@ describe('classifyFileChange', () => {
     };
     expect(classifyFileChange(snapshot, snapshot)).toEqual({ renames: [], orphans: [] });
   });
+
+  it('emits renames for shared exports whose IDs changed (title rename)', () => {
+    const old: FileSnapshot = {
+      stories: {
+        Primary: { id: 'old--primary' },
+        Secondary: { id: 'old--secondary' },
+      },
+      docs: [],
+    };
+    const next: FileSnapshot = {
+      stories: {
+        Primary: { id: 'new--primary' },
+        Secondary: { id: 'new--secondary' },
+      },
+      docs: [],
+    };
+    expect(classifyFileChange(old, next)).toEqual({
+      renames: [
+        { oldId: 'old--primary', newId: 'new--primary' },
+        { oldId: 'old--secondary', newId: 'new--secondary' },
+      ],
+      orphans: [],
+    });
+  });
 });

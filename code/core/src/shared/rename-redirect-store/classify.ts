@@ -12,6 +12,19 @@ export type ClassifyResult = {
   orphans: StoryId[];
 };
 
-export function classifyFileChange(_old: FileSnapshot, _new: FileSnapshot): ClassifyResult {
-  return { renames: [], orphans: [] };
+export function classifyFileChange(old: FileSnapshot, next: FileSnapshot): ClassifyResult {
+  const renames: { oldId: StoryId; newId: StoryId }[] = [];
+  const orphans: StoryId[] = [];
+
+  for (const exportName of Object.keys(old.stories)) {
+    const before = old.stories[exportName];
+    const after = next.stories[exportName];
+    if (after) {
+      if (before.id !== after.id) {
+        renames.push({ oldId: before.id, newId: after.id });
+      }
+    }
+  }
+
+  return { renames, orphans };
 }

@@ -14,8 +14,14 @@ import type {
 import { debounce } from 'es-toolkit/function';
 import type { Polka } from 'polka';
 
+import { classifyFileChange } from '../../shared/rename-redirect-store/classify.ts';
 import type { FileSnapshot } from '../../shared/rename-redirect-store/classify.ts';
-import { extendRenameMaps } from '../../shared/rename-redirect-store/index.ts';
+import {
+  type Deletion,
+  type Orphan,
+  type Rename,
+  extendRenameMaps,
+} from '../../shared/rename-redirect-store/index.ts';
 import { renameRedirectStore } from '../stores/rename-redirect.ts';
 import type { StoryIndexGenerator } from './StoryIndexGenerator.ts';
 import { watchStorySpecifiers } from './watch-story-specifiers.ts';
@@ -128,13 +134,28 @@ export function registerIndexJsonRoute({
       channel.emit(STORY_INDEX_INVALIDATED);
       onStoryIndexInvalidated?.();
 
-      if (pendingRenameCandidates.length === 0 && pendingDeletions.length === 0) {
+      if (
+        pendingRenameCandidates.length === 0 &&
+        pendingDeletions.length === 0 &&
+        pendingModifications.length === 0
+      ) {
         return;
       }
 
       // Snapshot accumulators so the next cycle starts clean even if we throw.
       const renameCandidates = pendingRenameCandidates.splice(0);
       const deletions = pendingDeletions.splice(0);
+      let modifications = pendingModifications.splice(0);
+
+      // Same-path conflict: deletion (and rename-source) trump modification.
+      // A path that was both modified and deleted this cycle should only
+      // produce deletion events — classifying the stale snapshot as a
+      // modification would emit orphans we'd then null-chain anyway.
+      const deletionPaths = new Set(deletions);
+      const renameSourcePaths = new Set(renameCandidates.map((r) => r.oldPath));
+      modifications = modifications.filter(
+        (p) => !deletionPaths.has(p) && !renameSourcePaths.has(p)
+      );
 
       let generator: StoryIndexGenerator;
       let index: StoryIndex;
@@ -145,12 +166,15 @@ export function registerIndexJsonRoute({
         // Generator threw (e.g. indexing error). Discard snapshots and bail:
         // on the next successful index, the user will still see the existing
         // 404 if they happen to be on a renamed story.
-        (await storyIndexGeneratorPromise).clearRemovedFileSnapshots();
+        (await storyIndexGeneratorPromise).clearSnapshots();
         return;
       }
 
       const removedSnapshots = generator.getRemovedFileSnapshots();
-      const { renames, unresolved } = resolveRenamePairs(
+      const modifiedSnapshots = generator.getModifiedFileSnapshots();
+
+      // 1. File-rename pairs (existing file-rename path).
+      const { renames: fileRenamePairs, unresolved } = resolveRenamePairs(
         renameCandidates,
         removedSnapshots,
         index,
@@ -163,33 +187,97 @@ export function registerIndexJsonRoute({
         );
       }
 
-      // Only explicit removals (not unresolved rename candidates) become
-      // null-terminated "deletion" chains. A spurious deletion entry for a
-      // file that was actually renamed would render the specialised 404 by
-      // mistake, which is worse than the generic one.
-      const deletedIds: StoryId[] = [];
-      for (const deletedPath of deletions) {
-        const absDeleted = resolve(workingDir, deletedPath);
-        const snap = removedSnapshots.get(absDeleted);
-        if (snap) {
-          for (const { id } of Object.values(snap.stories)) {
-            deletedIds.push(id);
-          }
+      // Build a lookup from old story ID to the absolute source path so we
+      // can stamp each rename pair with its origin.
+      const candidateOriginByOldId = new Map<StoryId, Path>();
+      for (const { oldPath } of renameCandidates) {
+        const absOld = resolve(workingDir, oldPath);
+        const snap = removedSnapshots.get(absOld);
+        if (!snap) {
+          continue;
+        }
+        for (const { id } of Object.values(snap.stories)) {
+          candidateOriginByOldId.set(id, absOld);
         }
       }
 
-      generator.clearRemovedFileSnapshots();
+      const eventRenames: Rename[] = fileRenamePairs.map((pair) => ({
+        ...pair,
+        origin: candidateOriginByOldId.get(pair.oldId) ?? '',
+      }));
 
-      if (renames.length === 0 && deletedIds.length === 0) {
+      // 2. Unresolved file-rename candidates become orphans.
+      const eventOrphans: Orphan[] = [];
+      for (const oldPath of unresolved) {
+        const absOld = resolve(workingDir, oldPath);
+        const snap = removedSnapshots.get(absOld);
+        if (!snap) {
+          continue;
+        }
+        for (const { id } of Object.values(snap.stories)) {
+          eventOrphans.push({ id, origin: absOld });
+        }
+      }
+
+      // 3. Modifications — reconstruct a "new" FileSnapshot from the live
+      // index, compare to the pre-modification snapshot, and translate the
+      // classifier output into events.
+      for (const path of modifications) {
+        const absPath = resolve(workingDir, path);
+        const oldSnap = modifiedSnapshots.get(absPath);
+        if (!oldSnap) {
+          continue;
+        }
+
+        const newSnap: FileSnapshot = { stories: {}, docs: [] };
+        for (const entry of Object.values(index.entries)) {
+          if (entry.importPath !== path && entry.importPath !== absPath) {
+            continue;
+          }
+          if (entry.type === 'story') {
+            const exportName = (entry as { exportName?: string }).exportName;
+            if (exportName) {
+              newSnap.stories[exportName] = { id: entry.id };
+            }
+          } else if (entry.type === 'docs') {
+            newSnap.docs.push({ id: entry.id, name: entry.name });
+          }
+        }
+
+        const { renames, orphans } = classifyFileChange(oldSnap, newSnap);
+        for (const r of renames) {
+          eventRenames.push({ ...r, origin: absPath });
+        }
+        for (const id of orphans) {
+          eventOrphans.push({ id, origin: absPath });
+        }
+      }
+
+      // 4. Confirmed file deletions.
+      const eventDeletions: Deletion[] = [];
+      for (const deletedPath of deletions) {
+        const absDeleted = resolve(workingDir, deletedPath);
+        const snap = removedSnapshots.get(absDeleted);
+        if (!snap) {
+          continue;
+        }
+        for (const { id } of Object.values(snap.stories)) {
+          eventDeletions.push({ id, origin: absDeleted });
+        }
+      }
+
+      generator.clearSnapshots();
+
+      if (eventRenames.length === 0 && eventOrphans.length === 0 && eventDeletions.length === 0) {
         return;
       }
 
       await renameRedirectStore.untilReady();
       renameRedirectStore.setState((prev) =>
         extendRenameMaps(prev, {
-          renames: renames.map((r) => ({ ...r, origin: '' })),
-          orphans: [],
-          deletions: deletedIds.map((id) => ({ id, origin: '' })),
+          renames: eventRenames,
+          orphans: eventOrphans,
+          deletions: eventDeletions,
         })
       );
     },

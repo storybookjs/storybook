@@ -116,4 +116,18 @@ describe('extendRenameMaps', () => {
     expect(result.origins).toEqual({ 'gone--story': './src/Gone.stories.ts' });
     expect(result.chains).toEqual({ 'gone--story': [null] });
   });
+
+  it('never overwrites an existing origin (first-wins semantics)', () => {
+    const step1 = extendRenameMaps(INITIAL_RENAME_REDIRECT_STATE, {
+      renames: [{ oldId: 'a--x', newId: 'b--x', origin: './first.ts' }],
+      orphans: [],
+      deletions: [],
+    });
+    const step2 = extendRenameMaps(step1, {
+      renames: [{ oldId: 'a--x', newId: 'c--x', origin: './second.ts' }],
+      orphans: [],
+      deletions: [],
+    });
+    expect(step2.origins['a--x']).toBe('./first.ts');
+  });
 });

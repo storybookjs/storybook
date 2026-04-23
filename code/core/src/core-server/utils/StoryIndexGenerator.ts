@@ -896,7 +896,7 @@ export class StoryIndexGenerator {
    * snapshot paths so rename detection sees consistent pre-change state.
    */
   private captureSnapshot(cacheEntry: CacheEntry | undefined): FileSnapshot | undefined {
-    if (!cacheEntry || cacheEntry === false || cacheEntry.type !== 'stories') {
+    if (!cacheEntry || cacheEntry.type !== 'stories') {
       return undefined;
     }
     const stories: FileSnapshot['stories'] = {};

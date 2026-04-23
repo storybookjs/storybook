@@ -598,7 +598,7 @@ describe('stories API', () => {
         const selectStorySpy = vi.spyOn(api, 'selectStory').mockImplementation(() => {});
 
         const { renameRedirectStore } = await import('../stores/rename-redirect.ts');
-        renameRedirectStore.setState({ chains: { 'old--x': ['new--x'] } });
+        renameRedirectStore.setState({ chains: { 'old--x': ['new--x'] }, origins: {} });
 
         await api.setIndex({
           v: 5,
@@ -624,7 +624,7 @@ describe('stories API', () => {
         const selectStorySpy = vi.spyOn(api, 'selectStory').mockImplementation(() => {});
 
         const { renameRedirectStore } = await import('../stores/rename-redirect.ts');
-        renameRedirectStore.setState({ chains: { 'old--x': ['new--x'] } });
+        renameRedirectStore.setState({ chains: { 'old--x': ['new--x'] }, origins: {} });
 
         // New index does not contain new--x — indexing lag or mismatch
         await api.setIndex({ v: 5, entries: {} });
@@ -640,7 +640,7 @@ describe('stories API', () => {
         const selectStorySpy = vi.spyOn(api, 'selectStory').mockImplementation(() => {});
 
         const { renameRedirectStore } = await import('../stores/rename-redirect.ts');
-        renameRedirectStore.setState({ chains: { 'gone--x': [null] } });
+        renameRedirectStore.setState({ chains: { 'gone--x': [null] }, origins: {} });
 
         await api.setIndex({ v: 5, entries: {} });
 

@@ -334,6 +334,7 @@ export default {
     'internal_checklistStore',
     'internal_fullStatusStore',
     'internal_fullTestProviderStore',
+    'internal_renameRedirectStore',
     'internal_universalChecklistStore',
     'internal_universalStatusStore',
     'internal_universalTestProviderStore',

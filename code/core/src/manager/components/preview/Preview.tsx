@@ -2,9 +2,14 @@ import type { FC } from 'react';
 import React, { Fragment, useEffect, useRef, useState } from 'react';
 
 import { deprecate } from 'storybook/internal/client-logger';
-import { Loader, Placeholder, useTabsState } from 'storybook/internal/components';
+import { Loader, useTabsState } from 'storybook/internal/components';
 import { PREVIEW_BUILDER_PROGRESS, SET_CURRENT_STORY } from 'storybook/internal/core-events';
-import type { Addon_BaseType, Addon_WrapperType } from 'storybook/internal/types';
+import type {
+  API_DocsEntry,
+  API_StoryEntry,
+  Addon_BaseType,
+  Addon_WrapperType,
+} from 'storybook/internal/types';
 
 import { global } from '@storybook/global';
 
@@ -18,9 +23,9 @@ import {
   merge,
   types,
 } from 'storybook/manager-api';
-import { styled } from 'storybook/theming';
 
 import { useLandmark } from '../../hooks/useLandmark.ts';
+import { FollowupOverlay, type FollowupOverlayProps } from './FollowupOverlay.tsx';
 import { FramesRenderer } from './FramesRenderer.tsx';
 import { ToolbarComp } from './Toolbar.tsx';
 import { ApplyWrappers } from './Wrappers.tsx';
@@ -28,20 +33,61 @@ import { ZoomConsumer, ZoomProvider } from './tools/zoom.tsx';
 import * as S from './utils/components.ts';
 import type { PreviewProps } from './utils/types.tsx';
 
+type Followup = {
+  heading: FollowupOverlayProps['heading'];
+  siblings: API_StoryEntry[];
+  docsEntry?: API_DocsEntry;
+};
+
 /**
- * Whether the current `storyId` is a story we know was deleted during this
- * session. This is true when the story is absent from the live index AND the
- * rename-redirect store has a chain for it that ends in `null`. When true, the
- * manager renders a specialised deletion notice instead of the generic "No
- * Preview" UI in the iframe.
+ * Derive the 404 followup overlay payload for the current `storyId`. Returns
+ * undefined when the story is present in the index or when the
+ * rename-redirect store has no record of this ID (falling back to the
+ * existing generic "No Preview" UI). When a followup is returned, the
+ * heading switches to "This story was deleted" if the chain terminates in a
+ * confirmed deletion (null tail); otherwise it reads "This story is no
+ * longer here".
  */
-const isKnownDeletion = (storyId: string | undefined, entry: unknown) => {
+const deriveFollowup = ({
+  storyId,
+  entry,
+  index,
+}: {
+  storyId: string | undefined;
+  entry: unknown;
+  index: Combo['state']['internal_index'];
+}): Followup | undefined => {
   if (!storyId || entry) {
-    return false;
+    return undefined;
   }
-  const { chains } = renameRedirectStore.getState();
+  const { chains, origins } = renameRedirectStore.getState();
+  const originPath = origins[storyId];
+  if (!originPath) {
+    return undefined;
+  }
+
+  const entries = index?.entries ?? {};
+  const siblings: API_StoryEntry[] = [];
+  let docsEntry: API_DocsEntry | undefined;
+  for (const e of Object.values(entries)) {
+    if (e.importPath !== originPath) {
+      continue;
+    }
+    if (e.type === 'story') {
+      siblings.push(e as unknown as API_StoryEntry);
+    } else if (e.type === 'docs' && !docsEntry) {
+      docsEntry = e as unknown as API_DocsEntry;
+    }
+  }
+
   const chain = chains[storyId];
-  return chain !== undefined && chain.length > 0 && chain[chain.length - 1] === null;
+  const isKnownDeletion =
+    chain !== undefined && chain.length > 0 && chain[chain.length - 1] === null;
+  const heading: FollowupOverlayProps['heading'] = isKnownDeletion
+    ? 'This story was deleted'
+    : 'This story is no longer here';
+
+  return { heading, siblings, docsEntry };
 };
 
 const canvasMapper = ({ state, api }: Combo) => {
@@ -57,19 +103,9 @@ const canvasMapper = ({ state, api }: Combo) => {
     entry,
     previewInitialized: state.previewInitialized,
     refs: state.refs,
-    isKnownDeletion: isKnownDeletion(state.storyId, entry),
+    followup: deriveFollowup({ storyId: state.storyId, entry, index: state.internal_index }),
   };
 };
-
-const DeletionOverlay = styled.div(({ theme }) => ({
-  position: 'absolute',
-  inset: 0,
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  background: theme.background.content,
-  zIndex: 2,
-}));
 
 export const createCanvasTab = (): Addon_BaseType => ({
   id: 'canvas',
@@ -208,7 +244,7 @@ const Canvas: FC<{
         viewMode,
         queryParams,
         previewInitialized,
-        isKnownDeletion: storyWasDeleted,
+        followup,
       }) => {
         const id = 'canvas';
 
@@ -262,13 +298,13 @@ const Canvas: FC<{
                       />
                     )}
                   </ApplyWrappers>
-                  {storyWasDeleted && (
-                    <DeletionOverlay role="status">
-                      <Placeholder>
-                        This story was deleted.
-                        <>The file it lived in has been removed during this session.</>
-                      </Placeholder>
-                    </DeletionOverlay>
+                  {followup && (
+                    <FollowupOverlay
+                      heading={followup.heading}
+                      siblings={followup.siblings}
+                      docsEntry={followup.docsEntry}
+                      onSelect={(id) => api.selectStory(id)}
+                    />
                   )}
                 </>
               );

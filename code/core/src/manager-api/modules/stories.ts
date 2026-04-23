@@ -61,6 +61,7 @@ import {
 import type { ModuleFn } from '../lib/types.tsx';
 import { buildNavigationUrl } from '../lib/url.ts';
 import type { ComposedRef } from '../root.tsx';
+import { renameRedirectStore } from '../stores/rename-redirect.ts';
 import { fullStatusStore } from '../stores/status.ts';
 import { computeStatusFilterFn, parseStatusesParam, serializeStatusesParam } from './statuses.ts';
 import {
@@ -732,6 +733,25 @@ export const init: ModuleFn<SubAPI, SubState> = ({
         index: addPreparedStories(newHash, oldHash),
         indexError: undefined,
       });
+
+      // Rename redirect: if the story the user was viewing is missing from the
+      // new index, consult the rename store. A chain that ends in a valid ID
+      // present in the new index means the file was renamed — navigate the
+      // user there. Chains ending in null (known deletion) or a target that
+      // is not in the new index (indexing lag) fall through to the existing
+      // 404 behaviour — the rename store is read synchronously here at the
+      // single moment both the new index and the store are guaranteed live.
+      const { storyId: currentStoryId } = store.getState();
+      if (currentStoryId && !input.entries[currentStoryId]) {
+        const { chains } = renameRedirectStore.getState();
+        const chain = chains[currentStoryId];
+        if (chain !== undefined && chain.length > 0) {
+          const last = chain[chain.length - 1];
+          if (last !== null && input.entries[last]) {
+            api.selectStory(last);
+          }
+        }
+      }
     },
     // FIXME: is there a bug where filtered stories get added back in on updateStory???
     updateStory: async (

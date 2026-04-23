@@ -26,7 +26,7 @@ jobs:
     if: ${{ needs.branch-checks.outputs.is-latest-branch == 'true' }}
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
 
       - run: curl -X POST "https://api.netlify.com/build_hooks/${FRONTPAGE_HOOK}"
         env:
@@ -37,7 +37,7 @@ jobs:
     if: ${{ needs.branch-checks.outputs.is-next-branch == 'true' || needs.branch-checks.outputs.is-release-branch == 'true' }}
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
         with:
           ref: next
           path: next
@@ -59,7 +59,7 @@ jobs:
     if: ${{ needs.branch-checks.outputs.is-next-branch == 'true' }}
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
         with:
           fetch-depth: 0
 

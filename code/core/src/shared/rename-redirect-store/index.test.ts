@@ -24,4 +24,16 @@ describe('applyRenameChains', () => {
       'b--x': ['c--x'],
     });
   });
+
+  it('drops entries where chain last element equals source key (round-trip)', () => {
+    const step1 = applyRenameChains(
+      INITIAL_RENAME_REDIRECT_STATE,
+      [{ oldId: 'a--x', newId: 'b--x' }],
+      []
+    );
+    const step2 = applyRenameChains(step1, [{ oldId: 'b--x', newId: 'a--x' }], []);
+    // a--x chain becomes ['b--x', 'a--x'] — last equals source — drop.
+    // b--x chain becomes ['a--x'] — last does not equal source — keep.
+    expect(step2.chains).toEqual({ 'b--x': ['a--x'] });
+  });
 });

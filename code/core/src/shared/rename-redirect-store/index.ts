@@ -30,6 +30,12 @@ export function applyRenameChains(
       }
     }
     chains[oldId] = [...(chains[oldId] ?? []), newId];
+    for (const source of Object.keys(chains)) {
+      const chain = chains[source];
+      if (chain.length > 0 && chain[chain.length - 1] === source) {
+        delete chains[source];
+      }
+    }
   }
   return { chains };
 }

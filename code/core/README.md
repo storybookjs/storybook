@@ -33,6 +33,6 @@ The `storybook` package contains Storybook's core. It includes:
 - User-facing utility libraries such as `storybook/test`, `theming`, and `viewport`
 - Libraries used by Storybook's ecosystem of frameworks, addons, and builders
 
-It also contains a variety of other libraries and utilities under the `stroybook/internal` namespace, such as utilities for CSF, MDX & Docs.
+It also contains a variety of other libraries and utilities under the `storybook/internal` namespace, such as utilities for CSF, MDX & Docs.
 
 Learn more about Storybook at [storybook.js.org](https://storybook.js.org/?ref=readme).

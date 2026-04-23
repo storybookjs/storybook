@@ -1,4 +1,5 @@
 import { logConfig, normalizeStories } from 'storybook/internal/common';
+import { DOCS_PREPARED, STORY_RENDERED } from 'storybook/internal/core-events';
 import { logger } from 'storybook/internal/node-logger';
 import { MissingBuilderError } from 'storybook/internal/server-errors';
 import { CHANGE_DETECTION_STATUS_TYPE_ID } from 'storybook/internal/types';
@@ -7,8 +8,9 @@ import type { Options } from 'storybook/internal/types';
 import compression from '@polka/compression';
 import polka from 'polka';
 
-import { telemetry } from '../telemetry/index.ts';
+import { isTelemetryModuleEnabled, telemetry } from '../telemetry/index.ts';
 import { ChangeDetectionService } from './change-detection/index.ts';
+import { setChangeDetectionReadiness } from './change-detection/readiness.ts';
 import { getStatusStoreByTypeId } from './stores/status.ts';
 import type { StoryIndexGenerator } from './utils/StoryIndexGenerator.ts';
 import { doTelemetry } from './utils/doTelemetry.ts';
@@ -47,6 +49,12 @@ export async function storybookDevServer(
   const storyIndexGeneratorPromise =
     options.presets.apply<StoryIndexGenerator>('storyIndexGenerator');
 
+  const changeDetectionService = new ChangeDetectionService({
+    storyIndexGeneratorPromise,
+    statusStore: getStatusStoreByTypeId(CHANGE_DETECTION_STATUS_TYPE_ID),
+    workingDir,
+  });
+
   app.use(compression({ level: 1 }));
 
   if (typeof options.extendServer === 'function') {
@@ -71,6 +79,7 @@ export async function storybookDevServer(
     channel: options.channel,
     workingDir,
     configDir,
+    onStoryIndexInvalidated: () => changeDetectionService.onStoryIndexInvalidated(),
   });
 
   (await getMiddleware(options.configDir))(app);
@@ -115,12 +124,9 @@ export async function storybookDevServer(
     await Promise.resolve();
 
   if (!options.ignorePreview) {
-    const changeDetectionService = new ChangeDetectionService({
-      storyIndexGeneratorPromise,
-      statusStore: getStatusStoreByTypeId(CHANGE_DETECTION_STATUS_TYPE_ID),
-      workingDir,
-    });
-    changeDetectionService.start(previewBuilder.onModuleGraphChange, features?.changeDetection);
+    if (!features.changeDetection) {
+      changeDetectionService.start(previewBuilder.onModuleGraphChange, false);
+    }
 
     logger.debug('Starting preview..');
     previewResult = await previewBuilder
@@ -146,6 +152,29 @@ export async function storybookDevServer(
         // re-throw the error
         throw e;
       });
+
+    if (features.changeDetection) {
+      let changeDetectionStarted = false;
+      const startChangeDetection = () => {
+        if (changeDetectionStarted) {
+          return;
+        }
+        try {
+          changeDetectionStarted = true;
+          changeDetectionService.start(previewBuilder.onModuleGraphChange, true);
+        } catch (error) {
+          logger.error('Failed to start change detection');
+          logger.error(error instanceof Error ? error : String(error));
+          setChangeDetectionReadiness({
+            status: 'error',
+            error: error instanceof Error ? error : new Error(String(error)),
+          });
+        }
+      };
+
+      options.channel.once(STORY_RENDERED, startChangeDetection);
+      options.channel.once(DOCS_PREPARED, startChangeDetection);
+    }
   }
 
   const listening = new Promise<void>((resolve, reject) => {
@@ -175,26 +204,32 @@ export async function storybookDevServer(
   doTelemetry(app, core, storyIndexGeneratorPromise, options);
 
   async function cancelTelemetry() {
-    const payload = { eventType: 'dev' };
     try {
-      const generator = await storyIndexGeneratorPromise;
-      const indexAndStats = await generator?.getIndexAndStats();
-      // compute stats so we can get more accurate story counts
-      if (indexAndStats) {
-        Object.assign(payload, {
-          storyIndex: summarizeIndex(indexAndStats.storyIndex),
-          storyStats: indexAndStats.stats,
-        });
+      if (!isTelemetryModuleEnabled()) {
+        return;
       }
-    } catch {}
-    await telemetry('canceled', payload, { immediate: true });
-    process.exit(0);
+
+      const payload = { eventType: 'dev' };
+      try {
+        const generator = await storyIndexGeneratorPromise;
+        const indexAndStats = await generator?.getIndexAndStats();
+        // compute stats so we can get more accurate story counts
+        if (indexAndStats) {
+          Object.assign(payload, {
+            storyIndex: summarizeIndex(indexAndStats.storyIndex),
+            storyStats: indexAndStats.stats,
+          });
+        }
+      } catch {}
+      await telemetry('canceled', payload, { immediate: true });
+    } finally {
+      // Always terminate on signal, even when telemetry is disabled.
+      process.exit(0);
+    }
   }
 
-  if (!core?.disableTelemetry) {
-    process.on('SIGINT', cancelTelemetry);
-    process.on('SIGTERM', cancelTelemetry);
-  }
+  process.on('SIGINT', cancelTelemetry);
+  process.on('SIGTERM', cancelTelemetry);
 
   return { previewResult, managerResult };
 }

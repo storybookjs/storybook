@@ -2111,9 +2111,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@chromatic-com/storybook@npm:^5.0.0":
-  version: 5.0.0
-  resolution: "@chromatic-com/storybook@npm:5.0.0"
+"@chromatic-com/storybook@npm:^5.1.2":
+  version: 5.1.2
+  resolution: "@chromatic-com/storybook@npm:5.1.2"
   dependencies:
     "@neoconfetti/react": "npm:^1.0.0"
     chromatic: "npm:^13.3.4"
@@ -2121,8 +2121,8 @@ __metadata:
     jsonfile: "npm:^6.1.0"
     strip-ansi: "npm:^7.1.0"
   peerDependencies:
-    storybook: ^0.0.0-0 || ^10.1.0 || ^10.1.0-0 || ^10.2.0-0 || ^10.3.0-0
-  checksum: 10c0/8e4dcba6c70b2943a5b68fd3d690084328844d757fffccef26adebf1eadfc3b0d2fee80280e57c40d6897dee3ab9c6c202de46eb1de39991d316df5e36b4fe89
+    storybook: ^0.0.0-0 || ^10.1.0 || ^10.1.0-0 || ^10.2.0-0 || ^10.3.0-0 || ^10.4.0-0
+  checksum: 10c0/0d21aab34eef8dea756d7a510fd78227379751e23d9cedac127161442eb96622f302e0b8f71a78f1254b31a26ee5350e328e4c994909d28553dbe74174d606e1
   languageName: node
   linkType: hard
 
@@ -8156,7 +8156,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@storybook/code@workspace:code"
   dependencies:
-    "@chromatic-com/storybook": "npm:^5.0.0"
+    "@chromatic-com/storybook": "npm:^5.1.2"
     "@playwright/test": "npm:1.58.2"
     "@storybook/addon-a11y": "workspace:*"
     "@storybook/addon-designs": "npm:^11.0.3"
@@ -8823,6 +8823,7 @@ __metadata:
     sort-package-json: "npm:^3.5.0"
     tiny-invariant: "npm:^1.3.3"
     tinyexec: "npm:^0.3.0"
+    tinyglobby: "npm:^0.2.15"
     trash: "npm:^7.2.0"
     ts-dedent: "npm:^2.2.0"
     type-fest: "npm:~2.19"
@@ -11998,6 +11999,13 @@ __metadata:
   version: 0.0.2
   resolution: "argv@npm:0.0.2"
   checksum: 10c0/13b7a94bf690b8cf04dcaac0c70b631df10de8a1eeb701f31c85abe46a60db449c1e3330e92ef00ffe2a709a5b35baf815e52cc4b8cbe495829c90ceb3e3e30f
+  languageName: node
+  linkType: hard
+
+"aria-live-capture@npm:^2.0.0":
+  version: 2.0.0
+  resolution: "aria-live-capture@npm:2.0.0"
+  checksum: 10c0/c706051c507320908d48b014bfd90ad225ad7104e3eb359c317e75f13888c7ef55a4c1b7cefdece9a28164774ad1ff4fd83cb492ea5c5fecd8172697144b12a8
   languageName: node
   linkType: hard
 
@@ -17254,6 +17262,15 @@ __metadata:
   version: 1.0.8
   resolution: "exsolve@npm:1.0.8"
   checksum: 10c0/65e44ae05bd4a4a5d87cfdbbd6b8f24389282cf9f85fa5feb17ca87ad3f354877e6af4cd99e02fc29044174891f82d1d68c77f69234410eb8f163530e6278c67
+  languageName: node
+  linkType: hard
+
+"extend-to-be-announced@npm:^2.0.0":
+  version: 2.0.0
+  resolution: "extend-to-be-announced@npm:2.0.0"
+  dependencies:
+    aria-live-capture: "npm:^2.0.0"
+  checksum: 10c0/8ad88d8711ce69ec60384f1febae31d7e5fcc2c63d7340d217800bcd5a43e906da1861243fc572d3b7a0484227502d037b38a6d55f397d8e0aa497cb682c23aa
   languageName: node
   linkType: hard
 
@@ -28566,6 +28583,7 @@ __metadata:
     "@radix-ui/react-slot": "npm:^1.0.2"
     "@react-aria/interactions": "npm:^3.25.5"
     "@react-aria/landmark": "npm:^3.0.8"
+    "@react-aria/live-announcer": "npm:^3.4.4"
     "@react-aria/overlays": "npm:^3.29.1"
     "@react-aria/tabs": "npm:^3.10.7"
     "@react-aria/toolbar": "npm:3.0.0-beta.20"
@@ -28624,6 +28642,7 @@ __metadata:
     esbuild: "npm:^0.18.0 || ^0.19.0 || ^0.20.0 || ^0.21.0 || ^0.22.0 || ^0.23.0 || ^0.24.0 || ^0.25.0 || ^0.26.0 || ^0.27.0"
     execa: "npm:^9.6.1"
     exsolve: "npm:^1.0.7"
+    extend-to-be-announced: "npm:^2.0.0"
     fetch-retry: "npm:^6.0.0"
     flush-promises: "npm:^1.0.2"
     fuse.js: "npm:^3.6.1"
@@ -28690,8 +28709,11 @@ __metadata:
     zod: "npm:^3.25.76"
   peerDependencies:
     prettier: ^2 || ^3
+    vite-plus: ^0.1.15
   peerDependenciesMeta:
     prettier:
+      optional: true
+    vite-plus:
       optional: true
   bin:
     storybook: ./dist/bin/dispatcher.js
@@ -32017,8 +32039,8 @@ __metadata:
   linkType: hard
 
 "ws@npm:^8.18.0, ws@npm:^8.19.0":
-  version: 8.19.0
-  resolution: "ws@npm:8.19.0"
+  version: 8.20.0
+  resolution: "ws@npm:8.20.0"
   peerDependencies:
     bufferutil: ^4.0.1
     utf-8-validate: ">=5.0.2"
@@ -32027,7 +32049,7 @@ __metadata:
       optional: true
     utf-8-validate:
       optional: true
-  checksum: 10c0/4741d9b9bc3f9c791880882414f96e36b8b254e34d4b503279d6400d9a4b87a033834856dbdd94ee4b637944df17ea8afc4bce0ff4a1560d2166be8855da5b04
+  checksum: 10c0/956ac5f11738c914089b65878b9223692ace77337ba55379ae68e1ecbeae9b47a0c6eb9403688f609999a58c80d83d99865fe0029b229d308b08c1ef93d4ea14
   languageName: node
   linkType: hard
 

@@ -38,7 +38,7 @@ export class AddonConfigurationCommand {
     readonly packageManager: JsPackageManager,
     private readonly commandOptions: CommandOptions,
     private readonly addonVitestService = new AddonVitestService(packageManager),
-    private readonly telemetryService = new TelemetryService(commandOptions.disableTelemetry)
+    private readonly telemetryService = new TelemetryService()
   ) {}
 
   /** Execute addon configuration */

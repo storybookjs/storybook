@@ -1,9 +1,10 @@
 import React from 'react';
 
-import type {
-  DecoratorFunction,
-  StatusValue,
-  StatusesByStoryIdAndTypeId,
+import {
+  CHANGE_DETECTION_STATUS_TYPE_ID,
+  type DecoratorFunction,
+  type StatusValue,
+  type StatusesByStoryIdAndTypeId,
 } from 'storybook/internal/types';
 
 import { global } from '@storybook/global';
@@ -542,8 +543,8 @@ export const StatusesNew: Story = {
       return {
         ...acc,
         [id]: {
-          addonA: {
-            typeId: 'addonA',
+          [CHANGE_DETECTION_STATUS_TYPE_ID]: {
+            typeId: CHANGE_DETECTION_STATUS_TYPE_ID,
             storyId: id,
             value: 'status-value:new' as StatusValue,
             title: 'Change Detection',
@@ -563,8 +564,8 @@ export const StatusesModified: Story = {
       return {
         ...acc,
         [id]: {
-          addonA: {
-            typeId: 'addonA',
+          [CHANGE_DETECTION_STATUS_TYPE_ID]: {
+            typeId: CHANGE_DETECTION_STATUS_TYPE_ID,
             storyId: id,
             value: 'status-value:modified' as StatusValue,
             title: 'Change Detection',
@@ -584,8 +585,8 @@ export const StatusesAffected: Story = {
       return {
         ...acc,
         [id]: {
-          addonA: {
-            typeId: 'addonA',
+          [CHANGE_DETECTION_STATUS_TYPE_ID]: {
+            typeId: CHANGE_DETECTION_STATUS_TYPE_ID,
             storyId: id,
             value: 'status-value:affected' as StatusValue,
             title: 'Change Detection',
@@ -613,8 +614,8 @@ export const StatusesMixed: Story = {
       return {
         ...acc,
         [id]: {
-          addonA: {
-            typeId: 'addonA',
+          [CHANGE_DETECTION_STATUS_TYPE_ID]: {
+            typeId: CHANGE_DETECTION_STATUS_TYPE_ID,
             storyId: id,
             value,
             title: 'Change Detection',
@@ -644,8 +645,8 @@ export const StatusesChangeDetectionPriority: Story = {
       return {
         ...acc,
         [id]: {
-          addonA: {
-            typeId: 'addonA',
+          [CHANGE_DETECTION_STATUS_TYPE_ID]: {
+            typeId: CHANGE_DETECTION_STATUS_TYPE_ID,
             storyId: id,
             value,
             title: 'Change Detection',

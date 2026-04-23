@@ -1,24 +1,19 @@
-import type { ComponentProps, FC, MutableRefObject } from 'react';
+import type { MutableRefObject } from 'react';
 import React, { useCallback, useMemo, useRef } from 'react';
 
 import { Button, ListItem } from 'storybook/internal/components';
 import { PRELOAD_ENTRIES } from 'storybook/internal/core-events';
-import type { StatusValue } from 'storybook/internal/types';
+
 import {
+  CHANGE_DETECTION_STATUS_TYPE_ID,
   type API_HashEntry,
   type StatusByTypeId,
   type StatusesByStoryIdAndTypeId,
+  type StatusValue,
   type StoryId,
 } from 'storybook/internal/types';
 
-import {
-  CollapseIcon as CollapseIconSvg,
-  ExpandAltIcon,
-  StatusFailIcon,
-  StatusPassIcon,
-  StatusWarnIcon,
-  SyncIcon,
-} from '@storybook/icons';
+import { CollapseIcon as CollapseIconSvg, ExpandAltIcon } from '@storybook/icons';
 
 import { internal_fullStatusStore as fullStatusStore } from '#manager-stores';
 import { darken } from 'polished';
@@ -34,7 +29,14 @@ import { styled, useTheme } from 'storybook/theming';
 
 import type { Link } from '../../../components/components/tooltip/TooltipLinkList.tsx';
 import { MEDIA_DESKTOP_BREAKPOINT } from '../../constants.ts';
-import { getGroupStatus, getMostCriticalStatusValue, getStatus } from '../../utils/status.tsx';
+import {
+  getChangeDetectionStatus,
+  getGroupDualStatus,
+  getGroupStatus,
+  getMostCriticalStatusValue,
+  getStatus,
+  statusPriority,
+} from '../../utils/status.tsx';
 import {
   createId,
   getAncestorIds,
@@ -147,6 +149,18 @@ const SkipToContentLink = styled(Button)(({ theme }) => ({
   },
 }));
 
+const StatusSlots = styled.div({
+  display: 'flex',
+  alignItems: 'center',
+});
+
+export const ContextMenu = {
+  ListItem,
+};
+
+const getStatusLabel = (status: StatusValue) =>
+  status.split(':')[1].replace(/^./, (char) => char.toUpperCase());
+
 interface NodeProps {
   item: Item;
   refId: string;
@@ -160,59 +174,16 @@ interface NodeProps {
   setFullyExpanded?: () => void;
   onSelectStoryId: (itemId: string) => void;
   statuses: StatusByTypeId;
-  groupStatus: Record<StoryId, StatusValue>;
+  groupDualStatus: Record<StoryId, { change: StatusValue; test: StatusValue }>;
   api: API;
   collapsedData: Record<string, API_HashEntry>;
 }
-
-const SuccessStatusIcon: FC<ComponentProps<typeof StatusPassIcon>> = (props) => {
-  const theme = useTheme();
-  return <StatusPassIcon {...props} color={theme.color.positive} />;
-};
-
-const ErrorStatusIcon: FC<ComponentProps<typeof StatusFailIcon>> = (props) => {
-  const theme = useTheme();
-  return <StatusFailIcon {...props} color={theme.color.negative} />;
-};
-
-const WarnStatusIcon: FC<ComponentProps<typeof StatusWarnIcon>> = (props) => {
-  const theme = useTheme();
-  return <StatusWarnIcon {...props} color={theme.color.warning} />;
-};
-
-const PendingStatusIcon: FC<ComponentProps<typeof SyncIcon>> = (props) => {
-  const theme = useTheme();
-  return <SyncIcon {...props} size={12} color={theme.color.defaultText} />;
-};
-
-const StatusIconMap: Record<StatusValue, React.ReactNode | null> = {
-  'status-value:success': <SuccessStatusIcon />,
-  'status-value:error': <ErrorStatusIcon />,
-  'status-value:warning': <WarnStatusIcon />,
-  'status-value:pending': <PendingStatusIcon />,
-  'status-value:new': null,
-  'status-value:modified': null,
-  'status-value:affected': null,
-  'status-value:unknown': null,
-};
-
-export const ContextMenu = {
-  ListItem,
-};
-
-const statusOrder: StatusValue[] = [
-  'status-value:success',
-  'status-value:error',
-  'status-value:warning',
-  'status-value:pending',
-  'status-value:unknown',
-];
 
 const Node = React.memo<NodeProps>(function Node(props) {
   const {
     item,
     statuses,
-    groupStatus,
+    groupDualStatus,
     refId,
     docsMode,
     isOrphan,
@@ -228,21 +199,17 @@ const Node = React.memo<NodeProps>(function Node(props) {
   const theme = useTheme();
   const { isDesktop, isMobile, setMobileMenuOpen } = useLayout();
 
-  if (!isDisplayed) {
-    return null;
-  }
-
   const statusLinks = useMemo<Link[]>(() => {
     if (item.type === 'story' || item.type === 'docs') {
       return Object.entries(statuses)
         .filter(([, status]) => status.sidebarContextMenu !== false)
-        .sort((a, b) => statusOrder.indexOf(a[1].value) - statusOrder.indexOf(b[1].value))
+        .sort((a, b) => statusPriority.indexOf(a[1].value) - statusPriority.indexOf(b[1].value))
         .map(([typeId, status]) => ({
           id: typeId,
           title: status.title,
           description: status.description,
           'aria-label': `Test status for ${status.title}: ${status.value}`,
-          icon: StatusIconMap[status.value],
+          icon: getStatus(theme, status.value).icon,
           onClick: () => {
             onSelectStoryId(item.id);
             fullStatusStore.selectStatuses([status]);
@@ -251,13 +218,14 @@ const Node = React.memo<NodeProps>(function Node(props) {
     }
 
     return [];
-  }, [item.id, item.type, onSelectStoryId, statuses]);
+  }, [item.id, item.type, onSelectStoryId, statuses, theme]);
+
+  let contextMenu = useContextMenu(item, statusLinks, api);
+  if (refId !== 'storybook_internal') {
+    contextMenu = { node: null, onMouseEnter: () => {} };
+  }
 
   const id = createId(item.id, refId);
-  const contextMenu =
-    refId === 'storybook_internal'
-      ? useContextMenu(item, statusLinks, api)
-      : { node: null, onMouseEnter: () => {} };
 
   if (
     (item.type === 'story' &&
@@ -267,10 +235,14 @@ const Node = React.memo<NodeProps>(function Node(props) {
   ) {
     const LeafNode = item.type === 'docs' ? DocumentNode : StoryLeafNode;
 
-    const statusValue = getMostCriticalStatusValue(
-      Object.values(statuses || {}).map((s) => s.value)
-    );
-    const { icon, textColor } = getStatus(theme, statusValue);
+    const { changeStatus, testStatus } = getChangeDetectionStatus(statuses || {});
+    // Show test statuses and "new" change detection status at the story level;
+    // other change detection statuses appear at the branch/component level instead
+    const storyStatus =
+      changeStatus === 'status-value:new'
+        ? getMostCriticalStatusValue([changeStatus, testStatus])
+        : testStatus;
+    const { icon: testIcon, textColor } = getStatus(theme, storyStatus);
 
     return (
       <LeafNodeStyleWrapper
@@ -309,15 +281,15 @@ const Node = React.memo<NodeProps>(function Node(props) {
           </SkipToContentLink>
         )}
         {contextMenu.node}
-        {icon ? (
+        {testIcon ? (
           <StatusButton
-            ariaLabel={`Status: ${statusValue.replace('status-value:', '')}`}
+            ariaLabel={`${storyStatus === testStatus ? 'Test status' : 'Status'}: ${getStatusLabel(storyStatus)}`}
             data-testid="tree-status-button"
             type="button"
-            status={statusValue}
+            status={storyStatus}
             selectedItem={isSelected}
           >
-            {icon}
+            {testIcon}
           </StatusButton>
         ) : null}
       </LeafNodeStyleWrapper>
@@ -368,21 +340,6 @@ const Node = React.memo<NodeProps>(function Node(props) {
     );
   }
 
-  const itemStatus = getMostCriticalStatusValue(Object.values(statuses || {}).map((s) => s.value));
-  const { icon: itemIcon, textColor: itemColor } = getStatus(theme, itemStatus);
-  const itemStatusButton = itemIcon ? (
-    <StatusButton
-      ariaLabel={`Status: ${itemStatus.replace('status-value:', '')}`}
-      data-testid="tree-status-button"
-      role="status"
-      type="button"
-      status={itemStatus}
-      selectedItem={isSelected}
-    >
-      {itemIcon}
-    </StatusButton>
-  ) : null;
-
   if (
     item.type === 'component' ||
     item.type === 'group' ||
@@ -392,17 +349,28 @@ const Node = React.memo<NodeProps>(function Node(props) {
     const BranchNode = { component: ComponentNode, group: GroupNode, story: StoryBranchNode }[
       item.type
     ];
-    const status = getMostCriticalStatusValue([itemStatus, groupStatus?.[item.id]]);
-    const color = status ? getStatus(theme, status).textColor : null;
-    const showBranchStatus = (
-      [
-        'status-value:modified',
-        'status-value:affected',
-        'status-value:new',
-        'status-value:warning',
-        'status-value:error',
-      ] as StatusValue[]
-    ).includes(status);
+
+    const { changeStatus: localChange, testStatus: localTest } = getChangeDetectionStatus(
+      statuses || {}
+    );
+    const groupDual = groupDualStatus?.[item.id] || {
+      change: 'status-value:unknown' as StatusValue,
+      test: 'status-value:unknown' as StatusValue,
+    };
+    const branchChange = getMostCriticalStatusValue([localChange, groupDual.change]);
+    const branchTest = getMostCriticalStatusValue([localTest, groupDual.test]);
+
+    const branchChangeIcon =
+      branchChange !== 'status-value:unknown' ? getStatus(theme, branchChange).icon : null;
+    const branchTestIcon =
+      branchTest === 'status-value:error' || branchTest === 'status-value:warning' ? (
+        <svg key="icon" viewBox="0 0 6 6" width="6" height="6" type="dot">
+          <UseSymbol type="dot" />
+        </svg>
+      ) : null;
+
+    const overallStatus = getMostCriticalStatusValue([branchChange, branchTest]);
+    const color = overallStatus ? getStatus(theme, overallStatus).textColor : null;
 
     return (
       <LeafNodeStyleWrapper
@@ -458,25 +426,48 @@ const Node = React.memo<NodeProps>(function Node(props) {
           </SkipToContentLink>
         )}
         {contextMenu.node}
-        {showBranchStatus ? (
+        {branchChangeIcon && branchTestIcon ? (
+          <StatusSlots>
+            <StatusButton
+              ariaLabel={`Change status: ${getStatusLabel(branchChange)}`}
+              data-testid="tree-change-status-button"
+              type="button"
+              status={branchChange}
+              selectedItem={isSelected}
+            >
+              {branchChangeIcon}
+            </StatusButton>
+            <StatusButton
+              ariaLabel={`Test status: ${getStatusLabel(branchTest)}`}
+              data-testid="tree-status-button"
+              type="button"
+              status={branchTest}
+              selectedItem={isSelected}
+            >
+              {branchTestIcon}
+            </StatusButton>
+          </StatusSlots>
+        ) : branchChangeIcon ? (
           <StatusButton
-            ariaLabel={`Status: ${status.replace('status-value:', '')}`}
-            data-testid="tree-status-button"
+            ariaLabel={`Change status: ${getStatusLabel(branchChange)}`}
+            data-testid="tree-change-status-button"
             type="button"
-            status={status}
+            status={branchChange}
             selectedItem={isSelected}
           >
-            {status === 'status-value:error' || status === 'status-value:warning' ? (
-              <svg key="icon" viewBox="0 0 6 6" width="6" height="6" type="dot">
-                <UseSymbol type="dot" />
-              </svg>
-            ) : (
-              getStatus(theme, status).icon
-            )}
+            {branchChangeIcon}
           </StatusButton>
-        ) : (
-          itemStatusButton
-        )}
+        ) : branchTestIcon ? (
+          <StatusButton
+            ariaLabel={`Test status: ${getStatusLabel(branchTest)}`}
+            data-testid="tree-status-button"
+            type="button"
+            status={branchTest}
+            selectedItem={isSelected}
+          >
+            {branchTestIcon}
+          </StatusButton>
+        ) : null}
       </LeafNodeStyleWrapper>
     );
   }
@@ -484,6 +475,29 @@ const Node = React.memo<NodeProps>(function Node(props) {
   const isTest = item.type === 'story' && item.subtype === 'test';
   const LeafNode = isTest ? TestNode : { docs: DocumentNode, story: StoryLeafNode }[item.type];
   const nodeType = isTest ? 'test' : { docs: 'document', story: 'story' }[item.type];
+
+  // For leaf nodes, filter out change detection statuses (except "new")
+  // because change detection statuses should appear at the branch/component level instead
+  const leafStatuses = Object.fromEntries(
+    Object.entries(statuses || {}).filter(
+      ([, status]) =>
+        status.typeId !== CHANGE_DETECTION_STATUS_TYPE_ID || status.value === 'status-value:new'
+    )
+  );
+  const leafStatus = getMostCriticalStatusValue(Object.values(leafStatuses).map((s) => s.value));
+  const { icon: leafIcon, textColor: leafColor } = getStatus(theme, leafStatus);
+  const leafStatusButton = leafIcon ? (
+    <StatusButton
+      ariaLabel={`Status: ${getStatusLabel(leafStatus)}`}
+      data-testid="tree-status-button"
+      role="status"
+      type="button"
+      status={leafStatus}
+      selectedItem={isSelected}
+    >
+      {leafIcon}
+    </StatusButton>
+  ) : null;
 
   return (
     <LeafNodeStyleWrapper
@@ -498,7 +512,7 @@ const Node = React.memo<NodeProps>(function Node(props) {
       onMouseEnter={contextMenu.onMouseEnter}
     >
       <LeafNode
-        style={itemColor && !isSelected ? { color: itemColor } : {}}
+        style={leafColor && !isSelected ? { color: leafColor } : {}}
         href={getLink(item, refId)}
         id={id}
         depth={isOrphan ? item.depth : item.depth - 1}
@@ -520,7 +534,7 @@ const Node = React.memo<NodeProps>(function Node(props) {
         </SkipToContentLink>
       )}
       {contextMenu.node}
-      {itemStatusButton}
+      {leafStatusButton}
     </LeafNodeStyleWrapper>
   );
 });
@@ -695,6 +709,11 @@ export const Tree = React.memo<{
     [collapsedData, allStatuses]
   );
 
+  const groupDualStatus = useMemo(
+    () => getGroupDualStatus(collapsedData, allStatuses ?? {}),
+    [collapsedData, allStatuses]
+  );
+
   const treeItems = useMemo(() => {
     return collapsedItems.map((itemId) => {
       const item = collapsedData[itemId];
@@ -736,7 +755,7 @@ export const Tree = React.memo<{
           key={id}
           item={item}
           statuses={allStatuses?.[itemId] ?? {}}
-          groupStatus={groupStatus}
+          groupDualStatus={groupDualStatus}
           refId={refId}
           docsMode={docsMode}
           isOrphan={orphanIds.some((oid) => itemId === oid || itemId.startsWith(`${oid}-`))}
@@ -756,6 +775,7 @@ export const Tree = React.memo<{
     docsMode,
     expandableDescendants,
     expanded,
+    groupDualStatus,
     groupStatus,
     onSelectStoryId,
     orphanIds,

@@ -54,4 +54,19 @@ describe('applyRenameChains', () => {
       'b--x': [null],
     });
   });
+
+  it('handles multiple independent renames in one call (folder rename)', () => {
+    const result = applyRenameChains(
+      INITIAL_RENAME_REDIRECT_STATE,
+      [
+        { oldId: 'old--a', newId: 'new--a' },
+        { oldId: 'old--b', newId: 'new--b' },
+      ],
+      []
+    );
+    expect(result.chains).toEqual({
+      'old--a': ['new--a'],
+      'old--b': ['new--b'],
+    });
+  });
 });

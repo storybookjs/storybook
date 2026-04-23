@@ -52,6 +52,18 @@ vi.mock('@storybook/global', () => ({
   },
 }));
 
+vi.mock('../stores/rename-redirect.ts', async () => {
+  const { UNIVERSAL_RENAME_REDIRECT_STORE_OPTIONS } = await vi.importActual<
+    typeof import('../../shared/rename-redirect-store/index.ts')
+  >('../../shared/rename-redirect-store/index.ts');
+  const { MockUniversalStore } = await vi.importActual<
+    typeof import('../../shared/universal-store/mock.ts')
+  >('../../shared/universal-store/mock.ts');
+  return {
+    renameRedirectStore: new MockUniversalStore(UNIVERSAL_RENAME_REDIRECT_STORE_OPTIONS),
+  };
+});
+
 function createMockStore(initialState: Partial<State> = {}) {
   let state = initialState;
   return {
@@ -574,6 +586,65 @@ describe('stories API', () => {
           const { index } = store.getState();
           expect(Object.keys(index!)).toEqual(['component-b', 'component-b--docs']);
         });
+      });
+    });
+
+    describe('rename redirect', () => {
+      it('redirects to the renamed story when current story is missing and chain maps to it', async () => {
+        const moduleArgs = createMockModuleArgs({
+          initialState: { storyId: 'old--x' },
+        });
+        const { api } = initStories(moduleArgs as unknown as ModuleArgs);
+        const selectStorySpy = vi.spyOn(api, 'selectStory').mockImplementation(() => {});
+
+        const { renameRedirectStore } = await import('../stores/rename-redirect.ts');
+        renameRedirectStore.setState({ chains: { 'old--x': ['new--x'] } });
+
+        await api.setIndex({
+          v: 5,
+          entries: {
+            'new--x': {
+              id: 'new--x',
+              name: 'X',
+              title: 'New',
+              importPath: './new.ts',
+              type: 'story',
+            } as any,
+          },
+        });
+
+        expect(selectStorySpy).toHaveBeenCalledWith('new--x');
+      });
+
+      it('does not redirect when chain last element is absent from the new index', async () => {
+        const moduleArgs = createMockModuleArgs({
+          initialState: { storyId: 'old--x' },
+        });
+        const { api } = initStories(moduleArgs as unknown as ModuleArgs);
+        const selectStorySpy = vi.spyOn(api, 'selectStory').mockImplementation(() => {});
+
+        const { renameRedirectStore } = await import('../stores/rename-redirect.ts');
+        renameRedirectStore.setState({ chains: { 'old--x': ['new--x'] } });
+
+        // New index does not contain new--x — indexing lag or mismatch
+        await api.setIndex({ v: 5, entries: {} });
+
+        expect(selectStorySpy).not.toHaveBeenCalled();
+      });
+
+      it('does not call selectStory when chain ends in null (deletion)', async () => {
+        const moduleArgs = createMockModuleArgs({
+          initialState: { storyId: 'gone--x' },
+        });
+        const { api } = initStories(moduleArgs as unknown as ModuleArgs);
+        const selectStorySpy = vi.spyOn(api, 'selectStory').mockImplementation(() => {});
+
+        const { renameRedirectStore } = await import('../stores/rename-redirect.ts');
+        renameRedirectStore.setState({ chains: { 'gone--x': [null] } });
+
+        await api.setIndex({ v: 5, entries: {} });
+
+        expect(selectStorySpy).not.toHaveBeenCalled();
       });
     });
   });

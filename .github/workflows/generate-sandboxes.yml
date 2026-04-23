@@ -29,12 +29,16 @@ jobs:
     steps:
       - id: set
         working-directory: ${{ github.workspace }}
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          REF_NAME: ${{ github.ref_name }}
         run: |
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            echo 'branches=["${{ github.ref_name }}"]' >> "$GITHUB_OUTPUT"
+          if [ "$EVENT_NAME" = "workflow_dispatch" ]; then
+            branches=$(jq -nc --arg ref "$REF_NAME" '[$ref]')
           else
-            echo 'branches=["next","main"]' >> "$GITHUB_OUTPUT"
+            branches='["next","main"]'
           fi
+          echo "branches=$branches" >> "$GITHUB_OUTPUT"
 
   generate:
     name: Generate to ${{ matrix.branch }}

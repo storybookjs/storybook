@@ -13,3 +13,17 @@ export const UNIVERSAL_RENAME_REDIRECT_STORE_OPTIONS: StoreOptions<RenameRedirec
   id: 'storybook/rename-redirect',
   initialState: INITIAL_RENAME_REDIRECT_STATE,
 };
+
+export type Rename = { oldId: StoryId; newId: StoryId };
+
+export function applyRenameChains(
+  current: RenameRedirectState,
+  renames: Rename[],
+  deletions: StoryId[]
+): RenameRedirectState {
+  const chains = { ...current.chains };
+  for (const { oldId, newId } of renames) {
+    chains[oldId] = [newId];
+  }
+  return { chains };
+}

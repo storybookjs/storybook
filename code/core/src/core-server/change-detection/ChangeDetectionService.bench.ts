@@ -27,6 +27,12 @@ import { ParserRegistry, builtinImportParsers } from './parser-registry/index.ts
 interface FixtureSpec {
   N: number;
   D: number;
+  /**
+   * Number of shared modules every story also imports from. Models a component library
+   * where all stories import from a small pool of shared components. Defaults to 0
+   * (each story has only its own private chain).
+   */
+  shared?: number;
 }
 
 interface Fixture {
@@ -37,22 +43,56 @@ interface Fixture {
 
 const SILENT_LOGGER = { debug: () => {}, warn: () => {} };
 
-async function createFixture({ N, D }: FixtureSpec): Promise<Fixture> {
-  const dir = join(tmpdir(), `cd-bench-${N}-${D}-${process.pid}-${Date.now()}`);
+async function createFixture({ N, D, shared = 0 }: FixtureSpec): Promise<Fixture> {
+  const dir = join(tmpdir(), `cd-bench-${N}-${D}-s${shared}-${process.pid}-${Date.now()}`);
   await mkdir(dir, { recursive: true });
 
   const storyFiles: string[] = [];
   const writes: Array<Promise<void>> = [];
 
+  // Shared-library modules imported by every story. Each shared module also imports two
+  // other shared modules, so the shared subgraph is not a trivial leaf set — this matches
+  // real component libraries where Button imports Icon, Icon imports styles, etc.
+  for (let s = 0; s < shared; s++) {
+    const filePath = join(dir, `shared-${s}.ts`);
+    const imports: string[] = [];
+    if (shared >= 2) {
+      const a = (s + 1) % shared;
+      const b = (s + 3) % shared;
+      if (a !== s) imports.push(`import { value as sa } from './shared-${a}.ts';`);
+      if (b !== s && b !== a) imports.push(`import { value as sb } from './shared-${b}.ts';`);
+    }
+    const valueExpr = imports.length > 0 ? `${s} + (sa ?? 0) + (sb ?? 0)` : String(s);
+    writes.push(
+      writeFile(
+        filePath,
+        [
+          ...imports,
+          `export const value = ${valueExpr};`,
+          `export type Foo = number;`,
+          `export function helper(x: number): number { return x * 2 + ${s}; }`,
+          '',
+        ].join('\n')
+      )
+    );
+  }
+
   for (let i = 0; i < N; i++) {
     const storyPath = join(dir, `story-${i}.stories.ts`);
     storyFiles.push(storyPath);
+
+    const sharedImports: string[] = [];
+    for (let s = 0; s < shared; s++) {
+      sharedImports.push(`import { value as shared${s} } from './shared-${s}.ts';`);
+    }
+
     writes.push(
       writeFile(
         storyPath,
         [
           `import { value } from './dep-${i}-0.ts';`,
           `import type { Foo } from './dep-${i}-0.ts';`,
+          ...sharedImports,
           `export default { title: 'Story${i}' };`,
           `export const Primary = { args: { value } };`,
           `export type Alias = Foo;`,
@@ -110,6 +150,11 @@ const CI_MATRIX: FixtureSpec[] = [
   { N: 50, D: 3 },
   { N: 500, D: 1 },
   { N: 500, D: 3 },
+  // Shared-deps scenario modelling a component library: 500 stories, each with its own
+  // 3-deep private chain, ALSO all importing from a pool of 20 shared modules (which
+  // themselves import each other). Exercises the resolver-cache hot path — without the
+  // cache, each shared module is resolved once per story walk = 10,000 redundant calls.
+  { N: 500, D: 3, shared: 20 },
 ];
 const BIG_MATRIX: FixtureSpec[] = [
   { N: 5000, D: 1 },
@@ -124,7 +169,7 @@ const MATRIX =
 // spec via a promise cache.
 const fixturePromises = new Map<string, Promise<Fixture>>();
 function getFixture(spec: FixtureSpec): Promise<Fixture> {
-  const key = `N${spec.N}-D${spec.D}`;
+  const key = `N${spec.N}-D${spec.D}-s${spec.shared ?? 0}`;
   let p = fixturePromises.get(key);
   if (!p) {
     p = createFixture(spec);
@@ -140,7 +185,7 @@ interface WarmContext {
 
 const warmContexts = new Map<string, Promise<WarmContext>>();
 async function getWarmContext(spec: FixtureSpec): Promise<WarmContext> {
-  const key = `N${spec.N}-D${spec.D}`;
+  const key = `N${spec.N}-D${spec.D}-s${spec.shared ?? 0}`;
   let p = warmContexts.get(key);
   if (!p) {
     p = (async () => {
@@ -189,8 +234,12 @@ process.on('beforeExit', async () => {
 });
 
 for (const spec of MATRIX) {
-  const { N, D } = spec;
-  describe(`change-detection N=${N} D=${D}`, () => {
+  const { N, D, shared = 0 } = spec;
+  const label =
+    shared > 0
+      ? `change-detection N=${N} D=${D} shared=${shared}`
+      : `change-detection N=${N} D=${D}`;
+  describe(label, () => {
     bench(
       'cold build',
       async () => {

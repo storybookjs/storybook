@@ -131,7 +131,7 @@ export class IncrementalPatcher {
         for (const edge of newEdges) {
           const resolved = await this.resolver.resolve(path, edge.specifier);
           if (resolved === null) {
-            this.logger.warn(`Could not resolve ${edge.specifier} from ${path}`);
+            this.logger.debug(`Could not resolve ${edge.specifier} from ${path}`);
             continue;
           }
           const normalised = normalize(resolved);
@@ -206,7 +206,7 @@ export class IncrementalPatcher {
       for (const edge of edges) {
         const resolved = await this.resolver.resolve(file, edge.specifier);
         if (resolved === null) {
-          this.logger.warn(`Could not resolve ${edge.specifier} from ${file}`);
+          this.logger.debug(`Could not resolve ${edge.specifier} from ${file}`);
           continue;
         }
         const normalised = normalize(resolved);

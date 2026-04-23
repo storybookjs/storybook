@@ -287,6 +287,43 @@ describe('DependencyGraphBuilder', () => {
     expect(reverseIndex.lookup(ok).get(story)).toBe(1);
   });
 
+  it('resolves each shared module exactly once regardless of how many stories reach it', async () => {
+    const storyA = '/repo/src/A.stories.tsx';
+    const storyB = '/repo/src/B.stories.tsx';
+    const shared = '/repo/src/shared.ts';
+    const world: FakeWorld = {
+      files: new Set([storyA, storyB, shared]),
+      edges: new Map([
+        [storyA, [{ specifier: './shared.ts', kind: 'static' }]],
+        [storyB, [{ specifier: './shared.ts', kind: 'static' }]],
+        [shared, [{ specifier: './nothing.ts', kind: 'static' }]],
+      ]),
+      resolutions: new Map([
+        [`${storyA}::./shared.ts`, shared],
+        [`${storyB}::./shared.ts`, shared],
+        // shared's outgoing edge fails to resolve — we only care that resolver is called once
+        // for shared, not once per story walk that reaches it.
+      ]),
+    };
+    setupFsReadOk(world);
+    const resolver = makeFakeResolver(world);
+    const builder = new DependencyGraphBuilder({
+      registry: makeFakeRegistry(world),
+      resolver,
+      workspaceRoots: new Set(),
+      projectRoot: '/repo',
+    });
+
+    await builder.build([storyA, storyB]);
+
+    // Without the resolve cache, `shared.ts`'s single outgoing edge would be resolved twice
+    // (once per story walk that visits it). With the cache, it is resolved exactly once.
+    const sharedEdgeResolves = vi
+      .mocked(resolver.resolve)
+      .mock.calls.filter(([from]) => from === shared);
+    expect(sharedEdgeResolves).toHaveLength(1);
+  });
+
   it('emits a debug log line on completion', async () => {
     const story = '/repo/src/A.stories.tsx';
     const world: FakeWorld = {

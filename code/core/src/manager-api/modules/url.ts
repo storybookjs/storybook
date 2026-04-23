@@ -282,10 +282,15 @@ export const init: ModuleFn<SubAPI, SubState> = (moduleArgs) => {
       globalsParam = globalsParam && `&globals=${globalsParam}`;
       customManagerParams = customManagerParams && `&${customManagerParams}`;
       customPreviewParams = customPreviewParams && `&${customPreviewParams}`;
-      const separator = previewBase.includes('?') ? '&' : '?';
+      const hashIndex = previewBase.indexOf('#');
+      const previewBaseWithoutHash =
+        hashIndex === -1 ? previewBase : previewBase.slice(0, hashIndex);
+      const previewHash = hashIndex === -1 ? '' : previewBase.slice(hashIndex);
+      const separator = previewBaseWithoutHash.includes('?') ? '&' : '?';
+
       return {
         managerHref: `${managerBase}?path=/${viewMode}/${refId ? `${refId}_` : ''}${storyId}${argsParam}${globalsParam}${customManagerParams}`,
-        previewHref: `${previewBase}${separator}id=${storyId}&viewMode=${viewMode}${refParam}${argsParam}${refId ? '' : globalsParam}${customPreviewParams}`,
+        previewHref: `${previewBaseWithoutHash}${separator}id=${storyId}&viewMode=${viewMode}${refParam}${argsParam}${refId ? '' : globalsParam}${customPreviewParams}${previewHash}`,
       };
     },
     getQueryParam(key) {

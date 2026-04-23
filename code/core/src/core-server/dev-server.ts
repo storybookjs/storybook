@@ -1,5 +1,4 @@
 import { logConfig, normalizeStories } from 'storybook/internal/common';
-import { DOCS_PREPARED, STORY_RENDERED } from 'storybook/internal/core-events';
 import { logger } from 'storybook/internal/node-logger';
 import { MissingBuilderError } from 'storybook/internal/server-errors';
 import { CHANGE_DETECTION_STATUS_TYPE_ID } from 'storybook/internal/types';
@@ -155,27 +154,17 @@ export async function storybookDevServer(
       });
 
     if (features.changeDetection) {
-      let changeDetectionStarted = false;
-      const startChangeDetection = () => {
-        if (changeDetectionStarted) {
-          return;
-        }
-        try {
-          changeDetectionStarted = true;
-          const adapter = previewBuilder.changeDetectionAdapter?.();
-          changeDetectionService.start(adapter, true);
-        } catch (error) {
-          logger.error('Failed to start change detection');
-          logger.error(error instanceof Error ? error : String(error));
-          setChangeDetectionReadiness({
-            status: 'error',
-            error: error instanceof Error ? error : new Error(String(error)),
-          });
-        }
-      };
-
-      options.channel.once(STORY_RENDERED, startChangeDetection);
-      options.channel.once(DOCS_PREPARED, startChangeDetection);
+      try {
+        const adapter = previewBuilder.changeDetectionAdapter?.();
+        changeDetectionService.start(adapter, true);
+      } catch (error) {
+        logger.error('Failed to start change detection');
+        logger.error(error instanceof Error ? error : String(error));
+        setChangeDetectionReadiness({
+          status: 'error',
+          error: error instanceof Error ? error : new Error(String(error)),
+        });
+      }
     }
   }
 

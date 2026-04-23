@@ -18,6 +18,8 @@ export {
   universalTestProviderStore as internal_universalTestProviderStore,
 } from './stores/test-provider.ts';
 
+export { renameRedirectStore as internal_renameRedirectStore } from './stores/rename-redirect.ts';
+
 export {
   checklistStore as internal_checklistStore,
   universalChecklistStore as internal_universalChecklistStore,

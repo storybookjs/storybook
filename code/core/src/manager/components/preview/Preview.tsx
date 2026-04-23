@@ -2,7 +2,7 @@ import type { FC } from 'react';
 import React, { Fragment, useEffect, useRef, useState } from 'react';
 
 import { deprecate } from 'storybook/internal/client-logger';
-import { Loader, useTabsState } from 'storybook/internal/components';
+import { Loader, Placeholder, useTabsState } from 'storybook/internal/components';
 import { PREVIEW_BUILDER_PROGRESS, SET_CURRENT_STORY } from 'storybook/internal/core-events';
 import type { Addon_BaseType, Addon_WrapperType } from 'storybook/internal/types';
 
@@ -10,7 +10,15 @@ import { global } from '@storybook/global';
 
 import type { TabListState } from '@react-stately/tabs';
 import { Helmet } from 'react-helmet-async';
-import { type Combo, Consumer, addons, merge, types } from 'storybook/manager-api';
+import {
+  type Combo,
+  Consumer,
+  addons,
+  internal_renameRedirectStore as renameRedirectStore,
+  merge,
+  types,
+} from 'storybook/manager-api';
+import { styled } from 'storybook/theming';
 
 import { useLandmark } from '../../hooks/useLandmark.ts';
 import { FramesRenderer } from './FramesRenderer.tsx';
@@ -20,18 +28,48 @@ import { ZoomConsumer, ZoomProvider } from './tools/zoom.tsx';
 import * as S from './utils/components.ts';
 import type { PreviewProps } from './utils/types.tsx';
 
-const canvasMapper = ({ state, api }: Combo) => ({
-  api,
-  storyId: state.storyId,
-  refId: state.refId,
-  viewMode: state.viewMode,
-  customCanvas: api.renderPreview,
-  queryParams: state.customQueryParams,
-  getElements: api.getElements,
-  entry: api.getData(state.storyId, state.refId),
-  previewInitialized: state.previewInitialized,
-  refs: state.refs,
-});
+/**
+ * Whether the current `storyId` is a story we know was deleted during this
+ * session. This is true when the story is absent from the live index AND the
+ * rename-redirect store has a chain for it that ends in `null`. When true, the
+ * manager renders a specialised deletion notice instead of the generic "No
+ * Preview" UI in the iframe.
+ */
+const isKnownDeletion = (storyId: string | undefined, entry: unknown) => {
+  if (!storyId || entry) {
+    return false;
+  }
+  const { chains } = renameRedirectStore.getState();
+  const chain = chains[storyId];
+  return chain !== undefined && chain.length > 0 && chain[chain.length - 1] === null;
+};
+
+const canvasMapper = ({ state, api }: Combo) => {
+  const entry = api.getData(state.storyId, state.refId);
+  return {
+    api,
+    storyId: state.storyId,
+    refId: state.refId,
+    viewMode: state.viewMode,
+    customCanvas: api.renderPreview,
+    queryParams: state.customQueryParams,
+    getElements: api.getElements,
+    entry,
+    previewInitialized: state.previewInitialized,
+    refs: state.refs,
+    isKnownDeletion: isKnownDeletion(state.storyId, entry),
+  };
+};
+
+const DeletionOverlay = styled.div(({ theme }) => ({
+  position: 'absolute',
+  inset: 0,
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  background: theme.background.content,
+  zIndex: 2,
+}));
 
 export const createCanvasTab = (): Addon_BaseType => ({
   id: 'canvas',
@@ -170,6 +208,7 @@ const Canvas: FC<{
         viewMode,
         queryParams,
         previewInitialized,
+        isKnownDeletion: storyWasDeleted,
       }) => {
         const id = 'canvas';
 
@@ -223,6 +262,14 @@ const Canvas: FC<{
                       />
                     )}
                   </ApplyWrappers>
+                  {storyWasDeleted && (
+                    <DeletionOverlay role="status">
+                      <Placeholder>
+                        This story was deleted.
+                        <>The file it lived in has been removed during this session.</>
+                      </Placeholder>
+                    </DeletionOverlay>
+                  )}
                 </>
               );
             }}

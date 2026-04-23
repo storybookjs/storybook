@@ -3,22 +3,28 @@ import { describe, expect, it } from 'vitest';
 import {
   INITIAL_RENAME_REDIRECT_STATE,
   type RenameRedirectState,
-  applyRenameChains,
+  extendRenameMaps,
 } from './index.ts';
 
-describe('applyRenameChains', () => {
+describe('extendRenameMaps', () => {
   it('records a single rename as a new chain entry', () => {
-    const result = applyRenameChains(
-      INITIAL_RENAME_REDIRECT_STATE,
-      [{ oldId: 'button--primary', newId: 'button--secondary' }],
-      []
-    );
+    const result = extendRenameMaps(INITIAL_RENAME_REDIRECT_STATE, {
+      renames: [
+        { oldId: 'button--primary', newId: 'button--secondary', origin: './src/Foo.stories.ts' },
+      ],
+      orphans: [],
+      deletions: [],
+    });
     expect(result.chains).toEqual({ 'button--primary': ['button--secondary'] });
   });
 
   it('extends existing chains when rename destination matches previous last element', () => {
-    const initial: RenameRedirectState = { chains: { 'a--x': ['b--x'] } };
-    const result = applyRenameChains(initial, [{ oldId: 'b--x', newId: 'c--x' }], []);
+    const initial: RenameRedirectState = { chains: { 'a--x': ['b--x'] }, origins: {} };
+    const result = extendRenameMaps(initial, {
+      renames: [{ oldId: 'b--x', newId: 'c--x', origin: './src/Foo.stories.ts' }],
+      orphans: [],
+      deletions: [],
+    });
     expect(result.chains).toEqual({
       'a--x': ['b--x', 'c--x'],
       'b--x': ['c--x'],
@@ -26,29 +32,41 @@ describe('applyRenameChains', () => {
   });
 
   it('drops entries where chain last element equals source key (round-trip)', () => {
-    const step1 = applyRenameChains(
-      INITIAL_RENAME_REDIRECT_STATE,
-      [{ oldId: 'a--x', newId: 'b--x' }],
-      []
-    );
-    const step2 = applyRenameChains(step1, [{ oldId: 'b--x', newId: 'a--x' }], []);
+    const step1 = extendRenameMaps(INITIAL_RENAME_REDIRECT_STATE, {
+      renames: [{ oldId: 'a--x', newId: 'b--x', origin: './src/Foo.stories.ts' }],
+      orphans: [],
+      deletions: [],
+    });
+    const step2 = extendRenameMaps(step1, {
+      renames: [{ oldId: 'b--x', newId: 'a--x', origin: './src/Foo.stories.ts' }],
+      orphans: [],
+      deletions: [],
+    });
     // a--x chain becomes ['b--x', 'a--x'] — last equals source — drop.
     // b--x chain becomes ['a--x'] — last does not equal source — keep.
     expect(step2.chains).toEqual({ 'b--x': ['a--x'] });
   });
 
   it('records a deletion with a null-terminated chain', () => {
-    const result = applyRenameChains(INITIAL_RENAME_REDIRECT_STATE, [], ['gone--story']);
+    const result = extendRenameMaps(INITIAL_RENAME_REDIRECT_STATE, {
+      renames: [],
+      orphans: [],
+      deletions: [{ id: 'gone--story', origin: './src/Gone.stories.ts' }],
+    });
     expect(result.chains).toEqual({ 'gone--story': [null] });
   });
 
   it('appends null to the end of existing chain when rename-then-delete occurs', () => {
-    const renamed = applyRenameChains(
-      INITIAL_RENAME_REDIRECT_STATE,
-      [{ oldId: 'a--x', newId: 'b--x' }],
-      []
-    );
-    const deleted = applyRenameChains(renamed, [], ['b--x']);
+    const renamed = extendRenameMaps(INITIAL_RENAME_REDIRECT_STATE, {
+      renames: [{ oldId: 'a--x', newId: 'b--x', origin: './src/Foo.stories.ts' }],
+      orphans: [],
+      deletions: [],
+    });
+    const deleted = extendRenameMaps(renamed, {
+      renames: [],
+      orphans: [],
+      deletions: [{ id: 'b--x', origin: './src/Foo.stories.ts' }],
+    });
     expect(deleted.chains).toEqual({
       'a--x': ['b--x', null],
       'b--x': [null],
@@ -56,14 +74,14 @@ describe('applyRenameChains', () => {
   });
 
   it('handles multiple independent renames in one call (folder rename)', () => {
-    const result = applyRenameChains(
-      INITIAL_RENAME_REDIRECT_STATE,
-      [
-        { oldId: 'old--a', newId: 'new--a' },
-        { oldId: 'old--b', newId: 'new--b' },
+    const result = extendRenameMaps(INITIAL_RENAME_REDIRECT_STATE, {
+      renames: [
+        { oldId: 'old--a', newId: 'new--a', origin: './src/Foo.stories.ts' },
+        { oldId: 'old--b', newId: 'new--b', origin: './src/Bar.stories.ts' },
       ],
-      []
-    );
+      orphans: [],
+      deletions: [],
+    });
     expect(result.chains).toEqual({
       'old--a': ['new--a'],
       'old--b': ['new--b'],

@@ -14,7 +14,7 @@ import type {
 import { debounce } from 'es-toolkit/function';
 import type { Polka } from 'polka';
 
-import { applyRenameChains } from '../../shared/rename-redirect-store/index.ts';
+import { extendRenameMaps } from '../../shared/rename-redirect-store/index.ts';
 import { renameRedirectStore } from '../stores/rename-redirect.ts';
 import type { StoryIndexGenerator } from './StoryIndexGenerator.ts';
 import { watchStorySpecifiers } from './watch-story-specifiers.ts';
@@ -181,7 +181,13 @@ export function registerIndexJsonRoute({
       }
 
       await renameRedirectStore.untilReady();
-      renameRedirectStore.setState((prev) => applyRenameChains(prev, renames, deletedIds));
+      renameRedirectStore.setState((prev) =>
+        extendRenameMaps(prev, {
+          renames: renames.map((r) => ({ ...r, origin: '' })),
+          orphans: [],
+          deletions: deletedIds.map((id) => ({ id, origin: '' })),
+        })
+      );
     },
     DEBOUNCE,
     { edges: ['leading', 'trailing'] }

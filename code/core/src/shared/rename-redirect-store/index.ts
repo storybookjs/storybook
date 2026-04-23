@@ -18,15 +18,24 @@ export const UNIVERSAL_RENAME_REDIRECT_STORE_OPTIONS: StoreOptions<RenameRedirec
   initialState: INITIAL_RENAME_REDIRECT_STATE,
 };
 
-export type Rename = { oldId: StoryId; newId: StoryId };
+export type Rename = { oldId: StoryId; newId: StoryId; origin: Path };
+export type Orphan = { id: StoryId; origin: Path };
+export type Deletion = { id: StoryId; origin: Path };
 
-export function applyRenameChains(
+export type RenameEvents = {
+  renames: Rename[];
+  orphans: Orphan[];
+  deletions: Deletion[];
+};
+
+export function extendRenameMaps(
   current: RenameRedirectState,
-  renames: Rename[],
-  deletions: StoryId[]
+  events: RenameEvents
 ): RenameRedirectState {
   const chains = { ...current.chains };
-  for (const { oldId, newId } of renames) {
+  const origins = { ...current.origins };
+
+  for (const { oldId, newId } of events.renames) {
     for (const source of Object.keys(chains)) {
       const chain = chains[source];
       if (chain.length > 0 && chain[chain.length - 1] === oldId) {
@@ -41,7 +50,8 @@ export function applyRenameChains(
       }
     }
   }
-  for (const deletedId of deletions) {
+
+  for (const { id: deletedId } of events.deletions) {
     for (const source of Object.keys(chains)) {
       const chain = chains[source];
       if (chain.length > 0 && chain[chain.length - 1] === deletedId) {
@@ -50,5 +60,6 @@ export function applyRenameChains(
     }
     chains[deletedId] = [...(chains[deletedId] ?? []), null];
   }
-  return { chains, origins: current.origins };
+
+  return { chains, origins };
 }

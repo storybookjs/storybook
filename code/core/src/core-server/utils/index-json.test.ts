@@ -683,7 +683,7 @@ describe('registerIndexJsonRoute', () => {
       // is static and shared across instances. Clearing avoids leaks where one
       // test's `invalidate` leaves a non-existent path marked for rebuild.
       StoryIndexGenerator.clearFindMatchingFilesCache();
-      renameRedirectStore.setState({ chains: {} });
+      renameRedirectStore.setState({ chains: {}, origins: {} });
     });
 
     it('writes a rename chain after a confirmed file rename', async () => {

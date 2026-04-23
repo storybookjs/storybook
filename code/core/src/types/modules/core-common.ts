@@ -277,35 +277,10 @@ export interface Builder<Config, BuilderStats extends Stats = Stats> {
   corePresets?: string[];
   overridePresets?: string[];
   /**
-   * @deprecated Use `changeDetectionAdapter` instead. Will be removed once the new
-   *   oxc-resolver–based change detector has been on a stable release.
-   */
-  onModuleGraphChange?(cb: (event: ModuleGraphChangeEvent) => void): () => void;
-  /**
    * Returns a change-detection adapter the core change-detection service uses to (a) read
    * builder resolve config (alias, root, conditions), and (b) subscribe to file-system events.
-   * Replaces `onModuleGraphChange`.
    */
   changeDetectionAdapter?(): import('../../core-server/change-detection/adapters/types.ts').ChangeDetectionAdapter;
-}
-
-/**
- * Builder-agnostic module graph for dependency tracking. Modeled after Vite's module graph.
- * The same file can be imported in multiple ways (e.g. based on query params or import context),
- * each representing a unique module identity, hence the value is a Set<ModuleNode>.
- */
-export type ModuleGraph = Map<ModuleNode['file'], Set<ModuleNode>>;
-
-export type ModuleGraphChangeEvent =
-  | { type: 'moduleGraph'; moduleGraph: ModuleGraph }
-  | { type: 'unavailable'; reason: string; error?: Error }
-  | { type: 'error'; error: Error };
-
-export interface ModuleNode {
-  file: string;
-  type: 'js' | 'css' | 'asset';
-  importers: Set<ModuleNode>;
-  importedModules: Set<ModuleNode>;
 }
 
 /** Options for TypeScript usage within Storybook. */

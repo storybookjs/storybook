@@ -87,4 +87,13 @@ describe('extendRenameMaps', () => {
       'old--b': ['new--b'],
     });
   });
+
+  it('writes origin for a rename event', () => {
+    const result = extendRenameMaps(INITIAL_RENAME_REDIRECT_STATE, {
+      renames: [{ oldId: 'a--x', newId: 'b--x', origin: './src/A.stories.ts' }],
+      orphans: [],
+      deletions: [],
+    });
+    expect(result.origins).toEqual({ 'a--x': './src/A.stories.ts' });
+  });
 });

@@ -117,6 +117,7 @@ export function registerIndexJsonRoute({
   // Kept at this scope so repeat events within a debounce cycle coalesce.
   const pendingRenameCandidates: RenameCandidate[] = [];
   const pendingDeletions: Path[] = [];
+  const pendingModifications: Path[] = [];
 
   const maybeInvalidate = debounce(
     async () => {
@@ -204,6 +205,8 @@ export function registerIndexJsonRoute({
       } else {
         pendingDeletions.push(path);
       }
+    } else {
+      pendingModifications.push(path);
     }
     maybeInvalidate();
   });

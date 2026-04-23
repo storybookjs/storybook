@@ -86,13 +86,33 @@ export async function oxcParse(filePath: string, source: string): Promise<Import
   }
 
   // oxc-parser's `EcmaScriptModule` does not surface `require()` calls separately,
-  // so walk the AST body to find them. Keep the walk shallow-ish but recurse into
-  // every child object so conditional/nested `require(...)` is captured.
-  if (parseResult.program?.body) {
+  // so walk the AST body to find them. The walk is expensive (visits every own-property
+  // of every AST node), and on modern code `require(` is extremely rare — it is
+  // syntactically impossible in `.mjs`/`.mts` and uncommon in `.ts`/`.tsx`. Two cheap
+  // gates before paying the recursive walk:
+  //   1. Extension-only skip for `.mjs`/`.mts` — ESM-exclusive file modes.
+  //   2. Source-level substring prefilter for everything else — if the literal token
+  //      `require(` never appears in the source, there is no CommonJS edge to find.
+  // Both gates preserve the edge-set exactly: a `require(` call MUST include the token
+  // `require(` verbatim in the source text.
+  if (parseResult.program?.body && canContainRequireCall(filePath, source)) {
     collectRequireSpecifiers(parseResult.program, edges, seen);
   }
 
   return edges;
+}
+
+function canContainRequireCall(filePath: string, source: string): boolean {
+  // Match the last extension segment without a toLowerCase allocation: `.tsx` / `.mjs`
+  // comparisons are case-sensitive in practice on every platform we support here.
+  const dot = filePath.lastIndexOf('.');
+  if (dot !== -1) {
+    const ext = filePath.slice(dot);
+    if (ext === '.mjs' || ext === '.mts' || ext === '.MJS' || ext === '.MTS') {
+      return false;
+    }
+  }
+  return source.includes('require(');
 }
 
 /**

@@ -47,6 +47,7 @@ export * from '../shared/utils/module.ts';
 export * from './utils/get-addon-names.ts';
 export * from './utils/utils.ts';
 export * from './utils/command.ts';
+export * from './utils/docgen-resolver.ts';
 export * from './node-version.ts';
 
 export { versions };

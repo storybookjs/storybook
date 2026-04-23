@@ -1,11 +1,10 @@
-import { join } from 'pathe';
+import { writeFile } from 'node:fs/promises';
+
+import { join, normalize } from 'pathe';
 
 import { logger } from 'storybook/internal/node-logger';
 import type {
-  Builder,
-  ModuleGraph,
-  ModuleGraphChangeEvent,
-  ModuleNode,
+  Presets,
   StatusValue,
   StoryIndex,
   Status,
@@ -13,13 +12,21 @@ import type {
 } from 'storybook/internal/types';
 import { CHANGE_DETECTION_STATUS_TYPE_ID } from 'storybook/internal/types';
 
-import { normalizePath } from '../../common/utils/normalize-path.ts';
 import type { StoryIndexGenerator } from '../utils/StoryIndexGenerator.ts';
+import type { ChangeDetectionAdapter, FileChangeEvent } from './adapters/index.ts';
+import {
+  ChangeDetectionResolverFactory,
+  DependencyGraphBuilder,
+  IncrementalPatcher,
+  WorkspaceLocator,
+} from './dependency-graph/index.ts';
+import type { DependencyGraph, ReverseIndexImpl } from './dependency-graph/index.ts';
 import { ChangeDetectionFailureError, ChangeDetectionUnavailableError } from './errors.ts';
 import { GitDiffProvider } from './GitDiffProvider.ts';
-import { resetChangeDetectionReadiness, setChangeDetectionReadiness } from './readiness.ts';
 import { extractBaselineEntryIds, IndexBaselineService } from './IndexBaselineService.ts';
-import { findAffectedStoryFiles } from './trace-changed.ts';
+import type { ImportParser } from './parser-registry/index.ts';
+import { ParserRegistry, builtinImportParsers } from './parser-registry/index.ts';
+import { resetChangeDetectionReadiness, setChangeDetectionReadiness } from './readiness.ts';
 
 const CHANGE_DETECTION_DEBOUNCE_MS = 200;
 
@@ -46,7 +53,7 @@ function getStoryIdsByAbsolutePath(
   const storyIdsByFile = new Map<string, Set<string>>();
   Object.values(storyIndex.entries).forEach((entry) => {
     if (entry.type === 'story' && !entry.importPath.startsWith('virtual:')) {
-      const filePath = join(workingDir, entry.importPath);
+      const filePath = normalize(join(workingDir, entry.importPath));
       const storyIds = storyIdsByFile.get(filePath) ?? new Set<string>();
       storyIds.add(entry.id);
       storyIdsByFile.set(filePath, storyIds);
@@ -115,16 +122,14 @@ export function buildIndexBaselineStatuses(
 }
 
 /**
- * Coordinates change detection by listening to builder module-graph updates, resolving changed
- * files from git, mapping those changes to affected stories, and publishing the resulting story
- * statuses to the status store.
+ * Coordinates change detection by owning a builder-supplied {@link ChangeDetectionAdapter},
+ * eagerly building a reverse-dependency index from story files at startup, applying
+ * file-system events incrementally to that index, resolving git-changed files, and publishing
+ * the resulting story statuses to the status store.
  */
 export class ChangeDetectionService {
   private disposed = false;
-  private unsubscribeModuleGraph: (() => void) | undefined;
   private debounceTimer: ReturnType<typeof setTimeout> | undefined;
-  private latestModuleGraph: ModuleGraph | undefined;
-  private hasReceivedModuleGraph = false;
   private scanInFlight = false;
   private rerunAfterCurrentScan = false;
   private readinessResolved = false;
@@ -133,6 +138,16 @@ export class ChangeDetectionService {
   private indexBaselineService: IndexBaselineService | undefined;
   private readonly workingDir: string;
   private readonly debounceMs: number;
+  private adapter: ChangeDetectionAdapter | undefined;
+  private dependencyGraphBuilder: DependencyGraphBuilder | undefined;
+  private incrementalPatcher: IncrementalPatcher | undefined;
+  private reverseIndex: ReverseIndexImpl | undefined;
+  private graph: DependencyGraph | undefined;
+  private storyFiles: Set<string> = new Set();
+  private buildInFlight = false;
+  private pendingEvents: FileChangeEvent[] = [];
+  private unsubscribeFileChange: (() => void) | undefined;
+  private unsubscribeStartupFailure: (() => void) | undefined;
 
   constructor(
     private readonly options: {
@@ -142,6 +157,12 @@ export class ChangeDetectionService {
       indexBaselineService?: IndexBaselineService;
       workingDir?: string;
       debounceMs?: number;
+      /**
+       * Presets instance used to resolve `experimental_importParsers` contributions from
+       * framework/renderer plugins. Optional for tests that never construct the real
+       * dependency-graph layer.
+       */
+      presets?: Presets;
     }
   ) {
     this.gitDiffProvider = options.gitDiffProvider;
@@ -151,10 +172,7 @@ export class ChangeDetectionService {
     resetChangeDetectionReadiness();
   }
 
-  start(
-    onModuleGraphChange: Builder<unknown>['onModuleGraphChange'],
-    enabled: boolean | undefined
-  ): void {
+  start(adapter: ChangeDetectionAdapter | undefined, enabled: boolean | undefined): void {
     if (enabled === false) {
       logger.debug('Change detection disabled.');
       this.resolveReadiness({
@@ -164,31 +182,139 @@ export class ChangeDetectionService {
       return;
     }
 
-    if (!onModuleGraphChange) {
-      logger.warn('Change detection unavailable: Not supported by builder');
+    if (!adapter) {
+      logger.warn('Change detection unavailable: builder does not support change detection');
       this.resolveReadiness({
         status: 'unavailable',
-        reason: 'builder does not support module graph',
+        reason: 'builder does not support change detection',
       });
       return;
     }
 
     logger.debug('Change detection enabled.');
-    void this.getIndexBaselineService().start();
-    this.unsubscribeModuleGraph = onModuleGraphChange((event) => {
+    this.adapter = adapter;
+
+    void this.startInternal().catch((error) => {
       if (this.disposed) {
         return;
       }
+      const failure =
+        error instanceof Error ? error : new ChangeDetectionFailureError(String(error));
+      logger.error(`Change detection failed to start: ${failure.message}`);
+      this.resolveReadiness({ status: 'error', error: failure });
+    });
+  }
 
-      if (event.type === 'moduleGraph') {
-        this.latestModuleGraph = event.moduleGraph;
-        this.scheduleScan(this.hasReceivedModuleGraph ? this.debounceMs : 0);
-        this.hasReceivedModuleGraph = true;
+  private async startInternal(): Promise<void> {
+    const adapter = this.adapter;
+    if (!adapter) {
+      return;
+    }
+
+    // 1. Get resolveConfig from adapter.
+    const resolveConfig = await adapter.getResolveConfig();
+    const projectRoot = normalize(resolveConfig.projectRoot ?? this.workingDir);
+
+    // 2. Construct parser registry (built-ins + preset contributions), resolver, workspace locator.
+    const pluginParsers = this.options.presets
+      ? await this.options.presets.apply<ImportParser[]>('experimental_importParsers', [])
+      : [];
+    const registry = new ParserRegistry({
+      defaultParsers: builtinImportParsers,
+      pluginParsers,
+    });
+    const resolver = new ChangeDetectionResolverFactory(resolveConfig);
+    const workspaceLocator = new WorkspaceLocator(projectRoot);
+    const workspaceRoots = await workspaceLocator.locate();
+
+    // 3. Get story-file index.
+    const storyIndexGenerator = await this.options.storyIndexGeneratorPromise;
+    const storyIndex = await storyIndexGenerator.getIndex();
+    const storyIdsByFile = getStoryIdsByAbsolutePath(storyIndex, this.workingDir);
+    this.storyFiles = new Set(storyIdsByFile.keys());
+
+    if (this.disposed) {
+      return;
+    }
+
+    // 4. Eager build.
+    this.dependencyGraphBuilder = new DependencyGraphBuilder({
+      registry,
+      resolver,
+      workspaceRoots,
+      projectRoot,
+    });
+    this.buildInFlight = true;
+    let reverseIndex: ReverseIndexImpl;
+    let graph: DependencyGraph;
+    try {
+      ({ reverseIndex, graph } = await this.dependencyGraphBuilder.build(this.storyFiles));
+    } finally {
+      this.buildInFlight = false;
+    }
+    if (this.disposed) {
+      return;
+    }
+    this.reverseIndex = reverseIndex;
+    this.graph = graph;
+
+    this.incrementalPatcher = new IncrementalPatcher({
+      reverseIndex,
+      graph,
+      registry,
+      resolver,
+      workspaceRoots,
+      projectRoot,
+      isStoryFile: (path: string) => this.storyFiles.has(normalize(path)),
+    });
+
+    // 5. Drain any events that arrived during the eager build, in arrival order.
+    const drained = this.pendingEvents.splice(0);
+    for (const event of drained) {
+      if (this.disposed) {
         return;
       }
+      try {
+        await this.incrementalPatcher.patch(event);
+      } catch (error) {
+        logger.warn(
+          `Change detection: failed to apply queued ${event.kind} for ${event.path}: ${error instanceof Error ? error.message : String(error)}`
+        );
+      }
+    }
 
-      this.handleBuilderStartupEvent(event);
+    // 6. Subscribe to file-change events.
+    this.unsubscribeFileChange = adapter.onFileChange((event) => {
+      if (this.disposed) {
+        return;
+      }
+      if (this.buildInFlight) {
+        this.pendingEvents.push(event);
+        return;
+      }
+      void this.handleFileChange(event);
     });
+
+    // 7. Subscribe to startup-failure events (optional).
+    if (adapter.onStartupFailure) {
+      this.unsubscribeStartupFailure = adapter.onStartupFailure((event) => {
+        if (this.disposed) {
+          return;
+        }
+        logger.warn(`Change detection unavailable: ${event.reason}`);
+        this.resolveReadiness({
+          status: 'unavailable',
+          reason: event.reason,
+          error: event.error,
+        });
+        void this.dispose();
+      });
+    }
+
+    // 8. Index baseline service.
+    void this.getIndexBaselineService().start();
+
+    // 9. Git state changes.
     this.getGitDiffProvider().onGitStateChange(() => {
       if (this.disposed) {
         return;
@@ -199,6 +325,9 @@ export class ChangeDetectionService {
         .handleGitStateChange()
         .catch(() => undefined);
     });
+
+    // Trigger an initial scan so we surface git-pending diffs immediately.
+    this.scheduleScan(0);
   }
 
   onStoryIndexInvalidated(): void {
@@ -216,8 +345,24 @@ export class ChangeDetectionService {
       this.debounceTimer = undefined;
     }
 
-    this.unsubscribeModuleGraph?.();
-    this.unsubscribeModuleGraph = undefined;
+    this.unsubscribeFileChange?.();
+    this.unsubscribeFileChange = undefined;
+    this.unsubscribeStartupFailure?.();
+    this.unsubscribeStartupFailure = undefined;
+  }
+
+  private async handleFileChange(event: FileChangeEvent): Promise<void> {
+    if (this.disposed || !this.incrementalPatcher) {
+      return;
+    }
+    try {
+      await this.incrementalPatcher.patch(event);
+    } catch (error) {
+      logger.warn(
+        `Change detection: failed to apply ${event.kind} for ${event.path}: ${error instanceof Error ? error.message : String(error)}`
+      );
+    }
+    this.scheduleScan(this.debounceMs);
   }
 
   private scheduleScan(delayMs: number): void {
@@ -232,7 +377,7 @@ export class ChangeDetectionService {
   }
 
   private async scan(): Promise<void> {
-    if (this.disposed || !this.latestModuleGraph) {
+    if (this.disposed || !this.reverseIndex) {
       return;
     }
 
@@ -244,7 +389,7 @@ export class ChangeDetectionService {
     this.scanInFlight = true;
 
     try {
-      const nextStatuses = await this.buildStatuses(this.latestModuleGraph);
+      const nextStatuses = await this.buildStatuses(this.reverseIndex);
       if (this.disposed) {
         return;
       }
@@ -291,7 +436,7 @@ export class ChangeDetectionService {
     }
   }
 
-  private async buildStatuses(moduleGraph: ModuleGraph): Promise<Map<string, Status>> {
+  private async buildStatuses(reverseIndex: ReverseIndexImpl): Promise<Map<string, Status>> {
     const gitDiffProvider = this.getGitDiffProvider();
     const [changes, repoRoot, storyIndexGenerator, baselineEntryIds] = await Promise.all([
       gitDiffProvider.getChangedFiles(),
@@ -300,19 +445,13 @@ export class ChangeDetectionService {
       this.getIndexBaselineService().getBaselineEntryIds(),
     ]);
 
-    const changedFiles = new Set(Array.from(changes.changed).map((path) => join(repoRoot, path)));
-    const newFiles = new Set(Array.from(changes.new).map((path) => join(repoRoot, path)));
+    const changedFiles = new Set(
+      Array.from(changes.changed).map((path) => normalize(join(repoRoot, path)))
+    );
+    const newFiles = new Set(
+      Array.from(changes.new).map((path) => normalize(join(repoRoot, path)))
+    );
     const scannedFiles = new Set([...changedFiles, ...newFiles]);
-    const normalizedModuleGraph = new Map<string, Set<ModuleNode>>();
-    moduleGraph.forEach((nodes, filePath) => {
-      const normalizedPath = normalizePath(filePath);
-      const existingNodes = normalizedModuleGraph.get(normalizedPath);
-      if (existingNodes) {
-        nodes.forEach((node) => void existingNodes.add(node));
-      } else {
-        normalizedModuleGraph.set(normalizedPath, new Set(nodes));
-      }
-    });
 
     const storyIndex = await storyIndexGenerator.getIndex();
     const baselineStatuses = buildIndexBaselineStatuses(storyIndex, baselineEntryIds);
@@ -320,16 +459,19 @@ export class ChangeDetectionService {
     const statuses = new Map<string, Status>();
 
     for (const changedFile of scannedFiles) {
-      const affectedStoryFiles = findAffectedStoryFiles(
-        changedFile,
-        normalizedModuleGraph,
-        storyIdsByFile
-      );
-      const lowestDistance = Math.min(
-        ...Array.from(affectedStoryFiles.values(), ({ distance }) => distance)
-      );
+      const affectedStoryFiles = reverseIndex.lookup(changedFile);
+      // Include the changed file as a story-at-distance-0 if it IS a story (parity with
+      // legacy trace-changed.ts:10-12).
+      const allEntries = new Map(affectedStoryFiles);
+      if (storyIdsByFile.has(changedFile)) {
+        allEntries.set(changedFile, 0);
+      }
+      if (allEntries.size === 0) {
+        continue;
+      }
+      const lowestDistance = Math.min(...allEntries.values());
 
-      for (const [storyFile, { distance }] of affectedStoryFiles.entries()) {
+      for (const [storyFile, distance] of allEntries.entries()) {
         const storyIds = storyIdsByFile.get(storyFile);
         if (!storyIds) {
           continue;
@@ -410,26 +552,21 @@ export class ChangeDetectionService {
 
     this.readinessResolved = true;
     setChangeDetectionReadiness(readiness);
+
+    if (readiness.status === 'ready') {
+      void this.writeBenchMarker(readiness.status);
+    }
   }
 
-  private handleBuilderStartupEvent(
-    event: Exclude<ModuleGraphChangeEvent, { type: 'moduleGraph' }>
-  ): void {
-    if (event.type === 'unavailable') {
-      logger.warn(`Change detection unavailable: ${event.reason}`);
-      this.resolveReadiness({
-        status: 'unavailable',
-        reason: event.reason,
-        error: event.error,
-      });
-    } else {
-      logger.error(`Change detection failed: ${event.error.message}`);
-      this.resolveReadiness({
-        status: 'error',
-        error: event.error,
-      });
+  private async writeBenchMarker(status: string): Promise<void> {
+    const marker = process.env.STORYBOOK_BENCH_MARKER;
+    if (!marker) {
+      return;
     }
-
-    void this.dispose();
+    try {
+      await writeFile(marker, `${JSON.stringify({ ts: Date.now(), status })}\n`, { flag: 'a' });
+    } catch (e) {
+      logger.debug(`Failed to write bench marker: ${(e as Error).message}`);
+    }
   }
 }

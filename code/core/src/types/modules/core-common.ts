@@ -276,7 +276,17 @@ export interface Builder<Config, BuilderStats extends Stats = Stats> {
   bail: (e?: Error) => Promise<void>;
   corePresets?: string[];
   overridePresets?: string[];
+  /**
+   * @deprecated Use `changeDetectionAdapter` instead. Will be removed once the new
+   *   oxc-resolver–based change detector has been on a stable release.
+   */
   onModuleGraphChange?(cb: (event: ModuleGraphChangeEvent) => void): () => void;
+  /**
+   * Returns a change-detection adapter the core change-detection service uses to (a) read
+   * builder resolve config (alias, root, conditions), and (b) subscribe to file-system events.
+   * Replaces `onModuleGraphChange`.
+   */
+  changeDetectionAdapter?(): import('../../core-server/change-detection/adapters/types.ts').ChangeDetectionAdapter;
 }
 
 /**
@@ -593,6 +603,23 @@ export interface StorybookConfigRaw {
   previewAnnotations?: Entry[];
 
   experimental_indexers?: Indexer[];
+
+  /**
+   * Register parsers that extract import edges from non-JS/TS files (e.g. .vue, .svelte).
+   * Each parser claims one or more file extensions. Last registration wins on collision.
+   * Lazy-load heavy SFC compilers inside the parser body — the function is awaited on first
+   * use.
+   *
+   * Used by Storybook's change-detection dependency graph. May be reused by other consumers
+   * in the future (static build, dependency analysis CLIs).
+   *
+   * @experimental Subject to change before stable release.
+   */
+  experimental_importParsers?:
+    | import('../../core-server/change-detection/parser-registry/types.ts').ImportParser[]
+    | (() => Promise<
+        import('../../core-server/change-detection/parser-registry/types.ts').ImportParser[]
+      >);
 
   storyIndexGenerator?: StoryIndexGenerator;
 

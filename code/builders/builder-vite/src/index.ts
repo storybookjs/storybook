@@ -16,6 +16,7 @@ import type {
 import type { ViteDevServer } from 'vite';
 
 import { build as viteBuild } from './build.ts';
+import { createViteChangeDetectionAdapter } from './change-detection-adapter/index.ts';
 import type { ViteBuilder } from './types.ts';
 import { createViteServer } from './vite-server.ts';
 import { buildModuleGraph } from './utils/build-module-graph.ts';
@@ -115,6 +116,11 @@ function startModuleGraphTracking(): void {
   });
 }
 
+/**
+ * @deprecated Use `changeDetectionAdapter` instead. Removed in PR-B (next minor) once the new
+ *   oxc-resolver-based change detector has been on a stable release. Kept here so the legacy
+ *   builder API remains usable for one release cycle (see consensus plan §ADR-E).
+ */
 export const onModuleGraphChange: NonNullable<Builder<Options>['onModuleGraphChange']> = (cb) => {
   listeners.add(cb);
   startModuleGraphTracking();
@@ -124,6 +130,25 @@ export const onModuleGraphChange: NonNullable<Builder<Options>['onModuleGraphCha
   };
 };
 
+/**
+ * Returns a {@link ChangeDetectionAdapter} bound to the Vite dev server created by `start()`.
+ *
+ * Throws if called before `start()` has resolved (i.e. before the Vite dev server exists).
+ * Replaces the polling-based `onModuleGraphChange` flow above.
+ */
+export const changeDetectionAdapter: NonNullable<
+  Builder<Options>['changeDetectionAdapter']
+> = () => {
+  if (!server) {
+    throw new Error(
+      'builder-vite: changeDetectionAdapter() called before start(); the Vite dev server is not ready yet.'
+    );
+  }
+  return createViteChangeDetectionAdapter(server);
+};
+
+// knip-ignore: kept temporarily; replaced by changeDetectionAdapter (see consensus plan §ADR-E).
+//   Will be removed in PR-B once the new detector has been on a stable release.
 const startChangeDetection = async (options: Options) => {
   const startTime = process.hrtime();
   const indexGenerator = await options.presets.apply<StoryIndexGenerator>('storyIndexGenerator');

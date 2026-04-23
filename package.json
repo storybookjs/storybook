@@ -16,6 +16,8 @@
     ]
   },
   "scripts": {
+    "benchmark:change-detection": "tsx scripts/bench/change-detection.ts",
+    "benchmark:change-detection:report": "tsx scripts/bench/report-change-detection.ts",
     "ci-tests": "cd code; yarn ci-tests",
     "docs:check": "yarn --cwd scripts docs:check",
     "fmt:check": "oxfmt --check .",

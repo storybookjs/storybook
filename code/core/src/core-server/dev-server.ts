@@ -53,6 +53,7 @@ export async function storybookDevServer(
     storyIndexGeneratorPromise,
     statusStore: getStatusStoreByTypeId(CHANGE_DETECTION_STATUS_TYPE_ID),
     workingDir,
+    presets: options.presets,
   });
 
   app.use(compression({ level: 1 }));
@@ -125,7 +126,7 @@ export async function storybookDevServer(
 
   if (!options.ignorePreview) {
     if (!features.changeDetection) {
-      changeDetectionService.start(previewBuilder.onModuleGraphChange, false);
+      changeDetectionService.start(undefined, false);
     }
 
     logger.debug('Starting preview..');
@@ -161,7 +162,8 @@ export async function storybookDevServer(
         }
         try {
           changeDetectionStarted = true;
-          changeDetectionService.start(previewBuilder.onModuleGraphChange, true);
+          const adapter = previewBuilder.changeDetectionAdapter?.();
+          changeDetectionService.start(adapter, true);
         } catch (error) {
           logger.error('Failed to start change detection');
           logger.error(error instanceof Error ? error : String(error));

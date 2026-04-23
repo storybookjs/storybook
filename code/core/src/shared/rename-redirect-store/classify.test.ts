@@ -79,4 +79,13 @@ describe('classifyFileChange', () => {
       orphans: ['old--secondary'],
     });
   });
+
+  it('ignores exports added in the new snapshot', () => {
+    const old: FileSnapshot = { stories: {}, docs: [] };
+    const next: FileSnapshot = {
+      stories: { Primary: { id: 'button--primary' } },
+      docs: [],
+    };
+    expect(classifyFileChange(old, next)).toEqual({ renames: [], orphans: [] });
+  });
 });

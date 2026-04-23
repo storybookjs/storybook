@@ -1,7 +1,9 @@
+import { fileURLToPath } from 'node:url';
+
+import { extractBuilderOptions } from 'storybook/internal/common';
 import type { PresetProperty } from 'storybook/internal/types';
 
 import type { StandaloneOptions } from './builders/utils/standalone-options.ts';
-import { fileURLToPath } from 'node:url';
 
 export const addons: PresetProperty<'addons'> = [
   fileURLToPath(import.meta.resolve('@storybook/angular/server/framework-preset-angular-cli')),
@@ -33,8 +35,15 @@ export const previewAnnotations: PresetProperty<'previewAnnotations'> = async (
   return annotations;
 };
 
-export const core: PresetProperty<'core'> = {
-  builder: import.meta.resolve('@storybook/builder-webpack5'),
+export const core: PresetProperty<'core'> = async (config, options) => {
+  const framework = await options.presets.apply('framework');
+  return {
+    ...config,
+    builder: {
+      name: import.meta.resolve('@storybook/builder-webpack5'),
+      options: extractBuilderOptions(framework),
+    },
+  };
 };
 
 export const typescript: PresetProperty<'typescript'> = async (config) => {

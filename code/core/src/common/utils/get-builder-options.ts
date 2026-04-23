@@ -21,3 +21,16 @@ export async function getBuilderOptions<T extends Record<string, any>>(
 
   return {};
 }
+
+/**
+ * Extracts builder options from an already-resolved framework value.
+ * Handles both string framework names (no options) and object framework configs.
+ */
+export function extractBuilderOptions(
+  framework: string | Record<string, any>
+): Record<string, any> {
+  if (typeof framework === 'string' || !framework?.options?.builder) {
+    return {};
+  }
+  return framework.options.builder;
+}

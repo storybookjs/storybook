@@ -3,7 +3,7 @@ import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { getProjectRoot } from 'storybook/internal/common';
+import { extractBuilderOptions, getProjectRoot } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
 import type { PresetProperty } from 'storybook/internal/types';
 
@@ -41,7 +41,7 @@ export const core: PresetProperty<'core'> = async (config, options) => {
     builder: {
       name: fileURLToPath(import.meta.resolve('@storybook/builder-webpack5')),
       options: {
-        ...(typeof framework === 'string' ? {} : framework.options.builder || {}),
+        ...extractBuilderOptions(framework),
       },
     },
     renderer: fileURLToPath(import.meta.resolve('@storybook/react/preset')),

@@ -15,6 +15,7 @@ import type {
   Indexer,
   NormalizedStoriesSpecifier,
   Path,
+  StoryId,
   StoryIndex,
   StoryIndexEntry,
   StoryIndexInput,
@@ -118,6 +119,12 @@ export class StoryIndexGenerator {
   private lastError?: Error | null;
 
   private invalidationListeners: Set<() => void> = new Set();
+
+  // Tracks export-name → story-ID maps for story files that were just removed
+  // or about to be replaced by a rename. Populated in `invalidate()` before the
+  // cache entry is deleted; drained by the orchestrator that writes rename
+  // redirect chains after re-indexing completes.
+  private removedFileSnapshots: Map<Path, Record<string, StoryId>> = new Map();
 
   constructor(
     public readonly specifiers: NormalizedStoriesSpecifier[],
@@ -851,6 +858,17 @@ export class StoryIndexGenerator {
           dep.dependents.splice(dep.dependents.indexOf(absolutePath), 1)
         );
       }
+      if (cacheEntry && cacheEntry.type === 'stories') {
+        const snapshot: Record<string, StoryId> = {};
+        for (const entry of cacheEntry.entries) {
+          if (entry.type === 'story' && 'exportName' in entry && entry.exportName) {
+            snapshot[entry.exportName] = entry.id;
+          }
+        }
+        if (Object.keys(snapshot).length > 0) {
+          this.removedFileSnapshots.set(absolutePath, snapshot);
+        }
+      }
       delete cache[absolutePath];
     } else {
       cache[absolutePath] = false;
@@ -865,6 +883,23 @@ export class StoryIndexGenerator {
     return () => {
       this.invalidationListeners.delete(listener);
     };
+  }
+
+  /**
+   * Returns the current map of removed-file snapshots keyed by absolute path.
+   *
+   * Each snapshot is a record of exportName → storyId captured just before the
+   * corresponding cache entry was deleted in `invalidate()`. The orchestrator
+   * that processes rename candidates calls this to learn both the old story
+   * IDs and the export-name fingerprint used to confirm rename pairs.
+   */
+  getRemovedFileSnapshots(): Map<Path, Record<string, StoryId>> {
+    return this.removedFileSnapshots;
+  }
+
+  /** Clears all captured removed-file snapshots. Call after draining a cycle. */
+  clearRemovedFileSnapshots(): void {
+    this.removedFileSnapshots.clear();
   }
 
   async getPreviewCode() {

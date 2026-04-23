@@ -2420,5 +2420,43 @@ describe('StoryIndexGenerator', () => {
         generator.invalidate('./src/A.stories.js', false);
       });
     });
+
+    describe('removed file snapshots', () => {
+      it('captures exportName→storyId map before deleting removed-file cache entry', async () => {
+        const specifier: NormalizedStoriesSpecifier = normalizeStoriesEntry(
+          './src/**/*.stories.(ts|js|mjs|jsx)',
+          options
+        );
+
+        const generator = new StoryIndexGenerator([specifier], options);
+        await generator.initialize();
+        await generator.getIndex();
+
+        generator.invalidate('./src/B.stories.ts', true);
+
+        const absolutePath = join(options.workingDir, 'src/B.stories.ts');
+        const snapshots = generator.getRemovedFileSnapshots();
+        const snapshot = snapshots.get(absolutePath);
+        expect(snapshot).toBeDefined();
+        expect(snapshot).toEqual({ StoryOne: 'b--story-one' });
+      });
+
+      it('clearRemovedFileSnapshots() empties the snapshot map', async () => {
+        const specifier: NormalizedStoriesSpecifier = normalizeStoriesEntry(
+          './src/**/*.stories.(ts|js|mjs|jsx)',
+          options
+        );
+
+        const generator = new StoryIndexGenerator([specifier], options);
+        await generator.initialize();
+        await generator.getIndex();
+
+        generator.invalidate('./src/B.stories.ts', true);
+        expect(generator.getRemovedFileSnapshots().size).toBeGreaterThan(0);
+
+        generator.clearRemovedFileSnapshots();
+        expect(generator.getRemovedFileSnapshots().size).toBe(0);
+      });
+    });
   });
 });

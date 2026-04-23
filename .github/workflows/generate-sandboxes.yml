@@ -102,8 +102,9 @@ jobs:
 
       - name: Publish
         # publish sandboxes even if the generation fails, as some sandboxes might have been generated successfully
+        # when triggered manually, always publish to the `next` branch on the sandboxes repo
         if: ${{ !cancelled() }}
-        run: yarn publish-sandboxes --remote=https://storybook-bot:${{ secrets.PAT_STORYBOOK_BOT }}@github.com/storybookjs/sandboxes.git --push --branch=${{ matrix.branch }}
+        run: yarn publish-sandboxes --remote=https://storybook-bot:${{ secrets.PAT_STORYBOOK_BOT }}@github.com/storybookjs/sandboxes.git --push --branch=${{ github.event_name == 'workflow_dispatch' && 'next' || matrix.branch }}
 
       - name: Report failure to Discord
         if: failure()

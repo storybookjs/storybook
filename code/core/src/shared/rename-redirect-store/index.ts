@@ -23,7 +23,13 @@ export function applyRenameChains(
 ): RenameRedirectState {
   const chains = { ...current.chains };
   for (const { oldId, newId } of renames) {
-    chains[oldId] = [newId];
+    for (const source of Object.keys(chains)) {
+      const chain = chains[source];
+      if (chain.length > 0 && chain[chain.length - 1] === oldId) {
+        chains[source] = [...chain, newId];
+      }
+    }
+    chains[oldId] = [...(chains[oldId] ?? []), newId];
   }
   return { chains };
 }

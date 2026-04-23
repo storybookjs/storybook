@@ -941,9 +941,22 @@ export class StoryIndexGenerator {
     return this.modifiedFileSnapshots;
   }
 
-  /** Clears all captured removed-file snapshots. Call after draining a cycle. */
-  clearRemovedFileSnapshots(): void {
+  /**
+   * Clears all captured snapshots (both modified and removed). Call after the
+   * rename-detection orchestrator finishes a cycle so the next invalidate
+   * pass starts from an empty slate.
+   */
+  clearSnapshots(): void {
+    this.modifiedFileSnapshots.clear();
     this.removedFileSnapshots.clear();
+  }
+
+  /**
+   * Clears all captured removed-file snapshots. Preserved as an alias for
+   * `clearSnapshots()` so existing callers keep working; drains both maps.
+   */
+  clearRemovedFileSnapshots(): void {
+    this.clearSnapshots();
   }
 
   async getPreviewCode() {

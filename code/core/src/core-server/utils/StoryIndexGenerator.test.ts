@@ -2480,6 +2480,25 @@ describe('StoryIndexGenerator', () => {
         expect(snapshot).toBeDefined();
         expect(snapshot!.stories).toEqual({ StoryOne: { id: 'b--story-one' } });
       });
+
+      it('clearSnapshots() empties both modified and removed maps', async () => {
+        const specifier: NormalizedStoriesSpecifier = normalizeStoriesEntry(
+          './src/**/*.stories.(ts|js|mjs|jsx)',
+          options
+        );
+        const generator = new StoryIndexGenerator([specifier], options);
+        await generator.initialize();
+        await generator.getIndex();
+
+        generator.invalidate('./src/A.stories.js', false);
+        generator.invalidate('./src/B.stories.ts', true);
+        expect(generator.getModifiedFileSnapshots().size).toBeGreaterThan(0);
+        expect(generator.getRemovedFileSnapshots().size).toBeGreaterThan(0);
+
+        generator.clearSnapshots();
+        expect(generator.getModifiedFileSnapshots().size).toBe(0);
+        expect(generator.getRemovedFileSnapshots().size).toBe(0);
+      });
     });
   });
 });

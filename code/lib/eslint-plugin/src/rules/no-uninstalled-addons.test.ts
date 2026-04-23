@@ -11,8 +11,8 @@ import { vi } from 'vitest';
 import { AST_NODE_TYPES } from '@typescript-eslint/utils';
 import { sep } from 'path';
 
-import ruleTester from '../test-utils';
-import rule from './no-uninstalled-addons';
+import ruleTester from '../test-utils.ts';
+import rule from './no-uninstalled-addons.ts';
 
 const rootDir = process.cwd().split(sep).pop();
 

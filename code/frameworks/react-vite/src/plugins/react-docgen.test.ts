@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 
-import { getReactDocgenImporter } from './react-docgen';
+import { getReactDocgenImporter } from './react-docgen.ts';
 
 const reactDocgenMock = vi.hoisted(() => {
   return {

@@ -8,10 +8,10 @@ import { existsSync } from 'fs';
 import { glob } from 'glob';
 import { dirname, join, relative } from 'path';
 
-import { temporaryDirectory } from '../../code/core/src/common/utils/cli';
-import { REPROS_DIRECTORY } from '../utils/constants';
-import { commitAllToGit } from './utils/git';
-import { getTemplatesData, renderTemplate } from './utils/template';
+import { temporaryDirectory } from '../../code/core/src/common/utils/cli.ts';
+import { REPROS_DIRECTORY } from '../utils/constants.ts';
+import { commitAllToGit } from './utils/git.ts';
+import { getTemplatesData, renderTemplate } from './utils/template.ts';
 
 export const logger = console;
 

@@ -1,9 +1,9 @@
 import { CheckIcon, EllipsisIcon, PlayAllHollowIcon } from '@storybook/icons';
 
-import { Badge, Form, ProgressSpinner } from '../..';
-import preview from '../../../../../.storybook/preview';
-import { Shortcut } from '../../../manager/components/Shortcut';
-import { ActionList } from './ActionList';
+import { Badge, Form, ProgressSpinner } from '../../index.ts';
+import preview from '../../../../../.storybook/preview.tsx';
+import { Shortcut } from '../../../manager/components/Shortcut.tsx';
+import { ActionList } from './ActionList.tsx';
 
 const meta = preview.meta({
   component: ActionList,

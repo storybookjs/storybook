@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { extractComponentProps } from 'storybook/internal/docs-tools';
 
-import { extractProps } from '../../extractProps';
+import { extractProps } from '../../extractProps.ts';
 
 // TODO: Norbert figure this out thank you
 describe('extractArgTypesFromDocgenTypescript', () => {

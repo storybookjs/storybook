@@ -1,8 +1,8 @@
 import fs from 'fs';
 import path from 'path';
 
-import type { StorybookRuleMeta } from '../../src/types';
-import type { createStorybookRule } from '../../src/utils/create-storybook-rule';
+import type { StorybookRuleMeta } from '../../src/types/index.ts';
+import type { createStorybookRule } from '../../src/utils/create-storybook-rule.ts';
 
 const ROOT = path.resolve(__dirname, '../../src/rules');
 

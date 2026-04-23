@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { isConfigAlreadySetup } from './postinstall';
+import { isConfigAlreadySetup } from './postinstall.ts';
 
 describe('postinstall helpers', () => {
   it('detects a fully configured Vitest config with addon plugin', () => {

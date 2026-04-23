@@ -1,4 +1,4 @@
-import type { ComponentTitle, Parameters, Path, StoryId, StoryName, Tag } from './csf';
+import type { ComponentTitle, Parameters, Path, StoryId, StoryName, Tag } from './csf.ts';
 
 type ExportName = string;
 type MetaId = string;

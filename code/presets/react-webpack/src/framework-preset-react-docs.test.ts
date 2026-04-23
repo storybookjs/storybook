@@ -5,7 +5,7 @@ import ReactDocgenTypescriptPlugin from '@storybook/react-docgen-typescript-plug
 
 import type { Configuration } from 'webpack';
 
-import * as preset from './framework-preset-react-docs';
+import * as preset from './framework-preset-react-docs.ts';
 
 vi.mock('./requirer', () => ({
   requirer: (resolver: any, path: string) => path,

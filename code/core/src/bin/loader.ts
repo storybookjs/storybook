@@ -14,7 +14,7 @@ import { deprecate } from 'storybook/internal/node-logger';
 import { transform } from 'esbuild';
 import { dedent } from 'ts-dedent';
 
-import { NODE_TARGET } from '../shared/constants/environments-support';
+import { NODE_TARGET } from '../shared/constants/environments-support.ts';
 
 export const supportedExtensions = [
   '.js',

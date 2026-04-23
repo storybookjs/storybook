@@ -11,7 +11,7 @@ import type { PreviewWeb } from 'storybook/preview-api';
 import type { App } from 'vue';
 import { createApp, h, isReactive, isVNode, reactive } from 'vue';
 
-import type { StoryFnVueReturnType, StoryID, VueRenderer } from './types';
+import type { StoryFnVueReturnType, StoryID, VueRenderer } from './types.ts';
 
 export const render: ArgsStoryFn<VueRenderer> = (props, context) => {
   const { id, component: Component } = context;
@@ -153,9 +153,6 @@ export function updateArgs<
     [name: string]: unknown;
   },
 >(reactiveArgs: T, nextArgs: T) {
-  if (Object.keys(nextArgs).length === 0) {
-    return;
-  }
   const currentArgs = isReactive(reactiveArgs) ? reactiveArgs : reactive(reactiveArgs);
   // delete all args in currentArgs that are not in nextArgs
   Object.keys(currentArgs).forEach((key) => {

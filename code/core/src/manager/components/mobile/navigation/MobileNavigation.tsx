@@ -10,10 +10,10 @@ import { useId } from '@react-aria/utils';
 import { useStorybookApi, useStorybookState } from 'storybook/manager-api';
 import { styled } from 'storybook/theming';
 
-import { useLandmark } from '../../../hooks/useLandmark';
-import { useLayout } from '../../layout/LayoutProvider';
-import { MobileAddonsDrawer } from './MobileAddonsDrawer';
-import { MobileMenuDrawer } from './MobileMenuDrawer';
+import { useLandmark } from '../../../hooks/useLandmark.ts';
+import { useLayout } from '../../layout/LayoutProvider.tsx';
+import { MobileAddonsDrawer } from './MobileAddonsDrawer.tsx';
+import { MobileMenuDrawer } from './MobileMenuDrawer.tsx';
 
 interface MobileNavigationProps {
   menu?: React.ReactNode;
@@ -49,7 +49,8 @@ const useFullStoryName = () => {
     return '';
   }
   const combinedIndex = combineIndexes(index, refs || {});
-  let fullStoryName = currentStory.renderLabel?.(currentStory, api) || currentStory.name;
+  const storyLabel = currentStory.renderLabel?.(currentStory, api);
+  let fullStoryName = typeof storyLabel === 'string' ? storyLabel : currentStory.name;
 
   let node = combinedIndex[currentStory.id];
 
@@ -61,7 +62,8 @@ const useFullStoryName = () => {
     fullStoryName.length < 24
   ) {
     node = combinedIndex[node.parent];
-    const parentName = node.renderLabel?.(node, api) || node.name;
+    const parentLabel = node.renderLabel?.(node, api);
+    const parentName = typeof parentLabel === 'string' ? parentLabel : node.name;
     fullStoryName = `${parentName}/${fullStoryName}`;
   }
   return fullStoryName;

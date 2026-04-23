@@ -11,8 +11,8 @@ import { CommonJsConfigNotSupportedError } from 'storybook/internal/server-error
 
 import { dedent } from 'ts-dedent';
 
-import { updateMainConfig } from '../helpers/mainConfigFile';
-import type { Fix } from '../types';
+import { updateMainConfig } from '../helpers/mainConfigFile.ts';
+import type { Fix } from '../types.ts';
 
 export interface WrapGetAbsolutePathRunOptions {
   storybookVersion: string;

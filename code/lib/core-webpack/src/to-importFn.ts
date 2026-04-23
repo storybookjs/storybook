@@ -3,7 +3,7 @@ import type { NormalizedStoriesSpecifier } from 'storybook/internal/types';
 
 import { dedent } from 'ts-dedent';
 
-import { importPipeline } from './importPipeline';
+import { importPipeline } from './importPipeline.ts';
 
 function adjustRegexToExcludeNodeModules(originalRegex: RegExp) {
   const originalRegexString = originalRegex.source;

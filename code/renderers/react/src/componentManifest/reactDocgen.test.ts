@@ -1,8 +1,13 @@
-import { describe, expect, test } from 'vitest';
+import { beforeEach, describe, expect, test } from 'vitest';
 
 import { dedent } from 'ts-dedent';
 
-import { parseWithReactDocgen } from './reactDocgen';
+import { parseWithReactDocgen } from './reactDocgen.ts';
+import { invalidateCache } from './utils.ts';
+
+beforeEach(() => {
+  invalidateCache();
+});
 
 async function parse(code: string, name = 'Component.tsx') {
   const filename = `/virtual/${name}`;

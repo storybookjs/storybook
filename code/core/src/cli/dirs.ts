@@ -18,7 +18,7 @@ import getNpmTarballUrlDefault from 'get-npm-tarball-url';
 import { unpackTar } from 'modern-tar/fs';
 import invariant from 'tiny-invariant';
 
-import { resolvePackageDir } from '../shared/utils/module';
+import { resolvePackageDir } from '../shared/utils/module.ts';
 
 const resolveUsingBranchInstall = async (packageManager: JsPackageManager, request: string) => {
   const tempDirectory = await temporaryDirectory();

@@ -16,9 +16,9 @@ import {
 import type { API } from 'storybook/manager-api';
 import { styled } from 'storybook/theming';
 
-import type { NormalLink } from '../../components/components/tooltip/TooltipLinkList';
-import { Shortcut } from '../components/Shortcut';
-import { useChecklist } from '../components/sidebar/useChecklist';
+import type { NormalLink } from '../../components/components/tooltip/TooltipLinkList.tsx';
+import { Shortcut } from '../components/Shortcut.tsx';
+import { useChecklist } from '../components/sidebar/useChecklist.ts';
 
 export type MenuItem = NormalLink & {
   closeOnClick?: boolean;

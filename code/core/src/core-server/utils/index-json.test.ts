@@ -9,11 +9,11 @@ import { debounce } from 'es-toolkit/function';
 import type { Polka, Request, Response } from 'polka';
 import Watchpack from 'watchpack';
 
-import { csfIndexer } from '../presets/common-preset';
-import type { StoryIndexGeneratorOptions } from './StoryIndexGenerator';
-import { StoryIndexGenerator } from './StoryIndexGenerator';
-import type { ServerChannel } from './get-server-channel';
-import { DEBOUNCE, registerIndexJsonRoute } from './index-json';
+import { csfIndexer } from '../presets/common-preset.ts';
+import type { StoryIndexGeneratorOptions } from './StoryIndexGenerator.ts';
+import { StoryIndexGenerator } from './StoryIndexGenerator.ts';
+import type { ServerChannel } from './get-server-channel.ts';
+import { registerIndexJsonRoute } from './index-json.ts';
 
 vi.mock('watchpack');
 vi.mock('es-toolkit/function', { spy: true });
@@ -525,12 +525,14 @@ describe('registerIndexJsonRoute', () => {
 
     it('sends invalidate events', async () => {
       const mockServerChannel = { emit: vi.fn() } as any as ServerChannel;
+      const onStoryIndexInvalidated = vi.fn();
       registerIndexJsonRoute({
         app,
         channel: mockServerChannel,
         workingDir,
         normalizedStories,
         storyIndexGeneratorPromise: getStoryIndexGeneratorPromise(),
+        onStoryIndexInvalidated,
       });
 
       expect(use).toHaveBeenCalledTimes(1);
@@ -558,6 +560,7 @@ describe('registerIndexJsonRoute', () => {
         expect(mockServerChannel.emit).toHaveBeenCalledTimes(1);
       });
       expect(mockServerChannel.emit).toHaveBeenCalledWith(STORY_INDEX_INVALIDATED);
+      expect(onStoryIndexInvalidated).toHaveBeenCalledTimes(1);
     });
 
     it('only sends one invalidation when multiple event listeners are listening', async () => {

@@ -28,16 +28,16 @@ import type { ModuleImportFn, ProjectAnnotations } from 'storybook/internal/type
 
 import invariant from 'tiny-invariant';
 
-import { Tag } from '../../../shared/constants/tags';
-import type { StorySpecifier } from '../store/StoryIndexStore';
-import type { MaybePromise } from './Preview';
-import { Preview } from './Preview';
-import type { Selection, SelectionStore } from './SelectionStore';
-import type { View } from './View';
-import { CsfDocsRender } from './render/CsfDocsRender';
-import { MdxDocsRender } from './render/MdxDocsRender';
-import { PREPARE_ABORTED } from './render/Render';
-import { StoryRender } from './render/StoryRender';
+import { Tag } from '../../../shared/constants/tags.ts';
+import type { StorySpecifier } from '../store/StoryIndexStore.ts';
+import type { MaybePromise } from './Preview.tsx';
+import { Preview } from './Preview.tsx';
+import type { Selection, SelectionStore } from './SelectionStore.ts';
+import type { View } from './View.ts';
+import { CsfDocsRender } from './render/CsfDocsRender.ts';
+import { MdxDocsRender } from './render/MdxDocsRender.ts';
+import { PREPARE_ABORTED } from './render/Render.ts';
+import { StoryRender } from './render/StoryRender.ts';
 
 const globalWindow = globalThis;
 

@@ -6,7 +6,7 @@ import { logger } from 'storybook/internal/node-logger';
 import picocolors from 'picocolors';
 import semver from 'semver';
 
-import { consolidatedPackages } from '../automigrate/helpers/consolidated-packages';
+import { consolidatedPackages } from '../automigrate/helpers/consolidated-packages.ts';
 
 export type AnalysedPackage = {
   packageName: string;

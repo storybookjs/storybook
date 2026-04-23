@@ -5,9 +5,9 @@ import type { PresetProperty } from 'storybook/internal/types';
 import { withoutVitePlugins } from '@storybook/builder-vite';
 import { viteFinal as svelteViteFinal } from '@storybook/svelte-vite/preset';
 
-import { configOverrides } from './plugins/config-overrides';
-import { mockSveltekitStores } from './plugins/mock-sveltekit-stores';
-import { type StorybookConfig } from './types';
+import { configOverrides } from './plugins/config-overrides.ts';
+import { mockSveltekitStores } from './plugins/mock-sveltekit-stores.ts';
+import { type StorybookConfig } from './types.ts';
 
 export const core: PresetProperty<'core'> = {
   builder: import.meta.resolve('@storybook/builder-vite'),

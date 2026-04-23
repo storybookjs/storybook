@@ -6,7 +6,7 @@ import React from 'react';
 
 import { ThemeProvider, convert, themes } from 'storybook/theming';
 
-import { DocumentWrapper } from './DocumentWrapper';
+import { DocumentWrapper } from './DocumentWrapper.tsx';
 
 function ThemedDocumentWrapper({ children }: { children: React.ReactNode }) {
   return (

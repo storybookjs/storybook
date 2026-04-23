@@ -24,6 +24,9 @@ const SUCCESS_ID = 'icon--success';
 const ERROR_ID = 'icon--error';
 const WARNING_ID = 'icon--warning';
 const DOT_ID = 'icon--dot';
+const NEW_ID = 'icon--new';
+const MODIFIED_ID = 'icon--modified';
+const AFFECTED_ID = 'icon--affected';
 
 export const IconSymbols: FC = () => {
   return (
@@ -104,6 +107,53 @@ export const IconSymbols: FC = () => {
       <symbol id={DOT_ID}>
         <circle cx="3" cy="3" r="3" fill="currentColor" />
       </symbol>
+      <symbol id={NEW_ID}>
+        <path
+          d="M7 3.5L6.96971 3.68173C6.68873 5.36762 5.36762 6.68873 3.68173 6.96971L3.5 7"
+          stroke="currentColor"
+          strokeLinecap="round"
+          fill="none"
+        />
+        <path
+          d="M7 3.5L7.03029 3.68173C7.31127 5.36762 8.63238 6.68873 10.3183 6.96971L10.5 7"
+          stroke="currentColor"
+          strokeLinecap="round"
+          fill="none"
+        />
+        <path
+          d="M7 10.5L6.96971 10.3183C6.68873 8.63238 5.36762 7.31127 3.68173 7.03029L3.5 7"
+          stroke="currentColor"
+          strokeLinecap="round"
+          fill="none"
+        />
+        <path
+          d="M7 10.5L7.03029 10.3183C7.31127 8.63238 8.63238 7.31127 10.3183 7.03029L10.5 7"
+          stroke="currentColor"
+          strokeLinecap="round"
+          fill="none"
+        />
+        <path d="M7 4.5L4.5 7L7 9.5L9.5 7L7 4.5Z" fill="currentColor" />
+      </symbol>
+      <symbol id={MODIFIED_ID}>
+        <circle cx="7" cy="7" r="3" fill="currentColor" />
+      </symbol>
+      <symbol id={AFFECTED_ID}>
+        <circle cx="7" cy="7" r="2" fill="currentColor" />
+        <path
+          d="M7 3.5A3.5 3.5 0 0 0 7 10.5"
+          stroke="currentColor"
+          strokeWidth="1"
+          strokeLinecap="round"
+          fill="none"
+        />
+        <path
+          d="M7 3.5A3.5 3.5 0 0 1 7 10.5"
+          stroke="currentColor"
+          strokeWidth="1"
+          strokeLinecap="round"
+          fill="none"
+        />
+      </symbol>
     </Svg>
   );
 };
@@ -118,7 +168,10 @@ export const UseSymbol: FC<{
     | 'success'
     | 'error'
     | 'warning'
-    | 'dot';
+    | 'dot'
+    | 'new'
+    | 'modified'
+    | 'affected';
 }> = ({ type }) => {
   if (type === 'group') {
     return <use xlinkHref={`#${GROUP_ID}`} />;
@@ -155,5 +208,18 @@ export const UseSymbol: FC<{
   if (type === 'dot') {
     return <use xlinkHref={`#${DOT_ID}`} />;
   }
+
+  if (type === 'new') {
+    return <use xlinkHref={`#${NEW_ID}`} />;
+  }
+
+  if (type === 'modified') {
+    return <use xlinkHref={`#${MODIFIED_ID}`} />;
+  }
+
+  if (type === 'affected') {
+    return <use xlinkHref={`#${AFFECTED_ID}`} />;
+  }
+
   return null;
 };

@@ -1,3 +1,8 @@
+## 10.4.0-alpha.10
+
+- Sidebar: Fix clear status button to only clear test statuses - [#34478](https://github.com/storybookjs/storybook/pull/34478), thanks @valentinpalkovic!
+- Telemetry: Centralize disable logic with module-level flag - [#34485](https://github.com/storybookjs/storybook/pull/34485), thanks @valentinpalkovic!
+
 ## 10.4.0-alpha.9
 
 - A11y: Improve boolean control contrast in forced colors mode - [#34204](https://github.com/storybookjs/storybook/pull/34204), thanks @anchmelev!

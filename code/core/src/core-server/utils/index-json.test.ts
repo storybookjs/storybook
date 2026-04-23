@@ -744,6 +744,45 @@ describe('registerIndexJsonRoute', () => {
         expect(renameRedirectStore.getState().chains['b--story-one']).toEqual([null]);
       });
     });
+
+    it('writes a rename chain when a modified file has shared exports with changed IDs', async () => {
+      const mockServerChannel = { emit: vi.fn() } as any as ServerChannel;
+      const storyIndexGeneratorPromise = getStoryIndexGeneratorPromise();
+      registerIndexJsonRoute({
+        app,
+        channel: mockServerChannel,
+        workingDir,
+        normalizedStories,
+        storyIndexGeneratorPromise,
+      });
+
+      const generator = await storyIndexGeneratorPromise;
+      await generator.getIndex();
+
+      // Simulate that B.stories.ts previously indexed to a different story ID
+      // under the same export (e.g. a meta.title rename). invalidate() first to
+      // mark the cache entry stale and record a real snapshot; then overwrite
+      // that snapshot with the fake "old" shape we want the classifier to see.
+      const absPath = `${workingDir}/src/B.stories.ts`;
+      generator.invalidate('./src/B.stories.ts', false);
+      generator.getModifiedFileSnapshots().set(absPath, {
+        stories: { StoryOne: { id: 'old--story-one' } },
+        docs: [],
+      });
+
+      // Drive onChange. The second invalidate finds cache[absPath] === false,
+      // so captureSnapshot returns undefined and the seeded snapshot survives.
+      // The push into pendingModifications + maybeInvalidate flushes the rename
+      // through the store.
+      const watcher = Watchpack.mock.instances[0];
+      const onChange = watcher.on.mock.calls[0][1];
+      onChange(absPath, 1234, undefined);
+
+      await vi.waitFor(() => {
+        expect(renameRedirectStore.getState().chains['old--story-one']).toEqual(['b--story-one']);
+      });
+      expect(renameRedirectStore.getState().origins['old--story-one']).toBe(absPath);
+    });
   });
 });
 

@@ -96,4 +96,14 @@ describe('extendRenameMaps', () => {
     });
     expect(result.origins).toEqual({ 'a--x': './src/A.stories.ts' });
   });
+
+  it('writes origin for an orphan without touching chains', () => {
+    const result = extendRenameMaps(INITIAL_RENAME_REDIRECT_STATE, {
+      renames: [],
+      orphans: [{ id: 'orphan--x', origin: './src/Orphan.stories.ts' }],
+      deletions: [],
+    });
+    expect(result.origins).toEqual({ 'orphan--x': './src/Orphan.stories.ts' });
+    expect(result.chains).toEqual({});
+  });
 });

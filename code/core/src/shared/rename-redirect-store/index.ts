@@ -57,6 +57,12 @@ export function extendRenameMaps(
     }
   }
 
+  for (const { id, origin } of events.orphans) {
+    if (!(id in origins)) {
+      origins[id] = origin;
+    }
+  }
+
   for (const { id: deletedId } of events.deletions) {
     for (const source of Object.keys(chains)) {
       const chain = chains[source];

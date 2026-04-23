@@ -783,6 +783,42 @@ describe('registerIndexJsonRoute', () => {
       });
       expect(renameRedirectStore.getState().origins['old--story-one']).toBe(absPath);
     });
+
+    it('writes origin but no chain when an export disappears', async () => {
+      const mockServerChannel = { emit: vi.fn() } as any as ServerChannel;
+      const storyIndexGeneratorPromise = getStoryIndexGeneratorPromise();
+      registerIndexJsonRoute({
+        app,
+        channel: mockServerChannel,
+        workingDir,
+        normalizedStories,
+        storyIndexGeneratorPromise,
+      });
+
+      const generator = await storyIndexGeneratorPromise;
+      await generator.getIndex();
+
+      // Pretend B.stories.ts previously had an extra export `Primary` that is
+      // now gone. Seed the modified snapshot accordingly.
+      const absPath = `${workingDir}/src/B.stories.ts`;
+      generator.invalidate('./src/B.stories.ts', false);
+      generator.getModifiedFileSnapshots().set(absPath, {
+        stories: {
+          StoryOne: { id: 'b--story-one' },
+          Primary: { id: 'b--primary' },
+        },
+        docs: [],
+      });
+
+      const watcher = Watchpack.mock.instances[0];
+      const onChange = watcher.on.mock.calls[0][1];
+      onChange(absPath, 1234, undefined);
+
+      await vi.waitFor(() => {
+        expect(renameRedirectStore.getState().origins['b--primary']).toBe(absPath);
+      });
+      expect(renameRedirectStore.getState().chains['b--primary']).toBeUndefined();
+    });
   });
 });
 

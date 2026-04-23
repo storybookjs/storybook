@@ -37,5 +37,14 @@ export function applyRenameChains(
       }
     }
   }
+  for (const deletedId of deletions) {
+    for (const source of Object.keys(chains)) {
+      const chain = chains[source];
+      if (chain.length > 0 && chain[chain.length - 1] === deletedId) {
+        chains[source] = [...chain, null];
+      }
+    }
+    chains[deletedId] = [...(chains[deletedId] ?? []), null];
+  }
   return { chains };
 }

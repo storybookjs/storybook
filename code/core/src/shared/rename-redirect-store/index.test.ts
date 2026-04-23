@@ -36,4 +36,22 @@ describe('applyRenameChains', () => {
     // b--x chain becomes ['a--x'] — last does not equal source — keep.
     expect(step2.chains).toEqual({ 'b--x': ['a--x'] });
   });
+
+  it('records a deletion with a null-terminated chain', () => {
+    const result = applyRenameChains(INITIAL_RENAME_REDIRECT_STATE, [], ['gone--story']);
+    expect(result.chains).toEqual({ 'gone--story': [null] });
+  });
+
+  it('appends null to the end of existing chain when rename-then-delete occurs', () => {
+    const renamed = applyRenameChains(
+      INITIAL_RENAME_REDIRECT_STATE,
+      [{ oldId: 'a--x', newId: 'b--x' }],
+      []
+    );
+    const deleted = applyRenameChains(renamed, [], ['b--x']);
+    expect(deleted.chains).toEqual({
+      'a--x': ['b--x', null],
+      'b--x': [null],
+    });
+  });
 });

@@ -187,8 +187,10 @@ export function registerIndexJsonRoute({
         );
       }
 
-      // Build a lookup from old story ID to the absolute source path so we
-      // can stamp each rename pair with its origin.
+      // Build a lookup from old story ID to the import-path form of the
+      // source file so we can stamp each rename pair with its origin.
+      // Origins must match the `importPath` on index entries exactly so the
+      // manager-side 404 overlay can find sibling stories.
       const candidateOriginByOldId = new Map<StoryId, Path>();
       for (const { oldPath } of renameCandidates) {
         const absOld = resolve(workingDir, oldPath);
@@ -197,7 +199,7 @@ export function registerIndexJsonRoute({
           continue;
         }
         for (const { id } of Object.values(snap.stories)) {
-          candidateOriginByOldId.set(id, absOld);
+          candidateOriginByOldId.set(id, oldPath);
         }
       }
 
@@ -215,7 +217,7 @@ export function registerIndexJsonRoute({
           continue;
         }
         for (const { id } of Object.values(snap.stories)) {
-          eventOrphans.push({ id, origin: absOld });
+          eventOrphans.push({ id, origin: oldPath });
         }
       }
 
@@ -246,10 +248,10 @@ export function registerIndexJsonRoute({
 
         const { renames, orphans } = classifyFileChange(oldSnap, newSnap);
         for (const r of renames) {
-          eventRenames.push({ ...r, origin: absPath });
+          eventRenames.push({ ...r, origin: path });
         }
         for (const id of orphans) {
-          eventOrphans.push({ id, origin: absPath });
+          eventOrphans.push({ id, origin: path });
         }
       }
 
@@ -262,7 +264,7 @@ export function registerIndexJsonRoute({
           continue;
         }
         for (const { id } of Object.values(snap.stories)) {
-          eventDeletions.push({ id, origin: absDeleted });
+          eventDeletions.push({ id, origin: deletedPath });
         }
       }
 

@@ -20,8 +20,6 @@ export class ReactDocgenResolveError extends Error {
 // resolve() will check for files in the order these extensions are sorted
 export const RESOLVE_EXTENSIONS = [
   '.js',
-  '.cts', // These were originally not in the code, I added them
-  '.mts', // These were originally not in the code, I added them
   '.ctsx', // These were originally not in the code, I added them
   '.mtsx', // These were originally not in the code, I added them
   '.ts',

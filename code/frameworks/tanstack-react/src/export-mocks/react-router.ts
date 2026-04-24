@@ -58,7 +58,7 @@ export const Outlet = () => null;
 
 export const Navigate: typeof _Navigate = ({ to, href }) => {
   useEffect(() => {
-    onNavigate(to || href);
+    onNavigate({ to: (to as string) || href });
   }, []);
 
   return null;
@@ -72,19 +72,22 @@ export const Link = ({
   to: string;
   children?: React.ReactNode;
   [key: string]: unknown;
-}) =>
-  React.createElement(
+}) => {
+  const navigate = useNavigate();
+  const location = useLocation();
+  return React.createElement(
     'a',
     {
       href: to,
       onClick: (e: React.MouseEvent) => {
         e.preventDefault();
-        useNavigate({ from: useLocation().href });
+        navigate({ to, from: location.href });
       },
       ...props,
     },
     children
   );
+};
 
 /**
  * Override createFilezRoute from tanstack react router

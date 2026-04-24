@@ -22,6 +22,8 @@ export type SourceParameters = SourceCodeProps & {
     code: string,
     storyContext: ReturnType<DocsContextProps['getStoryContext']>
   ) => string | Promise<string>;
+  /** When true, the `transform` function is also applied to the `code` prop/parameter. Defaults to `false`. */
+  transformCode?: boolean;
   /** Internal: set by our CSF loader (`enrichCsf` in `storybook/internal/csf-tools`). */
   originalSource?: string;
 };
@@ -45,6 +47,8 @@ export type SourceProps = SourceParameters & {
 
 const EMPTY_SOURCE_CONTEXT: SourceContextProps = { sources: {} };
 
+const IDENTITY_TRANSFORM = (code: string) => code;
+
 const getStorySource = (
   storyId: StoryId,
   args: Args,
@@ -63,39 +67,65 @@ const getStorySource = (
   return source || { code: '' };
 };
 
+const useResolvedStory = (of: ModuleExport | undefined, docsContext: DocsContextProps) =>
+  useMemo(() => {
+    if (of) {
+      const resolved = docsContext.resolveOf(of, ['story']);
+      return resolved.story;
+    } else {
+      try {
+        // Always fall back to the primary story for source parameters, even if code is set.
+        return docsContext.storyById();
+      } catch {
+        // You are allowed to use <Source code="..." /> and <Canvas /> unattached.
+      }
+    }
+  }, [of, docsContext]);
+
 const useCode = ({
+  props,
+  sourceParameters,
   snippet,
   storyContext,
-  typeFromProps,
-  transformFromProps,
 }: {
+  props: SourceProps;
+  sourceParameters: SourceParameters;
   snippet: string;
   storyContext: ReturnType<DocsContextProps['getStoryContext']>;
-  typeFromProps: SourceType;
-  transformFromProps?: SourceProps['transform'];
-}): string => {
-  const parameters = storyContext.parameters ?? {};
-  const { __isArgsStory: isArgsStory } = parameters;
-  const sourceParameters = (parameters.docs?.source || {}) as SourceParameters;
+}): { code: string; hasDirectCode: boolean } => {
+  const directCode = props.code ?? sourceParameters.code;
+  const hasDirectCode = directCode !== undefined;
 
-  const type = typeFromProps || sourceParameters.type || SourceType.AUTO;
+  // Determine what code to transform and which transformer to use.
+  // Direct code path: only transform when transformCode is opted in.
+  // Snippet path: always apply the transformer when present.
+  let codeToTransform: string;
+  let transformer: SourceProps['transform'] | undefined;
 
-  const useSnippet =
-    // if user has explicitly set this as dynamic, use snippet
-    type === SourceType.DYNAMIC ||
-    // if this is an args story and there's a snippet
-    (type === SourceType.AUTO && snippet && isArgsStory);
+  if (hasDirectCode) {
+    codeToTransform = directCode;
+    const shouldTransform = props.transformCode ?? sourceParameters.transformCode ?? false;
+    transformer = shouldTransform ? (props.transform ?? sourceParameters.transform) : undefined;
+  } else {
+    const { __isArgsStory: isArgsStory } = storyContext.parameters ?? {};
+    const type = (props.type as SourceType) || sourceParameters.type || SourceType.AUTO;
+    const useSnippet =
+      // if user has explicitly set this as dynamic, use snippet
+      type === SourceType.DYNAMIC ||
+      // if this is an args story and there's a snippet
+      (type === SourceType.AUTO && snippet && isArgsStory);
 
-  const code = useSnippet ? snippet : sourceParameters.originalSource || '';
-  const transformer = transformFromProps ?? sourceParameters.transform;
-
-  const transformedCode = transformer ? useTransformCode(code, transformer, storyContext) : code;
-
-  if (sourceParameters.code !== undefined) {
-    return sourceParameters.code;
+    codeToTransform = useSnippet ? snippet : sourceParameters.originalSource || '';
+    transformer = props.transform ?? sourceParameters.transform;
   }
 
-  return transformedCode;
+  const transformedCode = useTransformCode(
+    codeToTransform,
+    transformer ?? IDENTITY_TRANSFORM,
+    storyContext
+  );
+
+  return { code: transformer ? transformedCode : codeToTransform, hasDirectCode };
 };
 
 // state is used by the Canvas block, which also calls useSourceProps
@@ -108,19 +138,7 @@ export const useSourceProps = (
 ): PureSourceProps => {
   const { of } = props;
 
-  const story = useMemo(() => {
-    if (of) {
-      const resolved = docsContext.resolveOf(of, ['story']);
-      return resolved.story;
-    } else {
-      try {
-        // Always fall back to the primary story for source parameters, even if code is set.
-        return docsContext.storyById();
-      } catch {
-        // You are allowed to use <Source code="..." /> and <Canvas /> unattached.
-      }
-    }
-  }, [docsContext, of]);
+  const story = useResolvedStory(of, docsContext);
 
   const storyContext = story ? docsContext.getStoryContext(story) : {};
 
@@ -129,52 +147,44 @@ export const useSourceProps = (
     : storyContext.unmappedArgs;
 
   const source = story ? getStorySource(story.id, argsForSource, sourceContext) : null;
+  const sourceParameters = (story?.parameters?.docs?.source || {}) as SourceParameters;
 
-  const transformedCode = useCode({
+  const { code, hasDirectCode } = useCode({
+    props,
+    sourceParameters,
     snippet: source ? source.code : '',
     storyContext: { ...storyContext, args: argsForSource },
-    typeFromProps: props.type as SourceType,
-    transformFromProps: props.transform,
   });
 
   if ('of' in props && of === undefined) {
     throw new InvalidBlockOfPropError();
   }
 
-  const sourceParameters = (story?.parameters?.docs?.source || {}) as SourceParameters;
-  let format = props.format;
-
   const language = props.language ?? sourceParameters.language ?? 'jsx';
   const dark = props.dark ?? sourceParameters.dark ?? false;
 
-  if (props.code === undefined && !story) {
+  if (!hasDirectCode && !story) {
     return { error: SourceError.SOURCE_UNAVAILABLE };
   }
 
-  if (props.code !== undefined) {
-    return {
-      code: props.code,
-      format,
-      language,
-      dark,
-    };
+  let format: SourceCodeProps['format'];
+
+  if (hasDirectCode) {
+    format =
+      props.code !== undefined
+        ? props.format
+        : (props.format ?? sourceParameters.format ?? source?.format ?? true);
+  } else {
+    format = source?.format ?? true;
   }
 
-  format = source?.format ?? true;
-
-  return {
-    code: transformedCode,
-    format,
-    language,
-    dark,
-  };
+  return { code, format, language, dark };
 };
 
 /**
- * Story source doc block renders source code if provided, or the source for a story if `storyId` is
- * provided, or the source for the current story if nothing is provided.
+ * Used when source code is resolved from the story.
  */
-const SourceWithStorySnippet = (props: SourceProps) => {
+const SourceFromStory = (props: SourceProps) => {
   const sourceContext = useContext(SourceContext);
   const docsContext = useContext(DocsContext);
   const sourceProps = useSourceProps(props, docsContext, sourceContext);
@@ -182,7 +192,10 @@ const SourceWithStorySnippet = (props: SourceProps) => {
   return <PureSource {...sourceProps} />;
 };
 
-const SourceWithCode = (props: SourceProps) => {
+/**
+ * Used when code is explicitly provided via props or parameters.
+ */
+const SourceFromCode = (props: SourceProps) => {
   const docsContext = useContext(DocsContext);
   const sourceProps = useSourceProps(props, docsContext, EMPTY_SOURCE_CONTEXT);
 
@@ -190,8 +203,15 @@ const SourceWithCode = (props: SourceProps) => {
 };
 
 const SourceImpl = (props: SourceProps) => {
-  const hasCodeProp = props.code !== undefined;
-  return hasCodeProp ? <SourceWithCode {...props} /> : <SourceWithStorySnippet {...props} />;
+  const { code, of } = props;
+  const docsContext = useContext(DocsContext);
+  const story = useResolvedStory(of, docsContext);
+
+  const sourceParameters = (story?.parameters?.docs?.source || {}) as SourceParameters;
+  const directCode = code ?? sourceParameters.code;
+  const hasDirectCode = directCode !== undefined;
+
+  return hasDirectCode ? <SourceFromCode {...props} /> : <SourceFromStory {...props} />;
 };
 
 export const Source = withMdxComponentOverride('Source', SourceImpl);

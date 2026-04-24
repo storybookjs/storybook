@@ -115,11 +115,19 @@ Type: `(code: string, storyContext: StoryContext) => string | Promise<string>`
 Default: `parameters.docs.source.transform`
 
 An async function to dynamically transform the source before being rendered, based on the original source and any story context necessary. The returned string is displayed as-is.
-If both [`code`](#code) and `transform` are specified, `transform` will be ignored.
+If both [`code`](#code) and `transform` are specified, `transform` will be ignored unless [`transformCode`](#transformcode) is enabled.
 
 <CodeSnippets path="parameters-docs-source-transform-in-preview.md" />
 
 This example shows how to use Prettier to format all source code snippets in your documentation. The transform function is applied globally through the preview configuration, ensuring consistent code formatting across all stories.
+
+### `transformCode`
+
+Type: `boolean`
+
+Default: `parameters.docs.source.transformCode` or `false`
+
+When set to `true`, the [`transform`](#transform) function will also be applied to the [`code`](#code) prop. By default, the `code` prop is rendered as-is and `transform` is not applied to it.
 
 ### `type`
 

@@ -76,5 +76,8 @@
     "vite": "^7.0.4",
     "vitest": "^4.1.0"
   },
-  "packageManager": "yarn@4.10.3"
+  "packageManager": "yarn@4.10.3",
+  "dependencies": {
+    "handlebars": "4.7.9"
+  }
 }

@@ -26,6 +26,7 @@ import { GitDiffProvider } from './GitDiffProvider.ts';
 import { extractBaselineEntryIds, IndexBaselineService } from './IndexBaselineService.ts';
 import type { ImportParser } from './parser-registry/index.ts';
 import { ParserRegistry, builtinImportParsers } from './parser-registry/index.ts';
+import { disposeOxcParsePool } from './parser-registry/workers/index.ts';
 import { resetChangeDetectionReadiness, setChangeDetectionReadiness } from './readiness.ts';
 
 const CHANGE_DETECTION_DEBOUNCE_MS = 200;
@@ -349,6 +350,8 @@ export class ChangeDetectionService {
     this.unsubscribeFileChange = undefined;
     this.unsubscribeStartupFailure?.();
     this.unsubscribeStartupFailure = undefined;
+
+    await disposeOxcParsePool().catch(() => undefined);
   }
 
   private async handleFileChange(event: FileChangeEvent): Promise<void> {

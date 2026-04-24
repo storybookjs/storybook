@@ -3,8 +3,8 @@ import { extname } from 'pathe';
 import { logger } from 'storybook/internal/node-logger';
 
 import { profiler } from '../profiling.ts';
-import { oxcParse } from './oxc-parse.ts';
 import type { ImportEdge, ImportParser, ImportParserContext } from './types.ts';
+import { parseWithOxc } from './workers/index.ts';
 
 /**
  * Dispatches a file to the correct {@link ImportParser} based on its extension. The
@@ -69,6 +69,6 @@ export class ParserRegistry {
   }
 
   private async parseScriptWithOxc(source: string, virtualFilePath: string): Promise<ImportEdge[]> {
-    return oxcParse(virtualFilePath, source);
+    return parseWithOxc(virtualFilePath, source);
   }
 }

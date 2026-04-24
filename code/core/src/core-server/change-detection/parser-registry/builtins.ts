@@ -1,12 +1,12 @@
 import { mdxParse } from './mdx-parse.ts';
-import { oxcParse } from './oxc-parse.ts';
 import type { ImportParser } from './types.ts';
+import { parseWithOxc } from './workers/index.ts';
 
 /** Default parser for JavaScript/TypeScript source. Uses `oxc-parser` under the hood. */
 export const oxcImportParser: ImportParser = {
   extensions: ['.ts', '.tsx', '.js', '.jsx', '.mjs', '.cjs'],
   async parse({ filePath, source }) {
-    return oxcParse(filePath, source);
+    return parseWithOxc(filePath, source);
   },
 };
 

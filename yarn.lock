@@ -8699,6 +8699,7 @@ __metadata:
     "@nx/workspace": "npm:^22.6.1"
     "@playwright/test": "npm:^1.58.2"
     "@types/kill-port": "npm:^2.0.3"
+    happy-dom: "npm:20.0.0"
     http-server: "npm:^14.1.1"
     husky: "npm:^9.1.7"
     jiti: "npm:^2.6.1"
@@ -18679,6 +18680,17 @@ __metadata:
   bin:
     handlebars: bin/handlebars
   checksum: 10c0/7aff423ea38a14bb379316f3857fe0df3c5d66119270944247f155ba1f08e07a92b340c58edaa00cfe985c21508870ee5183e0634dcb53dd405f35c93ef7f10d
+  languageName: node
+  linkType: hard
+
+"happy-dom@npm:20.0.0":
+  version: 20.0.0
+  resolution: "happy-dom@npm:20.0.0"
+  dependencies:
+    "@types/node": "npm:^20.0.0"
+    "@types/whatwg-mimetype": "npm:^3.0.2"
+    whatwg-mimetype: "npm:^3.0.0"
+  checksum: 10c0/a205da48f3c98ae2b2bcb73c8f673fea66296cd2fc081065fcd5fa42b4411546c1b8f7c26ef2ca5adf0bdd1ced9aff4f429a3a4f5e6bce7724eec2747bef1a49
   languageName: node
   linkType: hard
 

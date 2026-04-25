@@ -90,7 +90,7 @@ export class TelemetryService {
       onboarding: selectedFeatures.has(Feature.ONBOARDING),
     };
 
-    await telemetry('init', {
+    await this.trackInit({
       projectType,
       features: telemetryFeatures,
       newUser,

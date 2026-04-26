@@ -8699,6 +8699,7 @@ __metadata:
     "@nx/workspace": "npm:^22.6.1"
     "@playwright/test": "npm:^1.58.2"
     "@types/kill-port": "npm:^2.0.3"
+    form-data: "npm:2.5.4"
     http-server: "npm:^14.1.1"
     husky: "npm:^9.1.7"
     jiti: "npm:^2.6.1"
@@ -17840,6 +17841,20 @@ __metadata:
   languageName: node
   linkType: hard
 
+"form-data@npm:2.5.4":
+  version: 2.5.4
+  resolution: "form-data@npm:2.5.4"
+  dependencies:
+    asynckit: "npm:^0.4.0"
+    combined-stream: "npm:^1.0.8"
+    es-set-tostringtag: "npm:^2.1.0"
+    has-own: "npm:^1.0.1"
+    mime-types: "npm:^2.1.35"
+    safe-buffer: "npm:^5.2.1"
+  checksum: 10c0/4256b7f0cc8709fd458b8f4c7670ce52bc6b8386b4bdfac53c9163354ef071a07cf5cb9400170870ec97dcd508b610ddf3b6852e1faaa7fd82dfe3bae4e016a5
+  languageName: node
+  linkType: hard
+
 "form-data@npm:^4.0.4, form-data@npm:~4.0.0":
   version: 4.0.5
   resolution: "form-data@npm:4.0.5"
@@ -18745,6 +18760,13 @@ __metadata:
   version: 4.0.0
   resolution: "has-flag@npm:4.0.0"
   checksum: 10c0/2e789c61b7888d66993e14e8331449e525ef42aac53c627cc53d1c3334e768bcb6abdc4f5f0de1478a25beec6f0bd62c7549058b7ac53e924040d4f301f02fd1
+  languageName: node
+  linkType: hard
+
+"has-own@npm:^1.0.1":
+  version: 1.0.1
+  resolution: "has-own@npm:1.0.1"
+  checksum: 10c0/2dcc9ca33a484254f59c47c2ebd8002f58ed9b0f77e4cad705371ea6cb59387168c5a076b51fc2fefdc28737df53ba5e668639d23c2eb660ddbcee6f7e13136e
   languageName: node
   linkType: hard
 
@@ -22613,7 +22635,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"mime-types@npm:^2.1.12, mime-types@npm:^2.1.27, mime-types@npm:^2.1.31, mime-types@npm:~2.1.17, mime-types@npm:~2.1.19, mime-types@npm:~2.1.24, mime-types@npm:~2.1.34":
+"mime-types@npm:^2.1.12, mime-types@npm:^2.1.27, mime-types@npm:^2.1.31, mime-types@npm:^2.1.35, mime-types@npm:~2.1.17, mime-types@npm:~2.1.19, mime-types@npm:~2.1.24, mime-types@npm:~2.1.34":
   version: 2.1.35
   resolution: "mime-types@npm:2.1.35"
   dependencies:

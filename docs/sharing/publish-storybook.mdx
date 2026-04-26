@@ -127,6 +127,16 @@ The GitHub Pages Action requires additional configuration options to customize t
 
 </Callout>
 
+### Netlify
+
+To deploy Storybook on [Netlify](https://www.netlify.com/), configure your site with the build command for your project (for example, `npm run build-storybook`) and set the publish directory to `storybook-static`. Storybook is a static web application, so no additional Netlify build plugins are required.
+
+<Callout variant="warning" icon="⚠️">
+
+If your project is a Next.js app, do **not** enable the [`@netlify/plugin-nextjs`](https://github.com/netlify/next-runtime) build plugin on the Netlify site that publishes Storybook. The plugin expects the publish directory to contain a Next.js production build and will fail with an error like `The directory "storybook-static" does not contain a Next.js production build` when pointed at Storybook's static output. Either disable the plugin for the Storybook site or publish Storybook from a separate Netlify site that does not have the plugin installed.
+
+</Callout>
+
 <details>
 <summary>
 <h3>Component Publishing Protocol (CPP)</h3>

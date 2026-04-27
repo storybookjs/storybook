@@ -44,7 +44,9 @@
     "!src/**/*"
   ],
   "dependencies": {
-    "execa": "^9.6.1"
+    "execa": "^9.6.1",
+    "magic-string": "^0.30.17",
+    "oxc-parser": "^0.127.0"
   },
   "devDependencies": {
     "react": "^18.2.0",

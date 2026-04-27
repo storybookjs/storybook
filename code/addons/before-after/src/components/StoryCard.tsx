@@ -5,6 +5,7 @@ import { styled } from 'storybook/theming';
 import { AutoSizingIframe } from './AutoSizingIframe.tsx';
 
 type StoryStatus = 'new' | 'modified' | 'affected';
+type BeforeEnvironment = 'subprocess' | 'env-api';
 
 interface StoryCardProps {
   storyId: string;
@@ -13,7 +14,15 @@ interface StoryCardProps {
   name: string;
   importPath: string;
   compareMode: boolean;
-  beforeServerPort: number | null;
+  /**
+   * Origin of the before iframe.
+   * - subprocess path: `http://localhost:PORT`
+   * - env-api path: `''` (same-origin; query marker is appended instead)
+   * - `null` while the before server is still booting
+   */
+  beforeServerUrl: string | null;
+  /** Which path the before server runs through; `null` until the manager learns. */
+  beforeEnvironment: BeforeEnvironment | null;
 }
 
 const Card = styled.div(({ theme }) => ({
@@ -131,8 +140,19 @@ const BADGE_LABELS: Record<StoryStatus, string> = {
   affected: 'Affected',
 };
 
-function buildIframeSrc(storyId: string, port: number): string {
-  return `http://localhost:${port}/iframe.html?id=${encodeURIComponent(storyId)}&viewMode=story`;
+function buildBeforeIframeSrc(
+  storyId: string,
+  serverUrl: string,
+  environment: BeforeEnvironment
+): string {
+  const id = encodeURIComponent(storyId);
+  if (environment === 'env-api') {
+    // Same-origin URL with the env marker; the addon's middleware routes the
+    // request to the `storybookBefore` Vite environment.
+    return `/iframe.html?id=${id}&viewMode=story&env=before`;
+  }
+  // Legacy subprocess: absolute URL pointing at the second Vite dev server.
+  return `${serverUrl}/iframe.html?id=${id}&viewMode=story`;
 }
 
 export const StoryCard = ({
@@ -142,10 +162,14 @@ export const StoryCard = ({
   name,
   importPath,
   compareMode,
-  beforeServerPort,
+  beforeServerUrl,
+  beforeEnvironment,
 }: StoryCardProps) => {
   const afterSrc = `/iframe.html?id=${encodeURIComponent(storyId)}&viewMode=story`;
-  const beforeSrc = beforeServerPort !== null ? buildIframeSrc(storyId, beforeServerPort) : null;
+  const beforeSrc =
+    beforeEnvironment != null && beforeServerUrl != null
+      ? buildBeforeIframeSrc(storyId, beforeServerUrl, beforeEnvironment)
+      : null;
 
   return (
     <Card id={`changes-story-${storyId}`}>

@@ -289,8 +289,8 @@ describe('Vite Environment API integration', () => {
 // ─────────────────────────────────────────────────────────────────────────────
 
 describe('beforeContentPlugin scoping', () => {
-  it('scopeToBeforeEnvironment=true sets applyToEnvironment to the before env', () => {
-    const plugin = beforeContentPlugin({ repoRoot: '/tmp', scopeToBeforeEnvironment: true });
+  it('scopes applyToEnvironment to the before env', () => {
+    const plugin = beforeContentPlugin({ repoRoot: '/tmp' });
     const apply = (plugin as unknown as { applyToEnvironment?: (e: { name: string }) => boolean })
       .applyToEnvironment;
     expect(typeof apply).toBe('function');
@@ -298,11 +298,5 @@ describe('beforeContentPlugin scoping', () => {
     expect(apply!({ name: 'client' })).toBe(false);
     // Sanity check: BEFORE_ENV_NAME respects Vite's identifier rules (no hyphens).
     expect(BEFORE_ENV_NAME).toMatch(/^[A-Za-z_$][A-Za-z0-9_$]*$/);
-  });
-
-  it('scopeToBeforeEnvironment=false leaves applyToEnvironment unset (legacy subprocess path)', () => {
-    const plugin = beforeContentPlugin({ repoRoot: '/tmp', scopeToBeforeEnvironment: false });
-    const apply = (plugin as unknown as { applyToEnvironment?: unknown }).applyToEnvironment;
-    expect(apply).toBeUndefined();
   });
 });

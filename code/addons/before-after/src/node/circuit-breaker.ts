@@ -27,27 +27,23 @@ export function readViteMajor(): number | null {
 }
 
 /**
- * Throws if the installed Vite version cannot host the Environment API path used by
- * `@storybook/addon-before-after`. Called at `viteFinal` time and again after the
- * dev server resolves so we can fail loud rather than silently producing a broken
- * setup.
+ * Throws if the installed Vite version cannot host the Environment API used by
+ * `@storybook/addon-before-after`. Called at `viteFinal` entry and again after
+ * the dev server resolves so we can fail loud rather than silently producing a
+ * broken setup.
  */
 export function assertViteEnvironmentApiSupported(server?: ViteDevServer | null): void {
   const major = readViteMajor();
   if (major !== null && major < 6) {
     throw new BeforeAfterUnsupportedViteError(
-      `[before-after] STORYBOOK_BEFORE_AFTER_ENV_API=1 requires Vite >= 6 (Environment API). ` +
-        `Detected Vite ${major}.x. Either upgrade Vite or unset the flag to use the legacy subprocess path.`
+      `[before-after] requires Vite >= 6 (Environment API). ` +
+        `Detected Vite ${major}.x — upgrade Vite to use this addon.`
     );
   }
   if (server && server.environments == null) {
     throw new BeforeAfterUnsupportedViteError(
-      `[before-after] STORYBOOK_BEFORE_AFTER_ENV_API=1 requires server.environments. ` +
-        `The active Vite build does not expose Environment API; unset the flag to use the legacy subprocess path.`
+      `[before-after] requires server.environments. ` +
+        `The active Vite build does not expose Environment API.`
     );
   }
-}
-
-export function isEnvApiEnabled(): boolean {
-  return process.env.STORYBOOK_BEFORE_AFTER_ENV_API === '1';
 }

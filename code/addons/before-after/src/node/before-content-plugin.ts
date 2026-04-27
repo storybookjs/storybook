@@ -4,20 +4,11 @@ import { logger } from 'storybook/internal/node-logger';
 
 import type { Plugin } from 'vite';
 
+import { BEFORE_ENV_NAME } from './before-environment-plugin.ts';
 import { getFileAtHead } from './git-file-at-head.ts';
 
 interface BeforeContentPluginOptions {
   repoRoot: string;
-  /**
-   * When `true`, the plugin scopes itself to the `storybook-before` Vite
-   * environment via `applyToEnvironment`. This is the path used by the
-   * Environment-API design (`STORYBOOK_BEFORE_AFTER_ENV_API=1`).
-   *
-   * When `false` (or omitted), the plugin runs unconditionally — the legacy
-   * subprocess path always loads HEAD content because the entire dev server
-   * runs in the "before" role.
-   */
-  scopeToBeforeEnvironment?: boolean;
 }
 
 /**
@@ -25,13 +16,11 @@ interface BeforeContentPluginOptions {
  * HEAD instead of the working directory. This ensures the "before" view always
  * renders the HEAD version of all project files.
  *
- * Virtual modules and files that don't exist at HEAD (new files) fall through to
- * default Vite resolution.
+ * Scoped via `applyToEnvironment` to the `storybookBefore` environment so the
+ * `client` environment never sees HEAD content. Virtual modules and files that
+ * don't exist at HEAD (new files) fall through to default Vite resolution.
  */
-export function beforeContentPlugin({
-  repoRoot,
-  scopeToBeforeEnvironment = false,
-}: BeforeContentPluginOptions): Plugin {
+export function beforeContentPlugin({ repoRoot }: BeforeContentPluginOptions): Plugin {
   const plugin: Plugin = {
     name: 'storybook:before-content-override',
     enforce: 'pre',
@@ -74,15 +63,10 @@ export function beforeContentPlugin({
     },
   };
 
-  if (scopeToBeforeEnvironment) {
-    // Vite ≥ 6 Environment API: only fire `load()` for the before environment.
-    // Cast keeps the plugin compilable against Vite 5 type definitions used by
-    // the legacy subprocess path. The env name matches `BEFORE_ENV_NAME` from
-    // `before-environment-plugin.ts`; Vite forbids hyphens in env names.
-    (
-      plugin as unknown as { applyToEnvironment: (env: { name: string }) => boolean }
-    ).applyToEnvironment = (env) => env.name === 'storybookBefore';
-  }
+  // Vite Environment API: only fire `load()` for the before environment.
+  (
+    plugin as unknown as { applyToEnvironment: (env: { name: string }) => boolean }
+  ).applyToEnvironment = (env) => env.name === BEFORE_ENV_NAME;
 
   return plugin;
 }

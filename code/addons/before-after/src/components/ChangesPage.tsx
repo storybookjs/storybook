@@ -20,7 +20,6 @@ import { EVENTS } from '../constants.ts';
 // ── Types ─────────────────────────────────────────────────────────────────────
 
 type StoryStatus = 'new' | 'modified' | 'affected';
-type BeforeEnvironment = 'subprocess' | 'env-api';
 
 interface ChangedStory {
   storyId: string;
@@ -33,11 +32,6 @@ interface ChangedStory {
 interface FileGroup {
   importPath: string;
   stories: ChangedStory[];
-}
-
-interface BeforeServerInfo {
-  url: string;
-  environment: BeforeEnvironment;
 }
 
 // ── Constants ─────────────────────────────────────────────────────────────────
@@ -129,13 +123,9 @@ export const ChangesPage: React.FC = () => {
   const lastStoryIdRef = useRef<string | undefined>(state.storyId);
   const previousIncludedFiltersRef = useRef<StatusValue[]>(state.includedStatusFilters ?? []);
   const previousExcludedFiltersRef = useRef<StatusValue[]>(state.excludedStatusFilters ?? []);
-  const requestedServerRef = useRef(false);
-  // Race-safety coalescing: SERVER_READY_V2 (env-API path) and SERVER_READY
-  // (legacy subprocess path) may both fire — the first arrival wins. (K6.)
-  const readyHandledRef = useRef(false);
 
   const [compareMode, setCompareMode] = useState(false);
-  const [beforeServer, setBeforeServer] = useState<BeforeServerInfo | null>(null);
+  const [addonDisabledReason, setAddonDisabledReason] = useState<string | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
 
   const statuses = experimental_useStatusStore((allStatuses: StatusesByStoryIdAndTypeId) =>
@@ -146,54 +136,23 @@ export const ChangesPage: React.FC = () => {
     )
   );
 
-  const handleReady = React.useCallback((info: BeforeServerInfo) => {
-    if (readyHandledRef.current) return;
-    readyHandledRef.current = true;
-    setBeforeServer(info);
-  }, []);
-
-  // Subscribe ORDER MATTERS:
-  //   1. SERVER_READY_V2 (carries env metadata; preferred)
-  //   2. SERVER_READY    (legacy compat — port-only)
-  // Reverse-order unsubscribe via React's effect cleanup occurs implicitly.
-  const emit = useChannel({
-    [EVENTS.SERVER_READY_V2]: (data: BeforeServerInfo) => {
-      handleReady(data);
-    },
-    [EVENTS.SERVER_READY]: (data: { port: number }) => {
-      // Sentinel `-1` denotes the env-API path; legacy clients must never
-      // construct an absolute URL for it.
-      if (data.port < 0) return;
-      handleReady({ url: `http://localhost:${data.port}`, environment: 'subprocess' });
-    },
-    [EVENTS.SERVER_ERROR]: () => {
-      readyHandledRef.current = false;
-      setBeforeServer(null);
-    },
+  useChannel({
     [EVENTS.HEAD_CHANGED]: () => {
       // Increment key to force iframe remount so they re-fetch fresh content.
       setRefreshKey((k) => k + 1);
     },
+    [EVENTS.ADDON_DISABLED]: (data: { reason: string }) => {
+      setAddonDisabledReason(data.reason);
+    },
   });
 
-  // On mount: store current story + filters, set change filters, request server
+  // On mount: store current story + filters, set change filters
   useEffect(() => {
     lastStoryIdRef.current = state.storyId;
     previousIncludedFiltersRef.current = state.includedStatusFilters ?? [];
     previousExcludedFiltersRef.current = state.excludedStatusFilters ?? [];
 
     api.setAllStatusFilters(CHANGE_STATUS_VALUES, []);
-
-    if (!requestedServerRef.current) {
-      requestedServerRef.current = true;
-      emit(EVENTS.REQUEST_SERVER);
-      // Polling fallback for the sync-emit-before-listener race: the server
-      // may have emitted SERVER_READY synchronously inside its REQUEST_SERVER
-      // handler before our `useChannel` listeners attached (registration runs
-      // in a React effect, async wrt the emit above). REQUEST_SERVER_STATUS is
-      // idempotent on the server side and re-emits ready state if known.
-      emit(EVENTS.REQUEST_SERVER_STATUS);
-    }
 
     // Register interceptor: when in changes viewMode, scroll-to story card instead of navigating
     api.setSelectStoryInterceptor(({ storyId, viewMode }) => {
@@ -270,6 +229,25 @@ export const ChangesPage: React.FC = () => {
 
   const totalCount = changedStories.length;
 
+  if (addonDisabledReason) {
+    return (
+      <PageWrapper>
+        <StickyHeader>
+          <ChangedIcon />
+          <HeaderTitle>Changes</HeaderTitle>
+          <IconButton key="exit-changes" title="Exit changes view" onClick={handleExit}>
+            <CloseIcon />
+          </IconButton>
+        </StickyHeader>
+        <EmptyState>
+          {addonDisabledReason === 'git-unavailable'
+            ? 'Git is not available in this workspace, so the before/after view is disabled.'
+            : `Before/after view is disabled (${addonDisabledReason}).`}
+        </EmptyState>
+      </PageWrapper>
+    );
+  }
+
   return (
     <PageWrapper>
       <StickyHeader>
@@ -305,8 +283,6 @@ export const ChangesPage: React.FC = () => {
                       importPath={story.importPath}
                       status={story.status}
                       compareMode={compareMode}
-                      beforeServerUrl={beforeServer?.url ?? null}
-                      beforeEnvironment={beforeServer?.environment ?? null}
                     />
                   </LazyMount>
                 ))}

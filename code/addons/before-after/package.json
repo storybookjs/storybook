@@ -31,7 +31,6 @@
       "code": "./src/index.ts",
       "default": "./dist/index.js"
     },
-    "./before-server-subprocess": "./dist/node/before-server-subprocess.js",
     "./manager": "./dist/manager.js",
     "./package.json": "./package.json",
     "./preset": "./dist/preset.js"
@@ -52,12 +51,12 @@
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "typescript": "^5.9.3",
-    "vite": "^5.0.0 || ^6.0.0 || ^7.0.0 || ^8.0.0"
+    "vite": "^6.0.0 || ^7.0.0 || ^8.0.0"
   },
   "peerDependencies": {
     "@storybook/builder-vite": "workspace:^",
     "storybook": "workspace:^",
-    "vite": "^5.0.0 || ^6.0.0 || ^7.0.0 || ^8.0.0"
+    "vite": "^6.0.0 || ^7.0.0 || ^8.0.0"
   },
   "peerDependenciesMeta": {
     "@storybook/builder-vite": {

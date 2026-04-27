@@ -5,7 +5,6 @@ import { styled } from 'storybook/theming';
 import { AutoSizingIframe } from './AutoSizingIframe.tsx';
 
 type StoryStatus = 'new' | 'modified' | 'affected';
-type BeforeEnvironment = 'subprocess' | 'env-api';
 
 interface StoryCardProps {
   storyId: string;
@@ -14,15 +13,6 @@ interface StoryCardProps {
   name: string;
   importPath: string;
   compareMode: boolean;
-  /**
-   * Origin of the before iframe.
-   * - subprocess path: `http://localhost:PORT`
-   * - env-api path: `''` (same-origin; query marker is appended instead)
-   * - `null` while the before server is still booting
-   */
-  beforeServerUrl: string | null;
-  /** Which path the before server runs through; `null` until the manager learns. */
-  beforeEnvironment: BeforeEnvironment | null;
 }
 
 const Card = styled.div(({ theme }) => ({
@@ -112,22 +102,6 @@ const Placeholder = styled.div(({ theme }) => ({
   fontSize: '12px',
 }));
 
-const LoadingPlaceholder = styled.div(({ theme }) => ({
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  minHeight: '200px',
-  background: `linear-gradient(90deg, ${theme.background.hoverable} 25%, ${theme.background.app} 50%, ${theme.background.hoverable} 75%)`,
-  backgroundSize: '200% 100%',
-  animation: 'shimmer 1.5s infinite',
-  color: theme.color.mediumdark,
-  fontSize: '12px',
-  '@keyframes shimmer': {
-    '0%': { backgroundPosition: '200% 0' },
-    '100%': { backgroundPosition: '-200% 0' },
-  },
-}));
-
 const Divider = styled.div(({ theme }) => ({
   width: '1px',
   background: theme.color.border,
@@ -140,19 +114,15 @@ const BADGE_LABELS: Record<StoryStatus, string> = {
   affected: 'Affected',
 };
 
-function buildBeforeIframeSrc(
-  storyId: string,
-  serverUrl: string,
-  environment: BeforeEnvironment
-): string {
-  const id = encodeURIComponent(storyId);
-  if (environment === 'env-api') {
-    // Same-origin URL with the env marker; the addon's middleware routes the
-    // request to the `storybookBefore` Vite environment.
-    return `/iframe.html?id=${id}&viewMode=story&env=before`;
-  }
-  // Legacy subprocess: absolute URL pointing at the second Vite dev server.
-  return `${serverUrl}/iframe.html?id=${id}&viewMode=story`;
+function buildAfterIframeSrc(storyId: string): string {
+  return `/iframe.html?id=${encodeURIComponent(storyId)}&viewMode=story`;
+}
+
+function buildBeforeIframeSrc(storyId: string): string {
+  // Same-origin URL with the env=before query marker. The addon's middleware
+  // routes the request to the `storybookBefore` Vite environment, which serves
+  // the file content from git HEAD instead of the working tree.
+  return `/iframe.html?id=${encodeURIComponent(storyId)}&viewMode=story&env=before`;
 }
 
 export const StoryCard = ({
@@ -162,14 +132,9 @@ export const StoryCard = ({
   name,
   importPath,
   compareMode,
-  beforeServerUrl,
-  beforeEnvironment,
 }: StoryCardProps) => {
-  const afterSrc = `/iframe.html?id=${encodeURIComponent(storyId)}&viewMode=story`;
-  const beforeSrc =
-    beforeEnvironment != null && beforeServerUrl != null
-      ? buildBeforeIframeSrc(storyId, beforeServerUrl, beforeEnvironment)
-      : null;
+  const afterSrc = buildAfterIframeSrc(storyId);
+  const beforeSrc = buildBeforeIframeSrc(storyId);
 
   return (
     <Card id={`changes-story-${storyId}`}>
@@ -187,8 +152,6 @@ export const StoryCard = ({
             <IframeColLabel>Before</IframeColLabel>
             {status === 'new' ? (
               <Placeholder>No previous version</Placeholder>
-            ) : beforeSrc === null ? (
-              <LoadingPlaceholder>Starting before server...</LoadingPlaceholder>
             ) : (
               <AutoSizingIframe
                 src={beforeSrc}

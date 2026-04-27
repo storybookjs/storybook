@@ -10,6 +10,7 @@ import { ParseResolveCache } from './ParseResolveCache.ts';
 import { ReverseIndexImpl } from './ReverseIndex.ts';
 import type { ChangeDetectionResolverFactory } from './ResolverFactory.ts';
 import type { DependencyGraph } from './types.ts';
+import { walkFromStory } from './walkFromStory.ts';
 
 interface BuilderLogger {
   debug: (message: string) => void;
@@ -72,7 +73,17 @@ export class DependencyGraphBuilder {
     const stories = Array.from(storyFiles, (s) => normalize(s));
 
     await Promise.all(
-      stories.map((story) => limit(() => this.walkFromStory(story, reverseIndex, graph)))
+      stories.map((story) =>
+        limit(() =>
+          walkFromStory({
+            storyRoot: story,
+            registry: this.registry,
+            cache: this.cache,
+            reverseIndex,
+            recordEdges: (file, deps) => graph.set(file, deps),
+          })
+        )
+      )
     );
 
     const elapsed = Date.now() - startedAt;
@@ -85,44 +96,5 @@ export class DependencyGraphBuilder {
     });
 
     return { reverseIndex, graph };
-  }
-
-  private isWalkable(filePath: string): boolean {
-    return this.registry.parserFor(filePath) !== undefined;
-  }
-
-  private async walkFromStory(
-    storyRoot: string,
-    reverseIndex: ReverseIndexImpl,
-    graph: DependencyGraph
-  ): Promise<void> {
-    reverseIndex.record(storyRoot, storyRoot, 0);
-
-    const visited = new Map<string, number>();
-    visited.set(storyRoot, 0);
-    const queue: Array<{ file: string; depth: number }> = [{ file: storyRoot, depth: 0 }];
-    let head = 0;
-
-    while (head < queue.length) {
-      const { file, depth } = queue[head++];
-
-      if (!this.isWalkable(file)) {
-        continue;
-      }
-
-      const resolvedDeps = await this.cache.resolveOnce(file);
-      graph.set(file, resolvedDeps);
-
-      const nextDepth = depth + 1;
-      for (const normalised of resolvedDeps) {
-        const previousDepth = visited.get(normalised);
-        if (previousDepth !== undefined && previousDepth <= nextDepth) {
-          continue;
-        }
-        visited.set(normalised, nextDepth);
-        reverseIndex.record(normalised, storyRoot, nextDepth);
-        queue.push({ file: normalised, depth: nextDepth });
-      }
-    }
   }
 }

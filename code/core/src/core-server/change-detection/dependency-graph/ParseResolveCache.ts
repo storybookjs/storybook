@@ -36,7 +36,7 @@ export class ParseResolveCache {
   private readonly projectRoot: string;
   private readonly logger: CacheLogger;
 
-  private readonly parseCache = new Map<string, Promise<ImportEdge[] | null>>();
+  private readonly parseCache = new Map<string, Promise<ImportEdge[]>>();
   private readonly resolveCache = new Map<string, Promise<Set<string>>>();
 
   constructor(opts: CacheOptions) {
@@ -47,13 +47,18 @@ export class ParseResolveCache {
     this.logger = opts.logger;
   }
 
-  /** Parses the file once and caches the result (or null on failure). */
-  parseOnce(filePath: string): Promise<ImportEdge[] | null> {
+  /**
+   * Parses the file once and caches the resulting edge list. Returns `[]` for unreadable
+   * files, parse failures, or files whose extension has no registered parser — callers
+   * cannot distinguish between "no edges" and "we couldn't look", which is by design:
+   * either way the file contributes nothing to the dependency graph.
+   */
+  parseOnce(filePath: string): Promise<ImportEdge[]> {
     const existing = this.parseCache.get(filePath);
     if (existing) {
       return existing;
     }
-    const promise = (async (): Promise<ImportEdge[] | null> => {
+    const promise = (async (): Promise<ImportEdge[]> => {
       let source: string;
       try {
         source = await readFile(filePath, 'utf8');
@@ -61,7 +66,7 @@ export class ParseResolveCache {
         this.logger.warn(
           `Change detection: could not read ${filePath}: ${error instanceof Error ? error.message : String(error)}`
         );
-        return null;
+        return [];
       }
       try {
         return (await this.registry.parse(filePath, source)) ?? [];
@@ -69,7 +74,7 @@ export class ParseResolveCache {
         this.logger.warn(
           `Change detection: failed to parse ${filePath}: ${error instanceof Error ? error.message : String(error)}`
         );
-        return null;
+        return [];
       }
     })();
     this.parseCache.set(filePath, promise);
@@ -84,9 +89,6 @@ export class ParseResolveCache {
     }
     const promise = (async (): Promise<Set<string>> => {
       const edges = await this.parseOnce(filePath);
-      if (!edges) {
-        return new Set<string>();
-      }
       const deps = new Set<string>();
       for (const edge of edges) {
         const resolved = await this.resolver.resolve(filePath, edge.specifier);

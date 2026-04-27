@@ -9,6 +9,7 @@ import { ParseResolveCache } from './ParseResolveCache.ts';
 import type { ReverseIndexImpl } from './ReverseIndex.ts';
 import type { ChangeDetectionResolverFactory } from './ResolverFactory.ts';
 import type { DependencyGraph } from './types.ts';
+import { walkFromStory } from './walkFromStory.ts';
 
 interface PatcherLogger {
   debug: (message: string) => void;
@@ -44,6 +45,8 @@ interface PatcherOptions {
 export class IncrementalPatcher {
   private readonly reverseIndex: ReverseIndexImpl;
   private readonly graph: DependencyGraph;
+  /** Inverse of `graph`: dep file → set of files that directly import it. */
+  private readonly inverseImporters = new Map<string, Set<string>>();
   private readonly registry: ParserRegistry;
   private readonly logger: PatcherLogger;
   private readonly isStoryFile: (path: string) => boolean;
@@ -64,6 +67,14 @@ export class IncrementalPatcher {
         projectRoot: opts.projectRoot,
         logger: this.logger,
       });
+
+    // Seed the inverse map from any pre-existing forward edges (typical: the cold-start
+    // graph handed in by DependencyGraphBuilder.build()).
+    for (const [importer, deps] of this.graph) {
+      for (const dep of deps) {
+        this.addInverseEdge(dep, importer);
+      }
+    }
   }
 
   async patch(event: FileChangeEvent): Promise<void> {
@@ -78,19 +89,17 @@ export class IncrementalPatcher {
       if (event.kind === 'add') {
         if (this.isStoryFile(path)) {
           storiesReWalked += 1;
-          await this.walkFromStory(path);
+          await this.walkStory(path);
           return;
         }
-        // Non-story add: scan graph for known direct importers whose previous resolve
-        // missed `path` (e.g. file did not exist at cold-start). If none found, this is
-        // a no-op until an importer's `change` fires.
+        // Non-story add: re-walk stories whose direct importers may now resolve `path`.
         storiesReWalked += await this.recoverViaDirectImporters(path);
         return;
       }
 
       if (event.kind === 'unlink') {
         const dependentsSet = new Set(this.reverseIndex.lookup(path).keys());
-        this.graph.delete(path);
+        this.deleteFromGraph(path);
         if (this.isStoryFile(path)) {
           this.reverseIndex.removeStory(path);
         } else {
@@ -100,23 +109,23 @@ export class IncrementalPatcher {
         }
         // Re-walk every dependent story so transitive deps reachable only through `path`
         // are pruned.
+        const storiesToWalk: string[] = [];
         for (const story of dependentsSet) {
-          if (story === path) {
+          if (story === path || !this.isStoryFile(story)) {
             continue;
           }
-          if (this.isStoryFile(story)) {
-            this.reverseIndex.removeStory(story);
-            storiesReWalked += 1;
-            await this.walkFromStory(story);
-          }
+          this.reverseIndex.removeStory(story);
+          storiesToWalk.push(story);
         }
+        await Promise.all(storiesToWalk.map((story) => this.walkStory(story)));
+        storiesReWalked += storiesToWalk.length;
         return;
       }
 
       // 'change'
       const previousDeps = this.graph.get(path) ?? new Set<string>();
       const newDeps = await this.cache.resolveOnce(path);
-      this.graph.set(path, newDeps);
+      this.setEdges(path, newDeps);
 
       const areDepsEqual =
         newDeps.size === previousDeps.size && [...newDeps].every((d) => previousDeps.has(d));
@@ -148,16 +157,18 @@ export class IncrementalPatcher {
       }
 
       // For each dependent story: prune obsolete (dep, story) edges, then BFS again.
+      const storiesToWalk: string[] = [];
       for (const story of dependentsSet) {
         for (const removedDep of removedDeps) {
           this.reverseIndex.removeEdge(removedDep, story);
         }
         if (this.isStoryFile(story)) {
           this.reverseIndex.removeStory(story);
-          storiesReWalked += 1;
-          await this.walkFromStory(story);
+          storiesToWalk.push(story);
         }
       }
+      await Promise.all(storiesToWalk.map((story) => this.walkStory(story)));
+      storiesReWalked += storiesToWalk.length;
     } finally {
       profiler.patchEnd({ storiesReWalked });
     }
@@ -169,13 +180,8 @@ export class IncrementalPatcher {
    * graph still records files that import it. Returns the number of stories re-walked.
    */
   private async recoverViaDirectImporters(path: string): Promise<number> {
-    const directImporters = new Set<string>();
-    for (const [importer, deps] of this.graph) {
-      if (deps.has(path)) {
-        directImporters.add(importer);
-      }
-    }
-    if (directImporters.size === 0) {
+    const directImporters = this.inverseImporters.get(path);
+    if (!directImporters || directImporters.size === 0) {
       return 0;
     }
     const storiesToWalk = new Set<string>();
@@ -191,43 +197,63 @@ export class IncrementalPatcher {
     }
     for (const story of storiesToWalk) {
       this.reverseIndex.removeStory(story);
-      await this.walkFromStory(story);
     }
+    await Promise.all(Array.from(storiesToWalk, (story) => this.walkStory(story)));
     return storiesToWalk.size;
   }
 
-  private isWalkable(filePath: string): boolean {
-    return this.registry.parserFor(filePath) !== undefined;
+  private walkStory(storyRoot: string): Promise<void> {
+    return walkFromStory({
+      storyRoot,
+      registry: this.registry,
+      cache: this.cache,
+      reverseIndex: this.reverseIndex,
+      recordEdges: (file, deps) => this.setEdges(file, deps),
+    });
   }
 
-  private async walkFromStory(storyRoot: string): Promise<void> {
-    this.reverseIndex.record(storyRoot, storyRoot, 0);
-
-    const visited = new Map<string, number>();
-    visited.set(storyRoot, 0);
-    const queue: Array<{ file: string; depth: number }> = [{ file: storyRoot, depth: 0 }];
-    let head = 0;
-
-    while (head < queue.length) {
-      const { file, depth } = queue[head++];
-
-      if (!this.isWalkable(file)) {
-        continue;
-      }
-
-      const resolvedDeps = await this.cache.resolveOnce(file);
-      this.graph.set(file, resolvedDeps);
-
-      const nextDepth = depth + 1;
-      for (const normalised of resolvedDeps) {
-        const previous = visited.get(normalised);
-        if (previous !== undefined && previous <= nextDepth) {
-          continue;
+  private setEdges(file: string, deps: Set<string>): void {
+    const previous = this.graph.get(file);
+    if (previous) {
+      for (const dep of previous) {
+        if (!deps.has(dep)) {
+          this.removeInverseEdge(dep, file);
         }
-        visited.set(normalised, nextDepth);
-        this.reverseIndex.record(normalised, storyRoot, nextDepth);
-        queue.push({ file: normalised, depth: nextDepth });
       }
+    }
+    this.graph.set(file, deps);
+    for (const dep of deps) {
+      this.addInverseEdge(dep, file);
+    }
+  }
+
+  private deleteFromGraph(file: string): void {
+    const deps = this.graph.get(file);
+    if (deps) {
+      for (const dep of deps) {
+        this.removeInverseEdge(dep, file);
+      }
+    }
+    this.graph.delete(file);
+  }
+
+  private addInverseEdge(dep: string, importer: string): void {
+    let importers = this.inverseImporters.get(dep);
+    if (!importers) {
+      importers = new Set();
+      this.inverseImporters.set(dep, importers);
+    }
+    importers.add(importer);
+  }
+
+  private removeInverseEdge(dep: string, importer: string): void {
+    const importers = this.inverseImporters.get(dep);
+    if (!importers) {
+      return;
+    }
+    importers.delete(importer);
+    if (importers.size === 0) {
+      this.inverseImporters.delete(dep);
     }
   }
 }

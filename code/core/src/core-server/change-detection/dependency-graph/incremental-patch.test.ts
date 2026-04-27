@@ -297,7 +297,7 @@ describe('IncrementalPatcher', () => {
     expect(calls.length).toBeLessThanOrEqual(2);
   });
 
-  it('recovers via direct-importer scan when reverseIndex has no record of the changed file (H4)', async () => {
+  it('recovers via direct-importer scan when reverseIndex has no record of the changed file', async () => {
     // Cold-start scenario: story imports `helper`, but `helper` did not exist on disk
     // when the build ran, so the resolver returned null and `helper` was never recorded
     // in graph or reverseIndex. The story's graph entry is left referencing `helper`
@@ -325,9 +325,7 @@ describe('IncrementalPatcher', () => {
     const initialIndex = new ReverseIndexImpl();
     initialIndex.record(story, story, 0);
     // Story already knows helper is among its direct deps from a prior walk.
-    const initialGraph: DependencyGraph = new Map([
-      [story, new Set([helper])],
-    ]);
+    const initialGraph: DependencyGraph = new Map([[story, new Set([helper])]]);
 
     const { patcher, reverseIndex } = buildPatcher({
       world,

@@ -995,7 +995,7 @@ describe('ChangeDetectionService', () => {
     await service.dispose();
   });
 
-  it('serialises concurrent file-change events through the patch chain (H2)', async () => {
+  it('serialises concurrent file-change events through the patch chain', async () => {
     const reverseIndex = buildReverseIndex([]);
     const { patchSpy, buildSpy } = installDependencyGraphMocks(reverseIndex);
     buildSpy.mockResolvedValue({ reverseIndex, graph: new Map() });

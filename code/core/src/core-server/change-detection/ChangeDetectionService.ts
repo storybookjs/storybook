@@ -21,7 +21,7 @@ import {
   ParseResolveCache,
   WorkspaceLocator,
 } from './dependency-graph/index.ts';
-import type { DependencyGraph, ReverseIndexImpl } from './dependency-graph/index.ts';
+import type { ReverseIndexImpl } from './dependency-graph/index.ts';
 import { ChangeDetectionFailureError, ChangeDetectionUnavailableError } from './errors.ts';
 import { GitDiffProvider } from './GitDiffProvider.ts';
 import { extractBaselineEntryIds, IndexBaselineService } from './IndexBaselineService.ts';
@@ -82,10 +82,20 @@ function isSameData(a: unknown, b: unknown): boolean {
   return true;
 }
 
+type StoryIdsByFileCacheKey = Awaited<ReturnType<StoryIndexGenerator['getIndex']>>;
+const storyIdsByFileCache = new WeakMap<
+  StoryIdsByFileCacheKey,
+  { workingDir: string; storyIdsByFile: Map<string, Set<string>> }
+>();
+
 function getStoryIdsByAbsolutePath(
-  storyIndex: Awaited<ReturnType<StoryIndexGenerator['getIndex']>>,
+  storyIndex: StoryIdsByFileCacheKey,
   workingDir: string
 ): Map<string, Set<string>> {
+  const cached = storyIdsByFileCache.get(storyIndex);
+  if (cached && cached.workingDir === workingDir) {
+    return cached.storyIdsByFile;
+  }
   const storyIdsByFile = new Map<string, Set<string>>();
   Object.values(storyIndex.entries).forEach((entry) => {
     if (entry.type === 'story' && !entry.importPath.startsWith('virtual:')) {
@@ -95,6 +105,7 @@ function getStoryIdsByAbsolutePath(
       storyIdsByFile.set(filePath, storyIds);
     }
   });
+  storyIdsByFileCache.set(storyIndex, { workingDir, storyIdsByFile });
   return storyIdsByFile;
 }
 
@@ -178,7 +189,6 @@ export class ChangeDetectionService {
   private dependencyGraphBuilder: DependencyGraphBuilder | undefined;
   private incrementalPatcher: IncrementalPatcher | undefined;
   private reverseIndex: ReverseIndexImpl | undefined;
-  private graph: DependencyGraph | undefined;
   private storyFiles: Set<string> = new Set();
   /**
    * Serialises file-change patches so two events touching the same dep set never interleave
@@ -308,7 +318,6 @@ export class ChangeDetectionService {
       return;
     }
     this.reverseIndex = reverseIndex;
-    this.graph = graph;
 
     this.incrementalPatcher = new IncrementalPatcher({
       reverseIndex,
@@ -506,7 +515,12 @@ export class ChangeDetectionService {
       if (allEntries.size === 0) {
         continue;
       }
-      const lowestDistance = Math.min(...allEntries.values());
+      let lowestDistance = Number.POSITIVE_INFINITY;
+      for (const distance of allEntries.values()) {
+        if (distance < lowestDistance) {
+          lowestDistance = distance;
+        }
+      }
 
       for (const [storyFile, distance] of allEntries.entries()) {
         const storyIds = storyIdsByFile.get(storyFile);
@@ -565,6 +579,10 @@ export class ChangeDetectionService {
     const changedStatuses = Array.from(nextStatuses.values()).filter(
       (status) => !isSameStatus(this.previousStatuses.get(status.storyId), status)
     );
+
+    if (removedStoryIds.length === 0 && changedStatuses.length === 0) {
+      return;
+    }
 
     if (removedStoryIds.length > 0) {
       this.options.statusStore.unset(removedStoryIds);

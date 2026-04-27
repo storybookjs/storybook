@@ -54,10 +54,9 @@ export interface OxcParsePool {
   dispose(): Promise<void>;
 }
 
-const WORKER_PATH_CANDIDATES = [
-  './oxc-worker.js',
-  './change-detection/parser-registry/workers/oxc-worker.js',
-] as const;
+// OxcWorkerPool ships bundled into `dist/core-server/index.js`; the worker is emitted as a
+// sibling tree at `dist/core-server/change-detection/parser-registry/workers/oxc-worker.js`.
+const WORKER_RELATIVE_PATH = './change-detection/parser-registry/workers/oxc-worker.js';
 
 const DEFAULT_TASK_TIMEOUT_MS = 30_000;
 
@@ -66,14 +65,8 @@ function resolveWorkerScriptPath(): string | undefined {
   if (typeof import.meta.url !== 'string') {
     return undefined;
   }
-  for (const relative of WORKER_PATH_CANDIDATES) {
-    const url = new URL(relative, import.meta.url);
-    const path = fileURLToPath(url);
-    if (existsSync(path)) {
-      return path;
-    }
-  }
-  return undefined;
+  const path = fileURLToPath(new URL(WORKER_RELATIVE_PATH, import.meta.url));
+  return existsSync(path) ? path : undefined;
 }
 
 function computePoolSize(): number {

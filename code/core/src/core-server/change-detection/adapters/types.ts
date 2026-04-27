@@ -25,7 +25,7 @@ export interface ResolveConfig {
    *   - `Array<{ find: string | RegExp; replacement: string }>` (array form, supports regex)
    *
    * Regex aliases that cannot be translated to oxc-resolver are downgraded to opaque-leaf
-   * with a debug log (R1 mitigation). Plain string aliases are forwarded as-is.
+   * with a debug log. Plain string aliases are forwarded as-is.
    */
   alias?: Record<string, string> | Array<{ find: string | RegExp; replacement: string }>;
   /**

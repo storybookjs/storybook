@@ -1,4 +1,4 @@
-import type { ToolbarItem } from '../types';
+import type { ToolbarItem } from '../types.ts';
 
 interface GetSelectedItemProps {
   currentValue: string | null;

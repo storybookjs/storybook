@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { dedent } from 'ts-dedent';
 
-import { formatter } from './formatter';
+import { formatter } from './formatter.ts';
 
 describe('dedent', () => {
   it('handles empty string', async () => {

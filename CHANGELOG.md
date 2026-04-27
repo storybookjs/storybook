@@ -1,3 +1,30 @@
+## 10.3.5
+
+- Core: Disable component manifest by default - [#34408](https://github.com/storybookjs/storybook/pull/34408), thanks @yannbf!
+
+> [!NOTE]
+> [Version >=0.5.0 of `@storybook/addon-mcp`](https://github.com/storybookjs/mcp/releases/tag/%40storybook%2Faddon-mcp%400.5.0) enables component manifests again. If you're upgrading Storybook from version >= 10.3.0 to >= 10.3.5 and are using the MCP addon, you should also upgrade `@storybook/addon-mcp` to keep the docs toolset in the MCP server.
+
+## 10.3.4
+
+- Addon-a11y: Clear status transition timer on unmount to prevent test flake - [#34203](https://github.com/storybookjs/storybook/pull/34203), thanks @mixelburg!
+- Bug: Skip re-processing already transformed config files for CSF factories - [#34273](https://github.com/storybookjs/storybook/pull/34273), thanks @huang-julien!
+- Builder-Vite: Use djb2 hash to prevent variable name collisions in builder-vite - [#34274](https://github.com/storybookjs/storybook/pull/34274), thanks @chida09!
+- CLI: Prompt for init crash reports - [#34316](https://github.com/storybookjs/storybook/pull/34316), thanks @JReinhold!
+- CSF4: Fix duplicate preview loading issue in Vitest - [#34361](https://github.com/storybookjs/storybook/pull/34361), thanks @valentinpalkovic!
+- Core: Fix WebSocket connection for StackBlitz/WebContainers - [#34281](https://github.com/storybookjs/storybook/pull/34281), thanks @ghengeveld!
+- React-Docgen: Try .tsx fallback when resolving .js ESM imports in docgen resolvers - [#34393](https://github.com/storybookjs/storybook/pull/34393), thanks @mixelburg!
+- React-Vite: Upgrade @joshwooding/vite-plugin-react-docgen-typescript to 0.7.0 - [#34335](https://github.com/storybookjs/storybook/pull/34335), thanks @beeswhacks!
+
+## 10.3.3
+
+- Addon-Vitest: Streamline vite(st) config detection across init and postinstall - [#34193](https://github.com/storybookjs/storybook/pull/34193), thanks @valentinpalkovic!
+
+## 10.3.2
+
+- CLI: Shorten CTA link messages - [#34236](https://github.com/storybookjs/storybook/pull/34236), thanks @shilman!
+- React Native Web: Fix vite8 support by bumping vite-plugin-rnw - [#34231](https://github.com/storybookjs/storybook/pull/34231), thanks @dannyhw!
+
 ## 10.3.1
 
 - CLI: Use npm info to fetch versions in repro command - [#34214](https://github.com/storybookjs/storybook/pull/34214), thanks @yannbf!
@@ -13,7 +40,6 @@ Storybook 10.3 contains hundreds of fixes and improvements including:
 - ⚡ Vite 8 support
 - ▲ Next.js 16.2 support
 - 📝 ESLint 10 support
-- 🧪 React: Experimental `react-component-meta` prop extraction tool for accurate controls and args tables
 - 〰️ Addon Pseudo-States: Tailwind v4 support
 - 🔧 Addon-Vitest: Simplified configuration - no more setup files required
 - ♿ Numerous accessibility improvements across the UI

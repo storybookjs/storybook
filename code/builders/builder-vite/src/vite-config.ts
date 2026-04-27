@@ -16,9 +16,9 @@ import {
   pluginWebpackStats,
   storybookEntryPlugin,
   storybookExternalGlobalsPlugin,
-} from './plugins';
-import { viteCorePlugins as corePlugins } from './preset';
-import type { BuilderOptions } from './types';
+} from './plugins/index.ts';
+import { viteCorePlugins as corePlugins } from './preset.ts';
+import type { BuilderOptions } from './types.ts';
 
 export type PluginConfigType = 'build' | 'development';
 

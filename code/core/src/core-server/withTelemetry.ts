@@ -1,21 +1,32 @@
-import { HandledError, cache, isCI, loadAllPresets } from 'storybook/internal/common';
+import {
+  HandledError,
+  cache,
+  getStorybookInfo,
+  isCI,
+  loadAllPresets,
+} from 'storybook/internal/common';
 import { logger, prompt } from 'storybook/internal/node-logger';
 import {
   ErrorCollector,
   getPrecedingUpgrade,
+  isTelemetryStateResolved,
   oneWayHash,
+  onPayloadError,
+  setTelemetryEnabled,
   telemetry,
 } from 'storybook/internal/telemetry';
 import type { EventType } from 'storybook/internal/telemetry';
 import type { CLIOptions } from 'storybook/internal/types';
 
-import { StorybookError } from '../storybook-error';
+import { StorybookError } from '../storybook-error.ts';
+import { dirname } from 'path';
 
 type TelemetryOptions = {
   cliOptions: CLIOptions;
   presetOptions?: Parameters<typeof loadAllPresets>[0];
   printError?: (err: any) => void;
   skipPrompt?: boolean;
+  eventType?: EventType;
 };
 
 const promptCrashReports = async () => {
@@ -40,29 +51,30 @@ export async function getErrorLevel({
   cliOptions,
   presetOptions,
   skipPrompt,
+  eventType,
 }: TelemetryOptions): Promise<ErrorLevel> {
   if (cliOptions.disableTelemetry) {
     return 'none';
   }
 
-  // If we are running init or similar, we just have to go with true here
-  if (!presetOptions) {
+  if (!presetOptions && eventType !== 'init') {
     return 'error';
   }
 
-  // should we load the preset?
-  const presets = await loadAllPresets(presetOptions);
+  if (presetOptions) {
+    const presets = await loadAllPresets(presetOptions);
 
-  // If the user has chosen to enable/disable crash reports in main.js
-  // or disabled telemetry, we can return that
-  const core = await presets.apply('core');
+    // If the user has chosen to enable/disable crash reports in main.js
+    // or disabled telemetry, we can return that
+    const core = await presets.apply('core');
 
-  if (core?.enableCrashReports !== undefined) {
-    return core.enableCrashReports ? 'full' : 'error';
-  }
+    if (core?.enableCrashReports !== undefined) {
+      return core.enableCrashReports ? 'full' : 'error';
+    }
 
-  if (core?.disableTelemetry) {
-    return 'none';
+    if (core?.disableTelemetry) {
+      return 'none';
+    }
   }
 
   // Deal with typo, remove in future version (7.1?)
@@ -96,7 +108,11 @@ export async function sendTelemetryError(
   try {
     let errorLevel = 'error';
     try {
-      errorLevel = await getErrorLevel(options);
+      errorLevel = await getErrorLevel({
+        ...options,
+        eventType,
+        skipPrompt: options.skipPrompt || (eventType === 'init' && !blocking),
+      });
     } catch (err) {
       // If this throws, eg. due to main.js breaking, we fall back to 'error'
     }
@@ -133,6 +149,7 @@ export async function sendTelemetryError(
           immediate: true,
           configDir: options.cliOptions.configDir || options.presetOptions?.configDir,
           enableCrashReports: errorLevel === 'full',
+          force: true,
         }
       );
 
@@ -149,7 +166,34 @@ export async function sendTelemetryError(
 }
 
 export function isTelemetryEnabled(options: TelemetryOptions) {
-  return !(options.cliOptions.disableTelemetry || options.cliOptions.test === true);
+  return !options.cliOptions.disableTelemetry;
+}
+
+/**
+ * Resolve telemetry state by loading presets from configDir to check core.disableTelemetry.
+ * Used when run() completes without resolving telemetry state (e.g. CLI commands like
+ * add/remove/doctor/upgrade/migrate that don't load presets themselves).
+ */
+async function tryResolveTelemetryStateFromConfig(options: TelemetryOptions) {
+  const configDir = options.cliOptions.configDir || options.presetOptions?.configDir;
+
+  try {
+    const { mainConfig } = await getStorybookInfo(
+      configDir,
+      configDir ? dirname(configDir) : undefined
+    );
+
+    if (!mainConfig) {
+      // No config dir available — default to enabled
+      await setTelemetryEnabled(true);
+      return;
+    }
+
+    await setTelemetryEnabled(!mainConfig.core?.disableTelemetry);
+  } catch {
+    // If presets fail to load, conservatively disable
+    await setTelemetryEnabled(false);
+  }
 }
 
 export async function withTelemetry<T>(
@@ -157,15 +201,15 @@ export async function withTelemetry<T>(
   options: TelemetryOptions,
   run: () => Promise<T>
 ): Promise<T | undefined> {
-  const enableTelemetry = isTelemetryEnabled(options);
+  if (!isTelemetryEnabled(options)) {
+    await setTelemetryEnabled(false);
+  }
 
   let canceled = false;
 
   async function cancelTelemetry() {
     canceled = true;
-    if (enableTelemetry) {
-      await telemetry('canceled', { eventType }, { stripMetadata: true, immediate: true });
-    }
+    await telemetry('canceled', { eventType }, { stripMetadata: true, immediate: true });
 
     process.exit(0);
   }
@@ -175,13 +219,29 @@ export async function withTelemetry<T>(
     process.on('SIGINT', cancelTelemetry);
   }
 
-  if (enableTelemetry) {
-    telemetry('boot', { eventType }, { stripMetadata: true });
-  }
+  // Register error handler so that payload factories returning { error } or throwing
+  // automatically trigger sendTelemetryError with full context (presets, cache, error levels).
+  onPayloadError(async (error, evtType) => {
+    await sendTelemetryError(error, evtType, options);
+  });
+
+  telemetry('boot', { eventType }, { stripMetadata: true });
 
   try {
-    return await run();
+    const result = await run();
+
+    // If run() completed but telemetry state was never resolved (e.g. CLI commands like
+    // add/remove/doctor that don't load presets themselves), load the config to resolve it.
+    if (!isTelemetryStateResolved()) {
+      await tryResolveTelemetryStateFromConfig(options);
+    }
+
+    return result;
   } catch (error: any) {
+    if (!isTelemetryStateResolved()) {
+      await tryResolveTelemetryStateFromConfig(options);
+    }
+
     if (canceled) {
       return undefined;
     }
@@ -194,18 +254,15 @@ export async function withTelemetry<T>(
       printError(error);
     }
 
-    if (enableTelemetry) {
-      await sendTelemetryError(error, eventType, options);
-    }
+    await sendTelemetryError(error, eventType, options);
 
     throw error;
   } finally {
-    if (enableTelemetry) {
-      const errors = ErrorCollector.getErrors();
-      for (const error of errors) {
-        await sendTelemetryError(error, eventType, options, false);
-      }
-      process.off('SIGINT', cancelTelemetry);
+    const errors = ErrorCollector.getErrors();
+    for (const error of errors) {
+      await sendTelemetryError(error, eventType, options, false);
     }
+    process.off('SIGINT', cancelTelemetry);
+    onPayloadError(undefined);
   }
 }

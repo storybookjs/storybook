@@ -12,11 +12,17 @@
     "nextjs"
   ],
   "targets": {
-    "sandbox": { "options": { "dir": "nextjs-14-ts" } },
-    "prepare-sandbox": {},
+    "sandbox": {
+      "options": {
+        "dir": "nextjs-14-ts"
+      }
+    },
     "dev": {},
-    "build": { "options": { "dir": "nextjs-14-ts" } },
-    "prepare-build-sandbox": {},
+    "build": {
+      "options": {
+        "dir": "nextjs-14-ts"
+      }
+    },
     "chromatic": {},
     "serve": {},
     "test-runner": {},

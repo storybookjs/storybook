@@ -1,7 +1,7 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { dedent } from 'ts-dedent';
 import { formatFileContent } from 'storybook/internal/common';
-import { configToCsfFactory } from './config-to-csf-factory';
+import { configToCsfFactory } from './config-to-csf-factory.ts';
 
 vi.mock('storybook/internal/common', { spy: true });
 
@@ -174,6 +174,31 @@ describe('main/preview codemod: general parsing functionality', () => {
     `;
     const transformed = await transform(original);
     expect(transformed).toEqual(original);
+  });
+
+  it('should add missing import when already transformed but import is absent', async () => {
+    await expect(
+      transform(dedent`
+        export default defineMain({});
+      `)
+    ).resolves.toMatchInlineSnapshot(`
+      import { defineMain } from "@storybook/react-vite/node";
+      export default defineMain({});
+    `);
+  });
+
+  it('should add missing specifier when already transformed but defineMain is not in existing import', async () => {
+    await expect(
+      transform(dedent`
+        import { someHelper } from '@storybook/react-vite/node';
+
+        export default defineMain({});
+      `)
+    ).resolves.toMatchInlineSnapshot(`
+      import { someHelper, defineMain } from '@storybook/react-vite/node';
+
+      export default defineMain({});
+    `);
   });
 
   it('should remove legacy main config type imports if unused', async () => {

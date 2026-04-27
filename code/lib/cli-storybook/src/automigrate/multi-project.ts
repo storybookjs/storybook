@@ -3,13 +3,13 @@ import { CLI_COLORS, type TaskLogInstance, logger, prompt } from 'storybook/inte
 import { ErrorCollector, sanitizeError } from 'storybook/internal/telemetry';
 import type { StorybookConfigRaw } from 'storybook/internal/types';
 
-import type { UpgradeOptions } from '../upgrade';
-import { shortenPath } from '../util';
-import type { CollectProjectsSuccessResult } from '../util';
-import { allFixes } from './fixes';
-import { rnstorybookConfig } from './fixes/rnstorybook-config';
-import type { CheckOptions, Fix, FixId, RunOptions } from './types';
-import { FixStatus } from './types';
+import type { UpgradeOptions } from '../upgrade.ts';
+import { shortenPath } from '../util.ts';
+import type { CollectProjectsSuccessResult } from '../util.ts';
+import { allFixes } from './fixes/index.ts';
+import { rnstorybookConfig } from './fixes/rnstorybook-config.ts';
+import type { CheckOptions, Fix, FixId, RunOptions } from './types.ts';
+import { FixStatus } from './types.ts';
 
 export interface ProjectAutomigrationData {
   configDir: string;

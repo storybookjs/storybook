@@ -1,4 +1,4 @@
-import type { PSEUDO_STATES } from './constants';
+import type { PSEUDO_STATES } from './constants.ts';
 
 export type PseudoState = keyof typeof PSEUDO_STATES;
 

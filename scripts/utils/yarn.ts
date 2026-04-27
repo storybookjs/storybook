@@ -2,10 +2,10 @@ import { access, mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 
 // TODO -- should we generate this file a second time outside of CLI?
-import storybookVersions from '../../code/core/src/common/versions';
-import { allTemplates } from '../../code/lib/cli-storybook/src/sandbox-templates';
-import type { AllTemplatesKey } from '../../code/lib/cli-storybook/src/sandbox-templates';
-import { exec } from './exec';
+import storybookVersions from '../../code/core/src/common/versions.ts';
+import { allTemplates } from '../../code/lib/cli-storybook/src/sandbox-templates.ts';
+import type { AllTemplatesKey } from '../../code/lib/cli-storybook/src/sandbox-templates.ts';
+import { exec } from './exec.ts';
 
 export type YarnOptions = {
   cwd: string;
@@ -142,11 +142,13 @@ export const configureYarn2ForVerdaccio = async ({
   debug,
   key,
 }: YarnOptions & { key: AllTemplatesKey }) => {
+  // On NX Cloud agents, we use the global cache to avoid duplicating .yarn/cache across sandboxes.
+  // Stale @storybook/* packages are cleaned from the global cache in the agent init step (agents.yaml).
+  // Locally and on CircleCI, we disable the global cache to avoid stale packages from previous runs.
+  const useGlobalCache = Boolean(process.env.STORYBOOK_NX_CLOUD_AGENT);
+
   const command = [
-    // We don't want to use the cache or we might get older copies of our built packages
-    // (with identical versions), as yarn (correctly I guess) assumes the same version hasn't changed
-    // TODO publish unique versions instead
-    `yarn config set enableGlobalCache false`,
+    `yarn config set enableGlobalCache ${useGlobalCache}`,
     `yarn config set enableMirror false`,
     // ⚠️ Need to set registry because Yarn 2 is not using the conf of Yarn 1 (URL is hardcoded in CircleCI config.yml)
     `yarn config set npmRegistryServer "http://localhost:6001/"`,

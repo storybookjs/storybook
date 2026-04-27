@@ -2,7 +2,7 @@
 import glob from 'fast-glob';
 import { join } from 'path/posix';
 
-import { WINDOWS_ROOT_DIR, WORKING_DIR } from './utils/constants';
+import { WINDOWS_ROOT_DIR, WORKING_DIR } from './utils/constants.ts';
 import {
   CACHE_KEYS,
   CACHE_PATHS,
@@ -16,8 +16,8 @@ import {
   verdaccio,
   workflow,
   workspace,
-} from './utils/helpers';
-import { defineJob, defineNoOpJob } from './utils/types';
+} from './utils/helpers.ts';
+import { defineJob, defineNoOpJob } from './utils/types.ts';
 
 const dirname = import.meta.dirname;
 
@@ -64,19 +64,18 @@ export const build_linux = defineJob('Build (linux)', (workflowName) => ({
   ],
 }));
 
-export const prettyDocs = defineJob('Prettify docs', () => ({
+export const fmt = defineJob('Format check', () => ({
   executor: {
     name: 'sb_node_22_classic',
     class: 'medium+',
   },
   steps: [
     git.checkout(),
-    npm.installScripts(),
+    npm.install('.'),
     {
       run: {
-        name: 'Docs formatting',
-        working_directory: `scripts`,
-        command: 'yarn docs:fmt:check',
+        name: 'Format check',
+        command: 'yarn fmt:check',
       },
     },
   ],
@@ -129,7 +128,7 @@ export const storybookChromatic = defineJob(
       class: 'medium+',
     },
     steps: [
-      ...workflow.restoreLinux(),
+      ...workflow.restoreLinux({ shallow: false }),
       {
         run: {
           name: 'Build internal storybook',
@@ -180,7 +179,7 @@ export const check = defineJob(
 );
 
 export const lint = defineJob(
-  'EsLint & Prettier validation',
+  'ESLint',
   () => ({
     executor: {
       name: 'sb_node_22_classic',
@@ -193,13 +192,6 @@ export const lint = defineJob(
           name: 'Lint code JS',
           working_directory: `code`,
           command: 'yarn lint:js',
-        },
-      },
-      {
-        run: {
-          name: 'Lint code Other',
-          working_directory: `code`,
-          command: 'yarn lint:other',
         },
       },
       {

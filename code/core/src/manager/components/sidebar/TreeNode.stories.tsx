@@ -1,8 +1,8 @@
 import React from 'react';
 
-import { HighlightStyles } from './HighlightStyles';
-import { IconSymbols } from './IconSymbols';
-import { LeafNodeStyleWrapper } from './Tree';
+import { HighlightStyles } from './HighlightStyles.tsx';
+import { IconSymbols } from './IconSymbols.tsx';
+import { LeafNodeStyleWrapper } from './Tree.tsx';
 import {
   ComponentNode,
   DocumentNode,
@@ -10,7 +10,7 @@ import {
   StoryBranchNode,
   StoryLeafNode,
   TestNode,
-} from './TreeNode';
+} from './TreeNode.tsx';
 
 export default {
   title: 'Sidebar/TreeNode',

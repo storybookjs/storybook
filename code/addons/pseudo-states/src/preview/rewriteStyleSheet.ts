@@ -2,8 +2,8 @@ import {
   EXCLUDED_PSEUDO_ELEMENT_PATTERNS,
   EXCLUDED_PSEUDO_ESCAPE_SEQUENCE,
   PSEUDO_STATES,
-} from '../constants';
-import { splitSelectors } from './splitSelectors';
+} from '../constants.ts';
+import { splitSelectors } from './splitSelectors.ts';
 
 const pseudoStates = Object.values(PSEUDO_STATES);
 const pseudoStatesPattern = `${EXCLUDED_PSEUDO_ESCAPE_SEQUENCE}:(${pseudoStates.join('|')})`;

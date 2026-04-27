@@ -1,8 +1,8 @@
 import { logger } from 'storybook/internal/client-logger';
 import type { API_ComposedRef } from 'storybook/internal/types';
 
-import { getSourceType } from '../modules/refs';
-import type { API } from '../root';
+import { getSourceType } from '../modules/refs.ts';
+import type { API } from '../root.tsx';
 
 interface Meta {
   ref?: API_ComposedRef;

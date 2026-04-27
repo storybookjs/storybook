@@ -1,4 +1,10 @@
-import { resolveExpression } from 'storybook/internal/babel';
+import {
+  getConfigObjectFromMergeArg,
+  getEffectiveMergeConfigCall,
+  getTargetConfigObject,
+  isDefineConfigLike,
+  resolveExpression,
+} from 'storybook/internal/babel';
 import type { BabelFile, types as t } from 'storybook/internal/babel';
 
 import { normalize } from 'pathe';
@@ -10,13 +16,13 @@ import { normalize } from 'pathe';
 async function getTemplatePath(name: string) {
   switch (name) {
     case 'vitest.config.template':
-      return import('../templates/vitest.config.template?raw');
+      return import('../templates/vitest.config.template.ts?raw');
     case 'vitest.config.4.template':
-      return import('../templates/vitest.config.4.template?raw');
+      return import('../templates/vitest.config.4.template.ts?raw');
     case 'vitest.config.3.2.template':
-      return import('../templates/vitest.config.3.2.template?raw');
+      return import('../templates/vitest.config.3.2.template.ts?raw');
     case 'vitest.workspace.template':
-      return import('../templates/vitest.workspace.template?raw');
+      return import('../templates/vitest.workspace.template.ts?raw');
     default:
       throw new Error(`Unknown template: ${name}`);
   }
@@ -67,57 +73,6 @@ const mergeProperties = (
       }
     }
   }
-};
-
-/**
- * Returns true if the identifier is a local alias for `defineConfig`/`defineProject` imported from
- * either `vitest/config` or `vite`.
- */
-const isImportedDefineConfigLikeIdentifier = (localName: string, ast: BabelFile['ast']): boolean =>
-  ast.program.body.some(
-    (node): boolean =>
-      node.type === 'ImportDeclaration' &&
-      (node.source.value === 'vitest/config' || node.source.value === 'vite') &&
-      node.specifiers.some(
-        (specifier) =>
-          specifier.type === 'ImportSpecifier' &&
-          specifier.local.type === 'Identifier' &&
-          specifier.local.name === localName &&
-          specifier.imported.type === 'Identifier' &&
-          (specifier.imported.name === 'defineConfig' ||
-            specifier.imported.name === 'defineProject')
-      )
-  );
-
-/** Returns true if the call expression is a defineConfig or defineProject call (including aliases). */
-const isDefineConfigLike = (node: t.CallExpression, ast: BabelFile['ast']): boolean =>
-  node.callee.type === 'Identifier' &&
-  (node.callee.name === 'defineConfig' ||
-    node.callee.name === 'defineProject' ||
-    isImportedDefineConfigLikeIdentifier(node.callee.name, ast));
-
-/**
- * Resolves a mergeConfig argument to a config object expression when possible. Supports both direct
- * object args and wrapped forms like `defineConfig({ ... })`.
- */
-const getConfigObjectFromMergeArg = (
-  arg: t.Expression,
-  ast: BabelFile['ast']
-): t.ObjectExpression | null => {
-  const resolved = resolveExpression(arg, ast);
-  if (!resolved) {
-    return null;
-  }
-
-  if (resolved.type === 'ObjectExpression') {
-    return resolved;
-  }
-
-  if (resolved.type === 'CallExpression' && resolved.arguments[0]?.type === 'ObjectExpression') {
-    return resolved.arguments[0] as t.ObjectExpression;
-  }
-
-  return null;
 };
 
 /**
@@ -366,69 +321,6 @@ const mergeTemplateIntoConfigObject = (
   }
 
   mergeProperties(properties, targetConfigObject.properties);
-};
-
-/**
- * Extracts the effective mergeConfig call from a declaration, handling wrappers:
- *
- * - TypeScript type annotations (as X, satisfies X)
- * - DefineConfig(mergeConfig(...)) outer wrapper
- * - Variable references (export default config where config = mergeConfig(...))
- */
-const getEffectiveMergeConfigCall = (
-  decl: t.Expression | t.Declaration,
-  ast: BabelFile['ast']
-): t.CallExpression | null => {
-  const resolved = resolveExpression(decl, ast);
-  if (!resolved || resolved.type !== 'CallExpression') {
-    return null;
-  }
-
-  // Handle defineConfig(mergeConfig(...)) – arg may itself be wrapped in a TS type expression
-  if (isDefineConfigLike(resolved, ast) && resolved.arguments.length > 0) {
-    const innerArg = resolveExpression(resolved.arguments[0] as t.Expression, ast);
-    if (
-      innerArg?.type === 'CallExpression' &&
-      innerArg.callee.type === 'Identifier' &&
-      innerArg.callee.name === 'mergeConfig'
-    ) {
-      return innerArg;
-    }
-  }
-
-  // Handle mergeConfig(...) directly
-  if (resolved.callee.type === 'Identifier' && resolved.callee.name === 'mergeConfig') {
-    return resolved;
-  }
-
-  return null;
-};
-
-/**
- * Resolves the target's default export to the actual config object expression we can merge into.
- * Handles: export default defineConfig({}), export default defineProject({}), export default {},
- * and export default config (where config is a variable holding one of those), as well as
- * TypeScript type annotations on the declaration.
- */
-const getTargetConfigObject = (
-  target: BabelFile['ast'],
-  exportDefault: t.ExportDefaultDeclaration
-): t.ObjectExpression | null => {
-  const resolved = resolveExpression(exportDefault.declaration, target);
-  if (!resolved) {
-    return null;
-  }
-  if (resolved.type === 'ObjectExpression') {
-    return resolved;
-  }
-  if (
-    resolved.type === 'CallExpression' &&
-    isDefineConfigLike(resolved, target) &&
-    resolved.arguments[0]?.type === 'ObjectExpression'
-  ) {
-    return resolved.arguments[0] as t.ObjectExpression;
-  }
-  return null;
 };
 
 /**

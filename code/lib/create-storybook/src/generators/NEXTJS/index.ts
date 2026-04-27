@@ -9,7 +9,7 @@ import { SupportedBuilder, SupportedFramework, SupportedRenderer } from 'storybo
 
 import { dedent } from 'ts-dedent';
 
-import { defineGeneratorModule } from '../modules/GeneratorModule';
+import { defineGeneratorModule } from '../modules/GeneratorModule.ts';
 
 const NEXT_CONFIG_FILES = [
   'next.config.mjs',

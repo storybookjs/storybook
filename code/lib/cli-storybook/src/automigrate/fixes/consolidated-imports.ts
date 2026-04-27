@@ -2,8 +2,8 @@ import { readFile, writeFile } from 'node:fs/promises';
 
 import { transformImportFiles, versions } from 'storybook/internal/common';
 
-import { consolidatedPackages } from '../helpers/consolidated-packages';
-import type { Fix } from '../types';
+import { consolidatedPackages } from '../helpers/consolidated-packages.ts';
+import type { Fix } from '../types.ts';
 
 export interface ConsolidatedOptions {
   consolidatedDeps: Set<keyof typeof consolidatedPackages>;

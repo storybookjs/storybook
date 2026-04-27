@@ -7,7 +7,6 @@ import type { ViteUserConfig } from 'vitest/config';
 import {
   DEFAULT_FILES_PATTERN,
   getInterpretedFile,
-  loadPreviewOrConfigFile,
   normalizeStories,
   optionalEnvToBoolean,
   resolvePathInStorybookCache,
@@ -19,14 +18,9 @@ import {
   experimental_loadStorybook,
   mapStaticDir,
 } from 'storybook/internal/core-server';
-import {
-  componentTransform,
-  isCsfFactoryPreview,
-  readConfig,
-  vitestTransform,
-} from 'storybook/internal/csf-tools';
+import { componentTransform, readConfig, vitestTransform } from 'storybook/internal/csf-tools';
 import { MainFileMissingError } from 'storybook/internal/server-errors';
-import { telemetry } from 'storybook/internal/telemetry';
+import { setTelemetryEnabled, telemetry } from 'storybook/internal/telemetry';
 import { oneWayHash } from 'storybook/internal/telemetry';
 import type { Presets } from 'storybook/internal/types';
 
@@ -39,9 +33,9 @@ import { dedent } from 'ts-dedent';
 import type { PluginOption } from 'vite';
 
 // Shared plugins from builder-vite (relative import to prebundle without adding a package dependency)
-import { withoutVitePlugins } from '../../../../builders/builder-vite/src/utils/without-vite-plugins';
-import type { InternalOptions, UserOptions } from './types';
-import { requiresProjectAnnotations } from './utils';
+import { withoutVitePlugins } from '../../../../builders/builder-vite/src/utils/without-vite-plugins.ts';
+import type { InternalOptions, UserOptions } from './types.ts';
+import { requiresProjectAnnotations } from './utils.ts';
 
 const WORKING_DIR = process.cwd();
 
@@ -224,6 +218,8 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
     presets.apply('features', {}),
   ]);
 
+  await setTelemetryEnabled(!core?.disableTelemetry);
+
   const pluginsToIgnore = [
     'storybook:react-docgen-plugin',
     'vite:react-docgen-typescript', // aka @joshwooding/vite-plugin-react-docgen-typescript
@@ -303,14 +299,9 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
       finalOptions.includeStories = includeStories;
       const projectId = oneWayHash(finalOptions.configDir);
 
-      const previewOrConfigFile = loadPreviewOrConfigFile({ configDir: finalOptions.configDir });
-      const previewConfig = previewOrConfigFile ? await readConfig(previewOrConfigFile) : undefined;
-      const isCSF4 = previewConfig ? isCsfFactoryPreview(previewConfig) : false;
-
       const areProjectAnnotationRequired = await requiresProjectAnnotations(
         nonMutableInputConfig.test,
-        finalOptions,
-        isCSF4
+        finalOptions
       );
 
       const internalSetupFiles = (
@@ -318,7 +309,6 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
           '@storybook/addon-vitest/internal/setup-file',
           areProjectAnnotationRequired &&
             '@storybook/addon-vitest/internal/setup-file-with-project-annotations',
-          isCSF4 && previewOrConfigFile,
         ].filter(Boolean) as string[]
       ).map((filePath) => fileURLToPath(import.meta.resolve(filePath)));
 
@@ -454,22 +444,17 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
     configureVitest(context) {
       context.vitest.config.coverage.exclude.push('storybook-static');
 
-      if (
-        !core?.disableTelemetry &&
-        !optionalEnvToBoolean(process.env.STORYBOOK_DISABLE_TELEMETRY)
-      ) {
-        // NOTE: we start telemetry immediately but do not wait on it. Typically it should complete
-        // before the tests do. If not we may miss the event, we are OK with that.
-        telemetry(
-          'test-run',
-          {
-            runner: 'vitest',
-            watch: context.vitest.config.watch,
-            coverage: !!context.vitest.config.coverage?.enabled,
-          },
-          { configDir: finalOptions.configDir }
-        );
-      }
+      // NOTE: we start telemetry immediately but do not wait on it. Typically it should complete
+      // before the tests do. If not we may miss the event, we are OK with that.
+      telemetry(
+        'test-run',
+        {
+          runner: 'vitest',
+          watch: context.vitest.config.watch,
+          coverage: !!context.vitest.config.coverage?.enabled,
+        },
+        { configDir: finalOptions.configDir }
+      );
     },
     async configureServer(server) {
       if (staticDirs) {

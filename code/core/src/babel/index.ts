@@ -13,8 +13,17 @@ import bt from '@babel/traverse';
 import * as types from '@babel/types';
 import * as recast from 'recast';
 
-export * from './babelParse';
-export { unwrapTSExpression, resolveExpression } from './expression-resolver';
+export * from './babelParse.ts';
+export { unwrapTSExpression, resolveExpression } from './expression-resolver.ts';
+export {
+  isImportedDefineConfigLikeIdentifier,
+  isDefineConfigLike,
+  getConfigObjectFromMergeArg,
+  getEffectiveMergeConfigCall,
+  getTargetConfigObject,
+  canUpdateVitestConfigFile,
+  canUpdateVitestWorkspaceFile,
+} from './vitest-config-helpers.ts';
 
 // @ts-expect-error (needed due to it's use of `exports.default`)
 const traverse = (bt.default || bt) as typeof bt;

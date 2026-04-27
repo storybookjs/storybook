@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test';
 import process from 'process';
 
-import { SbPage, checkTemplate } from './util';
+import { SbPage, checkTemplate } from './util.ts';
 
 const storybookUrl = process.env.STORYBOOK_URL || 'http://localhost:6006';
 const templateName = process.env.STORYBOOK_TEMPLATE_NAME || '';
@@ -77,9 +77,11 @@ test.describe('interactions', () => {
     await expect(panel).toBeVisible();
 
     // Test interactions debugger - Stepping through works, count is correct and values are as expected
-    const interactionsRow = panel.locator('[aria-label="Interaction step"]');
+    const interactionsRow = panel.getByRole('button', {
+      name: /^(Go to )?interaction row:/i,
+    });
 
-    await interactionsRow.first().isVisible();
+    await expect(interactionsRow.first()).toBeVisible();
 
     await expect(interactionsRow).toHaveCount(3);
     const firstInteraction = interactionsRow.first();
@@ -102,9 +104,9 @@ test.describe('interactions', () => {
 
     await expect(formInput).toHaveValue('final value');
 
-    await interactionsRow.first().isVisible();
-    await interactionsRow.nth(1).isVisible();
-    await interactionsRow.nth(2).isVisible();
+    await expect(interactionsRow.first()).toBeVisible();
+    await expect(interactionsRow.nth(1)).toBeVisible();
+    await expect(interactionsRow.nth(2)).toBeVisible();
     await expect(interactionsTab.getByText('3')).toBeVisible();
     await expect(interactionsTab).toBeVisible();
     await expect(interactionsTab.getByText('3')).toBeVisible();
@@ -113,9 +115,9 @@ test.describe('interactions', () => {
     const remountComponentButton = page.locator('[aria-label="Reload story"]');
     await remountComponentButton.click();
 
-    await interactionsRow.first().isVisible();
-    await interactionsRow.nth(1).isVisible();
-    await interactionsRow.nth(2).isVisible();
+    await expect(interactionsRow.first()).toBeVisible();
+    await expect(interactionsRow.nth(1)).toBeVisible();
+    await expect(interactionsRow.nth(2)).toBeVisible();
     await expect(interactionsTab.getByText('3')).toBeVisible();
     await expect(interactionsTab).toBeVisible();
     await expect(interactionsTab).toBeVisible();

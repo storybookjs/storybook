@@ -14,9 +14,9 @@ import {
   STATUS_TYPE_ID_A11Y,
   STATUS_TYPE_ID_COMPONENT_TEST,
   storeOptions,
-} from '../constants';
-import type { ErrorLike, FatalErrorEvent, StoreEvent, StoreState } from '../types';
-import { TestManager } from './test-manager';
+} from '../constants.ts';
+import type { ErrorLike, FatalErrorEvent, StoreEvent, StoreState } from '../types.ts';
+import { TestManager } from './test-manager.ts';
 
 // Destructure the imported functions for easier access
 const UniversalStore = experimental_UniversalStore;

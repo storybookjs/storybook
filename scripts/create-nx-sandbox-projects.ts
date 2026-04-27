@@ -1,8 +1,8 @@
 import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 
-import { type Template } from '../code/lib/cli-storybook/src/sandbox-templates';
-import * as templates from '../code/lib/cli-storybook/src/sandbox-templates';
+import { type Template } from '../code/lib/cli-storybook/src/sandbox-templates.ts';
+import * as templates from '../code/lib/cli-storybook/src/sandbox-templates.ts';
 
 // @ts-expect-error somehow TS thinks there is a default export
 const { allTemplates, merged, daily, normal } = (templates.default ||
@@ -34,7 +34,6 @@ const projectJson = (
         dir: name.replaceAll('/', '-'),
       },
     },
-    'prepare-sandbox': {},
     dev: {},
     ...(template.typeCheck === true
       ? {
@@ -51,7 +50,6 @@ const projectJson = (
         dir: name.replaceAll('/', '-'),
       },
     },
-    'prepare-build-sandbox': {},
     chromatic: {},
     serve: {},
     ...(template.skipTasks && template.skipTasks.includes('e2e-tests')

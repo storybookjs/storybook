@@ -1,5 +1,5 @@
-import type { animation, easing } from './animation';
-import type { background, color, tokens, typography } from './base';
+import type { animation, easing } from './animation.ts';
+import type { background, color, tokens, typography } from './base.ts';
 
 export interface ThemeVars extends ThemeVarsBase, ThemeVarsColors {}
 

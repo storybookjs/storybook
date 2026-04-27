@@ -1,8 +1,8 @@
 import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
 
-import { importModule } from '../../../core/src/shared/utils/module';
-import type { PostinstallOptions } from './add';
+import { importModule } from '../../../core/src/shared/utils/module.ts';
+import type { PostinstallOptions } from './add.ts';
 
 const DIR_CWD = process.cwd();
 const require = createRequire(DIR_CWD);

@@ -15,7 +15,7 @@ import type { A11yReport } from '@storybook/addon-a11y';
 import { throttle } from 'es-toolkit/function';
 import type { Report } from 'storybook/preview-api';
 
-import { STATUS_TYPE_ID_A11Y, STATUS_TYPE_ID_COMPONENT_TEST, storeOptions } from '../constants';
+import { STATUS_TYPE_ID_A11Y, STATUS_TYPE_ID_COMPONENT_TEST, storeOptions } from '../constants.ts';
 import type {
   CurrentRun,
   RunTrigger,
@@ -23,9 +23,9 @@ import type {
   StoreState,
   TriggerRunEvent,
   VitestError,
-} from '../types';
-import { errorToErrorLike } from '../utils';
-import { VitestManager } from './vitest-manager';
+} from '../types.ts';
+import { errorToErrorLike } from '../utils.ts';
+import { VitestManager } from './vitest-manager.ts';
 
 export type TestManagerOptions = {
   storybookOptions: Options;

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { isCorePackage } from './cli';
+import { isCorePackage } from './cli.ts';
 
 describe('UTILS', () => {
   describe.each([

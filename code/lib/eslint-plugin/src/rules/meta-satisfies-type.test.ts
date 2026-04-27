@@ -5,8 +5,8 @@
 //------------------------------------------------------------------------------
 // Requirements
 //------------------------------------------------------------------------------
-import ruleTester from '../test-utils';
-import rule from './meta-satisfies-type';
+import ruleTester from '../test-utils.ts';
+import rule from './meta-satisfies-type.ts';
 
 //------------------------------------------------------------------------------
 // Tests

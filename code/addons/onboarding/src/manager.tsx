@@ -5,10 +5,10 @@ import { STORY_SPECIFIED } from 'storybook/internal/core-events';
 
 import { addons, internal_universalChecklistStore as checklistStore } from 'storybook/manager-api';
 
-import { ADDON_CONTROLS_ID, ADDON_ID } from './constants';
+import { ADDON_CONTROLS_ID, ADDON_ID } from './constants.ts';
 
-const Onboarding = lazy(() => import('./Onboarding'));
-const Survey = lazy(() => import('./Survey'));
+const Onboarding = lazy(() => import('./Onboarding.tsx'));
+const Survey = lazy(() => import('./Survey.tsx'));
 
 let root: ReturnType<typeof createRoot> | null = null;
 const render = (node: React.ReactNode) => {

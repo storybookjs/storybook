@@ -23,10 +23,10 @@ import { CheckIcon } from '@storybook/icons';
 import type { RequestResponseError } from 'storybook/manager-api';
 import { addons, experimental_requestResponse, useStorybookApi } from 'storybook/manager-api';
 
-import { useDebounce } from '../../hooks/useDebounce';
-import type { NewStoryPayload, SearchResult } from './FileSearchList';
-import { FileSearchModal } from './FileSearchModal';
-import { trySelectNewStory } from './FileSearchModal.utils';
+import { useDebounce } from '../../hooks/useDebounce.ts';
+import type { NewStoryPayload, SearchResult } from './FileSearchList.tsx';
+import { FileSearchModal } from './FileSearchModal.tsx';
+import { trySelectNewStory } from './FileSearchModal.utils.tsx';
 
 interface CreateNewStoryFileModalProps {
   open: boolean;

@@ -15,7 +15,7 @@ import {
 import { StoryIndexGenerator } from 'storybook/internal/core-server';
 import { loadCsf } from 'storybook/internal/csf-tools';
 import { logger } from 'storybook/internal/node-logger';
-import { telemetry } from 'storybook/internal/telemetry';
+import { setTelemetryEnabled, telemetry } from 'storybook/internal/telemetry';
 import type {
   CoreConfig,
   Indexer,
@@ -29,18 +29,18 @@ import { isAbsolute, join } from 'pathe';
 import * as pathe from 'pathe';
 import { dedent } from 'ts-dedent';
 
-import { resolvePackageDir } from '../../shared/utils/module';
-import { initCreateNewStoryChannel } from '../server-channel/create-new-story-channel';
-import { initFileSearchChannel } from '../server-channel/file-search-channel';
-import { initGhostStoriesChannel } from '../server-channel/ghost-stories-channel';
-import { initOpenInEditorChannel } from '../server-channel/open-in-editor-channel';
-import { initTelemetryChannel } from '../server-channel/telemetry-channel';
-import { initializeChecklist } from '../utils/checklist';
-import { defaultFavicon, defaultStaticDirs } from '../utils/constants';
-import { initializeSaveStory } from '../utils/save-story/save-story';
-import { parseStaticDir } from '../utils/server-statics';
-import { type OptionsWithRequiredCache, initializeWhatsNew } from '../utils/whats-new';
-import { getWsToken } from './wsToken';
+import { resolvePackageDir } from '../../shared/utils/module.ts';
+import { initCreateNewStoryChannel } from '../server-channel/create-new-story-channel.ts';
+import { initFileSearchChannel } from '../server-channel/file-search-channel.ts';
+import { initGhostStoriesChannel } from '../server-channel/ghost-stories-channel.ts';
+import { initOpenInEditorChannel } from '../server-channel/open-in-editor-channel.ts';
+import { initTelemetryChannel } from '../server-channel/telemetry-channel.ts';
+import { initializeChecklist } from '../utils/checklist.ts';
+import { defaultFavicon, defaultStaticDirs } from '../utils/constants.ts';
+import { initializeSaveStory } from '../utils/save-story/save-story.ts';
+import { parseStaticDir } from '../utils/server-statics.ts';
+import { type OptionsWithRequiredCache, initializeWhatsNew } from '../utils/whats-new.ts';
+import { getWsToken } from './wsToken.ts';
 
 const interpolate = (string: string, data: Record<string, string> = {}) =>
   Object.entries(data).reduce((acc, [k, v]) => acc.replace(new RegExp(`%${k}%`, 'g'), v), string);
@@ -176,12 +176,10 @@ export const experimental_serverAPI = (extension: Record<string, Function>, opti
   const packageManager = JsPackageManagerFactory.getPackageManager({
     configDir: options.configDir,
   });
-  if (!options.disableTelemetry) {
-    removeAddon = async (id: string, opts: RemoveAddonOptions) => {
-      await telemetry('remove', { addon: id, source: 'api' });
-      return removeAddonBase(id, { ...opts, packageManager });
-    };
-  }
+  removeAddon = async (id: string, opts: RemoveAddonOptions) => {
+    await telemetry('remove', { addon: id, source: 'api' });
+    return removeAddonBase(id, { ...opts, packageManager });
+  };
   return { ...extension, removeAddon };
 };
 
@@ -197,26 +195,28 @@ export const core = async (existing: CoreConfig, options: Options): Promise<Core
     ...(existing?.channelOptions ?? {}),
     ...(options.configType === 'DEVELOPMENT' ? { wsToken: getWsToken() } : {}),
   },
-  disableTelemetry: options.disableTelemetry === true,
+  disableTelemetry:
+    options.disableTelemetry || optionalEnvToBoolean(process.env.STORYBOOK_DISABLE_TELEMETRY),
   enableCrashReports:
     options.enableCrashReports || optionalEnvToBoolean(process.env.STORYBOOK_ENABLE_CRASH_REPORTS),
 });
 
 export const features: PresetProperty<'features'> = async (existing) => ({
   ...existing,
-  argTypeTargetsV7: true,
-  legacyDecoratorFileOrder: false,
-  disallowImplicitActionsInRenderV8: true,
-  viewport: true,
-  highlight: true,
-  controls: true,
-  interactions: true,
   actions: true,
+  argTypeTargetsV7: true,
   backgrounds: true,
-  outline: true,
+  changeDetection: false,
+  componentsManifest: false,
+  controls: true,
+  disallowImplicitActionsInRenderV8: true,
+  highlight: true,
+  interactions: true,
+  legacyDecoratorFileOrder: false,
   measure: true,
+  outline: true,
   sidebarOnboardingChecklist: true,
-  componentsManifest: true,
+  viewport: true,
 });
 
 export const csfIndexer: Indexer = {
@@ -273,14 +273,16 @@ export const experimental_serverChannel = async (
 ) => {
   const coreOptions = await options.presets.apply('core');
 
-  initializeChecklist();
-  initializeWhatsNew(channel, options, coreOptions);
-  initializeSaveStory(channel, options, coreOptions);
+  await setTelemetryEnabled(!coreOptions?.disableTelemetry);
 
-  initFileSearchChannel(channel, options, coreOptions);
-  initCreateNewStoryChannel(channel, options, coreOptions);
-  initGhostStoriesChannel(channel, options, coreOptions);
-  initOpenInEditorChannel(channel, options, coreOptions);
+  initializeChecklist();
+  initializeWhatsNew(channel, options);
+  initializeSaveStory(channel, options);
+
+  initFileSearchChannel(channel, options);
+  initCreateNewStoryChannel(channel, options);
+  initGhostStoriesChannel(channel, options);
+  initOpenInEditorChannel(channel);
   initTelemetryChannel(channel, options);
 
   return channel;

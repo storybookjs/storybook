@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { extractFrameworkPackageName } from './get-framework-name';
+import { extractFrameworkPackageName } from './get-framework-name.ts';
 
 describe('get-framework-name', () => {
   describe('extractProperFrameworkName', () => {

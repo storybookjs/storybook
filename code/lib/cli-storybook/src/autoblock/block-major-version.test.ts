@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, test, vi } from 'vitest';
 // Import mocked modules
 import * as semver from 'semver';
 
-import { blocker, validateVersionTransition } from './block-major-version';
+import { blocker, validateVersionTransition } from './block-major-version.ts';
 
 // Mock all dependencies at the top level
 vi.mock('storybook/internal/common', () => ({

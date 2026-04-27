@@ -1,15 +1,39 @@
-import { rm } from 'node:fs/promises';
+import { readdir, rm } from 'node:fs/promises';
 import { homedir } from 'node:os';
 
 import { expect, test } from '@playwright/test';
 import { join } from 'pathe';
 import process from 'process';
 
-import { SbPage, hasOnboardingFeature } from './util';
+import { SbPage, hasOnboardingFeature } from './util.ts';
 
 const storybookUrl = process.env.STORYBOOK_URL || 'http://localhost:8001';
 const templateName = process.env.STORYBOOK_TEMPLATE_NAME || '';
 const type = process.env.STORYBOOK_TYPE || 'dev';
+
+async function clearChecklistCache() {
+  const storybookCacheDir = join(
+    process.env.STORYBOOK_SANDBOX_DIR!,
+    'node_modules',
+    '.cache',
+    'storybook'
+  );
+  const storybookCacheEntries = await readdir(storybookCacheDir, { withFileTypes: true }).catch(
+    () => []
+  );
+
+  // Storybook scopes cache entries by version, so remove the checklist for any installed version.
+  await Promise.all(
+    storybookCacheEntries
+      .filter((entry) => entry.isDirectory())
+      .map((entry) =>
+        rm(join(storybookCacheDir, entry.name, 'default', 'checklist'), {
+          recursive: true,
+          force: true,
+        })
+      )
+  );
+}
 
 test.describe('addon-onboarding', () => {
   test.skip(type === 'build', `Skipping addon tests for production Storybooks`);
@@ -21,6 +45,7 @@ test.describe('addon-onboarding', () => {
     // eslint-disable-next-line playwright/no-conditional-in-test
     if (process.env.CI) {
       await rm(join(homedir(), '.storybook', 'settings.json'), { force: true });
+      await clearChecklistCache();
     }
 
     await page.goto(`${storybookUrl}/?path=/onboarding`);

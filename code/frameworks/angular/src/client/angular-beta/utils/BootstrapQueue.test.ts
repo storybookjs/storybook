@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { Subject, lastValueFrom } from 'rxjs';
 
-import { queueBootstrapping } from './BootstrapQueue';
+import { queueBootstrapping } from './BootstrapQueue.ts';
 
 const instantWaitFor = (fn: () => void) => {
   return vi.waitFor(fn, {

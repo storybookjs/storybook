@@ -5,9 +5,9 @@ import { describe, expect, it, vi } from 'vitest';
 import { normalizeStoriesEntry } from 'storybook/internal/common';
 import type { NormalizedStoriesSpecifier } from 'storybook/internal/types';
 
-import { Tag } from '../../../shared/constants/tags';
-import type { StoryIndexGeneratorOptions } from '../StoryIndexGenerator';
-import { StoryIndexGenerator } from '../StoryIndexGenerator';
+import { Tag } from '../../../shared/constants/tags.ts';
+import type { StoryIndexGeneratorOptions } from '../StoryIndexGenerator.ts';
+import { StoryIndexGenerator } from '../StoryIndexGenerator.ts';
 
 vi.mock('storybook/internal/node-logger');
 

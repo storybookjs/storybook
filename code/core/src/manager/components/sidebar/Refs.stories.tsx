@@ -7,11 +7,11 @@ import { ManagerContext } from 'storybook/manager-api';
 import { fn, userEvent, within } from 'storybook/test';
 import { dedent } from 'ts-dedent';
 
-import { standardData as standardHeaderData } from './Heading.stories';
-import { IconSymbols } from './IconSymbols';
-import { Ref } from './Refs';
-import { mockDataset } from './mockdata';
-import type { RefType } from './types';
+import { standardData as standardHeaderData } from './Heading.stories.tsx';
+import { IconSymbols } from './IconSymbols.tsx';
+import { Ref } from './Refs.tsx';
+import { mockDataset } from './mockdata.ts';
+import type { RefType } from './types.ts';
 
 const managerContext = {
   state: { docsOptions: {} },

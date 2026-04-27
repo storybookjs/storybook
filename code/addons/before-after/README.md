@@ -87,8 +87,9 @@ yarn vitest run --config code/addons/before-after/vitest.config.ts
 compatibility contract with `builder-vite` — the list of Storybook-internal
 endpoint prefixes that the dispatch middleware must NEVER route through
 `beforeEnv.transformRequest`. Adding to this list MUST be accompanied by a
-corresponding `(k.3.*)` probe in `before-env-routing.test.ts`. The probe
-`(k.3.0)` asserts `BYPASS_PREFIXES.length === 4` as a forcing function so
-silent additions break CI. The `/sb-` entry is a wildcard prefix
-intentionally capturing all Storybook-internal asset routes; reducing its
-specificity requires a coordinated change.
+matching entry in the `BYPASS_SAMPLES` map of
+`before-env-routing.test.ts`. The `(k.3)` probe is data-driven
+(`it.each(BYPASS_PREFIXES)`) and asserts every prefix has a sample URL,
+so a new prefix without a sample fails CI explicitly. The `/sb-` entry
+is a wildcard prefix intentionally capturing all Storybook-internal
+asset routes; reducing its specificity requires a coordinated change.

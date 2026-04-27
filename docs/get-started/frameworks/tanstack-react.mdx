@@ -272,22 +272,81 @@ decorators: [
 ],
 ```
 
-#### My route loader calls `queryClient.ensureQueryData(...)` and it fails with "data is undefined"
+### TanStack Query
 
-**Why does this happen?** The route loader runs inside the Storybook router and calls your real query function. When that function is a `createServerFn` stub (a no-op), it returns nothing, so the QueryClient cache is empty and `ensureQueryData` finds no data.
+#### How do I use TanStack Query in stories?
 
-**Fix:** Pre-seed the QueryClient in a story-level `loaders` hook so the cache is warm before the loader runs:
+TanStack Query is not automatically set up. The recommended approach is to create a single `QueryClient` in your preview file, clear it between stories via a global `loaders` entry, and share the same instance through both `parameters.tanstack.router.context` and a `QueryClientProvider` decorator.
 
-```tsx
-loaders: [
-  async ({ parameters }) => {
-    const qc: QueryClient = parameters.tanstack?.router?.context?.queryClient
-    qc.setQueryData(['items', 'detail', itemId], { item: mockItem })
+**Setup in `.storybook/preview.tsx`:**
+
+```tsx title=".storybook/preview.tsx"
+import * as React from 'react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { definePreview } from '@storybook/tanstack-react';
+
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: false,
+      staleTime: Infinity,
+    },
   },
-],
+});
+
+export default definePreview({
+  loaders: [
+    // Clear the cache between stories so each story starts fresh.
+    () => { queryClient.clear(); },
+  ],
+  parameters: {
+    tanstack: {
+      router: {
+        // Make queryClient available to route loaders via ctx.context.queryClient.
+        context: { queryClient },
+      },
+    },
+  },
+  decorators: [
+    (Story) => (
+      <QueryClientProvider client={queryClient}>
+        <Story />
+      </QueryClientProvider>
+    ),
+  ],
+});
 ```
 
-The QueryClient instance must be provided via `parameters.tanstack.router.context` **and** wrapped with a `QueryClientProvider` decorator so the same instance is available to both the loader and the component tree.
+**Seeding query data per story:**
+
+In individual stories, use `loaders` to call `setQueryData` on the shared `QueryClient` before the component renders. Access it from `parameters.tanstack.router.context`:
+
+```tsx title="Navbar.stories.tsx"
+import type { Meta, StoryObj } from '@storybook/tanstack-react';
+import { QueryClient } from '@tanstack/react-query';
+import { Navbar } from './Navbar';
+
+const meta = {
+  component: Navbar,
+} satisfies Meta<typeof Navbar>;
+
+export default meta;
+type Story = StoryObj<typeof meta>;
+
+export const Default: Story = {};
+
+export const LoggedIn: Story = {
+  loaders: [
+    async ({ parameters }) => {
+      const qc: QueryClient = parameters.tanstack?.router?.context?.queryClient;
+      qc?.setQueryData(['currentUser'], {
+        id: 'user-1',
+        name: 'Ada Lovelace',
+      });
+    },
+  ],
+};
+```
 
 
 ### TanStack Start

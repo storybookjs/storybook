@@ -15,12 +15,12 @@ import rule from './use-storybook-testing-library.ts';
 //------------------------------------------------------------------------------
 
 ruleTester.run('use-storybook-testing-library', rule, {
-  valid: ["import { within } from '@storybook/testing-library'"],
+  valid: ["import { within } from 'storybook/test'"],
 
   invalid: [
     {
       code: "import { within } from '@testing-library/dom'",
-      output: "import { within } from '@storybook/testing-library'",
+      output: "import { within } from 'storybook/test'",
       errors: [
         {
           messageId: 'dontUseTestingLibraryDirectly',
@@ -31,7 +31,7 @@ ruleTester.run('use-storybook-testing-library', rule, {
           suggestions: [
             {
               messageId: 'updateImports',
-              output: "import { within } from '@storybook/testing-library'",
+              output: "import { within } from 'storybook/test'",
             },
           ],
         },
@@ -39,7 +39,7 @@ ruleTester.run('use-storybook-testing-library', rule, {
     },
     {
       code: "import userEvent from '@testing-library/user-event'",
-      output: "import { userEvent } from '@storybook/testing-library'",
+      output: "import { userEvent } from 'storybook/test'",
       errors: [
         {
           messageId: 'dontUseTestingLibraryDirectly',
@@ -50,7 +50,7 @@ ruleTester.run('use-storybook-testing-library', rule, {
           suggestions: [
             {
               messageId: 'updateImports',
-              output: "import { userEvent } from '@storybook/testing-library'",
+              output: "import { userEvent } from 'storybook/test'",
             },
           ],
         },
@@ -58,7 +58,7 @@ ruleTester.run('use-storybook-testing-library', rule, {
     },
     {
       code: "import userEvent, { foo, bar as Bar } from '@testing-library/user-event'",
-      output: "import { userEvent, foo, bar as Bar } from '@storybook/testing-library'",
+      output: "import { userEvent, foo, bar as Bar } from 'storybook/test'",
       errors: [
         {
           messageId: 'dontUseTestingLibraryDirectly',
@@ -69,7 +69,7 @@ ruleTester.run('use-storybook-testing-library', rule, {
           suggestions: [
             {
               messageId: 'updateImports',
-              output: "import { userEvent, foo, bar as Bar } from '@storybook/testing-library'",
+              output: "import { userEvent, foo, bar as Bar } from 'storybook/test'",
             },
           ],
         },

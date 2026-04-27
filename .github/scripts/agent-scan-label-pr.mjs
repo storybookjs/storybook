@@ -15,6 +15,7 @@ const CLASSIFICATION_MAP = {
 async function main() {
   const classification = core.getInput('classification', { required: true });
   const token = core.getInput('token', { required: true });
+  const isCommunityFlagged = core.getInput('community-flagged') === 'true';
 
   const octokit = github.getOctokit(token);
   const prNumber = github.context.payload.pull_request.number;
@@ -24,6 +25,14 @@ async function main() {
     issue_number: prNumber,
     labels: [`agent-scan:${CLASSIFICATION_MAP[classification] ?? classification}`],
   });
+
+  if (isCommunityFlagged) {
+    await octokit.rest.issues.addLabels({
+      ...github.context.repo,
+      issue_number: prNumber,
+      labels: ['agent-scan:community-flagged'],
+    });
+  }
 }
 
 main().catch((error) => {

@@ -37,14 +37,8 @@ jobs:
           skip-members: "dependabot[bot],AriPerkkio,huang-julien,MichaelArestad,yannbf,vanessayuenn,jonniebigodes,Sidnioulz,kasperpeulen,valentinpalkovic,github-actions[bot],ndelangen,shilman,JReinhold,ghengeveld,storybook-bot,kylegach"
           agent-scan-comment: false
           cache-path: .agentscan-cache
-      - name: Label flagged PR
-        if: steps.agentscan.outputs.community-flagged != 'true'
+      - name: Label PR with classification
         env:
           INPUT_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           INPUT_CLASSIFICATION: ${{ steps.agentscan.outputs.classification }}
         run: node .github/scripts/agent-scan-label-pr.mjs
-      - name: Close community flagged accounts
-        if: steps.agentscan.outputs.community-flagged == 'true'
-        env:
-          INPUT_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: node .github/scripts/agent-scan-close-pr.mjs

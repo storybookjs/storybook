@@ -4,7 +4,6 @@ import { existsSync } from 'node:fs';
 import { access, cp, lstat, mkdir, readFile, symlink, writeFile } from 'node:fs/promises';
 import { dirname } from 'node:path';
 
-import dedent from 'dedent';
 import { isFunction } from 'es-toolkit/predicate';
 import JSON5 from 'json5';
 import { createRequire } from 'module';
@@ -443,7 +442,7 @@ async function linkPackageStories(
 }
 
 export async function setupVitest(details: TemplateDetails, options: PassedOptionValues) {
-  const { sandboxDir, template } = details;
+  const { sandboxDir } = details;
   const packageJsonPath = join(sandboxDir, 'package.json');
   const packageJson = await readJson(packageJsonPath);
 
@@ -464,60 +463,6 @@ export async function setupVitest(details: TemplateDetails, options: PassedOptio
 
   await writeFile(packageJsonPath, JSON.stringify(packageJson, null, 2));
 
-  const isVue = template.expected.renderer === '@storybook/vue3';
-
-  const portableStoriesFrameworks = [
-    '@storybook/nextjs-vite',
-    '@storybook/sveltekit',
-    // TODO: add angular once we enable their sandboxes
-  ];
-  const storybookPackage = portableStoriesFrameworks.includes(template.expected.framework)
-    ? template.expected.framework
-    : template.expected.renderer;
-
-  const isTypeScriptSandbox = template.name.includes('TypeScript');
-  const setupFilePath = join(
-    sandboxDir,
-    isTypeScriptSandbox ? '.storybook/vitest.setup.ts' : '.storybook/vitest.setup.js'
-  );
-
-  const shouldUseCsf4 =
-    template.expected.framework === '@storybook/react-vite' ||
-    template.expected.framework === '@storybook/tanstack-react';
-
-  if (shouldUseCsf4) {
-    await writeFile(
-      setupFilePath,
-      dedent`import { beforeAll } from 'vitest'
-      import { setProjectAnnotations } from '${storybookPackage}'
-      import projectAnnotations from './preview'
-
-      // setProjectAnnotations still kept to support non-CSF4 story tests
-      setProjectAnnotations(projectAnnotations.composed)
-      `
-    );
-  } else {
-    await writeFile(
-      setupFilePath,
-      dedent`import { beforeAll } from 'vitest'
-      import { setProjectAnnotations } from '${storybookPackage}'
-      import * as rendererDocsAnnotations from '${template.expected.renderer}/entry-preview-docs'
-      import * as addonA11yAnnotations from '@storybook/addon-a11y/preview'
-      import '../src/stories/components'
-      import * as templateAnnotations from '../template-stories/core/preview'
-      import * as projectAnnotations from './preview'
-      ${isVue ? 'import * as vueAnnotations from "../src/stories/renderers/vue3/preview.js"' : ''}
-
-      setProjectAnnotations([
-        ${isVue ? 'vueAnnotations,' : ''}
-        rendererDocsAnnotations,
-        templateAnnotations,
-        addonA11yAnnotations,
-        projectAnnotations,
-      ])`
-    );
-  }
-
   const opts = { cwd: sandboxDir };
   const viteConfigFile = await findFirstPath(['vite.config.ts', 'vite.config.js'], opts);
   const vitestConfigFile = await findFirstPath(['vitest.config.ts', 'vitest.config.js'], opts);
@@ -529,23 +474,20 @@ export async function setupVitest(details: TemplateDetails, options: PassedOptio
   }
 
   let fileContent = await readFile(join(sandboxDir, configFile), 'utf-8');
-  if (fileContent.includes('resolve:')) {
-    // Extend existing resolve object with preserveSymlinks: true
-    fileContent = fileContent.replace(/(resolve\s*:\s*\{)/, '$1\n    preserveSymlinks: true,');
-  } else {
-    // Insert resolve: { preserveSymlinks: true } and optionally server.fs.allow as siblings to plugins
-    // Handles both defineConfig({ ... }) and defineWorkspace([ ... , { ... }])
-    fileContent = fileContent.replace(/(plugins\s*:\s*\[[^\]]*\],?)/, (match) => {
-      let replacement = `${match}\n  resolve: {\n    preserveSymlinks: true\n  },`;
 
-      // In linked mode, also add server.fs.allow to allow Vite to serve files from the monorepo root
-      if (options.link) {
-        replacement += `\n  server: {\n    fs: {\n      allow: ['../../..']\n    }\n  },`;
-      }
+  // Insert resolve: { preserveSymlinks: true } and optionally server.fs.allow as siblings to plugins
+  // Handles both defineConfig({ ... }) and defineWorkspace([ ... , { ... }])
+  fileContent = fileContent.replace(/(plugins\s*:\s*\[[^\]]*\],?)/, (match) => {
+    let replacement = `${match}\n  resolve: {\n    preserveSymlinks: true\n  },`;
 
-      return replacement;
-    });
-  }
+    // In linked mode, also add server.fs.allow to allow Vite to serve files from the monorepo root
+    if (options.link) {
+      replacement += `\n  server: {\n    fs: {\n      allow: ['../../..']\n    }\n  },`;
+    }
+
+    return replacement;
+  });
+
   // search for storybookTest({...}) and place `tags: 'vitest'` into it but tags option doesn't exist yet in the config. Also consider multi line
   const storybookTestRegex = /storybookTest\((\{[\s\S]*?\})\)/g;
   fileContent = fileContent.replace(storybookTestRegex, (match, args) => {

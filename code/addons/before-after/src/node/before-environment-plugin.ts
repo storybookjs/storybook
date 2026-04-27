@@ -212,6 +212,9 @@ function rewriteHtmlUrls(html: string): string {
 const DIAGNOSTIC_SCRIPT = `<script>(function(){try{var ok=/env=before/.test(location.search);if(!ok){console.warn('[storybook/before-after] Before-iframe loaded without env=before marker on its own URL. Referer-based env dispatch may not fire for child requests if your Referrer-Policy is restrictive. Before-iframe content may be stale (working-tree, not HEAD).');}}catch(e){}})();</script>`;
 
 function injectDiagnosticBeacon(html: string): string {
+  // Idempotent — skip if the beacon was already injected (e.g. by an
+  // earlier transformIndexHtml hook pass for the same response).
+  if (html.includes('[storybook/before-after]')) return html;
   // Append before </head>; if not present, prepend to the document so the
   // beacon still fires before any descendant request goes out.
   if (html.includes('</head>')) {
@@ -485,17 +488,63 @@ export function beforeEnvironmentPlugin(options: BeforeEnvironmentPluginOptions 
         // with shared deps and over-filtering HMR.
         if (isPathBlocklisted(pathPart)) return next();
         // (4) HTML defer — iframe HTML is handled by builder-vite's
-        // `iframeHandler` (or Vite's built-in indexHtml middleware), which
-        // invokes `transformIndexHtml`. We don't intercept the response
-        // ourselves, but we DO need to thread the before-iframe context
-        // through to our `transformIndexHtml` hook because
-        // `code/builders/builder-vite/src/index.ts:iframeHandler` calls
+        // `iframeHandler` (or Vite's built-in indexHtml middleware).
+        // Builder-vite's iframeHandler at
+        // `code/builders/builder-vite/src/index.ts:21-35` calls
         // `server.transformIndexHtml('/iframe.html', html)` with a
-        // hardcoded path that lacks the marker. AsyncLocalStorage carries
-        // the flag through the async chain (next → iframeHandler →
-        // server.transformIndexHtml → our hook).
+        // HARDCODED path that lacks the marker, so our
+        // `transformIndexHtml` hook cannot detect the before-iframe
+        // context via `ctx.originalUrl/path/filename`. We use TWO
+        // belt-and-suspenders mechanisms:
+        //
+        //   (a) als context — `als.run({…, beforeIframe: true}, ...)`
+        //       below stashes a flag the `transformIndexHtml` hook reads
+        //       as a fallback. AsyncLocalStorage propagates through the
+        //       sync next() → async iframeHandler → server.transformIndexHtml
+        //       → hook chain.
+        //
+        //   (b) Response interception — wraps `res.write/end` to capture
+        //       the body iframeHandler writes and rewrites it before
+        //       flushing. Bulletproof against any als-propagation
+        //       failure mode (e.g. if Vite's HTML pipeline schedules the
+        //       hook outside our async chain). Idempotent: if (a) ran
+        //       and the body already contains the diagnostic, the
+        //       rewrite is a no-op via `injectDiagnosticBeacon`'s
+        //       idempotency guard.
         if (pathPart.endsWith('.html') || pathPart === '/' || pathPart === '') {
           if (hasMarker) {
+            const chunks: Buffer[] = [];
+            let intercepted = false;
+            const origWrite = res.write.bind(res);
+            const origEnd = res.end.bind(res);
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            res.write = function wrappedWrite(chunk: any, ..._rest: any[]) {
+              if (chunk) {
+                intercepted = true;
+                chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(String(chunk)));
+              }
+              return true;
+            } as typeof res.write;
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            res.end = function wrappedEnd(chunk?: any, ..._rest: any[]) {
+              if (chunk) {
+                intercepted = true;
+                chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(String(chunk)));
+              }
+              if (!intercepted) {
+                // Nothing was written (likely next() fell through with no
+                // handler) — let the original end run unchanged.
+                return origEnd(chunk);
+              }
+              const body = Buffer.concat(chunks).toString('utf-8');
+              const rewritten = injectDiagnosticBeacon(rewriteHtmlUrls(body));
+              const buf = Buffer.from(rewritten, 'utf-8');
+              if (!res.headersSent) {
+                res.removeHeader('Content-Length');
+                res.setHeader('Content-Length', buf.byteLength);
+              }
+              return origEnd(buf);
+            } as typeof res.end;
             return als.run({ scope: 'before-after', beforeIframe: true }, () => next());
           }
           return next();

@@ -5,7 +5,7 @@ export const githubClient = (apiKey: string) => {
     const res = await fetch(GITHUB_API, {
       method: 'POST',
       headers: {
-        authorization: `token ${apiKey}`,
+        authorization: `Bearer ${apiKey}`,
       },
       body: JSON.stringify({
         query,

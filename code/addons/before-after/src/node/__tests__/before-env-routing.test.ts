@@ -18,6 +18,7 @@ import {
   ENV_MARKER,
   appendEnvBefore,
   beforeEnvironmentPlugin,
+  isBeforeIframeReferer,
   rewriteImports,
 } from '../before-environment-plugin.ts';
 import { beforeContentPlugin } from '../before-content-plugin.ts';
@@ -47,6 +48,43 @@ describe('appendEnvBefore (idempotence + query handling)', () => {
   it('is idempotent — re-appending is a no-op', () => {
     expect(appendEnvBefore('./a.ts?env=before')).toBe('./a.ts?env=before');
     expect(appendEnvBefore('./a.ts?direct&env=before')).toBe('./a.ts?direct&env=before');
+  });
+});
+
+describe('isBeforeIframeReferer (helper unit slice)', () => {
+  const HOST = 'localhost:6006';
+  it('(a) bare iframe.html?env=before — true', () => {
+    expect(isBeforeIframeReferer('http://localhost:6006/iframe.html?env=before', HOST)).toBe(true);
+  });
+  it('(b) iframe.html?env=before&id=foo — true', () => {
+    expect(isBeforeIframeReferer('http://localhost:6006/iframe.html?env=before&id=foo', HOST)).toBe(
+      true
+    );
+  });
+  it('(c) iframe.html?id=foo&env=before — true (param order indifferent)', () => {
+    expect(isBeforeIframeReferer('http://localhost:6006/iframe.html?id=foo&env=before', HOST)).toBe(
+      true
+    );
+  });
+  it('(d) cross-origin host — false', () => {
+    expect(isBeforeIframeReferer('http://other-host:1234/iframe.html?env=before', HOST)).toBe(
+      false
+    );
+  });
+  it('(e) unparseable URL — false (graceful)', () => {
+    expect(isBeforeIframeReferer('not-a-url', HOST)).toBe(false);
+  });
+  it('(f) wrong path (/index.html) — false', () => {
+    expect(isBeforeIframeReferer('http://localhost:6006/index.html?env=before', HOST)).toBe(false);
+  });
+  it('(g) wrong env value (env=after) — false', () => {
+    expect(isBeforeIframeReferer('http://localhost:6006/iframe.html?env=after', HOST)).toBe(false);
+  });
+  it('returns false for missing referer or host', () => {
+    expect(isBeforeIframeReferer(undefined, HOST)).toBe(false);
+    expect(isBeforeIframeReferer('http://localhost:6006/iframe.html?env=before', undefined)).toBe(
+      false
+    );
   });
 });
 
@@ -405,6 +443,12 @@ describe('Vite Environment API integration', () => {
       dispatchState.url = null;
       spyPerEnv.client.clear();
       spyPerEnv[BEFORE_ENV_NAME].clear();
+      // Invalidate transform caches so each probe re-runs the full pipeline
+      // (and the spy fires fresh). Without this, repeat requests to the same
+      // URL across probes hit Vite's transform cache and the spy never sees
+      // them, masking real dispatch behavior.
+      server.environments[BEFORE_ENV_NAME]?.moduleGraph.invalidateAll();
+      server.environments.client?.moduleGraph.invalidateAll();
     });
 
     it('(k.1) marker-present `/d.ts?env=before` (no Referer) → dispatched through before env', async () => {

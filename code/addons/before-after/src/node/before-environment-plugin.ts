@@ -97,6 +97,51 @@ export function isBypassedUrl(url: string): boolean {
   return BYPASS_PREFIXES.some((prefix) => url.startsWith(prefix));
 }
 
+/**
+ * Decide whether a request's `Referer` header proves it originated from the
+ * before-iframe. Used by the dispatch middleware to route marker-less child
+ * requests (e.g. `node_modules` deps resolved by `vite:import-analysis`,
+ * optimized-deps URLs rewritten by `vite:optimized-deps`) into the before
+ * environment.
+ *
+ * Requirements (all must hold):
+ *   1. `referer` is a parseable URL
+ *   2. `referer.host === host` (same-origin — prevents a stale before-iframe
+ *      in another tab from poisoning a sibling preview's requests)
+ *   3. `referer.pathname` ends in `/iframe.html`
+ *   4. `referer.searchParams.get('env') === 'before'`
+ *
+ * Returns `false` on any parse failure or missing condition. The dispatch
+ * middleware treats `false` as "no upgrade" — the request flows through to
+ * the next middleware unchanged.
+ */
+export function isBeforeIframeReferer(
+  referer: string | undefined,
+  host: string | undefined
+): boolean {
+  if (typeof referer !== 'string' || typeof host !== 'string') return false;
+  try {
+    const parsed = new URL(referer);
+    return (
+      parsed.host === host &&
+      parsed.pathname.endsWith('/iframe.html') &&
+      parsed.searchParams.get('env') === 'before'
+    );
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Paths that must NEVER be routed through the before env even when the
+ * Referer-dispatch heuristic would otherwise upgrade them. These are the
+ * collision domains for cross-tab races and Vite's own internal request
+ * shapes that cannot be served by a per-environment `transformRequest`.
+ */
+function isPathBlocklisted(pathPart: string): boolean {
+  return pathPart.startsWith('/node_modules/') || pathPart.includes('/.vite/deps/');
+}
+
 function isJsLike(id: string): boolean {
   // Strip query string then test extension. Vite typically transforms
   // .js/.jsx/.ts/.tsx/.mjs/.cjs through plugins; CSS/JSON/assets have their own
@@ -367,21 +412,54 @@ export function beforeEnvironmentPlugin(options: BeforeEnvironmentPluginOptions 
       };
       server.httpServer?.once('close', onClose);
 
-      // Pre-transform middleware: route ?env=before requests to the before env.
+      // Pre-transform middleware: route requests proven to belong to the
+      // before iframe through the before env's transformRequest. Two paths
+      // claim the before env:
+      //   (1) URL carries `?env=before` — primary marker, applied via
+      //       transformIndexHtml (entry script) and `transform()` (descendants
+      //       reachable through Vite's static-resolver).
+      //   (2) Same-origin Referer points back at `*/iframe.html?env=before` —
+      //       recovery path for marker-less child requests caused by Vite's
+      //       `vite:import-analysis` not preserving queries on bare-spec
+      //       resolutions and `vite:optimized-deps` rewriting paths.
+      //
+      // Ordering invariants pinned by probes (k.*):
+      //   gate → bypass → path-blocklist → html-defer → dispatch
+      //
+      // `req.url` is NOT mutated; the dispatchUrl with the marker appended is
+      // a local computation handed only to `beforeEnv.transformRequest` and
+      // `serveTransformResult` so the SourceMap header points at the marked
+      // sidecar and downstream `transform()` sees the env (not the id query).
       server.middlewares.use(async (req, res, next) => {
         const url = req.url || '';
-        if (!url.includes(ENV_MARKER)) return next();
+        const hasMarker = url.includes(ENV_MARKER);
+        const refererSaysBefore =
+          !hasMarker && isBeforeIframeReferer(req.headers?.referer, req.headers?.host);
+
+        // (1) Gate
+        if (!hasMarker && !refererSaysBefore) return next();
 
         const pathPart = url.split('?')[0];
+        // (2) Bypass — Storybook-internal endpoints not served by Vite's
+        // module pipeline; routing them through transformRequest 500s.
         if (isBypassedUrl(pathPart)) return next();
-        // Iframe HTML handled by Vite's built-in indexHtml middleware (which calls
-        // `transformIndexHtml`); we only intercept module/asset requests here.
+        // (3) Path-blocklist — graph-poisoning prevention. Even with proven
+        // before-iframe Referer, `node_modules` and `.vite/deps` paths must
+        // stay in the client env to avoid populating the before moduleGraph
+        // with shared deps and over-filtering HMR.
+        if (isPathBlocklisted(pathPart)) return next();
+        // (4) HTML defer — iframe HTML is handled by Vite's built-in
+        // indexHtml middleware which invokes `transformIndexHtml`; we only
+        // intercept module/asset requests here.
         if (pathPart.endsWith('.html') || pathPart === '/' || pathPart === '') {
           return next();
         }
 
         const beforeEnv = server.environments[BEFORE_ENV_NAME];
         if (!beforeEnv) return next();
+
+        // (5) Dispatch — idempotently mark the URL we hand to transformRequest.
+        const dispatchUrl = hasMarker ? url : appendEnvBefore(url);
 
         try {
           // Sourcemap sidecar: only the strict `<module>.<ext>.map?env=before`
@@ -390,9 +468,9 @@ export function beforeEnvironmentPlugin(options: BeforeEnvironmentPluginOptions 
           // `.map` from legitimate filenames like `foo.map.ts`.
           const SIDECAR_RE = /\.(?:[mc]?[jt]sx?|css)\.map(?:\?|$)/;
           const QUERY_MAP_RE = /[?&]map(?:&|$)/;
-          const isMapRequest = SIDECAR_RE.test(url) || QUERY_MAP_RE.test(url);
+          const isMapRequest = SIDECAR_RE.test(dispatchUrl) || QUERY_MAP_RE.test(dispatchUrl);
           if (isMapRequest) {
-            const sourceUrl = url
+            const sourceUrl = dispatchUrl
               .replace(SIDECAR_RE, (m) => m.replace('.map', ''))
               // Strip the bare `map` token from the query while preserving any
               // surrounding `?`/`&` separators.
@@ -410,19 +488,19 @@ export function beforeEnvironmentPlugin(options: BeforeEnvironmentPluginOptions 
               res.setHeader('Content-Type', 'application/json; charset=utf-8');
               res.setHeader('Cache-Control', 'no-cache');
               res.end(JSON.stringify(result.map));
-              options.onMiddlewareDispatch?.(url);
+              options.onMiddlewareDispatch?.(dispatchUrl);
               return;
             }
             return next();
           }
 
           const result = await als.run({ scope: 'before-after' }, () =>
-            beforeEnv.transformRequest(url)
+            beforeEnv.transformRequest(dispatchUrl)
           );
           if (!result) return next();
 
-          serveTransformResult(url, result, res);
-          options.onMiddlewareDispatch?.(url);
+          serveTransformResult(dispatchUrl, result, res);
+          options.onMiddlewareDispatch?.(dispatchUrl);
         } catch (err) {
           emitStructuredError('middleware', err);
           if (!res.headersSent) {
@@ -436,6 +514,14 @@ export function beforeEnvironmentPlugin(options: BeforeEnvironmentPluginOptions 
 
     transformIndexHtml: {
       order: 'pre',
+      // DO NOT REMOVE — load-bearing for entry-script marker; see ADR-0002.
+      // The bare `<script src="virtual:/@storybook/builder-vite/vite-app.js">`
+      // at builders/builder-vite/input/iframe.html:95 has no `?env=before`
+      // query baked in; this hook is the sole place that adds it. The
+      // Referer-based dispatch in `configureServer` cannot recover this case
+      // because the entry-script request itself has no Referer (it IS the
+      // entry). Removing or short-circuiting this handler regresses the
+      // entire propagation chain.
       handler(html, ctx) {
         // Multiple signals — `originalUrl` is set by Vite's dev middleware,
         // `path` falls back when the hook is invoked through `transformIndexHtml`

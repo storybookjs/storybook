@@ -1089,6 +1089,52 @@ describe('ChangeDetectionService', () => {
 
     await service.dispose();
   });
+
+  it('replays add/unlink through the patcher when onStoryIndexInvalidated reveals new/removed stories', async () => {
+    const reverseIndex = buildReverseIndex([]);
+    const { patchSpy, buildSpy } = installDependencyGraphMocks(reverseIndex);
+    buildSpy.mockResolvedValue({ reverseIndex, graph: new Map() });
+
+    const initialIndex = createStoryIndex([
+      { storyId: 'a--default', importPath: './src/A.stories.tsx', title: 'A' },
+    ]);
+    const updatedIndex = createStoryIndex([
+      { storyId: 'a--default', importPath: './src/A.stories.tsx', title: 'A' },
+      { storyId: 'b--default', importPath: './src/B.stories.tsx', title: 'B' },
+    ]);
+    const getIndex = vi
+      .fn()
+      .mockResolvedValueOnce(initialIndex)
+      .mockResolvedValueOnce(initialIndex)
+      .mockResolvedValue(updatedIndex);
+
+    const { getStatusStoreByTypeId } = createStatusStore({
+      universalStatusStore: new MockUniversalStore(UNIVERSAL_STATUS_STORE_OPTIONS),
+      environment: 'server',
+    });
+    const { adapter } = createMockAdapter();
+    const service = new ChangeDetectionService({
+      storyIndexGeneratorPromise: Promise.resolve({ getIndex } as never),
+      statusStore: getStatusStoreByTypeId(CHANGE_DETECTION_STATUS_TYPE_ID),
+      gitDiffProvider: createMockGitDiffProvider(),
+      indexBaselineService: createMockStoryIndexBaselineService(),
+      workingDir,
+    });
+
+    service.start(adapter, true);
+    await vi.runAllTimersAsync();
+    expect(patchSpy).not.toHaveBeenCalled();
+
+    service.onStoryIndexInvalidated();
+    await vi.runAllTimersAsync();
+
+    expect(patchSpy).toHaveBeenCalledWith({
+      kind: 'add',
+      path: '/repo/src/B.stories.tsx',
+    });
+
+    await service.dispose();
+  });
 });
 
 describe('mergeStatusValues', () => {

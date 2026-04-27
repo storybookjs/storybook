@@ -27,7 +27,7 @@ import { GitDiffProvider } from './GitDiffProvider.ts';
 import { extractBaselineEntryIds, IndexBaselineService } from './IndexBaselineService.ts';
 import type { ImportParser } from './parser-registry/index.ts';
 import { ParserRegistry, builtinImportParsers } from './parser-registry/index.ts';
-import { disposeOxcParsePool } from './parser-registry/workers/index.ts';
+import { acquireOxcParsePool, disposeOxcParsePool } from './parser-registry/workers/index.ts';
 import { resetChangeDetectionReadiness, setChangeDetectionReadiness } from './readiness.ts';
 
 const CHANGE_DETECTION_DEBOUNCE_MS = 200;
@@ -190,6 +190,8 @@ export class ChangeDetectionService {
   private incrementalPatcher: IncrementalPatcher | undefined;
   private reverseIndex: ReverseIndexImpl | undefined;
   private storyFiles: Set<string> = new Set();
+  /** Set when this service successfully acquired a ref on the shared oxc parse pool. */
+  private oxcPoolAcquired = false;
   /**
    * Serialises file-change patches so two events touching the same dep set never interleave
    * across `await` points inside `IncrementalPatcher.patch`. The chain ignores rejections
@@ -270,6 +272,12 @@ export class ChangeDetectionService {
     const adapter = this.adapter;
     if (!adapter) {
       return;
+    }
+
+    // Reserve the shared worker pool ref now so the cold-start build's parses are off-thread,
+    // and so disposeOxcParsePool() in dispose() releases exactly the ref we took here.
+    if (acquireOxcParsePool() !== null) {
+      this.oxcPoolAcquired = true;
     }
 
     const resolveConfig = await adapter.getResolveConfig();
@@ -372,8 +380,62 @@ export class ChangeDetectionService {
   }
 
   onStoryIndexInvalidated(): void {
-    if (!this.disposed) {
-      this.scheduleScan(this.debounceMs);
+    if (this.disposed) {
+      return;
+    }
+    void this.refreshStoryFiles().catch(() => undefined);
+    this.scheduleScan(this.debounceMs);
+  }
+
+  /**
+   * Re-reads the story index and reconciles {@link storyFiles} with stories that have
+   * appeared or disappeared since startup. For each story that newly entered the index, the
+   * patcher is asked to walk it (so its forward edges are recorded). For each story that
+   * left the index, the patcher is asked to unlink it (so its reverse-index entries are
+   * pruned). Replays are queued behind {@link currentPatch} to keep the serialised-patch
+   * invariant intact.
+   */
+  private async refreshStoryFiles(): Promise<void> {
+    if (!this.incrementalPatcher) {
+      return;
+    }
+    const storyIndexGenerator = await this.options.storyIndexGeneratorPromise;
+    const storyIndex = await storyIndexGenerator.getIndex();
+    if (this.disposed) {
+      return;
+    }
+    const storyIdsByFile = getStoryIdsByAbsolutePath(storyIndex, this.workingDir);
+    const next = new Set(storyIdsByFile.keys());
+    const previous = this.storyFiles;
+
+    const added: string[] = [];
+    for (const path of next) {
+      if (!previous.has(path)) {
+        added.push(path);
+      }
+    }
+    const removed: string[] = [];
+    for (const path of previous) {
+      if (!next.has(path)) {
+        removed.push(path);
+      }
+    }
+
+    if (added.length === 0 && removed.length === 0) {
+      return;
+    }
+
+    this.storyFiles = next;
+
+    for (const path of added) {
+      this.currentPatch = this.currentPatch.then(() =>
+        this.handleFileChange({ kind: 'add', path })
+      );
+    }
+    for (const path of removed) {
+      this.currentPatch = this.currentPatch.then(() =>
+        this.handleFileChange({ kind: 'unlink', path })
+      );
     }
   }
 
@@ -391,7 +453,10 @@ export class ChangeDetectionService {
     this.unsubscribeStartupFailure?.();
     this.unsubscribeStartupFailure = undefined;
 
-    await disposeOxcParsePool().catch(() => undefined);
+    if (this.oxcPoolAcquired) {
+      this.oxcPoolAcquired = false;
+      await disposeOxcParsePool().catch(() => undefined);
+    }
   }
 
   private async handleFileChange(event: FileChangeEvent): Promise<void> {

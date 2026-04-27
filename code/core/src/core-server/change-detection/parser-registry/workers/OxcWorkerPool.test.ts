@@ -1,6 +1,6 @@
 // Unit tests for the worker-pool dispatch / failure / dispose / refcount plumbing. A real
 // worker is substituted with an EventEmitter stand-in so the tests stay hermetic.
-import { EventEmitter } from 'node:events';
+import type { EventEmitter } from 'node:events';
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -189,9 +189,9 @@ describe('OxcWorkerPool', () => {
 
   describe('singleton refcount', () => {
     it('reuses the shared pool across multiple acquires', async () => {
-      const { getOxcParsePool, disposeOxcParsePool } = await loadModule();
-      const a = getOxcParsePool();
-      const b = getOxcParsePool();
+      const { acquireOxcParsePool, disposeOxcParsePool } = await loadModule();
+      const a = acquireOxcParsePool();
+      const b = acquireOxcParsePool();
       expect(a).not.toBeNull();
       expect(a).toBe(b);
       await disposeOxcParsePool();
@@ -199,11 +199,25 @@ describe('OxcWorkerPool', () => {
       const stillAlive = a!;
       expect(stillAlive).toBeDefined();
       await disposeOxcParsePool();
-      // Second release: subsequent get() spawns a fresh pool.
-      const c = getOxcParsePool();
+      // Second release: subsequent acquire spawns a fresh pool.
+      const c = acquireOxcParsePool();
       expect(c).not.toBeNull();
       expect(c).not.toBe(a);
       await disposeOxcParsePool();
+    });
+
+    it('getOxcParsePool peeks without changing the refcount', async () => {
+      const { acquireOxcParsePool, getOxcParsePool, disposeOxcParsePool } = await loadModule();
+      // Before any acquire: peek returns null.
+      expect(getOxcParsePool()).toBeNull();
+      const acquired = acquireOxcParsePool();
+      expect(acquired).not.toBeNull();
+      // Peek returns the same instance, no ref change.
+      expect(getOxcParsePool()).toBe(acquired);
+      expect(getOxcParsePool()).toBe(acquired);
+      // Single dispose tears it down — proves peek did not bump the refcount.
+      await disposeOxcParsePool();
+      expect(getOxcParsePool()).toBeNull();
     });
   });
 });

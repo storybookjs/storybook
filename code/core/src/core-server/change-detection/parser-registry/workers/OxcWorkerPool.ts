@@ -257,6 +257,9 @@ export class OxcWorkerPool implements OxcParsePool {
       }
       entry.reject(new ChangeDetectionFailureError('oxc parse pool disposed'));
     }
+    for (const queued of this.queue) {
+      queued.reject(new ChangeDetectionFailureError('oxc parse pool disposed'));
+    }
     this.pending.clear();
     this.queue.length = 0;
     this.workers.length = 0;
@@ -267,36 +270,48 @@ let sharedPool: OxcParsePool | null = null;
 let sharedRefs = 0;
 let initialized = false;
 
-/**
- * Returns the shared pool if workers are enabled AND the compiled worker script exists on
- * disk, incrementing the refcount. Returns null if workers are disabled or the script is
- * unavailable; callers should fall back to inline {@link oxcParse}.
- */
-export function getOxcParsePool(): OxcParsePool | null {
+function ensurePoolInitialized(): void {
   if (initialized) {
-    if (sharedPool) {
-      sharedRefs += 1;
-    }
-    return sharedPool;
+    return;
   }
   initialized = true;
-
   const scriptPath = resolveWorkerScriptPath();
   if (!scriptPath) {
     logger.debug(
       'oxc worker pool disabled: compiled worker script not found (running from source?)'
     );
-    return null;
+    return;
   }
   try {
     sharedPool = new OxcWorkerPool(scriptPath, computePoolSize());
-    sharedRefs = 1;
   } catch (error) {
     logger.debug(
       `oxc worker pool disabled: failed to spawn (${error instanceof Error ? error.message : String(error)})`
     );
     sharedPool = null;
   }
+}
+
+/**
+ * Acquires a ref on the shared pool, initializing it on first call. Returns null if workers
+ * are disabled or the compiled worker script is unavailable. Each successful (non-null)
+ * acquire MUST be paired with one {@link disposeOxcParsePool} call so concurrent
+ * {@link ChangeDetectionService} instances can co-exist.
+ */
+export function acquireOxcParsePool(): OxcParsePool | null {
+  ensurePoolInitialized();
+  if (sharedPool) {
+    sharedRefs += 1;
+  }
+  return sharedPool;
+}
+
+/**
+ * Returns the shared pool without changing the refcount. Returns null when no one has
+ * acquired yet (uninitialized) or the pool was torn down. Callers should fall back to
+ * inline {@link oxcParse} on null.
+ */
+export function getOxcParsePool(): OxcParsePool | null {
   return sharedPool;
 }
 

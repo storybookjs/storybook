@@ -184,6 +184,23 @@ function rewriteHtmlUrls(html: string): string {
   );
 }
 
+// Observability beacon (NOT a behavior shim). Injected into the before-iframe
+// HTML by `transformIndexHtml`. Fires a single console.warn if the iframe
+// loaded WITHOUT `env=before` on its own URL — a precondition for Referer-
+// based env dispatch to work for descendants. Does NOT patch fetch, install
+// MutationObservers, or rewrite URLs; the principle "no runtime URL
+// synthesis in iframe" stays intact.
+const DIAGNOSTIC_SCRIPT = `<script>(function(){try{var ok=/env=before/.test(location.search);if(!ok){console.warn('[storybook/before-after] Before-iframe loaded without env=before marker on its own URL. Referer-based env dispatch may not fire for child requests if your Referrer-Policy is restrictive. Before-iframe content may be stale (working-tree, not HEAD).');}}catch(e){}})();</script>`;
+
+function injectDiagnosticBeacon(html: string): string {
+  // Append before </head>; if not present, prepend to the document so the
+  // beacon still fires before any descendant request goes out.
+  if (html.includes('</head>')) {
+    return html.replace('</head>', `${DIAGNOSTIC_SCRIPT}</head>`);
+  }
+  return DIAGNOSTIC_SCRIPT + html;
+}
+
 interface AstNode {
   type: string;
   start?: number;
@@ -531,7 +548,12 @@ export function beforeEnvironmentPlugin(options: BeforeEnvironmentPluginOptions 
         const candidates = [ctxAny.originalUrl, ctxAny.path, ctxAny.filename];
         const matched = candidates.some((s) => typeof s === 'string' && s.includes(ENV_MARKER));
         if (!matched) return;
-        return rewriteHtmlUrls(html);
+        // (1) Rewrite static script/link/img URLs to carry the marker.
+        // (2) Inject the observability beacon — a one-time console.warn if the
+        // iframe loaded without env=before on its own URL (signals stripped
+        // Referrer-Policy or proxy query trimming). Does NOT mutate runtime
+        // behavior; observability-only.
+        return injectDiagnosticBeacon(rewriteHtmlUrls(html));
       },
     },
 

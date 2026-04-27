@@ -118,6 +118,13 @@ export class IncrementalPatcher {
       const newDeps = await this.cache.resolveOnce(path);
       this.graph.set(path, newDeps);
 
+      const areDepsEqual =
+        newDeps.size === previousDeps.size && [...newDeps].every((d) => previousDeps.has(d));
+
+      if (areDepsEqual && !this.isStoryFile(path)) {
+        return;
+      }
+
       const dependentsSet = new Set(this.reverseIndex.lookup(path).keys());
       if (this.isStoryFile(path)) {
         dependentsSet.add(path);

@@ -9,6 +9,8 @@ import type { ReverseIndex } from './types.ts';
  */
 export class ReverseIndexImpl {
   private readonly index: ReverseIndex = new Map();
+  /** Forward mapping from story file -> Set of dep files it reaches. */
+  private readonly forwardIndex = new Map<string, Set<string>>();
 
   /** Records (or updates with min) the depth for (dep, story). */
   record(dep: string, story: string, depth: number): void {
@@ -20,16 +22,32 @@ export class ReverseIndexImpl {
     const previous = inner.get(story);
     if (previous === undefined || depth < previous) {
       inner.set(story, depth);
+
+      let deps = this.forwardIndex.get(story);
+      if (!deps) {
+        deps = new Set<string>();
+        this.forwardIndex.set(story, deps);
+      }
+      deps.add(dep);
     }
   }
 
   /** Removes a story from every inner map; prunes outer entries that become empty. */
   removeStory(story: string): void {
-    for (const [depKey, inner] of this.index) {
-      if (inner.delete(story) && inner.size === 0) {
-        this.index.delete(depKey);
+    const deps = this.forwardIndex.get(story);
+    if (!deps) {
+      return;
+    }
+    for (const dep of deps) {
+      const inner = this.index.get(dep);
+      if (inner) {
+        inner.delete(story);
+        if (inner.size === 0) {
+          this.index.delete(dep);
+        }
       }
     }
+    this.forwardIndex.delete(story);
   }
 
   /** Removes a single (dep, story) pair without affecting other stories' depths to that dep. */
@@ -38,8 +56,17 @@ export class ReverseIndexImpl {
     if (!inner) {
       return;
     }
-    if (inner.delete(story) && inner.size === 0) {
-      this.index.delete(dep);
+    if (inner.delete(story)) {
+      if (inner.size === 0) {
+        this.index.delete(dep);
+      }
+      const deps = this.forwardIndex.get(story);
+      if (deps) {
+        deps.delete(dep);
+        if (deps.size === 0) {
+          this.forwardIndex.delete(story);
+        }
+      }
     }
   }
 

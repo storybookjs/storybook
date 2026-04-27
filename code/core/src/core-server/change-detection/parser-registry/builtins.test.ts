@@ -202,4 +202,17 @@ describe('mdxImportParser', () => {
 
     expect(edges).toEqual([{ specifier: '@storybook/blocks', kind: 'static' }]);
   });
+
+  it('extracts "export ... from" declarations from an MDX source', async () => {
+    const source = [`export { Meta } from '@storybook/blocks';`, `export * from './others';`].join(
+      '\n'
+    );
+
+    const edges = await mdxImportParser.parse({ filePath: '/tmp/intro.mdx', source }, noopContext);
+
+    expect(edges).toEqual([
+      { specifier: '@storybook/blocks', kind: 'static' },
+      { specifier: './others', kind: 'static' },
+    ]);
+  });
 });

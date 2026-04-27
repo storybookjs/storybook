@@ -1,6 +1,10 @@
 const GITHUB_API = 'https://api.github.com/graphql';
 
-export const githubClient = (apiKey: string) => {
+export const githubClient = () => {
+  const apiKey = process.env.GITHUB_TOKEN;
+  if (!apiKey) {
+    throw new Error('GITHUB_TOKEN environment variable is not set');
+  }
   return async (query: string, variables?: { [key: string]: any }) => {
     const res = await fetch(GITHUB_API, {
       method: 'POST',

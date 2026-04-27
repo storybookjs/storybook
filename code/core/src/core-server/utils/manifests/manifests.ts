@@ -59,15 +59,21 @@ export async function writeManifests(outputDir: string, presets: Presets) {
 export function registerManifests({ app, presets }: { app: Polka; presets: Presets }) {
   app.get('/manifests/:name.json', async (req, res) => {
     try {
+      const name = req.params.name;
+      if (!/^[a-zA-Z0-9_-]+$/.test(name)) {
+        res.statusCode = 400;
+        res.end(`Invalid manifest name`);
+        return;
+      }
       const manifests = await getManifests(presets, { watch: true });
-      const manifest = manifests[req.params.name];
+      const manifest = manifests[name];
 
       if (manifest) {
         res.setHeader('Content-Type', 'application/json');
         res.end(JSON.stringify(manifest));
       } else {
         res.statusCode = 404;
-        res.end(`Manifest "${req.params.name}" not found`);
+        res.end(`Manifest "${name}" not found`);
       }
     } catch (e) {
       logger.error(e instanceof Error ? e : String(e));

@@ -81,7 +81,8 @@ describe('rewriteImports — dynamic imports (probe d, e)', () => {
   it('rewrites string-literal dynamic imports', () => {
     const out = rewriteImports('a.ts', `const m = import('./b.ts');`);
     expect(out).not.toBeNull();
-    expect(out!.code).toContain(`import("./b.ts?env=before")`);
+    // Quote style is preserved: single-quoted source stays single-quoted.
+    expect(out!.code).toContain(`import('./b.ts?env=before')`);
   });
 
   it('rewrites template-literal dynamic imports without expressions', () => {
@@ -135,7 +136,7 @@ describe('rewriteImports — multi-byte source (probe j)', () => {
     const out = rewriteImports('a.ts', `const e = '🎉 emoji';\nimport('./mb.ts');`);
     expect(out).not.toBeNull();
     expect(out!.code).toContain(`'🎉 emoji'`);
-    expect(out!.code).toContain(`import("./mb.ts?env=before")`);
+    expect(out!.code).toContain(`import('./mb.ts?env=before')`);
   });
 
   it('rewrites when the multi-byte char is on the same line as the specifier', () => {

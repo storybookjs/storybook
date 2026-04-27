@@ -41,13 +41,16 @@ import { registerEnvApiServerHook } from './node/server-ready-hook.ts';
 const initialisedConfigs = new WeakSet<InlineConfig>();
 let capturedOptions: Options | null = null;
 
-interface RuntimeChannel extends Channel {
-  emit(event: string, payload?: unknown): void;
-  on(event: string, listener: (...args: unknown[]) => void): void;
-}
+// `Options.channel` is widened to `ChannelLike` upstream; coerce to a stricter
+// callable shape at the use site only.
+type RuntimeChannel = Pick<Channel, 'emit' | 'on'>;
 
-interface RuntimeOptions extends Options {
-  channel?: RuntimeChannel;
+function getChannel(options: Options): RuntimeChannel | null {
+  const ch = (options as Options & { channel?: unknown }).channel;
+  if (ch && typeof ch === 'object' && 'emit' in ch && 'on' in ch) {
+    return ch as RuntimeChannel;
+  }
+  return null;
 }
 
 export const viteFinal = async (config: InlineConfig, options: Options) => {
@@ -70,7 +73,7 @@ export const viteFinal = async (config: InlineConfig, options: Options) => {
     // instead of an obscure failure deeper in plugin initialisation.
     assertViteEnvironmentApiSupported();
 
-    const channel = (options as RuntimeOptions).channel ?? null;
+    const channel = getChannel(options);
     const repoRoot = await discoverRepoRoot();
 
     config.plugins = [
@@ -95,7 +98,7 @@ async function discoverRepoRoot(): Promise<string | null> {
 }
 
 export const experimental_devServer = async (_app: Record<string, unknown>, options: Options) => {
-  const channel = (options as RuntimeOptions).channel;
+  const channel = getChannel(options);
 
   if (!channel) {
     logger.warn('[before-after] No channel available, addon will not function');
@@ -126,18 +129,12 @@ export const experimental_devServer = async (_app: Record<string, unknown>, opti
     });
   }
 
-  // ── Env-API path resolves the main dev server reference for prewarm + HMR ──
+  // ── Env-API path: resolve the main dev server ref for prewarm + HMR ───────
+  //
+  // The plugin's `configureServer` calls `notifyEnvApiServerReady`; we listen
+  // for that single event rather than polling. Subscribing once here is enough
+  // — the hook re-fires on every server creation (e.g. `server.restart()`).
   let envApiServerRef: ViteDevServer | null = null;
-  if (envApiEnabled && repoRoot) {
-    // Optimistically prewarm once the main Vite server boots. The dev server
-    // ref is delivered via the `experimental_devServer` payload owner; we hook
-    // through the channel to get a heads-up when it is ready.
-    void prewarmChangedStoriesWhenReady(repoRoot, () => envApiServerRef);
-  }
-
-  // The viteFinal hook stashed the running ViteDevServer onto a shared symbol
-  // attached to options.presets after it resolves. Capture it here so HEAD
-  // invalidation + warmup can reach the right environment.
   registerEnvApiServerHook((server) => {
     envApiServerRef = server;
     if (envApiEnabled) {
@@ -145,6 +142,10 @@ export const experimental_devServer = async (_app: Record<string, unknown>, opti
         assertViteEnvironmentApiSupported(server);
       } catch (err) {
         logger.warn(`[before-after] ${(err as Error).message}`);
+        return;
+      }
+      if (repoRoot) {
+        void prewarmChangedStories({ kind: 'env-api', server }, repoRoot);
       }
     }
   });
@@ -287,21 +288,6 @@ export const experimental_devServer = async (_app: Record<string, unknown>, opti
 type PrewarmTarget =
   | { kind: 'subprocess'; server: import('vite').ViteDevServer }
   | { kind: 'env-api'; server: ViteDevServer };
-
-async function prewarmChangedStoriesWhenReady(
-  repoRoot: string,
-  getServer: () => ViteDevServer | null,
-  attemptsLeft = 200
-): Promise<void> {
-  const server = getServer();
-  if (server) {
-    await prewarmChangedStories({ kind: 'env-api', server }, repoRoot);
-    return;
-  }
-  if (attemptsLeft <= 0) return;
-  await new Promise((r) => setTimeout(r, 50));
-  return prewarmChangedStoriesWhenReady(repoRoot, getServer, attemptsLeft - 1);
-}
 
 /**
  * Discover changed story files via git diff and eagerly trigger compilation

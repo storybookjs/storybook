@@ -8,7 +8,7 @@ import type { Span, ValueSpan } from 'oxc-parser';
 import { parseSync } from 'oxc-parser';
 import type { Plugin, ViteDevServer } from 'vite';
 
-import { notifyEnvApiServerReady } from './server-ready-hook.ts';
+import { notifyEnvApiServerReady, resetServerReadyHookForServer } from './server-ready-hook.ts';
 
 // Vite restricts environment names to alphanumeric chars plus `$` and `_`, so
 // we use a camelCase identifier internally. The on-the-wire query marker stays
@@ -22,30 +22,48 @@ interface AlsStore {
 
 const als = new AsyncLocalStorage<AlsStore>();
 
-let unhandledListenerInstalled = false;
-let activeChannel: Pick<Channel, 'emit'> | null = null;
+// Active channels are tracked as a Set so that multiple plugin instances (e.g.
+// across `server.restart()` or in test runs spinning up several dev servers)
+// can each register and de-register their channel without trampling each other.
+const activeChannels = new Set<Pick<Channel, 'emit'>>();
+
+// The unhandledRejection listener is installed lazily once per process. We
+// keep a reference so it can be removed when the last plugin instance unwinds.
+let unhandledListener: ((reason: unknown) => void) | null = null;
 
 function emitStructuredError(source: string, error: unknown): void {
-  if (!activeChannel) return;
-  activeChannel.emit('storybook/before-after/server-error', {
+  if (activeChannels.size === 0) return;
+  const payload = {
     type: 'before-error',
     source,
     message: error instanceof Error ? error.message : String(error),
     stack: error instanceof Error ? error.stack : undefined,
-  });
+  };
+  for (const ch of activeChannels) {
+    try {
+      ch.emit('storybook/before-after/server-error', payload);
+    } catch {
+      // a single failing channel must not block others
+    }
+  }
 }
 
-function installUnhandledRejectionListener(): void {
-  if (unhandledListenerInstalled) return;
-  unhandledListenerInstalled = true;
-  process.on('unhandledRejection', (reason) => {
+function ensureUnhandledRejectionListener(): void {
+  if (unhandledListener) return;
+  unhandledListener = (reason: unknown) => {
     const store = als.getStore();
-    if (store?.scope !== 'before-after') {
-      // Not addon-owned: let other handlers (or Node's default) see it.
-      return;
-    }
+    if (store?.scope !== 'before-after') return;
     emitStructuredError('unhandledRejection', reason);
-  });
+  };
+  process.on('unhandledRejection', unhandledListener);
+}
+
+function detachChannel(channel: Pick<Channel, 'emit'>): void {
+  activeChannels.delete(channel);
+  if (activeChannels.size === 0 && unhandledListener) {
+    process.off('unhandledRejection', unhandledListener);
+    unhandledListener = null;
+  }
 }
 
 /**
@@ -190,12 +208,21 @@ export function rewriteImports(filename: string, code: string): RewriteResult | 
     }
   }
 
+  // Insert the helper AFTER any leading directive prologue (`'use strict'`,
+  // `'use client'`, etc.) — directives must remain the first statement of the
+  // module to keep React 19 / Next semantics correct. We compute the insertion
+  // offset once on demand.
+  const computeHelperInsertionOffset = (): number => {
+    const directiveMatch = code.match(/^(?:\s*(?:['"][^'"\n]+['"]\s*;?\s*\n))+/);
+    return directiveMatch ? directiveMatch[0].length : 0;
+  };
   const ensureHelper = () => {
     if (helperInjected) return;
     helperInjected = true;
-    ms.prepend(
-      `const __envBeforeJoin = (s) => s + (s.includes('?') ? '&' : '?') + 'env=before';\n`
-    );
+    const helper = `const __envBeforeJoin = (s) => s + (s.includes('?') ? '&' : '?') + 'env=before';\n`;
+    const offset = computeHelperInsertionOffset();
+    if (offset === 0) ms.prepend(helper);
+    else ms.appendRight(offset, helper);
   };
 
   for (const dyn of result.module.dynamicImports ?? []) {
@@ -203,31 +230,29 @@ export function rewriteImports(filename: string, code: string): RewriteResult | 
     const slice = code.slice(argSpan.start, argSpan.end);
     const trimmed = slice.trim();
 
+    // For literal arguments, append the marker INSIDE the original quoted form
+    // and preserve every escape verbatim. Decoding the literal (via JSON.parse
+    // + ad-hoc unescaping) is fragile across quote styles and silently corrupts
+    // edge cases like `import('./he said "hi".ts')`. The marker is plain ASCII
+    // (`?env=before` / `&env=before`) so direct concatenation is safe.
     const stringMatch = STRING_LITERAL_RE.exec(trimmed);
     if (stringMatch) {
+      const quote = stringMatch[1];
       const raw = stringMatch[2];
-      let unescaped: string;
-      try {
-        unescaped = JSON.parse(`"${raw.replace(/\\'/g, "'")}"`);
-      } catch {
-        unescaped = raw;
-      }
-      const newValue = appendEnvBefore(unescaped);
-      if (newValue !== unescaped) {
-        ms.overwrite(argSpan.start, argSpan.end, JSON.stringify(newValue));
-        changed = true;
-      }
+      if (raw.includes(ENV_MARKER)) continue;
+      const sep = raw.includes('?') ? '&' : '?';
+      ms.overwrite(argSpan.start, argSpan.end, `${quote}${raw}${sep}${ENV_MARKER}${quote}`);
+      changed = true;
       continue;
     }
 
     const tmplMatch = TEMPLATE_NO_EXPR_RE.exec(trimmed);
     if (tmplMatch) {
       const raw = tmplMatch[1];
-      const newValue = appendEnvBefore(raw);
-      if (newValue !== raw) {
-        ms.overwrite(argSpan.start, argSpan.end, '`' + newValue + '`');
-        changed = true;
-      }
+      if (raw.includes(ENV_MARKER)) continue;
+      const sep = raw.includes('?') ? '&' : '?';
+      ms.overwrite(argSpan.start, argSpan.end, '`' + raw + sep + ENV_MARKER + '`');
+      changed = true;
       continue;
     }
 
@@ -292,8 +317,11 @@ interface PluginContext {
  * the client environment.
  */
 export function beforeEnvironmentPlugin(options: BeforeEnvironmentPluginOptions = {}): Plugin {
-  if (options.channel) activeChannel = options.channel;
-  installUnhandledRejectionListener();
+  const localChannel = options.channel ?? null;
+  if (localChannel) {
+    activeChannels.add(localChannel);
+    ensureUnhandledRejectionListener();
+  }
 
   return {
     name: 'storybook:before-environment',
@@ -315,6 +343,15 @@ export function beforeEnvironmentPlugin(options: BeforeEnvironmentPluginOptions 
     configureServer(server) {
       notifyEnvApiServerReady(server);
 
+      // Tear down per-plugin state when the dev server closes, so a subsequent
+      // restart starts from a clean slate (channels not double-emitted; the
+      // unhandledRejection listener is removed once the last instance unwinds).
+      const onClose = () => {
+        if (localChannel) detachChannel(localChannel);
+        resetServerReadyHookForServer(server);
+      };
+      server.httpServer?.once('close', onClose);
+
       // Pre-transform middleware: route ?env=before requests to the before env.
       server.middlewares.use(async (req, res, next) => {
         const url = req.url || '';
@@ -332,10 +369,24 @@ export function beforeEnvironmentPlugin(options: BeforeEnvironmentPluginOptions 
         if (!beforeEnv) return next();
 
         try {
-          // Sourcemap sidecar: `<module>?env=before&map` or `<module>?env=before.map`.
-          const isMapRequest = /\.map(?:\?|$)/.test(url) || /[?&]map(?:&|$)/.test(url);
+          // Sourcemap sidecar: only the strict `<module>.<ext>.map?env=before`
+          // form OR the explicit `?map` query that Vite uses internally. We
+          // anchor on `\.[mc]?[jt]sx?\.map` for sidecars to avoid stripping
+          // `.map` from legitimate filenames like `foo.map.ts`.
+          const SIDECAR_RE = /\.(?:[mc]?[jt]sx?|css)\.map(?:\?|$)/;
+          const QUERY_MAP_RE = /[?&]map(?:&|$)/;
+          const isMapRequest = SIDECAR_RE.test(url) || QUERY_MAP_RE.test(url);
           if (isMapRequest) {
-            const sourceUrl = url.replace(/\.map(\?|$)/, '$1').replace(/([?&])map(?=&|$)/, '$1');
+            const sourceUrl = url
+              .replace(SIDECAR_RE, (m) => m.replace('.map', ''))
+              // Strip the bare `map` token from the query while preserving any
+              // surrounding `?`/`&` separators.
+              .replace(QUERY_MAP_RE, (m) =>
+                m
+                  .replace(/map(?=&|$)/, '')
+                  .replace(/&{2,}/g, '&')
+                  .replace(/[?&]$/, '')
+              );
             const result = await als.run({ scope: 'before-after' }, () =>
               beforeEnv.transformRequest(sourceUrl)
             );
@@ -371,8 +422,14 @@ export function beforeEnvironmentPlugin(options: BeforeEnvironmentPluginOptions 
     transformIndexHtml: {
       order: 'pre',
       handler(html, ctx) {
-        const originalUrl = ctx.originalUrl ?? ctx.path ?? '';
-        if (!originalUrl.includes(ENV_MARKER)) return;
+        // Multiple signals — `originalUrl` is set by Vite's dev middleware,
+        // `path` falls back when the hook is invoked through `transformIndexHtml`
+        // programmatically, and `filename` is set during builds. Any of them
+        // carrying the marker means we are transforming the before-iframe HTML.
+        const ctxAny = ctx as { originalUrl?: string; path?: string; filename?: string };
+        const candidates = [ctxAny.originalUrl, ctxAny.path, ctxAny.filename];
+        const matched = candidates.some((s) => typeof s === 'string' && s.includes(ENV_MARKER));
+        if (!matched) return;
         return rewriteHtmlUrls(html);
       },
     },
@@ -392,12 +449,18 @@ export function beforeEnvironmentPlugin(options: BeforeEnvironmentPluginOptions 
     },
 
     handleHotUpdate(ctx) {
-      // The before environment serves HEAD content; working-tree changes must
-      // never cause it to re-fetch. Filter out any modules belonging to the
-      // before env's module graph from the HMR update set.
+      // The before environment serves HEAD content; working-tree file changes
+      // must never cause it to re-fetch. We compare on the *file path* (which
+      // is invariant) rather than `urlToModuleMap` (which is keyed on the
+      // post-resolve URL including `?env=before` and Vite's normalisation, so
+      // string equality with `m.url` would under-match).
       const beforeEnv = ctx.server.environments[BEFORE_ENV_NAME];
       if (!beforeEnv) return;
-      return ctx.modules.filter((m) => !beforeEnv.moduleGraph.urlToModuleMap.has(m.url));
+      const beforeFiles = new Set<string>();
+      for (const mod of beforeEnv.moduleGraph.idToModuleMap.values()) {
+        if (mod.file) beforeFiles.add(mod.file);
+      }
+      return ctx.modules.filter((m) => !(m.file && beforeFiles.has(m.file)));
     },
   };
 }
@@ -428,7 +491,11 @@ export function invalidateBeforeEnvironment(server: ViteDevServer): void {
   env.moduleGraph.invalidateAll();
 }
 
-/** Test/diagnostic helper: clears the global channel reference. */
+/** Test/diagnostic helper: clears all process-level addon state. */
 export function __resetBeforeEnvironmentForTesting(): void {
-  activeChannel = null;
+  activeChannels.clear();
+  if (unhandledListener) {
+    process.off('unhandledRejection', unhandledListener);
+    unhandledListener = null;
+  }
 }

@@ -90,7 +90,7 @@ export const Link = ({
 };
 
 /**
- * Override createFilezRoute from tanstack react router
+ * Override createFileRoute from tanstack react router
  * because the org `createFileRoute` doesn't set the path in the Route
  */
 export function createFileRoute(path: string) {

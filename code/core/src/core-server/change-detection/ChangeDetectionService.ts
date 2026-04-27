@@ -18,6 +18,7 @@ import {
   ChangeDetectionResolverFactory,
   DependencyGraphBuilder,
   IncrementalPatcher,
+  ParseResolveCache,
   WorkspaceLocator,
 } from './dependency-graph/index.ts';
 import type { DependencyGraph, ReverseIndexImpl } from './dependency-graph/index.ts';
@@ -43,8 +44,42 @@ function isSameStatus(a: Status | undefined, b: Status): boolean {
     a.title === b.title &&
     a.description === b.description &&
     a.sidebarContextMenu === b.sidebarContextMenu &&
-    JSON.stringify(a.data) === JSON.stringify(b.data)
+    isSameData(a.data, b.data)
   );
+}
+
+function isSameData(a: unknown, b: unknown): boolean {
+  if (Object.is(a, b)) {
+    return true;
+  }
+  if (a === null || b === null || typeof a !== 'object' || typeof b !== 'object') {
+    return false;
+  }
+  if (Array.isArray(a) || Array.isArray(b)) {
+    if (!Array.isArray(a) || !Array.isArray(b) || a.length !== b.length) {
+      return false;
+    }
+    for (let i = 0; i < a.length; i++) {
+      if (!isSameData(a[i], b[i])) {
+        return false;
+      }
+    }
+    return true;
+  }
+  const aKeys = Object.keys(a as Record<string, unknown>);
+  const bRecord = b as Record<string, unknown>;
+  if (aKeys.length !== Object.keys(bRecord).length) {
+    return false;
+  }
+  for (const key of aKeys) {
+    if (!Object.prototype.hasOwnProperty.call(bRecord, key)) {
+      return false;
+    }
+    if (!isSameData((a as Record<string, unknown>)[key], bRecord[key])) {
+      return false;
+    }
+  }
+  return true;
 }
 
 function getStoryIdsByAbsolutePath(
@@ -145,8 +180,12 @@ export class ChangeDetectionService {
   private reverseIndex: ReverseIndexImpl | undefined;
   private graph: DependencyGraph | undefined;
   private storyFiles: Set<string> = new Set();
-  private buildInFlight = false;
-  private pendingEvents: FileChangeEvent[] = [];
+  /**
+   * Serialises file-change patches so two events touching the same dep set never interleave
+   * across `await` points inside `IncrementalPatcher.patch`. The chain ignores rejections
+   * (each call's failure is logged in {@link handleFileChange}).
+   */
+  private currentPatch: Promise<void> = Promise.resolve();
   private unsubscribeFileChange: (() => void) | undefined;
   private unsubscribeStartupFailure: (() => void) | undefined;
 
@@ -206,17 +245,26 @@ export class ChangeDetectionService {
     });
   }
 
+  /**
+   * Pipeline:
+   *   resolve config → build parser registry / resolver / workspace locator → load story
+   *   index → eager dependency-graph build → construct patcher → subscribe to file-change
+   *   and startup-failure events → kick off the index-baseline service and an initial scan.
+   *
+   * File-change subscription registers strictly AFTER the eager build; events that arrive
+   * during the build are produced by chokidar before we attach, so this is a no-op window
+   * by construction. After subscription, every event runs through {@link handleFileChange}
+   * and is queued behind {@link currentPatch} so two events never interleave.
+   */
   private async startInternal(): Promise<void> {
     const adapter = this.adapter;
     if (!adapter) {
       return;
     }
 
-    // 1. Get resolveConfig from adapter.
     const resolveConfig = await adapter.getResolveConfig();
     const projectRoot = normalize(resolveConfig.projectRoot ?? this.workingDir);
 
-    // 2. Construct parser registry (built-ins + preset contributions), resolver, workspace locator.
     const pluginParsers = this.options.presets
       ? await this.options.presets.apply<ImportParser[]>('experimental_importParsers', [])
       : [];
@@ -228,7 +276,6 @@ export class ChangeDetectionService {
     const workspaceLocator = new WorkspaceLocator(projectRoot);
     const workspaceRoots = await workspaceLocator.locate();
 
-    // 3. Get story-file index.
     const storyIndexGenerator = await this.options.storyIndexGeneratorPromise;
     const storyIndex = await storyIndexGenerator.getIndex();
     const storyIdsByFile = getStoryIdsByAbsolutePath(storyIndex, this.workingDir);
@@ -238,21 +285,25 @@ export class ChangeDetectionService {
       return;
     }
 
-    // 4. Eager build.
+    // Shared parse/resolve cache so the patcher reuses cold-start results instead of
+    // re-doing every file's parse + resolution on the first event after boot. The patcher
+    // invalidates per-file entries on every change/unlink before reading.
+    const cache = new ParseResolveCache({
+      registry,
+      resolver,
+      workspaceRoots,
+      projectRoot,
+      logger,
+    });
+
     this.dependencyGraphBuilder = new DependencyGraphBuilder({
       registry,
       resolver,
       workspaceRoots,
       projectRoot,
+      cache,
     });
-    this.buildInFlight = true;
-    let reverseIndex: ReverseIndexImpl;
-    let graph: DependencyGraph;
-    try {
-      ({ reverseIndex, graph } = await this.dependencyGraphBuilder.build(this.storyFiles));
-    } finally {
-      this.buildInFlight = false;
-    }
+    const { reverseIndex, graph } = await this.dependencyGraphBuilder.build(this.storyFiles);
     if (this.disposed) {
       return;
     }
@@ -266,37 +317,19 @@ export class ChangeDetectionService {
       resolver,
       workspaceRoots,
       projectRoot,
+      cache,
       isStoryFile: (path: string) => this.storyFiles.has(normalize(path)),
     });
 
-    // 5. Drain any events that arrived during the eager build, in arrival order.
-    const drained = this.pendingEvents.splice(0);
-    for (const event of drained) {
-      if (this.disposed) {
-        return;
-      }
-      try {
-        await this.incrementalPatcher.patch(event);
-      } catch (error) {
-        logger.warn(
-          `Change detection: failed to apply queued ${event.kind} for ${event.path}: ${error instanceof Error ? error.message : String(error)}`
-        );
-      }
-    }
-
-    // 6. Subscribe to file-change events.
     this.unsubscribeFileChange = adapter.onFileChange((event) => {
       if (this.disposed) {
         return;
       }
-      if (this.buildInFlight) {
-        this.pendingEvents.push(event);
-        return;
-      }
-      void this.handleFileChange(event);
+      // Serialise patches: chain each event behind the previous one so two events touching
+      // the same dep set never interleave inside IncrementalPatcher.patch.
+      this.currentPatch = this.currentPatch.then(() => this.handleFileChange(event));
     });
 
-    // 7. Subscribe to startup-failure events (optional).
     if (adapter.onStartupFailure) {
       this.unsubscribeStartupFailure = adapter.onStartupFailure((event) => {
         if (this.disposed) {
@@ -312,10 +345,8 @@ export class ChangeDetectionService {
       });
     }
 
-    // 8. Index baseline service.
     void this.getIndexBaselineService().start();
 
-    // 9. Git state changes.
     this.getGitDiffProvider().onGitStateChange(() => {
       if (this.disposed) {
         return;
@@ -327,7 +358,7 @@ export class ChangeDetectionService {
         .catch(() => undefined);
     });
 
-    // Trigger an initial scan so we surface git-pending diffs immediately.
+    // Initial scan surfaces git-pending diffs immediately.
     this.scheduleScan(0);
   }
 
@@ -364,6 +395,9 @@ export class ChangeDetectionService {
       logger.warn(
         `Change detection: failed to apply ${event.kind} for ${event.path}: ${error instanceof Error ? error.message : String(error)}`
       );
+    }
+    if (this.disposed) {
+      return;
     }
     this.scheduleScan(this.debounceMs);
   }

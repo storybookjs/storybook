@@ -21,8 +21,10 @@ import {
   ChangeDetectionResolverFactory,
   DependencyGraphBuilder,
   IncrementalPatcher,
+  ParseResolveCache,
 } from './dependency-graph/index.ts';
 import { ParserRegistry, builtinImportParsers } from './parser-registry/index.ts';
+import { getOxcParsePool } from './parser-registry/workers/index.ts';
 
 interface FixtureSpec {
   N: number;
@@ -164,6 +166,19 @@ const BIG_MATRIX: FixtureSpec[] = [
 const MATRIX =
   process.env.STORYBOOK_CD_BENCH_BIG === '1' ? [...CI_MATRIX, ...BIG_MATRIX] : CI_MATRIX;
 
+if (process.env.STORYBOOK_CHANGE_DETECTION_REQUIRE_WORKER === '1') {
+  // Hard-fail when callers expect the worker pool to be active. Without this guard, a
+  // missing compiled `dist/oxc-worker.js` silently falls back to inline parsing and the
+  // bench numbers no longer reflect the worker path the dev-server uses.
+  const pool = getOxcParsePool();
+  if (!pool) {
+    throw new Error(
+      'STORYBOOK_CHANGE_DETECTION_REQUIRE_WORKER=1 but the oxc worker pool is unavailable. ' +
+        'Run `yarn nx compile core` first, or unset the variable to allow inline-parse fallback.'
+    );
+  }
+}
+
 // Lazy per-spec fixture + patcher caches. `beforeAll` hooks do not run reliably under
 // `vitest bench` (at vitest 4.1.0), so set-up happens on the first bench iteration for each
 // spec via a promise cache.
@@ -192,6 +207,15 @@ async function getWarmContext(spec: FixtureSpec): Promise<WarmContext> {
       const fixture = await getFixture(spec);
       const registry = makeRegistry();
       const resolver = makeResolver(fixture.dir);
+      // Share the parse/resolve cache so the warm-patch bench measures the cache-hit
+      // path the dev-server actually exercises after cold-start.
+      const cache = new ParseResolveCache({
+        registry,
+        resolver,
+        workspaceRoots: new Set(),
+        projectRoot: fixture.dir,
+        logger: SILENT_LOGGER,
+      });
       const builder = new DependencyGraphBuilder({
         registry,
         resolver,
@@ -199,6 +223,7 @@ async function getWarmContext(spec: FixtureSpec): Promise<WarmContext> {
         projectRoot: fixture.dir,
         concurrency: 16,
         logger: SILENT_LOGGER,
+        cache,
       });
       const { reverseIndex, graph } = await builder.build(fixture.storyFiles);
       const storyFilesSet = new Set(fixture.storyFiles);
@@ -211,6 +236,7 @@ async function getWarmContext(spec: FixtureSpec): Promise<WarmContext> {
         projectRoot: fixture.dir,
         isStoryFile: (path) => storyFilesSet.has(path),
         logger: SILENT_LOGGER,
+        cache,
       });
       return { patcher, patchTarget: fixture.patchTarget };
     })();

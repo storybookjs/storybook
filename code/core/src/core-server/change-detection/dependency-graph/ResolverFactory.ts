@@ -72,6 +72,8 @@ export class ChangeDetectionResolverFactory {
  * RegExp `find` entries cannot be expressed in oxc-resolver's alias config and
  * are skipped with a debug log (downgraded to opaque-leaf at resolve time).
  */
+let warnedRegexAliases = false;
+
 function normaliseAlias(
   alias: ResolveConfig['alias']
 ): Record<string, Array<string | undefined | null>> | undefined {
@@ -80,15 +82,14 @@ function normaliseAlias(
   }
 
   const out: Record<string, Array<string | undefined | null>> = {};
+  const skippedRegex: string[] = [];
 
   if (Array.isArray(alias)) {
     for (const entry of alias) {
       if (typeof entry.find === 'string') {
         out[entry.find] = [entry.replacement];
       } else {
-        logger.debug(
-          `ChangeDetectionResolverFactory: skipping regex alias '${String(entry.find)}' (not supported by oxc-resolver)`
-        );
+        skippedRegex.push(String(entry.find));
       }
     }
   } else {
@@ -97,5 +98,24 @@ function normaliseAlias(
     }
   }
 
+  if (skippedRegex.length > 0) {
+    if (!warnedRegexAliases) {
+      warnedRegexAliases = true;
+      logger.warn(
+        `Change detection: ignored ${skippedRegex.length} regex alias(es) — oxc-resolver only supports literal string aliases. ` +
+          `Modules matched by [${skippedRegex.slice(0, 3).join(', ')}${skippedRegex.length > 3 ? ', …' : ''}] will be tracked as opaque-leaf.`
+      );
+    } else {
+      for (const pattern of skippedRegex) {
+        logger.debug(`ChangeDetectionResolverFactory: skipping regex alias '${pattern}'`);
+      }
+    }
+  }
+
   return Object.keys(out).length > 0 ? out : undefined;
+}
+
+/** Test-only: reset the warn-once latch between cases. */
+export function _resetResolverWarnLatchForTesting(): void {
+  warnedRegexAliases = false;
 }

@@ -1,5 +1,3 @@
-import { readFile } from 'node:fs/promises';
-
 import { normalize } from 'pathe';
 
 import { logger as defaultLogger } from 'storybook/internal/node-logger';
@@ -7,9 +5,10 @@ import { logger as defaultLogger } from 'storybook/internal/node-logger';
 import type { FileChangeEvent } from '../adapters/types.ts';
 import type { ParserRegistry } from '../parser-registry/index.ts';
 import { profiler } from '../profiling.ts';
+import { ParseResolveCache } from './ParseResolveCache.ts';
 import type { ReverseIndexImpl } from './ReverseIndex.ts';
 import type { ChangeDetectionResolverFactory } from './ResolverFactory.ts';
-import type { DependencyGraph, ImportEdge } from './types.ts';
+import type { DependencyGraph } from './types.ts';
 
 interface PatcherLogger {
   debug: (message: string) => void;
@@ -26,91 +25,82 @@ interface PatcherOptions {
   logger?: PatcherLogger;
   /** Set-style predicate: returns true if the path is a story-root file. */
   isStoryFile: (path: string) => boolean;
-}
-
-const NODE_MODULES_SEGMENT = '/node_modules/';
-
-function isInsideAnyWorkspace(absolute: string, workspaceRoots: Set<string>): boolean {
-  for (const root of workspaceRoots) {
-    if (absolute === root || absolute.startsWith(root.endsWith('/') ? root : `${root}/`)) {
-      return true;
-    }
-  }
-  return false;
-}
-
-function isInScope(absolute: string, projectRoot: string, workspaceRoots: Set<string>): boolean {
-  const projectPrefix = projectRoot.endsWith('/') ? projectRoot : `${projectRoot}/`;
-  if (
-    (absolute === projectRoot || absolute.startsWith(projectPrefix)) &&
-    !absolute.includes(NODE_MODULES_SEGMENT)
-  ) {
-    return true;
-  }
-  if (isInsideAnyWorkspace(absolute, workspaceRoots)) {
-    return true;
-  }
-  return false;
+  /**
+   * Optional shared cache. When the patcher and {@link DependencyGraphBuilder} share the
+   * same instance, post-build incremental walks reuse parse + resolve results from the
+   * cold-start build. The patcher invalidates `path` on every `change`/`unlink` event
+   * before reading.
+   */
+  cache?: ParseResolveCache;
 }
 
 /**
  * Applies a single {@link FileChangeEvent} to the live reverse index + graph.
  *
- * `patch()` ASSUMES the caller has serialised events behind any in-flight `build()`. The
- * service that owns this patcher (see {@link ChangeDetectionService}) implements the
- * queue-during-build pattern.
+ * `patch()` mutates `graph` and `reverseIndex` across multiple `await` points, so the caller
+ * MUST serialise concurrent calls; {@link ChangeDetectionService} chains them through
+ * `currentPatch`.
  */
 export class IncrementalPatcher {
   private readonly reverseIndex: ReverseIndexImpl;
   private readonly graph: DependencyGraph;
   private readonly registry: ParserRegistry;
-  private readonly resolver: ChangeDetectionResolverFactory;
-  private readonly workspaceRoots: Set<string>;
-  private readonly projectRoot: string;
   private readonly logger: PatcherLogger;
   private readonly isStoryFile: (path: string) => boolean;
+  private readonly cache: ParseResolveCache;
 
   constructor(opts: PatcherOptions) {
     this.reverseIndex = opts.reverseIndex;
     this.graph = opts.graph;
     this.registry = opts.registry;
-    this.resolver = opts.resolver;
-    this.workspaceRoots = new Set(Array.from(opts.workspaceRoots, (r) => normalize(r)));
-    this.projectRoot = normalize(opts.projectRoot);
     this.logger = opts.logger ?? defaultLogger;
     this.isStoryFile = opts.isStoryFile;
+    this.cache =
+      opts.cache ??
+      new ParseResolveCache({
+        registry: opts.registry,
+        resolver: opts.resolver,
+        workspaceRoots: opts.workspaceRoots,
+        projectRoot: opts.projectRoot,
+        logger: this.logger,
+      });
   }
 
-  /** Apply a single FileChangeEvent. Idempotent — safe to call multiple times for the same event. */
   async patch(event: FileChangeEvent): Promise<void> {
     profiler.patchStart({ kind: event.kind, path: event.path });
     let storiesReWalked = 0;
     try {
       const path = normalize(event.path);
+      // File contents may have changed (or the file is gone); drop any stale cached
+      // parse/resolve data before any read.
+      this.cache.invalidate(path);
+
       if (event.kind === 'add') {
         if (this.isStoryFile(path)) {
           storiesReWalked += 1;
           await this.walkFromStory(path);
+          return;
         }
-        // non-story add: no-op until something imports it.
+        // Non-story add: scan graph for known direct importers whose previous resolve
+        // missed `path` (e.g. file did not exist at cold-start). If none found, this is
+        // a no-op until an importer's `change` fires.
+        storiesReWalked += await this.recoverViaDirectImporters(path);
         return;
       }
 
       if (event.kind === 'unlink') {
-        // Stories that previously reached `path`.
-        const dependents = Array.from(this.reverseIndex.lookup(path).keys());
+        const dependentsSet = new Set(this.reverseIndex.lookup(path).keys());
         this.graph.delete(path);
         if (this.isStoryFile(path)) {
           this.reverseIndex.removeStory(path);
         } else {
-          // Remove path itself from index entries that referenced it.
-          for (const story of dependents) {
+          for (const story of dependentsSet) {
             this.reverseIndex.removeEdge(path, story);
           }
         }
-        // Re-walk every story that previously reached `path` so transitive deps reachable only
-        // through `path` are pruned correctly.
-        for (const story of dependents) {
+        // Re-walk every dependent story so transitive deps reachable only through `path`
+        // are pruned.
+        for (const story of dependentsSet) {
           if (story === path) {
             continue;
           }
@@ -125,30 +115,21 @@ export class IncrementalPatcher {
 
       // 'change'
       const previousDeps = this.graph.get(path) ?? new Set<string>();
-      const newEdges = await this.parseFile(path);
-      const newDeps = new Set<string>();
-      if (newEdges) {
-        for (const edge of newEdges) {
-          const resolved = await this.resolver.resolve(path, edge.specifier);
-          if (resolved === null) {
-            this.logger.debug(`Could not resolve ${edge.specifier} from ${path}`);
-            continue;
-          }
-          const normalised = normalize(resolved);
-          if (!isInScope(normalised, this.projectRoot, this.workspaceRoots)) {
-            continue;
-          }
-          newDeps.add(normalised);
-        }
-      }
+      const newDeps = await this.cache.resolveOnce(path);
       this.graph.set(path, newDeps);
 
-      // Stories whose dependency-set reaches `path`.
-      const dependents = Array.from(this.reverseIndex.lookup(path).keys());
-      if (this.isStoryFile(path) && !dependents.includes(path)) {
-        dependents.push(path);
+      const dependentsSet = new Set(this.reverseIndex.lookup(path).keys());
+      if (this.isStoryFile(path)) {
+        dependentsSet.add(path);
       }
-      if (dependents.length === 0) {
+
+      // Cold-start cascade-failure recovery: if no story reaches `path` via reverseIndex
+      // (e.g. cold-start walker never visited it because its importer's parse/resolve
+      // failed, or `path` did not exist on disk at boot), look for direct importers in
+      // the graph and re-walk their stories. That re-walk picks up the new outgoing
+      // edges introduced by this change.
+      if (dependentsSet.size === 0 && !this.isStoryFile(path)) {
+        storiesReWalked += await this.recoverViaDirectImporters(path);
         return;
       }
 
@@ -159,14 +140,12 @@ export class IncrementalPatcher {
         }
       }
 
-      // For each story that reaches `path`: prune obsolete (dep, story) edges and re-walk to
-      // recompute depths through the new outgoing-edge set.
-      for (const story of dependents) {
+      // For each dependent story: prune obsolete (dep, story) edges, then BFS again.
+      for (const story of dependentsSet) {
         for (const removedDep of removedDeps) {
           this.reverseIndex.removeEdge(removedDep, story);
         }
         if (this.isStoryFile(story)) {
-          // Conservative re-walk: clear the story's contribution from index then redo BFS.
           this.reverseIndex.removeStory(story);
           storiesReWalked += 1;
           await this.walkFromStory(story);
@@ -177,11 +156,43 @@ export class IncrementalPatcher {
     }
   }
 
+  /**
+   * Re-walks every story that transitively reaches a known direct importer of `path`.
+   * Used when `path` is not in the reverse-index (cold-start never reached it) but the
+   * graph still records files that import it. Returns the number of stories re-walked.
+   */
+  private async recoverViaDirectImporters(path: string): Promise<number> {
+    const directImporters = new Set<string>();
+    for (const [importer, deps] of this.graph) {
+      if (deps.has(path)) {
+        directImporters.add(importer);
+      }
+    }
+    if (directImporters.size === 0) {
+      return 0;
+    }
+    const storiesToWalk = new Set<string>();
+    for (const importer of directImporters) {
+      for (const story of this.reverseIndex.lookup(importer).keys()) {
+        if (this.isStoryFile(story)) {
+          storiesToWalk.add(story);
+        }
+      }
+      if (this.isStoryFile(importer)) {
+        storiesToWalk.add(importer);
+      }
+    }
+    for (const story of storiesToWalk) {
+      this.reverseIndex.removeStory(story);
+      await this.walkFromStory(story);
+    }
+    return storiesToWalk.size;
+  }
+
   private isWalkable(filePath: string): boolean {
     return this.registry.parserFor(filePath) !== undefined;
   }
 
-  /** BFS from a story root, recording depth into the reverse index and updating graph entries. */
   private async walkFromStory(storyRoot: string): Promise<void> {
     this.reverseIndex.record(storyRoot, storyRoot, 0);
 
@@ -197,25 +208,11 @@ export class IncrementalPatcher {
         continue;
       }
 
-      const edges = await this.parseFile(file);
-      if (!edges) {
-        continue;
-      }
+      const resolvedDeps = await this.cache.resolveOnce(file);
+      this.graph.set(file, resolvedDeps);
 
-      const resolvedDeps = this.graph.get(file) ?? new Set<string>();
-      for (const edge of edges) {
-        const resolved = await this.resolver.resolve(file, edge.specifier);
-        if (resolved === null) {
-          this.logger.debug(`Could not resolve ${edge.specifier} from ${file}`);
-          continue;
-        }
-        const normalised = normalize(resolved);
-        if (!isInScope(normalised, this.projectRoot, this.workspaceRoots)) {
-          continue;
-        }
-        resolvedDeps.add(normalised);
-
-        const nextDepth = depth + 1;
+      const nextDepth = depth + 1;
+      for (const normalised of resolvedDeps) {
         const previous = visited.get(normalised);
         if (previous !== undefined && previous <= nextDepth) {
           continue;
@@ -224,27 +221,6 @@ export class IncrementalPatcher {
         this.reverseIndex.record(normalised, storyRoot, nextDepth);
         queue.push({ file: normalised, depth: nextDepth });
       }
-      this.graph.set(file, resolvedDeps);
-    }
-  }
-
-  private async parseFile(filePath: string): Promise<ImportEdge[] | null> {
-    let source: string;
-    try {
-      source = await readFile(filePath, 'utf8');
-    } catch (error) {
-      this.logger.warn(
-        `Change detection: could not read ${filePath}: ${error instanceof Error ? error.message : String(error)}`
-      );
-      return null;
-    }
-    try {
-      return (await this.registry.parse(filePath, source)) ?? [];
-    } catch (error) {
-      this.logger.warn(
-        `Change detection: failed to parse ${filePath}: ${error instanceof Error ? error.message : String(error)}`
-      );
-      return null;
     }
   }
 }

@@ -84,28 +84,6 @@ describe('ParserRegistry', () => {
     });
 
     expect(registry.parserFor('/tmp/a.foo')).toBe(plugin.parse);
-    expect(registry.walkableExtensions().has('.foo')).toBe(true);
-  });
-
-  it('walkableExtensions returns the union of every registered extension', () => {
-    const plugin: ImportParser = {
-      extensions: ['.vue'],
-      parse: vi.fn(async () => []),
-    };
-    const registry = new ParserRegistry({
-      defaultParsers: builtinImportParsers,
-      pluginParsers: [plugin],
-    });
-
-    const exts = registry.walkableExtensions();
-    expect(exts.has('.ts')).toBe(true);
-    expect(exts.has('.tsx')).toBe(true);
-    expect(exts.has('.js')).toBe(true);
-    expect(exts.has('.jsx')).toBe(true);
-    expect(exts.has('.mjs')).toBe(true);
-    expect(exts.has('.cjs')).toBe(true);
-    expect(exts.has('.mdx')).toBe(true);
-    expect(exts.has('.vue')).toBe(true);
   });
 
   it('exposes parseScriptWithOxc to plugins via the context, returning import edges', async () => {

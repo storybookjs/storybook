@@ -1,25 +1,25 @@
 import { parse as oxcRawParse } from 'oxc-parser';
 
-import { logger } from 'storybook/internal/node-logger';
-
 import { ChangeDetectionFailureError } from '../errors.ts';
 import type { ImportEdge } from './types.ts';
 
 /**
+ * Files larger than this are treated as opaque-leaf and skipped — protects the require-walk
+ * iterator (and the worker IPC roundtrip) from O(MB) AST traversals on minified bundles or
+ * generated artefacts that happen to land in `code/`.
+ */
+const MAX_PARSE_SIZE = 2_000_000;
+
+/**
  * Extracts literal-string import edges from a JS/TS/JSX/TSX source file using oxc-parser.
- *
- * Skipped:
- *
- * - Type-only `import` / `export` declarations
- * - Dynamic imports with non-literal specifiers
- *
- * Caller is responsible for filtering CSS/asset specifiers from the returned list
- * (extension-based) — this function returns ALL literal-string specifiers it finds.
- *
- * Throws {@link ChangeDetectionFailureError} if the parser fails to produce any usable
- * result; callers should catch and treat such files as opaque-leaf nodes.
+ * Type-only imports/exports and non-literal dynamic-import specifiers are skipped.
+ * Throws {@link ChangeDetectionFailureError} when the parser fails or returns no module
+ * info; callers should catch and treat such files as opaque-leaf.
  */
 export async function oxcParse(filePath: string, source: string): Promise<ImportEdge[]> {
+  if (source.length > MAX_PARSE_SIZE) {
+    return [];
+  }
   let parseResult: Awaited<ReturnType<typeof oxcRawParse>>;
   try {
     parseResult = await oxcRawParse(filePath, source);
@@ -85,16 +85,9 @@ export async function oxcParse(filePath: string, source: string): Promise<Import
     edges.push({ specifier: literal, kind: 'dynamic' });
   }
 
-  // oxc-parser's `EcmaScriptModule` does not surface `require()` calls separately,
-  // so walk the AST body to find them. The walk is expensive (visits every own-property
-  // of every AST node), and on modern code `require(` is extremely rare — it is
-  // syntactically impossible in `.mjs`/`.mts` and uncommon in `.ts`/`.tsx`. Two cheap
-  // gates before paying the recursive walk:
-  //   1. Extension-only skip for `.mjs`/`.mts` — ESM-exclusive file modes.
-  //   2. Source-level substring prefilter for everything else — if the literal token
-  //      `require(` never appears in the source, there is no CommonJS edge to find.
-  // Both gates preserve the edge-set exactly: a `require(` call MUST include the token
-  // `require(` verbatim in the source text.
+  // oxc-parser does not surface require() calls separately. Walk the AST only after two
+  // cheap gates: ESM-exclusive extensions skip the walk entirely, and a source-level
+  // substring prefilter rules out files that cannot contain the literal `require(` token.
   if (parseResult.program?.body && canContainRequireCall(filePath, source)) {
     collectRequireSpecifiers(parseResult.program, edges, seen);
   }
@@ -103,12 +96,10 @@ export async function oxcParse(filePath: string, source: string): Promise<Import
 }
 
 function canContainRequireCall(filePath: string, source: string): boolean {
-  // Match the last extension segment without a toLowerCase allocation: `.tsx` / `.mjs`
-  // comparisons are case-sensitive in practice on every platform we support here.
   const dot = filePath.lastIndexOf('.');
   if (dot !== -1) {
-    const ext = filePath.slice(dot);
-    if (ext === '.mjs' || ext === '.mts' || ext === '.MJS' || ext === '.MTS') {
+    const ext = filePath.slice(dot).toLowerCase();
+    if (ext === '.mjs' || ext === '.mts') {
       return false;
     }
   }
@@ -140,54 +131,52 @@ function extractLiteralFromSource(source: string, start: number, end: number): s
 }
 
 /**
- * Walks an oxc AST recursively looking for `CallExpression` nodes whose callee is
- * the identifier `require` and whose first argument is a string literal. The walk
- * is intentionally generic — it does not know oxc node shapes — so it visits every
- * own-property of every node and recurses into objects/arrays.
+ * Iterative AST walk for `CallExpression` nodes whose callee is the identifier `require`
+ * and whose first argument is a string literal. Iterative (not recursive) so deeply
+ * nested ASTs cannot blow the call stack on minified bundles. Skips estree-shaped
+ * metadata fields (`parent`/`loc`/`range`); oxc-parser does not emit `parent`/`loc`/
+ * `range`, so the skip is defensive against future shape changes.
  */
-function collectRequireSpecifiers(node: unknown, edges: ImportEdge[], seen: Set<string>): void {
-  if (node === null || typeof node !== 'object') {
-    return;
-  }
-  if (Array.isArray(node)) {
-    for (const child of node) {
-      collectRequireSpecifiers(child, edges, seen);
+function collectRequireSpecifiers(root: unknown, edges: ImportEdge[], seen: Set<string>): void {
+  const stack: unknown[] = [root];
+  while (stack.length > 0) {
+    const node = stack.pop();
+    if (node === null || typeof node !== 'object') {
+      continue;
     }
-    return;
-  }
+    if (Array.isArray(node)) {
+      for (let i = node.length - 1; i >= 0; i--) {
+        stack.push(node[i]);
+      }
+      continue;
+    }
 
-  const maybeNode = node as { type?: unknown; callee?: unknown; arguments?: unknown };
-  if (maybeNode.type === 'CallExpression') {
-    const callee = maybeNode.callee as { type?: unknown; name?: unknown } | null | undefined;
-    if (callee && callee.type === 'Identifier' && callee.name === 'require') {
-      const args = Array.isArray(maybeNode.arguments) ? maybeNode.arguments : [];
-      const firstArg = args[0] as { type?: unknown; value?: unknown } | null | undefined;
-      if (
-        firstArg &&
-        (firstArg.type === 'StringLiteral' || firstArg.type === 'Literal') &&
-        typeof firstArg.value === 'string'
-      ) {
-        const specifier = firstArg.value;
-        const key = `require:${specifier}`;
-        if (!seen.has(key)) {
-          seen.add(key);
-          edges.push({ specifier, kind: 'require' });
+    const maybeNode = node as { type?: unknown; callee?: unknown; arguments?: unknown };
+    if (maybeNode.type === 'CallExpression') {
+      const callee = maybeNode.callee as { type?: unknown; name?: unknown } | null | undefined;
+      if (callee && callee.type === 'Identifier' && callee.name === 'require') {
+        const args = Array.isArray(maybeNode.arguments) ? maybeNode.arguments : [];
+        const firstArg = args[0] as { type?: unknown; value?: unknown } | null | undefined;
+        if (
+          firstArg &&
+          (firstArg.type === 'StringLiteral' || firstArg.type === 'Literal') &&
+          typeof firstArg.value === 'string'
+        ) {
+          const specifier = firstArg.value;
+          const key = `require:${specifier}`;
+          if (!seen.has(key)) {
+            seen.add(key);
+            edges.push({ specifier, kind: 'require' });
+          }
         }
       }
     }
-  }
 
-  for (const key of Object.keys(node)) {
-    // Skip the parent backref, range/loc, and other non-AST metadata to avoid
-    // walking into giant numeric arrays.
-    if (key === 'parent' || key === 'loc' || key === 'range' || key === 'span') {
-      continue;
-    }
-    try {
-      collectRequireSpecifiers((node as Record<string, unknown>)[key], edges, seen);
-    } catch (error) {
-      // Some AST node properties are getters that may throw on access; ignore.
-      logger.debug(`oxc-parse: skipped property '${key}' during require walk: ${String(error)}`);
+    for (const key of Object.keys(node)) {
+      if (key === 'parent' || key === 'loc' || key === 'range') {
+        continue;
+      }
+      stack.push((node as Record<string, unknown>)[key]);
     }
   }
 }

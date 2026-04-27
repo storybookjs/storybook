@@ -97,15 +97,14 @@ describe('ReverseIndexImpl', () => {
     expect(index.lookup('/repo/src/C.ts').get('/repo/src/A.stories.tsx')).toBe(2);
   });
 
-  it('normalises dep paths so equivalent path forms collapse to the same key', () => {
+  it('treats unnormalised path forms as distinct keys (callers MUST pre-normalise)', () => {
     const index = new ReverseIndexImpl();
-    // pathe.normalize collapses './' and double-slash style noise. We use './foo' vs 'foo'
-    // segments to verify two forms reach the same internal key.
+    // Contract: callers normalise before calling record/lookup. The index does no
+    // internal normalisation, so passing two non-canonical spellings yields two keys.
     index.record('/repo/src/Foo/bar.ts', '/repo/src/A.stories.tsx', 1);
     index.record('/repo/src/Foo/./bar.ts', '/repo/src/A.stories.tsx', 2);
 
-    // Both writes targeted the same normalised key — record() kept the lower depth (1).
     expect(index.lookup('/repo/src/Foo/bar.ts').get('/repo/src/A.stories.tsx')).toBe(1);
-    expect(index.lookup('/repo/src/Foo/./bar.ts').get('/repo/src/A.stories.tsx')).toBe(1);
+    expect(index.lookup('/repo/src/Foo/./bar.ts').get('/repo/src/A.stories.tsx')).toBe(2);
   });
 });

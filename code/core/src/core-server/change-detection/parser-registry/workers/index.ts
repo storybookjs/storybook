@@ -23,4 +23,4 @@ export async function parseWithOxc(filePath: string, source: string): Promise<Im
   }
 }
 
-export { disposeOxcParsePool };
+export { disposeOxcParsePool, getOxcParsePool };

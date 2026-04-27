@@ -42,20 +42,13 @@ export class ParserRegistry {
     }
   }
 
-  /** Returns the parse function for a file's extension, or undefined if unclaimed. */
   parserFor(filePath: string): ImportParser['parse'] | undefined {
     return this.byExtension.get(extname(filePath).toLowerCase());
   }
 
-  /** Every extension claimed by some registered parser. Used by the walker to filter. */
-  walkableExtensions(): ReadonlySet<string> {
-    return new Set(this.byExtension.keys());
-  }
-
   /**
-   * Dispatch `(filePath, source)` to its claimed parser and return the edges. Returns
-   * `null` when no parser claims the extension — callers interpret this as "opaque
-   * leaf, do not walk into".
+   * Returns `null` when no parser claims the extension — callers interpret this as
+   * "opaque leaf, do not walk into".
    */
   async parse(filePath: string, source: string): Promise<ImportEdge[] | null> {
     const fn = this.parserFor(filePath);

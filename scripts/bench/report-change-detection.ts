@@ -9,7 +9,7 @@ const BASELINE_PATH = path.join(BENCH_DIR, 'baselines', 'change-detection-next.j
 interface BenchResult {
   timestamp: string;
   git: { branch: string; sha: string };
-  median: { coldStartMs: number; singleEditMs: number; bulkEditMs: number };
+  median: { coldStartMs: number };
 }
 
 function loadLatestResult(): BenchResult {
@@ -31,7 +31,9 @@ function loadBaseline(): BenchResult | null {
 }
 
 function formatRatio(base: number, current: number): string {
-  if (base < 0 || current < 0) return 'n/a';
+  if (base < 0 || current < 0) {
+    return 'n/a';
+  }
   const ratio = base / current;
   return `${ratio.toFixed(2)}x`;
 }
@@ -58,8 +60,6 @@ console.log('|---------------|---------------|------------------|-------|');
 
 const scenarios: Array<[string, keyof BenchResult['median']]> = [
   ['cold-start', 'coldStartMs'],
-  ['single-edit', 'singleEditMs'],
-  ['bulk-edit-20', 'bulkEditMs'],
 ];
 
 for (const [label, key] of scenarios) {

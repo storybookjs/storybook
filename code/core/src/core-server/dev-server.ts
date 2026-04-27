@@ -9,7 +9,6 @@ import polka from 'polka';
 
 import { isTelemetryModuleEnabled, telemetry } from '../telemetry/index.ts';
 import { ChangeDetectionService } from './change-detection/index.ts';
-import { setChangeDetectionReadiness } from './change-detection/readiness.ts';
 import { getStatusStoreByTypeId } from './stores/status.ts';
 import type { StoryIndexGenerator } from './utils/StoryIndexGenerator.ts';
 import { doTelemetry } from './utils/doTelemetry.ts';
@@ -154,17 +153,10 @@ export async function storybookDevServer(
       });
 
     if (features.changeDetection) {
-      try {
-        const adapter = previewBuilder.changeDetectionAdapter?.();
-        changeDetectionService.start(adapter, true);
-      } catch (error) {
-        logger.error('Failed to start change detection');
-        logger.error(error instanceof Error ? error : String(error));
-        setChangeDetectionReadiness({
-          status: 'error',
-          error: error instanceof Error ? error : new Error(String(error)),
-        });
-      }
+      // start() is sync and routes async-init failures through ChangeDetectionService's
+      // own readiness state-machine; only the adapter probe needs guarding here.
+      const adapter = previewBuilder.changeDetectionAdapter?.();
+      changeDetectionService.start(adapter, true);
     }
   }
 

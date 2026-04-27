@@ -8,8 +8,6 @@ const CODE_DIR = path.join(REPO_ROOT, 'code');
 
 interface RunResult {
   coldStartMs: number;
-  singleEditMs: number;
-  bulkEditMs: number;
 }
 
 async function waitForMarkerLine(
@@ -91,14 +89,7 @@ async function singleRun(): Promise<RunResult> {
 
   try {
     const readyAt = await waitForMarkerLine(markerPath, 'ready', 120_000);
-    const coldStartMs = readyAt - startedAt;
-
-    // Single-edit and bulk-edit scenarios are placeholders pending
-    // IncrementalPatcher status-update marker wiring (Phase D follow-up).
-    const singleEditMs = -1;
-    const bulkEditMs = -1;
-
-    return { coldStartMs, singleEditMs, bulkEditMs };
+    return { coldStartMs: readyAt - startedAt };
   } finally {
     await killGracefully(child, 2000);
     try {
@@ -150,11 +141,6 @@ async function main() {
     }
   }
 
-  const positiveOrMinus1 = (xs: number[]) => {
-    const positive = xs.filter((x) => x >= 0);
-    return positive.length > 0 ? median(positive) : -1;
-  };
-
   const result = {
     timestamp: new Date().toISOString(),
     git: {
@@ -164,8 +150,6 @@ async function main() {
     runs,
     median: {
       coldStartMs: median(runs.map((r) => r.coldStartMs)),
-      singleEditMs: positiveOrMinus1(runs.map((r) => r.singleEditMs)),
-      bulkEditMs: positiveOrMinus1(runs.map((r) => r.bulkEditMs)),
     },
   };
 

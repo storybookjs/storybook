@@ -995,6 +995,53 @@ describe('ChangeDetectionService', () => {
     await service.dispose();
   });
 
+  it('serialises concurrent file-change events through the patch chain (H2)', async () => {
+    const reverseIndex = buildReverseIndex([]);
+    const { patchSpy, buildSpy } = installDependencyGraphMocks(reverseIndex);
+    buildSpy.mockResolvedValue({ reverseIndex, graph: new Map() });
+
+    let activePatches = 0;
+    let maxConcurrent = 0;
+    patchSpy.mockImplementation(async () => {
+      activePatches += 1;
+      maxConcurrent = Math.max(maxConcurrent, activePatches);
+      // Force an actual await so two concurrent calls would visibly interleave.
+      await new Promise((resolve) => setImmediate(resolve));
+      activePatches -= 1;
+    });
+
+    const storyIndex = createStoryIndex([
+      { storyId: 'button--primary', importPath: './src/Button.stories.tsx', title: 'Button' },
+    ]);
+    const { getStatusStoreByTypeId } = createStatusStore({
+      universalStatusStore: new MockUniversalStore(UNIVERSAL_STATUS_STORE_OPTIONS),
+      environment: 'server',
+    });
+    const { adapter, emitFileChange } = createMockAdapter();
+    const service = new ChangeDetectionService({
+      storyIndexGeneratorPromise: Promise.resolve({
+        getIndex: vi.fn().mockResolvedValue(storyIndex),
+      } as never),
+      statusStore: getStatusStoreByTypeId(CHANGE_DETECTION_STATUS_TYPE_ID),
+      gitDiffProvider: createMockGitDiffProvider(),
+      indexBaselineService: createMockStoryIndexBaselineService(),
+      workingDir,
+    });
+
+    service.start(adapter, true);
+    await vi.runAllTimersAsync();
+
+    emitFileChange({ kind: 'change', path: '/repo/src/Button.tsx' });
+    emitFileChange({ kind: 'change', path: '/repo/src/Other.tsx' });
+    emitFileChange({ kind: 'unlink', path: '/repo/src/Stale.tsx' });
+    await vi.runAllTimersAsync();
+
+    expect(patchSpy).toHaveBeenCalledTimes(3);
+    expect(maxConcurrent).toBe(1);
+
+    await service.dispose();
+  });
+
   it('queues file-change events that arrive while the eager build is in flight and patches them after build resolves', async () => {
     const reverseIndex = buildReverseIndex([]);
     const buildDeferred = createDeferred<void>();
@@ -1027,9 +1074,9 @@ describe('ChangeDetectionService', () => {
     await Promise.resolve();
     await Promise.resolve();
 
-    // Adapter has no subscribers yet, but the service may have stashed events arriving via
-    // its pendingEvents queue once subscriptions complete. Currently subscriptions are wired
-    // after build resolves; assert no patch calls have happened yet.
+    // The service subscribes to file-change events strictly after the eager build resolves,
+    // so anything emitted by the adapter before then has nowhere to land. Assert no patch
+    // calls have happened yet.
     expect(patchSpy).not.toHaveBeenCalled();
 
     buildDeferred.resolve();

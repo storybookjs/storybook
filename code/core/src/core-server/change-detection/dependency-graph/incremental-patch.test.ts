@@ -296,4 +296,50 @@ describe('IncrementalPatcher', () => {
     expect(calls.length).toBeGreaterThanOrEqual(1);
     expect(calls.length).toBeLessThanOrEqual(2);
   });
+
+  it('recovers via direct-importer scan when reverseIndex has no record of the changed file (H4)', async () => {
+    // Cold-start scenario: story imports `helper`, but `helper` did not exist on disk
+    // when the build ran, so the resolver returned null and `helper` was never recorded
+    // in graph or reverseIndex. The story's graph entry is left referencing `helper`
+    // because the test seeds it that way (this models the case where `helper` later
+    // appears and gets registered by an importer-side resolve).
+    //
+    // Without the recovery path, a `change` event for `helper` would early-return on
+    // empty dependents and the story would never re-walk.
+    const story = '/repo/src/A.stories.tsx';
+    const helper = '/repo/src/helper.ts';
+    const indirect = '/repo/src/indirect.ts';
+
+    const world: PatcherWorld = {
+      edges: new Map([
+        [story, [{ specifier: './helper.ts', kind: 'static' }]],
+        [helper, [{ specifier: './indirect.ts', kind: 'static' }]],
+        [indirect, []],
+      ]),
+      resolutions: new Map([
+        [`${story}::./helper.ts`, helper],
+        [`${helper}::./indirect.ts`, indirect],
+      ]),
+    };
+
+    const initialIndex = new ReverseIndexImpl();
+    initialIndex.record(story, story, 0);
+    // Story already knows helper is among its direct deps from a prior walk.
+    const initialGraph: DependencyGraph = new Map([
+      [story, new Set([helper])],
+    ]);
+
+    const { patcher, reverseIndex } = buildPatcher({
+      world,
+      reverseIndex: initialIndex,
+      graph: initialGraph,
+      storyFiles: new Set([story]),
+    });
+
+    await patcher.patch({ kind: 'change', path: helper });
+
+    // Recovery walked the story, which transitively reached `indirect` for the first time.
+    expect(reverseIndex.lookup(helper).get(story)).toBe(1);
+    expect(reverseIndex.lookup(indirect).get(story)).toBe(2);
+  });
 });

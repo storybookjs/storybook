@@ -38,6 +38,10 @@ const config: BuildEntries = {
         dts: false,
       },
       {
+        entryPoint: './src/core-server/change-detection/parser-registry/workers/oxc-worker.ts',
+        dts: false,
+      },
+      {
         entryPoint: './src/core-server/presets/common-override-preset.ts',
         exportEntries: ['./internal/core-server/presets/common-override-preset'],
         dts: false,

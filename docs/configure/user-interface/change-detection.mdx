@@ -1,0 +1,61 @@
+---
+title: Change detection
+hideRendererSelector: true
+sidebar:
+  order: 3
+---
+
+During development, Storybook monitors your git working tree and the builder's module graph to identify which stories are affected by your uncommitted changes. Status icons appear next to stories and components in the sidebar so you can focus your review and testing on what has actually changed.
+
+![Sidebar showing change detection status icons](../../_assets/configure/change-detection-full.png)
+
+## Requirements
+
+Change detection is a **development-only** feature. It is active when running `storybook dev` and is not available in static builds (`storybook build`).
+
+The following are required for change detection to work:
+
+- **Git repository**: Storybook uses `git diff` to detect changed files.
+- **Vite builder**: Storybook traces changed files through the builder's module import graph to identify all affected stories.
+
+If change detection status indicators never appear in your sidebar, check that both requirements above are met and that the feature has not been [disabled](#configuration).
+
+## Status indicators
+
+When a change is detected, Storybook shows one of the following status icons next to the affected story in the sidebar:
+
+| Icon                  | Status       | Definition                                                                            |
+| --------------------- | ------------ | ------------------------------------------------------------------------------------- |
+| ✦ Sparkle             | **new**      | The story file is untracked or newly added in git.                                    |
+| ● Filled circle       | **modified** | The story's own file, or a file it directly imports, was changed.                     |
+| ◉ Circle with outline | **affected** | A file further up the story's dependency chain was changed (a transitive dependency). |
+
+When multiple statuses apply to the same story, the highest priority wins: **new** > **modified** > **affected**.
+
+<Callout variant="info" icon="💡">
+
+**Modified vs. affected**
+
+This distinction helps you prioritize your review. **Modified** stories are closest to the change, so you should typically review them first. **Affected** stories depend on the changed code indirectly, so review them after you've verified the directly modified stories look correct. This can be especially helpful in larger codebases where a single change may impact many stories.
+
+</Callout>
+
+Change detection statuses are displayed alongside [test statuses](../../writing-tests/integrations/vitest-addon/index.mdx#storybook-ui) in the sidebar.
+
+![Sidebar showing change detection and test status icons](../../_assets/configure/change-detection-dual-slot.png)
+
+## Filtering
+
+You can filter the sidebar to show only stories with a specific change detection status using the filter menu. This lets you quickly isolate changed stories when reviewing a change.
+
+![Filter menu showing change detection status options](../../_assets/configure/change-detection-filter-menu.png)
+
+## Configuration
+
+Change detection is enabled by default. To disable it, set [`features.changeDetection`](../../api/main-config/main-config-features.mdx#changedetection) to `false` in your Storybook configuration:
+
+<CodeSnippets path="main-config-features-change-detection.md" />
+
+## How it works
+
+When you run `storybook dev`, Storybook builds its own dependency graph by parsing each story file (and its imports) with [oxc](https://oxc.rs/) and resolves module specifiers through the builder's resolve config. The builder ships a small change-detection adapter that forwards file-system events into Storybook so the graph stays current. A git diff provider watches your working tree for changes and runs `git diff` to identify modified or new files. Storybook then traces each changed file through the dependency graph to find all story files that depend on it — directly or transitively. Stories with the shortest import distance are marked **modified**; those at greater distance are marked **affected**. New untracked files are marked **new**.

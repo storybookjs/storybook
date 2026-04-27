@@ -276,26 +276,11 @@ export interface Builder<Config, BuilderStats extends Stats = Stats> {
   bail: (e?: Error) => Promise<void>;
   corePresets?: string[];
   overridePresets?: string[];
-  onModuleGraphChange?(cb: (event: ModuleGraphChangeEvent) => void): () => void;
-}
-
-/**
- * Builder-agnostic module graph for dependency tracking. Modeled after Vite's module graph.
- * The same file can be imported in multiple ways (e.g. based on query params or import context),
- * each representing a unique module identity, hence the value is a Set<ModuleNode>.
- */
-export type ModuleGraph = Map<ModuleNode['file'], Set<ModuleNode>>;
-
-export type ModuleGraphChangeEvent =
-  | { type: 'moduleGraph'; moduleGraph: ModuleGraph }
-  | { type: 'unavailable'; reason: string; error?: Error }
-  | { type: 'error'; error: Error };
-
-export interface ModuleNode {
-  file: string;
-  type: 'js' | 'css' | 'asset';
-  importers: Set<ModuleNode>;
-  importedModules: Set<ModuleNode>;
+  /**
+   * Returns a change-detection adapter the core change-detection service uses to (a) read
+   * builder resolve config (alias, root, conditions), and (b) subscribe to file-system events.
+   */
+  changeDetectionAdapter?(): import('../../core-server/change-detection/adapters/types.ts').ChangeDetectionAdapter;
 }
 
 /** Options for TypeScript usage within Storybook. */
@@ -593,6 +578,23 @@ export interface StorybookConfigRaw {
   previewAnnotations?: Entry[];
 
   experimental_indexers?: Indexer[];
+
+  /**
+   * Register parsers that extract import edges from non-JS/TS files (e.g. .vue, .svelte).
+   * Each parser claims one or more file extensions. Last registration wins on collision.
+   * Lazy-load heavy SFC compilers inside the parser body — the function is awaited on first
+   * use.
+   *
+   * Used by Storybook's change-detection dependency graph. May be reused by other consumers
+   * in the future (static build, dependency analysis CLIs).
+   *
+   * @experimental Subject to change before stable release.
+   */
+  experimental_importParsers?:
+    | import('../../core-server/change-detection/parser-registry/types.ts').ImportParser[]
+    | (() => Promise<
+        import('../../core-server/change-detection/parser-registry/types.ts').ImportParser[]
+      >);
 
   storyIndexGenerator?: StoryIndexGenerator;
 

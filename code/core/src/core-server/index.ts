@@ -28,6 +28,19 @@ export {
 export {
   getChangeDetectionReadiness as experimental_getChangeDetectionReadiness,
   type ChangeDetectionReadiness as Experimental_ChangeDetectionReadiness,
+  ChangeDetectionFailureError,
+  ChangeDetectionUnavailableError,
+} from './change-detection/index.ts';
+export type {
+  ChangeDetectionAdapter,
+  FileChangeEvent,
+  ResolveConfig,
+} from './change-detection/index.ts';
+export type {
+  ImportEdge,
+  ImportParser,
+  ImportParserContext,
+  ParseFileArgs,
 } from './change-detection/index.ts';
 export { ChangeDetectionService } from './change-detection/ChangeDetectionService.ts';
 export {

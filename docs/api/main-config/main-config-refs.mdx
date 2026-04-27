@@ -1,8 +1,7 @@
 ---
-title: 'refs'
+title: refs
 sidebar:
   order: 18
-  title: refs
 ---
 
 Parent: [main.js|ts configuration](./main-config.mdx)
@@ -19,28 +18,16 @@ Type:
 
 Configures [Storybook composition](../../sharing/storybook-composition.mdx).
 
-{/* prettier-ignore-start */}
-
 <CodeSnippets path="main-config-refs.md" />
-
-{/* prettier-ignore-end */}
 
 ## Using a function
 
 You can use a function to dynamically configure refs:
 
-{/* prettier-ignore-start */}
-
 <CodeSnippets path="main-config-refs-with-function.md" />
-
-{/* prettier-ignore-end */}
 
 ## Disable a ref
 
 Some package dependencies automatically [compose their Storybook in yours](../../sharing/package-composition.mdx). You can disable this behavior by setting `disable` to `true` for the package name:
 
-{/* prettier-ignore-start */}
-
 <CodeSnippets path="main-config-refs-disable.md" />
-
-{/* prettier-ignore-end */}

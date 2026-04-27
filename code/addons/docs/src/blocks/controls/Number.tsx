@@ -99,12 +99,9 @@ export const NumberControl: FC<NumberProps> = ({
 
   if (value === undefined) {
     return (
-      <SetValueButton
-        name={name}
-        storyId={storyId}
-        onClick={onForceVisible}
-        disabled={readonly}
-      >Set number</SetValueButton>
+      <SetValueButton name={name} storyId={storyId} onClick={onForceVisible} disabled={readonly}>
+        Set number
+      </SetValueButton>
     );
   }
 

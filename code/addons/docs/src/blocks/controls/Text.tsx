@@ -45,12 +45,9 @@ export const TextControl: FC<TextProps> = ({
 
   if (value === undefined) {
     return (
-      <SetValueButton
-        name={name}
-        storyId={storyId}
-        onClick={onForceVisible}
-        disabled={readonly}
-      >Set string</SetValueButton>
+      <SetValueButton name={name} storyId={storyId} onClick={onForceVisible} disabled={readonly}>
+        Set string
+      </SetValueButton>
     );
   }
 

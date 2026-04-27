@@ -205,12 +205,9 @@ export const ObjectControl: FC<ObjectProps> = ({ name, storyId, value, onChange,
 
   if (!hasData) {
     return (
-      <SetValueButton
-        name={name}
-        storyId={storyId}
-        onClick={onForceVisible}
-        disabled={readonly}
-      >Set object</SetValueButton>
+      <SetValueButton name={name} storyId={storyId} onClick={onForceVisible} disabled={readonly}>
+        Set object
+      </SetValueButton>
     );
   }
 

@@ -131,12 +131,9 @@ export const BooleanControl: FC<BooleanProps> = ({
   const readonly = !!argType?.table?.readonly;
   if (value === undefined) {
     return (
-      <SetValueButton
-        name={name}
-        storyId={storyId}
-        onClick={onSetFalse}
-        disabled={readonly}
-      >Set boolean</SetValueButton>
+      <SetValueButton name={name} storyId={storyId} onClick={onSetFalse} disabled={readonly}>
+        Set boolean
+      </SetValueButton>
     );
   }
   const controlId = getControlId(name, storyId);

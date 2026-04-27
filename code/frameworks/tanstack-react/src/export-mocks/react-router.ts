@@ -73,7 +73,6 @@ export const Link = ({
   children?: React.ReactNode;
   [key: string]: unknown;
 }) => {
-  const navigate = useNavigate();
   const location = useLocation();
   return React.createElement(
     'a',
@@ -81,7 +80,7 @@ export const Link = ({
       href: to,
       onClick: (e: React.MouseEvent) => {
         e.preventDefault();
-        navigate({ to, from: location.href });
+        onNavigate({ to, from: location.href });
       },
       ...props,
     },

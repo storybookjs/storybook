@@ -28,7 +28,7 @@ export const CanvasWrap = styled.div<{ show: boolean }>(
     gridTemplateRows: '100%',
     position: 'relative',
     minWidth: '100%',
-    minHeight: '100%',
+    height: '100%',
   },
   ({ show }) => ({ display: show ? 'grid' : 'none' })
 );

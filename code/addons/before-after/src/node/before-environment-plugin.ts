@@ -137,9 +137,15 @@ export function isBeforeIframeReferer(
  * Referer-dispatch heuristic would otherwise upgrade them. These are the
  * collision domains for cross-tab races and Vite's own internal request
  * shapes that cannot be served by a per-environment `transformRequest`.
+ *
+ * Both prefixes are root-anchored. Vite serves its optimized-deps cache
+ * from the project root at `/<root>/.vite/deps/...`, exposed as
+ * `/.vite/deps/...`; matching the substring anywhere would create false
+ * positives for project paths that happen to contain `.vite/deps/` as a
+ * directory segment.
  */
 function isPathBlocklisted(pathPart: string): boolean {
-  return pathPart.startsWith('/node_modules/') || pathPart.includes('/.vite/deps/');
+  return pathPart.startsWith('/node_modules/') || pathPart.startsWith('/.vite/deps/');
 }
 
 function isJsLike(id: string): boolean {
@@ -151,10 +157,12 @@ function isJsLike(id: string): boolean {
 }
 
 function getMimeForUrl(url: string): string {
+  // Only called from `serveTransformResult` after the dispatch middleware has
+  // already short-circuited `.html` URLs to Vite's indexHtml middleware
+  // (step (4) HTML-defer in `configureServer`). Module/asset URLs only here.
   const cleanUrl = url.split('?')[0];
   if (cleanUrl.endsWith('.css')) return 'text/css; charset=utf-8';
   if (cleanUrl.endsWith('.json')) return 'application/json; charset=utf-8';
-  if (cleanUrl.endsWith('.html')) return 'text/html; charset=utf-8';
   return 'application/javascript; charset=utf-8';
 }
 

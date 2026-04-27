@@ -66,6 +66,20 @@ yarn vitest run --config code/addons/before-after/vitest.config.ts
   full failure mode and the planned ADR-0003 follow-up.
 - **`srcdoc` iframe wrappers** are unsupported: `Referer` becomes
   `about:srcdoc` and fails the same-origin dispatch check.
+- **Strict CSP `script-src` blocks the diagnostic.** The observability beacon
+  is an inline `<script>` injected into the before-iframe. A `script-src`
+  directive without `'unsafe-inline'` or a matching nonce will silently
+  block it — meaning Referrer-Policy degradation has no DevTools signal in
+  CSP-hardened dev environments. If you ship a strict CSP via
+  `previewHead`, expect the warning to be suppressed; rely on the network
+  tab (`?env=before` filter) to confirm dispatch is working.
+- **Loopback alias mismatch.** The dispatch middleware compares
+  `Referer.host` against the request's `Host` header byte-for-byte. If you
+  load Storybook via `127.0.0.1:6006` while the dev server binds on
+  `localhost:6006` (or vice versa, or via SSH-tunnel hostname), the
+  same-origin check fails and the before iframe regresses to today's bug.
+  Always access Storybook through the same hostname the dev server
+  advertises.
 
 ## Maintenance notes
 

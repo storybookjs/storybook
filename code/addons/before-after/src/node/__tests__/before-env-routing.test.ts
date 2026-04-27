@@ -1,6 +1,6 @@
 /// <reference types="node" />
 
-import { existsSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { IncomingMessage, ServerResponse } from 'node:http';
 import { Socket } from 'node:net';
 import { tmpdir } from 'node:os';
@@ -9,7 +9,7 @@ import { join } from 'node:path';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 
 import { SourceMapConsumer } from 'source-map-js';
-import type { ModuleNode, Plugin, ViteDevServer } from 'vite';
+import type { HmrContext, ModuleNode, Plugin, ViteDevServer } from 'vite';
 import { createServer } from 'vite';
 
 import {
@@ -26,7 +26,7 @@ import { beforeContentPlugin } from '../before-content-plugin.ts';
 // ── Probe-1: routing/rewrite coverage for STORYBOOK_BEFORE_AFTER_ENV_API.
 //
 // Coverage map (must all be green before wiring into preset.ts):
-//   (a) `server.environments['storybook-before']` exists.
+//   (a) `server.environments['storybookBefore']` exists.
 //   (b) Requests with `?env=before` route through that env's `transformRequest`.
 //   (c) Static `import` rewrite.
 //   (d) Dynamic `import()` literal.
@@ -251,6 +251,13 @@ describe('Vite Environment API integration', () => {
     // Single-export module, no imports — used by the (k.*) middleware-dispatch
     // probes so the spy plugin can observe a clean before-env transform.
     writeFileSync(join(tmpRoot, 'd.ts'), `export const fromD = 7;\n`);
+    // Fixture used by (k.7.c) to pin that the path-blocklist's `.vite/deps/`
+    // entry is anchored to the URL root, NOT matched as an arbitrary
+    // substring. Lives under a non-root `.vite/deps/` directory so its URL
+    // (`/sub/.vite/deps/probe.ts`) contains the substring but not the prefix.
+    const subDepsDir = join(tmpRoot, 'sub', '.vite', 'deps');
+    mkdirSync(subDepsDir, { recursive: true });
+    writeFileSync(join(subDepsDir, 'probe.ts'), `export const fromProbe = 11;\n`);
 
     // Tiny loader that supplies content for `?env=before` requests, scoped to
     // the storybook-before environment. Stands in for `before-content-plugin`
@@ -296,7 +303,7 @@ describe('Vite Environment API integration', () => {
     if (tmpRoot && existsSync(tmpRoot)) rmSync(tmpRoot, { recursive: true, force: true });
   });
 
-  it('(a) registers `server.environments["storybook-before"]`', () => {
+  it('(a) registers `server.environments["storybookBefore"]`', () => {
     expect(server.environments[BEFORE_ENV_NAME]).toBeDefined();
     expect(server.environments[BEFORE_ENV_NAME]?.name).toBe(BEFORE_ENV_NAME);
   });
@@ -477,43 +484,33 @@ describe('Vite Environment API integration', () => {
       expect(r.spyBeforeIds.some((id) => id.endsWith('/d.ts'))).toBe(false);
     });
 
-    it('(k.3.0) BYPASS_PREFIXES forcing function — adding entries here requires a probe', () => {
-      // If this fails, you added a new bypass prefix without a corresponding
-      // (k.3.*) probe below. Add the probe AND bump this length, in that order.
-      expect(BYPASS_PREFIXES.length).toBe(4);
-    });
+    // Sample request URLs that should be matched by each entry in
+    // `BYPASS_PREFIXES`. Adding a new prefix to the source array means
+    // adding a sample URL here too — the `describe.each` below will fail
+    // CI on a missing entry. This enforces "every prefix has a probe", a
+    // stronger contract than asserting the array length.
+    const BYPASS_SAMPLES: Record<string, string> = {
+      '/index.json': '/index.json',
+      '/storybook-server-channel': '/storybook-server-channel/?token=abc',
+      '/runtime-error': '/runtime-error',
+      '/sb-': '/sb-common-assets/font.woff2',
+    };
 
-    it('(k.3.a) marker-less `/index.json` + before-Referer → next() (bypass wins)', async () => {
-      const r = await driveMiddleware({
-        url: '/index.json',
-        referer: 'http://localhost:6006/iframe.html?env=before',
-      });
-      expect(r.dispatchedUrl).toBeNull();
-    });
-
-    it('(k.3.b) marker-less `/storybook-server-channel/?token=abc` + before-Referer → next()', async () => {
-      const r = await driveMiddleware({
-        url: '/storybook-server-channel/?token=abc',
-        referer: 'http://localhost:6006/iframe.html?env=before',
-      });
-      expect(r.dispatchedUrl).toBeNull();
-    });
-
-    it('(k.3.c) marker-less `/runtime-error` + before-Referer → next()', async () => {
-      const r = await driveMiddleware({
-        url: '/runtime-error',
-        referer: 'http://localhost:6006/iframe.html?env=before',
-      });
-      expect(r.dispatchedUrl).toBeNull();
-    });
-
-    it('(k.3.d) marker-less `/sb-common-assets/font.woff2` + before-Referer → next()', async () => {
-      const r = await driveMiddleware({
-        url: '/sb-common-assets/font.woff2',
-        referer: 'http://localhost:6006/iframe.html?env=before',
-      });
-      expect(r.dispatchedUrl).toBeNull();
-    });
+    it.each(BYPASS_PREFIXES)(
+      '(k.3) marker-less request to bypass prefix %s + before-Referer → next()',
+      async (prefix) => {
+        const sample = BYPASS_SAMPLES[prefix];
+        expect(
+          sample,
+          `BYPASS_PREFIXES contains "${prefix}" but BYPASS_SAMPLES has no sample URL for it; add an entry above.`
+        ).toBeDefined();
+        const r = await driveMiddleware({
+          url: sample!,
+          referer: 'http://localhost:6006/iframe.html?env=before',
+        });
+        expect(r.dispatchedUrl).toBeNull();
+      }
+    );
 
     it('(k.4) marker-less `/` + before-Referer → next() (root deferred to indexHtml)', async () => {
       const r = await driveMiddleware({
@@ -546,12 +543,26 @@ describe('Vite Environment API integration', () => {
       expect(r.dispatchedUrl).toBeNull();
     });
 
-    it('(k.7.b) before-Referer + `/.vite/deps/react.js` → next() (path-blocklist)', async () => {
+    it('(k.7.b) before-Referer + root-anchored `/.vite/deps/react.js` → next() (path-blocklist)', async () => {
       const r = await driveMiddleware({
-        url: '/foo/.vite/deps/react.js',
+        url: '/.vite/deps/react.js',
         referer: 'http://localhost:6006/iframe.html?env=before',
       });
       expect(r.dispatchedUrl).toBeNull();
+    });
+
+    it('(k.7.c) before-Referer + project path containing `.vite/deps/` substring → DISPATCHED (not blocklisted)', async () => {
+      // Pins the prefix-vs-substring distinction. The path-blocklist anchors
+      // both prefixes to the URL root; project paths that happen to contain
+      // `.vite/deps/` as a directory segment must NOT be silently rerouted
+      // to the client env. A regression that swapped `startsWith` for
+      // `includes` would pass the negative (k.7.b) probe but fail this one.
+      const r = await driveMiddleware({
+        url: '/sub/.vite/deps/probe.ts',
+        referer: 'http://localhost:6006/iframe.html?env=before',
+      });
+      expect(r.dispatchedUrl).toBe(`/sub/.vite/deps/probe.ts?${ENV_MARKER}`);
+      expect(r.spyBeforeIds.some((id) => id.endsWith('/probe.ts'))).toBe(true);
     });
 
     it('(k.8) before-Referer + node_modules path → before env moduleGraph stays clean', async () => {
@@ -584,7 +595,7 @@ describe('Vite Environment API integration', () => {
         file: neverRoutedFile,
         timestamp: Date.now(),
         read: async () => '',
-      } as unknown as Parameters<NonNullable<Plugin['handleHotUpdate']>>[0];
+      } as unknown as HmrContext;
 
       // Call the hook (could be a function or an object with handler); in this
       // plugin it's defined as a plain function.
@@ -609,8 +620,11 @@ describe('Vite Environment API integration', () => {
       expect(html).toContain('vite-app.js?env=before');
       // Diagnostic beacon (Step 5.5): observability-only console.warn that fires
       // when the iframe loads without `env=before` on its own URL — a precondition
-      // for Referer-based dispatch to work for descendants.
-      expect(html).toContain('storybook/before-after');
+      // for Referer-based dispatch to work for descendants. Assert the script
+      // tag shape AND the call so a malformed script (missing closing tag, or
+      // strings leaking into a comment/attribute) does not silently pass.
+      expect(html).toMatch(/<script\b[^>]*>[\s\S]*storybook\/before-after[\s\S]*<\/script>/);
+      expect(html).toContain('console.warn(');
       expect(html).toContain('Referrer-Policy');
     });
   });

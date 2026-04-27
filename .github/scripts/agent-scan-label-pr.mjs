@@ -20,19 +20,15 @@ async function main() {
   const octokit = github.getOctokit(token);
   const prNumber = github.context.payload.pull_request.number;
 
+  const labels = [`agent-scan:${CLASSIFICATION_MAP[classification] ?? classification}`];
+  if (isCommunityFlagged) {
+    labels.push('agent-scan:community-flagged');
+  }
   await octokit.rest.issues.addLabels({
     ...github.context.repo,
     issue_number: prNumber,
-    labels: [`agent-scan:${CLASSIFICATION_MAP[classification] ?? classification}`],
+    labels: labels,
   });
-
-  if (isCommunityFlagged) {
-    await octokit.rest.issues.addLabels({
-      ...github.context.repo,
-      issue_number: prNumber,
-      labels: ['agent-scan:community-flagged'],
-    });
-  }
 }
 
 main().catch((error) => {

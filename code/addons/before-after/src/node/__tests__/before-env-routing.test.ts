@@ -296,6 +296,35 @@ describe('Vite Environment API integration', () => {
         makeSpyPlugin(),
       ],
     });
+
+    // Fake iframeHandler — mimics builder-vite's `iframeHandler` at
+    // `code/builders/builder-vite/src/index.ts:21-35` which calls
+    // `server.transformIndexHtml('/iframe.html', html)` with a hardcoded
+    // path that lacks the marker. Probe (k.11) uses this to verify the
+    // als-fallback path inside our `transformIndexHtml` hook recovers
+    // the before-iframe context that ctx alone cannot supply.
+    //
+    // Registered AFTER createServer so it runs LAST in the connect chain
+    // — production order is the same: our addon plugin (`enforce: 'pre'`)
+    // wraps `next()` in `als.run({beforeIframe: true}, …)`, then this
+    // (or builder-vite's iframeHandler) runs.
+    server.middlewares.use(async (req, res, next) => {
+      const url = req.url || '';
+      if (!url.startsWith('/iframe.html')) return next();
+      const sourceHtml =
+        '<html><head></head><body>' +
+        '<script type="module" src="virtual:/@storybook/builder-vite/vite-app.js"></script>' +
+        '</body></html>';
+      // Mimic transform-iframe-html.ts:53-56 substitution.
+      const rewritten = sourceHtml.replace(
+        'virtual:/@storybook/builder-vite/vite-app.js',
+        '/@id/__x00__virtual:/@storybook/builder-vite/vite-app.js'
+      );
+      const transformed = await server.transformIndexHtml('/iframe.html', rewritten);
+      res.statusCode = 200;
+      res.setHeader('Content-Type', 'text/html; charset=utf-8');
+      res.end(transformed);
+    });
   }, 30_000);
 
   afterAll(async () => {
@@ -609,7 +638,7 @@ describe('Vite Environment API integration', () => {
       expect(resolved.some((m) => m.file === neverRoutedFile)).toBe(true);
     });
 
-    it('(k.10) transformIndexHtml emits ?env=before on the entry script AND ships the diagnostic beacon', async () => {
+    it('(k.10) transformIndexHtml(url-with-marker) emits ?env=before on the entry script AND ships the diagnostic beacon', async () => {
       const html = await server.transformIndexHtml(
         `/iframe.html?${ENV_MARKER}`,
         '<html><head></head><body><script type="module" src="virtual:/@storybook/builder-vite/vite-app.js"></script></body></html>'
@@ -626,6 +655,50 @@ describe('Vite Environment API integration', () => {
       expect(html).toMatch(/<script\b[^>]*>[\s\S]*storybook\/before-after[\s\S]*<\/script>/);
       expect(html).toContain('console.warn(');
       expect(html).toContain('Referrer-Policy');
+    });
+
+    it('(k.11) end-to-end: /iframe.html?env=before through fake iframeHandler → entry script gets marker via als fallback', async () => {
+      // Production bug (manual QA on react-vite/default-ts): builder-vite's
+      // `iframeHandler` calls `server.transformIndexHtml('/iframe.html',
+      // html)` with a hardcoded path that LACKS the marker, even when the
+      // browser requested `/iframe.html?env=before`. Our addon's
+      // `transformIndexHtml` hook checks `ctx.originalUrl/path/filename`
+      // for the marker and finds none → returns without rewriting → entry
+      // script stays bare → browser requests it without ?env=before →
+      // dispatch middleware dispatches via Referer → before env 500s on
+      // the Vite-internal virtual-module URL → before iframe is empty.
+      //
+      // Fix: dispatch middleware stashes `beforeIframe: true` in
+      // AsyncLocalStorage before calling next() for HTML requests with
+      // the marker. The `transformIndexHtml` hook reads als.getStore() as
+      // a fallback. AsyncLocalStorage propagates through the async chain
+      // (next → fake iframeHandler → server.transformIndexHtml → hook).
+      //
+      // This probe drives the full path through a fake iframeHandler
+      // (registered in beforeAll AFTER our plugin's middleware) that
+      // mimics builder-vite's hardcoded-path call pattern.
+      const r = await driveMiddleware({ url: `/iframe.html?${ENV_MARKER}` });
+      // Entry script must carry the marker — proves the als fallback ran
+      // and rewriteHtmlUrls fired even though ctx had no marker.
+      expect(r.body).toContain('vite-app.js?env=before');
+      // Diagnostic beacon must be injected too.
+      expect(r.body).toMatch(/<script\b[^>]*>[\s\S]*storybook\/before-after[\s\S]*<\/script>/);
+      expect(r.body).toContain('console.warn(');
+      // Dispatch middleware must NOT have routed the HTML through
+      // beforeEnv.transformRequest (HTML defer step (4) hands off to the
+      // iframeHandler); otherwise the response would be JS, not HTML.
+      expect(r.dispatchedUrl).toBeNull();
+    });
+
+    it('(k.11.b) /iframe.html WITHOUT marker (e.g. client iframe) → entry script stays BARE (no leakage)', async () => {
+      // Negative case: when there is no marker on the URL and no Referer
+      // pointing to the before iframe, the als fallback must NOT fire and
+      // the rewrite must NOT happen. Otherwise the client iframe would
+      // load HEAD content instead of working-tree content.
+      const r = await driveMiddleware({ url: '/iframe.html' });
+      expect(r.body).toContain('vite-app.js');
+      expect(r.body).not.toContain('vite-app.js?env=before');
+      expect(r.body).not.toContain('storybook/before-after');
     });
   });
 });

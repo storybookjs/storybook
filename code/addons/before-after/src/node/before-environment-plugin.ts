@@ -18,6 +18,17 @@ export const ENV_MARKER = 'env=before';
 
 interface AlsStore {
   scope: 'before-after';
+  /**
+   * Set when the dispatch middleware is about to call `next()` for a
+   * `/iframe.html?env=before` request. Builder-vite's `iframeHandler` then
+   * calls `server.transformIndexHtml('/iframe.html', html)` with a
+   * hardcoded path that does NOT carry the marker — so our
+   * `transformIndexHtml` hook cannot detect the before-iframe context via
+   * `ctx.originalUrl`/`ctx.path`/`ctx.filename`. Stashing it here and
+   * reading via `als.getStore()` in the hook bridges the gap without
+   * touching `code/builders/builder-vite/`.
+   */
+  beforeIframe?: boolean;
 }
 
 const als = new AsyncLocalStorage<AlsStore>();
@@ -473,10 +484,20 @@ export function beforeEnvironmentPlugin(options: BeforeEnvironmentPluginOptions 
         // stay in the client env to avoid populating the before moduleGraph
         // with shared deps and over-filtering HMR.
         if (isPathBlocklisted(pathPart)) return next();
-        // (4) HTML defer — iframe HTML is handled by Vite's built-in
-        // indexHtml middleware which invokes `transformIndexHtml`; we only
-        // intercept module/asset requests here.
+        // (4) HTML defer — iframe HTML is handled by builder-vite's
+        // `iframeHandler` (or Vite's built-in indexHtml middleware), which
+        // invokes `transformIndexHtml`. We don't intercept the response
+        // ourselves, but we DO need to thread the before-iframe context
+        // through to our `transformIndexHtml` hook because
+        // `code/builders/builder-vite/src/index.ts:iframeHandler` calls
+        // `server.transformIndexHtml('/iframe.html', html)` with a
+        // hardcoded path that lacks the marker. AsyncLocalStorage carries
+        // the flag through the async chain (next → iframeHandler →
+        // server.transformIndexHtml → our hook).
         if (pathPart.endsWith('.html') || pathPart === '/' || pathPart === '') {
+          if (hasMarker) {
+            return als.run({ scope: 'before-after', beforeIframe: true }, () => next());
+          }
           return next();
         }
 
@@ -554,7 +575,16 @@ export function beforeEnvironmentPlugin(options: BeforeEnvironmentPluginOptions 
         // carrying the marker means we are transforming the before-iframe HTML.
         const ctxAny = ctx as { originalUrl?: string; path?: string; filename?: string };
         const candidates = [ctxAny.originalUrl, ctxAny.path, ctxAny.filename];
-        const matched = candidates.some((s) => typeof s === 'string' && s.includes(ENV_MARKER));
+        let matched = candidates.some((s) => typeof s === 'string' && s.includes(ENV_MARKER));
+        // Fallback: builder-vite's iframeHandler calls
+        // `server.transformIndexHtml('/iframe.html', html)` with a
+        // hardcoded path that lacks the marker. The dispatch middleware
+        // stashes a `beforeIframe` flag in AsyncLocalStorage before
+        // calling `next()` for these requests; we read it here to
+        // recover the context the ctx alone cannot supply.
+        if (!matched && als.getStore()?.beforeIframe) {
+          matched = true;
+        }
         if (!matched) return;
         // (1) Rewrite static script/link/img URLs to carry the marker.
         // (2) Inject the observability beacon — a one-time console.warn if the

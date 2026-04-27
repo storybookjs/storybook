@@ -9,9 +9,10 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import { ManagerContext } from 'storybook/manager-api';
 import { expect, screen, waitFor } from 'storybook/test';
 
-import { internal_fullStatusStore } from '../../manager-stores.mock';
+import { internal_fullStatusStore } from '../../manager-stores.mock.ts';
 
-import { Filter } from './Filter';
+import { Filter } from './Filter.tsx';
+import { IconSymbolsDecorator } from './Filter.story-helpers.tsx';
 
 const getDefaultTagFilters = () => {
   const tagOptions = global.TAGS_OPTIONS ?? {};
@@ -54,6 +55,7 @@ const meta = {
   title: 'Sidebar/Filter',
   tags: ['haha', 'this-is-a-very-long-tag-that-will-be-truncated-after-a-while'],
   decorators: [
+    IconSymbolsDecorator,
     (Story, { args, parameters }) => {
       const [state, setState] = useState(() =>
         createInitialState(parameters?.initialStoryState as Record<string, unknown> | undefined)
@@ -398,15 +400,13 @@ export const Empty: Story = {
   },
 };
 
-/** Production is equal to development now */
-export const EmptyProduction: Story = {
-  parameters: {
-    initialStoryState: {
-      internal_index: {
-        v: 6,
-        entries: {},
-      } as StoryIndex,
-    },
+export const EmptyNoChangeDetection: Story = {
+  ...Empty,
+  beforeEach: () => {
+    const features = global.FEATURES;
+    global.FEATURES = { ...features, changeDetection: false };
+    return () => {
+      global.FEATURES = features;
+    };
   },
-  play: Empty.play,
 };

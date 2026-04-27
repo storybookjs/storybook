@@ -4,6 +4,7 @@ import React from 'react';
 
 import type { Parameters, Renderer, StrictArgTypes } from 'storybook/internal/csf';
 import type { ArgTypesExtractor } from 'storybook/internal/docs-tools';
+import { InvalidBlockOfPropError } from 'storybook/internal/preview-errors';
 import type { ModuleExports } from 'storybook/internal/types';
 
 import type { PropDescriptor } from 'storybook/preview-api';
@@ -66,7 +67,7 @@ function getArgTypesFromResolved(resolved: ReturnType<typeof useOf>) {
 const ArgTypesImpl: FC<ArgTypesProps> = (props) => {
   const { of } = props;
   if ('of' in props && of === undefined) {
-    throw new Error('Unexpected `of={undefined}`, did you mistype a CSF file reference?');
+    throw new InvalidBlockOfPropError();
   }
   const resolved = useOf(of || 'meta');
   const { argTypes, parameters, component, subcomponents } = getArgTypesFromResolved(resolved);

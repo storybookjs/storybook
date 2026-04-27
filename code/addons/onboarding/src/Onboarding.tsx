@@ -6,13 +6,13 @@ import { SAVE_STORY_RESPONSE } from 'storybook/internal/core-events';
 import { type API } from 'storybook/manager-api';
 import { ThemeProvider, convert, styled, themes } from 'storybook/theming';
 
-import { HighlightElement } from '../../../core/src/manager/components/TourGuide/HighlightElement';
-import { TourGuide } from '../../../core/src/manager/components/TourGuide/TourGuide';
-import { Confetti } from './components/Confetti/Confetti';
-import type { STORYBOOK_ADDON_ONBOARDING_STEPS } from './constants';
-import { ADDON_CONTROLS_ID, ADDON_ONBOARDING_CHANNEL } from './constants';
-import { IntentSurvey } from './features/IntentSurvey/IntentSurvey';
-import { SplashScreen } from './features/SplashScreen/SplashScreen';
+import { HighlightElement } from '../../../core/src/manager/components/TourGuide/HighlightElement.tsx';
+import { TourGuide } from '../../../core/src/manager/components/TourGuide/TourGuide.tsx';
+import { Confetti } from './components/Confetti/Confetti.tsx';
+import type { STORYBOOK_ADDON_ONBOARDING_STEPS } from './constants.ts';
+import { ADDON_CONTROLS_ID, ADDON_ONBOARDING_CHANNEL } from './constants.ts';
+import { IntentSurvey } from './features/IntentSurvey/IntentSurvey.tsx';
+import { SplashScreen } from './features/SplashScreen/SplashScreen.tsx';
 
 const SpanHighlight = styled.span(({ theme }) => ({
   display: 'inline-flex',

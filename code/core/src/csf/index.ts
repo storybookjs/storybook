@@ -1,4 +1,4 @@
-import { toStartCaseStr } from './toStartCaseStr';
+import { toStartCaseStr } from './toStartCaseStr.ts';
 
 /**
  * Remove punctuation and illegal characters from a story ID.
@@ -90,7 +90,7 @@ export const combineTags = (...tags: string[]): string[] => {
   return Array.from(result);
 };
 
-export { includeConditionalArg } from './includeConditionalArg';
-export * from './story';
-export * from './csf-factories';
-export * from './core-annotations';
+export { includeConditionalArg } from './includeConditionalArg.ts';
+export * from './story.ts';
+export * from './csf-factories.ts';
+export * from './core-annotations.ts';

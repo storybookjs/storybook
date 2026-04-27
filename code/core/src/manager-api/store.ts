@@ -1,8 +1,8 @@
 import type { StoreAPI } from 'store2';
 import store from 'store2';
 
-import storeSetup from './lib/store-setup';
-import type { State } from './root';
+import storeSetup from './lib/store-setup.ts';
+import type { State } from './root.tsx';
 
 // setting up the store, overriding set and get to use telejson
 storeSetup(store._);

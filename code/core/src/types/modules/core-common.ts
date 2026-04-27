@@ -10,10 +10,10 @@ import type { Server as NetServer } from 'net';
 import type { Options as TelejsonOptions } from 'telejson';
 import type { PackageJson as PackageJsonFromTypeFest } from 'type-fest';
 
-import type { SupportedBuilder } from './builders';
-import type { SupportedFramework } from './frameworks';
-import type { Indexer, StoriesEntry } from './indexer';
-import type { SupportedRenderer } from './renderers';
+import type { SupportedBuilder } from './builders.ts';
+import type { SupportedFramework } from './frameworks.ts';
+import type { Indexer, StoriesEntry } from './indexer.ts';
+import type { SupportedRenderer } from './renderers.ts';
 
 /** ⚠️ This file contains internal WIP types they MUST NOT be exported outside this package for now! */
 
@@ -374,6 +374,11 @@ export interface TagOptions {
 
 export type TagsOptions = Record<Tag, Partial<TagOptions>>;
 
+export type ComponentSubcomponentManifest = Pick<
+  ComponentManifest,
+  'name' | 'path' | 'description' | 'import' | 'summary' | 'jsDocTags' | 'error'
+>;
+
 export interface ComponentManifest {
   id: string;
   path: string;
@@ -389,6 +394,7 @@ export interface ComponentManifest {
     error?: { name: string; message: string };
   }[];
   jsDocTags: Record<string, string[]>;
+  subcomponents?: Record<string, ComponentSubcomponentManifest>;
   error?: { name: string; message: string };
 }
 
@@ -530,7 +536,7 @@ export interface StorybookConfigRaw {
     /**
      * Enable component manifest generation for MCP and other tooling integrations.
      *
-     * @default true
+     * @default false
      */
     componentsManifest?: boolean;
 

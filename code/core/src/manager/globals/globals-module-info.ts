@@ -1,7 +1,7 @@
 import type { ModuleInfo } from '@fal-works/esbuild-plugin-global-externals';
 
-import Exports from './exports';
-import { globalPackages, globalsNameReferenceMap } from './globals';
+import Exports from './exports.ts';
+import { globalPackages, globalsNameReferenceMap } from './globals.ts';
 
 /*
  * We create a map of a module's name to a ModuleInfo.

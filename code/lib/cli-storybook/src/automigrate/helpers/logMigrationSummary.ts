@@ -3,8 +3,8 @@ import { CLI_COLORS, logger } from 'storybook/internal/node-logger';
 import picocolors from 'picocolors';
 import { dedent } from 'ts-dedent';
 
-import type { FixSummary } from '../types';
-import { FixStatus } from '../types';
+import type { FixSummary } from '../types.ts';
+import { FixStatus } from '../types.ts';
 
 export const messageDivider = '\n\n';
 const segmentDivider = '\n\n─────────────────────────────────────────────────\n\n';

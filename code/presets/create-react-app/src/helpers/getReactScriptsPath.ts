@@ -1,7 +1,7 @@
 import { lstatSync, readFileSync, realpathSync } from 'node:fs';
 import { join } from 'node:path';
 
-import { resolvePackageDir } from '../../../../core/src/shared/utils/module';
+import { resolvePackageDir } from '../../../../core/src/shared/utils/module.ts';
 
 export const getReactScriptsPath = (): string => {
   const cwd = process.cwd();

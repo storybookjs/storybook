@@ -24,18 +24,18 @@ import {
 import {
   STATUS_TYPE_ID_COMPONENT_TEST,
   STORYBOOK_ADDON_TEST_CHANNEL,
-} from '../../../../addons/vitest/src/constants';
-import { EVENTS } from '../../instrumenter/EVENTS';
+} from '../../../../addons/vitest/src/constants.ts';
+import { EVENTS } from '../../instrumenter/EVENTS.ts';
 import {
   type Call,
   CallStates,
   type ControlStates,
   type LogItem,
   type RenderPhase,
-} from '../../instrumenter/types';
-import { ADDON_ID, INTERNAL_RENDER_CALL_ID } from '../constants';
-import { InteractionsPanel, type SerializedError } from './InteractionsPanel';
-import type { PlayStatus } from './StatusBadge';
+} from '../../instrumenter/types.ts';
+import { ADDON_ID, INTERNAL_RENDER_CALL_ID } from '../constants.ts';
+import { InteractionsPanel, type SerializedError } from './InteractionsPanel.tsx';
+import type { PlayStatus } from './StatusBadge.tsx';
 
 export interface PanelState {
   status: PlayStatus;

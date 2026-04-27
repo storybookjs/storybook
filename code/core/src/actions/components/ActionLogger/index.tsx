@@ -7,8 +7,8 @@ import { Inspector } from 'react-inspector';
 import type { Theme } from 'storybook/theming';
 import { styled, withTheme } from 'storybook/theming';
 
-import type { ActionDisplay } from '../../models';
-import { Action, Counter, InspectorContainer } from './style';
+import type { ActionDisplay } from '../../models/index.ts';
+import { Action, Counter, InspectorContainer } from './style.tsx';
 
 const UnstyledWrapped = forwardRef<HTMLDivElement, { children: ReactNode; className?: string }>(
   ({ children, className }, ref) => (

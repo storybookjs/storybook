@@ -23,15 +23,15 @@ import yml from 'react-syntax-highlighter/dist/esm/languages/prism/yaml';
 import ReactSyntaxHighlighter from 'react-syntax-highlighter/dist/esm/prism-light';
 import { styled } from 'storybook/theming';
 
-import { ActionBar } from '../ActionBar/ActionBar';
-import type { ScrollAreaProps } from '../ScrollArea/ScrollArea';
-import { ScrollArea } from '../ScrollArea/ScrollArea';
-import { createCopyToClipboardFunction } from './clipboard';
+import { ActionBar } from '../ActionBar/ActionBar.tsx';
+import type { ScrollAreaProps } from '../ScrollArea/ScrollArea.tsx';
+import { ScrollArea } from '../ScrollArea/ScrollArea.tsx';
+import { createCopyToClipboardFunction } from './clipboard.ts';
 import type {
   SyntaxHighlighterProps,
   SyntaxHighlighterRenderer,
   SyntaxHighlighterRendererProps,
-} from './syntaxhighlighter-types';
+} from './syntaxhighlighter-types.ts';
 
 const { window: globalWindow } = global;
 

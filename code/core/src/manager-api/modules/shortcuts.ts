@@ -9,10 +9,10 @@ import { global } from '@storybook/global';
 
 import copy from 'copy-to-clipboard';
 
-import type { KeyboardEventLike } from '../lib/shortcut';
-import { eventToShortcut, shortcutMatchesShortcut } from '../lib/shortcut';
-import type { ModuleFn } from '../lib/types';
-import { focusableUIElements } from './layout';
+import type { KeyboardEventLike } from '../lib/shortcut.ts';
+import { eventToShortcut, shortcutMatchesShortcut } from '../lib/shortcut.ts';
+import type { ModuleFn } from '../lib/types.tsx';
+import { focusableUIElements } from './layout.ts';
 
 const { navigator, document } = global;
 

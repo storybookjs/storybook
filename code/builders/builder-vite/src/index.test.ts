@@ -4,8 +4,8 @@ import { logger } from 'storybook/internal/node-logger';
 import type { ModuleNode as StorybookModuleNode, Options } from 'storybook/internal/types';
 import type { ViteDevServer } from 'vite';
 
-import { bail, onModuleGraphChange, start } from './index';
-import { createViteServer } from './vite-server';
+import { bail, onModuleGraphChange, start } from './index.ts';
+import { createViteServer } from './vite-server.ts';
 
 vi.mock('storybook/internal/node-logger', { spy: true });
 vi.mock('./vite-server', { spy: true });
@@ -302,12 +302,24 @@ describe('onModuleGraphChange', () => {
     expect(fakeViteServer.waitForRequestsIdle).not.toHaveBeenCalled();
   });
 
-  it('rejects listeners registered after start', async () => {
-    await start(createStartArgs());
+  it('allows listeners registered after start and runs change detection', async () => {
+    await start(createStartArgs(['/src/Button.tsx']));
+    await vi.advanceTimersByTimeAsync(1000);
 
-    expect(() => onModuleGraphChange(vi.fn())).toThrow(
-      'Vite module graph listeners must be registered before the builder starts.'
-    );
+    fakeViteServer.moduleGraph.fileToModulesMap = createFileToModulesMap([
+      '/src/Button.tsx',
+      new Set([createViteModuleNode('/src/Button.tsx')]),
+    ]);
+
+    const cb = vi.fn();
+    onModuleGraphChange(cb);
+    await vi.advanceTimersByTimeAsync(1000);
+
+    cb.mockClear();
+    fakeViteServer.watcher.emit('change', '/src/Button.tsx');
+    await vi.advanceTimersByTimeAsync(100);
+
+    expect(cb).toHaveBeenCalledTimes(1);
   });
 
   it('does not reattach the watcher if bail runs while waiting for idle requests', async () => {

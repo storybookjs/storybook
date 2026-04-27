@@ -6,7 +6,7 @@ import { logger } from 'storybook/internal/client-logger';
 import { ObjectInspector } from '@devtools-ds/object-inspector';
 import { useTheme } from 'storybook/theming';
 
-import type { Call, CallRef, ElementRef } from '../../instrumenter/types';
+import type { Call, CallRef, ElementRef } from '../../instrumenter/types.ts';
 
 const colorsLight = {
   base: '#444',

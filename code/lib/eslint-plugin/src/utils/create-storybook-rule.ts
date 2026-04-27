@@ -1,8 +1,8 @@
 import type { TSESLint } from '@typescript-eslint/utils';
 import { ESLintUtils } from '@typescript-eslint/utils';
 
-import type { StorybookRuleMeta } from '../types';
-import { docsUrl } from './index';
+import type { StorybookRuleMeta } from '../types/index.ts';
+import { docsUrl } from './index.ts';
 
 export function createStorybookRule<
   TOptions extends readonly unknown[],

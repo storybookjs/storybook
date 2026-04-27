@@ -9,6 +9,7 @@
     "ignoreDeprecations": "5.0",
     "incremental": false,
     "isolatedModules": true,
+    "allowImportingTsExtensions": true,
     "jsx": "preserve",
     "lib": ["dom", "dom.iterable", "esnext"],
     "module": "Preserve",

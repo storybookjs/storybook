@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { StorybookError, appendErrorRef } from '../storybook-error';
+import { StorybookError, appendErrorRef } from '../storybook-error.ts';
 
 describe('StorybookError', () => {
   class TestError extends StorybookError {

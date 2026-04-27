@@ -6,8 +6,8 @@ import type { ComponentsManifest, Manifests, Presets, StoryIndex } from 'storybo
 import { vol } from 'memfs';
 import type { Polka } from 'polka';
 
-import { Tag } from '../../../shared/constants/tags';
-import { registerManifests, writeManifests } from './manifests';
+import { Tag } from '../../../shared/constants/tags.ts';
+import { registerManifests, writeManifests } from './manifests.ts';
 
 // Mock dependencies
 vi.mock('node:fs/promises', async () => {
@@ -110,6 +110,36 @@ describe('manifests', () => {
       const files = vol.toJSON();
       expect(files['/output/manifests/components.html']).toBeDefined();
       expect(files['/output/manifests/components.html']).toContain('<!doctype html>');
+    });
+
+    it('should render subcomponents in the manifest debugger', async () => {
+      mockManifests = {
+        components: {
+          v: 0,
+          components: {
+            button: {
+              id: 'button',
+              name: 'Button',
+              path: './Button.stories.tsx',
+              stories: [],
+              jsDocTags: {},
+              subcomponents: {
+                ButtonIcon: {
+                  name: 'ButtonIcon',
+                  path: './ButtonIcon.tsx',
+                  jsDocTags: {},
+                },
+              },
+            },
+          },
+        } as ComponentsManifest,
+      };
+
+      await writeManifests('/output', mockPresets);
+
+      const files = vol.toJSON();
+      expect(files['/output/manifests/components.html']).toContain('ButtonIcon');
+      expect(files['/output/manifests/components.html']).toContain('subcomponent');
     });
 
     it('should write HTML file when docs manifest exists', async () => {

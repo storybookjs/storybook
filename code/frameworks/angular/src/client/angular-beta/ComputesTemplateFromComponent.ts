@@ -2,12 +2,12 @@ import type { ArgTypes } from 'storybook/internal/types';
 
 import type { Type } from '@angular/core';
 
-import type { ICollection } from '../types';
-import type { ComponentInputsOutputs } from './utils/NgComponentAnalyzer';
+import type { ICollection } from '../types.ts';
+import type { ComponentInputsOutputs } from './utils/NgComponentAnalyzer.ts';
 import {
   getComponentDecoratorMetadata,
   getComponentInputsOutputs,
-} from './utils/NgComponentAnalyzer';
+} from './utils/NgComponentAnalyzer.ts';
 
 /**
  * Check if the name matches the criteria for a valid identifier. A valid identifier can only

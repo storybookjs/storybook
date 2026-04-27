@@ -1,5 +1,5 @@
 ---
-title: 'Migration guide from Storybook 8.x to 9.1'
+title: Migration guide from Storybook 8.x to 9.1
 sidebar:
   order: 2
   title: Migrate from 8 to 9
@@ -20,36 +20,38 @@ Storybook 9 improves performance, compatibility, and stability. Its key features
 This guide is meant to help you **upgrade from Storybook 8.x to 9.1** successfully!
 
 <Callout variant="info">
-  **Migrating from Storybook 6 or 7?**
 
-  We have prior migration guides for:
+**Migrating from Storybook 6 or 7?**
 
-  - [Storybook 7.x to 8.x](../../../release-8-6/docs/migration-guide/index.mdx)
-  - [Storybook 6.x to 8.x](../../../release-8-6/docs/migration-guide/from-older-version.mdx)
+We have prior migration guides for:
+
+- [Storybook 7.x to 8.x](../../../release-8-6/docs/migration-guide/index.mdx)
+- [Storybook 6.x to 8.x](../../../release-8-6/docs/migration-guide/from-older-version.mdx)
+
 </Callout>
 
 ## Major breaking changes
 
 The rest of this guide will help you upgrade successfully, either automatically or manually. But first, there are some [breaking changes][full-migration-notes] in Storybook 9. Here are the most impactful changes you should know about before you go further:
 
-* [Packages have been consolidated/removed](#package-structure-changes)
-* [Essential addons moved to core](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#essentials-addons-viewport-controls-interactions-and-actions-moved-to-core)
-* [Test addon renamed from `experimental-addon-test` to `addon-vitest`](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#experimental-test-addon-stabilized-and-renamed)
-* [`nextjs-vite` framework stabilized](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#nextjs-vite-builder-stabilized)
-* [Removed Webpack builder support for Preact, Vue, and Web Components in favor of Vite](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#dropped-webpack5-builder-support-in-favor-of-vite)
-* [Manager builder removed alias for `util`, `assert` and `process`](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#manager-builder-removed-alias-for-util-assert-and-process)
-* Ecosystem updates
-  * [Node 20+ is now required](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#nodejs--20)
-  * [Angular 18+ is now required](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#angular-require-v18-and-up)
-  * [Lit v3+ is now required](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#lit--require-v3-and-up)
-  * [Next.js 14+ is now required](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#nextjs-require-v14-and-up)
-  * [Svelte 5+ is now required](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#svelte-require-v5-and-up)
-  * [Vite 5+ is now required](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#vite-4)
-  * [Vitest 3+ is now required](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#vitest-addon-former-storybookexperimental-addon-test-vitest-20-support-is-dropped)
-  * [npm 10+ is now required](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#package-managers)
-  * [pnpm 9+ is now required](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#package-managers)
-  * [yarn 4+ is now required](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#package-managers)
-  * [TypeScript 4.9+ is now required](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#typescript--49)
+- [Packages have been consolidated/removed](#package-structure-changes)
+- [Essential addons moved to core](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#essentials-addons-viewport-controls-interactions-and-actions-moved-to-core)
+- [Test addon renamed from `experimental-addon-test` to `addon-vitest`](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#experimental-test-addon-stabilized-and-renamed)
+- [`nextjs-vite` framework stabilized](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#nextjs-vite-builder-stabilized)
+- [Removed Webpack builder support for Preact, Vue, and Web Components in favor of Vite](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#dropped-webpack5-builder-support-in-favor-of-vite)
+- [Manager builder removed alias for `util`, `assert` and `process`](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#manager-builder-removed-alias-for-util-assert-and-process)
+- Ecosystem updates
+  - [Node 20+ is now required](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#nodejs--20)
+  - [Angular 18+ is now required](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#angular-require-v18-and-up)
+  - [Lit v3+ is now required](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#lit--require-v3-and-up)
+  - [Next.js 14+ is now required](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#nextjs-require-v14-and-up)
+  - [Svelte 5+ is now required](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#svelte-require-v5-and-up)
+  - [Vite 5+ is now required](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#vite-4)
+  - [Vitest 3+ is now required](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#vitest-addon-former-storybookexperimental-addon-test-vitest-20-support-is-dropped)
+  - [npm 10+ is now required](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#package-managers)
+  - [pnpm 9+ is now required](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#package-managers)
+  - [yarn 4+ is now required](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#package-managers)
+  - [TypeScript 4.9+ is now required](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#typescript--49)
 
 If any of these changes apply to your project, please read through the linked migration notes before continuing.
 
@@ -61,33 +63,25 @@ You may wish to read the [full migration notes][full-migration-notes] before mig
 
 To upgrade your Storybook, run the [upgrade](./upgrading.mdx) command in the root of your repository:
 
-{/* prettier-ignore-start */}
-
 <CodeSnippets path="storybook-upgrade.md" />
-
-{/* prettier-ignore-end */}
 
 This will:
 
 1. Find all of the Storybook projects in your repository
 2. For each project
    1. Determine that none of the [breaking changes](#major-breaking-changes) apply to your project
-      * If they do, you will receive instructions on how to resolve them before continuing
+      - If they do, you will receive instructions on how to resolve them before continuing
    2. Upgrade your Storybook dependencies to the latest version
-   3. Run a collection of *automigrations*, which will:
-      * Check for common upgrade tasks
-      * Explain the necessary changes with links to more information
-      * Ask for approval, then perform the task automatically on your behalf
+   3. Run a collection of _automigrations_, which will:
+      - Check for common upgrade tasks
+      - Explain the necessary changes with links to more information
+      - Ask for approval, then perform the task automatically on your behalf
 
 ## New projects
 
 To add Storybook to a project that isn’t currently using Storybook:
 
-{/* prettier-ignore-start */}
-
 <CodeSnippets path="create-command.md" copyEvent="CreateCommandCopy" />
-
-{/* prettier-ignore-end */}
 
 This will:
 
@@ -131,23 +125,23 @@ The following packages are no longer published. Instead they have been consolida
 
 The following packages have been consolidated and moved into an internal path to indicate that they are now for internal usage only. They will continue to work in `9.x` releases, but will likely be removed in `10.0`. See the [full migration notes](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#dropped-support-for-legacy-packages) for details.
 
-| Deprecation                  | Replacement                           |
-| ---------------------------- | ------------------------------------- |
-| `@storybook/builder-manager` |	`storybook/internal/builder-manager` |
-| `@storybook/channels`        |	`storybook/internal/channels`        |
-| `@storybook/client-logger`   |	`storybook/internal/client-logger`   |
-| `@storybook/components`      |	`storybook/internal/components`      |
-| `@storybook/core-common`     |	`storybook/internal/common`          |
-| `@storybook/core-events`     |	`storybook/internal/core-events`     |
-| `@storybook/core-server`     |	`storybook/internal/core-server`     |
-| `@storybook/csf-tools`       |	`storybook/internal/csf-tools`       |
-| `@storybook/docs-tools`      |	`storybook/internal/docs-tools`      |
-| `@storybook/manager`         |	`storybook/internal/manager`         |
-| `@storybook/node-logger`     |	`storybook/internal/node-logger`     |
-| `@storybook/preview`         |	`storybook/internal/preview`         |
-| `@storybook/router`          |	`storybook/internal/router`          |
-| `@storybook/telemetry`       |	`storybook/internal/telemetry`       |
-| `@storybook/types`           |	`storybook/internal/types`           |
+| Deprecation                  | Replacement                          |
+| ---------------------------- | ------------------------------------ |
+| `@storybook/builder-manager` | `storybook/internal/builder-manager` |
+| `@storybook/channels`        | `storybook/internal/channels`        |
+| `@storybook/client-logger`   | `storybook/internal/client-logger`   |
+| `@storybook/components`      | `storybook/internal/components`      |
+| `@storybook/core-common`     | `storybook/internal/common`          |
+| `@storybook/core-events`     | `storybook/internal/core-events`     |
+| `@storybook/core-server`     | `storybook/internal/core-server`     |
+| `@storybook/csf-tools`       | `storybook/internal/csf-tools`       |
+| `@storybook/docs-tools`      | `storybook/internal/docs-tools`      |
+| `@storybook/manager`         | `storybook/internal/manager`         |
+| `@storybook/node-logger`     | `storybook/internal/node-logger`     |
+| `@storybook/preview`         | `storybook/internal/preview`         |
+| `@storybook/router`          | `storybook/internal/router`          |
+| `@storybook/telemetry`       | `storybook/internal/telemetry`       |
+| `@storybook/types`           | `storybook/internal/types`           |
 
 Addon authors may continue to use the internal packages, there is currently not yet any replacement.
 
@@ -163,8 +157,4 @@ In addition to the automigrations and manual migrations above, there are also op
 
 There are [many good reasons](/blog/storybook-csf3-is-here/) to convert your stories from CSF 2 to CSF 3. We provide a codemod which, in most cases, should automatically make the code changes for you (make sure to update the glob to fit your files):
 
-{/* prettier-ignore-start */}
-
 <CodeSnippets path="storybook-migrate-csf-2-to-3.md" />
-
-{/* prettier-ignore-end */}

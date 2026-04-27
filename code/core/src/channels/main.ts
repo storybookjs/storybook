@@ -7,7 +7,7 @@ import type {
   ChannelTransport,
   EventsKeyValue,
   Listener,
-} from './types';
+} from './types.ts';
 
 const isMulti = (args: ChannelArgs): args is ChannelArgsMulti => {
   // @ts-expect-error (we guard against this right here)

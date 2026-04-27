@@ -2,9 +2,15 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { cache, isCI, loadAllPresets } from 'storybook/internal/common';
 import { prompt } from 'storybook/internal/node-logger';
-import { ErrorCollector, oneWayHash, telemetry } from 'storybook/internal/telemetry';
+import {
+  ErrorCollector,
+  isTelemetryStateResolved,
+  oneWayHash,
+  setTelemetryEnabled,
+  telemetry,
+} from 'storybook/internal/telemetry';
 
-import { getErrorLevel, sendTelemetryError, withTelemetry } from './withTelemetry';
+import { getErrorLevel, sendTelemetryError, withTelemetry } from './withTelemetry.ts';
 
 vi.mock('storybook/internal/common', { spy: true });
 vi.mock('storybook/internal/telemetry', { spy: true });
@@ -44,7 +50,8 @@ describe('withTelemetry', () => {
 
     await withTelemetry('dev', { cliOptions: { disableTelemetry: true } }, run);
 
-    expect(telemetry).toHaveBeenCalledTimes(0);
+    expect(setTelemetryEnabled).toHaveBeenCalledWith(false);
+    expect(telemetry).toHaveBeenCalled();
   });
 
   describe('when command fails', () => {
@@ -66,7 +73,8 @@ describe('withTelemetry', () => {
         withTelemetry('dev', { cliOptions: { disableTelemetry: true }, printError: vi.fn() }, run)
       ).rejects.toThrow(error);
 
-      expect(telemetry).toHaveBeenCalledTimes(0);
+      expect(setTelemetryEnabled).toHaveBeenCalledWith(false);
+      expect(telemetry).toHaveBeenCalled();
     });
 
     it('sends error message when no options are passed', async () => {
@@ -137,7 +145,8 @@ describe('withTelemetry', () => {
         withTelemetry('dev', { cliOptions: { disableTelemetry: true }, printError: vi.fn() }, run)
       ).rejects.toThrow(error);
 
-      expect(telemetry).toHaveBeenCalledTimes(0);
+      expect(setTelemetryEnabled).toHaveBeenCalledWith(false);
+      expect(telemetry).toHaveBeenCalled();
       expect(telemetry).not.toHaveBeenCalledWith(
         'error',
         expect.objectContaining({}),
@@ -232,7 +241,7 @@ describe('withTelemetry', () => {
           error: expect.objectContaining({ message: 'An Error!', name: 'Error' }),
           isErrorInstance: true,
         }),
-        expect.objectContaining({ enableCrashReports: true })
+        expect.objectContaining({ enableCrashReports: true, force: true })
       );
     });
 
@@ -354,6 +363,20 @@ describe('withTelemetry', () => {
         expect.objectContaining({})
       );
     });
+  });
+
+  it('resolves telemetry state to disabled when run() throws and state is still uninitialized', async () => {
+    vi.mocked(isTelemetryStateResolved).mockReturnValue(false);
+
+    const run = vi.fn(async () => {
+      throw new Error('preset loading failed');
+    });
+
+    await expect(async () =>
+      withTelemetry('dev', { cliOptions: {}, printError: vi.fn() }, run)
+    ).rejects.toThrow('preset loading failed');
+
+    expect(setTelemetryEnabled).toHaveBeenCalledWith(false);
   });
 });
 

@@ -1,7 +1,7 @@
 import { identifier } from 'safe-identifier';
 import { dedent } from 'ts-dedent';
 
-import type { StorybookSection, StorybookStory } from './types';
+import type { StorybookSection, StorybookStory } from './types.ts';
 
 export function stringifyObject(object: any, level = 0, excludeOuterParams = false): string {
   if (typeof object === 'string') {

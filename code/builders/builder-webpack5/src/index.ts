@@ -20,8 +20,8 @@ import webpackModule from 'webpack';
 import webpackDevMiddleware from 'webpack-dev-middleware';
 import webpackHotMiddleware from 'webpack-hot-middleware';
 
-export * from './types';
-export * from './preview/virtual-module-mapping';
+export * from './types.ts';
+export * from './preview/virtual-module-mapping.ts';
 
 const { DefinePlugin, IgnorePlugin, ProgressPlugin } = webpackModule;
 

@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
-import { Input as Component } from './Input';
+import { Input as Component } from './Input.tsx';
 
 const meta = {
   title: 'Form/Input',

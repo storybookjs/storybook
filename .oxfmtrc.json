@@ -37,12 +37,14 @@
     "*.yaml",
     "*.md",
     "*.mdx",
-    "!docs/_snippets/**"
+    "!docs/**",
+    "docs/versions/**"
   ],
   "overrides": [
     {
-      "files": ["docs/_snippets/**"],
+      "files": ["docs/**"],
       "options": {
+        "singleQuote": true,
         "trailingComma": "all"
       }
     },

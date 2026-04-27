@@ -1,6 +1,7 @@
 import type { FunctionComponent, ReactNode } from 'react';
 import React from 'react';
 
+import { InvalidBlockOfPropError } from 'storybook/internal/preview-errors';
 import type { ComponentTitle } from 'storybook/internal/types';
 
 import { Title as PureTitle } from '../components';
@@ -30,7 +31,7 @@ const TitleImpl: FunctionComponent<TitleProps> = (props) => {
   const { children, of } = props;
 
   if ('of' in props && of === undefined) {
-    throw new Error('Unexpected `of={undefined}`, did you mistype a CSF file reference?');
+    throw new InvalidBlockOfPropError();
   }
 
   let preparedMeta;

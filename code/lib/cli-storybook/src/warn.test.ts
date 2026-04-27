@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { logger } from 'storybook/internal/node-logger';
 
-import { warn } from './warn';
+import { warn } from './warn.ts';
 
 vi.mock('storybook/internal/node-logger');
 

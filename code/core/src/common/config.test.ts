@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { filterPresetsConfig } from './presets';
+import { filterPresetsConfig } from './presets.ts';
 
 describe('filterPresetsConfig', () => {
   it('string config', () => {

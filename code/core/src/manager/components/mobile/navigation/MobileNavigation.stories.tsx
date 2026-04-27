@@ -6,8 +6,8 @@ import { startCase } from 'es-toolkit/string';
 import { ManagerContext } from 'storybook/manager-api';
 import { fn, screen, userEvent } from 'storybook/test';
 
-import { LayoutProvider, useLayout } from '../../layout/LayoutProvider';
-import { MobileNavigation } from './MobileNavigation';
+import { LayoutProvider, useLayout } from '../../layout/LayoutProvider.tsx';
+import { MobileNavigation } from './MobileNavigation.tsx';
 
 const MockMenu = () => {
   const { setMobileMenuOpen } = useLayout();

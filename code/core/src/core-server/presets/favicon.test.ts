@@ -7,7 +7,7 @@ import { type Presets } from 'storybook/internal/types';
 
 import { dirname, join, normalize } from 'pathe';
 
-import * as m from './common-preset';
+import * as m from './common-preset.ts';
 
 // mock src/core-server/utils/constants.ts:8:27
 vi.mock('../utils/constants', () => {

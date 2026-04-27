@@ -15,12 +15,12 @@ import { global } from '@storybook/global';
 
 import type { UserEventObject } from 'storybook/test';
 
-import { Tag } from '../../../../shared/constants/tags';
-import { HooksContext, addons } from '../../addons';
-import { UNTARGETED } from '../args';
-import { composeConfigs } from './composeConfigs';
-import { normalizeProjectAnnotations } from './normalizeProjectAnnotations';
-import { prepareContext, prepareMeta, prepareStory as realPrepareStory } from './prepareStory';
+import { Tag } from '../../../../shared/constants/tags.ts';
+import { HooksContext, addons } from '../../addons/index.ts';
+import { UNTARGETED } from '../args.ts';
+import { composeConfigs } from './composeConfigs.ts';
+import { normalizeProjectAnnotations } from './normalizeProjectAnnotations.ts';
+import { prepareContext, prepareMeta, prepareStory as realPrepareStory } from './prepareStory.ts';
 
 vi.mock('@storybook/global', async (importOriginal) => ({
   global: {

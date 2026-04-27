@@ -19,9 +19,9 @@ import type {
 
 import { EventEmitter } from 'events';
 
-import { Tag } from '../../../shared/constants/tags';
-import { composeConfigs } from '../store';
-import type { RenderPhase } from './render/StoryRender';
+import { Tag } from '../../../shared/constants/tags.ts';
+import { composeConfigs } from '../store/index.ts';
+import type { RenderPhase } from './render/StoryRender.ts';
 
 export const componentOneExports = {
   default: {

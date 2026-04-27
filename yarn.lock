@@ -8357,6 +8357,7 @@ __metadata:
     typescript: "npm:^5.9.3"
   peerDependencies:
     storybook: "workspace:^"
+    vite: ^5.0.0 || ^6.0.0 || ^7.0.0 || ^8.0.0
   languageName: unknown
   linkType: soft
 
@@ -8482,6 +8483,7 @@ __metadata:
   peerDependencies:
     preact: ">=10"
     storybook: "workspace:^"
+    vite: ^5.0.0 || ^6.0.0 || ^7.0.0 || ^8.0.0
   languageName: unknown
   linkType: soft
 
@@ -8977,6 +8979,7 @@ __metadata:
     typescript: "npm:^5.9.3"
   peerDependencies:
     storybook: "workspace:^"
+    vite: ^5.0.0 || ^6.0.0 || ^7.0.0 || ^8.0.0
   languageName: unknown
   linkType: soft
 

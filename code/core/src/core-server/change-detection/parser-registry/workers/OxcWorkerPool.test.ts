@@ -73,10 +73,6 @@ describe('OxcWorkerPool', () => {
   beforeEach(() => {
     fakeWorkers.length = 0;
     constructorThrowAt = -1;
-    delete process.env.STORYBOOK_CHANGE_DETECTION_NO_WORKER;
-    delete process.env.STORYBOOK_CHANGE_DETECTION_WORKERS;
-    delete process.env.STORYBOOK_CHANGE_DETECTION_WORKER_PATH;
-    delete process.env.STORYBOOK_CHANGE_DETECTION_WORKER_TIMEOUT_MS;
   });
 
   afterEach(async () => {
@@ -178,10 +174,9 @@ describe('OxcWorkerPool', () => {
     expect(fakeWorkers.every((w) => w.terminate.mock.calls.length > 0)).toBe(true);
   });
 
-  it('times out hung tasks per STORYBOOK_CHANGE_DETECTION_WORKER_TIMEOUT_MS', async () => {
-    process.env.STORYBOOK_CHANGE_DETECTION_WORKER_TIMEOUT_MS = '50';
+  it('times out hung tasks at the configured per-task timeout', async () => {
     const { OxcWorkerPool } = await loadModule();
-    const pool = new OxcWorkerPool('/fake/script.js', 1);
+    const pool = new OxcWorkerPool('/fake/script.js', 1, 50);
 
     fakeWorkers[0].hook.onPostMessage = () => {
       /* hang */
@@ -190,12 +185,6 @@ describe('OxcWorkerPool', () => {
     const pending = pool.parse('/src/hang.ts', 'x');
     await expect(pending).rejects.toThrow(/timed out/);
     await pool.dispose();
-  });
-
-  it('disables the shared pool when STORYBOOK_CHANGE_DETECTION_NO_WORKER is set', async () => {
-    process.env.STORYBOOK_CHANGE_DETECTION_NO_WORKER = '1';
-    const { getOxcParsePool } = await loadModule();
-    expect(getOxcParsePool()).toBeNull();
   });
 
   describe('singleton refcount', () => {

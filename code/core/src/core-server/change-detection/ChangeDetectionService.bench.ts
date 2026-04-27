@@ -24,7 +24,6 @@ import {
   ParseResolveCache,
 } from './dependency-graph/index.ts';
 import { ParserRegistry, builtinImportParsers } from './parser-registry/index.ts';
-import { getOxcParsePool } from './parser-registry/workers/index.ts';
 
 interface FixtureSpec {
   N: number;
@@ -165,19 +164,6 @@ const BIG_MATRIX: FixtureSpec[] = [
 
 const MATRIX =
   process.env.STORYBOOK_CD_BENCH_BIG === '1' ? [...CI_MATRIX, ...BIG_MATRIX] : CI_MATRIX;
-
-if (process.env.STORYBOOK_CHANGE_DETECTION_REQUIRE_WORKER === '1') {
-  // Hard-fail when callers expect the worker pool to be active. Without this guard, a
-  // missing compiled `dist/oxc-worker.js` silently falls back to inline parsing and the
-  // bench numbers no longer reflect the worker path the dev-server uses.
-  const pool = getOxcParsePool();
-  if (!pool) {
-    throw new Error(
-      'STORYBOOK_CHANGE_DETECTION_REQUIRE_WORKER=1 but the oxc worker pool is unavailable. ' +
-        'Run `yarn nx compile core` first, or unset the variable to allow inline-parse fallback.'
-    );
-  }
-}
 
 // Lazy per-spec fixture + patcher caches. `beforeAll` hooks do not run reliably under
 // `vitest bench` (at vitest 4.1.0), so set-up happens on the first bench iteration for each

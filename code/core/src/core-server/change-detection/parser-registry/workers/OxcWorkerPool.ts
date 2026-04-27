@@ -10,9 +10,9 @@ import type { ImportEdge } from '../types.ts';
 
 /**
  * Pool of worker threads that each run {@link ../oxc-parse.ts} against the files the main
- * thread hands them. Pool size defaults to `min(4, max(1, cpus()-1))` and is capped by
- * `STORYBOOK_CHANGE_DETECTION_WORKERS`. Pool usage is opt-out via
- * `STORYBOOK_CHANGE_DETECTION_NO_WORKER=1`.
+ * thread hands them. Pool size is `min(4, max(1, cpus()-1))`. When the compiled worker
+ * script isn't on disk (e.g. running from source without a build), `getOxcParsePool`
+ * returns `null` and callers transparently fall back to inline parsing.
  *
  * Lifecycle: shared across the process via {@link getOxcParsePool} but ref-counted so
  * concurrent {@link ChangeDetectionService} instances each `acquire`/`release` and only
@@ -62,10 +62,6 @@ const WORKER_PATH_CANDIDATES = [
 const DEFAULT_TASK_TIMEOUT_MS = 30_000;
 
 function resolveWorkerScriptPath(): string | undefined {
-  const override = process.env.STORYBOOK_CHANGE_DETECTION_WORKER_PATH;
-  if (override) {
-    return existsSync(override) ? override : undefined;
-  }
   // import.meta.url may be synthetic under exotic bundling; guard explicitly.
   if (typeof import.meta.url !== 'string') {
     return undefined;
@@ -81,20 +77,8 @@ function resolveWorkerScriptPath(): string | undefined {
 }
 
 function computePoolSize(): number {
-  const envSize = Number(process.env.STORYBOOK_CHANGE_DETECTION_WORKERS);
-  if (Number.isFinite(envSize) && envSize > 0) {
-    return Math.floor(envSize);
-  }
   const cpuCount = cpus().length;
   return Math.max(1, Math.min(4, cpuCount - 1));
-}
-
-function computeTaskTimeoutMs(): number {
-  const raw = Number(process.env.STORYBOOK_CHANGE_DETECTION_WORKER_TIMEOUT_MS);
-  if (Number.isFinite(raw) && raw > 0) {
-    return Math.floor(raw);
-  }
-  return DEFAULT_TASK_TIMEOUT_MS;
 }
 
 export class OxcWorkerPool implements OxcParsePool {
@@ -107,7 +91,7 @@ export class OxcWorkerPool implements OxcParsePool {
   private nextSlotId = 0;
   private disposed = false;
 
-  constructor(scriptPath: string, size: number, taskTimeoutMs = computeTaskTimeoutMs()) {
+  constructor(scriptPath: string, size: number, taskTimeoutMs = DEFAULT_TASK_TIMEOUT_MS) {
     this.scriptPath = scriptPath;
     this.taskTimeoutMs = taskTimeoutMs;
     try {
@@ -304,9 +288,6 @@ export function getOxcParsePool(): OxcParsePool | null {
   }
   initialized = true;
 
-  if (process.env.STORYBOOK_CHANGE_DETECTION_NO_WORKER) {
-    return null;
-  }
   const scriptPath = resolveWorkerScriptPath();
   if (!scriptPath) {
     logger.debug(

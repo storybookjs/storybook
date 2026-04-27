@@ -12,8 +12,8 @@ jobs:
     if: github.repository_owner == 'storybookjs'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: gaurav-nelson/github-action-markdown-link-check@v1
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+      - uses: gaurav-nelson/github-action-markdown-link-check@5c5dfc0ac2e225883c0e5f03a85311ec2830d368 # v1
         # checks all markdown files from important folders including all subfolders
         with:
           # only show errors that occur instead of successful links + errors
@@ -25,4 +25,7 @@ jobs:
       - name: Send Discord Notification
         if: failure() # Only run this step if previous steps failed
         run: |
-          curl -H "Content-Type: application/json" -X POST -d '{"content":"The Markdown Links Check workflow has failed in the repository: [storybook]"}' ${{ secrets.DISCORD_MONITORING_URL }}
+          curl -H "Content-Type: application/json" -X POST -d '{"content":"The Markdown Links Check workflow has failed in the repository: [storybook]"}' "${DISCORD_MONITORING_URL}"
+
+        env:
+          DISCORD_MONITORING_URL: ${{ secrets.DISCORD_MONITORING_URL }}

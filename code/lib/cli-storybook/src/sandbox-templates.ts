@@ -524,7 +524,7 @@ export const baseTemplates = {
     skipTasks: ['e2e-tests', 'e2e-tests-dev', 'bench', 'vitest-integration'],
   },
   'tanstack-react-router/default-ts': {
-    name: 'TanStack React Router (Vite | TypeScript)',
+    name: 'TanStack React Router Latest (Vite | TypeScript)',
     script: 'npx @tanstack/cli@latest create {{beforeDir}} --tailwind --router-only',
     expected: {
       framework: '@storybook/tanstack-react',
@@ -541,7 +541,7 @@ export const baseTemplates = {
     skipTasks: ['bench'],
   },
   'tanstack-react-start/default-ts': {
-    name: 'TanStack React Start (Vite | TypeScript)',
+    name: 'TanStack React Start Latest (Vite | TypeScript)',
     script: 'npx @tanstack/cli@latest create {{beforeDir}} --tailwind',
     expected: {
       framework: '@storybook/tanstack-react',

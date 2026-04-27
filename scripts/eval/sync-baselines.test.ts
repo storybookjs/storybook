@@ -494,7 +494,9 @@ describe('syncBaselines', () => {
     expect(
       readFileSync(join(reposRoot, 'edgy', '.storybook', 'eval-support', 'summary.mdx'), 'utf-8')
     ).toBe(baselineTemplate('.storybook/eval-support/summary.mdx'));
-    expect(readFileSync(join(reposRoot, 'edgy', 'README.md'), 'utf-8')).toBe('updated upstream\n');
+    expect(readFileSync(join(reposRoot, 'edgy', 'README.md'), 'utf-8').replace(/\r\n/g, '\n')).toBe(
+      'updated upstream\n'
+    );
     expect(getHead(join(reposRoot, 'edgy'))).toBe(getRemoteHead(join(remotesRoot, 'edgy.git')));
   });
 });

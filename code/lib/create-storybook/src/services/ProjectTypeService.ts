@@ -45,7 +45,7 @@ export class ProjectTypeService {
       },
       {
         preset: ProjectType.TANSTACK,
-        dependencies: ['@tanstack/start', '@tanstack/react-router', '@tanstack/router'],
+        dependencies: ['@tanstack/start', '@tanstack/react-start', '@tanstack/react-router'],
         matcherFunction: ({ dependencies }) => {
           return dependencies?.some(Boolean) ?? false;
         },

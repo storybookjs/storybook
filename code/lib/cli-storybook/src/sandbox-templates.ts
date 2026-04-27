@@ -533,7 +533,7 @@ export const baseTemplates = {
     },
     modifications: {
       useCsfFactory: true,
-      extraDependencies: [],
+      extraDependencies: ['prop-types'],
       mainConfig: {
         framework: '@storybook/tanstack-react',
       },
@@ -550,7 +550,7 @@ export const baseTemplates = {
     },
     modifications: {
       useCsfFactory: true,
-      extraDependencies: [],
+      extraDependencies: ['prop-types'],
       mainConfig: {
         framework: '@storybook/tanstack-react',
       },

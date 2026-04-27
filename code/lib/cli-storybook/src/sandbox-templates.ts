@@ -523,10 +523,26 @@ export const baseTemplates = {
     },
     skipTasks: ['e2e-tests', 'e2e-tests-dev', 'bench', 'vitest-integration'],
   },
-  'tanstack-react/default-ts': {
-    name: 'TanStack Router + Query Latest (Vite | TypeScript)',
-    script:
-      'npx @tanstack/cli@latest create {{beforeDir}} --tailwind --add-ons tanstack-query,form',
+  'tanstack-react-router/default-ts': {
+    name: 'TanStack React Router (Vite | TypeScript)',
+    script: 'npx @tanstack/cli@latest create {{beforeDir}} --tailwind --router-only',
+    expected: {
+      framework: '@storybook/tanstack-react',
+      renderer: '@storybook/react',
+      builder: '@storybook/builder-vite',
+    },
+    modifications: {
+      useCsfFactory: true,
+      extraDependencies: [],
+      mainConfig: {
+        framework: '@storybook/tanstack-react',
+      },
+    },
+    skipTasks: ['bench'],
+  },
+  'tanstack-react-start/default-ts': {
+    name: 'TanStack React Start (Vite | TypeScript)',
+    script: 'npx @tanstack/cli@latest create {{beforeDir}} --tailwind',
     expected: {
       framework: '@storybook/tanstack-react',
       renderer: '@storybook/react',
@@ -1049,7 +1065,8 @@ export const normal: TemplateKey[] = [
   'bench/react-webpack-18-ts-test-build',
   // 'ember/default-js',
   'react-rsbuild/default-ts',
-  'tanstack-react/default-ts',
+  'tanstack-react-router/default-ts',
+  'tanstack-react-start/default-ts',
 ];
 
 export const merged: TemplateKey[] = [

@@ -1,5 +1,5 @@
 ---
-title: 'Code snippets contributions'
+title: Code snippets contributions
 hideRendererSelector: true
 sidebar:
   order: 2
@@ -14,11 +14,9 @@ Storybook maintains code snippets for a [variety of frameworks](../../configure/
 
 We welcome community contributions to the code snippets. Here's a matrix of the frameworks for which we have snippets. Help us add snippets for your favorite framework.
 
-
-| React  | Vue 3 | Angular   | Web Components | Svelte | Solid  | Ember | HTML | Preact | Qwik |
-| ------ | ----- | --------- | ---------------|--------|--------|-------|------| -------|------|
-| ✅     | ✅    | ✅        | ✅             | ✅     | ✅     | ❌    | ❌   | ❌     | ❌  |
-
+| React | Vue 3 | Angular | Web Components | Svelte | Solid | Ember | HTML | Preact | Qwik |
+| ----- | ----- | ------- | -------------- | ------ | ----- | ----- | ---- | ------ | ---- |
+| ✅    | ✅    | ✅      | ✅             | ✅     | ✅    | ❌    | ❌   | ❌     | ❌   |
 
 ## Snippet syntax
 
@@ -27,8 +25,6 @@ The code snippets referenced throughout the Storybook documentation are located 
 ### Example
 
 The following code block demonstrates how to structure a code snippet in the Storybook documentation and the attributes you can use to provide additional context to the code snippet.
-
-{/* prettier-ignore-start */}
 
 ````md title="docs/_snippets/button-group-story.md"
 ```ts filename="ButtonGroup.stories.ts" renderer="vue" language="ts" tabTitle="3"
@@ -59,11 +55,8 @@ export const Pair: Story = {
     orientation: 'horizontal',
   },
 };
-``` 
+```
 ````
-
-{/* prettier-ignore-end */}
-
 
 ## Common attributes for code snippets
 
@@ -73,80 +66,63 @@ Following are the attributes you'll use most often in the Storybook documentatio
 
 Most code examples should include a file name so readers can understand which file they relate to and where to paste it into their project. For code examples, include the `filename` attribute wrapped with quotation marks to indicate the file name. This is not required if the example relates to a terminal command.
 
-{/* prettier-ignore-start */}
-
 ````md title="docs/_snippets/button-stories.md"
 ```ts filename="Button.stories.ts"
+
 ```
 ````
-
-{/* prettier-ignore-end */}
 
 ### Language configuration
 
 Use the `language` attribute to define the language to which the code snippet applies. The documentation uses this attribute to determine which variant to display (e.g., JavaScript, TypeScript, MDX).
 
-{/* prettier-ignore-start */}
-
 ````md title="docs/_snippets/button-stories.md"
 ```ts filename="Button.stories.ts" language="js|ts|mdx"
+
 ```
 ````
-
-{/* prettier-ignore-end */}
 
 ### Framework-specific code
 
 Use the `renderer` attribute to indicate which of the [supported frameworks](../../configure/integration/frameworks-feature-support.mdx) the code snippet belongs to.
 
-{/* prettier-ignore-start */}
-
 ````md title="docs/_snippets/button-stories.md"
 ```ts filename="Button.stories.ts" language="ts" renderer="react|vue|angular|web-components|ember|html|svelte|preact|qwik|solid"
+
 ```
 ````
-
-{/* prettier-ignore-end */}
 
 Alternatively, if you're documenting examples that apply to multiple frameworks, use the `renderer` attribute with the `common` value to indicate that the code snippet is framework-agnostic.
 
-{/* prettier-ignore-start */}
-
 ````md title="docs/_snippets/button-stories.md"
 ```ts filename="Button.stories.ts" language="ts" renderer="common"
+
 ```
 ````
-
-{/* prettier-ignore-end */}
 
 ### Package manager configuration
 
 Use the `packageManager` attribute to configure the package manager used in the example from the following options: `npm`, `yarn`, or `pnpm`.
 
-
-{/* prettier-ignore-start */}
-
 ````md title="docs/_snippets/storybook-run-dev.md"
 ```shell renderer="common" language="js" packageManager="npm|yarn|pnpm"
+
 ```
 ````
-
-{/* prettier-ignore-end */}
 
 ### Working with multiple snippets
 
 Use the `tabTitle` attribute to indicate the tab title in which the code snippet will be displayed. This attribute should only be used when multiple examples are in a single code snippet file.
- 
-{/* prettier-ignore-start */}
 
 ````md title="docs/_snippets/component-decorator.md"
 ```ts filename="YourComponent.stories.ts" language="ts" renderer="common" tabTitle="Story"
+
 ```
+
 ```ts filename=".storybook/preview.ts|tsx" language="ts" renderer="common" tabTitle="Storybook configuration"
+
 ```
 ````
-
-{/* prettier-ignore-end */}
 
 ## Contributing code snippets
 
@@ -154,32 +130,17 @@ You can start contributing to the Storybook documentation by now that you're fam
 
 Start by creating a new branch on your local Storybook monorepo with the following command:
 
-{/* prettier-ignore-start */}
-
 ```shell
 git checkout -b code-snippets-for-framework
 ```
-  
-{/* prettier-ignore-end */}
 
 Browse the documentation and look for the code snippets you want to contribute. For example, on the [setup page](https://github.com/storybookjs/storybook/blob/next/docs/get-started/setup.mdx) you should see the following:
 
-{/* prettier-ignore-start */}
-
- ```jsx title="docs/get-started/setup.mdx"
-{/* prettier-ignore-start */}
-
-<CodeSnippets path="your-component.md" usesCsf3 />
-
-{/* prettier-ignore-end */}
+```mdx title="docs/get-started/setup.mdx"
+<CodeSnippets path="your-component.md" />
 ```
 
-{/* prettier-ignore-end */}
-
-
 Open the file inside the `docs/_snippets` directory and adjust the content to match the code snippet you're willing to contribute. For example:
-
-{/* prettier-ignore-start */}
 
 ````md title="docs/_snippets/your-component.md"
 ```ts filename="YourComponent.stories.ts" renderer="qwik" language="ts"
@@ -199,13 +160,11 @@ type Story = StoryObj<YourComponentProps>;
 
 export const FirstStory: Story = {
   args: {
-  //👇 The args you need here will depend on your component
+    //👇 The args you need here will depend on your component
   },
 };
 ```
 ````
-
-{/* prettier-ignore-end */}
 
 Go through the rest of the documentation and repeat the process.
 
@@ -215,33 +174,21 @@ Before submitting your contribution, we encourage you to check your work against
 
 Start by forking the Storybook [website repository](https://github.com/storybookjs/web) and cloning it locally.
 
-{/* prettier-ignore-start */}
-
 ```shell
 git clone https://github.com/your-username/web.git
 ```
-  
-{/* prettier-ignore-end */}
 
 Navigate to the `web` directory and install the required dependencies.
-
-{/* prettier-ignore-start */}
 
 ```shell
 npm install
 ```
 
-{/* prettier-ignore-end */}
-
 We recommend that you generate a website build first to ensure you can preview your changes locally and verify that everything is working as expected. To do so, run the following command:
-
-{/* prettier-ignore-start */}
 
 ```shell
 npm run build:frontpage
 ```
-
-{/* prettier-ignore-end */}
 
 <Callout variant="info">
 
@@ -251,23 +198,15 @@ When executed, this command will retrieve the required files needed to successfu
 
 Run the `sync-docs` command to connect the documentation from the Storybook monorepo to the Storybook website. When prompted, provide the path to your local fork of the Storybook monorepo and the documentation version you're working on.
 
-{/* prettier-ignore-start */}
-
 ```shell
 npm run sync-docs
 ```
 
-{/* prettier-ignore-end */}
-
 Finally, open a new terminal window and run the `dev` command to start the Storybook website.
-
-{/* prettier-ignore-start */}
 
 ```shell
 npm run dev
 ```
-
-{/* prettier-ignore-end */}
 
 If all goes well, you should see the Storybook website running. Open a browser window to `http://localhost:3000`, click the Docs link to open the documentation, and select your framework from the dropdown.
 
@@ -279,7 +218,6 @@ Go through the documentation and check your work.
 
 Once you have verified that your changes are working as expected, you're ready to create a "Pull Request". This will let the Storybook maintainers know you have some changes to propose. At this point, we can give you feedback and request changes. To help with the review process, we encourage you to add a clear title and description of your work.
 
-
 ## Troubleshooting
 
 ### Code snippets not displaying
@@ -288,8 +226,8 @@ If you're documenting an example that includes the `packageManager` attribute co
 
 ## Learn more about contributing to Storybook
 
-* [RFC process](../RFC.mdx) for authoring feature requests
-* [Code](../code.mdx) for features and bug fixes
-* [Frameworks](../framework.mdx) to get started with a new framework
-* [Documentation](./documentation-updates.mdx) for documentation improvements, typos, and clarifications
-* Examples for new snippets
+- [RFC process](../RFC.mdx) for authoring feature requests
+- [Code](../code.mdx) for features and bug fixes
+- [Frameworks](../framework.mdx) to get started with a new framework
+- [Documentation](./documentation-updates.mdx) for documentation improvements, typos, and clarifications
+- Examples for new snippets

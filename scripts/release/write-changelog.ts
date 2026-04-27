@@ -79,35 +79,6 @@ const writeToChangelogFile = async ({
   await writeFile(changelogPath, nextChangelog);
 };
 
-const writeToDocsVersionFile = async ({
-  changelogText,
-  version,
-  verbose,
-}: {
-  changelogText: string;
-  version: string;
-  verbose?: boolean;
-}) => {
-  const isPrerelease = semver.prerelease(version) !== null;
-  const filename = isPrerelease ? 'next.json' : 'latest.json';
-  const filepath = join(__dirname, '..', '..', 'docs', 'versions', filename);
-
-  if (verbose) {
-    console.log(`📝 Writing changelog to ${picocolors.blue(filepath)}`);
-  }
-
-  const textWithoutHeading = changelogText.split('\n').slice(2).join('\n').replaceAll('"', '\\"');
-
-  const content = {
-    version,
-    info: {
-      plain: textWithoutHeading,
-    },
-  };
-
-  await writeFile(filepath, JSON.stringify(content));
-};
-
 export const run = async (args: unknown[], options: unknown) => {
   if (!validateOptions(args, options)) {
     return;
@@ -129,7 +100,6 @@ export const run = async (args: unknown[], options: unknown) => {
   }
 
   await writeToChangelogFile({ changelogText, version, verbose });
-  await writeToDocsVersionFile({ changelogText, version, verbose });
 
   console.log(`✅ Wrote Changelog to file`);
 };

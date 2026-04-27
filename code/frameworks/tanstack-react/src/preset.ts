@@ -66,7 +66,7 @@ export const viteFinal: StorybookConfigVite['viteFinal'] = async (config, option
   const basePlugins = reactConfig.plugins ?? [];
   const plugins = [
     ...basePlugins.filter((p) => !isTanStackStartPlugin(p)),
-    serverCodeEliminationPlugin(),
+    serverCodeEliminationPlugin({ excludeFiles: [stubPath] }),
     {
       name: 'tanstack-start-plugin-remover',
       enforce: 'pre' as const,

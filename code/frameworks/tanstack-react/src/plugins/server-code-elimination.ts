@@ -31,7 +31,9 @@ const CLIENT_ONLY_FN_RE = /\bcreateClientOnlyFn\b/;
 const ANY_PATTERN_RE =
   /\b(createServerFn|createMiddleware|createIsomorphicFn|createServerOnlyFn|createClientOnlyFn)\b/;
 
-export function serverCodeEliminationPlugin(): Plugin {
+export function serverCodeEliminationPlugin(options: { excludeFiles?: string[] } = {}): Plugin {
+  const excludeFiles = new Set(options.excludeFiles ?? []);
+
   return {
     name: 'storybook:tanstack-react:server-code-elimination',
     enforce: 'pre',
@@ -42,14 +44,18 @@ export function serverCodeEliminationPlugin(): Plugin {
       filter: {
         id: {
           include: [/\.tsx?$/],
-          // todo make export-mocks more robust (currently we just exclude all files in that folder, but ideally we should only exclude the relevant ones)
-          exclude: [/node_modules/, /export-mocks/],
+          exclude: [/node_modules/],
         },
         code: ANY_PATTERN_RE,
       },
       async handler(code, id) {
         // Only process JS/TS files
         if (!/\.[mc]?[jt]sx?$/.test(id)) {
+          return null;
+        }
+
+        // Skip files explicitly excluded by the caller (e.g. our own export-mocks)
+        if (excludeFiles.has(id)) {
           return null;
         }
 

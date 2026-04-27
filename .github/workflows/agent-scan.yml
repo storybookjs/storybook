@@ -15,7 +15,15 @@ concurrency:
 
 jobs:
   agentscan:
-    if: github.repository_owner == 'storybookjs'
+    if: |
+      github.repository_owner == 'storybookjs' &&
+      !contains(
+        fromJSON('["OWNER","MEMBER","COLLABORATOR"]'),
+        github.event.pull_request.author_association
+      ) && !contains(
+        fromJSON('["dependabot[bot]", "github-actions[bot]","storybook-bot"]'),
+        github.event.pull_request.user.login
+      )
     runs-on: ubuntu-latest
     permissions:
       pull-requests: write
@@ -34,7 +42,6 @@ jobs:
         uses: MatteoGabriele/agentscan-action@a584774dd15cabe6df4c6ab45fc43514a3b56b2d
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
-          skip-members: "dependabot[bot],AriPerkkio,huang-julien,MichaelArestad,yannbf,vanessayuenn,jonniebigodes,Sidnioulz,kasperpeulen,valentinpalkovic,github-actions[bot],ndelangen,shilman,JReinhold,ghengeveld,storybook-bot,kylegach"
           agent-scan-comment: false
           cache-path: .agentscan-cache
       - name: Label PR with classification

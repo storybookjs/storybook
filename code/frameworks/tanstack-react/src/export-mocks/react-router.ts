@@ -59,7 +59,7 @@ export const Outlet = () => null;
 export const Navigate: typeof _Navigate = ({ to, href }) => {
   useEffect(() => {
     onNavigate({ to: (to as string) || href });
-  }, []);
+  }, [to, href]);
 
   return null;
 };

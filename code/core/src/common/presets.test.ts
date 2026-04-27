@@ -5,8 +5,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { logger } from 'storybook/internal/node-logger';
 
-import * as resolveUtils from '../shared/utils/module';
-import { getPresets, loadPreset, resolveAddonName } from './presets';
+import * as resolveUtils from '../shared/utils/module.ts';
+import { getPresets, loadPreset, resolveAddonName } from './presets.ts';
 
 function wrapPreset(basePresets: any): { babel: Function; webpack: Function } {
   return {

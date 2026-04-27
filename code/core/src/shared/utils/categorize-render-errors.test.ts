@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { ERROR_CATEGORIES, categorizeError } from './categorize-render-errors';
+import { ERROR_CATEGORIES, categorizeError } from './categorize-render-errors.ts';
 
 describe('categorize-render-errors', () => {
   beforeEach(() => {

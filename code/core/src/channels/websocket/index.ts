@@ -6,7 +6,7 @@ import { global } from '@storybook/global';
 import { isJSON, parse, stringify } from 'telejson';
 import invariant from 'tiny-invariant';
 
-import type { ChannelHandler, ChannelTransport, Config } from '../types';
+import type { ChannelHandler, ChannelTransport, Config } from '../types.ts';
 
 const { WebSocket } = global;
 

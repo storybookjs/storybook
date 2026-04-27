@@ -1,6 +1,6 @@
 import { definePreviewAddon } from 'storybook/internal/csf';
 
-import type { ControlsTypes } from './types';
+import type { ControlsTypes } from './types.ts';
 
 export type { ControlsTypes };
 

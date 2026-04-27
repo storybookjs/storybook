@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 
 import type { StoryIndex } from 'storybook/internal/types';
 
-import { generateImportFnScriptCode } from './codegen-importfn-script';
+import { generateImportFnScriptCode } from './codegen-importfn-script.ts';
 
 describe('generateImportFnScriptCode', () => {
   it('should correctly map story paths to import functions for POSIX paths', async () => {

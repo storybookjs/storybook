@@ -4,7 +4,7 @@ import { CLI_COLORS } from 'storybook/internal/node-logger';
 import { coerce, gt, major, parse } from 'semver';
 import { dedent } from 'ts-dedent';
 
-import { createBlocker } from './types';
+import { createBlocker } from './types.ts';
 
 type UpgradeCheckResult = 'downgrade' | 'gap-too-large' | 'ok';
 

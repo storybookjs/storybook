@@ -1,5 +1,5 @@
 ---
-title: 'Code contributions'
+title: Code contributions
 hideRendererSelector: true
 sidebar:
   order: 2
@@ -10,8 +10,8 @@ Contribute a new feature or bug fix to [Storybook's monorepo](https://github.com
 
 ## Prerequisites
 
-* Ensure you have Node version 18 installed (suggestion: v18.16.0).
-* If you're working with Windows, all commands should be run in a terminal with administrator privileges.
+- Ensure you have Node version 18 installed (suggestion: v18.16.0).
+- If you're working with Windows, all commands should be run in a terminal with administrator privileges.
 
 ## Initial setup
 
@@ -30,7 +30,7 @@ corepack enable
 
 ## Run your first sandbox
 
-Storybook development happens in a set of *sandboxes* which are templated Storybook environments corresponding to different user setups. Within each sandbox, we inject a set of generalized stories that allow us to test core features and addons in all such environments.
+Storybook development happens in a set of _sandboxes_ which are templated Storybook environments corresponding to different user setups. Within each sandbox, we inject a set of generalized stories that allow us to test core features and addons in all such environments.
 
 To run a sandbox locally, you can use the `start` command:
 
@@ -56,7 +56,7 @@ When prompted, answer the questions as accurately as possible to allow Storybook
 
 <Callout variant="info" icon="💡">
 
-  The `yarn task` command takes a few development shortcuts that can catch you off guard when switching branches and may require you to re-run both the `install` and `compile` tasks. You can speed up the process by running the command with the `start-from=install` flag.
+The `yarn task` command takes a few development shortcuts that can catch you off guard when switching branches and may require you to re-run both the `install` and `compile` tasks. You can speed up the process by running the command with the `start-from=install` flag.
 
 </Callout>
 
@@ -90,7 +90,7 @@ When prompted to start the build process in `watch` mode, answer **yes** to deve
 
 <Callout variant="info" icon="💡">
 
-  Build's `watch` mode is great for interactive development. However, for performance reasons, it only transpiles your code and doesn't execute the TypeScript compiler. If something isn't working as expected, try running the `build` command **WITHOUT** enabling watch mode: it will re-generate TypeScript types and perform automatic type checking for you.
+Build's `watch` mode is great for interactive development. However, for performance reasons, it only transpiles your code and doesn't execute the TypeScript compiler. If something isn't working as expected, try running the `build` command **WITHOUT** enabling watch mode: it will re-generate TypeScript types and perform automatic type checking for you.
 
 </Callout>
 
@@ -103,17 +103,17 @@ Otherwise, if it affects the `Manager` (the outermost Storybook `iframe` where t
 ![Storybook manager preview](../_assets/addons/manager-preview.png)
 
 The `yarn build` commands accepts arguments to help speed up your development workflow:
-* `--all` will cause all packages to be built
-* `--watch` will enable watch mode (and skip the watch mode prompt)
-* `--prod` will build for production (and skip the production mode prompt)
-* individual package names can be passed, without the `@storybook/` prefix, e.g. `storybook`, `addon-docs`, etc.
+
+- `--all` will cause all packages to be built
+- `--watch` will enable watch mode (and skip the watch mode prompt)
+- `--prod` will build for production (and skip the production mode prompt)
+- individual package names can be passed, without the `@storybook/` prefix, e.g. `storybook`, `addon-docs`, etc.
 
 For example, to build Storybook and the docs addon in watch mode, run:
 
 ```shell
 yarn build --watch storybook addon-docs
 ```
-
 
 ## Check your work
 
@@ -163,8 +163,8 @@ yarn test
 
 <Callout variant="info" icon="💡">
 
-  Storybook relies on [Vitest](https://vitest.dev/) as part of it's testing suite. During the test run, if you spot that snapshot tests are failing, re-run the command with the `-u` flag to update them.
-  
+Storybook relies on [Vitest](https://vitest.dev/) as part of it's testing suite. During the test run, if you spot that snapshot tests are failing, re-run the command with the `-u` flag to update them.
+
 </Callout>
 
 Doing this prevents last-minute bugs and is a great way to merge your contribution faster once you submit your pull request. Failing to do so will lead to one of the maintainers mark the pull request with the **Work in Progress** label until all tests pass.
@@ -177,8 +177,8 @@ If your contribution focuses on a bugfix and you want it featured in the next st
 
 #### Useful resources when working with forks
 
-* [Sync a fork](https://docs.github.com/en/github/collaborating-with-issues-and-pull-requests/working-with-forks/syncing-a-fork)
-* [Merge an upstream repository into your fork](https://docs.github.com/en/github/collaborating-with-issues-and-pull-requests/working-with-forks/merging-an-upstream-repository-into-your-fork)
+- [Sync a fork](https://docs.github.com/en/github/collaborating-with-issues-and-pull-requests/working-with-forks/syncing-a-fork)
+- [Merge an upstream repository into your fork](https://docs.github.com/en/github/collaborating-with-issues-and-pull-requests/working-with-forks/merging-an-upstream-repository-into-your-fork)
 
 ### Reproducing job failures
 
@@ -191,9 +191,11 @@ yarn task --task e2e-tests --template=react-vite/default-ts --start-from=install
 Typically it is a good idea to start from the `install` task to ensure your local code is completely up to date. If you reproduce the failure, you can try and make fixes, [compile them](#start-developing) with `build`, then rerun the task with `--start-from=auto`.
 
 <Callout variant="info" icon="💡">
-  The default instructions run the code in "linked" mode, meaning built changes to Storybook library code will be reflected in the sandbox immediately (the next time you run the task). However, CI runs in "unlinked" mode, which in rare cases, will behave differently.
 
-  If you are having trouble reproducing, try rerunning the command with the `--no-link` flag. If you need to do that, you'll need to run it with `--start-from=compile` after each code change.
+The default instructions run the code in "linked" mode, meaning built changes to Storybook library code will be reflected in the sandbox immediately (the next time you run the task). However, CI runs in "unlinked" mode, which in rare cases, will behave differently.
+
+If you are having trouble reproducing, try rerunning the command with the `--no-link` flag. If you need to do that, you'll need to run it with `--start-from=compile` after each code change.
+
 </Callout>
 
 ## How to work with reproductions
@@ -215,7 +217,9 @@ npx storybook@next link --local /path/to/local-repro-directory
 ```
 
 <Callout variant="info" icon="💡">
-  The `storybook link` command relies on [Yarn linking](https://yarnpkg.com/cli/link/) under the hood. It requires your local reproduction to be using [Yarn 2 or higher](https://yarnpkg.com/) as well, which is the case if you've already enabled it with the [`storybook sandbox`](./how-to-reproduce.mdx) command per our contribution guidelines. The process will fail if you're trying to link a non-Yarn 2 project.
+
+The `storybook link` command relies on [Yarn linking](https://yarnpkg.com/cli/link/) under the hood. It requires your local reproduction to be using [Yarn 2 or higher](https://yarnpkg.com/) as well, which is the case if you've already enabled it with the [`storybook sandbox`](./how-to-reproduce.mdx) command per our contribution guidelines. The process will fail if you're trying to link a non-Yarn 2 project.
+
 </Callout>
 
 ## Developing a template
@@ -239,8 +243,8 @@ Add the `inDevelopment` flag until the PR is merged (you can fast-follow it with
 
 The **`key`** `cra/default-js` consists of two parts:
 
-* The prefix is the tool that was used to generate the repro app
-* The suffix is options that modify the default install, e.g. a specific version or options
+- The prefix is the tool that was used to generate the repro app
+- The suffix is options that modify the default install, e.g. a specific version or options
 
 The **`script`** field is what generates the application environment. The `.` argument is “the current working directory” which is auto-generated based on the key (e.g. `repros/cra/default-js/before-storybook`). The `{{beforeDir}}` key can also be used, which will be replaced by the path of that directory.
 
@@ -267,15 +271,16 @@ Once the PR is merged, the template will be generated on a nightly cadence and y
 ## Troubleshooting
 
 <details>
-  <summary><code>yarn build --all --watch</code> watches everything but is resource-intensive</summary>
+<summary><code>yarn build --all --watch</code> watches everything but is resource-intensive</summary>
 
-  It's troublesome to know which packages you'll change ahead of time, and watching them can be highly demanding, even on modern machines. If you're working on a powerful enough machine, you can use `yarn build --all --watch` instead of `yarn build`.
+It's troublesome to know which packages you'll change ahead of time, and watching them can be highly demanding, even on modern machines. If you're working on a powerful enough machine, you can use `yarn build --all --watch` instead of `yarn build`.
+
 </details>
 
 **Learn more about contributing to Storybook**
 
-* [RFC process](./RFC.mdx) for authoring feature requests
-* Code for features and bug fixes
-* [Frameworks](./framework.mdx) to get started with a new framework
-* [Documentation](./documentation/documentation-updates.mdx) for documentation improvements, typos, and clarifications
-* [Examples](./documentation/new-snippets.mdx) for new snippets
+- [RFC process](./RFC.mdx) for authoring feature requests
+- Code for features and bug fixes
+- [Frameworks](./framework.mdx) to get started with a new framework
+- [Documentation](./documentation/documentation-updates.mdx) for documentation improvements, typos, and clarifications
+- [Examples](./documentation/new-snippets.mdx) for new snippets

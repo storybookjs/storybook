@@ -5,9 +5,12 @@ import type { StorybookConfigRaw } from 'storybook/internal/types';
 
 import { dedent } from 'ts-dedent';
 
-import { add } from '../../add';
-import type { CheckOptions, RunOptions } from '../types';
-import { type StorysourceOptions, addonStorysourceCodePanel } from './addon-storysource-code-panel';
+import { add } from '../../add.ts';
+import type { CheckOptions, RunOptions } from '../types.ts';
+import {
+  type StorysourceOptions,
+  addonStorysourceCodePanel,
+} from './addon-storysource-code-panel.ts';
 
 vi.mock('../../add');
 

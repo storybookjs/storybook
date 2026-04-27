@@ -5,8 +5,8 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { JsPackageManager } from 'storybook/internal/common';
 import type { StorybookConfig } from 'storybook/internal/types';
 
-import * as docsUtils from '../../doctor/getIncompatibleStorybookPackages';
-import { upgradeStorybookRelatedDependencies } from './upgrade-storybook-related-dependencies';
+import * as docsUtils from '../../doctor/getIncompatibleStorybookPackages.ts';
+import { upgradeStorybookRelatedDependencies } from './upgrade-storybook-related-dependencies.ts';
 
 vi.mock('../../doctor/getIncompatibleStorybookPackages');
 vi.mock('node:fs', async (importOriginal) => {

@@ -3,9 +3,9 @@ import { join } from 'node:path';
 
 import { expect, it, vi } from 'vitest';
 
-import { initialGlobals } from './initial-globals';
+import { initialGlobals } from './initial-globals.ts';
 
-vi.mock('node:fs/promises', async () => import('../../../../../__mocks__/fs/promises'));
+vi.mock('node:fs/promises', async () => import('../../../../../__mocks__/fs/promises.ts'));
 
 const previewConfigPath = join('.storybook', 'preview.js');
 const check = async (previewContents: string) => {

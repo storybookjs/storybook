@@ -1,7 +1,7 @@
 //* @vitest-environment happy-dom */
 import { describe, expect, test, vi } from 'vitest';
 
-import { definePreview, definePreviewAddon, getStoryChildren } from './csf-factories';
+import { definePreview, definePreviewAddon, getStoryChildren } from './csf-factories.ts';
 
 interface Addon1Types {
   parameters: { foo?: { value: string } };

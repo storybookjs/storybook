@@ -4,13 +4,13 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useStorybookApi, useStorybookState } from 'storybook/manager-api';
 import { styled } from 'storybook/theming';
 
-import { getStateType } from '../../utils/tree';
-import { AuthBlock, EmptyBlock, ErrorBlock, LoaderBlock } from './RefBlocks';
-import { RefIndicator } from './RefIndicator';
-import { DEFAULT_REF_ID } from './Sidebar';
-import { Tree } from './Tree';
-import { CollapseIcon } from './components/CollapseIcon';
-import type { Highlight, RefType } from './types';
+import { getStateType } from '../../utils/tree.ts';
+import { AuthBlock, EmptyBlock, ErrorBlock, LoaderBlock } from './RefBlocks.tsx';
+import { RefIndicator } from './RefIndicator.tsx';
+import { DEFAULT_REF_ID } from './Sidebar.tsx';
+import { Tree } from './Tree.tsx';
+import { CollapseIcon } from './components/CollapseIcon.tsx';
+import type { Highlight, RefType } from './types.ts';
 
 export interface RefProps {
   isLoading: boolean;

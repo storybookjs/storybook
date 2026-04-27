@@ -1,8 +1,8 @@
 // should be node:http, but that caused the ui/manager to fail to build, might be able to switch this back once ui/manager is in the core
 import type { ChannelLike } from 'storybook/internal/channels';
 import type { FileSystemCache } from 'storybook/internal/common';
-import { type StoryIndexGenerator } from 'storybook/internal/core-server';
-import { type CsfFile } from 'storybook/internal/csf-tools';
+import type { StoryIndexGenerator } from 'storybook/internal/core-server';
+import type { CsfFile } from 'storybook/internal/csf-tools';
 import type { LogLevel } from 'storybook/internal/node-logger';
 
 import type { Server as HttpServer, IncomingMessage, ServerResponse } from 'http';
@@ -10,10 +10,10 @@ import type { Server as NetServer } from 'net';
 import type { Options as TelejsonOptions } from 'telejson';
 import type { PackageJson as PackageJsonFromTypeFest } from 'type-fest';
 
-import type { SupportedBuilder } from './builders';
-import type { SupportedFramework } from './frameworks';
-import type { Indexer, StoriesEntry } from './indexer';
-import type { SupportedRenderer } from './renderers';
+import type { SupportedBuilder } from './builders.ts';
+import type { SupportedFramework } from './frameworks.ts';
+import type { Indexer, StoriesEntry } from './indexer.ts';
+import type { SupportedRenderer } from './renderers.ts';
 
 /** ⚠️ This file contains internal WIP types they MUST NOT be exported outside this package for now! */
 
@@ -276,6 +276,26 @@ export interface Builder<Config, BuilderStats extends Stats = Stats> {
   bail: (e?: Error) => Promise<void>;
   corePresets?: string[];
   overridePresets?: string[];
+  onModuleGraphChange?(cb: (event: ModuleGraphChangeEvent) => void): () => void;
+}
+
+/**
+ * Builder-agnostic module graph for dependency tracking. Modeled after Vite's module graph.
+ * The same file can be imported in multiple ways (e.g. based on query params or import context),
+ * each representing a unique module identity, hence the value is a Set<ModuleNode>.
+ */
+export type ModuleGraph = Map<ModuleNode['file'], Set<ModuleNode>>;
+
+export type ModuleGraphChangeEvent =
+  | { type: 'moduleGraph'; moduleGraph: ModuleGraph }
+  | { type: 'unavailable'; reason: string; error?: Error }
+  | { type: 'error'; error: Error };
+
+export interface ModuleNode {
+  file: string;
+  type: 'js' | 'css' | 'asset';
+  importers: Set<ModuleNode>;
+  importedModules: Set<ModuleNode>;
 }
 
 /** Options for TypeScript usage within Storybook. */
@@ -354,6 +374,11 @@ export interface TagOptions {
 
 export type TagsOptions = Record<Tag, Partial<TagOptions>>;
 
+export type ComponentSubcomponentManifest = Pick<
+  ComponentManifest,
+  'name' | 'path' | 'description' | 'import' | 'summary' | 'jsDocTags' | 'error'
+>;
+
 export interface ComponentManifest {
   id: string;
   path: string;
@@ -369,6 +394,7 @@ export interface ComponentManifest {
     error?: { name: string; message: string };
   }[];
   jsDocTags: Record<string, string[]>;
+  subcomponents?: Record<string, ComponentSubcomponentManifest>;
   error?: { name: string; message: string };
 }
 
@@ -376,7 +402,7 @@ export interface ComponentsManifest {
   v: number;
   components: Record<string, ComponentManifest>;
   meta?: {
-    docgen: 'react-docgen' | 'react-docgen-typescript';
+    docgen: 'react-docgen' | 'react-docgen-typescript' | 'react-component-meta';
     durationMs: number;
   };
 }
@@ -510,9 +536,18 @@ export interface StorybookConfigRaw {
     /**
      * Enable component manifest generation for MCP and other tooling integrations.
      *
-     * @default true
+     * @default false
      */
     componentsManifest?: boolean;
+
+    /**
+     * Use TypeScript LanguageService (react-component-meta) for extracting React component props
+     * instead of react-docgen / react-docgen-typescript.
+     *
+     * @default false
+     * @experimental
+     */
+    experimentalReactComponentMeta?: boolean;
 
     /**
      * Enables the new code example generation for React components. You can see those examples when
@@ -526,6 +561,13 @@ export interface StorybookConfigRaw {
      * @experimental This feature is in early development and may change significantly in future releases.
      */
     experimentalCodeExamples?: boolean;
+
+    /**
+     * Enable change detection
+     * TODO: Turn to true before 10.4 release
+     * @default false
+     */
+    changeDetection?: boolean;
   };
 
   build?: TestBuildConfig;

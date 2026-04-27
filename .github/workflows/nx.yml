@@ -1,14 +1,10 @@
 name: nx
 
+# NX Cloud license has expired. Triggers are disabled so this workflow does
+# not run on PRs, pushes, or schedules. It can still be started manually via
+# workflow_dispatch once the license is restored.
 on:
-  push:
-    branches:
-      - next
-  # TODO use pull_request_target in the future to also run on forks
-  pull_request:
-    types: [opened, synchronize, labeled, reopened]
-  schedule:
-    - cron: '0 23 * * *'
+  workflow_dispatch:
 
 permissions:
   actions: read
@@ -32,7 +28,7 @@ jobs:
 
     runs-on: ubuntu-latest
     env:
-      ALL_TASKS: compile,check,knip,test,pretty-docs,lint,sandbox,build,e2e-tests,e2e-tests-dev,test-runner,vitest-integration,check-sandbox,e2e-ui,jest,vitest,playwright-ct
+      ALL_TASKS: compile,check,knip,test,lint,fmt,sandbox,build,e2e-tests,e2e-tests-dev,test-runner,vitest-integration,check-sandbox,e2e-ui,jest,vitest,playwright-ct
     steps:
       - uses: actions/checkout@v4
         with:

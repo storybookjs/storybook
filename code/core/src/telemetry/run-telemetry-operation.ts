@@ -1,4 +1,4 @@
-import { createFileSystemCache, resolvePathInStorybookCache } from '../common';
+import { createFileSystemCache, resolvePathInStorybookCache } from '../common/index.ts';
 
 const cache = createFileSystemCache({
   basePath: resolvePathInStorybookCache('telemetry'),

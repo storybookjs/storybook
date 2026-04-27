@@ -1,8 +1,7 @@
 ---
-title: 'Interaction tests'
+title: Interaction tests
 sidebar:
   order: 2
-  title: Interaction tests
 ---
 
 In Storybook, interaction tests are built as part of a [story](../writing-stories/index.mdx). That story renders the component with the necessary props and context to place it in an initial state. You then use a [play function](../writing-stories/play-function.mdx) to simulate user behavior like clicks, typing, and submitting a form and then assert on the end result.
@@ -78,7 +77,7 @@ canvas.getAllByRole('listitem');
 
 If your components use the shadow DOM, you can query elements within a shadow root with the help of [`shadow-dom-testing-library`](https://github.com/konnorrogers/shadow-dom-testing-library), which provides versions of the queries above that can pierce the shadow boundary. For example, `findByRole` → `findByShadowRole`, `getByText` → `getByShadowText`, and so on.
 
-With a bit of configuration, you can use these queries in your play function. Add the following code to your `.storybook/preview.js|ts` file:
+With a bit of configuration, you can use these queries in your play function. Add the following code to your `.storybook/preview.*` file:
 
 <CodeSnippets path="shadow-dom-testing-library-in-preview.md" />
 
@@ -86,8 +85,8 @@ Now, those queries are available on the `canvas` object in your `play` function:
 
 <CodeSnippets path="shadow-dom-testing-library-in-story.md" />
 
-{/* END only web-components */}
 </If>
+{/* END only web-components */}
 
 ### Simulating behavior with `userEvent`
 
@@ -99,8 +98,8 @@ There are many methods available on `userEvent`, which are detailed in the [`use
 | ----------------- | ------------------------------------------------------------------------------------------------------------------------ |
 | `click`           | Clicks the element, calling a click() function<br />`await userEvent.click(<element>)`                                   |
 | `dblClick`        | Clicks the element twice<br />`await userEvent.dblClick(<element>)`                                                      |
-| `hover`           | Hovers an element<br />`await userEvent.hover(<element>)`                                                                 |
-| `unhover`         | Unhovers out of element<br />`await userEvent.unhover(<element>)`                                                         |
+| `hover`           | Hovers an element<br />`await userEvent.hover(<element>)`                                                                |
+| `unhover`         | Unhovers out of element<br />`await userEvent.unhover(<element>)`                                                        |
 | `tab`             | Presses the tab key<br />`await userEvent.tab()`                                                                         |
 | `type`            | Writes text inside inputs or textareas<br />`await userEvent.type(<element>, 'Some text');`                              |
 | `keyboard`        | Simulates keyboard events<br />`await userEvent.keyboard('{Shift}');`                                                    |
@@ -110,7 +109,7 @@ There are many methods available on `userEvent`, which are detailed in the [`use
 
 <Callout variant="warning">
 
-`userEvent` methods should *always* be `await`ed inside of the play function. This ensures they can be properly logged and debugged in the Interactions panel.
+`userEvent` methods should _always_ be `await`ed inside of the play function. This ensures they can be properly logged and debugged in the Interactions panel.
 
 </Callout>
 
@@ -128,13 +127,13 @@ The `expect` utility here combines the methods available in [Vitest’s `expect`
 | -------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
 | [`toBeInTheDocument()`](https://github.com/testing-library/jest-dom#tobeinthedocument) | Checks if the element is in the DOM<br />`await expect(<element>).toBeInTheDocument()`                                               |
 | [`toBeVisible()`](https://github.com/testing-library/jest-dom#tobevisible)             | Checks if the element is visible to the user<br />`await expect(<element>).toBeVisible()`                                            |
-| [`toHaveAttribute()`](https://github.com/testing-library/jest-dom#tohaveattribute)     | Checks if an element has an attribute<br />`await expect(<element>).toHaveAttribute('aria-disabled', 'true')`                                                       |
+| [`toHaveAttribute()`](https://github.com/testing-library/jest-dom#tohaveattribute)     | Checks if an element has an attribute<br />`await expect(<element>).toHaveAttribute('aria-disabled', 'true')`                        |
 | [`toHaveBeenCalled()`](https://vitest.dev/api/expect.html#tohavebeencalled)            | Checks that a spied function was called<br />`await expect(<function-spy>).toHaveBeenCalled()`                                       |
 | [`toHaveBeenCalledWith()`](https://vitest.dev/api/expect.html#tohavebeencalledwith)    | Checks that a spied function was called with specific parameters<br />`await expect(<function-spy>).toHaveBeenCalledWith('example')` |
 
 <Callout variant="warning">
 
-`expect` calls should *always* be `await`ed inside of the play function. This ensures they can be properly logged and debugged in the Interactions panel.
+`expect` calls should _always_ be `await`ed inside of the play function. This ensures they can be properly logged and debugged in the Interactions panel.
 
 </Callout>
 
@@ -143,7 +142,7 @@ The `expect` utility here combines the methods available in [Vitest’s `expect`
 When your component calls a function, you can spy on that function to make assertions on its behavior using the `fn` utility from Vitest, available via the `storybook/test` module:
 
 ```js
-import { fn } from 'storybook/test'
+import { fn } from 'storybook/test';
 ```
 
 Most of the time, you will use `fn` as an `arg` value when writing your story, then access that `arg` in your test:
@@ -164,7 +163,7 @@ Here's an example of using the [`mockdate`](https://github.com/boblauer/MockDate
 
 There are two requirements to use the `mount` function:
 
-1. You *must* destructure the mount property from the `context` (the argument passed to your play function). This makes sure that Storybook does not start rendering the story before the play function begins.
+1. You _must_ destructure the mount property from the `context` (the argument passed to your play function). This makes sure that Storybook does not start rendering the story before the play function begins.
 2. Your Storybook framework or builder must be configured to transpile to ES2017 or newer. This is because destructuring statements and async/await usages are otherwise transpiled away, which prevents Storybook from recognizing your usage of `mount`.
 
 </Callout>
@@ -219,7 +218,7 @@ There are two options for resetting state, `beforeAll` and `beforeEach`.
 
 #### `beforeAll`
 
-The `beforeAll` function in the preview file (`.storybook/preview.js|ts`) will run once before any stories in the project and will _not_ re-run between stories. Beyond its initial run when kicking off a test run, it will not run again unless the preview file is updated. This is a good place to bootstrap your project or run any setup that your entire project depends on, as in the example below.
+The `beforeAll` function in the preview file (`.storybook/preview.*`) will run once before any stories in the project and will _not_ re-run between stories. Beyond its initial run when kicking off a test run, it will not run again unless the preview file is updated. This is a good place to bootstrap your project or run any setup that your entire project depends on, as in the example below.
 
 You can return a cleanup function from the `beforeAll` function, which will run before re-running the `beforeAll` function or during the teardown process in the test runner.
 
@@ -227,7 +226,7 @@ You can return a cleanup function from the `beforeAll` function, which will run 
 
 #### `beforeEach`
 
-Unlike `beforeAll`, which runs only once, the `beforeEach` function in the preview file (`.storybook/preview.js|ts`) will run before each story in the project. This is best used for resetting state or modules that are used by all or most of your stories. In the example below, we use it to reset the mocked Date.
+Unlike `beforeAll`, which runs only once, the `beforeEach` function in the preview file (`.storybook/preview.*`) will run before each story in the project. This is best used for resetting state or modules that are used by all or most of your stories. In the example below, we use it to reset the mocked Date.
 
 You can return a cleanup function from the `beforeEach` function, which will run **after** each story, when the story is remounted or navigated away from.
 
@@ -245,7 +244,7 @@ Sometimes, you may need to make assertions or run code after the component has b
 
 #### `afterEach`
 
-`afterEach` runs after the story is rendered and the play function has completed. It can be used at the project level in the preview file (`.storybook/preview.js|ts`), at the component level in the component meta, or at the story level in the story definition. This is useful for making assertions after the component has been rendered and interacted with, such as running checks on the final rendered output or logging information.
+`afterEach` runs after the story is rendered and the play function has completed. It can be used at the project level in the preview file (`.storybook/preview.*`), at the component level in the component meta, or at the story level in the story definition. This is useful for making assertions after the component has been rendered and interacted with, such as running checks on the final rendered output or logging information.
 
 Like the `play` function, `afterEach` receives the `context` object, which contains the `args`, `canvas`, and other properties related to the story. You can use this to make assertions or run code after the story has been rendered.
 
@@ -313,22 +312,22 @@ If you cannot use the Vitest addon, you can still run your tests in CI using the
 
 ## Troubleshooting
 
-#### What’s the difference between interaction tests and visual tests?
+### What’s the difference between interaction tests and visual tests?
 
 Interaction tests can be expensive to maintain when applied wholesale to every component. We recommend combining them with other methods like visual testing for comprehensive coverage with less maintenance work.
 
-#### What's the difference between interaction tests and using Vitest + Testing Library alone?
+### What's the difference between interaction tests and using Vitest + Testing Library alone?
 
 Interaction tests integrate Vitest and Testing Library into Storybook. The biggest benefit is the ability to view the component you're testing in a real browser. That helps you debug visually, instead of getting a dump of the (fake) DOM in the command line or hitting the limitations of how JSDOM mocks browser functionality. It's also more convenient to keep stories and tests together in one file than having them spread across files.
 
 **More testing resources**
 
-* [Vitest addon](./integrations/vitest-addon/index.mdx) for running tests in Storybook
-* [Accessibility testing](./accessibility-testing.mdx) for accessibility
-* [Visual testing](./visual-testing.mdx) for appearance
-* [Snapshot testing](./snapshot-testing.mdx) for rendering errors and warnings
-* [Test coverage](./test-coverage.mdx) for measuring code coverage
-* [CI](./in-ci.mdx) for running tests in your CI/CD pipeline
-* [End-to-end testing](./integrations/stories-in-end-to-end-tests.mdx) for simulating real user scenarios
-* [Unit testing](./integrations/stories-in-unit-tests.mdx) for functionality
-* [Test runner](./integrations/test-runner.mdx) to automate test execution
+- [Vitest addon](./integrations/vitest-addon/index.mdx) for running tests in Storybook
+- [Accessibility testing](./accessibility-testing.mdx) for accessibility
+- [Visual testing](./visual-testing.mdx) for appearance
+- [Snapshot testing](./snapshot-testing.mdx) for rendering errors and warnings
+- [Test coverage](./test-coverage.mdx) for measuring code coverage
+- [CI](./in-ci.mdx) for running tests in your CI/CD pipeline
+- [End-to-end testing](./integrations/stories-in-end-to-end-tests.mdx) for simulating real user scenarios
+- [Unit testing](./integrations/stories-in-unit-tests.mdx) for functionality
+- [Test runner](./integrations/test-runner.mdx) to automate test execution

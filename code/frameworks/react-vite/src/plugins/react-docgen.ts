@@ -18,12 +18,12 @@ import {
 import * as TsconfigPaths from 'tsconfig-paths';
 import type { PluginOption } from 'vite';
 
-import actualNameHandler from './docgen-handlers/actualNameHandler';
+import actualNameHandler from './docgen-handlers/actualNameHandler.ts';
 import {
   RESOLVE_EXTENSIONS,
   ReactDocgenResolveError,
   defaultLookupModule,
-} from './docgen-resolver';
+} from './docgen-resolver.ts';
 
 type DocObj = Documentation & { actualName: string; definedInFile: string };
 
@@ -44,7 +44,11 @@ export async function reactDocgen({
   const cwd = process.cwd();
   const filter = createFilter(include, exclude);
 
-  const tsconfigPath = find.up('tsconfig.json', { cwd, last: getProjectRoot() });
+  const projectRoot = getProjectRoot();
+  const tsconfigPath =
+    find.up('tsconfig.json', { cwd, last: projectRoot }) ??
+    find.up('tsconfig.base.json', { cwd, last: projectRoot }) ??
+    find.up('tsconfig.app.json', { cwd, last: projectRoot });
   const tsconfig = TsconfigPaths.loadConfig(tsconfigPath);
 
   let matchPath: TsconfigPaths.MatchPath | undefined;

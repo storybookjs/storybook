@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
 
-import { canUpdateVitestConfigFile, canUpdateVitestWorkspaceFile } from './vitest-config-helpers';
+import {
+  canUpdateVitestConfigFile,
+  canUpdateVitestWorkspaceFile,
+} from './vitest-config-helpers.ts';
 
 describe('canUpdateVitestConfigFile', () => {
   it('returns true for plain export default object literal', () => {

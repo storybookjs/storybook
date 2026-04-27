@@ -6,7 +6,7 @@ import React from 'react';
 
 import { ThemeProvider, convert, themes } from 'storybook/theming';
 
-import { A } from './A';
+import { A } from './A.tsx';
 
 function ThemedA({ children, ...props }: React.ComponentProps<typeof A>) {
   return (

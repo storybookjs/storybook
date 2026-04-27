@@ -76,9 +76,24 @@ export function appendEnvBefore(specifier: string): string {
   return `${specifier}${sep}${ENV_MARKER}`;
 }
 
-const BYPASS_PREFIXES = ['/index.json', '/storybook-server-channel', '/runtime-error', '/sb-'];
+/**
+ * Storybook-internal endpoints whose responses are NOT served by Vite's module
+ * pipeline. The before-iframe dispatch middleware never routes these through
+ * `beforeEnv.transformRequest`, regardless of `?env=before` marker or Referer.
+ *
+ * Adding to this list MUST be accompanied by a new `(k.3.*)` probe in
+ * `before-env-routing.test.ts`. The `/sb-` entry is intentionally a wildcard
+ * prefix capturing all Storybook-internal asset routes; reducing its
+ * specificity requires a coordinated change. See ADR-0002 and the README.
+ */
+export const BYPASS_PREFIXES = [
+  '/index.json',
+  '/storybook-server-channel',
+  '/runtime-error',
+  '/sb-',
+];
 
-function isBypassedUrl(url: string): boolean {
+export function isBypassedUrl(url: string): boolean {
   return BYPASS_PREFIXES.some((prefix) => url.startsWith(prefix));
 }
 

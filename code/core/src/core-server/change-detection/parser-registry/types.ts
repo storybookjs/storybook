@@ -1,13 +1,9 @@
-/**
- * A single import edge extracted from a source file. `specifier` is the literal token the
- * source used (e.g. `./foo`, `lodash`, `@scope/pkg`). `kind` distinguishes the three edge
- * flavours the change-detection walker cares about: static `import`/`export`, dynamic
- * `import()`, and CommonJS `require()`.
- */
-export interface ImportEdge {
-  specifier: string;
-  kind: 'static' | 'dynamic' | 'require';
-}
+// Re-exported from the oxc-parser sub-package so existing change-detection consumers keep
+// working without churn. The shape lives there because it is the oxc-parser's output type,
+// not a change-detection concept.
+import type { ImportEdge } from 'storybook/internal/oxc-parser';
+
+export type { ImportEdge };
 
 /** Arguments handed to an {@link ImportParser} when the registry dispatches a file to it. */
 export interface ParseFileArgs {

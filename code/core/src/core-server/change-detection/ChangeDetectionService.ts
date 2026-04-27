@@ -27,7 +27,7 @@ import { GitDiffProvider } from './GitDiffProvider.ts';
 import { extractBaselineEntryIds, IndexBaselineService } from './IndexBaselineService.ts';
 import type { ImportParser } from './parser-registry/index.ts';
 import { ParserRegistry, builtinImportParsers } from './parser-registry/index.ts';
-import { acquireOxcParsePool, disposeOxcParsePool } from './parser-registry/workers/index.ts';
+import { acquireOxcParsePool, disposeOxcParsePool } from 'storybook/internal/oxc-parser';
 import { resetChangeDetectionReadiness, setChangeDetectionReadiness } from './readiness.ts';
 
 const CHANGE_DETECTION_DEBOUNCE_MS = 200;

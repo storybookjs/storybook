@@ -1,10 +1,10 @@
 import { extname } from 'pathe';
 
 import { logger } from 'storybook/internal/node-logger';
+import { parseWithOxc } from 'storybook/internal/oxc-parser';
 
 import { profiler } from '../profiling.ts';
 import type { ImportEdge, ImportParser, ImportParserContext } from './types.ts';
-import { parseWithOxc } from './workers/index.ts';
 
 /**
  * Dispatches a file to the correct {@link ImportParser} based on its extension. The

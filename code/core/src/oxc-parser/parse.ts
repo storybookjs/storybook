@@ -1,6 +1,6 @@
 import { parse as oxcRawParse } from 'oxc-parser';
 
-import { ChangeDetectionFailureError } from '../errors.ts';
+import { OxcParseError } from './errors.ts';
 import type { ImportEdge } from './types.ts';
 
 /**
@@ -13,7 +13,7 @@ const MAX_PARSE_SIZE = 2_000_000;
 /**
  * Extracts literal-string import edges from a JS/TS/JSX/TSX source file using oxc-parser.
  * Type-only imports/exports and non-literal dynamic-import specifiers are skipped.
- * Throws {@link ChangeDetectionFailureError} when the parser fails or returns no module
+ * Throws {@link OxcParseError} when the parser fails or returns no module
  * info; callers should catch and treat such files as opaque-leaf.
  */
 export async function oxcParse(filePath: string, source: string): Promise<ImportEdge[]> {
@@ -24,7 +24,7 @@ export async function oxcParse(filePath: string, source: string): Promise<Import
   try {
     parseResult = await oxcRawParse(filePath, source);
   } catch (error) {
-    throw new ChangeDetectionFailureError(
+    throw new OxcParseError(
       `oxc-parser failed for ${filePath}: ${error instanceof Error ? error.message : String(error)}`,
       error instanceof Error ? { cause: error } : undefined
     );
@@ -32,7 +32,7 @@ export async function oxcParse(filePath: string, source: string): Promise<Import
 
   const moduleInfo = parseResult.module;
   if (!moduleInfo) {
-    throw new ChangeDetectionFailureError(`oxc-parser returned no module info for ${filePath}`);
+    throw new OxcParseError(`oxc-parser returned no module info for ${filePath}`);
   }
 
   const edges: ImportEdge[] = [];

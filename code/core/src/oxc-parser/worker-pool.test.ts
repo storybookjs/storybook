@@ -67,7 +67,7 @@ vi.mock('node:fs', () => ({ existsSync: () => true }));
 
 vi.mock('storybook/internal/node-logger', { spy: true });
 
-const loadModule = async () => await import('./OxcWorkerPool.ts');
+const loadModule = async () => await import('./worker-pool.ts');
 
 describe('OxcWorkerPool', () => {
   beforeEach(() => {

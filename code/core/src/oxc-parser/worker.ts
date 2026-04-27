@@ -1,12 +1,12 @@
 /**
  * Worker-thread entry point that parses a single file with `oxc-parser` and returns its
- * import edges. The worker is spawned by {@link ../OxcWorkerPool.ts} and delegates to the
+ * import edges. The worker is spawned by {@link ./worker-pool.ts} and delegates to the
  * same {@link oxcParse} implementation used on the main thread — the only difference is
  * that the CPU work runs off the event loop so dev-server traffic stays responsive.
  */
 import { parentPort } from 'node:worker_threads';
 
-import { oxcParse } from '../oxc-parse.ts';
+import { oxcParse } from './parse.ts';
 
 interface RequestMessage {
   id: number;

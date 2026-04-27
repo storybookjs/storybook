@@ -38,7 +38,11 @@ const config: BuildEntries = {
         dts: false,
       },
       {
-        entryPoint: './src/core-server/change-detection/parser-registry/workers/oxc-worker.ts',
+        exportEntries: ['./internal/oxc-parser'],
+        entryPoint: './src/oxc-parser/index.ts',
+      },
+      {
+        entryPoint: './src/oxc-parser/worker.ts',
         dts: false,
       },
       {

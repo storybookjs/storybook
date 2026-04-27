@@ -151,6 +151,11 @@
       "code": "./src/node-logger/index.ts",
       "default": "./dist/node-logger/index.js"
     },
+    "./internal/oxc-parser": {
+      "types": "./dist/oxc-parser/index.d.ts",
+      "code": "./src/oxc-parser/index.ts",
+      "default": "./dist/oxc-parser/index.js"
+    },
     "./internal/preview-api": {
       "types": "./dist/preview-api/index.d.ts",
       "code": "./src/preview-api/index.ts",

@@ -5,17 +5,17 @@ import { Worker } from 'node:worker_threads';
 
 import { logger } from 'storybook/internal/node-logger';
 
-import { ChangeDetectionFailureError } from '../../errors.ts';
-import type { ImportEdge } from '../types.ts';
+import { OxcParseError } from './errors.ts';
+import type { ImportEdge } from './types.ts';
 
 /**
- * Pool of worker threads that each run {@link ../oxc-parse.ts} against the files the main
+ * Pool of worker threads that each run {@link ./parse.ts} against the files the main
  * thread hands them. Pool size is `min(4, max(1, cpus()-1))`. When the compiled worker
  * script isn't on disk (e.g. running from source without a build), `getOxcParsePool`
  * returns `null` and callers transparently fall back to inline parsing.
  *
  * Lifecycle: shared across the process via {@link getOxcParsePool} but ref-counted so
- * concurrent {@link ChangeDetectionService} instances each `acquire`/`release` and only
+ * concurrent consumers (e.g. ChangeDetectionService) each `acquire`/`release` and only
  * the last release tears the pool down.
  */
 interface Pending {
@@ -54,9 +54,9 @@ export interface OxcParsePool {
   dispose(): Promise<void>;
 }
 
-// OxcWorkerPool ships bundled into `dist/core-server/index.js`; the worker is emitted as a
-// sibling tree at `dist/core-server/change-detection/parser-registry/workers/oxc-worker.js`.
-const WORKER_RELATIVE_PATH = './change-detection/parser-registry/workers/oxc-worker.js';
+// OxcWorkerPool ships bundled into `dist/core-server/index.js`; the worker is emitted as
+// a sibling sub-package at `dist/oxc-parser/worker.js`, one level up from core-server/.
+const WORKER_RELATIVE_PATH = '../oxc-parser/worker.js';
 
 const DEFAULT_TASK_TIMEOUT_MS = 30_000;
 
@@ -104,7 +104,7 @@ export class OxcWorkerPool implements OxcParsePool {
 
   parse(filePath: string, source: string): Promise<ImportEdge[]> {
     if (this.disposed) {
-      return Promise.reject(new ChangeDetectionFailureError('oxc parse pool disposed'));
+      return Promise.reject(new OxcParseError('oxc parse pool disposed'));
     }
     return new Promise<ImportEdge[]>((resolve, reject) => {
       this.queue.push({ filePath, source, resolve, reject });
@@ -177,7 +177,7 @@ export class OxcWorkerPool implements OxcParsePool {
     if (msg.ok && msg.edges) {
       entry.resolve(msg.edges);
     } else {
-      const err = new ChangeDetectionFailureError(msg.message ?? 'oxc-worker error');
+      const err = new OxcParseError(msg.message ?? 'oxc-worker error');
       if (msg.name) {
         err.name = msg.name;
       }
@@ -211,9 +211,7 @@ export class OxcWorkerPool implements OxcParsePool {
         clearTimeout(entry.timer);
       }
       this.pending.delete(id);
-      entry.reject(
-        new ChangeDetectionFailureError(`oxc-worker ${cause}: ${error.message}`, { cause: error })
-      );
+      entry.reject(new OxcParseError(`oxc-worker ${cause}: ${error.message}`, { cause: error }));
     }
 
     // Best-effort terminate; ignore errors on a worker that's already dead.
@@ -255,10 +253,10 @@ export class OxcWorkerPool implements OxcParsePool {
       if (entry.timer) {
         clearTimeout(entry.timer);
       }
-      entry.reject(new ChangeDetectionFailureError('oxc parse pool disposed'));
+      entry.reject(new OxcParseError('oxc parse pool disposed'));
     }
     for (const queued of this.queue) {
-      queued.reject(new ChangeDetectionFailureError('oxc parse pool disposed'));
+      queued.reject(new OxcParseError('oxc parse pool disposed'));
     }
     this.pending.clear();
     this.queue.length = 0;
@@ -296,7 +294,7 @@ function ensurePoolInitialized(): void {
  * Acquires a ref on the shared pool, initializing it on first call. Returns null if workers
  * are disabled or the compiled worker script is unavailable. Each successful (non-null)
  * acquire MUST be paired with one {@link disposeOxcParsePool} call so concurrent
- * {@link ChangeDetectionService} instances can co-exist.
+ * consumers (e.g. ChangeDetectionService) can co-exist.
  */
 export function acquireOxcParsePool(): OxcParsePool | null {
   ensurePoolInitialized();
@@ -317,7 +315,7 @@ export function getOxcParsePool(): OxcParsePool | null {
 
 /**
  * Releases one reference to the shared pool. The pool is only torn down when the last
- * reference is released, so concurrent {@link ChangeDetectionService} instances can each
+ * reference is released, so concurrent consumers (e.g. ChangeDetectionService) can each
  * dispose without affecting siblings.
  */
 export async function disposeOxcParsePool(): Promise<void> {

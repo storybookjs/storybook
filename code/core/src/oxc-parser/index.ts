@@ -1,6 +1,8 @@
-import { oxcParse } from '../oxc-parse.ts';
-import type { ImportEdge } from '../types.ts';
-import { acquireOxcParsePool, disposeOxcParsePool, getOxcParsePool } from './OxcWorkerPool.ts';
+import { oxcParse } from './parse.ts';
+import type { ImportEdge } from './types.ts';
+import { acquireOxcParsePool, disposeOxcParsePool, getOxcParsePool } from './worker-pool.ts';
+
+export type { ImportEdge } from './types.ts';
 
 /**
  * Parses a file with oxc-parser, using the worker pool when available and falling back to

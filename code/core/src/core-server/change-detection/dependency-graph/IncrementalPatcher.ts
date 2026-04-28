@@ -2,6 +2,14 @@ import { normalize } from 'pathe';
 
 import { logger as defaultLogger } from 'storybook/internal/node-logger';
 
+import type { FileChangeEvent } from '../adapters/types.ts';
+import type { ParserRegistry } from '../parser-registry/index.ts';
+import { ParseResolveCache } from './ParseResolveCache.ts';
+import type { ReverseIndexImpl } from './ReverseIndex.ts';
+import type { ChangeDetectionResolverFactory } from './ResolverFactory.ts';
+import type { DependencyGraph } from './types.ts';
+import { walkFromStory } from './walkFromStory.ts';
+
 function setsEqual(a: Set<string>, b: Set<string>): boolean {
   if (a.size !== b.size) {
     return false;
@@ -13,14 +21,6 @@ function setsEqual(a: Set<string>, b: Set<string>): boolean {
   }
   return true;
 }
-
-import type { FileChangeEvent } from '../adapters/types.ts';
-import type { ParserRegistry } from '../parser-registry/index.ts';
-import { ParseResolveCache } from './ParseResolveCache.ts';
-import type { ReverseIndexImpl } from './ReverseIndex.ts';
-import type { ChangeDetectionResolverFactory } from './ResolverFactory.ts';
-import type { DependencyGraph } from './types.ts';
-import { walkFromStory } from './walkFromStory.ts';
 
 interface PatcherLogger {
   debug: (message: string) => void;

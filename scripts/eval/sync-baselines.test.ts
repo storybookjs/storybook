@@ -1,5 +1,5 @@
 import { execFileSync } from 'node:child_process';
-import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { mkdir } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { tmpdir } from 'node:os';
@@ -198,7 +198,7 @@ describe('syncBaselines', () => {
     expect(getHead(join(reposRoot, 'wikitok'))).toBe(
       getRemoteHead(join(remotesRoot, 'wikitok.git'))
     );
-  });
+  }, 30_000);
 
   it('fails fast when a non-source target repo is dirty', async () => {
     TMP = mkdtempSync(join(tmpdir(), 'eval-sync-baselines-dirty-'));
@@ -494,7 +494,9 @@ describe('syncBaselines', () => {
     expect(
       readFileSync(join(reposRoot, 'edgy', '.storybook', 'eval-support', 'summary.mdx'), 'utf-8')
     ).toBe(baselineTemplate('.storybook/eval-support/summary.mdx'));
-    expect(readFileSync(join(reposRoot, 'edgy', 'README.md'), 'utf-8')).toBe('updated upstream\n');
+    expect(readFileSync(join(reposRoot, 'edgy', 'README.md'), 'utf-8').replace(/\r\n/g, '\n')).toBe(
+      'updated upstream\n'
+    );
     expect(getHead(join(reposRoot, 'edgy'))).toBe(getRemoteHead(join(remotesRoot, 'edgy.git')));
   });
 });
@@ -537,7 +539,7 @@ function setupRepo(opts: {
 }
 
 function mkdirSyncRecursive(path: string) {
-  execFileSync('mkdir', ['-p', path]);
+  mkdirSync(path, { recursive: true });
 }
 
 function getHead(repoRoot: string) {

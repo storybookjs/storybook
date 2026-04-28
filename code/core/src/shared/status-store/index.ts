@@ -97,7 +97,6 @@ export type StatusStore = {
 };
 type FullStatusStore = StatusStore & {
   selectStatuses: (statuses: Status[]) => void;
-  countByValue: () => Record<StatusValue, number>;
   typeId: undefined;
 };
 export type StatusStoreByTypeId = StatusStore & {
@@ -146,9 +145,6 @@ export function createStatusStore({
   const fullStatusStore: FullStatusStore = {
     getAll() {
       return universalStatusStore.getState();
-    },
-    countByValue() {
-      return countStatusesByValue(universalStatusStore.getState());
     },
     set(statuses) {
       universalStatusStore.setState((state) => {

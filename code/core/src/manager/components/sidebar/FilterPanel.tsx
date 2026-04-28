@@ -1,7 +1,6 @@
 import React, { Fragment, useCallback, useMemo } from 'react';
 
 import { ActionList } from 'storybook/internal/components';
-import { SIDEBAR_FILTER_CHANGED } from 'storybook/internal/core-events';
 import type { StatusValue, StatusesByStoryIdAndTypeId, StoryIndex } from 'storybook/internal/types';
 
 import { BatchAcceptIcon, DocumentIcon, ShareAltIcon, SweepIcon, UndoIcon } from '@storybook/icons';
@@ -11,12 +10,7 @@ import { styled, useTheme } from 'storybook/theming';
 
 import { getStatus } from '../../utils/status.tsx';
 import { createFilterLink, StatusIcon } from './FilterPanelLink.tsx';
-import {
-  type FilterItem,
-  type FilterTelemetryChanged,
-  areFiltersEqual,
-  computeFilterTelemetryPayload,
-} from './FilterPanel.utils.ts';
+import { type FilterItem, areFiltersEqual } from './FilterPanel.utils.ts';
 import {
   type StatusFilterEntry,
   type TagFilterEntry,
@@ -61,22 +55,6 @@ export const FilterPanel = ({
   const { builtInEntries, tagEntries } = useTagFilterEntries(indexJson);
   const statusEntries = useStatusFilterEntries(allStatuses);
 
-  const emitFilterTelemetry = useCallback(
-    (changed: FilterTelemetryChanged) => {
-      const state = api.getState();
-      const payload = computeFilterTelemetryPayload(changed, {
-        builtInEntries,
-        statusEntries,
-        includedTagFilters: state.includedTagFilters ?? [],
-        excludedTagFilters: state.excludedTagFilters ?? [],
-        includedStatusFilters: state.includedStatusFilters ?? [],
-        excludedStatusFilters: state.excludedStatusFilters ?? [],
-      });
-      api.emit(SIDEBAR_FILTER_CHANGED, payload);
-    },
-    [api, builtInEntries, statusEntries]
-  );
-
   const toTagFilterItem = useCallback(
     (entry: TagFilterEntry): FilterItem | null => {
       if (entry.count === 0 && entry.type === 'built-in') return null;
@@ -91,33 +69,17 @@ export const FilterPanel = ({
         icon: entry.icon,
         isIncluded,
         isExcluded,
-        onCheckboxChange: async () => {
+        onCheckboxChange: () => {
           if (isChecked) {
-            await api.removeTagFilters([entry.id]);
+            api.removeTagFilters([entry.id]);
           } else {
-            await api.addTagFilters([entry.id], false);
-          }
-          if (entry.type === 'built-in') {
-            emitFilterTelemetry({
-              filterType: 'tag',
-              filterId: entry.id,
-              action: isChecked ? 'remove' : 'include',
-            });
+            api.addTagFilters([entry.id], false);
           }
         },
-        onInvert: async () => {
-          await api.addTagFilters([entry.id], !isExcluded);
-          if (entry.type === 'built-in') {
-            emitFilterTelemetry({
-              filterType: 'tag',
-              filterId: entry.id,
-              action: !isExcluded ? 'exclude' : 'include',
-            });
-          }
-        },
+        onInvert: () => api.addTagFilters([entry.id], !isExcluded),
       };
     },
-    [api, includedFilters, excludedFilters, emitFilterTelemetry]
+    [api, includedFilters, excludedFilters]
   );
 
   const toStatusFilterItem = useCallback(
@@ -134,29 +96,17 @@ export const FilterPanel = ({
         icon: statusIconEl ? <StatusIcon $iconColor={iconColor}>{statusIconEl}</StatusIcon> : null,
         isIncluded,
         isExcluded,
-        onCheckboxChange: async () => {
+        onCheckboxChange: () => {
           if (isChecked) {
-            await api.removeStatusFilters([entry.statusValue]);
+            api.removeStatusFilters([entry.statusValue]);
           } else {
-            await api.addStatusFilters([entry.statusValue], false);
+            api.addStatusFilters([entry.statusValue], false);
           }
-          emitFilterTelemetry({
-            filterType: 'status',
-            filterId: entry.statusValue,
-            action: isChecked ? 'remove' : 'include',
-          });
         },
-        onInvert: async () => {
-          await api.addStatusFilters([entry.statusValue], !isExcluded);
-          emitFilterTelemetry({
-            filterType: 'status',
-            filterId: entry.statusValue,
-            action: !isExcluded ? 'exclude' : 'include',
-          });
-        },
+        onInvert: () => api.addStatusFilters([entry.statusValue], !isExcluded),
       };
     },
-    [api, includedStatusFilters, excludedStatusFilters, theme, emitFilterTelemetry]
+    [api, includedStatusFilters, excludedStatusFilters, theme]
   );
 
   const builtInItems = useMemo(

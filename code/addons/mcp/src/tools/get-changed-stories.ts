@@ -28,9 +28,9 @@ const GetChangedStoriesOutput = v.object({
 	stories: v.array(
 		v.object({
 			storyId: v.string(),
-			title: v.string(),
-			name: v.string(),
-			importPath: v.string(),
+			title: v.optional(v.string()),
+			name: v.optional(v.string()),
+			importPath: v.optional(v.string()),
 			statusValue: v.string(),
 		}),
 	),
@@ -131,9 +131,9 @@ Returns story metadata only (no URLs).`,
 					const entry = index.entries[storyId];
 					stories.push({
 						storyId,
-						title: entry?.title ?? 'Unknown title',
-						name: entry?.name ?? 'Unknown story',
-						importPath: entry?.importPath ?? 'Unknown import path',
+						title: entry?.title,
+						name: entry?.name,
+						importPath: entry?.importPath,
 						statusValue,
 					});
 				}
@@ -143,10 +143,15 @@ Returns story metadata only (no URLs).`,
 					return priorityDelta !== 0 ? priorityDelta : a.storyId.localeCompare(b.storyId);
 				});
 
+				const buckets = {
+					new: stories.filter((story) => story.statusValue === 'status-value:new'),
+					modified: stories.filter((story) => story.statusValue === 'status-value:modified'),
+					affected: stories.filter((story) => story.statusValue === 'status-value:affected'),
+				};
 				const counts = {
-					new: stories.filter((story) => story.statusValue === 'status-value:new').length,
-					modified: stories.filter((story) => story.statusValue === 'status-value:modified').length,
-					affected: stories.filter((story) => story.statusValue === 'status-value:affected').length,
+					new: buckets.new.length,
+					modified: buckets.modified.length,
+					affected: buckets.affected.length,
 				};
 
 				if (!disableTelemetry) {
@@ -161,18 +166,30 @@ Returns story metadata only (no URLs).`,
 					});
 				}
 
-				const summary =
+				let text =
 					stories.length === 0
 						? 'No new, modified, or affected stories detected.'
 						: `Detected ${stories.length} changed stor${stories.length === 1 ? 'y' : 'ies'} (${counts.new} new, ${counts.modified} modified, ${counts.affected} affected).`;
 
-				return {
-					content: [{ type: 'text' as const, text: summary }],
-					structuredContent: {
-						stories,
-						counts,
-					},
-				};
+				const serializeStory = (story: GetChangedStoriesOutput['stories'][number]) =>
+					story.title && story.name && story.importPath
+						? `- \`${story.storyId}\`: ${story.title} / ${story.name} (\`${story.importPath}\`)`
+						: `- \`${story.storyId}\``;
+
+				if (buckets.new.length > 0) {
+					text += `\n\nNew stories:\n`;
+					text += buckets.new.map(serializeStory).join('\n');
+				}
+				if (buckets.modified.length > 0) {
+					text += `\n\nModified stories:\n`;
+					text += buckets.modified.map(serializeStory).join('\n');
+				}
+				if (buckets.affected.length > 0) {
+					text += `\n\nAffected stories:\n`;
+					text += buckets.affected.map(serializeStory).join('\n');
+				}
+
+				return { content: [{ type: 'text' as const, text }] };
 			} catch (error) {
 				return errorToMCPContent(error);
 			}

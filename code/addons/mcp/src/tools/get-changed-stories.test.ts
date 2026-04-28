@@ -60,7 +60,31 @@ describe('getChangedStoriesTool', () => {
 		vi.spyOn(fetchStoryIndex, 'fetchStoryIndex').mockResolvedValue(smallStoryIndexFixture);
 	});
 
-	it('returns required metadata fields and raw status values', async () => {
+	async function callTool() {
+		return server.receive(
+			{
+				jsonrpc: '2.0' as const,
+				id: 1,
+				method: 'tools/call',
+				params: {
+					name: GET_CHANGED_STORIES_TOOL_NAME,
+					arguments: {},
+				},
+			},
+			{
+				sessionId: 'test-session',
+				custom: testContext,
+			},
+		);
+	}
+
+	function getResultText(response: unknown): string {
+		if (!response || typeof response !== 'object') return '';
+		const result = (response as { result?: { content?: Array<{ text?: string }> } }).result;
+		return result?.content?.[0]?.text ?? '';
+	}
+
+	it('returns grouped markdown text with changed story metadata', async () => {
 		mockGetStatusStore.mockReturnValue({
 			getAllStatuses: () => ({
 				'button--primary': {
@@ -81,53 +105,22 @@ describe('getChangedStoriesTool', () => {
 			}),
 		});
 
-		const response = await server.receive(
-			{
-				jsonrpc: '2.0' as const,
-				id: 1,
-				method: 'tools/call',
-				params: {
-					name: GET_CHANGED_STORIES_TOOL_NAME,
-					arguments: {},
-				},
-			},
-			{
-				sessionId: 'test-session',
-				custom: testContext,
-			},
-		);
+		const response = await callTool();
+		const text = getResultText(response);
 
 		expect(fetchStoryIndex.fetchStoryIndex).toHaveBeenCalledWith('http://localhost:6006');
-		expect(response.result?.structuredContent).toEqual({
-			stories: [
-				{
-					storyId: 'button--primary',
-					title: 'Button',
-					name: 'Primary',
-					importPath: './src/Button.stories.tsx',
-					statusValue: 'status-value:new',
-				},
-				{
-					storyId: 'button--secondary',
-					title: 'Button',
-					name: 'Secondary',
-					importPath: './src/Button.stories.tsx',
-					statusValue: 'status-value:modified',
-				},
-				{
-					storyId: 'input--default',
-					title: 'Input',
-					name: 'Default',
-					importPath: './src/Input.stories.tsx',
-					statusValue: 'status-value:affected',
-				},
-			],
-			counts: {
-				new: 1,
-				modified: 1,
-				affected: 1,
-			},
-		});
+		expect(text).toMatchInlineSnapshot(`
+			"Detected 3 changed stories (1 new, 1 modified, 1 affected).
+
+			New stories:
+			- \`button--primary\`: Button / Primary (\`./src/Button.stories.tsx\`)
+
+			Modified stories:
+			- \`button--secondary\`: Button / Secondary (\`./src/Button.stories.tsx\`)
+
+			Affected stories:
+			- \`input--default\`: Input / Default (\`./src/Input.stories.tsx\`)"
+		`);
 	});
 
 	it('filters out unsupported status values', async () => {
@@ -146,21 +139,18 @@ describe('getChangedStoriesTool', () => {
 			}),
 		});
 
-		const response = await server.receive(
-			{
-				jsonrpc: '2.0' as const,
-				id: 1,
-				method: 'tools/call',
-				params: { name: GET_CHANGED_STORIES_TOOL_NAME, arguments: {} },
-			},
-			{ sessionId: 'test-session', custom: testContext },
-		);
+		const response = await callTool();
+		const text = getResultText(response);
 
-		expect(response.result?.structuredContent?.stories).toHaveLength(1);
-		expect(response.result?.structuredContent?.stories[0].storyId).toBe('button--primary');
+		expect(text).toMatchInlineSnapshot(`
+			"Detected 1 changed story (1 new, 0 modified, 0 affected).
+
+			New stories:
+			- \`button--primary\`: Button / Primary (\`./src/Button.stories.tsx\`)"
+		`);
 	});
 
-	it('sorts by new, modified, affected, then storyId', async () => {
+	it('groups by new, modified, affected, then sorts by storyId', async () => {
 		mockGetStatusStore.mockReturnValue({
 			getAllStatuses: () => ({
 				'input--default': {
@@ -175,19 +165,19 @@ describe('getChangedStoriesTool', () => {
 			}),
 		});
 
-		const response = await server.receive(
-			{
-				jsonrpc: '2.0' as const,
-				id: 1,
-				method: 'tools/call',
-				params: { name: GET_CHANGED_STORIES_TOOL_NAME, arguments: {} },
-			},
-			{ sessionId: 'test-session', custom: testContext },
-		);
+		const response = await callTool();
+		const text = getResultText(response);
 
-		expect(
-			response.result?.structuredContent?.stories.map((story: { storyId: string }) => story.storyId),
-		).toEqual(['button--primary', 'button--secondary', 'input--default']);
+		expect(text).toMatchInlineSnapshot(`
+			"Detected 3 changed stories (2 new, 0 modified, 1 affected).
+
+			New stories:
+			- \`button--primary\`: Button / Primary (\`./src/Button.stories.tsx\`)
+			- \`button--secondary\`: Button / Secondary (\`./src/Button.stories.tsx\`)
+
+			Affected stories:
+			- \`input--default\`: Input / Default (\`./src/Input.stories.tsx\`)"
+		`);
 	});
 
 	it('uses fallbacks when a changed story is not in index', async () => {
@@ -199,23 +189,15 @@ describe('getChangedStoriesTool', () => {
 			}),
 		});
 
-		const response = await server.receive(
-			{
-				jsonrpc: '2.0' as const,
-				id: 1,
-				method: 'tools/call',
-				params: { name: GET_CHANGED_STORIES_TOOL_NAME, arguments: {} },
-			},
-			{ sessionId: 'test-session', custom: testContext },
-		);
+		const response = await callTool();
+		const text = getResultText(response);
 
-		expect(response.result?.structuredContent?.stories[0]).toEqual({
-			storyId: 'missing--story',
-			title: 'Unknown title',
-			name: 'Unknown story',
-			importPath: 'Unknown import path',
-			statusValue: 'status-value:modified',
-		});
+		expect(text).toMatchInlineSnapshot(`
+			"Detected 1 changed story (0 new, 1 modified, 0 affected).
+
+			Modified stories:
+			- \`missing--story\`"
+		`);
 	});
 
 	it('returns an MCP error when status store cannot be read', async () => {

@@ -180,6 +180,44 @@ describe('getChangedStoriesTool', () => {
 		`);
 	});
 
+	it('supports getAll() status-store API', async () => {
+		mockGetStatusStore.mockReturnValue({
+			getAll: () => ({
+				'button--primary': {
+					'storybook/change-detection': { value: 'status-value:new' },
+				},
+			}),
+		});
+
+		const response = await callTool();
+		const text = getResultText(response);
+
+		expect(text).toContain('Detected 1 changed story (1 new, 0 modified, 0 affected).');
+		expect(text).toContain('- `button--primary`: Button / Primary (`./src/Button.stories.tsx`)');
+	});
+
+	it('supports allStatuses property with single-status objects', async () => {
+		mockGetStatusStore.mockImplementation((statusType?: string) => {
+			if (!statusType) {
+				throw new Error('type required');
+			}
+
+			return {
+				allStatuses: {
+					'button--secondary': {
+						value: 'status-value:modified',
+					},
+				},
+			};
+		});
+
+		const response = await callTool();
+		const text = getResultText(response);
+
+		expect(text).toContain('Detected 1 changed story (0 new, 1 modified, 0 affected).');
+		expect(text).toContain('- `button--secondary`: Button / Secondary (`./src/Button.stories.tsx`)');
+	});
+
 	it('uses fallbacks when a changed story is not in index', async () => {
 		mockGetStatusStore.mockReturnValue({
 			getAllStatuses: () => ({

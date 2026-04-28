@@ -462,8 +462,8 @@ export const init: ModuleFn<SubAPI, SubState> = ({
   const emitFilterTelemetry = (trigger: 'interaction' | 'url', changed?: FilterTelemetryChange) => {
     const state = store.getState();
     const builtInTagIds = new Set(Object.keys(BUILT_IN_FILTERS));
-    const includedTags = state.includedTagFilters.filter((id) => builtInTagIds.has(id));
-    const excludedTags = state.excludedTagFilters.filter((id) => builtInTagIds.has(id));
+    const includedTags = (state.includedTagFilters ?? []).filter((id) => builtInTagIds.has(id));
+    const excludedTags = (state.excludedTagFilters ?? []).filter((id) => builtInTagIds.has(id));
 
     const changeDetectionEnabled = !!globalThis?.FEATURES?.changeDetection;
     const includedStatuses = changeDetectionEnabled ? (state.includedStatusFilters ?? []) : [];

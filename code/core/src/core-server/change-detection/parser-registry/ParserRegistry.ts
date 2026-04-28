@@ -3,7 +3,6 @@ import { extname } from 'pathe';
 import { logger } from 'storybook/internal/node-logger';
 import { parseWithOxc } from 'storybook/internal/oxc-parser';
 
-import { profiler } from '../profiling.ts';
 import type { ImportEdge, ImportParser, ImportParserContext } from './types.ts';
 
 /**
@@ -54,9 +53,6 @@ export class ParserRegistry {
     const fn = this.parserFor(filePath);
     if (!fn) {
       return null;
-    }
-    if (profiler.enabled) {
-      profiler.recordParse(extname(filePath).toLowerCase());
     }
     return fn({ filePath, source }, this.context);
   }

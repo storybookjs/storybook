@@ -104,12 +104,10 @@ describe('IncrementalPatcher', () => {
 
     await patcher.patch({ kind: 'change', path: '/repo/src/unknown.ts' });
 
-    // No previous deps, no dependents — graph + reverseIndex unchanged for this path
-    // (other than the empty entry the patcher creates for graph).
+    // No dependents in reverseIndex, not a story file — nothing to re-walk.
     expect(reverseIndex.asMap().size).toBe(0);
-    // The patcher does call the registry parser on the changed file once (per A3 contract).
-    expect(parseSpy).toHaveBeenCalledTimes(1);
-    expect(graph.get('/repo/src/unknown.ts')).toEqual(new Set());
+    expect(parseSpy).not.toHaveBeenCalled();
+    expect(graph.has('/repo/src/unknown.ts')).toBe(false);
   });
 
   it('re-walks a story root on `change`, updating depths', async () => {
@@ -331,49 +329,5 @@ describe('IncrementalPatcher', () => {
     expect(graph.has(dep)).toBe(false);
     // The story itself still exists at depth 0; dep is no longer reachable from it.
     expect(reverseIndex.lookup(story).get(story)).toBe(0);
-  });
-
-  it('recovers via direct-importer scan when reverseIndex was previously cleared but graph still records the importer edge', async () => {
-    // Models a transient mid-patch state where reverseIndex.removeStory(story) has run
-    // but graph still records story → helper. In that window a `change` event for `helper`
-    // would find an empty reverseIndex lookup and early-return without re-walking the story.
-    // recoverViaDirectImporters consults inverseImporters (built from the graph) to find and
-    // re-walk the affected story even when reverseIndex has no record of it.
-    //
-    // Note: files that fail to resolve at cold-start are NOT automatically reconnected when
-    // they later appear on disk — that is a known limitation of the current design.
-    const story = '/repo/src/A.stories.tsx';
-    const helper = '/repo/src/helper.ts';
-    const indirect = '/repo/src/indirect.ts';
-
-    const world: PatcherWorld = {
-      edges: new Map([
-        [story, [{ specifier: './helper.ts', kind: 'static' }]],
-        [helper, [{ specifier: './indirect.ts', kind: 'static' }]],
-        [indirect, []],
-      ]),
-      resolutions: new Map([
-        [`${story}::./helper.ts`, helper],
-        [`${helper}::./indirect.ts`, indirect],
-      ]),
-    };
-
-    const initialIndex = new ReverseIndexImpl();
-    initialIndex.record(story, story, 0);
-    // Story already knows helper is among its direct deps from a prior walk.
-    const initialGraph: DependencyGraph = new Map([[story, new Set([helper])]]);
-
-    const { patcher, reverseIndex } = buildPatcher({
-      world,
-      reverseIndex: initialIndex,
-      graph: initialGraph,
-      storyFiles: new Set([story]),
-    });
-
-    await patcher.patch({ kind: 'change', path: helper });
-
-    // Recovery walked the story, which transitively reached `indirect` for the first time.
-    expect(reverseIndex.lookup(helper).get(story)).toBe(1);
-    expect(reverseIndex.lookup(indirect).get(story)).toBe(2);
   });
 });

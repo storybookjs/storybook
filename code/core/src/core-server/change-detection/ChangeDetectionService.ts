@@ -1,8 +1,7 @@
-import { writeFile } from 'node:fs/promises';
-
 import { join, normalize } from 'pathe';
 
 import { logger } from 'storybook/internal/node-logger';
+import { disposeOxcParsePool } from 'storybook/internal/oxc-parser';
 import type {
   Presets,
   StatusValue,
@@ -19,7 +18,6 @@ import {
   DependencyGraphBuilder,
   IncrementalPatcher,
   ParseResolveCache,
-  WorkspaceLocator,
 } from './dependency-graph/index.ts';
 import type { ReverseIndexImpl } from './dependency-graph/index.ts';
 import { ChangeDetectionFailureError, ChangeDetectionUnavailableError } from './errors.ts';
@@ -27,7 +25,6 @@ import { GitDiffProvider } from './GitDiffProvider.ts';
 import { extractBaselineEntryIds, IndexBaselineService } from './IndexBaselineService.ts';
 import type { ImportParser } from './parser-registry/index.ts';
 import { ParserRegistry, builtinImportParsers } from './parser-registry/index.ts';
-import { acquireOxcParsePool, disposeOxcParsePool } from 'storybook/internal/oxc-parser';
 import { resetChangeDetectionReadiness, setChangeDetectionReadiness } from './readiness.ts';
 
 const CHANGE_DETECTION_DEBOUNCE_MS = 200;
@@ -44,11 +41,11 @@ function isSameStatus(a: Status | undefined, b: Status): boolean {
     a.title === b.title &&
     a.description === b.description &&
     a.sidebarContextMenu === b.sidebarContextMenu &&
-    isSameData(a.data, b.data)
+    deepEqual(a.data, b.data)
   );
 }
 
-function isSameData(a: unknown, b: unknown): boolean {
+function deepEqual(a: unknown, b: unknown): boolean {
   if (Object.is(a, b)) {
     return true;
   }
@@ -60,7 +57,7 @@ function isSameData(a: unknown, b: unknown): boolean {
       return false;
     }
     for (let i = 0; i < a.length; i++) {
-      if (!isSameData(a[i], b[i])) {
+      if (!deepEqual(a[i], b[i])) {
         return false;
       }
     }
@@ -75,7 +72,7 @@ function isSameData(a: unknown, b: unknown): boolean {
     if (!Object.prototype.hasOwnProperty.call(bRecord, key)) {
       return false;
     }
-    if (!isSameData((a as Record<string, unknown>)[key], bRecord[key])) {
+    if (!deepEqual((a as Record<string, unknown>)[key], bRecord[key])) {
       return false;
     }
   }
@@ -190,14 +187,12 @@ export class ChangeDetectionService {
   private incrementalPatcher: IncrementalPatcher | undefined;
   private reverseIndex: ReverseIndexImpl | undefined;
   private storyFiles: Set<string> = new Set();
-  /** Set when this service successfully acquired a ref on the shared oxc parse pool. */
-  private oxcPoolAcquired = false;
   /**
    * Serialises file-change patches so two events touching the same dep set never interleave
    * across `await` points inside `IncrementalPatcher.patch`. The chain ignores rejections
    * (each call's failure is logged in {@link handleFileChange}).
    */
-  private currentPatch: Promise<void> = Promise.resolve();
+  private patchQueue: Promise<void> = Promise.resolve();
   private unsubscribeFileChange: (() => void) | undefined;
   private unsubscribeStartupFailure: (() => void) | undefined;
 
@@ -254,22 +249,14 @@ export class ChangeDetectionService {
         error instanceof Error ? error : new ChangeDetectionFailureError(String(error));
       logger.error(`Change detection failed to start: ${failure.message}`);
       this.resolveReadiness({ status: 'error', error: failure });
-      // Release the pool ref acquired in startInternal so it is not held forever when the
-      // startup pipeline throws after acquireOxcParsePool() succeeded.
       void this.dispose().catch(() => undefined);
     });
   }
 
   /**
-   * Pipeline:
-   *   resolve config → build parser registry / resolver / workspace locator → load story
-   *   index → eager dependency-graph build → construct patcher → subscribe to file-change
-   *   and startup-failure events → kick off the index-baseline service and an initial scan.
-   *
-   * File-change subscription registers strictly AFTER the eager build; events that arrive
-   * during the build are produced by chokidar before we attach, so this is a no-op window
-   * by construction. After subscription, every event runs through {@link handleFileChange}
-   * and is queued behind {@link currentPatch} so two events never interleave.
+   * Builds parser registry, resolver, dependency graph, and patcher; subscribes to
+   * file-change events queued behind {@link patchQueue}; kicks off the baseline service
+   * and initial scan.
    */
   private async startInternal(): Promise<void> {
     const adapter = this.adapter;
@@ -277,16 +264,8 @@ export class ChangeDetectionService {
       return;
     }
 
-    // Guard against a synchronous start() → dispose() sequence where the microtask-scheduled
-    // startInternal would otherwise still acquire the pool and leak the ref.
     if (this.disposed) {
       return;
-    }
-
-    // Reserve the shared worker pool ref now so the cold-start build's parses are off-thread,
-    // and so disposeOxcParsePool() in dispose() releases exactly the ref we took here.
-    if (acquireOxcParsePool() !== null) {
-      this.oxcPoolAcquired = true;
     }
 
     const resolveConfig = await adapter.getResolveConfig();
@@ -300,8 +279,7 @@ export class ChangeDetectionService {
       pluginParsers,
     });
     const resolver = new ChangeDetectionResolverFactory(resolveConfig);
-    const workspaceLocator = new WorkspaceLocator(projectRoot);
-    const workspaceRoots = await workspaceLocator.locate();
+    const workspaceRoots = new Set<string>();
 
     const storyIndexGenerator = await this.options.storyIndexGeneratorPromise;
     const storyIndex = await storyIndexGenerator.getIndex();
@@ -353,7 +331,7 @@ export class ChangeDetectionService {
       }
       // Serialise patches: chain each event behind the previous one so two events touching
       // the same dep set never interleave inside IncrementalPatcher.patch.
-      this.currentPatch = this.currentPatch.then(() => this.handleFileChange(event));
+      this.patchQueue = this.patchQueue.then(() => this.handleFileChange(event));
     });
 
     if (adapter.onStartupFailure) {
@@ -401,7 +379,7 @@ export class ChangeDetectionService {
    * appeared or disappeared since startup. For each story that newly entered the index, the
    * patcher is asked to walk it (so its forward edges are recorded). For each story that
    * left the index, the patcher is asked to unlink it (so its reverse-index entries are
-   * pruned). Replays are queued behind {@link currentPatch} to keep the serialised-patch
+   * pruned). Replays are queued behind {@link patchQueue} to keep the serialised-patch
    * invariant intact.
    */
   private async refreshStoryFiles(): Promise<void> {
@@ -437,14 +415,10 @@ export class ChangeDetectionService {
     this.storyFiles = next;
 
     for (const path of added) {
-      this.currentPatch = this.currentPatch.then(() =>
-        this.handleFileChange({ kind: 'add', path })
-      );
+      this.patchQueue = this.patchQueue.then(() => this.handleFileChange({ kind: 'add', path }));
     }
     for (const path of removed) {
-      this.currentPatch = this.currentPatch.then(() =>
-        this.handleFileChange({ kind: 'unlink', path })
-      );
+      this.patchQueue = this.patchQueue.then(() => this.handleFileChange({ kind: 'unlink', path }));
     }
   }
 
@@ -462,15 +436,8 @@ export class ChangeDetectionService {
     this.unsubscribeStartupFailure?.();
     this.unsubscribeStartupFailure = undefined;
 
-    // Only tear down the watcher if onGitStateChange was ever called (i.e. the provider
-    // actually installed watchers). If the provider was never constructed or never started
-    // watching, this is a no-op.
     this.gitDiffProvider?.dispose();
-
-    if (this.oxcPoolAcquired) {
-      this.oxcPoolAcquired = false;
-      await disposeOxcParsePool().catch(() => undefined);
-    }
+    await disposeOxcParsePool().catch(() => undefined);
   }
 
   private async handleFileChange(event: FileChangeEvent): Promise<void> {
@@ -509,7 +476,7 @@ export class ChangeDetectionService {
     // Snapshot and drain the current patch chain before reading reverseIndex. Without this
     // await, a scan triggered mid-patch (between removeStory and the re-walk's recordEdges)
     // reads a transiently empty reverseIndex and publishes incorrect statuses.
-    const patchSnapshot = this.currentPatch;
+    const patchSnapshot = this.patchQueue;
     await patchSnapshot.catch(() => undefined);
 
     if (this.disposed || !this.reverseIndex) {
@@ -696,21 +663,5 @@ export class ChangeDetectionService {
 
     this.readinessResolved = true;
     setChangeDetectionReadiness(readiness);
-
-    if (readiness.status === 'ready') {
-      void this.writeBenchMarker(readiness.status);
-    }
-  }
-
-  private async writeBenchMarker(status: string): Promise<void> {
-    const marker = process.env.STORYBOOK_BENCH_MARKER;
-    if (!marker) {
-      return;
-    }
-    try {
-      await writeFile(marker, `${JSON.stringify({ ts: Date.now(), status })}\n`, { flag: 'a' });
-    } catch (e) {
-      logger.debug(`Failed to write bench marker: ${(e as Error).message}`);
-    }
   }
 }

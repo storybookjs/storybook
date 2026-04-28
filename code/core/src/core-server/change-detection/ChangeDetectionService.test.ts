@@ -30,7 +30,6 @@ import {
   DependencyGraphBuilder,
   IncrementalPatcher,
   ReverseIndexImpl,
-  WorkspaceLocator,
 } from './dependency-graph/index.ts';
 import type { GitDiffResult } from './GitDiffProvider.ts';
 import { GitDiffProvider } from './GitDiffProvider.ts';
@@ -39,14 +38,13 @@ import type { IndexBaselineService } from './IndexBaselineService.ts';
 vi.mock('storybook/internal/node-logger', { spy: true });
 vi.mock('./dependency-graph/index.ts', async (importOriginal) => {
   // Keep ReverseIndexImpl + types real so tests can build synthetic indexes; replace the
-  // ChangeDetectionResolverFactory / WorkspaceLocator / DependencyGraphBuilder /
-  // IncrementalPatcher constructors with `vi.fn()`s so tests can override their behaviour
-  // per-case via `vi.mocked(Ctor).mockImplementation(...)`.
+  // ChangeDetectionResolverFactory / DependencyGraphBuilder / IncrementalPatcher constructors
+  // with `vi.fn()`s so tests can override their behaviour per-case via
+  // `vi.mocked(Ctor).mockImplementation(...)`.
   const actual = await importOriginal<typeof import('./dependency-graph/index.ts')>();
   return {
     ...actual,
     ChangeDetectionResolverFactory: vi.fn(),
-    WorkspaceLocator: vi.fn(),
     DependencyGraphBuilder: vi.fn(),
     IncrementalPatcher: vi.fn(),
   };
@@ -239,11 +237,6 @@ function installDependencyGraphMocks(reverseIndex: ReverseIndexImpl): {
       resolve: vi.fn(async () => null),
     } as unknown as ChangeDetectionResolverFactory;
   } as unknown as new () => ChangeDetectionResolverFactory);
-  vi.mocked(WorkspaceLocator).mockImplementation(function () {
-    return {
-      locate: vi.fn(async () => new Set<string>()),
-    } as unknown as WorkspaceLocator;
-  } as unknown as new () => WorkspaceLocator);
   vi.mocked(DependencyGraphBuilder).mockImplementation(function () {
     return { build: buildSpy } as unknown as DependencyGraphBuilder;
   } as unknown as new () => DependencyGraphBuilder);
@@ -853,16 +846,15 @@ describe('ChangeDetectionService', () => {
     await service.dispose();
   });
 
-  it('releases the pool ref when startInternal throws after acquiring the pool', async () => {
-    // The startInternal pipeline throws after acquireOxcParsePool has been called. Without
-    // the dispose() call in the catch handler the acquired ref would be leaked forever.
+  it('disposes the pool when startInternal throws', async () => {
+    // The startInternal pipeline throws after startup. Without the dispose() call in the
+    // catch handler disposeOxcParsePool would not be called.
     const { buildSpy } = installDependencyGraphMocks(buildReverseIndex([]));
     buildSpy.mockImplementation(async () => {
       throw new ChangeDetectionFailureError('graph build blew up');
     });
 
     const disposePoolSpy = vi.spyOn(oxcParser, 'disposeOxcParsePool').mockResolvedValue(undefined);
-    vi.spyOn(oxcParser, 'acquireOxcParsePool').mockReturnValue({} as never);
 
     const { getStatusStoreByTypeId } = createStatusStore({
       universalStatusStore: new MockUniversalStore(UNIVERSAL_STATUS_STORE_OPTIONS),
@@ -1096,11 +1088,7 @@ describe('ChangeDetectionService', () => {
     // resolves, reverseIndex has a real entry that the scan should see.
     patchSpy.mockImplementationOnce(async () => {
       await patchDeferred.promise;
-      reverseIndex.record(
-        '/repo/src/Button.stories.tsx',
-        '/repo/src/Button.stories.tsx',
-        0
-      );
+      reverseIndex.record('/repo/src/Button.stories.tsx', '/repo/src/Button.stories.tsx', 0);
     });
 
     const storyIndex = createStoryIndex([

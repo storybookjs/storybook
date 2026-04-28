@@ -1,6 +1,6 @@
 import { oxcParse } from './parse.ts';
 import type { ImportEdge } from './types.ts';
-import { acquireOxcParsePool, disposeOxcParsePool, getOxcParsePool } from './worker-pool.ts';
+import { disposeOxcParsePool, getOxcParsePool } from './worker-pool.ts';
 
 export type { ImportEdge } from './types.ts';
 
@@ -25,4 +25,4 @@ export async function parseWithOxc(filePath: string, source: string): Promise<Im
   }
 }
 
-export { acquireOxcParsePool, disposeOxcParsePool };
+export { disposeOxcParsePool };

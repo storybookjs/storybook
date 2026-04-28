@@ -8,6 +8,10 @@ import { parentPort } from 'node:worker_threads';
 
 import { oxcParse } from './parse.ts';
 
+if (!parentPort) {
+  throw new Error('oxc-parser worker must be run as a worker thread');
+}
+
 interface RequestMessage {
   id: number;
   filePath: string;
@@ -22,11 +26,9 @@ interface ResponseMessage {
   name?: string;
 }
 
-// Defensive no-op when (somehow) imported outside a worker thread — there is no main
-// loop to post messages back to and no value in crashing the importing module.
 const port = parentPort;
 
-port?.on('message', async (msg: RequestMessage) => {
+port.on('message', async (msg: RequestMessage) => {
   try {
     const edges = await oxcParse(msg.filePath, msg.source);
     const response: ResponseMessage = { id: msg.id, ok: true, edges };

@@ -5,7 +5,6 @@ import { normalize } from 'pathe';
 import { logger as defaultLogger } from 'storybook/internal/node-logger';
 
 import type { ParserRegistry } from '../parser-registry/index.ts';
-import { profiler } from '../profiling.ts';
 import { ParseResolveCache } from './ParseResolveCache.ts';
 import { ReverseIndexImpl } from './ReverseIndex.ts';
 import type { ChangeDetectionResolverFactory } from './ResolverFactory.ts';
@@ -61,7 +60,6 @@ export class DependencyGraphBuilder {
     storyFiles: Iterable<string>
   ): Promise<{ reverseIndex: ReverseIndexImpl; graph: DependencyGraph }> {
     const startedAt = Date.now();
-    profiler.buildStart();
     const reverseIndex = new ReverseIndexImpl();
     const graph: DependencyGraph = new Map();
 
@@ -88,10 +86,6 @@ export class DependencyGraphBuilder {
     this.logger.debug(
       `Change detection graph built: ${stories.length} stories, ${reverseIndex.asMap().size} deps tracked, ${elapsed}ms`
     );
-    profiler.buildEnd({
-      storyCount: stories.length,
-      reverseIndexSize: reverseIndex.asMap().size,
-    });
 
     return { reverseIndex, graph };
   }

@@ -4,7 +4,6 @@ import { dirname } from 'pathe';
 import { logger } from 'storybook/internal/node-logger';
 
 import type { ResolveConfig } from '../adapters/types.ts';
-import { profiler } from '../profiling.ts';
 
 const DEFAULT_EXTENSIONS = ['.tsx', '.ts', '.jsx', '.js', '.mjs', '.cjs', '.json'];
 const DEFAULT_CONDITIONS = ['storybook', 'import', 'module', 'default'];
@@ -100,9 +99,6 @@ export class ChangeDetectionResolverFactory {
    * debug-level log line is emitted.
    */
   async resolve(from: string, specifier: string): Promise<string | null> {
-    if (profiler.enabled) {
-      profiler.recordResolve();
-    }
     const directory = dirname(from);
     try {
       const result = await this.factory.async(directory, specifier);

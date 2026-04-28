@@ -121,34 +121,24 @@ describe('OxcWorkerPool', () => {
     await expect(pending).rejects.toThrow(/disposed/);
   });
 
-  it('rejects only the crashed worker and keeps healthy workers running', async () => {
-    const { OxcWorkerPool } = await loadModule();
+  it('rejects all in-flight tasks and disposes the pool when a worker errors', async () => {
+    const { OxcWorkerPool, getOxcParsePool } = await loadModule();
     const pool = new OxcWorkerPool('/fake/script.js', 2, 0); // disable timeout
 
-    // Stash one task on each worker. The first worker keeps its task pending; the
-    // second worker echoes immediately.
-    fakeWorkers[0].hook.onPostMessage = () => {
-      // never echoes for this slot
-    };
+    // Both workers hang so tasks stay in flight.
+    fakeWorkers[0].hook.onPostMessage = () => {};
+    fakeWorkers[1].hook.onPostMessage = () => {};
 
-    // The pool's drain() picks any non-busy slot. We need to land task A on slot 0 and
-    // task B on slot 1. Since both are non-busy, drain assigns A→slot0, B→slot1.
     const taskA = pool.parse('/src/a.ts', 'x');
     const taskB = pool.parse('/src/b.ts', 'x');
 
-    await taskB; // healthy worker echoed.
-
     fakeWorkers[0].emit('error', new Error('boom'));
-    await expect(taskA).rejects.toThrow(/oxc-worker error: boom/);
 
-    // Pool should have spun up a replacement worker; total construction count is 3.
-    expect(fakeWorkers.length).toBe(3);
+    await expect(taskA).rejects.toThrow(/oxc-worker failure: boom/);
+    await expect(taskB).rejects.toThrow(/oxc-worker failure: boom/);
 
-    // Subsequent task lands on the replacement (or healthy slot 1) and resolves.
-    const taskC = pool.parse('/src/c.ts', 'x');
-    await expect(taskC).resolves.toBeDefined();
-
-    await pool.dispose();
+    // Subsequent parse() on the now-disposed pool fails fast.
+    await expect(pool.parse('/src/c.ts', 'x')).rejects.toThrow(/disposed/);
   });
 
   it('rejects victim entries when a worker emits exit unexpectedly', async () => {
@@ -204,10 +194,7 @@ describe('OxcWorkerPool', () => {
     const p2 = pool.parse('/src/b.ts', 'x');
 
     // Race: parse rejections should win against a 100 ms timeout even though terminate() hangs.
-    const rejected = Promise.all([
-      p1.catch((e) => e),
-      p2.catch((e) => e),
-    ]);
+    const rejected = Promise.all([p1.catch((e) => e), p2.catch((e) => e)]);
     const timeout = new Promise<'timeout'>((res) => setTimeout(() => res('timeout'), 100));
 
     pool.dispose(); // intentionally not awaited — terminate() hangs
@@ -219,67 +206,17 @@ describe('OxcWorkerPool', () => {
     expect(e2.message).toMatch(/disposed/);
   });
 
-  it('rejects queued tasks when the only worker respawns and fails (H3 regression)', async () => {
-    const { OxcWorkerPool } = await loadModule();
-
-    // spawnSlot is private; intercept Worker construction instead.
-    // First construction succeeds (the initial pool slot), subsequent ones throw.
-    // We set constructorThrowAt after the pool is created so the initial spawn succeeds.
-    const pool = new OxcWorkerPool('/fake/script.js', 1, 0);
-
-    // Worker 0 hangs so it keeps the first task in flight.
-    fakeWorkers[0].hook.onPostMessage = () => {};
-
-    const task1 = pool.parse('/src/a.ts', 'x'); // dispatched immediately, stays in flight
-    const task2 = pool.parse('/src/b.ts', 'x'); // queued — no free slots
-
-    // Make all future Worker constructions throw so respawn fails.
-    constructorThrowAt = fakeWorkers.length; // = 1, so next new Worker() throws
-
-    // Crash the worker — triggers handleWorkerFailure → reject task1 → attempt respawn → fail.
-    fakeWorkers[0].emit('exit', 1);
-
-    // task1 was in-flight on slot 0; it must reject with the exit error.
-    await expect(task1).rejects.toThrow(/oxc-worker exit/);
-
-    // task2 was queued; with no alive workers it must also reject (not hang forever).
-    const timeout = new Promise<'timeout'>((res) => setTimeout(() => res('timeout'), 100));
-    const result = await Promise.race([task2.catch((e) => e), timeout]);
-    expect(result).not.toBe('timeout');
-    expect((result as Error).message).toMatch(/no live workers/);
-  });
-
-  describe('singleton refcount', () => {
-    it('reuses the shared pool across multiple acquires', async () => {
-      const { acquireOxcParsePool, disposeOxcParsePool } = await loadModule();
-      const a = acquireOxcParsePool();
-      const b = acquireOxcParsePool();
-      expect(a).not.toBeNull();
-      expect(a).toBe(b);
-      await disposeOxcParsePool();
-      // First release: still alive.
-      const stillAlive = a!;
-      expect(stillAlive).toBeDefined();
-      await disposeOxcParsePool();
-      // Second release: subsequent acquire spawns a fresh pool.
-      const c = acquireOxcParsePool();
-      expect(c).not.toBeNull();
-      expect(c).not.toBe(a);
-      await disposeOxcParsePool();
-    });
-
-    it('getOxcParsePool peeks without changing the refcount', async () => {
-      const { acquireOxcParsePool, getOxcParsePool, disposeOxcParsePool } = await loadModule();
-      // Before any acquire: peek returns null.
-      expect(getOxcParsePool()).toBeNull();
-      const acquired = acquireOxcParsePool();
-      expect(acquired).not.toBeNull();
-      // Peek returns the same instance, no ref change.
-      expect(getOxcParsePool()).toBe(acquired);
-      expect(getOxcParsePool()).toBe(acquired);
-      // Single dispose tears it down — proves peek did not bump the refcount.
-      await disposeOxcParsePool();
-      expect(getOxcParsePool()).toBeNull();
-    });
+  it('getOxcParsePool returns the same instance on repeated calls; dispose tears it down and fresh instance is created on next call', async () => {
+    const { getOxcParsePool, disposeOxcParsePool } = await loadModule();
+    const pool = getOxcParsePool();
+    expect(pool).not.toBeNull();
+    // Repeated calls return the same instance without re-creating.
+    expect(getOxcParsePool()).toBe(pool);
+    // After dispose, the next call creates a fresh pool (lazy re-init).
+    await disposeOxcParsePool();
+    const fresh = getOxcParsePool();
+    expect(fresh).not.toBeNull();
+    expect(fresh).not.toBe(pool);
+    await disposeOxcParsePool();
   });
 });

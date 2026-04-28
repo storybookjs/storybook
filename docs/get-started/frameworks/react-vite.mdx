@@ -18,15 +18,20 @@ You can then get started [writing stories](../whats-a-story.mdx), [running tests
 
 ### Requirements
 
-<GetStartedVersions versions={[{
-  name: 'React',
-  range: '≥ 16.8',
-  icon: '/images/logos/renderers/logo-react.svg'
-}, {
-  name: 'Vite',
-  range: '≥ 5',
-  icon: '/images/logos/builders/vite.svg'
-}]} />
+<GetStartedVersions
+  versions={[
+    {
+      name: 'React',
+      range: '≥ 16.8',
+      icon: '/images/logos/renderers/logo-react.svg',
+    },
+    {
+      name: 'Vite',
+      range: '≥ 5',
+      icon: '/images/logos/builders/vite.svg',
+    },
+  ]}
+/>
 
 ## Run Storybook
 
@@ -41,15 +46,12 @@ To build Storybook, run:
 You will find the output in the configured `outputDir` (default is `storybook-static`).
 
 ## FAQ
+
 ### How do I migrate from the React Webpack framework?
 
 The `upgrade` command should prompt you to migrate to `@storybook/react-vite` when you run it:
 
-{/* prettier-ignore-start */}
-
 <CodeSnippets path="storybook-upgrade.md" />
-
-{/* prettier-ignore-end */}
 
 In case that auto-migration does not work for your project, refer to the manual installation instructions below.
 
@@ -57,19 +59,11 @@ In case that auto-migration does not work for your project, refer to the manual 
 
 First, install the framework:
 
-{/* prettier-ignore-start */}
-
 <CodeSnippets path="react-vite-install.md" />
-
-{/* prettier-ignore-end */}
 
 Then, update your `.storybook/main.js|ts` to change the framework property:
 
-{/* prettier-ignore-start */}
-
 <CodeSnippets path="react-vite-add-framework.md" />
-
-{/* prettier-ignore-end */}
 
 ## API
 
@@ -77,11 +71,7 @@ Then, update your `.storybook/main.js|ts` to change the framework property:
 
 You can pass an options object for additional configuration if needed:
 
-{/* prettier-ignore-start */}
-
 <CodeSnippets path="react-vite-framework-options.md" />
-
-{/* prettier-ignore-end */}
 
 #### `builder`
 

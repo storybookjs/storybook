@@ -18,16 +18,20 @@ You can then get started [writing stories](../whats-a-story.mdx), [running tests
 
 ### Requirements
 
-<GetStartedVersions versions={[{
-  name: 'Preact',
-  range: '8.x || 10.x',
-  icon: '/images/logos/renderers/logo-preact.svg'
-}, {
-  name: 'Vite',
-  range: '≥ 5',
-  icon: '/images/logos/builders/vite.svg'
-}]} />
-
+<GetStartedVersions
+  versions={[
+    {
+      name: 'Preact',
+      range: '8.x || 10.x',
+      icon: '/images/logos/renderers/logo-preact.svg',
+    },
+    {
+      name: 'Vite',
+      range: '≥ 5',
+      icon: '/images/logos/builders/vite.svg',
+    },
+  ]}
+/>
 
 ## Run Storybook
 
@@ -42,23 +46,16 @@ To build Storybook, run:
 You will find the output in the configured `outputDir` (default is `storybook-static`).
 
 ## FAQ
+
 ### How do I manually install the Preact framework?
 
 First, install the framework:
 
-{/* prettier-ignore-start */}
-
 <CodeSnippets path="preact-vite-install.md" />
-
-{/* prettier-ignore-end */}
 
 Then, update your `.storybook/main.js|ts` to change the framework property:
 
-{/* prettier-ignore-start */}
-
 <CodeSnippets path="preact-vite-add-framework.md" />
-
-{/* prettier-ignore-end */}
 
 ## API
 
@@ -66,11 +63,7 @@ Then, update your `.storybook/main.js|ts` to change the framework property:
 
 You can pass an options object for additional configuration if needed:
 
-{/* prettier-ignore-start */}
-
 <CodeSnippets path="preact-vite-framework-options.md" />
-
-{/* prettier-ignore-end */}
 
 #### `builder`
 

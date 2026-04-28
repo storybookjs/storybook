@@ -6,6 +6,7 @@ import type { AddonContext } from '../types.ts';
 import * as fetchStoryIndex from '../utils/fetch-story-index.ts';
 import smallStoryIndexFixture from '../../fixtures/small-story-index.fixture.json' with { type: 'json' };
 import { GET_CHANGED_STORIES_TOOL_NAME } from './tool-names.ts';
+import type { StoryIndex } from 'storybook/internal/types';
 
 const { mockGetStatusStore } = vi.hoisted(() => ({
 	mockGetStatusStore: vi.fn(),
@@ -16,7 +17,7 @@ vi.mock('storybook/internal/core-server', () => ({
 }));
 
 describe('getChangedStoriesTool', () => {
-	let server: McpServer<unknown, AddonContext>;
+	let server: McpServer<any, AddonContext>;
 	const testContext: AddonContext = {
 		origin: 'http://localhost:6006',
 		options: {} as AddonContext['options'],
@@ -57,7 +58,9 @@ describe('getChangedStoriesTool', () => {
 		);
 
 		await addGetChangedStoriesTool(server);
-		vi.spyOn(fetchStoryIndex, 'fetchStoryIndex').mockResolvedValue(smallStoryIndexFixture);
+		vi.spyOn(fetchStoryIndex, 'fetchStoryIndex').mockResolvedValue(
+			smallStoryIndexFixture as unknown as StoryIndex,
+		);
 	});
 
 	async function callTool() {

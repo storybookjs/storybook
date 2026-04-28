@@ -101,10 +101,6 @@ export class IncrementalPatcher {
       this.graph.delete(path);
       if (this.isStoryFile(path)) {
         this.reverseIndex.removeStory(path);
-      } else {
-        for (const story of dependentsSet) {
-          this.reverseIndex.removeEdge(path, story);
-        }
       }
       // Re-walk every dependent story so transitive deps reachable only through `path`
       // are pruned.

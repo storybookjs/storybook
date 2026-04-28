@@ -1,6 +1,9 @@
 const NODE_MODULES_SEGMENT = '/node_modules/';
 
 export function isInsideAnyWorkspace(absolute: string, workspaceRoots: Set<string>): boolean {
+  if (absolute.includes(NODE_MODULES_SEGMENT)) {
+    return false;
+  }
   for (const root of workspaceRoots) {
     if (absolute === root || absolute.startsWith(root.endsWith('/') ? root : `${root}/`)) {
       return true;

@@ -2,6 +2,7 @@ import { join, normalize } from 'pathe';
 
 import { logger } from 'storybook/internal/node-logger';
 import { disposeOxcParsePool } from 'storybook/internal/oxc-parser';
+import { getProjectRoot } from 'storybook/internal/common';
 import type {
   Presets,
   StatusValue,
@@ -279,7 +280,7 @@ export class ChangeDetectionService {
       pluginParsers,
     });
     const resolver = new ChangeDetectionResolverFactory(resolveConfig);
-    const workspaceRoots = new Set<string>();
+    const workspaceRoots = new Set<string>([normalize(getProjectRoot())]);
 
     const storyIndexGenerator = await this.options.storyIndexGeneratorPromise;
     const storyIndex = await storyIndexGenerator.getIndex();

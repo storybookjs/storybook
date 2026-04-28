@@ -270,7 +270,7 @@ describe('ChangeDetectionService', () => {
   // ADR-F semantic test cases (modified vs affected) — all four MUST appear.
   // ------------------------------------------------------------------
 
-  it('ADR-F #1: edits a story file -> that story is modified at distance 0; importer stories are affected at distance 1', async () => {
+  it('edits a story file -> that story is modified at distance 0; importer stories are affected at distance 1', async () => {
     // Story A is the changed file (distance 0). Story B imports A (distance 1).
     // Reverse index models forward-walk depths: A reaches itself at 0; B reaches A at 1.
     const reverseIndex = buildReverseIndex([
@@ -333,7 +333,7 @@ describe('ChangeDetectionService', () => {
     await service.dispose();
   });
 
-  it('ADR-F #2: edits a non-story dep at distance 1 from one story and distance 2 from another -> nearest is modified, farther is affected', async () => {
+  it('edits a non-story dep at distance 1 from one story and distance 2 from another -> nearest is modified, farther is affected', async () => {
     // Button.tsx is imported by Button.stories.tsx (distance 1) and by Compositions.stories.tsx
     // transitively via the Button story chain (distance 2).
     const reverseIndex = buildReverseIndex([
@@ -388,7 +388,7 @@ describe('ChangeDetectionService', () => {
     await service.dispose();
   });
 
-  it('ADR-F #3: edits a non-story dep at equal distance from two stories -> both stories tie and are both modified', async () => {
+  it('edits a non-story dep at equal distance from two stories -> both stories tie and are both modified', async () => {
     // Both Button.stories.tsx and Header.stories.tsx import shared.ts at distance 1.
     const reverseIndex = buildReverseIndex([
       ['/repo/src/shared.ts', '/repo/src/Button.stories.tsx', 1],
@@ -434,7 +434,7 @@ describe('ChangeDetectionService', () => {
     await service.dispose();
   });
 
-  it('ADR-F #4: edits a non-story file with no story importers -> reverse-index lookup is empty -> no status emitted', async () => {
+  it('edits a non-story file with no story importers -> reverse-index lookup is empty -> no status emitted', async () => {
     // orphan.ts is in neither the reverse index nor the story index.
     const reverseIndex = buildReverseIndex([
       ['/repo/src/Button.tsx', '/repo/src/Button.stories.tsx', 1],

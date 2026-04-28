@@ -22,11 +22,11 @@ You can then get started [writing stories](../whats-a-story.mdx), [running tests
 
 <GetStartedVersions versions={[{
   name: 'React',
-  range: '≥ 16.8',
+  range: '≥ 18',
   icon: '/images/logos/renderers/logo-react.svg'
 }, {
   name: 'Vite',
-  range: '≥ 5',
+  range: '≥ 7',
   icon: '/images/logos/builders/vite.svg'
 }]} />
 
@@ -52,7 +52,7 @@ Under the hood, the integration also intercepts TanStack runtime modules so Stor
 
 Out of the box, it supports these workflows:
 
-* Pass a TanStack Route directly as a story `component`
+* Supply a TanStack Route via `parameters.tanstack.router.route` to render it as the story component
 * Set the initial route, params, and query string per story
 * Override `loader`, `beforeLoad`, and more on the story route without modifying the original route object via `routeOverrides`
 * Automatically mock `@tanstack/react-router` so navigation hooks work in stories and navigation attempts can be observed
@@ -67,13 +67,11 @@ The generated setup uses this framework in `.storybook/main.ts` and the typed pr
 
 <CodeSnippets path="tanstack-react-preview-setup.md" />
 
-### Using a route as the story component
+### Using a route via parameters
 
-You can supply a TanStack Route object via `parameters.tanstack.router.route`. When you do, Storybook extracts the route's React component and keeps the route available for typed router configuration.
+Supply a TanStack Route object via `parameters.tanstack.router.route`. Storybook extracts the route's React component from the route and keeps the route available for typed router configuration.
 
 <CodeSnippets path="tanstack-react-route-story.md" />
-
-When a route is supplied via `parameters.tanstack.router.route`, TanStack route option fields can also be supplied through story args, which keeps overrides type-safe for route-based stories.
 
 ### Using router parameters with a plain component
 
@@ -357,29 +355,30 @@ This usually means a server-only module is being imported in the browser. Check 
 
 #### How do I mock server functions (`createServerFn`) in stories?
 
-The framework stubs TanStack Start entry points automatically (see [Automatic TanStack Router and Start mocks](#automatic-tanstack-router-and-start-mocks)), so most `createServerFn` calls are already replaced with mock functions you can override per story. For app-level server modules not covered by the preset, add a Vite plugin in `viteFinal` that replaces server files with no-op proxy exports:
+The framework stubs TanStack Start entry points automatically (see [Automatic TanStack Router and Start mocks](#automatic-tanstack-router-and-start-mocks)), so most `createServerFn` calls are already replaced with mock functions you can override per story.
 
-```ts
-// .storybook/main.ts → viteFinal
-config.plugins.push({
-  name: 'storybook:stub-server-files',
-  enforce: 'pre',
-  transform: {
-    filter: { id: /\.server\.[mc]?[jt]sx?$/ },
-    handler(code, id) {
-      if (id.includes('node_modules')) return null
-      // Extract named exports and re-export them as callable proxies
-      const names = /* ...parse named exports from `code`... */
-      const lines = [
-        `const _noop = () => {}`,
-        `const _proxy = new Proxy(_noop, { get: () => _proxy, apply: () => _proxy })`,
-      ]
-      for (const name of names) lines.push(`export const ${name} = _proxy`)
-      return { code: lines.join('\n'), map: null }
-    },
+
+```ts title="components/Navbar.stories.ts"
+import type { Meta, StoryObj } from '@storybook/tanstack-react';
+import { Navbar } from './Navbar';
+import { fetchRecentPosts } from '~/server/posts.server';
+
+
+const meta = {
+  component: Navbar,
+  beforeEach: () => {
+    // Override the server function's handler with a mock implementation.
+    // This does not affect your real server function or its behavior in the app.
+    fetchRecentPosts.handler.mockImplementation(async () => [
+      { id: 'post-1', title: 'Mocked Post 1' },
+      { id: 'post-2', title: 'Mocked Post 2' },
+    ]);
   },
-})
+} satisfies Meta<typeof Navbar>;
+
+export default meta;
 ```
+
 
 This replaces every named export with a callable proxy so imports from server files never crash in the browser.
 
@@ -391,7 +390,7 @@ This framework contributes the following [parameters](../../writing-stories/para
 
 | Parameter | Type | Description |
 | --- | --- | --- |
-| `route` | `AnyRoute \| route options object` | Supplies a route instance directly or creates a temporary story route from route options. Storybook extracts the route's React component automatically when no `component` is set on the meta. |
+| `route` | `AnyRoute \| route options object` | Supplies a route instance directly or creates a temporary story route from route options. Storybook extracts the route's React component automatically from the route. |
 | `path` | `string` | Sets the initial URL path for the story router. |
 | `params` | `Record<string, string>` | Interpolates route params into the current path. |
 | `query` | `Record<string, unknown>` | Appends search params to the initial URL. |

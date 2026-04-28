@@ -105,9 +105,7 @@ Returns story metadata only (no URLs).`,
 
 				const statusStore = getStatusStore();
 				const allStatuses = normalizeStoryStatusMap(readAllStatuses(statusStore));
-				const index = await fetchStoryIndex(origin);
-
-				const stories: ChangedStory[] = [];
+				const changedStoriesFromStatusStore: ChangedStory[] = [];
 				for (const [storyId, byType] of Object.entries(allStatuses)) {
 					const status = byType?.[CHANGE_DETECTION_TYPE];
 					const statusValue = status?.value;
@@ -115,15 +113,40 @@ Returns story metadata only (no URLs).`,
 						continue;
 					}
 
-					const entry = index.entries[storyId];
-					stories.push({
+					changedStoriesFromStatusStore.push({
 						storyId,
-						title: entry?.title,
-						name: entry?.name,
-						importPath: entry?.importPath,
 						statusValue,
 					});
 				}
+
+				if (changedStoriesFromStatusStore.length === 0) {
+					if (!disableTelemetry) {
+						await collectTelemetry({
+							event: 'tool:getChangedStories',
+							server,
+							toolset: 'dev',
+							storyCount: 0,
+							newStoryCount: 0,
+							modifiedStoryCount: 0,
+							affectedStoryCount: 0,
+						});
+					}
+
+					return {
+						content: [{ type: 'text' as const, text: 'No new, modified, or affected stories detected.' }],
+					};
+				}
+
+				const index = await fetchStoryIndex(origin);
+				const stories = changedStoriesFromStatusStore.map((story) => {
+					const entry = index.entries[story.storyId];
+					return {
+						...story,
+						title: entry?.title,
+						name: entry?.name,
+						importPath: entry?.importPath,
+					};
+				});
 
 				stories.sort((a, b) => {
 					const priorityDelta = statusPriority(a.statusValue) - statusPriority(b.statusValue);

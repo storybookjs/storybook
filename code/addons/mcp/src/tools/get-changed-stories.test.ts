@@ -223,4 +223,23 @@ describe('getChangedStoriesTool', () => {
 			isError: true,
 		});
 	});
+
+	it('returns early without fetching index when there are no relevant changed statuses', async () => {
+		mockGetStatusStore.mockReturnValue({
+			getAllStatuses: () => ({
+				'button--primary': {
+					'storybook/change-detection': {
+						value: 'status-value:success',
+					},
+				},
+			}),
+		});
+
+		const callCountBefore = vi.mocked(fetchStoryIndex.fetchStoryIndex).mock.calls.length;
+		const response = await callTool();
+		const text = getResultText(response);
+
+		expect(text).toBe('No new, modified, or affected stories detected.');
+		expect(vi.mocked(fetchStoryIndex.fetchStoryIndex).mock.calls.length).toBe(callCountBefore);
+	});
 });

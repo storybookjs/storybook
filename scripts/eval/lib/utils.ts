@@ -226,6 +226,6 @@ function stripAnsi(str: string) {
   return str.replace(/\x1b\[[0-9;]*m/g, '');
 }
 
-function toPosixPath(value: string) {
+export function toPosixPath(value: string) {
   return value.split(sep).join('/');
 }

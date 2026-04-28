@@ -1,5 +1,4 @@
 import type { McpServer } from 'tmcp';
-import * as v from 'valibot';
 import { experimental_getStatusStore } from 'storybook/internal/core-server';
 import { collectTelemetry } from '../telemetry.ts';
 import type { AddonContext } from '../types.ts';
@@ -24,24 +23,13 @@ type ChangeDetectionStatus = {
 type StoryStatusByType = Record<string, ChangeDetectionStatus | undefined>;
 type StoryStatusMap = Record<string, StoryStatusByType>;
 
-const GetChangedStoriesOutput = v.object({
-	stories: v.array(
-		v.object({
-			storyId: v.string(),
-			title: v.optional(v.string()),
-			name: v.optional(v.string()),
-			importPath: v.optional(v.string()),
-			statusValue: v.string(),
-		}),
-	),
-	counts: v.object({
-		new: v.number(),
-		modified: v.number(),
-		affected: v.number(),
-	}),
-});
-
-type GetChangedStoriesOutput = v.InferOutput<typeof GetChangedStoriesOutput>;
+type ChangedStory = {
+	storyId: string;
+	title?: string;
+	name?: string;
+	importPath?: string;
+	statusValue: string;
+};
 
 function readAllStatuses(statusStore: unknown): unknown {
 	if (statusStore && typeof statusStore === 'object') {
@@ -106,7 +94,6 @@ export async function addGetChangedStoriesTool(server: McpServer<unknown, AddonC
 			title: 'Get changed stories metadata',
 			description: `Get Storybook stories marked as new, modified, or affected.
 Returns story metadata only (no URLs).`,
-			outputSchema: GetChangedStoriesOutput,
 			enabled: () => server.ctx.custom?.toolsets?.dev ?? true,
 		},
 		async () => {
@@ -120,7 +107,7 @@ Returns story metadata only (no URLs).`,
 				const allStatuses = normalizeStoryStatusMap(readAllStatuses(statusStore));
 				const index = await fetchStoryIndex(origin);
 
-				const stories: GetChangedStoriesOutput['stories'] = [];
+				const stories: ChangedStory[] = [];
 				for (const [storyId, byType] of Object.entries(allStatuses)) {
 					const status = byType?.[CHANGE_DETECTION_TYPE];
 					const statusValue = status?.value;
@@ -171,7 +158,7 @@ Returns story metadata only (no URLs).`,
 						? 'No new, modified, or affected stories detected.'
 						: `Detected ${stories.length} changed stor${stories.length === 1 ? 'y' : 'ies'} (${counts.new} new, ${counts.modified} modified, ${counts.affected} affected).`;
 
-				const serializeStory = (story: GetChangedStoriesOutput['stories'][number]) =>
+				const serializeStory = (story: ChangedStory) =>
 					story.title && story.name && story.importPath
 						? `- \`${story.storyId}\`: ${story.title} / ${story.name} (\`${story.importPath}\`)`
 						: `- \`${story.storyId}\``;

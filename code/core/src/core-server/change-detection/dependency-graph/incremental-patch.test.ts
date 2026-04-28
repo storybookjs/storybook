@@ -256,6 +256,40 @@ describe('IncrementalPatcher', () => {
     expect(reverseIndex.lookup(dep).get(story)).toBe(1);
   });
 
+  it('skips re-walk on `change` when dep set is unchanged (comment-only edit)', async () => {
+    const story = '/repo/src/A.stories.tsx';
+    const dep = '/repo/src/shared.ts';
+
+    const initialIndex = new ReverseIndexImpl();
+    initialIndex.record(story, story, 0);
+    initialIndex.record(dep, story, 1);
+    const initialGraph: DependencyGraph = new Map([
+      [story, new Set([dep])],
+      [dep, new Set()],
+    ]);
+
+    // dep changes but its import list stays empty (comment-only edit)
+    const world: PatcherWorld = {
+      edges: new Map([[dep, []]]),
+      resolutions: new Map(),
+    };
+    const { patcher, reverseIndex, parseSpy } = buildPatcher({
+      world,
+      reverseIndex: initialIndex,
+      graph: initialGraph,
+      storyFiles: new Set([story]),
+    });
+
+    await patcher.patch({ kind: 'change', path: dep });
+
+    // story must NOT be re-walked — graph and index are still accurate
+    const storyCalls = parseSpy.mock.calls.filter((c) => c[0].filePath === story);
+    expect(storyCalls.length).toBe(0);
+    // reverse-index entries are preserved unchanged
+    expect(reverseIndex.lookup(dep).get(story)).toBe(1);
+    expect(reverseIndex.lookup(story).get(story)).toBe(0);
+  });
+
   it('treats `add` for a non-story file as a no-op', async () => {
     const file = '/repo/src/loose.ts';
     const world: PatcherWorld = { edges: new Map(), resolutions: new Map() };

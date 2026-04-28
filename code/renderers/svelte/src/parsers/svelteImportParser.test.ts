@@ -227,11 +227,7 @@ describe('svelteImportParser', () => {
   });
 
   it('uses .script.tsx virtual extension when lang="tsx"', async () => {
-    const source = [
-      `<script lang="tsx">`,
-      `  import x from './x.tsx';`,
-      `</script>`,
-    ].join('\n');
+    const source = [`<script lang="tsx">`, `  import x from './x.tsx';`, `</script>`].join('\n');
 
     const { ctx, calls } = makeContext(() => [{ specifier: './x.tsx', kind: 'static' }]);
 

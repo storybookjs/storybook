@@ -51,7 +51,9 @@ interface MaybeSvelteRoot {
  * Each attribute is `{ name, value }` where value is `true` (boolean attr) or an array
  * of text/expression nodes — `[{ data: "ts" }]` for `lang="ts"`.
  */
-function readLangFromAttributes(attributes: MaybeAstAttribute[] | null | undefined): string | undefined {
+function readLangFromAttributes(
+  attributes: MaybeAstAttribute[] | null | undefined
+): string | undefined {
   if (!Array.isArray(attributes)) {
     return undefined;
   }

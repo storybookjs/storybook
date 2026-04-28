@@ -2,6 +2,18 @@ import { normalize } from 'pathe';
 
 import { logger as defaultLogger } from 'storybook/internal/node-logger';
 
+function setsEqual(a: Set<string>, b: Set<string>): boolean {
+  if (a.size !== b.size) {
+    return false;
+  }
+  for (const item of a) {
+    if (!b.has(item)) {
+      return false;
+    }
+  }
+  return true;
+}
+
 import type { FileChangeEvent } from '../adapters/types.ts';
 import type { ParserRegistry } from '../parser-registry/index.ts';
 import { ParseResolveCache } from './ParseResolveCache.ts';
@@ -115,6 +127,16 @@ export class IncrementalPatcher {
     const affectedStories = new Set(this.reverseIndex.lookup(path).keys());
     if (this.isStoryFile(path)) {
       affectedStories.add(path);
+    }
+
+    // Skip re-walk when the file's direct dependency set is unchanged (e.g. on a
+    // comment-only or logic-only edit). The graph and reverse-index remain accurate.
+    const oldDeps = this.graph.get(path);
+    if (oldDeps !== undefined) {
+      const newDeps = await this.cache.resolveOnce(path);
+      if (setsEqual(oldDeps, newDeps)) {
+        return;
+      }
     }
 
     const storiesToWalk: string[] = [];

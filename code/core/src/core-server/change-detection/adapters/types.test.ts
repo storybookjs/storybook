@@ -1,11 +1,7 @@
 // Type-level smoke tests for the ChangeDetectionAdapter contract.
 import { describe, expectTypeOf, it } from 'vitest';
 
-import type {
-  ChangeDetectionAdapter,
-  FileChangeEvent,
-  ModuleResolveConfig,
-} from './types.ts';
+import type { ChangeDetectionAdapter, FileChangeEvent, ModuleResolveConfig } from './types.ts';
 
 describe('ChangeDetectionAdapter types', () => {
   it('FileChangeEvent is a discriminated union over add | change | unlink', () => {

@@ -1,5 +1,1 @@
-export type {
-  ChangeDetectionAdapter,
-  FileChangeEvent,
-  ModuleResolveConfig,
-} from './types.ts';
+export type { ChangeDetectionAdapter, FileChangeEvent, ModuleResolveConfig } from './types.ts';

@@ -1,6 +1,7 @@
 <h1>Migration</h1>
 
 - [From version 10.0.0 to 10.1.0](#from-version-1000-to-1010)
+  - [TanStack Router projects: migrate from `@storybook/react-vite` to `@storybook/tanstack-react`](#tanstack-router-projects-migrate-from-storybookreact-vite-to-storybooktanstack-react)
   - [API and Component Changes](#api-and-component-changes)
     - [Button Component API Changes](#button-component-api-changes)
       - [Added: ariaLabel](#added-arialabel)
@@ -521,6 +522,28 @@
   - [Deprecated embedded addons](#deprecated-embedded-addons)
 
 ## From version 10.0.0 to 10.1.0
+
+### TanStack Router projects: migrate from `@storybook/react-vite` to `@storybook/tanstack-react`
+
+Projects using `@storybook/react-vite` together with `@tanstack/react-router` (or `@tanstack/react-start`) can migrate to the dedicated `@storybook/tanstack-react` framework. The new framework provides built-in TanStack Router and TanStack Query support: every story is automatically wrapped in a TanStack Router instance, so any manual decorator that creates a `RouterProvider`, `createRouter`, `createMemoryHistory` or `createRootRoute` is no longer needed and should be removed.
+
+To run the automigration:
+
+```sh
+npx storybook automigrate
+```
+
+The migration will:
+
+- Replace `@storybook/react-vite` with `@storybook/tanstack-react` in `package.json`.
+- Update the framework string in `.storybook/main.*` (works for both regular and CSF factories `defineMain` configs).
+- Update import sites that reference `@storybook/react-vite` (including CSF factories `definePreview` and `defineMain` from `@storybook/react-vite/node`).
+- Detect manual TanStack Router decorators in `.storybook/preview.*` and offer a ready-to-paste AI prompt to help remove them.
+
+Stories that need to render under a specific route can use the framework APIs:
+
+- `component: Route` on the story `meta`, or
+- `parameters.tanstack.router.route` on a story.
 
 ### API and Component Changes
 

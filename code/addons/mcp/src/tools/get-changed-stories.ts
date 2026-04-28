@@ -87,7 +87,7 @@ function getStatusStore(): unknown {
 	}
 }
 
-export async function addGetChangedStoriesTool(server: McpServer<unknown, AddonContext>) {
+export async function addGetChangedStoriesTool(server: McpServer<any, AddonContext>) {
 	server.tool(
 		{
 			name: GET_CHANGED_STORIES_TOOL_NAME,
@@ -133,7 +133,9 @@ Returns story metadata only (no URLs).`,
 					}
 
 					return {
-						content: [{ type: 'text' as const, text: 'No new, modified, or affected stories detected.' }],
+						content: [
+							{ type: 'text' as const, text: 'No new, modified, or affected stories detected.' },
+						],
 					};
 				}
 

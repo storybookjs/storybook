@@ -215,7 +215,9 @@ describe('getChangedStoriesTool', () => {
 		const text = getResultText(response);
 
 		expect(text).toContain('Detected 1 changed story (0 new, 1 modified, 0 affected).');
-		expect(text).toContain('- `button--secondary`: Button / Secondary (`./src/Button.stories.tsx`)');
+		expect(text).toContain(
+			'- `button--secondary`: Button / Secondary (`./src/Button.stories.tsx`)',
+		);
 	});
 
 	it('uses fallbacks when a changed story is not in index', async () => {

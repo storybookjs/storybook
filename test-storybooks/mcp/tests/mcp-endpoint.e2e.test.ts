@@ -18,7 +18,7 @@ let storybookProcess: ReturnType<typeof x> | null = null;
 function isBrowserLaunchUnavailable(text: string): boolean {
 	return (
 		text.includes('browserType.launch') &&
-		(text.includes('Executable doesn\'t exist') || text.includes('spawn Unknown system error -86'))
+		(text.includes("Executable doesn't exist") || text.includes('spawn Unknown system error -86'))
 	);
 }
 

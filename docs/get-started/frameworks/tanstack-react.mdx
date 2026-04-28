@@ -250,19 +250,13 @@ Configure options for the [framework's builder](../../api/main-config/main-confi
 
 This framework contributes the following [parameters](../../writing-stories/parameters.mdx) to Storybook under the `tanstack.router` namespace:
 
-#### `route`
+When `route` is supplied as a plain object, it may also include TanStack route options such as [`head`](https://tanstack.com/router/latest/docs/api/router/RouteOptionsType#head-method), `search`, and [`params.parse`](https://tanstack.com/router/latest/docs/api/router/RouteOptionsType#paramsparse-method).
 
-Type: `AnyRoute | route options object`
+#### `context`
 
-Supplies a route instance directly or creates a temporary story route from route options. Storybook extracts the route's React component automatically from the route.
+Type: `Record<string, unknown>`
 
-When `route` is supplied as a plain object, it may also include TanStack route options such as [`context`](https://tanstack.com/router/latest/docs/guide/router-context), [`head`](https://tanstack.com/router/latest/docs/api/router/RouteOptionsType#head-method), `search`, and [`params.parse`](https://tanstack.com/router/latest/docs/api/router/RouteOptionsType#paramsparse-method).
-
-#### `path`
-
-Type: `string`
-
-Sets the initial URL path for the story router.
+Router context values injected into the story router.
 
 #### `params`
 
@@ -270,20 +264,26 @@ Type: `Record<string, string>`
 
 Interpolates route params into the current path.
 
+#### `path`
+
+Type: `string`
+
+Sets the initial URL path for the story router.
+
 #### `query`
 
 Type: `Record<string, unknown>`
 
 Appends search params to the initial URL.
 
+#### `route`
+
+Type: `AnyRoute | route options object`
+
+Supplies a route instance directly or creates a temporary story route from route options. Storybook extracts the route's React component automatically from the route.
+
 #### `routeOverrides`
 
 Type: `Partial<Record<string, RouteOverrideOptions>>`
 
 Per-route overrides keyed by route ID, applied to the story's route and root route. Use `'__root__'` to target the root route. Each entry can override `loader`, `beforeLoad`, `validateSearch`, `loaderDeps`, and `context`.
-
-#### `context`
-
-Type: `Record<string, unknown>`
-
-Router context values injected into the story router.

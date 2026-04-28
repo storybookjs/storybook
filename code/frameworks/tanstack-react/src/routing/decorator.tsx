@@ -139,6 +139,9 @@ function createStoryRouter({ Story, context }: MockRouterOptions): Router<AnyRoo
     defaultNotFoundComponent(props) {
       return <div>Route not found: {props.routeId}</div>;
     },
+    defaultErrorComponent({ error }) {
+      return <div>Story did something wrong : {String(error)}</div>;
+    },
     context: routerParameters?.context,
   });
   return router;

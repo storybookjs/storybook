@@ -20,9 +20,10 @@ export interface ProjectInfo {
   addons: string[];
   configDir: string;
   storiesPaths: string[];
-  hasCsfFactoryPreview: boolean;
   /** Whether the project uses TypeScript ('ts') or JavaScript ('js'), inferred from the main config file extension. */
   language: 'ts' | 'js';
+  /** Detected package manager name (npm, yarn, pnpm, bun), if known. */
+  packageManager?: string;
 }
 
 /**

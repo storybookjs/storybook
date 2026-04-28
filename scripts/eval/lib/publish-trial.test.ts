@@ -173,12 +173,12 @@ describe('publishTrialBranch', () => {
             total: 8,
             passed: 4,
             storyFiles: 3,
+            cssCheck: 'not-run' as const,
           },
           buildSuccess: true,
           typeCheckErrors: 0,
           fileChanges: [],
           storybookChanges: [],
-          hasCssCheckStory: false,
           ghostStories: {
             candidateCount: 6,
             total: 4,
@@ -189,6 +189,7 @@ describe('publishTrialBranch', () => {
             total: 8,
             passed: 6,
             storyFiles: 3,
+            cssCheck: 'not-run' as const,
           },
         },
         score: {
@@ -342,7 +343,6 @@ describe('publishTrialBranch', () => {
             typeCheckErrors: 0,
             fileChanges: [],
             storybookChanges: [],
-            hasCssCheckStory: false,
           },
           score: {
             score: 1,
@@ -462,7 +462,6 @@ describe('publishTrialBranch', () => {
           typeCheckErrors: 0,
           fileChanges: [],
           storybookChanges: [],
-          hasCssCheckStory: false,
         },
         score: {
           score: 1,

@@ -262,7 +262,6 @@ describe('normalizeTranscriptForDocs', () => {
         typeCheckErrors: 0,
         fileChanges: [],
         storybookChanges: [],
-        hasCssCheckStory: false,
       },
       score: {
         score: 1,

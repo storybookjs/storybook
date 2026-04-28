@@ -352,7 +352,6 @@ describe('runTrial pipeline', () => {
           typeCheckErrors: 0,
           fileChanges: [],
           storybookChanges: [],
-          hasCssCheckStory: false,
         },
         score: {
           score: 0,
@@ -433,6 +432,7 @@ function setupMocks(overrides?: {
         total: 6,
         passed: 2,
         storyFiles: 3,
+        cssCheck: 'not-run' as const,
       },
       buildSuccess,
       typeCheckErrors,
@@ -444,13 +444,13 @@ function setupMocks(overrides?: {
         { path: '.storybook/preview.tsx', gitStatus: 'A' },
         { path: 'src/Button.stories.tsx', gitStatus: 'A' },
       ],
-      hasCssCheckStory: true,
       ...(buildSuccess
         ? {
             storyRender: {
               total: 6,
               passed: 4,
               storyFiles: 3,
+              cssCheck: 'pass' as const,
             },
           }
         : {}),

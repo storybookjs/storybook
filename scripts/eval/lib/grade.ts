@@ -11,7 +11,6 @@ import {
   getGeneratedStoryFiles,
   getScriptRunCommand,
   runStoryRenderPass,
-  STORY_FILE_PATTERN,
   type StoryRenderGrade,
   withBaselinePreviewEnvironment,
 } from './story-render.ts';
@@ -53,11 +52,6 @@ export interface Grade {
   ghostStories?: GhostStoryGrade;
   baselinePreviewStories?: StoryRenderGrade;
   storyRender?: StoryRenderGrade;
-  /**
-   * True when the agent added a story named `CssCheck` (a `play` function that asserts a
-   * component-specific computed style, to prove the shared preview loaded the app's CSS).
-   */
-  hasCssCheckStory: boolean;
 }
 
 /** Filter file changes to only storybook-related ones. */
@@ -99,40 +93,6 @@ export function countTypeCheckErrors(tscOutput: string): number {
   return (tscOutput.match(/error TS\d+/g) || []).length;
 }
 
-/**
- * Walks a unified `git diff` patch and returns true if any added line (`+`, not the `+++` header)
- * inside a story file contains `token`.
- *
- * Guards against false positives from the prompt markdown, the agent transcript, and other
- * artifacts that end up in the diff because we stage every file in the trial worktree.
- */
-export function diffAddsTokenInStoryFiles(
-  rawDiff: string,
-  storybookChanges: FileChange[],
-  token: string
-): boolean {
-  const changedStoryPaths = new Set(
-    storybookChanges
-      .filter((change) => change.gitStatus !== 'D' && STORY_FILE_PATTERN.test(change.path))
-      .map((change) => change.path)
-  );
-  if (changedStoryPaths.size === 0) return false;
-
-  let currentPathIsStory = false;
-  for (const line of rawDiff.split('\n')) {
-    if (line.startsWith('+++ ')) {
-      // `+++ b/<path>` (or `+++ /dev/null` for deletions). Track whether we're now inside a story file.
-      const path = line.slice(4).replace(/^b\//, '');
-      currentPathIsStory = changedStoryPaths.has(path);
-      continue;
-    }
-    if (!currentPathIsStory) continue;
-    if (!line.startsWith('+') || line.startsWith('+++')) continue;
-    if (line.includes(token)) return true;
-  }
-  return false;
-}
-
 /** Parse git diff --name-status output into FileChange objects. */
 export function parseChangedFiles(gitOutput: string): FileChange[] {
   return gitOutput
@@ -161,22 +121,11 @@ export async function grade(
 
   // Changed files
   logger.logStep('Collecting agent changes...');
-  const { changes: fileChanges, rawDiff } = await getChangedFiles(repoRoot, baselineCommit);
+  const fileChanges = await getChangedFiles(repoRoot, baselineCommit);
   const storybookChanges = filterStorybookFiles(fileChanges);
   logger.logSuccess(
     `${fileChanges.length} files changed (${storybookChanges.length} storybook-related)`
   );
-
-  const hasCssCheckStory = diffAddsTokenInStoryFiles(
-    rawDiff,
-    storybookChanges,
-    'export const CssCheck'
-  );
-  if (hasCssCheckStory) {
-    logger.logSuccess('CssCheck story present (export const CssCheck added in a story file)');
-  } else {
-    logger.logError('CssCheck story missing (no export const CssCheck added in a story file)');
-  }
 
   // Storybook build + TypeScript check in parallel
   logger.logStep('Running storybook build + typecheck...');
@@ -231,6 +180,15 @@ export async function grade(
     logger,
   });
 
+  const cssCheck = storyRenderRun.summary?.cssCheck ?? 'not-run';
+  if (cssCheck === 'pass') {
+    logger.logSuccess('CssCheck story passed');
+  } else if (cssCheck === 'fail') {
+    logger.logError('CssCheck story failed');
+  } else {
+    logger.logError('CssCheck story missing or not run');
+  }
+
   const baselinePreviewRun = await withBaselinePreviewEnvironment({
     repoRoot,
     baselineCommit,
@@ -257,7 +215,6 @@ export async function grade(
     ghostStories,
     baselinePreviewStories: baselinePreviewRun.summary,
     storyRender: storyRenderRun.summary,
-    hasCssCheckStory,
   };
 
   const score = computeQualityScore({
@@ -292,27 +249,15 @@ function parseGitDiffStatus(rawStatus?: string): GitDiffStatus {
     : 'M';
 }
 
-async function getChangedFiles(
-  repoRoot: string,
-  baseline: string
-): Promise<{ changes: FileChange[]; rawDiff: string }> {
+async function getChangedFiles(repoRoot: string, baseline: string): Promise<FileChange[]> {
   // Stage all files so `git diff --cached` picks up new files the agent created.
   // Safe: this runs on an ephemeral trial copy, not the real repo.
   await x('git', ['add', '-A'], { nodeOptions: { cwd: repoRoot } });
-  const [nameStatus, patch] = await Promise.all([
-    x('git', ['diff', '--cached', '--name-status', baseline], {
-      throwOnError: false,
-      nodeOptions: { cwd: repoRoot },
-    }),
-    x('git', ['diff', '--cached', baseline], {
-      throwOnError: false,
-      nodeOptions: { cwd: repoRoot },
-    }),
-  ]);
-  return {
-    changes: parseChangedFiles(nameStatus.stdout),
-    rawDiff: patch.stdout,
-  };
+  const { stdout } = await x('git', ['diff', '--cached', '--name-status', baseline], {
+    throwOnError: false,
+    nodeOptions: { cwd: repoRoot },
+  });
+  return parseChangedFiles(stdout);
 }
 
 export async function collectGhostStoriesGrade(

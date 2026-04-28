@@ -1,8 +1,7 @@
 ---
-title: 'Backgrounds'
+title: Backgrounds
 sidebar:
   order: 2
-  title: Backgrounds
 ---
 
 The backgrounds feature allows you to set the background color on which the story renders in the UI:
@@ -17,26 +16,17 @@ But you're not restricted to these backgrounds. You can configure your own set o
 
 You can define the available background colors using the [`options` property](#options) and set the initial background color using the `initialGlobals` property:
 
-{/* prettier-ignore-start */}
-
 <CodeSnippets path="addon-backgrounds-options-in-preview.md" />
-
-{/* prettier-ignore-end */}
 
 ## Defining the background for a story
 
 The backgrounds feature enables you to change the background color applied to a story by selecting from the list of predefined background colors in the toolbar. If needed, you can set a story to default to a specific background color, by using the `globals` option:
 
-{/* prettier-ignore-start */}
-
-<CodeSnippets path="addon-backgrounds-define-globals.md" usesCsf3 />
-
-{/* prettier-ignore-end */}
-
+<CodeSnippets path="addon-backgrounds-define-globals.md" />
 
 <Callout variant="info">
 
-  When you specify a background color for a story (or a component's stories) using `globals`, the color is applied and cannot be changed using the toolbar. This is useful to ensure a story is always rendered on a specific background color.
+When you specify a background color for a story (or a component's stories) using `globals`, the color is applied and cannot be changed using the toolbar. This is useful to ensure a story is always rendered on a specific background color.
 
 </Callout>
 
@@ -46,22 +36,13 @@ You can also configure backgrounds on a per-component or per-story basis through
 
 To set the available background colors, use the [`options` property](#options). In this example, we'll adjust the colors for all of the Button component's stories:
 
-{/* prettier-ignore-start */}
-
 <CodeSnippets path="addon-backgrounds-options-in-meta.md" />
-
-{/* prettier-ignore-end */}
-
 
 ## Disable backgrounds
 
 If you want to turn off backgrounds in a story, you can do so by configuring the `backgrounds` parameter like so:
 
-{/* prettier-ignore-start */}
-
-<CodeSnippets path="addon-backgrounds-disabled.md" usesCsf3/>
-
-{/* prettier-ignore-end */}
+<CodeSnippets path="addon-backgrounds-disabled.md" />
 
 ## Grid
 
@@ -69,11 +50,7 @@ The backgrounds feature also includes a Grid selector, which allows you to quick
 
 You don't need additional configuration to get started. But its properties are fully customizable; if you don't supply any value to any of its properties, they'll default to the following values:
 
-{/* prettier-ignore-start */}
-
 <CodeSnippets path="addon-backgrounds-grid.md" />
-
-{/* prettier-ignore-end */}
 
 ## API
 

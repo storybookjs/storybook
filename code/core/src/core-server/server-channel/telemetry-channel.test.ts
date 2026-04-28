@@ -8,6 +8,8 @@ vi.mock('storybook/internal/telemetry', () => ({
   telemetry: vi.fn(),
   getLastEvents: vi.fn().mockResolvedValue({}),
   getSessionId: vi.fn().mockResolvedValue('test-session-id'),
+  isTelemetryModuleEnabled: vi.fn().mockReturnValue(true),
+  setTelemetryEnabled: vi.fn(),
 }));
 
 const { telemetry } = await import('storybook/internal/telemetry');
@@ -38,19 +40,6 @@ describe('telemetry-channel', () => {
 
       listeners[SIDEBAR_FILTER_CHANGED](payload);
       expect(telemetry).toHaveBeenCalledWith('sidebar-filter', payload);
-    });
-
-    it('does not register listener when telemetry is disabled', () => {
-      const listeners: Record<string, Function> = {};
-      const channel = {
-        on: (event: string, listener: Function) => {
-          listeners[event] = listener;
-        },
-      } as any;
-
-      initTelemetryChannel(channel, { disableTelemetry: true } as any);
-
-      expect(listeners[SIDEBAR_FILTER_CHANGED]).toBeUndefined();
     });
   });
 });

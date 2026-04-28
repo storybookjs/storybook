@@ -83,14 +83,16 @@ export function useTagFilterEntries(indexJson: StoryIndex) {
 
 export function useStatusFilterEntries(allStatuses: StatusesByStoryIdAndTypeId) {
   return useMemo(() => {
+    if (!globalThis?.FEATURES?.changeDetection) {
+      return [];
+    }
+
     const counts = countStatusesByValue(allStatuses);
 
-    return STATUS_DISPLAY_ORDER.filter((statusValue) => (counts[statusValue] ?? 0) > 0).map(
-      (statusValue) => ({
-        statusValue,
-        shortName: statusValueShortName(statusValue),
-        count: counts[statusValue],
-      })
-    );
+    return STATUS_DISPLAY_ORDER.map((statusValue) => ({
+      statusValue,
+      shortName: statusValueShortName(statusValue),
+      count: counts[statusValue] ?? 0,
+    }));
   }, [allStatuses]);
 }

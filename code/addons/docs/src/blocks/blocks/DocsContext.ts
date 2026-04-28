@@ -11,10 +11,10 @@ export type { DocsContextProps };
 // the React component tree.
 // This was specifically a problem with the Vite builder.
 if (globalThis && globalThis.__DOCS_CONTEXT__ === undefined) {
-  globalThis.__DOCS_CONTEXT__ = createContext(null);
+  globalThis.__DOCS_CONTEXT__ = createContext<DocsContextProps<Renderer>>(null!);
   globalThis.__DOCS_CONTEXT__.displayName = 'DocsContext';
 }
 
 export const DocsContext: Context<DocsContextProps<Renderer>> = globalThis
   ? globalThis.__DOCS_CONTEXT__
-  : createContext(null);
+  : createContext<DocsContextProps<Renderer>>(null!);

@@ -8,7 +8,7 @@ export default {
       router: {
         route: Route,
         params: { userId: '42' },
-        // Override the route's loader so the story doesn't call the real API.
+        // 👇 Override the route's loader so the story doesn't call the real API.
         routeOverrides: {
           '/users/$userId': {
             loader: async () => ({ user: { id: '42', name: 'Ada Lovelace' } }),
@@ -34,7 +34,7 @@ const meta = {
       router: {
         route: Route,
         params: { userId: '42' },
-        // Override the route's loader so the story doesn't call the real API.
+        // 👇 Override the route's loader so the story doesn't call the real API.
         routeOverrides: {
           '/users/$userId': {
             loader: async () => ({ user: { id: '42', name: 'Ada Lovelace' } }),
@@ -63,7 +63,7 @@ const meta = preview.meta({
       router: {
         route: Route,
         params: { userId: '42' },
-        // Override the route's loader so the story doesn't call the real API.
+        // 👇 Override the route's loader so the story doesn't call the real API.
         routeOverrides: {
           '/users/$userId': {
             loader: async () => ({ user: { id: '42', name: 'Ada Lovelace' } }),
@@ -74,9 +74,7 @@ const meta = preview.meta({
   },
 });
 
-export default meta;
-
-export const Default = meta.story({});
+export const Default = meta.story();
 ```
 
 <!-- JS snippets still needed while providing both CSF 3 & Next -->
@@ -93,7 +91,7 @@ const meta = preview.meta({
       router: {
         route: Route,
         params: { userId: '42' },
-        // Override the route's loader so the story doesn't call the real API.
+        // 👇 Override the route's loader so the story doesn't call the real API.
         routeOverrides: {
           '/users/$userId': {
             loader: async () => ({ user: { id: '42', name: 'Ada Lovelace' } }),
@@ -104,7 +102,5 @@ const meta = preview.meta({
   },
 });
 
-export default meta;
-
-export const Default = meta.story({});
+export const Default = meta.story();
 ```

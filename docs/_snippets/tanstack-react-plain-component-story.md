@@ -2,7 +2,6 @@
 import { Page } from './Page';
 
 export default {
-  title: 'Example/Page',
   component: Page,
 };
 
@@ -14,16 +13,6 @@ export const Default = {
           path: '/demo/form/address',
         },
         query: { view: 'list' },
-        routeOverrides: {
-          '/demo/form/address': {
-            loader: async () => ({
-              featuredItems: [
-                { name: 'Item A', description: 'First featured item' },
-                { name: 'Item B', description: 'Second featured item' },
-              ],
-            }),
-          },
-        },
       },
     },
   },
@@ -36,7 +25,6 @@ import type { Meta, StoryObj } from '@storybook/tanstack-react';
 import { Page } from './Page';
 
 const meta = {
-  title: 'Example/Page',
   component: Page,
 } satisfies Meta<typeof Page>;
 
@@ -52,16 +40,6 @@ export const Default: Story = {
           path: '/demo/form/address',
         },
         query: { view: 'list' },
-        routeOverrides: {
-          '/demo/form/address': {
-            loader: async () => ({
-              featuredItems: [
-                { name: 'Item A', description: 'First featured item' },
-                { name: 'Item B', description: 'Second featured item' },
-              ],
-            }),
-          },
-        },
       },
     },
   },
@@ -74,11 +52,8 @@ import preview from '../.storybook/preview';
 import { Page } from './Page';
 
 const meta = preview.meta({
-  title: 'Example/Page',
   component: Page,
 });
-
-export default meta;
 
 export const Default = meta.story({
   parameters: {
@@ -88,16 +63,6 @@ export const Default = meta.story({
           path: '/demo/form/address',
         },
         query: { view: 'list' },
-        routeOverrides: {
-          '/demo/form/address': {
-            loader: async () => ({
-              featuredItems: [
-                { name: 'Item A', description: 'First featured item' },
-                { name: 'Item B', description: 'Second featured item' },
-              ],
-            }),
-          },
-        },
       },
     },
   },
@@ -112,11 +77,8 @@ import preview from '../.storybook/preview';
 import { Page } from './Page';
 
 const meta = preview.meta({
-  title: 'Example/Page',
   component: Page,
 });
-
-export default meta;
 
 export const Default = meta.story({
   parameters: {
@@ -126,16 +88,6 @@ export const Default = meta.story({
           path: '/demo/form/address',
         },
         query: { view: 'list' },
-        routeOverrides: {
-          '/demo/form/address': {
-            loader: async () => ({
-              featuredItems: [
-                { name: 'Item A', description: 'First featured item' },
-                { name: 'Item B', description: 'Second featured item' },
-              ],
-            }),
-          },
-        },
       },
     },
   },

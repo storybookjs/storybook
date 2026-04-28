@@ -2,12 +2,11 @@
 import { Route } from './Page';
 
 export default {
-  title: 'Example/Page',
   parameters: {
     layout: 'fullscreen',
     tanstack: {
       router: {
-        route: Route,
+        route: Route, // 👈 Supply the Route here
         params: { id: '42' },
         query: { tab: 'details' },
       },
@@ -21,7 +20,7 @@ export const WithCustomLoader = {
   parameters: {
     tanstack: {
       router: {
-        route: Route,
+        route: Route, // 👈 Supply the Route here
         params: { id: '42' },
         routeOverrides: {
           '/items/$id': {
@@ -42,12 +41,12 @@ import type { Meta, StoryObj } from '@storybook/tanstack-react';
 import { Route } from './Page';
 
 const meta = {
-  title: 'Example/Page',
   parameters: {
     layout: 'fullscreen',
     tanstack: {
       router: {
-        route: Route,
+        route: Route, // 👈 Supply the Route here
+        // 👇 Rest of these properties are type-safe
         params: { id: '42' },
         query: { tab: 'details' },
       },
@@ -65,7 +64,8 @@ export const WithCustomLoader: Story = {
   parameters: {
     tanstack: {
       router: {
-        route: Route,
+        route: Route, // 👈 Supply the Route here
+        // 👇 Rest of these properties are type-safe
         params: { id: '42' },
         routeOverrides: {
           '/items/$id': {
@@ -86,12 +86,12 @@ import preview from '../.storybook/preview';
 import { Route } from './Page';
 
 const meta = preview.meta({
-  title: 'Example/Page',
   parameters: {
     layout: 'fullscreen',
     tanstack: {
       router: {
-        route: Route,
+        route: Route, // 👈 Supply the Route here
+        // 👇 Rest of these properties are type-safe
         params: { id: '42' },
         query: { tab: 'details' },
       },
@@ -99,15 +99,14 @@ const meta = preview.meta({
   },
 });
 
-export default meta;
-
-export const Default = meta.story({});
+export const Default = meta.story();
 
 export const WithCustomLoader = meta.story({
   parameters: {
     tanstack: {
       router: {
-        route: Route,
+        route: Route, // 👈 Supply the Route here
+        // 👇 Rest of these properties are type-safe
         params: { id: '42' },
         routeOverrides: {
           '/items/$id': {
@@ -130,12 +129,11 @@ import preview from '../.storybook/preview';
 import { Route } from './Page';
 
 const meta = preview.meta({
-  title: 'Example/Page',
   parameters: {
     layout: 'fullscreen',
     tanstack: {
       router: {
-        route: Route,
+        route: Route, // 👈 Supply the Route here
         params: { id: '42' },
         query: { tab: 'details' },
       },
@@ -143,15 +141,13 @@ const meta = preview.meta({
   },
 });
 
-export default meta;
-
-export const Default = meta.story({});
+export const Default = meta.story();
 
 export const WithCustomLoader = meta.story({
   parameters: {
     tanstack: {
       router: {
-        route: Route,
+        route: Route, // 👈 Supply the Route here
         params: { id: '42' },
         routeOverrides: {
           '/items/$id': {

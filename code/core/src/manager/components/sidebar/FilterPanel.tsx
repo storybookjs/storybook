@@ -63,25 +63,18 @@ export const FilterPanel = ({
 
   const emitFilterTelemetry = useCallback(
     (changed: FilterTelemetryChanged) => {
+      const state = api.getState();
       const payload = computeFilterTelemetryPayload(changed, {
         builtInEntries,
         statusEntries,
-        includedTagFilters: includedFilters,
-        excludedTagFilters: excludedFilters,
-        includedStatusFilters,
-        excludedStatusFilters,
+        includedTagFilters: state.includedTagFilters ?? [],
+        excludedTagFilters: state.excludedTagFilters ?? [],
+        includedStatusFilters: state.includedStatusFilters ?? [],
+        excludedStatusFilters: state.excludedStatusFilters ?? [],
       });
       api.emit(SIDEBAR_FILTER_CHANGED, payload);
     },
-    [
-      api,
-      builtInEntries,
-      statusEntries,
-      includedFilters,
-      excludedFilters,
-      includedStatusFilters,
-      excludedStatusFilters,
-    ]
+    [api, builtInEntries, statusEntries]
   );
 
   const toTagFilterItem = useCallback(
@@ -98,11 +91,11 @@ export const FilterPanel = ({
         icon: entry.icon,
         isIncluded,
         isExcluded,
-        onCheckboxChange: () => {
+        onCheckboxChange: async () => {
           if (isChecked) {
-            api.removeTagFilters([entry.id]);
+            await api.removeTagFilters([entry.id]);
           } else {
-            api.addTagFilters([entry.id], false);
+            await api.addTagFilters([entry.id], false);
           }
           if (entry.type === 'built-in') {
             emitFilterTelemetry({
@@ -112,8 +105,8 @@ export const FilterPanel = ({
             });
           }
         },
-        onInvert: () => {
-          api.addTagFilters([entry.id], !isExcluded);
+        onInvert: async () => {
+          await api.addTagFilters([entry.id], !isExcluded);
           if (entry.type === 'built-in') {
             emitFilterTelemetry({
               filterType: 'tag',
@@ -141,11 +134,11 @@ export const FilterPanel = ({
         icon: statusIconEl ? <StatusIcon $iconColor={iconColor}>{statusIconEl}</StatusIcon> : null,
         isIncluded,
         isExcluded,
-        onCheckboxChange: () => {
+        onCheckboxChange: async () => {
           if (isChecked) {
-            api.removeStatusFilters([entry.statusValue]);
+            await api.removeStatusFilters([entry.statusValue]);
           } else {
-            api.addStatusFilters([entry.statusValue], false);
+            await api.addStatusFilters([entry.statusValue], false);
           }
           emitFilterTelemetry({
             filterType: 'status',
@@ -153,8 +146,8 @@ export const FilterPanel = ({
             action: isChecked ? 'remove' : 'include',
           });
         },
-        onInvert: () => {
-          api.addStatusFilters([entry.statusValue], !isExcluded);
+        onInvert: async () => {
+          await api.addStatusFilters([entry.statusValue], !isExcluded);
           emitFilterTelemetry({
             filterType: 'status',
             filterId: entry.statusValue,

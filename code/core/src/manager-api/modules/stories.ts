@@ -384,6 +384,9 @@ function removeRemovedOptions<T extends Record<string, any> = Record<string, any
   return result;
 }
 
+// Module-level guard so manager remounts/HMR don't fire the URL telemetry event twice per page load.
+let urlFilterTelemetryEmitted = false;
+
 export const init: ModuleFn<SubAPI, SubState> = ({
   fullAPI,
   store,
@@ -1251,13 +1254,21 @@ export const init: ModuleFn<SubAPI, SubState> = ({
 
       await api.fetchIndex();
 
+      if (urlFilterTelemetryEmitted) {
+        return;
+      }
+      urlFilterTelemetryEmitted = true;
+
       // Emit telemetry if filters were set via URL params
+      const changeDetectionEnabled = !!globalThis?.FEATURES?.changeDetection;
       const builtInTagIds = new Set(Object.keys(BUILT_IN_FILTERS));
       const builtInIncludedTags = initialIncluded.filter((id) => builtInTagIds.has(id));
       const builtInExcludedTags = initialExcluded.filter((id) => builtInTagIds.has(id));
       const hasBuiltInTagFilters = builtInIncludedTags.length > 0 || builtInExcludedTags.length > 0;
+      const includedStatusesForTelemetry = changeDetectionEnabled ? initialIncludedStatuses : [];
+      const excludedStatusesForTelemetry = changeDetectionEnabled ? initialExcludedStatuses : [];
       const hasStatusFilters =
-        initialIncludedStatuses.length > 0 || initialExcludedStatuses.length > 0;
+        includedStatusesForTelemetry.length > 0 || excludedStatusesForTelemetry.length > 0;
 
       if (hasBuiltInTagFilters || hasStatusFilters) {
         const storyCounts: Record<string, number> = {};
@@ -1269,7 +1280,10 @@ export const init: ModuleFn<SubAPI, SubState> = ({
             storyCounts[tagId] = entries.filter((entry) => filterDef(entry)).length;
           }
         }
-        const targetStatuses = new Set([...initialIncludedStatuses, ...initialExcludedStatuses]);
+        const targetStatuses = new Set([
+          ...includedStatusesForTelemetry,
+          ...excludedStatusesForTelemetry,
+        ]);
         const statusCounts = fullStatusStore.countByValue();
         for (const statusValue of targetStatuses) {
           if (statusCounts[statusValue] !== undefined) {
@@ -1284,8 +1298,8 @@ export const init: ModuleFn<SubAPI, SubState> = ({
             excluded: builtInExcludedTags,
           },
           activeStatusFilters: {
-            included: [...initialIncludedStatuses],
-            excluded: [...initialExcludedStatuses],
+            included: [...includedStatusesForTelemetry],
+            excluded: [...excludedStatusesForTelemetry],
           },
           storyCounts,
         });

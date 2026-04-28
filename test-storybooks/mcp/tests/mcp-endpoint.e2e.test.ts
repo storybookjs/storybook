@@ -354,65 +354,6 @@ describe('MCP Endpoint E2E Tests', () => {
 				      "type": "object",
 				    },
 				    "name": "get-changed-stories",
-				    "outputSchema": {
-				      "$schema": "http://json-schema.org/draft-07/schema#",
-				      "properties": {
-				        "counts": {
-				          "properties": {
-				            "affected": {
-				              "type": "number",
-				            },
-				            "modified": {
-				              "type": "number",
-				            },
-				            "new": {
-				              "type": "number",
-				            },
-				          },
-				          "required": [
-				            "new",
-				            "modified",
-				            "affected",
-				          ],
-				          "type": "object",
-				        },
-				        "stories": {
-				          "items": {
-				            "properties": {
-				              "importPath": {
-				                "type": "string",
-				              },
-				              "name": {
-				                "type": "string",
-				              },
-				              "statusValue": {
-				                "type": "string",
-				              },
-				              "storyId": {
-				                "type": "string",
-				              },
-				              "title": {
-				                "type": "string",
-				              },
-				            },
-				            "required": [
-				              "storyId",
-				              "title",
-				              "name",
-				              "importPath",
-				              "statusValue",
-				            ],
-				            "type": "object",
-				          },
-				          "type": "array",
-				        },
-				      },
-				      "required": [
-				        "stories",
-				        "counts",
-				      ],
-				      "type": "object",
-				    },
 				    "title": "Get changed stories metadata",
 				  },
 				  {

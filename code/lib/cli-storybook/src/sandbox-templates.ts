@@ -536,6 +536,9 @@ export const baseTemplates = {
       extraDependencies: ['prop-types'],
       mainConfig: {
         framework: '@storybook/tanstack-react',
+        features: {
+          experimentalTestSyntax: true,
+        },
       },
     },
     skipTasks: ['bench'],
@@ -553,6 +556,9 @@ export const baseTemplates = {
       extraDependencies: ['prop-types'],
       mainConfig: {
         framework: '@storybook/tanstack-react',
+        features: {
+          experimentalTestSyntax: true,
+        },
       },
     },
     skipTasks: ['bench'],

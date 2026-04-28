@@ -215,4 +215,36 @@ describe('mdxImportParser', () => {
       { specifier: './others', kind: 'static' },
     ]);
   });
+
+  it('does NOT extract imports inside fenced code blocks (```js ... ```)', async () => {
+    const source = [
+      `import { Meta } from '@storybook/blocks';`,
+      ``,
+      `\`\`\`js`,
+      `import fake from 'this-is-an-example';`,
+      `import another from './example-dep';`,
+      `\`\`\``,
+      ``,
+      `<Meta title="Docs" />`,
+    ].join('\n');
+
+    const edges = await mdxImportParser.parse({ filePath: '/tmp/doc.mdx', source }, noopContext);
+
+    expect(edges).toEqual([{ specifier: '@storybook/blocks', kind: 'static' }]);
+    expect(edges.map((e) => e.specifier)).not.toContain('this-is-an-example');
+    expect(edges.map((e) => e.specifier)).not.toContain('./example-dep');
+  });
+
+  it('does NOT extract imports inside backtick inline code spans', async () => {
+    const source = [
+      `import { Canvas } from '@storybook/blocks';`,
+      ``,
+      `Use \`import foo from 'fake-pkg'\` in your code.`,
+    ].join('\n');
+
+    const edges = await mdxImportParser.parse({ filePath: '/tmp/doc.mdx', source }, noopContext);
+
+    expect(edges).toEqual([{ specifier: '@storybook/blocks', kind: 'static' }]);
+    expect(edges.map((e) => e.specifier)).not.toContain('fake-pkg');
+  });
 });

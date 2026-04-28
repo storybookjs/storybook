@@ -23,7 +23,6 @@ interface BuilderOptions {
   workspaceRoots: Set<string>;
   projectRoot: string;
   logger?: BuilderLogger;
-  concurrency?: number;
   /**
    * Optional shared cache. Pass the same instance to {@link IncrementalPatcher} so
    * post-build incremental walks skip work the cold-start build already did. When
@@ -35,19 +34,18 @@ interface BuilderOptions {
 /**
  * Eagerly builds a {@link ReverseIndexImpl} + {@link DependencyGraph} by BFS-walking forward
  * from each story file. Walks stop at workspace boundaries, non-JS extensions, or unresolved
- * specifiers. All-or-nothing per file: a file's resolved subset is committed even if some of
- * its imports failed.
+ * specifiers. Per-file errors (read failure, parse failure, individual unresolved specifiers)
+ * are swallowed and result in fewer recorded deps for that file — not a build failure.
+ * Graceful degradation ensures one bad file cannot crash change-detection for all stories.
  */
 export class DependencyGraphBuilder {
   private readonly registry: ParserRegistry;
   private readonly logger: BuilderLogger;
-  private readonly concurrency: number;
   private readonly cache: ParseResolveCache;
 
   constructor(opts: BuilderOptions) {
     this.registry = opts.registry;
     this.logger = opts.logger ?? defaultLogger;
-    this.concurrency = opts.concurrency ?? cpus().length * 2;
     this.cache =
       opts.cache ??
       new ParseResolveCache({
@@ -68,7 +66,7 @@ export class DependencyGraphBuilder {
     const graph: DependencyGraph = new Map();
 
     const { default: pLimit } = await import('p-limit');
-    const limit = pLimit(this.concurrency);
+    const limit = pLimit(cpus().length * 2);
 
     const stories = Array.from(storyFiles, (s) => normalize(s));
 

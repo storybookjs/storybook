@@ -24,6 +24,7 @@ import {
   mergeChangeDetectionStatuses,
   mergeStatusValues,
 } from './ChangeDetectionService.ts';
+import * as oxcParser from 'storybook/internal/oxc-parser';
 import {
   ChangeDetectionResolverFactory,
   DependencyGraphBuilder,
@@ -145,6 +146,7 @@ class MockGitDiffProvider extends GitDiffProvider {
   });
   readonly isWorkingTreeCleanMock = vi.fn(async (): Promise<boolean> => true);
   readonly getHeadCommitMock = vi.fn(async (): Promise<string> => 'mock-sha');
+  readonly disposeMock = vi.fn(() => undefined);
 
   constructor() {
     super('/repo');
@@ -168,6 +170,10 @@ class MockGitDiffProvider extends GitDiffProvider {
 
   override getHeadCommit(): Promise<string> {
     return this.getHeadCommitMock();
+  }
+
+  override dispose(): void {
+    this.disposeMock();
   }
 }
 
@@ -847,6 +853,41 @@ describe('ChangeDetectionService', () => {
     await service.dispose();
   });
 
+  it('releases the pool ref when startInternal throws after acquiring the pool', async () => {
+    // The startInternal pipeline throws after acquireOxcParsePool has been called. Without
+    // the dispose() call in the catch handler the acquired ref would be leaked forever.
+    const { buildSpy } = installDependencyGraphMocks(buildReverseIndex([]));
+    buildSpy.mockImplementation(async () => {
+      throw new ChangeDetectionFailureError('graph build blew up');
+    });
+
+    const disposePoolSpy = vi.spyOn(oxcParser, 'disposeOxcParsePool').mockResolvedValue(undefined);
+    vi.spyOn(oxcParser, 'acquireOxcParsePool').mockReturnValue({} as never);
+
+    const { getStatusStoreByTypeId } = createStatusStore({
+      universalStatusStore: new MockUniversalStore(UNIVERSAL_STATUS_STORE_OPTIONS),
+      environment: 'server',
+    });
+    const { adapter } = createMockAdapter();
+    const service = new ChangeDetectionService({
+      storyIndexGeneratorPromise: Promise.resolve({
+        getIndex: vi.fn().mockResolvedValue(createStoryIndex([])),
+      } as never),
+      statusStore: getStatusStoreByTypeId(CHANGE_DETECTION_STATUS_TYPE_ID),
+      gitDiffProvider: createMockGitDiffProvider(),
+      indexBaselineService: createMockStoryIndexBaselineService(),
+      workingDir,
+    });
+
+    service.start(adapter, true);
+    await vi.runAllTimersAsync();
+
+    // dispose() must have been called, which calls disposeOxcParsePool exactly once.
+    expect(disposePoolSpy).toHaveBeenCalledTimes(1);
+
+    await service.dispose();
+  });
+
   it('keeps the previous statuses when a live rescan fails', async () => {
     const reverseIndex = buildReverseIndex([
       ['/repo/src/Button.stories.tsx', '/repo/src/Button.stories.tsx', 0],
@@ -1042,6 +1083,75 @@ describe('ChangeDetectionService', () => {
     await service.dispose();
   });
 
+  it('scan waits for the current patch to settle before reading reverseIndex', async () => {
+    // Without the patchSnapshot await in scan(), a git-state-change that fires scheduleScan
+    // while a patch is mid-rewalk (reverseIndex transiently empty) reads the empty index
+    // and publishes no statuses even though the patch will eventually add entries back.
+    const reverseIndex = buildReverseIndex([]);
+    const patchDeferred = createDeferred<void>();
+    const { patchSpy, buildSpy } = installDependencyGraphMocks(reverseIndex);
+    buildSpy.mockResolvedValue({ reverseIndex, graph: new Map() });
+
+    // The first patch call blocks; during that block a scan is scheduled. After the patch
+    // resolves, reverseIndex has a real entry that the scan should see.
+    patchSpy.mockImplementationOnce(async () => {
+      await patchDeferred.promise;
+      reverseIndex.record(
+        '/repo/src/Button.stories.tsx',
+        '/repo/src/Button.stories.tsx',
+        0
+      );
+    });
+
+    const storyIndex = createStoryIndex([
+      { storyId: 'button--primary', importPath: './src/Button.stories.tsx', title: 'Button' },
+    ]);
+    const { getStatusStoreByTypeId } = createStatusStore({
+      universalStatusStore: new MockUniversalStore(UNIVERSAL_STATUS_STORE_OPTIONS),
+      environment: 'server',
+    });
+    const gitDiffProvider = createMockGitDiffProvider((provider) => {
+      provider.getChangedFilesMock.mockResolvedValue({
+        changed: new Set(['src/Button.stories.tsx']),
+        new: new Set(),
+      });
+    });
+    let triggerGitStateChange: (() => void) | undefined;
+    gitDiffProvider.onGitStateChangeMock.mockImplementation((callback: () => void) => {
+      triggerGitStateChange = callback;
+    });
+    const { adapter, emitFileChange } = createMockAdapter();
+    const service = new ChangeDetectionService({
+      storyIndexGeneratorPromise: Promise.resolve({
+        getIndex: vi.fn().mockResolvedValue(storyIndex),
+      } as never),
+      statusStore: getStatusStoreByTypeId(CHANGE_DETECTION_STATUS_TYPE_ID),
+      gitDiffProvider,
+      indexBaselineService: createMockStoryIndexBaselineService(),
+      workingDir,
+      debounceMs: 0,
+    });
+
+    service.start(adapter, true);
+    await vi.runAllTimersAsync();
+
+    // Start a patch that will block, then immediately schedule a scan mid-patch.
+    emitFileChange({ kind: 'change', path: '/repo/src/Button.stories.tsx' });
+    triggerGitStateChange?.();
+
+    // Unblock the patch — now the reverseIndex has the entry.
+    patchDeferred.resolve();
+    await vi.runAllTimersAsync();
+
+    // The scan that ran after the patch settled should have seen the populated reverseIndex.
+    const all = getStatusStoreByTypeId(CHANGE_DETECTION_STATUS_TYPE_ID).getAll();
+    expect(all['button--primary']?.[CHANGE_DETECTION_STATUS_TYPE_ID]?.value).toBe(
+      'status-value:modified'
+    );
+
+    await service.dispose();
+  });
+
   it('queues file-change events that arrive while the eager build is in flight and patches them after build resolves', async () => {
     const reverseIndex = buildReverseIndex([]);
     const buildDeferred = createDeferred<void>();
@@ -1088,6 +1198,60 @@ describe('ChangeDetectionService', () => {
     expect(patchSpy).toHaveBeenCalledTimes(1);
 
     await service.dispose();
+  });
+
+  it('calls gitDiffProvider.dispose() on service dispose when a git watcher was installed', async () => {
+    // Watcher leak: onGitStateChange installs FS watchers; without dispose() the watchers
+    // survive the service lifetime and fire stale callbacks on long-lived processes.
+    installDependencyGraphMocks(buildReverseIndex([]));
+
+    const gitDiffProvider = createMockGitDiffProvider((provider) => {
+      // Simulate having called onGitStateChange (watcher installed).
+      provider.onGitStateChangeMock.mockImplementation(() => undefined);
+    });
+    const { adapter } = createMockAdapter();
+    const service = new ChangeDetectionService({
+      storyIndexGeneratorPromise: Promise.resolve({
+        getIndex: vi.fn().mockResolvedValue(createStoryIndex([])),
+      } as never),
+      statusStore: createStatusStore({
+        universalStatusStore: new MockUniversalStore(UNIVERSAL_STATUS_STORE_OPTIONS),
+        environment: 'server',
+      }).getStatusStoreByTypeId(CHANGE_DETECTION_STATUS_TYPE_ID),
+      gitDiffProvider,
+      indexBaselineService: createMockStoryIndexBaselineService(),
+      workingDir,
+    });
+
+    service.start(adapter, true);
+    await vi.runAllTimersAsync();
+
+    await service.dispose();
+
+    expect(gitDiffProvider.disposeMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not call gitDiffProvider.dispose() when the provider was never constructed by the service', async () => {
+    // If gitDiffProvider is never passed in and start() exits early (disabled), the service
+    // never lazily constructs a provider, so dispose() must not create one just to tear it down.
+    const { getStatusStoreByTypeId } = createStatusStore({
+      universalStatusStore: new MockUniversalStore(UNIVERSAL_STATUS_STORE_OPTIONS),
+      environment: 'server',
+    });
+    const service = new ChangeDetectionService({
+      storyIndexGeneratorPromise: Promise.resolve({
+        getIndex: vi.fn(),
+      } as never),
+      statusStore: getStatusStoreByTypeId(CHANGE_DETECTION_STATUS_TYPE_ID),
+      // No gitDiffProvider injected — service would lazily create one, but start(false) exits
+      // before getGitDiffProvider() is called.
+      indexBaselineService: createMockStoryIndexBaselineService(),
+      workingDir,
+    });
+
+    service.start(undefined, false);
+    // Should not throw and should not attempt to call dispose on an unconstructed provider.
+    await expect(service.dispose()).resolves.toBeUndefined();
   });
 
   it('replays add/unlink through the patcher when onStoryIndexInvalidated reveals new/removed stories', async () => {

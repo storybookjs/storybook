@@ -28,8 +28,17 @@ interface MaybeProgramRange {
   end?: number;
 }
 
+/** Loose shape of a single attribute node from the Svelte AST (`Attribute[]` on `Script`). */
+interface MaybeAstAttribute {
+  name?: unknown;
+  /** `true` for boolean attrs; array of text/expression nodes for string attrs. */
+  value?: unknown;
+}
+
 interface MaybeScript {
   content?: MaybeProgramRange | null;
+  /** Svelte AST `Script.attributes` — an array of `Attribute` nodes. */
+  attributes?: MaybeAstAttribute[] | null;
 }
 
 interface MaybeSvelteRoot {
@@ -37,10 +46,39 @@ interface MaybeSvelteRoot {
   module?: MaybeScript | null;
 }
 
+/**
+ * Reads the `lang` attribute from a Svelte AST `Script.attributes` array.
+ * Each attribute is `{ name, value }` where value is `true` (boolean attr) or an array
+ * of text/expression nodes — `[{ data: "ts" }]` for `lang="ts"`.
+ */
+function readLangFromAttributes(attributes: MaybeAstAttribute[] | null | undefined): string | undefined {
+  if (!Array.isArray(attributes)) {
+    return undefined;
+  }
+  for (const attr of attributes) {
+    if (attr.name !== 'lang') {
+      continue;
+    }
+    // Boolean attribute (`lang` without value) — no practical meaning, skip.
+    if (attr.value === true) {
+      return undefined;
+    }
+    // String attribute: value is an array of text/expression nodes.
+    if (Array.isArray(attr.value) && attr.value.length > 0) {
+      const first = attr.value[0] as { data?: unknown } | undefined;
+      if (typeof first?.data === 'string') {
+        return first.data;
+      }
+    }
+    return undefined;
+  }
+  return undefined;
+}
+
 function extractScriptSource(
   source: string,
   script: MaybeScript | null | undefined
-): string | undefined {
+): { scriptSource: string; lang: string | undefined } | undefined {
   const range = script?.content;
   if (!range || typeof range.start !== 'number' || typeof range.end !== 'number') {
     return undefined;
@@ -48,7 +86,26 @@ function extractScriptSource(
   if (range.start < 0 || range.end > source.length || range.end <= range.start) {
     return undefined;
   }
-  return source.slice(range.start, range.end);
+  const lang = readLangFromAttributes(script?.attributes);
+  return { scriptSource: source.slice(range.start, range.end), lang };
+}
+
+/**
+ * Maps the `lang` attribute of a `<script>` block to a virtual file extension so oxc
+ * parses the extracted script in the right mode (TS superset vs plain JS, with/without JSX).
+ */
+function virtualExtensionForLang(lang: string | undefined): 'ts' | 'tsx' | 'jsx' | 'js' {
+  switch (lang) {
+    case 'ts':
+      return 'ts';
+    case 'tsx':
+      return 'tsx';
+    case 'jsx':
+      return 'jsx';
+    default:
+      // No lang or unrecognised value — plain JS is the safe default.
+      return 'js';
+  }
 }
 
 /**
@@ -83,31 +140,28 @@ export const svelteImportParser: ImportParser = {
     }
 
     const root = (ast ?? {}) as MaybeSvelteRoot;
-    const scripts: string[] = [];
     // Process `<script module>` first so deduplication preserves source/execution order:
     // module-scoped code initializes before the instance block.
-    const moduleSource = extractScriptSource(source, root.module);
-    if (moduleSource !== undefined) {
-      scripts.push(moduleSource);
+    const scripts: { scriptSource: string; lang: string | undefined }[] = [];
+    const moduleResult = extractScriptSource(source, root.module);
+    if (moduleResult !== undefined) {
+      scripts.push(moduleResult);
     }
-    const instanceSource = extractScriptSource(source, root.instance);
-    if (instanceSource !== undefined) {
-      scripts.push(instanceSource);
+    const instanceResult = extractScriptSource(source, root.instance);
+    if (instanceResult !== undefined) {
+      scripts.push(instanceResult);
     }
 
     if (scripts.length === 0) {
       return [];
     }
 
-    // `.ts` virtual extension works for both TypeScript and plain JS — oxc-parser accepts
-    // JS-only source via the TS syntax superset — so we do not need to introspect
-    // `<script lang="...">` here.
-    const virtualFilePath = `${filePath}.script.ts`;
-
     const edges: ImportEdge[] = [];
     const seen = new Set<string>();
-    for (const script of scripts) {
-      const scriptEdges = await ctx.parseScriptWithOxc(script, virtualFilePath);
+    for (const { scriptSource, lang } of scripts) {
+      const ext = virtualExtensionForLang(lang);
+      const virtualFilePath = `${filePath}.script.${ext}`;
+      const scriptEdges = await ctx.parseScriptWithOxc(scriptSource, virtualFilePath);
       for (const edge of scriptEdges) {
         const key = `${edge.kind}:${edge.specifier}`;
         if (seen.has(key)) {

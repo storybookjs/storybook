@@ -297,15 +297,51 @@ describe('IncrementalPatcher', () => {
     expect(calls.length).toBeLessThanOrEqual(2);
   });
 
-  it('recovers via direct-importer scan when reverseIndex has no record of the changed file', async () => {
-    // Cold-start scenario: story imports `helper`, but `helper` did not exist on disk
-    // when the build ran, so the resolver returned null and `helper` was never recorded
-    // in graph or reverseIndex. The story's graph entry is left referencing `helper`
-    // because the test seeds it that way (this models the case where `helper` later
-    // appears and gets registered by an importer-side resolve).
+  it('unlink of a dep clears the dep from the graph and from the story reverse-index, not just from the index edges', async () => {
+    // Models the stale-cache regression: story → dep is seeded into graph + reverseIndex at
+    // cold-start. Without importer invalidation on unlink, walkFromStory re-uses the cached
+    // resolveCache entry for `story` (which still lists `dep`), silently re-adding dep to
+    // the graph and leaving reverseIndex.lookup(dep) non-empty.
+    const story = '/repo/src/A.stories.tsx';
+    const dep = '/repo/src/dep.ts';
+
+    const initialIndex = new ReverseIndexImpl();
+    initialIndex.record(story, story, 0);
+    initialIndex.record(dep, story, 1);
+    const initialGraph: DependencyGraph = new Map([
+      [story, new Set([dep])],
+      [dep, new Set()],
+    ]);
+
+    // After unlink, the story no longer imports dep.
+    const world: PatcherWorld = {
+      edges: new Map([[story, []]]),
+      resolutions: new Map(),
+    };
+    const { patcher, reverseIndex, graph } = buildPatcher({
+      world,
+      reverseIndex: initialIndex,
+      graph: initialGraph,
+      storyFiles: new Set([story]),
+    });
+
+    await patcher.patch({ kind: 'unlink', path: dep });
+
+    expect(reverseIndex.lookup(dep).size).toBe(0);
+    expect(graph.has(dep)).toBe(false);
+    // The story itself still exists at depth 0; dep is no longer reachable from it.
+    expect(reverseIndex.lookup(story).get(story)).toBe(0);
+  });
+
+  it('recovers via direct-importer scan when reverseIndex was previously cleared but graph still records the importer edge', async () => {
+    // Models a transient mid-patch state where reverseIndex.removeStory(story) has run
+    // but graph still records story → helper. In that window a `change` event for `helper`
+    // would find an empty reverseIndex lookup and early-return without re-walking the story.
+    // recoverViaDirectImporters consults inverseImporters (built from the graph) to find and
+    // re-walk the affected story even when reverseIndex has no record of it.
     //
-    // Without the recovery path, a `change` event for `helper` would early-return on
-    // empty dependents and the story would never re-walk.
+    // Note: files that fail to resolve at cold-start are NOT automatically reconnected when
+    // they later appear on disk — that is a known limitation of the current design.
     const story = '/repo/src/A.stories.tsx';
     const helper = '/repo/src/helper.ts';
     const indirect = '/repo/src/indirect.ts';

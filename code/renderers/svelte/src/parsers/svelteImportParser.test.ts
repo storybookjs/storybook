@@ -55,7 +55,7 @@ describe('svelteImportParser', () => {
     const edges = await svelteImportParser.parse({ filePath: '/tmp/Foo.svelte', source }, ctx);
 
     expect(calls).toHaveLength(1);
-    expect(calls[0]?.virtualFilePath).toBe('/tmp/Foo.svelte.script.ts');
+    expect(calls[0]?.virtualFilePath).toBe('/tmp/Foo.svelte.script.js');
     expect(calls[0]?.source).toContain(`import Button from './Button.svelte';`);
     expect(calls[0]?.source).toContain(`import { onMount } from 'svelte';`);
     expect(calls[0]?.source).not.toContain('<div>');
@@ -84,7 +84,7 @@ describe('svelteImportParser', () => {
     const edges = await svelteImportParser.parse({ filePath: '/tmp/Bar.svelte', source }, ctx);
 
     expect(calls).toHaveLength(1);
-    expect(calls[0]?.virtualFilePath).toBe('/tmp/Bar.svelte.script.ts');
+    expect(calls[0]?.virtualFilePath).toBe('/tmp/Bar.svelte.script.js');
     expect(calls[0]?.source).toContain(`import { store } from './store.ts';`);
     expect(edges).toEqual([{ specifier: './store.ts', kind: 'static' }]);
   });
@@ -204,5 +204,49 @@ describe('svelteImportParser', () => {
     await expect(
       svelteImportParser.parse({ filePath: '/tmp/Broken.svelte', source }, ctx)
     ).rejects.toBeInstanceOf(ChangeDetectionFailureError);
+  });
+
+  it('uses .script.js virtual extension when no lang attribute is set', async () => {
+    const source = [`<script>`, `  import x from './x.js';`, `</script>`].join('\n');
+
+    const { ctx, calls } = makeContext(() => [{ specifier: './x.js', kind: 'static' }]);
+
+    await svelteImportParser.parse({ filePath: '/tmp/NoLang.svelte', source }, ctx);
+
+    expect(calls[0]?.virtualFilePath).toBe('/tmp/NoLang.svelte.script.js');
+  });
+
+  it('uses .script.ts virtual extension when lang="ts"', async () => {
+    const source = [`<script lang="ts">`, `  import x from './x.ts';`, `</script>`].join('\n');
+
+    const { ctx, calls } = makeContext(() => [{ specifier: './x.ts', kind: 'static' }]);
+
+    await svelteImportParser.parse({ filePath: '/tmp/TypeScript.svelte', source }, ctx);
+
+    expect(calls[0]?.virtualFilePath).toBe('/tmp/TypeScript.svelte.script.ts');
+  });
+
+  it('uses .script.tsx virtual extension when lang="tsx"', async () => {
+    const source = [
+      `<script lang="tsx">`,
+      `  import x from './x.tsx';`,
+      `</script>`,
+    ].join('\n');
+
+    const { ctx, calls } = makeContext(() => [{ specifier: './x.tsx', kind: 'static' }]);
+
+    await svelteImportParser.parse({ filePath: '/tmp/TSX.svelte', source }, ctx);
+
+    expect(calls[0]?.virtualFilePath).toBe('/tmp/TSX.svelte.script.tsx');
+  });
+
+  it('uses .script.jsx virtual extension when lang="jsx"', async () => {
+    const source = [`<script lang="jsx">`, `  import x from './x.jsx';`, `</script>`].join('\n');
+
+    const { ctx, calls } = makeContext(() => [{ specifier: './x.jsx', kind: 'static' }]);
+
+    await svelteImportParser.parse({ filePath: '/tmp/JSX.svelte', source }, ctx);
+
+    expect(calls[0]?.virtualFilePath).toBe('/tmp/JSX.svelte.script.jsx');
   });
 });

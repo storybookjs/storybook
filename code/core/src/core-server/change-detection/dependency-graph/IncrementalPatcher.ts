@@ -98,6 +98,17 @@ export class IncrementalPatcher {
       }
 
       if (event.kind === 'unlink') {
+        // Importers that cached their resolve sets at boot still hold `path` in their dep
+        // Set. Without invalidation, walkFromStory re-uses the stale cached Set and the
+        // unlink's effect is silently undone. Dropping importers' entries here forces a
+        // fresh re-resolve during the re-walk below.
+        const importers = this.inverseImporters.get(path);
+        if (importers) {
+          for (const importer of importers) {
+            this.cache.invalidate(importer);
+          }
+        }
+
         const dependentsSet = new Set(this.reverseIndex.lookup(path).keys());
         this.deleteFromGraph(path);
         if (this.isStoryFile(path)) {
@@ -178,6 +189,10 @@ export class IncrementalPatcher {
    * Re-walks every story that transitively reaches a known direct importer of `path`.
    * Used when `path` is not in the reverse-index (cold-start never reached it) but the
    * graph still records files that import it. Returns the number of stories re-walked.
+   *
+   * Known limitation: files that fail to resolve at cold-start (resolver returns null so
+   * they never enter graph or inverseImporters) are not automatically reconnected when they
+   * later appear on disk. A full rebuild is required to pick them up.
    */
   private async recoverViaDirectImporters(path: string): Promise<number> {
     const directImporters = this.inverseImporters.get(path);

@@ -141,7 +141,6 @@ function makeBuilder(dir: string): DependencyGraphBuilder {
     resolver: makeResolver(dir),
     workspaceRoots: new Set(),
     projectRoot: dir,
-    concurrency: 16,
     logger: SILENT_LOGGER,
   });
 }
@@ -207,7 +206,6 @@ async function getWarmContext(spec: FixtureSpec): Promise<WarmContext> {
         resolver,
         workspaceRoots: new Set(),
         projectRoot: fixture.dir,
-        concurrency: 16,
         logger: SILENT_LOGGER,
         cache,
       });

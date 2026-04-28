@@ -236,6 +236,28 @@ export class OxcWorkerPool implements OxcParsePool {
       logger.debug(
         `oxc-worker respawn failed: ${spawnErr instanceof Error ? spawnErr.message : String(spawnErr)}`
       );
+
+      // If no alive workers remain, all queued and orphaned pending entries will
+      // never settle — reject them now and mark the pool disposed so future
+      // parse() calls fail fast.
+      if (!this.workers.some((s) => s.alive)) {
+        this.disposed = true;
+        const noWorkerErr = new OxcParseError(
+          'oxc parse pool: no live workers after respawn failure',
+          { cause: spawnErr instanceof Error ? spawnErr : new Error(String(spawnErr)) }
+        );
+        for (const entry of this.pending.values()) {
+          if (entry.timer) {
+            clearTimeout(entry.timer);
+          }
+          entry.reject(noWorkerErr);
+        }
+        for (const queued of this.queue) {
+          queued.reject(noWorkerErr);
+        }
+        this.pending.clear();
+        this.queue.length = 0;
+      }
     }
   }
 
@@ -244,11 +266,13 @@ export class OxcWorkerPool implements OxcParsePool {
       return;
     }
     this.disposed = true;
+
     for (const slot of this.workers) {
       slot.alive = false;
     }
-    const terminations = this.workers.map((s) => s.worker.terminate().catch(() => 0));
-    await Promise.all(terminations);
+
+    // Reject callers BEFORE awaiting terminate() so they are never held hostage by a
+    // hung worker thread — terminate() may stall if the OS is unresponsive.
     for (const entry of this.pending.values()) {
       if (entry.timer) {
         clearTimeout(entry.timer);
@@ -260,7 +284,11 @@ export class OxcWorkerPool implements OxcParsePool {
     }
     this.pending.clear();
     this.queue.length = 0;
+
+    // Best-effort worker shutdown; ignore per-worker errors.
+    const terminations = this.workers.map((s) => s.worker.terminate().catch(() => 0));
     this.workers.length = 0;
+    await Promise.all(terminations);
   }
 }
 
@@ -337,8 +365,12 @@ export async function disposeOxcParsePool(): Promise<void> {
 }
 
 /** Test-only: force-reset the singleton state between cases. */
-export function _resetOxcParsePoolForTesting(): void {
+export async function _resetOxcParsePoolForTesting(): Promise<void> {
+  const pool = sharedPool;
   sharedPool = null;
   sharedRefs = 0;
   initialized = false;
+  if (pool) {
+    await pool.dispose().catch(() => undefined);
+  }
 }

@@ -254,6 +254,9 @@ export class ChangeDetectionService {
         error instanceof Error ? error : new ChangeDetectionFailureError(String(error));
       logger.error(`Change detection failed to start: ${failure.message}`);
       this.resolveReadiness({ status: 'error', error: failure });
+      // Release the pool ref acquired in startInternal so it is not held forever when the
+      // startup pipeline throws after acquireOxcParsePool() succeeded.
+      void this.dispose().catch(() => undefined);
     });
   }
 
@@ -271,6 +274,12 @@ export class ChangeDetectionService {
   private async startInternal(): Promise<void> {
     const adapter = this.adapter;
     if (!adapter) {
+      return;
+    }
+
+    // Guard against a synchronous start() → dispose() sequence where the microtask-scheduled
+    // startInternal would otherwise still acquire the pool and leak the ref.
+    if (this.disposed) {
       return;
     }
 
@@ -453,6 +462,11 @@ export class ChangeDetectionService {
     this.unsubscribeStartupFailure?.();
     this.unsubscribeStartupFailure = undefined;
 
+    // Only tear down the watcher if onGitStateChange was ever called (i.e. the provider
+    // actually installed watchers). If the provider was never constructed or never started
+    // watching, this is a no-op.
+    this.gitDiffProvider?.dispose();
+
     if (this.oxcPoolAcquired) {
       this.oxcPoolAcquired = false;
       await disposeOxcParsePool().catch(() => undefined);
@@ -488,6 +502,16 @@ export class ChangeDetectionService {
   }
 
   private async scan(): Promise<void> {
+    if (this.disposed || !this.reverseIndex) {
+      return;
+    }
+
+    // Snapshot and drain the current patch chain before reading reverseIndex. Without this
+    // await, a scan triggered mid-patch (between removeStory and the re-walk's recordEdges)
+    // reads a transiently empty reverseIndex and publishes incorrect statuses.
+    const patchSnapshot = this.currentPatch;
+    await patchSnapshot.catch(() => undefined);
+
     if (this.disposed || !this.reverseIndex) {
       return;
     }

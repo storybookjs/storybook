@@ -77,7 +77,7 @@ describe('OxcWorkerPool', () => {
 
   afterEach(async () => {
     const mod = await loadModule();
-    mod._resetOxcParsePoolForTesting();
+    await mod._resetOxcParsePoolForTesting();
     vi.resetModules();
     fakeWorkers.length = 0;
   });
@@ -185,6 +185,68 @@ describe('OxcWorkerPool', () => {
     const pending = pool.parse('/src/hang.ts', 'x');
     await expect(pending).rejects.toThrow(/timed out/);
     await pool.dispose();
+  });
+
+  it('dispose() rejects pending parse() callers before terminate() completes (H1 regression)', async () => {
+    const { OxcWorkerPool } = await loadModule();
+    const pool = new OxcWorkerPool('/fake/script.js', 2, 0);
+
+    // Make both workers hang — tasks will sit in pending until dispose.
+    fakeWorkers[0].hook.onPostMessage = () => {};
+    fakeWorkers[1].hook.onPostMessage = () => {};
+
+    // Override terminate() to return a never-resolving promise to simulate a hung worker.
+    const neverResolve = new Promise<number>(() => {});
+    fakeWorkers[0].terminate.mockReturnValue(neverResolve);
+    fakeWorkers[1].terminate.mockReturnValue(neverResolve);
+
+    const p1 = pool.parse('/src/a.ts', 'x');
+    const p2 = pool.parse('/src/b.ts', 'x');
+
+    // Race: parse rejections should win against a 100 ms timeout even though terminate() hangs.
+    const rejected = Promise.all([
+      p1.catch((e) => e),
+      p2.catch((e) => e),
+    ]);
+    const timeout = new Promise<'timeout'>((res) => setTimeout(() => res('timeout'), 100));
+
+    pool.dispose(); // intentionally not awaited — terminate() hangs
+    const result = await Promise.race([rejected, timeout]);
+
+    expect(result).not.toBe('timeout');
+    const [e1, e2] = result as [Error, Error];
+    expect(e1.message).toMatch(/disposed/);
+    expect(e2.message).toMatch(/disposed/);
+  });
+
+  it('rejects queued tasks when the only worker respawns and fails (H3 regression)', async () => {
+    const { OxcWorkerPool } = await loadModule();
+
+    // spawnSlot is private; intercept Worker construction instead.
+    // First construction succeeds (the initial pool slot), subsequent ones throw.
+    // We set constructorThrowAt after the pool is created so the initial spawn succeeds.
+    const pool = new OxcWorkerPool('/fake/script.js', 1, 0);
+
+    // Worker 0 hangs so it keeps the first task in flight.
+    fakeWorkers[0].hook.onPostMessage = () => {};
+
+    const task1 = pool.parse('/src/a.ts', 'x'); // dispatched immediately, stays in flight
+    const task2 = pool.parse('/src/b.ts', 'x'); // queued — no free slots
+
+    // Make all future Worker constructions throw so respawn fails.
+    constructorThrowAt = fakeWorkers.length; // = 1, so next new Worker() throws
+
+    // Crash the worker — triggers handleWorkerFailure → reject task1 → attempt respawn → fail.
+    fakeWorkers[0].emit('exit', 1);
+
+    // task1 was in-flight on slot 0; it must reject with the exit error.
+    await expect(task1).rejects.toThrow(/oxc-worker exit/);
+
+    // task2 was queued; with no alive workers it must also reject (not hang forever).
+    const timeout = new Promise<'timeout'>((res) => setTimeout(() => res('timeout'), 100));
+    const result = await Promise.race([task2.catch((e) => e), timeout]);
+    expect(result).not.toBe('timeout');
+    expect((result as Error).message).toMatch(/no live workers/);
   });
 
   describe('singleton refcount', () => {

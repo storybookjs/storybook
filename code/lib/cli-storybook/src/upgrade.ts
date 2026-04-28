@@ -116,6 +116,7 @@ export const checkVersionConsistency = () => {
 
 export type UpgradeOptions = {
   skipCheck: boolean;
+  skipAutomigrations?: boolean;
   packageManager?: PackageManagerName;
   dryRun: boolean;
   yes: boolean;
@@ -413,11 +414,17 @@ export async function upgrade(options: UpgradeOptions): Promise<void> {
       }
     }
 
-    // Run automigrations for all projects
-    const { automigrationResults, detectedAutomigrations } = await runAutomigrations(
-      storybookProjects,
-      options
-    );
+    // Run automigrations for all projects (unless explicitly skipped)
+    let automigrationResults: Record<string, AutomigrationResult> = {};
+    let detectedAutomigrations: AutomigrationCheckResult[] = [];
+    if (options.skipAutomigrations) {
+      logger.log('Skipping automigrations (--skip-automigrations).');
+    } else {
+      ({ automigrationResults, detectedAutomigrations } = await runAutomigrations(
+        storybookProjects,
+        options
+      ));
+    }
 
     // Install dependencies
     const rootPackageManager =

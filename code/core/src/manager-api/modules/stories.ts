@@ -81,6 +81,8 @@ const TAGS_FILTER = 'tags-filter';
 const STATIC_FILTER = 'static-filter';
 const STATUS_FILTER = 'status-filter';
 
+const BUILT_IN_TAG_IDS = new Set(Object.keys(BUILT_IN_FILTERS));
+
 type Direction = -1 | 1;
 type ParameterName = string;
 
@@ -461,9 +463,8 @@ export const init: ModuleFn<SubAPI, SubState> = ({
 
   const emitFilterTelemetry = (trigger: 'interaction' | 'url', changed?: FilterTelemetryChange) => {
     const state = store.getState();
-    const builtInTagIds = new Set(Object.keys(BUILT_IN_FILTERS));
-    const includedTags = (state.includedTagFilters ?? []).filter((id) => builtInTagIds.has(id));
-    const excludedTags = (state.excludedTagFilters ?? []).filter((id) => builtInTagIds.has(id));
+    const includedTags = (state.includedTagFilters ?? []).filter((id) => BUILT_IN_TAG_IDS.has(id));
+    const excludedTags = (state.excludedTagFilters ?? []).filter((id) => BUILT_IN_TAG_IDS.has(id));
 
     const changeDetectionEnabled = !!globalThis?.FEATURES?.changeDetection;
     const includedStatuses = changeDetectionEnabled ? (state.includedStatusFilters ?? []) : [];
@@ -935,7 +936,7 @@ export const init: ModuleFn<SubAPI, SubState> = ({
     addTagFilters: async (tags: Tag[], excluded: boolean) => {
       await addFilters('tag', tags, excluded);
       recomputeTagsFilter();
-      if (tags.length === 1 && tags[0] in BUILT_IN_FILTERS) {
+      if (tags.length === 1 && BUILT_IN_TAG_IDS.has(tags[0])) {
         emitFilterTelemetry('interaction', {
           filterType: 'tag',
           filterId: tags[0],
@@ -947,7 +948,7 @@ export const init: ModuleFn<SubAPI, SubState> = ({
     removeTagFilters: async (tags: Tag[]) => {
       await removeFilters('tag', tags);
       recomputeTagsFilter();
-      if (tags.length === 1 && tags[0] in BUILT_IN_FILTERS) {
+      if (tags.length === 1 && BUILT_IN_TAG_IDS.has(tags[0])) {
         emitFilterTelemetry('interaction', {
           filterType: 'tag',
           filterId: tags[0],
@@ -1324,10 +1325,9 @@ export const init: ModuleFn<SubAPI, SubState> = ({
       }
       urlFilterTelemetryEmitted = true;
 
-      const builtInTagIds = new Set(Object.keys(BUILT_IN_FILTERS));
       const hasBuiltInTagFilters =
-        initialIncluded.some((id) => builtInTagIds.has(id)) ||
-        initialExcluded.some((id) => builtInTagIds.has(id));
+        initialIncluded.some((id) => BUILT_IN_TAG_IDS.has(id)) ||
+        initialExcluded.some((id) => BUILT_IN_TAG_IDS.has(id));
       const changeDetectionEnabled = !!globalThis?.FEATURES?.changeDetection;
       const hasStatusFilters =
         changeDetectionEnabled &&

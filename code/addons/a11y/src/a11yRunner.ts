@@ -2,7 +2,7 @@ import { ElementA11yParameterError } from 'storybook/internal/preview-errors';
 
 import { global } from '@storybook/global';
 
-import type { AxeResults, ContextProp, ContextSpec } from 'axe-core';
+import type { AxeResults, ContextProp, ContextSpec, RunOptions, Spec } from 'axe-core';
 import { addons, waitForAnimations } from 'storybook/preview-api';
 
 import { withLinkPaths } from './a11yRunnerUtils.ts';
@@ -20,6 +20,44 @@ const DISABLED_RULES = [
   // and the rule check can cause false positives
   'region',
 ] as const;
+
+const getDisabledRules = (rules: Spec['rules'] = []) => {
+  const ruleStates = new Map<string, boolean>();
+
+  rules.forEach(({ id, enabled }) => {
+    if (id && typeof enabled === 'boolean') {
+      ruleStates.set(id, enabled);
+    }
+  });
+
+  return Object.fromEntries(
+    Array.from(ruleStates.entries())
+      .filter(([, enabled]) => !enabled)
+      .map(([id]) => [id, { enabled: false }])
+  ) as NonNullable<RunOptions['rules']>;
+};
+
+const mergeDisabledRulesIntoRunOptions = (options: RunOptions, config: Spec): RunOptions => {
+  // axe.run({ runOnly }) can re-enable tagged rules, so mirror configured disables into
+  // the same run options object without mutating the user's parameters.
+  if (!options.runOnly) {
+    return options;
+  }
+
+  const disabledRules = getDisabledRules(config.rules);
+
+  if (Object.keys(disabledRules).length === 0) {
+    return options;
+  }
+
+  return {
+    ...options,
+    rules: {
+      ...disabledRules,
+      ...options.rules,
+    },
+  };
+};
 
 // A simple queue to run axe-core in sequence
 // This is necessary because axe-core is not designed to run in parallel
@@ -92,6 +130,8 @@ export const run = async (input: A11yParameters = DEFAULT_PARAMETERS, storyId: s
 
   axe.configure(configWithDefault);
 
+  const optionsWithDisabledRules = mergeDisabledRulesIntoRunOptions(options, configWithDefault);
+
   return new Promise<AxeResults>((resolve, reject) => {
     const highlightsRoot = document?.getElementById('storybook-highlights-root');
     if (highlightsRoot) {
@@ -100,7 +140,7 @@ export const run = async (input: A11yParameters = DEFAULT_PARAMETERS, storyId: s
 
     const task = async () => {
       try {
-        const result = await axe.run(context, options);
+        const result = await axe.run(context, optionsWithDisabledRules);
         const resultWithLinks = withLinkPaths(result, storyId);
         resolve(resultWithLinks);
       } catch (error) {

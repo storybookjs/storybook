@@ -14,6 +14,7 @@ import {
   getStorybookDir,
   NODE_EVAL_SYNC_STORYBOOK_VERSION_SCRIPT,
   REPOS_DIR,
+  toPosixPath,
 } from './lib/utils.ts';
 
 type HookArgs = {
@@ -124,7 +125,7 @@ export async function syncStorybookVersion(
   const resolved = projects.map((project) => {
     const repoRoot = join(resolve(reposRoot), project.name);
     const projectPath = getProjectPath(repoRoot, project.projectDir);
-    const configDir = relative(repoRoot, getStorybookDir(projectPath)) || '.storybook';
+    const configDir = toPosixPath(relative(repoRoot, getStorybookDir(projectPath))) || '.storybook';
     return { project, repoRoot, projectPath, configDir };
   });
 

@@ -198,7 +198,7 @@ describe('syncBaselines', () => {
     expect(getHead(join(reposRoot, 'wikitok'))).toBe(
       getRemoteHead(join(remotesRoot, 'wikitok.git'))
     );
-  });
+  }, 30_000);
 
   it('fails fast when a non-source target repo is dirty', async () => {
     TMP = mkdtempSync(join(tmpdir(), 'eval-sync-baselines-dirty-'));

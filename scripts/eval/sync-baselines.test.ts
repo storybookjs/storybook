@@ -1,5 +1,5 @@
 import { execFileSync } from 'node:child_process';
-import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { mkdir } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { tmpdir } from 'node:os';
@@ -539,7 +539,7 @@ function setupRepo(opts: {
 }
 
 function mkdirSyncRecursive(path: string) {
-  execFileSync('mkdir', ['-p', path]);
+  mkdirSync(path, { recursive: true });
 }
 
 function getHead(repoRoot: string) {

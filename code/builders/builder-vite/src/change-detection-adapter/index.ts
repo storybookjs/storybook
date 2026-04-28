@@ -1,7 +1,7 @@
 import type {
   ChangeDetectionAdapter,
   FileChangeEvent,
-  ResolveConfig,
+  ModuleResolveConfig,
 } from 'storybook/internal/core-server';
 
 import { normalize } from 'pathe';
@@ -21,12 +21,12 @@ import type { ViteDevServer } from 'vite';
  */
 export function createViteChangeDetectionAdapter(server: ViteDevServer): ChangeDetectionAdapter {
   return {
-    async getResolveConfig(): Promise<ResolveConfig> {
+    async getResolveConfig(): Promise<ModuleResolveConfig> {
       const resolveOpts = server.config.resolve;
       // Vite normalises `resolve.alias` to its array form (`Array<{find, replacement, ...}>`)
       // before we ever see it. The detector accepts both Record and Array shapes, so we pass
       // the array through unchanged.
-      const alias = resolveOpts?.alias as ResolveConfig['alias'];
+      const alias = resolveOpts?.alias as ModuleResolveConfig['alias'];
       const conditions = resolveOpts?.conditions;
       // `tsconfig` is a non-standard Vite config option — only present when the user set it
       // explicitly. We forward it as-is; otherwise leave undefined so oxc-resolver auto-discovers.

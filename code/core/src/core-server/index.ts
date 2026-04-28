@@ -34,7 +34,7 @@ export {
 export type {
   ChangeDetectionAdapter,
   FileChangeEvent,
-  ResolveConfig,
+  ModuleResolveConfig,
 } from './change-detection/index.ts';
 export type {
   ImportEdge,

@@ -1,7 +1,11 @@
 // Type-level smoke tests for the ChangeDetectionAdapter contract.
 import { describe, expectTypeOf, it } from 'vitest';
 
-import type { ChangeDetectionAdapter, FileChangeEvent, ResolveConfig } from './types.ts';
+import type {
+  ChangeDetectionAdapter,
+  FileChangeEvent,
+  ModuleResolveConfig,
+} from './types.ts';
 
 describe('ChangeDetectionAdapter types', () => {
   it('FileChangeEvent is a discriminated union over add | change | unlink', () => {
@@ -12,17 +16,19 @@ describe('ChangeDetectionAdapter types', () => {
     >();
   });
 
-  it('ResolveConfig.alias accepts both Record<string, string> and Array<{find, replacement}>', () => {
-    expectTypeOf<Record<string, string>>().toMatchTypeOf<NonNullable<ResolveConfig['alias']>>();
+  it('ModuleResolveConfig.alias accepts both Record<string, string> and Array<{find, replacement}>', () => {
+    expectTypeOf<Record<string, string>>().toMatchTypeOf<
+      NonNullable<ModuleResolveConfig['alias']>
+    >();
     expectTypeOf<Array<{ find: string | RegExp; replacement: string }>>().toMatchTypeOf<
-      NonNullable<ResolveConfig['alias']>
+      NonNullable<ModuleResolveConfig['alias']>
     >();
   });
 
-  it('ChangeDetectionAdapter.getResolveConfig returns Promise<ResolveConfig>', () => {
+  it('ChangeDetectionAdapter.getResolveConfig returns Promise<ModuleResolveConfig>', () => {
     expectTypeOf<
       ChangeDetectionAdapter['getResolveConfig']
-    >().returns.resolves.toEqualTypeOf<ResolveConfig>();
+    >().returns.resolves.toEqualTypeOf<ModuleResolveConfig>();
   });
 
   it('ChangeDetectionAdapter.onFileChange returns an unsubscribe function', () => {

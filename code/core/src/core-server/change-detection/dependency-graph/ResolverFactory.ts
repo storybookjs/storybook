@@ -3,13 +3,13 @@ import { dirname } from 'pathe';
 
 import { logger } from 'storybook/internal/node-logger';
 
-import type { ResolveConfig } from '../adapters/types.ts';
+import type { ModuleResolveConfig } from '../adapters/types.ts';
 
 const DEFAULT_EXTENSIONS = ['.tsx', '.ts', '.jsx', '.js', '.mjs', '.cjs', '.json'];
 const DEFAULT_CONDITIONS = ['storybook', 'import', 'module', 'default'];
 
 /**
- * `ResolveConfig.alias` accepts both Vite shapes:
+ * `ModuleResolveConfig.alias` accepts both Vite shapes:
  *   - `Record<string, string>` (object form)
  *   - `Array<{ find: string | RegExp; replacement: string }>` (array form)
  *
@@ -24,7 +24,7 @@ class AliasNormaliser {
   private readonly warnedRegexAliases = new Set<string>();
 
   normalise(
-    alias: ResolveConfig['alias']
+    alias: ModuleResolveConfig['alias']
   ): Record<string, Array<string | undefined | null>> | undefined {
     if (!alias) {
       return undefined;
@@ -69,16 +69,16 @@ class AliasNormaliser {
 }
 
 /**
- * Thin wrapper around `oxc-resolver`'s `ResolverFactory` configured per the
- * change-detection `ResolveConfig`. Normalises the alias map shape and converts
- * resolver errors to `null` (with a debug log) — the caller treats unresolvable
- * specifiers as opaque-leaf edges.
+ * Thin wrapper around `oxc-resolver`'s `ResolverFactory` configured per a
+ * builder-supplied {@link ModuleResolveConfig}. Normalises the alias map shape and
+ * converts resolver errors to `null` (with a debug log) — the caller treats
+ * unresolvable specifiers as opaque-leaf edges.
  */
 export class ChangeDetectionResolverFactory {
   private readonly factory: OxcResolverFactory;
   private readonly aliasNormaliser = new AliasNormaliser();
 
-  constructor(config: ResolveConfig) {
+  constructor(config: ModuleResolveConfig) {
     const alias = this.aliasNormaliser.normalise(config.alias);
     const conditionNames = config.conditions ?? DEFAULT_CONDITIONS;
 

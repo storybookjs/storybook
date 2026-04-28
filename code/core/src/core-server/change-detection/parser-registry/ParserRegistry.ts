@@ -7,8 +7,8 @@ import type { ImportEdge, ImportParser, ImportParserContext } from './types.ts';
 
 /**
  * Dispatches a file to the correct {@link ImportParser} based on its extension. The
- * registry is built once at change-detection startup from {@link builtinImportParsers}
- * plus any contributions from the `experimental_importParsers` preset key.
+ * registry is constructed from a set of default parsers plus any plugin-supplied
+ * parsers (e.g. contributions to the `experimental_importParsers` preset key).
  *
  * Registration is last-wins on collision (plugin extensions override built-in
  * extensions). Lookup is case-insensitive and uses `path.extname` — compound

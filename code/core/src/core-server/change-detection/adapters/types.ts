@@ -9,35 +9,18 @@
  * Builder-vite is the first consumer (see `code/builders/builder-vite/src/change-detection-adapter/`).
  */
 
+import type { ModuleResolveConfig } from 'storybook/internal/types';
+
+export type { ModuleResolveConfig };
+
 export type FileChangeEvent =
   | { kind: 'add'; path: string }
   | { kind: 'change'; path: string }
   | { kind: 'unlink'; path: string };
 
-export interface ResolveConfig {
-  /** Project root (where Storybook is started from). */
-  projectRoot: string;
-  /** Resolved absolute path to the active tsconfig; oxc-resolver reads `paths`/`baseUrl` itself. */
-  tsconfigPath?: string;
-  /**
-   * Builder-supplied alias map. Accepts both Vite shapes:
-   *   - `Record<string, string>` (object form)
-   *   - `Array<{ find: string | RegExp; replacement: string }>` (array form, supports regex)
-   *
-   * Regex aliases that cannot be translated to oxc-resolver are downgraded to opaque-leaf
-   * with a debug log. Plain string aliases are forwarded as-is.
-   */
-  alias?: Record<string, string> | Array<{ find: string | RegExp; replacement: string }>;
-  /**
-   * Conditions for package `exports` resolution. Defaults to
-   * `['storybook', 'import', 'module', 'default']`.
-   */
-  conditions?: string[];
-}
-
 export interface ChangeDetectionAdapter {
   /** Pull: builder produces resolve-config once at start; detector caches it. */
-  getResolveConfig(): Promise<ResolveConfig>;
+  getResolveConfig(): Promise<ModuleResolveConfig>;
   /** Push: builder reports file-system events; returns an unsubscribe function. */
   onFileChange(handler: (event: FileChangeEvent) => void): () => void;
   /** Optional: builder reports a startup failure so the detector can mark itself unavailable. */

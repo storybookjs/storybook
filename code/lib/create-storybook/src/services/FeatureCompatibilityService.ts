@@ -5,7 +5,7 @@ import type { SupportedBuilder, SupportedFramework } from 'storybook/internal/ty
 /** Project types that support the onboarding feature */
 const ONBOARDING_PROJECT_TYPES: ProjectType[] = [
   ProjectType.REACT,
-  ProjectType.TANSTACK,
+  ProjectType.TANSTACK_REACT,
   ProjectType.REACT_SCRIPTS,
   ProjectType.REACT_NATIVE_WEB,
   ProjectType.NEXTJS,

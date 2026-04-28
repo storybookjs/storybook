@@ -5,7 +5,7 @@ import { defineGeneratorModule } from '../modules/GeneratorModule.ts';
 
 export default defineGeneratorModule({
   metadata: {
-    projectType: ProjectType.TANSTACK,
+    projectType: ProjectType.TANSTACK_REACT,
     renderer: SupportedRenderer.REACT,
     framework: SupportedFramework.TANSTACK_REACT,
     builderOverride: SupportedBuilder.VITE,

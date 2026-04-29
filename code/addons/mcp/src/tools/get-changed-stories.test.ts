@@ -113,7 +113,7 @@ describe('getChangedStoriesTool', () => {
 
 		expect(fetchStoryIndex.fetchStoryIndex).toHaveBeenCalledWith('http://localhost:6006');
 		expect(text).toMatchInlineSnapshot(`
-			"Detected 3 changed stories (1 new, 1 modified, 1 affected).
+			"Detected 3 changed stories (1 new, 1 modified, 1 related).
 
 			New stories:
 			- \`button--primary\`: Button / Primary (\`./src/Button.stories.tsx\`)
@@ -121,7 +121,7 @@ describe('getChangedStoriesTool', () => {
 			Modified stories:
 			- \`button--secondary\`: Button / Secondary (\`./src/Button.stories.tsx\`)
 
-			Affected stories:
+			Related stories:
 			- \`input--default\`: Input / Default (\`./src/Input.stories.tsx\`)"
 		`);
 	});
@@ -146,14 +146,14 @@ describe('getChangedStoriesTool', () => {
 		const text = getResultText(response);
 
 		expect(text).toMatchInlineSnapshot(`
-			"Detected 1 changed story (1 new, 0 modified, 0 affected).
+			"Detected 1 changed story (1 new, 0 modified, 0 related).
 
 			New stories:
 			- \`button--primary\`: Button / Primary (\`./src/Button.stories.tsx\`)"
 		`);
 	});
 
-	it('groups by new, modified, affected, then sorts by storyId', async () => {
+	it('groups by new, modified, related, then sorts by storyId', async () => {
 		mockGetStatusStore.mockReturnValue({
 			getAllStatuses: () => ({
 				'input--default': {
@@ -172,13 +172,13 @@ describe('getChangedStoriesTool', () => {
 		const text = getResultText(response);
 
 		expect(text).toMatchInlineSnapshot(`
-			"Detected 3 changed stories (2 new, 0 modified, 1 affected).
+			"Detected 3 changed stories (2 new, 0 modified, 1 related).
 
 			New stories:
 			- \`button--primary\`: Button / Primary (\`./src/Button.stories.tsx\`)
 			- \`button--secondary\`: Button / Secondary (\`./src/Button.stories.tsx\`)
 
-			Affected stories:
+			Related stories:
 			- \`input--default\`: Input / Default (\`./src/Input.stories.tsx\`)"
 		`);
 	});
@@ -195,7 +195,7 @@ describe('getChangedStoriesTool', () => {
 		const response = await callTool();
 		const text = getResultText(response);
 
-		expect(text).toContain('Detected 1 changed story (1 new, 0 modified, 0 affected).');
+		expect(text).toContain('Detected 1 changed story (1 new, 0 modified, 0 related).');
 		expect(text).toContain('- `button--primary`: Button / Primary (`./src/Button.stories.tsx`)');
 	});
 
@@ -217,7 +217,7 @@ describe('getChangedStoriesTool', () => {
 		const response = await callTool();
 		const text = getResultText(response);
 
-		expect(text).toContain('Detected 1 changed story (0 new, 1 modified, 0 affected).');
+		expect(text).toContain('Detected 1 changed story (0 new, 1 modified, 0 related).');
 		expect(text).toContain(
 			'- `button--secondary`: Button / Secondary (`./src/Button.stories.tsx`)',
 		);
@@ -236,7 +236,7 @@ describe('getChangedStoriesTool', () => {
 		const text = getResultText(response);
 
 		expect(text).toMatchInlineSnapshot(`
-			"Detected 1 changed story (0 new, 1 modified, 0 affected).
+			"Detected 1 changed story (0 new, 1 modified, 0 related).
 
 			Modified stories:
 			- \`missing--story\`"
@@ -282,7 +282,7 @@ describe('getChangedStoriesTool', () => {
 		const response = await callTool();
 		const text = getResultText(response);
 
-		expect(text).toBe('No new, modified, or affected stories detected.');
+		expect(text).toBe('No new, modified, or related stories detected.');
 		expect(vi.mocked(fetchStoryIndex.fetchStoryIndex).mock.calls.length).toBe(callCountBefore);
 	});
 });

@@ -92,7 +92,7 @@ export async function addGetChangedStoriesTool(server: McpServer<any, AddonConte
 		{
 			name: GET_CHANGED_STORIES_TOOL_NAME,
 			title: 'Get changed stories metadata',
-			description: `Get Storybook stories marked as new, modified, or affected.
+			description: `Get Storybook stories marked as new, modified, or related.
 Returns story metadata only (no URLs).`,
 			enabled: () => server.ctx.custom?.toolsets?.dev ?? true,
 		},
@@ -134,7 +134,7 @@ Returns story metadata only (no URLs).`,
 
 					return {
 						content: [
-							{ type: 'text' as const, text: 'No new, modified, or affected stories detected.' },
+							{ type: 'text' as const, text: 'No new, modified, or related stories detected.' },
 						],
 					};
 				}
@@ -180,8 +180,8 @@ Returns story metadata only (no URLs).`,
 
 				let text =
 					stories.length === 0
-						? 'No new, modified, or affected stories detected.'
-						: `Detected ${stories.length} changed stor${stories.length === 1 ? 'y' : 'ies'} (${counts.new} new, ${counts.modified} modified, ${counts.affected} affected).`;
+						? 'No new, modified, or related stories detected.'
+						: `Detected ${stories.length} changed stor${stories.length === 1 ? 'y' : 'ies'} (${counts.new} new, ${counts.modified} modified, ${counts.affected} related).`;
 
 				const serializeStory = (story: ChangedStory) =>
 					story.title && story.name && story.importPath
@@ -197,7 +197,7 @@ Returns story metadata only (no URLs).`,
 					text += buckets.modified.map(serializeStory).join('\n');
 				}
 				if (buckets.affected.length > 0) {
-					text += `\n\nAffected stories:\n`;
+					text += `\n\nRelated stories:\n`;
 					text += buckets.affected.map(serializeStory).join('\n');
 				}
 

@@ -5,7 +5,7 @@
 ### Workflow
 
 1. Make your change
-2. Run `{{RUN_STORY_TESTS_TOOL_NAME}}` with affected stories for focused feedback (faster while iterating)
+2. Run `{{RUN_STORY_TESTS_TOOL_NAME}}` with related stories for focused feedback (faster while iterating)
 3. If tests fail: analyze, fix{{A11Y_FIX_SUFFIX}}, re-run
 4. Repeat until all tests pass
 

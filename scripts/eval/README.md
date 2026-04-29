@@ -75,9 +75,14 @@ Result
 
 ## Running a batch
 
+By default, a batch runs **10 repetitions per (project × variant)** across all benchmark projects. With the default Claude-only matrix that's `7 projects × 1 variant × 10 reps = 70 trials`. Use `--repetitions` to shrink that — e.g. `--repetitions 2` gives 14 trials.
+
 ```sh
 # Prompt is required. Confirms interactively unless you pass --yes (CI / automation).
 node scripts/eval/run-batch.ts --prompt pattern-copy-play --yes
+
+# Smaller batch — 2 reps per project (14 trials with the default Claude-only matrix)
+node scripts/eval/run-batch.ts --prompt pattern-copy-play --yes --repetitions 2
 
 # Claude only
 node scripts/eval/run-batch.ts --prompt pattern-copy-play --yes --agents claude
@@ -92,7 +97,7 @@ node scripts/eval/run-batch.ts --prompt setup --yes
 node scripts/eval/run-batch.ts --prompt pattern-copy-play --yes --concurrency 4
 ```
 
-Batch results are written to `storybook-eval/batches/<timestamp>/`, with per-run log files and a `summary.json`.
+Batch results are written to `storybook-eval/batches/<timestamp>/`, with per-run log files and a `summary.json`. If any trials fail, the batch prints a `Failures:` footer with each failed label, the last error line from its log, and the log path.
 
 ## Syncing baselines
 

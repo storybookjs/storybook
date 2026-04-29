@@ -1,7 +1,7 @@
 import { spawn as spawnChild, type SpawnOptions } from 'node:child_process';
 import { once } from 'node:events';
 import { createWriteStream } from 'node:fs';
-import { mkdir, writeFile } from 'node:fs/promises';
+import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
 import type { Readable } from 'node:stream';
 import { parseArgs } from 'node:util';
@@ -94,6 +94,8 @@ export interface RunBatchOptions {
   claudeEfforts?: (typeof CLAUDE_EFFORTS)[number][];
   claudeEffort?: (typeof CLAUDE_EFFORTS)[number];
   codexEffort?: (typeof CODEX_EFFORTS)[number];
+  /** Repetitions per (project × variant). Defaults to BATCH_REPETITIONS. */
+  repetitions?: number;
   log?: (message: string) => void;
 }
 
@@ -154,6 +156,7 @@ export async function runBatch(
       claudeEfforts: options.claudeEfforts,
       claudeEffort: options.claudeEffort,
       codexEffort: options.codexEffort,
+      repetitions: options.repetitions,
     });
 
   if (!options.yes && options.descriptors === undefined) {
@@ -198,8 +201,9 @@ export async function runBatch(
         results[index] = result;
 
         finished += 1;
+        const reason = result.status === 'failed' ? await readFailureReason(result.logPath) : '';
         log(
-          `[finish ${finished}/${descriptors.length}] ${descriptor.label} ${result.status} ${formatExitResult(result)} ${result.durationMs}ms`
+          `[finish ${finished}/${descriptors.length}] ${descriptor.label} ${result.status} ${formatExitResult(result)} ${result.durationMs}ms${reason ? ` — ${reason}` : ''}`
         );
       })
     )
@@ -227,7 +231,39 @@ export async function runBatch(
     `Finished eval batch ${batchTimestamp}: ${summary.totalRuns} total, ${summary.succeeded} succeeded, ${summary.failed} failed`
   );
 
+  if (summary.failed > 0) {
+    log('Failures:');
+    for (const run of summary.runs) {
+      if (run.status === 'success') continue;
+      const reason = await readFailureReason(run.logPath);
+      log(`  - ${run.label}${reason ? `\n      ${reason}` : ''}\n      ${run.logPath}`);
+    }
+  }
+
   return summary;
+}
+
+const FAILURE_REASON_MAX_LEN = 200;
+
+/** Read the most informative trailing line from a failed trial log to surface inline. */
+async function readFailureReason(logPath: string): Promise<string> {
+  try {
+    const text = await readFile(logPath, 'utf8');
+    const lines = text
+      .split(/\r?\n/)
+      .map((line) => line.trim())
+      .filter(Boolean);
+    if (lines.length === 0) return '';
+    const errorLine = [...lines]
+      .reverse()
+      .find((line) => /error|abort|timeout|failed/i.test(line) && !line.startsWith('at '));
+    const candidate = errorLine ?? lines[lines.length - 1];
+    return candidate.length > FAILURE_REASON_MAX_LEN
+      ? `${candidate.slice(0, FAILURE_REASON_MAX_LEN - 1)}…`
+      : candidate;
+  } catch {
+    return '';
+  }
 }
 
 export function buildBatchVariants(
@@ -270,6 +306,7 @@ export function buildBatchRunDescriptors(options: {
   claudeEfforts?: RunBatchOptions['claudeEfforts'];
   claudeEffort?: RunBatchOptions['claudeEffort'];
   codexEffort?: RunBatchOptions['codexEffort'];
+  repetitions?: number;
 }): BatchRunDescriptor[] {
   const knownProjects = new Set(PROJECTS.map((project) => project.name));
 
@@ -288,7 +325,8 @@ export function buildBatchRunDescriptors(options: {
       ? BATCH_VARIANTS
       : buildBatchVariants(options);
 
-  for (let repetition = 1; repetition <= BATCH_REPETITIONS; repetition += 1) {
+  const totalRepetitions = options.repetitions ?? BATCH_REPETITIONS;
+  for (let repetition = 1; repetition <= totalRepetitions; repetition += 1) {
     for (const variant of variants) {
       for (const project of BATCH_PROJECT_NAMES) {
         descriptors.push(createBatchRunDescriptor(project, variant, repetition, options.prompt));
@@ -431,6 +469,7 @@ const runBatchArgsSchema = z.object({
   claudeEfforts: z.array(z.enum(CLAUDE_EFFORTS)).nonempty().optional(),
   claudeEffort: z.enum(CLAUDE_EFFORTS).optional(),
   codexEffort: z.enum(CODEX_EFFORTS).optional(),
+  repetitions: z.coerce.number().int().positive().optional(),
 });
 
 const runBatchOptions = {
@@ -449,6 +488,10 @@ const runBatchOptions = {
   },
   'claude-effort': { type: 'string' as const, description: 'Single Claude effort level' },
   'codex-effort': { type: 'string' as const, description: 'Single Codex effort level' },
+  repetitions: {
+    type: 'string' as const,
+    description: `Repetitions per (project × variant) (default: ${BATCH_REPETITIONS})`,
+  },
   yes: {
     type: 'boolean' as const,
     short: 'y',
@@ -462,7 +505,14 @@ export function parseRunBatchArgs(
 ):
   | Pick<
       RunBatchOptions,
-      'agents' | 'claudeEfforts' | 'claudeEffort' | 'codexEffort' | 'concurrency' | 'prompt' | 'yes'
+      | 'agents'
+      | 'claudeEfforts'
+      | 'claudeEffort'
+      | 'codexEffort'
+      | 'concurrency'
+      | 'prompt'
+      | 'yes'
+      | 'repetitions'
     >
   | { help: true } {
   const { values } = parseArgs({
@@ -483,6 +533,7 @@ export function parseRunBatchArgs(
     claudeEfforts: parseClaudeEfforts(values['claude-efforts']),
     claudeEffort: values['claude-effort'],
     codexEffort: values['codex-effort'],
+    repetitions: values.repetitions,
   });
 
   if (!parsed.success) {

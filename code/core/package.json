@@ -376,10 +376,14 @@
     "zod": "^3.25.76"
   },
   "peerDependencies": {
-    "prettier": "^2 || ^3"
+    "prettier": "^2 || ^3",
+    "vite-plus": "^0.1.15"
   },
   "peerDependenciesMeta": {
     "prettier": {
+      "optional": true
+    },
+    "vite-plus": {
       "optional": true
     }
   },

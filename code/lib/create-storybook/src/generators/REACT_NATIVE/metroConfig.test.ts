@@ -73,70 +73,120 @@ describe('metroConfig codemod', () => {
 
   it('wraps existing wrapper as outermost withStorybook', async () => {
     const filePath = path.join(tempDir, 'metro.config.js');
-    await writeFile(filePath, 'module.exports = withExpo(defaultConfig);\n', 'utf-8');
+    const before = 'module.exports = withExpo(defaultConfig);\n';
+    await writeFile(filePath, before, 'utf-8');
 
     const result = await runMetroCodemodOrFallback({
       packageManager,
       yes: true,
     });
-    const updatedSource = await readFile(filePath, 'utf-8');
+    const after = await readFile(filePath, 'utf-8');
 
     expect(result.status).toBe('updated');
-    expect(updatedSource).toContain('module.exports = withStorybook(withExpo(defaultConfig));');
+    expect(after).not.toBe(before);
+    expect(getDiff(before, after)).toMatchInlineSnapshot(`
+      "- module.exports = withExpo(defaultConfig);
+      - 
+      + const {
+      +   withStorybook,
+      + } = require('@storybook/react-native/withStorybook');
+      + 
+      + module.exports = withStorybook(withExpo(defaultConfig));
+      + "
+    `);
   });
 
   it('wraps export default async function in ts config with ESM import', () => {
-    const source = `
+    const before = `
 export default async function makeMetroConfig() {
   return { resolver: {} };
 }
 `;
-    const transformed = transformMetroConfigSource(source, path.join(tempDir, 'metro.config.ts'));
+    const transformed = transformMetroConfigSource(before, path.join(tempDir, 'metro.config.ts'));
 
     expect(transformed.action).toBe('updated');
     if (transformed.action === 'updated') {
-      expect(transformed.code).toContain(
-        "import { withStorybook } from '@storybook/react-native/withStorybook';"
-      );
-      expect(transformed.code).toContain(
-        'export default withStorybook(async function makeMetroConfig()'
-      );
+      expect(getDiff(before, transformed.code)).toMatchInlineSnapshot(`
+        "  
+          
+        - export default async function makeMetroConfig() {
+        - 
+        + import { withStorybook } from '@storybook/react-native/withStorybook';
+        + export default withStorybook(async function makeMetroConfig() {
+        + 
+            return { resolver: {} };
+          
+        - }
+        - 
+        + });
+        + "
+      `);
     }
   });
 
   it('does not treat import/export text inside template literals as ESM for .ts import injection', () => {
-    const source = `
+    const before = `
 const hint = \`
 import { something } from 'somewhere'
 export default {}
 \`;
 module.exports = {};
 `;
-    const transformed = transformMetroConfigSource(source, path.join(tempDir, 'metro.config.ts'));
+    const transformed = transformMetroConfigSource(before, path.join(tempDir, 'metro.config.ts'));
 
     expect(transformed.action).toBe('updated');
     if (transformed.action === 'updated') {
-      expect(transformed.code).toContain("require('@storybook/react-native/withStorybook')");
-      expect(transformed.code).not.toContain(
-        "import { withStorybook } from '@storybook/react-native/withStorybook'"
-      );
+      expect(getDiff(before, transformed.code)).toMatchInlineSnapshot(`
+        "  
+          
+        + const {
+        +   withStorybook,
+        + } = require('@storybook/react-native/withStorybook');
+        + 
+        + 
+          const hint = \`
+          import { something } from 'somewhere'
+          export default {}
+          \`;
+          
+        - module.exports = {};
+        - 
+        + module.exports = withStorybook({});
+        + "
+      `);
     }
   });
 
   it('preserves TypeScript return type and type parameters on default exported functions', () => {
-    const source = `
+    const before = `
 import type { MetroConfig } from 'metro-config';
 
 export default async function makeMetroConfig<T = string>(): Promise<MetroConfig> {
   return {} as MetroConfig;
 }
 `;
-    const transformed = transformMetroConfigSource(source, path.join(tempDir, 'metro.config.ts'));
+    const transformed = transformMetroConfigSource(before, path.join(tempDir, 'metro.config.ts'));
 
     expect(transformed.action).toBe('updated');
     if (transformed.action === 'updated') {
-      expect(transformed.code).toContain('function makeMetroConfig<T = string>()');
-      expect(transformed.code).toContain(': Promise<MetroConfig>');
+      expect(getDiff(before, transformed.code)).toMatchInlineSnapshot(`
+        "  
+          import type { MetroConfig } from 'metro-config';
+          
+          
+        - export default async function makeMetroConfig<T = string>(): Promise<MetroConfig> {
+        - 
+        + import { withStorybook } from '@storybook/react-native/withStorybook';
+        + 
+        + export default withStorybook(async function makeMetroConfig<T = string>(): Promise<MetroConfig> {
+        + 
+            return {} as MetroConfig;
+          
+        - }
+        - 
+        + });
+        + "
+      `);
     }
   });
 

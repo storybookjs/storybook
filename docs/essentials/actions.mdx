@@ -12,15 +12,21 @@ Actions are used to show that an event handler (callback) has been called, and t
 
 Actions work via supplying special Storybook-generated mock functions to your story's event handler args. There are two ways to get an action arg:
 
-### Via storybook/test fn spies
+### Via `storybook/test` `fn` spies
 
-The recommended way to write actions is to use the `fn` utility from `storybook/test` to mock and spy args. This is very useful for writing [interaction tests](../writing-tests/interaction-testing.mdx). You can mock your component's methods by assigning them to the `fn()` function:
+The recommended way is to assign an arg to `fn()`, which creates a mock function that is automatically spied by Storybook. This is very useful for writing [interaction tests](../writing-tests/interaction-testing.mdx).
 
 <CodeSnippets path="button-story-onclick-action-spy.md" />
 
-If your component calls an arg (because of either the user's interaction or the `play` function) and that arg is spied on, the event will show up in the action panel:
+When your component calls an arg (because of either the user's interaction or the `play` function) with an `fn()` assignment, the event will show up in the actions panel:
 
 ![Actions usage](../_assets/essentials/addon-actions-screenshot.png)
+
+If you are defining a mock function with `fn()` outside of `args`, you must provide a name for it to automatically log to the actions panel:
+
+```js
+const handleClick = fn().mockName('handleClick');
+```
 
 ### Automatically matching args
 
@@ -40,9 +46,9 @@ This will bind a standard HTML event handler to the outermost HTML element rende
 
 You can still use the actions panel if you need to log function calls that are unrelated to any story. This can be helpful for debugging or logging purposes. There are two main ways to do this: `spyOn` from `storybook/test` or the `action` function from `storybook/actions`. For basic logging, we recommend creating a function spy, and for more complex scenarios, you can use the `action` function directly.
 
-### Via storybook/test spyOn
+### Via `storybook/test` `spyOn`
 
-Mocks and spies from `storybook/test` are automatically logged as actions. The easiest way to show function calls in the actions panel is to use the `spyOn` utility function. Spies appear with a default name, which you can customize by calling the `mockName` method.
+Mocks and spies from `storybook/test` are automatically logged as actions (when [applied as `arg` values or when given a name](#via-storybooktest-fn-spies)). The easiest way to show function calls in the actions panel is to use the `spyOn` utility function. Spies appear with a default name, which you can customize by calling the `mockName` method.
 
 <CodeSnippets path="actions-spyon-basic-example.md" />
 

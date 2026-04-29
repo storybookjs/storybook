@@ -5,6 +5,7 @@ import { join } from 'node:path';
 import { dedent } from 'ts-dedent';
 
 import type { Fix } from '../types.ts';
+import { RN_STORYBOOK_DIR } from '../../../../../core/src/shared/constants/config-folder.ts';
 
 interface Options {
   storybookDir: string;
@@ -71,7 +72,7 @@ export const rnstorybookConfig: Fix<Options> = {
     // Check if .storybook directory exists
     const projectDir = mainConfigPath ? join(mainConfigPath, '..', '..') : process.cwd();
     const storybookDir = join(projectDir, '.storybook');
-    const rnStorybookDir = join(projectDir, '.rnstorybook');
+    const rnStorybookDir = join(projectDir, RN_STORYBOOK_DIR);
     // eslint-disable-next-line depend/ban-dependencies
     const { globby } = await import('globby');
 
@@ -95,7 +96,7 @@ export const rnstorybookConfig: Fix<Options> = {
     if (!dryRun) {
       await Promise.all(
         dotStorybookReferences.map(async (ref) => {
-          await renameInFile(ref, '.storybook', '.rnstorybook');
+          await renameInFile(ref, '.storybook', RN_STORYBOOK_DIR);
         })
       );
       await rename(storybookDir, rnStorybookDir);

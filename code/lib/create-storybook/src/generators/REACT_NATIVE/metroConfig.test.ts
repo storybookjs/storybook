@@ -124,6 +124,31 @@ export default async function makeMetroConfig() {
     }
   });
 
+  it('uses ESM import for a .js config that uses export default', () => {
+    const before = 'export default {};\n';
+    const transformed = transformMetroConfigSource(before, path.join(tempDir, 'metro.config.js'));
+
+    expect(transformed.action).toBe('updated');
+    if (transformed.action === 'updated') {
+      expect(transformed.code).toContain(
+        "import { withStorybook } from '@storybook/react-native/withStorybook'"
+      );
+      expect(transformed.code).not.toContain("require('@storybook/react-native/withStorybook')");
+    }
+  });
+
+  it('uses ESM import for an .mjs config even without existing import/export', () => {
+    const before = 'module.exports = {};\n';
+    const transformed = transformMetroConfigSource(before, path.join(tempDir, 'metro.config.mjs'));
+
+    expect(transformed.action).toBe('updated');
+    if (transformed.action === 'updated') {
+      expect(transformed.code).toContain(
+        "import { withStorybook } from '@storybook/react-native/withStorybook'"
+      );
+    }
+  });
+
   it('does not treat import/export text inside template literals as ESM for .ts import injection', () => {
     const before = `
 const hint = \`

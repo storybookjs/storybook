@@ -267,7 +267,7 @@ export const transformMetroConfigSource = (source: string, filePath: string): Tr
   }
 
   if (!hasWithStorybookBinding(program)) {
-    const shouldUseEsmImport = filePath.endsWith('.ts') && usesEsmSyntax(program);
+    const shouldUseEsmImport = usesEsmSyntax(program) || filePath.endsWith('.mjs');
     injectWithStorybookImport(program, shouldUseEsmImport);
   }
 

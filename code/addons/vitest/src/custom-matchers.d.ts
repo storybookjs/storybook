@@ -4,6 +4,6 @@ import type { LiveRegionMatcherOptions } from '../../../core/src/shared/utils/to
 
 declare module 'storybook/test' {
   interface Assertion<T> {
-    toHaveLiveRegion(options: LiveRegionMatcherOptions): Promise<void>;
+    toHaveLiveRegion(options?: LiveRegionMatcherOptions): Promise<void>;
   }
 }

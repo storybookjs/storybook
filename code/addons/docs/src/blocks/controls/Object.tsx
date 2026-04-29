@@ -1,12 +1,13 @@
 import type { FC, FocusEvent, SyntheticEvent } from 'react';
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 
 import { Button, Form, ToggleButton } from 'storybook/internal/components';
+import { announce, destroyAnnouncer } from '@react-aria/live-announcer';
 
 import { AddIcon, EditIcon, SubtractIcon } from '@storybook/icons';
 
 import { cloneDeep } from 'es-toolkit/object';
-import { styled, useTheme } from 'storybook/theming';
+import { styled } from 'storybook/theming';
 
 import { getControlId, getControlSetterButtonId } from './helpers';
 import { JsonTree } from './react-editable-json-tree';
@@ -126,7 +127,7 @@ const Input = styled.input(({ theme, placeholder }) => ({
   },
 }));
 
-const RawButton = styled(ToggleButton)({
+const RawButtonWrapper = styled.div({
   alignSelf: 'flex-start',
   order: 2,
   marginRight: -10,
@@ -138,13 +139,31 @@ const RawInput = styled(Form.Textarea)(({ theme }) => ({
   fontFamily: theme.typography.fonts.mono,
   fontSize: '12px',
   lineHeight: '18px',
-  '&::placeholder': {
-    fontFamily: theme.typography.fonts.base,
-    fontSize: '13px',
-  },
-  '&:placeholder-shown': {
-    padding: '7px 10px',
-  },
+}));
+
+const RawInputWrapper = styled.div({
+  position: 'relative',
+  flex: 1,
+  display: 'grid',
+  gap: 6,
+});
+
+const RawInputLabel = styled.span(({ theme }) => ({
+  position: 'absolute',
+  top: 7,
+  left: 6,
+  color: theme.textMutedColor,
+  fontFamily: theme.typography.fonts.mono,
+  fontSize: '12px',
+  lineHeight: '18px',
+  cursor: 'text',
+  pointerEvents: 'none',
+}));
+
+const ErrorMessage = styled.p(({ theme }) => ({
+  margin: 0,
+  color: theme.base === 'dark' ? theme.color.negative : theme.color.negativeText,
+  fontSize: theme.typography.size.s2,
 }));
 
 const ENTER_EVENT = {
@@ -164,13 +183,27 @@ const selectValue = (event: SyntheticEvent<HTMLInputElement>) => {
 export type ObjectProps = ControlProps<ObjectValue> & ObjectConfig;
 
 export const ObjectControl: FC<ObjectProps> = ({ name, storyId, value, onChange, argType }) => {
-  const theme = useTheme();
   const data = useMemo(() => value && cloneDeep(value), [value]);
   const hasData = data !== null && data !== undefined;
   const [showRaw, setShowRaw] = useState(!hasData);
+  const [isRawFocused, setIsRawFocused] = useState(false);
 
   const [parseError, setParseError] = useState<Error | null>(null);
   const readonly = !!argType?.table?.readonly;
+  const controlId = getControlId(name, storyId);
+  const jsonErrorId = `${controlId}-error`;
+
+  const validateRaw = useCallback((raw: string) => {
+    try {
+      if (raw) {
+        JSON.parse(raw);
+      }
+      setParseError(null);
+    } catch (e) {
+      setParseError(e as Error);
+    }
+  }, []);
+
   const updateRaw: (raw: string) => void = useCallback(
     (raw) => {
       try {
@@ -198,10 +231,34 @@ export const ObjectControl: FC<ObjectProps> = ({ name, storyId, value, onChange,
     }
   }, [forceVisible]);
 
-  // Use string value as key to force re-render on Arg value reset.
+  // Keep a stable serialized snapshot so raw-mode editing can sync back to external Arg updates.
   const jsonString = useMemo(() => {
-    return JSON.stringify(data ?? '', null, 2);
+    return JSON.stringify(data ?? '', null, 2) ?? '';
   }, [data]);
+  const [rawValue, setRawValue] = useState(jsonString);
+  const isRawEmpty = rawValue.length === 0;
+
+  useEffect(() => {
+    if (showRaw) {
+      setParseError(null);
+    }
+  }, [jsonString, showRaw]);
+
+  useLayoutEffect(() => {
+    setRawValue(jsonString);
+  }, [jsonString, showRaw]);
+
+  const rawJsonEditorLabel = `Edit ${name} as JSON`;
+
+  useEffect(() => {
+    if (parseError) {
+      announce(`Invalid JSON: ${parseError.message}`);
+    } else {
+      destroyAnnouncer();
+    }
+
+    return () => destroyAnnouncer();
+  }, [parseError]);
 
   if (!hasData) {
     return (
@@ -217,41 +274,70 @@ export const ObjectControl: FC<ObjectProps> = ({ name, storyId, value, onChange,
   }
 
   const rawJSONForm = (
-    <RawInput
-      ref={htmlElRef}
-      id={getControlId(name, storyId)}
-      minRows={3}
-      name={name}
-      key={jsonString}
-      defaultValue={jsonString}
-      onBlur={(event: FocusEvent<HTMLTextAreaElement>) => updateRaw(event.target.value)}
-      placeholder="Edit JSON string..."
-      autoFocus={forceVisible}
-      valid={parseError ? 'error' : undefined}
-      readOnly={readonly}
-    />
+    <RawInputWrapper>
+      <label htmlFor={controlId} className="sb-sr-only">
+        {rawJsonEditorLabel}
+      </label>
+      <RawInput
+        ref={htmlElRef}
+        id={controlId}
+        minRows={3}
+        name={name}
+        value={rawValue}
+        onChange={(event) => {
+          const nextRawValue = event.target.value;
+          setRawValue(nextRawValue);
+          validateRaw(nextRawValue);
+        }}
+        onFocus={() => setIsRawFocused(true)}
+        onBlur={(event: FocusEvent<HTMLTextAreaElement>) => {
+          setIsRawFocused(false);
+          updateRaw(event.target.value);
+        }}
+        autoFocus={forceVisible}
+        valid={parseError ? 'error' : undefined}
+        aria-invalid={!!parseError}
+        aria-describedby={parseError ? jsonErrorId : undefined}
+        readOnly={readonly}
+      />
+      {!readonly && !isRawFocused && isRawEmpty && (
+        <RawInputLabel aria-hidden="true">{rawJsonEditorLabel}</RawInputLabel>
+      )}
+      {parseError && (
+        <ErrorMessage id={jsonErrorId}>Invalid JSON: {parseError.message}</ErrorMessage>
+      )}
+    </RawInputWrapper>
   );
 
   const isObjectOrArray =
     Array.isArray(value) || (typeof value === 'object' && value?.constructor === Object);
 
+  const tooltip = showRaw
+    ? `Return to structured editor for ${name}`
+    : `Open raw JSON editor for ${name}`;
+
   return (
     <Wrapper>
       {isObjectOrArray && (
-        <RawButton
-          disabled={readonly}
-          pressed={showRaw}
-          ariaLabel={`Edit ${name} as JSON`}
-          onClick={(e: SyntheticEvent) => {
-            e.preventDefault();
-            setShowRaw((isRaw) => !isRaw);
-          }}
-          variant="ghost"
-          padding="small"
-          size="small"
-        >
-          <EditIcon />
-        </RawButton>
+        <>
+          <RawButtonWrapper>
+            <ToggleButton
+              pressed={showRaw}
+              ariaLabel={`Edit ${name} as JSON`}
+              ariaDescription="Toggle between the structured object editor and the raw JSON editor."
+              tooltip={tooltip}
+              variant="ghost"
+              padding="small"
+              size="small"
+              onClick={(e) => {
+                e.preventDefault();
+                setShowRaw((isRaw) => !isRaw);
+              }}
+            >
+              <EditIcon />
+            </ToggleButton>
+          </RawButtonWrapper>
+        </>
       )}
       {!showRaw ? (
         <JsonTree

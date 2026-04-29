@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
+import { destroyAnnouncer } from '@react-aria/live-announcer';
 
-import { fn } from 'storybook/test';
+import { expect, fireEvent, fn, waitFor, within } from 'storybook/test';
 
 import { ObjectControl } from './Object';
 
@@ -11,6 +12,9 @@ const meta = {
   args: {
     name: 'object',
     onChange: fn(),
+  },
+  beforeEach: async () => {
+    destroyAnnouncer();
   },
 } satisfies Meta<typeof ObjectControl>;
 
@@ -138,5 +142,98 @@ export const ArraySmallViewport: Story = {
   },
   parameters: {
     chromatic: { viewports: [320] },
+  },
+};
+
+export const JsonEditorValidation: Story = {
+  args: {
+    value: { label: 'value' },
+    onChange: fn(),
+  },
+  play: async ({ args, canvasElement, step }) => {
+    const canvas = within(canvasElement);
+
+    await step('Open the raw JSON editor and verify it is described', async () => {
+      const editAsJsonButton = canvas.getByRole('switch', { name: 'Edit object as JSON' });
+
+      await expect(editAsJsonButton).toHaveAttribute('aria-describedby');
+      await fireEvent.click(editAsJsonButton);
+      await expect(
+        canvas.getByRole('textbox', { name: 'Edit object as JSON' })
+      ).toBeInTheDocument();
+    });
+
+    await step('Show a parse error for invalid JSON', async () => {
+      const rawInput = canvas.getByRole('textbox', { name: 'Edit object as JSON' });
+
+      rawInput.focus();
+      await fireEvent.change(rawInput, { target: { value: '{"label":' } });
+      rawInput.blur();
+
+      await waitFor(() => {
+        expect(document.body).toHaveLiveRegion({
+          text: 'Invalid JSON: Unexpected end of JSON input',
+        });
+      });
+      await expect(rawInput).toHaveAttribute('aria-invalid', 'true');
+
+      const error = await canvas.findByText('Invalid JSON: Unexpected end of JSON input');
+      await expect(rawInput).toHaveAttribute('aria-describedby', error.getAttribute('id') ?? '');
+
+      await expect(args.onChange).not.toHaveBeenCalled();
+    });
+
+    await step('Clear the parse error after entering valid JSON', async () => {
+      const rawInput = canvas.getByRole('textbox', { name: 'Edit object as JSON' });
+
+      rawInput.focus();
+      await fireEvent.change(rawInput, { target: { value: '{"label":"updated"}' } });
+      rawInput.blur();
+
+      await waitFor(async () => {
+        await expect(document.body).not.toHaveLiveRegion();
+      });
+      await expect(rawInput).toHaveAttribute('aria-invalid', 'false');
+      await expect(rawInput).not.toHaveAttribute('aria-describedby');
+      await expect(args.onChange).toHaveBeenCalledWith({ label: 'updated' });
+    });
+  },
+};
+
+export const JsonEditorErrorReset: Story = {
+  args: {
+    value: { label: 'value' },
+    onChange: fn(),
+  },
+  play: async ({ canvas, step }) => {
+    await step('Create a parse error in the raw JSON editor', async () => {
+      const editAsJsonButton = canvas.getByRole('switch', { name: 'Edit object as JSON' });
+      await fireEvent.click(editAsJsonButton);
+
+      const rawInput = canvas.getByRole('textbox', { name: 'Edit object as JSON' });
+      rawInput.focus();
+      await fireEvent.change(rawInput, { target: { value: '{"label":' } });
+      rawInput.blur();
+
+      await waitFor(() => {
+        expect(document.body).toHaveLiveRegion({
+          text: 'Invalid JSON: Unexpected end of JSON input',
+        });
+      });
+      await expect(rawInput).toHaveAttribute('aria-invalid', 'true');
+    });
+
+    await step('Clear stale parse errors after closing and reopening the editor', async () => {
+      const editAsJsonButton = canvas.getByRole('switch', { name: 'Edit object as JSON' });
+      await fireEvent.click(editAsJsonButton);
+      await fireEvent.click(canvas.getByRole('switch', { name: 'Edit object as JSON' }));
+
+      const rawInput = canvas.getByRole('textbox', { name: 'Edit object as JSON' });
+      await waitFor(async () => {
+        await expect(document.body).not.toHaveLiveRegion();
+      });
+      await expect(rawInput).toHaveAttribute('aria-invalid', 'false');
+      await expect(rawInput).not.toHaveAttribute('aria-describedby');
+    });
   },
 };

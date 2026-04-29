@@ -14,7 +14,6 @@ const MCP_ENDPOINT = `http://localhost:${PORT}/mcp`;
 const STARTUP_TIMEOUT = 30_000;
 
 let storybookProcess: ReturnType<typeof x> | null = null;
-let hasRemoteSource = false;
 
 async function mcpRequest(method: string, params: any = {}) {
 	const response = await fetch(MCP_ENDPOINT, {
@@ -41,7 +40,7 @@ describe('MCP Composition E2E Tests', () => {
 			arguments: {},
 		});
 		const docsText = docsResponse.result.content[0].text as string;
-		hasRemoteSource = docsText.includes('id: storybook-ui');
+		expect(docsText).toContain('id: storybook-ui');
 	}, STARTUP_TIMEOUT);
 
 	afterAll(async () => {
@@ -59,16 +58,12 @@ describe('MCP Composition E2E Tests', () => {
 			const text = response.result.content[0].text;
 
 			// Should contain Local source
-			if (hasRemoteSource) {
-				expect(text).toContain('# Local');
-				expect(text).toContain('id: local');
-			}
+			expect(text).toContain('# Local');
+			expect(text).toContain('id: local');
 
 			// Should contain remote Storybook UI source
-			if (hasRemoteSource) {
-				expect(text).toContain('# Storybook UI');
-				expect(text).toContain('id: storybook-ui');
-			}
+			expect(text).toContain('# Storybook UI');
+			expect(text).toContain('id: storybook-ui');
 
 			// Local components should be present
 			expect(text).toContain('Button (example-button)');
@@ -182,11 +177,6 @@ describe('MCP Composition E2E Tests', () => {
 		});
 
 		it('should fetch documentation for a component from remote source', async () => {
-			if (!hasRemoteSource) {
-				expect(true).toBe(true);
-				return;
-			}
-
 			// Get documentation for a component that exists in the remote Storybook UI
 			const response = await mcpRequest('tools/call', {
 				name: 'get-documentation',
@@ -340,15 +330,11 @@ describe('MCP Composition E2E Tests', () => {
 			const getDocTool = response.result.tools.find((t: any) => t.name === 'get-documentation');
 
 			expect(getDocTool).toBeDefined();
-			if (hasRemoteSource) {
-				expect(getDocTool.inputSchema.properties).toHaveProperty('storybookId');
-				expect(getDocTool.inputSchema.properties.storybookId).toMatchObject({
-					type: 'string',
-					description: expect.stringContaining('source'),
-				});
-			} else {
-				expect(getDocTool.inputSchema.properties).not.toHaveProperty('storybookId');
-			}
+			expect(getDocTool.inputSchema.properties).toHaveProperty('storybookId');
+			expect(getDocTool.inputSchema.properties.storybookId).toMatchObject({
+				type: 'string',
+				description: expect.stringContaining('source'),
+			});
 		});
 	});
 });

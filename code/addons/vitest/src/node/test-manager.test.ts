@@ -28,6 +28,9 @@ const vitest = vi.hoisted(() => ({
   init: vi.fn(),
   close: vi.fn(),
   onCancel: vi.fn(),
+  logger: {
+    clearHighlightCache: vi.fn(),
+  },
   provide: vi.fn(),
   runTestSpecifications: vi.fn(),
   cancelCurrentRun: vi.fn(),
@@ -59,6 +62,13 @@ vi.mock('vitest/node', () => ({
 const createVitest = mockCreateVitest;
 
 beforeEach(() => {
+  vi.clearAllMocks();
+  mockStore.setState(() => ({
+    ...storeOptions.initialState,
+    index: mockIndex,
+  }));
+  vitest.projects = [{}];
+  vitest.config.coverage.enabled = false;
   createVitest.mockResolvedValue(vitest);
 });
 
@@ -250,6 +260,54 @@ describe('TestManager', () => {
       a11y: true,
       customFlag: 'custom-value',
     });
+  });
+
+  it('should refresh provided config before watch-triggered reruns', async () => {
+    vitest.globTestSpecifications.mockImplementation(() => tests);
+    vitest.projects = [
+      {
+        config: {
+          env: { __STORYBOOK_URL__: 'http://localhost:6006' },
+          root: process.cwd(),
+          setupFiles: [],
+        },
+        matchesTestGlob: vi.fn(),
+        vite: {
+          moduleGraph: {
+            getModuleById: vi.fn(),
+            getModulesByFile: vi.fn(() => []),
+            invalidateModule: vi.fn(),
+          },
+          transformRequest: vi.fn(),
+        },
+      },
+    ] as any;
+
+    const testManager = await TestManager.start(options);
+
+    await testManager.handleTriggerRunEvent({
+      type: 'TRIGGER_RUN',
+      payload: {
+        triggeredBy: 'global',
+      },
+    });
+
+    vitest.provide.mockClear();
+    mockStore.setState((s) => ({
+      ...s,
+      watching: true,
+      config: { coverage: false, a11y: true },
+    }));
+
+    vi.spyOn(testManager.vitestManager as any, 'getTestDependencies').mockResolvedValue(new Set());
+
+    await testManager.vitestManager.runAffectedTestsAfterChange(tests[0].moduleId, 'change');
+
+    expect(vitest.provide).toHaveBeenCalledWith(STORYBOOK_TEST_PROVIDE_KEY, {
+      coverage: false,
+      a11y: true,
+    });
+    expect(vitest.runTestSpecifications).toHaveBeenLastCalledWith(tests.slice(0, 1), false);
   });
 
   it('should persist all reports in currentRun', async () => {

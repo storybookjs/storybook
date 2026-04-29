@@ -533,6 +533,7 @@ export class VitestManager {
         }));
         await this.vitest!.cancelCurrentRun('keyboard-input');
         await this.runningPromise;
+        this.provideRunConfig();
         await this.vitest!.runTestSpecifications(filteredTestSpecifications, false);
       },
     });

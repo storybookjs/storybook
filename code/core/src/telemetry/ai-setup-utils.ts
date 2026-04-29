@@ -5,7 +5,7 @@ import { readFile } from 'node:fs/promises';
 
 import { findConfigFile } from 'storybook/internal/common';
 import { detectAgent } from './detect-agent.ts';
-import { isTelemetryModuleEnabled, telemetry } from './index.ts';
+import { telemetry } from './index.ts';
 import type { EventType } from './types.ts';
 import type { IndexEntry, StoryIndex } from 'storybook/internal/types';
 

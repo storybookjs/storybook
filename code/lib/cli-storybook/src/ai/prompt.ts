@@ -29,7 +29,7 @@ export function getPrompts(projectInfo: ProjectInfo): {
     prompts: [
       {
         name: 'setup',
-        description: 'Set up Storybook for success',
+        description: 'Configure Storybook for your codebase and write sample stories',
         instructions: getSetupInstructions(projectInfo),
       },
     ],

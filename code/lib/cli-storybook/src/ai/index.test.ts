@@ -47,7 +47,11 @@ vi.mock('../automigrate/helpers/mainConfigFile.ts', () => ({
 }));
 
 import { cache } from 'storybook/internal/common';
-import { snapshotPreviewFile, telemetry } from 'storybook/internal/telemetry';
+import {
+  isTelemetryModuleEnabled,
+  snapshotPreviewFile,
+  telemetry,
+} from 'storybook/internal/telemetry';
 
 import { aiSetup } from './index.ts';
 
@@ -75,6 +79,8 @@ describe('aiSetup telemetry gating', () => {
   });
 
   it('skips snapshot + cache write when telemetry is disabled', async () => {
+    vi.mocked(isTelemetryModuleEnabled).mockReturnValueOnce(false);
+
     await aiSetup({ configDir: '/proj/.storybook', disableTelemetry: true });
 
     expect(vi.mocked(snapshotPreviewFile)).not.toHaveBeenCalled();

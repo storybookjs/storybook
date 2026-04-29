@@ -266,15 +266,17 @@ describe('UserPreferencesCommand', () => {
       vi.mocked(prompt.select).mockResolvedValueOnce(true); // new user
       vi.mocked(prompt.confirm).mockResolvedValueOnce(true); // AI setup: yes
 
-      const result = await command.execute({
-        ...defaultExecuteOptions,
-        isAiSetupAvailable: true,
-      });
+      try {
+        const result = await command.execute({
+          ...defaultExecuteOptions,
+          isAiSetupAvailable: true,
+        });
 
-      delete process.env.IN_STORYBOOK_SANDBOX;
-
-      expect(result.selectedFeatures.has(Feature.AI)).toBe(true);
-      expect(result.selectedFeatures.has(Feature.ONBOARDING)).toBe(true);
+        expect(result.selectedFeatures.has(Feature.AI)).toBe(true);
+        expect(result.selectedFeatures.has(Feature.ONBOARDING)).toBe(true);
+      } finally {
+        delete process.env.IN_STORYBOOK_SANDBOX;
+      }
     });
 
     it('should not include AI feature when user declines AI setup', async () => {

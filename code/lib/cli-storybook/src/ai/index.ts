@@ -2,6 +2,7 @@ import { writeFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 
 import type { PackageManagerName } from 'storybook/internal/common';
+import { getPrettyPackageManagerName } from 'storybook/internal/common';
 import { cache } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
 import {
@@ -49,7 +50,7 @@ export async function aiSetup(options: AiSetupOptions): Promise<void> {
         addons: data.addons ?? [],
         configDir: data.configDir,
         storiesPaths: data.storiesPaths,
-        packageManager: packageManagerName,
+        packageManager: getPrettyPackageManagerName(packageManagerName),
         language,
       };
     }

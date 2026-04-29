@@ -63,10 +63,6 @@ import reactDomShimConfig from '../../../code/lib/react-dom-shim/build-config';
 // @ts-ignore
 import presetCraConfig from '../../../code/presets/create-react-app/build-config';
 // @ts-ignore
-import presetReactWebpackConfig from '../../../code/presets/react-webpack/build-config';
-// @ts-ignore
-import presetServerWebpackConfig from '../../../code/presets/server-webpack/build-config';
-// @ts-ignore
 import htmlRendererConfig from '../../../code/renderers/html/build-config';
 // @ts-ignore
 import preactRendererConfig from '../../../code/renderers/preact/build-config';
@@ -125,8 +121,6 @@ export const buildEntries = {
 
   // presets
   '@storybook/preset-create-react-app': presetCraConfig,
-  '@storybook/preset-react-webpack': presetReactWebpackConfig,
-  '@storybook/preset-server-webpack': presetServerWebpackConfig,
 
   // renderers
   '@storybook/html': htmlRendererConfig,

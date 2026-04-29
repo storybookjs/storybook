@@ -33,8 +33,6 @@ export default {
   'eslint-plugin-storybook': '10.4.0-alpha.10',
   '@storybook/react-dom-shim': '10.4.0-alpha.10',
   '@storybook/preset-create-react-app': '10.4.0-alpha.10',
-  '@storybook/preset-react-webpack': '10.4.0-alpha.10',
-  '@storybook/preset-server-webpack': '10.4.0-alpha.10',
   '@storybook/html': '10.4.0-alpha.10',
   '@storybook/preact': '10.4.0-alpha.10',
   '@storybook/react': '10.4.0-alpha.10',

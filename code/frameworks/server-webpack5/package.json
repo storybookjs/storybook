@@ -29,6 +29,7 @@
       "code": "./src/index.ts",
       "default": "./dist/index.js"
     },
+    "./loader": "./dist/loader.js",
     "./node": {
       "types": "./dist/node/index.d.ts",
       "code": "./src/node/index.ts",
@@ -47,8 +48,11 @@
   ],
   "dependencies": {
     "@storybook/builder-webpack5": "workspace:*",
-    "@storybook/preset-server-webpack": "workspace:*",
-    "@storybook/server": "workspace:*"
+    "@storybook/core-webpack": "workspace:*",
+    "@storybook/server": "workspace:*",
+    "safe-identifier": "^0.4.2",
+    "ts-dedent": "^2.0.0",
+    "yaml-loader": "^0.8.1"
   },
   "devDependencies": {
     "@types/node": "^22.19.1",

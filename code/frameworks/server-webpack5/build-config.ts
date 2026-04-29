@@ -15,6 +15,11 @@ const config: BuildEntries = {
         dts: false,
       },
       {
+        exportEntries: ['./loader'],
+        entryPoint: './src/loader.ts',
+        dts: false,
+      },
+      {
         exportEntries: ['./node'],
         entryPoint: './src/node/index.ts',
       },

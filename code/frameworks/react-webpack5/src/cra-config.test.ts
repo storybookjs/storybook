@@ -1,11 +1,11 @@
-import fs from 'node:fs';
+import * as fs from 'node:fs';
 import { join, sep } from 'node:path';
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { getReactScriptsPath } from './cra-config.ts';
 
-vi.mock('fs', () => ({
+vi.mock('node:fs', () => ({
   realpathSync: vi.fn(() => '/test-project'),
   readFileSync: vi.fn(),
   existsSync: vi.fn(() => true),
@@ -44,8 +44,6 @@ describe('cra-config', () => {
 
   describe('when used with a custom react-scripts package without symlinks in .bin folder', () => {
     beforeEach(() => {
-      // In case of .bin/react-scripts is not symlink (like it happens on Windows),
-      // realpathSync() method does not translate the path.
       vi.mocked(fs.realpathSync).mockImplementationOnce((filePath) => filePath.toString());
 
       vi.mocked(fs.readFileSync).mockImplementationOnce(

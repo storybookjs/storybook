@@ -14,8 +14,8 @@ const reactDocgenResolverMock = vi.hoisted(() => {
   };
 });
 
-vi.mock('./docgen-resolver', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('path')>();
+vi.mock('./docgen-resolver.ts', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('./docgen-resolver.ts')>();
   return {
     ...actual,
     defaultLookupModule: reactDocgenResolverMock.defaultLookupModule,
@@ -23,7 +23,7 @@ vi.mock('./docgen-resolver', async (importOriginal) => {
 });
 
 vi.mock('react-docgen', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('path')>();
+  const actual = await importOriginal<typeof import('react-docgen')>();
   return {
     ...actual,
     makeFsImporter: reactDocgenMock.makeFsImporter,

@@ -1,3 +1,15 @@
+/**
+ * Prompt variant: `setup`
+ *
+ * - Created: 2026-04-15 (eval iteration 1, baseline before `pattern-copy-play`)
+ * - Status: experimental — not the default. Selected only when the eval
+ *   harness sets `EVAL_SETUP_PROMPT=setup`.
+ * - Reference eval results:
+ *   https://github.com/search?q=is:pr label:"prompt:setup" org:storybook-tmp&type=pullrequests
+ *
+ * Update this header when iterating: bump the iteration number and link the
+ * latest eval run so reviewers can compare variants without spelunking git.
+ */
 import { dedent } from 'ts-dedent';
 
 import type { ProjectInfo } from '../types.ts';

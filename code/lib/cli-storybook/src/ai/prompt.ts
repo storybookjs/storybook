@@ -1,7 +1,7 @@
 import { dedent } from 'ts-dedent';
 
 import type { ProjectInfo } from './types.ts';
-import { getPrompts } from './prompts/index.ts';
+import { getPrompts } from './setup-prompts/index.ts';
 
 function getProjectOverview(projectInfo: ProjectInfo): string {
   return dedent`
@@ -19,10 +19,10 @@ function getProjectOverview(projectInfo: ProjectInfo): string {
   `;
 }
 
-export function generateMarkdownOutput(projectInfo: ProjectInfo): {
+export async function generateMarkdownOutput(projectInfo: ProjectInfo): Promise<{
   markdown: string;
-} {
-  const { prompts: aiPrompts } = getPrompts(projectInfo);
+}> {
+  const { prompts: aiPrompts } = await getPrompts(projectInfo);
 
   const sections: string[] = [];
 

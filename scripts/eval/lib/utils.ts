@@ -6,7 +6,7 @@ import { AI_SETUP_PROMPT } from '../../../code/core/src/shared/constants/ai-prom
 import {
   DEFAULT_PROMPT_NAME,
   PROMPT_NAMES,
-} from '../../../code/lib/cli-storybook/src/ai/prompts/index.ts';
+} from '../../../code/lib/cli-storybook/src/ai/setup-prompts/index.ts';
 
 export interface Logger {
   log: (msg: string) => void;

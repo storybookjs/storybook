@@ -74,8 +74,11 @@ export async function runTrial(config: TrialConfig, logger?: Logger): Promise<Ru
   // 5. Capture the full markdown the agent will receive from `ai setup` so
   //    the trial record contains a reproducible, project-aware snapshot of
   //    the instructions (not just the one-line nudge). Runs the same CLI the
-  //    agent will run, in the same workspace, with the same env.
+  //    agent will run, in the same workspace, with the same env. Persisted as
+  //    a separate file so the resulting PR diff shows the exact instructions
+  //    the agent was given for this trial.
   const promptContent = await captureAiSetupMarkdown(workspace.projectPath, promptName, log);
+  await writeFile(join(workspace.resultsDir, 'setup-prompt.md'), promptContent);
 
   // 6. Execute the agent. EVAL_SETUP_PROMPT is forwarded into the agent's
   //    environment so its `ai setup` tool call resolves to the selected
@@ -195,7 +198,7 @@ export async function runTrial(config: TrialConfig, logger?: Logger): Promise<Ru
  * capturing the prompt content is bookkeeping, not the thing being measured,
  * so it must never abort the trial.
  */
-async function captureAiSetupMarkdown(
+export async function captureAiSetupMarkdown(
   projectPath: string,
   promptName: string,
   log: Logger

@@ -31,7 +31,7 @@ import {
 } from './lib/agents/config.ts';
 import { prepareTrial } from './lib/prepare-trial.ts';
 import { PROJECTS } from './lib/projects.ts';
-import { runTrial, type TrialConfig } from './lib/run-trial.ts';
+import { captureAiSetupMarkdown, runTrial, type TrialConfig } from './lib/run-trial.ts';
 import {
   captureEnvironment,
   createLogger,
@@ -192,12 +192,21 @@ if (args.manual) {
   const promptPath = join(workspace.resultsDir, 'prompt.md');
   await writeFile(promptPath, prompt);
 
+  const setupPromptPath = join(workspace.resultsDir, 'setup-prompt.md');
+  const setupPromptContent = await captureAiSetupMarkdown(
+    workspace.projectPath,
+    promptName,
+    logger
+  );
+  await writeFile(setupPromptPath, setupPromptContent);
+
   const cliCommand = buildManualCommand(variant, promptPath, promptName);
 
   logger.log(pc.bold('\n── Manual mode ──'));
-  logger.log(`\n  Trial dir:    ${pc.cyan(workspace.trialDir)}`);
-  logger.log(`  Project dir:  ${pc.cyan(workspace.projectPath)}`);
-  logger.log(`  Prompt file:  ${pc.cyan(promptPath)}`);
+  logger.log(`\n  Trial dir:        ${pc.cyan(workspace.trialDir)}`);
+  logger.log(`  Project dir:      ${pc.cyan(workspace.projectPath)}`);
+  logger.log(`  Prompt file:      ${pc.cyan(promptPath)}`);
+  logger.log(`  Setup prompt:     ${pc.cyan(setupPromptPath)}`);
   logger.log(pc.bold('\nRun the agent yourself:\n'));
   logger.log(`  ${pc.green('cd')} ${workspace.projectPath}`);
   logger.log(`  ${pc.green(cliCommand)}\n`);

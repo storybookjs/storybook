@@ -217,7 +217,7 @@ describe('runTrial pipeline', () => {
     });
   });
 
-  it('writes data.json and prompt.md to results dir', async () => {
+  it('writes data.json, prompt.md, and setup-prompt.md to results dir', async () => {
     setupMocks();
 
     await runTrial(baseConfig);
@@ -260,6 +260,10 @@ describe('runTrial pipeline', () => {
 
     const promptContent = readFileSync(join(resultsDir, 'prompt.md'), 'utf-8');
     expect(promptContent).toContain('npx storybook ai setup');
+
+    const setupPromptContent = readFileSync(join(resultsDir, 'setup-prompt.md'), 'utf-8');
+    expect(setupPromptContent).toContain('Full project-aware instructions');
+
     expect(() => readFileSync(join(resultsDir, 'summary.json'), 'utf-8')).toThrow();
     expect(() => readFileSync(join(resultsDir, 'transcript.json'), 'utf-8')).toThrow();
   });

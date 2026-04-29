@@ -16,6 +16,7 @@ vi.mock('storybook/internal/telemetry', () => ({
   snapshotPreviewFile: vi
     .fn()
     .mockResolvedValue({ previewPath: '/proj/.storybook/preview.ts', previewHash: 'abc' }),
+  isTelemetryModuleEnabled: vi.fn(() => true),
 }));
 
 vi.mock('storybook/internal/node-logger', () => ({

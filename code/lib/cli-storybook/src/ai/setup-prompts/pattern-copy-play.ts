@@ -1,3 +1,15 @@
+/**
+ * Prompt variant: `pattern-copy-play` (current default for `npx storybook ai setup`)
+ *
+ * - Created: 2026-04-22 (eval iteration 2, default since this PR)
+ * - Status: shipping default — produced by every `ai setup` invocation
+ *   without `EVAL_SETUP_PROMPT` set.
+ * - Reference eval results:
+ *   https://github.com/search?q=is:pr label:"prompt:pattern-copy-play" org:storybook-tmp&type=pullrequests
+ *
+ * Update this header when iterating: bump the iteration number and link the
+ * latest eval run so reviewers can compare variants without spelunking git.
+ */
 import { dedent } from 'ts-dedent';
 
 import type { ProjectInfo } from '../types.ts';

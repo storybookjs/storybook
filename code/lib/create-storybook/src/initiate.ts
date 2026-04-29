@@ -168,8 +168,7 @@ export async function doInitiate(options: CommandOptions): Promise<
   await telemetryService.trackInitWithContext(projectType, selectedFeatures, newUser);
 
   // Signal dev to redirect to onboarding on first run
-  const shouldOnboard = newUser;
-  if (shouldOnboard && FeatureCompatibilityService.supportsOnboarding(projectType)) {
+  if (selectedFeatures.has(Feature.ONBOARDING)) {
     await cache.set('onboarding-pending', true).catch(() => {});
   }
 

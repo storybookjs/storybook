@@ -211,6 +211,11 @@ export class UserPreferencesCommand {
       if (isTestFeatureAvailable) {
         features.add(Feature.TEST);
       }
+
+      // We leave onboarding for sandboxes as we test onboarding in CI
+      if (!process.env.IN_STORYBOOK_SANDBOX) {
+        features.delete(Feature.ONBOARDING);
+      }
     }
 
     return features;

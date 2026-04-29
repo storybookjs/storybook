@@ -16,8 +16,8 @@ import type { ViteDevServer } from 'vite';
  *   events with normalised absolute paths. Other chokidar event names (`addDir`, `unlinkDir`,
  *   `ready`, `raw`, `error`) are intentionally filtered out.
  *
- * `tsconfigPath` is left undefined unless the user explicitly set `resolve.tsconfig`. When omitted,
- * oxc-resolver auto-discovers tsconfig files by walking up from each parent dir.
+ * `tsconfigPath` is left undefined so oxc-resolver auto-discovers tsconfig files by walking up
+ * from each parent dir.
  */
 export function createViteChangeDetectionAdapter(server: ViteDevServer): ChangeDetectionAdapter {
   return {
@@ -28,13 +28,9 @@ export function createViteChangeDetectionAdapter(server: ViteDevServer): ChangeD
       // the array through unchanged.
       const alias = resolveOpts?.alias as ModuleResolveConfig['alias'];
       const conditions = resolveOpts?.conditions;
-      // `tsconfig` is a non-standard Vite config option — only present when the user set it
-      // explicitly. We forward it as-is; otherwise leave undefined so oxc-resolver auto-discovers.
-      const tsconfigPath = (resolveOpts as { tsconfig?: string } | undefined)?.tsconfig;
 
       return {
         projectRoot: server.config.root,
-        tsconfigPath,
         alias,
         conditions,
       };

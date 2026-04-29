@@ -1,5 +1,6 @@
 import { cpus } from 'node:os';
 
+import pLimit from 'p-limit';
 import { normalize } from 'pathe';
 
 import { logger as defaultLogger } from 'storybook/internal/node-logger';
@@ -63,7 +64,6 @@ export class DependencyGraphBuilder {
     const reverseIndex = new ReverseIndexImpl();
     const graph: DependencyGraph = new Map();
 
-    const { default: pLimit } = await import('p-limit');
     const limit = pLimit(cpus().length * 2);
 
     const stories = Array.from(storyFiles, (s) => normalize(s));

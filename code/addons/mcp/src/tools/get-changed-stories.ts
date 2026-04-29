@@ -92,8 +92,7 @@ export async function addGetChangedStoriesTool(server: McpServer<any, AddonConte
 		{
 			name: GET_CHANGED_STORIES_TOOL_NAME,
 			title: 'Get changed stories metadata',
-			description: `Get Storybook stories marked as new, modified, or related.
-Returns story metadata only (no URLs).`,
+			description: `Get Storybook stories marked as new, modified, or related. Returns story metadata only (no URLs).`,
 			enabled: () => server.ctx.custom?.toolsets?.dev ?? true,
 		},
 		async () => {

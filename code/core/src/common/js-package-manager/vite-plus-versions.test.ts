@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { clearVitePlusCache, getVitePlusVersions } from './vite-plus-versions.ts';
+import { clearVitePlusCache, getVitePlusVersions } from './vite-plus-versions';
 
 vi.mock('storybook/internal/node-logger', () => ({
   logger: { debug: vi.fn() },
@@ -18,7 +18,7 @@ describe('getVitePlusVersions', () => {
     }));
 
     clearVitePlusCache();
-    const { getVitePlusVersions: fn } = await import('./vite-plus-versions.ts');
+    const { getVitePlusVersions: fn } = await import('./vite-plus-versions');
     clearVitePlusCache();
 
     const result = await fn();
@@ -39,7 +39,7 @@ describe('getVitePlusVersions', () => {
     });
 
     clearVitePlusCache();
-    const { getVitePlusVersions: fn } = await import('./vite-plus-versions.ts');
+    const { getVitePlusVersions: fn } = await import('./vite-plus-versions');
     clearVitePlusCache();
 
     const result = await fn();
@@ -55,7 +55,7 @@ describe('getVitePlusVersions', () => {
     }));
 
     clearVitePlusCache();
-    const { getVitePlusVersions: fn } = await import('./vite-plus-versions.ts');
+    const { getVitePlusVersions: fn } = await import('./vite-plus-versions');
     clearVitePlusCache();
 
     const result1 = await fn();
@@ -74,7 +74,7 @@ describe('getVitePlusVersions', () => {
     }));
 
     clearVitePlusCache();
-    const mod = await import('./vite-plus-versions.ts');
+    const mod = await import('./vite-plus-versions');
     mod.clearVitePlusCache();
 
     const result1 = await mod.getVitePlusVersions();
@@ -88,7 +88,7 @@ describe('getVitePlusVersions', () => {
     }));
 
     mod.clearVitePlusCache();
-    const { getVitePlusVersions: fn2 } = await import('./vite-plus-versions.ts');
+    const { getVitePlusVersions: fn2 } = await import('./vite-plus-versions');
     mod.clearVitePlusCache();
 
     const result2 = await fn2();

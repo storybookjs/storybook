@@ -38,12 +38,9 @@ export function findRootRoute(route: AnyRouteInstance): AnyRouteInstance {
     }
     const getParent = (current as any).options?.getParentRoute;
     const parent = typeof getParent === 'function' ? getParent() : undefined;
-    if (!parent || parent === current) {
-      return current;
-    }
+
     current = parent as AnyRouteInstance;
   }
-  return route;
 }
 
 function getOverrideFor(

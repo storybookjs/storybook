@@ -81,21 +81,36 @@ function resolveTree(Story: ComponentType, context: Parameters<Decorator>[1]): R
     return { tree, leaf };
   }
 
-  // No route instance — create a single-child synthetic tree from plain options.
-  const root = createRootRoute((routeOverrides as Record<string, any> | undefined)?.__root__ ?? {});
-  const child = createRoute({
+  // No route instance — build a synthetic root + child from plain options, then
+  // run it through `duplicateRouteTree` so any nested `children` Route instances
+  // attached to the user's plain options are cloned too.
+  const plainOptions = (routerParameterRoute ?? {}) as Record<string, unknown>;
+  const { children: plainChildren, ...plainRest } = plainOptions as {
+    children?: AnyRoute[];
+    [k: string]: unknown;
+  };
+  const syntheticRoot = createRootRoute(
+    (routeOverrides as Record<string, any> | undefined)?.__root__ ?? {}
+  );
+  const syntheticChild = createRoute({
     component: () => <Story />,
-    ...(routerParameterRoute as Record<string, unknown> | undefined),
-    path: ((routerParameterRoute as { path?: string } | undefined)?.path ?? '/') as any,
-    getParentRoute: () => root,
+    ...plainRest,
+    path: ((plainRest as { path?: string }).path ?? '/') as any,
+    getParentRoute: () => syntheticRoot,
   } as any);
-  root.addChildren([child]);
+  if (plainChildren?.length) {
+    for (const child of plainChildren) {
+      child.options.getParentRoute = () => syntheticChild;
+      child.update({ getParentRoute: () => syntheticChild } as any);
+    }
+    syntheticChild.addChildren(plainChildren);
+  }
+  syntheticRoot.addChildren([syntheticChild]);
 
-  const byId = new Map<string, AnyRoute>();
-  byId.set('__root__', root as unknown as AnyRoute);
-  byId.set(child.id, child as unknown as AnyRoute);
-
-  return { tree: { root, byId }, leaf: child as unknown as AnyRoute };
+  const tree = duplicateRouteTree(syntheticRoot as any, { overrides: routeOverrides });
+  const leaf = tree.byId.get(syntheticChild.id) ?? (tree.root as unknown as AnyRoute);
+  injectStoryComponent(leaf, Story, routeOverrides, leaf.id);
+  return { tree, leaf };
 }
 
 function createStoryRouter({
@@ -108,8 +123,8 @@ function createStoryRouter({
   const routeTree = tree.root;
 
   const inferredPath =
-    (routerParameters?.path as string | undefined) ||
-    ((leaf as any).fullPath as string | undefined) ||
+    routerParameters?.path ||
+    leaf.fullPath ||
     (routeTree.children as AnyRoute[] | undefined)?.[0]?.fullPath ||
     '/';
 

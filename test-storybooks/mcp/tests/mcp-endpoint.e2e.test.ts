@@ -11,7 +11,7 @@ import {
 
 const PORT = 6006;
 const MCP_ENDPOINT = `http://localhost:${PORT}/mcp`;
-const STARTUP_TIMEOUT = 60_000;
+const STARTUP_TIMEOUT = 30_000;
 
 let storybookProcess: ReturnType<typeof x> | null = null;
 

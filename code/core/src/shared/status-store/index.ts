@@ -71,6 +71,18 @@ export type StatusStoreEvent = {
   payload: Status[];
 };
 
+export function countStatusesByValue(
+  allStatuses: StatusesByStoryIdAndTypeId
+): Record<StatusValue, number> {
+  const counts = {} as Record<StatusValue, number>;
+  for (const statusByTypeId of Object.values(allStatuses)) {
+    for (const status of Object.values(statusByTypeId)) {
+      counts[status.value] = (counts[status.value] ?? 0) + 1;
+    }
+  }
+  return counts;
+}
+
 export type StatusStore = {
   getAll: () => StatusesByStoryIdAndTypeId;
   set: (statuses: Status[]) => void;

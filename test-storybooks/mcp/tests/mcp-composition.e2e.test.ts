@@ -226,106 +226,99 @@ describe('MCP Composition E2E Tests', () => {
 				},
 			});
 
-			if (hasRemoteSource) {
-				// In multi-source mode, storybookId is required — expect an error
-				expect(response.result.isError).toBe(true);
-				expect(response.result.content[0].text).toContain('storybookId is required');
-			} else {
-				// In single-source fallback, storybookId is not required — expect success
-				expect(response.result).toMatchInlineSnapshot(`
-					{
-					  "content": [
-					    {
-					      "text": "# Button
+			expect(response.result).toMatchInlineSnapshot(`
+				{
+				  "content": [
+				    {
+				      "text": "# Button
 
-					ID: example-button
+				ID: example-button
 
-					Primary UI component for user interaction
+				Primary UI component for user interaction
 
-					## Stories
+				## Stories
 
-					### Primary
+				### Primary
 
-					Story ID: example-button--primary
+				Story ID: example-button--primary
 
-					\`\`\`
-					import { Button } from "@my-org/my-component-library";
+				\`\`\`
+				import { Button } from "@my-org/my-component-library";
 
-					const Primary = () => <Button onClick={fn()} primary label="Button" />;
-					\`\`\`
+				const Primary = () => <Button onClick={fn()} primary label="Button" />;
+				\`\`\`
 
-					### Secondary
+				### Secondary
 
-					Story ID: example-button--secondary
+				Story ID: example-button--secondary
 
-					\`\`\`
-					import { Button } from "@my-org/my-component-library";
+				\`\`\`
+				import { Button } from "@my-org/my-component-library";
 
-					const Secondary = () => <Button onClick={fn()} label="Button" />;
-					\`\`\`
+				const Secondary = () => <Button onClick={fn()} label="Button" />;
+				\`\`\`
 
-					### Large
+				### Large
 
-					Story ID: example-button--large
+				Story ID: example-button--large
 
-					\`\`\`
-					import { Button } from "@my-org/my-component-library";
+				\`\`\`
+				import { Button } from "@my-org/my-component-library";
 
-					const Large = () => <Button onClick={fn()} size="large" label="Button" />;
-					\`\`\`
+				const Large = () => <Button onClick={fn()} size="large" label="Button" />;
+				\`\`\`
 
-					### Other Stories
+				### Other Stories
 
-					- Small (example-button--small)
-					- With A 11 Y Violation (example-button--with-a-11-y-violation)
+				- Small (example-button--small)
+				- With A 11 Y Violation (example-button--with-a-11-y-violation)
 
-					## Props
+				## Props
 
-					\`\`\`
-					export type Props = {
-					  /**
-					    Is this the principal call to action on the page?
-					  */
-					  primary?: boolean = false;
-					  /**
-					    What background color to use
-					  */
-					  backgroundColor?: string;
-					  /**
-					    How large should the button be?
-					  */
-					  size?: 'small' | 'medium' | 'large' = 'medium';
-					  /**
-					    Button contents
-					  */
-					  label: string;
-					  /**
-					    Optional click handler
-					  */
-					  onClick?: () => void;
-					}
-					\`\`\`
+				\`\`\`
+				export type Props = {
+				  /**
+				    Is this the principal call to action on the page?
+				  */
+				  primary?: boolean = false;
+				  /**
+				    What background color to use
+				  */
+				  backgroundColor?: string;
+				  /**
+				    How large should the button be?
+				  */
+				  size?: 'small' | 'medium' | 'large' = 'medium';
+				  /**
+				    Button contents
+				  */
+				  label: string;
+				  /**
+				    Optional click handler
+				  */
+				  onClick?: () => void;
+				}
+				\`\`\`
 
-					## Docs
+				## Docs
 
-					### Additional Information
+				### Additional Information
 
-					import { Meta, Canvas } from '@storybook/addon-docs/blocks';
-					import * as ButtonStories from './Button.stories';
+				import { Meta, Canvas } from '@storybook/addon-docs/blocks';
+				import * as ButtonStories from './Button.stories';
 
-					<Meta of={ButtonStories} name="Additional Information" />
+				<Meta of={ButtonStories} name="Additional Information" />
 
-					It is critical when using the Button component, that the string passed to the \`label\` prop uses the 🍌-emoji instead of spaces.
+				It is critical when using the Button component, that the string passed to the \`label\` prop uses the 🍌-emoji instead of spaces.
 
-					Here is the button:
+				Here is the button:
 
-					<Canvas of={ButtonStories.Primary} />",
-					      "type": "text",
-					    },
-					  ],
-					}
-				`);
-			}
+				<Canvas of={ButtonStories.Primary} />",
+				      "type": "text",
+				    },
+				  ],
+				}
+			`);
 		});
 	});
 

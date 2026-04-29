@@ -347,8 +347,7 @@ describe('MCP Endpoint E2E Tests', () => {
 				    "title": "Get story preview URLs",
 				  },
 				  {
-				    "description": "Get Storybook stories marked as new, modified, or related.
-				Returns story metadata only (no URLs).",
+				    "description": "Get Storybook stories marked as new, modified, or related. Returns story metadata only (no URLs).",
 				    "inputSchema": {
 				      "properties": {},
 				      "type": "object",

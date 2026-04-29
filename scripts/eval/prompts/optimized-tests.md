@@ -18,10 +18,11 @@ Your goal is to make Storybook fully functional in this project: configure `.sto
 ## Rules of engagement (follow strictly — these are time budgets, not suggestions)
 
 1. **Discover with Glob/Grep/Read, not shell.** Never use `ls`, `find`, `cat`, `head`, `tail`, shell `grep`, `sed`, or `node -e` for discovery or for editing files in bulk — these are slower per call and violate caching. Concrete substitutions, no exceptions:
-    - List a directory → `Glob('src/components/*')`, not `ls src/components`.
-    - Search a string → `Grep('pattern', { path: 'src' })`, not `grep -rn ...` or `find ... | xargs grep`.
-    - Read a file → `Read('path/to/file')`, not `cat`/`head`/`tail`.
-    - Bulk-edit many files → multiple `Edit` calls (or `Edit` with `replace_all`), not `sed -i`.
+    - List a directory → `Glob('src/components/*')` (alt names: `search_files`, `file_search`), not `ls src/components`.
+    - Search a string → `Grep('pattern', { path: 'src' })` (alt names: `grep_search`, `search_files`), not `grep -rn ...` or `find ... | xargs grep`.
+    - Read a file → `Read('path/to/file')` (alt names: `read_file`), not `cat`/`head`/`tail`.
+    - Bulk-edit many files → multiple `Edit` calls (alt names: `apply_patch`, `replace_in_file`, `replace`), or one `Edit` with `replace_all` (alt names: `replace` with `allow_multiple`), not `sed -i`.
+
 2. **Never read or grep inside `node_modules`.** The imports shown in this prompt are correct — don't verify them by introspecting installed packages. If something seems off, re-read this prompt, not `node_modules`.
 3. **Read budget: ~12 files for discovery.** Before writing any code you may Read at most ~12 files (`index.html`, entry, App, providers, routing, root CSS, 2–3 representative pages/components, 1–2 hooks, 1 test). If you need more, summarize and move on.
 4. **Edit > Write.** For any file you've Read, use `Edit`. Use `Write` only for new files. The project already has a `.storybook/preview.tsx` from `storybook init` — **Edit** it, do not overwrite.

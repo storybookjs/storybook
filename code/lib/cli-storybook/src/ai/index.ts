@@ -23,7 +23,7 @@ import type { ProjectInfo, AiSetupOptions } from './types.ts';
 export async function aiSetup(options: AiSetupOptions): Promise<void> {
   const { configDir: userConfigDir, packageManager: packageManagerName, output } = options;
 
-  let projectInfo: ProjectInfo | undefined;
+  let projectInfo: ProjectInfo;
 
   try {
     const data = await getStorybookData({
@@ -31,38 +31,47 @@ export async function aiSetup(options: AiSetupOptions): Promise<void> {
       packageManagerName: packageManagerName as PackageManagerName | undefined,
     });
 
-    if (data.frameworkPackage && data.rendererPackage && data.builderPackage) {
-      const majorVersion = data.versionInstalled
-        ? parseMajorVersion(data.versionInstalled)
-        : undefined;
-
-      const projectTypeService = new ProjectTypeService(data.packageManager);
-      const detectedLanguage = await projectTypeService.detectLanguage();
-      const language = detectedLanguage === SupportedLanguage.TYPESCRIPT ? 'ts' : 'js';
-
-      projectInfo = {
-        storybookVersion: data.versionInstalled,
-        majorVersion,
-        framework: data.frameworkPackage,
-        rendererPackage: data.rendererPackage,
-        renderer: data.renderer,
-        builderPackage: data.builderPackage,
-        addons: data.addons ?? [],
-        configDir: data.configDir,
-        storiesPaths: data.storiesPaths,
-        packageManager: getPrettyPackageManagerName(packageManagerName),
-        language,
-      };
+    if (!data.frameworkPackage || !data.rendererPackage || !data.builderPackage) {
+      logger.error(
+        'Could not detect framework, renderer, or builder from your Storybook config. Make sure you are running this command from your project root, or specify --config-dir.'
+      );
+      return;
     }
-  } catch {
-    // No Storybook project (or unreadable config) — fall through and emit
-    // the generic prompt without a project metadata section.
+
+    const majorVersion = data.versionInstalled
+      ? parseMajorVersion(data.versionInstalled)
+      : undefined;
+
+    const projectTypeService = new ProjectTypeService(data.packageManager);
+    const detectedLanguage = await projectTypeService.detectLanguage();
+    const language = detectedLanguage === SupportedLanguage.TYPESCRIPT ? 'ts' : 'js';
+
+    projectInfo = {
+      storybookVersion: data.versionInstalled,
+      majorVersion,
+      framework: data.frameworkPackage,
+      rendererPackage: data.rendererPackage,
+      renderer: data.renderer,
+      builderPackage: data.builderPackage,
+      addons: data.addons ?? [],
+      configDir: data.configDir,
+      storiesPaths: data.storiesPaths,
+      packageManager: getPrettyPackageManagerName(packageManagerName),
+      language,
+    };
+  } catch (err) {
+    logger.error(
+      `Failed to read Storybook configuration: ${err instanceof Error ? err.message : String(err)}`
+    );
+    logger.log(
+      'Make sure you are running this command from your project root, or specify --config-dir.'
+    );
+    return;
   }
 
   if (
-    projectInfo &&
-    (projectInfo.rendererPackage !== '@storybook/react' ||
-      projectInfo.builderPackage !== '@storybook/builder-vite')
+    projectInfo.rendererPackage !== '@storybook/react' ||
+    projectInfo.builderPackage !== '@storybook/builder-vite'
   ) {
     logger.log(
       'AI-assisted setup is currently only available for projects using the React renderer with Vite builder. Detected renderer: ' +
@@ -73,23 +82,21 @@ export async function aiSetup(options: AiSetupOptions): Promise<void> {
     return;
   }
 
-  const result = await generateMarkdownOutput(projectInfo);
+  const result = await generateMarkdownOutput('Storybook Setup', projectInfo);
   const markdownOutput = result.markdown;
 
   await telemetry('ai-setup', {
     cliOptions: {
       output: output ? 'file' : undefined,
-      configDir: projectInfo?.configDir,
+      configDir: projectInfo.configDir,
       packageManager: packageManagerName,
     },
-    project: projectInfo
-      ? {
-          framework: projectInfo.framework,
-          renderer: projectInfo.rendererPackage,
-          builder: projectInfo.builderPackage,
-          language: projectInfo.language,
-        }
-      : undefined,
+    project: {
+      framework: projectInfo.framework,
+      renderer: projectInfo.rendererPackage,
+      builder: projectInfo.builderPackage,
+      language: projectInfo.language,
+    },
   });
 
   // Snapshot the preview file baseline and cache the pending setup record.
@@ -97,7 +104,7 @@ export async function aiSetup(options: AiSetupOptions): Promise<void> {
   // collect evidence of what the agent accomplished — but only via telemetry
   // (the `ai-setup-evidence` event). Skip the snapshot + cache write when
   // telemetry is disabled so there's nobody to read it.
-  if (projectInfo && isTelemetryModuleEnabled()) {
+  if (isTelemetryModuleEnabled()) {
     const resolvedConfigDir = resolve(projectInfo.configDir);
     const previewSnapshot = await snapshotPreviewFile(resolvedConfigDir);
     const sessionId = await getSessionId();

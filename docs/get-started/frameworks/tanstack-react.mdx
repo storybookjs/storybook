@@ -20,15 +20,20 @@ You can then get started [writing stories](../whats-a-story.mdx), [running tests
 
 ### Requirements
 
-<GetStartedVersions versions={[{
-  name: 'React',
-  range: '≥ 18',
-  icon: '/images/logos/renderers/logo-react.svg'
-}, {
-  name: 'Vite',
-  range: '≥ 7',
-  icon: '/images/logos/builders/vite.svg'
-}]} />
+<GetStartedVersions
+  versions={[
+    {
+      name: 'React',
+      range: '≥ 18',
+      icon: '/images/logos/renderers/logo-react.svg',
+    },
+    {
+      name: 'Vite',
+      range: '≥ 7',
+      icon: '/images/logos/builders/vite.svg',
+    },
+  ]}
+/>
 
 This integration expects a TanStack Router application with `@tanstack/react-router` available in your project. If your app uses TanStack Start APIs such as server functions, keep the matching TanStack Start packages installed as well.
 
@@ -50,11 +55,11 @@ Storybook for TanStack React uses Vite through [`@storybook/builder-vite`](../..
 
 Out of the box, it supports these workflows:
 
-* Supply a TanStack Route to render it as the story component
-* Set the initial route, params, and query string per story
-* Override `loader`, `beforeLoad`, and more on the story route without modifying the original route object via `routeOverrides`
-* Automatically mock `@tanstack/react-router` so navigation hooks work in stories and navigation attempts can be observed
-* Automatically stub TanStack Start server and runtime entry points so components using server functions can render in Storybook
+- Supply a TanStack Route to render it as the story component
+- Set the initial route, params, and query string per story
+- Override `loader`, `beforeLoad`, and more on the story route without modifying the original route object via `routeOverrides`
+- Automatically mock `@tanstack/react-router` so navigation hooks work in stories and navigation attempts can be observed
+- Automatically stub TanStack Start server and runtime entry points so components using server functions can render in Storybook
 
 ### Routing
 
@@ -142,7 +147,7 @@ When your routes import app-specific server code (e.g. `~/db/client`, `~/auth/in
 
 **Why a `__mocks__` file instead of automocking?**
 
-[Storybook's automocking](../../writing-stories/mocking-data-and-modules/mocking-modules.mdx#automocking) replaces *functions* but still **evaluates the original module** and its imports. For modules that import `postgres`, `pg`, or other Node.js-only packages, the original module must never be evaluated, because it would crash the browser. A `__mocks__` file is the only approach that completely prevents evaluation of the original module and its dependency chain.
+[Storybook's automocking](../../writing-stories/mocking-data-and-modules/mocking-modules.mdx#automocking) replaces _functions_ but still **evaluates the original module** and its imports. For modules that import `postgres`, `pg`, or other Node.js-only packages, the original module must never be evaluated, because it would crash the browser. A `__mocks__` file is the only approach that completely prevents evaluation of the original module and its dependency chain.
 
 </Callout>
 
@@ -203,7 +208,7 @@ Use [`@storybook/react-vite`](./react-vite.mdx) when your app is a standard Reac
 Import your application CSS in `.storybook/preview.*` so it is bundled with the preview:
 
 ```ts title=".storybook/preview.tsx"
-import '../src/styles/app.css'
+import '../src/styles/app.css';
 ```
 
 For more information, see the [styling documentation](../../configure/styling-and-css.mdx).

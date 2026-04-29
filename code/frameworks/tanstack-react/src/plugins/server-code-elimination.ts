@@ -407,9 +407,16 @@ function eliminateDeadImports(programPath: NodePath<import('@babel/types').Progr
   programPath.traverse({
     enter(path) {
       const { node } = path;
-      if (isIdentifier(node) && !path.isBindingIdentifier()) {
-        referencedIdentifiers.add(node.name);
+      if (!isIdentifier(node) || path.isBindingIdentifier()) {
+        return;
       }
+      // Skip identifiers that live inside an import declaration's specifiers.
+      // Both `imported` and `local` are Identifiers, but neither should count
+      // as a real "use" of the binding for the purposes of dead-import removal.
+      if (path.findParent((p) => p.isImportDeclaration())) {
+        return;
+      }
+      referencedIdentifiers.add(node.name);
     },
   });
 

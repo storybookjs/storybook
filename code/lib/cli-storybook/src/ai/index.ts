@@ -115,7 +115,7 @@ export async function aiSetup(options: AiSetupOptions): Promise<void> {
     await writeFile(outputPath, markdownOutput, 'utf-8');
     logger.log(`Prompt written to ${outputPath}`);
   } else {
-    console.log(markdownOutput);
+    process.stdout.write(`${markdownOutput}\n`);
   }
 }
 

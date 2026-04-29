@@ -6,6 +6,15 @@ name: nx
 on:
   workflow_dispatch:
 
+concurrency:
+  # Per-PR queue: consecutive pushes to the same PR queue behind an
+  # in-progress run (cancel-in-progress: false). This protects against NX
+  # Cloud's self-cancellation behaviour — we never start a new CIPE on a
+  # branch while the previous one is still running, so nothing gets
+  # auto-cancelled mid-flight. Different PRs keep their own queues.
+  group: nx-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: false
+
 permissions:
   actions: read
   contents: read

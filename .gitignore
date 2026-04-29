@@ -81,3 +81,4 @@ CLAUDE.local.md
 .mcp.json
 .nx/polygraph
 .omc
+scripts/ci-eval.db

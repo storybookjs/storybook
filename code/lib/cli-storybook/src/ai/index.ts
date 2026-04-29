@@ -21,14 +21,14 @@ import { generateMarkdownOutput } from './prompt.ts';
 import type { ProjectInfo, AiSetupOptions } from './types.ts';
 
 export async function aiSetup(options: AiSetupOptions): Promise<void> {
-  const { configDir: userConfigDir, packageManager: packageManagerName, output } = options;
+  const { configDir: userConfigDir, packageManager, output } = options;
 
   let projectInfo: ProjectInfo;
 
   try {
     const data = await getStorybookData({
       configDir: userConfigDir,
-      packageManagerName: packageManagerName as PackageManagerName | undefined,
+      packageManagerName: packageManager as PackageManagerName | undefined,
     });
 
     if (!data.frameworkPackage || !data.rendererPackage || !data.builderPackage) {
@@ -56,7 +56,8 @@ export async function aiSetup(options: AiSetupOptions): Promise<void> {
       addons: data.addons ?? [],
       configDir: data.configDir,
       storiesPaths: data.storiesPaths,
-      packageManager: getPrettyPackageManagerName(packageManagerName),
+      packageManager: data.packageManager,
+      packageManagerName: getPrettyPackageManagerName(data.packageManager.type),
       language,
     };
   } catch (err) {
@@ -89,7 +90,7 @@ export async function aiSetup(options: AiSetupOptions): Promise<void> {
     cliOptions: {
       output: output ? 'file' : undefined,
       configDir: projectInfo.configDir,
-      packageManager: packageManagerName,
+      packageManager: projectInfo.packageManager.type,
     },
     project: {
       framework: projectInfo.framework,

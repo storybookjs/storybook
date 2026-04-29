@@ -1,4 +1,3 @@
-import { SupportedRenderer } from 'storybook/internal/types';
 import { dedent } from 'ts-dedent';
 
 import type { AiPrompt, ProjectInfo } from './types.ts';
@@ -43,37 +42,23 @@ function ext(language: 'ts' | 'js', jsx: boolean): string {
   return jsx ? 'jsx' : 'js';
 }
 
-function installCommand(packageManager: string | undefined, deps: string, dev = false): string {
-  switch (packageManager) {
-    case 'yarn':
-    case 'yarn1':
-    case 'yarn2':
-      return `yarn add ${dev ? '--dev ' : ''}${deps}`;
-    case 'pnpm':
-      return `pnpm add ${dev ? '-D ' : ''}${deps}`;
-    case 'bun':
-      return `bun add ${dev ? '-d ' : ''}${deps}`;
-    case 'npm':
-      return `npm install ${dev ? '--save-dev ' : ''}${deps}`;
-    default:
-      return `<your-package-manager> add ${dev ? '-D ' : ''}${deps}`;
-  }
-}
-
-function packageManagerRule(packageManager: string | undefined): string {
-  if (packageManager) {
-    return `**Use \`${packageManager}\` for every install** (detected from this project's lockfile).`;
+function packageManagerRule(packageManagerName: string | undefined): string {
+  if (packageManagerName) {
+    return `**Use \`${packageManagerName}\` for every install** (detected from this project's lockfile).`;
   }
   return '**Detect the package manager once** from the lockfile (`pnpm-lock.yaml` → pnpm, `yarn.lock` → yarn, `bun.lockb` → bun, otherwise npm) and use it for every install in this trial.';
 }
 
 function getSetupInstructions(projectInfo: ProjectInfo): string {
-  const { configDir, language, packageManager } = projectInfo;
+  const { configDir, language, packageManager, packageManagerName } = projectInfo;
   const tsx = ext(language, true);
   const ts = ext(language, false);
   const docsUrl = (path: string) => getDocsMarkdownUrl(path, projectInfo);
 
-  const mswInstall = installCommand(packageManager, 'msw msw-storybook-addon mockdate', true);
+  const mswInstall = packageManager.getInstallCommand(
+    ['msw', 'msw-storybook-addon', 'mockdate'],
+    true
+  );
 
   return dedent`
     Your goal is to make Storybook fully functional in this project: configure \`${configDir}/preview.${tsx}\` with the right decorators, add MSW for data, and write up to 10 colocated \`*.stories.${tsx}\` files. Add \`play\` functions only where they prove something non-trivial.
@@ -89,7 +74,7 @@ function getSetupInstructions(projectInfo: ProjectInfo): string {
     3. **Read budget: ~12 files for discovery.** Before writing any code you may Read at most ~12 files (\`index.html\`, entry, App, providers, routing, root CSS, 2–3 representative pages/components, 1–2 hooks, 1 test). If you need more, summarize and move on.
     4. **Edit > Write.** For any file you've Read, use \`Edit\`. Use \`Write\` only for new files. The project already has a \`${configDir}/preview.${tsx}\` from \`storybook init\` — **Edit** it, do not overwrite.
     5. **Batch the test loop.** Write **all** stories first, then run vitest **once** across everything. No per-file vitest runs until after that first batch run reveals failures.
-    6. ${packageManagerRule(packageManager)}
+    6. ${packageManagerRule(packageManagerName)}
     7. **Prefer fixing the shared \`${configDir}/preview.${tsx}\`** over story-local workarounds when multiple stories fail the same way.
     8. **Stop when the success criteria are met** — don't keep polishing.
 
@@ -249,7 +234,7 @@ function getSetupInstructions(projectInfo: ProjectInfo): string {
     npx vitest --project storybook run
     \`\`\`
 
-    Then run the project's TypeScript check (use the script from \`package.json\` — typically \`tsc --noEmit\` or \`${packageManager ?? '<pm>'} run typecheck\`). Read the raw output once; don't pipe it through repeated \`grep\`/\`head\` invocations to slice it.
+    Then run the project's TypeScript check (use the script from \`package.json\` — typically \`tsc --noEmit\` or \`${packageManager.getRunCommand('typecheck')}\`). Read the raw output once; don't pipe it through repeated \`grep\`/\`head\` invocations to slice it.
 
     For each failure:
 
@@ -495,7 +480,7 @@ function getProjectOverview(projectInfo: ProjectInfo): string {
   ];
 
   if (projectInfo.packageManager) {
-    rows.push(['Package Manager', projectInfo.packageManager]);
+    rows.push(['Package Manager', projectInfo.packageManagerName || 'unknown']);
   }
 
   rows.push(['Addons', projectInfo.addons.length > 0 ? projectInfo.addons.join(', ') : 'none']);

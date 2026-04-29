@@ -136,6 +136,12 @@ export abstract class JsPackageManager {
     this.primaryPackageJson = this.#getPrimaryPackageJson();
   }
 
+  /** Returns the name of the command to invoke this package manager. */
+  abstract getCommandName(): string;
+
+  /** Installs package dependencies. */
+  abstract getInstallCommand(deps: string[], dev?: boolean): string;
+
   /** Runs arbitrary package scripts (as a string for display). */
   abstract getRunCommand(command: string): string;
 

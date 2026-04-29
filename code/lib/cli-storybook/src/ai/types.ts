@@ -1,3 +1,4 @@
+import type { JsPackageManager } from 'storybook/internal/common';
 import type { SupportedRenderer } from 'storybook/internal/types';
 
 export interface AiSetupOptions {
@@ -22,8 +23,10 @@ export interface ProjectInfo {
   storiesPaths: string[];
   /** Whether the project uses TypeScript ('ts') or JavaScript ('js'), inferred from the main config file extension. */
   language: 'ts' | 'js';
-  /** Detected package manager name (npm, yarn, pnpm, bun), if known. */
-  packageManager?: string;
+  /** Detected package manager (npm, yarn, pnpm, bun), if known. */
+  packageManager: JsPackageManager;
+  /** Pretty name of the detected package manager, if known. */
+  packageManagerName?: string;
 }
 
 /**

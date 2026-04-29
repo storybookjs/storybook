@@ -10,24 +10,23 @@
 | Builder | @storybook/builder-vite |
 | Config Dir | `.storybook` |
 | Language | TypeScript |
-| Package Manager | yarn |
+| Package Manager | Yarn Berry |
 | Addons | @storybook/addon-onboarding, @storybook/addon-themes, @storybook/addon-docs, @storybook/addon-designs, @storybook/addon-vitest, @storybook/addon-a11y, storybook-addon-pseudo-states, @chromatic-com/storybook |
 
 Your goal is to make Storybook fully functional in this project: configure `.storybook/preview.tsx` with the right decorators, add MSW for data, and write up to 10 colocated `*.stories.tsx` files. Add `play` functions only where they prove something non-trivial.
 
 ## Rules of engagement (follow strictly — these are time budgets, not suggestions)
 
-1. **Discover with Glob/Grep/Read, not shell.** Never use `ls`, `find`, `cat`, `head`, `tail`, shell `grep`, `sed`, or `node -e` for discovery or for editing files in bulk — these are slower per call and violate caching. Concrete substitutions, no exceptions:
+1. **Discover with Glob/Grep/Read, not shell.** Never use `ls`, `find`, `cat`, `head`, `tail`, shell `grep`, `sed`, or `node -e` for discovery or for editing files in bulk — these are slower per call and violate caching. Substitute bash commands for the specific tool names listed below, or available tools with the closest semantics:
     - List a directory → `Glob('src/components/*')` (alt names: `search_files`, `file_search`), not `ls src/components`.
     - Search a string → `Grep('pattern', { path: 'src' })` (alt names: `grep_search`, `search_files`), not `grep -rn ...` or `find ... | xargs grep`.
     - Read a file → `Read('path/to/file')` (alt names: `read_file`), not `cat`/`head`/`tail`.
     - Bulk-edit many files → multiple `Edit` calls (alt names: `apply_patch`, `replace_in_file`, `replace`), or one `Edit` with `replace_all` (alt names: `replace` with `allow_multiple`), not `sed -i`.
-
 2. **Never read or grep inside `node_modules`.** The imports shown in this prompt are correct — don't verify them by introspecting installed packages. If something seems off, re-read this prompt, not `node_modules`.
 3. **Read budget: ~12 files for discovery.** Before writing any code you may Read at most ~12 files (`index.html`, entry, App, providers, routing, root CSS, 2–3 representative pages/components, 1–2 hooks, 1 test). If you need more, summarize and move on.
 4. **Edit > Write.** For any file you've Read, use `Edit`. Use `Write` only for new files. The project already has a `.storybook/preview.tsx` from `storybook init` — **Edit** it, do not overwrite.
 5. **Batch the test loop.** Write **all** stories first, then run vitest **once** across everything. No per-file vitest runs until after that first batch run reveals failures.
-6. **Use `yarn` for every install** (detected from this project's lockfile).
+6. **Use `Yarn Berry` for every install** (detected from this project's lockfile).
 7. **Prefer fixing the shared `.storybook/preview.tsx`** over story-local workarounds when multiple stories fail the same way.
 8. **Stop when the success criteria are met** — don't keep polishing.
 
@@ -118,7 +117,7 @@ Add this decorator to the `decorators` array of your preview config. Skip this s
 Use `msw-storybook-addon`. Install with:
 
 ```bash
-yarn add --dev msw msw-storybook-addon mockdate
+yarn add -D msw msw-storybook-addon mockdate
 npx msw init ./public --save
 ```
 
@@ -266,7 +265,7 @@ export const FilledForm: Story = {
 npx vitest --project storybook run
 ```
 
-Then run the project's TypeScript check (use the script from `package.json` — typically `tsc --noEmit` or `yarn run typecheck`). Read the raw output once; don't pipe it through repeated `grep`/`head` invocations to slice it.
+Then run the project's TypeScript check (use the script from `package.json` — typically `tsc --noEmit` or `yarn typecheck`). Read the raw output once; don't pipe it through repeated `grep`/`head` invocations to slice it.
 
 For each failure:
 

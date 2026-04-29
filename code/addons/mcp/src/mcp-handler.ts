@@ -33,6 +33,8 @@ let a11yEnabled: boolean | undefined;
 
 const initializeMCPServer = async (options: Options, multiSource?: boolean) => {
 	const core = await options.presets.apply('core', {});
+	const features = await options.presets.apply('features', {});
+	const changeDetectionEnabled = features?.changeDetection ?? false;
 	disableTelemetry = core?.disableTelemetry ?? false;
 
 	// Determine tool availability before creating server so instructions can be tailored
@@ -49,6 +51,7 @@ const initializeMCPServer = async (options: Options, multiSource?: boolean) => {
 				devEnabled: server?.ctx.custom?.toolsets?.dev ?? true,
 				testEnabled: (server?.ctx.custom?.toolsets?.test ?? true) && !!addonVitestConstants,
 				docsEnabled: (server?.ctx.custom?.toolsets?.docs ?? true) && manifestStatus.available,
+				changeDetectionEnabled,
 			});
 		},
 		capabilities: {
@@ -74,8 +77,11 @@ const initializeMCPServer = async (options: Options, multiSource?: boolean) => {
 
 	// Register dev addon tools
 	await addPreviewStoriesTool(server);
-	await addGetChangedStoriesTool(server);
 	await addGetUIBuildingInstructionsTool(server);
+
+	if (changeDetectionEnabled) {
+		await addGetChangedStoriesTool(server);
+	}
 
 	// Register test addon tools
 	await addRunStoryTestsTool(server, { a11yEnabled });

@@ -78,15 +78,6 @@ function statusPriority(statusValue: string): number {
 	return 2;
 }
 
-function getStatusStore(): unknown {
-	const getter = experimental_getStatusStore as unknown as (...args: unknown[]) => unknown;
-	try {
-		return getter();
-	} catch {
-		return getter(CHANGE_DETECTION_TYPE);
-	}
-}
-
 export async function addGetChangedStoriesTool(server: McpServer<any, AddonContext>) {
 	server.tool(
 		{
@@ -102,7 +93,7 @@ export async function addGetChangedStoriesTool(server: McpServer<any, AddonConte
 					throw new Error('Origin is required in addon context');
 				}
 
-				const statusStore = getStatusStore();
+				const statusStore = experimental_getStatusStore(CHANGE_DETECTION_TYPE);
 				const allStatuses = normalizeStoryStatusMap(readAllStatuses(statusStore));
 				const changedStoriesFromStatusStore: ChangedStory[] = [];
 				for (const [storyId, byType] of Object.entries(allStatuses)) {

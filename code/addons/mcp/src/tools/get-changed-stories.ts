@@ -1,5 +1,5 @@
 import type { McpServer } from 'tmcp';
-import { experimental_getStatusStore } from 'storybook/internal/core-server';
+import { experimental_getStatusStore } from 'storybook/manager-api';
 import { collectTelemetry } from '../telemetry.ts';
 import type { AddonContext } from '../types.ts';
 import { errorToMCPContent } from '../utils/errors.ts';
@@ -7,69 +7,40 @@ import { fetchStoryIndex } from '../utils/fetch-story-index.ts';
 import { GET_CHANGED_STORIES_TOOL_NAME } from './tool-names.ts';
 
 const CHANGE_DETECTION_TYPE = 'storybook/change-detection';
-const INCLUDED_STATUS_VALUES = new Set([
+const INCLUDED_STATUS_VALUES = new Set<StatusValue>([
 	'status-value:new',
 	'status-value:modified',
 	'status-value:affected',
 ]);
 
-type ChangeDetectionStatus = {
-	value?: string;
-	data?: {
-		changedFiles?: string[];
-	};
-};
+type StatusValue =
+	| 'status-value:pending'
+	| 'status-value:success'
+	| 'status-value:new'
+	| 'status-value:modified'
+	| 'status-value:affected'
+	| 'status-value:warning'
+	| 'status-value:error'
+	| 'status-value:unknown';
 
-type StoryStatusByType = Record<string, ChangeDetectionStatus | undefined>;
-type StoryStatusMap = Record<string, StoryStatusByType>;
+type StatusesByStoryIdAndTypeId = Record<string, Record<string, Status>>;
 
-type ChangedStory = {
+interface Status {
+	value: StatusValue;
+	typeId: string;
 	storyId: string;
+	title: string;
+	description: string;
+	data?: any;
+	sidebarContextMenu?: boolean;
+}
+
+interface ChangedStory {
+	storyId: string;
+	statusValue: StatusValue;
 	title?: string;
 	name?: string;
 	importPath?: string;
-	statusValue: string;
-};
-
-function readAllStatuses(statusStore: unknown): unknown {
-	if (statusStore && typeof statusStore === 'object') {
-		const candidate = statusStore as Record<string, unknown>;
-		if (typeof candidate.getAllStatuses === 'function') {
-			return (candidate.getAllStatuses as () => unknown)();
-		}
-
-		if (typeof candidate.getAll === 'function') {
-			return (candidate.getAll as () => unknown)();
-		}
-
-		if (candidate.allStatuses) {
-			return candidate.allStatuses;
-		}
-	}
-	throw new Error('Storybook status store does not expose a readable all-statuses API');
-}
-
-function normalizeStoryStatusMap(rawStatuses: unknown): StoryStatusMap {
-	if (!rawStatuses || typeof rawStatuses !== 'object') {
-		return {};
-	}
-
-	const normalized: StoryStatusMap = {};
-	for (const [storyId, value] of Object.entries(rawStatuses as Record<string, unknown>)) {
-		if (!value || typeof value !== 'object') {
-			continue;
-		}
-
-		const maybeSingleStatus = value as ChangeDetectionStatus;
-		if (typeof maybeSingleStatus.value === 'string') {
-			normalized[storyId] = { [CHANGE_DETECTION_TYPE]: maybeSingleStatus };
-			continue;
-		}
-
-		normalized[storyId] = value as StoryStatusByType;
-	}
-
-	return normalized;
 }
 
 function statusPriority(statusValue: string): number {
@@ -94,19 +65,13 @@ export async function addGetChangedStoriesTool(server: McpServer<any, AddonConte
 				}
 
 				const statusStore = experimental_getStatusStore(CHANGE_DETECTION_TYPE);
-				const allStatuses = normalizeStoryStatusMap(readAllStatuses(statusStore));
-				const changedStoriesFromStatusStore: ChangedStory[] = [];
-				for (const [storyId, byType] of Object.entries(allStatuses)) {
+				const allStatuses = statusStore.getAll() as StatusesByStoryIdAndTypeId;
+				const changedStoriesFromStatusStore: Status[] = [];
+				for (const byType of Object.values(allStatuses)) {
 					const status = byType?.[CHANGE_DETECTION_TYPE];
-					const statusValue = status?.value;
-					if (!statusValue || !INCLUDED_STATUS_VALUES.has(statusValue)) {
-						continue;
+					if (status?.value && INCLUDED_STATUS_VALUES.has(status.value)) {
+						changedStoriesFromStatusStore.push(status);
 					}
-
-					changedStoriesFromStatusStore.push({
-						storyId,
-						statusValue,
-					});
 				}
 
 				if (changedStoriesFromStatusStore.length === 0) {
@@ -130,10 +95,11 @@ export async function addGetChangedStoriesTool(server: McpServer<any, AddonConte
 				}
 
 				const index = await fetchStoryIndex(origin);
-				const stories = changedStoriesFromStatusStore.map((story) => {
+				const stories = changedStoriesFromStatusStore.map<ChangedStory>((story) => {
 					const entry = index.entries[story.storyId];
 					return {
-						...story,
+						storyId: story.storyId,
+						statusValue: story.value,
 						title: entry?.title,
 						name: entry?.name,
 						importPath: entry?.importPath,

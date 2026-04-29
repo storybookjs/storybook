@@ -173,6 +173,7 @@ describe('publishTrialBranch', () => {
             total: 8,
             passed: 4,
             storyFiles: 3,
+            cssCheck: 'not-run' as const,
           },
           buildSuccess: true,
           typeCheckErrors: 0,
@@ -188,6 +189,7 @@ describe('publishTrialBranch', () => {
             total: 8,
             passed: 6,
             storyFiles: 3,
+            cssCheck: 'not-run' as const,
           },
         },
         score: {
@@ -247,6 +249,7 @@ describe('publishTrialBranch', () => {
     expect(prBody).toContain('Ghost stories after: `3/4 (75%)`');
     expect(prBody).toContain('Vitest pass rate before preview changes: `4/8 (50%)`');
     expect(prBody).toContain('Vitest pass rate after preview changes: `6/8 (75%)`');
+    expect(prBody).toContain('CssCheck: `not-run`');
     expect(prBody).toContain('[.storybook/eval-results/data.json](');
     expect(prBody).toContain('<summary>Full prompt</summary>');
     expect(prBody.match(/<details>/g)).toHaveLength(1);

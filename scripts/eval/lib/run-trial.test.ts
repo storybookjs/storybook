@@ -432,6 +432,7 @@ function setupMocks(overrides?: {
         total: 6,
         passed: 2,
         storyFiles: 3,
+        cssCheck: 'not-run' as const,
       },
       buildSuccess,
       typeCheckErrors,
@@ -449,6 +450,7 @@ function setupMocks(overrides?: {
               total: 6,
               passed: 4,
               storyFiles: 3,
+              cssCheck: 'pass' as const,
             },
           }
         : {}),

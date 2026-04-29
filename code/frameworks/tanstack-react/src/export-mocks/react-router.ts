@@ -31,25 +31,16 @@ import { onNavigate } from './spies.ts';
 export const useNavigate = fn(_useNavigate).mockName('@tanstack/react-router::useNavigate');
 export const useRouter = fn(_useRouter).mockName('@tanstack/react-router::useRouter');
 export const useBlocker = fn(_useBlocker).mockName('@tanstack/react-router::useBlocker');
-export const useMatch = fn(_useMatch).mockName('@tanstack/react-router::useMatch');
 export const useSearch = fn(_useSearch).mockName('@tanstack/react-router::useSearch');
 export const useParams = fn(_useParams).mockName('@tanstack/react-router::useParams');
 export const useLocation = fn(_useLocation).mockName('@tanstack/react-router::useLocation');
 export const useRouterState = fn(_useRouterState).mockName(
   '@tanstack/react-router::useRouterState'
 );
-export const useMatchRoute = fn(_useMatchRoute).mockName('@tanstack/react-router::useMatchRoute');
 export const useLoaderData = fn(_useLoaderData).mockName('@tanstack/react-router::useLoaderData');
 export const useLoaderDeps = fn(_useLoaderDeps).mockName('@tanstack/react-router::useLoaderDeps');
 export const useRouteContext = fn(_useRouteContext).mockName(
   '@tanstack/react-router::useRouteContext'
-);
-export const useMatches = fn(_useMatches).mockName('@tanstack/react-router::useMatches');
-export const useParentMatches = fn(_useParentMatches).mockName(
-  '@tanstack/react-router::useParentMatches'
-);
-export const useChildMatches = fn(_useChildMatches).mockName(
-  '@tanstack/react-router::useChildMatches'
 );
 export const useCanGoBack = fn(_useCanGoBack).mockName('@tanstack/react-router::useCanGoBack');
 export const useLinkProps = fn(_useLinkProps).mockName('@tanstack/react-router::useLinkProps');

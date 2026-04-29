@@ -10,10 +10,13 @@ import { SbPage } from './util.ts';
  *
  * Prerequisites:
  *   1. STORYBOOK_URL — URL of a running Storybook dev server
- *   2. STORYBOOK_SANDBOX_DIR — path to the sandbox root (react-vite only)
+ *   2. STORYBOOK_SANDBOX_DIR — path to the sandbox root
  *      (e.g. ../storybook-sandboxes/react-vite-default-ts)
  *   3. The sandbox's .storybook/main.ts must have: features: { changeDetection: true }
- *   4. STORYBOOK_TEMPLATE_NAME must start with "react-vite" (or be unset for local runs)
+ *   4. STORYBOOK_TEMPLATE_NAME must be one of the supported templates (or be unset for local runs)
+ *
+ * Supported templates: react-vite/default-ts, nextjs-vite/default-ts,
+ *                      react-webpack/default-ts, nextjs/default-ts
  *
  * Git is auto-initialised in STORYBOOK_SANDBOX_DIR when not already a git repo.
  * The .git directory is removed in afterAll if this suite created it.
@@ -70,10 +73,15 @@ function hasGitHead(): boolean {
 test.describe('Change Detection', () => {
   test.skip(!sandboxDir, 'Set STORYBOOK_SANDBOX_DIR to run change detection tests');
   test.skip(type !== 'dev', 'Change detection only runs in dev mode');
+  const SUPPORTED_TEMPLATES = [
+    'react-vite/default-ts',
+    'nextjs-vite/default-ts',
+    'react-webpack/default-ts',
+    'nextjs/default-ts',
+  ];
   test.skip(
-    !!templateName &&
-      !(templateName === 'react-vite/default-ts' || templateName === 'nextjs-vite/default-ts'),
-    'Change detection E2E tests only run for react-vite and nextjs-vite sandboxes'
+    !!templateName && !SUPPORTED_TEMPLATES.includes(templateName),
+    `Change detection E2E tests only run for: ${SUPPORTED_TEMPLATES.join(', ')}`
   );
 
   test.beforeAll(() => {

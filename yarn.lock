@@ -8077,7 +8077,11 @@ __metadata:
     typescript: "npm:^5.9.3"
     vite: "npm:^7.0.4"
   peerDependencies:
+    "@types/react": ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
     storybook: "workspace:^"
+  peerDependenciesMeta:
+    "@types/react":
+      optional: true
   languageName: unknown
   linkType: soft
 
@@ -8088,9 +8092,12 @@ __metadata:
     "@storybook/global": "npm:^5.0.0"
     typescript: "npm:^5.9.3"
   peerDependencies:
+    "@types/react": ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
     react: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
     storybook: "workspace:^"
   peerDependenciesMeta:
+    "@types/react":
+      optional: true
     react:
       optional: true
   languageName: unknown
@@ -8516,6 +8523,7 @@ __metadata:
     typescript: "npm:^5.9.3"
   peerDependencies:
     storybook: "workspace:^"
+    vite: ^5.0.0 || ^6.0.0 || ^7.0.0 || ^8.0.0
   languageName: unknown
   linkType: soft
 
@@ -8557,12 +8565,18 @@ __metadata:
     typescript: "npm:^5.9.3"
     vite-plugin-storybook-nextjs: "npm:^3.2.4"
   peerDependencies:
+    "@types/react": ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
+    "@types/react-dom": ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
     next: ^14.1.0 || ^15.0.0 || ^16.0.0
     react: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
     react-dom: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
     storybook: "workspace:^"
     vite: ^5.0.0 || ^6.0.0 || ^7.0.0 || ^8.0.0
   peerDependenciesMeta:
+    "@types/react":
+      optional: true
+    "@types/react-dom":
+      optional: true
     typescript:
       optional: true
   languageName: unknown
@@ -8616,12 +8630,18 @@ __metadata:
     typescript: "npm:^5.9.3"
     webpack: "npm:^5.65.0"
   peerDependencies:
+    "@types/react": ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
+    "@types/react-dom": ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
     next: ^14.1.0 || ^15.0.0 || ^16.0.0
     react: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
     react-dom: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
     storybook: "workspace:^"
     webpack: ^5.0.0
   peerDependenciesMeta:
+    "@types/react":
+      optional: true
+    "@types/react-dom":
+      optional: true
     typescript:
       optional: true
     webpack:
@@ -8641,6 +8661,7 @@ __metadata:
   peerDependencies:
     preact: ">=10"
     storybook: "workspace:^"
+    vite: ^5.0.0 || ^6.0.0 || ^7.0.0 || ^8.0.0
   languageName: unknown
   linkType: soft
 
@@ -8741,9 +8762,16 @@ __metadata:
   dependencies:
     typescript: "npm:^5.8.3"
   peerDependencies:
+    "@types/react": ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
+    "@types/react-dom": ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
     react: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
     react-dom: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
     storybook: "workspace:^"
+  peerDependenciesMeta:
+    "@types/react":
+      optional: true
+    "@types/react-dom":
+      optional: true
   languageName: unknown
   linkType: soft
 
@@ -8841,11 +8869,17 @@ __metadata:
     ts-dedent: "npm:^2.0.0"
     type-fest: "npm:~2.19"
   peerDependencies:
+    "@types/react": ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
+    "@types/react-dom": ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
     react: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
     react-dom: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
     storybook: "workspace:^"
     typescript: ">= 4.9.x"
   peerDependenciesMeta:
+    "@types/react":
+      optional: true
+    "@types/react-dom":
+      optional: true
     typescript:
       optional: true
   languageName: unknown
@@ -9136,6 +9170,7 @@ __metadata:
     typescript: "npm:^5.9.3"
   peerDependencies:
     storybook: "workspace:^"
+    vite: ^5.0.0 || ^6.0.0 || ^7.0.0 || ^8.0.0
   languageName: unknown
   linkType: soft
 
@@ -28942,9 +28977,12 @@ __metadata:
     ws: "npm:^8.18.0"
     zod: "npm:^3.25.76"
   peerDependencies:
+    "@types/react": ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
     prettier: ^2 || ^3
     vite-plus: ^0.1.15
   peerDependenciesMeta:
+    "@types/react":
+      optional: true
     prettier:
       optional: true
     vite-plus:

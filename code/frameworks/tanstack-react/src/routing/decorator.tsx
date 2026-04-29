@@ -3,20 +3,27 @@ import type { Decorator } from '@storybook/react-vite';
 import {
   createMemoryHistory,
   createRootRoute,
+  createRoute,
   createRouter,
   Route,
   RouterProvider,
-  createRoute,
   RootRoute,
   interpolatePath,
   defaultStringifySearch,
 } from '@tanstack/react-router';
-import type { Router, AnyRootRoute } from '@tanstack/react-router';
+import type { Router, AnyRootRoute, AnyRoute } from '@tanstack/react-router';
 import type { RouterParameters } from './types.ts';
+import {
+  duplicateRouteTree,
+  findRootRoute,
+  resolveStoryLeaf,
+  type DuplicatedTree,
+} from './duplicate-tree.ts';
 
 export type MockRouterOptions = {
   Story: ComponentType;
   context: Parameters<Decorator>[1];
+  routerContext?: Record<string, unknown>;
 };
 
 /**
@@ -27,22 +34,30 @@ function isRoute(value: unknown): value is InstanceType<typeof Route> {
   return value instanceof Route || value instanceof RootRoute;
 }
 
-function getRouteFromContext(
+interface ResolvedTree {
+  tree: DuplicatedTree;
+  leaf: AnyRoute;
+}
+
+function injectStoryComponent(
+  leaf: AnyRoute,
   Story: ComponentType,
-  context: Parameters<Decorator>[1]
-): AnyRootRoute {
+  overrides: RouterParameters['routeOverrides'],
+  leafId: string
+) {
+  // Respect explicit user override of the leaf's component.
+  const userOverride = (overrides as Record<string, any> | undefined)?.[leafId];
+  if (userOverride && 'component' in userOverride && userOverride.component !== undefined) {
+    return;
+  }
+  (leaf as any).update({ component: () => <Story /> });
+}
+
+function resolveTree(Story: ComponentType, context: Parameters<Decorator>[1]): ResolvedTree {
   const metaRoute = context.route as Route | RootRoute | undefined;
   const routerParameters: RouterParameters = context.parameters.tanstack?.router ?? {};
   const routerParameterRoute = routerParameters.route;
-
-  const {
-    route: _route,
-    context: _context,
-    path: _path,
-    params: _params,
-    query: _query,
-    routeOverrides,
-  } = routerParameters ?? {};
+  const routeOverrides = routerParameters.routeOverrides;
 
   const resolvedRoute = isRoute(routerParameterRoute)
     ? routerParameterRoute
@@ -50,77 +65,57 @@ function getRouteFromContext(
       ? metaRoute
       : undefined;
 
-  if (resolvedRoute instanceof RootRoute) {
-    // Clone to avoid mutating the original route object across stories.
-    const clonedRoot = createRootRoute({
-      ...(resolvedRoute as any).options,
-      ...(routeOverrides as any).__root__,
-    });
-    const children = resolvedRoute.children as Route[] | undefined;
-    if (children?.length) {
-      const clonedChildren = children.map((child) => {
-        const { id: _id, getParentRoute: _g, ...childOpts } = (child as any).options ?? {};
-        return createRoute({
-          ...childOpts,
-          ...(routeOverrides as any)?.[child.id],
-          component: () => <Story />,
-          getParentRoute: () => clonedRoot,
-        });
-      });
-      clonedRoot.addChildren(clonedChildren);
-    } else {
-      clonedRoot.update({
-        component: () => <Story />,
-        ...(routeOverrides as any).__root__,
-      } as any);
-    }
-    return clonedRoot;
-  }
+  // `resolvedRoute` may already be a `RootRoute` (e.g. the `routeTree` from
+  // `routeTree.gen.ts`); `findRootRoute` returns it unchanged in that case,
+  // otherwise it walks up `getParentRoute()` to the enclosing root.
+  const rootRoute = resolvedRoute ? findRootRoute(resolvedRoute) : undefined;
 
-  if (resolvedRoute instanceof Route) {
-    const root = createRootRoute((routeOverrides as any)?.__root__);
-    const { id: _id, ...routeOpts } = (resolvedRoute as any).options ?? {};
-
-    const child = createRoute({
-      ...routeOpts,
-      ...(routeOverrides as any)?.[resolvedRoute.id],
-      component: () => <Story />,
-      getParentRoute: () => root,
+  if (rootRoute) {
+    const tree = duplicateRouteTree(rootRoute, { overrides: routeOverrides });
+    const leaf = resolveStoryLeaf(tree, {
+      path: routerParameters.path as string | undefined,
+      boundRouteId: resolvedRoute && resolvedRoute !== rootRoute ? resolvedRoute.id : undefined,
     });
 
-    root.addChildren([child]);
-    return root;
+    injectStoryComponent(leaf, Story, routeOverrides, leaf.id);
+    return { tree, leaf };
   }
 
-  // No route instance — create from plain options or default.
-  const root = createRootRoute((routeOverrides as any)?.__root__);
-  // @ts-expect-error route options spread
+  // No route instance — create a single-child synthetic tree from plain options.
+  const root = createRootRoute((routeOverrides as Record<string, any> | undefined)?.__root__ ?? {});
   const child = createRoute({
     component: () => <Story />,
-    ...routerParameterRoute,
-    path: (routerParameterRoute as any)?.path ?? '/',
+    ...(routerParameterRoute as Record<string, unknown> | undefined),
+    path: ((routerParameterRoute as { path?: string } | undefined)?.path ?? '/') as any,
     getParentRoute: () => root,
-  });
+  } as any);
   root.addChildren([child]);
-  return root;
+
+  const byId = new Map<string, AnyRoute>();
+  byId.set('__root__', root as unknown as AnyRoute);
+  byId.set(child.id, child as unknown as AnyRoute);
+
+  return { tree: { root, byId }, leaf: child as unknown as AnyRoute };
 }
 
-function createStoryRouter({ Story, context }: MockRouterOptions): Router<AnyRootRoute> {
+function createStoryRouter({
+  Story,
+  context,
+  routerContext,
+}: MockRouterOptions): Router<AnyRootRoute> {
   const routerParameters: RouterParameters = context.parameters.tanstack?.router ?? {};
-
-  const routeTree: AnyRootRoute = getRouteFromContext(Story, context);
+  const { tree, leaf } = resolveTree(Story, context);
+  const routeTree = tree.root;
 
   const inferredPath =
-    routerParameters?.path ||
-    routeTree.children?.[0]?.fullPath ||
-    routeTree.children?.[0]?.path ||
-    routeTree.children?.[0]?.options?.path;
-
-  const initialPath = inferredPath ?? '/';
+    (routerParameters?.path as string | undefined) ||
+    ((leaf as any).fullPath as string | undefined) ||
+    (routeTree.children as AnyRoute[] | undefined)?.[0]?.fullPath ||
+    '/';
 
   // Interpolate params into the path and append query/search params.
   let resolvedPath = interpolatePath({
-    path: initialPath,
+    path: inferredPath,
     params: routerParameters?.params ?? {},
   }).interpolatedPath;
   const search = routerParameters?.query ? defaultStringifySearch(routerParameters.query) : '';
@@ -142,16 +137,29 @@ function createStoryRouter({ Story, context }: MockRouterOptions): Router<AnyRoo
     defaultErrorComponent({ error }) {
       return <div>Story did something wrong : {String(error)}</div>;
     },
-    context: routerParameters?.context,
+    context: routerContext,
   });
   return router;
 }
 
 export const tanstackRouteDecorator: Decorator = (Story, context) => {
+  const routerContext = context.parameters.tanstack.router?.useRouterContext?.({
+    storyContext: context,
+  });
+
   const router = createStoryRouter({
     Story,
     context,
+    routerContext,
   });
 
-  return <RouterProvider router={router}></RouterProvider>;
+  return (
+    <RouterProvider
+      router={router}
+      context={{
+        ...context.parameters.tanstack?.router?.context,
+        ...routerContext,
+      }}
+    ></RouterProvider>
+  );
 };

@@ -18,6 +18,7 @@ const config: BuildEntries = {
       {
         exportEntries: ['./react-router'],
         entryPoint: './src/export-mocks/react-router.ts',
+        external: ['@tanstack/react-router'],
       },
       {
         exportEntries: ['./start-storage-context'],

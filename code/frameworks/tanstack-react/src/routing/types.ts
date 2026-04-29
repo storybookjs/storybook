@@ -6,6 +6,7 @@ import type {
   ResolveSearchSchema,
   RouteOptions,
 } from '@tanstack/router-core';
+import type { Decorator } from '@storybook/react';
 
 export type IsRoute<T> = T extends AnyRoute
   ? true
@@ -26,16 +27,50 @@ export type StoryRoutePath<TRoute = undefined> =
     ? ExtractAllPathsFromFileRoutes<TRoute>
     : keyof FileRoutesByPath | `/${string}`;
 
+/**
+ * Helper: convert a union `A | B | C` into an intersection `A & B & C`.
+ *
+ * Used to gather all per-route `allParams` shapes from the registered file
+ * route tree into a single object whose keys are the union of every nested
+ * route's params.
+ */
+type UnionToIntersection<U> = (U extends unknown ? (k: U) => void : never) extends (
+  k: infer I
+) => void
+  ? I
+  : never;
+
+/**
+ * Union of `allParams` from every registered nested file route.
+ *
+ * This is used when the bound route is a `RootRoute` / route tree (whose own
+ * `allParams` is empty), so users can still pass params for any nested route
+ * matched via `path`. The result is `Partial` so every key is optional.
+ */
+type AllRegisteredParams = Partial<
+  UnionToIntersection<
+    {
+      [K in keyof FileRoutesByPath]: FileRoutesByPath[K]['preLoaderRoute'] extends {
+        types: { allParams: infer A };
+      }
+        ? A
+        : never;
+    }[keyof FileRoutesByPath]
+  >
+>;
+
 type StoryRouteParams<TRoute> =
   TRoute extends FileRoutesByPath[keyof FileRoutesByPath]['preLoaderRoute']
     ? ResolveParams<ExtractAllPathsFromFileRoutes<TRoute>>
     : IsRoute<TRoute> extends true
       ? TRoute extends { types: { allParams: infer P } }
         ? unknown extends P
-          ? never
-          : P
-        : never
-      : never;
+          ? AllRegisteredParams
+          : keyof P extends never
+            ? AllRegisteredParams
+            : P
+        : AllRegisteredParams
+      : AllRegisteredParams;
 
 type StoryRouteSearch<TRoute> =
   IsRoute<TRoute> extends true
@@ -148,7 +183,6 @@ export type RouteTreeOverrides = Partial<{
 }>;
 
 export interface RouterParameters<TRoute = undefined> {
-  /** A route object or route options to use for this story. */
   route?: StoryRouteOptions<TRoute>;
   /** The initial URL path to render. */
   path?: StoryRoutePath<TRoute>;
@@ -175,4 +209,9 @@ export interface RouterParameters<TRoute = undefined> {
   routeOverrides?: RouteTreeOverrides;
 
   context?: Record<string, unknown>;
+
+  /**
+   *
+   */
+  useRouterContext?: ({ storyContext }: { storyContext: Parameters<Decorator>[1] }) => AnyContext;
 }

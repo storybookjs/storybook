@@ -177,10 +177,7 @@ export async function addGetChangedStoriesTool(server: McpServer<any, AddonConte
 					});
 				}
 
-				let text =
-					stories.length === 0
-						? 'No new, modified, or related stories detected.'
-						: `Detected ${stories.length} changed stor${stories.length === 1 ? 'y' : 'ies'} (${counts.new} new, ${counts.modified} modified, ${counts.affected} related).`;
+				let text = `Detected ${stories.length} changed stor${stories.length === 1 ? 'y' : 'ies'} (${counts.new} new, ${counts.modified} modified, ${counts.affected} related).`;
 
 				const serializeStory = (story: ChangedStory) =>
 					story.title && story.name && story.importPath

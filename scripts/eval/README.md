@@ -4,7 +4,7 @@ The eval harness benchmarks how well AI coding agents (Claude, Codex) can set up
 
 ## Prerequisites
 
-- `**gh` CLI** — installed and authenticated (`gh auth login`)
+- `**gh` CLI\*\* — installed and authenticated (`gh auth login`)
 - **Claude Code CLI** and/or **Codex CLI** — installed with an active subscription
 
 ## How it works
@@ -13,7 +13,7 @@ The eval harness benchmarks how well AI coding agents (Claude, Codex) can set up
 
 The system forms a cycle:
 
-1. `**sync-baselines.ts`** pushes a canonical `.storybook` config to each benchmark repo so every trial starts from the same known-good baseline.
+1. `**sync-baselines.ts`\*\* pushes a canonical `.storybook` config to each benchmark repo so every trial starts from the same known-good baseline.
 2. `**eval.ts**` (single trial) or `**run-batch.ts**` (batch) creates a git worktree from a benchmark repo, runs an agent inside it, grades the output, and publishes a draft PR with structured result data.
 3. `**collect-pr-data.ts**` scrapes those draft PRs via the GitHub API and loads the results into a local SQLite database for analysis.
 
@@ -75,9 +75,14 @@ Result
 
 ## Running a batch
 
+By default, a batch runs **10 repetitions per (project × variant)** across all benchmark projects. With the default Claude-only matrix that's `7 projects × 1 variant × 10 reps = 70 trials`. Use `--repetitions` to shrink that — e.g. `--repetitions 2` gives 14 trials.
+
 ```sh
 # Prompt is required. Confirms interactively unless you pass --yes (CI / automation).
 node scripts/eval/run-batch.ts --prompt pattern-copy-play --yes
+
+# Smaller batch — 2 reps per project (14 trials with the default Claude-only matrix)
+node scripts/eval/run-batch.ts --prompt pattern-copy-play --yes --repetitions 2
 
 # Claude only
 node scripts/eval/run-batch.ts --prompt pattern-copy-play --yes --agents claude
@@ -92,7 +97,7 @@ node scripts/eval/run-batch.ts --prompt setup --yes
 node scripts/eval/run-batch.ts --prompt pattern-copy-play --yes --concurrency 4
 ```
 
-Batch results are written to `storybook-eval/batches/<timestamp>/`, with per-run log files and a `summary.json`.
+Batch results are written to `storybook-eval/batches/<timestamp>/`, with per-run log files and a `summary.json`. If any trials fail, the batch prints a `Failures:` footer with each failed label, the last error line from its log, and the log path.
 
 ## Syncing baselines
 
@@ -288,7 +293,7 @@ eval.ts --prompt setup
 
 ### Available prompts
 
-- `**pattern-copy-play**` *(default)* — analyze the codebase, copy real usage patterns, configure preview with providers and MSW mocks, write ~10 story files with play functions, verify each with Vitest. This is the only prompt users ever see when they run `npx storybook ai setup`.
+- `**pattern-copy-play**` _(default)_ — analyze the codebase, copy real usage patterns, configure preview with providers and MSW mocks, write ~10 story files with play functions, verify each with Vitest. This is the only prompt users ever see when they run `npx storybook ai setup`.
 - `**setup**` — structured step-by-step: analyze, configure preview, write 9 stories (3 simple / 3 medium / 3 complex), verify each with Vitest. Available only to the eval harness for A/B comparison against the default.
 
 ### Adding a new prompt variant

@@ -1,14 +1,10 @@
 name: nx
 
+# NX Cloud license has expired. Triggers are disabled so this workflow does
+# not run on PRs, pushes, or schedules. It can still be started manually via
+# workflow_dispatch once the license is restored.
 on:
-  push:
-    branches:
-      - next
-  # TODO use pull_request_target in the future to also run on forks
-  pull_request:
-    types: [opened, synchronize, labeled, reopened]
-  schedule:
-    - cron: '0 23 * * *'
+  workflow_dispatch:
 
 permissions:
   actions: read

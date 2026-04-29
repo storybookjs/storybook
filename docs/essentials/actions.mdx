@@ -14,7 +14,7 @@ Actions work via supplying special Storybook-generated mock functions to your st
 
 ### Via `storybook/test` `fn` spies
 
-The recommended way is to assign an arg to `fn()`, which creates a mock function that is automatically spied by Storybook. This is very useful for writing [interaction tests](../writing-tests/interaction-testing.mdx).
+The recommended way is to assign `fn()` to an arg, which creates a mock function that is automatically spied on by Storybook. This is very useful for writing [interaction tests](../writing-tests/interaction-testing.mdx).
 
 <CodeSnippets path="button-story-onclick-action-spy.md" />
 

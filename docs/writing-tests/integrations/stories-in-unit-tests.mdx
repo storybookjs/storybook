@@ -1,5 +1,5 @@
 ---
-title: 'Stories in unit tests'
+title: Stories in unit tests
 sidebar:
   title: Unit tests
   order: 3
@@ -17,15 +17,11 @@ Stories are a practical starting point for UI testing. Import stories into tools
 
 Storybook provides a [`composeStories`](../../api/portable-stories/portable-stories-vitest.mdx#composestories) utility that helps convert stories from a test file into renderable elements that can be reused in your Node tests with JSDOM. It also allows you to apply other Storybook features that you have enabled your project (e.g., [decorators](../../writing-stories/decorators.mdx), [args](../../writing-stories/args.mdx)) into your tests, enabling you to reuse your stories in your testing environment of choice (e.g., [Jest](https://jestjs.io/), [Vitest](https://vitest.dev/)), ensuring your tests are always in sync with your stories without having to rewrite them. This is what we refer to as portable stories in Storybook.
 
-{/* prettier-ignore-start */}
-
 <CodeSnippets path="component-test-with-testing-library.md" />
 
-{/* prettier-ignore-end */}
-
 <Callout variant="warning">
-  
-  You **must** [configure your test environment to use portable stories](../../api/portable-stories/portable-stories-vitest.mdx#1-apply-project-level-annotations) to ensure your stories are composed with all aspects of your Storybook configuration, such as [decorators](../../writing-stories/decorators.mdx).
+
+You **must** [configure your test environment to use portable stories](../../api/portable-stories/portable-stories-vitest.mdx#1-apply-project-level-annotations) to ensure your stories are composed with all aspects of your Storybook configuration, such as [decorators](../../writing-stories/decorators.mdx).
 
 </Callout>
 
@@ -37,31 +33,19 @@ By default, the `setProjectAnnotations` function injects into your existing test
 
 To avoid this, you can override the global configurations by extending either the `composeStory` or `composeStories` functions to provide test-specific configurations. For example:
 
-{/* prettier-ignore-start */}
-
 <CodeSnippets path="override-compose-story-test.md" />
-
-{/* prettier-ignore-end */}
 
 ## Run tests on a single story
 
 You can use the [`composeStory`](../../api/portable-stories/portable-stories-vitest.mdx#composestory) function to allow your tests to run on a single story. However, if you're relying on this method, we recommend that you supply the story metadata (i.e., the [default export](../../writing-stories/index.mdx#default-export)) to the `composeStory` function. This ensures that your tests can accurately determine the correct information about the story. For example:
 
-{/* prettier-ignore-start */}
-
 <CodeSnippets path="single-story-test.md" />
-
-{/* prettier-ignore-end */}
 
 ## Combine stories into a single test
 
 If you intend to test multiple stories in a single test, use the [`composeStories`](../../api/portable-stories/portable-stories-vitest.mdx#composestories) function. It will process every component story you've specified, including any [`args`](../../writing-stories/args.mdx) or [`decorators`](../../writing-stories/decorators.mdx) you've defined. For example:
 
-{/* prettier-ignore-start */}
-
 <CodeSnippets path="multiple-stories-test.md" />
-
-{/* prettier-ignore-end */}
 
 ## Troubleshooting
 
@@ -69,48 +53,40 @@ If you intend to test multiple stories in a single test, use the [`composeStorie
 
 Storybook provides community-led addons for other frameworks like [Vue 2](https://storybook.js.org/addons/@storybook/testing-vue) and [Angular](https://storybook.js.org/addons/@storybook/testing-angular). However, these addons still lack support for the latest stable Storybook release. If you're interested in helping out, we recommend reaching out to the maintainers using the default communication channels (GitHub and [Discord server](https://discord.com/channels/486522875931656193/839297503446695956)).
 
-<IfRenderer renderer="react">
-  ### The args are not being passed to the test
+<If renderer="react">
 
-  The components returned by `composeStories` or `composeStory` not only can be rendered as React components but also come with the combined properties from the story, meta, and global configuration. This means that if you want to access args or parameters, for instance, you can do so:
+### The args are not being passed to the test
 
-  {/* prettier-ignore-start */}
+The components returned by `composeStories` or `composeStory` not only can be rendered as React components but also come with the combined properties from the story, meta, and global configuration. This means that if you want to access args or parameters, for instance, you can do so:
 
-  <CodeSnippets path="reuse-args-test.md" />
+<CodeSnippets path="reuse-args-test.md" />
 
-  {/* prettier-ignore-end */}
+### Next.js Vite cannot find the module
 
-  ### Next.js Vite cannot find the module
+If you are seeing error messages like `Cannot find module 'sb-original/image-context'` ensure you have included `storybookNextJsPlugin`.
 
-  If you are seeing error messages like `Cannot find module 'sb-original/image-context'` ensure you have included `storybookNextJsPlugin`.
+<CodeSnippets path="vite-includeStorybookNextjsPlugin.md" />
 
-  {/* prettier-ignore-start */}
+</If>
 
-  <CodeSnippets path="vite-includeStorybookNextjsPlugin.md" />
+<If renderer="vue">
 
-  {/* prettier-ignore-end */}
-</IfRenderer>
+### The args are not being passed to the test
 
-<IfRenderer renderer="vue">
-  ### The args are not being passed to the test
+When using the `composeStories` or `composeStory` functions, the components being rendered will have a combination of properties from the story, meta, and global configuration. Therefore, if you need to access the args or parameters, you can do so as follows:
 
-  When using the `composeStories` or `composeStory` functions, the components being rendered will have a combination of properties from the story, meta, and global configuration. Therefore, if you need to access the args or parameters, you can do so as follows:
+<CodeSnippets path="reuse-args-test.md" />
 
-  {/* prettier-ignore-start */}
-
-  <CodeSnippets path="reuse-args-test.md" />
-
-  {/* prettier-ignore-end */}
-</IfRenderer>
+</If>
 
 **More testing resources**
 
-* [Interaction testing](../interaction-testing.mdx) for user behavior simulation
-* [Accessibility testing](../accessibility-testing.mdx) for accessibility
-* [Visual testing](../visual-testing.mdx) for appearance
-* [Snapshot testing](../snapshot-testing.mdx) for rendering errors and warnings
-* [Test coverage](../test-coverage.mdx) for measuring code coverage
-* [CI](../in-ci.mdx) for running tests in your CI/CD pipeline
-* [Vitest addon](./vitest-addon/index.mdx) for running tests in Storybook
-* [Test runner](./test-runner.mdx) to automate test execution
-* [End-to-end testing](./stories-in-end-to-end-tests.mdx) for simulating real user scenarios
+- [Interaction testing](../interaction-testing.mdx) for user behavior simulation
+- [Accessibility testing](../accessibility-testing.mdx) for accessibility
+- [Visual testing](../visual-testing.mdx) for appearance
+- [Snapshot testing](../snapshot-testing.mdx) for rendering errors and warnings
+- [Test coverage](../test-coverage.mdx) for measuring code coverage
+- [CI](../in-ci.mdx) for running tests in your CI/CD pipeline
+- [Vitest addon](./vitest-addon/index.mdx) for running tests in Storybook
+- [Test runner](./test-runner.mdx) to automate test execution
+- [End-to-end testing](./stories-in-end-to-end-tests.mdx) for simulating real user scenarios

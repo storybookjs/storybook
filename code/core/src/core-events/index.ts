@@ -100,6 +100,7 @@ enum events {
   SHARE_STORY_LINK = 'shareStoryLink',
   SHARE_ISOLATE_MODE = 'shareIsolateMode',
   SHARE_POPOVER_OPENED = 'sharePopoverOpened',
+  SIDEBAR_FILTER_CHANGED = 'sidebarFilterChanged',
 }
 
 // Enables: `import Events from ...`
@@ -174,6 +175,7 @@ export const {
   SHARE_STORY_LINK,
   SHARE_ISOLATE_MODE,
   SHARE_POPOVER_OPENED,
+  SIDEBAR_FILTER_CHANGED,
 } = events;
 
 export * from './data/create-new-story.ts';

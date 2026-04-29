@@ -1,5 +1,6 @@
 import { join, normalize } from 'pathe';
 
+import { dequal } from 'dequal';
 import { logger } from 'storybook/internal/node-logger';
 import { disposeOxcParsePool } from 'storybook/internal/oxc-parser';
 import { getProjectRoot } from 'storybook/internal/common';
@@ -42,42 +43,8 @@ function isSameStatus(a: Status | undefined, b: Status): boolean {
     a.title === b.title &&
     a.description === b.description &&
     a.sidebarContextMenu === b.sidebarContextMenu &&
-    deepEqual(a.data, b.data)
+    dequal(a.data, b.data)
   );
-}
-
-function deepEqual(a: unknown, b: unknown): boolean {
-  if (Object.is(a, b)) {
-    return true;
-  }
-  if (a === null || b === null || typeof a !== 'object' || typeof b !== 'object') {
-    return false;
-  }
-  if (Array.isArray(a) || Array.isArray(b)) {
-    if (!Array.isArray(a) || !Array.isArray(b) || a.length !== b.length) {
-      return false;
-    }
-    for (let i = 0; i < a.length; i++) {
-      if (!deepEqual(a[i], b[i])) {
-        return false;
-      }
-    }
-    return true;
-  }
-  const aKeys = Object.keys(a as Record<string, unknown>);
-  const bRecord = b as Record<string, unknown>;
-  if (aKeys.length !== Object.keys(bRecord).length) {
-    return false;
-  }
-  for (const key of aKeys) {
-    if (!Object.prototype.hasOwnProperty.call(bRecord, key)) {
-      return false;
-    }
-    if (!deepEqual((a as Record<string, unknown>)[key], bRecord[key])) {
-      return false;
-    }
-  }
-  return true;
 }
 
 type StoryIdsByFileCacheKey = Awaited<ReturnType<StoryIndexGenerator['getIndex']>>;
@@ -205,11 +172,7 @@ export class ChangeDetectionService {
       indexBaselineService?: IndexBaselineService;
       workingDir?: string;
       debounceMs?: number;
-      /**
-       * Presets instance used to resolve `experimental_importParsers` contributions from
-       * framework/renderer plugins. Optional for tests that never construct the real
-       * dependency-graph layer.
-       */
+      /** Presets instance used to resolve `experimental_importParsers` contributions from framework/renderer plugins. */
       presets?: Presets;
     }
   ) {
@@ -330,8 +293,6 @@ export class ChangeDetectionService {
       if (this.disposed) {
         return;
       }
-      // Serialise patches: chain each event behind the previous one so two events touching
-      // the same dep set never interleave inside IncrementalPatcher.patch.
       this.patchQueue = this.patchQueue.then(() => this.handleFileChange(event));
     });
 

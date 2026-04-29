@@ -53,8 +53,6 @@ export function createViteChangeDetectionAdapter(server: ViteDevServer): ChangeD
           case 'unlink':
             kind = 'unlink';
             break;
-          // Filter out 'addDir', 'unlinkDir', 'ready', 'raw', 'error' and any other chokidar
-          // event we don't care about.
           default:
             return;
         }

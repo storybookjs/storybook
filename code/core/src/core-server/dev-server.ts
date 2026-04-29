@@ -153,9 +153,14 @@ export async function storybookDevServer(
       });
 
     if (features.changeDetection) {
-      // start() is sync and routes async-init failures through ChangeDetectionService's
-      // own readiness state-machine; only the adapter probe needs guarding here.
-      const adapter = previewBuilder.changeDetectionAdapter?.();
+      let adapter;
+      try {
+        adapter = previewBuilder.changeDetectionAdapter?.();
+      } catch (err) {
+        logger.warn(
+          `Change detection: adapter initialisation failed — ${err instanceof Error ? err.message : String(err)}`
+        );
+      }
       changeDetectionService.start(adapter, true);
     }
   }

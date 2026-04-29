@@ -1,9 +1,3 @@
-// Rewritten for forward-walk semantics per ADR-F.
-// Pure-function tests (mergeStatusValues, mergeChangeDetectionStatuses,
-// buildIndexBaselineStatuses), readiness-state-machine tests, git-state-change tests
-// and debounce tests are kept verbatim. Tests that previously drove the service via
-// `MockBuilder.emit(moduleGraph)` now drive it via `MockAdapter.emitFileChange(...)`
-// and stub the dependency-graph module to inject a synthetic `ReverseIndexImpl`.
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { logger } from 'storybook/internal/node-logger';
@@ -265,10 +259,6 @@ describe('ChangeDetectionService', () => {
     vi.resetAllMocks();
     internal_resetChangeDetectionReadiness();
   });
-
-  // ------------------------------------------------------------------
-  // ADR-F semantic test cases (modified vs affected) — all four MUST appear.
-  // ------------------------------------------------------------------
 
   it('edits a story file -> that story is modified at distance 0; importer stories are affected at distance 1', async () => {
     // Story A is the changed file (distance 0). Story B imports A (distance 1).

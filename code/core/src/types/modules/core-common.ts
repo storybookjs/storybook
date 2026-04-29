@@ -617,9 +617,13 @@ export interface StorybookConfigRaw {
    */
   experimental_importParsers?:
     | import('../../core-server/change-detection/parser-registry/types.ts').ImportParser[]
-    | (() => Promise<
-        import('../../core-server/change-detection/parser-registry/types.ts').ImportParser[]
-      >);
+    | ((
+        existing: import('../../core-server/change-detection/parser-registry/types.ts').ImportParser[]
+      ) =>
+        | import('../../core-server/change-detection/parser-registry/types.ts').ImportParser[]
+        | Promise<
+            import('../../core-server/change-detection/parser-registry/types.ts').ImportParser[]
+          >);
 
   storyIndexGenerator?: StoryIndexGenerator;
 

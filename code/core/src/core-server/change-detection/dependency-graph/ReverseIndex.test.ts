@@ -1,5 +1,4 @@
-// Replaces trace-changed.test.ts. Covers the construction + mutation surface of
-// ReverseIndexImpl (per ADR-F + §5 of the consensus plan).
+// Covers the construction + mutation surface of ReverseIndexImpl.
 import { describe, expect, it } from 'vitest';
 
 import { ReverseIndexImpl } from './ReverseIndex.ts';

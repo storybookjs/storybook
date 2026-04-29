@@ -261,10 +261,11 @@ describe('UserPreferencesCommand', () => {
         value: true,
         configurable: true,
       });
-      process.env.IN_STORYBOOK_SANDBOX = 'true';
-
       vi.mocked(prompt.select).mockResolvedValueOnce(true); // new user
       vi.mocked(prompt.confirm).mockResolvedValueOnce(true); // AI setup: yes
+
+      const oldInSandbox = process.env.IN_STORYBOOK_SANDBOX;
+      process.env.IN_STORYBOOK_SANDBOX = 'true';
 
       try {
         const result = await command.execute({
@@ -275,7 +276,11 @@ describe('UserPreferencesCommand', () => {
         expect(result.selectedFeatures.has(Feature.AI)).toBe(true);
         expect(result.selectedFeatures.has(Feature.ONBOARDING)).toBe(true);
       } finally {
-        delete process.env.IN_STORYBOOK_SANDBOX;
+        if (oldInSandbox !== undefined) {
+          process.env.IN_STORYBOOK_SANDBOX = oldInSandbox;
+        } else {
+          delete process.env.IN_STORYBOOK_SANDBOX;
+        }
       }
     });
 

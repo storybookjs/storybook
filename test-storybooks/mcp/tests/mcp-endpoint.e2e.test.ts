@@ -340,15 +340,6 @@ describe('MCP Endpoint E2E Tests', () => {
 				    "title": "Get story preview URLs",
 				  },
 				  {
-				    "description": "Get Storybook stories marked as new, modified, or related. Returns story metadata only (no URLs).",
-				    "inputSchema": {
-				      "properties": {},
-				      "type": "object",
-				    },
-				    "name": "get-changed-stories",
-				    "title": "Get changed stories metadata",
-				  },
-				  {
 				    "description": "Get comprehensive instructions for writing, testing, and fixing Storybook stories (.stories.tsx, .stories.ts, .stories.jsx, .stories.js, .stories.svelte, .stories.vue files).
 
 				CRITICAL: You MUST call this tool before:
@@ -377,6 +368,15 @@ describe('MCP Endpoint E2E Tests', () => {
 				    },
 				    "name": "get-storybook-story-instructions",
 				    "title": "Storybook Story Development Instructions",
+				  },
+				  {
+				    "description": "Get Storybook stories marked as new, modified, or related. Returns story metadata only (no URLs).",
+				    "inputSchema": {
+				      "properties": {},
+				      "type": "object",
+				    },
+				    "name": "get-changed-stories",
+				    "title": "Get changed stories metadata",
 				  },
 				  {
 				    "description": "Run story tests.

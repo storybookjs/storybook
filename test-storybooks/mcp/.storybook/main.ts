@@ -29,6 +29,7 @@ const config = defineMain({
 		disableTelemetry: true,
 	},
 	features: {
+		changeDetection: true,
 		experimentalComponentsManifest: true,
 	},
 	// No refs - single source mode

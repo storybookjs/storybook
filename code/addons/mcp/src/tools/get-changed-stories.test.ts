@@ -12,7 +12,7 @@ const { mockGetStatusStore } = vi.hoisted(() => ({
 	mockGetStatusStore: vi.fn(),
 }));
 
-vi.mock('storybook/internal/core-server', () => ({
+vi.mock('storybook/manager-api', () => ({
 	experimental_getStatusStore: (...args: unknown[]) => mockGetStatusStore(...args),
 }));
 
@@ -89,20 +89,23 @@ describe('getChangedStoriesTool', () => {
 
 	it('returns grouped markdown text with changed story metadata', async () => {
 		mockGetStatusStore.mockReturnValue({
-			getAllStatuses: () => ({
+			getAll: () => ({
 				'button--primary': {
 					'storybook/change-detection': {
 						value: 'status-value:new',
+						storyId: 'button--primary',
 					},
 				},
 				'button--secondary': {
 					'storybook/change-detection': {
 						value: 'status-value:modified',
+						storyId: 'button--secondary',
 					},
 				},
 				'input--default': {
 					'storybook/change-detection': {
 						value: 'status-value:affected',
+						storyId: 'input--default',
 					},
 				},
 			}),
@@ -128,15 +131,17 @@ describe('getChangedStoriesTool', () => {
 
 	it('filters out unsupported status values', async () => {
 		mockGetStatusStore.mockReturnValue({
-			getAllStatuses: () => ({
+			getAll: () => ({
 				'button--primary': {
 					'storybook/change-detection': {
 						value: 'status-value:new',
+						storyId: 'button--primary',
 					},
 				},
 				'button--secondary': {
 					'storybook/change-detection': {
 						value: 'status-value:success',
+						storyId: 'button--secondary',
 					},
 				},
 			}),
@@ -155,15 +160,24 @@ describe('getChangedStoriesTool', () => {
 
 	it('groups by new, modified, related, then sorts by storyId', async () => {
 		mockGetStatusStore.mockReturnValue({
-			getAllStatuses: () => ({
+			getAll: () => ({
 				'input--default': {
-					'storybook/change-detection': { value: 'status-value:affected' },
+					'storybook/change-detection': {
+						value: 'status-value:affected',
+						storyId: 'input--default',
+					},
 				},
 				'button--secondary': {
-					'storybook/change-detection': { value: 'status-value:new' },
+					'storybook/change-detection': {
+						value: 'status-value:new',
+						storyId: 'button--secondary',
+					},
 				},
 				'button--primary': {
-					'storybook/change-detection': { value: 'status-value:new' },
+					'storybook/change-detection': {
+						value: 'status-value:new',
+						storyId: 'button--primary',
+					},
 				},
 			}),
 		});
@@ -187,7 +201,10 @@ describe('getChangedStoriesTool', () => {
 		mockGetStatusStore.mockReturnValue({
 			getAll: () => ({
 				'button--primary': {
-					'storybook/change-detection': { value: 'status-value:new' },
+					'storybook/change-detection': {
+						value: 'status-value:new',
+						storyId: 'button--primary',
+					},
 				},
 			}),
 		});
@@ -199,19 +216,16 @@ describe('getChangedStoriesTool', () => {
 		expect(text).toContain('- `button--primary`: Button / Primary (`./src/Button.stories.tsx`)');
 	});
 
-	it('supports allStatuses property with single-status objects', async () => {
-		mockGetStatusStore.mockImplementation((statusType?: string) => {
-			if (!statusType) {
-				throw new Error('type required');
-			}
-
-			return {
-				allStatuses: {
-					'button--secondary': {
+	it('supports getAll() for modified stories', async () => {
+		mockGetStatusStore.mockReturnValue({
+			getAll: () => ({
+				'button--secondary': {
+					'storybook/change-detection': {
 						value: 'status-value:modified',
+						storyId: 'button--secondary',
 					},
 				},
-			};
+			}),
 		});
 
 		const response = await callTool();
@@ -225,9 +239,12 @@ describe('getChangedStoriesTool', () => {
 
 	it('uses fallbacks when a changed story is not in index', async () => {
 		mockGetStatusStore.mockReturnValue({
-			getAllStatuses: () => ({
+			getAll: () => ({
 				'missing--story': {
-					'storybook/change-detection': { value: 'status-value:modified' },
+					'storybook/change-detection': {
+						value: 'status-value:modified',
+						storyId: 'missing--story',
+					},
 				},
 			}),
 		});
@@ -260,7 +277,7 @@ describe('getChangedStoriesTool', () => {
 			content: [
 				{
 					type: 'text',
-					text: 'Error: Storybook status store does not expose a readable all-statuses API',
+					text: 'Error: statusStore.getAll is not a function',
 				},
 			],
 			isError: true,
@@ -269,10 +286,11 @@ describe('getChangedStoriesTool', () => {
 
 	it('returns early without fetching index when there are no relevant changed statuses', async () => {
 		mockGetStatusStore.mockReturnValue({
-			getAllStatuses: () => ({
+			getAll: () => ({
 				'button--primary': {
 					'storybook/change-detection': {
 						value: 'status-value:success',
+						storyId: 'button--primary',
 					},
 				},
 			}),

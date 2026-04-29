@@ -4,7 +4,7 @@ The eval harness benchmarks how well AI coding agents (Claude, Codex) can set up
 
 ## Prerequisites
 
-- `**gh` CLI\*\* — installed and authenticated (`gh auth login`)
+- **`gh` CLI** — installed and authenticated (`gh auth login`)
 - **Claude Code CLI** and/or **Codex CLI** — installed with an active subscription
 
 ## How it works
@@ -13,7 +13,7 @@ The eval harness benchmarks how well AI coding agents (Claude, Codex) can set up
 
 The system forms a cycle:
 
-1. `**sync-baselines.ts`\*\* pushes a canonical `.storybook` config to each benchmark repo so every trial starts from the same known-good baseline.
+1. `**sync-baselines.ts**` pushes a canonical `.storybook` config to each benchmark repo so every trial starts from the same known-good baseline.
 2. `**eval.ts**` (single trial) or `**run-batch.ts**` (batch) creates a git worktree from a benchmark repo, runs an agent inside it, grades the output, and publishes a draft PR with structured result data.
 3. `**collect-pr-data.ts**` scrapes those draft PRs via the GitHub API and loads the results into a local SQLite database for analysis.
 
@@ -275,7 +275,7 @@ The eval mirrors the real user flow exactly:
 3. The **agent** runs `npx storybook ai setup` itself as a tool call.
 4. The agent reads the resulting project-aware markdown and follows it.
 
-The harness hands step (1) to the trial agent as its task. It never spawns `ai setup` itself — that's the agent's job, just like with real users.
+The harness hands steps (1) and (2) to the trial agent as its task. Eval starts at step (3).
 
 ### How variant selection works
 

@@ -94,21 +94,33 @@ export async function runStoryRenderPass(opts: {
   const pm = detectPackageManager(resolveInstallRoot(opts.projectPath));
   const [runCmd, ...runArgs] = getScriptRunCommand(pm);
 
-  const result = await x(
-    runCmd,
-    [...runArgs, '--reporter=json', `--outputFile=${reportPath}`, ...runnableStoryFiles],
-    {
-      throwOnError: false,
-      timeout: 300_000,
-      nodeOptions: {
-        cwd: opts.projectPath,
-        env: {
-          ...process.env,
-          STORYBOOK_DISABLE_TELEMETRY: '1',
+  const timeoutMs = STORY_RENDER_TIMEOUT_MS;
+  let result: { exitCode: number | null; stdout: string; stderr: string };
+  let timedOut = false;
+  try {
+    result = await x(
+      runCmd,
+      [...runArgs, '--reporter=json', `--outputFile=${reportPath}`, ...runnableStoryFiles],
+      {
+        throwOnError: false,
+        timeout: timeoutMs,
+        nodeOptions: {
+          cwd: opts.projectPath,
+          env: {
+            ...process.env,
+            STORYBOOK_DISABLE_TELEMETRY: '1',
+          },
         },
-      },
+      }
+    );
+  } catch (error) {
+    if (isAbortTimeoutError(error)) {
+      timedOut = true;
+      result = { exitCode: null, stdout: '', stderr: `Timed out after ${timeoutMs / 1000}s` };
+    } else {
+      throw error;
     }
-  );
+  }
 
   const output = `${result.stdout}\n${result.stderr}`.trim();
   await writeFile(outputPath, output);
@@ -117,8 +129,11 @@ export async function runStoryRenderPass(opts: {
     ? await readStoryRenderSummary(reportPath, runnableStoryFiles.length)
     : undefined;
 
-  if (result.exitCode === 0) {
+  const success = !timedOut && result.exitCode === 0;
+  if (success) {
     opts.logger.logSuccess(`${tag}: passed`);
+  } else if (timedOut) {
+    opts.logger.logError(`${tag}: timed out after ${timeoutMs / 1000}s`);
   } else {
     const rate = summary ? `${summary.passed}/${summary.total} passed` : `exit ${result.exitCode}`;
     opts.logger.logError(`${tag}: ${rate}`);
@@ -126,12 +141,25 @@ export async function runStoryRenderPass(opts: {
 
   return {
     attempted: true,
-    success: result.exitCode === 0,
+    success,
     outputPath,
     reportPath,
-    runError: summary ? undefined : output || 'Story-render report not found',
+    runError: timedOut
+      ? `Story-render run timed out after ${timeoutMs / 1000}s`
+      : summary
+        ? undefined
+        : output || 'Story-render report not found',
     summary,
   };
+}
+
+const STORY_RENDER_TIMEOUT_MS = 600_000;
+
+function isAbortTimeoutError(error: unknown): boolean {
+  if (!(error instanceof Error)) return false;
+  if ('code' in error && (error as { code?: string }).code === 'ABORT_ERR') return true;
+  const cause = (error as { cause?: unknown }).cause;
+  return cause instanceof Error && cause.name === 'TimeoutError';
 }
 
 /** Build the full command tokens for `<pm> run vitest:storybook [--] <extra args>`. */

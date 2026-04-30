@@ -48,6 +48,7 @@ export * from './utils/get-addon-names.ts';
 export * from './utils/utils.ts';
 export * from './utils/command.ts';
 export * from './node-version.ts';
+export * from './utils/create-preview-annotations.ts';
 
 export { versions };
 

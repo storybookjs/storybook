@@ -38,34 +38,34 @@
     "*.{md,mdx}",
     "!docs/**",
     "docs/configure/integration/*.mdx",
-    "docs/versions/**",
+    "docs/versions/**"
   ],
   "overrides": [
     {
       "files": ["docs/**"],
       "options": {
         "singleQuote": true,
-        "trailingComma": "all",
-      },
+        "trailingComma": "all"
+      }
     },
     {
       "files": ["*.md", "*.mdx"],
       "options": {
         "importOrderSeparation": false,
-        "importOrderSortSpecifiers": false,
-      },
+        "importOrderSortSpecifiers": false
+      }
     },
     {
       "files": ["*.component.html"],
       "options": {
-        "parser": "angular",
-      },
+        "parser": "angular"
+      }
     },
     {
       "files": ["**/frameworks/angular/src/**/*.ts", "**/frameworks/angular/template/**/*.ts"],
       "options": {
-        "parser": "babel-ts",
-      },
-    },
-  ],
+        "parser": "babel-ts"
+      }
+    }
+  ]
 }

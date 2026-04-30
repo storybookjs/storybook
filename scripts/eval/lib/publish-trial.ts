@@ -281,9 +281,9 @@ function renderPrBody(opts: { branch: string; data: EvalData }) {
     '<details>',
     '<summary>Full prompt</summary>',
     '',
-    '```md',
+    '````md',
     opts.data.prompt.content,
-    '```',
+    '````',
     '</details>'
   );
 

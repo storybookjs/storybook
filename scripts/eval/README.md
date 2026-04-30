@@ -60,7 +60,7 @@ node scripts/eval/eval.ts --list-prompts
 
 When a trial completes, it prints a summary:
 
-```
+```text
 Result
   Build:   PASS
   Stories: 8/12 (67%) -> 11/12 (92%)
@@ -218,13 +218,13 @@ The headline metric is **normalized preview gain** — how much of the remaining
 
 If the baseline already passes every story (**before_rate = 100%**), there is no remaining gap — the gain and headline score are **0**.
 
-```
+```text
 gain = (after_rate - before_rate) / (1 - before_rate)
 ```
 
 For example, if the baseline pass rate is 60% and the agent achieves 80%:
 
-```
+```text
 gain = (0.80 - 0.60) / (1 - 0.60) = 0.50
 ```
 
@@ -279,11 +279,11 @@ The harness hands steps (1) and (2) to the trial agent as its task. Eval starts 
 
 ### How variant selection works
 
-Prompt variants live in [`code/lib/cli-storybook/src/ai/prompts/`](../../code/lib/cli-storybook/src/ai/prompts/). Each variant is a self-contained `.ts` file that exports an `instructions(projectInfo)` function. The registry in `prompts/index.ts` lists every variant.
+Prompt variants live in [`code/lib/cli-storybook/src/ai/setup-prompts/`](../../code/lib/cli-storybook/src/ai/setup-prompts/). Each variant is a self-contained `.ts` file that exports an `instructions(projectInfo)` function. The registry in `prompts/index.ts` lists every variant.
 
 The eval selects a variant by injecting the `EVAL_SETUP_PROMPT` env var into the agent's spawn environment. When the agent later runs `npx storybook ai setup`, the CLI reads that env var and returns the matching variant. Real users never set this env var, so they always get the default (`pattern-copy-play`).
 
-```
+```text
 eval.ts --prompt setup
   → run-trial.ts calls driver.execute({ env: { EVAL_SETUP_PROMPT: 'setup' } })
     → agent spawns with that env
@@ -298,9 +298,9 @@ eval.ts --prompt setup
 
 ### Adding a new prompt variant
 
-1. Create `code/lib/cli-storybook/src/ai/prompts/<name>.ts`. Make it fully self-contained — keep its own `getTypeImportSource`, code-example helpers, and any other private utilities so changing one variant can never accidentally change another. Duplication is deliberate here.
+1. Create `code/lib/cli-storybook/src/ai/setup-prompts/<name>.ts`. Make it fully self-contained — keep its own `getTypeImportSource`, code-example helpers, and any other private utilities so changing one variant can never accidentally change another. Duplication is deliberate here.
 2. Export an `instructions(projectInfo: ProjectInfo): string` function.
-3. Register it in `code/lib/cli-storybook/src/ai/prompts/index.ts` by adding an entry to `PROMPT_BUILDERS`.
+3. Register it in `code/lib/cli-storybook/src/ai/setup-prompts/index.ts` by adding an entry to `CURRENTLY_USED_PROMPT` and moving the existing one to FORMERLY_USED_PROMPTS.
 4. Use it from the eval: `node scripts/eval/eval.ts -p mealdrop --prompt <name>`.
 
 To promote a variant to be the default users see, change `DEFAULT_PROMPT_NAME` in the same registry file.

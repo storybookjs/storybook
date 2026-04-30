@@ -112,6 +112,9 @@ describe('UserPreferencesCommand', () => {
       configurable: true,
     });
 
+    // Reset sandbox env to avoid leaking between tests (or from the actual test environment)
+    delete process.env.IN_STORYBOOK_SANDBOX;
+
     vi.clearAllMocks();
 
     // Re-apply mocks after clearAllMocks (which clears call history but not implementations,

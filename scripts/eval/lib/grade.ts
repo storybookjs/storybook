@@ -186,7 +186,7 @@ export async function grade(
   } else if (cssCheck === 'fail') {
     logger.logError('CssCheck story failed');
   } else {
-    logger.logError('CssCheck story missing or not run');
+    logger.log('CssCheck story not run');
   }
 
   const baselinePreviewRun = await withBaselinePreviewEnvironment({

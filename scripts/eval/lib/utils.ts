@@ -40,8 +40,12 @@ export function createLogger(prefix?: string): Logger {
   };
 }
 
-export const formatDuration = (s: number) =>
-  s < 60 ? `${Math.round(s)}s` : `${Math.floor(s / 60)}m${Math.round(s % 60)}s`;
+export const formatDuration = (s: number) => {
+  const total = Math.round(s);
+  const minutes = Math.floor(total / 60);
+  const seconds = total % 60;
+  return minutes > 0 ? `${minutes}m${seconds}s` : `${seconds}s`;
+};
 
 export const formatCost = (cost?: number) => (cost == null ? '-' : `$${cost.toFixed(2)}`);
 
@@ -178,8 +182,12 @@ export async function captureEnvironment(): Promise<EvalEnvironment> {
   let evalBranch = 'unknown';
   let evalCommit = 'unknown';
   try {
-    evalBranch = (await x('git', ['rev-parse', '--abbrev-ref', 'HEAD'])).stdout.trim();
-    evalCommit = (await x('git', ['rev-parse', 'HEAD'])).stdout.trim();
+    evalBranch = (
+      await x('git', ['rev-parse', '--abbrev-ref', 'HEAD'], { nodeOptions: { cwd: REPO_ROOT } })
+    ).stdout.trim();
+    evalCommit = (
+      await x('git', ['rev-parse', 'HEAD'], { nodeOptions: { cwd: REPO_ROOT } })
+    ).stdout.trim();
   } catch {
     /* not in a git repo */
   }

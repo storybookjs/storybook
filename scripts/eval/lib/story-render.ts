@@ -200,19 +200,23 @@ export async function withBaselinePreviewEnvironment<T>(opts: {
 }
 
 async function readStoryRenderSummary(reportPath: string, storyFiles: number) {
-  const rawReport = JSON.parse(await readFile(reportPath, 'utf8'));
-  const parsed = parseVitestResults(rawReport).summary;
+  try {
+    const rawReport = JSON.parse(await readFile(reportPath, 'utf8'));
+    const parsed = parseVitestResults(rawReport).summary;
 
-  if (!parsed) {
+    if (!parsed) {
+      return undefined;
+    }
+
+    return {
+      total: parsed.total,
+      passed: parsed.passed,
+      storyFiles,
+      cssCheck: parsed.cssCheck,
+    } satisfies StoryRenderGrade;
+  } catch {
     return undefined;
   }
-
-  return {
-    total: parsed.total,
-    passed: parsed.passed,
-    storyFiles,
-    cssCheck: parsed.cssCheck,
-  } satisfies StoryRenderGrade;
 }
 
 async function snapshotFiles(repoRoot: string, paths: string[]): Promise<FileSnapshot[]> {

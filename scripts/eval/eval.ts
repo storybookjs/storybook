@@ -254,7 +254,8 @@ function buildManualCommand(variant: AgentVariant, promptPath: string, promptNam
   // EVAL_SETUP_PROMPT must be in the env the agent inherits, so that the
   // agent's own `npx storybook ai setup` tool call picks the right variant.
   const envPrefix = `EVAL_SETUP_PROMPT=${promptName} `;
-  const promptArg = `"$(cat ${promptPath})"`;
+  const escapedPath = promptPath.replace(/'/g, `'\\''`);
+  const promptArg = `"$(cat '${escapedPath}')"`;
   if (variant.agent === 'claude') {
     const sdkModel = AGENTS.claude.sdkModelIds[variant.model] ?? variant.model;
     return `${envPrefix}claude --model ${sdkModel} ${promptArg}`;

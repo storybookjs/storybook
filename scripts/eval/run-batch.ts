@@ -347,11 +347,13 @@ function requireBatchPrompt(options: RunBatchOptions): string {
   const prompt = options.prompt.trim();
   const available = listPrompts();
 
-  if (!available.some((name) => name.toLowerCase() === prompt.toLowerCase())) {
+  const canonical = available.find((name) => name.toLowerCase() === prompt.toLowerCase());
+
+  if (!canonical) {
     throw new Error(`Unknown prompt "${prompt}". Available prompts: ${available.join(', ')}`);
   }
 
-  return prompt;
+  return canonical;
 }
 
 async function runBatchDescriptor(
@@ -477,7 +479,7 @@ const runBatchOptions = {
   prompt: {
     type: 'string' as const,
     description:
-      'Prompt variant name (required; registered in code/lib/cli-storybook/src/ai/prompts/)',
+      'Prompt variant name (required; registered in code/lib/cli-storybook/src/ai/setup-prompts/)',
   },
   agents: {
     type: 'string' as const,

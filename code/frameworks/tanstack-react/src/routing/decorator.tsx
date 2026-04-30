@@ -81,34 +81,35 @@ function resolveTree(Story: ComponentType, context: Parameters<Decorator>[1]): R
     return { tree, leaf };
   }
 
+  if (isRoute(routerParameterRoute)) {
+    // The user provided a route instance that isn't connected to any root. Use it as the leaf of a new synthetic root, and duplicate it to ensure any nested children are cloned properly.
+    const syntheticRoot = createRootRoute(
+      (routeOverrides as Record<string, any> | undefined)?.__root__ ?? {}
+    );
+    routerParameterRoute.update({ getParentRoute: () => syntheticRoot } as any);
+    syntheticRoot.addChildren([routerParameterRoute]);
+    const tree = duplicateRouteTree(syntheticRoot, { overrides: routeOverrides });
+    const leaf = tree.byId.get(routerParameterRoute.id) ?? tree.root;
+    injectStoryComponent(leaf, Story, routeOverrides, leaf.id);
+    return { tree, leaf };
+  }
+
   // No route instance — build a synthetic root + child from plain options, then
   // run it through `duplicateRouteTree` so any nested `children` Route instances
   // attached to the user's plain options are cloned too.
-  const plainOptions = (routerParameterRoute ?? {}) as Record<string, unknown>;
-  const { children: plainChildren, ...plainRest } = plainOptions as {
-    children?: AnyRoute[];
-    [k: string]: unknown;
-  };
+  const plainOptions = routerParameterRoute ?? {};
   const syntheticRoot = createRootRoute(
     (routeOverrides as Record<string, any> | undefined)?.__root__ ?? {}
   );
   const syntheticChild = createRoute({
     component: () => <Story />,
-    ...plainRest,
-    path: ((plainRest as { path?: string }).path ?? '/') as any,
+    ...plainOptions,
     getParentRoute: () => syntheticRoot,
   } as any);
-  if (plainChildren?.length) {
-    for (const child of plainChildren) {
-      child.options.getParentRoute = () => syntheticChild;
-      child.update({ getParentRoute: () => syntheticChild } as any);
-    }
-    syntheticChild.addChildren(plainChildren);
-  }
   syntheticRoot.addChildren([syntheticChild]);
 
-  const tree = duplicateRouteTree(syntheticRoot as any, { overrides: routeOverrides });
-  const leaf = tree.byId.get(syntheticChild.id) ?? (tree.root as unknown as AnyRoute);
+  const tree = duplicateRouteTree(syntheticRoot, { overrides: routeOverrides });
+  const leaf = tree.byId.get(syntheticChild.id) ?? tree.root;
   injectStoryComponent(leaf, Story, routeOverrides, leaf.id);
   return { tree, leaf };
 }

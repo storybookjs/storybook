@@ -14,7 +14,6 @@ const MCP_ENDPOINT = `http://localhost:${PORT}/mcp`;
 const STARTUP_TIMEOUT = 30_000;
 
 let storybookProcess: ReturnType<typeof x> | null = null;
-let hasRemoteSource = false;
 
 async function mcpRequest(method: string, params: any = {}) {
 	const response = await fetch(MCP_ENDPOINT, {
@@ -35,13 +34,6 @@ describe('MCP Composition E2E Tests', () => {
 		await killPort(PORT);
 		storybookProcess = startStorybook('.storybook-composition', PORT);
 		await waitForMcpEndpoint(MCP_ENDPOINT);
-
-		const docsResponse = await mcpRequest('tools/call', {
-			name: 'list-all-documentation',
-			arguments: {},
-		});
-		const docsText = docsResponse.result.content[0].text as string;
-		hasRemoteSource = docsText.includes('id: storybook-ui') || docsText.includes('# Storybook UI');
 	}, STARTUP_TIMEOUT);
 
 	afterAll(async () => {
@@ -69,7 +61,7 @@ describe('MCP Composition E2E Tests', () => {
 			// Local components should be present
 			expect(text).toContain('Button (example-button)');
 
-			// Remote source output should include its own documentation sections.
+			// Remote components should be present (from storybook-ui)
 			expect(text).toContain('## Components');
 		});
 
@@ -217,28 +209,17 @@ describe('MCP Composition E2E Tests', () => {
 				},
 			});
 
-			if (hasRemoteSource) {
-				expect(response.result).toMatchObject({
-					isError: true,
-					content: [
-						{
-							type: 'text',
-							text: expect.stringContaining('storybookId is required'),
-						},
-					],
-				});
-				return;
-			}
-
-			expect(response.result).toMatchObject({
-				content: [
-					{
-						type: 'text',
-						text: expect.stringContaining('ID: example-button'),
-					},
-				],
-			});
-			expect(response.result).not.toHaveProperty('isError');
+			expect(response.result).toMatchInlineSnapshot(`
+				{
+				  "content": [
+				    {
+				      "text": "Invalid arguments for tool get-documentation: [{"kind":"schema","type":"object","expected":"\\"storybookId\\"","received":"undefined","message":"Invalid key: Expected \\"storybookId\\" but received undefined","path":[{"type":"object","origin":"key","input":{"id":"example-button"},"key":"storybookId"}]}]",
+				      "type": "text",
+				    },
+				  ],
+				  "isError": true,
+				}
+			`);
 		});
 	});
 

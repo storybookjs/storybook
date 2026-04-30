@@ -1,26 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-// Access the private normalizeOptions via a test-only re-export workaround:
-// We test the behaviour through its observable effects by reconstructing the logic inline.
-// The actual fix is in Options.tsx; these tests document the bug and verify the fix.
-
-// Inline the fixed normalizeOptions so the tests are self-contained and don't require
-// exporting an internal helper.
-const normalizeOptions = (options: any[], labels?: Record<any, string>) => {
-  if (Array.isArray(options)) {
-    return options.reduce((acc: Record<string, any>, item: any) => {
-      const label =
-        labels != null &&
-        !Array.isArray(labels) &&
-        Object.prototype.hasOwnProperty.call(labels, item)
-          ? labels[item]
-          : String(item);
-      acc[label] = item;
-      return acc;
-    }, {});
-  }
-  return options;
-};
+import { normalizeOptions } from './Options';
 
 describe('normalizeOptions', () => {
   it('uses String(item) as label when no labels map is provided', () => {
@@ -50,9 +30,10 @@ describe('normalizeOptions', () => {
     const labelsAsArray: any = ['first', 'second', 'third'];
     const options = ['reverse', 'map', 'filter'];
     const result = normalizeOptions(options, labelsAsArray);
-    // Each key must be the plain string value, not a native function
     expect(result).toEqual({ reverse: 'reverse', map: 'map', filter: 'filter' });
-    expect(Object.keys(result)).not.toContain('function reverse() { [native code] }');
+    expect(Object.keys(result as object)).not.toContain(
+      'function reverse() { [native code] }'
+    );
   });
 
   it('returns the options object unchanged when options is not an array', () => {

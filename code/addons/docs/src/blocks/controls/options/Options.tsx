@@ -18,7 +18,7 @@ import { SelectControl } from './Select';
  * While non-primitive values are deprecated, they might still not be valid object keys, so the
  * resulting object is a Label -> Value mapping.
  */
-const normalizeOptions = (options: Options, labels?: Record<any, string>) => {
+export const normalizeOptions = (options: Options, labels?: Record<any, string>) => {
   if (Array.isArray(options)) {
     return options.reduce((acc, item) => {
       // Guard against `labels` being an array (e.g. from Svelte docgen) and against

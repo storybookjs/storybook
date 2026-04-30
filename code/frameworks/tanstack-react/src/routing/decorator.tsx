@@ -172,13 +172,15 @@ function TanStackRouterStory({ Story, context }: TanStackRouterStoryProps) {
     storyContext: context,
   });
 
+  const router = React.useMemo(
+    () => createStoryRouter({ Story, context, routerContext }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [context.id]
+  );
+
   return (
     <RouterProvider
-      router={createStoryRouter({
-        Story,
-        context,
-        routerContext,
-      })}
+      router={router}
       context={{
         ...context.parameters.tanstack?.router?.context,
         ...routerContext,

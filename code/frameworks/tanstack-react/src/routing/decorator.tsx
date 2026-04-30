@@ -168,13 +168,6 @@ interface TanStackRouterStoryProps {
 }
 
 function TanStackRouterStory({ Story, context }: TanStackRouterStoryProps) {
-  const storyRef = React.useRef(Story);
-  storyRef.current = Story;
-  const StableStory = React.useCallback(() => {
-    const Current = storyRef.current;
-    return <Current />;
-  }, []);
-
   const routerContext = context.parameters.tanstack?.router?.useRouterContext?.({
     storyContext: context,
   });
@@ -182,7 +175,7 @@ function TanStackRouterStory({ Story, context }: TanStackRouterStoryProps) {
   return (
     <RouterProvider
       router={createStoryRouter({
-        Story: StableStory,
+        Story,
         context,
         routerContext,
       })}

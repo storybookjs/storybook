@@ -17,7 +17,7 @@ import { SupportedLanguage } from 'storybook/internal/types';
 import { ProjectTypeService } from '../../../create-storybook/src/services/ProjectTypeService.ts';
 
 import { getStorybookData } from '../automigrate/helpers/mainConfigFile.ts';
-import { generateMarkdownOutput } from './prompt.ts';
+import { getAiSetupMarkdownOutput } from './setup-prompts/index.ts';
 import type { ProjectInfo, AiSetupOptions } from './types.ts';
 
 export async function aiSetup(options: AiSetupOptions): Promise<void> {
@@ -84,7 +84,7 @@ export async function aiSetup(options: AiSetupOptions): Promise<void> {
     return;
   }
 
-  const result = await generateMarkdownOutput(projectInfo);
+  const result = await getAiSetupMarkdownOutput(projectInfo);
   const markdownOutput = result.markdown;
 
   await telemetry('ai-setup', {

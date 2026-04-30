@@ -1,9 +1,6 @@
-import { dedent } from 'ts-dedent';
+import type { ProjectInfo } from '../types.ts';
 
-import { getPrompts } from './setup-prompts/index.ts';
-import type { ProjectInfo } from './types.ts';
-
-function getProjectOverview(projectInfo: ProjectInfo): string {
+export function getProjectOverview(projectInfo: ProjectInfo): string {
   const rows: Array<[string, string]> = [
     ['Version', projectInfo.storybookVersion || 'unknown'],
     ['Renderer', projectInfo.rendererPackage || 'unknown'],
@@ -24,24 +21,4 @@ function getProjectOverview(projectInfo: ProjectInfo): string {
   return ['## Project Info', '', '| Property | Value |', '|----------|-------|', tableRows].join(
     '\n'
   );
-}
-
-export async function generateMarkdownOutput(projectInfo: ProjectInfo): Promise<{
-  markdown: string;
-}> {
-  const { prompts: aiPrompts } = await getPrompts(projectInfo);
-
-  const sections: string[] = [];
-
-  sections.push(dedent`
-    # Storybook Setup
-  `);
-
-  sections.push(getProjectOverview(projectInfo));
-
-  for (const aiPrompt of aiPrompts) {
-    sections.push(aiPrompt.instructions);
-  }
-
-  return { markdown: sections.join('\n\n') };
 }

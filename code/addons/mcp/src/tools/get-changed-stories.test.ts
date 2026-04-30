@@ -237,7 +237,7 @@ describe('getChangedStoriesTool', () => {
 		);
 	});
 
-	it('uses fallbacks when a changed story is not in index', async () => {
+	it('omits changed stories that are not in the index', async () => {
 		mockGetStatusStore.mockReturnValue({
 			getAll: () => ({
 				'missing--story': {
@@ -252,12 +252,9 @@ describe('getChangedStoriesTool', () => {
 		const response = await callTool();
 		const text = getResultText(response);
 
-		expect(text).toMatchInlineSnapshot(`
-			"Detected 1 changed story (0 new, 1 modified, 0 related).
-
-			Modified stories:
-			- \`missing--story\`"
-		`);
+		expect(text).toMatchInlineSnapshot(
+			`"Detected 0 changed stories (0 new, 0 modified, 0 related)."`,
+		);
 	});
 
 	it('returns an MCP error when status store cannot be read', async () => {

@@ -5,7 +5,7 @@
  * oxc-resolver behavioural differences (e.g. trailing-slash alias keys not working, tsconfig
  * path resolution) rather than just testing our own normalisation logic.
  */
-import { mkdirSync, mkdtempSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, realpathSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
@@ -174,6 +174,75 @@ describe('ChangeDetectionResolverFactory', () => {
       tsconfig({ paths: { '@/*': ['./*'], '~@/*': ['./*'] } });
       const r = new ChangeDetectionResolverFactory({ projectRoot: dir });
       expect(await r.resolve(from, '@/app/components/base/icons/IconBase')).toBe(target);
+    });
+  });
+
+  /**
+   * Yarn-workspace cross-package resolution
+   *
+   * In a monorepo the root `tsconfig.json` typically maps workspace package names to their
+   * source directories (e.g. "@mantinex/*" -> ["./packages/@mantinex/ * /src"]).  Per-package
+   * tsconfigs often do NOT extend the root, so `tsconfig: 'auto'` only sees the nearest
+   * (package-level) tsconfig and misses these workspace paths -> NotFound("@mantinex/demo").
+   *
+   * The fix in ResolverFactory uses the root tsconfig explicitly when it exists, so that
+   * workspace-level path mappings are always consulted.
+   */
+  describe('yarn workspace cross-package resolution', () => {
+    it('resolves workspace sibling via root tsconfig paths when package-level tsconfig has no mapping', async () => {
+      // Reproduces: @mantinex/demo unresolved from packages/@docs/demos/src/.../YearPicker/
+      // Root tsconfig has "@mantinex/*" paths; package tsconfig has no paths and no extends.
+      const target = write('packages/@mantinex/demo/src/index.ts');
+      // Package-level tsconfig — no paths, no extends (mirrors real mantine setup)
+      mkdirSync(join(dir, 'packages/@docs/demos'), { recursive: true });
+      writeFileSync(
+        join(dir, 'packages/@docs/demos/tsconfig.json'),
+        JSON.stringify({ compilerOptions: {} })
+      );
+      // Root tsconfig — maps workspace packages to source directories
+      tsconfig({ paths: { '@mantinex/*': ['./packages/@mantinex/*/src'] } });
+      const from = write(
+        'packages/@docs/demos/src/demos/dates/YearPicker/YearPicker.demo.controlProps.tsx'
+      );
+
+      const r = new ChangeDetectionResolverFactory({ projectRoot: dir });
+      expect(await r.resolve(from, '@mantinex/demo')).toBe(target);
+    });
+
+    it('resolves workspace sibling via node_modules symlink (yarn workspaces classic linker)', async () => {
+      // yarn workspace classic linker symlinks workspace packages at root node_modules.
+      // The resolver must traverse up past sub-package boundaries to reach root node_modules.
+      const target = write('packages/@mantinex/demo/src/index.ts');
+      writeFileSync(
+        join(dir, 'packages/@mantinex/demo/package.json'),
+        JSON.stringify({ name: '@mantinex/demo', main: './src/index.ts' })
+      );
+      const from = write('packages/@docs/demos/src/demos/dates/YearPicker/file.tsx');
+
+      mkdirSync(join(dir, 'node_modules/@mantinex'), { recursive: true });
+      symlinkSync(
+        join(dir, 'packages/@mantinex/demo'),
+        join(dir, 'node_modules/@mantinex/demo'),
+        'dir'
+      );
+
+      const r = new ChangeDetectionResolverFactory({ projectRoot: dir });
+      expect(await r.resolve(from, '@mantinex/demo')).toBe(target);
+    });
+
+    it('resolves multiple workspace siblings from the same root tsconfig paths', async () => {
+      const demoTarget = write('packages/@mantinex/demo/src/index.ts');
+      const iconsTarget = write('packages/@mantinex/dev-icons/src/index.ts');
+      tsconfig({
+        paths: {
+          '@mantinex/*': ['./packages/@mantinex/*/src'],
+        },
+      });
+      const from = write('packages/@docs/demos/src/file.tsx');
+
+      const r = new ChangeDetectionResolverFactory({ projectRoot: dir });
+      expect(await r.resolve(from, '@mantinex/demo')).toBe(demoTarget);
+      expect(await r.resolve(from, '@mantinex/dev-icons')).toBe(iconsTarget);
     });
   });
 });

@@ -1,3 +1,5 @@
+import { join } from 'node:path';
+
 import { ResolverFactory as OxcResolverFactory } from 'oxc-resolver';
 
 import { logger } from 'storybook/internal/node-logger';
@@ -78,6 +80,16 @@ class AliasNormaliser {
 export class ChangeDetectionResolverFactory {
   private readonly factory: OxcResolverFactory;
   private readonly aliasNormaliser = new AliasNormaliser();
+  /**
+   * Virtual entry point placed directly in the project root.
+   *
+   * Used as the fallback `from` path when the primary resolution fails.
+   * Resolving from here guarantees that `resolveFileAsync`'s tsconfig
+   * walk-up reaches the root `tsconfig.json` before any intermediate
+   * per-package tsconfig — so workspace-level `paths` mappings are
+   * consulted even when the per-package tsconfig does not extend root.
+   */
+  private readonly projectRootEntry: string;
 
   constructor(config: ModuleResolveConfig) {
     const alias = this.aliasNormaliser.normalise(config.alias);
@@ -89,15 +101,22 @@ export class ChangeDetectionResolverFactory {
       conditionNames,
       extensions: DEFAULT_EXTENSIONS,
     });
+
+    this.projectRootEntry = join(config.projectRoot, '__sb_resolver_root__.ts');
   }
 
   /**
    * Resolves `specifier` from the file at `from` (must be an absolute path).
-   * Uses `resolveFileAsync` so oxc-resolver auto-discovers the nearest tsconfig.json
-   * by traversing parent directories from `from`, applying compilerOptions.paths correctly.
-   * Returns the absolute resolved path, or `null` if the resolver could not
-   * locate it. Never throws — internal errors are converted to `null` and a
-   * debug-level log line is emitted.
+   *
+   * Two-pass strategy:
+   * 1. Resolve from `from` — handles per-package tsconfig paths and local node_modules.
+   * 2. On failure, retry from the project root — picks up root-level tsconfig `paths`
+   *    (e.g. workspace package aliases) that intermediate per-package tsconfigs may
+   *    not inherit, as well as root-level node_modules symlinks.
+   *
+   * Returns the absolute resolved path, or `null` if both passes fail.
+   * Never throws — internal errors are converted to `null` and a debug-level log
+   * line is emitted.
    */
   async resolve(from: string, specifier: string): Promise<string | null> {
     try {
@@ -105,6 +124,23 @@ export class ChangeDetectionResolverFactory {
       if (result.path) {
         return result.path;
       }
+
+      // Fallback: retry from the project root so that root-level tsconfig paths
+      // and root node_modules are consulted.  Skip the fallback when `from` is
+      // already the virtual root entry to avoid a redundant second attempt.
+      if (from !== this.projectRootEntry) {
+        const rootResult = await this.factory.resolveFileAsync(this.projectRootEntry, specifier);
+        if (rootResult.path) {
+          return rootResult.path;
+        }
+        if (result.error ?? rootResult.error) {
+          logger.debug(
+            `ChangeDetectionResolverFactory: '${specifier}' from '${from}' unresolved (${result.error ?? rootResult.error})`
+          );
+        }
+        return null;
+      }
+
       if (result.error) {
         logger.debug(
           `ChangeDetectionResolverFactory: '${specifier}' from '${from}' unresolved (${result.error})`

@@ -207,7 +207,7 @@ export async function initiate(options: CommandOptions): Promise<void> {
     },
     async () => {
       // we need to explicitly set this before init to not delay the events until the end of the flow
-      setTelemetryEnabled(!options.disableTelemetry);
+      await setTelemetryEnabled(!options.disableTelemetry);
 
       const result = await doInitiate(options);
 

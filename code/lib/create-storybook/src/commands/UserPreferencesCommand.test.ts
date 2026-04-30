@@ -112,6 +112,9 @@ describe('UserPreferencesCommand', () => {
       configurable: true,
     });
 
+    // Reset sandbox env to avoid leaking between tests (or from the actual test environment)
+    delete process.env.IN_STORYBOOK_SANDBOX;
+
     vi.clearAllMocks();
 
     // Re-apply mocks after clearAllMocks (which clears call history but not implementations,
@@ -236,6 +239,52 @@ describe('UserPreferencesCommand', () => {
         })
       );
       expect(result.selectedFeatures.has(Feature.AI)).toBe(true);
+    });
+
+    it('should not include ONBOARDING feature when user accepts AI setup', async () => {
+      Object.defineProperty(process.stdout, 'isTTY', {
+        value: true,
+        configurable: true,
+      });
+
+      vi.mocked(prompt.select).mockResolvedValueOnce(true); // new user
+      vi.mocked(prompt.confirm).mockResolvedValueOnce(true); // AI setup: yes
+
+      const result = await command.execute({
+        ...defaultExecuteOptions,
+        isAiSetupAvailable: true,
+      });
+
+      expect(result.selectedFeatures.has(Feature.AI)).toBe(true);
+      expect(result.selectedFeatures.has(Feature.ONBOARDING)).toBe(false);
+    });
+
+    it('should include ONBOARDING when AI is selected inside a sandbox (IN_STORYBOOK_SANDBOX)', async () => {
+      Object.defineProperty(process.stdout, 'isTTY', {
+        value: true,
+        configurable: true,
+      });
+      vi.mocked(prompt.select).mockResolvedValueOnce(true); // new user
+      vi.mocked(prompt.confirm).mockResolvedValueOnce(true); // AI setup: yes
+
+      const oldInSandbox = process.env.IN_STORYBOOK_SANDBOX;
+      process.env.IN_STORYBOOK_SANDBOX = 'true';
+
+      try {
+        const result = await command.execute({
+          ...defaultExecuteOptions,
+          isAiSetupAvailable: true,
+        });
+
+        expect(result.selectedFeatures.has(Feature.AI)).toBe(true);
+        expect(result.selectedFeatures.has(Feature.ONBOARDING)).toBe(true);
+      } finally {
+        if (oldInSandbox !== undefined) {
+          process.env.IN_STORYBOOK_SANDBOX = oldInSandbox;
+        } else {
+          delete process.env.IN_STORYBOOK_SANDBOX;
+        }
+      }
     });
 
     it('should not include AI feature when user declines AI setup', async () => {

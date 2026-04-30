@@ -49,6 +49,7 @@ describe('parse-vitest-report', () => {
         successRateWithoutEmptyRender: 1.0,
         uniqueErrorCount: 0,
         categorizedErrors: {},
+        cssCheck: 'not-run',
       });
     });
 
@@ -260,6 +261,37 @@ describe('parse-vitest-report', () => {
 
       expect(result.summary?.total).toBe(0);
       expect(result.summary?.successRate).toBe(0);
+    });
+
+    it('surfaces the CssCheck story outcome via summary.cssCheck', () => {
+      const mockVitestResults = {
+        success: false,
+        numTotalTests: 2,
+        numPassedTests: 1,
+        numFailedTests: 1,
+        testResults: [
+          {
+            assertionResults: [
+              {
+                fullName: 'components-button--primary',
+                status: 'passed',
+                meta: { storyId: 'components-button--primary' },
+                failureMessages: [],
+              },
+              {
+                fullName: 'components-button--css-check',
+                status: 'failed',
+                meta: { storyId: 'components-button--css-check' },
+                failureMessages: ['Error: expected rgb(37, 99, 235) but got rgba(0, 0, 0, 0)'],
+              },
+            ],
+          },
+        ],
+      };
+
+      const result = parseVitestResults(mockVitestResults);
+
+      expect(result.summary?.cssCheck).toBe('fail');
     });
   });
 });

@@ -1,3 +1,16 @@
+## 10.4.0-alpha.12
+
+- CLI: Introduce Agentic Setup workflow - [#34297](https://github.com/storybookjs/storybook/pull/34297), thanks @yannbf!
+
+## 10.4.0-alpha.11
+
+- CLI: Change mock event detection - [#34586](https://github.com/storybookjs/storybook/pull/34586), thanks @yannbf!
+- Core: Ensure process termination on SIGINT when telemetry is disabled - [#34585](https://github.com/storybookjs/storybook/pull/34585), thanks @ghengeveld!
+- Core: Show "new" status on newly added individual stories - [#34504](https://github.com/storybookjs/storybook/pull/34504), thanks @ghengeveld!
+- React: Add optional React type peers to packages that publish React-based declarations - [#34641](https://github.com/storybookjs/storybook/pull/34641), thanks @copilot-swe-agent!
+- Telemetry: Add sidebar filter telemetry for change detection - [#34533](https://github.com/storybookjs/storybook/pull/34533), thanks @valentinpalkovic!
+- UI: Fix global background + color styles affecting stories - [#34071](https://github.com/storybookjs/storybook/pull/34071), thanks @Axadali!
+
 ## 10.4.0-alpha.10
 
 - Sidebar: Fix clear status button to only clear test statuses - [#34478](https://github.com/storybookjs/storybook/pull/34478), thanks @valentinpalkovic!

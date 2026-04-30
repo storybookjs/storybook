@@ -1,7 +1,12 @@
-import { readFileSync, existsSync, readdirSync } from 'node:fs';
-import { basename, join, resolve, sep } from 'node:path';
+import { join, resolve, sep } from 'node:path';
 import pc from 'picocolors';
 import { x } from 'tinyexec';
+
+import { AI_SETUP_PROMPT } from '../../../code/core/src/shared/constants/ai-prompts.ts';
+import {
+  DEFAULT_PROMPT_NAME,
+  PROMPT_NAMES,
+} from '../../../code/lib/cli-storybook/src/ai/setup-prompts/index.ts';
 
 export interface Logger {
   log: (msg: string) => void;
@@ -14,12 +19,13 @@ export const REPO_ROOT = resolve(import.meta.dirname, '..', '..', '..');
 export const EVAL_ROOT = resolve(REPO_ROOT, '..', 'storybook-eval');
 export const REPOS_DIR = resolve(EVAL_ROOT, 'repos');
 export const TRIALS_DIR = resolve(EVAL_ROOT, 'trials');
-export const PROMPTS_DIR = resolve(import.meta.dirname, '..', 'prompts');
-/** Basename (no `.md`) used in docs and tests when a concrete prompt must be named. */
-export const EXAMPLE_PROMPT_BASENAME = 'pattern-copy-play';
+/** Name used in docs and tests when a concrete prompt must be named. Tracks the CLI default. */
+export const EXAMPLE_PROMPT_BASENAME = DEFAULT_PROMPT_NAME;
 export const NODE_EVAL_TRIAL_SCRIPT = 'scripts/eval/eval.ts' as const;
 export const NODE_EVAL_RUN_BATCH_SCRIPT = 'scripts/eval/run-batch.ts' as const;
 export const NODE_EVAL_SYNC_BASELINES_SCRIPT = 'scripts/eval/sync-baselines.ts' as const;
+export const NODE_EVAL_SYNC_STORYBOOK_VERSION_SCRIPT =
+  'scripts/eval/sync-storybook-version.ts' as const;
 export const NODE_EVAL_COLLECT_PR_DATA_SCRIPT = 'scripts/eval/collect-pr-data.ts' as const;
 export const STORYBOOK_DIRNAME = '.storybook';
 export const EVAL_RESULTS_DIRNAME = 'eval-results';
@@ -34,8 +40,12 @@ export function createLogger(prefix?: string): Logger {
   };
 }
 
-export const formatDuration = (s: number) =>
-  s < 60 ? `${Math.round(s)}s` : `${Math.floor(s / 60)}m${Math.round(s % 60)}s`;
+export const formatDuration = (s: number) => {
+  const total = Math.round(s);
+  const minutes = Math.floor(total / 60);
+  const seconds = total % 60;
+  return minutes > 0 ? `${minutes}m${seconds}s` : `${seconds}s`;
+};
 
 export const formatCost = (cost?: number) => (cost == null ? '-' : `$${cost.toFixed(2)}`);
 
@@ -140,22 +150,24 @@ export function formatTable(headers: string[], rows: string[][]): string {
   ].join('\n');
 }
 
-/** Load a prompt by name from prompts/{name}.md. */
+/**
+ * Returns the exact nudge string a real user copies from the Storybook UI —
+ * "Run `npx storybook ai setup` and follow its instructions precisely." The
+ * AGENT then runs `ai setup` itself as a tool call, mirroring the real user
+ * flow. The harness selects a prompt variant via the `EVAL_SETUP_PROMPT` env
+ * var on the agent's spawn (not here); this function only validates the name.
+ */
 export function loadPrompt(name: string): string {
   const available = listPrompts();
   if (!available.includes(name)) {
     throw new Error(`Prompt not found: ${name}\nAvailable: ${available.join(', ')}`);
   }
-  const file = resolve(PROMPTS_DIR, `${name}.md`);
-  return readFileSync(file, 'utf-8').trim();
+  return AI_SETUP_PROMPT;
 }
 
-/** List available prompt names. */
+/** List available prompt names. Mirrors the builder registry in the CLI. */
 export function listPrompts(): string[] {
-  if (!existsSync(PROMPTS_DIR)) return [];
-  return readdirSync(PROMPTS_DIR)
-    .filter((f) => f.endsWith('.md'))
-    .map((f) => basename(f, '.md'));
+  return [...PROMPT_NAMES];
 }
 
 export interface EvalEnvironment {
@@ -170,8 +182,12 @@ export async function captureEnvironment(): Promise<EvalEnvironment> {
   let evalBranch = 'unknown';
   let evalCommit = 'unknown';
   try {
-    evalBranch = (await x('git', ['rev-parse', '--abbrev-ref', 'HEAD'])).stdout.trim();
-    evalCommit = (await x('git', ['rev-parse', 'HEAD'])).stdout.trim();
+    evalBranch = (
+      await x('git', ['rev-parse', '--abbrev-ref', 'HEAD'], { nodeOptions: { cwd: REPO_ROOT } })
+    ).stdout.trim();
+    evalCommit = (
+      await x('git', ['rev-parse', 'HEAD'], { nodeOptions: { cwd: REPO_ROOT } })
+    ).stdout.trim();
   } catch {
     /* not in a git repo */
   }
@@ -218,6 +234,6 @@ function stripAnsi(str: string) {
   return str.replace(/\x1b\[[0-9;]*m/g, '');
 }
 
-function toPosixPath(value: string) {
+export function toPosixPath(value: string) {
   return value.split(sep).join('/');
 }

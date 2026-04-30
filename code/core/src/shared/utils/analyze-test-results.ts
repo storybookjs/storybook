@@ -57,6 +57,12 @@ export function extractCategorizedErrors(
 }
 
 /**
+ * StoryId suffix for a story named `CssCheck` (after Storybook's CSF
+ * `toStartCaseStr` + `sanitize`: `CssCheck` → `Css Check` → `css-check`).
+ */
+const CSS_CHECK_STORY_ID_SUFFIX = '--css-check';
+
+/**
  * Analyze a list of story test results and produce a TestRunAnalysis with pass/fail counts, success
  * rates, empty render detection, and categorized errors.
  */
@@ -71,6 +77,20 @@ export function analyzeTestResults(results: StoryTestResult[]): TestRunAnalysis 
 
   const errorClassification = extractCategorizedErrors(results);
 
+  // `'not-run'` covers both "no CssCheck story in the suite" and "story
+  // existed but wasn't executed" — they're the same signal for consumers
+  // (no pass/fail outcome available). Collapsing them avoids a fourth
+  // state and keeps dashboards from interpreting an absent field.
+  const cssCheckMatch = results.find((r) =>
+    r.storyId.toLowerCase().endsWith(CSS_CHECK_STORY_ID_SUFFIX)
+  );
+  const cssCheck: TestRunAnalysis['cssCheck'] =
+    cssCheckMatch?.status === 'PASS'
+      ? 'pass'
+      : cssCheckMatch?.status === 'FAIL'
+        ? 'fail'
+        : 'not-run';
+
   return {
     total,
     passed,
@@ -79,5 +99,6 @@ export function analyzeTestResults(results: StoryTestResult[]): TestRunAnalysis 
     successRateWithoutEmptyRender,
     uniqueErrorCount: errorClassification.uniqueErrorCount,
     categorizedErrors: errorClassification.categorizedErrors,
+    cssCheck,
   };
 }

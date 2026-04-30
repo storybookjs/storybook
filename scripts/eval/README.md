@@ -4,7 +4,7 @@ The eval harness benchmarks how well AI coding agents (Claude, Codex) can set up
 
 ## Prerequisites
 
-- `**gh` CLI** — installed and authenticated (`gh auth login`)
+- **`gh` CLI** — installed and authenticated (`gh auth login`)
 - **Claude Code CLI** and/or **Codex CLI** — installed with an active subscription
 
 ## How it works
@@ -13,7 +13,7 @@ The eval harness benchmarks how well AI coding agents (Claude, Codex) can set up
 
 The system forms a cycle:
 
-1. `**sync-baselines.ts`** pushes a canonical `.storybook` config to each benchmark repo so every trial starts from the same known-good baseline.
+1. `**sync-baselines.ts**` pushes a canonical `.storybook` config to each benchmark repo so every trial starts from the same known-good baseline.
 2. `**eval.ts**` (single trial) or `**run-batch.ts**` (batch) creates a git worktree from a benchmark repo, runs an agent inside it, grades the output, and publishes a draft PR with structured result data.
 3. `**collect-pr-data.ts**` scrapes those draft PRs via the GitHub API and loads the results into a local SQLite database for analysis.
 
@@ -31,7 +31,7 @@ Each trial follows this lifecycle:
 All commands run from the repo root.
 
 ```sh
-# Prompt file is required (scripts/eval/prompts/{name}.md). Example: pattern-copy-play
+# Prompt variant is required. Example: pattern-copy-play (the CLI default)
 node scripts/eval/eval.ts -p mealdrop --prompt pattern-copy-play
 
 # Specific agent
@@ -60,7 +60,7 @@ node scripts/eval/eval.ts --list-prompts
 
 When a trial completes, it prints a summary:
 
-```
+```text
 Result
   Build:   PASS
   Stories: 8/12 (67%) -> 11/12 (92%)
@@ -75,9 +75,14 @@ Result
 
 ## Running a batch
 
+By default, a batch runs **10 repetitions per (project × variant)** across all benchmark projects. With the default Claude-only matrix that's `7 projects × 1 variant × 10 reps = 70 trials`. Use `--repetitions` to shrink that — e.g. `--repetitions 2` gives 14 trials.
+
 ```sh
 # Prompt is required. Confirms interactively unless you pass --yes (CI / automation).
 node scripts/eval/run-batch.ts --prompt pattern-copy-play --yes
+
+# Smaller batch — 2 reps per project (14 trials with the default Claude-only matrix)
+node scripts/eval/run-batch.ts --prompt pattern-copy-play --yes --repetitions 2
 
 # Claude only
 node scripts/eval/run-batch.ts --prompt pattern-copy-play --yes --agents claude
@@ -92,7 +97,7 @@ node scripts/eval/run-batch.ts --prompt setup --yes
 node scripts/eval/run-batch.ts --prompt pattern-copy-play --yes --concurrency 4
 ```
 
-Batch results are written to `storybook-eval/batches/<timestamp>/`, with per-run log files and a `summary.json`.
+Batch results are written to `storybook-eval/batches/<timestamp>/`, with per-run log files and a `summary.json`. If any trials fail, the batch prints a `Failures:` footer with each failed label, the last error line from its log, and the log path.
 
 ## Syncing baselines
 
@@ -110,6 +115,33 @@ node scripts/eval/sync-baselines.ts --skip-push
 ```
 
 The script ensures each repo is on its default branch with no local changes, fetches the latest from origin, replaces the `.storybook` directory with the canonical baseline, and commits/pushes if anything changed.
+
+## Syncing the Storybook version
+
+`sync-storybook-version.ts` bumps every benchmark repo to a specific Storybook version. It mirrors the shape of `sync-baselines.ts`: for each project it ensures the source clone is present and clean, checks out and fast-forwards the default branch, runs `npx storybook@<version> upgrade --yes --force --skip-check --skip-automigrations -c <projectDir>/.storybook` from the **repo root**, then commits and pushes any resulting changes. Running from the repo root (with `-c` pointing at the project's `.storybook` dir) lets the Storybook CLI discover the correct workspace `package.json` in pnpm/yarn monorepos where the Storybook deps live at the workspace root and the config lives in a sub-package.
+
+```sh
+# Upgrade every benchmark repo to a stable version
+node scripts/eval/sync-storybook-version.ts --version 9.1.0
+
+# Upgrade to a canary published from a Storybook PR
+node scripts/eval/sync-storybook-version.ts --version 0.0.0-pr-34297-sha-abcdef12
+
+# Upgrade a subset of projects
+node scripts/eval/sync-storybook-version.ts --version latest --project mealdrop --project edgy
+
+# Commit locally without pushing yet
+node scripts/eval/sync-storybook-version.ts --version 9.1.0 --skip-push
+```
+
+The upgrade passes the following flags:
+
+- `--yes` — auto-accepts prompts.
+- `--force` — skips the autoblocker gate (useful for canary or major-version bumps).
+- `--skip-check` — skips the postinstall self-check.
+- `--skip-automigrations` — prevents the CLI from rewriting source files (e.g. the `wrap-getAbsolutePath` migration).
+
+The commit message defaults to `Eval: upgrade Storybook to <version>`. If you review a `--skip-push` run first, rerun the same command without `--skip-push` to push the existing local upgrade commits. Run `sync-baselines.ts` afterwards if you also need to refresh the canonical `.storybook` config in every repo.
 
 ## Collecting results
 
@@ -186,13 +218,13 @@ The headline metric is **normalized preview gain** — how much of the remaining
 
 If the baseline already passes every story (**before_rate = 100%**), there is no remaining gap — the gain and headline score are **0**.
 
-```
+```text
 gain = (after_rate - before_rate) / (1 - before_rate)
 ```
 
 For example, if the baseline pass rate is 60% and the agent achieves 80%:
 
-```
+```text
 gain = (0.80 - 0.60) / (1 - 0.60) = 0.50
 ```
 
@@ -236,17 +268,39 @@ To benchmark a new app, register it in the harness and sync baselines. Follow th
 
 ## Prompts
 
-Prompts are markdown files in `scripts/eval/prompts/` that tell the agent what to do during a trial. The `--prompt` flag selects one by filename (without `.md`).
+The eval mirrors the real user flow exactly:
+
+1. A real user copies the "Set up Storybook with AI" prompt from the Storybook UI — a one-line nudge (`AI_SETUP_PROMPT`) that just says _"Run `npx storybook ai setup` and follow its instructions precisely."_
+2. The user pastes that into their AI agent.
+3. The **agent** runs `npx storybook ai setup` itself as a tool call.
+4. The agent reads the resulting project-aware markdown and follows it.
+
+The harness hands steps (1) and (2) to the trial agent as its task. Eval starts at step (3).
+
+### How variant selection works
+
+Prompt variants live in [`code/lib/cli-storybook/src/ai/setup-prompts/`](../../code/lib/cli-storybook/src/ai/setup-prompts/). Each variant is a self-contained `.ts` file that exports an `instructions(projectInfo)` function. The registry in `prompts/index.ts` lists every variant.
+
+The eval selects a variant by injecting the `EVAL_SETUP_PROMPT` env var into the agent's spawn environment. When the agent later runs `npx storybook ai setup`, the CLI reads that env var and returns the matching variant. Real users never set this env var, so they always get the default (`pattern-copy-play`).
+
+```text
+eval.ts --prompt setup
+  → run-trial.ts calls driver.execute({ env: { EVAL_SETUP_PROMPT: 'setup' } })
+    → agent spawns with that env
+      → agent's `npx storybook ai setup` tool call inherits EVAL_SETUP_PROMPT
+        → CLI's getPrompts() picks the 'setup' variant
+```
 
 ### Available prompts
 
-- `**pattern-copy-play**` — analyze the codebase, copy real usage patterns, configure preview with providers and MSW mocks, write ~10 story files with play functions, verify each with Vitest.
-- `**setup**` — structured step-by-step: analyze, configure preview, write 9 stories (3 simple / 3 medium / 3 complex), verify each with Vitest.
+- `**pattern-copy-play**` _(default)_ — analyze the codebase, copy real usage patterns, configure preview with providers and MSW mocks, write ~10 story files with play functions, verify each with Vitest. This is the only prompt users ever see when they run `npx storybook ai setup`.
+- `**setup**` — structured step-by-step: analyze, configure preview, write 9 stories (3 simple / 3 medium / 3 complex), verify each with Vitest. Available only to the eval harness for A/B comparison against the default.
 
-### Writing a new prompt
+### Adding a new prompt variant
 
-1. Create a markdown file in `scripts/eval/prompts/`, e.g. `my-strategy.md`.
-2. Write the instructions the agent should follow. The prompt is passed directly to the agent as its task.
-3. Use it: `node scripts/eval/eval.ts -p mealdrop --prompt my-strategy`
+1. Create `code/lib/cli-storybook/src/ai/setup-prompts/<name>.ts`. Make it fully self-contained — keep its own `getTypeImportSource`, code-example helpers, and any other private utilities so changing one variant can never accidentally change another. Duplication is deliberate here.
+2. Export an `instructions(projectInfo: ProjectInfo): string` function.
+3. Register it in `code/lib/cli-storybook/src/ai/setup-prompts/index.ts` by adding an entry to `CURRENTLY_USED_PROMPT` and moving the existing one to FORMERLY_USED_PROMPTS.
+4. Use it from the eval: `node scripts/eval/eval.ts -p mealdrop --prompt <name>`.
 
-The prompt should tell the agent how to analyze the codebase, configure `.storybook/preview.ts`, write story files matching the `stories` glob, and verify with `npx vitest --project storybook`.
+To promote a variant to be the default users see, change `DEFAULT_PROMPT_NAME` in the same registry file.

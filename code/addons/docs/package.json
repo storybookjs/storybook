@@ -1,6 +1,6 @@
 {
   "name": "@storybook/addon-docs",
-  "version": "10.4.0-alpha.10",
+  "version": "10.4.0-alpha.12",
   "description": "Storybook Docs: Document UI components automatically with stories and MDX",
   "keywords": [
     "docs",
@@ -116,7 +116,13 @@
     "vite": "^7.0.4"
   },
   "peerDependencies": {
+    "@types/react": "^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0",
     "storybook": "workspace:^"
+  },
+  "peerDependenciesMeta": {
+    "@types/react": {
+      "optional": true
+    }
   },
   "publishConfig": {
     "access": "public"

@@ -77,6 +77,7 @@ describe('analyze-test-results', () => {
         successRateWithoutEmptyRender: 1.0,
         uniqueErrorCount: 0,
         categorizedErrors: {},
+        cssCheck: 'not-run',
       });
     });
 
@@ -121,6 +122,67 @@ describe('analyze-test-results', () => {
       expect(analysis.total).toBe(2);
       expect(analysis.passed).toBe(1);
       expect(analysis.successRate).toBe(0.5);
+    });
+
+    describe('cssCheck', () => {
+      it("is 'pass' when a --css-check story passed", () => {
+        const results: StoryTestResult[] = [
+          { storyId: 'components-button--primary', status: 'PASS' },
+          { storyId: 'components-button--css-check', status: 'PASS' },
+        ];
+        expect(analyzeTestResults(results).cssCheck).toBe('pass');
+      });
+
+      it("is 'fail' when a --css-check story failed", () => {
+        const results: StoryTestResult[] = [
+          {
+            storyId: 'components-button--css-check',
+            status: 'FAIL',
+            error: 'expected rgb(37, 99, 235) but got rgba(0, 0, 0, 0)',
+          },
+        ];
+        expect(analyzeTestResults(results).cssCheck).toBe('fail');
+      });
+
+      it("is 'not-run' when no --css-check story is present", () => {
+        const results: StoryTestResult[] = [
+          { storyId: 'components-button--primary', status: 'PASS' },
+        ];
+        expect(analyzeTestResults(results).cssCheck).toBe('not-run');
+      });
+
+      it("is 'not-run' when the --css-check story was skipped / pending / todo", () => {
+        // PENDING covers any non-pass / non-fail Vitest status (skipped,
+        // pending, todo, filtered out). No pass/fail signal available →
+        // 'not-run', same bucket as "story wasn't authored at all".
+        const results: StoryTestResult[] = [
+          { storyId: 'components-button--css-check', status: 'PENDING' },
+        ];
+        expect(analyzeTestResults(results).cssCheck).toBe('not-run');
+      });
+
+      it("is 'not-run' for an empty result list", () => {
+        expect(analyzeTestResults([]).cssCheck).toBe('not-run');
+      });
+
+      it('uses the first match when multiple --css-check stories exist', () => {
+        // Prompt violation: the AI setup prompt asks for exactly one.
+        // First match wins; downstream aggregates still reflect all of them.
+        const results: StoryTestResult[] = [
+          { storyId: 'components-button--css-check', status: 'PASS' },
+          { storyId: 'components-card--css-check', status: 'FAIL', error: 'style mismatch' },
+        ];
+        expect(analyzeTestResults(results).cssCheck).toBe('pass');
+      });
+
+      it('is case-insensitive on the suffix (defensive)', () => {
+        // CSF already lowercases storyIds. This keeps the check resilient
+        // to a future upstream change in sanitization.
+        const results: StoryTestResult[] = [
+          { storyId: 'components-button--CSS-CHECK', status: 'PASS' },
+        ];
+        expect(analyzeTestResults(results).cssCheck).toBe('pass');
+      });
     });
   });
 });

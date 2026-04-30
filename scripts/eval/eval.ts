@@ -31,7 +31,7 @@ import {
 } from './lib/agents/config.ts';
 import { prepareTrial } from './lib/prepare-trial.ts';
 import { PROJECTS } from './lib/projects.ts';
-import { runTrial, type TrialConfig } from './lib/run-trial.ts';
+import { captureAiSetupMarkdown, runTrial, type TrialConfig } from './lib/run-trial.ts';
 import {
   captureEnvironment,
   createLogger,
@@ -84,7 +84,7 @@ const argsSchema = z
     if (prompt === '') {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
-        message: `Specify --prompt <name> (markdown file in scripts/eval/prompts/). Example: --prompt ${EXAMPLE_PROMPT_BASENAME}. Run with --list-prompts to see available names.`,
+        message: `Specify --prompt <name>. Example: --prompt ${EXAMPLE_PROMPT_BASENAME}. Run with --list-prompts to see available names.`,
         path: ['prompt'],
       });
     }
@@ -101,7 +101,7 @@ const evalOptions = {
   effort: { type: 'string' as const, short: 'e', description: 'Effort level' },
   prompt: {
     type: 'string' as const,
-    description: `Prompt template name — required with -p (file: prompts/{name}.md; e.g. ${EXAMPLE_PROMPT_BASENAME})`,
+    description: `Prompt variant name — required with -p (e.g. ${EXAMPLE_PROMPT_BASENAME}). Use --list-prompts to see available names.`,
   },
   verbose: { type: 'boolean' as const, short: 'v', description: 'Enable verbose output' },
   manual: {
@@ -192,12 +192,21 @@ if (args.manual) {
   const promptPath = join(workspace.resultsDir, 'prompt.md');
   await writeFile(promptPath, prompt);
 
-  const cliCommand = buildManualCommand(variant, promptPath);
+  const setupPromptPath = join(workspace.resultsDir, 'setup-prompt.md');
+  const setupPromptContent = await captureAiSetupMarkdown(
+    workspace.projectPath,
+    promptName,
+    logger
+  );
+  await writeFile(setupPromptPath, setupPromptContent);
+
+  const cliCommand = buildManualCommand(variant, promptPath, promptName);
 
   logger.log(pc.bold('\n── Manual mode ──'));
-  logger.log(`\n  Trial dir:    ${pc.cyan(workspace.trialDir)}`);
-  logger.log(`  Project dir:  ${pc.cyan(workspace.projectPath)}`);
-  logger.log(`  Prompt file:  ${pc.cyan(promptPath)}`);
+  logger.log(`\n  Trial dir:        ${pc.cyan(workspace.trialDir)}`);
+  logger.log(`  Project dir:      ${pc.cyan(workspace.projectPath)}`);
+  logger.log(`  Prompt file:      ${pc.cyan(promptPath)}`);
+  logger.log(`  Setup prompt:     ${pc.cyan(setupPromptPath)}`);
   logger.log(pc.bold('\nRun the agent yourself:\n'));
   logger.log(`  ${pc.green('cd')} ${workspace.projectPath}`);
   logger.log(`  ${pc.green(cliCommand)}\n`);
@@ -241,13 +250,17 @@ function inferAgent(model: string): AgentId {
   throw new Error(`No agent found for model: ${model}`);
 }
 
-function buildManualCommand(variant: AgentVariant, promptPath: string): string {
-  const promptArg = `"$(cat ${promptPath})"`;
+function buildManualCommand(variant: AgentVariant, promptPath: string, promptName: string): string {
+  // EVAL_SETUP_PROMPT must be in the env the agent inherits, so that the
+  // agent's own `npx storybook ai setup` tool call picks the right variant.
+  const envPrefix = `EVAL_SETUP_PROMPT=${promptName} `;
+  const escapedPath = promptPath.replace(/'/g, `'\\''`);
+  const promptArg = `"$(cat '${escapedPath}')"`;
   if (variant.agent === 'claude') {
     const sdkModel = AGENTS.claude.sdkModelIds[variant.model] ?? variant.model;
-    return `claude --model ${sdkModel} ${promptArg}`;
+    return `${envPrefix}claude --model ${sdkModel} ${promptArg}`;
   }
-  return `codex --model ${variant.model} --reasoning-effort ${variant.effort} ${promptArg}`;
+  return `${envPrefix}codex --model ${variant.model} --reasoning-effort ${variant.effort} ${promptArg}`;
 }
 
 function toVariant(args: z.infer<typeof argsSchema>): AgentVariant {

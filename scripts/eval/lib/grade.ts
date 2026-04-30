@@ -180,6 +180,15 @@ export async function grade(
     logger,
   });
 
+  const cssCheck = storyRenderRun.summary?.cssCheck ?? 'not-run';
+  if (cssCheck === 'pass') {
+    logger.logSuccess('CssCheck story passed');
+  } else if (cssCheck === 'fail') {
+    logger.logError('CssCheck story failed');
+  } else {
+    logger.log('CssCheck story not run');
+  }
+
   const baselinePreviewRun = await withBaselinePreviewEnvironment({
     repoRoot,
     baselineCommit,

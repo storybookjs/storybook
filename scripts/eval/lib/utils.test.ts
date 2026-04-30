@@ -98,40 +98,33 @@ describe('formatReadableUtcTimestamp', () => {
 });
 
 describe('listPrompts', () => {
-  it('lists available prompt names', () => {
+  it('mirrors the CLI prompt registry', () => {
     const prompts = listPrompts();
     expect(prompts).toContain('pattern-copy-play');
-    expect(prompts).not.toContain('pattern-copy');
     expect(prompts).toContain('setup');
+    expect(prompts).not.toContain('pattern-copy');
   });
 
-  it('returns only names without .md extension', () => {
-    for (const name of listPrompts()) {
-      expect(name).not.toContain('.md');
-    }
+  it('includes the default/example prompt', () => {
+    expect(listPrompts()).toContain(EXAMPLE_PROMPT_BASENAME);
   });
 });
 
 describe('loadPrompt', () => {
-  it('loads setup prompt by name', () => {
-    const prompt = loadPrompt('setup');
-    expect(prompt).toContain('Storybook');
-    expect(prompt).toContain('### Step 1');
-  });
-
-  it('loads the play-driven pattern-copy prompt by name', () => {
+  it('returns the nudge string the agent receives (not the resolved instructions)', () => {
     const prompt = loadPrompt(EXAMPLE_PROMPT_BASENAME);
-    expect(prompt).toContain('play function');
-    expect(prompt).toContain('The purpose of the `play` function is to prove');
+    expect(prompt).toContain('npx storybook ai setup');
+    expect(prompt).not.toContain('### Step 1');
   });
 
-  it('throws for unknown prompt', () => {
+  it('rejects unknown prompt names', () => {
     expect(() => loadPrompt('nonexistent-prompt-xyz')).toThrow('Prompt not found');
   });
 
-  it('returns trimmed content', () => {
-    const prompt = loadPrompt(EXAMPLE_PROMPT_BASENAME);
-    expect(prompt).toBe(prompt.trim());
+  it('accepts every registered prompt name', () => {
+    for (const name of listPrompts()) {
+      expect(() => loadPrompt(name)).not.toThrow();
+    }
   });
 });
 

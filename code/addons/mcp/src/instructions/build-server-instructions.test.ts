@@ -7,6 +7,7 @@ describe('buildServerInstructions', () => {
 			devEnabled: true,
 			testEnabled: true,
 			docsEnabled: true,
+			changeDetectionEnabled: true,
 		});
 
 		expect(instructions).toMatchInlineSnapshot(`
@@ -51,6 +52,7 @@ describe('buildServerInstructions', () => {
 			devEnabled: true,
 			testEnabled: false,
 			docsEnabled: false,
+			changeDetectionEnabled: true,
 		});
 
 		expect(instructions).toMatchInlineSnapshot(`

@@ -31,7 +31,17 @@ type TransformResult =
   | { action: 'already-configured' }
   | { action: 'unsupported' };
 
-const STORYBOOK_PACKAGE_PATTERNS = ['@storybook/', 'storybook', 'storybook/'];
+// Quote-anchored patterns used as a last-resort fallback when the AST parse fails.
+// They are intentionally specific so that unrelated identifiers like
+// `storybookEnabled` or `isStorybookMode` don't produce false positives.
+const STORYBOOK_PACKAGE_PATTERNS = [
+  "'@storybook/", // @storybook/* scoped packages (single-quoted)
+  '"@storybook/', // @storybook/* scoped packages (double-quoted)
+  "'storybook'", // bare 'storybook' package specifier
+  '"storybook"', // bare "storybook" package specifier
+  "'storybook/", // storybook/* sub-path (single-quoted)
+  '"storybook/', // storybook/* sub-path (double-quoted)
+];
 
 const hasStorybookPackage = (value: string) => {
   return value === 'storybook' || value.startsWith('@storybook/') || value.startsWith('storybook/');

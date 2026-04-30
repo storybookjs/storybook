@@ -391,6 +391,18 @@ export default async function makeMetroConfig<T = string>(): Promise<MetroConfig
     expect(containsStorybookImport('const x = require("react-native");')).toBe(false);
   });
 
+  it('fallback heuristic does not false-positive on storybook-like identifiers', () => {
+    // This source is intentionally unparseable so the catch-branch runs.
+    const unparseable = 'const storybookEnabled = true; <<<INVALID>>>';
+    // 'storybookEnabled' must not fool the fallback into thinking Storybook is imported.
+    expect(containsStorybookImport(unparseable)).toBe(false);
+
+    // But a real package specifier in the same unparseable source must still be detected.
+    const unparseableWithImport =
+      "const storybookEnabled = true; const x = require('@storybook/react-native'); <<<INVALID>>>";
+    expect(containsStorybookImport(unparseableWithImport)).toBe(true);
+  });
+
   it('prepends fallback comment only once', () => {
     const original = 'module.exports = {};\n';
     const once = prependMetroFallbackComment(original);

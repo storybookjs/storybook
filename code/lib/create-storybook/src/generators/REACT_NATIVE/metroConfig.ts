@@ -190,12 +190,12 @@ interface ASTComment {
   leading?: boolean;
 }
 
-type NodeWithComments = t.Node & {
+interface NodeWithComments {
   /** recast: comment objects with {leading, trailing} boolean flags */
   comments?: ASTComment[];
   /** Babel: leading-only comments (no {leading} flag needed) */
   leadingComments?: ASTComment[];
-};
+}
 
 // Move file-level leading comments (those that start at source position 0) from
 // `fromNode` to `toNode` so that pragmas like // @ts-nocheck, /* eslint-disable */,
@@ -204,8 +204,8 @@ type NodeWithComments = t.Node & {
 // recast stores comments in both node.comments (with {leading, trailing} flags) and
 // node.leadingComments; we update both so the printer sees the change.
 const shiftFileLeadingComments = (fromNode: t.Node, toNode: t.Node) => {
-  const from = fromNode as NodeWithComments;
-  const to = toNode as NodeWithComments;
+  const from = fromNode as unknown as NodeWithComments;
+  const to = toNode as unknown as NodeWithComments;
 
   const isFileLeading = (c: ASTComment) => typeof c.start === 'number' && c.start === 0;
 

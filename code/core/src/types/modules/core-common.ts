@@ -196,6 +196,7 @@ export interface CLIOptions extends CLIBaseOptions {
   smokeTest?: boolean;
   managerCache?: boolean;
   open?: boolean;
+  openUrl?: string;
   ci?: boolean;
   versionUpdates?: boolean;
   docs?: boolean;

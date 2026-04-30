@@ -97,6 +97,7 @@ command('dev')
   .option('--smoke-test', 'Exit after successful start')
   .option('--ci', "CI mode (skip interactive prompts, don't open browser)")
   .option('--no-open', 'Do not open Storybook automatically in the browser')
+  .option('--open-url <url>', 'Open a custom URL instead of the default local address')
   .option('--quiet', 'Suppress verbose build output')
   .option('--no-version-updates', 'Suppress update check', true)
   .option('--debug-webpack', 'Display final webpack configurations for debugging purposes')
@@ -133,6 +134,10 @@ command('dev')
       configDir: 'SBCONFIG_CONFIG_DIR',
       ci: 'CI',
     });
+
+    if (!options.openUrl && process.env.STORYBOOK_OPEN_URL) {
+      options.openUrl = process.env.STORYBOOK_OPEN_URL;
+    }
 
     if (parseInt(`${options.port}`, 10)) {
       options.port = parseInt(`${options.port}`, 10);

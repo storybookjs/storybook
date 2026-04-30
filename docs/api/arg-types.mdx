@@ -1,8 +1,7 @@
 ---
-title: "ArgTypes"
+title: ArgTypes
 sidebar:
   order: 3
-  title: ArgTypes
 ---
 
 ArgTypes specify the behavior of [args](../writing-stories/args.mdx). By specifying the type of an arg, you constrain the values that it can accept and provide information about args that are not explicitly set (i.e., [description](#description)).
@@ -35,27 +34,15 @@ For most Storybook projects, argTypes are [automatically inferred](#automatic-ar
 
 ArgTypes are most often specified at the component level, in the [meta (or default export)](../writing-stories/index.mdx#default-export) of the CSF file:
 
-{/* prettier-ignore-start */}
-
 <CodeSnippets path="arg-types-in-meta.md" />
-
-{/* prettier-ignore-end */}
 
 They can apply to all stories when specified at the project (global) level, in the `preview.*` configuration file:
 
-{/* prettier-ignore-start */}
-
 <CodeSnippets path="arg-types-in-preview.md" />
-
-{/* prettier-ignore-end */}
 
 Or they can apply only to a [specific story](../writing-stories/index.mdx#defining-stories):
 
-{/* prettier-ignore-start */}
-
 <CodeSnippets path="arg-types-in-story.md" />
-
-{/* prettier-ignore-end */}
 
 ## `argTypes`
 
@@ -110,11 +97,7 @@ Default:
 
 Specify the behavior of the [controls panel](../essentials/controls.mdx) for the arg. If you specify a string, it's used as the [`type`](#controltype) of the control. If you specify an object, you can provide additional configuration. Specifying `false` will prevent the control from rendering.
 
-{/* prettier-ignore-start */}
-
 <CodeSnippets path="arg-types-control.md" />
-
-{/* prettier-ignore-end */}
 
 #### `control.type`
 
@@ -143,10 +126,9 @@ Specifies the type of control used to change the arg value with the [controls pa
 |             | `'text'`         | Provides a freeform text input.<br /> `{ control: 'text' }`                                                                                                                             |
 
 <Callout variant="info" icon="💡">
-  The `date` control will convert the date into a UNIX timestamp when the value
-  changes. It's a known limitation that will be fixed in a future release. If
-  you need to represent the actual date, you'll need to update the story's
-  implementation and convert the value into a date object.
+
+The `date` control will convert the date into a UNIX timestamp when the value changes. It's a known limitation that will be fixed in a future release. If you need to represent the actual date, you'll need to update the story's implementation and convert the value into a date object.
+
 </Callout>
 
 #### `control.accept`
@@ -193,11 +175,7 @@ Default: [Inferred](#automatic-argtype-inference)
 
 Describe the arg. (If you intend to describe the type of the arg, you should use [`table.type`](#tabletype), instead.)
 
-{/* prettier-ignore-start */}
-
 <CodeSnippets path="arg-types-description.md" />
-
-{/* prettier-ignore-end */}
 
 ### `if`
 
@@ -215,11 +193,7 @@ Type:
 
 Conditionally render an argType based on the value of another [arg](../writing-stories/args.mdx) or [global](../essentials/toolbars-and-globals.mdx).
 
-{/* prettier-ignore-start */}
-
 <CodeSnippets path="arg-types-if.md" />
-
-{/* prettier-ignore-end */}
 
 ### `mapping`
 
@@ -231,11 +205,7 @@ When dealing with non-primitive values, you'll notice that you'll run into some 
 
 `mapping` doesn't have to be exhaustive. If the currently selected option is not listed, it's used verbatim. Can be used with [`control.labels`](#labels).
 
-{/* prettier-ignore-start */}
-
 <CodeSnippets path="arg-types-mapping.md" />
-
-{/* prettier-ignore-end */}
 
 ### `name`
 
@@ -243,14 +213,11 @@ Type: `string`
 
 The `argTypes` object uses the name of the arg as the key. By default, that key is used when displaying the argType in Storybook. You can override the displayed name by specifying a `name` property.
 
-{/* prettier-ignore-start */}
-
 <CodeSnippets path="arg-types-name.md" />
 
-{/* prettier-ignore-end */}
-
 <Callout variant="warning">
-  Be careful renaming args in this way. Users of the component you're documenting will not be able to use the documented name as a property of your component and the actual name will not displayed.
+
+Be careful renaming args in this way. Users of the component you're documenting will not be able to use the documented name as a property of your component and the actual name will not displayed.
 
 For this reason, the `name` property is best used when defining an `argType` that is only used for documentation purposes and not an actual property of the component. For example, when [providing argTypes for each property of an object](https://stackblitz.com/edit/github-uplqzp?file=src/stories/Button.stories.tsx).
 
@@ -264,11 +231,7 @@ Default: [Inferred](#automatic-argtype-inference)
 
 If the arg accepts a finite set of values, you can specify them with `options`. If those values are [complex](../essentials/controls.mdx#dealing-with-complex-values), like JSX elements, you can use [`mapping`](#mapping) to map them to string values. You can use [`control.labels`](#labels) to provide custom labels for the options.
 
-{/* prettier-ignore-start */}
-
 <CodeSnippets path="arg-types-options.md" />
-
-{/* prettier-ignore-end */}
 
 ### `table`
 
@@ -294,11 +257,7 @@ Default: [Inferred](#automatic-argtype-inference)
 
 Specify how the arg is documented in the [`ArgTypes` doc block](./doc-blocks/doc-block-argtypes.mdx), [`Controls` doc block](./doc-blocks/doc-block-controls.mdx), and [Controls panel](../essentials/controls.mdx).
 
-{/* prettier-ignore-start */}
-
 <CodeSnippets path="arg-types-table.md" />
-
-{/* prettier-ignore-end */}
 
 #### `table.category`
 
@@ -351,7 +310,7 @@ Type: `'boolean' | 'function' | 'number' | 'string' | 'symbol' | SBType`
 The full type of `SBType` is:
 
 <details>
-  <summary>SBType</summary>
+<summary>SBType</summary>
 
 ```ts
 interface SBBaseType {
@@ -360,31 +319,31 @@ interface SBBaseType {
 }
 
 type SBScalarType = SBBaseType & {
-  name: "boolean" | "string" | "number" | "function" | "symbol";
+  name: 'boolean' | 'string' | 'number' | 'function' | 'symbol';
 };
 
 type SBArrayType = SBBaseType & {
-  name: "array";
+  name: 'array';
   value: SBType;
 };
 type SBObjectType = SBBaseType & {
-  name: "object";
+  name: 'object';
   value: Record<string, SBType>;
 };
 type SBEnumType = SBBaseType & {
-  name: "enum";
+  name: 'enum';
   value: (string | number)[];
 };
 type SBIntersectionType = SBBaseType & {
-  name: "intersection";
+  name: 'intersection';
   value: SBType[];
 };
 type SBUnionType = SBBaseType & {
-  name: "union";
+  name: 'union';
   value: SBType[];
 };
 type SBOtherType = SBBaseType & {
-  name: "other";
+  name: 'other';
   value: string;
 };
 
@@ -406,11 +365,7 @@ Specifies the semantic type of the argType. When an argType is [inferred](#autom
 
 If you only need to specify the documented type, you should use [`table.type`](#tabletype), instead.
 
-{/* prettier-ignore-start */}
-
 <CodeSnippets path="arg-types-type.md" />
-
-{/* prettier-ignore-end */}
 
 ### `defaultValue`
 
@@ -420,8 +375,4 @@ Type: `any`
 
 Define the default value of the argType. Deprecated in favor of defining the [`arg`](../writing-stories/args.mdx) value directly.
 
-{/* prettier-ignore-start */}
-
 <CodeSnippets path="arg-types-default-value.md" />
-
-{/* prettier-ignore-end */}

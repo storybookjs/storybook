@@ -9,10 +9,11 @@ This file is the canonical instruction source for coding agents. Files like `CLA
 Storybook is a large TypeScript monorepo. The git root is the repo root, the main code lives in `code/`, and build tooling lives in `scripts/`. The default branch is `next`.
 
 - **Base branch**: `next` (all PRs should target `next`, not `main`)
-- **Node.js**: `22.21.1` (see `.nvmrc`)
+- **Node.js**: `22.22.1` (see `.nvmrc`) — supports `.ts` natively via type stripping (no loader needed)
 - **Package Manager**: Yarn Berry
 - **Task orchestration**: NX plus the custom `yarn task` runner
 - **CI environment**: Linux and Windows
+- **TS execution**: Migrating from `jiti` to native `node` for running `.ts` files. New scripts should use `node ./path/file.ts` with explicit `.ts` import extensions (enabled by `allowImportingTsExtensions` in tsconfig). Legacy scripts still use `jiti` but should be migrated over time.
 
 ## Repository Structure
 
@@ -95,7 +96,7 @@ For routine agent work, prefer the faster non-production commands first. Add `-c
 yarn
 yarn task compile
 yarn nx run-many -t compile
-yarn nx compile <package-name>
+yarn nx compile <nx-project-name>
 ```
 
 ### Lint and typecheck
@@ -122,7 +123,7 @@ yarn storybook:vitest
 | Scenario                        | Command                                                                        |
 | ------------------------------- | ------------------------------------------------------------------------------ |
 | Compile everything quickly      | `yarn nx run-many -t compile`                                                  |
-| Compile one package             | `yarn nx compile <package-name>`                                               |
+| Compile one project             | `yarn nx compile <nx-project-name>`                                            |
 | Check TypeScript errors quickly | `yarn nx run-many -t check`                                                    |
 | Start the internal Storybook UI | `cd code && yarn storybook:ui`                                                 |
 | Build the internal Storybook UI | `cd code && yarn storybook:ui:build`                                           |
@@ -160,6 +161,8 @@ Key points:
 - `react-vite/default-ts` is the default sandbox template
 - `--no-link` is opt-in, not the default
 - NX handles task dependencies via `nx.json`
+- NX target commands use Nx project names (from `project.json` / Nx graph), not `package.json` names
+- Example: `yarn nx compile core` (project `core` is published as package `storybook`)
 
 ## Sandbox Notes
 
@@ -234,7 +237,7 @@ When writing tests:
 
 After changing files:
 
-1. Format with `cd code && oxfmt`
+1. Format with `yarn fmt:write` (run from the repo root)
 2. Lint with `yarn --cwd code lint:js:cmd <file-relative-to-code-folder> --fix` or `cd code && yarn lint:js:cmd <file-relative-to-code-folder>`
 3. Run relevant tests before submitting a PR
 
@@ -266,6 +269,7 @@ Avoid `console.log`, `console.warn`, and `console.error` unless the file is isol
 | `STORYBOOK_DISABLE_TELEMETRY` | Disable telemetry           |
 | `STORYBOOK_TELEMETRY_DEBUG`   | Log telemetry events        |
 | `DEBUG`                       | Enable debug logging        |
+| `FIX_ON_COMMIT`               | Force autofix for fmt & lint in pre-commit hook |
 
 ## Commands To Avoid
 

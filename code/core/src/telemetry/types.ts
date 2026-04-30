@@ -44,7 +44,14 @@ export type EventType =
   | 'preview-first-load'
   | 'doctor'
   | 'share'
-  | 'ghost-stories';
+  | 'ghost-stories'
+  | 'sidebar-filter'
+  | 'ai-setup'
+  | 'ai-setup-evidence'
+  | 'ai-setup-final-scoring'
+  | 'ai-prompt-nudge'
+  | 'ai-init-opt-in'
+  | 'ai-setup-self-healing-scoring';
 export interface Dependency {
   version: string | undefined;
   versionSpecifier?: string;
@@ -103,6 +110,10 @@ export interface Payload {
   [key: string]: any;
 }
 
+export type PayloadFactory = () => Payload | Promise<Payload>;
+
+export type PayloadInput = Payload | PayloadFactory;
+
 export interface Context {
   [key: string]: any;
 }
@@ -114,6 +125,10 @@ export interface Options {
   enableCrashReports?: boolean;
   stripMetadata?: boolean;
   notify?: boolean;
+  /** Override the event timestamp. Used when flushing queued events to preserve original timing. */
+  timestamp?: number;
+  /** When true, bypass the disabled state. Used for error telemetry with enableCrashReports. */
+  force?: boolean;
 }
 
 export interface TelemetryData {
@@ -130,7 +145,7 @@ export interface TelemetryEvent extends TelemetryData {
 
 export interface InitPayload {
   projectType: string;
-  features: { dev: boolean; docs: boolean; test: boolean; onboarding: boolean };
+  features: { dev: boolean; docs: boolean; test: boolean; onboarding: boolean; ai: boolean };
   newUser: boolean;
   versionSpecifier: string | undefined;
   cliIntegration: string | undefined;

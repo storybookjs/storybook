@@ -190,12 +190,12 @@ interface ASTComment {
   leading?: boolean;
 }
 
-interface NodeWithComments extends t.Node {
+type NodeWithComments = t.Node & {
   /** recast: comment objects with {leading, trailing} boolean flags */
   comments?: ASTComment[];
   /** Babel: leading-only comments (no {leading} flag needed) */
   leadingComments?: ASTComment[];
-}
+};
 
 // Move file-level leading comments (those that start at source position 0) from
 // `fromNode` to `toNode` so that pragmas like // @ts-nocheck, /* eslint-disable */,

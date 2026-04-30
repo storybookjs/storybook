@@ -43,7 +43,7 @@ interface ChangedStory {
 	importPath?: string;
 }
 
-function statusPriority(statusValue: string): number {
+function statusPriority(statusValue: StatusValue): number {
 	if (statusValue === 'status-value:new') return 0;
 	if (statusValue === 'status-value:modified') return 1;
 	return 2;

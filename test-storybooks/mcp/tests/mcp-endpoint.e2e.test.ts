@@ -855,7 +855,7 @@ describe('MCP Endpoint E2E Tests', () => {
 			expect(result1.result).toBeDefined();
 			expect(result1.result.content).toBeDefined();
 			expect(result1.result.content.length).toBeGreaterThan(0);
-			
+
 			expect(result1.result.content[0].text).toContain('example-button--primary');
 			expect(result1.result.content[0].text).toContain('Passing Stories');
 

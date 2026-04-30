@@ -21,7 +21,15 @@ import { SelectControl } from './Select';
 const normalizeOptions = (options: Options, labels?: Record<any, string>) => {
   if (Array.isArray(options)) {
     return options.reduce((acc, item) => {
-      acc[labels?.[item] || String(item)] = item;
+      // Guard against `labels` being an array (e.g. from Svelte docgen) and against
+      // prototype-chain lookups (e.g. 'reverse' resolving to Array.prototype.reverse).
+      const label =
+        labels != null &&
+        !Array.isArray(labels) &&
+        Object.prototype.hasOwnProperty.call(labels, item)
+          ? labels[item]
+          : String(item);
+      acc[label] = item;
       return acc;
     }, {});
   }

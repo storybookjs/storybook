@@ -178,41 +178,17 @@ function TanStackRouterStory({ Story, context }: TanStackRouterStoryProps) {
     storyContext: context,
   });
 
-  const routerParametersKey = React.useMemo(
-    () => safeStringify(context.parameters.tanstack?.router),
-    [context.parameters.tanstack?.router]
-  );
-
-  const router = React.useMemo(
-    () =>
-      createStoryRouter({
+  return (
+    <RouterProvider
+      router={createStoryRouter({
         Story: StableStory,
         context,
         routerContext,
-      }),
-    // We deliberately key on the story id + serialized router params, not on
-    // `context` itself (which changes every render due to new args).
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [context.id, routerParametersKey, routerContext]
-  );
-
-  return (
-    <RouterProvider
-      router={router}
+      })}
       context={{
         ...context.parameters.tanstack?.router?.context,
         ...routerContext,
       }}
     ></RouterProvider>
   );
-}
-
-function safeStringify(value: unknown): string {
-  try {
-    return JSON.stringify(value, (_, v) =>
-      typeof v === 'function' ? `__fn:${(v as Function).name || 'anon'}` : v
-    );
-  } catch {
-    return '';
-  }
 }

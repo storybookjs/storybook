@@ -1,17 +1,9 @@
-import type { Route } from '@tanstack/react-router';
-import {
-  createRoute,
-  type AnyRoute,
-  type AnyRootRoute,
-  RootRoute,
-  createRootRouteWithContext,
-} from '@tanstack/react-router';
+import type { AnyRootRoute, AnyRoute } from '@tanstack/react-router';
+import { createRoute, RootRoute, createRootRouteWithContext } from '@tanstack/react-router';
 
 import type { RouteTreeOverrides } from './types.ts';
 
 const MAX_PARENT_WALK = 50;
-
-type AnyRouteInstance = InstanceType<typeof Route> | InstanceType<typeof RootRoute>;
 
 export interface DuplicateRouteTreeOptions {
   overrides?: RouteTreeOverrides | undefined;
@@ -29,7 +21,7 @@ export interface DuplicatedTree {
  * (e.g. when the user constructed a stand-alone route by hand). The walk is
  * capped at `MAX_PARENT_WALK` hops to defend against accidental cycles.
  */
-export function findRootRoute(route: AnyRouteInstance): AnyRoute | undefined {
+export function findRootRoute(route: AnyRoute): AnyRoute | undefined {
   let current: AnyRoute | undefined = route;
   for (let i = 0; i < MAX_PARENT_WALK && current; i += 1) {
     if (current instanceof RootRoute) {
@@ -52,10 +44,10 @@ function getOverrideFor(
   return ((overrides as Record<string, unknown>)[routeId] as Record<string, unknown>) ?? {};
 }
 
-function initSourceTree(route: AnyRouteInstance, counter: { i: number }): void {
+function initSourceTree(route: AnyRoute, counter: { i: number }): void {
   route.init({ originalIndex: counter.i });
   counter.i += 1;
-  const children = route.children as AnyRouteInstance[] | undefined;
+  const children = route.children as AnyRoute[] | undefined;
   if (children?.length) {
     for (const child of children) {
       initSourceTree(child, counter);
@@ -64,8 +56,8 @@ function initSourceTree(route: AnyRouteInstance, counter: { i: number }): void {
 }
 
 function cloneChild(
-  oldRoute: AnyRouteInstance,
-  parent: AnyRouteInstance,
+  oldRoute: AnyRoute,
+  parent: AnyRoute,
   overrides: RouteTreeOverrides | undefined,
   byId: Map<string, AnyRoute>
 ): AnyRoute {
@@ -89,10 +81,10 @@ function cloneChild(
 
   byId.set(oldRoute.id, cloned as unknown as AnyRoute);
 
-  const children = (oldRoute as any).children as AnyRouteInstance[] | undefined;
+  const children = (oldRoute as any).children as AnyRoute[] | undefined;
   if (children?.length) {
     const clonedChildren = children.map((child) =>
-      cloneChild(child, cloned as unknown as AnyRouteInstance, overrides, byId)
+      cloneChild(child, cloned as unknown as AnyRoute, overrides, byId)
     );
     (cloned as any).addChildren(clonedChildren);
   }
@@ -110,7 +102,7 @@ function cloneChild(
  * stories.
  */
 export function duplicateRouteTree(
-  rootRoute: AnyRouteInstance,
+  rootRoute: AnyRoute,
   { overrides }: DuplicateRouteTreeOptions = {}
 ): DuplicatedTree {
   // init route to get all derived properties populated
@@ -133,10 +125,10 @@ export function duplicateRouteTree(
   } as any);
   byId.set('__root__', newRoot as unknown as AnyRoute);
 
-  const children = (rootRoute as any).children as AnyRouteInstance[] | undefined;
+  const children = (rootRoute as any).children as AnyRoute[] | undefined;
   if (children?.length) {
     const clonedChildren = children.map((child) =>
-      cloneChild(child, newRoot as unknown as AnyRouteInstance, overrides, byId)
+      cloneChild(child, newRoot as unknown as AnyRoute, overrides, byId)
     );
     (newRoot as any).addChildren(clonedChildren);
   }

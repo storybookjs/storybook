@@ -9,6 +9,7 @@ import { detectAgent } from './detect-agent.ts';
 import { telemetry } from './index.ts';
 import type { EventType } from './types.ts';
 import type { IndexEntry, StoryIndex } from 'storybook/internal/types';
+import { logger } from 'storybook/internal/node-logger';
 
 /**
  * Determines whether a story index entry was authored by the `sb ai setup` flow.
@@ -88,11 +89,13 @@ export async function collectAiSetupEvidence(
   storyIndex?: StoryIndex
 ): Promise<void> {
   try {
+    logger.log('collectAiSetupEvidence');
     // Gate 1: Is this an agent? (cheapest check)
     const agent = detectAgent();
     if (!agent) {
       return;
     }
+    logger.log('collectAiSetupEvidence - yes agent');
 
     // Gate 2: Is there a pending ai-setup record?
     const pending = await getAiSetupPending();
@@ -100,6 +103,8 @@ export async function collectAiSetupEvidence(
       return;
     }
 
+    logger.log('collectAiSetupEvidence - no pending');
+    logger.log(JSON.stringify({ configDir, pending }, null, 2));
     // Gate 3: Does the configDir match? (cross-project guard)
     if (configDir && pending.configDir !== resolve(configDir)) {
       return;
@@ -107,6 +112,7 @@ export async function collectAiSetupEvidence(
 
     // Gate 4: Is it within the session window?
     const timeSinceSetup = Date.now() - pending.timestamp;
+    logger.log(`timeSinceSetup: ${timeSinceSetup}`);
     if (timeSinceSetup > SESSION_TIMEOUT) {
       // Session expired, clean up pending record.
       await flushAiSetupPending();
@@ -116,10 +122,12 @@ export async function collectAiSetupEvidence(
     // Don't fire evidence for ai-setup itself — the setup command gives the
     // prompt to the agent and exits, so we only expect changes after the agent
     // has started processing it.
+    logger.log(`eventType: ${eventType}`);
     if (eventType === 'ai-setup') {
       return;
     }
 
+    logger.log(`calling event`);
     await telemetry(
       'ai-setup-evidence',
       async () => {
@@ -129,6 +137,8 @@ export async function collectAiSetupEvidence(
         // Count AI-authored stories if story index is available
         const aiAuthoredStories = storyIndex ? countAiAuthoredStories(storyIndex) : undefined;
 
+        logger.log(`event data`);
+        logger.log(JSON.stringify({ previewChanged, aiAuthoredStories, timeSinceSetup }, null, 2));
         return {
           previewChanged,
           aiAuthoredStories,

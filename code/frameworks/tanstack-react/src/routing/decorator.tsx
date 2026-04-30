@@ -158,15 +158,43 @@ function createStoryRouter({
 }
 
 export const tanstackRouteDecorator: Decorator = (Story, context) => {
-  const routerContext = context.parameters.tanstack.router?.useRouterContext?.({
+  return <TanStackRouterStory Story={Story} context={context} />;
+};
+
+interface TanStackRouterStoryProps {
+  Story: ComponentType;
+  context: Parameters<Decorator>[1];
+}
+
+function TanStackRouterStory({ Story, context }: TanStackRouterStoryProps) {
+  const storyRef = React.useRef(Story);
+  storyRef.current = Story;
+  const StableStory = React.useCallback(() => {
+    const Current = storyRef.current;
+    return <Current />;
+  }, []);
+
+  const routerContext = context.parameters.tanstack?.router?.useRouterContext?.({
     storyContext: context,
   });
 
-  const router = createStoryRouter({
-    Story,
-    context,
-    routerContext,
-  });
+  const routerParametersKey = React.useMemo(
+    () => safeStringify(context.parameters.tanstack?.router),
+    [context.parameters.tanstack?.router]
+  );
+
+  const router = React.useMemo(
+    () =>
+      createStoryRouter({
+        Story: StableStory,
+        context,
+        routerContext,
+      }),
+    // We deliberately key on the story id + serialized router params, not on
+    // `context` itself (which changes every render due to new args).
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [context.id, routerParametersKey, routerContext]
+  );
 
   return (
     <RouterProvider
@@ -177,4 +205,14 @@ export const tanstackRouteDecorator: Decorator = (Story, context) => {
       }}
     ></RouterProvider>
   );
-};
+}
+
+function safeStringify(value: unknown): string {
+  try {
+    return JSON.stringify(value, (_, v) =>
+      typeof v === 'function' ? `__fn:${(v as Function).name || 'anon'}` : v
+    );
+  } catch {
+    return '';
+  }
+}

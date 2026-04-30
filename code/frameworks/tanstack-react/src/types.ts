@@ -1,8 +1,10 @@
 import type { CompatibleString } from 'storybook/internal/types';
 
+import type { AnyRoute } from '@tanstack/react-router';
+import type { RoutesByPath } from '@tanstack/router-core';
 import type { BuilderOptions } from '@storybook/builder-vite';
 import type { StorybookConfig as StorybookConfigReactVite } from '@storybook/react-vite';
-import type { RouterParameters } from './routing/types.ts';
+import type { RegisteredFullPath, RouterParameters } from './routing/types.ts';
 
 type FrameworkName = CompatibleString<'@storybook/tanstack-react'>;
 type BuilderName = CompatibleString<'@storybook/builder-vite'>;
@@ -33,16 +35,30 @@ type StorybookConfigFramework = {
 export type StorybookConfig = Omit<StorybookConfigReactVite, keyof StorybookConfigFramework> &
   StorybookConfigFramework;
 
-export interface TanStackPreviewOptions<TRoute = undefined> {
+/** Path constraint mirroring `RouterParameters`'s second generic. */
+export type DefaultStoryPath<TRoute> = TRoute extends AnyRoute
+  ? keyof RoutesByPath<TRoute>
+  : RegisteredFullPath;
+
+export interface TanStackPreviewOptions<
+  TRoute = undefined,
+  Path extends DefaultStoryPath<TRoute> = DefaultStoryPath<TRoute>,
+> {
   /** Router configuration for stories */
-  router?: RouterParameters<TRoute>;
+  router?: RouterParameters<TRoute, Path>;
 }
 
-export interface TanStackParameters<TRoute = undefined> {
+export interface TanStackParameters<
+  TRoute = undefined,
+  Path extends DefaultStoryPath<TRoute> = DefaultStoryPath<TRoute>,
+> {
   /** TanStack framework configuration (router integration). */
-  tanstack?: TanStackPreviewOptions<TRoute>;
+  tanstack?: TanStackPreviewOptions<TRoute, Path>;
 }
 
-export interface TanStackTypes<TRoute = undefined> {
-  parameters: TanStackParameters<TRoute>;
+export interface TanStackTypes<
+  TRoute = undefined,
+  Path extends DefaultStoryPath<TRoute> = DefaultStoryPath<TRoute>,
+> {
+  parameters: TanStackParameters<TRoute, Path>;
 }

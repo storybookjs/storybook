@@ -1,12 +1,23 @@
-import type { AnyRoute, FileRoutesByPath } from '@tanstack/react-router';
+import type { AnyRoute, FileRoutesByPath, Register } from '@tanstack/react-router';
 import type {
   AnyContext,
-  ResolveLoaderData,
   ResolveParams,
-  ResolveSearchSchema,
+  RouteByPath,
   RouteOptions,
+  RoutesByPath,
 } from '@tanstack/router-core';
 import type { Decorator } from '@storybook/react';
+
+/** Union of every registered full path (e.g. `'/' | '/admin/users' | '/$libraryId/$version'`). */
+// @ts-expect-error - router is registered in user land
+export type RegisteredFullPath = keyof Register['router']['routesByPath'];
+// @ts-expect-error - router is registered in user land
+export type IsAppRouteTree<TRoute> = TRoute extends Register['router']['routeTree'] ? true : false;
+
+// @ts-expect-error - router is registered in user land
+export type RegisteredRouteFromRoute<TRoute> = TRoute extends Register['router']['routesById']
+  ? true
+  : false;
 
 export type IsRoute<T> = T extends AnyRoute
   ? true
@@ -59,27 +70,28 @@ type AllRegisteredParams = Partial<
   >
 >;
 
-type StoryRouteParams<TRoute> =
-  TRoute extends FileRoutesByPath[keyof FileRoutesByPath]['preLoaderRoute']
-    ? ResolveParams<ExtractAllPathsFromFileRoutes<TRoute>>
-    : IsRoute<TRoute> extends true
-      ? TRoute extends { types: { allParams: infer P } }
-        ? unknown extends P
-          ? AllRegisteredParams
-          : keyof P extends never
-            ? AllRegisteredParams
-            : P
-        : AllRegisteredParams
-      : AllRegisteredParams;
+type StoryParamsForFullPath<FullPath> = FullPath extends RegisteredFullPath
+  ? // @ts-expect-error - router is registered in user land
+    Register['router']['routesByPath'][FullPath]['types']['allParams']
+  : Record<string, unknown>;
 
-type StoryRouteSearch<TRoute> =
-  IsRoute<TRoute> extends true
-    ? TRoute extends { types: { fullSearchSchema: infer S } }
-      ? unknown extends S
-        ? Record<string, unknown>
-        : S
-      : Record<string, unknown>
+// @ts-expect-error - router is registered in user land
+type StoryParamsForRoute<TRoute> = TRoute extends Register['router']['routesById'][infer Id]
+  ? // @ts-expect-error - router is registered in user land
+    Register['router']['routesById'][Id]['types']['allParams']
+  : TRoute extends FileRoutesByPath[keyof FileRoutesByPath]
+    ? TRoute['preLoaderRoute'] extends { types: { allParams: infer A } }
+      ? A
+      : never
     : Record<string, unknown>;
+type StoryRouteSearch<TRoute> =
+  IsAppRouteTree<TRoute> extends true
+    ? Record<string, unknown>
+    : TRoute extends FileRoutesByPath[keyof FileRoutesByPath]
+      ? TRoute['preLoaderRoute'] extends { types: { allSearch: infer A } }
+        ? A
+        : never
+      : Record<string, unknown>;
 
 export type StoryRouteFileOptions<TRoute = undefined> =
   IsRoute<TRoute> extends true
@@ -131,7 +143,9 @@ export type CreateStoryRouteOptions<TRoute = undefined> = StoryRouteFileOptions<
   path?: StoryRoutePath<TRoute>;
 };
 
-export type StoryRouteOptions<TRoute = undefined> = CreateStoryRouteOptions<TRoute> | AnyRoute;
+export type StoryRouteOptions<TRoute = undefined> =
+  | CreateStoryRouteOptions<TRoute>
+  | (TRoute extends AnyRoute ? TRoute : AnyRoute);
 
 /**
  * Per-route override options for use inside `RouteTreeOverrides`.
@@ -182,12 +196,20 @@ export type RouteTreeOverrides = Partial<{
     | undefined;
 }>;
 
-export interface RouterParameters<TRoute = undefined> {
+export interface RouterParameters<
+  TRoute = undefined,
+  Path extends TRoute extends AnyRoute ? keyof RoutesByPath<TRoute> : RegisteredFullPath =
+    TRoute extends AnyRoute ? keyof RoutesByPath<TRoute> : keyof FileRoutesByPath,
+> {
   route?: StoryRouteOptions<TRoute>;
-  /** The initial URL path to render. */
-  path?: StoryRoutePath<TRoute>;
+  /**
+   * Path to resolve the story route against.
+   * Constrained to known registered paths in route tree mode, but can be any string in app route mode (since the user may be passing a custom `route` that doesn't exist in the registered tree).
+   */
+  path?: Path;
   /** URL params to interpolate into the path (e.g. `{ id: '42' }` for `/$id`). */
-  params?: StoryRouteParams<TRoute>;
+  // @ts-expect-error - route is registered in user land, and we want to allow any params when the user is passing a custom route that doesn't exist in the registered tree
+  params?: ResolveParams<Path>;
   /** Search/query params to append to the URL (e.g. `{ tab: 'details' }`). */
   query?: Partial<StoryRouteSearch<TRoute>>;
   /**

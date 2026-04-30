@@ -190,6 +190,7 @@ export async function storybookDevServer(
       const url =
         options.openUrl ||
         (options.previewOnly ? `${defaultUrl}iframe.html?navigator=true` : defaultUrl!);
+      // the browser window could not be opened, this is non-critical, we just ignore the error
       openInBrowser(url).catch((err: Error) => {
         if (options.openUrl) {
           logger.warn(`Failed to open custom URL: ${url}\n  ${err.message}`);

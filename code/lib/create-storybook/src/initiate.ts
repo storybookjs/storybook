@@ -2,10 +2,18 @@ import { ProjectType } from 'storybook/internal/cli';
 import {
   type JsPackageManager,
   PackageManagerName,
+  cache,
   executeCommand,
 } from 'storybook/internal/common';
 import { getServerPort, withTelemetry } from 'storybook/internal/core-server';
 import { logTracker, logger } from 'storybook/internal/node-logger';
+import { telemetry } from 'storybook/internal/telemetry';
+import { Feature } from 'storybook/internal/types';
+import type {
+  SupportedBuilder,
+  SupportedFramework,
+  SupportedRenderer,
+} from 'storybook/internal/types';
 
 import {
   executeAddonConfiguration,
@@ -23,6 +31,32 @@ import type { CommandOptions } from './generators/types.ts';
 import { FeatureCompatibilityService } from './services/FeatureCompatibilityService.ts';
 import { TelemetryService } from './services/TelemetryService.ts';
 
+/** Validate test feature compatibility and check AI setup support */
+async function checkFeatureSupport(
+  packageManager: JsPackageManager,
+  framework: SupportedFramework | null,
+  builder: SupportedBuilder,
+  renderer: SupportedRenderer
+): Promise<{
+  isTestFeatureAvailable: boolean;
+  isAiSetupAvailable: boolean;
+}> {
+  const featureService = new FeatureCompatibilityService(packageManager);
+
+  const result = await featureService.validateTestFeatureCompatibility(
+    framework,
+    builder,
+    process.cwd()
+  );
+
+  const aiSetup = FeatureCompatibilityService.supportsAISetupFeature(renderer, builder, framework);
+
+  return {
+    isTestFeatureAvailable: result.compatible,
+    isAiSetupAvailable: aiSetup,
+  };
+}
+
 /**
  * Main entry point for Storybook initialization
  *
@@ -39,6 +73,10 @@ export async function doInitiate(options: CommandOptions): Promise<
     }
   | { shouldRunDev: false }
 > {
+  if (options.agent) {
+    options.yes = true;
+  }
+
   // Initialize services
   const telemetryService = new TelemetryService();
 
@@ -48,7 +86,7 @@ export async function doInitiate(options: CommandOptions): Promise<
   let dependencyCollector: DependencyCollector | null = new DependencyCollector();
 
   // Step 1: Run preflight checks
-  const { packageManager } = await executePreflightCheck(options);
+  const { packageManager, isEmptyProject } = await executePreflightCheck(options);
 
   // Step 2: Detect project type
   const { projectType, language } = await executeProjectDetection(packageManager, options);
@@ -61,12 +99,23 @@ export async function doInitiate(options: CommandOptions): Promise<
   );
 
   // Step 4: Get user preferences and feature selections (with framework/builder for validation)
-  const { newUser, selectedFeatures } = await executeUserPreferences({
+  const { isTestFeatureAvailable, isAiSetupAvailable } = await checkFeatureSupport(
     packageManager,
+    framework,
+    builder,
+    renderer
+  );
+
+  const { newUser, selectedFeatures } = await executeUserPreferences({
     options,
     framework,
     builder,
+    renderer,
     projectType,
+    isTestFeatureAvailable,
+    // Skip AI feature recommendation when scaffolding into an empty directory,
+    // since the user hasn't yet committed to a project setup where AI tooling adds value.
+    isAiSetupAvailable: isAiSetupAvailable && !isEmptyProject,
   });
 
   // Step 5: Execute generator with dependency collector (now with frameworkInfo)
@@ -102,13 +151,26 @@ export async function doInitiate(options: CommandOptions): Promise<
   });
 
   // Step 8: Print final summary
+  const hasAiFeature = selectedFeatures.has(Feature.AI);
+  if (hasAiFeature) {
+    // Record the init-time AI opt-in in the telemetry event cache so the server can gate
+    // AI-related UI (checklist item, analytics) via the universal checklist store.
+    await telemetry('ai-init-opt-in', {}).catch(() => {});
+  }
   await executeFinalization({
+    showAgentFollowUp: !!options.agent && hasAiFeature,
+    showAiInstructions: hasAiFeature,
     logfile: options.logfile,
     storybookCommand,
   });
 
   // Step 9: Track telemetry
   await telemetryService.trackInitWithContext(projectType, selectedFeatures, newUser);
+
+  // Signal dev to redirect to onboarding on first run
+  if (selectedFeatures.has(Feature.ONBOARDING)) {
+    await cache.set('onboarding-pending', true).catch(() => {});
+  }
 
   return {
     shouldRunDev:
@@ -154,7 +216,8 @@ export async function initiate(options: CommandOptions): Promise<void> {
     handleCommandFailure(options.logfile);
   });
 
-  if (initiateResult?.shouldRunDev) {
+  // Launch dev server only if --dev was explicitly passed
+  if (!options.agent && initiateResult?.shouldRunDev) {
     await runStorybookDev(initiateResult);
   }
 }
@@ -164,17 +227,14 @@ async function runStorybookDev(result: {
   projectType: ProjectType;
   packageManager: JsPackageManager;
   storybookCommand?: string | null;
-  shouldOnboard: boolean;
 }): Promise<void> {
-  const { projectType, packageManager, storybookCommand, shouldOnboard } = result;
+  const { projectType, packageManager, storybookCommand } = result;
 
   if (!storybookCommand) {
     return;
   }
 
   try {
-    const supportsOnboarding = FeatureCompatibilityService.supportsOnboarding(projectType);
-
     const parts = storybookCommand.split(' ');
 
     // Angular CLI throws "Unknown argument: silent"
@@ -201,10 +261,6 @@ async function runStorybookDev(result: {
 
       if (useAlternativePort) {
         parts.push(`-p`, `${availablePort}`);
-      }
-
-      if (supportsOnboarding && shouldOnboard) {
-        parts.push('--initial-path=/onboarding');
       }
 
       parts.push('--quiet');

@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo } from 'react';
 
 import { Button, PopoverProvider, TooltipLinkList } from 'storybook/internal/components';
 import {
@@ -11,7 +11,7 @@ import type { Addon_BaseType } from 'storybook/internal/types';
 import { global } from '@storybook/global';
 import { LinkIcon, ShareAltIcon, ShareIcon } from '@storybook/icons';
 
-import copy from 'copy-to-clipboard';
+import { useCopyButton } from '../../../../shared/useCopyButton.ts';
 import { QRCodeSVG as QRCode } from 'qrcode.react';
 import { Consumer, types } from 'storybook/manager-api';
 import type { API, Combo } from 'storybook/manager-api';
@@ -72,19 +72,29 @@ const ShareMenu = React.memo(function ShareMenu({
 }) {
   const shortcutKeys = api.getShortcutKeys();
   const enableShortcuts = !!shortcutKeys;
-  const [copied, setCopied] = useState(false);
   const copyStoryLink = shortcutKeys?.copyStoryLink;
   const openInIsolation = shortcutKeys?.openInIsolation;
+
+  const originHrefs = useMemo(
+    () => api.getStoryHrefs(storyId, { base: 'origin', refId }),
+    [api, storyId, refId]
+  );
+  const networkHrefs = useMemo(
+    () => api.getStoryHrefs(storyId, { base: 'network', refId }),
+    [api, storyId, refId]
+  );
+
+  const { children: copyTitle, buttonProps: copyButtonProps } = useCopyButton<string>({
+    children: 'Copy story link',
+    content: originHrefs.managerHref,
+    onCopy: () => api.emit(SHARE_STORY_LINK, originHrefs.managerHref),
+  });
 
   useEffect(() => {
     api.emit(SHARE_POPOVER_OPENED);
   }, [api]);
 
   const links = useMemo(() => {
-    const copyTitle = copied ? 'Copied!' : 'Copy story link';
-    const originHrefs = api.getStoryHrefs(storyId, { base: 'origin', refId });
-    const networkHrefs = api.getStoryHrefs(storyId, { base: 'network', refId });
-
     return [
       [
         {
@@ -92,12 +102,7 @@ const ShareMenu = React.memo(function ShareMenu({
           title: copyTitle,
           icon: <LinkIcon />,
           right: enableShortcuts ? <Shortcut keys={copyStoryLink} /> : null,
-          onClick: () => {
-            api.emit(SHARE_STORY_LINK, originHrefs.managerHref);
-            copy(originHrefs.managerHref);
-            setCopied(true);
-            setTimeout(() => setCopied(false), 2000);
-          },
+          onClick: copyButtonProps.onClick,
         },
         {
           id: 'open-new-tab',
@@ -131,7 +136,16 @@ const ShareMenu = React.memo(function ShareMenu({
         },
       ],
     ];
-  }, [api, storyId, refId, copied, enableShortcuts, copyStoryLink, openInIsolation]);
+  }, [
+    api,
+    originHrefs,
+    networkHrefs,
+    copyTitle,
+    copyButtonProps,
+    enableShortcuts,
+    copyStoryLink,
+    openInIsolation,
+  ]);
 
   return <TooltipLinkList links={links} style={{ width: 240 }} />;
 });

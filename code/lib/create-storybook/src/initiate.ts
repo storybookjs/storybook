@@ -204,6 +204,8 @@ export async function initiate(options: CommandOptions): Promise<void> {
     {
       cliOptions: options,
       printError: (err) => !err.handled && logger.error(err),
+      // enable telemetry if nothing else specified in env var or CLI options
+      fallbackTelemetryState: true,
     },
     async () => {
       // we need to explicitly set this before init to not delay the events until the end of the flow

@@ -56,7 +56,9 @@ const hasAddonsToRename = (cfg: StorybookConfigRaw): boolean => {
     return false;
   }
   // Idempotency: don't touch a config that already has `deviceAddons` to avoid clobbering it.
-  if (cfg.deviceAddons !== undefined) {
+  // `deviceAddons` is not part of the core StorybookConfigRaw type — it lives in the RN framework
+  // package — so we cast to access it without touching the shared type definition.
+  if ((cfg as { deviceAddons?: unknown }).deviceAddons !== undefined) {
     return false;
   }
   return true;

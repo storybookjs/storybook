@@ -202,6 +202,8 @@ describe('getUIBuildingInstructionsTool', () => {
 		expect(instructions).not.toContain('{{FRAMEWORK}}');
 		expect(instructions).not.toContain('{{RENDERER}}');
 		expect(instructions).not.toContain('{{PREVIEW_STORIES_TOOL_NAME}}');
+		expect(instructions).not.toContain('{{STORY_LINKING_WORKFLOW}}');
+		expect(instructions).not.toContain('{{CHANGED_STORY_FALLBACK_LINK_GUIDANCE}}');
 	});
 
 	it('should not mention changed stories workflow when change detection is disabled', async () => {

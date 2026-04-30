@@ -1,7 +1,11 @@
 import React, { useCallback, useState } from 'react';
 
 import { Badge, Button, PopoverProvider } from 'storybook/internal/components';
-import type { StatusesByStoryIdAndTypeId, StoryIndex } from 'storybook/internal/types';
+import type {
+  API_IndexHash,
+  StatusesByStoryIdAndTypeId,
+  StoryIndex,
+} from 'storybook/internal/types';
 import type { StatusValue } from 'storybook/internal/types';
 
 import { FilterIcon } from '@storybook/icons';
@@ -42,6 +46,7 @@ const TagSelected = styled(Badge)(({ theme }) => ({
 const filterMapper = ({ api, state }: Combo) => ({
   api,
   indexJson: state.internal_index as StoryIndex | undefined,
+  filteredIndex: state.filteredIndex,
   activeFilterCount:
     (state.includedTagFilters?.length ?? 0) +
     (state.excludedTagFilters?.length ?? 0) +
@@ -58,6 +63,7 @@ const filterMapper = ({ api, state }: Combo) => ({
 interface FilterInnerProps {
   api: API;
   indexJson: StoryIndex;
+  filteredIndex: API_IndexHash | undefined;
   activeFilterCount: number;
   defaultIncludedFilters: string[];
   defaultExcludedFilters: string[];
@@ -70,6 +76,7 @@ interface FilterInnerProps {
 const FilterInner = ({
   api,
   indexJson,
+  filteredIndex,
   activeFilterCount,
   defaultIncludedFilters,
   defaultExcludedFilters,
@@ -100,6 +107,7 @@ const FilterInner = ({
         <FilterPanel
           api={api}
           indexJson={indexJson}
+          filteredIndex={filteredIndex}
           defaultIncludedFilters={defaultIncludedFilters}
           defaultExcludedFilters={defaultExcludedFilters}
           includedFilters={includedFilters}
@@ -135,6 +143,7 @@ export const Filter = () => (
     {({
       api,
       indexJson,
+      filteredIndex,
       activeFilterCount,
       defaultIncludedFilters,
       defaultExcludedFilters,
@@ -147,6 +156,7 @@ export const Filter = () => (
         <FilterInner
           api={api}
           indexJson={indexJson}
+          filteredIndex={filteredIndex}
           activeFilterCount={activeFilterCount}
           defaultIncludedFilters={defaultIncludedFilters}
           defaultExcludedFilters={defaultExcludedFilters}

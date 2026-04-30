@@ -25,6 +25,7 @@ export const createFilterLink = ({
   id,
   type,
   title,
+  visibleCount,
   count,
   icon,
   isIncluded,
@@ -36,6 +37,8 @@ export const createFilterLink = ({
   const toggleLabel = `${type} filter: ${isExcluded ? `exclude ${title}` : title}`;
   const toggleTooltip = `${isChecked ? 'Remove' : 'Add'} ${type} filter: ${title}`;
   const invertButtonLabel = `${isExcluded ? 'Include' : 'Exclude'} ${type}: ${title}`;
+
+  const countString = `${visibleCount} / ${count}`;
 
   return {
     id: `filter-${type}-${id}`,
@@ -57,7 +60,7 @@ export const createFilterLink = ({
               {isExcluded && <MutedText> (excluded)</MutedText>}
             </span>
           </ActionList.Text>
-          {isExcluded ? <s>{count}</s> : <span>{count}</span>}
+          {isExcluded ? <s>{countString}</s> : <span>{countString}</span>}
         </ActionList.Action>
         <ActionList.Button
           data-target-id={`filter-${type}-${id}`}

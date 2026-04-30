@@ -146,7 +146,7 @@ play: async ({ canvas }) => {
 ## Story Linking Agent Behavior
 
 - ALWAYS provide story links after any changes to stories files, including changes to existing stories.
-- After changing UI, call `{{GET_CHANGED_STORIES_TOOL_NAME}}` first, then use `{{PREVIEW_STORIES_TOOL_NAME}}` with selected `storyId` values from those results.
+- {{STORY_LINKING_WORKFLOW}}
 - When sharing links, choose the most relevant subset for the user and avoid long lists (generally no more than 5 links).
-- If you do not share all changed story links, include this Storybook fallback link so the user can view the complete changed list: `/?statuses=affected;modified;new`.
+- {{CHANGED_STORY_FALLBACK_LINK_GUIDANCE}}
 - After changing any UI components, ALWAYS search for related stories that might cover the changes you've made. If you find any, provide the story links to the user. THIS IS VERY IMPORTANT, as it allows the user to visually inspect the changes you've made. Even later in a session when changing UI components or stories that have already been linked to previously, YOU MUST PROVIDE THE LINKS AGAIN.

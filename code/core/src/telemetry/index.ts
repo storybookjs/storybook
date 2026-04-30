@@ -23,11 +23,22 @@ export * from './sanitize.ts';
 
 export * from './error-collector.ts';
 
-export { getPrecedingUpgrade, getLastEvents, type CacheEntry } from './event-cache.ts';
+export * from './ai-setup-utils.ts';
 
-export { getSessionId } from './session-id.ts';
+export {
+  getPrecedingUpgrade,
+  getLastEvents,
+  isWithinInitialSession,
+  type CacheEntry,
+  getAiSetupPending,
+  type AiSetupPendingRecord,
+} from './event-cache.ts';
+
+export { getSessionId, SESSION_TIMEOUT } from './session-id.ts';
 
 export { addToGlobalContext } from './telemetry.ts';
+
+export { detectAgent, type AgentInfo } from './detect-agent.ts';
 
 /** Is this story part of the CLI generated examples, including user-created stories in those files */
 export const isExampleStoryId = (storyId: string) =>
@@ -168,7 +179,6 @@ async function _processAndSend(
     }
   } finally {
     const { error } = payload;
-
     // make sure to anonymise possible paths from error messages
     if (error) {
       payload.error = sanitizeError(error);

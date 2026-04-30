@@ -68,7 +68,7 @@ export async function aiSetup(options: AiSetupOptions): Promise<void> {
   }
 
   if (
-    projectInfo.rendererPackage !== '@storybook/react' &&
+    projectInfo.rendererPackage !== '@storybook/react' ||
     projectInfo.builderPackage !== '@storybook/builder-vite'
   ) {
     logger.log(

@@ -20,6 +20,12 @@ import {
   type DuplicatedTree,
 } from './duplicate-tree.ts';
 
+const StoryContext = React.createContext<{ Story: ComponentType }>({ Story: () => null });
+const StoryFromContext: ComponentType = () => {
+  const { Story } = React.useContext(StoryContext);
+  return <Story />;
+};
+
 export type MockRouterOptions = {
   Story: ComponentType;
   context: Parameters<Decorator>[1];
@@ -173,18 +179,23 @@ function TanStackRouterStory({ Story, context }: TanStackRouterStoryProps) {
   });
 
   const router = React.useMemo(
-    () => createStoryRouter({ Story, context, routerContext }),
+    () => createStoryRouter({ Story: StoryFromContext, context, routerContext }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [context.id]
   );
 
+  const providerContext = React.useMemo(
+    () => ({
+      ...context.parameters.tanstack?.router?.context,
+      ...routerContext,
+    }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [context.id, routerContext]
+  );
+
   return (
-    <RouterProvider
-      router={router}
-      context={{
-        ...context.parameters.tanstack?.router?.context,
-        ...routerContext,
-      }}
-    ></RouterProvider>
+    <StoryContext.Provider value={{ Story }}>
+      <RouterProvider router={router} context={providerContext}></RouterProvider>
+    </StoryContext.Provider>
   );
 }

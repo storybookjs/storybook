@@ -13,12 +13,7 @@ Use the Storybook CLI to install it in a single command. Run this inside your pr
   variant="info"
   action={{
     label: 'Copy prompt',
-    icon: 'copy',
-    labelOnSuccess: 'Copied!',
-    iconOnSuccess: 'check',
-    onClick: ({ copy }) => {
-      copy('Set up Storybook for me with npx storybook@latest init and follow its instructions precisely')
-    },
+    copy: 'Set up Storybook for me with npx storybook@latest init and follow its instructions precisely',
     event: 'PromptInstallCopy',
   }}
 >

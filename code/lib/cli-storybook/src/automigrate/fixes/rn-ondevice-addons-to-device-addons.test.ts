@@ -226,7 +226,7 @@ describe('rn-ondevice-addons-to-device-addons', () => {
         if (prefix === 'main' && String(dir).includes('.rnstorybook')) {
           return rnMainPath;
         }
-        return storybookCommon.findConfigFile(prefix, dir);
+        return undefined;
       });
 
       vi.mocked(storybookCommon.loadMainConfig).mockResolvedValue({

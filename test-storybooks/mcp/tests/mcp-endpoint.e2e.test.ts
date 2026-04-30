@@ -899,8 +899,8 @@ describe('MCP Endpoint E2E Tests', () => {
 			expect(toolNames).toMatchInlineSnapshot(`
 				[
 				  "preview-stories",
-				  "get-changed-stories",
 				  "get-storybook-story-instructions",
+				  "get-changed-stories",
 				]
 			`);
 		});

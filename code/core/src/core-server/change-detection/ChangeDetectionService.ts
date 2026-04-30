@@ -1,3 +1,5 @@
+import { writeFile } from 'node:fs/promises';
+
 import { join, normalize } from 'pathe';
 
 import { dequal } from 'dequal';
@@ -21,7 +23,7 @@ import {
   IncrementalPatcher,
   ParseResolveCache,
 } from './dependency-graph/index.ts';
-import type { ReverseIndexImpl } from './dependency-graph/index.ts';
+import type { DependencyGraph, ReverseIndexImpl } from './dependency-graph/index.ts';
 import { ChangeDetectionFailureError, ChangeDetectionUnavailableError } from './errors.ts';
 import { GitDiffProvider } from './GitDiffProvider.ts';
 import { extractBaselineEntryIds, IndexBaselineService } from './IndexBaselineService.ts';
@@ -257,12 +259,14 @@ export class ChangeDetectionService {
     // Shared parse/resolve cache so the patcher reuses cold-start results instead of
     // re-doing every file's parse + resolution on the first event after boot. The patcher
     // invalidates per-file entries on every change/unlink before reading.
+    const debugEnv = process.env.STORYBOOK_CHANGE_DETECTION_DEBUG;
     const cache = new ParseResolveCache({
       registry,
       resolver,
       workspaceRoots,
       projectRoot,
       logger,
+      debug: !!debugEnv,
     });
 
     this.dependencyGraphBuilder = new DependencyGraphBuilder({
@@ -277,6 +281,7 @@ export class ChangeDetectionService {
       return;
     }
     this.reverseIndex = reverseIndex;
+    void this.dumpDebugSnapshot(reverseIndex, graph, projectRoot, workspaceRoots, cache);
 
     this.incrementalPatcher = new IncrementalPatcher({
       reverseIndex,
@@ -381,6 +386,58 @@ export class ChangeDetectionService {
     }
     for (const path of removed) {
       this.patchQueue = this.patchQueue.then(() => this.handleFileChange({ kind: 'unlink', path }));
+    }
+  }
+
+  private async dumpDebugSnapshot(
+    reverseIndex: ReverseIndexImpl,
+    graph: DependencyGraph,
+    projectRoot: string,
+    workspaceRoots: Set<string>,
+    cache: ParseResolveCache
+  ): Promise<void> {
+    const debugEnv = process.env.STORYBOOK_CHANGE_DETECTION_DEBUG;
+    if (!debugEnv) {
+      return;
+    }
+    const outPath =
+      debugEnv === '1' || debugEnv === 'true'
+        ? join(projectRoot, 'storybook-graph-debug.json')
+        : debugEnv;
+
+    const graphObj: Record<string, string[]> = {};
+    for (const [story, deps] of graph) {
+      graphObj[story] = Array.from(deps).sort();
+    }
+
+    const reverseObj: Record<string, Array<{ story: string; depth: number }>> = {};
+    for (const [dep, stories] of reverseIndex.asMap()) {
+      reverseObj[dep] = Array.from(stories.entries())
+        .map(([story, depth]) => ({ story, depth }))
+        .sort((a, b) => a.depth - b.depth || a.story.localeCompare(b.story));
+    }
+
+    const snapshot = {
+      timestamp: new Date().toISOString(),
+      projectRoot,
+      workspaceRoots: Array.from(workspaceRoots).sort(),
+      storyFiles: graph.size,
+      trackedDeps: reverseIndex.asMap().size,
+      graph: graphObj,
+      reverseIndex: reverseObj,
+      // Each entry records one named-import barrel lookup: which names were requested,
+      // which source files they resolved to, and whether the barrel itself was also
+      // included (needBarrel: true means at least one name fell back to the barrel).
+      barrelResolutions: cache.getBarrelTrace() ?? [],
+    };
+
+    try {
+      await writeFile(outPath, JSON.stringify(snapshot, null, 2), 'utf8');
+      logger.debug(`Change detection: graph debug snapshot written to ${outPath}`);
+    } catch (error) {
+      logger.warn(
+        `Change detection: failed to write debug snapshot to ${outPath}: ${error instanceof Error ? error.message : String(error)}`
+      );
     }
   }
 

@@ -2,6 +2,9 @@ import { readFile } from 'node:fs/promises';
 
 import { normalize } from 'pathe';
 
+import { parseBarrelInfo } from 'storybook/internal/oxc-parser';
+import type { BarrelInfo } from 'storybook/internal/oxc-parser';
+
 import type { ParserRegistry } from '../parser-registry/index.ts';
 import type { ImportEdge } from './types.ts';
 import type { ChangeDetectionResolverFactory } from './ResolverFactory.ts';
@@ -18,6 +21,26 @@ interface CacheOptions {
   workspaceRoots: Set<string>;
   projectRoot: string;
   logger: CacheLogger;
+  /** When true, accumulates barrel resolution events retrievable via {@link getBarrelTrace}. */
+  debug?: boolean;
+}
+
+export interface BarrelResolutionEvent {
+  /** File that contained the import statement. */
+  from: string;
+  /** Raw import specifier as written in source. */
+  specifier: string;
+  /** Resolved absolute path of the barrel file. */
+  barrel: string;
+  /** Named symbols that were requested. */
+  names: string[];
+  /** Source files the names resolved to (empty when needBarrel is true for all names). */
+  resolved: string[];
+  /**
+   * True when at least one name could not be chain-followed — the barrel itself was
+   * added to the dep set as a conservative fallback.
+   */
+  needBarrel: boolean;
 }
 
 /**
@@ -38,6 +61,8 @@ export class ParseResolveCache {
 
   private readonly parseCache = new Map<string, Promise<ImportEdge[]>>();
   private readonly resolveCache = new Map<string, Promise<Set<string>>>();
+  private readonly barrelInfoCache = new Map<string, Promise<BarrelInfo>>();
+  private readonly debugTrace: BarrelResolutionEvent[] | null;
 
   constructor(opts: CacheOptions) {
     this.registry = opts.registry;
@@ -45,6 +70,12 @@ export class ParseResolveCache {
     this.workspaceRoots = new Set(Array.from(opts.workspaceRoots, (r) => normalize(r)));
     this.projectRoot = normalize(opts.projectRoot);
     this.logger = opts.logger;
+    this.debugTrace = opts.debug ? [] : null;
+  }
+
+  /** Returns accumulated barrel resolution events, or null when debug mode is off. */
+  getBarrelTrace(): BarrelResolutionEvent[] | null {
+    return this.debugTrace;
   }
 
   /**
@@ -100,6 +131,34 @@ export class ParseResolveCache {
         if (!isInScope(normalised, this.projectRoot, this.workspaceRoots)) {
           continue;
         }
+
+        // For named imports, attempt to follow barrel re-exports directly to
+        // the source files of the specific symbols used.  This prevents stories
+        // that import only `Button` from being marked as related when
+        // `Breadcrumb` (also exported by the same barrel) changes.
+        if (edge.importedNames !== null && edge.importedNames.length > 0) {
+          const { sources, barrels, needBarrel } = await this.followBarrel(
+            normalised,
+            edge.importedNames
+          );
+          this.debugTrace?.push({
+            from: filePath,
+            specifier: edge.specifier,
+            barrel: normalised,
+            names: edge.importedNames,
+            resolved: Array.from(sources),
+            needBarrel,
+          });
+          for (const src of sources) {
+            deps.add(src);
+          }
+          // Add every barrel visited during chain-following so that structural re-export
+          // changes at any hop (not just the direct import) invalidate this importer.
+          for (const barrel of barrels) {
+            deps.add(barrel);
+          }
+        }
+
         deps.add(normalised);
       }
       return deps;
@@ -108,15 +167,148 @@ export class ParseResolveCache {
     return promise;
   }
 
-  /** Drops both cached entries for `filePath`. Call on every `change`/`unlink` event. */
+  /**
+   * For each name in `requestedNames`, walks the barrel chain starting at `barrelPath`
+   * until it reaches the actual source file that defines the symbol.  Handles multi-level
+   * chains where intermediate barrels use `export * from '...'` by recursing through them.
+   *
+   * Returns `needBarrel = true` for any name that could not be fully resolved so the
+   * caller falls back to including the barrel itself.
+   */
+  private async followBarrel(
+    barrelPath: string,
+    requestedNames: string[]
+  ): Promise<{ sources: Set<string>; barrels: Set<string>; needBarrel: boolean }> {
+    const barrels = new Set<string>();
+    const results = await Promise.all(
+      requestedNames.map((name) => this.followName(barrelPath, name, new Set(), 0, barrels))
+    );
+    const sources = new Set<string>();
+    let needBarrel = false;
+    for (const source of results) {
+      if (source !== null) {
+        sources.add(source);
+      } else {
+        needBarrel = true;
+      }
+    }
+    return { sources, barrels, needBarrel };
+  }
+
+  /**
+   * Recursively follows a single exported name through barrel re-exports.
+   *
+   * 1. Checks named re-exports in `barrelPath`; if found, resolves the specifier and
+   *    recurses with the inner name in case the target is itself a barrel.
+   * 2. Falls through to wildcard re-exports (`export * from '...'`) and searches each
+   *    transitively until the name is found or all paths are exhausted.
+   *
+   * Returns the normalised absolute path of the first non-barrel source found, or `null`
+   * when the chain is unresolvable (triggering the conservative `needBarrel` fallback).
+   * Cycle detection via `visited`; depth limit of 10 hops prevents infinite recursion.
+   */
+  private async followName(
+    barrelPath: string,
+    name: string,
+    visited: Set<string>,
+    depth: number,
+    barrels: Set<string>
+  ): Promise<string | null> {
+    const MAX_DEPTH = 10;
+    if (depth > MAX_DEPTH) {
+      this.logger.debug(
+        `Change detection: barrel chain depth limit reached at ${barrelPath} (looking for "${name}")`
+      );
+      return null;
+    }
+    if (visited.has(barrelPath)) {
+      return null;
+    }
+    visited.add(barrelPath);
+    barrels.add(barrelPath);
+
+    const info = await this.barrelInfoOnce(barrelPath);
+
+    const entry = info.named.get(name);
+    if (entry) {
+      const sourceResolved = await this.resolver.resolve(barrelPath, entry.specifier);
+      if (sourceResolved !== null) {
+        const sourceNorm = normalize(sourceResolved);
+        if (isInScope(sourceNorm, this.projectRoot, this.workspaceRoots)) {
+          const deeper = await this.followName(
+            sourceNorm,
+            entry.importedName,
+            new Set(visited),
+            depth + 1,
+            barrels
+          );
+          return deeper ?? sourceNorm;
+        }
+      }
+      return null;
+    }
+
+    for (const wildcardSpec of info.wildcards) {
+      const wildcardResolved = await this.resolver.resolve(barrelPath, wildcardSpec);
+      if (wildcardResolved === null) {
+        continue;
+      }
+      const wildcardNorm = normalize(wildcardResolved);
+      if (!isInScope(wildcardNorm, this.projectRoot, this.workspaceRoots)) {
+        continue;
+      }
+      const result = await this.followName(
+        wildcardNorm,
+        name,
+        new Set(visited),
+        depth + 1,
+        barrels
+      );
+      if (result !== null) {
+        return result;
+      }
+    }
+
+    return null;
+  }
+
+  /**
+   * Lazily parses and caches the barrel info (named re-exports + wildcard specifiers)
+   * for `filePath`. Returns empty info for files that cannot be read or have no exports.
+   */
+  private barrelInfoOnce(filePath: string): Promise<BarrelInfo> {
+    const existing = this.barrelInfoCache.get(filePath);
+    if (existing) {
+      return existing;
+    }
+    const promise = (async (): Promise<BarrelInfo> => {
+      let source: string;
+      try {
+        source = await readFile(filePath, 'utf8');
+      } catch {
+        return { named: new Map(), wildcards: [] };
+      }
+      try {
+        return await parseBarrelInfo(filePath, source);
+      } catch {
+        return { named: new Map(), wildcards: [] };
+      }
+    })();
+    this.barrelInfoCache.set(filePath, promise);
+    return promise;
+  }
+
+  /** Drops all cached entries for `filePath`. Call on every `change`/`unlink` event. */
   invalidate(filePath: string): void {
     this.parseCache.delete(filePath);
     this.resolveCache.delete(filePath);
+    this.barrelInfoCache.delete(filePath);
   }
 
   /** Test-only: full reset. */
   clear(): void {
     this.parseCache.clear();
     this.resolveCache.clear();
+    this.barrelInfoCache.clear();
   }
 }

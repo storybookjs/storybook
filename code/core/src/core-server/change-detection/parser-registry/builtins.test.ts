@@ -24,7 +24,7 @@ describe('oxcImportParser', () => {
       noopContext
     );
 
-    expect(edges).toEqual([{ specifier: 'y', kind: 'static' }]);
+    expect(edges).toEqual([{ specifier: 'y', kind: 'static', importedNames: ['default'] }]);
   });
 
   it('skips a type-only `import type x from "y"`', async () => {
@@ -42,7 +42,7 @@ describe('oxcImportParser', () => {
       noopContext
     );
 
-    expect(edges).toEqual([{ specifier: 'y', kind: 'static' }]);
+    expect(edges).toEqual([{ specifier: 'y', kind: 'static', importedNames: null }]);
   });
 
   it('skips a type-only `export type { x } from "y"`', async () => {
@@ -60,7 +60,7 @@ describe('oxcImportParser', () => {
       noopContext
     );
 
-    expect(edges).toEqual([{ specifier: 'y', kind: 'dynamic' }]);
+    expect(edges).toEqual([{ specifier: 'y', kind: 'dynamic', importedNames: null }]);
   });
 
   it('skips a dynamic import with a non-literal specifier', async () => {
@@ -93,7 +93,7 @@ describe('oxcImportParser', () => {
       noopContext
     );
 
-    expect(edges).toEqual([{ specifier: './y', kind: 'dynamic' }]);
+    expect(edges).toEqual([{ specifier: './y', kind: 'dynamic', importedNames: null }]);
   });
 
   it('extracts a `require("y")` call with a string literal', async () => {
@@ -103,7 +103,7 @@ describe('oxcImportParser', () => {
     );
 
     const requires = edges.filter((edge) => edge.kind === 'require');
-    expect(requires).toEqual([{ specifier: 'y', kind: 'require' }]);
+    expect(requires).toEqual([{ specifier: 'y', kind: 'require', importedNames: null }]);
   });
 
   it('skips `require(someVar)` with a non-literal argument', async () => {
@@ -124,7 +124,7 @@ describe('oxcImportParser', () => {
       noopContext
     );
 
-    expect(edges).toEqual([{ specifier: 'react', kind: 'static' }]);
+    expect(edges).toEqual([{ specifier: 'react', kind: 'static', importedNames: ['default'] }]);
   });
 
   it('parses `.mjs` and `.cjs` sources without error', async () => {
@@ -137,8 +137,10 @@ describe('oxcImportParser', () => {
       noopContext
     );
 
-    expect(mjs).toEqual([{ specifier: 'y', kind: 'static' }]);
-    expect(cjs.filter((e) => e.kind === 'require')).toEqual([{ specifier: 'y', kind: 'require' }]);
+    expect(mjs).toEqual([{ specifier: 'y', kind: 'static', importedNames: ['default'] }]);
+    expect(cjs.filter((e) => e.kind === 'require')).toEqual([
+      { specifier: 'y', kind: 'require', importedNames: null },
+    ]);
   });
 
   it('wraps an oxc-parser throw in a ChangeDetectionFailureError', async () => {
@@ -178,8 +180,8 @@ describe('mdxImportParser', () => {
     const edges = await mdxImportParser.parse({ filePath: '/tmp/intro.mdx', source }, noopContext);
 
     expect(edges).toEqual([
-      { specifier: '@storybook/blocks', kind: 'static' },
-      { specifier: './Button.stories', kind: 'static' },
+      { specifier: '@storybook/blocks', kind: 'static', importedNames: null },
+      { specifier: './Button.stories', kind: 'static', importedNames: null },
     ]);
   });
 
@@ -200,7 +202,9 @@ describe('mdxImportParser', () => {
 
     const edges = await mdxImportParser.parse({ filePath: '/tmp/intro.mdx', source }, noopContext);
 
-    expect(edges).toEqual([{ specifier: '@storybook/blocks', kind: 'static' }]);
+    expect(edges).toEqual([
+      { specifier: '@storybook/blocks', kind: 'static', importedNames: null },
+    ]);
   });
 
   it('extracts "export ... from" declarations from an MDX source', async () => {
@@ -211,8 +215,8 @@ describe('mdxImportParser', () => {
     const edges = await mdxImportParser.parse({ filePath: '/tmp/intro.mdx', source }, noopContext);
 
     expect(edges).toEqual([
-      { specifier: '@storybook/blocks', kind: 'static' },
-      { specifier: './others', kind: 'static' },
+      { specifier: '@storybook/blocks', kind: 'static', importedNames: null },
+      { specifier: './others', kind: 'static', importedNames: null },
     ]);
   });
 
@@ -230,7 +234,9 @@ describe('mdxImportParser', () => {
 
     const edges = await mdxImportParser.parse({ filePath: '/tmp/doc.mdx', source }, noopContext);
 
-    expect(edges).toEqual([{ specifier: '@storybook/blocks', kind: 'static' }]);
+    expect(edges).toEqual([
+      { specifier: '@storybook/blocks', kind: 'static', importedNames: null },
+    ]);
     expect(edges.map((e) => e.specifier)).not.toContain('this-is-an-example');
     expect(edges.map((e) => e.specifier)).not.toContain('./example-dep');
   });
@@ -244,7 +250,9 @@ describe('mdxImportParser', () => {
 
     const edges = await mdxImportParser.parse({ filePath: '/tmp/doc.mdx', source }, noopContext);
 
-    expect(edges).toEqual([{ specifier: '@storybook/blocks', kind: 'static' }]);
+    expect(edges).toEqual([
+      { specifier: '@storybook/blocks', kind: 'static', importedNames: null },
+    ]);
     expect(edges.map((e) => e.specifier)).not.toContain('fake-pkg');
   });
 });

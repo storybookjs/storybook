@@ -115,7 +115,7 @@ describe('IncrementalPatcher', () => {
     const dep = '/repo/src/dep.ts';
     const world: PatcherWorld = {
       edges: new Map([
-        [story, [{ specifier: './dep.ts', kind: 'static' }]],
+        [story, [{ specifier: './dep.ts', kind: 'static', importedNames: null }]],
         [dep, []],
       ]),
       resolutions: new Map([[`${story}::./dep.ts`, dep]]),
@@ -143,7 +143,7 @@ describe('IncrementalPatcher', () => {
     const initialGraph: DependencyGraph = new Map([[story, new Set([oldDep])]]);
     const world: PatcherWorld = {
       edges: new Map([
-        [story, [{ specifier: './new.ts', kind: 'static' }]],
+        [story, [{ specifier: './new.ts', kind: 'static', importedNames: null }]],
         [newDep, []],
       ]),
       resolutions: new Map([[`${story}::./new.ts`, newDep]]),
@@ -169,7 +169,7 @@ describe('IncrementalPatcher', () => {
     const initialGraph: DependencyGraph = new Map([[story, new Set()]]);
     const world: PatcherWorld = {
       edges: new Map([
-        [story, [{ specifier: './added.ts', kind: 'static' }]],
+        [story, [{ specifier: './added.ts', kind: 'static', importedNames: null }]],
         [newDep, []],
       ]),
       resolutions: new Map([[`${story}::./added.ts`, newDep]]),
@@ -240,7 +240,7 @@ describe('IncrementalPatcher', () => {
     const dep = '/repo/src/dep.ts';
     const world: PatcherWorld = {
       edges: new Map([
-        [story, [{ specifier: './dep.ts', kind: 'static' }]],
+        [story, [{ specifier: './dep.ts', kind: 'static', importedNames: null }]],
         [dep, []],
       ]),
       resolutions: new Map([[`${story}::./dep.ts`, dep]]),

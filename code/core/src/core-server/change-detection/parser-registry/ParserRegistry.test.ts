@@ -95,7 +95,11 @@ describe('ParserRegistry', () => {
           `import x from 'y'; export { a } from 'b';`,
           '/tmp/virtual.ts'
         );
-        return observedEdges as { specifier: string; kind: 'static' | 'dynamic' | 'require' }[];
+        return observedEdges as {
+          specifier: string;
+          kind: 'static' | 'dynamic' | 'require';
+          importedNames: string[] | null;
+        }[];
       },
     };
     const registry = new ParserRegistry({
@@ -106,14 +110,16 @@ describe('ParserRegistry', () => {
     const edges = await registry.parse('/tmp/component.sfc', 'ignored-by-plugin');
 
     expect(edges).toEqual([
-      { specifier: 'y', kind: 'static' },
-      { specifier: 'b', kind: 'static' },
+      { specifier: 'y', kind: 'static', importedNames: ['default'] },
+      { specifier: 'b', kind: 'static', importedNames: null },
     ]);
     expect(observedEdges).toEqual(edges);
   });
 
   it('dispatches a known extension to the registered parser and returns its edges', async () => {
-    const pluginParse = vi.fn(async () => [{ specifier: 'foo', kind: 'static' as const }]);
+    const pluginParse = vi.fn(async () => [
+      { specifier: 'foo', kind: 'static' as const, importedNames: null },
+    ]);
     const plugin: ImportParser = {
       extensions: ['.foo'],
       parse: pluginParse,
@@ -125,7 +131,7 @@ describe('ParserRegistry', () => {
 
     const edges = await registry.parse('/tmp/a.foo', 'some source');
 
-    expect(edges).toEqual([{ specifier: 'foo', kind: 'static' }]);
+    expect(edges).toEqual([{ specifier: 'foo', kind: 'static', importedNames: null }]);
     expect(pluginParse).toHaveBeenCalledWith(
       { filePath: '/tmp/a.foo', source: 'some source' },
       expect.objectContaining({ parseScriptWithOxc: expect.any(Function) })

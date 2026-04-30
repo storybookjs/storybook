@@ -35,7 +35,7 @@ export function mdxParse(source: string): ImportEdge[] {
     const key = `static:${specifier}`;
     if (!seen.has(key)) {
       seen.add(key);
-      edges.push({ specifier, kind: 'static' });
+      edges.push({ specifier, kind: 'static', importedNames: null });
     }
     match = MDX_IMPORT_REGEX.exec(stripped);
   }

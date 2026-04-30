@@ -30,13 +30,3 @@ export interface ProjectInfo {
   /** Whether the project's preview file uses the CSF Factory format. */
   hasCsfFactoryPreview: boolean;
 }
-
-/**
- * Represents a skill category that can be expanded in the future.
- * Each skill provides a name, description, and instructions for agents.
- */
-export interface AiPrompt {
-  name: string;
-  description: string;
-  instructions: string;
-}

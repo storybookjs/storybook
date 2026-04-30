@@ -1,6 +1,8 @@
-import type { AiPrompt, ProjectInfo } from '../types.ts';
+import dedent from 'ts-dedent';
+import type { ProjectInfo } from '../types.ts';
 
 import * as optimizedTests from './optimized-tests.ts';
+import { getProjectOverview } from '../utils/project-overview.ts';
 
 /**
  * Main prompt used currently in `npx storybook ai setup` command. If you promote a new prompt to be default, move this to the FORMERLY_USED_PROMPTS object below.
@@ -11,10 +13,13 @@ const CURRENTLY_USED_PROMPT: Record<string, (projectInfo: ProjectInfo) => string
 
 /**
  * Names of variants registered behind `EVAL_SETUP_PROMPT`. Loaded on demand
- * from sibling files so the bundler can code-split them away from the
+ * from sibling files so the bundler can code|-split them away from the
  * default-only path that real users hit.
  */
 const FORMERLY_USED_PROMPTS: Record<string, () => Promise<(projectInfo: ProjectInfo) => string>> = {
+  monorepo: async () => (await import('./monorepo.ts')).instructions,
+  'optimized-tests': async () => (await import('./optimized-tests.ts')).instructions,
+  'relaxed-limits': async () => (await import('./relaxed-limits.ts')).instructions,
   setup: async () => (await import('./setup.ts')).instructions,
   'pattern-copy-play': async () => (await import('./pattern-copy-play.ts')).instructions,
 };
@@ -53,17 +58,23 @@ function resolvePromptName(): PromptName {
   return DEFAULT_PROMPT_NAME;
 }
 
-export async function getPrompts(projectInfo: ProjectInfo): Promise<{ prompts: AiPrompt[] }> {
+export async function getAiSetupPrompt(projectInfo: ProjectInfo): Promise<string> {
   const name = resolvePromptName();
   const builder = CURRENTLY_USED_PROMPT[name] ?? (await FORMERLY_USED_PROMPTS[name]());
 
+  return builder(projectInfo);
+}
+
+export async function getAiSetupMarkdownOutput(projectInfo: ProjectInfo): Promise<{
+  markdown: string;
+}> {
   return {
-    prompts: [
-      {
-        name,
-        description: 'Set up Storybook for success',
-        instructions: builder(projectInfo),
-      },
-    ],
+    markdown: dedent`
+    # Storybook Setup
+
+    ${getProjectOverview(projectInfo)}
+
+    ${await getAiSetupPrompt(projectInfo)}
+  `,
   };
 }

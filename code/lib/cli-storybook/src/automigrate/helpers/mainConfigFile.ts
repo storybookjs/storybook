@@ -118,6 +118,11 @@ export const getStorybookData = async ({
     configDir: configDirFromScript,
     previewConfigPath,
     versionSpecifier,
+    frameworkPackage,
+    rendererPackage,
+    renderer,
+    builderPackage,
+    addons,
   } = await getStorybookInfo(
     userDefinedConfigDir,
     userDefinedConfigDir ? dirname(userDefinedConfigDir) : undefined
@@ -165,6 +170,11 @@ export const getStorybookData = async ({
     packageManager,
     storiesPaths,
     hasCsfFactoryPreview,
+    frameworkPackage,
+    rendererPackage,
+    renderer,
+    builderPackage,
+    addons,
   };
 };
 export type GetStorybookData = typeof getStorybookData;

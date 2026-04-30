@@ -574,6 +574,9 @@ export default {
     'withReset',
   ],
   'storybook/internal/core-events': [
+    'AI_PROMPT_NUDGE',
+    'AI_SETUP_ANALYTICS_REQUEST',
+    'AI_SETUP_ANALYTICS_RESPONSE',
     'ARGTYPES_INFO_REQUEST',
     'ARGTYPES_INFO_RESPONSE',
     'CHANNEL_CREATED',

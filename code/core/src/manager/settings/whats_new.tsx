@@ -9,6 +9,8 @@ import { AlertIcon as AlertIconSvg, EyeCloseIcon, EyeIcon, HeartIcon } from '@st
 import { useStorybookApi, useStorybookState } from 'storybook/manager-api';
 import { styled, useTheme } from 'storybook/theming';
 
+import { useCopyButton } from '../../shared/useCopyButton.ts';
+
 const Centered = styled.div({
   top: '50%',
   position: 'absolute',
@@ -48,27 +50,24 @@ const Container = styled.div(({ theme }) => ({
 export const WhatsNewFooter = ({
   isNotificationsEnabled,
   onToggleNotifications,
-  onCopyLink,
+  copyContent,
 }: {
   isNotificationsEnabled: boolean;
   onToggleNotifications?: () => void;
-  onCopyLink?: () => void;
+  copyContent: string;
 }) => {
   const theme = useTheme();
-  const [copyText, setCopyText] = useState('Copy Link');
-  const copyLink = () => {
-    // @ts-expect-error (non strict)
-    onCopyLink();
-    setCopyText('Copied!');
-    setTimeout(() => setCopyText('Copy Link'), 4000);
-  };
+  const { children: copyText, buttonProps: copyButtonProps } = useCopyButton({
+    children: 'Copy Link',
+    content: copyContent,
+  });
 
   return (
     <Container>
       <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
         <HeartIcon color={theme.color.mediumdark} />
         <div>Share this with your team.</div>
-        <Button ariaLabel={false} onClick={copyLink} size="small" variant="ghost">
+        <Button size="small" variant="ghost" {...copyButtonProps}>
           {copyText}
         </Button>
       </div>
@@ -135,7 +134,7 @@ export interface WhatsNewProps {
   onLoad: () => void;
   url?: string;
   isNotificationsEnabled: boolean;
-  onCopyLink?: () => void;
+  copyContent: string;
   onToggleNotifications?: () => void;
 }
 
@@ -144,7 +143,7 @@ const PureWhatsNewScreen: FC<WhatsNewProps> = ({
   isLoaded,
   onLoad,
   url,
-  onCopyLink,
+  copyContent,
   onToggleNotifications,
   isNotificationsEnabled,
 }) => (
@@ -158,7 +157,7 @@ const PureWhatsNewScreen: FC<WhatsNewProps> = ({
         <WhatsNewFooter
           isNotificationsEnabled={isNotificationsEnabled}
           onToggleNotifications={onToggleNotifications}
-          onCopyLink={onCopyLink}
+          copyContent={copyContent}
         />
       </>
     )}
@@ -195,10 +194,7 @@ const WhatsNewScreen: FC = () => {
       }}
       url={whatsNewData.url}
       isNotificationsEnabled={isNotificationsEnabled}
-      onCopyLink={() => {
-        // eslint-disable-next-line compat/compat
-        navigator.clipboard?.writeText(whatsNewData.blogUrl ?? whatsNewData.url);
-      }}
+      copyContent={whatsNewData.blogUrl ?? whatsNewData.url}
       onToggleNotifications={() => {
         if (isNotificationsEnabled) {
           if (global.confirm('All update notifications will no longer be shown. Are you sure?')) {

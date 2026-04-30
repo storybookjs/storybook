@@ -1,13 +1,12 @@
 import React from 'react';
 
 import { Link } from 'storybook/internal/components';
-
 import { global } from '@storybook/global';
-
 import { styled } from 'storybook/theming';
 
 import { useChecklist } from '../components/sidebar/useChecklist.ts';
 import { Checklist } from './Checklist/Checklist.tsx';
+import { AiSetupBlock } from './Checklist/AiSetupBlock.tsx';
 
 const Container = styled.div(({ theme }) => ({
   display: 'flex',
@@ -39,6 +38,8 @@ const Intro = styled.div(({ theme }) => ({
 export const GuidePage = () => {
   const checklist = useChecklist();
 
+  const aiSetupItem = checklist.availableItems.find((item) => item.id === 'aiSetup');
+
   return (
     <Container>
       <Intro>
@@ -48,7 +49,10 @@ export const GuidePage = () => {
           will help you make the most of your Storybook.
         </p>
       </Intro>
-      <Checklist {...checklist} />
+      {aiSetupItem && (
+        <AiSetupBlock item={aiSetupItem} reset={checklist.reset} skip={checklist.skip} />
+      )}
+      <Checklist {...checklist} forceCollapsed={aiSetupItem?.isOpen} />
       {global.FEATURES?.sidebarOnboardingChecklist !== false && (
         <>
           {checklist.openItems.length === 0 ? (

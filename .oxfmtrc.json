@@ -35,37 +35,37 @@
     "test-storybooks",
     "*.yml",
     "*.yaml",
-    "*.md",
-    "*.mdx",
+    "*.{md,mdx}",
     "!docs/**",
-    "docs/versions/**"
+    "docs/configure/integration/*.mdx",
+    "docs/versions/**",
   ],
   "overrides": [
     {
       "files": ["docs/**"],
       "options": {
         "singleQuote": true,
-        "trailingComma": "all"
-      }
+        "trailingComma": "all",
+      },
     },
     {
       "files": ["*.md", "*.mdx"],
       "options": {
         "importOrderSeparation": false,
-        "importOrderSortSpecifiers": false
-      }
+        "importOrderSortSpecifiers": false,
+      },
     },
     {
       "files": ["*.component.html"],
       "options": {
-        "parser": "angular"
-      }
+        "parser": "angular",
+      },
     },
     {
       "files": ["**/frameworks/angular/src/**/*.ts", "**/frameworks/angular/template/**/*.ts"],
       "options": {
-        "parser": "babel-ts"
-      }
-    }
-  ]
+        "parser": "babel-ts",
+      },
+    },
+  ],
 }

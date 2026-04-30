@@ -61,7 +61,7 @@ describe('rn-ondevice-addons-to-device-addons', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mocks.existsSyncOverride = null;
-    vi.mocked(storybookCommon.findConfigFile).mockImplementation(() => undefined);
+    vi.mocked(storybookCommon.findConfigFile).mockImplementation(() => null);
     vi.mocked(storybookCommon.loadMainConfig).mockReset();
     mocks.configFile.getFieldNode.mockImplementation((path: string[]) =>
       path[0] === 'addons' ? mocks.addonsNode : undefined
@@ -226,7 +226,7 @@ describe('rn-ondevice-addons-to-device-addons', () => {
         if (prefix === 'main' && String(dir).includes('.rnstorybook')) {
           return rnMainPath;
         }
-        return undefined;
+        return null;
       });
 
       vi.mocked(storybookCommon.loadMainConfig).mockResolvedValue({

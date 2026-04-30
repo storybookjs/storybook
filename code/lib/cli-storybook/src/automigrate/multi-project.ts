@@ -10,6 +10,7 @@ import { allFixes } from './fixes/index.ts';
 import { rnstorybookConfig } from './fixes/rnstorybook-config.ts';
 import type { CheckOptions, Fix, FixId, RunOptions } from './types.ts';
 import { FixStatus } from './types.ts';
+import { RN_STORYBOOK_DIR } from '../../../../core/src/shared/constants/config-folder.ts';
 
 export interface ProjectAutomigrationData {
   configDir: string;
@@ -478,7 +479,7 @@ export async function runAutomigrations(
       const project = projects.find((p) => p.configDir === configDir);
       if (project) {
         const oldConfigDir = project.configDir;
-        project.configDir = project.configDir.replace('.storybook', '.rnstorybook');
+        project.configDir = project.configDir.replace('.storybook', RN_STORYBOOK_DIR);
         automigrationResults[project.configDir] = resultData;
         delete automigrationResults[oldConfigDir];
       }

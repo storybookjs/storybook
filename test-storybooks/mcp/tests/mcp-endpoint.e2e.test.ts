@@ -100,7 +100,7 @@ describe('MCP Endpoint E2E Tests', () => {
 
 			expect(response.result).toHaveProperty('tools');
 			// Dev, docs, and test tools should be present
-			expect(response.result.tools).toHaveLength(6);
+			expect(response.result.tools).toHaveLength(7);
 
 			expect(response.result.tools).toMatchInlineSnapshot(`
 				[
@@ -368,6 +368,15 @@ describe('MCP Endpoint E2E Tests', () => {
 				    },
 				    "name": "get-storybook-story-instructions",
 				    "title": "Storybook Story Development Instructions",
+				  },
+				  {
+				    "description": "Get Storybook stories marked as new, modified, or related. Returns story metadata only (no URLs).",
+				    "inputSchema": {
+				      "properties": {},
+				      "type": "object",
+				    },
+				    "name": "get-changed-stories",
+				    "title": "Get changed stories metadata",
 				  },
 				  {
 				    "description": "Run story tests.
@@ -846,6 +855,7 @@ describe('MCP Endpoint E2E Tests', () => {
 			expect(result1.result).toBeDefined();
 			expect(result1.result.content).toBeDefined();
 			expect(result1.result.content.length).toBeGreaterThan(0);
+
 			expect(result1.result.content[0].text).toContain('example-button--primary');
 			expect(result1.result.content[0].text).toContain('Passing Stories');
 
@@ -890,6 +900,7 @@ describe('MCP Endpoint E2E Tests', () => {
 				[
 				  "preview-stories",
 				  "get-storybook-story-instructions",
+				  "get-changed-stories",
 				]
 			`);
 		});

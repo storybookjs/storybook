@@ -4,7 +4,11 @@ import { ValibotJsonSchemaAdapter } from '@tmcp/adapter-valibot';
 import { getAddonVitestConstants } from './run-story-tests.ts';
 import { addGetUIBuildingInstructionsTool } from './get-storybook-story-instructions.ts';
 import type { AddonContext } from '../types.ts';
-import { PREVIEW_STORIES_TOOL_NAME, GET_UI_BUILDING_INSTRUCTIONS_TOOL_NAME } from './tool-names.ts';
+import {
+	PREVIEW_STORIES_TOOL_NAME,
+	GET_CHANGED_STORIES_TOOL_NAME,
+	GET_UI_BUILDING_INSTRUCTIONS_TOOL_NAME,
+} from './tool-names.ts';
 
 vi.mock('./run-story-tests.ts', () => ({
 	getAddonVitestConstants: vi.fn(),
@@ -157,7 +161,11 @@ describe('getUIBuildingInstructionsTool', () => {
 	it('should return UI building instructions with framework placeholders replaced', async () => {
 		const mockOptions = {
 			presets: {
-				apply: vi.fn().mockResolvedValue('@storybook/react-vite'),
+				apply: vi.fn(async (presetName: string) => {
+					if (presetName === 'framework') return '@storybook/react-vite';
+					if (presetName === 'features') return { changeDetection: true };
+					return undefined;
+				}),
 			},
 		};
 
@@ -188,11 +196,56 @@ describe('getUIBuildingInstructionsTool', () => {
 		expect(instructions).toContain('@storybook/react-vite');
 		expect(instructions).toContain('@storybook/react');
 		expect(instructions).toContain(PREVIEW_STORIES_TOOL_NAME);
+		expect(instructions).toContain(GET_CHANGED_STORIES_TOOL_NAME);
 
 		// Check that no placeholders remain
 		expect(instructions).not.toContain('{{FRAMEWORK}}');
 		expect(instructions).not.toContain('{{RENDERER}}');
 		expect(instructions).not.toContain('{{PREVIEW_STORIES_TOOL_NAME}}');
+		expect(instructions).not.toContain('{{STORY_LINKING_WORKFLOW}}');
+		expect(instructions).not.toContain('{{CHANGED_STORY_FALLBACK_LINK_GUIDANCE}}');
+	});
+
+	it('should not mention changed stories workflow when change detection is disabled', async () => {
+		const mockOptions = {
+			presets: {
+				apply: vi.fn(async (presetName: string) => {
+					if (presetName === 'framework') {
+						return '@storybook/react-vite';
+					}
+					if (presetName === 'features') {
+						return { changeDetection: false };
+					}
+					return undefined;
+				}),
+			},
+		};
+
+		const testContext: AddonContext = {
+			origin: 'http://localhost:6006',
+			options: mockOptions as any,
+			disableTelemetry: true,
+		};
+
+		const request = {
+			jsonrpc: '2.0' as const,
+			id: 1,
+			method: 'tools/call',
+			params: {
+				name: GET_UI_BUILDING_INSTRUCTIONS_TOOL_NAME,
+				arguments: {},
+			},
+		};
+
+		const response = await server.receive(request, {
+			sessionId: 'test-session',
+			custom: testContext,
+		});
+
+		const instructions = response.result?.content[0].text as string;
+
+		expect(instructions).toContain(PREVIEW_STORIES_TOOL_NAME);
+		expect(instructions).not.toContain(GET_CHANGED_STORIES_TOOL_NAME);
 	});
 
 	it('should handle Vue framework', async () => {

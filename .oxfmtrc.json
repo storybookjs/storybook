@@ -30,15 +30,13 @@
     "code/lib/codemod/src/transforms/__testfixtures__",
     "code/frameworks/angular/template/**",
     "code/lib/eslint-plugin",
-    "docs/versions/*.json",
     ".prettierrc",
     "test-storybooks",
     "*.yml",
     "*.yaml",
     "*.{md,mdx}",
     "!docs/**",
-    "docs/configure/integration/*.mdx",
-    "docs/versions/**"
+    "docs/configure/integration/*.mdx"
   ],
   "overrides": [
     {

@@ -12,7 +12,7 @@ const { mockGetStatusStore } = vi.hoisted(() => ({
 	mockGetStatusStore: vi.fn(),
 }));
 
-vi.mock('storybook/manager-api', () => ({
+vi.mock('storybook/internal/core-server', () => ({
 	experimental_getStatusStore: (...args: unknown[]) => mockGetStatusStore(...args),
 }));
 

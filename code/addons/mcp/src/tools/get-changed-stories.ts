@@ -1,5 +1,5 @@
 import type { McpServer } from 'tmcp';
-import { experimental_getStatusStore } from 'storybook/manager-api';
+import { experimental_getStatusStore } from 'storybook/internal/core-server';
 import { collectTelemetry } from '../telemetry.ts';
 import type { AddonContext } from '../types.ts';
 import { errorToMCPContent } from '../utils/errors.ts';

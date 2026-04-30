@@ -50,3 +50,73 @@ const meta = preview.meta({
 });
 
 export const Default = meta.story({});
+
+const aiCtaOpenState = {
+  loaded: true,
+  aiOptIn: true,
+  widget: {},
+  items: {
+    ...initialState.items,
+    // aiSetup is intentionally omitted → status 'open', AiSetupBlock shows Copy prompt button
+    controls: { status: 'accepted' as const },
+    renderComponent: { status: 'done' as const },
+    viewports: { status: 'skipped' as const },
+  },
+};
+
+export const AiCtaOpen = meta.story({
+  beforeEach: async () => {
+    mockStore.setState(aiCtaOpenState);
+  },
+});
+
+export const AiCtaSkipped = meta.story({
+  beforeEach: async () => {
+    mockStore.setState({
+      loaded: true,
+      aiOptIn: true,
+      widget: {},
+      items: {
+        ...initialState.items,
+        aiSetup: { status: 'skipped' },
+        controls: { status: 'accepted' },
+        renderComponent: { status: 'done' },
+        viewports: { status: 'skipped' },
+      },
+    });
+  },
+});
+
+export const AiCtaDone = meta.story({
+  beforeEach: async () => {
+    mockStore.setState({
+      loaded: true,
+      aiOptIn: true,
+      widget: {},
+      items: {
+        ...initialState.items,
+        aiSetup: { status: 'done' },
+        controls: { status: 'accepted' },
+        renderComponent: { status: 'done' },
+        viewports: { status: 'skipped' },
+      },
+    });
+  },
+});
+
+export const AllDone = meta.story({
+  beforeEach: async () => {
+    const allDoneItems = Object.keys(initialState.items).reduce(
+      (acc, key) => {
+        acc[key as keyof typeof initialState.items] = { status: 'done' };
+        return acc;
+      },
+      {} as Record<keyof typeof initialState.items, { status: string }>
+    );
+    mockStore.setState({
+      loaded: true,
+      widget: {},
+      items: allDoneItems as typeof initialState.items,
+    });
+  },
+});

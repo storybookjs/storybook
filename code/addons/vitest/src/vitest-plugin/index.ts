@@ -20,8 +20,14 @@ import {
 } from 'storybook/internal/core-server';
 import { componentTransform, readConfig, vitestTransform } from 'storybook/internal/csf-tools';
 import { MainFileMissingError } from 'storybook/internal/server-errors';
-import { setTelemetryEnabled, telemetry } from 'storybook/internal/telemetry';
-import { oneWayHash } from 'storybook/internal/telemetry';
+import {
+  detectAgent,
+  isTelemetryModuleEnabled,
+  isWithinInitialSession,
+  oneWayHash,
+  telemetry,
+  setTelemetryEnabled,
+} from 'storybook/internal/telemetry';
 import type { Presets } from 'storybook/internal/types';
 
 import { match } from 'micromatch';
@@ -34,9 +40,13 @@ import type { PluginOption } from 'vite';
 
 // Shared plugins from builder-vite (relative import to prebundle without adding a package dependency)
 import { withoutVitePlugins } from '../../../../builders/builder-vite/src/utils/without-vite-plugins.ts';
-import { STORYBOOK_CORE_GHOST_STORIES_PROVIDE_KEY } from '../constants.ts';
+import {
+  STORYBOOK_CORE_GHOST_STORIES_PROVIDE_KEY,
+  STORYBOOK_CORE_RENDER_ANALYSIS_PROVIDE_KEY,
+} from '../constants.ts';
 import type { InternalOptions, UserOptions } from './types.ts';
 import { requiresProjectAnnotations } from './utils.ts';
+import { AgentTelemetryReporter } from './agent-telemetry-reporter.ts';
 
 const WORKING_DIR = process.cwd();
 
@@ -242,6 +252,8 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
     plugins.push(mdxStubPlugin);
   }
 
+  let withinAgenticSetupSession = false;
+
   const storybookTestPlugin: Plugin = {
     name: 'vite-plugin-storybook-test',
     async transformIndexHtml(html) {
@@ -355,6 +367,7 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
 
           provide: {
             [STORYBOOK_CORE_GHOST_STORIES_PROVIDE_KEY]: !!process.env.STORYBOOK_COMPONENT_PATHS,
+            [STORYBOOK_CORE_RENDER_ANALYSIS_PROVIDE_KEY]: !!process.env.STORYBOOK_COMPONENT_PATHS,
           },
 
           include: [...includeStories, ...getComponentTestPaths()],
@@ -427,7 +440,7 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
       // return the new config, it will be deep-merged by vite
       return config;
     },
-    configureVitest(context) {
+    async configureVitest(context) {
       context.vitest.config.coverage.exclude.push('storybook-static');
 
       // NOTE: we start telemetry immediately but do not wait on it. Typically it should complete
@@ -441,6 +454,24 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
         },
         { configDir: finalOptions.configDir }
       );
+
+      if (isTelemetryModuleEnabled()) {
+        // When an agent is running vitest via CLI, inject a reporter that sends
+        // detailed test result telemetry (pass/fail, error analysis, empty renders)
+        const agent = detectAgent();
+        withinAgenticSetupSession = !!agent && (await isWithinInitialSession('ai-setup'));
+        if (withinAgenticSetupSession) {
+          await context.vitest.provide(STORYBOOK_CORE_RENDER_ANALYSIS_PROVIDE_KEY, true);
+        }
+        if (agent && withinAgenticSetupSession) {
+          context.vitest.config.reporters.push(
+            new AgentTelemetryReporter({
+              configDir: finalOptions.configDir,
+              agent,
+            })
+          );
+        }
+      }
     },
     async configureServer(server) {
       if (staticDirs) {

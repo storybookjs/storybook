@@ -94,24 +94,24 @@ function resolveTree(Story: ComponentType, context: Parameters<Decorator>[1]): R
     return { tree, leaf };
   }
 
-  // No route instance — build a synthetic root + child from plain options, then
-  // run it through `duplicateRouteTree` so any nested `children` Route instances
-  // attached to the user's plain options are cloned too.
+  // No route instance — build a synthetic root + child from plain options.
   const plainOptions = routerParameterRoute ?? {};
   const syntheticRoot = createRootRoute(
     (routeOverrides as Record<string, any> | undefined)?.__root__ ?? {}
   );
   const syntheticChild = createRoute({
     component: () => <Story />,
+    id: 'storybook-story',
     ...plainOptions,
     getParentRoute: () => syntheticRoot,
   } as any);
   syntheticRoot.addChildren([syntheticChild]);
 
-  const tree = duplicateRouteTree(syntheticRoot, { overrides: routeOverrides });
-  const leaf = tree.byId.get(syntheticChild.id) ?? tree.root;
-  injectStoryComponent(leaf, Story, routeOverrides, leaf.id);
-  return { tree, leaf };
+  injectStoryComponent(syntheticChild, Story, routeOverrides, syntheticChild.id);
+  return {
+    tree: { root: syntheticRoot, byId: new Map([[syntheticChild.id, syntheticChild]]) },
+    leaf: syntheticChild,
+  };
 }
 
 function createStoryRouter({

@@ -526,11 +526,13 @@
 
 ### React Native: on-device addons moved to `deviceAddons`
 
-In Storybook 10.4, on-device addons (those whose package name contains `"ondevice"`, such as `@storybook/addon-ondevice-controls` and `@storybook/addon-ondevice-actions`) must be listed under the `deviceAddons` key in your `.rnstorybook/main.ts` instead of the shared `addons` key.
+In Storybook 10.4, the React Native on-device Storybook config (`.rnstorybook/main.ts`) uses a dedicated `deviceAddons` key. All entries that used to live under `addons` in your React Native config must now be listed under `deviceAddons` instead.
 
-Listing them in `addons` caused `storybook extract` to fail because Storybook Core tries to evaluate every entry in `addons` as a Node.js preset, which these on-device addons are not.
+Listing them under `addons` caused `storybook extract` to fail because Storybook Core evaluates every entry in `addons` as a Node.js preset, which on-device addons are not.
 
-The automigration (`rn-ondevice-addons-to-device-addons`) handles this automatically, but you can also migrate manually:
+The automigration (`rn-ondevice-addons-to-device-addons`) handles this automatically by renaming the `addons` key to `deviceAddons`. It only acts on React Native main configs (detected by the `.rnstorybook` directory name or by a `framework` field of `@storybook/react-native`), and leaves any paired web `.storybook/main.ts` untouched.
+
+You can also migrate manually:
 
 ```ts
 // Before (.rnstorybook/main.ts)
@@ -538,13 +540,11 @@ export default {
   addons: [
     '@storybook/addon-ondevice-controls',
     '@storybook/addon-ondevice-actions',
-    '@storybook/addon-docs',
   ],
 };
 
 // After (.rnstorybook/main.ts)
 export default {
-  addons: ['@storybook/addon-docs'],
   deviceAddons: [
     '@storybook/addon-ondevice-controls',
     '@storybook/addon-ondevice-actions',

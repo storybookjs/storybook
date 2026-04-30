@@ -3,25 +3,19 @@ import { basename, dirname, isAbsolute, join, resolve } from 'node:path';
 
 import { findConfigFile, loadMainConfig } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
-import type { Preset, StorybookConfigRaw } from 'storybook/internal/types';
+import type { StorybookConfigRaw } from 'storybook/internal/types';
 
-import { updateMainConfig } from '../helpers/mainConfigFile.ts';
+import { getFrameworkPackageName, updateMainConfig } from '../helpers/mainConfigFile.ts';
 import type { Fix } from '../types.ts';
 import { RN_STORYBOOK_DIR } from '../../../../../core/src/shared/constants/config-folder.ts';
 
 interface RnOndeviceAddonsTarget {
   mainConfigPath: string;
-  ondeviceAddons: Preset[];
 }
 
 interface RnOndeviceAddonsOptions {
   targets: RnOndeviceAddonsTarget[];
 }
-
-const getAddonName = (addon: Preset): string => (typeof addon === 'string' ? addon : addon.name);
-
-const filterOndeviceAddons = (addons: Preset[] | undefined): Preset[] =>
-  (addons ?? []).filter((addon) => getAddonName(addon).includes('ondevice'));
 
 const resolveAbsoluteConfigDir = (configDir: string): string =>
   isAbsolute(configDir) ? configDir : join(process.cwd(), configDir);
@@ -44,13 +38,34 @@ const getSiblingStorybookConfigDir = (configDirAbs: string): string | null => {
   return null;
 };
 
-/** True when at least one `main` still has on-device entries in `addons` (not yet in `deviceAddons`). */
-const anyMainHasOndeviceAddonsToMove = (targets: RnOndeviceAddonsTarget[]): boolean =>
-  targets.some((target) => target.ondeviceAddons.length > 0);
+/**
+ * A main config is treated as a React Native main when EITHER its directory is `.rnstorybook`, OR
+ * its `framework` field resolves to `@storybook/react-native`. Web frameworks (notably
+ * `@storybook/react-native-web-vite`) are not React Native mains.
+ */
+const isReactNativeMain = (mainConfigPath: string, mainConfig: StorybookConfigRaw): boolean => {
+  if (basename(dirname(mainConfigPath)) === RN_STORYBOOK_DIR) {
+    return true;
+  }
+  return getFrameworkPackageName(mainConfig) === '@storybook/react-native';
+};
+
+const hasAddonsToRename = (cfg: StorybookConfigRaw): boolean => {
+  const addons = cfg.addons;
+  if (!Array.isArray(addons) || addons.length === 0) {
+    return false;
+  }
+  // Idempotency: don't touch a config that already has `deviceAddons` to avoid clobbering it.
+  if (cfg.deviceAddons !== undefined) {
+    return false;
+  }
+  return true;
+};
 
 /**
- * Automigration: move on-device addons (those with "ondevice" in the name) from `addons` to
- * `deviceAddons` in the Storybook config for `@storybook/react-native` projects.
+ * Automigration: rename the `addons` key to `deviceAddons` in React Native Storybook main configs.
+ * On-device addons must not be evaluated as Node.js presets, which Storybook Core does for every
+ * entry in `addons`. Web framework main configs are left untouched.
  */
 export const rnOndeviceAddonsToDeviceAddons: Fix<RnOndeviceAddonsOptions> = {
   id: 'rn-ondevice-addons-to-device-addons',
@@ -63,78 +78,81 @@ export const rnOndeviceAddonsToDeviceAddons: Fix<RnOndeviceAddonsOptions> = {
       return null;
     }
 
-    // If a sibling config folder exists, add its `main` alongside the active one so we migrate both.
+    const candidateDirs: string[] = [];
     if (configDir) {
       const absConfigDir = resolveAbsoluteConfigDir(configDir);
+      candidateDirs.push(absConfigDir);
       const siblingConfigDir = getSiblingStorybookConfigDir(absConfigDir);
       if (siblingConfigDir) {
-        const targets: RnOndeviceAddonsTarget[] = [];
-        const seenResolvedMainPaths = new Set<string>();
-
-        for (const dir of [absConfigDir, siblingConfigDir]) {
-          const mainPath = findConfigFile('main', dir);
-          if (!mainPath) {
-            continue;
-          }
-          const resolvedMain = resolve(mainPath);
-          if (seenResolvedMainPaths.has(resolvedMain)) {
-            continue;
-          }
-          seenResolvedMainPaths.add(resolvedMain);
-
-          let cfg: StorybookConfigRaw;
-          if (mainConfigPath && resolve(mainConfigPath) === resolvedMain) {
-            cfg = mainConfig;
-          } else {
-            try {
-              cfg = (await loadMainConfig({ configDir: dir })) as StorybookConfigRaw;
-            } catch (e) {
-              logger.debug(
-                `Failed to load Storybook main config at ${dir}: ${
-                  e instanceof Error ? e.message : String(e)
-                }`
-              );
-              continue;
-            }
-          }
-
-          targets.push({
-            mainConfigPath: mainPath,
-            ondeviceAddons: filterOndeviceAddons(cfg.addons),
-          });
-        }
-
-        if (anyMainHasOndeviceAddonsToMove(targets)) {
-          return { targets };
-        }
-        return null;
+        candidateDirs.push(siblingConfigDir);
       }
     }
 
-    if (!mainConfigPath) {
+    const targets: RnOndeviceAddonsTarget[] = [];
+    const seenResolvedMainPaths = new Set<string>();
+
+    if (candidateDirs.length > 0) {
+      for (const dir of candidateDirs) {
+        const mainPath = findConfigFile('main', dir);
+        if (!mainPath) {
+          continue;
+        }
+        const resolvedMain = resolve(mainPath);
+        if (seenResolvedMainPaths.has(resolvedMain)) {
+          continue;
+        }
+        seenResolvedMainPaths.add(resolvedMain);
+
+        let cfg: StorybookConfigRaw;
+        if (mainConfigPath && resolve(mainConfigPath) === resolvedMain) {
+          cfg = mainConfig;
+        } else {
+          try {
+            cfg = (await loadMainConfig({ configDir: dir })) as StorybookConfigRaw;
+          } catch (e) {
+            logger.debug(
+              `Failed to load Storybook main config at ${dir}: ${
+                e instanceof Error ? e.message : String(e)
+              }`
+            );
+            continue;
+          }
+        }
+
+        if (!isReactNativeMain(mainPath, cfg)) {
+          continue;
+        }
+        if (!hasAddonsToRename(cfg)) {
+          continue;
+        }
+        targets.push({ mainConfigPath: mainPath });
+      }
+    } else if (mainConfigPath) {
+      if (isReactNativeMain(mainConfigPath, mainConfig) && hasAddonsToRename(mainConfig)) {
+        targets.push({ mainConfigPath });
+      }
+    }
+
+    if (targets.length === 0) {
       return null;
     }
 
-    const ondeviceAddons = filterOndeviceAddons(mainConfig.addons);
-    if (ondeviceAddons.length === 0) {
-      return null;
-    }
-
-    return { targets: [{ mainConfigPath, ondeviceAddons }] };
+    return { targets };
   },
 
   prompt() {
-    return 'On-device addons detected. Moving to `deviceAddons` for on-device injection (Skipping Storybook preset loading)';
+    return 'Renaming `addons` to `deviceAddons` in your React Native Storybook config (on-device addons must not be evaluated as Node.js presets).';
   },
 
   async run({ result, dryRun }) {
-    for (const { mainConfigPath, ondeviceAddons } of result.targets) {
+    for (const { mainConfigPath } of result.targets) {
       await updateMainConfig({ mainConfigPath, dryRun: !!dryRun }, (main) => {
-        for (const addon of ondeviceAddons) {
-          const name = getAddonName(addon);
-          main.removeEntryFromArray(['addons'], name);
-          main.appendValueToArray(['deviceAddons'], addon);
+        const node = main.getFieldNode(['addons']);
+        if (!node) {
+          return;
         }
+        main.setFieldNode(['deviceAddons'], node);
+        main.removeField(['addons']);
       });
     }
   },

@@ -59,6 +59,7 @@ export async function aiSetup(options: AiSetupOptions): Promise<void> {
       packageManager: data.packageManager,
       packageManagerName: getPrettyPackageManagerName(data.packageManager.type),
       language,
+      hasCsfFactoryPreview: data.hasCsfFactoryPreview,
     };
   } catch (err) {
     logger.error(
@@ -83,7 +84,7 @@ export async function aiSetup(options: AiSetupOptions): Promise<void> {
     return;
   }
 
-  const result = await generateMarkdownOutput('Storybook Setup', projectInfo);
+  const result = await generateMarkdownOutput(projectInfo);
   const markdownOutput = result.markdown;
 
   await telemetry('ai-setup', {

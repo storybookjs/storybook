@@ -1,12 +1,12 @@
 import type { AiPrompt, ProjectInfo } from '../types.ts';
 
-import * as patternCopyPlay from './pattern-copy-play.ts';
+import * as optimizedTests from './optimized-tests.ts';
 
 /**
  * Main prompt used currently in `npx storybook ai setup` command. If you promote a new prompt to be default, move this to the FORMERLY_USED_PROMPTS object below.
  */
 const CURRENTLY_USED_PROMPT: Record<string, (projectInfo: ProjectInfo) => string> = {
-  'pattern-copy-play': patternCopyPlay.instructions,
+  'optimized-tests': optimizedTests.instructions,
 };
 
 /**
@@ -16,6 +16,7 @@ const CURRENTLY_USED_PROMPT: Record<string, (projectInfo: ProjectInfo) => string
  */
 const FORMERLY_USED_PROMPTS: Record<string, () => Promise<(projectInfo: ProjectInfo) => string>> = {
   setup: async () => (await import('./setup.ts')).instructions,
+  'pattern-copy-play': async () => (await import('./pattern-copy-play.ts')).instructions,
 };
 
 export type PromptName = string;
@@ -30,7 +31,7 @@ export const PROMPT_NAMES: PromptName[] = [
  * The single prompt variant that ships to real users. Running
  * `npx storybook ai setup` without any overrides always produces this prompt.
  */
-export const DEFAULT_PROMPT_NAME: PromptName = 'pattern-copy-play';
+export const DEFAULT_PROMPT_NAME: PromptName = 'optimized-tests';
 
 /**
  * Internal env var read only by `getPrompts`. The eval harness sets this

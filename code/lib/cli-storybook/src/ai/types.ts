@@ -27,6 +27,8 @@ export interface ProjectInfo {
   packageManager: JsPackageManager;
   /** Pretty name of the detected package manager, if known. */
   packageManagerName?: string;
+  /** Whether the project's preview file uses the CSF Factory format. */
+  hasCsfFactoryPreview: boolean;
 }
 
 /**

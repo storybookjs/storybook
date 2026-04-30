@@ -17,7 +17,7 @@ export function buildServerInstructions(options: BuildServerInstructionsOptions)
 			devInstructions
 				.replace(
 					'{{PREVIEW_STORIES_STEP}}',
-					(options.changeDetectionEnabled ?? true)
+					(options.changeDetectionEnabled ?? false)
 						? 'After changing any component or story, call **get-changed-stories** to discover new/modified/related stories, then call **preview-stories** to retrieve preview URLs.'
 						: 'After changing any component or story, call **preview-stories** to retrieve preview URLs.',
 				)

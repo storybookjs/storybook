@@ -1,3 +1,7 @@
+## 10.4.0-alpha.12
+
+- CLI: Introduce Agentic Setup workflow - [#34297](https://github.com/storybookjs/storybook/pull/34297), thanks @yannbf!
+
 ## 10.4.0-alpha.11
 
 - CLI: Change mock event detection - [#34586](https://github.com/storybookjs/storybook/pull/34586), thanks @yannbf!

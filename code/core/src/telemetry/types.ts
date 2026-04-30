@@ -45,13 +45,13 @@ export type EventType =
   | 'doctor'
   | 'share'
   | 'ghost-stories'
+  | 'sidebar-filter'
   | 'ai-setup'
   | 'ai-setup-evidence'
   | 'ai-setup-final-scoring'
   | 'ai-prompt-nudge'
   | 'ai-init-opt-in'
   | 'ai-setup-self-healing-scoring';
-
 export interface Dependency {
   version: string | undefined;
   versionSpecifier?: string;

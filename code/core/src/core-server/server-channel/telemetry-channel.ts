@@ -5,6 +5,7 @@ import {
   SHARE_ISOLATE_MODE,
   SHARE_POPOVER_OPENED,
   SHARE_STORY_LINK,
+  SIDEBAR_FILTER_CHANGED,
 } from 'storybook/internal/core-events';
 import { type InitPayload, telemetry } from 'storybook/internal/telemetry';
 import { type CacheEntry, getLastEvents } from 'storybook/internal/telemetry';
@@ -53,5 +54,8 @@ export function initTelemetryChannel(channel: Channel) {
   });
   channel.on(AI_PROMPT_NUDGE, async ({ id, origin }: { id: string; origin: string }) => {
     telemetry('ai-prompt-nudge', { id, origin });
+  });
+  channel.on(SIDEBAR_FILTER_CHANGED, (payload) => {
+    telemetry('sidebar-filter', payload);
   });
 }

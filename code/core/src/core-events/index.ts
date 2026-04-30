@@ -105,6 +105,7 @@ enum events {
   SHARE_POPOVER_OPENED = 'sharePopoverOpened',
 
   AI_PROMPT_NUDGE = 'aiPromptNudge',
+  SIDEBAR_FILTER_CHANGED = 'sidebarFilterChanged',
 }
 
 // Enables: `import Events from ...`
@@ -182,6 +183,7 @@ export const {
   SHARE_ISOLATE_MODE,
   SHARE_POPOVER_OPENED,
   AI_PROMPT_NUDGE,
+  SIDEBAR_FILTER_CHANGED,
 } = events;
 
 export * from './data/create-new-story.ts';

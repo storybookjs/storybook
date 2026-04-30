@@ -153,7 +153,7 @@ export const rnOndeviceAddonsToDeviceAddons: Fix<RnOndeviceAddonsOptions> = {
         if (!node) {
           return;
         }
-        main.setFieldNode(['deviceAddons'], node);
+        main.setFieldNode(['deviceAddons'], node as any);
         main.removeField(['addons']);
       });
     }

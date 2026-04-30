@@ -1,4 +1,4 @@
-import dedent from 'ts-dedent';
+import { dedent } from 'ts-dedent';
 
 export function listRules(rules: (string | undefined)[]): string {
   return dedent`

@@ -21,7 +21,7 @@ import {
   noPolishRule,
   packageManagerRule,
   preferSharedFixesRule,
-  readBudgetRule,
+  readBudgetRuleRelaxed,
   toolsVsShellRule,
 } from './partials/rules.ts';
 
@@ -53,7 +53,7 @@ export function instructions(projectInfo: ProjectInfo): string {
     ${listRules([
       toolsVsShellRule(ctx),
       nodeModuleReadsRule(ctx),
-      readBudgetRule(ctx),
+      readBudgetRuleRelaxed(ctx),
       editOverWriteRule(ctx),
       batchTestsRule(ctx),
       packageManagerRule(ctx),

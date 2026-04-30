@@ -1,4 +1,4 @@
-import dedent from 'ts-dedent';
+import { dedent } from 'ts-dedent';
 import type { ProjectInfo, SetupInstructionsContext as InstructionsContext } from '../../types.ts';
 import {
   getInteractionPlayExample,

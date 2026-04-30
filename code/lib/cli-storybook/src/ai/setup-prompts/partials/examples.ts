@@ -1,4 +1,4 @@
-import dedent from 'ts-dedent';
+import { dedent } from 'ts-dedent';
 import type { ProjectInfo } from '../../types.ts';
 import { ext } from '../../utils/ext.ts';
 

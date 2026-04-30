@@ -1,4 +1,4 @@
-import dedent from 'ts-dedent';
+import { dedent } from 'ts-dedent';
 import type { SetupInstructionsContext } from '../../types.ts';
 import { getMonorepoType } from '../../../../../../core/src/shared/utils/get-monorepo-type.ts';
 
@@ -37,6 +37,10 @@ export function batchTestsRule(ctx: SetupInstructionsContext): string {
 }
 
 export function readBudgetRule(ctx: SetupInstructionsContext): string | undefined {
+  return dedent`**Read budget: ~12 files for discovery.** Before writing any code you may Read at most ~12 files (\`index.html\`, entry, App, providers, routing, root CSS, 2–3 representative pages/components, 1–2 hooks, 1 test). If you need more, summarize and move on.`;
+}
+
+export function readBudgetRuleRelaxed(ctx: SetupInstructionsContext): string | undefined {
   return dedent`**Read budget: ~40 files for discovery.** Before writing any code you may Read at most ~40 files: \`index.html\`, entry, App, providers, routing, root CSS, 1–2 hooks, 1 test, and spend the rest on components. You may read direct component dependencies essential to their understanding only after having read 20 components (or all components if fewer in the codebase).`;
 }
 

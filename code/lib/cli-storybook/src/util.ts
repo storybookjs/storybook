@@ -803,10 +803,14 @@ export const getStoriesPathsFromConfig = async ({
     return [];
   }
 
-  const normalizedStories = normalizeStories(stories, {
-    configDir,
+const resolvedStories = typeof stories === 'function' 
+  ? await stories() 
+  : stories;
+
+const normalizedStories = normalizeStories(resolvedStories, {
+   configDir,
     workingDir,
-  });
+});
 
   const matchingStoryFiles = await StoryIndexGenerator.findMatchingFilesForSpecifiers(
     normalizedStories,

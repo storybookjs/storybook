@@ -525,7 +525,7 @@ export interface StorybookConfigRaw {
 
   build?: TestBuildConfig;
 
-  stories: StoriesEntry[];
+  stories: StoriesEntry[] | (() => Promise<StoriesEntry[]>);
 
   framework?: Preset;
 

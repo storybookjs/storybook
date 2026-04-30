@@ -646,6 +646,11 @@ export default {
     'ProviderDoesNotExtendBaseProviderError',
     'StatusTypeIdMismatchError',
     'UncaughtManagerError',
+    'UniversalStoreFollowerTimeoutError',
+    'UniversalStoreIdRequiredError',
+    'UniversalStoreMissingSubscribeArgumentError',
+    'UniversalStoreNotConstructableError',
+    'UniversalStoreNotReadyError',
   ],
   'storybook/internal/router': [
     'BaseLocationProvider',

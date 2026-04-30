@@ -16,12 +16,16 @@ export const framework: PresetProperty<'framework'> = async (config) => {
 };
 
 export const stories: PresetProperty<'stories'> = async (entries, options) => {
-  if (options?.build?.test?.disableMDXEntries) {
-    return removeMDXEntries(entries, options);
-  }
-  return entries;
-};
+  const resolvedEntries = typeof entries === 'function' 
+    ? await entries() 
+    : entries;
 
+  if (options?.build?.test?.disableMDXEntries) {
+    return removeMDXEntries(resolvedEntries, options);
+  }
+  
+  return resolvedEntries;
+};
 export const typescript: PresetProperty<'typescript'> = async (input, options) => {
   if (options?.build?.test?.disableDocgen) {
     return { ...(input ?? {}), reactDocgen: false, check: false };

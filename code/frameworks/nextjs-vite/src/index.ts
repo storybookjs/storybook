@@ -5,7 +5,7 @@ import type { ReactPreview } from '@storybook/react';
 import { __definePreview } from '@storybook/react';
 import type { ReactTypes } from '@storybook/react';
 
-import type vitePluginStorybookNextJs from 'vite-plugin-storybook-nextjs';
+import type { storybookNextJsPlugin } from './vite-plugin';
 
 import * as nextPreview from './preview';
 import type { NextJsTypes } from './types';
@@ -17,9 +17,8 @@ export * from './types';
 
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
-declare module '@storybook/nextjs-vite/vite-plugin' {
-  export const storybookNextJsPlugin: typeof vitePluginStorybookNextJs;
-}
+
+export type StorybookNextJsPlugin = typeof storybookNextJsPlugin;
 
 export function definePreview<Addons extends PreviewAddon<never>[]>(
   preview: { addons?: Addons } & ProjectAnnotations<ReactTypes & NextJsTypes & InferTypes<Addons>>

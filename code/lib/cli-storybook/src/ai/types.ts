@@ -30,3 +30,13 @@ export interface ProjectInfo {
   /** Whether the project's preview file uses the CSF Factory format. */
   hasCsfFactoryPreview: boolean;
 }
+
+export interface SetupInstructionsContext {
+  configDir: string;
+  docsUrl: (path: string) => string;
+  mswInstall: string;
+  packageManager: JsPackageManager;
+  packageManagerName: string | undefined;
+  tsx: string;
+  ts: string;
+}

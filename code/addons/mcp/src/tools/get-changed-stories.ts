@@ -38,9 +38,9 @@ interface Status {
 interface ChangedStory {
 	storyId: string;
 	statusValue: StatusValue;
-	title?: string;
-	name?: string;
-	importPath?: string;
+	title: string;
+	name: string;
+	importPath: string;
 }
 
 function statusPriority(statusValue: StatusValue): number {
@@ -95,16 +95,23 @@ export async function addGetChangedStoriesTool(server: McpServer<any, AddonConte
 				}
 
 				const index = await fetchStoryIndex(origin);
-				const stories = changedStoriesFromStatusStore.map<ChangedStory>((story) => {
-					const entry = index.entries[story.storyId];
-					return {
-						storyId: story.storyId,
-						statusValue: story.value,
-						title: entry?.title,
-						name: entry?.name,
-						importPath: entry?.importPath,
-					};
-				});
+				const stories = changedStoriesFromStatusStore.flatMap<ChangedStory>(
+					({ storyId, value }) => {
+						const entry = index.entries[storyId];
+						if (!entry) {
+							return [];
+						}
+						return [
+							{
+								storyId,
+								statusValue: value,
+								title: entry.title,
+								name: entry.name,
+								importPath: entry.importPath,
+							},
+						];
+					},
+				);
 
 				stories.sort((a, b) => {
 					const priorityDelta = statusPriority(a.statusValue) - statusPriority(b.statusValue);
@@ -136,10 +143,8 @@ export async function addGetChangedStoriesTool(server: McpServer<any, AddonConte
 
 				let text = `Detected ${stories.length} changed stor${stories.length === 1 ? 'y' : 'ies'} (${counts.new} new, ${counts.modified} modified, ${counts.affected} related).`;
 
-				const serializeStory = (story: ChangedStory) =>
-					story.title && story.name && story.importPath
-						? `- \`${story.storyId}\`: ${story.title} / ${story.name} (\`${story.importPath}\`)`
-						: `- \`${story.storyId}\``;
+				const serializeStory = ({ storyId, title, name, importPath }: ChangedStory) =>
+					`- \`${storyId}\`: ${title} / ${name} (\`${importPath}\`)`;
 
 				if (buckets.new.length > 0) {
 					text += `\n\nNew stories:\n`;

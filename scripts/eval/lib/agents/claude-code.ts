@@ -13,7 +13,14 @@ import type { Logger } from '../utils.ts';
 export const claudeAgent: AgentDriver = {
   name: 'claude',
 
-  async execute({ prompt, projectPath, variant, logger, verbose }): Promise<AgentExecutionResult> {
+  async execute({
+    prompt,
+    projectPath,
+    variant,
+    logger,
+    verbose,
+    env,
+  }): Promise<AgentExecutionResult> {
     if (variant.agent !== 'claude') {
       throw new Error(`Claude driver received unsupported variant: ${variant.agent}`);
     }
@@ -37,6 +44,7 @@ export const claudeAgent: AgentDriver = {
           cwd: projectPath,
           env: {
             ...process.env,
+            ...env,
             STORYBOOK_DISABLE_TELEMETRY: '1',
           },
           allowedTools: [...settings.allowedTools],

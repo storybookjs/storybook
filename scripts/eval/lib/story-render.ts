@@ -13,6 +13,7 @@ export interface StoryRenderGrade {
   total: number;
   passed: number;
   storyFiles: number;
+  cssCheck: 'pass' | 'fail' | 'not-run';
 }
 
 export interface StoryRenderRunResult {
@@ -82,6 +83,7 @@ export async function runStoryRenderPass(opts: {
         total: 0,
         passed: 0,
         storyFiles: 0,
+        cssCheck: 'not-run' as const,
       },
     };
   }
@@ -209,6 +211,7 @@ async function readStoryRenderSummary(reportPath: string, storyFiles: number) {
     total: parsed.total,
     passed: parsed.passed,
     storyFiles,
+    cssCheck: parsed.cssCheck,
   } satisfies StoryRenderGrade;
 }
 

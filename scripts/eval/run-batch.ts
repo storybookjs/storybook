@@ -86,7 +86,7 @@ export interface RunBatchOptions {
   repoRoot?: string;
   evalRoot?: string;
   batchTimestamp?: string;
-  /** Required when `descriptors` are not provided — prompt template basename (prompts/{name}.md). */
+  /** Required when `descriptors` are not provided — prompt variant name from the CLI registry. */
   prompt?: string;
   /** Skip interactive confirmation (large API / token usage). */
   yes?: boolean;
@@ -476,7 +476,8 @@ const runBatchOptions = {
   concurrency: { type: 'string' as const, description: 'Max concurrent runs (default: 8)' },
   prompt: {
     type: 'string' as const,
-    description: 'Prompt template name (required; file: scripts/eval/prompts/{name}.md)',
+    description:
+      'Prompt variant name (required; registered in code/lib/cli-storybook/src/ai/prompts/)',
   },
   agents: {
     type: 'string' as const,

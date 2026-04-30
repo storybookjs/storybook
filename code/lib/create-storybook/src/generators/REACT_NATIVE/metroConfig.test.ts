@@ -334,6 +334,53 @@ export default async function makeMetroConfig<T = string>(): Promise<MetroConfig
     expect(updated).toContain(METRO_FALLBACK_COMMENT_MARKER);
   });
 
+  it("inserts require after 'use strict' directive prologue when present in body", () => {
+    // 'use strict' is normally in program.directives, but if a parser leaves it as
+    // an ExpressionStatement in body we must not insert our require before it.
+    const before = "'use strict';\nmodule.exports = {};\n";
+    const transformed = transformMetroConfigSource(before, path.join(tempDir, 'metro.config.js'));
+
+    expect(transformed.action).toBe('updated');
+    if (transformed.action === 'updated') {
+      // 'use strict' must remain the very first content in the output.
+      expect(transformed.code.trimStart()).toMatch(/^['"]use strict['"]/);
+      expect(transformed.code).toContain('withStorybook');
+    }
+  });
+
+  it('keeps // @ts-nocheck pragma as the first line after CJS require injection', () => {
+    const before = '// @ts-nocheck\nmodule.exports = {};\n';
+    const transformed = transformMetroConfigSource(before, path.join(tempDir, 'metro.config.js'));
+
+    expect(transformed.action).toBe('updated');
+    if (transformed.action === 'updated') {
+      expect(transformed.code.trimStart()).toMatch(/^\/\/ @ts-nocheck/);
+      expect(transformed.code).toContain('withStorybook');
+    }
+  });
+
+  it('keeps /* eslint-disable */ pragma as the first line after CJS require injection', () => {
+    const before = '/* eslint-disable */\nmodule.exports = {};\n';
+    const transformed = transformMetroConfigSource(before, path.join(tempDir, 'metro.config.js'));
+
+    expect(transformed.action).toBe('updated');
+    if (transformed.action === 'updated') {
+      expect(transformed.code.trimStart()).toMatch(/^\/\* eslint-disable \*\//);
+      expect(transformed.code).toContain('withStorybook');
+    }
+  });
+
+  it('keeps // @ts-nocheck pragma as the first line after ESM import injection', () => {
+    const before = '// @ts-nocheck\nexport default {};\n';
+    const transformed = transformMetroConfigSource(before, path.join(tempDir, 'metro.config.ts'));
+
+    expect(transformed.action).toBe('updated');
+    if (transformed.action === 'updated') {
+      expect(transformed.code.trimStart()).toMatch(/^\/\/ @ts-nocheck/);
+      expect(transformed.code).toContain('withStorybook');
+    }
+  });
+
   it('containsStorybookImport detects both import and require usage', () => {
     expect(
       containsStorybookImport(

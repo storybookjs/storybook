@@ -157,6 +157,53 @@ const hasWithStorybookBinding = (program: t.Program) => {
   return false;
 };
 
+// Returns the index in program.body after any directive-prologue statements
+// (ExpressionStatement nodes whose expression is a StringLiteral, e.g. 'use strict',
+// 'use client') so that injected imports are never inserted before them.
+// Babel normally stores these in program.directives rather than program.body, but
+// we guard defensively for configurations that leave them as body nodes.
+const getBodyInsertionIndex = (program: t.Program): number => {
+  for (let i = 0; i < program.body.length; i++) {
+    const statement = program.body[i];
+    if (t.isExpressionStatement(statement) && t.isStringLiteral(statement.expression)) {
+      continue;
+    }
+    return i;
+  }
+  return program.body.length;
+};
+
+// Move file-level leading comments (those that start at source position 0) from
+// `fromNode` to `toNode` so that pragmas like // @ts-nocheck, /* eslint-disable */,
+// and // @flow remain the very first content in the printed file even after a new
+// import/require statement is inserted before them.
+// recast stores comments in both node.comments (with {leading, trailing} flags) and
+// node.leadingComments; we update both so the printer sees the change.
+const shiftFileLeadingComments = (fromNode: t.Node, toNode: t.Node) => {
+  const from = fromNode as any;
+  const to = toNode as any;
+
+  const isFileLeading = (c: any) => c.start === 0;
+
+  // recast-style: node.comments[{leading: true, ...}]
+  if (Array.isArray(from.comments)) {
+    const fileLeading = (from.comments as any[]).filter((c) => c.leading && isFileLeading(c));
+    if (fileLeading.length > 0) {
+      to.comments = [...fileLeading, ...(to.comments ?? [])];
+      from.comments = (from.comments as any[]).filter((c) => !(c.leading && isFileLeading(c)));
+    }
+  }
+
+  // Babel-style: node.leadingComments[]
+  if (Array.isArray(from.leadingComments)) {
+    const fileLeading = (from.leadingComments as any[]).filter(isFileLeading);
+    if (fileLeading.length > 0) {
+      to.leadingComments = [...fileLeading, ...(to.leadingComments ?? [])];
+      from.leadingComments = (from.leadingComments as any[]).filter((c) => !isFileLeading(c));
+    }
+  }
+};
+
 const injectWithStorybookImport = (program: t.Program, useEsmImport: boolean) => {
   if (useEsmImport) {
     const importDeclaration = t.importDeclaration(
@@ -168,7 +215,12 @@ const injectWithStorybookImport = (program: t.Program, useEsmImport: boolean) =>
       .findIndex((statement) => t.isImportDeclaration(statement));
 
     if (lastImportIndex === -1) {
-      program.body.unshift(importDeclaration);
+      const insertAt = getBodyInsertionIndex(program);
+      const nodeAtInsert = program.body[insertAt];
+      if (nodeAtInsert) {
+        shiftFileLeadingComments(nodeAtInsert, importDeclaration);
+      }
+      program.body.splice(insertAt, 0, importDeclaration);
       return;
     }
 
@@ -187,7 +239,12 @@ const injectWithStorybookImport = (program: t.Program, useEsmImport: boolean) =>
       ])
     ),
   ]);
-  program.body.unshift(requireDeclaration);
+  const insertAt = getBodyInsertionIndex(program);
+  const nodeAtInsert = program.body[insertAt];
+  if (nodeAtInsert) {
+    shiftFileLeadingComments(nodeAtInsert, requireDeclaration);
+  }
+  program.body.splice(insertAt, 0, requireDeclaration);
 };
 
 export const prependMetroFallbackComment = (source: string) => {

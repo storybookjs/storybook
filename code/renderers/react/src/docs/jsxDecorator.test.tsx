@@ -71,6 +71,24 @@ describe('renderJsx', () => {
       </div>
     `);
   });
+  it('false boolean values are rendered explicitly (useBooleanShorthandSyntax: false)', () => {
+    function Button({ disabled }: { disabled?: boolean }) {
+      return <button disabled={disabled}>click</button>;
+    }
+    // useBooleanShorthandSyntax: false mirrors defaultOpts — ensures false props
+    // are never silently omitted when a component has no static defaultProps entry
+    expect(
+      renderJsx(<Button disabled={false} />, { useBooleanShorthandSyntax: false })
+    ).toMatchInlineSnapshot(`<Button disabled={false} />`);
+  });
+  it('true boolean values are rendered as explicit value when useBooleanShorthandSyntax is false', () => {
+    function Button({ disabled }: { disabled?: boolean }) {
+      return <button disabled={disabled}>click</button>;
+    }
+    expect(
+      renderJsx(<Button disabled={true} />, { useBooleanShorthandSyntax: false })
+    ).toMatchInlineSnapshot(`<Button disabled={true} />`);
+  });
   it('large objects', () => {
     const obj = Array.from({ length: 20 }).reduce((acc, _, i) => {
       // @ts-expect-error (Converted from ts-ignore)

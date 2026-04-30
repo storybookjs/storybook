@@ -200,6 +200,12 @@ const defaultOpts = {
   showFunctions: false,
   enableBeautify: true,
   showDefaultProps: false,
+  // Disable boolean shorthand so that explicit `false` props are always rendered.
+  // The underlying library (react-element-to-jsx-string) suppresses props whose
+  // value is `false` when no React.defaultProps entry exists for that prop, which
+  // is the norm for modern TypeScript components. Setting this to false ensures
+  // `<Button loading={false} />` appears in Show Code rather than being omitted.
+  useBooleanShorthandSyntax: false,
 };
 
 export const skipJsxRender = (context: StoryContext<ReactRenderer>) => {

@@ -23,6 +23,9 @@ export const HighlightStyles: FC<Highlight> = ({ refId, itemId }) => (
             '&:hover, &:focus': { background },
           },
         },
+        [`[data-ref-id="${refId}"][data-item-id="${itemId}"][data-selected="true"]`]: {
+          boxShadow: `inset 0 0 0 2px ${color.lightest}`,
+        },
       };
     }}
   />

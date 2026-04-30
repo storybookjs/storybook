@@ -9,6 +9,24 @@ Use the Storybook CLI to install it in a single command. Run this inside your pr
 
 <CodeSnippets path="create-command.md" variant="new-users" copyEvent="CreateCommandCopy" />
 
+<Callout
+  variant="info"
+  action={{
+    label: 'Copy prompt',
+    icon: 'copy',
+    labelOnSuccess: 'Copied!',
+    iconOnSuccess: 'check',
+    onClick: ({ copy }) => {
+      copy('Set up Storybook for me with npx storybook@latest init and follow its instructions precisely')
+    },
+    event: 'PromptInstallCopy',
+  }}
+>
+
+Want to have your AI agent set up Storybook for you?
+
+</Callout>
+
 Storybook will look into your project's dependencies during its install process and provide you with the best configuration available.
 
 <YouTubeCallout id="CtfU1UnizHU" title="New Storybook" style={{ marginTop: '1em' }} />

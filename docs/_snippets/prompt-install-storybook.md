@@ -1,3 +1,3 @@
-```txt renderer="common"
-Add Storybook to this project and follow the instructions precisely
+```shell renderer="common"
+Set up Storybook for me with npx storybook@latest init and follow its instructions precisely
 ```

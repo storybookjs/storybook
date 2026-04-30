@@ -11,6 +11,24 @@ Run this command to install Storybook into an existing project or create a new o
 
 <CodeSnippets path="create-command.md" variant="new-users" copyEvent="CreateCommandCopy" />
 
+<Callout
+  variant="info"
+  action={{
+    label: 'Copy prompt',
+    icon: 'copy',
+    labelOnSuccess: 'Copied!',
+    iconOnSuccess: 'check',
+    onClick: ({ copy }) => {
+      copy('Set up Storybook for me with npx storybook@latest init and follow its instructions precisely')
+    },
+    event: 'PromptInstallCopy',
+  }}
+>
+
+Want to have your AI agent set up Storybook for you?
+
+</Callout>
+
 Want to know more about installing Storybook? Check out the [installation guide](./get-started/install.mdx).
 
 ## Supported frameworks

@@ -1,11 +1,10 @@
 import { ResolverFactory as OxcResolverFactory } from 'oxc-resolver';
-import { dirname } from 'pathe';
 
 import { logger } from 'storybook/internal/node-logger';
 
 import type { ModuleResolveConfig } from '../adapters/types.ts';
 
-const DEFAULT_EXTENSIONS = ['.tsx', '.ts', '.jsx', '.js', '.mjs', '.cjs', '.json'];
+const DEFAULT_EXTENSIONS = ['.tsx', '.ts', '.d.ts', '.jsx', '.js', '.mjs', '.cjs', '.json'];
 const DEFAULT_CONDITIONS = ['storybook', 'import', 'module', 'default'];
 
 /**
@@ -36,14 +35,16 @@ class AliasNormaliser {
     if (Array.isArray(alias)) {
       for (const entry of alias) {
         if (typeof entry.find === 'string') {
-          out[entry.find] = [entry.replacement];
+          const find = entry.find.replace(/\/$/, '');
+          const replacement = entry.replacement.replace(/\/$/, '');
+          out[find] = [replacement];
         } else {
           skippedRegex.push(String(entry.find));
         }
       }
     } else {
       for (const [find, replacement] of Object.entries(alias)) {
-        out[find] = [replacement];
+        out[find.replace(/\/$/, '')] = [replacement.replace(/\/$/, '')];
       }
     }
 
@@ -83,9 +84,7 @@ export class ChangeDetectionResolverFactory {
     const conditionNames = config.conditions ?? DEFAULT_CONDITIONS;
 
     this.factory = new OxcResolverFactory({
-      tsconfig: config.tsconfigPath
-        ? { configFile: config.tsconfigPath, references: 'auto' }
-        : undefined,
+      tsconfig: 'auto',
       alias,
       conditionNames,
       extensions: DEFAULT_EXTENSIONS,
@@ -94,14 +93,15 @@ export class ChangeDetectionResolverFactory {
 
   /**
    * Resolves `specifier` from the file at `from` (must be an absolute path).
+   * Uses `resolveFileAsync` so oxc-resolver auto-discovers the nearest tsconfig.json
+   * by traversing parent directories from `from`, applying compilerOptions.paths correctly.
    * Returns the absolute resolved path, or `null` if the resolver could not
    * locate it. Never throws — internal errors are converted to `null` and a
    * debug-level log line is emitted.
    */
   async resolve(from: string, specifier: string): Promise<string | null> {
-    const directory = dirname(from);
     try {
-      const result = await this.factory.async(directory, specifier);
+      const result = await this.factory.resolveFileAsync(from, specifier);
       if (result.path) {
         return result.path;
       }

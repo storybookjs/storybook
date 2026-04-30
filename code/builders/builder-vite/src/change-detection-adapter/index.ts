@@ -15,9 +15,6 @@ import type { ViteDevServer } from 'vite';
  * - `onFileChange()` subscribes to `server.watcher` (chokidar) and forwards `add`/`change`/`unlink`
  *   events with normalised absolute paths. Other chokidar event names (`addDir`, `unlinkDir`,
  *   `ready`, `raw`, `error`) are intentionally filtered out.
- *
- * `tsconfigPath` is left undefined so oxc-resolver auto-discovers tsconfig files by walking up
- * from each parent dir.
  */
 export function createViteChangeDetectionAdapter(server: ViteDevServer): ChangeDetectionAdapter {
   return {

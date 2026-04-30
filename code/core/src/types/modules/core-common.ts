@@ -168,8 +168,6 @@ export interface BuilderResult {
 export interface ModuleResolveConfig {
   /** Project root (where Storybook is started from). */
   projectRoot: string;
-  /** Resolved absolute path to the active tsconfig; resolvers read `paths`/`baseUrl` themselves. */
-  tsconfigPath?: string;
   /**
    * Builder-supplied alias map. Accepts both Vite shapes:
    *   - `Record<string, string>` (object form)

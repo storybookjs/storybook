@@ -59,7 +59,6 @@ describe('createViteChangeDetectionAdapter', () => {
 
     expect(config).toEqual({
       projectRoot: '/repo',
-      tsconfigPath: undefined,
       alias,
       conditions,
     });

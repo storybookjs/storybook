@@ -115,6 +115,10 @@ export const viteFinal: StorybookConfigVite['viteFinal'] = async (config, option
         return {
           optimizeDeps: {
             exclude: [
+              '@storybook/react',
+              '@storybook/react/entry-preview',
+              '@storybook/react/entry-preview-argtypes',
+              '@storybook/react/entry-preview-docs',
               '@storybook/tanstack-react',
               '@tanstack/react-start/server',
               '@tanstack/react-start-server',

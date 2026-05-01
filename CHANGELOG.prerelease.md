@@ -1,3 +1,7 @@
+## 10.4.0-alpha.14
+
+- CLI: Fix agentic check - [#34678](https://github.com/storybookjs/storybook/pull/34678), thanks @yannbf!
+
 ## 10.4.0-alpha.13
 
 - Addon-Vitest: Use Vitest's provide-API for injecting values - [#34518](https://github.com/storybookjs/storybook/pull/34518), thanks @JReinhold!

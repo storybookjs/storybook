@@ -2,10 +2,11 @@ import { flushAiSetupPending, getAiSetupPending } from './event-cache.ts';
 import { SESSION_TIMEOUT } from './session-id.ts';
 import { createHash } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
+import { resolve } from 'node:path';
 
 import { findConfigFile } from 'storybook/internal/common';
 import { detectAgent } from './detect-agent.ts';
-import { isTelemetryModuleEnabled, telemetry } from './index.ts';
+import { telemetry } from './index.ts';
 import type { EventType } from './types.ts';
 import type { IndexEntry, StoryIndex } from 'storybook/internal/types';
 
@@ -100,7 +101,7 @@ export async function collectAiSetupEvidence(
     }
 
     // Gate 3: Does the configDir match? (cross-project guard)
-    if (configDir && pending.configDir !== configDir) {
+    if (configDir && pending.configDir !== resolve(configDir)) {
       return;
     }
 

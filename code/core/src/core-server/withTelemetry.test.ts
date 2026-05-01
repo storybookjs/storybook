@@ -110,6 +110,90 @@ describe('withTelemetry', () => {
     expect(telemetry).toHaveBeenCalledWith('boot', { eventType: 'dev' }, { stripMetadata: true });
   });
 
+  it('treats init interruption errors as canceled telemetry', async () => {
+    const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => undefined as never);
+    const run = vi.fn(async () => {
+      const error = new Error('Command was killed with SIGINT');
+      Object.assign(error, { signal: 'SIGINT' });
+      throw error;
+    });
+
+    await expect(withTelemetry('init', { cliOptions }, run)).resolves.toBeUndefined();
+
+    expect(telemetry).toHaveBeenNthCalledWith(
+      1,
+      'boot',
+      { eventType: 'init' },
+      { stripMetadata: true }
+    );
+    expect(telemetry).toHaveBeenNthCalledWith(
+      2,
+      'canceled',
+      { eventType: 'init' },
+      { stripMetadata: true, immediate: true }
+    );
+    expect(exitSpy).toHaveBeenCalledWith(0);
+
+    exitSpy.mockRestore();
+  });
+
+  it('treats init AbortError-style failures as canceled telemetry', async () => {
+    const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => undefined as never);
+    const run = vi.fn(async () => {
+      const error = new Error('The operation was aborted');
+      Object.assign(error, { name: 'AbortError', code: 'ABORT_ERR' });
+      throw error;
+    });
+
+    await expect(withTelemetry('init', { cliOptions }, run)).resolves.toBeUndefined();
+
+    expect(telemetry).toHaveBeenNthCalledWith(
+      1,
+      'boot',
+      { eventType: 'init' },
+      { stripMetadata: true }
+    );
+    expect(telemetry).toHaveBeenNthCalledWith(
+      2,
+      'canceled',
+      { eventType: 'init' },
+      { stripMetadata: true, immediate: true }
+    );
+    expect(exitSpy).toHaveBeenCalledWith(0);
+
+    exitSpy.mockRestore();
+  });
+
+  it('treats wrapped init interruption failures as canceled telemetry', async () => {
+    const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => undefined as never);
+    const run = vi.fn(async () => {
+      throw new Error('copy failed', {
+        cause: Object.assign(new Error('The operation was aborted'), {
+          name: 'AbortError',
+          code: 'ABORT_ERR',
+        }),
+      });
+    });
+
+    await expect(withTelemetry('init', { cliOptions }, run)).resolves.toBeUndefined();
+
+    expect(telemetry).toHaveBeenNthCalledWith(
+      1,
+      'boot',
+      { eventType: 'init' },
+      { stripMetadata: true }
+    );
+    expect(telemetry).toHaveBeenNthCalledWith(
+      2,
+      'canceled',
+      { eventType: 'init' },
+      { stripMetadata: true, immediate: true }
+    );
+    expect(exitSpy).toHaveBeenCalledWith(0);
+
+    exitSpy.mockRestore();
+  });
+
   it('resolves telemetry state when cli option is passed', async () => {
     const run = vi.fn();
 

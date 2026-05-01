@@ -11,8 +11,9 @@ import {
 } from 'storybook/internal/components';
 
 import { global } from '@storybook/global';
-import { ChevronDownIcon, LockIcon, SyncIcon } from '@storybook/icons';
+import { ChevronDownIcon, LockIcon, SweepIcon, SyncIcon } from '@storybook/icons';
 
+import { useStorybookApi } from 'storybook/manager-api';
 import { styled } from 'storybook/theming';
 
 import { useLayout } from '../layout/LayoutProvider.tsx';
@@ -157,52 +158,68 @@ const WideSpaced = styled(Spaced)({
   flex: 1,
 });
 
-export const EmptyBlock = ({ isMain, hasEntries }: { isMain: boolean; hasEntries: boolean }) => (
-  <Contained>
-    <FlexSpaced col={1}>
-      <WideSpaced>
-        {hasEntries ? (
-          <NoResults>
-            <strong>No stories found</strong>
-            <small>Your selected filters did not match any stories.</small>
-          </NoResults>
-        ) : isMain ? (
-          <Text>
-            Oh no! Your Storybook is empty. This can happen when:
-            <ul>
-              <li>
-                Your{' '}
-                <Link
-                  href="https://storybook.js.org/docs/api/main-config/main-config-stories?ref=ui"
-                  cancel={false}
-                  target="_blank"
-                >
-                  stories glob configuration
-                </Link>{' '}
-                does not match any files.{' '}
-              </li>
-              <li>
-                You have{' '}
-                <Link
-                  href="https://storybook.js.org/docs/writing-stories?ref=ui"
-                  cancel={false}
-                  target="_blank"
-                >
-                  no stories defined
-                </Link>{' '}
-                in your story files.{' '}
-              </li>
-            </ul>
-          </Text>
-        ) : (
-          <Text>
-            This composed Storybook is empty. Perhaps no stories match your selected filters.
-          </Text>
-        )}
-      </WideSpaced>
-    </FlexSpaced>
-  </Contained>
-);
+export const EmptyBlock = ({ isMain, hasEntries }: { isMain: boolean; hasEntries: boolean }) => {
+  const api = useStorybookApi();
+
+  return (
+    <Contained>
+      <FlexSpaced col={1}>
+        <WideSpaced>
+          {hasEntries ? (
+            <NoResults>
+              <strong>No stories found</strong>
+              <small>Your selected filters did not match any stories.</small>
+              <Button
+                ariaLabel={false}
+                size="small"
+                variant="outline"
+                onClick={() => {
+                  api.setAllTagFilters([], []);
+                  api.resetStatusFilters();
+                }}
+              >
+                <SweepIcon />
+                Clear filters
+              </Button>
+            </NoResults>
+          ) : isMain ? (
+            <Text>
+              Oh no! Your Storybook is empty. This can happen when:
+              <ul>
+                <li>
+                  Your{' '}
+                  <Link
+                    href="https://storybook.js.org/docs/api/main-config/main-config-stories?ref=ui"
+                    cancel={false}
+                    target="_blank"
+                  >
+                    stories glob configuration
+                  </Link>{' '}
+                  does not match any files.{' '}
+                </li>
+                <li>
+                  You have{' '}
+                  <Link
+                    href="https://storybook.js.org/docs/writing-stories?ref=ui"
+                    cancel={false}
+                    target="_blank"
+                  >
+                    no stories defined
+                  </Link>{' '}
+                  in your story files.{' '}
+                </li>
+              </ul>
+            </Text>
+          ) : (
+            <Text>
+              This composed Storybook is empty. Perhaps no stories match your selected filters.
+            </Text>
+          )}
+        </WideSpaced>
+      </FlexSpaced>
+    </Contained>
+  );
+};
 
 export const LoaderBlock: FC<{ isMain: boolean }> = ({ isMain }) => (
   <Contained>

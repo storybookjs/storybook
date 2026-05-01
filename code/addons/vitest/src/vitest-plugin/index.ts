@@ -252,6 +252,7 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
     plugins.push(mdxStubPlugin);
   }
 
+  let agent: ReturnType<typeof detectAgent> | undefined;
   let withinAgenticSetupSession = false;
 
   const storybookTestPlugin: Plugin = {
@@ -267,6 +268,11 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
         .replace('<body>', `<body>${bodyHtmlSnippet ?? ''}`);
     },
     async config(nonMutableInputConfig, { mode }) {
+      if (isTelemetryModuleEnabled()) {
+        agent = detectAgent();
+        withinAgenticSetupSession = !!agent && (await isWithinInitialSession('ai-setup'));
+      }
+
       if (mode) {
         // Needed for `preset.apply('env')` to work correctly
         process.env.BUILD_TARGET = mode;
@@ -367,7 +373,8 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
 
           provide: {
             [STORYBOOK_CORE_GHOST_STORIES_PROVIDE_KEY]: !!process.env.STORYBOOK_COMPONENT_PATHS,
-            [STORYBOOK_CORE_RENDER_ANALYSIS_PROVIDE_KEY]: !!process.env.STORYBOOK_COMPONENT_PATHS,
+            [STORYBOOK_CORE_RENDER_ANALYSIS_PROVIDE_KEY]:
+              !!process.env.STORYBOOK_COMPONENT_PATHS || withinAgenticSetupSession,
           },
 
           include: [...includeStories, ...getComponentTestPaths()],
@@ -458,11 +465,6 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
       if (isTelemetryModuleEnabled()) {
         // When an agent is running vitest via CLI, inject a reporter that sends
         // detailed test result telemetry (pass/fail, error analysis, empty renders)
-        const agent = detectAgent();
-        withinAgenticSetupSession = !!agent && (await isWithinInitialSession('ai-setup'));
-        if (withinAgenticSetupSession) {
-          await context.vitest.provide(STORYBOOK_CORE_RENDER_ANALYSIS_PROVIDE_KEY, true);
-        }
         if (agent && withinAgenticSetupSession) {
           context.vitest.config.reporters.push(
             new AgentTelemetryReporter({

@@ -1,3 +1,7 @@
+## 10.4.0-alpha.15
+
+- Vitest: Fix agent detection breaking runs - [#34681](https://github.com/storybookjs/storybook/pull/34681), thanks @JReinhold!
+
 ## 10.4.0-alpha.14
 
 - CLI: Fix agentic check - [#34678](https://github.com/storybookjs/storybook/pull/34678), thanks @yannbf!

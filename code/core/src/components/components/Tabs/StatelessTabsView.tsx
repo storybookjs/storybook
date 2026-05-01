@@ -4,9 +4,9 @@ import React from 'react';
 import { Tabs } from 'react-aria-components/patched-dist/Tabs';
 import { styled } from 'storybook/theming';
 
-import { Bar } from '../Bar/Bar';
-import { EmptyTabContent } from './EmptyTabContent';
-import type { TabsViewProps } from './TabsView';
+import { Bar } from '../Bar/Bar.tsx';
+import { EmptyTabContent } from './EmptyTabContent.tsx';
+import type { TabsViewProps } from './TabsView.tsx';
 
 const Container = styled(Tabs)<{ $simulatedGap: string | number }>(({ $simulatedGap }) => ({
   display: 'flex',

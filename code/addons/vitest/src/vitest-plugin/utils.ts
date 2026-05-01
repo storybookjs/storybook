@@ -7,7 +7,7 @@ import { CLI_COLORS, logger } from 'storybook/internal/node-logger';
 import { dirname, resolve } from 'pathe';
 import { dedent } from 'ts-dedent';
 
-import type { InternalOptions } from './types';
+import type { InternalOptions } from './types.ts';
 
 let hasLoggedDeprecationWarning = false;
 
@@ -20,8 +20,7 @@ const logBoxOnce = (message: string) => {
 
 export async function requiresProjectAnnotations(
   testConfig: ViteUserConfig['test'] | undefined,
-  finalOptions: InternalOptions,
-  isCSF4: boolean
+  finalOptions: InternalOptions
 ) {
   const setupFiles = Array.isArray(testConfig?.setupFiles)
     ? testConfig.setupFiles
@@ -58,8 +57,6 @@ export async function requiresProjectAnnotations(
       You can safely remove the "setProjectAnnotations" call from your setup file, or remove the file entirely if you don't have custom code there.
     `);
 
-    return false;
-  } else if (isCSF4) {
     return false;
   }
 

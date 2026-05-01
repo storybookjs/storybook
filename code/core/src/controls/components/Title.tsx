@@ -4,7 +4,7 @@ import { Badge } from 'storybook/internal/components';
 
 import { useArgTypes, useStorybookApi } from 'storybook/manager-api';
 
-import { ADDON_ID } from '../constants';
+import { ADDON_ID } from '../constants.ts';
 
 export function Title() {
   const api = useStorybookApi();

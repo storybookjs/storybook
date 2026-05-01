@@ -1,7 +1,7 @@
-import type { globalSettings } from '../../cli/globalSettings';
-import type { UniversalStore } from '../universal-store';
-import type { StoreOptions } from '../universal-store/types';
-import { initialState } from './checklistData.state';
+import type { globalSettings } from '../../cli/globalSettings.ts';
+import type { UniversalStore } from '../universal-store/index.ts';
+import type { StoreOptions } from '../universal-store/types.ts';
+import { initialState } from './checklistData.state.ts';
 
 /** ChecklistState is the persisted state, which may be incomplete */
 export type ChecklistState = NonNullable<
@@ -12,6 +12,8 @@ export type ChecklistState = NonNullable<
 export type StoreState = Required<Omit<ChecklistState, 'items'>> & {
   items: NonNullable<Required<ChecklistState['items']>>;
   loaded?: boolean;
+  /** True when the user opted into AI during `storybook init`. Set by the server from the event cache. */
+  aiOptIn?: boolean;
 };
 
 export type ItemId = keyof StoreState['items'];

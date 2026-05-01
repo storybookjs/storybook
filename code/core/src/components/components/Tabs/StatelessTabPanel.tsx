@@ -4,7 +4,7 @@ import React from 'react';
 import { TabPanel } from 'react-aria-components/patched-dist/Tabs';
 import { styled } from 'storybook/theming';
 
-import { ScrollArea } from '../ScrollArea/ScrollArea';
+import { ScrollArea } from '../ScrollArea/ScrollArea.tsx';
 
 export interface StatelessTabPanelProps {
   /** Content of the tab panel. */

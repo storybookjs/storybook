@@ -6,7 +6,7 @@ import { Feature } from 'storybook/internal/types';
 
 import { getProcessAncestry } from 'process-ancestry';
 
-import { TelemetryService } from './TelemetryService';
+import { TelemetryService } from './TelemetryService.ts';
 
 vi.mock('storybook/internal/telemetry', { spy: true });
 vi.mock('process-ancestry', { spy: true });
@@ -21,7 +21,7 @@ describe('TelemetryService', () => {
     let telemetryService: TelemetryService;
 
     beforeEach(() => {
-      telemetryService = new TelemetryService(false);
+      telemetryService = new TelemetryService();
     });
 
     it('should track new user check', async () => {
@@ -50,6 +50,7 @@ describe('TelemetryService', () => {
           docs: true,
           test: false,
           onboarding: true,
+          ai: false,
         },
         newUser: true,
         versionSpecifier: '8.0.0',
@@ -71,55 +72,31 @@ describe('TelemetryService', () => {
 
       expect(telemetry).toHaveBeenCalledWith('scaffolded-empty', data);
     });
-  });
 
-  describe('when telemetry is disabled', () => {
-    let telemetryService: TelemetryService;
+    it('should track ai-prompt-nudge event with context when prompt was shown', async () => {
+      await telemetryService.trackAiSetupNudge({ skipPrompt: false });
 
-    beforeEach(() => {
-      telemetryService = new TelemetryService(true);
-    });
-
-    it('should not track new user check', async () => {
-      await telemetryService.trackNewUserCheck(true);
-
-      expect(telemetry).not.toHaveBeenCalled();
-    });
-
-    it('should not track install type', async () => {
-      await telemetryService.trackInstallType('light');
-
-      expect(telemetry).not.toHaveBeenCalled();
-    });
-
-    it('should not track init event', async () => {
-      await telemetryService.trackInit({
-        projectType: ProjectType.VUE3,
-        features: {
-          dev: true,
-          docs: false,
-          test: false,
-          onboarding: false,
-        },
-        newUser: false,
+      expect(telemetry).toHaveBeenCalledWith('ai-prompt-nudge', {
+        id: 'setup',
+        origin: 'init',
+        context: { skipPrompt: false },
       });
-
-      expect(telemetry).not.toHaveBeenCalled();
     });
 
-    it('should not track scaffolded event', async () => {
-      await telemetryService.trackScaffolded({
-        packageManager: 'yarn',
-        projectType: 'vue-vite-ts',
-      });
+    it('should track ai-prompt-nudge event with context when prompt was skipped', async () => {
+      await telemetryService.trackAiSetupNudge({ skipPrompt: true });
 
-      expect(telemetry).not.toHaveBeenCalled();
+      expect(telemetry).toHaveBeenCalledWith('ai-prompt-nudge', {
+        id: 'setup',
+        origin: 'init',
+        context: { skipPrompt: true },
+      });
     });
   });
 
   describe('trackInitWithContext', () => {
     it('should track init with version and CLI integration from ancestry', async () => {
-      const telemetryService = new TelemetryService(false);
+      const telemetryService = new TelemetryService();
       const selectedFeatures = new Set([Feature.DOCS, Feature.TEST]);
 
       vi.mocked(getProcessAncestry).mockReturnValue([
@@ -136,6 +113,7 @@ describe('TelemetryService', () => {
           docs: true,
           test: true,
           onboarding: false,
+          ai: false,
         },
         newUser: true,
         versionSpecifier: '8.0.5',
@@ -144,7 +122,7 @@ describe('TelemetryService', () => {
     });
 
     it('should handle ancestry errors gracefully', async () => {
-      const telemetryService = new TelemetryService(false);
+      const telemetryService = new TelemetryService();
       const selectedFeatures = new Set([]);
 
       vi.mocked(getProcessAncestry).mockImplementation(() => {
@@ -160,6 +138,7 @@ describe('TelemetryService', () => {
           docs: false,
           test: false,
           onboarding: false,
+          ai: false,
         },
         newUser: false,
         versionSpecifier: undefined,
@@ -167,18 +146,8 @@ describe('TelemetryService', () => {
       });
     });
 
-    it('should not track when telemetry is disabled', async () => {
-      const telemetryService = new TelemetryService(true);
-      const selectedFeatures = new Set([Feature.DOCS]);
-
-      await telemetryService.trackInitWithContext(ProjectType.ANGULAR, selectedFeatures, true);
-
-      expect(getProcessAncestry).not.toHaveBeenCalled();
-      expect(telemetry).not.toHaveBeenCalled();
-    });
-
     it('should detect CLI integration from ancestry', async () => {
-      const telemetryService = new TelemetryService(false);
+      const telemetryService = new TelemetryService();
       const selectedFeatures = new Set([]);
 
       vi.mocked(getProcessAncestry).mockReturnValue([{ command: 'sv create my-app' }] as any);
@@ -191,6 +160,26 @@ describe('TelemetryService', () => {
           cliIntegration: 'sv create',
         })
       );
+    });
+
+    describe('when AI feature is selected', () => {
+      beforeEach(() => {
+        vi.mocked(getProcessAncestry).mockReturnValue([]);
+      });
+
+      it('should set ai: true when AI feature is selected', async () => {
+        const telemetryService = new TelemetryService();
+        const selectedFeatures = new Set([Feature.AI]);
+
+        await telemetryService.trackInitWithContext(ProjectType.REACT, selectedFeatures, true);
+
+        expect(telemetry).toHaveBeenCalledWith(
+          'init',
+          expect.objectContaining({
+            features: expect.objectContaining({ ai: true }),
+          })
+        );
+      });
     });
   });
 });

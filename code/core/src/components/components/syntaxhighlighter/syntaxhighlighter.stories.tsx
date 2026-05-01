@@ -3,7 +3,7 @@ import React from 'react';
 
 import { ThemeProvider, ensure, themes } from 'storybook/theming';
 
-import { SyntaxHighlighter } from './lazy-syntaxhighlighter';
+import { SyntaxHighlighter } from './lazy-syntaxhighlighter.tsx';
 
 export default {
   component: SyntaxHighlighter,

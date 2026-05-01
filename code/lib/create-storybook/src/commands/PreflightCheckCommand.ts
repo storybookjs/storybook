@@ -9,14 +9,23 @@ import { CLI_COLORS, deprecate, logger } from 'storybook/internal/node-logger';
 
 import { dedent } from 'ts-dedent';
 
-import type { CommandOptions } from '../generators/types';
-import { currentDirectoryIsEmpty, scaffoldNewProject } from '../scaffold-new-project';
-import { VersionService } from '../services';
+import type { CommandOptions } from '../generators/types.ts';
+import { currentDirectoryIsEmpty, scaffoldNewProject } from '../scaffold-new-project.ts';
+import { VersionService } from '../services/index.ts';
 
 export interface PreflightCheckResult {
   packageManager: JsPackageManager;
   isEmptyProject: boolean;
 }
+
+/** Human-friendly labels for each package manager type */
+const PACKAGE_MANAGER_LABEL: Record<PackageManagerName, string> = {
+  [PackageManagerName.NPM]: 'npm',
+  [PackageManagerName.YARN1]: 'Yarn Classic (v1)',
+  [PackageManagerName.YARN2]: 'Yarn Berry',
+  [PackageManagerName.PNPM]: 'pnpm',
+  [PackageManagerName.BUN]: 'Bun',
+};
 
 /**
  * Command for running preflight checks before Storybook initialization
@@ -63,6 +72,10 @@ export class PreflightCheckCommand {
       force: options.packageManager,
     });
 
+    logger.info(
+      `Package manager: ${PACKAGE_MANAGER_LABEL[packageManager.type] ?? packageManager.type}`
+    );
+
     // Install base project dependencies if we scaffolded a new project
     if (isEmptyDirProject && !options.skipInstall) {
       await packageManager.installDependencies();
@@ -76,9 +89,34 @@ export class PreflightCheckCommand {
     `);
     }
 
+    this.checkPackageNameConflict(packageManager);
+
     await this.displayVersionInfo(packageManager);
 
     return { packageManager, isEmptyProject: isEmptyDirProject };
+  }
+
+  /**
+   * Warn when the project's package.json "name" is "storybook", which shadows
+   * the real storybook package in workspaces.
+   *
+   * See: https://github.com/storybookjs/storybook/issues/28725
+   */
+  private checkPackageNameConflict(packageManager: JsPackageManager): void {
+    const packageName = packageManager.primaryPackageJson.packageJson.name;
+
+    if (packageName === 'storybook') {
+      logger.warn(dedent`
+        Your package.json "name" field is set to "storybook".
+
+        In npm, pnpm, or yarn workspaces this creates a symlink at
+        node_modules/storybook that shadows the real Storybook package,
+        causing "Cannot find module storybook/internal/..." errors.
+
+        Please rename the "name" field in your package.json to something
+        other than "storybook" (e.g. "my-storybook", "docs", "@myorg/storybook").
+      `);
+    }
   }
 
   /** Display version information and warnings */

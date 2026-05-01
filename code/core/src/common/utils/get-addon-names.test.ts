@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { getAddonNames } from './get-addon-names';
+import { getAddonNames } from './get-addon-names.ts';
 
 describe('getAddonNames', () => {
   it('should extract addon names from simple strings', () => {

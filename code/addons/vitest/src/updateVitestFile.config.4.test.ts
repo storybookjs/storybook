@@ -4,8 +4,8 @@ import { describe, expect, it, vi } from 'vitest';
 
 import * as babel from 'storybook/internal/babel';
 
-import { getDiff } from '../../../core/src/core-server/utils/save-story/getDiff';
-import { loadTemplate, updateConfigFile } from './updateVitestFile';
+import { getDiff } from '../../../core/src/core-server/utils/save-story/getDiff.ts';
+import { loadTemplate, updateConfigFile } from './updateVitestFile.ts';
 
 vi.mock('storybook/internal/node-logger', () => ({
   logger: {

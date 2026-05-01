@@ -11,8 +11,8 @@ import {
   TEST_PACKAGES,
   UI_LIBRARY_PACKAGES,
   matchesPackagePattern,
-} from '../shared/utils/ecosystem-identifier';
-import { getActualPackageVersion } from './package-json';
+} from '../shared/utils/ecosystem-identifier.ts';
+import { getActualPackageVersion } from './package-json.ts';
 
 type PackageGroupResult = Record<string, string | null | undefined>;
 

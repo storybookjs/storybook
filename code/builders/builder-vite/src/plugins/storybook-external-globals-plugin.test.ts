@@ -1,6 +1,6 @@
 import { expect, it } from 'vitest';
 
-import { rewriteImport } from './storybook-external-globals-plugin';
+import { rewriteImport } from './storybook-external-globals-plugin.ts';
 
 const packageName = '@storybook/package';
 const globals = { [packageName]: '_STORYBOOK_PACKAGE_' };

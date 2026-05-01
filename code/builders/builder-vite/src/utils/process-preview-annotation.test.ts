@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
-import { onlyWindows, skipWindows } from '../../../../vitest.helpers';
-import { processPreviewAnnotation } from './process-preview-annotation';
+import { onlyWindows, skipWindows } from '../../../../vitest.helpers.ts';
+import { processPreviewAnnotation } from './process-preview-annotation.ts';
 
 describe('processPreviewAnnotation()', () => {
   it('should pull the `absolute` value from an object', () => {

@@ -2,8 +2,8 @@ import type { Addon_StoryContext } from 'storybook/internal/types';
 
 import { vi, expect, describe, it } from 'vitest';
 import { Component } from '@angular/core';
-import { moduleMetadata, applicationConfig } from './decorators';
-import type { AngularRenderer } from './types';
+import { moduleMetadata, applicationConfig } from './decorators.ts';
+import type { AngularRenderer } from './types.ts';
 
 const defaultContext: Addon_StoryContext<AngularRenderer> = {
   componentId: 'unspecified',

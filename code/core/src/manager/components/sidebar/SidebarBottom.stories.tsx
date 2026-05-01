@@ -11,8 +11,8 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import { type API, ManagerContext } from 'storybook/manager-api';
 import { expect, fireEvent, fn, waitFor, within } from 'storybook/test';
 
-import type { TestProviderStateByProviderId } from '../../../shared/test-provider-store';
-import { SidebarBottomBase } from './SidebarBottom';
+import type { TestProviderStateByProviderId } from '../../../shared/test-provider-store/index.ts';
+import { SidebarBottomBase } from './SidebarBottom.tsx';
 
 const DynamicHeightDemo: FC = () => {
   const [height, setHeight] = useState(100);

@@ -7,7 +7,6 @@ import type { ViteUserConfig } from 'vitest/config';
 import {
   DEFAULT_FILES_PATTERN,
   getInterpretedFile,
-  loadPreviewOrConfigFile,
   normalizeStories,
   optionalEnvToBoolean,
   resolvePathInStorybookCache,
@@ -19,15 +18,16 @@ import {
   experimental_loadStorybook,
   mapStaticDir,
 } from 'storybook/internal/core-server';
-import {
-  componentTransform,
-  isCsfFactoryPreview,
-  readConfig,
-  vitestTransform,
-} from 'storybook/internal/csf-tools';
+import { componentTransform, readConfig, vitestTransform } from 'storybook/internal/csf-tools';
 import { MainFileMissingError } from 'storybook/internal/server-errors';
-import { telemetry } from 'storybook/internal/telemetry';
-import { oneWayHash } from 'storybook/internal/telemetry';
+import {
+  detectAgent,
+  isTelemetryModuleEnabled,
+  isWithinInitialSession,
+  oneWayHash,
+  telemetry,
+  setTelemetryEnabled,
+} from 'storybook/internal/telemetry';
 import type { Presets } from 'storybook/internal/types';
 
 import { match } from 'micromatch';
@@ -39,9 +39,14 @@ import { dedent } from 'ts-dedent';
 import type { PluginOption } from 'vite';
 
 // Shared plugins from builder-vite (relative import to prebundle without adding a package dependency)
-import { withoutVitePlugins } from '../../../../builders/builder-vite/src/utils/without-vite-plugins';
-import type { InternalOptions, UserOptions } from './types';
-import { requiresProjectAnnotations } from './utils';
+import { withoutVitePlugins } from '../../../../builders/builder-vite/src/utils/without-vite-plugins.ts';
+import {
+  STORYBOOK_CORE_GHOST_STORIES_PROVIDE_KEY,
+  STORYBOOK_CORE_RENDER_ANALYSIS_PROVIDE_KEY,
+} from '../constants.ts';
+import type { InternalOptions, UserOptions } from './types.ts';
+import { requiresProjectAnnotations } from './utils.ts';
+import { AgentTelemetryReporter } from './agent-telemetry-reporter.ts';
 
 const WORKING_DIR = process.cwd();
 
@@ -224,6 +229,8 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
     presets.apply('features', {}),
   ]);
 
+  await setTelemetryEnabled(!core?.disableTelemetry);
+
   const pluginsToIgnore = [
     'storybook:react-docgen-plugin',
     'vite:react-docgen-typescript', // aka @joshwooding/vite-plugin-react-docgen-typescript
@@ -245,6 +252,9 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
     plugins.push(mdxStubPlugin);
   }
 
+  let agent: ReturnType<typeof detectAgent> | undefined;
+  let withinAgenticSetupSession = false;
+
   const storybookTestPlugin: Plugin = {
     name: 'vite-plugin-storybook-test',
     async transformIndexHtml(html) {
@@ -258,6 +268,11 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
         .replace('<body>', `<body>${bodyHtmlSnippet ?? ''}`);
     },
     async config(nonMutableInputConfig, { mode }) {
+      if (isTelemetryModuleEnabled()) {
+        agent = detectAgent();
+        withinAgenticSetupSession = !!agent && (await isWithinInitialSession('ai-setup'));
+      }
+
       if (mode) {
         // Needed for `preset.apply('env')` to work correctly
         process.env.BUILD_TARGET = mode;
@@ -303,14 +318,9 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
       finalOptions.includeStories = includeStories;
       const projectId = oneWayHash(finalOptions.configDir);
 
-      const previewOrConfigFile = loadPreviewOrConfigFile({ configDir: finalOptions.configDir });
-      const previewConfig = previewOrConfigFile ? await readConfig(previewOrConfigFile) : undefined;
-      const isCSF4 = previewConfig ? isCsfFactoryPreview(previewConfig) : false;
-
       const areProjectAnnotationRequired = await requiresProjectAnnotations(
         nonMutableInputConfig.test,
-        finalOptions,
-        isCSF4
+        finalOptions
       );
 
       const internalSetupFiles = (
@@ -318,7 +328,6 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
           '@storybook/addon-vitest/internal/setup-file',
           areProjectAnnotationRequired &&
             '@storybook/addon-vitest/internal/setup-file-with-project-annotations',
-          isCSF4 && previewOrConfigFile,
         ].filter(Boolean) as string[]
       ).map((filePath) => fileURLToPath(import.meta.resolve(filePath)));
 
@@ -362,6 +371,12 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
             __VITEST_SKIP_TAGS__: finalOptions.tags.skip.join(','),
           },
 
+          provide: {
+            [STORYBOOK_CORE_GHOST_STORIES_PROVIDE_KEY]: !!process.env.STORYBOOK_COMPONENT_PATHS,
+            [STORYBOOK_CORE_RENDER_ANALYSIS_PROVIDE_KEY]:
+              !!process.env.STORYBOOK_COMPONENT_PATHS || withinAgenticSetupSession,
+          },
+
           include: [...includeStories, ...getComponentTestPaths()],
           exclude: [
             ...(nonMutableInputConfig.test?.exclude ?? []),
@@ -381,25 +396,6 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
             : {}),
 
           browser: {
-            commands: {
-              getInitialGlobals: () => {
-                const envConfig = JSON.parse(process.env.VITEST_STORYBOOK_CONFIG ?? '{}');
-
-                const shouldRunA11yTests = isVitestStorybook ? (envConfig.a11y ?? false) : true;
-                const globals: Record<string, unknown> = {};
-                globals.a11y = {
-                  manual: !shouldRunA11yTests,
-                };
-
-                if (process.env.STORYBOOK_COMPONENT_PATHS) {
-                  globals.ghostStories = {
-                    enabled: true,
-                  };
-                }
-
-                return globals;
-              },
-            },
             // if there is a test.browser config AND test.browser.screenshotFailures is not explicitly set, we set it to false
             ...(nonMutableInputConfig.test?.browser &&
             nonMutableInputConfig.test.browser.screenshotFailures === undefined
@@ -451,24 +447,32 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
       // return the new config, it will be deep-merged by vite
       return config;
     },
-    configureVitest(context) {
+    async configureVitest(context) {
       context.vitest.config.coverage.exclude.push('storybook-static');
 
-      if (
-        !core?.disableTelemetry &&
-        !optionalEnvToBoolean(process.env.STORYBOOK_DISABLE_TELEMETRY)
-      ) {
-        // NOTE: we start telemetry immediately but do not wait on it. Typically it should complete
-        // before the tests do. If not we may miss the event, we are OK with that.
-        telemetry(
-          'test-run',
-          {
-            runner: 'vitest',
-            watch: context.vitest.config.watch,
-            coverage: !!context.vitest.config.coverage?.enabled,
-          },
-          { configDir: finalOptions.configDir }
-        );
+      // NOTE: we start telemetry immediately but do not wait on it. Typically it should complete
+      // before the tests do. If not we may miss the event, we are OK with that.
+      telemetry(
+        'test-run',
+        {
+          runner: 'vitest',
+          watch: context.vitest.config.watch,
+          coverage: !!context.vitest.config.coverage?.enabled,
+        },
+        { configDir: finalOptions.configDir }
+      );
+
+      if (isTelemetryModuleEnabled()) {
+        // When an agent is running vitest via CLI, inject a reporter that sends
+        // detailed test result telemetry (pass/fail, error analysis, empty renders)
+        if (agent && withinAgenticSetupSession) {
+          context.vitest.config.reporters.push(
+            new AgentTelemetryReporter({
+              configDir: finalOptions.configDir,
+              agent,
+            })
+          );
+        }
       }
     },
     async configureServer(server) {

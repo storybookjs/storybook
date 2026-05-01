@@ -8,11 +8,11 @@ import { logger, prompt } from 'storybook/internal/node-logger';
 import picocolors from 'picocolors';
 import { dedent } from 'ts-dedent';
 
-import { runCodemod } from '../automigrate/codemod';
-import { getFrameworkPackageName } from '../automigrate/helpers/mainConfigFile';
-import type { CommandFix } from '../automigrate/types';
-import { configToCsfFactory } from './helpers/config-to-csf-factory';
-import { storyToCsfFactory } from './helpers/story-to-csf-factory';
+import { runCodemod } from '../automigrate/codemod.ts';
+import { getFrameworkPackageName } from '../automigrate/helpers/mainConfigFile.ts';
+import type { CommandFix } from '../automigrate/types.ts';
+import { configToCsfFactory } from './helpers/config-to-csf-factory.ts';
+import { storyToCsfFactory } from './helpers/story-to-csf-factory.ts';
 
 async function runStoriesCodemod(options: {
   dryRun: boolean | undefined;

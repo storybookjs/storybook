@@ -6,11 +6,11 @@ import { Channel, type ChannelTransport } from 'storybook/internal/channels';
 import { executeNodeCommand } from 'storybook/internal/common';
 import type { Options } from 'storybook/internal/types';
 
-import { storeOptions } from '../constants';
-import { log } from '../logger';
-import type { StoreEvent } from '../types';
-import type { StoreState } from '../types';
-import { killTestRunner, runTestRunner } from './boot-test-runner';
+import { storeOptions } from '../constants.ts';
+import { log } from '../logger.ts';
+import type { StoreEvent } from '../types.ts';
+import type { StoreState } from '../types.ts';
+import { killTestRunner, runTestRunner } from './boot-test-runner.ts';
 
 let stdout: (chunk: Buffer | string) => void;
 let stderr: (chunk: Buffer | string) => void;

@@ -4,8 +4,8 @@ import {
   type ProjectAutomigrationData,
   collectAutomigrationsAcrossProjects,
   promptForAutomigrations,
-} from './multi-project';
-import type { Fix } from './types';
+} from './multi-project.ts';
+import type { Fix } from './types.ts';
 
 vi.mock('storybook/internal/node-logger', async (importOriginal) => {
   return {

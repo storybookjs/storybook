@@ -3,6 +3,7 @@ import React from 'react';
 
 import { Link, SyntaxHighlighter } from 'storybook/internal/components';
 import {
+  AI_PROMPT_NUDGE,
   PREVIEW_INITIALIZED,
   STORY_ARGS_UPDATED,
   STORY_FINISHED,
@@ -18,20 +19,23 @@ import {
 import { type API, Tag, addons, internal_universalTestProviderStore } from 'storybook/manager-api';
 import { ThemeProvider, convert, styled, themes } from 'storybook/theming';
 
-import { ADDON_ID as ADDON_A11Y_ID } from '../../../../addons/a11y/src/constants';
+import { WandIcon } from '@storybook/icons';
+
+import { ADDON_ID as ADDON_A11Y_ID } from '../../../../addons/a11y/src/constants.ts';
 import {
   ADDON_ONBOARDING_CHANNEL,
   ADDON_ID as ADDON_ONBOARDING_ID,
-} from '../../../../addons/onboarding/src/constants';
+} from '../../../../addons/onboarding/src/constants.ts';
 import {
   ADDON_ID as ADDON_TEST_ID,
   STORYBOOK_ADDON_TEST_CHANNEL,
-} from '../../../../addons/vitest/src/constants';
-import { SUPPORTED_FRAMEWORKS } from '../../cli/AddonVitestService.constants';
-import { ADDON_ID as ADDON_DOCS_ID } from '../../docs-tools/shared';
-import { TourGuide } from '../../manager/components/TourGuide/TourGuide';
-import { LocationMonitor } from '../../manager/hooks/useLocation';
-import type { initialState } from './checklistData.state';
+} from '../../../../addons/vitest/src/constants.ts';
+import { SUPPORTED_FRAMEWORKS } from '../../cli/AddonVitestService.constants.ts';
+import { ADDON_ID as ADDON_DOCS_ID } from '../../docs-tools/shared.ts';
+import { TourGuide } from '../../manager/components/TourGuide/TourGuide.tsx';
+import { LocationMonitor } from '../../manager/hooks/useLocation.ts';
+import type { initialState } from './checklistData.state.ts';
+import { AI_SETUP_PROMPT } from '../constants/ai-prompts.ts';
 
 const CodeWrapper = styled.div(({ theme }) => ({
   alignSelf: 'stretch',
@@ -66,6 +70,9 @@ export interface ChecklistData {
       /** Display name. Keep it short and actionable (with a verb). */
       label: string;
 
+      /** Optional custom icon component to display instead of the default status icon. */
+      icon?: React.ComponentType;
+
       /** Description of the criteria that must be met to complete the item. */
       criteria: string;
 
@@ -75,6 +82,9 @@ export interface ChecklistData {
       /** What to do after the item is completed (prevent undo or hide the item). */
       afterCompletion?: 'immutable' | 'unavailable';
 
+      /** Whether to show the item in the GuidePage. Only set to `false` if the GuidePage has another tailored way to display the item.*/
+      showOnGuidePage?: boolean;
+
       /**
        * Function to check if the item should be available (displayed in the checklist). Called any
        * time the index is updated.
@@ -83,6 +93,7 @@ export interface ChecklistData {
         api: API;
         index: API_IndexHash | undefined;
         item: ChecklistData['sections'][number]['items'][number];
+        storeState: import('./index.ts').StoreState;
       }) => boolean;
 
       /** Function returning content to display in the checklist item's collapsible area. */
@@ -91,6 +102,8 @@ export interface ChecklistData {
       /** Action button to be displayed when item is not completed. */
       action?: {
         label: string;
+        /** If set, clicking the button copies this text to the clipboard via useCopyButton. */
+        copyContent?: string;
         onClick: (args: { api: API; accept: () => void }) => void;
       };
 
@@ -150,6 +163,25 @@ export const checklistData = {
       id: 'basics',
       title: 'Storybook basics',
       items: [
+        {
+          id: 'aiSetup',
+          label: 'Set up with AI',
+          icon: WandIcon,
+          available: ({ storeState }) => {
+            // Show only if the user opted into AI during `storybook init` and has not run
+            // `storybook ai setup` yet. Both flags are populated server-side from the event cache.
+            return !!storeState.aiOptIn && storeState.items.aiSetup?.status !== 'done';
+          },
+          criteria: 'ai setup command has not been run yet',
+          showOnGuidePage: false,
+          action: {
+            label: 'Copy prompt',
+            copyContent: AI_SETUP_PROMPT,
+            onClick: ({ api }) => {
+              api.emit(AI_PROMPT_NUDGE, { id: 'setup', origin: 'onboarding-checklist-side' });
+            },
+          },
+        },
         {
           id: 'guidedTour',
           label: 'Take the guided tour',
@@ -1175,7 +1207,7 @@ export default meta;`}
               </p>
               <CodeSnippet language="jsx">
                 {`{ /* introduction.mdx */ }
-import { Meta, Title, Subtitle, Description } from '@storybook/addon-docs/blocks';
+import { Meta, Title, Subtitle } from '@storybook/addon-docs/blocks';
 
 <Meta title="Get started" />
  
@@ -1183,10 +1215,8 @@ import { Meta, Title, Subtitle, Description } from '@storybook/addon-docs/blocks
 
 <Subtitle>It's really awesome</Subtitle>
 
-<Description>
-  My Awesome Project is designed to work with Your Awesome Project seamlessly.
-  Follow this guide and you'll be ready in no time.
-</Description>
+My Awesome Project is designed to work with Your Awesome Project seamlessly.
+Follow this guide and you'll be ready in no time.
 
 ## Install
 

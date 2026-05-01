@@ -1,9 +1,10 @@
 import React from 'react';
 
-import type {
-  DecoratorFunction,
-  StatusValue,
-  StatusesByStoryIdAndTypeId,
+import {
+  CHANGE_DETECTION_STATUS_TYPE_ID,
+  type DecoratorFunction,
+  type StatusValue,
+  type StatusesByStoryIdAndTypeId,
 } from 'storybook/internal/types';
 
 import { global } from '@storybook/global';
@@ -14,16 +15,16 @@ import type { IndexHash } from 'storybook/manager-api';
 import { ManagerContext } from 'storybook/manager-api';
 import { expect, fn, userEvent, waitFor, within } from 'storybook/test';
 
-import { initialState } from '../../../shared/checklist-store/checklistData.state';
+import { initialState } from '../../../shared/checklist-store/checklistData.state.ts';
 import {
   internal_fullStatusStore,
   internal_universalChecklistStore,
-} from '../../manager-stores.mock';
-import { LayoutProvider } from '../layout/LayoutProvider';
-import { standardData as standardHeaderData } from './Heading.stories';
-import { DEFAULT_REF_ID, Sidebar } from './Sidebar';
-import { mockDataset } from './mockdata';
-import type { RefType } from './types';
+} from '../../manager-stores.mock.ts';
+import { LayoutProvider } from '../layout/LayoutProvider.tsx';
+import { standardData as standardHeaderData } from './Heading.stories.tsx';
+import { DEFAULT_REF_ID, Sidebar } from './Sidebar.tsx';
+import { mockDataset } from './mockdata.ts';
+import type { RefType } from './types.ts';
 
 const wait = (ms: number) =>
   new Promise<void>((resolve) => {
@@ -542,8 +543,8 @@ export const StatusesNew: Story = {
       return {
         ...acc,
         [id]: {
-          addonA: {
-            typeId: 'addonA',
+          [CHANGE_DETECTION_STATUS_TYPE_ID]: {
+            typeId: CHANGE_DETECTION_STATUS_TYPE_ID,
             storyId: id,
             value: 'status-value:new' as StatusValue,
             title: 'Change Detection',
@@ -563,8 +564,8 @@ export const StatusesModified: Story = {
       return {
         ...acc,
         [id]: {
-          addonA: {
-            typeId: 'addonA',
+          [CHANGE_DETECTION_STATUS_TYPE_ID]: {
+            typeId: CHANGE_DETECTION_STATUS_TYPE_ID,
             storyId: id,
             value: 'status-value:modified' as StatusValue,
             title: 'Change Detection',
@@ -577,19 +578,19 @@ export const StatusesModified: Story = {
   play: waitForChecklistWidget,
 };
 
-export const StatusesAffected: Story = {
+export const StatusesRelated: Story = {
   args: {
     allStatuses: Object.entries(index).reduce((acc, [id, item]) => {
       if (item.type !== 'story') return acc;
       return {
         ...acc,
         [id]: {
-          addonA: {
-            typeId: 'addonA',
+          [CHANGE_DETECTION_STATUS_TYPE_ID]: {
+            typeId: CHANGE_DETECTION_STATUS_TYPE_ID,
             storyId: id,
             value: 'status-value:affected' as StatusValue,
             title: 'Change Detection',
-            description: 'This story is affected by a change',
+            description: 'This story is related to a change',
           },
         },
       } satisfies StatusesByStoryIdAndTypeId;
@@ -613,8 +614,8 @@ export const StatusesMixed: Story = {
       return {
         ...acc,
         [id]: {
-          addonA: {
-            typeId: 'addonA',
+          [CHANGE_DETECTION_STATUS_TYPE_ID]: {
+            typeId: CHANGE_DETECTION_STATUS_TYPE_ID,
             storyId: id,
             value,
             title: 'Change Detection',
@@ -632,7 +633,7 @@ export const StatusesChangeDetectionPriority: Story = {
     allStatuses: Object.entries(index).reduce((acc, [id, item]) => {
       if (item.type !== 'story') return acc;
       // Cycles through all change-detection variants + warning/error to verify
-      // priority ordering (most critical wins): error > warning > affected > modified > new
+      // priority ordering (most critical wins): error > warning > related > modified > new
       const priorityValues: StatusValue[] = [
         'status-value:new',
         'status-value:modified',
@@ -644,8 +645,8 @@ export const StatusesChangeDetectionPriority: Story = {
       return {
         ...acc,
         [id]: {
-          addonA: {
-            typeId: 'addonA',
+          [CHANGE_DETECTION_STATUS_TYPE_ID]: {
+            typeId: CHANGE_DETECTION_STATUS_TYPE_ID,
             storyId: id,
             value,
             title: 'Change Detection',

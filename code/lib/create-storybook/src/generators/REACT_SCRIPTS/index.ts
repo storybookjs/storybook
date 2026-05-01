@@ -8,7 +8,7 @@ import { SupportedBuilder, SupportedRenderer } from 'storybook/internal/types';
 import semver from 'semver';
 import { dedent } from 'ts-dedent';
 
-import { defineGeneratorModule } from '../modules/GeneratorModule';
+import { defineGeneratorModule } from '../modules/GeneratorModule.ts';
 
 export default defineGeneratorModule({
   metadata: {

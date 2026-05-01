@@ -3,6 +3,9 @@ import { expect, vi } from 'vitest';
 
 import { dedent } from 'ts-dedent';
 
+import './core/src/shared/utils/toHaveLiveRegion.ts';
+import { toHaveLiveRegion } from './core/src/shared/utils/toHaveLiveRegion.ts';
+
 const ignoreList = [
   (error: any) => error.message.includes('":nth-child" is potentially unsafe'),
   (error: any) => error.message.includes('":first-child" is potentially unsafe'),
@@ -10,7 +13,7 @@ const ignoreList = [
     error.message.match(
       `Support for defaultProps will be removed from function components in a future major release`
     ),
-  (error: any) => error.message.match(/Browserslist: .* is outdated. Please run:/),
+  (error: any) => error.message.match(/Browserslist: .*Please run:/),
   (error: any) => error.message.includes('Consider adding an error boundary'),
   (error: any) =>
     error.message.includes('react-async-component-lifecycle-hooks') &&
@@ -70,6 +73,8 @@ expect.extend({
     };
   },
 });
+
+expect.extend({ toHaveLiveRegion });
 
 vi.mock('storybook/internal/node-logger', async (importOriginal) => {
   return {

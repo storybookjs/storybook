@@ -1,3 +1,3 @@
-import { sourceDecorator } from './docs/sourceDecorator';
+import { sourceDecorator } from './docs/sourceDecorator.ts';
 
 export const decorators = [sourceDecorator];

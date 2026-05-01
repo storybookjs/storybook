@@ -1,3 +1,27 @@
+## 10.3.6
+
+- ESLint: Update deprecated @storybook/test reference to storybook/test - [#34430](https://github.com/storybookjs/storybook/pull/34430), thanks @venkat22022202!
+- React: Add optional React type peers to packages that publish React-based declarations - [#34641](https://github.com/storybookjs/storybook/pull/34641), thanks @copilot-swe-agent!
+- UI: Fix global background + color styles affecting stories - [#34071](https://github.com/storybookjs/storybook/pull/34071), thanks @Axadali!
+
+## 10.3.5
+
+- Core: Disable component manifest by default - [#34408](https://github.com/storybookjs/storybook/pull/34408), thanks @yannbf!
+
+> [!NOTE]
+> [Version >=0.5.0 of `@storybook/addon-mcp`](https://github.com/storybookjs/mcp/releases/tag/%40storybook%2Faddon-mcp%400.5.0) enables component manifests again. If you're upgrading Storybook from version >= 10.3.0 to >= 10.3.5 and are using the MCP addon, you should also upgrade `@storybook/addon-mcp` to keep the docs toolset in the MCP server.
+
+## 10.3.4
+
+- Addon-a11y: Clear status transition timer on unmount to prevent test flake - [#34203](https://github.com/storybookjs/storybook/pull/34203), thanks @mixelburg!
+- Bug: Skip re-processing already transformed config files for CSF factories - [#34273](https://github.com/storybookjs/storybook/pull/34273), thanks @huang-julien!
+- Builder-Vite: Use djb2 hash to prevent variable name collisions in builder-vite - [#34274](https://github.com/storybookjs/storybook/pull/34274), thanks @chida09!
+- CLI: Prompt for init crash reports - [#34316](https://github.com/storybookjs/storybook/pull/34316), thanks @JReinhold!
+- CSF4: Fix duplicate preview loading issue in Vitest - [#34361](https://github.com/storybookjs/storybook/pull/34361), thanks @valentinpalkovic!
+- Core: Fix WebSocket connection for StackBlitz/WebContainers - [#34281](https://github.com/storybookjs/storybook/pull/34281), thanks @ghengeveld!
+- React-Docgen: Try .tsx fallback when resolving .js ESM imports in docgen resolvers - [#34393](https://github.com/storybookjs/storybook/pull/34393), thanks @mixelburg!
+- React-Vite: Upgrade @joshwooding/vite-plugin-react-docgen-typescript to 0.7.0 - [#34335](https://github.com/storybookjs/storybook/pull/34335), thanks @beeswhacks!
+
 ## 10.3.3
 
 - Addon-Vitest: Streamline vite(st) config detection across init and postinstall - [#34193](https://github.com/storybookjs/storybook/pull/34193), thanks @valentinpalkovic!

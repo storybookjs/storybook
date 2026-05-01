@@ -10,9 +10,9 @@ import {
   VIEWPORT_MIN_HEIGHT,
   VIEWPORT_MIN_WIDTH,
   useViewport,
-} from '../../../viewport/useViewport';
-import { IFrame } from './Iframe';
-import { NumericInput } from './NumericInput';
+} from '../../../viewport/useViewport.ts';
+import { IFrame } from './Iframe.tsx';
+import { NumericInput } from './NumericInput.tsx';
 
 type DragSide = 'none' | 'both' | 'bottom' | 'right';
 

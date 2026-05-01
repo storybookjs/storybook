@@ -2,7 +2,7 @@ import { global } from '@storybook/global';
 
 import type { App } from 'vue';
 
-import type { StoryContext } from './public-types';
+import type { StoryContext } from './public-types.ts';
 
 const { window: globalWindow } = global;
 

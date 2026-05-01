@@ -91,6 +91,9 @@ enum events {
   // Story discovery and testing flow
   GHOST_STORIES_REQUEST = 'ghostStoriesRequest',
   GHOST_STORIES_RESPONSE = 'ghostStoriesResponse',
+  // AI analytics - ai setup command
+  AI_SETUP_ANALYTICS_RESPONSE = 'aiSetupAnalyticsResponse',
+  AI_SETUP_ANALYTICS_REQUEST = 'aiSetupAnalyticsRequest',
   // Open a file in the code editor
   OPEN_IN_EDITOR_REQUEST = 'openInEditorRequest',
   OPEN_IN_EDITOR_RESPONSE = 'openInEditorResponse',
@@ -100,6 +103,9 @@ enum events {
   SHARE_STORY_LINK = 'shareStoryLink',
   SHARE_ISOLATE_MODE = 'shareIsolateMode',
   SHARE_POPOVER_OPENED = 'sharePopoverOpened',
+
+  AI_PROMPT_NUDGE = 'aiPromptNudge',
+  SIDEBAR_FILTER_CHANGED = 'sidebarFilterChanged',
 }
 
 // Enables: `import Events from ...`
@@ -168,19 +174,23 @@ export const {
   ARGTYPES_INFO_RESPONSE,
   GHOST_STORIES_REQUEST,
   GHOST_STORIES_RESPONSE,
+  AI_SETUP_ANALYTICS_RESPONSE,
+  AI_SETUP_ANALYTICS_REQUEST,
   OPEN_IN_EDITOR_REQUEST,
   OPEN_IN_EDITOR_RESPONSE,
   MANAGER_INERT_ATTRIBUTE_CHANGED,
   SHARE_STORY_LINK,
   SHARE_ISOLATE_MODE,
   SHARE_POPOVER_OPENED,
+  AI_PROMPT_NUDGE,
+  SIDEBAR_FILTER_CHANGED,
 } = events;
 
-export * from './data/create-new-story';
-export * from './data/file-component-search';
-export * from './data/argtypes-info';
-export * from './data/request-response';
-export * from './data/save-story';
-export * from './data/whats-new';
-export * from './data/phases';
-export * from './data/open-in-editor';
+export * from './data/create-new-story.ts';
+export * from './data/file-component-search.ts';
+export * from './data/argtypes-info.ts';
+export * from './data/request-response.ts';
+export * from './data/save-story.ts';
+export * from './data/whats-new.ts';
+export * from './data/phases.ts';
+export * from './data/open-in-editor.ts';

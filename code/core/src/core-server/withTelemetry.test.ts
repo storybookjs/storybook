@@ -1,38 +1,122 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { cache, loadAllPresets } from 'storybook/internal/common';
+import { cache, isCI, loadAllPresets, loadMainConfig } from 'storybook/internal/common';
 import { prompt } from 'storybook/internal/node-logger';
-import { ErrorCollector, oneWayHash, telemetry } from 'storybook/internal/telemetry';
+import {
+  ErrorCollector,
+  collectAiSetupEvidence,
+  isTelemetryStateResolved,
+  oneWayHash,
+  setTelemetryEnabled,
+  telemetry,
+} from 'storybook/internal/telemetry';
+import type { StorybookConfigRaw } from 'storybook/internal/types';
 
-import { getErrorLevel, sendTelemetryError, withTelemetry } from './withTelemetry';
+import { getErrorLevel, sendTelemetryError, withTelemetry } from './withTelemetry.ts';
 
 vi.mock('storybook/internal/common', { spy: true });
 vi.mock('storybook/internal/telemetry', { spy: true });
 vi.mock('storybook/internal/node-logger', { spy: true });
 
 const cliOptions = {};
+const originalStdoutIsTTY = process.stdout.isTTY;
+
+const setStdoutIsTTY = (value: boolean | undefined) => {
+  Object.defineProperty(process.stdout, 'isTTY', {
+    value,
+    configurable: true,
+  });
+};
+
+afterEach(() => {
+  setStdoutIsTTY(originalStdoutIsTTY);
+});
 
 describe('withTelemetry', () => {
   beforeEach(() => {
     vi.resetAllMocks();
+    vi.mocked(isTelemetryStateResolved).mockReturnValue(false);
+    vi.mocked(loadMainConfig).mockRejectedValue(new Error('main config not available'));
     vi.mocked(ErrorCollector.getErrors).mockReturnValue([]);
     vi.mocked(telemetry).mockResolvedValue(undefined);
+    vi.mocked(collectAiSetupEvidence).mockResolvedValue(undefined);
   });
+
+  it('does not resolve telemetry state again when it is already initialized', async () => {
+    vi.mocked(isTelemetryStateResolved).mockReturnValue(true);
+    const run = vi.fn();
+
+    await withTelemetry('dev', { cliOptions }, run);
+
+    expect(loadMainConfig).not.toHaveBeenCalled();
+    expect(setTelemetryEnabled).not.toHaveBeenCalled();
+    expect(run).toHaveBeenCalledTimes(1);
+  });
+
+  it('resolves telemetry state from an explicit cli opt-in before run()', async () => {
+    const callOrder: string[] = [];
+    vi.mocked(setTelemetryEnabled).mockImplementation(async () => {
+      callOrder.push('setTelemetryEnabled');
+    });
+    const run = vi.fn(async () => {
+      callOrder.push('run');
+    });
+
+    await withTelemetry('dev', { cliOptions: { disableTelemetry: false } }, run);
+
+    expect(loadMainConfig).not.toHaveBeenCalled();
+    expect(setTelemetryEnabled).toHaveBeenCalledWith(true);
+    expect(callOrder).toEqual(['setTelemetryEnabled', 'run']);
+  });
+
+  it('resolves telemetry state from main config before run()', async () => {
+    const callOrder: string[] = [];
+    const mainConfig = { stories: [], core: {} } satisfies StorybookConfigRaw;
+    vi.mocked(loadMainConfig).mockResolvedValue(mainConfig);
+    vi.mocked(setTelemetryEnabled).mockImplementation(async () => {
+      callOrder.push('setTelemetryEnabled');
+    });
+    const run = vi.fn(async () => {
+      callOrder.push('run');
+    });
+
+    await withTelemetry('dev', { cliOptions }, run);
+
+    expect(loadMainConfig).toHaveBeenCalledWith({ configDir: '.storybook' });
+    expect(setTelemetryEnabled).toHaveBeenCalledWith(true);
+    expect(callOrder).toEqual(['setTelemetryEnabled', 'run']);
+  });
+
+  it('resolves telemetry state to disabled when main config opts out', async () => {
+    const mainConfig = {
+      stories: [],
+      core: { disableTelemetry: true },
+    } satisfies StorybookConfigRaw;
+    vi.mocked(loadMainConfig).mockResolvedValue(mainConfig);
+    const run = vi.fn();
+
+    await withTelemetry('dev', { cliOptions }, run);
+
+    expect(setTelemetryEnabled).toHaveBeenCalledWith(false);
+  });
+
   it('works in happy path', async () => {
     const run = vi.fn();
 
     await withTelemetry('dev', { cliOptions }, run);
 
     expect(telemetry).toHaveBeenCalledTimes(1);
+    expect(collectAiSetupEvidence).toHaveBeenCalledTimes(1);
     expect(telemetry).toHaveBeenCalledWith('boot', { eventType: 'dev' }, { stripMetadata: true });
   });
 
-  it('does not send boot when cli option is passed', async () => {
+  it('resolves telemetry state when cli option is passed', async () => {
     const run = vi.fn();
 
     await withTelemetry('dev', { cliOptions: { disableTelemetry: true } }, run);
 
-    expect(telemetry).toHaveBeenCalledTimes(0);
+    expect(setTelemetryEnabled).toHaveBeenCalledWith(false);
+    expect(telemetry).toHaveBeenCalled();
   });
 
   describe('when command fails', () => {
@@ -47,14 +131,16 @@ describe('withTelemetry', () => {
       ).rejects.toThrow(error);
 
       expect(telemetry).toHaveBeenCalledWith('boot', { eventType: 'dev' }, { stripMetadata: true });
+      expect(collectAiSetupEvidence).toHaveBeenCalledTimes(1);
     });
 
-    it('does not send boot when cli option is passed', async () => {
+    it('resolves telemetry state when cli option is passed', async () => {
       await expect(async () =>
         withTelemetry('dev', { cliOptions: { disableTelemetry: true }, printError: vi.fn() }, run)
       ).rejects.toThrow(error);
 
-      expect(telemetry).toHaveBeenCalledTimes(0);
+      expect(setTelemetryEnabled).toHaveBeenCalledWith(false);
+      expect(telemetry).toHaveBeenCalled();
     });
 
     it('sends error message when no options are passed', async () => {
@@ -63,6 +149,7 @@ describe('withTelemetry', () => {
       ).rejects.toThrow(error);
 
       expect(telemetry).toHaveBeenCalledTimes(2);
+      expect(collectAiSetupEvidence).toHaveBeenCalledTimes(1);
       expect(telemetry).toHaveBeenCalledWith(
         'error',
         expect.objectContaining({
@@ -74,12 +161,59 @@ describe('withTelemetry', () => {
       );
     });
 
+    it('prompts for crash reports when init fails without preset options', async () => {
+      vi.mocked(isCI).mockReturnValue(false);
+      vi.mocked(cache.get).mockResolvedValueOnce(undefined);
+      vi.mocked(prompt.confirm).mockResolvedValueOnce(true);
+      setStdoutIsTTY(true);
+
+      await expect(async () =>
+        withTelemetry('init', { cliOptions, printError: vi.fn() }, run)
+      ).rejects.toThrow(error);
+
+      expect(prompt.confirm).toHaveBeenCalledTimes(1);
+      expect(cache.set).toHaveBeenCalledWith('enableCrashReports', true);
+      expect(telemetry).toHaveBeenCalledWith(
+        'error',
+        expect.objectContaining({
+          eventType: 'init',
+          error: expect.objectContaining({ message: 'An Error!', name: 'Error' }),
+          isErrorInstance: true,
+        }),
+        expect.objectContaining({ enableCrashReports: true })
+      );
+    });
+
+    it('does not send full error details when init prompt is rejected', async () => {
+      vi.mocked(isCI).mockReturnValue(false);
+      vi.mocked(cache.get).mockResolvedValueOnce(undefined);
+      vi.mocked(prompt.confirm).mockResolvedValueOnce(false);
+      setStdoutIsTTY(true);
+
+      await expect(async () =>
+        withTelemetry('init', { cliOptions, printError: vi.fn() }, run)
+      ).rejects.toThrow(error);
+
+      expect(prompt.confirm).toHaveBeenCalledTimes(1);
+      expect(cache.set).toHaveBeenCalledWith('enableCrashReports', false);
+      expect(telemetry).toHaveBeenCalledWith(
+        'error',
+        expect.objectContaining({
+          eventType: 'init',
+          error: undefined,
+          isErrorInstance: true,
+        }),
+        expect.objectContaining({ enableCrashReports: false })
+      );
+    });
+
     it('does not send error message when cli opt out is passed', async () => {
       await expect(async () =>
         withTelemetry('dev', { cliOptions: { disableTelemetry: true }, printError: vi.fn() }, run)
       ).rejects.toThrow(error);
 
-      expect(telemetry).toHaveBeenCalledTimes(0);
+      expect(setTelemetryEnabled).toHaveBeenCalledWith(false);
+      expect(telemetry).toHaveBeenCalled();
       expect(telemetry).not.toHaveBeenCalledWith(
         'error',
         expect.objectContaining({}),
@@ -174,7 +308,7 @@ describe('withTelemetry', () => {
           error: expect.objectContaining({ message: 'An Error!', name: 'Error' }),
           isErrorInstance: true,
         }),
-        expect.objectContaining({ enableCrashReports: true })
+        expect.objectContaining({ enableCrashReports: true, force: true })
       );
     });
 
@@ -297,6 +431,19 @@ describe('withTelemetry', () => {
       );
     });
   });
+
+  it('falls back to disabled when the main config cannot be loaded', async () => {
+    const run = vi.fn(async () => {
+      throw new Error('preset loading failed');
+    });
+
+    await expect(async () =>
+      withTelemetry('dev', { cliOptions: {}, printError: vi.fn() }, run)
+    ).rejects.toThrow('preset loading failed');
+
+    expect(loadMainConfig).toHaveBeenCalledWith({ configDir: '.storybook' });
+    expect(setTelemetryEnabled).toHaveBeenCalledWith(false);
+  });
 });
 
 describe('sendTelemetryError', () => {
@@ -383,6 +530,67 @@ describe('sendTelemetryError', () => {
       })
     );
   });
+
+  it('does not prompt for non-blocking init errors without cached consent', async () => {
+    const options: any = {
+      cliOptions: {},
+      skipPrompt: false,
+    };
+    const mockError = new Error('Init non-blocking error');
+
+    vi.mocked(isCI).mockReturnValue(false);
+    vi.mocked(cache.get).mockResolvedValueOnce(undefined);
+    vi.mocked(prompt.confirm).mockResolvedValueOnce(true);
+    setStdoutIsTTY(true);
+
+    await sendTelemetryError(mockError, 'init', options, false);
+
+    expect(prompt.confirm).not.toHaveBeenCalled();
+    expect(vi.mocked(cache.set).mock.calls).not.toContainEqual([
+      'enableCrashReports',
+      expect.anything(),
+    ]);
+    expect(telemetry).toHaveBeenCalledWith(
+      'error',
+      expect.objectContaining({
+        eventType: 'init',
+        blocking: false,
+        error: undefined,
+        isErrorInstance: true,
+      }),
+      expect.objectContaining({
+        enableCrashReports: false,
+        immediate: true,
+      })
+    );
+  });
+
+  it('uses cached crash report consent for non-blocking init errors', async () => {
+    const options: any = {
+      cliOptions: {},
+      skipPrompt: false,
+    };
+    const mockError = new Error('Init non-blocking error');
+
+    vi.mocked(cache.get).mockResolvedValueOnce(true);
+
+    await sendTelemetryError(mockError, 'init', options, false);
+
+    expect(prompt.confirm).not.toHaveBeenCalled();
+    expect(telemetry).toHaveBeenCalledWith(
+      'error',
+      expect.objectContaining({
+        eventType: 'init',
+        blocking: false,
+        error: expect.objectContaining({ message: 'Init non-blocking error', name: 'Error' }),
+        isErrorInstance: true,
+      }),
+      expect.objectContaining({
+        enableCrashReports: true,
+        immediate: true,
+      })
+    );
+  });
 });
 
 describe('getErrorLevel', () => {
@@ -412,11 +620,58 @@ describe('getErrorLevel', () => {
       },
       presetOptions: undefined,
       skipPrompt: false,
+      eventType: 'dev',
     };
 
     const errorLevel = await getErrorLevel(options);
 
     expect(errorLevel).toBe('error');
+  });
+
+  it('returns "full" for init when presetOptions are not provided and prompt is accepted', async () => {
+    const options: any = {
+      cliOptions: {
+        disableTelemetry: false,
+      },
+      presetOptions: undefined,
+      skipPrompt: false,
+      eventType: 'init',
+    };
+
+    vi.mocked(isCI).mockReturnValue(false);
+    vi.mocked(cache.get).mockResolvedValueOnce(undefined);
+    vi.mocked(prompt.confirm).mockResolvedValueOnce(true);
+    setStdoutIsTTY(true);
+
+    const errorLevel = await getErrorLevel(options);
+
+    expect(errorLevel).toBe('full');
+    expect(loadAllPresets).not.toHaveBeenCalled();
+    expect(prompt.confirm).toHaveBeenCalledTimes(1);
+    expect(cache.set).toHaveBeenCalledWith('enableCrashReports', true);
+  });
+
+  it('returns "error" for init when presetOptions are not provided and prompt is rejected', async () => {
+    const options: any = {
+      cliOptions: {
+        disableTelemetry: false,
+      },
+      presetOptions: undefined,
+      skipPrompt: false,
+      eventType: 'init',
+    };
+
+    vi.mocked(isCI).mockReturnValue(false);
+    vi.mocked(cache.get).mockResolvedValueOnce(undefined);
+    vi.mocked(prompt.confirm).mockResolvedValueOnce(false);
+    setStdoutIsTTY(true);
+
+    const errorLevel = await getErrorLevel(options);
+
+    expect(errorLevel).toBe('error');
+    expect(loadAllPresets).not.toHaveBeenCalled();
+    expect(prompt.confirm).toHaveBeenCalledTimes(1);
+    expect(cache.set).toHaveBeenCalledWith('enableCrashReports', false);
   });
 
   it('returns "full" when core.enableCrashReports is true', async () => {

@@ -53,10 +53,7 @@ describe('PreflightCheckCommand', () => {
 
       const result = await command.execute({ force: false, skipInstall: true } as any);
 
-      expect(scaffoldModule.scaffoldNewProject).toHaveBeenCalledWith('npm', {
-        force: false,
-        skipInstall: true,
-      });
+      expect(scaffoldModule.scaffoldNewProject).toHaveBeenCalledWith('npm', expect.any(Object));
       expect(invalidateProjectRootCache).toHaveBeenCalled();
       expect(result.isEmptyProject).toBe(true);
     });

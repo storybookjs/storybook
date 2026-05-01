@@ -11,6 +11,7 @@ import type {
 } from 'storybook/internal/types';
 
 import type { DependencyCollector } from '../dependency-collector.ts';
+import type { TelemetryService } from '../services/TelemetryService.ts';
 import type { FrameworkPreviewParts } from './configure.ts';
 
 export type GeneratorOptions = {
@@ -79,7 +80,9 @@ export interface GeneratorMetadata {
    * generators that need to determine the builder based on the project type in cases where the
    * builder cannot be detected (Webpack and Vite are both non-existent dependencies).
    */
-  builderOverride?: SupportedBuilder | (() => SupportedBuilder | Promise<SupportedBuilder>);
+  builderOverride?:
+    | SupportedBuilder
+    | ((context: { telemetryService: TelemetryService }) => SupportedBuilder | Promise<SupportedBuilder>);
 }
 
 export interface GeneratorContext {
@@ -87,6 +90,7 @@ export interface GeneratorContext {
   renderer: SupportedRenderer;
   builder: SupportedBuilder;
   language: SupportedLanguage;
+  telemetryService: TelemetryService;
   features: Set<Feature>;
   dependencyCollector: DependencyCollector;
   linkable?: boolean;

@@ -54,6 +54,7 @@
     "@storybook/addon-designs": "^11.0.3",
     "@storybook/addon-docs": "workspace:*",
     "@storybook/addon-links": "workspace:*",
+    "@storybook/addon-mcp": "*",
     "@storybook/addon-onboarding": "workspace:*",
     "@storybook/addon-themes": "workspace:*",
     "@storybook/addon-vitest": "workspace:*",
@@ -195,5 +196,6 @@
         "Dependency Upgrades"
       ]
     ]
-  }
+  },
+  "deferredNextVersion": "10.4.0-alpha.13"
 }

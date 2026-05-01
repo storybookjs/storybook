@@ -94,6 +94,7 @@ export const FilterPanel = ({
         id: shortName,
         type: 'status',
         title: shortName.charAt(0).toUpperCase() + shortName.slice(1),
+        tooltip: entry.description,
         count: entry.count,
         icon: statusIconEl ? <StatusIcon $iconColor={iconColor}>{statusIconEl}</StatusIcon> : null,
         isIncluded,

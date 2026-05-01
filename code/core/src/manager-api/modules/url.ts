@@ -261,7 +261,21 @@ export const init: ModuleFn<SubAPI, SubState> = (moduleArgs) => {
         : global.PREVIEW_URL ||
           `${managerBase.replace(/\/[^/]*\.html$/, '').replace(/\/?$/, '/')}iframe.html`;
 
-      const refParam = refId ? `&refId=${encodeURIComponent(refId)}` : '';
+      const isAbsolutePreviewUrl = /^[a-zA-Z][a-zA-Z\d+\-.]*:/.test(previewBase);
+      const resolvedPreviewHref = isAbsolutePreviewUrl
+        ? previewBase
+        : new URL(previewBase, global.window.location.href).href;
+      const previewUrlObject = new URL(resolvedPreviewHref);
+      previewUrlObject.searchParams.set('id', storyId);
+      previewUrlObject.searchParams.set('viewMode', viewMode);
+      if (refId) {
+        previewUrlObject.searchParams.set('refId', refId);
+      }
+
+      const previewPathQuery = `${previewUrlObject.pathname}${previewUrlObject.search}`;
+      const previewHash = previewUrlObject.hash;
+      const previewHrefPrefix = isAbsolutePreviewUrl ? previewUrlObject.origin : '';
+
       const { args = '', globals = '', ...otherParams } = queryParams;
       let argsParam = inheritArgs
         ? mergeSerializedParams(customQueryParams?.args ?? '', args)
@@ -283,9 +297,11 @@ export const init: ModuleFn<SubAPI, SubState> = (moduleArgs) => {
       customManagerParams = customManagerParams && `&${customManagerParams}`;
       customPreviewParams = customPreviewParams && `&${customPreviewParams}`;
 
+      const previewSuffix = `${argsParam}${refId ? '' : globalsParam}${customPreviewParams}`;
+
       return {
         managerHref: `${managerBase}?path=/${viewMode}/${refId ? `${refId}_` : ''}${storyId}${argsParam}${globalsParam}${customManagerParams}`,
-        previewHref: `${previewBase}?id=${storyId}&viewMode=${viewMode}${refParam}${argsParam}${refId ? '' : globalsParam}${customPreviewParams}`,
+        previewHref: `${previewHrefPrefix}${previewPathQuery}${previewSuffix}${previewHash}`,
       };
     },
     getQueryParam(key) {

@@ -504,6 +504,26 @@ describe('getStoryHrefs', () => {
     delete global.PREVIEW_URL;
   });
 
+  it('supports PREVIEW_URL override when the URL already has query parameters', () => {
+    global.PREVIEW_URL = 'http://localhost:6007/?custom=true';
+    const { api, state } = initURL({
+      store,
+      provider: { channel: new EventEmitter() },
+      state: { location: { pathname: '/', search: '' } },
+      navigate: vi.fn(),
+      fullAPI: { getCurrentStoryData: () => ({ id: 'test--story' }) },
+    });
+    store.setState(state);
+
+    const { previewHref } = api.getStoryHrefs('test--story');
+    const parsed = new URL(previewHref);
+    expect(parsed.searchParams.get('custom')).toBe('true');
+    expect(parsed.searchParams.get('id')).toBe('test--story');
+    expect(parsed.searchParams.get('viewMode')).toBe('story');
+    expect(/\?[^\s#]*\?/.test(previewHref)).toBe(false);
+    delete global.PREVIEW_URL;
+  });
+
   it('correctly links from /index.html', () => {
     const { api, state } = initURL({
       store,

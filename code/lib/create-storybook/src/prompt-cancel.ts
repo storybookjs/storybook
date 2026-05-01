@@ -7,13 +7,22 @@ export const createPromptCancelOptions = (
   promptName: string
 ) => ({
   async onCancel() {
-    await Promise.race([
-      telemetryService.trackPromptCancel(promptName).catch(() => {}),
-      new Promise<void>((resolve) => {
-        setTimeout(resolve, PROMPT_CANCEL_TIMEOUT_MS);
-      }),
-    ]);
+    let timeout: ReturnType<typeof setTimeout> | undefined;
+    const timeoutPromise = new Promise<void>((resolve) => {
+      timeout = setTimeout(resolve, PROMPT_CANCEL_TIMEOUT_MS);
+      timeout.unref?.();
+    });
 
+    try {
+      await Promise.race([
+        telemetryService.trackPromptCancel(promptName).catch(() => {}),
+        timeoutPromise,
+      ]);
+    } finally {
+      if (timeout !== undefined) {
+        clearTimeout(timeout);
+      }
+    }
     process.exit(0);
   },
 });

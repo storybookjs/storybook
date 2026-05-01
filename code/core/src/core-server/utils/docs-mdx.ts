@@ -1,13 +1,20 @@
-import { toEstree } from 'hast-util-to-estree';
-import type { ExpressionStatement, Program } from 'estree';
+import { Parser } from 'acorn';
+import acornJsx from 'acorn-jsx';
+import type { ArrayExpression, Expression, ExpressionStatement, Program } from 'estree';
+import { fromMarkdown } from 'mdast-util-from-markdown';
+import { mdxExpressionFromMarkdown } from 'mdast-util-mdx-expression';
 import type {
-  JSXFragment,
-  JSXAttribute,
-  JSXElement,
-  JSXIdentifier,
-  JSXOpeningElement,
-  JSXSpreadAttribute,
-} from 'estree-jsx';
+  MdxJsxAttribute,
+  MdxJsxAttributeValueExpression,
+  MdxJsxExpressionAttribute,
+  MdxJsxFlowElement,
+} from 'mdast-util-mdx-jsx';
+import { mdxJsxFromMarkdown } from 'mdast-util-mdx-jsx';
+import { mdxjsEsmFromMarkdown } from 'mdast-util-mdxjs-esm';
+import { mdxExpression } from 'micromark-extension-mdx-expression';
+import { mdxJsx } from 'micromark-extension-mdx-jsx';
+import { mdxMd } from 'micromark-extension-mdx-md';
+import { mdxjsEsm } from 'micromark-extension-mdxjs-esm';
 
 export type AnalyzeResult = {
   title: string | undefined;
@@ -19,42 +26,71 @@ export type AnalyzeResult = {
   imports: string[];
 };
 
-const isJsxAttribute = (node: JSXAttribute | JSXSpreadAttribute): node is JSXAttribute =>
-  node.type === 'JSXAttribute';
-
-const getAttr = (elt: JSXOpeningElement, what: string): JSXAttribute | undefined =>
-  elt.attributes.find(
-    (node): node is JSXAttribute =>
-      isJsxAttribute(node) && node.name.type === 'JSXIdentifier' && node.name.name === what
-  );
-
-const getAttrValue = (elt: JSXOpeningElement, what: string): JSXAttribute['value'] | undefined => {
-  const attr = getAttr(elt, what);
-  return (attr as any)?.value;
+const mdxSyntaxOptions = {
+  acorn: Parser.extend(acornJsx()),
+  acornOptions: { ecmaVersion: 2024, sourceType: 'module' as const },
+  addResult: true,
 };
 
-const getAttrLiteral = (elt: JSXOpeningElement, what: string): any | undefined => {
+const isMdxJsxAttribute = (
+  node: MdxJsxAttribute | MdxJsxExpressionAttribute
+): node is MdxJsxAttribute => node.type === 'mdxJsxAttribute';
+
+const parseMdx = (code: string) =>
+  fromMarkdown(code, {
+    extensions: [
+      mdxjsEsm(mdxSyntaxOptions),
+      mdxExpression(mdxSyntaxOptions),
+      mdxJsx(mdxSyntaxOptions),
+      mdxMd(),
+    ],
+    mdastExtensions: [mdxjsEsmFromMarkdown(), mdxExpressionFromMarkdown(), mdxJsxFromMarkdown()],
+  });
+
+const getAttr = (elt: MdxJsxFlowElement, what: string): MdxJsxAttribute | undefined =>
+  elt.attributes.find(
+    (node): node is MdxJsxAttribute => isMdxJsxAttribute(node) && node.name === what
+  );
+
+const getAttrValue = (
+  elt: MdxJsxFlowElement,
+  what: string
+): MdxJsxAttribute['value'] | undefined => {
+  const attr = getAttr(elt, what);
+  return attr?.value;
+};
+
+const getExpression = (attrValue: MdxJsxAttributeValueExpression): Expression => {
+  const expression = attrValue.data?.estree?.body[0];
+  if (expression?.type === 'ExpressionStatement') {
+    return (expression as ExpressionStatement).expression;
+  }
+
+  throw new Error('Expected JSX expression, received unknown');
+};
+
+const getAttrLiteral = (elt: MdxJsxFlowElement, what: string): string | undefined => {
   const attrValue = getAttrValue(elt, what);
   if (!attrValue) {
     return undefined;
   }
 
-  if (attrValue.type === 'Literal') {
-    return (attrValue as any).value;
+  if (typeof attrValue === 'string') {
+    return attrValue;
   }
 
-  throw new Error(`Expected string literal ${what}, received ${attrValue.type}`);
+  throw new Error(`Expected string literal ${what}, received JSXExpressionContainer`);
 };
 
-const getOf = (elt: JSXOpeningElement, varToImport: Record<string, string>): string | undefined => {
+const getOf = (elt: MdxJsxFlowElement, varToImport: Record<string, string>): string | undefined => {
   const ofAttrValue = getAttrValue(elt, 'of');
   if (!ofAttrValue) {
     return undefined;
   }
 
-  if (ofAttrValue.type === 'JSXExpressionContainer') {
-    const of = (ofAttrValue as any).expression;
-    if (of?.type === 'Identifier') {
+  if (typeof ofAttrValue !== 'string') {
+    const of = getExpression(ofAttrValue);
+    if (of.type === 'Identifier') {
       const importName = varToImport[of.name];
       if (importName) {
         return importName;
@@ -66,10 +102,10 @@ const getOf = (elt: JSXOpeningElement, varToImport: Record<string, string>): str
     throw new Error(`Expected identifier, received ${of.type}`);
   }
 
-  throw new Error(`Expected JSX expression, received ${ofAttrValue.type}`);
+  throw new Error('Expected JSX expression, received Literal');
 };
 
-const getTags = (elt: JSXOpeningElement): string[] | undefined => {
+const getTags = (elt: MdxJsxFlowElement): string[] | undefined => {
   const tagsAttr = getAttr(elt, 'tags');
   if (!tagsAttr) {
     return undefined;
@@ -80,10 +116,10 @@ const getTags = (elt: JSXOpeningElement): string[] | undefined => {
     throw new Error('Expected JSX expression tags, received null');
   }
 
-  if (tagsContainer.type === 'JSXExpressionContainer') {
-    const tagsArray = (tagsContainer as any).expression;
+  if (typeof tagsContainer !== 'string') {
+    const tagsArray = getExpression(tagsContainer);
     if (tagsArray.type === 'ArrayExpression') {
-      const metaTags = (tagsArray as any).elements.map((tag: any) => {
+      const metaTags = tagsArray.elements.map((tag: ArrayExpression['elements'][number]) => {
         if (tag.type === 'Literal' && typeof tag.value === 'string') {
           return tag.value;
         }
@@ -97,22 +133,22 @@ const getTags = (elt: JSXOpeningElement): string[] | undefined => {
     throw new Error(`Expected tags array, received ${tagsArray.type}`);
   }
 
-  throw new Error(`Expected JSX expression tags, received ${tagsContainer.type}`);
+  throw new Error('Expected JSX expression tags, received Literal');
 };
 
-const getIsTemplate = (elt: JSXOpeningElement): boolean => {
+const getIsTemplate = (elt: MdxJsxFlowElement): boolean => {
   const isTemplateAttr = getAttr(elt, 'isTemplate');
   if (!isTemplateAttr) {
     return false;
   }
 
-  const isTemplate = (isTemplateAttr as any).value;
+  const isTemplate = isTemplateAttr.value;
   if (isTemplate == null) {
     return true;
   }
 
-  if (isTemplate.type === 'JSXExpressionContainer') {
-    const expression = isTemplate.expression;
+  if (typeof isTemplate !== 'string') {
+    const expression = getExpression(isTemplate);
     if (expression.type === 'Literal' && typeof expression.value === 'boolean') {
       return expression.value;
     }
@@ -120,10 +156,10 @@ const getIsTemplate = (elt: JSXOpeningElement): boolean => {
     throw new Error(`Expected boolean isTemplate, received ${typeof expression.value}`);
   }
 
-  throw new Error(`Expected expression isTemplate, received ${isTemplate.type}`);
+  throw new Error('Expected expression isTemplate, received Literal');
 };
 
-const extractTitle = (root: Program, varToImport: Record<string, string>) => {
+const extractMeta = (root: ReturnType<typeof parseMdx>, varToImport: Record<string, string>) => {
   const result = {
     title: undefined,
     of: undefined,
@@ -132,41 +168,18 @@ const extractTitle = (root: Program, varToImport: Record<string, string>) => {
     isTemplate: false,
   } as Omit<AnalyzeResult, 'imports'>;
 
-  const fragments = root.body.filter(
-    (child: Program['body'][number]) =>
-      child.type === 'ExpressionStatement' && (child.expression as any).type === 'JSXFragment'
-  ) as ExpressionStatement[];
-
-  if (fragments.length > 1) {
-    throw new Error('duplicate contents');
-  }
-
-  if (fragments.length === 0) {
-    return result;
-  }
-
-  const fragment = fragments[0].expression as any as JSXFragment;
-  fragment.children.forEach((child) => {
-    if (child.type === 'JSXElement') {
-      const { openingElement } = child as JSXElement;
-      const elementName = openingElement.name;
-      const name =
-        elementName.type === 'JSXIdentifier' ? (elementName as JSXIdentifier).name : undefined;
-
-      if (name === 'Meta') {
-        if (result.title || result.name || result.of) {
-          throw new Error('Meta can only be declared once');
-        }
-
-        result.title = getAttrLiteral(openingElement, 'title');
-        result.name = getAttrLiteral(openingElement, 'name');
-        result.summary = getAttrLiteral(openingElement, 'summary');
-        result.of = getOf(openingElement, varToImport);
-        result.isTemplate = getIsTemplate(openingElement);
-        result.metaTags = getTags(openingElement);
+  root.children.forEach((child) => {
+    if (child.type === 'mdxJsxFlowElement' && child.name === 'Meta') {
+      if (result.title || result.name || result.of) {
+        throw new Error('Meta can only be declared once');
       }
-    } else if (child.type !== 'JSXExpressionContainer') {
-      throw new Error(`Unexpected JSX child: ${child.type}`);
+
+      result.title = getAttrLiteral(child, 'title');
+      result.name = getAttrLiteral(child, 'name');
+      result.summary = getAttrLiteral(child, 'summary');
+      result.of = getOf(child, varToImport);
+      result.isTemplate = getIsTemplate(child);
+      result.metaTags = getTags(child);
     }
   });
 
@@ -193,36 +206,23 @@ export const extractImports = (root: Program) => {
   return varToImport;
 };
 
-export const plugin = (store: AnalyzeResult) => (root: any) => {
-  const estree = toEstree(root);
-  const varToImport = extractImports(estree);
-  const { title, of, name, summary, isTemplate, metaTags } = extractTitle(estree, varToImport);
-  store.title = title;
-  store.of = of;
-  store.name = name;
-  store.summary = summary;
-  store.isTemplate = isTemplate;
-  store.metaTags = metaTags;
-  store.imports = Array.from(new Set(Object.values(varToImport)));
+const extractImportsFromMdx = (root: ReturnType<typeof parseMdx>) => {
+  const varToImport = {} as Record<string, string>;
 
-  return root;
+  root.children.forEach((child) => {
+    if (child.type === 'mdxjsEsm' && child.data?.estree) {
+      Object.assign(varToImport, extractImports(child.data.estree as Program));
+    }
+  });
+
+  return varToImport;
 };
 
 export const analyze = async (code: string): Promise<AnalyzeResult> => {
-  const store: AnalyzeResult = {
-    title: undefined,
-    of: undefined,
-    name: undefined,
-    summary: undefined,
-    isTemplate: false,
-    metaTags: undefined,
-    imports: [],
-  };
-  const { compile } = await import('@mdx-js/mdx');
-  await compile(code, {
-    rehypePlugins: [[plugin, store]],
-  });
+  const root = parseMdx(code);
+  const varToImport = extractImportsFromMdx(root);
+  const { title, of, name, summary, isTemplate, metaTags } = extractMeta(root, varToImport);
+  const imports = Array.from(new Set(Object.values(varToImport)));
 
-  const { title, of, name, summary, isTemplate, metaTags, imports = [] } = store;
   return { title, of, name, summary, isTemplate, metaTags, imports };
 };

@@ -173,9 +173,9 @@ export const EmptyBlock = ({ isMain, hasEntries }: { isMain: boolean; hasEntries
                 ariaLabel={false}
                 size="small"
                 variant="outline"
-                onClick={() => {
-                  api.setAllTagFilters([], []);
-                  api.resetStatusFilters();
+                onClick={async () => {
+                  await api.setAllTagFilters([], []);
+                  await api.resetStatusFilters();
                 }}
               >
                 <SweepIcon />

@@ -111,6 +111,10 @@ export class TelemetryService {
   }
 
   async trackPromptCancel(prompt: string): Promise<void> {
-    await telemetry('canceled', { eventType: 'init', prompt }, { stripMetadata: true, immediate: true });
+    await telemetry(
+      'canceled',
+      { eventType: 'init', prompt },
+      { stripMetadata: true, immediate: true }
+    );
   }
 }

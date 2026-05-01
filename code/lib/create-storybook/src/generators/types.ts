@@ -82,7 +82,9 @@ export interface GeneratorMetadata {
    */
   builderOverride?:
     | SupportedBuilder
-    | ((context: { telemetryService: TelemetryService }) => SupportedBuilder | Promise<SupportedBuilder>);
+    | ((context: {
+        telemetryService: TelemetryService;
+      }) => SupportedBuilder | Promise<SupportedBuilder>);
 }
 
 export interface GeneratorContext {

@@ -202,14 +202,17 @@ describe('FrameworkDetectionService', () => {
       const result = await service.detectBuilder();
 
       expect(result).toBe(SupportedBuilder.VITE);
-      expect(prompt.select).toHaveBeenCalledWith({
-        message: expect.stringContaining('Multiple builders were detected'),
-        options: [
-          { label: 'Vite', value: SupportedBuilder.VITE },
-          { label: 'Webpack 5', value: SupportedBuilder.WEBPACK5 },
-          { label: 'Rsbuild', value: SupportedBuilder.RSBUILD },
-        ],
-      }, expect.objectContaining({ onCancel: expect.any(Function) }));
+      expect(prompt.select).toHaveBeenCalledWith(
+        {
+          message: expect.stringContaining('Multiple builders were detected'),
+          options: [
+            { label: 'Vite', value: SupportedBuilder.VITE },
+            { label: 'Webpack 5', value: SupportedBuilder.WEBPACK5 },
+            { label: 'Rsbuild', value: SupportedBuilder.RSBUILD },
+          ],
+        },
+        expect.objectContaining({ onCancel: expect.any(Function) })
+      );
     });
 
     it('should prompt user when multiple builders are detected', async () => {
@@ -228,14 +231,17 @@ describe('FrameworkDetectionService', () => {
       const result = await service.detectBuilder();
 
       expect(result).toBe(SupportedBuilder.VITE);
-      expect(prompt.select).toHaveBeenCalledWith({
-        message: expect.stringContaining('Multiple builders were detected'),
-        options: [
-          { label: 'Vite', value: SupportedBuilder.VITE },
-          { label: 'Webpack 5', value: SupportedBuilder.WEBPACK5 },
-          { label: 'Rsbuild', value: SupportedBuilder.RSBUILD },
-        ],
-      }, expect.objectContaining({ onCancel: expect.any(Function) }));
+      expect(prompt.select).toHaveBeenCalledWith(
+        {
+          message: expect.stringContaining('Multiple builders were detected'),
+          options: [
+            { label: 'Vite', value: SupportedBuilder.VITE },
+            { label: 'Webpack 5', value: SupportedBuilder.WEBPACK5 },
+            { label: 'Rsbuild', value: SupportedBuilder.RSBUILD },
+          ],
+        },
+        expect.objectContaining({ onCancel: expect.any(Function) })
+      );
     });
 
     it('should prompt user when no builders are detected', async () => {
@@ -246,14 +252,17 @@ describe('FrameworkDetectionService', () => {
       const result = await service.detectBuilder();
 
       expect(result).toBe(SupportedBuilder.VITE);
-      expect(prompt.select).toHaveBeenCalledWith({
-        message: expect.stringContaining('We were not able to detect the right builder'),
-        options: [
-          { label: 'Vite', value: SupportedBuilder.VITE },
-          { label: 'Webpack 5', value: SupportedBuilder.WEBPACK5 },
-          { label: 'Rsbuild', value: SupportedBuilder.RSBUILD },
-        ],
-      }, expect.objectContaining({ onCancel: expect.any(Function) }));
+      expect(prompt.select).toHaveBeenCalledWith(
+        {
+          message: expect.stringContaining('We were not able to detect the right builder'),
+          options: [
+            { label: 'Vite', value: SupportedBuilder.VITE },
+            { label: 'Webpack 5', value: SupportedBuilder.WEBPACK5 },
+            { label: 'Rsbuild', value: SupportedBuilder.RSBUILD },
+          ],
+        },
+        expect.objectContaining({ onCancel: expect.any(Function) })
+      );
     });
 
     it('should track prompt cancellation for builder selection and exit cleanly', async () => {

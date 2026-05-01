@@ -70,13 +70,16 @@ export default defineGeneratorModule({
 
           However, your project has a ${reason}, which is not supported by nextjs-vite, so please be aware of that if you choose that option.
         `);
-        return prompt.select({
-          message: 'Which framework would you like to use?',
-          options: [
-            { label: '@storybook/nextjs-vite', value: SupportedBuilder.VITE },
-            { label: '@storybook/nextjs (Webpack)', value: SupportedBuilder.WEBPACK5 },
-          ],
-        }, createPromptCancelOptions(telemetryService, 'nextjs-builder'));
+        return prompt.select(
+          {
+            message: 'Which framework would you like to use?',
+            options: [
+              { label: '@storybook/nextjs-vite', value: SupportedBuilder.VITE },
+              { label: '@storybook/nextjs (Webpack)', value: SupportedBuilder.WEBPACK5 },
+            ],
+          },
+          createPromptCancelOptions(telemetryService, 'nextjs-builder')
+        );
       }
     },
   },

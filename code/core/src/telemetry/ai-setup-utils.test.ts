@@ -233,6 +233,25 @@ describe('collectAiSetupEvidence', () => {
     expect(telemetry).not.toHaveBeenCalled();
   });
 
+  it('matches configDir when caller passes a relative path', async () => {
+    // withTelemetry calls collectAiSetupEvidence before preset loading has
+    // resolved the configDir, so the caller may pass './.storybook' while
+    // the pending record stores the absolute path.
+    vi.mocked(detectAgent).mockReturnValue({ name: 'claude' });
+    const absoluteConfigDir = `${process.cwd()}/.storybook`;
+    vi.mocked(getAiSetupPending).mockResolvedValue(
+      makePendingRecord({ configDir: absoluteConfigDir })
+    );
+    vi.mocked(findConfigFile).mockReturnValue(null);
+
+    await collectAiSetupEvidence('dev', './.storybook');
+    expect(telemetry).toHaveBeenCalledWith(
+      'ai-setup-evidence',
+      expect.any(Function),
+      expect.any(Object)
+    );
+  });
+
   it('fires event with correct payload when all gates pass', async () => {
     vi.mocked(detectAgent).mockReturnValue({ name: 'claude' });
     const pending = makePendingRecord({ configDir: '/test/config' });

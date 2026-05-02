@@ -63,6 +63,30 @@ When in "preview-only" mode, the normal entry point, `/index.html`, will result 
 
 This applies to both the [`build`](../api/cli-options.mdx#build) (for publishing) and [`dev`](../api/cli-options.mdx#dev) (for local development) commands.
 
+<If renderer="web-components">
+
+## Troubleshooting
+
+### How do I use Stencil with static Storybook builds?
+
+If you register Stencil components with `defineCustomElements()` from the generated loader, enable Stencil's import injection so Vite can include the lazy-loaded component entry files in the static Storybook build.
+
+For Stencil 4.26 and later:
+
+```ts title="stencil.config.ts"
+import type { Config } from '@stencil/core';
+
+export const config: Config = {
+  extras: {
+    enableImportInjection: true,
+  },
+};
+```
+
+For older Stencil versions, use `experimentalImportInjection: true` instead.
+
+</If>
+
 ## Publish Storybook with Chromatic
 
 Once you've built your Storybook as a static web application, you can publish it to your web host. We recommend [Chromatic](https://www.chromatic.com/?utm_source=storybook_website\&utm_medium=link\&utm_campaign=storybook), a free publishing service made for Storybook that documents, versions, and indexes your UI components securely in the cloud.

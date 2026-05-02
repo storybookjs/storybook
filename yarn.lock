@@ -22029,7 +22029,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"mdast-util-mdx-jsx@npm:^3.0.0":
+"mdast-util-mdx-jsx@npm:^3.0.0, mdast-util-mdx-jsx@npm:^3.2.0":
   version: 3.2.0
   resolution: "mdast-util-mdx-jsx@npm:3.2.0"
   dependencies:
@@ -28568,7 +28568,6 @@ __metadata:
     "@emotion/styled": "npm:^11.14.0"
     "@fal-works/esbuild-plugin-global-externals": "npm:^2.1.2"
     "@happy-dom/global-registrator": "npm:^20.0.11"
-    "@mdx-js/mdx": "npm:^3.0.0"
     "@ngard/tiny-isequal": "npm:^1.1.0"
     "@polka/compression": "npm:^1.0.0-next.28"
     "@radix-ui/react-scroll-area": "npm:1.2.0-rc.7"
@@ -28612,6 +28611,8 @@ __metadata:
     "@webcontainer/env": "npm:^1.1.1"
     "@yarnpkg/fslib": "npm:2.10.3"
     "@yarnpkg/libzip": "npm:2.3.0"
+    acorn: "npm:^8.15.0"
+    acorn-jsx: "npm:^5.3.2"
     ansi-to-html: "npm:^0.7.2"
     browser-dtector: "npm:^3.4.0"
     bundle-require: "npm:^5.1.0"
@@ -28648,8 +28649,12 @@ __metadata:
     launch-editor: "npm:^2.11.1"
     lazy-universal-dotenv: "npm:^4.0.0"
     leven: "npm:^4.0.0"
+    mdast-util-from-markdown: "npm:^2.0.0"
+    mdast-util-mdx: "npm:^3.0.0"
+    mdast-util-mdx-jsx: "npm:^3.2.0"
     memfs: "npm:^4.11.1"
     memoizerific: "npm:^1.11.3"
+    micromark-extension-mdxjs: "npm:^3.0.0"
     modern-tar: "npm:^0.5.5"
     nanoid: "npm:^4.0.2"
     npmlog: "npm:^7.0.0"

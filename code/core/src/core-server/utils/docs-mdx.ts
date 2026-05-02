@@ -2,19 +2,14 @@ import { Parser } from 'acorn';
 import acornJsx from 'acorn-jsx';
 import type { ArrayExpression, Expression, ExpressionStatement, Program } from 'estree';
 import { fromMarkdown } from 'mdast-util-from-markdown';
-import { mdxExpressionFromMarkdown } from 'mdast-util-mdx-expression';
+import { mdxFromMarkdown } from 'mdast-util-mdx';
 import type {
   MdxJsxAttribute,
   MdxJsxAttributeValueExpression,
   MdxJsxExpressionAttribute,
   MdxJsxFlowElement,
 } from 'mdast-util-mdx-jsx';
-import { mdxJsxFromMarkdown } from 'mdast-util-mdx-jsx';
-import { mdxjsEsmFromMarkdown } from 'mdast-util-mdxjs-esm';
-import { mdxExpression } from 'micromark-extension-mdx-expression';
-import { mdxJsx } from 'micromark-extension-mdx-jsx';
-import { mdxMd } from 'micromark-extension-mdx-md';
-import { mdxjsEsm } from 'micromark-extension-mdxjs-esm';
+import { mdxjs } from 'micromark-extension-mdxjs';
 
 export type AnalyzeResult = {
   title: string | undefined;
@@ -28,7 +23,7 @@ export type AnalyzeResult = {
 
 const mdxSyntaxOptions = {
   acorn: Parser.extend(acornJsx()),
-  acornOptions: { ecmaVersion: 2024, sourceType: 'module' as const },
+  acornOptions: { ecmaVersion: 2024 as const, sourceType: 'module' as const },
   addResult: true,
 };
 
@@ -38,13 +33,8 @@ const isMdxJsxAttribute = (
 
 const parseMdx = (code: string) =>
   fromMarkdown(code, {
-    extensions: [
-      mdxjsEsm(mdxSyntaxOptions),
-      mdxExpression(mdxSyntaxOptions),
-      mdxJsx(mdxSyntaxOptions),
-      mdxMd(),
-    ],
-    mdastExtensions: [mdxjsEsmFromMarkdown(), mdxExpressionFromMarkdown(), mdxJsxFromMarkdown()],
+    extensions: [mdxjs(mdxSyntaxOptions)],
+    mdastExtensions: [mdxFromMarkdown()],
   });
 
 const getAttr = (elt: MdxJsxFlowElement, what: string): MdxJsxAttribute | undefined =>

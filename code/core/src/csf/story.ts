@@ -213,6 +213,12 @@ export interface Renderer extends AddonTypes {
   csf4: boolean;
 }
 
+type TypedParameters<TRenderer extends Renderer> = Parameters &
+  (TRenderer['csf4'] extends true ? CoreTypes['parameters'] & TRenderer['parameters'] : unknown);
+
+type TypedGlobals<TRenderer extends Renderer> = Globals &
+  (TRenderer['csf4'] extends true ? CoreTypes['globals'] & TRenderer['globals'] : unknown);
+
 /** @deprecated - Use `Renderer` */
 export type AnyFramework = Renderer;
 
@@ -222,7 +228,7 @@ export interface StoryContextForEnhancers<
 > extends StoryIdentifier {
   component?: (TRenderer & { T: any })['component'];
   subcomponents?: Record<string, (TRenderer & { T: any })['component']>;
-  parameters: Parameters;
+  parameters: TypedParameters<TRenderer>;
   initialArgs: TArgs;
   argTypes: StrictArgTypes<TArgs>;
 }
@@ -267,6 +273,7 @@ export interface Canvas {}
 
 export interface StoryContext<TRenderer extends Renderer = Renderer, TArgs = Args>
   extends StoryContextForEnhancers<TRenderer, TArgs>, Required<StoryContextUpdate<TArgs>> {
+  globals: TypedGlobals<TRenderer>;
   loaded: Record<string, any>;
   abortSignal: AbortSignal;
   canvasElement: TRenderer['canvasElement'];
@@ -361,8 +368,7 @@ export interface BaseAnnotations<TRenderer extends Renderer = Renderer, TArgs = 
    *
    * @see [Parameters](https://storybook.js.org/docs/writing-stories/parameters)
    */
-  parameters?: Parameters &
-    (TRenderer['csf4'] extends true ? CoreTypes['parameters'] & TRenderer['parameters'] : unknown);
+  parameters?: TypedParameters<TRenderer>;
 
   /**
    * Dynamic data that are provided (and possibly updated by) Storybook and its addons.
@@ -441,8 +447,7 @@ export interface ProjectAnnotations<
    */
   beforeAll?: BeforeAll;
 
-  initialGlobals?: Globals &
-    (TRenderer['csf4'] extends true ? CoreTypes['globals'] & TRenderer['globals'] : unknown);
+  initialGlobals?: TypedGlobals<TRenderer>;
   globalTypes?: GlobalTypes;
   applyDecorators?: DecoratorApplicator<TRenderer, Args>;
   runStep?: StepRunner<TRenderer, TArgs>;
@@ -536,8 +541,7 @@ export interface ComponentAnnotations<
   play?: PlayFunction<TRenderer, TArgs>;
 
   /** Override the globals values for all stories in this component */
-  globals?: Globals &
-    (TRenderer['csf4'] extends true ? CoreTypes['globals'] & TRenderer['globals'] : unknown);
+  globals?: TypedGlobals<TRenderer>;
 }
 
 export type StoryAnnotations<
@@ -555,8 +559,7 @@ export type StoryAnnotations<
   play?: PlayFunction<TRenderer, TArgs>;
 
   /** Override the globals values for this story */
-  globals?: Globals &
-    (TRenderer['csf4'] extends true ? CoreTypes['globals'] & TRenderer['globals'] : unknown);
+  globals?: TypedGlobals<TRenderer>;
 
   /** @deprecated */
   story?: Omit<StoryAnnotations<TRenderer, TArgs>, 'story'>;

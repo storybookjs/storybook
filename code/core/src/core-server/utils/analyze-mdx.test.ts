@@ -2,7 +2,7 @@ import { parse } from '@babel/parser';
 import { dedent } from 'ts-dedent';
 import { describe, expect, it } from 'vitest';
 
-import { analyze, extractImports } from './docs-mdx.ts';
+import { analyzeMdx, extractImports } from './analyze-mdx.ts';
 
 const estreeParse = (code: string) =>
   parse(code, { sourceType: 'module', plugins: ['jsx', 'estree'] }).program;
@@ -38,7 +38,7 @@ describe('extractImports', () => {
   });
 });
 
-describe('analyze', () => {
+describe('analyzeMdx', () => {
   describe('title', () => {
     it('string literal title', async () => {
       const input = dedent`
@@ -46,7 +46,7 @@ describe('analyze', () => {
 
         <Meta title="foobar" />
       `;
-      await expect(analyze(input)).resolves.toMatchInlineSnapshot(`
+      await expect(analyzeMdx(input)).resolves.toMatchInlineSnapshot(`
         {
           "imports": [],
           "isTemplate": false,
@@ -64,7 +64,7 @@ describe('analyze', () => {
 
         <Meta title={\`foobar\`} />
       `;
-      await expect(analyze(input)).rejects.toThrowErrorMatchingInlineSnapshot(
+      await expect(analyzeMdx(input)).rejects.toThrowErrorMatchingInlineSnapshot(
         `[Error: Expected string literal title, received JSXExpressionContainer]`
       );
     });
@@ -77,7 +77,7 @@ describe('analyze', () => {
 
         <Meta name="foobar" />
       `;
-      await expect(analyze(input)).resolves.toMatchInlineSnapshot(`
+      await expect(analyzeMdx(input)).resolves.toMatchInlineSnapshot(`
         {
           "imports": [],
           "isTemplate": false,
@@ -95,7 +95,7 @@ describe('analyze', () => {
 
         <Meta name={\`foobar\`} />
       `;
-      await expect(analyze(input)).rejects.toThrowErrorMatchingInlineSnapshot(
+      await expect(analyzeMdx(input)).rejects.toThrowErrorMatchingInlineSnapshot(
         `[Error: Expected string literal name, received JSXExpressionContainer]`
       );
     });
@@ -109,7 +109,7 @@ describe('analyze', () => {
 
         <Meta of={ButtonStories} />
       `;
-      await expect(analyze(input)).resolves.toMatchInlineSnapshot(`
+      await expect(analyzeMdx(input)).resolves.toMatchInlineSnapshot(`
         {
           "imports": [
             "@storybook/blocks",
@@ -128,7 +128,7 @@ describe('analyze', () => {
       const input = dedent`
         <Meta of={meta} />
       `;
-      await expect(analyze(input)).rejects.toThrowErrorMatchingInlineSnapshot(
+      await expect(analyzeMdx(input)).rejects.toThrowErrorMatchingInlineSnapshot(
         `[Error: Unknown identifier meta]`
       );
     });
@@ -138,7 +138,7 @@ describe('analyze', () => {
 
         <Meta of="foobar" />
       `;
-      await expect(analyze(input)).rejects.toThrowErrorMatchingInlineSnapshot(
+      await expect(analyzeMdx(input)).rejects.toThrowErrorMatchingInlineSnapshot(
         `[Error: Expected JSX expression, received Literal]`
       );
     });
@@ -150,7 +150,7 @@ describe('analyze', () => {
 
         <Meta of={ButtonStories} />
       `;
-      await expect(analyze(input)).resolves.toMatchInlineSnapshot(`
+      await expect(analyzeMdx(input)).resolves.toMatchInlineSnapshot(`
         {
           "imports": [
             "@storybook/blocks",
@@ -180,7 +180,7 @@ describe('analyze', () => {
 
         hello docs
       `;
-      await expect(analyze(input)).resolves.toMatchInlineSnapshot(`
+      await expect(analyzeMdx(input)).resolves.toMatchInlineSnapshot(`
         {
           "imports": [
             "../src/A.stories",
@@ -203,7 +203,7 @@ describe('analyze', () => {
         export const status = "ready";
         export const values = [{ name: 'label' }]
       `;
-      await expect(analyze(input)).resolves.not.toThrow();
+      await expect(analyzeMdx(input)).resolves.not.toThrow();
     });
   });
 
@@ -212,7 +212,7 @@ describe('analyze', () => {
       const input = dedent`
         <Meta summary="This is a summary." />
       `;
-      await expect(analyze(input)).resolves.toMatchInlineSnapshot(`
+      await expect(analyzeMdx(input)).resolves.toMatchInlineSnapshot(`
         {
           "imports": [],
           "isTemplate": false,
@@ -228,7 +228,7 @@ describe('analyze', () => {
       const input = dedent`
         <Meta summary={\`This is a summary.\`} />
       `;
-      await expect(analyze(input)).rejects.toThrowErrorMatchingInlineSnapshot(
+      await expect(analyzeMdx(input)).rejects.toThrowErrorMatchingInlineSnapshot(
         `[Error: Expected string literal summary, received JSXExpressionContainer]`
       );
     });
@@ -239,7 +239,7 @@ describe('analyze', () => {
       const input = dedent`
         <Meta isTemplate />
       `;
-      await expect(analyze(input)).resolves.toMatchInlineSnapshot(`
+      await expect(analyzeMdx(input)).resolves.toMatchInlineSnapshot(`
         {
           "imports": [],
           "isTemplate": true,
@@ -255,7 +255,7 @@ describe('analyze', () => {
       const input = dedent`
         <Meta isTemplate={true} />
       `;
-      await expect(analyze(input)).resolves.toMatchInlineSnapshot(`
+      await expect(analyzeMdx(input)).resolves.toMatchInlineSnapshot(`
         {
           "imports": [],
           "isTemplate": true,
@@ -271,7 +271,7 @@ describe('analyze', () => {
       const input = dedent`
         <Meta isTemplate={false} />
       `;
-      await expect(analyze(input)).resolves.toMatchInlineSnapshot(`
+      await expect(analyzeMdx(input)).resolves.toMatchInlineSnapshot(`
         {
           "imports": [],
           "isTemplate": false,
@@ -287,7 +287,7 @@ describe('analyze', () => {
       const input = dedent`
         <Meta isTemplate="foo" />
       `;
-      await expect(analyze(input)).rejects.toThrowErrorMatchingInlineSnapshot(
+      await expect(analyzeMdx(input)).rejects.toThrowErrorMatchingInlineSnapshot(
         `[Error: Expected expression isTemplate, received Literal]`
       );
     });
@@ -295,7 +295,7 @@ describe('analyze', () => {
       const input = dedent`
         <Meta isTemplate={1} />
       `;
-      await expect(analyze(input)).rejects.toThrowErrorMatchingInlineSnapshot(
+      await expect(analyzeMdx(input)).rejects.toThrowErrorMatchingInlineSnapshot(
         `[Error: Expected boolean isTemplate, received number]`
       );
     });
@@ -310,7 +310,7 @@ describe('analyze', () => {
 
         {/* whatever */}
       `;
-      await expect(analyze(input)).resolves.toMatchInlineSnapshot(`
+      await expect(analyzeMdx(input)).resolves.toMatchInlineSnapshot(`
         {
           "imports": [
             "./Button.stories",
@@ -336,7 +336,7 @@ describe('analyze', () => {
 
         {/* whatever */}
       `;
-      await expect(analyze(input)).rejects.toThrowErrorMatchingInlineSnapshot(
+      await expect(analyzeMdx(input)).rejects.toThrowErrorMatchingInlineSnapshot(
         `[Error: Expected string literal tag, received Literal]`
       );
     });
@@ -348,7 +348,7 @@ describe('analyze', () => {
 
         {/* whatever */}
       `;
-      await expect(analyze(input)).rejects.toThrowErrorMatchingInlineSnapshot(
+      await expect(analyzeMdx(input)).rejects.toThrowErrorMatchingInlineSnapshot(
         `[Error: Expected JSX expression tags, received Literal]`
       );
     });
@@ -359,7 +359,7 @@ describe('analyze', () => {
       const input = dedent`
       # hello
     `;
-      await expect(analyze(input)).resolves.toMatchInlineSnapshot(`
+      await expect(analyzeMdx(input)).resolves.toMatchInlineSnapshot(`
         {
           "imports": [],
           "isTemplate": false,
@@ -377,7 +377,7 @@ describe('analyze', () => {
 
         <Meta of={meta} />/>
       `;
-      await expect(analyze(input)).resolves.toMatchInlineSnapshot(`
+      await expect(analyzeMdx(input)).resolves.toMatchInlineSnapshot(`
         {
           "imports": [
             "./Button.stories",
@@ -397,7 +397,7 @@ describe('analyze', () => {
 
         <Meta title="bz" />
       `;
-      await expect(analyze(input)).rejects.toThrowErrorMatchingInlineSnapshot(
+      await expect(analyzeMdx(input)).rejects.toThrowErrorMatchingInlineSnapshot(
         `[Error: Meta can only be declared once]`
       );
     });
@@ -409,7 +409,7 @@ describe('analyze', () => {
 
         <Meta of={ButtonStories} />
       `;
-      await expect(analyze(input)).rejects.toThrowErrorMatchingInlineSnapshot(
+      await expect(analyzeMdx(input)).rejects.toThrowErrorMatchingInlineSnapshot(
         `[Error: Meta can only be declared once]`
       );
     });
@@ -421,7 +421,7 @@ describe('analyze', () => {
 
         {/* whatever */}
       `;
-      await expect(analyze(input)).resolves.toMatchInlineSnapshot(`
+      await expect(analyzeMdx(input)).resolves.toMatchInlineSnapshot(`
         {
           "imports": [
             "./Button.stories",

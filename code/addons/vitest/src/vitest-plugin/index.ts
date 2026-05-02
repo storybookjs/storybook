@@ -124,6 +124,14 @@ const getComponentTestPaths = (): string[] => {
   return envPaths.split(';').filter(Boolean);
 };
 
+const decodePathForMatching = (id: string) => {
+  try {
+    return decodeURI(id);
+  } catch {
+    return id;
+  }
+};
+
 const createComponentTestTransformPlugin = (presets: Presets, configDir: string): Plugin => {
   const storybookComponentTestPaths: string[] = getComponentTestPaths();
 
@@ -136,7 +144,8 @@ const createComponentTestTransformPlugin = (presets: Presets, configDir: string)
           return code;
         }
 
-        const resolvedId = path.resolve(id);
+        const idForMatching = decodePathForMatching(id);
+        const resolvedId = path.resolve(idForMatching);
         const matches = storybookComponentTestPaths.some(
           (testPath) =>
             resolvedId === testPath ||
@@ -151,7 +160,7 @@ const createComponentTestTransformPlugin = (presets: Presets, configDir: string)
 
         const result = await componentTransform({
           code,
-          fileName: id,
+          fileName: idForMatching,
           getComponentArgTypes: async ({ componentName, fileName }) =>
             presets.apply('internal_getArgTypesData', null, {
               componentFilePath: fileName,
@@ -495,12 +504,13 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
       }
     },
     async transform(code, id) {
-      const relativeId = relative(finalOptions.vitestRoot, id);
+      const idForMatching = decodePathForMatching(id);
+      const relativeId = relative(finalOptions.vitestRoot, idForMatching);
 
       if (match([relativeId], finalOptions.includeStories).length > 0) {
         return vitestTransform({
           code,
-          fileName: id,
+          fileName: idForMatching,
           configDir: finalOptions.configDir,
           tagsFilter: finalOptions.tags,
           stories: storiesGlobs,

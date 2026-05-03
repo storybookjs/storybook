@@ -1,5 +1,4 @@
 import { expect, test } from '@playwright/test';
-import { execSync } from 'node:child_process';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 
@@ -14,12 +13,11 @@ import { SbPage } from './util.ts';
  *      (e.g. ../storybook-sandboxes/react-vite-default-ts)
  *   3. The sandbox's .storybook/main.ts must have: features: { changeDetection: true }
  *   4. STORYBOOK_TEMPLATE_NAME must be one of the supported templates (or be unset for local runs)
+ *   5. The sandbox must already have a git repo with an initial commit — this is handled
+ *      automatically by the sandbox generation task (scripts/tasks/sandbox.ts).
  *
  * Supported templates: react-vite/default-ts, nextjs-vite/default-ts,
  *                      react-webpack/default-ts, nextjs/default-ts
- *
- * Git is auto-initialised in STORYBOOK_SANDBOX_DIR when not already a git repo.
- * The .git directory is removed in afterAll if this suite created it.
  */
 
 const storybookUrl = process.env.STORYBOOK_URL || 'http://localhost:8001';
@@ -45,31 +43,6 @@ const buttonComponentPath =
   ) ??
     null);
 
-let gitInitialisedByTest = false;
-
-function gitExec(cmd: string) {
-  execSync(cmd, {
-    cwd: sandboxDir,
-    stdio: 'pipe',
-    env: {
-      ...process.env,
-      GIT_AUTHOR_NAME: 'Test',
-      GIT_AUTHOR_EMAIL: 'test@test.com',
-      GIT_COMMITTER_NAME: 'Test',
-      GIT_COMMITTER_EMAIL: 'test@test.com',
-    },
-  });
-}
-
-function hasGitHead(): boolean {
-  try {
-    execSync('git rev-parse HEAD', { cwd: sandboxDir, stdio: 'pipe' });
-    return true;
-  } catch {
-    return false;
-  }
-}
-
 test.describe('Change Detection', () => {
   test.skip(!sandboxDir, 'Set STORYBOOK_SANDBOX_DIR to run change detection tests');
   test.skip(type !== 'dev', 'Change detection only runs in dev mode');
@@ -84,29 +57,6 @@ test.describe('Change Detection', () => {
     `Change detection E2E tests only run for: ${SUPPORTED_TEMPLATES.join(', ')}`
   );
 
-  test.beforeAll(() => {
-    if (!sandboxDir) return;
-
-    const gitDir = path.join(sandboxDir, '.git');
-    if (!fs.existsSync(gitDir)) {
-      gitExec('git init');
-      gitInitialisedByTest = true;
-    }
-
-    if (!hasGitHead()) {
-      gitExec('git add -A');
-      gitExec(
-        'git commit --allow-empty -m "Initial sandbox commit for change detection tests" --no-verify'
-      );
-    }
-  });
-
-  test.afterAll(() => {
-    if (gitInitialisedByTest && sandboxDir) {
-      fs.rmSync(path.join(sandboxDir, '.git'), { recursive: true, force: true });
-    }
-  });
-
   test.beforeEach(async ({ page }) => {
     await page.goto(`${storybookUrl}/?path=/story/example-button--primary`);
     await new SbPage(page, expect).waitUntilLoaded();
@@ -114,6 +64,8 @@ test.describe('Change Detection', () => {
 
   test('shows "new" status for an untracked story file', async ({ page }) => {
     const newStoryPath = path.join(sandboxDir, 'src/stories/ChangeDetectionNew.stories.tsx');
+
+    console.log({ newStoryPath });
 
     try {
       fs.writeFileSync(
@@ -154,7 +106,7 @@ test.describe('Change Detection', () => {
     }
   });
 
-  test('shows "affected" status for stories whose dependency changed', async ({ page }) => {
+  test('shows "related" status for stories whose dependency changed', async ({ page }) => {
     test.skip(!buttonComponentPath, 'Button.tsx not found in STORYBOOK_SANDBOX_DIR');
 
     const componentPath = buttonComponentPath as string;

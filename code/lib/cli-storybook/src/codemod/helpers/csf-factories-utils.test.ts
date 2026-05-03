@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { types as t } from 'storybook/internal/babel';
-import { generate, parser } from 'storybook/internal/babel';
+import { generate, parseAst } from 'storybook/internal/babel';
 
 import {
   cleanupTypeImports,
@@ -23,7 +23,7 @@ expect.addSnapshotSerializer({
 });
 
 function parseCodeToProgramNode(code: string): t.Program {
-  return parser.parse(code, { sourceType: 'unambiguous', plugins: ['typescript'] }).program;
+  return parseAst(code, { sourceType: 'unambiguous', plugins: ['typescript'] }).program;
 }
 
 function generateCodeFromAST(node: t.Program) {

@@ -1,4 +1,4 @@
-import { parser, types as t } from 'storybook/internal/babel';
+import { parseAst, types as t } from 'storybook/internal/babel';
 
 export function valueToAST<T>(literal: T): any {
   if (literal === null) {
@@ -6,7 +6,7 @@ export function valueToAST<T>(literal: T): any {
   }
   switch (typeof literal) {
     case 'function':
-      const ast = parser.parse(literal.toString(), {
+      const ast = parseAst(literal.toString(), {
         allowReturnOutsideFunction: true,
         allowSuperOutsideMethod: true,
       });

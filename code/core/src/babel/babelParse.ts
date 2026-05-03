@@ -49,6 +49,18 @@ export const babelPrint = (ast: ASTNode): string => {
   }).code;
 };
 
-export const babelParseExpression = (code: string): parser.ParseResult<t.Expression> => {
-  return parser.parseExpression(code, parserOptions);
-};
+/**
+ * Thin wrapper around `@babel/parser`'s `parse` so callers do not have to import the parser
+ * namespace directly. Use this for parsing arbitrary source files; for recast-compatible parsing
+ * (source-preserving transforms) use {@link babelParse} instead.
+ */
+export const parseAst = (
+  code: string,
+  options?: parser.ParserOptions
+): parser.ParseResult<t.File> => parser.parse(code, options);
+
+/** Thin wrapper around `@babel/parser`'s `parseExpression`. */
+export const parseAstExpression = (
+  code: string,
+  options?: parser.ParserOptions
+): parser.ParseResult<t.Expression> => parser.parseExpression(code, options);

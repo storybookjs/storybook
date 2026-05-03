@@ -1,4 +1,4 @@
-import { parser, types as t } from 'storybook/internal/babel';
+import { parseAst, types as t } from 'storybook/internal/babel';
 
 import type { Parser, ParserResult } from './types.ts';
 
@@ -11,7 +11,7 @@ export class GenericParser implements Parser {
    * @returns The exports of the file
    */
   async parse(content: string): Promise<ParserResult> {
-    const ast = parser.parse(content, {
+    const ast = parseAst(content, {
       allowImportExportEverywhere: true,
       allowAwaitOutsideFunction: true,
       allowNewTargetOutsideFunction: true,

@@ -8,7 +8,6 @@ import * as core from '@babel/core';
 // @ts-expect-error File is not yet exposed, see https://github.com/babel/babel/issues/11350#issuecomment-644118606
 import { File } from '@babel/core';
 import bg from '@babel/generator';
-import * as parser from '@babel/parser';
 import bt from '@babel/traverse';
 import * as types from '@babel/types';
 import * as recast from 'recast';
@@ -38,7 +37,6 @@ export {
   generate,
   traverse,
   types,
-  parser,
   transformSync,
   BabelFileClass,
 

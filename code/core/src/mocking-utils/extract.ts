@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 
-import { generate, parser, types as t } from 'storybook/internal/babel';
+import { generate, parseAst, types as t } from 'storybook/internal/babel';
 import { logger } from 'storybook/internal/node-logger';
 import { telemetry } from 'storybook/internal/telemetry';
 import type { CoreConfig } from 'storybook/internal/types';
@@ -42,7 +42,7 @@ interface ExtractMockCallsOptions {
  * @returns The parsed code.
  */
 export const babelParser = (code: string) => {
-  return parser.parse(code, {
+  return parseAst(code, {
     sourceType: 'module',
     // Enable plugins to handle modern JavaScript features, including TSX.
     plugins: ['typescript', 'jsx', 'classProperties', 'objectRestSpread'],

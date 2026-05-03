@@ -50,16 +50,16 @@ function isSameStatus(a: Status | undefined, b: Status): boolean {
 }
 
 type StoryIdsByFileCacheKey = Awaited<ReturnType<StoryIndexGenerator['getIndex']>>;
-const storyIdsByFileCache = new WeakMap<
-  StoryIdsByFileCacheKey,
-  { workingDir: string; storyIdsByFile: Map<string, Set<string>> }
->();
 
 function getStoryIdsByAbsolutePath(
+  cache: WeakMap<
+    StoryIdsByFileCacheKey,
+    { workingDir: string; storyIdsByFile: Map<string, Set<string>> }
+  >,
   storyIndex: StoryIdsByFileCacheKey,
   workingDir: string
 ): Map<string, Set<string>> {
-  const cached = storyIdsByFileCache.get(storyIndex);
+  const cached = cache.get(storyIndex);
   if (cached && cached.workingDir === workingDir) {
     return cached.storyIdsByFile;
   }
@@ -72,7 +72,7 @@ function getStoryIdsByAbsolutePath(
       storyIdsByFile.set(filePath, storyIds);
     }
   });
-  storyIdsByFileCache.set(storyIndex, { workingDir, storyIdsByFile });
+  cache.set(storyIndex, { workingDir, storyIdsByFile });
   return storyIdsByFile;
 }
 
@@ -147,6 +147,7 @@ export class ChangeDetectionService {
   private scanInFlight = false;
   private rerunAfterCurrentScan = false;
   private readinessResolved = false;
+  private refreshInFlight = false;
   private previousStatuses = new Map<string, Status>();
   private gitDiffProvider: GitDiffProvider | undefined;
   private indexBaselineService: IndexBaselineService | undefined;
@@ -157,6 +158,10 @@ export class ChangeDetectionService {
   private incrementalPatcher: IncrementalPatcher | undefined;
   private reverseIndex: ReverseIndexImpl | undefined;
   private storyFiles: Set<string> = new Set();
+  private readonly storyIdsByFileCache = new WeakMap<
+    StoryIdsByFileCacheKey,
+    { workingDir: string; storyIdsByFile: Map<string, Set<string>> }
+  >();
   /**
    * Serialises file-change patches so two events touching the same dep set never interleave
    * across `await` points inside `IncrementalPatcher.patch`. The chain ignores rejections
@@ -249,7 +254,11 @@ export class ChangeDetectionService {
 
     const storyIndexGenerator = await this.options.storyIndexGeneratorPromise;
     const storyIndex = await storyIndexGenerator.getIndex();
-    const storyIdsByFile = getStoryIdsByAbsolutePath(storyIndex, this.workingDir);
+    const storyIdsByFile = getStoryIdsByAbsolutePath(
+      this.storyIdsByFileCache,
+      storyIndex,
+      this.workingDir
+    );
     this.storyFiles = new Set(storyIdsByFile.keys());
 
     if (this.disposed) {
@@ -276,6 +285,16 @@ export class ChangeDetectionService {
       projectRoot,
       cache,
     });
+
+    // Subscribe BEFORE build — buffer events until patcher is ready
+    const eventBuffer: FileChangeEvent[] = [];
+    this.unsubscribeFileChange = adapter.onFileChange((event) => {
+      if (this.disposed) {
+        return;
+      }
+      eventBuffer.push(event);
+    });
+
     const { reverseIndex, graph } = await this.dependencyGraphBuilder.build(this.storyFiles);
     if (this.disposed) {
       return;
@@ -294,11 +313,21 @@ export class ChangeDetectionService {
       isStoryFile: (path: string) => this.storyFiles.has(normalize(path)),
     });
 
+    // Drain buffered events into patchQueue, then switch to live handler
+    this.unsubscribeFileChange?.();
+    for (const event of eventBuffer) {
+      this.patchQueue = this.patchQueue
+        .then(() => this.handleFileChange(event))
+        .catch(() => undefined);
+    }
+
     this.unsubscribeFileChange = adapter.onFileChange((event) => {
       if (this.disposed) {
         return;
       }
-      this.patchQueue = this.patchQueue.then(() => this.handleFileChange(event));
+      this.patchQueue = this.patchQueue
+        .then(() => this.handleFileChange(event))
+        .catch(() => undefined);
     });
 
     if (adapter.onStartupFailure) {
@@ -350,42 +379,55 @@ export class ChangeDetectionService {
    * invariant intact.
    */
   private async refreshStoryFiles(): Promise<void> {
-    if (!this.incrementalPatcher) {
+    if (this.refreshInFlight || !this.incrementalPatcher) {
       return;
     }
-    const storyIndexGenerator = await this.options.storyIndexGeneratorPromise;
-    const storyIndex = await storyIndexGenerator.getIndex();
-    if (this.disposed) {
-      return;
-    }
-    const storyIdsByFile = getStoryIdsByAbsolutePath(storyIndex, this.workingDir);
-    const next = new Set(storyIdsByFile.keys());
-    const previous = this.storyFiles;
-
-    const added: string[] = [];
-    for (const path of next) {
-      if (!previous.has(path)) {
-        added.push(path);
+    this.refreshInFlight = true;
+    try {
+      const storyIndexGenerator = await this.options.storyIndexGeneratorPromise;
+      const storyIndex = await storyIndexGenerator.getIndex();
+      if (this.disposed) {
+        return;
       }
-    }
-    const removed: string[] = [];
-    for (const path of previous) {
-      if (!next.has(path)) {
-        removed.push(path);
+      const storyIdsByFile = getStoryIdsByAbsolutePath(
+        this.storyIdsByFileCache,
+        storyIndex,
+        this.workingDir
+      );
+      const next = new Set(storyIdsByFile.keys());
+      const previous = this.storyFiles;
+
+      const added: string[] = [];
+      for (const path of next) {
+        if (!previous.has(path)) {
+          added.push(path);
+        }
       }
-    }
+      const removed: string[] = [];
+      for (const path of previous) {
+        if (!next.has(path)) {
+          removed.push(path);
+        }
+      }
 
-    if (added.length === 0 && removed.length === 0) {
-      return;
-    }
+      if (added.length === 0 && removed.length === 0) {
+        return;
+      }
 
-    this.storyFiles = next;
+      this.storyFiles = next;
 
-    for (const path of added) {
-      this.patchQueue = this.patchQueue.then(() => this.handleFileChange({ kind: 'add', path }));
-    }
-    for (const path of removed) {
-      this.patchQueue = this.patchQueue.then(() => this.handleFileChange({ kind: 'unlink', path }));
+      for (const path of added) {
+        this.patchQueue = this.patchQueue
+          .then(() => this.handleFileChange({ kind: 'add', path }))
+          .catch(() => undefined);
+      }
+      for (const path of removed) {
+        this.patchQueue = this.patchQueue
+          .then(() => this.handleFileChange({ kind: 'unlink', path }))
+          .catch(() => undefined);
+      }
+    } finally {
+      this.refreshInFlight = false;
     }
   }
 
@@ -576,7 +618,11 @@ export class ChangeDetectionService {
 
     const storyIndex = await storyIndexGenerator.getIndex();
     const baselineStatuses = buildIndexBaselineStatuses(storyIndex, baselineEntryIds);
-    const storyIdsByFile = getStoryIdsByAbsolutePath(storyIndex, this.workingDir);
+    const storyIdsByFile = getStoryIdsByAbsolutePath(
+      this.storyIdsByFileCache,
+      storyIndex,
+      this.workingDir
+    );
     const statuses = new Map<string, Status>();
 
     for (const changedFile of scannedFiles) {

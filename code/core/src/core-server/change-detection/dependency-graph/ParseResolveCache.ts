@@ -10,6 +10,9 @@ import type { ImportEdge } from './types.ts';
 import type { ChangeDetectionResolverFactory } from './ResolverFactory.ts';
 import { isInScope } from './scope.ts';
 
+/** Maximum barrel-chain hops followed when tracing a named export to its source file. */
+const BARREL_FOLLOW_MAX_DEPTH = 10;
+
 interface CacheLogger {
   debug: (message: string) => void;
   warn: (message: string) => void;
@@ -214,8 +217,7 @@ export class ParseResolveCache {
     depth: number,
     barrels: Set<string>
   ): Promise<string | null> {
-    const MAX_DEPTH = 10;
-    if (depth > MAX_DEPTH) {
+    if (depth > BARREL_FOLLOW_MAX_DEPTH) {
       this.logger.debug(
         `Change detection: barrel chain depth limit reached at ${barrelPath} (looking for "${name}")`
       );
@@ -229,6 +231,9 @@ export class ParseResolveCache {
 
     const info = await this.barrelInfoOnce(barrelPath);
 
+    // NOTE: parseBarrelInfo only tracks direct re-exports (export { x } from './y').
+    // Two-step re-exports (import { x } from './y'; export { x }) are not detected,
+    // causing the barrel fallback to be used for those patterns.
     const entry = info.named.get(name);
     if (entry) {
       const sourceResolved = await this.resolver.resolve(barrelPath, entry.specifier);
@@ -248,6 +253,8 @@ export class ParseResolveCache {
       return null;
     }
 
+    // NOTE: namespace re-exports (export * as ns from './foo') are not tracked.
+    // Imports using the namespace form (ns.Button) fall back to barrel tracking.
     for (const wildcardSpec of info.wildcards) {
       const wildcardResolved = await this.resolver.resolve(barrelPath, wildcardSpec);
       if (wildcardResolved === null) {

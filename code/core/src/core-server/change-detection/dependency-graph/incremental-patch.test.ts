@@ -304,7 +304,9 @@ describe('IncrementalPatcher', () => {
     expect(parseSpy).not.toHaveBeenCalled();
   });
 
-  it('A3 acceptance: registry parse called exactly once for the changed file', async () => {
+  it('parses the story root exactly once when the graph entry is absent (no diff-check path)', async () => {
+    // graph is empty so graph.get(path) === undefined → skip the resolveOnce diff-check
+    // → walkStory calls resolveOnce once → parseOnce called exactly once.
     const story = '/repo/src/A.stories.tsx';
     const initialIndex = new ReverseIndexImpl();
     initialIndex.record(story, story, 0);
@@ -320,13 +322,8 @@ describe('IncrementalPatcher', () => {
 
     await patcher.patch({ kind: 'change', path: story });
 
-    // Once for the change-step itself, plus once during the re-walk of the same story.
-    // The contract says `parse` is called exactly once for each file participating; for a
-    // story root with no deps, that means a single re-walk visits only the root => one parse.
-    // Allow up to 2 (one for the diff, one for the re-walk) but assert it's bounded.
     const calls = parseSpy.mock.calls.filter((c) => c[0].filePath === story);
-    expect(calls.length).toBeGreaterThanOrEqual(1);
-    expect(calls.length).toBeLessThanOrEqual(2);
+    expect(calls.length).toBe(1);
   });
 
   it('unlink of a dep clears the dep from the graph and from the story reverse-index, not just from the index edges', async () => {

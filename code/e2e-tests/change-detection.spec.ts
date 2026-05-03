@@ -95,7 +95,9 @@ test.describe('Change Detection', () => {
 
     if (!hasGitHead()) {
       gitExec('git add -A');
-      gitExec('git commit --allow-empty -m "Initial sandbox commit for change detection tests"');
+      gitExec(
+        'git commit --allow-empty -m "Initial sandbox commit for change detection tests" --no-verify'
+      );
     }
   });
 

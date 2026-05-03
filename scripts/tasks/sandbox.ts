@@ -1,5 +1,3 @@
-import { execSync } from 'node:child_process';
-import { existsSync } from 'node:fs';
 import { access, cp, rm } from 'node:fs/promises';
 import path, { join } from 'node:path';
 import { promisify } from 'node:util';
@@ -180,26 +178,6 @@ export const sandbox: Task = {
     await runMigrations(details, options);
 
     await extendPreview(details, options);
-
-    // Initialise a git repo with an initial commit so the Storybook dev server can use
-    // change detection from the moment it starts (git diff requires at least one commit).
-    const gitEnv = {
-      ...process.env,
-      GIT_AUTHOR_NAME: 'Storybook Sandbox',
-      GIT_AUTHOR_EMAIL: 'sandbox@storybook.js',
-      GIT_COMMITTER_NAME: 'Storybook Sandbox',
-      GIT_COMMITTER_EMAIL: 'sandbox@storybook.js',
-    };
-    const gitOpts = { cwd: details.sandboxDir, stdio: 'pipe' as const, env: gitEnv };
-    if (!existsSync(join(details.sandboxDir, '.git'))) {
-      execSync('git init', gitOpts);
-    }
-    try {
-      execSync('git rev-parse HEAD', { cwd: details.sandboxDir, stdio: 'pipe' });
-    } catch {
-      execSync('git add -A', gitOpts);
-      execSync('git commit --allow-empty -m "Initial sandbox commit" --no-verify', gitOpts);
-    }
 
     // For NX we move the sandbox to a directory that can be cached.
     // We remove node_modules to keep the remote cache small and fast

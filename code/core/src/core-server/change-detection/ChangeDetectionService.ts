@@ -498,6 +498,9 @@ export class ChangeDetectionService {
     this.unsubscribeStartupFailure = undefined;
 
     this.gitDiffProvider?.dispose();
+    // Drain in-flight patches before tearing down the OXC parse pool so no
+    // patch reads the pool after it has been disposed.
+    await this.patchQueue.catch(() => undefined);
     await disposeOxcParsePool().catch(() => undefined);
   }
 

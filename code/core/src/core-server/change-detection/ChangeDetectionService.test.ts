@@ -255,7 +255,6 @@ describe('ChangeDetectionService', () => {
 
   afterEach(() => {
     vi.useRealTimers();
-    vi.clearAllMocks();
     vi.resetAllMocks();
     internal_resetChangeDetectionReadiness();
   });
@@ -1130,7 +1129,7 @@ describe('ChangeDetectionService', () => {
     await service.dispose();
   });
 
-  it('queues file-change events that arrive while the eager build is in flight and patches them after build resolves', async () => {
+  it('does not patch file-change events emitted before the adapter subscription is installed (pre-build events are dropped)', async () => {
     const reverseIndex = buildReverseIndex([]);
     const buildDeferred = createDeferred<void>();
     const { patchSpy, buildSpy } = installDependencyGraphMocks(reverseIndex);

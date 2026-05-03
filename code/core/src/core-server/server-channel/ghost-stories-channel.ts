@@ -1,15 +1,11 @@
 import type { Channel } from 'storybook/internal/channels';
 import { GHOST_STORIES_REQUEST, GHOST_STORIES_RESPONSE } from 'storybook/internal/core-events';
-import {
-  getLastEvents,
-  getSessionId,
-  getStorybookMetadata,
-  telemetry,
-} from 'storybook/internal/telemetry';
+import { getLastEvents, getStorybookMetadata, telemetry } from 'storybook/internal/telemetry';
 import type { Options } from 'storybook/internal/types';
 
 import { getComponentCandidates } from '../utils/ghost-stories/get-candidates.ts';
 import { runStoryTests } from '../utils/ghost-stories/run-story-tests.ts';
+import { waitForIdleVitest } from '../utils/wait-for-idle-vitest.ts';
 
 class SkipGhostStoriesTelemetry extends Error {}
 
@@ -32,18 +28,23 @@ export function initGhostStoriesChannel(channel: Channel, options: Options) {
           const ghostRunStart = Date.now();
           const lastEvents = await getLastEvents();
           const lastInit = lastEvents?.init;
-          if (!lastEvents || !lastInit) {
+          const lastAISetup = lastEvents?.['ai-setup'];
+          const lastGhostStoriesRun = lastEvents?.['ghost-stories'];
+
+          // We only want to run ghost stories immediately after init or ai setup.
+          const lastRelevantEvent = lastAISetup ?? lastInit;
+          if (!lastRelevantEvent) {
             throw new SkipGhostStoriesTelemetry();
           }
 
-          const sessionId = await getSessionId();
-          const lastGhostStoriesRun = lastEvents['ghost-stories'];
-          if (
-            lastGhostStoriesRun ||
-            (lastInit.body?.sessionId && lastInit.body.sessionId !== sessionId)
-          ) {
+          // Already ran once for this project — never run again
+          if (lastGhostStoriesRun) {
             throw new SkipGhostStoriesTelemetry();
           }
+
+          // No session-ID match: `storybook ai setup` runs as a separate CLI
+          // process, so its sessionId never matches the dev server's. The
+          // `lastGhostStoriesRun` guard above is enough to enforce once-per-project.
 
           const metadata = await getStorybookMetadata(options.configDir);
           const isReactStorybook = metadata?.renderer?.includes('@storybook/react');
@@ -56,6 +57,13 @@ export function initGhostStoriesChannel(channel: Channel, options: Options) {
           // For now this is gated by React + Vitest
           if (!isReactStorybook || !hasVitestAddon) {
             throw new SkipGhostStoriesTelemetry();
+          }
+
+          // Wait for any running tests to finish before launching scoring, so we don't
+          // disturb end user activities.
+          const isIdle = await waitForIdleVitest();
+          if (!isIdle) {
+            return;
           }
 
           // Phase 1: find candidates from components
@@ -85,7 +93,9 @@ export function initGhostStoriesChannel(channel: Channel, options: Options) {
 
           // Phase 2: Run tests on those candidates Vitest. The components will be transformed directly to tests
           // If they pass, it means that creating a story file for them would succeed.
-          const testRunResult = await runStoryTests(candidatesResult.candidates);
+          const testRunResult = await runStoryTests(candidatesResult.candidates, {
+            ghostRun: true,
+          });
           stats.totalRunDuration = Date.now() - ghostRunStart;
           stats.testRunDuration = testRunResult.duration;
           if (testRunResult.runError) {

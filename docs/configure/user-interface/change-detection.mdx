@@ -5,7 +5,7 @@ sidebar:
   order: 3
 ---
 
-During development, Storybook monitors your git working tree and the builder's module graph to identify which stories are affected by your uncommitted changes. Status icons appear next to stories and components in the sidebar so you can focus your review and testing on what has actually changed.
+During development, Storybook monitors your git working tree and the builder's module graph to identify which stories are related to your changes. Status icons appear next to stories and components in the sidebar so you can focus your review and testing on what has actually changed.
 
 ![Sidebar showing change detection status icons](../../_assets/configure/change-detection-full.png)
 
@@ -16,19 +16,19 @@ Change detection is a **development-only** feature. It is active when running `s
 The following are required for change detection to work:
 
 - **Git repository**: Storybook uses `git diff` to detect changed files.
-- **Vite builder**: Storybook traces changed files through the builder's module import graph to identify all affected stories. Vite is the only currently supported builder; non-Vite builders (e.g. webpack) will not have change detection until they ship a change-detection adapter.
+- **Vite builder**: Storybook traces changed files through the builder's module import graph to identify all related stories.
 
 If change detection status indicators never appear in your sidebar, check that both requirements above are met and that the feature has not been [disabled](#configuration).
 
 ## Status indicators
 
-When a change is detected, Storybook shows one of the following status icons next to the affected story in the sidebar:
+When a change is detected, Storybook shows one of the following status icons next to the relevant stories in the sidebar:
 
 | Icon                  | Status       | Definition                                                                            |
 | --------------------- | ------------ | ------------------------------------------------------------------------------------- |
 | ✦ Sparkle             | **new**      | The story file is untracked or newly added in git.                                    |
 | ● Filled circle       | **modified** | The story's own file, or a file it directly imports, was changed.                     |
-| ◉ Circle with outline | **related** | A file further up the story's dependency chain was changed (a transitive dependency). |
+| ◉ Circle with outline | **related**  | A file further up the story's dependency chain was changed (a transitive dependency). |
 
 When multiple statuses apply to the same story, the highest priority wins: **new** > **modified** > **related**.
 

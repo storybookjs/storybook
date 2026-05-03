@@ -16,12 +16,7 @@ import {
 } from 'storybook/internal/common';
 import { CLI_COLORS, deprecate, logger, prompt } from 'storybook/internal/node-logger';
 import { MissingBuilderError, NoStatsForViteDevError } from 'storybook/internal/server-errors';
-import {
-  detectAgent,
-  oneWayHash,
-  setTelemetryEnabled,
-  telemetry,
-} from 'storybook/internal/telemetry';
+import { detectAgent, oneWayHash, telemetry } from 'storybook/internal/telemetry';
 import type { BuilderOptions, CLIOptions, LoadOptions, Options } from 'storybook/internal/types';
 
 import { global } from '@storybook/global';
@@ -215,9 +210,7 @@ export async function buildDevStandalone(
     }),
   });
 
-  const { allowedHosts, renderer, builder, disableTelemetry } = await presets.apply('core', {});
-
-  await setTelemetryEnabled(!disableTelemetry);
+  const { allowedHosts, renderer, builder } = await presets.apply('core', {});
 
   // '0.0.0.0' binds to all interfaces, which is useful for Docker and other containerized environments.
   // By default we allow requests from all hosts in this case, but the user should be made aware of the risk.

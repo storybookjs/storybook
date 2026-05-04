@@ -21,10 +21,10 @@ const DEFAULT_CONDITIONS = ['storybook', 'import', 'module', 'default'];
  * Instance-scoped so each ChangeDetectionResolverFactory warns independently —
  * multiple service instances in the same process do not suppress each other's warnings.
  */
-class AliasNormaliser {
+class AliasNormalizer {
   private readonly warnedRegexAliases = new Set<string>();
 
-  normalise(
+  normalize(
     alias: ModuleResolveConfig['alias']
   ): Record<string, Array<string | undefined | null>> | undefined {
     if (!alias) {
@@ -73,13 +73,13 @@ class AliasNormaliser {
 
 /**
  * Thin wrapper around `oxc-resolver`'s `ResolverFactory` configured per a
- * builder-supplied {@link ModuleResolveConfig}. Normalises the alias map shape and
+ * builder-supplied {@link ModuleResolveConfig}. Normalizes the alias map shape and
  * converts resolver errors to `null` (with a debug log) — the caller treats
  * unresolvable specifiers as opaque-leaf edges.
  */
 export class ChangeDetectionResolverFactory {
   private readonly factory: OxcResolverFactory;
-  private readonly aliasNormaliser = new AliasNormaliser();
+  private readonly aliasNormalizer = new AliasNormalizer();
   /**
    * Virtual entry point placed directly in the project root.
    *
@@ -92,7 +92,7 @@ export class ChangeDetectionResolverFactory {
   private readonly projectRootEntry: string;
 
   constructor(config: ModuleResolveConfig) {
-    const alias = this.aliasNormaliser.normalise(config.alias);
+    const alias = this.aliasNormalizer.normalize(config.alias);
     const conditionNames = config.conditions ?? DEFAULT_CONDITIONS;
 
     this.factory = new OxcResolverFactory({

@@ -1,13 +1,13 @@
 {
   "name": "@storybook/tanstack-react",
   "version": "10.4.0-alpha.15",
-  "description": "Storybook for TanStack (React, Vite): Router + Query ready Storybook framework",
+  "description": "Storybook for TanStack (React, Vite): Router and Start ready Storybook framework",
   "keywords": [
     "storybook",
     "storybook-framework",
     "tanstack",
     "tanstack-router",
-    "tanstack-query",
+    "tanstack-start",
     "react",
     "vite",
     "component",
@@ -75,8 +75,6 @@
     "!src/**/*"
   ],
   "dependencies": {
-    "@babel/core": "7.29.0",
-    "@babel/types": "7.29.0",
     "@storybook/builder-vite": "workspace:*",
     "@storybook/react": "workspace:*",
     "@storybook/react-vite": "workspace:*"
@@ -87,7 +85,6 @@
     "@tanstack/router-core": "^1.168.9",
     "@tanstack/start-client-core": "^1.167.9",
     "@types/node": "^22.19.1",
-    "prop-types": "^15.7.2",
     "typescript": "^5.9.3",
     "vite": "^7.0.4"
   },
@@ -102,9 +99,6 @@
     "vite": "^5.0.0 || ^6.0.0 || ^7.0.0 || ^8.0.0"
   },
   "peerDependenciesMeta": {
-    "@tanstack/react-router": {
-      "optional": false
-    },
     "@tanstack/react-start": {
       "optional": true
     },

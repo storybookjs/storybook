@@ -12,9 +12,7 @@ describe('generateReactNativeEntrypoint', () => {
   it('resolves Expo template path when expo variant is requested', () => {
     const templatePath = getEntrypointTemplatePath('expo');
 
-    expect(templatePath.endsWith('templates/react-native/index.expo.js')).toMatchInlineSnapshot(
-      `true`
-    );
+    expect(path.basename(templatePath)).toMatchInlineSnapshot(`"index.expo.js"`);
   });
 
   it('generates .rnstorybook/index.ts for TypeScript projects', async () => {
@@ -31,13 +29,31 @@ describe('generateReactNativeEntrypoint', () => {
       expect(path.relative(cwd, result.targetPath)).toMatchInlineSnapshot(
         `".rnstorybook/index.ts"`
       );
-      expect(output.includes("import { AppRegistry } from 'react-native';")).toMatchInlineSnapshot(
-        `true`
-      );
-      expect(output.includes("import { view } from './storybook.requires';")).toMatchInlineSnapshot(
-        `true`
-      );
-      expect(output.includes("AppRegistry.registerComponent('main'")).toMatchInlineSnapshot(`true`);
+      expect(output).toMatchInlineSnapshot(`
+        "import { AppRegistry } from 'react-native';
+        import AsyncStorage from '@react-native-async-storage/async-storage';
+
+        import { view } from './storybook.requires';
+
+        /**
+         * This file is user-editable.
+         *
+         * Use it as your React Native Storybook entrypoint and wrap \`StorybookUIRoot\`
+         * with application decorators/providers (theme, i18n, state, navigation, etc).
+         */
+        const StorybookUIRoot = view.getStorybookUI({
+          shouldPersistSelection: true,
+          storage: {
+            getItem: AsyncStorage.getItem,
+            setItem: AsyncStorage.setItem,
+          },
+        });
+
+        AppRegistry.registerComponent('main', () => StorybookUIRoot);
+
+        export default StorybookUIRoot;
+        "
+      `);
     } finally {
       await rm(cwd, { recursive: true, force: true });
     }
@@ -57,12 +73,31 @@ describe('generateReactNativeEntrypoint', () => {
       expect(path.relative(cwd, result.targetPath)).toMatchInlineSnapshot(
         `".rnstorybook/index.js"`
       );
-      expect(output.includes("import { AppRegistry } from 'react-native';")).toMatchInlineSnapshot(
-        `true`
-      );
-      expect(output.includes("import { view } from './storybook.requires';")).toMatchInlineSnapshot(
-        `true`
-      );
+      expect(output).toMatchInlineSnapshot(`
+        "import { AppRegistry } from 'react-native';
+        import AsyncStorage from '@react-native-async-storage/async-storage';
+
+        import { view } from './storybook.requires';
+
+        /**
+         * This file is user-editable.
+         *
+         * Use it as your React Native Storybook entrypoint and wrap \`StorybookUIRoot\`
+         * with application decorators/providers (theme, i18n, state, navigation, etc).
+         */
+        const StorybookUIRoot = view.getStorybookUI({
+          shouldPersistSelection: true,
+          storage: {
+            getItem: AsyncStorage.getItem,
+            setItem: AsyncStorage.setItem,
+          },
+        });
+
+        AppRegistry.registerComponent('main', () => StorybookUIRoot);
+
+        export default StorybookUIRoot;
+        "
+      `);
     } finally {
       await rm(cwd, { recursive: true, force: true });
     }
@@ -83,20 +118,29 @@ describe('generateReactNativeEntrypoint', () => {
       expect(path.relative(cwd, result.targetPath)).toMatchInlineSnapshot(
         `".rnstorybook/index.ts"`
       );
-      expect(
-        output.includes("import AsyncStorage from '@react-native-async-storage/async-storage';")
-      ).toMatchInlineSnapshot(`true`);
-      expect(
-        output.includes("import { registerRootComponent } from 'expo';")
-      ).toMatchInlineSnapshot(`true`);
-      expect(output.includes('shouldPersistSelection: true')).toMatchInlineSnapshot(`true`);
-      expect(output.includes('enableWebsockets: true')).toMatchInlineSnapshot(`false`);
-      expect(output.includes('registerRootComponent(StorybookUIRoot);')).toMatchInlineSnapshot(
-        `true`
-      );
-      expect(output.includes("AppRegistry.registerComponent('main'")).toMatchInlineSnapshot(
-        `false`
-      );
+      expect(output).toMatchInlineSnapshot(`
+        "import { registerRootComponent } from 'expo';
+        import AsyncStorage from '@react-native-async-storage/async-storage';
+
+        import { view } from './storybook.requires';
+
+        /**
+         * This file is user-editable.
+         *
+         * Use it as your React Native Storybook entrypoint and wrap \`StorybookUIRoot\`
+         * with application decorators/providers (theme, i18n, state, navigation, etc).
+         */
+        const StorybookUIRoot = view.getStorybookUI({
+          shouldPersistSelection: true,
+          storage: {
+            getItem: AsyncStorage.getItem,
+            setItem: AsyncStorage.setItem,
+          },
+        });
+
+        registerRootComponent(StorybookUIRoot);
+        "
+      `);
     } finally {
       await rm(cwd, { recursive: true, force: true });
     }
@@ -116,8 +160,31 @@ describe('generateReactNativeEntrypoint', () => {
       });
       const output = await readFile(targetPath, 'utf-8');
 
-      expect(output.includes('Old')).toMatchInlineSnapshot(`false`);
-      expect(output.includes('StorybookUIRoot')).toMatchInlineSnapshot(`true`);
+      expect(output).toMatchInlineSnapshot(`
+        "import { AppRegistry } from 'react-native';
+        import AsyncStorage from '@react-native-async-storage/async-storage';
+
+        import { view } from './storybook.requires';
+
+        /**
+         * This file is user-editable.
+         *
+         * Use it as your React Native Storybook entrypoint and wrap \`StorybookUIRoot\`
+         * with application decorators/providers (theme, i18n, state, navigation, etc).
+         */
+        const StorybookUIRoot = view.getStorybookUI({
+          shouldPersistSelection: true,
+          storage: {
+            getItem: AsyncStorage.getItem,
+            setItem: AsyncStorage.setItem,
+          },
+        });
+
+        AppRegistry.registerComponent('main', () => StorybookUIRoot);
+
+        export default StorybookUIRoot;
+        "
+      `);
     } finally {
       await rm(cwd, { recursive: true, force: true });
     }
@@ -144,9 +211,31 @@ describe('generateReactNativeEntrypoint', () => {
         "// sibling
         "
       `);
-      expect(
-        generated.includes("import { view } from './storybook.requires';")
-      ).toMatchInlineSnapshot(`true`);
+      expect(generated).toMatchInlineSnapshot(`
+        "import { AppRegistry } from 'react-native';
+        import AsyncStorage from '@react-native-async-storage/async-storage';
+
+        import { view } from './storybook.requires';
+
+        /**
+         * This file is user-editable.
+         *
+         * Use it as your React Native Storybook entrypoint and wrap \`StorybookUIRoot\`
+         * with application decorators/providers (theme, i18n, state, navigation, etc).
+         */
+        const StorybookUIRoot = view.getStorybookUI({
+          shouldPersistSelection: true,
+          storage: {
+            getItem: AsyncStorage.getItem,
+            setItem: AsyncStorage.setItem,
+          },
+        });
+
+        AppRegistry.registerComponent('main', () => StorybookUIRoot);
+
+        export default StorybookUIRoot;
+        "
+      `);
     } finally {
       await rm(cwd, { recursive: true, force: true });
     }

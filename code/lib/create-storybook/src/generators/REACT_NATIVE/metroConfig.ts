@@ -49,6 +49,69 @@ const hasStorybookPackage = (value: string) => {
   return value === 'storybook' || value.startsWith('@storybook/') || value.startsWith('storybook/');
 };
 
+const isAstNode = (value: unknown): value is t.Node => {
+  return !!value && typeof value === 'object' && 'type' in value;
+};
+
+const getRequirePackageFromCallExpression = (callExpression: t.CallExpression) => {
+  if (t.isIdentifier(callExpression.callee, { name: 'require' })) {
+    const [firstArgument] = callExpression.arguments;
+    return t.isStringLiteral(firstArgument) ? firstArgument.value : null;
+  }
+
+  if (
+    t.isMemberExpression(callExpression.callee) &&
+    t.isCallExpression(callExpression.callee.object)
+  ) {
+    const objectCall = callExpression.callee.object;
+    if (!t.isIdentifier(objectCall.callee, { name: 'require' })) {
+      return null;
+    }
+
+    const [firstArgument] = objectCall.arguments;
+    return t.isStringLiteral(firstArgument) ? firstArgument.value : null;
+  }
+
+  return null;
+};
+
+const statementContainsStorybookCall = (statement: t.Statement) => {
+  const visited = new WeakSet<object>();
+  const queue: unknown[] = [statement];
+
+  while (queue.length > 0) {
+    const current = queue.pop();
+    if (!current || typeof current !== 'object') {
+      continue;
+    }
+
+    if (visited.has(current)) {
+      continue;
+    }
+    visited.add(current);
+
+    if (isAstNode(current) && t.isCallExpression(current)) {
+      const packageName = getRequirePackageFromCallExpression(current);
+      if (packageName && hasStorybookPackage(packageName)) {
+        return true;
+      }
+    }
+
+    if (Array.isArray(current)) {
+      queue.push(...current);
+      continue;
+    }
+
+    for (const value of Object.values(current as Record<string, unknown>)) {
+      if (value && (typeof value === 'object' || Array.isArray(value))) {
+        queue.push(value);
+      }
+    }
+  }
+
+  return false;
+};
+
 const isModuleExportsTarget = (left: t.LVal | t.OptionalMemberExpression) => {
   return (
     t.isMemberExpression(left) &&
@@ -92,23 +155,14 @@ export const containsStorybookImport = (source: string) => {
         return true;
       }
 
-      if (!t.isVariableDeclaration(statement)) {
-        continue;
-      }
-
-      for (const declaration of statement.declarations) {
-        if (!t.isCallExpression(declaration.init)) {
-          continue;
-        }
-
-        if (!t.isIdentifier(declaration.init.callee, { name: 'require' })) {
-          continue;
-        }
-
-        const [firstArgument] = declaration.init.arguments;
-        if (t.isStringLiteral(firstArgument) && hasStorybookPackage(firstArgument.value)) {
+      if (t.isExportNamedDeclaration(statement) && statement.source) {
+        if (hasStorybookPackage(statement.source.value)) {
           return true;
         }
+      }
+
+      if (statementContainsStorybookCall(statement)) {
+        return true;
       }
     }
   } catch {

@@ -427,13 +427,26 @@ export default async function makeMetroConfig<T = string>(): Promise<MetroConfig
     }
   });
 
-  it('containsStorybookImport detects both import and require usage', () => {
+  it('containsStorybookImport detects import/require across top-level statement forms', () => {
     expect(
       containsStorybookImport(
         "import { withStorybook } from '@storybook/react-native/withStorybook';"
       )
     ).toBe(true);
     expect(containsStorybookImport("const sb = require('storybook/internal/common');")).toBe(true);
+    expect(
+      containsStorybookImport("withSomething(require('@storybook/react-native/withStorybook'));")
+    ).toBe(true);
+    expect(
+      containsStorybookImport(
+        "module.exports = require('@storybook/react-native/withStorybook').withStorybook({});"
+      )
+    ).toBe(true);
+    expect(
+      containsStorybookImport(
+        "export const withSb = require('@storybook/react-native/withStorybook');"
+      )
+    ).toBe(true);
     expect(containsStorybookImport('const x = require("react-native");')).toBe(false);
   });
 

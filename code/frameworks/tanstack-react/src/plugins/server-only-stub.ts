@@ -105,23 +105,19 @@ function collectExports(code: string, id: string): ExportInfo {
 
 function buildStubCode(exports: ExportInfo, id: string): string {
   const label = JSON.stringify(id);
-  const lines: string[] = [
-    `import { fn as __sb_fn } from 'storybook/test';`,
-    `function __sb_serverOnly(name) {`,
-    `  return __sb_fn(() => {`,
-    `    throw new Error(`,
-    `      \`[storybook] Tried to call server-only export "\${name}" from \${${label}} in the browser.\``,
-    `    );`,
-    `  }).mockName(name);`,
-    `}`,
-  ];
+  const namedExports = [...exports.named]
+    .map((name) => `export const ${name} = __sb_serverOnly(${JSON.stringify(name)});`)
+    .join('\n');
+  const defaultExport = exports.hasDefault ? `export default __sb_serverOnly('default');` : '';
 
-  for (const name of exports.named) {
-    lines.push(`export const ${name} = __sb_serverOnly(${JSON.stringify(name)});`);
-  }
-  if (exports.hasDefault) {
-    lines.push(`export default __sb_serverOnly('default');`);
-  }
-
-  return lines.join('\n');
+  return `import { fn as __sb_fn } from 'storybook/test';
+function __sb_serverOnly(name) {
+  return __sb_fn(() => {
+    throw new Error(
+      \`[storybook] Tried to call server-only export "\${name}" from \${${label}} in the browser.\`
+    );
+  }).mockName(name);
+}
+${namedExports}
+${defaultExport}`.trim();
 }

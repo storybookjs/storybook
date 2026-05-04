@@ -6,7 +6,13 @@ import { onNavigate } from './spies.ts';
 export * from '@tanstack/start-client-core';
 export * from '@tanstack/react-start';
 
-const START_SERVER_STATE_SYMBOL = Symbol.for('storybook.tanstack-react.start-server.state');
+declare global {
+  let __TSR_ROUTER__: unknown;
+}
+
+const START_SERVER_STATE_SYMBOL: unique symbol = Symbol.for(
+  'storybook.tanstack-react.start-server.state'
+);
 
 type RequestOptions<TRegister = unknown> = {
   context?: TRegister extends { server: { requestContext: infer TRequestContext } }
@@ -53,12 +59,9 @@ type MockServerState = {
   sessionData: Record<string, unknown>;
 };
 
-type BrowserStartGlobals = typeof globalThis & {
-  __TSR_ROUTER__?: unknown;
+type StartServerGlobalState = typeof globalThis & {
   [START_SERVER_STATE_SYMBOL]?: MockServerState;
 };
-
-const browserGlobals = globalThis as BrowserStartGlobals;
 
 export const HEADERS = {
   TSS_SHELL: 'X-TSS_SHELL',
@@ -146,28 +149,28 @@ function createMockState(request = createDefaultRequest()): MockServerState {
 }
 
 function getState() {
-  const existingState = browserGlobals[START_SERVER_STATE_SYMBOL];
+  const existingState = (globalThis as StartServerGlobalState)[START_SERVER_STATE_SYMBOL];
 
   if (existingState) {
     return existingState;
   }
 
   const nextState = createMockState();
-  browserGlobals[START_SERVER_STATE_SYMBOL] = nextState;
+  (globalThis as StartServerGlobalState)[START_SERVER_STATE_SYMBOL] = nextState;
   return nextState;
 }
 
 async function withRequestState<T>(request: Request, run: () => Promise<T> | T) {
-  const previousState = browserGlobals[START_SERVER_STATE_SYMBOL];
-  browserGlobals[START_SERVER_STATE_SYMBOL] = createMockState(request);
+  const previousState = (globalThis as StartServerGlobalState)[START_SERVER_STATE_SYMBOL];
+  (globalThis as StartServerGlobalState)[START_SERVER_STATE_SYMBOL] = createMockState(request);
 
   try {
     return await run();
   } finally {
     if (previousState) {
-      browserGlobals[START_SERVER_STATE_SYMBOL] = previousState;
+      (globalThis as StartServerGlobalState)[START_SERVER_STATE_SYMBOL] = previousState;
     } else {
-      delete browserGlobals[START_SERVER_STATE_SYMBOL];
+      delete (globalThis as StartServerGlobalState)[START_SERVER_STATE_SYMBOL];
     }
   }
 }
@@ -290,7 +293,7 @@ export const createStartHandler = createNamedMock(
       return handler({
         request,
         responseHeaders: getState().responseHeaders,
-        router: browserGlobals.__TSR_ROUTER__,
+        router: globalThis.__TSR_ROUTER__,
         context: requestOpts?.context,
         requestContext: requestOpts?.context,
       });

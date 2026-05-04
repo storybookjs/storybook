@@ -77,42 +77,58 @@ export const setupPreviewNavigator = async (index: StoryIndex, currentEntryId: s
     };
   }
 
-  const createHtmlForNode = (node: BranchNode | LeafNode): string => {
+  const createElementForNode = (node: BranchNode | LeafNode): HTMLElement => {
+    const li = document.createElement('li');
+
     if ('entries' in node && 'title' in node) {
       const branchNode = node as BranchNode;
-      return `
-      <li class="sb-navigator-branch">
-        <details${branchNode.isActive ? ' open' : ''}>
-          <summary class="sb-navigator-title">
-            ${branchNode.title}
-          </summary>
-          <ul class="sb-navigator-entries" aria-label="${branchNode.title}">
-            ${Object.values(branchNode.entries).map(createHtmlForNode).join('')}
-          </ul>
-        </details>
-      </li>
-      `;
+      li.className = 'sb-navigator-branch';
+
+      const details = document.createElement('details');
+      if (branchNode.isActive) details.open = true;
+
+      const summary = document.createElement('summary');
+      summary.className = 'sb-navigator-title';
+      summary.textContent = branchNode.title;
+
+      const ul = document.createElement('ul');
+      ul.className = 'sb-navigator-entries';
+      ul.setAttribute('aria-label', branchNode.title);
+
+      for (const child of Object.values(branchNode.entries)) {
+        ul.appendChild(createElementForNode(child));
+      }
+
+      details.appendChild(summary);
+      details.appendChild(ul);
+      li.appendChild(details);
+    } else {
+      const leafNode = node as LeafNode;
+      li.className = 'sb-navigator-story-item';
+
+      const a = document.createElement('a');
+      a.href = leafNode.href;
+      a.className = `sb-navigator-story-link${leafNode.isActive ? ' active' : ''}`;
+      a.setAttribute('aria-current', leafNode.isActive ? 'location' : 'false');
+      a.textContent = leafNode.name;
+
+      li.appendChild(a);
     }
 
-    const leafNode = node as LeafNode;
-    return `
-      <li class="sb-navigator-story-item">
-        <a href="${leafNode.href}" 
-           class="sb-navigator-story-link${leafNode.isActive ? ' active' : ''}" 
-           aria-current="${leafNode.isActive ? 'location' : 'false'}">${leafNode.name}</a>
-      </li>
-    `;
+    return li;
   };
 
-  const navItems = Object.values(tree.entries).map(createHtmlForNode).join('');
+  const navList = document.createElement('ul');
+  navList.className = 'sb-navigator-list';
+  for (const entry of Object.values(tree.entries)) {
+    navList.appendChild(createElementForNode(entry));
+  }
 
   const nav = document.createElement('nav');
   nav.id = 'sb-navigator-container';
   nav.setAttribute('role', 'navigation');
   nav.setAttribute('aria-label', 'Story navigation');
-  nav.innerHTML = `
-    <ul class="sb-navigator-list">${navItems}</ul>
-  `;
+  nav.appendChild(navList);
 
   document.body.insertBefore(nav, document.body.firstChild);
 

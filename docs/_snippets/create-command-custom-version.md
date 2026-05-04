@@ -1,7 +1,7 @@
-```shell renderer="common" language="js" packageManager="npm"
+```shell renderer="common" packageManager="npm"
 npm create storybook@8.3
 ```
 
-```shell renderer="common" language="js" packageManager="pnpm"
+```shell renderer="common" packageManager="pnpm"
 pnpm create storybook@8.3
 ```

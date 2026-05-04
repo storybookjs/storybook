@@ -1,4 +1,5 @@
-import { transformSync, type NodePath, type PluginObj } from '@babel/core';
+import { transformSync } from 'storybook/internal/babel';
+import type { NodePath, PluginObj } from '@babel/core';
 import {
   type Statement,
   isImportDeclaration,

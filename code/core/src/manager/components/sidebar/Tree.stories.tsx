@@ -412,14 +412,14 @@ export const WithTestStatusOnly: Story = makeDualSlotStory({
   },
 });
 
-export const WithAffectedStatus: Story = makeDualSlotStory({
+export const WithRelatedStatus: Story = makeDualSlotStory({
   [dualSlotStoryId]: {
     'storybook/change-detection': {
       storyId: dualSlotStoryId,
       typeId: 'storybook/change-detection',
       value: 'status-value:affected',
       title: 'Change Detection',
-      description: 'Story is affected',
+      description: 'Story is related',
       sidebarContextMenu: false,
     },
   },

@@ -6,14 +6,7 @@ import type { StorybookConfigVite } from '@storybook/builder-vite';
 import { viteFinal as reactViteFinal } from '@storybook/react-vite/preset';
 import { serverCodeEliminationPlugin } from './plugins/server-code-elimination.ts';
 import { serverOnlyStubPlugin } from './plugins/server-only-stub.ts';
-
-const INTERCEPTED_PATTERNS = ['virtual:cloudflare', 'server-entry', 'worker-entry'];
-const START_SERVER_MODULES = [
-  '@tanstack/react-start',
-  '@tanstack/react-start/server',
-  '@tanstack/react-start-server',
-  '@tanstack/start-server-core',
-];
+import { moduleInterceptionPlugin } from './plugins/module-interception.ts';
 
 export const core: PresetProperty<'core'> = async (config, options) => {
   const framework = await options.presets.apply('framework');
@@ -68,59 +61,7 @@ export const viteFinal: StorybookConfigVite['viteFinal'] = async (config, option
     ...basePlugins.filter((p) => !isTanStackStartPlugin(p)),
     serverCodeEliminationPlugin({ excludeFiles: [dirname(startMockPath)] }),
     serverOnlyStubPlugin(),
-    {
-      name: 'storybook:tanstack-react:module-interception',
-      enforce: 'pre' as const,
-      resolveId: {
-        order: 'pre' as const,
-        handler(id: string, importer: string | undefined) {
-          // Redirect @tanstack/react-router to our mock, except when
-          // the importer IS the mock (to avoid a circular alias).
-          if (
-            (id === '@tanstack/react-router' || id.startsWith('@tanstack/react-router/')) &&
-            importer &&
-            !importer.includes('export-mocks')
-          ) {
-            return routerMockPath;
-          }
-
-          if (START_SERVER_MODULES.includes(id) || id === '@tanstack/react-start') {
-            return startMockPath;
-          }
-
-          if (id === '@tanstack/start-storage-context') {
-            return startStorageContextMockPath;
-          }
-
-          // Intercept virtual/server/worker entries
-          for (const pattern of INTERCEPTED_PATTERNS) {
-            if (id.includes(pattern)) {
-              return startMockPath;
-            }
-          }
-
-          return null;
-        },
-      },
-
-      config() {
-        return {
-          optimizeDeps: {
-            exclude: [
-              '@storybook/react',
-              '@storybook/react/entry-preview',
-              '@storybook/react/entry-preview-argtypes',
-              '@storybook/react/entry-preview-docs',
-              '@storybook/tanstack-react',
-              '@tanstack/react-start',
-              '@tanstack/react-start/server',
-              '@tanstack/react-start-server',
-              '@tanstack/start-server-core',
-            ],
-          },
-        };
-      },
-    },
+    moduleInterceptionPlugin({ startMockPath, startStorageContextMockPath, routerMockPath }),
   ];
 
   return {

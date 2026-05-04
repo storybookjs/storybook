@@ -73,7 +73,13 @@ const CollapseButton = styled.button(({ theme }) => ({
 }));
 
 export const Ref: FC<RefType & RefProps> = React.memo(function Ref(props) {
-  const { docsOptions } = useStorybookState();
+  const {
+    docsOptions,
+    includedTagFilters,
+    excludedTagFilters,
+    includedStatusFilters,
+    excludedStatusFilters,
+  } = useStorybookState();
   const api = useStorybookApi();
   const {
     filteredIndex: index,
@@ -103,6 +109,11 @@ export const Ref: FC<RefType & RefProps> = React.memo(function Ref(props) {
   const isError = !!indexError;
   const isEmpty = !isLoading && length === 0;
   const isAuthRequired = !!loginUrl && length === 0;
+  const activeFilterCount =
+    (includedTagFilters?.length ?? 0) +
+    (excludedTagFilters?.length ?? 0) +
+    (includedStatusFilters?.length ?? 0) +
+    (excludedStatusFilters?.length ?? 0);
 
   const state = getStateType(isLoading, isAuthRequired, isError, isEmpty);
   const [isExpanded, setExpanded] = useState<boolean>(expanded);
@@ -111,9 +122,9 @@ export const Ref: FC<RefType & RefProps> = React.memo(function Ref(props) {
     if (index && selectedStoryId && index[selectedStoryId]) {
       setExpanded(true);
     }
-  }, [setExpanded, index, selectedStoryId]);
+  }, [index, selectedStoryId]);
 
-  const handleClick = useCallback(() => setExpanded((value) => !value), [setExpanded]);
+  const handleClick = useCallback(() => setExpanded((value) => !value), []);
 
   const setHighlightedItemId = useCallback(
     (itemId: string) => setHighlighted({ itemId, refId }),
@@ -146,7 +157,13 @@ export const Ref: FC<RefType & RefProps> = React.memo(function Ref(props) {
           {/* @ts-expect-error (non strict) */}
           {state === 'error' && <ErrorBlock error={indexError} />}
           {state === 'loading' && <LoaderBlock isMain={isMain} />}
-          {state === 'empty' && <EmptyBlock isMain={isMain} hasEntries={hasEntries} />}
+          {state === 'empty' && (
+            <EmptyBlock
+              isMain={isMain}
+              hasEntries={hasEntries}
+              activeFilterCount={activeFilterCount}
+            />
+          )}
           {state === 'ready' && (
             <Tree
               allStatuses={allStatuses}

@@ -158,7 +158,15 @@ const WideSpaced = styled(Spaced)({
   flex: 1,
 });
 
-export const EmptyBlock = ({ isMain, hasEntries }: { isMain: boolean; hasEntries: boolean }) => {
+export const EmptyBlock = ({
+  isMain,
+  hasEntries,
+  activeFilterCount,
+}: {
+  isMain: boolean;
+  hasEntries: boolean;
+  activeFilterCount: number;
+}) => {
   const api = useStorybookApi();
 
   return (
@@ -168,19 +176,25 @@ export const EmptyBlock = ({ isMain, hasEntries }: { isMain: boolean; hasEntries
           {hasEntries ? (
             <NoResults>
               <strong>No stories found</strong>
-              <small>Your selected filters did not match any stories.</small>
-              <Button
-                ariaLabel={false}
-                size="small"
-                variant="outline"
-                onClick={async () => {
-                  await api.setAllTagFilters([], []);
-                  await api.resetStatusFilters();
-                }}
-              >
-                <SweepIcon />
-                Clear filters
-              </Button>
+              {activeFilterCount > 0 ? (
+                <small>Your selected filters did not match any stories.</small>
+              ) : (
+                <small>Try adding some stories!</small>
+              )}
+              {activeFilterCount > 0 ? (
+                <Button
+                  ariaLabel={false}
+                  size="small"
+                  variant="outline"
+                  onClick={async () => {
+                    await api.setAllTagFilters([], []);
+                    await api.resetStatusFilters();
+                  }}
+                >
+                  <SweepIcon />
+                  Clear filters
+                </Button>
+              ) : null}
             </NoResults>
           ) : isMain ? (
             <Text>

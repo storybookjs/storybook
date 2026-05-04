@@ -35,6 +35,7 @@
     "*.yaml",
     "*.md",
     "*.mdx",
+    "!docs/**",
     "!code/lib/eslint-plugin/docs/rules/**"
   ],
   "overrides": [

@@ -178,6 +178,7 @@ const CopyButton = ({
   label,
   copyContent,
   onClick,
+  ...props
 }: {
   label: string;
   copyContent: string;
@@ -196,7 +197,11 @@ const CopyButton = ({
     content: copyContent,
   });
 
-  return <ActionList.Button {...copyButtonProps}>{copyChildren}</ActionList.Button>;
+  return (
+    <ActionList.Button {...props} {...copyButtonProps}>
+      {copyChildren}
+    </ActionList.Button>
+  );
 };
 
 export const ChecklistWidget = () => {

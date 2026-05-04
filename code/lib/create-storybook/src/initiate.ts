@@ -7,7 +7,7 @@ import {
 } from 'storybook/internal/common';
 import { getServerPort, withTelemetry } from 'storybook/internal/core-server';
 import { logTracker, logger } from 'storybook/internal/node-logger';
-import { telemetry } from 'storybook/internal/telemetry';
+import { telemetry, setTelemetryEnabled } from 'storybook/internal/telemetry';
 import { Feature } from 'storybook/internal/types';
 import type {
   SupportedBuilder,
@@ -204,8 +204,13 @@ export async function initiate(options: CommandOptions): Promise<void> {
     {
       cliOptions: options,
       printError: (err) => !err.handled && logger.error(err),
+      // enable telemetry if nothing else specified in env var or CLI options
+      fallbackTelemetryState: true,
     },
     async () => {
+      // we need to explicitly set this before init to not delay the events until the end of the flow
+      await setTelemetryEnabled(!options.disableTelemetry);
+
       const result = await doInitiate(options);
 
       logger.outro('');

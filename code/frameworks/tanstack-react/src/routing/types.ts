@@ -1,11 +1,5 @@
 import type { AnyRoute, FileRoutesByPath, Register } from '@tanstack/react-router';
-import type {
-  AnyContext,
-  ResolveParams,
-  RouteByPath,
-  RouteOptions,
-  RoutesByPath,
-} from '@tanstack/router-core';
+import type { AnyContext, ResolveParams, RouteOptions, RoutesByPath } from '@tanstack/router-core';
 import type { Decorator } from '@storybook/react';
 
 /** Union of every registered full path (e.g. `'/' | '/admin/users' | '/$libraryId/$version'`). */
@@ -38,52 +32,6 @@ export type StoryRoutePath<TRoute = undefined> =
     ? ExtractAllPathsFromFileRoutes<TRoute>
     : keyof FileRoutesByPath | `/${string}`;
 
-/**
- * Helper: convert a union `A | B | C` into an intersection `A & B & C`.
- *
- * Used to gather all per-route `allParams` shapes from the registered file
- * route tree into a single object whose keys are the union of every nested
- * route's params.
- */
-type UnionToIntersection<U> = (U extends unknown ? (k: U) => void : never) extends (
-  k: infer I
-) => void
-  ? I
-  : never;
-
-/**
- * Union of `allParams` from every registered nested file route.
- *
- * This is used when the bound route is a `RootRoute` / route tree (whose own
- * `allParams` is empty), so users can still pass params for any nested route
- * matched via `path`. The result is `Partial` so every key is optional.
- */
-type AllRegisteredParams = Partial<
-  UnionToIntersection<
-    {
-      [K in keyof FileRoutesByPath]: FileRoutesByPath[K]['preLoaderRoute'] extends {
-        types: { allParams: infer A };
-      }
-        ? A
-        : never;
-    }[keyof FileRoutesByPath]
-  >
->;
-
-type StoryParamsForFullPath<FullPath> = FullPath extends RegisteredFullPath
-  ? // @ts-expect-error - router is registered in user land
-    Register['router']['routesByPath'][FullPath]['types']['allParams']
-  : Record<string, unknown>;
-
-// @ts-expect-error - router is registered in user land
-type StoryParamsForRoute<TRoute> = TRoute extends Register['router']['routesById'][infer Id]
-  ? // @ts-expect-error - router is registered in user land
-    Register['router']['routesById'][Id]['types']['allParams']
-  : TRoute extends FileRoutesByPath[keyof FileRoutesByPath]
-    ? TRoute['preLoaderRoute'] extends { types: { allParams: infer A } }
-      ? A
-      : never
-    : Record<string, unknown>;
 type StoryRouteSearch<TRoute> =
   IsAppRouteTree<TRoute> extends true
     ? Record<string, unknown>

@@ -42,7 +42,19 @@ vi.mock('../automigrate/helpers/mainConfigFile.ts', () => ({
     configDir: '/proj/.storybook',
     storiesPaths: [],
     hasCsfFactoryPreview: false,
-    packageManager: {},
+    packageManager: {
+      type: 'npm',
+      version: '9.5.0',
+      getCommandName(): string {
+        return 'npm';
+      },
+      getInstallCommand(deps: string[], dev: boolean): string {
+        return `npm install ${dev ? '-D ' : ''}${deps.join(' ')}`;
+      },
+      getRunCommand(command: string): string {
+        return `npm run ${command}`;
+      },
+    },
   }),
 }));
 

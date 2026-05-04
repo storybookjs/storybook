@@ -55,10 +55,10 @@
       "code": "./src/export-mocks/react-router.ts",
       "default": "./dist/export-mocks/react-router.js"
     },
-    "./start-server": {
-      "types": "./dist/export-mocks/start-server.d.ts",
-      "code": "./src/export-mocks/start-server.ts",
-      "default": "./dist/export-mocks/start-server.js"
+    "./start": {
+      "types": "./dist/export-mocks/start.d.ts",
+      "code": "./src/export-mocks/start.ts",
+      "default": "./dist/export-mocks/start.js"
     },
     "./start-storage-context": {
       "types": "./dist/export-mocks/start-storage-context.d.ts",

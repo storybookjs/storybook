@@ -21,8 +21,8 @@ const config: BuildEntries = {
         entryPoint: './src/export-mocks/start-storage-context.ts',
       },
       {
-        exportEntries: ['./start-server'],
-        entryPoint: './src/export-mocks/start-server.ts',
+        exportEntries: ['./start'],
+        entryPoint: './src/export-mocks/start.ts',
       },
     ],
     node: [

@@ -49,7 +49,7 @@ export const viteFinal: StorybookConfigVite['viteFinal'] = async (config, option
     );
   };
 
-  const startMockPath = fileURLToPath(import.meta.resolve('./export-mocks/start-server.js'));
+  const startMockPath = fileURLToPath(import.meta.resolve('./export-mocks/start.js'));
   const startStorageContextMockPath = fileURLToPath(
     import.meta.resolve('./export-mocks/start-storage-context.js')
   );

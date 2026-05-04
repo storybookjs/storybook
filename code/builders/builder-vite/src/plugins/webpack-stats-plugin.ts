@@ -11,7 +11,7 @@ import {
   SB_VIRTUAL_FILES,
   getOriginalVirtualModuleId,
   getResolvedVirtualModuleId,
-} from '../virtual-file-names';
+} from '../virtual-file-names.ts';
 
 /*
  * Reason, Module are copied from chromatic types

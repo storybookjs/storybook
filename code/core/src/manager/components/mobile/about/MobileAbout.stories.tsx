@@ -5,8 +5,8 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import { ManagerContext } from 'storybook/manager-api';
 import { within } from 'storybook/test';
 
-import { LayoutProvider, useLayout } from '../../layout/LayoutProvider';
-import { MobileAbout } from './MobileAbout';
+import { LayoutProvider, useLayout } from '../../layout/LayoutProvider.tsx';
+import { MobileAbout } from './MobileAbout.tsx';
 
 /** A helper component to open the about page via the MobileLayoutContext */
 const OpenAboutHelper = ({ children }: { children: any }) => {

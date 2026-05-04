@@ -6,7 +6,7 @@ import { SupportedBuilder, SupportedFramework, SupportedRenderer } from 'storybo
 
 import * as find from 'empathic/find';
 
-import { FrameworkDetectionService } from './FrameworkDetectionService';
+import { FrameworkDetectionService } from './FrameworkDetectionService.ts';
 
 vi.mock('empathic/find', () => ({
   any: vi.fn(),

@@ -1,7 +1,7 @@
 import { type NodePath, types as t } from 'storybook/internal/babel';
 import { type CsfFile } from 'storybook/internal/csf-tools';
 
-import { invariant } from './utils';
+import { invariant } from './utils.ts';
 
 export function getCodeSnippet(
   csf: CsfFile,

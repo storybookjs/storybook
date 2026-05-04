@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 
-import { getHostValidationMiddleware, isValidHost } from '../getHostValidationMiddleware';
+import { getHostValidationMiddleware, isValidHost } from '../getHostValidationMiddleware.ts';
 
 function createMockRequest(headers: Record<string, string>) {
   return { headers } as any;

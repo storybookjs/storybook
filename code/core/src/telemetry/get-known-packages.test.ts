@@ -2,10 +2,10 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { PackageJson } from 'storybook/internal/types';
 
-import { analyzeEcosystemPackages, getSafeVersionSpecifier } from './get-known-packages';
-import { getActualPackageVersion } from './package-json';
+import { analyzeEcosystemPackages, getSafeVersionSpecifier } from './get-known-packages.ts';
+import { getActualPackageVersion } from './package-json.ts';
 
-vi.mock(import('./package-json'), { spy: true });
+vi.mock(import('./package-json.ts'), { spy: true });
 
 describe('get-known-packages', () => {
   beforeEach(() => {

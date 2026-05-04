@@ -23,8 +23,8 @@
  */
 import type ts from 'typescript';
 
-import type { ComponentRef, ResolvedComponentTarget } from '../types';
-import { groupBy } from '../utils';
+import type { ComponentRef, ResolvedComponentTarget } from '../types.ts';
+import { groupBy } from '../utils.ts';
 
 // ---------------------------------------------------------------------------
 // Output types — compatible with react-docgen-typescript's ComponentDoc shape

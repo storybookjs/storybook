@@ -172,11 +172,11 @@ export const {
   SHARE_ISOLATE_MODE,
 } = events;
 
-export * from './data/create-new-story';
-export * from './data/file-component-search';
-export * from './data/argtypes-info';
-export * from './data/request-response';
-export * from './data/save-story';
-export * from './data/whats-new';
-export * from './data/phases';
-export * from './data/open-in-editor';
+export * from './data/create-new-story.ts';
+export * from './data/file-component-search.ts';
+export * from './data/argtypes-info.ts';
+export * from './data/request-response.ts';
+export * from './data/save-story.ts';
+export * from './data/whats-new.ts';
+export * from './data/phases.ts';
+export * from './data/open-in-editor.ts';

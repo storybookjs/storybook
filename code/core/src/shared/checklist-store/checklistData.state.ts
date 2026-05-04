@@ -1,4 +1,4 @@
-import type { StoreState } from '.';
+import type { StoreState } from './index.ts';
 
 export const initialState = {
   items: {

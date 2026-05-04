@@ -27,13 +27,13 @@ import {
 import * as path from 'path';
 import type ts from 'typescript';
 
-import type { StoryRef } from '../getComponentImports';
-import type { ComponentRef, ResolvedComponentTarget } from '../types';
+import type { StoryRef } from '../getComponentImports.ts';
+import type { ComponentRef, ResolvedComponentTarget } from '../types.ts';
 import {
   resolvePropsFromComponentType,
   resolvePropsFromStoryFile,
   serializeComponentDoc,
-} from './componentMetaExtractor';
+} from './componentMetaExtractor.ts';
 
 export class ComponentMetaProject {
   private ls: ts.LanguageService;

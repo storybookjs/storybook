@@ -5,7 +5,7 @@ import { dirname, join } from 'node:path';
 import { dedent } from 'ts-dedent';
 import { z } from 'zod';
 
-import { invariant } from '../common/utils/utils';
+import { invariant } from '../common/utils/utils.ts';
 
 const DEFAULT_SETTINGS_PATH = join(homedir(), '.storybook', 'settings.json');
 

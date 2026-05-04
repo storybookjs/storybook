@@ -1,6 +1,6 @@
 import type { ViewMode as ViewModeBase } from 'storybook/internal/csf';
 
-import type { Addon_OptionsParameterV7 } from './addons';
+import type { Addon_OptionsParameterV7 } from './addons.ts';
 
 export type {
   AfterEach,

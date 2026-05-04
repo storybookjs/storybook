@@ -1,9 +1,9 @@
 import type { ComponentProps } from 'react';
 import { useState } from 'react';
 
-import preview from '../../../../.storybook/preview';
-import { Button } from '../../components';
-import { TextFlip } from './TextFlip';
+import preview from '../../../../.storybook/preview.tsx';
+import { Button } from '../../components/index.ts';
+import { TextFlip } from './TextFlip.tsx';
 
 const Counter = ({
   text,

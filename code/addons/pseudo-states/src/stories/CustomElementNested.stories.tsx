@@ -2,9 +2,9 @@ import React from 'react';
 
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
-import './CustomElementNested';
+import './CustomElementNested.tsx';
 import './grid.css';
-import { PseudoStateGrid } from './PseudoStateGrid';
+import { PseudoStateGrid } from './PseudoStateGrid.tsx';
 
 const meta = {
   title: 'CustomElementNested',

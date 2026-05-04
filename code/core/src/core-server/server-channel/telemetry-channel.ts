@@ -25,21 +25,19 @@ export const makePayload = (
 };
 
 export function initTelemetryChannel(channel: Channel, options: Options) {
-  if (!options.disableTelemetry) {
-    channel.on(PREVIEW_INITIALIZED, async ({ userAgent }) => {
-      try {
-        const sessionId = await getSessionId();
-        const lastEvents = await getLastEvents();
-        const lastInit = lastEvents.init;
-        const lastPreviewFirstLoad = lastEvents['preview-first-load'];
-        if (!lastPreviewFirstLoad) {
-          const payload = makePayload(userAgent, lastInit, sessionId);
-          telemetry('preview-first-load', payload);
-        }
-      } catch {}
-    });
-    channel.on(SHARE_ISOLATE_MODE, async () => {
-      telemetry('share', { action: 'isolate-mode-opened' });
-    });
-  }
+  channel.on(PREVIEW_INITIALIZED, async ({ userAgent }) => {
+    try {
+      const sessionId = await getSessionId();
+      const lastEvents = await getLastEvents();
+      const lastInit = lastEvents.init;
+      const lastPreviewFirstLoad = lastEvents['preview-first-load'];
+      if (!lastPreviewFirstLoad) {
+        const payload = makePayload(userAgent, lastInit, sessionId);
+        telemetry('preview-first-load', payload);
+      }
+    } catch {}
+  });
+  channel.on(SHARE_ISOLATE_MODE, async () => {
+    telemetry('share', { action: 'isolate-mode-opened' });
+  });
 }

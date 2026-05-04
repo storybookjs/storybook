@@ -18,8 +18,8 @@ import { Addon_TypesEnum } from 'storybook/internal/types';
 
 import { global } from '@storybook/global';
 
-import type { API } from '../root';
-import { mockChannel } from './storybook-channel-mock';
+import type { API } from '../root.tsx';
+import { mockChannel } from './storybook-channel-mock.ts';
 
 export type { Addon_Type as Addon };
 export { Addon_TypesEnum as types };

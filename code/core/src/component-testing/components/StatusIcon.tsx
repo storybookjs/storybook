@@ -5,7 +5,7 @@ import { CheckIcon, CircleIcon, PlayIcon, StopAltIcon } from '@storybook/icons';
 import { transparentize } from 'polished';
 import { styled, useTheme } from 'storybook/theming';
 
-import { type Call, CallStates } from '../../instrumenter/types';
+import { type Call, CallStates } from '../../instrumenter/types.ts';
 
 export interface StatusIconProps {
   status: Call['status'];

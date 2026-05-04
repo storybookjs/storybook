@@ -1,6 +1,6 @@
-import type { Task } from '../task';
-import { exec } from '../utils/exec';
-import { prepareSandbox } from '../prepare-sandbox';
+import type { Task } from '../task.ts';
+import { exec } from '../utils/exec.ts';
+import { prepareSandbox } from '../prepare-sandbox.ts';
 
 export const chromatic: Task = {
   description: 'Run Chromatic against the sandbox',

@@ -1,6 +1,6 @@
 import { JsPackageManagerFactory, versions } from 'storybook/internal/common';
 
-import type { PostinstallOptions } from '../../../lib/cli-storybook/src/add';
+import type { PostinstallOptions } from '../../../lib/cli-storybook/src/add.ts';
 
 export default async function postinstall(options: PostinstallOptions) {
   const args = [

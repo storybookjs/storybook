@@ -3,8 +3,8 @@ import { beforeEach, describe, expect, test, vi } from 'vitest';
 import { vol } from 'memfs';
 import { dedent } from 'ts-dedent';
 
-import { fsMocks } from '../fixtures';
-import { getComponentDocgen } from './extractReactDocgenInfo';
+import { fsMocks } from '../fixtures.ts';
+import { getComponentDocgen } from './extractReactDocgenInfo.ts';
 
 vi.mock('node:fs');
 vi.mock('node:fs/promises');

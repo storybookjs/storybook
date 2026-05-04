@@ -4,8 +4,8 @@ import { ProjectType } from 'storybook/internal/cli';
 import { logger } from 'storybook/internal/node-logger';
 import { SupportedRenderer } from 'storybook/internal/types';
 
-import { GeneratorRegistry } from './GeneratorRegistry';
-import type { GeneratorModule } from './types';
+import { GeneratorRegistry } from './GeneratorRegistry.ts';
+import type { GeneratorModule } from './types.ts';
 
 vi.mock('storybook/internal/node-logger', { spy: true });
 

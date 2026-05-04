@@ -17,9 +17,9 @@ import {
 } from 'storybook/preview-api';
 import { h } from 'vue';
 
-import * as defaultProjectAnnotations from './entry-preview';
-import type { Meta } from './public-types';
-import type { VueRenderer } from './types';
+import * as defaultProjectAnnotations from './entry-preview.ts';
+import type { Meta } from './public-types.ts';
+import type { VueRenderer } from './types.ts';
 
 type JSXAble<TElement> = TElement & {
   new (...args: any[]): any;

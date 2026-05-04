@@ -1,7 +1,7 @@
 import type { Options as CoreOptions } from 'storybook/internal/types';
 
 import type { BuilderContext } from '@angular-devkit/architect';
-import type { StandaloneOptions } from '../builders/utils/standalone-options';
+import type { StandaloneOptions } from '../builders/utils/standalone-options.ts';
 
 export type PresetOptions = CoreOptions & {
   /* Allow to get the options of a targeted "browser builder"  */

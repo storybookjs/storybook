@@ -11,12 +11,12 @@ import {
   SupportedRenderer,
 } from 'storybook/internal/types';
 
-import { DependencyCollector } from '../dependency-collector';
-import { generatorRegistry } from '../generators/GeneratorRegistry';
-import { baseGenerator } from '../generators/baseGenerator';
-import { AddonService } from '../services';
-import type { FrameworkDetectionResult } from './FrameworkDetectionCommand';
-import { GeneratorExecutionCommand } from './GeneratorExecutionCommand';
+import { DependencyCollector } from '../dependency-collector.ts';
+import { generatorRegistry } from '../generators/GeneratorRegistry.ts';
+import { baseGenerator } from '../generators/baseGenerator.ts';
+import { AddonService } from '../services/index.ts';
+import type { FrameworkDetectionResult } from './FrameworkDetectionCommand.ts';
+import { GeneratorExecutionCommand } from './GeneratorExecutionCommand.ts';
 
 vi.mock('storybook/internal/node-logger', { spy: true });
 vi.mock('../generators/GeneratorRegistry', { spy: true });

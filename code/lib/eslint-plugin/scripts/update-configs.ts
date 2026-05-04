@@ -4,9 +4,9 @@ This script updates `lib/*.js` files from rule's meta data.
 import fs from 'fs/promises';
 import path from 'path';
 
-import { update as updateLegacyConfigs } from './update-lib-configs';
-import { update as updateFlatConfigs } from './update-lib-flat-configs';
-import { update as updateIndex } from './update-lib-index';
+import { update as updateLegacyConfigs } from './update-lib-configs.ts';
+import { update as updateFlatConfigs } from './update-lib-flat-configs.ts';
+import { update as updateIndex } from './update-lib-index.ts';
 
 const ROOT_CONFIG_DIR = path.resolve(__dirname, '../src/configs/');
 

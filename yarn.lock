@@ -560,7 +560,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@babel/core@npm:7.29.0, @babel/core@npm:^7.12.0, @babel/core@npm:^7.18.9, @babel/core@npm:^7.23.0, @babel/core@npm:^7.23.7, @babel/core@npm:^7.23.9, @babel/core@npm:^7.28.0, @babel/core@npm:^7.28.5, @babel/core@npm:^7.29.0, @babel/core@npm:^7.3.4, @babel/core@npm:^7.7.5":
+"@babel/core@npm:^7.12.0, @babel/core@npm:^7.18.9, @babel/core@npm:^7.23.0, @babel/core@npm:^7.23.7, @babel/core@npm:^7.23.9, @babel/core@npm:^7.28.0, @babel/core@npm:^7.28.5, @babel/core@npm:^7.29.0, @babel/core@npm:^7.3.4, @babel/core@npm:^7.7.5":
   version: 7.29.0
   resolution: "@babel/core@npm:7.29.0"
   dependencies:
@@ -9168,8 +9168,6 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@storybook/tanstack-react@workspace:code/frameworks/tanstack-react"
   dependencies:
-    "@babel/core": "npm:7.29.0"
-    "@babel/types": "npm:7.29.0"
     "@storybook/builder-vite": "workspace:*"
     "@storybook/react": "workspace:*"
     "@storybook/react-vite": "workspace:*"
@@ -9178,7 +9176,6 @@ __metadata:
     "@tanstack/router-core": "npm:^1.168.9"
     "@tanstack/start-client-core": "npm:^1.167.9"
     "@types/node": "npm:^22.19.1"
-    prop-types: "npm:^15.7.2"
     typescript: "npm:^5.9.3"
     vite: "npm:^7.0.4"
   peerDependencies:
@@ -9191,8 +9188,6 @@ __metadata:
     storybook: "workspace:^"
     vite: ^5.0.0 || ^6.0.0 || ^7.0.0 || ^8.0.0
   peerDependenciesMeta:
-    "@tanstack/react-router":
-      optional: false
     "@tanstack/react-start":
       optional: true
     "@tanstack/start-client-core":

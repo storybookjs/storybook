@@ -25,7 +25,6 @@ export const emojiKey = {
 
 const staticElements = {
   listHeaderRow: ['Name', 'Description', 'Automatically fixable', 'Included in configurations'],
-  listSpacerRow: Array(4).fill('-'),
   rulesListKey: [
     '',
     '',
@@ -38,13 +37,20 @@ const staticElements = {
   ].join('\n'),
 };
 
-const generateRulesListTable = (rulesList: TRuleListWithoutName[]) =>
-  [staticElements.listHeaderRow, staticElements.listSpacerRow, ...rulesList]
-    .map((column) => `|${column.join('|')}|`)
+const generateRulesListTable = (rulesList: TRuleListWithoutName[]) => {
+  const allRows = [staticElements.listHeaderRow, ...rulesList];
+  const colCount = staticElements.listHeaderRow.length;
+  const colWidths = Array.from({ length: colCount }, (_, colIdx) =>
+    Math.max(...allRows.map((row) => (row[colIdx] ?? '').length))
+  );
+  const separatorRow = colWidths.map((w) => '-'.repeat(w));
+  return [staticElements.listHeaderRow, separatorRow, ...rulesList]
+    .map((row) => '| ' + row.map((cell, i) => cell.padEnd(colWidths[i])).join(' | ') + ' |')
     .join('\n');
+};
 
 const generateRulesListMarkdown = (rulesList: TRuleListWithoutName[]) =>
-  ['', staticElements.rulesListKey, '', generateRulesListTable(rulesList), ''].join('\n');
+  [staticElements.rulesListKey.trimStart(), '', generateRulesListTable(rulesList), ''].join('\n');
 
 const listBeginMarker = '{/* RULES-LIST:START */}';
 const listEndMarker = '{/* RULES-LIST:END */}';
@@ -82,6 +88,7 @@ const overWriteRuleDocs = (rule: TRulesList, ruleDocFile: string) => {
     ruleCategoriesBeginMarker,
     '',
     `**Included in these configurations**: ${rule[4]}`,
+    '',
     ruleDocFile.substring(ruleCategoriesEndIndex),
   ].join('\n');
 };

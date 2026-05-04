@@ -8,7 +8,7 @@ import { CheckIcon, UndoIcon } from '@storybook/icons';
 import { type API, useStorybookApi } from 'storybook/manager-api';
 import { styled } from 'storybook/theming';
 
-import { AI_SETUP_PROMPT } from '../../../shared/constants/ai-prompts.ts';
+import { getAiSetupPrompt } from '../../../shared/utils/ai-prompts.ts';
 import { useCopyButton } from '../../../shared/useCopyButton.ts';
 import type { ItemId } from '../../../shared/checklist-store/index.ts';
 import type { ChecklistItem } from '../../components/sidebar/useChecklist.ts';
@@ -61,7 +61,7 @@ const CopyButton = ({ api }: { api: API }) => {
         <CheckIcon /> Copied!
       </>
     ),
-    content: AI_SETUP_PROMPT,
+    content: getAiSetupPrompt(),
     onCopy: () => {
       api.emit(AI_PROMPT_NUDGE, { id: 'setup', origin: 'onboarding-guide-page' });
     },

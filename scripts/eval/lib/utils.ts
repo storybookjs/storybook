@@ -1,12 +1,13 @@
+import { existsSync } from 'node:fs';
 import { join, resolve, sep } from 'node:path';
 import pc from 'picocolors';
 import { x } from 'tinyexec';
 
-import { AI_SETUP_PROMPT } from '../../../code/core/src/shared/constants/ai-prompts.ts';
 import {
   DEFAULT_PROMPT_NAME,
   PROMPT_NAMES,
 } from '../../../code/lib/cli-storybook/src/ai/setup-prompts/index.ts';
+import { getAiSetupPrompt } from '../../../code/core/src/shared/utils/ai-prompts.ts';
 
 export interface Logger {
   log: (msg: string) => void;
@@ -16,6 +17,7 @@ export interface Logger {
 }
 
 export const REPO_ROOT = resolve(import.meta.dirname, '..', '..', '..');
+export const DISPATCHER_PATH = resolve(REPO_ROOT, 'code/core/dist/bin/dispatcher.js');
 export const EVAL_ROOT = resolve(REPO_ROOT, '..', 'storybook-eval');
 export const REPOS_DIR = resolve(EVAL_ROOT, 'repos');
 export const TRIALS_DIR = resolve(EVAL_ROOT, 'trials');
@@ -151,18 +153,37 @@ export function formatTable(headers: string[], rows: string[][]): string {
 }
 
 /**
- * Returns the exact nudge string a real user copies from the Storybook UI —
- * "Run `npx storybook ai setup` and follow its instructions precisely." The
- * AGENT then runs `ai setup` itself as a tool call, mirroring the real user
- * flow. The harness selects a prompt variant via the `EVAL_SETUP_PROMPT` env
- * var on the agent's spawn (not here); this function only validates the name.
+ * Resolves the absolute path to the local Storybook dispatcher CLI entrypoint
+ * (`code/core/dist/bin/dispatcher.js`) and asserts it has been built. The eval
+ * runs Storybook from this local checkout — not from the benchmark project's
+ * installed `node_modules` — so changes under `code/` are exercised by the
+ * trial. Throws a contributor-friendly error if the dispatcher is missing.
+ */
+export function resolveDispatcherPath(): string {
+  if (!existsSync(DISPATCHER_PATH)) {
+    throw new Error(
+      `Storybook dispatcher not found at ${DISPATCHER_PATH}. ` +
+        `Run \`yarn task compile -s compile\` from the repo root before running the eval.`
+    );
+  }
+  return DISPATCHER_PATH;
+}
+
+/**
+ * Returns the nudge string the eval gives the agent. Mirrors the real user
+ * flow ("Run `<command>` and follow its instructions precisely.") but points
+ * at the local dispatcher so the trial exercises the Storybook code under
+ * `code/` rather than whatever version the benchmark project has installed.
+ * The harness selects a prompt variant via the `EVAL_SETUP_PROMPT` env var on
+ * the agent's spawn (not here); this function only validates the name.
  */
 export function loadPrompt(name: string): string {
   const available = listPrompts();
   if (!available.includes(name)) {
     throw new Error(`Prompt not found: ${name}\nAvailable: ${available.join(', ')}`);
   }
-  return AI_SETUP_PROMPT;
+  const dispatcher = resolveDispatcherPath();
+  return getAiSetupPrompt(`node ${dispatcher}`);
 }
 
 /** List available prompt names. Mirrors the builder registry in the CLI. */

@@ -4,7 +4,7 @@ import type { DetectResult } from 'package-manager-detector';
 
 import type { AgentInfo } from './detect-agent.ts';
 import type { KnownPackagesList } from './get-known-packages.ts';
-import type { MonorepoType } from './get-monorepo-type.ts';
+import type { MonorepoType } from '../shared/utils/get-monorepo-type.ts';
 
 export type EventType =
   | 'boot'

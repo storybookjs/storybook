@@ -342,7 +342,10 @@ const dualSlotData: IndexHash = {
   [dualSlotStoryId]: index[dualSlotStoryId],
 };
 
-function makeDualSlotStory(allStatuses: StatusesByStoryIdAndTypeId): Story {
+function makeDualSlotStory(
+  allStatuses: StatusesByStoryIdAndTypeId,
+  contextOverride?: { state?: Record<string, unknown> }
+): Story {
   return {
     args: {
       docsMode: false,
@@ -352,6 +355,21 @@ function makeDualSlotStory(allStatuses: StatusesByStoryIdAndTypeId): Story {
       setHighlightedItemId: action('setHighlightedItemId'),
       allStatuses,
     },
+    decorators: contextOverride
+      ? [
+          (storyFn) => (
+            <ManagerContext.Provider
+              value={{
+                ...managerContext,
+                state: { ...managerContext.state, ...contextOverride.state },
+              }}
+            >
+              <IconSymbols />
+              {storyFn()}
+            </ManagerContext.Provider>
+          ),
+        ]
+      : undefined,
     render: (args) => {
       const [selectedId, setSelectedId] = useState(dualSlotStoryId);
       return (
@@ -412,18 +430,25 @@ export const WithTestStatusOnly: Story = makeDualSlotStory({
   },
 });
 
-export const WithRelatedStatus: Story = makeDualSlotStory({
-  [dualSlotStoryId]: {
-    'storybook/change-detection': {
-      storyId: dualSlotStoryId,
-      typeId: 'storybook/change-detection',
-      value: 'status-value:affected',
-      title: 'Change Detection',
-      description: 'Story is related',
-      sidebarContextMenu: false,
+export const WithRelatedStatus: Story = {
+  ...makeDualSlotStory({
+    [dualSlotStoryId]: {
+      'storybook/change-detection': {
+        storyId: dualSlotStoryId,
+        typeId: 'storybook/change-detection',
+        value: 'status-value:affected',
+        title: 'Change Detection',
+        description: 'Story is related',
+        sidebarContextMenu: false,
+      },
     },
+  }),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    // affected status is always hidden — no change-status icon should render
+    await expect(canvas.queryByTestId('tree-change-status-button')).toBeNull();
   },
-});
+};
 
 export const BranchWithChangeDetectionPriority: Story = makeDualSlotStory({
   [dualSlotStoryId]: {
@@ -456,4 +481,79 @@ BranchWithChangeDetectionPriority.render = (args) => {
       highlightedRef={{ current: { itemId: selectedId, refId: DEFAULT_REF_ID } }}
     />
   );
+};
+
+/**
+ * A modified story without the modified filter active.
+ * The change-status icon should be hidden because modified icons only show when the filter is active.
+ */
+export const WithModifiedFilterInactive: Story = {
+  ...makeDualSlotStory({
+    [dualSlotStoryId]: {
+      'storybook/change-detection': {
+        storyId: dualSlotStoryId,
+        typeId: 'storybook/change-detection',
+        value: 'status-value:modified',
+        title: 'Change Detection',
+        description: 'Story is modified',
+        sidebarContextMenu: false,
+      },
+    },
+  }),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    // modified filter is not active — icon should be hidden
+    await expect(canvas.queryByTestId('tree-change-status-button')).toBeNull();
+  },
+};
+
+/**
+ * A modified story with the modified filter active.
+ * The change-status icon should be visible.
+ */
+export const WithModifiedFilterActive: Story = {
+  ...makeDualSlotStory(
+    {
+      [dualSlotStoryId]: {
+        'storybook/change-detection': {
+          storyId: dualSlotStoryId,
+          typeId: 'storybook/change-detection',
+          value: 'status-value:modified',
+          title: 'Change Detection',
+          description: 'Story is modified',
+          sidebarContextMenu: false,
+        },
+      },
+    },
+    { state: { includedStatusFilters: ['status-value:modified'] } }
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    // modified filter is active — icon should be visible
+    await expect(canvas.queryByTestId('tree-change-status-button')).toBeInTheDocument();
+  },
+};
+
+/**
+ * A new story with no filters set.
+ * The new status icon is always visible (not gated on a filter).
+ */
+export const WithNewAlwaysVisible: Story = {
+  ...makeDualSlotStory({
+    [dualSlotStoryId]: {
+      'storybook/change-detection': {
+        storyId: dualSlotStoryId,
+        typeId: 'storybook/change-detection',
+        value: 'status-value:new',
+        title: 'Change Detection',
+        description: 'Story is new',
+        sidebarContextMenu: false,
+      },
+    },
+  }),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    // new status is always shown — icon should be present regardless of filters
+    await expect(canvas.queryByTestId('tree-change-status-button')).toBeInTheDocument();
+  },
 };

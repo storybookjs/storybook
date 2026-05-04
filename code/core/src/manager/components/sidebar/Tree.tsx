@@ -17,7 +17,7 @@ import { CollapseIcon as CollapseIconSvg, ExpandAltIcon } from '@storybook/icons
 
 import { internal_fullStatusStore as fullStatusStore } from '#manager-stores';
 import { darken } from 'polished';
-import { useStorybookApi } from 'storybook/manager-api';
+import { useStorybookApi, useStorybookState } from 'storybook/manager-api';
 import type {
   API,
   ComponentEntry,
@@ -177,6 +177,7 @@ interface NodeProps {
   groupDualStatus: Record<StoryId, { change: StatusValue; test: StatusValue }>;
   api: API;
   collapsedData: Record<string, API_HashEntry>;
+  isModifiedFilterActive: boolean;
 }
 
 const Node = React.memo<NodeProps>(function Node(props) {
@@ -195,6 +196,7 @@ const Node = React.memo<NodeProps>(function Node(props) {
     setExpanded,
     onSelectStoryId,
     api,
+    isModifiedFilterActive,
   } = props;
   const theme = useTheme();
   const { isDesktop, isMobile, setMobileMenuOpen } = useLayout();
@@ -361,7 +363,11 @@ const Node = React.memo<NodeProps>(function Node(props) {
     const branchTest = getMostCriticalStatusValue([localTest, groupDual.test]);
 
     const branchChangeIcon =
-      branchChange !== 'status-value:unknown' ? getStatus(theme, branchChange).icon : null;
+      branchChange === 'status-value:unknown' ||
+      branchChange === 'status-value:affected' ||
+      (branchChange === 'status-value:modified' && !isModifiedFilterActive)
+        ? null
+        : getStatus(theme, branchChange).icon;
     const branchTestIcon =
       branchTest === 'status-value:error' || branchTest === 'status-value:warning' ? (
         <svg key="icon" viewBox="0 0 6 6" width="6" height="6" type="dot">
@@ -583,6 +589,8 @@ export const Tree = React.memo<{
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const api = useStorybookApi();
+  const includedStatusFilters = useStorybookState().includedStatusFilters ?? [];
+  const isModifiedFilterActive = includedStatusFilters.includes('status-value:modified');
 
   // Find top-level nodes and group them so we can hoist any orphans and expand any roots.
   const [rootIds, orphanIds, initialExpanded] = useMemo(
@@ -738,6 +746,7 @@ export const Tree = React.memo<{
             isFullyExpanded={isFullyExpanded}
             expandableDescendants={descendants}
             onSelectStoryId={onSelectStoryId}
+            isModifiedFilterActive={isModifiedFilterActive}
           />
         );
       }
@@ -764,6 +773,7 @@ export const Tree = React.memo<{
           isExpanded={!!expanded[itemId]}
           setExpanded={setExpanded}
           onSelectStoryId={onSelectStoryId}
+          isModifiedFilterActive={isModifiedFilterActive}
         />
       );
     });
@@ -776,7 +786,7 @@ export const Tree = React.memo<{
     expandableDescendants,
     expanded,
     groupDualStatus,
-    groupStatus,
+    isModifiedFilterActive,
     onSelectStoryId,
     orphanIds,
     refId,

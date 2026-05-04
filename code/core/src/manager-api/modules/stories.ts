@@ -248,7 +248,7 @@ export interface SubAPI {
    * @returns {API_LeafEntry} The leaf entry for the given story ID, or null if no leaf entry was
    *   found.
    */
-  findLeafEntry(index: API_IndexHash, storyId: StoryId): API_LeafEntry;
+  findLeafEntry(index: API_IndexHash, storyId: StoryId): API_LeafEntry | undefined;
   /**
    * Finds the leaf story ID for the given component or group ID in the given index.
    *
@@ -256,7 +256,7 @@ export interface SubAPI {
    * @param {StoryId} storyId - The ID of the story to find the leaf story ID for.
    * @returns {StoryId} The ID of the leaf story, or null if no leaf story was found.
    */
-  findLeafStoryId(index: API_IndexHash, storyId: StoryId): StoryId;
+  findLeafStoryId(index: API_IndexHash, storyId: StoryId): StoryId | undefined;
   /**
    * Finds all the leaf story IDs for the given entry ID in the given index.
    *
@@ -691,11 +691,17 @@ export const init: ModuleFn<SubAPI, SubState> = ({
     },
     findLeafEntry(index, storyId) {
       const entry = index[storyId];
+      if (!entry) {
+        return undefined;
+      }
       if (entry.type === 'docs' || entry.type === 'story') {
         return entry;
       }
 
-      const childStoryId = entry.children.find((childId) => index[childId]) || entry.children[0];
+      const childStoryId = entry.children.find((childId) => index[childId]);
+      if (!childStoryId) {
+        return undefined;
+      }
       return api.findLeafEntry(index, childStoryId);
     },
     findLeafStoryId(index, storyId) {

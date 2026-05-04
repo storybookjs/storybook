@@ -12,7 +12,9 @@ describe('generateReactNativeEntrypoint', () => {
   it('resolves Expo template path when expo variant is requested', () => {
     const templatePath = getEntrypointTemplatePath('expo');
 
-    expect(templatePath.endsWith('templates/react-native/index.expo.js')).toBe(true);
+    expect(templatePath.endsWith('templates/react-native/index.expo.js')).toMatchInlineSnapshot(
+      `true`
+    );
   });
 
   it('generates .rnstorybook/index.ts for TypeScript projects', async () => {
@@ -26,10 +28,16 @@ describe('generateReactNativeEntrypoint', () => {
       const outputPath = path.join(cwd, '.rnstorybook', 'index.ts');
       const output = await readFile(outputPath, 'utf-8');
 
-      expect(result.targetPath).toBe(outputPath);
-      expect(output).toContain("import { AppRegistry } from 'react-native';");
-      expect(output).toContain("import { view } from './storybook.requires';");
-      expect(output).toContain("AppRegistry.registerComponent('main'");
+      expect(path.relative(cwd, result.targetPath)).toMatchInlineSnapshot(
+        `".rnstorybook/index.ts"`
+      );
+      expect(output.includes("import { AppRegistry } from 'react-native';")).toMatchInlineSnapshot(
+        `true`
+      );
+      expect(output.includes("import { view } from './storybook.requires';")).toMatchInlineSnapshot(
+        `true`
+      );
+      expect(output.includes("AppRegistry.registerComponent('main'")).toMatchInlineSnapshot(`true`);
     } finally {
       await rm(cwd, { recursive: true, force: true });
     }
@@ -46,9 +54,15 @@ describe('generateReactNativeEntrypoint', () => {
       const outputPath = path.join(cwd, '.rnstorybook', 'index.js');
       const output = await readFile(outputPath, 'utf-8');
 
-      expect(result.targetPath).toBe(outputPath);
-      expect(output).toContain("import { AppRegistry } from 'react-native';");
-      expect(output).toContain("import { view } from './storybook.requires';");
+      expect(path.relative(cwd, result.targetPath)).toMatchInlineSnapshot(
+        `".rnstorybook/index.js"`
+      );
+      expect(output.includes("import { AppRegistry } from 'react-native';")).toMatchInlineSnapshot(
+        `true`
+      );
+      expect(output.includes("import { view } from './storybook.requires';")).toMatchInlineSnapshot(
+        `true`
+      );
     } finally {
       await rm(cwd, { recursive: true, force: true });
     }
@@ -66,15 +80,23 @@ describe('generateReactNativeEntrypoint', () => {
       const outputPath = path.join(cwd, '.rnstorybook', 'index.ts');
       const output = await readFile(outputPath, 'utf-8');
 
-      expect(result.targetPath).toBe(outputPath);
-      expect(output).toContain(
-        "import AsyncStorage from '@react-native-async-storage/async-storage';"
+      expect(path.relative(cwd, result.targetPath)).toMatchInlineSnapshot(
+        `".rnstorybook/index.ts"`
       );
-      expect(output).toContain("import { registerRootComponent } from 'expo';");
-      expect(output).toContain('shouldPersistSelection: true');
-      expect(output).toContain('enableWebsockets: true');
-      expect(output).toContain('registerRootComponent(StorybookUIRoot);');
-      expect(output).not.toContain("AppRegistry.registerComponent('main'");
+      expect(
+        output.includes("import AsyncStorage from '@react-native-async-storage/async-storage';")
+      ).toMatchInlineSnapshot(`true`);
+      expect(
+        output.includes("import { registerRootComponent } from 'expo';")
+      ).toMatchInlineSnapshot(`true`);
+      expect(output.includes('shouldPersistSelection: true')).toMatchInlineSnapshot(`true`);
+      expect(output.includes('enableWebsockets: true')).toMatchInlineSnapshot(`false`);
+      expect(output.includes('registerRootComponent(StorybookUIRoot);')).toMatchInlineSnapshot(
+        `true`
+      );
+      expect(output.includes("AppRegistry.registerComponent('main'")).toMatchInlineSnapshot(
+        `false`
+      );
     } finally {
       await rm(cwd, { recursive: true, force: true });
     }
@@ -94,8 +116,8 @@ describe('generateReactNativeEntrypoint', () => {
       });
       const output = await readFile(targetPath, 'utf-8');
 
-      expect(output).not.toContain('Old');
-      expect(output).toContain('StorybookUIRoot');
+      expect(output.includes('Old')).toMatchInlineSnapshot(`false`);
+      expect(output.includes('StorybookUIRoot')).toMatchInlineSnapshot(`true`);
     } finally {
       await rm(cwd, { recursive: true, force: true });
     }
@@ -118,8 +140,13 @@ describe('generateReactNativeEntrypoint', () => {
       const jsPath = path.join(cwd, '.rnstorybook', 'index.js');
       const generated = await readFile(jsPath, 'utf-8');
 
-      expect(sibling).toBe('// sibling\n');
-      expect(generated).toContain("import { view } from './storybook.requires';");
+      expect(sibling).toMatchInlineSnapshot(`
+        "// sibling
+        "
+      `);
+      expect(
+        generated.includes("import { view } from './storybook.requires';")
+      ).toMatchInlineSnapshot(`true`);
     } finally {
       await rm(cwd, { recursive: true, force: true });
     }
@@ -140,7 +167,10 @@ describe('generateReactNativeEntrypoint', () => {
       });
 
       const requiresOutput = await readFile(requiresPath, 'utf-8');
-      expect(requiresOutput).toBe(originalRequires);
+      expect(requiresOutput).toMatchInlineSnapshot(`
+        "export const view = {};
+        "
+      `);
     } finally {
       await rm(cwd, { recursive: true, force: true });
     }

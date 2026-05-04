@@ -30,8 +30,6 @@ export {
   getLastEvents,
   isWithinInitialSession,
   type CacheEntry,
-  getAiSetupPending,
-  type AiSetupPendingRecord,
 } from './event-cache.ts';
 
 export { getSessionId, SESSION_TIMEOUT } from './session-id.ts';

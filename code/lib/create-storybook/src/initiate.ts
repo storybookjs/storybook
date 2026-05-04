@@ -153,8 +153,12 @@ export async function doInitiate(options: CommandOptions): Promise<
   // Step 8: Print final summary
   const hasAiFeature = selectedFeatures.has(Feature.AI);
   if (hasAiFeature) {
-    // Record the init-time AI opt-in in the telemetry event cache so the server can gate
-    // AI-related UI (checklist item, analytics) via the universal checklist store.
+    // Persist the init-time AI opt-in so the dev server can gate AI-related UI
+    // (checklist item, copy-prompt button) on the user's actual choice — not on
+    // a telemetry-event side effect. This is a tiny local boolean with no PII,
+    // so it is written even when telemetry is disabled.
+    await cache.set('ai-init-opt-in', { timestamp: Date.now() }).catch(() => {});
+    // Telemetry event remains for analytics. UI logic does not depend on it.
     await telemetry('ai-init-opt-in', {}).catch(() => {});
   }
   await executeFinalization({

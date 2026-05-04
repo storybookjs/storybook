@@ -172,7 +172,7 @@ function serverCodeElimination(
               if (handlerArg) {
                 if (t.isIdentifier(handlerArg)) {
                   const binding = path.scope.getBinding(handlerArg.name);
-                  if (binding) {
+                  if (binding && binding.referencePaths.length === 1) {
                     binding.path.remove();
                   }
                 }

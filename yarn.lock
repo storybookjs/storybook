@@ -16882,7 +16882,7 @@ __metadata:
     eslint: "npm:^8.57.1"
     eslint-plugin-eslint-plugin: "npm:^6.5.0"
     eslint-plugin-node: "npm:^11.1.0"
-    prettier: "npm:^3.7.1"
+    oxfmt: "npm:^0.41.0"
     prompts: "npm:^2.4.0"
     ts-dedent: "npm:^2.0.0"
     typescript: "npm:^5.9.3"

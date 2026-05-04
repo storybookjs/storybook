@@ -56,7 +56,7 @@
     "eslint": "^8.57.1",
     "eslint-plugin-eslint-plugin": "^6.5.0",
     "eslint-plugin-node": "^11.1.0",
-    "prettier": "^3.7.1",
+    "oxfmt": "^0.41.0",
     "prompts": "^2.4.0",
     "ts-dedent": "^2.0.0",
     "typescript": "^5.9.3"

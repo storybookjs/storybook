@@ -70,7 +70,7 @@ export const viteFinal: StorybookConfigVite['viteFinal'] = async (config, option
     serverCodeEliminationPlugin({ excludeFiles: [dirname(stubPath)] }),
     serverOnlyStubPlugin(),
     {
-      name: 'tanstack-start-plugin-remover',
+      name: 'storybook:tanstack-react:module-interception',
       enforce: 'pre' as const,
       resolveId: {
         order: 'pre' as const,
@@ -124,9 +124,6 @@ export const viteFinal: StorybookConfigVite['viteFinal'] = async (config, option
               '@tanstack/react-start-server',
               '@tanstack/start-server-core',
             ],
-          },
-          define: {
-            'process.env': {},
           },
         };
       },

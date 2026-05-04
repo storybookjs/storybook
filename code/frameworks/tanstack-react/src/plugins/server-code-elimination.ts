@@ -1,22 +1,7 @@
-import { transformSync } from 'storybook/internal/babel';
-import type { NodePath, PluginObj } from '@babel/core';
-import {
-  type Statement,
-  isImportDeclaration,
-  isIdentifier,
-  isImportSpecifier,
-  isMemberExpression,
-  isCallExpression,
-  isExpression,
-  isObjectExpression,
-  isObjectProperty,
-  identifier,
-  stringLiteral,
-  callExpression,
-  importDeclaration,
-  importSpecifier,
-} from '@babel/types';
+import { transformSync, types as t, type NodePath } from 'storybook/internal/babel';
+import { type Statement } from '@babel/types';
 import type { Plugin } from 'vite';
+import type { PluginObj } from '@babel/core';
 
 interface TransformState {
   code: string;
@@ -142,7 +127,7 @@ function serverCodeElimination(state: TransformState): PluginObj {
 
             // createServerOnlyFn(fn) → fn() no-op spy
             if (
-              isIdentifier(node.callee) &&
+              t.isIdentifier(node.callee) &&
               resolves(node.callee.name, 'createServerOnlyFn') &&
               SERVER_ONLY_FN_RE.test(state.code)
             ) {
@@ -153,12 +138,12 @@ function serverCodeElimination(state: TransformState): PluginObj {
 
             // createClientOnlyFn(fn) → fn(originalImpl) spy wrapping original
             if (
-              isIdentifier(node.callee) &&
+              t.isIdentifier(node.callee) &&
               resolves(node.callee.name, 'createClientOnlyFn') &&
               CLIENT_ONLY_FN_RE.test(state.code)
             ) {
               const innerFn = node.arguments[0];
-              if (innerFn && isExpression(innerFn)) {
+              if (innerFn && t.isExpression(innerFn)) {
                 path.replaceWith(sbFnCallWithImpl(innerFn));
                 state.modified = true;
               }
@@ -183,7 +168,7 @@ function serverCodeElimination(state: TransformState): PluginObj {
             ) {
               const handlerArg = node.arguments[0];
               if (handlerArg) {
-                if (isIdentifier(handlerArg)) {
+                if (t.isIdentifier(handlerArg)) {
                   const binding = path.scope.getBinding(handlerArg.name);
                   if (binding) {
                     binding.path.remove();
@@ -198,7 +183,7 @@ function serverCodeElimination(state: TransformState): PluginObj {
             // createMiddleware()...server(fn) / .inputValidator(fn) → strip call
             if (resolves(root.rootName, 'createMiddleware') && MIDDLEWARE_RE.test(state.code)) {
               if (methodName === 'server' || methodName === 'inputValidator') {
-                if (isMemberExpression(path.node.callee)) {
+                if (t.isMemberExpression(path.node.callee)) {
                   path.replaceWith(path.node.callee.object);
                   state.modified = true;
                 }
@@ -214,7 +199,7 @@ function serverCodeElimination(state: TransformState): PluginObj {
             ) {
               if (methodName === 'client') {
                 const innerFn = node.arguments[0];
-                if (innerFn && isExpression(innerFn)) {
+                if (innerFn && t.isExpression(innerFn)) {
                   path.replaceWith(sbFnCallWithImpl(innerFn));
                   state.modified = true;
                 }
@@ -223,7 +208,7 @@ function serverCodeElimination(state: TransformState): PluginObj {
 
               if (methodName === 'server') {
                 const parent = path.parent;
-                if (!isMemberExpression(parent) || !isCallExpression(path.parentPath?.parent)) {
+                if (!t.isMemberExpression(parent) || !t.isCallExpression(path.parentPath?.parent)) {
                   path.replaceWith(sbFnCall());
                   state.modified = true;
                 }
@@ -249,20 +234,20 @@ function serverCodeElimination(state: TransformState): PluginObj {
 
 /** Build `import { fn as __sb_fn } from 'storybook/test'` */
 function buildFnImport() {
-  return importDeclaration(
-    [importSpecifier(identifier('__sb_fn'), identifier('fn'))],
-    stringLiteral('storybook/test')
+  return t.importDeclaration(
+    [t.importSpecifier(t.identifier('__sb_fn'), t.identifier('fn'))],
+    t.stringLiteral('storybook/test')
   );
 }
 
 /** Build `__sb_fn()` — no-op spy for server code */
 function buildFnCall() {
-  return callExpression(identifier('__sb_fn'), []);
+  return t.callExpression(t.identifier('__sb_fn'), []);
 }
 
 /** Build `__sb_fn(impl)` — spy wrapping the original implementation for client code */
 function buildFnCallWithImpl(impl: import('@babel/types').Expression) {
-  return callExpression(identifier('__sb_fn'), [impl]);
+  return t.callExpression(t.identifier('__sb_fn'), [impl]);
 }
 
 /**
@@ -272,7 +257,7 @@ function buildFnCallWithImpl(impl: import('@babel/types').Expression) {
 function collectTanstackImports(body: Statement[]) {
   const imports = new Map<string, string>();
   for (const node of body) {
-    if (!isImportDeclaration(node)) {
+    if (!t.isImportDeclaration(node)) {
       continue;
     }
     const src = node.source.value;
@@ -284,8 +269,10 @@ function collectTanstackImports(body: Statement[]) {
       continue;
     }
     for (const spec of node.specifiers) {
-      if (isImportSpecifier(spec)) {
-        const importedName = isIdentifier(spec.imported) ? spec.imported.name : spec.imported.value;
+      if (t.isImportSpecifier(spec)) {
+        const importedName = t.isIdentifier(spec.imported)
+          ? spec.imported.name
+          : spec.imported.value;
         imports.set(spec.local.name, importedName);
       }
     }
@@ -310,16 +297,16 @@ function resolvesToFactory(
  * e.g. `createServerFn().middleware(...).handler(fn)` → `createServerFn()`.
  */
 function findChainRoot(
-  node: ReturnType<typeof callExpression>
-): { rootCall: ReturnType<typeof callExpression>; rootName: string } | null {
-  let current: ReturnType<typeof callExpression> = node;
+  node: ReturnType<typeof t.callExpression>
+): { rootCall: ReturnType<typeof t.callExpression>; rootName: string } | null {
+  let current: ReturnType<typeof t.callExpression> = node;
 
   while (true) {
     const callee = current.callee;
-    if (isIdentifier(callee)) {
+    if (t.isIdentifier(callee)) {
       return { rootCall: current, rootName: callee.name };
     }
-    if (isMemberExpression(callee) && isCallExpression(callee.object)) {
+    if (t.isMemberExpression(callee) && t.isCallExpression(callee.object)) {
       current = callee.object;
       continue;
     }
@@ -328,8 +315,8 @@ function findChainRoot(
 }
 
 /** Get the method name from `expr.method(...)` → `"method"` */
-function getMethodName(node: ReturnType<typeof callExpression>): string | null {
-  if (isMemberExpression(node.callee) && isIdentifier(node.callee.property)) {
+function getMethodName(node: ReturnType<typeof t.callExpression>): string | null {
+  if (t.isMemberExpression(node.callee) && t.isIdentifier(node.callee.property)) {
     return node.callee.property.name;
   }
   return null;
@@ -348,7 +335,7 @@ function getMethodName(node: ReturnType<typeof callExpression>): string | null {
  * match or the argument isn't an inline object literal.
  */
 function getRouteFactoryOptionsArg(
-  node: ReturnType<typeof callExpression>,
+  node: ReturnType<typeof t.callExpression>,
   imports: Map<string, string>
 ): import('@babel/types').ObjectExpression | null {
   const factoryName = getRouteFactoryName(node, imports);
@@ -356,21 +343,21 @@ function getRouteFactoryOptionsArg(
     return null;
   }
   const optionsArg = node.arguments[0];
-  return isObjectExpression(optionsArg) ? optionsArg : null;
+  return t.isObjectExpression(optionsArg) ? optionsArg : null;
 }
 
 function getRouteFactoryName(
-  node: ReturnType<typeof callExpression>,
+  node: ReturnType<typeof t.callExpression>,
   imports: Map<string, string>
 ): string | null {
   // Direct call: createRoute(...) / createRootRoute(...)
-  if (isIdentifier(node.callee)) {
+  if (t.isIdentifier(node.callee)) {
     const resolved = imports.get(node.callee.name) ?? node.callee.name;
     return ROUTE_FACTORIES.has(resolved) ? resolved : null;
   }
   // Curried call: createFileRoute('/path')(...) /
   //               createRootRouteWithContext<...>()(...)
-  if (isCallExpression(node.callee) && isIdentifier(node.callee.callee)) {
+  if (t.isCallExpression(node.callee) && t.isIdentifier(node.callee.callee)) {
     const calleeName = node.callee.callee.name;
     const resolved = imports.get(calleeName) ?? calleeName;
     return ROUTE_FACTORIES.has(resolved) ? resolved : null;
@@ -388,11 +375,11 @@ function getRouteFactoryName(
 function stripServerOption(options: import('@babel/types').ObjectExpression): boolean {
   const initialLength = options.properties.length;
   options.properties = options.properties.filter((prop) => {
-    if (!isObjectProperty(prop) || prop.computed) {
+    if (!t.isObjectProperty(prop) || prop.computed) {
       return true;
     }
     const key = prop.key;
-    const keyName = isIdentifier(key) ? key.name : undefined;
+    const keyName = t.isIdentifier(key) ? key.name : undefined;
     return keyName !== 'server';
   });
   return options.properties.length !== initialLength;
@@ -408,7 +395,7 @@ function eliminateDeadImports(programPath: NodePath<import('@babel/types').Progr
   programPath.traverse({
     enter(path) {
       const { node } = path;
-      if (!isIdentifier(node) || path.isBindingIdentifier()) {
+      if (!t.isIdentifier(node) || path.isBindingIdentifier()) {
         return;
       }
       // Skip identifiers that live inside an import declaration's specifiers.

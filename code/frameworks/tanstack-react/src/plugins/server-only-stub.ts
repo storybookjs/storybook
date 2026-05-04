@@ -1,14 +1,5 @@
-import { babelParse as parse } from 'storybook/internal/barsel';
-import {
-  isExportDefaultDeclaration,
-  isExportNamedDeclaration,
-  isExportAllDeclaration,
-  isVariableDeclaration,
-  isFunctionDeclaration,
-  isClassDeclaration,
-  isIdentifier,
-  isExportSpecifier,
-} from '@babel/types';
+import { babelParse as parse, types as t } from 'storybook/internal/babel';
+
 import type { Plugin } from 'vite';
 
 const SERVER_FILE_RE = /\.server\.(?:[mc]?[jt]sx?)$/;
@@ -65,43 +56,38 @@ function collectExports(code: string, id: string): ExportInfo {
 
   let ast: ReturnType<typeof parse>;
   try {
-    ast = parse(code, {
-      sourceType: 'module',
-      sourceFilename: id,
-      plugins: ['typescript', 'jsx'],
-      errorRecovery: true,
-    });
+    ast = parse(code);
   } catch {
     return { named, hasDefault };
   }
 
   for (const node of ast.program.body) {
-    if (isExportDefaultDeclaration(node)) {
+    if (t.isExportDefaultDeclaration(node)) {
       hasDefault = true;
       continue;
     }
-    if (isExportAllDeclaration(node)) {
+    if (t.isExportAllDeclaration(node)) {
       // `export * from '...'` — we can't enumerate; ignore to be safe.
       // Consumers of unknown re-exports will get `undefined`, which is
       // acceptable for server-only modules.
       continue;
     }
-    if (isExportNamedDeclaration(node)) {
+    if (t.isExportNamedDeclaration(node)) {
       const decl = node.declaration;
       if (decl) {
-        if (isVariableDeclaration(decl)) {
+        if (t.isVariableDeclaration(decl)) {
           for (const declarator of decl.declarations) {
-            if (isIdentifier(declarator.id)) {
+            if (t.isIdentifier(declarator.id)) {
               named.add(declarator.id.name);
             }
           }
-        } else if ((isFunctionDeclaration(decl) || isClassDeclaration(decl)) && decl.id?.name) {
+        } else if ((t.isFunctionDeclaration(decl) || t.isClassDeclaration(decl)) && decl.id?.name) {
           named.add(decl.id.name);
         }
       }
       for (const spec of node.specifiers) {
-        if (isExportSpecifier(spec)) {
-          const exportedName = isIdentifier(spec.exported)
+        if (t.isExportSpecifier(spec)) {
+          const exportedName = t.isIdentifier(spec.exported)
             ? spec.exported.name
             : spec.exported.value;
           if (exportedName !== 'default') {

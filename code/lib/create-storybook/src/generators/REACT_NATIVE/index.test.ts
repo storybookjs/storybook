@@ -19,6 +19,7 @@ describe('REACT_NATIVE generator module', () => {
   const createPackageManager = (scripts?: Record<string, string>) =>
     ({
       getDependencyVersion: vi.fn().mockReturnValue(null),
+      getAllDependencies: vi.fn().mockReturnValue({}),
       getVersionedPackages: vi.fn().mockResolvedValue([]),
       addScripts: vi.fn(),
       getRunCommand: vi.fn((scriptName: string) => `npm run ${scriptName}`),

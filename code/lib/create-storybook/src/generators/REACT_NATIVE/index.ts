@@ -10,7 +10,6 @@ import {
   generateReactNativeEntrypoint,
 } from './generateEntrypoint.ts';
 import { defineGeneratorModule } from '../modules/GeneratorModule.ts';
-import { generateReactNativeEntrypoint } from './generateEntrypoint.ts';
 import {
   deriveStorybookPlatformScripts,
   type StorybookPlatformScriptDerivationResult,

@@ -137,6 +137,52 @@ export default async function makeMetroConfig() {
     }
   });
 
+  it('reuses aliased ESM withStorybook import when wrapping export default', () => {
+    const before = `
+import { withStorybook as wrapMetro } from '@storybook/react-native/withStorybook';
+
+export default {};
+`;
+    const transformed = transformMetroConfigSource(before, path.join(tempDir, 'metro.config.ts'));
+
+    expect(transformed.action).toBe('updated');
+    if (transformed.action === 'updated') {
+      expect(transformed.code).toContain(
+        "import { withStorybook as wrapMetro } from '@storybook/react-native/withStorybook'"
+      );
+      expect(transformed.code).toContain('export default wrapMetro({});');
+      expect(transformed.code).not.toContain('export default withStorybook({});');
+    }
+  });
+
+  it('treats aliased ESM withStorybook wrapper as already configured', () => {
+    const before = `
+import { withStorybook as wrapMetro } from '@storybook/react-native/withStorybook';
+
+export default wrapMetro({});
+`;
+    const transformed = transformMetroConfigSource(before, path.join(tempDir, 'metro.config.ts'));
+    expect(transformed.action).toBe('already-configured');
+  });
+
+  it('reuses aliased CJS withStorybook binding when wrapping module.exports', () => {
+    const before = `
+const { withStorybook: wrapMetro } = require('@storybook/react-native/withStorybook');
+const config = {};
+module.exports = config;
+`;
+    const transformed = transformMetroConfigSource(before, path.join(tempDir, 'metro.config.js'));
+
+    expect(transformed.action).toBe('updated');
+    if (transformed.action === 'updated') {
+      expect(transformed.code).toContain(
+        "const { withStorybook: wrapMetro } = require('@storybook/react-native/withStorybook');"
+      );
+      expect(transformed.code).toContain('module.exports = wrapMetro(config);');
+      expect(transformed.code).not.toContain('module.exports = withStorybook(config);');
+    }
+  });
+
   it('uses ESM import for an .mjs config even without existing import/export', () => {
     const before = 'module.exports = {};\n';
     const transformed = transformMetroConfigSource(before, path.join(tempDir, 'metro.config.mjs'));

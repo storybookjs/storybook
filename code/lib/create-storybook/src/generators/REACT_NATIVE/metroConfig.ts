@@ -57,8 +57,8 @@ const isModuleExportsTarget = (left: t.LVal | t.OptionalMemberExpression) => {
   );
 };
 
-const isWithStorybookCall = (node: t.Node | null | undefined) => {
-  return t.isCallExpression(node) && t.isIdentifier(node.callee, { name: 'withStorybook' });
+const isWithStorybookCall = (node: t.Node | null | undefined, withStorybookLocalName: string) => {
+  return t.isCallExpression(node) && t.isIdentifier(node.callee, { name: withStorybookLocalName });
 };
 
 const parseConfig = (source: string) => {
@@ -124,11 +124,14 @@ const hasWithStorybookBinding = (program: t.Program) => {
       t.isImportDeclaration(statement) &&
       statement.source.value === '@storybook/react-native/withStorybook'
     ) {
-      return statement.specifiers.some(
+      const withStorybookSpecifier = statement.specifiers.find(
         (specifier) =>
           t.isImportSpecifier(specifier) &&
           t.isIdentifier(specifier.imported, { name: 'withStorybook' })
       );
+      if (withStorybookSpecifier && t.isImportSpecifier(withStorybookSpecifier)) {
+        return withStorybookSpecifier.local.name;
+      }
     }
 
     if (!t.isVariableDeclaration(statement)) {
@@ -153,20 +156,25 @@ const hasWithStorybookBinding = (program: t.Program) => {
         continue;
       }
 
-      const withStorybookProperty = declaration.id.properties.find(
-        (property) =>
-          t.isObjectProperty(property) &&
-          t.isIdentifier(property.key, { name: 'withStorybook' }) &&
-          t.isIdentifier(property.value, { name: 'withStorybook' })
-      );
+      for (const property of declaration.id.properties) {
+        if (!t.isObjectProperty(property)) {
+          continue;
+        }
 
-      if (withStorybookProperty) {
-        return true;
+        if (!t.isIdentifier(property.key, { name: 'withStorybook' })) {
+          continue;
+        }
+
+        if (!t.isIdentifier(property.value)) {
+          continue;
+        }
+
+        return property.value.name;
       }
     }
   }
 
-  return false;
+  return undefined;
 };
 
 // Returns the index in program.body after any directive-prologue statements
@@ -284,6 +292,7 @@ export const prependMetroFallbackComment = (source: string) => {
 export const transformMetroConfigSource = (source: string, filePath: string): TransformResult => {
   const ast = parseConfig(source);
   const program = ast.program;
+  const withStorybookLocalName = hasWithStorybookBinding(program) ?? 'withStorybook';
   let matchedExport = false;
   let changed = false;
 
@@ -294,11 +303,11 @@ export const transformMetroConfigSource = (source: string, filePath: string): Tr
       }
 
       matchedExport = true;
-      if (isWithStorybookCall(statement.expression.right)) {
+      if (isWithStorybookCall(statement.expression.right, withStorybookLocalName)) {
         return { action: 'already-configured' };
       }
 
-      statement.expression.right = t.callExpression(t.identifier('withStorybook'), [
+      statement.expression.right = t.callExpression(t.identifier(withStorybookLocalName), [
         statement.expression.right as t.Expression,
       ]);
       changed = true;
@@ -322,7 +331,9 @@ export const transformMetroConfigSource = (source: string, filePath: string): Tr
       // Preserve TypeScript/Flow function metadata when converting declaration -> expression.
       functionExpression.returnType = statement.declaration.returnType ?? null;
       functionExpression.typeParameters = statement.declaration.typeParameters ?? null;
-      statement.declaration = t.callExpression(t.identifier('withStorybook'), [functionExpression]);
+      statement.declaration = t.callExpression(t.identifier(withStorybookLocalName), [
+        functionExpression,
+      ]);
       changed = true;
       continue;
     }
@@ -331,11 +342,11 @@ export const transformMetroConfigSource = (source: string, filePath: string): Tr
       return { action: 'unsupported' };
     }
 
-    if (isWithStorybookCall(statement.declaration)) {
+    if (isWithStorybookCall(statement.declaration, withStorybookLocalName)) {
       return { action: 'already-configured' };
     }
 
-    statement.declaration = t.callExpression(t.identifier('withStorybook'), [
+    statement.declaration = t.callExpression(t.identifier(withStorybookLocalName), [
       statement.declaration,
     ]);
     changed = true;

@@ -51,6 +51,7 @@ export default defineGeneratorModule({
       '@react-native-community/datetimepicker',
       '@react-native-community/slider',
       'react-native-reanimated',
+      'react-native-worklets',
       'react-native-gesture-handler',
       '@gorhom/bottom-sheet',
       'react-native-svg',

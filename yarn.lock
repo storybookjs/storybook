@@ -2111,18 +2111,18 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@chromatic-com/storybook@npm:5.1.2--canary.694333f.0":
-  version: 5.1.2--canary.694333f.0
-  resolution: "@chromatic-com/storybook@npm:5.1.2--canary.694333f.0"
+"@chromatic-com/storybook@npm:^5.0.0":
+  version: 5.1.2
+  resolution: "@chromatic-com/storybook@npm:5.1.2"
   dependencies:
     "@neoconfetti/react": "npm:^1.0.0"
-    chromatic: "npm:16.0.1--canary.1262.23788470989.0"
+    chromatic: "npm:^13.3.4"
     filesize: "npm:^10.0.12"
     jsonfile: "npm:^6.1.0"
     strip-ansi: "npm:^7.1.0"
   peerDependencies:
     storybook: ^0.0.0-0 || ^10.1.0 || ^10.1.0-0 || ^10.2.0-0 || ^10.3.0-0 || ^10.4.0-0
-  checksum: 10c0/3b3fe1ef9d16827f0e79b89a796f61160911460f7d455c0e31721f4a6df4946024c32109b0e34b481b9b84c3a3969d9b7dae618b9fbccbed236173dc2b87d889
+  checksum: 10c0/0d21aab34eef8dea756d7a510fd78227379751e23d9cedac127161442eb96622f302e0b8f71a78f1254b31a26ee5350e328e4c994909d28553dbe74174d606e1
   languageName: node
   linkType: hard
 
@@ -13663,25 +13663,6 @@ __metadata:
   version: 3.0.0
   resolution: "chownr@npm:3.0.0"
   checksum: 10c0/43925b87700f7e3893296c8e9c56cc58f926411cce3a6e5898136daaf08f08b9a8eb76d37d3267e707d0dcc17aed2e2ebdf5848c0c3ce95cf910a919935c1b10
-  languageName: node
-  linkType: hard
-
-"chromatic@npm:16.0.1--canary.1262.23788470989.0":
-  version: 16.0.1--canary.1262.23788470989.0
-  resolution: "chromatic@npm:16.0.1--canary.1262.23788470989.0"
-  peerDependencies:
-    "@chromatic-com/cypress": ^0.*.* || ^1.0.0
-    "@chromatic-com/playwright": ^0.*.* || ^1.0.0
-  peerDependenciesMeta:
-    "@chromatic-com/cypress":
-      optional: true
-    "@chromatic-com/playwright":
-      optional: true
-  bin:
-    chroma: dist/bin.js
-    chromatic: dist/bin.js
-    chromatic-cli: dist/bin.js
-  checksum: 10c0/c0069f6fc0bf13b39a6a0dc1c70a8f4e512761cd30dbc7a996a4ec3c14ae677655ad3d5aeda5ef51d6b899e593c749dc2692d2ea0dce160c2b3a5789aae56400
   languageName: node
   linkType: hard
 

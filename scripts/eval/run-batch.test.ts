@@ -163,6 +163,7 @@ describe('buildBatchRunDescriptors', () => {
       { project: 'evergreen-ci', agent: 'claude', repetition: 1 },
       { project: 'excalidraw', agent: 'claude', repetition: 1 },
       { project: 'bluesky', agent: 'claude', repetition: 1 },
+      { project: 'react-spectrum', agent: 'claude', repetition: 1 },
       { project: 'mealdrop', agent: 'codex', repetition: 1 },
       { project: 'edgy', agent: 'codex', repetition: 1 },
       { project: 'wikitok', agent: 'codex', repetition: 1 },
@@ -170,6 +171,7 @@ describe('buildBatchRunDescriptors', () => {
       { project: 'evergreen-ci', agent: 'codex', repetition: 1 },
       { project: 'excalidraw', agent: 'codex', repetition: 1 },
       { project: 'bluesky', agent: 'codex', repetition: 1 },
+      { project: 'react-spectrum', agent: 'codex', repetition: 1 },
     ]);
   });
 });
@@ -201,6 +203,7 @@ describe('buildBatchVariants', () => {
       'evergreen-ci',
       'excalidraw',
       'bluesky',
+      'react-spectrum',
     ]);
   });
 

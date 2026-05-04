@@ -36,7 +36,7 @@ import { ADDON_ID as ADDON_DOCS_ID } from '../../docs-tools/shared.ts';
 import { TourGuide } from '../../manager/components/TourGuide/TourGuide.tsx';
 import { LocationMonitor } from '../../manager/hooks/useLocation.ts';
 import type { initialState } from './checklistData.state.ts';
-import { AI_SETUP_PROMPT } from '../constants/ai-prompts.ts';
+import { getAiSetupPrompt } from '../utils/ai-prompts.ts';
 
 const CodeWrapper = styled.div(({ theme }) => ({
   alignSelf: 'stretch',
@@ -177,7 +177,7 @@ export const checklistData = {
           showOnGuidePage: false,
           action: {
             label: 'Copy prompt',
-            copyContent: AI_SETUP_PROMPT,
+            copyContent: getAiSetupPrompt(),
             onClick: ({ api }) => {
               api.emit(AI_PROMPT_NUDGE, { id: 'setup', origin: 'onboarding-checklist-side' });
             },

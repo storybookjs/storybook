@@ -76,7 +76,7 @@ export class BUNProxy extends JsPackageManager {
   }
 
   getCommandName(): string {
-    return 'npm';
+    return 'bun';
   }
 
   getInstallCommand(deps: string[], dev: boolean): string {

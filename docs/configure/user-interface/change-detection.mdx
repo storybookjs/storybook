@@ -5,7 +5,7 @@ sidebar:
   order: 3
 ---
 
-During development, Storybook monitors your git working tree and the builder's module graph to identify which stories are related to your changes. Status icons appear next to stories and components in the sidebar so you can focus your review and testing on what has actually changed.
+During development, Storybook monitors your git working tree and the builder's module graph to identify which stories are related to your changes. A **Review** button at the top of the sidebar shows live counts of new and modified stories and lets you filter the tree to just those entries with one click. Subtle status icons appear next to **new** stories so you can spot them at a glance.
 
 ![Sidebar showing change detection status icons](../../_assets/configure/change-detection-full.png)
 
@@ -24,19 +24,19 @@ If change detection status indicators never appear in your sidebar, check that b
 
 When a change is detected, Storybook shows one of the following status icons next to the relevant stories in the sidebar:
 
-| Icon                  | Status       | Definition                                                                            |
-| --------------------- | ------------ | ------------------------------------------------------------------------------------- |
-| ✦ Sparkle             | **new**      | The story file is untracked or newly added in git.                                    |
-| ● Filled circle       | **modified** | The story's own file, or a file it directly imports, was changed.                     |
-| ◉ Circle with outline | **related**  | A file further up the story's dependency chain was changed (a transitive dependency). |
+| Icon            | Status       | Definition                                                                            |
+| --------------- | ------------ | ------------------------------------------------------------------------------------- |
+| ✦ Sparkle       | **new**      | The story file is untracked or newly added in git.                                    |
+| ● Filled circle | **modified** | The story's own file, or a file it directly imports, was changed.                     |
+|                 | **related**  | A file further up the story's dependency chain was changed (a transitive dependency). |
 
 When multiple statuses apply to the same story, the highest priority wins: **new** > **modified** > **related**.
 
 <Callout variant="info" icon="💡">
 
-**Modified vs. related**
+**Why are modified and related quiet by default?**
 
-This distinction helps you prioritize your review. **Modified** stories are closest to the change, so you should typically review them first. **Related** stories depend on the changed code indirectly, so review them after you've verified the directly modified stories look correct. This can be especially helpful in larger codebases where a single change may impact many stories.
+Heuristic-based statuses can over-report on real-world repositories — a route file that imports many components, or a utility that's imported broadly, can mark a large number of stories as modified or related even when the actual code change doesn't affect them. Storybook keeps these statuses available behind explicit filters so the sidebar stays calm by default while still giving you the information when you ask for it.
 
 </Callout>
 
@@ -44,9 +44,20 @@ Change detection statuses are displayed alongside [test statuses](../../writing-
 
 ![Sidebar showing change detection and test status icons](../../_assets/configure/change-detection-dual-slot.png)
 
+## Reviewing changes
+
+A **Review** button appears between the search bar and the story tree whenever you have at least one new or modified story. The button shows live counts and toggles both the **new** and **modified** filters together with one click:
+
+- Idle: `Review N new, M changed`
+- Active: `Reviewing N new, M changed` (highlighted, primary color)
+
+Clicking the button filters the sidebar to just new and modified stories. Clicking it again clears those filters and returns the tree to its normal state. Right-click exclusions you set on individual filters are preserved across toggles.
+
+The button hides while you're typing in the search input so it doesn't compete with search results.
+
 ## Filtering
 
-You can filter the sidebar to show only stories with a specific change detection status using the filter menu. This lets you quickly isolate changed stories when reviewing a change.
+For more granular control — for example, to inspect only **related** stories — open the filter menu next to the search bar and check or uncheck the individual statuses. Modified branch icons appear in the tree only while the **modified** filter is checked.
 
 ![Filter menu showing change detection status options](../../_assets/configure/change-detection-filter-menu.png)
 

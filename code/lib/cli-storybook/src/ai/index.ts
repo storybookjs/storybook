@@ -46,7 +46,7 @@ export async function aiSetup(options: AiSetupOptions): Promise<void> {
     const detectedLanguage = await projectTypeService.detectLanguage();
     const language = detectedLanguage === SupportedLanguage.TYPESCRIPT ? 'ts' : 'js';
 
-    const needsUserOnboarding = await cache.get('onboarding-pending', true);
+    const needsUserOnboarding = await cache.get('onboarding-pending');
 
     projectInfo = {
       storybookVersion: data.versionInstalled,

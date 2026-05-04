@@ -100,6 +100,8 @@ enum events {
   // Emitted when the manager UI sets up a focus trap
   MANAGER_INERT_ATTRIBUTE_CHANGED = 'managerInertAttributeChanged',
 
+  SHARE_ISOLATE_MODE = 'shareIsolateMode',
+
   AI_PROMPT_NUDGE = 'aiPromptNudge',
   SIDEBAR_FILTER_CHANGED = 'sidebarFilterChanged',
 }
@@ -175,6 +177,7 @@ export const {
   OPEN_IN_EDITOR_REQUEST,
   OPEN_IN_EDITOR_RESPONSE,
   MANAGER_INERT_ATTRIBUTE_CHANGED,
+  SHARE_ISOLATE_MODE,
   AI_PROMPT_NUDGE,
   SIDEBAR_FILTER_CHANGED,
 } = events;

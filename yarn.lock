@@ -2305,7 +2305,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@emnapi/core@npm:1.10.0":
+"@emnapi/core@npm:1.10.0, @emnapi/core@npm:^1.1.0, @emnapi/core@npm:^1.4.3":
   version: 1.10.0
   resolution: "@emnapi/core@npm:1.10.0"
   dependencies:
@@ -2315,7 +2315,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@emnapi/core@npm:1.9.2, @emnapi/core@npm:^1.1.0, @emnapi/core@npm:^1.4.3":
+"@emnapi/core@npm:1.9.2":
   version: 1.9.2
   resolution: "@emnapi/core@npm:1.9.2"
   dependencies:
@@ -2325,7 +2325,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@emnapi/runtime@npm:1.10.0":
+"@emnapi/runtime@npm:1.10.0, @emnapi/runtime@npm:^1.1.0, @emnapi/runtime@npm:^1.4.3, @emnapi/runtime@npm:^1.7.0":
   version: 1.10.0
   resolution: "@emnapi/runtime@npm:1.10.0"
   dependencies:
@@ -2334,7 +2334,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@emnapi/runtime@npm:1.9.2, @emnapi/runtime@npm:^1.1.0, @emnapi/runtime@npm:^1.4.3, @emnapi/runtime@npm:^1.7.0":
+"@emnapi/runtime@npm:1.9.2":
   version: 1.9.2
   resolution: "@emnapi/runtime@npm:1.9.2"
   dependencies:
@@ -7727,7 +7727,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@rolldown/pluginutils@npm:1.0.0-rc.17":
+"@rolldown/pluginutils@npm:1.0.0-rc.17, @rolldown/pluginutils@npm:^1.0.0-rc.9":
   version: 1.0.0-rc.17
   resolution: "@rolldown/pluginutils@npm:1.0.0-rc.17"
   checksum: 10c0/5e840b20cc531910c093c1ca36e550952cf4936465a50d89f0a98fc9d0dfd7d319d06a10a5f4376209d89e9bf4d60af6cc8363ebf0dcc5e60842f7fef438b2f0
@@ -7738,13 +7738,6 @@ __metadata:
   version: 1.0.0-rc.3
   resolution: "@rolldown/pluginutils@npm:1.0.0-rc.3"
   checksum: 10c0/3928b6282a30f307d1b075d2f217180ae173ea9e00638ce46ab65f089bd5f7a0b2c488ae1ce530f509387793c656a2910337c4cd68fa9d37d7e439365989e699
-  languageName: node
-  linkType: hard
-
-"@rolldown/pluginutils@npm:^1.0.0-rc.9":
-  version: 1.0.0-rc.10
-  resolution: "@rolldown/pluginutils@npm:1.0.0-rc.10"
-  checksum: 10c0/7478f982d2705fef5f844e714aa264571d30368ef90883642fdc9eb869613c0c3060e8a8f69255e37a6fb600cbe4be35ce273d1f808fa6fe2a4b4e72116caf29
   languageName: node
   linkType: hard
 
@@ -25683,18 +25676,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"postcss@npm:^8.2.14, postcss@npm:^8.4.33, postcss@npm:^8.4.38, postcss@npm:^8.4.49, postcss@npm:^8.5.3, postcss@npm:^8.5.6":
-  version: 8.5.8
-  resolution: "postcss@npm:8.5.8"
-  dependencies:
-    nanoid: "npm:^3.3.11"
-    picocolors: "npm:^1.1.1"
-    source-map-js: "npm:^1.2.1"
-  checksum: 10c0/dd918f7127ee7c60a0295bae2e72b3787892296e1d1c3c564d7a2a00c68d8df83cadc3178491259daa19ccc54804fb71ed8c937c6787e08d8bd4bedf8d17044c
-  languageName: node
-  linkType: hard
-
-"postcss@npm:^8.5.10":
+"postcss@npm:^8.2.14, postcss@npm:^8.4.33, postcss@npm:^8.4.38, postcss@npm:^8.4.49, postcss@npm:^8.5.10, postcss@npm:^8.5.3, postcss@npm:^8.5.6":
   version: 8.5.13
   resolution: "postcss@npm:8.5.13"
   dependencies:

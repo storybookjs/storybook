@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { AddonVitestService, ProjectType } from 'storybook/internal/cli';
 import type { JsPackageManager } from 'storybook/internal/common';
-import { SupportedBuilder, SupportedFramework } from 'storybook/internal/types';
+import { SupportedBuilder, SupportedFramework, SupportedRenderer } from 'storybook/internal/types';
 
 import { FeatureCompatibilityService } from './FeatureCompatibilityService.ts';
 
@@ -41,6 +41,66 @@ describe('FeatureCompatibilityService', () => {
       expect(FeatureCompatibilityService.supportsOnboarding(ProjectType.SVELTE)).toBe(false);
       expect(FeatureCompatibilityService.supportsOnboarding(ProjectType.EMBER)).toBe(false);
       expect(FeatureCompatibilityService.supportsOnboarding(ProjectType.HTML)).toBe(false);
+    });
+  });
+
+  describe('supportsAISetupFeature', () => {
+    it('should return true for react renderer with vite builder', () => {
+      expect(
+        FeatureCompatibilityService.supportsAISetupFeature(
+          SupportedRenderer.REACT,
+          SupportedBuilder.VITE,
+          SupportedFramework.REACT_VITE
+        )
+      ).toBe(true);
+    });
+
+    it('should return false for vue3 renderer with vite builder', () => {
+      expect(
+        FeatureCompatibilityService.supportsAISetupFeature(
+          SupportedRenderer.VUE3,
+          SupportedBuilder.VITE,
+          SupportedFramework.VUE3_VITE
+        )
+      ).toBe(false);
+    });
+
+    it('should return false for react renderer with webpack5 builder', () => {
+      expect(
+        FeatureCompatibilityService.supportsAISetupFeature(
+          SupportedRenderer.REACT,
+          SupportedBuilder.WEBPACK5,
+          SupportedFramework.REACT_WEBPACK5
+        )
+      ).toBe(false);
+    });
+
+    it('should return false for non-react renderer with non-vite builder', () => {
+      expect(
+        FeatureCompatibilityService.supportsAISetupFeature(
+          SupportedRenderer.ANGULAR,
+          SupportedBuilder.WEBPACK5,
+          SupportedFramework.ANGULAR
+        )
+      ).toBe(false);
+
+      expect(
+        FeatureCompatibilityService.supportsAISetupFeature(
+          SupportedRenderer.SVELTE,
+          SupportedBuilder.WEBPACK5,
+          null
+        )
+      ).toBe(false);
+    });
+
+    it('should return false for react-native-web-vite framework', () => {
+      expect(
+        FeatureCompatibilityService.supportsAISetupFeature(
+          SupportedRenderer.REACT,
+          SupportedBuilder.VITE,
+          SupportedFramework.REACT_NATIVE_WEB_VITE
+        )
+      ).toBe(false);
     });
   });
 

@@ -9,7 +9,7 @@ import {
   resolveAddonName,
 } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
-import { getPrecedingUpgrade, setTelemetryEnabled, telemetry } from 'storybook/internal/telemetry';
+import { getPrecedingUpgrade, telemetry } from 'storybook/internal/telemetry';
 import type { BuilderOptions, CLIOptions, LoadOptions, Options } from 'storybook/internal/types';
 
 import { global } from '@storybook/global';
@@ -110,8 +110,6 @@ export async function buildStaticStandalone(options: BuildStaticStandaloneOption
     presets.apply('core'),
     presets.apply('staticDirs'),
   ]);
-
-  await setTelemetryEnabled(!core?.disableTelemetry);
 
   const invokedBy = process.env.STORYBOOK_INVOKED_BY;
   if (invokedBy) {

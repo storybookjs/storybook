@@ -4,7 +4,13 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { cache } from 'storybook/internal/common';
 
 import type { CacheEntry } from './event-cache.ts';
-import { getLastEvents, getPrecedingUpgrade, set } from './event-cache.ts';
+import {
+  flushAiSetupPending,
+  getAiSetupPending,
+  getLastEvents,
+  getPrecedingUpgrade,
+  set,
+} from './event-cache.ts';
 import type { TelemetryEvent } from './types.ts';
 
 vi.mock('storybook/internal/common', { spy: true });
@@ -345,6 +351,42 @@ describe('event-cache', () => {
       // Verify the successful operation was processed
       const result = await getLastEvents();
       expect(result).toEqual(afterDev);
+    });
+  });
+
+  describe('ai-setup pending cache', () => {
+    let cacheGetMock: MockInstance;
+    let cacheRemoveMock: MockInstance;
+
+    beforeEach(() => {
+      vi.clearAllMocks();
+      cacheGetMock = vi.mocked(cache.get);
+      cacheRemoveMock = vi.mocked(cache.remove);
+    });
+
+    it('returns cached ai-setup pending record when present', async () => {
+      const pending = {
+        timestamp: 123,
+        sessionId: 'session-1',
+        configDir: '/tmp/.storybook',
+        previewPath: '/tmp/.storybook/preview.ts',
+        previewHash: 'abc123',
+      };
+
+      cacheGetMock.mockResolvedValueOnce(pending);
+
+      await expect(getAiSetupPending()).resolves.toEqual(pending);
+      expect(cacheGetMock).toHaveBeenCalledWith('ai-setup-pending');
+    });
+
+    it('removes the cached ai-setup pending record and returns undefined', async () => {
+      cacheRemoveMock.mockResolvedValueOnce(undefined);
+      cacheGetMock.mockResolvedValueOnce(undefined);
+
+      await expect(flushAiSetupPending()).resolves.toBeUndefined();
+      expect(cacheRemoveMock).toHaveBeenCalledWith('ai-setup-pending');
+      await expect(getAiSetupPending()).resolves.toBeUndefined();
+      expect(cacheGetMock).toHaveBeenCalledWith('ai-setup-pending');
     });
   });
 });

@@ -1,4 +1,5 @@
 import { ProjectType, copyTemplateFiles, getBabelDependencies } from 'storybook/internal/cli';
+import { RN_STORYBOOK_DIR } from '../../../../../core/src/shared/constants/config-folder.ts';
 import { CLI_COLORS, logger } from 'storybook/internal/node-logger';
 import { SupportedBuilder, SupportedLanguage, SupportedRenderer } from 'storybook/internal/types';
 
@@ -53,21 +54,19 @@ export default defineGeneratorModule({
       'storybook-generate': 'sb-rn-get-stories',
     });
 
-    const storybookConfigFolder = '.rnstorybook';
-
     // Copy React Native templates
     await copyTemplateFiles({
       packageManager: packageManager as any,
       templateLocation: SupportedRenderer.REACT_NATIVE,
       language: SupportedLanguage.TYPESCRIPT,
-      destination: storybookConfigFolder,
+      destination: RN_STORYBOOK_DIR,
       features: context.features,
     });
 
     // React Native doesn't use baseGenerator - return special config
     return {
       // Signal to skip baseGenerator by returning minimal config
-      storybookConfigFolder,
+      storybookConfigFolder: RN_STORYBOOK_DIR,
       skipGenerator: true,
       storybookCommand: null,
       shouldRunDev: false, // React Native needs additional manual steps to configure the project

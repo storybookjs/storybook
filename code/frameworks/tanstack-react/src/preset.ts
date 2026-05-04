@@ -8,8 +8,8 @@ import { serverCodeEliminationPlugin } from './plugins/server-code-elimination.t
 import { serverOnlyStubPlugin } from './plugins/server-only-stub.ts';
 
 const INTERCEPTED_PATTERNS = ['virtual:cloudflare', 'server-entry', 'worker-entry'];
-const INTERCEPTED_MODULES = ['@tanstack/react-start'];
 const START_SERVER_MODULES = [
+  '@tanstack/react-start',
   '@tanstack/react-start/server',
   '@tanstack/react-start-server',
   '@tanstack/start-server-core',
@@ -56,8 +56,7 @@ export const viteFinal: StorybookConfigVite['viteFinal'] = async (config, option
     );
   };
 
-  const stubPath = fileURLToPath(import.meta.resolve('./export-mocks/start.js'));
-  const startServerMockPath = fileURLToPath(import.meta.resolve('./export-mocks/start-server.js'));
+  const startMockPath = fileURLToPath(import.meta.resolve('./export-mocks/start-server.js'));
   const startStorageContextMockPath = fileURLToPath(
     import.meta.resolve('./export-mocks/start-storage-context.js')
   );
@@ -67,7 +66,7 @@ export const viteFinal: StorybookConfigVite['viteFinal'] = async (config, option
   const basePlugins = reactConfig.plugins ?? [];
   const plugins = [
     ...basePlugins.filter((p) => !isTanStackStartPlugin(p)),
-    serverCodeEliminationPlugin({ excludeFiles: [dirname(stubPath)] }),
+    serverCodeEliminationPlugin({ excludeFiles: [dirname(startMockPath)] }),
     serverOnlyStubPlugin(),
     {
       name: 'storybook:tanstack-react:module-interception',
@@ -85,25 +84,18 @@ export const viteFinal: StorybookConfigVite['viteFinal'] = async (config, option
             return routerMockPath;
           }
 
-          if (START_SERVER_MODULES.includes(id)) {
-            return startServerMockPath;
+          if (START_SERVER_MODULES.includes(id) || id === '@tanstack/react-start') {
+            return startMockPath;
           }
 
           if (id === '@tanstack/start-storage-context') {
             return startStorageContextMockPath;
           }
 
-          // Intercept TanStack Start packages.
-          for (const mod of INTERCEPTED_MODULES) {
-            if (id === mod) {
-              return stubPath;
-            }
-          }
-
           // Intercept virtual/server/worker entries
           for (const pattern of INTERCEPTED_PATTERNS) {
             if (id.includes(pattern)) {
-              return stubPath;
+              return startMockPath;
             }
           }
 
@@ -120,6 +112,7 @@ export const viteFinal: StorybookConfigVite['viteFinal'] = async (config, option
               '@storybook/react/entry-preview-argtypes',
               '@storybook/react/entry-preview-docs',
               '@storybook/tanstack-react',
+              '@tanstack/react-start',
               '@tanstack/react-start/server',
               '@tanstack/react-start-server',
               '@tanstack/start-server-core',

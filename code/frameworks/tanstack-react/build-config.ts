@@ -12,10 +12,6 @@ const config: BuildEntries = {
         entryPoint: './src/preview.tsx',
       },
       {
-        exportEntries: ['./start'],
-        entryPoint: './src/export-mocks/start.ts',
-      },
-      {
         exportEntries: ['./react-router'],
         entryPoint: './src/export-mocks/react-router.ts',
         external: ['@tanstack/react-router'],

@@ -5,9 +5,9 @@ import {
   createRootRoute,
   createRoute,
   createRouter,
-  Route,
+  type Route,
   RouterProvider,
-  RootRoute,
+  type RootRoute,
   interpolatePath,
   defaultStringifySearch,
 } from '@tanstack/react-router';
@@ -19,30 +19,108 @@ import {
   resolveStoryLeaf,
   type DuplicatedTree,
 } from './duplicate-tree.ts';
+import { isRoute } from './utils.ts';
 
-const StoryContext = React.createContext<{ Story: ComponentType }>({ Story: () => null });
-const StoryFromContext: ComponentType = () => {
-  const { Story } = React.useContext(StoryContext);
-  return <Story />;
-};
+interface TanStackRouterStoryProps {
+  Story: ComponentType;
+  context: Parameters<Decorator>[1];
+}
 
-export type MockRouterOptions = {
+type MockRouterOptions = {
   Story: ComponentType;
   context: Parameters<Decorator>[1];
   routerContext?: Record<string, unknown>;
 };
 
-/**
- * Checks whether a value is a TanStack Router Route instance.
- */
-function isRoute(value: unknown): value is InstanceType<typeof Route> {
-  // todo: check if works with multiple versions of the router in a monorepo
-  return value instanceof Route || value instanceof RootRoute;
-}
-
 interface ResolvedTree {
   tree: DuplicatedTree;
   leaf: AnyRoute;
+}
+
+const StoryContext = React.createContext<{ Story: ComponentType }>({ Story: () => null });
+
+const StoryFromContext: ComponentType = () => {
+  const { Story } = React.useContext(StoryContext);
+  return <Story />;
+};
+
+export const tanstackRouteDecorator: Decorator = (Story, context) => {
+  return <TanStackRouterStory Story={Story} context={context} />;
+};
+
+function TanStackRouterStory({ Story, context }: TanStackRouterStoryProps) {
+  const routerContext = context.parameters.tanstack?.router?.useRouterContext?.({
+    storyContext: context,
+  });
+
+  const router = React.useMemo(
+    () => createStoryRouter({ Story: StoryFromContext, context, routerContext }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [context.id]
+  );
+
+  const providerContext = React.useMemo(
+    () => ({
+      ...context.parameters.tanstack?.router?.context,
+      ...routerContext,
+    }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [context.id, routerContext]
+  );
+
+  return (
+    <StoryContext.Provider value={{ Story }}>
+      <RouterProvider router={router} context={providerContext}></RouterProvider>
+    </StoryContext.Provider>
+  );
+}
+
+function createStoryRouter({
+  Story,
+  context,
+  routerContext,
+}: MockRouterOptions): Router<AnyRootRoute> {
+  const routerParameters: RouterParameters = context.parameters.tanstack?.router ?? {};
+  const { tree, leaf } = resolveTree(Story, context);
+  const routeTree = tree.root;
+
+  // Infer the initial path for the router. The priority is:
+  // 1. `parameters.tanstack.router.path` (explicit path override)
+  // 2. `leaf.fullPath` (the full path of the resolved leaf route, if it has one)
+  // 3. The full path of the first child of the route tree, if it exists (e.g. the Story's parent route)
+  // 4. `/` as a last resort
+  const inferredPath =
+    routerParameters?.path ||
+    leaf.fullPath ||
+    (routeTree.children as AnyRoute[] | undefined)?.[0]?.fullPath ||
+    '/';
+
+  // Interpolate params into the path and append query/search params.
+  let resolvedPath = interpolatePath({
+    path: inferredPath,
+    params: routerParameters?.params ?? {},
+  }).interpolatedPath;
+  const search = routerParameters?.query ? defaultStringifySearch(routerParameters.query) : '';
+  if (search) {
+    resolvedPath += search;
+  }
+  const history = createMemoryHistory({
+    initialEntries: [resolvedPath],
+  });
+
+  history.replace(resolvedPath);
+
+  return createRouter({
+    routeTree,
+    history,
+    defaultNotFoundComponent(props) {
+      return <div>Route not found: {props.routeId}</div>;
+    },
+    defaultErrorComponent({ error }) {
+      return <div>Story did something wrong : {String(error)}</div>;
+    },
+    context: routerContext,
+  });
 }
 
 function injectStoryComponent(
@@ -59,6 +137,18 @@ function injectStoryComponent(
   (leaf as any).update({ component: () => <Story /> });
 }
 
+/**
+ * Resolves the route tree and leaf to render for a given story, based on the following inputs (in order of precedence):
+ * 1. `parameters.tanstack.router.route` (if it's a Route instance)
+ * 2. `route` from the story's meta (if it's a Route instance)
+ * 3. A synthetic root + child created from plain options in `parameters.tanstack.router.route` (if it's a plain object)
+ * 4. A synthetic root + child with no options.
+ *
+ * If the resolved route isn't already a root, walks up its parent chain to find the enclosing root, and duplicates the entire tree under that root to ensure isolation between stories.
+ * The story component is injected at the resolved leaf route.
+ * If no route can be resolved from the inputs, creates a synthetic root and injects the story at a child route.
+ *
+ */
 function resolveTree(Story: ComponentType, context: Parameters<Decorator>[1]): ResolvedTree {
   const metaRoute = context.route as Route | RootRoute | undefined;
   const routerParameters: RouterParameters = context.parameters.tanstack?.router ?? {};
@@ -77,6 +167,8 @@ function resolveTree(Story: ComponentType, context: Parameters<Decorator>[1]): R
   const rootRoute = resolvedRoute ? findRootRoute(resolvedRoute) : undefined;
 
   if (rootRoute) {
+    // The user provided a route that's already connected to a root. Use it as the leaf of a duplicated tree.
+    // Could be a custom RootRoute or the whole application RouteTree.
     const tree = duplicateRouteTree(rootRoute, { overrides: routeOverrides });
     const leaf = resolveStoryLeaf(tree, {
       path: routerParameters.path as string | undefined,
@@ -88,7 +180,9 @@ function resolveTree(Story: ComponentType, context: Parameters<Decorator>[1]): R
   }
 
   if (isRoute(routerParameterRoute)) {
-    // The user provided a route instance that isn't connected to any root. Use it as the leaf of a new synthetic root, and duplicate it to ensure any nested children are cloned properly.
+    // The user provided a route instance that isn't connected to any root.
+    // Could be a simple Route import from a Route file.
+    // Use it as the leaf of a new synthetic root, and duplicate it to ensure any nested children are cloned properly.
     const syntheticRoot = createRootRoute(
       (routeOverrides as Record<string, any> | undefined)?.__root__ ?? {}
     );
@@ -118,84 +212,4 @@ function resolveTree(Story: ComponentType, context: Parameters<Decorator>[1]): R
     tree: { root: syntheticRoot, byId: new Map([[syntheticChild.id, syntheticChild]]) },
     leaf: syntheticChild,
   };
-}
-
-function createStoryRouter({
-  Story,
-  context,
-  routerContext,
-}: MockRouterOptions): Router<AnyRootRoute> {
-  const routerParameters: RouterParameters = context.parameters.tanstack?.router ?? {};
-  const { tree, leaf } = resolveTree(Story, context);
-  const routeTree = tree.root;
-
-  const inferredPath =
-    routerParameters?.path ||
-    leaf.fullPath ||
-    (routeTree.children as AnyRoute[] | undefined)?.[0]?.fullPath ||
-    '/';
-
-  // Interpolate params into the path and append query/search params.
-  let resolvedPath = interpolatePath({
-    path: inferredPath,
-    params: routerParameters?.params ?? {},
-  }).interpolatedPath;
-  const search = routerParameters?.query ? defaultStringifySearch(routerParameters.query) : '';
-  if (search) {
-    resolvedPath += search;
-  }
-  const history = createMemoryHistory({
-    initialEntries: [resolvedPath],
-  });
-
-  history.replace(resolvedPath);
-
-  const router = createRouter({
-    routeTree,
-    history,
-    defaultNotFoundComponent(props) {
-      return <div>Route not found: {props.routeId}</div>;
-    },
-    defaultErrorComponent({ error }) {
-      return <div>Story did something wrong : {String(error)}</div>;
-    },
-    context: routerContext,
-  });
-  return router;
-}
-
-export const tanstackRouteDecorator: Decorator = (Story, context) => {
-  return <TanStackRouterStory Story={Story} context={context} />;
-};
-
-interface TanStackRouterStoryProps {
-  Story: ComponentType;
-  context: Parameters<Decorator>[1];
-}
-
-function TanStackRouterStory({ Story, context }: TanStackRouterStoryProps) {
-  const routerContext = context.parameters.tanstack?.router?.useRouterContext?.({
-    storyContext: context,
-  });
-
-  const router = React.useMemo(
-    () => createStoryRouter({ Story: StoryFromContext, context, routerContext }),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [context.id]
-  );
-
-  const providerContext = React.useMemo(
-    () => ({
-      ...context.parameters.tanstack?.router?.context,
-      ...routerContext,
-    }),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [context.id, routerContext]
-  );
-
-  return (
-    <StoryContext.Provider value={{ Story }}>
-      <RouterProvider router={router} context={providerContext}></RouterProvider>
-    </StoryContext.Provider>
-  );
 }

@@ -13,6 +13,7 @@ export const applyDecorators = (
   allDecorators: DecoratorFunction[]
 ) =>
   // reorder decorators so `jsxDecorator` is innermost, and `tanstackRouteDecorator` is just outside it
+  // There is an issue if `tanstackRouteDecorator` is innermost. All stories crashes due to a bug with the jsxDecorator.
   reactApplyDecorators(storyFn, [
     tanstackRouteDecorator as DecoratorFunction,
     ...allDecorators,

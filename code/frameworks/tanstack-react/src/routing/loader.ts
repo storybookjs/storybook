@@ -1,11 +1,8 @@
 import type { LoaderFunction, Renderer } from 'storybook/internal/types';
-import { Route, RootRoute } from '@tanstack/react-router';
+import { type Route, RootRoute } from '@tanstack/react-router';
 
 import type { RouterParameters } from './types.ts';
-
-function isRoute(value: unknown): value is InstanceType<typeof Route> {
-  return value instanceof Route || value instanceof RootRoute;
-}
+import { isRoute } from './utils.ts';
 
 function getComponentFromRoute(route: InstanceType<typeof Route>) {
   if (route.options?.component) {
@@ -21,28 +18,26 @@ function getComponentFromRoute(route: InstanceType<typeof Route>) {
 
 /**
  * Loader that extracts the render component from a TanStack Route when the
- * story uses either `component: Route` or `parameters.tanstack.router.route`.
+ * story uses `parameters.tanstack.router.route`.
  */
 export const routeComponentLoader: LoaderFunction<Renderer> = (context) => {
-  const componentRoute = isRoute(context.component) ? context.component : undefined;
   const routerParameters: RouterParameters = context.parameters.tanstack?.router ?? {};
   const parameterRoute = isRoute(routerParameters.route) ? routerParameters.route : undefined;
-  const resolvedRoute = parameterRoute ?? componentRoute;
 
-  if (!resolvedRoute) {
+  if (!parameterRoute) {
     return;
   }
 
   if (!context.component) {
-    const component = getComponentFromRoute(resolvedRoute);
+    const component = getComponentFromRoute(parameterRoute);
 
-    if (component && (componentRoute || !context.component)) {
+    if (component && !context.component) {
       context.component = component;
     }
   }
 
   if (!context.route) {
     // don't override parameters route with component route, as parameters take priority
-    context.route = resolvedRoute;
+    context.route = parameterRoute;
   }
 };

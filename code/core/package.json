@@ -1,6 +1,6 @@
 {
   "name": "storybook",
-  "version": "10.4.0-alpha.10",
+  "version": "10.4.0-alpha.15",
   "description": "Storybook: Develop, document, and test UI components in isolation",
   "keywords": [
     "storybook",
@@ -384,10 +384,14 @@
     "zod": "^3.25.76"
   },
   "peerDependencies": {
+    "@types/react": "^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0",
     "prettier": "^2 || ^3",
     "vite-plus": "^0.1.15"
   },
   "peerDependenciesMeta": {
+    "@types/react": {
+      "optional": true
+    },
     "prettier": {
       "optional": true
     },

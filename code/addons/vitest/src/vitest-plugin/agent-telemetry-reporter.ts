@@ -9,6 +9,8 @@ import type { StoryTestResult } from 'storybook/internal/core-server';
 import { isExampleStoryId, telemetry } from 'storybook/internal/telemetry';
 import type { AgentInfo } from 'storybook/internal/telemetry';
 
+import { mergeAndWriteStoryHistory } from './agent-story-history-cache.ts';
+
 interface AgentTelemetryReporterOptions {
   configDir: string;
   agent: AgentInfo;
@@ -63,7 +65,11 @@ export class AgentTelemetryReporter implements Reporter {
     testModules: readonly TestModule[],
     unhandledErrors: readonly SerializedError[]
   ) {
-    const analysis = analyzeTestResults(this.testResults);
+    // Merge the current run into the persisted per-story history (kept on
+    // disk only — storyIds never enter telemetry) and use the merged set
+    // to compute cumulative stats across runs.
+    const cumulativeResults = await mergeAndWriteStoryHistory(this.testResults);
+    const analysis = analyzeTestResults(this.testResults, cumulativeResults);
     const duration = Date.now() - this.startTime;
 
     const testModulesErrors = testModules.flatMap((t) => t.errors());

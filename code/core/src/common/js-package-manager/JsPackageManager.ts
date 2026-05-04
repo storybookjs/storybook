@@ -37,6 +37,33 @@ type PackageJsonWithIndent = PackageJsonWithDepsAndDevDeps & {
   [indentSymbol]?: any;
 };
 
+/** Human-friendly labels for each package manager type */
+const PACKAGE_MANAGER_LABEL: Record<PackageManagerName, string> = {
+  [PackageManagerName.NPM]: 'npm',
+  [PackageManagerName.YARN1]: 'Yarn Classic (v1)',
+  [PackageManagerName.YARN2]: 'Yarn Berry',
+  [PackageManagerName.PNPM]: 'pnpm',
+  [PackageManagerName.BUN]: 'Bun',
+};
+
+function isValidPackageManagerName(name: string): name is PackageManagerName {
+  return Object.hasOwn(PACKAGE_MANAGER_LABEL, name);
+}
+
+/**
+ * Prints a package manager's name in a way that's easier to compute by humans and agents.
+ * @param packageManager The package manager's internal name (e.g. "yarn1")
+ * @return A human-friendly name for the package manager (e.g. "Yarn Classic (v1)")
+ */
+export function getPrettyPackageManagerName(packageManager: string | undefined): string {
+  if (!packageManager) {
+    return 'unknown package manager';
+  }
+  return isValidPackageManagerName(packageManager)
+    ? PACKAGE_MANAGER_LABEL[packageManager]
+    : packageManager;
+}
+
 /**
  * Extract package name and version from input
  *
@@ -108,6 +135,12 @@ export abstract class JsPackageManager {
     );
     this.primaryPackageJson = this.#getPrimaryPackageJson();
   }
+
+  /** Returns the name of the command to invoke this package manager. */
+  abstract getCommandName(): string;
+
+  /** Installs package dependencies. */
+  abstract getInstallCommand(deps: string[], dev?: boolean): string;
 
   /** Runs arbitrary package scripts (as a string for display). */
   abstract getRunCommand(command: string): string;

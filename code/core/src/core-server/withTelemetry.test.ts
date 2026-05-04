@@ -4,7 +4,6 @@ import { cache, isCI, loadAllPresets, loadMainConfig } from 'storybook/internal/
 import { prompt } from 'storybook/internal/node-logger';
 import {
   ErrorCollector,
-  collectAiSetupEvidence,
   isTelemetryStateResolved,
   oneWayHash,
   setTelemetryEnabled,
@@ -39,7 +38,6 @@ describe('withTelemetry', () => {
     vi.mocked(loadMainConfig).mockRejectedValue(new Error('main config not available'));
     vi.mocked(ErrorCollector.getErrors).mockReturnValue([]);
     vi.mocked(telemetry).mockResolvedValue(undefined);
-    vi.mocked(collectAiSetupEvidence).mockResolvedValue(undefined);
   });
 
   it('does not resolve telemetry state again when it is already initialized', async () => {
@@ -106,7 +104,6 @@ describe('withTelemetry', () => {
     await withTelemetry('dev', { cliOptions }, run);
 
     expect(telemetry).toHaveBeenCalledTimes(1);
-    expect(collectAiSetupEvidence).toHaveBeenCalledTimes(1);
     expect(telemetry).toHaveBeenCalledWith('boot', { eventType: 'dev' }, { stripMetadata: true });
   });
 
@@ -131,7 +128,6 @@ describe('withTelemetry', () => {
       ).rejects.toThrow(error);
 
       expect(telemetry).toHaveBeenCalledWith('boot', { eventType: 'dev' }, { stripMetadata: true });
-      expect(collectAiSetupEvidence).toHaveBeenCalledTimes(1);
     });
 
     it('resolves telemetry state when cli option is passed', async () => {
@@ -149,7 +145,6 @@ describe('withTelemetry', () => {
       ).rejects.toThrow(error);
 
       expect(telemetry).toHaveBeenCalledTimes(2);
-      expect(collectAiSetupEvidence).toHaveBeenCalledTimes(1);
       expect(telemetry).toHaveBeenCalledWith(
         'error',
         expect.objectContaining({

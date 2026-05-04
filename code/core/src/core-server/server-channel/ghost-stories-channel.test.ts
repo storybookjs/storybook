@@ -197,6 +197,7 @@ describe('ghostStoriesChannel', () => {
         ],
         stdio: 'pipe',
         env: {
+          STORYBOOK_INTERNAL_TEST_RUN: '1',
           STORYBOOK_COMPONENT_PATHS: 'component1.tsx;component2.tsx',
         },
       } as any);
@@ -303,6 +304,7 @@ describe('ghostStoriesChannel', () => {
         ],
         stdio: 'pipe',
         env: {
+          STORYBOOK_INTERNAL_TEST_RUN: '1',
           STORYBOOK_COMPONENT_PATHS: 'component1.tsx;component2.tsx',
         },
       } as any);

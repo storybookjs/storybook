@@ -104,7 +104,7 @@ export class FinalizationCommand {
     }
 
     // We don't want to tell agents about Discord, and we want to customise their docs URL.
-    if (this.options.showAgentFollowUp) {
+    if (this.options.showAiInstructions) {
       logger.log(dedent`
       Official documentation reference: ${CLI_COLORS.cta('https://storybook.js.org/llms.txt')}
     `);

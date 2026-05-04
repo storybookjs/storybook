@@ -117,7 +117,7 @@ describe('FinalizationCommand', () => {
       const agentCommand = new FinalizationCommand({
         logfile: undefined,
         showAgentFollowUp: true,
-        showAiInstructions: false,
+        showAiInstructions: true,
       });
       vi.mocked(find.up).mockReturnValue(undefined);
 

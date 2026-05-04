@@ -36,7 +36,7 @@
     "*.yaml",
     "*.{md,mdx}",
     "!docs/**",
-    "docs/configure/integration/*.mdx"
+    "docs/configure/integration/eslint-plugin.mdx"
   ],
   "overrides": [
     {

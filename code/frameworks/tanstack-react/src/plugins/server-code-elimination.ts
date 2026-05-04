@@ -1,7 +1,6 @@
 import { transformSync, types as t, type NodePath } from 'storybook/internal/babel';
 import { type Statement } from '@babel/types';
 import type { Plugin } from 'vite';
-import type { PluginObj } from '@babel/core';
 
 interface TransformState {
   code: string;
@@ -87,7 +86,10 @@ export function serverCodeEliminationPlugin(options: { excludeFiles?: string[] }
   };
 }
 
-function serverCodeElimination(state: TransformState): PluginObj {
+// todo make storybook/internal/babel export PluginObj
+function serverCodeElimination(
+  state: TransformState
+): NonNullable<NonNullable<Parameters<typeof transformSync>[1]>['plugins']>[number] {
   /** No-op spy for server-side code */
   function sbFnCall() {
     state.needsFnImport = true;

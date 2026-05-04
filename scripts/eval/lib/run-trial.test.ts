@@ -38,9 +38,11 @@ vi.mock('./utils', async (importOriginal) => {
       evalCommit: 'abc123',
     }),
     resolveDispatcherPath: vi.fn().mockReturnValue('/repo/code/core/dist/bin/dispatcher.js'),
-    loadPrompt: vi.fn().mockReturnValue(
-      'Run `node /repo/code/core/dist/bin/dispatcher.js ai setup` and follow its instructions precisely.'
-    ),
+    loadPrompt: vi
+      .fn()
+      .mockReturnValue(
+        'Run `node /repo/code/core/dist/bin/dispatcher.js ai setup` and follow its instructions precisely.'
+      ),
   };
 });
 vi.mock('./agents/claude-code', () => ({

@@ -3,7 +3,6 @@ import {
   HandledError,
   JsPackageManagerFactory,
   PackageManagerName,
-  isCI,
   optionalEnvToBoolean,
   removeAddon as remove,
   versions,
@@ -24,6 +23,7 @@ import { doctor } from '../doctor/index.ts';
 import { link } from '../link.ts';
 import { migrate } from '../migrate.ts';
 import { sandbox } from '../sandbox.ts';
+import { aiSetup } from '../ai/index.ts';
 import { type UpgradeOptions, upgrade } from '../upgrade.ts';
 
 addToGlobalContext('cliVersion', versions.storybook);
@@ -105,14 +105,10 @@ command('init')
   .option('-y --yes', 'Answer yes to all prompts')
   .option('-b --builder <webpack5 | vite>', 'Builder library')
   .option('-l --linkable', 'Prepare installation for link (contributor helper)')
-  .option(
-    '--dev',
-    'Launch the development server after completing initialization. Enabled by default (default: true)',
-    !isCI() && !optionalEnvToBoolean(process.env.IN_STORYBOOK_SANDBOX)
-  )
+  .option('--dev', 'Launch the development server after completing initialization')
   .option(
     '--no-dev',
-    'Complete the initialization of Storybook without launching the Storybook development server'
+    'Do not launch the Storybook development server after completing initialization (default)'
   );
 
 command('add <addon>')
@@ -175,6 +171,10 @@ command('upgrade')
   .option('-f --force', 'force the upgrade, skipping autoblockers')
   .option('-n --dry-run', 'Only check for upgrades, do not install')
   .option('-s --skip-check', 'Skip postinstall version and automigration checks')
+  .option(
+    '--skip-automigrations',
+    'Skip running automigrations entirely (only update package versions and install)'
+  )
   .option(
     '-c, --config-dir <dir-name...>',
     'Directory(ies) where to load Storybook configurations from'
@@ -298,6 +298,35 @@ command('doctor')
       logger.outro('Done');
     }).catch(handleCommandFailure(options.logfile));
   });
+
+const aiCommand = command('ai')
+  .description('AI agent helpers for Storybook')
+  .option(
+    '-o, --output <path>',
+    'Write the prompt output to a file instead of printing it to stdout'
+  );
+
+aiCommand
+  .command('setup')
+  .description('Generate setup instructions to write stories for real components')
+  .addOption(
+    new Option('--package-manager <type>', 'Force package manager for installing deps').choices(
+      Object.values(PackageManagerName)
+    )
+  )
+  .option('-c, --config-dir <dir-name>', 'Directory of Storybook configuration')
+  .action(async (options, cmd) => {
+    const parentOptions = cmd.parent?.opts() ?? {};
+    const mergedOptions = { ...parentOptions, ...options };
+    await withTelemetry('ai-setup', { cliOptions: mergedOptions }, async () => {
+      await aiSetup(mergedOptions);
+    }).catch(handleCommandFailure(mergedOptions.logfile));
+  });
+
+// Show available subcommands when `storybook ai` is run without arguments
+aiCommand.action(() => {
+  aiCommand.outputHelp();
+});
 
 program.on('command:*', ([invalidCmd]) => {
   let errorMessage = ` Invalid command: ${picocolors.bold(invalidCmd)}.\n See --help for a list of available commands.`;

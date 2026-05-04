@@ -237,7 +237,7 @@ export const Clear = {
         storyId: 'c1-doc',
         typeId: 'change-detection',
         value: 'status-value:affected',
-        title: 'Affected',
+        title: 'Related',
         description: '',
       },
     ]);
@@ -316,7 +316,7 @@ export const NoUserTags = {
         storyId: 'c1-doc',
         typeId: 'change-detection',
         value: 'status-value:affected',
-        title: 'Affected',
+        title: 'Related',
         description: '',
       },
     ]);

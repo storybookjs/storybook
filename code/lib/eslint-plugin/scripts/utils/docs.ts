@@ -1,14 +1,48 @@
 import { readFile, writeFile } from 'fs/promises';
 import { resolve } from 'path';
 
+import { minimatch } from 'minimatch';
+import { format } from 'oxfmt';
+import type { FormatConfig } from 'oxfmt';
+
 import type { TRuleListWithoutName, TRulesList } from '../update-rules-list.ts';
 import { categoryIds } from './categories.ts';
 
-const readmePath = resolve(
-  __dirname,
-  `../../../../../docs/configure/integration/eslint-plugin.mdx`
-);
-const ruleDocsPath = resolve(__dirname, `../../docs/rules`);
+const REPO_ROOT = resolve(__dirname, '../../../../..');
+const readmePath = resolve(REPO_ROOT, 'docs/configure/integration/eslint-plugin.mdx');
+const readmeRelPath = 'docs/configure/integration/eslint-plugin.mdx';
+const ruleDocRelPath = (ruleName: string) => `code/lib/eslint-plugin/docs/rules/${ruleName}.md`;
+
+let cachedFormatConfig: {
+  $schema?: string;
+  ignorePatterns?: unknown;
+  overrides?: Array<{ files: string | string[]; options: Record<string, unknown> }>;
+  [key: string]: unknown;
+} | null = null;
+
+// oxfmt programmatic API doesn't support loading config files, so we need to do it ourselves. We also need to merge the base options with the overrides based on the file path.
+const loadFormatOptions = async (relPath: string): Promise<FormatConfig> => {
+  if (!cachedFormatConfig) {
+    cachedFormatConfig = JSON.parse(await readFile(resolve(REPO_ROOT, '.oxfmtrc.json'), 'utf8'));
+  }
+
+  const {
+    $schema: _schema,
+    ignorePatterns: _ignore,
+    overrides,
+    ...baseOptions
+  } = cachedFormatConfig!;
+  const merged: Record<string, unknown> = { ...baseOptions };
+
+  for (const override of overrides ?? []) {
+    const patterns = ([] as string[]).concat(override.files);
+    if (patterns.some((p) => minimatch(relPath, p))) {
+      Object.assign(merged, override.options);
+    }
+  }
+
+  return merged as FormatConfig;
+};
 
 export const configBadges = categoryIds.reduce(
   (badges, category) => ({
@@ -25,6 +59,7 @@ export const emojiKey = {
 
 const staticElements = {
   listHeaderRow: ['Name', 'Description', 'Automatically fixable', 'Included in configurations'],
+  listSpacerRow: Array(4).fill('-'),
   rulesListKey: [
     '',
     '',
@@ -37,20 +72,13 @@ const staticElements = {
   ].join('\n'),
 };
 
-const generateRulesListTable = (rulesList: TRuleListWithoutName[]) => {
-  const allRows = [staticElements.listHeaderRow, ...rulesList];
-  const colCount = staticElements.listHeaderRow.length;
-  const colWidths = Array.from({ length: colCount }, (_, colIdx) =>
-    Math.max(...allRows.map((row) => (row[colIdx] ?? '').length))
-  );
-  const separatorRow = colWidths.map((w) => '-'.repeat(w));
-  return [staticElements.listHeaderRow, separatorRow, ...rulesList]
-    .map((row) => '| ' + row.map((cell, i) => cell.padEnd(colWidths[i])).join(' | ') + ' |')
+const generateRulesListTable = (rulesList: TRuleListWithoutName[]) =>
+  [staticElements.listHeaderRow, staticElements.listSpacerRow, ...rulesList]
+    .map((column) => `|${column.join('|')}|`)
     .join('\n');
-};
 
 const generateRulesListMarkdown = (rulesList: TRuleListWithoutName[]) =>
-  [staticElements.rulesListKey.trimStart(), '', generateRulesListTable(rulesList), ''].join('\n');
+  ['', staticElements.rulesListKey, '', generateRulesListTable(rulesList), ''].join('\n');
 
 const listBeginMarker = '{/* RULES-LIST:START */}';
 const listEndMarker = '{/* RULES-LIST:END */}';
@@ -88,7 +116,6 @@ const overWriteRuleDocs = (rule: TRulesList, ruleDocFile: string) => {
     ruleCategoriesBeginMarker,
     '',
     `**Included in these configurations**: ${rule[4]}`,
-    '',
     ruleDocFile.substring(ruleCategoriesEndIndex),
   ].join('\n');
 };
@@ -96,17 +123,25 @@ const overWriteRuleDocs = (rule: TRulesList, ruleDocFile: string) => {
 export const writeRulesListInReadme = async (rulesList: TRulesList[]) => {
   const readme = await readFile(readmePath, 'utf8');
   const rulesListWithoutName = rulesList.map((rule) => rule.slice(1)) as TRuleListWithoutName[];
-  await writeFile(readmePath, overWriteRulesList(rulesListWithoutName, readme));
+  const options = await loadFormatOptions(readmeRelPath);
+  const { code } = await format(
+    readmeRelPath,
+    overWriteRulesList(rulesListWithoutName, readme),
+    options
+  );
+  await writeFile(readmePath, code);
 };
 
 export const updateRulesDocs = async (rulesList: TRulesList[]) => {
   await Promise.all(
     rulesList.map(async (rule) => {
       const ruleName = rule[0];
-      const ruleDocFilePath = resolve(ruleDocsPath, `${ruleName}.md`);
+      const relPath = ruleDocRelPath(ruleName);
+      const ruleDocFilePath = resolve(REPO_ROOT, relPath);
       const ruleDocFile = await readFile(ruleDocFilePath, 'utf8');
-
-      await writeFile(ruleDocFilePath, overWriteRuleDocs(rule, ruleDocFile));
+      const options = await loadFormatOptions(relPath);
+      const { code } = await format(relPath, overWriteRuleDocs(rule, ruleDocFile), options);
+      await writeFile(ruleDocFilePath, code);
     })
   );
 };

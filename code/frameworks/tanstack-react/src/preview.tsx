@@ -22,3 +22,9 @@ export const applyDecorators = (
 export const parameters: TanStackParameters = {
   tanstack: {},
 };
+
+export const optimizeDeps = [
+  '@tanstack/react-devtools',
+  '@tanstack/react-query-devtools',
+  '@tanstack/react-router-devtools',
+];

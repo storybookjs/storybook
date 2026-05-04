@@ -209,10 +209,10 @@ async function readStoryRenderSummary(reportPath: string, storyFiles: number) {
     }
 
     return {
-      total: parsed.total,
-      passed: parsed.passed,
+      total: parsed.runTotal,
+      passed: parsed.runPassed,
       storyFiles,
-      cssCheck: parsed.cssCheck,
+      cssCheck: parsed.runCssCheck,
     } satisfies StoryRenderGrade;
   } catch {
     return undefined;

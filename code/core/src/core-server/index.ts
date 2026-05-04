@@ -54,5 +54,9 @@ export { runStoryTests } from './utils/ghost-stories/run-story-tests.ts';
 export { getServerPort } from './utils/server-address.ts';
 
 export { analyzeTestResults } from '../shared/utils/analyze-test-results.ts';
-export type { StoryTestResult } from '../shared/utils/test-result-types.ts';
+export type {
+  StoryTestResult,
+  StoryTestResultHistory,
+  StoryTestResultHistoryEntry,
+} from '../shared/utils/test-result-types.ts';
 export { toStoryTestResult } from '../shared/utils/to-story-test-result.ts';

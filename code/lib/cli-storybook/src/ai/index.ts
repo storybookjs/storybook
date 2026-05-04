@@ -2,6 +2,7 @@ import { writeFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 
 import type { PackageManagerName } from 'storybook/internal/common';
+import { getPrettyPackageManagerName } from 'storybook/internal/common';
 import { cache } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
 import {
@@ -16,22 +17,19 @@ import { SupportedLanguage } from 'storybook/internal/types';
 import { ProjectTypeService } from '../../../create-storybook/src/services/ProjectTypeService.ts';
 
 import { getStorybookData } from '../automigrate/helpers/mainConfigFile.ts';
-import { generateMarkdownOutput } from './prompt.ts';
+import { getAiSetupMarkdownOutput } from './setup-prompts/index.ts';
 import type { ProjectInfo, AiSetupOptions } from './types.ts';
 
 export async function aiSetup(options: AiSetupOptions): Promise<void> {
-  const { configDir: userConfigDir, packageManager: packageManagerName, output } = options;
+  const { configDir: userConfigDir, packageManager, output } = options;
 
   let projectInfo: ProjectInfo;
 
   try {
     const data = await getStorybookData({
       configDir: userConfigDir,
-      packageManagerName: packageManagerName as PackageManagerName | undefined,
+      packageManagerName: packageManager as PackageManagerName | undefined,
     });
-    const majorVersion = data.versionInstalled
-      ? parseMajorVersion(data.versionInstalled)
-      : undefined;
 
     if (!data.frameworkPackage || !data.rendererPackage || !data.builderPackage) {
       logger.error(
@@ -39,6 +37,10 @@ export async function aiSetup(options: AiSetupOptions): Promise<void> {
       );
       return;
     }
+
+    const majorVersion = data.versionInstalled
+      ? parseMajorVersion(data.versionInstalled)
+      : undefined;
 
     const projectTypeService = new ProjectTypeService(data.packageManager);
     const detectedLanguage = await projectTypeService.detectLanguage();
@@ -54,10 +56,12 @@ export async function aiSetup(options: AiSetupOptions): Promise<void> {
       addons: data.addons ?? [],
       configDir: data.configDir,
       storiesPaths: data.storiesPaths,
-      hasCsfFactoryPreview: data.hasCsfFactoryPreview,
+      packageManager: data.packageManager,
+      packageManagerName: getPrettyPackageManagerName(data.packageManager.type),
       language,
+      hasCsfFactoryPreview: data.hasCsfFactoryPreview,
     };
-  } catch (err: unknown) {
+  } catch (err) {
     logger.error(
       `Failed to read Storybook configuration: ${err instanceof Error ? err.message : String(err)}`
     );
@@ -80,21 +84,20 @@ export async function aiSetup(options: AiSetupOptions): Promise<void> {
     return;
   }
 
-  const result = await generateMarkdownOutput(projectInfo);
+  const result = await getAiSetupMarkdownOutput(projectInfo);
   const markdownOutput = result.markdown;
 
   await telemetry('ai-setup', {
     cliOptions: {
       output: output ? 'file' : undefined,
       configDir: projectInfo.configDir,
-      packageManager: packageManagerName,
+      packageManager: projectInfo.packageManager.type,
     },
     project: {
       framework: projectInfo.framework,
       renderer: projectInfo.rendererPackage,
       builder: projectInfo.builderPackage,
       language: projectInfo.language,
-      hasCsfFactoryPreview: projectInfo.hasCsfFactoryPreview,
     },
   });
 
@@ -121,7 +124,7 @@ export async function aiSetup(options: AiSetupOptions): Promise<void> {
     await writeFile(outputPath, markdownOutput, 'utf-8');
     logger.log(`Prompt written to ${outputPath}`);
   } else {
-    logger.log(markdownOutput);
+    process.stdout.write(`${markdownOutput}\n`);
   }
 }
 

@@ -27,7 +27,8 @@ import type { StoryIndexGenerator } from './StoryIndexGenerator.ts';
 
 export async function initializeChecklist(
   channel?: Channel,
-  getStoryIndexGeneratorPromise?: () => Promise<StoryIndexGenerator> | undefined
+  getStoryIndexGeneratorPromise?: () => Promise<StoryIndexGenerator> | undefined,
+  configDir?: string
 ) {
   try {
     const store = experimental_UniversalStore.create<StoreState, StoreEvent>({
@@ -80,16 +81,18 @@ export async function initializeChecklist(
     // AI opt-in flag (set during `storybook init` when the user accepted the
     // AI feature). Read from the regular fs cache — NOT from the telemetry
     // event cache — so the copy-prompt button still appears for users who
-    // disabled telemetry. We fall back to the telemetry event cache for
-    // backward compatibility with installs that opted in before this flag
-    // existed.
-    Promise.all([hasAiInitOptIn(), getEventCacheEntry('ai-init-opt-in').catch(() => undefined)])
-      .then(([cached, event]) => {
-        if (cached || event) {
-          store.setState((state) => ({ ...state, aiOptIn: true }));
-        }
-      })
-      .catch(() => {});
+    // disabled telemetry. Scoped to the current project's configDir so a
+    // monorepo with hoisted node_modules can't leak the flag across sibling
+    // Storybook projects.
+    if (configDir) {
+      hasAiInitOptIn(configDir)
+        .then((cached) => {
+          if (cached) {
+            store.setState((state) => ({ ...state, aiOptIn: true }));
+          }
+        })
+        .catch(() => {});
+    }
 
     /**
      * "Has the agent actually produced something?" Running `storybook ai setup`
@@ -106,7 +109,7 @@ export async function initializeChecklist(
      */
     const isAiSetupCompleted = async (): Promise<boolean> => {
       try {
-        if (!(await hasAiSetupRun())) {
+        if (!configDir || !(await hasAiSetupRun(configDir))) {
           return false;
         }
 

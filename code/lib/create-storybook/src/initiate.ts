@@ -1,3 +1,5 @@
+import { resolve } from 'node:path';
+
 import { ProjectType } from 'storybook/internal/cli';
 import {
   type JsPackageManager,
@@ -152,12 +154,16 @@ export async function doInitiate(options: CommandOptions): Promise<
 
   // Step 8: Print final summary
   const hasAiFeature = selectedFeatures.has(Feature.AI);
-  if (hasAiFeature) {
+  if (hasAiFeature && configDir) {
     // Persist the init-time AI opt-in so the dev server can gate AI-related UI
     // (checklist item, copy-prompt button) on the user's actual choice — not on
-    // a telemetry-event side effect. This is a tiny local boolean with no PII,
-    // so it is written even when telemetry is disabled.
-    await cache.set('ai-init-opt-in', { timestamp: Date.now() }).catch(() => {});
+    // a telemetry-event side effect. Scoped to the project's configDir so a
+    // monorepo with hoisted `node_modules/.cache` doesn't leak the flag across
+    // sibling Storybook projects. This is a tiny local file with no PII, so it
+    // is written even when telemetry is disabled.
+    await cache
+      .set('ai-init-opt-in', { timestamp: Date.now(), configDir: resolve(configDir) })
+      .catch(() => {});
     // Telemetry event remains for analytics. UI logic does not depend on it.
     await telemetry('ai-init-opt-in', {}).catch(() => {});
   }

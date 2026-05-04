@@ -159,7 +159,7 @@ describe('initializeChecklist', () => {
     vi.mocked(getEventCacheEntry).mockResolvedValue(undefined);
 
     const { initializeChecklist } = await import('./checklist.ts');
-    await initializeChecklist(undefined, oneAiGeneratedStoryGenerator);
+    await initializeChecklist(undefined, oneAiGeneratedStoryGenerator, '/p');
     await vi.advanceTimersByTimeAsync(0);
 
     const state = mockStore.getState();
@@ -172,7 +172,7 @@ describe('initializeChecklist', () => {
     await setAiFlags({ setupRan: true });
 
     const { initializeChecklist } = await import('./checklist.ts');
-    await initializeChecklist(undefined, noStoriesGenerator);
+    await initializeChecklist(undefined, noStoriesGenerator, '/p');
     await vi.advanceTimersByTimeAsync(0);
 
     expect(mockStore.getState().items.aiSetup.status).toBe('open');
@@ -184,7 +184,7 @@ describe('initializeChecklist', () => {
     await setAiFlags({ setupRan: true });
 
     const { initializeChecklist } = await import('./checklist.ts');
-    await initializeChecklist(undefined, oneAiGeneratedStoryGenerator);
+    await initializeChecklist(undefined, oneAiGeneratedStoryGenerator, '/p');
     await vi.advanceTimersByTimeAsync(0);
 
     expect(mockStore.getState().items.aiSetup.status).toBe('done');
@@ -216,7 +216,7 @@ describe('initializeChecklist', () => {
     await setAiFlags({ setupRan: true });
 
     const { initializeChecklist } = await import('./checklist.ts');
-    await initializeChecklist(undefined, oneAiGeneratedStoryGenerator);
+    await initializeChecklist(undefined, oneAiGeneratedStoryGenerator, '/p');
     await vi.advanceTimersByTimeAsync(0);
 
     expect(mockStore.getState().items.aiSetup.status).toBe('done');
@@ -229,26 +229,13 @@ describe('initializeChecklist', () => {
       await setAiFlags({ optedIn: true });
 
       const { initializeChecklist } = await import('./checklist.ts');
-      await initializeChecklist();
+      await initializeChecklist(undefined, undefined, '/p');
       await vi.advanceTimersByTimeAsync(0);
 
       expect(mockStore.getState().aiOptIn).toBe(true);
     });
 
-    it('falls back to the telemetry event cache for backward compatibility', async () => {
-      const { get: getEventCacheEntry } = await import('../../telemetry/event-cache.ts');
-      vi.mocked(getEventCacheEntry).mockImplementation(
-        mockEventCache({ 'ai-init-opt-in': aiInitOptInCacheEntry })
-      );
-
-      const { initializeChecklist } = await import('./checklist.ts');
-      await initializeChecklist();
-      await vi.advanceTimersByTimeAsync(0);
-
-      expect(mockStore.getState().aiOptIn).toBe(true);
-    });
-
-    it('keeps aiOptIn=false when neither cache has the flag', async () => {
+    it('keeps aiOptIn=false when no flag is cached', async () => {
       const { get: getEventCacheEntry } = await import('../../telemetry/event-cache.ts');
       vi.mocked(getEventCacheEntry).mockResolvedValue(undefined);
 
@@ -292,7 +279,7 @@ describe('initializeChecklist', () => {
       await setupCompletedAgentRun();
       const { channel } = createMockChannel();
       const { initializeChecklist } = await import('./checklist.ts');
-      await initializeChecklist(channel as any, oneAiGeneratedStoryGenerator);
+      await initializeChecklist(channel as any, oneAiGeneratedStoryGenerator, '/p');
       await vi.advanceTimersByTimeAsync(0);
 
       expect(channel.emit).not.toHaveBeenCalledWith(AI_SETUP_ANALYTICS_REQUEST);
@@ -308,7 +295,7 @@ describe('initializeChecklist', () => {
       await setupCompletedAgentRun();
       const { channel } = createMockChannel();
       const { initializeChecklist } = await import('./checklist.ts');
-      await initializeChecklist(channel as any, oneAiGeneratedStoryGenerator);
+      await initializeChecklist(channel as any, oneAiGeneratedStoryGenerator, '/p');
       await vi.advanceTimersByTimeAsync(0);
       await vi.advanceTimersByTimeAsync(AI_IDLE_DELAY_MS);
 
@@ -326,7 +313,7 @@ describe('initializeChecklist', () => {
       const { channel, listeners } = createMockChannel();
       const { initializeChecklist } = await import('./checklist.ts');
       // Story index has zero ai-generated stories — agent never produced anything.
-      await initializeChecklist(channel as any, noStoriesGenerator);
+      await initializeChecklist(channel as any, noStoriesGenerator, '/p');
       await vi.advanceTimersByTimeAsync(0);
 
       // Trigger the idle pipeline anyway
@@ -362,7 +349,7 @@ describe('initializeChecklist', () => {
 
       const { channel, listeners } = createMockChannel();
       const { initializeChecklist } = await import('./checklist.ts');
-      await initializeChecklist(channel as any, dynamicGenerator);
+      await initializeChecklist(channel as any, dynamicGenerator, '/p');
       await vi.advanceTimersByTimeAsync(0);
 
       expect(mockStore.getState().items.aiSetup.status).toBe('open');
@@ -387,7 +374,7 @@ describe('initializeChecklist', () => {
 
       const { channel, listeners } = createMockChannel();
       const { initializeChecklist } = await import('./checklist.ts');
-      await initializeChecklist(channel as any, oneAiGeneratedStoryGenerator);
+      await initializeChecklist(channel as any, oneAiGeneratedStoryGenerator, '/p');
       await vi.advanceTimersByTimeAsync(0);
 
       listeners[STORY_INDEX_INVALIDATED]?.forEach((fn) => fn());
@@ -406,7 +393,7 @@ describe('initializeChecklist', () => {
       await setupCompletedAgentRun();
       const { channel, listeners } = createMockChannel();
       const { initializeChecklist } = await import('./checklist.ts');
-      await initializeChecklist(channel as any, oneAiGeneratedStoryGenerator);
+      await initializeChecklist(channel as any, oneAiGeneratedStoryGenerator, '/p');
       await vi.advanceTimersByTimeAsync(0);
 
       await vi.advanceTimersByTimeAsync(AI_IDLE_DELAY_MS);
@@ -430,7 +417,7 @@ describe('initializeChecklist', () => {
       await setupCompletedAgentRun();
       const { channel } = createMockChannel();
       const { initializeChecklist } = await import('./checklist.ts');
-      await initializeChecklist(channel as any, oneAiGeneratedStoryGenerator);
+      await initializeChecklist(channel as any, oneAiGeneratedStoryGenerator, '/p');
       await vi.advanceTimersByTimeAsync(0);
 
       await vi.advanceTimersByTimeAsync(2 * 60 * 1000);
@@ -460,7 +447,7 @@ describe('initializeChecklist', () => {
       await setupCompletedAgentRun();
       const { channel } = createMockChannel();
       const { initializeChecklist } = await import('./checklist.ts');
-      await initializeChecklist(channel as any, oneAiGeneratedStoryGenerator);
+      await initializeChecklist(channel as any, oneAiGeneratedStoryGenerator, '/p');
       await vi.advanceTimersByTimeAsync(0);
 
       await vi.advanceTimersByTimeAsync(2 * 60 * 1000);

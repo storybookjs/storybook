@@ -14,6 +14,13 @@ export function nodeModuleReadsRule(ctx: SetupInstructionsContext): string {
   return dedent`**Never read or grep inside \`node_modules\`.** The imports shown in this prompt are correct — don't verify them by introspecting installed packages. If something seems off, re-read this prompt, not \`node_modules\`.`;
 }
 
+export function onboardingContentRule({ needsUserOnboarding }: SetupInstructionsContext): string {
+  if (needsUserOnboarding) {
+    return dedent`**Initial content.** You must preserve the stories initially created by Storybook, as they are required for onboarding, and users requested to be onboarded.`;
+  }
+  return dedent`**Initial content.** You may delete the stories initially created by Storybook at the end of setup.`;
+}
+
 export function monorepoRule(ctx: SetupInstructionsContext): string | undefined {
   const monorepoType = getMonorepoType();
   if (monorepoType) {

@@ -46,6 +46,8 @@ export async function aiSetup(options: AiSetupOptions): Promise<void> {
     const detectedLanguage = await projectTypeService.detectLanguage();
     const language = detectedLanguage === SupportedLanguage.TYPESCRIPT ? 'ts' : 'js';
 
+    const needsUserOnboarding = await cache.get('onboarding-pending', true);
+
     projectInfo = {
       storybookVersion: data.versionInstalled,
       majorVersion,
@@ -60,6 +62,7 @@ export async function aiSetup(options: AiSetupOptions): Promise<void> {
       packageManagerName: getPrettyPackageManagerName(data.packageManager.type),
       language,
       hasCsfFactoryPreview: data.hasCsfFactoryPreview,
+      needsUserOnboarding,
     };
   } catch (err) {
     logger.error(

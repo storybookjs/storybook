@@ -1,9 +1,13 @@
 import type { Channel } from 'storybook/internal/channels';
-import { PREVIEW_INITIALIZED, SHARE_ISOLATE_MODE } from 'storybook/internal/core-events';
+import {
+  PREVIEW_INITIALIZED,
+  SHARE_ISOLATE_MODE,
+  SIDEBAR_FILTER_CHANGED,
+  AI_PROMPT_NUDGE,
+} from 'storybook/internal/core-events';
 import { type InitPayload, telemetry } from 'storybook/internal/telemetry';
 import { type CacheEntry, getLastEvents } from 'storybook/internal/telemetry';
 import { getSessionId } from 'storybook/internal/telemetry';
-import type { Options } from 'storybook/internal/types';
 
 export const makePayload = (
   userAgent: string,
@@ -24,7 +28,7 @@ export const makePayload = (
   return payload;
 };
 
-export function initTelemetryChannel(channel: Channel, options: Options) {
+export function initTelemetryChannel(channel: Channel) {
   channel.on(PREVIEW_INITIALIZED, async ({ userAgent }) => {
     try {
       const sessionId = await getSessionId();
@@ -39,5 +43,11 @@ export function initTelemetryChannel(channel: Channel, options: Options) {
   });
   channel.on(SHARE_ISOLATE_MODE, async () => {
     telemetry('share', { action: 'isolate-mode-opened' });
+  });
+  channel.on(SIDEBAR_FILTER_CHANGED, (payload) => {
+    telemetry('sidebar-filter', payload);
+  });
+  channel.on(AI_PROMPT_NUDGE, async ({ id, origin }: { id: string; origin: string }) => {
+    telemetry('ai-prompt-nudge', { id, origin });
   });
 }

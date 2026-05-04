@@ -16,6 +16,7 @@ import { removeAddonInteractions } from './remove-addon-interactions.ts';
 import { removeDocsAutodocs } from './remove-docs-autodocs.ts';
 import { removeEssentials } from './remove-essentials.ts';
 import { rendererToFramework } from './renderer-to-framework.ts';
+import { rnOndeviceAddonsToDeviceAddons } from './rn-ondevice-addons-to-device-addons.ts';
 import { rnstorybookConfig } from './rnstorybook-config.ts';
 import { storybookPackageNameConflict } from './storybook-package-name-conflict.ts';
 import { upgradeStorybookRelatedDependencies } from './upgrade-storybook-related-dependencies.ts';
@@ -34,6 +35,7 @@ export const allFixes: Fix[] = [
   consolidatedImports,
   addonExperimentalTest,
   rnstorybookConfig,
+  rnOndeviceAddonsToDeviceAddons,
   migrateAddonConsole,
   nextjsToNextjsVite,
   removeAddonInteractions,

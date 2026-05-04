@@ -1,13 +1,13 @@
 import React from 'react';
 
 import { Button, PopoverProvider } from 'storybook/internal/components';
+import { QRCodeSVG } from 'qrcode.react';
 import { SHARE_ISOLATE_MODE } from 'storybook/internal/core-events';
 import type { Addon_BaseType } from 'storybook/internal/types';
 
 import { global } from '@storybook/global';
 import { ShareAltIcon, ShareIcon } from '@storybook/icons';
 
-import { QRCodeSVG } from 'qrcode.react';
 import { Consumer, types } from 'storybook/manager-api';
 import type { Combo } from 'storybook/manager-api';
 import { styled, useTheme } from 'storybook/theming';

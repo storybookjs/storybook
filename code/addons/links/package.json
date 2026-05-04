@@ -1,6 +1,6 @@
 {
   "name": "@storybook/addon-links",
-  "version": "10.4.0-alpha.10",
+  "version": "10.4.0-alpha.15",
   "description": "Storybook Links: Link stories together to build demos and prototypes with your UI components",
   "keywords": [
     "storybook",
@@ -59,10 +59,14 @@
     "typescript": "^5.9.3"
   },
   "peerDependencies": {
+    "@types/react": "^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0",
     "react": "^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0",
     "storybook": "workspace:^"
   },
   "peerDependenciesMeta": {
+    "@types/react": {
+      "optional": true
+    },
     "react": {
       "optional": true
     }

@@ -1,4 +1,4 @@
-import type { ComponentProps, FC, SyntheticEvent } from 'react';
+import type { ComponentProps, FC, MouseEvent, SyntheticEvent } from 'react';
 import React, { useContext, useMemo, useState } from 'react';
 
 import { PopoverProvider, TooltipLinkList } from 'storybook/internal/components';
@@ -12,12 +12,12 @@ import {
 
 import { CopyIcon, EditorIcon, EllipsisIcon } from '@storybook/icons';
 
-import copy from 'copy-to-clipboard';
 import { useStorybookApi } from 'storybook/manager-api';
 import type { API } from 'storybook/manager-api';
 import { styled } from 'storybook/theming';
 
 import type { Link } from '../../../components/components/tooltip/TooltipLinkList.tsx';
+import { useCopyButton } from '../../../shared/useCopyButton.ts';
 import { getMostCriticalStatusValue } from '../../utils/status.tsx';
 import { Shortcut } from '../Shortcut.tsx';
 import { UseSymbol } from './IconSymbols.tsx';
@@ -44,8 +44,13 @@ const FloatingStatusButton = styled(StatusButton)({
 export const useContextMenu = (context: API_HashEntry, links: Link[], api: API) => {
   const [hoverCount, setHoverCount] = useState(0);
   const [isOpen, setIsOpen] = useState(false);
-  const [copyText, setCopyText] = React.useState('Copy story name');
   const { allStatuses, groupStatus } = useContext(StatusContext);
+
+  const exportName = context && 'exportName' in context ? (context.exportName ?? '') : '';
+  const { children: copyText, buttonProps: copyButtonProps } = useCopyButton<string>({
+    children: 'Copy story name',
+    content: exportName,
+  });
 
   const shortcutKeys = api.getShortcutKeys();
   const enableShortcuts = !!shortcutKeys;
@@ -80,17 +85,13 @@ export const useContextMenu = (context: API_HashEntry, links: Link[], api: API) 
         //   ) : null,
         onClick: (e: SyntheticEvent) => {
           e.preventDefault();
-          copy(context.exportName);
-          setCopyText('Copied!');
-          setTimeout(() => {
-            setCopyText('Copy story name');
-          }, 2000);
+          copyButtonProps.onClick(e);
         },
       });
     }
 
     return defaultLinks;
-  }, [api, context, copyText, enableShortcuts, shortcutKeys]);
+  }, [api, context, copyText, copyButtonProps, enableShortcuts, shortcutKeys]);
 
   const handlers = useMemo(() => {
     return {

@@ -1,0 +1,239 @@
+import { join, resolve, sep } from 'node:path';
+import pc from 'picocolors';
+import { x } from 'tinyexec';
+
+import { AI_SETUP_PROMPT } from '../../../code/core/src/shared/constants/ai-prompts.ts';
+import {
+  DEFAULT_PROMPT_NAME,
+  PROMPT_NAMES,
+} from '../../../code/lib/cli-storybook/src/ai/setup-prompts/index.ts';
+
+export interface Logger {
+  log: (msg: string) => void;
+  logStep: (msg: string) => void;
+  logSuccess: (msg: string) => void;
+  logError: (msg: string) => void;
+}
+
+export const REPO_ROOT = resolve(import.meta.dirname, '..', '..', '..');
+export const EVAL_ROOT = resolve(REPO_ROOT, '..', 'storybook-eval');
+export const REPOS_DIR = resolve(EVAL_ROOT, 'repos');
+export const TRIALS_DIR = resolve(EVAL_ROOT, 'trials');
+/** Name used in docs and tests when a concrete prompt must be named. Tracks the CLI default. */
+export const EXAMPLE_PROMPT_BASENAME = DEFAULT_PROMPT_NAME;
+export const NODE_EVAL_TRIAL_SCRIPT = 'scripts/eval/eval.ts' as const;
+export const NODE_EVAL_RUN_BATCH_SCRIPT = 'scripts/eval/run-batch.ts' as const;
+export const NODE_EVAL_SYNC_BASELINES_SCRIPT = 'scripts/eval/sync-baselines.ts' as const;
+export const NODE_EVAL_SYNC_STORYBOOK_VERSION_SCRIPT =
+  'scripts/eval/sync-storybook-version.ts' as const;
+export const NODE_EVAL_COLLECT_PR_DATA_SCRIPT = 'scripts/eval/collect-pr-data.ts' as const;
+export const STORYBOOK_DIRNAME = '.storybook';
+export const EVAL_RESULTS_DIRNAME = 'eval-results';
+
+export function createLogger(prefix?: string): Logger {
+  const p = prefix ? pc.dim(`[${prefix}]`) + ' ' : '';
+  return {
+    log: (msg: string) => console.log(`${p}${msg}`),
+    logStep: (msg: string) => console.log(`${p}  ${pc.cyan('>')} ${msg}`),
+    logSuccess: (msg: string) => console.log(`${p}  ${pc.green('✓')} ${msg}`),
+    logError: (msg: string) => console.log(`${p}  ${pc.red('✗')} ${msg}`),
+  };
+}
+
+export const formatDuration = (s: number) => {
+  const total = Math.round(s);
+  const minutes = Math.floor(total / 60);
+  const seconds = total % 60;
+  return minutes > 0 ? `${minutes}m${seconds}s` : `${seconds}s`;
+};
+
+export const formatCost = (cost?: number) => (cost == null ? '-' : `$${cost.toFixed(2)}`);
+
+/** Raw 0-1 index (used in data.json and when you need the exact ratio). */
+export const formatScore = (score: number) =>
+  score.toFixed(3).replace(/(?:\.0+|(\.\d*?)0+)$/, '$1');
+
+/** Human-readable percentage for the same 0-1 score (data.json keeps the ratio). */
+export function formatScorePercent(score: number): string {
+  if (!Number.isFinite(score)) return String(score);
+  const pct = score * 100;
+  const rounded = Math.round(pct);
+  if (Math.abs(pct - rounded) < 1e-6) return `${rounded}%`;
+  return `${pct.toFixed(1)}%`;
+}
+
+export function getProjectPath(repoRoot: string, projectDir?: string) {
+  return projectDir ? join(repoRoot, projectDir) : repoRoot;
+}
+
+export function getStorybookDir(projectPath: string) {
+  return join(projectPath, STORYBOOK_DIRNAME);
+}
+
+export function getEvalSupportDir(projectPath: string) {
+  return join(getStorybookDir(projectPath), 'eval-support');
+}
+
+export function getEvalResultsDir(projectPath: string) {
+  return join(getStorybookDir(projectPath), EVAL_RESULTS_DIRNAME);
+}
+
+export function getEvalResultsRelativeDir(projectDir?: string) {
+  return toPosixPath(
+    projectDir
+      ? join(projectDir, STORYBOOK_DIRNAME, EVAL_RESULTS_DIRNAME)
+      : join(STORYBOOK_DIRNAME, EVAL_RESULTS_DIRNAME)
+  );
+}
+
+export function getEvalResultsRelativePath(fileName: string, projectDir?: string) {
+  return `${getEvalResultsRelativeDir(projectDir)}/${fileName}`;
+}
+
+export function generateTrialId() {
+  const timestamp = new Date()
+    .toISOString()
+    .replace(/\.\d{3}Z$/, 'Z')
+    .replace(/:/g, '-');
+  return `${timestamp}-${crypto.randomUUID().replace(/-/g, '').slice(0, 8)}`;
+}
+
+/** Uppercase first character only (shared eval string helper). */
+export function capitalizeFirst(value: string) {
+  return value.charAt(0).toUpperCase() + value.slice(1);
+}
+
+export function formatReadableUtcTimestamp(timestamp: string) {
+  const date = new Date(timestamp);
+  if (Number.isNaN(date.getTime())) {
+    return timestamp;
+  }
+
+  const month = [
+    'Jan',
+    'Feb',
+    'Mar',
+    'Apr',
+    'May',
+    'Jun',
+    'Jul',
+    'Aug',
+    'Sep',
+    'Oct',
+    'Nov',
+    'Dec',
+  ][date.getUTCMonth()];
+  const day = date.getUTCDate();
+  const year = date.getUTCFullYear();
+  const hour = `${date.getUTCHours()}`.padStart(2, '0');
+  const minute = `${date.getUTCMinutes()}`.padStart(2, '0');
+  const second = `${date.getUTCSeconds()}`.padStart(2, '0');
+  return `${month} ${day} ${year} ${hour}:${minute}:${second} UTC`;
+}
+
+/** Format data as an aligned table with automatic column widths. */
+export function formatTable(headers: string[], rows: string[][]): string {
+  const widths = headers.map((h, i) =>
+    Math.max(h.length, ...rows.map((r) => stripAnsi(r[i] ?? '').length))
+  );
+
+  const pad = (str: string, width: number) => {
+    const visible = stripAnsi(str).length;
+    return str + ' '.repeat(Math.max(0, width - visible));
+  };
+
+  const sep = ' | ';
+  return [
+    headers.map((h, i) => pad(h, widths[i])).join(sep),
+    widths.map((w) => '-'.repeat(w)).join('-+-'),
+    ...rows.map((row) => row.map((cell, i) => pad(cell, widths[i])).join(sep)),
+  ].join('\n');
+}
+
+/**
+ * Returns the exact nudge string a real user copies from the Storybook UI —
+ * "Run `npx storybook ai setup` and follow its instructions precisely." The
+ * AGENT then runs `ai setup` itself as a tool call, mirroring the real user
+ * flow. The harness selects a prompt variant via the `EVAL_SETUP_PROMPT` env
+ * var on the agent's spawn (not here); this function only validates the name.
+ */
+export function loadPrompt(name: string): string {
+  const available = listPrompts();
+  if (!available.includes(name)) {
+    throw new Error(`Prompt not found: ${name}\nAvailable: ${available.join(', ')}`);
+  }
+  return AI_SETUP_PROMPT;
+}
+
+/** List available prompt names. Mirrors the builder registry in the CLI. */
+export function listPrompts(): string[] {
+  return [...PROMPT_NAMES];
+}
+
+export interface EvalEnvironment {
+  nodeVersion: string;
+  /** Git branch of the eval harness (storybook monorepo), not the evaluated project. */
+  evalBranch: string;
+  /** Git commit of the eval harness (storybook monorepo), not the evaluated project. */
+  evalCommit: string;
+}
+
+export async function captureEnvironment(): Promise<EvalEnvironment> {
+  let evalBranch = 'unknown';
+  let evalCommit = 'unknown';
+  try {
+    evalBranch = (
+      await x('git', ['rev-parse', '--abbrev-ref', 'HEAD'], { nodeOptions: { cwd: REPO_ROOT } })
+    ).stdout.trim();
+    evalCommit = (
+      await x('git', ['rev-parse', 'HEAD'], { nodeOptions: { cwd: REPO_ROOT } })
+    ).stdout.trim();
+  } catch {
+    /* not in a git repo */
+  }
+  return { nodeVersion: process.version, evalBranch, evalCommit };
+}
+
+export interface HelpOption {
+  type: 'string' | 'boolean';
+  short?: string;
+  description?: string;
+}
+
+/**
+ * Format a --help message from the same options object passed to parseArgs.
+ * Each option may carry a `description` field (ignored by parseArgs at runtime).
+ */
+export function formatHelp(
+  usage: string,
+  description: string,
+  options: Record<string, HelpOption>
+): string {
+  const entries = Object.entries(options);
+
+  const formatted = entries.map(([name, opt]) => {
+    const short = opt.short ? `-${opt.short}, ` : '    ';
+    const long = opt.type === 'string' ? `--${name} <value>` : `--${name}`;
+    return { short, long, desc: opt.description ?? '' };
+  });
+
+  const maxLong = Math.max(...formatted.map((f) => f.long.length));
+
+  return [
+    `Usage: ${usage}`,
+    '',
+    description,
+    '',
+    'Options:',
+    ...formatted.map((f) => `  ${f.short}${f.long.padEnd(maxLong)}  ${f.desc}`),
+  ].join('\n');
+}
+
+/** Strip ANSI escape codes for accurate width calculation. */
+function stripAnsi(str: string) {
+  return str.replace(/\x1b\[[0-9;]*m/g, '');
+}
+
+export function toPosixPath(value: string) {
+  return value.split(sep).join('/');
+}

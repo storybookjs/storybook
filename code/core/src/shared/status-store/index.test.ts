@@ -7,7 +7,6 @@ import { useUniversalStore } from '../universal-store/use-universal-store-manage
 import {
   type Status,
   type StatusStoreEvent,
-  StatusValue,
   type StatusesByStoryIdAndTypeId,
   createStatusStore,
 } from './index.ts';

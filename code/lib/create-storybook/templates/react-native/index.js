@@ -10,7 +10,7 @@ import { view } from './storybook.requires';
  * with application decorators/providers (theme, i18n, state, navigation, etc).
  */
 const StorybookUIRoot = view.getStorybookUI({
-  enableWebsockets: true,
+  shouldPersistSelection: true,
   storage: {
     getItem: AsyncStorage.getItem,
     setItem: AsyncStorage.setItem,

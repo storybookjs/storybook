@@ -1,8 +1,4 @@
-import {
-  collectAiSetupEvidence,
-  getPrecedingUpgrade,
-  telemetry,
-} from 'storybook/internal/telemetry';
+import { getPrecedingUpgrade, telemetry } from 'storybook/internal/telemetry';
 import type { CoreConfig, Options } from 'storybook/internal/types';
 
 import type { Polka } from 'polka';
@@ -42,13 +38,6 @@ export async function doTelemetry(
         precedingUpgrade: await getPrecedingUpgrade(),
       };
       if (indexAndStats) {
-        // sb ai commands trigger side effects performed by agent harnesses, which can't be observed
-        // directly. This is the entry point for collecting evidence about those side effects and
-        // recording them in telemetry.
-        if (indexAndStats) {
-          collectAiSetupEvidence('dev', options.configDir, indexAndStats.storyIndex);
-        }
-
         Object.assign(payload, {
           versionStatus: versionUpdates && versionCheck ? versionStatus(versionCheck) : 'disabled',
           storyIndex: summarizeIndex(indexAndStats.storyIndex),

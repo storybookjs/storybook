@@ -6,7 +6,9 @@ import type { JsPackageManager } from 'storybook/internal/common';
 import { logger, prompt } from 'storybook/internal/node-logger';
 
 export const METRO_CONFIG_CANDIDATES = ['metro.config.ts', 'metro.config.js', 'metro.config.cjs'];
-export const METRO_SETUP_DOCS_LINK = 'TODO_REPLACE_WITH_REACT_NATIVE_METRO_DOCS_LINK';
+export const METRO_SETUP_DOCS_LINK =
+  'https://storybookjs.github.io/react-native/docs/intro/configuration/metro-configuration';
+
 export const METRO_FALLBACK_COMMENT_MARKER = 'storybook-react-native-metro-codemod-fallback';
 export const EXPO_CREATE_METRO_COMMAND = {
   command: 'expo',

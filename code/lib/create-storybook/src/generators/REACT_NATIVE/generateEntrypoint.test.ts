@@ -6,9 +6,15 @@ import { SupportedLanguage } from 'storybook/internal/types';
 
 import { describe, expect, it } from 'vitest';
 
-import { generateReactNativeEntrypoint } from './generateEntrypoint.ts';
+import { generateReactNativeEntrypoint, getEntrypointTemplatePath } from './generateEntrypoint.ts';
 
 describe('generateReactNativeEntrypoint', () => {
+  it('resolves Expo template path when expo variant is requested', () => {
+    const templatePath = getEntrypointTemplatePath('expo');
+
+    expect(templatePath.endsWith('templates/react-native/index.expo.js')).toBe(true);
+  });
+
   it('generates .rnstorybook/index.ts for TypeScript projects', async () => {
     const cwd = await mkdtemp(path.join(os.tmpdir(), 'sb-rn-entry-ts-'));
 
@@ -43,6 +49,32 @@ describe('generateReactNativeEntrypoint', () => {
       expect(result.targetPath).toBe(outputPath);
       expect(output).toContain("import { AppRegistry } from 'react-native';");
       expect(output).toContain("import { view } from './storybook.requires';");
+    } finally {
+      await rm(cwd, { recursive: true, force: true });
+    }
+  });
+
+  it('generates Expo-specific entrypoint contents for expo projects', async () => {
+    const cwd = await mkdtemp(path.join(os.tmpdir(), 'sb-rn-entry-expo-'));
+
+    try {
+      const result = await generateReactNativeEntrypoint({
+        language: SupportedLanguage.TYPESCRIPT,
+        templateVariant: 'expo',
+        cwd,
+      });
+      const outputPath = path.join(cwd, '.rnstorybook', 'index.ts');
+      const output = await readFile(outputPath, 'utf-8');
+
+      expect(result.targetPath).toBe(outputPath);
+      expect(output).toContain(
+        "import AsyncStorage from '@react-native-async-storage/async-storage';"
+      );
+      expect(output).toContain("import { registerRootComponent } from 'expo';");
+      expect(output).toContain('shouldPersistSelection: true');
+      expect(output).toContain('enableWebsockets: true');
+      expect(output).toContain('registerRootComponent(StorybookUIRoot);');
+      expect(output).not.toContain("AppRegistry.registerComponent('main'");
     } finally {
       await rm(cwd, { recursive: true, force: true });
     }

@@ -137,6 +137,52 @@ export default async function makeMetroConfig() {
     }
   });
 
+  it('reuses aliased ESM withStorybook import when wrapping export default', () => {
+    const before = `
+import { withStorybook as wrapMetro } from '@storybook/react-native/withStorybook';
+
+export default {};
+`;
+    const transformed = transformMetroConfigSource(before, path.join(tempDir, 'metro.config.ts'));
+
+    expect(transformed.action).toBe('updated');
+    if (transformed.action === 'updated') {
+      expect(transformed.code).toContain(
+        "import { withStorybook as wrapMetro } from '@storybook/react-native/withStorybook'"
+      );
+      expect(transformed.code).toContain('export default wrapMetro({});');
+      expect(transformed.code).not.toContain('export default withStorybook({});');
+    }
+  });
+
+  it('treats aliased ESM withStorybook wrapper as already configured', () => {
+    const before = `
+import { withStorybook as wrapMetro } from '@storybook/react-native/withStorybook';
+
+export default wrapMetro({});
+`;
+    const transformed = transformMetroConfigSource(before, path.join(tempDir, 'metro.config.ts'));
+    expect(transformed.action).toBe('already-configured');
+  });
+
+  it('reuses aliased CJS withStorybook binding when wrapping module.exports', () => {
+    const before = `
+const { withStorybook: wrapMetro } = require('@storybook/react-native/withStorybook');
+const config = {};
+module.exports = config;
+`;
+    const transformed = transformMetroConfigSource(before, path.join(tempDir, 'metro.config.js'));
+
+    expect(transformed.action).toBe('updated');
+    if (transformed.action === 'updated') {
+      expect(transformed.code).toContain(
+        "const { withStorybook: wrapMetro } = require('@storybook/react-native/withStorybook');"
+      );
+      expect(transformed.code).toContain('module.exports = wrapMetro(config);');
+      expect(transformed.code).not.toContain('module.exports = withStorybook(config);');
+    }
+  });
+
   it('uses ESM import for an .mjs config even without existing import/export', () => {
     const before = 'module.exports = {};\n';
     const transformed = transformMetroConfigSource(before, path.join(tempDir, 'metro.config.mjs'));
@@ -334,6 +380,53 @@ export default async function makeMetroConfig<T = string>(): Promise<MetroConfig
     expect(updated).toContain(METRO_FALLBACK_COMMENT_MARKER);
   });
 
+  it("inserts require after 'use strict' directive prologue when present in body", () => {
+    // 'use strict' is normally in program.directives, but if a parser leaves it as
+    // an ExpressionStatement in body we must not insert our require before it.
+    const before = "'use strict';\nmodule.exports = {};\n";
+    const transformed = transformMetroConfigSource(before, path.join(tempDir, 'metro.config.js'));
+
+    expect(transformed.action).toBe('updated');
+    if (transformed.action === 'updated') {
+      // 'use strict' must remain the very first content in the output.
+      expect(transformed.code.trimStart()).toMatch(/^['"]use strict['"]/);
+      expect(transformed.code).toContain('withStorybook');
+    }
+  });
+
+  it('keeps // @ts-nocheck pragma as the first line after CJS require injection', () => {
+    const before = '// @ts-nocheck\nmodule.exports = {};\n';
+    const transformed = transformMetroConfigSource(before, path.join(tempDir, 'metro.config.js'));
+
+    expect(transformed.action).toBe('updated');
+    if (transformed.action === 'updated') {
+      expect(transformed.code.trimStart()).toMatch(/^\/\/ @ts-nocheck/);
+      expect(transformed.code).toContain('withStorybook');
+    }
+  });
+
+  it('keeps /* eslint-disable */ pragma as the first line after CJS require injection', () => {
+    const before = '/* eslint-disable */\nmodule.exports = {};\n';
+    const transformed = transformMetroConfigSource(before, path.join(tempDir, 'metro.config.js'));
+
+    expect(transformed.action).toBe('updated');
+    if (transformed.action === 'updated') {
+      expect(transformed.code.trimStart()).toMatch(/^\/\* eslint-disable \*\//);
+      expect(transformed.code).toContain('withStorybook');
+    }
+  });
+
+  it('keeps // @ts-nocheck pragma as the first line after ESM import injection', () => {
+    const before = '// @ts-nocheck\nexport default {};\n';
+    const transformed = transformMetroConfigSource(before, path.join(tempDir, 'metro.config.ts'));
+
+    expect(transformed.action).toBe('updated');
+    if (transformed.action === 'updated') {
+      expect(transformed.code.trimStart()).toMatch(/^\/\/ @ts-nocheck/);
+      expect(transformed.code).toContain('withStorybook');
+    }
+  });
+
   it('containsStorybookImport detects both import and require usage', () => {
     expect(
       containsStorybookImport(
@@ -342,6 +435,18 @@ export default async function makeMetroConfig<T = string>(): Promise<MetroConfig
     ).toBe(true);
     expect(containsStorybookImport("const sb = require('storybook/internal/common');")).toBe(true);
     expect(containsStorybookImport('const x = require("react-native");')).toBe(false);
+  });
+
+  it('fallback heuristic does not false-positive on storybook-like identifiers', () => {
+    // This source is intentionally unparseable so the catch-branch runs.
+    const unparseable = 'const storybookEnabled = true; <<<INVALID>>>';
+    // 'storybookEnabled' must not fool the fallback into thinking Storybook is imported.
+    expect(containsStorybookImport(unparseable)).toBe(false);
+
+    // But a real package specifier in the same unparseable source must still be detected.
+    const unparseableWithImport =
+      "const storybookEnabled = true; const x = require('@storybook/react-native'); <<<INVALID>>>";
+    expect(containsStorybookImport(unparseableWithImport)).toBe(true);
   });
 
   it('prepends fallback comment only once', () => {

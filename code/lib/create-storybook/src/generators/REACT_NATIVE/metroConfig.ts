@@ -6,7 +6,9 @@ import type { JsPackageManager } from 'storybook/internal/common';
 import { logger, prompt } from 'storybook/internal/node-logger';
 
 export const METRO_CONFIG_CANDIDATES = ['metro.config.ts', 'metro.config.js', 'metro.config.cjs'];
-export const METRO_SETUP_DOCS_LINK = 'TODO_REPLACE_WITH_REACT_NATIVE_METRO_DOCS_LINK';
+export const METRO_SETUP_DOCS_LINK =
+  'https://storybookjs.github.io/react-native/docs/intro/configuration/metro-configuration';
+
 export const METRO_FALLBACK_COMMENT_MARKER = 'storybook-react-native-metro-codemod-fallback';
 export const EXPO_CREATE_METRO_COMMAND = {
   command: 'expo',
@@ -31,7 +33,17 @@ type TransformResult =
   | { action: 'already-configured' }
   | { action: 'unsupported' };
 
-const STORYBOOK_PACKAGE_PATTERNS = ['@storybook/', 'storybook', 'storybook/'];
+// Quote-anchored patterns used as a last-resort fallback when the AST parse fails.
+// They are intentionally specific so that unrelated identifiers like
+// `storybookEnabled` or `isStorybookMode` don't produce false positives.
+const STORYBOOK_PACKAGE_PATTERNS = [
+  "'@storybook/", // @storybook/* scoped packages (single-quoted)
+  '"@storybook/', // @storybook/* scoped packages (double-quoted)
+  "'storybook'", // bare 'storybook' package specifier
+  '"storybook"', // bare "storybook" package specifier
+  "'storybook/", // storybook/* sub-path (single-quoted)
+  '"storybook/', // storybook/* sub-path (double-quoted)
+];
 
 const hasStorybookPackage = (value: string) => {
   return value === 'storybook' || value.startsWith('@storybook/') || value.startsWith('storybook/');
@@ -45,8 +57,8 @@ const isModuleExportsTarget = (left: t.LVal | t.OptionalMemberExpression) => {
   );
 };
 
-const isWithStorybookCall = (node: t.Node | null | undefined) => {
-  return t.isCallExpression(node) && t.isIdentifier(node.callee, { name: 'withStorybook' });
+const isWithStorybookCall = (node: t.Node | null | undefined, withStorybookLocalName: string) => {
+  return t.isCallExpression(node) && t.isIdentifier(node.callee, { name: withStorybookLocalName });
 };
 
 const parseConfig = (source: string) => {
@@ -112,11 +124,14 @@ const hasWithStorybookBinding = (program: t.Program) => {
       t.isImportDeclaration(statement) &&
       statement.source.value === '@storybook/react-native/withStorybook'
     ) {
-      return statement.specifiers.some(
+      const withStorybookSpecifier = statement.specifiers.find(
         (specifier) =>
           t.isImportSpecifier(specifier) &&
           t.isIdentifier(specifier.imported, { name: 'withStorybook' })
       );
+      if (withStorybookSpecifier && t.isImportSpecifier(withStorybookSpecifier)) {
+        return withStorybookSpecifier.local.name;
+      }
     }
 
     if (!t.isVariableDeclaration(statement)) {
@@ -141,20 +156,86 @@ const hasWithStorybookBinding = (program: t.Program) => {
         continue;
       }
 
-      const withStorybookProperty = declaration.id.properties.find(
-        (property) =>
-          t.isObjectProperty(property) &&
-          t.isIdentifier(property.key, { name: 'withStorybook' }) &&
-          t.isIdentifier(property.value, { name: 'withStorybook' })
-      );
+      for (const property of declaration.id.properties) {
+        if (!t.isObjectProperty(property)) {
+          continue;
+        }
 
-      if (withStorybookProperty) {
-        return true;
+        if (!t.isIdentifier(property.key, { name: 'withStorybook' })) {
+          continue;
+        }
+
+        if (!t.isIdentifier(property.value)) {
+          continue;
+        }
+
+        return property.value.name;
       }
     }
   }
 
-  return false;
+  return undefined;
+};
+
+// Returns the index in program.body after any directive-prologue statements
+// (ExpressionStatement nodes whose expression is a StringLiteral, e.g. 'use strict',
+// 'use client') so that injected imports are never inserted before them.
+// Babel normally stores these in program.directives rather than program.body, but
+// we guard defensively for configurations that leave them as body nodes.
+const getBodyInsertionIndex = (program: t.Program): number => {
+  for (let i = 0; i < program.body.length; i++) {
+    const statement = program.body[i];
+    if (t.isExpressionStatement(statement) && t.isStringLiteral(statement.expression)) {
+      continue;
+    }
+    return i;
+  }
+  return program.body.length;
+};
+
+// Babel nodes don't expose comment arrays in their public types; define a minimal
+// shape for the two comment storage formats used by Babel and recast respectively.
+interface ASTComment {
+  start?: number;
+  leading?: boolean;
+}
+
+interface NodeWithComments {
+  /** recast: comment objects with {leading, trailing} boolean flags */
+  comments?: ASTComment[];
+  /** Babel: leading-only comments (no {leading} flag needed) */
+  leadingComments?: ASTComment[];
+}
+
+// Move file-level leading comments (those that start at source position 0) from
+// `fromNode` to `toNode` so that pragmas like // @ts-nocheck, /* eslint-disable */,
+// and // @flow remain the very first content in the printed file even after a new
+// import/require statement is inserted before them.
+// recast stores comments in both node.comments (with {leading, trailing} flags) and
+// node.leadingComments; we update both so the printer sees the change.
+const shiftFileLeadingComments = (fromNode: t.Node, toNode: t.Node) => {
+  const from = fromNode as unknown as NodeWithComments;
+  const to = toNode as unknown as NodeWithComments;
+
+  const isFileLeading = (c: ASTComment) => typeof c.start === 'number' && c.start === 0;
+
+  // recast-style: node.comments[{leading: true, ...}]
+  if (Array.isArray(from.comments)) {
+    const fileLeading = from.comments.filter((c) => c.leading && isFileLeading(c));
+    if (fileLeading.length > 0) {
+      to.comments = [...fileLeading, ...(to.comments ?? [])];
+      from.comments = from.comments.filter((c) => !(c.leading && isFileLeading(c)));
+    }
+  }
+
+  // Babel-style: node.leadingComments[]
+  if (Array.isArray(from.leadingComments)) {
+    const fileLeading = from.leadingComments.filter(isFileLeading);
+    if (fileLeading.length > 0) {
+      to.leadingComments = [...fileLeading, ...(to.leadingComments ?? [])];
+      from.leadingComments = from.leadingComments.filter((c) => !isFileLeading(c));
+    }
+  }
 };
 
 const injectWithStorybookImport = (program: t.Program, useEsmImport: boolean) => {
@@ -168,7 +249,12 @@ const injectWithStorybookImport = (program: t.Program, useEsmImport: boolean) =>
       .findIndex((statement) => t.isImportDeclaration(statement));
 
     if (lastImportIndex === -1) {
-      program.body.unshift(importDeclaration);
+      const insertAt = getBodyInsertionIndex(program);
+      const nodeAtInsert = program.body[insertAt];
+      if (nodeAtInsert) {
+        shiftFileLeadingComments(nodeAtInsert, importDeclaration);
+      }
+      program.body.splice(insertAt, 0, importDeclaration);
       return;
     }
 
@@ -187,7 +273,12 @@ const injectWithStorybookImport = (program: t.Program, useEsmImport: boolean) =>
       ])
     ),
   ]);
-  program.body.unshift(requireDeclaration);
+  const insertAt = getBodyInsertionIndex(program);
+  const nodeAtInsert = program.body[insertAt];
+  if (nodeAtInsert) {
+    shiftFileLeadingComments(nodeAtInsert, requireDeclaration);
+  }
+  program.body.splice(insertAt, 0, requireDeclaration);
 };
 
 export const prependMetroFallbackComment = (source: string) => {
@@ -201,6 +292,7 @@ export const prependMetroFallbackComment = (source: string) => {
 export const transformMetroConfigSource = (source: string, filePath: string): TransformResult => {
   const ast = parseConfig(source);
   const program = ast.program;
+  const withStorybookLocalName = hasWithStorybookBinding(program) ?? 'withStorybook';
   let matchedExport = false;
   let changed = false;
 
@@ -211,11 +303,11 @@ export const transformMetroConfigSource = (source: string, filePath: string): Tr
       }
 
       matchedExport = true;
-      if (isWithStorybookCall(statement.expression.right)) {
+      if (isWithStorybookCall(statement.expression.right, withStorybookLocalName)) {
         return { action: 'already-configured' };
       }
 
-      statement.expression.right = t.callExpression(t.identifier('withStorybook'), [
+      statement.expression.right = t.callExpression(t.identifier(withStorybookLocalName), [
         statement.expression.right as t.Expression,
       ]);
       changed = true;
@@ -239,7 +331,9 @@ export const transformMetroConfigSource = (source: string, filePath: string): Tr
       // Preserve TypeScript/Flow function metadata when converting declaration -> expression.
       functionExpression.returnType = statement.declaration.returnType ?? null;
       functionExpression.typeParameters = statement.declaration.typeParameters ?? null;
-      statement.declaration = t.callExpression(t.identifier('withStorybook'), [functionExpression]);
+      statement.declaration = t.callExpression(t.identifier(withStorybookLocalName), [
+        functionExpression,
+      ]);
       changed = true;
       continue;
     }
@@ -248,11 +342,11 @@ export const transformMetroConfigSource = (source: string, filePath: string): Tr
       return { action: 'unsupported' };
     }
 
-    if (isWithStorybookCall(statement.declaration)) {
+    if (isWithStorybookCall(statement.declaration, withStorybookLocalName)) {
       return { action: 'already-configured' };
     }
 
-    statement.declaration = t.callExpression(t.identifier('withStorybook'), [
+    statement.declaration = t.callExpression(t.identifier(withStorybookLocalName), [
       statement.declaration,
     ]);
     changed = true;

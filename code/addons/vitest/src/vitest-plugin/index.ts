@@ -40,6 +40,10 @@ import type { PluginOption } from 'vite';
 
 // Shared plugins from builder-vite (relative import to prebundle without adding a package dependency)
 import { withoutVitePlugins } from '../../../../builders/builder-vite/src/utils/without-vite-plugins.ts';
+import {
+  STORYBOOK_CORE_GHOST_STORIES_PROVIDE_KEY,
+  STORYBOOK_CORE_RENDER_ANALYSIS_PROVIDE_KEY,
+} from '../constants.ts';
 import type { InternalOptions, UserOptions } from './types.ts';
 import { requiresProjectAnnotations } from './utils.ts';
 import { AgentTelemetryReporter } from './agent-telemetry-reporter.ts';
@@ -248,6 +252,7 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
     plugins.push(mdxStubPlugin);
   }
 
+  let agent: ReturnType<typeof detectAgent> | undefined;
   let withinAgenticSetupSession = false;
 
   const storybookTestPlugin: Plugin = {
@@ -263,6 +268,11 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
         .replace('<body>', `<body>${bodyHtmlSnippet ?? ''}`);
     },
     async config(nonMutableInputConfig, { mode }) {
+      if (isTelemetryModuleEnabled()) {
+        agent = detectAgent();
+        withinAgenticSetupSession = !!agent && (await isWithinInitialSession('ai-setup'));
+      }
+
       if (mode) {
         // Needed for `preset.apply('env')` to work correctly
         process.env.BUILD_TARGET = mode;
@@ -361,6 +371,12 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
             __VITEST_SKIP_TAGS__: finalOptions.tags.skip.join(','),
           },
 
+          provide: {
+            [STORYBOOK_CORE_GHOST_STORIES_PROVIDE_KEY]: !!process.env.STORYBOOK_COMPONENT_PATHS,
+            [STORYBOOK_CORE_RENDER_ANALYSIS_PROVIDE_KEY]:
+              !!process.env.STORYBOOK_COMPONENT_PATHS || withinAgenticSetupSession,
+          },
+
           include: [...includeStories, ...getComponentTestPaths()],
           exclude: [
             ...(nonMutableInputConfig.test?.exclude ?? []),
@@ -380,34 +396,6 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
             : {}),
 
           browser: {
-            commands: {
-              getInitialGlobals: () => {
-                const envConfig = JSON.parse(process.env.VITEST_STORYBOOK_CONFIG ?? '{}');
-
-                const shouldRunA11yTests = isVitestStorybook ? (envConfig.a11y ?? false) : true;
-                const globals: Record<string, unknown> = {};
-                globals.a11y = {
-                  manual: !shouldRunA11yTests,
-                };
-
-                if (process.env.STORYBOOK_COMPONENT_PATHS) {
-                  globals.ghostStories = {
-                    enabled: true,
-                  };
-                  globals.renderAnalysis = {
-                    enabled: true,
-                  };
-                }
-
-                if (withinAgenticSetupSession) {
-                  globals.renderAnalysis = {
-                    enabled: true,
-                  };
-                }
-
-                return globals;
-              },
-            },
             // if there is a test.browser config AND test.browser.screenshotFailures is not explicitly set, we set it to false
             ...(nonMutableInputConfig.test?.browser &&
             nonMutableInputConfig.test.browser.screenshotFailures === undefined
@@ -477,8 +465,6 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
       if (isTelemetryModuleEnabled()) {
         // When an agent is running vitest via CLI, inject a reporter that sends
         // detailed test result telemetry (pass/fail, error analysis, empty renders)
-        const agent = detectAgent();
-        withinAgenticSetupSession = !!agent && (await isWithinInitialSession('ai-setup'));
         if (agent && withinAgenticSetupSession) {
           context.vitest.config.reporters.push(
             new AgentTelemetryReporter({

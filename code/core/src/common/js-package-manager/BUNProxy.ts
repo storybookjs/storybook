@@ -75,6 +75,14 @@ export class BUNProxy extends JsPackageManager {
     return executeCommand({ command: 'bun', args: ['init'] });
   }
 
+  getCommandName(): string {
+    return 'bun';
+  }
+
+  getInstallCommand(deps: string[], dev: boolean): string {
+    return `bun add ${dev ? '-D ' : ''}${deps.join(' ')}`;
+  }
+
   getRunStorybookCommand(): string {
     return 'bun run storybook';
   }

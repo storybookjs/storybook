@@ -67,4 +67,12 @@ export const PROJECTS: Project[] = [
     githubSlug: 'storybook-tmp/bluesky',
     description: 'React Native + React app with highly complex providers setup',
   },
+  {
+    name: 'react-spectrum',
+    repo: 'https://github.com/storybook-tmp/react-spectrum',
+    branch: 'main',
+    githubSlug: 'storybook-tmp/react-spectrum',
+    projectDir: 'packages/react-aria-components',
+    description: 'React headless UI library in a Lerna monorepo with shared utils',
+  },
 ];

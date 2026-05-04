@@ -18,7 +18,7 @@ import { type Settings, globalSettings } from '../cli/globalSettings.ts';
 import { detectAgent } from './detect-agent.ts';
 import { getApplicationFileCount } from '../telemetry/get-application-file-count.ts';
 import { analyzeEcosystemPackages } from '../telemetry/get-known-packages.ts';
-import { getMonorepoType } from '../telemetry/get-monorepo-type.ts';
+import { getMonorepoType } from '../shared/utils/get-monorepo-type.ts';
 import { getPackageManagerInfo } from '../telemetry/get-package-manager-info.ts';
 import { getPortableStoriesFileCount } from '../telemetry/get-portable-stories-usage.ts';
 import {
@@ -37,7 +37,7 @@ vi.mock('./detect-agent.ts', () => ({
   detectAgent: vi.fn().mockReturnValue(undefined),
 }));
 vi.mock(import('./package-json.ts'), { spy: true });
-vi.mock(import('./get-monorepo-type.ts'), { spy: true });
+vi.mock(import('../shared/utils/get-monorepo-type.ts'), { spy: true });
 vi.mock(import('./get-framework-info.ts'), { spy: true });
 vi.mock(import('./get-package-manager-info.ts'), { spy: true });
 vi.mock(import('./get-portable-stories-usage.ts'), { spy: true });

@@ -5,6 +5,10 @@ import { SupportedBuilder, SupportedLanguage, SupportedRenderer } from 'storyboo
 
 import { dedent } from 'ts-dedent';
 
+import {
+  type ReactNativeEntrypointTemplateVariant,
+  generateReactNativeEntrypoint,
+} from './generateEntrypoint.ts';
 import { defineGeneratorModule } from '../modules/GeneratorModule.ts';
 import { generateReactNativeEntrypoint } from './generateEntrypoint.ts';
 import {
@@ -19,6 +23,16 @@ import {
 
 let lastMetroCodemodResult: MetroCodemodResult | undefined;
 let lastScriptDerivationResult: StorybookPlatformScriptDerivationResult | undefined;
+
+export const detectReactNativeEntrypointTemplateVariant = (
+  allDependencies: Record<string, string>
+) => {
+  if (allDependencies.expo || allDependencies['expo-router']) {
+    return 'expo';
+  }
+
+  return 'default';
+};
 
 export default defineGeneratorModule({
   metadata: {
@@ -91,6 +105,14 @@ export default defineGeneratorModule({
     lastMetroCodemodResult = await runMetroCodemodOrFallback({
       packageManager,
       yes: !!context.yes,
+    });
+
+    const templateVariant: ReactNativeEntrypointTemplateVariant =
+      detectReactNativeEntrypointTemplateVariant(packageManager.getAllDependencies());
+
+    await generateReactNativeEntrypoint({
+      language: context.language,
+      templateVariant,
     });
 
     // React Native doesn't use baseGenerator - return special config

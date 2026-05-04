@@ -72,6 +72,14 @@ export class NPMProxy extends JsPackageManager {
 
   installArgs: string[] | undefined;
 
+  getCommandName(): string {
+    return 'npm';
+  }
+
+  getInstallCommand(deps: string[], dev: boolean): string {
+    return `npm install ${dev ? '-D ' : ''}${deps.join(' ')}`;
+  }
+
   getRunCommand(command: string): string {
     return `npm run ${command}`;
   }

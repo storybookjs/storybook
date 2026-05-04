@@ -1,4 +1,5 @@
 import { AppRegistry } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import { view } from './storybook.requires';
 
@@ -8,7 +9,13 @@ import { view } from './storybook.requires';
  * Use it as your React Native Storybook entrypoint and wrap `StorybookUIRoot`
  * with application decorators/providers (theme, i18n, state, navigation, etc).
  */
-const StorybookUIRoot = view.getStorybookUI({});
+const StorybookUIRoot = view.getStorybookUI({
+  shouldPersistSelection: true,
+  storage: {
+    getItem: AsyncStorage.getItem,
+    setItem: AsyncStorage.setItem,
+  },
+});
 
 AppRegistry.registerComponent('main', () => StorybookUIRoot);
 

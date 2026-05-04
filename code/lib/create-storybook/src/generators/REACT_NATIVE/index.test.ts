@@ -8,6 +8,7 @@ import { DependencyCollector } from '../../dependency-collector.ts';
 import reactNativeGenerator from './index.ts';
 import { generateReactNativeEntrypoint } from './generateEntrypoint.ts';
 import { runMetroCodemodOrFallback } from './metroConfig.ts';
+import { detectReactNativeEntrypointTemplateVariant } from './index.ts';
 
 vi.mock('storybook/internal/cli', { spy: true });
 vi.mock('storybook/internal/node-logger', { spy: true });
@@ -169,5 +170,33 @@ describe('REACT_NATIVE generator module', () => {
     expect(packageManager.getVersionedPackages).toHaveBeenCalledWith(
       expect.not.arrayContaining(['cross-env'])
     );
+  });
+});
+
+describe('detectReactNativeEntrypointTemplateVariant', () => {
+  it('returns expo when expo dependency is present', () => {
+    expect(
+      detectReactNativeEntrypointTemplateVariant({
+        expo: '^51.0.0',
+        'react-native': '0.76.0',
+      })
+    ).toBe('expo');
+  });
+
+  it('returns expo when expo-router dependency is present', () => {
+    expect(
+      detectReactNativeEntrypointTemplateVariant({
+        'expo-router': '^4.0.0',
+        'react-native': '0.76.0',
+      })
+    ).toBe('expo');
+  });
+
+  it('returns default when expo dependencies are missing', () => {
+    expect(
+      detectReactNativeEntrypointTemplateVariant({
+        'react-native': '0.76.0',
+      })
+    ).toBe('default');
   });
 });

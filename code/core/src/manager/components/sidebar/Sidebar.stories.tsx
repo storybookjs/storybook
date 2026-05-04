@@ -578,7 +578,7 @@ export const StatusesModified: Story = {
   play: waitForChecklistWidget,
 };
 
-export const StatusesAffected: Story = {
+export const StatusesRelated: Story = {
   args: {
     allStatuses: Object.entries(index).reduce((acc, [id, item]) => {
       if (item.type !== 'story') return acc;
@@ -590,7 +590,7 @@ export const StatusesAffected: Story = {
             storyId: id,
             value: 'status-value:affected' as StatusValue,
             title: 'Change Detection',
-            description: 'This story is affected by a change',
+            description: 'This story is related to a change',
           },
         },
       } satisfies StatusesByStoryIdAndTypeId;
@@ -633,7 +633,7 @@ export const StatusesChangeDetectionPriority: Story = {
     allStatuses: Object.entries(index).reduce((acc, [id, item]) => {
       if (item.type !== 'story') return acc;
       // Cycles through all change-detection variants + warning/error to verify
-      // priority ordering (most critical wins): error > warning > affected > modified > new
+      // priority ordering (most critical wins): error > warning > related > modified > new
       const priorityValues: StatusValue[] = [
         'status-value:new',
         'status-value:modified',

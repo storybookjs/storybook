@@ -1,4 +1,4 @@
-import { parse } from '@babel/parser';
+import { babelParse as parse } from 'storybook/internal/barsel';
 import {
   isExportDefaultDeclaration,
   isExportNamedDeclaration,

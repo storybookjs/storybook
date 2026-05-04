@@ -1,14 +1,20 @@
 import { dedent } from 'ts-dedent';
 import type { ProjectInfo } from '../types.ts';
 
-import * as optimizedTests from './optimized-tests.ts';
 import { getProjectOverview } from '../utils/project-overview.ts';
+
+/**
+ * The single prompt variant that ships to real users. Running
+ * `npx storybook ai setup` without any overrides always produces this prompt.
+ */
+import * as currentlyUsedPrompt from './pattern-copy-play.ts';
+export const DEFAULT_PROMPT_NAME: PromptName = 'pattern-copy-play';
 
 /**
  * Main prompt used currently in `npx storybook ai setup` command. If you promote a new prompt to be default, move this to the FORMERLY_USED_PROMPTS object below.
  */
 const CURRENTLY_USED_PROMPT: Record<string, (projectInfo: ProjectInfo) => string> = {
-  'optimized-tests': optimizedTests.instructions,
+  [DEFAULT_PROMPT_NAME]: currentlyUsedPrompt.instructions,
 };
 
 /**
@@ -31,12 +37,6 @@ export const PROMPT_NAMES: PromptName[] = [
   ...Object.keys(CURRENTLY_USED_PROMPT),
   ...Object.keys(FORMERLY_USED_PROMPTS),
 ];
-
-/**
- * The single prompt variant that ships to real users. Running
- * `npx storybook ai setup` without any overrides always produces this prompt.
- */
-export const DEFAULT_PROMPT_NAME: PromptName = 'optimized-tests';
 
 /**
  * Internal env var read only by `getPrompts`. The eval harness sets this

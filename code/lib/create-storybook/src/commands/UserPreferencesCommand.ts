@@ -47,7 +47,7 @@ export class UserPreferencesCommand {
     private readonly commandOptions: CommandOptions,
     packageManager: JsPackageManager,
     private readonly featureService = new FeatureCompatibilityService(packageManager),
-    private readonly telemetryService = new TelemetryService(commandOptions.disableTelemetry)
+    private readonly telemetryService = new TelemetryService()
   ) {}
 
   /** Execute user preferences gathering */

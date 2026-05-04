@@ -8,6 +8,7 @@ import type {
   ModuleGraph,
   ModuleGraphChangeEvent,
   ModuleNode,
+  Status,
   StoryIndex,
 } from 'storybook/internal/types';
 import { CHANGE_DETECTION_STATUS_TYPE_ID } from 'storybook/internal/types';
@@ -19,9 +20,15 @@ import {
 import { MockUniversalStore } from '../../shared/universal-store/mock.ts';
 import { getChangeDetectionReadiness, internal_resetChangeDetectionReadiness } from './index.ts';
 import { ChangeDetectionFailureError, ChangeDetectionUnavailableError } from './errors.ts';
-import { ChangeDetectionService } from './ChangeDetectionService.ts';
+import {
+  buildIndexBaselineStatuses,
+  ChangeDetectionService,
+  mergeChangeDetectionStatuses,
+  mergeStatusValues,
+} from './ChangeDetectionService.ts';
 import type { GitDiffResult } from './GitDiffProvider.ts';
 import { GitDiffProvider } from './GitDiffProvider.ts';
+import type { IndexBaselineService } from './IndexBaselineService.ts';
 
 vi.mock('storybook/internal/node-logger', { spy: true });
 
@@ -105,6 +112,8 @@ class MockGitDiffProvider extends GitDiffProvider {
   readonly onGitStateChangeMock = vi.fn<(callback: () => void) => void>((callback) => {
     void callback;
   });
+  readonly isWorkingTreeCleanMock = vi.fn(async (): Promise<boolean> => true);
+  readonly getHeadCommitMock = vi.fn(async (): Promise<string> => 'mock-sha');
 
   constructor() {
     super('/repo');
@@ -121,12 +130,42 @@ class MockGitDiffProvider extends GitDiffProvider {
   override onGitStateChange(callback: () => void): void {
     this.onGitStateChangeMock(callback);
   }
+
+  override isWorkingTreeClean(): Promise<boolean> {
+    return this.isWorkingTreeCleanMock();
+  }
+
+  override getHeadCommit(): Promise<string> {
+    return this.getHeadCommitMock();
+  }
 }
 
 function createMockGitDiffProvider(configure?: (provider: MockGitDiffProvider) => void) {
   const provider = new MockGitDiffProvider();
   configure?.(provider);
   return provider;
+}
+
+function createMockStoryIndexBaselineService(
+  entryIds: Set<string> = new Set()
+): IndexBaselineService {
+  return {
+    start: vi.fn(async () => undefined),
+    getBaselineEntryIds: vi.fn(async () => new Set(entryIds)),
+    handleGitStateChange: vi.fn(async () => undefined),
+  } as unknown as IndexBaselineService;
+}
+
+function createStatus(value: Status['value'], data?: Status['data']): Status {
+  return {
+    storyId: 'story-1',
+    typeId: 'storybook/change-detection',
+    value,
+    title: '',
+    description: '',
+    ...(data ? { data } : {}),
+    sidebarContextMenu: false,
+  };
 }
 
 describe('ChangeDetectionService', () => {
@@ -186,6 +225,7 @@ describe('ChangeDetectionService', () => {
       } as never),
       statusStore: getStatusStoreByTypeId(CHANGE_DETECTION_STATUS_TYPE_ID),
       gitDiffProvider,
+      indexBaselineService: createMockStoryIndexBaselineService(),
       workingDir,
     });
 
@@ -201,9 +241,6 @@ describe('ChangeDetectionService', () => {
           value: 'status-value:modified',
           title: '',
           description: '',
-          data: {
-            changedFiles: ['src/Button.module.css'],
-          },
           sidebarContextMenu: false,
         },
       },
@@ -214,9 +251,6 @@ describe('ChangeDetectionService', () => {
           value: 'status-value:affected',
           title: '',
           description: '',
-          data: {
-            changedFiles: ['src/Button.module.css'],
-          },
           sidebarContextMenu: false,
         },
       },
@@ -255,6 +289,7 @@ describe('ChangeDetectionService', () => {
       } as never),
       statusStore: getStatusStoreByTypeId(CHANGE_DETECTION_STATUS_TYPE_ID),
       gitDiffProvider,
+      indexBaselineService: createMockStoryIndexBaselineService(),
       workingDir,
       debounceMs: 10,
     });
@@ -271,9 +306,6 @@ describe('ChangeDetectionService', () => {
           value: 'status-value:new',
           title: '',
           description: '',
-          data: {
-            changedFiles: ['src/NewButton.stories.tsx'],
-          },
           sidebarContextMenu: false,
         },
       },
@@ -284,6 +316,84 @@ describe('ChangeDetectionService', () => {
 
     expect(getStatusStoreByTypeId(CHANGE_DETECTION_STATUS_TYPE_ID).getAll()).toEqual({
       'new-button--primary': {},
+    });
+    await service.dispose();
+  });
+
+  it('replaces prior scan status data instead of cumulatively merging with store state', async () => {
+    const depA = createModuleNode('/repo/src/depA.ts');
+    const depB = createModuleNode('/repo/src/depB.ts');
+    const buttonStory = createModuleNode('/repo/src/Button.stories.tsx');
+
+    depA.importers.add(buttonStory);
+    depB.importers.add(buttonStory);
+
+    const moduleGraph: ModuleGraph = new Map([
+      ['/repo/src/depA.ts', new Set([depA])],
+      ['/repo/src/depB.ts', new Set([depB])],
+      ['/repo/src/Button.stories.tsx', new Set([buttonStory])],
+    ]);
+    const storyIndex = createStoryIndex([
+      { storyId: 'button--primary', importPath: './src/Button.stories.tsx', title: 'Button' },
+    ]);
+    const { getStatusStoreByTypeId } = createStatusStore({
+      universalStatusStore: new MockUniversalStore(UNIVERSAL_STATUS_STORE_OPTIONS),
+      environment: 'server',
+    });
+    const gitDiffProvider = createMockGitDiffProvider((provider) => {
+      provider.getChangedFilesMock
+        .mockResolvedValueOnce({
+          changed: new Set(),
+          new: new Set(['src/Button.stories.tsx']),
+        })
+        .mockResolvedValueOnce({
+          changed: new Set(['src/depB.ts']),
+          new: new Set(),
+        });
+    });
+    const { builder, emit } = createBuilder();
+    const service = new ChangeDetectionService({
+      storyIndexGeneratorPromise: Promise.resolve({
+        getIndex: vi.fn().mockResolvedValue(storyIndex),
+      } as never),
+      statusStore: getStatusStoreByTypeId(CHANGE_DETECTION_STATUS_TYPE_ID),
+      gitDiffProvider,
+      indexBaselineService: createMockStoryIndexBaselineService(),
+      workingDir,
+      debounceMs: 10,
+    });
+
+    service.start(builder.onModuleGraphChange, true);
+    emit(moduleGraph);
+    await vi.runAllTimersAsync();
+
+    expect(getStatusStoreByTypeId(CHANGE_DETECTION_STATUS_TYPE_ID).getAll()).toEqual({
+      'button--primary': {
+        [CHANGE_DETECTION_STATUS_TYPE_ID]: {
+          storyId: 'button--primary',
+          typeId: CHANGE_DETECTION_STATUS_TYPE_ID,
+          value: 'status-value:new',
+          title: '',
+          description: '',
+          sidebarContextMenu: false,
+        },
+      },
+    });
+
+    emit(moduleGraph);
+    await vi.runAllTimersAsync();
+
+    expect(getStatusStoreByTypeId(CHANGE_DETECTION_STATUS_TYPE_ID).getAll()).toEqual({
+      'button--primary': {
+        [CHANGE_DETECTION_STATUS_TYPE_ID]: {
+          storyId: 'button--primary',
+          typeId: CHANGE_DETECTION_STATUS_TYPE_ID,
+          value: 'status-value:modified',
+          title: '',
+          description: '',
+          sidebarContextMenu: false,
+        },
+      },
     });
     await service.dispose();
   });
@@ -317,6 +427,7 @@ describe('ChangeDetectionService', () => {
       } as never),
       statusStore: getStatusStoreByTypeId(CHANGE_DETECTION_STATUS_TYPE_ID),
       gitDiffProvider,
+      indexBaselineService: createMockStoryIndexBaselineService(),
       workingDir,
       debounceMs: 10,
     });
@@ -353,6 +464,7 @@ describe('ChangeDetectionService', () => {
       } as never),
       statusStore: getStatusStoreByTypeId(CHANGE_DETECTION_STATUS_TYPE_ID),
       gitDiffProvider,
+      indexBaselineService: createMockStoryIndexBaselineService(),
       workingDir,
     });
 
@@ -378,6 +490,7 @@ describe('ChangeDetectionService', () => {
       } as never),
       statusStore: getStatusStoreByTypeId(CHANGE_DETECTION_STATUS_TYPE_ID),
       gitDiffProvider: createMockGitDiffProvider(),
+      indexBaselineService: createMockStoryIndexBaselineService(),
       workingDir,
     });
 
@@ -406,6 +519,7 @@ describe('ChangeDetectionService', () => {
       } as never),
       statusStore: getStatusStoreByTypeId(CHANGE_DETECTION_STATUS_TYPE_ID),
       gitDiffProvider,
+      indexBaselineService: createMockStoryIndexBaselineService(),
       workingDir,
     });
 
@@ -447,6 +561,7 @@ describe('ChangeDetectionService', () => {
       } as never),
       statusStore: getStatusStoreByTypeId(CHANGE_DETECTION_STATUS_TYPE_ID),
       gitDiffProvider,
+      indexBaselineService: createMockStoryIndexBaselineService(),
       workingDir,
       debounceMs: 10,
     });
@@ -465,9 +580,6 @@ describe('ChangeDetectionService', () => {
           value: 'status-value:modified',
           title: '',
           description: '',
-          data: {
-            changedFiles: ['src/Button.stories.tsx'],
-          },
           sidebarContextMenu: false,
         },
       },
@@ -502,6 +614,7 @@ describe('ChangeDetectionService', () => {
       } as never),
       statusStore: getStatusStoreByTypeId(CHANGE_DETECTION_STATUS_TYPE_ID),
       gitDiffProvider,
+      indexBaselineService: createMockStoryIndexBaselineService(),
       workingDir,
       debounceMs: 0,
     });
@@ -547,6 +660,7 @@ describe('ChangeDetectionService', () => {
       } as never),
       statusStore: getStatusStoreByTypeId(CHANGE_DETECTION_STATUS_TYPE_ID),
       gitDiffProvider,
+      indexBaselineService: createMockStoryIndexBaselineService(),
       workingDir,
       debounceMs: 0,
     });
@@ -611,6 +725,7 @@ describe('ChangeDetectionService', () => {
       } as never),
       statusStore: getStatusStoreByTypeId(CHANGE_DETECTION_STATUS_TYPE_ID),
       gitDiffProvider,
+      indexBaselineService: createMockStoryIndexBaselineService(),
       workingDir,
     });
 
@@ -626,9 +741,6 @@ describe('ChangeDetectionService', () => {
           value: 'status-value:modified',
           title: '',
           description: '',
-          data: {
-            changedFiles: ['src/direct.ts', 'src/indirect.ts'],
-          },
           sidebarContextMenu: false,
         },
       },
@@ -636,7 +748,7 @@ describe('ChangeDetectionService', () => {
     await service.dispose();
   });
 
-  it('stores changed files as normalized repo-relative paths', async () => {
+  it('handles normalized paths when assigning statuses', async () => {
     const buttonCssPath = join(workingDir, 'src', 'Button.module.css');
     const buttonComponentPath = join(workingDir, 'src', 'Button.tsx');
     const buttonStoryPath = join(workingDir, 'src', 'Button.stories.tsx');
@@ -672,6 +784,7 @@ describe('ChangeDetectionService', () => {
       } as never),
       statusStore: getStatusStoreByTypeId(CHANGE_DETECTION_STATUS_TYPE_ID),
       gitDiffProvider,
+      indexBaselineService: createMockStoryIndexBaselineService(),
       workingDir,
     });
 
@@ -687,13 +800,77 @@ describe('ChangeDetectionService', () => {
           value: 'status-value:modified',
           title: '',
           description: '',
-          data: {
-            changedFiles: ['src/Button.module.css'],
-          },
           sidebarContextMenu: false,
         },
       },
     });
     await service.dispose();
+  });
+});
+
+describe('mergeStatusValues', () => {
+  it('prioritizes status-value:new over modified and affected', () => {
+    expect(mergeStatusValues('status-value:modified', 'status-value:new')).toBe('status-value:new');
+    expect(mergeStatusValues('status-value:new', 'status-value:affected')).toBe('status-value:new');
+  });
+
+  it('prioritizes status-value:modified over affected', () => {
+    expect(mergeStatusValues('status-value:affected', 'status-value:modified')).toBe(
+      'status-value:modified'
+    );
+  });
+});
+
+describe('mergeChangeDetectionStatuses', () => {
+  it('keeps status-value:new when later status is modified', () => {
+    const existing = createStatus('status-value:new');
+    const incoming = createStatus('status-value:modified');
+
+    const result = mergeChangeDetectionStatuses(existing, incoming);
+
+    expect(result.value).toBe('status-value:new');
+  });
+
+  it('prefers incoming data without merging previous payloads', () => {
+    const existing = createStatus('status-value:new', { source: 'previous' });
+    const incoming = createStatus('status-value:modified', { source: 'next' });
+
+    const result = mergeChangeDetectionStatuses(existing, incoming);
+
+    expect(result.data).toEqual({ source: 'next' });
+  });
+});
+
+describe('buildIndexBaselineStatuses', () => {
+  it('creates status-value:new for entries not present in baseline', () => {
+    const storyIndex: StoryIndex = {
+      v: 5,
+      entries: {
+        a: {
+          id: 'a',
+          type: 'story',
+          subtype: 'story',
+          title: 'A',
+          name: 'A',
+          importPath: './a.stories.ts',
+        },
+        b: {
+          id: 'b',
+          type: 'docs',
+          title: 'B',
+          name: 'B',
+          importPath: './b.mdx',
+          storiesImports: [],
+        },
+      },
+    };
+
+    const statuses = buildIndexBaselineStatuses(storyIndex, new Set(['a']));
+
+    expect(statuses.get('b')).toMatchObject({
+      storyId: 'b',
+      value: 'status-value:new',
+    });
+    expect(statuses.has('a')).toBe(false);
   });
 });

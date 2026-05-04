@@ -1,6 +1,8 @@
 import type { FC } from 'react';
 import React from 'react';
 
+import { InvalidBlockOfPropError } from 'storybook/internal/preview-errors';
+
 import { Markdown } from './Markdown';
 import type { Of } from './useOf';
 import { useOf } from './useOf';
@@ -63,7 +65,7 @@ const DescriptionImpl: FC<DescriptionProps> = (props) => {
   const { of } = props;
 
   if ('of' in props && of === undefined) {
-    throw new Error('Unexpected `of={undefined}`, did you mistype a CSF file reference?');
+    throw new InvalidBlockOfPropError();
   }
   const resolvedOf = useOf(of || 'meta');
   const markdown = getDescriptionFromResolvedOf(resolvedOf);

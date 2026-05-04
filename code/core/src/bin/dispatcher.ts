@@ -7,6 +7,7 @@ import { logger } from 'storybook/internal/node-logger';
 import { join } from 'pathe';
 import { dedent } from 'ts-dedent';
 
+import { MIN_SUPPORTED_NODE_DESCRIPTION, isNodeVersionSupported } from '../common/node-version.ts';
 import versions from '../common/versions.ts';
 import { resolvePackageDir } from '../shared/utils/module.ts';
 
@@ -20,14 +21,10 @@ import { resolvePackageDir } from '../shared/utils/module.ts';
  * - Init is routed to the create-storybook package via npx
  * - External CLI tools (upgrade, doctor, etc.) are routed to @storybook/cli via npx
  */
-const [majorNodeVersion, minorNodeVersion] = process.versions.node.split('.').map(Number);
-if (
-  majorNodeVersion < 20 ||
-  (majorNodeVersion === 20 && minorNodeVersion < 19) ||
-  (majorNodeVersion === 22 && minorNodeVersion < 12)
-) {
+const [major, minor, patch] = process.versions.node.split('.').map(Number);
+if (!isNodeVersionSupported(major, minor, patch)) {
   logger.error(
-    dedent`To run Storybook, you need Node.js version 20.19+ or 22.12+.
+    dedent`To run Storybook, you need Node.js version ${MIN_SUPPORTED_NODE_DESCRIPTION}.
     You are currently running Node.js ${process.version}. Please upgrade your Node.js installation.`
   );
   process.exit(1);

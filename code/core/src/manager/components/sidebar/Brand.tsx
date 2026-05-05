@@ -2,6 +2,8 @@ import React from 'react';
 
 import { StorybookLogo } from 'storybook/internal/components';
 
+import DOMPurify from 'dompurify';
+
 import { styled, withTheme } from 'storybook/theming';
 
 export const StorybookLogoStyled = styled(StorybookLogo)(({ theme }) => ({
@@ -44,10 +46,18 @@ export const Brand = withTheme(({ theme }) => {
       return null;
     }
 
+    const sanitizedTitle = DOMPurify.sanitize(title);
+
     if (!url) {
-      return <div dangerouslySetInnerHTML={{ __html: title }} />;
+      return <div dangerouslySetInnerHTML={{ __html: sanitizedTitle }} />;
     }
-    return <LogoLink href={url} target={targetValue} dangerouslySetInnerHTML={{ __html: title }} />;
+    return (
+      <LogoLink
+        href={url}
+        target={targetValue}
+        dangerouslySetInnerHTML={{ __html: sanitizedTitle }}
+      />
+    );
   }
 
   const logo = image ? <Img src={image} alt={title} /> : <StorybookLogoStyled alt={title} />;

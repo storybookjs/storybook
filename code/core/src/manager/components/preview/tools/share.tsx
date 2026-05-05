@@ -6,7 +6,7 @@ import { SHARE_ISOLATE_MODE } from 'storybook/internal/core-events';
 import type { Addon_BaseType } from 'storybook/internal/types';
 
 import { global } from '@storybook/global';
-import { ShareAltIcon, ShareIcon } from '@storybook/icons';
+import { PopOutIcon } from '@storybook/icons';
 
 import { Consumer, types } from 'storybook/manager-api';
 import type { Combo } from 'storybook/manager-api';
@@ -102,7 +102,7 @@ export const isolationModeTool: Addon_BaseType = {
               api.emit(SHARE_ISOLATE_MODE, originHrefs.previewHref);
             }}
           >
-            <ShareAltIcon />
+            <PopOutIcon />
           </Button>
         );
       }}

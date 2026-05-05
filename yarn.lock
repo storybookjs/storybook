@@ -8500,15 +8500,6 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@storybook/docs-mdx@npm:4.0.0-next.3":
-  version: 4.0.0-next.3
-  resolution: "@storybook/docs-mdx@npm:4.0.0-next.3"
-  dependencies:
-    acorn: "npm:^8.12.1"
-  checksum: 10c0/7d9e689df6a098b0c294f3e835a5a1323460c80b8a33195f811f7de215c6abaf452988851a219ebd59fa472107747b8f54ab2b82d6044c81a76a7e4dc09e506c
-  languageName: node
-  linkType: hard
-
 "@storybook/ember@workspace:*, @storybook/ember@workspace:code/frameworks/ember":
   version: 0.0.0-use.local
   resolution: "@storybook/ember@workspace:code/frameworks/ember"
@@ -22725,7 +22716,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"mdast-util-mdx-jsx@npm:^3.0.0":
+"mdast-util-mdx-jsx@npm:^3.0.0, mdast-util-mdx-jsx@npm:^3.2.0":
   version: 3.2.0
   resolution: "mdast-util-mdx-jsx@npm:3.2.0"
   dependencies:
@@ -29344,7 +29335,6 @@ __metadata:
     "@react-stately/tabs": "npm:^3.8.5"
     "@react-types/shared": "npm:^3.32.0"
     "@rolldown/pluginutils": "npm:1.0.0-beta.18"
-    "@storybook/docs-mdx": "npm:4.0.0-next.3"
     "@storybook/global": "npm:^5.0.0"
     "@storybook/icons": "npm:^2.0.1"
     "@tanstack/react-virtual": "npm:^3.3.0"
@@ -29373,6 +29363,8 @@ __metadata:
     "@webcontainer/env": "npm:^1.1.1"
     "@yarnpkg/fslib": "npm:2.10.3"
     "@yarnpkg/libzip": "npm:2.3.0"
+    acorn: "npm:^8.15.0"
+    acorn-jsx: "npm:^5.3.2"
     ansi-to-html: "npm:^0.7.2"
     browser-dtector: "npm:^3.4.0"
     bundle-require: "npm:^5.1.0"
@@ -29401,6 +29393,7 @@ __metadata:
     get-npm-tarball-url: "npm:^2.1.0"
     glob: "npm:^10.5.0"
     globby: "npm:^14.1.0"
+    hast-util-to-estree: "npm:^3.0.0"
     host-validation-middleware: "npm:^0.1.2"
     jiti: "npm:^2.6.1"
     js-yaml: "npm:^4.1.0"
@@ -29408,8 +29401,12 @@ __metadata:
     launch-editor: "npm:^2.11.1"
     lazy-universal-dotenv: "npm:^4.0.0"
     leven: "npm:^4.0.0"
+    mdast-util-from-markdown: "npm:^2.0.0"
+    mdast-util-mdx: "npm:^3.0.0"
+    mdast-util-mdx-jsx: "npm:^3.2.0"
     memfs: "npm:^4.11.1"
     memoizerific: "npm:^1.11.3"
+    micromark-extension-mdxjs: "npm:^3.0.0"
     modern-tar: "npm:^0.5.5"
     nanoid: "npm:^4.0.2"
     npmlog: "npm:^7.0.0"

@@ -36,8 +36,7 @@
     "*.md",
     "*.mdx",
     "!docs/**",
-    "!code/lib/eslint-plugin/docs/rules/**",
-    "docs/configure/integration/eslint-plugin.mdx"
+    "!code/lib/eslint-plugin/docs/rules/**"
   ],
   "overrides": [
     {

@@ -83,12 +83,16 @@ export function verifyStep(
 }
 
 export function cleanupStep(
-  projectInfo: ProjectInfo,
+  { needsUserOnboarding }: ProjectInfo,
   ctx: InstructionsContext
 ): { title: string; body: string } {
+  const onboardingInstructions = needsUserOnboarding
+    ? 'You must preserve the components, CSS, stories and MDX docs initially created by Storybook, as they are required for user onboarding in the UI.'
+    : 'Delete the components, CSS, stories and MDX docs initially created by Storybook only if you managed to write successful stories.';
+
   return {
     title: `Clean up`,
-    body: `Before finishing, remove debug code, broad mocks added during diagnosis, unused deps, and eval artifacts.`,
+    body: `Before finishing, remove debug code, broad mocks added during diagnosis, unused deps, and eval artifacts. ${onboardingInstructions}`,
   };
 }
 

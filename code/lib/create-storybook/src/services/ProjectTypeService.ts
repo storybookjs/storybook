@@ -76,7 +76,7 @@ export class ProjectTypeService {
       },
       {
         preset: ProjectType.REACT_NATIVE,
-        dependencies: ['react-native', 'react-native-scripts'],
+        dependencies: ['react-native', 'react-native-scripts', 'expo'],
         matcherFunction: ({ dependencies }) => {
           return dependencies?.some(Boolean) ?? false;
         },

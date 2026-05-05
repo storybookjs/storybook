@@ -55,6 +55,7 @@ export const Brand = withTheme(({ theme }) => {
       <LogoLink
         href={url}
         target={targetValue}
+        rel={targetValue === '_blank' ? 'noopener noreferrer' : undefined}
         dangerouslySetInnerHTML={{ __html: sanitizedTitle }}
       />
     );
@@ -64,7 +65,12 @@ export const Brand = withTheme(({ theme }) => {
 
   if (url) {
     return (
-      <LogoLink title={title} href={url} target={targetValue}>
+      <LogoLink
+        title={title}
+        href={url}
+        target={targetValue}
+        rel={targetValue === '_blank' ? 'noopener noreferrer' : undefined}
+      >
         {logo}
       </LogoLink>
     );

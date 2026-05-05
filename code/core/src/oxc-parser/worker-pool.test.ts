@@ -48,7 +48,7 @@ vi.mock('node:worker_threads', async () => {
         this.emit('message', {
           id: msg.id,
           ok: true,
-          edges: [{ specifier: `edge-for:${msg.filePath}`, kind: 'static' }],
+          edges: [{ specifier: `edge-for:${msg.filePath}`, kind: 'static', importedNames: null }],
         });
       });
     });
@@ -88,7 +88,9 @@ describe('OxcWorkerPool', () => {
 
     const edges = await pool.parse('/src/a.ts', 'import "x";');
 
-    expect(edges).toEqual([{ specifier: 'edge-for:/src/a.ts', kind: 'static' }]);
+    expect(edges).toEqual([
+      { specifier: 'edge-for:/src/a.ts', kind: 'static', importedNames: null },
+    ]);
     await pool.dispose();
   });
 

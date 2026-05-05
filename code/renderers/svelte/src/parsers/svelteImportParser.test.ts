@@ -45,8 +45,8 @@ describe('svelteImportParser', () => {
     const { ctx, calls } = makeContext((src) => {
       if (src.includes(`from './Button.svelte'`)) {
         return [
-          { specifier: './Button.svelte', kind: 'static' },
-          { specifier: 'svelte', kind: 'static' },
+          { specifier: './Button.svelte', kind: 'static', importedNames: null },
+          { specifier: 'svelte', kind: 'static', importedNames: null },
         ];
       }
       return [];
@@ -60,8 +60,8 @@ describe('svelteImportParser', () => {
     expect(calls[0]?.source).toContain(`import { onMount } from 'svelte';`);
     expect(calls[0]?.source).not.toContain('<div>');
     expect(edges).toEqual([
-      { specifier: './Button.svelte', kind: 'static' },
-      { specifier: 'svelte', kind: 'static' },
+      { specifier: './Button.svelte', kind: 'static', importedNames: null },
+      { specifier: 'svelte', kind: 'static', importedNames: null },
     ]);
   });
 
@@ -76,7 +76,7 @@ describe('svelteImportParser', () => {
 
     const { ctx, calls } = makeContext((src) => {
       if (src.includes(`from './store.ts'`)) {
-        return [{ specifier: './store.ts', kind: 'static' }];
+        return [{ specifier: './store.ts', kind: 'static', importedNames: null }];
       }
       return [];
     });
@@ -86,7 +86,7 @@ describe('svelteImportParser', () => {
     expect(calls).toHaveLength(1);
     expect(calls[0]?.virtualFilePath).toBe('/tmp/Bar.svelte.script.js');
     expect(calls[0]?.source).toContain(`import { store } from './store.ts';`);
-    expect(edges).toEqual([{ specifier: './store.ts', kind: 'static' }]);
+    expect(edges).toEqual([{ specifier: './store.ts', kind: 'static', importedNames: null }]);
   });
 
   it('extracts imports from BOTH instance and module scripts and dedupes', async () => {
@@ -107,13 +107,13 @@ describe('svelteImportParser', () => {
     const { ctx, calls } = makeContext((src) => {
       if (src.includes(`from './shared.ts'`)) {
         return [
-          { specifier: './shared.ts', kind: 'static' },
-          { specifier: './Button.svelte', kind: 'static' },
+          { specifier: './shared.ts', kind: 'static', importedNames: null },
+          { specifier: './Button.svelte', kind: 'static', importedNames: null },
         ];
       }
       return [
-        { specifier: 'svelte', kind: 'static' },
-        { specifier: './Button.svelte', kind: 'static' },
+        { specifier: 'svelte', kind: 'static', importedNames: null },
+        { specifier: './Button.svelte', kind: 'static', importedNames: null },
       ];
     });
 
@@ -121,9 +121,9 @@ describe('svelteImportParser', () => {
 
     expect(calls).toHaveLength(2);
     expect(edges).toEqual([
-      { specifier: './shared.ts', kind: 'static' },
-      { specifier: './Button.svelte', kind: 'static' },
-      { specifier: 'svelte', kind: 'static' },
+      { specifier: './shared.ts', kind: 'static', importedNames: null },
+      { specifier: './Button.svelte', kind: 'static', importedNames: null },
+      { specifier: 'svelte', kind: 'static', importedNames: null },
     ]);
   });
 
@@ -157,14 +157,16 @@ describe('svelteImportParser', () => {
       `</script>`,
     ].join('\n');
 
-    const { ctx, calls } = makeContext(() => [{ specifier: 'svelte/store', kind: 'static' }]);
+    const { ctx, calls } = makeContext(() => [
+      { specifier: 'svelte/store', kind: 'static', importedNames: null },
+    ]);
 
     const edges = await svelteImportParser.parse({ filePath: '/tmp/Typed.svelte', source }, ctx);
 
     expect(calls).toHaveLength(1);
     expect(calls[0]?.source).toContain(`import type { Writable } from 'svelte/store';`);
     expect(calls[0]?.source).toContain(`import { writable } from 'svelte/store';`);
-    expect(edges).toEqual([{ specifier: 'svelte/store', kind: 'static' }]);
+    expect(edges).toEqual([{ specifier: 'svelte/store', kind: 'static', importedNames: null }]);
   });
 
   it('parses a .stories.svelte (Svelte CSF) file the same way', async () => {
@@ -180,8 +182,8 @@ describe('svelteImportParser', () => {
     ].join('\n');
 
     const { ctx } = makeContext(() => [
-      { specifier: '@storybook/addon-svelte-csf', kind: 'static' },
-      { specifier: './Button.svelte', kind: 'static' },
+      { specifier: '@storybook/addon-svelte-csf', kind: 'static', importedNames: null },
+      { specifier: './Button.svelte', kind: 'static', importedNames: null },
     ]);
 
     const edges = await svelteImportParser.parse(
@@ -190,8 +192,8 @@ describe('svelteImportParser', () => {
     );
 
     expect(edges).toEqual([
-      { specifier: '@storybook/addon-svelte-csf', kind: 'static' },
-      { specifier: './Button.svelte', kind: 'static' },
+      { specifier: '@storybook/addon-svelte-csf', kind: 'static', importedNames: null },
+      { specifier: './Button.svelte', kind: 'static', importedNames: null },
     ]);
   });
 
@@ -209,7 +211,9 @@ describe('svelteImportParser', () => {
   it('uses .script.js virtual extension when no lang attribute is set', async () => {
     const source = [`<script>`, `  import x from './x.js';`, `</script>`].join('\n');
 
-    const { ctx, calls } = makeContext(() => [{ specifier: './x.js', kind: 'static' }]);
+    const { ctx, calls } = makeContext(() => [
+      { specifier: './x.js', kind: 'static', importedNames: null },
+    ]);
 
     await svelteImportParser.parse({ filePath: '/tmp/NoLang.svelte', source }, ctx);
 
@@ -219,7 +223,9 @@ describe('svelteImportParser', () => {
   it('uses .script.ts virtual extension when lang="ts"', async () => {
     const source = [`<script lang="ts">`, `  import x from './x.ts';`, `</script>`].join('\n');
 
-    const { ctx, calls } = makeContext(() => [{ specifier: './x.ts', kind: 'static' }]);
+    const { ctx, calls } = makeContext(() => [
+      { specifier: './x.ts', kind: 'static', importedNames: null },
+    ]);
 
     await svelteImportParser.parse({ filePath: '/tmp/TypeScript.svelte', source }, ctx);
 
@@ -229,7 +235,9 @@ describe('svelteImportParser', () => {
   it('uses .script.tsx virtual extension when lang="tsx"', async () => {
     const source = [`<script lang="tsx">`, `  import x from './x.tsx';`, `</script>`].join('\n');
 
-    const { ctx, calls } = makeContext(() => [{ specifier: './x.tsx', kind: 'static' }]);
+    const { ctx, calls } = makeContext(() => [
+      { specifier: './x.tsx', kind: 'static', importedNames: null },
+    ]);
 
     await svelteImportParser.parse({ filePath: '/tmp/TSX.svelte', source }, ctx);
 
@@ -239,7 +247,9 @@ describe('svelteImportParser', () => {
   it('uses .script.jsx virtual extension when lang="jsx"', async () => {
     const source = [`<script lang="jsx">`, `  import x from './x.jsx';`, `</script>`].join('\n');
 
-    const { ctx, calls } = makeContext(() => [{ specifier: './x.jsx', kind: 'static' }]);
+    const { ctx, calls } = makeContext(() => [
+      { specifier: './x.jsx', kind: 'static', importedNames: null },
+    ]);
 
     await svelteImportParser.parse({ filePath: '/tmp/JSX.svelte', source }, ctx);
 

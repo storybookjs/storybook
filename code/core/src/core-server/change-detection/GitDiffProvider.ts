@@ -211,6 +211,10 @@ export class GitDiffProvider {
     });
   }
 
+  dispose(): void {
+    this.stopWatching();
+  }
+
   private stopWatching(): void {
     if (this.watchingStopped) {
       return;

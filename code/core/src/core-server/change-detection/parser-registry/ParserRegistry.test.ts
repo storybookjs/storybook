@@ -98,7 +98,7 @@ describe('ParserRegistry', () => {
         return observedEdges as {
           specifier: string;
           kind: 'static' | 'dynamic' | 'require';
-          importedNames: string[] | null;
+          importedNames: Set<string> | null;
         }[];
       },
     };

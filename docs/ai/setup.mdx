@@ -20,11 +20,11 @@ After an agent follows those instructions, you have a working Storybook with sto
 
 ## Set up Storybook with an agent
 
-To set up Storybook in your project using an agent, run this prompt:
+To set up Storybook in your project, copy/paste this prompt into your agent's chat:
 
 <CodeSnippets path="prompt-install-storybook.md" />
 
-The agent first runs [`storybook init`](../api/cli-options.mdx#init) to add Storybook to your project. When that completes, it prompts you to run `storybook ai setup` for a more complete configuration tailored to your project. If you agree, the agent generates the instructions, follows them step by step, and applies each change directly to your codebase so you can review its work as it goes.
+The agent first runs [`storybook init`](../api/cli-options.mdx#init) to add Storybook to your project. When that completes, it prompts you to run `storybook ai setup` for a more complete configuration tailored to your project. If you agree, the agent generates the instructions, follows them step by step, and applies each change directly to your codebase so you can review its work.
 
 ### Generated setup instructions
 
@@ -44,8 +44,9 @@ Running `storybook ai setup` generates project-specific instructions covering th
 
 Once the agent has completed the setup:
 
-- Connect the [Storybook MCP server](./mcp/overview.mdx) to your agent so it can continue reading manifests, generating stories, and running tests against your live Storybook.
+- [Run your new Storybook](../get-started/install.mdx#start-storybook) and review the generated configuration files ([main](../configure/index.mdx#configure-your-storybook-project) and [preview](../configure/index.mdx#configure-story-rendering), most importantly).
 - Review the stories tagged `ai-generated`, and remove the tag once you've validated each one.
+- Connect the [Storybook MCP server](./mcp/overview.mdx) to your agent so it can continue reading manifests, generating stories, and running tests against your live Storybook.
 - Follow the [best practices](./best-practices.mdx) to make your stories and documentation maximally useful to both humans and agents.
 
 ## Advanced usage
@@ -62,7 +63,9 @@ Use this flow when you want tighter control over what the agent does, when you'r
 
 2. Open the generated file and paste its contents into your agent's chat, or attach it as context. The prompt is designed to be self-contained: it references your specific `configDir`, framework, and renderer, and links back to the relevant Storybook docs in Markdown form.
 
-3. Let the agent work through the steps. You can review each change as the agent applies it.
+3. Adjust the instructions as needed. For example, you might want to include constraints unique to your project, ensure stories are generated for specific components, or remove steps that don't apply to your project.
+
+4. Let the agent work through the steps.
 
 </If>
 {/* End supported renderers */}

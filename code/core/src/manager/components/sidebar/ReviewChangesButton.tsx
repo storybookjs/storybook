@@ -82,7 +82,8 @@ const ReviewChangesButtonInner = ({
       if (!entry) {
         continue;
       }
-      if (!tagFilterFn(entry) || !statusFilterFn(entry)) {
+      const entryWithStatuses = { ...entry, statuses: statusesByType };
+      if (!tagFilterFn(entryWithStatuses) || !statusFilterFn(entryWithStatuses)) {
         continue;
       }
       const values = Object.values(statusesByType).map((s) => s.value);

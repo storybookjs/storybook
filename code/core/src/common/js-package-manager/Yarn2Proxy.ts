@@ -90,8 +90,16 @@ export class Yarn2Proxy extends JsPackageManager {
     return this.installArgs;
   }
 
+  getCommandName(): string {
+    return 'yarn';
+  }
+
   getRunCommand(command: string): string {
     return `yarn ${command}`;
+  }
+
+  getInstallCommand(deps: string[], dev: boolean): string {
+    return `yarn add ${dev ? '-D ' : ''}${deps.join(' ')}`;
   }
 
   getPackageCommand(args: string[]): string {

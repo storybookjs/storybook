@@ -13,6 +13,7 @@ export enum SupportedFramework {
   SERVER_WEBPACK5 = 'server-webpack5',
   SVELTE_VITE = 'svelte-vite',
   SVELTEKIT = 'sveltekit',
+  TANSTACK_REACT = 'tanstack-react',
   VUE3_VITE = 'vue3-vite',
   WEB_COMPONENTS_VITE = 'web-components-vite',
   // COMMUNITY

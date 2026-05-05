@@ -97,7 +97,7 @@ export class ParseResolveCache {
       try {
         source = await readFile(filePath, 'utf8');
       } catch (error) {
-        this.logger.warn(
+        this.logger.debug(
           `Change detection: could not read ${filePath}: ${error instanceof Error ? error.message : String(error)}`
         );
         return [];
@@ -105,7 +105,7 @@ export class ParseResolveCache {
       try {
         return (await this.registry.parse(filePath, source)) ?? [];
       } catch (error) {
-        this.logger.warn(
+        this.logger.debug(
           `Change detection: failed to parse ${filePath}: ${error instanceof Error ? error.message : String(error)}`
         );
         return [];

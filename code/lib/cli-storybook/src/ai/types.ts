@@ -29,12 +29,15 @@ export interface ProjectInfo {
   packageManagerName?: string;
   /** Whether the project's preview file uses the CSF Factory format. */
   hasCsfFactoryPreview: boolean;
+  /** Whether the user has requested to be onboarded into Storybook. */
+  needsUserOnboarding: boolean;
 }
 
 export interface SetupInstructionsContext {
   configDir: string;
   docsUrl: (path: string) => string;
   mswInstall: string;
+  needsUserOnboarding: boolean;
   packageManager: JsPackageManager;
   packageManagerName: string | undefined;
   tsx: string;

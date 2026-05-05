@@ -389,6 +389,41 @@ describe('buildBatchRunDescriptors with --projects', () => {
       })
     ).toThrow(/Unknown project/);
   });
+
+  it('fans out across multiple prompts when --prompts is set', () => {
+    const [first] = BATCH_PROJECT_NAMES;
+    const descriptors = buildBatchRunDescriptors({
+      prompts: ['pattern-copy-play', 'setup'],
+      agents: ['claude'],
+      claudeEffort: 'high',
+      projects: [first],
+      repetitions: 2,
+    });
+
+    expect(descriptors).toHaveLength(2 * 1 * 2); // 2 prompts × 1 project × 2 reps
+    expect(new Set(descriptors.map((d) => d.prompt))).toEqual(
+      new Set(['pattern-copy-play', 'setup'])
+    );
+    expect(new Set(descriptors.map((d) => d.label)).size).toBe(descriptors.length);
+  });
+
+  it('throws when an unknown prompt is requested', () => {
+    expect(() =>
+      buildBatchRunDescriptors({
+        prompts: ['pattern-copy-play', 'not-a-real-prompt'],
+      })
+    ).toThrow(/Unknown prompt/);
+  });
+
+  it('parses --prompts from the CLI', () => {
+    expect(
+      parseRunBatchArgs(['--prompts', 'pattern-copy-play, setup'])
+    ).toMatchObject({ prompts: ['pattern-copy-play', 'setup'] });
+  });
+
+  it('rejects CLI invocations with neither --prompt nor --prompts', () => {
+    expect(() => parseRunBatchArgs(['--repetitions', '1'])).toThrow(/--prompt or --prompts/);
+  });
 });
 
 describe('runBatch', () => {

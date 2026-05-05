@@ -12,16 +12,39 @@ import { internal_fullStatusStore } from 'storybook/manager-api';
 import { IconSymbols } from './IconSymbols.tsx';
 import ReviewChangesButton from './ReviewChangesButton.tsx';
 
+const buildIndexEntries = (storyIds: string[], extraTags: Record<string, string[]> = {}) =>
+  storyIds.reduce<Record<string, any>>((acc, id) => {
+    acc[id] = {
+      type: 'story',
+      id,
+      name: id,
+      title: id,
+      importPath: `./${id}.stories.tsx`,
+      tags: ['dev', ...(extraTags[id] ?? [])],
+    };
+    return acc;
+  }, {});
+
 const makeManagerContext = (
   options: {
     includedStatusFilters?: string[];
     excludedStatusFilters?: string[];
+    includedTagFilters?: string[];
+    excludedTagFilters?: string[];
+    storyIds?: string[];
+    extraTags?: Record<string, string[]>;
     setAllStatusFilters?: ReturnType<typeof fn>;
   } = {}
 ): any => ({
   state: {
     includedStatusFilters: options.includedStatusFilters ?? [],
     excludedStatusFilters: options.excludedStatusFilters ?? [],
+    includedTagFilters: options.includedTagFilters ?? [],
+    excludedTagFilters: options.excludedTagFilters ?? [],
+    internal_index: {
+      v: 5,
+      entries: buildIndexEntries(options.storyIds ?? [], options.extraTags),
+    },
     docsOptions: {
       defaultName: 'Docs',
       autodocs: 'tag',
@@ -83,11 +106,18 @@ const twoStoriesBeforeEach = () => {
   return () => internal_fullStatusStore.unset();
 };
 
+const eightStoryIds = ['s1', 's2', 's3', 's4', 's5', 's6', 's7', 's8'];
+
 /**
  * Feature flag on, 5 new stories, 3 modified. No filters active.
  * Shows "Review 5 new, 3 changed".
  */
 export const Idle: Story = {
+  parameters: {
+    contextOptions: {
+      storyIds: eightStoryIds,
+    },
+  },
   beforeEach: () => {
     internal_fullStatusStore.set([
       {
@@ -164,6 +194,7 @@ export const Idle: Story = {
 export const Active: Story = {
   parameters: {
     contextOptions: {
+      storyIds: eightStoryIds,
       includedStatusFilters: ['status-value:new', 'status-value:modified'],
     },
   },
@@ -183,6 +214,7 @@ export const Active: Story = {
 export const PartialFilter: Story = {
   parameters: {
     contextOptions: {
+      storyIds: eightStoryIds,
       includedStatusFilters: ['status-value:new'],
     },
   },
@@ -199,6 +231,11 @@ export const PartialFilter: Story = {
  * Only new stories present (no modified). Label should omit the "changed" segment.
  */
 export const OnlyNew: Story = {
+  parameters: {
+    contextOptions: {
+      storyIds: ['s1', 's2'],
+    },
+  },
   beforeEach: () => {
     internal_fullStatusStore.set([
       {
@@ -230,6 +267,11 @@ export const OnlyNew: Story = {
  * Only modified stories present (no new). Label should omit the "new" segment.
  */
 export const OnlyModified: Story = {
+  parameters: {
+    contextOptions: {
+      storyIds: ['s1', 's2', 's3'],
+    },
+  },
   beforeEach: () => {
     internal_fullStatusStore.set([
       {
@@ -265,6 +307,30 @@ export const OnlyModified: Story = {
 };
 
 /**
+ * Contextual counting: a tag filter narrows the eligible scope, so the CTA reports
+ * only new/modified stories that are also passing the active tag filter.
+ *
+ * Setup: 5 new stories, 3 modified. Two of the new stories carry the `feature-a` tag.
+ * Active tag include filter: `feature-a` → only those 2 should be counted.
+ */
+export const ContextualTagFilter: Story = {
+  parameters: {
+    contextOptions: {
+      storyIds: eightStoryIds,
+      includedTagFilters: ['feature-a'],
+      extraTags: { s1: ['feature-a'], s2: ['feature-a'] },
+    },
+  },
+  beforeEach: Idle.beforeEach,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const button = await canvas.findByRole('button');
+    await expect(button).toHaveTextContent('Review 2 new');
+    await expect(button.textContent).not.toMatch(/changed/);
+  },
+};
+
+/**
  * Feature flag on, but no statuses in the store.
  * Component should return null — no button rendered.
  */
@@ -283,6 +349,11 @@ export const HiddenWhenZeroCounts: Story = {
  * Component should return null — no button rendered.
  */
 export const HiddenWhenFeatureOff: Story = {
+  parameters: {
+    contextOptions: {
+      storyIds: ['s1'],
+    },
+  },
   beforeEach: () => {
     internal_fullStatusStore.set([
       {
@@ -315,6 +386,7 @@ const toggleActivateMock = fn().mockName('api::setAllStatusFilters');
 export const ToggleActivate: Story = {
   parameters: {
     contextOptions: {
+      storyIds: ['s1', 's2'],
       includedStatusFilters: [],
       excludedStatusFilters: [],
       setAllStatusFilters: toggleActivateMock,
@@ -347,6 +419,7 @@ const togglePreservesMock = fn().mockName('api::setAllStatusFilters');
 export const TogglePreservesExcluded: Story = {
   parameters: {
     contextOptions: {
+      storyIds: ['s1', 's2'],
       includedStatusFilters: [],
       // seed 'status-value:new' in excluded to verify it gets removed on activate
       excludedStatusFilters: ['status-value:new'],

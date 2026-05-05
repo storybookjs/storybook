@@ -1,12 +1,19 @@
 import React, { useMemo } from 'react';
 
 import { Button } from 'storybook/internal/components';
-import type { StatusesByStoryIdAndTypeId, StatusValue } from 'storybook/internal/types';
+import type {
+  API_PreparedIndexEntry,
+  StatusesByStoryIdAndTypeId,
+  StatusValue,
+  StoryIndex,
+  Tag,
+} from 'storybook/internal/types';
 
 import { type API, type Combo, Consumer, experimental_useStatusStore } from 'storybook/manager-api';
 import { styled } from 'storybook/theming';
 
-import { countStatusesByValue } from './FilterPanel.utils.ts';
+import { computeStatusFilterFn } from '../../../manager-api/modules/statuses.ts';
+import { computeTagsFilterFn } from '../../../manager-api/modules/tags.ts';
 import { UseSymbol } from './IconSymbols.tsx';
 
 const StyledCTA = styled(Button)<{ $isActive: boolean }>(({ $isActive, theme }) => ({
@@ -29,26 +36,76 @@ const MOD = 'status-value:modified' as StatusValue;
 
 const filterMapper = ({ api, state }: Combo) => ({
   api,
+  index: state.internal_index as StoryIndex | undefined,
+  includedTagFilters: (state.includedTagFilters ?? []) as Tag[],
+  excludedTagFilters: (state.excludedTagFilters ?? []) as Tag[],
   includedStatusFilters: (state.includedStatusFilters ?? []) as StatusValue[],
   excludedStatusFilters: (state.excludedStatusFilters ?? []) as StatusValue[],
 });
 
 interface ReviewChangesButtonInnerProps {
   api: API;
+  index: StoryIndex | undefined;
+  includedTagFilters: Tag[];
+  excludedTagFilters: Tag[];
   includedStatusFilters: StatusValue[];
   excludedStatusFilters: StatusValue[];
 }
 
 const ReviewChangesButtonInner = ({
   api,
+  index,
+  includedTagFilters,
+  excludedTagFilters,
   includedStatusFilters,
   excludedStatusFilters,
 }: ReviewChangesButtonInnerProps) => {
   const allStatuses = experimental_useStatusStore() as StatusesByStoryIdAndTypeId;
 
-  const counts = useMemo(() => countStatusesByValue(allStatuses), [allStatuses]);
-  const newCount = counts[NEW] ?? 0;
-  const modifiedCount = counts[MOD] ?? 0;
+  const { newCount, modifiedCount } = useMemo(() => {
+    if (!index) {
+      return { newCount: 0, modifiedCount: 0 };
+    }
+    const contextualIncludedStatuses = includedStatusFilters.filter(
+      (s) => s !== NEW && s !== MOD
+    );
+    const contextualExcludedStatuses = excludedStatusFilters.filter(
+      (s) => s !== NEW && s !== MOD
+    );
+    const tagFilterFn = computeTagsFilterFn(includedTagFilters, excludedTagFilters);
+    const statusFilterFn = computeStatusFilterFn(
+      contextualIncludedStatuses,
+      contextualExcludedStatuses
+    );
+
+    let next = 0;
+    let modified = 0;
+    const entries = index.entries ?? {};
+    for (const [storyId, statusesByType] of Object.entries(allStatuses)) {
+      const entry = entries[storyId] as API_PreparedIndexEntry | undefined;
+      if (!entry) {
+        continue;
+      }
+      if (!tagFilterFn(entry) || !statusFilterFn(entry)) {
+        continue;
+      }
+      const values = Object.values(statusesByType).map((s) => s.value);
+      if (values.includes(NEW)) {
+        next += 1;
+      }
+      if (values.includes(MOD)) {
+        modified += 1;
+      }
+    }
+    return { newCount: next, modifiedCount: modified };
+  }, [
+    index,
+    allStatuses,
+    includedTagFilters,
+    excludedTagFilters,
+    includedStatusFilters,
+    excludedStatusFilters,
+  ]);
 
   const isReviewActive = includedStatusFilters.includes(NEW) && includedStatusFilters.includes(MOD);
 
@@ -100,9 +157,19 @@ const ReviewChangesButtonInner = ({
 
 const ReviewChangesButton = () => (
   <Consumer filter={filterMapper}>
-    {({ api, includedStatusFilters, excludedStatusFilters }) => (
+    {({
+      api,
+      index,
+      includedTagFilters,
+      excludedTagFilters,
+      includedStatusFilters,
+      excludedStatusFilters,
+    }) => (
       <ReviewChangesButtonInner
         api={api}
+        index={index}
+        includedTagFilters={includedTagFilters}
+        excludedTagFilters={excludedTagFilters}
         includedStatusFilters={includedStatusFilters}
         excludedStatusFilters={excludedStatusFilters}
       />

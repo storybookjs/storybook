@@ -43,6 +43,7 @@
     "create-storybook": "workspace:*",
     "jscodeshift": "^0.15.1",
     "storybook": "workspace:*",
+    "tinyclip": "^0.1.12",
     "ts-dedent": "^2.0.0"
   },
   "devDependencies": {

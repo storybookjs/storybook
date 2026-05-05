@@ -8,6 +8,13 @@ allowed-tools: Bash, Read, Write, Edit
 
 Assembles and writes a polished changelog entry for a Storybook minor or major (`X.Y.0`) release into `CHANGELOG.md`.
 
+## Rules — read before doing anything
+
+- **The two helper scripts are at `.agents/skills/minor-release/get-minor-changelog-summary.ts` and `.agents/skills/minor-release/write-minor-changelog-section.ts`. Do not search for them anywhere else in the repo. Do not look in `scripts/`, `package.json`, `AGENTS.md`, or elsewhere. Do not read the script source files. Just run them.**
+- **Do not read `CHANGELOG.md` or `CHANGELOG.prerelease.md` before running the scripts.** The scripts handle version detection and entry collection automatically.
+- **Do not read `CHANGELOG.md` for style guidance.** The style examples in Step 3 of this skill are the authoritative reference. Do not grep or read the changelog to infer format.
+- Run all commands from the repository root.
+
 ## Step 1: Collect the changelog entries
 
 Run the helper script to see all unique changelog entries from the prereleases, with patch-backported changes filtered out:

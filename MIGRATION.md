@@ -1,5 +1,7 @@
 <h1>Migration</h1>
 
+- [From version 10.3.0 to 10.4.0](#from-version-1030-to-1040)
+  - [React Native: on-device addons moved to `deviceAddons`](#react-native-on-device-addons-moved-to-deviceaddons)
 - [From version 10.0.0 to 10.1.0](#from-version-1000-to-1010)
   - [TanStack Router projects: migrate from `@storybook/react-vite` to `@storybook/tanstack-react`](#tanstack-router-projects-migrate-from-storybookreact-vite-to-storybooktanstack-react)
   - [API and Component Changes](#api-and-component-changes)
@@ -520,6 +522,36 @@
   - [Webpack upgrade](#webpack-upgrade)
   - [Packages renaming](#packages-renaming)
   - [Deprecated embedded addons](#deprecated-embedded-addons)
+
+## From version 10.3.0 to 10.4.0
+
+### React Native: on-device addons moved to `deviceAddons`
+
+In Storybook 10.4, the React Native on-device Storybook config (`.rnstorybook/main.ts`) uses a dedicated `deviceAddons` key. All entries that used to live under `addons` in your React Native config must now be listed under `deviceAddons` instead.
+
+Listing them under `addons` caused `storybook extract` to fail because Storybook Core evaluates every entry in `addons` as a Node.js preset, which on-device addons are not.
+
+The automigration (`rn-ondevice-addons-to-device-addons`) handles this automatically by renaming the `addons` key to `deviceAddons`. It only acts on React Native main configs (detected by the `.rnstorybook` directory name or by a `framework` field of `@storybook/react-native`), and leaves any paired web `.storybook/main.ts` untouched.
+
+You can also migrate manually:
+
+```ts
+// Before (.rnstorybook/main.ts)
+export default {
+  addons: [
+    '@storybook/addon-ondevice-controls',
+    '@storybook/addon-ondevice-actions',
+  ],
+};
+
+// After (.rnstorybook/main.ts)
+export default {
+  deviceAddons: [
+    '@storybook/addon-ondevice-controls',
+    '@storybook/addon-ondevice-actions',
+  ],
+};
+```
 
 ## From version 10.0.0 to 10.1.0
 

@@ -7,17 +7,31 @@ sidebar:
 
 <Callout variant="info" icon="🧪">
 
-While they are in [preview](../releases/features.mdx#preview), Storybook's AI capabilities (specifically, the [manifests](./manifests.mdx) and [MCP server](./mcp/overview.mdx)) are currently only supported for [React](?renderer=react) projects.
+Storybook's AI capabilities are currently in [preview](../releases/features.mdx#preview) and only supported for [React](?renderer=react) projects.
 
-Additionally, the API may change in future releases. We welcome feedback and contributions to help improve this feature.
+The API may change in future releases. We welcome feedback and contributions to help improve this feature.
 
 </Callout>
 
 <If renderer={['react']}>
 
-With Storybook's AI capabilities, you can leverage the power of AI agents to speed up your development workflow. By connecting your Storybook to an AI agent via the [Storybook MCP server](./mcp/overview.mdx), you can enable your agent to understand your components and documentation, generate stories, run tests, and more.
+Storybook's AI capabilities help you get more out of agentic development at every stage, from adding Storybook to a project to working with your components day to day.
 
-## Get started
+[`Agentic setup`](./setup.mdx) configures Storybook for you and writes an initial set of stories for your project. The [Storybook MCP server](./mcp/overview.mdx) gives your agent ongoing access to your component documentation, story generation, and component tests.
+
+## Set up Storybook with an agent
+
+[Agentic setup](./setup.mdx) analyzes your project and produces step-by-step instructions that an agent follows to add Storybook, configure the preview, write stories for your components, and verify them.
+
+To get started, run this prompt in your agent:
+
+<CodeSnippets path="prompt-install-storybook.md" />
+
+For the full walkthrough, see the [agentic setup guide](./setup.mdx).
+
+## Connect your agent to Storybook
+
+Once Storybook is set up, connect your agent to the Storybook MCP server so it can read [manifests](./manifests.mdx) of your components and documentation, generate stories, and run tests against your live Storybook.
 
 ### 1. Install the addon
 
@@ -68,7 +82,13 @@ Finally, test your agent's access to the MCP server. First, make sure your Story
 
 ## Key concepts
 
-Understanding these concepts will help you make the most of Storybook's AI capabilities and guide you in using the MCP server to enhance your development workflow.
+Understanding these concepts will help you make the most of Storybook's AI capabilities and guide you in choosing the right tool for each stage of your workflow.
+
+### Agentic setup
+
+The [`storybook ai setup`](./setup.mdx) command generates project-specific instructions tailored to your framework, renderer, builder, language, and addons. An agent follows those instructions to configure Storybook's preview, support patterns like portals and providers, mock side effects, write stories for your components, add interaction tests, and verify the result.
+
+This is a one-time flow you run when adding Storybook to a project, or when you want an agent to expand coverage across new components.
 
 ### Manifests
 
@@ -85,9 +105,9 @@ These manifests are automatically generated and updated as you work on your Stor
 
 **More AI resources**
 
+- [Agentic setup](./setup.mdx)
 - [MCP server overview](./mcp/overview.mdx)
 - [MCP server API](./mcp/api.mdx)
 - [Sharing your MCP server](./mcp/sharing.mdx)
 - [Best practices for using Storybook with AI](./best-practices.mdx)
 - [Manifests](./manifests.mdx)
-- [Agentic setup](./setup.mdx)

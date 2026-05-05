@@ -8,6 +8,7 @@ import compression from '@polka/compression';
 import polka from 'polka';
 
 import { isTelemetryModuleEnabled, telemetry } from '../telemetry/index.ts';
+import type { ChangeDetectionAdapter } from './change-detection/index.ts';
 import { ChangeDetectionService } from './change-detection/index.ts';
 import { getStatusStoreByTypeId } from './stores/status.ts';
 import type { StoryIndexGenerator } from './utils/StoryIndexGenerator.ts';
@@ -153,13 +154,12 @@ export async function storybookDevServer(
       });
 
     if (features.changeDetection) {
-      let adapter;
+      let adapter: ChangeDetectionAdapter | undefined;
       try {
         adapter = previewBuilder.changeDetectionAdapter?.();
       } catch (err) {
-        logger.warn(
-          `Change detection: adapter initialisation failed — ${err instanceof Error ? err.message : String(err)}`
-        );
+        logger.warn('Change detection: adapter initialisation failed');
+        logger.debug(err instanceof Error ? (err.stack ?? err.message) : String(err));
       }
       changeDetectionService.start(adapter, true);
     }

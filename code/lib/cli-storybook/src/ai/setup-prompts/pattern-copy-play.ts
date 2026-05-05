@@ -13,29 +13,8 @@
 import { dedent } from 'ts-dedent';
 
 import type { ProjectInfo } from '../types.ts';
-
-/**
- * Builds a markdown-format docs URL with renderer and language query parameters.
- * Appending .md to any Storybook docs URL returns clean markdown with code examples.
- */
-function getDocsMarkdownUrl(
-  path: string,
-  projectInfo?: Pick<ProjectInfo, 'majorVersion' | 'renderer' | 'language'>
-): string {
-  const { majorVersion, renderer = 'react', language = 'ts' } = projectInfo ?? {};
-  const versionSegment = majorVersion ? `/${majorVersion}` : '';
-  const params = new URLSearchParams();
-  if (renderer) {
-    params.set('renderer', renderer);
-  }
-  params.set('language', language);
-  const query = params.toString();
-  return `https://storybook.js.org/docs${versionSegment}/${path}.md${query ? `?${query}` : ''}`;
-}
-
-function getTypeImportSource(projectInfo: ProjectInfo): string {
-  return projectInfo.framework || projectInfo.rendererPackage || '@storybook/react';
-}
+import { getDocsMarkdownUrl } from '../utils/docs-markdown-url.ts';
+import { getTypeImportSource } from '../utils/type-import-source.ts';
 
 function getDocsReferenceSection(projectInfo: ProjectInfo): string {
   const docsUrl = (path: string) => getDocsMarkdownUrl(path, projectInfo);

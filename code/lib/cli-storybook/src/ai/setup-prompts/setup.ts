@@ -13,10 +13,7 @@
 import { dedent } from 'ts-dedent';
 
 import type { ProjectInfo } from '../types.ts';
-
-function getTypeImportSource(projectInfo: ProjectInfo): string {
-  return projectInfo.framework || projectInfo.rendererPackage || '@storybook/react';
-}
+import { getTypeImportSource } from '../utils/type-import-source.ts';
 
 function getPreviewDecoratorExample(projectInfo: ProjectInfo): string {
   const configDir = projectInfo.configDir;

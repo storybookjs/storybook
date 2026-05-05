@@ -28,19 +28,22 @@ const templateName = process.env.STORYBOOK_TEMPLATE_NAME || '';
 const CHANGE_DETECTION_TIMEOUT = 15_000;
 
 // Resolve paths eagerly so test.skip() calls need no if-conditionals inside tests.
-const buttonStoriesPath =
+const headerStoriesPath =
   sandboxDir &&
   ([
-    path.join(sandboxDir, 'src/stories/Button.stories.ts'),
-    path.join(sandboxDir, 'src/stories/Button.stories.tsx'),
+    path.join(sandboxDir, 'src/stories/Header.stories.ts'),
+    path.join(sandboxDir, 'src/stories/Header.stories.tsx'),
+    path.join(sandboxDir, 'src/stories/Header.stories.svelte'),
   ].find((p) => fs.existsSync(p)) ??
     null);
 
 const buttonComponentPath =
   sandboxDir &&
-  ([path.join(sandboxDir, 'src/stories/Button.tsx'), path.join(sandboxDir, 'src/Button.tsx')].find(
-    (p) => fs.existsSync(p)
-  ) ??
+  ([
+    path.join(sandboxDir, 'src/stories/Button.tsx'),
+    path.join(sandboxDir, 'src/stories/Button.svelte'),
+    path.join(sandboxDir, 'src/stories/Button.vue'),
+  ].find((p) => fs.existsSync(p)) ??
     null);
 
 test.describe('Change Detection', () => {
@@ -51,6 +54,8 @@ test.describe('Change Detection', () => {
     'nextjs-vite/default-ts',
     'react-webpack/default-ts',
     'nextjs/default-ts',
+    'svelte-vite/default-ts',
+    'vue3-vite/default-ts',
   ];
   test.skip(
     !!templateName && !SUPPORTED_TEMPLATES.includes(templateName),
@@ -62,8 +67,12 @@ test.describe('Change Detection', () => {
     await new SbPage(page, expect).waitUntilLoaded();
   });
 
-  test('shows "new" status for an untracked story file', async ({ page }) => {
-    const newStoryPath = path.join(sandboxDir, 'src/stories/ChangeDetectionNew.stories.tsx');
+  test('shows "new" status for an untracked story file (Svelte)', async ({ page }) => {
+    test.skip(
+      templateName !== 'svelte-vite/default-ts',
+      'This test is only relevant for Svelte, which supports untracked files in the sandbox setup'
+    );
+    const newStoryPath = path.join(sandboxDir, 'src/stories/ChangeDetectionNew.stories.svelte');
 
     console.log({ newStoryPath });
 
@@ -71,12 +80,60 @@ test.describe('Change Detection', () => {
       fs.writeFileSync(
         newStoryPath,
         [
-          "import type { Meta, StoryObj } from '@storybook/react';",
+          '<script module>',
+          "  import { defineMeta } from '@storybook/addon-svelte-csf';",
+          "  import Button from './Button.svelte';",
+          "  import { fn } from 'storybook/test';",
           '',
-          "const meta = { title: 'Example/ChangeDetectionNew' } satisfies Meta;",
+          '  const { Story } = defineMeta({',
+          "    title: 'Example/ChangeDetectionNew',",
+          '    component: Button,',
+          "    tags: ['autodocs'],",
+          '    argTypes: {',
+          "      backgroundColor: { control: 'color' },",
+          '      size: {',
+          "        control: { type: 'select' },",
+          "        options: ['small', 'medium', 'large'],",
+          '      },',
+          '    },',
+          '    args: {',
+          '      onclick: fn(),',
+          '    },',
+          '  });',
+          '</script>',
+          '',
+          '<Story name="Primary" args={{ primary: true, label: \'Button\' }} />',
+          '',
+          '<Story name="Secondary" args={{ label: \'Button\' }} />',
+        ].join('\n')
+      );
+
+      // New stories roll up to "Change status: New" on the parent component node
+      await expect(page.locator('[aria-label="Change status: New"]').first()).toBeVisible({
+        timeout: CHANGE_DETECTION_TIMEOUT,
+      });
+    } finally {
+      fs.rmSync(newStoryPath, { force: true });
+    }
+  });
+
+  test('shows "new" status for an untracked story file (TypeScript)', async ({ page }) => {
+    test.skip(
+      templateName === 'svelte-vite/default-ts',
+      'This test only works for TypeScript-based templates because it relies on creating a new .stories.ts file'
+    );
+    const newStoryPath = path.join(sandboxDir, 'src/stories/ChangeDetectionNew.stories.ts');
+
+    console.log({ newStoryPath });
+
+    try {
+      fs.writeFileSync(
+        newStoryPath,
+        [
+          "const meta = { title: 'Example/ChangeDetectionNew' }",
           'export default meta;',
           '',
-          'export const Default: StoryObj<typeof meta> = {};',
+          'export const Default = {};',
         ].join('\n')
       );
 
@@ -90,16 +147,18 @@ test.describe('Change Detection', () => {
   });
 
   test('shows "modified" status for a changed story file', async ({ page }) => {
-    test.skip(!buttonStoriesPath, 'Button.stories file not found in STORYBOOK_SANDBOX_DIR');
+    test.skip(!headerStoriesPath, 'Header.stories file not found in STORYBOOK_SANDBOX_DIR');
 
-    const storyPath = buttonStoriesPath as string;
+    const storyPath = headerStoriesPath as string;
     const original = fs.readFileSync(storyPath, 'utf-8');
+
+    console.log({ storyPath });
 
     try {
       fs.writeFileSync(storyPath, `${original}\n// change-detection-e2e-modified`);
 
       await expect(
-        page.locator('[data-item-id="example-button"] [aria-label="Change status: Modified"]')
+        page.locator('[data-item-id="example-header"] [aria-label="Change status: Modified"]')
       ).toBeVisible({ timeout: CHANGE_DETECTION_TIMEOUT });
     } finally {
       fs.writeFileSync(storyPath, original);
@@ -107,13 +166,17 @@ test.describe('Change Detection', () => {
   });
 
   test('shows "related" status for stories whose dependency changed', async ({ page }) => {
-    test.skip(!buttonComponentPath, 'Button.tsx not found in STORYBOOK_SANDBOX_DIR');
+    test.skip(!buttonComponentPath, 'Button component not found in STORYBOOK_SANDBOX_DIR');
 
     const componentPath = buttonComponentPath as string;
     const original = fs.readFileSync(componentPath, 'utf-8');
+    // eslint-disable-next-line playwright/no-conditional-in-test
+    const comment = componentPath.endsWith('.svelte')
+      ? '\n<!-- change-detection-e2e-affected -->'
+      : '\n// change-detection-e2e-affected';
 
     try {
-      fs.writeFileSync(componentPath, `${original}\n// change-detection-e2e-affected`);
+      fs.writeFileSync(componentPath, `${original}${comment}`);
 
       // Header.stories is depth-2 from Button.tsx (via Header.tsx); depth-1 Button.stories gets "Modified"
       await expect(

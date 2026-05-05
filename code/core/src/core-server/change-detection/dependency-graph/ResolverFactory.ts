@@ -1,4 +1,4 @@
-import { join } from 'node:path';
+import { join } from 'pathe';
 
 import { ResolverFactory as OxcResolverFactory } from 'oxc-resolver';
 
@@ -21,10 +21,10 @@ const DEFAULT_CONDITIONS = ['storybook', 'import', 'module', 'default'];
  * Instance-scoped so each ChangeDetectionResolverFactory warns independently —
  * multiple service instances in the same process do not suppress each other's warnings.
  */
-class AliasNormaliser {
+class AliasNormalizer {
   private readonly warnedRegexAliases = new Set<string>();
 
-  normalise(
+  normalize(
     alias: ModuleResolveConfig['alias']
   ): Record<string, Array<string | undefined | null>> | undefined {
     if (!alias) {
@@ -57,8 +57,10 @@ class AliasNormaliser {
           this.warnedRegexAliases.add(p);
         }
         logger.warn(
-          `Change detection: ignored ${skippedRegex.length} regex alias(es) — oxc-resolver only supports literal string aliases. ` +
-            `Modules matched by [${skippedRegex.slice(0, 3).join(', ')}${skippedRegex.length > 3 ? ', …' : ''}] will be tracked as opaque-leaf.`
+          `Change detection: ignored ${skippedRegex.length} regex alias(es); related modules tracked as opaque-leaf.`
+        );
+        logger.debug(
+          `ChangeDetectionResolverFactory: skipped regex aliases [${skippedRegex.join(', ')}]`
         );
       } else {
         for (const pattern of skippedRegex) {
@@ -73,13 +75,13 @@ class AliasNormaliser {
 
 /**
  * Thin wrapper around `oxc-resolver`'s `ResolverFactory` configured per a
- * builder-supplied {@link ModuleResolveConfig}. Normalises the alias map shape and
+ * builder-supplied {@link ModuleResolveConfig}. Normalizes the alias map shape and
  * converts resolver errors to `null` (with a debug log) — the caller treats
  * unresolvable specifiers as opaque-leaf edges.
  */
 export class ChangeDetectionResolverFactory {
   private readonly factory: OxcResolverFactory;
-  private readonly aliasNormaliser = new AliasNormaliser();
+  private readonly aliasNormalizer = new AliasNormalizer();
   /**
    * Virtual entry point placed directly in the project root.
    *
@@ -92,7 +94,7 @@ export class ChangeDetectionResolverFactory {
   private readonly projectRootEntry: string;
 
   constructor(config: ModuleResolveConfig) {
-    const alias = this.aliasNormaliser.normalise(config.alias);
+    const alias = this.aliasNormalizer.normalize(config.alias);
     const conditionNames = config.conditions ?? DEFAULT_CONDITIONS;
 
     this.factory = new OxcResolverFactory({

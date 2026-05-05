@@ -3,6 +3,7 @@ import type {
   FileChangeEvent,
   ModuleResolveConfig,
 } from 'storybook/internal/core-server';
+import { logger } from 'storybook/internal/node-logger';
 
 import { normalize } from 'pathe';
 import type { ViteDevServer } from 'vite';
@@ -18,7 +19,19 @@ import type { ViteDevServer } from 'vite';
  */
 export function createViteChangeDetectionAdapter(server: ViteDevServer): ChangeDetectionAdapter {
   return {
+    /**
+     * Snapshots the Vite resolver configuration (aliases, conditions, root) once at
+     * adapter creation time. If `vite.config.ts` is modified while Storybook is
+     * running, this snapshot becomes stale and Storybook must be restarted to pick
+     * up the updated aliases.
+     *
+     * A future improvement would subscribe to Vite's HMR config-reload event and
+     * invalidate the resolver cache on config change.
+     */
     async getResolveConfig(): Promise<ModuleResolveConfig> {
+      logger.debug(
+        'Change detection: snapshotting Vite resolve config (restart required if vite.config.ts changes)'
+      );
       const resolveOpts = server.config.resolve;
       // Vite normalises `resolve.alias` to its array form (`Array<{find, replacement, ...}>`)
       // before we ever see it. The detector accepts both Record and Array shapes, so we pass
@@ -34,22 +47,15 @@ export function createViteChangeDetectionAdapter(server: ViteDevServer): ChangeD
     },
 
     onFileChange(handler) {
+      const FORWARDED_EVENTS = new Set<FileChangeEvent['kind']>(['add', 'change', 'unlink']);
+      const isForwardedEvent = (name: string): name is FileChangeEvent['kind'] =>
+        FORWARDED_EVENTS.has(name as FileChangeEvent['kind']);
+
       const onAll = (eventName: string, path: string) => {
-        let kind: FileChangeEvent['kind'];
-        switch (eventName) {
-          case 'add':
-            kind = 'add';
-            break;
-          case 'change':
-            kind = 'change';
-            break;
-          case 'unlink':
-            kind = 'unlink';
-            break;
-          default:
-            return;
+        if (!isForwardedEvent(eventName)) {
+          return;
         }
-        handler({ kind, path: normalize(path) });
+        handler({ kind: eventName, path: normalize(path) });
       };
       server.watcher.on('all', onAll);
       return () => {

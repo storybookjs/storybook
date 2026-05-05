@@ -81,31 +81,6 @@ export const getPrecedingUpgrade = async (
     ? upgradeFields(lastUpgradeEvent)
     : undefined;
 };
-/**
- * Record cached at ai-setup time.
- * Read by subsequent CLI entry points for evidence collection.
- * Canonical definition — imported by event-cache.ts and prepare-requirements.ts.
- */
-export interface AiSetupPendingRecord {
-  timestamp: number;
-  sessionId: string;
-  configDir: string;
-  previewPath: string | null;
-  previewHash: string | null;
-}
-
-export const getAiSetupPending = async (): Promise<AiSetupPendingRecord | undefined> => {
-  // Wait for any pending set operations to complete before reading
-  await processingPromise;
-  return (await cache.get('ai-setup-pending')) ?? undefined;
-};
-
-export const flushAiSetupPending = async (): Promise<undefined> => {
-  // Wait for any pending set operations to complete before removing
-  await processingPromise;
-  await cache.remove('ai-setup-pending');
-  return undefined;
-};
 
 /**
  * Returns true when the current session falls within the 2-hour window opened by the most recent

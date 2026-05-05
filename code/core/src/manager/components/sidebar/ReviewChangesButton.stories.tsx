@@ -196,6 +196,75 @@ export const PartialFilter: Story = {
 };
 
 /**
+ * Only new stories present (no modified). Label should omit the "changed" segment.
+ */
+export const OnlyNew: Story = {
+  beforeEach: () => {
+    internal_fullStatusStore.set([
+      {
+        storyId: 's1',
+        typeId: 'storybook/change-detection',
+        value: 'status-value:new',
+        title: 'Change Detection',
+        description: '',
+      },
+      {
+        storyId: 's2',
+        typeId: 'storybook/change-detection',
+        value: 'status-value:new',
+        title: 'Change Detection',
+        description: '',
+      },
+    ]);
+    return () => internal_fullStatusStore.unset();
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const button = await canvas.findByRole('button');
+    await expect(button).toHaveTextContent('Review 2 new');
+    await expect(button.textContent).not.toMatch(/changed/);
+  },
+};
+
+/**
+ * Only modified stories present (no new). Label should omit the "new" segment.
+ */
+export const OnlyModified: Story = {
+  beforeEach: () => {
+    internal_fullStatusStore.set([
+      {
+        storyId: 's1',
+        typeId: 'storybook/change-detection',
+        value: 'status-value:modified',
+        title: 'Change Detection',
+        description: '',
+      },
+      {
+        storyId: 's2',
+        typeId: 'storybook/change-detection',
+        value: 'status-value:modified',
+        title: 'Change Detection',
+        description: '',
+      },
+      {
+        storyId: 's3',
+        typeId: 'storybook/change-detection',
+        value: 'status-value:modified',
+        title: 'Change Detection',
+        description: '',
+      },
+    ]);
+    return () => internal_fullStatusStore.unset();
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const button = await canvas.findByRole('button');
+    await expect(button).toHaveTextContent('Review 3 changed');
+    await expect(button.textContent).not.toMatch(/\bnew\b/);
+  },
+};
+
+/**
  * Feature flag on, but no statuses in the store.
  * Component should return null — no button rendered.
  */

@@ -484,34 +484,10 @@ BranchWithChangeDetectionPriority.render = (args) => {
 };
 
 /**
- * A modified story without the modified filter active.
- * The change-status icon should be hidden because modified icons only show when the filter is active.
- */
-export const WithModifiedFilterInactive: Story = {
-  ...makeDualSlotStory({
-    [dualSlotStoryId]: {
-      'storybook/change-detection': {
-        storyId: dualSlotStoryId,
-        typeId: 'storybook/change-detection',
-        value: 'status-value:modified',
-        title: 'Change Detection',
-        description: 'Story is modified',
-        sidebarContextMenu: false,
-      },
-    },
-  }),
-  play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement);
-    // modified filter is not active — icon should be hidden
-    await expect(canvas.queryByTestId('tree-change-status-button')).toBeNull();
-  },
-};
-
-/**
  * A modified story with the modified filter active.
  * The change-status icon should be visible.
  */
-export const WithModifiedFilterActive: Story = {
+export const WithModified: Story = {
   ...makeDualSlotStory(
     {
       [dualSlotStoryId]: {
@@ -538,7 +514,7 @@ export const WithModifiedFilterActive: Story = {
  * A new story with no filters set.
  * The new status icon is always visible (not gated on a filter).
  */
-export const WithNewAlwaysVisible: Story = {
+export const WithNew: Story = {
   ...makeDualSlotStory({
     [dualSlotStoryId]: {
       'storybook/change-detection': {

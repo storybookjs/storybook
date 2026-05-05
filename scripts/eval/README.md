@@ -92,6 +92,19 @@ node scripts/eval/run-batch.ts --prompt pattern-copy-play --yes --claude-effort 
 node scripts/eval/run-batch.ts --prompt pattern-copy-play --yes --claude-efforts max,high
 node scripts/eval/run-batch.ts --prompt pattern-copy-play --yes --agents codex --codex-effort xhigh
 
+# Restrict to specific projects (works with both agents)
+node scripts/eval/run-batch.ts --prompt pattern-copy-play --yes --projects mealdrop,edgy,echarts
+
+# Targeted matrix: medium + high effort, 3 projects, 2 reps each (12 Claude trials)
+node scripts/eval/run-batch.ts --prompt pattern-copy-play --yes \
+  --agents claude --claude-efforts medium,high \
+  --projects mealdrop,edgy,echarts --repetitions 2
+
+# Same project subset on Codex
+node scripts/eval/run-batch.ts --prompt pattern-copy-play --yes \
+  --agents codex --codex-effort high \
+  --projects mealdrop,edgy,echarts --repetitions 2
+
 # Different prompt or concurrency
 node scripts/eval/run-batch.ts --prompt setup --yes
 node scripts/eval/run-batch.ts --prompt pattern-copy-play --yes --concurrency 4

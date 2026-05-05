@@ -39,6 +39,10 @@ vi.mock('globby', () => ({
   globby: vi.fn().mockResolvedValue([]),
 }));
 
+vi.mock('tinyclip', () => ({
+  writeText: vi.fn().mockResolvedValue(undefined),
+}));
+
 const mockReadFile = vi.mocked(readFile);
 const mockWriteFile = vi.mocked(writeFile);
 

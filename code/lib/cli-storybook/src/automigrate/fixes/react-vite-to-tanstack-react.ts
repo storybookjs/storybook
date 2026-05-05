@@ -404,13 +404,27 @@ export const reactViteToTanstackReact: Fix<ReactViteToTanstackReactOptions> = {
       if (wantsAiPrompt) {
         const aiPrompt = buildAiMigrationPrompt(previewConfigPath);
 
-        await writeText(aiPrompt);
+        try {
+          await writeText(aiPrompt);
 
-        logger.logBox(
-          dedent`AI migration prompt copied to clipboard! ${picocolors.dim(
-            '(It can be pasted into Copilot or your preferred AI tool to generate code for removing the TanStack Router decorator.)'
-          )}`
-        );
+          logger.logBox(
+            dedent`AI migration prompt copied to clipboard! ${picocolors.dim(
+              '(It can be pasted into Copilot or your preferred AI tool to generate code for removing the TanStack Router decorator.)'
+            )}`
+          );
+        } catch {
+          // Clipboard access can fail in CI / headless Linux environments where the
+          // platform helper (e.g. `xclip`) isn't installed. Fall back to printing the
+          // prompt so the user can still copy it manually.
+          const separator = picocolors.dim('─'.repeat(60));
+          logger.logBox(
+            dedent`Clipboard not available in this environment. Copy the AI migration prompt below manually:
+
+              ${separator}
+              ${aiPrompt}
+              ${separator}`
+          );
+        }
       }
     }
     logger.step('Migration completed successfully!');

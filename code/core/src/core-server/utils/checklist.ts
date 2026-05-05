@@ -23,7 +23,7 @@ import {
   type StoreState,
   UNIVERSAL_CHECKLIST_STORE_OPTIONS,
 } from '../../shared/checklist-store/index.ts';
-import type { StoryIndexGenerator } from './StoryIndexGenerator.ts';
+import type { StoryIndexGenerator } from 'storybook/internal/core-server';
 
 export async function initializeChecklist(
   channel?: Channel,

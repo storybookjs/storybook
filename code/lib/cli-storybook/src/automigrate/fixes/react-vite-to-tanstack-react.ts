@@ -362,7 +362,11 @@ export const reactViteToTanstackReact: Fix<ReactViteToTanstackReactOptions> = {
 
     // eslint-disable-next-line depend/ban-dependencies
     const { globby } = await import('globby');
-    const configFiles = await globby([`${configDir}/**/*`]);
+    const configFiles = configDir
+      ? await globby([`${configDir}/**/*.{ts,tsx,js,jsx,mjs,cjs}`], {
+          ignore: ['**/node_modules/**', '**/dist/**'],
+        })
+      : [];
     const allFiles = [...storiesPaths, ...configFiles].filter(Boolean) as string[];
 
     const transformErrors = await transformImportFiles(

@@ -2,8 +2,12 @@ import { readFile, writeFile } from 'node:fs/promises';
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+// eslint-disable-next-line depend/ban-dependencies
+import { globby } from 'globby';
 import type { JsPackageManager } from 'storybook/internal/common';
-import { prompt } from 'storybook/internal/node-logger';
+import { transformImportFiles } from 'storybook/internal/common';
+import { logger, prompt } from 'storybook/internal/node-logger';
+import { writeText } from 'tinyclip';
 
 import type { CheckOptions } from './index.ts';
 import {
@@ -12,36 +16,11 @@ import {
   reactViteToTanstackReact,
 } from './react-vite-to-tanstack-react.ts';
 
-vi.mock('node:fs/promises', () => ({
-  readFile: vi.fn(),
-  writeFile: vi.fn(),
-}));
-
-vi.mock('storybook/internal/node-logger', () => ({
-  logger: {
-    step: vi.fn(),
-    debug: vi.fn(),
-    warn: vi.fn(),
-    log: vi.fn(),
-    error: vi.fn(),
-    logBox: vi.fn(),
-  },
-  prompt: {
-    confirm: vi.fn(),
-  },
-}));
-
-vi.mock('storybook/internal/common', () => ({
-  transformImportFiles: vi.fn().mockResolvedValue([]),
-}));
-
-vi.mock('globby', () => ({
-  globby: vi.fn().mockResolvedValue([]),
-}));
-
-vi.mock('tinyclip', () => ({
-  writeText: vi.fn().mockResolvedValue(undefined),
-}));
+vi.mock('node:fs/promises', { spy: true });
+vi.mock('storybook/internal/node-logger', { spy: true });
+vi.mock('storybook/internal/common', { spy: true });
+vi.mock('globby', { spy: true });
+vi.mock('tinyclip', { spy: true });
 
 const mockReadFile = vi.mocked(readFile);
 const mockWriteFile = vi.mocked(writeFile);
@@ -57,9 +36,21 @@ describe('react-vite-to-tanstack-react', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    // Reset default behaviours for spied modules so spies don't call through to real impls.
+    mockReadFile.mockResolvedValue('');
+    mockWriteFile.mockResolvedValue(undefined);
+    vi.mocked(globby).mockResolvedValue([]);
+    vi.mocked(writeText).mockResolvedValue(undefined);
+    vi.mocked(transformImportFiles).mockResolvedValue([]);
+    vi.mocked(logger.step).mockImplementation(() => {});
+    vi.mocked(logger.debug).mockImplementation(() => {});
+    vi.mocked(logger.warn).mockImplementation(() => {});
+    vi.mocked(logger.log).mockImplementation(() => {});
+    vi.mocked(logger.error).mockImplementation(() => {});
+    vi.mocked(logger.logBox).mockImplementation(() => {});
+    vi.mocked(prompt.confirm).mockResolvedValue(false);
     vi.mocked(mockPackageManager.removeDependencies).mockResolvedValue(undefined);
     vi.mocked(mockPackageManager.addDependencies).mockResolvedValue(undefined);
-    vi.mocked(prompt.confirm).mockResolvedValue(false);
   });
 
   describe('check function', () => {
@@ -156,8 +147,6 @@ describe('react-vite-to-tanstack-react', () => {
         '@tanstack/react-router': '^1.0.0',
       });
 
-      // eslint-disable-next-line depend/ban-dependencies
-      const { globby } = await import('globby');
       vi.mocked(globby).mockResolvedValueOnce([
         '/project/.storybook/preview.tsx',
         '/project/.storybook/decorators.tsx',

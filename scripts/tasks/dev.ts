@@ -65,7 +65,13 @@ export const dev: Task = {
     await prepareSandbox({ key, link });
 
     if (!dryRun) {
-      initGitForChangeDetection(sandboxDir);
+      try {
+        initGitForChangeDetection(sandboxDir);
+      } catch (e) {
+        console.warn(
+          `Failed to initialise git in sandbox for change detection: ${e instanceof Error ? e.message : String(e)}`
+        );
+      }
     }
 
     const controller = new AbortController();

@@ -2,7 +2,7 @@ import { writeFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 
 import type { PackageManagerName } from 'storybook/internal/common';
-import { getPrettyPackageManagerName } from 'storybook/internal/common';
+import { cache, getPrettyPackageManagerName } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
 import { telemetry } from 'storybook/internal/telemetry';
 import { SupportedLanguage } from 'storybook/internal/types';
@@ -39,7 +39,7 @@ export async function aiSetup(options: AiSetupOptions): Promise<void> {
     const detectedLanguage = await projectTypeService.detectLanguage();
     const language = detectedLanguage === SupportedLanguage.TYPESCRIPT ? 'ts' : 'js';
 
-    const needsUserOnboarding = await cache.get('onboarding-pending');
+    const needsUserOnboarding = await cache.get<boolean>('onboarding-pending', false);
 
     projectInfo = {
       storybookVersion: data.versionInstalled,

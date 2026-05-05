@@ -93,6 +93,32 @@ describe('buildTrialLabels', () => {
       'prompt:setup',
     ]);
   });
+
+  it('truncates labels longer than 50 characters', async () => {
+    const { buildTrialLabels } = await import('./publish-trial.ts');
+
+    const longPrompt = 'monorepo-optimized-tests-relaxed-limits-no-story-deletion';
+    const labels = buildTrialLabels(
+      {
+        name: 'mealdrop',
+        repo: 'https://github.com/storybook-tmp/mealdrop',
+        branch: 'main',
+        githubSlug: 'storybook-tmp/mealdrop',
+      },
+      { agent: 'claude', model: 'sonnet-4.6', effort: 'high' },
+      longPrompt
+    );
+
+    expect(labels).toEqual([
+      'eval',
+      'project:mealdrop',
+      'agent:claude',
+      'model:sonnet-4.6',
+      'effort:high',
+      'prompt:monorepo-optimized-tests-relaxed-limits-no-',
+    ]);
+    expect(labels.every((label) => label.length <= 50)).toBe(true);
+  });
 });
 
 describe('publishTrialBranch', () => {

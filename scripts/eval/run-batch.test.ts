@@ -18,6 +18,9 @@ import {
   BATCH_VARIANTS,
   buildBatchRunDescriptors,
   buildBatchVariants,
+  formatBatchHeader,
+  formatDuration,
+  formatPerProjectSummary,
   main,
   parseRunBatchArgs,
   runBatch,
@@ -254,6 +257,137 @@ describe('parseRunBatchArgs', () => {
       prompt: TEST_PROMPT,
       claudeEfforts: ['max', 'high'],
     });
+  });
+
+  it('parses a comma-separated --projects list from the CLI', () => {
+    const [first, second] = BATCH_PROJECT_NAMES;
+    expect(
+      parseRunBatchArgs(['--prompt', TEST_PROMPT, '--projects', `${first}, ${second}`])
+    ).toEqual({
+      prompt: TEST_PROMPT,
+      projects: [first, second],
+    });
+  });
+});
+
+describe('formatDuration', () => {
+  it('formats sub-minute durations as seconds', () => {
+    expect(formatDuration(0)).toBe('0s');
+    expect(formatDuration(45_000)).toBe('45s');
+    expect(formatDuration(59_499)).toBe('59s');
+  });
+
+  it('formats minutes and seconds for under-an-hour durations', () => {
+    expect(formatDuration(60_000)).toBe('1m');
+    expect(formatDuration(338_759)).toBe('5m 39s');
+    expect(formatDuration(1_120_358)).toBe('18m 40s');
+  });
+
+  it('formats hours and minutes for long durations', () => {
+    expect(formatDuration(3_600_000)).toBe('1h 0m');
+    expect(formatDuration(3_900_000)).toBe('1h 5m');
+  });
+});
+
+describe('formatBatchHeader', () => {
+  it('summarizes the matrix and lists distinct values', () => {
+    const descriptors = buildBatchRunDescriptors({
+      prompt: TEST_PROMPT,
+      agents: ['claude'],
+      claudeEfforts: ['medium', 'high'],
+      projects: ['mealdrop', 'edgy'],
+      repetitions: 2,
+    });
+
+    const lines = formatBatchHeader({
+      batchTimestamp: '2026-05-05T12-09-55-151Z',
+      descriptors,
+      concurrency: 8,
+      logsDir: '/tmp/logs',
+    });
+
+    expect(lines[0]).toBe('Eval batch 2026-05-05T12-09-55-151Z');
+    expect(lines.join('\n')).toContain('runs:        8 (2 projects × 1 agent(s) × 2 effort(s) × 2 rep(s))');
+    expect(lines.join('\n')).toContain('prompt:      pattern-copy-play');
+    expect(lines.join('\n')).toContain('projects:    edgy, mealdrop');
+    expect(lines.join('\n')).toContain('efforts:     high, medium');
+    expect(lines.join('\n')).toContain('concurrency: 8');
+    expect(lines.join('\n')).toContain('logs:        /tmp/logs');
+  });
+});
+
+describe('formatPerProjectSummary', () => {
+  it('produces a column-aligned table grouped by project', () => {
+    const runs = [
+      makeRun({ project: 'mealdrop', status: 'success', durationMs: 60_000 }),
+      makeRun({ project: 'mealdrop', status: 'success', durationMs: 120_000 }),
+      makeRun({ project: 'mealdrop', status: 'failed', durationMs: 30_000 }),
+      makeRun({ project: 'edgy', status: 'success', durationMs: 240_000 }),
+    ];
+    const lines = formatPerProjectSummary(runs);
+    expect(lines[0]).toBe('');
+    expect(lines[1]).toBe('Per-project summary:');
+    const body = lines.slice(2).join('\n');
+    expect(body).toContain('project');
+    expect(body).toContain('ok');
+    expect(body).toMatch(/edgy\s+1\/1/);
+    expect(body).toMatch(/mealdrop\s+2\/3/);
+    expect(body).toContain('30s');
+    expect(body).toContain('4m');
+  });
+
+  it('returns an empty array when there are no runs', () => {
+    expect(formatPerProjectSummary([])).toEqual([]);
+  });
+});
+
+function makeRun(opts: {
+  project: string;
+  status: 'success' | 'failed';
+  durationMs: number;
+}) {
+  return {
+    project: opts.project,
+    agent: 'claude' as const,
+    model: 'opus-4.6',
+    effort: 'high',
+    prompt: TEST_PROMPT,
+    repetition: 1,
+    label: `${opts.project}-r01`,
+    args: [],
+    startTimestamp: '2026-05-05T12:00:00.000Z',
+    endTimestamp: '2026-05-05T12:01:00.000Z',
+    durationMs: opts.durationMs,
+    exitCode: opts.status === 'success' ? 0 : 1,
+    signal: null,
+    status: opts.status,
+    logPath: `/tmp/${opts.project}.log`,
+  } as Parameters<typeof formatPerProjectSummary>[0][number];
+}
+
+describe('buildBatchRunDescriptors with --projects', () => {
+  it('restricts the matrix to the requested projects, deduplicating', () => {
+    const [first, second] = BATCH_PROJECT_NAMES;
+    const descriptors = buildBatchRunDescriptors({
+      prompt: TEST_PROMPT,
+      agents: ['claude'],
+      claudeEfforts: ['medium', 'high'],
+      projects: [first, second, first],
+      repetitions: 2,
+    });
+
+    expect(descriptors).toHaveLength(2 * 2 * 2); // 2 projects × 2 efforts × 2 reps
+    expect(new Set(descriptors.map((d) => d.project))).toEqual(new Set([first, second]));
+    expect(new Set(descriptors.map((d) => d.effort))).toEqual(new Set(['medium', 'high']));
+  });
+
+  it('throws when an unknown project is requested', () => {
+    expect(() =>
+      buildBatchRunDescriptors({
+        prompt: TEST_PROMPT,
+        projects: ['not-a-real-project'],
+      })
+    ).toThrow(/Unknown project/);
   });
 });
 

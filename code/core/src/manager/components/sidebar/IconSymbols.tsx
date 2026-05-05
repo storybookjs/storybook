@@ -138,21 +138,7 @@ export const IconSymbols: FC = () => {
         <circle cx="7" cy="7" r="3" fill="currentColor" />
       </symbol>
       <symbol id={AFFECTED_ID}>
-        <circle cx="7" cy="7" r="2" fill="currentColor" />
-        <path
-          d="M7 3.5A3.5 3.5 0 0 0 7 10.5"
-          stroke="currentColor"
-          strokeWidth="1"
-          strokeLinecap="round"
-          fill="none"
-        />
-        <path
-          d="M7 3.5A3.5 3.5 0 0 1 7 10.5"
-          stroke="currentColor"
-          strokeWidth="1"
-          strokeLinecap="round"
-          fill="none"
-        />
+        <circle cx="7" cy="7" r="3" fill="currentColor" />
       </symbol>
     </Svg>
   );

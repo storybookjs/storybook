@@ -574,6 +574,9 @@ export default {
     'withReset',
   ],
   'storybook/internal/core-events': [
+    'AI_PROMPT_NUDGE',
+    'AI_SETUP_ANALYTICS_REQUEST',
+    'AI_SETUP_ANALYTICS_RESPONSE',
     'ARGTYPES_INFO_REQUEST',
     'ARGTYPES_INFO_RESPONSE',
     'CHANNEL_CREATED',
@@ -619,6 +622,7 @@ export default {
     'SHARE_ISOLATE_MODE',
     'SHARE_POPOVER_OPENED',
     'SHARE_STORY_LINK',
+    'SIDEBAR_FILTER_CHANGED',
     'STORIES_COLLAPSE_ALL',
     'STORIES_EXPAND_ALL',
     'STORY_ARGS_UPDATED',

@@ -15,7 +15,7 @@ import {
 import { StoryIndexGenerator } from 'storybook/internal/core-server';
 import { loadCsf } from 'storybook/internal/csf-tools';
 import { logger } from 'storybook/internal/node-logger';
-import { setTelemetryEnabled, telemetry } from 'storybook/internal/telemetry';
+import { telemetry } from 'storybook/internal/telemetry';
 import type {
   CoreConfig,
   Indexer,
@@ -41,6 +41,7 @@ import { initializeSaveStory } from '../utils/save-story/save-story.ts';
 import { parseStaticDir } from '../utils/server-statics.ts';
 import { type OptionsWithRequiredCache, initializeWhatsNew } from '../utils/whats-new.ts';
 import { getWsToken } from './wsToken.ts';
+import { initAIAnalyticsChannel } from '../server-channel/ai-setup-channel.ts';
 
 const interpolate = (string: string, data: Record<string, string> = {}) =>
   Object.entries(data).reduce((acc, [k, v]) => acc.replace(new RegExp(`%${k}%`, 'g'), v), string);
@@ -271,19 +272,15 @@ export const experimental_serverChannel = async (
   channel: Channel,
   options: OptionsWithRequiredCache
 ) => {
-  const coreOptions = await options.presets.apply('core');
-
-  await setTelemetryEnabled(!coreOptions?.disableTelemetry);
-
-  initializeChecklist();
+  initAIAnalyticsChannel(channel, options, () => storyIndexGeneratorPromise);
+  initializeChecklist(channel, () => storyIndexGeneratorPromise, options.configDir);
   initializeWhatsNew(channel, options);
   initializeSaveStory(channel, options);
-
   initFileSearchChannel(channel, options);
   initCreateNewStoryChannel(channel, options);
   initGhostStoriesChannel(channel, options);
   initOpenInEditorChannel(channel);
-  initTelemetryChannel(channel, options);
+  initTelemetryChannel(channel);
 
   return channel;
 };

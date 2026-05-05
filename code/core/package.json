@@ -1,6 +1,6 @@
 {
   "name": "storybook",
-  "version": "10.4.0-alpha.10",
+  "version": "10.4.0-alpha.16",
   "description": "Storybook: Develop, document, and test UI components in isolation",
   "keywords": [
     "storybook",
@@ -273,7 +273,6 @@
     "@react-stately/tabs": "^3.8.5",
     "@react-types/shared": "^3.32.0",
     "@rolldown/pluginutils": "1.0.0-beta.18",
-    "@storybook/docs-mdx": "4.0.0-next.3",
     "@tanstack/react-virtual": "^3.3.0",
     "@testing-library/dom": "^10.4.1",
     "@testing-library/react": "^14.0.0",
@@ -295,6 +294,8 @@
     "@vitest/utils": "^3.2.4",
     "@yarnpkg/fslib": "2.10.3",
     "@yarnpkg/libzip": "2.3.0",
+    "acorn": "^8.15.0",
+    "acorn-jsx": "^5.3.2",
     "ansi-to-html": "^0.7.2",
     "browser-dtector": "^3.4.0",
     "bundle-require": "^5.1.0",
@@ -323,6 +324,7 @@
     "get-npm-tarball-url": "^2.1.0",
     "glob": "^10.5.0",
     "globby": "^14.1.0",
+    "hast-util-to-estree": "^3.0.0",
     "host-validation-middleware": "^0.1.2",
     "jiti": "^2.6.1",
     "js-yaml": "^4.1.0",
@@ -330,8 +332,12 @@
     "launch-editor": "^2.11.1",
     "lazy-universal-dotenv": "^4.0.0",
     "leven": "^4.0.0",
+    "mdast-util-from-markdown": "^2.0.0",
+    "mdast-util-mdx": "^3.0.0",
+    "mdast-util-mdx-jsx": "^3.2.0",
     "memfs": "^4.11.1",
     "memoizerific": "^1.11.3",
+    "micromark-extension-mdxjs": "^3.0.0",
     "modern-tar": "^0.5.5",
     "nanoid": "^4.0.2",
     "npmlog": "^7.0.0",
@@ -378,10 +384,14 @@
     "zod": "^3.25.76"
   },
   "peerDependencies": {
+    "@types/react": "^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0",
     "prettier": "^2 || ^3",
     "vite-plus": "^0.1.15"
   },
   "peerDependenciesMeta": {
+    "@types/react": {
+      "optional": true
+    },
     "prettier": {
       "optional": true
     },

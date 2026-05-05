@@ -231,7 +231,7 @@ You can also add [component-level decorators](../../writing-stories/decorators.m
 
 ### Does `@storybook/tanstack-react` support React Server Components?
 
-No. `@storybook/tanstack-react` runs stories in the browser using a memory-backed router. React Server Components require a server runtime and are not supported. If your component is a Server Component, extract the client-side parts into a Client Component and write stories for that instead.
+No. `@storybook/tanstack-react` runs stories in the browser using a memory-backed router. [React Server Components](https://react.dev/reference/rsc/server-components) require a server runtime and are not supported. If your component is a Server Component, [extract the client-side parts into a Client Component](https://react.dev/reference/rsc/server-components#adding-interactivity-to-server-components) and write stories for that instead.
 
 ### Story fails to render with an error about modules not providing a default export
 
@@ -325,4 +325,4 @@ parameters: {
 }
 ```
 
-This is an alternative to `context` for cases where the router context needs a React context provider (e.g., TanStack Query's `QueryClientProvider`) that must be rendered in the story before the context value can be accessed.
+This is an alternative to [`context`](#context) for cases where the router context needs a React context provider (e.g., TanStack Query's `QueryClientProvider`) that must be rendered in the story before the context value can be accessed.

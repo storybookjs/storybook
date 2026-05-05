@@ -161,15 +161,17 @@ When your routes import app-specific server code (e.g. `~/db/client`, `~/auth/in
 
 ##### Identifying what to mock
 
-If Storybook throws a browser error like `does not provide an export named 'default'` or `AsyncLocalStorage is not defined`, open the error stack trace and find the deepest module that imports a Node.js API. That module is what needs to be mocked at its point of entry.
+Errors like `does not provide an export named 'default'` or `AsyncLocalStorage is not defined` mean a server-only module reached the browser.
 
-Common patterns in TanStack Start apps:
+The fix is to mock the **server module itself**, not the component or route that uses it. For example, if `Dashboard.tsx` imports `~/auth/session`, and `~/auth/session` imports `~/db/client`, and `~/db/client` imports `postgres` — mock `~/db/client`.
+The Node.js dependency (`postgres`) is the smoking gun; mock the closest module to it that you control.
 
-| Import                | Root cause               | Solution                                                                     |
-| --------------------- | ------------------------ | ---------------------------------------------------------------------------- |
-| `~/db/client`         | imports `postgres`       | [`__mocks__` file](#app-level-server-modules)                                |
-| `~/auth/index.server` | imports `~/db/client`    | already covered if `~/db/client` is mocked                                   |
-| `~/utils/*.functions` | imports `createServerFn` | already handled by [framework-level mocks](#framework-level-mocks-automatic) |
+To find that module, walk the error stack trace from top to bottom and stop at the first import you wrote yourself. Then add a [`__mocks__` file](#app-level-server-modules) for it.
+
+Two cases where you do _not_ need a mock:
+
+- The module is from `@tanstack/*` — already handled by the framework preset. Make sure you are on the latest `@storybook/tanstack-react`.
+- The module only imports `createServerFn` — already mocked. The error is coming from another import in the same file.
 
 ### TanStack Query
 

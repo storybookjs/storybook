@@ -970,8 +970,43 @@ export const init: ModuleFn<SubAPI, SubState> = ({
     },
 
     setAllStatusFilters: async (included: StatusValue[], excluded: StatusValue[]) => {
+      const prevState = store.getState();
+      const prevIncluded = new Set(prevState.includedStatusFilters ?? []);
+      const prevExcluded = new Set(prevState.excludedStatusFilters ?? []);
+      const nextIncluded = new Set(included);
+      const nextExcluded = new Set(excluded);
+
       await persistFilters({ includedStatusFilters: included, excludedStatusFilters: excluded });
       recomputeStatusFilter();
+
+      const changedIds = new Set<StatusValue>([
+        ...prevIncluded,
+        ...prevExcluded,
+        ...nextIncluded,
+        ...nextExcluded,
+      ]);
+      for (const id of changedIds) {
+        const wasIncluded = prevIncluded.has(id);
+        const wasExcluded = prevExcluded.has(id);
+        const isIncluded = nextIncluded.has(id);
+        const isExcluded = nextExcluded.has(id);
+        if (wasIncluded === isIncluded && wasExcluded === isExcluded) {
+          continue;
+        }
+        let action: FilterTelemetryChange['action'];
+        if (isIncluded) {
+          action = 'include';
+        } else if (isExcluded) {
+          action = 'exclude';
+        } else {
+          action = 'remove';
+        }
+        emitFilterTelemetry('interaction', {
+          filterType: 'status',
+          filterId: id,
+          action,
+        });
+      }
     },
 
     addStatusFilters: async (statuses: StatusValue[], excluded: boolean) => {

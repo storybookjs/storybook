@@ -245,8 +245,8 @@ export interface SubAPI {
    *
    * @param {API_IndexHash} index - The story index to search for the leaf entry in.
    * @param {StoryId} storyId - The ID of the story to find the leaf entry for.
-   * @returns {API_LeafEntry} The leaf entry for the given story ID, or null if no leaf entry was
-   *   found.
+   * @returns {API_LeafEntry | undefined} The leaf entry for the given story ID, or undefined if no
+   *   leaf entry was found.
    */
   findLeafEntry(index: API_IndexHash, storyId: StoryId): API_LeafEntry | undefined;
   /**
@@ -254,7 +254,8 @@ export interface SubAPI {
    *
    * @param {API_IndexHash} index - The story index to search for the leaf story ID in.
    * @param {StoryId} storyId - The ID of the story to find the leaf story ID for.
-   * @returns {StoryId} The ID of the leaf story, or null if no leaf story was found.
+   * @returns {StoryId | undefined} The ID of the leaf story, or undefined if no leaf story was
+   *   found.
    */
   findLeafStoryId(index: API_IndexHash, storyId: StoryId): StoryId | undefined;
   /**

@@ -81,10 +81,14 @@ export async function initializeChecklist(
     // AI opt-in flag (set in `init` when user accepted the AI feature).
     // Read from the regular fs cache — NOT from the telemetry event cache
     // so the copy-prompt button appears for users who disabled telemetry.
-    const hasOptedIn = await hasAiInitOptIn(configDir!);
-    if (hasOptedIn) {
-      store.setState((state) => ({ ...state, aiOptIn: true }));
-    }
+    // Fire-and-forget so the store is never blocked waiting for this check.
+    hasAiInitOptIn(configDir!)
+      .then((hasOptedIn) => {
+        if (hasOptedIn) {
+          store.setState((state) => ({ ...state, aiOptIn: true }));
+        }
+      })
+      .catch(() => {});
 
     /**
      * "Has the agent actually produced something?" Running `storybook ai setup`

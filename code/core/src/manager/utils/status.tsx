@@ -11,7 +11,7 @@ import { transparentize } from 'polished';
 import { type Theme, styled } from 'storybook/theming';
 
 import { UseSymbol } from '../components/sidebar/IconSymbols.tsx';
-import { getDescendantIds } from './tree.ts';
+
 
 const SmallIcons = styled(CircleIcon)({
   // specificity hack
@@ -128,29 +128,54 @@ export const getMostCriticalStatusValue = (statusValues: StatusValue[]): StatusV
   );
 };
 
+/**
+ * Compute the aggregate status for every non-leaf item in a single bottom-up pass.
+ *
+ * For each story leaf we look up its most-critical status, then walk up the parent chain
+ * and promote each ancestor's status if the leaf's status is more critical. This replaces
+ * the previous O(n*m) approach that called the memoizerific-wrapped `getDescendantIds` per
+ * item — which thrashed the LRU cache because `collapsedData` is a fresh object on every
+ * render.
+ */
 export function getGroupStatus(
   collapsedData: {
     [x: string]: Partial<API_HashEntry>;
   },
   allStatuses: StatusesByStoryIdAndTypeId
 ): Record<string, StatusValue> {
-  return Object.values(collapsedData).reduce<Record<string, StatusValue>>((acc, item) => {
-    if (item.type === 'group' || item.type === 'component' || item.type === 'story') {
-      // @ts-expect-error (non strict)
-      const leafs = getDescendantIds(collapsedData as any, item.id, false)
-        .map((id) => collapsedData[id])
-        .filter((i) => i.type === 'story');
+  const result: Record<string, StatusValue> = {};
 
-      const combinedStatus = getMostCriticalStatusValue(
-        // @ts-expect-error (non strict)
-        leafs.flatMap((story) => Object.values(allStatuses[story.id] || {})).map((s) => s.value)
-      );
-
-      if (combinedStatus) {
-        // @ts-expect-error (non strict)
-        acc[item.id] = combinedStatus;
-      }
+  for (const item of Object.values(collapsedData)) {
+    if (item.type !== 'story') {
+      continue;
     }
-    return acc;
-  }, {});
+
+    const storyStatuses = allStatuses[item.id!];
+    if (!storyStatuses) {
+      continue;
+    }
+
+    const leafStatus = getMostCriticalStatusValue(
+      Object.values(storyStatuses).map((s) => s.value)
+    );
+
+    // Walk up the parent chain and propagate the most-critical status.
+    let currentItem: Partial<API_HashEntry> | undefined = item;
+    while (currentItem) {
+      const pid: string | undefined =
+        'parent' in currentItem ? (currentItem.parent as string | undefined) : undefined;
+      if (!pid) {
+        break;
+      }
+
+      const existing = result[pid];
+      if (!existing || statusPriority.indexOf(leafStatus) > statusPriority.indexOf(existing)) {
+        result[pid] = leafStatus;
+      }
+
+      currentItem = collapsedData[pid];
+    }
+  }
+
+  return result;
 }

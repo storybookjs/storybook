@@ -8,9 +8,7 @@ import { useStorybookApi } from 'storybook/manager-api';
 
 import { getAncestorIds } from '../../utils/tree.ts';
 
-// TODO/FIXME: Record<string, boolean> was likely better for performance.
-
-export type ExpandedState = string[];
+export type ExpandedState = Set<string>;
 
 export interface ExpandAction {
   ids: string[];
@@ -27,7 +25,7 @@ export interface ExpandedProps {
 
 const initializeExpanded = ({
   data,
-  initialExpanded = [],
+  initialExpanded = new Set<string>(),
   selectedStoryId,
 }: {
   data: StoriesHash;
@@ -35,7 +33,7 @@ const initializeExpanded = ({
   selectedStoryId: string | null;
 }) => {
   const selectedStory = selectedStoryId && data[selectedStoryId];
-  const candidates = [];
+  const candidates: string[] = [];
   // TODO/FIXME: this might not be necessary based on the order of rendering between the selected story ID and this hook.
   // If still necessary, reimplement by checking the data-story-id of document.activeElement instead of highlightedRef.
   // if (highlightedRef.current?.refId === refId) {
@@ -45,7 +43,7 @@ const initializeExpanded = ({
     candidates.push(selectedStoryId);
   }
 
-  return [...candidates, ...initialExpanded];
+  return new Set([...candidates, ...initialExpanded]);
 };
 
 const noop = () => {};
@@ -54,14 +52,16 @@ export const useExpanded = ({
   refId,
   data,
   selectedStoryId,
-}: ExpandedProps): [string[], Dispatch<ExpandAction>] => {
+}: ExpandedProps): [Set<string>, Dispatch<ExpandAction>] => {
   const api = useStorybookApi();
 
   const initialExpanded = useMemo(
     () =>
-      Object.entries(data)
-        .filter(([, item]) => item.type === 'root' && !item.startCollapsed)
-        .map(([key]) => key),
+      new Set(
+        Object.entries(data)
+          .filter(([, item]) => item.type === 'root' && !item.startCollapsed)
+          .map(([key]) => key)
+      ),
     [data]
   );
 
@@ -79,12 +79,12 @@ export const useExpanded = ({
     (state, { ids, append, value }) => {
       if (append) {
         if (value) {
-          return Array.from(new Set([...state, ...ids]));
+          return new Set([...state, ...ids]);
         } else {
-          return state.filter((id) => !ids.includes(id));
+          return new Set([...state].filter((id) => !ids.includes(id)));
         }
       } else {
-        return ids;
+        return new Set(ids);
       }
     },
     { refId, data, initialExpanded, selectedStoryId },

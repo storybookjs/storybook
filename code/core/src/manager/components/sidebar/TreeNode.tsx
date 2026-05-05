@@ -1,7 +1,7 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useMemo } from 'react';
 
-import { Button, TooltipProvider } from 'storybook/internal/components';
-import { PRELOAD_ENTRIES, SIDEBAR_OPEN_CONTEXT_MENU } from 'storybook/internal/core-events';
+import { Button } from 'storybook/internal/components';
+import { PRELOAD_ENTRIES } from 'storybook/internal/core-events';
 import type { StatusByTypeId, StatusValue } from 'storybook/internal/types';
 
 import { ChevronSmallDownIcon, ChevronSmallRightIcon } from '@storybook/icons';
@@ -11,7 +11,7 @@ import { darken } from 'polished';
 import { TreeItem, TreeItemContent } from 'react-aria-components/patched-dist/Tree';
 import type { HashEntry } from 'storybook/manager-api';
 import type { API } from 'storybook/manager-api';
-import { shortcutMatchesShortcut, shortcutToHumanString } from 'storybook/manager-api';
+import { shortcutToHumanString } from 'storybook/manager-api';
 import { styled, useTheme } from 'storybook/theming';
 
 import type { Link } from '../../../components/components/tooltip/TooltipLinkList.tsx';
@@ -26,7 +26,7 @@ import {
 } from '../../utils/tree.ts';
 import { useLayout } from '../layout/LayoutProvider.tsx';
 import { useContextMenu } from './ContextMenu.tsx';
-import { DEFAULT_REF_ID } from './Sidebar.tsx';
+
 import { StatusIconContainer } from './StatusButton.tsx';
 import { StatusIconMap } from './components/StatusIcon.tsx';
 import { TypeIconWithSymbol } from './components/TypeIcon.tsx';
@@ -47,45 +47,62 @@ const StyledTreeItem = styled(TreeItem)<{ $level: number; $textColor: string | n
     overflow: 'hidden',
     a: { color: $textColor ?? 'currentColor' },
 
-    /* Color handling. */
+    /* Sticky section headers and spacers for root-level items */
+    ...($level === 0 && {
+      position: 'sticky',
+      top: 0,
+      zIndex: 1,
+      backgroundColor: theme.background.app,
+      '&:not(:first-child)': {
+        marginTop: 14,
+      },
+    }),
+
+    /* Color handling — Figma: fgColor/default maps to theme.color.defaultText */
     color: $textColor ?? theme.color.defaultText,
-    '--tree-node-background-hover': theme.background.content,
-    [MEDIA_DESKTOP_BREAKPOINT]: {
-      '--tree-node-background-hover': theme.background.app,
-    },
 
-    '&:hover, &:focus': {
-      '--tree-node-background-hover': theme.background.hoverable,
-      background: 'var(--tree-node-background-hover)',
+    /* Hover — Figma: button/ghost/bgColor/hover → theme.background.hoverable,
+     *         Figma: button/ghost/fgColor/hover → theme.barHoverColor */
+    '&:hover, &[data-focused="true"]': {
+      background: theme.background.hoverable,
+      color: $textColor ?? theme.barHoverColor,
       outline: 'none',
+      svg: { color: 'currentColor' },
     },
 
+    /* Selected — Figma: button/accent/bgColor/rest → theme.color.secondary,
+     *            Figma: neutral/white → theme.color.lightest,
+     *            Figma: fontWeight/bold */
     '&[data-selected="true"]': {
       color: theme.color.lightest,
       background:
         theme.base === 'dark' ? darken(0.18, theme.color.secondary) : theme.color.secondary,
       fontWeight: theme.typography.weight.bold,
 
-      '&&:hover, &&:focus': {
+      '&&:hover, &&[data-focused="true"]': {
+        color: theme.color.lightest,
         background:
           theme.base === 'dark' ? darken(0.18, theme.color.secondary) : theme.color.secondary,
       },
       svg: { color: theme.color.lightest },
     },
 
+    /* Focus ring — Figma: Focus outline = box-shadow with fgColor/accent and bgColor/mute
+     *   Rendered as: 0 0 0 2px bgColor/mute, 0 0 0 4px fgColor/accent
+     *   Maps to: theme.background.app + theme.color.secondary */
     '&:focus-visible': {
-      outline: `2px solid ${theme.color.secondary}`,
-      outlineOffset: 2,
+      outline: 'none',
+      boxShadow: `0 0 0 2px ${theme.background.app}, 0 0 0 4px ${theme.color.secondary}`,
     },
 
     /* ContextMenu and StatusIcon visibility.
-     * ContextMenu is shown on hover/focus and when already open,
-     * StatusIcon is hidden when ContextMenu is visible. */
+     * ContextMenu button is shown on hover/focus and when already open;
+     * StatusIcon is hidden when ContextMenu button is visible. */
     '& [data-displayed="off"]': {
       visibility: 'hidden',
     },
 
-    '&:hover [data-displayed="off"]': {
+    '&:hover [data-displayed="off"], &[data-focused="true"] [data-displayed="off"]': {
       visibility: 'visible',
     },
 
@@ -93,14 +110,14 @@ const StyledTreeItem = styled(TreeItem)<{ $level: number; $textColor: string | n
       visibility: 'hidden',
     },
 
-    '&:hover [data-displayed="off"] + *': {
+    '&:hover [data-displayed="off"] + *, &[data-focused="true"] [data-displayed="off"] + *': {
       visibility: 'hidden',
     },
 
     '.hover-only': {
       display: 'none',
     },
-    '&:hover .hover-only, &:focus-visible .hover-only': {
+    '&:hover .hover-only, &:focus-visible .hover-only, &[data-focused="true"] .hover-only': {
       display: 'flex',
       alignContent: 'center',
       alignItems: 'center',
@@ -110,7 +127,7 @@ const StyledTreeItem = styled(TreeItem)<{ $level: number; $textColor: string | n
       alignContent: 'center',
       alignItems: 'center',
     },
-    '&:hover .static-only, &:focus-visible .static-only': {
+    '&:hover .static-only, &:focus-visible .static-only, &[data-focused="true"] .static-only': {
       display: 'none',
     },
   })
@@ -126,7 +143,33 @@ const StyledContent = styled.div({
   justifyContent: 'center',
   alignItems: 'center',
   flex: '1 0 0',
+  position: 'relative',
 });
+
+const Traces = styled.span<{ $depth: number }>(({ $depth }) => ({
+  display: 'flex',
+  gap: 0,
+  alignItems: 'stretch',
+  height: '100%',
+  position: 'absolute',
+  left: 0,
+  top: 0,
+  bottom: 0,
+  pointerEvents: 'none',
+}));
+
+const TraceLine = styled.span<{ $offset: number }>(({ theme, $offset }) => ({
+  position: 'absolute',
+  left: `calc(${$offset} * 20px + 9px)`,
+  top: 0,
+  bottom: 0,
+  width: 1,
+  /* Figma: borderColor/default at rest → theme.appBorderColor.
+   * On hover the tree container swaps these to blue/88 via a CSS variable. */
+  backgroundColor: 'var(--tree-trace-color)',
+  opacity: 0,
+  transition: 'opacity 150ms ease',
+}));
 
 const StyledLabel = styled.span({
   flex: '1 1 auto',
@@ -163,6 +206,8 @@ const statusOrder: StatusValue[] = [
   'status-value:unknown',
 ];
 
+export type ContextMenuEntryMethod = 'pointer' | 'keyboard';
+
 export interface TreeNodeProps {
   item: TreeEntry;
   refId: string;
@@ -171,11 +216,18 @@ export interface TreeNodeProps {
   isOrphan: boolean;
   isSelected: boolean;
   isExpanded: boolean;
-  setExpanded: (expanded: boolean) => void;
   onSelectStoryId: (itemId: string) => void;
   statuses: StatusByTypeId;
   api: API;
   data: Record<string, HashEntry>;
+  /** Whether this item's context menu is currently open. */
+  isContextMenuOpen?: boolean;
+  /** How the context menu was opened — 'pointer' (click) or 'keyboard' (global shortcut). */
+  contextMenuEntryMethod?: ContextMenuEntryMethod;
+  /** Open the context menu for a given item ID with the specified entry method. */
+  openContextMenu?: (itemId: string, entryMethod: ContextMenuEntryMethod) => void;
+  /** Close the currently-open context menu. */
+  closeContextMenu?: () => void;
   children?: React.ReactNode;
 }
 
@@ -200,21 +252,38 @@ export const TreeNode = React.memo<TreeNodeProps>(function TreeNode({
   isOrphan,
   isSelected,
   isExpanded,
-  setExpanded,
   onSelectStoryId,
   statuses,
   api,
   data,
+  isContextMenuOpen,
+  contextMenuEntryMethod,
+  openContextMenu,
+  closeContextMenu,
   children,
 }) {
   const theme = useTheme();
-  const id = useMemo(() => createId(refId, item.id), [refId, item.id]);
+  const id = useMemo(() => createId(item.id, refId), [item.id, refId]);
   const { isDesktop, isMobile, setMobileMenuOpen } = useLayout();
-  const [contextMenuEntryMethod, setContextMenuEntryMethod] = useState<'mouse' | 'keyboard'>(
-    'mouse'
+
+  // Memoize renderContext so downstream useMemo deps don't bust every render.
+  const renderContext = useMemo(
+    () => ({ isMobile, location: 'sidebar' as const }),
+    [isMobile]
   );
 
-  const renderContext = { isMobile, location: 'sidebar' as const };
+  // Per-item handler for toggling the context menu open/close, suitable as the `setIsOpen`
+  // parameter for `useContextMenu`. Uses pointer mode by default when toggled via the ⋯ button.
+  const handleContextMenuOpenChange = useCallback(
+    (open: boolean) => {
+      if (open) {
+        openContextMenu?.(item.id, 'pointer');
+      } else {
+        closeContextMenu?.();
+      }
+    },
+    [openContextMenu, closeContextMenu, item.id]
+  );
 
   const statusLinks = useMemo<Link[]>(() => {
     if (item.type === 'story' || item.type === 'docs') {
@@ -236,32 +305,20 @@ export const TreeNode = React.memo<TreeNodeProps>(function TreeNode({
     return [];
   }, [id, item.type, onSelectStoryId, statuses]);
 
-  // Should only have a context menu on non-composed storybooks? TODO: verify requirement with team
-  const [contextMenuOpen, setContextMenuOpen] = useState(false);
-
-  useEffect(() => {
-    if (!api || !isSelected) {
-      return;
-    }
-
-    const openContextMenu = () => setContextMenuOpen(true);
-
-    api.on(SIDEBAR_OPEN_CONTEXT_MENU, openContextMenu);
-
-    return () => {
-      api.off(SIDEBAR_OPEN_CONTEXT_MENU, openContextMenu);
-    };
-  }, [api, isSelected]);
-
-  const contextMenu =
-    refId === DEFAULT_REF_ID
-      ? useContextMenu(item, contextMenuOpen, setContextMenuOpen, statusLinks, api)
-      : null;
+  const contextMenu = useContextMenu(
+    item,
+    isContextMenuOpen ?? false,
+    handleContextMenuOpenChange,
+    statusLinks,
+    api,
+    data,
+    contextMenuEntryMethod
+  );
 
   const itemStatus = getMostCriticalStatusValue(Object.values(statuses || {}).map((s) => s.value));
-  const [statusIcon, statusTextColor] = getStatus(theme, itemStatus);
+  const { icon: statusIcon, textColor: statusTextColor } = getStatus(theme, itemStatus);
 
-  const showBranchStatus = itemStatus === 'status-value:error' || status === 'status-value:warning';
+  const showBranchStatus = itemStatus === 'status-value:error' || itemStatus === 'status-value:warning';
   const isBranch = guardHasChildren(item);
   const hasContextMenu = guardHasContextMenu(contextMenu);
 
@@ -273,24 +330,13 @@ export const TreeNode = React.memo<TreeNodeProps>(function TreeNode({
     }
 
     if (hasContextMenu) {
-      console.log(api.getShortcutKeys());
       const shortcut = shortcutToHumanString(api.getShortcutKeys().contextMenu);
       label += `. Press ${shortcut} for more actions`;
     }
     return label;
   }, [item, api, renderContext, hasContextMenu, itemStatus, isBranch, showBranchStatus]);
 
-  const tooltipContent = useMemo(() => {
-    if (hasContextMenu) {
-      const shortcut = shortcutToHumanString(api.getShortcutKeys().contextMenu);
-      return (
-        <>
-          Actions <kbd>{shortcut}</kbd>
-        </>
-      );
-    }
-    return null;
-  }, [hasContextMenu, api]);
+
 
   const collapseAction = useMemo(() => {
     if (!isBranch) {
@@ -300,47 +346,7 @@ export const TreeNode = React.memo<TreeNodeProps>(function TreeNode({
     return isExpanded ? <ChevronSmallDownIcon /> : <ChevronSmallRightIcon />;
   }, [isBranch, isExpanded]);
 
-  const handleKeyDown = useCallback(
-    (event: React.KeyboardEvent) => {
-      console.log('event', event);
-      if (shortcutMatchesShortcut([event.key], api.getShortcutKeys().contextMenu)) {
-        event.preventDefault();
-        console.log('TODO: open context menu on kb');
-      }
-    },
-    [api]
-  );
-
-  // TODO: either do it here with ExpandAction or in Tree renderNode.
-  // const handleExpandedChange = useCallback(() => {
-  //   setExpanded({ ids: [item.id], append: true, value: !isExpanded });
-  // }, [item.id, isExpanded, setExpanded]);
-
-  // TODO: on leaf selection within the tree
-  // - onSelectStoryId(item.id);
-  // - if isMobile setMobileMenuOpen(false)
-
-  // TODO: on branch selection, we used to do onSelectStoryId(item.id);
-  // - double check but we probably no longer want that
-
-  // FIXME: is there a more general way to handle preloading based on current selection / active item? Maybe via a MutationObserver?
-  // TODO: we also want to preload entries on focus
-  // const handleFocus = useCallback(() => {
-  //   // TODO/FIXME: discuss perf implications with N and Gert. We could either preload all children,
-  //   // or only a select first few on the assumption they're more likely to be opened.
-  //   // TODO: ask MS if we have telemetry data on which children get visited more often.
-  //   if (hasChildren && (item.type === 'component' || item.type === 'story')) {
-  //     api.emit(PRELOAD_ENTRIES, {
-  //       ids: [item.children],
-  //       options: { target: refId },
-  //     });
-  //   }
-  // }, [hasChildren, item, api, refId]);
-
   const handleMouseEnter = useCallback(() => {
-    // FIXME: logic flaw, what if we mouseEnter + press Enter on kb. We need different menus.
-    setContextMenuEntryMethod('mouse');
-
     // TODO: check what this actually does
     contextMenu?.onMouseEnter();
 
@@ -373,27 +379,17 @@ export const TreeNode = React.memo<TreeNodeProps>(function TreeNode({
       id={id}
       data-item-id={item.id}
       data-ref-id={refId}
-      // FIXME: we can't pass these events, must review the preloading strat
-      // onFocus={handleFocus}
-      // onMouseEnter={handleMouseEnter}
-      // FIXME: make this a global kb shortcut and have it identify the currently highlighted item
-      // onKeyDown={handleKeyDown}
-      // data-ref-id={refId}
-      // data-parent-id={(item as any).parent}
-      // data-nodetype={
-      //   item.type === 'story' && (item as any).subtype === 'test'
-      //     ? ('test' as const)
-      //     : item.type === 'docs'
-      //       ? ('document' as const)
-      //       : item.type === 'component'
-      //         ? ('component' as const)
-      //         : item.type === 'group'
-      //           ? ('group' as const)
-      //           : ('story' as const)
-      // }
+      onMouseEnter={handleMouseEnter}
     >
       <TreeItemContent>
         <StyledContent>
+          {item.depth > 0 && (
+            <Traces className="tree-traces" $depth={item.depth}>
+              {Array.from({ length: item.depth }, (_, i) => (
+                <TraceLine key={i} $offset={i} />
+              ))}
+            </Traces>
+          )}
           {finalType === 'root' ? (
             collapseAction
           ) : (
@@ -432,16 +428,6 @@ export const TreeNode = React.memo<TreeNodeProps>(function TreeNode({
       {children}
     </StyledTreeItem>
   );
-
-  // FIXME not working with the TreeView.Item component
-  // TODO: use useTooltip lower level hook
-  if (tooltipContent) {
-    return (
-      <TooltipProvider triggerOnFocusOnly={true} tooltip={tooltipContent}>
-        {itemContent}
-      </TooltipProvider>
-    );
-  }
 
   return itemContent;
 });

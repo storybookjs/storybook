@@ -96,6 +96,7 @@ export interface SidebarProps extends API_LoadedRefData {
   menu: any[];
   storyId?: string;
   refId?: string;
+  docsMode?: boolean;
   menuHighlighted?: boolean;
   enableShortcuts?: boolean;
   onMenuClick?: HeadingProps['onMenuClick'];
@@ -116,6 +117,7 @@ export const Sidebar = React.memo(function Sidebar({
   menuHighlighted = false,
   enableShortcuts = true,
   isDevelopment = global.CONFIG_TYPE === 'DEVELOPMENT',
+  docsMode = false,
   refs = {},
   onMenuClick,
   showCreateStoryButton = isDevelopment && isRendererReact,
@@ -207,6 +209,8 @@ export const Sidebar = React.memo(function Sidebar({
               <>
                 {
                   <Explorer
+                    api={api}
+                    docsMode={docsMode}
                     dataset={dataset}
                     selected={selected}
                     isLoading={isLoading}

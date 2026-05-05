@@ -1,7 +1,7 @@
 import type { FC, MutableRefObject } from 'react';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
-import { useStorybookApi, useStorybookState } from 'storybook/manager-api';
+import type { API } from 'storybook/manager-api';
 import { styled } from 'storybook/theming';
 
 import { getStateType } from '../../utils/tree.ts';
@@ -13,13 +13,13 @@ import { CollapseIcon } from './components/CollapseIcon.tsx';
 import type { Highlight, RefType } from './types.ts';
 
 export interface RefProps {
+  api: API;
+  docsMode: boolean;
   isLoading: boolean;
   isBrowsing: boolean;
   isDevelopment: boolean;
   hasEntries: boolean;
   selectedStoryId: string | null;
-  // highlightedRef: MutableRefObject<Highlight>;
-  // setHighlighted: (highlight: Highlight) => void;
 }
 
 const Wrapper = styled.div<{ isMain: boolean }>(({ isMain }) => ({
@@ -75,9 +75,9 @@ const CollapseButton = styled.button(({ theme }) => ({
 }));
 
 export const Ref: FC<RefType & RefProps> = React.memo(function Ref(props) {
-  const { docsOptions } = useStorybookState();
-  const api = useStorybookApi();
   const {
+    api,
+    docsMode,
     filteredIndex: index,
     id: refId,
     title = refId,
@@ -86,8 +86,6 @@ export const Ref: FC<RefType & RefProps> = React.memo(function Ref(props) {
     isDevelopment,
     hasEntries,
     selectedStoryId,
-    // highlightedRef,
-    // setHighlighted,
     loginUrl,
     type,
     expanded = true,
@@ -159,7 +157,7 @@ export const Ref: FC<RefType & RefProps> = React.memo(function Ref(props) {
               isMain={isMain}
               refId={refId}
               data={index}
-              docsMode={docsOptions.docsMode ?? false}
+              docsMode={docsMode}
               selectedStoryId={selectedStoryId}
               onSelectStoryId={onSelectStoryId}
               // highlightedRef={highlightedRef}

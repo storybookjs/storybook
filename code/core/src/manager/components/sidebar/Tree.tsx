@@ -1,5 +1,6 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
+import { SIDEBAR_OPEN_CONTEXT_MENU } from 'storybook/internal/core-events';
 import type { StatusesByStoryIdAndTypeId } from 'storybook/internal/types';
 
 import { Collection } from '@react-aria/collections';
@@ -9,17 +10,30 @@ import { styled } from 'storybook/theming';
 
 import { getGroupStatus } from '../../utils/status.tsx';
 import { type TreeEntry, collapseSingleStoryComponents, indexToTree } from '../../utils/tree.ts';
-import { StatusContext } from './StatusContext.tsx';
 import { TreeNode, type TreeNodeProps } from './TreeNode.tsx';
-import { type ExpandAction, useExpanded } from './useExpanded.ts';
-
-// TODO: When pressing enter on branch, expand/collapse it
-// TODO: Find bug preventing branches from collapsing
-// TODO: Restore the scrollIntoView for the currently selected story
+import { useExpanded } from './useExpanded.ts';
 
 const StyledAriaTree = styled(AriaTree)(({ theme }) => ({
-  // TODO
-}));
+  listStyle: 'none',
+  padding: 0,
+  margin: 0,
+  outline: 'none',
+
+  /* Figma: borderColor/default at rest, blue/88 on hover.
+   * We approximate blue/88 (#C2DEFF) via transparentize on the secondary color. */
+  '--tree-trace-color': theme.appBorderColor,
+
+  // Show trace lines on hover or keyboard focus, swap to accent tint
+  '&:hover, &:focus-within': {
+    '--tree-trace-color': theme.base === 'dark'
+      ? `${theme.color.secondary}44` // 27% opacity in dark — visible on dark bg
+      : `${theme.color.secondary}22`, // 13% opacity in light — approximates #C2DEFF on white
+    '.tree-traces span': {
+      opacity: 1,
+    },
+  },
+})) as typeof AriaTree;
+
 interface TreeProps {
   api: API;
   isBrowsing: boolean;
@@ -44,8 +58,13 @@ export const Tree = React.memo<TreeProps>(function Tree({
   onSelectStoryId,
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const focusedItemRef = useRef<HTMLElement | null>(null);
-  const [focusedItemId, setFocusedItemId] = useState<string | null>(null);
+
+  // Context-menu state: which item's menu is open, and how it was triggered.
+  // 'pointer' = click on the ⋯ button; 'keyboard' = global shortcut (shows extra actions).
+  const [contextMenuState, setContextMenuState] = useState<{
+    itemId: string;
+    entryMethod: 'pointer' | 'keyboard';
+  } | null>(null);
 
   // Rewrite the dataset to place the single child story in place of the component.
   const collapsedData = useMemo(() => collapseSingleStoryComponents(data), [data]);
@@ -53,54 +72,7 @@ export const Tree = React.memo<TreeProps>(function Tree({
   // Switch to a tree structure from now on.
   const tree = useMemo(() => indexToTree(collapsedData), [collapsedData]);
 
-  // Track focused item with mutation observer TEMP/DEBUG/TODO
-  useEffect(() => {
-    const container = containerRef.current;
-    if (!container) {
-      console.log('no container yet');
-      return;
-    }
-
-    // Mutation observer to track focus changes
-    const observer = new MutationObserver(() => {
-      // Find the currently focused tree item
-      const focusedElement = container.querySelector('[data-focused="true"]') as HTMLElement;
-      if (focusedElement && focusedElement !== focusedItemRef.current) {
-        focusedItemRef.current = focusedElement;
-        setFocusedItemId(focusedElement.id);
-        console.log('Focused item changed to:', focusedElement.id, focusedElement.textContent);
-      }
-    });
-
-    observer.observe(container, {
-      attributes: true,
-      subtree: true,
-      attributeFilter: ['data-focused'],
-    });
-
-    return () => {
-      observer.disconnect();
-    };
-  }, []);
-
-  // DEBUG/TODO use the tracked focused item
-  useEffect(() => {
-    if (focusedItemRef.current) {
-      // console.log('UPDATE CURRENTLY FOCUSED', focusedItemRef.current);
-      // const content = focusedItemRef.current.querySelector('[role="gridcell"]');
-      // if (content) {
-      //   const baseText = focusedItemRef.current.getAttribute('data-base-text');
-      //   if (!baseText) {
-      //     focusedItemRef.current.setAttribute('data-base-text', content.textContent || '');
-      //   }
-      //   const text = focusedItemRef.current.getAttribute('data-base-text') || '';
-      //   content.textContent = text + ' (currently focused)';
-      // }
-    }
-  }, [focusedItemId]);
-
-  // // Track expanded nodes, keep it in sync with props and enable keyboard shortcuts.
-  // TODO: try out other data format for performance.
+  // Track expanded nodes, keep it in sync with props and enable keyboard shortcuts.
   const [expanded, setExpanded] = useExpanded({
     refId,
     data: collapsedData,
@@ -113,43 +85,168 @@ export const Tree = React.memo<TreeProps>(function Tree({
     return Object.assign({}, allStatuses, groupStatus);
   }, [allStatuses, collapsedData]);
 
+  // React-aria expects a Set for selectedKeys. Memoize so Tree's children see a stable ref.
+  const selectedKeys = useMemo(
+    () => (selectedStoryId ? new Set([selectedStoryId]) : EMPTY_KEYS),
+    [selectedStoryId]
+  );
+
+  // Stable handlers so children (especially TreeNode) can rely on prop identity.
+  const handleExpandedChange = useCallback(
+    (keys: Set<React.Key>) => {
+      setExpanded({ ids: Array.from(keys).map(String) });
+    },
+    [setExpanded]
+  );
+
+  // Use refs so the callbacks below can read the latest values without re-creating.
+  const expandedRef = useRef(expanded);
+  expandedRef.current = expanded;
+  const collapsedDataRef = useRef(collapsedData);
+  collapsedDataRef.current = collapsedData;
+
+  // Helper: returns true when an item ID corresponds to a branch (has children).
+  const isBranch = useCallback((id: string): boolean => {
+    const item = collapsedDataRef.current[id];
+    return !!(
+      item &&
+      'children' in item &&
+      Array.isArray((item as { children?: string[] }).children) &&
+      (item as { children: string[] }).children.length > 0
+    );
+  }, []);
+
+  // Click (single) and Space both fire onSelectionChange.
+  //   • Branch items: toggle expand/collapse (do NOT navigate).
+  //   • Leaf items: navigate to story/docs via onSelectStoryId.
+  const handleSelectionChange = useCallback(
+    (keys: 'all' | Set<React.Key>) => {
+      if (keys === 'all') {
+        return;
+      }
+      const selectedKey = Array.from(keys)[0];
+      if (!selectedKey || typeof selectedKey !== 'string') {
+        return;
+      }
+
+      if (isBranch(selectedKey)) {
+        setExpanded({
+          ids: [selectedKey],
+          append: true,
+          value: !expandedRef.current.has(selectedKey),
+        });
+      } else {
+        onSelectStoryId(selectedKey);
+      }
+    },
+    [onSelectStoryId, isBranch, setExpanded]
+  );
+
+  // Enter / double-click fire onAction — same logic as single click.
+  const handleAction = useCallback(
+    (key: React.Key) => {
+      const keyStr = String(key);
+      if (isBranch(keyStr)) {
+        setExpanded({ ids: [keyStr], append: true, value: !expandedRef.current.has(keyStr) });
+      } else {
+        onSelectStoryId(keyStr);
+      }
+    },
+    [isBranch, setExpanded, onSelectStoryId]
+  );
+
+  // Open or close the context menu. Stable callback for children.
+  const openContextMenu = useCallback(
+    (itemId: string, entryMethod: 'pointer' | 'keyboard') => {
+      setContextMenuState({ itemId, entryMethod });
+    },
+    []
+  );
+  const closeContextMenu = useCallback(() => setContextMenuState(null), []);
+
+  // Listen for the global context-menu shortcut and open the menu for the focused item.
+  useEffect(() => {
+    if (!api) {
+      return;
+    }
+    const handler = () => {
+      const focused = containerRef.current?.querySelector('[data-focused="true"]');
+      const itemId = focused?.getAttribute('data-item-id');
+      if (itemId) {
+        openContextMenu(itemId, 'keyboard');
+      }
+    };
+    api.on(SIDEBAR_OPEN_CONTEXT_MENU, handler);
+    return () => {
+      api.off(SIDEBAR_OPEN_CONTEXT_MENU, handler);
+    };
+  }, [api, openContextMenu]);
+
+  // Scroll the selected story into view when it changes.
+  useEffect(() => {
+    if (selectedStoryId && containerRef.current) {
+      const element = containerRef.current.querySelector(
+        `[data-item-id="${CSS.escape(selectedStoryId)}"]`
+      );
+      if (element) {
+        element.scrollIntoView({ block: 'nearest' });
+      }
+    }
+  }, [selectedStoryId]);
+
+  // Memoize renderNode's returned closure so Collection receives a stable children prop
+  // as long as the relevant inputs are stable.
+  const nodeRenderer = useMemo(
+    () =>
+      renderNode({
+        api,
+        refId,
+        docsMode,
+        isDevelopment,
+        consolidatedStatuses,
+        data: collapsedData,
+        onSelectStoryId,
+        selectedStoryId,
+        expanded,
+        contextMenuState,
+        openContextMenu,
+        closeContextMenu,
+      }),
+    [
+      api,
+      refId,
+      docsMode,
+      isDevelopment,
+      consolidatedStatuses,
+      collapsedData,
+      onSelectStoryId,
+      selectedStoryId,
+      expanded,
+      contextMenuState,
+      openContextMenu,
+      closeContextMenu,
+    ]
+  );
+
   return (
-    <StatusContext.Provider value={{ data: collapsedData, allStatuses }}>
-      <div>
-        <StyledAriaTree
-          ref={containerRef}
-          aria-label="Stories"
-          selectionMode="single"
-          expandedKeys={expanded}
-          onExpandedChange={(keys) => setExpanded({ ids: Array.from(keys).map(String) })}
-          selectedKeys={selectedStoryId ? new Set([selectedStoryId]) : new Set()}
-          onSelectionChange={(keys) => {
-            console.log('Selected', keys);
-            const selectedKey = Array.from(keys)[0];
-            if (selectedKey && typeof selectedKey === 'string') {
-              onSelectStoryId(selectedKey);
-            }
-          }}
-        >
-          <Collection items={tree}>
-            {renderNode({
-              api,
-              refId,
-              docsMode,
-              isDevelopment,
-              consolidatedStatuses,
-              data: collapsedData,
-              onSelectStoryId,
-              selectedStoryId,
-              expanded,
-              setExpanded,
-            })}
-          </Collection>
-        </StyledAriaTree>
-      </div>
-    </StatusContext.Provider>
+    <StyledAriaTree
+      ref={containerRef}
+      aria-label="Stories"
+      selectionMode="single"
+      expandedKeys={expanded}
+      onExpandedChange={handleExpandedChange}
+      selectedKeys={selectedKeys}
+      onSelectionChange={handleSelectionChange}
+      onAction={handleAction}
+    >
+      <Collection items={tree}>{nodeRenderer}</Collection>
+    </StyledAriaTree>
   );
 });
+
+// Stable module-level constants so empty-state props don't bust React.memo equality checks.
+const EMPTY_KEYS: Set<string> = new Set();
+const EMPTY_STATUSES = Object.freeze({}) as Record<string, never>;
 
 interface RenderNodeProps extends Omit<
   TreeNodeProps,
@@ -158,43 +255,63 @@ interface RenderNodeProps extends Omit<
   | 'isOrphan'
   | 'isSelected'
   | 'isExpanded'
-  | 'setExpanded'
   | 'children'
   | 'statuses'
   | 'isContextMenuOpen'
+  | 'contextMenuEntryMethod'
+  | 'openContextMenu'
+  | 'closeContextMenu'
 > {
   consolidatedStatuses?: StatusesByStoryIdAndTypeId;
   selectedStoryId: string | null;
-  expanded: string[];
-  setExpanded: (action: ExpandAction) => void;
+  expanded: Set<string>;
+  contextMenuState: { itemId: string; entryMethod: 'pointer' | 'keyboard' } | null;
+  openContextMenu: (itemId: string, entryMethod: 'pointer' | 'keyboard') => void;
+  closeContextMenu: () => void;
 }
 
 function renderNode({
   expanded,
-  setExpanded,
   consolidatedStatuses,
   selectedStoryId,
+  contextMenuState,
+  openContextMenu,
+  closeContextMenu,
   ...props
 }: RenderNodeProps) {
-  return function renderNodeLevel(item: TreeEntry) {
+  const renderNodeLevel = (item: TreeEntry) => {
+    const itemStatuses = consolidatedStatuses?.[item.id];
     return (
       <TreeNode
         {...props}
         key={item.id}
         item={item}
-        // TODO review these conditions. What is isOrphan used for? Are roots orphans?
         isOrphan={item.depth === 0 && item.type !== 'root'}
-        isExpanded={expanded.includes(item.id)}
-        setExpanded={(expanded) => setExpanded({ ids: [item.id], append: true, value: expanded })}
+        isExpanded={expanded.has(item.id)}
         isSelected={selectedStoryId === item.id}
-        statuses={consolidatedStatuses?.[item.id] ?? {}}
+        isContextMenuOpen={contextMenuState?.itemId === item.id}
+        contextMenuEntryMethod={
+          contextMenuState?.itemId === item.id ? contextMenuState.entryMethod : undefined
+        }
+        openContextMenu={openContextMenu}
+        closeContextMenu={closeContextMenu}
+        statuses={itemStatuses ?? EMPTY_STATUSES}
       >
         {item.resolvedChildren && (
           <Collection items={item.resolvedChildren}>
-            {renderNode({ ...props, expanded, setExpanded, consolidatedStatuses, selectedStoryId })}
+            {renderNode({
+              ...props,
+              expanded,
+              consolidatedStatuses,
+              selectedStoryId,
+              contextMenuState,
+              openContextMenu,
+              closeContextMenu,
+            })}
           </Collection>
         )}
       </TreeNode>
     );
   };
+  return renderNodeLevel;
 }

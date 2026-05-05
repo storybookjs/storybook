@@ -1,7 +1,7 @@
 import type { ComponentProps, FC, SyntheticEvent } from 'react';
-import React, { useContext, useMemo, useState } from 'react';
+import React, { useMemo, useState } from 'react';
 
-import { PopoverProvider, TooltipLinkList } from 'storybook/internal/components';
+import { PopoverProvider, TooltipLinkList, TooltipProvider } from 'storybook/internal/components';
 import {
   type API_HashEntry,
   type Addon_Collection,
@@ -12,17 +12,17 @@ import {
 
 import { CopyIcon, EditorIcon, EllipsisIcon } from '@storybook/icons';
 
+import { experimental_useStatusStore } from '#manager-stores';
 import copy from 'copy-to-clipboard';
-import { useStorybookApi } from 'storybook/manager-api';
-import type { API } from 'storybook/manager-api';
+import type { API, IndexHash } from 'storybook/manager-api';
+import { shortcutToHumanString, useStorybookApi } from 'storybook/manager-api';
 import { styled } from 'storybook/theming';
 
 import type { Link } from '../../../components/components/tooltip/TooltipLinkList.tsx';
-import { getMostCriticalStatusValue } from '../../utils/status.tsx';
+import { getGroupStatus, getMostCriticalStatusValue } from '../../utils/status.tsx';
 import { Shortcut } from '../Shortcut.tsx';
 import { UseSymbol } from './IconSymbols.tsx';
 import { StatusButton } from './StatusButton.tsx';
-import { StatusContext } from './StatusContext.tsx';
 
 const empty = {
   onMouseEnter: () => {},
@@ -40,16 +40,24 @@ const FloatingStatusButton = styled(StatusButton)({
   },
 });
 
+export type ContextMenuEntryMethod = 'pointer' | 'keyboard';
+
 export const useContextMenu = (
   context: API_HashEntry,
   isOpen: boolean,
   setIsOpen: (open: boolean) => void,
   links: Link[],
-  api: API
+  api: API,
+  data: IndexHash,
+  entryMethod?: ContextMenuEntryMethod
 ) => {
   const [hoverCount, setHoverCount] = useState(0);
   const [copyText, setCopyText] = React.useState('Copy story name');
-  const { allStatuses, groupStatus } = useContext(StatusContext);
+  const allStatuses = experimental_useStatusStore();
+  const groupStatus = useMemo(
+    () => getGroupStatus(data, allStatuses ?? {}),
+    [data, allStatuses]
+  );
 
   const shortcutKeys = api.getShortcutKeys();
   const enableShortcuts = !!shortcutKeys;
@@ -120,9 +128,7 @@ export const useContextMenu = (
     return [];
   }, [api, context, hoverCount]);
 
-  // We just don't want to render the context menu for composed storybook stories
-  const shouldRender =
-    !context.refId && (providerLinks.length > 0 || links.length > 0 || topLinks.length > 0);
+  const shouldRender = providerLinks.length > 0 || links.length > 0 || topLinks.length > 0;
 
   const isLeafNode = context.type === 'story' || context.type === 'docs';
 
@@ -187,11 +193,36 @@ export const useContextMenu = (
     return <EllipsisIcon />;
   }, [itemStatus, context.type]);
 
+  const shortcutLabel = useMemo(() => {
+    if (!enableShortcuts || !shortcutKeys?.contextMenu) {
+      return null;
+    }
+    return (
+      <>
+        Actions <kbd>{shortcutToHumanString(shortcutKeys.contextMenu)}</kbd>
+      </>
+    );
+  }, [enableShortcuts, shortcutKeys]);
+
   return useMemo(() => {
     // Never show the SidebarContextMenu in production
     if (globalThis.CONFIG_TYPE !== 'DEVELOPMENT') {
       return empty;
     }
+
+    const button = (
+      <FloatingStatusButton
+        tabIndex={-1}
+        data-displayed={isOpen ? 'on' : 'off'}
+        data-testid="context-menu"
+        ariaLabel="Open context menu"
+        type="button"
+        status={itemStatus}
+        onClick={handlers.onOpen}
+      >
+        {MenuIcon}
+      </FloatingStatusButton>
+    );
 
     return {
       onMouseEnter: handlers.onMouseEnter,
@@ -206,20 +237,26 @@ export const useContextMenu = (
           hasChrome={true}
           padding={0}
         >
-          <FloatingStatusButton
-            data-displayed={isOpen ? 'on' : 'off'}
-            data-testid="context-menu"
-            ariaLabel="Open context menu"
-            type="button"
-            status={itemStatus}
-            onClick={handlers.onOpen}
-          >
-            {MenuIcon}
-          </FloatingStatusButton>
+          {shortcutLabel ? (
+            <TooltipProvider tooltip={shortcutLabel}>{button}</TooltipProvider>
+          ) : (
+            button
+          )}
         </PopoverProvider>
       ) : null,
     };
-  }, [context, handlers, isOpen, setIsOpen, shouldRender, links, topLinks, itemStatus, MenuIcon]);
+  }, [
+    context,
+    handlers,
+    isOpen,
+    setIsOpen,
+    shouldRender,
+    links,
+    topLinks,
+    itemStatus,
+    MenuIcon,
+    shortcutLabel,
+  ]);
 };
 
 /**

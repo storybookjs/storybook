@@ -42,14 +42,22 @@ describe('parse-vitest-report', () => {
       const result = parseVitestResults(mockVitestResults);
 
       expect(result.summary).toEqual({
-        total: 3,
-        passed: 3,
-        passedButEmptyRender: 0,
-        successRate: 1.0,
-        successRateWithoutEmptyRender: 1.0,
-        uniqueErrorCount: 0,
-        categorizedErrors: {},
-        cssCheck: 'not-run',
+        runTotal: 3,
+        runPassed: 3,
+        runPassedButEmptyRender: 0,
+        runSuccessRate: 1.0,
+        runSuccessRateWithoutEmptyRender: 1.0,
+        runUniqueErrorCount: 0,
+        runCategorizedErrors: {},
+        runCssCheck: 'not-run',
+        cumulativeTotal: 3,
+        cumulativePassed: 3,
+        cumulativePassedButEmptyRender: 0,
+        cumulativeSuccessRate: 1.0,
+        cumulativeSuccessRateWithoutEmptyRender: 1.0,
+        cumulativeUniqueErrorCount: 0,
+        cumulativeCategorizedErrors: {},
+        cumulativeCssCheck: 'not-run',
       });
     });
 
@@ -86,10 +94,10 @@ describe('parse-vitest-report', () => {
 
       const result = parseVitestResults(mockVitestResults);
 
-      expect(result.summary?.total).toBe(3);
-      expect(result.summary?.passed).toBe(1);
-      expect(result.summary?.successRate).toBe(0.33);
-      expect(result.summary?.uniqueErrorCount).toBe(2);
+      expect(result.summary?.runTotal).toBe(3);
+      expect(result.summary?.runPassed).toBe(1);
+      expect(result.summary?.runSuccessRate).toBe(0.33);
+      expect(result.summary?.runUniqueErrorCount).toBe(2);
     });
 
     it('should categorize errors and include them in the summary', () => {
@@ -137,10 +145,10 @@ describe('parse-vitest-report', () => {
 
       const result = parseVitestResults(mockVitestResults);
 
-      expect(result.summary?.total).toBe(5);
-      expect(result.summary?.passed).toBe(1);
-      expect(result.summary?.uniqueErrorCount).toBe(3);
-      expect(result.summary?.categorizedErrors).toEqual({
+      expect(result.summary?.runTotal).toBe(5);
+      expect(result.summary?.runPassed).toBe(1);
+      expect(result.summary?.runUniqueErrorCount).toBe(3);
+      expect(result.summary?.runCategorizedErrors).toEqual({
         HOOK_USAGE_ERROR: {
           uniqueCount: 1,
           count: 1,
@@ -199,9 +207,9 @@ describe('parse-vitest-report', () => {
 
       const result = parseVitestResults(mockVitestResults);
 
-      expect(result.summary?.passedButEmptyRender).toBe(2);
-      expect(result.summary?.successRate).toBe(1.0);
-      expect(result.summary?.successRateWithoutEmptyRender).toBe(0.33);
+      expect(result.summary?.runPassedButEmptyRender).toBe(2);
+      expect(result.summary?.runSuccessRate).toBe(1.0);
+      expect(result.summary?.runSuccessRateWithoutEmptyRender).toBe(0.33);
     });
 
     it('should handle multiple test suites', () => {
@@ -244,8 +252,8 @@ describe('parse-vitest-report', () => {
 
       const result = parseVitestResults(mockVitestResults);
 
-      expect(result.summary?.total).toBe(4);
-      expect(result.summary?.passed).toBe(3);
+      expect(result.summary?.runTotal).toBe(4);
+      expect(result.summary?.runPassed).toBe(3);
     });
 
     it('should handle zero total tests', () => {
@@ -259,11 +267,11 @@ describe('parse-vitest-report', () => {
 
       const result = parseVitestResults(mockVitestResults);
 
-      expect(result.summary?.total).toBe(0);
-      expect(result.summary?.successRate).toBe(0);
+      expect(result.summary?.runTotal).toBe(0);
+      expect(result.summary?.runSuccessRate).toBe(0);
     });
 
-    it('surfaces the CssCheck story outcome via summary.cssCheck', () => {
+    it('surfaces the CssCheck story outcome via summary.runCssCheck', () => {
       const mockVitestResults = {
         success: false,
         numTotalTests: 2,
@@ -291,7 +299,7 @@ describe('parse-vitest-report', () => {
 
       const result = parseVitestResults(mockVitestResults);
 
-      expect(result.summary?.cssCheck).toBe('fail');
+      expect(result.summary?.runCssCheck).toBe('fail');
     });
   });
 });

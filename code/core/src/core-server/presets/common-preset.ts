@@ -15,7 +15,7 @@ import {
 import { StoryIndexGenerator } from 'storybook/internal/core-server';
 import { loadCsf } from 'storybook/internal/csf-tools';
 import { logger } from 'storybook/internal/node-logger';
-import { setTelemetryEnabled, telemetry } from 'storybook/internal/telemetry';
+import { telemetry } from 'storybook/internal/telemetry';
 import type {
   CoreConfig,
   Indexer,
@@ -272,10 +272,6 @@ export const experimental_serverChannel = async (
   channel: Channel,
   options: OptionsWithRequiredCache
 ) => {
-  const coreOptions = await options.presets.apply('core');
-
-  await setTelemetryEnabled(!coreOptions?.disableTelemetry);
-
   initAIAnalyticsChannel(channel, options, () => storyIndexGeneratorPromise);
   initializeChecklist(channel);
   initializeWhatsNew(channel, options);

@@ -1,16 +1,14 @@
 import {
   HandledError,
   cache,
-  getStorybookInfo,
+  loadMainConfig,
   isCI,
   loadAllPresets,
 } from 'storybook/internal/common';
 import { logger, prompt } from 'storybook/internal/node-logger';
 import {
-  collectAiSetupEvidence,
   ErrorCollector,
   getPrecedingUpgrade,
-  isTelemetryModuleEnabled,
   isTelemetryStateResolved,
   oneWayHash,
   onPayloadError,
@@ -18,10 +16,9 @@ import {
   telemetry,
 } from 'storybook/internal/telemetry';
 import type { EventType } from 'storybook/internal/telemetry';
-import type { CLIOptions } from 'storybook/internal/types';
+import type { CLIOptions, StorybookConfigRaw } from 'storybook/internal/types';
 
 import { StorybookError } from '../storybook-error.ts';
-import { dirname } from 'path';
 
 type TelemetryOptions = {
   cliOptions: CLIOptions;
@@ -29,6 +26,7 @@ type TelemetryOptions = {
   printError?: (err: any) => void;
   skipPrompt?: boolean;
   eventType?: EventType;
+  fallbackTelemetryState?: boolean;
 };
 
 const promptCrashReports = async () => {
@@ -167,35 +165,28 @@ export async function sendTelemetryError(
   }
 }
 
-export function isTelemetryEnabled(options: TelemetryOptions) {
-  return !options.cliOptions.disableTelemetry;
-}
-
-/**
- * Resolve telemetry state by loading presets from configDir to check core.disableTelemetry.
- * Used when run() completes without resolving telemetry state (e.g. CLI commands like
- * add/remove/doctor/upgrade/migrate that don't load presets themselves).
- */
-async function tryResolveTelemetryStateFromConfig(options: TelemetryOptions) {
-  const configDir = options.cliOptions.configDir || options.presetOptions?.configDir;
-
-  try {
-    const { mainConfig } = await getStorybookInfo(
-      configDir,
-      configDir ? dirname(configDir) : undefined
-    );
-
-    if (!mainConfig) {
-      // No config dir available — default to enabled
-      await setTelemetryEnabled(true);
-      return;
-    }
-
-    await setTelemetryEnabled(!mainConfig.core?.disableTelemetry);
-  } catch {
-    // If presets fail to load, conservatively disable
-    await setTelemetryEnabled(false);
+async function resolveTelemetryState(options: TelemetryOptions) {
+  // 1. If telemetry is explicitly set via CLI options or env var, set and skip loading main config
+  if (options.cliOptions.disableTelemetry !== undefined) {
+    return await setTelemetryEnabled(!options.cliOptions.disableTelemetry);
   }
+
+  let mainConfig;
+  const configDir =
+    options.cliOptions.configDir ?? options.presetOptions?.configDir ?? '.storybook';
+  try {
+    mainConfig = (await loadMainConfig({ configDir })) as StorybookConfigRaw;
+  } catch {}
+
+  // 2. If main config succesfully loaded, set based on that
+  // (unset = enabled, true/false = disabled/enabled)
+  if (mainConfig) {
+    return await setTelemetryEnabled(!mainConfig?.core?.disableTelemetry);
+  }
+
+  // 3. If main config could not be loaded, set to fallback,
+  // which is usually disabled but can be enabled for certain commands (e.g. init)
+  await setTelemetryEnabled(options.fallbackTelemetryState ?? false);
 }
 
 export async function withTelemetry<T>(
@@ -203,8 +194,8 @@ export async function withTelemetry<T>(
   options: TelemetryOptions,
   run: () => Promise<T>
 ): Promise<T | undefined> {
-  if (!isTelemetryEnabled(options)) {
-    await setTelemetryEnabled(false);
+  if (!isTelemetryStateResolved()) {
+    await resolveTelemetryState(options);
   }
 
   let canceled = false;
@@ -229,25 +220,10 @@ export async function withTelemetry<T>(
 
   telemetry('boot', { eventType }, { stripMetadata: true });
 
-  // Fire-and-forget: don't await, don't block the command
-  const configDir = options.cliOptions.configDir || options.presetOptions?.configDir;
-  collectAiSetupEvidence(eventType, configDir);
-
   try {
     const result = await run();
-
-    // If run() completed but telemetry state was never resolved (e.g. CLI commands like
-    // add/remove/doctor that don't load presets themselves), load the config to resolve it.
-    if (!isTelemetryStateResolved()) {
-      await tryResolveTelemetryStateFromConfig(options);
-    }
-
     return result;
   } catch (error: any) {
-    if (!isTelemetryStateResolved()) {
-      await tryResolveTelemetryStateFromConfig(options);
-    }
-
     if (canceled) {
       return undefined;
     }

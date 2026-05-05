@@ -49,7 +49,7 @@ describe('getComponentInputsOutputs', () => {
 
   /* Commented out until we figure out how to handle the removal of ComponentFactoryResolver in Angular 22
   See https://github.com/angular/angular/releases/tag/v22.0.0-next.7
-  
+
   it('should return I/O', () => {
     @Component({
       template: '',

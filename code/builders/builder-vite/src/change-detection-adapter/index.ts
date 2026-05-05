@@ -34,22 +34,15 @@ export function createViteChangeDetectionAdapter(server: ViteDevServer): ChangeD
     },
 
     onFileChange(handler) {
+      const FORWARDED_EVENTS = new Set<FileChangeEvent['kind']>(['add', 'change', 'unlink']);
+      const isForwardedEvent = (name: string): name is FileChangeEvent['kind'] =>
+        FORWARDED_EVENTS.has(name as FileChangeEvent['kind']);
+
       const onAll = (eventName: string, path: string) => {
-        let kind: FileChangeEvent['kind'];
-        switch (eventName) {
-          case 'add':
-            kind = 'add';
-            break;
-          case 'change':
-            kind = 'change';
-            break;
-          case 'unlink':
-            kind = 'unlink';
-            break;
-          default:
-            return;
+        if (!isForwardedEvent(eventName)) {
+          return;
         }
-        handler({ kind, path: normalize(path) });
+        handler({ kind: eventName, path: normalize(path) });
       };
       server.watcher.on('all', onAll);
       return () => {

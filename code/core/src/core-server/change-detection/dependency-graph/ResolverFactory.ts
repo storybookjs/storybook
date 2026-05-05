@@ -57,8 +57,10 @@ class AliasNormalizer {
           this.warnedRegexAliases.add(p);
         }
         logger.warn(
-          `Change detection: ignored ${skippedRegex.length} regex alias(es) — oxc-resolver only supports literal string aliases. ` +
-            `Modules matched by [${skippedRegex.slice(0, 3).join(', ')}${skippedRegex.length > 3 ? ', …' : ''}] will be tracked as opaque-leaf.`
+          `Change detection: ignored ${skippedRegex.length} regex alias(es); related modules tracked as opaque-leaf.`
+        );
+        logger.debug(
+          `ChangeDetectionResolverFactory: skipped regex aliases [${skippedRegex.join(', ')}]`
         );
       } else {
         for (const pattern of skippedRegex) {

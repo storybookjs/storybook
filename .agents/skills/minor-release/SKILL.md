@@ -61,7 +61,7 @@ Do not include the `## X.Y.0` heading — the script adds that.
 
 The default format is:
 
-```
+```text
 > _Tagline phrase_
 
 Storybook X.Y [intro sentence]:
@@ -82,7 +82,7 @@ For releases with 7-8 highlights, a second group of bullets with its own intro s
 
 **10.3.0** — a typical release with a single highlight group:
 
-```
+```text
 > _Improved developer experience, AI-assisting tools, and broader ecosystem support_
 
 Storybook 10.3 contains hundreds of fixes and improvements including:
@@ -98,7 +98,7 @@ Storybook 10.3 contains hundreds of fixes and improvements including:
 
 **10.1.0** — a release with multiple highlight groups:
 
-```
+```text
 > _Easier to setup, more accessible to use_
 
 Storybook 10.1 focuses on two key improvements: installation and accessibility:
@@ -121,7 +121,7 @@ Finally, it contains two highly-requested experimental features:
 
 **10.0.0** — a major release with a more impactful intro (no `>` tagline, two-sentence intro):
 
-```
+```text
 Storybook 10 contains one breaking change: it's ESM-only. This simplifies our distribution and reduces install size by 29% while simultaneously unminifying dist code for easier debugging.
 It also includes features to level up your UI development, documentation, and testing workflows:
 

@@ -1,4 +1,4 @@
-import { join } from 'node:path';
+import { join } from 'pathe';
 
 import { ResolverFactory as OxcResolverFactory } from 'oxc-resolver';
 

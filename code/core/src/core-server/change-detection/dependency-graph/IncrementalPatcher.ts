@@ -99,9 +99,7 @@ export class IncrementalPatcher {
     if (event.kind === 'unlink') {
       const dependentsSet = new Set(this.reverseIndex.lookup(path).keys());
       this.graph.delete(path);
-      if (this.isStoryFile(path)) {
-        this.reverseIndex.removeStory(path);
-      }
+      this.reverseIndex.removeStory(path); // always call — no-op for non-stories
       // Re-walk every dependent story so transitive deps reachable only through `path`
       // are pruned.
       const storiesToWalk: string[] = [];
@@ -147,6 +145,7 @@ export class IncrementalPatcher {
   }
 
   private walkStory(storyRoot: string): Promise<void> {
+    this.cache.invalidate(storyRoot);
     return walkFromStory({
       storyRoot,
       registry: this.registry,

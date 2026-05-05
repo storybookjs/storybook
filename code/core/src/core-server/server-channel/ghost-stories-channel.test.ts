@@ -222,14 +222,6 @@ describe('ghostStoriesChannel', () => {
           runCssCheck: 'not-run',
           runUniqueErrorCount: 0,
           runPassedButEmptyRender: 0,
-          cumulativeTotal: 2,
-          cumulativePassed: 2,
-          cumulativeSuccessRate: 1,
-          cumulativeSuccessRateWithoutEmptyRender: 1,
-          cumulativeCategorizedErrors: expect.any(Object),
-          cumulativeCssCheck: 'not-run',
-          cumulativeUniqueErrorCount: 0,
-          cumulativePassedButEmptyRender: 0,
         },
       });
     });

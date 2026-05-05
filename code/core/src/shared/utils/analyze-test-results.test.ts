@@ -78,14 +78,6 @@ describe('analyze-test-results', () => {
         runUniqueErrorCount: 0,
         runCategorizedErrors: {},
         runCssCheck: 'not-run',
-        cumulativeTotal: 3,
-        cumulativePassed: 3,
-        cumulativePassedButEmptyRender: 0,
-        cumulativeSuccessRate: 1.0,
-        cumulativeSuccessRateWithoutEmptyRender: 1.0,
-        cumulativeUniqueErrorCount: 0,
-        cumulativeCategorizedErrors: {},
-        cumulativeCssCheck: 'not-run',
       });
     });
 
@@ -119,7 +111,7 @@ describe('analyze-test-results', () => {
       expect(analysis.runTotal).toBe(0);
       expect(analysis.runSuccessRate).toBe(0);
       expect(analysis.runSuccessRateWithoutEmptyRender).toBe(0);
-      expect(analysis.cumulativeTotal).toBe(0);
+      expect(analysis.cumulativeTotal).toBeUndefined();
     });
 
     it('should handle PENDING tests by not counting them as passed', () => {
@@ -134,16 +126,18 @@ describe('analyze-test-results', () => {
     });
 
     describe('cumulative stats', () => {
-      it('mirrors run stats when no cumulative results are provided', () => {
+      it('omits all cumulative fields when no cumulative results are provided', () => {
         const results: StoryTestResult[] = [
           { storyId: 's1', status: 'PASS' },
           { storyId: 's2', status: 'FAIL', error: 'oops' },
         ];
         const analysis = analyzeTestResults(results);
-        expect(analysis.cumulativeTotal).toBe(analysis.runTotal);
-        expect(analysis.cumulativePassed).toBe(analysis.runPassed);
-        expect(analysis.cumulativeSuccessRate).toBe(analysis.runSuccessRate);
-        expect(analysis.cumulativeUniqueErrorCount).toBe(analysis.runUniqueErrorCount);
+        expect(analysis.cumulativeTotal).toBeUndefined();
+        expect(analysis.cumulativePassed).toBeUndefined();
+        expect(analysis.cumulativeSuccessRate).toBeUndefined();
+        expect(analysis.cumulativeUniqueErrorCount).toBeUndefined();
+        expect(analysis.cumulativeCategorizedErrors).toBeUndefined();
+        expect(analysis.cumulativeCssCheck).toBeUndefined();
       });
 
       it('reports cumulative stats independently when provided', () => {

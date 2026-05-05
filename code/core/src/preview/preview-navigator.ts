@@ -45,6 +45,47 @@ export async function maybeSetupPreviewNavigator() {
   setupPreviewNavigator(index, currentEntryId);
 }
 
+export const createElementForNode = (node: BranchNode | LeafNode): HTMLElement => {
+  const li = document.createElement('li');
+
+  if ('entries' in node && 'title' in node) {
+    const branchNode = node as BranchNode;
+    li.className = 'sb-navigator-branch';
+
+    const details = document.createElement('details');
+    if (branchNode.isActive) details.open = true;
+
+    const summary = document.createElement('summary');
+    summary.className = 'sb-navigator-title';
+    summary.textContent = branchNode.title;
+
+    const ul = document.createElement('ul');
+    ul.className = 'sb-navigator-entries';
+    ul.setAttribute('aria-label', branchNode.title);
+
+    for (const child of Object.values(branchNode.entries)) {
+      ul.appendChild(createElementForNode(child));
+    }
+
+    details.appendChild(summary);
+    details.appendChild(ul);
+    li.appendChild(details);
+  } else {
+    const leafNode = node as LeafNode;
+    li.className = 'sb-navigator-story-item';
+
+    const a = document.createElement('a');
+    a.href = leafNode.href;
+    a.className = `sb-navigator-story-link${leafNode.isActive ? ' active' : ''}`;
+    a.setAttribute('aria-current', leafNode.isActive ? 'location' : 'false');
+    a.textContent = leafNode.name;
+
+    li.appendChild(a);
+  }
+
+  return li;
+};
+
 export const setupPreviewNavigator = async (index: StoryIndex, currentEntryId: string) => {
   const tree: BranchNode = { title: '', entries: {}, isActive: true };
   for (const entry of Object.values(index.entries)) {
@@ -76,47 +117,6 @@ export const setupPreviewNavigator = async (index: StoryIndex, currentEntryId: s
       isActive: currentEntryId === entry.id,
     };
   }
-
-  const createElementForNode = (node: BranchNode | LeafNode): HTMLElement => {
-    const li = document.createElement('li');
-
-    if ('entries' in node && 'title' in node) {
-      const branchNode = node as BranchNode;
-      li.className = 'sb-navigator-branch';
-
-      const details = document.createElement('details');
-      if (branchNode.isActive) details.open = true;
-
-      const summary = document.createElement('summary');
-      summary.className = 'sb-navigator-title';
-      summary.textContent = branchNode.title;
-
-      const ul = document.createElement('ul');
-      ul.className = 'sb-navigator-entries';
-      ul.setAttribute('aria-label', branchNode.title);
-
-      for (const child of Object.values(branchNode.entries)) {
-        ul.appendChild(createElementForNode(child));
-      }
-
-      details.appendChild(summary);
-      details.appendChild(ul);
-      li.appendChild(details);
-    } else {
-      const leafNode = node as LeafNode;
-      li.className = 'sb-navigator-story-item';
-
-      const a = document.createElement('a');
-      a.href = leafNode.href;
-      a.className = `sb-navigator-story-link${leafNode.isActive ? ' active' : ''}`;
-      a.setAttribute('aria-current', leafNode.isActive ? 'location' : 'false');
-      a.textContent = leafNode.name;
-
-      li.appendChild(a);
-    }
-
-    return li;
-  };
 
   const navList = document.createElement('ul');
   navList.className = 'sb-navigator-list';

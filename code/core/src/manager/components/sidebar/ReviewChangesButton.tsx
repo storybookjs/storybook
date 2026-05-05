@@ -66,12 +66,8 @@ const ReviewChangesButtonInner = ({
     if (!index) {
       return { newCount: 0, modifiedCount: 0 };
     }
-    const contextualIncludedStatuses = includedStatusFilters.filter(
-      (s) => s !== NEW && s !== MOD
-    );
-    const contextualExcludedStatuses = excludedStatusFilters.filter(
-      (s) => s !== NEW && s !== MOD
-    );
+    const contextualIncludedStatuses = includedStatusFilters.filter((s) => s !== NEW && s !== MOD);
+    const contextualExcludedStatuses = excludedStatusFilters.filter((s) => s !== NEW && s !== MOD);
     const tagFilterFn = computeTagsFilterFn(includedTagFilters, excludedTagFilters);
     const statusFilterFn = computeStatusFilterFn(
       contextualIncludedStatuses,

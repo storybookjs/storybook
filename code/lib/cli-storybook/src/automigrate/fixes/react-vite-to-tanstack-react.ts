@@ -344,7 +344,8 @@ export const reactViteToTanstackReact: Fix<ReactViteToTanstackReactOptions> = {
           ignore: ['**/node_modules/**', '**/dist/**'],
         })
       : [];
-    const allFiles = [...storiesPaths, ...configFiles].filter(Boolean) as string[];
+    const allFiles = [...storiesPaths, ...configFiles, previewConfigPath]
+      .filter(Boolean) as string[];
 
     const transformErrors = await transformImportFiles(
       allFiles,

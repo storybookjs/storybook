@@ -21,8 +21,6 @@ import type {
   StorybookConfigRaw,
 } from 'storybook/internal/types';
 
-import { analyze } from '@storybook/docs-mdx';
-
 import * as find from 'empathic/find';
 import picocolors from 'picocolors';
 // eslint-disable-next-line depend/ban-dependencies
@@ -37,6 +35,7 @@ import { sortStoriesV7 } from '../../preview-api/modules/store/sortStories.ts';
 import { Tag } from '../../shared/constants/tags.ts';
 import { IndexingError, MultipleIndexingError } from './IndexingError.ts';
 import { autoName } from './autoName.ts';
+import { analyzeMdx } from './analyze-mdx.ts';
 import { type IndexStatsSummary, addStats } from './summarizeStats.ts';
 
 // Extended type to keep track of the csf meta id so we know the component id when referencing docs in `extractDocs`
@@ -528,7 +527,7 @@ export class StoryIndexGenerator {
       const importPath = slash(normalizedPath);
 
       const content = await readFile(absolutePath, { encoding: 'utf8' });
-      const result = await analyze(content);
+      const result = await analyzeMdx(content);
 
       // Templates are not indexed
       if (result.isTemplate) {

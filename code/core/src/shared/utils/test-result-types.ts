@@ -61,15 +61,16 @@ export interface TestRunAnalysis {
 
   /**
    * Stats accumulated across runs: for every story we've ever seen, we
-   * keep the most recent outcome (by timestamp). When no history is
-   * available these mirror the `run*` fields.
+   * keep the most recent outcome (by timestamp). Only emitted by the
+   * agent self-healing flow, which is the only consumer that persists
+   * a per-story history in the Storybook cache.
    */
-  cumulativeTotal: number;
-  cumulativePassed: number;
-  cumulativePassedButEmptyRender: number;
-  cumulativeSuccessRate: number;
-  cumulativeSuccessRateWithoutEmptyRender: number;
-  cumulativeUniqueErrorCount: number;
-  cumulativeCategorizedErrors: Record<string, CategorizedError>;
-  cumulativeCssCheck: CssCheckOutcome;
+  cumulativeTotal?: number;
+  cumulativePassed?: number;
+  cumulativePassedButEmptyRender?: number;
+  cumulativeSuccessRate?: number;
+  cumulativeSuccessRateWithoutEmptyRender?: number;
+  cumulativeUniqueErrorCount?: number;
+  cumulativeCategorizedErrors?: Record<string, CategorizedError>;
+  cumulativeCssCheck?: CssCheckOutcome;
 }

@@ -95,6 +95,9 @@ node scripts/eval/run-batch.ts --prompt pattern-copy-play --yes --agents codex -
 # Restrict to specific projects (works with both agents)
 node scripts/eval/run-batch.ts --prompt pattern-copy-play --yes --projects mealdrop,edgy,echarts
 
+# Fan out across multiple prompts in one batch
+node scripts/eval/run-batch.ts --prompts pattern-copy-play,optimized-tests --yes --repetitions 2
+
 # Targeted matrix: medium + high effort, 3 projects, 2 reps each (12 Claude trials)
 node scripts/eval/run-batch.ts --prompt pattern-copy-play --yes \
   --agents claude --claude-efforts medium,high \

@@ -88,6 +88,8 @@ export interface RunBatchOptions {
   batchTimestamp?: string;
   /** Required when `descriptors` are not provided — prompt variant name from the CLI registry. */
   prompt?: string;
+  /** Optional list of prompts to fan out across in a single batch (in addition to or in place of `prompt`). */
+  prompts?: string[];
   /** Skip interactive confirmation (large API / token usage). */
   yes?: boolean;
   agents?: (typeof BATCH_AGENT_IDS)[number][];
@@ -153,7 +155,7 @@ export async function runBatch(
   const descriptors =
     options.descriptors ??
     buildBatchRunDescriptors({
-      prompt: requireBatchPrompt(options),
+      prompts: requireBatchPrompts(options),
       agents: options.agents,
       claudeEfforts: options.claudeEfforts,
       claudeEffort: options.claudeEffort,
@@ -324,7 +326,8 @@ export function buildBatchVariants(
 }
 
 export function buildBatchRunDescriptors(options: {
-  prompt: string;
+  prompt?: string;
+  prompts?: string[];
   agents?: RunBatchOptions['agents'];
   claudeEfforts?: RunBatchOptions['claudeEfforts'];
   claudeEffort?: RunBatchOptions['claudeEffort'];
@@ -341,6 +344,7 @@ export function buildBatchRunDescriptors(options: {
   }
 
   const projects = resolveBatchProjects(options.projects);
+  const prompts = resolveBatchPrompts({ prompt: options.prompt, prompts: options.prompts });
 
   const descriptors: BatchRunDescriptor[] = [];
   const variants =
@@ -353,14 +357,56 @@ export function buildBatchRunDescriptors(options: {
 
   const totalRepetitions = options.repetitions ?? BATCH_REPETITIONS;
   for (let repetition = 1; repetition <= totalRepetitions; repetition += 1) {
-    for (const variant of variants) {
-      for (const project of projects) {
-        descriptors.push(createBatchRunDescriptor(project, variant, repetition, options.prompt));
+    for (const prompt of prompts) {
+      for (const variant of variants) {
+        for (const project of projects) {
+          descriptors.push(createBatchRunDescriptor(project, variant, repetition, prompt));
+        }
       }
     }
   }
 
   return descriptors;
+}
+
+function resolveBatchPrompts(options: { prompt?: string; prompts?: string[] }): string[] {
+  const merged = [
+    ...(options.prompts ?? []),
+    ...(options.prompt != null ? [options.prompt] : []),
+  ]
+    .map((value) => value.trim())
+    .filter(Boolean);
+
+  if (merged.length === 0) {
+    throw new Error(
+      'runBatch: pass `prompt` or `prompts` (prompt template basename) or provide `descriptors` explicitly.'
+    );
+  }
+
+  const available = listPrompts();
+  const lookup = new Map(available.map((name) => [name.toLowerCase(), name]));
+
+  const seen = new Set<string>();
+  const ordered: string[] = [];
+  const unknown: string[] = [];
+  for (const value of merged) {
+    const canonical = lookup.get(value.toLowerCase());
+    if (!canonical) {
+      unknown.push(value);
+      continue;
+    }
+    if (seen.has(canonical)) continue;
+    seen.add(canonical);
+    ordered.push(canonical);
+  }
+
+  if (unknown.length > 0) {
+    throw new Error(
+      `Unknown prompt(s): ${unknown.join(', ')}. Available prompts: ${available.join(', ')}`
+    );
+  }
+
+  return ordered;
 }
 
 function resolveBatchProjects(projects?: RunBatchOptions['projects']) {
@@ -386,23 +432,8 @@ function resolveBatchProjects(projects?: RunBatchOptions['projects']) {
   return ordered;
 }
 
-function requireBatchPrompt(options: RunBatchOptions): string {
-  if (options.prompt == null || options.prompt.trim() === '') {
-    throw new Error(
-      'runBatch: pass `prompt` (prompt template basename) or provide `descriptors` explicitly.'
-    );
-  }
-
-  const prompt = options.prompt.trim();
-  const available = listPrompts();
-
-  const canonical = available.find((name) => name.toLowerCase() === prompt.toLowerCase());
-
-  if (!canonical) {
-    throw new Error(`Unknown prompt "${prompt}". Available prompts: ${available.join(', ')}`);
-  }
-
-  return canonical;
+function requireBatchPrompts(options: RunBatchOptions): string[] {
+  return resolveBatchPrompts({ prompt: options.prompt, prompts: options.prompts });
 }
 
 async function runBatchDescriptor(
@@ -512,24 +543,34 @@ function defaultSpawn(command: string, args: string[], options: SpawnOptions) {
   return spawnChild(command, args, options);
 }
 
-const runBatchArgsSchema = z.object({
-  concurrency: z.coerce.number().int().positive().optional(),
-  prompt: z.string().min(1),
-  yes: z.boolean().optional(),
-  agents: z.array(z.enum(BATCH_AGENT_IDS)).nonempty().optional(),
-  claudeEfforts: z.array(z.enum(CLAUDE_EFFORTS)).nonempty().optional(),
-  claudeEffort: z.enum(CLAUDE_EFFORTS).optional(),
-  codexEffort: z.enum(CODEX_EFFORTS).optional(),
-  projects: z.array(z.string().min(1)).nonempty().optional(),
-  repetitions: z.coerce.number().int().positive().optional(),
-});
+const runBatchArgsSchema = z
+  .object({
+    concurrency: z.coerce.number().int().positive().optional(),
+    prompt: z.string().min(1).optional(),
+    prompts: z.array(z.string().min(1)).nonempty().optional(),
+    yes: z.boolean().optional(),
+    agents: z.array(z.enum(BATCH_AGENT_IDS)).nonempty().optional(),
+    claudeEfforts: z.array(z.enum(CLAUDE_EFFORTS)).nonempty().optional(),
+    claudeEffort: z.enum(CLAUDE_EFFORTS).optional(),
+    codexEffort: z.enum(CODEX_EFFORTS).optional(),
+    projects: z.array(z.string().min(1)).nonempty().optional(),
+    repetitions: z.coerce.number().int().positive().optional(),
+  })
+  .refine((value) => value.prompt != null || value.prompts != null, {
+    message: 'pass --prompt or --prompts',
+    path: ['prompt'],
+  });
 
 const runBatchOptions = {
   concurrency: { type: 'string' as const, description: 'Max concurrent runs (default: 8)' },
   prompt: {
     type: 'string' as const,
     description:
-      'Prompt variant name (required; registered in code/lib/cli-storybook/src/ai/setup-prompts/)',
+      'Prompt variant name (required unless --prompts is set; registered in code/lib/cli-storybook/src/ai/setup-prompts/)',
+  },
+  prompts: {
+    type: 'string' as const,
+    description: 'Comma-separated list of prompt variant names to fan out across',
   },
   agents: {
     type: 'string' as const,
@@ -568,6 +609,7 @@ export function parseRunBatchArgs(
       | 'codexEffort'
       | 'concurrency'
       | 'prompt'
+      | 'prompts'
       | 'projects'
       | 'yes'
       | 'repetitions'
@@ -586,6 +628,7 @@ export function parseRunBatchArgs(
   const parsed = runBatchArgsSchema.safeParse({
     concurrency: values.concurrency,
     prompt: values.prompt,
+    prompts: parseList(values.prompts),
     yes: values.yes,
     agents: parseAgentArgs(values.agents),
     claudeEfforts: parseClaudeEfforts(values['claude-efforts']),
@@ -628,15 +671,18 @@ function parseClaudeEfforts(value?: string) {
 }
 
 function parseProjects(value?: string) {
+  return parseList(value);
+}
+
+function parseList(value?: string) {
   if (value == null) {
     return undefined;
   }
-
-  const projects = value
+  const items = value
     .split(',')
-    .map((project) => project.trim())
+    .map((item) => item.trim())
     .filter(Boolean);
-  return projects.length > 0 ? projects : undefined;
+  return items.length > 0 ? items : undefined;
 }
 
 function resolveBatchAgents(agents?: RunBatchOptions['agents']) {

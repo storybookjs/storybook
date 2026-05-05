@@ -235,7 +235,7 @@ describe('initializeChecklist', () => {
       expect(mockStore.getState().aiOptIn).toBe(true);
     });
 
-    it('keeps aiOptIn=false when no flag is cached', async () => {
+    it('keeps aiOptIn=false when cache does not have the flag', async () => {
       const { get: getEventCacheEntry } = await import('../../telemetry/event-cache.ts');
       vi.mocked(getEventCacheEntry).mockResolvedValue(undefined);
 

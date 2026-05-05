@@ -152,6 +152,7 @@ describe('react-vite-to-tanstack-react', () => {
         '@tanstack/react-router': '^1.0.0',
       });
 
+      // eslint-disable-next-line depend/ban-dependencies
       const { globby } = await import('globby');
       vi.mocked(globby).mockResolvedValueOnce([
         '/project/.storybook/preview.tsx',
@@ -187,7 +188,7 @@ describe('react-vite-to-tanstack-react', () => {
         previewConfigPath: '/project/.storybook/preview.tsx',
         configDir: '/project/.storybook',
         storiesPaths: [],
-      } as CheckOptions);
+      } as unknown as CheckOptions);
 
       expect(result?.hasTanstackRouterDecorator).toBe(true);
     });

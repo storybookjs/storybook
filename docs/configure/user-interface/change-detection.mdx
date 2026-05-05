@@ -123,6 +123,7 @@ Set the `STORYBOOK_CHANGE_DETECTION_DEBUG` environment variable to dump a JSON s
 - `STORYBOOK_CHANGE_DETECTION_DEBUG=/path/to/output.json` — writes to the specified path
 
 The snapshot includes:
+
 - All story-to-dependency edges tracked at startup
 - The reverse index (which stories depend on each dep file, with BFS depth)
 - A barrel resolution trace showing which named imports were resolved to which source files

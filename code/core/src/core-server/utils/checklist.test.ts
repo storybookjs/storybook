@@ -235,20 +235,7 @@ describe('initializeChecklist', () => {
       expect(mockStore.getState().aiOptIn).toBe(true);
     });
 
-    it('falls back to the telemetry event cache for backward compatibility', async () => {
-      const { get: getEventCacheEntry } = await import('../../telemetry/event-cache.ts');
-      vi.mocked(getEventCacheEntry).mockImplementation(
-        mockEventCache({ 'ai-init-opt-in': aiInitOptInCacheEntry })
-      );
-
-      const { initializeChecklist } = await import('./checklist.ts');
-      await initializeChecklist();
-      await vi.advanceTimersByTimeAsync(0);
-
-      expect(mockStore.getState().aiOptIn).toBe(true);
-    });
-
-    it('keeps aiOptIn=false when neither cache has the flag', async () => {
+    it('keeps aiOptIn=false when cache does not have the flag', async () => {
       const { get: getEventCacheEntry } = await import('../../telemetry/event-cache.ts');
       vi.mocked(getEventCacheEntry).mockResolvedValue(undefined);
 

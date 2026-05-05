@@ -1,4 +1,14 @@
 if [ -z "$SKIP_STORYBOOK_GIT_HOOKS" ]; then
+#!/bin/bash
+if [ -z "$SKIP_STORYBOOK_GIT_HOOKS" ]; then
+  upstream_ref="$(git rev-parse --abbrev-ref --symbolic-full-name '@{u}' 2>/dev/null || true)"
+  case "$upstream_ref" in
+    */main|*/next)
+      echo "❌ Push is blocked: current branch tracks $upstream_ref. Open a PR instead." >&2
+      exit 1
+      ;;
+  esac
+
   while read -r local_ref local_oid remote_ref remote_oid; do
     case "$remote_ref" in
       refs/heads/next|refs/heads/main)
@@ -6,5 +16,7 @@ if [ -z "$SKIP_STORYBOOK_GIT_HOOKS" ]; then
         exit 1
         ;;
     esac
+  done
+fi
   done
 fi

@@ -16,10 +16,11 @@ import { prepareSandbox } from '../prepare-sandbox.ts';
  * Initialise a git repo with an initial commit in the sandbox so the Storybook dev server can
  * use change detection from the moment it starts (git diff requires at least one commit).
  *
- * Scoped to the change-detection E2E test suite so we don't leave stray commits behind in
- * sandboxes consumed by Chromatic / publishing flows that expect a clean working tree.
+ * Idempotent — skips `git init` if `.git` already exists, skips the initial commit if HEAD
+ * already points to one. Chromatic and publishing flows run in dedicated jobs with their own
+ * checkout, so initialising git inside the dev sandbox does not affect them.
  */
-function initGitForChangeDetectionE2E(sandboxDir: string): void {
+function initGitForChangeDetection(sandboxDir: string): void {
   const gitEnv = {
     ...process.env,
     GIT_AUTHOR_NAME: 'Storybook Sandbox',
@@ -63,8 +64,8 @@ export const dev: Task = {
   async run({ sandboxDir, key, selectedTask }, { dryRun, debug, link }) {
     await prepareSandbox({ key, link });
 
-    if (selectedTask === 'e2e-tests-dev' && !dryRun) {
-      initGitForChangeDetectionE2E(sandboxDir);
+    if (!dryRun) {
+      initGitForChangeDetection(sandboxDir);
     }
 
     const controller = new AbortController();

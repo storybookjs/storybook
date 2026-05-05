@@ -117,17 +117,17 @@ function summarizeResults(results: StoryTestResult[]): ResultSummary {
  * rates, empty render detection, and categorized errors.
  *
  * @param results Story results from the current run.
- * @param cumulativeResults Optional aggregated results across all runs (latest outcome per story).
- *   When omitted, cumulative stats mirror the run stats.
+ * @param cumulativeResults Optional aggregated results across runs (latest outcome per story).
+ *   Only the agent self-healing flow tracks history and passes this; when omitted the returned
+ *   analysis only contains `run*` fields and no `cumulative*` fields are emitted.
  */
 export function analyzeTestResults(
   results: StoryTestResult[],
   cumulativeResults?: StoryTestResult[]
 ): TestRunAnalysis {
   const run = summarizeResults(results);
-  const cumulative = cumulativeResults ? summarizeResults(cumulativeResults) : run;
 
-  return {
+  const analysis: TestRunAnalysis = {
     runTotal: run.total,
     runPassed: run.passed,
     runPassedButEmptyRender: run.passedButEmptyRender,
@@ -136,14 +136,19 @@ export function analyzeTestResults(
     runUniqueErrorCount: run.uniqueErrorCount,
     runCategorizedErrors: run.categorizedErrors,
     runCssCheck: run.cssCheck,
-
-    cumulativeTotal: cumulative.total,
-    cumulativePassed: cumulative.passed,
-    cumulativePassedButEmptyRender: cumulative.passedButEmptyRender,
-    cumulativeSuccessRate: cumulative.successRate,
-    cumulativeSuccessRateWithoutEmptyRender: cumulative.successRateWithoutEmptyRender,
-    cumulativeUniqueErrorCount: cumulative.uniqueErrorCount,
-    cumulativeCategorizedErrors: cumulative.categorizedErrors,
-    cumulativeCssCheck: cumulative.cssCheck,
   };
+
+  if (cumulativeResults) {
+    const cumulative = summarizeResults(cumulativeResults);
+    analysis.cumulativeTotal = cumulative.total;
+    analysis.cumulativePassed = cumulative.passed;
+    analysis.cumulativePassedButEmptyRender = cumulative.passedButEmptyRender;
+    analysis.cumulativeSuccessRate = cumulative.successRate;
+    analysis.cumulativeSuccessRateWithoutEmptyRender = cumulative.successRateWithoutEmptyRender;
+    analysis.cumulativeUniqueErrorCount = cumulative.uniqueErrorCount;
+    analysis.cumulativeCategorizedErrors = cumulative.categorizedErrors;
+    analysis.cumulativeCssCheck = cumulative.cssCheck;
+  }
+
+  return analysis;
 }

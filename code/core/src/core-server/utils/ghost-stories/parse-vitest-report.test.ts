@@ -50,14 +50,6 @@ describe('parse-vitest-report', () => {
         runUniqueErrorCount: 0,
         runCategorizedErrors: {},
         runCssCheck: 'not-run',
-        cumulativeTotal: 3,
-        cumulativePassed: 3,
-        cumulativePassedButEmptyRender: 0,
-        cumulativeSuccessRate: 1.0,
-        cumulativeSuccessRateWithoutEmptyRender: 1.0,
-        cumulativeUniqueErrorCount: 0,
-        cumulativeCategorizedErrors: {},
-        cumulativeCssCheck: 'not-run',
       });
     });
 

@@ -464,8 +464,15 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
 
       if (isTelemetryModuleEnabled()) {
         // When an agent is running vitest via CLI, inject a reporter that sends
-        // detailed test result telemetry (pass/fail, error analysis, empty renders)
-        if (agent && withinAgenticSetupSession) {
+        // detailed test result telemetry (pass/fail, error analysis, empty renders).
+        //
+        // STORYBOOK_INTERNAL_TEST_RUN is set by the dev server when it spawns
+        // vitest internally (ghost-stories, ai-setup-final-scoring). Those runs
+        // are not part of the agent's iterative self-healing loop, so we skip
+        // installing the reporter to avoid emitting `ai-setup-self-healing-scoring`
+        // events whose results would misleadingly attribute ghost-stories /
+        // final-scoring outcomes to the self-healing loop.
+        if (agent && withinAgenticSetupSession && !process.env.STORYBOOK_INTERNAL_TEST_RUN) {
           context.vitest.config.reporters.push(
             new AgentTelemetryReporter({
               configDir: finalOptions.configDir,

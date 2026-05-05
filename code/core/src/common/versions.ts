@@ -37,6 +37,7 @@ export default {
   '@storybook/preset-server-webpack': '10.4.0-alpha.16',
   '@storybook/html': '10.4.0-alpha.16',
   '@storybook/preact': '10.4.0-alpha.16',
+  '@storybook/tanstack-react': '10.4.0-alpha.16',
   '@storybook/react': '10.4.0-alpha.16',
   '@storybook/server': '10.4.0-alpha.16',
   '@storybook/svelte': '10.4.0-alpha.16',

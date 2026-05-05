@@ -8,6 +8,8 @@ import { describe, expect, it } from 'vitest';
 
 import { generateReactNativeEntrypoint, getEntrypointTemplatePath } from './generateEntrypoint.ts';
 
+const normalizePath = (filePath: string) => filePath.split(path.sep).join('/');
+
 describe('generateReactNativeEntrypoint', () => {
   it('resolves Expo template path when expo variant is requested', () => {
     const templatePath = getEntrypointTemplatePath('expo');
@@ -26,7 +28,7 @@ describe('generateReactNativeEntrypoint', () => {
       const outputPath = path.join(cwd, '.rnstorybook', 'index.ts');
       const output = await readFile(outputPath, 'utf-8');
 
-      expect(path.relative(cwd, result.targetPath)).toMatchInlineSnapshot(
+      expect(normalizePath(path.relative(cwd, result.targetPath))).toMatchInlineSnapshot(
         `".rnstorybook/index.ts"`
       );
       expect(output).toMatchInlineSnapshot(`
@@ -70,7 +72,7 @@ describe('generateReactNativeEntrypoint', () => {
       const outputPath = path.join(cwd, '.rnstorybook', 'index.js');
       const output = await readFile(outputPath, 'utf-8');
 
-      expect(path.relative(cwd, result.targetPath)).toMatchInlineSnapshot(
+      expect(normalizePath(path.relative(cwd, result.targetPath))).toMatchInlineSnapshot(
         `".rnstorybook/index.js"`
       );
       expect(output).toMatchInlineSnapshot(`
@@ -115,7 +117,7 @@ describe('generateReactNativeEntrypoint', () => {
       const outputPath = path.join(cwd, '.rnstorybook', 'index.ts');
       const output = await readFile(outputPath, 'utf-8');
 
-      expect(path.relative(cwd, result.targetPath)).toMatchInlineSnapshot(
+      expect(normalizePath(path.relative(cwd, result.targetPath))).toMatchInlineSnapshot(
         `".rnstorybook/index.ts"`
       );
       expect(output).toMatchInlineSnapshot(`

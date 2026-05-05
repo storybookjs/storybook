@@ -1,11 +1,11 @@
-```shell renderer="common" language="js" packageManager="npm"
+```shell renderer="common" packageManager="npm"
 npm run release
 ```
 
-```shell renderer="common" language="js" packageManager="pnpm"
+```shell renderer="common" packageManager="pnpm"
 pnpm run release
 ```
 
-```shell renderer="common" language="js" packageManager="yarn"
+```shell renderer="common" packageManager="yarn"
 yarn release
 ```

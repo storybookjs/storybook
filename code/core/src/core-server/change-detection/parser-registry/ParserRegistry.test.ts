@@ -110,7 +110,7 @@ describe('ParserRegistry', () => {
     const edges = await registry.parse('/tmp/component.sfc', 'ignored-by-plugin');
 
     expect(edges).toEqual([
-      { specifier: 'y', kind: 'static', importedNames: ['default'] },
+      { specifier: 'y', kind: 'static', importedNames: new Set(['default']) },
       { specifier: 'b', kind: 'static', importedNames: null },
     ]);
     expect(observedEdges).toEqual(edges);

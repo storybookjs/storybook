@@ -24,7 +24,9 @@ describe('oxcImportParser', () => {
       noopContext
     );
 
-    expect(edges).toEqual([{ specifier: 'y', kind: 'static', importedNames: ['default'] }]);
+    expect(edges).toEqual([
+      { specifier: 'y', kind: 'static', importedNames: new Set(['default']) },
+    ]);
   });
 
   it('skips a type-only `import type x from "y"`', async () => {
@@ -124,7 +126,9 @@ describe('oxcImportParser', () => {
       noopContext
     );
 
-    expect(edges).toEqual([{ specifier: 'react', kind: 'static', importedNames: ['default'] }]);
+    expect(edges).toEqual([
+      { specifier: 'react', kind: 'static', importedNames: new Set(['default']) },
+    ]);
   });
 
   it('parses `.mjs` and `.cjs` sources without error', async () => {
@@ -137,7 +141,7 @@ describe('oxcImportParser', () => {
       noopContext
     );
 
-    expect(mjs).toEqual([{ specifier: 'y', kind: 'static', importedNames: ['default'] }]);
+    expect(mjs).toEqual([{ specifier: 'y', kind: 'static', importedNames: new Set(['default']) }]);
     expect(cjs.filter((e) => e.kind === 'require')).toEqual([
       { specifier: 'y', kind: 'require', importedNames: null },
     ]);

@@ -139,7 +139,7 @@ export class ParseResolveCache {
         // the source files of the specific symbols used.  This prevents stories
         // that import only `Button` from being marked as related when
         // `Breadcrumb` (also exported by the same barrel) changes.
-        if (edge.importedNames !== null && edge.importedNames.length > 0) {
+        if (edge.importedNames !== null && edge.importedNames.size > 0) {
           const { sources, barrels, needBarrel } = await this.followBarrel(
             normalised,
             edge.importedNames
@@ -148,7 +148,7 @@ export class ParseResolveCache {
             from: filePath,
             specifier: edge.specifier,
             barrel: normalised,
-            names: edge.importedNames,
+            names: Array.from(edge.importedNames),
             resolved: Array.from(sources),
             needBarrel,
           });
@@ -180,11 +180,11 @@ export class ParseResolveCache {
    */
   private async followBarrel(
     barrelPath: string,
-    requestedNames: string[]
+    requestedNames: Set<string>
   ): Promise<{ sources: Set<string>; barrels: Set<string>; needBarrel: boolean }> {
     const barrels = new Set<string>();
     const results = await Promise.all(
-      requestedNames.map((name) => this.followName(barrelPath, name, new Set(), 0, barrels))
+      Array.from(requestedNames, (name) => this.followName(barrelPath, name, new Set(), 0, barrels))
     );
     const sources = new Set<string>();
     let needBarrel = false;

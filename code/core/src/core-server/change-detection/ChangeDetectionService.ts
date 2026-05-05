@@ -463,8 +463,14 @@ export class ChangeDetectionService {
       timestamp: new Date().toISOString(),
       projectRoot,
       workspaceRoots: Array.from(workspaceRoots).sort(),
-      storyFiles: graph.size,
-      trackedDeps: reverseIndex.asMap().size,
+      // `graph` is keyed by every walked node (story roots + their transitive deps),
+      // and `reverseIndex` records each story root at depth 0 alongside real deps —
+      // so `graph.size` / `reverseIndex.asMap().size` over-report story and dep totals.
+      // Report `storyFiles` from the authoritative source-of-truth set, plus the raw
+      // node/entry counts under unambiguous names for diagnostics.
+      storyFiles: this.storyFiles.size,
+      graphNodes: graph.size,
+      reverseIndexEntries: reverseIndex.asMap().size,
       graph: graphObj,
       reverseIndex: reverseObj,
       // Each entry records one named-import barrel lookup: which names were requested,

@@ -75,7 +75,9 @@ describe('ParseResolveCache — multi-hop barrel following', () => {
     const story = '/repo/story.tsx';
 
     const cache = makeCache({
-      edges: new Map([[story, [{ specifier: '@ui', importedNames: ['Link'], kind: 'static' }]]]),
+      edges: new Map([
+        [story, [{ specifier: '@ui', importedNames: new Set(['Link']), kind: 'static' }]],
+      ]),
       resolutions: new Map([
         [`${story}::@ui`, barrelA],
         [`${barrelA}::./Link`, barrelB],
@@ -124,7 +126,9 @@ describe('ParseResolveCache — multi-hop barrel following', () => {
     const story = '/repo/story.tsx';
 
     const cache = makeCache({
-      edges: new Map([[story, [{ specifier: '@ui', importedNames: ['Link'], kind: 'static' }]]]),
+      edges: new Map([
+        [story, [{ specifier: '@ui', importedNames: new Set(['Link']), kind: 'static' }]],
+      ]),
       resolutions: new Map([
         [`${story}::@ui`, barrelA],
         [`${barrelA}::./Link`, barrelB],
@@ -169,7 +173,7 @@ describe('ParseResolveCache — multi-hop barrel following', () => {
 
     const cache = makeCache({
       edges: new Map([
-        [story, [{ specifier: '@ui', importedNames: ['NonExistent'], kind: 'static' }]],
+        [story, [{ specifier: '@ui', importedNames: new Set(['NonExistent']), kind: 'static' }]],
       ]),
       resolutions: new Map([[`${story}::@ui`, barrelA]]),
       barrelInfos: new Map([
@@ -194,7 +198,9 @@ describe('ParseResolveCache — multi-hop barrel following', () => {
     const story = '/repo/story.tsx';
 
     const cache = makeCache({
-      edges: new Map([[story, [{ specifier: '@ui', importedNames: ['Foo'], kind: 'static' }]]]),
+      edges: new Map([
+        [story, [{ specifier: '@ui', importedNames: new Set(['Foo']), kind: 'static' }]],
+      ]),
       resolutions: new Map([
         [`${story}::@ui`, barrelA],
         [`${barrelA}::../b`, barrelB],
@@ -223,7 +229,10 @@ describe('ParseResolveCache — multi-hop barrel following', () => {
 
     const cache = makeCache({
       edges: new Map([
-        [story, [{ specifier: '@ui', importedNames: ['Link', 'ButtonType'], kind: 'static' }]],
+        [
+          story,
+          [{ specifier: '@ui', importedNames: new Set(['Link', 'ButtonType']), kind: 'static' }],
+        ],
       ]),
       resolutions: new Map([
         [`${story}::@ui`, barrel],
@@ -273,7 +282,9 @@ describe('ParseResolveCache — multi-hop barrel following', () => {
     resolutions.set(`${barrels[barrels.length - 1]}::./Foo.tsx`, '/repo/lib/Foo.tsx');
 
     const cache = makeCache({
-      edges: new Map([[story, [{ specifier: '@ui', importedNames: ['Foo'], kind: 'static' }]]]),
+      edges: new Map([
+        [story, [{ specifier: '@ui', importedNames: new Set(['Foo']), kind: 'static' }]],
+      ]),
       resolutions,
       barrelInfos,
     });

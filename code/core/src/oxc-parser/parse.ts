@@ -55,9 +55,11 @@ export async function oxcParse(filePath: string, source: string): Promise<Import
     const newNames = extractImportedNames(staticImport.entries);
     const existing = staticImportEdges.get(key);
     if (existing) {
-      // Merge: null (namespace/side-effect) wins; otherwise union the name lists.
+      // Merge: null (namespace/side-effect) wins; otherwise union the name sets.
       if (existing.importedNames !== null && newNames !== null) {
-        existing.importedNames = [...existing.importedNames, ...newNames];
+        for (const name of newNames) {
+          existing.importedNames.add(name);
+        }
       } else {
         existing.importedNames = null;
       }
@@ -151,11 +153,11 @@ function extractLiteralFromSource(source: string, start: number, end: number): s
  * or when no runtime names can be determined; otherwise returns the array of names as
  * they appear in the source module (before any `as` rename).
  */
-function extractImportedNames(entries: StaticImportEntry[]): string[] | null {
+function extractImportedNames(entries: StaticImportEntry[]): Set<string> | null {
   if (entries.length === 0) {
     return null; // side-effect: import 'mod'
   }
-  const names: string[] = [];
+  const names = new Set<string>();
   for (const entry of entries) {
     if (entry.isType) {
       continue;
@@ -165,12 +167,12 @@ function extractImportedNames(entries: StaticImportEntry[]): string[] | null {
       return null; // import * as ns — cannot narrow
     }
     if (kind === 'Default') {
-      names.push('default');
+      names.add('default');
     } else if (kind === 'Name' && name) {
-      names.push(name);
+      names.add(name);
     }
   }
-  return names.length > 0 ? names : null;
+  return names.size > 0 ? names : null;
 }
 
 /**

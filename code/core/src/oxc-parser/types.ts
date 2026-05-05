@@ -8,17 +8,20 @@ export interface ImportEdge {
   specifier: string;
   kind: 'static' | 'dynamic' | 'require';
   /**
-   * For static named imports (`import { Foo, Bar } from 'mod'`) the list of names as they
+   * For static named imports (`import { Foo, Bar } from 'mod'`) the set of names as they
    * appear in the source module (i.e. before any `as` rename). `'default'` is included for
    * default imports (`import X from 'mod'`). `null` for side-effect imports, namespace
    * imports (`import * as ns`), dynamic imports, and `require()` calls.
+   *
+   * A Set rather than an array because duplicate names carry no extra information and the
+   * downstream barrel-follower only ever iterates the unique names.
    *
    * Used by the change-detection barrel-follower to short-circuit through re-export barrels
    * and connect a story directly to the source files of the specific symbols it needs,
    * preventing unrelated stories from being marked as related when a single component in a
    * large barrel changes.
    */
-  importedNames: string[] | null;
+  importedNames: Set<string> | null;
 }
 
 /**

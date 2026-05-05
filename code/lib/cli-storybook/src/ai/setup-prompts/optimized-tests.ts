@@ -26,7 +26,8 @@ import {
 } from './partials/rules.ts';
 
 export function instructions(projectInfo: ProjectInfo): string {
-  const { configDir, language, packageManager, packageManagerName } = projectInfo;
+  const { configDir, language, needsUserOnboarding, packageManager, packageManagerName } =
+    projectInfo;
   const tsx = ext(language, true);
   const ts = ext(language, false);
   const docsUrl = (path: string) => getDocsMarkdownUrl(path, projectInfo);
@@ -39,6 +40,7 @@ export function instructions(projectInfo: ProjectInfo): string {
     configDir,
     docsUrl,
     mswInstall,
+    needsUserOnboarding,
     packageManager,
     packageManagerName,
     tsx,

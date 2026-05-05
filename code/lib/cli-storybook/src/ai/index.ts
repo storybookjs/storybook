@@ -2,7 +2,7 @@ import { writeFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 
 import type { PackageManagerName } from 'storybook/internal/common';
-import { getPrettyPackageManagerName } from 'storybook/internal/common';
+import { cache, getPrettyPackageManagerName } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
 import { telemetry } from 'storybook/internal/telemetry';
 import { SupportedLanguage } from 'storybook/internal/types';
@@ -39,6 +39,8 @@ export async function aiSetup(options: AiSetupOptions): Promise<void> {
     const detectedLanguage = await projectTypeService.detectLanguage();
     const language = detectedLanguage === SupportedLanguage.TYPESCRIPT ? 'ts' : 'js';
 
+    const needsUserOnboarding = await cache.get('onboarding-pending');
+
     projectInfo = {
       storybookVersion: data.versionInstalled,
       majorVersion,
@@ -53,6 +55,7 @@ export async function aiSetup(options: AiSetupOptions): Promise<void> {
       packageManagerName: getPrettyPackageManagerName(data.packageManager.type),
       language,
       hasCsfFactoryPreview: data.hasCsfFactoryPreview,
+      needsUserOnboarding,
     };
   } catch (err) {
     logger.error(
@@ -79,6 +82,18 @@ export async function aiSetup(options: AiSetupOptions): Promise<void> {
 
   const result = await getAiSetupMarkdownOutput(projectInfo);
   const markdownOutput = result.markdown;
+
+  // Persist the fact that `storybook ai setup` ran in this project, scoped to
+  // the resolved configDir. The dev server reads this together with the story
+  // index to decide whether the agent actually produced work — never to
+  // unconditionally hide the copy-prompt button. This is a tiny local file
+  // with no PII, so it is written even when telemetry is disabled.
+  await cache
+    .set('ai-setup-ran', {
+      timestamp: Date.now(),
+      configDir: resolve(projectInfo.configDir),
+    })
+    .catch(() => {});
 
   await telemetry('ai-setup', {
     cliOptions: {

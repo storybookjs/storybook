@@ -117,7 +117,7 @@ describe('FinalizationCommand', () => {
       const agentCommand = new FinalizationCommand({
         logfile: undefined,
         showAgentFollowUp: true,
-        showAiInstructions: false,
+        showAiInstructions: true,
       });
       vi.mocked(find.up).mockReturnValue(undefined);
 
@@ -127,6 +127,9 @@ describe('FinalizationCommand', () => {
         expect.stringContaining('is not entirely set up yet')
       );
       expect(logger.step).toHaveBeenCalledWith(expect.stringContaining('npx storybook ai setup'));
+      const logCalls = vi.mocked(logger.log).mock.calls.map((c) => String(c[0]));
+      expect(logCalls.some((msg) => msg.includes('https://storybook.js.org/llms.txt'))).toBe(true);
+      expect(logCalls.some((msg) => msg.includes('https://discord.gg/storybook/'))).toBe(false);
     });
 
     it('should show standard success message when showAgentFollowUp=false with AI instructions', async () => {
@@ -163,6 +166,10 @@ describe('FinalizationCommand', () => {
       // Ensure the agent message is NOT shown
       const stepCalls = vi.mocked(logger.step).mock.calls.map((c) => String(c[0]));
       expect(stepCalls.some((msg) => msg.includes('is not entirely set up yet'))).toBe(false);
+      const logCalls = vi.mocked(logger.log).mock.calls.map((c) => String(c[0]));
+      expect(logCalls.some((msg) => msg.includes('https://storybook.js.org/'))).toBe(true);
+      expect(logCalls.some((msg) => msg.includes('https://discord.gg/storybook/'))).toBe(true);
+      expect(logCalls.some((msg) => msg.includes('https://storybook.js.org/llms.txt'))).toBe(false);
     });
   });
 

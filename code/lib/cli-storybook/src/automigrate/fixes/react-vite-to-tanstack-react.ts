@@ -12,9 +12,6 @@ export const REACT_VITE_PACKAGE = '@storybook/react-vite';
 export const TANSTACK_REACT_PACKAGE = '@storybook/tanstack-react';
 
 interface ReactViteToTanstackReactOptions {
-  hasReactVitePackage: boolean;
-  hasTanstackRouter: boolean;
-  packageJsonFiles: string[];
   /** Whether the preview config appears to set up a TanStack Router decorator manually. */
   hasTanstackRouterDecorator: boolean;
 }
@@ -291,23 +288,6 @@ export const reactViteToTanstackReact: Fix<ReactViteToTanstackReactOptions> = {
       return null;
     }
 
-    const packageJsonFiles: string[] = [];
-    for (const packageJsonPath of packageManager.packageJsonPaths) {
-      try {
-        const content = await readFile(packageJsonPath, 'utf-8');
-        const packageJson = JSON.parse(content);
-        const deps = {
-          ...packageJson.dependencies,
-          ...packageJson.devDependencies,
-        };
-        if (Object.keys(deps).includes(REACT_VITE_PACKAGE)) {
-          packageJsonFiles.push(packageJsonPath);
-        }
-      } catch {
-        continue;
-      }
-    }
-
     const hasTanstackRouterDecorator = await detectTanstackRouterDecorator({
       previewConfigPath,
       configDir,
@@ -315,9 +295,6 @@ export const reactViteToTanstackReact: Fix<ReactViteToTanstackReactOptions> = {
     });
 
     return {
-      hasReactVitePackage,
-      hasTanstackRouter,
-      packageJsonFiles,
       hasTanstackRouterDecorator,
     };
   },

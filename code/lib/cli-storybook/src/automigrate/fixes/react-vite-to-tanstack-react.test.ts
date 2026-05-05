@@ -84,24 +84,12 @@ describe('react-vite-to-tanstack-react', () => {
         '@tanstack/react-router': '^1.0.0',
       });
 
-      mockReadFile.mockResolvedValueOnce(
-        JSON.stringify({
-          devDependencies: {
-            [REACT_VITE_PACKAGE]: '^10.0.0',
-            '@tanstack/react-router': '^1.0.0',
-          },
-        })
-      );
-
       const result = await reactViteToTanstackReact.check({
         packageManager: mockPackageManager,
         previewConfigPath: undefined,
       } as CheckOptions);
 
       expect(result).toEqual({
-        hasReactVitePackage: true,
-        hasTanstackRouter: true,
-        packageJsonFiles: ['/project/package.json'],
         hasTanstackRouterDecorator: false,
       });
     });
@@ -204,9 +192,6 @@ describe('react-vite-to-tanstack-react', () => {
 
       await reactViteToTanstackReact.run!({
         result: {
-          hasReactVitePackage: true,
-          hasTanstackRouter: true,
-          packageJsonFiles: ['/project/package.json'],
           hasTanstackRouterDecorator: false,
         },
         dryRun: false,
@@ -236,9 +221,6 @@ describe('react-vite-to-tanstack-react', () => {
     it('skips writes in dry run mode', async () => {
       await reactViteToTanstackReact.run!({
         result: {
-          hasReactVitePackage: true,
-          hasTanstackRouter: true,
-          packageJsonFiles: ['/project/package.json'],
           hasTanstackRouterDecorator: false,
         },
         dryRun: true,
@@ -261,9 +243,6 @@ describe('react-vite-to-tanstack-react', () => {
 
       await reactViteToTanstackReact.run!({
         result: {
-          hasReactVitePackage: true,
-          hasTanstackRouter: true,
-          packageJsonFiles: ['/project/package.json'],
           hasTanstackRouterDecorator: true,
         },
         dryRun: false,
@@ -283,9 +262,6 @@ describe('react-vite-to-tanstack-react', () => {
 
       await reactViteToTanstackReact.run!({
         result: {
-          hasReactVitePackage: true,
-          hasTanstackRouter: true,
-          packageJsonFiles: ['/project/package.json'],
           hasTanstackRouterDecorator: true,
         },
         dryRun: false,

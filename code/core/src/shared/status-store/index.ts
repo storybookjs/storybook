@@ -42,6 +42,18 @@ export const statusValueShortName = (value: StatusValue): string => {
   return value.slice(STATUS_VALUE_PREFIX.length);
 };
 
+export const statusValueDescription = (value: StatusValue): string =>
+  ({
+    'status-value:pending': 'Stories with pending status',
+    'status-value:success': 'Stories with passing tests',
+    'status-value:new': 'Newly added stories',
+    'status-value:modified': 'Stories closely linked to code changes',
+    'status-value:affected': 'Stories likely to be affected by code changes',
+    'status-value:warning': 'Stories with warnings',
+    'status-value:error': 'Stories with failing tests',
+    'status-value:unknown': 'Stories with unknown status',
+  })[value];
+
 export type StatusTypeId = string;
 export type StatusByTypeId = Record<StatusTypeId, Status>;
 export type StatusesByStoryIdAndTypeId = Record<StoryId, StatusByTypeId>;

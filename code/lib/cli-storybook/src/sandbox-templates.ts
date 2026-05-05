@@ -246,6 +246,7 @@ export const baseTemplates = {
           experimentalRSC: true,
           developmentModeForBuild: true,
           experimentalTestSyntax: true,
+          changeDetection: true,
         },
       },
       extraDependencies: ['server-only', 'prop-types'],
@@ -343,6 +344,7 @@ export const baseTemplates = {
           experimentalRSC: true,
           developmentModeForBuild: true,
           experimentalTestSyntax: true,
+          changeDetection: true,
         },
       },
       extraDependencies: ['server-only', 'vite', 'prop-types'],
@@ -385,6 +387,7 @@ export const baseTemplates = {
         features: {
           developmentModeForBuild: true,
           experimentalTestSyntax: true,
+          changeDetection: true,
         },
       },
     },
@@ -522,6 +525,46 @@ export const baseTemplates = {
       builder: '@storybook/builder-vite',
     },
     skipTasks: ['e2e-tests', 'e2e-tests-dev', 'bench', 'vitest-integration'],
+  },
+  'tanstack-react-router/default-ts': {
+    name: 'TanStack React Router Latest (Vite | TypeScript)',
+    script: 'npx @tanstack/cli@latest create {{beforeDir}} --tailwind --router-only',
+    expected: {
+      framework: '@storybook/tanstack-react',
+      renderer: '@storybook/react',
+      builder: '@storybook/builder-vite',
+    },
+    modifications: {
+      useCsfFactory: true,
+      extraDependencies: ['prop-types'],
+      mainConfig: {
+        framework: '@storybook/tanstack-react',
+        features: {
+          experimentalTestSyntax: true,
+        },
+      },
+    },
+    skipTasks: ['bench'],
+  },
+  'tanstack-react-start/default-ts': {
+    name: 'TanStack React Start Latest (Vite | TypeScript)',
+    script: 'npx @tanstack/cli@latest create {{beforeDir}} --tailwind',
+    expected: {
+      framework: '@storybook/tanstack-react',
+      renderer: '@storybook/react',
+      builder: '@storybook/builder-vite',
+    },
+    modifications: {
+      useCsfFactory: true,
+      extraDependencies: ['prop-types'],
+      mainConfig: {
+        framework: '@storybook/tanstack-react',
+        features: {
+          experimentalTestSyntax: true,
+        },
+      },
+    },
+    skipTasks: ['bench'],
   },
   'vue3-vite/default-js': {
     name: 'Vue v3 (Vite | JavaScript)',
@@ -1031,6 +1074,8 @@ export const normal: TemplateKey[] = [
   'bench/react-webpack-18-ts-test-build',
   // 'ember/default-js',
   'react-rsbuild/default-ts',
+  'tanstack-react-router/default-ts',
+  'tanstack-react-start/default-ts',
 ];
 
 export const merged: TemplateKey[] = [

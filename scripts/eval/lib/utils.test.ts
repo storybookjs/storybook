@@ -113,7 +113,7 @@ describe('listPrompts', () => {
 describe('loadPrompt', () => {
   it('returns the nudge string the agent receives (not the resolved instructions)', () => {
     const prompt = loadPrompt(EXAMPLE_PROMPT_BASENAME);
-    expect(prompt).toMatch(/node .+code\/core\/dist\/bin\/dispatcher\.js ai setup/);
+    expect(prompt).toMatch(/node .+code[\\/]core[\\/]dist[\\/]bin[\\/]dispatcher\.js ai setup/);
     expect(prompt).not.toContain('### Step 1');
   });
 

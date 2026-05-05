@@ -207,7 +207,7 @@ export const features: PresetProperty<'features'> = async (existing) => ({
   actions: true,
   argTypeTargetsV7: true,
   backgrounds: true,
-  changeDetection: false,
+  changeDetection: true,
   componentsManifest: false,
   controls: true,
   disallowImplicitActionsInRenderV8: true,
@@ -273,7 +273,7 @@ export const experimental_serverChannel = async (
   options: OptionsWithRequiredCache
 ) => {
   initAIAnalyticsChannel(channel, options, () => storyIndexGeneratorPromise);
-  initializeChecklist(channel);
+  initializeChecklist(channel, () => storyIndexGeneratorPromise, options.configDir);
   initializeWhatsNew(channel, options);
   initializeSaveStory(channel, options);
   initFileSearchChannel(channel, options);

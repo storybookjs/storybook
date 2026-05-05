@@ -19,7 +19,6 @@ import {
   editOverWriteRule,
   nodeModuleReadsRule,
   noPolishRule,
-  onboardingContentRule,
   packageManagerRule,
   preferSharedFixesRule,
   readBudgetRuleRelaxed,
@@ -61,7 +60,6 @@ export function instructions(projectInfo: ProjectInfo): string {
       batchTestsRule(ctx),
       packageManagerRule(ctx),
       preferSharedFixesRule(ctx),
-      onboardingContentRule(ctx),
       noPolishRule(ctx),
     ])}
 

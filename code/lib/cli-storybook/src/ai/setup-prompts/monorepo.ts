@@ -21,7 +21,6 @@ import {
   monorepoRule,
   nodeModuleReadsRule,
   noPolishRule,
-  onboardingContentRule,
   packageManagerRule,
   preferSharedFixesRule,
   readBudgetRule,
@@ -64,7 +63,6 @@ export function instructions(projectInfo: ProjectInfo): string {
       batchTestsRule(ctx),
       packageManagerRule(ctx),
       preferSharedFixesRule(ctx),
-      onboardingContentRule(ctx),
       noPolishRule(ctx),
     ])}
 

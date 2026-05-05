@@ -77,7 +77,9 @@ export const createElementForNode = (node: BranchNode | LeafNode): HTMLElement =
     const a = document.createElement('a');
     a.href = leafNode.href;
     a.className = `sb-navigator-story-link${leafNode.isActive ? ' active' : ''}`;
-    a.setAttribute('aria-current', leafNode.isActive ? 'location' : 'false');
+    if (leafNode.isActive) {
+      a.setAttribute('aria-current', 'location');
+    }
     a.textContent = leafNode.name;
 
     li.appendChild(a);

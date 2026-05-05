@@ -18,6 +18,7 @@ import {
   countStatusesByValue,
   getFilterFunction,
   statusValueShortName,
+  statusValueDescription,
 } from './FilterPanel.utils.ts';
 
 export interface TagFilterEntry {
@@ -32,6 +33,7 @@ export interface StatusFilterEntry {
   statusValue: StatusValue;
   shortName: string;
   count: number;
+  description?: string;
 }
 
 const BUILT_IN_FILTER_DEFS: Array<{
@@ -92,6 +94,7 @@ export function useStatusFilterEntries(allStatuses: StatusesByStoryIdAndTypeId) 
     return STATUS_DISPLAY_ORDER.map((statusValue) => ({
       statusValue,
       shortName: statusValueShortName(statusValue),
+      description: statusValueDescription(statusValue),
       count: counts[statusValue] ?? 0,
     }));
   }, [allStatuses]);

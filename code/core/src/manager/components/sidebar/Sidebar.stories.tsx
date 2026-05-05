@@ -268,6 +268,45 @@ export const EmptyMobile: Story = {
   play: waitForChecklistWidget,
 };
 
+export const EmptyWithFilters: Story = {
+  args: Empty.args,
+  decorators: [
+    (storyFn, { args, globals, title }) => {
+      const context = managerContext(args);
+      return (
+        <ManagerContext.Provider
+          value={{
+            ...context,
+            state: {
+              ...context.state,
+              includedTagFilters: ['A'],
+              excludedTagFilters: ['B'],
+              includedStatusFilters: [],
+              excludedStatusFilters: [],
+            },
+          }}
+        >
+          <LayoutProvider
+            forceDesktop={
+              globals.viewport?.value === 'desktop' ||
+              globals.viewport?.value === undefined ||
+              title.endsWith('scrolled')
+            }
+          >
+            {storyFn()}
+          </LayoutProvider>
+        </ManagerContext.Provider>
+      );
+    },
+  ],
+  play: async ({ canvasElement }) => {
+    await waitForChecklistWidget();
+    const canvas = within(canvasElement);
+    const clearFiltersButton = await canvas.findByRole('button', { name: 'Clear filters' });
+    await expect(clearFiltersButton).toBeInTheDocument();
+  },
+};
+
 export const EmptyIndex: Story = {
   args: {
     index: {},

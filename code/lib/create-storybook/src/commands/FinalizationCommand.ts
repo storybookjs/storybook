@@ -103,10 +103,17 @@ export class FinalizationCommand {
       logger.log(`To run Storybook, run ${CLI_COLORS.cta(storybookCommand)}. CTRL+C to stop.`);
     }
 
-    logger.log(dedent`
+    // We don't want to tell agents about Discord, and we want to customise their docs URL.
+    if (this.options.showAiInstructions) {
+      logger.log(dedent`
+      Official documentation reference: ${CLI_COLORS.cta('https://storybook.js.org/llms.txt')}
+    `);
+    } else {
+      logger.log(dedent`
       Want to learn more about Storybook? ${CLI_COLORS.cta('https://storybook.js.org/')}
       Having trouble or want to chat? ${CLI_COLORS.cta('https://discord.gg/storybook/')}
     `);
+    }
 
     if (this.options.showAiInstructions) {
       logger.step(dedent`To finalize setting up with AI, paste this prompt to your AI agent:

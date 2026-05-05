@@ -95,6 +95,7 @@ export const FilterPanel = ({
         id: shortName,
         type: 'status',
         title: shortName.charAt(0).toUpperCase() + shortName.slice(1),
+        tooltip: entry.description,
         count: entry.count,
         icon: showIcon ? <StatusIcon $iconColor={iconColor}>{statusIconEl}</StatusIcon> : null,
         isIncluded,
@@ -141,9 +142,7 @@ export const FilterPanel = ({
   );
 
   const setAllFilters = useCallback(
-    (selected: boolean) => {
-      api.setAllTagFilters(selected ? filterIds : [], []);
-    },
+    (selected: boolean) => api.setAllTagFilters(selected ? filterIds : [], []),
     [api, filterIds]
   );
 
@@ -182,9 +181,9 @@ export const FilterPanel = ({
                 ariaLabel={false}
                 id="deselect-all"
                 key="deselect-all"
-                onClick={() => {
-                  setAllFilters(false);
-                  api.resetStatusFilters();
+                onClick={async () => {
+                  await setAllFilters(false);
+                  await api.resetStatusFilters();
                 }}
               >
                 <SweepIcon />

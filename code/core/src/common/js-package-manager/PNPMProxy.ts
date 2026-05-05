@@ -49,6 +49,14 @@ export class PNPMProxy extends JsPackageManager {
     return existsSync(pnpmWorkspaceYaml);
   }
 
+  getCommandName(): string {
+    return 'pnpm';
+  }
+
+  getInstallCommand(deps: string[], dev: boolean): string {
+    return `pnpm add ${dev ? '-D ' : ''}${deps.join(' ')}`;
+  }
+
   getRunCommand(command: string): string {
     return `pnpm run ${command}`;
   }

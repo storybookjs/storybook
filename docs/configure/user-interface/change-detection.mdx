@@ -64,6 +64,53 @@ Change detection is enabled by default. To disable it, set [`features.changeDete
 
 <CodeSnippets path="main-config-features-change-detection.md" />
 
+## Troubleshooting
+
+If status icons don't appear in your sidebar, check the following:
+
+- The dev server terminal log for messages prefixed with `Change detection:` — startup errors, unsupported builder warnings, and parse failures all surface there.
+- That you are running `storybook dev` against a Vite-based framework (the only currently supported builder).
+- That your project is inside a git repository.
+- That `features.changeDetection` is not set to `false` in your Storybook configuration.
+
+### Workspace sibling packages not tracked in monorepos
+
+In a monorepo, when a story imports a workspace sibling package (e.g., `@myorg/ui` declared as `"workspace:*"` in `package.json`), the dependency may not be tracked, meaning changes to that sibling won't trigger a story reload. There are two root causes:
+
+**Built output missing at dev time.** Workspace packages typically point their `exports` or `main` fields to compiled output (`./dist/index.js`, `./esm/index.mjs`, etc.) that doesn't exist until the package is built. Storybook's resolver finds the symlink in `node_modules` but can't resolve the entry file, so it treats the import as untrackable. Even when the package has been built, its output directories are usually `.gitignore`d, meaning the resolved files are outside the set of watched source files and changes to them would never trigger a story reload.
+
+**Per-package `tsconfig.json` blocking root paths.** Many monorepos define workspace path aliases in the root `tsconfig.json` (e.g., `"@myorg/*": ["./packages/@myorg/*/src"]`) so that bundlers resolve imports directly to source. If a package has its own `tsconfig.json` that doesn't extend root, Storybook's resolver finds that file first during its directory walk-up and never sees the root-level path mappings.
+
+To ensure cross-workspace dependencies are tracked correctly, add `paths` entries to your root `tsconfig.json` pointing to the source directories of your workspace packages:
+
+```json title="tsconfig.json"
+{
+  "compilerOptions": {
+    "paths": {
+      "@myorg/*": ["./packages/@myorg/*/src"]
+    }
+  }
+}
+```
+
+Storybook uses these mappings as a fallback when per-file resolution does not find the module.
+
+### Many unrelated stories marked as related after a single change
+
+If a change to one component (e.g., `Breadcrumb`) causes every story that imports from a shared package (e.g., `@myorg/ui`) to be marked as **related**, the package is using a barrel file — a single `index.ts` that re-exports everything. Storybook's dependency graph tracks file-level dependencies, not export-level ones. A story that imports `import { Button } from '@myorg/ui'` depends on the resolved barrel file. When `Breadcrumb.tsx` changes, the barrel file is considered changed (it transitively imports it), so all stories depending on that barrel are marked related.
+
+This is a fundamental limitation of file-level dependency tracking. The only way to eliminate false positives is to import components from their direct source paths instead of the barrel:
+
+```ts
+// Instead of the barrel import:
+import { Button } from '@myorg/ui';
+
+// Import directly from the component's source:
+import { Button } from '@myorg/ui/Button';
+```
+
+Whether this is practical depends on the library. Libraries that publish deep-import paths (or that you own and can restructure) allow this workaround; libraries that intentionally expose only a barrel do not.
+
 ## How it works
 
-When you run `storybook dev`, Storybook subscribes to the builder's module graph via an `onModuleGraphChange` hook. A git diff provider watches your working tree for changes and runs `git diff` to identify modified or new files. Storybook then traces each changed file through the module import graph (by following `import` statements) to find all story files that depend on it — directly or transitively. Stories with the shortest import distance are marked **modified**; those at greater distance are marked **related**. New untracked files are marked **new**.
+When you run `storybook dev`, Storybook builds its own dependency graph by parsing each story file (and its imports) with [oxc](https://oxc.rs/) and resolves module specifiers through the builder's resolve config. The builder ships a small change-detection adapter that forwards file-system events into Storybook so the graph stays current. A git diff provider watches your working tree for changes and runs `git diff` to identify modified or new files. Storybook then traces each changed file through the dependency graph to find all story files that depend on it — directly or transitively. Stories with the shortest import distance are marked **modified**; those at greater distance are marked **related**. New untracked files are marked **new**.

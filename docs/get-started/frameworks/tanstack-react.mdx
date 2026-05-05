@@ -227,6 +227,10 @@ Add [project-level decorators](../../writing-stories/decorators.mdx#global-decor
 
 You can also add [component-level decorators](../../writing-stories/decorators.mdx#component-decorators) to apply providers to all stories for a specific component, or [story-level decorators](../../writing-stories/decorators.mdx#story-decorators) to apply providers to a single story.
 
+### Does `@storybook/tanstack-react` support React Server Components?
+
+No. `@storybook/tanstack-react` runs stories in the browser using a memory-backed router. React Server Components require a server runtime and are not supported. If your component is a Server Component, extract the client-side parts into a Client Component and write stories for that instead.
+
 ### Story fails to render with an error about modules not providing a default export
 
 This usually means a server-only module is being imported in the browser. Check the error stack trace to find the module and add a Storybook mock for it as described in [Handling server-only dependencies](#handling-server-only-dependencies).

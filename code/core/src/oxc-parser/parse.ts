@@ -1,3 +1,4 @@
+import type { StaticImportEntry } from 'oxc-parser';
 import { parse as oxcRawParse } from 'oxc-parser';
 
 import { OxcParseError } from './errors.ts';
@@ -37,6 +38,8 @@ export async function oxcParse(filePath: string, source: string): Promise<Import
 
   const edges: ImportEdge[] = [];
   const seen = new Set<string>();
+  // Tracks mutable edge objects for static imports so duplicates can merge names.
+  const staticImportEdges = new Map<string, ImportEdge>();
 
   for (const staticImport of moduleInfo.staticImports) {
     const specifier = staticImport.moduleRequest.value;
@@ -49,11 +52,23 @@ export async function oxcParse(filePath: string, source: string): Promise<Import
       continue;
     }
     const key = `static:${specifier}`;
-    if (seen.has(key)) {
-      continue;
+    const newNames = extractImportedNames(staticImport.entries);
+    const existing = staticImportEdges.get(key);
+    if (existing) {
+      // Merge: null (namespace/side-effect) wins; otherwise union the name sets.
+      if (existing.importedNames !== null && newNames !== null) {
+        for (const name of newNames) {
+          existing.importedNames.add(name);
+        }
+      } else {
+        existing.importedNames = null;
+      }
+    } else {
+      const edge: ImportEdge = { specifier, kind: 'static', importedNames: newNames };
+      staticImportEdges.set(key, edge);
+      edges.push(edge);
+      seen.add(key);
     }
-    seen.add(key);
-    edges.push({ specifier, kind: 'static' });
   }
 
   for (const staticExport of moduleInfo.staticExports) {
@@ -67,7 +82,9 @@ export async function oxcParse(filePath: string, source: string): Promise<Import
         continue;
       }
       seen.add(key);
-      edges.push({ specifier, kind: 'static' });
+      // Export-derived edges carry null — they represent the barrel's own
+      // dependency on its source modules, not a consumer-visible named import.
+      edges.push({ specifier, kind: 'static', importedNames: null });
     }
   }
 
@@ -82,7 +99,7 @@ export async function oxcParse(filePath: string, source: string): Promise<Import
       continue;
     }
     seen.add(key);
-    edges.push({ specifier: literal, kind: 'dynamic' });
+    edges.push({ specifier: literal, kind: 'dynamic', importedNames: null });
   }
 
   // oxc-parser does not surface require() calls separately. Walk the AST only after two
@@ -131,6 +148,34 @@ function extractLiteralFromSource(source: string, start: number, end: number): s
 }
 
 /**
+ * Extracts the names imported from a static import's entry list.
+ * Returns `null` for side-effect imports (empty entries), namespace imports (`* as ns`),
+ * or when no runtime names can be determined; otherwise returns the array of names as
+ * they appear in the source module (before any `as` rename).
+ */
+function extractImportedNames(entries: StaticImportEntry[]): Set<string> | null {
+  if (entries.length === 0) {
+    return null; // side-effect: import 'mod'
+  }
+  const names = new Set<string>();
+  for (const entry of entries) {
+    if (entry.isType) {
+      continue;
+    }
+    const { kind, name } = entry.importName;
+    if (kind === 'NamespaceObject') {
+      return null; // import * as ns — cannot narrow
+    }
+    if (kind === 'Default') {
+      names.add('default');
+    } else if (kind === 'Name' && name) {
+      names.add(name);
+    }
+  }
+  return names.size > 0 ? names : null;
+}
+
+/**
  * Iterative AST walk for `CallExpression` nodes whose callee is the identifier `require`
  * and whose first argument is a string literal. Iterative (not recursive) so deeply
  * nested ASTs cannot blow the call stack on minified bundles. Skips estree-shaped
@@ -166,7 +211,7 @@ function collectRequireSpecifiers(root: unknown, edges: ImportEdge[], seen: Set<
           const key = `require:${specifier}`;
           if (!seen.has(key)) {
             seen.add(key);
-            edges.push({ specifier, kind: 'require' });
+            edges.push({ specifier, kind: 'require', importedNames: null });
           }
         }
       }

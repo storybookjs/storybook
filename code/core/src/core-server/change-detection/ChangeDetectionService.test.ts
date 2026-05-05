@@ -1276,6 +1276,164 @@ describe('ChangeDetectionService', () => {
 
     await service.dispose();
   });
+
+  it('file events emitted during the eager build are buffered and applied after build resolves', async () => {
+    // The service subscribes to file-change events BEFORE awaiting the build. Events arriving
+    // during the build window should be buffered and drained into patchQueue once the build
+    // completes — not silently dropped.
+    const reverseIndex = buildReverseIndex([]);
+    const buildDeferred = createDeferred<void>();
+    const { patchSpy, buildSpy } = installDependencyGraphMocks(reverseIndex);
+    buildSpy.mockImplementation(async () => {
+      await buildDeferred.promise;
+      return { reverseIndex, graph: new Map() };
+    });
+
+    const storyIndex = createStoryIndex([
+      { storyId: 'button--primary', importPath: './src/Button.stories.tsx', title: 'Button' },
+    ]);
+    const { getStatusStoreByTypeId } = createStatusStore({
+      universalStatusStore: new MockUniversalStore(UNIVERSAL_STATUS_STORE_OPTIONS),
+      environment: 'server',
+    });
+    const { adapter, emitFileChange } = createMockAdapter();
+    const service = new ChangeDetectionService({
+      storyIndexGeneratorPromise: Promise.resolve({
+        getIndex: vi.fn().mockResolvedValue(storyIndex),
+      } as never),
+      statusStore: getStatusStoreByTypeId(CHANGE_DETECTION_STATUS_TYPE_ID),
+      gitDiffProvider: createMockGitDiffProvider(),
+      indexBaselineService: createMockStoryIndexBaselineService(),
+      workingDir,
+    });
+
+    service.start(adapter, true);
+    // Allow startInternal to advance past: getResolveConfig, storyIndexGeneratorPromise,
+    // getIndex, and the DependencyGraphBuilder constructor — reaching the build await.
+    // Each 'await' in the async function consumes one microtask tick.
+    for (let i = 0; i < 10; i++) {
+      await Promise.resolve();
+    }
+
+    // Emit a file-change event while the build is still in flight (buffering handler active).
+    emitFileChange({ kind: 'change', path: '/repo/src/Button.tsx' });
+
+    // Build has not resolved yet — no patch should have run.
+    expect(patchSpy).not.toHaveBeenCalled();
+
+    // Now resolve the build — the buffered event should be drained into patchQueue.
+    buildDeferred.resolve();
+    await vi.runAllTimersAsync();
+
+    // The buffered event must have been patched exactly once.
+    expect(patchSpy).toHaveBeenCalledTimes(1);
+    expect(patchSpy).toHaveBeenCalledWith({ kind: 'change', path: '/repo/src/Button.tsx' });
+
+    await service.dispose();
+  });
+
+  it('multiple file events buffered during build are all applied in order after build resolves', async () => {
+    const reverseIndex = buildReverseIndex([]);
+    const buildDeferred = createDeferred<void>();
+    const { patchSpy, buildSpy } = installDependencyGraphMocks(reverseIndex);
+    buildSpy.mockImplementation(async () => {
+      await buildDeferred.promise;
+      return { reverseIndex, graph: new Map() };
+    });
+
+    const storyIndex = createStoryIndex([]);
+    const { getStatusStoreByTypeId } = createStatusStore({
+      universalStatusStore: new MockUniversalStore(UNIVERSAL_STATUS_STORE_OPTIONS),
+      environment: 'server',
+    });
+    const { adapter, emitFileChange } = createMockAdapter();
+    const service = new ChangeDetectionService({
+      storyIndexGeneratorPromise: Promise.resolve({
+        getIndex: vi.fn().mockResolvedValue(storyIndex),
+      } as never),
+      statusStore: getStatusStoreByTypeId(CHANGE_DETECTION_STATUS_TYPE_ID),
+      gitDiffProvider: createMockGitDiffProvider(),
+      indexBaselineService: createMockStoryIndexBaselineService(),
+      workingDir,
+    });
+
+    service.start(adapter, true);
+    // Advance past all awaits in startInternal before the build step.
+    for (let i = 0; i < 10; i++) {
+      await Promise.resolve();
+    }
+
+    emitFileChange({ kind: 'change', path: '/repo/src/A.tsx' });
+    emitFileChange({ kind: 'change', path: '/repo/src/B.tsx' });
+    emitFileChange({ kind: 'unlink', path: '/repo/src/C.tsx' });
+
+    expect(patchSpy).not.toHaveBeenCalled();
+
+    buildDeferred.resolve();
+    await vi.runAllTimersAsync();
+
+    expect(patchSpy).toHaveBeenCalledTimes(3);
+    expect(patchSpy).toHaveBeenNthCalledWith(1, { kind: 'change', path: '/repo/src/A.tsx' });
+    expect(patchSpy).toHaveBeenNthCalledWith(2, { kind: 'change', path: '/repo/src/B.tsx' });
+    expect(patchSpy).toHaveBeenNthCalledWith(3, { kind: 'unlink', path: '/repo/src/C.tsx' });
+
+    await service.dispose();
+  });
+
+  it('calling onStoryIndexInvalidated twice rapidly does not enqueue duplicate patches', async () => {
+    // Two rapid onStoryIndexInvalidated() calls before the first refresh completes both
+    // compute the same diff from the same storyFiles baseline. The refreshInFlight guard
+    // ensures only one refresh runs; the second call is a no-op, preventing duplicate patches.
+    const reverseIndex = buildReverseIndex([]);
+    const { patchSpy, buildSpy } = installDependencyGraphMocks(reverseIndex);
+    buildSpy.mockResolvedValue({ reverseIndex, graph: new Map() });
+
+    const initialIndex = createStoryIndex([
+      { storyId: 'a--default', importPath: './src/A.stories.tsx', title: 'A' },
+    ]);
+    // After invalidation: B is added.
+    const updatedIndex = createStoryIndex([
+      { storyId: 'a--default', importPath: './src/A.stories.tsx', title: 'A' },
+      { storyId: 'b--default', importPath: './src/B.stories.tsx', title: 'B' },
+    ]);
+
+    // getIndex is called: (1) during startInternal (initial), (2+) during refreshStoryFiles.
+    // Both refresh calls will receive updatedIndex so they compute the same diff.
+    const getIndex = vi
+      .fn()
+      .mockResolvedValueOnce(initialIndex) // startInternal initial read
+      .mockResolvedValueOnce(initialIndex) // scan's storyIndexGenerator.getIndex()
+      .mockResolvedValue(updatedIndex); // both refresh calls
+
+    const { getStatusStoreByTypeId } = createStatusStore({
+      universalStatusStore: new MockUniversalStore(UNIVERSAL_STATUS_STORE_OPTIONS),
+      environment: 'server',
+    });
+    const { adapter } = createMockAdapter();
+    const service = new ChangeDetectionService({
+      storyIndexGeneratorPromise: Promise.resolve({ getIndex } as never),
+      statusStore: getStatusStoreByTypeId(CHANGE_DETECTION_STATUS_TYPE_ID),
+      gitDiffProvider: createMockGitDiffProvider(),
+      indexBaselineService: createMockStoryIndexBaselineService(),
+      workingDir,
+    });
+
+    service.start(adapter, true);
+    await vi.runAllTimersAsync();
+
+    // Two rapid calls before the first refresh completes.
+    service.onStoryIndexInvalidated();
+    service.onStoryIndexInvalidated();
+    await vi.runAllTimersAsync();
+
+    // B.stories.tsx should be patched exactly once — not twice.
+    const addPatches = patchSpy.mock.calls.filter(
+      ([event]) => event.kind === 'add' && event.path === '/repo/src/B.stories.tsx'
+    );
+    expect(addPatches).toHaveLength(1);
+
+    await service.dispose();
+  });
 });
 
 describe('mergeStatusValues', () => {

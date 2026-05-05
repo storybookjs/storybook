@@ -77,6 +77,14 @@ Supply `params` alongside `routeOverrides` under `parameters.tanstack.router`. T
 
 For the full set of properties, see [`Parameters`](#parameters).
 
+#### Rendering nested routes
+
+When `route` is a file route connected to your app's route tree, Storybook automatically includes parent layout routes so the story renders inside the same nested hierarchy as the real app. You can also pass the `routeTree` export from `routeTree.gen.ts` directly.
+
+Use `path` to navigate to the specific route, and `routeOverrides` to stub guards or loaders on ancestor routes so the story can render independently.
+
+<CodeSnippets path="tanstack-react-route-tree-story.md" />
+
 #### Using router parameters with a non-Route component
 
 If your story renders a regular React component instead of a route object, you can still provide routing context through `parameters.tanstack.router`.
@@ -265,9 +273,9 @@ Router context values injected into the story router.
 
 #### `params`
 
-Type: `Record<string, string>`
+Type: `ResolveParams<Path>`
 
-Interpolates route params into the current path.
+Interpolates route params into the current path. When `route` is a typed file route, the type is constrained to the param names declared in that route's path (for example, `{ id: string }` for `/$id`).
 
 #### `path`
 
@@ -292,3 +300,23 @@ Supplies a route instance directly or creates a temporary story route from route
 Type: `Partial<Record<string, RouteOverrideOptions>>`
 
 Per-route overrides keyed by route ID, applied to the story's route and root route. Use `'__root__'` to target the root route. Each entry can override `loader`, `beforeLoad`, `validateSearch`, `loaderDeps`, and `context`.
+
+#### `useRouterContext`
+
+Type: `({ storyContext }) => RouterContext`
+
+Dynamically computes the router context from the story context. Use this when the router context depends on values that are already available in the story (for example, a `QueryClient` that is loaded by a story loader).
+
+```ts
+parameters: {
+  tanstack: {
+    router: {
+      useRouterContext: ({ storyContext }) => ({
+        queryClient: storyContext.loaded.queryClient,
+      }),
+    },
+  },
+}
+```
+
+This is an alternative to `context` for cases where the router context needs a React context provider (e.g., TanStack Query's `QueryClientProvider`) that must be rendered in the story before the context value can be accessed.

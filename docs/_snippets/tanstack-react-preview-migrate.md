@@ -1,10 +1,3 @@
-```diff filename=".storybook/preview.jsx" renderer="react" language="js" tabTitle="CSF 3"
-// No changes necessary
-export default {
-  //...
-};
-```
-
 ```diff filename=".storybook/preview.tsx" renderer="react" language="ts" tabTitle="CSF 3"
 - import type { Preview } from '@storybook/react-vite';
 + import type { Preview } from '@storybook/tanstack-react';
@@ -26,12 +19,3 @@ export default definePreview({
 ```
 
 <!-- JS snippets still needed while providing both CSF 3 & Next -->
-
-```diff filename=".storybook/preview.jsx" renderer="react" language="js" tabTitle="CSF Next 🧪"
-- import { definePreview } from '@storybook/react-vite';
-+ import { definePreview } from '@storybook/tanstack-react';
-
-export default definePreview({
-  //...
-});
-```

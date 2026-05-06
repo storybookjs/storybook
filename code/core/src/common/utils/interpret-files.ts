@@ -23,9 +23,9 @@ export function getInterpretedFile(pathToFile: string) {
 }
 
 /**
- * `mainFields: ['module', 'main']` mirrors the previous `packageFilter` callback that rewrote
- * `pkg.main = pkg.module` — both prefer the ESM entry over the CJS entry. Storybook server
- * processes run in Node ESM context, so consuming `pkg.module` is safe.
+ * `mainFields: ['module', 'main']` makes the resolver prefer the ESM entry (`pkg.module`) over the
+ * CJS entry (`pkg.main`). Storybook server processes run in Node ESM context, so consuming
+ * `pkg.module` is safe.
  */
 const importResolver = new ResolverFactory({
   extensions: [...supportedExtensions],

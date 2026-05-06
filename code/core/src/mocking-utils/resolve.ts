@@ -10,10 +10,11 @@ const require = createRequire(import.meta.url);
 
 /**
  * Browser-condition resolver used for `sb.mock()` external module resolution.
- * Mirrors the previous `resolve.exports({ browser: true })` behaviour:
- * - `browser` condition wins in `exports` maps
- * - legacy `browser` field is honoured via `aliasFields`
- * - `mainFields` order makes `pkg.module` win over `pkg.main` when no `exports` is present
+ *
+ * - `browser` wins ahead of `import` / `module` / `default` in `exports` maps via `conditionNames`
+ * - the package.json `browser` field is honoured via `aliasFields`
+ * - `mainFields` order picks `pkg.browser` first, then `pkg.module`, then `pkg.main` when no
+ *   `exports` map is present
  */
 const externalResolver = new OxcResolverFactory({
   conditionNames: ['browser', 'import', 'module', 'default'],
@@ -23,8 +24,8 @@ const externalResolver = new OxcResolverFactory({
 });
 
 /**
- * Resolves an external module path to its absolute path. It considers the "exports" map and the
- * legacy "browser" field in the package.json file, preferring browser-targeted entries.
+ * Resolves an external module path to its absolute path, preferring browser-targeted entries via
+ * the `exports` map and the package.json `browser` field.
  *
  * @param path The raw module path from the `sb.mock()` call.
  * @param root The project's root directory.
@@ -35,7 +36,6 @@ export function resolveExternalModule(path: string, root: string) {
   if (result.path) {
     return result.path;
   }
-  // Fallback for edge cases oxc-resolver does not handle (legacy package layouts).
   return require.resolve(path, { paths: [root] });
 }
 

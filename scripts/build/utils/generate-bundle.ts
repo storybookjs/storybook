@@ -169,6 +169,11 @@ export async function generateBundle({
         entryPoints: entries.node.map(({ entryPoint }) => entryPoint),
         platform: 'node',
         target: NODE_TARGET,
+        alias: {
+          // Keep a single bundled acorn copy when CommonJS dependencies such as
+          // acorn-jsx require('acorn') alongside ESM imports.
+          acorn: join(resolvePackageDir('acorn'), 'dist/acorn.mjs'),
+        },
         chunkNames: '_node-chunks/[name]-[hash]',
         banner: {
           /*

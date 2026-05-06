@@ -5,7 +5,7 @@ sidebar:
   order: 3
 ---
 
-During development, Storybook monitors your git working tree and the builder's module graph to identify which stories are affected by your uncommitted changes. Status icons appear next to stories and components in the sidebar so you can focus your review and testing on what has actually changed.
+During development, Storybook monitors your git working tree and the builder's module graph to identify which stories are related to your changes. Status icons appear next to stories and components in the sidebar so you can focus your review and testing on what has actually changed.
 
 ![Sidebar showing change detection status icons](../../_assets/configure/change-detection-full.png)
 
@@ -16,27 +16,27 @@ Change detection is a **development-only** feature. It is active when running `s
 The following are required for change detection to work:
 
 - **Git repository**: Storybook uses `git diff` to detect changed files.
-- **Vite builder**: Storybook traces changed files through the builder's module import graph to identify all affected stories.
+- **Supported builder**: Storybook traces changed files through the builder's module import graph to identify all affected stories. Both Vite and webpack5 builders are supported. Other builders can gain support by implementing a change-detection adapter.
 
 If change detection status indicators never appear in your sidebar, check that both requirements above are met and that the feature has not been [disabled](#configuration).
 
 ## Status indicators
 
-When a change is detected, Storybook shows one of the following status icons next to the affected story in the sidebar:
+When a change is detected, Storybook shows one of the following status icons next to the relevant stories in the sidebar:
 
 | Icon                  | Status       | Definition                                                                            |
 | --------------------- | ------------ | ------------------------------------------------------------------------------------- |
 | ✦ Sparkle             | **new**      | The story file is untracked or newly added in git.                                    |
 | ● Filled circle       | **modified** | The story's own file, or a file it directly imports, was changed.                     |
-| ◉ Circle with outline | **affected** | A file further up the story's dependency chain was changed (a transitive dependency). |
+| ◉ Circle with outline | **related**  | A file further up the story's dependency chain was changed (a transitive dependency). |
 
-When multiple statuses apply to the same story, the highest priority wins: **new** > **modified** > **affected**.
+When multiple statuses apply to the same story, the highest priority wins: **new** > **modified** > **related**.
 
 <Callout variant="info" icon="💡">
 
-**Modified vs. affected**
+**Modified vs. related**
 
-This distinction helps you prioritize your review. **Modified** stories are closest to the change, so you should typically review them first. **Affected** stories depend on the changed code indirectly, so review them after you've verified the directly modified stories look correct. This can be especially helpful in larger codebases where a single change may impact many stories.
+This distinction helps you prioritize your review. **Modified** stories are closest to the change, so you should typically review them first. **Related** stories depend on the changed code indirectly, so review them after you've verified the directly modified stories look correct. This can be especially helpful in larger codebases where a single change may impact many stories.
 
 </Callout>
 
@@ -56,6 +56,80 @@ Change detection is enabled by default. To disable it, set [`features.changeDete
 
 <CodeSnippets path="main-config-features-change-detection.md" />
 
+## Troubleshooting
+
+If status icons don't appear in your sidebar, check the following:
+
+- The dev server terminal log for messages prefixed with `Change detection:` — startup errors, unsupported builder warnings, and parse failures all surface there.
+- That you are running `storybook dev` against a supported builder (Vite or webpack5).
+- That your project is inside a git repository.
+- That `features.changeDetection` is not set to `false` in your Storybook configuration.
+
+### Workspace sibling packages not tracked in monorepos
+
+In a monorepo, when a story imports a workspace sibling package (e.g., `@myorg/ui` declared as `"workspace:*"` in `package.json`), the dependency may not be tracked, meaning changes to that sibling won't trigger a story reload. There are two root causes:
+
+**Built output missing at dev time.** Workspace packages typically point their `exports` or `main` fields to compiled output (`./dist/index.js`, `./esm/index.mjs`, etc.) that doesn't exist until the package is built. Storybook's resolver finds the symlink in `node_modules` but can't resolve the entry file, so it treats the import as untrackable. Even when the package has been built, its output directories are usually `.gitignore`d, meaning the resolved files are outside the set of watched source files and changes to them would never trigger a story reload.
+
+**Per-package `tsconfig.json` blocking root paths.** Many monorepos define workspace path aliases in the root `tsconfig.json` (e.g., `"@myorg/*": ["./packages/@myorg/*/src"]`) so that bundlers resolve imports directly to source. If a package has its own `tsconfig.json` that doesn't extend root, Storybook's resolver finds that file first during its directory walk-up and never sees the root-level path mappings.
+
+To ensure cross-workspace dependencies are tracked correctly, add `paths` entries to your root `tsconfig.json` pointing to the source directories of your workspace packages:
+
+```json title="tsconfig.json"
+{
+  "compilerOptions": {
+    "paths": {
+      "@myorg/*": ["./packages/@myorg/*/src"]
+    }
+  }
+}
+```
+
+Storybook uses these mappings as a fallback when per-file resolution does not find the module.
+
+### Many unrelated stories marked as related after a single change
+
+If a change to one component (e.g., `Breadcrumb`) causes every story that imports from a shared package (e.g., `@myorg/ui`) to be marked as **related**, the package is likely using a barrel file — a single `index.ts` that re-exports everything.
+
+Storybook performs **barrel-aware named import resolution**: when a story does `import { Button } from '@myorg/ui'`, Storybook traces through the barrel to find the actual source file (`Button.tsx`) and tracks that file instead of the barrel itself. This means a change to `Breadcrumb.tsx` will only mark stories that actually import `Breadcrumb` as related, not every story that imports from the barrel.
+
+**Supported barrel patterns** (Storybook resolves these to the underlying source file):
+
+- Direct named re-exports: `export { Button } from './Button'`
+- Wildcard re-exports: `export * from './Button'`
+
+**Patterns not fully supported** (Storybook falls back to tracking the barrel file itself):
+
+- Two-step re-exports: `import { Button } from './Button'; export { Button }`
+- Namespace re-exports: `export * as components from './components'`
+
+If your barrel uses unsupported patterns, or if you need the most precise tracking possible, you can still import components from their direct source paths:
+
+```ts
+// Instead of the barrel import:
+import { Button } from '@myorg/ui';
+
+// Import directly from the component's source:
+import { Button } from '@myorg/ui/Button';
+```
+
+Whether this is practical depends on the library. Libraries that publish deep-import paths (or that you own and can restructure) support this; libraries that intentionally expose only a barrel do not.
+
+### Debugging the dependency graph
+
+Set the `STORYBOOK_CHANGE_DETECTION_DEBUG` environment variable to dump a JSON snapshot of the dependency graph when Storybook starts:
+
+- `STORYBOOK_CHANGE_DETECTION_DEBUG=1` — writes `storybook-graph-debug.json` in the project root
+- `STORYBOOK_CHANGE_DETECTION_DEBUG=/path/to/output.json` — writes to the specified path
+
+The snapshot includes:
+
+- All story-to-dependency edges tracked at startup
+- The reverse index (which stories depend on each dep file, with BFS depth)
+- A barrel resolution trace showing which named imports were resolved to which source files
+
+This is useful for diagnosing why a specific story is or is not being marked as modified when you change a file.
+
 ## How it works
 
-When you run `storybook dev`, Storybook subscribes to the builder's module graph via an `onModuleGraphChange` hook. A git diff provider watches your working tree for changes and runs `git diff` to identify modified or new files. Storybook then traces each changed file through the module import graph (by following `import` statements) to find all story files that depend on it — directly or transitively. Stories with the shortest import distance are marked **modified**; those at greater distance are marked **affected**. New untracked files are marked **new**.
+When you run `storybook dev`, Storybook builds its own dependency graph by parsing each story file (and its imports) with [oxc](https://oxc.rs/) and resolves module specifiers through the builder's resolve config. The builder ships a small change-detection adapter that forwards file-system events into Storybook so the graph stays current. A git diff provider watches your working tree for changes and runs `git diff` to identify modified or new files. Storybook then traces each changed file through the dependency graph to find all story files that depend on it — directly or transitively. Stories with the shortest import distance are marked **modified**; those at greater distance are marked **related**. New untracked files are marked **new**.

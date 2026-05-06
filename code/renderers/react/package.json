@@ -1,6 +1,6 @@
 {
   "name": "@storybook/react",
-  "version": "10.4.0-alpha.10",
+  "version": "10.4.0-alpha.17",
   "description": "Storybook React renderer",
   "keywords": [
     "storybook"
@@ -81,12 +81,20 @@
     "type-fest": "~2.19"
   },
   "peerDependencies": {
+    "@types/react": "^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0",
+    "@types/react-dom": "^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0",
     "react": "^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0",
     "react-dom": "^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0",
     "storybook": "workspace:^",
     "typescript": ">= 4.9.x"
   },
   "peerDependenciesMeta": {
+    "@types/react": {
+      "optional": true
+    },
+    "@types/react-dom": {
+      "optional": true
+    },
     "typescript": {
       "optional": true
     }

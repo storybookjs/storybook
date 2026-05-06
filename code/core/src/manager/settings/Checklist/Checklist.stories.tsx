@@ -10,15 +10,8 @@ import { checklistData } from '../../../shared/checklist-store/checklistData.tsx
 import type { ChecklistItem } from '../../components/sidebar/useChecklist.ts';
 import { Checklist } from './Checklist.tsx';
 
-const values: Record<string, 'accepted' | 'done' | 'skipped'> = {
-  controls: 'accepted',
-  renderComponent: 'done',
-  whatsNewStorybook10: 'done',
-  viewports: 'skipped',
-};
-
-const availableItems = checklistData.sections.flatMap(
-  ({ id: sectionId, title: sectionTitle, items }, sectionIndex) =>
+const buildItems = (values: Record<string, 'accepted' | 'done' | 'skipped'>) =>
+  checklistData.sections.flatMap(({ id: sectionId, title: sectionTitle, items }, sectionIndex) =>
     items.map<ChecklistItem>((item, itemIndex) => {
       const itemValue = values[item.id];
       const isAccepted = itemValue === 'accepted';
@@ -43,7 +36,14 @@ const availableItems = checklistData.sections.flatMap(
         isMuted: false,
       };
     })
-);
+  );
+
+const availableItems = buildItems({
+  controls: 'accepted',
+  renderComponent: 'done',
+  whatsNewStorybook10: 'done',
+  viewports: 'skipped',
+});
 
 const Container = styled.div(({ theme }) => ({
   fontSize: theme.typography.size.s2,
@@ -82,4 +82,30 @@ const meta = preview.meta({
 
 export const Default = meta.story({
   args: { availableItems, ...checklistStore },
+});
+
+export const WithAiSetup = meta.story({
+  args: {
+    availableItems: buildItems({
+      controls: 'accepted',
+      renderComponent: 'done',
+      whatsNewStorybook10: 'done',
+      viewports: 'skipped',
+      // aiSetup is intentionally omitted → status 'open'
+    }),
+    ...checklistStore,
+  },
+});
+
+export const WithAiSetupSkipped = meta.story({
+  args: {
+    availableItems: buildItems({
+      controls: 'accepted',
+      renderComponent: 'done',
+      whatsNewStorybook10: 'done',
+      viewports: 'skipped',
+      aiSetup: 'skipped',
+    }),
+    ...checklistStore,
+  },
 });

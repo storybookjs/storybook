@@ -386,28 +386,32 @@ export const reactViteToTanstackReact: Fix<ReactViteToTanstackReactOptions> = {
 
       if (wantsAiPrompt) {
         const aiPrompt = buildAiMigrationPrompt(previewConfigPath);
+        const separator = picocolors.dim('─'.repeat(60));
 
+        let clipboardOk = false;
         try {
           await writeText(aiPrompt);
-
-          logger.logBox(
-            dedent`AI migration prompt copied to clipboard! ${picocolors.dim(
-              '(It can be pasted into Copilot or your preferred AI tool to generate code for removing the TanStack Router decorator.)'
-            )}`
-          );
+          clipboardOk = true;
         } catch {
           // Clipboard access can fail in CI / headless Linux environments where the
-          // platform helper (e.g. `xclip`) isn't installed. Fall back to printing the
-          // prompt so the user can still copy it manually.
-          const separator = picocolors.dim('─'.repeat(60));
-          logger.logBox(
-            dedent`Clipboard not available in this environment. Copy the AI migration prompt below manually:
-
-              ${separator}
-              ${aiPrompt}
-              ${separator}`
-          );
+          // platform helper (e.g. `xclip`) isn't installed. We fall back to printing
+          // only — the prompt is logged below either way.
         }
+
+        // Always log the prompt so coding agents running this automigration can read it
+        // directly from stdout (no clipboard available in agentic environments). Humans
+        // benefit too: the clipboard contents are visible for verification.
+        logger.logBox(
+          dedent`${
+            clipboardOk
+              ? 'AI migration prompt copied to clipboard. Full prompt below:'
+              : 'Clipboard not available in this environment. Copy the AI migration prompt below manually:'
+          }
+
+            ${separator}
+            ${aiPrompt}
+            ${separator}`
+        );
       }
     }
     logger.step('Migration completed successfully!');

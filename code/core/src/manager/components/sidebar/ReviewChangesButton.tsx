@@ -9,7 +9,11 @@ import type {
   Tag,
 } from 'storybook/internal/types';
 
-import { type API, type Combo, Consumer, experimental_useStatusStore } from 'storybook/manager-api';
+import {
+  experimental_useStatusStore,
+  useStorybookApi,
+  useStorybookState,
+} from 'storybook/manager-api';
 import { styled } from 'storybook/theming';
 
 import { computeStatusFilterFn } from '../../../manager-api/modules/statuses.ts';
@@ -29,38 +33,25 @@ const StyledIcon = styled.svg(({ theme }) => ({
 const NEW = 'status-value:new' as StatusValue;
 const MOD = 'status-value:modified' as StatusValue;
 
-const filterMapper = ({ api, state }: Combo) => ({
-  api,
-  index: state.internal_index as StoryIndex | undefined,
-  includedTagFilters: (state.includedTagFilters ?? []) as Tag[],
-  excludedTagFilters: (state.excludedTagFilters ?? []) as Tag[],
-  includedStatusFilters: (state.includedStatusFilters ?? []) as StatusValue[],
-  excludedStatusFilters: (state.excludedStatusFilters ?? []) as StatusValue[],
-});
-
-interface ReviewChangesButtonInnerProps {
-  api: API;
-  index: StoryIndex | undefined;
-  includedTagFilters: Tag[];
-  excludedTagFilters: Tag[];
-  includedStatusFilters: StatusValue[];
-  excludedStatusFilters: StatusValue[];
-}
-
-const ReviewChangesButtonInner = ({
-  api,
-  index,
-  includedTagFilters,
-  excludedTagFilters,
-  includedStatusFilters,
-  excludedStatusFilters,
-}: ReviewChangesButtonInnerProps) => {
+const ReviewChangesButton = () => {
+  const api = useStorybookApi();
+  const {
+    internal_index: index,
+    includedStatusFilters: rawIncludedStatusFilters,
+    excludedStatusFilters: rawExcludedStatusFilters,
+    includedTagFilters: rawIncludedTagFilters,
+    excludedTagFilters: rawExcludedTagFilters,
+  } = useStorybookState();
   const allStatuses = experimental_useStatusStore() as StatusesByStoryIdAndTypeId;
 
   const { newCount, modifiedCount } = useMemo(() => {
     if (!index) {
       return { newCount: 0, modifiedCount: 0 };
     }
+    const includedStatusFilters = (rawIncludedStatusFilters ?? []) as StatusValue[];
+    const excludedStatusFilters = (rawExcludedStatusFilters ?? []) as StatusValue[];
+    const includedTagFilters = (rawIncludedTagFilters ?? []) as Tag[];
+    const excludedTagFilters = (rawExcludedTagFilters ?? []) as Tag[];
     const contextualIncludedStatuses = includedStatusFilters.filter((s) => s !== NEW && s !== MOD);
     const contextualExcludedStatuses = excludedStatusFilters.filter((s) => s !== NEW && s !== MOD);
     const tagFilterFn = computeTagsFilterFn(includedTagFilters, excludedTagFilters);
@@ -71,7 +62,7 @@ const ReviewChangesButtonInner = ({
 
     let next = 0;
     let modified = 0;
-    const entries = index.entries ?? {};
+    const entries = (index as StoryIndex).entries ?? {};
     for (const [storyId, statusesByType] of Object.entries(allStatuses)) {
       const entry = entries[storyId] as API_PreparedIndexEntry | undefined;
       if (!entry) {
@@ -81,11 +72,11 @@ const ReviewChangesButtonInner = ({
       if (!tagFilterFn(entryWithStatuses) || !statusFilterFn(entryWithStatuses)) {
         continue;
       }
-      const values = Object.values(statusesByType).map((s) => s.value);
-      if (values.includes(NEW)) {
+      const statuses = Object.values(statusesByType);
+      if (statuses.some(({ value }) => value === NEW)) {
         next += 1;
       }
-      if (values.includes(MOD)) {
+      if (statuses.some(({ value }) => value === MOD)) {
         modified += 1;
       }
     }
@@ -93,12 +84,14 @@ const ReviewChangesButtonInner = ({
   }, [
     index,
     allStatuses,
-    includedTagFilters,
-    excludedTagFilters,
-    includedStatusFilters,
-    excludedStatusFilters,
+    rawIncludedStatusFilters,
+    rawExcludedStatusFilters,
+    rawIncludedTagFilters,
+    rawExcludedTagFilters,
   ]);
 
+  const includedStatusFilters = (rawIncludedStatusFilters ?? []) as StatusValue[];
+  const excludedStatusFilters = (rawExcludedStatusFilters ?? []) as StatusValue[];
   const isReviewActive = includedStatusFilters.includes(NEW) && includedStatusFilters.includes(MOD);
 
   if (!globalThis.FEATURES?.changeDetection) {
@@ -120,17 +113,9 @@ const ReviewChangesButtonInner = ({
     }
   };
 
-  const verb = isReviewActive ? 'Reviewing' : 'Review';
-
-  const parts: string[] = [];
-  if (newCount > 0) {
-    parts.push('new');
-  }
-  if (modifiedCount > 0) {
-    parts.push('modified');
-  }
-
-  const label = `${verb} ${parts.join(' and ')} stories`;
+  const changeKinds =
+    newCount > 0 && modifiedCount > 0 ? 'new and modified' : newCount > 0 ? 'new' : 'modified';
+  const label = `${isReviewActive ? 'Reviewing' : 'Review'} ${changeKinds} stories`;
 
   return (
     <StyledCTA
@@ -147,27 +132,5 @@ const ReviewChangesButtonInner = ({
     </StyledCTA>
   );
 };
-
-const ReviewChangesButton = () => (
-  <Consumer filter={filterMapper}>
-    {({
-      api,
-      index,
-      includedTagFilters,
-      excludedTagFilters,
-      includedStatusFilters,
-      excludedStatusFilters,
-    }) => (
-      <ReviewChangesButtonInner
-        api={api}
-        index={index}
-        includedTagFilters={includedTagFilters}
-        excludedTagFilters={excludedTagFilters}
-        includedStatusFilters={includedStatusFilters}
-        excludedStatusFilters={excludedStatusFilters}
-      />
-    )}
-  </Consumer>
-);
 
 export default ReviewChangesButton;

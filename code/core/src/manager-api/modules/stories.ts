@@ -692,10 +692,7 @@ export const init: ModuleFn<SubAPI, SubState> = ({
       }
 
       const childStoryId = entry.children.find((childId) => index[childId]);
-      if (!childStoryId) {
-        return undefined;
-      }
-      return api.findLeafEntry(index, childStoryId);
+      return childStoryId ? api.findLeafEntry(index, childStoryId) : undefined;
     },
     findLeafStoryId(index, storyId) {
       return api.findLeafEntry(index, storyId)?.id;

@@ -12,6 +12,21 @@ import { internal_fullStatusStore } from 'storybook/manager-api';
 import { IconSymbols } from './IconSymbols.tsx';
 import ReviewChangesButton from './ReviewChangesButton.tsx';
 
+type ChangeStatusValue = 'status-value:new' | 'status-value:modified';
+
+const setChangeStatuses = (entries: Record<string, ChangeStatusValue>) => {
+  internal_fullStatusStore.set(
+    Object.entries(entries).map(([storyId, value]) => ({
+      storyId,
+      typeId: 'storybook/change-detection',
+      value,
+      title: 'Change Detection',
+      description: '',
+    }))
+  );
+  return () => internal_fullStatusStore.unset();
+};
+
 const buildIndexEntries = (storyIds: string[], extraTags: Record<string, string[]> = {}) =>
   storyIds.reduce<Record<string, any>>((acc, id) => {
     acc[id] = {
@@ -86,27 +101,22 @@ export default meta;
 
 type Story = StoryObj<typeof meta>;
 
-const twoStoriesBeforeEach = () => {
-  internal_fullStatusStore.set([
-    {
-      storyId: 's1',
-      typeId: 'storybook/change-detection',
-      value: 'status-value:new',
-      title: 'Change Detection',
-      description: '',
-    },
-    {
-      storyId: 's2',
-      typeId: 'storybook/change-detection',
-      value: 'status-value:modified',
-      title: 'Change Detection',
-      description: '',
-    },
-  ]);
-  return () => internal_fullStatusStore.unset();
-};
-
 const eightStoryIds = ['s1', 's2', 's3', 's4', 's5', 's6', 's7', 's8'];
+
+const fiveNewThreeModified = () =>
+  setChangeStatuses({
+    s1: 'status-value:new',
+    s2: 'status-value:new',
+    s3: 'status-value:new',
+    s4: 'status-value:new',
+    s5: 'status-value:new',
+    s6: 'status-value:modified',
+    s7: 'status-value:modified',
+    s8: 'status-value:modified',
+  });
+
+const twoStoriesBeforeEach = () =>
+  setChangeStatuses({ s1: 'status-value:new', s2: 'status-value:modified' });
 
 /**
  * Feature flag on, 5 new stories, 3 modified. No filters active.
@@ -118,67 +128,7 @@ export const Idle: Story = {
       storyIds: eightStoryIds,
     },
   },
-  beforeEach: () => {
-    internal_fullStatusStore.set([
-      {
-        storyId: 's1',
-        typeId: 'storybook/change-detection',
-        value: 'status-value:new',
-        title: 'Change Detection',
-        description: '',
-      },
-      {
-        storyId: 's2',
-        typeId: 'storybook/change-detection',
-        value: 'status-value:new',
-        title: 'Change Detection',
-        description: '',
-      },
-      {
-        storyId: 's3',
-        typeId: 'storybook/change-detection',
-        value: 'status-value:new',
-        title: 'Change Detection',
-        description: '',
-      },
-      {
-        storyId: 's4',
-        typeId: 'storybook/change-detection',
-        value: 'status-value:new',
-        title: 'Change Detection',
-        description: '',
-      },
-      {
-        storyId: 's5',
-        typeId: 'storybook/change-detection',
-        value: 'status-value:new',
-        title: 'Change Detection',
-        description: '',
-      },
-      {
-        storyId: 's6',
-        typeId: 'storybook/change-detection',
-        value: 'status-value:modified',
-        title: 'Change Detection',
-        description: '',
-      },
-      {
-        storyId: 's7',
-        typeId: 'storybook/change-detection',
-        value: 'status-value:modified',
-        title: 'Change Detection',
-        description: '',
-      },
-      {
-        storyId: 's8',
-        typeId: 'storybook/change-detection',
-        value: 'status-value:modified',
-        title: 'Change Detection',
-        description: '',
-      },
-    ]);
-    return () => internal_fullStatusStore.unset();
-  },
+  beforeEach: fiveNewThreeModified,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     const button = await canvas.findByRole('switch');
@@ -198,7 +148,7 @@ export const Active: Story = {
       includedStatusFilters: ['status-value:new', 'status-value:modified'],
     },
   },
-  beforeEach: Idle.beforeEach,
+  beforeEach: fiveNewThreeModified,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     const button = await canvas.findByRole('switch');
@@ -218,7 +168,7 @@ export const PartialFilter: Story = {
       includedStatusFilters: ['status-value:new'],
     },
   },
-  beforeEach: Idle.beforeEach,
+  beforeEach: fiveNewThreeModified,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     const button = await canvas.findByRole('switch');
@@ -236,25 +186,7 @@ export const OnlyNew: Story = {
       storyIds: ['s1', 's2'],
     },
   },
-  beforeEach: () => {
-    internal_fullStatusStore.set([
-      {
-        storyId: 's1',
-        typeId: 'storybook/change-detection',
-        value: 'status-value:new',
-        title: 'Change Detection',
-        description: '',
-      },
-      {
-        storyId: 's2',
-        typeId: 'storybook/change-detection',
-        value: 'status-value:new',
-        title: 'Change Detection',
-        description: '',
-      },
-    ]);
-    return () => internal_fullStatusStore.unset();
-  },
+  beforeEach: () => setChangeStatuses({ s1: 'status-value:new', s2: 'status-value:new' }),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     const button = await canvas.findByRole('switch');
@@ -272,32 +204,12 @@ export const OnlyModified: Story = {
       storyIds: ['s1', 's2', 's3'],
     },
   },
-  beforeEach: () => {
-    internal_fullStatusStore.set([
-      {
-        storyId: 's1',
-        typeId: 'storybook/change-detection',
-        value: 'status-value:modified',
-        title: 'Change Detection',
-        description: '',
-      },
-      {
-        storyId: 's2',
-        typeId: 'storybook/change-detection',
-        value: 'status-value:modified',
-        title: 'Change Detection',
-        description: '',
-      },
-      {
-        storyId: 's3',
-        typeId: 'storybook/change-detection',
-        value: 'status-value:modified',
-        title: 'Change Detection',
-        description: '',
-      },
-    ]);
-    return () => internal_fullStatusStore.unset();
-  },
+  beforeEach: () =>
+    setChangeStatuses({
+      s1: 'status-value:modified',
+      s2: 'status-value:modified',
+      s3: 'status-value:modified',
+    }),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     const button = await canvas.findByRole('switch');
@@ -322,7 +234,7 @@ export const ContextualTagFilter: Story = {
       extraTags: { s1: ['feature-a'], s2: ['feature-a'] },
     },
   },
-  beforeEach: Idle.beforeEach,
+  beforeEach: fiveNewThreeModified,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     const button = await canvas.findByRole('switch');
@@ -356,20 +268,12 @@ export const HiddenWhenFeatureOff: Story = {
     },
   },
   beforeEach: () => {
-    internal_fullStatusStore.set([
-      {
-        storyId: 's1',
-        typeId: 'storybook/change-detection',
-        value: 'status-value:new',
-        title: 'Change Detection',
-        description: '',
-      },
-    ]);
+    const cleanup = setChangeStatuses({ s1: 'status-value:new' });
     const features = global.FEATURES;
     global.FEATURES = { ...features, changeDetection: false };
     return () => {
       global.FEATURES = features;
-      internal_fullStatusStore.unset();
+      cleanup();
     };
   },
   play: async ({ canvasElement }) => {

@@ -172,8 +172,12 @@ export class ClackPromptProvider extends PromptProvider {
     const taskId = `${options.id}-task`;
     logTracker.addLog('info', `${taskId}-start: ${options.title}`);
 
+    // Track whether this wrapper owns the current-task-log entry so that nested taskLog() calls
+    // don't pop the parent's entry or tear down the parent's stdout hook on close.
+    const createdCurrentLog = !isCurrentTaskActive;
+
     // Only the root taskLog installs the stdout hook (nested calls reuse the parent's task).
-    if (!isCurrentTaskActive) {
+    if (createdCurrentLog) {
       hasExternalStdoutWrite = false;
       inTrackedTaskLogWrite = false;
       installStdoutHook();
@@ -192,7 +196,7 @@ export class ClackPromptProvider extends PromptProvider {
       error: (message) => {
         logTracker.addLog('error', `${taskId}-error: ${message}`);
         const contaminated = hasExternalStdoutWrite;
-        if (!isCurrentTaskActive) {
+        if (createdCurrentLog) {
           uninstallStdoutHook();
           hasExternalStdoutWrite = false;
         }
@@ -201,23 +205,23 @@ export class ClackPromptProvider extends PromptProvider {
         } else {
           task.error(message, { showLog: true });
         }
-        clearCurrentTaskLog();
+        if (createdCurrentLog) {
+          clearCurrentTaskLog();
+        }
       },
       success: (message, options) => {
         logTracker.addLog('info', `${taskId}-success: ${message}`);
         const contaminated = hasExternalStdoutWrite;
-        if (!isCurrentTaskActive) {
+        if (createdCurrentLog) {
           uninstallStdoutHook();
           hasExternalStdoutWrite = false;
-        }
-        if (!isCurrentTaskActive) {
           if (contaminated) {
             clack.log.success(message);
           } else {
             task.success(message, options);
           }
+          clearCurrentTaskLog();
         }
-        clearCurrentTaskLog();
       },
       group(title) {
         logTracker.addLog('info', `${taskId}-group: ${title}`);
@@ -241,16 +245,15 @@ export class ClackPromptProvider extends PromptProvider {
           return stub;
         }
         const group = runTracked(() => task.group(title));
-        setCurrentTaskLog(group);
-        return {
-          message: (message) => {
+        const wrappedGroup = {
+          message: (message: string) => {
             if (hasExternalStdoutWrite) {
               clack.log.message(message);
             } else {
               runTracked(() => group.message(message));
             }
           },
-          success: (message) => {
+          success: (message: string) => {
             if (hasExternalStdoutWrite) {
               clack.log.success(message);
             } else {
@@ -258,7 +261,7 @@ export class ClackPromptProvider extends PromptProvider {
             }
             clearCurrentTaskLog();
           },
-          error: (message) => {
+          error: (message: string) => {
             if (hasExternalStdoutWrite) {
               clack.log.error(message);
             } else {
@@ -267,12 +270,16 @@ export class ClackPromptProvider extends PromptProvider {
             clearCurrentTaskLog();
           },
         };
+        // Push the contamination-aware wrapper (not the raw clack group) so callers reaching
+        // the active task via `getCurrentTaskLog()` (e.g. logger.ts) also get rerouting.
+        setCurrentTaskLog(wrappedGroup);
+        return wrappedGroup;
       },
     };
 
     // Push the contamination-aware wrapper (not the raw clack task) so that callers reaching
     // the active task via `getCurrentTaskLog()` (e.g. logger.ts) also get the rerouting.
-    if (!isCurrentTaskActive) {
+    if (createdCurrentLog) {
       setCurrentTaskLog(wrapped);
     }
 

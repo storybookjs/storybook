@@ -181,15 +181,15 @@ export const Idle: Story = {
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    const button = await canvas.findByRole('button');
+    const button = await canvas.findByRole('switch');
     await expect(button).toHaveTextContent('Review new and modified stories');
-    await expect(button).toHaveAttribute('aria-pressed', 'false');
+    await expect(button).toHaveAttribute('aria-checked', 'false');
   },
 };
 
 /**
  * Both new and modified filters active.
- * Shows "Reviewing new and modified stories" with aria-pressed="true".
+ * Shows "Reviewing new and modified stories" with aria-checked="true".
  */
 export const Active: Story = {
   parameters: {
@@ -201,15 +201,15 @@ export const Active: Story = {
   beforeEach: Idle.beforeEach,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    const button = await canvas.findByRole('button');
+    const button = await canvas.findByRole('switch');
     await expect(button).toHaveTextContent('Reviewing new and modified stories');
-    await expect(button).toHaveAttribute('aria-pressed', 'true');
+    await expect(button).toHaveAttribute('aria-checked', 'true');
   },
 };
 
 /**
  * Only 'status-value:new' in includedStatusFilters — not fully active.
- * Shows "Review …" (not "Reviewing") and aria-pressed="false".
+ * Shows "Review …" (not "Reviewing") and aria-checked="false".
  */
 export const PartialFilter: Story = {
   parameters: {
@@ -221,8 +221,8 @@ export const PartialFilter: Story = {
   beforeEach: Idle.beforeEach,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    const button = await canvas.findByRole('button');
-    await expect(button).toHaveAttribute('aria-pressed', 'false');
+    const button = await canvas.findByRole('switch');
+    await expect(button).toHaveAttribute('aria-checked', 'false');
     await expect(button.textContent).toMatch(/^Review /);
   },
 };
@@ -257,7 +257,7 @@ export const OnlyNew: Story = {
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    const button = await canvas.findByRole('button');
+    const button = await canvas.findByRole('switch');
     await expect(button).toHaveTextContent('Review new stories');
     await expect(button.textContent).not.toMatch(/modified/);
   },
@@ -300,7 +300,7 @@ export const OnlyModified: Story = {
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    const button = await canvas.findByRole('button');
+    const button = await canvas.findByRole('switch');
     await expect(button).toHaveTextContent('Review modified stories');
     await expect(button.textContent).not.toMatch(/\bnew\b/);
   },
@@ -325,7 +325,7 @@ export const ContextualTagFilter: Story = {
   beforeEach: Idle.beforeEach,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    const button = await canvas.findByRole('button');
+    const button = await canvas.findByRole('switch');
     await expect(button).toHaveTextContent('Review new stories');
     await expect(button.textContent).not.toMatch(/modified/);
   },
@@ -399,7 +399,7 @@ export const ToggleActivate: Story = {
   },
   play: async ({ canvasElement, parameters }) => {
     const canvas = within(canvasElement);
-    const button = await canvas.findByRole('button');
+    const button = await canvas.findByRole('switch');
     await userEvent.click(button);
     const mock = parameters.contextOptions.setAllStatusFilters;
     await expect(mock).toHaveBeenCalledOnce();
@@ -433,7 +433,7 @@ export const TogglePreservesExcluded: Story = {
   },
   play: async ({ canvasElement, parameters }) => {
     const canvas = within(canvasElement);
-    const button = await canvas.findByRole('button');
+    const button = await canvas.findByRole('switch');
     await userEvent.click(button);
     const mock = parameters.contextOptions.setAllStatusFilters;
     await expect(mock).toHaveBeenCalledOnce();

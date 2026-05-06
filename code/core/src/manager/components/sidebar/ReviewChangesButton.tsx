@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 
-import { Button } from 'storybook/internal/components';
+import { ToggleButton } from 'storybook/internal/components';
 import type {
   API_PreparedIndexEntry,
   StatusesByStoryIdAndTypeId,
@@ -16,16 +16,11 @@ import { computeStatusFilterFn } from '../../../manager-api/modules/statuses.ts'
 import { computeTagsFilterFn } from '../../../manager-api/modules/tags.ts';
 import { UseSymbol } from './IconSymbols.tsx';
 
-const StyledCTA = styled(Button)<{ $isActive: boolean }>(({ $isActive, theme }) => ({
+const StyledCTA = styled(ToggleButton)({
   marginTop: -8,
   width: '100%',
   justifyContent: 'flex-start',
-  '&:focus-visible': { outlineOffset: 4 },
-  ...($isActive && {
-    background: theme.background.hoverable,
-    color: theme.color.secondary,
-  }),
-}));
+});
 
 const StyledIcon = styled.svg(({ theme }) => ({
   color: theme.fgColor.accent,
@@ -141,9 +136,8 @@ const ReviewChangesButtonInner = ({
     <StyledCTA
       variant="ghost"
       padding="small"
-      $isActive={isReviewActive}
-      aria-pressed={isReviewActive}
-      aria-label={label}
+      pressed={isReviewActive}
+      ariaLabel={label}
       onClick={onClick}
     >
       <StyledIcon viewBox="0 0 14 14" width="14" height="14" aria-hidden>

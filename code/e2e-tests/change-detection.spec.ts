@@ -151,7 +151,7 @@ test.describe('Change Detection', () => {
       // Branch-level "Modified" change-detection icon is gated on the modified
       // status filter being active. Activate it via the ReviewChangesButton CTA
       // (which toggles new+modified filters together) so the badge renders.
-      const reviewCta = page.getByRole('button', {
+      const reviewCta = page.getByRole('switch', {
         name: /^Review (new|modified|new and modified) stories$/,
       });
       await expect(reviewCta).toBeVisible({ timeout: CHANGE_DETECTION_TIMEOUT });

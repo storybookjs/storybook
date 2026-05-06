@@ -91,6 +91,7 @@ export async function aiSetup(options: AiSetupOptions): Promise<void> {
   await cache
     .set('ai-setup-ran', {
       timestamp: Date.now(),
+      runId: options.runId,
       configDir: resolve(projectInfo.configDir),
     })
     .catch(() => {});
@@ -101,6 +102,7 @@ export async function aiSetup(options: AiSetupOptions): Promise<void> {
       configDir: projectInfo.configDir,
       packageManager: projectInfo.packageManager.type,
       prompt: result.prompt,
+      runId: options.runId,
     },
     project: {
       framework: projectInfo.framework,

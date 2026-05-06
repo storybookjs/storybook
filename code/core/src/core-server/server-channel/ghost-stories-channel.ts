@@ -6,6 +6,7 @@ import type { Options } from 'storybook/internal/types';
 import { getComponentCandidates } from '../utils/ghost-stories/get-candidates.ts';
 import { runStoryTests } from '../utils/ghost-stories/run-story-tests.ts';
 import { waitForIdleVitest } from '../utils/wait-for-idle-vitest.ts';
+import { getAiSetupRunId } from '../../shared/utils/ai-checklist-flags.ts';
 
 class SkipGhostStoriesTelemetry extends Error {}
 
@@ -18,6 +19,8 @@ export function initGhostStoriesChannel(channel: Channel, options: Options) {
       totalRunDuration?: number;
       analyzedCount?: number;
       avgComplexity?: number;
+      aiSetupRunId?: string;
+
       candidateCount?: number;
       testRunDuration?: number;
     } = {};
@@ -103,6 +106,11 @@ export function initGhostStoriesChannel(channel: Channel, options: Options) {
               stats,
               runError: testRunResult.runError,
             };
+          }
+
+          const aiSetupRunId = await getAiSetupRunId(options.configDir);
+          if (aiSetupRunId) {
+            stats.aiSetupRunId = aiSetupRunId;
           }
 
           return {

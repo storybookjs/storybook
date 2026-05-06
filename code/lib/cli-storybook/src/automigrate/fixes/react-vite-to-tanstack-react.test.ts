@@ -100,16 +100,7 @@ describe('react-vite-to-tanstack-react', () => {
         '@tanstack/react-router': '^1.0.0',
       });
 
-      // First read: package.json
-      mockReadFile.mockResolvedValueOnce(
-        JSON.stringify({
-          devDependencies: {
-            [REACT_VITE_PACKAGE]: '^10.0.0',
-            '@tanstack/react-router': '^1.0.0',
-          },
-        })
-      );
-      // Second read: preview file
+      // preview file
       mockReadFile.mockResolvedValueOnce(`
         import { RouterProvider, createMemoryHistory, createRouter } from '@tanstack/react-router';
 
@@ -140,15 +131,6 @@ describe('react-vite-to-tanstack-react', () => {
         '/project/.storybook/decorators.tsx',
       ]);
 
-      // package.json
-      mockReadFile.mockResolvedValueOnce(
-        JSON.stringify({
-          devDependencies: {
-            [REACT_VITE_PACKAGE]: '^10.0.0',
-            '@tanstack/react-router': '^1.0.0',
-          },
-        })
-      );
       // preview.tsx — only imports the decorator, no router markers itself
       mockReadFile.mockResolvedValueOnce(`
         import { withRouter } from './decorators';

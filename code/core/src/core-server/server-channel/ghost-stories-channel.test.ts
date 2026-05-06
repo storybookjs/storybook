@@ -150,9 +150,7 @@ describe('ghostStoriesChannel', () => {
       });
 
       // Has ran tests successfully and written reports to JSON file in cache directory
-      vi.mocked(mockCommon.resolvePathInStorybookCache).mockReturnValue(
-        '/cache/ghost-stories-tests'
-      );
+      vi.mocked(mockCommon.resolvePathInStorybookCache).mockReturnValue('/cache/story-tests');
       vi.mocked(mockCommon.executeCommand).mockResolvedValue({} as any);
       mockFs.existsSync.mockReturnValue(true);
       mockFs.readFile.mockResolvedValue(
@@ -193,12 +191,13 @@ describe('ghostStoriesChannel', () => {
           'run',
           '--reporter=json',
           '--testTimeout=1000',
-          expect.stringContaining('--outputFile=/cache/ghost-stories-tests/test-results-'),
+          expect.stringContaining('--outputFile=/cache/story-tests/test-results-'),
           'component1.tsx',
           'component2.tsx',
         ],
         stdio: 'pipe',
         env: {
+          STORYBOOK_INTERNAL_TEST_RUN: '1',
           STORYBOOK_COMPONENT_PATHS: 'component1.tsx;component2.tsx',
         },
       } as any);
@@ -215,13 +214,14 @@ describe('ghostStoriesChannel', () => {
           testRunDuration: expect.any(Number),
         },
         results: {
-          total: 2,
-          passed: 2,
-          successRate: 1,
-          successRateWithoutEmptyRender: 1,
-          categorizedErrors: expect.any(Object),
-          uniqueErrorCount: 0,
-          passedButEmptyRender: 0,
+          runTotal: 2,
+          runPassed: 2,
+          runSuccessRate: 1,
+          runSuccessRateWithoutEmptyRender: 1,
+          runCategorizedErrors: expect.any(Object),
+          runCssCheck: 'not-run',
+          runUniqueErrorCount: 0,
+          runPassedButEmptyRender: 0,
         },
       });
     });
@@ -247,9 +247,7 @@ describe('ghostStoriesChannel', () => {
       });
 
       // Has ran tests but with failures, reports written to JSON file in cache directory
-      vi.mocked(mockCommon.resolvePathInStorybookCache).mockReturnValue(
-        '/cache/ghost-stories-tests'
-      );
+      vi.mocked(mockCommon.resolvePathInStorybookCache).mockReturnValue('/cache/story-tests');
       vi.mocked(mockCommon.executeCommand).mockResolvedValue({} as any);
       mockFs.existsSync.mockReturnValue(true);
       mockFs.readFile.mockResolvedValue(
@@ -292,12 +290,13 @@ describe('ghostStoriesChannel', () => {
           'run',
           '--reporter=json',
           '--testTimeout=1000',
-          expect.stringContaining('--outputFile=/cache/ghost-stories-tests/test-results-'),
+          expect.stringContaining('--outputFile=/cache/story-tests/test-results-'),
           'component1.tsx',
           'component2.tsx',
         ],
         stdio: 'pipe',
         env: {
+          STORYBOOK_INTERNAL_TEST_RUN: '1',
           STORYBOOK_COMPONENT_PATHS: 'component1.tsx;component2.tsx',
         },
       } as any);
@@ -315,13 +314,14 @@ describe('ghostStoriesChannel', () => {
             testRunDuration: expect.any(Number),
           },
           results: expect.objectContaining({
-            total: 2,
-            passed: 0,
-            successRate: 0,
-            // categorizedErrors is now an object with categories as keys
-            categorizedErrors: expect.any(Object),
-            uniqueErrorCount: expect.any(Number),
-            passedButEmptyRender: 0,
+            runTotal: 2,
+            runPassed: 0,
+            runSuccessRate: 0,
+            // runCategorizedErrors is an object keyed by error category
+            runCategorizedErrors: expect.any(Object),
+            runCssCheck: 'not-run',
+            runUniqueErrorCount: expect.any(Number),
+            runPassedButEmptyRender: 0,
           }),
         })
       );
@@ -363,7 +363,9 @@ describe('ghostStoriesChannel', () => {
         });
 
         expect(mockTelemetry.getLastEvents).toHaveBeenCalled();
-        expect(mockTelemetry.getSessionId).toHaveBeenCalled();
+        // getSessionId is no longer checked by ghost stories — session matching
+        // was removed to support mid-session ai-setup triggers.
+        expect(mockTelemetry.getSessionId).not.toHaveBeenCalled();
         expect(mockTelemetry.getStorybookMetadata).not.toHaveBeenCalled();
         expect(mockStoryGeneration.getComponentCandidates).not.toHaveBeenCalled();
       });
@@ -389,7 +391,6 @@ describe('ghostStoriesChannel', () => {
         });
 
         expect(mockTelemetry.getLastEvents).toHaveBeenCalled();
-        expect(mockTelemetry.getSessionId).toHaveBeenCalled();
         expect(mockTelemetry.getStorybookMetadata).toHaveBeenCalled();
         expect(mockStoryGeneration.getComponentCandidates).not.toHaveBeenCalled();
       });
@@ -415,7 +416,6 @@ describe('ghostStoriesChannel', () => {
         });
 
         expect(mockTelemetry.getLastEvents).toHaveBeenCalled();
-        expect(mockTelemetry.getSessionId).toHaveBeenCalled();
         expect(mockTelemetry.getStorybookMetadata).toHaveBeenCalled();
         expect(mockStoryGeneration.getComponentCandidates).not.toHaveBeenCalled();
       });
@@ -518,9 +518,7 @@ describe('ghostStoriesChannel', () => {
           analyzedCount: 2,
           avgComplexity: 1.0,
         });
-        vi.mocked(mockCommon.resolvePathInStorybookCache).mockReturnValue(
-          '/cache/ghost-stories-tests'
-        );
+        vi.mocked(mockCommon.resolvePathInStorybookCache).mockReturnValue('/cache/story-tests');
         vi.mocked(mockCommon.executeCommand).mockRejectedValue(new Error('Test execution failed'));
         mockFs.existsSync.mockReturnValue(false);
 
@@ -563,9 +561,7 @@ describe('ghostStoriesChannel', () => {
           analyzedCount: 2,
           avgComplexity: 1.0,
         });
-        vi.mocked(mockCommon.resolvePathInStorybookCache).mockReturnValue(
-          '/cache/ghost-stories-tests'
-        );
+        vi.mocked(mockCommon.resolvePathInStorybookCache).mockReturnValue('/cache/story-tests');
         vi.mocked(mockCommon.executeCommand).mockRejectedValue(new Error('Startup Error'));
         mockFs.existsSync.mockReturnValue(true);
         mockFs.readFile.mockResolvedValue(

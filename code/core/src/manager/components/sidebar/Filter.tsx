@@ -9,6 +9,7 @@ import { FilterIcon } from '@storybook/icons';
 import { type API, type Combo, Consumer, experimental_useStatusStore } from 'storybook/manager-api';
 import { styled } from 'storybook/theming';
 
+import { getActiveFilterCount } from '../../../shared/utils/story-index-filters.ts';
 import { FilterPanel } from './FilterPanel.tsx';
 
 const StyledButton = styled(Button)<{ $isHighlighted: boolean }>(({ $isHighlighted, theme }) => ({
@@ -42,11 +43,7 @@ const TagSelected = styled(Badge)(({ theme }) => ({
 const filterMapper = ({ api, state }: Combo) => ({
   api,
   indexJson: state.internal_index as StoryIndex | undefined,
-  activeFilterCount:
-    (state.includedTagFilters?.length ?? 0) +
-    (state.excludedTagFilters?.length ?? 0) +
-    (state.includedStatusFilters?.length ?? 0) +
-    (state.excludedStatusFilters?.length ?? 0),
+  activeFilterCount: getActiveFilterCount(state),
   defaultIncludedFilters: state.defaultIncludedTagFilters,
   defaultExcludedFilters: state.defaultExcludedTagFilters,
   includedFilters: state.includedTagFilters,

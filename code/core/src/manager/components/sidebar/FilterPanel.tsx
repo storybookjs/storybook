@@ -84,14 +84,17 @@ export const FilterPanel = ({
 
   const toStatusFilterItem = useCallback(
     (entry: StatusFilterEntry): FilterItem => {
+      const shortName = entry.shortName === 'affected' ? 'related' : entry.shortName;
       const isIncluded = includedStatusFilters.includes(entry.statusValue);
       const isExcluded = excludedStatusFilters.includes(entry.statusValue);
       const isChecked = isIncluded || isExcluded;
       const { icon: statusIconEl, iconColor } = getStatus(theme, entry.statusValue);
+
       return {
-        id: entry.shortName,
+        id: shortName,
         type: 'status',
-        title: entry.shortName.charAt(0).toUpperCase() + entry.shortName.slice(1),
+        title: shortName.charAt(0).toUpperCase() + shortName.slice(1),
+        tooltip: entry.description,
         count: entry.count,
         icon: statusIconEl ? <StatusIcon $iconColor={iconColor}>{statusIconEl}</StatusIcon> : null,
         isIncluded,
@@ -138,9 +141,7 @@ export const FilterPanel = ({
   );
 
   const setAllFilters = useCallback(
-    (selected: boolean) => {
-      api.setAllTagFilters(selected ? filterIds : [], []);
-    },
+    (selected: boolean) => api.setAllTagFilters(selected ? filterIds : [], []),
     [api, filterIds]
   );
 
@@ -179,9 +180,9 @@ export const FilterPanel = ({
                 ariaLabel={false}
                 id="deselect-all"
                 key="deselect-all"
-                onClick={() => {
-                  setAllFilters(false);
-                  api.resetStatusFilters();
+                onClick={async () => {
+                  await setAllFilters(false);
+                  await api.resetStatusFilters();
                 }}
               >
                 <SweepIcon />

@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { type ReactElement, type SyntheticEvent, useEffect, useRef, useState } from 'react';
 
 import {
   ActionList,
@@ -9,6 +9,7 @@ import {
 } from 'storybook/internal/components';
 
 import {
+  CheckIcon,
   ChevronSmallUpIcon,
   EyeCloseIcon,
   ListUnorderedIcon,
@@ -25,6 +26,7 @@ import { Particles } from '../Particles/Particles.tsx';
 import { TextFlip } from '../TextFlip.tsx';
 import type { ChecklistItem } from './useChecklist.ts';
 import { useChecklist } from './useChecklist.ts';
+import { useCopyButton } from '../../../shared/useCopyButton.ts';
 
 const fadeScaleIn = keyframes`
   from {
@@ -169,6 +171,36 @@ const OpenGuideButton = ({
       </ActionList.Icon>
       {children}
     </ActionList.Action>
+  );
+};
+
+const CopyButton = ({
+  label,
+  copyContent,
+  onClick,
+  ...props
+}: {
+  label: string;
+  copyContent: string;
+  onClick: (e: SyntheticEvent) => void;
+}) => {
+  const { children: copyChildren, buttonProps: copyButtonProps } = useCopyButton<
+    string | ReactElement
+  >({
+    children: label,
+    childrenOnCopy: (
+      <>
+        <CheckIcon /> Copied!
+      </>
+    ),
+    onCopy: onClick,
+    content: copyContent,
+  });
+
+  return (
+    <ActionList.Button {...props} {...copyButtonProps}>
+      {copyChildren}
+    </ActionList.Button>
   );
 };
 
@@ -317,6 +349,8 @@ export const ChecklistWidget = () => {
                       <ActionList.Icon>
                         {item.isCompleted && animated ? (
                           <Particles anchor={Checked} key={item.id} />
+                        ) : item.icon ? (
+                          <item.icon />
                         ) : (
                           <StatusFailIcon />
                         )}
@@ -327,21 +361,35 @@ export const ChecklistWidget = () => {
                         </ItemLabel>
                       </ActionList.Text>
                     </ActionList.Action>
-                    {item.action && (
-                      <ActionList.Button
-                        data-target-id={item.id}
-                        ariaLabel={false}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          item.action?.onClick({
-                            api,
-                            accept: () => accept(item.id),
-                          });
-                        }}
-                      >
-                        {item.action.label}
-                      </ActionList.Button>
-                    )}
+                    {item.action &&
+                      (item.action.copyContent ? (
+                        <CopyButton
+                          data-target-id={item.id}
+                          label={item.action.label}
+                          copyContent={item.action.copyContent}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            item.action?.onClick({
+                              api,
+                              accept: () => accept(item.id),
+                            });
+                          }}
+                        />
+                      ) : (
+                        <ActionList.Button
+                          data-target-id={item.id}
+                          ariaLabel={false}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            item.action?.onClick({
+                              api,
+                              accept: () => accept(item.id),
+                            });
+                          }}
+                        >
+                          {item.action.label}
+                        </ActionList.Button>
+                      ))}
                   </ActionList.HoverItem>
                 )
             )}

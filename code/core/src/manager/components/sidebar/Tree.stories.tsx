@@ -398,25 +398,30 @@ export const WithChangeDetectionOnly: Story = makeDualSlotStory({
   },
 });
 
-export const WithChangeDetectionAndTestStatus: Story = makeDualSlotStory({
-  [dualSlotStoryId]: {
-    'storybook/change-detection': {
-      storyId: dualSlotStoryId,
-      typeId: 'storybook/change-detection',
-      value: 'status-value:modified',
-      title: 'Change Detection',
-      description: 'Story is modified',
-      sidebarContextMenu: false,
-    },
-    'storybook/vitest': {
-      storyId: dualSlotStoryId,
-      typeId: 'storybook/vitest',
-      value: 'status-value:error',
-      title: 'Vitest',
-      description: 'Test failed',
+export const WithChangeDetectionAndTestStatus: Story = makeDualSlotStory(
+  {
+    [dualSlotStoryId]: {
+      'storybook/change-detection': {
+        storyId: dualSlotStoryId,
+        typeId: 'storybook/change-detection',
+        value: 'status-value:modified',
+        title: 'Change Detection',
+        description: 'Story is modified',
+        sidebarContextMenu: false,
+      },
+      'storybook/vitest': {
+        storyId: dualSlotStoryId,
+        typeId: 'storybook/vitest',
+        value: 'status-value:error',
+        title: 'Vitest',
+        description: 'Test failed',
+      },
     },
   },
-});
+  // Modified branch icon only renders when the modified status filter is
+  // active; activate it so the dual-slot design (change + test) is visible.
+  { state: { includedStatusFilters: ['status-value:modified'] } }
+);
 
 export const WithTestStatusOnly: Story = makeDualSlotStory({
   [dualSlotStoryId]: {

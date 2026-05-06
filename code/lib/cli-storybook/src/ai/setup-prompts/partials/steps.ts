@@ -100,10 +100,10 @@ export function verifyWithAllowedFailureStep(
 
     1. Read the error.
     2. If multiple stories share the failure, fix the shared preview setup, not the stories.
-    3. Re-run vitest **only for the affected file(s)**: \`npx vitest --project storybook run path/to/Foo.stories.${tsx}\`.
-    4. Repeat until the file passes, or until you have tried 5 times — if it still fails, leave \`'needs-work'\` tag to inform the user.
-    5. When you keep failing on a story, play function, etc., do not substitute it for easier content that contributes less to codebase understanding.
-
+    3. In subsequent runs, re-run Vitest **only for the affected file(s)**: \`npx vitest --project storybook run path/to/Foo.stories.${tsx}\`.
+    4. Fix any TypeScript issues needed for story files to pass, then re-run TS and Vitest only for those files. Repeat until files pass, or until you have tried 5 times.
+    5. If a story file still fails after those retries, leave the file tagged \`'needs-work'\` and move on — do not keep chasing project-wide TS errors caused by preserved \`'needs-work'\` files.
+    6. When you keep failing on a story, play function, etc., do not substitute it for easier content that contributes less to codebase understanding.
     **After a file passes**, edit its meta and remove \`'needs-work'\` so its tags become \`['ai-generated']\`. Files you couldn't fix keep \`['ai-generated', 'needs-work']\` — move on, don't loop forever.`,
   };
 }

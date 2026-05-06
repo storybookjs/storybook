@@ -610,7 +610,10 @@ const indexJsonWithAllStories = {
     ...(meta.args.indexJson?.entries ?? {}),
     ...Object.fromEntries(
       Object.entries(index)
-        .filter(([, item]) => item.type === 'story')
+        .filter(
+          (entry): entry is [string, Extract<IndexHash[string], { type: 'story' }>] =>
+            entry[1].type === 'story'
+        )
         .map(([id, item]) => [
           id,
           {

@@ -61,6 +61,7 @@ import {
 } from '../lib/stories.ts';
 import type { ModuleFn } from '../lib/types.tsx';
 import { buildNavigationUrl } from '../lib/url.ts';
+import { hasActiveFilters } from '../../shared/utils/story-index-filters.ts';
 import type { ComposedRef } from '../root.tsx';
 import { fullStatusStore } from '../stores/status.ts';
 import { BUILT_IN_FILTERS } from '../../shared/constants/tags.ts';
@@ -596,21 +597,11 @@ export const init: ModuleFn<SubAPI, SubState> = ({
       }
     },
     selectFirstStory: () => {
-      const {
-        index,
-        filteredIndex,
-        includedTagFilters,
-        excludedTagFilters,
-        includedStatusFilters,
-        excludedStatusFilters,
-      } = store.getState();
-      const hasActiveFilters =
-        includedTagFilters.length > 0 ||
-        excludedTagFilters.length > 0 ||
-        (includedStatusFilters?.length ?? 0) > 0 ||
-        (excludedStatusFilters?.length ?? 0) > 0;
+      const state = store.getState();
+      const hasAnyActiveFilters = hasActiveFilters(state);
 
-      if (hasActiveFilters) {
+      if (hasAnyActiveFilters) {
+        const { filteredIndex } = state;
         if (!filteredIndex) {
           return;
         }
@@ -624,6 +615,7 @@ export const init: ModuleFn<SubAPI, SubState> = ({
         return;
       }
 
+      const { index } = state;
       if (!index) {
         return;
       }
@@ -1044,20 +1036,10 @@ export const init: ModuleFn<SubAPI, SubState> = ({
          * - If the user started storybook with a specific page-URL like "/settings/about"
          */
         if (isCanvasRoute) {
-          const {
-            includedTagFilters,
-            excludedTagFilters,
-            includedStatusFilters,
-            excludedStatusFilters,
-            filteredIndex,
-          } = state;
-          const hasActiveFilters =
-            (includedTagFilters?.length ?? 0) > 0 ||
-            (excludedTagFilters?.length ?? 0) > 0 ||
-            (includedStatusFilters?.length ?? 0) > 0 ||
-            (excludedStatusFilters?.length ?? 0) > 0;
+          const hasAnyActiveFilters = hasActiveFilters(state);
 
-          if (hasActiveFilters && !stateHasSelection) {
+          if (hasAnyActiveFilters && !stateHasSelection) {
+            const { filteredIndex } = state;
             const storyPassesFilter = filteredIndex && filteredIndex[storyId]?.type === 'story';
 
             if (!storyPassesFilter) {

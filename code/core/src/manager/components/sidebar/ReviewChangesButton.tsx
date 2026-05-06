@@ -22,19 +22,12 @@ import { computeStatusFilterFn } from '../../../manager-api/modules/statuses.ts'
 import { computeTagsFilterFn } from '../../../manager-api/modules/tags.ts';
 import { UseSymbol } from './IconSymbols.tsx';
 
-const Wrapper = styled.div<{ $isActive: boolean }>(({ $isActive }) => ({
+const Wrapper = styled.div({
   display: 'flex',
   alignItems: 'center',
   gap: 4,
   marginTop: -8,
-  '[data-clear-review]': {
-    opacity: $isActive ? 1 : 0,
-    transition: 'opacity 150ms',
-  },
-  '&:hover [data-clear-review], [data-clear-review]:focus-visible': {
-    opacity: 1,
-  },
-}));
+});
 
 const StyledCTA = styled(ToggleButton)({
   flex: 1,
@@ -143,7 +136,7 @@ const ReviewChangesButton = () => {
   const label = `${isReviewActive ? 'Reviewing' : 'Review'} ${changeKinds} stories`;
 
   return (
-    <Wrapper $isActive={isReviewActive}>
+    <Wrapper>
       <StyledCTA
         variant="ghost"
         padding="small"
@@ -156,17 +149,18 @@ const ReviewChangesButton = () => {
         </StyledIcon>
         {label}
       </StyledCTA>
-      <Button
-        data-clear-review
-        variant="ghost"
-        padding="small"
-        size="small"
-        onClick={onClearClick}
-        ariaLabel="Clear"
-        tooltip="Clear"
-      >
-        <SweepIcon />
-      </Button>
+      {isReviewActive && (
+        <Button
+          variant="ghost"
+          padding="small"
+          size="small"
+          onClick={onClearClick}
+          ariaLabel="Clear"
+          tooltip="Clear"
+        >
+          <SweepIcon />
+        </Button>
+      )}
     </Wrapper>
   );
 };

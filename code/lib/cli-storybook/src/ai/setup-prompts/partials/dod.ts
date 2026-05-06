@@ -2,7 +2,7 @@ import { dedent } from 'ts-dedent';
 import type { SetupInstructionsContext } from '../../types.ts';
 
 export function cssCheckDOD(ctx: SetupInstructionsContext): string {
-  return dedent`**Exactly one \`CssCheck\` story exists** somewhere in the new stories, asserting a concrete computed style value read from the component's source (added at the end of Step 5).`;
+  return dedent`**Exactly one \`CssCheck\` story exists** somewhere in the new stories, asserting a concrete computed style value read from the component's source.`;
 }
 
 export function storyTagsV1DOD(ctx: SetupInstructionsContext): string {
@@ -10,7 +10,7 @@ export function storyTagsV1DOD(ctx: SetupInstructionsContext): string {
 }
 
 export function storyTagsV2DOD(ctx: SetupInstructionsContext): string {
-  return dedent`Every story file that passes vitest tests has had \`'needs-work'\` stripped, leaving \`tags: ['ai-generated']\`.Story files with vitest failures keep \`['ai-generated', 'needs-work']\`.`;
+  return dedent`Every story file that passes vitest tests has had \`'needs-work'\` stripped, leaving \`tags: ['ai-generated']\`. Story files with vitest failures keep \`['ai-generated', 'needs-work']\`.`;
 }
 
 export function vitestPassesStrictDOD(ctx: SetupInstructionsContext): string {

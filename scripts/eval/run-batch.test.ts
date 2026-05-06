@@ -308,9 +308,9 @@ describe('formatBatchHeader', () => {
 
     expect(lines[0]).toBe('Eval batch 2026-05-05T12-09-55-151Z');
     expect(lines.join('\n')).toContain(
-      'runs:        8 (2 projects × 1 agent(s) × 2 effort(s) × 2 rep(s))'
+      'runs:        8 (2 projects × 1 prompt(s) × 1 agent(s) × 1 model(s) × 2 effort(s) × 2 rep(s))'
     );
-    expect(lines.join('\n')).toContain('prompt:      pattern-copy-play');
+    expect(lines.join('\n')).toContain('prompts:     pattern-copy-play');
     expect(lines.join('\n')).toContain('projects:    edgy, mealdrop');
     expect(lines.join('\n')).toContain('efforts:     high, medium');
     expect(lines.join('\n')).toContain('concurrency: 8');

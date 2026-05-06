@@ -81,7 +81,7 @@ By default, a batch runs **10 repetitions per (project × variant)** across all 
 # Prompt is required. Confirms interactively unless you pass --yes (CI / automation).
 node scripts/eval/run-batch.ts --prompt pattern-copy-play --yes
 
-# Smaller batch — 2 reps per project (14 trials with the default Claude-only matrix)
+# Smaller batch — 2 reps per project (16 trials with Claude and Codex)
 node scripts/eval/run-batch.ts --prompt pattern-copy-play --yes --repetitions 2
 
 # Claude only

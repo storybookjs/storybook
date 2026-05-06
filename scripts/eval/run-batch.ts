@@ -189,7 +189,7 @@ export async function runBatch(
   const total = descriptors.length;
   const padTotal = String(total).length;
   const shortLabel = (descriptor: BatchRunDescriptor) =>
-    `${descriptor.project} r${String(descriptor.repetition).padStart(2, '0')}`;
+    `${descriptor.project} ${descriptor.agent}/${descriptor.effort} ${descriptor.prompt} r${String(descriptor.repetition).padStart(2, '0')}`;
 
   for (const line of formatBatchHeader({
     batchTimestamp,
@@ -741,8 +741,8 @@ export function formatBatchHeader(opts: {
 
   return [
     `Eval batch ${batchTimestamp}`,
-    `  runs:        ${descriptors.length} (${projects.length} projects × ${agents.length} agent(s) × ${efforts.length} effort(s) × ${reps} rep(s))`,
-    `  prompt:      ${prompts.join(', ')}`,
+    `  runs:        ${descriptors.length} (${projects.length} projects × ${prompts.length} prompt(s) × ${agents.length} agent(s) × ${models.length} model(s) × ${efforts.length} effort(s) × ${reps} rep(s))`,
+    `  prompts:     ${prompts.join(', ')}`,
     `  agents:      ${agents.join(', ')}`,
     `  models:      ${models.join(', ')}`,
     `  efforts:     ${efforts.join(', ')}`,
@@ -770,7 +770,11 @@ export function formatPerProjectSummary(runs: BatchRunSummaryEntry[]): string[] 
     .map(([project, projectRuns]) => {
       const ok = projectRuns.filter((r) => r.status === 'success').length;
       const sortedDurations = projectRuns.map((r) => r.durationMs).sort((a, b) => a - b);
-      const median = sortedDurations[Math.floor(sortedDurations.length / 2)];
+      const mid = Math.floor(sortedDurations.length / 2);
+      const median =
+        sortedDurations.length % 2 === 0
+          ? Math.round((sortedDurations[mid - 1] + sortedDurations[mid]) / 2)
+          : sortedDurations[mid];
       return [
         project,
         `${ok}/${projectRuns.length}`,

@@ -35,6 +35,7 @@ export function initAIAnalyticsChannel(
       const lastEvents = await getLastEvents();
       const lastAISetup = lastEvents?.['ai-setup'];
       const lastSetupStoryScoringRun = lastEvents?.['ai-setup-final-scoring'];
+      stats.runId = await getAiSetupRunId(options.configDir);
 
       // Only run if sb ai setup has been called
       if (!lastAISetup) {
@@ -91,8 +92,6 @@ export function initAIAnalyticsChannel(
           aiStoryCount++;
         }
       }
-
-      stats.runId = await getAiSetupRunId(options.configDir);
 
       if (aiStoryFiles.size > 0) {
         const aiTestRunResult = await runStoryTests([...aiStoryFiles]);

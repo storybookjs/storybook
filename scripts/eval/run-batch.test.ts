@@ -307,7 +307,9 @@ describe('formatBatchHeader', () => {
     });
 
     expect(lines[0]).toBe('Eval batch 2026-05-05T12-09-55-151Z');
-    expect(lines.join('\n')).toContain('runs:        8 (2 projects × 1 agent(s) × 2 effort(s) × 2 rep(s))');
+    expect(lines.join('\n')).toContain(
+      'runs:        8 (2 projects × 1 agent(s) × 2 effort(s) × 2 rep(s))'
+    );
     expect(lines.join('\n')).toContain('prompt:      pattern-copy-play');
     expect(lines.join('\n')).toContain('projects:    edgy, mealdrop');
     expect(lines.join('\n')).toContain('efforts:     high, medium');
@@ -341,11 +343,7 @@ describe('formatPerProjectSummary', () => {
   });
 });
 
-function makeRun(opts: {
-  project: string;
-  status: 'success' | 'failed';
-  durationMs: number;
-}) {
+function makeRun(opts: { project: string; status: 'success' | 'failed'; durationMs: number }) {
   return {
     project: opts.project,
     agent: 'claude' as const,
@@ -416,9 +414,9 @@ describe('buildBatchRunDescriptors with --projects', () => {
   });
 
   it('parses --prompts from the CLI', () => {
-    expect(
-      parseRunBatchArgs(['--prompts', 'pattern-copy-play, setup'])
-    ).toMatchObject({ prompts: ['pattern-copy-play', 'setup'] });
+    expect(parseRunBatchArgs(['--prompts', 'pattern-copy-play, setup'])).toMatchObject({
+      prompts: ['pattern-copy-play', 'setup'],
+    });
   });
 
   it('rejects CLI invocations with neither --prompt nor --prompts', () => {

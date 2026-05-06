@@ -204,9 +204,7 @@ export async function runBatch(
     descriptors.map((descriptor, index) =>
       limit(async () => {
         started += 1;
-        log(
-          `[${String(started).padStart(padTotal)}/${total}] start  ${shortLabel(descriptor)}`
-        );
+        log(`[${String(started).padStart(padTotal)}/${total}] start  ${shortLabel(descriptor)}`);
 
         const result = await runBatchDescriptor(descriptor, {
           repoRoot,
@@ -219,8 +217,7 @@ export async function runBatch(
         finished += 1;
         const reason = result.status === 'failed' ? await readFailureReason(result.logPath) : '';
         const tag = result.status === 'success' ? '✓' : '✗';
-        const exitInfo =
-          result.status === 'success' ? '' : ` ${formatExitResult(result)}`;
+        const exitInfo = result.status === 'success' ? '' : ` ${formatExitResult(result)}`;
         log(
           `[${String(finished).padStart(padTotal)}/${total}] ${tag} ${shortLabel(descriptor)} ${formatDuration(result.durationMs)}${exitInfo}${reason ? ` — ${reason}` : ''}`
         );
@@ -370,10 +367,7 @@ export function buildBatchRunDescriptors(options: {
 }
 
 function resolveBatchPrompts(options: { prompt?: string; prompts?: string[] }): string[] {
-  const merged = [
-    ...(options.prompts ?? []),
-    ...(options.prompt != null ? [options.prompt] : []),
-  ]
+  const merged = [...(options.prompts ?? []), ...(options.prompt != null ? [options.prompt] : [])]
     .map((value) => value.trim())
     .filter(Boolean);
 
@@ -786,9 +780,7 @@ export function formatPerProjectSummary(runs: BatchRunSummaryEntry[]): string[] 
       ];
     });
 
-  const widths = headers.map((h, i) =>
-    Math.max(h.length, ...rows.map((row) => row[i].length))
-  );
+  const widths = headers.map((h, i) => Math.max(h.length, ...rows.map((row) => row[i].length)));
   widths[0] = Math.max(widths[0], projectCol);
 
   const fmtRow = (cells: string[]) =>

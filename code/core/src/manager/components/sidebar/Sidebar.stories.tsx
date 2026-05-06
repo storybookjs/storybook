@@ -652,7 +652,7 @@ export const StatusesNew: Story = {
     await waitForChecklistWidget();
     await step('CTA shows new label', async () => {
       const canvas = within(canvasElement);
-      const cta = await canvas.findByRole('button', { name: 'Review new stories' });
+      const cta = await canvas.findByRole('switch', { name: 'Review new stories' });
       await expect(cta).toBeInTheDocument();
       await expect(cta).toHaveTextContent('Review new stories');
     });
@@ -698,7 +698,7 @@ export const StatusesModified: Story = {
     await waitForChecklistWidget();
     await step('CTA shows modified label', async () => {
       const canvas = within(canvasElement);
-      const cta = await canvas.findByRole('button', { name: 'Review modified stories' });
+      const cta = await canvas.findByRole('switch', { name: 'Review modified stories' });
       await expect(cta).toBeInTheDocument();
       await expect(cta).toHaveTextContent('Review modified stories');
     });
@@ -835,16 +835,16 @@ export const WithCTAActive: Story = {
     await waitForChecklistWidget();
     await step('CTA shows reviewing state', async () => {
       const canvas = within(canvasElement);
-      const cta = await canvas.findByRole('button', { name: 'Reviewing new stories' });
+      const cta = await canvas.findByRole('switch', { name: 'Reviewing new stories' });
       await expect(cta).toBeInTheDocument();
-      await expect(cta).toHaveAttribute('aria-pressed', 'true');
+      await expect(cta).toHaveAttribute('aria-checked', 'true');
       await expect(cta).toHaveTextContent('Reviewing new stories');
     });
   },
 };
 
 /**
- * Clicking the CTA flips includedStatusFilters live — the button text, aria-pressed and active
+ * Clicking the CTA flips includedStatusFilters live — the button text, aria-checked and active
  * styling all update in the same render cycle. Regression guard for the Tree.tsx Consumer issue
  * where new data props were ignored after first render.
  */
@@ -901,27 +901,27 @@ export const CTAToggleUpdatesLive: Story = {
     const canvas = within(canvasElement);
 
     await step('initial CTA reads "Review new stories"', async () => {
-      const cta = await canvas.findByRole('button', { name: 'Review new stories' });
-      await expect(cta).toHaveAttribute('aria-pressed', 'false');
+      const cta = await canvas.findByRole('switch', { name: 'Review new stories' });
+      await expect(cta).toHaveAttribute('aria-checked', 'false');
       await expect(cta).toHaveTextContent('Review new stories');
     });
 
     await step('click CTA → tree state flips live', async () => {
-      const cta = await canvas.findByRole('button', { name: 'Review new stories' });
+      const cta = await canvas.findByRole('switch', { name: 'Review new stories' });
       await userEvent.click(cta);
     });
 
-    await step('CTA shows reviewing state and aria-pressed=true', async () => {
-      const cta = await canvas.findByRole('button', { name: 'Reviewing new stories' });
-      await expect(cta).toHaveAttribute('aria-pressed', 'true');
+    await step('CTA shows reviewing state and aria-checked=true', async () => {
+      const cta = await canvas.findByRole('switch', { name: 'Reviewing new stories' });
+      await expect(cta).toHaveAttribute('aria-checked', 'true');
       await expect(cta).toHaveTextContent('Reviewing new stories');
     });
 
     await step('click again deactivates', async () => {
-      const cta = await canvas.findByRole('button', { name: 'Reviewing new stories' });
+      const cta = await canvas.findByRole('switch', { name: 'Reviewing new stories' });
       await userEvent.click(cta);
-      const idle = await canvas.findByRole('button', { name: 'Review new stories' });
-      await expect(idle).toHaveAttribute('aria-pressed', 'false');
+      const idle = await canvas.findByRole('switch', { name: 'Review new stories' });
+      await expect(idle).toHaveAttribute('aria-checked', 'false');
     });
   },
 };

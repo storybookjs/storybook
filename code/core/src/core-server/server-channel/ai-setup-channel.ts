@@ -42,8 +42,11 @@ export function initAIAnalyticsChannel(
         return;
       }
 
-      // Already ran once for this project — never run again
-      if (lastSetupStoryScoringRun) {
+      // Already ran once for this project and `ai setup` session — never run again
+      if (
+        lastSetupStoryScoringRun &&
+        lastSetupStoryScoringRun.body.payload.runId === lastAISetup.body.payload.runId
+      ) {
         return;
       }
 

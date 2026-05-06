@@ -32,6 +32,7 @@ export function initGhostStoriesChannel(channel: Channel, options: Options) {
           const lastEvents = await getLastEvents();
           const lastInit = lastEvents?.init;
           const lastAISetup = lastEvents?.['ai-setup'];
+          const lastSetupStoryScoringRun = lastEvents?.['ai-setup-final-scoring'];
           const lastGhostStoriesRun = lastEvents?.['ghost-stories'];
 
           // We only want to run ghost stories immediately after init or ai setup.
@@ -40,8 +41,13 @@ export function initGhostStoriesChannel(channel: Channel, options: Options) {
             throw new SkipGhostStoriesTelemetry();
           }
 
-          // Already ran once for this project — never run again
-          if (lastGhostStoriesRun) {
+          // Already ran once for this project — never run again, unless we need fresh
+          // data for a new instance of `ai setup`.
+          if (
+            lastGhostStoriesRun &&
+            (!lastSetupStoryScoringRun ||
+              lastSetupStoryScoringRun.body.payload.runId === lastAISetup.body.payload.runId)
+          ) {
             throw new SkipGhostStoriesTelemetry();
           }
 

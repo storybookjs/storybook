@@ -20,7 +20,7 @@ Assembles and writes a polished changelog entry for a Storybook minor or major (
 Run the helper script to see all unique changelog entries from the prereleases, with patch-backported changes filtered out:
 
 ```bash
-node --experimental-strip-types .agents/skills/minor-release/get-minor-changelog-summary.ts [version]
+node .agents/skills/minor-release/get-minor-changelog-summary.ts [version]
 ```
 
 - Omit `[version]` to auto-detect from the most recent prerelease in `CHANGELOG.prerelease.md`
@@ -137,7 +137,7 @@ It also includes features to level up your UI development, documentation, and te
 Pass the highlights text to the write script via stdin. The script will call the summary script internally, combine the full entry list with your highlights, and write the complete section to `CHANGELOG.md` — inserting at the top or overwriting any existing section for this version.
 
 ```bash
-node --experimental-strip-types .agents/skills/minor-release/write-minor-changelog-section.ts [version] << 'HIGHLIGHTS'
+node .agents/skills/minor-release/write-minor-changelog-section.ts [version] << 'HIGHLIGHTS'
 > _Your tagline here_
 
 Storybook X.Y contains hundreds of fixes and improvements including:
@@ -150,7 +150,7 @@ HIGHLIGHTS
 Use `--dry-run` to preview the composed section before writing:
 
 ```bash
-node --experimental-strip-types .agents/skills/minor-release/write-minor-changelog-section.ts --dry-run << 'HIGHLIGHTS'
+node .agents/skills/minor-release/write-minor-changelog-section.ts --dry-run << 'HIGHLIGHTS'
 ...
 HIGHLIGHTS
 ```

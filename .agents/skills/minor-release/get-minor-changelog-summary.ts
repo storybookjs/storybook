@@ -1,14 +1,16 @@
 import { readFile } from 'node:fs/promises';
 import { createRequire } from 'node:module';
-import { dirname, extname, join } from 'node:path';
+import { extname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { Command } from 'commander';
 import picocolors from 'picocolors';
 import semver from 'semver';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
+const PRERELEASE_CHANGELOG_PATH = fileURLToPath(
+  new URL('../../../CHANGELOG.prerelease.md', import.meta.url)
+);
+const STABLE_CHANGELOG_PATH = fileURLToPath(new URL('../../../CHANGELOG.md', import.meta.url));
 
 const program = new Command();
 
@@ -63,16 +65,13 @@ export const getMinorChangelogSummary = async (args: { version?: string; verbose
 
   const log = (...msg: unknown[]) => {
     if (verbose) {
-      console.log(...msg);
+      console.error(...msg);
     }
   };
 
-  const prereleaseChangelogPath = join(__dirname, '..', '..', '..', 'CHANGELOG.prerelease.md');
-  const stableChangelogPath = join(__dirname, '..', '..', '..', 'CHANGELOG.md');
-
   const [prereleaseChangelog, stableChangelog] = await Promise.all([
-    readFile(prereleaseChangelogPath, 'utf-8'),
-    readFile(stableChangelogPath, 'utf-8'),
+    readFile(PRERELEASE_CHANGELOG_PATH, 'utf-8'),
+    readFile(STABLE_CHANGELOG_PATH, 'utf-8'),
   ]);
 
   const preSections = parseChangelogSections(prereleaseChangelog);
@@ -83,7 +82,7 @@ export const getMinorChangelogSummary = async (args: { version?: string; verbose
     const firstPrerelease = [...preSections.keys()][0];
     if (!firstPrerelease) {
       throw new Error(
-        `No prerelease entries found in ${picocolors.green(prereleaseChangelogPath)}`
+        `No prerelease entries found in ${picocolors.green(PRERELEASE_CHANGELOG_PATH)}`
       );
     }
     const p = semver.parse(firstPrerelease);
@@ -115,7 +114,7 @@ export const getMinorChangelogSummary = async (args: { version?: string; verbose
 
   if (prereleaseVersions.length === 0) {
     throw new Error(
-      `No prerelease versions found for ${picocolors.blue(version)} in ${picocolors.green(prereleaseChangelogPath)}`
+      `No prerelease versions found for ${picocolors.blue(version)} in ${picocolors.green(PRERELEASE_CHANGELOG_PATH)}`
     );
   }
 

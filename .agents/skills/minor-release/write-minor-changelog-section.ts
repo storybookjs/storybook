@@ -1,6 +1,6 @@
 import { readFile, writeFile } from 'node:fs/promises';
 import { createRequire } from 'node:module';
-import { dirname, extname, join } from 'node:path';
+import { extname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { Command } from 'commander';
@@ -9,8 +9,7 @@ import semver from 'semver';
 
 import { getMinorChangelogSummary } from './get-minor-changelog-summary.ts';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
+const CHANGELOG_PATH = fileURLToPath(new URL('../../../CHANGELOG.md', import.meta.url));
 
 const program = new Command();
 
@@ -28,11 +27,13 @@ async function readStdin(): Promise<string> {
   if (process.stdin.isTTY) {
     return '';
   }
-  const chunks: Buffer[] = [];
+  const chunks: Array<string> = [];
   for await (const chunk of process.stdin) {
-    chunks.push(chunk as Buffer);
+    if (typeof chunk === 'string' || Buffer.isBuffer(chunk)) {
+      chunks.push(chunk.toString());
+    }
   }
-  return Buffer.concat(chunks).toString('utf-8').trim();
+  return chunks.join('').trim();
 }
 
 /**
@@ -103,8 +104,10 @@ if (esMain(import.meta.url)) {
     // 1. Read highlights from stdin
     const highlights = await readStdin();
     if (!highlights) {
+      const invokedScriptPath =
+        process.argv[1] ?? '.agents/skills/minor-release/write-minor-changelog-section.ts';
       console.error(
-        `🚨 No highlights provided via stdin.\n\nUsage:\n  echo "highlights text" | node --experimental-strip-types write-minor-changelog-section.ts [version]\n\nThe highlights text should contain the tagline, intro sentence, and bullet points — everything except the ## heading and the full entry list.`
+        `🚨 No highlights provided via stdin.\n\nUsage:\n  echo "highlights text" | node ${invokedScriptPath} [version]\n\nThe highlights text should contain the tagline, intro sentence, and bullet points — everything except the ## heading and the full entry list.`
       );
       process.exit(1);
     }
@@ -138,12 +141,11 @@ if (esMain(import.meta.url)) {
     }
 
     // 4. Read CHANGELOG.md, insert/replace the section, write back
-    const changelogPath = join(__dirname, '..', '..', '..', 'CHANGELOG.md');
-    const existing = await readFile(changelogPath, 'utf-8');
+    const existing = await readFile(CHANGELOG_PATH, 'utf-8');
     const updated = insertOrReplaceSection(existing, resolvedVersion, section);
 
-    await writeFile(changelogPath, updated, 'utf-8');
-    log(`✅ Written to ${picocolors.green(changelogPath)}`);
+    await writeFile(CHANGELOG_PATH, updated, 'utf-8');
+    log(`✅ Written to ${picocolors.green(CHANGELOG_PATH)}`);
     console.error(
       `✅ CHANGELOG.md updated for ${picocolors.blue(resolvedVersion)} (${picocolors.yellow(entries.split('\n').length)} entries)`
     );

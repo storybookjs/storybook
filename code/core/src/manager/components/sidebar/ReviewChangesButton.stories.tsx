@@ -110,7 +110,7 @@ const eightStoryIds = ['s1', 's2', 's3', 's4', 's5', 's6', 's7', 's8'];
 
 /**
  * Feature flag on, 5 new stories, 3 modified. No filters active.
- * Shows "Review 5 new, 3 changed".
+ * Shows "Review new and modified stories".
  */
 export const Idle: Story = {
   parameters: {
@@ -182,14 +182,14 @@ export const Idle: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     const button = await canvas.findByRole('button');
-    await expect(button).toHaveTextContent('Review 5 new, 3 changed');
+    await expect(button).toHaveTextContent('Review new and modified stories');
     await expect(button).toHaveAttribute('aria-pressed', 'false');
   },
 };
 
 /**
  * Both new and modified filters active.
- * Shows "Reviewing 5 new, 3 changed" with aria-pressed="true".
+ * Shows "Reviewing new and modified stories" with aria-pressed="true".
  */
 export const Active: Story = {
   parameters: {
@@ -202,7 +202,7 @@ export const Active: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     const button = await canvas.findByRole('button');
-    await expect(button).toHaveTextContent('Reviewing 5 new, 3 changed');
+    await expect(button).toHaveTextContent('Reviewing new and modified stories');
     await expect(button).toHaveAttribute('aria-pressed', 'true');
   },
 };
@@ -228,7 +228,7 @@ export const PartialFilter: Story = {
 };
 
 /**
- * Only new stories present (no modified). Label should omit the "changed" segment.
+ * Only new stories present (no modified). Label should omit the "modified" segment.
  */
 export const OnlyNew: Story = {
   parameters: {
@@ -258,8 +258,8 @@ export const OnlyNew: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     const button = await canvas.findByRole('button');
-    await expect(button).toHaveTextContent('Review 2 new');
-    await expect(button.textContent).not.toMatch(/changed/);
+    await expect(button).toHaveTextContent('Review new stories');
+    await expect(button.textContent).not.toMatch(/modified/);
   },
 };
 
@@ -301,17 +301,18 @@ export const OnlyModified: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     const button = await canvas.findByRole('button');
-    await expect(button).toHaveTextContent('Review 3 changed');
+    await expect(button).toHaveTextContent('Review modified stories');
     await expect(button.textContent).not.toMatch(/\bnew\b/);
   },
 };
 
 /**
- * Contextual counting: a tag filter narrows the eligible scope, so the CTA reports
- * only new/modified stories that are also passing the active tag filter.
+ * Contextual filtering: a tag filter narrows the eligible scope, so the CTA only
+ * surfaces categories whose stories pass the active tag filter.
  *
- * Setup: 5 new stories, 3 modified. Two of the new stories carry the `feature-a` tag.
- * Active tag include filter: `feature-a` → only those 2 should be counted.
+ * Setup: 5 new stories, 3 modified. Two of the new stories carry the `feature-a` tag,
+ * none of the modified ones do. With include filter `feature-a`, the modified
+ * category drops out and the CTA reads "Review new stories" (not the combined label).
  */
 export const ContextualTagFilter: Story = {
   parameters: {
@@ -325,8 +326,8 @@ export const ContextualTagFilter: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     const button = await canvas.findByRole('button');
-    await expect(button).toHaveTextContent('Review 2 new');
-    await expect(button.textContent).not.toMatch(/changed/);
+    await expect(button).toHaveTextContent('Review new stories');
+    await expect(button.textContent).not.toMatch(/modified/);
   },
 };
 

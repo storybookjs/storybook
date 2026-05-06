@@ -647,11 +647,11 @@ export const StatusesNew: Story = {
   },
   play: async ({ canvasElement, step }) => {
     await waitForChecklistWidget();
-    await step('CTA shows new count', async () => {
+    await step('CTA shows new label', async () => {
       const canvas = within(canvasElement);
-      const cta = await canvas.findByRole('button', { name: /Review \d+ new/ });
+      const cta = await canvas.findByRole('button', { name: 'Review new stories' });
       await expect(cta).toBeInTheDocument();
-      await expect(cta).toHaveTextContent(`Review ${newStatusStoryIds.length} new`);
+      await expect(cta).toHaveTextContent('Review new stories');
     });
   },
 };
@@ -693,11 +693,11 @@ export const StatusesModified: Story = {
   },
   play: async ({ canvasElement, step }) => {
     await waitForChecklistWidget();
-    await step('CTA shows modified count', async () => {
+    await step('CTA shows modified label', async () => {
       const canvas = within(canvasElement);
-      const cta = await canvas.findByRole('button', { name: /Review \d+ changed/ });
+      const cta = await canvas.findByRole('button', { name: 'Review modified stories' });
       await expect(cta).toBeInTheDocument();
-      await expect(cta).toHaveTextContent(`Review ${modifiedStatusStoryIds.length} changed`);
+      await expect(cta).toHaveTextContent('Review modified stories');
     });
   },
 };
@@ -832,10 +832,10 @@ export const WithCTAActive: Story = {
     await waitForChecklistWidget();
     await step('CTA shows reviewing state', async () => {
       const canvas = within(canvasElement);
-      const cta = await canvas.findByRole('button', { name: /Reviewing \d+ new/ });
+      const cta = await canvas.findByRole('button', { name: 'Reviewing new stories' });
       await expect(cta).toBeInTheDocument();
       await expect(cta).toHaveAttribute('aria-pressed', 'true');
-      await expect(cta).toHaveTextContent(`Reviewing ${newStatusStoryIds.length} new`);
+      await expect(cta).toHaveTextContent('Reviewing new stories');
     });
   },
 };
@@ -897,27 +897,27 @@ export const CTAToggleUpdatesLive: Story = {
     await waitForChecklistWidget();
     const canvas = within(canvasElement);
 
-    await step('initial CTA reads "Review N new"', async () => {
-      const cta = await canvas.findByRole('button', { name: /^Review \d+ new/ });
+    await step('initial CTA reads "Review new stories"', async () => {
+      const cta = await canvas.findByRole('button', { name: 'Review new stories' });
       await expect(cta).toHaveAttribute('aria-pressed', 'false');
-      await expect(cta).toHaveTextContent(`Review ${newStatusStoryIds.length} new`);
+      await expect(cta).toHaveTextContent('Review new stories');
     });
 
     await step('click CTA → tree state flips live', async () => {
-      const cta = await canvas.findByRole('button', { name: /^Review \d+ new/ });
+      const cta = await canvas.findByRole('button', { name: 'Review new stories' });
       await userEvent.click(cta);
     });
 
     await step('CTA shows reviewing state and aria-pressed=true', async () => {
-      const cta = await canvas.findByRole('button', { name: /^Reviewing \d+ new/ });
+      const cta = await canvas.findByRole('button', { name: 'Reviewing new stories' });
       await expect(cta).toHaveAttribute('aria-pressed', 'true');
-      await expect(cta).toHaveTextContent(`Reviewing ${newStatusStoryIds.length} new`);
+      await expect(cta).toHaveTextContent('Reviewing new stories');
     });
 
     await step('click again deactivates', async () => {
-      const cta = await canvas.findByRole('button', { name: /^Reviewing \d+ new/ });
+      const cta = await canvas.findByRole('button', { name: 'Reviewing new stories' });
       await userEvent.click(cta);
-      const idle = await canvas.findByRole('button', { name: /^Review \d+ new/ });
+      const idle = await canvas.findByRole('button', { name: 'Review new stories' });
       await expect(idle).toHaveAttribute('aria-pressed', 'false');
     });
   },

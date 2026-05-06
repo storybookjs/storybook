@@ -129,11 +129,13 @@ const ReviewChangesButtonInner = ({
 
   const parts: string[] = [];
   if (newCount > 0) {
-    parts.push(`${newCount} new`);
+    parts.push('new');
   }
   if (modifiedCount > 0) {
-    parts.push(`${modifiedCount} changed`);
+    parts.push('modified');
   }
+
+  const label = `${verb} ${parts.join(' and ')} stories`;
 
   return (
     <StyledCTA
@@ -141,13 +143,13 @@ const ReviewChangesButtonInner = ({
       padding="small"
       $isActive={isReviewActive}
       aria-pressed={isReviewActive}
-      aria-label={`${verb} ${parts.join(' and ')} stories`}
+      aria-label={label}
       onClick={onClick}
     >
       <StyledIcon viewBox="0 0 14 14" width="14" height="14" aria-hidden>
         <UseSymbol type="new" />
       </StyledIcon>
-      {`${verb} ${parts.join(', ')}`}
+      {label}
     </StyledCTA>
   );
 };

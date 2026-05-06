@@ -605,9 +605,33 @@ const newStatusStoryIds = Object.entries(index)
   .filter(([, item]) => item.type === 'story')
   .map(([id]) => id);
 
+const indexJsonWithAllStories = {
+  entries: {
+    ...(meta.args.indexJson?.entries ?? {}),
+    ...Object.fromEntries(
+      Object.entries(index)
+        .filter(([, item]) => item.type === 'story')
+        .map(([id, item]) => [
+          id,
+          {
+            id,
+            name: item.name ?? id,
+            title: item.title ?? id,
+            importPath: './importPath.js',
+            type: 'story' as const,
+            subtype: 'story' as const,
+            tags: ['dev'],
+          },
+        ])
+    ),
+  },
+  v: 6,
+};
+
 export const StatusesNew: Story = {
   args: {
     allStatuses: newStatusAllStories,
+    indexJson: indexJsonWithAllStories,
   },
   beforeEach: () => {
     internal_ctaStatusStore.set(
@@ -627,7 +651,7 @@ export const StatusesNew: Story = {
       const canvas = within(canvasElement);
       const cta = await canvas.findByRole('button', { name: /Review \d+ new/ });
       await expect(cta).toBeInTheDocument();
-      await expect(cta).toHaveTextContent(`Review ${newStatusStoryIds.length} new, 0 changed`);
+      await expect(cta).toHaveTextContent(`Review ${newStatusStoryIds.length} new`);
     });
   },
 };
@@ -653,6 +677,7 @@ const modifiedStatusStoryIds = newStatusStoryIds;
 export const StatusesModified: Story = {
   args: {
     allStatuses: modifiedStatusAllStories,
+    indexJson: indexJsonWithAllStories,
   },
   beforeEach: () => {
     internal_ctaStatusStore.set(
@@ -670,9 +695,9 @@ export const StatusesModified: Story = {
     await waitForChecklistWidget();
     await step('CTA shows modified count', async () => {
       const canvas = within(canvasElement);
-      const cta = await canvas.findByRole('button', { name: /Review 0 new/ });
+      const cta = await canvas.findByRole('button', { name: /Review \d+ changed/ });
       await expect(cta).toBeInTheDocument();
-      await expect(cta).toHaveTextContent(`Review 0 new, ${modifiedStatusStoryIds.length} changed`);
+      await expect(cta).toHaveTextContent(`Review ${modifiedStatusStoryIds.length} changed`);
     });
   },
 };
@@ -784,6 +809,7 @@ export const StatusesChangeDetectionPriority: Story = {
 export const WithCTAActive: Story = {
   args: {
     allStatuses: newStatusAllStories,
+    indexJson: indexJsonWithAllStories,
   },
   parameters: {
     contextOptions: {
@@ -809,7 +835,7 @@ export const WithCTAActive: Story = {
       const cta = await canvas.findByRole('button', { name: /Reviewing \d+ new/ });
       await expect(cta).toBeInTheDocument();
       await expect(cta).toHaveAttribute('aria-pressed', 'true');
-      await expect(cta).toHaveTextContent(`Reviewing ${newStatusStoryIds.length} new, 0 changed`);
+      await expect(cta).toHaveTextContent(`Reviewing ${newStatusStoryIds.length} new`);
     });
   },
 };
@@ -822,6 +848,7 @@ export const WithCTAActive: Story = {
 export const CTAToggleUpdatesLive: Story = {
   args: {
     allStatuses: newStatusAllStories,
+    indexJson: indexJsonWithAllStories,
   },
   beforeEach: () => {
     internal_ctaStatusStore.set(
@@ -870,10 +897,10 @@ export const CTAToggleUpdatesLive: Story = {
     await waitForChecklistWidget();
     const canvas = within(canvasElement);
 
-    await step('initial CTA reads "Review N new, 0 changed"', async () => {
+    await step('initial CTA reads "Review N new"', async () => {
       const cta = await canvas.findByRole('button', { name: /^Review \d+ new/ });
       await expect(cta).toHaveAttribute('aria-pressed', 'false');
-      await expect(cta).toHaveTextContent(`Review ${newStatusStoryIds.length} new, 0 changed`);
+      await expect(cta).toHaveTextContent(`Review ${newStatusStoryIds.length} new`);
     });
 
     await step('click CTA → tree state flips live', async () => {
@@ -884,7 +911,7 @@ export const CTAToggleUpdatesLive: Story = {
     await step('CTA shows reviewing state and aria-pressed=true', async () => {
       const cta = await canvas.findByRole('button', { name: /^Reviewing \d+ new/ });
       await expect(cta).toHaveAttribute('aria-pressed', 'true');
-      await expect(cta).toHaveTextContent(`Reviewing ${newStatusStoryIds.length} new, 0 changed`);
+      await expect(cta).toHaveTextContent(`Reviewing ${newStatusStoryIds.length} new`);
     });
 
     await step('click again deactivates', async () => {
@@ -902,6 +929,7 @@ export const CTAToggleUpdatesLive: Story = {
 export const CTAHiddenDuringSearch: Story = {
   args: {
     allStatuses: newStatusAllStories,
+    indexJson: indexJsonWithAllStories,
   },
   parameters: {
     chromatic: { delay: 2200 },

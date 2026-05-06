@@ -805,6 +805,40 @@ export const StatusesChangeDetectionPriority: Story = {
   play: waitForChecklistWidget,
 };
 
+export const WithCTAInActive: Story = {
+  args: {
+    allStatuses: newStatusAllStories,
+    indexJson: indexJsonWithAllStories,
+  },
+  parameters: {
+    contextOptions: {
+      includedStatusFilters: [] as StatusValue[],
+    },
+  },
+  beforeEach: () => {
+    internal_ctaStatusStore.set(
+      newStatusStoryIds.map((id) => ({
+        storyId: id,
+        typeId: CHANGE_DETECTION_STATUS_TYPE_ID,
+        value: 'status-value:new' as StatusValue,
+        title: 'Change Detection',
+        description: 'This story is new',
+      }))
+    );
+    return () => internal_ctaStatusStore.unset();
+  },
+  play: async ({ canvasElement, step }) => {
+    await waitForChecklistWidget();
+    await step('CTA shows reviewing state', async () => {
+      const canvas = within(canvasElement);
+      const cta = await canvas.findByRole('switch', { name: 'Reviewing new stories' });
+      await expect(cta).toBeInTheDocument();
+      await expect(cta).toHaveAttribute('aria-checked', 'true');
+      await expect(cta).toHaveTextContent('Reviewing new stories');
+    });
+  },
+};
+
 /**
  * CTA in active state: both new and modified filters are included.
  * Shows "Reviewing N new, M changed" with active styling.

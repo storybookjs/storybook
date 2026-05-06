@@ -3,6 +3,7 @@ import {
   type JsPackageManager,
   JsPackageManagerFactory,
   PackageManagerName,
+  getPrettyPackageManagerName,
   invalidateProjectRootCache,
 } from 'storybook/internal/common';
 import { CLI_COLORS, deprecate, logger } from 'storybook/internal/node-logger';
@@ -62,6 +63,8 @@ export class PreflightCheckCommand {
     const packageManager = JsPackageManagerFactory.getPackageManager({
       force: options.packageManager,
     });
+
+    logger.info(`Package manager: ${getPrettyPackageManagerName(packageManager.type)}`);
 
     // Install base project dependencies if we scaffolded a new project
     if (isEmptyDirProject && !options.skipInstall) {

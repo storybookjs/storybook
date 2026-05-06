@@ -4,7 +4,7 @@ import type { DetectResult } from 'package-manager-detector';
 
 import type { AgentInfo } from './detect-agent.ts';
 import type { KnownPackagesList } from './get-known-packages.ts';
-import type { MonorepoType } from './get-monorepo-type.ts';
+import type { MonorepoType } from '../shared/utils/get-monorepo-type.ts';
 
 export type EventType =
   | 'boot'
@@ -44,8 +44,14 @@ export type EventType =
   | 'preview-first-load'
   | 'doctor'
   | 'share'
+  | 'ghost-stories'
   | 'sidebar-filter'
-  | 'ghost-stories';
+  | 'ai-setup'
+  | 'ai-setup-evidence'
+  | 'ai-setup-final-scoring'
+  | 'ai-prompt-nudge'
+  | 'ai-init-opt-in'
+  | 'ai-setup-self-healing-scoring';
 export interface Dependency {
   version: string | undefined;
   versionSpecifier?: string;
@@ -139,7 +145,7 @@ export interface TelemetryEvent extends TelemetryData {
 
 export interface InitPayload {
   projectType: string;
-  features: { dev: boolean; docs: boolean; test: boolean; onboarding: boolean };
+  features: { dev: boolean; docs: boolean; test: boolean; onboarding: boolean; ai: boolean };
   newUser: boolean;
   versionSpecifier: string | undefined;
   cliIntegration: string | undefined;

@@ -1,24 +1,30 @@
 import React, { useMemo } from 'react';
 
-import { Button } from 'storybook/internal/components';
-import type { StatusesByStoryIdAndTypeId, StatusValue } from 'storybook/internal/types';
+import { ToggleButton } from 'storybook/internal/components';
+import type {
+  API_PreparedIndexEntry,
+  StatusesByStoryIdAndTypeId,
+  StatusValue,
+  StoryIndex,
+  Tag,
+} from 'storybook/internal/types';
 
-import { type API, type Combo, Consumer, experimental_useStatusStore } from 'storybook/manager-api';
+import {
+  experimental_useStatusStore,
+  useStorybookApi,
+  useStorybookState,
+} from 'storybook/manager-api';
 import { styled } from 'storybook/theming';
 
-import { countStatusesByValue } from './FilterPanel.utils.ts';
+import { computeStatusFilterFn } from '../../../manager-api/modules/statuses.ts';
+import { computeTagsFilterFn } from '../../../manager-api/modules/tags.ts';
 import { UseSymbol } from './IconSymbols.tsx';
 
-const StyledCTA = styled(Button)<{ $isActive: boolean }>(({ $isActive, theme }) => ({
+const StyledCTA = styled(ToggleButton)({
   marginTop: -8,
   width: '100%',
   justifyContent: 'flex-start',
-  '&:focus-visible': { outlineOffset: 4 },
-  ...($isActive && {
-    background: theme.background.hoverable,
-    color: theme.color.secondary,
-  }),
-}));
+});
 
 const StyledIcon = styled.svg(({ theme }) => ({
   color: theme.fgColor.accent,
@@ -27,29 +33,65 @@ const StyledIcon = styled.svg(({ theme }) => ({
 const NEW = 'status-value:new' as StatusValue;
 const MOD = 'status-value:modified' as StatusValue;
 
-const filterMapper = ({ api, state }: Combo) => ({
-  api,
-  includedStatusFilters: (state.includedStatusFilters ?? []) as StatusValue[],
-  excludedStatusFilters: (state.excludedStatusFilters ?? []) as StatusValue[],
-});
-
-interface ReviewChangesButtonInnerProps {
-  api: API;
-  includedStatusFilters: StatusValue[];
-  excludedStatusFilters: StatusValue[];
-}
-
-const ReviewChangesButtonInner = ({
-  api,
-  includedStatusFilters,
-  excludedStatusFilters,
-}: ReviewChangesButtonInnerProps) => {
+const ReviewChangesButton = () => {
+  const api = useStorybookApi();
+  const {
+    internal_index: index,
+    includedStatusFilters: rawIncludedStatusFilters,
+    excludedStatusFilters: rawExcludedStatusFilters,
+    includedTagFilters: rawIncludedTagFilters,
+    excludedTagFilters: rawExcludedTagFilters,
+  } = useStorybookState();
   const allStatuses = experimental_useStatusStore() as StatusesByStoryIdAndTypeId;
 
-  const counts = useMemo(() => countStatusesByValue(allStatuses), [allStatuses]);
-  const newCount = counts[NEW] ?? 0;
-  const modifiedCount = counts[MOD] ?? 0;
+  const { newCount, modifiedCount } = useMemo(() => {
+    if (!index) {
+      return { newCount: 0, modifiedCount: 0 };
+    }
+    const includedStatusFilters = (rawIncludedStatusFilters ?? []) as StatusValue[];
+    const excludedStatusFilters = (rawExcludedStatusFilters ?? []) as StatusValue[];
+    const includedTagFilters = (rawIncludedTagFilters ?? []) as Tag[];
+    const excludedTagFilters = (rawExcludedTagFilters ?? []) as Tag[];
+    const contextualIncludedStatuses = includedStatusFilters.filter((s) => s !== NEW && s !== MOD);
+    const contextualExcludedStatuses = excludedStatusFilters.filter((s) => s !== NEW && s !== MOD);
+    const tagFilterFn = computeTagsFilterFn(includedTagFilters, excludedTagFilters);
+    const statusFilterFn = computeStatusFilterFn(
+      contextualIncludedStatuses,
+      contextualExcludedStatuses
+    );
 
+    let next = 0;
+    let modified = 0;
+    const entries = (index as StoryIndex).entries ?? {};
+    for (const [storyId, statusesByType] of Object.entries(allStatuses)) {
+      const entry = entries[storyId] as API_PreparedIndexEntry | undefined;
+      if (!entry) {
+        continue;
+      }
+      const entryWithStatuses = { ...entry, statuses: statusesByType };
+      if (!tagFilterFn(entryWithStatuses) || !statusFilterFn(entryWithStatuses)) {
+        continue;
+      }
+      const statuses = Object.values(statusesByType);
+      if (statuses.some(({ value }) => value === NEW)) {
+        next += 1;
+      }
+      if (statuses.some(({ value }) => value === MOD)) {
+        modified += 1;
+      }
+    }
+    return { newCount: next, modifiedCount: modified };
+  }, [
+    index,
+    allStatuses,
+    rawIncludedStatusFilters,
+    rawExcludedStatusFilters,
+    rawIncludedTagFilters,
+    rawExcludedTagFilters,
+  ]);
+
+  const includedStatusFilters = (rawIncludedStatusFilters ?? []) as StatusValue[];
+  const excludedStatusFilters = (rawExcludedStatusFilters ?? []) as StatusValue[];
   const isReviewActive = includedStatusFilters.includes(NEW) && includedStatusFilters.includes(MOD);
 
   if (!globalThis.FEATURES?.changeDetection) {
@@ -71,35 +113,24 @@ const ReviewChangesButtonInner = ({
     }
   };
 
-  const verb = isReviewActive ? 'Reviewing' : 'Review';
+  const changeKinds =
+    newCount > 0 && modifiedCount > 0 ? 'new and modified' : newCount > 0 ? 'new' : 'modified';
+  const label = `${isReviewActive ? 'Reviewing' : 'Review'} ${changeKinds} stories`;
 
   return (
     <StyledCTA
       variant="ghost"
       padding="small"
-      $isActive={isReviewActive}
-      aria-pressed={isReviewActive}
-      aria-label={`${verb} ${newCount} new and ${modifiedCount} changed stories`}
+      pressed={isReviewActive}
+      ariaLabel={label}
       onClick={onClick}
     >
       <StyledIcon viewBox="0 0 14 14" width="14" height="14" aria-hidden>
         <UseSymbol type="new" />
       </StyledIcon>
-      {`${verb} ${newCount} new, ${modifiedCount} changed`}
+      {label}
     </StyledCTA>
   );
 };
-
-const ReviewChangesButton = () => (
-  <Consumer filter={filterMapper}>
-    {({ api, includedStatusFilters, excludedStatusFilters }) => (
-      <ReviewChangesButtonInner
-        api={api}
-        includedStatusFilters={includedStatusFilters}
-        excludedStatusFilters={excludedStatusFilters}
-      />
-    )}
-  </Consumer>
-);
 
 export default ReviewChangesButton;

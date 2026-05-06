@@ -394,12 +394,13 @@ const Node = React.memo<NodeProps>(function Node(props) {
     const branchChange = getMostCriticalStatusValue([localChange, groupDual.change]);
     const branchTest = getMostCriticalStatusValue([localTest, groupDual.test]);
 
-    const branchChangeIcon =
-      branchChange === 'status-value:unknown' ||
-      branchChange === 'status-value:affected' ||
-      (branchChange === 'status-value:modified' && !isModifiedFilterActive)
-        ? null
-        : getStatus(theme, branchChange).icon;
+    const shouldShowBranchChangeIcon =
+      branchChange !== 'status-value:unknown' &&
+      branchChange !== 'status-value:affected' &&
+      (branchChange !== 'status-value:modified' || isModifiedFilterActive);
+    const branchChangeIcon = shouldShowBranchChangeIcon
+      ? getStatus(theme, branchChange).icon
+      : null;
     const branchTestIcon = getStatus(theme, branchTest).icon;
 
     const overallStatus = getMostCriticalStatusValue([branchChange, branchTest]);

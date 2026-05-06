@@ -197,6 +197,7 @@ describe('ghostStoriesChannel', () => {
         ],
         stdio: 'pipe',
         env: {
+          STORYBOOK_INTERNAL_TEST_RUN: '1',
           STORYBOOK_COMPONENT_PATHS: 'component1.tsx;component2.tsx',
         },
       } as any);
@@ -213,14 +214,14 @@ describe('ghostStoriesChannel', () => {
           testRunDuration: expect.any(Number),
         },
         results: {
-          total: 2,
-          passed: 2,
-          successRate: 1,
-          successRateWithoutEmptyRender: 1,
-          categorizedErrors: expect.any(Object),
-          cssCheck: 'not-run',
-          uniqueErrorCount: 0,
-          passedButEmptyRender: 0,
+          runTotal: 2,
+          runPassed: 2,
+          runSuccessRate: 1,
+          runSuccessRateWithoutEmptyRender: 1,
+          runCategorizedErrors: expect.any(Object),
+          runCssCheck: 'not-run',
+          runUniqueErrorCount: 0,
+          runPassedButEmptyRender: 0,
         },
       });
     });
@@ -295,6 +296,7 @@ describe('ghostStoriesChannel', () => {
         ],
         stdio: 'pipe',
         env: {
+          STORYBOOK_INTERNAL_TEST_RUN: '1',
           STORYBOOK_COMPONENT_PATHS: 'component1.tsx;component2.tsx',
         },
       } as any);
@@ -312,14 +314,14 @@ describe('ghostStoriesChannel', () => {
             testRunDuration: expect.any(Number),
           },
           results: expect.objectContaining({
-            total: 2,
-            passed: 0,
-            successRate: 0,
-            // categorizedErrors is now an object with categories as keys
-            categorizedErrors: expect.any(Object),
-            cssCheck: 'not-run',
-            uniqueErrorCount: expect.any(Number),
-            passedButEmptyRender: 0,
+            runTotal: 2,
+            runPassed: 0,
+            runSuccessRate: 0,
+            // runCategorizedErrors is an object keyed by error category
+            runCategorizedErrors: expect.any(Object),
+            runCssCheck: 'not-run',
+            runUniqueErrorCount: expect.any(Number),
+            runPassedButEmptyRender: 0,
           }),
         })
       );

@@ -325,14 +325,14 @@ export interface SubAPI {
   experimental_setFilter: (addonId: string, filterFunction: API_FilterFunction) => Promise<void>;
 
   /** Resets tag filters in the sidebar to the default filters. */
-  resetTagFilters(): void;
+  resetTagFilters(): Promise<void>;
   /**
    * Replaces all tag filters in the sidebar with the provided included and excluded lists.
    *
    * @param included The tags to include in the filtered stories list
    * @param excluded The tags to filter out (exclude) from the stories list
    */
-  setAllTagFilters(included: Tag[], excluded: Tag[]): void;
+  setAllTagFilters(included: Tag[], excluded: Tag[]): Promise<void>;
   /**
    * Adds tag filters to the included or excluded filter lists. Included filters are included in the
    * stories list, whereas excluded filters are filtered out.
@@ -340,36 +340,36 @@ export interface SubAPI {
    * @param tags The tags to add as filters.
    * @param excluded Whether to add the tags to the include or exclude filter list.
    */
-  addTagFilters(tags: Tag[], excluded: boolean): void;
+  addTagFilters(tags: Tag[], excluded: boolean): Promise<void>;
   /**
    * Removes tag filters from both the included and excluded filter lists.
    *
    * @param tags The tags to remove from filters.
    */
-  removeTagFilters(tags: Tag[]): void;
+  removeTagFilters(tags: Tag[]): Promise<void>;
 
   /** Resets status filters in the sidebar (clears both included and excluded). */
-  resetStatusFilters(): void;
+  resetStatusFilters(): Promise<void>;
   /**
    * Replaces all status filters in the sidebar with the provided included and excluded lists.
    *
    * @param included The status values to include in the filtered stories list
    * @param excluded The status values to filter out (exclude) from the stories list
    */
-  setAllStatusFilters(included: StatusValue[], excluded: StatusValue[]): void;
+  setAllStatusFilters(included: StatusValue[], excluded: StatusValue[]): Promise<void>;
   /**
    * Adds status filters to the included or excluded filter lists.
    *
    * @param statuses The status values to add as filters.
    * @param excluded Whether to add to the include or exclude filter list.
    */
-  addStatusFilters(statuses: StatusValue[], excluded: boolean): void;
+  addStatusFilters(statuses: StatusValue[], excluded: boolean): Promise<void>;
   /**
    * Removes status filters from both the included and excluded filter lists.
    *
    * @param statuses The status values to remove from filters.
    */
-  removeStatusFilters(statuses: StatusValue[]): void;
+  removeStatusFilters(statuses: StatusValue[]): Promise<void>;
 }
 
 const removedOptions = ['enableShortcuts', 'theme', 'showRoots'];
@@ -1279,7 +1279,7 @@ export const init: ModuleFn<SubAPI, SubState> = ({
 
   fullStatusStore.onAllStatusChange(async () => {
     // re-apply the filters when the statuses change
-    recomputeStatusFilter();
+    await recomputeStatusFilter();
 
     const { internal_index: index } = store.getState();
 

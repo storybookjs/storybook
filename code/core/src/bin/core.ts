@@ -189,6 +189,7 @@ command('build')
     });
 
     logger.outro('Storybook build completed successfully');
+    process.exit(0);
   });
 
 command('index')

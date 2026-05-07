@@ -12,6 +12,7 @@ import { fixFauxEsmRequire } from './fix-faux-esm-require.ts';
 import { initialGlobals } from './initial-globals.ts';
 import { migrateAddonConsole } from './migrate-addon-console.ts';
 import { nextjsToNextjsVite } from './nextjs-to-nextjs-vite.ts';
+import { reactViteToTanstackReact } from './react-vite-to-tanstack-react.ts';
 import { removeAddonInteractions } from './remove-addon-interactions.ts';
 import { removeDocsAutodocs } from './remove-docs-autodocs.ts';
 import { removeEssentials } from './remove-essentials.ts';
@@ -38,6 +39,7 @@ export const allFixes: Fix[] = [
   rnOndeviceAddonsToDeviceAddons,
   migrateAddonConsole,
   nextjsToNextjsVite,
+  reactViteToTanstackReact,
   removeAddonInteractions,
   rendererToFramework,
   removeEssentials,

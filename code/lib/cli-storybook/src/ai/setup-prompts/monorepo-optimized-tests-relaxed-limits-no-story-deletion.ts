@@ -8,12 +8,12 @@ import {
   buildPortalStep,
   buildSharedPreviewStep,
   cleanupStep,
-  discoveryStepStrict,
+  discoveryStepRelaxed,
   interactionPlayStep,
   monorepoStep,
   mswStep,
-  verifyStep,
-  writeStoriesStep,
+  verifyWithAllowedFailureStep,
+  writeStoriesWithAllowedFailuresStep,
 } from './partials/steps.ts';
 import {
   batchTestsRule,
@@ -23,15 +23,15 @@ import {
   noPolishRule,
   packageManagerRule,
   preferSharedFixesRule,
-  readBudgetRule,
+  readBudgetRuleRelaxed,
   toolsVsShellRule,
 } from './partials/rules.ts';
 import {
   cssCheckDOD,
   sharedPreviewDOD,
-  storyTagsV1DOD,
-  typeCheckPassesStrictDOD,
-  vitestPassesStrictDOD,
+  storyTagsV2DOD,
+  typeCheckPassesWhenExpectedDOD,
+  vitestPassesWhenExpectedDOD,
 } from './partials/dod.ts';
 
 export function instructions(projectInfo: ProjectInfo): string {
@@ -65,7 +65,7 @@ export function instructions(projectInfo: ProjectInfo): string {
       toolsVsShellRule(ctx),
       nodeModuleReadsRule(ctx),
       monorepoRule(ctx),
-      readBudgetRule(ctx),
+      readBudgetRuleRelaxed(ctx),
       editOverWriteRule(ctx),
       batchTestsRule(ctx),
       packageManagerRule(ctx),
@@ -77,26 +77,26 @@ export function instructions(projectInfo: ProjectInfo): string {
 
     ${listSteps(
       [
-        discoveryStepStrict(projectInfo, ctx),
+        discoveryStepRelaxed(projectInfo, ctx),
         monorepoStep(projectInfo, ctx),
         buildSharedPreviewStep(projectInfo, ctx),
         buildPortalStep(projectInfo, ctx),
         mswStep(projectInfo, ctx),
-        writeStoriesStep(projectInfo, ctx),
+        writeStoriesWithAllowedFailuresStep(projectInfo, ctx),
         interactionPlayStep(projectInfo, ctx),
-        verifyStep(projectInfo, ctx),
+        verifyWithAllowedFailureStep(projectInfo, ctx),
         cleanupStep(projectInfo, ctx),
       ],
       { level: 3 }
     )}
 
     ## Done when
-    
+
     ${listDOD([
       cssCheckDOD(ctx),
-      storyTagsV1DOD(ctx),
-      vitestPassesStrictDOD(ctx),
-      typeCheckPassesStrictDOD(ctx),
+      storyTagsV2DOD(ctx),
+      vitestPassesWhenExpectedDOD(ctx),
+      typeCheckPassesWhenExpectedDOD(ctx),
       sharedPreviewDOD(ctx),
     ])}
 

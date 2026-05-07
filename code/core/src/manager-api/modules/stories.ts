@@ -920,18 +920,18 @@ export const init: ModuleFn<SubAPI, SubState> = ({
         excludedTagFilters: s.defaultExcludedTagFilters,
       }));
 
-      recomputeTagsFilter();
+      await recomputeTagsFilter();
     },
 
     setAllTagFilters: async (included: Tag[], excluded: Tag[]) => {
       await persistFilters({ includedTagFilters: included, excludedTagFilters: excluded });
 
-      recomputeTagsFilter();
+      await recomputeTagsFilter();
     },
 
     addTagFilters: async (tags: Tag[], excluded: boolean) => {
       await addFilters('tag', tags, excluded);
-      recomputeTagsFilter();
+      await recomputeTagsFilter();
       if (tags.length === 1 && BUILT_IN_TAG_IDS.has(tags[0])) {
         emitFilterTelemetry('interaction', {
           filterType: 'tag',
@@ -943,7 +943,7 @@ export const init: ModuleFn<SubAPI, SubState> = ({
 
     removeTagFilters: async (tags: Tag[]) => {
       await removeFilters('tag', tags);
-      recomputeTagsFilter();
+      await recomputeTagsFilter();
       if (tags.length === 1 && BUILT_IN_TAG_IDS.has(tags[0])) {
         emitFilterTelemetry('interaction', {
           filterType: 'tag',
@@ -955,7 +955,7 @@ export const init: ModuleFn<SubAPI, SubState> = ({
 
     resetStatusFilters: async () => {
       await persistFilters({ includedStatusFilters: [], excludedStatusFilters: [] });
-      recomputeStatusFilter();
+      await recomputeStatusFilter();
     },
 
     setAllStatusFilters: async (included: StatusValue[], excluded: StatusValue[]) => {
@@ -966,7 +966,7 @@ export const init: ModuleFn<SubAPI, SubState> = ({
       const nextExcluded = new Set(excluded);
 
       await persistFilters({ includedStatusFilters: included, excludedStatusFilters: excluded });
-      recomputeStatusFilter();
+      await recomputeStatusFilter();
 
       const changedIds = new Set<StatusValue>([
         ...prevIncluded,
@@ -1000,7 +1000,7 @@ export const init: ModuleFn<SubAPI, SubState> = ({
 
     addStatusFilters: async (statuses: StatusValue[], excluded: boolean) => {
       await addFilters('status', statuses, excluded);
-      recomputeStatusFilter();
+      await recomputeStatusFilter();
       if (statuses.length === 1) {
         emitFilterTelemetry('interaction', {
           filterType: 'status',
@@ -1012,7 +1012,7 @@ export const init: ModuleFn<SubAPI, SubState> = ({
 
     removeStatusFilters: async (statuses: StatusValue[]) => {
       await removeFilters('status', statuses);
-      recomputeStatusFilter();
+      await recomputeStatusFilter();
       if (statuses.length === 1) {
         emitFilterTelemetry('interaction', {
           filterType: 'status',
@@ -1025,7 +1025,7 @@ export const init: ModuleFn<SubAPI, SubState> = ({
 
   const recomputeTagsFilter = () => {
     const { includedTagFilters, excludedTagFilters } = store.getState();
-    api.experimental_setFilter(
+    return api.experimental_setFilter(
       TAGS_FILTER,
       computeTagsFilterFn(includedTagFilters, excludedTagFilters)
     );
@@ -1033,7 +1033,7 @@ export const init: ModuleFn<SubAPI, SubState> = ({
 
   const recomputeStatusFilter = () => {
     const { includedStatusFilters, excludedStatusFilters } = store.getState();
-    api.experimental_setFilter(
+    return api.experimental_setFilter(
       STATUS_FILTER,
       computeStatusFilterFn(includedStatusFilters ?? [], excludedStatusFilters ?? [])
     );

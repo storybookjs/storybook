@@ -60,23 +60,29 @@ function resolvePromptName(): PromptName {
   return DEFAULT_PROMPT_NAME;
 }
 
-export async function getAiSetupPrompt(projectInfo: ProjectInfo): Promise<string> {
+export async function getAiSetupPrompt(
+  projectInfo: ProjectInfo
+): Promise<{ content: string; name: PromptName }> {
   const name = resolvePromptName();
   const builder = CURRENTLY_USED_PROMPT[name] ?? (await FORMERLY_USED_PROMPTS[name]());
 
-  return builder(projectInfo);
+  return { content: builder(projectInfo), name };
 }
 
 export async function getAiSetupMarkdownOutput(projectInfo: ProjectInfo): Promise<{
   markdown: string;
+  prompt: PromptName;
 }> {
+  const { content, name } = await getAiSetupPrompt(projectInfo);
+
   return {
     markdown: dedent`
     # Storybook Setup
 
     ${getProjectOverview(projectInfo)}
 
-    ${await getAiSetupPrompt(projectInfo)}
+    ${content}
   `,
+    prompt: name,
   };
 }

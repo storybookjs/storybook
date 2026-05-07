@@ -102,7 +102,6 @@ export async function aiSetup(options: AiSetupOptions): Promise<void> {
       configDir: projectInfo.configDir,
       packageManager: projectInfo.packageManager.type,
       prompt: result.prompt,
-      runId: options.runId,
     },
     project: {
       framework: projectInfo.framework,
@@ -110,6 +109,7 @@ export async function aiSetup(options: AiSetupOptions): Promise<void> {
       builder: projectInfo.builderPackage,
       language: projectInfo.language,
     },
+    runId: options.runId,
   });
 
   if (output) {

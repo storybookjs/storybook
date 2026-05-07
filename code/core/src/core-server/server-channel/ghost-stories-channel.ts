@@ -19,11 +19,14 @@ export function initGhostStoriesChannel(channel: Channel, options: Options) {
       totalRunDuration?: number;
       analyzedCount?: number;
       avgComplexity?: number;
-      aiSetupRunId?: string;
 
       candidateCount?: number;
       testRunDuration?: number;
     } = {};
+
+    // Initialize contextual data; if ghost stories are triggered to assess the
+    // quality of an ai setup workflow, inject the runId for the ai setup session.
+    const aiSetupRunId = await getAiSetupRunId(options.configDir);
 
     try {
       await telemetry('ghost-stories', async () => {
@@ -41,12 +44,11 @@ export function initGhostStoriesChannel(channel: Channel, options: Options) {
             throw new SkipGhostStoriesTelemetry();
           }
 
-          // Already ran once for this project — never run again, unless we need fresh
+          // Already ran once for this project — re-run it only when we need fresh
           // data for a new instance of `ai setup`.
           if (
             lastGhostStoriesRun &&
-            (!lastSetupStoryScoringRun ||
-              lastSetupStoryScoringRun.body.payload.runId === lastAISetup.body.payload.runId)
+            lastSetupStoryScoringRun.body.payload.runId === lastAISetup.body.payload.runId
           ) {
             throw new SkipGhostStoriesTelemetry();
           }
@@ -72,7 +74,11 @@ export function initGhostStoriesChannel(channel: Channel, options: Options) {
           // disturb end user activities.
           const isIdle = await waitForIdleVitest();
           if (!isIdle) {
-            return;
+            return {
+              stats,
+              aiSetupRunId,
+              runError: "Vitest busy, couldn't run ghost stories",
+            };
           }
 
           // Phase 1: find candidates from components
@@ -88,6 +94,7 @@ export function initGhostStoriesChannel(channel: Channel, options: Options) {
             stats.totalRunDuration = Date.now() - ghostRunStart;
             return {
               stats,
+              aiSetupRunId,
               runError: candidatesResult.error,
             };
           }
@@ -96,6 +103,7 @@ export function initGhostStoriesChannel(channel: Channel, options: Options) {
             stats.totalRunDuration = Date.now() - ghostRunStart;
             return {
               stats,
+              aiSetupRunId,
               runError: 'No candidates found',
             };
           }
@@ -110,17 +118,14 @@ export function initGhostStoriesChannel(channel: Channel, options: Options) {
           if (testRunResult.runError) {
             return {
               stats,
+              aiSetupRunId,
               runError: testRunResult.runError,
             };
           }
 
-          const aiSetupRunId = await getAiSetupRunId(options.configDir);
-          if (aiSetupRunId) {
-            stats.aiSetupRunId = aiSetupRunId;
-          }
-
           return {
             stats,
+            aiSetupRunId,
             results: testRunResult.summary,
           };
         } catch (error) {
@@ -130,6 +135,7 @@ export function initGhostStoriesChannel(channel: Channel, options: Options) {
 
           return {
             stats,
+            aiSetupRunId,
             runError: 'Unknown error during ghost run',
           };
         }

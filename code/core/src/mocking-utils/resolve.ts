@@ -20,7 +20,7 @@ const externalResolver = new OxcResolverFactory({
   conditionNames: ['browser', 'import', 'module', 'default'],
   mainFields: ['browser', 'module', 'main'],
   aliasFields: [['browser']],
-  extensions: ['.js', '.mjs', '.cjs', '.ts', '.tsx', '.jsx', '.json'],
+  extensions: ['.js', '.mjs', '.cjs', '.ts', '.tsx', '.jsx', '.json', '.vue', '.svelte'],
 });
 
 /**

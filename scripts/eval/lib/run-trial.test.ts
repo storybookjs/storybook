@@ -1,4 +1,4 @@
-import { existsSync, mkdirSync, readFileSync, rmSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 
@@ -295,6 +295,51 @@ describe('runTrial pipeline', () => {
     expect(vi.mocked(x)).toHaveBeenCalledWith(
       'git',
       ['restore', '--source', 'deadbeef', '--', '.storybook/eval-results/data.json'],
+      expect.objectContaining({
+        throwOnError: false,
+        nodeOptions: expect.objectContaining({ cwd: TMP }),
+      })
+    );
+  });
+
+  it('restores eval-support artifacts if the agent deletes them', async () => {
+    setupMocks();
+    const storybookDir = join(TMP, '.storybook');
+    mkdirSync(join(storybookDir, 'eval-support'), { recursive: true });
+    writeFileSync(
+      join(storybookDir, 'main.ts'),
+      ['export default {', '  stories: [', "    '../src/**/*.stories.tsx',", '  ],', '};', ''].join(
+        '\n'
+      )
+    );
+
+    vi.mocked(claudeAgent.execute).mockImplementation(async () => {
+      rmSync(join(storybookDir, 'eval-support'), { recursive: true, force: true });
+      writeFileSync(
+        join(storybookDir, 'main.ts'),
+        [
+          'export default {',
+          '  stories: [',
+          "    '../src/**/*.stories.tsx',",
+          '  ],',
+          '};',
+          '',
+        ].join('\n')
+      );
+      return {
+        execution: { cost: 0.42, duration: 45.2, turns: 12 },
+        transcript: [],
+      };
+    });
+
+    await runTrial(baseConfig);
+
+    expect(readFileSync(join(storybookDir, 'main.ts'), 'utf-8')).toContain(
+      "'./eval-support/*.mdx'"
+    );
+    expect(vi.mocked(x)).toHaveBeenCalledWith(
+      'git',
+      ['restore', '--source', 'deadbeef', '--', '.storybook/eval-support'],
       expect.objectContaining({
         throwOnError: false,
         nodeOptions: expect.objectContaining({ cwd: TMP }),

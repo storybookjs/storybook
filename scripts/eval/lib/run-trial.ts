@@ -1,4 +1,5 @@
-import { mkdir, writeFile } from 'node:fs/promises';
+import { existsSync } from 'node:fs';
+import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { join, relative } from 'pathe';
 import { x } from 'tinyexec';
 import type { Logger } from './utils.ts';
@@ -14,7 +15,9 @@ import {
   captureEnvironment,
   createLogger,
   generateTrialId,
+  getEvalSupportDir,
   getEvalResultsRelativePath,
+  getStorybookDir,
   loadPrompt,
   resolveDispatcherPath,
 } from './utils.ts';
@@ -40,6 +43,8 @@ const drivers: Record<AgentId, AgentDriver> = {
   claude: claudeAgent,
   codex: codexAgent,
 };
+const EVAL_SUPPORT_STORY_GLOB = './eval-support/*.mdx';
+const STORYBOOK_MAIN_FILES = ['main.ts', 'main.js', 'main.mts', 'main.mjs', 'main.cjs'] as const;
 
 /**
  * Run a full eval trial: prepare -> execute agent -> grade -> save.
@@ -100,7 +105,7 @@ export async function runTrial(config: TrialConfig, logger?: Logger): Promise<Ru
     `Agent completed (${Math.round(execution.duration)}s, ${execution.cost ? `$${execution.cost.toFixed(2)}` : 'cost N/A'}, ${execution.turns} turns)`
   );
 
-  await restoreTrackedEvalData(workspace, log);
+  await restoreHarnessOwnedArtifacts(workspace, log);
   await writeEvalResultsArtifacts(workspace.resultsDir, prompt, promptContent);
 
   const provisionalArtifacts = {
@@ -198,6 +203,90 @@ async function restoreTrackedEvalData(workspace: TrialWorkspace, log: Logger) {
       `Could not restore ${dataPath} from ${workspace.baselineCommit}; regenerating eval data.`
     );
   }
+}
+
+async function restoreHarnessOwnedArtifacts(workspace: TrialWorkspace, log: Logger) {
+  await restoreTrackedEvalData(workspace, log);
+  await restoreTrackedEvalSupport(workspace, log);
+  await ensureEvalSupportStoryGlob(workspace, log);
+}
+
+async function restoreTrackedEvalSupport(workspace: TrialWorkspace, log: Logger) {
+  const supportPath = relative(workspace.repoRoot, getEvalSupportDir(workspace.projectPath));
+  const result = await x(
+    'git',
+    ['restore', '--source', workspace.baselineCommit, '--', supportPath],
+    {
+      throwOnError: false,
+      nodeOptions: { cwd: workspace.repoRoot },
+    }
+  );
+
+  if (result.exitCode !== 0) {
+    log.logError(
+      `Could not restore ${supportPath} from ${workspace.baselineCommit}; eval support validation may fail.`
+    );
+  }
+}
+
+async function ensureEvalSupportStoryGlob(workspace: TrialWorkspace, log: Logger) {
+  const configPath = findStorybookMainFile(workspace.projectPath);
+  if (configPath == null) {
+    log.logError('Could not find .storybook/main.* to preserve the eval-support story glob.');
+    return;
+  }
+
+  const content = await readFile(configPath, 'utf-8');
+  if (content.includes(EVAL_SUPPORT_STORY_GLOB)) {
+    return;
+  }
+
+  const updated = addEvalSupportStoryGlob(content);
+  if (updated == null) {
+    log.logError(
+      `Could not add ${EVAL_SUPPORT_STORY_GLOB} to ${relative(workspace.repoRoot, configPath)}.`
+    );
+    return;
+  }
+
+  await writeFile(configPath, updated);
+}
+
+function findStorybookMainFile(projectPath: string) {
+  const storybookDir = getStorybookDir(projectPath);
+  return STORYBOOK_MAIN_FILES.map((file) => join(storybookDir, file)).find((file) =>
+    existsSync(file)
+  );
+}
+
+function addEvalSupportStoryGlob(content: string) {
+  const match = /stories\s*:\s*\[([\s\S]*?)\]/m.exec(content);
+  if (match == null || match.index == null) {
+    return null;
+  }
+
+  const [fullMatch, body] = match;
+  const before = content.slice(0, match.index);
+  const after = content.slice(match.index + fullMatch.length);
+
+  if (body.includes(EVAL_SUPPORT_STORY_GLOB)) {
+    return content;
+  }
+
+  if (!body.includes('\n')) {
+    const trimmedBody = body.trim();
+    const nextBody = trimmedBody
+      ? `'${EVAL_SUPPORT_STORY_GLOB}', ${trimmedBody}`
+      : `'${EVAL_SUPPORT_STORY_GLOB}'`;
+    return `${before}stories: [${nextBody}]${after}`;
+  }
+
+  const closingIndent = fullMatch.match(/\n([ \t]*)\]$/)?.[1] ?? '';
+  const entryIndent = body.match(/\n([ \t]*)['"`]/)?.[1] ?? `${closingIndent}  `;
+  const trimmedBody = body.replace(/\s*$/, '');
+  const separator = trimmedBody.endsWith(',') ? '' : ',';
+
+  return `${before}stories: [${trimmedBody}${separator}\n${entryIndent}'${EVAL_SUPPORT_STORY_GLOB}',\n${closingIndent}]${after}`;
 }
 
 async function writeEvalResultsArtifacts(

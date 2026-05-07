@@ -610,6 +610,8 @@ export const Default: StoryObj<typeof meta> = {};
 
 `parameters.tanstack.router` also accepts `path`, `params`, `query`, `routeOverrides`, and `useRouterContext` for finer-grained control. You can additionally register a project-wide default route by passing `route` to `definePreview` in `.storybook/preview.*`.
 
+See the [`@storybook/tanstack-react` framework documentation](https://storybook.js.org/docs/get-started/frameworks/tanstack-react) for the full list of features and APIs.
+
 ## From version 10.0.0 to 10.1.0
 
 ### API and Component Changes

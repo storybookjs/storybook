@@ -248,8 +248,8 @@ describe('initAIAnalyticsChannel', () => {
             fileCount: 1,
             storyCount: 1,
             testRunDuration: 1234,
-            runId: 'session-B',
           }),
+          runId: 'session-B',
           results: expect.objectContaining({ runTotal: 2, runPassed: 2 }),
         })
       );

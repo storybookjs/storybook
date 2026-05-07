@@ -14,9 +14,6 @@ export interface AiSetupOptions {
   /** Populated from the program-level `--disable-telemetry` flag (defaults from `STORYBOOK_DISABLE_TELEMETRY`). */
   disableTelemetry?: boolean;
 
-  /** Whether to use the extensive prompt instead of the default prompt. */
-  extensive?: boolean;
-
   /** A random ID attributed by the CLI when running `ai setup` to identify the setup session. */
   runId: string;
 }

@@ -20,7 +20,9 @@ The command analyzes your Storybook configuration (framework, renderer, builder,
 
 ## Starting from `storybook init`
 
-When an agent runs [`storybook init`](../api/cli-options.mdx#init) to add Storybook to a new project, the output instructs the agent to continue with `storybook ai setup`. No extra prompting is needed; the agent will pick up the agentic setup flow automatically.
+When an agent runs [`storybook init`](../api/cli-options.mdx#init) to add Storybook to a new project, the output instructs the agent to continue with `storybook ai setup`. Storybook automatically enables this flow when it detects a supported AI agent environment.
+
+Some agents, including GitHub Copilot cloud agents and local VS Code Copilot agents, may not expose a reliable agent signal to terminal commands. In those environments, run `storybook init --agent` to force the non-interactive agent flow. You can also set `AI_AGENT=copilot` in the agent environment, for example by configuring a repository variable in [GitHub's `copilot` environment](https://docs.github.com/en/copilot/how-tos/use-copilot-agents/coding-agent/customize-the-agent-environment#setting-environment-variables-in-copilots-environment) for Copilot cloud agent sessions.
 
 If Storybook is already installed, you can kick off the flow yourself using one of the two approaches below.
 
@@ -34,7 +36,7 @@ Use Storybook's agentic setup command to configure Storybook for this project an
 
 The agent will run the command from your project root, read the generated prompt from stdout, and follow the steps in order: analyzing your codebase, updating `preview.tsx`, and writing stories. After each story, it runs Vitest to verify that the story renders and fixes any failures before moving on.
 
-This flow works best when your agent has access to a terminal in your project (most modern coding agents do). No flags or additional configuration is required. The generated instructions are self-contained.
+This flow works best when your agent has access to a terminal in your project (most modern coding agents do). The generated instructions are self-contained.
 
 ## User-initiated setup
 

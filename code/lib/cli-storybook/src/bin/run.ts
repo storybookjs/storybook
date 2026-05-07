@@ -315,10 +315,6 @@ aiCommand
     )
   )
   .option('-c, --config-dir <dir-name>', 'Directory of Storybook configuration')
-  .option(
-    '-e, --extensive',
-    'Use the extensive setup prompt (takes longer, explores your codebase further, and generates more complex stories)'
-  )
   .action(async (options, cmd) => {
     const parentOptions = cmd.parent?.opts() ?? {};
     const runId = Math.random().toString(36);

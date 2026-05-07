@@ -14,7 +14,7 @@ import { getAiSetupMarkdownOutput } from './setup-prompts/index.ts';
 import type { ProjectInfo, AiSetupOptions } from './types.ts';
 
 export async function aiSetup(options: AiSetupOptions): Promise<void> {
-  const { configDir: userConfigDir, extensive, packageManager, output } = options;
+  const { configDir: userConfigDir, packageManager, output } = options;
 
   let projectInfo: ProjectInfo;
 
@@ -80,7 +80,7 @@ export async function aiSetup(options: AiSetupOptions): Promise<void> {
     return;
   }
 
-  const result = await getAiSetupMarkdownOutput(projectInfo, extensive);
+  const result = await getAiSetupMarkdownOutput(projectInfo);
   const markdownOutput = result.markdown;
 
   // Persist the fact that `storybook ai setup` ran in this project, scoped to

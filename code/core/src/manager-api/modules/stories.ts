@@ -1279,8 +1279,20 @@ export const init: ModuleFn<SubAPI, SubState> = ({
 
   fullStatusStore.onAllStatusChange(async () => {
     // re-apply the filters when the statuses change
-    // (experimental_setFilter already re-indexes and updates refs)
-    await recomputeStatusFilter();
+    recomputeStatusFilter();
+
+    const { internal_index: index } = store.getState();
+
+    if (!index) {
+      return;
+    }
+    // apply new filters by setting the index again
+    await api.setIndex(index);
+
+    const refs = await fullAPI.getRefs();
+    Object.entries(refs).forEach(([refId, { internal_index, ...ref }]) => {
+      fullAPI.setRef(refId, { ...ref, storyIndex: internal_index }, true);
+    });
   });
 
   const config = provider.getConfig();

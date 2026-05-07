@@ -49,7 +49,7 @@ async function readProjectScopedFlag(
   } catch {}
 }
 
-/** Written by `storybook init` when the user accepted the AI feature. */
+/** Written by `storybook init` when the user accepted the AI feature and in legacy inits where the question was not asked. */
 export async function hasAiInitOptIn(configDir: string): Promise<boolean> {
   const flag = await readProjectScopedFlag('ai-init-opt-in', configDir);
   return flag?.answer !== false;

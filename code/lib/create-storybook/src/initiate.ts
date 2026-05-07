@@ -154,8 +154,8 @@ export async function doInitiate(options: CommandOptions): Promise<
 
   // Step 8: Print final summary
   const hasAiFeature = selectedFeatures.has(Feature.AI);
-  if (configDir) {
-    // Persist the init-time AI opt-in so the dev server can gate AI-related UI
+  if (configDir && isAiSetupAvailable) {
+    // Persist init-time AI opt-in/opt-out so the dev server can gate AI-related UI
     // (checklist item, copy-prompt button) on the user's actual choice — not on
     // a telemetry-event side effect. Scoped to the project's configDir so a
     // monorepo with hoisted `node_modules/.cache` doesn't leak the flag across

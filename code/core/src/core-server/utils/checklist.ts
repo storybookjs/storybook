@@ -78,15 +78,21 @@ export async function initializeChecklist(
         }) satisfies StoreState
     );
 
-    // AI setup run flag (set in `init` when user ran the AI setup).
+    // AI setup run and AI optin flags (set in `ai setup` and `init`respectively).
     // Read from the regular fs cache — NOT from the telemetry event cache
     // so the copy-prompt button appears for users who disabled telemetry.
     // Fire-and-forget so the store is never blocked waiting for this check.
     hasAiSetupRun(configDir!)
-      .then((hasOptedIn) => {
-        if (hasOptedIn) {
+      .then((hasSetupRun) => {
+        if (hasSetupRun) {
           store.setState((state) => ({ ...state, aiSetupRun: true }));
         }
+      })
+      .catch(() => {});
+
+    hasAiInitOptIn(configDir!)
+      .then((hasOptedIn) => {
+        store.setState((state) => ({ ...state, aiOptIn: hasOptedIn }));
       })
       .catch(() => {});
 

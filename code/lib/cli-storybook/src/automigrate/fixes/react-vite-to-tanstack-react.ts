@@ -377,7 +377,7 @@ export const reactViteToTanstackReact: Fix<ReactViteToTanstackReactOptions> = {
       );
 
       const wantsAiPrompt = yes
-        ? false
+        ? true
         : await prompt.confirm({
             message:
               'Would you like a ready-to-paste AI prompt to help remove the now-unused TanStack Router decorator?',

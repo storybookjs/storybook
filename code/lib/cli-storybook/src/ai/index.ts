@@ -14,7 +14,7 @@ import { getAiSetupMarkdownOutput } from './setup-prompts/index.ts';
 import type { ProjectInfo, AiSetupOptions } from './types.ts';
 
 export async function aiSetup(options: AiSetupOptions): Promise<void> {
-  const { configDir: userConfigDir, packageManager, output } = options;
+  const { configDir: userConfigDir, extensive, packageManager, output } = options;
 
   let projectInfo: ProjectInfo;
 
@@ -80,7 +80,7 @@ export async function aiSetup(options: AiSetupOptions): Promise<void> {
     return;
   }
 
-  const result = await getAiSetupMarkdownOutput(projectInfo);
+  const result = await getAiSetupMarkdownOutput(projectInfo, extensive);
   const markdownOutput = result.markdown;
 
   // Persist the fact that `storybook ai setup` ran in this project, scoped to
@@ -91,6 +91,7 @@ export async function aiSetup(options: AiSetupOptions): Promise<void> {
   await cache
     .set('ai-setup-ran', {
       timestamp: Date.now(),
+      runId: options.runId,
       configDir: resolve(projectInfo.configDir),
     })
     .catch(() => {});
@@ -100,6 +101,7 @@ export async function aiSetup(options: AiSetupOptions): Promise<void> {
       output: output ? 'file' : undefined,
       configDir: projectInfo.configDir,
       packageManager: projectInfo.packageManager.type,
+      prompt: result.prompt,
     },
     project: {
       framework: projectInfo.framework,
@@ -107,6 +109,7 @@ export async function aiSetup(options: AiSetupOptions): Promise<void> {
       builder: projectInfo.builderPackage,
       language: projectInfo.language,
     },
+    runId: options.runId,
   });
 
   if (output) {

@@ -102,4 +102,31 @@ describe('ai-checklist-flags', () => {
       expect(await hasAiSetupRun('/any/project/.storybook')).toBe(false);
     });
   });
+
+  describe('getAiSetupRunId', () => {
+    it('returns undefined when nothing is cached', async () => {
+      const { getAiSetupRunId } = await import('./ai-checklist-flags.ts');
+      expect(await getAiSetupRunId('/some/project/.storybook')).toBeUndefined();
+    });
+
+    it('returns the runId when the cached configDir matches', async () => {
+      mockCacheStore.set('ai-setup-ran', {
+        timestamp: Date.now(),
+        configDir: resolve('/repo/apps/web/.storybook'),
+        runId: 'abc123',
+      });
+      const { getAiSetupRunId } = await import('./ai-checklist-flags.ts');
+      expect(await getAiSetupRunId('/repo/apps/web/.storybook')).toBe('abc123');
+    });
+
+    it('returns undefined when the cached configDir is for a different project', async () => {
+      mockCacheStore.set('ai-setup-ran', {
+        timestamp: Date.now(),
+        configDir: resolve('/repo/apps/web/.storybook'),
+        runId: 'abc123',
+      });
+      const { getAiSetupRunId } = await import('./ai-checklist-flags.ts');
+      expect(await getAiSetupRunId('/repo/packages/ui/.storybook')).toBeUndefined();
+    });
+  });
 });

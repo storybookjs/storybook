@@ -14,6 +14,8 @@ export type StoreState = Required<Omit<ChecklistState, 'items'>> & {
   loaded?: boolean;
   /** True when the user opted into AI during `storybook init`. Set by the server from the event cache. */
   aiOptIn?: boolean;
+  /** True when the user ran the AI setup at some point in the past. */
+  aiSetupRun?: boolean;
 };
 
 export type ItemId = keyof StoreState['items'];

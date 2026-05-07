@@ -241,6 +241,31 @@ describe('initializeChecklist', () => {
     });
   });
 
+  describe('aiSetupRun flag', () => {
+    it('flips aiSetupRun=true when the regular fs cache has it (telemetry-disabled path)', async () => {
+      const { get: getEventCacheEntry } = await import('../../telemetry/event-cache.ts');
+      vi.mocked(getEventCacheEntry).mockResolvedValue(undefined);
+      await setAiFlags({ optedIn: true });
+
+      const { initializeChecklist } = await import('./checklist.ts');
+      await initializeChecklist(undefined, undefined, '/p');
+      await vi.advanceTimersByTimeAsync(0);
+
+      expect(mockStore.getState().aiSetupRun).toBe(true);
+    });
+
+    it('keeps aiSetupRun=false when cache does not have the flag', async () => {
+      const { get: getEventCacheEntry } = await import('../../telemetry/event-cache.ts');
+      vi.mocked(getEventCacheEntry).mockResolvedValue(undefined);
+
+      const { initializeChecklist } = await import('./checklist.ts');
+      await initializeChecklist();
+      await vi.advanceTimersByTimeAsync(0);
+
+      expect(mockStore.getState().aiSetupRun).toBeFalsy();
+    });
+  });
+
   describe('debounced analytics and ghost stories', () => {
     function createMockChannel() {
       const listeners: Record<string, Function[]> = {};

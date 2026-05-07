@@ -1,6 +1,5 @@
 import type { FC, PropsWithChildren, ReactElement, ReactNode } from 'react';
 
-import type { State } from '../../manager-api/index.ts';
 import type { RenderData as RouterData } from '../../router/types.ts';
 import type { ThemeVars } from '../../theming/types.ts';
 import type { API_LayoutCustomisations, API_SidebarOptions } from './api.ts';

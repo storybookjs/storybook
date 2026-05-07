@@ -24,6 +24,7 @@ import { Search } from './Search.tsx';
 import { SearchResults } from './SearchResults.tsx';
 import { SidebarBottom } from './SidebarBottom.tsx';
 import { Filter } from './Filter.tsx';
+import ReviewChangesButton from './ReviewChangesButton.tsx';
 import type { CombinedDataset, Selection } from './types.ts';
 import { useLastViewed } from './useLastViewed.ts';
 
@@ -191,6 +192,7 @@ export const Sidebar = React.memo(function Sidebar({
               )
             }
             searchFieldContent={<Filter />}
+            belowSearchContent={<ReviewChangesButton />}
             {...lastViewedProps}
           >
             {({

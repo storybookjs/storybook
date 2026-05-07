@@ -1,5 +1,5 @@
-import { writeFile } from 'node:fs/promises';
-import { join } from 'pathe';
+import { mkdir, writeFile } from 'node:fs/promises';
+import { join, relative } from 'pathe';
 import { x } from 'tinyexec';
 import type { Logger } from './utils.ts';
 import type { AgentId, AgentDriver, AgentVariant } from './agents/config.ts';
@@ -8,7 +8,7 @@ import { collectGhostStoriesGrade, grade } from './grade.ts';
 import { claudeAgent } from './agents/claude-code.ts';
 import { codexAgent } from './agents/codex.ts';
 import { publishTrialBranch, type PublishMetadata } from './publish-trial.ts';
-import { prepareTrial } from './prepare-trial.ts';
+import { prepareTrial, type TrialWorkspace } from './prepare-trial.ts';
 import { buildEvalData, type EvalData } from './result-docs.ts';
 import {
   captureEnvironment,
@@ -72,7 +72,6 @@ export async function runTrial(config: TrialConfig, logger?: Logger): Promise<Ru
   //    Storybook checkout so the trial exercises in-tree changes rather than
   //    whatever version the benchmark project has installed.
   const prompt = loadPrompt(promptName);
-  await writeFile(join(workspace.resultsDir, 'prompt.md'), prompt);
 
   // 5. Capture the full markdown the agent will receive from `ai setup` so
   //    the trial record contains a reproducible, project-aware snapshot of
@@ -81,7 +80,7 @@ export async function runTrial(config: TrialConfig, logger?: Logger): Promise<Ru
   //    a separate file so the resulting PR diff shows the exact instructions
   //    the agent was given for this trial.
   const promptContent = await captureAiSetupMarkdown(workspace.projectPath, promptName, log);
-  await writeFile(join(workspace.resultsDir, 'setup-prompt.md'), promptContent);
+  await writeEvalResultsArtifacts(workspace.resultsDir, prompt, promptContent);
 
   // 6. Execute the agent. EVAL_SETUP_PROMPT is forwarded into the agent's
   //    environment so its `ai setup` tool call resolves to the selected
@@ -100,6 +99,9 @@ export async function runTrial(config: TrialConfig, logger?: Logger): Promise<Ru
   log.logSuccess(
     `Agent completed (${Math.round(execution.duration)}s, ${execution.cost ? `$${execution.cost.toFixed(2)}` : 'cost N/A'}, ${execution.turns} turns)`
   );
+
+  await restoreTrackedEvalData(workspace, log);
+  await writeEvalResultsArtifacts(workspace.resultsDir, prompt, promptContent);
 
   const provisionalArtifacts = {
     buildOutput: {
@@ -144,10 +146,7 @@ export async function runTrial(config: TrialConfig, logger?: Logger): Promise<Ru
     artifacts: provisionalArtifacts,
   });
 
-  await writeFile(
-    join(workspace.resultsDir, 'data.json'),
-    JSON.stringify(provisionalData, null, 2)
-  );
+  await writeEvalData(workspace.resultsDir, provisionalData);
 
   // 8. Grade the results using story-render preview gain as the score.
   const { grade: trialGrade, score } = await grade(workspace, log, baselineGhostStories);
@@ -170,10 +169,7 @@ export async function runTrial(config: TrialConfig, logger?: Logger): Promise<Ru
     },
   });
 
-  await writeFile(
-    join(workspace.resultsDir, 'data.json'),
-    JSON.stringify(reportForCommit, null, 2)
-  );
+  await writeEvalData(workspace.resultsDir, reportForCommit);
 
   // 10. Commit, push, and open the benchmark PR
   const publish = await publishTrialBranch({
@@ -188,6 +184,37 @@ export async function runTrial(config: TrialConfig, logger?: Logger): Promise<Ru
     ...reportForCommit,
     publish,
   };
+}
+
+async function restoreTrackedEvalData(workspace: TrialWorkspace, log: Logger) {
+  const dataPath = relative(workspace.repoRoot, join(workspace.resultsDir, 'data.json'));
+  const result = await x('git', ['restore', '--source', workspace.baselineCommit, '--', dataPath], {
+    throwOnError: false,
+    nodeOptions: { cwd: workspace.repoRoot },
+  });
+
+  if (result.exitCode !== 0) {
+    log.logError(
+      `Could not restore ${dataPath} from ${workspace.baselineCommit}; regenerating eval data.`
+    );
+  }
+}
+
+async function writeEvalResultsArtifacts(
+  resultsDir: string,
+  prompt: string,
+  promptContent: string
+) {
+  await mkdir(resultsDir, { recursive: true });
+  await Promise.all([
+    writeFile(join(resultsDir, 'prompt.md'), prompt),
+    writeFile(join(resultsDir, 'setup-prompt.md'), promptContent),
+  ]);
+}
+
+async function writeEvalData(resultsDir: string, data: EvalData) {
+  await mkdir(resultsDir, { recursive: true });
+  await writeFile(join(resultsDir, 'data.json'), JSON.stringify(data, null, 2));
 }
 
 /**

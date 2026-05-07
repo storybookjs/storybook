@@ -1,4 +1,4 @@
-import { mkdirSync, readFileSync, rmSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 
@@ -272,6 +272,34 @@ describe('runTrial pipeline', () => {
 
     expect(() => readFileSync(join(resultsDir, 'summary.json'), 'utf-8')).toThrow();
     expect(() => readFileSync(join(resultsDir, 'transcript.json'), 'utf-8')).toThrow();
+  });
+
+  it('restores eval-results artifacts if the agent deletes them', async () => {
+    setupMocks();
+    vi.mocked(claudeAgent.execute).mockImplementation(async () => {
+      rmSync(join(TMP, '.storybook', 'eval-results'), { recursive: true, force: true });
+      return {
+        execution: { cost: 0.42, duration: 45.2, turns: 12 },
+        transcript: [],
+      };
+    });
+
+    await runTrial(baseConfig);
+
+    const resultsDir = join(TMP, '.storybook', 'eval-results');
+    expect(existsSync(join(resultsDir, 'data.json'))).toBe(true);
+    expect(readFileSync(join(resultsDir, 'prompt.md'), 'utf-8')).toMatch(/dispatcher\.js ai setup/);
+    expect(readFileSync(join(resultsDir, 'setup-prompt.md'), 'utf-8')).toContain(
+      'Full project-aware instructions'
+    );
+    expect(vi.mocked(x)).toHaveBeenCalledWith(
+      'git',
+      ['restore', '--source', 'deadbeef', '--', '.storybook/eval-results/data.json'],
+      expect.objectContaining({
+        throwOnError: false,
+        nodeOptions: expect.objectContaining({ cwd: TMP }),
+      })
+    );
   });
 
   it('propagates failed build into result', async () => {

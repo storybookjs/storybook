@@ -1,7 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { CacheEntry } from '../../telemetry/event-cache.ts';
-import type { TelemetryEvent } from '../../telemetry/types.ts';
 import { MockUniversalStore } from '../../shared/universal-store/mock.ts';
 import {
   type StoreEvent,
@@ -20,7 +19,7 @@ vi.mock('storybook/internal/common', () => ({
 // The two AI-related flags read from the regular fs cache. Mocking the small
 // helper module lets each test set the flags directly without having to drive
 // the underlying cache through vitest's module resolution.
-vi.mock('./ai-checklist-flags.ts', () => ({
+vi.mock('../../shared/utils/ai-checklist-flags.ts', () => ({
   hasAiInitOptIn: vi.fn().mockResolvedValue(false),
   hasAiSetupRun: vi.fn().mockResolvedValue(false),
 }));
@@ -70,11 +69,6 @@ vi.mock('../../telemetry/event-cache.ts', () => ({
 
 const AI_IDLE_DELAY_MS = 4 * 60 * 1000;
 
-const aiInitOptInCacheEntry = {
-  timestamp: Date.now(),
-  body: { eventType: 'ai-init-opt-in' } as TelemetryEvent,
-} satisfies CacheEntry;
-
 /** Mock getEventCacheEntry to return specific entries by event type. */
 function mockEventCache(events: Record<string, CacheEntry | undefined>) {
   return async (eventType: string) => events[eventType];
@@ -106,7 +100,7 @@ async function setAiFlags({
   optedIn?: boolean;
   setupRan?: boolean;
 }) {
-  const flags = await import('./ai-checklist-flags.ts');
+  const flags = await import('../../shared/utils/ai-checklist-flags.ts');
   vi.mocked(flags.hasAiInitOptIn).mockResolvedValue(optedIn);
   vi.mocked(flags.hasAiSetupRun).mockResolvedValue(setupRan);
 }
@@ -142,7 +136,7 @@ describe('initializeChecklist', () => {
   it('sets loaded immediately, even before the AI checks resolve', async () => {
     const { get: getEventCacheEntry } = await import('../../telemetry/event-cache.ts');
     vi.mocked(getEventCacheEntry).mockReturnValue(new Promise(() => {}));
-    const flags = await import('./ai-checklist-flags.ts');
+    const flags = await import('../../shared/utils/ai-checklist-flags.ts');
     vi.mocked(flags.hasAiInitOptIn).mockReturnValue(new Promise(() => {}));
     vi.mocked(flags.hasAiSetupRun).mockReturnValue(new Promise(() => {}));
 
@@ -193,7 +187,7 @@ describe('initializeChecklist', () => {
   it('still initializes when reading the AI cache fails', async () => {
     const { get: getEventCacheEntry } = await import('../../telemetry/event-cache.ts');
     vi.mocked(getEventCacheEntry).mockRejectedValue(new Error('cache read failed'));
-    const flags = await import('./ai-checklist-flags.ts');
+    const flags = await import('../../shared/utils/ai-checklist-flags.ts');
     vi.mocked(flags.hasAiInitOptIn).mockRejectedValueOnce(new Error('cache read failed'));
 
     const { initializeChecklist } = await import('./checklist.ts');

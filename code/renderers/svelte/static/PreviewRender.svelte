@@ -1,5 +1,7 @@
 <script>
-  import DecoratorHandler from './DecoratorHandler.svelte';
+  // Vite 8's Rolldown dep scanner can load this file through a virtual-module id.
+  // Keep this as a package export so sibling .svelte resolution is not importer-path dependent.
+  import DecoratorHandler from '@storybook/svelte/internal/DecoratorHandler.svelte';
   import { dedent } from 'ts-dedent';
 
   const { name, title, storyFn, showError } = $props();

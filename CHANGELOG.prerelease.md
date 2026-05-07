@@ -1,3 +1,15 @@
+## 10.4.0-alpha.18
+
+- Agentic Setup: Allow failed stories to persist - [#34717](https://github.com/storybookjs/storybook/pull/34717), thanks @Sidnioulz!
+- CLI: Add react-vite to tanstack-react automigration - [#34718](https://github.com/storybookjs/storybook/pull/34718), thanks @huang-julien!
+- Change-Detection: Set GIT_OPTIONAL_LOCKS=0 to avoid blocking commits - [#34726](https://github.com/storybookjs/storybook/pull/34726), thanks @valentinpalkovic!
+- Core: Barrel-aware named import resolution for change detection - [#34675](https://github.com/storybookjs/storybook/pull/34675), thanks @valentinpalkovic!
+- Fix ArgsTable borders not visible in Windows High Contrast Mode - [#34264](https://github.com/storybookjs/storybook/pull/34264), thanks @TheSeydiCharyyev!
+- Sidebar: Soften change-detection signals + add Review CTA - [#34701](https://github.com/storybookjs/storybook/pull/34701), thanks @valentinpalkovic!
+- Tanstack: Optimize tanstack react-store - [#34731](https://github.com/storybookjs/storybook/pull/34731), thanks @huang-julien!
+- Telemetry: Refactor init tracking - [#34629](https://github.com/storybookjs/storybook/pull/34629), thanks @Programer1804!
+- UI: Add Share section to onboarding checklist and redesign share tool - [#34413](https://github.com/storybookjs/storybook/pull/34413), thanks @valentinpalkovic!
+
 ## 10.4.0-alpha.17
 
 - Agentic Setup: Keep sample content if users want onboarding - [#34704](https://github.com/storybookjs/storybook/pull/34704), thanks @Sidnioulz!

@@ -246,6 +246,7 @@ export const baseTemplates = {
           experimentalRSC: true,
           developmentModeForBuild: true,
           experimentalTestSyntax: true,
+          changeDetection: true,
         },
       },
       extraDependencies: ['server-only', 'prop-types'],
@@ -343,6 +344,7 @@ export const baseTemplates = {
           experimentalRSC: true,
           developmentModeForBuild: true,
           experimentalTestSyntax: true,
+          changeDetection: true,
         },
       },
       extraDependencies: ['server-only', 'vite', 'prop-types'],
@@ -385,6 +387,7 @@ export const baseTemplates = {
         features: {
           developmentModeForBuild: true,
           experimentalTestSyntax: true,
+          changeDetection: true,
         },
       },
     },

@@ -151,6 +151,11 @@
       "code": "./src/node-logger/index.ts",
       "default": "./dist/node-logger/index.js"
     },
+    "./internal/oxc-parser": {
+      "types": "./dist/oxc-parser/index.d.ts",
+      "code": "./src/oxc-parser/index.ts",
+      "default": "./dist/oxc-parser/index.js"
+    },
     "./internal/preview-api": {
       "types": "./dist/preview-api/index.d.ts",
       "code": "./src/preview-api/index.ts",
@@ -229,7 +234,7 @@
   ],
   "dependencies": {
     "@storybook/global": "^5.0.0",
-    "@storybook/icons": "^2.0.1",
+    "@storybook/icons": "^2.0.2",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/user-event": "^14.6.1",
     "@vitest/expect": "3.2.4",
@@ -237,6 +242,8 @@
     "@webcontainer/env": "^1.1.1",
     "esbuild": "^0.18.0 || ^0.19.0 || ^0.20.0 || ^0.21.0 || ^0.22.0 || ^0.23.0 || ^0.24.0 || ^0.25.0 || ^0.26.0 || ^0.27.0",
     "open": "^10.2.0",
+    "oxc-parser": "^0.127.0",
+    "oxc-resolver": "^11.19.1",
     "recast": "^0.23.5",
     "semver": "^7.7.3",
     "use-sync-external-store": "^1.5.0",

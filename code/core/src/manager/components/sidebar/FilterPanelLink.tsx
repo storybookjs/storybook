@@ -25,6 +25,7 @@ export const createFilterLink = ({
   id,
   type,
   title,
+  tooltip,
   count,
   icon,
   isIncluded,
@@ -34,7 +35,7 @@ export const createFilterLink = ({
 }: FilterItem): Link => {
   const isChecked = isIncluded || isExcluded;
   const toggleLabel = `${type} filter: ${isExcluded ? `exclude ${title}` : title}`;
-  const toggleTooltip = `${isChecked ? 'Remove' : 'Add'} ${type} filter: ${title}`;
+  const toggleTooltip = tooltip ?? `${isChecked ? 'Remove' : 'Add'} ${type} filter: ${title}`;
   const invertButtonLabel = `${isExcluded ? 'Include' : 'Exclude'} ${type}: ${title}`;
 
   return {

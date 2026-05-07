@@ -2,6 +2,7 @@ import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 
+import { format } from 'oxfmt';
 import { logger, prompt } from 'storybook/internal/node-logger';
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -18,6 +19,15 @@ import {
 } from './metroConfig.ts';
 
 vi.mock('storybook/internal/node-logger', { spy: true });
+
+const getFormattedDiff = async (before: string, after: string, filePath: string) => {
+  const [beforeResult, afterResult] = await Promise.all([
+    format(path.basename(filePath), before, { singleQuote: true }),
+    format(path.basename(filePath), after, { singleQuote: true }),
+  ]);
+
+  return getDiff(beforeResult.code, afterResult.code);
+};
 
 describe('metroConfig codemod', () => {
   let tempDir: string;
@@ -56,10 +66,8 @@ describe('metroConfig codemod', () => {
 
     expect(result.status).toBe('updated');
     expect(after).not.toBe(before);
-    expect(getDiff(before, after)).toMatchInlineSnapshot(`
-      "+ const {
-      +   withStorybook,
-      + } = require('@storybook/react-native/withStorybook');
+    expect(await getFormattedDiff(before, after, filePath)).toMatchInlineSnapshot(`
+      "+ const { withStorybook } = require('@storybook/react-native/withStorybook');
       + 
       + 
         const defaultConfig = {};
@@ -84,32 +92,29 @@ describe('metroConfig codemod', () => {
 
     expect(result.status).toBe('updated');
     expect(after).not.toBe(before);
-    expect(getDiff(before, after)).toMatchInlineSnapshot(`
+    expect(await getFormattedDiff(before, after, filePath)).toMatchInlineSnapshot(`
       "- module.exports = withExpo(defaultConfig);
       - 
-      + const {
-      +   withStorybook,
-      + } = require('@storybook/react-native/withStorybook');
+      + const { withStorybook } = require('@storybook/react-native/withStorybook');
       + 
       + module.exports = withStorybook(withExpo(defaultConfig));
       + "
     `);
   });
 
-  it('wraps export default async function in ts config with ESM import', () => {
+  it('wraps export default async function in ts config with ESM import', async () => {
+    const filePath = path.join(tempDir, 'metro.config.ts');
     const before = `
 export default async function makeMetroConfig() {
   return { resolver: {} };
 }
 `;
-    const transformed = transformMetroConfigSource(before, path.join(tempDir, 'metro.config.ts'));
+    const transformed = transformMetroConfigSource(before, filePath);
 
     expect(transformed.action).toBe('updated');
     if (transformed.action === 'updated') {
-      expect(getDiff(before, transformed.code)).toMatchInlineSnapshot(`
-        "  
-          
-        - export default async function makeMetroConfig() {
+      expect(await getFormattedDiff(before, transformed.code, filePath)).toMatchInlineSnapshot(`
+        "- export default async function makeMetroConfig() {
         - 
         + import { withStorybook } from '@storybook/react-native/withStorybook';
         + export default withStorybook(async function makeMetroConfig() {
@@ -195,7 +200,8 @@ module.exports = config;
     }
   });
 
-  it('does not treat import/export text inside template literals as ESM for .ts import injection', () => {
+  it('does not treat import/export text inside template literals as ESM for .ts import injection', async () => {
+    const filePath = path.join(tempDir, 'metro.config.ts');
     const before = `
 const hint = \`
 import { something } from 'somewhere'
@@ -203,16 +209,12 @@ export default {}
 \`;
 module.exports = {};
 `;
-    const transformed = transformMetroConfigSource(before, path.join(tempDir, 'metro.config.ts'));
+    const transformed = transformMetroConfigSource(before, filePath);
 
     expect(transformed.action).toBe('updated');
     if (transformed.action === 'updated') {
-      expect(getDiff(before, transformed.code)).toMatchInlineSnapshot(`
-        "  
-          
-        + const {
-        +   withStorybook,
-        + } = require('@storybook/react-native/withStorybook');
+      expect(await getFormattedDiff(before, transformed.code, filePath)).toMatchInlineSnapshot(`
+        "+ const { withStorybook } = require('@storybook/react-native/withStorybook');
         + 
         + 
           const hint = \`
@@ -228,7 +230,8 @@ module.exports = {};
     }
   });
 
-  it('preserves TypeScript return type and type parameters on default exported functions', () => {
+  it('preserves TypeScript return type and type parameters on default exported functions', async () => {
+    const filePath = path.join(tempDir, 'metro.config.ts');
     const before = `
 import type { MetroConfig } from 'metro-config';
 
@@ -236,13 +239,12 @@ export default async function makeMetroConfig<T = string>(): Promise<MetroConfig
   return {} as MetroConfig;
 }
 `;
-    const transformed = transformMetroConfigSource(before, path.join(tempDir, 'metro.config.ts'));
+    const transformed = transformMetroConfigSource(before, filePath);
 
     expect(transformed.action).toBe('updated');
     if (transformed.action === 'updated') {
-      expect(getDiff(before, transformed.code)).toMatchInlineSnapshot(`
-        "  
-          import type { MetroConfig } from 'metro-config';
+      expect(await getFormattedDiff(before, transformed.code, filePath)).toMatchInlineSnapshot(`
+        "  import type { MetroConfig } from 'metro-config';
           
           
         - export default async function makeMetroConfig<T = string>(): Promise<MetroConfig> {

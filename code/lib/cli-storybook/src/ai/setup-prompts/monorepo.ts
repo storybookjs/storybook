@@ -3,7 +3,7 @@ import { dedent } from 'ts-dedent';
 import type { ProjectInfo, SetupInstructionsContext } from '../types.ts';
 import { getDocsMarkdownUrl } from '../utils/docs-markdown-url.ts';
 import { ext } from '../utils/ext.ts';
-import { listRules, listSteps } from '../utils/markdown.ts';
+import { listDOD, listRules, listSteps } from '../utils/markdown.ts';
 import {
   buildPortalStep,
   buildSharedPreviewStep,
@@ -26,6 +26,13 @@ import {
   readBudgetRule,
   toolsVsShellRule,
 } from './partials/rules.ts';
+import {
+  cssCheckDOD,
+  sharedPreviewDOD,
+  storyTagsV1DOD,
+  typeCheckPassesStrictDOD,
+  vitestPassesStrictDOD,
+} from './partials/dod.ts';
 
 export function instructions(projectInfo: ProjectInfo): string {
   const { configDir, language, needsUserOnboarding, packageManager, packageManagerName } =
@@ -84,12 +91,14 @@ export function instructions(projectInfo: ProjectInfo): string {
     )}
 
     ## Done when
-
-    - **Exactly one \`CssCheck\` story exists** somewhere in the new stories, asserting a concrete computed style value read from the component's source (added at the end of Step 5).
-    - Every story file you wrote that vitest confirmed passing has had \`'needs-work'\` stripped, leaving \`tags: ['ai-generated']\`. Anything still failing keeps \`['ai-generated', 'needs-work']\`.
-    - \`npx vitest --project storybook run\` passes for the new files.
-    - The project's TypeScript check passes for changed files.
-    - The shared preview is strong enough that stories don't need per-story fetch/provider workarounds.
+    
+    ${listDOD([
+      cssCheckDOD(ctx),
+      storyTagsV1DOD(ctx),
+      vitestPassesStrictDOD(ctx),
+      typeCheckPassesStrictDOD(ctx),
+      sharedPreviewDOD(ctx),
+    ])}
 
     ## Reference (only fetch if stuck)
 

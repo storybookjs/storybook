@@ -71,6 +71,7 @@ ActionButton.displayName = 'ActionButton';
 
 export interface ActionItem {
   title: string | ReactElement;
+  ariaLabel?: string;
   className?: string;
   onClick: (e: MouseEvent<HTMLButtonElement>) => void;
   disabled?: boolean;

@@ -90,8 +90,14 @@ export interface ActionBarProps {
 export const ActionBar = ({ actionItems, flexLayout = false, ...props }: ActionBarProps) => {
   return (
     <Container {...props} $flexLayout={flexLayout}>
-      {actionItems.map(({ title, className, onClick, disabled }, index: number) => (
-        <ActionButton key={index} className={className} onClick={onClick} disabled={!!disabled}>
+      {actionItems.map(({ title, ariaLabel, className, onClick, disabled }, index: number) => (
+        <ActionButton
+          key={index}
+          aria-label={ariaLabel}
+          className={className}
+          onClick={onClick}
+          disabled={!!disabled}
+        >
           {title}
         </ActionButton>
       ))}

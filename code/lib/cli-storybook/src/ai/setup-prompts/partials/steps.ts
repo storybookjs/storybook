@@ -82,6 +82,32 @@ export function verifyStep(
   };
 }
 
+export function verifyWithAllowedFailureStep(
+  projectInfo: ProjectInfo,
+  { packageManager, tsx }: InstructionsContext
+): { title: string; body: string } {
+  return {
+    title: `Verify in one batch, then iterate only on failures`,
+    body: dedent`**Read this rule once before running anything:** the first vitest invocation must run **all** the new stories together. No single-file runs before the batch.
+
+    \`\`\`bash
+    npx vitest --project storybook run
+    \`\`\`
+
+    Then run the project's TypeScript check (use the script from \`package.json\` — typically \`tsc --noEmit\` or \`${packageManager.getRunCommand('typecheck')}\`). Read the raw output once; don't pipe it through repeated \`grep\`/\`head\` invocations to slice it.
+
+    For each failure:
+
+    1. Read the error.
+    2. If multiple stories share the failure, fix the shared preview setup, not the stories.
+    3. In subsequent runs, re-run Vitest **only for the affected file(s)**: \`npx vitest --project storybook run path/to/Foo.stories.${tsx}\`.
+    4. Fix any TypeScript issues needed for story files to pass, then re-run TS and Vitest only for those files. Repeat until files pass, or until you have tried 5 times.
+    5. If a story file still fails after those retries, leave the file tagged \`'needs-work'\` and move on — do not keep chasing project-wide TS errors caused by preserved \`'needs-work'\` files.
+    6. When you keep failing on a story, play function, etc., do not substitute it for easier content that contributes less to codebase understanding.
+    **After a file passes**, edit its meta and remove \`'needs-work'\` so its tags become \`['ai-generated']\`. Files you couldn't fix keep \`['ai-generated', 'needs-work']\` — move on, don't loop forever.`,
+  };
+}
+
 export function cleanupStep(
   { needsUserOnboarding }: ProjectInfo,
   ctx: InstructionsContext
@@ -196,6 +222,55 @@ export function writeStoriesStep(
     Each story file: ~3 exports for typical components, up to ~10 when warranted by real usage. Copy JSX patterns from real pages/routes/tests.
 
     **Tag every new story file with \`['ai-generated', 'needs-work']\` from the start.** You will remove \`'needs-work'\` only after vitest confirms the file passes. This way, anything not yet verified — including stories you ran out of time to fix — stays correctly marked.
+
+    ${getStoryExample(projectInfo)}
+
+    Story rules:
+
+    - Start every meta with \`tags: ['ai-generated', 'needs-work']\`.
+    - Show all imports explicitly.
+    - Don't add a custom \`title\`.
+    - Don't build large story-specific harnesses — fix preview instead.
+    - Don't create new app components.
+
+    **Substep b — add the single \`CssCheck\` story.** Before you finish this step, pick **one** visually distinctive component from the files you just wrote and add a \`CssCheck\` export to that file. Exactly **one** \`CssCheck\` across the whole project — not one per file. This step is not complete until the story exists.
+
+    Why it's mandatory: \`toBeVisible\` passes on an unstyled component. A concrete \`getComputedStyle\` value is the only proof that the shared preview actually loaded the app's CSS — without it, you have no idea whether your stories are rendering correctly.
+
+    How: read a real styling value from the component's source (e.g. a hex color in styled-components, a Tailwind class like \`bg-blue-600\`, a CSS variable from the theme), and assert the resolved \`getComputedStyle\` value:
+
+    \`\`\`${tsx}
+    export const CssCheck: Story = {
+      args: { children: 'Submit' },
+      play: async ({ canvas }) => {
+        const button = canvas.getByRole('button', { name: /submit/i });
+        // PrimaryButton uses bg-blue-600 — fails if Tailwind / global CSS did not load.
+        await expect(getComputedStyle(button).backgroundColor).toBe('rgb(37, 99, 235)');
+      },
+    };
+    \`\`\`
+    `,
+  };
+}
+
+export function writeStoriesWithAllowedFailuresStep(
+  projectInfo: ProjectInfo,
+  { tsx }: InstructionsContext
+): { title: string; body: string } {
+  return {
+    title: 'Write up to 10 story files (in one batch)',
+    body: dedent`
+
+    This step has **two required deliverables**:
+
+    a. Up to 10 colocated \`*.stories.${tsx}\` files for meaningful targets in the codebase.
+    b. **Exactly one \`CssCheck\` story** added to one of those files (spec below). This step is not complete without it.
+
+    **Substep a — pick targets and write the files.** Pick ~10 meaningful targets from the real codebase (low-level reusable → page components). Skip subcomponents, hooks, contexts, helpers, and \`App\` itself when real page components exist.
+
+    Each story file: ~3 exports for typical components, up to ~10 when warranted by real usage. Copy JSX patterns from real pages/routes/tests.
+
+    **Tag every new story file with \`['ai-generated', 'needs-work']\` from the start.** You will remove \`'needs-work'\` only after vitest confirms the file passes, and you will leave the tag if the file is not fully functional at the end of your self-healing loop.
 
     ${getStoryExample(projectInfo)}
 

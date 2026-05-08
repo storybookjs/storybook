@@ -4,6 +4,8 @@ import type {
   ModuleResolveConfig,
 } from 'storybook/internal/core-server';
 
+import { logger } from 'storybook/internal/node-logger';
+
 import { normalize } from 'pathe';
 import type { Compiler } from 'webpack';
 
@@ -31,6 +33,7 @@ export function createWebpackChangeDetectionAdapter(compiler: Compiler): ChangeD
 
     onFileChange(handler: (event: FileChangeEvent) => void): () => void {
       let active = true;
+      let firstRun = true;
       const seenFiles = new Set<string>();
 
       compiler.hooks.watchRun.tap('StorybookChangeDetection', (watchingCompiler) => {
@@ -38,7 +41,9 @@ export function createWebpackChangeDetectionAdapter(compiler: Compiler): ChangeD
 
         for (const filePath of watchingCompiler.modifiedFiles ?? []) {
           const path = normalize(filePath);
-          const kind: FileChangeEvent['kind'] = seenFiles.has(path) ? 'change' : 'add';
+          // On firstRun, seenFiles is empty but files already exist — treat as 'change'
+          const kind: FileChangeEvent['kind'] =
+            !firstRun && !seenFiles.has(path) ? 'add' : 'change';
           seenFiles.add(path);
           handler({ kind, path });
         }
@@ -48,6 +53,8 @@ export function createWebpackChangeDetectionAdapter(compiler: Compiler): ChangeD
           seenFiles.delete(path);
           handler({ kind: 'unlink', path });
         }
+
+        firstRun = false;
       });
 
       return () => {
@@ -87,6 +94,11 @@ function normaliseWebpackAlias(
     if (typeof value === 'string') {
       record[key] = value;
     } else if (Array.isArray(value) && value.length > 0) {
+      if (value.length > 1) {
+        logger.debug(
+          `Change detection: webpack alias "${key}" has ${value.length} values; using only the first: "${value[0]}"`
+        );
+      }
       record[key] = value[0];
     }
     // false = disabled alias, skip

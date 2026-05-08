@@ -2,8 +2,6 @@ import type { Channel } from 'storybook/internal/channels';
 import {
   PREVIEW_INITIALIZED,
   SHARE_ISOLATE_MODE,
-  SHARE_POPOVER_OPENED,
-  SHARE_STORY_LINK,
   SIDEBAR_FILTER_CHANGED,
   AI_PROMPT_NUDGE,
 } from 'storybook/internal/core-events';
@@ -42,12 +40,6 @@ export function initTelemetryChannel(channel: Channel) {
         telemetry('preview-first-load', payload);
       }
     } catch {}
-  });
-  channel.on(SHARE_POPOVER_OPENED, async () => {
-    telemetry('share', { action: 'popover-opened' });
-  });
-  channel.on(SHARE_STORY_LINK, async () => {
-    telemetry('share', { action: 'story-link-copied' });
   });
   channel.on(SHARE_ISOLATE_MODE, async () => {
     telemetry('share', { action: 'isolate-mode-opened' });

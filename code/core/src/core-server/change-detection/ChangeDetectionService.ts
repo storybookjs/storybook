@@ -1,3 +1,5 @@
+import { writeFile } from 'node:fs/promises';
+
 import { join, normalize } from 'pathe';
 
 import { dequal } from 'dequal';
@@ -21,7 +23,7 @@ import {
   IncrementalPatcher,
   ParseResolveCache,
 } from './dependency-graph/index.ts';
-import type { ReverseIndexImpl } from './dependency-graph/index.ts';
+import type { DependencyGraph, ReverseIndexImpl } from './dependency-graph/index.ts';
 import { ChangeDetectionFailureError, ChangeDetectionUnavailableError } from './errors.ts';
 import { GitDiffProvider } from './GitDiffProvider.ts';
 import { extractBaselineEntryIds, IndexBaselineService } from './IndexBaselineService.ts';
@@ -48,16 +50,16 @@ function isSameStatus(a: Status | undefined, b: Status): boolean {
 }
 
 type StoryIdsByFileCacheKey = Awaited<ReturnType<StoryIndexGenerator['getIndex']>>;
-const storyIdsByFileCache = new WeakMap<
-  StoryIdsByFileCacheKey,
-  { workingDir: string; storyIdsByFile: Map<string, Set<string>> }
->();
 
 function getStoryIdsByAbsolutePath(
+  cache: WeakMap<
+    StoryIdsByFileCacheKey,
+    { workingDir: string; storyIdsByFile: Map<string, Set<string>> }
+  >,
   storyIndex: StoryIdsByFileCacheKey,
   workingDir: string
 ): Map<string, Set<string>> {
-  const cached = storyIdsByFileCache.get(storyIndex);
+  const cached = cache.get(storyIndex);
   if (cached && cached.workingDir === workingDir) {
     return cached.storyIdsByFile;
   }
@@ -70,7 +72,7 @@ function getStoryIdsByAbsolutePath(
       storyIdsByFile.set(filePath, storyIds);
     }
   });
-  storyIdsByFileCache.set(storyIndex, { workingDir, storyIdsByFile });
+  cache.set(storyIndex, { workingDir, storyIdsByFile });
   return storyIdsByFile;
 }
 
@@ -145,6 +147,7 @@ export class ChangeDetectionService {
   private scanInFlight = false;
   private rerunAfterCurrentScan = false;
   private readinessResolved = false;
+  private refreshInFlight = false;
   private previousStatuses = new Map<string, Status>();
   private gitDiffProvider: GitDiffProvider | undefined;
   private indexBaselineService: IndexBaselineService | undefined;
@@ -155,6 +158,10 @@ export class ChangeDetectionService {
   private incrementalPatcher: IncrementalPatcher | undefined;
   private reverseIndex: ReverseIndexImpl | undefined;
   private storyFiles: Set<string> = new Set();
+  private readonly storyIdsByFileCache = new WeakMap<
+    StoryIdsByFileCacheKey,
+    { workingDir: string; storyIdsByFile: Map<string, Set<string>> }
+  >();
   /**
    * Serialises file-change patches so two events touching the same dep set never interleave
    * across `await` points inside `IncrementalPatcher.patch`. The chain ignores rejections
@@ -247,7 +254,11 @@ export class ChangeDetectionService {
 
     const storyIndexGenerator = await this.options.storyIndexGeneratorPromise;
     const storyIndex = await storyIndexGenerator.getIndex();
-    const storyIdsByFile = getStoryIdsByAbsolutePath(storyIndex, this.workingDir);
+    const storyIdsByFile = getStoryIdsByAbsolutePath(
+      this.storyIdsByFileCache,
+      storyIndex,
+      this.workingDir
+    );
     this.storyFiles = new Set(storyIdsByFile.keys());
 
     if (this.disposed) {
@@ -257,12 +268,14 @@ export class ChangeDetectionService {
     // Shared parse/resolve cache so the patcher reuses cold-start results instead of
     // re-doing every file's parse + resolution on the first event after boot. The patcher
     // invalidates per-file entries on every change/unlink before reading.
+    const debugEnv = process.env.STORYBOOK_CHANGE_DETECTION_DEBUG;
     const cache = new ParseResolveCache({
       registry,
       resolver,
       workspaceRoots,
       projectRoot,
       logger,
+      debug: !!debugEnv,
     });
 
     this.dependencyGraphBuilder = new DependencyGraphBuilder({
@@ -272,11 +285,22 @@ export class ChangeDetectionService {
       projectRoot,
       cache,
     });
+
+    // Subscribe BEFORE build — buffer events until patcher is ready
+    const eventBuffer: FileChangeEvent[] = [];
+    this.unsubscribeFileChange = adapter.onFileChange((event) => {
+      if (this.disposed) {
+        return;
+      }
+      eventBuffer.push(event);
+    });
+
     const { reverseIndex, graph } = await this.dependencyGraphBuilder.build(this.storyFiles);
     if (this.disposed) {
       return;
     }
     this.reverseIndex = reverseIndex;
+    void this.dumpDebugSnapshot(reverseIndex, graph, projectRoot, workspaceRoots, cache);
 
     this.incrementalPatcher = new IncrementalPatcher({
       reverseIndex,
@@ -289,11 +313,21 @@ export class ChangeDetectionService {
       isStoryFile: (path: string) => this.storyFiles.has(normalize(path)),
     });
 
+    // Drain buffered events into patchQueue, then switch to live handler
+    this.unsubscribeFileChange?.();
+    for (const event of eventBuffer) {
+      this.patchQueue = this.patchQueue
+        .then(() => this.handleFileChange(event))
+        .catch(() => undefined);
+    }
+
     this.unsubscribeFileChange = adapter.onFileChange((event) => {
       if (this.disposed) {
         return;
       }
-      this.patchQueue = this.patchQueue.then(() => this.handleFileChange(event));
+      this.patchQueue = this.patchQueue
+        .then(() => this.handleFileChange(event))
+        .catch(() => undefined);
     });
 
     if (adapter.onStartupFailure) {
@@ -345,42 +379,113 @@ export class ChangeDetectionService {
    * invariant intact.
    */
   private async refreshStoryFiles(): Promise<void> {
-    if (!this.incrementalPatcher) {
+    if (this.refreshInFlight || !this.incrementalPatcher) {
       return;
     }
-    const storyIndexGenerator = await this.options.storyIndexGeneratorPromise;
-    const storyIndex = await storyIndexGenerator.getIndex();
-    if (this.disposed) {
-      return;
-    }
-    const storyIdsByFile = getStoryIdsByAbsolutePath(storyIndex, this.workingDir);
-    const next = new Set(storyIdsByFile.keys());
-    const previous = this.storyFiles;
-
-    const added: string[] = [];
-    for (const path of next) {
-      if (!previous.has(path)) {
-        added.push(path);
+    this.refreshInFlight = true;
+    try {
+      const storyIndexGenerator = await this.options.storyIndexGeneratorPromise;
+      const storyIndex = await storyIndexGenerator.getIndex();
+      if (this.disposed) {
+        return;
       }
-    }
-    const removed: string[] = [];
-    for (const path of previous) {
-      if (!next.has(path)) {
-        removed.push(path);
-      }
-    }
+      const storyIdsByFile = getStoryIdsByAbsolutePath(
+        this.storyIdsByFileCache,
+        storyIndex,
+        this.workingDir
+      );
+      const next = new Set(storyIdsByFile.keys());
+      const previous = this.storyFiles;
 
-    if (added.length === 0 && removed.length === 0) {
+      const added: string[] = [];
+      for (const path of next) {
+        if (!previous.has(path)) {
+          added.push(path);
+        }
+      }
+      const removed: string[] = [];
+      for (const path of previous) {
+        if (!next.has(path)) {
+          removed.push(path);
+        }
+      }
+
+      if (added.length === 0 && removed.length === 0) {
+        return;
+      }
+
+      this.storyFiles = next;
+
+      for (const path of added) {
+        this.patchQueue = this.patchQueue
+          .then(() => this.handleFileChange({ kind: 'add', path }))
+          .catch(() => undefined);
+      }
+      for (const path of removed) {
+        this.patchQueue = this.patchQueue
+          .then(() => this.handleFileChange({ kind: 'unlink', path }))
+          .catch(() => undefined);
+      }
+    } finally {
+      this.refreshInFlight = false;
+    }
+  }
+
+  private async dumpDebugSnapshot(
+    reverseIndex: ReverseIndexImpl,
+    graph: DependencyGraph,
+    projectRoot: string,
+    workspaceRoots: Set<string>,
+    cache: ParseResolveCache
+  ): Promise<void> {
+    const debugEnv = process.env.STORYBOOK_CHANGE_DETECTION_DEBUG;
+    if (!debugEnv) {
       return;
     }
+    const outPath =
+      debugEnv === '1' || debugEnv === 'true'
+        ? join(projectRoot, 'storybook-graph-debug.json')
+        : debugEnv;
 
-    this.storyFiles = next;
-
-    for (const path of added) {
-      this.patchQueue = this.patchQueue.then(() => this.handleFileChange({ kind: 'add', path }));
+    const graphObj: Record<string, string[]> = {};
+    for (const [story, deps] of graph) {
+      graphObj[story] = Array.from(deps).sort();
     }
-    for (const path of removed) {
-      this.patchQueue = this.patchQueue.then(() => this.handleFileChange({ kind: 'unlink', path }));
+
+    const reverseObj: Record<string, Array<{ story: string; depth: number }>> = {};
+    for (const [dep, stories] of reverseIndex.asMap()) {
+      reverseObj[dep] = Array.from(stories.entries())
+        .map(([story, depth]) => ({ story, depth }))
+        .sort((a, b) => a.depth - b.depth || a.story.localeCompare(b.story));
+    }
+
+    const snapshot = {
+      timestamp: new Date().toISOString(),
+      projectRoot,
+      workspaceRoots: Array.from(workspaceRoots).sort(),
+      // `graph` is keyed by every walked node (story roots + their transitive deps),
+      // and `reverseIndex` records each story root at depth 0 alongside real deps —
+      // so `graph.size` / `reverseIndex.asMap().size` over-report story and dep totals.
+      // Report `storyFiles` from the authoritative source-of-truth set, plus the raw
+      // node/entry counts under unambiguous names for diagnostics.
+      storyFiles: this.storyFiles.size,
+      graphNodes: graph.size,
+      reverseIndexEntries: reverseIndex.asMap().size,
+      graph: graphObj,
+      reverseIndex: reverseObj,
+      // Each entry records one named-import barrel lookup: which names were requested,
+      // which source files they resolved to, and whether the barrel itself was also
+      // included (needBarrel: true means at least one name fell back to the barrel).
+      barrelResolutions: cache.getBarrelTrace() ?? [],
+    };
+
+    try {
+      await writeFile(outPath, JSON.stringify(snapshot, null, 2), 'utf8');
+      logger.debug(`Change detection: graph debug snapshot written to ${outPath}`);
+    } catch (error) {
+      logger.warn(
+        `Change detection: failed to write debug snapshot to ${outPath}: ${error instanceof Error ? error.message : String(error)}`
+      );
     }
   }
 
@@ -522,7 +627,11 @@ export class ChangeDetectionService {
 
     const storyIndex = await storyIndexGenerator.getIndex();
     const baselineStatuses = buildIndexBaselineStatuses(storyIndex, baselineEntryIds);
-    const storyIdsByFile = getStoryIdsByAbsolutePath(storyIndex, this.workingDir);
+    const storyIdsByFile = getStoryIdsByAbsolutePath(
+      this.storyIdsByFileCache,
+      storyIndex,
+      this.workingDir
+    );
     const statuses = new Map<string, Status>();
 
     for (const changedFile of scannedFiles) {

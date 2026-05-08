@@ -213,7 +213,11 @@ Common templates:
 
 ## Testing Expectations
 
-- Use `yarn test` for unit tests
+> [!IMPORTANT]
+> **For React components, write Storybook stories with `play` functions — do NOT write `*.test.tsx` unit tests.** Behavior, accessibility, and interaction assertions belong in `*.stories.tsx` co-located with the component, executed via the Storybook Vitest project (`yarn storybook:vitest` or `vitest run --config code/vitest.config.storybook.ts`). Unit tests (`*.test.ts(x)`) are reserved for pure utilities, hooks, and non-React modules where rendering is not involved.
+
+- Use `yarn storybook:vitest` to run Storybook story tests (the primary test path for components)
+- Use `yarn test` for unit tests of utilities, hooks, and non-React modules
 - Use Storybook UI or Chromatic for visual validation
 - Use `yarn task e2e-tests --start-from auto` or `yarn task e2e-tests-dev --start-from auto` for E2E coverage
 - Use `yarn task test-runner --start-from auto` or `yarn task test-runner-dev --start-from auto` for test-runner scenarios
@@ -226,7 +230,13 @@ yarn test:watch
 yarn storybook:vitest
 ```
 
-When writing tests:
+When writing tests for components:
+
+- Add or update `<Component>.stories.tsx` with stories covering each behavior; use `play` functions with `expect`, `userEvent`, `within` from `storybook/test`
+- Mock external context (e.g. `ManagerContext.Provider`) inside story decorators or `beforeEach`
+- Run `vitest --config code/vitest.config.storybook.ts <story-file>` to verify play assertions
+
+When writing unit tests (utilities, hooks, non-React modules):
 
 - Export functions that need direct tests
 - Test real behavior, not just syntax patterns

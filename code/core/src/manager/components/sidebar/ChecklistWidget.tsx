@@ -11,9 +11,9 @@ import {
 import {
   CheckIcon,
   ChevronSmallUpIcon,
+  CircleHollowIcon,
   EyeCloseIcon,
   ListUnorderedIcon,
-  StatusFailIcon,
   StatusPassIcon,
 } from '@storybook/icons';
 
@@ -352,7 +352,7 @@ export const ChecklistWidget = () => {
                         ) : item.icon ? (
                           <item.icon />
                         ) : (
-                          <StatusFailIcon />
+                          <CircleHollowIcon />
                         )}
                       </ActionList.Icon>
                       <ActionList.Text>

@@ -101,7 +101,7 @@ export class TelemetryService {
       ai: selectedFeatures.has(Feature.AI),
     };
 
-    await telemetry('init', {
+    await this.trackInit({
       projectType,
       features: telemetryFeatures,
       newUser,

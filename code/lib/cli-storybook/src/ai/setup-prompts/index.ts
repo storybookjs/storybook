@@ -4,21 +4,17 @@ import type { ProjectInfo } from '../types.ts';
 import { getProjectOverview } from '../utils/project-overview.ts';
 
 /**
- * The prompt variants that ship to real users. Running `npx storybook ai setup`
- * without environment variable overrides uses either of these prompts.
+ * The single prompt variant that ships to real users. Running
+ * `npx storybook ai setup` without any overrides always produces this prompt.
  */
 import * as currentlyUsedPrompt from './optimized-tests.ts';
 export const DEFAULT_PROMPT_NAME: PromptName = 'optimized-tests';
 
-import * as extensivePrompt from './pattern-copy-play.ts';
-export const EXTENSIVE_PROMPT_NAME: PromptName = 'pattern-copy-play';
-
 /**
  * Main prompt used currently in `npx storybook ai setup` command. If you promote a new prompt to be default, move this to the FORMERLY_USED_PROMPTS object below.
  */
-const BUNDLED_PROMPTS: Record<string, (projectInfo: ProjectInfo) => string> = {
+const CURRENTLY_USED_PROMPT: Record<string, (projectInfo: ProjectInfo) => string> = {
   [DEFAULT_PROMPT_NAME]: currentlyUsedPrompt.instructions,
-  [EXTENSIVE_PROMPT_NAME]: extensivePrompt.instructions,
 };
 
 /**
@@ -26,10 +22,7 @@ const BUNDLED_PROMPTS: Record<string, (projectInfo: ProjectInfo) => string> = {
  * from sibling files so the bundler can code|-split them away from the
  * default-only path that real users hit.
  */
-const DYNAMICALLY_IMPORTED_PROMPTS: Record<
-  string,
-  () => Promise<(projectInfo: ProjectInfo) => string>
-> = {
+const FORMERLY_USED_PROMPTS: Record<string, () => Promise<(projectInfo: ProjectInfo) => string>> = {
   monorepo: async () => (await import('./monorepo.ts')).instructions,
   'optimized-tests': async () => (await import('./optimized-tests.ts')).instructions,
   'relaxed-limits': async () => (await import('./relaxed-limits.ts')).instructions,
@@ -43,8 +36,8 @@ export type PromptName = string;
 
 /** Names available to the eval harness — defaults plus experimental variants. */
 export const PROMPT_NAMES: PromptName[] = [
-  ...Object.keys(BUNDLED_PROMPTS),
-  ...Object.keys(DYNAMICALLY_IMPORTED_PROMPTS),
+  ...Object.keys(CURRENTLY_USED_PROMPT),
+  ...Object.keys(FORMERLY_USED_PROMPTS),
 ];
 
 /**
@@ -55,36 +48,32 @@ export const PROMPT_NAMES: PromptName[] = [
  */
 const EVAL_SETUP_PROMPT_ENV = 'EVAL_SETUP_PROMPT';
 
-function resolvePromptName(extensive?: boolean): PromptName {
+function resolvePromptName(): PromptName {
   const requested = process.env[EVAL_SETUP_PROMPT_ENV]?.trim();
   if (
     requested &&
-    (Object.hasOwn(BUNDLED_PROMPTS, requested) ||
-      Object.hasOwn(DYNAMICALLY_IMPORTED_PROMPTS, requested))
+    (Object.hasOwn(CURRENTLY_USED_PROMPT, requested) ||
+      Object.hasOwn(FORMERLY_USED_PROMPTS, requested))
   ) {
     return requested;
   }
-  return extensive ? EXTENSIVE_PROMPT_NAME : DEFAULT_PROMPT_NAME;
+  return DEFAULT_PROMPT_NAME;
 }
 
 export async function getAiSetupPrompt(
-  projectInfo: ProjectInfo,
-  extensive?: boolean
+  projectInfo: ProjectInfo
 ): Promise<{ content: string; name: PromptName }> {
-  const name = resolvePromptName(extensive);
-  const builder = BUNDLED_PROMPTS[name] ?? (await DYNAMICALLY_IMPORTED_PROMPTS[name]());
+  const name = resolvePromptName();
+  const builder = CURRENTLY_USED_PROMPT[name] ?? (await FORMERLY_USED_PROMPTS[name]());
 
   return { content: builder(projectInfo), name };
 }
 
-export async function getAiSetupMarkdownOutput(
-  projectInfo: ProjectInfo,
-  extensive?: boolean
-): Promise<{
+export async function getAiSetupMarkdownOutput(projectInfo: ProjectInfo): Promise<{
   markdown: string;
   prompt: PromptName;
 }> {
-  const { content, name } = await getAiSetupPrompt(projectInfo, extensive);
+  const { content, name } = await getAiSetupPrompt(projectInfo);
 
   return {
     markdown: dedent`

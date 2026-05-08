@@ -1,7 +1,9 @@
 import { AppRegistry } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { LiteUI } from '@storybook/react-native-ui-lite';
 
 import { view } from './storybook.requires';
+import { name as appName } from '../app.json';
 
 /**
  * This file is user-editable.
@@ -15,8 +17,9 @@ const StorybookUIRoot = view.getStorybookUI({
     getItem: AsyncStorage.getItem,
     setItem: AsyncStorage.setItem,
   },
+  CustomUIComponent: LiteUI,
 });
 
-AppRegistry.registerComponent('main', () => StorybookUIRoot);
+AppRegistry.registerComponent(appName, () => StorybookUIRoot);
 
 export default StorybookUIRoot;

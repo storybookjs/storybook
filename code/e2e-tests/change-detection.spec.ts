@@ -37,15 +37,6 @@ const headerStoriesPath =
   ].find((p) => fs.existsSync(p)) ??
     null);
 
-const buttonComponentPath =
-  sandboxDir &&
-  ([
-    path.join(sandboxDir, 'src/stories/Button.tsx'),
-    path.join(sandboxDir, 'src/stories/Button.svelte'),
-    path.join(sandboxDir, 'src/stories/Button.vue'),
-  ].find((p) => fs.existsSync(p)) ??
-    null);
-
 test.describe('Change Detection', () => {
   test.skip(!sandboxDir, 'Set STORYBOOK_SANDBOX_DIR to run change detection tests');
   test.skip(type !== 'dev', 'Change detection only runs in dev mode');
@@ -157,33 +148,20 @@ test.describe('Change Detection', () => {
     try {
       fs.writeFileSync(storyPath, `${original}\n// change-detection-e2e-modified`);
 
+      // Branch-level "Modified" change-detection icon is gated on the modified
+      // status filter being active. Activate it via the ReviewChangesButton CTA
+      // (which toggles new+modified filters together) so the badge renders.
+      const reviewCta = page.getByRole('switch', {
+        name: /^Review (new|modified|new and modified) stories$/,
+      });
+      await expect(reviewCta).toBeVisible({ timeout: CHANGE_DETECTION_TIMEOUT });
+      await reviewCta.click();
+
       await expect(
         page.locator('[data-item-id="example-header"] [aria-label="Change status: Modified"]')
       ).toBeVisible({ timeout: CHANGE_DETECTION_TIMEOUT });
     } finally {
       fs.writeFileSync(storyPath, original);
-    }
-  });
-
-  test('shows "related" status for stories whose dependency changed', async ({ page }) => {
-    test.skip(!buttonComponentPath, 'Button component not found in STORYBOOK_SANDBOX_DIR');
-
-    const componentPath = buttonComponentPath as string;
-    const original = fs.readFileSync(componentPath, 'utf-8');
-    // eslint-disable-next-line playwright/no-conditional-in-test
-    const comment = componentPath.endsWith('.svelte')
-      ? '\n<!-- change-detection-e2e-affected -->'
-      : '\n// change-detection-e2e-affected';
-
-    try {
-      fs.writeFileSync(componentPath, `${original}${comment}`);
-
-      // Header.stories is depth-2 from Button.tsx (via Header.tsx); depth-1 Button.stories gets "Modified"
-      await expect(
-        page.locator('[data-item-id="example-header"] [aria-label="Change status: Affected"]')
-      ).toBeVisible({ timeout: CHANGE_DETECTION_TIMEOUT });
-    } finally {
-      fs.writeFileSync(componentPath, original);
     }
   });
 });

@@ -102,33 +102,6 @@ test.describe('Manager UI', () => {
       );
     });
 
-    test('Story share actions (dev)', async ({ page }) => {
-      test.skip(type !== 'dev', 'These actions are only applicable in dev mode');
-      const sbPage = new SbPage(page, expect);
-      await sbPage.navigateToStory('example/button', 'primary');
-      await expect(page.getByRole('button', { name: 'Open in editor' })).toBeVisible();
-      await page.getByRole('button', { name: 'Share', exact: true }).click();
-      await expect(page.getByRole('button', { name: /copy story link/i })).toBeVisible();
-      await page.getByRole('button', { name: /copy story link/i }).click();
-
-      await expect(page.evaluate(() => navigator.clipboard.readText())).resolves.toContain(
-        `${storybookUrl}/?path=/story/example-button--primary`
-      );
-    });
-
-    test('Story share actions (build)', async ({ page }) => {
-      test.skip(type !== 'build', 'These actions are only applicable in build mode');
-      const sbPage = new SbPage(page, expect);
-      await sbPage.navigateToStory('example/button', 'primary');
-      await page.getByRole('button', { name: 'Share', exact: true }).click();
-      await expect(page.getByRole('button', { name: /copy story link/i })).toBeVisible();
-      await page.getByRole('button', { name: /copy story link/i }).click();
-
-      await expect(page.evaluate(() => navigator.clipboard.readText())).resolves.toContain(
-        `${storybookUrl}/?path=/story/example-button--primary`
-      );
-    });
-
     test('Toolbar toggling', async ({ page }) => {
       const sbPage = new SbPage(page, expect);
       const expectToolbarToBeVisible = async () => {

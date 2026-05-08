@@ -160,7 +160,16 @@ export async function checkCalloutVariant(docsDir: string): Promise<CalloutVaria
   for (const file of mdxFiles) {
     const lines = await readFileLines(file);
     lines.forEach((line, idx) => {
-      if (calloutOpenRegex.test(line) && !line.includes('variant=')) {
+      if (!calloutOpenRegex.test(line)) return;
+      // Collect the full opening tag, which may span multiple lines until the closing `>`.
+      let tag = line;
+      let i = idx;
+      while (!tag.includes('>') && i < lines.length - 1) {
+        i++;
+        tag += '\n' + lines[i];
+      }
+      const openTag = tag.slice(0, tag.indexOf('>') + 1);
+      if (!openTag.includes('variant=')) {
         errors.push({
           file,
           line: idx + 1,

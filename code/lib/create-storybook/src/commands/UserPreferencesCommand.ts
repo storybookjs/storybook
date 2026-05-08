@@ -226,8 +226,7 @@ export class UserPreferencesCommand {
     const useAi = skipPrompt
       ? true
       : await prompt.confirm({
-          message:
-            'Would you like to install AI features (MCP addon, skills and prompt suggestions)?',
+          message: 'Would you like to install AI features (MCP addon and prompt suggestions)?',
         });
 
     if (useAi) {

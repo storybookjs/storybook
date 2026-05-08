@@ -16,7 +16,7 @@ import { globalSettings } from '../../cli/index.ts';
 import { universalTestProviderStore } from '../stores/test-provider.ts';
 import { get as getEventCacheEntry } from '../../telemetry/event-cache.ts';
 import { isStoryCreatedByAISetup } from '../../telemetry/ai-setup-utils.ts';
-import { hasAiInitOptIn, hasAiSetupRun } from './ai-checklist-flags.ts';
+import { hasAiInitOptIn, hasAiSetupRun } from '../../shared/utils/ai-checklist-flags.ts';
 import {
   type ChecklistState,
   type StoreEvent,

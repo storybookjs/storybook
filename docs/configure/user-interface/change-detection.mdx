@@ -28,7 +28,7 @@ When a change is detected, Storybook shows one of the following status icons nex
 | ------------------------- | ------------ | ------------------------------------------------------------------------------------- |
 | ✦&nbsp;Sparkle            | **new**      | The story file is untracked or newly added in git.                                    |
 | ●&nbsp;Filled&nbsp;circle | **modified** | The story's own file, or a file it directly imports, was changed.                     |
-|                           | **related**  | A file further up the story's dependency chain was changed (a transitive dependency). |
+| (no icon)                 | **related**  | A file further up the story's dependency chain was changed (a transitive dependency). |
 
 When multiple statuses apply to the same story, the highest priority wins: **new** > **modified** > **related**.
 
@@ -46,7 +46,7 @@ A **Review** button appears between the search bar and the story tree whenever y
 
 **Why are change detection filters off by default?**
 
-The heuristics that Storybook uses to determine modified and related stories are designed to be fast and work without any configuration, but they aren't perfect. They can produce false positives (marking stories as modified or related when they aren't), which can be distracting if you have a large repository with many shared dependencies. For example, if you change a widely used utility function, Storybook might mark dozens of stories as related even if the change doesn't actually affect them. To avoid overwhelming you with status icons, Storybook keeps the modified and related filters off by default, so you only see these statuses when you choose to review your changes.
+The heuristics that Storybook uses to determine modified and related stories are designed to be fast and work without any configuration, but they aren't perfect. They can produce false positives (marking stories as modified or related when they aren't), which can be distracting if you have a large repository with many shared dependencies. For example, if you change a widely used utility function, Storybook might mark dozens of stories as related even if the change doesn't actually affect them. To avoid overwhelming you with status icons, Storybook keeps the change detection filters off by default, so you only see these statuses when you choose to review your changes.
 
 </Callout>
 

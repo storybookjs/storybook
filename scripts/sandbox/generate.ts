@@ -85,6 +85,20 @@ const emptyDir = async (dir: string): Promise<void> => {
   await Promise.all(names.map((name) => rm(join(dir, name), { recursive: true, force: true })));
 };
 
+const moveDir = async (from: string, to: string): Promise<void> => {
+  try {
+    await rename(from, to);
+  } catch (error) {
+    // On some platforms (notably Windows), rename doesn't work across different disks volumes
+    if ((error as NodeJS.ErrnoException).code !== 'EXDEV') {
+      throw error;
+    }
+
+    await cp(from, to, { recursive: true });
+    await rm(from, { recursive: true, force: true });
+  }
+};
+
 const addStorybook = async ({
   localRegistry,
   baseDir,
@@ -266,7 +280,7 @@ const runGenerators = async (
           await localizeYarnConfigFiles(createBaseDir, createBeforeDir);
 
           // Now move the created before dir into it's final location and add storybook
-          await rename(createBeforeDir, beforeDir);
+          await moveDir(createBeforeDir, beforeDir);
 
           // Make sure there are no git projects in the folder
           await rm(join(beforeDir, '.git'), { recursive: true, force: true });

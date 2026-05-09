@@ -8,6 +8,7 @@ import { includeConditionalArg } from 'storybook/internal/csf';
 import { DocumentIcon, UndoIcon } from '@storybook/icons';
 
 import { pickBy } from 'es-toolkit/object';
+import { opacify } from 'polished';
 import { styled } from 'storybook/theming';
 
 import { EmptyBlock } from '../EmptyBlock';
@@ -22,7 +23,13 @@ export const TableWrapper = styled.table<{
   inAddonPanel?: boolean;
   inTabPanel?: boolean;
   isLoading?: boolean;
-}>(({ theme, compact, inAddonPanel, inTabPanel }) => ({
+}>(({ theme, compact, inAddonPanel, inTabPanel }) => {
+  // In dark mode, appBorderColor (white at 10% opacity) is nearly invisible.
+  // Boost opacity so table borders are distinguishable from the background.
+  const tableBorderColor =
+    theme.base === 'dark' ? opacify(0.1, theme.appBorderColor) : theme.appBorderColor;
+
+  return {
   '&&': {
     // Resets for cascading/system styles
     borderSpacing: 0,
@@ -119,13 +126,13 @@ export const TableWrapper = styled.table<{
             filter:
               theme.base === 'light'
                 ? `drop-shadow(0px 1px 3px rgba(0, 0, 0, 0.10))`
-                : `drop-shadow(0px 1px 3px rgba(0, 0, 0, 0.20))`,
+                : `drop-shadow(0px 1px 3px rgba(0, 0, 0, 0.40))`,
           }),
 
       '> tr > *': {
         // For filter to work properly, the table cells all need to be opaque.
         background: theme.background.content,
-        borderTop: `1px solid ${theme.appBorderColor}`,
+        borderTop: `1px solid ${tableBorderColor}`,
       },
 
       ...(inAddonPanel
@@ -133,16 +140,16 @@ export const TableWrapper = styled.table<{
         : {
             // This works and I don't know why. :)
             '> tr:first-of-type > *': {
-              borderBlockStart: `1px solid ${theme.appBorderColor}`,
+              borderBlockStart: `1px solid ${tableBorderColor}`,
             },
             '> tr:last-of-type > *': {
-              borderBlockEnd: `1px solid ${theme.appBorderColor}`,
+              borderBlockEnd: `1px solid ${tableBorderColor}`,
             },
             '> tr > *:first-of-type': {
-              borderInlineStart: `1px solid ${theme.appBorderColor}`,
+              borderInlineStart: `1px solid ${tableBorderColor}`,
             },
             '> tr > *:last-of-type': {
-              borderInlineEnd: `1px solid ${theme.appBorderColor}`,
+              borderInlineEnd: `1px solid ${tableBorderColor}`,
             },
 
             // Thank you, Safari, for making me write code like this.
@@ -173,6 +180,7 @@ export const TableWrapper = styled.table<{
 
     // End awesome table styling
   },
+};
 }));
 
 const TablePositionWrapper = styled.div({

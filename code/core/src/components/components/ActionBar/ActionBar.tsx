@@ -74,6 +74,7 @@ export interface ActionItem {
   className?: string;
   onClick: (e: MouseEvent<HTMLButtonElement>) => void;
   disabled?: boolean;
+  ariaLabel?: string | false;
 }
 
 export interface ActionBarProps {
@@ -89,8 +90,14 @@ export interface ActionBarProps {
 export const ActionBar = ({ actionItems, flexLayout = false, ...props }: ActionBarProps) => {
   return (
     <Container {...props} $flexLayout={flexLayout}>
-      {actionItems.map(({ title, className, onClick, disabled }, index: number) => (
-        <ActionButton key={index} className={className} onClick={onClick} disabled={!!disabled}>
+      {actionItems.map(({ title, className, onClick, disabled, ariaLabel }, index: number) => (
+        <ActionButton
+          key={index}
+          className={className}
+          onClick={onClick}
+          disabled={!!disabled}
+          aria-label={ariaLabel === false ? undefined : ariaLabel}
+        >
           {title}
         </ActionButton>
       ))}

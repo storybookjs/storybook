@@ -73,6 +73,7 @@ type CanvasBlockParameters = {
     disabled?: boolean;
     onClick: () => void;
     title: string | React.JSX.Element;
+    ariaLabel?: string | false;
   }[];
   /** Provide HTML class(es) to the preview element, for custom styling. */
   className?: string;

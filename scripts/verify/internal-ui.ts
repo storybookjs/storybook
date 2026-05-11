@@ -1,31 +1,33 @@
-// Boots the monorepo's internal Storybook UI for the verify harness.
+// Boots the monorepo's internal Storybook UI dev server for the verify
+// harness.
 //
-// Builds `code/storybook-static/` once via `yarn storybook:ui:build` (skipped
-// when the build artefact is already present), then serves it on the requested
-// port via `yarn http-server --silent -c-1`. Used by the v6 verify-pr.ts
-// when a recipe declares `// @verify-target: internal-ui` (the default).
+// Spawns the same `storybook dev` entry that `yarn storybook:ui` uses
+// (with a configurable port and `--ci` to suppress the auto-open) and
+// waits for both `/iframe.html` and `/index.html` to respond. Used by
+// the v6 verify-pr.ts when a recipe declares
+// `// @verify-target: internal-ui` (the default).
 //
-// Why static build + http-server instead of `storybook dev`: the static
-// bundle is deterministic and free of Vite dev-mode startup races (the
-// addon-vitest `globals-runtime` follower/leader init order, in
-// particular, surfaces a `TypeError: No existing state found for
-// follower with id: 'storybook/test'` on cold dev boot that is not
-// caused by the PR under test). The static path costs more cold-boot
-// time (~3-5 min on CI) but eliminates that source of false-positive
-// regressions. Warm runs are seconds because storybook-static persists.
+// Dev server instead of `storybook build` + `http-server`: Vite serves
+// on-demand instead of producing a full static bundle, so cold boot is
+// ~30 s on a fresh runner instead of the 3-5 min the static path needs.
+// HMR is available for any iterative dev-loop tooling that reuses this
+// handle.
+//
+// The previously-blocking addon-vitest universal-store follower/leader
+// init race ("TypeError: No existing state found for follower with id:
+// 'storybook/test'") is fixed at the source in
+// code/core/src/shared/universal-store/index.ts (the rejection is now
+// marked handled so it no longer surfaces as a top-frame pageerror).
 
 import { spawn, type ChildProcess } from 'node:child_process';
-import { existsSync } from 'node:fs';
 import * as path from 'node:path';
 import { performance } from 'node:perf_hooks';
 
 import waitOn from 'wait-on';
 
-import { exec } from '../utils/exec.ts';
-
 const repoRoot = path.resolve(import.meta.dirname, '..', '..');
 const codeDir = path.join(repoRoot, 'code');
-const staticDir = path.join(codeDir, 'storybook-static');
+const dispatcherJs = path.join(codeDir, 'core', 'dist', 'bin', 'dispatcher.js');
 
 export interface InternalUiHandle {
   bootMs: number;
@@ -35,31 +37,21 @@ export interface InternalUiHandle {
 export async function bootInternalUi(opts: {
   port: number;
   controller: AbortController;
-  forceBuild?: boolean;
 }): Promise<InternalUiHandle> {
   const bootStart = performance.now();
 
-  const needBuild = opts.forceBuild || !existsSync(path.join(staticDir, 'index.html'));
-  if (needBuild) {
-    await exec(
-      'yarn storybook:ui:build',
-      { cwd: codeDir },
-      {
-        startMessage: '[internal-ui] building static UI',
-        errorMessage: '[internal-ui] storybook:ui:build failed',
-      }
-    );
-  } else {
-    console.log('[internal-ui] storybook-static present — skipping build');
-  }
-
   const child = spawn(
-    'yarn',
-    ['http-server', staticDir, '-p', String(opts.port), '--silent', '-c-1'],
+    process.execPath,
+    [dispatcherJs, 'dev', '--port', String(opts.port), '--config-dir', './.storybook', '--ci'],
     {
-      cwd: repoRoot,
+      cwd: codeDir,
       stdio: ['ignore', 'pipe', 'pipe'],
       signal: opts.controller.signal,
+      env: {
+        ...process.env,
+        NODE_OPTIONS: `${process.env.NODE_OPTIONS ?? ''} --max_old_space_size=4096`.trim(),
+        STORYBOOK_DISABLE_TELEMETRY: '1',
+      },
     }
   );
 
@@ -71,7 +63,7 @@ export async function bootInternalUi(opts: {
   });
   child.on('error', (err: NodeJS.ErrnoException) => {
     if (err.name === 'AbortError') return;
-    console.error('[internal-ui] http-server error:', err);
+    console.error('[internal-ui] dev server error:', err);
   });
 
   const abortPromise = new Promise<never>((_, reject) => {
@@ -82,11 +74,18 @@ export async function bootInternalUi(opts: {
 
   try {
     await Promise.race([
-      waitOn({
-        resources: [`http://localhost:${opts.port}/index.html`],
-        interval: 100,
-        timeout: 60_000,
-      }),
+      Promise.all([
+        waitOn({
+          resources: [`http://localhost:${opts.port}/iframe.html`],
+          interval: 250,
+          timeout: 200_000,
+        }),
+        waitOn({
+          resources: [`http://localhost:${opts.port}/index.html`],
+          interval: 250,
+          timeout: 200_000,
+        }),
+      ]),
       abortPromise,
     ]);
   } catch (err: unknown) {

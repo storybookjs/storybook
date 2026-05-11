@@ -299,6 +299,13 @@ export class UniversalStore<
           reject(reason);
         };
       });
+      // Attach a no-op `.catch` so this rejection is marked handled even if
+      // no consumer explicitly awaits `untilReady()`. Consumers that do
+      // await still receive the rejection through their own `.then/.catch`
+      // chain — `.catch(noop)` does not consume the rejection, it only
+      // suppresses the unhandled-rejection signal (which the browser
+      // surfaces as a top-frame `pageerror`).
+      syncingPromise.catch(() => {});
       this.syncing = {
         state: ProgressState.PENDING,
         promise: syncingPromise,

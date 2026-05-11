@@ -74,6 +74,7 @@ export interface ActionItem {
   className?: string;
   onClick: (e: MouseEvent<HTMLButtonElement>) => void;
   disabled?: boolean;
+  ariaLabel?: string;
 }
 
 export interface ActionBarProps {

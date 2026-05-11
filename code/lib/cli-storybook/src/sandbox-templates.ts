@@ -1079,6 +1079,7 @@ export const normal: TemplateKey[] = [
   // 'cra/default-ts',
   'react-vite/default-ts',
   'angular-cli/default-ts',
+  'angular-cli/vite-default-ts',
   'vue3-vite/default-ts',
   // 'nuxt-vite/default-ts', // temporarily disabled because it's broken
   'lit-vite/default-ts',

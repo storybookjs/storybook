@@ -150,6 +150,12 @@ COPY --chown=1000:1000 code/renderers/svelte/package.json code/renderers/svelte/
 COPY --chown=1000:1000 code/renderers/vue3/package.json code/renderers/vue3/
 COPY --chown=1000:1000 code/renderers/web-components/package.json code/renderers/web-components/
 
+# `WORKDIR /opt/verify-harness/repo` (line 79) was executed as root, so the
+# directory itself is root-owned even though COPY --chown=1000:1000 placed
+# its contents with uid 1000. Yarn runs as uid 1000 (USER below) and must
+# `mkdir node_modules/` here — chown the workdir so the link step succeeds.
+RUN chown 1000:1000 /opt/verify-harness/repo
+
 USER 1000:1000
 
 # HIGH #4 — verify the on-disk yarn binary BEFORE invoking it, then call it via

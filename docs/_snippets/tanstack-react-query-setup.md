@@ -12,7 +12,7 @@ const queryClient = new QueryClient({
 });
 
 export default {
-  loaders: [
+  beforeEach: [
     // 👇 Clear the cache between stories so each story starts fresh
     () => {
       queryClient.clear();
@@ -52,7 +52,7 @@ const queryClient = new QueryClient({
 });
 
 export default definePreview({
-  loaders: [
+  beforeEach: [
     // 👇 Clear the cache between stories so each story starts fresh
     () => {
       queryClient.clear();

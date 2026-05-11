@@ -108,9 +108,10 @@ export function buildRecipeAuthorPrompt(input: PromptInput): string {
   sections.push(refParts.join('\n'));
 
   // 5. PR metadata
-  const bodyExcerpt = input.prMeta.body.length > BODY_EXCERPT_CAP
-    ? `${input.prMeta.body.slice(0, BODY_EXCERPT_CAP)}\n[...truncated]`
-    : input.prMeta.body;
+  const bodyExcerpt =
+    input.prMeta.body.length > BODY_EXCERPT_CAP
+      ? `${input.prMeta.body.slice(0, BODY_EXCERPT_CAP)}\n[...truncated]`
+      : input.prMeta.body;
   const fileTable = input.prMeta.files
     .map((f) => `- ${f.path} (+${f.additions} / -${f.deletions})`)
     .join('\n');
@@ -134,7 +135,9 @@ export function buildRecipeAuthorPrompt(input: PromptInput): string {
   );
 
   // 6. PR diff (verbatim, already truncated)
-  sections.push([`# PR diff (truncated per harness caps)`, '', '```diff', input.prDiff, '```'].join('\n'));
+  sections.push(
+    [`# PR diff (truncated per harness caps)`, '', '```diff', input.prDiff, '```'].join('\n')
+  );
 
   // 7. Attachment + verdict signal explanation
   sections.push(

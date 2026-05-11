@@ -6,7 +6,7 @@ on:
 
 jobs:
   verify:
-    if: false  # GATED — flip to draft check when Phase 2 launches
+    if: github.event.pull_request.draft == false && contains(github.event.pull_request.labels.*.name, 'ci:verify')
     runs-on: ubuntu-22.04
     timeout-minutes: 20
     concurrency:
@@ -17,17 +17,28 @@ jobs:
       statuses: write
     steps:
       - name: Check actor permission
-        uses: prince-chrismc/check-actor-permissions-action@<pinned-sha>
+        uses: prince-chrismc/check-actor-permissions-action@0000000000000000000000000000000000000000 # TODO: pin to real SHA before activation
         with:
           permission: write
       - name: Checkout base
-        uses: actions/checkout@<pinned-sha>
+        uses: actions/checkout@0000000000000000000000000000000000000000 # TODO: pin to real SHA before activation
         with:
           ref: ${{ github.event.pull_request.base.sha }}
       - name: Fetch PR diff
         run: gh pr diff ${{ github.event.pull_request.number }} > /tmp/pr.diff
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Generate bundle
+        run: yarn verify-pr-generate --pr ${{ github.event.pull_request.number }} --force
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Author recipe
+        run: |
+          # shellcheck disable=SC2012
+          BUNDLE=$(ls -t .verify-output/*/prompt-bundle.json | head -1)
+          yarn verify-pr-author --bundle "$BUNDLE"
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
       - name: Run harness in container
         run: |
           docker run \
@@ -36,19 +47,18 @@ jobs:
             --tmpfs /workspace/.verify-output:rw,size=500m \
             --network none --memory 4g --pids-limit 200 --user 1000:1000 \
             -v ${{ github.workspace }}:/workspace:ro \
-            -v /var/run/proxy.sock:/var/run/proxy.sock:ro \
             verify-harness:pinned-sha \
             yarn verify-pr --recipe-spec .verify-recipes/${{ github.event.pull_request.number }}.spec.ts
       - name: Upload artifacts
         if: always()
-        uses: actions/upload-artifact@<pinned-sha>
+        uses: actions/upload-artifact@0000000000000000000000000000000000000000 # TODO: pin to real SHA before activation
         with:
           name: verify-output-pr-${{ github.event.pull_request.number }}-${{ github.run_id }}
           path: .verify-output/*/
           retention-days: 14
       - name: Post PR comment
         if: always()
-        uses: actions/github-script@<pinned-sha>
+        uses: actions/github-script@0000000000000000000000000000000000000000 # TODO: pin to real SHA before activation
         with:
           script: |
             const fs = require('fs');

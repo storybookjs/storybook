@@ -308,6 +308,60 @@ The agent-readable authoring rules live at `.verify-recipes/_recipe-authoring-gu
 - `--commit-range <a..b>` flag. Only `--pr <#>` is supported today.
 - Phase-2 CI activation requires migrating to direct Anthropic SDK; today the skill couples to Claude Code's `Agent` tool.
 
+## Increment 3 — Two Execution Paths
+
+Increment 3 splits recipe authoring into **two parallel execution paths** that share the same core logic. Both produce a committed `.verify-recipes/pr-<#>.spec.ts` reviewed by a human before any sandbox executes it. Parity between the two paths is guaranteed by construction: they call into the same `scripts/verify/recipe-author-core.ts` module.
+
+### Local / interactive path
+
+Used during day-to-day development and PoC iteration.
+
+1. Run `yarn verify-pr-generate --pr <#>` to emit `.verify-output/<runId>/prompt-bundle.json`.
+2. Invoke the `verify-recipe-author` skill (`.claude/skills/verify-recipe-author/SKILL.md`). The skill dispatches an OMC `executor` subagent (model: opus) with the assembled prompt.
+3. The skill pipes the agent reply into the shared core:
+   ```bash
+   cat agent-reply.txt | node scripts/verify-pr-author.ts \
+     --bundle .verify-output/<runId>/prompt-bundle.json \
+     --dispatch-mode stdin
+   ```
+4. The core runs the static deny-regex pass, prepends the header-comment provenance, lints the candidate, and either writes `.verify-recipes/pr-<#>.spec.ts` or emits a framed retry block on stderr and exits **75** (`EX_TEMPFAIL`).
+5. On exit 75 the skill parses the framed retry block, re-dispatches the OMC agent with the categorized lint errors, and pipes the new reply back into the core with `--retry-of <runId>` (D4-α contract). One retry max; second failure aborts the run.
+
+### CI / headless path
+
+Used by the `Author recipe` step in `.github/workflows/verify-pr.yml`.
+
+```bash
+yarn verify-pr-author --bundle .verify-output/<runId>/prompt-bundle.json --dispatch-mode sdk
+```
+
+The `sdk` dispatch mode calls `@anthropic-ai/sdk` directly through `scripts/verify/agent-dispatch.ts`. No Claude Code runtime, no OMC dependency — just the same shared core plus a direct HTTP dispatcher. Retries follow the same `recipe-retry-policy.ts` declarative config as the local path.
+
+### Shared core — parity by construction
+
+Both paths import `scripts/verify/recipe-author-core.ts`. The core encapsulates: deny-regex pass, provenance header, lint invocation, retry-policy lookup, framed-retry emission on exit 75, and final write of the committed spec.
+
+Test parity is enforced via the `VERIFY_PR_AUTHOR_STUB_REPLY` env var: when set, both dispatch modes return a stubbed agent reply without making any HTTP calls or spawning subagents. This is how acceptance criteria AC-V4-7a (local path produces spec X) and AC-V4-7b (CI path produces identical spec X) are validated in CI without burning API quota.
+
+### Trigger
+
+Phase-2 (CI) activation requires the `ci:verify` label on the PR, a non-draft PR, and a write-permission actor. The workflow at `.github/workflows/verify-pr.yml` is committed with this gating; see [`SECURITY.md`](./SECURITY.md) for the full posture.
+
+### Secret scope — v4 ships without Envoy
+
+`ANTHROPIC_API_KEY` is mounted only on the `Author recipe` workflow step's `env:` block. The committed-spec runner step (`Run harness in container`) has `--network=none` and no API key, so the key cannot be exfiltrated by a hostile committed spec.
+
+The Envoy `credential_injector` sidecar is **explicitly deferred to v5**. In v4 the authoring step runs on the bare GitHub-hosted runner. The trifecta-breaker (human review of the committed spec before sandbox execution) is the load-bearing control and remains unchanged.
+
+### EX_TEMPFAIL=75 — stable retry contract
+
+Exit code **75** (`EX_TEMPFAIL`, from BSD `sysexits.h`) is the **stable contract** between the recipe-author core and any dispatcher. When the core fails on a retryable error (e.g. lint failure in a known category), it:
+
+1. Writes a framed retry block to stderr: `<<<VERIFY_PR_RETRY>>> { … json … } <<<END>>>`.
+2. Exits with status `75`.
+
+Dispatchers (the local skill, the CI CLI, future containerized authoring runtimes) **must** treat exit 75 as "parse the framed block and re-dispatch", not as a hard failure. Any other non-zero exit is terminal. This is documented as risk note **R10** in the v4 plan: changing the sentinel exit code is a breaking change to every dispatcher.
+
 ## References
 
 - Security model: [`SECURITY.md`](./SECURITY.md)

@@ -112,83 +112,77 @@ The JSON body inside the comment uses 2-space indentation. Every line of the emb
 
 `Write` the assembled content (header + spec body) to `bundle.outputSpecPath` (absolute path from the bundle).
 
-### Step 8 — Lint and post-write regex checks
+### Step 8 — Pipe to `verify-pr-author` (D4-α sentinel-exit-75 contract)
 
-#### 8a. Lint with auto-fix
+Lint, deny-regex, post-write regex checks, header-comment provenance, retry-message
+authoring, and result.json emission all live in TypeScript core. The skill's job is
+strictly to dispatch the agent and pipe its raw reply into the author CLI.
+
+#### 8a. Dispatch the agent (attempt 1)
+
+```
+Agent({
+  description: "Generate PR recipe spec",
+  subagent_type: "oh-my-claudecode:executor",
+  model: "opus",
+  prompt: bundle.prompt
+})
+```
+
+Capture the agent's full reply as `<reply>`.
+
+#### 8b. Pipe to `verify-pr-author --bundle <bundle-path> --dispatch-mode stdin`
 
 ```bash
-yarn --cwd /Users/valentinpalkovic/Projects/storybook/code lint:js:cmd ../.verify-recipes/pr-<#>.spec.ts --fix
+printf '%s' "$REPLY" | node /Users/valentinpalkovic/Projects/storybook/scripts/verify-pr-author.ts --bundle <abs-bundle-path> --dispatch-mode stdin
 ```
 
-The path passed to `lint:js:cmd` is relative to `code/`; `../.verify-recipes/pr-<#>.spec.ts` resolves to the repo-root recipe.
+The CLI runs the deny-regex, header-comment provenance, file write, scoped lint
+(`scripts/verify/lint-invocation.ts`), and post-write regex checks. Exit codes:
 
-Capture exit code and stderr/stdout.
+- `0` — success. CLI has already written the spec and `result.json`. Skip to Step 10.
+- `1` — non-retryable error (deny-regex hit, collision, IO error). CLI has written
+  `result.json` with the failure status. Print the failure line and stop.
+- `75` — retryable lint/structural failure. The CLI has emitted a framed retry
+  block on stdout (see Step 9). Continue to Step 9.
 
-#### 8b. Post-write regex checks (AC-V3-3, AC-V3-4)
+Treat **exit 75** as the sole retry sentinel. Any other non-zero exit is terminal.
 
-Always run these after lint, regardless of lint exit code. Failure here is treated as a lint-equivalent failure.
+### Step 9 — Retry once (attempt 2, sentinel-exit-75)
 
-**Listener-before-goto** — assert `page.on('pageerror'` (single or double quote) appears at a line number strictly less than the line of the first `page.goto(`:
+On exit 75 from Step 8b, parse stdout for the framed retry block:
+
+```
+===VERIFY_PR_AUTHOR_RETRY_BEGIN===
+<retryMessage payload — already categorized and capped at 5 errors>
+===VERIFY_PR_AUTHOR_RETRY_END===
+```
+
+Extract the lines strictly between the BEGIN/END markers and assemble the retry
+prompt as:
+
+```
+<bundle.prompt>
+
+[RETRY]
+<retryMessage>
+```
+
+Dispatch the agent again with the assembled retry prompt (same `subagent_type` and
+`model`). Capture the new reply as `<reply2>`, then pipe it back through the CLI in
+retry mode:
 
 ```bash
-grep -n "page\.on(['\"]pageerror" <path> | head -1
-grep -n "page\.goto(" <path> | head -1
+printf '%s' "$REPLY2" | node /Users/valentinpalkovic/Projects/storybook/scripts/verify-pr-author.ts --bundle <abs-bundle-path> --dispatch-mode stdin --retry-of <runId>
 ```
 
-Compute the line numbers (first field of `grep -n` output, split by `:`). Fail if either is missing, or if the `page.on` line >= the `page.goto` line.
+The CLI enforces `RECIPE_RETRY_POLICY.maxAttempts` (currently 2) — it will not
+re-emit exit 75 on the retry call. Expected exits:
 
-**Attach pattern** — assert both attachments are present:
-
-```bash
-grep -q "testInfo\.attach(['\"]pageErrors['\"]" <path>
-grep -q "testInfo\.attach(['\"]consoleErrors['\"]" <path>
-```
-
-Both must match.
-
-#### 8c. Decision
-
-- Lint exit 0 AND both regex checks pass → success. Skip to Step 10.
-- Lint exit non-zero OR any regex check fails → on attempt 1, continue to Step 9. On attempt 2, write `result.json` `{ status: "lint-failed", attempts: 2, errors: [...] }` (use `regex-check-failed` if lint was clean but a regex check failed) and stop.
-
-### Step 9 — Retry once (attempt 2)
-
-`Read` `/Users/valentinpalkovic/Projects/storybook/scripts/verify/recipe-retry-policy.ts` to get `RECIPE_RETRY_POLICY.errorCategories` (currently `['listener-before-goto', 'attach-pattern', 'imports']`). Do NOT hardcode the literal categories — read them from the file.
-
-Re-run lint in JSON mode to enumerate errors:
-
-```bash
-yarn --cwd /Users/valentinpalkovic/Projects/storybook/code lint:js:cmd --format=json ../.verify-recipes/pr-<#>.spec.ts
-```
-
-Bucket the parsed errors by category:
-
-- `listener-before-goto` — failed regex check #1 (manual injection: add a synthetic error entry)
-- `attach-pattern` — failed regex check #2 (manual injection)
-- `imports` — eslint rules like `no-restricted-imports`, `import/*`
-- `other` — everything else
-
-Cap the feedback list at **5 errors total** (R3 in the plan).
-
-Construct the retry prompt:
-
-```
-Retry: your prior emission had lint/structural issues. Fix only the issues below and re-emit between the fence markers (<<<SPEC_START>>> ... <<<SPEC_END>>>). No commentary.
-
-Categorized issue counts (priority order from recipe-retry-policy.ts):
-- listener-before-goto: <count>
-- attach-pattern: <count>
-- imports: <count>
-- other: <count>
-
-First 5 errors:
-- <file:line> <ruleId>: <message>
-- ...
-
-Re-read the original output contract from the prior prompt. Emit only the corrected TypeScript spec body between the fence markers.
-```
-
-Dispatch the agent again with this retry message. Repeat Steps 4 → 5 → 6 → 7 → 8. If attempt 2 also fails any gate, emit the corresponding failure `result.json` and stop. **No third attempt** — bound by `RECIPE_RETRY_POLICY.maxAttempts`.
+- `0` — success. Skip to Step 10.
+- `1` — terminal failure (lint exhausted, regex-check exhausted, deny-regex hit).
+  CLI has written `result.json` with `attempts: 2` and the failure status. Print
+  the failure line and stop.
 
 ### Step 10 — Emit `result.json` on success
 

@@ -38,6 +38,7 @@
     "test:watch": "NODE_OPTIONS=--max_old_space_size=4096 vitest watch",
     "upload-bench": "cd scripts; yarn upload-bench",
     "verify-pr": "bun scripts/verify-pr.ts",
+    "verify-pr-author": "node scripts/verify-pr-author.ts",
     "verify-pr-generate": "bun scripts/verify-pr-generate.ts",
     "vite-ecosystem-ci:before-test": "./scripts/ecosystem-ci/before-test.sh react-vite/default-ts",
     "vite-ecosystem-ci:build": "./scripts/ecosystem-ci/build.sh react-vite/default-ts",
@@ -64,6 +65,7 @@
     "typescript": "^5.9.3"
   },
   "devDependencies": {
+    "@anthropic-ai/sdk": "0.65.0",
     "@nx/workspace": "^22.6.1",
     "@playwright/test": "^1.58.2",
     "@types/kill-port": "^2.0.3",

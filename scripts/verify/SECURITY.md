@@ -8,7 +8,7 @@ The verify harness accepts external PR diffs, story content, and repo README tex
 
 1. **Limit network access** — block outbound calls so exfiltration is impossible even if the agent is hijacked.
 2. **Limit data access** — restrict what files and credentials the agent can read/write.
-3. **Require human review of spec diff** — ensure a trusted human has reviewed the verification spec before it runs.
+3. **Secrets are scoped to authoring; the committed-spec runner is `--network=none`.**
 
 The Phase-1 PoC chooses **option 3**: every verification spec is committed to `.verify-recipes/<pr#>.spec.ts` and reviewed as part of the normal PR review process before the harness executes it. Options 1 and 2 are enforced additionally via `.claude/settings.json` deny rules and the `.dockerignore` exclusion list.
 
@@ -79,9 +79,44 @@ Evaluation of `@anthropic-ai/sandbox-runtime` as an additional isolation layer i
 
 ---
 
-## Phase 2 — CI Action (deferred)
+## Phase 2 — CI Action (v4 increment)
 
-### Container shape
+Phase 2 introduces two execution paths that share the same recipe-authoring core. Both are gated by `pull_request_target` + the `ci:verify` label + a non-draft PR + an actor-permission check. Only one workflow step (`Author recipe`) ever sees `ANTHROPIC_API_KEY`.
+
+### Secret scope
+
+`ANTHROPIC_API_KEY` lives **only** on the `Author recipe` workflow step's `env:` block. It is **not** present on the `Run harness in container` step. The spec-runner container is launched with `--network=none` and has no API key, so even a fully-compromised reviewer agent producing a hostile spec cannot exfiltrate the key — the container that executes the committed spec has no network and no credential.
+
+### Authoring posture
+
+This increment runs the `Author recipe` step on the **bare GitHub-hosted runner** (no container). The justification: the authoring step writes a spec file that is later subject to human review before any execution, so the trifecta breaker (option 3 — committed-spec review) still holds. Containerizing the authoring step is a **v5 candidate**: shared net-namespace with an Envoy `credential_injector` sidecar so the key never enters the container at all.
+
+### Actor-permission gate
+
+The first step of the `verify` job is `prince-chrismc/check-actor-permissions-action@0000000000000000000000000000000000000000` (40-zero placeholder, pin before activation) with `permission: write`. It runs **before** any step that references secrets. A non-write actor fails the job before the `Author recipe` step can resolve `${{ secrets.ANTHROPIC_API_KEY }}`.
+
+### Trigger gate
+
+- `on: pull_request_target` + `types: [labeled, synchronize]`
+- Job-level `if: github.event.pull_request.draft == false && contains(github.event.pull_request.labels.*.name, 'ci:verify')`
+- Combined: `ci:verify` label + non-draft + write-permission actor.
+
+### Phase-1 trifecta-breaker preserved
+
+The committed-spec runner step (`Run harness in container`) keeps every Phase-1 isolation primitive:
+
+- `--network=none`
+- `--cap-drop ALL`
+- `--read-only` rootfs (with `--tmpfs /tmp` and `--tmpfs /workspace/.verify-output`)
+- `--security-opt no-new-privileges`
+- `--user 1000:1000`
+- `--memory 4g --pids-limit 200`
+- workspace mounted read-only at `/workspace:ro`
+- no `ANTHROPIC_API_KEY` env (the key is scoped to authoring only)
+
+The spec is committed to `.verify-recipes/<pr#>.spec.ts` and reviewed as part of the normal PR review process before this step runs. That review is the lethal-trifecta breaker — option 3 — and remains the load-bearing control even after Phase-2 ships.
+
+### Container shape (committed-spec runner)
 
 ```
 docker run \
@@ -98,10 +133,6 @@ docker run \
   verify-harness:<pinned-sha>
 ```
 
-### Credential proxy
-
-An Envoy proxy runs outside the container with a `credential_injector` filter. The allowlist permits only `api.anthropic.com` and `api.github.com`. The container reaches the proxy via `ANTHROPIC_BASE_URL=http://proxy:8080`; no API key is injected inside the container itself.
-
 ### Workflow trigger
 
 - Trigger: `pull_request_target` + label `ci:verify`
@@ -109,6 +140,12 @@ An Envoy proxy runs outside the container with a `credential_injector` filter. T
 - Concurrency: `group: verify-${pr.number}`, `cancel-in-progress: true`
 - Permissions: `pull-requests: write`, `statuses: write` only
 - Artifacts: `actions/upload-artifact` with `if: always()`, retention 14 days, name includes `pr#` and `run-id`
+
+### v5 follow-ups (deferred from v4)
+
+- **Envoy `credential_injector` sidecar.** Containerize the `Author recipe` step on a shared net-namespace with an Envoy proxy that injects the API key on outbound `api.anthropic.com` requests. The container itself never holds `ANTHROPIC_API_KEY`; the key lives only in the proxy process. Removes the residual risk that a compromised authoring runtime could read its own env vars.
+- **`author_association` gating.** Auto-trigger for `OWNER`/`MEMBER`/`COLLABORATOR` without requiring the `ci:verify` label; external PRs continue to need the explicit label.
+- **Containerized authoring runtime.** Drop the bare-runner posture in favor of a containerized authoring step once the Envoy credential-injector is in place.
 
 ---
 

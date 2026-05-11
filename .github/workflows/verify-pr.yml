@@ -140,6 +140,13 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          # Ensure the label exists on the repo (idempotent — `gh label create`
+          # exits non-zero if the label already exists, which we swallow).
+          gh label create verified-by-harness \
+            --repo ${{ github.repository }} \
+            --description "Verified by PR Verify Harness" \
+            --color 0E8A16 \
+            2>/dev/null || true
           gh pr edit ${{ github.event.pull_request.number }} \
             --repo ${{ github.repository }} \
             --add-label verified-by-harness

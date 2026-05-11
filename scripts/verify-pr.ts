@@ -1,17 +1,20 @@
 // Entry point for the PR verification harness.
-// Usage: bun scripts/verify-pr.ts [--resync] [--keep-open] [--no-screenshot] [--restore-sandbox]
+// Usage: bun scripts/verify-pr.ts [--resync] [--keep-open] [--skip-recipe] [--restore-sandbox] [--recipe-spec <path>]
 
 import { parseArgs } from 'node:util';
 import { performance } from 'node:perf_hooks';
+import * as path from 'node:path';
 
 import {
+  SCHEMA_VERSION,
   buildRunPaths,
   computeVerdict,
   ensureRunDir,
+  parsePlaywrightReport,
   pruneOldRuns,
   writeResult,
 } from './verify/core.ts';
-import type { CaptureMetadata, CaptureResult, VerifyResult } from './verify/core.ts';
+import type { VerifyResult } from './verify/core.ts';
 import {
   resolveSandboxDir,
   restoreSandbox,
@@ -20,24 +23,34 @@ import {
 } from './verify/sandbox.ts';
 import { syncCorePackage } from './verify/sync.ts';
 import { bootStorybook, installSignalHandlers, preflightPort } from './verify/boot.ts';
-import { capture } from './verify/capture.ts';
+import { runRecipe } from './verify/runner.ts';
+
+const repoRoot = path.resolve(import.meta.dirname, '..');
+const DEFAULT_RECIPE_SPEC = path.resolve(repoRoot, '.verify-recipes/example-smoke.spec.ts');
 
 const HELP = `
 Usage: bun scripts/verify-pr.ts [options]
 
 Options:
-  --resync           Recompile affected packages and hard-reload running Storybook (requires --keep-open session)
-  --keep-open        Leave Storybook running after capture; print URL
-  --no-screenshot    Skip capture entirely; write verdict: "skipped"; exit 0
-  --restore-sandbox  Copy .verify-snapshot/* back to sandbox and exit
-  --help             Show this help
+  --resync                Recompile affected packages and hard-reload running Storybook (requires --keep-open session)
+  --keep-open             Leave Storybook running after the recipe completes; print URL
+  --skip-recipe           Skip the Playwright recipe entirely; write verdict: "skipped"; exit 0
+  --restore-sandbox       Copy .verify-snapshot/* back to sandbox and exit
+  --recipe-spec <path>    Path to the Playwright spec to run (default: .verify-recipes/example-smoke.spec.ts)
+  --help                  Show this help
 
 Examples:
   bun scripts/verify-pr.ts
   bun scripts/verify-pr.ts --keep-open
   bun scripts/verify-pr.ts --resync
   bun scripts/verify-pr.ts --restore-sandbox
+  bun scripts/verify-pr.ts --recipe-spec .verify-recipes/my-recipe.spec.ts
 `.trim();
+
+function resolveRecipeSpec(flagValue: string | undefined): string {
+  const raw = flagValue ?? DEFAULT_RECIPE_SPEC;
+  return path.isAbsolute(raw) ? raw : path.resolve(repoRoot, raw);
+}
 
 async function main(argv: string[]): Promise<number> {
   const { values: flags } = parseArgs({
@@ -45,8 +58,9 @@ async function main(argv: string[]): Promise<number> {
     options: {
       resync: { type: 'boolean', default: false },
       'keep-open': { type: 'boolean', default: false },
-      'no-screenshot': { type: 'boolean', default: false },
+      'skip-recipe': { type: 'boolean', default: false },
       'restore-sandbox': { type: 'boolean', default: false },
+      'recipe-spec': { type: 'string' },
       help: { type: 'boolean', default: false },
     },
     strict: true,
@@ -57,6 +71,7 @@ async function main(argv: string[]): Promise<number> {
     return 0;
   }
 
+  const recipeSpec = resolveRecipeSpec(flags['recipe-spec']);
   const totalStart = performance.now();
   const paths = buildRunPaths();
   await pruneOldRuns();
@@ -69,20 +84,17 @@ async function main(argv: string[]): Promise<number> {
     return 0;
   }
 
-  // --no-screenshot: write skipped verdict and exit 0
-  if (flags['no-screenshot']) {
+  // --skip-recipe: write skipped verdict and exit 0
+  if (flags['skip-recipe']) {
     const skipped: VerifyResult = {
+      schemaVersion: SCHEMA_VERSION,
       runId: paths.runId,
       verdict: 'skipped',
       template: 'react-vite/default-ts',
       storyIds: [],
-      capture: {
-        pageErrors: [],
-        consoleErrors: [],
-        errorDisplayHidden: true,
-        previewHasChildren: false,
-        screenshotPath: '',
-      },
+      recipeSpecPath: recipeSpec,
+      tests: [],
+      traceZipPaths: [],
       durations: { totalMs: performance.now() - totalStart },
       createdAt: new Date().toISOString(),
     };
@@ -93,9 +105,8 @@ async function main(argv: string[]): Promise<number> {
 
   const sandboxDir = resolveSandboxDir();
 
-  // --resync: recompile affected, refresh symlinks, hard-reload running Storybook
+  // --resync: recompile affected, refresh symlinks, re-run recipe against the running Storybook
   if (flags.resync) {
-    // Verify Storybook is running
     const { default: fetch } = await import('node-fetch').catch(() => ({
       default: globalThis.fetch as typeof import('node-fetch').default,
     }));
@@ -114,8 +125,6 @@ async function main(argv: string[]): Promise<number> {
     }
 
     const { exec } = await import('./utils/exec.ts');
-    const { resolve } = await import('node:path');
-    const repoRoot = resolve(import.meta.dirname, '..');
     await exec(
       'yarn nx affected -t compile --base=HEAD~1',
       { cwd: repoRoot },
@@ -123,33 +132,42 @@ async function main(argv: string[]): Promise<number> {
     );
     await syncCorePackage({ sandboxDir });
 
-    // Hard-reload: navigate to cache-busted URL
     try {
       await (fetch as any)(`http://localhost:6006/__reload`, { method: 'POST' });
     } catch {
-      // __reload endpoint not available; use navigation (precondition: --keep-open tab open)
       console.log('[resync] __reload not available; hard-reload via navigation cache-bust');
     }
 
     const resyncPaths = buildRunPaths();
     await ensureRunDir(resyncPaths);
-    const captureResult = await capture({
+
+    const recipeStart = performance.now();
+    const { reportPath } = await runRecipe({
+      specPath: recipeSpec,
       baseURL: 'http://localhost:6006',
-      storyId: 'example-button--primary',
       runPaths: resyncPaths,
     });
-    const verdict = computeVerdict(captureResult);
+    const { tests, traceZipPaths } = await parsePlaywrightReport(reportPath);
+    const recipeMs = performance.now() - recipeStart;
+    const verdict = computeVerdict(tests);
+
     const result: VerifyResult = {
+      schemaVersion: SCHEMA_VERSION,
       runId: resyncPaths.runId,
       verdict,
       template: 'react-vite/default-ts',
       storyIds: ['example-button--primary'],
-      capture: captureResult as CaptureMetadata,
-      durations: { totalMs: performance.now() - totalStart },
+      recipeSpecPath: recipeSpec,
+      tests,
+      traceZipPaths,
+      durations: { recipeMs, totalMs: performance.now() - totalStart },
       createdAt: new Date().toISOString(),
     };
     await writeResult(resyncPaths, result);
     console.log(`[verify] resync — verdict: ${verdict} — result at ${resyncPaths.resultJson}`);
+    if (traceZipPaths.length > 0) {
+      console.log(`[verify] traces: ${traceZipPaths.join(', ')}`);
+    }
     return verdict === 'verified' ? 0 : 1;
   }
 
@@ -165,37 +183,42 @@ async function main(argv: string[]): Promise<number> {
 
   const { bootMs } = await bootStorybook({ sandboxDir, port: 6006, controller });
 
-  let captureResult: CaptureResult;
-  let captureMs: number;
+  let reportPath: string;
+  let recipeMs: number;
   try {
-    const captureStart = performance.now();
-    captureResult = await capture({
+    const recipeStart = performance.now();
+    const runResult = await runRecipe({
+      specPath: recipeSpec,
       baseURL: 'http://localhost:6006',
-      storyId: 'example-button--primary',
       runPaths: paths,
       controller,
     });
-    captureMs = performance.now() - captureStart;
+    reportPath = runResult.reportPath;
+    recipeMs = performance.now() - recipeStart;
   } finally {
     if (!flags['keep-open']) {
       controller.abort();
     }
   }
 
-  const verdict = computeVerdict(captureResult!);
+  const { tests, traceZipPaths } = await parsePlaywrightReport(reportPath);
+  const verdict = computeVerdict(tests);
   const totalMs = performance.now() - totalStart;
 
   const result: VerifyResult = {
+    schemaVersion: SCHEMA_VERSION,
     runId: paths.runId,
     verdict,
     template: 'react-vite/default-ts',
     storyIds: ['example-button--primary'],
-    capture: captureResult! as CaptureMetadata,
+    recipeSpecPath: recipeSpec,
+    tests,
+    traceZipPaths,
     durations: {
       compileMs: syncResult.compileMs,
       symlinkMs: syncResult.symlinkMs,
       bootMs,
-      captureMs: captureMs!,
+      recipeMs,
       totalMs,
     },
     createdAt: new Date().toISOString(),
@@ -203,6 +226,9 @@ async function main(argv: string[]): Promise<number> {
 
   await writeResult(paths, result);
   console.log(`[verify] verdict: ${verdict} — result at ${paths.resultJson}`);
+  if (traceZipPaths.length > 0) {
+    console.log(`[verify] traces: ${traceZipPaths.join(', ')}`);
+  }
 
   if (flags['keep-open']) {
     console.log('[verify] --keep-open: Storybook running at http://localhost:6006');

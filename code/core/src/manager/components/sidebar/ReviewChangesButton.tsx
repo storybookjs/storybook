@@ -9,7 +9,7 @@ import type {
   Tag,
 } from 'storybook/internal/types';
 
-import { SweepIcon } from '@storybook/icons';
+import { CloseIcon } from '@storybook/icons';
 
 import {
   experimental_useStatusStore,
@@ -158,7 +158,7 @@ const ReviewChangesButton = () => {
           ariaLabel="Clear"
           tooltip="Clear"
         >
-          <SweepIcon />
+          <CloseIcon />
         </Button>
       )}
     </Wrapper>

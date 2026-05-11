@@ -13,6 +13,7 @@ Storybook for React & Webpack is a [framework](../../contribute/framework.mdx) t
 **We recommend using [`@storybook/react-vite`](./react-vite.mdx)** for most React projects. The Vite-based framework is faster, more modern, and offers better support for testing features.
 
 Use this Webpack-based framework (`@storybook/react-webpack5`) only if you need specific Webpack features not available in Vite.
+
 </Callout>
 
 ## Install
@@ -25,15 +26,20 @@ You can then get started [writing stories](../whats-a-story.mdx), [running tests
 
 ### Requirements
 
-<GetStartedVersions versions={[{
-  name: 'React',
-  range: '≥ 16.8',
-  icon: '/images/logos/renderers/logo-react.svg'
-}, {
-  name: 'Webpack',
-  range: '5',
-  icon: '/images/logos/builders/webpack.svg'
-}]} />
+<GetStartedVersions
+  versions={[
+    {
+      name: 'React',
+      range: '≥ 16.8',
+      icon: '/images/logos/renderers/logo-react.svg',
+    },
+    {
+      name: 'Webpack',
+      range: '5',
+      icon: '/images/logos/builders/webpack.svg',
+    },
+  ]}
+/>
 
 ## Run Storybook
 
@@ -65,41 +71,27 @@ If you're working on an app that was initialized manually (i.e., without the use
 
 First, install the framework:
 
-{/* prettier-ignore-start */}
-
 <CodeSnippets path="react-webpack5-install.md" />
-
-{/* prettier-ignore-end */}
 
 Next, install and register your appropriate compiler addon, depending on whether you're using SWC (recommended) or Babel:
 
 <Callout variant="info">
-  If your project is using [Create React App](#create-react-app-cra), you can skip this step.
-</Callout>
 
-{/* prettier-ignore-start */}
+If your project is using [Create React App](#create-react-app-cra), you can skip this step.
+
+</Callout>
 
 <CodeSnippets path="storybook-addon-compiler-swc-auto-install.md" />
 
-{/* prettier-ignore-end */}
-
 or
 
-{/* prettier-ignore-start */}
-
 <CodeSnippets path="storybook-addon-compiler-babel-auto-install.md" />
-
-{/* prettier-ignore-end */}
 
 More details can be found in the [Webpack builder docs](../../builders/webpack.mdx#compiler-support).
 
 Finally, update your `.storybook/main.js|ts` to change the framework property:
 
-{/* prettier-ignore-start */}
-
 <CodeSnippets path="react-webpack5-add-framework.md" />
-
-{/* prettier-ignore-end */}
 
 ### How do I migrate to the React Vite framework?
 
@@ -111,11 +103,7 @@ Please refer to the [migration instructions for `@storybook/react-vite`](./react
 
 You can pass an options object for additional configuration if needed:
 
-{/* prettier-ignore-start */}
-
 <CodeSnippets path="react-webpack5-framework-options.md" />
-
-{/* prettier-ignore-end */}
 
 #### `builder`
 

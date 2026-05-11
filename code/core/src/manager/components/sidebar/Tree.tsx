@@ -3,12 +3,13 @@ import React, { useCallback, useMemo, useRef } from 'react';
 
 import { Button, ListItem } from 'storybook/internal/components';
 import { PRELOAD_ENTRIES } from 'storybook/internal/core-events';
-import type { StatusValue } from 'storybook/internal/types';
+
 import {
   CHANGE_DETECTION_STATUS_TYPE_ID,
   type API_HashEntry,
   type StatusByTypeId,
   type StatusesByStoryIdAndTypeId,
+  type StatusValue,
   type StoryId,
 } from 'storybook/internal/types';
 
@@ -16,7 +17,7 @@ import { CollapseIcon as CollapseIconSvg, ExpandAltIcon } from '@storybook/icons
 
 import { internal_fullStatusStore as fullStatusStore } from '#manager-stores';
 import { darken } from 'polished';
-import { useStorybookApi } from 'storybook/manager-api';
+import { useStorybookApi, useStorybookState } from 'storybook/manager-api';
 import type {
   API,
   ComponentEntry,
@@ -153,6 +154,13 @@ const StatusSlots = styled.div({
   alignItems: 'center',
 });
 
+export const ContextMenu = {
+  ListItem,
+};
+
+const getStatusLabel = (status: StatusValue) =>
+  status.split(':')[1].replace(/^./, (char) => char.toUpperCase());
+
 interface NodeProps {
   item: Item;
   refId: string;
@@ -169,11 +177,8 @@ interface NodeProps {
   groupDualStatus: Record<StoryId, { change: StatusValue; test: StatusValue }>;
   api: API;
   collapsedData: Record<string, API_HashEntry>;
+  isModifiedFilterActive: boolean;
 }
-
-export const ContextMenu = {
-  ListItem,
-};
 
 const Node = React.memo<NodeProps>(function Node(props) {
   const {
@@ -191,13 +196,10 @@ const Node = React.memo<NodeProps>(function Node(props) {
     setExpanded,
     onSelectStoryId,
     api,
+    isModifiedFilterActive,
   } = props;
   const theme = useTheme();
   const { isDesktop, isMobile, setMobileMenuOpen } = useLayout();
-
-  if (!isDisplayed) {
-    return null;
-  }
 
   const statusLinks = useMemo<Link[]>(() => {
     if (item.type === 'story' || item.type === 'docs') {
@@ -220,11 +222,12 @@ const Node = React.memo<NodeProps>(function Node(props) {
     return [];
   }, [item.id, item.type, onSelectStoryId, statuses, theme]);
 
+  let contextMenu = useContextMenu(item, statusLinks, api);
+  if (refId !== 'storybook_internal') {
+    contextMenu = { node: null, onMouseEnter: () => {} };
+  }
+
   const id = createId(item.id, refId);
-  const contextMenu =
-    refId === 'storybook_internal'
-      ? useContextMenu(item, statusLinks, api)
-      : { node: null, onMouseEnter: () => {} };
 
   if (
     (item.type === 'story' &&
@@ -282,7 +285,7 @@ const Node = React.memo<NodeProps>(function Node(props) {
         {contextMenu.node}
         {testIcon ? (
           <StatusButton
-            ariaLabel={`${storyStatus === testStatus ? 'Test status' : 'Status'}: ${storyStatus.replace('status-value:', '')}`}
+            ariaLabel={`${storyStatus === testStatus ? 'Test status' : 'Status'}: ${getStatusLabel(storyStatus)}`}
             data-testid="tree-status-button"
             type="button"
             status={storyStatus}
@@ -359,8 +362,13 @@ const Node = React.memo<NodeProps>(function Node(props) {
     const branchChange = getMostCriticalStatusValue([localChange, groupDual.change]);
     const branchTest = getMostCriticalStatusValue([localTest, groupDual.test]);
 
-    const branchChangeIcon =
-      branchChange !== 'status-value:unknown' ? getStatus(theme, branchChange).icon : null;
+    const shouldShowBranchChangeIcon =
+      branchChange !== 'status-value:unknown' &&
+      branchChange !== 'status-value:affected' &&
+      (branchChange !== 'status-value:modified' || isModifiedFilterActive);
+    const branchChangeIcon = shouldShowBranchChangeIcon
+      ? getStatus(theme, branchChange).icon
+      : null;
     const branchTestIcon =
       branchTest === 'status-value:error' || branchTest === 'status-value:warning' ? (
         <svg key="icon" viewBox="0 0 6 6" width="6" height="6" type="dot">
@@ -428,7 +436,7 @@ const Node = React.memo<NodeProps>(function Node(props) {
         {branchChangeIcon && branchTestIcon ? (
           <StatusSlots>
             <StatusButton
-              ariaLabel={`Change status: ${branchChange.replace('status-value:', '')}`}
+              ariaLabel={`Change status: ${getStatusLabel(branchChange)}`}
               data-testid="tree-change-status-button"
               type="button"
               status={branchChange}
@@ -437,7 +445,7 @@ const Node = React.memo<NodeProps>(function Node(props) {
               {branchChangeIcon}
             </StatusButton>
             <StatusButton
-              ariaLabel={`Test status: ${branchTest.replace('status-value:', '')}`}
+              ariaLabel={`Test status: ${getStatusLabel(branchTest)}`}
               data-testid="tree-status-button"
               type="button"
               status={branchTest}
@@ -448,7 +456,7 @@ const Node = React.memo<NodeProps>(function Node(props) {
           </StatusSlots>
         ) : branchChangeIcon ? (
           <StatusButton
-            ariaLabel={`Change status: ${branchChange.replace('status-value:', '')}`}
+            ariaLabel={`Change status: ${getStatusLabel(branchChange)}`}
             data-testid="tree-change-status-button"
             type="button"
             status={branchChange}
@@ -458,7 +466,7 @@ const Node = React.memo<NodeProps>(function Node(props) {
           </StatusButton>
         ) : branchTestIcon ? (
           <StatusButton
-            ariaLabel={`Test status: ${branchTest.replace('status-value:', '')}`}
+            ariaLabel={`Test status: ${getStatusLabel(branchTest)}`}
             data-testid="tree-status-button"
             type="button"
             status={branchTest}
@@ -487,7 +495,7 @@ const Node = React.memo<NodeProps>(function Node(props) {
   const { icon: leafIcon, textColor: leafColor } = getStatus(theme, leafStatus);
   const leafStatusButton = leafIcon ? (
     <StatusButton
-      ariaLabel={`Status: ${leafStatus.replace('status-value:', '')}`}
+      ariaLabel={`Status: ${getStatusLabel(leafStatus)}`}
       data-testid="tree-status-button"
       role="status"
       type="button"
@@ -582,6 +590,8 @@ export const Tree = React.memo<{
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const api = useStorybookApi();
+  const includedStatusFilters = useStorybookState().includedStatusFilters ?? [];
+  const isModifiedFilterActive = includedStatusFilters.includes('status-value:modified');
 
   // Find top-level nodes and group them so we can hoist any orphans and expand any roots.
   const [rootIds, orphanIds, initialExpanded] = useMemo(
@@ -737,6 +747,7 @@ export const Tree = React.memo<{
             isFullyExpanded={isFullyExpanded}
             expandableDescendants={descendants}
             onSelectStoryId={onSelectStoryId}
+            isModifiedFilterActive={isModifiedFilterActive}
           />
         );
       }
@@ -763,6 +774,7 @@ export const Tree = React.memo<{
           isExpanded={!!expanded[itemId]}
           setExpanded={setExpanded}
           onSelectStoryId={onSelectStoryId}
+          isModifiedFilterActive={isModifiedFilterActive}
         />
       );
     });
@@ -775,7 +787,7 @@ export const Tree = React.memo<{
     expandableDescendants,
     expanded,
     groupDualStatus,
-    groupStatus,
+    isModifiedFilterActive,
     onSelectStoryId,
     orphanIds,
     refId,

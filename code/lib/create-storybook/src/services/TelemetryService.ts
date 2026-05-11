@@ -30,6 +30,15 @@ export class TelemetryService {
     });
   }
 
+  /** Track when a user accepts the AI setup nudge prompt */
+  async trackAiSetupNudge(context: { skipPrompt: boolean }): Promise<void> {
+    await telemetry('ai-prompt-nudge', {
+      id: 'setup',
+      origin: 'init',
+      context,
+    });
+  }
+
   /** Track Playwright prompt decision (install | skip | aborted) */
   async trackPlaywrightPromptDecision(
     result: 'installed' | 'skipped' | 'aborted' | 'failed'
@@ -48,6 +57,7 @@ export class TelemetryService {
       docs: boolean;
       test: boolean;
       onboarding: boolean;
+      ai: boolean;
     };
     newUser: boolean;
     versionSpecifier?: string;
@@ -88,9 +98,10 @@ export class TelemetryService {
       docs: selectedFeatures.has(Feature.DOCS),
       test: selectedFeatures.has(Feature.TEST),
       onboarding: selectedFeatures.has(Feature.ONBOARDING),
+      ai: selectedFeatures.has(Feature.AI),
     };
 
-    await telemetry('init', {
+    await this.trackInit({
       projectType,
       features: telemetryFeatures,
       newUser,

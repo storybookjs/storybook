@@ -1,6 +1,7 @@
+import { parseWithOxc } from 'storybook/internal/oxc-parser';
+
 import { mdxParse } from './mdx-parse.ts';
 import type { ImportParser } from './types.ts';
-import { parseWithOxc } from './workers/index.ts';
 
 /** Default parser for JavaScript/TypeScript source. Uses `oxc-parser` under the hood. */
 export const oxcImportParser: ImportParser = {

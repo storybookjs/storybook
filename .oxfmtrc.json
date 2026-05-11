@@ -29,8 +29,6 @@
     "code/core/src/core-server/utils/__mockdata__/src/Empty.stories.ts",
     "code/lib/codemod/src/transforms/__testfixtures__",
     "code/frameworks/angular/template/**",
-    "code/lib/eslint-plugin",
-    "docs/versions/*.json",
     ".prettierrc",
     "test-storybooks",
     "*.yml",
@@ -38,7 +36,7 @@
     "*.md",
     "*.mdx",
     "!docs/**",
-    "docs/versions/**"
+    "!code/lib/eslint-plugin/docs/rules/**"
   ],
   "overrides": [
     {

@@ -40,7 +40,9 @@ describe('vueImportParser', () => {
       `</script>`,
     ].join('\n');
 
-    const { ctx, calls } = makeContext(() => [{ specifier: 'vue', kind: 'static' }]);
+    const { ctx, calls } = makeContext(() => [
+      { specifier: 'vue', kind: 'static', importedNames: null },
+    ]);
 
     const edges = await vueImportParser.parse({ filePath: '/tmp/Button.vue', source }, ctx);
 
@@ -49,7 +51,7 @@ describe('vueImportParser', () => {
     expect(calls[0]?.source).toContain(`import { defineComponent } from 'vue';`);
     expect(calls[0]?.source).toContain(`import type { PropType } from 'vue';`);
     expect(calls[0]?.source).not.toContain('<template>');
-    expect(edges).toEqual([{ specifier: 'vue', kind: 'static' }]);
+    expect(edges).toEqual([{ specifier: 'vue', kind: 'static', importedNames: null }]);
   });
 
   it('extracts imports from <script setup>', async () => {
@@ -67,8 +69,8 @@ describe('vueImportParser', () => {
     ].join('\n');
 
     const { ctx, calls } = makeContext(() => [
-      { specifier: './Button.vue', kind: 'static' },
-      { specifier: 'vue', kind: 'static' },
+      { specifier: './Button.vue', kind: 'static', importedNames: null },
+      { specifier: 'vue', kind: 'static', importedNames: null },
     ]);
 
     const edges = await vueImportParser.parse({ filePath: '/tmp/App.vue', source }, ctx);
@@ -77,8 +79,8 @@ describe('vueImportParser', () => {
     expect(calls[0]?.virtualFilePath).toBe('/tmp/App.vue.script.js');
     expect(calls[0]?.source).toContain(`import Button from './Button.vue';`);
     expect(edges).toEqual([
-      { specifier: './Button.vue', kind: 'static' },
-      { specifier: 'vue', kind: 'static' },
+      { specifier: './Button.vue', kind: 'static', importedNames: null },
+      { specifier: 'vue', kind: 'static', importedNames: null },
     ]);
   });
 
@@ -101,13 +103,13 @@ describe('vueImportParser', () => {
     const { ctx, calls } = makeContext((src) => {
       if (src.includes('defineOptions')) {
         return [
-          { specifier: 'vue', kind: 'static' },
-          { specifier: './shared.ts', kind: 'static' },
+          { specifier: 'vue', kind: 'static', importedNames: null },
+          { specifier: './shared.ts', kind: 'static', importedNames: null },
         ];
       }
       return [
-        { specifier: './shared.ts', kind: 'static' },
-        { specifier: './Button.vue', kind: 'static' },
+        { specifier: './shared.ts', kind: 'static', importedNames: null },
+        { specifier: './Button.vue', kind: 'static', importedNames: null },
       ];
     });
 
@@ -117,9 +119,9 @@ describe('vueImportParser', () => {
     expect(calls[0]?.virtualFilePath).toBe('/tmp/Both.vue.script.ts');
     expect(calls[1]?.virtualFilePath).toBe('/tmp/Both.vue.script.ts');
     expect(edges).toEqual([
-      { specifier: 'vue', kind: 'static' },
-      { specifier: './shared.ts', kind: 'static' },
-      { specifier: './Button.vue', kind: 'static' },
+      { specifier: 'vue', kind: 'static', importedNames: null },
+      { specifier: './shared.ts', kind: 'static', importedNames: null },
+      { specifier: './Button.vue', kind: 'static', importedNames: null },
     ]);
   });
 
@@ -150,7 +152,9 @@ describe('vueImportParser', () => {
       `</script>`,
     ].join('\n');
 
-    const { ctx, calls } = makeContext(() => [{ specifier: 'vue', kind: 'static' }]);
+    const { ctx, calls } = makeContext(() => [
+      { specifier: 'vue', kind: 'static', importedNames: null },
+    ]);
 
     await vueImportParser.parse({ filePath: '/tmp/Plain.vue', source }, ctx);
 
@@ -174,7 +178,9 @@ describe('vueImportParser', () => {
       `</script>`,
     ].join('\n');
 
-    const { ctx, calls } = makeContext(() => [{ specifier: 'vue', kind: 'static' }]);
+    const { ctx, calls } = makeContext(() => [
+      { specifier: 'vue', kind: 'static', importedNames: null },
+    ]);
 
     await vueImportParser.parse({ filePath: '/tmp/TemplateOnly.vue', source }, ctx);
 

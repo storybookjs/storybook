@@ -1,15 +1,14 @@
 import { extname } from 'pathe';
 
 import { logger } from 'storybook/internal/node-logger';
+import { parseWithOxc } from 'storybook/internal/oxc-parser';
 
-import { profiler } from '../profiling.ts';
 import type { ImportEdge, ImportParser, ImportParserContext } from './types.ts';
-import { parseWithOxc } from './workers/index.ts';
 
 /**
  * Dispatches a file to the correct {@link ImportParser} based on its extension. The
- * registry is built once at change-detection startup from {@link builtinImportParsers}
- * plus any contributions from the `experimental_importParsers` preset key.
+ * registry is constructed from a set of default parsers plus any plugin-supplied
+ * parsers (e.g. contributions to the `experimental_importParsers` preset key).
  *
  * Registration is last-wins on collision (plugin extensions override built-in
  * extensions). Lookup is case-insensitive and uses `path.extname` — compound
@@ -54,9 +53,6 @@ export class ParserRegistry {
     const fn = this.parserFor(filePath);
     if (!fn) {
       return null;
-    }
-    if (profiler.enabled) {
-      profiler.recordParse(extname(filePath).toLowerCase());
     }
     return fn({ filePath, source }, this.context);
   }

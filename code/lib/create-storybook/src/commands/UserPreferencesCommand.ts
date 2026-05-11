@@ -1,8 +1,12 @@
 import type { ProjectType } from 'storybook/internal/cli';
 import { globalSettings } from 'storybook/internal/cli';
-import { type JsPackageManager, isCI } from 'storybook/internal/common';
+import { isCI } from 'storybook/internal/common';
 import { logger, prompt } from 'storybook/internal/node-logger';
-import type { SupportedBuilder, SupportedFramework } from 'storybook/internal/types';
+import type {
+  SupportedBuilder,
+  SupportedFramework,
+  SupportedRenderer,
+} from 'storybook/internal/types';
 import { Feature } from 'storybook/internal/types';
 
 import picocolors from 'picocolors';
@@ -28,7 +32,10 @@ export interface UserPreferencesOptions {
   skipPrompt?: boolean;
   framework: SupportedFramework | null;
   builder: SupportedBuilder;
+  renderer: SupportedRenderer;
   projectType: ProjectType;
+  isTestFeatureAvailable: boolean;
+  isAiSetupAvailable: boolean;
 }
 
 /**
@@ -45,8 +52,6 @@ export interface UserPreferencesOptions {
 export class UserPreferencesCommand {
   constructor(
     private readonly commandOptions: CommandOptions,
-    packageManager: JsPackageManager,
-    private readonly featureService = new FeatureCompatibilityService(packageManager),
     private readonly telemetryService = new TelemetryService()
   ) {}
 
@@ -55,11 +60,6 @@ export class UserPreferencesCommand {
     // Display version information
     const isInteractive = process.stdout.isTTY && !isCI();
     const skipPrompt = !isInteractive || !!this.commandOptions.yes;
-
-    const isTestFeatureAvailable = await this.isTestFeatureAvailable(
-      options.framework,
-      options.builder
-    );
 
     // Get new user preference
     const newUser = await this.promptNewUser(skipPrompt);
@@ -76,14 +76,18 @@ export class UserPreferencesCommand {
     // Get install type
     const installType: InstallType =
       !newUser && !this.commandOptions.features
-        ? await this.promptInstallType(skipPrompt, isTestFeatureAvailable)
+        ? await this.promptInstallType(skipPrompt, options.isTestFeatureAvailable)
         : 'recommended';
+
+    // Ask about AI setup (only available for compatible projects, e.g. React + Vite)
+    const useAiForSetup = options.isAiSetupAvailable ? await this.promptAiSetup(skipPrompt) : false;
 
     const selectedFeatures = this.determineFeatures(
       installType,
       newUser,
-      isTestFeatureAvailable,
-      options.projectType
+      options.isTestFeatureAvailable,
+      options.projectType,
+      useAiForSetup
     );
 
     return { newUser, selectedFeatures };
@@ -184,7 +188,8 @@ export class UserPreferencesCommand {
     installType: InstallType,
     newUser: boolean,
     isTestFeatureAvailable: boolean,
-    projectType: ProjectType
+    projectType: ProjectType,
+    useAiForSetup: boolean
   ): Set<Feature> {
     const features = new Set<Feature>();
 
@@ -200,28 +205,43 @@ export class UserPreferencesCommand {
       }
     }
 
+    // If user has asked for AI setup, we provide the MCP addon and ensure test is included
+    if (useAiForSetup) {
+      features.add(Feature.AI);
+      if (isTestFeatureAvailable) {
+        features.add(Feature.TEST);
+      }
+
+      // We leave onboarding for sandboxes as we test onboarding in CI
+      if (!process.env.IN_STORYBOOK_SANDBOX) {
+        features.delete(Feature.ONBOARDING);
+      }
+    }
+
     return features;
   }
 
-  /** Validate test feature compatibility and prompt user if issues found */
-  private async isTestFeatureAvailable(
-    framework: SupportedFramework | null,
-    builder: SupportedBuilder
-  ): Promise<boolean> {
-    const result = await this.featureService.validateTestFeatureCompatibility(
-      framework,
-      builder,
-      process.cwd()
-    );
+  /** Prompt user about AI-assisted Storybook setup */
+  private async promptAiSetup(skipPrompt: boolean): Promise<boolean> {
+    const useAi = skipPrompt
+      ? true
+      : await prompt.confirm({
+          message: 'Would you like to install AI features (MCP addon and prompt suggestions)?',
+        });
 
-    return result.compatible;
+    if (useAi) {
+      await this.telemetryService.trackAiSetupNudge({ skipPrompt });
+    }
+
+    return useAi;
   }
 }
 
 export const executeUserPreferences = ({
   options,
-  packageManager,
   ...restOptions
-}: UserPreferencesOptions & { options: CommandOptions; packageManager: JsPackageManager }) => {
-  return new UserPreferencesCommand(options, packageManager).execute(restOptions);
+}: UserPreferencesOptions & {
+  options: CommandOptions;
+}) => {
+  return new UserPreferencesCommand(options).execute(restOptions);
 };

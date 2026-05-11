@@ -158,6 +158,29 @@ export interface BuilderResult {
   stats?: Stats;
 }
 
+/**
+ * Builder-supplied module resolution config consumed by Storybook's change-detection
+ * dependency graph (and any future module-resolver consumer in core).
+ *
+ * Shape mirrors a subset of Vite's `resolve.*` options and is intentionally
+ * builder-agnostic — webpack/rspack adapters surface the same fields.
+ */
+export interface ModuleResolveConfig {
+  /** Project root (where Storybook is started from). */
+  projectRoot: string;
+  /**
+   * Builder-supplied alias map. Accepts both Vite shapes:
+   *   - `Record<string, string>` (object form)
+   *   - `Array<{ find: string | RegExp; replacement: string }>` (array form, supports regex)
+   *
+   * Callers may treat unresolvable specifiers (including unsupported regex aliases) as
+   * terminal.
+   */
+  alias?: Record<string, string> | Array<{ find: string | RegExp; replacement: string }>;
+  /** Conditions for package `exports` resolution. */
+  conditions?: string[];
+}
+
 export type PackageJson = PackageJsonFromTypeFest & Record<string, any>;
 
 // TODO: This could be exported to the outside world and used in `options.ts` file of each `@storybook/APP`
@@ -592,9 +615,13 @@ export interface StorybookConfigRaw {
    */
   experimental_importParsers?:
     | import('../../core-server/change-detection/parser-registry/types.ts').ImportParser[]
-    | (() => Promise<
-        import('../../core-server/change-detection/parser-registry/types.ts').ImportParser[]
-      >);
+    | ((
+        existing: import('../../core-server/change-detection/parser-registry/types.ts').ImportParser[]
+      ) =>
+        | import('../../core-server/change-detection/parser-registry/types.ts').ImportParser[]
+        | Promise<
+            import('../../core-server/change-detection/parser-registry/types.ts').ImportParser[]
+          >);
 
   storyIndexGenerator?: StoryIndexGenerator;
 

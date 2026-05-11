@@ -53,7 +53,6 @@ const CHANGE_TITLES_TO_IGNORE = [
   /\[ci skip\]/i,
   /^Update CHANGELOG\.md for.*/i,
   /^Release: (Pre)?(Patch|Minor|Major|Release).*\d+$/i,
-  /^Update \.\/docs\/versions/,
 ];
 
 export const mapToChangelist = ({

@@ -104,12 +104,10 @@ describe('IncrementalPatcher', () => {
 
     await patcher.patch({ kind: 'change', path: '/repo/src/unknown.ts' });
 
-    // No previous deps, no dependents — graph + reverseIndex unchanged for this path
-    // (other than the empty entry the patcher creates for graph).
+    // No dependents in reverseIndex, not a story file — nothing to re-walk.
     expect(reverseIndex.asMap().size).toBe(0);
-    // The patcher does call the registry parser on the changed file once (per A3 contract).
-    expect(parseSpy).toHaveBeenCalledTimes(1);
-    expect(graph.get('/repo/src/unknown.ts')).toEqual(new Set());
+    expect(parseSpy).not.toHaveBeenCalled();
+    expect(graph.has('/repo/src/unknown.ts')).toBe(false);
   });
 
   it('re-walks a story root on `change`, updating depths', async () => {
@@ -117,7 +115,7 @@ describe('IncrementalPatcher', () => {
     const dep = '/repo/src/dep.ts';
     const world: PatcherWorld = {
       edges: new Map([
-        [story, [{ specifier: './dep.ts', kind: 'static' }]],
+        [story, [{ specifier: './dep.ts', kind: 'static', importedNames: null }]],
         [dep, []],
       ]),
       resolutions: new Map([[`${story}::./dep.ts`, dep]]),
@@ -145,7 +143,7 @@ describe('IncrementalPatcher', () => {
     const initialGraph: DependencyGraph = new Map([[story, new Set([oldDep])]]);
     const world: PatcherWorld = {
       edges: new Map([
-        [story, [{ specifier: './new.ts', kind: 'static' }]],
+        [story, [{ specifier: './new.ts', kind: 'static', importedNames: null }]],
         [newDep, []],
       ]),
       resolutions: new Map([[`${story}::./new.ts`, newDep]]),
@@ -171,7 +169,7 @@ describe('IncrementalPatcher', () => {
     const initialGraph: DependencyGraph = new Map([[story, new Set()]]);
     const world: PatcherWorld = {
       edges: new Map([
-        [story, [{ specifier: './added.ts', kind: 'static' }]],
+        [story, [{ specifier: './added.ts', kind: 'static', importedNames: null }]],
         [newDep, []],
       ]),
       resolutions: new Map([[`${story}::./added.ts`, newDep]]),
@@ -242,7 +240,7 @@ describe('IncrementalPatcher', () => {
     const dep = '/repo/src/dep.ts';
     const world: PatcherWorld = {
       edges: new Map([
-        [story, [{ specifier: './dep.ts', kind: 'static' }]],
+        [story, [{ specifier: './dep.ts', kind: 'static', importedNames: null }]],
         [dep, []],
       ]),
       resolutions: new Map([[`${story}::./dep.ts`, dep]]),
@@ -256,6 +254,40 @@ describe('IncrementalPatcher', () => {
 
     expect(reverseIndex.lookup(story).get(story)).toBe(0);
     expect(reverseIndex.lookup(dep).get(story)).toBe(1);
+  });
+
+  it('skips re-walk on `change` when dep set is unchanged (comment-only edit)', async () => {
+    const story = '/repo/src/A.stories.tsx';
+    const dep = '/repo/src/shared.ts';
+
+    const initialIndex = new ReverseIndexImpl();
+    initialIndex.record(story, story, 0);
+    initialIndex.record(dep, story, 1);
+    const initialGraph: DependencyGraph = new Map([
+      [story, new Set([dep])],
+      [dep, new Set()],
+    ]);
+
+    // dep changes but its import list stays empty (comment-only edit)
+    const world: PatcherWorld = {
+      edges: new Map([[dep, []]]),
+      resolutions: new Map(),
+    };
+    const { patcher, reverseIndex, parseSpy } = buildPatcher({
+      world,
+      reverseIndex: initialIndex,
+      graph: initialGraph,
+      storyFiles: new Set([story]),
+    });
+
+    await patcher.patch({ kind: 'change', path: dep });
+
+    // story must NOT be re-walked — graph and index are still accurate
+    const storyCalls = parseSpy.mock.calls.filter((c) => c[0].filePath === story);
+    expect(storyCalls.length).toBe(0);
+    // reverse-index entries are preserved unchanged
+    expect(reverseIndex.lookup(dep).get(story)).toBe(1);
+    expect(reverseIndex.lookup(story).get(story)).toBe(0);
   });
 
   it('treats `add` for a non-story file as a no-op', async () => {
@@ -272,7 +304,85 @@ describe('IncrementalPatcher', () => {
     expect(parseSpy).not.toHaveBeenCalled();
   });
 
-  it('A3 acceptance: registry parse called exactly once for the changed file', async () => {
+  it('unlink prunes reverseIndex for a story path even when not in current storyFiles', async () => {
+    // Regression: if refreshStoryFiles already removed the story from the story set before
+    // the unlink event fires, `isStoryFile(path)` returns false. The old code guarded
+    // `removeStory` behind that check, leaving stale (dep→story) entries forever.
+    const story = '/repo/src/A.stories.tsx';
+    const dep = '/repo/src/dep.ts';
+
+    const reverseIndex = new ReverseIndexImpl();
+    reverseIndex.record(story, story, 0);
+    reverseIndex.record(dep, story, 1);
+    const graph: DependencyGraph = new Map([[story, new Set([dep])]]);
+
+    // storyFiles is EMPTY — simulates refreshStoryFiles already removed the story
+    const { patcher } = buildPatcher({
+      world: { edges: new Map(), resolutions: new Map() },
+      reverseIndex,
+      graph,
+      storyFiles: new Set(),
+    });
+
+    await patcher.patch({ kind: 'unlink', path: story });
+
+    expect(reverseIndex.asMap().has(story)).toBe(false);
+    expect(reverseIndex.asMap().has(dep)).toBe(false);
+    expect(graph.has(story)).toBe(false);
+  });
+
+  it('walkStory invalidates story cache so stale deps are not re-added after re-walk', async () => {
+    // Regression: when a dep file changes and its story is re-walked, the cache held a
+    // stale entry for the story (from the cold-start build). Without cache.invalidate(storyRoot)
+    // in walkStory, walkFromStory would read the stale cached result and silently re-add the
+    // removed dep back into the graph / reverseIndex.
+    const story = '/repo/src/A.stories.tsx';
+    const dep = '/repo/src/dep.ts';
+    const extra = '/repo/src/extra.ts';
+    const dep2 = '/repo/src/dep2.ts';
+
+    const world: PatcherWorld = {
+      edges: new Map([
+        [story, [{ specifier: './dep.ts', kind: 'static', importedNames: null }]],
+        [dep, [{ specifier: './extra.ts', kind: 'static', importedNames: null }]],
+        [extra, []],
+      ]),
+      resolutions: new Map([
+        [`${story}::./dep.ts`, dep],
+        [`${dep}::./extra.ts`, extra],
+      ]),
+    };
+
+    const { patcher, reverseIndex } = buildPatcher({
+      world,
+      storyFiles: new Set([story]),
+    });
+
+    // Seed the cache: walk the story once to populate cache entries for story and dep.
+    await patcher.patch({ kind: 'add', path: story });
+    expect(reverseIndex.lookup(dep).get(story)).toBe(1);
+
+    // Mutate world: story no longer imports dep.
+    world.edges.set(story, []);
+
+    // Mutate world: dep gains a new import so the setsEqual check does not short-circuit.
+    world.edges.set(dep, [
+      { specifier: './extra.ts', kind: 'static', importedNames: null },
+      { specifier: './dep2.ts', kind: 'static', importedNames: null },
+    ]);
+    world.resolutions.set(`${dep}::./dep2.ts`, dep2);
+
+    // A change on dep triggers re-walk of every story that depends on it (= our story).
+    await patcher.patch({ kind: 'change', path: dep });
+
+    // story cache was invalidated before re-walk → story resolves to [] → dep pruned.
+    expect(reverseIndex.lookup(dep).size).toBe(0);
+    expect(reverseIndex.lookup(story).get(story)).toBe(0);
+  });
+
+  it('parses the story root exactly once when the graph entry is absent (no diff-check path)', async () => {
+    // graph is empty so graph.get(path) === undefined → skip the resolveOnce diff-check
+    // → walkStory calls resolveOnce once → parseOnce called exactly once.
     const story = '/repo/src/A.stories.tsx';
     const initialIndex = new ReverseIndexImpl();
     initialIndex.record(story, story, 0);
@@ -288,56 +398,43 @@ describe('IncrementalPatcher', () => {
 
     await patcher.patch({ kind: 'change', path: story });
 
-    // Once for the change-step itself, plus once during the re-walk of the same story.
-    // The contract says `parse` is called exactly once for each file participating; for a
-    // story root with no deps, that means a single re-walk visits only the root => one parse.
-    // Allow up to 2 (one for the diff, one for the re-walk) but assert it's bounded.
     const calls = parseSpy.mock.calls.filter((c) => c[0].filePath === story);
-    expect(calls.length).toBeGreaterThanOrEqual(1);
-    expect(calls.length).toBeLessThanOrEqual(2);
+    expect(calls.length).toBe(1);
   });
 
-  it('recovers via direct-importer scan when reverseIndex has no record of the changed file', async () => {
-    // Cold-start scenario: story imports `helper`, but `helper` did not exist on disk
-    // when the build ran, so the resolver returned null and `helper` was never recorded
-    // in graph or reverseIndex. The story's graph entry is left referencing `helper`
-    // because the test seeds it that way (this models the case where `helper` later
-    // appears and gets registered by an importer-side resolve).
-    //
-    // Without the recovery path, a `change` event for `helper` would early-return on
-    // empty dependents and the story would never re-walk.
+  it('unlink of a dep clears the dep from the graph and from the story reverse-index, not just from the index edges', async () => {
+    // Models the stale-cache regression: story → dep is seeded into graph + reverseIndex at
+    // cold-start. Without importer invalidation on unlink, walkFromStory re-uses the cached
+    // resolveCache entry for `story` (which still lists `dep`), silently re-adding dep to
+    // the graph and leaving reverseIndex.lookup(dep) non-empty.
     const story = '/repo/src/A.stories.tsx';
-    const helper = '/repo/src/helper.ts';
-    const indirect = '/repo/src/indirect.ts';
-
-    const world: PatcherWorld = {
-      edges: new Map([
-        [story, [{ specifier: './helper.ts', kind: 'static' }]],
-        [helper, [{ specifier: './indirect.ts', kind: 'static' }]],
-        [indirect, []],
-      ]),
-      resolutions: new Map([
-        [`${story}::./helper.ts`, helper],
-        [`${helper}::./indirect.ts`, indirect],
-      ]),
-    };
+    const dep = '/repo/src/dep.ts';
 
     const initialIndex = new ReverseIndexImpl();
     initialIndex.record(story, story, 0);
-    // Story already knows helper is among its direct deps from a prior walk.
-    const initialGraph: DependencyGraph = new Map([[story, new Set([helper])]]);
+    initialIndex.record(dep, story, 1);
+    const initialGraph: DependencyGraph = new Map([
+      [story, new Set([dep])],
+      [dep, new Set()],
+    ]);
 
-    const { patcher, reverseIndex } = buildPatcher({
+    // After unlink, the story no longer imports dep.
+    const world: PatcherWorld = {
+      edges: new Map([[story, []]]),
+      resolutions: new Map(),
+    };
+    const { patcher, reverseIndex, graph } = buildPatcher({
       world,
       reverseIndex: initialIndex,
       graph: initialGraph,
       storyFiles: new Set([story]),
     });
 
-    await patcher.patch({ kind: 'change', path: helper });
+    await patcher.patch({ kind: 'unlink', path: dep });
 
-    // Recovery walked the story, which transitively reached `indirect` for the first time.
-    expect(reverseIndex.lookup(helper).get(story)).toBe(1);
-    expect(reverseIndex.lookup(indirect).get(story)).toBe(2);
+    expect(reverseIndex.lookup(dep).size).toBe(0);
+    expect(graph.has(dep)).toBe(false);
+    // The story itself still exists at depth 0; dep is no longer reachable from it.
+    expect(reverseIndex.lookup(story).get(story)).toBe(0);
   });
 });

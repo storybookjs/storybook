@@ -1,5 +1,4 @@
-// Replaces trace-changed.test.ts. Covers the construction + mutation surface of
-// ReverseIndexImpl (per ADR-F + §5 of the consensus plan).
+// Covers the construction + mutation surface of ReverseIndexImpl.
 import { describe, expect, it } from 'vitest';
 
 import { ReverseIndexImpl } from './ReverseIndex.ts';
@@ -95,16 +94,5 @@ describe('ReverseIndexImpl', () => {
 
     expect(index.lookup('/repo/src/B.ts').get('/repo/src/A.stories.tsx')).toBe(1);
     expect(index.lookup('/repo/src/C.ts').get('/repo/src/A.stories.tsx')).toBe(2);
-  });
-
-  it('treats unnormalised path forms as distinct keys (callers MUST pre-normalise)', () => {
-    const index = new ReverseIndexImpl();
-    // Contract: callers normalise before calling record/lookup. The index does no
-    // internal normalisation, so passing two non-canonical spellings yields two keys.
-    index.record('/repo/src/Foo/bar.ts', '/repo/src/A.stories.tsx', 1);
-    index.record('/repo/src/Foo/./bar.ts', '/repo/src/A.stories.tsx', 2);
-
-    expect(index.lookup('/repo/src/Foo/bar.ts').get('/repo/src/A.stories.tsx')).toBe(1);
-    expect(index.lookup('/repo/src/Foo/./bar.ts').get('/repo/src/A.stories.tsx')).toBe(2);
   });
 });

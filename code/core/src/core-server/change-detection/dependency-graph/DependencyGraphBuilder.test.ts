@@ -110,7 +110,9 @@ describe('DependencyGraphBuilder', () => {
     const css = '/repo/src/styles.css';
     const world: FakeWorld = {
       files: new Set([story, css]),
-      edges: new Map([[story, [{ specifier: './styles.css', kind: 'static' }]]]),
+      edges: new Map([
+        [story, [{ specifier: './styles.css', kind: 'static', importedNames: null }]],
+      ]),
       resolutions: new Map([[`${story}::./styles.css`, css]]),
     };
     setupFsReadOk(world);
@@ -138,7 +140,7 @@ describe('DependencyGraphBuilder', () => {
     const world: FakeWorld = {
       files: new Set([story, sibling]),
       edges: new Map([
-        [story, [{ specifier: './sibling.ts', kind: 'static' }]],
+        [story, [{ specifier: './sibling.ts', kind: 'static', importedNames: null }]],
         [sibling, []],
       ]),
       resolutions: new Map([[`${story}::./sibling.ts`, sibling]]),
@@ -162,7 +164,7 @@ describe('DependencyGraphBuilder', () => {
     const world: FakeWorld = {
       files: new Set([story, wsMain]),
       edges: new Map([
-        [story, [{ specifier: '@scope/lib', kind: 'static' }]],
+        [story, [{ specifier: '@scope/lib', kind: 'static', importedNames: null }]],
         [wsMain, []],
       ]),
       resolutions: new Map([[`${story}::@scope/lib`, wsMain]]),
@@ -187,8 +189,8 @@ describe('DependencyGraphBuilder', () => {
     const registry = makeFakeRegistry({
       files: new Set(),
       edges: new Map([
-        [story, [{ specifier: 'lodash', kind: 'static' }]],
-        [npmMain, [{ specifier: './util', kind: 'static' }]],
+        [story, [{ specifier: 'lodash', kind: 'static', importedNames: null }]],
+        [npmMain, [{ specifier: './util', kind: 'static', importedNames: null }]],
       ]),
       resolutions: new Map(),
     });
@@ -230,9 +232,9 @@ describe('DependencyGraphBuilder', () => {
     const world: FakeWorld = {
       files: new Set([a, b, intermediate, shared]),
       edges: new Map([
-        [a, [{ specifier: './shared.ts', kind: 'static' }]],
-        [b, [{ specifier: './intermediate.ts', kind: 'static' }]],
-        [intermediate, [{ specifier: './shared.ts', kind: 'static' }]],
+        [a, [{ specifier: './shared.ts', kind: 'static', importedNames: null }]],
+        [b, [{ specifier: './intermediate.ts', kind: 'static', importedNames: null }]],
+        [intermediate, [{ specifier: './shared.ts', kind: 'static', importedNames: null }]],
         [shared, []],
       ]),
       resolutions: new Map([
@@ -265,8 +267,8 @@ describe('DependencyGraphBuilder', () => {
         [
           story,
           [
-            { specifier: './missing', kind: 'static' },
-            { specifier: './ok.ts', kind: 'static' },
+            { specifier: './missing', kind: 'static', importedNames: null },
+            { specifier: './ok.ts', kind: 'static', importedNames: null },
           ],
         ],
         [ok, []],
@@ -294,9 +296,9 @@ describe('DependencyGraphBuilder', () => {
     const world: FakeWorld = {
       files: new Set([storyA, storyB, shared]),
       edges: new Map([
-        [storyA, [{ specifier: './shared.ts', kind: 'static' }]],
-        [storyB, [{ specifier: './shared.ts', kind: 'static' }]],
-        [shared, [{ specifier: './nothing.ts', kind: 'static' }]],
+        [storyA, [{ specifier: './shared.ts', kind: 'static', importedNames: null }]],
+        [storyB, [{ specifier: './shared.ts', kind: 'static', importedNames: null }]],
+        [shared, [{ specifier: './nothing.ts', kind: 'static', importedNames: null }]],
       ]),
       resolutions: new Map([
         [`${storyA}::./shared.ts`, shared],

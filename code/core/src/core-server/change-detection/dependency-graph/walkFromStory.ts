@@ -2,6 +2,8 @@ import type { ParserRegistry } from '../parser-registry/index.ts';
 import type { ParseResolveCache } from './ParseResolveCache.ts';
 import type { ReverseIndexImpl } from './ReverseIndex.ts';
 
+const MAX_BFS_DEPTH = 50;
+
 export interface WalkFromStoryArgs {
   storyRoot: string;
   registry: ParserRegistry;
@@ -42,6 +44,10 @@ export async function walkFromStory({
 
     const nextDepth = depth + 1;
     for (const normalised of resolvedDeps) {
+      if (nextDepth > MAX_BFS_DEPTH) {
+        // Skip — prevents unbounded walks in pathological dep trees
+        continue;
+      }
       const previousDepth = visited.get(normalised);
       if (previousDepth !== undefined && previousDepth <= nextDepth) {
         continue;

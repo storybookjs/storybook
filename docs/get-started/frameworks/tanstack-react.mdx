@@ -191,21 +191,48 @@ In individual stories, use [`loaders`](../../writing-stories/loaders.mdx) to cal
 
 ## FAQ
 
-### How do I manually install the TanStack React framework?
+### How do I migrate from the `react-vite` framework?
 
-To migrate to `@storybook/tanstack-react` from `@storybook/react-vite` or to set it up manually, follow these steps:
+#### Automatic migration
+
+Storybook provides a migration tool for migrating to this framework from the React (Vite) framework, [`@storybook/react-vite`](./react-vite.mdx). To migrate, run this command:
+
+```bash
+npx storybook automigrate react-vite-to-tanstack-react
+```
+
+This automigration tool performs the following actions:
+
+1. Updates `package.json` files to replace `@storybook/react-vite` with `@storybook/tanstack-react`.
+2. Updates `.storybook/main.js|ts` to change the framework property (works with both regular and CSF factories `defineMain` configs).
+3. Scans and updates import statements that reference `@storybook/react-vite` in your story files and Storybook configuration files (including `@storybook/react-vite/node` used by CSF factories).
+4. Detects manual TanStack Router decorators in `.storybook/preview.*`, the rest of `.storybook/`, and any `*.stories.*` file. When one is found, the CLI offers to copy a ready-to-paste AI prompt to your clipboard that walks an AI assistant through removing the now-redundant decorator.
+
+<Callout variant="info">
+
+`@storybook/tanstack-react` already wraps every story in a TanStack Router automatically, so any manual `RouterProvider` / `createRouter` / `createMemoryHistory` / `createRootRoute` decorator should be removed after running the automigration. For stories that need a specific route, use [`parameters.tanstack.router`](#rendering-a-route) instead.
+
+</Callout>
+
+#### Manual migration
 
 First, install the framework:
 
 <CodeSnippets path="tanstack-react-install.md" />
 
-Then, update your `.storybook/main.js|ts` to set the framework:
+Then, update your `.storybook/main.js|ts` to change the framework property:
 
 <CodeSnippets path="tanstack-react-add-framework.md" />
 
 Then similarly update your `.storybook/preview.*` to import from `@storybook/tanstack-react`:
 
 <CodeSnippets path="tanstack-react-preview-migrate.md" />
+
+<Callout variant="info">
+
+`@storybook/tanstack-react` already wraps every story in a TanStack Router automatically, so any manual `RouterProvider` / `createRouter` / `createMemoryHistory` / `createRootRoute` decorator should be removed after running the automigration. For stories that need a specific route, use [`parameters.tanstack.router`](#rendering-a-route) instead.
+
+</Callout>
 
 ### When should I use `@storybook/tanstack-react` instead of `@storybook/react-vite`?
 

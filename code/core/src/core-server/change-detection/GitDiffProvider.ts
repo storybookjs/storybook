@@ -52,6 +52,11 @@ export class GitDiffProvider {
       const { stdout } = await execa('git', ['rev-parse', '--show-toplevel'], {
         cwd: this.cwd,
         stdio: 'pipe',
+        // Prevent git from acquiring .git/index.lock for stat-cache refreshes
+        // during read-only operations. Without this, parallel scans can race
+        // an interactive `git commit` and break the user's commit with
+        // "Unable to create '.git/index.lock': File exists".
+        env: { GIT_OPTIONAL_LOCKS: '0' },
       });
 
       this.repoRoot = stdout.trim();
@@ -270,7 +275,17 @@ export class GitDiffProvider {
 
   private async runGitCommand(repoRoot: string, args: string[]) {
     try {
-      return await execa('git', args, { cwd: repoRoot, stdio: 'pipe' });
+      return await execa('git', args, {
+        cwd: repoRoot,
+        stdio: 'pipe',
+        // GIT_OPTIONAL_LOCKS=0 disables the stat-cache refresh that
+        // `git status` and `git diff` would otherwise write into
+        // .git/index.lock. The diff/status output stays correct; we only
+        // skip the optional cache update. This prevents change detection
+        // scans from racing an interactive `git commit` running in the
+        // user's shell.
+        env: { GIT_OPTIONAL_LOCKS: '0' },
+      });
     } catch (error) {
       throw this.toGitError(error, `git ${args.join(' ')}`);
     }

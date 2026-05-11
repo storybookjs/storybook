@@ -154,18 +154,24 @@ export async function doInitiate(options: CommandOptions): Promise<
 
   // Step 8: Print final summary
   const hasAiFeature = selectedFeatures.has(Feature.AI);
-  if (hasAiFeature && configDir) {
-    // Persist the init-time AI opt-in so the dev server can gate AI-related UI
+  if (configDir && isAiSetupAvailable) {
+    // Persist init-time AI opt-in/opt-out so the dev server can gate AI-related UI
     // (checklist item, copy-prompt button) on the user's actual choice — not on
     // a telemetry-event side effect. Scoped to the project's configDir so a
     // monorepo with hoisted `node_modules/.cache` doesn't leak the flag across
     // sibling Storybook projects. This is a tiny local file with no PII, so it
     // is written even when telemetry is disabled.
     await cache
-      .set('ai-init-opt-in', { timestamp: Date.now(), configDir: resolve(configDir) })
+      .set('ai-init-opt-in', {
+        timestamp: Date.now(),
+        configDir: resolve(configDir),
+        answer: hasAiFeature,
+      })
       .catch(() => {});
     // Telemetry event remains for analytics. UI logic does not depend on it.
-    await telemetry('ai-init-opt-in', {}).catch(() => {});
+    await telemetry('ai-init-opt-in', {
+      answer: hasAiFeature,
+    }).catch(() => {});
   }
   await executeFinalization({
     showAgentFollowUp: !!options.agent && hasAiFeature,

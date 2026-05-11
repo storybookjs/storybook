@@ -1,4 +1,4 @@
-import { defineConfig } from '@playwright/test';
+import { defineConfig, devices } from '@playwright/test';
 import * as path from 'node:path';
 
 const runDir = process.env.VERIFY_RUN_DIR ?? path.resolve(process.cwd(), '.verify-output/_adhoc');
@@ -13,6 +13,7 @@ export default defineConfig({
     screenshot: 'on',
     video: 'retain-on-failure',
   },
+  projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
   workers: 1,
   timeout: 60_000,
   expect: { timeout: 10_000 },

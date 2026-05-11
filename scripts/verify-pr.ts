@@ -4,6 +4,7 @@
 import { parseArgs } from 'node:util';
 import { performance } from 'node:perf_hooks';
 import * as path from 'node:path';
+import * as fs from 'node:fs/promises';
 
 import {
   SCHEMA_VERSION,
@@ -12,6 +13,7 @@ import {
   ensureRunDir,
   parsePlaywrightReport,
   pruneOldRuns,
+  writeRegressionResult,
   writeResult,
 } from './verify/core.ts';
 import type { VerifyResult } from './verify/core.ts';
@@ -81,7 +83,43 @@ async function main(argv: string[]): Promise<number> {
   }
   const baseURL = `http://localhost:${port}`;
   const totalStart = performance.now();
+  // MEDIUM (iter-4 F-3.2) — `paths` MUST be initialised BEFORE the HEAD_SHA
+  // assertion because `writeRegressionResult(paths, …)` references it.
   const paths = buildRunPaths();
+  const inContainer = process.env.VERIFY_HARNESS_IN_CONTAINER === '1';
+
+  if (inContainer) {
+    // BLOCKER #2 — HEAD_SHA assertion uses the new helper. Requires `paths`
+    // to be initialised above; otherwise this diff would produce a TypeScript
+    // / runtime undefined error.
+    let baked: string | undefined;
+    try {
+      baked = (await fs.readFile('/opt/verify-harness/HEAD_SHA', 'utf-8')).trim();
+    } catch {
+      await writeRegressionResult(paths, 'head-sha file missing', { inContainer: true });
+      return 1;
+    }
+    const expected = process.env.VERIFY_HARNESS_EXPECTED_HEAD_SHA;
+    if (expected === undefined) {
+      // Laptop / dev-mode reproduction — assertion is skipped, warning logged.
+      console.warn(
+        '[verify] in-container without VERIFY_HARNESS_EXPECTED_HEAD_SHA — head-sha assertion skipped (dev mode)'
+      );
+    } else if (
+      !/^[a-f0-9]{40}$/.test(expected) ||
+      !/^[a-f0-9]{40}$/.test(baked) ||
+      expected !== baked
+    ) {
+      await writeRegressionResult(paths, 'head-sha drift', { headSha: baked, inContainer: true });
+      return 1;
+    }
+  }
+
+  if (inContainer && flags.resync) {
+    console.error('[verify] --resync is not supported when VERIFY_HARNESS_IN_CONTAINER=1.');
+    return 1;
+  }
+
   await pruneOldRuns();
   await ensureRunDir(paths);
 
@@ -180,14 +218,20 @@ async function main(argv: string[]): Promise<number> {
   }
 
   // Full run
-  await snapshotSandbox(sandboxDir);
-  await sanitizeResolutions(sandboxDir);
+  if (!inContainer) {
+    await snapshotSandbox(sandboxDir);
+    await sanitizeResolutions(sandboxDir);
+  } else {
+    console.log('[verify] in-container mode — skipping snapshot/sanitize (pre-baked).');
+  }
 
   const controller = new AbortController();
   installSignalHandlers(controller);
   await preflightPort(port);
 
-  const syncResult = await syncCorePackage({ sandboxDir });
+  const syncResult = inContainer
+    ? { compileMs: 0, symlinkMs: 0 }
+    : await syncCorePackage({ sandboxDir });
 
   const { bootMs } = await bootStorybook({ sandboxDir, port, controller });
 
@@ -230,6 +274,14 @@ async function main(argv: string[]): Promise<number> {
       totalMs,
     },
     createdAt: new Date().toISOString(),
+    inContainer,
+    imageDigest: process.env.VERIFY_HARNESS_IMAGE_DIGEST ?? null,
+    headSha: inContainer
+      ? await fs
+          .readFile('/opt/verify-harness/HEAD_SHA', 'utf-8')
+          .then((s): string | null => s.trim())
+          .catch((): string | null => null)
+      : null,
   };
 
   await writeResult(paths, result);

@@ -36,6 +36,7 @@ export interface VerifyResult {
   schemaVersion: number;
   runId: string;
   verdict: 'verified' | 'regression' | 'skipped';
+  regressionReason?: string;
   template: 'react-vite/default-ts';
   storyIds: string[];
   recipeSpecPath: string;
@@ -43,6 +44,9 @@ export interface VerifyResult {
   traceZipPaths: string[];
   durations: Durations;
   createdAt: string;
+  inContainer?: boolean;
+  imageDigest?: string | null;
+  headSha?: string | null;
 }
 
 export interface RunPaths {
@@ -76,6 +80,35 @@ export async function ensureRunDir(paths: RunPaths): Promise<void> {
 export async function writeResult(paths: RunPaths, result: VerifyResult): Promise<void> {
   await ensureRunDir(paths);
   await fs.writeFile(paths.resultJson, JSON.stringify(result, null, 2) + '\n', 'utf-8');
+}
+
+/**
+ * Write a synthetic `regression` verdict with a structured reason. Used for
+ * harness-level abort conditions (head-sha drift, head-sha file missing) where
+ * the recipe never executed. The runner exits non-zero after calling this.
+ */
+export async function writeRegressionResult(
+  paths: RunPaths,
+  reason: string,
+  opts?: { headSha?: string; inContainer?: boolean; imageDigest?: string | null }
+): Promise<void> {
+  const result: VerifyResult = {
+    schemaVersion: SCHEMA_VERSION,
+    runId: paths.runId,
+    verdict: 'regression',
+    regressionReason: reason,
+    template: 'react-vite/default-ts',
+    storyIds: [],
+    recipeSpecPath: '',
+    tests: [],
+    traceZipPaths: [],
+    durations: { compileMs: 0, symlinkMs: 0, bootMs: 0, recipeMs: 0, totalMs: 0 },
+    createdAt: new Date().toISOString(),
+    inContainer: opts?.inContainer,
+    imageDigest: opts?.imageDigest ?? null,
+    headSha: opts?.headSha,
+  };
+  await writeResult(paths, result);
 }
 
 export function computeVerdict(tests: RecipeTest[]): 'verified' | 'regression' {

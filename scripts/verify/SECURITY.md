@@ -214,3 +214,44 @@ jq '.permissions.deny[]' .claude/settings.json
 ```
 
 Expected output lists all deny patterns (curl, wget, rm -rf, sudo, .env paths, SSH/AWS/config paths, credential files, PEM/key files).
+
+---
+
+## Image-build provenance
+
+v5-0 introduces a containerized harness execution path. The image is built per PR and consumed by the same workflow run. Because the build context partially derives from the PR-head checkout (an untrusted source), every supply-chain vector that head-controlled content could weaponise is closed by the `Harden build context` step and a defence-in-depth layering of mitigations.
+
+| # | Mitigation | Enforcement site |
+|---|------------|------------------|
+| 1 | **Base image digest pin** — `mcr.microsoft.com/playwright:v1.58.2-jammy@sha256:<digest>` resolved via `docker manifest inspect`, tracked by `renovate.json`. | `scripts/verify/Dockerfile` `FROM` line. |
+| 2 | **Bun digest pin** — `oven/bun:1.3.0-slim@sha256:<digest>` injected via multi-stage `COPY --from=…`, tracked by `renovate.json`. | `scripts/verify/Dockerfile` `COPY --from=…` line. |
+| 3 | **Harden-script overlay** — `scripts/verify/harden-build-context.sh` overlays base-sha `.dockerignore`, `.yarnrc.yml`, `.yarn/releases/` onto the PR-head checkout; removes `.yarn/plugins/`; defuses `.yarn` / `.yarn/plugins` / `.yarn/releases` symlinks (`defuse_target`); verifies byte-identity of overlaid files (`sha256_check`). | `scripts/verify/harden-build-context.sh`. |
+| 4 | **Lifecycle-script stripping** — `scripts/verify/strip-lifecycle-scripts.mjs` removes `preinstall`/`install`/`postinstall`/`prepare` from every workspace `package.json` (symlink-skip, max-depth 8, 1 MB file cap, 60 s timeout, prototype-chain hygiene). | `scripts/verify/strip-lifecycle-scripts.mjs`. |
+| 5 | **`.npmrc` purge** — any head-supplied `.npmrc` is deleted from the build context, closing the corepack registry-override surface. | `scripts/verify/harden-build-context.sh` (`find … -name .npmrc -delete`). |
+| 6 | **`packageManager` normalisation** — root `pr-head/package.json` `packageManager` field is set to base-sha's value (or deleted if base-sha has none). | `scripts/verify/strip-lifecycle-scripts.mjs` (root-pkg branch). |
+| 7 | **Corepack-network bypass** — yarn is invoked as `node $YARN_BIN` against the on-disk binary copied from the overlaid `.yarn/releases/`, so corepack never fetches yarn from npm. `COREPACK_ENABLE_NETWORK=0`. | `scripts/verify/Dockerfile` `ENV YARN_BIN=…` + every `RUN node "$YARN_BIN" …` invocation; `ENTRYPOINT` uses the same on-disk binary. |
+| 8 | **Dockerfile byte-identity check** — `diff -q scripts/verify/Dockerfile pr-head/scripts/verify/Dockerfile`. Build aborts on divergence; missing-in-head is allowed (workflow `-f` points at base-sha copy). | `scripts/verify/harden-build-context.sh` step 6. |
+| 9 | **Per-PR cache scope** — `cache-from`/`cache-to` use `type=gha,scope=pr-${{ github.event.pull_request.number }}` so a poisoned layer from one PR cannot leak to another. | `.github/workflows/verify-pr.yml` `Build harness image` step. |
+| 10 | **HEAD_SHA bake + runtime assertion** — Dockerfile bakes `ARG HEAD_SHA` into `/opt/verify-harness/HEAD_SHA` and labels the image `org.storybook.verify.head_sha=<sha>`. At runtime, the runner reads the file and aborts with `regression: head-sha drift` if it disagrees with `VERIFY_HARNESS_EXPECTED_HEAD_SHA`. | `scripts/verify/Dockerfile` stage 1.e; `scripts/verify-pr.ts` in-container branch. |
+| 11 | **Named-container `docker cp`** — the run step uses `--name verify-harness-${{ github.run_id }}` and the mirror step references the container by name. No `|| true` on the load-bearing `docker cp` line. | `.github/workflows/verify-pr.yml` `Run harness in container` + `Mirror tmpfs output` steps. |
+| 12 | **Smoke-test fail-closed (BLOCKER #1)** — `/opt/verify-harness/smoke.sh` exits non-zero unless `VERIFY_HARNESS_IMAGE_DIGEST` is set and matches `^sha256:[a-f0-9]{64}$`. Workflow filter rejects the all-zero digest. | `scripts/verify/Dockerfile` stage 4 `smoke.sh`; workflow `Smoke test image` step. |
+| 13 | **`STORYBOOK_DISABLE_TELEMETRY=1` baked** — telemetry is disabled at the image-`ENV` level so `bootStorybook` never attempts an outbound probe under `--network=none`. | `scripts/verify/Dockerfile` `ENV` block. |
+
+### Residual risk — buildx process-env `GITHUB_TOKEN`
+
+The job-level `permissions:` block grants `pull-requests: write` so that `Post PR comment` can run. The step-level `env: { GITHUB_TOKEN: '' }` clears the token from the **step's main process**, but does **not** strip it from the buildx daemon subprocess that `docker/build-push-action` spawns — the runner-injected `GITHUB_TOKEN` environment variable is inherited by the daemon. A head-controlled code path that runs during `yarn install` (despite every mitigation above) could in principle read that variable from process env.
+
+**v5-1 mitigation (preferred):** split the workflow into two jobs.
+- `prep` (with `pull-requests: write`) runs `Author recipe` + posts the PR comment.
+- `harness` (with `permissions: {}`) runs `Harden build context` + `Build harness image` + `Run harness in container`.
+- Artifacts pass between jobs via `upload-artifact` / `download-artifact`. This eliminates `GITHUB_TOKEN` from the buildx process env entirely.
+
+**Current (v5-0) mitigations stack:**
+- `enableScripts: false` (yarn lifecycle scripts disabled in the overlaid `.yarnrc.yml`).
+- Lifecycle-script stripping in every workspace `package.json` (defence in depth even with `enableScripts: false`).
+- `.npmrc` purge from `pr-head/`.
+- Corepack network bypass — yarn invoked via `node $YARN_BIN`, not via corepack's shim.
+- Per-PR cache scope — any token-derived artefact cannot leak across PRs.
+- Dockerfile byte-identity check — head cannot rewrite the Dockerfile invoked by the workflow.
+
+The residual risk is **accepted for v5-0 and documented honestly**; v5-1 closes it by job split.

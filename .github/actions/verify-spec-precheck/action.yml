@@ -1,0 +1,45 @@
+name: Verify spec precheck
+description: >-
+  Detects whether a committed verify-recipe spec (.verify-recipes/pr-<#>.spec.ts)
+  exists at the PR head checkout. Emits boolean output `spec-present` plus a
+  human-readable `reason`, and exports `SPEC_PRESENT` to the job env so the
+  downstream PR-comment step can render the two-state not-applicable message.
+
+inputs:
+  pr-number:
+    description: Pull-request number used to locate the spec file.
+    required: true
+  head-checkout-path:
+    description: Path (relative to GITHUB_WORKSPACE) of the PR-head checkout.
+    required: true
+
+outputs:
+  spec-present:
+    description: '"true" if the spec file exists at head, "false" otherwise.'
+    value: ${{ steps.detect.outputs.spec-present }}
+  reason:
+    description: Human-readable explanation surfaced in the PR comment when absent.
+    value: ${{ steps.detect.outputs.reason }}
+
+runs:
+  using: composite
+  steps:
+    - name: Detect committed spec
+      id: detect
+      shell: bash
+      env:
+        PR_NUMBER: ${{ inputs.pr-number }}
+        HEAD_CHECKOUT_PATH: ${{ inputs.head-checkout-path }}
+      run: |
+        set -euo pipefail
+        SPEC_PATH="${HEAD_CHECKOUT_PATH}/.verify-recipes/pr-${PR_NUMBER}.spec.ts"
+        if [ -f "$SPEC_PATH" ]; then
+          PRESENT=true
+          REASON="committed spec present"
+        else
+          PRESENT=false
+          REASON="no committed spec — either re-fire ci:verify after running the verify-recipe-author skill OR commit pr-${PR_NUMBER}.spec.ts and push"
+        fi
+        echo "spec-present=$PRESENT" >> "$GITHUB_OUTPUT"
+        echo "reason=$REASON" >> "$GITHUB_OUTPUT"
+        echo "SPEC_PRESENT=$PRESENT" >> "$GITHUB_ENV"

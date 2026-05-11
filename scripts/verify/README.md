@@ -369,3 +369,62 @@ Dispatchers (the local skill, the CI CLI, future containerized authoring runtime
 - Research: [`.omc/research/research-20260508-prverify/report.md`](../../.omc/research/research-20260508-prverify/report.md)
 - Existing e2e patterns: [`code/e2e-tests/`](../../code/e2e-tests/)
 - CI workflow scaffold (gated): [`.github/workflows/verify-pr.yml`](../../.github/workflows/verify-pr.yml)
+
+## Running inside the verify-harness container
+
+The v5-0 CI path runs the harness inside a hermetic, network-isolated container built per PR. The same image is reproducible on a developer laptop for ad-hoc debugging.
+
+### Local docker-build / docker-run loop
+
+From the repo root:
+
+```bash
+# 1. Build the image. HEAD_SHA is baked into the image as provenance.
+HEAD_SHA="$(git rev-parse HEAD)"
+docker build \
+  -f scripts/verify/Dockerfile \
+  --build-arg HEAD_SHA="$HEAD_SHA" \
+  -t verify-harness:test \
+  .
+
+# 2. Capture the digest for the smoke step.
+DIGEST="$(docker inspect --format='{{.Id}}' verify-harness:test)"
+
+# 3. Smoke-test the image (no spec required — exits 0 with a JSON sentinel).
+docker run --rm \
+  --network=none --cap-drop ALL --security-opt no-new-privileges \
+  --read-only --tmpfs /tmp:rw,size=100m \
+  --tmpfs /workspace/.verify-output:rw,size=500m \
+  --memory 4g --pids-limit 200 --user 1000:1000 \
+  -e VERIFY_HARNESS_IMAGE_DIGEST="$DIGEST" \
+  verify-harness:test \
+  /opt/verify-harness/smoke.sh
+
+# 4. Run a committed recipe.
+docker run \
+  --name verify-harness-local \
+  --network=none --cap-drop ALL --security-opt no-new-privileges \
+  --read-only --tmpfs /tmp:rw,size=100m \
+  --tmpfs /workspace/.verify-output:rw,size=500m \
+  --memory 4g --pids-limit 200 --user 1000:1000 \
+  -e VERIFY_HARNESS_IMAGE_DIGEST="$DIGEST" \
+  -e VERIFY_HARNESS_EXPECTED_HEAD_SHA="$HEAD_SHA" \
+  -v "$(pwd)":/workspace:ro \
+  verify-harness:test \
+  yarn verify-pr --recipe-spec .verify-recipes/example-smoke.spec.ts
+
+# 5. Mirror the verdict + traces out of the tmpfs.
+docker cp verify-harness-local:/workspace/.verify-output/. ./e2e-out/
+cat ./e2e-out/*/verify-result.json
+docker rm verify-harness-local
+```
+
+### Environment variables
+
+| Variable | Purpose | Required |
+|----------|---------|----------|
+| `VERIFY_HARNESS_IN_CONTAINER=1` | Baked into the image at build time. Signals the runner to skip `snapshotSandbox`, `sanitizeResolutions`, and `syncCorePackage` because the sandbox is already pre-baked under `/opt/verify-harness/`. Also rejects `--resync` outright. | Set by the Dockerfile `ENV`. |
+| `VERIFY_HARNESS_IMAGE_DIGEST` | The full `sha256:…` image digest. Used by the smoke script's fail-closed sentinel and recorded in `verify-result.json` for audit. | Yes for CI; optional for laptop dev (the smoke step still requires it, but `yarn verify-pr` runs without it). |
+| `VERIFY_HARNESS_EXPECTED_HEAD_SHA` | The PR-head SHA the workflow expects. The runner reads `/opt/verify-harness/HEAD_SHA` (baked at image build) and aborts with `regression: head-sha drift` if it disagrees. **If unset on a developer laptop, the assertion is skipped and a warning is logged** — this preserves the local reproduction loop (you can `docker run … verify-harness:test …` without passing the env). | Yes for CI; optional for laptop dev. |
+| `STORYBOOK_SANDBOX_ROOT` | Set by the image `ENV` to `/opt/verify-harness/storybook-sandboxes`. `resolveSandboxDir()` honours this so the runner finds the pre-baked sandbox. | Set by the Dockerfile `ENV`. |
+| `STORYBOOK_DISABLE_TELEMETRY=1` | Baked into the image. Prevents `bootStorybook` from attempting an outbound telemetry probe under `--network=none`. | Set by the Dockerfile `ENV`. |

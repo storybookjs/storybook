@@ -17,3 +17,21 @@
 .verify-output/
 node_modules/
 .nx/
+
+# v5-0 — exclude build artefacts and unneeded trees from the image build context.
+.git
+.github
+test-storybooks/
+docs/
+code/sandbox/
+sandbox/
+.nx/cache
+.nx/workspace-data
+coverage/
+*.log
+.DS_Store
+CLAUDE.md
+AGENTS.md
+.claude/
+.omc/
+.verify-output/

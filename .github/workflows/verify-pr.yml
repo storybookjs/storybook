@@ -8,7 +8,7 @@ jobs:
   verify:
     if: github.event.pull_request.draft == false && contains(github.event.pull_request.labels.*.name, 'ci:verify')
     runs-on: ubuntu-22.04
-    timeout-minutes: 20
+    timeout-minutes: 30   # TODO(AC-V5-0-2) confirm via empirical cold-build measurement; raise to 45 if p100 > 12 min
     concurrency:
       group: verify-${{ github.event.pull_request.number }}
       cancel-in-progress: true
@@ -45,16 +45,101 @@ jobs:
           yarn verify-pr-author --bundle "$BUNDLE"
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+
+      - name: Checkout PR head (untrusted execution context)
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          path: pr-head
+          persist-credentials: false
+
+      - name: Spec precheck
+        id: spec_precheck
+        uses: ./.github/actions/verify-spec-precheck
+        with:
+          pr-number: ${{ github.event.pull_request.number }}
+          head-checkout-path: pr-head
+
+      - name: Harden build context
+        if: steps.spec_precheck.outputs.spec-present == 'true'
+        env:
+          GITHUB_TOKEN: ''
+        run: ./scripts/verify/harden-build-context.sh pr-head
+
+      - name: Set up Docker Buildx
+        if: steps.spec_precheck.outputs.spec-present == 'true'
+        uses: docker/setup-buildx-action@988b5a0280414f521da01fcc63a27aeeb4b104db # v3.6.1
+
+      - name: Build harness image
+        if: steps.spec_precheck.outputs.spec-present == 'true'
+        id: build_image
+        env:
+          GITHUB_TOKEN: ''   # explicitly clear — buildx daemon has runner network anyway
+        uses: docker/build-push-action@4f58ea79222b3b9dc2c8bbdd6debcef730109a75 # v5.1.0
+        with:
+          context: ./pr-head
+          file: scripts/verify/Dockerfile           # base-sha checkout; maintainer-reviewed
+          tags: verify-harness:${{ github.sha }}
+          load: true
+          build-args: |
+            HEAD_SHA=${{ github.event.pull_request.head.sha }}
+          cache-from: type=gha,scope=pr-${{ github.event.pull_request.number }}
+          cache-to: type=gha,mode=max,scope=pr-${{ github.event.pull_request.number }}
+
+      - name: Capture image digest
+        if: steps.spec_precheck.outputs.spec-present == 'true'
+        id: image_digest
+        run: |
+          set -euo pipefail
+          DIGEST="$(docker inspect --format='{{.Id}}' verify-harness:${{ github.sha }})"
+          echo "digest=$DIGEST" >> "$GITHUB_OUTPUT"
+          echo "image-digest: $DIGEST" >> "$GITHUB_STEP_SUMMARY"
+          echo "VERIFY_HARNESS_IMAGE_DIGEST=$DIGEST" >> "$GITHUB_ENV"
+
+      - name: Smoke test image
+        if: steps.spec_precheck.outputs.spec-present == 'true'
+        run: |
+          set -euo pipefail
+          # LOW — capture stdout+stderr via tee, keep last stdout line as the sentinel.
+          SENTINEL="$(docker run --rm \
+            --network=none --cap-drop ALL --security-opt no-new-privileges \
+            --read-only --tmpfs /tmp:rw,size=100m \
+            --tmpfs /workspace/.verify-output:rw,size=500m \
+            --memory 4g --pids-limit 200 --user 1000:1000 \
+            -e VERIFY_HARNESS_IMAGE_DIGEST="$VERIFY_HARNESS_IMAGE_DIGEST" \
+            verify-harness:${{ github.sha }} \
+            /opt/verify-harness/smoke.sh 2>&1 | tee /tmp/smoke.log | tail -1)"
+          # BLOCKER #1 — fail-closed: real digest only (no sha256:0{64} match).
+          echo "$SENTINEL" \
+            | grep -E '^\{"event":"smoke","status":"ready","durationMs":[0-9]+,"imageDigest":"sha256:[a-f0-9]{64}"\}$' \
+            | grep -vE '"imageDigest":"sha256:0{64}"'
+
       - name: Run harness in container
+        if: steps.spec_precheck.outputs.spec-present == 'true'
+        env:
+          VERIFY_HARNESS_IMAGE_DIGEST: ${{ steps.image_digest.outputs.digest }}
         run: |
           docker run \
+            --name verify-harness-${{ github.run_id }} \
             --cap-drop ALL --security-opt no-new-privileges \
             --read-only --tmpfs /tmp:rw,size=100m \
             --tmpfs /workspace/.verify-output:rw,size=500m \
             --network none --memory 4g --pids-limit 200 --user 1000:1000 \
-            -v ${{ github.workspace }}:/workspace:ro \
-            verify-harness:pinned-sha \
+            -v ${{ github.workspace }}/pr-head:/workspace:ro \
+            -e VERIFY_HARNESS_IMAGE_DIGEST="$VERIFY_HARNESS_IMAGE_DIGEST" \
+            -e VERIFY_HARNESS_EXPECTED_HEAD_SHA="${{ github.event.pull_request.head.sha }}" \
+            verify-harness:${{ github.sha }} \
             yarn verify-pr --recipe-spec .verify-recipes/${{ github.event.pull_request.number }}.spec.ts
+
+      - name: Mirror tmpfs output to runner workspace
+        if: steps.spec_precheck.outputs.spec-present == 'true' && always()
+        run: |
+          set -euo pipefail
+          mkdir -p .verify-output
+          docker cp verify-harness-${{ github.run_id }}:/workspace/.verify-output/. .verify-output/
+          # Existence assertion — no || true on the load-bearing copy.
+          ls .verify-output/*/verify-result.json >/dev/null
+          docker rm verify-harness-${{ github.run_id }} || true   # cleanup only; not a verdict gate
       - name: Upload artifacts
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
@@ -74,6 +159,11 @@ jobs:
             const url = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
             let body;
             try {
+              if (process.env.SPEC_PRESENT === 'false') {
+                body = `## Verify Harness\n\nVerdict: \`not-applicable\` for PR \`${context.issue.number}\`. Either:\n- no spec authored this run — re-fire \`ci:verify\` after running the verify-recipe-author skill, or\n- a spec was authored locally but not yet committed at head — commit \`pr-${context.issue.number}.spec.ts\` and push.\n\nSee [run log](${url}).`;
+                await github.rest.issues.createComment({ issue_number: context.issue.number, owner: context.repo.owner, repo: context.repo.repo, body });
+                return;
+              }
               const root = '.verify-output';
               const dirs = fs.existsSync(root)
                 ? fs.readdirSync(root, { withFileTypes: true })
@@ -89,7 +179,7 @@ jobs:
                 body = `## Verify Harness\n\nNo verdict produced (workflow failed before harness ran). See [run log](${url}).`;
               } else {
                 const verdict = JSON.parse(fs.readFileSync(resultPath, 'utf-8'));
-                body = `## Verify Harness\n\nVerdict: \`${verdict.verdict}\`\n\nReplay: \`npx playwright show-trace\` on the trace.zip in [artifacts](${url}/artifacts).`;
+                body = `## Verify Harness\n\nVerdict: \`${verdict.verdict}\` (image ${verdict.imageDigest ?? 'n/a'}, head ${verdict.headSha ?? 'n/a'})${verdict.regressionReason ? `\n\nReason: \`${verdict.regressionReason}\`` : ''}\n\nReplay: \`npx playwright show-trace\` on the trace.zip in [artifacts](${url}/artifacts).`;
               }
             } catch (err) {
               body = `## Verify Harness\n\nError reading verdict: \`${err.message}\`. See [run log](${url}).`;

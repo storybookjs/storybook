@@ -1,5 +1,10 @@
 import { PackageManagerName } from 'storybook/internal/common';
-import { HandledError, JsPackageManagerFactory, isCorePackage } from 'storybook/internal/common';
+import {
+  HandledError,
+  JsPackageManagerFactory,
+  isCI,
+  isCorePackage,
+} from 'storybook/internal/common';
 import {
   CLI_COLORS,
   createHyperlink,
@@ -385,6 +390,13 @@ export async function upgrade(options: UpgradeOptions): Promise<void> {
 
     // Update dependencies in package.jsons for all projects
     if (!options.dryRun) {
+      for (const project of storybookProjects) {
+        await project.packageManager.precheckStorybookPackageInstall({
+          storybookVersion: project.currentCLIVersion,
+          nonInteractive: !!options.yes || !process.stdout.isTTY || !!isCI(),
+        });
+      }
+
       const task = prompt.taskLog({
         id: 'upgrade-dependencies',
         title: `Fetching versions to update package.json files..`,

@@ -1,5 +1,5 @@
 import { AddonVitestService } from 'storybook/internal/cli';
-import type { JsPackageManager } from 'storybook/internal/common';
+import { HandledError, type JsPackageManager } from 'storybook/internal/common';
 import { logger, prompt } from 'storybook/internal/node-logger';
 import { ErrorCollector } from 'storybook/internal/telemetry';
 import { Feature } from 'storybook/internal/types';
@@ -70,6 +70,10 @@ export class DependencyInstallationCommand {
       try {
         await this.packageManager.installDependencies();
       } catch (err) {
+        if (err instanceof HandledError) {
+          throw err;
+        }
+
         ErrorCollector.addError(err);
         return { status: 'failed' };
       }

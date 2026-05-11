@@ -4,6 +4,7 @@ import {
   JsPackageManagerFactory,
   PackageManagerName,
   getPrettyPackageManagerName,
+  isCI,
   invalidateProjectRootCache,
 } from 'storybook/internal/common';
 import { CLI_COLORS, deprecate, logger } from 'storybook/internal/node-logger';
@@ -31,6 +32,7 @@ export interface PreflightCheckResult {
 export class PreflightCheckCommand {
   /** Execute preflight checks */
   constructor(private readonly versionService = new VersionService()) {}
+
   async execute(options: CommandOptions): Promise<PreflightCheckResult> {
     const isEmptyDirProject = options.force !== true && currentDirectoryIsEmpty();
     let packageManagerType = JsPackageManagerFactory.getPackageManagerType();
@@ -82,6 +84,10 @@ export class PreflightCheckCommand {
     this.checkPackageNameConflict(packageManager);
 
     await this.displayVersionInfo(packageManager);
+    await packageManager.precheckStorybookPackageInstall({
+      storybookVersion: this.versionService.getCurrentVersion(),
+      nonInteractive: !!options.yes || !process.stdout.isTTY || !!isCI(),
+    });
 
     return { packageManager, isEmptyProject: isEmptyDirProject };
   }

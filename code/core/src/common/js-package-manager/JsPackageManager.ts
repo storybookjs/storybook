@@ -189,6 +189,11 @@ export abstract class JsPackageManager {
     this.clearInstalledVersionCache();
   }
 
+  async precheckStorybookPackageInstall(options: {
+    storybookVersion: string;
+    nonInteractive: boolean;
+  }): Promise<void> {}
+
   async dedupeDependencies(options?: { force?: boolean }) {
     await prompt.executeTask(
       (_signal) =>

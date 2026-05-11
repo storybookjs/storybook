@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { prompt } from 'storybook/internal/node-logger';
 
@@ -10,9 +10,11 @@ vi.mock('storybook/internal/node-logger', () => ({
   prompt: {
     executeTaskWithSpinner: vi.fn(),
     getPreferredStdio: vi.fn(() => 'inherit'),
+    select: vi.fn(),
   },
   logger: {
     debug: vi.fn(),
+    info: vi.fn(),
     warn: vi.fn(),
     error: vi.fn(),
   },
@@ -377,6 +379,33 @@ describe('PNPM Proxy', () => {
       );
     });
 
+    it('should format minimumReleaseAge errors', () => {
+      const PNPM_ERROR_SAMPLE = `
+        ERR_PNPM_NO_MATURE_MATCHING_VERSION Version 4.1.5 (released 19 days ago) of @vitest/coverage-v8 does not meet the minimumReleaseAge constraint
+
+        This error happened while installing a direct dependency of /Users/jeppe/dev/temp/skeleton/packages/skeleton-react
+
+        The latest release of @vitest/coverage-v8 is "4.1.5". Published at 21/04/2026
+
+        Other releases are:
+          * beta: 5.0.0-beta.2 published at 05/05/2026
+
+        If you need the full list of all 158 published versions run "pnpm view @vitest/coverage-v8 versions".
+
+        If you want to install the matched version ignoring the time it was published, you can add the package name to the minimumReleaseAgeExclude setting. Read more about it: https://pnpm.io/settings#minimumreleaseageexclude
+      `;
+
+      expect(pnpmProxy.parseErrorFromLogs(PNPM_ERROR_SAMPLE)).toContain(
+        '@vitest/coverage-v8@4.1.5'
+      );
+      expect(pnpmProxy.parseErrorFromLogs(PNPM_ERROR_SAMPLE)).toContain(
+        'ERR_PNPM_NO_MATURE_MATCHING_VERSION'
+      );
+      expect(pnpmProxy.parseErrorFromLogs(PNPM_ERROR_SAMPLE)).toContain(
+        'https://pnpm.io/settings#minimumreleaseageexclude'
+      );
+    });
+
     it('should show unknown pnpm error', () => {
       const PNPM_ERROR_SAMPLE = `
         This error happened while installing a direct dependency of /Users/yannbraga/open-source/sandboxes/react-vite/default-js/before-storybook
@@ -385,6 +414,92 @@ describe('PNPM Proxy', () => {
       `;
 
       expect(pnpmProxy.parseErrorFromLogs(PNPM_ERROR_SAMPLE)).toEqual(`PNPM error`);
+    });
+  });
+
+  describe('precheckStorybookPackageInstall', () => {
+    beforeEach(() => {
+      vi.useFakeTimers();
+      vi.setSystemTime(new Date('2026-05-11T12:00:00.000Z'));
+    });
+
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    it('should update minimumReleaseAgeExclude in non-interactive mode when minimumReleaseAge blocks Storybook', async () => {
+      mockedExecuteCommand
+        .mockResolvedValueOnce({ stdout: '1440\n' } as any)
+        .mockResolvedValueOnce({ stdout: '"2026-05-11T11:59:00.000Z"' } as any)
+        .mockResolvedValueOnce({
+          stdout: JSON.stringify({
+            created: '2025-01-01T00:00:00.000Z',
+            modified: '2026-05-11T12:00:00.000Z',
+            '10.4.0-alpha.17': '2026-05-11T11:59:00.000Z',
+            '10.3.2': '2026-05-01T00:00:00.000Z',
+          }),
+        } as any)
+        .mockResolvedValueOnce({ stdout: '' } as any);
+      vi.mocked(prompt.executeTaskWithSpinner).mockImplementationOnce(async (factory: any) => {
+        await factory();
+      });
+
+      await pnpmProxy.precheckStorybookPackageInstall({
+        storybookVersion: '10.4.0-alpha.17',
+        nonInteractive: true,
+      });
+
+      expect(mockedExecuteCommand).toHaveBeenLastCalledWith(
+        expect.objectContaining({
+          command: 'pnpm',
+          args: [
+            'config',
+            'set',
+            '--location=project',
+            '--json',
+            'minimumReleaseAgeExclude',
+            JSON.stringify(['storybook', '@storybook/*', 'eslint-plugin-storybook']),
+          ],
+        })
+      );
+    });
+
+    it('should let the user update minimumReleaseAgeExclude interactively', async () => {
+      mockedExecuteCommand
+        .mockResolvedValueOnce({ stdout: '1440\n' } as any)
+        .mockResolvedValueOnce({ stdout: '"2026-05-11T11:59:00.000Z"' } as any)
+        .mockResolvedValueOnce({
+          stdout: JSON.stringify({
+            created: '2025-01-01T00:00:00.000Z',
+            modified: '2026-05-11T12:00:00.000Z',
+            '10.4.0-alpha.17': '2026-05-11T11:59:00.000Z',
+            '10.3.2': '2026-05-01T00:00:00.000Z',
+          }),
+        } as any)
+        .mockResolvedValueOnce({ stdout: '' } as any);
+      vi.mocked(prompt.select).mockResolvedValue('exclude' as never);
+      vi.mocked(prompt.executeTaskWithSpinner).mockImplementationOnce(async (factory: any) => {
+        await factory();
+      });
+
+      await pnpmProxy.precheckStorybookPackageInstall({
+        storybookVersion: '10.4.0-alpha.17',
+        nonInteractive: false,
+      });
+
+      expect(mockedExecuteCommand).toHaveBeenLastCalledWith(
+        expect.objectContaining({
+          command: 'pnpm',
+          args: [
+            'config',
+            'set',
+            '--location=project',
+            '--json',
+            'minimumReleaseAgeExclude',
+            JSON.stringify(['storybook', '@storybook/*', 'eslint-plugin-storybook']),
+          ],
+        })
+      );
     });
   });
 });

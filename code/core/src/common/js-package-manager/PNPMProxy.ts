@@ -8,7 +8,10 @@ import { FindPackageVersionsError } from 'storybook/internal/server-errors';
 import * as find from 'empathic/find';
 // eslint-disable-next-line depend/ban-dependencies
 import type { ResultPromise } from 'execa';
+import { dedent } from 'ts-dedent';
+import { gt, prerelease, valid } from 'semver';
 
+import { HandledError } from '../utils/HandledError.ts';
 import type { ExecuteCommandOptions } from '../utils/command.ts';
 import { executeCommand } from '../utils/command.ts';
 import { getProjectRoot } from '../utils/paths.ts';
@@ -212,6 +215,98 @@ export class PNPMProxy extends JsPackageManager {
     });
   }
 
+  async installDependencies(options?: { force?: boolean }) {
+    try {
+      await super.installDependencies(options);
+    } catch (error) {
+      const parsedError = this.parseErrorFromLogs(this.getErrorLogs(error));
+      if (parsedError !== 'PNPM error') {
+        throw new HandledError(parsedError);
+      }
+
+      throw error;
+    }
+  }
+
+  async precheckStorybookPackageInstall({
+    storybookVersion,
+    nonInteractive,
+  }: {
+    storybookVersion: string;
+    nonInteractive: boolean;
+  }): Promise<void> {
+    const minimumReleaseAge = await this.getMinimumReleaseAge();
+
+    if (!minimumReleaseAge) {
+      return;
+    }
+
+    const publishedAt = await this.getPackageReleaseTime('storybook', storybookVersion);
+
+    if (!publishedAt) {
+      return;
+    }
+
+    const ageMinutes = Math.floor((Date.now() - publishedAt.getTime()) / 60_000);
+    if (ageMinutes >= minimumReleaseAge) {
+      return;
+    }
+
+    const compatibleVersion = await this.getLatestStableVersionAdheringToMinimumReleaseAge(
+      'storybook',
+      minimumReleaseAge
+    );
+
+    if (nonInteractive) {
+      await this.updateMinimumReleaseAgeExclude();
+      logger.info(
+        dedent`
+          pnpm minimumReleaseAge would block Storybook core package installation, so Storybook updated minimumReleaseAgeExclude for this project automatically.
+
+          Added patterns: storybook, @storybook/*, eslint-plugin-storybook
+
+          Read more:
+          - https://pnpm.io/settings#minimumreleaseage
+          - https://pnpm.io/settings#minimumreleaseageexclude
+        `
+      );
+      return;
+    }
+
+    const selection = await prompt.select({
+      message:
+        'pnpm minimumReleaseAge would block Storybook core package installation. How do you want to proceed?',
+      options: [
+        {
+          label: 'Update pnpm config to exclude Storybook core packages',
+          value: 'exclude',
+        },
+        {
+          label: compatibleVersion
+            ? `Stop now and rerun with storybook@${compatibleVersion}`
+            : 'Stop now and rerun with an older stable Storybook release later',
+          value: 'rerun',
+        },
+      ],
+    });
+
+    if (selection === 'exclude') {
+      await this.updateMinimumReleaseAgeExclude();
+      logger.info(
+        'Added Storybook core packages to pnpm minimumReleaseAgeExclude for this project.'
+      );
+      return;
+    }
+
+    throw new HandledError(
+      this.createMinimumReleaseAgeMessage({
+        minimumReleaseAge,
+        currentVersion: storybookVersion,
+        compatibleVersion,
+      })
+    );
+  }
+
   protected runAddDeps(dependencies: string[], installAsDevDependencies: boolean) {
     let args = [...dependencies];
 
@@ -309,6 +404,24 @@ export class PNPMProxy extends JsPackageManager {
   }
 
   public parseErrorFromLogs(logs: string): string {
+    if (logs.includes('ERR_PNPM_NO_MATURE_MATCHING_VERSION')) {
+      const failedPackage = this.extractFailedPackage(logs);
+
+      return dedent`
+        pnpm blocked package installation because your project uses minimumReleaseAge.
+
+        Failed package:
+        ${failedPackage ?? 'Unknown package'}
+
+        pnpm error: ERR_PNPM_NO_MATURE_MATCHING_VERSION
+
+        Read more: https://pnpm.io/settings#minimumreleaseage
+        minimumReleaseAgeExclude docs: https://pnpm.io/settings#minimumreleaseageexclude
+
+        To fix this, either wait for the configured age window to pass and rerun the command, or add the blocked packages to pnpm's minimumReleaseAgeExclude setting.
+      `;
+    }
+
     let finalMessage = 'PNPM error';
     const match = logs.match(PNPM_ERROR_REGEX);
     if (match) {
@@ -319,5 +432,199 @@ export class PNPMProxy extends JsPackageManager {
     }
 
     return finalMessage.trim();
+  }
+
+  private extractFailedPackage(logs: string): string | null {
+    const match = logs.match(
+      /Version\s+([^\s]+)\s+\([^)]*\)\s+of\s+((?:@[^/\s]+\/)?[^\s]+)\s+does not meet the minimumReleaseAge constraint/
+    );
+
+    if (!match) {
+      return null;
+    }
+
+    const [, version, packageName] = match;
+    return `${packageName}@${version}`;
+  }
+
+  private async getMinimumReleaseAge(): Promise<number | null> {
+    const result = await this.runInternalCommand(
+      'config',
+      ['get', 'minimumReleaseAge'],
+      undefined,
+      'pipe'
+    );
+
+    const normalizedValue = typeof result.stdout === 'string' ? result.stdout.trim() : '';
+
+    if (
+      !normalizedValue ||
+      normalizedValue === 'undefined' ||
+      normalizedValue === 'null' ||
+      normalizedValue === 'false'
+    ) {
+      return null;
+    }
+
+    const parsedValue = Number.parseInt(normalizedValue, 10);
+    if (!Number.isFinite(parsedValue) || parsedValue <= 0) {
+      return null;
+    }
+
+    return parsedValue;
+  }
+
+  private async getPackageReleaseTime(packageName: string, version: string): Promise<Date | null> {
+    const result = await this.runInternalCommand(
+      'view',
+      ['--json', packageName, `time[${version}]`],
+      undefined,
+      'pipe'
+    );
+
+    const normalizedValue = typeof result.stdout === 'string' ? result.stdout.trim() : '';
+    if (!normalizedValue) {
+      return null;
+    }
+
+    const parsedValue = JSON.parse(normalizedValue);
+    if (typeof parsedValue !== 'string') {
+      return null;
+    }
+
+    const releaseTime = new Date(parsedValue);
+    return Number.isNaN(releaseTime.getTime()) ? null : releaseTime;
+  }
+
+  private async getLatestStableVersionAdheringToMinimumReleaseAge(
+    packageName: string,
+    minimumReleaseAgeMinutes: number,
+    now = new Date()
+  ): Promise<string | null> {
+    const result = await this.runInternalCommand(
+      'view',
+      ['--json', packageName, 'time'],
+      undefined,
+      'pipe'
+    );
+
+    const normalizedValue = typeof result.stdout === 'string' ? result.stdout.trim() : '';
+    if (!normalizedValue) {
+      return null;
+    }
+
+    const parsedValue = JSON.parse(normalizedValue);
+    if (!parsedValue || typeof parsedValue !== 'object' || Array.isArray(parsedValue)) {
+      return null;
+    }
+
+    const timeMap: Record<string, string> = {};
+    for (const [version, releaseTime] of Object.entries(parsedValue)) {
+      if (typeof releaseTime === 'string' && releaseTime.length > 0) {
+        timeMap[version] = releaseTime;
+      }
+    }
+    const cutoff = now.getTime() - minimumReleaseAgeMinutes * 60_000;
+
+    let latestStableVersion: string | null = null;
+
+    for (const [version, releaseTime] of Object.entries(timeMap)) {
+      if (!valid(version) || prerelease(version)) {
+        continue;
+      }
+
+      const publishedAt = new Date(releaseTime);
+      if (Number.isNaN(publishedAt.getTime()) || publishedAt.getTime() > cutoff) {
+        continue;
+      }
+
+      if (!latestStableVersion || gt(version, latestStableVersion)) {
+        latestStableVersion = version;
+      }
+    }
+
+    return latestStableVersion;
+  }
+
+  private createMinimumReleaseAgeMessage({
+    minimumReleaseAge,
+    currentVersion,
+    compatibleVersion,
+  }: {
+    minimumReleaseAge: number;
+    currentVersion: string;
+    compatibleVersion: string | null;
+  }): string {
+    const rerunCommand = compatibleVersion
+      ? `npx storybook@${compatibleVersion} init`
+      : 'npx storybook@<compatible-version> init';
+
+    return dedent`
+      pnpm minimumReleaseAge would block Storybook core package installation.
+
+      Your project is configured with minimumReleaseAge=${minimumReleaseAge} minutes, but Storybook ${currentVersion} is still within that protection window.
+
+      To fix this, choose one of these options:
+      1. Update pnpm to exclude Storybook core packages in this project by setting minimumReleaseAgeExclude to include: storybook, @storybook/*, eslint-plugin-storybook
+      2. Stop now and rerun init with the newest stable Storybook release old enough to satisfy the policy: ${rerunCommand}
+
+      Read more:
+      - https://pnpm.io/settings#minimumreleaseage
+      - https://pnpm.io/settings#minimumreleaseageexclude
+    `;
+  }
+
+  private async updateMinimumReleaseAgeExclude(): Promise<void> {
+    await prompt.executeTaskWithSpinner(
+      () =>
+        this.runInternalCommand(
+          'config',
+          [
+            'set',
+            '--location=project',
+            '--json',
+            'minimumReleaseAgeExclude',
+            JSON.stringify(['storybook', '@storybook/*', 'eslint-plugin-storybook']),
+          ],
+          undefined,
+          'pipe'
+        ),
+      {
+        id: 'update-pnpm-minimum-release-age-exclude',
+        intro: 'Updating pnpm minimumReleaseAgeExclude...',
+        error: 'Failed to update pnpm minimumReleaseAgeExclude.',
+        success: 'Updated pnpm minimumReleaseAgeExclude',
+      }
+    );
+  }
+
+  private getErrorLogs(error: unknown): string {
+    if (typeof error === 'string') {
+      return error;
+    }
+
+    if (error && typeof error === 'object') {
+      const structuredError = error as {
+        stderr?: string;
+        stdout?: string;
+        shortMessage?: string;
+        originalMessage?: string;
+        message?: string;
+      };
+
+      const structuredLogs = [
+        structuredError.shortMessage,
+        structuredError.originalMessage,
+        structuredError.stderr,
+        structuredError.stdout,
+        structuredError.message,
+      ].filter((value): value is string => typeof value === 'string' && value.length > 0);
+
+      if (structuredLogs.length > 0) {
+        return structuredLogs.join('\n');
+      }
+    }
+
+    return String(error);
   }
 }

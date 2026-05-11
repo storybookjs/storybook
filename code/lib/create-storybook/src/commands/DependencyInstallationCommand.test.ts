@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import type { JsPackageManager } from 'storybook/internal/common';
+import { HandledError, type JsPackageManager } from 'storybook/internal/common';
 import { Feature } from 'storybook/internal/types';
 
 import { DependencyCollector } from '../dependency-collector.ts';
@@ -19,6 +19,8 @@ describe('DependencyInstallationCommand', () => {
     command = new DependencyInstallationCommand(dependencyCollector, mockPackageManager);
 
     vi.clearAllMocks();
+    vi.mocked(mockPackageManager.addDependencies).mockResolvedValue(undefined);
+    vi.mocked(mockPackageManager.installDependencies).mockResolvedValue(undefined);
   });
 
   describe('execute', () => {
@@ -98,6 +100,20 @@ describe('DependencyInstallationCommand', () => {
 
       expect(mockPackageManager.addDependencies).not.toHaveBeenCalled();
       expect(mockPackageManager.installDependencies).not.toHaveBeenCalled();
+    });
+
+    it('should rethrow handled install errors', async () => {
+      dependencyCollector.addDevDependencies(['storybook@10.4.0-alpha.17']);
+      vi.mocked(mockPackageManager.installDependencies).mockRejectedValue(
+        new HandledError('pnpm blocked package installation')
+      );
+
+      await expect(
+        command.execute({
+          skipInstall: false,
+          selectedFeatures: new Set([Feature.DOCS]),
+        })
+      ).rejects.toThrow('pnpm blocked package installation');
     });
 
     it('should not collect test dependencies if test feature is not selected', async () => {

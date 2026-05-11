@@ -54,17 +54,24 @@ jobs:
         # persist-credentials: false. The manual clone never writes auth into
         # pr-head/.git, preserving the same security posture as
         # persist-credentials: false.
+        #
+        # Cloning into $RUNNER_TEMP (outside the base checkout tree) so that
+        # nx / yarn / jiti module resolution inside pr-head never walks up
+        # into the base checkout's node_modules — that escape was the round-3
+        # / round-4 failure mode (eslint-plugin prebuild resolved
+        # `storybook/csf` to the base copy, which has no `dist/csf` yet).
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
           REPO: ${{ github.repository }}
+          PR_HEAD_DIR: ${{ runner.temp }}/pr-head
         run: |
           set -euo pipefail
           git -c protocol.version=2 clone \
             --no-tags --no-checkout --filter=blob:none \
             "https://x-access-token:${GITHUB_TOKEN}@github.com/${REPO}.git" \
-            pr-head
-          cd pr-head
+            "$PR_HEAD_DIR"
+          cd "$PR_HEAD_DIR"
           git -c protocol.version=2 fetch --no-tags --depth=1 origin "$PR_HEAD_SHA"
           git checkout --force "$PR_HEAD_SHA"
           git remote set-url origin "https://github.com/${REPO}.git"
@@ -75,11 +82,11 @@ jobs:
         uses: ./.github/actions/verify-spec-precheck
         with:
           pr-number: ${{ github.event.pull_request.number }}
-          head-checkout-path: pr-head
+          head-checkout-path: ${{ runner.temp }}/pr-head
 
       - name: Verify PR
         if: steps.spec_precheck.outputs.spec-present == 'true'
-        working-directory: pr-head
+        working-directory: ${{ runner.temp }}/pr-head
         env:
           PR_NUMBER: ${{ github.event.pull_request.number }}
           # Force Nx to run locally — the fork harness firetest runs without
@@ -107,11 +114,13 @@ jobs:
       - name: Read verdict
         id: verdict
         if: always() && steps.spec_precheck.outputs.spec-present == 'true'
+        env:
+          PR_HEAD_DIR: ${{ runner.temp }}/pr-head
         run: |
           set -euo pipefail
           RESULT=""
-          if compgen -G "pr-head/.verify-output/*/verify-result.json" >/dev/null; then
-            RESULT=$(ls -t pr-head/.verify-output/*/verify-result.json | head -1)
+          if compgen -G "$PR_HEAD_DIR/.verify-output/*/verify-result.json" >/dev/null; then
+            RESULT=$(ls -t "$PR_HEAD_DIR"/.verify-output/*/verify-result.json | head -1)
           fi
           if [ -n "$RESULT" ]; then
             VERDICT=$(jq -r '.verdict' "$RESULT")
@@ -136,12 +145,14 @@ jobs:
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: verify-output-pr-${{ github.event.pull_request.number }}-${{ github.run_id }}
-          path: pr-head/.verify-output/
+          path: ${{ runner.temp }}/pr-head/.verify-output/
           if-no-files-found: warn
           include-hidden-files: true
           retention-days: 14
       - name: Post PR comment
         if: always()
+        env:
+          PR_HEAD_DIR: ${{ runner.temp }}/pr-head
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
         with:
           script: |
@@ -155,7 +166,7 @@ jobs:
                 await github.rest.issues.createComment({ issue_number: context.issue.number, owner: context.repo.owner, repo: context.repo.repo, body });
                 return;
               }
-              const root = 'pr-head/.verify-output';
+              const root = path.join(process.env.PR_HEAD_DIR || 'pr-head', '.verify-output');
               const dirs = fs.existsSync(root)
                 ? fs.readdirSync(root, { withFileTypes: true })
                     .filter((d) => d.isDirectory())

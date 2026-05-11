@@ -28,6 +28,8 @@ jobs:
         uses: ./.github/actions/setup-node-and-install
         with:
           install-code-deps: true
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
       - name: Fetch PR diff
         run: gh pr diff ${{ github.event.pull_request.number }} > /tmp/pr.diff
         env:

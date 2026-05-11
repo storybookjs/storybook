@@ -439,11 +439,14 @@ function removeDeadTopLevelDeclarations(
     }
 
     if (stmtPath.isVariableDeclaration()) {
-      // Only remove when every declarator in the statement is dead and uses a
-      // plain identifier (not a destructuring pattern that could have effects).
-      const allDead = stmtPath.node.declarations.every(
-        (decl) => t.isIdentifier(decl.id) && !referenced.has(decl.id.name)
-      );
+      // Only remove when every declarator is dead: plain identifier binding,
+      // unreferenced, and initializer absent or provably side-effect-free.
+      const allDead = stmtPath.get('declarations').every((declPath) => {
+        if (!t.isIdentifier(declPath.node.id)) return false;
+        if (referenced.has(declPath.node.id.name)) return false;
+        const initPath = declPath.get('init');
+        return !declPath.node.init || initPath.isPure();
+      });
       if (allDead) {
         stmtPath.remove();
         removed = true;
@@ -468,6 +471,12 @@ function removeDeadImportSpecifiers(
 
   programPath.traverse({
     ImportDeclaration(path) {
+      // Side-effect-only imports (`import './styles.css'`) have no specifiers
+      // and must never be removed by this pass.
+      if (path.node.specifiers.length === 0) {
+        return;
+      }
+
       const specifiers = path.node.specifiers.filter((spec) => referenced.has(spec.local.name));
 
       if (specifiers.length === 0) {

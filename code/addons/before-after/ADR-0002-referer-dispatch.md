@@ -1,9 +1,15 @@
 # ADR-0002 — Referer-based dispatch for the before-iframe environment
 
-**Status:** Accepted
+**Status:** **Superseded by ADR-0003** (single-environment marker-based content routing)
 **Date:** 2026-04-27
-**Supersedes:** none (ADR-0001 was deleted with the subprocess approach)
-**Related:** future ADR-0003 (builder-vite hook fallback if Referer becomes unreliable)
+**Superseded:** 2026-05-11
+
+> **Historical only.** The mechanism described in this ADR — a separate
+> `storybookBefore` Vite environment, dispatch middleware, response
+> interception, Referer fallback, AsyncLocalStorage propagation — has
+> been removed in favour of a single-environment model. See
+> [ADR-0003](./ADR-0003-single-env-marker-routing.md) for the current
+> design and the failure modes that triggered the redesign.
 
 ## Decision
 

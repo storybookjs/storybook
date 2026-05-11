@@ -1,7 +1,7 @@
 /// <reference types="node" />
 
 import { AsyncLocalStorage } from 'node:async_hooks';
-import { existsSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdtempSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
@@ -10,64 +10,53 @@ import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import type { Plugin, ViteDevServer } from 'vite';
 import { createServer } from 'vite';
 
-import {
-  BEFORE_ENV_NAME,
-  ENV_MARKER,
-  beforeEnvironmentPlugin,
-} from '../before-environment-plugin.ts';
+import { ENV_MARKER, beforeEnvironmentPlugin } from '../before-environment-plugin.ts';
 
-// ── crash-containment probe (K5) ─────────────────────────────────────────────
+// ── crash-containment ────────────────────────────────────────────────────────
 //
-// Asserts:
-//   (i)  An exception inside the before env's load pipeline does not crash the
-//        Vite dev server — subsequent unrelated requests still succeed.
-//   (ii) A structured `{ type: 'before-error', source: 'transform' | 'load',
-//        message, stack }` channel event is emitted.
-//   (iii) The global `unhandledRejection` swallow ONLY triggers inside the
-//        addon's ALS scope. Out-of-scope rejections propagate.
+// The single-env model exercises the marker via `?env=before` on the id.
+// `load`-time failures inside the marker'd code path must not bring the
+// dev server down, and the addon's structured-error channel must surface
+// the failure.
 
-describe('crash containment — load() rejection inside before env', () => {
+describe('crash containment — load() rejection for marker-bearing ids', () => {
   let tmpRoot: string;
   let server: ViteDevServer;
   const channelEmit = vi.fn();
   const channel = { emit: channelEmit } as { emit: (event: string, payload: unknown) => void };
 
-  // Plugin that always throws inside `load` for the before env.
+  // Plugin that throws inside `load` for marker-bearing ids that point at
+  // `boom.ts`. Fires regardless of environment (single-env model).
   const explodingLoader: Plugin = {
     name: 'exploding-loader',
     enforce: 'pre',
-    load: {
-      handler(id: string) {
-        const env = (this as unknown as { environment?: { name: string } }).environment;
-        if (env?.name !== BEFORE_ENV_NAME) return null;
-        if (id.includes('boom.ts')) throw new Error('boom');
-        return null;
-      },
+    load(id: string) {
+      if (!id.includes(ENV_MARKER)) return null;
+      if (id.includes('boom.ts')) throw new Error('boom');
+      return null;
     },
   };
 
-  // Fixture loader for non-exploding files (so the test fixture can resolve).
+  // Fixture loader: serve a stable string for `ok.ts?env=before` so the
+  // second request in the test does not regress to the working-tree read
+  // path (the tmpdir is not a git repo).
   const fixtureLoader: Plugin = {
     name: 'fixture-loader',
     enforce: 'pre',
-    load: {
-      async handler(id: string) {
-        const env = (this as unknown as { environment?: { name: string } }).environment;
-        if (env?.name !== BEFORE_ENV_NAME) return null;
-        const cleanPath = id.split('?')[0];
-        if (cleanPath.includes('boom.ts')) return null;
-        const { readFile } = await import('node:fs/promises');
-        try {
-          return await readFile(cleanPath, 'utf-8');
-        } catch {
-          return null;
-        }
-      },
+    load(id: string) {
+      if (!id.includes(ENV_MARKER)) return null;
+      const cleanPath = id.split('?')[0];
+      if (cleanPath.endsWith('/ok.ts')) return `export const v = 1;\n`;
+      return null;
     },
   };
 
   beforeAll(async () => {
-    tmpRoot = mkdtempSync(join(tmpdir(), 'before-after-crash-'));
+    // `realpathSync` because macOS `mkdtempSync` returns a `/var/folders/...`
+    // path but Vite resolves files to their realpath under `/private/var/...`.
+    // Without this the marker'd resolved id falls outside `repoRoot` and the
+    // discriminator drops the marker, causing the load hook to skip the file.
+    tmpRoot = realpathSync(mkdtempSync(join(tmpdir(), 'before-after-crash-')));
     writeFileSync(join(tmpRoot, 'ok.ts'), `export const v = 1;\n`);
     writeFileSync(join(tmpRoot, 'boom.ts'), `export const v = 2;\n`);
 
@@ -77,7 +66,11 @@ describe('crash containment — load() rejection inside before env', () => {
       logLevel: 'silent',
       appType: 'custom',
       server: { middlewareMode: true, hmr: false },
-      plugins: [beforeEnvironmentPlugin({ channel }), explodingLoader, fixtureLoader],
+      plugins: [
+        beforeEnvironmentPlugin({ channel, repoRoot: tmpRoot }),
+        explodingLoader,
+        fixtureLoader,
+      ],
     });
   }, 30_000);
 
@@ -86,17 +79,19 @@ describe('crash containment — load() rejection inside before env', () => {
     if (tmpRoot && existsSync(tmpRoot)) rmSync(tmpRoot, { recursive: true, force: true });
   });
 
-  it('(i) the dev server stays alive after a load() throw', async () => {
-    const beforeEnv = server.environments[BEFORE_ENV_NAME]!;
-    await expect(beforeEnv.transformRequest(`/boom.ts?${ENV_MARKER}`)).rejects.toThrow(/boom/);
+  it('(i) the dev server stays alive after a load() throw on a marked id', async () => {
+    await expect(
+      server.environments.client.transformRequest(`/boom.ts?${ENV_MARKER}`)
+    ).rejects.toThrow(/boom/);
     // Subsequent unrelated request succeeds — server is not poisoned.
-    const ok = await beforeEnv.transformRequest(`/ok.ts?${ENV_MARKER}`);
+    const ok = await server.environments.client.transformRequest(`/ok.ts?${ENV_MARKER}`);
     expect(ok).not.toBeNull();
   });
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
-// (iii) ALS scoping for unhandledRejection
+// AsyncLocalStorage scoping for unhandled rejections — independent of the
+// dev-server model, purely a unit test of the scoping mechanism.
 // ─────────────────────────────────────────────────────────────────────────────
 
 describe('AsyncLocalStorage scoping for unhandled rejections', () => {
@@ -115,28 +110,21 @@ describe('AsyncLocalStorage scoping for unhandled rejections', () => {
     };
     process.on('unhandledRejection', handler);
 
-    // In-scope rejection: triggered inside `als.run`. The store is set when the
-    // listener fires, so the handler routes it as `inScopeReasons`.
     await als.run({ scope: 'before-after' }, async () => {
       Promise.reject(new Error('addon-owned')).catch(() => {
-        // swallow at promise level — but we want the *unhandledRejection*
-        // event to also fire. Re-emit via setImmediate inside the same
-        // ALS context to simulate a truly-unhandled rejection.
+        // swallow at promise level
       });
       await new Promise<void>((resolve) => {
-        // Schedule an actually-unhandled rejection.
         Promise.reject(new Error('addon-unhandled')).then(undefined, undefined);
         setTimeout(resolve, 100);
       });
     });
 
-    // Out-of-scope rejection: created OUTSIDE the ALS run.
     Promise.reject(new Error('not-addon-owned')).then(undefined, undefined);
     await new Promise((resolve) => setTimeout(resolve, 100));
 
     process.off('unhandledRejection', handler);
 
-    // The handler distinguished the two by ALS store presence.
     const inScopeMessages = inScopeReasons
       .map((r) => (r instanceof Error ? r.message : String(r)))
       .join(',');

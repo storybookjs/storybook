@@ -52,10 +52,16 @@ export const viteFinal = async (config: InlineConfig, options: Options) => {
   const channel = getChannel(options);
   const repoRoot = await discoverRepoRoot();
 
+  // Prepend (not append) so `beforeEnvironmentPlugin.resolveId` runs BEFORE
+  // builder-vite's `code-generator-plugin` and `storybook-project-annotations-plugin`.
+  // The hook delegates via `this.resolve({ skipSelf: true })` and then attaches
+  // the `?env=before` marker to the resolved id — this only works if our hook
+  // sees the spec FIRST (otherwise a `pre`-enforce plugin earlier in the array
+  // resolves it and our post-processing never fires).
   config.plugins = [
-    ...(config.plugins ?? []),
-    beforeEnvironmentPlugin({ channel }),
+    beforeEnvironmentPlugin({ channel, repoRoot: repoRoot ?? undefined }),
     ...(repoRoot ? [beforeContentPlugin({ repoRoot })] : []),
+    ...(config.plugins ?? []),
   ];
 
   return config;
@@ -167,9 +173,11 @@ export const experimental_devServer = async (_app: Record<string, unknown>, opti
 };
 
 /**
- * Discover changed story files via git diff and eagerly trigger compilation in
- * the `storybookBefore` environment so the before iframe is ready when the
- * user clicks Changes.
+ * Discover changed story files via git diff and eagerly trigger compilation
+ * with the `?env=before` marker so the before iframe is ready when the user
+ * clicks Changes. Pre-warming runs against the client environment (the only
+ * environment in the new single-env model); the marker on the URL routes
+ * `beforeContentPlugin.load` to serve HEAD content for these requests.
  */
 async function prewarmChangedStories(server: ViteDevServer, repoRoot: string): Promise<void> {
   try {
@@ -189,12 +197,10 @@ async function prewarmChangedStories(server: ViteDevServer, repoRoot: string): P
     const storyFiles = allChanged.filter((f) => f.includes('.stories.') || f.includes('.story.'));
     if (storyFiles.length === 0) return;
 
-    const env = server.environments.storybookBefore;
+    const env = server.environments.client;
     if (!env) return;
-    const absolutePaths = storyFiles.map((f) => `/@fs/${join(repoRoot, f)}`);
-    logger.info(
-      `[before-after] Pre-warming ${storyFiles.length} changed story files (storybookBefore env)`
-    );
+    const absolutePaths = storyFiles.map((f) => `/@fs/${join(repoRoot, f)}?env=before`);
+    logger.info(`[before-after] Pre-warming ${storyFiles.length} changed story files`);
     await Promise.allSettled(absolutePaths.map((p) => env.warmupRequest(p)));
     logger.info('[before-after] Pre-warming complete');
   } catch (e) {

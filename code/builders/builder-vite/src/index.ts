@@ -26,7 +26,17 @@ function iframeHandler(options: Options, server: ViteDevServer): Middleware {
         encoding: 'utf8',
       }
     );
-    const transformed = await server.transformIndexHtml('/iframe.html', indexHtml);
+    // Pass the original request URL (including query string) via Vite's
+    // `originalUrl` parameter so plugins' `transformIndexHtml` hooks can
+    // detect routing markers like `?env=before` used by the before-after
+    // addon. The first argument stays as the canonical `/iframe.html`
+    // path because Vite's internal devHtmlHook uses it for `virtual:` /
+    // bare-spec module resolution and bails on paths with query strings.
+    const originalUrl =
+      (req as { originalUrl?: string; url?: string }).originalUrl ??
+      (req as { url?: string }).url ??
+      '/iframe.html';
+    const transformed = await server.transformIndexHtml('/iframe.html', indexHtml, originalUrl);
     res.setHeader('Content-Type', 'text/html');
     res.statusCode = 200;
     res.write(transformed);

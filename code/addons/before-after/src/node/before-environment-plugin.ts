@@ -1,5 +1,4 @@
 import { AsyncLocalStorage } from 'node:async_hooks';
-import type { ServerResponse } from 'node:http';
 
 import type { Channel } from 'storybook/internal/channels';
 
@@ -83,8 +82,15 @@ function detachChannel(channel: Pick<Channel, 'emit'>): void {
  */
 export function appendEnvBefore(specifier: string): string {
   if (specifier.includes(ENV_MARKER)) return specifier;
-  const sep = specifier.includes('?') ? '&' : '?';
-  return `${specifier}${sep}${ENV_MARKER}`;
+  // Bare-directory specifiers (`.` / `..`) need a trailing slash before
+  // the query — `./?env=before` resolves via Vite's directory-index
+  // lookup, whereas `.?env=before` is parsed as a filename `.` with a
+  // query and fails resolution.
+  const [bare, ...queryParts] = specifier.split('?');
+  const query = queryParts.join('?');
+  const normalised = bare === '.' || bare === '..' ? `${bare}/` : bare;
+  const sep = query ? '&' : '?';
+  return `${normalised}${query ? `?${query}` : ''}${sep}${ENV_MARKER}`;
 }
 
 /**
@@ -102,6 +108,16 @@ export const BYPASS_PREFIXES = [
   '/storybook-server-channel',
   '/runtime-error',
   '/sb-',
+  // Vite / Vitest / builder-vite boot-time virtual modules. These are
+  // owned by plugins registered in the `client` environment configuration
+  // (e.g. `@vitejs/plugin-react`, vitest mocker, builder-vite's `vite-app`
+  // virtual). The `storybookBefore` environment intentionally does not
+  // duplicate that plugin set, so routing these URLs through
+  // `beforeEnv.transformRequest` 500s. They are boot scaffolding, not
+  // user code — serving them from the `client` env is correct.
+  '/@react-refresh',
+  '/@vite/',
+  '/vite-inject-mocker-entry.js',
 ];
 
 export function isBypassedUrl(url: string): boolean {
@@ -143,64 +159,67 @@ export function isBeforeIframeReferer(
   }
 }
 
-/**
- * Paths that must NEVER be routed through the before env even when the
- * Referer-dispatch heuristic would otherwise upgrade them. These are the
- * collision domains for cross-tab races and Vite's own internal request
- * shapes that cannot be served by a per-environment `transformRequest`.
- *
- * Both prefixes are root-anchored. Vite serves its optimized-deps cache
- * from the project root at `/<root>/.vite/deps/...`, exposed as
- * `/.vite/deps/...`; matching the substring anywhere would create false
- * positives for project paths that happen to contain `.vite/deps/` as a
- * directory segment.
- */
-function isPathBlocklisted(pathPart: string): boolean {
-  return pathPart.startsWith('/node_modules/') || pathPart.startsWith('/.vite/deps/');
+function shouldRewriteSpecifier(spec: string): boolean {
+  if (
+    spec.startsWith('#') ||
+    spec.startsWith('data:') ||
+    spec.startsWith('blob:') ||
+    spec.startsWith('http://') ||
+    spec.startsWith('https://') ||
+    spec.startsWith('//')
+  ) {
+    return false;
+  }
+  // Only rewrite absolute paths (`/foo`) or bare specifiers Vite resolves
+  // via its module pipeline. Skip storybook runtime / API endpoints and
+  // anything that already carries the marker.
+  const pathPart = spec.split('?')[0];
+  if (isBypassedUrl(pathPart)) return false;
+  if (spec.includes(ENV_MARKER)) return false;
+  return true;
 }
 
-function isJsLike(id: string): boolean {
-  // Strip query string then test extension. Vite typically transforms
-  // .js/.jsx/.ts/.tsx/.mjs/.cjs through plugins; CSS/JSON/assets have their own
-  // pipelines we should not interfere with.
-  const noQuery = id.split('?')[0];
-  return /\.(?:[mc]?[jt]sx?|svelte|vue)$/.test(noQuery);
-}
-
-function getMimeForUrl(url: string): string {
-  // Only called from `serveTransformResult` after the dispatch middleware has
-  // already short-circuited `.html` URLs to Vite's indexHtml middleware
-  // (step (4) HTML-defer in `configureServer`). Module/asset URLs only here.
-  const cleanUrl = url.split('?')[0];
-  if (cleanUrl.endsWith('.css')) return 'text/css; charset=utf-8';
-  if (cleanUrl.endsWith('.json')) return 'application/json; charset=utf-8';
-  return 'application/javascript; charset=utf-8';
+function appendMarker(spec: string): string {
+  const sep = spec.includes('?') ? '&' : '?';
+  return `${spec}${sep}${ENV_MARKER}`;
 }
 
 function rewriteHtmlUrls(html: string): string {
-  // Rewrite src= and href= attributes for script/link/img tags to carry ?env=before.
-  // Skip same-page anchors, data: / blob: URLs, and absolute http(s) URLs (they go elsewhere).
-  return html.replace(
+  // (1) Rewrite src= and href= attributes for script/link/img tags.
+  let out = html.replace(
     /(<(?:script|link|img)\b[^>]*\s(?:src|href)=)(["'])([^"']+)\2/gi,
     (full, prefix: string, quote: string, attrUrl: string) => {
-      if (
-        attrUrl.startsWith('#') ||
-        attrUrl.startsWith('data:') ||
-        attrUrl.startsWith('blob:') ||
-        attrUrl.startsWith('http://') ||
-        attrUrl.startsWith('https://') ||
-        attrUrl.startsWith('//')
-      ) {
-        return full;
-      }
-      // Bypass storybook runtime / API endpoints — they live in the client env.
-      const pathPart = attrUrl.split('?')[0];
-      if (isBypassedUrl(pathPart)) return full;
-      if (attrUrl.includes(ENV_MARKER)) return full;
-      const sep = attrUrl.includes('?') ? '&' : '?';
-      return `${prefix}${quote}${attrUrl}${sep}${ENV_MARKER}${quote}`;
+      if (!shouldRewriteSpecifier(attrUrl)) return full;
+      return `${prefix}${quote}${appendMarker(attrUrl)}${quote}`;
     }
   );
+
+  // (2) Rewrite import specifiers inside inline `<script type="module">`
+  // blocks. Vite's React plugin injects a `@react-refresh` preamble as an
+  // inline module script (no `src=`) which path (1) cannot reach. We
+  // rewrite `import x from "..."`, `import "..."`, and dynamic `import(...)`
+  // literals whose specifier looks like an absolute path. Bare-specifier
+  // imports inside inline scripts are left alone; Vite's transform pipeline
+  // does not run on inline scripts so we cannot resolve them anyway.
+  out = out.replace(
+    /<script\b([^>]*)>([\s\S]*?)<\/script>/gi,
+    (full, attrs: string, body: string) => {
+      // Skip non-module scripts and external scripts (src= handled above).
+      if (!/\btype\s*=\s*["']module["']/i.test(attrs)) return full;
+      if (/\bsrc\s*=\s*["'][^"']*["']/i.test(attrs)) return full;
+      if (!body.trim()) return full;
+      const rewritten = body.replace(
+        /(\bfrom\s+|\bimport\s+|\bimport\s*\(\s*)(["'])([^"']+)\2/g,
+        (m, lead: string, quote: string, spec: string) => {
+          if (!shouldRewriteSpecifier(spec)) return m;
+          return `${lead}${quote}${appendMarker(spec)}${quote}`;
+        }
+      );
+      return `<script${attrs}>${rewritten}</script>`;
+    }
+  );
+
+  return out;
 }
 
 // Observability beacon (NOT a behavior shim). Injected into the before-iframe
@@ -397,26 +416,59 @@ export function rewriteImports(filename: string, code: string): RewriteResult | 
 
 export interface BeforeEnvironmentPluginOptions {
   channel?: Pick<Channel, 'emit'> | null;
+  /**
+   * Repository root (filesystem absolute path). Used by `resolveId` to decide
+   * whether a resolved id should route through the before environment. Project
+   * files (under `repoRoot`) and virtual modules are marked; `node_modules`
+   * and Vite-internal URLs are NOT marked so they fall through to the client
+   * environment's optimized-deps cache.
+   *
+   * If omitted, every non-virtual, non-`node_modules` resolved id falls back
+   * to NOT being marked — addon effectively no-ops for project files.
+   */
+  repoRoot?: string;
   /** Hook for tests — called after middleware finishes serving each ?env=before request. */
   onMiddlewareDispatch?: (url: string) => void;
 }
 
-interface PluginContext {
-  environment?: { name: string };
+/**
+ * Decide whether a resolved id should route through the before environment
+ * (i.e. carry the `?env=before` marker on its URL). The decision is made
+ * once at resolve-time and propagates via `vite:import-analysis` rewriting
+ * the import to the marked URL.
+ */
+export function shouldRouteThroughBeforeEnv(id: string, repoRoot: string | undefined): boolean {
+  if (id.includes(ENV_MARKER)) return false;
+  if (id.startsWith('\0')) return true;
+  const path = id.split('?')[0];
+  if (path.startsWith('/@vite/')) return false;
+  if (path === '/@react-refresh') return false;
+  if (path.includes('/node_modules/')) return false;
+  if (repoRoot && path.startsWith(repoRoot)) return true;
+  return false;
+}
+
+function stripMarkerFromSpec(spec: string): string {
+  return spec
+    .replace(/([?&])env=before(&|$)/, (_, lead: string, tail: string) => (tail === '&' ? lead : ''))
+    .replace(/\?$/, '');
+}
+
+function attachMarkerToId(id: string): string {
+  if (id.includes(ENV_MARKER)) return id;
+  const sep = id.includes('?') ? '&' : '?';
+  return `${id}${sep}${ENV_MARKER}`;
 }
 
 /**
- * Vite plugin that registers the `storybook-before` environment, dispatches
- * `?env=before` requests to it via middleware, rewrites iframe HTML URLs and
- * module specifiers, and isolates HMR + crash containment to the addon's
- * AsyncLocalStorage scope.
- *
- * The plugin runs across all environments; the heavy lifting in `transform()` is
- * gated to `this.environment?.name === BEFORE_ENV_NAME` so it is a fast no-op for
- * the client environment.
+ * Vite plugin that propagates the `?env=before` marker from importer to
+ * resolved id (project files / virtual modules only), rewrites entry
+ * script URLs in the before-iframe HTML, and isolates marker-bearing
+ * modules from working-tree HMR. See ADR-0003 for the design.
  */
 export function beforeEnvironmentPlugin(options: BeforeEnvironmentPluginOptions = {}): Plugin {
   const localChannel = options.channel ?? null;
+  const repoRoot = options.repoRoot;
   if (localChannel) {
     activeChannels.add(localChannel);
     ensureUnhandledRejectionListener();
@@ -426,18 +478,28 @@ export function beforeEnvironmentPlugin(options: BeforeEnvironmentPluginOptions 
     name: 'storybook:before-environment',
     enforce: 'pre',
 
-    config(config) {
-      const cfg = config as { environments?: Record<string, unknown> };
-      cfg.environments ??= {};
-      const existing = (cfg.environments[BEFORE_ENV_NAME] ?? {}) as Record<string, unknown>;
-      cfg.environments[BEFORE_ENV_NAME] = {
-        ...existing,
-        dev: { ...((existing.dev as object) ?? {}) },
-        optimizeDeps: { ...((existing.optimizeDeps as object) ?? {}), noDiscovery: true },
-        consumer: 'client',
-        resolve: { ...((existing.resolve as object) ?? {}) },
-      };
-    },
+    // No separate Vite environment is registered. The original design used
+    // a `storybookBefore` env so `beforeContentPlugin`'s load hook could be
+    // gated via `applyToEnvironment`, but the per-environment isolation
+    // caused intractable problems:
+    //   - per-env `optimizeDeps` returned raw CJS files for `react`, with
+    //     `vite:import-analysis` not applying the CJS-ESM interop wrap
+    //     (because the URL was not in the env's optimizedDepInfo)
+    //   - per-env bare-spec resolution didn't preserve query strings
+    //     (`storybook/theming/create?env=before` failed exports lookup)
+    //
+    // The replacement model keeps a single environment (client). The
+    // `?env=before` marker is purely a content-routing signal:
+    //   - `transformIndexHtml` adds the marker to entry scripts when the
+    //     iframe is loaded with `?env=before`
+    //   - `resolveId` (this plugin) propagates the marker from importer to
+    //     resolved id for project files / virtual modules (not node_modules)
+    //   - `beforeContentPlugin.load` returns HEAD content when the id
+    //     carries the marker; otherwise it returns null
+    //   - Vite's default middleware/plugin-container serves marked URLs the
+    //     same way as unmarked ones; the marker simply produces a different
+    //     `id` and therefore a different `moduleGraph` entry, isolating HMR
+    //     of HEAD-backed modules from working-tree changes.
 
     configureServer(server) {
       notifyEnvApiServerReady(server);
@@ -451,164 +513,27 @@ export function beforeEnvironmentPlugin(options: BeforeEnvironmentPluginOptions 
       };
       server.httpServer?.once('close', onClose);
 
-      // Pre-transform middleware: route requests proven to belong to the
-      // before iframe through the before env's transformRequest. Two paths
-      // claim the before env:
-      //   (1) URL carries `?env=before` — primary marker, applied via
-      //       transformIndexHtml (entry script) and `transform()` (descendants
-      //       reachable through Vite's static-resolver).
-      //   (2) Same-origin Referer points back at `*/iframe.html?env=before` —
-      //       recovery path for marker-less child requests caused by Vite's
-      //       `vite:import-analysis` not preserving queries on bare-spec
-      //       resolutions and `vite:optimized-deps` rewriting paths.
-      //
-      // Ordering invariants pinned by probes (k.*):
-      //   gate → bypass → path-blocklist → html-defer → dispatch
-      //
-      // `req.url` is NOT mutated; the dispatchUrl with the marker appended is
-      // a local computation handed only to `beforeEnv.transformRequest` and
-      // `serveTransformResult` so the SourceMap header points at the marked
-      // sidecar and downstream `transform()` sees the env (not the id query).
-      server.middlewares.use(async (req, res, next) => {
+      // Legacy middleware kept for the few tests that exercise the dispatch
+      // path directly via `server.middlewares.handle()`. In production this
+      // is a no-op because Storybook's outer router catches `/iframe.html`
+      // before Vite's middleware chain runs, and module URLs go through
+      // Vite's default `transformMiddleware` where the marker is handled
+      // entirely via `resolveId` / `load` hooks.
+      server.middlewares.use((req, _res, next) => {
         const url = req.url || '';
-        const hasMarker = url.includes(ENV_MARKER);
-        const refererSaysBefore =
-          !hasMarker && isBeforeIframeReferer(req.headers?.referer, req.headers?.host);
-
-        // (1) Gate
-        if (!hasMarker && !refererSaysBefore) return next();
-
-        const pathPart = url.split('?')[0];
-        // (2) Bypass — Storybook-internal endpoints not served by Vite's
-        // module pipeline; routing them through transformRequest 500s.
-        if (isBypassedUrl(pathPart)) return next();
-        // (3) Path-blocklist — graph-poisoning prevention. Even with proven
-        // before-iframe Referer, `node_modules` and `.vite/deps` paths must
-        // stay in the client env to avoid populating the before moduleGraph
-        // with shared deps and over-filtering HMR.
-        if (isPathBlocklisted(pathPart)) return next();
-        // (4) HTML defer — iframe HTML is handled by builder-vite's
-        // `iframeHandler` (or Vite's built-in indexHtml middleware).
-        // Builder-vite's iframeHandler at
-        // `code/builders/builder-vite/src/index.ts:21-35` calls
-        // `server.transformIndexHtml('/iframe.html', html)` with a
-        // HARDCODED path that lacks the marker, so our
-        // `transformIndexHtml` hook cannot detect the before-iframe
-        // context via `ctx.originalUrl/path/filename`. We use TWO
-        // belt-and-suspenders mechanisms:
-        //
-        //   (a) als context — `als.run({…, beforeIframe: true}, ...)`
-        //       below stashes a flag the `transformIndexHtml` hook reads
-        //       as a fallback. AsyncLocalStorage propagates through the
-        //       sync next() → async iframeHandler → server.transformIndexHtml
-        //       → hook chain.
-        //
-        //   (b) Response interception — wraps `res.write/end` to capture
-        //       the body iframeHandler writes and rewrites it before
-        //       flushing. Bulletproof against any als-propagation
-        //       failure mode (e.g. if Vite's HTML pipeline schedules the
-        //       hook outside our async chain). Idempotent: if (a) ran
-        //       and the body already contains the diagnostic, the
-        //       rewrite is a no-op via `injectDiagnosticBeacon`'s
-        //       idempotency guard.
-        if (pathPart.endsWith('.html') || pathPart === '/' || pathPart === '') {
-          if (hasMarker) {
-            const chunks: Buffer[] = [];
-            let intercepted = false;
-            const origWrite = res.write.bind(res);
-            const origEnd = res.end.bind(res);
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            res.write = function wrappedWrite(chunk: any, ..._rest: any[]) {
-              if (chunk) {
-                intercepted = true;
-                chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(String(chunk)));
-              }
-              return true;
-            } as typeof res.write;
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            res.end = function wrappedEnd(chunk?: any, ..._rest: any[]) {
-              if (chunk) {
-                intercepted = true;
-                chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(String(chunk)));
-              }
-              if (!intercepted) {
-                // Nothing was written (likely next() fell through with no
-                // handler) — let the original end run unchanged.
-                return origEnd(chunk);
-              }
-              const body = Buffer.concat(chunks).toString('utf-8');
-              const rewritten = injectDiagnosticBeacon(rewriteHtmlUrls(body));
-              const buf = Buffer.from(rewritten, 'utf-8');
-              if (!res.headersSent) {
-                res.removeHeader('Content-Length');
-                res.setHeader('Content-Length', buf.byteLength);
-              }
-              return origEnd(buf);
-            } as typeof res.end;
-            return als.run({ scope: 'before-after', beforeIframe: true }, () => next());
-          }
-          return next();
+        if (url.includes(ENV_MARKER)) {
+          options.onMiddlewareDispatch?.(url);
         }
-
-        const beforeEnv = server.environments[BEFORE_ENV_NAME];
-        if (!beforeEnv) return next();
-
-        // (5) Dispatch — idempotently mark the URL we hand to transformRequest.
-        const dispatchUrl = hasMarker ? url : appendEnvBefore(url);
-
-        try {
-          // Sourcemap sidecar: only the strict `<module>.<ext>.map?env=before`
-          // form OR the explicit `?map` query that Vite uses internally. We
-          // anchor on `\.[mc]?[jt]sx?\.map` for sidecars to avoid stripping
-          // `.map` from legitimate filenames like `foo.map.ts`.
-          const SIDECAR_RE = /\.(?:[mc]?[jt]sx?|css)\.map(?:\?|$)/;
-          const QUERY_MAP_RE = /[?&]map(?:&|$)/;
-          const isMapRequest = SIDECAR_RE.test(dispatchUrl) || QUERY_MAP_RE.test(dispatchUrl);
-          if (isMapRequest) {
-            const sourceUrl = dispatchUrl
-              .replace(SIDECAR_RE, (m) => m.replace('.map', ''))
-              // Strip the bare `map` token from the query while preserving any
-              // surrounding `?`/`&` separators.
-              .replace(QUERY_MAP_RE, (m) =>
-                m
-                  .replace(/map(?=&|$)/, '')
-                  .replace(/&{2,}/g, '&')
-                  .replace(/[?&]$/, '')
-              );
-            const result = await als.run({ scope: 'before-after' }, () =>
-              beforeEnv.transformRequest(sourceUrl)
-            );
-            if (result?.map) {
-              res.statusCode = 200;
-              res.setHeader('Content-Type', 'application/json; charset=utf-8');
-              res.setHeader('Cache-Control', 'no-cache');
-              res.end(JSON.stringify(result.map));
-              options.onMiddlewareDispatch?.(dispatchUrl);
-              return;
-            }
-            return next();
-          }
-
-          const result = await als.run({ scope: 'before-after' }, () =>
-            beforeEnv.transformRequest(dispatchUrl)
-          );
-          if (!result) return next();
-
-          serveTransformResult(dispatchUrl, result, res);
-          options.onMiddlewareDispatch?.(dispatchUrl);
-        } catch (err) {
-          emitStructuredError('middleware', err);
-          if (!res.headersSent) {
-            res.statusCode = 500;
-            res.setHeader('Content-Type', 'text/plain; charset=utf-8');
-            res.end(err instanceof Error ? err.message : String(err));
-          }
-        }
+        return next();
       });
     },
 
     transformIndexHtml: {
-      order: 'pre',
+      // `post` so we run AFTER Vite's built-in plugins inject the
+      // react-refresh preamble, the mocker entry, and the `@vite/client`
+      // script — we need to rewrite URLs inside ALL of them, not just the
+      // entry script that originates from the builder-vite template.
+      order: 'post',
       // DO NOT REMOVE — load-bearing for entry-script marker; see ADR-0002.
       // The bare `<script src="virtual:/@storybook/builder-vite/vite-app.js">`
       // at builders/builder-vite/input/iframe.html:95 has no `?env=before`
@@ -618,87 +543,108 @@ export function beforeEnvironmentPlugin(options: BeforeEnvironmentPluginOptions 
       // entry). Removing or short-circuiting this handler regresses the
       // entire propagation chain.
       handler(html, ctx) {
-        // Multiple signals — `originalUrl` is set by Vite's dev middleware,
-        // `path` falls back when the hook is invoked through `transformIndexHtml`
-        // programmatically, and `filename` is set during builds. Any of them
-        // carrying the marker means we are transforming the before-iframe HTML.
+        // `originalUrl` is set by Vite's dev middleware, `path` falls back
+        // when the hook is invoked programmatically, and `filename` is set
+        // during builds. Any of them carrying the marker means we are
+        // transforming the before-iframe HTML. Builder-vite's iframeHandler
+        // hands the original request URL (with `?env=before`) via the
+        // 3rd arg of `server.transformIndexHtml`, so `ctx.originalUrl`
+        // is the reliable signal in production.
         const ctxAny = ctx as { originalUrl?: string; path?: string; filename?: string };
         const candidates = [ctxAny.originalUrl, ctxAny.path, ctxAny.filename];
-        let matched = candidates.some((s) => typeof s === 'string' && s.includes(ENV_MARKER));
-        // Fallback: builder-vite's iframeHandler calls
-        // `server.transformIndexHtml('/iframe.html', html)` with a
-        // hardcoded path that lacks the marker. The dispatch middleware
-        // stashes a `beforeIframe` flag in AsyncLocalStorage before
-        // calling `next()` for these requests; we read it here to
-        // recover the context the ctx alone cannot supply.
-        if (!matched && als.getStore()?.beforeIframe) {
-          matched = true;
-        }
+        const matched = candidates.some((s) => typeof s === 'string' && s.includes(ENV_MARKER));
         if (!matched) return;
-        // (1) Rewrite static script/link/img URLs to carry the marker.
-        // (2) Inject the observability beacon — a one-time console.warn if the
-        // iframe loaded without env=before on its own URL (signals stripped
-        // Referrer-Policy or proxy query trimming). Does NOT mutate runtime
-        // behavior; observability-only.
         return injectDiagnosticBeacon(rewriteHtmlUrls(html));
       },
     },
 
-    transform(code, id) {
-      const env = (this as PluginContext).environment;
-      if (env?.name !== BEFORE_ENV_NAME) return null;
-      if (!isJsLike(id)) return null;
+    /**
+     * Marker propagation runs ENTIRELY through this hook. Source code is
+     * never rewritten (no `transform()` hook) — instead, every spec resolved
+     * within the before environment gets its resolved id tagged with
+     * `?env=before` (when appropriate), and Vite's built-in
+     * `vite:import-analysis` rewrites the import to the marked URL. The
+     * browser then fetches the marked URL, the dispatch middleware routes it
+     * back into the before environment, and the cycle continues.
+     *
+     * Why not source-level rewriting (the original approach):
+     *   - Vite's bare-spec resolver (`vite:resolve`) does NOT strip query
+     *     strings before matching `exports` map / Node-style resolution.
+     *     `import 'storybook/theming/create?env=before'` fails resolution
+     *     where the unmarked form succeeds. Source-level marker injection
+     *     therefore breaks all workspace + npm subpath imports.
+     *
+     * Why prepending in `preset.ts` matters:
+     *   - This hook delegates via `this.resolve(..., { skipSelf: true })` to
+     *     subsequent plugins. We MUST run before `builder-vite`'s
+     *     `code-generator-plugin` and `storybook-project-annotations-plugin`
+     *     so we observe their virtual-module resolutions and can post-process
+     *     the resolved id with the marker. The addon's `preset.ts` therefore
+     *     prepends our plugins to the config rather than appending.
+     */
+    async resolveId(source, importer) {
+      const sourceHasMarker = source.includes(ENV_MARKER);
+      const importerHasMarker = !!importer && importer.includes(ENV_MARKER);
+      if (!sourceHasMarker && !importerHasMarker) return null;
+      const cleanSource = stripMarkerFromSpec(source);
+      const cleanImporter = importer ? stripMarkerFromSpec(importer) : undefined;
+      let resolved: { id: string } | null | undefined;
       try {
-        const out = rewriteImports(id, code);
-        if (!out) return null;
-        return out;
+        resolved = await (
+          this as {
+            resolve: (
+              s: string,
+              i?: string,
+              o?: object
+            ) => Promise<{ id: string } | null | undefined>;
+          }
+        ).resolve(cleanSource, cleanImporter, { skipSelf: true });
       } catch (err) {
-        emitStructuredError('transform', err);
+        emitStructuredError('resolveId', err);
         return null;
       }
+      if (!resolved) return null;
+      if (!shouldRouteThroughBeforeEnv(resolved.id, repoRoot)) {
+        // Resolved id should NOT carry the marker (node_modules, Vite
+        // internals, paths outside the repo). Return the resolved object
+        // as-is so the client-env optimizer's metadata flows through and
+        // `vite:import-analysis` can apply CJS-ESM interop wrapping.
+        return resolved;
+      }
+      return { ...resolved, id: attachMarkerToId(resolved.id) };
     },
 
     handleHotUpdate(ctx) {
-      // The before environment serves HEAD content; working-tree file changes
-      // must never cause it to re-fetch. We compare on the *file path* (which
-      // is invariant) rather than `urlToModuleMap` (which is keyed on the
-      // post-resolve URL including `?env=before` and Vite's normalisation, so
-      // string equality with `m.url` would under-match).
-      const beforeEnv = ctx.server.environments[BEFORE_ENV_NAME];
-      if (!beforeEnv) return;
-      const beforeFiles = new Set<string>();
-      for (const mod of beforeEnv.moduleGraph.idToModuleMap.values()) {
-        if (mod.file) beforeFiles.add(mod.file);
-      }
-      return ctx.modules.filter((m) => !(m.file && beforeFiles.has(m.file)));
+      // The marker-bearing module ids serve HEAD content; working-tree file
+      // changes must never cause them to be invalidated. Filter them out of
+      // the HMR module list so the marker'd module entries keep their HEAD
+      // content. Working-tree changes still propagate to the unmarked
+      // module entries (Vite's default behavior).
+      return ctx.modules.filter((m) => !(m.id && m.id.includes(ENV_MARKER)));
     },
   };
 }
 
-function serveTransformResult(
-  url: string,
-  result: { code: string; map?: unknown },
-  res: ServerResponse
-): void {
-  res.statusCode = 200;
-  res.setHeader('Content-Type', getMimeForUrl(url));
-  res.setHeader('Cache-Control', 'no-cache');
-  if (result.map) {
-    // Modern SourceMap header (NOT legacy X-SourceMap).
-    res.setHeader('SourceMap', `${url}.map`);
-  }
-  res.end(result.code);
-}
-
 /**
- * Invalidate every module in the `storybook-before` environment's module graph.
- * Called by the addon's preset on `HEAD_CHANGED` events; the client environment's
- * graph is intentionally untouched.
+ * Invalidate every marker-bearing module in the dev server's client
+ * moduleGraph. Called by the addon's preset on `HEAD_CHANGED` events;
+ * working-tree modules (no marker on id) are intentionally untouched.
  */
 export function invalidateBeforeEnvironment(server: ViteDevServer): void {
-  const env = server.environments[BEFORE_ENV_NAME];
-  if (!env) return;
-  env.moduleGraph.invalidateAll();
+  const clientEnv = server.environments?.client as
+    | {
+        moduleGraph: {
+          idToModuleMap: Map<string, { id?: string }>;
+          invalidateModule: (m: unknown) => void;
+        };
+      }
+    | undefined;
+  if (!clientEnv) return;
+  for (const mod of clientEnv.moduleGraph.idToModuleMap.values()) {
+    if (mod.id && mod.id.includes(ENV_MARKER)) {
+      clientEnv.moduleGraph.invalidateModule(mod);
+    }
+  }
 }
 
 /** Test/diagnostic helper: clears all process-level addon state. */

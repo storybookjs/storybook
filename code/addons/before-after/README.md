@@ -12,15 +12,21 @@ page renders two iframes:
 
 - **After** — the existing main Storybook preview, showing the working-tree
   rendering.
-- **Before** — a same-origin iframe served by a second Vite environment in the
-  same dev server. The environment loads each module from its `HEAD` blob via
-  `git show HEAD:<path>`, so you see what the same story looked like at the
-  last commit.
+- **Before** — a same-origin iframe loaded with the `?env=before` query
+  marker. The marker is purely a content-routing signal: the addon's
+  `resolveId` hook propagates it from importer to resolved id, and a
+  load-time hook (`beforeContentPlugin.load`) reads `git show HEAD:<path>`
+  whenever the marker is present.
 
-Both previews share the same dev server — there is no second process and no
-second `createServer()`. The before environment is registered via the addon's
-`viteFinal` hook, and Vite's Environment API isolates its module graph from the
-main `client` environment.
+Both previews share the same dev server and the same Vite environment
+(`client`). The marker drives `moduleGraph` partitioning — `/foo.ts` and
+`/foo.ts?env=before` are tracked as separate modules — so HMR for
+working-tree edits does not touch the before-iframe and HEAD updates from
+the git watcher do not touch the after-iframe.
+
+See [ADR-0003](./ADR-0003-single-env-marker-routing.md) for the full
+design rationale. ADR-0002 (a separate `storybookBefore` Vite environment)
+is kept for historical reference and is **superseded**.
 
 ## Requirements
 
@@ -28,8 +34,9 @@ main `client` environment.
 - A Vite-based Storybook (`builder-vite` directly or via a Vite framework like
   `react-vite`, `vue3-vite`, `svelte-vite`, `web-components-vite`,
   `nextjs-vite`, …).
-- **Vite ≥ 6** — Environment API is required. Vite 5 throws
-  `BeforeAfterUnsupportedViteError` at `viteFinal` entry.
+- **Vite ≥ 6** — the Environment API surface used by builder-vite to mount
+  multiple environments is required even though this addon only registers
+  hooks on the default `client` environment.
 
 ## Sandbox templates that have been validated
 
@@ -40,13 +47,16 @@ main `client` environment.
 
 Three vitest files guard the addon:
 
-- `src/node/__tests__/before-env-routing.test.ts` — asserts coverage checkboxes
-  (a)–(j) of the routing/rewrite spec PLUS the `(k.*)` family of
-  middleware-driven probes for Referer-based env dispatch (see ADR-0002).
+- `src/node/__tests__/before-env-routing.test.ts` — unit tests for the
+  marker helpers (`appendEnvBefore`, `isBeforeIframeReferer`,
+  `shouldRouteThroughBeforeEnv`), the load-gate of
+  `beforeContentPlugin`, and an isolated `resolveId`-propagation
+  probe driven through a real Vite dev server.
 - `src/node/__tests__/git-watchers-cleanup.test.ts` — asserts watcher
   lifecycle correctness (no late callbacks after cleanup).
 - `src/node/__tests__/crash-containment.test.ts` — asserts the
-  `AsyncLocalStorage` scope around `unhandledRejection`.
+  `AsyncLocalStorage` scope around `unhandledRejection` and that a
+  `load()` throw on a marker-bearing id does not poison the dev server.
 
 Run them locally with:
 
@@ -56,40 +66,32 @@ yarn vitest run --config code/addons/before-after/vitest.config.ts
 
 ## Limitations
 
-- **Restrictive Referrer-Policy.** The before-iframe relies on its `Referer`
-  header (with the `?env=before` query intact) to route descendant module
-  requests back to the before environment. If a user's `<meta name="referrer">`,
-  CSP, or reverse proxy strips or trims `Referer`, the addon degrades to
-  serving working-tree content for those descendants. The before-iframe
-  emits a `console.warn` if it loaded without `?env=before` on its own URL —
-  watch DevTools for `[storybook/before-after]`. ADR-0002 documents the
-  full failure mode and the planned ADR-0003 follow-up.
-- **`srcdoc` iframe wrappers** are unsupported: `Referer` becomes
-  `about:srcdoc` and fails the same-origin dispatch check.
-- **Strict CSP `script-src` blocks the diagnostic.** The observability beacon
-  is an inline `<script>` injected into the before-iframe. A `script-src`
-  directive without `'unsafe-inline'` or a matching nonce will silently
-  block it — meaning Referrer-Policy degradation has no DevTools signal in
-  CSP-hardened dev environments. If you ship a strict CSP via
-  `previewHead`, expect the warning to be suppressed; rely on the network
-  tab (`?env=before` filter) to confirm dispatch is working.
-- **Loopback alias mismatch.** The dispatch middleware compares
-  `Referer.host` against the request's `Host` header byte-for-byte. If you
-  load Storybook via `127.0.0.1:6006` while the dev server binds on
-  `localhost:6006` (or vice versa, or via SSH-tunnel hostname), the
-  same-origin check fails and the before iframe regresses to today's bug.
-  Always access Storybook through the same hostname the dev server
-  advertises.
+- **Dynamic imports with non-literal specifiers.** `vite:import-analysis`
+  only rewrites literal-string `import()` calls. A dynamic import whose
+  specifier is computed at runtime stays unmarked and therefore loads
+  working-tree content. This is rarely an issue in story files but can
+  affect mocked dynamic imports.
+- **New files not committed to `HEAD`.** A story file that exists only in
+  the working tree has no `HEAD` blob; the load hook returns `null` and
+  Vite falls through to the working-tree read. The before iframe will
+  show the same content as the after iframe for such files (the addon
+  considers them "new", not "modified").
+- **`srcdoc` iframe wrappers** are unsupported. The Referer-based
+  fallback path that was relevant under ADR-0002 has been removed in
+  ADR-0003, but the diagnostic beacon that warns when `?env=before` is
+  missing from the iframe URL is preserved.
 
 ## Maintenance notes
 
-`BYPASS_PREFIXES` in `before-environment-plugin.ts` is the addon's
-compatibility contract with `builder-vite` — the list of Storybook-internal
-endpoint prefixes that the dispatch middleware must NEVER route through
-`beforeEnv.transformRequest`. Adding to this list MUST be accompanied by a
-matching entry in the `BYPASS_SAMPLES` map of
-`before-env-routing.test.ts`. The `(k.3)` probe is data-driven
-(`it.each(BYPASS_PREFIXES)`) and asserts every prefix has a sample URL,
-so a new prefix without a sample fails CI explicitly. The `/sb-` entry
-is a wildcard prefix intentionally capturing all Storybook-internal
-asset routes; reducing its specificity requires a coordinated change.
+`shouldRouteThroughBeforeEnv` in `before-environment-plugin.ts` is the
+discriminator that decides whether a resolved id should carry the
+marker. Project paths (under `repoRoot`) and virtual modules
+(`\0`-prefixed) are marked; `node_modules` and Vite-internal URLs
+(`/@vite/...`, `/@react-refresh`) are NOT marked so the client
+environment's `optimizeDeps` cache and CJS-ESM interop continue to
+apply. Changing the discriminator without updating the unit test in
+`before-env-routing.test.ts` fails CI explicitly.
+
+`BYPASS_PREFIXES` is retained for the legacy middleware code path used
+in `(k.*)` test probes; the production runtime no longer dispatches
+through it.

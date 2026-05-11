@@ -4,7 +4,7 @@ import { logger } from 'storybook/internal/node-logger';
 
 import type { Plugin } from 'vite';
 
-import { BEFORE_ENV_NAME } from './before-environment-plugin.ts';
+import { ENV_MARKER } from './before-environment-plugin.ts';
 import { getFileAtHead } from './git-file-at-head.ts';
 
 interface BeforeContentPluginOptions {
@@ -13,20 +13,25 @@ interface BeforeContentPluginOptions {
 
 /**
  * Vite plugin that intercepts module loading and returns file content from git
- * HEAD instead of the working directory. This ensures the "before" view always
- * renders the HEAD version of all project files.
- *
- * Scoped via `applyToEnvironment` to the `storybookBefore` environment so the
- * `client` environment never sees HEAD content. Virtual modules and files that
- * don't exist at HEAD (new files) fall through to default Vite resolution.
+ * HEAD instead of the working directory. The load hook fires only when the
+ * resolved id carries the `?env=before` marker; the marker is attached by
+ * `beforeEnvironmentPlugin.resolveId` when an importer chain traces back to
+ * the before-iframe entry. Virtual modules and files that don't exist at HEAD
+ * fall through to default Vite resolution.
  */
 export function beforeContentPlugin({ repoRoot }: BeforeContentPluginOptions): Plugin {
-  const plugin: Plugin = {
+  return {
     name: 'storybook:before-content-override',
     enforce: 'pre',
 
     async load(id) {
-      // Skip virtual modules
+      // Only serve HEAD content for marker-bearing ids — see plugin docstring.
+      if (!id.includes(ENV_MARKER)) {
+        return null;
+      }
+
+      // Skip virtual modules — the marker on them is purely for HMR
+      // partitioning; the generated content is identical to client env.
       if (id.startsWith('\0') || id.startsWith('virtual:')) {
         return null;
       }
@@ -62,11 +67,4 @@ export function beforeContentPlugin({ repoRoot }: BeforeContentPluginOptions): P
       }
     },
   };
-
-  // Vite Environment API: only fire `load()` for the before environment.
-  (
-    plugin as unknown as { applyToEnvironment: (env: { name: string }) => boolean }
-  ).applyToEnvironment = (env) => env.name === BEFORE_ENV_NAME;
-
-  return plugin;
 }

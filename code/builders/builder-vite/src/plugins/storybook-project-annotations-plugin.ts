@@ -27,12 +27,17 @@ export function storybookProjectAnnotationsPlugin(options: Options): Plugin {
       projectRoot = config.root;
     },
     resolveId(source) {
-      if (source === VIRTUAL_ID) {
-        return RESOLVED_VIRTUAL_ID;
+      // Query-tolerant match — see `code-generator-plugin.ts` for the
+      // rationale. Per-environment routing addons append markers like
+      // `?env=before`; preserving the query on the resolved ID keeps the
+      // module graph properly partitioned.
+      const [bareSource, query] = source.split('?');
+      if (bareSource === VIRTUAL_ID) {
+        return `${RESOLVED_VIRTUAL_ID}${query ? `?${query}` : ''}`;
       }
     },
     async load(id) {
-      if (id === RESOLVED_VIRTUAL_ID) {
+      if (id.split('?')[0] === RESOLVED_VIRTUAL_ID) {
         return generateProjectAnnotationsCode(options, projectRoot);
       }
     },

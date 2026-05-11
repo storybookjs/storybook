@@ -63,17 +63,32 @@ export function codeGeneratorPlugin(options: Options) {
       iframeId = `${config.root}/iframe.html`;
     },
     resolveId(source) {
-      if (SB_VIRTUAL_FILE_IDS.includes(source)) {
-        return getResolvedVirtualModuleId(source);
+      // Strip query string before matching the canonical virtual module IDs.
+      // Per-environment routing addons (e.g. `addon-before-after`) tag
+      // bare-spec imports with markers like `?env=before` so the addon's
+      // dispatch middleware can route them to a non-`client` Vite
+      // environment. Without this normalisation, strict equality on
+      // `source` misses the marker-tagged form and Vite falls through to
+      // a 404 disk lookup. The query is preserved on the resolved ID so
+      // Vite's module graph still partitions marker-tagged modules from
+      // their plain counterparts.
+      const [bareSource, query] = source.split('?');
+      const querySuffix = query ? `?${query}` : '';
+      if (SB_VIRTUAL_FILE_IDS.includes(bareSource)) {
+        return `${getResolvedVirtualModuleId(bareSource)}${querySuffix}`;
       }
-      if (source === iframePath) {
+      if (bareSource === iframePath) {
         return iframeId;
       }
 
       return undefined;
     },
     async load(id) {
-      switch (id) {
+      // Mirror the query-tolerance from `resolveId`: drop the query before
+      // matching the canonical resolved virtual IDs. Generated module
+      // bodies are query-independent — the marker only affects dispatch.
+      const bareId = id.split('?')[0];
+      switch (bareId) {
         case getResolvedVirtualModuleId(SB_VIRTUAL_FILES.VIRTUAL_STORIES_FILE): {
           const storyIndexGenerator = await storyIndexGeneratorPromise;
           const index = await storyIndexGenerator?.getIndex();

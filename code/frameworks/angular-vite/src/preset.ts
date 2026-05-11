@@ -94,9 +94,28 @@ export const viteFinal = async (config: UserConfig, options?: StandaloneOptions)
         '@angular/compiler',
         '@angular/platform-browser',
         '@angular/platform-browser/animations',
+        '@angular/common/http',
         'tslib',
         ...(experimentalZoneless ? [] : ['zone.js']),
       ],
+    },
+    build: {
+      rolldownOptions: {
+        output: {
+          // Rolldown's lazy-init wrapper splits @angular/platform-browser and
+          // @angular/common/http into separate chunks. The platform-browser
+          // chunk extends a class imported from the http xhr chunk but the
+          // generated wrapper never invokes the dependent init thunk, leaving
+          // the imported class undefined at evaluation time. Merging them keeps
+          // the inheritance contiguous in a single chunk.
+          manualChunks(id: string) {
+            if (id.includes('@angular/platform-browser') || id.includes('@angular/common')) {
+              return 'angular-platform';
+            }
+            return undefined;
+          },
+        },
+      },
     },
     plugins: [
       angular({

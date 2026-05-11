@@ -89,19 +89,19 @@ async function discoverRepoRoot(): Promise<string | null> {
   }
 }
 
-export const experimental_devServer = async (_app: Record<string, unknown>, options: Options) => {
+export const experimental_devServer = async (app: Record<string, unknown>, options: Options) => {
   const channel = getChannel(options);
 
   if (!channel) {
     logger.warn('[before-after] No channel available, addon will not function');
-    return;
+    return app;
   }
 
   const repoRoot = await discoverRepoRoot();
   if (!repoRoot) {
     logger.info('[before-after] Git not available, addon will show informational message');
     channel.emit(EVENTS.ADDON_DISABLED, { reason: 'git-unavailable' });
-    return;
+    return app;
   }
 
   let envApiServerRef: ViteDevServer | null = null;
@@ -180,6 +180,8 @@ export const experimental_devServer = async (_app: Record<string, unknown>, opti
     cleanup();
     process.kill(process.pid, 'SIGTERM');
   });
+
+  return app;
 };
 
 /**

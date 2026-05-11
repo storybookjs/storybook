@@ -98,6 +98,10 @@ jobs:
         run: |
           set -euo pipefail
           yarn install --immutable
+          # Install the Playwright chromium browser binary on the runner
+          # (the GitHub-hosted ubuntu-22.04 image does not pre-bundle
+          # @playwright/test browsers).
+          yarn playwright install --with-deps chromium
           # Compile core FIRST so eslint-plugin's prebuild script (which
           # imports from `storybook/csf` via jiti) can resolve
           # `storybook/dist/csf/index.js`. nx run-many parallelises by
@@ -105,9 +109,9 @@ jobs:
           # explicit `dependsOn: ["^compile"]` is set, which the repo
           # currently lacks for the eslint-plugin chain.
           yarn nx compile core
-          # Then compile every other NX project so the internal-ui
-          # storybook:ui:build can resolve @storybook/react-vite + every
-          # addon listed in code/.storybook/main.ts.
+          # Then compile every other NX project so the internal-ui dev
+          # server can resolve @storybook/react-vite + every addon
+          # listed in code/.storybook/main.ts.
           yarn nx run-many -t compile
           yarn verify-pr --recipe-spec ".verify-recipes/pr-${PR_NUMBER}.spec.ts"
 

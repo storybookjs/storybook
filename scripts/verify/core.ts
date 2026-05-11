@@ -117,9 +117,22 @@ export function computeVerdict(tests: RecipeTest[]): 'verified' | 'regression' {
   for (const t of tests) {
     if (t.status !== 'passed') return 'regression';
     if (t.pageErrors.length > 0) return 'regression';
-    if (t.consoleErrors.length > 0) return 'regression';
+    const significantConsoleErrors = t.consoleErrors.filter((m) => !isLowSignalConsoleError(m));
+    if (significantConsoleErrors.length > 0) return 'regression';
   }
   return 'verified';
+}
+
+/**
+ * Generic Chromium resource-load failures ("Failed to load resource: …")
+ * are low-signal noise — favicon misses, dev-mode source-map probes,
+ * Storybook composition refs that 404 in CI, etc. Real PR regressions
+ * surface via pageErrors (uncaught JS exceptions) or test failures.
+ * Drop these from the regression gate so a clean story render doesn't
+ * get flagged on benign browser-side fetch misses.
+ */
+function isLowSignalConsoleError(text: string): boolean {
+  return /^Failed to load resource:/.test(text);
 }
 
 export interface ParsedReport {

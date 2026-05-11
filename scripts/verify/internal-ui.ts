@@ -2,10 +2,17 @@
 //
 // Builds `code/storybook-static/` once via `yarn storybook:ui:build` (skipped
 // when the build artefact is already present), then serves it on the requested
-// port via `yarn http-server --silent -c-1`. Returns once index.html responds.
+// port via `yarn http-server --silent -c-1`. Used by the v6 verify-pr.ts
+// when a recipe declares `// @verify-target: internal-ui` (the default).
 //
-// Used by the v6 verify-pr.ts when a recipe declares `// @verify-target: internal-ui`
-// (the default).
+// Why static build + http-server instead of `storybook dev`: the static
+// bundle is deterministic and free of Vite dev-mode startup races (the
+// addon-vitest `globals-runtime` follower/leader init order, in
+// particular, surfaces a `TypeError: No existing state found for
+// follower with id: 'storybook/test'` on cold dev boot that is not
+// caused by the PR under test). The static path costs more cold-boot
+// time (~3-5 min on CI) but eliminates that source of false-positive
+// regressions. Warm runs are seconds because storybook-static persists.
 
 import { spawn, type ChildProcess } from 'node:child_process';
 import { existsSync } from 'node:fs';

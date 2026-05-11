@@ -5,9 +5,9 @@ import { Component, ɵresetJitOptions } from '@angular/core';
 import { platformBrowserDynamicTesting } from '@angular/platform-browser-dynamic/testing';
 import { platformBrowserDynamic } from '@angular/platform-browser-dynamic';
 
-import { CanvasRenderer } from './CanvasRenderer';
-import { RendererFactory } from './RendererFactory';
-import { DocsRenderer } from './DocsRenderer';
+import { CanvasRenderer } from './CanvasRenderer.ts';
+import { RendererFactory } from './RendererFactory.ts';
+import { DocsRenderer } from './DocsRenderer.ts';
 
 vi.mock('@angular/platform-browser-dynamic');
 

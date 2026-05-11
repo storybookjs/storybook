@@ -1,10 +1,10 @@
-import './globals';
+import './globals.ts';
 
-export * from './public-types';
-export * from './portable-stories';
-export * from './preview';
+export * from './public-types.ts';
+export * from './portable-stories.ts';
+export * from './preview.ts';
 
-export type { StoryFnAngularReturnType as IStory } from './types';
+export type { StoryFnAngularReturnType as IStory } from './types.ts';
 
-export { moduleMetadata, componentWrapperDecorator, applicationConfig } from './decorators';
-export { argsToTemplate } from './argsToTemplate';
+export { moduleMetadata, componentWrapperDecorator, applicationConfig } from './decorators.ts';
+export { argsToTemplate } from './argsToTemplate.ts';

@@ -4,12 +4,12 @@ import type { Subject } from 'rxjs';
 import { BehaviorSubject } from 'rxjs';
 import { stringify } from 'telejson';
 
-import type { ICollection, StoryFnAngularReturnType } from '../types';
-import { getApplication } from './StorybookModule';
-import { storyPropsProvider } from './StorybookProvider';
-import { queueBootstrapping } from './utils/BootstrapQueue';
-import { PropertyExtractor } from './utils/PropertyExtractor';
-import { getProvideZonelessChangeDetectionFn } from './utils/Zoneless';
+import type { ICollection, StoryFnAngularReturnType } from '../types.ts';
+import { getApplication } from './StorybookModule.ts';
+import { storyPropsProvider } from './StorybookProvider.ts';
+import { queueBootstrapping } from './utils/BootstrapQueue.ts';
+import { PropertyExtractor } from './utils/PropertyExtractor.ts';
+import { getProvideZonelessChangeDetectionFn } from './utils/Zoneless.ts';
 
 type StoryRenderInfo = {
   storyFnAngular: StoryFnAngularReturnType;

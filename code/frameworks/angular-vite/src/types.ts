@@ -1,6 +1,6 @@
-import { CompatibleString } from 'storybook/internal/types';
+import type { CompatibleString } from 'storybook/internal/types';
 
-import { StorybookConfig as StorybookConfigBase } from 'storybook/internal/types';
+import type { StorybookConfig as StorybookConfigBase } from 'storybook/internal/types';
 
 import type { BuilderOptions, StorybookConfigVite } from '@storybook/builder-vite';
 

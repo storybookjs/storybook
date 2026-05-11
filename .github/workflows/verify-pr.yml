@@ -60,7 +60,8 @@ jobs:
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: verify-output-pr-${{ github.event.pull_request.number }}-${{ github.run_id }}
-          path: .verify-output/*/
+          path: .verify-output/
+          if-no-files-found: warn
           retention-days: 14
       - name: Post PR comment
         if: always()

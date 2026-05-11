@@ -37,16 +37,17 @@ export interface VerifyResult {
   runId: string;
   verdict: 'verified' | 'regression' | 'skipped';
   regressionReason?: string;
-  template: 'react-vite/default-ts';
+  /**
+   * v6 widened: `internal-ui` (default monorepo-UI target) or a sandbox
+   * template such as `react-vite/default-ts`.
+   */
+  template: string;
   storyIds: string[];
   recipeSpecPath: string;
   tests: RecipeTest[];
   traceZipPaths: string[];
   durations: Durations;
   createdAt: string;
-  inContainer?: boolean;
-  imageDigest?: string | null;
-  headSha?: string | null;
 }
 
 export interface RunPaths {
@@ -90,23 +91,20 @@ export async function writeResult(paths: RunPaths, result: VerifyResult): Promis
 export async function writeRegressionResult(
   paths: RunPaths,
   reason: string,
-  opts?: { headSha?: string; inContainer?: boolean; imageDigest?: string | null }
+  opts?: { template?: string }
 ): Promise<void> {
   const result: VerifyResult = {
     schemaVersion: SCHEMA_VERSION,
     runId: paths.runId,
     verdict: 'regression',
     regressionReason: reason,
-    template: 'react-vite/default-ts',
+    template: opts?.template ?? 'internal-ui',
     storyIds: [],
     recipeSpecPath: '',
     tests: [],
     traceZipPaths: [],
     durations: { compileMs: 0, symlinkMs: 0, bootMs: 0, recipeMs: 0, totalMs: 0 },
     createdAt: new Date().toISOString(),
-    inContainer: opts?.inContainer,
-    imageDigest: opts?.imageDigest ?? null,
-    headSha: opts?.headSha,
   };
   await writeResult(paths, result);
 }

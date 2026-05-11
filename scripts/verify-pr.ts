@@ -1,10 +1,24 @@
-// Entry point for the PR verification harness.
-// Usage: bun scripts/verify-pr.ts [--resync] [--keep-open] [--skip-recipe] [--restore-sandbox] [--recipe-spec <path>] [--port <n>]
+// Entry point for the PR verification harness (v6, local-first).
+//
+// Usage:
+//   node scripts/verify-pr.ts [<PR#>] [options]
+//
+// Two execution targets, selected per recipe via a `// @verify-target:` header:
+//
+//   internal-ui (default)  — builds code/storybook-static once, serves it on
+//                            the requested port via http-server. Fast path
+//                            for fixes that exercise the monorepo's own UI
+//                            against the PR head's compiled packages.
+//
+//   sandbox:<template>     — pre-existing sandbox flow: snapshotSandbox,
+//                            sanitizeResolutions, syncCorePackage (symlink
+//                            code/core/dist into the sandbox), then boot
+//                            the sandbox's own `yarn storybook --ci`.
+//                            Use only when a fix is template-specific.
 
 import { parseArgs } from 'node:util';
 import { performance } from 'node:perf_hooks';
 import * as path from 'node:path';
-import * as fs from 'node:fs/promises';
 
 import {
   SCHEMA_VERSION,
@@ -13,7 +27,6 @@ import {
   ensureRunDir,
   parsePlaywrightReport,
   pruneOldRuns,
-  writeRegressionResult,
   writeResult,
 } from './verify/core.ts';
 import type { VerifyResult } from './verify/core.ts';
@@ -25,38 +38,129 @@ import {
 } from './verify/sandbox.ts';
 import { syncCorePackage } from './verify/sync.ts';
 import { bootStorybook, installSignalHandlers, preflightPort } from './verify/boot.ts';
+import { bootInternalUi } from './verify/internal-ui.ts';
 import { runRecipe } from './verify/runner.ts';
+import { describeTarget, parseTargetFromSpec, type VerifyTarget } from './verify/target.ts';
+import { exec } from './utils/exec.ts';
 
 const repoRoot = path.resolve(import.meta.dirname, '..');
 const DEFAULT_RECIPE_SPEC = path.resolve(repoRoot, '.verify-recipes/example-smoke.spec.ts');
 
 const HELP = `
-Usage: bun scripts/verify-pr.ts [options]
+Usage: node scripts/verify-pr.ts [<PR#>] [options]
+
+Positional:
+  <PR#>                   Resolves recipe-spec to .verify-recipes/pr-<#>.spec.ts.
+                          Ignored when --recipe-spec is supplied.
 
 Options:
-  --resync                Recompile affected packages and hard-reload running Storybook (requires --keep-open session)
-  --keep-open             Leave Storybook running after the recipe completes; print URL
-  --skip-recipe           Skip the Playwright recipe entirely; write verdict: "skipped"; exit 0
-  --restore-sandbox       Copy .verify-snapshot/* back to sandbox and exit
-  --recipe-spec <path>    Path to the Playwright spec to run (default: .verify-recipes/example-smoke.spec.ts)
-  --port <n>              Port for Storybook (default: 6006). Use to avoid collisions with side processes.
-  --help                  Show this help
+  --resync                Recompile affected packages and re-run the recipe
+                          against a running Storybook (sandbox target only;
+                          requires a prior --keep-open session).
+  --keep-open             Leave Storybook running after the recipe completes.
+  --skip-recipe           Skip the Playwright recipe; emit verdict: "skipped".
+  --restore-sandbox       Copy .verify-snapshot/* back to sandbox and exit.
+                          Sandbox target only.
+  --recipe-spec <path>    Path to the Playwright spec to run. Overrides PR#.
+                          Default: .verify-recipes/example-smoke.spec.ts.
+  --port <n>              Storybook port (default 6006).
+  --help                  Show this help.
 
 Examples:
-  bun scripts/verify-pr.ts
-  bun scripts/verify-pr.ts --keep-open
-  bun scripts/verify-pr.ts --resync
-  bun scripts/verify-pr.ts --restore-sandbox
-  bun scripts/verify-pr.ts --recipe-spec .verify-recipes/my-recipe.spec.ts
+  yarn verify-pr 34762
+  yarn verify-pr --recipe-spec .verify-recipes/example-smoke.spec.ts
+  yarn verify-pr --keep-open
+  yarn verify-pr --restore-sandbox --recipe-spec .verify-recipes/pr-N.spec.ts
 `.trim();
 
-function resolveRecipeSpec(flagValue: string | undefined): string {
-  const raw = flagValue ?? DEFAULT_RECIPE_SPEC;
-  return path.isAbsolute(raw) ? raw : path.resolve(repoRoot, raw);
+function resolveRecipeSpec(flagValue: string | undefined, positional?: string): string {
+  if (flagValue) {
+    return path.isAbsolute(flagValue) ? flagValue : path.resolve(repoRoot, flagValue);
+  }
+  if (positional && /^\d+$/.test(positional)) {
+    return path.resolve(repoRoot, `.verify-recipes/pr-${positional}.spec.ts`);
+  }
+  return DEFAULT_RECIPE_SPEC;
+}
+
+function templateLabel(target: VerifyTarget): string {
+  return target.kind === 'sandbox' ? target.template : 'internal-ui';
+}
+
+interface RunResyncArgs {
+  recipeSpec: string;
+  baseURL: string;
+  port: number;
+  sandboxDir: string;
+  totalStart: number;
+}
+
+async function runResync(args: RunResyncArgs): Promise<number> {
+  const { default: fetchImpl } = await import('node-fetch').catch(() => ({
+    default: globalThis.fetch as typeof import('node-fetch').default,
+  }));
+  let alive = false;
+  try {
+    const res = await (fetchImpl as any)(`${args.baseURL}/index.html`, { method: 'GET' });
+    alive = res.ok;
+  } catch {
+    alive = false;
+  }
+  if (!alive) {
+    console.error(
+      `[verify] --resync requires a running Storybook on :${args.port}. Bootstrap with:\n  yarn verify-pr --keep-open --port ${args.port}`
+    );
+    return 1;
+  }
+
+  await exec(
+    'yarn nx affected -t compile --base=HEAD~1',
+    { cwd: repoRoot },
+    { startMessage: '[resync] compiling affected', errorMessage: '[resync] compile failed' }
+  );
+  await syncCorePackage({ sandboxDir: args.sandboxDir });
+
+  try {
+    await (fetchImpl as any)(`${args.baseURL}/__reload`, { method: 'POST' });
+  } catch {
+    console.log('[resync] __reload not available; hard-reload via navigation cache-bust');
+  }
+
+  const resyncPaths = buildRunPaths();
+  await ensureRunDir(resyncPaths);
+
+  const recipeStart = performance.now();
+  const { reportPath } = await runRecipe({
+    specPath: args.recipeSpec,
+    baseURL: args.baseURL,
+    runPaths: resyncPaths,
+  });
+  const { tests, traceZipPaths } = await parsePlaywrightReport(reportPath);
+  const recipeMs = performance.now() - recipeStart;
+  const verdict = computeVerdict(tests);
+
+  const result: VerifyResult = {
+    schemaVersion: SCHEMA_VERSION,
+    runId: resyncPaths.runId,
+    verdict,
+    template: 'react-vite/default-ts',
+    storyIds: [],
+    recipeSpecPath: args.recipeSpec,
+    tests,
+    traceZipPaths,
+    durations: { recipeMs, totalMs: performance.now() - args.totalStart },
+    createdAt: new Date().toISOString(),
+  };
+  await writeResult(resyncPaths, result);
+  console.log(`[verify] resync — verdict: ${verdict} — result at ${resyncPaths.resultJson}`);
+  if (traceZipPaths.length > 0) {
+    console.log(`[verify] traces: ${traceZipPaths.join(', ')}`);
+  }
+  return verdict === 'verified' ? 0 : 1;
 }
 
 async function main(argv: string[]): Promise<number> {
-  const { values: flags } = parseArgs({
+  const { values: flags, positionals } = parseArgs({
     args: argv,
     options: {
       resync: { type: 'boolean', default: false },
@@ -67,6 +171,7 @@ async function main(argv: string[]): Promise<number> {
       port: { type: 'string' },
       help: { type: 'boolean', default: false },
     },
+    allowPositionals: true,
     strict: true,
   });
 
@@ -75,7 +180,7 @@ async function main(argv: string[]): Promise<number> {
     return 0;
   }
 
-  const recipeSpec = resolveRecipeSpec(flags['recipe-spec']);
+  const recipeSpec = resolveRecipeSpec(flags['recipe-spec'], positionals[0]);
   const port = flags.port ? Number(flags.port) : 6006;
   if (!Number.isInteger(port) || port < 1 || port > 65535) {
     console.error(`[verify] --port must be an integer in 1..65535, got: ${flags.port}`);
@@ -83,60 +188,31 @@ async function main(argv: string[]): Promise<number> {
   }
   const baseURL = `http://localhost:${port}`;
   const totalStart = performance.now();
-  // MEDIUM (iter-4 F-3.2) — `paths` MUST be initialised BEFORE the HEAD_SHA
-  // assertion because `writeRegressionResult(paths, …)` references it.
   const paths = buildRunPaths();
-  const inContainer = process.env.VERIFY_HARNESS_IN_CONTAINER === '1';
-
-  if (inContainer) {
-    // BLOCKER #2 — HEAD_SHA assertion uses the new helper. Requires `paths`
-    // to be initialised above; otherwise this diff would produce a TypeScript
-    // / runtime undefined error.
-    let baked: string | undefined;
-    try {
-      baked = (await fs.readFile('/opt/verify-harness/HEAD_SHA', 'utf-8')).trim();
-    } catch {
-      await writeRegressionResult(paths, 'head-sha file missing', { inContainer: true });
-      return 1;
-    }
-    const expected = process.env.VERIFY_HARNESS_EXPECTED_HEAD_SHA;
-    if (expected === undefined) {
-      // Laptop / dev-mode reproduction — assertion is skipped, warning logged.
-      console.warn(
-        '[verify] in-container without VERIFY_HARNESS_EXPECTED_HEAD_SHA — head-sha assertion skipped (dev mode)'
-      );
-    } else if (
-      !/^[a-f0-9]{40}$/.test(expected) ||
-      !/^[a-f0-9]{40}$/.test(baked) ||
-      expected !== baked
-    ) {
-      await writeRegressionResult(paths, 'head-sha drift', { headSha: baked, inContainer: true });
-      return 1;
-    }
-  }
-
-  if (inContainer && flags.resync) {
-    console.error('[verify] --resync is not supported when VERIFY_HARNESS_IN_CONTAINER=1.');
-    return 1;
-  }
 
   await pruneOldRuns();
   await ensureRunDir(paths);
 
-  // --restore-sandbox: copy snapshot back and exit
+  const target: VerifyTarget = parseTargetFromSpec(recipeSpec);
+  console.log(`[verify] recipe: ${recipeSpec}`);
+  console.log(`[verify] target: ${describeTarget(target)}`);
+
   if (flags['restore-sandbox']) {
-    const sandboxDir = resolveSandboxDir();
+    if (target.kind !== 'sandbox') {
+      console.error('[verify] --restore-sandbox only applies to sandbox-target recipes.');
+      return 1;
+    }
+    const sandboxDir = resolveSandboxDir(target.template as 'react-vite/default-ts');
     await restoreSandbox(sandboxDir);
     return 0;
   }
 
-  // --skip-recipe: write skipped verdict and exit 0
   if (flags['skip-recipe']) {
     const skipped: VerifyResult = {
       schemaVersion: SCHEMA_VERSION,
       runId: paths.runId,
       verdict: 'skipped',
-      template: 'react-vite/default-ts',
+      template: templateLabel(target),
       storyIds: [],
       recipeSpecPath: recipeSpec,
       tests: [],
@@ -149,91 +225,37 @@ async function main(argv: string[]): Promise<number> {
     return 0;
   }
 
-  const sandboxDir = resolveSandboxDir();
-
-  // --resync: recompile affected, refresh symlinks, re-run recipe against the running Storybook
-  if (flags.resync) {
-    const { default: fetch } = await import('node-fetch').catch(() => ({
-      default: globalThis.fetch as typeof import('node-fetch').default,
-    }));
-    let alive = false;
-    try {
-      const res = await (fetch as any)(`${baseURL}/index.html`, { method: 'GET' });
-      alive = res.ok;
-    } catch {
-      alive = false;
-    }
-    if (!alive) {
-      console.error(
-        `[verify] --resync requires a running Storybook on :${port}. Bootstrap with:\n  bun scripts/verify-pr.ts --keep-open --port ${port}`
-      );
-      return 1;
-    }
-
-    const { exec } = await import('./utils/exec.ts');
-    await exec(
-      'yarn nx affected -t compile --base=HEAD~1',
-      { cwd: repoRoot },
-      { startMessage: '[resync] compiling affected', errorMessage: '[resync] compile failed' }
-    );
-    await syncCorePackage({ sandboxDir });
-
-    try {
-      await (fetch as any)(`${baseURL}/__reload`, { method: 'POST' });
-    } catch {
-      console.log('[resync] __reload not available; hard-reload via navigation cache-bust');
-    }
-
-    const resyncPaths = buildRunPaths();
-    await ensureRunDir(resyncPaths);
-
-    const recipeStart = performance.now();
-    const { reportPath } = await runRecipe({
-      specPath: recipeSpec,
-      baseURL,
-      runPaths: resyncPaths,
-    });
-    const { tests, traceZipPaths } = await parsePlaywrightReport(reportPath);
-    const recipeMs = performance.now() - recipeStart;
-    const verdict = computeVerdict(tests);
-
-    const result: VerifyResult = {
-      schemaVersion: SCHEMA_VERSION,
-      runId: resyncPaths.runId,
-      verdict,
-      template: 'react-vite/default-ts',
-      storyIds: ['example-button--primary'],
-      recipeSpecPath: recipeSpec,
-      tests,
-      traceZipPaths,
-      durations: { recipeMs, totalMs: performance.now() - totalStart },
-      createdAt: new Date().toISOString(),
-    };
-    await writeResult(resyncPaths, result);
-    console.log(`[verify] resync — verdict: ${verdict} — result at ${resyncPaths.resultJson}`);
-    if (traceZipPaths.length > 0) {
-      console.log(`[verify] traces: ${traceZipPaths.join(', ')}`);
-    }
-    return verdict === 'verified' ? 0 : 1;
-  }
-
-  // Full run
-  if (!inContainer) {
-    await snapshotSandbox(sandboxDir);
-    await sanitizeResolutions(sandboxDir);
-  } else {
-    console.log('[verify] in-container mode — skipping snapshot/sanitize (pre-baked).');
+  if (flags.resync && target.kind !== 'sandbox') {
+    console.error('[verify] --resync only applies to sandbox-target recipes.');
+    return 1;
   }
 
   const controller = new AbortController();
   installSignalHandlers(controller);
   await preflightPort(port);
 
-  const syncResult = inContainer
-    ? { compileMs: 0, symlinkMs: 0 }
-    : await syncCorePackage({ sandboxDir });
+  let compileMs: number | undefined;
+  let symlinkMs: number | undefined;
+  let bootMs: number;
 
-  const { bootMs } = await bootStorybook({ sandboxDir, port, controller });
+  if (target.kind === 'internal-ui') {
+    const handle = await bootInternalUi({ port, controller });
+    bootMs = handle.bootMs;
+  } else {
+    const sandboxDir = resolveSandboxDir(target.template as 'react-vite/default-ts');
+
+    if (flags.resync) {
+      return runResync({ recipeSpec, baseURL, port, sandboxDir, totalStart });
+    }
+
+    await snapshotSandbox(sandboxDir);
+    await sanitizeResolutions(sandboxDir);
+    const sync = await syncCorePackage({ sandboxDir });
+    compileMs = sync.compileMs;
+    symlinkMs = sync.symlinkMs;
+    const boot = await bootStorybook({ sandboxDir, port, controller });
+    bootMs = boot.bootMs;
+  }
 
   let reportPath: string;
   let recipeMs: number;
@@ -261,27 +283,13 @@ async function main(argv: string[]): Promise<number> {
     schemaVersion: SCHEMA_VERSION,
     runId: paths.runId,
     verdict,
-    template: 'react-vite/default-ts',
-    storyIds: ['example-button--primary'],
+    template: templateLabel(target),
+    storyIds: [],
     recipeSpecPath: recipeSpec,
     tests,
     traceZipPaths,
-    durations: {
-      compileMs: syncResult.compileMs,
-      symlinkMs: syncResult.symlinkMs,
-      bootMs,
-      recipeMs,
-      totalMs,
-    },
+    durations: { compileMs, symlinkMs, bootMs, recipeMs, totalMs },
     createdAt: new Date().toISOString(),
-    inContainer,
-    imageDigest: process.env.VERIFY_HARNESS_IMAGE_DIGEST ?? null,
-    headSha: inContainer
-      ? await fs
-          .readFile('/opt/verify-harness/HEAD_SHA', 'utf-8')
-          .then((s): string | null => s.trim())
-          .catch((): string | null => null)
-      : null,
   };
 
   await writeResult(paths, result);

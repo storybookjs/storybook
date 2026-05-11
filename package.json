@@ -37,7 +37,7 @@
     "test": "NODE_OPTIONS=--max_old_space_size=4096 vitest run",
     "test:watch": "NODE_OPTIONS=--max_old_space_size=4096 vitest watch",
     "upload-bench": "cd scripts; yarn upload-bench",
-    "verify-pr": "bun scripts/verify-pr.ts",
+    "verify-pr": "node ./scripts/verify-pr.ts",
     "verify-pr-author": "node scripts/verify-pr-author.ts",
     "verify-pr-generate": "bun scripts/verify-pr-generate.ts",
     "vite-ecosystem-ci:before-test": "./scripts/ecosystem-ci/before-test.sh react-vite/default-ts",

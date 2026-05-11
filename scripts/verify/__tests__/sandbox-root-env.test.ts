@@ -1,7 +1,6 @@
 // Asserts STORYBOOK_SANDBOX_ROOT env var is honoured by resolveSandboxDir().
-// This is required by the v5-0 Dockerfile, which bakes
-// ENV STORYBOOK_SANDBOX_ROOT=/opt/verify-harness/storybook-sandboxes so the
-// in-container runner finds the pre-baked sandbox.
+// The env override lets sandbox-target recipes point the harness at a sandbox
+// tree located outside the default `../storybook-sandboxes/` path.
 
 import { mkdtempSync, mkdirSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';

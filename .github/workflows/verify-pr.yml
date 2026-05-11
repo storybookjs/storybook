@@ -91,7 +91,13 @@ jobs:
         run: |
           set -euo pipefail
           yarn install --immutable
-          yarn nx run-many -t compile -p core,cli,create-storybook
+          # Compile every NX project so the internal-ui storybook:ui:build
+          # can resolve @storybook/react-vite + every addon listed in
+          # code/.storybook/main.ts (addon-onboarding/themes/docs/designs/
+          # vitest/a11y/mcp + transitive renderer + builder packages). The
+          # earlier `-p core,cli,create-storybook` filter is sufficient for
+          # the sandbox target but not for the internal-ui target.
+          yarn nx run-many -t compile
           yarn verify-pr --recipe-spec ".verify-recipes/pr-${PR_NUMBER}.spec.ts"
 
       - name: Read verdict

@@ -47,11 +47,31 @@ jobs:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
 
       - name: Checkout PR head (untrusted execution context)
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-        with:
-          ref: ${{ github.event.pull_request.head.sha }}
-          path: pr-head
-          persist-credentials: false
+        # Manual git clone instead of actions/checkout because the repo carries
+        # gitlinks (.external/addon-svelte-csf etc.) without a .gitmodules file,
+        # which breaks actions/checkout's submodule-foreach cleanup pass under
+        # persist-credentials: false. The manual clone never writes auth into
+        # pr-head/.git, preserving the same security posture as
+        # persist-credentials: false. .git/ is also excluded from the docker
+        # build context by .dockerignore.
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          git -c protocol.version=2 clone \
+            --no-tags --no-checkout --filter=blob:none \
+            "https://x-access-token:${GITHUB_TOKEN}@github.com/${REPO}.git" \
+            pr-head
+          cd pr-head
+          git -c protocol.version=2 fetch --no-tags --depth=1 origin "$PR_HEAD_SHA"
+          git checkout --force "$PR_HEAD_SHA"
+          # Remove the credential from .git/config so subsequent git ops cannot
+          # use it.
+          git remote set-url origin "https://github.com/${REPO}.git"
+          # Also scrub any cached credential helper.
+          git config --local --unset-all credential.helper 2>/dev/null || true
 
       - name: Spec precheck
         id: spec_precheck

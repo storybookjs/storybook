@@ -5,7 +5,7 @@ import { fileURLToPath } from 'node:url';
 
 import type { StandaloneOptions } from './builders/utils/standalone-options.ts';
 import type { FrameworkOptions } from './types.ts';
-import type { UserConfig, Plugin } from 'vite';
+import type { ConfigEnv, UserConfig, Plugin } from 'vite';
 
 export const addons: PresetProperty<'addons'> = [];
 
@@ -200,13 +200,16 @@ function angularOptionsPlugin(
 function storybookEsbuildPlugin() {
   return {
     name: 'storybookjs-angular-vite-esbuild-config',
-    apply: 'build',
-    config() {
+    config(_userConfig: UserConfig, env: ConfigEnv) {
       return {
         esbuild: {
           // Don't mangle class names during the build
           // This fixes display of compodoc argtypes
-          keepNames: true,
+          ...(env.command === 'build' ? { keepNames: true } : {}),
+          jsx: 'automatic',
+        },
+        oxc: {
+          jsx: { runtime: 'automatic' },
         },
       };
     },

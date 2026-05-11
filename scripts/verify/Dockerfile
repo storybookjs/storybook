@@ -182,7 +182,7 @@ WORKDIR /opt/verify-harness/repo
 # via `require.resolve(...dist/bin/...)` at module-eval time. The sandbox task
 # imports cli-step.ts, so cli-storybook and create-storybook must be compiled
 # before the next step runs.
-RUN node "$HARNESS_YARN_BIN" nx run-many -t compile -p core,cli-storybook,create-storybook
+RUN node "$HARNESS_YARN_BIN" nx run-many -t compile -p core,cli,create-storybook
 
 # 3.b Bootstrap the sandbox at the baked path.
 RUN mkdir -p /opt/verify-harness/storybook-sandboxes && \

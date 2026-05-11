@@ -216,20 +216,25 @@ export const ObjectControl: FC<ObjectProps> = ({ name, storyId, value, onChange,
     );
   }
 
+  const rawInputId = getControlId(name, storyId);
   const rawJSONForm = (
-    <RawInput
-      ref={htmlElRef}
-      id={getControlId(name, storyId)}
-      minRows={3}
-      name={name}
-      key={jsonString}
-      defaultValue={jsonString}
-      onBlur={(event: FocusEvent<HTMLTextAreaElement>) => updateRaw(event.target.value)}
-      placeholder="Edit JSON string..."
-      autoFocus={forceVisible}
-      valid={parseError ? 'error' : undefined}
-      readOnly={readonly}
-    />
+    <>
+      <label htmlFor={rawInputId} className="sb-sr-only">
+        Edit {name} as JSON
+      </label>
+      <RawInput
+        ref={htmlElRef}
+        id={rawInputId}
+        minRows={3}
+        name={name}
+        key={jsonString}
+        defaultValue={jsonString}
+        onBlur={(event: FocusEvent<HTMLTextAreaElement>) => updateRaw(event.target.value)}
+        autoFocus={forceVisible}
+        valid={parseError ? 'error' : undefined}
+        readOnly={readonly}
+      />
+    </>
   );
 
   const isObjectOrArray =

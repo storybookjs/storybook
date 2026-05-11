@@ -59,6 +59,20 @@ yarn --cwd code lint:js:cmd ../.verify-recipes/<pr#>.spec.ts --fix
 
 A lint failure aborts the run. This prevents obviously malformed or injected specs from reaching the execution layer.
 
+### Increment 2 notes — Agent-generated recipes
+
+**Spec-review gate unchanged.** The bun generator (`verify-pr-generate.ts`) does not execute its output — it only writes a prompt bundle to `.verify-output/<runId>/prompt-bundle.json` and stops. The `verify-recipe-author` skill writes the generated spec to disk but never executes it. Execution happens only after a human commits the spec to `.verify-recipes/pr-<#>.spec.ts` and the v2 runner is invoked explicitly.
+
+**Lint enforcement lives in the skill, not as ad-hoc CLI invocations.** The skill runs `yarn --cwd code lint:js:cmd ../.verify-recipes/pr-<#>.spec.ts --fix`, retries once on failure by feeding categorized errors (`listener-before-goto`, `attach-pattern`, `imports`) back to the agent, and aborts exit 1 on second failure. The retry policy is expressed declaratively in `scripts/verify/recipe-retry-policy.ts` — the orchestrator contains no hardcoded retry branches.
+
+**Static deny-regex pass** runs before lint and catches blatant prompt-injection or compromised-agent output. Current patterns: `child_process`, `fs.unlink*`, `fs.rm`, `process.exit`, `eval(`, `node:*` imports, `require('child_process')`. The list lives in `scripts/verify/recipe-deny.ts` and can be extended without touching the orchestrator.
+
+**Header-comment provenance.** The skill prepends a block comment to every generated spec containing `generatedAt`, `agentModel`, `prNumber`, `referenceSpecs`, and `triageGlobs`. This provides an audit trail that survives squash-merge. A sidecar `.meta.json` was considered and rejected — it adds review burden and creates a second committed artifact that can drift from the spec (see plan §D8).
+
+**Spec-name collision = fail unless `--force` is passed.** When `.verify-recipes/pr-<#>.spec.ts` already exists and `--force` is not set, the generator exits 1 with an actionable message. This prevents silent overwrite of a reviewed spec on re-run. The skill re-checks before writing to avoid TOCTOU races.
+
+**`gh pr diff --patch`** — the generator uses the `--patch` flag to fetch full file content, not just a file list, so the agent has line-level context for producing meaningful assertions.
+
 ### Deferred: `@anthropic-ai/sandbox-runtime` evaluation
 
 Evaluation of `@anthropic-ai/sandbox-runtime` as an additional isolation layer is **postponed to Phase 2**. Tracked as a follow-up item. Do not attempt the spike in Phase 1.

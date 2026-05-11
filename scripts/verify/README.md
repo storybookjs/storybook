@@ -173,6 +173,7 @@ test('my recipe', async ({ page }, testInfo) => {
 ```
 scripts/
 ├── verify-pr.ts              # Entry — flag parsing, mode dispatch, glue
+├── verify-pr-generate.ts     # Entry — prompt-bundle emitter for agent-generated recipes
 └── verify/
     ├── core.ts               # Types, run-paths, schema v2, parsePlaywrightReport, computeVerdict, prune
     ├── runner.ts             # Spawns `bun x playwright test`, parses report for trace.zip paths
@@ -180,9 +181,16 @@ scripts/
     ├── symlink.ts            # ensureSymlinkOrCopy with dangling-heal + EPERM/EEXIST cp fallback
     ├── sandbox.ts            # resolveSandboxDir, snapshot/restore, sanitizeResolutions
     ├── sync.ts               # yarn nx compile core + symlink dist
-    └── boot.ts               # Port preflight, signal handlers, spawn, dual wait-on
+    ├── boot.ts               # Port preflight, signal handlers, spawn, dual wait-on
+    ├── triage.ts             # triageReferenceSpecs(changedPaths) — glob matching via minimatch
+    ├── agent-prompt.ts       # buildRecipeAuthorPrompt(...) — assembles the prompt bundle sections
+    ├── recipe-deny.ts        # assertNoDeniedPatterns(source) — static deny-regex pass
+    ├── recipe-retry-policy.ts # RECIPE_RETRY_POLICY declarative config (maxAttempts, errorCategories)
+    └── recipes/
+        └── triage-table.ts   # TRIAGE_ROUTES — path-glob → reference-spec mappings
 .verify-recipes/
 ├── _util.ts                  # Slim Playwright helper (recipe-local; no SbPage enum chain)
+├── _recipe-authoring-guide.md # Agent-readable authoring guide (imports, listener rules, attach pattern)
 ├── example-smoke.spec.ts     # Default smoke spec (canonical 'verified' baseline)
 └── .gitkeep
 ```
@@ -225,19 +233,80 @@ The Increment-1 harness still does not cover:
 - **Multi-template triage.** Hardcoded to `react-vite/default-ts`.
 - **Pixel diffing / baselines.** Tier-1 presence-only; defer Tier-2 to Chromatic.
 - **CI activation.** The workflow at `.github/workflows/verify-pr.yml` is committed with `if: false` until Phase 2 launches.
-- **Agent-generated specs.** Recipes are still hand-authored. Increment 2 adds PR-diff → recipe generation.
 - **Auto-bootstrap.** If the sandbox cache is missing, the harness fails loud — it does not run `yarn task sandbox` automatically.
 
 ## Roadmap
 
 In rough priority order:
 
-1. **Increment 2 — Agent-generated recipes.** `gh pr diff` → triage routing (path-glob → reference spec) → agent emits `.verify-recipes/<pr#>.spec.ts` → spec committed via writer worker → harness runs → trace + report uploaded → agent reviews artifacts.
-2. **Manager-frame captures.** Add full-page screenshot capture beyond the iframe clip.
-3. **Channel-event waits.** `page.evaluate` on `window.__STORYBOOK_ADDONS_CHANNEL__.on(...)` to await indexer events.
-4. **Multi-template triage.** Path-glob → template set per `.omc/research/research-20260508-prverify/report.md` §7.
-5. **CI activation (Phase 2).** Container-isolated execution + Envoy proxy + actor permission gate + artifact upload + `gh pr comment`.
-6. **Chromatic Tier-2.** Pixel-diff layer delegated to Chromatic; replaces in-repo baselines.
+- **Done in v3 — Agent-generated recipes (Increment 2).** `gh pr diff` → triage routing → agent emits `.verify-recipes/pr-<#>.spec.ts` → spec committed after human review → harness runs via `--recipe-spec`. See [Increment 2 — Four-Step Flow](#increment-2--four-step-flow) below.
+
+1. **Manager-frame captures.** Add full-page screenshot capture beyond the iframe clip.
+2. **Channel-event waits.** `page.evaluate` on `window.__STORYBOOK_ADDONS_CHANNEL__.on(...)` to await indexer events.
+3. **Multi-template triage.** Path-glob → template set per `.omc/research/research-20260508-prverify/report.md` §7.
+4. **CI activation (Phase 2).** Container-isolated execution + Envoy proxy + actor permission gate + artifact upload + `gh pr comment`. Requires migrating the recipe-author skill to direct Anthropic SDK (no Claude Code dependency).
+5. **Chromatic Tier-2.** Pixel-diff layer delegated to Chromatic; replaces in-repo baselines.
+
+## Increment 2 — Four-Step Flow
+
+Increment 2 ships `yarn verify-pr-generate`, which produces a per-PR Playwright spec via an OMC executor agent. The four steps are:
+
+1. **Generate the prompt bundle.**
+   ```bash
+   yarn verify-pr-generate --pr <#>
+   ```
+   Fetches PR metadata and diff via `gh`, applies triage routing (see `scripts/verify/recipes/triage-table.ts`), assembles the prompt, enforces the spec-name collision policy (see below), writes `.verify-output/<runId>/prompt-bundle.json`, and prints the next-step command. Use `--force` to overwrite an existing `.verify-recipes/pr-<#>.spec.ts`.
+
+2. **Run the `verify-recipe-author` skill on the prompt bundle.**
+   The skill (`.claude/skills/verify-recipe-author/SKILL.md`) dispatches the OMC executor agent (model: opus) with the assembled prompt, extracts the generated spec from the agent reply, runs a static deny-regex pass (`scripts/verify/recipe-deny.ts`), prepends the header-comment provenance block, lints the candidate with `yarn --cwd code lint:js:cmd` (allowing at most one retry on lint failure), writes `.verify-recipes/pr-<#>.spec.ts`, and emits `.verify-output/<runId>/result.json`.
+
+3. **Human reviews and commits the spec.**
+   Review the diff of `.verify-recipes/pr-<#>.spec.ts` before committing. This is the lethal-trifecta-breaker — the agent never executes its own output. See [`SECURITY.md`](./SECURITY.md).
+
+4. **Run the committed spec.**
+   ```bash
+   yarn verify-pr --recipe-spec .verify-recipes/pr-<#>.spec.ts
+   ```
+   Runs the committed spec via the v2 runner and emits `verify-result.json` with the verdict.
+
+### Spec-name collision
+
+When `.verify-recipes/pr-<#>.spec.ts` already exists and `--force` is not passed, the generator exits 1 with an actionable message. Pass `--force` to explicitly overwrite a previously reviewed spec on re-run.
+
+### Header-comment provenance
+
+The skill prepends a block comment to every generated spec:
+
+```ts
+// verify-pr-generate: {
+//   generatedAt: "<ISO timestamp>",
+//   agentModel: "<model id, e.g. opus>",
+//   prNumber: <#>,
+//   referenceSpecs: ["<rel path>", ...],
+//   triageGlobs: ["<glob>", ...]
+// }
+```
+
+This provides an audit trail that survives squash-merge. No sidecar metadata file is written to the PR tree.
+
+### Triage routing
+
+Changed-file paths are matched against `scripts/verify/recipes/triage-table.ts`. Matched entries supply reference specs from `code/e2e-tests/` that the agent uses as authoring examples. When no paths match, the generator logs `triage: empty → using canonical smoke pattern only` and proceeds with `example-smoke.spec.ts` as the sole reference.
+
+### Diff truncation
+
+- Per-file cap: 500 lines.
+- Total-file cap: 20 files. Triage-matched files are included first; remaining files are ordered by `additions desc`, then `path asc`. Elided files are listed in a summary printed to stderr and embedded in the prompt.
+- Hard cap: 5 MB raw diff. If exceeded the generator aborts with an actionable error.
+
+### Authoring guide
+
+The agent-readable authoring rules live at `.verify-recipes/_recipe-authoring-guide.md`. They cover the output contract, listener-before-goto rule, attach pattern, `RecipePage` API, selector guidance, and what to avoid.
+
+### Deferred
+
+- `--commit-range <a..b>` flag. Only `--pr <#>` is supported today.
+- Phase-2 CI activation requires migrating to direct Anthropic SDK; today the skill couples to Claude Code's `Agent` tool.
 
 ## References
 

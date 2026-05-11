@@ -1,9 +1,11 @@
-import { afterEach, beforeAll, vi } from 'vitest';
+import { beforeEach, afterEach, beforeAll, vi } from 'vitest';
 import type { RunnerTask } from 'vitest';
+import { commands } from 'vitest/browser';
 
 import { Channel } from 'storybook/internal/channels';
 
 import { COMPONENT_TESTING_PANEL_ID } from '../constants.ts';
+import { isFunction } from 'es-toolkit/predicate';
 
 declare global {
   // eslint-disable-next-line @typescript-eslint/ban-ts-comment
@@ -37,6 +39,12 @@ export const modifyErrorMessage = ({ task }: { task: Task }) => {
 beforeAll(() => {
   if (globalThis.globalProjectAnnotations) {
     return globalThis.globalProjectAnnotations.beforeAll();
+  }
+});
+
+beforeEach(async () => {
+  if ('resetMousePosition' in commands && isFunction(commands.resetMousePosition)) {
+    await commands.resetMousePosition();
   }
 });
 

@@ -1,6 +1,6 @@
 import { Component } from '@angular/core';
 
-import type { Meta, StoryObj } from '@storybook/angular';
+import type { Meta, StoryObj } from '@storybook/angular-vite';
 
 @Component({
   standalone: false,

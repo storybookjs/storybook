@@ -1,5 +1,5 @@
-import type { Meta, StoryObj } from '@storybook/angular';
-import { StoryFn, moduleMetadata } from '@storybook/angular';
+import type { Meta, StoryObj } from '@storybook/angular-vite';
+import { StoryFn, moduleMetadata } from '@storybook/angular-vite';
 
 import { FormsModule } from '@angular/forms';
 

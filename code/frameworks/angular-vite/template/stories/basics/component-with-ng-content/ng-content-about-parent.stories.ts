@@ -1,6 +1,6 @@
 import { Component, Input } from '@angular/core';
-import type { Meta, StoryObj } from '@storybook/angular';
-import { componentWrapperDecorator } from '@storybook/angular';
+import type { Meta, StoryObj } from '@storybook/angular-vite';
+import { componentWrapperDecorator } from '@storybook/angular-vite';
 
 @Component({
   standalone: false,

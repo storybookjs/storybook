@@ -15,7 +15,7 @@ Here is a simple example with a storybook decorator that you can place in the `p
 import { HttpClient, HttpClientModule } from '@angular/common/http';
 import { TranslateLoader, TranslateModule } from '@ngx-translate/core';
 import { TranslateHttpLoader } from '@ngx-translate/http-loader';
-import { moduleMetadata, applicationConfig } from '@storybook/angular';
+import { moduleMetadata, applicationConfig } from '@storybook/angular-vite';
 
 function createTranslateLoader(http: HttpClient) {
   return new TranslateHttpLoader(http, '/assets/i18n/', '.json');

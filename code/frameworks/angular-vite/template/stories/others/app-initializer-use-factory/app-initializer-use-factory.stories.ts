@@ -1,6 +1,6 @@
 import { action } from 'storybook/actions';
-import type { Meta, StoryObj } from '@storybook/angular';
-import { moduleMetadata } from '@storybook/angular';
+import type { Meta, StoryObj } from '@storybook/angular-vite';
+import { moduleMetadata } from '@storybook/angular-vite';
 
 import { APP_INITIALIZER } from '@angular/core';
 

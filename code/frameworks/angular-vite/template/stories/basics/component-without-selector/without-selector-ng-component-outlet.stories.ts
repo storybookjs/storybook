@@ -1,7 +1,7 @@
 import type { OnInit, Type } from '@angular/core';
 import { Component, Injector, Input } from '@angular/core';
-import type { Meta, StoryObj } from '@storybook/angular';
-import { componentWrapperDecorator, moduleMetadata } from '@storybook/angular';
+import type { Meta, StoryObj } from '@storybook/angular-vite';
+import { componentWrapperDecorator, moduleMetadata } from '@storybook/angular-vite';
 import { WithoutSelectorComponent, WITHOUT_SELECTOR_DATA } from './without-selector.component';
 
 const meta: Meta<WithoutSelectorComponent> = {

@@ -1,5 +1,5 @@
-import type { Args, Meta } from '@storybook/angular';
-import { componentWrapperDecorator } from '@storybook/angular';
+import type { Args, Meta } from '@storybook/angular-vite';
+import { componentWrapperDecorator } from '@storybook/angular-vite';
 
 export const Base = (args: Args) => ({
   template: 'Change sb_theme with the brush in toolbar',

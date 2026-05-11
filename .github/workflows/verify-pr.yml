@@ -82,6 +82,12 @@ jobs:
         working-directory: pr-head
         env:
           PR_NUMBER: ${{ github.event.pull_request.number }}
+          # Force Nx to run locally — the fork harness firetest runs without
+          # Nx Cloud org auth, and the Verify step does not need distributed
+          # cache. Upstream CI behaviour is unaffected (other steps that
+          # already use Nx Cloud auth continue to do so).
+          NX_NO_CLOUD: 'true'
+          NX_CLOUD_ACCESS_TOKEN: ''
         run: |
           set -euo pipefail
           yarn install --immutable

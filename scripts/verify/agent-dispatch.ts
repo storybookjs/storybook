@@ -25,15 +25,17 @@ const CANONICAL_SMOKE_PATH = path.resolve(RECIPES_DIR, 'example-smoke.spec.ts');
 // Claude Code hint (e.g. `claude-opus-4-7[1m]`); the SDK only accepts the
 // canonical public id. Update this map when newer ids become available.
 export const MODEL_ID_MAP: Record<string, string> = {
-  'claude-opus-4-7[1m]': 'claude-opus-4-5-20250929',
-  'claude-opus-4-7': 'claude-opus-4-5-20250929',
-  'claude-opus-4-6': 'claude-opus-4-5-20250929',
-  'claude-opus-4-5': 'claude-opus-4-5-20250929',
+  'claude-opus-4-7[1m]': 'claude-opus-4-7',
+  'claude-opus-4-7': 'claude-opus-4-7',
+  'claude-opus-4-6': 'claude-opus-4-6',
+  'claude-opus-4-5': 'claude-opus-4-5-20251101',
   'claude-haiku-4-5': 'claude-haiku-4-5-20251001',
 };
 
 export const MODEL_MAX_TOKENS: Record<string, number> = {
-  'claude-opus-4-5-20250929': 8192,
+  'claude-opus-4-7': 8192,
+  'claude-opus-4-6': 8192,
+  'claude-opus-4-5-20251101': 8192,
   'claude-haiku-4-5-20251001': 4096,
 };
 

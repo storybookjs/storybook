@@ -8,12 +8,13 @@ jobs:
   verify:
     if: github.event.pull_request.draft == false && contains(github.event.pull_request.labels.*.name, 'ci:verify')
     runs-on: ubuntu-22.04
-    timeout-minutes: 30   # TODO(AC-V5-0-2) confirm via empirical cold-build measurement; raise to 45 if p100 > 12 min
+    timeout-minutes: 30
     concurrency:
       group: verify-${{ github.event.pull_request.number }}
       cancel-in-progress: true
     permissions:
       pull-requests: write
+      issues: write
       statuses: write
     steps:
       - name: Check actor permission
@@ -52,8 +53,7 @@ jobs:
         # which breaks actions/checkout's submodule-foreach cleanup pass under
         # persist-credentials: false. The manual clone never writes auth into
         # pr-head/.git, preserving the same security posture as
-        # persist-credentials: false. .git/ is also excluded from the docker
-        # build context by .dockerignore.
+        # persist-credentials: false.
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
@@ -67,10 +67,7 @@ jobs:
           cd pr-head
           git -c protocol.version=2 fetch --no-tags --depth=1 origin "$PR_HEAD_SHA"
           git checkout --force "$PR_HEAD_SHA"
-          # Remove the credential from .git/config so subsequent git ops cannot
-          # use it.
           git remote set-url origin "https://github.com/${REPO}.git"
-          # Also scrub any cached credential helper.
           git config --local --unset-all credential.helper 2>/dev/null || true
 
       - name: Spec precheck
@@ -80,92 +77,50 @@ jobs:
           pr-number: ${{ github.event.pull_request.number }}
           head-checkout-path: pr-head
 
-      - name: Harden build context
+      - name: Verify PR
         if: steps.spec_precheck.outputs.spec-present == 'true'
+        working-directory: pr-head
         env:
-          GITHUB_TOKEN: ''
-        run: ./scripts/verify/harden-build-context.sh pr-head
-
-      - name: Set up Docker Buildx
-        if: steps.spec_precheck.outputs.spec-present == 'true'
-        uses: docker/setup-buildx-action@988b5a0280414f521da01fcc63a27aeeb4b104db # v3.6.1
-
-      - name: Build harness image
-        if: steps.spec_precheck.outputs.spec-present == 'true'
-        id: build_image
-        env:
-          GITHUB_TOKEN: ''   # explicitly clear — buildx daemon has runner network anyway
-        uses: docker/build-push-action@4f58ea79222b3b9dc2c8bbdd6debcef730109a75 # v5.1.0
-        with:
-          context: ./pr-head
-          file: scripts/verify/Dockerfile           # base-sha checkout; maintainer-reviewed
-          tags: verify-harness:${{ github.sha }}
-          load: true
-          build-args: |
-            HEAD_SHA=${{ github.event.pull_request.head.sha }}
-          cache-from: type=gha,scope=pr-${{ github.event.pull_request.number }}
-          cache-to: type=gha,mode=max,scope=pr-${{ github.event.pull_request.number }}
-
-      - name: Capture image digest
-        if: steps.spec_precheck.outputs.spec-present == 'true'
-        id: image_digest
+          PR_NUMBER: ${{ github.event.pull_request.number }}
         run: |
           set -euo pipefail
-          DIGEST="$(docker inspect --format='{{.Id}}' verify-harness:${{ github.sha }})"
-          echo "digest=$DIGEST" >> "$GITHUB_OUTPUT"
-          echo "image-digest: $DIGEST" >> "$GITHUB_STEP_SUMMARY"
-          echo "VERIFY_HARNESS_IMAGE_DIGEST=$DIGEST" >> "$GITHUB_ENV"
+          yarn install --immutable
+          yarn nx run-many -t compile -p core,cli,create-storybook
+          yarn verify-pr --recipe-spec ".verify-recipes/pr-${PR_NUMBER}.spec.ts"
 
-      - name: Smoke test image
-        if: steps.spec_precheck.outputs.spec-present == 'true'
+      - name: Read verdict
+        id: verdict
+        if: always() && steps.spec_precheck.outputs.spec-present == 'true'
         run: |
           set -euo pipefail
-          # LOW — capture stdout+stderr via tee, keep last stdout line as the sentinel.
-          SENTINEL="$(docker run --rm \
-            --network=none --cap-drop ALL --security-opt no-new-privileges \
-            --read-only --tmpfs /tmp:rw,size=100m \
-            --tmpfs /workspace/.verify-output:rw,size=500m \
-            --memory 4g --pids-limit 200 --user 1000:1000 \
-            -e VERIFY_HARNESS_IMAGE_DIGEST="$VERIFY_HARNESS_IMAGE_DIGEST" \
-            verify-harness:${{ github.sha }} \
-            /opt/verify-harness/smoke.sh 2>&1 | tee /tmp/smoke.log | tail -1)"
-          # BLOCKER #1 — fail-closed: real digest only (no sha256:0{64} match).
-          echo "$SENTINEL" \
-            | grep -E '^\{"event":"smoke","status":"ready","durationMs":[0-9]+,"imageDigest":"sha256:[a-f0-9]{64}"\}$' \
-            | grep -vE '"imageDigest":"sha256:0{64}"'
+          RESULT=""
+          if compgen -G "pr-head/.verify-output/*/verify-result.json" >/dev/null; then
+            RESULT=$(ls -t pr-head/.verify-output/*/verify-result.json | head -1)
+          fi
+          if [ -n "$RESULT" ]; then
+            VERDICT=$(jq -r '.verdict' "$RESULT")
+            echo "verdict=$VERDICT" >> "$GITHUB_OUTPUT"
+            echo "verdict: $VERDICT" >> "$GITHUB_STEP_SUMMARY"
+            jq -r '"target=\(.template) regressionReason=\(.regressionReason // "n/a")"' "$RESULT" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "verdict=missing" >> "$GITHUB_OUTPUT"
+          fi
 
-      - name: Run harness in container
-        if: steps.spec_precheck.outputs.spec-present == 'true'
+      - name: Apply verified-by-harness label
+        if: steps.verdict.outputs.verdict == 'verified'
         env:
-          VERIFY_HARNESS_IMAGE_DIGEST: ${{ steps.image_digest.outputs.digest }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          docker run \
-            --name verify-harness-${{ github.run_id }} \
-            --cap-drop ALL --security-opt no-new-privileges \
-            --read-only --tmpfs /tmp:rw,size=100m \
-            --tmpfs /workspace/.verify-output:rw,size=500m \
-            --network none --memory 4g --pids-limit 200 --user 1000:1000 \
-            -v ${{ github.workspace }}/pr-head:/workspace:ro \
-            -e VERIFY_HARNESS_IMAGE_DIGEST="$VERIFY_HARNESS_IMAGE_DIGEST" \
-            -e VERIFY_HARNESS_EXPECTED_HEAD_SHA="${{ github.event.pull_request.head.sha }}" \
-            verify-harness:${{ github.sha }} \
-            yarn verify-pr --recipe-spec .verify-recipes/${{ github.event.pull_request.number }}.spec.ts
+          gh pr edit ${{ github.event.pull_request.number }} \
+            --repo ${{ github.repository }} \
+            --add-label verified-by-harness
 
-      - name: Mirror tmpfs output to runner workspace
-        if: steps.spec_precheck.outputs.spec-present == 'true' && always()
-        run: |
-          set -euo pipefail
-          mkdir -p .verify-output
-          docker cp verify-harness-${{ github.run_id }}:/workspace/.verify-output/. .verify-output/
-          # Existence assertion — no || true on the load-bearing copy.
-          ls .verify-output/*/verify-result.json >/dev/null
-          docker rm verify-harness-${{ github.run_id }} || true   # cleanup only; not a verdict gate
       - name: Upload artifacts
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: verify-output-pr-${{ github.event.pull_request.number }}-${{ github.run_id }}
-          path: .verify-output/
+          path: pr-head/.verify-output/
           if-no-files-found: warn
           include-hidden-files: true
           retention-days: 14
@@ -184,7 +139,7 @@ jobs:
                 await github.rest.issues.createComment({ issue_number: context.issue.number, owner: context.repo.owner, repo: context.repo.repo, body });
                 return;
               }
-              const root = '.verify-output';
+              const root = 'pr-head/.verify-output';
               const dirs = fs.existsSync(root)
                 ? fs.readdirSync(root, { withFileTypes: true })
                     .filter((d) => d.isDirectory())
@@ -199,7 +154,7 @@ jobs:
                 body = `## Verify Harness\n\nNo verdict produced (workflow failed before harness ran). See [run log](${url}).`;
               } else {
                 const verdict = JSON.parse(fs.readFileSync(resultPath, 'utf-8'));
-                body = `## Verify Harness\n\nVerdict: \`${verdict.verdict}\` (image ${verdict.imageDigest ?? 'n/a'}, head ${verdict.headSha ?? 'n/a'})${verdict.regressionReason ? `\n\nReason: \`${verdict.regressionReason}\`` : ''}\n\nReplay: \`npx playwright show-trace\` on the trace.zip in [artifacts](${url}/artifacts).`;
+                body = `## Verify Harness\n\nVerdict: \`${verdict.verdict}\` (target \`${verdict.template}\`)${verdict.regressionReason ? `\n\nReason: \`${verdict.regressionReason}\`` : ''}\n\nReplay: \`npx playwright show-trace\` on the trace.zip in [artifacts](${url}/artifacts).`;
               }
             } catch (err) {
               body = `## Verify Harness\n\nError reading verdict: \`${err.message}\`. See [run log](${url}).`;

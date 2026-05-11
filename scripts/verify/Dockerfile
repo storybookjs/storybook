@@ -202,7 +202,7 @@ RUN set -eux; \
     SBX_DIST="${STORYBOOK_SANDBOX_ROOT}/react-vite-default-ts/node_modules/storybook/dist"; \
     rm -rf "${SBX_DIST}"; \
     cp -RL /opt/verify-harness/repo/code/core/dist "${SBX_DIST}"; \
-    ls "${SBX_DIST}/index.js" >/dev/null
+    test -f "${SBX_DIST}/bin/dispatcher.js"
 
 # 3.e Permissions sweep.
 USER root

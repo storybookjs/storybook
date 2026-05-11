@@ -20,9 +20,16 @@ ENV DEBIAN_FRONTEND=noninteractive \
     YARN_ENABLE_TELEMETRY=false \
     COREPACK_ENABLE_DOWNLOAD_PROMPT=0
 
-# 1.a Pin Node 22.22.1. Re-install only if mismatch (OQ-V5-0-E).
+# 1.a Pin Node 22.22.1. Re-install only if mismatch (OQ-V5-0-E resolved:
+# playwright:v1.58.2-jammy ships Node 24.x, so the re-install always fires).
+# xz-utils + ca-certificates are required to extract the .tar.xz and validate
+# TLS to nodejs.org. Both are absent from the jammy base. apt lists pruned
+# after install to keep the layer slim.
 RUN set -eux; \
     if [ "$(node --version 2>/dev/null || true)" != "v${NODE_VERSION}" ]; then \
+      apt-get update; \
+      apt-get install -y --no-install-recommends xz-utils ca-certificates; \
+      rm -rf /var/lib/apt/lists/*; \
       curl -fsSLo /tmp/node.tar.xz "https://nodejs.org/dist/v${NODE_VERSION}/node-v${NODE_VERSION}-linux-x64.tar.xz"; \
       tar -xJf /tmp/node.tar.xz -C /usr/local --strip-components=1 --no-same-owner; \
       rm /tmp/node.tar.xz; \

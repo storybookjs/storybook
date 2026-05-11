@@ -24,6 +24,10 @@ jobs:
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           ref: ${{ github.event.pull_request.base.sha }}
+      - name: Setup Node.js and Install Dependencies
+        uses: ./.github/actions/setup-node-and-install
+        with:
+          install-code-deps: true
       - name: Fetch PR diff
         run: gh pr diff ${{ github.event.pull_request.number }} > /tmp/pr.diff
         env:
@@ -62,11 +66,33 @@ jobs:
         with:
           script: |
             const fs = require('fs');
-            const verdict = JSON.parse(fs.readFileSync('.verify-output/latest/verify-result.json'));
+            const path = require('path');
             const url = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+            let body;
+            try {
+              const root = '.verify-output';
+              const dirs = fs.existsSync(root)
+                ? fs.readdirSync(root, { withFileTypes: true })
+                    .filter((d) => d.isDirectory())
+                    .map((d) => d.name)
+                    .sort()
+                    .reverse()
+                : [];
+              const resultPath = dirs
+                .map((d) => path.join(root, d, 'verify-result.json'))
+                .find((p) => fs.existsSync(p));
+              if (!resultPath) {
+                body = `## Verify Harness\n\nNo verdict produced (workflow failed before harness ran). See [run log](${url}).`;
+              } else {
+                const verdict = JSON.parse(fs.readFileSync(resultPath, 'utf-8'));
+                body = `## Verify Harness\n\nVerdict: \`${verdict.verdict}\`\n\nReplay: \`npx playwright show-trace\` on the trace.zip in [artifacts](${url}/artifacts).`;
+              }
+            } catch (err) {
+              body = `## Verify Harness\n\nError reading verdict: \`${err.message}\`. See [run log](${url}).`;
+            }
             github.rest.issues.createComment({
               issue_number: context.issue.number,
               owner: context.repo.owner,
               repo: context.repo.repo,
-              body: `## Verify Harness\n\nVerdict: \`${verdict.verdict}\`\n\nReplay: \`npx playwright show-trace\` on the trace.zip in [artifacts](${url}/artifacts).`
+              body,
             });

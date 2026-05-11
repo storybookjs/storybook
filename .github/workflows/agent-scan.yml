@@ -17,8 +17,9 @@ jobs:
   agentscan:
     if: |
       github.repository_owner == 'storybookjs' &&
+      github.event.pull_request.head.repo.full_name != github.repository &&
       !contains(
-        fromJSON('["OWNER","MEMBER","COLLABORATOR"]'),
+        fromJSON('["OWNER","MEMBER"]'),
         github.event.pull_request.author_association
       ) && !contains(
         fromJSON('["dependabot[bot]", "github-actions[bot]","storybook-bot"]'),

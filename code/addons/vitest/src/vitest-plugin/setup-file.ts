@@ -1,6 +1,5 @@
 import { beforeEach, afterEach, beforeAll, vi } from 'vitest';
 import type { RunnerTask } from 'vitest';
-import { commands } from 'vitest/browser';
 
 import { Channel } from 'storybook/internal/channels';
 
@@ -36,16 +35,44 @@ export const modifyErrorMessage = ({ task }: { task: Task }) => {
   }
 };
 
+export const resetMousePositionBeforeTests = async () => {
+  try {
+    const { commands } = await import('vitest/browser');
+    if ('resetMousePosition' in commands && isFunction(commands.resetMousePosition)) {
+      await commands.resetMousePosition();
+    }
+  } catch (error) {
+    // Ignore when vitest/browser is not found not found (Vitest 3)
+    if (error instanceof Error && error.message.includes("Cannot find module 'vitest/browser'")) {
+      return;
+    }
+    // Ignore when commands is not exported by vitest/browser (Vitest 3)
+    if (
+      error instanceof Error &&
+      error.message.includes("Cannot destructure property 'commands'")
+    ) {
+      return;
+    }
+
+    // Ignore "Error: vitest/browser can be imported only inside the Browser Mode."
+    if (
+      error instanceof Error &&
+      error.message.includes('vitest/browser can be imported only inside the Browser Mode')
+    ) {
+      return;
+    }
+
+    // Throw anything else
+    throw error;
+  }
+};
+
 beforeAll(() => {
   if (globalThis.globalProjectAnnotations) {
     return globalThis.globalProjectAnnotations.beforeAll();
   }
 });
 
-beforeEach(async () => {
-  if ('resetMousePosition' in commands && isFunction(commands.resetMousePosition)) {
-    await commands.resetMousePosition();
-  }
-});
+beforeEach(resetMousePositionBeforeTests);
 
 afterEach(modifyErrorMessage);

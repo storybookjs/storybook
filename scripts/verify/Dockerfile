@@ -178,8 +178,11 @@ COPY --chown=1000:1000 . /opt/verify-harness/repo
 
 WORKDIR /opt/verify-harness/repo
 
-# 3.a Compile code/core via the on-disk yarn binary (HIGH #4).
-RUN node "$HARNESS_YARN_BIN" nx compile core
+# 3.a Compile core + the CLI packages that scripts/utils/cli-step.ts resolves
+# via `require.resolve(...dist/bin/...)` at module-eval time. The sandbox task
+# imports cli-step.ts, so cli-storybook and create-storybook must be compiled
+# before the next step runs.
+RUN node "$HARNESS_YARN_BIN" nx run-many -t compile -p core,cli-storybook,create-storybook
 
 # 3.b Bootstrap the sandbox at the baked path.
 RUN mkdir -p /opt/verify-harness/storybook-sandboxes && \

@@ -150,7 +150,13 @@ export default defineGeneratorModule({
 
     const extraPackages = [
       ...extraAngularDeps,
-      ...(isVite ? ['@analogjs/vite-plugin-angular', 'vite'] : []),
+      ...(isVite
+        ? [
+            angularVersion ? `@angular/animations@${angularVersion}` : '@angular/animations',
+            '@analogjs/vite-plugin-angular',
+            'vite',
+          ]
+        : []),
       ...(useCompodoc ? ['@compodoc/compodoc', '@storybook/addon-docs'] : []),
     ];
 

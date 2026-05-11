@@ -370,6 +370,63 @@ describe('ghostStoriesChannel', () => {
         expect(mockStoryGeneration.getComponentCandidates).not.toHaveBeenCalled();
       });
 
+      it('should skip discovery run when ghost stories ran and ai-setup scoring runId matches current ai-setup session', async () => {
+        mockChannel.addListener(GHOST_STORIES_RESPONSE, ghostStoriesEventListener);
+        vi.mocked(mockTelemetry.getLastEvents).mockResolvedValue({
+          'ghost-stories': { timestamp: Date.now(), body: {} },
+          'ai-setup': { body: { payload: { runId: 'session-A' } } },
+          'ai-setup-final-scoring': { body: { payload: { runId: 'session-A' } } },
+          init: { body: { sessionId: 'test-session' } },
+        } as any);
+
+        initGhostStoriesChannel(mockChannel, {} as Options);
+
+        mockChannel.emit(GHOST_STORIES_REQUEST);
+
+        await vi.waitFor(() => {
+          expect(ghostStoriesEventListener).toHaveBeenCalled();
+        });
+
+        expect(mockTelemetry.getStorybookMetadata).not.toHaveBeenCalled();
+        expect(mockStoryGeneration.getComponentCandidates).not.toHaveBeenCalled();
+      });
+
+      it('should run discovery again when ghost stories ran but ai-setup scoring runId is from an older session', async () => {
+        mockChannel.addListener(GHOST_STORIES_RESPONSE, ghostStoriesEventListener);
+        // Ghost stories has run before, but a new `ai setup` session has started
+        // (scoring runId is from session-A, ai-setup runId is now session-B)
+        vi.mocked(mockTelemetry.getLastEvents).mockResolvedValue({
+          'ghost-stories': { timestamp: Date.now(), body: {} },
+          'ai-setup': { body: { payload: { runId: 'session-B' } } },
+          'ai-setup-final-scoring': { body: { payload: { runId: 'session-A' } } },
+          init: { body: { sessionId: 'test-session' } },
+        } as any);
+
+        vi.mocked(mockTelemetry.getStorybookMetadata).mockResolvedValue({
+          renderer: '@storybook/react',
+          addons: { '@storybook/addon-vitest': {} },
+        } as any);
+
+        vi.mocked(mockStoryGeneration.getComponentCandidates).mockResolvedValue({
+          candidates: [],
+          globMatchCount: 0,
+          analyzedCount: 0,
+          avgComplexity: 0,
+        });
+
+        initGhostStoriesChannel(mockChannel, {} as Options);
+
+        mockChannel.emit(GHOST_STORIES_REQUEST);
+
+        await vi.waitFor(() => {
+          expect(ghostStoriesEventListener).toHaveBeenCalled();
+        });
+
+        // Should have proceeded past the skip condition
+        expect(mockTelemetry.getStorybookMetadata).toHaveBeenCalled();
+        expect(mockStoryGeneration.getComponentCandidates).toHaveBeenCalled();
+      });
+
       it('should skip discovery run when not in a React + Vitest project', async () => {
         mockChannel.addListener(GHOST_STORIES_RESPONSE, ghostStoriesEventListener);
         // Has not run yet (no ghost stories event and session matches)

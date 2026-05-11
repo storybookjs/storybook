@@ -1,6 +1,6 @@
-import React, { useMemo } from 'react';
+import React, { type SyntheticEvent, useMemo } from 'react';
 
-import { ToggleButton } from 'storybook/internal/components';
+import { Button, ToggleButton } from 'storybook/internal/components';
 import type {
   API_PreparedIndexEntry,
   StatusesByStoryIdAndTypeId,
@@ -8,6 +8,8 @@ import type {
   StoryIndex,
   Tag,
 } from 'storybook/internal/types';
+
+import { SweepIcon } from '@storybook/icons';
 
 import {
   experimental_useStatusStore,
@@ -20,9 +22,15 @@ import { computeStatusFilterFn } from '../../../manager-api/modules/statuses.ts'
 import { computeTagsFilterFn } from '../../../manager-api/modules/tags.ts';
 import { UseSymbol } from './IconSymbols.tsx';
 
-const StyledCTA = styled(ToggleButton)({
+const Wrapper = styled.div({
+  display: 'flex',
+  alignItems: 'center',
+  gap: 4,
   marginTop: -8,
-  width: '100%',
+});
+
+const StyledCTA = styled(ToggleButton)({
+  flex: 1,
   justifyContent: 'flex-start',
 });
 
@@ -102,10 +110,15 @@ const ReviewChangesButton = () => {
     return null;
   }
 
+  const clearReview = () => {
+    const nextIncluded = includedStatusFilters.filter((s) => s !== NEW && s !== MOD);
+    const nextExcluded = excludedStatusFilters.filter((s) => s !== NEW && s !== MOD);
+    api.setAllStatusFilters(nextIncluded, nextExcluded);
+  };
+
   const onClick = () => {
     if (isReviewActive) {
-      const nextIncluded = includedStatusFilters.filter((s) => s !== NEW && s !== MOD);
-      api.setAllStatusFilters(nextIncluded, excludedStatusFilters);
+      clearReview();
     } else {
       const nextIncluded = Array.from(new Set([...includedStatusFilters, NEW, MOD]));
       const nextExcluded = excludedStatusFilters.filter((s) => s !== NEW && s !== MOD);
@@ -113,23 +126,42 @@ const ReviewChangesButton = () => {
     }
   };
 
+  const onClearClick = (e: SyntheticEvent) => {
+    e.stopPropagation();
+    clearReview();
+  };
+
   const changeKinds =
     newCount > 0 && modifiedCount > 0 ? 'new and modified' : newCount > 0 ? 'new' : 'modified';
   const label = `${isReviewActive ? 'Reviewing' : 'Review'} ${changeKinds} stories`;
 
   return (
-    <StyledCTA
-      variant="ghost"
-      padding="small"
-      pressed={isReviewActive}
-      ariaLabel={label}
-      onClick={onClick}
-    >
-      <StyledIcon viewBox="0 0 14 14" width="14" height="14" aria-hidden>
-        <UseSymbol type="new" />
-      </StyledIcon>
-      {label}
-    </StyledCTA>
+    <Wrapper>
+      <StyledCTA
+        variant="ghost"
+        padding="small"
+        pressed={isReviewActive}
+        ariaLabel={label}
+        onClick={onClick}
+      >
+        <StyledIcon viewBox="0 0 14 14" width="14" height="14" aria-hidden>
+          <UseSymbol type="new" />
+        </StyledIcon>
+        {label}
+      </StyledCTA>
+      {isReviewActive && (
+        <Button
+          variant="ghost"
+          padding="small"
+          size="small"
+          onClick={onClearClick}
+          ariaLabel="Clear"
+          tooltip="Clear"
+        >
+          <SweepIcon />
+        </Button>
+      )}
+    </Wrapper>
   );
 };
 

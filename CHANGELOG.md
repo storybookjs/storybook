@@ -38,7 +38,7 @@
 
 ## 10.3.0
 
-_> Improved developer experience, AI-assisting tools, and broader ecosystem support_
+> _Improved developer experience, AI-assisting tools, and broader ecosystem support_
 
 Storybook 10.3 contains hundreds of fixes and improvements including:
 

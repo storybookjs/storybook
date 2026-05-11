@@ -22,3 +22,12 @@ export function listSteps(
       .join('\n\n')}
   `;
 }
+
+export function listDOD(dods: (string | undefined)[]): string {
+  return dedent`
+    ${dods
+      .filter(Boolean)
+      .map((s) => `- ${s}`)
+      .join('\n')}
+  `;
+}

@@ -805,7 +805,7 @@ export const StatusesChangeDetectionPriority: Story = {
   play: waitForChecklistWidget,
 };
 
-export const WithCTAInActive: Story = {
+export const WithCTAInactive: Story = {
   args: {
     allStatuses: newStatusAllStories,
     indexJson: indexJsonWithAllStories,
@@ -831,10 +831,9 @@ export const WithCTAInActive: Story = {
     await waitForChecklistWidget();
     await step('CTA shows reviewing state', async () => {
       const canvas = within(canvasElement);
-      const cta = await canvas.findByRole('switch', { name: 'Reviewing new stories' });
+      const cta = await canvas.findByRole('switch', { name: 'Review new stories' });
       await expect(cta).toBeInTheDocument();
-      await expect(cta).toHaveAttribute('aria-checked', 'true');
-      await expect(cta).toHaveTextContent('Reviewing new stories');
+      await expect(cta).toHaveAttribute('aria-checked', 'false');
     });
   },
 };

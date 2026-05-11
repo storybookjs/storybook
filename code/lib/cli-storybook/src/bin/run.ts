@@ -317,7 +317,8 @@ aiCommand
   .option('-c, --config-dir <dir-name>', 'Directory of Storybook configuration')
   .action(async (options, cmd) => {
     const parentOptions = cmd.parent?.opts() ?? {};
-    const mergedOptions = { ...parentOptions, ...options };
+    const runId = Math.random().toString(36);
+    const mergedOptions = { ...parentOptions, ...options, runId };
     await withTelemetry('ai-setup', { cliOptions: mergedOptions }, async () => {
       await aiSetup(mergedOptions);
     }).catch(handleCommandFailure(mergedOptions.logfile));

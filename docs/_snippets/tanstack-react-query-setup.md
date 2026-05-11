@@ -12,12 +12,10 @@ const queryClient = new QueryClient({
 });
 
 export default {
-  loaders: [
+  beforeEach: () => {
     // 👇 Clear the cache between stories so each story starts fresh
-    () => {
-      queryClient.clear();
-    },
-  ],
+    queryClient.clear();
+  },
   parameters: {
     tanstack: {
       router: {
@@ -52,12 +50,10 @@ const queryClient = new QueryClient({
 });
 
 export default definePreview({
-  loaders: [
+  beforeEach: () => {
     // 👇 Clear the cache between stories so each story starts fresh
-    () => {
-      queryClient.clear();
-    },
-  ],
+    queryClient.clear();
+  },
   parameters: {
     tanstack: {
       router: {

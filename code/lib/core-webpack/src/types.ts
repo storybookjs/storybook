@@ -1,5 +1,7 @@
 import type { Options, StorybookConfig as StorybookConfigBase } from 'storybook/internal/types';
 
+import type { Configuration } from 'webpack';
+
 export type { Options, Preset, BuilderResult, TypescriptOptions } from 'storybook/internal/types';
 
 export type RulesConfig = any;
@@ -19,7 +21,7 @@ export interface WebpackConfiguration {
   module?: ModuleConfig;
   resolve?: ResolveConfig;
   optimization?: any;
-  devtool?: false | string;
+  devtool?: Configuration['devtool'];
 }
 
 export type BuilderOptions = {

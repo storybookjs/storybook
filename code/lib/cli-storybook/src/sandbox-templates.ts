@@ -749,7 +749,6 @@ export const baseTemplates = {
       renderer: '@storybook/angular-vite',
       builder: '@storybook/builder-vite',
     },
-    inDevelopment: true,
     skipTasks: ['bench', 'vitest-integration'],
     initOptions: { builder: SupportedBuilder.VITE },
   },

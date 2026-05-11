@@ -54,9 +54,13 @@ ENV YARN_BIN=/opt/verify-harness/repo/.yarn/releases/yarn-4.10.3.cjs \
 COPY --from=oven/bun:1.3.0-slim@sha256:337866545ababba9c5b7432e0b446eaba25621a55d2757df1f933f6f609714c7 /usr/local/bin/bun /usr/local/bin/bun
 RUN bun --version | grep -F "${BUN_VERSION}"
 
-# 1.d Non-root user.
-RUN groupadd --gid 1000 verify && \
-    useradd  --uid 1000 --gid 1000 --create-home --shell /bin/bash verify && \
+# 1.d Non-root user. Playwright's jammy base already ships `pwuser` at
+# UID/GID 1000, so the create commands are guarded with getent/id probes
+# (idempotent for a future base image that drops the prebuilt user).
+RUN if ! getent group 1000 > /dev/null; then groupadd --gid 1000 verify; fi && \
+    if ! id -u 1000 > /dev/null 2>&1; then \
+      useradd --uid 1000 --gid 1000 --create-home --shell /bin/bash verify; \
+    fi && \
     mkdir -p /workspace /workspace/.verify-output /opt/verify-harness && \
     chown -R 1000:1000 /workspace /opt/verify-harness
 

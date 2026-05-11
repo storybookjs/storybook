@@ -1,3 +1,4 @@
+// @verify-target: internal-ui
 import { expect, test } from '@playwright/test';
 
 import { RecipePage } from './_util.ts';

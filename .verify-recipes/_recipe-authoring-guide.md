@@ -201,7 +201,32 @@ See `.verify-recipes/example-smoke.spec.ts` for the canonical minimum. Your outp
 
 ---
 
-## 12. Output budget
+## 12. Target selection (v6)
+
+Pick one of two execution targets via a single-line header comment as
+the **first non-empty line** of the spec:
+
+```ts
+// @verify-target: internal-ui
+// or:
+// @verify-target: sandbox:react-vite/default-ts
+```
+
+| Target | What the harness boots | Pick when |
+|---|---|---|
+| `internal-ui` (default if header absent) | `code/storybook-static/` served via `http-server`. Built once from the PR-head monorepo. | The diff touches a package that the internal Storybook UI exercises (manager, manager-api, channels, core-server, addons, csf-tools, preview-api). This is the right answer for ~all PRs. |
+| `sandbox:<template>` | `yarn task sandbox --template <template>` + `code/core/dist` symlinked into the sandbox's `node_modules/storybook`. | The diff is template-specific (frameworks/builders/renderers) AND the regression is only reproducible inside a generated sandbox. Rare. |
+
+If you choose `sandbox:<template>`, use a template the repo lists in
+`code/lib/cli-storybook/src/sandbox-templates.ts` — typically
+`react-vite/default-ts`, `react-webpack/default-ts`,
+`vue3-vite/default-ts`, or `nextjs/default-ts`.
+
+The header must appear before the first `import` statement. The
+parser scans the first 30 lines; an absent or unrecognised header
+falls back to `internal-ui`.
+
+## 13. Output budget
 
 - One file, typically 30-80 lines.
 - One test, typically 3-8 assertions (counting `await expect(...)` calls).

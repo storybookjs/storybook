@@ -1,85 +1,190 @@
-# Verify Harness — Runbook
+# Verify Harness — Runbook (v6)
 
-This runbook is the field-debugging guide for the v5-0 containerized verify harness. It maps common CI failure signals to root-cause diagnoses and remediation steps.
+Field-debugging guide for the v6 local-first verify harness. Maps
+common failure signals to root-cause diagnoses and remediation steps,
+for both the local AI fix-loop and the CI workflow.
 
-## When v5-0 fails in CI — common signals + diagnosis
+## Local AI fix-loop
 
-### Signal: `Harden build context` step failed
-
-**Most likely cause:** `scripts/verify/Dockerfile` diverges between `base.sha` and `head.sha`.
-
-The harden script runs `diff -q scripts/verify/Dockerfile pr-head/scripts/verify/Dockerfile` and refuses to build if the two copies are not byte-identical (BLOCKER #3 step 6). A PR that edits the Dockerfile will trip this guard.
-
-**Diagnosis:**
+The expected loop:
 
 ```bash
-git fetch origin "${{ github.event.pull_request.base.sha }}"
-git fetch origin "${{ github.event.pull_request.head.sha }}"
-git diff "${{ github.event.pull_request.base.sha }}":scripts/verify/Dockerfile \
-         "${{ github.event.pull_request.head.sha }}":scripts/verify/Dockerfile
+# 1. Make a change locally on the PR head branch.
+# 2. Run the harness against the committed spec for that PR.
+yarn verify-pr <PR#>
+# 3. Inspect verdict + traces; iterate.
 ```
 
-If the diff is intentional (e.g. a v5-1 follow-up landing through a PR), it must be merged in two passes: first merge the Dockerfile change to `next`, then rebase the PR so `base.sha` already contains the new Dockerfile. Otherwise the harden-script's "Dockerfile diverges between base.sha and head.sha" check will fail every run.
+### Signal: spec-present check fails locally
 
-Secondary causes:
-- `.yarn/releases/yarn-4.10.3.cjs` missing or replaced in head — verified by `sha256_check`. Inspect the harden-script log lines `[harden] removing pr-head/.yarn…` and the post-overlay sha256 mismatch.
-- A symlink at `pr-head/.yarn`, `pr-head/.yarn/plugins`, or `pr-head/.yarn/releases`. The symlink guard removes them; if removal fails, fix permissions on the runner workspace.
+```
+Error: ENOENT: no such file or directory, open '.verify-recipes/pr-<#>.spec.ts'
+```
 
----
-
-### Signal: Smoke step's JSON sentinel is absent or malformed
-
-**Most likely causes (in priority order):**
-
-1. **Image build is broken.** The smoke script's first action is `node "$HARNESS_YARN_BIN" verify-pr --skip-recipe`. If the image is missing `/opt/verify-harness/repo/.yarn/releases/yarn-4.10.3.cjs`, that `node` invocation dies before the sentinel prints.
-   - Diagnose: download the failed image step's logs and search for `::error::yarn binary missing at $HARNESS_YARN_BIN` or for the `bun --version` / `node --version` probes in stage 1.
-2. **`bootStorybook` attempted to reach the network.** All outbound traffic is blocked by `--network=none`. Any DNS, telemetry, or prebundle probe inside vite/wait-on will timeout silently and the smoke step will exceed the 60 s budget without emitting the sentinel.
-   - Diagnose: inspect `/tmp/smoke.log` (captured by `2>&1 | tee /tmp/smoke.log`). Search for `getaddrinfo ENOTFOUND`, `connect ETIMEDOUT`, or warnings from `wait-on`.
-   - Mitigation already in place: `STORYBOOK_DISABLE_TELEMETRY=1` baked into the image `ENV`. If a new outbound dependency lands in a `code/core` change, that change is the regression — revert + open an issue.
-3. **`VERIFY_HARNESS_IMAGE_DIGEST` is unset or malformed.** The smoke script fails-closed at the source — see `scripts/verify/Dockerfile` stage 4 — exits non-zero when the env is unset or does not match `^sha256:[a-f0-9]{64}$`. Workflow filter additionally rejects the all-zero digest.
-   - Diagnose: search the `Smoke test image` step log for `::error::smoke missing VERIFY_HARNESS_IMAGE_DIGEST` or `::error::smoke digest malformed`.
-
----
-
-### Signal: `head-sha drift` regression appears in `verify-result.json`
-
-**Most likely cause:** the workflow's checkout step is misconfigured — `base.sha` and `head.sha` reference the wrong commits, or the `pr-head` checkout is at a stale ref.
-
-The runner inside the container reads `/opt/verify-harness/HEAD_SHA` (baked at image build from `ARG HEAD_SHA`) and compares it to `VERIFY_HARNESS_EXPECTED_HEAD_SHA` (set by the workflow from `${{ github.event.pull_request.head.sha }}`). A mismatch produces `verdict: "regression"` with `regressionReason: "head-sha drift"`.
-
-**Diagnosis:**
+The harness expects `.verify-recipes/pr-<#>.spec.ts` to exist relative
+to the repo root. If you haven't authored a spec for the PR yet:
 
 ```bash
-# In .github/workflows/verify-pr.yml, confirm:
-# 1. The PR-head checkout uses ref: ${{ github.event.pull_request.head.sha }}
-# 2. The Build harness image step passes HEAD_SHA=${{ github.event.pull_request.head.sha }}
-# 3. The Run harness in container step exports
-#    VERIFY_HARNESS_EXPECTED_HEAD_SHA="${{ github.event.pull_request.head.sha }}"
-grep -nE 'pull_request\.head\.sha|HEAD_SHA|VERIFY_HARNESS_EXPECTED_HEAD_SHA' \
-  .github/workflows/verify-pr.yml
+yarn verify-pr-generate --pr <#> --force
+# Then invoke the `verify-recipe-author` skill, or run the CLI:
+yarn verify-pr-author --bundle .verify-output/<runId>/prompt-bundle.json
 ```
 
-All three references must resolve to the same commit. A workflow that uses `github.sha` (which on `pull_request_target` resolves to the *base* SHA, not head) for any of the three points is broken — change it to `github.event.pull_request.head.sha`.
+The CLI emits `.verify-recipes/pr-<#>.spec.ts`. Commit it before the
+next run. (Local-loop iteration does not require a commit, but CI
+gates on the spec being present at PR head — see below.)
 
-Secondary cause:
-- `regressionReason: "head-sha file missing"` — `/opt/verify-harness/HEAD_SHA` was never baked. Verify the Dockerfile stage 1.e `RUN echo "$HEAD_SHA" > /opt/verify-harness/HEAD_SHA` line is present and the `--build-arg HEAD_SHA=…` is being passed by the workflow.
+### Signal: `Port 6006 already in use by PID(s) <n>`
 
----
+A side process owns the port. Kill it (the error includes the kill
+command) or pass `--port <other>` to the harness.
 
-### Signal: `docker cp` mirror produced empty `.verify-output/`
+### Signal: `bootInternalUi failed: timeout`
 
-**Most likely cause:** the `--name` flag on `docker run` and on `docker cp` do not refer to the same container ID.
+`yarn storybook:ui:build` finished but `http-server` is not responding
+on `:port/index.html`. Most likely:
 
-The mirror step uses `docker cp verify-harness-${{ github.run_id }}:/workspace/.verify-output/. .verify-output/`. The run step must use a matching `--name verify-harness-${{ github.run_id }}`. Iter-2 used `docker ps -a -lq` which could select the wrong container; iter-3 (current) uses `--name` to make selection deterministic.
+1. The build produced no `code/storybook-static/index.html`. Run
+   `cd code && yarn storybook:ui:build` directly and inspect the
+   output.
+2. `yarn http-server` isn't on `PATH`. The root devDependency
+   `http-server@^14.1.1` resolves it through the yarn binary. Confirm
+   `yarn http-server --version` works from the repo root.
 
-**Diagnosis:**
+### Signal: `bootStorybook failed: …` (sandbox target)
+
+Sandbox-target recipes require `<sandbox>/node_modules/storybook` to
+be present. Bootstrap once:
 
 ```bash
-grep -nE 'docker (run|cp).*--name|verify-harness-' .github/workflows/verify-pr.yml
+yarn task sandbox -s task --no-link --template <template>
 ```
 
-Both occurrences must reference `verify-harness-${{ github.run_id }}` (or whatever name the workflow chose). A typo or a missing `--name` flag on `docker run` means `docker cp` will fail with `Error: No such container: verify-harness-…` or — worse, on iter-2-style workflows — select an unrelated container and silently copy nothing.
+Then re-run. If the sandbox path differs from the default, set
+`STORYBOOK_SANDBOX_ROOT` and re-run.
 
-Secondary causes:
-- The container exited before `docker cp` ran and was cleaned up by `--rm`. The `Run harness in container` step must **not** use `--rm` — the mirror step needs the stopped container to still be present. The cleanup `docker rm verify-harness-${{ github.run_id }} || true` runs after the load-bearing copy.
-- `.verify-output` on the tmpfs was never written because the runner aborted before `writeResult`. Check the `Run harness in container` step's stdout for an early `[verify] fatal:` line.
+### Signal: verdict is `regression` with `pageErrors: [...]`
+
+The Storybook UI booted, but the recipe captured page errors. Open
+the trace:
+
+```bash
+npx playwright show-trace .verify-output/<runId>/<spec>-<test-slug>/trace.zip
+```
+
+The trace contains the full DOM + console + network timeline. Use it
+to locate the failing assertion or runtime error.
+
+### Signal: verdict is `regression` with zero tests
+
+```jsonc
+{ "verdict": "regression", "tests": [] }
+```
+
+Playwright loaded the spec file but ran zero tests. Almost always a
+spec-import error. Look for a Playwright-side `TypeError` in the
+runner log (search for `[runner]` prefixed lines in the console
+output). Common causes:
+
+- Imported a `node:*` module — banned by the deny-regex.
+- Imported `@storybook/*` directly — pulls the non-erasable enum chain.
+- Used `test.skip` / `test.only` / `describe(...)` — the contract is
+  exactly one `test(...)` call.
+
+### Signal: `--resync` rejected
+
+```
+[verify] --resync only applies to sandbox-target recipes.
+```
+
+`--resync` exists for the sandbox target's slow boot path. The
+internal-ui target rebuilds fast enough that resync adds no value.
+Just re-run `yarn verify-pr <PR#>`.
+
+### Recovery: sandbox in a broken state
+
+If the harness crashed mid-mutation against the sandbox:
+
+```bash
+yarn verify-pr <PR#> --restore-sandbox
+```
+
+Restores `<sandbox>/package.json`, `yarn.lock`, `.yarnrc.yml` from
+`<sandbox>/.verify-snapshot/`.
+
+## CI workflow
+
+### Signal: `Verify PR` step fails with `yarn install` errors
+
+The `Verify PR` step runs inside `pr-head/`, which is a fresh clone of
+the PR head SHA. The install pulls from the head's lockfile under
+`enableScripts: false` (set by `.yarnrc.yml`). Common failure modes:
+
+- **Head's lockfile is stale relative to its `package.json`** — the
+  PR author needs to run `yarn install` and commit the updated
+  `yarn.lock`.
+- **Head added a new workspace package that the base lockfile didn't
+  see** — same fix on the PR author's side.
+- **Network-flake on a registry mirror** — re-run the workflow.
+
+### Signal: `Verify PR` step fails with `yarn nx run-many -t compile`
+
+A package's compile target broke on the PR head. Reproduce locally:
+
+```bash
+git fetch origin <PR-head-SHA>
+git checkout <PR-head-SHA>
+yarn install --immutable
+yarn nx run-many -t compile -p core,cli,create-storybook
+```
+
+If the compile fails for the same reason locally, the PR has a
+genuine compile regression. If it passes locally but fails in CI,
+inspect cache state — `yarn nx reset` can rule out stale cache.
+
+### Signal: `not-applicable` verdict, no harness ran
+
+The `verify-spec-precheck` composite action did not find
+`.verify-recipes/pr-<#>.spec.ts` at the PR head. Either:
+
+- The recipe was authored locally but not committed/pushed yet.
+  Commit the spec on the PR branch and push.
+- The `Author recipe` step in the same workflow run wrote a candidate
+  to the **base** checkout, but that candidate is not the spec the
+  runner executes — only the committed spec at PR head is. The
+  workflow's PR comment surfaces the candidate's location in
+  artefacts so the maintainer can review + commit.
+
+### Signal: `Apply verified-by-harness label` is skipped
+
+The `verdict` step runs only when `spec-present` is `true`. If
+spec-present was `false`, the workflow skips both `verdict` and the
+label step. If spec-present was `true` but `verdict.outputs.verdict`
+is not `verified` (i.e. `regression` or `missing`), the label step
+correctly does not apply the label. Inspect
+`pr-head/.verify-output/*/verify-result.json` via the artefact bundle.
+
+### Signal: PR comment renders `Error reading verdict: …`
+
+The `github-script` step caught an exception while resolving the
+verdict path. Almost always means `pr-head/.verify-output/` is missing
+or empty — the `Verify PR` step probably failed before
+`writeResult(...)` ran. The runtime error itself is in the `Verify
+PR` step's stdout, not the comment.
+
+## Artefacts
+
+Every run uploads `pr-head/.verify-output/` with a 14-day retention.
+Path: from the workflow run page, the `verify-output-pr-<#>-<runId>`
+zip contains every `runId/` subdirectory the harness produced. Each
+contains:
+
+- `verify-result.json` — the verdict.
+- `playwright-report.json` — raw Playwright JSON reporter output.
+- `<spec>-<test-slug>/trace.zip` — Playwright trace, replayable via
+  `npx playwright show-trace <trace.zip>`.
+- `<spec>-<test-slug>/*.png` and `*.webm` — screenshots / video on
+  failure.
+
+The trace is almost always the fastest path to diagnosis. Start there
+before re-reading workflow logs.

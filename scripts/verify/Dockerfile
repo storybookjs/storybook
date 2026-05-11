@@ -198,9 +198,15 @@ RUN bun -e "import('/opt/verify-harness/repo/scripts/verify/sandbox.ts').then(as
     })"
 
 # 3.d Materialise dist as plain directory (NOT a symlink).
+# The `yarn task sandbox` step above runs the publish pipeline through
+# verdaccio, which can churn code/core/dist (pack, replace, etc.). Re-compile
+# core before copying so the sandbox sees the exact, freshly-built artifact
+# from the PR head.
+RUN node "$HARNESS_YARN_BIN" nx compile core
 RUN set -eux; \
     SBX_DIST="${STORYBOOK_SANDBOX_ROOT}/react-vite-default-ts/node_modules/storybook/dist"; \
     rm -rf "${SBX_DIST}"; \
+    test -d /opt/verify-harness/repo/code/core/dist || { echo "::error::core/dist missing after recompile"; ls -la /opt/verify-harness/repo/code/core/; exit 1; }; \
     cp -RL /opt/verify-harness/repo/code/core/dist "${SBX_DIST}"; \
     test -f "${SBX_DIST}/bin/dispatcher.js"
 

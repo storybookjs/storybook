@@ -6,6 +6,7 @@ import type { Options } from 'storybook/internal/types';
 import { getComponentCandidates } from '../utils/ghost-stories/get-candidates.ts';
 import { runStoryTests } from '../utils/ghost-stories/run-story-tests.ts';
 import { waitForIdleVitest } from '../utils/wait-for-idle-vitest.ts';
+import { getAiSetupRunId } from '../../shared/utils/ai-checklist-flags.ts';
 
 class SkipGhostStoriesTelemetry extends Error {}
 
@@ -18,9 +19,14 @@ export function initGhostStoriesChannel(channel: Channel, options: Options) {
       totalRunDuration?: number;
       analyzedCount?: number;
       avgComplexity?: number;
+
       candidateCount?: number;
       testRunDuration?: number;
     } = {};
+
+    // Initialize contextual data; if ghost stories are triggered to assess the
+    // quality of an ai setup workflow, inject the runId for the ai setup session.
+    const aiSetupRunId = await getAiSetupRunId(options.configDir);
 
     try {
       await telemetry('ghost-stories', async () => {
@@ -29,6 +35,7 @@ export function initGhostStoriesChannel(channel: Channel, options: Options) {
           const lastEvents = await getLastEvents();
           const lastInit = lastEvents?.init;
           const lastAISetup = lastEvents?.['ai-setup'];
+          const lastSetupStoryScoringRun = lastEvents?.['ai-setup-final-scoring'];
           const lastGhostStoriesRun = lastEvents?.['ghost-stories'];
 
           // We only want to run ghost stories immediately after init or ai setup.
@@ -37,8 +44,12 @@ export function initGhostStoriesChannel(channel: Channel, options: Options) {
             throw new SkipGhostStoriesTelemetry();
           }
 
-          // Already ran once for this project — never run again
-          if (lastGhostStoriesRun) {
+          // Already ran once for this project — re-run it only when we need fresh
+          // data for a new instance of `ai setup`.
+          if (
+            lastGhostStoriesRun &&
+            lastSetupStoryScoringRun.body.payload.runId === lastAISetup.body.payload.runId
+          ) {
             throw new SkipGhostStoriesTelemetry();
           }
 
@@ -63,7 +74,11 @@ export function initGhostStoriesChannel(channel: Channel, options: Options) {
           // disturb end user activities.
           const isIdle = await waitForIdleVitest();
           if (!isIdle) {
-            return;
+            return {
+              stats,
+              aiSetupRunId,
+              runError: "Vitest busy, couldn't run ghost stories",
+            };
           }
 
           // Phase 1: find candidates from components
@@ -79,6 +94,7 @@ export function initGhostStoriesChannel(channel: Channel, options: Options) {
             stats.totalRunDuration = Date.now() - ghostRunStart;
             return {
               stats,
+              aiSetupRunId,
               runError: candidatesResult.error,
             };
           }
@@ -87,6 +103,7 @@ export function initGhostStoriesChannel(channel: Channel, options: Options) {
             stats.totalRunDuration = Date.now() - ghostRunStart;
             return {
               stats,
+              aiSetupRunId,
               runError: 'No candidates found',
             };
           }
@@ -101,12 +118,14 @@ export function initGhostStoriesChannel(channel: Channel, options: Options) {
           if (testRunResult.runError) {
             return {
               stats,
+              aiSetupRunId,
               runError: testRunResult.runError,
             };
           }
 
           return {
             stats,
+            aiSetupRunId,
             results: testRunResult.summary,
           };
         } catch (error) {
@@ -116,6 +135,7 @@ export function initGhostStoriesChannel(channel: Channel, options: Options) {
 
           return {
             stats,
+            aiSetupRunId,
             runError: 'Unknown error during ghost run',
           };
         }

@@ -73,6 +73,7 @@ export default defineGeneratorModule({
       '@storybook/addon-ondevice-controls',
       '@storybook/addon-ondevice-actions',
       '@storybook/react-native',
+      '@storybook/react-native-ui-lite',
       'storybook',
     ];
 

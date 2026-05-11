@@ -5,7 +5,5 @@
     "compile": {},
     "check": {}
   },
-  "tags": [
-    "library"
-  ]
+  "tags": ["library"]
 }

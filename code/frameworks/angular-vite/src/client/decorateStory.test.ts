@@ -1,10 +1,10 @@
 import { Component, Input, Output } from '@angular/core';
 import type { DecoratorFunction, StoryContext } from 'storybook/internal/types';
 import { describe, expect, it } from 'vitest';
-import { componentWrapperDecorator } from './decorators';
+import { componentWrapperDecorator } from './decorators.ts';
 
-import decorateStory from './decorateStory';
-import type { AngularRenderer } from './types';
+import decorateStory from './decorateStory.ts';
+import type { AngularRenderer } from './types.ts';
 
 // TODO: Fix. Test is infinitely running.
 describe.skip('decorateStory', () => {
@@ -328,13 +328,17 @@ function makeContext(input: Record<string, unknown>): StoryContext<AngularRender
 
 @Component({
   selector: 'foo',
-  template: `foo`,
+  template: `
+    foo
+  `,
 })
 class FooComponent {}
 
 @Component({
   selector: 'parent',
-  template: `<ng-content></ng-content>`,
+  template: `
+    <ng-content></ng-content>
+  `,
 })
 class ParentComponent {
   @Input()

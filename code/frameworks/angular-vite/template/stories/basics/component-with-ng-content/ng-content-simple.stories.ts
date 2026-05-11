@@ -5,8 +5,10 @@ import type { Meta, StoryObj } from '@storybook/angular';
 @Component({
   standalone: false,
   selector: 'storybook-with-ng-content',
-  template: `Content value:
-<div style="color: #1e88e5"><ng-content></ng-content></div>`,
+  template: `
+    Content value:
+    <div style="color: #1e88e5"><ng-content></ng-content></div>
+  `,
 })
 class WithNgContentComponent {}
 
@@ -29,7 +31,7 @@ export const Default: Story = {
 
 export const WithDynamicContentAndArgs: Story = {
   render: (args) => ({
-    template: `<storybook-with-ng-content><h1>${args['content']}</h1></storybook-with-ng-content>`,
+    template: `<storybook-with-ng-content><h1>${args.content}</h1></storybook-with-ng-content>`,
   }),
   args: { content: 'Default content' },
   argTypes: {

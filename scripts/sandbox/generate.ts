@@ -424,11 +424,6 @@ async function addResolutions(beforeDir: string) {
 
   packageJson.resolutions = {
     ...storybookVersions,
-    // Vite 8 bundles its own rolldown@1.0.0 (has the `Visitor` export).
-    // Some Angular deps (e.g. @angular/build) pin a `1.0.0-rc.4` that does not.
-    // Force a single rolldown so the preview server stops crashing on
-    // `does not provide an export named 'Visitor'`.
-    rolldown: '1.0.0',
   };
 
   await writeFile(join(beforeDir, 'package.json'), JSON.stringify(packageJson, null, 2));

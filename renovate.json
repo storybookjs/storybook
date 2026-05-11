@@ -1,27 +1,4 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "extends": ["config:recommended"],
-  "packageRules": [
-    {
-      "matchManagers": ["dockerfile"],
-      "matchPackagePatterns": [
-        "^mcr\\.microsoft\\.com/playwright$",
-        "^oven/bun$"
-      ],
-      "schedule": ["before 5am on monday"],
-      "labels": ["renovate", "verify-harness", "supply-chain"],
-      "automerge": false,
-      "pinDigests": true
-    }
-  ],
-  "regexManagers": [
-    {
-      "fileMatch": ["^scripts/verify/Dockerfile$"],
-      "matchStrings": [
-        "FROM (?<depName>mcr\\.microsoft\\.com/playwright):(?<currentValue>[^@\\s]+)@(?<currentDigest>sha256:[a-f0-9]{64})",
-        "COPY --from=(?<depName>oven/bun):(?<currentValue>[^@\\s]+)@(?<currentDigest>sha256:[a-f0-9]{64})"
-      ],
-      "datasourceTemplate": "docker"
-    }
-  ]
+  "extends": ["config:recommended"]
 }

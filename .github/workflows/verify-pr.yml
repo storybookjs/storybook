@@ -16,6 +16,7 @@ jobs:
       pull-requests: write
       issues: write
       statuses: write
+      contents: write   # needed to push screenshots to the _verify-screenshots side branch
     steps:
       - name: Check actor permission
         uses: prince-chrismc/check-actor-permissions-action@d504e74ba31658f4cdf4fcfeb509d4c09736d88e # v3.0.2
@@ -151,6 +152,89 @@ jobs:
             --repo ${{ github.repository }} \
             --add-label verified-by-harness
 
+      - name: Push screenshots to side branch
+        id: screenshots
+        if: always() && steps.verdict.outputs.verdict != '' && steps.verdict.outputs.verdict != 'missing'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_HEAD_DIR: ${{ runner.temp }}/pr-head
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          REPO: ${{ github.repository }}
+          RUN_ID: ${{ github.run_id }}
+        run: |
+          set -euo pipefail
+          SOURCE="$PR_HEAD_DIR/.verify-output"
+          if ! find "$SOURCE" -name '*.png' -print -quit | grep -q .; then
+            echo "no screenshots produced — skipping side-branch push"
+            echo "urls=[]" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          ASSETS_DIR="$RUNNER_TEMP/verify-assets"
+          AUTH_URL="https://x-access-token:${GITHUB_TOKEN}@github.com/${REPO}.git"
+
+          # Try cloning the existing side branch; if it doesn't exist yet,
+          # create an orphan branch with a single empty commit.
+          if git -c protocol.version=2 clone --depth 1 --branch _verify-screenshots \
+              "$AUTH_URL" "$ASSETS_DIR" 2>/dev/null; then
+            echo "cloned existing _verify-screenshots branch"
+          else
+            echo "side branch missing — creating orphan _verify-screenshots"
+            git -c protocol.version=2 clone --depth 1 "$AUTH_URL" "$ASSETS_DIR"
+            (
+              cd "$ASSETS_DIR"
+              git -c user.email=actions@github.com -c user.name="github-actions[bot]" \
+                checkout --orphan _verify-screenshots
+              git rm -rf . >/dev/null
+              echo "Verify harness screenshot store. Auto-managed; do not edit." > README.md
+              git add README.md
+              git -c user.email=actions@github.com -c user.name="github-actions[bot]" \
+                commit -m "chore: init _verify-screenshots branch"
+              git push origin _verify-screenshots
+            )
+          fi
+
+          PR_DIR="$ASSETS_DIR/pr-${PR_NUMBER}/${RUN_ID}"
+          rm -rf "$ASSETS_DIR/pr-${PR_NUMBER}/${RUN_ID}"
+          mkdir -p "$PR_DIR"
+
+          # Copy each runId/<spec-slug>/<file>.png preserving the structure
+          # under the run directory.
+          (
+            cd "$SOURCE"
+            find . -name '*.png' -print0
+          ) | while IFS= read -r -d '' rel; do
+            dest="$PR_DIR/${rel#./}"
+            mkdir -p "$(dirname "$dest")"
+            cp "$SOURCE/$rel" "$dest"
+          done
+
+          cd "$ASSETS_DIR"
+          git add "pr-${PR_NUMBER}/${RUN_ID}"
+          if git diff --cached --quiet; then
+            echo "no new screenshots to commit"
+            echo "urls=[]" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          git -c user.email=actions@github.com -c user.name="github-actions[bot]" \
+            commit -m "verify: PR #${PR_NUMBER} run ${RUN_ID}"
+          git push origin _verify-screenshots
+          COMMIT_SHA=$(git rev-parse HEAD)
+
+          # Emit JSON array of { rel, url } for each PNG, where url is the
+          # raw.githubusercontent.com URL pinned at the commit we just pushed.
+          URLS=$(
+            cd "$ASSETS_DIR/pr-${PR_NUMBER}/${RUN_ID}"
+            find . -name '*.png' \
+              | sed "s|^\./||" \
+              | jq -R --arg base "https://raw.githubusercontent.com/${REPO}/${COMMIT_SHA}/pr-${PR_NUMBER}/${RUN_ID}" \
+                  '{ rel: ., url: ($base + "/" + .) }' \
+              | jq -s .
+          )
+          echo "urls<<EOF" >> "$GITHUB_OUTPUT"
+          echo "$URLS" >> "$GITHUB_OUTPUT"
+          echo "EOF" >> "$GITHUB_OUTPUT"
+
       - name: Upload artifacts
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
@@ -164,12 +248,30 @@ jobs:
         if: always()
         env:
           PR_HEAD_DIR: ${{ runner.temp }}/pr-head
+          SCREENSHOT_URLS: ${{ steps.screenshots.outputs.urls }}
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
         with:
           script: |
             const fs = require('fs');
             const path = require('path');
             const url = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+
+            function renderScreenshots() {
+              let raw = process.env.SCREENSHOT_URLS;
+              if (!raw || raw.trim() === '' || raw.trim() === '[]') return '';
+              let items;
+              try {
+                items = JSON.parse(raw);
+              } catch {
+                return '';
+              }
+              if (!Array.isArray(items) || items.length === 0) return '';
+              const blocks = items.map(
+                (it) => `### \`${it.rel}\`\n\n![${it.rel}](${it.url})\n`,
+              );
+              return `\n\n## Screenshots\n\n${blocks.join('\n')}`;
+            }
+
             let body;
             try {
               if (process.env.SPEC_PRESENT === 'false') {
@@ -192,7 +294,7 @@ jobs:
                 body = `## Verify Harness\n\nNo verdict produced (workflow failed before harness ran). See [run log](${url}).`;
               } else {
                 const verdict = JSON.parse(fs.readFileSync(resultPath, 'utf-8'));
-                body = `## Verify Harness\n\nVerdict: \`${verdict.verdict}\` (target \`${verdict.template}\`)${verdict.regressionReason ? `\n\nReason: \`${verdict.regressionReason}\`` : ''}\n\nReplay: \`npx playwright show-trace\` on the trace.zip in [artifacts](${url}/artifacts).`;
+                body = `## Verify Harness\n\nVerdict: \`${verdict.verdict}\` (target \`${verdict.template}\`)${verdict.regressionReason ? `\n\nReason: \`${verdict.regressionReason}\`` : ''}\n\nReplay: \`npx playwright show-trace\` on the trace.zip in [artifacts](${url}/artifacts).${renderScreenshots()}`;
               }
             } catch (err) {
               body = `## Verify Harness\n\nError reading verdict: \`${err.message}\`. See [run log](${url}).`;

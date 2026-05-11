@@ -1,5 +1,5 @@
 // Entry point for the PR verification harness.
-// Usage: bun scripts/verify-pr.ts [--resync] [--keep-open] [--skip-recipe] [--restore-sandbox] [--recipe-spec <path>]
+// Usage: bun scripts/verify-pr.ts [--resync] [--keep-open] [--skip-recipe] [--restore-sandbox] [--recipe-spec <path>] [--port <n>]
 
 import { parseArgs } from 'node:util';
 import { performance } from 'node:perf_hooks';
@@ -37,6 +37,7 @@ Options:
   --skip-recipe           Skip the Playwright recipe entirely; write verdict: "skipped"; exit 0
   --restore-sandbox       Copy .verify-snapshot/* back to sandbox and exit
   --recipe-spec <path>    Path to the Playwright spec to run (default: .verify-recipes/example-smoke.spec.ts)
+  --port <n>              Port for Storybook (default: 6006). Use to avoid collisions with side processes.
   --help                  Show this help
 
 Examples:
@@ -61,6 +62,7 @@ async function main(argv: string[]): Promise<number> {
       'skip-recipe': { type: 'boolean', default: false },
       'restore-sandbox': { type: 'boolean', default: false },
       'recipe-spec': { type: 'string' },
+      port: { type: 'string' },
       help: { type: 'boolean', default: false },
     },
     strict: true,
@@ -72,6 +74,12 @@ async function main(argv: string[]): Promise<number> {
   }
 
   const recipeSpec = resolveRecipeSpec(flags['recipe-spec']);
+  const port = flags.port ? Number(flags.port) : 6006;
+  if (!Number.isInteger(port) || port < 1 || port > 65535) {
+    console.error(`[verify] --port must be an integer in 1..65535, got: ${flags.port}`);
+    return 1;
+  }
+  const baseURL = `http://localhost:${port}`;
   const totalStart = performance.now();
   const paths = buildRunPaths();
   await pruneOldRuns();
@@ -112,14 +120,14 @@ async function main(argv: string[]): Promise<number> {
     }));
     let alive = false;
     try {
-      const res = await (fetch as any)('http://localhost:6006/index.html', { method: 'GET' });
+      const res = await (fetch as any)(`${baseURL}/index.html`, { method: 'GET' });
       alive = res.ok;
     } catch {
       alive = false;
     }
     if (!alive) {
       console.error(
-        '[verify] --resync requires a running Storybook on :6006. Bootstrap with:\n  bun scripts/verify-pr.ts --keep-open'
+        `[verify] --resync requires a running Storybook on :${port}. Bootstrap with:\n  bun scripts/verify-pr.ts --keep-open --port ${port}`
       );
       return 1;
     }
@@ -133,7 +141,7 @@ async function main(argv: string[]): Promise<number> {
     await syncCorePackage({ sandboxDir });
 
     try {
-      await (fetch as any)(`http://localhost:6006/__reload`, { method: 'POST' });
+      await (fetch as any)(`${baseURL}/__reload`, { method: 'POST' });
     } catch {
       console.log('[resync] __reload not available; hard-reload via navigation cache-bust');
     }
@@ -144,7 +152,7 @@ async function main(argv: string[]): Promise<number> {
     const recipeStart = performance.now();
     const { reportPath } = await runRecipe({
       specPath: recipeSpec,
-      baseURL: 'http://localhost:6006',
+      baseURL,
       runPaths: resyncPaths,
     });
     const { tests, traceZipPaths } = await parsePlaywrightReport(reportPath);
@@ -177,11 +185,11 @@ async function main(argv: string[]): Promise<number> {
 
   const controller = new AbortController();
   installSignalHandlers(controller);
-  await preflightPort(6006);
+  await preflightPort(port);
 
   const syncResult = await syncCorePackage({ sandboxDir });
 
-  const { bootMs } = await bootStorybook({ sandboxDir, port: 6006, controller });
+  const { bootMs } = await bootStorybook({ sandboxDir, port, controller });
 
   let reportPath: string;
   let recipeMs: number;
@@ -189,7 +197,7 @@ async function main(argv: string[]): Promise<number> {
     const recipeStart = performance.now();
     const runResult = await runRecipe({
       specPath: recipeSpec,
-      baseURL: 'http://localhost:6006',
+      baseURL,
       runPaths: paths,
       controller,
     });
@@ -231,7 +239,7 @@ async function main(argv: string[]): Promise<number> {
   }
 
   if (flags['keep-open']) {
-    console.log('[verify] --keep-open: Storybook running at http://localhost:6006');
+    console.log(`[verify] --keep-open: Storybook running at ${baseURL}`);
   }
 
   return verdict === 'verified' ? 0 : 1;

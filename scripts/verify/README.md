@@ -35,6 +35,7 @@ bun scripts/verify-pr.ts
 | `--resync` | Recompile NX-affected packages, refresh symlinks, ping `__reload`, and re-run the same spec against an already-running Storybook (requires a prior `--keep-open` session). |
 | `--restore-sandbox` | Copy `<sandbox>/.verify-snapshot/{package.json,yarn.lock,.yarnrc.yml}` back. Recovery for mid-mutation crashes. |
 | `--skip-recipe` | Skip Playwright execution; emit `verdict: "skipped"`; exit 0. (Replaces the v1 `--no-screenshot`.) |
+| `--port <n>` | Port for Storybook (default: `6006`). Use to avoid collisions with side processes that already occupy 6006. |
 | `--help` | Print usage. |
 
 ### Examples

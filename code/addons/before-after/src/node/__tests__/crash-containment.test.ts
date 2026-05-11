@@ -1,6 +1,5 @@
 /// <reference types="node" />
 
-import { AsyncLocalStorage } from 'node:async_hooks';
 import { existsSync, mkdtempSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -86,54 +85,5 @@ describe('crash containment — load() rejection for marker-bearing ids', () => 
     // Subsequent unrelated request succeeds — server is not poisoned.
     const ok = await server.environments.client.transformRequest(`/ok.ts?${ENV_MARKER}`);
     expect(ok).not.toBeNull();
-  });
-});
-
-// ─────────────────────────────────────────────────────────────────────────────
-// AsyncLocalStorage scoping for unhandled rejections — independent of the
-// dev-server model, purely a unit test of the scoping mechanism.
-// ─────────────────────────────────────────────────────────────────────────────
-
-describe('AsyncLocalStorage scoping for unhandled rejections', () => {
-  it('rejections inside the addon ALS scope can be intercepted; outside-scope rejections propagate', async () => {
-    const als = new AsyncLocalStorage<{ scope: 'before-after' }>();
-    const inScopeReasons: unknown[] = [];
-    const outOfScopeReasons: unknown[] = [];
-
-    const handler = (reason: unknown) => {
-      const store = als.getStore();
-      if (store?.scope === 'before-after') {
-        inScopeReasons.push(reason);
-      } else {
-        outOfScopeReasons.push(reason);
-      }
-    };
-    process.on('unhandledRejection', handler);
-
-    await als.run({ scope: 'before-after' }, async () => {
-      Promise.reject(new Error('addon-owned')).catch(() => {
-        // swallow at promise level
-      });
-      await new Promise<void>((resolve) => {
-        Promise.reject(new Error('addon-unhandled')).then(undefined, undefined);
-        setTimeout(resolve, 100);
-      });
-    });
-
-    Promise.reject(new Error('not-addon-owned')).then(undefined, undefined);
-    await new Promise((resolve) => setTimeout(resolve, 100));
-
-    process.off('unhandledRejection', handler);
-
-    const inScopeMessages = inScopeReasons
-      .map((r) => (r instanceof Error ? r.message : String(r)))
-      .join(',');
-    const outOfScopeMessages = outOfScopeReasons
-      .map((r) => (r instanceof Error ? r.message : String(r)))
-      .join(',');
-    expect(inScopeMessages).toContain('addon-unhandled');
-    expect(outOfScopeMessages).toContain('not-addon-owned');
-    expect(inScopeMessages).not.toContain('not-addon-owned');
-    expect(outOfScopeMessages).not.toContain('addon-unhandled');
   });
 });

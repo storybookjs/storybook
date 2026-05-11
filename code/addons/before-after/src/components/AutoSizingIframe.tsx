@@ -58,7 +58,6 @@ const RetryButton = styled.button(({ theme }) => ({
 
 interface AutoSizingIframeProps {
   src: string;
-  storyId: string;
   title: string;
 }
 
@@ -66,7 +65,7 @@ const DEFAULT_HEIGHT = 200;
 const FALLBACK_HEIGHT = 400;
 const FALLBACK_TIMEOUT = 3000;
 
-export const AutoSizingIframe = ({ src, storyId, title }: AutoSizingIframeProps) => {
+export const AutoSizingIframe = ({ src, title }: AutoSizingIframeProps) => {
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const [height, setHeight] = useState(DEFAULT_HEIGHT);
   const [error, setError] = useState(false);
@@ -74,31 +73,8 @@ export const AutoSizingIframe = ({ src, storyId, title }: AutoSizingIframeProps)
   const [retryKey, setRetryKey] = useState(0);
   const heightSetRef = useRef(false);
 
-  // Listen for postMessage height reports (cross-origin before-server iframes)
-  useEffect(() => {
-    const handleMessage = (event: MessageEvent) => {
-      // Only accept messages from localhost origins (the before-server)
-      if (!event.origin.startsWith('http://localhost:')) return;
-
-      if (
-        event.data?.type === 'storybook-iframe-height' &&
-        (event.data?.storyId === storyId ||
-          // Match the raw storyId from the URL for before-server iframes (which use __before suffix)
-          `${event.data?.storyId}__before` === storyId)
-      ) {
-        const height = Number(event.data.height);
-        if (!Number.isFinite(height) || height < 0) return;
-        const newHeight = Math.max(height, DEFAULT_HEIGHT);
-        setHeight(newHeight);
-        setLoaded(true);
-        heightSetRef.current = true;
-      }
-    };
-    window.addEventListener('message', handleMessage);
-    return () => window.removeEventListener('message', handleMessage);
-  }, [storyId]);
-
-  // ResizeObserver for same-origin iframes
+  // ResizeObserver for same-origin iframes (both before and after iframes
+  // are served from the dev server's origin per ADR-0003).
   useEffect(() => {
     const iframe = iframeRef.current;
     if (!iframe) return;
@@ -107,24 +83,20 @@ export const AutoSizingIframe = ({ src, storyId, title }: AutoSizingIframeProps)
 
     const handleLoad = () => {
       setLoaded(true);
-      try {
-        const doc = iframe.contentDocument;
-        if (!doc?.body) return;
+      const doc = iframe.contentDocument;
+      if (!doc?.body) return;
 
-        observer = new ResizeObserver(() => {
-          const newHeight = Math.max(doc.body.scrollHeight, DEFAULT_HEIGHT);
-          setHeight(newHeight);
-          heightSetRef.current = true;
-        });
-        observer.observe(doc.body);
+      observer = new ResizeObserver(() => {
+        const newHeight = Math.max(doc.body.scrollHeight, DEFAULT_HEIGHT);
+        setHeight(newHeight);
+        heightSetRef.current = true;
+      });
+      observer.observe(doc.body);
 
-        const initialHeight = doc.body.scrollHeight;
-        if (initialHeight > 0) {
-          setHeight(Math.max(initialHeight, DEFAULT_HEIGHT));
-          heightSetRef.current = true;
-        }
-      } catch {
-        // Cross-origin — rely on postMessage
+      const initialHeight = doc.body.scrollHeight;
+      if (initialHeight > 0) {
+        setHeight(Math.max(initialHeight, DEFAULT_HEIGHT));
+        heightSetRef.current = true;
       }
     };
 

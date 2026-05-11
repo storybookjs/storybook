@@ -119,9 +119,9 @@ function buildAfterIframeSrc(storyId: string): string {
 }
 
 function buildBeforeIframeSrc(storyId: string): string {
-  // Same-origin URL with the env=before query marker. The addon's middleware
-  // routes the request to the `storybookBefore` Vite environment, which serves
-  // the file content from git HEAD instead of the working tree.
+  // Same-origin URL with the env=before query marker. The addon's
+  // `beforeContentPlugin.load` hook serves git HEAD content for any module
+  // id carrying the marker; see ADR-0003.
   return `/iframe.html?id=${encodeURIComponent(storyId)}&viewMode=story&env=before`;
 }
 
@@ -153,25 +153,17 @@ export const StoryCard = ({
             {status === 'new' ? (
               <Placeholder>No previous version</Placeholder>
             ) : (
-              <AutoSizingIframe
-                src={beforeSrc}
-                storyId={`${storyId}__before`}
-                title={`${title} / ${name} (before)`}
-              />
+              <AutoSizingIframe src={beforeSrc} title={`${title} / ${name} (before)`} />
             )}
           </IframeCol>
           <Divider />
           <IframeCol>
             <IframeColLabel>After</IframeColLabel>
-            <AutoSizingIframe
-              src={afterSrc}
-              storyId={storyId}
-              title={`${title} / ${name} (after)`}
-            />
+            <AutoSizingIframe src={afterSrc} title={`${title} / ${name} (after)`} />
           </IframeCol>
         </IframeRow>
       ) : (
-        <AutoSizingIframe src={afterSrc} storyId={storyId} title={`${title} / ${name}`} />
+        <AutoSizingIframe src={afterSrc} title={`${title} / ${name}`} />
       )}
     </Card>
   );

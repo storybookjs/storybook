@@ -154,20 +154,8 @@ export const ChangesPage: React.FC = () => {
 
     api.setAllStatusFilters(CHANGE_STATUS_VALUES, []);
 
-    // Register interceptor: when in changes viewMode, scroll-to story card instead of navigating
-    api.setSelectStoryInterceptor(({ storyId, viewMode }) => {
-      if (viewMode === 'changes') {
-        const el = document.getElementById(`changes-story-${storyId}`);
-        if (el) {
-          el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-        }
-        return true; // handled — skip normal navigation
-      }
-      return false;
-    });
-
     return () => {
-      // On unmount: restore previous filters and clear interceptor
+      // On unmount: restore previous filters
       try {
         api.setAllStatusFilters(
           previousIncludedFiltersRef.current,
@@ -176,7 +164,6 @@ export const ChangesPage: React.FC = () => {
       } catch {
         // Store may not be ready during teardown — safe to ignore
       }
-      api.clearSelectStoryInterceptor();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -217,9 +204,6 @@ export const ChangesPage: React.FC = () => {
   }, [changedStories]);
 
   const handleExit = () => {
-    // Clear the interceptor first — otherwise it blocks our own selectStory call
-    // since viewMode is still 'changes' at this point.
-    api.clearSelectStoryInterceptor();
     if (lastStoryIdRef.current) {
       api.selectStory(lastStoryIdRef.current);
     } else {

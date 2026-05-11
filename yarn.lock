@@ -8341,8 +8341,6 @@ __metadata:
   resolution: "@storybook/addon-before-after@workspace:code/addons/before-after"
   dependencies:
     execa: "npm:^9.6.1"
-    magic-string: "npm:^0.30.17"
-    oxc-parser: "npm:^0.127.0"
     react: "npm:^18.2.0"
     react-dom: "npm:^18.2.0"
     typescript: "npm:^5.9.3"

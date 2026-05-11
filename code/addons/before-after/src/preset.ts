@@ -18,15 +18,19 @@ import {
   assertViteEnvironmentApiSupported,
   BeforeAfterUnsupportedViteError,
 } from './node/circuit-breaker.ts';
-import { registerEnvApiServerHook } from './node/server-ready-hook.ts';
 
-// ── Re-entrance state ────────────────────────────────────────────────────────
-//
-// `viteFinal` is invoked once per dev server creation. We track per-config
-// "already initialised" via a `WeakSet<InlineConfig>` so plugin re-installation
-// is idempotent across `server.restart()` and concurrent dev servers without
-// using a module-level singleton.
+// `viteFinal` is invoked once per dev server creation. Track per-config
+// idempotency so plugin re-installation across `server.restart()` or
+// concurrent dev servers doesn't double-register.
 const initialisedConfigs = new WeakSet<InlineConfig>();
+
+// Shared mutable holder so `viteFinal` (which creates the plugin) and
+// `experimental_devServer` (which sets up git watchers + prewarm) can
+// exchange the resolved ViteDevServer reference without a singleton module.
+const serverHandoff: {
+  server: ViteDevServer | null;
+  onReady: ((server: ViteDevServer) => void) | null;
+} = { server: null, onReady: null };
 
 type RuntimeChannel = Pick<Channel, 'emit' | 'on'>;
 
@@ -59,7 +63,14 @@ export const viteFinal = async (config: InlineConfig, options: Options) => {
   // sees the spec FIRST (otherwise a `pre`-enforce plugin earlier in the array
   // resolves it and our post-processing never fires).
   config.plugins = [
-    beforeEnvironmentPlugin({ channel, repoRoot: repoRoot ?? undefined }),
+    beforeEnvironmentPlugin({
+      channel,
+      repoRoot: repoRoot ?? undefined,
+      onServerReady: (server) => {
+        serverHandoff.server = server;
+        serverHandoff.onReady?.(server);
+      },
+    }),
     ...(repoRoot ? [beforeContentPlugin({ repoRoot })] : []),
     ...(config.plugins ?? []),
   ];
@@ -93,11 +104,8 @@ export const experimental_devServer = async (_app: Record<string, unknown>, opti
     return;
   }
 
-  // Subscribe once for the dev server reference; the hook re-fires on every
-  // `server.restart()` so prewarm + HEAD invalidation always target the
-  // current server.
   let envApiServerRef: ViteDevServer | null = null;
-  registerEnvApiServerHook((server) => {
+  const onServerReady = (server: ViteDevServer) => {
     envApiServerRef = server;
     try {
       assertViteEnvironmentApiSupported(server);
@@ -106,7 +114,9 @@ export const experimental_devServer = async (_app: Record<string, unknown>, opti
       return;
     }
     void prewarmChangedStories(server, repoRoot);
-  });
+  };
+  serverHandoff.onReady = onServerReady;
+  if (serverHandoff.server) onServerReady(serverHandoff.server);
 
   // ── Git watchers ───────────────────────────────────────────────────────────
   let gitWatchers: ReturnType<typeof watch>[] = [];

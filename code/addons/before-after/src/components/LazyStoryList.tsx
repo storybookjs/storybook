@@ -66,14 +66,7 @@ interface LazyStoryListProps {
 }
 
 export const LazyStoryList = ({ children }: LazyStoryListProps) => {
-  return (
-    <ScrollContainer>
-      {React.Children.map(children, (child) => {
-        return child;
-      })}
-    </ScrollContainer>
-  );
+  return <ScrollContainer>{children}</ScrollContainer>;
 };
 
-// Export LazyMount for use in StoryCard wrapping
 export { LazyMount };

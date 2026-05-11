@@ -10,9 +10,7 @@ import type { ViteDevServer } from 'vite';
 import { createServer } from 'vite';
 
 import {
-  appendEnvBefore,
   beforeEnvironmentPlugin,
-  isBeforeIframeReferer,
   shouldRouteThroughBeforeEnv,
 } from '../before-environment-plugin.ts';
 import { beforeContentPlugin } from '../before-content-plugin.ts';
@@ -54,50 +52,6 @@ import { beforeContentPlugin } from '../before-content-plugin.ts';
 // probes (`(k.*)` family from the env-dispatch model) have been removed.
 //
 // ─────────────────────────────────────────────────────────────────────────────
-
-describe('appendEnvBefore (idempotence + query handling)', () => {
-  it('appends ?env=before when no query is present', () => {
-    expect(appendEnvBefore('./a.ts')).toBe('./a.ts?env=before');
-  });
-  it('appends &env=before when a query already exists', () => {
-    expect(appendEnvBefore('./a.ts?direct')).toBe('./a.ts?direct&env=before');
-  });
-  it('is idempotent — re-appending is a no-op', () => {
-    expect(appendEnvBefore('./a.ts?env=before')).toBe('./a.ts?env=before');
-    expect(appendEnvBefore('./a.ts?direct&env=before')).toBe('./a.ts?direct&env=before');
-  });
-  it('normalises bare-directory specifiers ("." → "./")', () => {
-    // `./?env=before` resolves via directory-index; `.?env=before` doesn't.
-    expect(appendEnvBefore('.')).toBe('./?env=before');
-    expect(appendEnvBefore('..')).toBe('../?env=before');
-  });
-});
-
-describe('isBeforeIframeReferer (helper)', () => {
-  const HOST = 'localhost:6006';
-  it('accepts a same-origin /iframe.html?env=before referer', () => {
-    expect(isBeforeIframeReferer('http://localhost:6006/iframe.html?env=before', HOST)).toBe(true);
-    expect(isBeforeIframeReferer('http://localhost:6006/iframe.html?env=before&id=x', HOST)).toBe(
-      true
-    );
-    expect(isBeforeIframeReferer('http://localhost:6006/iframe.html?id=x&env=before', HOST)).toBe(
-      true
-    );
-  });
-  it('rejects when host, path, or marker mismatch', () => {
-    expect(isBeforeIframeReferer('http://other:1234/iframe.html?env=before', HOST)).toBe(false);
-    expect(isBeforeIframeReferer('http://localhost:6006/index.html?env=before', HOST)).toBe(false);
-    expect(isBeforeIframeReferer('http://localhost:6006/iframe.html?env=after', HOST)).toBe(false);
-    expect(isBeforeIframeReferer('http://localhost:6006/iframe.html', HOST)).toBe(false);
-  });
-  it('returns false for unparseable / missing inputs', () => {
-    expect(isBeforeIframeReferer('not-a-url', HOST)).toBe(false);
-    expect(isBeforeIframeReferer(undefined, HOST)).toBe(false);
-    expect(isBeforeIframeReferer('http://localhost:6006/iframe.html?env=before', undefined)).toBe(
-      false
-    );
-  });
-});
 
 describe('shouldRouteThroughBeforeEnv (marker-attach discriminator)', () => {
   const repoRoot = '/repo';

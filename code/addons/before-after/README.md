@@ -25,8 +25,7 @@ working-tree edits does not touch the before-iframe and HEAD updates from
 the git watcher do not touch the after-iframe.
 
 See [ADR-0003](./ADR-0003-single-env-marker-routing.md) for the full
-design rationale. ADR-0002 (a separate `storybookBefore` Vite environment)
-is kept for historical reference and is **superseded**.
+design rationale.
 
 ## Requirements
 
@@ -45,18 +44,14 @@ is kept for historical reference and is **superseded**.
 
 ## Probes (regression guards)
 
-Three vitest files guard the addon:
+Two vitest files guard the addon:
 
 - `src/node/__tests__/before-env-routing.test.ts` — unit tests for the
-  marker helpers (`appendEnvBefore`, `isBeforeIframeReferer`,
-  `shouldRouteThroughBeforeEnv`), the load-gate of
-  `beforeContentPlugin`, and an isolated `resolveId`-propagation
-  probe driven through a real Vite dev server.
-- `src/node/__tests__/git-watchers-cleanup.test.ts` — asserts watcher
-  lifecycle correctness (no late callbacks after cleanup).
-- `src/node/__tests__/crash-containment.test.ts` — asserts the
-  `AsyncLocalStorage` scope around `unhandledRejection` and that a
-  `load()` throw on a marker-bearing id does not poison the dev server.
+  marker discriminator (`shouldRouteThroughBeforeEnv`), the load-gate of
+  `beforeContentPlugin`, and an isolated `resolveId`-propagation probe
+  driven through a real Vite dev server.
+- `src/node/__tests__/crash-containment.test.ts` — asserts that a `load()`
+  throw on a marker-bearing id does not poison the dev server.
 
 Run them locally with:
 
@@ -76,10 +71,8 @@ yarn vitest run --config code/addons/before-after/vitest.config.ts
   Vite falls through to the working-tree read. The before iframe will
   show the same content as the after iframe for such files (the addon
   considers them "new", not "modified").
-- **`srcdoc` iframe wrappers** are unsupported. The Referer-based
-  fallback path that was relevant under ADR-0002 has been removed in
-  ADR-0003, but the diagnostic beacon that warns when `?env=before` is
-  missing from the iframe URL is preserved.
+- **`srcdoc` iframe wrappers** are unsupported. A diagnostic beacon warns
+  in the iframe console when `?env=before` is missing from its own URL.
 
 ## Maintenance notes
 
@@ -91,7 +84,3 @@ marker. Project paths (under `repoRoot`) and virtual modules
 environment's `optimizeDeps` cache and CJS-ESM interop continue to
 apply. Changing the discriminator without updating the unit test in
 `before-env-routing.test.ts` fails CI explicitly.
-
-`BYPASS_PREFIXES` is retained for the legacy middleware code path used
-in `(k.*)` test probes; the production runtime no longer dispatches
-through it.

@@ -2,10 +2,9 @@ import { resolve } from 'node:path';
 
 import { defineConfig } from 'vitest/config';
 
-// The addon's node-side tests boot a real Vite dev server and exercise
-// `oxc-parser`/`magic-string` directly. They do not need the workspace-wide
-// vitest setup file (which mocks compiled storybook internals); using a
-// standalone config keeps the test runtime self-contained.
+// The addon's node-side tests boot a real Vite dev server. They do not need
+// the workspace-wide vitest setup file (which mocks compiled storybook
+// internals); using a standalone config keeps the test runtime self-contained.
 export default defineConfig({
   test: {
     name: 'addon-before-after',

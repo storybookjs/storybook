@@ -17,11 +17,11 @@ jobs:
       statuses: write
     steps:
       - name: Check actor permission
-        uses: prince-chrismc/check-actor-permissions-action@0000000000000000000000000000000000000000 # TODO: pin to real SHA before activation
+        uses: prince-chrismc/check-actor-permissions-action@d504e74ba31658f4cdf4fcfeb509d4c09736d88e # v3.0.2
         with:
           permission: write
       - name: Checkout base
-        uses: actions/checkout@0000000000000000000000000000000000000000 # TODO: pin to real SHA before activation
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           ref: ${{ github.event.pull_request.base.sha }}
       - name: Fetch PR diff
@@ -51,14 +51,14 @@ jobs:
             yarn verify-pr --recipe-spec .verify-recipes/${{ github.event.pull_request.number }}.spec.ts
       - name: Upload artifacts
         if: always()
-        uses: actions/upload-artifact@0000000000000000000000000000000000000000 # TODO: pin to real SHA before activation
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: verify-output-pr-${{ github.event.pull_request.number }}-${{ github.run_id }}
           path: .verify-output/*/
           retention-days: 14
       - name: Post PR comment
         if: always()
-        uses: actions/github-script@0000000000000000000000000000000000000000 # TODO: pin to real SHA before activation
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
         with:
           script: |
             const fs = require('fs');

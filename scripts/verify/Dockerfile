@@ -38,12 +38,12 @@ RUN set -eux; \
 
 # 1.b HIGH #4 — Corepack network-fetch bypass. We invoke yarn directly from the
 # on-disk binary that the harden script overlaid from base-sha. No corepack,
-# no network fetch of yarn from npm. The `node $YARN_BIN` invocation is used
+# no network fetch of yarn from npm. The `node $HARNESS_YARN_BIN` invocation is used
 # in every subsequent yarn step.
-ENV YARN_BIN=/opt/verify-harness/repo/.yarn/releases/yarn-4.10.3.cjs \
+ENV HARNESS_YARN_BIN=/opt/verify-harness/repo/.yarn/releases/yarn-4.10.3.cjs \
     COREPACK_ENABLE_NETWORK=0 \
     COREPACK_ENABLE_DOWNLOAD_PROMPT=0
-# We do NOT run `corepack enable` — the binary at $YARN_BIN is the source of
+# We do NOT run `corepack enable` — the binary at $HARNESS_YARN_BIN is the source of
 # truth. The on-disk binary is verified to exist + report 4.10.3 in stage 2
 # (after .yarn/ is COPYed in). If the file is absent or yields the wrong
 # version, stage 2 fails the build before yarn install runs.
@@ -149,11 +149,11 @@ USER 1000:1000
 
 # HIGH #4 — verify the on-disk yarn binary BEFORE invoking it, then call it via
 # node directly. No corepack network fetch.
-RUN test -f "$YARN_BIN" || { echo "::error::yarn binary missing at $YARN_BIN"; exit 1; } && \
-    node "$YARN_BIN" --version | grep -F "4.10.3"
+RUN test -f "$HARNESS_YARN_BIN" || { echo "::error::yarn binary missing at $HARNESS_YARN_BIN"; exit 1; } && \
+    node "$HARNESS_YARN_BIN" --version | grep -F "4.10.3"
 
 RUN --mount=type=cache,target=/home/verify/.yarn-cache,uid=1000,gid=1000 \
-    YARN_GLOBAL_FOLDER=/home/verify/.yarn-cache node "$YARN_BIN" install --immutable
+    YARN_GLOBAL_FOLDER=/home/verify/.yarn-cache node "$HARNESS_YARN_BIN" install --immutable
 
 ############################################################
 # Stage 3: build — compile code/core + bootstrap sandbox.
@@ -168,11 +168,11 @@ COPY --chown=1000:1000 . /opt/verify-harness/repo
 WORKDIR /opt/verify-harness/repo
 
 # 3.a Compile code/core via the on-disk yarn binary (HIGH #4).
-RUN node "$YARN_BIN" nx compile core
+RUN node "$HARNESS_YARN_BIN" nx compile core
 
 # 3.b Bootstrap the sandbox at the baked path.
 RUN mkdir -p /opt/verify-harness/storybook-sandboxes && \
-    node "$YARN_BIN" task sandbox --template react-vite/default-ts --start-from auto
+    node "$HARNESS_YARN_BIN" task sandbox --template react-vite/default-ts --start-from auto
 
 # 3.c Sanitize resolutions + snapshot via bun (F-12 — node strip-types rejects non-erasable enums).
 # MEDIUM — `bun -e` is the correct CLI (no `run`); use absolute import path.
@@ -214,7 +214,7 @@ RUN printf '%s\n' \
   '[[ "$DIGEST" =~ ^sha256:[a-f0-9]{64}$ ]] || { echo "::error::smoke digest malformed: $DIGEST" >&2; exit 1; }' \
   'START=$(date +%s%3N)' \
   'export VERIFY_HARNESS_IN_CONTAINER=1' \
-  'node "$YARN_BIN" verify-pr --skip-recipe >/dev/null' \
+  'node "$HARNESS_YARN_BIN" verify-pr --skip-recipe >/dev/null' \
   'END=$(date +%s%3N)' \
   'printf "{\"event\":\"smoke\",\"status\":\"ready\",\"durationMs\":%s,\"imageDigest\":\"%s\"}\n" "$((END-START))" "$DIGEST"' \
   > /opt/verify-harness/smoke.sh && chmod +x /opt/verify-harness/smoke.sh

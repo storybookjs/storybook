@@ -229,7 +229,7 @@ v5-0 introduces a containerized harness execution path. The image is built per P
 | 4 | **Lifecycle-script stripping** — `scripts/verify/strip-lifecycle-scripts.mjs` removes `preinstall`/`install`/`postinstall`/`prepare` from every workspace `package.json` (symlink-skip, max-depth 8, 1 MB file cap, 60 s timeout, prototype-chain hygiene). | `scripts/verify/strip-lifecycle-scripts.mjs`. |
 | 5 | **`.npmrc` purge** — any head-supplied `.npmrc` is deleted from the build context, closing the corepack registry-override surface. | `scripts/verify/harden-build-context.sh` (`find … -name .npmrc -delete`). |
 | 6 | **`packageManager` normalisation** — root `pr-head/package.json` `packageManager` field is set to base-sha's value (or deleted if base-sha has none). | `scripts/verify/strip-lifecycle-scripts.mjs` (root-pkg branch). |
-| 7 | **Corepack-network bypass** — yarn is invoked as `node $YARN_BIN` against the on-disk binary copied from the overlaid `.yarn/releases/`, so corepack never fetches yarn from npm. `COREPACK_ENABLE_NETWORK=0`. | `scripts/verify/Dockerfile` `ENV YARN_BIN=…` + every `RUN node "$YARN_BIN" …` invocation; `ENTRYPOINT` uses the same on-disk binary. |
+| 7 | **Corepack-network bypass** — yarn is invoked as `node $HARNESS_YARN_BIN` against the on-disk binary copied from the overlaid `.yarn/releases/`, so corepack never fetches yarn from npm. `COREPACK_ENABLE_NETWORK=0`. | `scripts/verify/Dockerfile` `ENV HARNESS_YARN_BIN=…` + every `RUN node "$HARNESS_YARN_BIN" …` invocation; `ENTRYPOINT` uses the same on-disk binary. |
 | 8 | **Dockerfile byte-identity check** — `diff -q scripts/verify/Dockerfile pr-head/scripts/verify/Dockerfile`. Build aborts on divergence; missing-in-head is allowed (workflow `-f` points at base-sha copy). | `scripts/verify/harden-build-context.sh` step 6. |
 | 9 | **Per-PR cache scope** — `cache-from`/`cache-to` use `type=gha,scope=pr-${{ github.event.pull_request.number }}` so a poisoned layer from one PR cannot leak to another. | `.github/workflows/verify-pr.yml` `Build harness image` step. |
 | 10 | **HEAD_SHA bake + runtime assertion** — Dockerfile bakes `ARG HEAD_SHA` into `/opt/verify-harness/HEAD_SHA` and labels the image `org.storybook.verify.head_sha=<sha>`. At runtime, the runner reads the file and aborts with `regression: head-sha drift` if it disagrees with `VERIFY_HARNESS_EXPECTED_HEAD_SHA`. | `scripts/verify/Dockerfile` stage 1.e; `scripts/verify-pr.ts` in-container branch. |
@@ -250,7 +250,7 @@ The job-level `permissions:` block grants `pull-requests: write` so that `Post P
 - `enableScripts: false` (yarn lifecycle scripts disabled in the overlaid `.yarnrc.yml`).
 - Lifecycle-script stripping in every workspace `package.json` (defence in depth even with `enableScripts: false`).
 - `.npmrc` purge from `pr-head/`.
-- Corepack network bypass — yarn invoked via `node $YARN_BIN`, not via corepack's shim.
+- Corepack network bypass — yarn invoked via `node $HARNESS_YARN_BIN`, not via corepack's shim.
 - Per-PR cache scope — any token-derived artefact cannot leak across PRs.
 - Dockerfile byte-identity check — head cannot rewrite the Dockerfile invoked by the workflow.
 

@@ -31,8 +31,8 @@ Secondary causes:
 
 **Most likely causes (in priority order):**
 
-1. **Image build is broken.** The smoke script's first action is `node "$YARN_BIN" verify-pr --skip-recipe`. If the image is missing `/opt/verify-harness/repo/.yarn/releases/yarn-4.10.3.cjs`, that `node` invocation dies before the sentinel prints.
-   - Diagnose: download the failed image step's logs and search for `::error::yarn binary missing at $YARN_BIN` or for the `bun --version` / `node --version` probes in stage 1.
+1. **Image build is broken.** The smoke script's first action is `node "$HARNESS_YARN_BIN" verify-pr --skip-recipe`. If the image is missing `/opt/verify-harness/repo/.yarn/releases/yarn-4.10.3.cjs`, that `node` invocation dies before the sentinel prints.
+   - Diagnose: download the failed image step's logs and search for `::error::yarn binary missing at $HARNESS_YARN_BIN` or for the `bun --version` / `node --version` probes in stage 1.
 2. **`bootStorybook` attempted to reach the network.** All outbound traffic is blocked by `--network=none`. Any DNS, telemetry, or prebundle probe inside vite/wait-on will timeout silently and the smoke step will exceed the 60 s budget without emitting the sentinel.
    - Diagnose: inspect `/tmp/smoke.log` (captured by `2>&1 | tee /tmp/smoke.log`). Search for `getaddrinfo ENOTFOUND`, `connect ETIMEDOUT`, or warnings from `wait-on`.
    - Mitigation already in place: `STORYBOOK_DISABLE_TELEMETRY=1` baked into the image `ENV`. If a new outbound dependency lands in a `code/core` change, that change is the regression — revert + open an issue.

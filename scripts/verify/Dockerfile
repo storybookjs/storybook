@@ -88,6 +88,11 @@ COPY --chown=1000:1000 .yarn .yarn
 # stable 1.7 frontend, so we enumerate). The hardened build context guarantees
 # every path below exists at base-sha.
 COPY --chown=1000:1000 scripts/package.json scripts/
+# Portal target referenced from scripts/package.json
+# ("eslint-plugin-local-rules": "portal:./eslint-plugin-local-rules"). Yarn must
+# see the portal directory at install time to resolve the manifest. Copy the
+# whole directory so the plugin's runtime files are also present for `yarn lint`.
+COPY --chown=1000:1000 scripts/eslint-plugin-local-rules/ scripts/eslint-plugin-local-rules/
 COPY --chown=1000:1000 code/package.json code/
 COPY --chown=1000:1000 code/core/package.json code/core/
 

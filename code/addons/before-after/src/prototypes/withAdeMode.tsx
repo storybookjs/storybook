@@ -2,720 +2,1104 @@
  * `withAdeMode` decorator + Claude-Code-shaped shell.
  *
  * When the toolbar global `adeMode === 'on'`, wraps the story in a faux
- * Claude Code chat-panel + browser-preview layout so the reviewer can
- * see what the prototype looks like when Claude opens it during an
- * agent session.
+ * Claude Code app + browser-preview layout so the reviewer can see what
+ * the prototype looks like when Claude opens it during an agent
+ * session.
+ *
+ * Visual reference: the real Claude Code desktop app — left sidebar
+ * with sessions/pinned/recents, a transcript panel with a compact PR
+ * input bar, and a separate floating browser window on the right whose
+ * width can be dragged.
  *
  * Toggle is registered in `.storybook/preview.tsx` as a global
  * `adeMode` with a toolbar item; the decorator reads it from
  * `context.globals`.
  */
-import React, { useMemo, type ReactNode } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 
+import {
+  AddIcon,
+  BookmarkIcon,
+  BranchIcon,
+  ChatIcon,
+  ChevronDownIcon,
+  ChevronSmallDownIcon,
+  CircleIcon,
+  CloseIcon,
+  CommandIcon,
+  EditIcon,
+  FilterIcon,
+  GlobeIcon,
+  LightningIcon,
+  MenuIcon,
+  PlusIcon,
+  RefreshIcon,
+  ShareAltIcon,
+  SideBySideIcon,
+  StorybookIcon,
+  WandIcon,
+} from '@storybook/icons';
 import { styled } from 'storybook/theming';
 
 import type { Decorator } from '@storybook/react-vite';
 
 // ────────────────────────────────────────────────────────────────
-// Claude Code visual constants
+// Visual constants — driven by CSS variables so the shell can swap
+// between a dark and light palette via the toolbar toggle.
 // ────────────────────────────────────────────────────────────────
 
-const CLAUDE_BG = '#1a1714';
-const CLAUDE_PANEL = '#221d18';
-const CLAUDE_BORDER = '#3a342c';
-const CLAUDE_TEXT = '#e8e4dd';
-const CLAUDE_DIM = '#a8a39a';
-const CLAUDE_ACCENT = '#cc785c'; // Anthropic's orange/clay
-const CLAUDE_USER = '#5b8ad9'; // user message accent
-const CLAUDE_TOOL = '#806550';
+const BG_OUTER = 'var(--ade-bg-outer)';
+const PANEL_BG = 'var(--ade-panel-bg)';
+const PANEL_BORDER = 'var(--ade-panel-border)';
+const SIDEBAR_BG = 'var(--ade-sidebar-bg)';
+const TEXT = 'var(--ade-text)';
+const TEXT_DIM = 'var(--ade-text-dim)';
+const TEXT_FAINT = 'var(--ade-text-faint)';
+const ACCENT = 'var(--ade-accent)';
+const HOVER = 'var(--ade-hover)';
+const BORDER_SOFT = 'var(--ade-border-soft)';
+const PILL_BG = 'var(--ade-pill-bg)';
+const GREEN = 'var(--ade-green)';
+const RED = 'var(--ade-red)';
+const ITEM_TEXT = 'var(--ade-item-text)';
+const ITEM_BRANCH = 'var(--ade-item-branch)';
+const TRANSCRIPT_TEXT = 'var(--ade-transcript-text)';
+const LINK = 'var(--ade-link)';
+const CODE_BG = 'var(--ade-code-bg)';
+const CODE_COLOR = 'var(--ade-code-color)';
+const TH = 'var(--ade-th)';
+const INPUT_BG = 'var(--ade-input-bg)';
+const PR_BG = 'var(--ade-pr-bg)';
+const PR_BG_HOVER = 'var(--ade-pr-bg-hover)';
+const BROWSER_BG = 'var(--ade-browser-bg)';
+const CHROME_BG = 'var(--ade-chrome-bg)';
+const URL_BG = 'var(--ade-url-bg)';
+const STORY_BG = 'var(--ade-story-bg)';
+const RESIZER_GRIP = 'var(--ade-resizer-grip)';
+const SHADOW =
+  'var(--ade-shadow, 0 30px 60px rgba(0,0,0,0.55), 0 8px 18px rgba(0,0,0,0.4), inset 0 0 0 1px rgba(255,255,255,0.02))';
+const GREEN_SOFT = 'var(--ade-green-soft)';
+const GREEN_SOFT_BORDER = 'var(--ade-green-soft-border)';
+const RED_SOFT = 'var(--ade-red-soft)';
+const RED_SOFT_BORDER = 'var(--ade-red-soft-border)';
+
+type AdeMode = 'light' | 'dark';
+
+const PALETTES: Record<AdeMode, Record<string, string>> = {
+  dark: {
+    '--ade-bg-outer': '#0a0a0a',
+    '--ade-panel-bg': '#161616',
+    '--ade-panel-border': '#262626',
+    '--ade-sidebar-bg': '#141414',
+    '--ade-text': '#e6e6e6',
+    '--ade-text-dim': '#8a8a8a',
+    '--ade-text-faint': '#5a5a5a',
+    '--ade-accent': '#cc7a55',
+    '--ade-hover': 'rgba(255,255,255,0.04)',
+    '--ade-border-soft': '#222222',
+    '--ade-pill-bg': '#1f1f1f',
+    '--ade-green': '#7fb87f',
+    '--ade-red': '#d97a7a',
+    '--ade-item-text': '#cfcfcf',
+    '--ade-item-branch': '#9aa3b5',
+    '--ade-transcript-text': '#d8d8d8',
+    '--ade-link': '#7da3e0',
+    '--ade-code-bg': '#1d1d1d',
+    '--ade-code-color': '#e3c9a3',
+    '--ade-th': '#7aa6d6',
+    '--ade-input-bg': '#181818',
+    '--ade-pr-bg': '#1f1f1f',
+    '--ade-pr-bg-hover': '#262626',
+    '--ade-browser-bg': '#0e0e0e',
+    '--ade-chrome-bg': '#1a1a1a',
+    '--ade-url-bg': '#0e0e0e',
+    '--ade-story-bg': '#ffffff',
+    '--ade-resizer-grip': '#2a2a2a',
+    '--ade-shadow':
+      '0 30px 60px rgba(0,0,0,0.55), 0 8px 18px rgba(0,0,0,0.4), inset 0 0 0 1px rgba(255,255,255,0.02)',
+    '--ade-green-soft': 'rgba(127,184,127,0.12)',
+    '--ade-green-soft-border': 'rgba(127,184,127,0.28)',
+    '--ade-red-soft': 'rgba(217,122,122,0.12)',
+    '--ade-red-soft-border': 'rgba(217,122,122,0.28)',
+  },
+  light: {
+    '--ade-bg-outer': '#f1ede5',
+    '--ade-panel-bg': '#ffffff',
+    '--ade-panel-border': '#e2ddd0',
+    '--ade-sidebar-bg': '#f7f4ec',
+    '--ade-text': '#1f1d1a',
+    '--ade-text-dim': '#6e6a62',
+    '--ade-text-faint': '#a5a094',
+    '--ade-accent': '#b85d36',
+    '--ade-hover': 'rgba(0,0,0,0.045)',
+    '--ade-border-soft': '#e6e1d3',
+    '--ade-pill-bg': '#efeae0',
+    '--ade-green': '#3f8a3f',
+    '--ade-red': '#b94a4a',
+    '--ade-item-text': '#3a3833',
+    '--ade-item-branch': '#5f6b86',
+    '--ade-transcript-text': '#2b2a26',
+    '--ade-link': '#2f5bb7',
+    '--ade-code-bg': '#f1ece1',
+    '--ade-code-color': '#8a4f1e',
+    '--ade-th': '#2f5bb7',
+    '--ade-input-bg': '#f7f4ec',
+    '--ade-pr-bg': '#ffffff',
+    '--ade-pr-bg-hover': '#f1ece1',
+    '--ade-browser-bg': '#ece8dd',
+    '--ade-chrome-bg': '#ece8dd',
+    '--ade-url-bg': '#fbfaf5',
+    '--ade-story-bg': '#ffffff',
+    '--ade-resizer-grip': '#d4cfc1',
+    '--ade-shadow':
+      '0 20px 40px rgba(60,40,20,0.10), 0 4px 10px rgba(60,40,20,0.06), inset 0 0 0 1px rgba(0,0,0,0.02)',
+    '--ade-green-soft': 'rgba(63,138,63,0.14)',
+    '--ade-green-soft-border': 'rgba(63,138,63,0.3)',
+    '--ade-red-soft': 'rgba(185,74,74,0.12)',
+    '--ade-red-soft-border': 'rgba(185,74,74,0.3)',
+  },
+};
 
 // ────────────────────────────────────────────────────────────────
 // Layout
 // ────────────────────────────────────────────────────────────────
 
-const Shell = styled.div({
-  fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, sans-serif',
-  background: CLAUDE_BG,
-  color: CLAUDE_TEXT,
+const Outer = styled.div({
+  fontFamily:
+    '-apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, Oxygen, Ubuntu, sans-serif',
+  background: BG_OUTER,
   width: '100vw',
   height: '100vh',
-  display: 'grid',
-  gridTemplateRows: '36px 1fr',
-  // App rail (56px) · Conversations history (240px) · Active chat (360px) · Preview (1fr)
-  gridTemplateColumns: '56px 240px 360px 1fr',
-  gridTemplateAreas: `
-    "header header header header"
-    "rail history chat preview"
-  `,
+  padding: 16,
+  display: 'flex',
+  gap: 0,
   overflow: 'hidden',
+  color: TEXT,
   fontSize: 13,
+  boxSizing: 'border-box',
 });
 
-const Header = styled.div({
-  gridArea: 'header',
-  background: '#0f0d0a',
-  borderBottom: `1px solid ${CLAUDE_BORDER}`,
+const Window = styled.div({
+  background: PANEL_BG,
+  border: `1px solid ${PANEL_BORDER}`,
+  borderRadius: 12,
+  overflow: 'hidden',
+  display: 'flex',
+  flexDirection: 'column' as const,
+  boxShadow: SHADOW,
+  minWidth: 0,
+});
+
+const ClaudeWindow = styled(Window)({
+  flex: 1,
+  display: 'grid',
+  gridTemplateColumns: '230px 1fr',
+  minWidth: 540,
+});
+
+// ── Resizer ────────────────────────────────────────────────────────
+
+const ResizerTrack = styled.div({
+  width: 16,
+  flexShrink: 0,
   display: 'flex',
   alignItems: 'center',
-  gap: 12,
-  padding: '0 14px',
-  fontSize: 12,
-  color: CLAUDE_DIM,
+  justifyContent: 'center',
+  cursor: 'col-resize',
+  position: 'relative' as const,
+  '&:hover > span, &[data-dragging="true"] > span': {
+    background: ACCENT,
+    opacity: 1,
+  },
 });
 
-const Logo = styled.span({
-  color: CLAUDE_ACCENT,
-  fontWeight: 700,
-  letterSpacing: '0.04em',
-  display: 'inline-flex',
+const ResizerGrip = styled.span({
+  width: 4,
+  height: 60,
+  background: RESIZER_GRIP,
+  borderRadius: 3,
+  opacity: 0.7,
+  transition: 'background 120ms, opacity 120ms',
+});
+
+// ── Sidebar ────────────────────────────────────────────────────────
+
+const Sidebar = styled.aside({
+  background: SIDEBAR_BG,
+  borderRight: `1px solid ${BORDER_SOFT}`,
+  display: 'flex',
+  flexDirection: 'column' as const,
+  overflow: 'hidden',
+  padding: '10px 0 8px',
+});
+
+const SidebarTop = styled.div({
+  display: 'flex',
   alignItems: 'center',
   gap: 6,
+  padding: '4px 10px 10px',
 });
 
-const HeaderSep = styled.span({
-  color: '#4a4239',
-  fontSize: 10,
-});
+const IconBtn = styled.button<{ active?: boolean }>(({ active }) => ({
+  width: 28,
+  height: 28,
+  borderRadius: 6,
+  border: 'none',
+  background: active ? HOVER : 'transparent',
+  color: active ? TEXT : TEXT_DIM,
+  cursor: 'pointer',
+  display: 'inline-flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  fontSize: 13,
+  '&:hover': { background: HOVER, color: TEXT },
+}));
 
-const HeaderItem = styled.span({
-  color: CLAUDE_TEXT,
-});
-
-const HeaderRight = styled.span({
+const CodeChip = styled.div({
   marginLeft: 'auto',
   display: 'inline-flex',
   alignItems: 'center',
-  gap: 12,
-  fontSize: 11,
-  color: CLAUDE_DIM,
+  gap: 5,
+  padding: '4px 9px',
+  borderRadius: 6,
+  background: CODE_BG,
+  border: `1px solid ${BORDER_SOFT}`,
+  fontSize: 11.5,
+  color: TEXT,
+  fontWeight: 500,
 });
 
-// ── App rail (icon nav) ────────────────────────────────────────────
-
-const AppRail = styled.nav({
-  gridArea: 'rail',
-  background: '#13100d',
-  borderRight: `1px solid ${CLAUDE_BORDER}`,
+const NavList = styled.div({
   display: 'flex',
   flexDirection: 'column' as const,
+  padding: '0 6px',
+  gap: 1,
+});
+
+const NavRow = styled.button({
+  display: 'flex',
   alignItems: 'center',
-  padding: '14px 0',
+  gap: 9,
+  width: '100%',
+  background: 'transparent',
+  border: 'none',
+  borderRadius: 6,
+  padding: '6px 8px',
+  textAlign: 'left' as const,
+  cursor: 'pointer',
+  color: TEXT,
+  fontSize: 12.5,
+  '&:hover': { background: HOVER },
+});
+
+const NavIcon = styled.span({
+  width: 14,
+  display: 'inline-flex',
+  justifyContent: 'center',
+  color: TEXT_DIM,
+  fontSize: 12,
+});
+
+const NavCaret = styled.span({
+  marginLeft: 'auto',
+  color: TEXT_FAINT,
+  display: 'inline-flex',
+  alignItems: 'center',
+});
+
+const SectionLabel = styled.div({
+  padding: '14px 14px 6px',
+  fontSize: 10.5,
+  fontWeight: 600,
+  color: TEXT_FAINT,
+  letterSpacing: '0.02em',
+  display: 'flex',
+  alignItems: 'center',
   gap: 6,
 });
 
-const RailIcon = styled.button<{ active?: boolean }>(({ active }) => ({
-  width: 36,
-  height: 36,
-  borderRadius: 8,
-  border: 'none',
-  background: active ? 'rgba(204,120,92,0.18)' : 'transparent',
-  color: active ? CLAUDE_ACCENT : CLAUDE_DIM,
-  cursor: 'pointer',
-  fontSize: 16,
+const SectionRight = styled.span({
+  marginLeft: 'auto',
+  color: TEXT_FAINT,
   display: 'inline-flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  '&:hover': {
-    background: 'rgba(255,255,255,0.05)',
-    color: CLAUDE_TEXT,
-  },
-}));
-
-const RailSpacer = styled.span({ flex: 1 });
-
-const Avatar = styled.span({
-  width: 30,
-  height: 30,
-  borderRadius: '50%',
-  background: 'linear-gradient(135deg, #cc785c 0%, #806550 100%)',
-  display: 'inline-flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  color: '#fff',
-  fontSize: 12,
-  fontWeight: 700,
-  border: `1px solid ${CLAUDE_BORDER}`,
 });
 
-// ── Conversation history sidebar ────────────────────────────────────
-
-const History = styled.aside({
-  gridArea: 'history',
-  background: '#1d1814',
-  borderRight: `1px solid ${CLAUDE_BORDER}`,
+const Scroll = styled.div({
+  flex: 1,
+  overflowY: 'auto',
   display: 'flex',
   flexDirection: 'column' as const,
-  overflow: 'hidden',
 });
 
-const HistoryHead = styled.div({
-  padding: '10px 12px',
-  borderBottom: `1px solid ${CLAUDE_BORDER}`,
+const ListPad = styled.div({ padding: '0 6px' });
+
+const ItemRow = styled.button<{ active?: boolean }>(({ active }) => ({
   display: 'flex',
   alignItems: 'center',
   gap: 8,
-  fontSize: 12,
-});
-
-const NewChatBtn = styled.button({
-  flex: 1,
-  background: 'transparent',
-  border: `1px dashed ${CLAUDE_BORDER}`,
-  color: CLAUDE_ACCENT,
-  borderRadius: 6,
-  padding: '6px 8px',
-  fontSize: 11.5,
-  fontWeight: 600,
-  cursor: 'pointer',
-  display: 'inline-flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  gap: 5,
-  '&:hover': { background: 'rgba(204,120,92,0.08)' },
-});
-
-const SearchInput = styled.div({
-  padding: '8px 12px',
-  borderBottom: `1px solid ${CLAUDE_BORDER}`,
-});
-
-const SearchField = styled.div({
-  display: 'flex',
-  alignItems: 'center',
-  gap: 6,
-  background: '#13100d',
-  border: `1px solid ${CLAUDE_BORDER}`,
-  borderRadius: 6,
-  padding: '5px 8px',
-  fontSize: 11.5,
-  color: CLAUDE_DIM,
-});
-
-const HistoryScroll = styled.div({
-  flex: 1,
-  overflowY: 'auto',
-  padding: '8px 6px',
-  display: 'flex',
-  flexDirection: 'column' as const,
-  gap: 2,
-});
-
-const HistorySection = styled.div({
-  padding: '8px 8px 4px',
-  fontSize: 10,
-  textTransform: 'uppercase' as const,
-  letterSpacing: '0.07em',
-  fontWeight: 700,
-  color: CLAUDE_DIM,
-});
-
-const HistoryItem = styled.button<{ active?: boolean }>(({ active }) => ({
   width: '100%',
-  background: active ? 'rgba(204,120,92,0.12)' : 'transparent',
+  background: active ? HOVER : 'transparent',
   border: 'none',
   borderRadius: 6,
-  padding: '7px 8px',
+  padding: '5px 8px',
   textAlign: 'left' as const,
   cursor: 'pointer',
-  display: 'flex',
-  flexDirection: 'column' as const,
-  gap: 2,
-  color: active ? CLAUDE_TEXT : '#d6cfc4',
-  borderLeft: active ? `2px solid ${CLAUDE_ACCENT}` : '2px solid transparent',
-  '&:hover': { background: 'rgba(255,255,255,0.04)' },
+  color: active ? TEXT : ITEM_TEXT,
+  fontSize: 12,
+  minHeight: 26,
+  '&:hover': { background: HOVER },
 }));
 
-const HistoryTitle = styled.span({
-  fontSize: 12,
-  fontWeight: 600,
+const ItemIconSlot = styled.span<{ kind?: 'diff' | 'dot' | 'branch' }>(({ kind }) => ({
+  width: 14,
+  display: 'inline-flex',
+  justifyContent: 'center',
+  color: kind === 'diff' ? ACCENT : kind === 'branch' ? ITEM_BRANCH : TEXT_DIM,
+  flexShrink: 0,
+}));
+
+const ItemText = styled.span({
   overflow: 'hidden',
   textOverflow: 'ellipsis',
   whiteSpace: 'nowrap' as const,
-  display: 'inline-flex',
-  alignItems: 'center',
-  gap: 6,
+  flex: 1,
 });
 
-const ActiveDot = styled.span({
-  width: 6,
-  height: 6,
-  borderRadius: '50%',
-  background: CLAUDE_ACCENT,
+const UserStrip = styled.div({
+  display: 'flex',
+  alignItems: 'center',
+  gap: 8,
+  padding: '10px 12px',
+  borderTop: `1px solid ${BORDER_SOFT}`,
+  marginTop: 4,
+});
+
+const Avatar = styled.span({
+  width: 22,
+  height: 22,
+  borderRadius: 5,
+  background: 'linear-gradient(135deg, #f0c674 0%, #cc7a55 100%)',
+  display: 'inline-flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  color: '#1a1a1a',
+  fontSize: 10,
+  fontWeight: 700,
+});
+
+const UserName = styled.span({ fontSize: 12, color: TEXT });
+const UserMeta = styled.span({ fontSize: 11.5, color: TEXT_DIM });
+
+// ── Main column ───────────────────────────────────────────────────
+
+const Main = styled.section({
+  display: 'flex',
+  flexDirection: 'column' as const,
+  overflow: 'hidden',
+  background: PANEL_BG,
+  minWidth: 0,
+});
+
+const MainHeader = styled.div({
+  height: 38,
+  display: 'flex',
+  alignItems: 'center',
+  gap: 8,
+  padding: '0 12px',
+  borderBottom: `1px solid ${BORDER_SOFT}`,
+  fontSize: 12,
   flexShrink: 0,
 });
 
-const HistoryMeta = styled.span({
-  fontSize: 10.5,
-  color: CLAUDE_DIM,
-  overflow: 'hidden',
-  textOverflow: 'ellipsis',
-  whiteSpace: 'nowrap' as const,
-});
-
-// ── Chat panel ────────────────────────────────────────────────────
-
-const Chat = styled.aside({
-  gridArea: 'chat',
-  background: CLAUDE_PANEL,
-  borderRight: `1px solid ${CLAUDE_BORDER}`,
-  display: 'flex',
-  flexDirection: 'column' as const,
-  overflow: 'hidden',
-});
-
-const ChatScroll = styled.div({
-  flex: 1,
-  overflowY: 'auto',
-  padding: '12px 14px',
-  display: 'flex',
-  flexDirection: 'column' as const,
-  gap: 10,
-});
-
-const Bubble = styled.div<{ role: 'user' | 'assistant' | 'system' }>(({ role }) => ({
-  display: 'flex',
-  flexDirection: 'column' as const,
-  gap: 4,
-  fontSize: 12.5,
-  lineHeight: 1.45,
-  alignItems: role === 'user' ? 'flex-end' : 'flex-start',
-}));
-
-const RoleLabel = styled.span<{ role: 'user' | 'assistant' | 'system' }>(({ role }) => ({
-  fontSize: 10,
-  textTransform: 'uppercase' as const,
-  letterSpacing: '0.06em',
-  fontWeight: 700,
-  color: role === 'user' ? CLAUDE_USER : role === 'system' ? CLAUDE_DIM : CLAUDE_ACCENT,
-}));
-
-const BubbleBody = styled.div<{ role: 'user' | 'assistant' | 'system' }>(({ role }) => ({
-  background: role === 'user' ? 'rgba(91,138,217,0.12)' : 'transparent',
-  border: role === 'user' ? `1px solid rgba(91,138,217,0.35)` : 'none',
-  borderRadius: 6,
-  padding: role === 'user' ? '6px 10px' : '0',
-  color: CLAUDE_TEXT,
-  maxWidth: '94%',
-  whiteSpace: 'pre-wrap' as const,
-}));
-
-const ToolCall = styled.div({
-  marginTop: 4,
-  border: `1px solid ${CLAUDE_BORDER}`,
-  borderRadius: 6,
-  padding: '6px 9px',
-  background: '#1d1814',
-  display: 'flex',
-  flexDirection: 'column' as const,
-  gap: 4,
-  fontFamily: 'ui-monospace, SF Mono, Menlo, monospace',
-  fontSize: 11.5,
-  color: '#d6cfc4',
-  width: '100%',
-});
-
-const ToolHeader = styled.div({
-  display: 'flex',
+const Crumbs = styled.div({
+  display: 'inline-flex',
   alignItems: 'center',
   gap: 6,
-  color: CLAUDE_TOOL,
-  fontSize: 10.5,
-  fontWeight: 700,
-  textTransform: 'uppercase' as const,
-  letterSpacing: '0.04em',
+  color: TEXT,
+  overflow: 'hidden',
+  whiteSpace: 'nowrap' as const,
+  textOverflow: 'ellipsis',
 });
 
-const ToolBody = styled.pre({
+const CrumbDim = styled.span({ color: TEXT_DIM });
+const CrumbSep = styled.span({ color: TEXT_FAINT });
+const HeaderActions = styled.div({
+  marginLeft: 'auto',
+  display: 'inline-flex',
+  alignItems: 'center',
+  gap: 4,
+  color: TEXT_DIM,
+});
+
+const Transcript = styled.div({
+  flex: 1,
+  overflowY: 'auto',
+  padding: '16px 22px 10px',
+  display: 'flex',
+  flexDirection: 'column' as const,
+  gap: 14,
+  fontSize: 13,
+  lineHeight: 1.55,
+  color: TRANSCRIPT_TEXT,
+  minHeight: 0,
+});
+
+const Para = styled.p({ margin: 0 });
+
+const Link = styled.span({
+  color: LINK,
+  textDecoration: 'none',
+});
+
+const Code = styled.code({
+  fontFamily: 'ui-monospace, SF Mono, Menlo, monospace',
+  fontSize: 12,
+  background: CODE_BG,
+  border: `1px solid ${BORDER_SOFT}`,
+  padding: '1px 5px',
+  borderRadius: 4,
+  color: CODE_COLOR,
+});
+
+const Table = styled.table({
+  width: '100%',
+  borderCollapse: 'collapse' as const,
+  fontSize: 12.5,
+  margin: '2px 0 4px',
+});
+
+const Th = styled.th({
+  textAlign: 'left' as const,
+  fontWeight: 600,
+  color: TH,
+  padding: '4px 10px 8px',
+  borderBottom: `1px solid ${BORDER_SOFT}`,
+});
+
+const Td = styled.td({
+  padding: '8px 10px',
+  borderBottom: `1px solid ${BORDER_SOFT}`,
+  color: TRANSCRIPT_TEXT,
+  verticalAlign: 'top' as const,
+});
+
+const TdNum = styled(Td)({ color: TEXT_DIM });
+
+const OL = styled.ol({
   margin: 0,
-  whiteSpace: 'pre-wrap' as const,
-  color: '#c5beb1',
-  fontSize: 11.5,
-  lineHeight: 1.4,
+  paddingLeft: 22,
+  display: 'flex',
+  flexDirection: 'column' as const,
+  gap: 4,
 });
 
-const InputBar = styled.div({
-  borderTop: `1px solid ${CLAUDE_BORDER}`,
-  padding: '8px 10px 10px',
-  background: '#1a1612',
+const UL = styled.ul({
+  margin: 0,
+  paddingLeft: 22,
+  display: 'flex',
+  flexDirection: 'column' as const,
+  gap: 4,
 });
 
-const FakeInput = styled.div({
+const TimestampRow = styled.div({
   display: 'flex',
   alignItems: 'center',
   gap: 8,
-  border: `1px solid ${CLAUDE_BORDER}`,
-  borderRadius: 6,
-  padding: '8px 10px',
-  background: '#13100d',
-  color: CLAUDE_DIM,
+  color: TEXT_FAINT,
+  fontSize: 11,
+  paddingTop: 4,
+});
+
+const StarMark = styled.div({
+  color: ACCENT,
+  padding: '0 0 6px',
+  display: 'inline-flex',
+});
+
+// ── PR + input bar ───────────────────────────────────────────────
+
+const Composer = styled.div({
+  borderTop: `1px solid ${BORDER_SOFT}`,
+  padding: '10px 14px 12px',
+  display: 'flex',
+  flexDirection: 'column' as const,
+  gap: 8,
+  flexShrink: 0,
+});
+
+const BranchBar = styled.div({
+  display: 'flex',
+  alignItems: 'center',
+  gap: 10,
+  padding: '7px 10px',
+  background: INPUT_BG,
+  border: `1px solid ${BORDER_SOFT}`,
+  borderRadius: 8,
   fontSize: 12,
 });
 
-const Caret = styled.span({
+const BranchIconSlot = styled.span({
+  color: TEXT_DIM,
+  display: 'inline-flex',
+});
+
+const BranchPair = styled.span({
+  color: TEXT,
+  fontFamily: 'ui-monospace, SF Mono, Menlo, monospace',
+  fontSize: 11.5,
+  display: 'inline-flex',
+  alignItems: 'center',
+  gap: 6,
+});
+
+const DiffAdd = styled.span({
+  color: GREEN,
+  background: GREEN_SOFT,
+  border: `1px solid ${GREEN_SOFT_BORDER}`,
+  borderRadius: 4,
+  padding: '1px 6px',
+  fontFamily: 'ui-monospace, SF Mono, Menlo, monospace',
+  fontSize: 11,
+  marginLeft: 'auto',
+});
+
+const DiffRem = styled.span({
+  color: RED,
+  background: RED_SOFT,
+  border: `1px solid ${RED_SOFT_BORDER}`,
+  borderRadius: 4,
+  padding: '1px 6px',
+  fontFamily: 'ui-monospace, SF Mono, Menlo, monospace',
+  fontSize: 11,
+});
+
+const CreatePr = styled.button({
+  background: PR_BG,
+  border: `1px solid ${PANEL_BORDER}`,
+  color: TEXT,
+  fontSize: 11.5,
+  fontWeight: 500,
+  padding: '4px 10px',
+  borderRadius: 6,
+  cursor: 'pointer',
+  display: 'inline-flex',
+  alignItems: 'center',
+  gap: 5,
+  '&:hover': { background: PR_BG_HOVER },
+});
+
+const InputField = styled.div({
+  display: 'flex',
+  alignItems: 'center',
+  gap: 8,
+  padding: '9px 12px',
+  background: INPUT_BG,
+  border: `1px solid ${BORDER_SOFT}`,
+  borderRadius: 8,
+  fontSize: 12.5,
+  color: TEXT_DIM,
+});
+
+const InputPrompt = styled.span({ flex: 1 });
+
+const InputEnter = styled.span({
+  color: TEXT_FAINT,
+  display: 'inline-flex',
+});
+
+const ComposerFooter = styled.div({
+  display: 'flex',
+  alignItems: 'center',
+  gap: 8,
+  fontSize: 11.5,
+  color: TEXT_DIM,
+  paddingTop: 2,
+});
+
+const AutoChip = styled.span({
+  background: PILL_BG,
+  border: `1px solid ${BORDER_SOFT}`,
+  padding: '2px 8px',
+  borderRadius: 5,
+  color: TEXT,
+  fontSize: 11,
+});
+
+const FootBtn = styled.button({
+  background: 'transparent',
+  border: 'none',
+  color: TEXT_DIM,
+  cursor: 'pointer',
+  padding: '2px 4px',
+  display: 'inline-flex',
+  alignItems: 'center',
+  gap: 4,
+  '&:hover': { color: TEXT },
+});
+
+const ModelInfo = styled.span({
+  marginLeft: 'auto',
+  color: TEXT_DIM,
+  fontSize: 11,
+  display: 'inline-flex',
+  alignItems: 'center',
+  gap: 6,
+});
+
+const Spinner = styled.span({
+  width: 10,
+  height: 10,
+  borderRadius: '50%',
+  border: `1.5px solid ${TEXT_FAINT}`,
+  borderTopColor: ACCENT,
   display: 'inline-block',
-  width: 7,
-  height: 13,
-  background: CLAUDE_ACCENT,
-  marginLeft: 2,
-  animation: 'adeBlink 1s steps(2) infinite',
-  '@keyframes adeBlink': {
-    '0%, 50%': { opacity: 1 },
-    '50.01%, 100%': { opacity: 0 },
+  animation: 'adeSpin 1s linear infinite',
+  '@keyframes adeSpin': {
+    '0%': { transform: 'rotate(0deg)' },
+    '100%': { transform: 'rotate(360deg)' },
   },
 });
 
-const ModelChip = styled.span({
-  marginLeft: 'auto',
-  fontSize: 10.5,
-  color: CLAUDE_DIM,
-  background: '#0f0d0a',
-  border: `1px solid ${CLAUDE_BORDER}`,
-  padding: '2px 7px',
-  borderRadius: 999,
+// ── Browser window ───────────────────────────────────────────────
+
+const BrowserWindow = styled(Window)({
+  background: BROWSER_BG,
+  flexShrink: 0,
 });
 
-// ── Preview pane (faux browser) ───────────────────────────────────
-
-const Preview = styled.section({
-  gridArea: 'preview',
-  background: '#0f0d0a',
-  padding: 12,
-  display: 'flex',
-  flexDirection: 'column' as const,
-  overflow: 'hidden',
-});
-
-const Browser = styled.div({
-  flex: 1,
-  borderRadius: 8,
-  border: `1px solid ${CLAUDE_BORDER}`,
-  background: '#ffffff',
-  display: 'flex',
-  flexDirection: 'column' as const,
-  overflow: 'hidden',
-  boxShadow: '0 12px 32px rgba(0,0,0,0.45), inset 0 0 0 1px rgba(255,255,255,0.04)',
-});
-
-const Chrome = styled.div({
-  height: 36,
-  background: '#272320',
-  borderBottom: `1px solid #1a1612`,
+const BrowserChrome = styled.div({
+  height: 38,
   display: 'flex',
   alignItems: 'center',
   gap: 10,
   padding: '0 12px',
+  background: CHROME_BG,
+  borderBottom: `1px solid ${BORDER_SOFT}`,
   flexShrink: 0,
 });
 
-const Lights = styled.div({
-  display: 'flex',
-  gap: 6,
-  flexShrink: 0,
-});
-
-const Light = styled.span<{ color: string }>(({ color }) => ({
-  width: 11,
-  height: 11,
-  borderRadius: '50%',
-  background: color,
-  display: 'inline-block',
-  boxShadow: 'inset 0 0 0 1px rgba(0,0,0,0.18)',
-}));
-
-const NavBtns = styled.div({
-  display: 'flex',
-  gap: 4,
-  marginLeft: 6,
-  color: '#a8a39a',
-  fontSize: 13,
-});
-
-const NavBtn = styled.button({
-  background: 'transparent',
-  border: 'none',
-  color: 'inherit',
-  cursor: 'pointer',
-  padding: '2px 4px',
-  borderRadius: 3,
-  fontSize: 12,
-  '&:hover': { background: 'rgba(255,255,255,0.06)' },
-  '&:disabled': { opacity: 0.35 },
-});
-
-const UrlBar = styled.div({
+const UrlPill = styled.div({
   flex: 1,
-  height: 22,
-  background: '#1a1612',
-  border: '1px solid #3a342c',
-  borderRadius: 4,
   display: 'flex',
   alignItems: 'center',
-  gap: 6,
-  padding: '0 10px',
-  color: '#d6cfc4',
+  gap: 8,
+  height: 24,
+  padding: '0 12px',
+  background: URL_BG,
+  border: `1px solid ${BORDER_SOFT}`,
+  borderRadius: 6,
+  color: TEXT,
+  fontSize: 12,
   fontFamily: 'ui-monospace, SF Mono, Menlo, monospace',
-  fontSize: 11,
   overflow: 'hidden',
 });
 
-const Lock = styled.span({
-  color: '#7fb87f',
-  fontSize: 10,
-});
-
-const Reload = styled.button({
+const ChromeBtn = styled.button({
   background: 'transparent',
   border: 'none',
-  color: '#a8a39a',
+  color: TEXT_DIM,
   cursor: 'pointer',
-  fontSize: 12,
-  marginLeft: 4,
-  padding: '2px 4px',
-  borderRadius: 3,
-  '&:hover': { background: 'rgba(255,255,255,0.06)' },
+  width: 22,
+  height: 22,
+  borderRadius: 4,
+  display: 'inline-flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  '&:hover': { background: HOVER, color: TEXT },
 });
 
-const ViewBody = styled.div({
+const StoryFrame = styled.div({
   flex: 1,
+  background: STORY_BG,
+  overflow: 'auto',
   position: 'relative' as const,
-  overflow: 'hidden',
-  background: '#ffffff',
 });
 
-// ── Mock chat content ──────────────────────────────────────────────
-
-interface BubbleSpec {
-  role: 'user' | 'assistant' | 'system';
-  text?: string;
-  tool?: { name: string; body: string };
-}
-
-function mockMessages(storyTitle: string): BubbleSpec[] {
-  return [
-    {
-      role: 'user',
-      text: `I touched Button.tsx and added a comment marker. Can you check what stories that might affect and open the review page?`,
-    },
-    {
-      role: 'assistant',
-      text: `I'll start by looking at the diff to understand what changed, then call the change-detection tool to see which stories are flagged.`,
-    },
-    {
-      role: 'assistant',
-      tool: {
-        name: 'Bash · git diff --stat',
-        body: ' code/core/src/components/components/Button/Button.tsx | 1 +\n 1 file changed, 1 insertion(+)',
-      },
-    },
-    {
-      role: 'assistant',
-      tool: {
-        name: 'mcp · get-changed-stories',
-        body: 'Detected 17 changed stories (0 new, 6 modified, 11 related).\n\nModified stories:\n- `button-component--base`: button/component / Base\n- `button-component--variants`: button/component / Variants\n- …',
-      },
-    },
-    {
-      role: 'assistant',
-      text: `Good — 17 stories across 6 clusters. The change is comment-only so I expect them all to be visually identical, but the agent layer should still surface them for you to skim. Opening the review page now.`,
-    },
-    {
-      role: 'assistant',
-      tool: {
-        name: 'mcp · open-review-page',
-        body: `{ "reviewSlug": "rv_4kx2", "storyIds": [17 ids] }`,
-      },
-    },
-    {
-      role: 'assistant',
-      text: `Review page is open in the preview pane on the right (currently showing **${storyTitle}**). Use the rail to walk the clusters. I'll wait here for your verdict.`,
-    },
-    { role: 'system', text: '— agent is idle, waiting for input —' },
-  ];
-}
-
 // ────────────────────────────────────────────────────────────────
-// Decorator
+// Mock content for sidebar — generic, decoupled from any real user
 // ────────────────────────────────────────────────────────────────
 
-interface ClaudeShellProps {
+interface Item {
+  text: string;
+  kind?: 'diff' | 'dot' | 'branch';
+  active?: boolean;
+}
+
+const PINNED: Item[] = [
+  { text: 'Component review session', kind: 'branch' },
+  { text: 'Visual regression triage', kind: 'dot', active: true },
+  { text: 'Refactor design tokens', kind: 'dot' },
+  { text: 'Audit accessibility issues', kind: 'branch' },
+  { text: 'Update changelog draft', kind: 'dot' },
+];
+
+const RECENTS: Item[] = [
+  { text: 'Story migration plan', kind: 'branch' },
+  { text: 'Investigate flaky test', kind: 'dot' },
+  { text: 'Sandbox bootstrap fix', kind: 'dot' },
+  { text: 'Sidebar empty state copy', kind: 'dot' },
+  { text: 'Theme switcher behavior', kind: 'branch' },
+  { text: 'Toolbar icons cleanup', kind: 'dot' },
+  { text: 'Docs page table of contents', kind: 'branch' },
+  { text: 'CSF indexer perf notes', kind: 'dot' },
+  { text: 'Iframe pool tuning', kind: 'dot' },
+  { text: 'Controls panel layout', kind: 'branch' },
+  { text: 'Backgrounds preset palette', kind: 'dot' },
+  { text: 'Vitest project config', kind: 'branch' },
+  { text: 'Addon API draft', kind: 'dot' },
+  { text: 'Manager UI tweaks', kind: 'dot' },
+];
+
+// ────────────────────────────────────────────────────────────────
+// Shell
+// ────────────────────────────────────────────────────────────────
+
+interface ShellProps {
   storyTitle: string;
   storyId: string;
+  mode: AdeMode;
   children: ReactNode;
 }
 
-interface Conversation {
-  title: string;
-  meta: string;
-  active?: boolean;
-  section: 'today' | 'yesterday' | 'last-week';
-}
+const DEFAULT_PREVIEW_WIDTH = 480;
+const MIN_PREVIEW_WIDTH = 320;
+const MIN_LEFT_WIDTH = 540;
 
-const MOCK_CONVERSATIONS: Conversation[] = [
-  {
-    title: 'Reviewing Button.tsx changes',
-    meta: 'just now · 17 files · 24 messages',
-    active: true,
-    section: 'today',
-  },
-  { title: 'addon-mcp: get-changed-stories', meta: '2h ago · 6 messages', section: 'today' },
-  { title: 'Hook up `apply_review_status`', meta: '5h ago · 12 messages', section: 'today' },
-  { title: 'StatusStore race condition', meta: 'yesterday · 31 messages', section: 'yesterday' },
-  { title: 'Iframe pool memory ceiling', meta: 'yesterday · 9 messages', section: 'yesterday' },
-  {
-    title: 'env=before iframe correctness',
-    meta: '2 days ago · 14 messages',
-    section: 'last-week',
-  },
-  { title: 'CSS-blast prototype', meta: '3 days ago · 7 messages', section: 'last-week' },
-  {
-    title: 'Round-2 module-graph experiment',
-    meta: '4 days ago · 22 messages',
-    section: 'last-week',
-  },
-  { title: 'Real-commit replay design', meta: '5 days ago · 18 messages', section: 'last-week' },
-];
+function ClaudeShell({ storyTitle, mode, children }: ShellProps) {
+  const paletteStyle = useMemo(() => PALETTES[mode] as unknown as React.CSSProperties, [mode]);
 
-function ClaudeShell({ storyTitle, storyId, children }: ClaudeShellProps) {
-  const messages = useMemo(() => mockMessages(storyTitle), [storyTitle]);
-  const byCol = useMemo(() => {
-    const out: Record<Conversation['section'], Conversation[]> = {
-      today: [],
-      yesterday: [],
-      'last-week': [],
-    };
-    for (const c of MOCK_CONVERSATIONS) out[c.section].push(c);
-    return out;
+  const outerRef = useRef<HTMLDivElement>(null);
+  const [previewWidth, setPreviewWidth] = useState(DEFAULT_PREVIEW_WIDTH);
+  const [dragging, setDragging] = useState(false);
+
+  const onMouseDown = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    setDragging(true);
   }, []);
+
+  useEffect(() => {
+    if (!dragging) return;
+    const onMove = (e: MouseEvent) => {
+      const el = outerRef.current;
+      if (!el) return;
+      const rect = el.getBoundingClientRect();
+      const padding = 16;
+      // Available horizontal area for left + handle + preview
+      const totalInner = rect.width - padding * 2;
+      const proposed = rect.right - padding - e.clientX;
+      const maxPreview = totalInner - MIN_LEFT_WIDTH - 16; // resizer track width
+      const clamped = Math.max(MIN_PREVIEW_WIDTH, Math.min(maxPreview, proposed));
+      setPreviewWidth(clamped);
+    };
+    const onUp = () => setDragging(false);
+    document.body.style.cursor = 'col-resize';
+    document.body.style.userSelect = 'none';
+    window.addEventListener('mousemove', onMove);
+    window.addEventListener('mouseup', onUp);
+    return () => {
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+      window.removeEventListener('mousemove', onMove);
+      window.removeEventListener('mouseup', onUp);
+    };
+  }, [dragging]);
+
   return (
-    <Shell>
-      <Header>
-        <Logo>✻ Claude</Logo>
-        <HeaderSep>·</HeaderSep>
-        <HeaderItem>storybookjs/storybook</HeaderItem>
-        <HeaderSep>·</HeaderSep>
-        <HeaderItem>yann/story-review-analysis</HeaderItem>
-        <HeaderRight>
-          <span>Context 84.3K / 200K</span>
-          <ModelChip>claude-sonnet-4-6</ModelChip>
-        </HeaderRight>
-      </Header>
+    <Outer ref={outerRef} style={paletteStyle} data-ade-mode={mode}>
+      <ClaudeWindow>
+        <Sidebar>
+          <SidebarTop>
+            <IconBtn title="Chats">
+              <ChatIcon />
+            </IconBtn>
+            <IconBtn title="Sessions">
+              <MenuIcon />
+            </IconBtn>
+            <CodeChip>
+              <SideBySideIcon size={11} />
+              <span>Code</span>
+            </CodeChip>
+          </SidebarTop>
 
-      <AppRail>
-        <RailIcon active title="Chats">
-          💬
-        </RailIcon>
-        <RailIcon title="Projects">📁</RailIcon>
-        <RailIcon title="Files">📄</RailIcon>
-        <RailIcon title="Bookmarks">⭐</RailIcon>
-        <RailSpacer />
-        <RailIcon title="Settings">⚙</RailIcon>
-        <Avatar>YB</Avatar>
-      </AppRail>
+          <NavList>
+            <NavRow>
+              <NavIcon>
+                <PlusIcon />
+              </NavIcon>
+              <span>New session</span>
+            </NavRow>
+            <NavRow>
+              <NavIcon>
+                <LightningIcon />
+              </NavIcon>
+              <span>Routines</span>
+            </NavRow>
+            <NavRow>
+              <NavIcon>
+                <WandIcon />
+              </NavIcon>
+              <span>Customize</span>
+            </NavRow>
+            <NavRow>
+              <NavIcon>
+                <MenuIcon />
+              </NavIcon>
+              <span>More</span>
+              <NavCaret>
+                <ChevronSmallDownIcon />
+              </NavCaret>
+            </NavRow>
+          </NavList>
 
-      <History>
-        <HistoryHead>
-          <NewChatBtn>＋ New chat</NewChatBtn>
-        </HistoryHead>
-        <SearchInput>
-          <SearchField>
-            <span>🔍</span>
-            <span style={{ flex: 1 }}>Search conversations…</span>
-            <span style={{ opacity: 0.5 }}>⌘K</span>
-          </SearchField>
-        </SearchInput>
-        <HistoryScroll>
-          <HistorySection>Today</HistorySection>
-          {byCol.today.map((c) => (
-            <HistoryItem key={c.title} active={c.active}>
-              <HistoryTitle>
-                {c.active && <ActiveDot />}
-                {c.title}
-              </HistoryTitle>
-              <HistoryMeta>{c.meta}</HistoryMeta>
-            </HistoryItem>
-          ))}
-          <HistorySection>Yesterday</HistorySection>
-          {byCol.yesterday.map((c) => (
-            <HistoryItem key={c.title}>
-              <HistoryTitle>{c.title}</HistoryTitle>
-              <HistoryMeta>{c.meta}</HistoryMeta>
-            </HistoryItem>
-          ))}
-          <HistorySection>Last 7 days</HistorySection>
-          {byCol['last-week'].map((c) => (
-            <HistoryItem key={c.title}>
-              <HistoryTitle>{c.title}</HistoryTitle>
-              <HistoryMeta>{c.meta}</HistoryMeta>
-            </HistoryItem>
-          ))}
-        </HistoryScroll>
-      </History>
+          <SectionLabel>
+            Pinned
+            <SectionRight>
+              <BookmarkIcon />
+            </SectionRight>
+          </SectionLabel>
+          <ListPad>
+            {PINNED.map((it, i) => (
+              <ItemRow key={`p-${i}`} active={it.active}>
+                <ItemIconSlot kind={it.kind}>
+                  {it.kind === 'branch' ? <BranchIcon /> : <CircleIcon size={8} />}
+                </ItemIconSlot>
+                <ItemText>{it.text}</ItemText>
+              </ItemRow>
+            ))}
+          </ListPad>
 
-      <Chat>
-        <ChatScroll>
-          {messages.map((m, i) => (
-            <Bubble key={i} role={m.role}>
-              <RoleLabel role={m.role}>
-                {m.role === 'user' ? 'you' : m.role === 'system' ? 'system' : '✻ claude'}
-              </RoleLabel>
-              {m.text && <BubbleBody role={m.role}>{m.text}</BubbleBody>}
-              {m.tool && (
-                <ToolCall>
-                  <ToolHeader>⚙ {m.tool.name}</ToolHeader>
-                  <ToolBody>{m.tool.body}</ToolBody>
-                </ToolCall>
-              )}
-            </Bubble>
-          ))}
-        </ChatScroll>
-        <InputBar>
-          <FakeInput>
-            <span>›</span>
-            <span style={{ flex: 1 }}>Continue the conversation…</span>
-            <Caret />
-          </FakeInput>
-        </InputBar>
-      </Chat>
+          <SectionLabel>
+            Recents
+            <SectionRight>
+              <FilterIcon />
+            </SectionRight>
+          </SectionLabel>
+          <Scroll>
+            <ListPad>
+              {RECENTS.map((it, i) => (
+                <ItemRow key={`r-${i}`}>
+                  <ItemIconSlot kind={it.kind}>
+                    {it.kind === 'branch' ? <BranchIcon /> : <CircleIcon size={8} />}
+                  </ItemIconSlot>
+                  <ItemText>{it.text}</ItemText>
+                </ItemRow>
+              ))}
+            </ListPad>
+          </Scroll>
 
-      <Preview>
-        <Browser>
-          <Chrome>
-            <Lights>
-              <Light color="#ff5f57" />
-              <Light color="#febc2e" />
-              <Light color="#28c840" />
-            </Lights>
-            <NavBtns>
-              <NavBtn disabled>←</NavBtn>
-              <NavBtn disabled>→</NavBtn>
-            </NavBtns>
-            <Reload>↻</Reload>
-            <UrlBar>
-              <Lock>🔒</Lock>
-              <span>localhost:6006/review/rv_4kx2</span>
-              <span style={{ marginLeft: 'auto', opacity: 0.5 }}>· story={storyId}</span>
-            </UrlBar>
-          </Chrome>
-          <ViewBody>{children}</ViewBody>
-        </Browser>
-      </Preview>
-    </Shell>
+          <UserStrip>
+            <Avatar>A</Avatar>
+            <UserName>Agent</UserName>
+            <UserMeta>· Pro</UserMeta>
+            <span style={{ marginLeft: 'auto', color: TEXT_FAINT, display: 'inline-flex' }}>
+              <ChevronSmallDownIcon />
+            </span>
+          </UserStrip>
+        </Sidebar>
+
+        <Main>
+          <MainHeader>
+            <Crumbs>
+              <CrumbDim>storybookjs/storybook</CrumbDim>
+              <CrumbSep>/</CrumbSep>
+              <span>Reviewing {storyTitle}</span>
+              <span style={{ color: TEXT_DIM, display: 'inline-flex' }}>
+                <ChevronSmallDownIcon />
+              </span>
+            </Crumbs>
+            <HeaderActions>
+              <IconBtn title="Outline">
+                <MenuIcon />
+              </IconBtn>
+              <IconBtn title="Split view">
+                <SideBySideIcon />
+              </IconBtn>
+            </HeaderActions>
+          </MainHeader>
+
+          <Transcript>
+            <Para>
+              Could you take a look at the latest changes on this branch and help me confirm which
+              stories are affected? I want to walk through them in the preview before opening the
+              PR.
+            </Para>
+
+            <Para>
+              Sure. I'll start by reading the diff to figure out what changed, then call the
+              change-detection tool so we know which stories are flagged. Here's the summary of the
+              coverage runs we have so far:
+            </Para>
+
+            <Table>
+              <thead>
+                <tr>
+                  <Th>scenario</Th>
+                  <Th>rows</Th>
+                  <Th>what's in it</Th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <Td>Sample run — 5 scenarios × 2 reps</Td>
+                  <TdNum>10</TdNum>
+                  <Td>full coverage, recall and precision both at 1.0</Td>
+                </tr>
+                <tr>
+                  <Td>Depth sweep — 5 × 2</Td>
+                  <TdNum>10</TdNum>
+                  <Td>recovers css-only / regex-aliased stories via the import graph</Td>
+                </tr>
+                <tr>
+                  <Td>Small bucket × 5 reps</Td>
+                  <TdNum>5</TdNum>
+                  <Td>variance check — recall / precision flat at 1.00</Td>
+                </tr>
+                <tr>
+                  <Td>Replay of recent commits</Td>
+                  <TdNum>12</TdNum>
+                  <Td>4 successful, all recall=1, transcripts attached</Td>
+                </tr>
+                <tr>
+                  <Td>Historical reference baseline</Td>
+                  <TdNum>1</TdNum>
+                  <Td>kept around for back-comparison</Td>
+                </tr>
+              </tbody>
+            </Table>
+
+            <Para>
+              Each run is captured through the shared <Code>TranscriptEntry</Code> shape in{' '}
+              <Link>lib/invoke-agent.ts</Link> and rendered by <Code>renderTranscript</Code> in{' '}
+              <Code>build-report.ts</Code>. Every entry carries the session UUID so it can be
+              cross-referenced with the raw event log if needed.
+            </Para>
+
+            <Para style={{ fontWeight: 600, color: TEXT }}>Outline (top → bottom)</Para>
+            <OL>
+              <li>TL;DR — a few bullets for someone joining the review cold</li>
+              <li>Fresh coverage sweep (table)</li>
+              <li>Depth follow-up (table + takeaways)</li>
+              <li>Variance refresh (table)</li>
+              <li>Recent-commit replay refresh (table)</li>
+              <li>What was carried over vs. skipped (provenance)</li>
+              <li>New on this branch (capture pipeline, probe endpoint)</li>
+              <li>Frozen historical snapshot for back-reference</li>
+            </OL>
+
+            <Para style={{ color: TEXT }}>Servers running for the review:</Para>
+            <UL>
+              <li>
+                <Link>http://localhost:6006</Link> — Storybook UI + change-detection probe
+              </li>
+              <li>
+                <Link>http://localhost:7115/report.html</Link> — the inner-loop eval report
+              </li>
+            </UL>
+
+            <TimestampRow>
+              <ShareAltIcon />
+              <span>just now</span>
+            </TimestampRow>
+            <StarMark>
+              <StorybookIcon size={14} />
+            </StarMark>
+          </Transcript>
+
+          <Composer>
+            <BranchBar>
+              <BranchIconSlot>
+                <BranchIcon />
+              </BranchIconSlot>
+              <BranchPair>
+                main <span style={{ color: TEXT_FAINT }}>←</span> feature-branch
+              </BranchPair>
+              <DiffAdd>+1284</DiffAdd>
+              <DiffRem>−412</DiffRem>
+              <CreatePr>
+                Create PR
+                <ChevronSmallDownIcon size={10} />
+              </CreatePr>
+            </BranchBar>
+
+            <InputField>
+              <InputPrompt>Type / for commands</InputPrompt>
+              <InputEnter>
+                <CommandIcon size={11} />
+              </InputEnter>
+            </InputField>
+
+            <ComposerFooter>
+              <AutoChip>Auto</AutoChip>
+              <FootBtn>
+                <AddIcon />
+              </FootBtn>
+              <FootBtn>
+                <CircleIcon />
+              </FootBtn>
+              <FootBtn>
+                <ChevronSmallDownIcon />
+              </FootBtn>
+              <ModelInfo>
+                Opus 4.7 · High
+                <Spinner />
+              </ModelInfo>
+            </ComposerFooter>
+          </Composer>
+        </Main>
+      </ClaudeWindow>
+
+      <ResizerTrack
+        data-dragging={dragging ? 'true' : 'false'}
+        onMouseDown={onMouseDown}
+        title="Drag to resize preview"
+      >
+        <ResizerGrip />
+      </ResizerTrack>
+
+      <BrowserWindow style={{ width: previewWidth }}>
+        <BrowserChrome>
+          <UrlPill>
+            <span style={{ color: TEXT_DIM, display: 'inline-flex' }}>
+              <GlobeIcon size={11} />
+            </span>
+            <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis' }}>
+              localhost:6006/
+            </span>
+          </UrlPill>
+          <ChromeBtn title="Edit">
+            <EditIcon />
+          </ChromeBtn>
+          <ChromeBtn title="Split">
+            <ChevronDownIcon />
+          </ChromeBtn>
+          <ChromeBtn title="Reload">
+            <RefreshIcon />
+          </ChromeBtn>
+          <ChromeBtn title="Close">
+            <CloseIcon />
+          </ChromeBtn>
+        </BrowserChrome>
+        <StoryFrame>{children}</StoryFrame>
+      </BrowserWindow>
+    </Outer>
   );
 }
 
 /**
  * Storybook decorator. Reads `context.globals.adeMode` (toggled by the
- * toolbar item registered in `.storybook/preview.tsx`). When 'on',
- * wraps the story in the Claude shell; otherwise renders the story
- * untouched.
+ * toolbar item registered in `.storybook/preview.tsx`). When set to
+ * `'light'` or `'dark'`, wraps the story in the Claude shell in that
+ * theme; when `'off'` (default), renders the story untouched.
  */
 export const withAdeMode: Decorator = (Story, context) => {
   const adeMode = (context.globals as Record<string, unknown> | undefined)?.adeMode;
-  if (adeMode !== 'on') return <Story />;
+  const mode: AdeMode | null =
+    adeMode === 'light' ? 'light' : adeMode === 'dark' || adeMode === 'on' ? 'dark' : null;
+  if (!mode) return <Story />;
   const storyId = context.id ?? '';
   const storyTitle = `${context.title ?? ''} / ${context.name ?? ''}`;
   return (
-    <ClaudeShell storyId={storyId} storyTitle={storyTitle}>
+    <ClaudeShell storyId={storyId} storyTitle={storyTitle} mode={mode}>
       <Story />
     </ClaudeShell>
   );

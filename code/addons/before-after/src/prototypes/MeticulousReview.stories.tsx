@@ -4,12 +4,10 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 
 import { MeticulousReview } from './MeticulousReview.tsx';
 import { mockMixedSizeData, mockReviewData } from './mockData.ts';
-import { withAdeMode } from './withAdeMode.tsx';
 
 const meta = {
   title: 'prototypes/Review · Meticulous-style (approve/reject)',
   component: MeticulousReview,
-  decorators: [withAdeMode],
   parameters: {
     layout: 'fullscreen',
     docs: {

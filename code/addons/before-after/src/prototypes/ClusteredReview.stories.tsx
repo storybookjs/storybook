@@ -4,12 +4,10 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 
 import { ClusteredReview } from './ClusteredReview.tsx';
 import { mockReviewData } from './mockData.ts';
-import { withAdeMode } from './withAdeMode.tsx';
 
 const meta = {
   title: 'prototypes/Review · Clustered (AI categorisation)',
   component: ClusteredReview,
-  decorators: [withAdeMode],
   parameters: {
     layout: 'fullscreen',
     docs: {

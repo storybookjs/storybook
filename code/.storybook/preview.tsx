@@ -29,6 +29,7 @@ import {
   useTheme,
 } from 'storybook/theming';
 
+import { withAdeMode } from '../addons/before-after/src/prototypes/withAdeMode.tsx';
 import { DocsPageWrapper } from '../addons/docs/src/blocks/components/index.ts';
 import { toHaveLiveRegion } from '../core/src/shared/utils/toHaveLiveRegion.ts';
 import * as templatePreview from '../core/template/stories/preview.ts';
@@ -200,6 +201,9 @@ const loaders = [
 ] as Loader[];
 
 const decorators = [
+  // ADE-mode wrapper — global so any story can be previewed inside the
+  // Claude Code shell via the toolbar `adeMode` toggle.
+  withAdeMode,
   // This decorator adds the DocsContext created in the loader above
   (Story, { loaded: { docsContext } }) =>
     docsContext ? (
@@ -425,14 +429,15 @@ export default definePreview({
   // dogfood UI.
   globalTypes: {
     adeMode: {
-      description: 'Wrap review-prototype stories in a Claude Code shell',
+      description: 'Wrap stories in a Claude Code shell (light or dark)',
       defaultValue: 'off',
       toolbar: {
         title: 'ADE',
         icon: 'lightning',
         items: [
           { value: 'off', title: 'ADE off' },
-          { value: 'on', title: 'ADE on — Claude Code shell' },
+          { value: 'light', title: 'ADE light' },
+          { value: 'dark', title: 'ADE dark' },
         ],
         dynamicTitle: true,
       },

@@ -103,6 +103,10 @@ scripts/eval/inner-loop/results/*
 # fresh-sig-depth-low-x2: signature-depth prompt (Round-2 §I.5 comparison).
 !scripts/eval/inner-loop/results/fresh-sig-low-x2.jsonl
 !scripts/eval/inner-loop/results/fresh-sig-depth-low-x2.jsonl
+# Variance batch (5 reps of small/signature/low) on the new base.
+!scripts/eval/inner-loop/results/fresh-variance-small-x5.jsonl
+# Real-commit replay refreshed 2026-05-12 on yann/story-review-project-analysis.
+!scripts/eval/inner-loop/results/replay-real-2026-05-12.jsonl
 # Round-2 backlog experiment outputs are deterministic + slow to regenerate;
 # commit them so the HTML report renders without rerunning every experiment.
 !scripts/eval/inner-loop/results/tied-distance.json

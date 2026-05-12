@@ -42,6 +42,20 @@ Three things stand out vs the plain-signature run:
 
 Open `report.html` in any browser and look for the colour-coded **thinking** blocks in the depth runs' transcripts — that's where the model is reasoning about which depth tier owns each cluster. The plain-signature runs typically have one short `text` block; depth runs add explicit thinking traces.
 
+### Variance refresh (`fresh-variance-small-x5.jsonl`)
+
+5 repeated runs of small/signature/low to characterise stability on the new base:
+
+| rep | recall | precision | purity | clusters | cost | duration |
+|---|---|---|---|---|---|---|
+| 0 | 1.00 | 1.00 | 0.629 | 5 | $0.0121 | 13.4s |
+| 1 | 1.00 | 1.00 | 0.750 | 6 | $0.0133 | 12.0s |
+| 2 | 1.00 | 1.00 | 0.750 | 6 | $0.0132 | 10.1s |
+| 3 | 1.00 | 1.00 | 0.629 | 5 | $0.0120 | 10.5s |
+| 4 | 1.00 | 1.00 | 0.629 | 4 | $0.0109 | 9.8s |
+
+Same picture as the May-10 baseline: **recall and precision are flat at 1.00**, purity drifts in a 0.629–0.750 band (12 ppt range), cluster count 4–6. The two non-stable metrics still settle inside a narrow band — useful for the meeting when "is this reproducible?" comes up.
+
 What this branch contains, relative to `valentin/before-after`:
 
 - `scripts/eval/inner-loop/` — the full harness + sub-experiments + reference outputs that the previous Round-1/Round-2 work produced. Re-validated against the new base; no regressions (`small` 116 stories: recall=precision=1, purity=0.75, 6 clusters in 12s for $0.013 with cache; `medium` 1025 stories: same recall/precision, purity=0.18, 6 clusters in 16s for $0.14).

@@ -9,7 +9,6 @@ import * as find from 'empathic/find';
 // eslint-disable-next-line depend/ban-dependencies
 import type { ResultPromise } from 'execa';
 import { dedent } from 'ts-dedent';
-import { gt, prerelease, valid } from 'semver';
 
 import { HandledError } from '../utils/HandledError.ts';
 import type { ExecuteCommandOptions } from '../utils/command.ts';
@@ -18,6 +17,17 @@ import { getProjectRoot } from '../utils/paths.ts';
 import { JsPackageManager, PackageManagerName } from './JsPackageManager.ts';
 import type { PackageJson } from './PackageJson.ts';
 import type { InstallationMetadata, PackageMetadata } from './types.ts';
+import {
+  getAgeInMinutes,
+  getErrorLogs,
+  getLatestStableVersionAdheringToMinimumAgeGate,
+  getStorybookRerunCommand,
+  getStorybookRerunInstruction,
+  parsePackageTimeMap,
+  parsePositiveIntegerConfigValue,
+  parseReleaseTime,
+  STORYBOOK_PACKAGE_PATTERNS,
+} from './util.ts';
 
 type PnpmDependency = {
   from: string;
@@ -219,8 +229,9 @@ export class PNPMProxy extends JsPackageManager {
     try {
       await super.installDependencies(options);
     } catch (error) {
-      const parsedError = this.parseErrorFromLogs(this.getErrorLogs(error));
+      const parsedError = this.parseErrorFromLogs(getErrorLogs(error));
       if (parsedError !== 'PNPM error') {
+        logger.error(parsedError);
         throw new HandledError(parsedError);
       }
 
@@ -249,7 +260,7 @@ export class PNPMProxy extends JsPackageManager {
       return;
     }
 
-    const ageMinutes = Math.floor((Date.now() - publishedAt.getTime()) / 60_000);
+    const ageMinutes = getAgeInMinutes(publishedAt, new Date());
     if (ageMinutes >= minimumReleaseAge) {
       return;
     }
@@ -305,6 +316,7 @@ export class PNPMProxy extends JsPackageManager {
       },
       {
         onCancel: () => {
+          logger.error(rerunError.message);
           throw rerunError;
         },
       }
@@ -315,6 +327,7 @@ export class PNPMProxy extends JsPackageManager {
       return;
     }
 
+    logger.error(rerunError.message);
     throw rerunError;
   }
 
@@ -466,23 +479,9 @@ export class PNPMProxy extends JsPackageManager {
       'pipe'
     );
 
-    const normalizedValue = typeof result.stdout === 'string' ? result.stdout.trim() : '';
-
-    if (
-      !normalizedValue ||
-      normalizedValue === 'undefined' ||
-      normalizedValue === 'null' ||
-      normalizedValue === 'false'
-    ) {
-      return null;
-    }
-
-    const parsedValue = Number.parseInt(normalizedValue, 10);
-    if (!Number.isFinite(parsedValue) || parsedValue <= 0) {
-      return null;
-    }
-
-    return parsedValue;
+    return parsePositiveIntegerConfigValue(
+      typeof result.stdout === 'string' ? result.stdout : undefined
+    );
   }
 
   private async getPackageReleaseTime(packageName: string, version: string): Promise<Date | null> {
@@ -498,13 +497,7 @@ export class PNPMProxy extends JsPackageManager {
       return null;
     }
 
-    const parsedValue = JSON.parse(normalizedValue);
-    if (typeof parsedValue !== 'string') {
-      return null;
-    }
-
-    const releaseTime = new Date(parsedValue);
-    return Number.isNaN(releaseTime.getTime()) ? null : releaseTime;
+    return parseReleaseTime(JSON.parse(normalizedValue));
   }
 
   private async getLatestStableVersionAdheringToMinimumReleaseAge(
@@ -524,37 +517,12 @@ export class PNPMProxy extends JsPackageManager {
       return null;
     }
 
-    const parsedValue = JSON.parse(normalizedValue);
-    if (!parsedValue || typeof parsedValue !== 'object' || Array.isArray(parsedValue)) {
+    const timeMap = parsePackageTimeMap(JSON.parse(normalizedValue));
+    if (!timeMap) {
       return null;
     }
 
-    const timeMap: Record<string, string> = {};
-    for (const [version, releaseTime] of Object.entries(parsedValue)) {
-      if (typeof releaseTime === 'string' && releaseTime.length > 0) {
-        timeMap[version] = releaseTime;
-      }
-    }
-    const cutoff = now.getTime() - minimumReleaseAgeMinutes * 60_000;
-
-    let latestStableVersion: string | null = null;
-
-    for (const [version, releaseTime] of Object.entries(timeMap)) {
-      if (!valid(version) || prerelease(version)) {
-        continue;
-      }
-
-      const publishedAt = new Date(releaseTime);
-      if (Number.isNaN(publishedAt.getTime()) || publishedAt.getTime() > cutoff) {
-        continue;
-      }
-
-      if (!latestStableVersion || gt(version, latestStableVersion)) {
-        latestStableVersion = version;
-      }
-    }
-
-    return latestStableVersion;
+    return getLatestStableVersionAdheringToMinimumAgeGate(timeMap, minimumReleaseAgeMinutes, now);
   }
 
   private createMinimumReleaseAgeRerunMessage({
@@ -566,19 +534,8 @@ export class PNPMProxy extends JsPackageManager {
     compatibleVersion: string | null;
     installContext: 'create' | 'upgrade';
   }): string {
-    const rerunCommand =
-      installContext === 'create'
-        ? compatibleVersion
-          ? `npx create-storybook@${compatibleVersion}`
-          : 'npx create-storybook@<compatible-version>'
-        : compatibleVersion
-          ? `npx storybook@${compatibleVersion} upgrade`
-          : 'npx storybook@<compatible-version> upgrade';
-
-    const rerunInstruction =
-      installContext === 'create'
-        ? 'Please rerun Storybook creation with:'
-        : 'Please rerun the Storybook upgrade with:';
+    const rerunCommand = getStorybookRerunCommand(installContext, compatibleVersion);
+    const rerunInstruction = getStorybookRerunInstruction(installContext);
 
     return dedent`
       pnpm minimumReleaseAge blocked storybook@${currentVersion} from being installed.
@@ -601,7 +558,7 @@ export class PNPMProxy extends JsPackageManager {
             '--location=project',
             '--json',
             'minimumReleaseAgeExclude',
-            JSON.stringify(['storybook', '@storybook/*', 'eslint-plugin-storybook']),
+            JSON.stringify(STORYBOOK_PACKAGE_PATTERNS),
           ],
           undefined,
           'pipe'
@@ -613,35 +570,5 @@ export class PNPMProxy extends JsPackageManager {
         success: 'Updated pnpm minimumReleaseAgeExclude',
       }
     );
-  }
-
-  private getErrorLogs(error: unknown): string {
-    if (typeof error === 'string') {
-      return error;
-    }
-
-    if (error && typeof error === 'object') {
-      const structuredError = error as {
-        stderr?: string;
-        stdout?: string;
-        shortMessage?: string;
-        originalMessage?: string;
-        message?: string;
-      };
-
-      const structuredLogs = [
-        structuredError.shortMessage,
-        structuredError.originalMessage,
-        structuredError.stderr,
-        structuredError.stdout,
-        structuredError.message,
-      ].filter((value): value is string => typeof value === 'string' && value.length > 0);
-
-      if (structuredLogs.length > 0) {
-        return structuredLogs.join('\n');
-      }
-    }
-
-    return String(error);
   }
 }

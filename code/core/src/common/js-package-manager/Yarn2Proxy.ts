@@ -11,7 +11,6 @@ import * as find from 'empathic/find';
 // eslint-disable-next-line depend/ban-dependencies
 import type { ResultPromise } from 'execa';
 import { dedent } from 'ts-dedent';
-import { gt, prerelease, valid } from 'semver';
 
 import { HandledError } from '../utils/HandledError.ts';
 import { logger } from '../../node-logger/index.ts';
@@ -21,7 +20,18 @@ import { getProjectRoot } from '../utils/paths.ts';
 import { JsPackageManager, PackageManagerName } from './JsPackageManager.ts';
 import type { PackageJson } from './PackageJson.ts';
 import type { InstallationMetadata, PackageMetadata } from './types.ts';
-import { parsePackageData } from './util.ts';
+import {
+  getAgeInMinutes,
+  getErrorLogs,
+  getLatestStableVersionAdheringToMinimumAgeGate,
+  getStorybookRerunCommand,
+  getStorybookRerunInstruction,
+  parsePackageData,
+  parsePackageTimeMap,
+  parsePositiveIntegerConfigValue,
+  parseReleaseTime,
+  STORYBOOK_PACKAGE_PATTERNS,
+} from './util.ts';
 
 // more info at https://yarnpkg.com/advanced/error-codes
 const CRITICAL_YARN2_ERROR_CODES = {
@@ -250,8 +260,9 @@ export class Yarn2Proxy extends JsPackageManager {
     try {
       await super.installDependencies(options);
     } catch (error) {
-      const parsedError = this.parseErrorFromLogs(this.getErrorLogs(error));
+      const parsedError = this.parseErrorFromLogs(getErrorLogs(error));
       if (parsedError !== 'YARN2 error') {
+        logger.error(parsedError);
         throw new HandledError(parsedError);
       }
 
@@ -284,17 +295,17 @@ export class Yarn2Proxy extends JsPackageManager {
       return;
     }
 
-    const publishedAt = new Date(releaseTime);
-    if (Number.isNaN(publishedAt.getTime())) {
+    const publishedAt = parseReleaseTime(releaseTime);
+    if (!publishedAt) {
       return;
     }
 
-    const ageMinutes = Math.floor((Date.now() - publishedAt.getTime()) / 60_000);
+    const ageMinutes = getAgeInMinutes(publishedAt, new Date());
     if (ageMinutes >= minimumAgeGate) {
       return;
     }
 
-    const compatibleVersion = this.getLatestStableVersionAdheringToMinimumAgeGate(
+    const compatibleVersion = getLatestStableVersionAdheringToMinimumAgeGate(
       timeMap,
       minimumAgeGate
     );
@@ -345,6 +356,7 @@ export class Yarn2Proxy extends JsPackageManager {
       },
       {
         onCancel: () => {
+          logger.error(rerunError.message);
           throw rerunError;
         },
       }
@@ -355,6 +367,7 @@ export class Yarn2Proxy extends JsPackageManager {
       return;
     }
 
+    logger.error(rerunError.message);
     throw rerunError;
   }
 
@@ -511,23 +524,10 @@ export class Yarn2Proxy extends JsPackageManager {
       undefined,
       'pipe'
     );
-    const normalizedValue = typeof result.stdout === 'string' ? result.stdout.trim() : '';
 
-    if (
-      !normalizedValue ||
-      normalizedValue === 'undefined' ||
-      normalizedValue === 'null' ||
-      normalizedValue === 'false'
-    ) {
-      return null;
-    }
-
-    const parsedValue = Number.parseInt(normalizedValue, 10);
-    if (!Number.isFinite(parsedValue) || parsedValue <= 0) {
-      return null;
-    }
-
-    return parsedValue;
+    return parsePositiveIntegerConfigValue(
+      typeof result.stdout === 'string' ? result.stdout : undefined
+    );
   }
 
   private async getPackageTimeMap(packageName: string): Promise<Record<string, string> | null> {
@@ -541,47 +541,7 @@ export class Yarn2Proxy extends JsPackageManager {
       return null;
     }
 
-    const parsedValue = JSON.parse(normalizedValue);
-    const timeField = parsedValue?.time;
-
-    if (!timeField || typeof timeField !== 'object' || Array.isArray(timeField)) {
-      return null;
-    }
-
-    const timeMap: Record<string, string> = {};
-    for (const [version, releaseTime] of Object.entries(timeField)) {
-      if (typeof releaseTime === 'string' && releaseTime.length > 0) {
-        timeMap[version] = releaseTime;
-      }
-    }
-
-    return timeMap;
-  }
-
-  private getLatestStableVersionAdheringToMinimumAgeGate(
-    timeMap: Record<string, string>,
-    minimumAgeGateMinutes: number,
-    now = new Date()
-  ): string | null {
-    const cutoff = now.getTime() - minimumAgeGateMinutes * 60_000;
-    let latestStableVersion: string | null = null;
-
-    for (const [version, releaseTime] of Object.entries(timeMap)) {
-      if (!valid(version) || prerelease(version)) {
-        continue;
-      }
-
-      const publishedAt = new Date(releaseTime);
-      if (Number.isNaN(publishedAt.getTime()) || publishedAt.getTime() > cutoff) {
-        continue;
-      }
-
-      if (!latestStableVersion || gt(version, latestStableVersion)) {
-        latestStableVersion = version;
-      }
-    }
-
-    return latestStableVersion;
+    return parsePackageTimeMap(JSON.parse(normalizedValue)?.time);
   }
 
   private createMinimalAgeGateRerunMessage({
@@ -593,19 +553,8 @@ export class Yarn2Proxy extends JsPackageManager {
     compatibleVersion: string | null;
     installContext: 'create' | 'upgrade';
   }): string {
-    const rerunCommand =
-      installContext === 'create'
-        ? compatibleVersion
-          ? `npx create-storybook@${compatibleVersion}`
-          : 'npx create-storybook@<compatible-version>'
-        : compatibleVersion
-          ? `npx storybook@${compatibleVersion} upgrade`
-          : 'npx storybook@<compatible-version> upgrade';
-
-    const rerunInstruction =
-      installContext === 'create'
-        ? 'Please rerun Storybook creation with:'
-        : 'Please rerun the Storybook upgrade with:';
+    const rerunCommand = getStorybookRerunCommand(installContext, compatibleVersion);
+    const rerunInstruction = getStorybookRerunInstruction(installContext);
 
     return dedent`
       yarn npmMinimalAgeGate blocked storybook@${currentVersion} from being installed.
@@ -621,12 +570,7 @@ export class Yarn2Proxy extends JsPackageManager {
   private async updatePreapprovedPackages(): Promise<void> {
     const currentPreapprovedPackages = await this.getPreapprovedPackages();
     const nextPreapprovedPackages = Array.from(
-      new Set([
-        ...currentPreapprovedPackages,
-        'storybook',
-        '@storybook/*',
-        'eslint-plugin-storybook',
-      ])
+      new Set([...currentPreapprovedPackages, ...STORYBOOK_PACKAGE_PATTERNS])
     );
 
     await prompt.executeTaskWithSpinner(
@@ -665,35 +609,5 @@ export class Yarn2Proxy extends JsPackageManager {
           (value): value is string => typeof value === 'string' && value.length > 0
         )
       : [];
-  }
-
-  private getErrorLogs(error: unknown): string {
-    if (typeof error === 'string') {
-      return error;
-    }
-
-    if (error && typeof error === 'object') {
-      const structuredError = error as {
-        stderr?: string;
-        stdout?: string;
-        shortMessage?: string;
-        originalMessage?: string;
-        message?: string;
-      };
-
-      const structuredLogs = [
-        structuredError.shortMessage,
-        structuredError.originalMessage,
-        structuredError.stderr,
-        structuredError.stdout,
-        structuredError.message,
-      ].filter((value): value is string => typeof value === 'string' && value.length > 0);
-
-      if (structuredLogs.length > 0) {
-        return structuredLogs.join('\n');
-      }
-    }
-
-    return String(error);
   }
 }

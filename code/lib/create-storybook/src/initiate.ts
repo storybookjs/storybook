@@ -209,10 +209,6 @@ const handleCommandFailure = async (
   const logFile = await logTracker.writeToFile(logFilePath);
   logger.error('Storybook encountered an error during initialization');
 
-  if (error instanceof HandledError) {
-    logger.error(error.message);
-  }
-
   logger.log(`Debug logs are written to: ${logFile}`);
   logger.outro('Storybook exited with an error');
   process.exit(1);

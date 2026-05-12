@@ -1,0 +1,58 @@
+{
+  "experiment": "Static-baseline feasibility check (SECOND_CONVERSATION.md, raised in team conversation)",
+  "timestamp": "2026-05-12T06:10:44.468Z",
+  "staticExists": true,
+  "staticSizeBytes": 47550464,
+  "summary": {
+    "pass": 4,
+    "fail": 0,
+    "skipped": 0
+  },
+  "checks": [
+    {
+      "id": "static-folder-present",
+      "description": "Does code/storybook-static/ exist?",
+      "result": "pass",
+      "note": "Present, ~45.3 MB. (Run `cd code && yarn storybook:ui:build` to (re)build.)",
+      "data": {
+        "staticDir": "/Users/yannbraga/open-source/storybook/code/storybook-static",
+        "sizeBytes": 47550464
+      }
+    },
+    {
+      "id": "static-index-json",
+      "description": "GET /index.json from static build",
+      "result": "pass",
+      "note": "1637 stories indexed.",
+      "ms": 35,
+      "data": {
+        "storyCount": 1637
+      }
+    },
+    {
+      "id": "static-iframe-serves",
+      "description": "GET /iframe.html?id=<story> from static build",
+      "result": "pass",
+      "note": "Iframe HTML returned (24281 chars).",
+      "ms": 1,
+      "data": {
+        "storyId": "bench--es-build-analyzer"
+      }
+    },
+    {
+      "id": "static-vs-live-index",
+      "description": "Compare static-build index.json vs live Storybook",
+      "result": "pass",
+      "note": "Identical story sets — static is a faithful baseline.",
+      "data": {
+        "liveStoryCount": 1637,
+        "staticStoryCount": 1637,
+        "onlyLiveCount": 0,
+        "onlyStaticCount": 0,
+        "sampleOnlyLive": [],
+        "sampleOnlyStatic": []
+      }
+    }
+  ],
+  "conclusion": "Static-baseline approach is mechanically feasible. A `storybook-static` folder served on a parallel port returns a valid index.json and serves iframe URLs identically to the live Storybook. Iteration-1.5 design: addon-before-after detects the folder, spins up a sidecar HTTP server, and uses its iframe URLs as the baseline. Open questions for the kickoff: (a) how does the addon machinery integrate with a sidecar process? (b) does this work on Webpack-builder Storybooks (test separately)? (c) how stale does the static build become during a long agent session — needs UX guidance for \"rebuild baseline\" CTA."
+}

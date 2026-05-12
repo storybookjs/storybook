@@ -1,0 +1,81 @@
+{
+  "experiment": "Round-2 §I.5 — depth-annotated payload vs un-annotated baseline",
+  "timestamp": "2026-05-12T13:00:00Z",
+  "method": "Re-ran the agent eval on 4 scenarios with two prompts: (a) the existing `signature` prompt + baseline payload (no depth) and (b) a new `signature-depth` prompt + payload annotated with `depthByStory` + `depthTiers`. Same model (claude-sonnet-4-6), same effort (low). Single run per cell. All scores compared head-to-head.",
+  "perScenario": [
+    {
+      "scenario": "small",
+      "cascade": 116,
+      "depthTiers": "d1=51 d2=20 d3=9 d4=25 d5=11",
+      "baseline":      { "duration": 12, "cost": 0.013, "recall": 1.0, "precision": 1.0, "purity": 0.75, "clusters": 6, "catchAll": 0.00, "reprValid": "5/6" },
+      "depthAnnotated":{ "duration": 16, "cost": 0.051, "recall": 1.0, "precision": 1.0, "purity": 0.70, "clusters": 6, "catchAll": 0.00, "reprValid": "5/6" },
+      "depthClusters": [
+        { "id": "direct-sidebar-importers", "depthHint": 1, "stories": 51, "rationale": "Depth-1 stories that directly import Sidebar.tsx — highest priority" },
+        { "id": "refs-and-searchresults-consumers", "depthHint": 2, "stories": 20, "rationale": "Depth-2 consumers via Refs/SearchResults" },
+        { "id": "explorer-and-treenode-consumers", "depthHint": 3, "stories": 9, "rationale": "Depth-3 indirect consumers" },
+        { "id": "filterpanel-and-main-consumers", "depthHint": 4, "stories": 25, "rationale": "Depth-4 top-level Main / FilterPanel" },
+        { "id": "deep-filter-consumers", "depthHint": 5, "stories": 11, "rationale": "Depth-5 most distal consumers — lowest priority" },
+        { "id": "catchall", "depthHint": null, "stories": 0, "rationale": "(empty)" }
+      ],
+      "verdict": "Depth tiers emerge naturally and precisely match the underlying d1/d2/d3/d4/d5 distribution. Rationales include explicit review priority. This is the canonical zoom-level UX the team conversation described."
+    },
+    {
+      "scenario": "medium",
+      "cascade": 1025,
+      "depthTiers": "d1=210 d2=407 d3=374 d4=23 d5=25",
+      "baseline":      { "duration": 14, "cost": 0.022, "recall": 1.0, "precision": 1.0, "purity": 0.18, "clusters": 6, "catchAll": 0.16, "reprValid": "6/6" },
+      "depthAnnotated":{ "duration": 69, "cost": 0.336, "recall": 1.0, "precision": 1.0, "purity": 0.17, "clusters": 5, "catchAll": 0.517, "reprValid": "5/5" },
+      "depthClusters": [
+        { "id": "direct-button-overlay-importers", "depthHint": 1, "rationale": "Depth-1 button + overlay direct importers" },
+        { "id": "direct-select-tabs-toolbar-tooltip-importers", "depthHint": 1, "rationale": "Depth-1 select/tabs/toolbar/tooltip" },
+        { "id": "direct-docs-preview-and-manager-component-importers", "depthHint": 1, "rationale": "Depth-1 docs blocks + small manager components" },
+        { "id": "manager-transitive-consumers", "depthHint": 3, "rationale": "All remaining manager-* stories (sidebar, layout, settings, etc.)" },
+        { "id": "all-other-transitive-consumers", "depthHint": null, "rationale": "Catch-all for everything else" }
+      ],
+      "verdict": "Agent subdivides d1 (210 stories) into 3 sub-clusters by component family, then dumps d2-d5 into manager-* + catchAll. catchAll = 51.7% means the depth axis didn't subdivide deeper tiers — agent reverts to namespace clustering once past d1."
+    },
+    {
+      "scenario": "large",
+      "cascade": 1236,
+      "depthTiers": "d1=352 d2=751 d3=153",
+      "baseline":      { "duration": 12, "cost": 0.169, "recall": 1.0, "precision": 1.0, "purity": 0.13, "clusters": 5, "catchAll": 0.155, "reprValid": "5/5" },
+      "depthAnnotated":{ "duration": 105, "cost": 0.415, "recall": 1.0, "precision": 1.0, "purity": 0.12, "clusters": 5, "catchAll": 0.00, "reprValid": "4/5" },
+      "depthClusters": [
+        { "id": "depth-1-manager-ui", "depthHint": 1, "rationale": "Depth-1 manager UI direct theming importers" },
+        { "id": "depth-1-primitives-and-addons", "depthHint": 1, "rationale": "Depth-1 component primitives + addon panels" },
+        { "id": "depth-2-manager-transitive", "depthHint": 2, "rationale": "Depth-2 manager transitive consumers" },
+        { "id": "depth-2-3-non-manager-transitive", "depthHint": 2, "rationale": "Depth-2/3 non-manager transitive consumers" },
+        { "id": "catchall-remaining", "depthHint": null, "rationale": "(empty)" }
+      ],
+      "verdict": "Better depth coverage than medium — 4 explicit depth-labelled clusters + empty catchAll. But agent still mixes namespace and depth (manager-* vs non-manager-*). Purity drops from 0.13 to 0.12 because depth-based clusters cross namespaces. Latency 9× baseline (105s vs 12s); cost 2.5× ($0.42 vs $0.17)."
+    },
+    {
+      "scenario": "regex-aliased",
+      "cascade": 1025,
+      "depthTiers": "d2=914 d3=196 d4=42 d5=14 d6=66 d7=44",
+      "baseline":      { "note": "Not run in this experiment; depth-aware run is the only signature run for regex-aliased so far." },
+      "depthAnnotated":{ "duration": 33, "cost": 0.301, "recall": 1.0, "precision": 1.0, "purity": 0.16, "clusters": 5, "catchAll": 0.208, "reprValid": "5/5" },
+      "depthClusters": [
+        { "id": "manager-ui-consumers", "depthHint": 2, "rationale": "All manager-* d2 transitive consumers" },
+        { "id": "overlay-button-select-direct", "depthHint": 2, "rationale": "Overlay/button/select d2 direct importers" },
+        { "id": "shared-components-library", "depthHint": 2, "rationale": "All components-* d2 namespace" },
+        { "id": "addons-docs-blocks", "depthHint": 2, "rationale": "Addons-docs d2 namespace" },
+        { "id": "other-addon-and-testing-consumers", "depthHint": null, "rationale": "(catchAll)" }
+      ],
+      "verdict": "When min depth is 2 (no d1 importers — storybook/test is regex-aliased so resolver can't see direct paths), the agent treats every cluster as depth-2 and reverts to pure namespace clustering. Depth axis becomes degenerate; output equivalent to baseline signature prompt."
+    }
+  ],
+  "headlineFindings": [
+    "Depth tiers emerge NATURALLY and CLEANLY on small cascades (≤200 stories). On the small scenario, the agent produced exactly d1/d2/d3/d4/d5 tiers with priority-ordered rationales ('highest-priority review targets' → 'lowest review priority'). This is the canonical 'zoom-levels' UX the team conversation predicted.",
+    "On cascade-scale (1000+), depth tiers only help for the d1 split. The agent subdivides d1 by component family (good — high-priority stories grouped tightly) but lumps d2+ into a catchAll or namespace bucket. The deeper tiers don't subdivide along depth — they're too big and the agent falls back to namespace.",
+    "Cost and latency 3-9× higher with depth. Sending `depthTiers` (the full grouped story-id list) inflates the payload from 31K to 64K tokens on medium; from 37K to 76K on large. Output tokens also go up because rationales mention depth explicitly. Latency grows from 12-15s baseline to 33-105s with depth.",
+    "Namespace-based purity goes DOWN with depth. The dominant-namespace-share purity metric penalises depth clusters that span namespaces (a d1 cluster mixing button + tabs + tooltip drops namespace purity). This is a measurement artefact, not a UX regression — for the zoom-levels UX, depth purity is actually more useful than namespace purity.",
+    "Recall and precision unaffected. Both 1.0 in every cell. The change is purely the SHAPE of clusters, not what they contain."
+  ],
+  "uxImplications": [
+    "For the **walk-only fork** in iteration 1, the depth-1 split is the high-value signal. The deterministic system can split the cascade into 'depth-1 (direct importers)' vs 'depth-2+ (transitive)' WITHOUT an agent. Show direct importers first; offer 'zoom out' to see transitive.",
+    "For **iteration 2 with agent**: the agent's value over a deterministic depth-1 split is sub-clustering within each tier by component family. e.g. depth-1 = {button-family, overlay-family, tabs-family}. Cleaner UX than 'depth-1: 210 stories' as a single bucket.",
+    "The **simpler iteration-2 design** that emerges: do the depth-1 vs deeper split deterministically (no LLM), then call the existing signature prompt on each tier separately. Cost stays close to baseline because each tier's payload is smaller. The agent only does within-tier sub-clustering, which it's already good at."
+  ],
+  "recommendation": "Do NOT ship the depth-annotated agent prompt as-is. It triples cost and latency without meaningfully improving the UX shape beyond what a deterministic d1-vs-deeper split would give. INSTEAD: ship deterministic depth-1 partitioning in iteration 1 (the walk-only fork's 'review these first' section maps to d1), and use the agent for within-tier sub-clustering in iteration 2 if user sessions ask for it."
+}

@@ -250,7 +250,10 @@ const Carousel = styled.div({
   position: 'relative' as const,
   display: 'flex',
   alignItems: 'center',
-  justifyContent: 'center',
+  // No justifyContent — the track is positioned manually via translateX
+  // so we want it to start at the left edge. With `center`, the flex
+  // engine would shift the whole track horizontally, double-centering it
+  // and causing the slot to land off-center.
   overflow: 'hidden',
   minHeight: 0,
 });
@@ -267,13 +270,12 @@ const CarouselTrack = styled.div<{ offset: number }>(({ offset }) => ({
 }));
 
 const Slot = styled.div<{ active: boolean }>(({ theme, active }) => ({
-  // Every slot identical in size — proper carousel, no zoom-in effect.
-  width: 720,
-  height: 'min(440px, calc(100vh - 260px))',
+  // Width and height come from inline style (computed from carousel size).
+  // Every slot is the same size — proper carousel, no zoom-in effect.
   flexShrink: 0,
   // Only opacity and border/shadow animate; never size or transform.
   transition: 'opacity 0.2s linear, border-color 0.2s linear, box-shadow 0.2s linear',
-  opacity: active ? 1 : 0.4,
+  opacity: active ? 1 : 0.35,
   display: 'flex',
   flexDirection: 'column' as const,
   border: `1px solid ${active ? theme.color.secondary : theme.color.border}`,
@@ -511,11 +513,6 @@ export function LayeredReview({ data, initialMode = 'clustered' }: LayeredReview
   const below = rows.slice(clusterIdx + 1);
   const totalStories = currentRow.stories.length;
 
-  // Every slot is the same size (no zoom-in animation) — a proper
-  // carousel. Constants here must stay in sync with the Slot styled-
-  // component and the CarouselTrack gap.
-  const SLOT_W = 720;
-  const GAP = 24;
   const carouselRef = React.useRef<HTMLDivElement | null>(null);
   const [carouselWidth, setCarouselWidth] = useState(1200);
   useEffect(() => {
@@ -528,11 +525,20 @@ export function LayeredReview({ data, initialMode = 'clustered' }: LayeredReview
     ro.observe(el);
     return () => ro.disconnect();
   }, []);
+
+  // Every slot is the same size (no zoom-in animation) — a proper
+  // carousel. Slot width is responsive: takes most of the carousel's
+  // available width (with a small margin so neighbors hint), capped
+  // at 1400px so it doesn't get ridiculous on ultrawide displays.
+  const GAP = 24;
+  const SLOT_W = Math.max(560, Math.min(1400, carouselWidth - 120));
+  const SLOT_H = 'min(480px, calc(100vh - 240px))';
+
   const trackOffset = useMemo(() => {
     const leftEdge = storyIdx * (SLOT_W + GAP);
     const slotCenter = leftEdge + SLOT_W / 2;
     return carouselWidth / 2 - slotCenter;
-  }, [storyIdx, carouselWidth]);
+  }, [storyIdx, carouselWidth, SLOT_W]);
 
   return (
     <Page ref={pageRef} tabIndex={-1}>
@@ -617,7 +623,11 @@ export function LayeredReview({ data, initialMode = 'clustered' }: LayeredReview
                     key={s.storyId}
                     active={active}
                     onClick={() => !active && setStoryIdx(i)}
-                    style={{ cursor: active ? 'default' : 'pointer' }}
+                    style={{
+                      cursor: active ? 'default' : 'pointer',
+                      width: SLOT_W,
+                      height: SLOT_H,
+                    }}
                   >
                     <SlotHeader>
                       <span>

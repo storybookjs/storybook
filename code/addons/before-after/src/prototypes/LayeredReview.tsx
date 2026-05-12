@@ -642,7 +642,7 @@ export function LayeredReview({ data, initialMode = 'clustered' }: LayeredReview
                       storyId={s.storyId}
                       title={`${s.title} / ${s.name}`}
                       mode="lazy"
-                      priority={active ? 'primary' : 'thumbnail'}
+                      priority={active ? 'primary' : 'high'}
                       style={{ flex: 1, minHeight: 0 }}
                     />
                   </Slot>

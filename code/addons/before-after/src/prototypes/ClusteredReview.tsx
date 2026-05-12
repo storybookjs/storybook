@@ -414,6 +414,7 @@ export function ClusteredReview({ data, initialView = 'clustered' }: ClusteredRe
                   <LazyStoryFrame
                     storyId={s.storyId}
                     title={`${s.title} / ${s.name}`}
+                    priority={s.status === 'modified' || s.status === 'new' ? 'high' : 'low'}
                     style={{ width: '100%', height: 180 }}
                   />
                 </StoryCard>
@@ -446,6 +447,7 @@ export function ClusteredReview({ data, initialView = 'clustered' }: ClusteredRe
                     <LazyStoryFrame
                       storyId={c.representative}
                       title={c.representative}
+                      priority="high"
                       style={{ width: '100%', height: 200 }}
                     />
                   </RepresentativeWrap>
@@ -493,6 +495,7 @@ export function ClusteredReview({ data, initialView = 'clustered' }: ClusteredRe
                   <LazyStoryFrame
                     storyId={s.storyId}
                     title={`${s.title} / ${s.name}`}
+                    priority={s.storyId === activeCluster.representative ? 'high' : 'normal'}
                     style={{ width: '100%', height: 180 }}
                   />
                 </StoryCard>

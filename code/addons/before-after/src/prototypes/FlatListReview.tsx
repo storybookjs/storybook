@@ -275,6 +275,7 @@ export function FlatListReview({ data, initialGroupBy = 'status' }: FlatListRevi
         storyId={s.storyId}
         title={`${s.title} / ${s.name}`}
         subtitle={s.importPath.split('/').pop()}
+        priority={s.status === 'new' ? 'high' : s.status === 'modified' ? 'high' : 'low'}
         style={{ width: '100%', height: 180 }}
       />
       <StoryPath title={s.importPath}>{s.importPath.replace(/^\.\//, '')}</StoryPath>

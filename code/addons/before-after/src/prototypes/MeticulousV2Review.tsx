@@ -34,7 +34,7 @@ import React, { useMemo, useState } from 'react';
 
 import { styled } from 'storybook/theming';
 
-import { LazyStoryFrame, LazyThumbFrame } from './LazyStoryFrame.tsx';
+import { LazyThumbFrame } from './LazyStoryFrame.tsx';
 import { type MockCluster, type MockReviewData, type MockStory, statusLabel } from './mockData.ts';
 
 interface MeticulousV2ReviewProps {
@@ -536,6 +536,13 @@ export function MeticulousV2Review({
                             storyId={s.storyId}
                             title={s.title}
                             subtitle={s.name}
+                            priority={
+                              s.storyId === activeId
+                                ? 'primary'
+                                : s.storyId === cluster.representative || i === 0
+                                  ? 'high'
+                                  : 'low'
+                            }
                             decorations={<ThumbBanner />}
                             style={{ position: 'absolute', inset: 0 }}
                           />
@@ -586,6 +593,7 @@ export function MeticulousV2Review({
                             storyId={s.storyId}
                             title={s.title}
                             subtitle={s.name}
+                            priority="high"
                             decorations={<ThumbBanner />}
                             style={{ position: 'absolute', inset: 0 }}
                           />
@@ -637,6 +645,7 @@ export function MeticulousV2Review({
                             storyId={s.storyId}
                             title={s.title}
                             subtitle={s.name}
+                            priority={isActiveStory ? 'primary' : isActive ? 'high' : 'normal'}
                             decorations={<ThumbBanner />}
                             style={{ position: 'absolute', inset: 0 }}
                           />

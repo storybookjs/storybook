@@ -1,37 +1,47 @@
 /**
  * Shared lazy story-preview component for the review prototypes.
  *
- * The prototypes (especially MeticulousV2Review's route-tree grid) can
- * render 15–25 story iframes simultaneously, each costing ~8 MB of
- * browser memory. This module gives the prototypes a drop-in
- * replacement with three knobs:
+ * Three things this module solves:
  *
- *   • **Visibility-driven mounting** — IntersectionObserver only requests
- *     a real iframe once the placeholder card is within ~200px of the
- *     viewport. Out-of-view cards render a static poster.
+ *   1. **Hard cap on concurrent iframes.** Each story iframe costs ~8 MB
+ *      in this dogfood, so rendering a route-tree grid of 20+ at once
+ *      tanks the page. A global LRU pool caps the number actually
+ *      mounted (default 8); the rest render a stylised poster.
  *
- *   • **LRU pool with a hard cap** — at most `POOL_CAP` (8 by default)
- *     iframes are mounted across the entire page at any one time. New
- *     mount requests evict the least-recently-touched item. Items
- *     marked `priority="primary"` are pinned and never count against
- *     the pool (intended for the single big-preview pane in
- *     MeticulousV2 / Hub / Focused).
+ *   2. **Priority tiers.** Not every iframe is equally important. The
+ *      pool orders requests by tier (`primary` → `high` → `normal` →
+ *      `low`) and only falls back to recency within a tier. So the
+ *      currently-focused story stays mounted, cluster representatives
+ *      keep their slot, and low-priority neighbours are evicted first.
  *
- *   • **Mode override** — `mode='hover'` keeps the poster until the
- *     user hovers the card. Useful when many thumbnails are in view
- *     but only a few will be inspected.
- *
- * The poster is a deterministic-coloured gradient + the story id +
- * title, so out-of-pool cards still feel intentional rather than
- * "broken iframe" empty boxes.
+ *   3. **A real loading state.** Until the iframe fires `load`, an
+ *      overlay shimmers across the cell so the user gets feedback that
+ *      content is incoming (instead of a flash of white). The cold
+ *      poster (out-of-pool) shows the same hue as the warm state so
+ *      transitions are visually quiet.
  */
 import React, { type CSSProperties, type ReactNode, useEffect, useMemo, useState } from 'react';
 
+import { keyframes, styled } from 'storybook/theming';
+
+// ────────────────────────────────────────────────────────────────
+// Pool
+// ────────────────────────────────────────────────────────────────
+
 const POOL_CAP_DEFAULT = 8;
+
+export type Priority = 'primary' | 'high' | 'normal' | 'low';
+
+const TIER_RANK: Record<Priority, number> = {
+  primary: 0,
+  high: 1,
+  normal: 2,
+  low: 3,
+};
 
 interface PoolEntry {
   ts: number;
-  permanent: boolean;
+  priority: Priority;
 }
 
 const wanted = new Map<string, PoolEntry>();
@@ -48,8 +58,8 @@ function notify() {
   subscribers.forEach((s) => s());
 }
 
-function requestMount(id: string, permanent: boolean) {
-  wanted.set(id, { ts: performance.now(), permanent });
+function requestMount(id: string, priority: Priority) {
+  wanted.set(id, { ts: performance.now(), priority });
   notify();
 }
 
@@ -59,15 +69,19 @@ function releaseMount(id: string) {
 }
 
 function getActiveSet(): Set<string> {
-  // Permanent (priority='primary') items always mount.
-  // Everyone else competes for `poolCap - permanentCount` slots,
-  // ranked by recency.
-  const permanent = [...wanted.entries()].filter(([, v]) => v.permanent).map(([id]) => id);
-  const transientSorted = [...wanted.entries()]
-    .filter(([, v]) => !v.permanent)
-    .sort((a, b) => b[1].ts - a[1].ts);
-  const slotsLeft = Math.max(0, poolCap - permanent.length);
-  return new Set([...permanent, ...transientSorted.slice(0, slotsLeft).map(([id]) => id)]);
+  // Two-key sort: tier rank ascending, then timestamp descending (recent first).
+  // Primary items are pinned (never count toward the cap).
+  const entries = [...wanted.entries()];
+  const primaryIds = entries.filter(([, v]) => v.priority === 'primary').map(([id]) => id);
+  const transients = entries
+    .filter(([, v]) => v.priority !== 'primary')
+    .sort((a, b) => {
+      const tierDiff = TIER_RANK[a[1].priority] - TIER_RANK[b[1].priority];
+      if (tierDiff !== 0) return tierDiff;
+      return b[1].ts - a[1].ts;
+    });
+  const slotsLeft = Math.max(0, poolCap - primaryIds.length);
+  return new Set([...primaryIds, ...transients.slice(0, slotsLeft).map(([id]) => id)]);
 }
 
 function useIsMounted(id: string): boolean {
@@ -79,108 +93,306 @@ function useIsMounted(id: string): boolean {
       subscribers.delete(sub);
     };
   }, []);
-  // Recompute on every render that follows a notify.
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const _ = version;
   return getActiveSet().has(id);
 }
 
-type Mode = 'lazy' | 'hover' | 'always';
+// ────────────────────────────────────────────────────────────────
+// Visual primitives
+// ────────────────────────────────────────────────────────────────
 
-interface LazyStoryFrameProps {
-  storyId: string;
-  /** Display name for the poster and iframe title. */
-  title?: string;
-  /** Display sub-line (e.g. story name) for the poster. */
-  subtitle?: string;
-  /**
-   * 'lazy' (default): mount when card scrolls into view (IO with
-   * rootMargin 200px). 'hover': only mount on hover. 'always': pin
-   * mounted regardless of visibility (use for primary previews).
-   */
-  mode?: Mode;
-  /**
-   * 'primary' counts as pinned in the pool — never evicted, never
-   * eats a transient slot. 'thumbnail' is the default — competes for
-   * the transient slot budget.
-   */
-  priority?: 'primary' | 'thumbnail';
-  /** Extra slot decoration (e.g. orange top stripe, badges). */
-  decorations?: ReactNode;
-  className?: string;
-  style?: CSSProperties;
-}
+const STORYBOOK_PINK = '#FF4785';
+const STORYBOOK_PINK_SOFT = 'rgba(255, 71, 133, 0.65)';
 
-// Deterministic colour per story id so posters look consistent.
+// Deterministic hue per story id so each story has a consistent tint.
 function hashHue(id: string): number {
   let h = 0;
   for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) | 0;
   return Math.abs(h) % 360;
 }
 
+const shimmer = keyframes({
+  '0%': { backgroundPosition: '-200% 0' },
+  '100%': { backgroundPosition: '200% 0' },
+});
+
+const fadeOut = keyframes({
+  '0%': { opacity: 1 },
+  '100%': { opacity: 0 },
+});
+
+const Wrap = styled.div({
+  position: 'relative' as const,
+  overflow: 'hidden',
+});
+
+const PosterRoot = styled.div<{ hue: number }>(({ hue }) => ({
+  width: '100%',
+  height: '100%',
+  background: `linear-gradient(135deg, hsl(${hue}, 28%, 17%) 0%, hsl(${(hue + 24) % 360}, 24%, 11%) 100%)`,
+  color: 'rgba(255, 255, 255, 0.85)',
+  display: 'flex',
+  flexDirection: 'column' as const,
+  justifyContent: 'space-between',
+  padding: 12,
+  fontSize: 11,
+  fontFamily: '-apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", Roboto, sans-serif',
+  boxSizing: 'border-box' as const,
+  position: 'relative' as const,
+}));
+
+const PosterShine = styled.div({
+  position: 'absolute' as const,
+  inset: 0,
+  background:
+    'linear-gradient(120deg, transparent 30%, rgba(255,255,255,0.05) 50%, transparent 70%)',
+  backgroundSize: '300% 100%',
+  animation: `${shimmer} 4s ease-in-out infinite`,
+  pointerEvents: 'none' as const,
+});
+
+const StoryIdRow = styled.div({
+  fontFamily: 'ui-monospace, "SF Mono", Menlo, monospace',
+  fontSize: 9,
+  letterSpacing: '0.02em',
+  opacity: 0.55,
+  overflow: 'hidden',
+  textOverflow: 'ellipsis',
+  whiteSpace: 'nowrap' as const,
+});
+
+const PosterTitle = styled.div({
+  fontSize: 12,
+  fontWeight: 600,
+  opacity: 0.95,
+  lineHeight: 1.3,
+  display: 'flex',
+  flexDirection: 'column' as const,
+  gap: 2,
+});
+
+const PosterSubtitle = styled.div({
+  fontSize: 10,
+  fontWeight: 400,
+  opacity: 0.7,
+});
+
+const PriorityChip = styled.span<{ priority: Priority }>(({ priority }) => {
+  const map: Record<Priority, { bg: string; fg: string }> = {
+    primary: { bg: STORYBOOK_PINK, fg: '#fff' },
+    high: { bg: STORYBOOK_PINK_SOFT, fg: '#fff' },
+    normal: { bg: 'rgba(255,255,255,0.10)', fg: 'rgba(255,255,255,0.7)' },
+    low: { bg: 'rgba(255,255,255,0.06)', fg: 'rgba(255,255,255,0.4)' },
+  };
+  return {
+    alignSelf: 'flex-start' as const,
+    background: map[priority].bg,
+    color: map[priority].fg,
+    fontSize: 9,
+    fontWeight: 700,
+    padding: '1px 6px',
+    borderRadius: 999,
+    textTransform: 'uppercase' as const,
+    letterSpacing: '0.05em',
+  };
+});
+
+const PosterFooter = styled.div({
+  fontSize: 9,
+  fontWeight: 600,
+  letterSpacing: '0.06em',
+  textTransform: 'uppercase' as const,
+  opacity: 0.55,
+  display: 'flex',
+  alignItems: 'center',
+  gap: 5,
+});
+
+const Dot = styled.span<{ colour: string }>(({ colour }) => ({
+  display: 'inline-block',
+  width: 6,
+  height: 6,
+  borderRadius: '50%',
+  background: colour,
+}));
+
+// ── Loading skeleton (shown over a mounted-but-not-yet-loaded iframe) ──
+
+const SkeletonOverlay = styled.div<{ fading: boolean }>(({ fading }) => ({
+  position: 'absolute' as const,
+  inset: 0,
+  background: '#fdfbf7',
+  display: 'flex',
+  flexDirection: 'column' as const,
+  justifyContent: 'flex-start',
+  padding: 14,
+  gap: 10,
+  animation: fading ? `${fadeOut} 0.18s ease-out forwards` : undefined,
+  pointerEvents: 'none' as const,
+}));
+
+const SkeletonBar = styled.div<{ w: string; h: number }>(({ w, h }) => ({
+  width: w,
+  height: h,
+  borderRadius: 4,
+  background:
+    'linear-gradient(90deg, rgba(15,23,42,0.05) 0%, rgba(15,23,42,0.12) 30%, rgba(15,23,42,0.05) 60%)',
+  backgroundSize: '300% 100%',
+  animation: `${shimmer} 1.4s ease-in-out infinite`,
+}));
+
+const SpinnerWrap = styled.div({
+  marginTop: 'auto',
+  display: 'flex',
+  alignItems: 'center',
+  gap: 8,
+  fontSize: 11,
+  color: 'rgba(15,23,42,0.55)',
+});
+
+const spin = keyframes({
+  to: { transform: 'rotate(360deg)' },
+});
+
+const Spinner = styled.span({
+  width: 12,
+  height: 12,
+  borderRadius: '50%',
+  border: `2px solid rgba(255, 71, 133, 0.25)`,
+  borderTopColor: STORYBOOK_PINK,
+  animation: `${spin} 0.9s linear infinite`,
+});
+
+const StyledIframe = styled.iframe({
+  width: '100%',
+  height: '100%',
+  border: 'none',
+  display: 'block',
+  background: '#fff',
+  position: 'relative' as const,
+});
+
+const ScaledIframe = styled.iframe({
+  border: 'none',
+  display: 'block',
+  background: '#fff',
+  width: '200%',
+  height: '200%',
+  transform: 'scale(0.5)',
+  transformOrigin: 'top left',
+  pointerEvents: 'none' as const,
+});
+
+// ────────────────────────────────────────────────────────────────
+// Posters & Loading state
+// ────────────────────────────────────────────────────────────────
+
 interface PosterProps {
   storyId: string;
   title?: string;
   subtitle?: string;
-  status: 'pool-cold' | 'pool-warm';
+  priority: Priority;
 }
 
-function Poster({ storyId, title, subtitle, status }: PosterProps) {
+const PRIORITY_LABEL: Record<Priority, string> = {
+  primary: 'pinned',
+  high: 'high priority',
+  normal: 'normal priority',
+  low: 'low priority',
+};
+
+const PRIORITY_DOT: Record<Priority, string> = {
+  primary: STORYBOOK_PINK,
+  high: '#f59e0b',
+  normal: '#94a3b8',
+  low: '#475569',
+};
+
+function Poster({ storyId, title, subtitle, priority }: PosterProps) {
   const hue = useMemo(() => hashHue(storyId), [storyId]);
-  const labelMap: Record<PosterProps['status'], string> = {
-    'pool-cold': '⏸ paused (pool full)',
-    'pool-warm': '⏳ loading…',
-  };
   return (
-    <div
-      aria-label={`Story preview placeholder for ${storyId}`}
-      style={{
-        width: '100%',
-        height: '100%',
-        background: `linear-gradient(135deg, hsl(${hue}, 32%, 16%) 0%, hsl(${(hue + 24) % 360}, 28%, 10%) 100%)`,
-        color: 'rgba(255, 255, 255, 0.78)',
-        display: 'flex',
-        flexDirection: 'column',
-        justifyContent: 'space-between',
-        padding: 10,
-        fontSize: 11,
-        fontFamily: '-apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", Roboto, sans-serif',
-        boxSizing: 'border-box',
-      }}
-    >
+    <PosterRoot hue={hue}>
+      <PosterShine />
       <div
         style={{
-          fontFamily: 'ui-monospace, SF Mono, Menlo, monospace',
-          fontSize: 9,
-          opacity: 0.55,
-          overflow: 'hidden',
-          textOverflow: 'ellipsis',
-          whiteSpace: 'nowrap',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: 8,
+          position: 'relative',
         }}
       >
-        {storyId}
+        <StoryIdRow>{storyId}</StoryIdRow>
+        <PriorityChip priority={priority}>{priority}</PriorityChip>
       </div>
-      <div style={{ fontSize: 11, fontWeight: 600, opacity: 0.9, lineHeight: 1.3 }}>
+      <PosterTitle style={{ position: 'relative' }}>
         {title || storyId.split('--').pop()}
-        {subtitle && (
-          <div style={{ fontSize: 10, fontWeight: 400, opacity: 0.7, marginTop: 2 }}>
-            {subtitle}
-          </div>
-        )}
-      </div>
-      <div
-        style={{
-          fontSize: 9,
-          fontWeight: 600,
-          letterSpacing: '0.06em',
-          textTransform: 'uppercase',
-          opacity: 0.5,
-        }}
-      >
-        {labelMap[status]}
-      </div>
-    </div>
+        {subtitle && <PosterSubtitle>{subtitle}</PosterSubtitle>}
+      </PosterTitle>
+      <PosterFooter style={{ position: 'relative' }}>
+        <Dot colour={PRIORITY_DOT[priority]} />
+        Queued · pool full
+      </PosterFooter>
+    </PosterRoot>
   );
+}
+
+function LoadingSkeleton({ fading }: { fading: boolean }) {
+  return (
+    <SkeletonOverlay fading={fading}>
+      <SkeletonBar w="48%" h={11} />
+      <SkeletonBar w="78%" h={9} />
+      <SkeletonBar w="62%" h={9} />
+      <SkeletonBar w="44%" h={9} />
+      <SpinnerWrap>
+        <Spinner />
+        <span>Mounting iframe…</span>
+      </SpinnerWrap>
+    </SkeletonOverlay>
+  );
+}
+
+// ────────────────────────────────────────────────────────────────
+// Components
+// ────────────────────────────────────────────────────────────────
+
+type Mode = 'lazy' | 'hover' | 'always';
+
+interface LazyStoryFrameProps {
+  storyId: string;
+  title?: string;
+  subtitle?: string;
+  mode?: Mode;
+  priority?: Priority;
+  decorations?: ReactNode;
+  className?: string;
+  style?: CSSProperties;
+}
+
+function useFrameLoadState(storyId: string, isMounted: boolean) {
+  const [loaded, setLoaded] = useState(false);
+  const [fadingOut, setFadingOut] = useState(false);
+  useEffect(() => {
+    // Reset on storyId or mount changes.
+    setLoaded(false);
+    setFadingOut(false);
+  }, [storyId, isMounted]);
+  const onLoad = () => {
+    setLoaded(true);
+    // Trigger the fadeOut animation; the skeleton unmounts after the
+    // animation finishes (in another effect).
+    setFadingOut(true);
+  };
+  useEffect(() => {
+    if (!fadingOut) return;
+    const t = setTimeout(() => setFadingOut(false), 220);
+    return () => clearTimeout(t);
+  }, [fadingOut]);
+  // Render the skeleton until the iframe has loaded; the fadeOut
+  // animation drives the overlay's exit.
+  const showSkeleton = !loaded || fadingOut;
+  return { onLoad, showSkeleton, fading: fadingOut };
 }
 
 export function LazyStoryFrame({
@@ -188,106 +400,89 @@ export function LazyStoryFrame({
   title,
   subtitle,
   mode = 'lazy',
-  priority = 'thumbnail',
+  priority = 'normal',
   decorations,
   className,
   style,
 }: LazyStoryFrameProps) {
   const [hovered, setHovered] = useState(false);
   const isMounted = useIsMounted(storyId);
+  const { onLoad, showSkeleton, fading } = useFrameLoadState(storyId, isMounted);
 
-  // Request a mount slot. For 'always' / 'lazy' we always want one (pool
-  // cap decides who gets a slot). For 'hover' we only want one on hover.
   useEffect(() => {
     const want = mode === 'always' || mode === 'lazy' || (mode === 'hover' && hovered);
-    if (want) requestMount(storyId, priority === 'primary');
+    if (want) requestMount(storyId, priority);
     else releaseMount(storyId);
     return () => releaseMount(storyId);
   }, [storyId, mode, hovered, priority]);
 
-  const renderFrame = isMounted;
-  const posterStatus: PosterProps['status'] = isMounted ? 'pool-warm' : 'pool-cold';
-
   return (
-    <div
+    <Wrap
       className={className}
-      style={{ position: 'relative', overflow: 'hidden', ...style }}
+      style={style}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
     >
       {decorations}
-      {renderFrame ? (
-        <iframe
-          src={`/iframe.html?id=${encodeURIComponent(storyId)}&viewMode=story`}
-          title={title || storyId}
-          style={{
-            width: '100%',
-            height: '100%',
-            border: 'none',
-            display: 'block',
-            background: '#fff',
-            position: 'relative' as const,
-          }}
-          loading="lazy"
-        />
+      {isMounted ? (
+        <>
+          <StyledIframe
+            src={`/iframe.html?id=${encodeURIComponent(storyId)}&viewMode=story`}
+            title={title || storyId}
+            loading="lazy"
+            onLoad={onLoad}
+          />
+          {showSkeleton && <LoadingSkeleton fading={fading} />}
+        </>
       ) : (
-        <Poster storyId={storyId} title={title} subtitle={subtitle} status={posterStatus} />
+        <Poster storyId={storyId} title={title} subtitle={subtitle} priority={priority} />
       )}
-    </div>
+    </Wrap>
   );
 }
 
 /**
- * Scaled-down variant for thumbnail-grid cards: renders the iframe at
- * 200% inside a 50% transform so the content reads at half-density.
+ * Scaled-down variant for thumbnail-grid cards.
  */
 export function LazyThumbFrame(props: LazyStoryFrameProps) {
   const [hovered, setHovered] = useState(false);
   const isMounted = useIsMounted(props.storyId);
+  const { onLoad, showSkeleton, fading } = useFrameLoadState(props.storyId, isMounted);
 
   useEffect(() => {
     const mode = props.mode ?? 'lazy';
     const want = mode === 'always' || mode === 'lazy' || (mode === 'hover' && hovered);
-    if (want) requestMount(props.storyId, props.priority === 'primary');
+    if (want) requestMount(props.storyId, props.priority ?? 'normal');
     else releaseMount(props.storyId);
     return () => releaseMount(props.storyId);
   }, [props.storyId, props.mode, hovered, props.priority]);
 
-  const renderFrame = isMounted;
-  const posterStatus: PosterProps['status'] = isMounted ? 'pool-warm' : 'pool-cold';
-
   return (
-    <div
+    <Wrap
       className={props.className}
-      style={{ position: 'relative', overflow: 'hidden', ...props.style }}
+      style={props.style}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
     >
       {props.decorations}
-      {renderFrame ? (
-        <iframe
-          src={`/iframe.html?id=${encodeURIComponent(props.storyId)}&viewMode=story`}
-          title={props.title || props.storyId}
-          style={{
-            border: 'none',
-            display: 'block',
-            background: '#fff',
-            width: '200%',
-            height: '200%',
-            transform: 'scale(0.5)',
-            transformOrigin: 'top left',
-            pointerEvents: 'none',
-          }}
-          loading="lazy"
-        />
+      {isMounted ? (
+        <>
+          <ScaledIframe
+            src={`/iframe.html?id=${encodeURIComponent(props.storyId)}&viewMode=story`}
+            title={props.title || props.storyId}
+            loading="lazy"
+            onLoad={onLoad}
+          />
+          {showSkeleton && <LoadingSkeleton fading={fading} />}
+        </>
       ) : (
         <Poster
           storyId={props.storyId}
           title={props.title}
           subtitle={props.subtitle}
-          status={posterStatus}
+          priority={props.priority ?? 'normal'}
         />
       )}
-    </div>
+    </Wrap>
   );
 }

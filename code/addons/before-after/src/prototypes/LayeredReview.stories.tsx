@@ -4,10 +4,12 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 
 import { LayeredReview } from './LayeredReview.tsx';
 import { mockMixedSizeData, mockReviewData } from './mockData.ts';
+import { withAdeMode } from './withAdeMode.tsx';
 
 const meta = {
   title: 'prototypes/Review · Layered (2D nav)',
   component: LayeredReview,
+  decorators: [withAdeMode],
   parameters: {
     layout: 'fullscreen',
     docs: {

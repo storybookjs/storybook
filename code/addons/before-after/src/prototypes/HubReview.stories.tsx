@@ -4,10 +4,12 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 
 import { HubReview } from './HubReview.tsx';
 import { mockMixedSizeData, mockReviewData } from './mockData.ts';
+import { withAdeMode } from './withAdeMode.tsx';
 
 const meta = {
   title: 'prototypes/Review · Hub (rail + focused pane)',
   component: HubReview,
+  decorators: [withAdeMode],
   parameters: {
     layout: 'fullscreen',
     docs: {

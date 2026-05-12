@@ -4,10 +4,12 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 
 import { FlatListReview } from './FlatListReview.tsx';
 import { mockReviewData } from './mockData.ts';
+import { withAdeMode } from './withAdeMode.tsx';
 
 const meta = {
   title: 'prototypes/Review · Flat list (deterministic, no AI)',
   component: FlatListReview,
+  decorators: [withAdeMode],
   parameters: {
     layout: 'fullscreen',
     docs: {

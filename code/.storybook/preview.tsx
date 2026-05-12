@@ -419,4 +419,23 @@ export default definePreview({
   loaders,
   tags: ['test', 'vitest'],
   parameters,
+  // ADE-mode toolbar toggle — only the review-prototype stories opt-in
+  // to the `withAdeMode` decorator (they apply it in their meta), but
+  // the toolbar item lives here so it's visible from any story in the
+  // dogfood UI.
+  globalTypes: {
+    adeMode: {
+      description: 'Wrap review-prototype stories in a Claude Code shell',
+      defaultValue: 'off',
+      toolbar: {
+        title: 'ADE',
+        icon: 'lightning',
+        items: [
+          { value: 'off', title: 'ADE off' },
+          { value: 'on', title: 'ADE on — Claude Code shell' },
+        ],
+        dynamicTitle: true,
+      },
+    },
+  },
 });

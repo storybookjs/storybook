@@ -4,10 +4,12 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 
 import { FocusedReview } from './FocusedReview.tsx';
 import { mockMixedSizeData, mockReviewData } from './mockData.ts';
+import { withAdeMode } from './withAdeMode.tsx';
 
 const meta = {
   title: 'prototypes/Review · Focused (page-level)',
   component: FocusedReview,
+  decorators: [withAdeMode],
   parameters: {
     layout: 'fullscreen',
     docs: {

@@ -1,0 +1,20 @@
+{
+  "experiment": "I.3 — Tied-distance distribution",
+  "timestamp": "2026-05-11T11:04:22.064Z",
+  "totalFiles": 1438,
+  "unitsNote": "Each file in the reverse index → count of stories tied at the minimum import depth (= |modified| if that file is edited). Counts are story files, not story IDs.",
+  "summary": {
+    "singleModified": 1013,
+    "singleModifiedShare": 0.7044506258692629,
+    "mean": 7.19,
+    "median": 1,
+    "p75": 2,
+    "p90": 24,
+    "p95": 39,
+    "p99": 58,
+    "max": 262,
+    "meanWhenTied": 21.95,
+    "medianWhenTied": 13
+  },
+  "takeaway": "1013 of 1438 files (70.4%) resolve to exactly 1 modified story when edited. The median tie size is 1. Across the 425 files with ties, the median tie size is 13 and the 90th percentile is 24. The \"lead with one modified card\" UX is sufficient for 70.4% of edits; for the remaining 29.6%, the UI needs to handle multiple modified cards (median 13 stories, occasionally up to 262)."
+}

@@ -14,6 +14,7 @@ import {
   invalidateBeforeEnvironment,
 } from './node/before-environment-plugin.ts';
 import { beforeContentPlugin } from './node/before-content-plugin.ts';
+import { statusProbePlugin } from './node/status-probe-plugin.ts';
 import {
   assertViteEnvironmentApiSupported,
   BeforeAfterUnsupportedViteError,
@@ -72,6 +73,7 @@ export const viteFinal = async (config: InlineConfig, options: Options) => {
       },
     }),
     ...(repoRoot ? [beforeContentPlugin({ repoRoot })] : []),
+    statusProbePlugin(),
     ...(config.plugins ?? []),
   ];
 

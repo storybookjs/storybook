@@ -1,0 +1,8 @@
+This directory holds eval-harness output (JSONL per run, plus generated
+report.html). Almost everything is gitignored; we keep only:
+
+  - this .gitkeep so the directory exists
+  - run-2026-05-09T14-09-20-024Z.jsonl as a reference baseline
+
+Run `node --experimental-transform-types --no-warnings scripts/eval/inner-loop/run.ts ...`
+to populate this directory. See ../README.md for usage.

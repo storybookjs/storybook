@@ -1,0 +1,850 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Inner-Loop Agentic Diff — Team Walkthrough</title>
+<style>
+  :root {
+    --fg: #0f172a;
+    --fg-soft: #475569;
+    --muted: #94a3b8;
+    --bg: #f8fafc;
+    --card: #fff;
+    --border: #e2e8f0;
+    --border-strong: #cbd5e1;
+    --accent: #2563eb;
+    --green: #15803d;
+    --green-bg: #dcfce7;
+    --amber: #b45309;
+    --amber-bg: #fef3c7;
+    --red: #b91c1c;
+    --red-bg: #fee2e2;
+    --blue: #1d4ed8;
+    --blue-bg: #dbeafe;
+    --slate: #475569;
+    --slate-bg: #f1f5f9;
+    --mono: ui-monospace, "SF Mono", Menlo, Monaco, Consolas, monospace;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font: 15px/1.55 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    color: var(--fg);
+    background: var(--bg);
+  }
+  .layout {
+    display: grid;
+    grid-template-columns: 240px minmax(0, 1fr);
+    gap: 32px;
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 32px;
+  }
+  @media (max-width: 900px) {
+    .layout { grid-template-columns: 1fr; padding: 16px; gap: 16px; }
+    nav.toc { position: static !important; }
+  }
+  nav.toc {
+    position: sticky;
+    top: 24px;
+    align-self: start;
+    font-size: 13px;
+  }
+  nav.toc .group {
+    margin-bottom: 18px;
+  }
+  nav.toc .group-title {
+    text-transform: uppercase;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    color: var(--muted);
+    margin-bottom: 6px;
+  }
+  nav.toc a {
+    display: block;
+    padding: 5px 10px;
+    color: var(--fg-soft);
+    text-decoration: none;
+    border-radius: 6px;
+    line-height: 1.35;
+  }
+  nav.toc a:hover { background: var(--blue-bg); color: var(--blue); }
+  main { min-width: 0; }
+  h1 {
+    font-size: 28px;
+    margin: 0 0 4px;
+    line-height: 1.25;
+  }
+  h2 {
+    font-size: 22px;
+    margin: 0 0 16px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border-strong);
+  }
+  h3 {
+    font-size: 17px;
+    margin: 24px 0 10px;
+  }
+  h4 {
+    font-size: 14px;
+    margin: 16px 0 6px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--fg-soft);
+  }
+  p { margin: 0 0 12px; }
+  ul, ol { margin: 0 0 12px; padding-left: 22px; }
+  li { margin-bottom: 4px; }
+  a { color: var(--blue); }
+  code {
+    font-family: var(--mono);
+    background: var(--slate-bg);
+    padding: 1px 5px;
+    border-radius: 4px;
+    font-size: 0.92em;
+  }
+  pre code { display: block; padding: 12px; overflow: auto; line-height: 1.5; }
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 24px;
+    margin-bottom: 24px;
+    box-shadow: 0 1px 2px rgba(15,23,42,0.04);
+  }
+  .badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    vertical-align: middle;
+  }
+  .badge.green  { background: var(--green-bg); color: var(--green); }
+  .badge.amber  { background: var(--amber-bg); color: var(--amber); }
+  .badge.red    { background: var(--red-bg); color: var(--red); }
+  .badge.blue   { background: var(--blue-bg); color: var(--blue); }
+  .badge.slate  { background: var(--slate-bg); color: var(--slate); }
+  .lead {
+    font-size: 16px;
+    color: var(--fg-soft);
+  }
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+  @media (max-width: 720px) {
+    .grid-2, .grid-3 { grid-template-columns: 1fr; }
+  }
+  .kpi {
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px;
+    background: #fff;
+  }
+  .kpi .label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); }
+  .kpi .value { font-size: 22px; font-weight: 600; margin-top: 2px; color: var(--fg); }
+  .kpi .note  { font-size: 12px; color: var(--fg-soft); margin-top: 4px; }
+
+  .q-block {
+    border-left: 3px solid var(--border-strong);
+    padding: 4px 0 4px 16px;
+    margin: 18px 0;
+  }
+  .q-block.settled    { border-left-color: var(--green); }
+  .q-block.partial    { border-left-color: var(--amber); }
+  .q-block.open       { border-left-color: var(--red); }
+  .q-block .q-title   { font-weight: 600; font-size: 15px; margin-bottom: 4px; }
+  .q-block .q-meta    { font-size: 12px; color: var(--muted); margin-bottom: 6px; }
+  .q-block p:last-child { margin-bottom: 0; }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+    margin: 6px 0 16px;
+  }
+  th, td {
+    text-align: left;
+    padding: 8px 10px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: top;
+  }
+  th { background: var(--slate-bg); font-weight: 600; }
+  tr:last-child td { border-bottom: none; }
+
+  blockquote {
+    margin: 12px 0;
+    padding: 10px 14px;
+    background: var(--slate-bg);
+    border-left: 3px solid var(--accent);
+    color: var(--fg-soft);
+    font-size: 13.5px;
+  }
+
+  .pill-row { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0; }
+
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  @media (max-width: 720px) { .two-col { grid-template-columns: 1fr; } }
+
+  .col h4 { margin-top: 0; }
+  .col.green-col { background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 14px; }
+  .col.red-col   { background: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; padding: 14px; }
+  .col.amber-col { background: #fffbeb; border: 1px solid #fde68a; border-radius: 8px; padding: 14px; }
+
+  .footnote {
+    font-size: 12px;
+    color: var(--muted);
+    margin-top: 24px;
+    padding-top: 16px;
+    border-top: 1px solid var(--border);
+  }
+
+  details summary { cursor: pointer; font-weight: 600; padding: 6px 0; }
+  details[open] summary { margin-bottom: 8px; }
+
+  .hero {
+    background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+    color: #fff;
+    border-radius: 12px;
+    padding: 28px 32px;
+    margin-bottom: 24px;
+  }
+  .hero h1 { color: #fff; }
+  .hero .lead { color: #cbd5e1; margin-top: 8px; max-width: 720px; }
+  .hero .meta { font-size: 12px; color: #94a3b8; margin-top: 16px; }
+  .hero .meta strong { color: #e2e8f0; }
+</style>
+</head>
+<body>
+
+<div class="layout">
+
+<nav class="toc">
+  <div class="group">
+    <div class="group-title">Overview</div>
+    <a href="#tldr">TL;DR</a>
+    <a href="#what-we-built">What we built</a>
+  </div>
+  <div class="group">
+    <div class="group-title">Pitch revisited</div>
+    <a href="#problem">Problem</a>
+    <a href="#proposal">Proposal</a>
+    <a href="#deliverables">Deliverables</a>
+    <a href="#questions">Questions (6)</a>
+  </div>
+  <div class="group">
+    <div class="group-title">Findings</div>
+    <a href="#findings-deterministic">Deterministic</a>
+    <a href="#findings-agent">Agent</a>
+    <a href="#findings-cost">Cost & latency</a>
+    <a href="#findings-bugs">Bugs & gaps</a>
+  </div>
+  <div class="group">
+    <div class="group-title">Discussion</div>
+    <a href="#clear-unclear">Clear vs unclear</a>
+    <a href="#decisions">Pre-kickoff decisions</a>
+    <a href="#iteration-1">Iteration-1 spec</a>
+    <a href="#risks">Risks &amp; premortems</a>
+    <a href="#refs">Reference docs</a>
+  </div>
+</nav>
+
+<main>
+
+<div class="hero">
+  <h1>Inner-Loop Agentic Diff — Team Walkthrough</h1>
+  <p class="lead">A one-shot map from <code>INNER_LOOP.md</code> through five rounds of investigation. Use this to anchor the kickoff discussion: what we measured, what's settled, what still needs the team to choose.</p>
+  <p class="meta">
+    <strong>Status:</strong> Pre-kickoff &middot;
+    <strong>Branch:</strong> <code>yann/story-review-analysis</code> &middot;
+    <strong>Eval harness:</strong> <code>scripts/eval/inner-loop/</code> &middot;
+    <strong>Empirical record:</strong> <code>project-documents/questions/appendix/INVESTIGATION_FINDINGS.md</code>
+  </p>
+</div>
+
+<!-- ────────────────────────────────────────────────────────── -->
+<section id="tldr" class="card">
+  <h2>TL;DR</h2>
+  <p class="lead">No architectural blocker found. The deterministic system is already good enough for the dominant case, and the agent layer works at cascade scale with the signature-prompt design. The remaining open questions are <em>product</em> questions — scope, sequencing, and what "good" looks like with real users — not technical ones.</p>
+
+  <div class="grid-3" style="margin-top:18px">
+    <div class="kpi">
+      <div class="label">Cascade-scale agent run</div>
+      <div class="value">14–18 s</div>
+      <div class="note">$0.06–0.18 per run, recall=precision=1.0 on signature prompt</div>
+    </div>
+    <div class="kpi">
+      <div class="label">Single-modified-story edits</div>
+      <div class="value">70.4%</div>
+      <div class="note">Most edits don't need an agent at all</div>
+    </div>
+    <div class="kpi">
+      <div class="label">Cluster rationale fidelity</div>
+      <div class="value">95.2%</div>
+      <div class="note">20/21 hand-labelled clusters correct; trust UX can show rationale text</div>
+    </div>
+    <div class="kpi">
+      <div class="label">LLM consolidation factor</div>
+      <div class="value">~20×</div>
+      <div class="note">118 namespace clusters → 6 UX-usable groupings on cascade-scale commits</div>
+    </div>
+    <div class="kpi">
+      <div class="label">Output-token blocker</div>
+      <div class="value">Solved</div>
+      <div class="note">Signature prompt replaces enumerate; cascade no longer hangs the SDK</div>
+    </div>
+    <div class="kpi">
+      <div class="label">Iteration-1 recommendation</div>
+      <div class="value">Deterministic-only</div>
+      <div class="note">Review page + simple MCP tool; agent layer = iteration 2 if sessions ask for it</div>
+    </div>
+  </div>
+</section>
+
+<!-- ────────────────────────────────────────────────────────── -->
+<section id="what-we-built" class="card">
+  <h2>What we built during pre-kickoff</h2>
+  <p>The investigation produced three reusable artefact bundles, all on <code>yann/story-review-analysis</code>:</p>
+  <ol>
+    <li><strong>An eval harness</strong> — <code>scripts/eval/inner-loop/</code> with 8 runnable scripts (synthetic-edit eval, module-graph histogram, CSS blast-radius prototype, deterministic baselines, real-commit replay, tied-distance, barrel-share, failure-mode taxonomy) and a self-contained HTML report renderer.</li>
+    <li><strong>Five Notion-shaped decision pages</strong> — <code>project-documents/questions/00..04_*.md</code>: scope, deterministic-vs-AI split, technical architecture, UX &amp; eval methodology. Every recommendation is grounded in real numbers.</li>
+    <li><strong>Three production patches</strong> — <code>project-documents/questions/appendix/patches/</code>: <code>Changes(0)</code> HMR bug fix (verified live), status-probe Vite middleware (needed for the eval), and the addon preset wiring.</li>
+  </ol>
+  <p>Everything is reproducible from a clean checkout — see <a href="RUNNING.md"><code>RUNNING.md</code></a>.</p>
+</section>
+
+<!-- ────────────────────────────────────────────────────────── -->
+<section id="problem" class="card">
+  <h2>Problem statement, revisited</h2>
+  <p class="lead">From the pitch: <em>"as a developer using an agent to change UI, I want Storybook to point me to the stories most likely to matter."</em></p>
+
+  <h3>What the pitch got right</h3>
+  <ul>
+    <li>Review fatigue from "show every affected story" is real — the worst observed cascade is <strong>1,236 stories (75% of the dogfood)</strong> on a single theming-barrel edit.</li>
+    <li>The current change-detection output <em>is</em> useful — it's never wrong about a story being affected, just often noisy.</li>
+    <li>The signal IS imperfect in known ways: CSS-blind, regex-aliased imports opaque, type-only files invisible.</li>
+  </ul>
+
+  <h3>What we learned that <em>refines</em> the problem framing</h3>
+  <div class="two-col">
+    <div class="col green-col">
+      <h4>Confirmed</h4>
+      <ul>
+        <li>The cascade case is real (21% of files have &gt;100 importers).</li>
+        <li>The cascade case is also the <em>minority</em> case (79% of files have ≤100 importers; 67.9% have ≤10).</li>
+        <li>Inside a cascade, the agent's job is consolidation, not selection. 1,025 stories → 6 readable clusters.</li>
+      </ul>
+    </div>
+    <div class="col amber-col">
+      <h4>Reframed</h4>
+      <ul>
+        <li>The pitch describes the agent as a <em>shortlist filter</em> ("pick K from N"). We now believe the agent should be a <strong>categorizer</strong> ("group all N into K clusters and explain each"). This avoids the false-negative cliff inherent to filtering.</li>
+        <li>70% of edits resolve to a single <code>modified</code> story. A deterministic "lead with the one modified card" UX already wins for the dominant case — agent or no agent.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ────────────────────────────────────────────────────────── -->
+<section id="proposal" class="card">
+  <h2>Solution proposal, item by item</h2>
+  <p class="lead">The pitch lists four bullets. Each one is now grounded in something we can point at.</p>
+
+  <table>
+    <tr><th>Pitch bullet</th><th>Status</th><th>Where it lives now</th></tr>
+    <tr>
+      <td><strong>1.</strong> Agent reviews code diff, Storybook metadata, and changed-stories output</td>
+      <td><span class="badge green">Working</span></td>
+      <td>Eval harness sends a <code>get_change_context</code> payload (diff + status + project shape) and gets back valid clusters. Verified on 5 synthetic edits and 8 real commits.</td>
+    </tr>
+    <tr>
+      <td><strong>2.</strong> Agent selects a short list of stories most relevant to inspect</td>
+      <td><span class="badge amber">Reframed</span></td>
+      <td>Selection-as-shortlist replaced with <strong>categorization</strong>. Agent emits cluster signatures, deterministic expansion fills them. See <a href="questions/02_DETERMINISTIC_VS_AI.md">page 2</a>.</td>
+    </tr>
+    <tr>
+      <td><strong>3.</strong> Storybook opens a review page showing those stories</td>
+      <td><span class="badge amber">Designed, not built</span></td>
+      <td>Architecture for opening a dynamic story set agreed (URL params for cold-link, MCP tool for live agent). Iframe pool spec in <a href="questions/03_TECHNICAL.md">page 3</a>; not yet implemented.</td>
+    </tr>
+    <tr>
+      <td><strong>4.</strong> "Zoom out" path to the broader changeset</td>
+      <td><span class="badge amber">Design-only</span></td>
+      <td>Discussed in <a href="questions/04_UX_AND_EVAL.md">page 4</a> as a default-collapsed list of the full <code>affected</code> set. Needs UX prototyping in iteration 1.</td>
+    </tr>
+    <tr>
+      <td><strong>Stretch.</strong> Pair with Chromatic as CI backstop</td>
+      <td><span class="badge slate">Out of inner-loop scope</span></td>
+      <td>Recommendation: ship the "Chromatic catches the rest" framing in the UI from day one regardless of any actual integration. Real Chromatic plumbing is a separate project.</td>
+    </tr>
+  </table>
+</section>
+
+<!-- ────────────────────────────────────────────────────────── -->
+<section id="deliverables" class="card">
+  <h2>Pitch deliverables — status</h2>
+
+  <div class="q-block settled">
+    <div class="q-title">D1. Agent selection workflow (prompt / skill / context)</div>
+    <div class="q-meta"><span class="badge green">working prototype</span> &middot; signature prompt with deterministic expansion</div>
+    <p><strong>What exists:</strong> <code>scripts/eval/inner-loop/prompts/categoriser-signature.md</code> + <code>lib/expand-signatures.ts</code>. Catches every story, never hangs, completes in 14–18 s at any cascade size.</p>
+    <p><strong>What's still open:</strong> the iteration-2 design we now recommend is <em>simpler still</em> — generate cluster <em>content</em> deterministically (namespace + shared-files), use the LLM only to merge over-segmented clusters and write rationales. That collapses output to a few hundred tokens and latency to seconds.</p>
+  </div>
+
+  <div class="q-block partial">
+    <div class="q-title">D2. Mechanism for opening a dynamically selected story set</div>
+    <div class="q-meta"><span class="badge amber">designed, not built</span> &middot; review-slug URL + MCP tool</div>
+    <p><strong>Recommendation:</strong> two-channel — and the URL form is NOT raw story IDs in query params (a 25-story cascade would blow URL length limits):</p>
+    <ul>
+      <li><strong>Server-side review store + short slug.</strong> A POST endpoint accepts a story-set or cluster-set and returns a short ID; the shareable URL is <code>/review/&lt;uid&gt;</code>. Alternatively, since cluster <em>signatures</em> are already O(K) and short by design, the agent can also POST signatures and let the client re-expand them — cheaper than a server store for the in-session case.</li>
+      <li><strong>MCP tool</strong> (<code>open_review_page</code>) for live agent flows that already have a channel into the addon.</li>
+    </ul>
+    <p><strong>Open:</strong> the MCP tool surface needs cross-repo work with <code>storybookjs/mcp</code>. Three tools: <code>get_change_context</code>, <code>apply_review_status</code>, <code>open_review_page</code>. Estimated 2–3 days incl. PR review.</p>
+  </div>
+
+  <div class="q-block partial">
+    <div class="q-title">D3. Focused review page</div>
+    <div class="q-meta"><span class="badge amber">design only</span> &middot; iframe pool required</div>
+    <p><strong>Architecture is agreed:</strong> before/after iframes, session-pinned baseline at merge-base (not git HEAD), <code>agent-recommended</code> status taxonomy slotted next to <code>modified</code>/<code>affected</code>.</p>
+    <p><strong>Hard constraint:</strong> iframe pooling is <em>iteration-1 work</em>, not optional. Each iframe costs ~8 MB browser memory; the 75% cascade in compare mode would crash a tab without a pool. Confirmed live.</p>
+  </div>
+
+  <div class="q-block open">
+    <div class="q-title">D4. User evaluation vs current changed-stories baseline</div>
+    <div class="q-meta"><span class="badge red">methodology drafted, no real users yet</span></div>
+    <p>The eval harness scores recall/precision/cluster-purity against the deterministic ground-truth, but the <em>user-facing</em> evaluation (preference, time-to-first-finding, trust calibration) has not happened. Page 4 of the questions docs has a methodology draft (within-subjects design, ≥6 participants, counterbalanced order). This is the largest <strong>unknown</strong> in the project.</p>
+  </div>
+</section>
+
+<!-- ────────────────────────────────────────────────────────── -->
+<section id="questions" class="card">
+  <h2>The 6 research questions from the pitch</h2>
+
+  <div class="q-block settled">
+    <div class="q-title">Q1. Can the agent produce a useful shortlist from the diff + metadata + change-detection output? What context does it need?</div>
+    <div class="q-meta"><span class="badge green">answered</span></div>
+    <p><strong>Yes, with two caveats:</strong></p>
+    <ol>
+      <li>"Shortlist" should be "categorization." Filtering is a false-negative cliff; categorising every story into a small number of named clusters has no hidden stories.</li>
+      <li>The agent <em>must</em> also receive the raw <code>git diff</code>, not only the change-detection statuses. CSS, type-only files, and regex-aliased barrels are systematically invisible to change-detection.</li>
+    </ol>
+    <p>On 8 real-commit replays plus 5 synthetic edits, signature-prompt clusters score <strong>recall = 1.0, precision = 1.0</strong>. Cluster rationales hand-labelled at 95.2% correct.</p>
+  </div>
+
+  <div class="q-block settled">
+    <div class="q-title">Q2. URL params vs MCP for opening a dynamic story set?</div>
+    <div class="q-meta"><span class="badge green">answered — both, but URL means slug-not-IDs</span></div>
+    <p>Two channels, neither is "stuff every story ID into the query string." A 25-story cascade alone would blow common URL-length limits.</p>
+    <ul>
+      <li><strong>Server-side review store + short slug</strong> (<code>/review/&lt;uid&gt;</code>) for cold-share / paste-this-link flows.</li>
+      <li><strong>POST cluster signatures</strong> (O(K), short by construction) and re-expand client-side — cheaper than a server store for the in-session case, and reuses the signature shape the eval already produces.</li>
+      <li><strong>MCP tool</strong> (<code>open_review_page</code>) for live agent flows.</li>
+    </ul>
+    <p>All three can coexist. Building the slug path first is the simpler thing and unblocks the deterministic iteration-1 without depending on the MCP cross-repo work landing.</p>
+  </div>
+
+  <div class="q-block partial">
+    <div class="q-title">Q3. What's the right review-page UI?</div>
+    <div class="q-meta"><span class="badge amber">defaults proposed; user sessions still required to validate</span></div>
+    <p><strong>Proposed defaults</strong> (from a separate team conversation that converged on the same instincts as the eval):</p>
+    <ul>
+      <li><strong>Single-up with baseline ↔ latest toggle</strong>, not side-by-side. Page-level stories and viewport-specific components break in any tiny iframe; giving each story the full preview width avoids the worst layout failures and side-steps the "small mobile-viewport rendered in 50%-width frame" trap.</li>
+      <li><strong>Cluster-organised navigation</strong> — sections headed by the agent's cluster rationale, story cards inside. Same "zoom levels" intuition the team independently reached (button → header → page) which the categoriser output already supports.</li>
+      <li><strong>Lead with one card when |modified|=1</strong>, grid when ties. 70% of edits resolve to a single modified story — the dominant case warrants its own layout, not a degenerate grid-of-one.</li>
+    </ul>
+    <p><strong>Still open and needs user-session input:</strong></p>
+    <ul>
+      <li>How aggressively to collapse the "zoom out" affected list — start expanded, collapsed, or smart-collapse beyond N?</li>
+      <li>Where does cluster rationale text appear? Headline, tooltip, expandable detail?</li>
+      <li>Detail/full-screen view for complex components — Page 4 added this as Q.</li>
+      <li>Comment/leave-a-note affordances (raised in team conversation) — iteration-1 or 2?</li>
+    </ul>
+  </div>
+
+  <div class="q-block partial">
+    <div class="q-title">Q4. Core Storybook feature or addon?</div>
+    <div class="q-meta"><span class="badge amber">leaning addon</span></div>
+    <p>The change-detection engine is already a Storybook core (<code>code/core/src/core-server/change-detection/</code>). The <em>review page</em> currently lives in <code>addon-before-after</code>; the agent layer could live there too. Recommendation: addon for iteration 1, lift to core in 11 if traction.</p>
+  </div>
+
+  <div class="q-block open">
+    <div class="q-title">Q5. How do we recruit unbiased evaluation users?</div>
+    <div class="q-meta"><span class="badge red">open — needs DX + Design</span></div>
+    <p>Page 4 recommends within-subjects (~6 users), counterbalanced order, real diffs from their own repo, with the agent flow and the deterministic-only flow. Open: recruitment channel (Chromatic users? Storybook Discord power users? both?), incentives, scheduling cadence.</p>
+  </div>
+
+  <div class="q-block partial">
+    <div class="q-title">Q6. Can we package this info for Chromatic as a UI-review input signal?</div>
+    <div class="q-meta"><span class="badge amber">conceptually yes, scope-deferred</span></div>
+    <p>The categorizer output (<code>{ clusterId, rationale, representative, stories[] }</code>) is itself a perfectly fine input shape for an external consumer like Chromatic. Iteration-1 should serialise it cleanly so it could be POSTed forward later; actual Chromatic plumbing is a separate project.</p>
+  </div>
+</section>
+
+<!-- ────────────────────────────────────────────────────────── -->
+<section id="findings-deterministic" class="card">
+  <h2>Findings — the deterministic system is already strong</h2>
+  <p class="lead">Most of what people imagine the agent doing is actually deterministic. The investigation surfaced how much deterministic value is left on the table.</p>
+
+  <h3>Module-graph distribution (the headline number)</h3>
+  <table>
+    <tr><th>Cohort</th><th>Files</th><th>Share</th><th>Implication</th></tr>
+    <tr><td>≤10 importers (the "good case")</td><td>977 / 1,438</td><td>67.9%</td><td>Edit lands in a small bounded blast-radius</td></tr>
+    <tr><td>11–100 importers</td><td>155</td><td>10.8%</td><td>Noisy but readable</td></tr>
+    <tr><td>&gt;100 importers (the "cascade case")</td><td>306</td><td>21.3%</td><td>Where the agent layer earns its keep</td></tr>
+    <tr><td>&gt;500 importers</td><td>0</td><td>0%</td><td>Worst single-file fan-in is 319 (test/index.ts)</td></tr>
+  </table>
+
+  <h3>|modified| distribution — the deterministic <em>lead-with-one-card</em> case</h3>
+  <table>
+    <tr><th>Tie size at lowest depth</th><th>Files</th><th>Share</th></tr>
+    <tr><td>1 (single modified story)</td><td>1,013</td><td>70.4%</td></tr>
+    <tr><td>2–3</td><td>130</td><td>9.0%</td></tr>
+    <tr><td>4–9</td><td>76</td><td>5.3%</td></tr>
+    <tr><td>10–49</td><td>178</td><td>12.4%</td></tr>
+    <tr><td>50+ (worst tail is 262)</td><td>41</td><td>2.9%</td></tr>
+  </table>
+
+  <h3>Barrel-share — a heuristic that <em>doesn't</em> work</h3>
+  <p>Hypothesised: "exclude barrels from cascade" would cut the bulk of noise. Measured: barrels (<code>*/index.ts(x)</code>) account for only <strong>7.3% of cascade edges</strong>; top-10 barrels are 3.4%. The cascade is structural fan-in of <em>non-barrel</em> shared code (manager-api singletons, theme providers, preview-api modules) — depth-based pruning is the only deterministic lever that would matter.</p>
+
+  <h3>CSS-blast — the known gap, with a deterministic workaround</h3>
+  <p>Change-detection is CSS-blind by design (it walks JS/TS imports). Prototype workaround in <code>lib/css-blast-radius.ts</code>: walk the reverse index, find JS/TS siblings of each <code>.css</code> file, union their importing stories. Verified live: <code>pseudo-states/src/stories/*.css</code> edit synthesises 9 stories vs change-detection's 0. High-recall, low-precision (every CSS file in a directory produces the same set; refinement = filename matching).</p>
+</section>
+
+<!-- ────────────────────────────────────────────────────────── -->
+<section id="findings-agent" class="card">
+  <h2>Findings — the agent layer is operationally viable</h2>
+
+  <h3>Signature prompt unlocked the cascade scale</h3>
+  <p>The original "enumerate every story per cluster" prompt hangs at &gt;600 stories — the model generates 30K+ output tokens that never stream completely. The signature variant asks for cluster <em>patterns</em> (prefix / regex / explicit IDs) and a deterministic expander fills them. Output stays under 1K tokens regardless of cascade size.</p>
+
+  <table>
+    <tr><th>Scenario</th><th>Cascade</th><th>Duration</th><th>Cost</th><th>Recall</th><th>Precision</th><th>Cluster count</th></tr>
+    <tr><td>small (Sidebar edit)</td><td>116</td><td>12 s</td><td>$0.063</td><td>1.0</td><td>1.0</td><td>5–6</td></tr>
+    <tr><td>medium (Button edit)</td><td>1,025</td><td>15 s</td><td>$0.147</td><td>1.0</td><td>1.0</td><td>6</td></tr>
+    <tr><td>large (theming barrel)</td><td>1,236</td><td>18 s</td><td>$0.176</td><td>1.0</td><td>1.0</td><td>7</td></tr>
+  </table>
+
+  <h3>Variance is well-bounded</h3>
+  <p>6 repeated runs of the small scenario on Sonnet/signature/low: recall 1.0 stable, precision 1.0 stable, cluster count 5–6, pairwise Jaccard <strong>0.707</strong>. Cost drops 4× on runs 2+ thanks to prompt-cache hits.</p>
+
+  <h3>Haiku works as a primary mode</h3>
+  <p>Counter to Page 4's original "downshift on Haiku" recommendation: <code>claude-haiku-4-5</code> with signature/low completes all three scenarios with recall=1, precision=1, purity comparable to Sonnet. 4–5× slower (47–80s vs 12–18s) but ~30% cheaper at cascade scale. <strong>Haiku is the cost-sensitive primary, not a defensive downshift.</strong></p>
+
+  <h3>Real-commit replay confirms synthetic findings</h3>
+  <p>8 real dogfood commits replayed via reverse-patch trick (<code>git apply -R</code>). Recall=1.0 and precision=1.0 across every replay; cascades from 12 to 1,025 stories; cost $0.015–$0.151 per commit. Cluster purity is bimodal — 1.0 when the cascade fits in one namespace, ~0.15 when it crosses namespaces (real cross-namespace cascades, not agent failure).</p>
+
+  <h3>Cluster rationales are trustworthy</h3>
+  <p>Hand-labelled all 21 cluster rationales across the 5 successful real-commit replays: <strong>20 correct (95.2%), 1 partial, 0 wrong.</strong> No hallucinated diff details across the sample. Page 4 set 80% as the threshold for "show rationale text directly in the UI" — comfortably cleared. Iteration-1 should NOT add a "model-generated" warning label.</p>
+
+  <h3>Failure modes degrade gracefully</h3>
+  <p>9 of 12 failure paths (parse error, empty clusters, invalid regex signature, missing catch-all, shadowed cluster, hallucinated IDs, duplicates, empty ground-truth, phantom IDs) exercised directly — all degrade gracefully with sensible scores. 3 documented network/SDK paths (Storybook unreachable, rate-limit, hang) — the <em>only</em> unrecovered path is the SDK hang on enumerate-prompt at cascade, already fixed by the signature variant. Production iteration-1 still needs a wall-clock timeout (~60 s) with deterministic-baseline fallback as the bare-minimum acceptance criterion.</p>
+</section>
+
+<!-- ────────────────────────────────────────────────────────── -->
+<section id="findings-cost" class="card">
+  <h2>Findings — cost &amp; latency are not the problem</h2>
+  <p class="lead">The "expensive AI" worry from the original transcript does not materialise empirically.</p>
+
+  <h3>Token cost</h3>
+  <ul>
+    <li>Input: 2.7K (typical) → 22K (cascade) → 63K (worst measured). Categoriser framing keeps us well under the 200K context.</li>
+    <li>Output: signature prompt holds output under 1K tokens regardless of cascade.</li>
+    <li>The "expensive AI" framing was about the <strong>filter</strong> approach blowing context above 611 stories. Reframing to categoriser fixed it.</li>
+  </ul>
+
+  <h3>Dollar cost per invocation</h3>
+  <ul>
+    <li>Sonnet/signature/low: $0.06–$0.18 across all scales.</li>
+    <li>Haiku/signature/low: $0.065–$0.13.</li>
+    <li>Real-commit replay range: $0.015 (tiny diff) → $0.15 (1K-cascade).</li>
+    <li>Even a heavy user (50 reviews/day) is under $10/day on Sonnet — cost UI is <em>not</em> needed for iteration 1.</li>
+  </ul>
+
+  <h3>Latency</h3>
+  <ul>
+    <li>Sonnet at cascade: 14–18 s end-to-end (10–14s API).</li>
+    <li>Haiku at cascade: 47–80 s.</li>
+    <li>First user-visible feedback is the deterministic <code>modified</code> list which exists <em>before</em> any agent call — the agent layer enriches, doesn't gate the page render.</li>
+  </ul>
+</section>
+
+<!-- ────────────────────────────────────────────────────────── -->
+<section id="findings-bugs" class="card">
+  <h2>Bugs &amp; gaps discovered (and what was done)</h2>
+
+  <table>
+    <tr><th>Issue</th><th>Where</th><th>Status</th></tr>
+    <tr>
+      <td>HMR <code>Changes (0)</code> bug — review page showed 0 changes after reload</td>
+      <td>Root cause: <code>UniversalStore</code> follower's <code>EXISTING_STATE_RESPONSE</code> raced React StrictMode unsubscribe</td>
+      <td><span class="badge green">Fixed</span> — patch <code>02-changes-page-hmr-fix.patch</code>, verified live</td>
+    </tr>
+    <tr>
+      <td>Probe-endpoint plumbing for eval</td>
+      <td><code>addon-before-after</code> didn't expose change-detection status outside the UI</td>
+      <td><span class="badge green">Patched</span> — <code>03-preset-probe-plugin</code> + <code>04-status-probe-plugin.ts.new</code></td>
+    </tr>
+    <tr>
+      <td>CSS-blind cascade</td>
+      <td>Change-detection only walks JS/TS</td>
+      <td><span class="badge amber">Workaround prototyped</span> — high-recall sibling-union; precision improvement = future</td>
+    </tr>
+    <tr>
+      <td>Regex-aliased imports opaque (<code>storybook/test</code>)</td>
+      <td>Resolver treats them as terminal leaves</td>
+      <td><span class="badge amber">Documented caveat</span> — agent must consume raw diff to compensate</td>
+    </tr>
+    <tr>
+      <td>Enumerate prompt hangs at cascade scale</td>
+      <td>SDK output-token overflow above ~600 stories</td>
+      <td><span class="badge green">Fixed</span> — signature prompt + deterministic expander</td>
+    </tr>
+    <tr>
+      <td>Iframe memory ceiling at scale</td>
+      <td>~8 MB per iframe; 1,212 stories in compare mode = tab crash</td>
+      <td><span class="badge amber">Iteration-1 work</span> — iframe pool spec written, not implemented</td>
+    </tr>
+    <tr>
+      <td>env=before correctness concerns (play fns, decorators, args)</td>
+      <td>Initial worry: would HEAD content render identically?</td>
+      <td><span class="badge green">Verified identical</span> — page 3, INVESTIGATION_FINDINGS §20</td>
+    </tr>
+  </table>
+</section>
+
+<!-- ────────────────────────────────────────────────────────── -->
+<section id="clear-unclear" class="card">
+  <h2>What's clear vs what's not</h2>
+
+  <div class="two-col">
+    <div class="col green-col">
+      <h4>Clear &amp; settled</h4>
+      <ul>
+        <li>No architectural blocker — every tier-1 risk resolved positively.</li>
+        <li>Agent should categorize, not filter.</li>
+        <li>Signature-prompt design is the canonical agent shape.</li>
+        <li>Deterministic baseline already handles 70% of edits well; iteration-1 should ship without an agent.</li>
+        <li>Agent input must include raw <code>git diff</code> alongside change-detection status.</li>
+        <li>Session-pinned baseline at merge-base, not git HEAD.</li>
+        <li>Iframe pool is iteration-1 work, not optional.</li>
+        <li>Cost &amp; latency are not blockers; cost UI not needed in iteration 1.</li>
+        <li>Rationales are trustworthy enough to show directly.</li>
+        <li>Failure paths degrade gracefully (with a wall-clock timeout added).</li>
+        <li><code>experimental_getStatusStore('storybook/agent-review')</code> is the right write surface; round-trips intact through UniversalStore.</li>
+      </ul>
+    </div>
+
+    <div class="col red-col">
+      <h4>Not yet clear (= what to discuss)</h4>
+      <ul>
+        <li><strong>With-baseline or walk-only for iteration 1?</strong> Pitch literally says "before and after states in one place" but the walk-only fork drops the riskiest engineering (iframe pool) and matches the 70%-single-modified data.</li>
+        <li><strong>What does a real user-session evaluation look like?</strong> Recruitment, incentives, the diffs they bring, success criteria.</li>
+        <li><strong>What recall threshold ships?</strong> Pre-commit to ≥95% now (with Chromatic-as-backstop framing). Measured 100% empirically but variance is non-zero.</li>
+        <li><strong>Is iteration-1 truly deterministic-only?</strong> Or do we ship the signature-prompt agent from day one and switch on it for high-fan-in cascades?</li>
+        <li><strong>Core feature or addon?</strong> Leaning addon for iteration-1; lift if it earns it.</li>
+        <li><strong>Detail/full-screen story view UX</strong> — modal? full-route? lazy-detect dense stories?</li>
+        <li><strong>Cluster-acceptance UX</strong> — once the agent ships, can the user accept/reject/edit clusters? Persisted as status? Iteration-2 problem but informs the iteration-1 page shell.</li>
+        <li><strong>Chromatic integration shape</strong> — POST forward, separate MCP, both?</li>
+        <li><strong>Storybook 10.5 release branch cuts at end of week 6.</strong> No buffer; what scope are we committing to?</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ────────────────────────────────────────────────────────── -->
+<section id="decisions" class="card">
+  <h2>Pre-kickoff decisions the team needs to make</h2>
+  <p>From <a href="questions/00_README.md">page 0</a>. These are the five questions to answer before week 1.</p>
+
+  <ol>
+    <li><strong>Two tracks or one project?</strong> Recommend: two tracks. Review page = engineering; agent shortlist = research. Separate success bars. Engineering is shippable without the research landing.</li>
+    <li><strong>Iteration-1 deliverable?</strong> Recommend: review page + deterministic MCP tool, no agent. Agent layer is iteration-2 if user sessions ask for it. The 70%-single-modified data backs this; we'd be shipping value to the dominant case immediately.</li>
+    <li><strong>Recall threshold to ship?</strong> Recommend: pick now, not after measurement. <strong>≥95% with explicit "Chromatic catches the rest" framing</strong> is realistic and honest. Measured 100% but variance is non-zero.</li>
+    <li><strong>Eval-time VRT</strong> — the "no local VRT" no-go is product-facing; internal-only VRT for hand-labelling ground truth is allowed. Confirm this is the team's read.</li>
+    <li><strong>Baseline strategy</strong> — session-pinned at merge-base, not git HEAD. Required for agentic loops (agent commits drift HEAD; reviewers want to see <em>their own session's</em> changes vs the branch start, not vs the last agent commit).</li>
+  </ol>
+</section>
+
+<!-- ────────────────────────────────────────────────────────── -->
+<section id="iteration-1" class="card">
+  <h2>Recommended iteration-1 spec</h2>
+  <p class="lead">Concrete shape we'd commit to in the kickoff. Everything here is buildable inside the 10.5 release branch window. <strong>But</strong> — there are two credible iteration-1 forks the team needs to pick between before week 1.</p>
+
+  <h3>The fork: with-baseline vs walk-only</h3>
+  <div class="two-col">
+    <div class="col amber-col">
+      <h4>Fork A — with-baseline (the pitch's D3)</h4>
+      <p>Ship before/after for the <code>modified</code> set, single-up with a baseline ↔ latest toggle (not side-by-side). Requires session-pinned baseline + iframe pool with eviction.</p>
+      <p><strong>Pros:</strong> matches the pitch's literal deliverable; closest analogue to Chromatic's UI for users who already use it.</p>
+      <p><strong>Cons:</strong> the iframe pool is the hardest single piece of iteration-1; week-six release branch leaves no buffer.</p>
+    </div>
+    <div class="col green-col">
+      <h4>Fork B — walk-only (raised in team conversation)</h4>
+      <p>No before/after at all. Instead: a cluster-organised <em>story walk</em> — side-scroll or keyboard-next through the agent-determined subset, agent rationale as section header per cluster, only the latest state shown. Optionally a "leave a comment" affordance per story.</p>
+      <p><strong>Pros:</strong> drops the iframe pool from iteration-1's critical path; works with the deterministic-only baseline; ships faster and lower-risk.</p>
+      <p><strong>Cons:</strong> deviates from the pitch's D3 ("before and after states in one place"). The team has to be honest that the user is reviewing against their <em>mental model</em>, not a rendered baseline.</p>
+    </div>
+  </div>
+  <p>Recommendation: <strong>walk-only as iteration 1, with-baseline as iteration 1.5 once iframe pool work has a stable design.</strong> Three reasons: (a) the 70%-single-modified statistic means most edits don't need a visual diff to be useful; (b) the no-VRT constraint plus viewport/theme/play-function uncertainties means baseline rendering is the most failure-prone surface; (c) shipping a leaner v1 keeps the door open to learn what users actually do before committing engineering to the harder piece.</p>
+
+  <h3>What ships either way</h3>
+  <ul>
+    <li>Review-page route with a short <code>/review/&lt;uid&gt;</code> URL backed by a server-side review store.</li>
+    <li>Cluster-organised navigation: sections headed by rationale, story cards inside, lead with one card when |modified|=1.</li>
+    <li>"Zoom out" panel for the <code>affected</code> set, default-collapsed beyond N stories.</li>
+    <li><code>get_change_context</code> MCP tool returning the payload shape already serialised in the eval (<code>{ changedFiles, diffSummary, modified, affected, new, cssAffected, projectShape }</code>).</li>
+    <li><code>apply_review_status</code> MCP tool writing to <code>experimental_getStatusStore('storybook/agent-review')</code>.</li>
+    <li><code>open_review_page</code> MCP tool — a channel event the addon listens for.</li>
+    <li>"Chromatic catches the rest" framing in the UI, regardless of any actual Chromatic plumbing.</li>
+    <li>Wall-clock timeout (60s) around any future agent call, with graceful fallback to the deterministic baseline.</li>
+    <li>Telemetry from day one: cascade size, time-to-first-finding, zoom-out frequency.</li>
+  </ul>
+
+  <h3>Conditional on Fork A only</h3>
+  <ul>
+    <li>Iframe pool with eviction (the hard piece).</li>
+    <li>Session-pinned baseline at merge-base (mechanism already exists in <code>addon-before-after</code>).</li>
+    <li>Optional: <code>storybook-static</code> folder as baseline if present (cheap to add, opt-in by file-presence detection, raised in team conversation as iteration 1.5).</li>
+  </ul>
+
+  <h3>What's <em>not</em> in iteration 1 either way</h3>
+  <ul>
+    <li>The agent layer itself (iteration-2 hook only).</li>
+    <li>Cluster acceptance UX (iteration 2 if categoriser ships).</li>
+    <li>Cost UI (cost is not a problem).</li>
+    <li>Local production VRT (per pitch no-go).</li>
+    <li>Webpack-based builder support.</li>
+  </ul>
+
+  <h3>What's the agent's role when it ships in iteration 2?</h3>
+  <p>Based on the deterministic-baselines experiment: the LLM's actual contribution is <strong>consolidation</strong>, not clustering. Namespace baseline produces 1–118 clusters; the LLM produces 2–7. The simpler iteration-2 design that emerges:</p>
+  <ol>
+    <li>Generate cluster <em>content</em> deterministically (namespace OR shared-changed-file set).</li>
+    <li>Use the LLM only to (a) merge over-segmented namespace clusters into UX-usable groupings, (b) write a rationale per surviving cluster.</li>
+    <li>Output drops to ~5–10 short rationales (~500 tokens); latency a few seconds; variance near-zero.</li>
+  </ol>
+</section>
+
+<!-- ────────────────────────────────────────────────────────── -->
+<section id="risks" class="card">
+  <h2>Risk register &amp; pre-mortems</h2>
+
+  <table>
+    <tr><th>Risk</th><th>Likelihood</th><th>Impact</th><th>Mitigation</th></tr>
+    <tr>
+      <td>User sessions reveal the deterministic baseline isn't <em>persuasive enough</em>, so iteration-1 ships but users don't switch from current Storybook</td>
+      <td>Medium</td>
+      <td>High</td>
+      <td>Run lightweight sessions in week 2–3 with deterministic-only flow before locking iteration-2 scope. Page 4 §user-session methodology.</td>
+    </tr>
+    <tr>
+      <td>Iframe pool implementation underestimated; tab crashes at scale</td>
+      <td>Low</td>
+      <td>High</td>
+      <td>Page 3 has the pool spec with measured memory cost; budget 1 full week.</td>
+    </tr>
+    <tr>
+      <td>MCP cross-repo PR review at <code>storybookjs/mcp</code> stalls</td>
+      <td>Medium</td>
+      <td>Medium</td>
+      <td>Open all three tools as a single PR in week 1; review by EOW2.</td>
+    </tr>
+    <tr>
+      <td>SDK rate-limiting during user sessions in production</td>
+      <td>Low (iteration 2)</td>
+      <td>Medium</td>
+      <td>Wall-clock timeout + graceful deterministic fallback already specced; failure-mode taxonomy verifies the path exists.</td>
+    </tr>
+    <tr>
+      <td>"Chromatic catches the rest" framing reads as buck-passing</td>
+      <td>Medium</td>
+      <td>Medium</td>
+      <td>UX copy review with Design lead before user sessions; the goal is honesty about confidence, not deflection.</td>
+    </tr>
+    <tr>
+      <td>10.5 release branch cuts at end of week 6 with iteration-1 incomplete</td>
+      <td>Medium</td>
+      <td>High</td>
+      <td>De-scope the "zoom out" panel polish before the iframe pool; the pool is the hard architectural piece.</td>
+    </tr>
+    <tr>
+      <td>Recruitment for user evaluation slips; we ship without evidence</td>
+      <td>High</td>
+      <td>High</td>
+      <td>Identify 6 specific candidate users by EOW1. Schedule sessions in weeks 4–5. If we can't recruit, ship as "experimental" with explicit caveat.</td>
+    </tr>
+  </table>
+</section>
+
+<!-- ────────────────────────────────────────────────────────── -->
+<section id="refs" class="card">
+  <h2>Reference docs &amp; reproducible artefacts</h2>
+
+  <h3>Decision pages (read in this order)</h3>
+  <ol>
+    <li><a href="questions/01_SCOPE.md"><code>01_SCOPE.md</code></a> — what we're building, what we're not, hard non-goals</li>
+    <li><a href="questions/02_DETERMINISTIC_VS_AI.md"><code>02_DETERMINISTIC_VS_AI.md</code></a> — what's deterministic, what needs the agent</li>
+    <li><a href="questions/03_TECHNICAL.md"><code>03_TECHNICAL.md</code></a> — architecture, MCP surface, status taxonomy</li>
+    <li><a href="questions/04_UX_AND_EVAL.md"><code>04_UX_AND_EVAL.md</code></a> — page design, user-session methodology, recall threshold</li>
+  </ol>
+
+  <h3>Primary artefacts</h3>
+  <ul>
+    <li><a href="../scripts/eval/inner-loop/results/report.html"><code>scripts/eval/inner-loop/results/report.html</code></a> — interactive HTML report with all per-run cards, prompt comparisons, variance analysis, module-graph viz, file-level dependency graphs</li>
+    <li><a href="../scripts/eval/inner-loop/README.md"><code>scripts/eval/inner-loop/README.md</code></a> — eval harness usage</li>
+    <li><a href="RUNNING.md"><code>RUNNING.md</code></a> — reproducible recipe for every experiment</li>
+    <li><a href="FOLLOWUP.md"><code>FOLLOWUP.md</code></a> — Round-2 backlog with done/pending markers per experiment</li>
+    <li><a href="questions/appendix/INVESTIGATION_FINDINGS.md"><code>INVESTIGATION_FINDINGS.md</code></a> — full empirical record across 5 rounds</li>
+  </ul>
+
+  <h3>Patches ready to apply</h3>
+  <ul>
+    <li><code>patches/02-changes-page-hmr-fix.patch</code> — production bug fix</li>
+    <li><code>patches/03-preset-probe-plugin.patch</code> + <code>patches/04-status-probe-plugin.ts.new</code> — eval harness plumbing</li>
+  </ul>
+
+  <h3>One-shot eval reproduction</h3>
+  <pre><code>eval "$(fnm env --shell bash)" &amp;&amp; fnm use 22.22.1
+git apply project-documents/questions/appendix/patches/02-changes-page-hmr-fix.patch
+git apply project-documents/questions/appendix/patches/03-preset-probe-plugin.patch
+cp project-documents/questions/appendix/patches/04-status-probe-plugin.ts.new \
+   code/addons/before-after/src/node/status-probe-plugin.ts
+yarn install &amp;&amp; yarn nx compile addon-before-after
+(cd code &amp;&amp; yarn storybook:ui &amp;) &amp;&amp; sleep 30
+
+# Run the headline experiments
+node --experimental-transform-types --no-warnings scripts/eval/inner-loop/run.ts --prompt signature --effort low
+node --experimental-transform-types --no-warnings scripts/eval/inner-loop/module-graph-experiment.ts
+node --experimental-transform-types --no-warnings scripts/eval/inner-loop/replay-real-commits.ts --max 25
+
+# Build the HTML report
+node --experimental-transform-types --no-warnings scripts/eval/inner-loop/build-report.ts
+open scripts/eval/inner-loop/results/report.html</code></pre>
+</section>
+
+<!-- ────────────────────────────────────────────────────────── -->
+<section class="card">
+  <h2>Suggested kickoff agenda</h2>
+  <ol>
+    <li><strong>10 min</strong> — Recap of the problem &amp; what changed since the pitch (this doc, sections "Problem revisited" &amp; "Proposal item-by-item").</li>
+    <li><strong>15 min</strong> — Walk the headline findings (deterministic distribution, agent viability, cost/latency).</li>
+    <li><strong>20 min</strong> — Settle the 5 pre-kickoff decisions (two tracks, iteration-1 scope, recall threshold, eval VRT, baseline strategy).</li>
+    <li><strong>15 min</strong> — Iteration-1 spec &amp; milestone planning (target end of week 6).</li>
+    <li><strong>10 min</strong> — Risks &amp; user-session recruitment plan (identify 6 candidates by EOW1).</li>
+    <li><strong>5 min</strong> — Open questions &amp; next steps.</li>
+  </ol>
+</section>
+
+<p class="footnote">
+  Generated for the inner-loop agentic diff kickoff. Source markdown lives under <code>project-documents/</code>; reproducibility artefacts under <code>scripts/eval/inner-loop/</code>. Every number cited here traces back to a runnable script — see <code>RUNNING.md</code>.
+</p>
+
+</main>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,176 @@
+{
+  "experiment": "N — Failure-mode taxonomy",
+  "timestamp": "2026-05-11T11:07:19.647Z",
+  "summary": {
+    "total": 12,
+    "pass": 9,
+    "fail": 0,
+    "documented": 3
+  },
+  "probes": [
+    {
+      "id": "parse-malformed-json",
+      "description": "Agent returns prose + malformed JSON (no closing brace).",
+      "category": "parse",
+      "expected": "invokeAgent should set parseError, leave parsed=null, return cleanly. run.ts logs \"⚠ Agent output failed to parse\" and writes JSONL row with scores=null.",
+      "observed": {
+        "parsed": null,
+        "parseError": "Unexpected token 'H', \"Here is my\"... is not valid JSON"
+      },
+      "status": "pass",
+      "notes": "Verified: JSON.parse throws; invoke-agent.ts:178 catches; agentRun.parsed=null; run.ts:181 logs the warning; row still written with scores=null and parseError persisted in agentRun.parseError."
+    },
+    {
+      "id": "agent-empty-clusters",
+      "description": "Agent returns valid JSON with zero clusters.",
+      "category": "scoring",
+      "expected": "score() returns recall=0, precision=1 (no agent output, no hallucinations), purity=1 (no clusters to measure). No division-by-zero.",
+      "observed": {
+        "recall": 0,
+        "precision": 1,
+        "clusterPurity": 1,
+        "groundTruthSize": 10,
+        "agentOutputSize": 0,
+        "duplicateCount": 0,
+        "hallucinationCount": 0,
+        "missingCount": 10
+      },
+      "status": "pass",
+      "notes": "Verified: score.ts:53 `agentSet.size > 0 ? ... : 1` short-circuits precision; same for purity (purityDen=0 → 1). Recall=0 is correct (missed everything)."
+    },
+    {
+      "id": "scoring-empty-ground-truth",
+      "description": "Change-detection produced no statuses (e.g. CSS-only edit).",
+      "category": "scoring",
+      "expected": "No NaN. recall=1 (trivially), precision=1, purity=1, all sizes 0.",
+      "observed": {
+        "recall": 1,
+        "precision": 1,
+        "clusterPurity": 1,
+        "groundTruthSize": 0,
+        "agentOutputSize": 0,
+        "duplicateCount": 0,
+        "hallucinationCount": 0,
+        "missingCount": 0
+      },
+      "status": "pass",
+      "notes": "Verified: score.ts:52 `groundTruthSize > 0 ? ... : 1`. run.ts:150 also short-circuits — if statuses.length===0 it skips the agent call entirely (no SDK cost). For css-only / regex-aliased scenarios this is the documented path."
+    },
+    {
+      "id": "signature-invalid-regex",
+      "description": "Agent emits a signature with a malformed regex.",
+      "category": "signature-expansion",
+      "expected": "expand-signatures replaces the bad regex with `/(?!)/` (matches nothing). Catch-all picks up everything. unmatched=0.",
+      "observed": {
+        "brokenStories": 0,
+        "catchAllStories": 3,
+        "unmatched": 0
+      },
+      "status": "pass",
+      "notes": "Verified: expand-signatures.ts:36 try/catch sets `re = /(?!)/` so the broken cluster gets nothing and the catch-all sweeps. Real recovery, not silent failure."
+    },
+    {
+      "id": "signature-no-catchall",
+      "description": "Agent forgets the required catch-all final signature.",
+      "category": "signature-expansion",
+      "expected": "Two stories end up in `unmatched`. score() shows recall<1 because the unmatched stories are not in any cluster.",
+      "observed": {
+        "placed": 1,
+        "unmatched": 2,
+        "recall": 0.5
+      },
+      "status": "pass",
+      "notes": "Verified: unmatched IDs are simply not in any cluster. score()/HTML report quantify the loss via recall<1. No crash. Catch-all-missing is the dominant signature-prompt failure mode (signature-quality.ts also reports `catchAllShare`)."
+    },
+    {
+      "id": "signature-shadowed-cluster",
+      "description": "Eager catch-all listed first → later cluster gets nothing.",
+      "category": "signature-expansion",
+      "expected": "expand-signatures assigns all stories to the first cluster (first-match wins). signature-quality reports shadowedClusterCount=1.",
+      "observed": {
+        "firstClusterStories": 2,
+        "secondClusterStories": 0,
+        "shadowedClusterCount": 1,
+        "catchAllShare": 1
+      },
+      "status": "pass",
+      "notes": "Verified: signature-quality.ts surfaces this as a KPI. The HTML report colour-codes catchAllShare. Trust-UX implication: the report must show shadowed clusters distinctly so reviewers spot bad orderings."
+    },
+    {
+      "id": "agent-hallucinated-ids",
+      "description": "Agent invents story IDs that are not in the ground-truth set.",
+      "category": "scoring",
+      "expected": "hallucinationCount=1, precision<1 (2/3), no crash.",
+      "observed": {
+        "recall": 0.5,
+        "precision": 0.667,
+        "clusterPurity": 0.667,
+        "groundTruthSize": 4,
+        "agentOutputSize": 3,
+        "duplicateCount": 0,
+        "hallucinationCount": 1,
+        "missingCount": 2
+      },
+      "status": "pass",
+      "notes": "Verified: score.ts builds overlap = agentSet ∩ groundTruth; hallucinations = agentSet \\ groundTruth. Surfaced in JSONL row and HTML report."
+    },
+    {
+      "id": "agent-duplicate-ids",
+      "description": "Agent places the same story in two clusters.",
+      "category": "scoring",
+      "expected": "duplicateCount=1, agentOutputSize counts unique IDs (=3), score() does not double-count in recall/precision.",
+      "observed": {
+        "recall": 0.75,
+        "precision": 1,
+        "clusterPurity": 0.75,
+        "groundTruthSize": 4,
+        "agentOutputSize": 3,
+        "duplicateCount": 1,
+        "hallucinationCount": 0,
+        "missingCount": 1
+      },
+      "status": "pass",
+      "notes": "Verified: score.ts:43-46 tracks Set + duplicate counter. The enumerate prompt is more prone to this than the signature prompt (which can't express duplicates by construction — each story matches the first signature only)."
+    },
+    {
+      "id": "signature-ids-with-nonexistent",
+      "description": "Agent lists explicit IDs that do not appear in the payload.",
+      "category": "signature-expansion",
+      "expected": "Non-existent IDs are silently dropped (no entry to match against). Real IDs still placed. No crash.",
+      "observed": {
+        "explicitMatches": 1,
+        "catchAllMatches": 1
+      },
+      "status": "pass",
+      "notes": "Verified: expand-signatures iterates allStoryIds, not the signature ids. Phantom IDs in the signature are inert."
+    },
+    {
+      "id": "network-storybook-unreachable",
+      "description": "Storybook UI not running / wrong port (STORYBOOK_URL=http://localhost:9999).",
+      "category": "network",
+      "expected": "assertStorybookRunning() throws before any agent invocation. run.ts main()'s top-level catch prints \"Eval failed:\" and process.exit(1). No JSONL row written. No SDK cost incurred.",
+      "observed": "documented-by-inspection",
+      "status": "documented",
+      "notes": "storybook-client.ts:48 wraps fetch in .catch() and rethrows with a contextful message (\"Storybook not reachable at <url>: <error>\"). run.ts:290 catches and exits non-zero."
+    },
+    {
+      "id": "sdk-rate-limit",
+      "description": "Rapid serial runs hit the Anthropic API rate limit.",
+      "category": "network",
+      "expected": "The SDK's `query` async-iterator yields an error. invokeAgent's for-await raises; run.ts:184 catches and logs \"⚠ Agent invocation failed: ...\". The JSONL row is still written with agentRun=null. Subsequent scenarios continue.",
+      "observed": "documented-by-inspection",
+      "status": "documented",
+      "notes": "run.ts:151-186 wraps the entire invokeAgent call in try/catch. Empirically observed once during variance runs — recovered cleanly. The delay(1500) between scenarios is intentional spacing."
+    },
+    {
+      "id": "sdk-hang",
+      "description": "Enumerate prompt at cascade scale: model generates 30K+ output tokens, SDK call never returns.",
+      "category": "network",
+      "expected": "No automatic timeout — the harness blocks indefinitely. User must Ctrl-C. The `--trace` flag is provided specifically to diagnose this case (timestamps per SDK message).",
+      "observed": "documented-by-inspection",
+      "status": "documented",
+      "notes": "This is the failure mode that motivated the signature-prompt variant. README documents it: enumerate prompt only safe for <600 stories. Iteration-1 production tool should set a wall-clock timeout (~60s) and fall back to deterministic clustering on timeout."
+    }
+  ],
+  "takeaway": "9 library-level failure paths exercised and verified to degrade gracefully. 3 network/SDK-level failure paths documented (not forced — would require actual API mistreatment). 0 regressions. The only failure mode WITHOUT a graceful recovery is the SDK hang at cascade scale — fixed by the signature-prompt variant; iteration-1 should add a wall-clock timeout regardless."
+}

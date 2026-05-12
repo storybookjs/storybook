@@ -85,6 +85,19 @@ CLAUDE.local.md
 scripts/eval/.cache
 scripts/eval/results
 
+# Inner-loop eval artifacts (JSONL/JSON outputs and generated HTML report)
+# — keep one reference baseline + the docs in scripts/eval/inner-loop/results/.gitkeep,
+#   ignore everything else so noisy local runs don't pollute commits.
+scripts/eval/inner-loop/results/*
+!scripts/eval/inner-loop/results/.gitkeep
+!scripts/eval/inner-loop/results/run-2026-05-09T14-09-20-024Z.jsonl
+# Round-2 backlog experiment outputs are deterministic + slow to regenerate;
+# commit them so the HTML report renders without rerunning every experiment.
+!scripts/eval/inner-loop/results/tied-distance.json
+!scripts/eval/inner-loop/results/barrel-share.json
+!scripts/eval/inner-loop/results/failure-modes.json
+!scripts/eval/inner-loop/results/rationale-fidelity.json
+
 # review-pr skill output
 .pr-review
 

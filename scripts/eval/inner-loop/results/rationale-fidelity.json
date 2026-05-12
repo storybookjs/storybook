@@ -1,0 +1,58 @@
+{
+  "experiment": "K — Cluster rationale fidelity (hand-labelled)",
+  "timestamp": "2026-05-11T00:00:00Z",
+  "method": "For each cluster produced on 5 real-commit replays from `replay-real-fileGraph.jsonl`, hand-compared the agent's rationale text against the actual git diff. Graded each as correct/partial/wrong. Sample: 21 clusters across 5 commits, all cascades from 31 to 1,025 stories. Replays used signature prompt + claude-sonnet-4-6 + effort=low.",
+  "summary": {
+    "totalClusters": 21,
+    "correct": 20,
+    "partial": 1,
+    "wrong": 0,
+    "correctRate": 0.952,
+    "partialRate": 0.048,
+    "wrongRate": 0
+  },
+  "perCommit": [
+    {
+      "sha": "ee6713705d",
+      "subject": "Fix: keep original onAllStatusChange timing behavior",
+      "diffSummary": "Adds `await api.setIndex(index)` and `fullAPI.setRef(...)` loop after `recomputeStatusFilter` in stories.ts",
+      "clusters": 5,
+      "correct": 5,
+      "notes": "All rationales correctly identify the new setIndex/setRef calls and the transitive vs direct nature of the affected stories. The catch-all bucket is honest about its catch-all nature."
+    },
+    {
+      "sha": "38a009a3c1",
+      "subject": "fix(manager-api): await recompute filter calls",
+      "diffSummary": "Adds `await` to 6+ recomputeTagsFilter()/recomputeStatusFilter() calls",
+      "clusters": 5,
+      "correct": 5,
+      "notes": "Direct rationale ('async fix to recomputeTagsFilter/recomputeStatusFilter now being properly awaited') matches the diff verbatim. Other rationales correctly distinguish first-order vs second-order vs catch-all."
+    },
+    {
+      "sha": "181521d273",
+      "subject": "fix(sidebar): only show Clear button when review filter active",
+      "diffSummary": "Removes $isActive prop from Wrapper styled-component; conditionally renders Clear button via isReviewActive instead of CSS opacity",
+      "clusters": 4,
+      "correct": 4,
+      "notes": "Most technically precise of the five. Cluster rationale literally cites 'the Wrapper styled component no longer accepts $isActive, removing the prop-driven opacity CSS' — exactly what the diff does."
+    },
+    {
+      "sha": "3219ec38d8",
+      "subject": "Add story",
+      "diffSummary": "Adds WithCTAInactive story export using internal_ctaStatusStore + CHANGE_DETECTION_STATUS_TYPE_ID + newStatusStoryIds",
+      "clusters": 4,
+      "correct": 3,
+      "partial": 1,
+      "partialReasoning": "sidebar-refs-stories rationale claims 'the module-level addition of a new export can shift module evaluation order and shared store state.' Technically true but speculative; the real reason is just 'same story file.'"
+    },
+    {
+      "sha": "316818511e",
+      "subject": "test(sidebar): align Sidebar.stories with ToggleButton role=switch",
+      "diffSummary": "Changes role: 'button' → 'switch' and aria-pressed → aria-checked in play functions of StatusesNew, StatusesModified, WithCTAActive, CTAToggleUpdatesLive",
+      "clusters": 3,
+      "correct": 3,
+      "notes": "All three rationales correctly cite the role-attribute change and which stories' play functions would break."
+    }
+  ],
+  "conclusion": "95.2% rationale-correct rate — comfortably above the 80% threshold Page 4 set for 'suppress rationales in the UI.' The agent's rationales reliably cite real diff details (function names, prop names, role attributes), not hallucinated 'plausible-sounding but wrong' descriptions. Trust UX can show the rationale directly to users. The single partial label is a stretch claim about module evaluation order, not a hallucinated diff detail."
+}

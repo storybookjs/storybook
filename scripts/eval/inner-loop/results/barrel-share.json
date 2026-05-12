@@ -1,0 +1,162 @@
+{
+  "experiment": "I.4 — Barrel-file false-cascade share",
+  "timestamp": "2026-05-11T11:05:34.391Z",
+  "unitsNote": "Barrel = path matches /\\/index\\.tsx?$/. Edges are (story-file, changed-file) pairs in the reverse index — story-file counts, not story-IDs. Multiply by ~3-7 for IDs.",
+  "summary": {
+    "totalFiles": 1438,
+    "barrelFiles": 39,
+    "nonBarrelFiles": 1399,
+    "barrelFileShare": 0.027121001390820583,
+    "totalEdges": 51358,
+    "barrelEdges": 3771,
+    "nonBarrelEdges": 47587,
+    "barrelEdgeShare": 0.0734257564546906,
+    "top10BarrelEdgeShare": 0.034230304918415826,
+    "top20BarrelEdgeShare": 0.06139257759258538,
+    "avgImportersPerBarrel": 96.6923076923077,
+    "avgImportersPerNonBarrel": 34.01501072194424
+  },
+  "topBarrels": [
+    {
+      "file": "core/src/test/index.ts",
+      "importerCount": 319,
+      "directImporters": 248
+    },
+    {
+      "file": "core/src/theming/index.ts",
+      "importerCount": 167,
+      "directImporters": 250
+    },
+    {
+      "file": "core/src/preview-api/index.ts",
+      "importerCount": 159,
+      "directImporters": 35
+    },
+    {
+      "file": "core/src/preview-api/modules/store/index.ts",
+      "importerCount": 159,
+      "directImporters": 13
+    },
+    {
+      "file": "core/src/preview-api/modules/store/csf/index.ts",
+      "importerCount": 159,
+      "directImporters": 10
+    },
+    {
+      "file": "core/src/preview-api/modules/addons/index.ts",
+      "importerCount": 159,
+      "directImporters": 31
+    },
+    {
+      "file": "core/src/preview-api/modules/preview-web/index.ts",
+      "importerCount": 159,
+      "directImporters": 7
+    },
+    {
+      "file": "core/src/docs-tools/index.ts",
+      "importerCount": 159,
+      "directImporters": 1
+    },
+    {
+      "file": "core/src/docs-tools/argTypes/index.ts",
+      "importerCount": 159,
+      "directImporters": 2
+    },
+    {
+      "file": "core/src/docs-tools/argTypes/convert/index.ts",
+      "importerCount": 159,
+      "directImporters": 3
+    },
+    {
+      "file": "core/src/docs-tools/argTypes/docgen/index.ts",
+      "importerCount": 159,
+      "directImporters": 2
+    },
+    {
+      "file": "core/src/docs-tools/argTypes/docgen/utils/index.ts",
+      "importerCount": 159,
+      "directImporters": 3
+    },
+    {
+      "file": "core/src/docs-tools/argTypes/convert/flow/index.ts",
+      "importerCount": 159,
+      "directImporters": 1
+    },
+    {
+      "file": "core/src/docs-tools/argTypes/convert/proptypes/index.ts",
+      "importerCount": 159,
+      "directImporters": 1
+    },
+    {
+      "file": "core/src/docs-tools/argTypes/convert/typescript/index.ts",
+      "importerCount": 159,
+      "directImporters": 1
+    },
+    {
+      "file": "core/src/manager-api/index.ts",
+      "importerCount": 120,
+      "directImporters": 84
+    },
+    {
+      "file": "core/src/shared/universal-store/index.ts",
+      "importerCount": 120,
+      "directImporters": 6
+    },
+    {
+      "file": "core/src/types/index.ts",
+      "importerCount": 120,
+      "directImporters": 19
+    },
+    {
+      "file": "core/src/shared/status-store/index.ts",
+      "importerCount": 120,
+      "directImporters": 10
+    },
+    {
+      "file": "core/src/shared/test-provider-store/index.ts",
+      "importerCount": 120,
+      "directImporters": 2
+    }
+  ],
+  "syntheticScenarios": [
+    {
+      "scenario": "small",
+      "changedFile": "core/src/manager/components/sidebar/Sidebar.tsx",
+      "exists": true,
+      "isBarrel": false,
+      "importers": 10,
+      "share": 0.00019471163207290004
+    },
+    {
+      "scenario": "medium",
+      "changedFile": "core/src/components/components/Button/Button.tsx",
+      "exists": true,
+      "isBarrel": false,
+      "importers": 120,
+      "share": 0.0023365395848748004
+    },
+    {
+      "scenario": "large",
+      "changedFile": "core/src/theming/index.ts",
+      "exists": true,
+      "isBarrel": true,
+      "importers": 167,
+      "share": 0.0032516842556174308
+    },
+    {
+      "scenario": "css-only",
+      "changedFile": "core/src/manager/components/preview/tools/bundle-analyzer/index.css",
+      "exists": false,
+      "isBarrel": false
+    },
+    {
+      "scenario": "regex-aliased",
+      "changedFile": "core/src/test/expect.ts",
+      "exists": true,
+      "isBarrel": false,
+      "importers": 319,
+      "share": 0.006211301063125511
+    }
+  ],
+  "takeaway": "39 of 1438 files (2.7%) are barrels, but they account for 7.3% of all (story, changed-file) edges. The top 10 barrels alone account for 3.4% of edges. Excluding barrels from the cascade would cut roughly that share of cascade noise — at the cost of missing real bugs where the edit is *to* a barrel re-export."
+}

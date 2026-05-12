@@ -1,0 +1,73 @@
+diff --git a/code/addons/before-after/src/components/ChangesPage.tsx b/code/addons/before-after/src/components/ChangesPage.tsx
+index 700fbff3923..dff7ec98477 100644
+--- a/code/addons/before-after/src/components/ChangesPage.tsx
++++ b/code/addons/before-after/src/components/ChangesPage.tsx
+@@ -1,7 +1,7 @@
+ import React, { useEffect, useRef, useState } from 'react';
+ 
+ import {
+-  experimental_useStatusStore,
++  experimental_getStatusStore,
+   useChannel,
+   useStorybookApi,
+   useStorybookState,
+@@ -128,13 +128,52 @@ export const ChangesPage: React.FC = () => {
+   const [addonDisabledReason, setAddonDisabledReason] = useState<string | null>(null);
+   const [refreshKey, setRefreshKey] = useState(0);
+ 
+-  const statuses = experimental_useStatusStore((allStatuses: StatusesByStoryIdAndTypeId) =>
+-    Object.fromEntries(
+-      Object.entries(allStatuses)
+-        .map(([storyId, byTypeId]) => [storyId, byTypeId[CHANGE_DETECTION_STATUS_TYPE_ID]])
+-        .filter(([, status]) => status != null)
+-    )
+-  );
++  // Subscribe to change-detection statuses directly via the typed status store,
++  // bypassing `experimental_useStatusStore`. The hook version proved to lose
++  // subscriptions on first mount after a HMR-reload because its inline-arrow
++  // selector reference shifts per render and the React `useSyncExternalStore`
++  // pattern races against UniversalStore's async leader/follower hydration.
++  //
++  // This implementation:
++  //   1. Seeds with whatever the store has now (covers fast-sync path).
++  //   2. Subscribes to onAllStatusChange (covers later updates AND the
++  //      synthesised SET_STATE event the follower emits when it receives
++  //      EXISTING_STATE_RESPONSE from the leader on the dev server).
++  //   3. Re-reads on a short retry budget if the seed was empty — defends
++  //      against React StrictMode double-effect timing where the first
++  //      cleanup might unsubscribe before the response arrives.
++  const [statuses, setStatuses] = useState<Record<string, Status>>({});
++  useEffect(() => {
++    let cancelled = false;
++    const store = experimental_getStatusStore(CHANGE_DETECTION_STATUS_TYPE_ID);
++    const filterStatuses = (
++      all: StatusesByStoryIdAndTypeId
++    ): Record<string, Status> => {
++      const out: Record<string, Status> = {};
++      for (const [storyId, byTypeId] of Object.entries(all)) {
++        const cd = byTypeId[CHANGE_DETECTION_STATUS_TYPE_ID];
++        if (cd != null) out[storyId] = cd;
++      }
++      return out;
++    };
++    const refresh = () => {
++      if (cancelled) return;
++      setStatuses(filterStatuses(store.getAll()));
++    };
++    refresh();
++    const unsubscribe = store.onAllStatusChange(() => refresh());
++    // Defensive retries: if the universal-store follower is still syncing
++    // when this effect first runs, neither the seed nor the subscribe will
++    // catch the EXISTING_STATE_RESPONSE if it lands during a StrictMode
++    // unsubscribe gap. Re-read on 50/200/500ms so we self-heal within ~half
++    // a second of mount even in adversarial timing.
++    const retryTimers = [50, 200, 500].map((ms) => setTimeout(refresh, ms));
++    return () => {
++      cancelled = true;
++      retryTimers.forEach(clearTimeout);
++      unsubscribe();
++    };
++  }, []);
+ 
+   useChannel({
+     [EVENTS.HEAD_CHANGED]: () => {

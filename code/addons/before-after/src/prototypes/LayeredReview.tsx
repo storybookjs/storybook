@@ -258,27 +258,29 @@ const Carousel = styled.div({
 const CarouselTrack = styled.div<{ offset: number }>(({ offset }) => ({
   display: 'flex',
   alignItems: 'stretch',
-  gap: 20,
-  transform: `translateX(${offset}px)`,
-  transition: 'transform 0.25s cubic-bezier(0.2, 0.7, 0.2, 1)',
+  gap: 24,
+  transform: `translate3d(${offset}px, 0, 0)`,
+  // Smooth swipe — ease-out, no overshoot, no bounce.
+  transition: 'transform 0.3s ease-out',
   willChange: 'transform',
   padding: '20px 0',
 }));
 
 const Slot = styled.div<{ active: boolean }>(({ theme, active }) => ({
-  width: active ? 880 : 280,
-  height: active ? 'min(420px, calc(100vh - 280px))' : 'min(260px, calc(100vh - 380px))',
+  // Every slot identical in size — proper carousel, no zoom-in effect.
+  width: 720,
+  height: 'min(440px, calc(100vh - 260px))',
   flexShrink: 0,
-  transition: 'width 0.25s, height 0.25s, opacity 0.25s, transform 0.25s',
-  opacity: active ? 1 : 0.55,
-  transform: active ? 'scale(1)' : 'scale(0.96)',
+  // Only opacity and border/shadow animate; never size or transform.
+  transition: 'opacity 0.2s linear, border-color 0.2s linear, box-shadow 0.2s linear',
+  opacity: active ? 1 : 0.4,
   display: 'flex',
   flexDirection: 'column' as const,
   border: `1px solid ${active ? theme.color.secondary : theme.color.border}`,
   borderRadius: 8,
   background: theme.background.content,
   overflow: 'hidden',
-  boxShadow: active ? '0 10px 30px rgba(15,23,42,0.15)' : '0 2px 6px rgba(15,23,42,0.04)',
+  boxShadow: active ? '0 4px 16px rgba(15,23,42,0.10)' : 'none',
 }));
 
 const SlotHeader = styled.div(({ theme }) => ({
@@ -509,12 +511,11 @@ export function LayeredReview({ data, initialMode = 'clustered' }: LayeredReview
   const below = rows.slice(clusterIdx + 1);
   const totalStories = currentRow.stories.length;
 
-  // Carousel math: slots to the left of the active are PEEK_W wide.
-  // We want the active slot's center to land at the viewport center.
-  // Constants here must stay in sync with the Slot styled-component.
-  const ACTIVE_W = 880;
-  const PEEK_W = 280;
-  const GAP = 20;
+  // Every slot is the same size (no zoom-in animation) — a proper
+  // carousel. Constants here must stay in sync with the Slot styled-
+  // component and the CarouselTrack gap.
+  const SLOT_W = 720;
+  const GAP = 24;
   const carouselRef = React.useRef<HTMLDivElement | null>(null);
   const [carouselWidth, setCarouselWidth] = useState(1200);
   useEffect(() => {
@@ -528,8 +529,8 @@ export function LayeredReview({ data, initialMode = 'clustered' }: LayeredReview
     return () => ro.disconnect();
   }, []);
   const trackOffset = useMemo(() => {
-    const leftEdge = storyIdx * (PEEK_W + GAP);
-    const slotCenter = leftEdge + ACTIVE_W / 2;
+    const leftEdge = storyIdx * (SLOT_W + GAP);
+    const slotCenter = leftEdge + SLOT_W / 2;
     return carouselWidth / 2 - slotCenter;
   }, [storyIdx, carouselWidth]);
 

@@ -1,7 +1,8 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { prompt } from 'storybook/internal/node-logger';
 
+import { logger } from '../../node-logger/index.ts';
 import { executeCommand } from '../utils/command.ts';
 import { JsPackageManager } from './JsPackageManager.ts';
 import { Yarn2Proxy } from './Yarn2Proxy.ts';
@@ -10,9 +11,20 @@ vi.mock('storybook/internal/node-logger', () => ({
   prompt: {
     executeTaskWithSpinner: vi.fn(),
     getPreferredStdio: vi.fn(() => 'inherit'),
+    select: vi.fn(),
   },
   logger: {
     debug: vi.fn(),
+    info: vi.fn(),
+    warn: vi.fn(),
+    error: vi.fn(),
+  },
+}));
+
+vi.mock('../../node-logger/index.ts', () => ({
+  logger: {
+    debug: vi.fn(),
+    info: vi.fn(),
     warn: vi.fn(),
     error: vi.fn(),
   },
@@ -268,6 +280,20 @@ describe('Yarn 2 Proxy', () => {
   });
 
   describe('parseErrors', () => {
+    it('should format npmMinimalAgeGate quarantined errors', () => {
+      const YARN2_ERROR_SAMPLE = `
+        ➤ YN0016: │ @storybook/react-vite@npm:10.4.0-alpha.17: All versions satisfying "10.4.0-alpha.17" are quarantined
+      `;
+
+      const parsedError = yarn2Proxy.parseErrorFromLogs(YARN2_ERROR_SAMPLE);
+
+      expect(parsedError).toContain('@storybook/react-vite@10.4.0-alpha.17');
+      expect(parsedError).toContain('YN0016');
+      expect(parsedError).toContain(
+        'https://yarnpkg.com/configuration/yarnrc#npmPreapprovedPackages'
+      );
+    });
+
     it('should single yarn2 error message', () => {
       const YARN2_ERROR_SAMPLE = `
         ➤ YN0000: ┌ Resolution step
@@ -335,6 +361,182 @@ describe('Yarn 2 Proxy', () => {
         -> Cannot link @storybook/test into before-storybook@workspace:. dependency @testing-library/user-event@npm:14.5.2 [ae73b] conflicts with parent dependency @testing-library/user-event@npm:13.5.0 [1b0ac]
         "
       `
+      );
+    });
+  });
+
+  describe('precheckStorybookPackageInstall', () => {
+    beforeEach(() => {
+      vi.useFakeTimers();
+      vi.setSystemTime(new Date('2026-05-11T12:00:00.000Z'));
+    });
+
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    it('should update npmPreapprovedPackages in non-interactive mode when npmMinimalAgeGate blocks Storybook', async () => {
+      mockedExecuteCommand
+        .mockResolvedValueOnce({ stdout: '1440\n' } as any)
+        .mockResolvedValueOnce({
+          stdout: JSON.stringify({
+            name: 'storybook',
+            time: {
+              created: '2025-01-01T00:00:00.000Z',
+              modified: '2026-05-11T12:00:00.000Z',
+              '10.4.0-alpha.17': '2026-05-11T11:59:00.000Z',
+              '10.3.2': '2026-05-01T00:00:00.000Z',
+            },
+          }),
+        } as any)
+        .mockResolvedValueOnce({ stdout: '[]\n' } as any)
+        .mockResolvedValueOnce({ stdout: '' } as any);
+      vi.mocked(prompt.executeTaskWithSpinner).mockImplementationOnce(async (factory: any) => {
+        await factory();
+      });
+
+      await yarn2Proxy.precheckStorybookPackageInstall({
+        storybookVersion: '10.4.0-alpha.17',
+        nonInteractive: true,
+        installContext: 'create',
+      });
+
+      expect(mockedExecuteCommand).toHaveBeenLastCalledWith(
+        expect.objectContaining({
+          command: 'yarn',
+          args: [
+            'config',
+            'set',
+            'npmPreapprovedPackages',
+            '--json',
+            JSON.stringify(['storybook', '@storybook/*', 'eslint-plugin-storybook']),
+          ],
+        })
+      );
+      expect(vi.mocked(logger.info)).toHaveBeenCalledWith(
+        expect.stringContaining(
+          'Storybook updated npmPreapprovedPackages for this project automatically'
+        )
+      );
+    });
+
+    it('should let the user update npmPreapprovedPackages interactively', async () => {
+      mockedExecuteCommand
+        .mockResolvedValueOnce({ stdout: '1440\n' } as any)
+        .mockResolvedValueOnce({
+          stdout: JSON.stringify({
+            name: 'storybook',
+            time: {
+              created: '2025-01-01T00:00:00.000Z',
+              modified: '2026-05-11T12:00:00.000Z',
+              '10.4.0-alpha.17': '2026-05-11T11:59:00.000Z',
+              '10.3.2': '2026-05-01T00:00:00.000Z',
+            },
+          }),
+        } as any)
+        .mockResolvedValueOnce({ stdout: '["foo"]\n' } as any)
+        .mockResolvedValueOnce({ stdout: '' } as any);
+      vi.mocked(prompt.select).mockResolvedValue('exclude' as never);
+      vi.mocked(prompt.executeTaskWithSpinner).mockImplementationOnce(async (factory: any) => {
+        await factory();
+      });
+
+      await yarn2Proxy.precheckStorybookPackageInstall({
+        storybookVersion: '10.4.0-alpha.17',
+        nonInteractive: false,
+        installContext: 'create',
+      });
+
+      expect(vi.mocked(logger.warn)).toHaveBeenCalledWith(
+        expect.stringContaining(
+          'yarn npmMinimalAgeGate will block storybook@10.4.0-alpha.17 from being installed'
+        )
+      );
+      expect(vi.mocked(prompt.select)).toHaveBeenCalledWith(
+        expect.objectContaining({
+          options: expect.arrayContaining([
+            expect.objectContaining({
+              label: 'Update yarn config to preapprove Storybook packages',
+            }),
+            expect.objectContaining({
+              label: 'Stop now and rerun with the most recent allowed release: storybook@10.3.2',
+            }),
+          ]),
+        }),
+        expect.objectContaining({
+          onCancel: expect.any(Function),
+        })
+      );
+      expect(mockedExecuteCommand).toHaveBeenLastCalledWith(
+        expect.objectContaining({
+          command: 'yarn',
+          args: [
+            'config',
+            'set',
+            'npmPreapprovedPackages',
+            '--json',
+            JSON.stringify(['foo', 'storybook', '@storybook/*', 'eslint-plugin-storybook']),
+          ],
+        })
+      );
+    });
+
+    it('should tell create-storybook users how to rerun when they choose rerun', async () => {
+      mockedExecuteCommand
+        .mockResolvedValueOnce({ stdout: '1440\n' } as any)
+        .mockResolvedValueOnce({
+          stdout: JSON.stringify({
+            name: 'storybook',
+            time: {
+              created: '2025-01-01T00:00:00.000Z',
+              modified: '2026-05-11T12:00:00.000Z',
+              '10.4.0-alpha.17': '2026-05-11T11:59:00.000Z',
+              '10.3.2': '2026-05-01T00:00:00.000Z',
+            },
+          }),
+        } as any);
+      vi.mocked(prompt.select).mockResolvedValue('rerun' as never);
+
+      await expect(
+        yarn2Proxy.precheckStorybookPackageInstall({
+          storybookVersion: '10.4.0-alpha.17',
+          nonInteractive: false,
+          installContext: 'create',
+        })
+      ).rejects.toThrow(
+        /Please rerun Storybook creation with:[\s\S]*npx create-storybook@10\.3\.2/
+      );
+    });
+
+    it('should show the same rerun guidance when the prompt is cancelled', async () => {
+      mockedExecuteCommand
+        .mockResolvedValueOnce({ stdout: '1440\n' } as any)
+        .mockResolvedValueOnce({
+          stdout: JSON.stringify({
+            name: 'storybook',
+            time: {
+              created: '2025-01-01T00:00:00.000Z',
+              modified: '2026-05-11T12:00:00.000Z',
+              '10.4.0-alpha.17': '2026-05-11T11:59:00.000Z',
+              '10.3.2': '2026-05-01T00:00:00.000Z',
+            },
+          }),
+        } as any);
+      vi.mocked(prompt.select).mockImplementationOnce(
+        async (_question: any, promptOptions: any) => {
+          promptOptions.onCancel();
+          return 'exclude';
+        }
+      );
+
+      await expect(
+        yarn2Proxy.precheckStorybookPackageInstall({
+          storybookVersion: '10.4.0-alpha.17',
+          nonInteractive: false,
+          installContext: 'create',
+        })
+      ).rejects.toThrow(
+        /Please rerun Storybook creation with:[\s\S]*npx create-storybook@10\.3\.2/
       );
     });
   });

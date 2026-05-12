@@ -10,7 +10,10 @@ import { getLibzipSync } from '@yarnpkg/libzip';
 import * as find from 'empathic/find';
 // eslint-disable-next-line depend/ban-dependencies
 import type { ResultPromise } from 'execa';
+import { dedent } from 'ts-dedent';
+import { gt, prerelease, valid } from 'semver';
 
+import { HandledError } from '../utils/HandledError.ts';
 import { logger } from '../../node-logger/index.ts';
 import type { ExecuteCommandOptions } from '../utils/command.ts';
 import { executeCommand } from '../utils/command.ts';
@@ -243,6 +246,118 @@ export class Yarn2Proxy extends JsPackageManager {
     });
   }
 
+  async installDependencies(options?: { force?: boolean }) {
+    try {
+      await super.installDependencies(options);
+    } catch (error) {
+      const parsedError = this.parseErrorFromLogs(this.getErrorLogs(error));
+      if (parsedError !== 'YARN2 error') {
+        throw new HandledError(parsedError);
+      }
+
+      throw error;
+    }
+  }
+
+  async precheckStorybookPackageInstall({
+    storybookVersion,
+    nonInteractive,
+    installContext,
+  }: {
+    storybookVersion: string;
+    nonInteractive: boolean;
+    installContext: 'create' | 'upgrade';
+  }): Promise<void> {
+    const minimumAgeGate = await this.getMinimumAgeGate();
+
+    if (!minimumAgeGate) {
+      return;
+    }
+
+    const timeMap = await this.getPackageTimeMap('storybook');
+    if (!timeMap) {
+      return;
+    }
+
+    const releaseTime = timeMap[storybookVersion];
+    if (!releaseTime) {
+      return;
+    }
+
+    const publishedAt = new Date(releaseTime);
+    if (Number.isNaN(publishedAt.getTime())) {
+      return;
+    }
+
+    const ageMinutes = Math.floor((Date.now() - publishedAt.getTime()) / 60_000);
+    if (ageMinutes >= minimumAgeGate) {
+      return;
+    }
+
+    const compatibleVersion = this.getLatestStableVersionAdheringToMinimumAgeGate(
+      timeMap,
+      minimumAgeGate
+    );
+
+    if (nonInteractive) {
+      await this.updatePreapprovedPackages();
+      logger.info(
+        dedent`
+          yarn npmMinimalAgeGate would block storybook@${storybookVersion} from being installed because it was released within the configured npmMinimalAgeGate window, so Storybook updated npmPreapprovedPackages for this project automatically.
+
+          Added patterns: storybook, @storybook/*, eslint-plugin-storybook
+
+          Read more:
+          - https://yarnpkg.com/configuration/yarnrc#npmMinimalAgeGate
+          - https://yarnpkg.com/configuration/yarnrc#npmPreapprovedPackages
+        `
+      );
+      return;
+    }
+
+    logger.warn(
+      `yarn npmMinimalAgeGate will block storybook@${storybookVersion} from being installed because it was released within the disallowed immaturity window.`
+    );
+
+    const rerunError = new HandledError(
+      this.createMinimalAgeGateRerunMessage({
+        currentVersion: storybookVersion,
+        compatibleVersion,
+        installContext,
+      })
+    );
+
+    const selection = await prompt.select(
+      {
+        message: 'How would you like to proceed?',
+        options: [
+          {
+            label: 'Update yarn config to preapprove Storybook packages',
+            value: 'exclude',
+          },
+          {
+            label: compatibleVersion
+              ? `Stop now and rerun with the most recent allowed release: storybook@${compatibleVersion}`
+              : 'Stop now and rerun with an older stable Storybook release later',
+            value: 'rerun',
+          },
+        ],
+      },
+      {
+        onCancel: () => {
+          throw rerunError;
+        },
+      }
+    );
+
+    if (selection === 'exclude') {
+      await this.updatePreapprovedPackages();
+      return;
+    }
+
+    throw rerunError;
+  }
+
   protected runAddDeps(dependencies: string[], installAsDevDependencies: boolean) {
     let args = [...dependencies];
 
@@ -333,6 +448,25 @@ export class Yarn2Proxy extends JsPackageManager {
   }
 
   public parseErrorFromLogs(logs: string): string {
+    if (logs.includes('YN0016') && logs.includes('quarantined')) {
+      const failedPackage = this.extractQuarantinedPackage(logs);
+
+      return dedent`
+        yarn blocked package installation because your project uses npmMinimalAgeGate.
+
+        Failed package:
+        ${failedPackage ?? 'Unknown package'}
+
+        yarn error: YN0016
+
+        Read more:
+        - https://yarnpkg.com/configuration/yarnrc#npmMinimalAgeGate
+        - https://yarnpkg.com/configuration/yarnrc#npmPreapprovedPackages
+
+        To fix this, either wait for the configured age window to pass and rerun the command, or add the blocked packages to yarn's npmPreapprovedPackages setting.
+      `;
+    }
+
     const finalMessage = 'YARN2 error';
     const errorCodesWithMessages: { code: string; message: string }[] = [];
     const regex = /(YN\d{4}): (.+)/g;
@@ -355,5 +489,211 @@ export class Yarn2Proxy extends JsPackageManager {
       finalMessage,
       errorCodesWithMessages.map(({ code, message }) => `${code}: ${message}`).join('\n'),
     ].join('\n');
+  }
+
+  private extractQuarantinedPackage(logs: string): string | null {
+    const match = logs.match(
+      /│\s+((?:@[^/\s]+\/)?[^@\s]+)@npm:([^:\s]+):\s+All versions satisfying/
+    );
+
+    if (!match) {
+      return null;
+    }
+
+    const [, packageName, version] = match;
+    return `${packageName}@${version}`;
+  }
+
+  private async getMinimumAgeGate(): Promise<number | null> {
+    const result = await this.runInternalCommand(
+      'config',
+      ['get', 'npmMinimalAgeGate'],
+      undefined,
+      'pipe'
+    );
+    const normalizedValue = typeof result.stdout === 'string' ? result.stdout.trim() : '';
+
+    if (
+      !normalizedValue ||
+      normalizedValue === 'undefined' ||
+      normalizedValue === 'null' ||
+      normalizedValue === 'false'
+    ) {
+      return null;
+    }
+
+    const parsedValue = Number.parseInt(normalizedValue, 10);
+    if (!Number.isFinite(parsedValue) || parsedValue <= 0) {
+      return null;
+    }
+
+    return parsedValue;
+  }
+
+  private async getPackageTimeMap(packageName: string): Promise<Record<string, string> | null> {
+    const result = await executeCommand({
+      command: 'yarn',
+      args: ['npm', 'info', packageName, '--fields', 'time', '--json'],
+    });
+    const normalizedValue = typeof result.stdout === 'string' ? result.stdout.trim() : '';
+
+    if (!normalizedValue) {
+      return null;
+    }
+
+    const parsedValue = JSON.parse(normalizedValue);
+    const timeField = parsedValue?.time;
+
+    if (!timeField || typeof timeField !== 'object' || Array.isArray(timeField)) {
+      return null;
+    }
+
+    const timeMap: Record<string, string> = {};
+    for (const [version, releaseTime] of Object.entries(timeField)) {
+      if (typeof releaseTime === 'string' && releaseTime.length > 0) {
+        timeMap[version] = releaseTime;
+      }
+    }
+
+    return timeMap;
+  }
+
+  private getLatestStableVersionAdheringToMinimumAgeGate(
+    timeMap: Record<string, string>,
+    minimumAgeGateMinutes: number,
+    now = new Date()
+  ): string | null {
+    const cutoff = now.getTime() - minimumAgeGateMinutes * 60_000;
+    let latestStableVersion: string | null = null;
+
+    for (const [version, releaseTime] of Object.entries(timeMap)) {
+      if (!valid(version) || prerelease(version)) {
+        continue;
+      }
+
+      const publishedAt = new Date(releaseTime);
+      if (Number.isNaN(publishedAt.getTime()) || publishedAt.getTime() > cutoff) {
+        continue;
+      }
+
+      if (!latestStableVersion || gt(version, latestStableVersion)) {
+        latestStableVersion = version;
+      }
+    }
+
+    return latestStableVersion;
+  }
+
+  private createMinimalAgeGateRerunMessage({
+    currentVersion,
+    compatibleVersion,
+    installContext,
+  }: {
+    currentVersion: string;
+    compatibleVersion: string | null;
+    installContext: 'create' | 'upgrade';
+  }): string {
+    const rerunCommand =
+      installContext === 'create'
+        ? compatibleVersion
+          ? `npx create-storybook@${compatibleVersion}`
+          : 'npx create-storybook@<compatible-version>'
+        : compatibleVersion
+          ? `npx storybook@${compatibleVersion} upgrade`
+          : 'npx storybook@<compatible-version> upgrade';
+
+    const rerunInstruction =
+      installContext === 'create'
+        ? 'Please rerun Storybook creation with:'
+        : 'Please rerun the Storybook upgrade with:';
+
+    return dedent`
+      yarn npmMinimalAgeGate blocked storybook@${currentVersion} from being installed.
+
+      ${rerunInstruction}
+      ${rerunCommand}
+
+      Read more:
+      - https://yarnpkg.com/configuration/yarnrc#npmMinimalAgeGate
+    `;
+  }
+
+  private async updatePreapprovedPackages(): Promise<void> {
+    const currentPreapprovedPackages = await this.getPreapprovedPackages();
+    const nextPreapprovedPackages = Array.from(
+      new Set([
+        ...currentPreapprovedPackages,
+        'storybook',
+        '@storybook/*',
+        'eslint-plugin-storybook',
+      ])
+    );
+
+    await prompt.executeTaskWithSpinner(
+      () =>
+        this.runInternalCommand(
+          'config',
+          ['set', 'npmPreapprovedPackages', '--json', JSON.stringify(nextPreapprovedPackages)],
+          undefined,
+          'pipe'
+        ),
+      {
+        id: 'update-yarn-npm-preapproved-packages',
+        intro: 'Updating yarn npmPreapprovedPackages...',
+        error: 'Failed to update yarn npmPreapprovedPackages.',
+        success: 'Updated yarn npmPreapprovedPackages',
+      }
+    );
+  }
+
+  private async getPreapprovedPackages(): Promise<string[]> {
+    const result = await this.runInternalCommand(
+      'config',
+      ['get', 'npmPreapprovedPackages'],
+      undefined,
+      'pipe'
+    );
+    const normalizedValue = typeof result.stdout === 'string' ? result.stdout.trim() : '';
+
+    if (!normalizedValue) {
+      return [];
+    }
+
+    const parsedValue = JSON.parse(normalizedValue);
+    return Array.isArray(parsedValue)
+      ? parsedValue.filter(
+          (value): value is string => typeof value === 'string' && value.length > 0
+        )
+      : [];
+  }
+
+  private getErrorLogs(error: unknown): string {
+    if (typeof error === 'string') {
+      return error;
+    }
+
+    if (error && typeof error === 'object') {
+      const structuredError = error as {
+        stderr?: string;
+        stdout?: string;
+        shortMessage?: string;
+        originalMessage?: string;
+        message?: string;
+      };
+
+      const structuredLogs = [
+        structuredError.shortMessage,
+        structuredError.originalMessage,
+        structuredError.stderr,
+        structuredError.stdout,
+        structuredError.message,
+      ].filter((value): value is string => typeof value === 'string' && value.length > 0);
+
+      if (structuredLogs.length > 0) {
+        return structuredLogs.join('\n');
+      }
+    }
+
+    return String(error);
   }
 }

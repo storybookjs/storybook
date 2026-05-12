@@ -88,9 +88,7 @@ export const viteFinal = async (config: UserConfig, options?: StandaloneOptions)
   const angularPlugins = angular({
     jit: typeof framework.options?.jit !== 'undefined' ? framework.options?.jit : true,
     liveReload:
-      typeof framework.options?.liveReload !== 'undefined'
-        ? framework.options?.liveReload
-        : false,
+      typeof framework.options?.liveReload !== 'undefined' ? framework.options?.liveReload : false,
     tsconfig:
       typeof framework.options?.tsconfig !== 'undefined'
         ? framework.options?.tsconfig

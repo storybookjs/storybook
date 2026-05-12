@@ -237,7 +237,9 @@ const runGenerators = async (
                 console.error(message);
                 console.error(error);
               }
-              throw new Error(message);
+              throw new Error(message, {
+                cause: error,
+              });
             }
           }
 
@@ -343,7 +345,14 @@ const runGenerators = async (
           .filter((result) => result.status === 'rejected')
           .map((_, index) => generators[index].name)
       );
-      throw new Error(`Some sandboxes failed to generate`);
+      throw new Error(`Some sandboxes failed to generate`, {
+        cause: generationResults
+          .filter((result) => result.status === 'rejected')
+          .map((result) => {
+            const generationError = (result as PromiseRejectedResult).reason as Error;
+            return generationError;
+          }),
+      });
     }
     return;
   }
@@ -383,7 +392,14 @@ const runGenerators = async (
     ])
     .write();
 
-  throw new Error(`Some sandboxes failed to generate`);
+  throw new Error(`Some sandboxes failed to generate`, {
+    cause: generationResults
+      .filter((result) => result.status === 'rejected')
+      .map((result) => {
+        const generationError = (result as PromiseRejectedResult).reason as Error;
+        return generationError;
+      }),
+  });
 };
 
 export const options = createOptions({

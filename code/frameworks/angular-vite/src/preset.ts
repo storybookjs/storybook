@@ -85,6 +85,45 @@ export const viteFinal = async (config: UserConfig, options?: StandaloneOptions)
     framework.options,
     options?.angularBuilderOptions
   );
+  const angularPlugins = angular({
+    jit: typeof framework.options?.jit !== 'undefined' ? framework.options?.jit : true,
+    liveReload:
+      typeof framework.options?.liveReload !== 'undefined'
+        ? framework.options?.liveReload
+        : false,
+    tsconfig:
+      typeof framework.options?.tsconfig !== 'undefined'
+        ? framework.options?.tsconfig
+        : (options?.tsConfig ?? './.storybook/tsconfig.json'),
+    inlineStylesExtension:
+      typeof framework.options?.inlineStylesExtension !== 'undefined'
+        ? framework.options?.inlineStylesExtension
+        : 'css',
+  });
+
+  // analogjs's main `@analogjs/vite-plugin-angular` plugin transforms .ts files
+  // by replacing the incoming `code` with its own TS-compiled output (pulled
+  // from an internal Angular file emitter). It does NOT honor the `code` param
+  // produced by earlier transforms. Without an explicit ordering hint it sits
+  // in Vite's "normal" group, which is also where storybook's automock plugin
+  // (`storybook:mock-loader`) lives — and automock runs first because it
+  // declares `transform.order: 'pre'`. That means the automocked module body
+  // is silently discarded by analogjs's transform.
+  //
+  // Force the angular plugin into the "pre" group so it transforms `.ts`
+  // sources before the mock plugin's automock pass, which then operates on the
+  // compiled JS output. Only the main plugin needs reordering; the rest of
+  // analogjs's array (jit, live-reload, build-optimizer, …) keeps its
+  // declared enforce values.
+  const pluginsToInject = (Array.isArray(angularPlugins) ? angularPlugins : [angularPlugins])
+    .filter(Boolean)
+    .map((plugin: any) => {
+      if (plugin?.name === '@analogjs/vite-plugin-angular' && !plugin.enforce) {
+        return { ...plugin, enforce: 'pre' as const };
+      }
+      return plugin;
+    });
+
   return mergeConfig(config, {
     // Add dependencies to pre-optimization
     optimizeDeps: {
@@ -118,21 +157,7 @@ export const viteFinal = async (config: UserConfig, options?: StandaloneOptions)
       },
     },
     plugins: [
-      angular({
-        jit: typeof framework.options?.jit !== 'undefined' ? framework.options?.jit : true,
-        liveReload:
-          typeof framework.options?.liveReload !== 'undefined'
-            ? framework.options?.liveReload
-            : false,
-        tsconfig:
-          typeof framework.options?.tsconfig !== 'undefined'
-            ? framework.options?.tsconfig
-            : (options?.tsConfig ?? './.storybook/tsconfig.json'),
-        inlineStylesExtension:
-          typeof framework.options?.inlineStylesExtension !== 'undefined'
-            ? framework.options?.inlineStylesExtension
-            : 'css',
-      }),
+      ...pluginsToInject,
       angularOptionsPlugin(options, { normalizePath, experimentalZoneless }),
       storybookEsbuildPlugin(),
     ],

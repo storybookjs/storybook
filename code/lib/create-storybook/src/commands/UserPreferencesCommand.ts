@@ -234,8 +234,7 @@ export class UserPreferencesCommand {
       ? true
       : await prompt.confirm(
           {
-            message:
-              'Would you like to install AI features (MCP addon and prompt suggestions)?',
+            message: 'Would you like to install AI features (MCP addon and prompt suggestions)?',
           },
           createPromptCancelOptions(this.telemetryService, 'ai-setup')
         );

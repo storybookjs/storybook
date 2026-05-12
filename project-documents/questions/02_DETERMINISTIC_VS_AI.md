@@ -98,13 +98,19 @@ These are short additions (days, not weeks), purely deterministic, and would not
 This is **purely a reverse-index query** — no AI needed. The accuracy is bounded by "did anyone import any module from this directory" which is high-recall for a design-system check.
 
 ### 2. Raw git diff in the agent's input
-The MCP tool `get_change_context` should return:
-- modified[] / affected[] / new[] story IDs (from change-detection)
-- raw git diff hunks per changed file
-- a project-shape summary (story count, top namespaces) so the agent can self-tune behaviour
-- the reverse-index slice for the changed files
 
-This is one tool call, one round-trip. Agents don't walk the filesystem; the tool delivers the bundle.
+> **Revised after reviewing [storybookjs/mcp PR #219](https://github.com/storybookjs/mcp/pull/219).** Earlier drafts of this section proposed a new `get_change_context` MCP tool that bundled "list of changed stories + raw diff + project shape + reverse-index slice" into one call. The merged PR ships only the *list-of-changed-stories* half (as `get-changed-stories`, returning markdown text not structured JSON). The raw diff is **agent-side** — the agent already has filesystem/git tools and assembles its own diff context.
+
+Updated split:
+
+| What the agent needs | Source |
+|---|---|
+| `modified[]` / `affected[]` (= `related`) / `new[]` story IDs with `title` + `name` + `importPath` | `get-changed-stories` MCP tool (shipped) |
+| Raw `git diff` hunks per changed file | Agent's own filesystem/git tools |
+| Project-shape summary (story count, top namespaces) for self-tuning | Either: inline into `get-changed-stories` output, or skip (agent rarely needs this on iteration 1) |
+| Reverse-index slice (`changedFile → importing stories`) | Either: extend `get-changed-stories` with an optional flag, or roll into change-detection's status data |
+
+Iteration-1 contract is simpler than the original draft and reuses what's already published.
 
 ### 3. Session-pinned baseline (merge-base)
 Currently the prototype's "before" is git HEAD. In an agentic loop the agent commits/amends; HEAD shifts and "before" moves with it. The user's mental model is "before this whole feature."
@@ -175,14 +181,14 @@ Iteration 1 (weeks 1-2) — **fully deterministic**:
 | What | Where built | Approx cost |
 |---|---|---|
 | Polish PR #34569 (fix build-config bug, iframe pooling, session-pinned baseline) | `code/addons/before-after` | 3-5 days |
-| New MCP tool `get_change_context` returning bundle (statuses + diff + project shape + reverse-index slice + CSS blast radius) | `storybookjs/mcp` cross-repo PR | 1-2 days |
-| New MCP tool `apply_review_status(ids[], cluster_id?)` | `storybookjs/mcp` | 0.5 days |
-| New MCP tool `open_review_page()` | `storybookjs/mcp` | 0.5 days |
+| ✅ ~~MCP tool `get_change_context`~~ — already shipped as `get-changed-stories` in [PR #219](https://github.com/storybookjs/mcp/pull/219) | `storybookjs/mcp` | — |
+| ✅ ~~MCP tool `apply_review_status`~~ — not needed in iteration 1; addon owns its status store | — | — |
+| New MCP tool `open-review-page(storyIds | reviewSlug)` (channel event → tab navigates to `/review/<uid>`) | `storybookjs/mcp` | ~1 day |
 | `agent-recommended` status value + cluster-data carrier | `code/core/src/shared/status-store` | 1 day |
-| Wire `addon-mcp` into dogfood | `code/package.json` + `code/.storybook/main.ts` | 0.5 days |
+| Wire `addon-mcp` into dogfood (with `changeDetectionEnabled: true`) | `code/package.json` + `code/.storybook/main.ts` | 0.5 days |
 | Telemetry on review-page open / close / scroll-depth | `code/addons/before-after/src/preset.ts` | 0.5 days |
 
-**Total: ~7-10 engineer-days.** Two engineers can do this in a week with parallel work.
+**Total: ~6-8 engineer-days** (revised down — the bulk of the MCP work is already merged). Two engineers can do this comfortably in a week.
 
 User sessions in weeks 3-4 evaluate whether this deterministic flow is *enough*.
 
@@ -202,30 +208,37 @@ Iteration 2 (weeks 5-6) — **AI layer added if user sessions ask for it**:
 
 ## Concrete tool surface for iteration 1
 
-Three tools, all deterministic on the server side:
+Two tools shipped, one to add.
+
+**Already shipped in `@storybook/addon-mcp` (PR #219, `dev` toolset):**
 
 ```ts
-// Returns everything the agent or a deterministic UI consumer needs
-storybook_get_change_context(): {
-  modified: StoryID[];
-  affected: StoryID[];
-  new: StoryID[];
-  cssAffected: StoryID[];      // ← synthesised via reverse-index lookup
-  rawDiff: { path: string; hunks: string }[];
-  projectShape: { totalStories: number; topNamespaces: { name: string; count: number }[] };
-  reverseIndexSlice: { changedFile: string; importingStories: StoryID[] }[];
-}
+// Returns markdown-formatted text grouped by status; NOT structured JSON.
+// Sourced from experimental_getStatusStore('storybook/change-detection').
+get-changed-stories(): TextContent  // {storyId, title, name, importPath} per story
 
-// Sets agent-curated status; cluster_id stored in data field for UI grouping
-storybook_apply_review_status(story_ids: StoryID[], cluster_id?: string, rationale?: string): void
-
-// Channel event → all connected Storybook tabs navigate to /changes
-storybook_open_review_page(filter?: { statuses?: StatusValue[] }): void
+// Returns iframe URLs for a set of story IDs.
+preview-stories(storyIds: StoryID[]): TextContent
 ```
 
-In iteration 1, an "agent" calling these tools could be just a deterministic script (CLI wrapper that calls `get_change_context`, applies the existing modified/affected/CSS sets as `agent-recommended`, then opens the page). **The same tool surface supports the deterministic baseline AND the iteration-2 LLM-based categoriser.**
+**New, to add (~1 day cross-repo PR):**
 
-This is the architectural unlock: the tools don't care whether their caller is an agent or a script. The agent is replaceable, and we can validate the value of *the workflow* before validating the value of *the agent*.
+```ts
+// Channel event → addon listens → tab navigates to /review/<uid>
+open-review-page(input: { storyIds?: StoryID[]; reviewSlug?: string }): void
+```
+
+The agent's per-iteration workflow:
+
+1. Author/edit a component.
+2. Call `get-changed-stories` → see what change-detection flagged.
+3. Assemble raw `git diff` via filesystem tools (agent-side; not MCP's job).
+4. Optionally categorise: produce cluster signatures via the agent's own reasoning pass (the signature-prompt design from Round-2; runs on the agent's transport, not MCP).
+5. Call `open-review-page` → user is taken to the review page with either the raw story list or the agent's cluster signatures.
+
+This is significantly simpler than the original draft, which assumed `get_change_context` would be a new structured-JSON MCP tool. PR #219 already settled the question with a markdown-text discovery surface, and our cluster-signature design is agent-side reasoning over what that tool returns plus the agent's own context.
+
+**The architectural unlock is still real:** the tools don't care whether their caller is an agent or a deterministic script. iteration 1 can ship without an agent — a CLI wrapper that calls `get-changed-stories`, applies the modified/affected sets as-is, opens the page is a valid v1.
 
 ---
 

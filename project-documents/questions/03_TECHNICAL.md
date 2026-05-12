@@ -57,33 +57,60 @@ Decision: Pending
 
 ## **MCP tool surface for iteration 1**
 
-The deterministic split ([Page 2](02_DETERMINISTIC_VS_AI.md)) lands three tools:
+> **Revised after reviewing [storybookjs/mcp PR #219](https://github.com/storybookjs/mcp/pull/219).** The discovery half of the MCP surface is already shipped. Earlier drafts of this section proposed three new tools (`get_change_context`, `apply_review_status`, `open_review_page`); after reading the merged PR the scope drops to **one** new tool.
+
+### What's already shipped (PR #219, in `@storybook/addon-mcp`'s `dev` toolset)
+
+- **`get-changed-stories`** — reads `experimental_getStatusStore('storybook/change-detection').getAll()`, filters to `new` / `modified` / `affected` (renamed `related` in the response copy), sorts by status priority then storyId, returns *markdown text* (not structured JSON) with the format:
+  ```
+  Detected N changed stories (X new, Y modified, Z related).
+
+  New stories:
+  - `<storyId>`: <title> / <name> (`<importPath>`)
+  Modified stories:
+  - …
+  Related stories:
+  - …
+  ```
+  Telemetry event: `tool:getChangedStories`.
+
+- **`preview-stories`** — gives the agent iframe URLs for a set of story IDs. Already used by the existing dev workflow.
+
+The PR also wired up the **workflow** in `dev-instructions.md`: *"After changing any component or story, call `get-changed-stories` to discover new/modified/related stories, then call `preview-stories` to retrieve preview URLs."* This is gated on a `changeDetectionEnabled` option.
+
+### What this project needs to add
+
+Exactly one new tool:
 
 ```ts
-storybook_get_change_context(): {
-  modified: StoryID[]; affected: StoryID[]; new: StoryID[];
-  cssAffected: StoryID[];          // synthesised by reverse-index walking CSS files in diff
-  rawDiff: { path: string; hunks: string }[];
-  projectShape: { totalStories: number; topNamespaces: { name: string; count: number }[] };
-  reverseIndexSlice: { changedFile: string; importingStories: StoryID[] }[];
-}
-storybook_apply_review_status(story_ids: StoryID[], cluster_id?: string, rationale?: string): void
-storybook_open_review_page(filter?: { statuses?: StatusValue[] }): void
+open-review-page(input: { storyIds?: StoryID[]; reviewSlug?: string }): void
 ```
 
-These live in [`storybookjs/mcp`](https://github.com/storybookjs/mcp). Adding tools is the half-day pattern documented by `run-story-tests` (server.tool + valibot schema + channel-based request/response).
+Emits a channel event the addon listens for; the running Storybook tab navigates to `/review/<uid>` (server-side slug-backed review store; see Q "How does the addon open the review page…" below). Same pattern as `run-story-tests` — `server.tool + valibot schema + channel request/response`. **~1 day cross-repo.**
 
-The `cssAffected` field is the deterministic gap-filler: for each `.css/.scss/.sass/.less` file in the git diff, walk the existing reverse-index for sibling JS files in the same directory and union the importing stories. Purely deterministic, no AI.
+### What the existing tool does NOT cover (and where each gap lives instead)
 
-1. **Single bundled call** (above).
-2. **Multiple narrow calls** (one per concern: get-modified, get-diff, get-shape).
-3. **Just `get_change_context`; agent handles the rest via filesystem reads.**
+| Field the review-page eval used | Where it actually comes from in production |
+|---|---|
+| `modified` / `affected` / `new` lists | ✅ Already in `get-changed-stories` |
+| `title` / `name` / `importPath` per story | ✅ Already in `get-changed-stories` |
+| Raw `git diff` | **Agent side** — the agent assembles this via its own filesystem/git tools. NOT the MCP's job per PR #219's design. |
+| `cssAffected` (CSS-blind workaround) | Server side, deterministic. Either: (a) extend `get-changed-stories` with an optional `includeCssAffected` flag, or (b) inline this into change-detection itself so it shows up in the standard status flow. Option (b) is more honest — CSS edits SHOULD flag stories. |
+| `reverseIndexSlice` (changed-file → importers) | Server side, deterministic. Same question as above — extend, or roll into change-detection. |
+| `depthByStory` / `depthTiers` | Server side, deterministic, but per Round-2 §I.5 results: **don't ship in the MCP payload**. Adds 50% to input tokens and 3-9× cost/latency. Reserve depth as an addon-internal hint for the UI ("review the d1 group first"). |
+| Cluster signatures | **Agent output**, comes back via the agent's response, not in MCP request shape. |
 
-**Recommendation: option 1.** Token cost differs by an order of magnitude between option 1 and option 3 on a 2,000-story repo. Single bundled call also makes deterministic UI consumers (e.g. a "smart filter" sidebar widget) trivial — they read once, render. Multiple narrow calls add round-trip latency for no clarity gain.
+### Why this works without `apply_review_status`
 
-**Cross-repo coordination required.** Plan time for it; `storybookjs/mcp` has open auth/memory bugs ([#211](https://github.com/storybookjs/mcp/issues/211), [#214](https://github.com/storybookjs/mcp/issues/214)) that may surface during integration.
+The earlier draft proposed `apply_review_status(storyIds, clusterId, rationale)` so the agent could write back to `experimental_getStatusStore('storybook/agent-review')`. After the team conversation and the depth experiment, that's **not needed in iteration 1**:
+
+- The addon owns its status store; the agent doesn't need to write to it.
+- Cluster information travels via the agent's response payload, which the addon parses on receipt.
+- If iteration-2 needs a persistent write-back (e.g. user accepts a cluster), revisit then.
 
 Decision: Pending
+
+---
 
 ---
 
@@ -208,7 +235,7 @@ The technical work for iteration 1, in priority order:
 1. ~~**Fix the PR bugs**~~ ✅ all three are resolved (see top of this page).
 2. **Iframe pooling.** 2-3 days. Required for the cascade case.
 3. **Session-pinned baseline (merge-base).** 1 day. *Round-2 note:* the dominant case is 70.4% single-modified; merge-base baseline matters most for agentic loops (multi-commit feature work), less for one-shot edits.
-4. **MCP tool surface (cross-repo).** 2-3 days.
+4. **MCP tool surface (cross-repo).** ~1 day. (Revised down — `get-changed-stories` already shipped in [PR #219](https://github.com/storybookjs/mcp/pull/219); only `open-review-page` is new.)
 5. **`agent-recommended` status value + cluster-data carrier.** 1 day.
 6. **CSS blast-radius synthesised lookup.** 1-2 days. *Round-2 note:* prototype exists in [`scripts/eval/inner-loop/lib/css-blast-radius.ts`](../../scripts/eval/inner-loop/lib/css-blast-radius.ts) and works; it just needs wiring into the addon's preset. Known precision caveat documented in the prototype.
 7. **Telemetry.** 0.5 days.

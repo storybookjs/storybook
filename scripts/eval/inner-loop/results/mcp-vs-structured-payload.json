@@ -1,0 +1,43 @@
+{
+  "experiment": "MCP-shaped workflow vs structured-payload eval",
+  "timestamp": "2026-05-12T15:00:00Z",
+  "context": "After discovering storybookjs/mcp PR #219 already ships `get-changed-stories` (returning markdown text, not structured JSON), tested whether the same signature prompt produces comparable cluster quality when fed the real shipped-tool output + raw diff vs the structured payload our existing eval invents.",
+  "method": "test-mcp-workflow.ts mirrors the exact output format of get-changed-stories (`Detected N changed stories (...). New stories: -<id>: <title>/<name>(<path>) …`), assembles it into a user message with the raw git diff (which the agent would obtain via its own filesystem tools in production), and calls the SAME signature prompt the structured eval uses. Only the input shape changes.",
+  "perScenario": [
+    {
+      "scenario": "small",
+      "cascade": 116,
+      "structuredPayload":  { "duration": 12, "cost": 0.013, "purity": 0.75,  "clusters": 6, "catchAll": 0.00, "inputChars": 10935, "estTokens": 3641 },
+      "mcpWorkflow":        { "duration": 17, "cost": 0.040, "purity": 0.80,  "clusters": 6, "catchAll": 0.095, "inputChars": 17956, "estTokens": 4489 },
+      "verdict": "Slightly higher cost (3×) and slightly higher purity (0.80 vs 0.75). 6 clusters in both. catchAll grows modestly (0% → 9.5%) — text format gives less signal than structured but agent still groups cleanly. Both produce UX-usable output."
+    },
+    {
+      "scenario": "medium",
+      "cascade": 1025,
+      "structuredPayload":  { "duration": 14, "cost": 0.022, "purity": 0.18,  "clusters": 6, "catchAll": 0.161, "inputChars": 100337, "estTokens": 31170 },
+      "mcpWorkflow":        { "duration": 29, "cost": 0.250, "purity": 0.20,  "clusters": 7, "catchAll": 0.409, "inputChars": 168272, "estTokens": 42068 },
+      "verdict": "MCP workflow is 11× more expensive ($0.25 vs $0.022) and 2× slower (29s vs 14s) but produces comparable cluster quality — recall=precision=1.0, slightly higher purity, 7 vs 6 clusters. Cost blow-up traces to the verbose markdown format: every story emits ~150 chars (id + title + name + importPath) vs ~30 chars in the structured payload's flat ID list."
+    },
+    {
+      "scenario": "large",
+      "cascade": 1236,
+      "structuredPayload":  { "duration": 12, "cost": 0.169, "purity": 0.13,  "clusters": 5, "catchAll": 0.155, "inputChars": 119275, "estTokens": 36853 },
+      "mcpWorkflow":        { "duration": 23, "cost": 0.252, "purity": 0.12,  "clusters": 4, "catchAll": 0.321, "inputChars": 202386, "estTokens": 50597 },
+      "verdict": "1.5× cost, 2× duration, equivalent purity, 1 fewer cluster, 2× catchAll share. Same quality, more expensive."
+    }
+  ],
+  "headlineFindings": [
+    "Cluster quality survives the format change. recall=1.0 and precision=1.0 on all three scenarios; purity stays in the same band (0.80 / 0.20 / 0.12 — actually slightly BETTER on small and medium). 6/7 clusters per scenario, namespace-organised, rationales reference the actual diff content (AGENT_EVAL_MARKER, theming barrel, etc).",
+    "Cost scales with cascade size, not pretty. Small (116 stories): $0.04 — fine. Medium (1025): $0.25 — 10× the structured baseline. Large (1236): $0.25 — only 1.5× the structured baseline because the structured baseline was already expensive.",
+    "Latency 2× on cascade scenarios. Acceptable absolute (17-29s) but the structured payload's 12-14s is meaningfully better when the agent has to wait synchronously.",
+    "catchAll share jumps. 0%/16%/16% (structured) vs 10%/41%/32% (MCP workflow). Agent dumps more stories into the catch-all when input is plain text — less structural signal to anchor specific patterns on. Still UX-usable but the 'specific clusters first' framing weakens at scale.",
+    "The MCP tool's verbose format is the cost driver. Each story takes ~150 chars (id + title + name + importPath) vs ~30 in flat ID lists. For a 1K-story cascade that's an extra ~120KB of input. Token cost grows linearly with cascade size."
+  ],
+  "implications": [
+    "**MCP workflow is shippable as-is** for iteration-1. recall=precision=1.0, clusters are sensible, rationales reference the diff. The agent does NOT need a structured-payload tool — it can do the job with `get-changed-stories` (text) + its own raw-diff tools.",
+    "**Cost gap is real but small in absolute terms.** $0.25 vs $0.02 is a 12× ratio but still under $1 per cascade-scale review. For an interactive review flow that fires a few times a day, this is not a blocker.",
+    "**For high-frequency workflows (e.g. fire-on-every-save), the verbose format would matter.** A future optimisation would add an `output_format: 'compact'` option to `get-changed-stories` that drops title/name and keeps only `<id>: <importPath>`. Worth raising with the upstream maintainer if usage warrants.",
+    "**The catchAll-rate jump (16% → 41% on medium) is the real UX concern.** If 40% of stories end up in a generic catch-all, the cluster-organised review loses much of its value at the high end. Two paths: (a) ship as-is and let user sessions reveal whether catchAll-share matters; (b) explore the deterministic-merge design from §I.5 (namespace clusterer + LLM-only-merges) which sidesteps catchAll by giving the LLM pre-grouped buckets."
+  ],
+  "recommendation": "Iteration-1 ships with `get-changed-stories` + raw-diff + signature prompt. The agent's prompt may emit cluster signatures or a simpler 'review these first' list — either way, the shipped MCP tool covers the discovery half. Do NOT add a new structured MCP tool just to save tokens at this scale. Revisit ONLY if user sessions surface either (a) cost anxiety, or (b) catchAll-share confusion in the UI."
+}

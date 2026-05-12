@@ -402,7 +402,12 @@
       <li><strong>Server-side review store + short slug.</strong> A POST endpoint accepts a story-set or cluster-set and returns a short ID; the shareable URL is <code>/review/&lt;uid&gt;</code>. Alternatively, since cluster <em>signatures</em> are already O(K) and short by design, the agent can also POST signatures and let the client re-expand them — cheaper than a server store for the in-session case.</li>
       <li><strong>MCP tool</strong> (<code>open_review_page</code>) for live agent flows that already have a channel into the addon.</li>
     </ul>
-    <p><strong>Open:</strong> the MCP tool surface needs cross-repo work with <code>storybookjs/mcp</code>. Three tools: <code>get_change_context</code>, <code>apply_review_status</code>, <code>open_review_page</code>. Estimated 2–3 days incl. PR review.</p>
+    <p><strong>Open (revised after reviewing <a href="https://github.com/storybookjs/mcp/pull/219">storybookjs/mcp PR #219</a>):</strong> the discovery half of the MCP surface is <em>already shipped</em>. <code>get-changed-stories</code> (in <code>@storybook/addon-mcp</code>'s <code>dev</code> toolset) returns markdown-formatted lists of new/modified/related stories with <code>storyId</code> + <code>title</code> + <code>name</code> + <code>importPath</code>, sourced from the same status store the review page uses. <code>preview-stories</code> already gives the agent URLs. Iteration-1 MCP scope drops from three new tools to <strong>one</strong>:</p>
+    <ul>
+      <li><strong>Use <code>get-changed-stories</code> + <code>preview-stories</code> as-shipped.</strong> No new code.</li>
+      <li><strong>Add <code>open-review-page(storyIds | reviewSlug)</code></strong> — emits a channel event the addon listens for; navigates the live tab to <code>/review/&lt;uid&gt;</code>. ~1 day cross-repo.</li>
+      <li><strong>Skip <code>apply_review_status</code></strong> for iteration-1: the addon owns its status store; the agent doesn't need to write back.</li>
+    </ul>
   </div>
 
   <div class="q-block partial">
@@ -441,7 +446,7 @@
     <ul>
       <li><strong>Server-side review store + short slug</strong> (<code>/review/&lt;uid&gt;</code>) for cold-share / paste-this-link flows.</li>
       <li><strong>POST cluster signatures</strong> (O(K), short by construction) and re-expand client-side — cheaper than a server store for the in-session case, and reuses the signature shape the eval already produces.</li>
-      <li><strong>MCP tool</strong> (<code>open_review_page</code>) for live agent flows.</li>
+      <li><strong>MCP tool</strong> (<code>open-review-page</code>) for live agent flows. Sits next to the already-shipped <code>get-changed-stories</code> and <code>preview-stories</code> tools in <code>@storybook/addon-mcp</code>'s <code>dev</code> toolset.</li>
     </ul>
     <p>All three can coexist. Building the slug path first is the simpler thing and unblocks the deterministic iteration-1 without depending on the MCP cross-repo work landing.</p>
   </div>
@@ -696,9 +701,10 @@
     <li>Review-page route with a short <code>/review/&lt;uid&gt;</code> URL backed by a server-side review store.</li>
     <li>Cluster-organised navigation: sections headed by rationale, story cards inside, lead with one card when |modified|=1.</li>
     <li>"Zoom out" panel for the <code>affected</code> set, default-collapsed beyond N stories.</li>
-    <li><code>get_change_context</code> MCP tool returning the payload shape already serialised in the eval (<code>{ changedFiles, diffSummary, modified, affected, new, cssAffected, projectShape }</code>).</li>
-    <li><code>apply_review_status</code> MCP tool writing to <code>experimental_getStatusStore('storybook/agent-review')</code>.</li>
-    <li><code>open_review_page</code> MCP tool — a channel event the addon listens for.</li>
+    <li><strong>Reuse already-shipped <code>get-changed-stories</code></strong> (<a href="https://github.com/storybookjs/mcp/pull/219">PR #219</a> in <code>storybookjs/mcp</code>, in <code>@storybook/addon-mcp</code>'s <code>dev</code> toolset). Returns markdown-formatted lists with <code>storyId</code> + <code>title</code> + <code>name</code> + <code>importPath</code>, sourced from <code>experimental_getStatusStore('storybook/change-detection')</code>. <em>No new tool authoring needed.</em></li>
+    <li><strong>Reuse already-shipped <code>preview-stories</code></strong> for handing iframe URLs to the agent.</li>
+    <li>Add <strong>one</strong> new MCP tool: <code>open-review-page(storyIds | reviewSlug)</code> — emits a channel event the addon listens for; navigates the live tab to <code>/review/&lt;uid&gt;</code>.</li>
+    <li>The agent assembles its own <strong>raw git diff</strong> via filesystem tools (not the MCP's job per PR #219's design). Eval shape stays the same; only the transport changes.</li>
     <li>"Chromatic catches the rest" framing in the UI, regardless of any actual Chromatic plumbing.</li>
     <li>Wall-clock timeout (60s) around any future agent call, with graceful fallback to the deterministic baseline.</li>
     <li>Telemetry from day one: cascade size, time-to-first-finding, zoom-out frequency.</li>
@@ -749,9 +755,9 @@
     </tr>
     <tr>
       <td>MCP cross-repo PR review at <code>storybookjs/mcp</code> stalls</td>
-      <td>Medium</td>
-      <td>Medium</td>
-      <td>Open all three tools as a single PR in week 1; review by EOW2.</td>
+      <td>Low</td>
+      <td>Low</td>
+      <td>Reduced from prior estimate: PR #219 already shipped <code>get-changed-stories</code> + the workflow framing. Only <code>open-review-page</code> is new; small PR, ~1 day cross-repo.</td>
     </tr>
     <tr>
       <td>SDK rate-limiting during user sessions in production</td>

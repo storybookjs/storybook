@@ -95,6 +95,10 @@ const config = defineMain({
       titlePrefix: 'addons/pseudo-states',
     },
     {
+      directory: '../addons/before-after/src/prototypes',
+      titlePrefix: 'addons/before-after',
+    },
+    {
       directory: '../addons/vitest/src/components',
       titlePrefix: 'addons/vitest',
     },

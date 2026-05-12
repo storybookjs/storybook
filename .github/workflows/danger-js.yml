@@ -1,4 +1,37 @@
+###################################################################################################
+#                                                                                                 #
+#                                            ██                                                   #
+#                                          ██░░██                                                 #
+#  ░░          ░░                        ██░░░░░░██                            ░░░░               #
+#                                      ██░░░░░░░░░░██                                             #
+#                                      ██░░░░░░░░░░██                                             #
+#                                    ██░░░░░░░░░░░░░░██                                           #
+#                                  ██░░░░░░██████░░░░░░██                                         #
+#                                  ██░░░░░░██████░░░░░░██                                         #
+#                                ██░░░░░░░░██████░░░░░░░░██                                       #
+#                                ██░░░░░░░░██████░░░░░░░░██                                       #
+#                              ██░░░░░░░░░░██████░░░░░░░░░░██                                     #
+#                            ██░░░░░░░░░░░░██████░░░░░░░░░░░░██                                   #
+#                            ██░░░░░░░░░░░░██████░░░░░░░░░░░░██                                   #
+#                          ██░░░░░░░░░░░░░░██████░░░░░░░░░░░░░░██                                 #
+#                          ██░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░██                                 #
+#                        ██░░░░░░░░░░░░░░░░██████░░░░░░░░░░░░░░░░██                               #
+#                        ██░░░░░░░░░░░░░░░░██████░░░░░░░░░░░░░░░░██                               #
+#                      ██░░░░░░░░░░░░░░░░░░██████░░░░░░░░░░░░░░░░░░██                             #
+#        ░░            ██░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░██                             #
+#                        ██████████████████████████████████████████                               #
+#                                                                                                 #
+#                                                                                                 #
+#   SECURITY WARNING: Ensure your `pull_request_target` job respects the following rules:         #
+#                                                                                                 #
+# - Never write to GitHub Actions cache, as it would allow cache poisoning attacks                #
+# - Only call third-party systems that are aware the code passed to them could be untrustworthy   #
+# - Always set explicit permissions on your PR to limit the capabilities of secrets.GITHUB_TOKEN  #
+#                                                                                                 #
+###################################################################################################
+
 on:
+  # We need `pull_request_target` to check external contributor PRs.
   pull_request_target:
     types:
       - opened
@@ -16,9 +49,8 @@ concurrency:
 
 permissions:
   contents: read
+  issues: read
   pull-requests: write
-  issues: write
-  statuses: write
 
 name: Danger JS
 jobs:
@@ -26,12 +58,12 @@ jobs:
     name: Danger JS
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           ref: ${{ github.event.pull_request.base.sha }}
           persist-credentials: false
       - name: Danger JS
-        uses: docker://ghcr.io/danger/danger-js:13.0.5
+        uses: docker://ghcr.io/danger/danger-js@sha256:66d5394557aef115c9b8086e9886fc24ee32d82ad222efb83778468538a91ef0 # 13.0.5
         env:
           GITHUB_TOKEN: ${{ secrets.DANGER_GITHUB_API_TOKEN }}
         with:

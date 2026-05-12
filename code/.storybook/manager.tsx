@@ -1,4 +1,4 @@
-import { startCase, upperCase } from 'es-toolkit/string';
+import { startCase } from 'es-toolkit/string';
 import { addons } from 'storybook/manager-api';
 
 addons.setConfig({

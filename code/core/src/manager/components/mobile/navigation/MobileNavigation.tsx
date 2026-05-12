@@ -66,7 +66,7 @@ const useFullStoryName = () => {
       node.renderAriaLabel?.(node, api, { isMobile: true, location: 'bottom-bar' }) || parentName;
 
     // Limit length of name shown in UI due to layout constraints.
-    if (fullStoryName.length > 24) {
+    if (fullStoryName.length < 24) {
       fullStoryName = `${parentName}/${fullStoryName}`;
     }
     fullStoryAriaLabel = `${parentAriaLabel}/${fullStoryAriaLabel}`;

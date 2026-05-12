@@ -170,6 +170,7 @@ describe('PreflightCheckCommand', () => {
       expect(mockPackageManager.precheckStorybookPackageInstall).toHaveBeenCalledWith({
         storybookVersion: '10.4.0-alpha.17',
         nonInteractive: true,
+        installContext: 'create',
       });
     });
   });

@@ -5,7 +5,7 @@
  * - Services/VersionService.test.ts (for version detection)
  * - Commands/UserPreferencesCommand.test.ts (for user prompts)
  */
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { VersionService } from './services/VersionService.ts';
 
@@ -20,6 +20,18 @@ vi.mock('storybook/internal/telemetry');
 
 vi.mock('storybook/internal/core-server', () => ({
   getServerPort: vi.fn().mockResolvedValue(6006),
+  withTelemetry: vi.fn(),
+}));
+
+vi.mock('storybook/internal/node-logger', () => ({
+  logTracker: {
+    writeToFile: vi.fn().mockResolvedValue('/tmp/debug-storybook.log'),
+  },
+  logger: {
+    error: vi.fn(),
+    log: vi.fn(),
+    outro: vi.fn(),
+  },
 }));
 
 describe('getStorybookVersionFromAncestry', () => {
@@ -104,5 +116,42 @@ describe('getCliIntegrationFromAncestry', () => {
   it('returns undefined if no CLI integration found', () => {
     const ancestry = [{ command: 'node' }, { command: 'npm' }];
     expect(getCliIntegrationFromAncestry(ancestry as any)).toBeUndefined();
+  });
+});
+
+describe('initiate failure handling', () => {
+  beforeEach(() => {
+    vi.resetModules();
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it('prints handled error messages before exiting', async () => {
+    const exitError = new Error('process.exit(1)');
+    vi.spyOn(process, 'exit').mockImplementation((() => {
+      throw exitError;
+    }) as never);
+
+    const { withTelemetry } = await import('storybook/internal/core-server');
+    const { HandledError } = await import('storybook/internal/common');
+    const { logger } = await import('storybook/internal/node-logger');
+    vi.mocked(withTelemetry).mockRejectedValueOnce(
+      new HandledError('Please rerun Storybook creation with:\nnpx create-storybook@10.3.5')
+    );
+
+    const { initiate } = await import('./initiate.ts');
+
+    await expect(initiate({ logfile: true } as any)).rejects.toThrow('process.exit(1)');
+
+    expect(vi.mocked(logger.error)).toHaveBeenNthCalledWith(
+      1,
+      'Storybook encountered an error during initialization'
+    );
+    expect(vi.mocked(logger.error)).toHaveBeenNthCalledWith(
+      2,
+      'Please rerun Storybook creation with:\nnpx create-storybook@10.3.5'
+    );
   });
 });

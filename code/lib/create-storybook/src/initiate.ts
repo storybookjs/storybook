@@ -2,6 +2,7 @@ import { resolve } from 'node:path';
 
 import { ProjectType } from 'storybook/internal/cli';
 import {
+  HandledError,
   type JsPackageManager,
   PackageManagerName,
   cache,
@@ -201,9 +202,17 @@ export async function doInitiate(options: CommandOptions): Promise<
   };
 }
 
-const handleCommandFailure = async (logFilePath: string | boolean | undefined): Promise<never> => {
+const handleCommandFailure = async (
+  logFilePath: string | boolean | undefined,
+  error?: unknown
+): Promise<never> => {
   const logFile = await logTracker.writeToFile(logFilePath);
   logger.error('Storybook encountered an error during initialization');
+
+  if (error instanceof HandledError) {
+    logger.error(error.message);
+  }
+
   logger.log(`Debug logs are written to: ${logFile}`);
   logger.outro('Storybook exited with an error');
   process.exit(1);
@@ -233,8 +242,8 @@ export async function initiate(options: CommandOptions): Promise<void> {
 
       return result;
     }
-  ).catch(() => {
-    handleCommandFailure(options.logfile);
+  ).catch((error) => {
+    return handleCommandFailure(options.logfile, error);
   });
 
   // Launch dev server only if --dev was explicitly passed

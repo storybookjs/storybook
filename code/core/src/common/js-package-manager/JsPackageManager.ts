@@ -192,6 +192,7 @@ export abstract class JsPackageManager {
   async precheckStorybookPackageInstall(options: {
     storybookVersion: string;
     nonInteractive: boolean;
+    installContext: 'create' | 'upgrade';
   }): Promise<void> {}
 
   async dedupeDependencies(options?: { force?: boolean }) {

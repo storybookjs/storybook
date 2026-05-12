@@ -394,6 +394,7 @@ export async function upgrade(options: UpgradeOptions): Promise<void> {
         await project.packageManager.precheckStorybookPackageInstall({
           storybookVersion: project.currentCLIVersion,
           nonInteractive: !!options.yes || !process.stdout.isTTY || !!isCI(),
+          installContext: 'upgrade',
         });
       }
 

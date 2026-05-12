@@ -231,9 +231,11 @@ export class PNPMProxy extends JsPackageManager {
   async precheckStorybookPackageInstall({
     storybookVersion,
     nonInteractive,
+    installContext,
   }: {
     storybookVersion: string;
     nonInteractive: boolean;
+    installContext: 'create' | 'upgrade';
   }): Promise<void> {
     const minimumReleaseAge = await this.getMinimumReleaseAge();
 
@@ -261,7 +263,7 @@ export class PNPMProxy extends JsPackageManager {
       await this.updateMinimumReleaseAgeExclude();
       logger.info(
         dedent`
-          pnpm minimumReleaseAge would block Storybook core package installation, so Storybook updated minimumReleaseAgeExclude for this project automatically.
+          pnpm minimumReleaseAge would block storybook@${storybookVersion} from being installed because it was released within the configured minimumReleaseAge window, so Storybook updated minimumReleaseAgeExclude for this project automatically.
 
           Added patterns: storybook, @storybook/*, eslint-plugin-storybook
 
@@ -273,38 +275,47 @@ export class PNPMProxy extends JsPackageManager {
       return;
     }
 
-    const selection = await prompt.select({
-      message:
-        'pnpm minimumReleaseAge would block Storybook core package installation. How do you want to proceed?',
-      options: [
-        {
-          label: 'Update pnpm config to exclude Storybook core packages',
-          value: 'exclude',
+    logger.warn(
+      `pnpm minimumReleaseAge will block storybook@${storybookVersion} from being installed because it was released within the disallowed immaturity window.`
+    );
+
+    const rerunError = new HandledError(
+      this.createMinimumReleaseAgeRerunMessage({
+        currentVersion: storybookVersion,
+        compatibleVersion,
+        installContext,
+      })
+    );
+
+    const selection = await prompt.select(
+      {
+        message: 'How would you like to proceed?',
+        options: [
+          {
+            label: 'Update pnpm config to exclude Storybook packages',
+            value: 'exclude',
+          },
+          {
+            label: compatibleVersion
+              ? `Stop now and rerun with the most recent allowed release: storybook@${compatibleVersion}`
+              : 'Stop now and rerun with an older stable Storybook release later',
+            value: 'rerun',
+          },
+        ],
+      },
+      {
+        onCancel: () => {
+          throw rerunError;
         },
-        {
-          label: compatibleVersion
-            ? `Stop now and rerun with storybook@${compatibleVersion}`
-            : 'Stop now and rerun with an older stable Storybook release later',
-          value: 'rerun',
-        },
-      ],
-    });
+      }
+    );
 
     if (selection === 'exclude') {
       await this.updateMinimumReleaseAgeExclude();
-      logger.info(
-        'Added Storybook core packages to pnpm minimumReleaseAgeExclude for this project.'
-      );
       return;
     }
 
-    throw new HandledError(
-      this.createMinimumReleaseAgeMessage({
-        minimumReleaseAge,
-        currentVersion: storybookVersion,
-        compatibleVersion,
-      })
-    );
+    throw rerunError;
   }
 
   protected runAddDeps(dependencies: string[], installAsDevDependencies: boolean) {
@@ -546,31 +557,37 @@ export class PNPMProxy extends JsPackageManager {
     return latestStableVersion;
   }
 
-  private createMinimumReleaseAgeMessage({
-    minimumReleaseAge,
+  private createMinimumReleaseAgeRerunMessage({
     currentVersion,
     compatibleVersion,
+    installContext,
   }: {
-    minimumReleaseAge: number;
     currentVersion: string;
     compatibleVersion: string | null;
+    installContext: 'create' | 'upgrade';
   }): string {
-    const rerunCommand = compatibleVersion
-      ? `npx storybook@${compatibleVersion} init`
-      : 'npx storybook@<compatible-version> init';
+    const rerunCommand =
+      installContext === 'create'
+        ? compatibleVersion
+          ? `npx create-storybook@${compatibleVersion}`
+          : 'npx create-storybook@<compatible-version>'
+        : compatibleVersion
+          ? `npx storybook@${compatibleVersion} upgrade`
+          : 'npx storybook@<compatible-version> upgrade';
+
+    const rerunInstruction =
+      installContext === 'create'
+        ? 'Please rerun Storybook creation with:'
+        : 'Please rerun the Storybook upgrade with:';
 
     return dedent`
-      pnpm minimumReleaseAge would block Storybook core package installation.
+      pnpm minimumReleaseAge blocked storybook@${currentVersion} from being installed.
 
-      Your project is configured with minimumReleaseAge=${minimumReleaseAge} minutes, but Storybook ${currentVersion} is still within that protection window.
-
-      To fix this, choose one of these options:
-      1. Update pnpm to exclude Storybook core packages in this project by setting minimumReleaseAgeExclude to include: storybook, @storybook/*, eslint-plugin-storybook
-      2. Stop now and rerun init with the newest stable Storybook release old enough to satisfy the policy: ${rerunCommand}
+      ${rerunInstruction}
+      ${rerunCommand}
 
       Read more:
       - https://pnpm.io/settings#minimumreleaseage
-      - https://pnpm.io/settings#minimumreleaseageexclude
     `;
   }
 

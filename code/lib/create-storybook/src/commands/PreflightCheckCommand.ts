@@ -87,6 +87,7 @@ export class PreflightCheckCommand {
     await packageManager.precheckStorybookPackageInstall({
       storybookVersion: this.versionService.getCurrentVersion(),
       nonInteractive: !!options.yes || !process.stdout.isTTY || !!isCI(),
+      installContext: 'create',
     });
 
     return { packageManager, isEmptyProject: isEmptyDirProject };

@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { prompt } from 'storybook/internal/node-logger';
+import { logger, prompt } from 'storybook/internal/node-logger';
 
 import { executeCommand } from '../utils/command.ts';
 import { JsPackageManager } from './JsPackageManager.ts';
@@ -447,6 +447,7 @@ describe('PNPM Proxy', () => {
       await pnpmProxy.precheckStorybookPackageInstall({
         storybookVersion: '10.4.0-alpha.17',
         nonInteractive: true,
+        installContext: 'create',
       });
 
       expect(mockedExecuteCommand).toHaveBeenLastCalledWith(
@@ -485,7 +486,32 @@ describe('PNPM Proxy', () => {
       await pnpmProxy.precheckStorybookPackageInstall({
         storybookVersion: '10.4.0-alpha.17',
         nonInteractive: false,
+        installContext: 'create',
       });
+
+      expect(vi.mocked(logger.warn)).toHaveBeenCalledWith(
+        expect.stringContaining(
+          'pnpm minimumReleaseAge will block storybook@10.4.0-alpha.17 from being installed'
+        )
+      );
+      expect(vi.mocked(prompt.select)).toHaveBeenCalledWith(
+        expect.objectContaining({
+          options: expect.arrayContaining([
+            expect.objectContaining({
+              label: 'Update pnpm config to exclude Storybook packages',
+            }),
+            expect.objectContaining({
+              label: 'Stop now and rerun with the most recent allowed release: storybook@10.3.2',
+            }),
+          ]),
+        }),
+        expect.objectContaining({
+          onCancel: expect.any(Function),
+        })
+      );
+      expect(vi.mocked(logger.info)).not.toHaveBeenCalledWith(
+        'Added Storybook core packages to pnpm minimumReleaseAgeExclude for this project.'
+      );
 
       expect(mockedExecuteCommand).toHaveBeenLastCalledWith(
         expect.objectContaining({
@@ -499,6 +525,63 @@ describe('PNPM Proxy', () => {
             JSON.stringify(['storybook', '@storybook/*', 'eslint-plugin-storybook']),
           ],
         })
+      );
+    });
+
+    it('should tell create-storybook users how to rerun when they choose rerun', async () => {
+      mockedExecuteCommand
+        .mockResolvedValueOnce({ stdout: '1440\n' } as any)
+        .mockResolvedValueOnce({ stdout: '"2026-05-11T11:59:00.000Z"' } as any)
+        .mockResolvedValueOnce({
+          stdout: JSON.stringify({
+            created: '2025-01-01T00:00:00.000Z',
+            modified: '2026-05-11T12:00:00.000Z',
+            '10.4.0-alpha.17': '2026-05-11T11:59:00.000Z',
+            '10.3.2': '2026-05-01T00:00:00.000Z',
+          }),
+        } as any);
+      vi.mocked(prompt.select).mockResolvedValue('rerun' as never);
+
+      const rerunPromise = pnpmProxy.precheckStorybookPackageInstall({
+        storybookVersion: '10.4.0-alpha.17',
+        nonInteractive: false,
+        installContext: 'create',
+      });
+
+      await expect(rerunPromise).rejects.toThrow(
+        /Please rerun Storybook creation with:[\s\S]*npx create-storybook@10\.3\.2/
+      );
+
+      await expect(rerunPromise).rejects.not.toThrow(
+        /choose one of these options|Update pnpm to exclude Storybook packages/
+      );
+    });
+
+    it('should show the same rerun guidance when the prompt is cancelled', async () => {
+      mockedExecuteCommand
+        .mockResolvedValueOnce({ stdout: '1440\n' } as any)
+        .mockResolvedValueOnce({ stdout: '"2026-05-11T11:59:00.000Z"' } as any)
+        .mockResolvedValueOnce({
+          stdout: JSON.stringify({
+            created: '2025-01-01T00:00:00.000Z',
+            modified: '2026-05-11T12:00:00.000Z',
+            '10.4.0-alpha.17': '2026-05-11T11:59:00.000Z',
+            '10.3.2': '2026-05-01T00:00:00.000Z',
+          }),
+        } as any);
+      vi.mocked(prompt.select).mockImplementationOnce(async (_options: any, promptOptions: any) => {
+        promptOptions.onCancel();
+        return 'exclude';
+      });
+
+      await expect(
+        pnpmProxy.precheckStorybookPackageInstall({
+          storybookVersion: '10.4.0-alpha.17',
+          nonInteractive: false,
+          installContext: 'create',
+        })
+      ).rejects.toThrow(
+        /Please rerun Storybook creation with:[\s\S]*npx create-storybook@10\.3\.2/
       );
     });
   });

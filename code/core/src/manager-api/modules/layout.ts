@@ -2,6 +2,7 @@ import { SET_CONFIG } from 'storybook/internal/core-events';
 import type {
   API_Layout,
   API_LayoutCustomisations,
+  API_LayoutOptions,
   API_PanelPositions,
   API_UI,
 } from 'storybook/internal/types';
@@ -190,6 +191,38 @@ const getRecentVisibleSizes = (layoutState: API_Layout) => {
         ? layoutState.rightPanelWidth
         : layoutState.recentVisibleSizes.rightPanelWidth,
   };
+};
+
+const applyLayoutOptions = (
+  layoutState: API_Layout,
+  options: API_LayoutOptions | undefined,
+  singleStory: boolean
+) => {
+  const { showPanel, showSidebar, ...layoutOptions } = options ?? {};
+  const layoutKeys = Object.keys(layoutState) as (keyof API_Layout)[];
+  const nextLayoutState = toMerged(layoutState, pick(layoutOptions, layoutKeys)) as API_Layout;
+
+  if (showSidebar === false) {
+    nextLayoutState.recentVisibleSizes = getRecentVisibleSizes(nextLayoutState);
+    nextLayoutState.navSize = 0;
+  } else if (showSidebar === true && !singleStory) {
+    nextLayoutState.navSize = nextLayoutState.recentVisibleSizes.navSize;
+  }
+
+  if (showPanel === false) {
+    nextLayoutState.recentVisibleSizes = getRecentVisibleSizes(nextLayoutState);
+    nextLayoutState.bottomPanelHeight = 0;
+    nextLayoutState.rightPanelWidth = 0;
+  } else if (showPanel === true) {
+    nextLayoutState.bottomPanelHeight = nextLayoutState.recentVisibleSizes.bottomPanelHeight;
+    nextLayoutState.rightPanelWidth = nextLayoutState.recentVisibleSizes.rightPanelWidth;
+  }
+
+  if (singleStory) {
+    nextLayoutState.navSize = 0;
+  }
+
+  return nextLayoutState;
 };
 
 export const init: ModuleFn<SubAPI, SubState> = ({ store, provider, singleStory }) => {
@@ -444,13 +477,14 @@ export const init: ModuleFn<SubAPI, SubState> = ({ store, provider, singleStory 
 
       return {
         ...defaultLayoutState,
-        layout: {
-          ...toMerged(
-            defaultLayoutState.layout,
-            pick(options, Object.keys(defaultLayoutState.layout))
-          ),
-          ...(singleStory && { navSize: 0 }),
-        },
+        layout: applyLayoutOptions(
+          defaultLayoutState.layout,
+          {
+            ...options.layout,
+            ...pick(options, Object.keys(defaultLayoutState.layout)),
+          },
+          !!singleStory
+        ),
         layoutCustomisations: {
           ...defaultLayoutState.layoutCustomisations,
           ...(layoutCustomisations ?? {}),
@@ -513,12 +547,14 @@ export const init: ModuleFn<SubAPI, SubState> = ({ store, provider, singleStory 
         return;
       }
 
-      const updatedLayout = {
-        ...layout,
-        ...(options.layout || {}),
-        ...pick(options, Object.keys(layout)),
-        ...(singleStory && { navSize: 0 }),
-      };
+      const updatedLayout = applyLayoutOptions(
+        layout,
+        {
+          ...options.layout,
+          ...pick(options, Object.keys(layout)),
+        },
+        !!singleStory
+      );
 
       const updatedUi = {
         ...ui,

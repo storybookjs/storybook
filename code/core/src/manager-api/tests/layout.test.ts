@@ -486,6 +486,44 @@ describe('layout API', () => {
 
       expect(getLastSetStateArgs()[0].selectedPanel).toEqual(panelName);
     });
+
+    it('should hide the panel when layout.showPanel is false', () => {
+      layoutApi.setSizes({
+        bottomPanelHeight: 200,
+        rightPanelWidth: 250,
+      });
+
+      layoutApi.setOptions({ layout: { showPanel: false } });
+
+      expect(currentState.layout.bottomPanelHeight).toBe(0);
+      expect(currentState.layout.rightPanelWidth).toBe(0);
+      expect(currentState.layout.recentVisibleSizes.bottomPanelHeight).toBe(200);
+      expect(currentState.layout.recentVisibleSizes.rightPanelWidth).toBe(250);
+
+      layoutApi.togglePanel(true);
+
+      expect(currentState.layout.bottomPanelHeight).toBe(200);
+      expect(currentState.layout.rightPanelWidth).toBe(250);
+    });
+  });
+
+  describe('getInitialOptions', () => {
+    it('should apply layout.showPanel from the initial config', () => {
+      (provider.getConfig as Mock).mockReturnValue({
+        layout: { showPanel: false },
+      });
+
+      const { state } = initLayout({
+        store,
+        provider,
+        singleStory: false,
+      } as unknown as ModuleArgs);
+
+      expect(state.layout.bottomPanelHeight).toBe(0);
+      expect(state.layout.rightPanelWidth).toBe(0);
+      expect(state.layout.recentVisibleSizes.bottomPanelHeight).toBe(300);
+      expect(state.layout.recentVisibleSizes.rightPanelWidth).toBe(400);
+    });
   });
 
   describe('state getters', () => {

@@ -2,7 +2,7 @@ import type { FC, PropsWithChildren, ReactElement, ReactNode } from 'react';
 
 import type { RenderData as RouterData } from '../../router/types.ts';
 import type { ThemeVars } from '../../theming/types.ts';
-import type { API_LayoutCustomisations, API_SidebarOptions } from './api.ts';
+import type { API_LayoutCustomisations, API_LayoutOptions, API_SidebarOptions } from './api.ts';
 import type { API_HashEntry, API_StoryEntry } from './api-stories.ts';
 import type {
   Args,
@@ -479,6 +479,7 @@ export interface Addon_ToolbarConfig {
 }
 export interface Addon_Config {
   theme?: ThemeVars;
+  layout?: API_LayoutOptions;
   layoutCustomisations?: {
     showPanel?: API_LayoutCustomisations['showPanel'];
     showSidebar?: API_LayoutCustomisations['showSidebar'];

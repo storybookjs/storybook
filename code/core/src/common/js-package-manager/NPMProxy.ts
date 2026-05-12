@@ -9,13 +9,25 @@ import * as find from 'empathic/find';
 // eslint-disable-next-line depend/ban-dependencies
 import type { ResultPromise } from 'execa';
 import sort from 'semver/functions/sort.js';
+import { dedent } from 'ts-dedent';
 
 import type { ExecuteCommandOptions } from '../utils/command.ts';
 import { executeCommand } from '../utils/command.ts';
 import { getProjectRoot } from '../utils/paths.ts';
 import { JsPackageManager, PackageManagerName } from './JsPackageManager.ts';
+import { MinimumReleaseAgeHandledError } from './MinimumReleaseAgeHandledError.ts';
 import type { PackageJson } from './PackageJson.ts';
 import type { InstallationMetadata, PackageMetadata } from './types.ts';
+import {
+  getAgeInMinutes,
+  getErrorLogs,
+  getLatestStableVersionAdheringToMinimumAgeGate,
+  getStorybookRerunCommand,
+  getStorybookRerunInstruction,
+  parsePackageTimeMap,
+  parsePositiveIntegerConfigValue,
+  parseReleaseTime,
+} from './util.ts';
 
 type NpmDependency = {
   version: string;
@@ -31,6 +43,9 @@ type NpmDependencies = {
 export type NpmListOutput = {
   dependencies: NpmDependencies;
 };
+
+const NPM_CONFIG_WORKSPACE_ARGS = ['--workspaces=false', '--include-workspace-root'] as const;
+
 const NPM_ERROR_REGEX = /npm (ERR!|error) (code|errno) (\w+)/i;
 
 const NPM_ERROR_CODES = {
@@ -186,12 +201,76 @@ export class NPMProxy extends JsPackageManager {
     });
   }
 
+  async installDependencies(options?: { force?: boolean }) {
+    try {
+      await super.installDependencies(options);
+    } catch (error) {
+      const parsedError = this.parseErrorFromLogs(getErrorLogs(error));
+      if (parsedError !== 'NPM error') {
+        logger.error(parsedError);
+        throw new MinimumReleaseAgeHandledError(parsedError);
+      }
+
+      throw error;
+    }
+  }
+
+  async precheckStorybookPackageInstall({
+    storybookVersion,
+    installContext,
+  }: {
+    storybookVersion: string;
+    nonInteractive: boolean;
+    installContext: 'create' | 'upgrade';
+  }): Promise<void> {
+    const minimumReleaseAgeDays = await this.getMinimumReleaseAge();
+
+    if (!minimumReleaseAgeDays) {
+      return;
+    }
+
+    const timeMap = await this.getPackageTimeMap('storybook');
+    if (!timeMap) {
+      return;
+    }
+
+    const releaseTime = timeMap[storybookVersion];
+    if (!releaseTime) {
+      return;
+    }
+
+    const publishedAt = parseReleaseTime(releaseTime);
+    if (!publishedAt) {
+      return;
+    }
+
+    const ageDays = getAgeInMinutes(publishedAt, new Date()) / (24 * 60);
+    if (ageDays >= minimumReleaseAgeDays) {
+      return;
+    }
+
+    const compatibleVersion = getLatestStableVersionAdheringToMinimumAgeGate(
+      timeMap,
+      minimumReleaseAgeDays * 24 * 60
+    );
+    const error = new MinimumReleaseAgeHandledError(
+      this.createMinimumReleaseAgeRerunMessage({
+        currentVersion: storybookVersion,
+        compatibleVersion,
+        installContext,
+      })
+    );
+
+    logger.error(error.message);
+    throw error;
+  }
+
   public async getRegistryURL() {
     const process = executeCommand({
       command: 'npm',
       // "npm config" commands are not allowed in workspaces per default
       // https://github.com/npm/cli/issues/6099#issuecomment-1847584792
-      args: ['config', 'get', 'registry', '-ws=false', '-iwr'],
+      args: ['config', 'get', 'registry', ...NPM_CONFIG_WORKSPACE_ARGS],
     });
     const result = await process;
     const url = (typeof result.stdout === 'string' ? result.stdout : '').trim();
@@ -292,6 +371,22 @@ export class NPMProxy extends JsPackageManager {
   }
 
   public parseErrorFromLogs(logs: string): string {
+    if (logs.match(/npm\s+(ERR!|error)\s+code\s+ETARGET/i) && logs.includes('with a date before')) {
+      const failedPackage = this.extractMinimumReleaseAgePackage(logs);
+
+      return dedent`
+        npm blocked package installation because your project uses min-release-age.
+
+        Failed package:
+        ${failedPackage ?? 'Unknown package'}
+
+        Read more:
+        - https://docs.npmjs.com/cli/v11/using-npm/config#min-release-age
+
+        To fix this, either wait for the configured age window to pass and rerun the command, or rerun Storybook with an older compatible release.
+      `;
+    }
+
     let finalMessage = 'NPM error';
     const match = logs.match(NPM_ERROR_REGEX);
 
@@ -308,5 +403,77 @@ export class NPMProxy extends JsPackageManager {
     }
 
     return finalMessage.trim();
+  }
+
+  private async getMinimumReleaseAge(): Promise<number | null> {
+    const result = await executeCommand({
+      command: 'npm',
+      args: ['config', 'get', 'min-release-age', ...NPM_CONFIG_WORKSPACE_ARGS],
+      cwd: this.cwd,
+      stdio: 'pipe',
+    });
+
+    return parsePositiveIntegerConfigValue(
+      typeof result.stdout === 'string' ? result.stdout : undefined
+    );
+  }
+
+  private async getPackageTimeMap(packageName: string): Promise<Record<string, string> | null> {
+    const result = await executeCommand({
+      command: 'npm',
+      args: ['info', packageName, 'time', '--json'],
+      cwd: this.cwd,
+      stdio: 'pipe',
+    });
+
+    const normalizedValue = typeof result.stdout === 'string' ? result.stdout.trim() : '';
+    if (!normalizedValue) {
+      return null;
+    }
+
+    return parsePackageTimeMap(JSON.parse(normalizedValue));
+  }
+
+  private createMinimumReleaseAgeRerunMessage({
+    currentVersion,
+    compatibleVersion,
+    installContext,
+  }: {
+    currentVersion: string;
+    compatibleVersion: string | null;
+    installContext: 'create' | 'upgrade';
+  }) {
+    const rerunCommand = getStorybookRerunCommand(installContext, compatibleVersion);
+    const rerunInstruction = getStorybookRerunInstruction(installContext);
+
+    return dedent`
+      npm min-release-age blocked storybook@${currentVersion} from being installed.
+
+      ${rerunInstruction}
+      ${rerunCommand}
+
+      Read more:
+      - https://docs.npmjs.com/cli/v11/using-npm/config#min-release-age
+    `;
+  }
+
+  private extractMinimumReleaseAgePackage(logs: string): string | null {
+    const exactVersionMatch = logs.match(
+      /No matching version found for\s+((?:@[^/\s]+\/)?[^@\s]+)@([^\s]+)\s+with a date before/i
+    );
+
+    if (exactVersionMatch) {
+      const [, packageName, version] = exactVersionMatch;
+      return `${packageName}@${version}`;
+    }
+
+    const scopedMatch = logs.match(/((?:@[^/\s]+\/)?[^@\s]+)@([^\s"']+)/);
+
+    if (!scopedMatch) {
+      return null;
+    }
+
+    const [, packageName, version] = scopedMatch;
+    return `${packageName}@${version}`;
   }
 }

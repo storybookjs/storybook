@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { HandledError, type JsPackageManager } from 'storybook/internal/common';
 import { Feature } from 'storybook/internal/types';
 
+import { MinimumReleaseAgeHandledError } from '../../../../core/src/common/js-package-manager/MinimumReleaseAgeHandledError.ts';
 import { DependencyCollector } from '../dependency-collector.ts';
 import { DependencyInstallationCommand } from './DependencyInstallationCommand.ts';
 
@@ -102,10 +103,10 @@ describe('DependencyInstallationCommand', () => {
       expect(mockPackageManager.installDependencies).not.toHaveBeenCalled();
     });
 
-    it('should rethrow handled install errors', async () => {
+    it('should rethrow minimum-release-age install errors', async () => {
       dependencyCollector.addDevDependencies(['storybook@10.4.0-alpha.17']);
       vi.mocked(mockPackageManager.installDependencies).mockRejectedValue(
-        new HandledError('pnpm blocked package installation')
+        new MinimumReleaseAgeHandledError('pnpm blocked package installation')
       );
 
       await expect(
@@ -114,6 +115,20 @@ describe('DependencyInstallationCommand', () => {
           selectedFeatures: new Set([Feature.DOCS]),
         })
       ).rejects.toThrow('pnpm blocked package installation');
+    });
+
+    it('should not rethrow unrelated handled install errors', async () => {
+      dependencyCollector.addDevDependencies(['storybook@10.4.0-alpha.17']);
+      vi.mocked(mockPackageManager.installDependencies).mockRejectedValue(
+        new HandledError('some other handled install error')
+      );
+
+      await expect(
+        command.execute({
+          skipInstall: false,
+          selectedFeatures: new Set([Feature.DOCS]),
+        })
+      ).resolves.toEqual({ status: 'failed' });
     });
 
     it('should not collect test dependencies if test feature is not selected', async () => {

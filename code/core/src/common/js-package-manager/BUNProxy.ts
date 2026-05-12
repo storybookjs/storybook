@@ -1,4 +1,4 @@
-import { readFileSync } from 'node:fs';
+import { readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 import { logger, prompt } from 'storybook/internal/node-logger';
@@ -8,13 +8,24 @@ import * as find from 'empathic/find';
 // eslint-disable-next-line depend/ban-dependencies
 import type { ResultPromise } from 'execa';
 import sort from 'semver/functions/sort.js';
+import { dedent } from 'ts-dedent';
 
 import type { ExecuteCommandOptions } from '../utils/command.ts';
 import { executeCommand } from '../utils/command.ts';
 import { getProjectRoot } from '../utils/paths.ts';
 import { JsPackageManager, PackageManagerName } from './JsPackageManager.ts';
+import { MinimumReleaseAgeHandledError } from './MinimumReleaseAgeHandledError.ts';
 import type { PackageJson } from './PackageJson.ts';
 import type { InstallationMetadata, PackageMetadata } from './types.ts';
+import {
+  getErrorLogs,
+  getLatestStableVersionAdheringToMinimumAgeGate,
+  getStorybookRerunCommand,
+  getStorybookRerunInstruction,
+  parsePackageTimeMap,
+  parseReleaseTime,
+  STORYBOOK_PACKAGE_PATTERNS,
+} from './util.ts';
 
 type NpmDependency = {
   version: string;
@@ -210,6 +221,120 @@ export class BUNProxy extends JsPackageManager {
     });
   }
 
+  async installDependencies(options?: { force?: boolean }) {
+    try {
+      await super.installDependencies(options);
+    } catch (error) {
+      const parsedError = this.parseErrorFromLogs(getErrorLogs(error));
+      if (parsedError !== 'BUN error') {
+        logger.error(parsedError);
+        throw new MinimumReleaseAgeHandledError(parsedError);
+      }
+
+      throw error;
+    }
+  }
+
+  async precheckStorybookPackageInstall({
+    storybookVersion,
+    nonInteractive,
+    installContext,
+  }: {
+    storybookVersion: string;
+    nonInteractive: boolean;
+    installContext: 'create' | 'upgrade';
+  }): Promise<void> {
+    const minimumReleaseAgeSeconds = this.getMinimumReleaseAgeSeconds();
+
+    if (!minimumReleaseAgeSeconds) {
+      return;
+    }
+
+    const timeMap = await this.getPackageTimeMap('storybook');
+    if (!timeMap) {
+      return;
+    }
+
+    const releaseTime = timeMap[storybookVersion];
+    if (!releaseTime) {
+      return;
+    }
+
+    const publishedAt = parseReleaseTime(releaseTime);
+    if (!publishedAt) {
+      return;
+    }
+
+    const ageSeconds = Math.floor((Date.now() - publishedAt.getTime()) / 1_000);
+    if (ageSeconds >= minimumReleaseAgeSeconds) {
+      return;
+    }
+
+    const compatibleVersion = getLatestStableVersionAdheringToMinimumAgeGate(
+      timeMap,
+      Math.ceil(minimumReleaseAgeSeconds / 60)
+    );
+
+    if (nonInteractive) {
+      this.updateMinimumReleaseAgeExcludes();
+      logger.info(
+        dedent`
+          bun minimumReleaseAge would block storybook@${storybookVersion} from being installed because it was released within the configured minimumReleaseAge window, so Storybook updated minimumReleaseAgeExcludes for this project automatically.
+
+          Added patterns: storybook, @storybook/*, eslint-plugin-storybook
+
+          Read more:
+          - https://bun.com/docs/pm/cli/install#minimum-release-age
+        `
+      );
+      return;
+    }
+
+    logger.warn(
+      `bun minimumReleaseAge will block storybook@${storybookVersion} from being installed because it was released within the disallowed immaturity window.`
+    );
+
+    const rerunError = new MinimumReleaseAgeHandledError(
+      this.createMinimumReleaseAgeRerunMessage({
+        currentVersion: storybookVersion,
+        compatibleVersion,
+        installContext,
+      })
+    );
+
+    const selection = await prompt.select(
+      {
+        message: 'How would you like to proceed?',
+        options: [
+          {
+            label: 'Update bunfig.toml to exclude Storybook packages from minimumReleaseAge',
+            value: 'exclude',
+          },
+          {
+            label: compatibleVersion
+              ? `Stop now and rerun with the most recent allowed release: storybook@${compatibleVersion}`
+              : 'Stop now and rerun with an older stable Storybook release later',
+            value: 'rerun',
+          },
+        ],
+      },
+      {
+        onCancel: () => {
+          logger.error(rerunError.message);
+          throw rerunError;
+        },
+      }
+    );
+
+    if (selection === 'exclude') {
+      this.updateMinimumReleaseAgeExcludes();
+      return;
+    }
+
+    logger.error(rerunError.message);
+    throw rerunError;
+  }
+
   public async getRegistryURL() {
     const process = executeCommand({
       command: 'npm',
@@ -318,7 +443,26 @@ export class BUNProxy extends JsPackageManager {
   }
 
   public parseErrorFromLogs(logs: string): string {
-    let finalMessage = 'NPM error';
+    if (
+      logs.includes('minimum-release-age') ||
+      logs.includes('minimum release age')
+    ) {
+      const failedPackage = this.extractMinimumReleaseAgePackage(logs);
+
+      return dedent`
+        bun blocked package installation because your project uses minimumReleaseAge.
+
+        Failed package:
+        ${failedPackage ?? 'Unknown package'}
+
+        Read more:
+        - https://bun.com/docs/pm/cli/install#minimum-release-age
+
+        To fix this, either wait for the configured age window to pass and rerun the command, or add the blocked packages to bun's minimumReleaseAgeExcludes setting.
+      `;
+    }
+
+    let finalMessage = 'BUN error';
     const match = logs.match(NPM_ERROR_REGEX);
 
     if (match) {
@@ -334,5 +478,132 @@ export class BUNProxy extends JsPackageManager {
     }
 
     return finalMessage.trim();
+  }
+
+  private getMinimumReleaseAgeSeconds(): number | null {
+    const bunfig = this.readBunfig();
+    if (!bunfig) {
+      return null;
+    }
+
+    const match = bunfig.match(/^minimumReleaseAge\s*=\s*(\d+)\s*$/m);
+    if (!match) {
+      return null;
+    }
+
+    const parsedValue = Number.parseInt(match[1], 10);
+    return Number.isFinite(parsedValue) && parsedValue > 0 ? parsedValue : null;
+  }
+
+  private async getPackageTimeMap(packageName: string): Promise<Record<string, string> | null> {
+    const result = await executeCommand({
+      command: 'npm',
+      cwd: this.cwd,
+      args: ['info', packageName, 'time', '--json'],
+      stdio: 'pipe',
+    });
+    const normalizedValue = typeof result.stdout === 'string' ? result.stdout.trim() : '';
+
+    if (!normalizedValue) {
+      return null;
+    }
+
+    return parsePackageTimeMap(JSON.parse(normalizedValue));
+  }
+
+  private createMinimumReleaseAgeRerunMessage({
+    currentVersion,
+    compatibleVersion,
+    installContext,
+  }: {
+    currentVersion: string;
+    compatibleVersion: string | null;
+    installContext: 'create' | 'upgrade';
+  }) {
+    const rerunCommand = getStorybookRerunCommand(installContext, compatibleVersion);
+    const rerunInstruction = getStorybookRerunInstruction(installContext);
+
+    return dedent`
+      bun minimumReleaseAge blocked storybook@${currentVersion} from being installed.
+
+      ${rerunInstruction}
+      ${rerunCommand}
+
+      Read more:
+      - https://bun.com/docs/pm/cli/install#minimum-release-age
+    `;
+  }
+
+  private updateMinimumReleaseAgeExcludes() {
+    const bunfigPath = join(this.cwd, 'bunfig.toml');
+    const currentContent = this.readBunfig() ?? '';
+    const lineEnding = currentContent.includes('\r\n') ? '\r\n' : '\n';
+    const nextPatterns = Array.from(
+      new Set([...this.getMinimumReleaseAgeExcludes(currentContent), ...STORYBOOK_PACKAGE_PATTERNS])
+    );
+    const replacement = [
+      'minimumReleaseAgeExcludes = [',
+      ...nextPatterns.map((pattern) => `  "${pattern}",`),
+      ']',
+    ].join(lineEnding);
+
+    const nextContent = currentContent.match(/^minimumReleaseAgeExcludes\s*=\s*\[[\s\S]*?\]/m)
+      ? currentContent.replace(/^minimumReleaseAgeExcludes\s*=\s*\[[\s\S]*?\]/m, replacement)
+      : `${currentContent}${currentContent.trim().length > 0 ? `${lineEnding}${lineEnding}` : ''}${replacement}${lineEnding}`;
+
+    writeFileSync(bunfigPath, nextContent);
+  }
+
+  private getMinimumReleaseAgeExcludes(bunfig: string): string[] {
+    const match = bunfig.match(/^minimumReleaseAgeExcludes\s*=\s*\[([\s\S]*?)\]/m);
+    if (!match) {
+      return [];
+    }
+
+    return Array.from(match[1].matchAll(/"([^"]+)"/g), (entry) => entry[1]);
+  }
+
+  private readBunfig(): string | null {
+    try {
+      return readFileSync(join(this.cwd, 'bunfig.toml'), 'utf-8');
+    } catch {
+      return null;
+    }
+  }
+
+  private extractMinimumReleaseAgePackage(logs: string): string | null {
+    const exactVersionMatch = logs.match(
+      /Version\s+"((?:@[^/\s"]+\/)?[^@\s"]+@[^\s"]+)"\s+was published within minimum release age/
+    );
+
+    if (exactVersionMatch) {
+      return exactVersionMatch[1];
+    }
+
+    const rangedSpecifierMatch = logs.match(
+      /No version matching\s+"((?:@[^/\s"]+\/)?[^\s"]+)"\s+found for specifier\s+"([^"]+)"\s+\(blocked by minimum-release-age:/
+    );
+
+    if (rangedSpecifierMatch) {
+      const [, packageName, specifier] = rangedSpecifierMatch;
+      return `${packageName}@${specifier}`;
+    }
+
+    const failedToResolveMatch = logs.match(
+      /error:\s+((?:@[^/\s]+\/)?[^@\s]+@[^\s]+)\s+failed to resolve/
+    );
+
+    if (failedToResolveMatch) {
+      return failedToResolveMatch[1];
+    }
+
+    const match = logs.match(/((?:@[^/\s]+\/)?[^@\s]+)@([^\s"']+)/);
+
+    if (!match) {
+      return null;
+    }
+
+    const [, packageName, version] = match;
+    return `${packageName}@${version}`;
   }
 }

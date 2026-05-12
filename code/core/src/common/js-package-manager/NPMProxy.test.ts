@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { prompt } from 'storybook/internal/node-logger';
 
+import { MinimumReleaseAgeHandledError } from './MinimumReleaseAgeHandledError.ts';
 import { executeCommand } from '../utils/command.ts';
 import { JsPackageManager } from './JsPackageManager.ts';
 import { NPMProxy } from './NPMProxy.ts';
@@ -26,6 +27,7 @@ describe('NPM Proxy', () => {
   let npmProxy: NPMProxy;
 
   beforeEach(() => {
+    vi.useRealTimers();
     npmProxy = new NPMProxy();
     JsPackageManager.clearLatestVersionCache();
     vi.spyOn(npmProxy, 'writePackageJson').mockImplementation(vi.fn());
@@ -69,6 +71,70 @@ describe('NPM Proxy', () => {
           expect.objectContaining({ command: 'npm', args: ['install'] })
         );
       });
+
+      it('should rethrow minimum-release-age install errors as handled errors', async () => {
+        vi.mocked(prompt.executeTaskWithSpinner).mockImplementationOnce(async (fn: any) => {
+          await Promise.resolve(fn());
+        });
+        mockedExecuteCommand.mockRejectedValueOnce(
+          new Error(
+            [
+              'npm error code ETARGET',
+              'npm error notarget No matching version found for @storybook/react-vite@10.4.0-alpha.17 with a date before 02/05/2026, 13:32:18.',
+              "npm error notarget In most cases you or one of your dependencies are requesting a package version that doesn't exist.",
+            ].join('\n')
+          )
+        );
+
+        await expect(npmProxy.installDependencies()).rejects.toBeInstanceOf(
+          MinimumReleaseAgeHandledError
+        );
+      });
+    });
+  });
+
+  describe('precheckStorybookPackageInstall', () => {
+    it('throws a handled error with rerun instructions when npm min-release-age blocks the requested version', async () => {
+      vi.useFakeTimers();
+      vi.setSystemTime(new Date('2025-01-10T00:00:00.000Z'));
+      mockedExecuteCommand.mockResolvedValueOnce({ stdout: '1' } as any).mockResolvedValueOnce({
+        stdout: JSON.stringify({
+          '10.4.0-alpha.17': '2025-01-09T23:30:00.000Z',
+          '10.3.9': '2025-01-08T20:00:00.000Z',
+        }),
+      } as any);
+
+      const error = await npmProxy
+        .precheckStorybookPackageInstall({
+          storybookVersion: '10.4.0-alpha.17',
+          nonInteractive: false,
+          installContext: 'upgrade',
+        })
+        .then(
+          () => null,
+          (caughtError) => caughtError
+        );
+
+      expect(error).toBeInstanceOf(MinimumReleaseAgeHandledError);
+      expect(error).toBeTruthy();
+      expect(error?.message).toContain('npx storybook@10.3.9 upgrade');
+      expect(error?.message).toContain('min-release-age');
+    });
+  });
+
+  describe('parseErrors', () => {
+    it('formats ETARGET minimum-release-age errors', () => {
+      const parsedError = npmProxy.parseErrorFromLogs([
+        'npm error code ETARGET',
+        'npm error notarget No matching version found for @storybook/react-vite@10.4.0-alpha.17 with a date before 02/05/2026, 13:32:18.',
+        "npm error notarget In most cases you or one of your dependencies are requesting a package version that doesn't exist.",
+      ].join('\n'));
+
+      expect(parsedError).toContain('@storybook/react-vite@10.4.0-alpha.17');
+      expect(parsedError).toContain('min-release-age');
+      expect(parsedError).toContain(
+        'https://docs.npmjs.com/cli/v11/using-npm/config#min-release-age'
+      );
     });
   });
 

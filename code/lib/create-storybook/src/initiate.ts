@@ -226,13 +226,8 @@ export async function initiate(options: CommandOptions): Promise<void> {
       fallbackTelemetryState: true,
     },
     async () => {
-      // we need to explicitly set this before init to not delay the events until the end of the flow
-      await setTelemetryEnabled(!options.disableTelemetry);
-
       const result = await doInitiate(options);
-
       logger.outro('');
-
       return result;
     }
   ).catch((error) => {

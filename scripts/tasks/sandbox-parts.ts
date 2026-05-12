@@ -1013,7 +1013,12 @@ async function prepareAngularSandbox(cwd: string, templateName: string) {
   tsConfigJson.compilerOptions.strict = false;
   tsConfigJson.include = [
     ...tsConfigJson.include,
-    '../template-stories/**/*.stories.ts',
+    // @analogjs/vite-plugin-angular only compiles files referenced by the
+    // tsconfig program. Template components (e.g. pre.component.ts) live next
+    // to the stories, so widen to every .ts file under template-stories — not
+    // just *.stories.ts — otherwise the component decorators are stripped and
+    // @Input() bindings never resolve at runtime.
+    '../template-stories/**/*.ts',
     // This is necessary since template stories depend on globalThis.__TEMPLATE_COMPONENTS__, which Typescript can't look up automatically
     '../src/stories/**/*',
   ];

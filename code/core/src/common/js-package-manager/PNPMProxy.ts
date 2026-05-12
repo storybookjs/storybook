@@ -287,7 +287,7 @@ export class PNPMProxy extends JsPackageManager {
     }
 
     logger.warn(
-      `pnpm minimumReleaseAge will block storybook@${storybookVersion} from being installed because it was released within the disallowed immaturity window.`
+      `pnpm minimumReleaseAge will block storybook@${storybookVersion} from being installed because it was published within the configured minimum-release-age window.`
     );
 
     const rerunError = new HandledError(
@@ -549,6 +549,11 @@ export class PNPMProxy extends JsPackageManager {
   }
 
   private async updateMinimumReleaseAgeExclude(): Promise<void> {
+    const currentMinimumReleaseAgeExclude = await this.getMinimumReleaseAgeExclude();
+    const nextMinimumReleaseAgeExclude = Array.from(
+      new Set([...currentMinimumReleaseAgeExclude, ...STORYBOOK_PACKAGE_PATTERNS])
+    );
+
     await prompt.executeTaskWithSpinner(
       () =>
         this.runInternalCommand(
@@ -558,7 +563,7 @@ export class PNPMProxy extends JsPackageManager {
             '--location=project',
             '--json',
             'minimumReleaseAgeExclude',
-            JSON.stringify(STORYBOOK_PACKAGE_PATTERNS),
+            JSON.stringify(nextMinimumReleaseAgeExclude),
           ],
           undefined,
           'pipe'
@@ -570,5 +575,26 @@ export class PNPMProxy extends JsPackageManager {
         success: 'Updated pnpm minimumReleaseAgeExclude',
       }
     );
+  }
+
+  private async getMinimumReleaseAgeExclude(): Promise<string[]> {
+    const result = await this.runInternalCommand(
+      'config',
+      ['get', 'minimumReleaseAgeExclude', '--json'],
+      undefined,
+      'pipe'
+    );
+
+    const normalizedValue = typeof result.stdout === 'string' ? result.stdout.trim() : '';
+    if (!normalizedValue || normalizedValue === 'undefined' || normalizedValue === 'null') {
+      return [];
+    }
+
+    const parsedValue = JSON.parse(normalizedValue);
+    return Array.isArray(parsedValue)
+      ? parsedValue.filter(
+          (value): value is string => typeof value === 'string' && value.length > 0
+        )
+      : [];
   }
 }

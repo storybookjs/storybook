@@ -22,6 +22,13 @@ vi.mock('storybook/internal/node-logger', () => ({
 
 vi.mock(import('../utils/command.ts'), { spy: true });
 const mockedExecuteCommand = vi.mocked(executeCommand);
+const expectedMinimumReleaseAgeExcludePackages = [
+  'react',
+  'webpack',
+  'storybook',
+  '@storybook/*',
+  'eslint-plugin-storybook',
+];
 
 describe('PNPM Proxy', () => {
   let pnpmProxy: PNPMProxy;
@@ -439,6 +446,7 @@ describe('PNPM Proxy', () => {
             '10.3.2': '2026-05-01T00:00:00.000Z',
           }),
         } as any)
+        .mockResolvedValueOnce({ stdout: JSON.stringify(['react', 'webpack']) } as any)
         .mockResolvedValueOnce({ stdout: '' } as any);
       vi.mocked(prompt.executeTaskWithSpinner).mockImplementationOnce(async (factory: any) => {
         await factory();
@@ -459,7 +467,7 @@ describe('PNPM Proxy', () => {
             '--location=project',
             '--json',
             'minimumReleaseAgeExclude',
-            JSON.stringify(['storybook', '@storybook/*', 'eslint-plugin-storybook']),
+            JSON.stringify(expectedMinimumReleaseAgeExcludePackages),
           ],
         })
       );
@@ -477,6 +485,7 @@ describe('PNPM Proxy', () => {
             '10.3.2': '2026-05-01T00:00:00.000Z',
           }),
         } as any)
+        .mockResolvedValueOnce({ stdout: JSON.stringify(['react', 'webpack']) } as any)
         .mockResolvedValueOnce({ stdout: '' } as any);
       vi.mocked(prompt.select).mockResolvedValue('exclude' as never);
       vi.mocked(prompt.executeTaskWithSpinner).mockImplementationOnce(async (factory: any) => {
@@ -522,7 +531,7 @@ describe('PNPM Proxy', () => {
             '--location=project',
             '--json',
             'minimumReleaseAgeExclude',
-            JSON.stringify(['storybook', '@storybook/*', 'eslint-plugin-storybook']),
+            JSON.stringify(expectedMinimumReleaseAgeExcludePackages),
           ],
         })
       );

@@ -327,7 +327,7 @@ export class Yarn2Proxy extends JsPackageManager {
     }
 
     logger.warn(
-      `yarn npmMinimalAgeGate will block storybook@${storybookVersion} from being installed because it was released within the disallowed immaturity window.`
+      `yarn npmMinimalAgeGate will block storybook@${storybookVersion} from being installed because it was published within the configured minimum-release-age window.`
     );
 
     const rerunError = new HandledError(
@@ -518,23 +518,29 @@ export class Yarn2Proxy extends JsPackageManager {
   }
 
   private async getMinimumAgeGate(): Promise<number | null> {
-    const result = await this.runInternalCommand(
-      'config',
-      ['get', 'npmMinimalAgeGate'],
-      undefined,
-      'pipe'
-    );
+    try {
+      const result = await this.runInternalCommand(
+        'config',
+        ['get', 'npmMinimalAgeGate'],
+        undefined,
+        'pipe'
+      );
 
-    return parsePositiveIntegerConfigValue(
-      typeof result.stdout === 'string' ? result.stdout : undefined
-    );
+      return parsePositiveIntegerConfigValue(
+        typeof result.stdout === 'string' ? result.stdout : undefined
+      );
+    } catch {
+      return null;
+    }
   }
 
   private async getPackageTimeMap(packageName: string): Promise<Record<string, string> | null> {
-    const result = await executeCommand({
-      command: 'yarn',
-      args: ['npm', 'info', packageName, '--fields', 'time', '--json'],
-    });
+    const result = await this.runInternalCommand(
+      'npm',
+      ['info', packageName, '--fields', 'time', '--json'],
+      undefined,
+      'pipe'
+    );
     const normalizedValue = typeof result.stdout === 'string' ? result.stdout.trim() : '';
 
     if (!normalizedValue) {
@@ -591,23 +597,35 @@ export class Yarn2Proxy extends JsPackageManager {
   }
 
   private async getPreapprovedPackages(): Promise<string[]> {
-    const result = await this.runInternalCommand(
-      'config',
-      ['get', 'npmPreapprovedPackages'],
-      undefined,
-      'pipe'
-    );
-    const normalizedValue = typeof result.stdout === 'string' ? result.stdout.trim() : '';
+    try {
+      const result = await this.runInternalCommand(
+        'config',
+        ['get', 'npmPreapprovedPackages'],
+        undefined,
+        'pipe'
+      );
+      const normalizedValue = typeof result.stdout === 'string' ? result.stdout.trim() : '';
 
-    if (!normalizedValue) {
+      if (!normalizedValue) {
+        return [];
+      }
+
+      return this.parsePreapprovedPackages(normalizedValue);
+    } catch {
       return [];
     }
+  }
 
-    const parsedValue = JSON.parse(normalizedValue);
-    return Array.isArray(parsedValue)
-      ? parsedValue.filter(
-          (value): value is string => typeof value === 'string' && value.length > 0
-        )
-      : [];
+  private parsePreapprovedPackages(value: string): string[] {
+    try {
+      const parsedValue = JSON.parse(value);
+      return Array.isArray(parsedValue)
+        ? parsedValue.filter(
+            (entry): entry is string => typeof entry === 'string' && entry.length > 0
+          )
+        : [];
+    } catch {
+      return Array.from(value.matchAll(/['"]([^'"\n]+)['"]/g), (match) => match[1]);
+    }
   }
 }

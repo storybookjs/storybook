@@ -5,7 +5,7 @@
  * - Services/VersionService.test.ts (for version detection)
  * - Commands/UserPreferencesCommand.test.ts (for user prompts)
  */
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 import { VersionService } from './services/VersionService.ts';
 

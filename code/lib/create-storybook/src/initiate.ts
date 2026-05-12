@@ -202,10 +202,7 @@ export async function doInitiate(options: CommandOptions): Promise<
   };
 }
 
-const handleCommandFailure = async (
-  logFilePath: string | boolean | undefined,
-  error?: unknown
-): Promise<never> => {
+const handleCommandFailure = async (logFilePath: string | boolean | undefined): Promise<never> => {
   const logFile = await logTracker.writeToFile(logFilePath);
   logger.error('Storybook encountered an error during initialization');
 

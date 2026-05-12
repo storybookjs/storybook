@@ -434,7 +434,7 @@ describe('Yarn 2 Proxy', () => {
             },
           }),
         } as any)
-        .mockResolvedValueOnce({ stdout: '["foo"]\n' } as any)
+        .mockResolvedValueOnce({ stdout: "[\n  'foo',\n  '@storybook/preset-react-webpack',\n]\n" } as any)
         .mockResolvedValueOnce({ stdout: '' } as any);
       vi.mocked(prompt.select).mockResolvedValue('exclude' as never);
       vi.mocked(prompt.executeTaskWithSpinner).mockImplementationOnce(async (factory: any) => {
@@ -475,10 +475,28 @@ describe('Yarn 2 Proxy', () => {
             'set',
             'npmPreapprovedPackages',
             '--json',
-            JSON.stringify(['foo', 'storybook', '@storybook/*', 'eslint-plugin-storybook']),
+            JSON.stringify([
+              'foo',
+              '@storybook/preset-react-webpack',
+              'storybook',
+              '@storybook/*',
+              'eslint-plugin-storybook',
+            ]),
           ],
         })
       );
+    });
+
+    it('should gracefully skip the precheck on older Yarn Berry versions without npmMinimalAgeGate', async () => {
+      mockedExecuteCommand.mockRejectedValueOnce(new Error('Unknown configuration setting'));
+
+      await expect(
+        yarn2Proxy.precheckStorybookPackageInstall({
+          storybookVersion: '10.4.0-alpha.17',
+          nonInteractive: false,
+          installContext: 'create',
+        })
+      ).resolves.toBeUndefined();
     });
 
     it('should tell create-storybook users how to rerun when they choose rerun', async () => {

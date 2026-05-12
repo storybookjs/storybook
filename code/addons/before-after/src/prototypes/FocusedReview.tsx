@@ -315,14 +315,19 @@ export function FocusedReview({
   enteredFromClusterId,
   initialIndex = 0,
 }: FocusedReviewProps) {
-  const cluster = enteredFromClusterId
-    ? data.clusters.find((c) => c.id === enteredFromClusterId)
+  const [scopeClusterId, setScopeClusterId] = useState<string | null>(enteredFromClusterId ?? null);
+  const cluster = scopeClusterId
+    ? (data.clusters.find((c) => c.id === scopeClusterId) ?? null)
     : null;
   const stories = useMemo<MockStory[]>(
     () => (cluster ? cluster.sampleStories : data.stories),
     [cluster, data.stories]
   );
   const [index, setIndex] = useState(Math.min(initialIndex, Math.max(stories.length - 1, 0)));
+  // Reset story index when scope changes.
+  useEffect(() => {
+    setIndex(0);
+  }, [scopeClusterId]);
   const [viewport, setViewport] = useState<ViewportPreset>('auto');
   const [side, setSide] = useState<SideMode>('latest');
   const [reviewed, setReviewed] = useState<Set<string>>(new Set());
@@ -407,7 +412,25 @@ export function FocusedReview({
       )}
 
       <Toolbar>
-        <ToolbarLabel>View</ToolbarLabel>
+        <ToolbarLabel>Walk</ToolbarLabel>
+        <SegGroup>
+          <SegButton active={scopeClusterId === null} onClick={() => setScopeClusterId(null)}>
+            All ({data.stories.length})
+          </SegButton>
+          {data.clusters.map((c) => (
+            <SegButton
+              key={c.id}
+              active={scopeClusterId === c.id}
+              onClick={() => setScopeClusterId(c.id)}
+              title={c.rationale}
+            >
+              {c.id}
+              <span style={{ opacity: 0.55, marginLeft: 4 }}>({c.sampleStories.length})</span>
+            </SegButton>
+          ))}
+        </SegGroup>
+
+        <ToolbarLabel style={{ marginLeft: 12 }}>View</ToolbarLabel>
         <SegGroup>
           <SegButton active={side === 'latest'} onClick={() => setSide('latest')}>
             Latest

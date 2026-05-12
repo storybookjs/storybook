@@ -21,6 +21,7 @@ import {
 
 interface ClusteredReviewProps {
   data: MockReviewData;
+  initialView?: 'clustered' | 'flat';
 }
 
 const Page = styled.div(({ theme }) => ({
@@ -330,7 +331,8 @@ const Truncated = styled.div(({ theme }) => ({
 
 // ───── Component ──────────────────────────────────────────
 
-export function ClusteredReview({ data }: ClusteredReviewProps) {
+export function ClusteredReview({ data, initialView = 'clustered' }: ClusteredReviewProps) {
+  const [view, setView] = useState<'clustered' | 'flat'>(initialView);
   const [activeClusterId, setActiveClusterId] = useState<string | null>(null);
   const activeCluster: MockCluster | null = activeClusterId
     ? (data.clusters.find((c) => c.id === activeClusterId) ?? null)
@@ -346,7 +348,34 @@ export function ClusteredReview({ data }: ClusteredReviewProps) {
           <CountChip kind="modified">{data.modifiedCount} modified</CountChip>
           <CountChip kind="related">{data.relatedCount} related</CountChip>
         </Counts>
-        {activeCluster ? (
+        <span
+          style={{
+            marginLeft: 12,
+            fontSize: 11,
+            color: '#64748b',
+            textTransform: 'uppercase',
+            letterSpacing: '0.06em',
+            fontWeight: 700,
+          }}
+        >
+          View
+        </span>
+        <ZoomOutButton
+          onClick={() => setView('clustered')}
+          style={view === 'clustered' ? { borderColor: '#2563eb', color: '#1d4ed8' } : undefined}
+        >
+          Clusters
+        </ZoomOutButton>
+        <ZoomOutButton
+          onClick={() => {
+            setView('flat');
+            setActiveClusterId(null);
+          }}
+          style={view === 'flat' ? { borderColor: '#2563eb', color: '#1d4ed8' } : undefined}
+        >
+          Flat list
+        </ZoomOutButton>
+        {view === 'clustered' && activeCluster ? (
           <>
             <Crumbs>
               <CrumbLink onClick={() => setActiveClusterId(null)}>← Back to clusters</CrumbLink>
@@ -357,13 +386,40 @@ export function ClusteredReview({ data }: ClusteredReviewProps) {
           </>
         ) : (
           <Crumbs style={{ marginLeft: 'auto' }}>
-            {data.clusters.length} clusters · {data.cascadeSize} stories
+            {view === 'clustered'
+              ? `${data.clusters.length} clusters · ${data.cascadeSize} stories`
+              : `${data.cascadeSize} stories (flat)`}
           </Crumbs>
         )}
       </TopBar>
 
       <Content>
-        {!activeCluster ? (
+        {view === 'flat' ? (
+          <>
+            <Banner>
+              <strong>Flat view.</strong> Same prototype, clusters bypassed. Useful for users who
+              want a one-shot list without AI grouping — switch back to <em>Clusters</em> at the top
+              right to see the agent's categorisation.
+            </Banner>
+            <StoryGrid>
+              {data.stories.map((s) => (
+                <StoryCard key={s.storyId}>
+                  <StoryHeader>
+                    <StoryTitle>
+                      {s.title} <StoryName>/ {s.name}</StoryName>
+                    </StoryTitle>
+                    <StatusBadge kind={s.status}>{statusLabel[s.status]}</StatusBadge>
+                  </StoryHeader>
+                  <PreviewFrame
+                    title={s.storyId}
+                    src={`/iframe.html?id=${encodeURIComponent(s.storyId)}&viewMode=story`}
+                    loading="lazy"
+                  />
+                </StoryCard>
+              ))}
+            </StoryGrid>
+          </>
+        ) : !activeCluster ? (
           <>
             <Banner>
               <strong>Prototype</strong> — clustered review with AI categorisation (zoom-out view).

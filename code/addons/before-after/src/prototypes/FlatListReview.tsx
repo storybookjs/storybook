@@ -10,6 +10,7 @@ import React, { useMemo, useState } from 'react';
 import { styled } from 'storybook/theming';
 
 import {
+  type MockCluster,
   type MockReviewData,
   type MockStory,
   type StoryStatus,
@@ -19,6 +20,7 @@ import {
 
 interface FlatListReviewProps {
   data: MockReviewData;
+  initialGroupBy?: 'status' | 'cluster';
 }
 
 const Page = styled.div(({ theme }) => ({
@@ -240,9 +242,10 @@ function groupByStatus(stories: MockStory[]): Record<StoryStatus, MockStory[]> {
   };
 }
 
-export function FlatListReview({ data }: FlatListReviewProps) {
+export function FlatListReview({ data, initialGroupBy = 'status' }: FlatListReviewProps) {
   const [filter, setFilter] = useState<Filter>('all');
   const [query, setQuery] = useState('');
+  const [groupBy, setGroupBy] = useState<'status' | 'cluster'>(initialGroupBy);
 
   const filteredStories = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -259,6 +262,23 @@ export function FlatListReview({ data }: FlatListReviewProps) {
 
   const grouped = useMemo(() => groupByStatus(filteredStories), [filteredStories]);
 
+  const renderStoryCard = (s: MockStory) => (
+    <StoryCard key={s.storyId}>
+      <StoryHeader>
+        <StoryTitle>
+          {s.title} <StoryName>/ {s.name}</StoryName>
+        </StoryTitle>
+        <StatusBadge kind={s.status}>{statusLabel[s.status]}</StatusBadge>
+      </StoryHeader>
+      <PreviewFrame
+        title={s.storyId}
+        src={`/iframe.html?id=${encodeURIComponent(s.storyId)}&viewMode=story`}
+        loading="lazy"
+      />
+      <StoryPath title={s.importPath}>{s.importPath.replace(/^\.\//, '')}</StoryPath>
+    </StoryCard>
+  );
+
   const renderSection = (kind: StoryStatus) => {
     const items = grouped[kind];
     if (items.length === 0) return null;
@@ -268,25 +288,86 @@ export function FlatListReview({ data }: FlatListReviewProps) {
           {statusLabel[kind]}
           <SectionCount kind={kind}>{items.length}</SectionCount>
         </SectionTitle>
-        <StoryGrid>
-          {items.map((s) => (
-            <StoryCard key={s.storyId}>
-              <StoryHeader>
-                <StoryTitle>
-                  {s.title} <StoryName>/ {s.name}</StoryName>
-                </StoryTitle>
-                <StatusBadge kind={s.status}>{statusLabel[s.status]}</StatusBadge>
-              </StoryHeader>
-              <PreviewFrame
-                title={s.storyId}
-                src={`/iframe.html?id=${encodeURIComponent(s.storyId)}&viewMode=story`}
-                loading="lazy"
-              />
-              <StoryPath title={s.importPath}>{s.importPath.replace(/^\.\//, '')}</StoryPath>
-            </StoryCard>
-          ))}
-        </StoryGrid>
+        <StoryGrid>{items.map(renderStoryCard)}</StoryGrid>
       </Section>
+    );
+  };
+
+  /** Group filteredStories into cluster sections using the data.clusters
+   *  shape — a story is placed in the FIRST cluster whose sample contains
+   *  its id (the actual production system uses signature expansion; the
+   *  prototype short-circuits via the sample list). */
+  const renderClusterSections = () => {
+    const idToCluster = new Map<string, MockCluster>();
+    for (const c of data.clusters) {
+      for (const s of c.sampleStories)
+        if (!idToCluster.has(s.storyId)) idToCluster.set(s.storyId, c);
+    }
+    const buckets = new Map<string, MockStory[]>();
+    const orderedIds: string[] = [];
+    const uncategorised: MockStory[] = [];
+    for (const s of filteredStories) {
+      const c = idToCluster.get(s.storyId);
+      if (!c) {
+        uncategorised.push(s);
+        continue;
+      }
+      if (!buckets.has(c.id)) {
+        buckets.set(c.id, []);
+        orderedIds.push(c.id);
+      }
+      buckets.get(c.id)!.push(s);
+    }
+    return (
+      <>
+        {orderedIds.map((cid) => {
+          const cluster = data.clusters.find((c) => c.id === cid)!;
+          const items = buckets.get(cid)!;
+          return (
+            <Section key={cid}>
+              <SectionTitle style={{ flexDirection: 'column', alignItems: 'flex-start', gap: 4 }}>
+                <span>
+                  <strong style={{ color: '#0f172a' }}>{cluster.id}</strong>
+                  {cluster.depthHint !== undefined && (
+                    <span
+                      style={{
+                        marginLeft: 8,
+                        fontSize: 10,
+                        fontWeight: 700,
+                        background: '#dbeafe',
+                        color: '#1d4ed8',
+                        padding: '2px 7px',
+                        borderRadius: 999,
+                        textTransform: 'uppercase',
+                      }}
+                    >
+                      depth {cluster.depthHint}
+                    </span>
+                  )}
+                  <SectionCount kind="modified" style={{ marginLeft: 8 }}>
+                    {items.length} of {cluster.totalStoryCount}
+                  </SectionCount>
+                </span>
+                <span
+                  style={{ fontSize: 12, fontWeight: 400, textTransform: 'none', letterSpacing: 0 }}
+                >
+                  {cluster.rationale}
+                </span>
+              </SectionTitle>
+              <StoryGrid>{items.map(renderStoryCard)}</StoryGrid>
+            </Section>
+          );
+        })}
+        {uncategorised.length > 0 && (
+          <Section>
+            <SectionTitle>
+              Uncategorised
+              <SectionCount kind="related">{uncategorised.length}</SectionCount>
+            </SectionTitle>
+            <StoryGrid>{uncategorised.map(renderStoryCard)}</StoryGrid>
+          </Section>
+        )}
+      </>
     );
   };
 
@@ -301,6 +382,24 @@ export function FlatListReview({ data }: FlatListReviewProps) {
             <CountChip kind="modified">{data.modifiedCount} modified</CountChip>
             <CountChip kind="related">{data.relatedCount} related</CountChip>
           </Counts>
+          <span
+            style={{
+              marginLeft: 16,
+              fontSize: 11,
+              color: '#64748b',
+              textTransform: 'uppercase',
+              letterSpacing: '0.06em',
+              fontWeight: 700,
+            }}
+          >
+            Group by
+          </span>
+          <FilterChip active={groupBy === 'status'} onClick={() => setGroupBy('status')}>
+            Status
+          </FilterChip>
+          <FilterChip active={groupBy === 'cluster'} onClick={() => setGroupBy('cluster')}>
+            Clusters ({data.clusters.length})
+          </FilterChip>
         </TopBarRow>
         <SearchRow>
           <FilterChip active={filter === 'all'} onClick={() => setFilter('all')}>
@@ -339,6 +438,8 @@ export function FlatListReview({ data }: FlatListReviewProps) {
         </Banner>
         {filteredStories.length === 0 ? (
           <Empty>No stories match this filter.</Empty>
+        ) : groupBy === 'cluster' ? (
+          renderClusterSections()
         ) : (
           (['modified', 'new', 'related'] as StoryStatus[]).map(renderSection)
         )}

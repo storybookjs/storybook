@@ -76,7 +76,9 @@ describe('BUN Proxy', () => {
       vi.useFakeTimers();
       vi.setSystemTime(new Date('2025-01-10T00:00:00.000Z'));
       vi.spyOn(bunProxy as any, 'readBunfig').mockReturnValue('minimumReleaseAge = 3600\n');
-      const updateSpy = vi.spyOn(bunProxy as any, 'updateMinimumReleaseAgeExcludes');
+      const updateSpy = vi
+        .spyOn(bunProxy as any, 'updateMinimumReleaseAgeExcludes')
+        .mockImplementation(() => undefined);
       mockedExecuteCommand.mockResolvedValueOnce({
         stdout: JSON.stringify({
           '10.4.0-alpha.17': '2025-01-09T23:30:00.000Z',
@@ -100,7 +102,9 @@ describe('BUN Proxy', () => {
       vi.useFakeTimers();
       vi.setSystemTime(new Date('2025-01-10T00:00:00.000Z'));
       vi.spyOn(bunProxy as any, 'readBunfig').mockReturnValue('minimumReleaseAge = 3600\n');
-      const updateSpy = vi.spyOn(bunProxy as any, 'updateMinimumReleaseAgeExcludes');
+      const updateSpy = vi
+        .spyOn(bunProxy as any, 'updateMinimumReleaseAgeExcludes')
+        .mockImplementation(() => undefined);
       mockedExecuteCommand.mockResolvedValueOnce({
         stdout: JSON.stringify({
           '10.4.0-alpha.17': '2025-01-09T23:30:00.000Z',
@@ -144,15 +148,40 @@ describe('BUN Proxy', () => {
       expect(error).toBeInstanceOf(MinimumReleaseAgeHandledError);
       expect(error?.message).toContain('npx storybook@10.3.9 upgrade');
     });
+
+    it('skips the precheck when Storybook packages are already excluded', async () => {
+      vi.spyOn(bunProxy as any, 'readBunfig').mockReturnValue(
+        [
+          '[install]',
+          'minimumReleaseAge = 3600',
+          'minimumReleaseAgeExcludes = ["storybook", "@storybook/*", "eslint-plugin-storybook", "@chromatic-com/storybook"]',
+          '',
+        ].join('\n')
+      );
+      const updateSpy = vi.spyOn(bunProxy as any, 'updateMinimumReleaseAgeExcludes');
+
+      await expect(
+        bunProxy.precheckStorybookPackageInstall({
+          storybookVersion: '10.4.0-alpha.17',
+          nonInteractive: false,
+          installContext: 'upgrade',
+        })
+      ).resolves.toBeUndefined();
+
+      expect(mockedExecuteCommand).not.toHaveBeenCalled();
+      expect(vi.mocked(prompt.select)).not.toHaveBeenCalled();
+      expect(vi.mocked(logger.warn)).not.toHaveBeenCalled();
+      expect(updateSpy).not.toHaveBeenCalled();
+    });
   });
 
   describe('updateMinimumReleaseAgeExcludes', () => {
     it('adds minimumReleaseAgeExcludes inside the install section', () => {
       const tempDir = mkdtempSync(join(tmpdir(), 'storybook-bun-proxy-'));
-      const tempBunProxy = new BUNProxy({ cwd: tempDir });
       const bunfigPath = join(tempDir, 'bunfig.toml');
 
       writeFileSync(join(tempDir, 'package.json'), '{}\n');
+      const tempBunProxy = new BUNProxy({ cwd: tempDir });
       writeFileSync(
         bunfigPath,
         ['[install]', 'minimumReleaseAge = 900000', '[test]', 'coverageThreshold = 0.9', ''].join(
@@ -171,6 +200,7 @@ describe('BUN Proxy', () => {
             '  "storybook",',
             '  "@storybook/*",',
             '  "eslint-plugin-storybook",',
+            '  "@chromatic-com/storybook",',
             ']',
             '[test]',
             'coverageThreshold = 0.9',

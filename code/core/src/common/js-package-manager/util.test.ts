@@ -6,6 +6,7 @@ import {
   getLatestStableVersionAdheringToMinimumAgeGate,
   getStorybookRerunCommand,
   getStorybookRerunInstruction,
+  hasStorybookMinimumAgeExclusions,
   parsePackageData,
   parsePackageTimeMap,
   parsePositiveIntegerConfigValue,
@@ -64,6 +65,21 @@ describe('js package manager util', () => {
         new Date('2026-05-11T12:00:00.000Z')
       )
     ).toBe('10.3.2');
+  });
+
+  it('detects when Storybook minimum-age exclusions are already configured', () => {
+    expect(
+      hasStorybookMinimumAgeExclusions([
+        'storybook',
+        '@storybook/*',
+        'eslint-plugin-storybook',
+        '@chromatic-com/storybook',
+      ])
+    ).toBe(true);
+    expect(
+      hasStorybookMinimumAgeExclusions(['storybook', '@storybook/react-vite'])
+    ).toBe(false);
+    expect(hasStorybookMinimumAgeExclusions(['*storybook*'])).toBe(true);
   });
 
   it('builds rerun guidance', () => {

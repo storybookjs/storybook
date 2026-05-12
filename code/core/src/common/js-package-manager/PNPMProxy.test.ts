@@ -29,6 +29,7 @@ const expectedMinimumReleaseAgeExcludePackages = [
   'storybook',
   '@storybook/*',
   'eslint-plugin-storybook',
+  '@chromatic-com/storybook',
 ];
 
 describe('PNPM Proxy', () => {
@@ -453,6 +454,7 @@ describe('PNPM Proxy', () => {
     it('should update minimumReleaseAgeExclude in non-interactive mode when minimumReleaseAge blocks Storybook', async () => {
       mockedExecuteCommand
         .mockResolvedValueOnce({ stdout: '1440\n' } as any)
+        .mockResolvedValueOnce({ stdout: JSON.stringify(['react', 'webpack']) } as any)
         .mockResolvedValueOnce({ stdout: '"2026-05-11T11:59:00.000Z"' } as any)
         .mockResolvedValueOnce({
           stdout: JSON.stringify({
@@ -492,6 +494,9 @@ describe('PNPM Proxy', () => {
     it('should let the user update minimumReleaseAgeExclude interactively', async () => {
       mockedExecuteCommand
         .mockResolvedValueOnce({ stdout: '1440\n' } as any)
+        .mockResolvedValueOnce(
+          { stdout: JSON.stringify(['react', '@storybook/preset-react-webpack']) } as any
+        )
         .mockResolvedValueOnce({ stdout: '"2026-05-11T11:59:00.000Z"' } as any)
         .mockResolvedValueOnce({
           stdout: JSON.stringify({
@@ -556,6 +561,7 @@ describe('PNPM Proxy', () => {
     it('should tell create-storybook users how to rerun when they choose rerun', async () => {
       mockedExecuteCommand
         .mockResolvedValueOnce({ stdout: '1440\n' } as any)
+        .mockResolvedValueOnce({ stdout: '[]' } as any)
         .mockResolvedValueOnce({ stdout: '"2026-05-11T11:59:00.000Z"' } as any)
         .mockResolvedValueOnce({
           stdout: JSON.stringify({
@@ -585,6 +591,7 @@ describe('PNPM Proxy', () => {
     it('should show the same rerun guidance when the prompt is cancelled', async () => {
       mockedExecuteCommand
         .mockResolvedValueOnce({ stdout: '1440\n' } as any)
+        .mockResolvedValueOnce({ stdout: '[]' } as any)
         .mockResolvedValueOnce({ stdout: '"2026-05-11T11:59:00.000Z"' } as any)
         .mockResolvedValueOnce({
           stdout: JSON.stringify({
@@ -608,6 +615,34 @@ describe('PNPM Proxy', () => {
       ).rejects.toThrow(
         /Please rerun Storybook creation with:[\s\S]*npx create-storybook@10\.3\.2/
       );
+    });
+
+    it('should skip the precheck when Storybook packages are already excluded', async () => {
+      const updateSpy = vi.spyOn(pnpmProxy as any, 'updateMinimumReleaseAgeExclude');
+      mockedExecuteCommand
+        .mockResolvedValueOnce({ stdout: '1440\n' } as any)
+        .mockResolvedValueOnce(
+          {
+            stdout: JSON.stringify([
+              'storybook',
+              '@storybook/*',
+              'eslint-plugin-storybook',
+              '@chromatic-com/storybook',
+            ]),
+          } as any
+        );
+
+      await expect(
+        pnpmProxy.precheckStorybookPackageInstall({
+          storybookVersion: '10.4.0-alpha.17',
+          nonInteractive: false,
+          installContext: 'upgrade',
+        })
+      ).resolves.toBeUndefined();
+
+      expect(vi.mocked(prompt.select)).not.toHaveBeenCalled();
+      expect(vi.mocked(logger.warn)).not.toHaveBeenCalled();
+      expect(updateSpy).not.toHaveBeenCalled();
     });
   });
 });

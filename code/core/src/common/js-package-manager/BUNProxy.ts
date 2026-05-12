@@ -22,6 +22,7 @@ import {
   getLatestStableVersionAdheringToMinimumAgeGate,
   getStorybookRerunCommand,
   getStorybookRerunInstruction,
+  hasStorybookMinimumAgeExclusions,
   parsePackageTimeMap,
   parseReleaseTime,
   STORYBOOK_PACKAGE_PATTERNS,
@@ -244,9 +245,14 @@ export class BUNProxy extends JsPackageManager {
     nonInteractive: boolean;
     installContext: 'create' | 'upgrade';
   }): Promise<void> {
-    const minimumReleaseAgeSeconds = this.getMinimumReleaseAgeSeconds();
+    const bunfig = this.readBunfig();
+    const minimumReleaseAgeSeconds = this.getMinimumReleaseAgeSeconds(bunfig);
 
     if (!minimumReleaseAgeSeconds) {
+      return;
+    }
+
+    if (hasStorybookMinimumAgeExclusions(this.getMinimumReleaseAgeExcludes(bunfig ?? ''))) {
       return;
     }
 
@@ -281,7 +287,7 @@ export class BUNProxy extends JsPackageManager {
         dedent`
           bun minimumReleaseAge would block storybook@${storybookVersion} from being installed because it was released within the configured minimumReleaseAge window, so Storybook updated minimumReleaseAgeExcludes for this project automatically.
 
-          Added patterns: storybook, @storybook/*, eslint-plugin-storybook
+          Added patterns: storybook, @storybook/*, eslint-plugin-storybook, @chromatic-com/storybook
 
           Read more:
           - https://bun.com/docs/pm/cli/install#minimum-release-age
@@ -477,8 +483,7 @@ export class BUNProxy extends JsPackageManager {
     return finalMessage.trim();
   }
 
-  private getMinimumReleaseAgeSeconds(): number | null {
-    const bunfig = this.readBunfig();
+  private getMinimumReleaseAgeSeconds(bunfig = this.readBunfig()): number | null {
     if (!bunfig) {
       return null;
     }

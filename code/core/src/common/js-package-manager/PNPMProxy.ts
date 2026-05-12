@@ -23,6 +23,7 @@ import {
   getLatestStableVersionAdheringToMinimumAgeGate,
   getStorybookRerunCommand,
   getStorybookRerunInstruction,
+  hasStorybookMinimumAgeExclusions,
   parsePackageTimeMap,
   parsePositiveIntegerConfigValue,
   parseReleaseTime,
@@ -254,6 +255,10 @@ export class PNPMProxy extends JsPackageManager {
       return;
     }
 
+    if (hasStorybookMinimumAgeExclusions(await this.getMinimumReleaseAgeExclude())) {
+      return;
+    }
+
     const publishedAt = await this.getPackageReleaseTime('storybook', storybookVersion);
 
     if (!publishedAt) {
@@ -276,7 +281,7 @@ export class PNPMProxy extends JsPackageManager {
         dedent`
           pnpm minimumReleaseAge would block storybook@${storybookVersion} from being installed because it was released within the configured minimumReleaseAge window, so Storybook updated minimumReleaseAgeExclude for this project automatically.
 
-          Added patterns: storybook, @storybook/*, eslint-plugin-storybook
+          Added patterns: storybook, @storybook/*, eslint-plugin-storybook, @chromatic-com/storybook
 
           Read more:
           - https://pnpm.io/settings#minimumreleaseage

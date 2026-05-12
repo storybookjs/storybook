@@ -26,6 +26,7 @@ import {
   getLatestStableVersionAdheringToMinimumAgeGate,
   getStorybookRerunCommand,
   getStorybookRerunInstruction,
+  hasStorybookMinimumAgeExclusions,
   parsePackageData,
   parsePackageTimeMap,
   parsePositiveIntegerConfigValue,
@@ -285,6 +286,10 @@ export class Yarn2Proxy extends JsPackageManager {
       return;
     }
 
+    if (hasStorybookMinimumAgeExclusions(await this.getPreapprovedPackages())) {
+      return;
+    }
+
     const timeMap = await this.getPackageTimeMap('storybook');
     if (!timeMap) {
       return;
@@ -316,7 +321,7 @@ export class Yarn2Proxy extends JsPackageManager {
         dedent`
           yarn npmMinimalAgeGate would block storybook@${storybookVersion} from being installed because it was released within the configured npmMinimalAgeGate window, so Storybook updated npmPreapprovedPackages for this project automatically.
 
-          Added patterns: storybook, @storybook/*, eslint-plugin-storybook
+          Added patterns: storybook, @storybook/*, eslint-plugin-storybook, @chromatic-com/storybook
 
           Read more:
           - https://yarnpkg.com/configuration/yarnrc#npmMinimalAgeGate

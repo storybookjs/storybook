@@ -6,7 +6,21 @@ export const STORYBOOK_PACKAGE_PATTERNS = [
   'storybook',
   '@storybook/*',
   'eslint-plugin-storybook',
+  '@chromatic-com/storybook',
 ] as const;
+
+const escapePatternForRegex = (pattern: string) => pattern.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+const packagePatternToRegex = (pattern: string) =>
+  new RegExp(`^${escapePatternForRegex(pattern).replace(/\\\*/g, '.*')}$`);
+
+export const hasStorybookMinimumAgeExclusions = (configuredPatterns: string[]) => {
+  return STORYBOOK_PACKAGE_PATTERNS.every((storybookPattern) =>
+    configuredPatterns.some((configuredPattern) =>
+      packagePatternToRegex(configuredPattern).test(storybookPattern)
+    )
+  );
+};
 
 // input: @storybook/addon-essentials@npm:7.0.0
 // output: { name: '@storybook/addon-essentials', value: { version : '7.0.0', location: '' } }

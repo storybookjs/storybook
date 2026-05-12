@@ -394,6 +394,7 @@ describe('Yarn 2 Proxy', () => {
     it('should update npmPreapprovedPackages in non-interactive mode when npmMinimalAgeGate blocks Storybook', async () => {
       mockedExecuteCommand
         .mockResolvedValueOnce({ stdout: '1440\n' } as any)
+        .mockResolvedValueOnce({ stdout: '[]\n' } as any)
         .mockResolvedValueOnce({
           stdout: JSON.stringify({
             name: 'storybook',
@@ -425,7 +426,12 @@ describe('Yarn 2 Proxy', () => {
             'set',
             'npmPreapprovedPackages',
             '--json',
-            JSON.stringify(['storybook', '@storybook/*', 'eslint-plugin-storybook']),
+            JSON.stringify([
+              'storybook',
+              '@storybook/*',
+              'eslint-plugin-storybook',
+              '@chromatic-com/storybook',
+            ]),
           ],
         })
       );
@@ -439,6 +445,7 @@ describe('Yarn 2 Proxy', () => {
     it('should let the user update npmPreapprovedPackages interactively', async () => {
       mockedExecuteCommand
         .mockResolvedValueOnce({ stdout: '1440\n' } as any)
+        .mockResolvedValueOnce({ stdout: "[\n  'foo',\n  '@storybook/preset-react-webpack',\n]\n" } as any)
         .mockResolvedValueOnce({
           stdout: JSON.stringify({
             name: 'storybook',
@@ -497,6 +504,7 @@ describe('Yarn 2 Proxy', () => {
               'storybook',
               '@storybook/*',
               'eslint-plugin-storybook',
+              '@chromatic-com/storybook',
             ]),
           ],
         })
@@ -518,6 +526,7 @@ describe('Yarn 2 Proxy', () => {
     it('should tell create-storybook users how to rerun when they choose rerun', async () => {
       mockedExecuteCommand
         .mockResolvedValueOnce({ stdout: '1440\n' } as any)
+        .mockResolvedValueOnce({ stdout: '[]\n' } as any)
         .mockResolvedValueOnce({
           stdout: JSON.stringify({
             name: 'storybook',
@@ -545,6 +554,7 @@ describe('Yarn 2 Proxy', () => {
     it('should show the same rerun guidance when the prompt is cancelled', async () => {
       mockedExecuteCommand
         .mockResolvedValueOnce({ stdout: '1440\n' } as any)
+        .mockResolvedValueOnce({ stdout: '[]\n' } as any)
         .mockResolvedValueOnce({
           stdout: JSON.stringify({
             name: 'storybook',
@@ -572,6 +582,30 @@ describe('Yarn 2 Proxy', () => {
       ).rejects.toThrow(
         /Please rerun Storybook creation with:[\s\S]*npx create-storybook@10\.3\.2/
       );
+    });
+
+    it('should skip the precheck when Storybook packages are already preapproved', async () => {
+      const updateSpy = vi.spyOn(yarn2Proxy as any, 'updatePreapprovedPackages');
+      mockedExecuteCommand
+        .mockResolvedValueOnce({ stdout: '1440\n' } as any)
+        .mockResolvedValueOnce(
+          {
+            stdout:
+              "[\n  'storybook',\n  '@storybook/*',\n  'eslint-plugin-storybook',\n  '@chromatic-com/storybook',\n]\n",
+          } as any
+        );
+
+      await expect(
+        yarn2Proxy.precheckStorybookPackageInstall({
+          storybookVersion: '10.4.0-alpha.17',
+          nonInteractive: false,
+          installContext: 'upgrade',
+        })
+      ).resolves.toBeUndefined();
+
+      expect(vi.mocked(prompt.select)).not.toHaveBeenCalled();
+      expect(vi.mocked(logger.warn)).not.toHaveBeenCalled();
+      expect(updateSpy).not.toHaveBeenCalled();
     });
   });
 });

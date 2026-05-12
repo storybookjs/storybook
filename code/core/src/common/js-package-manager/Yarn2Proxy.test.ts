@@ -5,6 +5,7 @@ import { prompt } from 'storybook/internal/node-logger';
 import { logger } from '../../node-logger/index.ts';
 import { executeCommand } from '../utils/command.ts';
 import { JsPackageManager } from './JsPackageManager.ts';
+import { MinimumReleaseAgeHandledError } from './MinimumReleaseAgeHandledError.ts';
 import { Yarn2Proxy } from './Yarn2Proxy.ts';
 
 vi.mock('storybook/internal/node-logger', () => ({
@@ -60,6 +61,21 @@ describe('Yarn 2 Proxy', () => {
 
       expect(executeCommandSpy).toHaveBeenCalledWith(
         expect.objectContaining({ command: 'yarn', args: ['install'] })
+      );
+    });
+
+    it('should rethrow minimum-age-gate install errors as handled errors', async () => {
+      vi.mocked(prompt.executeTaskWithSpinner).mockImplementationOnce(async (fn: any) => {
+        await Promise.resolve(fn());
+      });
+      mockedExecuteCommand.mockRejectedValueOnce(
+        new Error(
+          '➤ YN0016: │ @storybook/react-vite@npm:10.4.0-alpha.17: All versions satisfying "10.4.0-alpha.17" are quarantined'
+        )
+      );
+
+      await expect(yarn2Proxy.installDependencies()).rejects.toBeInstanceOf(
+        MinimumReleaseAgeHandledError
       );
     });
   });

@@ -1,3 +1,7 @@
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { logger, prompt } from 'storybook/internal/node-logger';
@@ -139,6 +143,43 @@ describe('BUN Proxy', () => {
 
       expect(error).toBeInstanceOf(MinimumReleaseAgeHandledError);
       expect(error?.message).toContain('npx storybook@10.3.9 upgrade');
+    });
+  });
+
+  describe('updateMinimumReleaseAgeExcludes', () => {
+    it('adds minimumReleaseAgeExcludes inside the install section', () => {
+      const tempDir = mkdtempSync(join(tmpdir(), 'storybook-bun-proxy-'));
+      const tempBunProxy = new BUNProxy({ cwd: tempDir });
+      const bunfigPath = join(tempDir, 'bunfig.toml');
+
+      writeFileSync(join(tempDir, 'package.json'), '{}\n');
+      writeFileSync(
+        bunfigPath,
+        ['[install]', 'minimumReleaseAge = 900000', '[test]', 'coverageThreshold = 0.9', ''].join(
+          '\n'
+        )
+      );
+
+      try {
+        (tempBunProxy as any).updateMinimumReleaseAgeExcludes();
+
+        expect(readFileSync(bunfigPath, 'utf-8')).toBe(
+          [
+            '[install]',
+            'minimumReleaseAge = 900000',
+            'minimumReleaseAgeExcludes = [',
+            '  "storybook",',
+            '  "@storybook/*",',
+            '  "eslint-plugin-storybook",',
+            ']',
+            '[test]',
+            'coverageThreshold = 0.9',
+            '',
+          ].join('\n')
+        );
+      } finally {
+        rmSync(tempDir, { recursive: true, force: true });
+      }
     });
   });
 

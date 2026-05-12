@@ -443,10 +443,7 @@ export class BUNProxy extends JsPackageManager {
   }
 
   public parseErrorFromLogs(logs: string): string {
-    if (
-      logs.includes('minimum-release-age') ||
-      logs.includes('minimum release age')
-    ) {
+    if (logs.includes('minimum-release-age') || logs.includes('minimum release age')) {
       const failedPackage = this.extractMinimumReleaseAgePackage(logs);
 
       return dedent`
@@ -547,11 +544,62 @@ export class BUNProxy extends JsPackageManager {
       ']',
     ].join(lineEnding);
 
-    const nextContent = currentContent.match(/^minimumReleaseAgeExcludes\s*=\s*\[[\s\S]*?\]/m)
-      ? currentContent.replace(/^minimumReleaseAgeExcludes\s*=\s*\[[\s\S]*?\]/m, replacement)
-      : `${currentContent}${currentContent.trim().length > 0 ? `${lineEnding}${lineEnding}` : ''}${replacement}${lineEnding}`;
+    // `minimumReleaseAgeExcludes` belongs in Bun's `[install]` table. Restricting
+    // the rewrite to that slice avoids accidentally appending the key into a later table.
+    const installSectionRange = this.getTomlSectionRange(currentContent, 'install');
+    const nextContent = installSectionRange
+      ? [
+          currentContent.slice(0, installSectionRange.start),
+          this.updateMinimumReleaseAgeExcludesInContent(
+            currentContent.slice(installSectionRange.start, installSectionRange.end),
+            replacement,
+            lineEnding
+          ),
+          currentContent.slice(installSectionRange.end),
+        ].join('')
+      : this.updateMinimumReleaseAgeExcludesInContent(currentContent, replacement, lineEnding);
 
     writeFileSync(bunfigPath, nextContent);
+  }
+
+  private updateMinimumReleaseAgeExcludesInContent(
+    content: string,
+    replacement: string,
+    lineEnding: string
+  ) {
+    // Keep an existing list in place when it already exists. Otherwise, insert the
+    // new property directly after `minimumReleaseAge` so related Bun settings stay together.
+    if (content.match(/^minimumReleaseAgeExcludes\s*=\s*\[[\s\S]*?\]/m)) {
+      return content.replace(/^minimumReleaseAgeExcludes\s*=\s*\[[\s\S]*?\]/m, replacement);
+    }
+
+    if (content.match(/^minimumReleaseAge\s*=\s*.+$/m)) {
+      return content.replace(
+        /^minimumReleaseAge\s*=\s*.+$/m,
+        (minimumReleaseAgeLine) => `${minimumReleaseAgeLine}${lineEnding}${replacement}`
+      );
+    }
+
+    return `${content}${content.trim().length > 0 ? `${lineEnding}${lineEnding}` : ''}${replacement}${lineEnding}`;
+  }
+
+  private getTomlSectionRange(content: string, sectionName: string) {
+    const escapedSectionName = sectionName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const sectionHeader = new RegExp(`^\\[${escapedSectionName}\\]\\s*$`, 'm');
+    const sectionMatch = sectionHeader.exec(content);
+
+    if (!sectionMatch || sectionMatch.index === undefined) {
+      return null;
+    }
+
+    const nextSectionHeader = /^\[[^\]]+\]\s*$/gm;
+    nextSectionHeader.lastIndex = sectionMatch.index + sectionMatch[0].length;
+    const nextSectionMatch = nextSectionHeader.exec(content);
+
+    return {
+      start: sectionMatch.index,
+      end: nextSectionMatch?.index ?? content.length,
+    };
   }
 
   private getMinimumReleaseAgeExcludes(bunfig: string): string[] {

@@ -12,12 +12,12 @@ import * as find from 'empathic/find';
 import type { ResultPromise } from 'execa';
 import { dedent } from 'ts-dedent';
 
-import { HandledError } from '../utils/HandledError.ts';
 import { logger } from '../../node-logger/index.ts';
 import type { ExecuteCommandOptions } from '../utils/command.ts';
 import { executeCommand } from '../utils/command.ts';
 import { getProjectRoot } from '../utils/paths.ts';
 import { JsPackageManager, PackageManagerName } from './JsPackageManager.ts';
+import { MinimumReleaseAgeHandledError } from './MinimumReleaseAgeHandledError.ts';
 import type { PackageJson } from './PackageJson.ts';
 import type { InstallationMetadata, PackageMetadata } from './types.ts';
 import {
@@ -263,7 +263,7 @@ export class Yarn2Proxy extends JsPackageManager {
       const parsedError = this.parseErrorFromLogs(getErrorLogs(error));
       if (parsedError !== 'YARN2 error') {
         logger.error(parsedError);
-        throw new HandledError(parsedError);
+        throw new MinimumReleaseAgeHandledError(parsedError);
       }
 
       throw error;
@@ -330,7 +330,7 @@ export class Yarn2Proxy extends JsPackageManager {
       `yarn npmMinimalAgeGate will block storybook@${storybookVersion} from being installed because it was published within the configured minimum-release-age window.`
     );
 
-    const rerunError = new HandledError(
+    const rerunError = new MinimumReleaseAgeHandledError(
       this.createMinimalAgeGateRerunMessage({
         currentVersion: storybookVersion,
         compatibleVersion,

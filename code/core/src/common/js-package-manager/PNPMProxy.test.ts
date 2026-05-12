@@ -4,6 +4,7 @@ import { logger, prompt } from 'storybook/internal/node-logger';
 
 import { executeCommand } from '../utils/command.ts';
 import { JsPackageManager } from './JsPackageManager.ts';
+import { MinimumReleaseAgeHandledError } from './MinimumReleaseAgeHandledError.ts';
 import { PNPMProxy } from './PNPMProxy.ts';
 
 vi.mock('storybook/internal/node-logger', () => ({
@@ -55,6 +56,21 @@ describe('PNPM Proxy', () => {
 
       expect(executeCommandSpy).toHaveBeenCalledWith(
         expect.objectContaining({ command: 'pnpm', args: ['install'] })
+      );
+    });
+
+    it('should rethrow minimum-release-age install errors as handled errors', async () => {
+      vi.mocked(prompt.executeTaskWithSpinner).mockImplementationOnce(async (fn: any) => {
+        await Promise.resolve(fn());
+      });
+      mockedExecuteCommand.mockRejectedValueOnce(
+        new Error(
+          'ERR_PNPM_NO_MATURE_MATCHING_VERSION Version 10.4.0-alpha.17 (released 1 minute ago) of storybook does not meet the minimumReleaseAge constraint'
+        )
+      );
+
+      await expect(pnpmProxy.installDependencies()).rejects.toBeInstanceOf(
+        MinimumReleaseAgeHandledError
       );
     });
   });

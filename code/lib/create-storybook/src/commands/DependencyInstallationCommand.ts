@@ -1,10 +1,12 @@
 import { AddonVitestService } from 'storybook/internal/cli';
-import type { JsPackageManager } from 'storybook/internal/common';
+import {
+  MinimumReleaseAgeHandledError,
+  type JsPackageManager,
+} from 'storybook/internal/common';
 import { logger, prompt } from 'storybook/internal/node-logger';
 import { ErrorCollector } from 'storybook/internal/telemetry';
 import { Feature } from 'storybook/internal/types';
 
-import { MinimumReleaseAgeHandledError } from '../../../../core/src/common/js-package-manager/MinimumReleaseAgeHandledError.ts';
 import type { DependencyCollector } from '../dependency-collector.ts';
 
 type DependencyInstallationCommandParams = {

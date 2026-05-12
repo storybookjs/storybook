@@ -31,6 +31,17 @@ type StoryBlockParameters = {
   of: ModuleExport;
 };
 
+type StoriesBlockParameters = {
+  /** Filter which stories are rendered by the Stories block */
+  filter?: (story: any, context: any) => boolean;
+  /** When rendering stories, whether the first story should be included */
+  includePrimaryStory?: boolean;
+  /** Whether to force initial args when rendering stories */
+  forceInitialArgs?: boolean;
+  /** The title displayed above the stories list */
+  title?: string;
+};
+
 type ControlsBlockParameters = {
   /** Exclude specific properties from the Controls panel */
   exclude?: string[] | RegExp;
@@ -220,6 +231,13 @@ export interface DocsParameters {
      * @see https://storybook.js.org/docs/api/doc-blocks/doc-block-story
      */
     story?: Partial<StoryBlockParameters>;
+
+    /**
+     * Stories configuration
+     *
+     * @see https://storybook.js.org/docs/api/doc-blocks/doc-block-stories
+     */
+    stories?: StoriesBlockParameters;
 
     /**
      * The subtitle displayed when shown in docs page

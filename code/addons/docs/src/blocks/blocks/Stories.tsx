@@ -2,17 +2,26 @@ import type { FC, ReactElement } from 'react';
 import React, { useContext } from 'react';
 
 import { Tag } from 'storybook/internal/preview-api';
+import { InvalidBlockOfPropError } from 'storybook/internal/preview-errors';
+import type { ResolvedModuleExportFromType } from 'storybook/internal/types';
 
 import { styled } from 'storybook/theming';
 
 import { DocsContext } from './DocsContext';
 import { DocsStory } from './DocsStory';
 import { Heading } from './Heading';
+import type { Of } from './useOf';
+import { useOf } from './useOf';
 import { withMdxComponentOverride } from './with-mdx-component-override';
 
 interface StoriesProps {
+  /** Specify which CSF file's stories are displayed. */
+  of?: Of;
   title?: ReactElement | string;
+  /** @deprecated Use `includePrimaryStory` instead. */
   includePrimary?: boolean;
+  includePrimaryStory?: boolean;
+  forceInitialArgs?: boolean;
 }
 
 const StyledHeading: typeof Heading = styled(Heading)(({ theme }) => ({
@@ -31,10 +40,37 @@ const StyledHeading: typeof Heading = styled(Heading)(({ theme }) => ({
   },
 }));
 
-const StoriesImpl: FC<StoriesProps> = ({ title = 'Stories', includePrimary = true }) => {
-  const { componentStories, projectAnnotations, getStoryContext } = useContext(DocsContext);
+const StoriesImpl: FC<StoriesProps> = (props) => {
+  const { of, includePrimary, includePrimaryStory } = props;
+  const context = useContext(DocsContext);
+  const { componentStories, componentStoriesFromCSFFile, projectAnnotations, getStoryContext } =
+    context;
 
-  let stories = componentStories();
+  if ('of' in props && of === undefined) {
+    throw new InvalidBlockOfPropError();
+  }
+
+  let resolvedOf: ResolvedModuleExportFromType<'meta'> | undefined;
+  try {
+    resolvedOf = useOf(of || 'meta', ['meta']);
+  } catch (error: unknown) {
+    if (
+      of ||
+      !(error instanceof Error) ||
+      !error.message.includes('did you forget to use <Meta of={} />?')
+    ) {
+      throw error;
+    }
+  }
+
+  const docsStoriesParameters = resolvedOf?.preparedMeta.parameters.docs?.stories || {};
+  const title = props.title ?? docsStoriesParameters.title ?? 'Stories';
+  const showPrimaryStory =
+    includePrimaryStory ?? includePrimary ?? docsStoriesParameters.includePrimaryStory ?? true;
+  const forceInitialArgs = props.forceInitialArgs ?? docsStoriesParameters.forceInitialArgs ?? true;
+
+  let stories =
+    of && resolvedOf ? componentStoriesFromCSFFile(resolvedOf.csfFile) : componentStories();
   const { stories: { filter } = { filter: undefined } } = projectAnnotations.parameters?.docs || {};
   if (filter) {
     stories = stories.filter((story) => filter(story, getStoryContext(story)));
@@ -53,7 +89,7 @@ const StoriesImpl: FC<StoriesProps> = ({ title = 'Stories', includePrimary = tru
     stories = stories.filter((story) => story.tags?.includes(Tag.AUTODOCS) && !story.usesMount);
   }
 
-  if (!includePrimary) {
+  if (!showPrimaryStory) {
     stories = stories.slice(1);
   }
 
@@ -65,7 +101,14 @@ const StoriesImpl: FC<StoriesProps> = ({ title = 'Stories', includePrimary = tru
       {typeof title === 'string' ? <StyledHeading>{title}</StyledHeading> : title}
       {stories.map(
         (story) =>
-          story && <DocsStory key={story.id} of={story.moduleExport} expanded __forceInitialArgs />
+          story && (
+            <DocsStory
+              key={story.id}
+              of={story.moduleExport}
+              expanded
+              __forceInitialArgs={forceInitialArgs}
+            />
+          )
       )}
     </>
   );

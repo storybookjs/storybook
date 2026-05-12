@@ -37,27 +37,45 @@ export const modifyErrorMessage = ({ task }: { task: Task }) => {
 
 export const resetMousePositionBeforeTests = async () => {
   try {
-    const { commands } = await import('vitest/browser');
-    if ('resetMousePosition' in commands && isFunction(commands.resetMousePosition)) {
-      await commands.resetMousePosition();
+    const browserCommands = await import('vitest/browser').then((module) => module.commands);
+    if ('resetMousePosition' in browserCommands && isFunction(browserCommands.resetMousePosition)) {
+      await browserCommands.resetMousePosition();
     }
   } catch (error) {
-    // Ignore when vitest/browser is not found not found (Vitest 3)
+    // Retry with Vitest 3 context module when vitest/browser is not found.
     if (error instanceof Error && error.message.includes("Cannot find module 'vitest/browser'")) {
-      return;
-    }
-    // Ignore when commands is not exported by vitest/browser (Vitest 3)
-    if (
-      error instanceof Error &&
-      error.message.includes("Cannot destructure property 'commands'")
-    ) {
-      return;
+      try {
+        const browserCommands = await import('@vitest/browser/context').then(
+          (module) => module.commands
+        );
+        if (
+          'resetMousePosition' in browserCommands &&
+          isFunction(browserCommands.resetMousePosition)
+        ) {
+          await browserCommands.resetMousePosition();
+        }
+        return;
+      } catch (vitest3Error) {
+        if (
+          vitest3Error instanceof Error &&
+          vitest3Error.message.includes("Cannot find module '@vitest/browser/context'")
+        ) {
+          return;
+        }
+        if (
+          vitest3Error instanceof Error &&
+          vitest3Error.message.includes('can be imported only inside the Browser Mode')
+        ) {
+          return;
+        }
+        throw vitest3Error;
+      }
     }
 
     // Ignore "Error: vitest/browser can be imported only inside the Browser Mode."
     if (
       error instanceof Error &&
-      error.message.includes('vitest/browser can be imported only inside the Browser Mode')
+      error.message.includes('can be imported only inside the Browser Mode')
     ) {
       return;
     }

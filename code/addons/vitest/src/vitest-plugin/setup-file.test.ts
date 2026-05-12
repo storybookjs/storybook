@@ -82,6 +82,7 @@ describe('resetMousePositionBeforeTests', () => {
   afterEach(() => {
     vi.clearAllMocks();
     vi.doUnmock('vitest/browser');
+    vi.doUnmock('@vitest/browser/context');
   });
 
   it('should reset the mouse position when the browser command exists', async () => {
@@ -116,5 +117,28 @@ describe('resetMousePositionBeforeTests', () => {
     });
 
     await expect(resetMousePositionBeforeTests()).rejects.toThrow();
+  });
+
+  it('should fallback to vitest v3 browser context when vitest/browser is not found', async () => {
+    const resetMousePosition = vi.fn().mockResolvedValue(undefined);
+
+    vi.doMock('vitest/browser', () => {
+      const browser = {};
+      Object.defineProperty(browser, 'commands', {
+        get: () => {
+          throw new Error("Cannot find module 'vitest/browser'");
+        },
+      });
+      return browser;
+    });
+    vi.doMock('@vitest/browser/context', () => ({
+      commands: {
+        resetMousePosition,
+      },
+    }));
+
+    await resetMousePositionBeforeTests();
+
+    expect(resetMousePosition).toHaveBeenCalledTimes(1);
   });
 });

@@ -20,6 +20,8 @@ import { readFile, readdir, writeFile } from 'node:fs/promises';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import type { TranscriptEntry } from './lib/invoke-agent.ts';
+
 const HERE = dirname(fileURLToPath(import.meta.url));
 const RESULTS_DIR = join(HERE, 'results');
 
@@ -89,6 +91,14 @@ interface RunRow {
       stories: string[];
     }[];
     parseError?: string;
+    /** SDK session id (`system.session_id`). Lets readers correlate the
+     *  in-report transcript with the local Claude Code session log. */
+    sessionId?: string;
+    /** Compact, JSON-safe view of every SDK message exchanged with the
+     *  agent (text/thinking/tool_use/tool_result/result), with elapsed-time
+     *  annotations. Persisted inline so the report renders without spawning
+     *  the SDK again. */
+    transcript?: TranscriptEntry[];
   };
   scores: null | {
     recall: number;
@@ -1463,6 +1473,108 @@ function renderClusterGraph(
   </details>`;
 }
 
+/** Render the full SDK transcript captured during a run as an expandable
+ *  conversation view. The transcript is a compact JSON projection of every
+ *  message exchanged with `query()` (see `lib/invoke-agent.ts`), so it can be
+ *  reproduced from the JSONL row alone — no need to re-invoke the SDK. */
+function renderTranscript(
+  transcript: TranscriptEntry[] | undefined,
+  sessionId: string | undefined
+): string {
+  if (!transcript || transcript.length === 0) {
+    return '';
+  }
+
+  const fmtMs = (ms: number) => `+${(ms / 1000).toFixed(1)}s`;
+  const previewText = (text: string, max = 4000) =>
+    text.length > max
+      ? escapeHtml(text.slice(0, max)) +
+        `<span class="muted">… (+${text.length - max} chars truncated; expand JSON view below)</span>`
+      : escapeHtml(text);
+
+  const entryHtml = transcript
+    .map((e) => {
+      const t = `<span class="transcript-time">${fmtMs(e.ms)}</span>`;
+      if (e.kind === 'system') {
+        const tools = e.tools && e.tools.length > 0 ? ` tools=${e.tools.length}` : '';
+        return `<li class="transcript-entry sys">${t}<span class="badge muted">system</span> ${escapeHtml(e.subtype ?? '')} <code>${escapeHtml(e.model ?? '')}</code><span class="muted">${tools}</span></li>`;
+      }
+      if (e.kind === 'assistant') {
+        const blocks = e.content
+          .map((b) => {
+            if (b.type === 'thinking') {
+              return `<div class="block thinking"><span class="block-label">thinking</span><pre>${previewText((b as any).text ?? '')}</pre></div>`;
+            }
+            if (b.type === 'text') {
+              return `<div class="block text"><span class="block-label">text</span><pre>${previewText((b as any).text ?? '')}</pre></div>`;
+            }
+            if (b.type === 'tool_use') {
+              const name = escapeHtml(String((b as any).name ?? ''));
+              const input = escapeHtml(JSON.stringify((b as any).input, null, 2));
+              return `<div class="block tool-use"><span class="block-label">tool_use</span> <code>${name}</code><pre>${input}</pre></div>`;
+            }
+            return `<div class="block other"><span class="block-label">${escapeHtml(b.type)}</span></div>`;
+          })
+          .join('');
+        const usage = e.usage
+          ? `<span class="muted">in ${fmtNum(e.usage.input_tokens)} / out ${fmtNum(e.usage.output_tokens)}</span>`
+          : '';
+        return `<li class="transcript-entry assistant">${t}<span class="badge">assistant</span> ${usage}${blocks}</li>`;
+      }
+      if (e.kind === 'user') {
+        const blocks = e.content
+          .map((b) => {
+            if (b.type === 'tool_result') {
+              const c = (b as any).content;
+              const text =
+                typeof c === 'string'
+                  ? c
+                  : Array.isArray(c)
+                    ? c
+                        .map((x: any) =>
+                          x?.type === 'text' ? String(x.text ?? '') : JSON.stringify(x)
+                        )
+                        .join('\n')
+                    : JSON.stringify(c);
+              const isError = (b as any).is_error ? ' err' : '';
+              return `<div class="block tool-result${isError}"><span class="block-label">tool_result</span><pre>${previewText(text)}</pre></div>`;
+            }
+            return `<div class="block other"><span class="block-label">${escapeHtml(b.type)}</span></div>`;
+          })
+          .join('');
+        return `<li class="transcript-entry user">${t}<span class="badge muted">user</span>${blocks}</li>`;
+      }
+      if (e.kind === 'result') {
+        return `<li class="transcript-entry result">${t}<span class="badge ${e.subtype === 'success' ? 'good' : 'bad'}">result</span> ${escapeHtml(e.subtype ?? '')} <span class="muted">cost ${fmtCost(e.total_cost_usd)} · ${fmtNum(e.num_turns)} turns · ${fmtNum((e.duration_ms ?? 0) / 1000, 1)}s wall / ${fmtNum((e.duration_api_ms ?? 0) / 1000, 1)}s api</span></li>`;
+      }
+      if (e.kind === 'rate_limit') {
+        const reset = e.resetsAt ? new Date(e.resetsAt * 1000).toLocaleString() : '?';
+        const overage =
+          e.isUsingOverage === true
+            ? '<span class="badge bad">using overage</span>'
+            : e.overageStatus === 'rejected'
+              ? '<span class="muted">overage off</span>'
+              : '';
+        return `<li class="transcript-entry rate-limit">${t}<span class="badge muted">rate_limit</span> ${escapeHtml(e.rateLimitType ?? '')} status <strong>${escapeHtml(e.status ?? '?')}</strong> · resets ${escapeHtml(reset)} ${overage}</li>`;
+      }
+      return `<li class="transcript-entry other">${t}<span class="badge muted">${escapeHtml(e.type ?? 'other')}</span></li>`;
+    })
+    .join('');
+
+  const sessionLabel = sessionId
+    ? `session <code>${escapeHtml(sessionId)}</code>`
+    : '<span class="muted">no session id</span>';
+
+  return `<details class="transcript-block">
+    <summary>Agent conversation <span class="muted">(${transcript.length} messages · ${sessionLabel})</span></summary>
+    <ol class="transcript-list">${entryHtml}</ol>
+    <details>
+      <summary class="muted">Raw transcript JSON</summary>
+      <pre class="raw">${escapeHtml(JSON.stringify(transcript, null, 2))}</pre>
+    </details>
+  </details>`;
+}
+
 function renderRunDetail(
   r: RunRow,
   idx: number,
@@ -1586,6 +1698,8 @@ function renderRunDetail(
       <summary>SDK message trace (${a.messageTrace.totalMessages} messages, first @ ${fmtNum((a.messageTrace.firstMessageMs ?? 0) / 1000, 1)}s, last @ ${fmtNum((a.messageTrace.lastMessageMs ?? 0) / 1000, 1)}s)</summary>
       <table class="table small"><thead><tr><th>type</th><th>count</th></tr></thead><tbody>${traceRows}</tbody></table>
     </details>` : ''}
+
+    ${renderTranscript(a?.transcript, a?.sessionId)}
 
     ${a?.rawOutput ? `<details>
       <summary>Raw agent output (${a.rawOutput.length} chars)</summary>
@@ -2142,6 +2256,24 @@ function renderHead(): string {
     .toc-list { display: flex; flex-wrap: wrap; gap: 12px; }
     .toc-list a { color: #2563eb; text-decoration: none; font-weight: 500; padding: 4px 10px; background: #eff6ff; border-radius: 4px; }
     .toc-list a:hover { background: #dbeafe; }
+    /* Agent transcript */
+    .transcript-block { margin-top: 10px; }
+    .transcript-list { list-style: none; padding: 0; margin: 8px 0 0; display: flex; flex-direction: column; gap: 6px; }
+    .transcript-entry { display: flex; flex-direction: column; gap: 6px; padding: 8px 10px; border-radius: 6px; font-size: 12px; }
+    .transcript-entry.sys { background: #f8fafc; }
+    .transcript-entry.assistant { background: #eef2ff; }
+    .transcript-entry.user { background: #f0fdf4; }
+    .transcript-entry.result { background: #fdf4ff; }
+    .transcript-entry.rate-limit { background: #fef9c3; }
+    .transcript-entry.other { background: #f1f5f9; }
+    .transcript-time { font-family: ui-monospace, SFMono-Regular, monospace; color: #64748b; margin-right: 6px; }
+    .transcript-entry .block { background: #fff; border: 1px solid #e2e8f0; border-radius: 4px; padding: 6px 8px; }
+    .transcript-entry .block.thinking { background: #fffbeb; border-color: #fde68a; }
+    .transcript-entry .block.tool-use { background: #f0f9ff; border-color: #bae6fd; }
+    .transcript-entry .block.tool-result { background: #f0fdf4; border-color: #bbf7d0; }
+    .transcript-entry .block.tool-result.err { background: #fef2f2; border-color: #fecaca; }
+    .transcript-entry .block-label { display: inline-block; font-size: 10px; text-transform: uppercase; color: #64748b; letter-spacing: .04em; margin-right: 6px; }
+    .transcript-entry .block pre { margin: 4px 0 0; font-size: 11px; line-height: 1.45; max-height: 320px; overflow: auto; white-space: pre-wrap; word-break: break-word; }
   </style>
 </head>`;
 }

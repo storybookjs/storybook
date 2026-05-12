@@ -69,8 +69,9 @@ interface Args {
   trace: boolean;
   model?: string;
   effort?: 'low' | 'medium' | 'high' | 'max';
-  prompt?: 'enumerate' | 'signature';
+  prompt?: 'enumerate' | 'signature' | 'signature-depth';
   outFile?: string;
+  withDepth: boolean;
 }
 
 function parseArgs(): Args {
@@ -81,6 +82,7 @@ function parseArgs(): Args {
     noCleanup: false,
     verbose: false,
     trace: false,
+    withDepth: false,
   };
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
@@ -94,6 +96,7 @@ function parseArgs(): Args {
     else if (a === '--effort') args.effort = argv[++i] as Args['effort'];
     else if (a === '--prompt') args.prompt = argv[++i] as Args['prompt'];
     else if (a === '--out') args.outFile = argv[++i];
+    else if (a === '--with-depth') args.withDepth = true;
     else if (a === '--help' || a === '-h') {
       console.log(`Run scripts/eval/inner-loop/run.ts. See README.md.`);
       process.exit(0);
@@ -134,7 +137,27 @@ async function runScenario(
   }
 
   const rawDiff = await getRawDiff(scenario);
-  const payload = buildPayload({ statuses, rawDiff, scenario, index });
+
+  // Round-2 §I.5: optionally load precomputed depth map.
+  let depthByStory: Record<string, number> | undefined;
+  if (args.withDepth && statuses.length > 0) {
+    try {
+      const text = await readFile(
+        join(HERE, 'results', 'depth-maps', `${scenario.name}.json`),
+        'utf8'
+      );
+      const parsed = JSON.parse(text) as { byStoryId?: Record<string, number> };
+      depthByStory = parsed.byStoryId ?? {};
+      const ds = Object.values(depthByStory);
+      console.log(
+        `  Depth map: ${ds.length} stories, depth min=${ds.length ? Math.min(...ds) : 0} max=${ds.length ? Math.max(...ds) : 0} (precomputed)`
+      );
+    } catch (e) {
+      console.log(`  ⚠ Depth map missing — run precompute-depth-maps.ts. (${(e as Error).message})`);
+    }
+  }
+
+  const payload = buildPayload({ statuses, rawDiff, scenario, index, depthByStory });
   const payloadJson = JSON.stringify(payload);
   const estimatedTokens = estimateTokens(payloadJson);
 
@@ -168,7 +191,8 @@ async function runScenario(
         console.log(
           `  Scores: recall=${scores.recall} precision=${scores.precision} purity=${scores.clusterPurity} clusters=${agentRun.parsed.clusters.length}`
         );
-        if ((args.prompt || 'enumerate') === 'signature') {
+        const _pv = args.prompt || 'enumerate';
+        if (_pv === 'signature' || _pv === 'signature-depth') {
           const sq = scoreSignatureQuality(
             'signature',
             agentRun.rawSignatureClusters,
@@ -242,6 +266,8 @@ async function runScenario(
           })),
           rawSignatureClusters: agentRun.rawSignatureClusters,
           parseError: agentRun.parseError,
+          sessionId: agentRun.sessionId,
+          transcript: agentRun.transcript,
         }
       : null,
     scores,

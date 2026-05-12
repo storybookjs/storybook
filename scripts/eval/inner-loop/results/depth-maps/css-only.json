@@ -1,0 +1,5 @@
+{
+  "scenario": "css-only",
+  "changedFile": "code/.storybook/bench/bundle-analyzer/index.css",
+  "byStoryId": {}
+}

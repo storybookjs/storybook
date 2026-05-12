@@ -17,6 +17,10 @@ export interface ChangeContextPayload {
     topNamespaces: { name: string; count: number }[];
   };
   reverseIndexSlice: { changedFile: string; importingStories: string[] }[];
+  /** Optional (Round-2 §I.5): story-id → depth (number of import hops from the changed file). */
+  depthByStory?: Record<string, number>;
+  /** Optional (Round-2 §I.5): same data grouped into ascending-depth tiers. */
+  depthTiers?: { depth: number; stories: string[] }[];
 }
 
 /**
@@ -46,6 +50,7 @@ export function buildPayload(args: {
   rawDiff: string;
   scenario: Scenario;
   index: StoryIndex;
+  depthByStory?: Record<string, number>;
 }): ChangeContextPayload {
   const modified = args.statuses
     .filter((s) => s.value === 'status-value:modified')
@@ -80,6 +85,23 @@ export function buildPayload(args: {
     },
   ];
 
+  const flagged = new Set([...modified, ...affected, ...newSet]);
+  let depthTiers: { depth: number; stories: string[] }[] | undefined;
+  let depthByStoryFiltered: Record<string, number> | undefined;
+  if (args.depthByStory) {
+    depthByStoryFiltered = {};
+    const byDepth = new Map<number, string[]>();
+    for (const [id, d] of Object.entries(args.depthByStory)) {
+      if (!flagged.has(id)) continue;
+      depthByStoryFiltered[id] = d;
+      if (!byDepth.has(d)) byDepth.set(d, []);
+      byDepth.get(d)!.push(id);
+    }
+    depthTiers = [...byDepth.entries()]
+      .sort((a, b) => a[0] - b[0])
+      .map(([depth, stories]) => ({ depth, stories }));
+  }
+
   return {
     modified,
     affected,
@@ -88,5 +110,7 @@ export function buildPayload(args: {
     rawDiff: [{ path: args.scenario.filePath, hunks: args.rawDiff }],
     projectShape: { totalStories, topNamespaces },
     reverseIndexSlice,
+    depthByStory: depthByStoryFiltered,
+    depthTiers,
   };
 }

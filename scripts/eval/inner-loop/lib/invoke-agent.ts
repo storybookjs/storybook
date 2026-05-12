@@ -20,6 +20,65 @@ import { expandSignatures, type SignatureCluster } from './expand-signatures.ts'
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 
+/** One entry in the persisted SDK transcript — a compact, JSON-safe view of
+ *  a `query()` message with elapsed-time annotation. Shapes mirror Claude
+ *  Agent SDK message types so the same renderer can be used for outer-loop
+ *  and inner-loop sessions. */
+export type TranscriptEntry =
+  | {
+      kind: 'system';
+      ms: number;
+      subtype?: string;
+      model?: string;
+      cwd?: string;
+      tools?: string[];
+      session_id?: string;
+    }
+  | {
+      kind: 'assistant';
+      ms: number;
+      content: Array<
+        | { type: 'text'; text: string }
+        | { type: 'thinking'; text: string }
+        | { type: 'tool_use'; id?: string; name: string; input: unknown }
+        | { type: string; [k: string]: unknown }
+      >;
+      usage?: { input_tokens?: number; output_tokens?: number };
+    }
+  | {
+      kind: 'user';
+      ms: number;
+      content: Array<
+        | { type: 'tool_result'; tool_use_id?: string; content?: unknown; is_error?: boolean }
+        | { type: string; [k: string]: unknown }
+      >;
+    }
+  | {
+      kind: 'result';
+      ms: number;
+      subtype?: string;
+      duration_ms?: number;
+      duration_api_ms?: number;
+      num_turns?: number;
+      total_cost_usd?: number;
+      usage?: { input_tokens?: number; output_tokens?: number; cache_read_input_tokens?: number };
+    }
+  | {
+      kind: 'rate_limit';
+      ms: number;
+      status?: string;
+      rateLimitType?: string;
+      resetsAt?: number;
+      overageStatus?: string;
+      isUsingOverage?: boolean;
+    }
+  | {
+      kind: 'other';
+      ms: number;
+      type: string;
+      raw?: unknown;
+    };
+
 export interface AgentRun {
   model: string;
   costUsd: number | undefined;
@@ -46,6 +105,89 @@ export interface AgentRun {
   signatureExpansion?: { clusters: Cluster[]; unmatched: string[] };
   /** Raw signature clusters as emitted by the model (signature variant only). */
   rawSignatureClusters?: SignatureCluster[];
+  /** Compact transcript of every SDK message, with elapsed-time annotations.
+   *  Persist this to the JSONL row so the HTML report can render the full
+   *  agent conversation per run without spawning the SDK again. */
+  transcript?: TranscriptEntry[];
+  /** SDK session ID from the system/init message — the same UUID that the
+   *  Claude Code CLI uses to identify the conversation. Useful for
+   *  cross-referencing the local `~/.claude/projects/<...>/<id>.jsonl`
+   *  session log when present. */
+  sessionId?: string;
+}
+
+/** Project a raw SDK message into a TranscriptEntry. Lossless for the
+ *  fields we care about (text, thinking, tool_use, tool_result, usage),
+ *  drops large fields we don't render (e.g. raw birpc envelopes). */
+function toTranscriptEntry(message: any, ms: number): TranscriptEntry {
+  if (message?.type === 'assistant') {
+    const content = Array.isArray(message.message?.content)
+      ? (message.message.content as any[]).map((b) => {
+          if (b?.type === 'text') return { type: 'text', text: String(b.text ?? '') };
+          if (b?.type === 'thinking')
+            return { type: 'thinking', text: String(b.thinking ?? b.text ?? '') };
+          if (b?.type === 'tool_use')
+            return { type: 'tool_use', id: b.id, name: b.name, input: b.input };
+          return { type: String(b?.type ?? 'unknown'), ...b };
+        })
+      : [];
+    const usage = message.message?.usage as
+      | { input_tokens?: number; output_tokens?: number }
+      | undefined;
+    return { kind: 'assistant', ms, content, usage };
+  }
+  if (message?.type === 'user') {
+    const content = Array.isArray(message.message?.content)
+      ? (message.message.content as any[]).map((b) => {
+          if (b?.type === 'tool_result') {
+            return {
+              type: 'tool_result',
+              tool_use_id: b.tool_use_id,
+              content: b.content,
+              is_error: b.is_error,
+            };
+          }
+          return { type: String(b?.type ?? 'unknown'), ...b };
+        })
+      : [];
+    return { kind: 'user', ms, content };
+  }
+  if (message?.type === 'system') {
+    return {
+      kind: 'system',
+      ms,
+      subtype: message.subtype,
+      model: message.model,
+      cwd: message.cwd,
+      tools: Array.isArray(message.tools) ? message.tools : undefined,
+      session_id: message.session_id,
+    };
+  }
+  if (message?.type === 'result') {
+    return {
+      kind: 'result',
+      ms,
+      subtype: message.subtype,
+      duration_ms: message.duration_ms,
+      duration_api_ms: message.duration_api_ms,
+      num_turns: message.num_turns,
+      total_cost_usd: message.total_cost_usd,
+      usage: message.usage,
+    };
+  }
+  if (message?.type === 'rate_limit_event') {
+    const info = (message as { rate_limit_info?: Record<string, unknown> }).rate_limit_info ?? {};
+    return {
+      kind: 'rate_limit',
+      ms,
+      status: info.status as string | undefined,
+      rateLimitType: info.rateLimitType as string | undefined,
+      resetsAt: info.resetsAt as number | undefined,
+      overageStatus: info.overageStatus as string | undefined,
+      isUsingOverage: info.isUsingOverage as boolean | undefined,
+    };
+  }
+  return { kind: 'other', ms, type: String(message?.type ?? 'unknown'), raw: message };
 }
 
 export interface InvokeOptions {
@@ -60,11 +202,12 @@ export interface InvokeOptions {
   /** Log every SDK message to stdout with timestamps for diagnosing hangs. */
   trace?: boolean;
   /**
-   * Prompt variant. `enumerate` = original prompt asking for every story to
-   * be placed in a cluster. `signature` = signature-based prompt asking the
-   * model to emit cluster definitions only; deterministic system expands.
+   * Prompt variant.
+   * - `enumerate` = original prompt asking for every story to be placed in a cluster.
+   * - `signature` = signature-based prompt; deterministic system expands.
+   * - `signature-depth` = signature prompt with depth-tier guidance (Round-2 §I.5).
    */
-  promptVariant?: 'enumerate' | 'signature';
+  promptVariant?: 'enumerate' | 'signature' | 'signature-depth';
 }
 
 export async function invokeAgent(
@@ -75,7 +218,11 @@ export async function invokeAgent(
   const effort = options.effort || 'medium';
   const variant = options.promptVariant || 'enumerate';
   const defaultPrompt =
-    variant === 'signature' ? 'categoriser-signature.md' : 'categoriser.md';
+    variant === 'signature-depth'
+      ? 'categoriser-signature-depth.md'
+      : variant === 'signature'
+        ? 'categoriser-signature.md'
+        : 'categoriser.md';
   const promptPath = options.promptPath || join(HERE, '..', 'prompts', defaultPrompt);
   const systemPrompt = await readFile(promptPath, 'utf8');
 
@@ -101,6 +248,8 @@ export async function invokeAgent(
   let inputTokens: number | undefined;
   let outputTokens: number | undefined;
   let cacheReadTokens: number | undefined;
+  let sessionId: string | undefined;
+  const transcript: TranscriptEntry[] = [];
 
   for await (const message of query({
     prompt: userMessage,
@@ -117,6 +266,14 @@ export async function invokeAgent(
     if (firstMessageMs === undefined) firstMessageMs = elapsedMs;
     lastMessageMs = elapsedMs;
     typeCounts[message.type] = (typeCounts[message.type] || 0) + 1;
+    transcript.push(toTranscriptEntry(message, elapsedMs));
+    if (
+      message.type === 'system' &&
+      sessionId === undefined &&
+      typeof (message as { session_id?: unknown }).session_id === 'string'
+    ) {
+      sessionId = (message as { session_id?: string }).session_id;
+    }
     if (options.trace) {
       const summary = traceSummary(message);
       console.log(`[+${(elapsedMs / 1000).toFixed(1)}s] ${message.type}${summary ? ' ' + summary : ''}`);
@@ -162,7 +319,7 @@ export async function invokeAgent(
       .replace(/```$/, '')
       .trim();
     const raw = JSON.parse(cleaned) as { clusters: unknown[] };
-    if (variant === 'signature') {
+    if (variant === 'signature' || variant === 'signature-depth') {
       rawSignatureClusters = raw.clusters as SignatureCluster[];
       const allIds = [
         ...payload.modified,
@@ -200,6 +357,8 @@ export async function invokeAgent(
     inputTokens,
     outputTokens,
     cacheReadTokens,
+    transcript,
+    sessionId,
   };
 }
 

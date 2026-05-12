@@ -1,6 +1,7 @@
 import type { ComponentType } from 'react';
 
-import type { ModuleExport, ModuleExports } from 'storybook/internal/types';
+import type { Args, Renderer, StoryContext } from 'storybook/internal/csf';
+import type { ModuleExport, ModuleExports, PreparedStory } from 'storybook/internal/types';
 
 import type { ThemeVars } from 'storybook/theming';
 
@@ -33,7 +34,7 @@ type StoryBlockParameters = {
 
 type StoriesBlockParameters = {
   /** Filter which stories are rendered by the Stories block */
-  filter?: (story: any, context: any) => boolean;
+  filter?: (story: PreparedStory<Renderer>, context: StoryContext<Renderer, Args>) => boolean;
   /** When rendering stories, whether the first story should be included */
   includePrimaryStory?: boolean;
   /** Whether to force initial args when rendering stories */

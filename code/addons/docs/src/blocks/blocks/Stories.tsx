@@ -10,8 +10,8 @@ import { styled } from 'storybook/theming';
 import { DocsContext } from './DocsContext';
 import { DocsStory } from './DocsStory';
 import { Heading } from './Heading';
-import type { Of } from './useOf';
-import { useOf } from './useOf';
+import type { Of } from './useOf.ts';
+import { useOf } from './useOf.ts';
 import { withMdxComponentOverride } from './with-mdx-component-override';
 
 interface StoriesProps {

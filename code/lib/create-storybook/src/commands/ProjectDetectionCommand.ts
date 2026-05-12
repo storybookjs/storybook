@@ -2,7 +2,7 @@ import { ProjectType } from 'storybook/internal/cli';
 import type { JsPackageManager } from 'storybook/internal/common';
 import { logger, prompt } from 'storybook/internal/node-logger';
 import { telemetry } from 'storybook/internal/telemetry';
-import type { SupportedLanguage } from 'storybook/internal/types';
+import { SupportedLanguage } from 'storybook/internal/types';
 
 import picocolors from 'picocolors';
 import { dedent } from 'ts-dedent';
@@ -51,9 +51,25 @@ export class ProjectDetectionCommand {
     // Check for existing installation
     await this.checkExistingInstallation(projectType);
 
-    const language = this.options.language || (await this.projectTypeService.detectLanguage());
+    const language = this.options.language || (await this.detectAndReportLanguage());
 
     return { projectType, language };
+  }
+
+  /** Detect language and warn about incompatible packages */
+  private async detectAndReportLanguage(): Promise<SupportedLanguage> {
+    const language = await this.projectTypeService.detectLanguage();
+
+    if (language === SupportedLanguage.JAVASCRIPT) {
+      const incompatibleReasons = await this.projectTypeService.detectIncompatiblePackageVersions();
+      if (incompatibleReasons.length > 0) {
+        logger.warn(
+          `Populating with JavaScript examples due to incompatible package versions:\n${incompatibleReasons.map((r) => `  - ${r}`).join('\n')}`
+        );
+      }
+    }
+
+    return language;
   }
 
   /** Prompt user to select React Native variant */

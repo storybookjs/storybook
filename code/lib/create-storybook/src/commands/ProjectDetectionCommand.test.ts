@@ -23,6 +23,7 @@ describe('ProjectDetectionCommand', () => {
     autoDetectProjectType: ReturnType<typeof vi.fn>;
     isStorybookInstantiated: ReturnType<typeof vi.fn>;
     detectLanguage: ReturnType<typeof vi.fn>;
+    detectIncompatiblePackageVersions: ReturnType<typeof vi.fn>;
   };
   let mockTelemetryService: {
     trackPromptCancel: ReturnType<typeof vi.fn>;
@@ -39,6 +40,7 @@ describe('ProjectDetectionCommand', () => {
       autoDetectProjectType: vi.fn(),
       isStorybookInstantiated: vi.fn().mockReturnValue(false),
       detectLanguage: vi.fn().mockResolvedValue(SupportedLanguage.JAVASCRIPT),
+      detectIncompatiblePackageVersions: vi.fn().mockResolvedValue([]),
     };
 
     mockTelemetryService = {
@@ -270,6 +272,30 @@ describe('ProjectDetectionCommand', () => {
 
       expect(result.language).toBe(SupportedLanguage.TYPESCRIPT);
       expect(mockProjectTypeService.detectLanguage).toHaveBeenCalled();
+    });
+
+    it('should warn about incompatible packages when falling back to JavaScript', async () => {
+      options.type = undefined;
+      options.language = undefined;
+      vi.mocked(mockProjectTypeService.autoDetectProjectType).mockResolvedValue(ProjectType.REACT);
+      vi.mocked(mockProjectTypeService.detectLanguage).mockResolvedValue(
+        SupportedLanguage.JAVASCRIPT
+      );
+      vi.mocked(mockProjectTypeService.detectIncompatiblePackageVersions).mockResolvedValue([
+        'prettier 2.6.2 is below 2.8.0',
+      ]);
+
+      const result = await command.execute();
+
+      expect(result.language).toBe(SupportedLanguage.JAVASCRIPT);
+      expect(logger.warn).toHaveBeenCalledWith(
+        expect.stringContaining(
+          'Populating with JavaScript examples due to incompatible package versions'
+        )
+      );
+      expect(logger.warn).toHaveBeenCalledWith(
+        expect.stringContaining('prettier 2.6.2 is below 2.8.0')
+      );
     });
   });
 });

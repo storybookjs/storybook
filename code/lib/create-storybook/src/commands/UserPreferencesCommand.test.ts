@@ -261,7 +261,7 @@ describe('UserPreferencesCommand', () => {
       expect(prompt.confirm).toHaveBeenCalledWith(
         expect.objectContaining({
           message: expect.stringContaining(
-            'Would you like to install AI features (MCP addon, skills and prompt suggestions)?'
+            'Would you like to install AI features (MCP addon and prompt suggestions)?'
           ),
         }),
         expect.objectContaining({ onCancel: expect.any(Function) })

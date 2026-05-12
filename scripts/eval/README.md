@@ -81,7 +81,7 @@ By default, a batch runs **10 repetitions per (project × variant)** across all 
 # Prompt is required. Confirms interactively unless you pass --yes (CI / automation).
 node scripts/eval/run-batch.ts --prompt pattern-copy-play --yes
 
-# Smaller batch — 2 reps per project (14 trials with the default Claude-only matrix)
+# Smaller batch — 2 reps per project (16 trials with Claude and Codex)
 node scripts/eval/run-batch.ts --prompt pattern-copy-play --yes --repetitions 2
 
 # Claude only
@@ -91,6 +91,22 @@ node scripts/eval/run-batch.ts --prompt pattern-copy-play --yes --agents claude
 node scripts/eval/run-batch.ts --prompt pattern-copy-play --yes --claude-effort max
 node scripts/eval/run-batch.ts --prompt pattern-copy-play --yes --claude-efforts max,high
 node scripts/eval/run-batch.ts --prompt pattern-copy-play --yes --agents codex --codex-effort xhigh
+
+# Restrict to specific projects (works with both agents)
+node scripts/eval/run-batch.ts --prompt pattern-copy-play --yes --projects mealdrop,edgy,echarts
+
+# Fan out across multiple prompts in one batch
+node scripts/eval/run-batch.ts --prompts pattern-copy-play,optimized-tests --yes --repetitions 2
+
+# Targeted matrix: medium + high effort, 3 projects, 2 reps each (12 Claude trials)
+node scripts/eval/run-batch.ts --prompt pattern-copy-play --yes \
+  --agents claude --claude-efforts medium,high \
+  --projects mealdrop,edgy,echarts --repetitions 2
+
+# Same project subset on Codex
+node scripts/eval/run-batch.ts --prompt pattern-copy-play --yes \
+  --agents codex --codex-effort high \
+  --projects mealdrop,edgy,echarts --repetitions 2
 
 # Different prompt or concurrency
 node scripts/eval/run-batch.ts --prompt setup --yes

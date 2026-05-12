@@ -1,6 +1,43 @@
+###################################################################################################
+#                                                                                                 #
+#                                            ██                                                   #
+#                                          ██░░██                                                 #
+#  ░░          ░░                        ██░░░░░░██                            ░░░░               #
+#                                      ██░░░░░░░░░░██                                             #
+#                                      ██░░░░░░░░░░██                                             #
+#                                    ██░░░░░░░░░░░░░░██                                           #
+#                                  ██░░░░░░██████░░░░░░██                                         #
+#                                  ██░░░░░░██████░░░░░░██                                         #
+#                                ██░░░░░░░░██████░░░░░░░░██                                       #
+#                                ██░░░░░░░░██████░░░░░░░░██                                       #
+#                              ██░░░░░░░░░░██████░░░░░░░░░░██                                     #
+#                            ██░░░░░░░░░░░░██████░░░░░░░░░░░░██                                   #
+#                            ██░░░░░░░░░░░░██████░░░░░░░░░░░░██                                   #
+#                          ██░░░░░░░░░░░░░░██████░░░░░░░░░░░░░░██                                 #
+#                          ██░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░██                                 #
+#                        ██░░░░░░░░░░░░░░░░██████░░░░░░░░░░░░░░░░██                               #
+#                        ██░░░░░░░░░░░░░░░░██████░░░░░░░░░░░░░░░░██                               #
+#                      ██░░░░░░░░░░░░░░░░░░██████░░░░░░░░░░░░░░░░░░██                             #
+#        ░░            ██░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░██                             #
+#                        ██████████████████████████████████████████                               #
+#                                                                                                 #
+#                                                                                                 #
+#   SECURITY WARNING: Ensure your `pull_request_target` job respects the following rules:         #
+#                                                                                                 #
+# - Never write to GitHub Actions cache, as it would allow cache poisoning attacks                #
+# - Only call third-party systems that are aware the code passed to them could be untrustworthy   #
+# - Always set explicit permissions on your PR to limit the capabilities of secrets.GITHUB_TOKEN  #
+#                                                                                                 #
+###################################################################################################
+
 name: agent-scan
 
+# Start with empty permissions on `pull_request_target`, then set permissions per job as needed.
+permissions: {}
+
 on:
+  # Use `pull_request_target` so we can run this workflow on PRs from forks, as its goal is to assess
+  # if PR authors are trustworthy. Only reasons on the PR author and does not check out the fork code.
   pull_request_target:
     types:
       - opened
@@ -26,9 +63,12 @@ jobs:
     permissions:
       pull-requests: write
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+      - name: Checkout code from `next`/`main` branch (trusted code, not PR author code)
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
       - name: Install script dependencies
         run: npm install --prefix .github/scripts
+
       - name: Check author org membership
         id: membership
         env:
@@ -36,13 +76,15 @@ jobs:
           INPUT_ORG: ${{ github.repository_owner }}
           INPUT_USERNAME: ${{ github.event.pull_request.user.login }}
         run: node .github/scripts/agent-scan-check-org-membership.mjs
+
       - name: Cache AgentScan analysis
         if: steps.membership.outputs.should-scan == 'true'
-        uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7
+        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
         with:
           path: .agentscan-cache
           key: agentscan-cache-${{ github.actor }}
           restore-keys: agentscan-cache-
+
       - name: AgentScan
         if: steps.membership.outputs.should-scan == 'true'
         id: agentscan
@@ -51,9 +93,9 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           agent-scan-comment: false
           cache-path: .agentscan-cache
-          label-community-flagged: "agent-scan:community-flagged"
-          label-mixed: "agent-scan:mixed"
-          label-automation: "agent-scan:automated"
+          label-community-flagged: 'agent-scan:community-flagged'
+          label-mixed: 'agent-scan:mixed'
+          label-automation: 'agent-scan:automated'
 
       - name: Label PR with classification
         if: steps.membership.outputs.should-scan == 'true' && steps.agentscan.outputs.classification

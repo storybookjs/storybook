@@ -91,6 +91,12 @@ scripts/eval/results
 scripts/eval/inner-loop/results/*
 !scripts/eval/inner-loop/results/.gitkeep
 !scripts/eval/inner-loop/results/run-2026-05-09T14-09-20-024Z.jsonl
+# Replay baselines from the yann/story-review-project-analysis port —
+# captured against valentin/before-after with the new transcript capture
+# enabled. Lets the HTML report render the agent conversation view on a
+# clean checkout without re-invoking the SDK.
+!scripts/eval/inner-loop/results/replay-small-sig.jsonl
+!scripts/eval/inner-loop/results/replay-medium-sig.jsonl
 # Round-2 backlog experiment outputs are deterministic + slow to regenerate;
 # commit them so the HTML report renders without rerunning every experiment.
 !scripts/eval/inner-loop/results/tied-distance.json

@@ -29,7 +29,7 @@
  *      addon-before-after — see project-documents/questions/appendix/patches/.
  *      Without it, the harness falls back to a manual DevTools probe.
  */
-import { mkdir, appendFile } from 'node:fs/promises';
+import { mkdir, appendFile, readFile } from 'node:fs/promises';
 import { join, dirname } from 'node:path';
 import { setTimeout as delay } from 'node:timers/promises';
 import { execSync } from 'node:child_process';

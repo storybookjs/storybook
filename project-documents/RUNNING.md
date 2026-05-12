@@ -8,15 +8,15 @@ Every script and experiment produced during the inner-loop investigation is repr
 |---|---|---|
 | Measure cascade size for an arbitrary changed file | `node --experimental-transform-types --no-warnings project-documents/questions/appendix/cd-experiment.ts` | any |
 | Estimate token cost of the `get_change_context` payload at multiple scales (offline) | `node --experimental-transform-types --no-warnings project-documents/questions/appendix/token-cost-experiment.ts` | any |
-| Run end-to-end agent eval against a live Storybook UI | `node --experimental-transform-types --no-warnings scripts/eval/inner-loop/run.ts` | `yann/story-review-analysis` (apply patches 02-04 first) |
+| Run end-to-end agent eval against a live Storybook UI | `node --experimental-transform-types --no-warnings scripts/eval/inner-loop/run.ts` | `yann/story-review-project-analysis` |
 | **Run agent eval with the signature prompt (cascade-scale-safe)** | `… scripts/eval/inner-loop/run.ts --scenario large --prompt signature --effort low --trace` | same |
 | **Measure run-to-run variance** | `… scripts/eval/inner-loop/run.ts --scenario small --prompt signature --effort low --runs 5 --out variance.jsonl` | same |
 | **CSS blast-radius synthesis (Experiment C)** | `… scripts/eval/inner-loop/css-blast-experiment.ts` | any |
 | **Module-graph histogram (Round-2 I.1)** | `… scripts/eval/inner-loop/module-graph-experiment.ts` | any |
 | **Deterministic clustering baselines (Round-2 §O)** | `… scripts/eval/inner-loop/deterministic-baselines.ts` | any |
-| **Replay real dogfood commits (Round-2 §L)** | `… scripts/eval/inner-loop/replay-real-commits.ts --max 25` | `yann/story-review-analysis` |
+| **Replay real dogfood commits (Round-2 §L)** | `… scripts/eval/inner-loop/replay-real-commits.ts --max 25` | `yann/story-review-project-analysis` |
 | **Build the HTML report** | `… scripts/eval/inner-loop/build-report.ts` | any |
-| Apply the addon-before-after improvements I made | `git apply project-documents/questions/appendix/patches/0*.patch` | `yann/story-review-analysis` |
+| Historical reference: the legacy HMR + probe patches | `git apply project-documents/questions/appendix/patches/0*.patch` | superseded — see FOLLOWUP.md |
 
 All scripts require **Node 22+** (the repo's `.nvmrc` is `22.22.1`). The `--experimental-transform-types --no-warnings` flags are needed because the change-detection module transitively uses TypeScript enums which Node 22's strip-only TS support can't handle.
 
@@ -89,27 +89,22 @@ Re-uses the `@anthropic-ai/claude-agent-sdk` from `scripts/eval/lib/agents/claud
 
 **Setup (one-time):**
 
-The harness needs a `/_status_/change-detection` endpoint on the Storybook UI. Apply the patches captured in [`questions/appendix/patches/`](questions/appendix/patches/README.md):
+The harness needs a `/_status_/change-detection` endpoint on the Storybook UI. On `yann/story-review-project-analysis` this is **already wired in** — `statusProbePlugin()` is registered alongside the other before-after Vite plugins in [`code/addons/before-after/src/preset.ts`](../code/addons/before-after/src/preset.ts). No patches required.
 
 ```bash
-# All on yann/story-review-analysis (which already merges valentin/before-after + next)
-git apply project-documents/questions/appendix/patches/02-changes-page-hmr-fix.patch
-git apply project-documents/questions/appendix/patches/03-preset-probe-plugin.patch
-cp project-documents/questions/appendix/patches/04-status-probe-plugin.ts.new \
-   code/addons/before-after/src/node/status-probe-plugin.ts
-
+git checkout yann/story-review-project-analysis
 yarn install
 yarn nx compile addon-before-after
 cd code && yarn storybook:ui     # serves http://localhost:6006
 ```
 
-If you skip the patch, the harness prints a DevTools probe snippet to copy into the Storybook tab's console — paste, save the printed JSON to `/tmp/sb-cd-statuses.json`, re-run.
+If you're working from an older branch without the probe, the harness prints a DevTools probe snippet to copy into the Storybook tab's console — paste, save the printed JSON to `/tmp/sb-cd-statuses.json`, re-run. The patches in [`questions/appendix/patches/`](questions/appendix/patches/README.md) are kept as historical reference only; the canonical path is the registered plugin on this branch.
 
 **Run (in a separate terminal):**
 
 ```bash
 # The harness only talks to the running Storybook UI, so any branch with the
-# SDK installed works. Easiest is the same yann/story-review-analysis branch.
+# SDK installed works. Easiest is the same yann/story-review-project-analysis branch.
 
 # Baseline only (no agent — measures payload size + ground truth)
 node --experimental-transform-types --no-warnings \
@@ -352,12 +347,11 @@ node --experimental-transform-types --no-warnings \
 ## 3e. End-to-end recipe for reproducing the round-1 + round-2 findings
 
 ```bash
-# 1. Apply the addon patches and start Storybook UI
+# 1. Start Storybook UI on this branch — the probe plugin and HMR fix are
+#    already wired in via valentin/before-after + the in-tree
+#    statusProbePlugin registered in preset.ts. No patches required.
 eval "$(fnm env --shell bash)" && fnm use 22.22.1
-git apply project-documents/questions/appendix/patches/02-changes-page-hmr-fix.patch
-git apply project-documents/questions/appendix/patches/03-preset-probe-plugin.patch
-cp project-documents/questions/appendix/patches/04-status-probe-plugin.ts.new \
-   code/addons/before-after/src/node/status-probe-plugin.ts
+git checkout yann/story-review-project-analysis
 yarn install
 yarn nx compile addon-before-after
 (cd code && yarn storybook:ui &) && sleep 30  # wait for UI
@@ -398,7 +392,7 @@ Two small fixes captured as patch files for the addon-before-after PR:
 - **`02-changes-page-hmr-fix.patch`** — full fix for the `Changes (0)` bug after page reload. Subscribes directly to `experimental_getStatusStore(...).onAllStatusChange` and adds defensive 50/200/500ms retry-reads. Verified live.
 - **`03-preset-probe-plugin.patch`** + **`04-status-probe-plugin.ts.new`** — adds the `/_status_/change-detection` middleware needed by the inner-loop eval harness. Apply together.
 
-Apply with `git apply` from repo root on `yann/story-review-analysis`. See the [patch README](questions/appendix/patches/README.md) for the full sequence.
+Apply with `git apply` from repo root on `yann/story-review-project-analysis`. See the [patch README](questions/appendix/patches/README.md) for the full sequence.
 
 ---
 

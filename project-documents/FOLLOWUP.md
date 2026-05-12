@@ -2,7 +2,58 @@
 
 This is a hand-off note. Read it once, then read [`RUNNING.md`](RUNNING.md) for command details and [`questions/00_README.md`](questions/00_README.md) for the project framing.
 
-## Where we are now (2026-05-10 update — experiments A/B/C complete)
+## Branch state (2026-05-12)
+
+We are now on **`yann/story-review-project-analysis`**, branched from `valentin/before-after` (a clean rebase target, not from `next` directly). The old `yann/story-review-analysis` branch is frozen; everything still relevant has been ported.
+
+What this branch contains, relative to `valentin/before-after`:
+
+- `scripts/eval/inner-loop/` — the full harness + sub-experiments + reference outputs that the previous Round-1/Round-2 work produced. Re-validated against the new base; no regressions (`small` 116 stories: recall=precision=1, purity=0.75, 6 clusters in 12s for $0.013 with cache; `medium` 1025 stories: same recall/precision, purity=0.18, 6 clusters in 16s for $0.14).
+- `code/addons/before-after/src/node/status-probe-plugin.ts` + a one-line `viteFinal` registration in `preset.ts`. This is the `/_status_/change-detection` probe endpoint the harness depends on. Confirmed live on the new base.
+- `project-documents/` — research docs (this one, INNER_LOOP, RUNNING, MAIN_CONVERSATION, etc).
+- A new **agent-conversation transcript capture** in the inner-loop runs (see "Agent transcripts" below).
+
+What this branch deliberately **does not** carry over from the old `yann/story-review-analysis`:
+
+- The HMR-fix patches (patches 02–04). Valentin's branch rewrote `experimental_devServer` to return `app` at every exit (commit `9a57a1f8c`), and rewrote routing to the single-env marker model. The HMR-flash workaround in `ChangesPage.tsx` looks unnecessary against the new code path; we'll re-port it only if the symptom reappears.
+- The custom changes to `code/builders/builder-vite/input/iframe.html` — superseded by valentin's font-face extraction (`d61bd0e77b0`).
+- Manager-side test stories (`ChecklistWidget.stories.tsx`, `Tree.stories.tsx`) that were edit fixtures for the old branch.
+- An uncommitted local-only WIP for a `signature-depth` prompt variant (depth-tier guidance). The implementation referenced internal Storybook modules via deep paths and had a hardcoded checkout path; not production-shaped. Left out for now — happy to revisit if the team conversation says depth-tier UX is the right direction.
+
+If you need to refer to the previous branch's exact state: `git log yann/story-review-analysis -- <path>`.
+
+## What's new on this branch
+
+### Agent transcripts: see what the model actually said
+
+The inner-loop now captures the full SDK message stream for every agent invocation and ships it both inline in the JSONL row and rendered in the HTML report:
+
+- **JSONL** — each agent run gains two new fields:
+  - `agentRun.sessionId` — the SDK `system.session_id` UUID. Same UUID Claude Code uses for its own session log at `~/.claude/projects/<project>/<session-id>.jsonl`, so you can cross-reference if you need raw birpc envelopes.
+  - `agentRun.transcript` — a compact, JSON-safe projection of every message: `system`/`assistant`/`user`/`result`/`rate_limit`/`other`, each annotated with `ms` (elapsed since session start). The assistant entries preserve text, thinking, and `tool_use` blocks; user entries preserve `tool_result` blocks. No raw birpc envelopes — those would inflate the row 5–10× for no diagnostic value.
+- **HTML report** — every per-run card now has an **"Agent conversation"** section (collapsed by default) showing the messages in timeline order with per-block colour coding (assistant=indigo, user=green, system=neutral, result=violet, rate_limit=amber). Open it to see exactly what the model produced; expand "Raw transcript JSON" inside for the full structured form.
+- **Type re-use** — the `TranscriptEntry` type lives in `scripts/eval/inner-loop/lib/invoke-agent.ts` and is exported, so anything else under `scripts/eval/inner-loop/` can consume it without duplicate definitions. We didn't unify with the outer-loop `transcript-types.ts` because the shapes diverge (outer-loop is multi-turn with real tool use; inner-loop is one-shot reasoning) — but the inner-loop schema is the same camel-cased structure, so a future merge is mechanical.
+
+To see this on a fresh checkout: run the report build (no SDK required, just reads the committed JSONLs):
+
+```bash
+node --experimental-transform-types --no-warnings scripts/eval/inner-loop/build-report.ts
+open scripts/eval/inner-loop/results/report.html
+```
+
+Look under any of the post-2026-05-12 runs (`replay-small-sig`, `replay-medium-sig`, `smoke-transcript`); the historic `run-2026-05-09T14...` runs don't have the transcript field — re-run them locally if you want to see them populated.
+
+### Probe endpoint on the new base
+
+The `statusProbePlugin` is wired into `viteFinal` alongside `beforeEnvironmentPlugin` and `beforeContentPlugin`. Live snapshot of change-detection state is back at:
+
+```
+GET http://localhost:6006/_status_/change-detection
+```
+
+No patches required, no manual DevTools probe fallback — it Just Works on this branch's Storybook UI startup.
+
+## Where we are now (2026-05-10 — frozen; see "Branch state" above for current)
 
 The three previously-blocking experiments are done and the results materially change the project's risk picture. **The categoriser approach now demonstrably works at the cascade scale** when you stop asking the model to enumerate stories. See [`scripts/eval/inner-loop/results/report.html`](../scripts/eval/inner-loop/results/report.html) for the full digestible view (open in any browser; self-contained).
 

@@ -82,6 +82,8 @@ jobs:
         uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
         with:
           path: .agentscan-cache
+          # Safe because the cache is prefixed and only used here, and does not include
+          # user-controlled content (can't spoof another actor's identity).
           key: agentscan-cache-${{ github.actor }}
           restore-keys: agentscan-cache-
 

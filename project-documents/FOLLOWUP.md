@@ -63,6 +63,19 @@ Open `report.html` in any browser and look for the colour-coded **thinking** blo
 
 Same picture as the May-10 baseline: **recall and precision are flat at 1.00**, purity drifts in a 0.629–0.750 band (12 ppt range), cluster count 4–6. The two non-stable metrics still settle inside a narrow band — useful for the meeting when "is this reproducible?" comes up.
 
+### Real-commit replay refresh (`replay-real-2026-05-12.jsonl`)
+
+`replay-real-commits.ts --max 12` against recent dogfood commits — applies each commit's diff via `git apply`, lets change-detection scan, runs the signature categoriser on the resulting cascade, reverts. 4 of 12 commits replayed cleanly; 7 hit context-drift `apply-failed` (expected for older commits); 1 produced an empty cascade.
+
+| commit | subject | cascade | recall | purity | cost | duration |
+|---|---|---|---|---|---|---|
+| `f003ca4` | Quiet change-detection regex warning | 126 | 1.00 | 0.77 | $0.033 | 14s |
+| `a4cae09` | Address PR feedback | 154 | 1.00 | 0.53 | $0.049 | 13s |
+| `ee67137` | manager-api: keep onAllStatusChange timing | 1025 | 1.00 | 0.14 | $0.155 | 26s |
+| `38a009a` | manager-api: await recompute filter calls | 1025 | 1.00 | 0.15 | $0.151 | 15s |
+
+All four successful runs ship their transcripts in the JSONL (4–5 messages each), so the meeting can click into a real dogfood commit and read what the model thought.
+
 What this branch contains, relative to `valentin/before-after`:
 
 - `scripts/eval/inner-loop/` — the full harness + sub-experiments + reference outputs that the previous Round-1/Round-2 work produced. Re-validated against the new base; no regressions (`small` 116 stories: recall=precision=1, purity=0.75, 6 clusters in 12s for $0.013 with cache; `medium` 1025 stories: same recall/precision, purity=0.18, 6 clusters in 16s for $0.14).

@@ -34,6 +34,7 @@ import React, { useMemo, useState } from 'react';
 
 import { styled } from 'storybook/theming';
 
+import { LazyStoryFrame, LazyThumbFrame } from './LazyStoryFrame.tsx';
 import { type MockCluster, type MockReviewData, type MockStory, statusLabel } from './mockData.ts';
 
 interface MeticulousV2ReviewProps {
@@ -531,14 +532,13 @@ export function MeticulousV2Review({
                           title={`${s.title} / ${s.name}`}
                           onClick={() => setActiveId(s.storyId)}
                         >
-                          <ThumbInner>
-                            <ThumbBanner />
-                            <ThumbFrame
-                              src={`/iframe.html?id=${encodeURIComponent(s.storyId)}&viewMode=story`}
-                              title={s.storyId}
-                              loading="lazy"
-                            />
-                          </ThumbInner>
+                          <LazyThumbFrame
+                            storyId={s.storyId}
+                            title={s.title}
+                            subtitle={s.name}
+                            decorations={<ThumbBanner />}
+                            style={{ position: 'absolute', inset: 0 }}
+                          />
                           <ThumbCount>
                             {cluster.totalStoryCount - stories.length + i + 1}
                           </ThumbCount>
@@ -582,14 +582,13 @@ export function MeticulousV2Review({
                           onClick={() => setActiveId(s.storyId)}
                           title={`${s.title} / ${s.name}`}
                         >
-                          <ThumbInner>
-                            <ThumbBanner />
-                            <ThumbFrame
-                              src={`/iframe.html?id=${encodeURIComponent(s.storyId)}&viewMode=story`}
-                              title={s.storyId}
-                              loading="lazy"
-                            />
-                          </ThumbInner>
+                          <LazyThumbFrame
+                            storyId={s.storyId}
+                            title={s.title}
+                            subtitle={s.name}
+                            decorations={<ThumbBanner />}
+                            style={{ position: 'absolute', inset: 0 }}
+                          />
                         </SubThumb>
                       ))}
                     </SubStrip>
@@ -634,14 +633,13 @@ export function MeticulousV2Review({
                           onClick={() => setActiveId(s.storyId)}
                           title={`${s.title} / ${s.name}`}
                         >
-                          <ThumbInner>
-                            <ThumbBanner />
-                            <ThumbFrame
-                              src={`/iframe.html?id=${encodeURIComponent(s.storyId)}&viewMode=story`}
-                              title={s.storyId}
-                              loading="lazy"
-                            />
-                          </ThumbInner>
+                          <LazyThumbFrame
+                            storyId={s.storyId}
+                            title={s.title}
+                            subtitle={s.name}
+                            decorations={<ThumbBanner />}
+                            style={{ position: 'absolute', inset: 0 }}
+                          />
                           {isActiveStory && isActive && <AfterLabel>After</AfterLabel>}
                           <RedDiff />
                         </ChangeThumb>

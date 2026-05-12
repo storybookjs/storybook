@@ -11,6 +11,7 @@ import React, { useState } from 'react';
 
 import { styled } from 'storybook/theming';
 
+import { LazyStoryFrame } from './LazyStoryFrame.tsx';
 import {
   type MockCluster,
   type MockReviewData,
@@ -410,10 +411,10 @@ export function ClusteredReview({ data, initialView = 'clustered' }: ClusteredRe
                     </StoryTitle>
                     <StatusBadge kind={s.status}>{statusLabel[s.status]}</StatusBadge>
                   </StoryHeader>
-                  <PreviewFrame
-                    title={s.storyId}
-                    src={`/iframe.html?id=${encodeURIComponent(s.storyId)}&viewMode=story`}
-                    loading="lazy"
+                  <LazyStoryFrame
+                    storyId={s.storyId}
+                    title={`${s.title} / ${s.name}`}
+                    style={{ width: '100%', height: 180 }}
                   />
                 </StoryCard>
               ))}
@@ -442,10 +443,10 @@ export function ClusteredReview({ data, initialView = 'clustered' }: ClusteredRe
                   </ClusterHeader>
                   <RepresentativeWrap>
                     <RepresentativeBadge>★ Representative</RepresentativeBadge>
-                    <RepresentativeFrame
+                    <LazyStoryFrame
+                      storyId={c.representative}
                       title={c.representative}
-                      src={`/iframe.html?id=${encodeURIComponent(c.representative)}&viewMode=story`}
-                      loading="lazy"
+                      style={{ width: '100%', height: 200 }}
                     />
                   </RepresentativeWrap>
                   <ClusterFooter>
@@ -489,10 +490,10 @@ export function ClusteredReview({ data, initialView = 'clustered' }: ClusteredRe
                     </StoryTitle>
                     <StatusBadge kind={s.status}>{statusLabel[s.status]}</StatusBadge>
                   </StoryHeader>
-                  <PreviewFrame
-                    title={s.storyId}
-                    src={`/iframe.html?id=${encodeURIComponent(s.storyId)}&viewMode=story`}
-                    loading="lazy"
+                  <LazyStoryFrame
+                    storyId={s.storyId}
+                    title={`${s.title} / ${s.name}`}
+                    style={{ width: '100%', height: 180 }}
                   />
                 </StoryCard>
               ))}

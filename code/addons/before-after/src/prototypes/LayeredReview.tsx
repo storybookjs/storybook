@@ -20,6 +20,7 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { styled } from 'storybook/theming';
 
+import { LazyStoryFrame } from './LazyStoryFrame.tsx';
 import {
   type MockCluster,
   type MockReviewData,
@@ -637,10 +638,12 @@ export function LayeredReview({ data, initialMode = 'clustered' }: LayeredReview
                         {statusLabel[s.status]}
                       </StatusBadge>
                     </SlotHeader>
-                    <SlotFrame
-                      src={`/iframe.html?id=${encodeURIComponent(s.storyId)}&viewMode=story`}
-                      title={s.storyId}
-                      loading="lazy"
+                    <LazyStoryFrame
+                      storyId={s.storyId}
+                      title={`${s.title} / ${s.name}`}
+                      mode="lazy"
+                      priority={active ? 'primary' : 'thumbnail'}
+                      style={{ flex: 1, minHeight: 0 }}
                     />
                   </Slot>
                 );

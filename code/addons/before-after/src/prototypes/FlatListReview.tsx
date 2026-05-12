@@ -9,6 +9,7 @@ import React, { useMemo, useState } from 'react';
 
 import { styled } from 'storybook/theming';
 
+import { LazyStoryFrame } from './LazyStoryFrame.tsx';
 import {
   type MockCluster,
   type MockReviewData,
@@ -270,10 +271,11 @@ export function FlatListReview({ data, initialGroupBy = 'status' }: FlatListRevi
         </StoryTitle>
         <StatusBadge kind={s.status}>{statusLabel[s.status]}</StatusBadge>
       </StoryHeader>
-      <PreviewFrame
-        title={s.storyId}
-        src={`/iframe.html?id=${encodeURIComponent(s.storyId)}&viewMode=story`}
-        loading="lazy"
+      <LazyStoryFrame
+        storyId={s.storyId}
+        title={`${s.title} / ${s.name}`}
+        subtitle={s.importPath.split('/').pop()}
+        style={{ width: '100%', height: 180 }}
       />
       <StoryPath title={s.importPath}>{s.importPath.replace(/^\.\//, '')}</StoryPath>
     </StoryCard>

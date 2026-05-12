@@ -12,7 +12,7 @@ import { dedent } from 'ts-dedent';
 
 import type { CommandOptions } from '../generators/types.ts';
 import { currentDirectoryIsEmpty, scaffoldNewProject } from '../scaffold-new-project.ts';
-import { VersionService } from '../services/index.ts';
+import { TelemetryService, VersionService } from '../services/index.ts';
 
 export interface PreflightCheckResult {
   packageManager: JsPackageManager;
@@ -30,7 +30,10 @@ export interface PreflightCheckResult {
  */
 export class PreflightCheckCommand {
   /** Execute preflight checks */
-  constructor(private readonly versionService = new VersionService()) {}
+  constructor(
+    private readonly versionService = new VersionService(),
+    private readonly telemetryService = new TelemetryService()
+  ) {}
   async execute(options: CommandOptions): Promise<PreflightCheckResult> {
     const isEmptyDirProject = options.force !== true && currentDirectoryIsEmpty();
     let packageManagerType = JsPackageManagerFactory.getPackageManagerType();
@@ -53,7 +56,7 @@ export class PreflightCheckCommand {
 
       // Prompt the user to create a new project from our list
       logger.intro(CLI_COLORS.info(`Initializing a new project`));
-      await scaffoldNewProject(packageManagerType, options);
+      await scaffoldNewProject(packageManagerType, this.telemetryService);
       logger.outro(CLI_COLORS.info(`Project created successfully`));
       invalidateProjectRootCache();
     }

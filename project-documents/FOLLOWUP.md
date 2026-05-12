@@ -6,6 +6,13 @@ This is a hand-off note. Read it once, then read [`RUNNING.md`](RUNNING.md) for 
 
 We are now on **`yann/story-review-project-analysis`**, branched from `valentin/before-after` (a clean rebase target, not from `next` directly). The old `yann/story-review-analysis` branch is frozen; everything still relevant has been ported.
 
+### TL;DR for the meeting
+
+- **Branch is ready to demo.** Storybook UI starts with the probe endpoint already wired in, no patches required. `node scripts/eval/inner-loop/build-report.ts` regenerates `results/report.html` from committed JSONLs.
+- **Open `report.html` in any browser.** Every agent run now has an "Agent conversation" section showing the model's thinking + structured output in timeline order (look for the amber **thinking** blocks on signature-depth runs).
+- **The numbers held up against the new base.** Recall and precision are still 100% across small/medium/large with signature; variance is in the same narrow band as the May-10 baseline; costs are 4–7× cheaper because the prompt cache is warming across trials.
+- **New: signature-depth recovers gap scenarios.** css-only and regex-aliased scored recall=1 with depth-tier guidance because depth is computed from `DependencyGraphBuilder` directly, sidestepping the deterministic change-detection blind spots. Cost is 4–20× higher, so it's a deliberate-use feature.
+
 ### Fresh full-coverage replay against this base
 
 10-trial sweep (`fresh-sig-low-x2.jsonl`) re-ran every scenario × 2 reps on the new base with `--prompt signature --effort low`. Numbers consistent with the historic May-10 baseline, **and ~4–7× cheaper** thanks to the prompt cache hitting across trials:

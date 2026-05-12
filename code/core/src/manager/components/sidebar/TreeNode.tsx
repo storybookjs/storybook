@@ -7,7 +7,7 @@ import type { StatusByTypeId, StatusValue } from 'storybook/internal/types';
 import { ChevronSmallDownIcon, ChevronSmallRightIcon } from '@storybook/icons';
 
 import { internal_fullStatusStore as fullStatusStore } from '#manager-stores';
-import { darken } from 'polished';
+import { darken, transparentize } from 'polished';
 import { TreeItem, TreeItemContent } from 'react-aria-components/patched-dist/Tree';
 import type { HashEntry } from 'storybook/manager-api';
 import type { API } from 'storybook/manager-api';
@@ -15,15 +15,8 @@ import { shortcutToHumanString } from 'storybook/manager-api';
 import { styled, useTheme } from 'storybook/theming';
 
 import type { Link } from '../../../components/components/tooltip/TooltipLinkList.tsx';
-import { MEDIA_DESKTOP_BREAKPOINT } from '../../constants.ts';
 import { getMostCriticalStatusValue, getStatus } from '../../utils/status.tsx';
-import {
-  type TreeEntry,
-  createId,
-  getAncestorIds,
-  getDescendantIds,
-  getLink,
-} from '../../utils/tree.ts';
+import { type TreeEntry, createId } from '../../utils/tree.ts';
 import { useLayout } from '../layout/LayoutProvider.tsx';
 import { useContextMenu } from './ContextMenu.tsx';
 
@@ -32,106 +25,110 @@ import { StatusIconMap } from './components/StatusIcon.tsx';
 import { TypeIconWithSymbol } from './components/TypeIcon.tsx';
 import type { Item } from './types.ts';
 
-const StyledTreeItem = styled(TreeItem)<{ $level: number; $textColor: string | null }>(
-  ({ $level, theme, $textColor }) => ({
-    /* Indent based on tree level */
-    paddingInlineStart: `calc(${$level} * 20px)`,
+const StyledTreeItem = styled(TreeItem)<{
+  $level: number;
+  $textColor: string | null;
+}>(({ $level, theme, $textColor }) => ({
+  /* Indent based on tree level */
+  paddingInlineStart: `calc(${$level} * 20px)`,
 
-    position: 'relative',
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    background: 'transparent',
-    minHeight: 28,
-    borderRadius: 4,
-    overflow: 'hidden',
-    a: { color: $textColor ?? 'currentColor' },
+  position: 'relative',
+  display: 'flex',
+  justifyContent: 'space-between',
+  alignItems: 'flex-start',
+  background: 'transparent',
+  minHeight: 28,
+  borderRadius: 4,
+  overflow: 'hidden',
+  a: { color: $textColor ?? 'currentColor' },
 
-    /* Sticky section headers and spacers for root-level items */
-    ...($level === 0 && {
-      position: 'sticky',
-      top: 0,
-      zIndex: 1,
-      backgroundColor: theme.background.app,
-      '&:not(:first-child)': {
-        marginTop: 14,
-      },
-    }),
-
-    /* Color handling — Figma: fgColor/default maps to theme.color.defaultText */
-    color: $textColor ?? theme.color.defaultText,
-
-    /* Hover — Figma: button/ghost/bgColor/hover → theme.background.hoverable,
-     *         Figma: button/ghost/fgColor/hover → theme.barHoverColor */
-    '&:hover, &[data-focused="true"]': {
-      background: theme.background.hoverable,
-      color: $textColor ?? theme.barHoverColor,
-      outline: 'none',
-      svg: { color: 'currentColor' },
+  /* Sticky section headers and spacers for root-level items */
+  ...($level === 0 && {
+    position: 'sticky',
+    top: 0,
+    zIndex: 1,
+    backgroundColor: theme.background.app,
+    '&:not(:first-child)': {
+      marginTop: 14,
     },
+  }),
 
-    /* Selected — Figma: button/accent/bgColor/rest → theme.color.secondary,
-     *            Figma: neutral/white → theme.color.lightest,
-     *            Figma: fontWeight/bold */
-    '&[data-selected="true"]': {
+  /* Color handling — Figma: fgColor/default maps to theme.color.defaultText */
+  color: $textColor ?? theme.color.defaultText,
+  '--trace-color': theme.appBorderColor,
+
+  /* Hover — Figma: button/ghost/bgColor/hover → theme.background.hoverable,
+   *         Figma: button/ghost/fgColor/hover → theme.barHoverColor */
+  '&:hover, &[data-focused="true"]': {
+    background: theme.background.hoverable,
+    color: $textColor ?? theme.barHoverColor,
+    outline: 'none',
+    svg: { color: 'currentColor' },
+  },
+
+  /* Selected — Figma: button/accent/bgColor/rest → theme.color.secondary,
+   *            Figma: neutral/white → theme.color.lightest,
+   *            Figma: fontWeight/bold */
+  '&[data-selected="true"]': {
+    color: theme.color.lightest,
+    background: theme.base === 'dark' ? darken(0.18, theme.color.secondary) : theme.color.secondary,
+    fontWeight: theme.typography.weight.bold,
+
+    '&&:hover, &&[data-focused="true"]': {
       color: theme.color.lightest,
       background:
         theme.base === 'dark' ? darken(0.18, theme.color.secondary) : theme.color.secondary,
-      fontWeight: theme.typography.weight.bold,
+    },
+    svg: { color: theme.color.lightest },
+  },
 
-      '&&:hover, &&[data-focused="true"]': {
-        color: theme.color.lightest,
-        background:
-          theme.base === 'dark' ? darken(0.18, theme.color.secondary) : theme.color.secondary,
-      },
-      svg: { color: theme.color.lightest },
-    },
+  /* Focus ring — Figma: Focus outline = box-shadow with fgColor/accent and bgColor/mute
+   *   Rendered as: 0 0 0 2px bgColor/mute, 0 0 0 4px fgColor/accent
+   *   Maps to: theme.background.app + theme.color.secondary */
+  '&:focus-visible': {
+    outline: 'none',
+    boxShadow: `0 0 0 2px ${theme.background.app}, 0 0 0 4px ${theme.color.secondary}`,
+    '--trace-color': transparentize(0.88, theme.color.secondary),
+  },
+  '&:hover': {
+    '--trace-color': transparentize(0.52, theme.color.secondary),
+  },
+  /* ContextMenu and StatusIcon visibility.
+   * ContextMenu button is shown on hover/focus and when already open;
+   * StatusIcon is hidden when ContextMenu button is visible. */
+  '& [data-displayed="off"]': {
+    visibility: 'hidden',
+  },
 
-    /* Focus ring — Figma: Focus outline = box-shadow with fgColor/accent and bgColor/mute
-     *   Rendered as: 0 0 0 2px bgColor/mute, 0 0 0 4px fgColor/accent
-     *   Maps to: theme.background.app + theme.color.secondary */
-    '&:focus-visible': {
-      outline: 'none',
-      boxShadow: `0 0 0 2px ${theme.background.app}, 0 0 0 4px ${theme.color.secondary}`,
-    },
+  '&:hover [data-displayed="off"], &[data-focused="true"] [data-displayed="off"]': {
+    visibility: 'visible',
+  },
 
-    /* ContextMenu and StatusIcon visibility.
-     * ContextMenu button is shown on hover/focus and when already open;
-     * StatusIcon is hidden when ContextMenu button is visible. */
-    '& [data-displayed="off"]': {
-      visibility: 'hidden',
-    },
+  '& [data-displayed="on"] + *': {
+    visibility: 'hidden',
+  },
 
-    '&:hover [data-displayed="off"], &[data-focused="true"] [data-displayed="off"]': {
-      visibility: 'visible',
-    },
+  '&:hover [data-displayed="off"] + *, &[data-focused="true"] [data-displayed="off"] + *': {
+    visibility: 'hidden',
+  },
 
-    '& [data-displayed="on"] + *': {
-      visibility: 'hidden',
-    },
-
-    '&:hover [data-displayed="off"] + *, &[data-focused="true"] [data-displayed="off"] + *': {
-      visibility: 'hidden',
-    },
-
-    '.hover-only': {
-      display: 'none',
-    },
-    '&:hover .hover-only, &:focus-visible .hover-only, &[data-focused="true"] .hover-only': {
-      display: 'flex',
-      alignContent: 'center',
-      alignItems: 'center',
-    },
-    '.static-only': {
-      display: 'flex',
-      alignContent: 'center',
-      alignItems: 'center',
-    },
-    '&:hover .static-only, &:focus-visible .static-only, &[data-focused="true"] .static-only': {
-      display: 'none',
-    },
-  })
-);
+  '.hover-only': {
+    display: 'none',
+  },
+  '&:hover .hover-only, &:focus-visible .hover-only, &[data-focused="true"] .hover-only': {
+    display: 'flex',
+    alignContent: 'center',
+    alignItems: 'center',
+  },
+  '.static-only': {
+    display: 'flex',
+    alignContent: 'center',
+    alignItems: 'center',
+  },
+  '&:hover .static-only, &:focus-visible .static-only, &[data-focused="true"] .static-only': {
+    display: 'none',
+  },
+}));
 
 const StyledContent = styled.div({
   // NOTE: we don't use gap because of the invisible SkipLink
@@ -158,18 +155,20 @@ const Traces = styled.span<{ $depth: number }>(({ $depth }) => ({
   pointerEvents: 'none',
 }));
 
-const TraceLine = styled.span<{ $offset: number }>(({ theme, $offset }) => ({
-  position: 'absolute',
-  left: `calc(${$offset} * 20px + 9px)`,
-  top: 0,
-  bottom: 0,
-  width: 1,
-  /* Figma: borderColor/default at rest → theme.appBorderColor.
-   * On hover the tree container swaps these to blue/88 via a CSS variable. */
-  backgroundColor: 'var(--tree-trace-color)',
-  opacity: 0,
-  transition: 'opacity 150ms ease',
-}));
+//0a7cff hover dark
+
+const TraceLine = styled.span<{ $offset: number; $forceVisible?: boolean }>(
+  ({ $offset, $forceVisible }) => ({
+    position: 'absolute',
+    left: `calc(${$offset} * -20px - 7px)`,
+    top: 0,
+    bottom: 0,
+    width: 1,
+    backgroundColor: 'var(--trace-color)',
+    opacity: $forceVisible ? 1 : 'var(--trace-opacity, 0)',
+    transition: 'opacity 150ms ease',
+  })
+);
 
 const StyledLabel = styled.span({
   flex: '1 1 auto',
@@ -215,6 +214,7 @@ export interface TreeNodeProps {
   isDevelopment: boolean;
   isOrphan: boolean;
   isSelected: boolean;
+  isAlongsideSelected: boolean;
   isExpanded: boolean;
   onSelectStoryId: (itemId: string) => void;
   statuses: StatusByTypeId;
@@ -251,6 +251,7 @@ export const TreeNode = React.memo<TreeNodeProps>(function TreeNode({
   isDevelopment,
   isOrphan,
   isSelected,
+  isAlongsideSelected,
   isExpanded,
   onSelectStoryId,
   statuses,
@@ -267,10 +268,7 @@ export const TreeNode = React.memo<TreeNodeProps>(function TreeNode({
   const { isDesktop, isMobile, setMobileMenuOpen } = useLayout();
 
   // Memoize renderContext so downstream useMemo deps don't bust every render.
-  const renderContext = useMemo(
-    () => ({ isMobile, location: 'sidebar' as const }),
-    [isMobile]
-  );
+  const renderContext = useMemo(() => ({ isMobile, location: 'sidebar' as const }), [isMobile]);
 
   // Per-item handler for toggling the context menu open/close, suitable as the `setIsOpen`
   // parameter for `useContextMenu`. Uses pointer mode by default when toggled via the ⋯ button.
@@ -318,7 +316,8 @@ export const TreeNode = React.memo<TreeNodeProps>(function TreeNode({
   const itemStatus = getMostCriticalStatusValue(Object.values(statuses || {}).map((s) => s.value));
   const { icon: statusIcon, textColor: statusTextColor } = getStatus(theme, itemStatus);
 
-  const showBranchStatus = itemStatus === 'status-value:error' || itemStatus === 'status-value:warning';
+  const showBranchStatus =
+    itemStatus === 'status-value:error' || itemStatus === 'status-value:warning';
   const isBranch = guardHasChildren(item);
   const hasContextMenu = guardHasContextMenu(contextMenu);
 
@@ -335,8 +334,6 @@ export const TreeNode = React.memo<TreeNodeProps>(function TreeNode({
     }
     return label;
   }, [item, api, renderContext, hasContextMenu, itemStatus, isBranch, showBranchStatus]);
-
-
 
   const collapseAction = useMemo(() => {
     if (!isBranch) {
@@ -386,7 +383,7 @@ export const TreeNode = React.memo<TreeNodeProps>(function TreeNode({
           {item.depth > 0 && (
             <Traces className="tree-traces" $depth={item.depth}>
               {Array.from({ length: item.depth }, (_, i) => (
-                <TraceLine key={i} $offset={i} />
+                <TraceLine key={i} $offset={i} $forceVisible={isAlongsideSelected && i === 0} />
               ))}
             </Traces>
           )}

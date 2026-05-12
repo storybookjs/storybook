@@ -19,18 +19,9 @@ const StyledAriaTree = styled(AriaTree)(({ theme }) => ({
   margin: 0,
   outline: 'none',
 
-  /* Figma: borderColor/default at rest, blue/88 on hover.
-   * We approximate blue/88 (#C2DEFF) via transparentize on the secondary color. */
-  '--tree-trace-color': theme.appBorderColor,
-
-  // Show trace lines on hover or keyboard focus, swap to accent tint
-  '&:hover, &:focus-within': {
-    '--tree-trace-color': theme.base === 'dark'
-      ? `${theme.color.secondary}44` // 27% opacity in dark — visible on dark bg
-      : `${theme.color.secondary}22`, // 13% opacity in light — approximates #C2DEFF on white
-    '.tree-traces span': {
-      opacity: 1,
-    },
+  // Show trace lines on hover or keyboard focus.
+  '&:hover, &:has(:focus-visible)': {
+    '--trace-opacity': 1,
   },
 })) as typeof AriaTree;
 
@@ -90,6 +81,22 @@ export const Tree = React.memo<TreeProps>(function Tree({
     () => (selectedStoryId ? new Set([selectedStoryId]) : EMPTY_KEYS),
     [selectedStoryId]
   );
+
+  const selectedParentId = useMemo(() => {
+    if (!selectedStoryId) {
+      return null;
+    }
+    const entry = collapsedData[selectedStoryId];
+    if (!entry) {
+      return null;
+    }
+    if (entry.type === 'root') {
+      return null;
+    }
+    return entry.parent ?? null;
+  }, [selectedStoryId, collapsedData]);
+
+  console.log(selectedParentId);
 
   // Stable handlers so children (especially TreeNode) can rely on prop identity.
   const handleExpandedChange = useCallback(
@@ -156,12 +163,9 @@ export const Tree = React.memo<TreeProps>(function Tree({
   );
 
   // Open or close the context menu. Stable callback for children.
-  const openContextMenu = useCallback(
-    (itemId: string, entryMethod: 'pointer' | 'keyboard') => {
-      setContextMenuState({ itemId, entryMethod });
-    },
-    []
-  );
+  const openContextMenu = useCallback((itemId: string, entryMethod: 'pointer' | 'keyboard') => {
+    setContextMenuState({ itemId, entryMethod });
+  }, []);
   const closeContextMenu = useCallback(() => setContextMenuState(null), []);
 
   // Listen for the global context-menu shortcut and open the menu for the focused item.
@@ -207,6 +211,7 @@ export const Tree = React.memo<TreeProps>(function Tree({
         data: collapsedData,
         onSelectStoryId,
         selectedStoryId,
+        selectedParentId,
         expanded,
         contextMenuState,
         openContextMenu,
@@ -221,6 +226,7 @@ export const Tree = React.memo<TreeProps>(function Tree({
       collapsedData,
       onSelectStoryId,
       selectedStoryId,
+      selectedParentId,
       expanded,
       contextMenuState,
       openContextMenu,
@@ -254,6 +260,7 @@ interface RenderNodeProps extends Omit<
   | 'id'
   | 'isOrphan'
   | 'isSelected'
+  | 'isAlongsideSelected'
   | 'isExpanded'
   | 'children'
   | 'statuses'
@@ -264,6 +271,7 @@ interface RenderNodeProps extends Omit<
 > {
   consolidatedStatuses?: StatusesByStoryIdAndTypeId;
   selectedStoryId: string | null;
+  selectedParentId: string | null;
   expanded: Set<string>;
   contextMenuState: { itemId: string; entryMethod: 'pointer' | 'keyboard' } | null;
   openContextMenu: (itemId: string, entryMethod: 'pointer' | 'keyboard') => void;
@@ -274,6 +282,7 @@ function renderNode({
   expanded,
   consolidatedStatuses,
   selectedStoryId,
+  selectedParentId,
   contextMenuState,
   openContextMenu,
   closeContextMenu,
@@ -281,6 +290,7 @@ function renderNode({
 }: RenderNodeProps) {
   const renderNodeLevel = (item: TreeEntry) => {
     const itemStatuses = consolidatedStatuses?.[item.id];
+    console.log('--', item.id, item.type !== 'root' && selectedParentId === item.parent);
     return (
       <TreeNode
         {...props}
@@ -289,6 +299,7 @@ function renderNode({
         isOrphan={item.depth === 0 && item.type !== 'root'}
         isExpanded={expanded.has(item.id)}
         isSelected={selectedStoryId === item.id}
+        isAlongsideSelected={item.type !== 'root' && selectedParentId === item.parent}
         isContextMenuOpen={contextMenuState?.itemId === item.id}
         contextMenuEntryMethod={
           contextMenuState?.itemId === item.id ? contextMenuState.entryMethod : undefined
@@ -304,6 +315,7 @@ function renderNode({
               expanded,
               consolidatedStatuses,
               selectedStoryId,
+              selectedParentId,
               contextMenuState,
               openContextMenu,
               closeContextMenu,

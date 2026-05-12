@@ -388,7 +388,7 @@ export function ClusteredReview({ data }: ClusteredReviewProps) {
                     <RepresentativeBadge>★ Representative</RepresentativeBadge>
                     <RepresentativeFrame
                       title={c.representative}
-                      src={`./iframe.html?id=${encodeURIComponent(c.representative)}&viewMode=story`}
+                      src={`/iframe.html?id=${encodeURIComponent(c.representative)}&viewMode=story`}
                       loading="lazy"
                     />
                   </RepresentativeWrap>
@@ -435,7 +435,7 @@ export function ClusteredReview({ data }: ClusteredReviewProps) {
                   </StoryHeader>
                   <PreviewFrame
                     title={s.storyId}
-                    src={`./iframe.html?id=${encodeURIComponent(s.storyId)}&viewMode=story`}
+                    src={`/iframe.html?id=${encodeURIComponent(s.storyId)}&viewMode=story`}
                     loading="lazy"
                   />
                 </StoryCard>

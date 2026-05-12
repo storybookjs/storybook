@@ -22,6 +22,12 @@ export interface MockStory {
   importPath: string;
   /** Depth (number of import hops from the changed file). */
   depth?: number;
+  /**
+   * Hint for the focused-review prototype: 'component' fits a 320×180
+   * thumbnail, 'page' needs full viewport width to be readable.
+   * Inferred from the story id/title in the real implementation.
+   */
+  size?: 'component' | 'page';
 }
 
 export interface MockCluster {
@@ -277,6 +283,150 @@ export const mockReviewData: MockReviewData = {
       representative: 'addons-accessibility-panel--ready-with-results',
       totalStoryCount: 452,
       sampleStories: remainingConsumers,
+    },
+  ],
+};
+
+// ──────────────────────────────────────────────────────────────────
+// Mock data for the FocusedReview (page-level) prototype.
+//
+// Curated set that mixes component-scale and page-level stories — the
+// problem the focused prototype is designed to solve. Each story has a
+// `size` hint so the prototype can render component stories at a
+// constrained width and page-level stories full-bleed.
+// ──────────────────────────────────────────────────────────────────
+
+export const mixedSizeStories: MockStory[] = [
+  // Component-scale (would render fine in any prototype)
+  {
+    storyId: 'button-component--base',
+    status: 'modified',
+    title: 'button/component',
+    name: 'Base',
+    importPath: './core/src/components/components/Button/Button.stories.tsx',
+    depth: 1,
+    size: 'component',
+  },
+  {
+    storyId: 'overlay-modal--base',
+    status: 'related',
+    title: 'overlay/Modal',
+    name: 'Base',
+    importPath: './core/src/components/components/Modal/Modal.stories.tsx',
+    depth: 2,
+    size: 'component',
+  },
+  // Layout-scale — start to push against the card size
+  {
+    storyId: 'manager-sidebar-sidebar--simple',
+    status: 'modified',
+    title: 'manager/sidebar/Sidebar',
+    name: 'Simple',
+    importPath: './core/src/manager/components/sidebar/Sidebar.stories.tsx',
+    depth: 3,
+    size: 'page',
+  },
+  {
+    storyId: 'manager-sidebar-sidebar--with-refs',
+    status: 'related',
+    title: 'manager/sidebar/Sidebar',
+    name: 'WithRefs',
+    importPath: './core/src/manager/components/sidebar/Sidebar.stories.tsx',
+    depth: 3,
+    size: 'page',
+  },
+  // Full-page stories — the cases where the card-grid layout breaks down
+  {
+    storyId: 'manager-main--default',
+    status: 'related',
+    title: 'manager/Main',
+    name: 'Default',
+    importPath: './core/src/manager/components/main/Main.stories.tsx',
+    depth: 4,
+    size: 'page',
+  },
+  {
+    storyId: 'manager-main--full-screen',
+    status: 'related',
+    title: 'manager/Main',
+    name: 'FullScreen',
+    importPath: './core/src/manager/components/main/Main.stories.tsx',
+    depth: 4,
+    size: 'page',
+  },
+  {
+    storyId: 'manager-layout--desktop',
+    status: 'related',
+    title: 'manager/Layout',
+    name: 'Desktop',
+    importPath: './core/src/manager/components/layout/Layout.stories.tsx',
+    depth: 4,
+    size: 'page',
+  },
+  {
+    storyId: 'manager-layout--mobile',
+    status: 'related',
+    title: 'manager/Layout',
+    name: 'Mobile',
+    importPath: './core/src/manager/components/layout/Layout.stories.tsx',
+    depth: 4,
+    size: 'page',
+  },
+  {
+    storyId: 'addons-onboarding-features-splashscreen--default',
+    status: 'modified',
+    title: 'addons/onboarding/features/Splashscreen',
+    name: 'Default',
+    importPath: './addons/onboarding/src/features/WelcomeTour/Splashscreen.stories.tsx',
+    depth: 4,
+    size: 'page',
+  },
+  {
+    storyId: 'addons-onboarding-features-intentsurvey--default',
+    status: 'related',
+    title: 'addons/onboarding/features/IntentSurvey',
+    name: 'Default',
+    importPath: './addons/onboarding/src/features/WelcomeTour/IntentSurvey.stories.tsx',
+    depth: 4,
+    size: 'page',
+  },
+];
+
+export const mockMixedSizeData: MockReviewData = {
+  changedFile: 'code/core/src/components/components/Button/Button.tsx',
+  diffSummary: 'Added an inline comment marker; no behavioural change.',
+  cascadeSize: 1025,
+  modifiedCount: 210,
+  newCount: 0,
+  relatedCount: 815,
+  stories: mixedSizeStories,
+  clusters: [
+    {
+      id: 'direct-button-importers',
+      rationale:
+        'Depth-1 stories whose story files directly import Button.tsx. Highest review priority.',
+      representative: 'button-component--base',
+      totalStoryCount: 32,
+      depthHint: 1,
+      sampleStories: mixedSizeStories.slice(0, 2),
+    },
+    {
+      id: 'manager-layout-pages',
+      rationale:
+        'Manager-namespace page-level stories. These render the full Storybook UI shell and will not fit in card-grid thumbnails — review one at a time.',
+      representative: 'manager-main--default',
+      totalStoryCount: 23,
+      depthHint: 4,
+      sampleStories: mixedSizeStories.slice(2, 8),
+    },
+    {
+      id: 'onboarding-pages',
+      rationale:
+        'Full-viewport onboarding screens. Inherently page-level — these will look broken in a tiny card preview.',
+      representative: 'addons-onboarding-features-splashscreen--default',
+      totalStoryCount: 6,
+      depthHint: 4,
+      sampleStories: mixedSizeStories.slice(8, 10),
     },
   ],
 };

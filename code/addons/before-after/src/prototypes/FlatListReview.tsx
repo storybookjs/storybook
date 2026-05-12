@@ -279,7 +279,7 @@ export function FlatListReview({ data }: FlatListReviewProps) {
               </StoryHeader>
               <PreviewFrame
                 title={s.storyId}
-                src={`./iframe.html?id=${encodeURIComponent(s.storyId)}&viewMode=story`}
+                src={`/iframe.html?id=${encodeURIComponent(s.storyId)}&viewMode=story`}
                 loading="lazy"
               />
               <StoryPath title={s.importPath}>{s.importPath.replace(/^\.\//, '')}</StoryPath>

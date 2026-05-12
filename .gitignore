@@ -97,6 +97,12 @@ scripts/eval/inner-loop/results/*
 # clean checkout without re-invoking the SDK.
 !scripts/eval/inner-loop/results/replay-small-sig.jsonl
 !scripts/eval/inner-loop/results/replay-medium-sig.jsonl
+# Full coverage sweep captured 2026-05-12 on yann/story-review-project-analysis
+# (10 trials each: 5 scenarios × 2 runs, with full transcript capture).
+# fresh-sig-low-x2: signature prompt (baseline).
+# fresh-sig-depth-low-x2: signature-depth prompt (Round-2 §I.5 comparison).
+!scripts/eval/inner-loop/results/fresh-sig-low-x2.jsonl
+!scripts/eval/inner-loop/results/fresh-sig-depth-low-x2.jsonl
 # Round-2 backlog experiment outputs are deterministic + slow to regenerate;
 # commit them so the HTML report renders without rerunning every experiment.
 !scripts/eval/inner-loop/results/tied-distance.json

@@ -6,6 +6,42 @@ This is a hand-off note. Read it once, then read [`RUNNING.md`](RUNNING.md) for 
 
 We are now on **`yann/story-review-project-analysis`**, branched from `valentin/before-after` (a clean rebase target, not from `next` directly). The old `yann/story-review-analysis` branch is frozen; everything still relevant has been ported.
 
+### Fresh full-coverage replay against this base
+
+10-trial sweep (`fresh-sig-low-x2.jsonl`) re-ran every scenario × 2 reps on the new base with `--prompt signature --effort low`. Numbers consistent with the historic May-10 baseline, **and ~4–7× cheaper** thanks to the prompt cache hitting across trials:
+
+| scenario | total | recall | precision | purity (range) | clusters | cost (range) | duration |
+|---|---|---|---|---|---|---|---|
+| small | 116 | 1.00 | 1.00 | 0.75 | 5–6 | $0.012–$0.013 | 13–15s |
+| medium | 1025 | 1.00 | 1.00 | 0.15–0.18 | 6 | $0.020–$0.021 | 13s |
+| large | 1236 (75%) | 1.00 | 1.00 | 0.13–0.15 | 6–7 | $0.024–$0.026 | 14–15s |
+| css-only | 0 | — | — | — | — | — | — |
+| regex-aliased | 0 | — | — | — | — | — | — |
+
+(`css-only` and `regex-aliased` produce empty cascades by design — the harness records the gap so we can later wire deterministic fallbacks.)
+
+Every one of these trials ships its full agent transcript in the row (see below) — when the meeting asks "what did the model actually think?" you can answer by clicking the run card in the report.
+
+### `signature-depth` follow-up sweep
+
+A second 10-trial sweep (`fresh-sig-depth-low-x2.jsonl`) re-ran every scenario with `--prompt signature-depth --with-depth --effort low`, which annotates the payload with each story's import depth from the changed file and asks the model to produce naturally-tiered "zoom-level" clusters (the team-conversation hypothesis from Round-2 §I.5).
+
+| scenario | recall | precision | purity (range) | clusters | cost (range) | duration (range) |
+|---|---|---|---|---|---|---|
+| small | 1.00 | 1.00 | 0.70–0.81 | 6 | $0.017–$0.023 | 15–22s |
+| medium | 1.00 | 1.00 | 0.16 | 5 | $0.05–$0.09 | 39–68s |
+| large | 1.00 | 1.00 | 0.13 | 5 | $0.09–$0.35 | 29–76s |
+| css-only | 1.00 | 1.00 | 0.15 | 6 | $0.04–$0.18 | 24–32s |
+| regex-aliased | 1.00 | 1.00 | 0.12 | 5 | $0.05–$0.34 | 30–37s |
+
+Three things stand out vs the plain-signature run:
+
+1. **`css-only` and `regex-aliased` are no longer empty.** Depth maps are computed from Storybook's `DependencyGraphBuilder` directly (via `precompute-depth-maps.ts`), not from change-detection. They reach scenarios where the deterministic change-detection signal is structurally blind (CSS files; regex-aliased exports). With depth context, the agent recovers real cascades the deterministic path missed — recall=1 on both.
+2. **Variance is higher.** Small's purity ranges 0.70–0.81 (vs 0.75 flat for signature). Large run=1 cost jumped to $0.35 (vs $0.025 for plain signature). Reasoning cost is sensitive to the longer prompt and the depth-tier instruction making the model "think harder."
+3. **Cost is 4–20× higher.** Depth runs are expensive enough that it's a deliberate-use feature, not a default. Cheapest depth trial ($0.017 on small run=1, cache-warm) is still ~30% more than plain signature.
+
+Open `report.html` in any browser and look for the colour-coded **thinking** blocks in the depth runs' transcripts — that's where the model is reasoning about which depth tier owns each cluster. The plain-signature runs typically have one short `text` block; depth runs add explicit thinking traces.
+
 What this branch contains, relative to `valentin/before-after`:
 
 - `scripts/eval/inner-loop/` — the full harness + sub-experiments + reference outputs that the previous Round-1/Round-2 work produced. Re-validated against the new base; no regressions (`small` 116 stories: recall=precision=1, purity=0.75, 6 clusters in 12s for $0.013 with cache; `medium` 1025 stories: same recall/precision, purity=0.18, 6 clusters in 16s for $0.14).

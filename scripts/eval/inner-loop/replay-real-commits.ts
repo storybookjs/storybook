@@ -349,6 +349,8 @@ async function replayOne(
       storyCount: c.stories.length,
       stories: c.stories,
     })),
+    sessionId: agentRun.sessionId,
+    transcript: agentRun.transcript,
   };
   result.scores = scores;
   result.signatureQuality = sq;

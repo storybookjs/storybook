@@ -477,6 +477,8 @@ interface ReplayRow {
     cacheReadTokens?: number;
     clusterCount: number;
     clusters: { id: string; rationale: string; representative: string; storyCount: number; stories: string[] }[];
+    sessionId?: string;
+    transcript?: TranscriptEntry[];
   };
   scores?: { recall: number; precision: number; clusterPurity: number };
   signatureQuality?: SignatureQuality;
@@ -1791,6 +1793,8 @@ function replayToRunShape(r: ReplayRow): RunRow {
           cacheReadTokens: r.agent.cacheReadTokens,
           clusterCount: r.agent.clusterCount,
           clusters: r.agent.clusters,
+          sessionId: r.agent.sessionId,
+          transcript: r.agent.transcript,
         }
       : null,
     scores: r.scores

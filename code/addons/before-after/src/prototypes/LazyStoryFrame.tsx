@@ -4,9 +4,10 @@
  * Three things this module solves:
  *
  *   1. **Hard cap on concurrent iframes.** Each story iframe costs ~8 MB
- *      in this dogfood, so rendering a route-tree grid of 20+ at once
+ *      in this dogfood, so rendering a route-tree grid of 50+ at once
  *      tanks the page. A global LRU pool caps the number actually
- *      mounted (default 8); the rest render a stylised poster.
+ *      mounted (default 16); the rest render a stylised poster. Dense
+ *      prototypes can raise this with `setLazyFramePoolCap()`.
  *
  *   2. **Priority tiers.** Not every iframe is equally important. The
  *      pool orders requests by tier (`primary` → `high` → `normal` →
@@ -28,7 +29,7 @@ import { keyframes, styled } from 'storybook/theming';
 // Pool
 // ────────────────────────────────────────────────────────────────
 
-const POOL_CAP_DEFAULT = 8;
+const POOL_CAP_DEFAULT = 16;
 
 export type Priority = 'primary' | 'high' | 'normal' | 'low';
 

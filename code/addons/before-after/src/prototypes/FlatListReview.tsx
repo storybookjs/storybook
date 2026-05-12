@@ -5,11 +5,11 @@
  * story grouped by status only, no clusters, latest-only preview iframe.
  * Filterable by status + searchable by ID/title.
  */
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 
 import { styled } from 'storybook/theming';
 
-import { LazyStoryFrame } from './LazyStoryFrame.tsx';
+import { LazyStoryFrame, setLazyFramePoolCap } from './LazyStoryFrame.tsx';
 import {
   type MockCluster,
   type MockReviewData,
@@ -247,6 +247,12 @@ export function FlatListReview({ data, initialGroupBy = 'status' }: FlatListRevi
   const [filter, setFilter] = useState<Filter>('all');
   const [query, setQuery] = useState('');
   const [groupBy, setGroupBy] = useState<'status' | 'cluster'>(initialGroupBy);
+
+  // Flat list shows a tall scrolling grid — bump the pool while mounted.
+  useEffect(() => {
+    setLazyFramePoolCap(20);
+    return () => setLazyFramePoolCap(16);
+  }, []);
 
   const filteredStories = useMemo(() => {
     const q = query.trim().toLowerCase();

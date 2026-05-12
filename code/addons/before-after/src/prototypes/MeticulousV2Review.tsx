@@ -30,11 +30,11 @@
  *     same cluster
  *   - "Changes" mode = treats each cluster as one "Change #N"
  */
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 
 import { styled } from 'storybook/theming';
 
-import { LazyThumbFrame } from './LazyStoryFrame.tsx';
+import { LazyThumbFrame, setLazyFramePoolCap } from './LazyStoryFrame.tsx';
 import { type MockCluster, type MockReviewData, type MockStory, statusLabel } from './mockData.ts';
 
 interface MeticulousV2ReviewProps {
@@ -457,6 +457,15 @@ export function MeticulousV2Review({
   }, [data.clusters]);
 
   const [mode, setMode] = useState<'tests' | 'changes'>(initialMode);
+
+  // Dense view: cluster rows + strip + active pair want lots of warm
+  // iframes simultaneously. Bump well above the default while this
+  // prototype is mounted.
+  useEffect(() => {
+    setLazyFramePoolCap(24);
+    return () => setLazyFramePoolCap(16);
+  }, []);
+
   const [activeId, setActiveId] = useState<string>(
     initialStoryId ?? allFlat[0]?.story.storyId ?? ''
   );

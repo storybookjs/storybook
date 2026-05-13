@@ -234,8 +234,7 @@ export class BUNProxy extends JsPackageManager {
         const handledError = new MinimumReleaseAgeHandledError({
           packageManagerName: 'bun',
           minimumReleaseAgeConfigName: 'minimumReleaseAge',
-          minimumReleaseAgeConfigDocs:
-            'https://bun.com/docs/pm/cli/install#minimum-release-age',
+          minimumReleaseAgeConfigDocs: 'https://bun.com/docs/pm/cli/install#minimum-release-age',
           minimumReleaseAgeExclusionsConfigName: 'minimumReleaseAgeExcludes',
           failedPackage: this.extractMinimumReleaseAgePackage(logs),
           cause: error,

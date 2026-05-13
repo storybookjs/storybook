@@ -253,5 +253,4 @@ export class Yarn1Proxy extends JsPackageManager {
 
     throw new Error('Something went wrong while parsing yarn output');
   }
-
 }

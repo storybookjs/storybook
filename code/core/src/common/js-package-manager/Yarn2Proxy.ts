@@ -269,8 +269,7 @@ export class Yarn2Proxy extends JsPackageManager {
         const handledError = new MinimumReleaseAgeHandledError({
           packageManagerName: 'yarn',
           minimumReleaseAgeConfigName: 'npmMinimalAgeGate',
-          minimumReleaseAgeConfigDocs:
-            'https://yarnpkg.com/configuration/yarnrc#npmMinimalAgeGate',
+          minimumReleaseAgeConfigDocs: 'https://yarnpkg.com/configuration/yarnrc#npmMinimalAgeGate',
           minimumReleaseAgeExclusionsConfigName: 'npmPreapprovedPackages',
           minimumReleaseAgeExclusionsConfigDocs:
             'https://yarnpkg.com/configuration/yarnrc#npmPreapprovedPackages',

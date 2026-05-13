@@ -219,5 +219,4 @@ describe('BUN Proxy', () => {
       }
     });
   });
-
 });

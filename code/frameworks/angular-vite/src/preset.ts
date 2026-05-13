@@ -70,10 +70,38 @@ async function resolveExperimentalZoneless(
 }
 
 export const viteFinal = async (config: UserConfig, options?: StandaloneOptions) => {
-  // Remove any loaded analogjs plugins from a vite.config.(m)ts file
+  // Remove any loaded analogjs plugins from a vite.config.(m)ts file, and
+  // demote storybook's CSF plugin out of the "pre" bucket. csf-plugin and
+  // analogjs both declare `enforce: 'pre'`; within the same enforce bucket
+  // plugins run in registration order. builder-vite registers `plugin-csf`
+  // first, then this preset adds analogjs, so analogjs's transform — which
+  // discards the incoming `code` and re-emits from its own TS file emitter —
+  // silently overwrites the csf enrichment that adds
+  // `parameters.docs.description.story` / `parameters.docs.source
+  // .originalSource`. Demoting csf-plugin to the normal stage means it runs
+  // after analogjs has produced its compiled JS, so the enrichment lands in
+  // the bundle. csf-plugin reads the original source from disk (not the
+  // upstream `code`), so the JSDoc/source extraction is unaffected.
   config.plugins = (config.plugins ?? [])
     .flat()
-    .filter((plugin: any) => !plugin.name.includes('analogjs'));
+    .filter((plugin: any) => !plugin.name.includes('analogjs'))
+    .map((plugin: any) => {
+      if (plugin?.name === 'plugin-csf' && plugin.enforce === 'pre') {
+        return { ...plugin, enforce: undefined };
+      }
+      // mock-loader's `transform.order: 'pre'` runs before analogjs's
+      // `enforce: 'pre'` (hook-level order beats plugin-level enforce in
+      // Vite), and analogjs then re-emits the file from its own TS emitter,
+      // discarding mock-loader's automock output. Demote mock-loader out of
+      // 'pre' so it runs in the normal stage after analogjs has produced its
+      // compiled JS — the automock then operates on that JS and survives to
+      // the bundle.
+      if (plugin?.name === 'storybook:mock-loader' && plugin.transform?.order === 'pre') {
+        const { order: _order, ...restTransform } = plugin.transform;
+        return { ...plugin, transform: restTransform };
+      }
+      return plugin;
+    });
 
   // Merge custom configuration into the default config
   const { mergeConfig, normalizePath } = await import('vite');
@@ -99,20 +127,13 @@ export const viteFinal = async (config: UserConfig, options?: StandaloneOptions)
         : 'css',
   });
 
-  // analogjs's main `@analogjs/vite-plugin-angular` plugin transforms .ts files
-  // by replacing the incoming `code` with its own TS-compiled output (pulled
-  // from an internal Angular file emitter). It does NOT honor the `code` param
-  // produced by earlier transforms. Without an explicit ordering hint it sits
-  // in Vite's "normal" group, which is also where storybook's automock plugin
-  // (`storybook:mock-loader`) lives — and automock runs first because it
-  // declares `transform.order: 'pre'`. That means the automocked module body
-  // is silently discarded by analogjs's transform.
-  //
-  // Force the angular plugin into the "pre" group so it transforms `.ts`
-  // sources before the mock plugin's automock pass, which then operates on the
-  // compiled JS output. Only the main plugin needs reordering; the rest of
-  // analogjs's array (jit, live-reload, build-optimizer, …) keeps its
-  // declared enforce values.
+  // Pin the main `@analogjs/vite-plugin-angular` plugin to `enforce: 'pre'`
+  // so it transforms `.ts` sources before storybook's automock plugin
+  // (`storybook:mock-loader`) runs. analogjs's transform re-emits files
+  // from its own internal Angular file emitter and discards the incoming
+  // `code`, so anything mock-loader or csf-plugin did upstream is wiped
+  // unless those plugins run *after* analogjs (see csf-plugin demote
+  // above and the mock re-apply plugin defined below).
   const pluginsToInject = (Array.isArray(angularPlugins) ? angularPlugins : [angularPlugins])
     .filter(Boolean)
     .map((plugin: any) => {

@@ -209,14 +209,14 @@ describe('initAIAnalyticsChannel', () => {
       vi.mocked(mockRunStoryTests.runStoryTests).mockResolvedValue({
         duration: 1234,
         summary: {
-          runTotal: 2,
-          runPassed: 2,
-          runSuccessRate: 1,
-          runSuccessRateWithoutEmptyRender: 1,
-          runCategorizedErrors: {},
-          runCssCheck: 'not-run',
-          runUniqueErrorCount: 0,
-          runPassedButEmptyRender: 0,
+          total: 2,
+          passed: 2,
+          successRate: 1,
+          successRateWithoutEmptyRender: 1,
+          categorizedErrors: {},
+          cssCheck: 'not-run',
+          uniqueErrorCount: 0,
+          passedButEmptyRender: 0,
         },
       } as any);
       vi.mocked(mockAiChecklistFlags.getAiSetupRunId).mockResolvedValue('session-B');
@@ -250,7 +250,7 @@ describe('initAIAnalyticsChannel', () => {
             testRunDuration: 1234,
           }),
           runId: 'session-B',
-          results: expect.objectContaining({ runTotal: 2, runPassed: 2 }),
+          results: expect.objectContaining({ total: 2, passed: 2 }),
         })
       );
     });

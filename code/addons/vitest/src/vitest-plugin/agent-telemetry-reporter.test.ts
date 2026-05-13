@@ -128,12 +128,12 @@ describe('AgentTelemetryReporter', () => {
         expect.objectContaining({
           agent: { name: 'claude' },
           analysis: expect.objectContaining({
-            runTotal: 3,
-            runPassed: 2,
-            runPassedButEmptyRender: 1,
-            runSuccessRate: 0.67,
-            runSuccessRateWithoutEmptyRender: 0.33,
-            runUniqueErrorCount: 1,
+            total: 3,
+            passed: 2,
+            passedButEmptyRender: 1,
+            successRate: 0.67,
+            successRateWithoutEmptyRender: 0.33,
+            uniqueErrorCount: 1,
           }),
           unhandledErrorCount: 0,
           watch: false,
@@ -167,8 +167,8 @@ describe('AgentTelemetryReporter', () => {
         'ai-setup-self-healing-scoring',
         expect.objectContaining({
           analysis: expect.objectContaining({
-            runTotal: 1,
-            runPassed: 0,
+            total: 1,
+            passed: 0,
             cumulativeTotal: 3,
             cumulativePassed: 2,
           }),
@@ -218,8 +218,8 @@ describe('AgentTelemetryReporter', () => {
         'ai-setup-self-healing-scoring',
         expect.objectContaining({
           analysis: expect.objectContaining({
-            runTotal: 1,
-            runPassed: 1,
+            total: 1,
+            passed: 1,
           }),
         }),
         expect.anything()
@@ -262,8 +262,8 @@ describe('AgentTelemetryReporter', () => {
       expect(secondCall[1]).toEqual(
         expect.objectContaining({
           analysis: expect.objectContaining({
-            runTotal: 1,
-            runPassed: 0,
+            total: 1,
+            passed: 0,
           }),
         })
       );

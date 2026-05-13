@@ -139,6 +139,19 @@ export const viteFinal = async (config: UserConfig, options?: StandaloneOptions)
     build: {
       rolldownOptions: {
         output: {
+          // Preserve original class/function names through the production
+          // bundle. Compodoc-derived argTypes are looked up by class name at
+          // runtime (`findComponentByName(component.name, …)`), and the
+          // angular-vite `cleanArgsDecorator` strips any arg whose argType
+          // lacks an `action` or `control` flag. If the bundler renames
+          // `ButtonComponent` → `f` the lookup fails, no Output argTypes
+          // are emitted, and `onClick`/other handlers get stripped from args
+          // before the renderer sees them — manifesting as missing action
+          // bindings and unbound @Input() values (e.g. core-argmapping). The
+          // esbuild `keepNames` flag only governs the per-file TS→JS
+          // transform; the final minified bundle is produced by Rolldown's
+          // oxc minifier and needs its own opt-in here.
+          keepNames: true,
           // Rolldown's lazy-init wrapper splits @angular/platform-browser and
           // @angular/common/http into separate chunks. The platform-browser
           // chunk extends a class imported from the http xhr chunk but the

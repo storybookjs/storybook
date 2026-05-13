@@ -247,6 +247,7 @@ function storybookEsbuildPlugin() {
         esbuild: {
           // Don't mangle class names during the build
           // This fixes display of compodoc argtypes
+          keepNames: true,
           ...(env.command === 'build' ? { keepNames: true } : {}),
           jsx: 'automatic',
         },

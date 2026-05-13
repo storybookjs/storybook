@@ -57,7 +57,7 @@ export const ActionButton = styled.button<{ disabled: boolean }>(
       outline: '0 none',
 
       '@media (forced-colors: active)': {
-        outline: '2px solid CanvasText',
+        outline: '2px solid ButtonBorder',
         outlineOffset: '2px',
       },
     },

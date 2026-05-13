@@ -1,7 +1,5 @@
 import type { ReactElement } from 'react';
 
-import type { is } from '@babel/types';
-
 import type { Channel } from '../../channels.ts';
 import type { State } from '../../manager-api.ts';
 import type { RenderData } from '../../router/types.ts';
@@ -120,7 +118,6 @@ export interface API_SidebarOptions<API = any> {
     item: API_HashEntry,
     api: API,
     context: {
-      isMobile: boolean;
       location: 'sidebar' | 'bottom-bar';
     }
   ) => any;
@@ -128,7 +125,6 @@ export interface API_SidebarOptions<API = any> {
     item: API_HashEntry,
     api: API,
     context: {
-      isMobile: boolean;
       location: 'sidebar' | 'bottom-bar';
     }
   ) => any;

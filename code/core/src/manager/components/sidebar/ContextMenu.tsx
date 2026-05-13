@@ -24,6 +24,9 @@ import { Shortcut } from '../Shortcut.tsx';
 import { UseSymbol } from './IconSymbols.tsx';
 import { StatusButton } from './StatusButton.tsx';
 
+// FIXME/TODO: onMouseEnter is actually a data preloading mechanism for test providers to render custom React nodes.
+// It helps with perceived performance as it avoids showing loaders for a short span. Find a way to reinstate this.
+// AND: rename it to a more meaningful name.
 const empty = {
   onMouseEnter: () => {},
   node: null,
@@ -54,13 +57,12 @@ export const useContextMenu = (
   const [hoverCount, setHoverCount] = useState(0);
   const [copyText, setCopyText] = React.useState('Copy story name');
   const allStatuses = experimental_useStatusStore();
-  const groupStatus = useMemo(
-    () => getGroupStatus(data, allStatuses ?? {}),
-    [data, allStatuses]
-  );
+  const groupStatus = useMemo(() => getGroupStatus(data, allStatuses ?? {}), [data, allStatuses]);
 
   const shortcutKeys = api.getShortcutKeys();
   const enableShortcuts = !!shortcutKeys;
+
+  // TODO: if entryMethod is keyboard, add link to story at top of menu.
 
   const topLinks = useMemo<Link[]>(() => {
     const defaultLinks = [];

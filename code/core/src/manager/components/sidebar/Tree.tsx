@@ -13,7 +13,7 @@ import { type TreeEntry, collapseSingleStoryComponents, indexToTree } from '../.
 import { TreeNode, type TreeNodeProps } from './TreeNode.tsx';
 import { useExpanded } from './useExpanded.ts';
 
-const StyledAriaTree = styled(AriaTree)(({ theme }) => ({
+const StyledAriaTree = styled(AriaTree)(() => ({
   listStyle: 'none',
   padding: 0,
   margin: 0,
@@ -96,8 +96,6 @@ export const Tree = React.memo<TreeProps>(function Tree({
     return entry.parent ?? null;
   }, [selectedStoryId, collapsedData]);
 
-  console.log(selectedParentId);
-
   // Stable handlers so children (especially TreeNode) can rely on prop identity.
   const handleExpandedChange = useCallback(
     (keys: Set<React.Key>) => {
@@ -174,9 +172,11 @@ export const Tree = React.memo<TreeProps>(function Tree({
       return;
     }
     const handler = () => {
+      console.log('handler');
       const focused = containerRef.current?.querySelector('[data-focused="true"]');
       const itemId = focused?.getAttribute('data-item-id');
       if (itemId) {
+        console.log('handled' + itemId);
         openContextMenu(itemId, 'keyboard');
       }
     };
@@ -245,7 +245,18 @@ export const Tree = React.memo<TreeProps>(function Tree({
       onSelectionChange={handleSelectionChange}
       onAction={handleAction}
     >
-      <Collection items={tree}>{nodeRenderer}</Collection>
+      <Collection
+        items={tree}
+        dependencies={[
+          expanded,
+          selectedStoryId,
+          selectedParentId,
+          contextMenuState,
+          consolidatedStatuses,
+        ]}
+      >
+        {nodeRenderer}
+      </Collection>
     </StyledAriaTree>
   );
 });
@@ -290,7 +301,6 @@ function renderNode({
 }: RenderNodeProps) {
   const renderNodeLevel = (item: TreeEntry) => {
     const itemStatuses = consolidatedStatuses?.[item.id];
-    console.log('--', item.id, item.type !== 'root' && selectedParentId === item.parent);
     return (
       <TreeNode
         {...props}

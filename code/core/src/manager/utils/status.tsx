@@ -12,7 +12,6 @@ import { type Theme, styled } from 'storybook/theming';
 
 import { UseSymbol } from '../components/sidebar/IconSymbols.tsx';
 
-
 const SmallIcons = styled(CircleIcon)({
   // specificity hack
   '&&&': {
@@ -122,10 +121,19 @@ export const getStatus = memoizerific(10)((theme: Theme, status: StatusValue): S
 });
 
 export const getMostCriticalStatusValue = (statusValues: StatusValue[]): StatusValue => {
-  return statusPriority.reduce(
-    (acc, value) => (statusValues.includes(value) ? value : acc),
-    'status-value:unknown'
-  );
+  return statusPriority.findLast((value) => statusValues.includes(value)) || 'status-value:unknown';
+};
+
+// FIXME/TODO: remove if unused
+export const sortByMostCriticalStatus = (a: StatusValue, b: StatusValue): number => {
+  for (const value of statusPriority) {
+    if (a === value || b === value) {
+      // NOTE: the array goes from least to most important but we virtually want
+      // to sort by most important first. So we must reverse traditional sort order.
+      return a === value ? -1 : 1;
+    }
+  }
+  return 0;
 };
 
 /**
@@ -155,9 +163,7 @@ export function getGroupStatus(
       continue;
     }
 
-    const leafStatus = getMostCriticalStatusValue(
-      Object.values(storyStatuses).map((s) => s.value)
-    );
+    const leafStatus = getMostCriticalStatusValue(Object.values(storyStatuses).map((s) => s.value));
 
     // Walk up the parent chain and propagate the most-critical status.
     let currentItem: Partial<API_HashEntry> | undefined = item;

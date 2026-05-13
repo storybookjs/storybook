@@ -226,6 +226,7 @@ export const init: Task['run'] = async (
 
   switch (template.expected.framework) {
     case '@storybook/angular':
+    case '@storybook/angular-vite':
       await prepareAngularSandbox(cwd, template.name);
       break;
     default:

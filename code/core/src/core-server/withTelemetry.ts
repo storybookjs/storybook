@@ -1,15 +1,24 @@
-import { HandledError, cache, isCI, loadAllPresets } from 'storybook/internal/common';
+import {
+  HandledError,
+  cache,
+  loadMainConfig,
+  isCI,
+  loadAllPresets,
+} from 'storybook/internal/common';
 import { logger, prompt } from 'storybook/internal/node-logger';
 import {
   ErrorCollector,
   getPrecedingUpgrade,
+  isTelemetryStateResolved,
   oneWayHash,
+  onPayloadError,
+  setTelemetryEnabled,
   telemetry,
 } from 'storybook/internal/telemetry';
 import type { EventType } from 'storybook/internal/telemetry';
-import type { CLIOptions } from 'storybook/internal/types';
+import type { CLIOptions, StorybookConfigRaw } from 'storybook/internal/types';
 
-import { StorybookError } from '../storybook-error';
+import { StorybookError } from '../storybook-error.ts';
 
 type TelemetryOptions = {
   cliOptions: CLIOptions;
@@ -17,6 +26,7 @@ type TelemetryOptions = {
   printError?: (err: any) => void;
   skipPrompt?: boolean;
   eventType?: EventType;
+  fallbackTelemetryState?: boolean;
 };
 
 const promptCrashReports = async () => {
@@ -139,6 +149,7 @@ export async function sendTelemetryError(
           immediate: true,
           configDir: options.cliOptions.configDir || options.presetOptions?.configDir,
           enableCrashReports: errorLevel === 'full',
+          force: true,
         }
       );
 
@@ -154,8 +165,51 @@ export async function sendTelemetryError(
   }
 }
 
-export function isTelemetryEnabled(options: TelemetryOptions) {
-  return !(options.cliOptions.disableTelemetry || options.cliOptions.test === true);
+async function resolveTelemetryState(options: TelemetryOptions) {
+  // 1. If telemetry is explicitly set via CLI options or env var, set and skip loading main config
+  if (options.cliOptions.disableTelemetry !== undefined) {
+    return await setTelemetryEnabled(!options.cliOptions.disableTelemetry);
+  }
+
+  let mainConfig;
+  const configDir =
+    options.cliOptions.configDir ?? options.presetOptions?.configDir ?? '.storybook';
+  try {
+    mainConfig = (await loadMainConfig({ configDir })) as StorybookConfigRaw;
+  } catch {}
+
+  // 2. If main config succesfully loaded, set based on that
+  // (unset = enabled, true/false = disabled/enabled)
+  if (mainConfig) {
+    return await setTelemetryEnabled(!mainConfig?.core?.disableTelemetry);
+  }
+
+  // 3. If main config could not be loaded, set to fallback,
+  // which is usually disabled but can be enabled for certain commands (e.g. init)
+  await setTelemetryEnabled(options.fallbackTelemetryState ?? false);
+}
+
+function isInterruptionError(error: unknown): boolean {
+  if (!error || typeof error !== 'object') {
+    return false;
+  }
+
+  const signal = 'signal' in error ? error.signal : undefined;
+  const code = 'code' in error ? error.code : undefined;
+  const name = 'name' in error ? error.name : undefined;
+  const message =
+    'message' in error && typeof error.message === 'string' ? error.message : undefined;
+  const cause = 'cause' in error ? error.cause : undefined;
+
+  return (
+    signal === 'SIGINT' ||
+    code === 'ABORT_ERR' ||
+    code === 'ERR_CANCELED' ||
+    name === 'AbortError' ||
+    message?.includes('Command was killed with SIGINT') ||
+    message?.includes('The operation was aborted') ||
+    isInterruptionError(cause)
+  );
 }
 
 export async function withTelemetry<T>(
@@ -163,15 +217,15 @@ export async function withTelemetry<T>(
   options: TelemetryOptions,
   run: () => Promise<T>
 ): Promise<T | undefined> {
-  const enableTelemetry = isTelemetryEnabled(options);
+  if (!isTelemetryStateResolved()) {
+    await resolveTelemetryState(options);
+  }
 
   let canceled = false;
 
   async function cancelTelemetry() {
     canceled = true;
-    if (enableTelemetry) {
-      await telemetry('canceled', { eventType }, { stripMetadata: true, immediate: true });
-    }
+    await telemetry('canceled', { eventType }, { stripMetadata: true, immediate: true });
 
     process.exit(0);
   }
@@ -181,14 +235,24 @@ export async function withTelemetry<T>(
     process.on('SIGINT', cancelTelemetry);
   }
 
-  if (enableTelemetry) {
-    telemetry('boot', { eventType }, { stripMetadata: true });
-  }
+  // Register error handler so that payload factories returning { error } or throwing
+  // automatically trigger sendTelemetryError with full context (presets, cache, error levels).
+  onPayloadError(async (error, evtType) => {
+    await sendTelemetryError(error, evtType, options);
+  });
+
+  telemetry('boot', { eventType }, { stripMetadata: true });
 
   try {
-    return await run();
-  } catch (error: any) {
+    const result = await run();
+    return result;
+  } catch (error: unknown) {
     if (canceled) {
+      return undefined;
+    }
+
+    if (eventType === 'init' && isInterruptionError(error)) {
+      await cancelTelemetry();
       return undefined;
     }
 
@@ -200,18 +264,15 @@ export async function withTelemetry<T>(
       printError(error);
     }
 
-    if (enableTelemetry) {
-      await sendTelemetryError(error, eventType, options);
-    }
+    await sendTelemetryError(error, eventType, options);
 
     throw error;
   } finally {
-    if (enableTelemetry) {
-      const errors = ErrorCollector.getErrors();
-      for (const error of errors) {
-        await sendTelemetryError(error, eventType, options, false);
-      }
-      process.off('SIGINT', cancelTelemetry);
+    const errors = ErrorCollector.getErrors();
+    for (const error of errors) {
+      await sendTelemetryError(error, eventType, options, false);
     }
+    process.off('SIGINT', cancelTelemetry);
+    onPayloadError(undefined);
   }
 }

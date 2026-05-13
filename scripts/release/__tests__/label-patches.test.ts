@@ -3,10 +3,10 @@ import { beforeEach, expect, it, vi } from 'vitest';
 import ansiRegex from 'ansi-regex';
 import type { LogResult } from 'simple-git';
 
-import { run } from '../label-patches';
-import * as githubInfo_ from '../utils/get-github-info';
-import * as gitClient_ from '../utils/git-client';
-import * as github_ from '../utils/github-client';
+import { run } from '../label-patches.ts';
+import * as githubInfo_ from '../utils/get-github-info.ts';
+import * as gitClient_ from '../utils/git-client.ts';
+import * as github_ from '../utils/github-client.ts';
 
 vi.mock('uuid');
 vi.mock('../utils/get-github-info');

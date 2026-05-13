@@ -3,7 +3,7 @@ import { beforeEach, expect, test, vi } from 'vitest';
 import ansiRegex from 'ansi-regex';
 import { dedent } from 'ts-dedent';
 
-import transform from '../find-implicit-spies';
+import transform from '../find-implicit-spies.ts';
 
 expect.addSnapshotSerializer({
   print: (val, print) => print((val as string).replace(ansiRegex(), '')),

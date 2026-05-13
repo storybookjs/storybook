@@ -20,7 +20,7 @@ import type { StorybookConfigRaw } from 'storybook/internal/types';
 
 import picocolors from 'picocolors';
 
-import { getStoriesPathsFromConfig } from '../../util';
+import { getStoriesPathsFromConfig } from '../../util.ts';
 
 /**
  * Given a Storybook configuration object, retrieves the package name or file path of the framework.
@@ -118,6 +118,11 @@ export const getStorybookData = async ({
     configDir: configDirFromScript,
     previewConfigPath,
     versionSpecifier,
+    frameworkPackage,
+    rendererPackage,
+    renderer,
+    builderPackage,
+    addons,
   } = await getStorybookInfo(
     userDefinedConfigDir,
     userDefinedConfigDir ? dirname(userDefinedConfigDir) : undefined
@@ -165,6 +170,11 @@ export const getStorybookData = async ({
     packageManager,
     storiesPaths,
     hasCsfFactoryPreview,
+    frameworkPackage,
+    rendererPackage,
+    renderer,
+    builderPackage,
+    addons,
   };
 };
 export type GetStorybookData = typeof getStorybookData;

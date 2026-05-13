@@ -1,26 +1,30 @@
 import { logConfig, normalizeStories } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
 import { MissingBuilderError } from 'storybook/internal/server-errors';
+import { CHANGE_DETECTION_STATUS_TYPE_ID } from 'storybook/internal/types';
 import type { Options } from 'storybook/internal/types';
 
 import compression from '@polka/compression';
 import polka from 'polka';
 
-import { telemetry } from '../telemetry';
-import { type StoryIndexGenerator } from './utils/StoryIndexGenerator';
-import { doTelemetry } from './utils/doTelemetry';
-import { getManagerBuilder, getPreviewBuilder } from './utils/get-builders';
-import { getCachingMiddleware } from './utils/get-caching-middleware';
-import { getAccessControlMiddleware } from './utils/getAccessControlMiddleware';
-import { getHostValidationMiddleware } from './utils/getHostValidationMiddleware';
-import { registerIndexJsonRoute } from './utils/index-json';
-import { registerManifests } from './utils/manifests/manifests';
-import { useStorybookMetadata } from './utils/metadata';
-import { getMiddleware } from './utils/middleware';
-import { openInBrowser } from './utils/open-browser/open-in-browser';
-import type { getServer } from './utils/server-init';
-import { useStatics } from './utils/server-statics';
-import { summarizeIndex } from './utils/summarizeIndex';
+import { isTelemetryModuleEnabled, telemetry } from '../telemetry/index.ts';
+import type { ChangeDetectionAdapter } from './change-detection/index.ts';
+import { ChangeDetectionService } from './change-detection/index.ts';
+import { getStatusStoreByTypeId } from './stores/status.ts';
+import type { StoryIndexGenerator } from './utils/StoryIndexGenerator.ts';
+import { doTelemetry } from './utils/doTelemetry.ts';
+import { getManagerBuilder, getPreviewBuilder } from './utils/get-builders.ts';
+import { getCachingMiddleware } from './utils/get-caching-middleware.ts';
+import { getAccessControlMiddleware } from './utils/getAccessControlMiddleware.ts';
+import { getHostValidationMiddleware } from './utils/getHostValidationMiddleware.ts';
+import { registerIndexJsonRoute } from './utils/index-json.ts';
+import { registerManifests } from './utils/manifests/manifests.ts';
+import { useStorybookMetadata } from './utils/metadata.ts';
+import { getMiddleware } from './utils/middleware.ts';
+import { openInBrowser } from './utils/open-browser/open-in-browser.ts';
+import type { getServer } from './utils/server-init.ts';
+import { useStatics } from './utils/server-statics.ts';
+import { summarizeIndex } from './utils/summarizeIndex.ts';
 
 export async function storybookDevServer(
   options: Options,
@@ -32,6 +36,7 @@ export async function storybookDevServer(
 
   const workingDir = process.cwd();
   const configDir = options.configDir;
+  const features = await options.presets.apply('features');
   const stories = await options.presets.apply('stories');
   // StoryIndexGenerator depends on these normalized stories to be referentially equal
   // So it's important that we only normalize them once here and pass the same reference around
@@ -42,6 +47,13 @@ export async function storybookDevServer(
 
   const storyIndexGeneratorPromise =
     options.presets.apply<StoryIndexGenerator>('storyIndexGenerator');
+
+  const changeDetectionService = new ChangeDetectionService({
+    storyIndexGeneratorPromise,
+    statusStore: getStatusStoreByTypeId(CHANGE_DETECTION_STATUS_TYPE_ID),
+    workingDir,
+    presets: options.presets,
+  });
 
   app.use(compression({ level: 1 }));
 
@@ -67,6 +79,7 @@ export async function storybookDevServer(
     channel: options.channel,
     workingDir,
     configDir,
+    onStoryIndexInvalidated: () => changeDetectionService.onStoryIndexInvalidated(),
   });
 
   (await getMiddleware(options.configDir))(app);
@@ -111,6 +124,10 @@ export async function storybookDevServer(
     await Promise.resolve();
 
   if (!options.ignorePreview) {
+    if (!features.changeDetection) {
+      changeDetectionService.start(undefined, false);
+    }
+
     logger.debug('Starting preview..');
     previewResult = await previewBuilder
       .start({
@@ -120,20 +137,32 @@ export async function storybookDevServer(
         server,
         channel: options.channel,
       })
-      .catch(async (e: any) => {
+      .catch(async (e: unknown) => {
         logger.error('Failed to build the preview');
         process.exitCode = 1;
 
-        await managerBuilder?.bail().catch();
+        await changeDetectionService.dispose().catch(() => undefined);
+        await managerBuilder?.bail().catch(() => undefined);
         // For some reason, even when Webpack fails e.g. wrong main.js config,
         // the preview may continue to print to stdout, which can affect output
         // when we catch this error and process those errors (e.g. telemetry)
         // gets overwritten by preview progress output. Therefore, we should bail the preview too.
-        await previewBuilder?.bail().catch();
+        await previewBuilder?.bail().catch(() => undefined);
 
         // re-throw the error
         throw e;
       });
+
+    if (features.changeDetection) {
+      let adapter: ChangeDetectionAdapter | undefined;
+      try {
+        adapter = previewBuilder.changeDetectionAdapter?.();
+      } catch (err) {
+        logger.warn('Change detection: adapter initialisation failed');
+        logger.debug(err instanceof Error ? (err.stack ?? err.message) : String(err));
+      }
+      changeDetectionService.start(adapter, true);
+    }
   }
 
   const listening = new Promise<void>((resolve, reject) => {
@@ -151,12 +180,11 @@ export async function storybookDevServer(
       });
     }
   } catch (e) {
-    await managerBuilder?.bail().catch();
-    await previewBuilder?.bail().catch();
+    await managerBuilder?.bail().catch(() => undefined);
+    await previewBuilder?.bail().catch(() => undefined);
     throw e;
   }
 
-  const features = await options.presets.apply('features');
   if (features?.componentsManifest) {
     registerManifests({ app, presets: options.presets });
   }
@@ -164,26 +192,32 @@ export async function storybookDevServer(
   doTelemetry(app, core, storyIndexGeneratorPromise, options);
 
   async function cancelTelemetry() {
-    const payload = { eventType: 'dev' };
     try {
-      const generator = await storyIndexGeneratorPromise;
-      const indexAndStats = await generator?.getIndexAndStats();
-      // compute stats so we can get more accurate story counts
-      if (indexAndStats) {
-        Object.assign(payload, {
-          storyIndex: summarizeIndex(indexAndStats.storyIndex),
-          storyStats: indexAndStats.stats,
-        });
+      if (!isTelemetryModuleEnabled()) {
+        return;
       }
-    } catch (err) {}
-    await telemetry('canceled', payload, { immediate: true });
-    process.exit(0);
+
+      const payload = { eventType: 'dev' };
+      try {
+        const generator = await storyIndexGeneratorPromise;
+        const indexAndStats = await generator?.getIndexAndStats();
+        // compute stats so we can get more accurate story counts
+        if (indexAndStats) {
+          Object.assign(payload, {
+            storyIndex: summarizeIndex(indexAndStats.storyIndex),
+            storyStats: indexAndStats.stats,
+          });
+        }
+      } catch {}
+      await telemetry('canceled', payload, { immediate: true });
+    } finally {
+      // Always terminate on signal, even when telemetry is disabled.
+      process.exit(0);
+    }
   }
 
-  if (!core?.disableTelemetry) {
-    process.on('SIGINT', cancelTelemetry);
-    process.on('SIGTERM', cancelTelemetry);
-  }
+  process.on('SIGINT', cancelTelemetry);
+  process.on('SIGTERM', cancelTelemetry);
 
   return { previewResult, managerResult };
 }

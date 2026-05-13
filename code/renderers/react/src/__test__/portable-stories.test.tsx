@@ -9,10 +9,10 @@ import type { Meta } from '@storybook/react';
 import { expectTypeOf } from 'expect-type';
 import { addons } from 'storybook/preview-api';
 
-import { composeStories, composeStory, setProjectAnnotations } from '..';
-import type { Button } from './Button';
-import * as ButtonStories from './Button.stories';
-import * as ComponentWithErrorStories from './ComponentWithError.stories';
+import { composeStories, composeStory, setProjectAnnotations } from '../index.ts';
+import type { Button } from './Button.tsx';
+import * as ButtonStories from './Button.stories.tsx';
+import * as ComponentWithErrorStories from './ComponentWithError.stories.tsx';
 
 const HooksStory = composeStory(ButtonStories.HooksStory, ButtonStories.default);
 

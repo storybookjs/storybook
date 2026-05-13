@@ -1,6 +1,7 @@
 {
   "compileOnSave": false,
   "compilerOptions": {
+    "customConditions": ["code"],
     "baseUrl": ".",
     "noEmit": true,
     "incremental": false,
@@ -11,6 +12,8 @@
     "moduleResolution": "bundler",
     "target": "ESNext",
     "module": "Preserve",
+    // Required for native Node TS execution (node file.ts) — we are migrating from jiti to native node
+    "allowImportingTsExtensions": true,
     "skipLibCheck": true,
     "allowSyntheticDefaultImports": true,
     "esModuleInterop": true,

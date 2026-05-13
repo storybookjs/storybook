@@ -2,8 +2,8 @@ import { describe, expect, it } from 'vitest';
 
 import type { StorybookConfigRaw } from 'storybook/internal/types';
 
-import { makePackageManager } from '../helpers/testing-helpers';
-import { storybookPackageNameConflict } from './storybook-package-name-conflict';
+import { makePackageManager } from '../helpers/testing-helpers.ts';
+import { storybookPackageNameConflict } from './storybook-package-name-conflict.ts';
 
 const mockMainConfig: StorybookConfigRaw = {
   stories: [],

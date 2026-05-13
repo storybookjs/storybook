@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { getCsfFactoryTemplateForNewStoryFile } from './csf-factory-template';
+import { getCsfFactoryTemplateForNewStoryFile } from './csf-factory-template.ts';
 
 describe('csf-factories', () => {
   it('should return a CSF factories template with a default import', async () => {

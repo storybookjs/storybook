@@ -3,7 +3,7 @@ import React, { useRef } from 'react';
 
 import { useToolbar } from '@react-aria/toolbar';
 
-import { Bar, type BarProps } from '../Bar/Bar';
+import { Bar, type BarProps } from '../Bar/Bar.tsx';
 
 export interface AbstractToolbarProps {
   className?: string;

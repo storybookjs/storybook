@@ -1,11 +1,11 @@
 import picocolors from 'picocolors';
 import { dedent } from 'ts-dedent';
 
-import type { Status } from './shared/status-store';
-import type { StatusTypeId } from './shared/status-store';
-import { StorybookError } from './storybook-error';
+import type { Status } from './shared/status-store/index.ts';
+import type { StatusTypeId } from './shared/status-store/index.ts';
+import { StorybookError } from './storybook-error.ts';
 
-export { StorybookError } from './storybook-error';
+export { StorybookError } from './storybook-error.ts';
 
 /**
  * If you can't find a suitable category for your error, create one based on the package name/file
@@ -457,6 +457,50 @@ export class GenerateNewProjectOnInitError extends StorybookError {
   }
 }
 
+type MinimumReleaseAgeHandledErrorData =
+  | {
+      message: string;
+      cause?: unknown;
+    }
+  | {
+      packageManagerName: string;
+      minimumReleaseAgeConfigName: string;
+      minimumReleaseAgeConfigDocs: string;
+      minimumReleaseAgeExclusionsConfigName?: string;
+      minimumReleaseAgeExclusionsConfigDocs?: string;
+      failedPackage?: string | null;
+      cause?: unknown;
+    };
+
+function createMinimumReleaseAgeHandledErrorMessage(data: MinimumReleaseAgeHandledErrorData) {
+  if ('message' in data) {
+    return data.message;
+  }
+
+  const followUp = data.minimumReleaseAgeExclusionsConfigName
+    ? `To fix this, either wait for the configured age window to pass and rerun the command, or add the blocked packages to ${data.packageManagerName}'s ${data.minimumReleaseAgeExclusionsConfigName} setting.`
+    : 'To fix this, either wait for the configured age window to pass and rerun the command, or rerun Storybook with an older compatible release.';
+
+  return dedent`
+    ${data.packageManagerName} blocked package installation because your project uses ${data.minimumReleaseAgeConfigName}.
+    ${data.failedPackage ? `\nFailed package: ${data.failedPackage}\n` : ''}
+    ${followUp}
+  `;
+}
+
+export class MinimumReleaseAgeHandledError extends StorybookError {
+  constructor(public data: MinimumReleaseAgeHandledErrorData) {
+    super({
+      name: 'MinimumReleaseAgeHandledError',
+      category: Category.CLI,
+      isHandledError: true,
+      code: 2,
+      cause: data.cause,
+      message: createMinimumReleaseAgeHandledErrorMessage(data),
+    });
+  }
+}
+
 export class AddonVitestPostinstallPrerequisiteCheckError extends StorybookError {
   constructor(public data: { reasons: string[] }) {
     super({
@@ -573,6 +617,17 @@ export class NoStatsForViteDevError extends StorybookError {
         Unable to write preview stats as the Vite builder does not support stats in dev mode.
         
         Please remove the \`--stats-json\` flag when running in dev mode.`,
+    });
+  }
+}
+
+export class ViteModuleGraphSubscriptionError extends StorybookError {
+  constructor() {
+    super({
+      name: 'ViteModuleGraphSubscriptionError',
+      category: Category.BUILDER_VITE,
+      code: 2,
+      message: 'Vite module graph listeners must be registered before the builder starts.',
     });
   }
 }

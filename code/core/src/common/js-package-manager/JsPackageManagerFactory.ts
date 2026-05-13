@@ -1,23 +1,25 @@
-import { basename, parse, relative } from 'node:path';
+import { existsSync, readFileSync } from 'node:fs';
+import { basename, join, parse, relative } from 'node:path';
 
 import * as find from 'empathic/find';
+import * as walk from 'empathic/walk';
 
-import { executeCommandSync } from '../utils/command';
-import { getProjectRoot } from '../utils/paths';
-import { BUNProxy } from './BUNProxy';
-import type { JsPackageManager } from './JsPackageManager';
-import { PackageManagerName } from './JsPackageManager';
-import { NPMProxy } from './NPMProxy';
-import { PNPMProxy } from './PNPMProxy';
-import { Yarn1Proxy } from './Yarn1Proxy';
-import { Yarn2Proxy } from './Yarn2Proxy';
+import { executeCommandSync } from '../utils/command.ts';
+import { getProjectRoot } from '../utils/paths.ts';
+import { BUNProxy } from './BUNProxy.ts';
+import type { JsPackageManager } from './JsPackageManager.ts';
+import { PackageManagerName } from './JsPackageManager.ts';
+import { NPMProxy } from './NPMProxy.ts';
+import { PNPMProxy } from './PNPMProxy.ts';
+import { Yarn1Proxy } from './Yarn1Proxy.ts';
+import { Yarn2Proxy } from './Yarn2Proxy.ts';
 import {
   BUN_LOCKFILE,
   BUN_LOCKFILE_BINARY,
   NPM_LOCKFILE,
   PNPM_LOCKFILE,
   YARN_LOCKFILE,
-} from './constants';
+} from './constants.ts';
 
 type PackageManagerProxy =
   | typeof NPMProxy
@@ -249,7 +251,63 @@ function hasPNPM(cwd?: string) {
   }
 }
 
+/**
+ * Walk upward from `cwd` to `root`, checking each package.json for a
+ * `packageManager` field specifying yarn.  Returns 1 or 2 when found,
+ * or undefined only after every ancestor has been checked.
+ *
+ * This avoids a common monorepo pitfall where the closest package.json
+ * (a workspace package) lacks `packageManager` while the repo-root
+ * package.json declares it.
+ */
+function getYarnVersionFromPackageJson(cwd?: string, root?: string): 1 | 2 | undefined {
+  const effectiveRoot = root ?? getProjectRoot();
+  const directories = walk.up(cwd ?? process.cwd(), { last: effectiveRoot });
+
+  for (const dir of directories) {
+    const packageJsonPath = join(dir, 'package.json');
+    if (!existsSync(packageJsonPath)) {
+      continue;
+    }
+
+    try {
+      const content = JSON.parse(readFileSync(packageJsonPath, 'utf-8'));
+      const packageManager: unknown = content.packageManager;
+      if (typeof packageManager === 'string') {
+        const match = packageManager.match(/^yarn@(\d+)\./);
+        if (match) {
+          return match[1] === '1' ? 1 : 2;
+        }
+      }
+    } catch {
+      // Ignore parse errors and continue walking
+    }
+  }
+
+  return undefined;
+}
+
+/**
+ * Check whether a `.yarnrc.yml` file exists in the project tree.
+ * This file only exists in Yarn Berry (v2+) projects.
+ */
+function hasYarnBerryConfig(cwd?: string, root?: string): boolean {
+  return find.up('.yarnrc.yml', { cwd, last: root }) !== undefined;
+}
+
 function getYarnVersion(cwd?: string): 1 | 2 | undefined {
+  const root = getProjectRoot();
+
+  // 1. Check packageManager field in closest package.json (highest priority)
+  const versionFromPackageJson = getYarnVersionFromPackageJson(cwd, root);
+  if (versionFromPackageJson !== undefined) {
+    return versionFromPackageJson;
+  }
+
+  // 2. Check for .yarnrc.yml (Berry-only config file)
+  const hasBerryConfig = hasYarnBerryConfig(cwd, root);
+
+  // 3. Run yarn --version
   try {
     const yarnVersion = executeCommandSync({
       command: 'yarn',
@@ -259,8 +317,20 @@ function getYarnVersion(cwd?: string): 1 | 2 | undefined {
         Object.entries(process.env).filter(([, value]) => value !== undefined)
       ) as Record<string, string>,
     });
-    return /^1\.+/.test(yarnVersion.trim()) ? 1 : 2;
+
+    if (/^1\./.test(yarnVersion.trim())) {
+      // yarn --version reports 1.x, but .yarnrc.yml means it's actually Berry; happens if the user's global Yarn is used because they forgot to enable corepack
+      return hasBerryConfig ? 2 : 1;
+    }
+
+    return 2;
   } catch (err) {
+    // 4. yarn command failed — fall back to .yarnrc.yml presence
+    if (hasBerryConfig) {
+      return 2;
+    }
+
+    // 5. No yarn command and no .yarnrc.yml
     return undefined;
   }
 }

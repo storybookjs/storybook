@@ -4,8 +4,8 @@ import { parseArgs } from 'node:util';
 
 import { join } from 'pathe';
 
-import { ROOT_DIRECTORY } from '../utils/constants';
-import { getTSDiagnostics, getTSFilesAndConfig, getTSProgramAndHost } from './utils/typescript';
+import { ROOT_DIRECTORY } from '../utils/constants.ts';
+import { getTSDiagnostics, getTSFilesAndConfig, getTSProgramAndHost } from './utils/typescript.ts';
 
 const {
   values: { cwd },

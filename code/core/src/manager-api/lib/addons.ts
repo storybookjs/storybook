@@ -18,8 +18,8 @@ import { Addon_TypesEnum } from 'storybook/internal/types';
 
 import { global } from '@storybook/global';
 
-import type { API } from '../root';
-import { mockChannel } from './storybook-channel-mock';
+import type { API } from '../root.tsx';
+import { mockChannel } from './storybook-channel-mock.ts';
 
 export type { Addon_Type as Addon };
 export { Addon_TypesEnum as types };
@@ -128,8 +128,13 @@ export class AddonStore {
     Object.values(this.loaders).forEach((value: any) => value(api));
   };
 
-  experimental_getRegisteredAddons() {
-    return Object.keys(this.loaders);
+  experimental_getRegisteredAddons<
+    T extends
+      | Addon_Types
+      | Addon_TypesEnum.experimental_PAGE
+      | Addon_TypesEnum.experimental_TEST_PROVIDER,
+  >(type?: T) {
+    return type ? Object.keys(this.getElements(type)) : Object.keys(this.loaders);
   }
 }
 

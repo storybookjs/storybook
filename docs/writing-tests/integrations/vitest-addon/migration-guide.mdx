@@ -1,5 +1,5 @@
 ---
-title: 'Migrating to Vitest addon from test-runner'
+title: Migrating to Vitest addon from test-runner
 isTab: true
 tab:
   order: 2
@@ -57,9 +57,9 @@ Remove the following files:
 ### 3. Set up `@storybook/addon-vitest`
 
 - Run this command, which will set up all the necessary code for you.
-  
+
   <CodeSnippets path="addon-test-install.md" />
-  
+
 - Update the `package.json` script for Storybook tests, replacing the test-runner binary and using Vitest instead:
 
   ```diff title="package.json"
@@ -69,6 +69,7 @@ Remove the following files:
   +    "test-storybook": "vitest --project=storybook"
     }
   }
+  ```
 
 ### 4. Update your CI to run Vitest instead of the test-runner
 
@@ -116,7 +117,7 @@ The Vitest addon relies on Vite to transform and run your stories as tests. Whic
 
 If your Storybook project uses a non-Vite builder like Webpack or RsPack, you will need to keep using the `@storybook/test-runner` for your component testing.
 
-Most Webpack-based Storybook projects which do not have complex configurations can [migrate to Vite](../../../builders/vite#migrating-from-webpack) relatively easily. If you are using Next.js, you can use the [`@storybook/nextjs-vite` framework](../../../get-started/frameworks/nextjs-vite.mdx) to use Vite with Storybook.
+Most Webpack-based Storybook projects which do not have complex configurations can [migrate to Vite](../../../builders/vite.mdx#migrating-from-webpack) relatively easily. If you are using Next.js, you can use the [`@storybook/nextjs-vite` framework](../../../get-started/frameworks/nextjs-vite.mdx) to use Vite with Storybook.
 
 ### What if I am using Jest for my unit tests?
 

@@ -8,9 +8,9 @@ import { resolveModulePath } from 'exsolve';
 import { join, parse } from 'pathe';
 import sirv from 'sirv';
 
-import { globalsModuleInfoMap } from '../manager/globals/globals-module-info';
-import { BROWSER_TARGETS, SUPPORTED_FEATURES } from '../shared/constants/environments-support';
-import { resolvePackageDir } from '../shared/utils/module';
+import { globalsModuleInfoMap } from '../manager/globals/globals-module-info.ts';
+import { BROWSER_TARGETS, SUPPORTED_FEATURES } from '../shared/constants/environments-support.ts';
+import { resolvePackageDir } from '../shared/utils/module.ts';
 import type {
   BuilderBuildResult,
   BuilderFunction,
@@ -18,16 +18,16 @@ import type {
   Compilation,
   ManagerBuilder,
   StarterFunction,
-} from './types';
-import { getData } from './utils/data';
-import { readOrderedFiles } from './utils/files';
-import { buildFrameworkGlobalsFromOptions } from './utils/framework';
-import { wrapManagerEntries } from './utils/managerEntries';
-import { getTemplatePath, renderHTML } from './utils/template';
+} from './types.ts';
+import { getData } from './utils/data.ts';
+import { readOrderedFiles } from './utils/files.ts';
+import { buildFrameworkGlobalsFromOptions } from './utils/framework.ts';
+import { wrapManagerEntries } from './utils/managerEntries.ts';
+import { getTemplatePath, renderHTML } from './utils/template.ts';
 
-export { BROWSER_TARGETS, NODE_TARGET } from '../shared/constants/environments-support';
-export { buildFrameworkGlobalsFromOptions } from './utils/framework';
-export { readTemplate, renderHTML } from './utils/template';
+export { BROWSER_TARGETS, NODE_TARGET } from '../shared/constants/environments-support.ts';
+export { buildFrameworkGlobalsFromOptions } from './utils/framework.ts';
+export { readTemplate, renderHTML } from './utils/template.ts';
 
 const CORE_DIR_ORIGIN = join(resolvePackageDir('storybook'), 'dist/manager');
 

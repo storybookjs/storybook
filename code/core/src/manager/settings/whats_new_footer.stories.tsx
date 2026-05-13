@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
-import { WhatsNewFooter } from './whats_new';
+import { WhatsNewFooter } from './whats_new.tsx';
 
 const meta = {
   component: WhatsNewFooter,
@@ -13,6 +13,7 @@ type Story = StoryObj<typeof meta>;
 export const Default: Story = {
   args: {
     isNotificationsEnabled: false,
+    copyContent: 'https://storybook.js.org/blog',
   },
   parameters: {
     design: {

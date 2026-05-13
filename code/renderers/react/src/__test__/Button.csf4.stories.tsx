@@ -4,8 +4,8 @@ import { createPortal } from 'react-dom';
 import { action } from 'storybook/actions';
 import { expect, fn, mocked, userEvent, within } from 'storybook/test';
 
-import { __definePreview } from '../preview';
-import { Button } from './Button';
+import { __definePreview } from '../preview.tsx';
+import { Button } from './Button.tsx';
 
 const preview = __definePreview({
   addons: [],

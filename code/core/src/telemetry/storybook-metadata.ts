@@ -17,18 +17,19 @@ import type { PackageJson, StorybookConfig } from 'storybook/internal/types';
 import * as pkg from 'empathic/package';
 
 import { version } from '../../package.json';
-import { globalSettings } from '../cli/globalSettings';
-import { getApplicationFileCount } from './get-application-file-count';
-import { getChromaticVersionSpecifier } from './get-chromatic-version';
-import { getFrameworkInfo } from './get-framework-info';
-import { getHasRouterPackage } from './get-has-router-package';
-import { analyzeEcosystemPackages } from './get-known-packages';
-import { getMonorepoType } from './get-monorepo-type';
-import { getPackageManagerInfo } from './get-package-manager-info';
-import { getPortableStoriesFileCount } from './get-portable-stories-usage';
-import { getActualPackageVersion, getActualPackageVersions } from './package-json';
-import { cleanPaths } from './sanitize';
-import type { Dependency, StorybookAddon, StorybookMetadata } from './types';
+import { globalSettings } from '../cli/globalSettings.ts';
+import { detectAgent } from './detect-agent.ts';
+import { getApplicationFileCount } from './get-application-file-count.ts';
+import { getChromaticVersionSpecifier } from './get-chromatic-version.ts';
+import { getFrameworkInfo } from './get-framework-info.ts';
+import { getHasRouterPackage } from './get-has-router-package.ts';
+import { analyzeEcosystemPackages } from './get-known-packages.ts';
+import { getMonorepoType } from '../shared/utils/get-monorepo-type.ts';
+import { getPackageManagerInfo } from './get-package-manager-info.ts';
+import { getPortableStoriesFileCount } from './get-portable-stories-usage.ts';
+import { getActualPackageVersion, getActualPackageVersions } from './package-json.ts';
+import { cleanPaths } from './sanitize.ts';
+import type { Dependency, StorybookAddon, StorybookMetadata } from './types.ts';
 
 export const metaFrameworks = {
   next: 'Next',
@@ -113,7 +114,7 @@ export const computeStorybookMetadata = async ({
   mainConfig?: StorybookConfig & Record<string, any>;
   configDir: string;
 }): Promise<StorybookMetadata> => {
-  const settings = isCI() ? undefined : await globalSettings();
+  const settings = isCI() && !detectAgent() ? undefined : await globalSettings();
   const metadata: Partial<StorybookMetadata> = {
     generatedAt: new Date().getTime(),
     userSince: settings?.value.userSince,

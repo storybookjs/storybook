@@ -19,12 +19,12 @@ import path, { dirname, join, normalize, resolve } from 'pathe';
 // eslint-disable-next-line depend/ban-dependencies
 import slash from 'slash';
 
-import { COVERAGE_DIRECTORY } from '../constants';
-import { log } from '../logger';
-import type { TriggerRunEvent } from '../types';
-import type { StorybookCoverageReporterOptions } from './coverage-reporter';
-import { StorybookReporter } from './reporter';
-import type { TestManager } from './test-manager';
+import { COVERAGE_DIRECTORY, STORYBOOK_TEST_PROVIDE_KEY } from '../constants.ts';
+import { log } from '../logger.ts';
+import type { TriggerRunEvent } from '../types.ts';
+import type { StorybookCoverageReporterOptions } from './coverage-reporter.ts';
+import { StorybookReporter } from './reporter.ts';
+import type { TestManager } from './test-manager.ts';
 
 const VITEST_CONFIG_FILE_EXTENSIONS = ['mts', 'mjs', 'cts', 'cjs', 'ts', 'tsx', 'js', 'jsx'];
 const VITEST_WORKSPACE_FILE_EXTENSION = ['ts', 'js', 'json'];
@@ -61,7 +61,7 @@ export class VitestManager {
       '@storybook/addon-vitest/internal/coverage-reporter',
       {
         testManager: this.testManager,
-        coverageOptions: this.vitest?.config?.coverage as ResolvedCoverageOptions<'v8'> | undefined,
+        coverageOptions: this.vitest?.config?.coverage as ResolvedCoverageOptions | undefined,
       },
     ];
     const coverageOptions = (
@@ -102,7 +102,10 @@ export class VitestManager {
 
     for (const location of potentialConfigFileLocations) {
       for (const file of configFiles) {
-        const maybe = find.any([file], { cwd: location, last: getProjectRoot() });
+        const maybe = find.any([file], {
+          cwd: location,
+          last: getProjectRoot(),
+        });
         if (maybe && existsSync(maybe)) {
           firstVitestConfig ??= dirname(maybe);
           const content = readFileSync(maybe, 'utf8');
@@ -363,10 +366,19 @@ export class VitestManager {
     return { filteredTestSpecifications, filteredStoryIds };
   }
 
+  private getCurrentRunConfig() {
+    return this.testManager.store.getState().currentRun.config;
+  }
+
+  private provideRunConfig() {
+    this.vitest?.provide(STORYBOOK_TEST_PROVIDE_KEY, this.getCurrentRunConfig());
+  }
+
   async runTests(runPayload: TriggerRunEvent['payload']) {
-    const { watching, config } = this.testManager.store.getState();
+    const { watching } = this.testManager.store.getState();
+    const runConfig = this.getCurrentRunConfig();
     const coverageShouldBeEnabled =
-      config.coverage && !watching && (runPayload?.storyIds?.length ?? 0) === 0;
+      !!runConfig.coverage && !watching && (runPayload?.storyIds?.length ?? 0) === 0;
     const currentCoverage = this.vitest?.config.coverage?.enabled;
 
     if (!this.vitest) {
@@ -376,6 +388,8 @@ export class VitestManager {
     } else {
       await this.vitestRestartPromise;
     }
+
+    this.provideRunConfig();
 
     this.resetGlobalTestNamePattern();
 
@@ -519,6 +533,7 @@ export class VitestManager {
         }));
         await this.vitest!.cancelCurrentRun('keyboard-input');
         await this.runningPromise;
+        this.provideRunConfig();
         await this.vitest!.runTestSpecifications(filteredTestSpecifications, false);
       },
     });

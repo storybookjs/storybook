@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 
 import type { StoryIndex } from 'storybook/internal/types';
 
-import { StoryIndexStore } from './StoryIndexStore';
+import { StoryIndexStore } from './StoryIndexStore.ts';
 
 vi.mock('@storybook/channel-websocket', () => () => ({ on: vi.fn() }));
 

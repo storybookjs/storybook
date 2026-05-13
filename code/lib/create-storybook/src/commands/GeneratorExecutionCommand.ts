@@ -2,12 +2,13 @@ import type { ProjectType } from 'storybook/internal/cli';
 import { type JsPackageManager } from 'storybook/internal/common';
 import { type Feature, type SupportedLanguage } from 'storybook/internal/types';
 
-import type { DependencyCollector } from '../dependency-collector';
-import { generatorRegistry } from '../generators/GeneratorRegistry';
-import { baseGenerator } from '../generators/baseGenerator';
-import type { CommandOptions, GeneratorModule, GeneratorOptions } from '../generators/types';
-import { AddonService } from '../services';
-import type { FrameworkDetectionResult } from './FrameworkDetectionCommand';
+import type { DependencyCollector } from '../dependency-collector.ts';
+import { generatorRegistry } from '../generators/GeneratorRegistry.ts';
+import { baseGenerator } from '../generators/baseGenerator.ts';
+import type { CommandOptions, GeneratorModule, GeneratorOptions } from '../generators/types.ts';
+import { AddonService } from '../services/index.ts';
+import { TelemetryService } from '../services/TelemetryService.ts';
+import type { FrameworkDetectionResult } from './FrameworkDetectionCommand.ts';
 
 type ExecuteProjectGeneratorOptions = {
   projectType: ProjectType;
@@ -32,7 +33,8 @@ export class GeneratorExecutionCommand {
   constructor(
     private readonly dependencyCollector: DependencyCollector,
     private readonly jsPackageManager: JsPackageManager,
-    private readonly addonService = new AddonService()
+    private readonly addonService = new AddonService(),
+    private readonly telemetryService = new TelemetryService()
   ) {}
 
   async execute({
@@ -91,6 +93,7 @@ export class GeneratorExecutionCommand {
       renderer: frameworkInfo.renderer,
       builder: frameworkInfo.builder,
       language,
+      telemetryService: this.telemetryService,
       linkable: !!options.linkable,
       features: selectedFeatures,
       dependencyCollector: this.dependencyCollector,

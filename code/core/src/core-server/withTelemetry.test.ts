@@ -1,10 +1,17 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { cache, isCI, loadAllPresets } from 'storybook/internal/common';
+import { cache, isCI, loadAllPresets, loadMainConfig } from 'storybook/internal/common';
 import { prompt } from 'storybook/internal/node-logger';
-import { ErrorCollector, oneWayHash, telemetry } from 'storybook/internal/telemetry';
+import {
+  ErrorCollector,
+  isTelemetryStateResolved,
+  oneWayHash,
+  setTelemetryEnabled,
+  telemetry,
+} from 'storybook/internal/telemetry';
+import type { StorybookConfigRaw } from 'storybook/internal/types';
 
-import { getErrorLevel, sendTelemetryError, withTelemetry } from './withTelemetry';
+import { getErrorLevel, sendTelemetryError, withTelemetry } from './withTelemetry.ts';
 
 vi.mock('storybook/internal/common', { spy: true });
 vi.mock('storybook/internal/telemetry', { spy: true });
@@ -27,9 +34,70 @@ afterEach(() => {
 describe('withTelemetry', () => {
   beforeEach(() => {
     vi.resetAllMocks();
+    vi.mocked(isTelemetryStateResolved).mockReturnValue(false);
+    vi.mocked(loadMainConfig).mockRejectedValue(new Error('main config not available'));
     vi.mocked(ErrorCollector.getErrors).mockReturnValue([]);
     vi.mocked(telemetry).mockResolvedValue(undefined);
   });
+
+  it('does not resolve telemetry state again when it is already initialized', async () => {
+    vi.mocked(isTelemetryStateResolved).mockReturnValue(true);
+    const run = vi.fn();
+
+    await withTelemetry('dev', { cliOptions }, run);
+
+    expect(loadMainConfig).not.toHaveBeenCalled();
+    expect(setTelemetryEnabled).not.toHaveBeenCalled();
+    expect(run).toHaveBeenCalledTimes(1);
+  });
+
+  it('resolves telemetry state from an explicit cli opt-in before run()', async () => {
+    const callOrder: string[] = [];
+    vi.mocked(setTelemetryEnabled).mockImplementation(async () => {
+      callOrder.push('setTelemetryEnabled');
+    });
+    const run = vi.fn(async () => {
+      callOrder.push('run');
+    });
+
+    await withTelemetry('dev', { cliOptions: { disableTelemetry: false } }, run);
+
+    expect(loadMainConfig).not.toHaveBeenCalled();
+    expect(setTelemetryEnabled).toHaveBeenCalledWith(true);
+    expect(callOrder).toEqual(['setTelemetryEnabled', 'run']);
+  });
+
+  it('resolves telemetry state from main config before run()', async () => {
+    const callOrder: string[] = [];
+    const mainConfig = { stories: [], core: {} } satisfies StorybookConfigRaw;
+    vi.mocked(loadMainConfig).mockResolvedValue(mainConfig);
+    vi.mocked(setTelemetryEnabled).mockImplementation(async () => {
+      callOrder.push('setTelemetryEnabled');
+    });
+    const run = vi.fn(async () => {
+      callOrder.push('run');
+    });
+
+    await withTelemetry('dev', { cliOptions }, run);
+
+    expect(loadMainConfig).toHaveBeenCalledWith({ configDir: '.storybook' });
+    expect(setTelemetryEnabled).toHaveBeenCalledWith(true);
+    expect(callOrder).toEqual(['setTelemetryEnabled', 'run']);
+  });
+
+  it('resolves telemetry state to disabled when main config opts out', async () => {
+    const mainConfig = {
+      stories: [],
+      core: { disableTelemetry: true },
+    } satisfies StorybookConfigRaw;
+    vi.mocked(loadMainConfig).mockResolvedValue(mainConfig);
+    const run = vi.fn();
+
+    await withTelemetry('dev', { cliOptions }, run);
+
+    expect(setTelemetryEnabled).toHaveBeenCalledWith(false);
+  });
+
   it('works in happy path', async () => {
     const run = vi.fn();
 
@@ -39,12 +107,97 @@ describe('withTelemetry', () => {
     expect(telemetry).toHaveBeenCalledWith('boot', { eventType: 'dev' }, { stripMetadata: true });
   });
 
-  it('does not send boot when cli option is passed', async () => {
+  it('treats init interruption errors as canceled telemetry', async () => {
+    const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => undefined as never);
+    const run = vi.fn(async () => {
+      const error = new Error('Command was killed with SIGINT');
+      Object.assign(error, { signal: 'SIGINT' });
+      throw error;
+    });
+
+    await expect(withTelemetry('init', { cliOptions }, run)).resolves.toBeUndefined();
+
+    expect(telemetry).toHaveBeenNthCalledWith(
+      1,
+      'boot',
+      { eventType: 'init' },
+      { stripMetadata: true }
+    );
+    expect(telemetry).toHaveBeenNthCalledWith(
+      2,
+      'canceled',
+      { eventType: 'init' },
+      { stripMetadata: true, immediate: true }
+    );
+    expect(exitSpy).toHaveBeenCalledWith(0);
+
+    exitSpy.mockRestore();
+  });
+
+  it('treats init AbortError-style failures as canceled telemetry', async () => {
+    const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => undefined as never);
+    const run = vi.fn(async () => {
+      const error = new Error('The operation was aborted');
+      Object.assign(error, { name: 'AbortError', code: 'ABORT_ERR' });
+      throw error;
+    });
+
+    await expect(withTelemetry('init', { cliOptions }, run)).resolves.toBeUndefined();
+
+    expect(telemetry).toHaveBeenNthCalledWith(
+      1,
+      'boot',
+      { eventType: 'init' },
+      { stripMetadata: true }
+    );
+    expect(telemetry).toHaveBeenNthCalledWith(
+      2,
+      'canceled',
+      { eventType: 'init' },
+      { stripMetadata: true, immediate: true }
+    );
+    expect(exitSpy).toHaveBeenCalledWith(0);
+
+    exitSpy.mockRestore();
+  });
+
+  it('treats wrapped init interruption failures as canceled telemetry', async () => {
+    const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => undefined as never);
+    const run = vi.fn(async () => {
+      throw new Error('copy failed', {
+        cause: Object.assign(new Error('The operation was aborted'), {
+          name: 'AbortError',
+          code: 'ABORT_ERR',
+        }),
+      });
+    });
+
+    await expect(withTelemetry('init', { cliOptions }, run)).resolves.toBeUndefined();
+
+    expect(telemetry).toHaveBeenNthCalledWith(
+      1,
+      'boot',
+      { eventType: 'init' },
+      { stripMetadata: true }
+    );
+    expect(telemetry).toHaveBeenNthCalledWith(
+      2,
+      'canceled',
+      { eventType: 'init' },
+      { stripMetadata: true, immediate: true }
+    );
+    expect(exitSpy).toHaveBeenCalledWith(0);
+
+    exitSpy.mockRestore();
+  });
+
+  it('resolves telemetry state when cli option is passed', async () => {
     const run = vi.fn();
 
     await withTelemetry('dev', { cliOptions: { disableTelemetry: true } }, run);
 
-    expect(telemetry).toHaveBeenCalledTimes(0);
+    expect(setTelemetryEnabled).toHaveBeenCalledWith(false);
+    expect(telemetry).toHaveBeenCalled();
   });
 
   describe('when command fails', () => {
@@ -61,12 +214,13 @@ describe('withTelemetry', () => {
       expect(telemetry).toHaveBeenCalledWith('boot', { eventType: 'dev' }, { stripMetadata: true });
     });
 
-    it('does not send boot when cli option is passed', async () => {
+    it('resolves telemetry state when cli option is passed', async () => {
       await expect(async () =>
         withTelemetry('dev', { cliOptions: { disableTelemetry: true }, printError: vi.fn() }, run)
       ).rejects.toThrow(error);
 
-      expect(telemetry).toHaveBeenCalledTimes(0);
+      expect(setTelemetryEnabled).toHaveBeenCalledWith(false);
+      expect(telemetry).toHaveBeenCalled();
     });
 
     it('sends error message when no options are passed', async () => {
@@ -137,7 +291,8 @@ describe('withTelemetry', () => {
         withTelemetry('dev', { cliOptions: { disableTelemetry: true }, printError: vi.fn() }, run)
       ).rejects.toThrow(error);
 
-      expect(telemetry).toHaveBeenCalledTimes(0);
+      expect(setTelemetryEnabled).toHaveBeenCalledWith(false);
+      expect(telemetry).toHaveBeenCalled();
       expect(telemetry).not.toHaveBeenCalledWith(
         'error',
         expect.objectContaining({}),
@@ -232,7 +387,7 @@ describe('withTelemetry', () => {
           error: expect.objectContaining({ message: 'An Error!', name: 'Error' }),
           isErrorInstance: true,
         }),
-        expect.objectContaining({ enableCrashReports: true })
+        expect.objectContaining({ enableCrashReports: true, force: true })
       );
     });
 
@@ -354,6 +509,19 @@ describe('withTelemetry', () => {
         expect.objectContaining({})
       );
     });
+  });
+
+  it('falls back to disabled when the main config cannot be loaded', async () => {
+    const run = vi.fn(async () => {
+      throw new Error('preset loading failed');
+    });
+
+    await expect(async () =>
+      withTelemetry('dev', { cliOptions: {}, printError: vi.fn() }, run)
+    ).rejects.toThrow('preset loading failed');
+
+    expect(loadMainConfig).toHaveBeenCalledWith({ configDir: '.storybook' });
+    expect(setTelemetryEnabled).toHaveBeenCalledWith(false);
   });
 });
 

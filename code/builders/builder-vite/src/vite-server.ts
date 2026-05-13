@@ -3,8 +3,8 @@ import type { Options } from 'storybook/internal/types';
 import type { Server } from 'http';
 import type { InlineConfig, ServerOptions } from 'vite';
 
-import { createViteLogger } from './logger';
-import { commonConfig } from './vite-config';
+import { createViteLogger } from './logger.ts';
+import { commonConfig } from './vite-config.ts';
 
 export async function createViteConfig(options: Options) {
   const { presets } = options;

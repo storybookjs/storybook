@@ -2,7 +2,7 @@ import { join } from 'node:path';
 
 import { describe, expect, it, vi } from 'vitest';
 
-import { loadTemplate } from './updateVitestFile';
+import { loadTemplate } from './updateVitestFile.ts';
 
 vi.mock('storybook/internal/node-logger', () => ({
   logger: {

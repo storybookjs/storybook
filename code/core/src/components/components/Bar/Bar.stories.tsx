@@ -2,8 +2,8 @@ import React from 'react';
 
 import { styled } from 'storybook/theming';
 
-import preview from '../../../../../.storybook/preview';
-import { Bar } from './Bar';
+import preview from '../../../../../.storybook/preview.tsx';
+import { Bar } from './Bar.tsx';
 
 const Wrapper = styled.div(({ theme }) => ({
   background: theme.background.app,

@@ -5,16 +5,16 @@ import { Tag } from 'storybook/internal/core-server';
 import { vol } from 'memfs';
 import { dedent } from 'ts-dedent';
 
-import { ComponentMetaManager } from './componentMeta/ComponentMetaManager';
-import { indexJson } from './fixtures';
-import { manifests } from './generator';
-import { setupMemfsMocks } from './memfs-test-setup';
+import { ComponentMetaManager } from './componentMeta/ComponentMetaManager.ts';
+import { indexJson } from './fixtures.ts';
+import { manifests } from './generator.ts';
+import { setupMemfsMocks } from './memfs-test-setup.ts';
 
 // Opt into memfs for this file (loads from __mocks__/fs.cjs)
 vi.mock('node:fs');
 vi.mock('node:fs/promises');
 
-vi.mock(import('./utils'), { spy: true });
+vi.mock(import('./utils.ts'), { spy: true });
 vi.mock('storybook/internal/common', { spy: true });
 vi.mock('empathic/find', { spy: true });
 vi.mock('tsconfig-paths', { spy: true });
@@ -505,6 +505,317 @@ test('unknown expressions', async () => {
       "summary": undefined,
     }
   `);
+});
+
+test('includes declared subcomponents that are already used in JSX', async () => {
+  vol.fromJSON(
+    {
+      ['./package.json']: JSON.stringify({ name: 'some-package' }),
+      ['./src/stories/Button.stories.tsx']: dedent`
+        import type { Meta } from '@storybook/react';
+        import { Button } from './Button';
+        import { ButtonIcon } from './ButtonIcon';
+
+        const meta = {
+          title: 'Example/Button',
+          component: Button,
+          subcomponents: { ButtonIcon },
+        } satisfies Meta<typeof Button>;
+        export default meta;
+
+        export const Default = () => (
+          <Button label="Button">
+            <ButtonIcon icon="plus" />
+          </Button>
+        );
+      `,
+      ['./src/stories/Button.tsx']: dedent`
+        import React from 'react';
+
+        export interface ButtonProps {
+          label: string;
+        }
+
+        /** Parent button docs */
+        export const Button = ({ label, children }: React.PropsWithChildren<ButtonProps>) => (
+          <button type="button">
+            {label}
+            {children}
+          </button>
+        );
+      `,
+      ['./src/stories/ButtonIcon.tsx']: dedent`
+        import React from 'react';
+
+        export interface ButtonIconProps {
+          icon: string;
+          tone?: 'primary' | 'secondary';
+        }
+
+        /** Child item docs */
+        export const ButtonIcon = ({ icon, tone = 'primary' }: ButtonIconProps) => (
+          <span data-tone={tone}>{icon}</span>
+        );
+      `,
+    },
+    '/app'
+  );
+
+  const manifestEntries: ManifestEntries = [
+    {
+      type: 'story',
+      subtype: 'story',
+      id: 'example-button--default',
+      name: 'Default',
+      title: 'Example/Button',
+      importPath: './src/stories/Button.stories.tsx',
+      componentPath: './src/stories/Button.tsx',
+      tags: [Tag.DEV, Tag.TEST, Tag.MANIFEST],
+      exportName: 'Default',
+    },
+  ];
+
+  const result = await runManifests(manifestEntries);
+  const button = result?.components?.components?.['example-button'] as any;
+
+  expect(button?.subcomponents?.ButtonIcon?.name).toBe('ButtonIcon');
+  expect(button?.subcomponents?.ButtonIcon?.path).toContain('ButtonIcon.tsx');
+  expect(button?.subcomponents?.ButtonIcon?.reactDocgen?.props?.tone).toBeDefined();
+  expect(button?.subcomponents?.ButtonIcon?.description).toBe('Child item docs');
+});
+
+test('includes declared subcomponents even when they are not used in JSX', async () => {
+  vol.fromJSON(
+    {
+      ['./package.json']: JSON.stringify({ name: 'some-package' }),
+      ['./src/stories/Button.stories.tsx']: dedent`
+        import type { Meta } from '@storybook/react';
+        import { Button } from './Button';
+        import { ButtonIcon } from './ButtonIcon';
+
+        const meta = {
+          title: 'Example/Button',
+          component: Button,
+          subcomponents: { ButtonIcon },
+        } satisfies Meta<typeof Button>;
+        export default meta;
+
+        export const Default = () => <Button label="Button" />;
+      `,
+      ['./src/stories/Button.tsx']: dedent`
+        import React from 'react';
+
+        export interface ButtonProps {
+          label: string;
+        }
+
+        /** Parent button docs */
+        export const Button = ({ label }: ButtonProps) => <button type="button">{label}</button>;
+      `,
+      ['./src/stories/ButtonIcon.tsx']: dedent`
+        import React from 'react';
+
+        export interface ButtonIconProps {
+          icon: string;
+          textValue?: string;
+        }
+
+        /** Supplemental child docs */
+        export const ButtonIcon = ({ icon }: ButtonIconProps) => <span>{icon}</span>;
+      `,
+    },
+    '/app'
+  );
+
+  const manifestEntries: ManifestEntries = [
+    {
+      type: 'story',
+      subtype: 'story',
+      id: 'example-button--default',
+      name: 'Default',
+      title: 'Example/Button',
+      importPath: './src/stories/Button.stories.tsx',
+      componentPath: './src/stories/Button.tsx',
+      tags: [Tag.DEV, Tag.TEST, Tag.MANIFEST],
+      exportName: 'Default',
+    },
+  ];
+
+  const result = await runManifests(manifestEntries);
+  const button = result?.components?.components?.['example-button'] as any;
+
+  expect(button?.subcomponents?.ButtonIcon?.reactDocgen?.props?.textValue).toBeDefined();
+  expect(button?.subcomponents?.ButtonIcon?.description).toBe('Supplemental child docs');
+});
+
+test('includes aliased member-expression subcomponents', async () => {
+  vol.fromJSON(
+    {
+      ['./package.json']: JSON.stringify({ name: 'some-package' }),
+      ['./src/stories/ComboBox.stories.tsx']: dedent`
+        import type { Meta } from '@storybook/react';
+        import * as ComboBox from './ComboBox';
+
+        const meta = {
+          title: 'Example/ComboBox',
+          component: ComboBox.Root,
+          subcomponents: { Item: ComboBox.Item },
+        } satisfies Meta<typeof ComboBox.Root>;
+        export default meta;
+
+        export const Default = () => <ComboBox.Root />;
+      `,
+      ['./src/stories/ComboBox.tsx']: dedent`
+        import React from 'react';
+
+        type RootProps = { open?: boolean };
+        type ItemProps = { textValue?: string };
+
+        const Root = ({ open = false }: RootProps) => <div data-open={open} />;
+        const Item = ({ textValue }: ItemProps) => <div data-text-value={textValue} />;
+
+        export const ComboBox = { Root, Item };
+      `,
+    },
+    '/app'
+  );
+
+  const batchExtract = vi
+    .spyOn(ComponentMetaManager.prototype, 'batchExtract')
+    .mockImplementation((entries) => {
+      for (const entry of entries) {
+        if (!entry.component) {
+          continue;
+        }
+
+        if (entry.component.componentName === 'ComboBox.Root') {
+          entry.component.reactComponentMeta = {
+            displayName: 'ComboBox.Root',
+            exportName: 'Root',
+            filePath: '/app/src/stories/ComboBox.tsx',
+            description: 'Root docs',
+            props: {
+              open: {
+                name: 'open',
+                required: false,
+                type: { name: 'boolean' },
+                description: 'Whether the list is open',
+                defaultValue: null,
+              },
+            },
+          };
+          continue;
+        }
+
+        if (entry.component.componentName === 'ComboBox.Item') {
+          entry.component.reactComponentMeta = {
+            displayName: 'ComboBox.Item',
+            exportName: 'Item',
+            filePath: '/app/src/stories/ComboBox.tsx',
+            description: 'Item docs',
+            props: {
+              textValue: {
+                name: 'textValue',
+                required: false,
+                type: { name: 'string' },
+                description: 'Used for type-ahead filtering',
+                defaultValue: null,
+              },
+            },
+          };
+        }
+      }
+    });
+
+  const presets = {
+    apply: async (extension: string, config?: unknown) => {
+      if (extension === 'typescript') {
+        return {};
+      }
+      if (extension === 'features') {
+        return { experimentalReactComponentMeta: true };
+      }
+      return config;
+    },
+  } as NonNullable<ManifestOptions['presets']>;
+
+  const manifestEntries: ManifestEntries = [
+    {
+      type: 'story',
+      subtype: 'story',
+      id: 'example-combo-box--default',
+      name: 'Default',
+      title: 'Example/ComboBox',
+      importPath: './src/stories/ComboBox.stories.tsx',
+      componentPath: './src/stories/ComboBox.tsx',
+      tags: [Tag.DEV, Tag.TEST, Tag.MANIFEST],
+      exportName: 'Default',
+    },
+  ];
+
+  const result = await runManifestsWithOptions(manifestEntries, { presets });
+  const comboBox = result?.components?.components?.['example-combo-box'] as any;
+
+  expect(comboBox?.subcomponents?.Item?.name).toBe('Item');
+  expect(comboBox?.subcomponents?.Item?.reactComponentMeta?.props?.textValue).toBeDefined();
+  expect(batchExtract).toHaveBeenCalled();
+});
+
+test('keeps the parent manifest when a declared subcomponent cannot be resolved', async () => {
+  vol.fromJSON(
+    {
+      ['./package.json']: JSON.stringify({ name: 'some-package' }),
+      ['./src/stories/Button.stories.tsx']: dedent`
+        import type { Meta } from '@storybook/react';
+        import { Button } from './Button';
+
+        const MissingItem = () => null;
+
+        const meta = {
+          title: 'Example/Button',
+          component: Button,
+          subcomponents: { MissingItem },
+        } satisfies Meta<typeof Button>;
+        export default meta;
+
+        export const Default = () => <Button label="Button" />;
+      `,
+      ['./src/stories/Button.tsx']: dedent`
+        import React from 'react';
+
+        export interface ButtonProps {
+          label: string;
+        }
+
+        /** Parent button docs */
+        export const Button = ({ label }: ButtonProps) => <button type="button">{label}</button>;
+      `,
+    },
+    '/app'
+  );
+
+  const manifestEntries: ManifestEntries = [
+    {
+      type: 'story',
+      subtype: 'story',
+      id: 'example-button--default',
+      name: 'Default',
+      title: 'Example/Button',
+      importPath: './src/stories/Button.stories.tsx',
+      componentPath: './src/stories/Button.tsx',
+      tags: [Tag.DEV, Tag.TEST, Tag.MANIFEST],
+      exportName: 'Default',
+    },
+  ];
+
+  const result = await runManifests(manifestEntries);
+  const button = result?.components?.components?.['example-button'] as any;
+
+  expect(button?.error).toBeUndefined();
+  expect(button?.description).toBe('Parent button docs');
+  expect(button?.subcomponents?.MissingItem?.error).toMatchObject({
+    name: 'No component import found',
+  });
 });
 
 test('generator uses reactComponentMeta displayName from batch extraction', async () => {

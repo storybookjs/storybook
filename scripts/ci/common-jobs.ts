@@ -2,7 +2,7 @@
 import glob from 'fast-glob';
 import { join } from 'path/posix';
 
-import { WINDOWS_ROOT_DIR, WORKING_DIR } from './utils/constants';
+import { WINDOWS_ROOT_DIR, WORKING_DIR } from './utils/constants.ts';
 import {
   CACHE_KEYS,
   CACHE_PATHS,
@@ -16,8 +16,8 @@ import {
   verdaccio,
   workflow,
   workspace,
-} from './utils/helpers';
-import { defineJob, defineNoOpJob } from './utils/types';
+} from './utils/helpers.ts';
+import { defineJob, defineNoOpJob } from './utils/types.ts';
 
 const dirname = import.meta.dirname;
 
@@ -67,7 +67,7 @@ export const build_linux = defineJob('Build (linux)', (workflowName) => ({
 export const fmt = defineJob('Format check', () => ({
   executor: {
     name: 'sb_node_22_classic',
-    class: 'medium+',
+    class: 'xlarge',
   },
   steps: [
     git.checkout(),
@@ -128,7 +128,7 @@ export const storybookChromatic = defineJob(
       class: 'medium+',
     },
     steps: [
-      ...workflow.restoreLinux(),
+      ...workflow.restoreLinux({ shallow: false }),
       {
         run: {
           name: 'Build internal storybook',

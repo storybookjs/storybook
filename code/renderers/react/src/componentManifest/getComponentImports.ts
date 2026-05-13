@@ -7,15 +7,15 @@ import type { TypescriptOptions as TypescriptOptionsBase } from 'storybook/inter
 
 import type { ParserOptions } from 'react-docgen-typescript';
 
-import { getImportTag, getReactDocgen, matchPath } from './reactDocgen';
+import { getImportTag, getReactDocgen, matchPath } from './reactDocgen.ts';
 import {
   type ComponentDocWithExportName,
   getReactDocgenTypescriptError,
   matchComponentDoc,
   parseWithReactDocgenTypescript,
-} from './reactDocgenTypescript';
-import type { ComponentRef } from './types';
-import { cachedResolveImport } from './utils';
+} from './reactDocgenTypescript.ts';
+import type { ComponentRef } from './types.ts';
+import { cachedResolveImport } from './utils.ts';
 
 export type ReactDocgenConfig = 'react-docgen' | 'react-docgen-typescript' | false;
 export type DocgenEngine = 'react-docgen' | 'react-docgen-typescript' | 'react-component-meta';
@@ -25,7 +25,7 @@ export interface TypescriptOptions extends TypescriptOptionsBase {
   reactDocgenTypescriptOptions: ParserOptions;
 }
 
-export type { ComponentRef } from './types';
+export type { ComponentRef } from './types.ts';
 
 /** Selected component for a story file; `storyPath` is the absolute path on disk. */
 export type StoryRef = {
@@ -71,11 +71,13 @@ export const getComponents = async ({
   storyFilePath,
   typescriptOptions = {},
   docgenEngine,
+  additionalComponentNames = [],
 }: {
   csf: CsfFile;
   storyFilePath?: string;
   typescriptOptions?: Partial<TypescriptOptions>;
   docgenEngine: DocgenEngine;
+  additionalComponentNames?: string[];
 }): Promise<ComponentRef[]> => {
   const { reactDocgenTypescriptOptions } = typescriptOptions;
   const program: NodePath<t.Program> = csf._file.path;
@@ -129,6 +131,10 @@ export const getComponents = async ({
   const metaComp = csf._meta?.component;
   if (metaComp) {
     componentSet.add(metaComp);
+  }
+
+  for (const componentName of additionalComponentNames) {
+    componentSet.add(componentName);
   }
 
   const components = Array.from(componentSet).sort((a, b) => a.localeCompare(b));

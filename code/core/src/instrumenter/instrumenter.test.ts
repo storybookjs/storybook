@@ -5,14 +5,14 @@ import { SET_CURRENT_STORY, STORY_RENDER_PHASE_CHANGED } from 'storybook/interna
 
 import { global } from '@storybook/global';
 
-import { EVENTS } from './EVENTS';
-import { Instrumenter, isClass } from './instrumenter';
-import { addons } from './preview-api';
-import type { Options } from './types';
+import { EVENTS } from './EVENTS.ts';
+import { Instrumenter, isClass } from './instrumenter.ts';
+import { addons } from './preview-api.ts';
+import type { Options } from './types.ts';
 
 const mocks = await vi.hoisted(async () => {
   const { Channel } = await import('storybook/internal/channels');
-  const { EVENTS: INSTRUMENTER_EVENTS } = await import('./EVENTS');
+  const { EVENTS: INSTRUMENTER_EVENTS } = await import('./EVENTS.ts');
   const { FORCE_REMOUNT } = await import('storybook/internal/core-events');
 
   const transport = {

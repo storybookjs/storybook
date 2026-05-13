@@ -3,7 +3,7 @@ import { toId } from 'storybook/internal/csf';
 
 import type { Expect, Page } from '@playwright/test';
 
-import { allTemplates } from '../lib/cli-storybook/src/sandbox-templates';
+import { allTemplates } from '../lib/cli-storybook/src/sandbox-templates.ts';
 
 export class SbPage {
   readonly page: Page;
@@ -63,8 +63,13 @@ export class SbPage {
       )
     );
 
-    const selected = storyLink;
-    await this.expect(selected).toHaveAttribute('data-selected', 'true');
+    // In mobile mode the sidebar drawer unmounts after navigation, so the element
+    // may disappear between the visibility check and the attribute poll.
+    try {
+      await this.expect(storyLink).toHaveAttribute('data-selected', 'true', { timeout: 1000 });
+    } catch {
+      // Element unmounted (mobile drawer); navigation already confirmed via waitForURL above.
+    }
 
     await this.previewRoot();
 

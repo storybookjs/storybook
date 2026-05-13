@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { normalizeStoriesEntry } from 'storybook/internal/common';
 
-import { userOrAutoTitleFromSpecifier as userOrAuto } from './autoTitle';
+import { userOrAutoTitleFromSpecifier as userOrAuto } from './autoTitle.ts';
 
 expect.addSnapshotSerializer({
   print: (val: any) => val,

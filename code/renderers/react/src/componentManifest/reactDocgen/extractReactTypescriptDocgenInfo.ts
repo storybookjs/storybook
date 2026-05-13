@@ -2,8 +2,8 @@ import { logger } from 'storybook/internal/node-logger';
 
 import type { ParserOptions as ReactDocgenTypescriptOptions } from 'react-docgen-typescript';
 
-import { extractArgTypes } from '../../extractArgTypes';
-import { type GetArgTypesDataOptions, getTsConfig } from './utils';
+import { extractArgTypes } from '../../extractArgTypes.ts';
+import { type GetArgTypesDataOptions, getTsConfig } from './utils.ts';
 
 interface PropFilterProps {
   parent?: { fileName: string };

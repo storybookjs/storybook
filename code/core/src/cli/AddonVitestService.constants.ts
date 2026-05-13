@@ -1,4 +1,4 @@
-import { SupportedFramework } from '../types';
+import { SupportedFramework } from '../types/index.ts';
 
 export const SUPPORTED_FRAMEWORKS: readonly SupportedFramework[] = [
   SupportedFramework.HTML_VITE,
@@ -11,4 +11,5 @@ export const SUPPORTED_FRAMEWORKS: readonly SupportedFramework[] = [
   SupportedFramework.SVELTEKIT,
   SupportedFramework.VUE3_VITE,
   SupportedFramework.WEB_COMPONENTS_VITE,
+  SupportedFramework.TANSTACK_REACT,
 ];

@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test';
 import process from 'process';
 
-import { SbPage } from './util';
+import { SbPage } from './util.ts';
 
 const storybookUrl = process.env.STORYBOOK_URL || 'http://localhost:8001';
 const templateName = process.env.STORYBOOK_TEMPLATE_NAME;
@@ -99,33 +99,6 @@ test.describe('Manager UI', () => {
 
       await expect(page.evaluate(() => navigator.clipboard.readText())).resolves.toContain(
         'Primary'
-      );
-    });
-
-    test('Story share actions (dev)', async ({ page }) => {
-      test.skip(type !== 'dev', 'These actions are only applicable in dev mode');
-      const sbPage = new SbPage(page, expect);
-      await sbPage.navigateToStory('example/button', 'primary');
-      await expect(page.getByRole('button', { name: 'Open in editor' })).toBeVisible();
-      await page.getByRole('button', { name: 'Share', exact: true }).click();
-      await expect(page.getByRole('button', { name: /copy story link/i })).toBeVisible();
-      await page.getByRole('button', { name: /copy story link/i }).click();
-
-      await expect(page.evaluate(() => navigator.clipboard.readText())).resolves.toContain(
-        `${storybookUrl}/?path=/story/example-button--primary`
-      );
-    });
-
-    test('Story share actions (build)', async ({ page }) => {
-      test.skip(type !== 'build', 'These actions are only applicable in build mode');
-      const sbPage = new SbPage(page, expect);
-      await sbPage.navigateToStory('example/button', 'primary');
-      await page.getByRole('button', { name: 'Share', exact: true }).click();
-      await expect(page.getByRole('button', { name: /copy story link/i })).toBeVisible();
-      await page.getByRole('button', { name: /copy story link/i }).click();
-
-      await expect(page.evaluate(() => navigator.clipboard.readText())).resolves.toContain(
-        `${storybookUrl}/?path=/story/example-button--primary`
       );
     });
 

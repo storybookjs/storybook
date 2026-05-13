@@ -1,5 +1,9 @@
-import { stringifySection } from './stringifier';
-import type { CompileCsfModuleArgs, CompileStorybookSectionArgs, StorybookSection } from './types';
+import { stringifySection } from './stringifier.ts';
+import type {
+  CompileCsfModuleArgs,
+  CompileStorybookSectionArgs,
+  StorybookSection,
+} from './types.ts';
 
 function createSection(args: CompileStorybookSectionArgs): StorybookSection {
   return {

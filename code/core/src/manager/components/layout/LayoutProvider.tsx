@@ -1,8 +1,8 @@
 import type { FC, PropsWithChildren } from 'react';
 import React, { createContext, useContext, useMemo, useState } from 'react';
 
-import { BREAKPOINT } from '../../constants';
-import { useMediaQuery } from '../../hooks/useMedia';
+import { BREAKPOINT } from '../../constants.ts';
+import { useMediaQuery } from '../../hooks/useMedia.tsx';
 
 type LayoutContextType = {
   isMobileMenuOpen: boolean;

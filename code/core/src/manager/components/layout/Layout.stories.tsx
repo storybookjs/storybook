@@ -11,14 +11,14 @@ import { ManagerContext } from 'storybook/manager-api';
 import { expect, fn, userEvent, waitFor, within } from 'storybook/test';
 import { styled } from 'storybook/theming';
 
-import { isChromatic } from '../../../../../.storybook/isChromatic';
+import { isChromatic } from '../../../../../.storybook/isChromatic.ts';
 import {
   MINIMUM_HORIZONTAL_PANEL_HEIGHT_PX,
   MINIMUM_RIGHT_PANEL_WIDTH_PX,
   MINIMUM_SIDEBAR_WIDTH_PX,
-} from '../../constants';
-import { Layout } from './Layout';
-import { LayoutProvider } from './LayoutProvider';
+} from '../../constants.ts';
+import { Layout } from './Layout.tsx';
+import { LayoutProvider } from './LayoutProvider.tsx';
 
 const PlaceholderBlock = styled.div({
   width: '100%',

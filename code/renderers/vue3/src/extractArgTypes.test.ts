@@ -11,8 +11,8 @@ import {
   referenceTypeProps,
   templateSlots,
   vueDocgenMocks,
-} from './docs/tests-meta-components/meta-components';
-import { extractArgTypes } from './extractArgTypes';
+} from './docs/tests-meta-components/meta-components.ts';
+import { extractArgTypes } from './extractArgTypes.ts';
 
 vitest.mock('storybook/internal/docs-tools', async (importOriginal) => {
   const module: Record<string, unknown> = await importOriginal();

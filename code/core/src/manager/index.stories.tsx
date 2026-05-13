@@ -13,9 +13,9 @@ import { addons, mockChannel } from 'storybook/manager-api';
 import { screen, within } from 'storybook/test';
 import { color } from 'storybook/theming';
 
-import preview from '../../../.storybook/preview';
-import { Main } from './index';
-import Provider from './provider';
+import preview from '../../../.storybook/preview.tsx';
+import { Main } from './index.tsx';
+import Provider from './provider.ts';
 
 const WS_DISCONNECTED_NOTIFICATION_ID = 'CORE/WS_DISCONNECTED';
 
@@ -166,12 +166,6 @@ export const RightPanel = meta.story({
 export const FullScreen = meta.story({
   play: async ({ canvas, userEvent }) => {
     await userEvent.click(await canvas.findByRole('button', { name: /Enter full screen/i }));
-  },
-});
-
-export const ShareMenu = meta.story({
-  play: async ({ canvas, userEvent }) => {
-    await userEvent.click(await canvas.findByRole('button', { name: /Share/i }));
   },
 });
 

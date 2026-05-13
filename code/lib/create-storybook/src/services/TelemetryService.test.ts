@@ -92,6 +92,16 @@ describe('TelemetryService', () => {
         context: { skipPrompt: true },
       });
     });
+
+    it('should track prompt cancellation', async () => {
+      await telemetryService.trackPromptCancel('new-user-check');
+
+      expect(telemetry).toHaveBeenCalledWith(
+        'canceled',
+        { eventType: 'init', prompt: 'new-user-check' },
+        { stripMetadata: true, immediate: true }
+      );
+    });
   });
 
   describe('trackInitWithContext', () => {

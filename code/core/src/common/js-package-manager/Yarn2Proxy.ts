@@ -3,7 +3,10 @@ import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 
 import { prompt } from 'storybook/internal/node-logger';
-import { FindPackageVersionsError } from 'storybook/internal/server-errors';
+import {
+  FindPackageVersionsError,
+  MinimumReleaseAgeHandledError,
+} from 'storybook/internal/server-errors';
 
 import { PosixFS, VirtualFS, ZipOpenFS } from '@yarnpkg/fslib';
 import { getLibzipSync } from '@yarnpkg/libzip';
@@ -17,7 +20,6 @@ import type { ExecuteCommandOptions } from '../utils/command.ts';
 import { executeCommand } from '../utils/command.ts';
 import { getProjectRoot } from '../utils/paths.ts';
 import { JsPackageManager, PackageManagerName } from './JsPackageManager.ts';
-import { MinimumReleaseAgeHandledError } from './MinimumReleaseAgeHandledError.ts';
 import type { PackageJson } from './PackageJson.ts';
 import type { InstallationMetadata, PackageMetadata } from './types.ts';
 import {
@@ -261,10 +263,23 @@ export class Yarn2Proxy extends JsPackageManager {
     try {
       await super.installDependencies(options);
     } catch (error) {
-      const parsedError = this.parseErrorFromLogs(getErrorLogs(error));
-      if (parsedError !== 'YARN2 error') {
-        logger.error(parsedError);
-        throw new MinimumReleaseAgeHandledError(parsedError);
+      const logs = getErrorLogs(error);
+
+      if (logs.includes('YN0016') && logs.includes('quarantined')) {
+        const handledError = new MinimumReleaseAgeHandledError({
+          packageManagerName: 'yarn',
+          minimumReleaseAgeConfigName: 'npmMinimalAgeGate',
+          minimumReleaseAgeConfigDocs:
+            'https://yarnpkg.com/configuration/yarnrc#npmMinimalAgeGate',
+          minimumReleaseAgeExclusionsConfigName: 'npmPreapprovedPackages',
+          minimumReleaseAgeExclusionsConfigDocs:
+            'https://yarnpkg.com/configuration/yarnrc#npmPreapprovedPackages',
+          failedPackage: this.extractQuarantinedPackage(logs),
+          cause: error,
+        });
+
+        logger.error(handledError.message);
+        throw handledError;
       }
 
       throw error;
@@ -335,13 +350,13 @@ export class Yarn2Proxy extends JsPackageManager {
       `yarn npmMinimalAgeGate will block storybook@${storybookVersion} from being installed because it was published within the configured minimum-release-age window.`
     );
 
-    const rerunError = new MinimumReleaseAgeHandledError(
-      this.createMinimalAgeGateRerunMessage({
+    const rerunError = new MinimumReleaseAgeHandledError({
+      message: this.createMinimalAgeGateRerunMessage({
         currentVersion: storybookVersion,
         compatibleVersion,
         installContext,
-      })
-    );
+      }),
+    });
 
     const selection = await prompt.select(
       {
@@ -463,50 +478,6 @@ export class Yarn2Proxy extends JsPackageManager {
       infoCommand: 'yarn why',
       dedupeCommand: 'yarn dedupe',
     };
-  }
-
-  public parseErrorFromLogs(logs: string): string {
-    if (logs.includes('YN0016') && logs.includes('quarantined')) {
-      const failedPackage = this.extractQuarantinedPackage(logs);
-
-      return dedent`
-        yarn blocked package installation because your project uses npmMinimalAgeGate.
-
-        Failed package:
-        ${failedPackage ?? 'Unknown package'}
-
-        yarn error: YN0016
-
-        Read more:
-        - https://yarnpkg.com/configuration/yarnrc#npmMinimalAgeGate
-        - https://yarnpkg.com/configuration/yarnrc#npmPreapprovedPackages
-
-        To fix this, either wait for the configured age window to pass and rerun the command, or add the blocked packages to yarn's npmPreapprovedPackages setting.
-      `;
-    }
-
-    const finalMessage = 'YARN2 error';
-    const errorCodesWithMessages: { code: string; message: string }[] = [];
-    const regex = /(YN\d{4}): (.+)/g;
-    let match: RegExpExecArray | null;
-
-    while ((match = regex.exec(logs)) !== null) {
-      const code = match[1];
-      const message = match[2].replace(/[┌│└]/g, '').trim();
-      if (code in CRITICAL_YARN2_ERROR_CODES) {
-        errorCodesWithMessages.push({
-          code,
-          message: `${
-            CRITICAL_YARN2_ERROR_CODES[code as keyof typeof CRITICAL_YARN2_ERROR_CODES]
-          }\n-> ${message}\n`,
-        });
-      }
-    }
-
-    return [
-      finalMessage,
-      errorCodesWithMessages.map(({ code, message }) => `${code}: ${message}`).join('\n'),
-    ].join('\n');
   }
 
   private extractQuarantinedPackage(logs: string): string | null {

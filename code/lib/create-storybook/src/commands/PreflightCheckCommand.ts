@@ -2,13 +2,13 @@ import { detectPnp } from 'storybook/internal/cli';
 import {
   type JsPackageManager,
   JsPackageManagerFactory,
-  MinimumReleaseAgeHandledError,
   PackageManagerName,
   getPrettyPackageManagerName,
   isCI,
   invalidateProjectRootCache,
 } from 'storybook/internal/common';
 import { CLI_COLORS, deprecate, logger } from 'storybook/internal/node-logger';
+import { MinimumReleaseAgeHandledError } from 'storybook/internal/server-errors';
 
 import { dedent } from 'ts-dedent';
 

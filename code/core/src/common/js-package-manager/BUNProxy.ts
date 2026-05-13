@@ -2,7 +2,10 @@ import { readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 import { logger, prompt } from 'storybook/internal/node-logger';
-import { FindPackageVersionsError } from 'storybook/internal/server-errors';
+import {
+  FindPackageVersionsError,
+  MinimumReleaseAgeHandledError,
+} from 'storybook/internal/server-errors';
 
 import * as find from 'empathic/find';
 // eslint-disable-next-line depend/ban-dependencies
@@ -14,7 +17,6 @@ import type { ExecuteCommandOptions } from '../utils/command.ts';
 import { executeCommand } from '../utils/command.ts';
 import { getProjectRoot } from '../utils/paths.ts';
 import { JsPackageManager, PackageManagerName } from './JsPackageManager.ts';
-import { MinimumReleaseAgeHandledError } from './MinimumReleaseAgeHandledError.ts';
 import type { PackageJson } from './PackageJson.ts';
 import type { InstallationMetadata, PackageMetadata } from './types.ts';
 import {
@@ -226,10 +228,21 @@ export class BUNProxy extends JsPackageManager {
     try {
       await super.installDependencies(options);
     } catch (error) {
-      const parsedError = this.parseErrorFromLogs(getErrorLogs(error));
-      if (parsedError !== 'BUN error') {
-        logger.error(parsedError);
-        throw new MinimumReleaseAgeHandledError(parsedError);
+      const logs = getErrorLogs(error);
+
+      if (logs.includes('minimum-release-age') || logs.includes('minimum release age')) {
+        const handledError = new MinimumReleaseAgeHandledError({
+          packageManagerName: 'bun',
+          minimumReleaseAgeConfigName: 'minimumReleaseAge',
+          minimumReleaseAgeConfigDocs:
+            'https://bun.com/docs/pm/cli/install#minimum-release-age',
+          minimumReleaseAgeExclusionsConfigName: 'minimumReleaseAgeExcludes',
+          failedPackage: this.extractMinimumReleaseAgePackage(logs),
+          cause: error,
+        });
+
+        logger.error(handledError.message);
+        throw handledError;
       }
 
       throw error;
@@ -300,13 +313,13 @@ export class BUNProxy extends JsPackageManager {
       `bun minimumReleaseAge will block storybook@${storybookVersion} from being installed because it was released within the disallowed immaturity window.`
     );
 
-    const rerunError = new MinimumReleaseAgeHandledError(
-      this.createMinimumReleaseAgeRerunMessage({
+    const rerunError = new MinimumReleaseAgeHandledError({
+      message: this.createMinimumReleaseAgeRerunMessage({
         currentVersion: storybookVersion,
         compatibleVersion,
         installContext,
-      })
-    );
+      }),
+    });
 
     const selection = await prompt.select(
       {
@@ -446,41 +459,6 @@ export class BUNProxy extends JsPackageManager {
       infoCommand: 'npm ls --depth=1',
       dedupeCommand: 'npm dedupe',
     };
-  }
-
-  public parseErrorFromLogs(logs: string): string {
-    if (logs.includes('minimum-release-age') || logs.includes('minimum release age')) {
-      const failedPackage = this.extractMinimumReleaseAgePackage(logs);
-
-      return dedent`
-        bun blocked package installation because your project uses minimumReleaseAge.
-
-        Failed package:
-        ${failedPackage ?? 'Unknown package'}
-
-        Read more:
-        - https://bun.com/docs/pm/cli/install#minimum-release-age
-
-        To fix this, either wait for the configured age window to pass and rerun the command, or add the blocked packages to bun's minimumReleaseAgeExcludes setting.
-      `;
-    }
-
-    let finalMessage = 'BUN error';
-    const match = logs.match(NPM_ERROR_REGEX);
-
-    if (match) {
-      const errorCode = match[1] as keyof typeof NPM_ERROR_CODES;
-      if (errorCode) {
-        finalMessage = `${finalMessage} ${errorCode}`;
-      }
-
-      const errorMessage = NPM_ERROR_CODES[errorCode];
-      if (errorMessage) {
-        finalMessage = `${finalMessage} - ${errorMessage}`;
-      }
-    }
-
-    return finalMessage.trim();
   }
 
   private getMinimumReleaseAgeSeconds(bunfig = this.readBunfig()): number | null {

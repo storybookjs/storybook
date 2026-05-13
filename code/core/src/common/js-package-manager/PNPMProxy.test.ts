@@ -1,10 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { logger, prompt } from 'storybook/internal/node-logger';
+import { MinimumReleaseAgeHandledError } from 'storybook/internal/server-errors';
 
 import { executeCommand } from '../utils/command.ts';
 import { JsPackageManager } from './JsPackageManager.ts';
-import { MinimumReleaseAgeHandledError } from './MinimumReleaseAgeHandledError.ts';
 import { PNPMProxy } from './PNPMProxy.ts';
 
 vi.mock('storybook/internal/node-logger', () => ({
@@ -64,15 +64,20 @@ describe('PNPM Proxy', () => {
       vi.mocked(prompt.executeTaskWithSpinner).mockImplementationOnce(async (fn: any) => {
         await Promise.resolve(fn());
       });
-      mockedExecuteCommand.mockRejectedValueOnce(
-        new Error(
-          'ERR_PNPM_NO_MATURE_MATCHING_VERSION Version 10.4.0-alpha.17 (released 1 minute ago) of storybook does not meet the minimumReleaseAge constraint'
-        )
+      const originalError = new Error(
+        'ERR_PNPM_NO_MATURE_MATCHING_VERSION Version 10.4.0-alpha.17 (released 1 minute ago) of storybook does not meet the minimumReleaseAge constraint'
+      );
+      mockedExecuteCommand.mockRejectedValueOnce(originalError);
+
+      const error = await pnpmProxy.installDependencies().then(
+        () => null,
+        (caughtError) => caughtError
       );
 
-      await expect(pnpmProxy.installDependencies()).rejects.toBeInstanceOf(
-        MinimumReleaseAgeHandledError
-      );
+      expect(error).toBeInstanceOf(MinimumReleaseAgeHandledError);
+      expect(error).toMatchObject({ cause: originalError });
+      expect(error?.message).toContain('minimumReleaseAge');
+      expect(error?.message).toContain('minimumReleaseAgeExclude');
     });
   });
 
@@ -385,59 +390,6 @@ describe('PNPM Proxy', () => {
           "infoCommand": "pnpm list --depth=1",
         }
       `);
-    });
-  });
-
-  describe('parseErrors', () => {
-    it('should parse pnpm errors', () => {
-      const PNPM_ERROR_SAMPLE = `
-        ERR_PNPM_NO_MATCHING_VERSION No matching version found for react@29.2.0
-
-        This error happened while installing a direct dependency of /Users/yannbraga/open-source/sandboxes/react-vite/default-js/before-storybook
-        
-        The latest release of react is "18.2.0".
-        `;
-
-      expect(pnpmProxy.parseErrorFromLogs(PNPM_ERROR_SAMPLE)).toEqual(
-        'PNPM error ERR_PNPM_NO_MATCHING_VERSION No matching version found for react@29.2.0'
-      );
-    });
-
-    it('should format minimumReleaseAge errors', () => {
-      const PNPM_ERROR_SAMPLE = `
-        ERR_PNPM_NO_MATURE_MATCHING_VERSION Version 4.1.5 (released 19 days ago) of @vitest/coverage-v8 does not meet the minimumReleaseAge constraint
-
-        This error happened while installing a direct dependency of /Users/jeppe/dev/temp/skeleton/packages/skeleton-react
-
-        The latest release of @vitest/coverage-v8 is "4.1.5". Published at 21/04/2026
-
-        Other releases are:
-          * beta: 5.0.0-beta.2 published at 05/05/2026
-
-        If you need the full list of all 158 published versions run "pnpm view @vitest/coverage-v8 versions".
-
-        If you want to install the matched version ignoring the time it was published, you can add the package name to the minimumReleaseAgeExclude setting. Read more about it: https://pnpm.io/settings#minimumreleaseageexclude
-      `;
-
-      expect(pnpmProxy.parseErrorFromLogs(PNPM_ERROR_SAMPLE)).toContain(
-        '@vitest/coverage-v8@4.1.5'
-      );
-      expect(pnpmProxy.parseErrorFromLogs(PNPM_ERROR_SAMPLE)).toContain(
-        'ERR_PNPM_NO_MATURE_MATCHING_VERSION'
-      );
-      expect(pnpmProxy.parseErrorFromLogs(PNPM_ERROR_SAMPLE)).toContain(
-        'https://pnpm.io/settings#minimumreleaseageexclude'
-      );
-    });
-
-    it('should show unknown pnpm error', () => {
-      const PNPM_ERROR_SAMPLE = `
-        This error happened while installing a direct dependency of /Users/yannbraga/open-source/sandboxes/react-vite/default-js/before-storybook
-          
-        The latest release of react is "18.2.0".
-      `;
-
-      expect(pnpmProxy.parseErrorFromLogs(PNPM_ERROR_SAMPLE)).toEqual(`PNPM error`);
     });
   });
 

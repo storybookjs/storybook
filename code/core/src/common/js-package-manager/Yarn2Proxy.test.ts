@@ -1,11 +1,11 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { prompt } from 'storybook/internal/node-logger';
+import { MinimumReleaseAgeHandledError } from 'storybook/internal/server-errors';
 
 import { logger } from '../../node-logger/index.ts';
 import { executeCommand } from '../utils/command.ts';
 import { JsPackageManager } from './JsPackageManager.ts';
-import { MinimumReleaseAgeHandledError } from './MinimumReleaseAgeHandledError.ts';
 import { Yarn2Proxy } from './Yarn2Proxy.ts';
 
 vi.mock('storybook/internal/node-logger', () => ({
@@ -68,15 +68,20 @@ describe('Yarn 2 Proxy', () => {
       vi.mocked(prompt.executeTaskWithSpinner).mockImplementationOnce(async (fn: any) => {
         await Promise.resolve(fn());
       });
-      mockedExecuteCommand.mockRejectedValueOnce(
-        new Error(
-          '➤ YN0016: │ @storybook/react-vite@npm:10.4.0-alpha.17: All versions satisfying "10.4.0-alpha.17" are quarantined'
-        )
+      const originalError = new Error(
+        '➤ YN0016: │ @storybook/react-vite@npm:10.4.0-alpha.17: All versions satisfying "10.4.0-alpha.17" are quarantined'
+      );
+      mockedExecuteCommand.mockRejectedValueOnce(originalError);
+
+      const error = await yarn2Proxy.installDependencies().then(
+        () => null,
+        (caughtError) => caughtError
       );
 
-      await expect(yarn2Proxy.installDependencies()).rejects.toBeInstanceOf(
-        MinimumReleaseAgeHandledError
-      );
+      expect(error).toBeInstanceOf(MinimumReleaseAgeHandledError);
+      expect(error).toMatchObject({ cause: originalError });
+      expect(error?.message).toContain('npmMinimalAgeGate');
+      expect(error?.message).toContain('npmPreapprovedPackages');
     });
   });
 
@@ -225,159 +230,29 @@ describe('Yarn 2 Proxy', () => {
       // yarn info --name-only --recursive "@storybook/*" "storybook"
       mockedExecuteCommand.mockResolvedValue({
         stdout: `
-          "unrelated-and-should-be-filtered@npm:1.0.0"
-          "@storybook/global@npm:5.0.0"
-          "@storybook/package@npm:7.0.0-beta.12"
-          "@storybook/package@npm:7.0.0-beta.19"
-          "@storybook/jest@npm:0.0.11-next.0"
-          "@storybook/manager-api@npm:7.0.0-beta.19"
-          "@storybook/manager@npm:7.0.0-beta.19"
-          "@storybook/mdx2-csf@npm:0.1.0-next.5"
-        `,
+            "unrelated-and-should-be-filtered@npm:1.0.0"
+            "@storybook/package@npm:7.0.0-beta.12"
+            "@storybook/package@npm:7.0.0-beta.19"
+            "@storybook/testing-library@npm:0.0.14-next.1"
+          `,
       } as any);
 
-      const installations = await yarn2Proxy.findInstallations(['@storybook/*']);
+      const metadata = await yarn2Proxy.findInstallations(['@storybook/*', 'storybook']);
 
-      expect(installations).toMatchInlineSnapshot(`
-        {
-          "dedupeCommand": "yarn dedupe",
-          "dependencies": {
-            "@storybook/global": [
-              {
-                "location": "",
-                "version": "5.0.0",
-              },
-            ],
-            "@storybook/jest": [
-              {
-                "location": "",
-                "version": "0.0.11-next.0",
-              },
-            ],
-            "@storybook/manager": [
-              {
-                "location": "",
-                "version": "7.0.0-beta.19",
-              },
-            ],
-            "@storybook/manager-api": [
-              {
-                "location": "",
-                "version": "7.0.0-beta.19",
-              },
-            ],
-            "@storybook/mdx2-csf": [
-              {
-                "location": "",
-                "version": "0.1.0-next.5",
-              },
-            ],
-            "@storybook/package": [
-              {
-                "location": "",
-                "version": "7.0.0-beta.12",
-              },
-              {
-                "location": "",
-                "version": "7.0.0-beta.19",
-              },
-            ],
-          },
-          "duplicatedDependencies": {
-            "@storybook/package": [
-              "7.0.0-beta.12",
-              "7.0.0-beta.19",
-            ],
-          },
-          "infoCommand": "yarn why",
-        }
-      `);
-    });
-  });
-
-  describe('parseErrors', () => {
-    it('should format npmMinimalAgeGate quarantined errors', () => {
-      const YARN2_ERROR_SAMPLE = `
-        ➤ YN0016: │ @storybook/react-vite@npm:10.4.0-alpha.17: All versions satisfying "10.4.0-alpha.17" are quarantined
-      `;
-
-      const parsedError = yarn2Proxy.parseErrorFromLogs(YARN2_ERROR_SAMPLE);
-
-      expect(parsedError).toContain('@storybook/react-vite@10.4.0-alpha.17');
-      expect(parsedError).toContain('YN0016');
-      expect(parsedError).toContain(
-        'https://yarnpkg.com/configuration/yarnrc#npmPreapprovedPackages'
-      );
-    });
-
-    it('should single yarn2 error message', () => {
-      const YARN2_ERROR_SAMPLE = `
-        ➤ YN0000: ┌ Resolution step
-        ➤ YN0001: │ Error: react@npm:28.2.0: No candidates found
-            at ge (/Users/xyz/.cache/node/corepack/yarn/3.5.1/yarn.js:439:8124)
-            at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
-            at async Promise.allSettled (index 8)
-            at async io (/Users/xyz/.cache/node/corepack/yarn/3.5.1/yarn.js:390:10398)
-        ➤ YN0000: └ Completed in 2s 369ms
-        ➤ YN0000: Failed with errors in 2s 372ms
-        ➤ YN0032: fsevents@npm:2.3.2: Implicit dependencies on node-gyp are discouraged
-        ➤ YN0061: @npmcli/move-file@npm:2.0.1 is deprecated: This functionality has been moved to @npmcli/fs
-      `;
-
-      expect(yarn2Proxy.parseErrorFromLogs(YARN2_ERROR_SAMPLE)).toMatchInlineSnapshot(
-        `
-        "YARN2 error
-        YN0001: EXCEPTION
-        -> Error: react@npm:28.2.0: No candidates found
-        "
-      `
-      );
-    });
-
-    it('shows multiple yarn2 error messages', () => {
-      const YARN2_ERROR_SAMPLE = `
-        ➤ YN0000: · Yarn 4.1.1
-        ➤ YN0000: ┌ Resolution step
-        ➤ YN0085: │ + @chromatic-com/storybook@npm:1.2.25, and 300 more.
-        ➤ YN0000: └ Completed in 0s 763ms
-        ➤ YN0000: ┌ Post-resolution validation
-        ➤ YN0002: │ before-storybook@workspace:. doesn't provide @testing-library/dom (p1ac37), requested by @testing-library/user-event.
-        ➤ YN0002: │ before-storybook@workspace:. doesn't provide eslint (p1f657), requested by eslint-plugin-storybook.
-        ➤ YN0086: │ Some peer dependencies are incorrectly met; run yarn explain peer-requirements <hash> for details, where <hash> is the six-letter p-prefixed code.
-        ➤ YN0000: └ Completed
-        ➤ YN0000: ┌ Fetch step
-        ➤ YN0000: └ Completed
-        ➤ YN0000: ┌ Link step
-        ➤ YN0014: │ Failed to import certain dependencies
-        ➤ YN0071: │ Cannot link @storybook/test into before-storybook@workspace:. dependency @testing-library/jest-dom@npm:6.4.2 [ae73b] conflicts with parent dependency @testing-library/jest-dom@npm:5.17.0
-        ➤ YN0071: │ Cannot link @storybook/test into before-storybook@workspace:. dependency @testing-library/user-event@npm:14.5.2 [ae73b] conflicts with parent dependency @testing-library/user-event@npm:13.5.0 [1b0ac]
-        ➤ YN0000: └ Completed in 0s 262ms
-        ➤ YN0000: · Failed with errors in 1s 301ms
-      `;
-
-      expect(yarn2Proxy.parseErrorFromLogs(YARN2_ERROR_SAMPLE)).toMatchInlineSnapshot(
-        `
-        "YARN2 error
-        YN0002: MISSING_PEER_DEPENDENCY
-        -> before-storybook@workspace:. doesn't provide @testing-library/dom (p1ac37), requested by @testing-library/user-event.
-
-        YN0002: MISSING_PEER_DEPENDENCY
-        -> before-storybook@workspace:. doesn't provide eslint (p1f657), requested by eslint-plugin-storybook.
-
-        YN0086: EXPLAIN_PEER_DEPENDENCIES_CTA
-        -> Some peer dependencies are incorrectly met; run yarn explain peer-requirements <hash> for details, where <hash> is the six-letter p-prefixed code.
-
-        YN0014: YARN_IMPORT_FAILED
-        -> Failed to import certain dependencies
-
-        YN0071: NM_CANT_INSTALL_EXTERNAL_SOFT_LINK
-        -> Cannot link @storybook/test into before-storybook@workspace:. dependency @testing-library/jest-dom@npm:6.4.2 [ae73b] conflicts with parent dependency @testing-library/jest-dom@npm:5.17.0
-
-        YN0071: NM_CANT_INSTALL_EXTERNAL_SOFT_LINK
-        -> Cannot link @storybook/test into before-storybook@workspace:. dependency @testing-library/user-event@npm:14.5.2 [ae73b] conflicts with parent dependency @testing-library/user-event@npm:13.5.0 [1b0ac]
-        "
-      `
-      );
+      expect(metadata).toEqual({
+        dependencies: {
+          '@storybook/package': [
+            { location: '', version: '7.0.0-beta.12' },
+            { location: '', version: '7.0.0-beta.19' },
+          ],
+          '@storybook/testing-library': [{ location: '', version: '0.0.14-next.1' }],
+        },
+        duplicatedDependencies: {
+          '@storybook/package': ['7.0.0-beta.12', '7.0.0-beta.19'],
+        },
+        infoCommand: 'yarn why',
+        dedupeCommand: 'yarn dedupe',
+      });
     });
   });
 

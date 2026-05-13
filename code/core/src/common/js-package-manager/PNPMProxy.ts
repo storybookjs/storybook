@@ -3,7 +3,10 @@ import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 
 import { logger, prompt } from 'storybook/internal/node-logger';
-import { FindPackageVersionsError } from 'storybook/internal/server-errors';
+import {
+  FindPackageVersionsError,
+  MinimumReleaseAgeHandledError,
+} from 'storybook/internal/server-errors';
 
 import * as find from 'empathic/find';
 // eslint-disable-next-line depend/ban-dependencies
@@ -14,7 +17,6 @@ import type { ExecuteCommandOptions } from '../utils/command.ts';
 import { executeCommand } from '../utils/command.ts';
 import { getProjectRoot } from '../utils/paths.ts';
 import { JsPackageManager, PackageManagerName } from './JsPackageManager.ts';
-import { MinimumReleaseAgeHandledError } from './MinimumReleaseAgeHandledError.ts';
 import type { PackageJson } from './PackageJson.ts';
 import type { InstallationMetadata, PackageMetadata } from './types.ts';
 import {
@@ -230,10 +232,22 @@ export class PNPMProxy extends JsPackageManager {
     try {
       await super.installDependencies(options);
     } catch (error) {
-      const parsedError = this.parseErrorFromLogs(getErrorLogs(error));
-      if (parsedError !== 'PNPM error') {
-        logger.error(parsedError);
-        throw new MinimumReleaseAgeHandledError(parsedError);
+      const logs = getErrorLogs(error);
+
+      if (logs.includes('ERR_PNPM_NO_MATURE_MATCHING_VERSION')) {
+        const handledError = new MinimumReleaseAgeHandledError({
+          packageManagerName: 'pnpm',
+          minimumReleaseAgeConfigName: 'minimumReleaseAge',
+          minimumReleaseAgeConfigDocs: 'https://pnpm.io/settings#minimumreleaseage',
+          minimumReleaseAgeExclusionsConfigName: 'minimumReleaseAgeExclude',
+          minimumReleaseAgeExclusionsConfigDocs:
+            'https://pnpm.io/settings#minimumreleaseageexclude',
+          failedPackage: this.extractFailedPackage(logs),
+          cause: error,
+        });
+
+        logger.error(handledError.message);
+        throw handledError;
       }
 
       throw error;
@@ -295,13 +309,13 @@ export class PNPMProxy extends JsPackageManager {
       `pnpm minimumReleaseAge will block storybook@${storybookVersion} from being installed because it was published within the configured minimum-release-age window.`
     );
 
-    const rerunError = new MinimumReleaseAgeHandledError(
-      this.createMinimumReleaseAgeRerunMessage({
+    const rerunError = new MinimumReleaseAgeHandledError({
+      message: this.createMinimumReleaseAgeRerunMessage({
         currentVersion: storybookVersion,
         compatibleVersion,
         installContext,
-      })
-    );
+      }),
+    });
 
     const selection = await prompt.select(
       {
@@ -430,37 +444,6 @@ export class PNPMProxy extends JsPackageManager {
       infoCommand: 'pnpm list --depth=1',
       dedupeCommand: 'pnpm dedupe',
     };
-  }
-
-  public parseErrorFromLogs(logs: string): string {
-    if (logs.includes('ERR_PNPM_NO_MATURE_MATCHING_VERSION')) {
-      const failedPackage = this.extractFailedPackage(logs);
-
-      return dedent`
-        pnpm blocked package installation because your project uses minimumReleaseAge.
-
-        Failed package:
-        ${failedPackage ?? 'Unknown package'}
-
-        pnpm error: ERR_PNPM_NO_MATURE_MATCHING_VERSION
-
-        Read more: https://pnpm.io/settings#minimumreleaseage
-        minimumReleaseAgeExclude docs: https://pnpm.io/settings#minimumreleaseageexclude
-
-        To fix this, either wait for the configured age window to pass and rerun the command, or add the blocked packages to pnpm's minimumReleaseAgeExclude setting.
-      `;
-    }
-
-    let finalMessage = 'PNPM error';
-    const match = logs.match(PNPM_ERROR_REGEX);
-    if (match) {
-      const [errorCode] = match;
-      if (errorCode) {
-        finalMessage = `${finalMessage} ${errorCode}`;
-      }
-    }
-
-    return finalMessage.trim();
   }
 
   private extractFailedPackage(logs: string): string | null {

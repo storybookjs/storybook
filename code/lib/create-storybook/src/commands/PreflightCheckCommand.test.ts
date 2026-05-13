@@ -2,11 +2,11 @@ import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import {
   JsPackageManagerFactory,
-  MinimumReleaseAgeHandledError,
   PackageManagerName,
   invalidateProjectRootCache,
 } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
+import { MinimumReleaseAgeHandledError } from 'storybook/internal/server-errors';
 
 import * as scaffoldModule from '../scaffold-new-project.ts';
 import { PreflightCheckCommand } from './PreflightCheckCommand.ts';
@@ -191,7 +191,7 @@ describe('PreflightCheckCommand', () => {
     it('should rethrow handled minimum-release-age precheck failures', async () => {
       vi.mocked(scaffoldModule.currentDirectoryIsEmpty).mockReturnValue(false);
       mockPackageManager.precheckStorybookPackageInstall.mockRejectedValueOnce(
-        new MinimumReleaseAgeHandledError('blocked by minimum release age')
+        new MinimumReleaseAgeHandledError({ message: 'blocked by minimum release age' })
       );
 
       await expect(command.execute({ force: false, yes: true } as any)).rejects.toThrow(

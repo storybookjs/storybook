@@ -1,10 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import {
-  HandledError,
-  MinimumReleaseAgeHandledError,
-  type JsPackageManager,
-} from 'storybook/internal/common';
+import { HandledError, type JsPackageManager } from 'storybook/internal/common';
+import { MinimumReleaseAgeHandledError } from 'storybook/internal/server-errors';
 import { Feature } from 'storybook/internal/types';
 
 import { DependencyCollector } from '../dependency-collector.ts';
@@ -109,7 +106,7 @@ describe('DependencyInstallationCommand', () => {
     it('should rethrow minimum-release-age install errors', async () => {
       dependencyCollector.addDevDependencies(['storybook@10.4.0-alpha.17']);
       vi.mocked(mockPackageManager.installDependencies).mockRejectedValue(
-        new MinimumReleaseAgeHandledError('pnpm blocked package installation')
+        new MinimumReleaseAgeHandledError({ message: 'pnpm blocked package installation' })
       );
 
       await expect(

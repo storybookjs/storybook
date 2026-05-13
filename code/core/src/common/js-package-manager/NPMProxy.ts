@@ -3,7 +3,10 @@ import { platform } from 'node:os';
 import { join } from 'node:path';
 
 import { logger, prompt } from 'storybook/internal/node-logger';
-import { FindPackageVersionsError } from 'storybook/internal/server-errors';
+import {
+  FindPackageVersionsError,
+  MinimumReleaseAgeHandledError,
+} from 'storybook/internal/server-errors';
 
 import * as find from 'empathic/find';
 // eslint-disable-next-line depend/ban-dependencies
@@ -15,7 +18,6 @@ import type { ExecuteCommandOptions } from '../utils/command.ts';
 import { executeCommand } from '../utils/command.ts';
 import { getProjectRoot } from '../utils/paths.ts';
 import { JsPackageManager, PackageManagerName } from './JsPackageManager.ts';
-import { MinimumReleaseAgeHandledError } from './MinimumReleaseAgeHandledError.ts';
 import type { PackageJson } from './PackageJson.ts';
 import type { InstallationMetadata, PackageMetadata } from './types.ts';
 import {
@@ -205,10 +207,23 @@ export class NPMProxy extends JsPackageManager {
     try {
       await super.installDependencies(options);
     } catch (error) {
-      const parsedError = this.parseErrorFromLogs(getErrorLogs(error));
-      if (parsedError !== 'NPM error') {
-        logger.error(parsedError);
-        throw new MinimumReleaseAgeHandledError(parsedError);
+      const logs = getErrorLogs(error);
+
+      if (
+        logs.match(/npm\s+(ERR!|error)\s+code\s+ETARGET/i) &&
+        logs.includes('with a date before')
+      ) {
+        const handledError = new MinimumReleaseAgeHandledError({
+          packageManagerName: 'npm',
+          minimumReleaseAgeConfigName: 'min-release-age',
+          minimumReleaseAgeConfigDocs:
+            'https://docs.npmjs.com/cli/v11/using-npm/config#min-release-age',
+          failedPackage: this.extractMinimumReleaseAgePackage(logs),
+          cause: error,
+        });
+
+        logger.error(handledError.message);
+        throw handledError;
       }
 
       throw error;
@@ -253,13 +268,13 @@ export class NPMProxy extends JsPackageManager {
       timeMap,
       minimumReleaseAgeDays * 24 * 60
     );
-    const error = new MinimumReleaseAgeHandledError(
-      this.createMinimumReleaseAgeRerunMessage({
+    const error = new MinimumReleaseAgeHandledError({
+      message: this.createMinimumReleaseAgeRerunMessage({
         currentVersion: storybookVersion,
         compatibleVersion,
         installContext,
-      })
-    );
+      }),
+    });
 
     logger.error(error.message);
     throw error;
@@ -368,41 +383,6 @@ export class NPMProxy extends JsPackageManager {
       infoCommand: 'npm ls --depth=1',
       dedupeCommand: 'npm dedupe',
     };
-  }
-
-  public parseErrorFromLogs(logs: string): string {
-    if (logs.match(/npm\s+(ERR!|error)\s+code\s+ETARGET/i) && logs.includes('with a date before')) {
-      const failedPackage = this.extractMinimumReleaseAgePackage(logs);
-
-      return dedent`
-        npm blocked package installation because your project uses min-release-age.
-
-        Failed package:
-        ${failedPackage ?? 'Unknown package'}
-
-        Read more:
-        - https://docs.npmjs.com/cli/v11/using-npm/config#min-release-age
-
-        To fix this, either wait for the configured age window to pass and rerun the command, or rerun Storybook with an older compatible release.
-      `;
-    }
-
-    let finalMessage = 'NPM error';
-    const match = logs.match(NPM_ERROR_REGEX);
-
-    if (match) {
-      const errorCode = match[3] as keyof typeof NPM_ERROR_CODES;
-      if (errorCode) {
-        finalMessage = `${finalMessage} ${errorCode}`;
-      }
-
-      const errorMessage = NPM_ERROR_CODES[errorCode];
-      if (errorMessage) {
-        finalMessage = `${finalMessage} - ${errorMessage}`;
-      }
-    }
-
-    return finalMessage.trim();
   }
 
   private async getMinimumReleaseAge(): Promise<number | null> {

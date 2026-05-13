@@ -5,11 +5,11 @@ import { join } from 'node:path';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { logger, prompt } from 'storybook/internal/node-logger';
+import { MinimumReleaseAgeHandledError } from 'storybook/internal/server-errors';
 
 import { executeCommand } from '../utils/command.ts';
 import { JsPackageManager } from './JsPackageManager.ts';
 import { BUNProxy } from './BUNProxy.ts';
-import { MinimumReleaseAgeHandledError } from './MinimumReleaseAgeHandledError.ts';
 
 vi.mock('storybook/internal/node-logger', () => ({
   prompt: {
@@ -61,13 +61,20 @@ describe('BUN Proxy', () => {
       vi.mocked(prompt.executeTaskWithSpinner).mockImplementationOnce(async (fn: any) => {
         await Promise.resolve(fn());
       });
-      mockedExecuteCommand.mockRejectedValueOnce(
-        new Error('error: @storybook/react@10.4.0-alpha.17 blocked by minimum-release-age')
+      const originalError = new Error(
+        'error: @storybook/react@10.4.0-alpha.17 blocked by minimum-release-age'
+      );
+      mockedExecuteCommand.mockRejectedValueOnce(originalError);
+
+      const error = await bunProxy.installDependencies().then(
+        () => null,
+        (caughtError) => caughtError
       );
 
-      await expect(bunProxy.installDependencies()).rejects.toBeInstanceOf(
-        MinimumReleaseAgeHandledError
-      );
+      expect(error).toBeInstanceOf(MinimumReleaseAgeHandledError);
+      expect(error).toMatchObject({ cause: originalError });
+      expect(error?.message).toContain('minimumReleaseAge');
+      expect(error?.message).toContain('minimumReleaseAgeExcludes');
     });
   });
 
@@ -213,28 +220,4 @@ describe('BUN Proxy', () => {
     });
   });
 
-  describe('parseErrors', () => {
-    it('formats exact-version minimum release age errors', () => {
-      const parsedError = bunProxy.parseErrorFromLogs(
-        'error: Version "storybook@10.4.0-alpha.17" was published within minimum release age of 9999999999 seconds'
-      );
-
-      expect(parsedError).toContain('storybook@10.4.0-alpha.17');
-      expect(parsedError).toContain('minimumReleaseAgeExcludes');
-      expect(parsedError).toContain('https://bun.com/docs/pm/cli/install#minimum-release-age');
-    });
-
-    it('formats ranged minimum-release-age errors', () => {
-      const parsedError = bunProxy.parseErrorFromLogs(
-        [
-          'error: No version matching "storybook" found for specifier "^10.4.0-alpha.17" (blocked by minimum-release-age: 9999999999 seconds)',
-          'error: storybook@^10.4.0-alpha.17 failed to resolve',
-        ].join('\n')
-      );
-
-      expect(parsedError).toContain('storybook@^10.4.0-alpha.17');
-      expect(parsedError).toContain('minimumReleaseAgeExcludes');
-      expect(parsedError).toContain('https://bun.com/docs/pm/cli/install#minimum-release-age');
-    });
-  });
 });

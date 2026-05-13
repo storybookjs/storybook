@@ -2,7 +2,6 @@ import { PackageManagerName } from 'storybook/internal/common';
 import {
   HandledError,
   JsPackageManagerFactory,
-  MinimumReleaseAgeHandledError,
   isCI,
   isCorePackage,
 } from 'storybook/internal/common';
@@ -15,6 +14,7 @@ import {
 } from 'storybook/internal/node-logger';
 import type { LogLevel } from 'storybook/internal/node-logger';
 import {
+  MinimumReleaseAgeHandledError,
   UpgradeStorybookToLowerVersionError,
   UpgradeStorybookUnknownCurrentVersionError,
 } from 'storybook/internal/server-errors';

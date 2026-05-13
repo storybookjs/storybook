@@ -20,6 +20,18 @@ vi.mock('storybook/internal/telemetry');
 
 vi.mock('storybook/internal/core-server', () => ({
   getServerPort: vi.fn().mockResolvedValue(6006),
+  withTelemetry: vi.fn(),
+}));
+
+vi.mock('storybook/internal/node-logger', () => ({
+  logTracker: {
+    writeToFile: vi.fn().mockResolvedValue('/tmp/debug-storybook.log'),
+  },
+  logger: {
+    error: vi.fn(),
+    log: vi.fn(),
+    outro: vi.fn(),
+  },
 }));
 
 describe('getStorybookVersionFromAncestry', () => {

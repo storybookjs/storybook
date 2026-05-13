@@ -8,6 +8,7 @@ import type { SupportedFramework } from 'storybook/internal/types';
 import { generatorRegistry } from '../generators/GeneratorRegistry.ts';
 import type { CommandOptions } from '../generators/types.ts';
 import { FrameworkDetectionService } from '../services/FrameworkDetectionService.ts';
+import { TelemetryService } from '../services/TelemetryService.ts';
 
 export interface FrameworkDetectionResult {
   renderer: SupportedRenderer;
@@ -24,7 +25,8 @@ export interface FrameworkDetectionResult {
 export class FrameworkDetectionCommand {
   constructor(
     packageManager: JsPackageManager,
-    private frameworkDetectionService = new FrameworkDetectionService(packageManager)
+    private frameworkDetectionService = new FrameworkDetectionService(packageManager),
+    private telemetryService = new TelemetryService()
   ) {}
   async execute(
     projectType: ProjectType,
@@ -46,7 +48,10 @@ export class FrameworkDetectionCommand {
       builder = options.builder as SupportedBuilder;
     } else if (metadata.builderOverride) {
       if (typeof metadata.builderOverride === 'function') {
-        builder = await metadata.builderOverride(options);
+        builder = await metadata.builderOverride({
+          options,
+          telemetryService: this.telemetryService,
+        });
       } else {
         builder = metadata.builderOverride;
       }

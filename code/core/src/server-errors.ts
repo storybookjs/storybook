@@ -483,7 +483,7 @@ function createMinimumReleaseAgeHandledErrorMessage(data: MinimumReleaseAgeHandl
 
   return dedent`
     ${data.packageManagerName} blocked package installation because your project uses ${data.minimumReleaseAgeConfigName}.
-    ${data.failedPackage ? `\nFailed package: ${data.failedPackage}` : ''}
+    ${data.failedPackage ? `\nFailed package: ${data.failedPackage}\n` : ''}
     ${followUp}
   `;
 }
@@ -495,7 +495,6 @@ export class MinimumReleaseAgeHandledError extends StorybookError {
       category: Category.CLI,
       isHandledError: true,
       code: 2,
-      documentation: '',
       cause: data.cause,
       message: createMinimumReleaseAgeHandledErrorMessage(data),
     });

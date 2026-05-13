@@ -26,9 +26,8 @@ export type { UserOptions } from './types';
 
 export async function experimental_vitePlugin(options?: UserOptions): Promise<PluginOption> {
   const finalOptions = {
-    storybookScript: undefined,
-    configDir: resolve(join(process.cwd(), '.storybook')),
-    storybookUrl: 'http://localhost:6006',
+    base: '/__storybook',
+    configDir: resolve(options?.configDir ?? '.storybook'),
     ...options,
   };
 
@@ -48,7 +47,9 @@ export async function experimental_vitePlugin(options?: UserOptions): Promise<Pl
     import.meta.resolve('@storybook/builder-vite/input/iframe.html')
   );
 
-  let basePath = '/__storybook/';
+  const baseNoSlash = finalOptions.base.replace(/\/+$/, '') || '';
+  const baseEscaped = baseNoSlash.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  let basePath = baseNoSlash === '' ? '/' : `${baseNoSlash}/`;
 
   const applyToStorybookOnly = (_: unknown, env: { command: string; mode: string }) =>
     env.command === 'serve' || env.mode === 'storybook';
@@ -109,12 +110,13 @@ export async function experimental_vitePlugin(options?: UserOptions): Promise<Pl
         registerStoryIndexMiddleware(server, storyIndexGenerator, basePath);
 
         server.middlewares.use(
-          '/__storybook',
+          baseNoSlash || '/',
           createProxyMiddleware({
             target: `http://localhost:${port}`,
             changeOrigin: true,
             ws: true,
-            pathRewrite: (path) => path.replace(/^\/__storybook/, ''),
+            pathRewrite: (path) =>
+              baseNoSlash ? path.replace(new RegExp(`^${baseEscaped}`), '') : path,
           })
         );
         if (server.httpServer) {

@@ -13,6 +13,9 @@ concurrency:
   group: agent-scan-${{ github.event.pull_request.number }}
   cancel-in-progress: true
 
+# Deny all permissions by default; jobs opt back in to the minimum they need.
+permissions: {}
+
 jobs:
   agentscan:
     if: |
@@ -27,6 +30,8 @@ jobs:
       pull-requests: write
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+        with:
+          persist-credentials: false
       - name: Install script dependencies
         run: npm install --prefix .github/scripts
       - name: Check author org membership

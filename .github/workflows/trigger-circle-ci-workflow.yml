@@ -14,6 +14,10 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+# This workflow only POSTs to the CircleCI API with a CircleCI token; it never
+# uses GITHUB_TOKEN, so deny every scope by default.
+permissions: {}
+
 jobs:
   get-branch:
     if: github.repository_owner == 'storybookjs'

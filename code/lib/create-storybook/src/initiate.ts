@@ -230,8 +230,8 @@ export async function initiate(options: CommandOptions): Promise<void> {
       logger.outro('');
       return result;
     }
-  ).catch((error) => {
-    return handleCommandFailure(options.logfile, error);
+  ).catch(() => {
+    return handleCommandFailure(options.logfile);
   });
 
   // Launch dev server only if --dev was explicitly passed

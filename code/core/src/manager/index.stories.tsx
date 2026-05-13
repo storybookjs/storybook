@@ -201,3 +201,9 @@ export const ShortcutsPage = meta.story({
     await userEvent.click(await screen.findByRole('link', { name: /Keyboard shortcuts/i }));
   },
 });
+
+export const InAdeSession = meta.story({
+  globals: {
+    adeMode: 'light',
+  },
+});

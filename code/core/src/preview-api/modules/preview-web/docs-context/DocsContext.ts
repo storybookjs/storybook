@@ -14,6 +14,7 @@ import type {
 
 import { dedent } from 'ts-dedent';
 
+import { NoMetaAttachedError } from '../../../../preview-errors.ts';
 import { type StoryStore } from '../../store/index.ts';
 import type { DocsContextProps } from './DocsContextProps.ts';
 
@@ -131,9 +132,7 @@ export class DocsContext<TRenderer extends Renderer> implements DocsContextProps
     }
 
     if (this.attachedCSFFiles.size === 0) {
-      throw new Error(
-        `No CSF file attached to this docs file, did you forget to use <Meta of={} />?`
-      );
+      throw new NoMetaAttachedError();
     }
 
     const firstAttachedCSFFile = Array.from(this.attachedCSFFiles)[0];

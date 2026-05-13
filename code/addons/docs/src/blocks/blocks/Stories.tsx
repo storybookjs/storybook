@@ -2,7 +2,7 @@ import type { FC, ReactElement } from 'react';
 import React, { useContext } from 'react';
 
 import { Tag } from 'storybook/internal/preview-api';
-import { InvalidBlockOfPropError } from 'storybook/internal/preview-errors';
+import { InvalidBlockOfPropError, NoMetaAttachedError } from 'storybook/internal/preview-errors';
 import type { ResolvedModuleExportFromType } from 'storybook/internal/types';
 
 import { styled } from 'storybook/theming';
@@ -54,11 +54,7 @@ const StoriesImpl: FC<StoriesProps> = (props) => {
   try {
     resolvedOf = useOf(of || 'meta', ['meta']);
   } catch (error: unknown) {
-    if (
-      of ||
-      !(error instanceof Error) ||
-      !error.message.includes('did you forget to use <Meta of={} />?')
-    ) {
+    if (of || !(error instanceof NoMetaAttachedError)) {
       throw error;
     }
   }

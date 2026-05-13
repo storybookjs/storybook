@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 
 import { Channel } from 'storybook/internal/channels';
+import { NoMetaAttachedError } from 'storybook/internal/preview-errors';
 import type { CSFFile, Renderer } from 'storybook/internal/types';
 
 import type { StoryStore } from '../../store/index.ts';
@@ -310,7 +311,7 @@ describe('resolveOf', () => {
     });
 
     it('throws for attached CSF file', () => {
-      expect(() => context.resolveOf('meta')).toThrow('No CSF file attached');
+      expect(() => context.resolveOf('meta')).toThrow(NoMetaAttachedError);
     });
 
     it('throws for attached component', () => {

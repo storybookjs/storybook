@@ -9,7 +9,6 @@ export default {
   '@storybook/addon-vitest': '10.4.0-alpha.5',
   '@storybook/builder-vite': '10.4.0-alpha.5',
   '@storybook/builder-webpack5': '10.4.0-alpha.5',
-  '@storybook/vite-plugin': '10.4.0-alpha.5',
   storybook: '10.4.0-alpha.5',
   '@storybook/angular': '10.4.0-alpha.5',
   '@storybook/ember': '10.4.0-alpha.5',

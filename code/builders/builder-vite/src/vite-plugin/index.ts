@@ -1,29 +1,30 @@
+import { fileURLToPath } from 'node:url';
+
 import {
   experimental_loadStorybook,
   type StoryIndexGenerator,
 } from 'storybook/internal/core-server';
+
 import { getPort } from 'get-port-please';
-import type { InlineConfig, Plugin, PluginOption } from 'vite';
 import { createProxyMiddleware } from 'http-proxy-middleware';
-import { pluginConfig } from '../../builder-vite/src/vite-config';
-import { bundlerOptionsKey } from '../../builder-vite/src/utils/vite-features';
+import { join, resolve } from 'pathe';
+import polka from 'polka';
+import type { InlineConfig, Plugin, PluginOption } from 'vite';
+
+import { bundlerOptionsKey } from '../utils/vite-features';
+import { pluginConfig } from '../vite-config';
 import { buildStorybookPlugin } from './build';
 import { createServerChannel } from './middlewares/channel';
 import { registerIframeMiddleware } from './middlewares/iframe';
-import {
-  createDepsStorybookMiddleware,
-  registerEnvironmentModuleMiddleware,
-} from './middlewares/module-router';
 import { buildManager, registerManagerMiddleware } from './middlewares/manager';
+import { registerEnvironmentModuleMiddleware } from './middlewares/module-router';
 import { createStaticMiddlewares } from './middlewares/static';
 import { registerStoryIndexMiddleware } from './middlewares/story-index';
 import type { UserOptions } from './types';
-import polka from 'polka';
-import { fileURLToPath } from 'node:url';
 
-import { join, resolve } from 'pathe';
+export type { UserOptions } from './types';
 
-export async function SbMain(options?: UserOptions): Promise<PluginOption> {
+export async function experimental_vitePlugin(options?: UserOptions): Promise<PluginOption> {
   const finalOptions = {
     storybookScript: undefined,
     configDir: resolve(join(process.cwd(), '.storybook')),
@@ -128,7 +129,6 @@ export async function SbMain(options?: UserOptions): Promise<PluginOption> {
 
         registerIframeMiddleware(server, sb, basePath);
 
-        // server.middlewares.use(createDepsStorybookMiddleware(server));
         registerEnvironmentModuleMiddleware(server);
 
         storyIndexGenerator.onInvalidated(() => {
@@ -193,9 +193,9 @@ function wrapTransformIndexHtml(
   basePath: string
 ): Plugin['transformIndexHtml'] {
   if (typeof transform === 'function') {
-    return async (html, ctx) => {
+    return async function (this: unknown, html, ctx) {
       if (ctx.path.startsWith(basePath)) {
-        return transform.apply(this, [html, ctx]);
+        return (transform as Function).apply(this, [html, ctx]);
       }
     };
   }

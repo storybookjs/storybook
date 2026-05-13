@@ -82,8 +82,6 @@ import vue3RendererConfig from '../../../code/renderers/vue3/build-config';
 import webComponentsRendererConfig from '../../../code/renderers/web-components/build-config';
 import type { BuildEntriesByPackageName } from './utils/entry-utils';
 
-// @ts-ignore
-import vitePluginConfig from '../../../code/builders/vite-plugin/build-config';
 export const buildEntries = {
   storybook: storybookConfig,
 
@@ -100,7 +98,6 @@ export const buildEntries = {
   '@storybook/builder-vite': builderViteConfig,
   '@storybook/builder-webpack5': builderWebpack5Config,
 
-  '@storybook/vite-plugin': vitePluginConfig,
   // frameworks
   '@storybook/angular': angularFrameworkConfig,
   '@storybook/ember': emberFrameworkConfig,

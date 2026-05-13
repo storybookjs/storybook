@@ -68,6 +68,11 @@
     },
     "./internal/bin/dispatcher": "./dist/bin/dispatcher.js",
     "./internal/bin/loader": "./dist/bin/loader.js",
+    "./internal/builder-manager": {
+      "types": "./dist/builder-manager/index.d.ts",
+      "code": "./src/builder-manager/index.ts",
+      "default": "./dist/builder-manager/index.js"
+    },
     "./internal/channels": {
       "types": "./dist/channels/index.d.ts",
       "code": "./src/channels/index.ts",

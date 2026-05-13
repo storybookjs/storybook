@@ -1,5 +1,11 @@
 ## 3.1.12
 
+## 3.2.5
+
+### Patch Changes
+
+- [#119](https://github.com/storybookjs/vite-plugin-storybook-nextjs/pull/119) [`b6eba0b`](https://github.com/storybookjs/vite-plugin-storybook-nextjs/commit/b6eba0b4050861dff5ae3ab439ec7ad87550b305) Thanks [@copilot-swe-agent](https://github.com/apps/copilot-swe-agent)! - Add Storybook peer dependency support for `^10.5.0-0` and `^10.6.0-0`.
+
 ## 3.2.4
 
 ### Patch Changes

@@ -76,9 +76,7 @@ describe('js package manager util', () => {
         '@chromatic-com/storybook',
       ])
     ).toBe(true);
-    expect(
-      hasStorybookMinimumAgeExclusions(['storybook', '@storybook/react-vite'])
-    ).toBe(false);
+    expect(hasStorybookMinimumAgeExclusions(['storybook', '@storybook/react-vite'])).toBe(false);
     expect(hasStorybookMinimumAgeExclusions(['*storybook*'])).toBe(true);
   });
 

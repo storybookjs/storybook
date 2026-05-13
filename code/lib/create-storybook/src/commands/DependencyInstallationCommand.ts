@@ -1,8 +1,5 @@
 import { AddonVitestService } from 'storybook/internal/cli';
-import {
-  MinimumReleaseAgeHandledError,
-  type JsPackageManager,
-} from 'storybook/internal/common';
+import { MinimumReleaseAgeHandledError, type JsPackageManager } from 'storybook/internal/common';
 import { logger, prompt } from 'storybook/internal/node-logger';
 import { ErrorCollector } from 'storybook/internal/telemetry';
 import { Feature } from 'storybook/internal/types';

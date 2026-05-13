@@ -445,7 +445,9 @@ describe('Yarn 2 Proxy', () => {
     it('should let the user update npmPreapprovedPackages interactively', async () => {
       mockedExecuteCommand
         .mockResolvedValueOnce({ stdout: '1440\n' } as any)
-        .mockResolvedValueOnce({ stdout: "[\n  'foo',\n  '@storybook/preset-react-webpack',\n]\n" } as any)
+        .mockResolvedValueOnce({
+          stdout: "[\n  'foo',\n  '@storybook/preset-react-webpack',\n]\n",
+        } as any)
         .mockResolvedValueOnce({
           stdout: JSON.stringify({
             name: 'storybook',
@@ -457,7 +459,9 @@ describe('Yarn 2 Proxy', () => {
             },
           }),
         } as any)
-        .mockResolvedValueOnce({ stdout: "[\n  'foo',\n  '@storybook/preset-react-webpack',\n]\n" } as any)
+        .mockResolvedValueOnce({
+          stdout: "[\n  'foo',\n  '@storybook/preset-react-webpack',\n]\n",
+        } as any)
         .mockResolvedValueOnce({ stdout: '' } as any);
       vi.mocked(prompt.select).mockResolvedValue('exclude' as never);
       vi.mocked(prompt.executeTaskWithSpinner).mockImplementationOnce(async (factory: any) => {
@@ -588,12 +592,10 @@ describe('Yarn 2 Proxy', () => {
       const updateSpy = vi.spyOn(yarn2Proxy as any, 'updatePreapprovedPackages');
       mockedExecuteCommand
         .mockResolvedValueOnce({ stdout: '1440\n' } as any)
-        .mockResolvedValueOnce(
-          {
-            stdout:
-              "[\n  'storybook',\n  '@storybook/*',\n  'eslint-plugin-storybook',\n  '@chromatic-com/storybook',\n]\n",
-          } as any
-        );
+        .mockResolvedValueOnce({
+          stdout:
+            "[\n  'storybook',\n  '@storybook/*',\n  'eslint-plugin-storybook',\n  '@chromatic-com/storybook',\n]\n",
+        } as any);
 
       await expect(
         yarn2Proxy.precheckStorybookPackageInstall({

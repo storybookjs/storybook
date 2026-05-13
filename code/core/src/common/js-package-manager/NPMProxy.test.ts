@@ -124,11 +124,13 @@ describe('NPM Proxy', () => {
 
   describe('parseErrors', () => {
     it('formats ETARGET minimum-release-age errors', () => {
-      const parsedError = npmProxy.parseErrorFromLogs([
-        'npm error code ETARGET',
-        'npm error notarget No matching version found for @storybook/react-vite@10.4.0-alpha.17 with a date before 02/05/2026, 13:32:18.',
-        "npm error notarget In most cases you or one of your dependencies are requesting a package version that doesn't exist.",
-      ].join('\n'));
+      const parsedError = npmProxy.parseErrorFromLogs(
+        [
+          'npm error code ETARGET',
+          'npm error notarget No matching version found for @storybook/react-vite@10.4.0-alpha.17 with a date before 02/05/2026, 13:32:18.',
+          "npm error notarget In most cases you or one of your dependencies are requesting a package version that doesn't exist.",
+        ].join('\n')
+      );
 
       expect(parsedError).toContain('@storybook/react-vite@10.4.0-alpha.17');
       expect(parsedError).toContain('min-release-age');

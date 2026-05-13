@@ -494,9 +494,9 @@ describe('PNPM Proxy', () => {
     it('should let the user update minimumReleaseAgeExclude interactively', async () => {
       mockedExecuteCommand
         .mockResolvedValueOnce({ stdout: '1440\n' } as any)
-        .mockResolvedValueOnce(
-          { stdout: JSON.stringify(['react', '@storybook/preset-react-webpack']) } as any
-        )
+        .mockResolvedValueOnce({
+          stdout: JSON.stringify(['react', '@storybook/preset-react-webpack']),
+        } as any)
         .mockResolvedValueOnce({ stdout: '"2026-05-11T11:59:00.000Z"' } as any)
         .mockResolvedValueOnce({
           stdout: JSON.stringify({
@@ -621,16 +621,14 @@ describe('PNPM Proxy', () => {
       const updateSpy = vi.spyOn(pnpmProxy as any, 'updateMinimumReleaseAgeExclude');
       mockedExecuteCommand
         .mockResolvedValueOnce({ stdout: '1440\n' } as any)
-        .mockResolvedValueOnce(
-          {
-            stdout: JSON.stringify([
-              'storybook',
-              '@storybook/*',
-              'eslint-plugin-storybook',
-              '@chromatic-com/storybook',
-            ]),
-          } as any
-        );
+        .mockResolvedValueOnce({
+          stdout: JSON.stringify([
+            'storybook',
+            '@storybook/*',
+            'eslint-plugin-storybook',
+            '@chromatic-com/storybook',
+          ]),
+        } as any);
 
       await expect(
         pnpmProxy.precheckStorybookPackageInstall({

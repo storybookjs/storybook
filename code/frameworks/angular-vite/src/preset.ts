@@ -1,5 +1,13 @@
+import { findConfigFile } from 'storybook/internal/common';
+import {
+  babelParser,
+  extractMockCalls,
+  findMockRedirect,
+  getRealPath,
+} from 'storybook/internal/mocking-utils';
 import type { PresetProperty } from 'storybook/internal/types';
 
+import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -133,7 +141,7 @@ export const viteFinal = async (config: UserConfig, options?: StandaloneOptions)
   // from its own internal Angular file emitter and discards the incoming
   // `code`, so anything mock-loader or csf-plugin did upstream is wiped
   // unless those plugins run *after* analogjs (see csf-plugin demote
-  // above and the mock re-apply plugin defined below).
+  // above and `angularViteRedirectReapplyPlugin`).
   const pluginsToInject = (Array.isArray(angularPlugins) ? angularPlugins : [angularPlugins])
     .filter(Boolean)
     .map((plugin: any) => {
@@ -190,6 +198,7 @@ export const viteFinal = async (config: UserConfig, options?: StandaloneOptions)
     },
     plugins: [
       ...pluginsToInject,
+      angularViteRedirectReapplyPlugin(options),
       angularOptionsPlugin(options, { normalizePath, experimentalZoneless }),
       storybookEsbuildPlugin(),
     ],
@@ -269,6 +278,75 @@ function angularOptionsPlugin(
       }
 
       return;
+    },
+  };
+}
+
+// mock-loader's `load` hook returns manual mock contents for files with
+// a matching `__mocks__/…` redirect. analogjs's transform then re-emits
+// the file from its own TS emitter and discards that mock content. The
+// automock case is handled by demoting mock-loader's transform out of
+// 'pre' (in viteFinal); the redirect case isn't — analogjs only runs
+// once and mock-loader's `load` doesn't run again after it. So we
+// re-apply the redirect after analogjs in the normal stage: for each
+// file with a redirect path, return the redirect contents as the
+// transform output. Plain `sb.mock(...)` automocks are intentionally
+// NOT handled here to avoid double-wrapping mock-loader's transform
+// output.
+function angularViteRedirectReapplyPlugin(options?: StandaloneOptions): Plugin {
+  let viteConfig: { resolve?: { preserveSymlinks?: boolean } } = {};
+  let redirects: Array<{ absolutePath: string; redirectPath: string }> = [];
+  return {
+    name: 'storybook-angular-vite-redirect-reapply',
+    configResolved(c) {
+      viteConfig = c as any;
+    },
+    buildStart() {
+      if (!options?.configDir) {
+        return;
+      }
+      const previewConfigPath = findConfigFile('preview', options.configDir);
+      if (!previewConfigPath) {
+        return;
+      }
+      try {
+        redirects = extractMockCalls(
+          { previewConfigPath, configDir: options.configDir },
+          babelParser,
+          (viteConfig as any).root ?? process.cwd(),
+          findMockRedirect
+        )
+          .filter(
+            (
+              call
+            ): call is { absolutePath: string; redirectPath: string; spy: boolean; path: string } =>
+              !!call.redirectPath
+          )
+          .map((call) => ({
+            absolutePath: call.absolutePath,
+            redirectPath: call.redirectPath,
+          }));
+      } catch {
+        redirects = [];
+      }
+    },
+    async transform(_code: string, id: string) {
+      if (redirects.length === 0) {
+        return null;
+      }
+      const preserveSymlinks = !!viteConfig.resolve?.preserveSymlinks;
+      const idNorm = getRealPath(id, preserveSymlinks);
+      for (const r of redirects) {
+        if (getRealPath(r.absolutePath, preserveSymlinks) !== idNorm) {
+          continue;
+        }
+        this.addWatchFile(r.redirectPath);
+        return {
+          code: readFileSync(r.redirectPath, 'utf-8'),
+          map: { mappings: '' },
+        };
+      }
+      return null;
     },
   };
 }

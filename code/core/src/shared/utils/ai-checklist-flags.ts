@@ -22,6 +22,10 @@ import { cache } from 'storybook/internal/common';
 interface ProjectScopedFlag {
   timestamp: number;
   configDir: string;
+  // only on ai-init-opt-in
+  answer?: boolean;
+  // only on ai-setup-ran
+  runId?: string;
 }
 
 function isProjectScopedFlag(value: unknown): value is ProjectScopedFlag {
@@ -33,24 +37,29 @@ function isProjectScopedFlag(value: unknown): value is ProjectScopedFlag {
   );
 }
 
-async function readProjectScopedFlag(key: string, configDir: string): Promise<boolean> {
+async function readProjectScopedFlag(
+  key: string,
+  configDir: string
+): Promise<ProjectScopedFlag | undefined> {
   try {
     const value = await cache.get(key);
-    if (!isProjectScopedFlag(value)) {
-      return false;
+    if (isProjectScopedFlag(value) && value.configDir === resolve(configDir)) {
+      return value;
     }
-    return value.configDir === resolve(configDir);
-  } catch {
-    return false;
-  }
+  } catch {}
 }
 
-/** Written by `storybook init` when the user accepted the AI feature. */
+/** Written by `storybook init` when the user accepted the AI feature and in legacy inits where the question was not asked. */
 export async function hasAiInitOptIn(configDir: string): Promise<boolean> {
-  return readProjectScopedFlag('ai-init-opt-in', configDir);
+  const flag = await readProjectScopedFlag('ai-init-opt-in', configDir);
+  return flag?.answer !== false;
 }
 
 /** Written by `storybook ai setup` when the prompt CLI ran in this project. */
 export async function hasAiSetupRun(configDir: string): Promise<boolean> {
-  return readProjectScopedFlag('ai-setup-ran', configDir);
+  return !!(await readProjectScopedFlag('ai-setup-ran', configDir));
+}
+
+export async function getAiSetupRunId(configDir: string): Promise<string | undefined> {
+  return (await readProjectScopedFlag('ai-setup-ran', configDir))?.runId;
 }

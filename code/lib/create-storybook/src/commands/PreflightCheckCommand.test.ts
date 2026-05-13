@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import {
   JsPackageManagerFactory,
@@ -6,6 +6,7 @@ import {
   invalidateProjectRootCache,
 } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
+import { MinimumReleaseAgeHandledError } from 'storybook/internal/server-errors';
 
 import * as scaffoldModule from '../scaffold-new-project.ts';
 import { PreflightCheckCommand } from './PreflightCheckCommand.ts';
@@ -17,15 +18,28 @@ vi.mock('storybook/internal/node-logger', { spy: true });
 describe('PreflightCheckCommand', () => {
   let command: PreflightCheckCommand;
   let mockPackageManager: any;
+  let mockVersionService: any;
+  const originalIsTTYDescriptor = Object.getOwnPropertyDescriptor(process.stdout, 'isTTY');
 
   beforeEach(() => {
-    command = new PreflightCheckCommand();
     mockPackageManager = {
       installDependencies: vi.fn(),
+      precheckStorybookPackageInstall: vi.fn().mockResolvedValue(undefined),
       latestVersion: vi.fn().mockResolvedValue('8.0.0'),
       type: PackageManagerName.NPM,
       primaryPackageJson: { packageJson: { name: 'my-app' } },
     };
+
+    mockVersionService = {
+      getVersionInfo: vi.fn().mockResolvedValue({
+        currentVersion: '8.0.0',
+        latestVersion: '8.0.0',
+        isPrerelease: false,
+        isOutdated: false,
+      }),
+      getCurrentVersion: vi.fn().mockReturnValue('8.0.0'),
+    };
+    command = new PreflightCheckCommand(mockVersionService);
 
     vi.mocked(JsPackageManagerFactory.getPackageManager).mockReturnValue(mockPackageManager);
     vi.mocked(JsPackageManagerFactory.getPackageManagerType).mockReturnValue(
@@ -33,7 +47,17 @@ describe('PreflightCheckCommand', () => {
     );
     vi.mocked(scaffoldModule.scaffoldNewProject).mockResolvedValue(undefined);
     vi.mocked(invalidateProjectRootCache).mockImplementation(() => {});
+    Object.defineProperty(process.stdout, 'isTTY', {
+      value: false,
+      configurable: true,
+    });
     vi.clearAllMocks();
+  });
+
+  afterAll(() => {
+    if (originalIsTTYDescriptor) {
+      Object.defineProperty(process.stdout, 'isTTY', originalIsTTYDescriptor);
+    }
   });
 
   describe('execute', () => {
@@ -132,6 +156,46 @@ describe('PreflightCheckCommand', () => {
 
       expect(vi.mocked(logger.warn)).not.toHaveBeenCalledWith(
         expect.stringContaining('Your package.json "name" field is set to "storybook"')
+      );
+    });
+
+    it('should call the package manager Storybook install precheck', async () => {
+      vi.mocked(scaffoldModule.currentDirectoryIsEmpty).mockReturnValue(false);
+      mockVersionService.getCurrentVersion.mockReturnValue('10.4.0-alpha.17');
+
+      await command.execute({ force: false, yes: true } as any);
+
+      expect(mockPackageManager.precheckStorybookPackageInstall).toHaveBeenCalledWith({
+        storybookVersion: '10.4.0-alpha.17',
+        nonInteractive: true,
+        installContext: 'create',
+      });
+    });
+
+    it('should ignore unexpected precheck failures', async () => {
+      vi.mocked(scaffoldModule.currentDirectoryIsEmpty).mockReturnValue(false);
+      mockPackageManager.precheckStorybookPackageInstall.mockRejectedValueOnce(
+        new Error('registry timeout')
+      );
+
+      await expect(command.execute({ force: false, yes: true } as any)).resolves.toEqual({
+        packageManager: mockPackageManager,
+        isEmptyProject: false,
+      });
+
+      expect(vi.mocked(logger.debug)).toHaveBeenCalledWith(
+        expect.stringContaining('Skipping minimum-release-age precheck after an unexpected failure')
+      );
+    });
+
+    it('should rethrow handled minimum-release-age precheck failures', async () => {
+      vi.mocked(scaffoldModule.currentDirectoryIsEmpty).mockReturnValue(false);
+      mockPackageManager.precheckStorybookPackageInstall.mockRejectedValueOnce(
+        new MinimumReleaseAgeHandledError({ message: 'blocked by minimum release age' })
+      );
+
+      await expect(command.execute({ force: false, yes: true } as any)).rejects.toThrow(
+        'blocked by minimum release age'
       );
     });
   });

@@ -1,6 +1,7 @@
 import { AddonVitestService } from 'storybook/internal/cli';
 import type { JsPackageManager } from 'storybook/internal/common';
 import { logger, prompt } from 'storybook/internal/node-logger';
+import { MinimumReleaseAgeHandledError } from 'storybook/internal/server-errors';
 import { ErrorCollector } from 'storybook/internal/telemetry';
 import { Feature } from 'storybook/internal/types';
 
@@ -70,6 +71,10 @@ export class DependencyInstallationCommand {
       try {
         await this.packageManager.installDependencies();
       } catch (err) {
+        if (err instanceof MinimumReleaseAgeHandledError) {
+          throw err;
+        }
+
         ErrorCollector.addError(err);
         return { status: 'failed' };
       }

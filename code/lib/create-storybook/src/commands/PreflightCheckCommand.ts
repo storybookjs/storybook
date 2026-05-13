@@ -2,6 +2,7 @@ import { detectPnp } from 'storybook/internal/cli';
 import {
   type JsPackageManager,
   JsPackageManagerFactory,
+  MinimumReleaseAgeHandledError,
   PackageManagerName,
   getPrettyPackageManagerName,
   isCI,
@@ -86,11 +87,19 @@ export class PreflightCheckCommand {
     this.checkPackageNameConflict(packageManager);
 
     await this.displayVersionInfo(packageManager);
-    await packageManager.precheckStorybookPackageInstall({
-      storybookVersion: this.versionService.getCurrentVersion(),
-      nonInteractive: !!options.yes || !process.stdout.isTTY || !!isCI(),
-      installContext: 'create',
-    });
+    try {
+      await packageManager.precheckStorybookPackageInstall({
+        storybookVersion: this.versionService.getCurrentVersion(),
+        nonInteractive: !!options.yes || !process.stdout.isTTY || !!isCI(),
+        installContext: 'create',
+      });
+    } catch (error) {
+      if (error instanceof MinimumReleaseAgeHandledError) {
+        throw error;
+      }
+
+      logger.debug(`Skipping minimum-release-age precheck after an unexpected failure: ${error}`);
+    }
 
     return { packageManager, isEmptyProject: isEmptyDirProject };
   }

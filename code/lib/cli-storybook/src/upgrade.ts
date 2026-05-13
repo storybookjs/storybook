@@ -2,6 +2,7 @@ import { PackageManagerName } from 'storybook/internal/common';
 import {
   HandledError,
   JsPackageManagerFactory,
+  MinimumReleaseAgeHandledError,
   isCI,
   isCorePackage,
 } from 'storybook/internal/common';
@@ -391,11 +392,21 @@ export async function upgrade(options: UpgradeOptions): Promise<void> {
     // Update dependencies in package.jsons for all projects
     if (!options.dryRun) {
       for (const project of storybookProjects) {
-        await project.packageManager.precheckStorybookPackageInstall({
-          storybookVersion: project.currentCLIVersion,
-          nonInteractive: !!options.yes || !process.stdout.isTTY || !!isCI(),
-          installContext: 'upgrade',
-        });
+        try {
+          await project.packageManager.precheckStorybookPackageInstall({
+            storybookVersion: project.currentCLIVersion,
+            nonInteractive: !!options.yes || !process.stdout.isTTY || !!isCI(),
+            installContext: 'upgrade',
+          });
+        } catch (error) {
+          if (error instanceof MinimumReleaseAgeHandledError) {
+            throw error;
+          }
+
+          logger.debug(
+            `Skipping minimum-release-age precheck for ${project.configDir} after an unexpected failure: ${error}`
+          );
+        }
       }
 
       const task = prompt.taskLog({

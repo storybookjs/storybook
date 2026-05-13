@@ -2,6 +2,7 @@ import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import {
   JsPackageManagerFactory,
+  MinimumReleaseAgeHandledError,
   PackageManagerName,
   invalidateProjectRootCache,
 } from 'storybook/internal/common';
@@ -169,6 +170,33 @@ describe('PreflightCheckCommand', () => {
         nonInteractive: true,
         installContext: 'create',
       });
+    });
+
+    it('should ignore unexpected precheck failures', async () => {
+      vi.mocked(scaffoldModule.currentDirectoryIsEmpty).mockReturnValue(false);
+      mockPackageManager.precheckStorybookPackageInstall.mockRejectedValueOnce(
+        new Error('registry timeout')
+      );
+
+      await expect(command.execute({ force: false, yes: true } as any)).resolves.toEqual({
+        packageManager: mockPackageManager,
+        isEmptyProject: false,
+      });
+
+      expect(vi.mocked(logger.debug)).toHaveBeenCalledWith(
+        expect.stringContaining('Skipping minimum-release-age precheck after an unexpected failure')
+      );
+    });
+
+    it('should rethrow handled minimum-release-age precheck failures', async () => {
+      vi.mocked(scaffoldModule.currentDirectoryIsEmpty).mockReturnValue(false);
+      mockPackageManager.precheckStorybookPackageInstall.mockRejectedValueOnce(
+        new MinimumReleaseAgeHandledError('blocked by minimum release age')
+      );
+
+      await expect(command.execute({ force: false, yes: true } as any)).rejects.toThrow(
+        'blocked by minimum release age'
+      );
     });
   });
 });

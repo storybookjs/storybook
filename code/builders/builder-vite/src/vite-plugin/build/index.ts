@@ -94,11 +94,8 @@ async function buildStoryIndex(options: Options, outputDir: string): Promise<voi
 export function buildStorybookPlugin(options: Options): Plugin {
   return {
     name: 'storybook:build',
-    apply: 'build',
-    async config(_, { mode }) {
-      if (mode !== 'storybook') {
-        return;
-      }
+    apply: (_, { command, mode }) => command === 'build' && mode === 'storybook',
+    config() {
       return {
         builder: {
           async buildApp(builder) {

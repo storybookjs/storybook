@@ -50,9 +50,13 @@ export async function experimental_vitePlugin(options?: UserOptions): Promise<Pl
 
   let basePath = '/__storybook/';
 
+  const applyToStorybookOnly = (_: unknown, env: { command: string; mode: string }) =>
+    env.command === 'serve' || env.mode === 'storybook';
+
   return [
     {
       name: 'storybook-env',
+      apply: applyToStorybookOnly,
 
       config(_, { command, mode }) {
         sb.configType = command === 'build' ? 'PRODUCTION' : 'DEVELOPMENT';
@@ -160,7 +164,7 @@ export async function experimental_vitePlugin(options?: UserOptions): Promise<Pl
         },
       },
     },
-    ...scopeToStorybookEnv(allPlugins, basePath),
+    ...scopeToStorybookEnv(allPlugins, basePath, applyToStorybookOnly),
     buildStorybookPlugin(sb),
   ];
 }
@@ -174,10 +178,15 @@ export async function experimental_vitePlugin(options?: UserOptions): Promise<Pl
  * The plugins' configEnvironment hooks are preserved and fire naturally
  * since the plugins remain top-level (not inside applyToEnvironment).
  */
-function scopeToStorybookEnv(plugins: Plugin[], basePath: string): Plugin[] {
+function scopeToStorybookEnv(
+  plugins: Plugin[],
+  basePath: string,
+  apply: Plugin['apply']
+): Plugin[] {
   return plugins.map((plugin) => {
     return {
       ...plugin,
+      apply,
       applyToEnvironment(environment: { name: string }) {
         return environment.name === 'storybook';
       },

@@ -1070,7 +1070,6 @@ export const withAdeMode: Decorator = (Story, context) => {
   }
 
   const mode: AdeMode | null = adeMode === 'on' ? 'dark' : adeMode;
-  console.log({ mode });
   if (!mode) return <Story />;
   const storyId = context.id ?? '';
   const storyTitle = `${context.title ?? ''} / ${context.name ?? ''}`;

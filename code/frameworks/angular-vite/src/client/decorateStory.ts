@@ -55,6 +55,15 @@ const cleanArgsDecorator: DecoratorFunction<AngularRenderer> = (storyFn, context
     return storyFn();
   }
 
+  // When no argTypes are defined for the story (e.g. compodoc metadata is
+  // unavailable, or the class name was renamed by a bundler so the compodoc
+  // lookup fails) we have no signal to distinguish "real" component inputs
+  // from other args. Pass them through unchanged rather than stripping every
+  // arg the user explicitly set.
+  if (Object.keys(context.argTypes).length === 0) {
+    return storyFn();
+  }
+
   const argsToClean = context.args;
 
   context.args = Object.entries(argsToClean).reduce((obj, [key, arg]) => {

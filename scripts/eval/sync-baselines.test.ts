@@ -7,6 +7,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { BASELINE_STORYBOOK_FILES } from './lib/baseline-template-files.ts';
 import type { Project } from './lib/projects.ts';
 import { syncBaselines } from './sync-baselines.ts';
+import { isWindows } from 'std-env';
 
 let TMP = '';
 
@@ -17,7 +18,7 @@ afterEach(() => {
   }
 });
 
-describe('syncBaselines', () => {
+describe.skipIf(isWindows)('syncBaselines', () => {
   it('syncs authoritative mealdrop files into root and nested repos, removes old eval-results, and pushes main', async () => {
     TMP = mkdtempSync(join(tmpdir(), 'eval-sync-baselines-'));
     const reposRoot = join(TMP, 'repos');

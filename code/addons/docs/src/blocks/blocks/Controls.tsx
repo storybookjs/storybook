@@ -1,6 +1,6 @@
 /* eslint-disable react/destructuring-assignment */
 import type { FC } from 'react';
-import React, { useContext } from 'react';
+import React, { useContext, useId } from 'react';
 
 import type { Parameters, Renderer, StrictArgTypes } from 'storybook/internal/csf';
 import type { ArgTypesExtractor } from 'storybook/internal/docs-tools';
@@ -43,6 +43,10 @@ const ControlsImpl: FC<ControlsProps> = (props) => {
   const { of } = props;
   const context = useContext(DocsContext);
   const primaryStory = usePrimaryStory();
+  // Disambiguate multiple <Controls /> blocks rendered for the same story on a single page.
+  // React's useId produces a stable id per component instance; strip colons since they require
+  // escaping in CSS selectors.
+  const controlsId = useId().replace(/:/g, '');
 
   const story = of ? context.resolveOf(of, ['story']).story : primaryStory;
 
@@ -71,6 +75,7 @@ const ControlsImpl: FC<ControlsProps> = (props) => {
     return (
       <PureArgsTable
         storyId={story.id}
+        controlsId={controlsId}
         rows={filteredArgTypes as any}
         sort={sort}
         args={args}
@@ -104,6 +109,7 @@ const ControlsImpl: FC<ControlsProps> = (props) => {
       updateArgs={updateArgs}
       resetArgs={resetArgs}
       storyId={story.id}
+      controlsId={controlsId}
     />
   );
 };

@@ -10,6 +10,7 @@ Storybook 10.4 contains hundreds of fixes and improvements including:
 - ⚛️ TanStack React: New `@storybook/tanstack-react` framework with routing and server function support
 - 🧩 React MCP: Faster, more accurate component docgen powered by the TypeScript Language Server
 - 📱 React Native: Zero config RN project initialization
+- 🤝 Sharing: Easily publish and share your local Storybook with teammates, powered by Chromatic
 
 <details>
 <summary>List of all updates</summary>

@@ -1,7 +1,7 @@
 ---
 title: Agentic setup
 sidebar:
-  order: 4
+  order: 1
 ---
 
 <Callout variant="info" icon="🧪">
@@ -14,70 +14,48 @@ The API may change in future releases. We welcome feedback and contributions to 
 
 <If renderer={['react']}>
 
-Getting Storybook wired up to an existing application (configuring providers, mocking side effects, and writing the first few real stories) is the kind of repetitive, project-specific work that AI agents are well suited for. The **agentic setup** flow uses the [`storybook ai setup`](../api/cli-options.mdx#ai) command to generate a detailed, project-aware instruction set that an AI agent can follow to make Storybook fully functional in your project.
+Configuring Storybook in an existing application is repetitive, project-specific work that AI agents handle well. When you add Storybook to a project using an agent, it analyzes your project (framework, renderer, builder, language, addons) and produces a Markdown guide with [step-by-step instructions](#generated-setup-instructions). By following this guide, your agent will configure your preview file, set up commonly needed mocks, and write stories for components in your codebase.
 
-The command analyzes your Storybook configuration (framework, renderer, builder, language, addons) and produces a Markdown prompt containing step-by-step instructions tailored to your project, covering everything from configuring your preview file to writing and verifying stories. See [what the generated prompt covers](#what-the-generated-prompt-covers) for the full list of steps.
+After an agent follows those instructions, you have a working Storybook with stories for your components and a clear path to expanding coverage across your codebase.
 
-## Starting from `storybook init`
+## Set up Storybook with an agent
 
-When an agent runs [`storybook init`](../api/cli-options.mdx#init) to add Storybook to a new project, the output instructs the agent to continue with `storybook ai setup`. No extra prompting is needed; the agent will pick up the agentic setup flow automatically.
+To set up Storybook in your project, copy/paste this prompt into your agent's chat:
 
-If Storybook is already installed, you can kick off the flow yourself using one of the two approaches below.
+<CodeSnippets path="prompt-install-storybook.md" />
 
-## Agent-initiated setup
+The agent first runs [`storybook init`](../api/cli-options.mdx#init) to add Storybook to your project. When init completes, the agent offers to continue with project-specific configuration. If you agree, the agent generates the instructions, follows them step by step, and applies each change directly to your codebase so you can review its work.
 
-In this flow, you ask your agent to run `storybook ai setup`. For example:
+### Generated setup instructions
 
-```txt
-Use Storybook's agentic setup command to configure Storybook for this project and write some initial stories.
-```
-
-The agent will run the command from your project root, read the generated prompt from stdout, and follow the steps in order: analyzing your codebase, updating `preview.tsx`, and writing stories. After each story, it runs Vitest to verify that the story renders and fixes any failures before moving on.
-
-This flow works best when your agent has access to a terminal in your project (most modern coding agents do). No flags or additional configuration is required. The generated instructions are self-contained.
-
-## User-initiated setup
-
-If you'd rather drive the process yourself, you can run the command manually and hand the output to any agent, even one that can't execute shell commands.
-
-1. From your project root, run:
-
-   <CodeSnippets path="ai-setup-output.md" />
-
-   This writes the instructions to `storybook-setup.md` instead of printing them to your terminal. Omit `--output` to print to stdout and pipe it elsewhere.
-
-2. Open the generated file and paste its contents into your agent's chat, or attach it as context. The prompt is designed to be self-contained: it references your specific `configDir`, framework, and renderer, and links back to the relevant Storybook docs in Markdown form.
-
-3. Let the agent work through the steps. You can review each change as the agent applies it.
-
-Use this flow when you want tighter control over what the agent does, when you're working with an agent that doesn't have shell access, or when you want to save the prompt to reuse across projects.
-
-## What the generated prompt covers
-
-Regardless of how the flow is initiated, the generated Markdown prompt walks the agent through the same ordered steps:
+The project-specific instructions cover the following steps:
 
 1. **Analyze the codebase:** read providers, global CSS, portals, and data-fetching patterns.
-2. **Configure the [preview](../configure/story-rendering.mdx):** set up [decorators](../writing-stories/decorators.mdx), global styles, and any framework-level providers in `preview.tsx`.
+2. **Configure the [preview](../configure/story-rendering.mdx):** set up [decorators](../writing-stories/decorators.mdx), [global styles](../configure/styling-and-css.mdx), and any framework-level providers in `preview.tsx`.
 3. **Support portals:** ensure portal roots exist in the Storybook preview DOM.
 4. **Mock side effects:** intercept [network requests](../writing-stories/mocking-data-and-modules/mocking-network-requests.mdx) (via MSW), storage, timers, and navigation at the preview level rather than per-story.
-5. **Write [stories](../writing-stories/index.mdx):** copy real usage patterns from the app, [tagging](../writing-stories/tags.mdx) generated stories with `ai-generated` and `needs-work` so you can review them later.
-6. **Add [play functions](../writing-stories/play-function.mdx):** implement interaction tests for the most important flows.
+5. **Write [stories](../writing-stories/index.mdx):** add stories from up to 10 components, from simple to complex, [tagging](../writing-stories/tags.mdx) them as `ai-generated` for your review.
+6. **Add [play functions](../writing-stories/play-function.mdx):** implement [interaction tests](../writing-tests/interaction-testing.mdx) for the most important flows.
 7. **Cover additional patterns:** expand coverage across the components the agent has already touched.
 8. **Verify:** run [Vitest](../writing-tests/integrations/vitest-addon/index.mdx) against every new story to confirm it renders, and run the type checker.
-
-<Callout variant="info">
-
-The command snapshots your `preview` file so that subsequent runs of `storybook dev`, `storybook build`, and `storybook doctor` can detect progress the agent made and report it via telemetry. If you'd prefer not to share this data, pass `--disable-telemetry` (see [telemetry](../configure/telemetry.mdx)).
-
-</Callout>
+9. **Install useful addons:** add and configure addons like [MCP](./mcp/overview.mdx) to help you (and your agent) get the most out of Storybook.
 
 ## Next steps
 
 Once the agent has completed the setup:
 
+- [Run your new Storybook](../get-started/install.mdx#start-storybook) and review the generated configuration files ([main](../configure/index.mdx#configure-your-storybook-project) and [preview](../configure/index.mdx#configure-story-rendering), most importantly).
+- Review the stories tagged `ai-generated`, and remove the tag once you've validated each one.
 - Connect the [Storybook MCP server](./mcp/overview.mdx) to your agent so it can continue reading manifests, generating stories, and running tests against your live Storybook.
-- Review the stories tagged `ai-generated` and `needs-work`, and remove those tags once you've validated each one.
 - Follow the [best practices](./best-practices.mdx) to make your stories and documentation maximally useful to both humans and agents.
 
 </If>
 {/* End supported renderers */}
+
+**More AI resources**
+
+- [MCP server overview](./mcp/overview.mdx)
+- [MCP server API](./mcp/api.mdx)
+- [Sharing your MCP server](./mcp/sharing.mdx)
+- [Best practices for using Storybook with AI](./best-practices.mdx)
+- [Manifests](./manifests.mdx)

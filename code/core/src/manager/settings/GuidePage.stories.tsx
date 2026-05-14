@@ -54,6 +54,7 @@ export const Default = meta.story({});
 const aiCtaOpenState = {
   loaded: true,
   aiOptIn: true,
+  aiSetupRun: true,
   widget: {},
   items: {
     ...initialState.items,
@@ -75,6 +76,7 @@ export const AiCtaSkipped = meta.story({
     mockStore.setState({
       loaded: true,
       aiOptIn: true,
+      aiSetupRun: true,
       widget: {},
       items: {
         ...initialState.items,
@@ -92,6 +94,7 @@ export const AiCtaDone = meta.story({
     mockStore.setState({
       loaded: true,
       aiOptIn: true,
+      aiSetupRun: true,
       widget: {},
       items: {
         ...initialState.items,

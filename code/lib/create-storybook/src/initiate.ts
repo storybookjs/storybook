@@ -2,6 +2,7 @@ import { resolve } from 'node:path';
 
 import { ProjectType } from 'storybook/internal/cli';
 import {
+  HandledError,
   type JsPackageManager,
   PackageManagerName,
   cache,
@@ -154,18 +155,24 @@ export async function doInitiate(options: CommandOptions): Promise<
 
   // Step 8: Print final summary
   const hasAiFeature = selectedFeatures.has(Feature.AI);
-  if (hasAiFeature && configDir) {
-    // Persist the init-time AI opt-in so the dev server can gate AI-related UI
+  if (configDir && isAiSetupAvailable) {
+    // Persist init-time AI opt-in/opt-out so the dev server can gate AI-related UI
     // (checklist item, copy-prompt button) on the user's actual choice — not on
     // a telemetry-event side effect. Scoped to the project's configDir so a
     // monorepo with hoisted `node_modules/.cache` doesn't leak the flag across
     // sibling Storybook projects. This is a tiny local file with no PII, so it
     // is written even when telemetry is disabled.
     await cache
-      .set('ai-init-opt-in', { timestamp: Date.now(), configDir: resolve(configDir) })
+      .set('ai-init-opt-in', {
+        timestamp: Date.now(),
+        configDir: resolve(configDir),
+        answer: hasAiFeature,
+      })
       .catch(() => {});
     // Telemetry event remains for analytics. UI logic does not depend on it.
-    await telemetry('ai-init-opt-in', {}).catch(() => {});
+    await telemetry('ai-init-opt-in', {
+      answer: hasAiFeature,
+    }).catch(() => {});
   }
   await executeFinalization({
     showAgentFollowUp: !!options.agent && hasAiFeature,
@@ -198,6 +205,7 @@ export async function doInitiate(options: CommandOptions): Promise<
 const handleCommandFailure = async (logFilePath: string | boolean | undefined): Promise<never> => {
   const logFile = await logTracker.writeToFile(logFilePath);
   logger.error('Storybook encountered an error during initialization');
+
   logger.log(`Debug logs are written to: ${logFile}`);
   logger.outro('Storybook exited with an error');
   process.exit(1);
@@ -218,17 +226,12 @@ export async function initiate(options: CommandOptions): Promise<void> {
       fallbackTelemetryState: true,
     },
     async () => {
-      // we need to explicitly set this before init to not delay the events until the end of the flow
-      await setTelemetryEnabled(!options.disableTelemetry);
-
       const result = await doInitiate(options);
-
       logger.outro('');
-
       return result;
     }
   ).catch(() => {
-    handleCommandFailure(options.logfile);
+    return handleCommandFailure(options.logfile);
   });
 
   // Launch dev server only if --dev was explicitly passed

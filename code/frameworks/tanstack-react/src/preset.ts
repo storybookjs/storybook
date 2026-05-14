@@ -26,6 +26,12 @@ export const previewAnnotations: PresetProperty<'previewAnnotations'> = (entry =
   fileURLToPath(import.meta.resolve('@storybook/tanstack-react/preview')),
 ];
 
+export const optimizeViteDeps = [
+  '@tanstack/react-store',
+  '@tanstack/react-router > @tanstack/react-store',
+  'use-sync-external-store/shim/with-selector',
+];
+
 export const viteFinal: StorybookConfigVite['viteFinal'] = async (config, options) => {
   const reactConfig = await reactViteFinal(config, options);
 

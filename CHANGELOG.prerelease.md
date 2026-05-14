@@ -1,3 +1,6 @@
+## 10.5.0-alpha.0
+
+
 ## 10.4.0-beta.0
 
 - CLI: Handle minimumReleaseAge conflicts across package managers - [#34769](https://github.com/storybookjs/storybook/pull/34769), thanks @JReinhold!

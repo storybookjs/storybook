@@ -1,3 +1,6 @@
+## 10.4.0
+
+
 ## 10.3.6
 
 - ESLint: Update deprecated @storybook/test reference to storybook/test - [#34430](https://github.com/storybookjs/storybook/pull/34430), thanks @venkat22022202!

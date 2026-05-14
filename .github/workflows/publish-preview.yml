@@ -1,0 +1,47 @@
+name: Publish Preview Packages
+run-name: Publish preview packages for PR #${{ github.event.pull_request.number }}
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, labeled]
+
+env:
+  PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: 1
+  PUPPETEER_SKIP_CHROMIUM_DOWNLOAD: 1
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  publish-preview:
+    name: Publish preview packages
+    if: |
+      contains(github.event.pull_request.labels.*.name, 'ci:normal') ||
+      contains(github.event.pull_request.labels.*.name, 'ci:merged') ||
+      contains(github.event.pull_request.labels.*.name, 'ci:daily')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout pull request HEAD
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - name: Setup Node.js and Install Dependencies
+        uses: ./.github/actions/setup-node-and-install
+        with:
+          install-code-deps: true
+
+      - name: Build publishable packages
+        working-directory: code
+        run: yarn task --task compile --start-from=auto --no-link
+
+      - name: Publish preview packages with pkg.pr.new
+        working-directory: scripts
+        run: |
+          yarn workspaces list --json --no-private \
+            | jq -j '"../" + .location + "\u0000"' \
+            | xargs -0 -r yarn pkg-pr-new publish --no-template --commentWithDev

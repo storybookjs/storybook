@@ -136,6 +136,7 @@
     "playwright": "1.58.2",
     "playwright-core": "1.58.2",
     "polka": "^1.0.0-next.28",
+    "pkg-pr-new": "0.0.72",
     "prettier": "^3.7.1",
     "pretty-bytes": "^6.1.1",
     "pretty-hrtime": "^1.0.3",

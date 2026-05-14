@@ -5,11 +5,11 @@
 Storybook 10.4 contains hundreds of fixes and improvements including:
 
 - 🤖 Agentic Setup: New CLI workflow for AI-assisted Storybook setup and onboarding
-- 🔍 Change detection: Git-powered story change tracking for new, modified, and affected stories
+- 🔍 Change review: Sidebar filtering to highlight new, modified, and related stories based on git changes
 - 🧭 Sidebar review tools: Status filtering, URL-persisted filters, and clearer review signals in the sidebar
-- ⚛️ TanStack React: New `@storybook/tanstack-react` package plus smoother automigration support
-- 🧩 React metadata: LanguageService-powered component metadata extraction with richer component manifests
-- 📱 React Native init: Overhauled setup with Metro codemods and true entrypoint generation
+- ⚛️ TanStack React: New `@storybook/tanstack-react` framework with routing and server function support
+- 🧩 React MCP: Faster, more accurate component docgen powered by the TypeScript Language Server
+- 📱 React Native: Zero config RN project initialization
 
 <details>
 <summary>List of all updates</summary>

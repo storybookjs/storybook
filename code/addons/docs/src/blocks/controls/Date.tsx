@@ -10,16 +10,35 @@ import type { ControlProps, DateConfig, DateValue } from './types';
 
 export const parseDate = (value: string) => {
   const [year, month, day] = value.split('-');
-  const result = new Date();
-  result.setFullYear(parseInt(year, 10), parseInt(month, 10) - 1, parseInt(day, 10));
+  const parsedYear = parseInt(year, 10);
+  const parsedMonth = parseInt(month, 10) - 1;
+  const parsedDay = parseInt(day, 10);
+  const result = new Date(0);
+  result.setFullYear(parsedYear, parsedMonth, parsedDay);
+  result.setHours(0, 0, 0, 0);
+
+  if (
+    result.getFullYear() !== parsedYear ||
+    result.getMonth() !== parsedMonth ||
+    result.getDate() !== parsedDay
+  ) {
+    return new Date(Number.NaN);
+  }
+
   return result;
 };
 
 export const parseTime = (value: string) => {
   const [hours, minutes] = value.split(':');
-  const result = new Date();
-  result.setHours(parseInt(hours, 10));
-  result.setMinutes(parseInt(minutes, 10));
+  const parsedHours = parseInt(hours, 10);
+  const parsedMinutes = parseInt(minutes, 10);
+  const result = new Date(0);
+  result.setHours(parsedHours, parsedMinutes, 0, 0);
+
+  if (result.getHours() !== parsedHours || result.getMinutes() !== parsedMinutes) {
+    return new Date(Number.NaN);
+  }
+
   return result;
 };
 

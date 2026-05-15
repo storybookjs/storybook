@@ -14,6 +14,14 @@ describe('Date control', () => {
   });
 
   it.each([
+    // name, input
+    ['day does not exist in month', '2022-11-31'],
+    ['month is out of range', '2022-13-01'],
+  ])('marks invalid date as invalid: %s', (name, input) => {
+    expect(parseDate(input).getTime()).toBeNaN();
+  });
+
+  it.each([
     // name, input, expected
     ['same time', '12:00', '12:00'],
     ['hours not padded with a zero', '1:00', '01:00'],
@@ -21,5 +29,13 @@ describe('Date control', () => {
     ['different minutes', '01:30', '01:30'],
   ])('parse and format time: %s', (name, input, expected) => {
     expect(formatTime(parseTime(input))).toBe(expected);
+  });
+
+  it.each([
+    // name, input
+    ['hours are out of range', '24:00'],
+    ['minutes are out of range', '12:60'],
+  ])('marks invalid time as invalid: %s', (name, input) => {
+    expect(parseTime(input).getTime()).toBeNaN();
   });
 });

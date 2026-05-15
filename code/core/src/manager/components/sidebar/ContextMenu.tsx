@@ -1,5 +1,5 @@
 import type { ComponentProps, FC, SyntheticEvent } from 'react';
-import React, { useMemo, useState } from 'react';
+import React, { useContext, useMemo, useState } from 'react';
 
 import { PopoverProvider, TooltipLinkList, TooltipProvider } from 'storybook/internal/components';
 import {
@@ -12,18 +12,17 @@ import {
 
 import { CopyIcon, EditorIcon, EllipsisIcon } from '@storybook/icons';
 
-import { experimental_useStatusStore } from '#manager-stores';
 import type { API, IndexHash } from 'storybook/manager-api';
 import { shortcutToHumanString, useStorybookApi } from 'storybook/manager-api';
-import { styled } from 'storybook/theming';
 
 import { useCopyButton } from '../../../shared/useCopyButton.ts';
 import type { Link } from '../../../components/components/tooltip/TooltipLinkList.tsx';
-import { getGroupStatus, getMostCriticalStatusValue } from '../../utils/status.tsx';
+import { getMostCriticalStatusValue } from '../../utils/status.tsx';
 
 import { Shortcut } from '../Shortcut.tsx';
 import { UseSymbol } from './IconSymbols.tsx';
-import { StatusButton } from './StatusButton.tsx';
+import { ContextMenuButton } from './ContextMenuButton.tsx';
+import { StatusContext } from './StatusContext.tsx';
 
 // FIXME/TODO: onMouseEnter is actually a data preloading mechanism for test providers to render custom React nodes.
 // It helps with perceived performance as it avoids showing loaders for a short span. Find a way to reinstate this.
@@ -33,31 +32,20 @@ const empty = {
   node: null,
 };
 
-const FloatingStatusButton = styled(StatusButton)({
-  background: 'var(--tree-node-background-hover)',
-  boxShadow: '0 0 5px 5px var(--tree-node-background-hover)',
-  position: 'absolute',
-  right: 0,
-  zIndex: 1,
-  '&:focus-visible': {
-    outlineOffset: -2,
-  },
-});
-
 export type ContextMenuEntryMethod = 'pointer' | 'keyboard';
 
 export const useContextMenu = (
   context: API_HashEntry,
-  isOpen: boolean,
-  setIsOpen: (open: boolean) => void,
+  // isOpen: boolean,
+  // setIsOpen: (open: boolean) => void,
   links: Link[],
   api: API,
   data: IndexHash,
   entryMethod?: ContextMenuEntryMethod
 ) => {
   const [hoverCount, setHoverCount] = useState(0);
-  const allStatuses = experimental_useStatusStore();
-  const groupStatus = useMemo(() => getGroupStatus(data, allStatuses ?? {}), [data, allStatuses]);
+  const [isOpen, setIsOpen] = useState(false);
+  const { allStatuses, groupDualStatus } = useContext(StatusContext);
 
   const exportName = context && 'exportName' in context ? (context.exportName ?? '') : '';
   const { children: copyText, buttonProps: copyButtonProps } = useCopyButton<string>({
@@ -68,7 +56,8 @@ export const useContextMenu = (
   const shortcutKeys = api.getShortcutKeys();
   const enableShortcuts = !!shortcutKeys;
 
-  // TODO: if entryMethod is keyboard, add link to story at top of menu.
+  // FIXME/TODO: if entryMethod is keyboard, add link to story at top of menu.
+  // FIXME/TODO: move all the status link stuff in here.
 
   const topLinks = useMemo<Link[]>(() => {
     const defaultLinks = [];
@@ -117,6 +106,10 @@ export const useContextMenu = (
         event.stopPropagation();
         setIsOpen(true);
       },
+      // FIXME/TODO: not called in practice
+      onClose: () => {
+        setIsOpen(false);
+      },
     };
   }, [setIsOpen]);
   /**
@@ -132,9 +125,33 @@ export const useContextMenu = (
     return [];
   }, [api, context, hoverCount]);
 
-  const shouldRender = providerLinks.length > 0 || links.length > 0 || topLinks.length > 0;
+  const shouldRender =
+    !context.refId && (providerLinks.length > 0 || links.length > 0 || topLinks.length > 0);
 
-  const isLeafNode = context.type === 'story' || context.type === 'docs';
+  // FIXME/TODO
+  // const isLeafNode = context.type === 'story' || context.type === 'docs';
+
+  // const statuses = useMemo(() => allStatuses?.[item.id] || {}, [allStatuses, item.id]);
+
+  // // Compute status items to go in the ContextMenu.
+  // const statusLinks = useMemo<Link[]>(() => {
+  //   if (item.type !== 'story' && item.type !== 'docs') {
+  //     return [];
+  //   }
+  //   return Object.entries(statuses || {})
+  //     .filter(([, status]) => status.sidebarContextMenu !== false)
+  //     .map(([typeId, status]) => ({
+  //       id: typeId,
+  //       title: status.title,
+  //       description: status.description,
+  //       'aria-label': `${status.title}: ${StatusLabelsInContextMenu[status.value]}.`,
+  //       icon: getStatus(theme, status.value).icon,
+  //       onClick: () => {
+  //         onSelectStoryId(id);
+  //         fullStatusStore.selectStatuses([status]);
+  //       },
+  //     }));
+  // }, [id, item.type, onSelectStoryId, statuses, theme]);
 
   const itemStatus = useMemo<StatusValue>(() => {
     let status: StatusValue = 'status-value:unknown';
@@ -142,37 +159,25 @@ export const useContextMenu = (
       return status;
     }
 
-    if (isLeafNode) {
-      const values = Object.values(allStatuses?.[context.id] || {}).map((s) => s.value);
-      status = getMostCriticalStatusValue(values);
-    }
+    // FIXME/TODO: stop the leaf/branch separation.
+    // if (isLeafNode) {
+    const values = Object.values(allStatuses?.[context.id] || {}).map((s) => s.value);
+    status = getMostCriticalStatusValue(values);
+    // }
 
-    if (!isLeafNode) {
-      // On component/groups we only show non-ellipsis on hover on non-success status colors
-      const groupValue = groupStatus && groupStatus[context.id];
-      status =
-        groupValue === 'status-value:success' || groupValue === undefined
-          ? 'status-value:unknown'
-          : groupValue;
-    }
+    // if (!isLeafNode) {
+    //   // On component/groups we only show non-ellipsis on hover on non-success status colors
+    //   const groupValue = groupDualStatus && groupDualStatus[context.id];
+    //   status =
+    //     groupValue === 'status-value:success' || groupValue === undefined
+    //       ? 'status-value:unknown'
+    //       : groupValue;
+    // }
 
     return status;
-  }, [allStatuses, groupStatus, context, isLeafNode]);
+  }, [allStatuses, context]);
 
   const MenuIcon = useMemo(() => {
-    // On component/groups we only show non-ellipsis on hover on non-success statuses
-    if (context.type !== 'story' && context.type !== 'docs') {
-      if (itemStatus !== 'status-value:success' && itemStatus !== 'status-value:unknown') {
-        return (
-          <svg key="icon" viewBox="0 0 6 6" width="6" height="6">
-            <UseSymbol type="dot" />
-          </svg>
-        );
-      }
-
-      return <EllipsisIcon />;
-    }
-
     if (itemStatus === 'status-value:error') {
       return (
         <svg key="icon" viewBox="0 0 14 14" width="14" height="14">
@@ -199,6 +204,7 @@ export const useContextMenu = (
 
   const shortcutLabel = useMemo(() => {
     if (!enableShortcuts || !shortcutKeys?.contextMenu) {
+      console.log('no tooltip', enableShortcuts, shortcutKeys);
       return null;
     }
     return (
@@ -215,17 +221,16 @@ export const useContextMenu = (
     }
 
     const button = (
-      <FloatingStatusButton
+      <ContextMenuButton
         tabIndex={-1}
         data-displayed={isOpen ? 'on' : 'off'}
         data-testid="context-menu"
         ariaLabel="Open context menu"
         type="button"
-        status={itemStatus}
         onClick={handlers.onOpen}
       >
-        {MenuIcon}
-      </FloatingStatusButton>
+        <EllipsisIcon />
+      </ContextMenuButton>
     );
 
     return {

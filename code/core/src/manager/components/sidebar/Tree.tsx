@@ -20,6 +20,7 @@ import { styled } from 'storybook/theming';
 
 import { getGroupDualStatus } from '../../utils/status.tsx';
 import { useExpanded } from './useExpanded.ts';
+import { StatusContext } from './StatusContext.tsx';
 
 const StyledAriaTree = styled(AriaTree)(() => ({
   listStyle: 'none',
@@ -31,7 +32,7 @@ const StyledAriaTree = styled(AriaTree)(() => ({
   '&:hover, &:has(:focus-visible)': {
     '--trace-opacity': 1,
   },
-})) as typeof AriaTree;
+}));
 
 interface TreeProps {
   isBrowsing: boolean;
@@ -202,26 +203,11 @@ export const Tree = React.memo<TreeProps>(function Tree({
 
   // Memoize renderNode's returned closure so Collection receives a stable children prop
   // as long as the relevant inputs are stable.
-  // const nodeRenderer = renderNode({
-  //   api,
-  //   refId,
-  //   groupDualStatus,
-  //   data: collapsedData,
-  //   onSelectStoryId,
-  //   selectedStoryId,
-  //   selectedParentId,
-  //   expanded,
-  //   contextMenuState,
-  //   openContextMenu,
-  //   closeContextMenu,
-  // });
   const nodeRenderer = useMemo(
     () =>
       renderNode({
         api,
         refId,
-        groupDualStatus,
-        data: collapsedData,
         onSelectStoryId,
         selectedStoryId,
         selectedParentId,
@@ -233,8 +219,6 @@ export const Tree = React.memo<TreeProps>(function Tree({
     [
       api,
       refId,
-      groupDualStatus,
-      collapsedData,
       onSelectStoryId,
       selectedStoryId,
       selectedParentId,
@@ -246,29 +230,31 @@ export const Tree = React.memo<TreeProps>(function Tree({
   );
 
   return (
-    <StyledAriaTree
-      ref={containerRef}
-      aria-label="Stories"
-      selectionMode="single"
-      expandedKeys={expanded}
-      onExpandedChange={handleExpandedChange}
-      selectedKeys={selectedKeys}
-      onSelectionChange={handleSelectionChange}
-      onAction={handleAction}
-    >
-      <Collection
-        items={tree}
-        dependencies={[
-          expanded,
-          selectedStoryId,
-          selectedParentId,
-          contextMenuState,
-          groupDualStatus,
-        ]}
+    <StatusContext.Provider value={{ data, allStatuses, groupDualStatus }}>
+      <StyledAriaTree
+        ref={containerRef}
+        aria-label="Stories"
+        selectionMode="single"
+        expandedKeys={expanded}
+        onExpandedChange={handleExpandedChange}
+        selectedKeys={selectedKeys}
+        onSelectionChange={handleSelectionChange}
+        onAction={handleAction}
       >
-        {nodeRenderer}
-      </Collection>
-    </StyledAriaTree>
+        <Collection
+          items={tree}
+          dependencies={[
+            expanded,
+            selectedStoryId,
+            selectedParentId,
+            contextMenuState,
+            groupDualStatus,
+          ]}
+        >
+          {nodeRenderer}
+        </Collection>
+      </StyledAriaTree>
+    </StatusContext.Provider>
   );
 });
 
@@ -310,7 +296,6 @@ function renderNode({
   ...props
 }: RenderNodeProps) {
   const renderNodeLevel = (item: TreeEntry) => {
-    const itemStatuses = groupDualStatus?.[item.id];
     return (
       <TreeNode
         {...props}
@@ -326,23 +311,15 @@ function renderNode({
         }
         openContextMenu={openContextMenu}
         closeContextMenu={closeContextMenu}
-        statuses={itemStatuses}
       >
         {item.resolvedChildren && (
           <Collection
             items={item.resolvedChildren}
-            dependencies={[
-              expanded,
-              selectedStoryId,
-              selectedParentId,
-              contextMenuState,
-              groupDualStatus,
-            ]}
+            dependencies={[expanded, selectedStoryId, selectedParentId, contextMenuState]}
           >
             {renderNode({
               ...props,
               expanded,
-              groupDualStatus,
               selectedStoryId,
               selectedParentId,
               contextMenuState,

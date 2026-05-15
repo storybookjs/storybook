@@ -9,7 +9,13 @@ import {
   type StatusesByStoryIdAndTypeId,
 } from 'storybook/internal/types';
 
-import { CircleIcon } from '@storybook/icons';
+import {
+  CircleIcon,
+  StatusFailIcon,
+  StatusPassIcon,
+  StatusWarnIcon,
+  SyncIcon,
+} from '@storybook/icons';
 
 import memoizerific from 'memoizerific';
 import { transparentize } from 'polished';
@@ -33,7 +39,6 @@ const LoadingIcons = styled(SmallIcons)(({ theme: { animation } }) => ({
 
 export interface StatusMapping {
   icon: ReactElement | null;
-  iconColor: string | null;
   textColor: string | null;
 }
 
@@ -48,7 +53,6 @@ export const statusPriority: StatusValue[] = [
   'status-value:error',
 ];
 
-// FIXME/TODO: this is redundant with the StatusIcon component I created. Rationalise.
 // We might not want to make this a hook because it is used in the Tree after multiple returns.
 // There could be scenarios where creating a story changes the type of an item (e.g. story now
 // has children because it has a test child), so we could end up with rule of hooks violations.
@@ -58,69 +62,51 @@ export const getStatus = memoizerific(10)((theme: Theme, status: StatusValue): S
       ? transparentize(0.3, theme.color.defaultText)
       : transparentize(0.6, theme.color.defaultText);
 
+  // FIXME/TODO: check if size 12 or 14.
+
   const statusMapping: Record<StatusValue, StatusMapping> = {
     'status-value:unknown': {
       icon: null,
-      iconColor: defaultIconColor,
       textColor: null,
     },
     'status-value:pending': {
-      icon: <LoadingIcons key="icon" />,
-      iconColor: defaultIconColor,
+      icon: <SyncIcon size={12} color={defaultIconColor} />,
       textColor: 'currentColor',
     },
     'status-value:success': {
-      icon: (
-        <svg key="icon" viewBox="0 0 14 14" width="14" height="14">
-          <UseSymbol type="success" />
-        </svg>
-      ),
-      iconColor: theme.color.positive,
+      icon: <StatusPassIcon color={theme.color.positive} />,
       textColor: 'currentColor',
     },
     'status-value:new': {
       icon: (
-        <svg key="icon" viewBox="0 0 14 14" width="14" height="14">
+        <svg viewBox="0 0 14 14" width="14" height="14" style={{ color: theme.fgColor.accent }}>
           <UseSymbol type="change-new" />
         </svg>
       ),
-      iconColor: theme.fgColor.accent,
       textColor: null,
     },
     'status-value:modified': {
       icon: (
-        <svg key="icon" viewBox="0 0 14 14" width="14" height="14">
+        <svg viewBox="0 0 14 14" width="14" height="14" style={{ color: theme.fgColor.accent }}>
           <UseSymbol type="change-modified" />
         </svg>
       ),
-      iconColor: theme.fgColor.accent,
       textColor: null,
     },
     'status-value:affected': {
       icon: (
-        <svg key="icon" viewBox="0 0 14 14" width="14" height="14">
+        <svg viewBox="0 0 14 14" width="14" height="14" style={{ color: theme.fgColor.accent }}>
           <UseSymbol type="change-affected" />
         </svg>
       ),
-      iconColor: theme.fgColor.accent,
       textColor: null,
     },
     'status-value:warning': {
-      icon: (
-        <svg key="icon" viewBox="0 0 14 14" width="14" height="14">
-          <UseSymbol type="warning" />
-        </svg>
-      ),
-      iconColor: theme.color.warning,
+      icon: <StatusWarnIcon size={14} color={theme.color.warning} />,
       textColor: theme.fgColor.warning,
     },
     'status-value:error': {
-      icon: (
-        <svg key="icon" viewBox="0 0 14 14" width="14" height="14">
-          <UseSymbol type="error" />
-        </svg>
-      ),
-      iconColor: theme.color.negative,
+      icon: <StatusFailIcon color={theme.color.negative} />,
       textColor: theme.fgColor.negative,
     },
   };

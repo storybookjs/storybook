@@ -3,10 +3,9 @@ import React from 'react';
 
 import { styled } from 'storybook/theming';
 
-// TODO: either use this everywhere or ChevronSmall*Icon everywhere
 export const CollapseIconWrapper = styled.div<{ isExpanded: boolean }>(({ theme, isExpanded }) => ({
-  width: 8,
-  height: 8,
+  width: 14,
+  height: 14,
   display: 'flex',
   justifyContent: 'center',
   alignItems: 'center',

@@ -2,7 +2,7 @@ import React from 'react';
 
 import { styled } from 'storybook/theming';
 
-import { UseSymbol } from '../IconSymbols.tsx';
+import { UseSymbol } from './IconSymbols.tsx';
 
 export const TypeIcon = styled.svg<{ type: 'component' | 'story' | 'test' | 'group' | 'docs' }>(
   ({ theme, type }) => ({

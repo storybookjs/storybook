@@ -10,7 +10,7 @@ import { AuthBlock, EmptyBlock, ErrorBlock, LoaderBlock } from './RefBlocks.tsx'
 import { RefIndicator } from './RefIndicator.tsx';
 import { DEFAULT_REF_ID } from './Sidebar.tsx';
 import { Tree } from './Tree.tsx';
-import { CollapseIcon } from './components/CollapseIcon.tsx';
+import { CollapseIcon } from './CollapseIcon.tsx';
 import type { RefType } from './types.ts';
 
 export interface RefProps {

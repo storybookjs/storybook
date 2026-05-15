@@ -1,14 +1,11 @@
-import React, { useCallback, useMemo } from 'react';
+import React, { useCallback, useContext, useMemo } from 'react';
 
 import { Button } from 'storybook/internal/components';
-import type { Status, StatusValue } from 'storybook/internal/types';
-
-import { ChevronSmallDownIcon, ChevronSmallRightIcon } from '@storybook/icons';
+import type { StatusValue } from 'storybook/internal/types';
 
 import { internal_fullStatusStore as fullStatusStore } from '#manager-stores';
 import { darken, transparentize } from 'polished';
 import { TreeItem, TreeItemContent } from 'react-aria-components/patched-dist/Tree';
-import type { HashEntry } from 'storybook/manager-api';
 import type { API } from 'storybook/manager-api';
 import { shortcutToHumanString } from 'storybook/manager-api';
 import { styled, useTheme } from 'storybook/theming';
@@ -19,10 +16,10 @@ import { type TreeEntry, createId } from '../../utils/tree.ts';
 import { useLayout } from '../layout/LayoutProvider.tsx';
 import { useContextMenu } from './ContextMenu.tsx';
 
-import { StatusIconContainer } from './StatusButton.tsx';
-import { StatusIconMap } from './components/StatusIcon.tsx';
-import { TypeIconWithSymbol } from './components/TypeIcon.tsx';
+import { TypeIconWithSymbol } from './TypeIcon.tsx';
 import type { Item } from './types.ts';
+import { StatusContext } from './StatusContext.tsx';
+import { CollapseIcon } from './CollapseIcon.tsx';
 
 const StyledTreeItem = styled(TreeItem)<{
   $level: number;
@@ -89,6 +86,7 @@ const StyledTreeItem = styled(TreeItem)<{
    * StatusIcon is hidden when ContextMenu button is visible. */
 
   // TODO/FIXME: replace all this with a data-menu-open attr or with aria-expanded on the button.
+  // TODO/FIXME: it doesnt work right now anyway
 
   // '& [data-displayed="off"]': {
   //   visibility: 'hidden',
@@ -109,7 +107,7 @@ const StyledTreeItem = styled(TreeItem)<{
   '.hover-only': {
     display: 'none',
   },
-  '&:hover .hover-only, &:focus-visible .hover-only, &[data-focused="true"] .hover-only': {
+  '&:hover .hover-only, &:focus-visible .hover-only': {
     display: 'flex',
     alignContent: 'center',
     alignItems: 'center',
@@ -119,7 +117,7 @@ const StyledTreeItem = styled(TreeItem)<{
     alignContent: 'center',
     alignItems: 'center',
   },
-  '&:hover .static-only, &:focus-visible .static-only, &[data-focused="true"] .static-only': {
+  '&:hover .static-only, &:focus-visible .static-only': {
     display: 'none',
   },
 }));
@@ -187,6 +185,21 @@ const StyledLabel = styled.span({
   marginInlineStart: 6,
 });
 
+const MenuTriggerContainer = styled.span({
+  margin: -2,
+});
+
+const StatusIconContainer = styled.span({
+  transition: 'none',
+  display: 'inline-flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  minWidth: 24,
+  height: 24,
+  gap: 4,
+  padding: 5,
+});
+
 const SkipToContentLink = styled(Button)(({ theme }) => ({
   display: 'none',
   '@media (min-width: 600px)': {
@@ -219,9 +232,9 @@ export interface TreeNodeProps {
   isAlongsideSelected: boolean;
   isExpanded: boolean;
   onSelectStoryId: (itemId: string) => void;
-  statuses?: { change: Status; test: Status };
+  // statuses?: { change: Status; test: Status };
   api: API;
-  data: Record<string, HashEntry>;
+  // data: Record<string, HashEntry>;
   /** Whether this item's context menu is currently open. */
   isContextMenuOpen?: boolean;
   /** How the context menu was opened — 'pointer' (click) or 'keyboard' (global shortcut). */
@@ -274,9 +287,9 @@ export const TreeNode = React.memo<TreeNodeProps>(function TreeNode({
   isAlongsideSelected,
   isExpanded,
   onSelectStoryId,
-  statuses,
+  // statuses,
   api,
-  data,
+  // data,
   isContextMenuOpen,
   contextMenuEntryMethod,
   openContextMenu,
@@ -285,7 +298,7 @@ export const TreeNode = React.memo<TreeNodeProps>(function TreeNode({
 }) {
   const theme = useTheme();
   const id = useMemo(() => createId(item.id, refId), [item.id, refId]);
-
+  const { data, groupDualStatus } = useContext(StatusContext);
   const { isMobile } = useLayout();
   const location = isMobile ? 'bottom-bar' : 'sidebar';
 
@@ -302,47 +315,53 @@ export const TreeNode = React.memo<TreeNodeProps>(function TreeNode({
     [openContextMenu, closeContextMenu, item.id]
   );
 
-  // TODO next
-  // Add isModifiedFilterActive: boolean and groupDualStatus: Record<string, { change: StatusValue; test: StatusValue }> to TreeNodeProps
-  // Split the current single-icon status rendering into dual change+test icons — for branches use getChangeDetectionStatus(statuses) + groupDualStatus[item.id] and pick the most critical of each; for leaves filter out change detection statuses (except new)
-  // Handle the isModifiedFilterActive suppression of the change icon
-
-  // Compute status items to go in the ContextMenu.
-  const statusLinks = useMemo<Link[]>(() => {
-    if (item.type !== 'story' && item.type !== 'docs') {
-      return [];
-    }
-    return Object.entries(statuses || {})
-      .filter(([, status]) => status.sidebarContextMenu !== false)
-      .map(([typeId, status]) => ({
-        id: typeId,
-        title: status.title,
-        description: status.description,
-        'aria-label': `${status.title}: ${StatusLabelsInContextMenu[status.value]}.`,
-        icon: StatusIconMap[status.value],
-        onClick: () => {
-          onSelectStoryId(id);
-          fullStatusStore.selectStatuses([status]);
-        },
-      }));
-  }, [id, item.type, onSelectStoryId, statuses]);
-
   const contextMenu = useContextMenu(
     item,
     // FIXME/TODO: why is there a mixed state model here?
-    isContextMenuOpen ?? false,
-    handleContextMenuOpenChange,
-    statusLinks,
+    // isContextMenuOpen ?? false,
+    // handleContextMenuOpenChange,
+    [],
     api,
     data,
     contextMenuEntryMethod
   );
 
-  const itemStatus = getMostCriticalStatusValue(Object.values(statuses || {}).map((s) => s.value));
-  const { icon: statusIcon, textColor: statusTextColor } = getStatus(theme, itemStatus);
+  // Get all status icons for this node.
+  const { changeStatus, changeStatusIcon, testStatus, testStatusIcon, statusTextColor } = useMemo<{
+    changeStatus: StatusValue;
+    changeStatusIcon: React.ReactNode | null;
+    testStatus: StatusValue;
+    testStatusIcon: React.ReactNode | null;
+    statusTextColor: string | null;
+  }>(() => {
+    if (!groupDualStatus || !groupDualStatus[item.id]) {
+      return {
+        changeStatus: 'status-value:unknown',
+        changeStatusIcon: null,
+        testStatus: 'status-value:unknown',
+        testStatusIcon: null,
+        statusTextColor: null,
+      };
+    }
 
-  const showBranchStatus =
-    itemStatus === 'status-value:error' || itemStatus === 'status-value:warning';
+    const changeStatus = groupDualStatus[item.id].change;
+    const testStatus = groupDualStatus[item.id].test;
+
+    const { icon: changeStatusIcon, textColor: changeTextColor } = getStatus(
+      theme,
+      changeStatus.value
+    );
+    const { icon: testStatusIcon, textColor: testTextColor } = getStatus(theme, testStatus.value);
+
+    return {
+      changeStatus: changeStatus.value,
+      changeStatusIcon,
+      testStatus: testStatus.value,
+      testStatusIcon,
+      statusTextColor: testTextColor ?? changeTextColor,
+    };
+  }, [groupDualStatus, item.id, theme]);
+
   const isBranch = guardHasChildren(item);
   const hasContextMenu = guardHasContextMenu(contextMenu);
 
@@ -350,8 +369,12 @@ export const TreeNode = React.memo<TreeNodeProps>(function TreeNode({
   const ariaLabel = useMemo(() => {
     let label = item.renderAriaLabel?.(item, api, { location }) || item.name;
 
-    if (itemStatus !== 'status-value:unknown' && (!isBranch || showBranchStatus)) {
-      label += `. ${StatusLabelsInAriaLabel[itemStatus]}`;
+    if (testStatus !== 'status-value:unknown') {
+      label += `. ${StatusLabelsInAriaLabel[testStatus]}`;
+    }
+
+    if (changeStatus !== 'status-value:unknown') {
+      label += `. ${StatusLabelsInAriaLabel[changeStatus]}`;
     }
 
     if (hasContextMenu) {
@@ -359,19 +382,17 @@ export const TreeNode = React.memo<TreeNodeProps>(function TreeNode({
       label += `. Press ${shortcut} for more actions`;
     }
     return label;
-  }, [item, api, location, hasContextMenu, itemStatus, isBranch, showBranchStatus]);
+  }, [item, api, location, hasContextMenu, changeStatus, testStatus]);
 
   const prefixAction = useMemo(() => {
     if (item.type === 'root') {
-      return isExpanded ? <ChevronSmallDownIcon /> : <ChevronSmallRightIcon />;
+      return <CollapseIcon isExpanded={isExpanded} />;
     }
 
     if (isBranch) {
       return (
         <>
-          <span className="hover-only">
-            {isExpanded ? <ChevronSmallDownIcon /> : <ChevronSmallRightIcon />}
-          </span>
+          <span className="hover-only">{<CollapseIcon isExpanded={isExpanded} />}</span>
           <span className="static-only">
             <TypeIconWithSymbol type={item.type} />
           </span>
@@ -389,6 +410,7 @@ export const TreeNode = React.memo<TreeNodeProps>(function TreeNode({
       textValue={item.name}
       aria-label={ariaLabel}
       id={id}
+      key={id}
       data-item-id={item.id}
       data-ref-id={refId}
     >
@@ -397,19 +419,20 @@ export const TreeNode = React.memo<TreeNodeProps>(function TreeNode({
           <Traces level={item.depth} isAlongsideSelected={isAlongsideSelected} />
           {prefixAction}
           <StyledLabel>{item.renderLabel?.(item, api, { location }) || item.name}</StyledLabel>
-          {hasContextMenu && <span className="hover-only">{contextMenu.node}</span>}
-          {statusIcon && (!isBranch || showBranchStatus) && (
-            <span className="static-only">
-              <StatusIconContainer
-                data-testid="tree-status-button"
-                status={itemStatus}
-                selectedItem={isSelected}
-              >
-                {statusIcon}
-              </StatusIconContainer>
-            </span>
+          {hasContextMenu && (
+            <MenuTriggerContainer className="hover-only">{contextMenu.node}</MenuTriggerContainer>
           )}
-
+          {(changeStatusIcon || testStatusIcon) && (
+            <StatusIconContainer
+              className="static-only"
+              role="status"
+              aria-live="off"
+              data-testid="tree-status-button"
+            >
+              {changeStatusIcon}
+              {testStatusIcon}
+            </StatusIconContainer>
+          )}
           {isSelected && (
             <SkipToContentLink asChild ariaLabel={false}>
               <a href="#storybook-preview-wrapper">Skip to content</a>

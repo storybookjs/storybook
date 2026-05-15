@@ -50,7 +50,7 @@ export const BooleanTrueProps = {
     label: 'Submit',
     primary: true,
     loading: true,
-    disabled: false,
+    disabled: true,
   },
 };
 

@@ -53,6 +53,12 @@ jobs:
       workflow: ${{ env.workflow }}
       ghBaseBranch: ${{ github.event.pull_request.base.ref }}
       ghPrNumber: ${{ github.event.pull_request.number }}
+      # SECURITY: 'true' only when the PR head is a fork (untrusted). On
+      # push events github.event.pull_request is absent → '' → treated as
+      # not-fork (trusted). Threaded into CircleCI as the ghIsFork pipeline
+      # parameter so the generated config omits save_cache on fork
+      # pipelines (TanStack/router 2026-05-11 cache-poisoning class).
+      ghIsFork: ${{ github.event.pull_request.head.repo.fork }}
 
   trigger-circle-ci-workflow:
     runs-on: ubuntu-latest

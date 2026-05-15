@@ -1,0 +1,7 @@
+{
+  "name": "eslint-plugin-verify-recipes",
+  "version": "0.0.1",
+  "private": true,
+  "description": "Local ESLint plugin for Storybook verify-recipe structural rules",
+  "main": "index.cjs"
+}

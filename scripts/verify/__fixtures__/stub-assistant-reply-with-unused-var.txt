@@ -1,0 +1,46 @@
+<<<SPEC_START>>>
+import { expect, test } from '@playwright/test';
+
+import { RecipePage } from './_util.ts';
+
+const unusedX: number = 1;
+
+test('stub fixture with unused var', async ({ page }, testInfo) => {
+  const pageErrors: string[] = [];
+  const consoleErrors: string[] = [];
+
+  page.on('pageerror', (err) => {
+    pageErrors.push(err.stack ?? err.message ?? String(err));
+  });
+  page.on('console', (msg) => {
+    if (msg.type() === 'error') {
+      consoleErrors.push(msg.text());
+    }
+  });
+
+  const baseURL =
+    process.env.STORYBOOK_URL ?? testInfo.project.use.baseURL ?? 'http://localhost:6006';
+
+  try {
+    await page.goto(`${baseURL}/?path=/story/example-button--primary`);
+
+    const sb = new RecipePage(page, expect);
+    await sb.waitUntilLoaded();
+
+    const previewIframe = page.frameLocator('#storybook-preview-iframe');
+    const previewRoot = previewIframe.locator('#storybook-root, #root');
+    await expect(previewRoot).toBeVisible();
+  } finally {
+    await testInfo.attach('pageErrors', {
+      body: JSON.stringify(pageErrors),
+      contentType: 'application/json',
+    });
+    await testInfo.attach('consoleErrors', {
+      body: JSON.stringify(consoleErrors),
+      contentType: 'application/json',
+    });
+  }
+
+  expect(pageErrors).toEqual([]);
+});
+<<<SPEC_END>>>

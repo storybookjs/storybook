@@ -1,0 +1,245 @@
+name: 'Publish agentic PR results'
+description: >
+  Read verdict, push screenshots to side branch, append telemetry, stage
+  artifacts, upload artifacts. Carves out steps 19 + 21-24 of the original
+  verify-pr.yml. Action-agnostic; verdict-gated label / PR comment / final
+  fail-gate stay in the caller because they encode action-specific shape.
+
+  M1: every sub-step that mirrors a current `if: always()` step carries
+  explicit `if: always()` here — composite-level `if:` does NOT cascade.
+
+  H4: `screenshot-urls` is exposed as a FILE PATH (composite output
+  `screenshot-urls-path`), not a heredoc string. Caller's github-script
+  reads the file with fs.readFileSync. Closes a heredoc-terminator-injection
+  surface against the PR comment renderer.
+
+inputs:
+  github-token:
+    description: 'GITHUB_TOKEN for side-branch push'
+    required: true
+  pr-number:
+    description: 'PR number'
+    required: true
+  run-id:
+    description: 'github.run_id'
+    required: true
+  repo:
+    description: 'owner/name (github.repository)'
+    required: true
+  result-path:
+    description: >
+      Trusted absolute path to verify-result.json (caller threads from the
+      task step's $GITHUB_OUTPUT).
+    required: true
+  provenance-secret-path:
+    description: >
+      C1 fix: path to file holding the per-run provenance secret. derive-verdict.ts
+      reads VERIFY_PROVENANCE_SECRET from env to validate the HMAC signature
+      on verify-result.json. If empty, HMAC gate is skipped (back-compat for
+      callers that don't yet pass it; treats the verdict as untrusted in the
+      same sense as the pre-C1 path).
+    required: false
+    default: ''
+  pr-head-dir:
+    description: 'Absolute path to PR-head workspace (defaults to env.PR_HEAD_DIR)'
+    required: false
+    default: ''
+  screenshot-source-dir:
+    description: 'Where push-screenshots.ts scans for PNGs'
+    required: false
+    default: ''
+  dispatch-dirs:
+    description: 'Newline-delimited dirs passed as repeated --dispatch-dir to append-telemetry.ts'
+    required: false
+    default: ''
+  telemetry-webhook-url:
+    description: 'Empty → telemetry no-ops'
+    required: false
+    default: ''
+  telemetry-webhook-token:
+    description: 'Empty → telemetry no-ops'
+    required: false
+    default: ''
+  artifact-name-prefix:
+    description: 'Final artifact name = <prefix>-pr-<num>-<run-id>'
+    required: false
+    default: 'verify-output'
+  retention-days:
+    description: 'Artifact retention'
+    required: false
+    default: '14'
+  skip-screenshots:
+    description: 'true → side-branch push skipped'
+    required: false
+    default: 'false'
+  skip-telemetry:
+    description: 'true → telemetry no-op (independent of webhook secrets)'
+    required: false
+    default: 'false'
+
+outputs:
+  verdict:
+    description: 'Verdict emitted by derive-verdict.ts (e.g. verified | regression | missing)'
+    value: ${{ steps.verdict.outputs.verdict }}
+  screenshot-urls-path:
+    description: >
+      H4: absolute path to a file containing the screenshot URLs JSON
+      (array of {rel,url} or []). Empty file or missing path means no
+      screenshots. Caller reads with fs.readFileSync to avoid heredoc
+      injection through composite output.
+    value: ${{ steps.screenshots.outputs.urls-path }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Read verdict
+      id: verdict
+      if: always()
+      shell: bash
+      env:
+        RESULT: ${{ inputs.result-path }}
+        PROVENANCE_SECRET_PATH: ${{ inputs.provenance-secret-path }}
+      run: |
+        set -euo pipefail
+        if [ ! -f "$RESULT" ]; then
+          echo "verdict=missing" >> "$GITHUB_OUTPUT"
+          exit 0
+        fi
+        # Playwright writes its report into `$PR_HEAD_DIR/.verify-output/<runId>/`,
+        # which is separate from the trusted result file at
+        # `$PR_HEAD_DIR/.verify-out-trusted/verify-result.json`. Using
+        # `dirname($RESULT)` finds nothing — derive-verdict then can't populate
+        # `regressionReason` from the report. Resolve via runId.
+        RUN_ID=$(jq -r '.runId // ""' "$RESULT" 2>/dev/null)
+        REPORT="${PR_HEAD_DIR:-$(dirname "$RESULT")}/.verify-output/${RUN_ID}/playwright-report.json"
+        if [ ! -f "$REPORT" ]; then
+          # Fallback for older runs colocated with verify-result.json (local-dev).
+          REPORT="$(dirname "$RESULT")/playwright-report.json"
+        fi
+        # C1 fix: thread the provenance secret into derive-verdict.ts via env
+        # so it can validate the HMAC signature. The secret never appears in
+        # the composite's $GITHUB_ENV or step output — only in this subshell.
+        if [ -n "$PROVENANCE_SECRET_PATH" ] && [ -f "$PROVENANCE_SECRET_PATH" ]; then
+          VERIFY_PROVENANCE_SECRET="$(cat "$PROVENANCE_SECRET_PATH")" \
+            node "$GITHUB_WORKSPACE/scripts/verify/ci/derive-verdict.ts" \
+              --result "$RESULT" \
+              --report "$REPORT" \
+              >> "$GITHUB_OUTPUT"
+        else
+          node "$GITHUB_WORKSPACE/scripts/verify/ci/derive-verdict.ts" \
+            --result "$RESULT" \
+            --report "$REPORT" \
+            >> "$GITHUB_OUTPUT"
+        fi
+
+    - name: Push screenshots to side branch
+      id: screenshots
+      if: always() && inputs.skip-screenshots != 'true' && steps.verdict.outputs.verdict != '' && steps.verdict.outputs.verdict != 'missing'
+      shell: bash
+      # M3: token via env-mapping, not literal interpolation. H4: write urls
+      # JSON to a file path exposed as composite output, not a heredoc to
+      # $GITHUB_OUTPUT.
+      env:
+        GITHUB_TOKEN: ${{ inputs.github-token }}
+        PR_NUMBER: ${{ inputs.pr-number }}
+        REPO: ${{ inputs.repo }}
+        RUN_ID: ${{ inputs.run-id }}
+        SRC_DIR: ${{ inputs.screenshot-source-dir }}
+      run: |
+        set -euo pipefail
+        SRC="${SRC_DIR:-${{ inputs.pr-head-dir != '' && inputs.pr-head-dir || env.PR_HEAD_DIR }}/.verify-output}"
+        URLS_FILE="$RUNNER_TEMP/screenshot-urls.json"
+        # Default to empty array so caller can always fs.readFileSync.
+        echo '[]' > "$URLS_FILE"
+
+        # Route push-screenshots' heredoc output to a private sink, then
+        # extract just the urls JSON value into URLS_FILE. Avoids exposing
+        # the heredoc terminator across the composite-caller boundary.
+        SINK="$RUNNER_TEMP/screenshot-output-sink"
+        : > "$SINK"
+        node "$GITHUB_WORKSPACE/scripts/verify/ci/push-screenshots.ts" \
+          --source "$SRC" \
+          --pr "$PR_NUMBER" \
+          --run-id "$RUN_ID" \
+          --repo "$REPO" \
+          --assets-dir "$RUNNER_TEMP/verify-assets" \
+          --output "$SINK"
+        # Heredoc shape: `urls<<EOF\n<json>\nEOF\n`. Extract everything
+        # between `urls<<EOF` and the next `EOF` line. urls value is single-
+        # line JSON emitted by JSON.stringify, so this is deterministic.
+        if grep -q '^urls<<EOF$' "$SINK"; then
+          awk '/^urls<<EOF$/{flag=1; next} /^EOF$/{flag=0} flag' "$SINK" > "$URLS_FILE"
+        fi
+        echo "urls-path=$URLS_FILE" >> "$GITHUB_OUTPUT"
+
+    - name: Append telemetry
+      if: always() && inputs.skip-telemetry != 'true' && steps.verdict.outputs.verdict != '' && steps.verdict.outputs.verdict != 'missing'
+      shell: bash
+      # M3: webhook secrets via env-mapping only. No literal interpolation
+      # into the shell. append-telemetry.ts no-ops when env unset.
+      env:
+        PR_NUMBER: ${{ inputs.pr-number }}
+        RUN_ID: ${{ inputs.run-id }}
+        TELEMETRY_AGENTIC_VERIFICATION_WEBHOOK_URL: ${{ inputs.telemetry-webhook-url }}
+        TELEMETRY_AGENTIC_VERIFICATION_WEBHOOK_TOKEN: ${{ inputs.telemetry-webhook-token }}
+        RESULT: ${{ inputs.result-path }}
+        DISPATCH_DIRS: ${{ inputs.dispatch-dirs }}
+        PR_HEAD_DIR_IN: ${{ inputs.pr-head-dir }}
+      run: |
+        set -euo pipefail
+        DISPATCH_ARGS=()
+        if [ -n "$DISPATCH_DIRS" ]; then
+          while IFS= read -r d; do
+            [ -z "$d" ] && continue
+            d="${d%"${d##*[![:space:]]}"}"
+            [ -z "$d" ] && continue
+            DISPATCH_ARGS+=(--dispatch-dir "$d")
+          done <<< "$DISPATCH_DIRS"
+        else
+          PRHD="${PR_HEAD_DIR_IN:-$PR_HEAD_DIR}"
+          DISPATCH_ARGS+=(--dispatch-dir "$PRHD/.verify-output")
+          DISPATCH_ARGS+=(--dispatch-dir "$GITHUB_WORKSPACE/.verify-output")
+        fi
+        node "$GITHUB_WORKSPACE/scripts/verify/ci/append-telemetry.ts" \
+          --result "$RESULT" \
+          --pr "$PR_NUMBER" \
+          --run-id "$RUN_ID" \
+          "${DISPATCH_ARGS[@]}" \
+          --curl-cfg "$RUNNER_TEMP/.curl-cfg"
+
+    - name: Stage artifacts (rename dotdirs)
+      if: always()
+      shell: bash
+      env:
+        PR_NUMBER: ${{ inputs.pr-number }}
+        PR_HEAD_DIR_IN: ${{ inputs.pr-head-dir }}
+      run: |
+        set -euo pipefail
+        PRHD="${PR_HEAD_DIR_IN:-$PR_HEAD_DIR}"
+        STAGE="$RUNNER_TEMP/verify-artifacts"
+        rm -rf "$STAGE"
+        mkdir -p "$STAGE/runner-pr-head" "$STAGE/base"
+        if [ -d "$PRHD/.verify-output" ]; then
+          cp -a "$PRHD/.verify-output/." "$STAGE/runner-pr-head/verify-output/"
+        fi
+        if [ -d "$PRHD/.verify-recipes" ]; then
+          mkdir -p "$STAGE/runner-pr-head/verify-recipes"
+          if [ -f "$PRHD/.verify-recipes/pr-${PR_NUMBER}.spec.ts" ]; then
+            cp "$PRHD/.verify-recipes/pr-${PR_NUMBER}.spec.ts" \
+              "$STAGE/runner-pr-head/verify-recipes/pr-${PR_NUMBER}.spec.ts"
+          fi
+        fi
+        if [ -d "$GITHUB_WORKSPACE/.verify-output" ]; then
+          cp -a "$GITHUB_WORKSPACE/.verify-output/." "$STAGE/base/verify-output/"
+        fi
+        echo "VERIFY_ARTIFACTS_DIR=$STAGE" >> "$GITHUB_ENV"
+        ls -la "$STAGE" || true
+
+    - name: Upload artifacts
+      if: always()
+      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+      with:
+        name: ${{ inputs.artifact-name-prefix }}-pr-${{ inputs.pr-number }}-${{ inputs.run-id }}
+        path: ${{ env.VERIFY_ARTIFACTS_DIR }}/
+        if-no-files-found: warn
+        retention-days: ${{ inputs.retention-days }}

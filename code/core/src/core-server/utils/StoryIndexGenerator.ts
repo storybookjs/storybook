@@ -168,10 +168,18 @@ export class StoryIndexGenerator {
     const { globby } = await import('globby');
 
     // Execute globby within the new CWD to ensure `ignore` patterns work correctly.
+    const globOptions = commonGlobOptions(globPattern);
+    const ignore = [
+      ...(('ignore' in globOptions && globOptions.ignore) || []),
+      `${globPattern}/**`,
+    ];
+
     const files = await globby(globPattern, {
       absolute: true,
       cwd: globCwd,
-      ...commonGlobOptions(globPattern),
+      ...globOptions,
+      ignore,
+      onlyFiles: true,
     });
 
     if (files.length === 0 && !ignoreWarnings) {

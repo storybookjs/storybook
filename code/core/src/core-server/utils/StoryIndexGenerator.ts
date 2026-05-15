@@ -606,7 +606,7 @@ export class StoryIndexGenerator {
         result.name ||
         (csfEntry ? autoName(importPath, csfEntry.importPath, defaultName) : defaultName);
 
-      const id = toId(csfEntry?.extra.metaId || title, name);
+      const id = toId(csfEntry?.extra.metaId || result.id || title, name);
 
       const tags = combineTags(
         ...projectTags,

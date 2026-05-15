@@ -15,10 +15,8 @@ import type { RefType } from './types.ts';
 
 export interface RefProps {
   api: API;
-  docsMode: boolean;
   isLoading: boolean;
   isBrowsing: boolean;
-  isDevelopment: boolean;
   hasEntries: boolean;
   selectedStoryId: string | null;
 }
@@ -84,7 +82,6 @@ export const Ref: FC<RefType & RefProps> = React.memo(function Ref(props) {
     title = refId,
     isLoading: isLoadingMain,
     isBrowsing,
-    isDevelopment,
     hasEntries,
     selectedStoryId,
     loginUrl,
@@ -158,15 +155,11 @@ export const Ref: FC<RefType & RefProps> = React.memo(function Ref(props) {
           )}
           {state === 'ready' && (
             <Tree
-              api={api}
               allStatuses={allStatuses}
               isBrowsing={isBrowsing}
-              isDevelopment={isDevelopment}
               isMain={isMain}
               refId={refId}
               data={index}
-              // @ts-expect-error (non strict)
-              docsMode={storybookState.docsOptions.docsMode}
               selectedStoryId={selectedStoryId}
               onSelectStoryId={onSelectStoryId}
               // highlightedRef={highlightedRef}

@@ -35,22 +35,18 @@ const StyledAriaTree = styled(AriaTree)(() => ({
 
 interface TreeProps {
   isBrowsing: boolean;
-  isDevelopment: boolean;
   isMain: boolean;
   allStatuses?: StatusesByStoryIdAndTypeId;
   refId: string;
   data: IndexHash;
-  docsMode: boolean;
   selectedStoryId: string | null;
   onSelectStoryId: (storyId: string) => void;
 }
 
 export const Tree = React.memo<TreeProps>(function Tree({
-  isDevelopment,
   allStatuses,
   refId,
   data,
-  docsMode,
   selectedStoryId,
   onSelectStoryId,
 }) {
@@ -206,13 +202,24 @@ export const Tree = React.memo<TreeProps>(function Tree({
 
   // Memoize renderNode's returned closure so Collection receives a stable children prop
   // as long as the relevant inputs are stable.
+  // const nodeRenderer = renderNode({
+  //   api,
+  //   refId,
+  //   groupDualStatus,
+  //   data: collapsedData,
+  //   onSelectStoryId,
+  //   selectedStoryId,
+  //   selectedParentId,
+  //   expanded,
+  //   contextMenuState,
+  //   openContextMenu,
+  //   closeContextMenu,
+  // });
   const nodeRenderer = useMemo(
     () =>
       renderNode({
         api,
         refId,
-        docsMode,
-        isDevelopment,
         groupDualStatus,
         data: collapsedData,
         onSelectStoryId,
@@ -226,8 +233,6 @@ export const Tree = React.memo<TreeProps>(function Tree({
     [
       api,
       refId,
-      docsMode,
-      isDevelopment,
       groupDualStatus,
       collapsedData,
       onSelectStoryId,
@@ -324,7 +329,16 @@ function renderNode({
         statuses={itemStatuses}
       >
         {item.resolvedChildren && (
-          <Collection items={item.resolvedChildren}>
+          <Collection
+            items={item.resolvedChildren}
+            dependencies={[
+              expanded,
+              selectedStoryId,
+              selectedParentId,
+              contextMenuState,
+              groupDualStatus,
+            ]}
+          >
             {renderNode({
               ...props,
               expanded,

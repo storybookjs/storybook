@@ -23,7 +23,6 @@ const Sidebar = React.memo(function Sideber({ onMenuClick }: SidebarProps) {
       storyId,
       refId,
       layout: { showToolbar },
-      docsOptions,
       // FIXME: This is the actual `index.json` index where the `index` below
       // is actually the stories hash. We should fix this up and make it consistent.
       internal_index,
@@ -49,7 +48,6 @@ const Sidebar = React.memo(function Sideber({ onMenuClick }: SidebarProps) {
       refId,
       viewMode,
       showToolbar,
-      docsMode: docsOptions?.docsMode ?? false,
       isPanelShown: api.getIsPanelShown(),
       isNavShown: api.getIsNavShown(),
       menuHighlighted: whatsNewNotificationsEnabled && api.isWhatsNewUnread(),

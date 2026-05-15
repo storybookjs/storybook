@@ -9,7 +9,7 @@ import type {
   API_FilterFunction,
   API_HashEntry,
   API_IndexHash,
-  API_IndexTree,
+  API_PreparedIndexEntry,
 } from './api-stories.ts';
 import type { SetStoriesStory, SetStoriesStoryData } from './channelApi.ts';
 import type { DocsOptions } from './core-common.ts';

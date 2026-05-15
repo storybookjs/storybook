@@ -10,11 +10,9 @@ import type { CombinedDataset, Selection } from './types.ts';
 export interface ExplorerProps {
   className?: string;
   api: API;
-  docsMode: boolean;
   isLoading: boolean;
   isBrowsing: boolean;
   isHidden: boolean;
-  isDevelopment: boolean;
   hasEntries: boolean;
   dataset: CombinedDataset;
   selected: Selection;
@@ -22,12 +20,10 @@ export interface ExplorerProps {
 
 export const Explorer: FC<ExplorerProps> = React.memo(function Explorer({
   api,
-  docsMode,
   hasEntries,
   isLoading,
   isBrowsing,
   isHidden,
-  isDevelopment,
   dataset,
   selected,
   ...restProps
@@ -57,10 +53,8 @@ export const Explorer: FC<ExplorerProps> = React.memo(function Explorer({
           {...ref}
           key={refId}
           api={api}
-          docsMode={docsMode}
           isLoading={isLoading}
           isBrowsing={isBrowsing}
-          isDevelopment={isDevelopment}
           hasEntries={hasEntries}
           selectedStoryId={selected?.refId === ref.id ? selected.storyId : null}
         />

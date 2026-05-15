@@ -50,20 +50,17 @@ const useFullStoryName = () => {
   }
   const combinedIndex = combineIndexes(index, refs || {});
   let fullStoryName =
-    currentStory.renderLabel?.(currentStory, api, { isMobile: true, location: 'bottom-bar' }) ||
-    currentStory.name;
+    currentStory.renderLabel?.(currentStory, api, { location: 'bottom-bar' }) || currentStory.name;
   let fullStoryAriaLabel =
-    currentStory.renderAriaLabel?.(currentStory, api, { isMobile: true, location: 'bottom-bar' }) ||
-    fullStoryName;
+    currentStory.renderAriaLabel?.(currentStory, api, { location: 'bottom-bar' }) || fullStoryName;
 
   let node = combinedIndex[currentStory.id];
 
   while (node && 'parent' in node && node.parent && combinedIndex[node.parent]) {
     node = combinedIndex[node.parent];
-    const parentName =
-      node.renderLabel?.(node, api, { isMobile: true, location: 'bottom-bar' }) || node.name;
+    const parentName = node.renderLabel?.(node, api, { location: 'bottom-bar' }) || node.name;
     const parentAriaLabel =
-      node.renderAriaLabel?.(node, api, { isMobile: true, location: 'bottom-bar' }) || parentName;
+      node.renderAriaLabel?.(node, api, { location: 'bottom-bar' }) || parentName;
 
     // Limit length of name shown in UI due to layout constraints.
     if (fullStoryName.length < 24) {

@@ -214,8 +214,6 @@ export type ContextMenuEntryMethod = 'pointer' | 'keyboard';
 export interface TreeNodeProps {
   item: TreeEntry;
   refId: string;
-  docsMode: boolean;
-  isDevelopment: boolean;
   isOrphan: boolean;
   isSelected: boolean;
   isAlongsideSelected: boolean;
@@ -398,9 +396,7 @@ export const TreeNode = React.memo<TreeNodeProps>(function TreeNode({
         <StyledContent>
           <Traces level={item.depth} isAlongsideSelected={isAlongsideSelected} />
           {prefixAction}
-          <StyledLabel>
-            {item.renderLabel?.(item || [], api, { location }) || item.name}
-          </StyledLabel>
+          <StyledLabel>{item.renderLabel?.(item, api, { location }) || item.name}</StyledLabel>
           {hasContextMenu && <span className="hover-only">{contextMenu.node}</span>}
           {statusIcon && (!isBranch || showBranchStatus) && (
             <span className="static-only">

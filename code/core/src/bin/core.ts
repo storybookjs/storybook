@@ -15,6 +15,9 @@ import { globalSettings } from '../cli/globalSettings.ts';
 addToGlobalContext('cliVersion', version);
 process.env.STORYBOOK = 'true';
 
+const parsePort = (str: string) => parseInt(str, 10);
+const parseOptionalPort = (str?: string) => (str == null ? true : parsePort(str));
+
 /**
  * Core CLI for Storybook.
  *
@@ -80,7 +83,7 @@ const command = (name: string) =>
     });
 
 command('dev')
-  .option('-p, --port <number>', 'Port to run Storybook', (str) => parseInt(str, 10))
+  .option('-p, --port <number>', 'Port to run Storybook', parsePort)
   .option('-h, --host <string>', 'Host to run Storybook')
   .option('-c, --config-dir <dir-name>', 'Directory where to load Storybook configurations from')
   .option(
@@ -111,7 +114,11 @@ command('dev')
   )
   .option('--force-build-preview', 'Build the preview iframe even if you are using --preview-url')
   .option('--docs', 'Build a documentation-only site using addon-docs')
-  .option('--exact-port', 'Exit early if the desired port is not available')
+  .option(
+    '--exact-port [number]',
+    'Exit early if the desired port is not available',
+    parseOptionalPort
+  )
   .option(
     '--initial-path [path]',
     'URL path to be appended when visiting Storybook for the first time'
@@ -136,6 +143,10 @@ command('dev')
 
     if (parseInt(`${options.port}`, 10)) {
       options.port = parseInt(`${options.port}`, 10);
+    }
+    if (typeof options.exactPort === 'number') {
+      options.port = options.exactPort;
+      options.exactPort = true;
     }
 
     await dev({ ...options, packageJson }).catch(() => {

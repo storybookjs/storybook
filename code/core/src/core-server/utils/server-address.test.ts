@@ -66,6 +66,26 @@ describe('getServerPort', () => {
 
     expect(result).toBe(expectedFreePort);
   });
+
+  it('should not exit for exact port when no port is requested', async () => {
+    const expectedFreePort = 4000;
+    const exitSpy = vi.spyOn(process, 'exit').mockImplementation(
+      ((code?: string | number | null) => {
+        throw new Error(`process.exit called with ${code}`);
+      }) as typeof process.exit
+    );
+
+    try {
+      vi.mocked(detectPort).mockResolvedValue(expectedFreePort);
+
+      const result = await getServerPort(undefined, { exactPort: true });
+
+      expect(result).toBe(expectedFreePort);
+      expect(exitSpy).not.toHaveBeenCalled();
+    } finally {
+      exitSpy.mockRestore();
+    }
+  });
 });
 
 describe('getServerChannelUrl', () => {

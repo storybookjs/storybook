@@ -34,7 +34,7 @@ interface PortOptions {
 export const getServerPort = (port?: number, { exactPort }: PortOptions = {}) =>
   detectFreePort(port)
     .then((freePort) => {
-      if (freePort !== port && exactPort) {
+      if (port != null && freePort !== port && exactPort) {
         process.exit(-1);
       }
       return freePort;

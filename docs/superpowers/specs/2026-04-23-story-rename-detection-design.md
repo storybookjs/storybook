@@ -37,7 +37,7 @@ In all three, the old URL becomes a 404 even though the story is usually still r
 
 **Silence > wrong redirect.** The previous spec adopted this rule for ambiguous file renames and so does this one. A wrong redirect is a silent bug the user may not notice; a fallback overlay with options is a predictable UX the user can reason about.
 
-**One signal, many cases.** Rather than classify in-file edits into discrete categories (title rename, component rename, export rename, deletion), the classifier asks a single question per export name: *was this symbol present before and after?* Yes + different ID → rename. Yes + same ID → noop. No (gone) → orphan. This handles title/component/export/delete in one unified table.
+**One signal, many cases.** Rather than classify in-file edits into discrete categories (title rename, component rename, export rename, deletion), the classifier asks a single question per export name: _was this symbol present before and after?_ Yes + different ID → rename. Yes + same ID → noop. No (gone) → orphan. This handles title/component/export/delete in one unified table.
 
 **"Story was deleted" is a hint, not a terminal state.** Even when we can prove a story is gone (physical file deletion), we still offer followups. The UX always presents a way forward.
 
@@ -156,13 +156,13 @@ Both fields grow monotonically. Neither is cleared within a session.
 **File:** `code/core/src/shared/rename-redirect-store/index.ts` (renamed + generalised from `applyRenameChains`)
 
 ```typescript
-type Rename   = { oldId: StoryId; newId: StoryId; origin: Path };
-type Orphan   = { id: StoryId; origin: Path };
+type Rename = { oldId: StoryId; newId: StoryId; origin: Path };
+type Orphan = { id: StoryId; origin: Path };
 type Deletion = { id: StoryId; origin: Path };
 
 function extendRenameMaps(
   state: RenameRedirectState,
-  events: { renames: Rename[]; orphans: Orphan[]; deletions: Deletion[] }
+  events: { renames: Rename[]; orphans: Orphan[]; deletions: Deletion[] },
 ): RenameRedirectState;
 ```
 
@@ -214,15 +214,15 @@ Docs entries capture `name` because the 404 button surfaces the docs title.
 Add a third accumulator and extend the watchStorySpecifiers callback:
 
 ```typescript
-const pendingRenameCandidates: { oldPath: Path; newPath: Path }[] = [];  // existing
-const pendingDeletions: Path[] = [];                                      // existing
-const pendingModifications: Path[] = [];                                  // new
+const pendingRenameCandidates: { oldPath: Path; newPath: Path }[] = []; // existing
+const pendingDeletions: Path[] = []; // existing
+const pendingModifications: Path[] = []; // new
 
 watchStorySpecifiers(normalizedStories, { workingDir }, async (path, removed, renameHint) => {
   (await storyIndexGeneratorPromise).invalidate(path, removed);
   if (removed) {
     if (renameHint) pendingRenameCandidates.push({ oldPath: path, newPath: renameHint.pairedWith });
-    else            pendingDeletions.push(path);
+    else pendingDeletions.push(path);
   } else {
     pendingModifications.push(path);
   }
@@ -279,8 +279,8 @@ The `origins` field is not read here — it's for the 404 path only.
 ```typescript
 type FollowupOverlayProps = {
   heading: 'This story is no longer here' | 'This story was deleted';
-  siblings: API_StoryEntry[];     // current stories at origins[storyId]
-  docsEntry?: API_DocsEntry;      // current docs at origins[storyId] (if any)
+  siblings: API_StoryEntry[]; // current stories at origins[storyId]
+  docsEntry?: API_DocsEntry; // current docs at origins[storyId] (if any)
   onSelect: (id: StoryId) => void;
 };
 ```
@@ -313,12 +313,12 @@ return <FollowupOverlay heading={heading} siblings={siblings} docsEntry={docsEnt
 
 **Rendering matrix:**
 
-| Store state                               | UI                                                         |
-|-------------------------------------------|------------------------------------------------------------|
-| `origins[id]` undefined                   | Existing generic missing-story UI (no change from today)   |
-| `origins[id]` set, siblings non-empty     | Full overlay: heading + sibling list + (optional) docs button + sidebar fallback |
-| `origins[id]` set, siblings empty         | Overlay with heading + sidebar fallback only (file gone or empty) |
-| `chains[id].last === null`                | Heading switches to "This story was deleted"               |
+| Store state                           | UI                                                                               |
+| ------------------------------------- | -------------------------------------------------------------------------------- |
+| `origins[id]` undefined               | Existing generic missing-story UI (no change from today)                         |
+| `origins[id]` set, siblings non-empty | Full overlay: heading + sibling list + (optional) docs button + sidebar fallback |
+| `origins[id]` set, siblings empty     | Overlay with heading + sidebar fallback only (file gone or empty)                |
+| `chains[id].last === null`            | Heading switches to "This story was deleted"                                     |
 
 **Props and data source:**
 
@@ -332,16 +332,16 @@ return <FollowupOverlay heading={heading} siblings={siblings} docsEntry={docsEnt
 
 ## Breaking Change Analysis
 
-| Surface | Change | Breaking? |
-|---------|--------|-----------|
-| `STORY_INDEX_INVALIDATED` | Unchanged | No |
-| `onInvalidate` signature | Unchanged (3rd arg already optional) | No |
-| `StoryIndexGenerator` public methods | `removedFileSnapshots` accessors unchanged; `modifiedFileSnapshots`, `clearSnapshots` new; `clearRemovedFileSnapshots` retained as alias | No |
-| `applyRenameChains` → `extendRenameMaps` | Internal function renamed + generalised; no public export | No |
-| `RenameRedirectState` | Adds `origins` field. Session-scoped, no persistence migration needed | No |
-| `UniversalStore` ID (`storybook/rename-redirect`) | Unchanged | No |
-| Manager public API | `internal_renameRedirectStore` export unchanged | No |
-| Channel events | None added, none changed | No |
+| Surface                                           | Change                                                                                                                                   | Breaking? |
+| ------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- | --------- |
+| `STORY_INDEX_INVALIDATED`                         | Unchanged                                                                                                                                | No        |
+| `onInvalidate` signature                          | Unchanged (3rd arg already optional)                                                                                                     | No        |
+| `StoryIndexGenerator` public methods              | `removedFileSnapshots` accessors unchanged; `modifiedFileSnapshots`, `clearSnapshots` new; `clearRemovedFileSnapshots` retained as alias | No        |
+| `applyRenameChains` → `extendRenameMaps`          | Internal function renamed + generalised; no public export                                                                                | No        |
+| `RenameRedirectState`                             | Adds `origins` field. Session-scoped, no persistence migration needed                                                                    | No        |
+| `UniversalStore` ID (`storybook/rename-redirect`) | Unchanged                                                                                                                                | No        |
+| Manager public API                                | `internal_renameRedirectStore` export unchanged                                                                                          | No        |
+| Channel events                                    | None added, none changed                                                                                                                 | No        |
 
 Net: **no public breaking changes.** All work is additive or internal.
 
@@ -352,6 +352,7 @@ Net: **no public breaking changes.** All work is additive or internal.
 ### Unit tests
 
 **`classifyFileChange`** (`shared/rename-redirect-store/classify.test.ts`, new):
+
 - empty old, empty new → no events
 - shared exports, all IDs unchanged → no events
 - shared exports, all IDs changed (title/component rename) → all renames, no orphans
@@ -362,6 +363,7 @@ Net: **no public breaking changes.** All work is additive or internal.
 - mixed (1 shared id-changed + 1 removed + 1 added) → 1 rename + 1 orphan
 
 **`extendRenameMaps`** (extends prior `applyRenameChains.test.ts`):
+
 - Prior tests migrate to new function name.
 - Origin written for rename / orphan / deletion events.
 - Origin write-once (second event for same ID leaves origin unchanged).
@@ -371,11 +373,13 @@ Net: **no public breaking changes.** All work is additive or internal.
 ### Integration tests
 
 **`StoryIndexGenerator`:**
+
 - `invalidate(path, removed=false)` populates `modifiedFileSnapshots` before `cache[path] = false`.
 - `invalidate(path, removed=true)` populates `removedFileSnapshots` (existing).
 - `clearSnapshots()` empties both.
 
 **`index-json.ts`:**
+
 - `meta.title` rename at fixture level → `chains` entries written for each shared export whose ID changed.
 - Export rename → `origins` entry for the old ID, no `chains` entry.
 - Same-path conflict: path in both mods + deletes → deletion wins, no in-file classification.
@@ -383,12 +387,14 @@ Net: **no public breaking changes.** All work is additive or internal.
 - `invalidateAll` → no events flow through rename machinery.
 
 **Manager `setIndex`:**
+
 - Existing redirect tests stay green.
 - New: setIndex does not redirect on an orphan (`chains[id]` undefined).
 
 ### Component / UI tests
 
 **`FollowupOverlay`**:
+
 - Heading switches on `isKnownDeletion` flag.
 - Sibling list renders with navigate callbacks when non-empty.
 - Docs button renders when `docsEntry` defined.
@@ -397,6 +403,7 @@ Net: **no public breaking changes.** All work is additive or internal.
 ### E2E / sandbox tests
 
 Manual or scripted via `yarn task e2e-tests-dev`:
+
 1. `meta.title` rename → auto-redirect, URL updates.
 2. `meta.component` rename (autoTitle) → auto-redirect.
 3. Single export renamed → overlay on old URL, new story in sibling list.

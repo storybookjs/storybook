@@ -15,12 +15,14 @@
 ## File Structure
 
 **New files:**
+
 - `code/core/src/shared/rename-redirect-store/index.ts` — state shape, `applyRenameChains` pure function, `UNIVERSAL_RENAME_REDIRECT_STORE_OPTIONS`
 - `code/core/src/shared/rename-redirect-store/index.test.ts` — unit tests for `applyRenameChains`
 - `code/core/src/core-server/stores/rename-redirect.ts` — server leader instance
 - `code/core/src/manager-api/stores/rename-redirect.ts` — manager follower instance
 
 **Modified files:**
+
 - `code/core/src/core-server/utils/StoryIndexGenerator.ts` — add `removedFileSnapshots` map, `getRemovedFileSnapshots()`, `clearRemovedFileSnapshots()`, snapshot capture in `invalidate()`
 - `code/core/src/core-server/utils/watch-story-specifiers.ts` — detect rename candidate pairs in batch processor, extend `onInvalidate` callback signature
 - `code/core/src/core-server/utils/index-json.ts` — after invalidation debounce, await re-index, pair rename candidates via fingerprint, write to store
@@ -32,6 +34,7 @@
 ## Task 1: RenameRedirectState type and empty store options
 
 **Files:**
+
 - Create: `code/core/src/shared/rename-redirect-store/index.ts`
 
 - [ ] **Step 1: Create the file with state shape and options**
@@ -67,6 +70,7 @@ git commit -m "feat(rename-redirect): add state shape and store options"
 ## Task 2: applyRenameChains — single rename case (TDD)
 
 **Files:**
+
 - Create: `code/core/src/shared/rename-redirect-store/index.test.ts`
 - Modify: `code/core/src/shared/rename-redirect-store/index.ts`
 
@@ -83,7 +87,7 @@ describe('applyRenameChains', () => {
     const result = applyRenameChains(
       INITIAL_RENAME_REDIRECT_STATE,
       [{ oldId: 'button--primary', newId: 'button--secondary' }],
-      []
+      [],
     );
     expect(result.chains).toEqual({ 'button--primary': ['button--secondary'] });
   });
@@ -105,7 +109,7 @@ export type Rename = { oldId: StoryId; newId: StoryId };
 export function applyRenameChains(
   current: RenameRedirectState,
   renames: Rename[],
-  deletions: StoryId[]
+  deletions: StoryId[],
 ): RenameRedirectState {
   const chains = { ...current.chains };
   for (const { oldId, newId } of renames) {
@@ -132,6 +136,7 @@ git commit -m "feat(rename-redirect): applyRenameChains handles single rename"
 ## Task 3: applyRenameChains — transitive chain extension
 
 **Files:**
+
 - Modify: `code/core/src/shared/rename-redirect-store/index.test.ts`
 - Modify: `code/core/src/shared/rename-redirect-store/index.ts`
 
@@ -140,14 +145,14 @@ git commit -m "feat(rename-redirect): applyRenameChains handles single rename"
 Append to the `describe` block:
 
 ```typescript
-  it('extends existing chains when rename destination matches previous last element', () => {
-    const initial: RenameRedirectState = { chains: { 'a--x': ['b--x'] } };
-    const result = applyRenameChains(initial, [{ oldId: 'b--x', newId: 'c--x' }], []);
-    expect(result.chains).toEqual({
-      'a--x': ['b--x', 'c--x'],
-      'b--x': ['c--x'],
-    });
+it('extends existing chains when rename destination matches previous last element', () => {
+  const initial: RenameRedirectState = { chains: { 'a--x': ['b--x'] } };
+  const result = applyRenameChains(initial, [{ oldId: 'b--x', newId: 'c--x' }], []);
+  expect(result.chains).toEqual({
+    'a--x': ['b--x', 'c--x'],
+    'b--x': ['c--x'],
   });
+});
 ```
 
 Add the import update if needed:
@@ -173,7 +178,7 @@ Replace `applyRenameChains` body:
 export function applyRenameChains(
   current: RenameRedirectState,
   renames: Rename[],
-  deletions: StoryId[]
+  deletions: StoryId[],
 ): RenameRedirectState {
   const chains = { ...current.chains };
   for (const { oldId, newId } of renames) {
@@ -206,6 +211,7 @@ git commit -m "feat(rename-redirect): applyRenameChains extends transitive chain
 ## Task 4: applyRenameChains — round-trip loop prevention
 
 **Files:**
+
 - Modify: `code/core/src/shared/rename-redirect-store/index.test.ts`
 - Modify: `code/core/src/shared/rename-redirect-store/index.ts`
 
@@ -214,17 +220,17 @@ git commit -m "feat(rename-redirect): applyRenameChains extends transitive chain
 Append to the `describe` block:
 
 ```typescript
-  it('drops entries where chain last element equals source key (round-trip)', () => {
-    const step1 = applyRenameChains(
-      INITIAL_RENAME_REDIRECT_STATE,
-      [{ oldId: 'a--x', newId: 'b--x' }],
-      []
-    );
-    const step2 = applyRenameChains(step1, [{ oldId: 'b--x', newId: 'a--x' }], []);
-    // a--x chain becomes ['b--x', 'a--x'] — last equals source — drop.
-    // b--x chain becomes ['a--x'] — last does not equal source — keep.
-    expect(step2.chains).toEqual({ 'b--x': ['a--x'] });
-  });
+it('drops entries where chain last element equals source key (round-trip)', () => {
+  const step1 = applyRenameChains(
+    INITIAL_RENAME_REDIRECT_STATE,
+    [{ oldId: 'a--x', newId: 'b--x' }],
+    [],
+  );
+  const step2 = applyRenameChains(step1, [{ oldId: 'b--x', newId: 'a--x' }], []);
+  // a--x chain becomes ['b--x', 'a--x'] — last equals source — drop.
+  // b--x chain becomes ['a--x'] — last does not equal source — keep.
+  expect(step2.chains).toEqual({ 'b--x': ['a--x'] });
+});
 ```
 
 - [ ] **Step 2: Run test to verify it fails**
@@ -240,7 +246,7 @@ Replace `applyRenameChains` body to add the loop-prevention sweep:
 export function applyRenameChains(
   current: RenameRedirectState,
   renames: Rename[],
-  deletions: StoryId[]
+  deletions: StoryId[],
 ): RenameRedirectState {
   const chains = { ...current.chains };
   for (const { oldId, newId } of renames) {
@@ -279,6 +285,7 @@ git commit -m "feat(rename-redirect): applyRenameChains drops round-trip entries
 ## Task 5: applyRenameChains — deletion handling
 
 **Files:**
+
 - Modify: `code/core/src/shared/rename-redirect-store/index.test.ts`
 - Modify: `code/core/src/shared/rename-redirect-store/index.ts`
 
@@ -287,23 +294,23 @@ git commit -m "feat(rename-redirect): applyRenameChains drops round-trip entries
 Append to the `describe` block:
 
 ```typescript
-  it('records a deletion with a null-terminated chain', () => {
-    const result = applyRenameChains(INITIAL_RENAME_REDIRECT_STATE, [], ['gone--story']);
-    expect(result.chains).toEqual({ 'gone--story': [null] });
-  });
+it('records a deletion with a null-terminated chain', () => {
+  const result = applyRenameChains(INITIAL_RENAME_REDIRECT_STATE, [], ['gone--story']);
+  expect(result.chains).toEqual({ 'gone--story': [null] });
+});
 
-  it('appends null to the end of existing chain when rename-then-delete occurs', () => {
-    const renamed = applyRenameChains(
-      INITIAL_RENAME_REDIRECT_STATE,
-      [{ oldId: 'a--x', newId: 'b--x' }],
-      []
-    );
-    const deleted = applyRenameChains(renamed, [], ['b--x']);
-    expect(deleted.chains).toEqual({
-      'a--x': ['b--x', null],
-      'b--x': [null],
-    });
+it('appends null to the end of existing chain when rename-then-delete occurs', () => {
+  const renamed = applyRenameChains(
+    INITIAL_RENAME_REDIRECT_STATE,
+    [{ oldId: 'a--x', newId: 'b--x' }],
+    [],
+  );
+  const deleted = applyRenameChains(renamed, [], ['b--x']);
+  expect(deleted.chains).toEqual({
+    'a--x': ['b--x', null],
+    'b--x': [null],
   });
+});
 ```
 
 - [ ] **Step 2: Run tests to verify they fail**
@@ -319,7 +326,7 @@ Add a deletion pass after the rename loop:
 export function applyRenameChains(
   current: RenameRedirectState,
   renames: Rename[],
-  deletions: StoryId[]
+  deletions: StoryId[],
 ): RenameRedirectState {
   const chains = { ...current.chains };
   for (const { oldId, newId } of renames) {
@@ -367,6 +374,7 @@ git commit -m "feat(rename-redirect): applyRenameChains handles deletions"
 ## Task 6: applyRenameChains — folder rename (multi-pair batch)
 
 **Files:**
+
 - Modify: `code/core/src/shared/rename-redirect-store/index.test.ts`
 
 - [ ] **Step 1: Add the test**
@@ -374,20 +382,20 @@ git commit -m "feat(rename-redirect): applyRenameChains handles deletions"
 Append to the `describe` block:
 
 ```typescript
-  it('handles multiple independent renames in one call (folder rename)', () => {
-    const result = applyRenameChains(
-      INITIAL_RENAME_REDIRECT_STATE,
-      [
-        { oldId: 'old--a', newId: 'new--a' },
-        { oldId: 'old--b', newId: 'new--b' },
-      ],
-      []
-    );
-    expect(result.chains).toEqual({
-      'old--a': ['new--a'],
-      'old--b': ['new--b'],
-    });
+it('handles multiple independent renames in one call (folder rename)', () => {
+  const result = applyRenameChains(
+    INITIAL_RENAME_REDIRECT_STATE,
+    [
+      { oldId: 'old--a', newId: 'new--a' },
+      { oldId: 'old--b', newId: 'new--b' },
+    ],
+    [],
+  );
+  expect(result.chains).toEqual({
+    'old--a': ['new--a'],
+    'old--b': ['new--b'],
   });
+});
 ```
 
 - [ ] **Step 2: Run the test**
@@ -407,6 +415,7 @@ git commit -m "test(rename-redirect): cover folder rename multi-pair case"
 ## Task 7: Server leader store instance
 
 **Files:**
+
 - Create: `code/core/src/core-server/stores/rename-redirect.ts`
 
 - [ ] **Step 1: Create the server store instance**
@@ -443,6 +452,7 @@ git commit -m "feat(rename-redirect): server leader UniversalStore instance"
 ## Task 8: Manager follower store instance
 
 **Files:**
+
 - Create: `code/core/src/manager-api/stores/rename-redirect.ts`
 
 - [ ] **Step 1: Create the manager store instance**
@@ -478,6 +488,7 @@ git commit -m "feat(rename-redirect): manager follower UniversalStore instance"
 ## Task 9: StoryIndexGenerator — snapshot removed file entries (TDD)
 
 **Files:**
+
 - Modify: `code/core/src/core-server/utils/StoryIndexGenerator.ts`
 - Modify: `code/core/src/core-server/utils/StoryIndexGenerator.test.ts`
 
@@ -488,10 +499,7 @@ Locate `StoryIndexGenerator.test.ts` and add a new `describe` block (or extend e
 ```typescript
 describe('removed file snapshots', () => {
   it('captures exportName→storyId map before deleting removed-file cache entry', async () => {
-    const generator = new StoryIndexGenerator(
-      [storiesSpecifier],
-      options
-    );
+    const generator = new StoryIndexGenerator([storiesSpecifier], options);
     await generator.getIndex();
     const path = './src/A.stories.ts';
     const absolutePath = resolve(options.workingDir, path);
@@ -535,17 +543,17 @@ Add public accessors near the bottom of the class:
 In `invalidate()`, before `delete cache[absolutePath]` (around line 854), insert:
 
 ```typescript
-    if (removed && cacheEntry && cacheEntry.type === 'stories') {
-      const snapshot: Record<string, StoryId> = {};
-      for (const entry of cacheEntry.entries) {
-        if (entry.type === 'story' && 'exportName' in entry && entry.exportName) {
-          snapshot[entry.exportName] = entry.id;
-        }
-      }
-      if (Object.keys(snapshot).length > 0) {
-        this.removedFileSnapshots.set(absolutePath, snapshot);
-      }
+if (removed && cacheEntry && cacheEntry.type === 'stories') {
+  const snapshot: Record<string, StoryId> = {};
+  for (const entry of cacheEntry.entries) {
+    if (entry.type === 'story' && 'exportName' in entry && entry.exportName) {
+      snapshot[entry.exportName] = entry.id;
     }
+  }
+  if (Object.keys(snapshot).length > 0) {
+    this.removedFileSnapshots.set(absolutePath, snapshot);
+  }
+}
 ```
 
 - [ ] **Step 4: Run test to verify it passes**
@@ -565,6 +573,7 @@ git commit -m "feat(rename-redirect): StoryIndexGenerator snapshots removed file
 ## Task 10: StoryIndexGenerator — clear snapshots accessor test
 
 **Files:**
+
 - Modify: `code/core/src/core-server/utils/StoryIndexGenerator.test.ts`
 
 - [ ] **Step 1: Add the test**
@@ -572,15 +581,15 @@ git commit -m "feat(rename-redirect): StoryIndexGenerator snapshots removed file
 Append to the `removed file snapshots` describe:
 
 ```typescript
-  it('clearRemovedFileSnapshots() empties the snapshot map', async () => {
-    const generator = new StoryIndexGenerator([storiesSpecifier], options);
-    await generator.getIndex();
-    generator.invalidate('./src/A.stories.ts', true);
+it('clearRemovedFileSnapshots() empties the snapshot map', async () => {
+  const generator = new StoryIndexGenerator([storiesSpecifier], options);
+  await generator.getIndex();
+  generator.invalidate('./src/A.stories.ts', true);
 
-    expect(generator.getRemovedFileSnapshots().size).toBeGreaterThan(0);
-    generator.clearRemovedFileSnapshots();
-    expect(generator.getRemovedFileSnapshots().size).toBe(0);
-  });
+  expect(generator.getRemovedFileSnapshots().size).toBeGreaterThan(0);
+  generator.clearRemovedFileSnapshots();
+  expect(generator.getRemovedFileSnapshots().size).toBe(0);
+});
 ```
 
 - [ ] **Step 2: Run test to verify it passes**
@@ -600,6 +609,7 @@ git commit -m "test(rename-redirect): cover clearRemovedFileSnapshots"
 ## Task 11: watch-story-specifiers — extend onInvalidate signature with renameHint
 
 **Files:**
+
 - Modify: `code/core/src/core-server/utils/watch-story-specifiers.ts`
 - Modify: `code/core/src/core-server/utils/watch-story-specifiers.test.ts`
 
@@ -611,11 +621,7 @@ Open the test file and add a new test that fires two rename events (one removal,
 describe('rename detection', () => {
   it('pairs rename-explanation remove + add events into a renameHint', async () => {
     const onInvalidate = vi.fn();
-    const unwatch = watchStorySpecifiers(
-      [specifier],
-      { workingDir },
-      onInvalidate
-    );
+    const unwatch = watchStorySpecifiers([specifier], { workingDir }, onInvalidate);
 
     // Simulate Watchpack firing both halves of a rename within the batch window
     wpMock.emit('change', oldAbsolutePath, undefined, 'rename');
@@ -623,16 +629,8 @@ describe('rename detection', () => {
 
     await new Promise((resolve) => setTimeout(resolve, 150));
 
-    expect(onInvalidate).toHaveBeenCalledWith(
-      oldImportPath,
-      true,
-      { pairedWith: newImportPath }
-    );
-    expect(onInvalidate).toHaveBeenCalledWith(
-      newImportPath,
-      false,
-      undefined
-    );
+    expect(onInvalidate).toHaveBeenCalledWith(oldImportPath, true, { pairedWith: newImportPath });
+    expect(onInvalidate).toHaveBeenCalledWith(newImportPath, false, undefined);
 
     unwatch();
   });
@@ -653,80 +651,78 @@ In `watch-story-specifiers.ts`, change the type of `pendingEvents` to include ex
 Replace the existing `pendingEvents` declaration and `queueEvent`/`wp.on('change')` handlers:
 
 ```typescript
-  const pendingEvents = new Map<Path, { removed: boolean; explanation: string }>();
-  let batchTimeout: ReturnType<typeof setTimeout> | undefined;
+const pendingEvents = new Map<Path, { removed: boolean; explanation: string }>();
+let batchTimeout: ReturnType<typeof setTimeout> | undefined;
 
-  function queueEvent(absolutePath: Path, removed: boolean, explanation: string) {
-    pendingEvents.set(absolutePath, { removed, explanation });
-    if (batchTimeout) {
-      clearTimeout(batchTimeout);
-    }
-    batchTimeout = setTimeout(async () => {
-      batchTimeout = undefined;
-      const events = new Map(pendingEvents);
-      pendingEvents.clear();
-
-      // Identify rename pairs: 1 removal + 1 addition both with explanation='rename'
-      const renameRemovals: Path[] = [];
-      const renameAdditions: Path[] = [];
-      for (const [path, { removed, explanation }] of events) {
-        if (explanation === 'rename') {
-          (removed ? renameRemovals : renameAdditions).push(path);
-        }
-      }
-      const pairs = new Map<Path, Path>();
-      if (renameRemovals.length === 1 && renameAdditions.length === 1) {
-        pairs.set(renameRemovals[0], renameAdditions[0]);
-      }
-      // Multi-pair disambiguation happens later in index-json via fingerprint match.
-      // Pass all rename candidates through as hints so the orchestrator can resolve them.
-
-      await Promise.all(
-        Array.from(events.entries()).map(async ([path, { removed, explanation }]) => {
-          const isRenameCandidate = explanation === 'rename';
-          let renameHint: { pairedWith: Path } | undefined;
-          if (removed && isRenameCandidate) {
-            const paired = pairs.get(path);
-            if (paired) {
-              renameHint = { pairedWith: paired };
-            }
-          }
-          await onChangeOrRemove(path, removed, renameHint);
-        })
-      );
-    }, 100);
+function queueEvent(absolutePath: Path, removed: boolean, explanation: string) {
+  pendingEvents.set(absolutePath, { removed, explanation });
+  if (batchTimeout) {
+    clearTimeout(batchTimeout);
   }
+  batchTimeout = setTimeout(async () => {
+    batchTimeout = undefined;
+    const events = new Map(pendingEvents);
+    pendingEvents.clear();
 
-  wp.on('change', (filePath: Path, mtime: Date, explanation: string) => {
-    const removed = !mtime;
-    queueEvent(filePath, removed, explanation);
-  });
-  wp.on('remove', (filePath: Path) => {
-    queueEvent(filePath, true, 'remove');
-  });
+    // Identify rename pairs: 1 removal + 1 addition both with explanation='rename'
+    const renameRemovals: Path[] = [];
+    const renameAdditions: Path[] = [];
+    for (const [path, { removed, explanation }] of events) {
+      if (explanation === 'rename') {
+        (removed ? renameRemovals : renameAdditions).push(path);
+      }
+    }
+    const pairs = new Map<Path, Path>();
+    if (renameRemovals.length === 1 && renameAdditions.length === 1) {
+      pairs.set(renameRemovals[0], renameAdditions[0]);
+    }
+    // Multi-pair disambiguation happens later in index-json via fingerprint match.
+    // Pass all rename candidates through as hints so the orchestrator can resolve them.
+
+    await Promise.all(
+      Array.from(events.entries()).map(async ([path, { removed, explanation }]) => {
+        const isRenameCandidate = explanation === 'rename';
+        let renameHint: { pairedWith: Path } | undefined;
+        if (removed && isRenameCandidate) {
+          const paired = pairs.get(path);
+          if (paired) {
+            renameHint = { pairedWith: paired };
+          }
+        }
+        await onChangeOrRemove(path, removed, renameHint);
+      }),
+    );
+  }, 100);
+}
+
+wp.on('change', (filePath: Path, mtime: Date, explanation: string) => {
+  const removed = !mtime;
+  queueEvent(filePath, removed, explanation);
+});
+wp.on('remove', (filePath: Path) => {
+  queueEvent(filePath, true, 'remove');
+});
 ```
 
 Update `onChangeOrRemove` to accept and forward the optional hint:
 
 ```typescript
-  async function onChangeOrRemove(
-    absolutePath: Path,
-    removed: boolean,
-    renameHint?: { pairedWith: Path }
-  ) {
-    const importPath = toImportPath(absolutePath);
-    const matchingSpecifier = specifiers.find((ns) =>
-      ns.importPathMatcher.exec(importPath)
-    );
-    if (matchingSpecifier) {
-      const hintImportPath = renameHint
-        ? { pairedWith: toImportPath(renameHint.pairedWith) }
-        : undefined;
-      onInvalidate(importPath, removed, hintImportPath);
-      return;
-    }
-    // ... existing directory-add branch unchanged
+async function onChangeOrRemove(
+  absolutePath: Path,
+  removed: boolean,
+  renameHint?: { pairedWith: Path },
+) {
+  const importPath = toImportPath(absolutePath);
+  const matchingSpecifier = specifiers.find((ns) => ns.importPathMatcher.exec(importPath));
+  if (matchingSpecifier) {
+    const hintImportPath = renameHint
+      ? { pairedWith: toImportPath(renameHint.pairedWith) }
+      : undefined;
+    onInvalidate(importPath, removed, hintImportPath);
+    return;
   }
+  // ... existing directory-add branch unchanged
+}
 ```
 
 Also update the `onInvalidate` parameter type:
@@ -760,6 +756,7 @@ git commit -m "feat(rename-redirect): watch-story-specifiers emits renameHint fo
 ## Task 12: watch-story-specifiers — ambiguous batches produce no hint
 
 **Files:**
+
 - Modify: `code/core/src/core-server/utils/watch-story-specifiers.test.ts`
 
 - [ ] **Step 1: Add the test**
@@ -767,26 +764,26 @@ git commit -m "feat(rename-redirect): watch-story-specifiers emits renameHint fo
 Append to the `rename detection` describe:
 
 ```typescript
-  it('produces no renameHint when multiple removals and additions arrive together', async () => {
-    const onInvalidate = vi.fn();
-    const unwatch = watchStorySpecifiers([specifier], { workingDir }, onInvalidate);
+it('produces no renameHint when multiple removals and additions arrive together', async () => {
+  const onInvalidate = vi.fn();
+  const unwatch = watchStorySpecifiers([specifier], { workingDir }, onInvalidate);
 
-    // Two rename pairs (folder rename) — ambiguous at this layer, defer disambiguation
-    wpMock.emit('change', oldAbsolutePath, undefined, 'rename');
-    wpMock.emit('change', oldAbsolutePath2, undefined, 'rename');
-    wpMock.emit('change', newAbsolutePath, new Date(), 'rename');
-    wpMock.emit('change', newAbsolutePath2, new Date(), 'rename');
+  // Two rename pairs (folder rename) — ambiguous at this layer, defer disambiguation
+  wpMock.emit('change', oldAbsolutePath, undefined, 'rename');
+  wpMock.emit('change', oldAbsolutePath2, undefined, 'rename');
+  wpMock.emit('change', newAbsolutePath, new Date(), 'rename');
+  wpMock.emit('change', newAbsolutePath2, new Date(), 'rename');
 
-    await new Promise((resolve) => setTimeout(resolve, 150));
+  await new Promise((resolve) => setTimeout(resolve, 150));
 
-    // All four callbacks fire with renameHint=undefined; multi-pair case handled in index-json
-    expect(onInvalidate).toHaveBeenCalledTimes(4);
-    for (const call of onInvalidate.mock.calls) {
-      expect(call[2]).toBeUndefined();
-    }
+  // All four callbacks fire with renameHint=undefined; multi-pair case handled in index-json
+  expect(onInvalidate).toHaveBeenCalledTimes(4);
+  for (const call of onInvalidate.mock.calls) {
+    expect(call[2]).toBeUndefined();
+  }
 
-    unwatch();
-  });
+  unwatch();
+});
 ```
 
 - [ ] **Step 2: Run test to verify it passes**
@@ -806,6 +803,7 @@ git commit -m "test(rename-redirect): verify ambiguous batches emit no hint"
 ## Task 13: index-json — collect rename candidates from onInvalidate
 
 **Files:**
+
 - Modify: `code/core/src/core-server/utils/index-json.ts`
 
 - [ ] **Step 1: Add candidate collection to the onInvalidate callback**
@@ -874,6 +872,7 @@ git commit -m "feat(rename-redirect): collect rename candidates per invalidation
 ## Task 14: index-json — fingerprint match and old/new ID alignment helper
 
 **Files:**
+
 - Modify: `code/core/src/core-server/utils/index-json.ts`
 
 - [ ] **Step 1: Add the matching helper**
@@ -900,7 +899,7 @@ function resolveRenamePairs(
   candidates: { oldPath: Path; newPath: Path }[],
   removedSnapshots: Map<Path, Record<string, StoryId>>,
   index: StoryIndex,
-  workingDir: string
+  workingDir: string,
 ): { renames: { oldId: StoryId; newId: StoryId }[]; unresolved: Path[] } {
   const renames: { oldId: StoryId; newId: StoryId }[] = [];
   const unresolved: Path[] = [];
@@ -958,6 +957,7 @@ git commit -m "feat(rename-redirect): resolveRenamePairs fingerprint matcher"
 ## Task 15: index-json — drain and write to store after re-index
 
 **Files:**
+
 - Modify: `code/core/src/core-server/utils/index-json.ts`
 
 - [ ] **Step 1: Replace the debounce body to drain accumulators and write to store**
@@ -969,67 +969,67 @@ import { renameRedirectStore } from '../stores/rename-redirect.ts';
 
 // ... existing code ...
 
-  const maybeInvalidate = debounce(
-    async () => {
-      channel.emit(STORY_INDEX_INVALIDATED);
-      onStoryIndexInvalidated?.();
+const maybeInvalidate = debounce(
+  async () => {
+    channel.emit(STORY_INDEX_INVALIDATED);
+    onStoryIndexInvalidated?.();
 
-      if (pendingRenameCandidates.length === 0 && pendingDeletions.length === 0) {
-        return;
-      }
+    if (pendingRenameCandidates.length === 0 && pendingDeletions.length === 0) {
+      return;
+    }
 
-      // Snapshot the accumulators so they can be reset for the next cycle
-      const renameCandidates = pendingRenameCandidates.splice(0);
-      const deletions = pendingDeletions.splice(0);
-      const hintedRemovals = new Set(pendingHintedRemovals);
-      pendingHintedRemovals.clear();
+    // Snapshot the accumulators so they can be reset for the next cycle
+    const renameCandidates = pendingRenameCandidates.splice(0);
+    const deletions = pendingDeletions.splice(0);
+    const hintedRemovals = new Set(pendingHintedRemovals);
+    pendingHintedRemovals.clear();
 
-      const generator = await storyIndexGeneratorPromise;
-      let index: StoryIndex;
-      try {
-        index = await generator.getIndex();
-      } catch {
-        generator.clearRemovedFileSnapshots();
-        return;
-      }
-
-      const removedSnapshots = generator.getRemovedFileSnapshots();
-      const { renames, unresolved } = resolveRenamePairs(
-        renameCandidates,
-        removedSnapshots,
-        index,
-        workingDir
-      );
-
-      for (const unresolvedOldPath of unresolved) {
-        logger.debug(
-          `rename-redirect: could not confirm rename pair for ${unresolvedOldPath}, skipping`
-        );
-      }
-
-      // Deletions list: explicit removals + unresolved rename removals are NOT treated as deletions
-      // (spec: unresolved rename candidates produce nothing). Only explicit removals become null-terminated chains.
-      const deletedIds: StoryId[] = [];
-      for (const deletedPath of deletions) {
-        const abs = resolve(workingDir, deletedPath);
-        const snap = removedSnapshots.get(abs);
-        if (snap) {
-          deletedIds.push(...Object.values(snap));
-        }
-      }
-
+    const generator = await storyIndexGeneratorPromise;
+    let index: StoryIndex;
+    try {
+      index = await generator.getIndex();
+    } catch {
       generator.clearRemovedFileSnapshots();
+      return;
+    }
 
-      if (renames.length === 0 && deletedIds.length === 0) {
-        return;
+    const removedSnapshots = generator.getRemovedFileSnapshots();
+    const { renames, unresolved } = resolveRenamePairs(
+      renameCandidates,
+      removedSnapshots,
+      index,
+      workingDir,
+    );
+
+    for (const unresolvedOldPath of unresolved) {
+      logger.debug(
+        `rename-redirect: could not confirm rename pair for ${unresolvedOldPath}, skipping`,
+      );
+    }
+
+    // Deletions list: explicit removals + unresolved rename removals are NOT treated as deletions
+    // (spec: unresolved rename candidates produce nothing). Only explicit removals become null-terminated chains.
+    const deletedIds: StoryId[] = [];
+    for (const deletedPath of deletions) {
+      const abs = resolve(workingDir, deletedPath);
+      const snap = removedSnapshots.get(abs);
+      if (snap) {
+        deletedIds.push(...Object.values(snap));
       }
+    }
 
-      await renameRedirectStore.untilReady();
-      renameRedirectStore.setState((prev) => applyRenameChains(prev, renames, deletedIds));
-    },
-    DEBOUNCE,
-    { edges: ['leading', 'trailing'] }
-  );
+    generator.clearRemovedFileSnapshots();
+
+    if (renames.length === 0 && deletedIds.length === 0) {
+      return;
+    }
+
+    await renameRedirectStore.untilReady();
+    renameRedirectStore.setState((prev) => applyRenameChains(prev, renames, deletedIds));
+  },
+  DEBOUNCE,
+  { edges: ['leading', 'trailing'] },
+);
 ```
 
 Also add the `logger` import:
@@ -1055,11 +1055,13 @@ git commit -m "feat(rename-redirect): write rename chains to store after re-inde
 ## Task 16: index-json — integration test for store write after re-index
 
 **Files:**
+
 - Modify: `code/core/src/core-server/utils/index-json.test.ts` (create if missing)
 
 - [ ] **Step 1: Write the integration test**
 
 Write a test that:
+
 1. Creates a mock `StoryIndexGenerator` whose `getIndex()` returns a fresh index and whose `getRemovedFileSnapshots()` returns a known snapshot.
 2. Invokes the `onInvalidate` callback with `(oldPath, true, { pairedWith: newPath })` and `(newPath, false)`.
 3. Waits past the DEBOUNCE window.
@@ -1111,6 +1113,7 @@ git commit -m "test(rename-redirect): integration test for store write"
 ## Task 17: Manager setIndex — redirect when chain ends in a valid new ID
 
 **Files:**
+
 - Modify: `code/core/src/manager-api/modules/stories.ts`
 
 - [ ] **Step 1: Read the existing setIndex implementation**
@@ -1160,6 +1163,7 @@ git commit -m "feat(rename-redirect): manager redirects to renamed story on setI
 ## Task 18: Manager redirect — test that selectStory is called with the new ID
 
 **Files:**
+
 - Modify: `code/core/src/manager-api/tests/stories.test.ts`
 
 - [ ] **Step 1: Add the test**
@@ -1211,6 +1215,7 @@ git commit -m "test(rename-redirect): manager redirect on setIndex"
 ## Task 19: Manager redirect — no-op when chain target is not in index
 
 **Files:**
+
 - Modify: `code/core/src/manager-api/tests/stories.test.ts`
 
 - [ ] **Step 1: Add the test**
@@ -1249,6 +1254,7 @@ git commit -m "test(rename-redirect): no redirect when target missing"
 ## Task 20: Manager redirect — no-op when chain ends in null (deletion)
 
 **Files:**
+
 - Modify: `code/core/src/manager-api/tests/stories.test.ts`
 
 - [ ] **Step 1: Add the test**
@@ -1286,6 +1292,7 @@ git commit -m "test(rename-redirect): deletion chain does not redirect"
 ## Task 21: Specialised 404 UI — detection hook
 
 **Files:**
+
 - Modify: `code/core/src/manager/components/preview/Preview.tsx`
 
 - [ ] **Step 1: Identify the rendering branch for "story missing"**
@@ -1308,11 +1315,13 @@ const isKnownDeletion = chain !== undefined && chain[chain.length - 1] === null;
 Render a specialised message when `isKnownDeletion`:
 
 ```tsx
-{isKnownDeletion ? (
-  <MissingStoryMessage title="This story was deleted." />
-) : (
-  <MissingStoryMessage title="Story not found." />
-)}
+{
+  isKnownDeletion ? (
+    <MissingStoryMessage title="This story was deleted." />
+  ) : (
+    <MissingStoryMessage title="Story not found." />
+  );
+}
 ```
 
 Note: the exact existing component for rendering error states must be used — the engineer reads the surrounding code to find the right wrapper (e.g., `NoPreview`, `PreviewError`). If none accepts a custom message, extend it minimally with a `message` prop.
@@ -1334,6 +1343,7 @@ git commit -m "feat(rename-redirect): specialised 404 for known deletions"
 ## Task 22: End-to-end smoke test via internal Storybook UI
 
 **Files:**
+
 - None created — this is a manual verification step.
 
 - [ ] **Step 1: Start the internal UI**
@@ -1379,6 +1389,7 @@ git checkout -- <renamed or deleted files>
 ## Task 23: Full-suite verification
 
 **Files:**
+
 - None modified.
 
 - [ ] **Step 1: Run full lint and typecheck**
@@ -1414,6 +1425,6 @@ git commit --allow-empty -m "chore(rename-redirect): full verification pass"
 
 Spec coverage verified: rename detection (Tasks 11-12), disambiguation (Task 14), chain algorithm (Tasks 2-6), store definition (Tasks 1, 7, 8), orchestration (Tasks 13, 15, 16), manager redirect (Tasks 17-20), specialised 404 (Task 21), breaking-change preservation (no STORY_INDEX_INVALIDATED payload changes, confirmed in Task 13-15).
 
-No placeholders in steps — all code blocks contain actual implementation. Some test scaffolding (Tasks 16, 18-20) defers to "engineer adapts to existing test harness" because the harness patterns vary per file — the engineer reads the file to match. The *assertions* (what to verify) are fully specified.
+No placeholders in steps — all code blocks contain actual implementation. Some test scaffolding (Tasks 16, 18-20) defers to "engineer adapts to existing test harness" because the harness patterns vary per file — the engineer reads the file to match. The _assertions_ (what to verify) are fully specified.
 
 Type consistency: `renameRedirectStore` named identically everywhere. `RenameRedirectState`, `RenameRedirectChain`, `Rename` types consistent. `applyRenameChains(current, renames, deletions)` signature stable across all usages.

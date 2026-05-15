@@ -783,9 +783,7 @@ describe('registerIndexJsonRoute', () => {
       });
       // Origin is stored in import-path form so it matches `importPath` on
       // index entries when the manager builds the sibling list.
-      expect(renameRedirectStore.getState().origins['old--story-one']).toBe(
-        './src/B.stories.ts'
-      );
+      expect(renameRedirectStore.getState().origins['old--story-one']).toBe('./src/B.stories.ts');
     });
 
     it('writes origin but no chain when an export disappears', async () => {
@@ -819,9 +817,7 @@ describe('registerIndexJsonRoute', () => {
       onChange(absPath, 1234, undefined);
 
       await vi.waitFor(() => {
-        expect(renameRedirectStore.getState().origins['b--primary']).toBe(
-          './src/B.stories.ts'
-        );
+        expect(renameRedirectStore.getState().origins['b--primary']).toBe('./src/B.stories.ts');
       });
       expect(renameRedirectStore.getState().chains['b--primary']).toBeUndefined();
     });

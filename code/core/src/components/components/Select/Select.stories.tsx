@@ -128,6 +128,7 @@ export const PseudoStates = meta.story({
 });
 
 export const ManyOptions = meta.story({
+  storyName: 'Many Options',
   args: {
     options: Array.from({ length: 20 }, (_, i) => ({
       title: `Option ${i + 1}`,

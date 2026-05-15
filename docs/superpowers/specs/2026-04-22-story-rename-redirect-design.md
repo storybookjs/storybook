@@ -73,9 +73,11 @@ Zero extra I/O — all data comes from the indexer's own cache. The approach is 
 **Unambiguous deletions:** A `remove` event (or `change` with no mtime and `explanation !== 'rename'`) is a confirmed deletion — no disambiguation needed. These always produce a `[null]` deletion chain entry in the store. Only rename-explanation removals that fail disambiguation produce nothing.
 
 **`onInvalidate` callback extended:**
+
 ```
 (path, removed, renameHint?: { pairedWith: Path }) => void
 ```
+
 Optional parameter — existing callers are unaffected.
 
 ---
@@ -83,15 +85,17 @@ Optional parameter — existing callers are unaffected.
 ## Building Block 2: Rename Chain Store
 
 **New files:**
+
 - `code/core/src/shared/rename-redirect-store/index.ts` — state shape, chain algorithm, store options
 - `code/core/src/core-server/stores/rename-redirect.ts` — server leader instance
 - `code/core/src/manager-api/stores/rename-redirect.ts` — manager follower instance
 
 **State shape:**
+
 ```typescript
 type RenameRedirectState = {
-  chains: Record<StoryId, (StoryId | null)[]>
-}
+  chains: Record<StoryId, (StoryId | null)[]>;
+};
 // chain = []         should not exist in practice
 // chain = [..., id]  redirect to last element
 // chain = [..., null] story was deleted
@@ -100,14 +104,17 @@ type RenameRedirectState = {
 **Chain algorithm (`applyRenameChains`):**
 
 Pure function, independently testable. On each rename `oldId → newId`:
+
 1. Extend all existing chains whose last element is `oldId` by appending `newId`
 2. Add new entry `oldId: [newId]`
 3. Drop any entry where last element equals source key (net no-op / round-trip rename — loop prevention)
 
 On each deletion `deletedId`:
+
 - Add or update entry `deletedId: [...existingChain, null]`
 
 **Leader/follower pattern:**
+
 - Server: always leader (matches status store pattern), except in Vitest subprocess
 - Manager: leader only when `CONFIG_TYPE === 'PRODUCTION'` (static build — store is inert, always empty)
 - Preview: not involved
@@ -132,6 +139,7 @@ The commit order guarantee: the server writes rename data to the store **after**
 The HTTP round trip in step 1→6 is consistently slower than the in-process channel message in step 5. The store is virtually always ready before `setIndex()` runs. In the rare case it isn't, the manager falls through to the existing 404 behaviour (the chain target won't be in the new index yet).
 
 **`StoryIndexGenerator` additions:**
+
 - `removedFileSnapshots: Map<Path, Record<exportName, StoryId>>` — populated in `invalidate()` before cache deletion, keyed by export name for later alignment
 - `getRemovedFileSnapshots()` / `clearRemovedFileSnapshots()` — accessors for `index-json.ts`
 
@@ -165,12 +173,12 @@ At the end of `setIndex()`, after the new index is applied to manager state:
 The existing missing-story rendering path in the manager is augmented to check the rename store when about to render a generic 404:
 
 ```typescript
-const { chains } = renameRedirectStore.getState()
-const chain = chains[currentStoryId]
-const isKnownDeletion = chain !== undefined && chain[chain.length - 1] === null
+const { chains } = renameRedirectStore.getState();
+const chain = chains[currentStoryId];
+const isKnownDeletion = chain !== undefined && chain[chain.length - 1] === null;
 ```
 
-If `isKnownDeletion`: render *"This story was deleted."* using existing error display patterns.
+If `isKnownDeletion`: render _"This story was deleted."_ using existing error display patterns.
 Otherwise: render existing generic missing-story UI, unchanged.
 
 The deletion chain entry persists for the session. If a story with the same ID is later created, `setIndex()` finds it in the new index and skips all redirect/deletion logic — the existence check gates everything.
@@ -179,30 +187,33 @@ The deletion chain entry persists for the session. If a story with the same ID i
 
 ## Breaking Change Analysis
 
-| Surface | Change | Breaking? |
-|---------|--------|-----------|
-| `STORY_INDEX_INVALIDATED` event | No change to event name, payload, or emit timing | No |
-| `onInvalidate` callback in `watchStorySpecifiers` | New optional 3rd parameter `renameHint?` | No |
-| `StoryIndexGenerator` | New public methods `getRemovedFileSnapshots`, `clearRemovedFileSnapshots` | No (additions only) |
-| UniversalStore | New store ID `storybook/rename-redirect` | No |
-| Manager store state | No new fields | No |
-| Public channel events | No additions or changes | No |
+| Surface                                           | Change                                                                    | Breaking?           |
+| ------------------------------------------------- | ------------------------------------------------------------------------- | ------------------- |
+| `STORY_INDEX_INVALIDATED` event                   | No change to event name, payload, or emit timing                          | No                  |
+| `onInvalidate` callback in `watchStorySpecifiers` | New optional 3rd parameter `renameHint?`                                  | No                  |
+| `StoryIndexGenerator`                             | New public methods `getRemovedFileSnapshots`, `clearRemovedFileSnapshots` | No (additions only) |
+| UniversalStore                                    | New store ID `storybook/rename-redirect`                                  | No                  |
+| Manager store state                               | No new fields                                                             | No                  |
+| Public channel events                             | No additions or changes                                                   | No                  |
 
 ---
 
 ## Testing Strategy
 
 **Unit tests:**
+
 - `applyRenameChains` — pure function, cover: single rename, chain extension, round-trip (loop prevention), deletion, rename-then-delete, folder rename (multiple pairs), explicit-title stable-ID case (chain collapses to no-op)
 - Export-name fingerprint matching — mock cache entries with identical and differing export sets
 - Export-name alignment — verify `oldIds[exportName]` maps to `newIds[exportName]` regardless of cache entry order
 
 **Integration tests:**
+
 - `watchStorySpecifiers` with mocked Watchpack — verify rename pairs produce `renameHint`, ambiguous batches produce nothing
 - `StoryIndexGenerator.invalidate()` — verify removed-file snapshot captured before deletion, includes full exportName→storyId map
 - `registerIndexJsonRoute` — verify store written after index resolves, not before
 
 **E2E tests (existing sandbox flow):**
+
 - Rename a story file → verify UI navigates to new story ID
 - Rename a story file that uses an explicit `title` in meta → verify URL is unchanged (IDs are stable) and no navigation occurs
 - Delete a story file → verify "story was deleted" notice appears

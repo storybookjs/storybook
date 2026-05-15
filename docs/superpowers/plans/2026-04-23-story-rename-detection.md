@@ -15,12 +15,14 @@
 ## File Structure
 
 **New files:**
+
 - `code/core/src/shared/rename-redirect-store/classify.ts` — `classifyFileChange` pure function + `FileSnapshot` type
 - `code/core/src/shared/rename-redirect-store/classify.test.ts` — unit tests for the classifier
 - `code/core/src/manager/components/preview/FollowupOverlay.tsx` — the replacement 404 overlay
 - `code/core/src/manager/components/preview/FollowupOverlay.test.tsx` — component tests
 
 **Modified files:**
+
 - `code/core/src/shared/rename-redirect-store/index.ts` — add `origins` field, rename `applyRenameChains` → `extendRenameMaps` with grouped event shape, origin write-once behaviour
 - `code/core/src/shared/rename-redirect-store/index.test.ts` — migrate existing tests, add origin-write tests
 - `code/core/src/core-server/utils/StoryIndexGenerator.ts` — retype `removedFileSnapshots` to `FileSnapshot`, add `modifiedFileSnapshots`, `clearSnapshots`, preserve `clearRemovedFileSnapshots` alias
@@ -34,6 +36,7 @@
 ## Task 1: FileSnapshot type and classifyFileChange skeleton
 
 **Files:**
+
 - Create: `code/core/src/shared/rename-redirect-store/classify.ts`
 - Create: `code/core/src/shared/rename-redirect-store/classify.test.ts`
 
@@ -77,10 +80,7 @@ export type ClassifyResult = {
   orphans: StoryId[];
 };
 
-export function classifyFileChange(
-  _old: FileSnapshot,
-  _new: FileSnapshot
-): ClassifyResult {
+export function classifyFileChange(_old: FileSnapshot, _new: FileSnapshot): ClassifyResult {
   return { renames: [], orphans: [] };
 }
 ```
@@ -102,6 +102,7 @@ git commit -m "feat(rename-detect): classifyFileChange skeleton + empty-input te
 ## Task 2: classifyFileChange — shared exports, IDs unchanged
 
 **Files:**
+
 - Modify: `code/core/src/shared/rename-redirect-store/classify.test.ts`
 
 - [ ] **Step 1: Add the failing test**
@@ -109,13 +110,13 @@ git commit -m "feat(rename-detect): classifyFileChange skeleton + empty-input te
 Append to the `describe` block:
 
 ```typescript
-  it('returns no events when shared exports keep the same IDs', () => {
-    const snapshot: FileSnapshot = {
-      stories: { Primary: { id: 'button--primary' } },
-      docs: [],
-    };
-    expect(classifyFileChange(snapshot, snapshot)).toEqual({ renames: [], orphans: [] });
-  });
+it('returns no events when shared exports keep the same IDs', () => {
+  const snapshot: FileSnapshot = {
+    stories: { Primary: { id: 'button--primary' } },
+    docs: [],
+  };
+  expect(classifyFileChange(snapshot, snapshot)).toEqual({ renames: [], orphans: [] });
+});
 ```
 
 - [ ] **Step 2: Run the test**
@@ -135,6 +136,7 @@ git commit -m "test(rename-detect): cover shared-exports-unchanged case"
 ## Task 3: classifyFileChange — shared exports, IDs changed (title/component rename)
 
 **Files:**
+
 - Modify: `code/core/src/shared/rename-redirect-store/classify.test.ts`
 - Modify: `code/core/src/shared/rename-redirect-store/classify.ts`
 
@@ -143,29 +145,29 @@ git commit -m "test(rename-detect): cover shared-exports-unchanged case"
 Append to the `describe` block:
 
 ```typescript
-  it('emits renames for shared exports whose IDs changed (title rename)', () => {
-    const old: FileSnapshot = {
-      stories: {
-        Primary: { id: 'old--primary' },
-        Secondary: { id: 'old--secondary' },
-      },
-      docs: [],
-    };
-    const next: FileSnapshot = {
-      stories: {
-        Primary: { id: 'new--primary' },
-        Secondary: { id: 'new--secondary' },
-      },
-      docs: [],
-    };
-    expect(classifyFileChange(old, next)).toEqual({
-      renames: [
-        { oldId: 'old--primary', newId: 'new--primary' },
-        { oldId: 'old--secondary', newId: 'new--secondary' },
-      ],
-      orphans: [],
-    });
+it('emits renames for shared exports whose IDs changed (title rename)', () => {
+  const old: FileSnapshot = {
+    stories: {
+      Primary: { id: 'old--primary' },
+      Secondary: { id: 'old--secondary' },
+    },
+    docs: [],
+  };
+  const next: FileSnapshot = {
+    stories: {
+      Primary: { id: 'new--primary' },
+      Secondary: { id: 'new--secondary' },
+    },
+    docs: [],
+  };
+  expect(classifyFileChange(old, next)).toEqual({
+    renames: [
+      { oldId: 'old--primary', newId: 'new--primary' },
+      { oldId: 'old--secondary', newId: 'new--secondary' },
+    ],
+    orphans: [],
   });
+});
 ```
 
 - [ ] **Step 2: Run the test to confirm it fails**
@@ -178,10 +180,7 @@ Expected: FAIL — skeleton emits no renames.
 Replace the body of `classifyFileChange`:
 
 ```typescript
-export function classifyFileChange(
-  old: FileSnapshot,
-  next: FileSnapshot
-): ClassifyResult {
+export function classifyFileChange(old: FileSnapshot, next: FileSnapshot): ClassifyResult {
   const renames: { oldId: StoryId; newId: StoryId }[] = [];
   const orphans: StoryId[] = [];
 
@@ -216,6 +215,7 @@ git commit -m "feat(rename-detect): classify shared-export ID change as rename"
 ## Task 4: classifyFileChange — removed exports become orphans
 
 **Files:**
+
 - Modify: `code/core/src/shared/rename-redirect-store/classify.test.ts`
 - Modify: `code/core/src/shared/rename-redirect-store/classify.ts`
 
@@ -224,23 +224,23 @@ git commit -m "feat(rename-detect): classify shared-export ID change as rename"
 Append to the `describe` block:
 
 ```typescript
-  it('emits an orphan for each removed export', () => {
-    const old: FileSnapshot = {
-      stories: {
-        Primary: { id: 'button--primary' },
-        Secondary: { id: 'button--secondary' },
-      },
-      docs: [],
-    };
-    const next: FileSnapshot = {
-      stories: { Secondary: { id: 'button--secondary' } },
-      docs: [],
-    };
-    expect(classifyFileChange(old, next)).toEqual({
-      renames: [],
-      orphans: ['button--primary'],
-    });
+it('emits an orphan for each removed export', () => {
+  const old: FileSnapshot = {
+    stories: {
+      Primary: { id: 'button--primary' },
+      Secondary: { id: 'button--secondary' },
+    },
+    docs: [],
+  };
+  const next: FileSnapshot = {
+    stories: { Secondary: { id: 'button--secondary' } },
+    docs: [],
+  };
+  expect(classifyFileChange(old, next)).toEqual({
+    renames: [],
+    orphans: ['button--primary'],
   });
+});
 ```
 
 - [ ] **Step 2: Run the test**
@@ -253,17 +253,17 @@ Expected: FAIL — `orphans` empty, test expected `['button--primary']`.
 Update the shared-export loop:
 
 ```typescript
-  for (const exportName of Object.keys(old.stories)) {
-    const before = old.stories[exportName];
-    const after = next.stories[exportName];
-    if (after) {
-      if (before.id !== after.id) {
-        renames.push({ oldId: before.id, newId: after.id });
-      }
-    } else {
-      orphans.push(before.id);
+for (const exportName of Object.keys(old.stories)) {
+  const before = old.stories[exportName];
+  const after = next.stories[exportName];
+  if (after) {
+    if (before.id !== after.id) {
+      renames.push({ oldId: before.id, newId: after.id });
     }
+  } else {
+    orphans.push(before.id);
   }
+}
 ```
 
 - [ ] **Step 4: Run tests to confirm pass**
@@ -283,6 +283,7 @@ git commit -m "feat(rename-detect): removed exports become orphans"
 ## Task 5: classifyFileChange — mixed shared-changed + orphan
 
 **Files:**
+
 - Modify: `code/core/src/shared/rename-redirect-store/classify.test.ts`
 
 - [ ] **Step 1: Add the test**
@@ -290,26 +291,26 @@ git commit -m "feat(rename-detect): removed exports become orphans"
 Append to the `describe` block:
 
 ```typescript
-  it('handles a mix of shared ID change, orphan, and ignored new export', () => {
-    const old: FileSnapshot = {
-      stories: {
-        Primary: { id: 'old--primary' },
-        Secondary: { id: 'old--secondary' },
-      },
-      docs: [],
-    };
-    const next: FileSnapshot = {
-      stories: {
-        Primary: { id: 'new--primary' },  // shared + id-changed → rename
-        Tertiary: { id: 'new--tertiary' }, // added → ignored
-      },
-      docs: [],
-    };
-    expect(classifyFileChange(old, next)).toEqual({
-      renames: [{ oldId: 'old--primary', newId: 'new--primary' }],
-      orphans: ['old--secondary'],
-    });
+it('handles a mix of shared ID change, orphan, and ignored new export', () => {
+  const old: FileSnapshot = {
+    stories: {
+      Primary: { id: 'old--primary' },
+      Secondary: { id: 'old--secondary' },
+    },
+    docs: [],
+  };
+  const next: FileSnapshot = {
+    stories: {
+      Primary: { id: 'new--primary' }, // shared + id-changed → rename
+      Tertiary: { id: 'new--tertiary' }, // added → ignored
+    },
+    docs: [],
+  };
+  expect(classifyFileChange(old, next)).toEqual({
+    renames: [{ oldId: 'old--primary', newId: 'new--primary' }],
+    orphans: ['old--secondary'],
   });
+});
 ```
 
 - [ ] **Step 2: Run the test to confirm it passes**
@@ -329,6 +330,7 @@ git commit -m "test(rename-detect): cover mixed change classification"
 ## Task 6: classifyFileChange — added exports never become orphans
 
 **Files:**
+
 - Modify: `code/core/src/shared/rename-redirect-store/classify.test.ts`
 
 - [ ] **Step 1: Add the test**
@@ -336,14 +338,14 @@ git commit -m "test(rename-detect): cover mixed change classification"
 Append to the `describe` block:
 
 ```typescript
-  it('ignores exports added in the new snapshot', () => {
-    const old: FileSnapshot = { stories: {}, docs: [] };
-    const next: FileSnapshot = {
-      stories: { Primary: { id: 'button--primary' } },
-      docs: [],
-    };
-    expect(classifyFileChange(old, next)).toEqual({ renames: [], orphans: [] });
-  });
+it('ignores exports added in the new snapshot', () => {
+  const old: FileSnapshot = { stories: {}, docs: [] };
+  const next: FileSnapshot = {
+    stories: { Primary: { id: 'button--primary' } },
+    docs: [],
+  };
+  expect(classifyFileChange(old, next)).toEqual({ renames: [], orphans: [] });
+});
 ```
 
 - [ ] **Step 2: Run the test**
@@ -363,6 +365,7 @@ git commit -m "test(rename-detect): added exports are ignored"
 ## Task 7: Add `origins` field to RenameRedirectState
 
 **Files:**
+
 - Modify: `code/core/src/shared/rename-redirect-store/index.ts`
 
 - [ ] **Step 1: Extend the type and initial state**
@@ -407,6 +410,7 @@ git commit -m "feat(rename-detect): add origins field to RenameRedirectState"
 ## Task 8: Rename `applyRenameChains` → `extendRenameMaps` and switch to grouped event shape
 
 **Files:**
+
 - Modify: `code/core/src/shared/rename-redirect-store/index.ts`
 - Modify: `code/core/src/shared/rename-redirect-store/index.test.ts`
 - Modify: `code/core/src/core-server/utils/index-json.ts`
@@ -417,8 +421,8 @@ git commit -m "feat(rename-detect): add origins field to RenameRedirectState"
 In `index.ts`, replace the `Rename` type and `applyRenameChains` export with:
 
 ```typescript
-export type Rename   = { oldId: StoryId; newId: StoryId; origin: Path };
-export type Orphan   = { id: StoryId; origin: Path };
+export type Rename = { oldId: StoryId; newId: StoryId; origin: Path };
+export type Orphan = { id: StoryId; origin: Path };
 export type Deletion = { id: StoryId; origin: Path };
 
 export type RenameEvents = {
@@ -429,7 +433,7 @@ export type RenameEvents = {
 
 export function extendRenameMaps(
   current: RenameRedirectState,
-  events: RenameEvents
+  events: RenameEvents,
 ): RenameRedirectState {
   const chains = { ...current.chains };
   const origins = { ...current.origins };
@@ -469,6 +473,7 @@ Delete the old `applyRenameChains` export. Origin writes come in subsequent task
 - [ ] **Step 2: Migrate the existing test file**
 
 In `index.test.ts`:
+
 - Replace all imports of `applyRenameChains` with `extendRenameMaps`.
 - Update every call site to pass the grouped shape:
 
@@ -507,7 +512,7 @@ renameRedirectStore.setState((prev) =>
     renames: renames.map((r) => ({ ...r, origin: resolve(workingDir, /* origin path */ '') })),
     orphans: [],
     deletions: deletedIds.map((id) => ({ id, origin: /* origin path from snapshot */ '' })),
-  })
+  }),
 );
 ```
 
@@ -534,20 +539,21 @@ git commit -m "refactor(rename-detect): rename applyRenameChains to extendRename
 ## Task 9: extendRenameMaps writes origins for renames (TDD)
 
 **Files:**
+
 - Modify: `code/core/src/shared/rename-redirect-store/index.test.ts`
 - Modify: `code/core/src/shared/rename-redirect-store/index.ts`
 
 - [ ] **Step 1: Add the failing test**
 
 ```typescript
-  it('writes origin for a rename event', () => {
-    const result = extendRenameMaps(INITIAL_RENAME_REDIRECT_STATE, {
-      renames: [{ oldId: 'a--x', newId: 'b--x', origin: './src/A.stories.ts' }],
-      orphans: [],
-      deletions: [],
-    });
-    expect(result.origins).toEqual({ 'a--x': './src/A.stories.ts' });
+it('writes origin for a rename event', () => {
+  const result = extendRenameMaps(INITIAL_RENAME_REDIRECT_STATE, {
+    renames: [{ oldId: 'a--x', newId: 'b--x', origin: './src/A.stories.ts' }],
+    orphans: [],
+    deletions: [],
   });
+  expect(result.origins).toEqual({ 'a--x': './src/A.stories.ts' });
+});
 ```
 
 - [ ] **Step 2: Run the test**
@@ -560,11 +566,11 @@ Expected: FAIL — `origins` empty.
 After the renames loop, add:
 
 ```typescript
-  for (const { oldId, origin } of events.renames) {
-    if (!(oldId in origins)) {
-      origins[oldId] = origin;
-    }
+for (const { oldId, origin } of events.renames) {
+  if (!(oldId in origins)) {
+    origins[oldId] = origin;
   }
+}
 ```
 
 - [ ] **Step 4: Run tests**
@@ -584,21 +590,22 @@ git commit -m "feat(rename-detect): extendRenameMaps writes origin for renames"
 ## Task 10: extendRenameMaps writes origins for orphans
 
 **Files:**
+
 - Modify: `code/core/src/shared/rename-redirect-store/index.test.ts`
 - Modify: `code/core/src/shared/rename-redirect-store/index.ts`
 
 - [ ] **Step 1: Add the failing test**
 
 ```typescript
-  it('writes origin for an orphan without touching chains', () => {
-    const result = extendRenameMaps(INITIAL_RENAME_REDIRECT_STATE, {
-      renames: [],
-      orphans: [{ id: 'orphan--x', origin: './src/Orphan.stories.ts' }],
-      deletions: [],
-    });
-    expect(result.origins).toEqual({ 'orphan--x': './src/Orphan.stories.ts' });
-    expect(result.chains).toEqual({});
+it('writes origin for an orphan without touching chains', () => {
+  const result = extendRenameMaps(INITIAL_RENAME_REDIRECT_STATE, {
+    renames: [],
+    orphans: [{ id: 'orphan--x', origin: './src/Orphan.stories.ts' }],
+    deletions: [],
   });
+  expect(result.origins).toEqual({ 'orphan--x': './src/Orphan.stories.ts' });
+  expect(result.chains).toEqual({});
+});
 ```
 
 - [ ] **Step 2: Run the test**
@@ -611,11 +618,11 @@ Expected: FAIL — orphan branch not implemented.
 Inside `extendRenameMaps`, after the rename loop and before deletions:
 
 ```typescript
-  for (const { id, origin } of events.orphans) {
-    if (!(id in origins)) {
-      origins[id] = origin;
-    }
+for (const { id, origin } of events.orphans) {
+  if (!(id in origins)) {
+    origins[id] = origin;
   }
+}
 ```
 
 - [ ] **Step 4: Run tests**
@@ -635,21 +642,22 @@ git commit -m "feat(rename-detect): extendRenameMaps writes origin for orphans"
 ## Task 11: extendRenameMaps writes origins for deletions
 
 **Files:**
+
 - Modify: `code/core/src/shared/rename-redirect-store/index.test.ts`
 - Modify: `code/core/src/shared/rename-redirect-store/index.ts`
 
 - [ ] **Step 1: Add the failing test**
 
 ```typescript
-  it('writes origin for a deletion alongside the null chain', () => {
-    const result = extendRenameMaps(INITIAL_RENAME_REDIRECT_STATE, {
-      renames: [],
-      orphans: [],
-      deletions: [{ id: 'gone--story', origin: './src/Gone.stories.ts' }],
-    });
-    expect(result.origins).toEqual({ 'gone--story': './src/Gone.stories.ts' });
-    expect(result.chains).toEqual({ 'gone--story': [null] });
+it('writes origin for a deletion alongside the null chain', () => {
+  const result = extendRenameMaps(INITIAL_RENAME_REDIRECT_STATE, {
+    renames: [],
+    orphans: [],
+    deletions: [{ id: 'gone--story', origin: './src/Gone.stories.ts' }],
   });
+  expect(result.origins).toEqual({ 'gone--story': './src/Gone.stories.ts' });
+  expect(result.chains).toEqual({ 'gone--story': [null] });
+});
 ```
 
 - [ ] **Step 2: Run the test**
@@ -662,11 +670,11 @@ Expected: FAIL — deletion branch writes chain but not origin.
 After the existing deletion chain loop:
 
 ```typescript
-  for (const { id, origin } of events.deletions) {
-    if (!(id in origins)) {
-      origins[id] = origin;
-    }
+for (const { id, origin } of events.deletions) {
+  if (!(id in origins)) {
+    origins[id] = origin;
   }
+}
 ```
 
 - [ ] **Step 4: Run tests**
@@ -686,24 +694,25 @@ git commit -m "feat(rename-detect): extendRenameMaps writes origin for deletions
 ## Task 12: extendRenameMaps — origin write-once semantics
 
 **Files:**
+
 - Modify: `code/core/src/shared/rename-redirect-store/index.test.ts`
 
 - [ ] **Step 1: Add the test**
 
 ```typescript
-  it('never overwrites an existing origin (first-wins semantics)', () => {
-    const step1 = extendRenameMaps(INITIAL_RENAME_REDIRECT_STATE, {
-      renames: [{ oldId: 'a--x', newId: 'b--x', origin: './first.ts' }],
-      orphans: [],
-      deletions: [],
-    });
-    const step2 = extendRenameMaps(step1, {
-      renames: [{ oldId: 'a--x', newId: 'c--x', origin: './second.ts' }],
-      orphans: [],
-      deletions: [],
-    });
-    expect(step2.origins['a--x']).toBe('./first.ts');
+it('never overwrites an existing origin (first-wins semantics)', () => {
+  const step1 = extendRenameMaps(INITIAL_RENAME_REDIRECT_STATE, {
+    renames: [{ oldId: 'a--x', newId: 'b--x', origin: './first.ts' }],
+    orphans: [],
+    deletions: [],
   });
+  const step2 = extendRenameMaps(step1, {
+    renames: [{ oldId: 'a--x', newId: 'c--x', origin: './second.ts' }],
+    orphans: [],
+    deletions: [],
+  });
+  expect(step2.origins['a--x']).toBe('./first.ts');
+});
 ```
 
 - [ ] **Step 2: Run the test**
@@ -723,6 +732,7 @@ git commit -m "test(rename-detect): origin write-once semantics"
 ## Task 13: Retype FileSnapshot on StoryIndexGenerator (incl. docs)
 
 **Files:**
+
 - Modify: `code/core/src/core-server/utils/StoryIndexGenerator.ts`
 - Modify: `code/core/src/core-server/utils/StoryIndexGenerator.test.ts`
 
@@ -750,20 +760,20 @@ getRemovedFileSnapshots(): Map<Path, FileSnapshot> {
 Replace the snapshot block inside `invalidate(path, removed=true)`:
 
 ```typescript
-      if (cacheEntry && cacheEntry.type === 'stories') {
-        const stories: FileSnapshot['stories'] = {};
-        const docs: FileSnapshot['docs'] = [];
-        for (const entry of cacheEntry.entries) {
-          if (entry.type === 'story' && 'exportName' in entry && entry.exportName) {
-            stories[entry.exportName] = { id: entry.id };
-          } else if (entry.type === 'docs') {
-            docs.push({ id: entry.id, name: entry.name });
-          }
-        }
-        if (Object.keys(stories).length > 0 || docs.length > 0) {
-          this.removedFileSnapshots.set(absolutePath, { stories, docs });
-        }
-      }
+if (cacheEntry && cacheEntry.type === 'stories') {
+  const stories: FileSnapshot['stories'] = {};
+  const docs: FileSnapshot['docs'] = [];
+  for (const entry of cacheEntry.entries) {
+    if (entry.type === 'story' && 'exportName' in entry && entry.exportName) {
+      stories[entry.exportName] = { id: entry.id };
+    } else if (entry.type === 'docs') {
+      docs.push({ id: entry.id, name: entry.name });
+    }
+  }
+  if (Object.keys(stories).length > 0 || docs.length > 0) {
+    this.removedFileSnapshots.set(absolutePath, { stories, docs });
+  }
+}
 ```
 
 - [ ] **Step 3: Update the existing snapshot tests to match the new shape**
@@ -840,6 +850,7 @@ git commit -m "refactor(rename-detect): use FileSnapshot shape for removed-file 
 ## Task 14: Add modifiedFileSnapshots map + snapshot capture on modify
 
 **Files:**
+
 - Modify: `code/core/src/core-server/utils/StoryIndexGenerator.ts`
 - Modify: `code/core/src/core-server/utils/StoryIndexGenerator.test.ts`
 
@@ -852,7 +863,7 @@ describe('modified file snapshots', () => {
   it('captures stories+docs before marking the cache entry stale (invalidate with removed=false)', async () => {
     const specifier: NormalizedStoriesSpecifier = normalizeStoriesEntry(
       './src/**/*.stories.(ts|js|mjs|jsx)',
-      options
+      options,
     );
     const generator = new StoryIndexGenerator([specifier], options);
     await generator.initialize();
@@ -912,7 +923,7 @@ if (cacheEntry && cacheEntry.type === 'stories') {
   const snap = this.captureSnapshot(cacheEntry);
   if (snap) {
     if (removed) this.removedFileSnapshots.set(absolutePath, snap);
-    else         this.modifiedFileSnapshots.set(absolutePath, snap);
+    else this.modifiedFileSnapshots.set(absolutePath, snap);
   }
 }
 ```
@@ -936,30 +947,31 @@ git commit -m "feat(rename-detect): capture modifiedFileSnapshots in invalidate"
 ## Task 15: clearSnapshots drains both maps + preserve alias
 
 **Files:**
+
 - Modify: `code/core/src/core-server/utils/StoryIndexGenerator.ts`
 - Modify: `code/core/src/core-server/utils/StoryIndexGenerator.test.ts`
 
 - [ ] **Step 1: Add the failing test**
 
 ```typescript
-  it('clearSnapshots() empties both modified and removed maps', async () => {
-    const specifier: NormalizedStoriesSpecifier = normalizeStoriesEntry(
-      './src/**/*.stories.(ts|js|mjs|jsx)',
-      options
-    );
-    const generator = new StoryIndexGenerator([specifier], options);
-    await generator.initialize();
-    await generator.getIndex();
+it('clearSnapshots() empties both modified and removed maps', async () => {
+  const specifier: NormalizedStoriesSpecifier = normalizeStoriesEntry(
+    './src/**/*.stories.(ts|js|mjs|jsx)',
+    options,
+  );
+  const generator = new StoryIndexGenerator([specifier], options);
+  await generator.initialize();
+  await generator.getIndex();
 
-    generator.invalidate('./src/A.stories.js', false);  // populates modified
-    generator.invalidate('./src/B.stories.ts', true);   // populates removed
-    expect(generator.getModifiedFileSnapshots().size).toBeGreaterThan(0);
-    expect(generator.getRemovedFileSnapshots().size).toBeGreaterThan(0);
+  generator.invalidate('./src/A.stories.js', false); // populates modified
+  generator.invalidate('./src/B.stories.ts', true); // populates removed
+  expect(generator.getModifiedFileSnapshots().size).toBeGreaterThan(0);
+  expect(generator.getRemovedFileSnapshots().size).toBeGreaterThan(0);
 
-    generator.clearSnapshots();
-    expect(generator.getModifiedFileSnapshots().size).toBe(0);
-    expect(generator.getRemovedFileSnapshots().size).toBe(0);
-  });
+  generator.clearSnapshots();
+  expect(generator.getModifiedFileSnapshots().size).toBe(0);
+  expect(generator.getRemovedFileSnapshots().size).toBe(0);
+});
 ```
 
 - [ ] **Step 2: Run the test**
@@ -1000,6 +1012,7 @@ git commit -m "feat(rename-detect): clearSnapshots drains both maps"
 ## Task 16: Pending modifications accumulator in index-json
 
 **Files:**
+
 - Modify: `code/core/src/core-server/utils/index-json.ts`
 
 - [ ] **Step 1: Add the new accumulator next to the existing ones**
@@ -1009,7 +1022,7 @@ In `registerIndexJsonRoute`, near the top where `pendingRenameCandidates` and `p
 ```typescript
 const pendingRenameCandidates: RenameCandidate[] = [];
 const pendingDeletions: Path[] = [];
-const pendingModifications: Path[] = [];  // new
+const pendingModifications: Path[] = []; // new
 ```
 
 - [ ] **Step 2: Route modification events into the accumulator**
@@ -1021,7 +1034,7 @@ watchStorySpecifiers(normalizedStories, { workingDir }, async (path, removed, re
   (await storyIndexGeneratorPromise).invalidate(path, removed);
   if (removed) {
     if (renameHint) pendingRenameCandidates.push({ oldPath: path, newPath: renameHint.pairedWith });
-    else            pendingDeletions.push(path);
+    else pendingDeletions.push(path);
   } else {
     pendingModifications.push(path);
   }
@@ -1046,6 +1059,7 @@ git commit -m "feat(rename-detect): pending modifications accumulator"
 ## Task 17: Orchestrator classifies modifications and routes orphans
 
 **Files:**
+
 - Modify: `code/core/src/core-server/utils/index-json.ts`
 
 - [ ] **Step 1: Update the debounced `maybeInvalidate` body**
@@ -1053,7 +1067,10 @@ git commit -m "feat(rename-detect): pending modifications accumulator"
 Replace the body to drain all three accumulators, resolve same-path conflicts, classify modifications, and emit a single `extendRenameMaps` call.
 
 ```typescript
-import { classifyFileChange, type FileSnapshot } from '../../shared/rename-redirect-store/classify.ts';
+import {
+  classifyFileChange,
+  type FileSnapshot,
+} from '../../shared/rename-redirect-store/classify.ts';
 import {
   extendRenameMaps,
   type Rename,
@@ -1069,15 +1086,15 @@ const maybeInvalidate = debounce(
     onStoryIndexInvalidated?.();
 
     const renameCandidates = pendingRenameCandidates.splice(0);
-    const deletions        = pendingDeletions.splice(0);
-    let   modifications    = pendingModifications.splice(0);
+    const deletions = pendingDeletions.splice(0);
+    let modifications = pendingModifications.splice(0);
 
     if (renameCandidates.length === 0 && deletions.length === 0 && modifications.length === 0) {
       return;
     }
 
     // Same-path conflict: deletion (and rename-source) trump modification
-    const deletionPaths   = new Set(deletions);
+    const deletionPaths = new Set(deletions);
     const renameSourcePaths = new Set(renameCandidates.map((r) => r.oldPath));
     modifications = modifications.filter((p) => !deletionPaths.has(p) && !renameSourcePaths.has(p));
 
@@ -1091,7 +1108,7 @@ const maybeInvalidate = debounce(
       return;
     }
 
-    const removedSnapshots  = generator.getRemovedFileSnapshots();
+    const removedSnapshots = generator.getRemovedFileSnapshots();
     const modifiedSnapshots = generator.getModifiedFileSnapshots();
 
     // 1. File-rename pairs (existing file-rename path).
@@ -1099,7 +1116,7 @@ const maybeInvalidate = debounce(
       renameCandidates,
       removedSnapshots,
       index,
-      workingDir
+      workingDir,
     );
 
     // Origin of a file-rename pair is the old absolute path. Build a lookup
@@ -1179,11 +1196,11 @@ const maybeInvalidate = debounce(
         renames: eventRenames,
         orphans: eventOrphans,
         deletions: eventDeletions,
-      })
+      }),
     );
   },
   DEBOUNCE,
-  { edges: ['leading', 'trailing'] }
+  { edges: ['leading', 'trailing'] },
 );
 ```
 
@@ -1206,6 +1223,7 @@ git commit -m "feat(rename-detect): classify modifications and route orphans thr
 ## Task 18: Orchestration test for meta.title rename
 
 **Files:**
+
 - Modify: `code/core/src/core-server/utils/index-json.test.ts`
 
 - [ ] **Step 1: Add the test**
@@ -1266,6 +1284,7 @@ git commit -m "test(rename-detect): orchestrator writes rename on shared-export 
 ## Task 19: Orchestration test for export-level orphan (no chain, origin only)
 
 **Files:**
+
 - Modify: `code/core/src/core-server/utils/index-json.test.ts`
 
 - [ ] **Step 1: Add the test**
@@ -1290,7 +1309,7 @@ it('writes origin but no chain when an export disappears', async () => {
   generator.getModifiedFileSnapshots().set(absPath, {
     stories: {
       StoryOne: { id: 'b--story-one' },
-      Primary:  { id: 'b--primary' },
+      Primary: { id: 'b--primary' },
     },
     docs: [],
   });
@@ -1323,6 +1342,7 @@ git commit -m "test(rename-detect): orphan produces origin-only store write"
 ## Task 20: Orchestration test for same-path deletion trumps modification
 
 **Files:**
+
 - Modify: `code/core/src/core-server/utils/index-json.test.ts`
 
 - [ ] **Step 1: Add the test**
@@ -1385,6 +1405,7 @@ git commit -m "test(rename-detect): deletion beats modification on same path"
 ## Task 21: FollowupOverlay component
 
 **Files:**
+
 - Create: `code/core/src/manager/components/preview/FollowupOverlay.tsx`
 - Create: `code/core/src/manager/components/preview/FollowupOverlay.test.tsx`
 
@@ -1411,7 +1432,7 @@ describe('FollowupOverlay', () => {
         heading="This story is no longer here"
         siblings={siblings as any}
         onSelect={vi.fn()}
-      />
+      />,
     );
     expect(screen.getByText('This story is no longer here')).toBeDefined();
   });
@@ -1422,7 +1443,7 @@ describe('FollowupOverlay', () => {
         heading="This story was deleted"
         siblings={siblings as any}
         onSelect={vi.fn()}
-      />
+      />,
     );
     expect(screen.getByText('This story was deleted')).toBeDefined();
   });
@@ -1434,7 +1455,7 @@ describe('FollowupOverlay', () => {
         heading="This story is no longer here"
         siblings={siblings as any}
         onSelect={onSelect}
-      />
+      />,
     );
     expect(screen.getAllByRole('link')).toHaveLength(2);
   });
@@ -1445,7 +1466,7 @@ describe('FollowupOverlay', () => {
         heading="This story is no longer here"
         siblings={siblings as any}
         onSelect={vi.fn()}
-      />
+      />,
     );
     expect(screen.queryByText(/docs/i)).toBeNull();
   });
@@ -1463,7 +1484,7 @@ describe('FollowupOverlay', () => {
         siblings={siblings as any}
         docsEntry={docsEntry as any}
         onSelect={vi.fn()}
-      />
+      />,
     );
     expect(screen.getByText(/take me to button docs/i)).toBeDefined();
   });
@@ -1563,11 +1584,7 @@ export const FollowupOverlay: FC<FollowupOverlayProps> = ({
               <List>
                 {siblings.map((s) => (
                   <Item key={s.id}>
-                    <Link
-                      role="link"
-                      onClick={() => onSelect(s.id)}
-                      tabIndex={0}
-                    >
+                    <Link role="link" onClick={() => onSelect(s.id)} tabIndex={0}>
                       {s.title} — {s.name}
                     </Link>
                   </Item>
@@ -1604,6 +1621,7 @@ git commit -m "feat(rename-detect): FollowupOverlay component"
 ## Task 22: Wire FollowupOverlay into Preview.tsx (replaces DeletionOverlay)
 
 **Files:**
+
 - Modify: `code/core/src/manager/components/preview/Preview.tsx`
 
 - [ ] **Step 1: Replace the deletion detection + overlay with the followup wiring**
@@ -1625,18 +1643,21 @@ const canvasMapper = ({ state, api }: Combo) => {
   const chain = storyId ? chains[storyId] : undefined;
   const index = state.internal_index;
 
-  const siblings = originPath && index
-    ? (Object.values(index.entries).filter(
-        (e: any) => e.importPath === originPath && e.type === 'story'
-      ) as API_StoryEntry[])
-    : [];
-  const docsEntry = originPath && index
-    ? (Object.values(index.entries).find(
-        (e: any) => e.importPath === originPath && e.type === 'docs'
-      ) as API_DocsEntry | undefined)
-    : undefined;
+  const siblings =
+    originPath && index
+      ? (Object.values(index.entries).filter(
+          (e: any) => e.importPath === originPath && e.type === 'story',
+        ) as API_StoryEntry[])
+      : [];
+  const docsEntry =
+    originPath && index
+      ? (Object.values(index.entries).find(
+          (e: any) => e.importPath === originPath && e.type === 'docs',
+        ) as API_DocsEntry | undefined)
+      : undefined;
 
-  const isKnownDeletion = chain !== undefined && chain.length > 0 && chain[chain.length - 1] === null;
+  const isKnownDeletion =
+    chain !== undefined && chain.length > 0 && chain[chain.length - 1] === null;
   const followupHeading: FollowupOverlayProps['heading'] | undefined =
     entry || !originPath
       ? undefined
@@ -1669,14 +1690,16 @@ const canvasMapper = ({ state, api }: Combo) => {
 Inside `Canvas`'s render, after `<ApplyWrappers>...</ApplyWrappers>`:
 
 ```tsx
-{followup && (
-  <FollowupOverlay
-    heading={followup.heading}
-    siblings={followup.siblings}
-    docsEntry={followup.docsEntry}
-    onSelect={(id) => api.selectStory(id)}
-  />
-)}
+{
+  followup && (
+    <FollowupOverlay
+      heading={followup.heading}
+      siblings={followup.siblings}
+      docsEntry={followup.docsEntry}
+      onSelect={(id) => api.selectStory(id)}
+    />
+  );
+}
 ```
 
 Destructure `followup` from the consumer args alongside the rest.
@@ -1723,6 +1746,7 @@ cd code && yarn storybook:ui
 ```
 
 Verify in the browser:
+
 1. Change `meta.title` of a component → navigation follows automatically.
 2. Rename a component identifier used by autoTitle → same.
 3. Rename a single export → landing on the old URL shows the FollowupOverlay with sibling stories; new story listed; docs button appears if autodocs was on.
@@ -1748,6 +1772,7 @@ git commit --allow-empty -m "chore(rename-detect): full verification pass"
 ## Self-Review Notes
 
 Spec coverage verified:
+
 - Classification algorithm (§2) → Tasks 1–6
 - State shape (§3.1) → Task 7
 - `extendRenameMaps` rename + origin semantics (§3.2) → Tasks 8–12

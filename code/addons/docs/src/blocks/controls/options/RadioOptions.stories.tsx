@@ -10,6 +10,12 @@ const labels = {
   Cat: 'Catwoman',
   Rat: 'Ratwoman',
 };
+// Only `Bat` is labelled; `Cat` and `Rat` should fall back to String(item).
+const partialLabels = {
+  Bat: 'Batwoman',
+};
+// Options that collide with Array.prototype method names — the regression case.
+const prototypeCollisionOptions = ['reverse', 'map', 'filter'];
 const objectOptions = {
   A: { id: 'Aardvark' },
   B: { id: 'Bat' },
@@ -67,6 +73,57 @@ export const ArrayInlineLabels: Story = {
     type: 'inline-radio',
     value: arrayOptions[1],
     labels,
+  },
+};
+
+// Partial labels: only 'Bat' is mapped; 'Cat' and 'Rat' fall back to String(item).
+export const ArrayLabelsPartial: Story = {
+  args: {
+    value: arrayOptions[0],
+    labels: partialLabels,
+  },
+};
+
+export const ArrayInlineLabelsPartial: Story = {
+  args: {
+    type: 'inline-radio',
+    value: arrayOptions[1],
+    labels: partialLabels,
+  },
+};
+
+// Regression: when `labels` is emitted as an array by docgen (e.g. Svelte),
+// options whose names match Array.prototype methods previously showed
+// `function reverse() { [native code] }` instead of the option's string value.
+// With the fix, each option must display as String(item) — 'reverse', 'map', 'filter'.
+export const ArrayLabelsIsArray: Story = {
+  name: 'Array Labels (docgen array — prototype-collision fix)',
+  args: {
+    value: prototypeCollisionOptions[0],
+    argType: { options: prototypeCollisionOptions },
+    labels: ['Reverse', 'Map', 'Filter'] as any,
+  },
+  argTypes: {
+    value: {
+      control: { type: 'radio' },
+      options: prototypeCollisionOptions,
+    },
+  },
+};
+
+export const ArrayInlineLabelsIsArray: Story = {
+  name: 'Array Inline Labels (docgen array — prototype-collision fix)',
+  args: {
+    type: 'inline-radio',
+    value: prototypeCollisionOptions[1],
+    argType: { options: prototypeCollisionOptions },
+    labels: ['Reverse', 'Map', 'Filter'] as any,
+  },
+  argTypes: {
+    value: {
+      control: { type: 'inline-radio' },
+      options: prototypeCollisionOptions,
+    },
   },
 };
 

@@ -154,6 +154,8 @@ const Actions = styled.div({
   gap: 2,
 });
 
+const FocusContainer = styled.div({ outline: 0 });
+
 export type SearchProps = {
   children: SearchChildrenFn;
   dataset: CombinedDataset;
@@ -162,6 +164,7 @@ export type SearchProps = {
   initialQuery?: string;
   searchBarContent?: ReactNode;
   searchFieldContent?: ReactNode;
+  belowSearchContent?: ReactNode;
 };
 
 export const Search = React.memo<SearchProps>(function Search({
@@ -172,6 +175,7 @@ export const Search = React.memo<SearchProps>(function Search({
   initialQuery = '',
   searchBarContent,
   searchFieldContent,
+  belowSearchContent,
 }) {
   const api = useStorybookApi();
   const inputRef = useRef<HTMLInputElement>(null);
@@ -431,7 +435,8 @@ export const Search = React.memo<SearchProps>(function Search({
               </SearchField>
               {searchBarContent}
             </SearchBar>
-            <div>
+            {!isOpen && belowSearchContent}
+            <FocusContainer tabIndex={0} id="storybook-explorer-menu">
               {children({
                 query: input,
                 results,
@@ -443,7 +448,7 @@ export const Search = React.memo<SearchProps>(function Search({
                 getItemProps,
                 highlightedIndex,
               })}
-            </div>
+            </FocusContainer>
           </>
         );
       }}

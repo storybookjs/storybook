@@ -2,9 +2,15 @@ import React, { type ComponentProps, type FC } from 'react';
 
 import type { StatusValue } from 'storybook/internal/types';
 
-import { StatusFailIcon, StatusPassIcon, StatusWarnIcon, SyncIcon } from '@storybook/icons';
+import {
+  StatusFailIcon,
+  StatusNewIcon,
+  StatusPassIcon,
+  StatusWarnIcon,
+  SyncIcon,
+} from '@storybook/icons';
 
-import { useTheme } from 'storybook/theming';
+import { color, styled, useTheme } from 'storybook/theming';
 
 const SuccessStatusIcon: FC<ComponentProps<typeof StatusPassIcon>> = (props) => {
   const theme = useTheme();
@@ -26,10 +32,34 @@ const PendingStatusIcon: FC<ComponentProps<typeof SyncIcon>> = (props) => {
   return <SyncIcon {...props} size={12} color={theme.color.defaultText} />;
 };
 
+const StyledSymbolIcon = styled.svg<{ $color: string }>(({ $color }) => ({
+  color: $color,
+  width: 12,
+  height: 12,
+}));
+
+const NewStatusIcon: FC = () => {
+  const theme = useTheme();
+  return <StyledSymbolIcon $color={theme.fgColor.accent} type="change-new" />;
+};
+
+const ModifiedStatusIcon: FC = () => {
+  const theme = useTheme();
+  return <StyledSymbolIcon $color={theme.fgColor.accent} type="change-modified" />;
+};
+
+const AffectedStatusIcon: FC = () => {
+  const theme = useTheme();
+  return <StyledSymbolIcon $color={theme.fgColor.accent} type="change-affected" />;
+};
+
 export const StatusIconMap: Record<StatusValue, React.ReactNode | null> = {
   'status-value:success': <SuccessStatusIcon />,
   'status-value:error': <ErrorStatusIcon />,
   'status-value:warning': <WarnStatusIcon />,
   'status-value:pending': <PendingStatusIcon />,
+  'status-value:new': <NewStatusIcon />,
+  'status-value:modified': <ModifiedStatusIcon />,
+  'status-value:affected': <AffectedStatusIcon />,
   'status-value:unknown': null,
 };

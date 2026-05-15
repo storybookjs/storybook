@@ -1,8 +1,13 @@
 import type { ReactElement } from 'react';
 import React from 'react';
 
-import type { StatusValue } from 'storybook/internal/types';
-import { type API_HashEntry, type StatusesByStoryIdAndTypeId } from 'storybook/internal/types';
+import type { API_IndexHash, API_StoryEntry, Status, StatusValue } from 'storybook/internal/types';
+import {
+  CHANGE_DETECTION_STATUS_TYPE_ID,
+  type API_HashEntry,
+  type StatusByTypeId,
+  type StatusesByStoryIdAndTypeId,
+} from 'storybook/internal/types';
 
 import { CircleIcon } from '@storybook/icons';
 
@@ -11,6 +16,7 @@ import { transparentize } from 'polished';
 import { type Theme, styled } from 'storybook/theming';
 
 import { UseSymbol } from '../components/sidebar/IconSymbols.tsx';
+import { getDescendantIds } from './tree.ts';
 
 const SmallIcons = styled(CircleIcon)({
   // specificity hack
@@ -42,6 +48,7 @@ export const statusPriority: StatusValue[] = [
   'status-value:error',
 ];
 
+// FIXME/TODO: this is redundant with the StatusIcon component I created. Rationalise.
 // We might not want to make this a hook because it is used in the Tree after multiple returns.
 // There could be scenarios where creating a story changes the type of an item (e.g. story now
 // has children because it has a test child), so we could end up with rule of hooks violations.
@@ -74,7 +81,7 @@ export const getStatus = memoizerific(10)((theme: Theme, status: StatusValue): S
     'status-value:new': {
       icon: (
         <svg key="icon" viewBox="0 0 14 14" width="14" height="14">
-          <UseSymbol type="new" />
+          <UseSymbol type="change-new" />
         </svg>
       ),
       iconColor: theme.fgColor.accent,
@@ -83,7 +90,7 @@ export const getStatus = memoizerific(10)((theme: Theme, status: StatusValue): S
     'status-value:modified': {
       icon: (
         <svg key="icon" viewBox="0 0 14 14" width="14" height="14">
-          <UseSymbol type="modified" />
+          <UseSymbol type="change-modified" />
         </svg>
       ),
       iconColor: theme.fgColor.accent,
@@ -92,7 +99,7 @@ export const getStatus = memoizerific(10)((theme: Theme, status: StatusValue): S
     'status-value:affected': {
       icon: (
         <svg key="icon" viewBox="0 0 14 14" width="14" height="14">
-          <UseSymbol type="affected" />
+          <UseSymbol type="change-affected" />
         </svg>
       ),
       iconColor: theme.fgColor.accent,
@@ -120,20 +127,24 @@ export const getStatus = memoizerific(10)((theme: Theme, status: StatusValue): S
   return statusMapping[status];
 });
 
+export function getChangeDetectionStatus(statuses: StatusByTypeId): {
+  changeStatus: StatusValue;
+  testStatus: StatusValue;
+} {
+  const changeValues = Object.values(statuses)
+    .filter((status) => status.typeId === CHANGE_DETECTION_STATUS_TYPE_ID)
+    .map((status) => status.value);
+  const testValues = Object.values(statuses)
+    .filter((status) => status.typeId !== CHANGE_DETECTION_STATUS_TYPE_ID)
+    .map((status) => status.value);
+  return {
+    changeStatus: getMostCriticalStatusValue(changeValues),
+    testStatus: getMostCriticalStatusValue(testValues),
+  };
+}
+
 export const getMostCriticalStatusValue = (statusValues: StatusValue[]): StatusValue => {
   return statusPriority.findLast((value) => statusValues.includes(value)) || 'status-value:unknown';
-};
-
-// FIXME/TODO: remove if unused
-export const sortByMostCriticalStatus = (a: StatusValue, b: StatusValue): number => {
-  for (const value of statusPriority) {
-    if (a === value || b === value) {
-      // NOTE: the array goes from least to most important but we virtually want
-      // to sort by most important first. So we must reverse traditional sort order.
-      return a === value ? -1 : 1;
-    }
-  }
-  return 0;
 };
 
 /**
@@ -184,4 +195,43 @@ export function getGroupStatus(
   }
 
   return result;
+}
+
+export function getGroupDualStatus(
+  collapsedData: API_IndexHash,
+  allStatuses: StatusesByStoryIdAndTypeId
+): Record<string, { change: Status; test: Status }> {
+  return Object.values(collapsedData).reduce<Record<string, { change: Status; test: Status }>>(
+    (acc, item) => {
+      if (item.type === 'group' || item.type === 'component' || item.type === 'story') {
+        const allDescendantStatuses = getDescendantIds(collapsedData, item.id, false)
+          .map((childId) => collapsedData[childId])
+          .filter((child): child is API_StoryEntry => child.type === 'story')
+          .map((child) => allStatuses[child.id])
+          .filter((status) => !!status)
+          .flatMap((status) => Object.values(status));
+
+        const changeStatuses = allDescendantStatuses.filter(
+          (s) => s.typeId === CHANGE_DETECTION_STATUS_TYPE_ID
+        );
+        const testStatuses = allDescendantStatuses.filter(
+          (s) => s.typeId !== CHANGE_DETECTION_STATUS_TYPE_ID
+        );
+
+        const mostCriticalChange = getMostCriticalStatusValue(changeStatuses.map((s) => s.value));
+        const mostCriticalTest = getMostCriticalStatusValue(testStatuses.map((s) => s.value));
+
+        acc[item.id] = {
+          change:
+            changeStatuses.find((s) => s.value === mostCriticalChange) ??
+            ({ value: mostCriticalChange } as Status),
+          test:
+            testStatuses.find((s) => s.value === mostCriticalTest) ??
+            ({ value: mostCriticalTest } as Status),
+        };
+      }
+      return acc;
+    },
+    {}
+  );
 }

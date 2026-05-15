@@ -13,13 +13,14 @@ import {
 import { CopyIcon, EditorIcon, EllipsisIcon } from '@storybook/icons';
 
 import { experimental_useStatusStore } from '#manager-stores';
-import copy from 'copy-to-clipboard';
 import type { API, IndexHash } from 'storybook/manager-api';
 import { shortcutToHumanString, useStorybookApi } from 'storybook/manager-api';
 import { styled } from 'storybook/theming';
 
+import { useCopyButton } from '../../../shared/useCopyButton.ts';
 import type { Link } from '../../../components/components/tooltip/TooltipLinkList.tsx';
 import { getGroupStatus, getMostCriticalStatusValue } from '../../utils/status.tsx';
+
 import { Shortcut } from '../Shortcut.tsx';
 import { UseSymbol } from './IconSymbols.tsx';
 import { StatusButton } from './StatusButton.tsx';
@@ -55,9 +56,14 @@ export const useContextMenu = (
   entryMethod?: ContextMenuEntryMethod
 ) => {
   const [hoverCount, setHoverCount] = useState(0);
-  const [copyText, setCopyText] = React.useState('Copy story name');
   const allStatuses = experimental_useStatusStore();
   const groupStatus = useMemo(() => getGroupStatus(data, allStatuses ?? {}), [data, allStatuses]);
+
+  const exportName = context && 'exportName' in context ? (context.exportName ?? '') : '';
+  const { children: copyText, buttonProps: copyButtonProps } = useCopyButton<string>({
+    children: 'Copy story name',
+    content: exportName,
+  });
 
   const shortcutKeys = api.getShortcutKeys();
   const enableShortcuts = !!shortcutKeys;
@@ -94,17 +100,13 @@ export const useContextMenu = (
         //   ) : null,
         onClick: (e: SyntheticEvent) => {
           e.preventDefault();
-          copy(context.exportName);
-          setCopyText('Copied!');
-          setTimeout(() => {
-            setCopyText('Copy story name');
-          }, 2000);
+          copyButtonProps.onClick(e);
         },
       });
     }
 
     return defaultLinks;
-  }, [api, context, copyText, enableShortcuts, shortcutKeys]);
+  }, [api, context, copyText, copyButtonProps, enableShortcuts, shortcutKeys]);
 
   const handlers = useMemo(() => {
     return {

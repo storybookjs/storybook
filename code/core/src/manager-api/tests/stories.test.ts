@@ -1697,7 +1697,7 @@ describe('stories API', () => {
     });
 
     it('parses included status short names', () => {
-      const result = parseStatusesParam('new;modified;affected');
+      const result = parseStatusesParam('new;modified;related');
       expect(result.included).toEqual([
         'status-value:new',
         'status-value:modified',
@@ -1726,7 +1726,7 @@ describe('stories API', () => {
 
     it('parses all known status values', () => {
       const result = parseStatusesParam(
-        'new;modified;affected;error;warning;success;pending;unknown'
+        'new;modified;related;error;warning;success;pending;unknown'
       );
       expect(result.included).toEqual([
         'status-value:new',
@@ -1738,6 +1738,12 @@ describe('stories API', () => {
         'status-value:pending',
         'status-value:unknown',
       ]);
+    });
+
+    it('keeps backward compatibility for affected in URL params', () => {
+      const result = parseStatusesParam('affected');
+      expect(result.included).toEqual(['status-value:affected']);
+      expect(result.excluded).toEqual([]);
     });
   });
 
@@ -1762,6 +1768,11 @@ describe('stories API', () => {
       expect(serializeStatusesParam(['status-value:new'], ['status-value:error'])).toBe(
         'new;!error'
       );
+    });
+
+    it('serializes affected as related for URL params', () => {
+      expect(serializeStatusesParam(['status-value:affected'], [])).toBe('related');
+      expect(serializeStatusesParam([], ['status-value:affected'])).toBe('!related');
     });
 
     it('round-trips with parseStatusesParam', () => {

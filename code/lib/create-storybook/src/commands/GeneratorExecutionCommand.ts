@@ -7,6 +7,7 @@ import { generatorRegistry } from '../generators/GeneratorRegistry.ts';
 import { baseGenerator } from '../generators/baseGenerator.ts';
 import type { CommandOptions, GeneratorModule, GeneratorOptions } from '../generators/types.ts';
 import { AddonService } from '../services/index.ts';
+import { TelemetryService } from '../services/TelemetryService.ts';
 import type { FrameworkDetectionResult } from './FrameworkDetectionCommand.ts';
 
 type ExecuteProjectGeneratorOptions = {
@@ -32,7 +33,8 @@ export class GeneratorExecutionCommand {
   constructor(
     private readonly dependencyCollector: DependencyCollector,
     private readonly jsPackageManager: JsPackageManager,
-    private readonly addonService = new AddonService()
+    private readonly addonService = new AddonService(),
+    private readonly telemetryService = new TelemetryService()
   ) {}
 
   async execute({
@@ -91,6 +93,7 @@ export class GeneratorExecutionCommand {
       renderer: frameworkInfo.renderer,
       builder: frameworkInfo.builder,
       language,
+      telemetryService: this.telemetryService,
       linkable: !!options.linkable,
       features: selectedFeatures,
       dependencyCollector: this.dependencyCollector,

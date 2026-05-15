@@ -114,4 +114,72 @@ describe('Addons API', () => {
       expect(setState).toHaveBeenCalledWith({ selectedPanel: 'knobs' }, { persistence: 'session' });
     });
   });
+
+  describe('#clearStatuses', () => {
+    it('calls clear() on every test provider that has it', () => {
+      const clearA = vi.fn();
+      const clearB = vi.fn();
+      const providerWithClear = {
+        getElements(type) {
+          if (type === types.experimental_TEST_PROVIDER) {
+            return {
+              'provider-a': { id: 'provider-a', clear: clearA },
+              'provider-b': { id: 'provider-b', clear: clearB },
+            };
+          }
+          return null;
+        },
+      };
+      const { api } = initAddons({ provider: providerWithClear, store });
+
+      api.clearStatuses();
+
+      expect(clearA).toHaveBeenCalledOnce();
+      expect(clearB).toHaveBeenCalledOnce();
+    });
+
+    it('skips providers without a clear() function', () => {
+      const clearA = vi.fn();
+      const providerMixed = {
+        getElements(type) {
+          if (type === types.experimental_TEST_PROVIDER) {
+            return {
+              'provider-with-clear': { id: 'provider-with-clear', clear: clearA },
+              // simulates change-detection provider — no clear()
+              'storybook/change-detection': { id: 'storybook/change-detection' },
+            };
+          }
+          return null;
+        },
+      };
+      const { api } = initAddons({ provider: providerMixed, store });
+
+      expect(() => api.clearStatuses()).not.toThrow();
+      expect(clearA).toHaveBeenCalledOnce();
+    });
+
+    it('continues clearing remaining providers when one throws', () => {
+      const clearOk = vi.fn();
+      const providerWithError = {
+        getElements(type) {
+          if (type === types.experimental_TEST_PROVIDER) {
+            return {
+              'provider-throws': {
+                id: 'provider-throws',
+                clear: () => {
+                  throw new Error('boom');
+                },
+              },
+              'provider-ok': { id: 'provider-ok', clear: clearOk },
+            };
+          }
+          return null;
+        },
+      };
+      const { api } = initAddons({ provider: providerWithError, store });
+
+      expect(() => api.clearStatuses()).not.toThrow();
+      expect(clearOk).toHaveBeenCalledOnce();
+    });
+  });
 });

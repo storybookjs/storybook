@@ -186,7 +186,7 @@ test.describe("component testing", () => {
     );
     await expect(failingStoryElement).toHaveAttribute(
       "aria-label",
-      "Status: success"
+      "Test status: Success"
     );
     await expect(sbPage.panelContent()).toContainText(
       /This interaction test passed in the CLI, but the tests failed in this browser/
@@ -199,7 +199,7 @@ test.describe("component testing", () => {
     );
     await expect(successfulStoryElement).toHaveAttribute(
       "aria-label",
-      "Status: error"
+      "Test status: Error"
     );
     await expect(sbPage.panelContent()).toContainText(
       /This interaction test passed in this browser, but the tests failed in the CLI/
@@ -257,7 +257,7 @@ test.describe("component testing", () => {
     );
     await expect(successfulStoryElement).toHaveAttribute(
       "aria-label",
-      "Status: success"
+      "Test status: Success"
     );
 
     // Assert for expected failure
@@ -266,7 +266,7 @@ test.describe("component testing", () => {
     );
     await expect(failingStoryElement).toHaveAttribute(
       "aria-label",
-      "Status: error"
+      "Test status: Error"
     );
 
     // Assert that filter works as intended
@@ -316,7 +316,7 @@ test.describe("component testing", () => {
     );
     await expect(successfulStoryElement).toHaveAttribute(
       "aria-label",
-      "Status: success"
+      "Test status: Success"
     );
 
     // Assert for expected failure
@@ -325,7 +325,7 @@ test.describe("component testing", () => {
     );
     await expect(failingStoryElement).toHaveAttribute(
       "aria-label",
-      "Status: error"
+      "Test status: Error"
     );
 
     // Assert that filter works as intended
@@ -372,7 +372,7 @@ test.describe("component testing", () => {
     );
     await expect(failingStoryElement).toHaveAttribute(
       "aria-label",
-      "Status: error"
+      "Test status: Error"
     );
   });
 
@@ -412,7 +412,7 @@ test.describe("component testing", () => {
 
     await expect(failingStoryElement).toHaveAttribute(
       "aria-label",
-      "Status: error"
+      "Test status: Error"
     );
   });
 
@@ -548,9 +548,9 @@ test.describe("component testing", () => {
     await page.click("body");
     await expect(
       page.locator(
-        '#storybook-explorer-menu [data-testid="tree-status-button"][aria-label="Status: success"]'
+        '#storybook-explorer-menu [data-testid="tree-status-button"][aria-label="Test status: Success"]'
       )
-    ).toHaveCount(1);
+    ).toHaveCount(3); // 1 story, 1 component, 1 group
   });
 
   test("should show unhandled errors in the testing module", async ({
@@ -661,12 +661,12 @@ test.describe("component testing", () => {
     await page.click("body");
     await expect(
       page.locator(
-        '#storybook-explorer-menu [data-testid="tree-status-button"][aria-label="Status: success"]'
+        '#storybook-explorer-menu [data-testid="tree-status-button"][aria-label="Test status: Success"]'
       )
     ).toHaveCount(8);
     await expect(
       page.locator(
-        '#storybook-explorer-menu [data-testid="tree-status-button"][aria-label="Status: error"]'
+        '#storybook-explorer-menu [data-testid="tree-status-button"][aria-label="Test status: Error"]'
       )
     ).toHaveCount(3);
   });
@@ -722,7 +722,7 @@ test.describe("component testing", () => {
     );
     await expect(
       page.locator(
-        '#storybook-explorer-menu [data-testid="tree-status-button"][aria-label="Status: error"]'
+        '#storybook-explorer-menu [data-testid="tree-status-button"][aria-label="Test status: Error"]'
       )
     ).toHaveCount(4); // 1 visible/expanded story, 1 expanded component, 1 collapsed component, 1 group
   });

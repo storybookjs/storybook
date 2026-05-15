@@ -17,6 +17,7 @@
   },
   "scripts": {
     "ci-tests": "cd code; yarn ci-tests",
+    "docs:check": "yarn --cwd scripts docs:check",
     "fmt:check": "oxfmt --check .",
     "fmt:write": "oxfmt .",
     "get-report-message": "cd scripts; yarn get-report-message",
@@ -73,7 +74,7 @@
     "oxfmt": "^0.41.0",
     "std-env": "^4.0.0",
     "vite": "^7.0.4",
-    "vitest": "^4.1.0"
+    "vitest": "^4.1.5"
   },
   "packageManager": "yarn@4.10.3"
 }

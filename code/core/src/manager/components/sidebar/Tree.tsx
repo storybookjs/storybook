@@ -1,16 +1,24 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { SIDEBAR_OPEN_CONTEXT_MENU } from 'storybook/internal/core-events';
-import type { StatusesByStoryIdAndTypeId } from 'storybook/internal/types';
 
 import { Collection } from '@react-aria/collections';
 import { Tree as AriaTree } from 'react-aria-components/patched-dist/Tree';
-import type { API, IndexHash } from 'storybook/manager-api';
-import { styled } from 'storybook/theming';
 
-import { getGroupStatus } from '../../utils/status.tsx';
 import { type TreeEntry, collapseSingleStoryComponents, indexToTree } from '../../utils/tree.ts';
 import { TreeNode, type TreeNodeProps } from './TreeNode.tsx';
+
+import {
+  type Status,
+  type StatusesByStoryIdAndTypeId,
+  type StoryId,
+} from 'storybook/internal/types';
+
+import { useStorybookApi } from 'storybook/manager-api';
+import type { IndexHash } from 'storybook/manager-api';
+import { styled } from 'storybook/theming';
+
+import { getGroupDualStatus } from '../../utils/status.tsx';
 import { useExpanded } from './useExpanded.ts';
 
 const StyledAriaTree = styled(AriaTree)(() => ({
@@ -26,7 +34,6 @@ const StyledAriaTree = styled(AriaTree)(() => ({
 })) as typeof AriaTree;
 
 interface TreeProps {
-  api: API;
   isBrowsing: boolean;
   isDevelopment: boolean;
   isMain: boolean;
@@ -39,7 +46,6 @@ interface TreeProps {
 }
 
 export const Tree = React.memo<TreeProps>(function Tree({
-  api,
   isDevelopment,
   allStatuses,
   refId,
@@ -49,6 +55,7 @@ export const Tree = React.memo<TreeProps>(function Tree({
   onSelectStoryId,
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
+  const api = useStorybookApi();
 
   // Context-menu state: which item's menu is open, and how it was triggered.
   // 'pointer' = click on the ⋯ button; 'keyboard' = global shortcut (shows extra actions).
@@ -70,11 +77,10 @@ export const Tree = React.memo<TreeProps>(function Tree({
     selectedStoryId,
   });
 
-  // Compute group statuses and add them to individual entry statuses.
-  const consolidatedStatuses = useMemo(() => {
-    const groupStatus = getGroupStatus(collapsedData, allStatuses ?? {});
-    return Object.assign({}, allStatuses, groupStatus);
-  }, [allStatuses, collapsedData]);
+  const groupDualStatus = useMemo(
+    () => getGroupDualStatus(collapsedData, allStatuses ?? {}),
+    [collapsedData, allStatuses]
+  );
 
   // React-aria expects a Set for selectedKeys. Memoize so Tree's children see a stable ref.
   const selectedKeys = useMemo(
@@ -207,7 +213,7 @@ export const Tree = React.memo<TreeProps>(function Tree({
         refId,
         docsMode,
         isDevelopment,
-        consolidatedStatuses,
+        groupDualStatus,
         data: collapsedData,
         onSelectStoryId,
         selectedStoryId,
@@ -222,7 +228,7 @@ export const Tree = React.memo<TreeProps>(function Tree({
       refId,
       docsMode,
       isDevelopment,
-      consolidatedStatuses,
+      groupDualStatus,
       collapsedData,
       onSelectStoryId,
       selectedStoryId,
@@ -252,7 +258,7 @@ export const Tree = React.memo<TreeProps>(function Tree({
           selectedStoryId,
           selectedParentId,
           contextMenuState,
-          consolidatedStatuses,
+          groupDualStatus,
         ]}
       >
         {nodeRenderer}
@@ -263,7 +269,6 @@ export const Tree = React.memo<TreeProps>(function Tree({
 
 // Stable module-level constants so empty-state props don't bust React.memo equality checks.
 const EMPTY_KEYS: Set<string> = new Set();
-const EMPTY_STATUSES = Object.freeze({}) as Record<string, never>;
 
 interface RenderNodeProps extends Omit<
   TreeNodeProps,
@@ -280,7 +285,7 @@ interface RenderNodeProps extends Omit<
   | 'openContextMenu'
   | 'closeContextMenu'
 > {
-  consolidatedStatuses?: StatusesByStoryIdAndTypeId;
+  groupDualStatus?: Record<StoryId, { change: Status; test: Status }>;
   selectedStoryId: string | null;
   selectedParentId: string | null;
   expanded: Set<string>;
@@ -291,7 +296,7 @@ interface RenderNodeProps extends Omit<
 
 function renderNode({
   expanded,
-  consolidatedStatuses,
+  groupDualStatus,
   selectedStoryId,
   selectedParentId,
   contextMenuState,
@@ -300,7 +305,7 @@ function renderNode({
   ...props
 }: RenderNodeProps) {
   const renderNodeLevel = (item: TreeEntry) => {
-    const itemStatuses = consolidatedStatuses?.[item.id];
+    const itemStatuses = groupDualStatus?.[item.id];
     return (
       <TreeNode
         {...props}
@@ -316,14 +321,14 @@ function renderNode({
         }
         openContextMenu={openContextMenu}
         closeContextMenu={closeContextMenu}
-        statuses={itemStatuses ?? EMPTY_STATUSES}
+        statuses={itemStatuses}
       >
         {item.resolvedChildren && (
           <Collection items={item.resolvedChildren}>
             {renderNode({
               ...props,
               expanded,
-              consolidatedStatuses,
+              groupDualStatus,
               selectedStoryId,
               selectedParentId,
               contextMenuState,

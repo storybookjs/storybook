@@ -19,6 +19,7 @@ import { findFilesUp, getProjectRoot } from '../utils/paths.ts';
 import storybookPackagesVersions from '../versions.ts';
 import type { PackageJson, PackageJsonWithDepsAndDevDeps } from './PackageJson.ts';
 import type { InstallationMetadata } from './types.ts';
+import { getVitePlusVersions } from './vite-plus-versions.ts';
 
 export enum PackageManagerName {
   NPM = 'npm',
@@ -35,6 +36,33 @@ const indentSymbol = Symbol('indent');
 type PackageJsonWithIndent = PackageJsonWithDepsAndDevDeps & {
   [indentSymbol]?: any;
 };
+
+/** Human-friendly labels for each package manager type */
+const PACKAGE_MANAGER_LABEL: Record<PackageManagerName, string> = {
+  [PackageManagerName.NPM]: 'npm',
+  [PackageManagerName.YARN1]: 'Yarn Classic (v1)',
+  [PackageManagerName.YARN2]: 'Yarn Berry',
+  [PackageManagerName.PNPM]: 'pnpm',
+  [PackageManagerName.BUN]: 'Bun',
+};
+
+function isValidPackageManagerName(name: string): name is PackageManagerName {
+  return Object.hasOwn(PACKAGE_MANAGER_LABEL, name);
+}
+
+/**
+ * Prints a package manager's name in a way that's easier to compute by humans and agents.
+ * @param packageManager The package manager's internal name (e.g. "yarn1")
+ * @return A human-friendly name for the package manager (e.g. "Yarn Classic (v1)")
+ */
+export function getPrettyPackageManagerName(packageManager: string | undefined): string {
+  if (!packageManager) {
+    return 'unknown package manager';
+  }
+  return isValidPackageManagerName(packageManager)
+    ? PACKAGE_MANAGER_LABEL[packageManager]
+    : packageManager;
+}
 
 /**
  * Extract package name and version from input
@@ -108,6 +136,12 @@ export abstract class JsPackageManager {
     this.primaryPackageJson = this.#getPrimaryPackageJson();
   }
 
+  /** Returns the name of the command to invoke this package manager. */
+  abstract getCommandName(): string;
+
+  /** Installs package dependencies. */
+  abstract getInstallCommand(deps: string[], dev?: boolean): string;
+
   /** Runs arbitrary package scripts (as a string for display). */
   abstract getRunCommand(command: string): string;
 
@@ -154,6 +188,12 @@ export abstract class JsPackageManager {
     // Clear installed version cache after installation
     this.clearInstalledVersionCache();
   }
+
+  async precheckStorybookPackageInstall(options: {
+    storybookVersion: string;
+    nonInteractive: boolean;
+    installContext: 'create' | 'upgrade';
+  }): Promise<void> {}
 
   async dedupeDependencies(options?: { force?: boolean }) {
     await prompt.executeTask(
@@ -631,7 +671,6 @@ export abstract class JsPackageManager {
     pattern?: string[],
     options?: { depth: number }
   ): Promise<InstallationMetadata | undefined>;
-  public abstract parseErrorFromLogs(logs?: string): string;
 
   // TODO: Remove pnp compatibility code in SB11
   /** Returns the installed (within node_modules or pnp zip) version of a specified package */
@@ -649,15 +688,28 @@ export abstract class JsPackageManager {
       }
 
       logger.debug(`Getting installed version for ${packageName}...`);
-      const installations = await this.findInstallations([packageName]);
-      if (!installations) {
+
+      // When vite-plus is used, packages like vite and vitest are vendored and their node_modules entries report the vite-plus wrapper version (e.g. 0.1.16) instead of the actual vendored version.
+      // Check vite-plus first so we always get the real version when it's available.
+      let version: string | null = null;
+      const vitePlusVersions = await getVitePlusVersions();
+      if (vitePlusVersions?.[packageName]) {
+        version = vitePlusVersions[packageName]!;
+      }
+
+      if (!version) {
+        const installations = await this.findInstallations([packageName]);
+        if (installations) {
+          version = Object.entries(installations.dependencies)[0]?.[1]?.[0].version || null;
+        }
+      }
+
+      if (!version) {
         logger.debug(`No installations found for ${packageName}`);
         // Cache the null result
         JsPackageManager.installedVersionCache.set(cacheKey, null);
         return null;
       }
-
-      const version = Object.entries(installations.dependencies)[0]?.[1]?.[0].version || null;
 
       const coercedVersion = coerce(version, { includePrerelease: true })?.toString() ?? version;
 

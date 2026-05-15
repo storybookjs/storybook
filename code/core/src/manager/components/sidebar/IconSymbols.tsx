@@ -24,9 +24,9 @@ const SUCCESS_ID = 'icon--success';
 const ERROR_ID = 'icon--error';
 const WARNING_ID = 'icon--warning';
 const DOT_ID = 'icon--dot';
-const NEW_ID = 'icon--new';
-const MODIFIED_ID = 'icon--modified';
-const AFFECTED_ID = 'icon--affected';
+const NEW_ID = 'icon--change-new';
+const MODIFIED_ID = 'icon--change-modified';
+const AFFECTED_ID = 'icon--change-affected';
 
 export const IconSymbols: FC = () => {
   return (
@@ -138,21 +138,7 @@ export const IconSymbols: FC = () => {
         <circle cx="7" cy="7" r="3" fill="currentColor" />
       </symbol>
       <symbol id={AFFECTED_ID}>
-        <circle cx="7" cy="7" r="2" fill="currentColor" />
-        <path
-          d="M7 3.5A3.5 3.5 0 0 0 7 10.5"
-          stroke="currentColor"
-          strokeWidth="1"
-          strokeLinecap="round"
-          fill="none"
-        />
-        <path
-          d="M7 3.5A3.5 3.5 0 0 1 7 10.5"
-          stroke="currentColor"
-          strokeWidth="1"
-          strokeLinecap="round"
-          fill="none"
-        />
+        <circle cx="7" cy="7" r="3" fill="currentColor" />
       </symbol>
     </Svg>
   );
@@ -169,9 +155,9 @@ export const UseSymbol: FC<{
     | 'error'
     | 'warning'
     | 'dot'
-    | 'new'
-    | 'modified'
-    | 'affected';
+    | 'change-new'
+    | 'change-modified'
+    | 'change-affected';
 }> = ({ type }) => {
   if (type === 'group') {
     return <use xlinkHref={`#${GROUP_ID}`} />;
@@ -209,15 +195,15 @@ export const UseSymbol: FC<{
     return <use xlinkHref={`#${DOT_ID}`} />;
   }
 
-  if (type === 'new') {
+  if (type === 'change-new') {
     return <use xlinkHref={`#${NEW_ID}`} />;
   }
 
-  if (type === 'modified') {
+  if (type === 'change-modified') {
     return <use xlinkHref={`#${MODIFIED_ID}`} />;
   }
 
-  if (type === 'affected') {
+  if (type === 'change-affected') {
     return <use xlinkHref={`#${AFFECTED_ID}`} />;
   }
 

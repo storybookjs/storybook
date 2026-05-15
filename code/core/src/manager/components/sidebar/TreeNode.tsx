@@ -1,7 +1,7 @@
 import React, { useCallback, useMemo } from 'react';
 
 import { Button } from 'storybook/internal/components';
-import type { StatusByTypeId, StatusValue } from 'storybook/internal/types';
+import type { Status, StatusValue } from 'storybook/internal/types';
 
 import { ChevronSmallDownIcon, ChevronSmallRightIcon } from '@storybook/icons';
 
@@ -221,7 +221,7 @@ export interface TreeNodeProps {
   isAlongsideSelected: boolean;
   isExpanded: boolean;
   onSelectStoryId: (itemId: string) => void;
-  statuses: StatusByTypeId;
+  statuses?: { change: Status; test: Status };
   api: API;
   data: Record<string, HashEntry>;
   /** Whether this item's context menu is currently open. */
@@ -253,6 +253,9 @@ const StatusLabelsInContextMenu: Record<StatusValue, string> = {
   'status-value:warning': 'Has warnings',
   'status-value:pending': 'Status pending',
   'status-value:unknown': 'Status unknown',
+  'status-value:new': 'New',
+  'status-value:modified': 'Modified',
+  'status-value:affected': 'Related', // TODO/FIXME: talk to MA about using better copy here.
 };
 
 const StatusLabelsInAriaLabel: Record<StatusValue, string> = {
@@ -261,6 +264,9 @@ const StatusLabelsInAriaLabel: Record<StatusValue, string> = {
   'status-value:warning': 'Tests passing with warnings',
   'status-value:pending': 'Test status pending',
   'status-value:unknown': 'Test status unknown',
+  'status-value:new': 'Has new stories',
+  'status-value:modified': 'Has modified stories',
+  'status-value:affected': 'Affected by other changes', // TODO/FIXME: talk to MA about using better copy here.
 };
 
 export const TreeNode = React.memo<TreeNodeProps>(function TreeNode({
@@ -298,12 +304,17 @@ export const TreeNode = React.memo<TreeNodeProps>(function TreeNode({
     [openContextMenu, closeContextMenu, item.id]
   );
 
+  // TODO next
+  // Add isModifiedFilterActive: boolean and groupDualStatus: Record<string, { change: StatusValue; test: StatusValue }> to TreeNodeProps
+  // Split the current single-icon status rendering into dual change+test icons — for branches use getChangeDetectionStatus(statuses) + groupDualStatus[item.id] and pick the most critical of each; for leaves filter out change detection statuses (except new)
+  // Handle the isModifiedFilterActive suppression of the change icon
+
   // Compute status items to go in the ContextMenu.
   const statusLinks = useMemo<Link[]>(() => {
     if (item.type !== 'story' && item.type !== 'docs') {
       return [];
     }
-    return Object.entries(statuses)
+    return Object.entries(statuses || {})
       .filter(([, status]) => status.sidebarContextMenu !== false)
       .map(([typeId, status]) => ({
         id: typeId,

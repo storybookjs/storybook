@@ -90,6 +90,7 @@ scripts/eval/results
 
 # verify-pr harness output
 .verify-output
+.verify-scratch
 
 # Unknown
 .omc

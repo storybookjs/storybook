@@ -113,13 +113,36 @@ new RecipePage(page, expect).waitUntilLoaded(): Promise<void>
 new RecipePage(page, expect).previewIframe(): FrameLocator
 new RecipePage(page, expect).previewRoot(): Locator
 new RecipePage(page, expect).waitForStoryLoaded(): Promise<void>
+new RecipePage(page, expect).scratchDir: string
+new RecipePage(page, expect).writeFixture(relPath: string, contents: string): string
 ```
 
 - `waitUntilLoaded()` injects a session-storage layout, disables transitions, waits for `.sb-preparing-story` / `.sb-preparing-docs` to vanish, then for the story root to be attached.
 - `previewIframe()` returns `page.frameLocator('#storybook-preview-iframe')` — use for any preview-frame assertions.
 - `previewRoot()` returns the visible `#storybook-root` (or `#storybook-docs`) inside the preview iframe.
+- `scratchDir` is the absolute path of `$PR_HEAD_DIR/.verify-scratch` — the **only** sanctioned on-disk write location for recipes.
+- `writeFixture(relPath, contents)` writes a file under `scratchDir` (parent dirs auto-created) and returns its absolute path. `relPath` must be relative and stay inside the scratch dir.
 
 Call `waitUntilLoaded()` immediately after `page.goto(...)`.
+
+### Writing fixtures to disk (non-visual recipes)
+
+Most recipes only drive the browser and never touch the filesystem. A
+non-visual recipe (behavioral / pure-fn / type-only / build-config) that must
+write a fixture or config to exercise a code path **must** use
+`writeFixture()` / `scratchDir` — never write elsewhere.
+
+The harness runs recipes inside an `srt` jail. `$GITHUB_WORKSPACE` and `.git`
+are **denyWrite**; `$PR_HEAD_DIR` (which contains `.verify-scratch`) is
+**allowWrite**. The scratch dir is pre-created by the prepare composite and
+gitignored. Do not attempt to widen the jail or write to the repo checkout —
+a recipe that does will fail at runtime, not be granted access.
+
+```ts
+const sb = new RecipePage(page, expect);
+const cfgPath = sb.writeFixture('preview-head.html', '<meta name="x" content="1">');
+// hand cfgPath to the code under test, then assert on the resulting behavior
+```
 
 ---
 
@@ -456,6 +479,69 @@ Replace `.first()` with one of:
 
 Symptom of `.first()`-on-hidden:
 `expect(locator).toBeVisible() failed … 19 × locator resolved to <table aria-hidden="true" class="sb-…">`
+
+## 12.5 Mode selection — visual vs behavioral (HARD GATE)
+
+Orthogonal to `@verify-target` (WHERE it runs), `@verify-mode` picks the
+verdict STRATEGY. Second single-line header, after `@verify-target`:
+
+```ts
+// @verify-target: internal-ui
+// @verify-mode: behavioral
+```
+
+| Mode | Pick when | Verdict basis |
+|---|---|---|
+| `visual` (default if header absent) | The change is **something you can see** — a new icon, label text, focus ring, color/theme, layout, an added panel item. | Playwright run **+ vision evidence-check** on a screenshot (§8.1 applies — you MUST capture a screenshot of the changed state). |
+| `behavioral` | The change has **no visible surface** — ARIA/role/`aria-*` attributes, screen-reader semantics, event-handler wiring, console-error-free boot, XSS/escaping/sanitization, focus management, keyboard nav, network/request behavior. | Playwright DOM/ARIA/console assertions **only**. Vision is **skipped** — there is nothing to screenshot. §8.1's screenshot requirement is replaced by concrete `expect(...)` assertions on the DOM/attributes/console. |
+
+**HARD GATE — pick `behavioral` when the diff is any of:**
+- adds/changes `aria-*`, `role`, `tabindex`, `alt`, `title`, label associations, or other accessibility attributes with no visual delta;
+- changes escaping/sanitization/`dangerouslySetInnerHTML`/XSS handling — assert the payload is **inert** in the DOM (e.g. text content present but no injected `<script>` / no executed handler), not a screenshot;
+- changes an event handler, focus order, keyboard interaction, or console-error behavior with identical pixels.
+
+A `visual` recipe for an aria/XSS/behavioral diff will produce a screenshot
+that looks identical before and after → vision returns `undetermined` → weak
+or wrong verdict. That is exactly the gap `behavioral` closes.
+
+**Do NOT use `pure-fn` or `build-config` yet.** The parser accepts them but
+the orchestrator is not wired for them — a recipe with those modes is
+reported `skipped` and **never executed**. Until they ship, a non-browser
+change still goes through `behavioral` (import + exercise the changed code via
+the running Storybook and assert observable DOM/console effects).
+
+### Worked example — aria-label added to a toolbar button (behavioral)
+
+```ts
+// @verify-target: internal-ui
+// @verify-mode: behavioral
+import { RecipePage, expect, filterPageErrors, test } from './_util.ts';
+
+test('toolbar zoom-in button exposes the new aria-label', async ({ page }, testInfo) => {
+  const pageErrors: string[] = [];
+  page.on('pageerror', (e) => pageErrors.push(e.stack ?? e.message ?? String(e)));
+
+  const baseURL =
+    process.env.STORYBOOK_URL ?? testInfo.project.use.baseURL ?? 'http://localhost:6006';
+  try {
+    await page.goto(`${baseURL}/?path=/story/example-button--primary`);
+    const sb = new RecipePage(page, expect);
+    await sb.waitUntilLoaded();
+
+    // The change has no visible delta — assert the accessibility attribute
+    // directly. No screenshot: this is a behavioral recipe.
+    const zoomIn = page.getByRole('button', { name: 'Zoom in' });
+    await expect(zoomIn).toBeVisible();
+    await expect(zoomIn).toHaveAttribute('aria-label', 'Zoom in');
+  } finally {
+    await testInfo.attach('pageErrors', {
+      body: JSON.stringify(pageErrors),
+      contentType: 'application/json',
+    });
+  }
+  expect(filterPageErrors(pageErrors)).toEqual([]);
+});
+```
 
 ## 13. Output budget
 

@@ -5,16 +5,51 @@
 
 import { test as baseTest, expect as baseExpect } from '@playwright/test';
 import type { Expect, FrameLocator, Locator, Page } from '@playwright/test';
-import { writeFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { mkdirSync, writeFileSync } from 'node:fs';
+import { dirname, isAbsolute, join, normalize } from 'node:path';
 
 export class RecipePage {
   readonly page: Page;
   readonly expect: Expect;
 
+  /**
+   * Sanctioned scratch directory for recipes that must write fixtures /
+   * config to disk to exercise a non-visual code path.
+   *
+   * `$PR_HEAD_DIR/.verify-scratch` is pre-created by the agentic-pr-prepare
+   * composite and lies inside srt's `allowWrite` set (all of `$PR_HEAD_DIR`
+   * is writable; `$GITHUB_WORKSPACE` and `.git` are denied). Writing here
+   * keeps recipes off srt-denied paths WITHOUT loosening the egress jail.
+   *
+   * Both CI verify runs `cd $PR_HEAD_DIR` and export `PR_HEAD_DIR`; local-dev
+   * has no such env so we fall back to cwd.
+   */
+  readonly scratchDir: string;
+
   constructor(page: Page, expect: Expect) {
     this.page = page;
     this.expect = expect;
+    this.scratchDir = join(process.env.PR_HEAD_DIR ?? process.cwd(), '.verify-scratch');
+  }
+
+  /**
+   * Write `contents` to `relPath` under {@link scratchDir}, creating parent
+   * dirs as needed. `relPath` must be relative and stay inside the scratch
+   * dir (no absolute paths, no `..` escape). Returns the absolute path so
+   * the caller can hand it to the code under test.
+   */
+  writeFixture(relPath: string, contents: string): string {
+    if (isAbsolute(relPath)) {
+      throw new Error(`writeFixture: relPath must be relative, got "${relPath}"`);
+    }
+    const target = join(this.scratchDir, relPath);
+    const normalizedRoot = normalize(this.scratchDir + '/');
+    if (!normalize(target).startsWith(normalizedRoot)) {
+      throw new Error(`writeFixture: "${relPath}" escapes the scratch dir`);
+    }
+    mkdirSync(dirname(target), { recursive: true });
+    writeFileSync(target, contents);
+    return target;
   }
 
   previewIframe(): FrameLocator {

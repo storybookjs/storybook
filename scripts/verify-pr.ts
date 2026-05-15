@@ -43,6 +43,7 @@ import { bootStorybook, installSignalHandlers, preflightPort } from './verify/bo
 import { bootInternalUi } from './verify/internal-ui.ts';
 import { runRecipe } from './verify/runner.ts';
 import { describeTarget, parseTargetFromSpec, type VerifyTarget } from './verify/target.ts';
+import { parseModeFromSpec, type VerifyMode } from './verify/mode.ts';
 import { exec } from './utils/exec.ts';
 
 const repoRoot = path.resolve(import.meta.dirname, '..');
@@ -218,8 +219,10 @@ async function main(argv: string[]): Promise<number> {
   await ensureRunDir(paths);
 
   const target: VerifyTarget = parseTargetFromSpec(recipeSpec);
+  const mode: VerifyMode = parseModeFromSpec(recipeSpec);
   console.log(`[verify] recipe: ${recipeSpec}`);
   console.log(`[verify] target: ${describeTarget(target)}`);
+  console.log(`[verify] mode: ${mode}`);
 
   if (flags['restore-sandbox']) {
     if (target.kind !== 'sandbox') {
@@ -237,6 +240,7 @@ async function main(argv: string[]): Promise<number> {
       runId: paths.runId,
       verdict: 'skipped',
       template: templateLabel(target),
+      mode,
       storyIds: [],
       recipeSpecPath: recipeSpec,
       tests: [],
@@ -246,6 +250,38 @@ async function main(argv: string[]): Promise<number> {
     };
     await writeResult(paths, skipped, explicitOutputDir, provenanceSecret);
     console.log(`[verify] skipped — result at ${paths.resultJson}`);
+    return 0;
+  }
+
+  // Router dispatch (Part B). `visual` and `behavioral` share the boot +
+  // Playwright path below — they differ only downstream: vision
+  // evidence-check runs for `visual` and is skipped for `behavioral`
+  // (gated on `mode` in verify-evidence-check.ts). `pure-fn` and
+  // `build-config` need a non-browser execution harness (focused vitest /
+  // build-output assertion) that is designed but not yet implemented — see
+  // scripts/verify/DESIGN-nonvisual-coverage.md. Emit an explicit `skipped`
+  // verdict rather than misrouting them through the browser path (which
+  // would produce a meaningless false verdict).
+  if (mode === 'pure-fn' || mode === 'build-config') {
+    const skipped: VerifyResult = {
+      schemaVersion: SCHEMA_VERSION,
+      runId: paths.runId,
+      verdict: 'skipped',
+      template: templateLabel(target),
+      mode,
+      notes: [
+        `@verify-mode '${mode}' router not yet implemented — see ` +
+          `scripts/verify/DESIGN-nonvisual-coverage.md. Recipe was NOT executed.`,
+      ],
+      storyIds: [],
+      recipeSpecPath: recipeSpec,
+      tests: [],
+      traceZipPaths: [],
+      durations: { totalMs: performance.now() - totalStart },
+      createdAt: new Date().toISOString(),
+    };
+    await writeResult(paths, skipped, explicitOutputDir, provenanceSecret);
+    console.log(`[verify] mode '${mode}' not yet wired — skipped (result at ${paths.resultJson})`);
     return 0;
   }
 
@@ -352,6 +388,7 @@ async function main(argv: string[]): Promise<number> {
     runId: paths.runId,
     verdict,
     template: templateLabel(target),
+    mode,
     storyIds: [],
     recipeSpecPath: recipeSpec,
     tests,

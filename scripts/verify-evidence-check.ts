@@ -219,6 +219,20 @@ async function main(rawArgv: string[]): Promise<number> {
     return 0;
   }
 
+  // Vision evidence-check only applies to visual recipes. Non-visual modes
+  // (behavioral / pure-fn / build-config) assert behavior directly and have
+  // no screenshot to judge; running vision would only ever yield a useless
+  // `undetermined`. `mode` is HMAC-signed by the trusted orchestrator, so a
+  // forged in-srt result cannot set mode!=visual to dodge this check —
+  // derive-verdict's signature gate would already have downgraded it.
+  // (Absent `mode` ⇒ legacy/visual ⇒ check runs, preserving back-compat.)
+  if (original.mode && original.mode !== 'visual') {
+    console.error(
+      `[evidence-check] mode is '${original.mode}' (non-visual) — skipping vision evidence check`
+    );
+    return 0;
+  }
+
   const diff = truncateDiff(fs.readFileSync(flags.diff, 'utf-8'));
   const recipe = fs.readFileSync(flags.recipe, 'utf-8');
 

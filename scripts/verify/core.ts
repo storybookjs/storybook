@@ -4,6 +4,8 @@ import * as path from 'node:path';
 import * as fs from 'node:fs/promises';
 import { createHmac, timingSafeEqual } from 'node:crypto';
 
+import type { VerifyMode } from './mode.ts';
+
 export const SCHEMA_VERSION = 2;
 
 // CSI / SGR ANSI escape stripper shared by entry script + CI helpers so log
@@ -57,6 +59,13 @@ export interface VerifyResult {
    * template such as `react-vite/default-ts`.
    */
   template: string;
+  /**
+   * v7: verdict strategy parsed from the recipe's `@verify-mode` header by
+   * the trusted orchestrator (default `visual`). Signed (see SIGNED_FIELDS)
+   * so a forged in-srt result cannot claim a non-visual mode to dodge the
+   * vision evidence-check. Downstream trusted steps branch on this.
+   */
+  mode?: VerifyMode;
   storyIds: string[];
   recipeSpecPath: string;
   tests: RecipeTest[];
@@ -98,6 +107,7 @@ const SIGNED_FIELDS = [
   'runId',
   'verdict',
   'template',
+  'mode',
   'recipeSpecPath',
   'tests',
   'traceZipPaths',

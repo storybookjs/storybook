@@ -17,6 +17,7 @@ import {
   workflow,
   workspace,
 } from './utils/helpers.ts';
+import { isForkPipeline } from './utils/runtime.ts';
 import { defineJob, defineNoOpJob } from './utils/types.ts';
 
 const dirname = import.meta.dirname;
@@ -29,7 +30,18 @@ export const build_linux = defineJob('Build (linux)', (workflowName) => ({
   steps: [
     git.checkout(),
     npm.install('.'),
-    cache.persist(CACHE_PATHS, CACHE_KEYS()[0]),
+    // SECURITY (TanStack/router 2026-05-11 class — fork→base cache
+    // poisoning): build_linux runs `git.checkout()` of the triggered ref.
+    // For a FORK PR that ref is untrusted contributor code. CircleCI caches
+    // are project-global and restore_cache does PREFIX-match fallback
+    // (CACHE_KEYS() is a prefix ladder), so a cache written by a fork
+    // pipeline can later be restored by the trusted `merged`/`daily`
+    // pipelines. The `ci:merged` label is sometimes applied to fork PRs,
+    // so the workflow name is NOT a safe trusted signal — gate on actual
+    // fork status (threaded from trigger-circle-ci-workflow.yml via the
+    // --is-fork CLI arg). Fork pipelines are cache restore-only; mirrors
+    // the setup-node-and-install pull_request_target restore-only split.
+    ...(isForkPipeline() ? [] : [cache.persist(CACHE_PATHS, CACHE_KEYS()[0])]),
     git.check(),
     npm.check(),
     {

@@ -17,6 +17,13 @@ parameters:
     default: ''
     description: The PR number
     type: string
+  ghIsFork:
+    default: 'false'
+    description: >
+      'true' when the triggering PR head is a fork (untrusted). SECURITY:
+      gates save_cache so a fork pipeline cannot poison the project-global
+      cache that trusted merged/daily pipelines restore.
+    type: string
   workflow:
     default: skipped
     description: Which workflow to run
@@ -44,7 +51,7 @@ jobs:
       - run:
           name: Generate config
           command: |
-            yarn dlx jiti ./scripts/ci/main.ts --workflow=<< pipeline.parameters.workflow >>
+            yarn dlx jiti ./scripts/ci/main.ts --workflow=<< pipeline.parameters.workflow >> --is-fork=<< pipeline.parameters.ghIsFork >>
       - continuation/continue:
           configuration_path: .circleci/config.generated.yml
 workflows:

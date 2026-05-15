@@ -89,6 +89,14 @@ describe('renderJsx', () => {
       renderJsx(<Button disabled={true} />, { useBooleanShorthandSyntax: false })
     ).toMatchInlineSnapshot(`<Button disabled={true} />`);
   });
+  it('false boolean values are rendered explicitly by default options', () => {
+    function Button({ disabled }: { disabled?: boolean }) {
+      return <button disabled={disabled}>click</button>;
+    }
+    expect(renderJsx(<Button disabled={false} />, {})).toMatchInlineSnapshot(
+      `<Button disabled={false} />`
+    );
+  });
   it('large objects', () => {
     const obj = Array.from({ length: 20 }).reduce((acc, _, i) => {
       // @ts-expect-error (Converted from ts-ignore)

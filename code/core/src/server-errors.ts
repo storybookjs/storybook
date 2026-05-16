@@ -418,6 +418,34 @@ export class MainFileEvaluationError extends StorybookError {
   }
 }
 
+export class ConfigValidationError extends StorybookError {
+  constructor(
+    public data: {
+      location: string;
+      errors: Array<{ field: string; message: string }>;
+    }
+  ) {
+    const errorList = data.errors
+      .map((err) => `  - ${picocolors.red(err.field)}: ${err.message}`)
+      .join('\n');
+
+    super({
+      name: 'ConfigValidationError',
+      category: Category.CORE_SERVER,
+      code: 8,
+      documentation:
+        'https://storybook.js.org/docs/api/main-config-typescript-strict-mode',
+      message: dedent`
+        Storybook config validation failed in ${picocolors.yellow(data.location)}.
+        
+        The following validation errors were found:
+        ${errorList}
+        
+        Please ensure your Storybook config matches the expected TypeScript types.`,
+    });
+  }
+}
+
 export class StatusTypeIdMismatchError extends StorybookError {
   constructor(
     public data: {

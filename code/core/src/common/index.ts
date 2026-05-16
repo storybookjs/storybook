@@ -33,6 +33,7 @@ export * from './utils/symlinks.ts';
 export * from './utils/template.ts';
 export * from './utils/validate-config.ts';
 export * from './utils/validate-configuration-files.ts';
+export * from './utils/validate-storybook-config.ts';
 export * from './utils/satisfies.ts';
 export * from './utils/formatter.ts';
 export * from './utils/get-story-id.ts';

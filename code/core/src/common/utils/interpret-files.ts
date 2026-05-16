@@ -3,6 +3,13 @@ import { extname } from 'node:path';
 
 import resolve from 'resolve';
 
+const typescriptFallbackExtensions: Record<string, string[]> = {
+  '.js': ['.ts', '.tsx'],
+  '.mjs': ['.mts', '.mtsx'],
+  '.cjs': ['.cts', '.ctsx'],
+  '.jsx': ['.tsx'],
+};
+
 export const supportedExtensions = [
   '.js',
   '.ts',
@@ -44,15 +51,23 @@ export function resolveImport(id: string, options: resolve.SyncOpts): string {
     // a TypeScript file. This can happen in ES modules as TypeScript requires to import other
     // TypeScript files with .js extensions
     // https://www.typescriptlang.org/docs/handbook/esm-node.html#type-in-packagejson-and-new-extensions
-    const newId = ['.js', '.mjs', '.cjs'].includes(ext)
-      ? `${id.slice(0, -2)}ts`
-      : ext === '.jsx'
-        ? `${id.slice(0, -3)}tsx`
-        : null;
+    const fallbackExtensions = typescriptFallbackExtensions[ext];
 
-    if (!newId) {
+    if (!fallbackExtensions) {
       throw error;
     }
-    return resolve.sync(newId, { ...mergedOptions, extensions: [] });
+
+    let fallbackError: unknown = error;
+    const baseId = id.slice(0, -ext.length);
+
+    for (const fallbackExtension of fallbackExtensions) {
+      try {
+        return resolve.sync(`${baseId}${fallbackExtension}`, { ...mergedOptions, extensions: [] });
+      } catch (err) {
+        fallbackError = err;
+      }
+    }
+
+    throw fallbackError;
   }
 }

@@ -1,7 +1,12 @@
 import type { ComponentProps, FC, SyntheticEvent } from 'react';
 import React, { useContext, useMemo, useState } from 'react';
 
-import { PopoverProvider, TooltipLinkList, TooltipProvider } from 'storybook/internal/components';
+import {
+  Button,
+  PopoverProvider,
+  TooltipLinkList,
+  TooltipProvider,
+} from 'storybook/internal/components';
 import {
   type API_HashEntry,
   type Addon_Collection,
@@ -202,6 +207,7 @@ export const useContextMenu = (
     return <EllipsisIcon />;
   }, [itemStatus, context.type]);
 
+  // FIXME/TODO if shortcutLabel, then customise the actual button's tooltip!
   const shortcutLabel = useMemo(() => {
     if (!enableShortcuts || !shortcutKeys?.contextMenu) {
       console.log('no tooltip', enableShortcuts, shortcutKeys);
@@ -246,11 +252,7 @@ export const useContextMenu = (
           hasChrome={true}
           padding={0}
         >
-          {shortcutLabel ? (
-            <TooltipProvider tooltip={shortcutLabel}>{button}</TooltipProvider>
-          ) : (
-            button
-          )}
+          {button}
         </PopoverProvider>
       ) : null,
     };

@@ -2,8 +2,8 @@ import React, { type ButtonHTMLAttributes, type ReactNode, forwardRef, useState 
 
 import type { DecoratorFunction } from 'storybook/internal/csf';
 
-import { UNSAFE_PortalProvider } from '@react-aria/overlays';
-import type { PositionProps } from '@react-types/overlays';
+import { UNSAFE_PortalProvider } from 'react-aria/PortalProvider';
+import type { PositionProps } from 'react-aria/useOverlayPosition';
 import memoize from 'memoizerific';
 import { styled } from 'storybook/theming';
 

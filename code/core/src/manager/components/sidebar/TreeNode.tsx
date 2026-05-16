@@ -5,7 +5,7 @@ import type { StatusValue } from 'storybook/internal/types';
 
 import { internal_fullStatusStore as fullStatusStore } from '#manager-stores';
 import { darken, transparentize } from 'polished';
-import { TreeItem, TreeItemContent } from 'react-aria-components/patched-dist/Tree';
+import { TreeItem, TreeItemContent } from 'react-aria-components/Tree';
 import type { API } from 'storybook/manager-api';
 import { shortcutToHumanString } from 'storybook/manager-api';
 import { styled, useTheme } from 'storybook/theming';
@@ -80,30 +80,28 @@ const StyledTreeItem = styled(TreeItem)<{
     '--trace-color': transparentize(0.88, theme.color.secondary),
   },
 
-  /* ContextMenu, StatusIcon, chevron and TypeIcon visibility.
+  /* ContextMenu and StatusIcon visibility.
    * ContextMenu button is shown on hover/focus and when already open;
-   * Expand/collapse chevron is shown instead of the TypeIcon on hover/focus;
    * StatusIcon is hidden when ContextMenu button is visible. */
+  '& [data-displayed="off"]': {
+    visibility: 'hidden',
+  },
 
-  // TODO/FIXME: replace all this with a data-menu-open attr or with aria-expanded on the button.
-  // TODO/FIXME: it doesnt work right now anyway
+  '&:hover [data-displayed="off"], &:focus-visible [data-displayed="off"]': {
+    visibility: 'visible',
+  },
 
-  // '& [data-displayed="off"]': {
-  //   visibility: 'hidden',
-  // },
+  '& span:has([data-displayed="on"]) + *': {
+    visibility: 'hidden',
+  },
 
-  // '&:hover [data-displayed="off"], &[data-focused="true"] [data-displayed="off"]': {
-  //   visibility: 'visible',
-  // },
+  '&:hover span:has([data-displayed="off"]) + *, &:focus-visible span:has([data-displayed="off"]) + *':
+    {
+      visibility: 'hidden',
+    },
 
-  // '& [data-displayed="on"] + *': {
-  //   visibility: 'hidden',
-  // },
-
-  // '&:hover [data-displayed="off"] + *, &[data-focused="true"] [data-displayed="off"] + *': {
-  //   visibility: 'hidden',
-  // },
-
+  /* CollapseIcon and TypeIcon visibility.
+   * Expand/collapse icon is shown instead of the TypeIcon on hover/focus. */
   '.hover-only': {
     display: 'none',
   },
@@ -186,7 +184,9 @@ const StyledLabel = styled.span({
 });
 
 const MenuTriggerContainer = styled.span({
-  margin: -2,
+  position: 'absolute',
+  insetY: 0,
+  right: 0,
 });
 
 const StatusIconContainer = styled.span({
@@ -419,16 +419,9 @@ export const TreeNode = React.memo<TreeNodeProps>(function TreeNode({
           <Traces level={item.depth} isAlongsideSelected={isAlongsideSelected} />
           {prefixAction}
           <StyledLabel>{item.renderLabel?.(item, api, { location }) || item.name}</StyledLabel>
-          {hasContextMenu && (
-            <MenuTriggerContainer className="hover-only">{contextMenu.node}</MenuTriggerContainer>
-          )}
+          {hasContextMenu && <MenuTriggerContainer>{contextMenu.node}</MenuTriggerContainer>}
           {(changeStatusIcon || testStatusIcon) && (
-            <StatusIconContainer
-              className="static-only"
-              role="status"
-              aria-live="off"
-              data-testid="tree-status-button"
-            >
+            <StatusIconContainer role="status" aria-live="off" data-testid="tree-status-button">
               {changeStatusIcon}
               {testStatusIcon}
             </StatusIconContainer>

@@ -284,7 +284,7 @@ export const init: ModuleFn = ({ store, fullAPI, provider }) => {
           break;
         }
 
-        // Handled by @react-aria/interactions and useLandmarkIndicator
+        // Handled by react-aria and useLandmarkIndicator
         case 'goToNextLandmark':
         case 'goToPreviousLandmark':
           break;

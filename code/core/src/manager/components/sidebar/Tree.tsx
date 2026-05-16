@@ -2,8 +2,8 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import { SIDEBAR_OPEN_CONTEXT_MENU } from 'storybook/internal/core-events';
 
-import { Collection } from '@react-aria/collections';
-import { Tree as AriaTree } from 'react-aria-components/patched-dist/Tree';
+import { Collection } from 'react-aria-components/Collection';
+import { Tree as AriaTree } from 'react-aria-components/Tree';
 
 import { type TreeEntry, collapseSingleStoryComponents, indexToTree } from '../../utils/tree.ts';
 import { TreeNode, type TreeNodeProps } from './TreeNode.tsx';
@@ -171,7 +171,9 @@ export const Tree = React.memo<TreeProps>(function Tree({
 
   // Listen for the global context-menu shortcut and open the menu for the focused item.
   useEffect(() => {
+    console.log('Effect');
     if (!api) {
+      console.log('Effect RET');
       return;
     }
     const handler = () => {

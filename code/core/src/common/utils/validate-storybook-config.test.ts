@@ -98,4 +98,51 @@ describe('validateStorybookConfig', () => {
     };
     expect(isValidStorybookConfig(invalidConfig)).toBe(false);
   });
+
+  it('should not throw when framework is null', () => {
+    const config = {
+      stories: ['./src/**/*.stories.ts'],
+      framework: null,
+    };
+    expect(() => validateStorybookConfig(config)).not.toThrow();
+    const errors = validateStorybookConfig(config);
+    expect(errors.some((e) => e.field === 'framework')).toBe(true);
+  });
+
+  it('should not throw when addons contains null', () => {
+    const config = {
+      stories: ['./src/**/*.stories.ts'],
+      addons: [null],
+    };
+    expect(() => validateStorybookConfig(config)).not.toThrow();
+    const errors = validateStorybookConfig(config);
+    expect(errors.some((e) => e.field === 'addons[0]')).toBe(true);
+  });
+
+  it('should validate stories array entries', () => {
+    const config = {
+      stories: [42],
+    };
+    const errors = validateStorybookConfig(config);
+    expect(errors.some((e) => e.field === 'stories[0]')).toBe(true);
+  });
+
+  it('should validate staticDirs array entries', () => {
+    const config = {
+      stories: ['./src/**/*.stories.ts'],
+      staticDirs: [42],
+    };
+    const errors = validateStorybookConfig(config);
+    expect(errors.some((e) => e.field === 'staticDirs[0]')).toBe(true);
+  });
+
+  it('should not flag known fields as unknown in strict mode', () => {
+    const config = {
+      stories: ['./src/**/*.stories.ts'],
+      env: () => ({}),
+      previewAnnotations: [],
+    };
+    const errors = validateStorybookConfig(config, true);
+    expect(errors.every((e) => e.field !== 'env' && e.field !== 'previewAnnotations')).toBe(true);
+  });
 });

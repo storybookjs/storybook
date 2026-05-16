@@ -50,6 +50,15 @@ export function validateStorybookConfig(
         message:
           'The "stories" field must be a string, array, or async function',
       });
+    } else if (Array.isArray(stories)) {
+      stories.forEach((entry, index) => {
+        if (typeof entry !== 'string' && (typeof entry !== 'object' || entry === null)) {
+          errors.push({
+            field: `stories[${index}]`,
+            message: 'Each stories entry must be a string or a glob config object',
+          });
+        }
+      });
     }
   }
 
@@ -62,7 +71,7 @@ export function validateStorybookConfig(
         message:
           'The "framework" field must be a string or an object with a "name" property',
       });
-    } else if (typeof framework === 'object' && !('name' in framework)) {
+    } else if (typeof framework === 'object' && framework !== null && !('name' in framework)) {
       errors.push({
         field: 'framework',
         message:
@@ -81,12 +90,12 @@ export function validateStorybookConfig(
       });
     } else {
       addons.forEach((addon, index) => {
-        if (typeof addon !== 'string' && typeof addon !== 'object') {
+        if (typeof addon !== 'string' && (typeof addon !== 'object' || addon === null)) {
           errors.push({
             field: `addons[${index}]`,
             message: 'Each addon must be a string or an object with a "name" property',
           });
-        } else if (typeof addon === 'object' && !('name' in addon)) {
+        } else if (typeof addon === 'object' && addon !== null && !('name' in addon)) {
           errors.push({
             field: `addons[${index}]`,
             message: 'Addon object must have a "name" property',
@@ -103,6 +112,15 @@ export function validateStorybookConfig(
       errors.push({
         field: 'staticDirs',
         message: 'The "staticDirs" field must be an array',
+      });
+    } else {
+      staticDirs.forEach((dir, index) => {
+        if (typeof dir !== 'string' && (typeof dir !== 'object' || dir === null)) {
+          errors.push({
+            field: `staticDirs[${index}]`,
+            message: 'Each staticDirs entry must be a string or a {from, to} object',
+          });
+        }
       });
     }
   }
@@ -173,6 +191,13 @@ export function validateStorybookConfig(
       'previewHead',
       'experimental_manifests',
       'experimental_enrichCsf',
+      'env',
+      'previewAnnotations',
+      'managerEntries',
+      'previewEntries',
+      'webpackFinal',
+      'viteFinal',
+      'babelDefault',
     ];
 
     Object.keys(cfg).forEach((key) => {

@@ -7,6 +7,7 @@ import {
   MainFileEvaluationError,
   StorybookError,
 } from 'storybook/internal/server-errors';
+import { optionalEnvToBoolean } from './envs.ts';
 import type { StorybookConfig } from 'storybook/internal/types';
 
 import { dedent } from 'ts-dedent';
@@ -38,9 +39,9 @@ export async function loadMainConfig({
 
   try {
     const out = await importModule(mainPath, { skipCache });
-    
+
     // Validate config if strict mode is enabled or env var is set
-    const enableStrictValidation = strict ?? process.env.STORYBOOK_STRICT_CONFIG === 'true';
+    const enableStrictValidation = strict || optionalEnvToBoolean(process.env.STORYBOOK_STRICT_CONFIG);
     if (enableStrictValidation) {
       const validationErrors = validateStorybookConfig(out, true);
       if (validationErrors.length > 0) {
@@ -50,14 +51,14 @@ export async function loadMainConfig({
         });
       }
     }
-    
+
     return out;
   } catch (e) {
     // Re-throw StorybookError subclasses as-is
     if (e instanceof StorybookError) {
       throw e;
     }
-    
+
     if (!(e instanceof Error)) {
       throw e;
     }

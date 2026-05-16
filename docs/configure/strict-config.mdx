@@ -1,0 +1,200 @@
+---
+title: Strict Config Validation
+---
+
+# Strict Config Validation
+
+Storybook can validate your configuration file at runtime to catch configuration errors early and provide helpful error messages.
+
+## Overview
+
+By default, Storybook loads your `.storybook/main.ts` configuration file with minimal validation. To enable stricter validation that catches typos, missing required fields, and type mismatches, you can enable strict config mode.
+
+## Enabling Strict Mode
+
+Strict config validation can be enabled in two ways:
+
+### 1. Environment Variable
+
+Set the `STORYBOOK_STRICT_CONFIG` environment variable before starting Storybook:
+
+```bash
+STORYBOOK_STRICT_CONFIG=true yarn storybook
+```
+
+### 2. Programmatic Configuration
+
+When loading the config programmatically, pass the `strict` parameter:
+
+```typescript
+import { loadMainConfig } from 'storybook/internal/core-server';
+
+const config = await loadMainConfig({
+  configDir: '.storybook',
+  strict: true,
+});
+```
+
+## What Gets Validated
+
+In strict mode, Storybook validates:
+
+- **Required fields** — Ensures `stories` field is present
+- **Type correctness** — Validates that configuration fields have the correct types (e.g., `framework` should be a string or object, not a number)
+- **Array element types** — Validates that array entries are valid (e.g., each entry in `stories` or `staticDirs` must be a string or object)
+- **Object structure** — Ensures objects like `addons` have required properties (e.g., `name` in addon definitions)
+- **Unknown fields** — Detects typos and unknown configuration properties
+
+## Error Messages
+
+When validation fails, you'll see a detailed error message:
+
+```text
+ConfigValidationError: Storybook config validation failed in .storybook/main.ts.
+
+The following validation errors were found:
+  - stories: The "stories" field is required in the Storybook config
+  - framework: The "framework" field must be a string or an object with a "name" property
+  - addons[0]: Each addon must have a "name" property
+
+Please ensure your Storybook config matches the expected TypeScript types.
+```
+
+## Common Mistakes Caught
+
+### Missing Required Fields
+
+```typescript
+// ❌ Missing stories field
+export default {
+  framework: '@storybook/react-vite',
+};
+```
+
+Error: `stories: The "stories" field is required in the Storybook config`
+
+### Type Errors
+
+```typescript
+// ❌ stories should be a string, array, or function
+export default {
+  stories: 123,
+};
+```
+
+Error: `stories: The "stories" field must be a string, array, or async function`
+
+### Typos in Configuration
+
+```typescript
+// ❌ Typo: "framwork" instead of "framework"
+export default {
+  stories: ['./src/**/*.stories.ts'],
+  framwork: '@storybook/react-vite',
+};
+```
+
+Error: `framwork: Unknown configuration property: "framwork"`
+
+### Invalid Addon Structure
+
+```typescript
+// ❌ Addon is missing the "name" property
+export default {
+  stories: ['./src/**/*.stories.ts'],
+  addons: [
+    { options: { theme: 'dark' } }, // Missing "name"
+  ],
+};
+```
+
+Error: `addons[0]: Addon object must have a "name" property`
+
+## Migration Guide
+
+### For Existing Projects
+
+If you have an existing Storybook project and enable strict mode, you may encounter validation errors. Here's how to fix them:
+
+1. **Run Storybook with strict mode enabled**:
+   ```bash
+   STORYBOOK_STRICT_CONFIG=true yarn storybook
+   ```
+
+2. **Review the error messages** — Each error tells you exactly which field has a problem
+
+3. **Fix the configuration**:
+   - Add any missing required fields
+   - Correct field types (e.g., convert numbers to strings)
+   - Remove or rename unknown properties
+   - Ensure all addons and entries have the correct structure
+
+4. **Re-run Storybook** — Once all errors are resolved, Storybook will start normally
+
+### Valid Configuration Example
+
+Here's a configuration that passes strict validation:
+
+```typescript
+// .storybook/main.ts
+import type { StorybookConfig } from '@storybook/react-vite';
+
+const config: StorybookConfig = {
+  stories: ['../src/**/*.stories.ts', '../src/**/*.stories.tsx'],
+  framework: '@storybook/react-vite',
+  addons: [
+    '@storybook/addon-essentials',
+    {
+      name: '@storybook/addon-docs',
+      options: {
+        configureJSDoc: true,
+      },
+    },
+  ],
+  core: {
+    builder: '@storybook/builder-vite',
+  },
+  typescript: {
+    check: true,
+  },
+};
+
+export default config;
+```
+
+## Backward Compatibility
+
+Strict config validation is **disabled by default** to maintain backward compatibility with existing Storybook projects. Your existing configuration will continue to work without any changes.
+
+To benefit from validation errors and catch configuration mistakes, explicitly enable strict mode as described above.
+
+## Supported Configuration Fields
+
+The following fields are recognized as valid in strict mode:
+
+- `stories` (required)
+- `framework`
+- `addons`
+- `core`
+- `staticDirs`
+- `typescript`
+- `features`
+- `logLevel`
+- `build`
+- `refs`
+- `babel`
+- `swc`
+- `docs`
+- `previewBody`
+- `previewHead`
+- `managerHead`
+- `managerBody`
+- `experimental_manifests`
+- `experimental_enrichCsf`
+- `env`
+- `previewAnnotations`
+- `managerEntries`
+- `previewEntries`
+- `webpackFinal`
+- `viteFinal`
+- `babelDefault`

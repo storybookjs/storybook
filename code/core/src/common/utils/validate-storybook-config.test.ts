@@ -56,7 +56,7 @@ describe('validateStorybookConfig', () => {
     invalidConfigs.forEach(({ stories, desc }) => {
       const config = { stories };
       const errors = validateStorybookConfig(config);
-      expect(errors.some((e) => e.field === 'stories')).toBe(true, `Should fail for ${desc}`);
+      expect(errors.some((e) => e.field === 'stories')).toBe(true);
     });
   });
 
@@ -71,10 +71,7 @@ describe('validateStorybookConfig', () => {
     validConfigs.forEach(({ stories, desc }) => {
       const config = { stories };
       const errors = validateStorybookConfig(config);
-      expect(errors.filter((e) => e.field === 'stories')).toHaveLength(
-        0,
-        `Should pass for ${desc}`
-      );
+      expect(errors.filter((e) => e.field === 'stories')).toHaveLength(0);
     });
   });
 

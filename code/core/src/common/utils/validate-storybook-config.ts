@@ -69,7 +69,10 @@ export function validateStorybookConfig(
   // Validate framework field if present
   if ('framework' in cfg && cfg.framework !== undefined) {
     const framework = cfg.framework;
-    if (typeof framework !== 'string' && typeof framework !== 'object') {
+    if (
+      typeof framework !== 'string' &&
+      (typeof framework !== 'object' || framework === null)
+    ) {
       errors.push({
         field: 'framework',
         message:

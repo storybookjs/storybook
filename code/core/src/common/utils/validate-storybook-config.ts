@@ -5,6 +5,10 @@ export interface ValidationError {
   message: string;
 }
 
+function hasNameProperty(value: unknown): value is { name: unknown } {
+  return value !== null && typeof value === 'object' && 'name' in value;
+}
+
 /**
  * Validates a Storybook configuration object in strict mode.
  * This ensures the config matches the expected StorybookConfig interface.
@@ -71,7 +75,7 @@ export function validateStorybookConfig(
         message:
           'The "framework" field must be a string or an object with a "name" property',
       });
-    } else if (typeof framework === 'object' && framework !== null && !('name' in framework)) {
+    } else if (framework !== null && typeof framework === 'object' && !hasNameProperty(framework)) {
       errors.push({
         field: 'framework',
         message:
@@ -95,7 +99,7 @@ export function validateStorybookConfig(
             field: `addons[${index}]`,
             message: 'Each addon must be a string or an object with a "name" property',
           });
-        } else if (typeof addon === 'object' && addon !== null && !('name' in addon)) {
+        } else if (addon !== null && typeof addon === 'object' && !hasNameProperty(addon)) {
           errors.push({
             field: `addons[${index}]`,
             message: 'Addon object must have a "name" property',

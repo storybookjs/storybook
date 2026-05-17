@@ -1,17 +1,15 @@
 import React, { useCallback, useContext, useMemo } from 'react';
 
-import { Button } from 'storybook/internal/components';
+import { Button, TooltipProvider } from 'storybook/internal/components';
 import type { StatusValue } from 'storybook/internal/types';
 
-import { internal_fullStatusStore as fullStatusStore } from '#manager-stores';
 import { darken, transparentize } from 'polished';
 import { TreeItem, TreeItemContent } from 'react-aria-components/Tree';
 import type { API } from 'storybook/manager-api';
 import { shortcutToHumanString } from 'storybook/manager-api';
 import { styled, useTheme } from 'storybook/theming';
 
-import type { Link } from '../../../components/components/tooltip/TooltipLinkList.tsx';
-import { getMostCriticalStatusValue, getStatus } from '../../utils/status.tsx';
+import { getStatus } from '../../utils/status.tsx';
 import { type TreeEntry, createId } from '../../utils/tree.ts';
 import { useLayout } from '../layout/LayoutProvider.tsx';
 import { useContextMenu } from './ContextMenu.tsx';
@@ -37,19 +35,6 @@ const StyledTreeItem = styled(TreeItem)<{
 
   // Indent based on tree level.
   paddingInlineStart: `calc(${$level} * 20px)`,
-
-  // FIXME: This cannot be the right implem. We don't want lvl0 to stick all in the same spot,
-  // we want the entire chain of currentlySelected parents to stick nicely without overlapping.
-  /* Sticky section headers and spacers for root-level items */
-  // ...($level === 0 && {
-  //   position: 'sticky',
-  //   top: 0,
-  //   zIndex: 1,
-  //   backgroundColor: theme.background.app,
-  //   '&:not(:first-child)': {
-  //     marginTop: 14,
-  //   },
-  // }),
 
   // Base colors.
   color: $textColor ?? theme.color.defaultText,
@@ -224,19 +209,25 @@ const SkipToContentLink = styled(Button)(({ theme }) => ({
 
 export type ContextMenuEntryMethod = 'pointer' | 'keyboard';
 
+// FIXME/TODO: find what to do with orphans. Try trees with orphan items. Likely special treatment with lines.
 export interface TreeNodeProps {
+  /** The item for this TreeNode. */
   item: TreeEntry;
+  /** refId of the composed Storybook, if the item isn't from the host instance. */
   refId: string;
+  /** Whether this node has no parent and isn't a natural root. */
   isOrphan: boolean;
+  /** Whether this node is currently selected. */
   isSelected: boolean;
+  /** Whether this node is a direct sibling to the selected node. */
   isAlongsideSelected: boolean;
+  /** Whether this node is currently expanded. */
   isExpanded: boolean;
+  /** Callback to select a story by its ID. */
   onSelectStoryId: (itemId: string) => void;
-  // statuses?: { change: Status; test: Status };
   api: API;
-  // data: Record<string, HashEntry>;
   /** Whether this item's context menu is currently open. */
-  isContextMenuOpen?: boolean;
+  isContextMenuOpen: boolean;
   /** How the context menu was opened — 'pointer' (click) or 'keyboard' (global shortcut). */
   contextMenuEntryMethod?: ContextMenuEntryMethod;
   /** Open the context menu for a given item ID with the specified entry method. */
@@ -258,17 +249,6 @@ function guardHasContextMenu(
   return contextMenu?.node !== null;
 }
 
-const StatusLabelsInContextMenu: Record<StatusValue, string> = {
-  'status-value:success': 'Passing',
-  'status-value:error': 'Has errors',
-  'status-value:warning': 'Has warnings',
-  'status-value:pending': 'Status pending',
-  'status-value:unknown': 'Status unknown',
-  'status-value:new': 'New',
-  'status-value:modified': 'Modified',
-  'status-value:affected': 'Related', // TODO/FIXME: talk to MA about using better copy here.
-};
-
 const StatusLabelsInAriaLabel: Record<StatusValue, string> = {
   'status-value:success': 'Tests passing',
   'status-value:error': 'Tests failing',
@@ -286,10 +266,8 @@ export const TreeNode = React.memo<TreeNodeProps>(function TreeNode({
   isSelected,
   isAlongsideSelected,
   isExpanded,
-  onSelectStoryId,
-  // statuses,
   api,
-  // data,
+  onSelectStoryId,
   isContextMenuOpen,
   contextMenuEntryMethod,
   openContextMenu,
@@ -298,7 +276,7 @@ export const TreeNode = React.memo<TreeNodeProps>(function TreeNode({
 }) {
   const theme = useTheme();
   const id = useMemo(() => createId(item.id, refId), [item.id, refId]);
-  const { data, groupDualStatus } = useContext(StatusContext);
+  const { groupDualStatus } = useContext(StatusContext);
   const { isMobile } = useLayout();
   const location = isMobile ? 'bottom-bar' : 'sidebar';
 
@@ -317,13 +295,11 @@ export const TreeNode = React.memo<TreeNodeProps>(function TreeNode({
 
   const contextMenu = useContextMenu(
     item,
-    // FIXME/TODO: why is there a mixed state model here?
-    // isContextMenuOpen ?? false,
-    // handleContextMenuOpenChange,
-    [],
+    isContextMenuOpen,
+    handleContextMenuOpenChange,
+    onSelectStoryId,
     api,
-    data,
-    contextMenuEntryMethod
+    contextMenuEntryMethod,
   );
 
   // Get all status icons for this node.
@@ -364,6 +340,7 @@ export const TreeNode = React.memo<TreeNodeProps>(function TreeNode({
 
   const isBranch = guardHasChildren(item);
   const hasContextMenu = guardHasContextMenu(contextMenu);
+  const shortcutKeys = api.getShortcutKeys();
 
   // Compute final aria-label including test status and keyboard shortcut discovery.
   const ariaLabel = useMemo(() => {
@@ -378,11 +355,22 @@ export const TreeNode = React.memo<TreeNodeProps>(function TreeNode({
     }
 
     if (hasContextMenu) {
-      const shortcut = shortcutToHumanString(api.getShortcutKeys().contextMenu);
+      const shortcut = shortcutToHumanString(shortcutKeys.contextMenu);
       label += `. Press ${shortcut} for more actions`;
     }
     return label;
-  }, [item, api, location, hasContextMenu, changeStatus, testStatus]);
+  }, [item, api, location, hasContextMenu, changeStatus, testStatus, shortcutKeys]);
+
+  const shortcutLabel = useMemo(() => {
+    if (!hasContextMenu || !shortcutKeys?.contextMenu) {
+      return null;
+    }
+    return (
+      <>
+        Actions <kbd>{shortcutToHumanString(shortcutKeys.contextMenu)}</kbd>
+      </>
+    );
+  }, [shortcutKeys, hasContextMenu]);
 
   const prefixAction = useMemo(() => {
     if (item.type === 'root') {
@@ -394,14 +382,14 @@ export const TreeNode = React.memo<TreeNodeProps>(function TreeNode({
         <>
           <span className="hover-only">{<CollapseIcon isExpanded={isExpanded} />}</span>
           <span className="static-only">
-            <TypeIconWithSymbol type={item.type} />
+            <TypeIconWithSymbol item={item} />
           </span>
         </>
       );
     }
 
-    return <TypeIconWithSymbol type={item.type} />;
-  }, [item.type, isBranch, isExpanded]);
+    return <TypeIconWithSymbol item={item} />;
+  }, [item, isBranch, isExpanded]);
 
   const itemContent = (
     <StyledTreeItem
@@ -437,5 +425,5 @@ export const TreeNode = React.memo<TreeNodeProps>(function TreeNode({
     </StyledTreeItem>
   );
 
-  return itemContent;
+  return  shortcutLabel ? <TooltipProvider tooltip={shortcutLabel} triggerOnFocusOnly>{itemContent}</TooltipProvider> : itemContent;
 });

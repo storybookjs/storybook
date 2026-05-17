@@ -22,6 +22,9 @@ import { getGroupDualStatus } from '../../utils/status.tsx';
 import { useExpanded } from './useExpanded.ts';
 import { StatusContext } from './StatusContext.tsx';
 
+// FIXME/TODO: should clicking on a story with children also navigate to it? Review with MA
+// FIXME/TODO: implement sticky breadcrumbs
+
 const StyledAriaTree = styled(AriaTree)(() => ({
   listStyle: 'none',
   padding: 0,
@@ -112,6 +115,8 @@ export const Tree = React.memo<TreeProps>(function Tree({
   expandedRef.current = expanded;
   const collapsedDataRef = useRef(collapsedData);
   collapsedDataRef.current = collapsedData;
+  const selectedStoryIdRef = useRef(selectedStoryId);
+  selectedStoryIdRef.current = selectedStoryId;
 
   // Helper: returns true when an item ID corresponds to a branch (has children).
   const isBranch = useCallback((id: string): boolean => {
@@ -169,19 +174,19 @@ export const Tree = React.memo<TreeProps>(function Tree({
   }, []);
   const closeContextMenu = useCallback(() => setContextMenuState(null), []);
 
-  // Listen for the global context-menu shortcut and open the menu for the focused item.
+  // Listen for the global context-menu shortcut and open the menu for the right story.
+  // Prefer the currently focused tree item; fall back to the selected story when focus is outside
+  // the tree. RAC sets data-focused="true" on the focused row, and we track the current story with a ref.
   useEffect(() => {
-    console.log('Effect');
     if (!api) {
-      console.log('Effect RET');
       return;
     }
     const handler = () => {
-      console.log('handler');
-      const focused = containerRef.current?.querySelector('[data-focused="true"]');
-      const itemId = focused?.getAttribute('data-item-id');
+      const focusedEl = containerRef.current?.querySelector<HTMLElement>(
+        '[data-focused="true"][data-item-id]'
+      );
+      const itemId = focusedEl?.getAttribute('data-item-id') ?? selectedStoryIdRef.current;
       if (itemId) {
-        console.log('handled' + itemId);
         openContextMenu(itemId, 'keyboard');
       }
     };
@@ -289,7 +294,6 @@ interface RenderNodeProps extends Omit<
 
 function renderNode({
   expanded,
-  groupDualStatus,
   selectedStoryId,
   selectedParentId,
   contextMenuState,

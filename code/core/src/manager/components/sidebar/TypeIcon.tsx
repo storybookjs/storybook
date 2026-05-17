@@ -1,6 +1,7 @@
 import React from 'react';
 
 import { styled } from 'storybook/theming';
+import type { API_HashEntry, API_StoryEntry, API_TestEntry } from 'storybook/internal/types';
 
 import { UseSymbol } from './IconSymbols.tsx';
 
@@ -36,11 +37,18 @@ export const TypeIcon = styled.svg<{ type: 'component' | 'story' | 'test' | 'gro
 );
 
 export const TypeIconWithSymbol = React.memo<{
-  type: 'component' | 'story' | 'test' | 'group' | 'docs';
-}>(function TypeIconWithSymbol({ type }) {
+  item: {
+    type: API_HashEntry['type'];
+    subtype?: API_StoryEntry['subtype'] | API_TestEntry['subtype'];
+  }
+}>(function TypeIconWithSymbol({ item }) {
+  if (item.type === 'root') {
+    return null;
+  }
+
   return (
-    <TypeIcon viewBox="0 0 14 14" width="14" height="14" type={type}>
-      <UseSymbol type={type} />
+    <TypeIcon viewBox="0 0 14 14" width="14" height="14" type={item.subtype ?? item.type}>
+      <UseSymbol type={item.subtype ?? item.type} />
     </TypeIcon>
   );
 });

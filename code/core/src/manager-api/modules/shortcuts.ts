@@ -86,8 +86,9 @@ export interface SubAPI {
    * Handles a keydown event.
    *
    * @param event The event to handle.
+   * @returns The matched shortcut action name, or undefined if no shortcut was matched.
    */
-  handleKeydownEvent(event: KeyboardEventLike): void;
+  handleKeydownEvent(event: KeyboardEventLike): API_Action | undefined;
   /**
    * Handles a shortcut feature.
    *
@@ -167,7 +168,7 @@ export const defaultShortcuts: API_Shortcuts = Object.freeze({
   copyStoryLink: ['alt', 'shift', 'L'],
   goToPreviousLandmark: ['shift', 'F6'], // hardcoded in react-aria
   goToNextLandmark: ['F6'], // hardcoded in react-aria
-  contextMenu: [controlOrMetaKey(), 'shift', 'u'],
+  contextMenu: [controlOrMetaKey(), 'shift', 'U'],
   // TODO: bring this back once we want to add shortcuts for this
   // copyStoryName: ['alt', 'shift', 'C'],
 });
@@ -256,6 +257,7 @@ export const init: ModuleFn = ({ store, fullAPI, provider }) => {
       if (matchedFeature) {
         api.handleShortcutFeature(matchedFeature, event);
       }
+      return matchedFeature;
     },
 
     // warning: event might not have a full prototype chain because it may originate from the channel
@@ -512,12 +514,26 @@ export const init: ModuleFn = ({ store, fullAPI, provider }) => {
   };
 
   const initModule = () => {
-    // Listen for keydown events in the manager
-    document.addEventListener('keydown', (event: KeyboardEvent) => {
-      if (!shouldSkipShortcut(event)) {
-        api.handleKeydownEvent(event);
-      }
-    });
+    // Listen for keydown events in the manager.
+    // Capture phase ensures we run before React Aria (and other component libraries) can
+    // call stopPropagation(), which would prevent bubbling-phase listeners from firing.
+    // When a shortcut is matched we also stop propagation so React Aria cannot re-dispatch
+    // the same event (which it does for ArrowUp/Down) and cause double-firing or
+    // unintended tree navigation as a side effect.
+    // Landmark-navigation shortcuts (F6 / Shift+F6) are intentionally excluded: Storybook's
+    // handler is a no-op for them and React Aria must be allowed to handle them.
+    document.addEventListener(
+      'keydown',
+      (event: KeyboardEvent) => {
+        if (!shouldSkipShortcut(event)) {
+          const matched = api.handleKeydownEvent(event);
+          if (matched && matched !== 'goToNextLandmark' && matched !== 'goToPreviousLandmark') {
+            event.stopPropagation();
+          }
+        }
+      },
+      { capture: true }
+    );
 
     // Also listen to keydown events sent over the channel
     provider.channel?.on(PREVIEW_KEYDOWN, (data: { event: KeyboardEventLike }) => {

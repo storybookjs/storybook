@@ -39,7 +39,43 @@ describe('validateStorybookConfig', () => {
       stories: 123,
     };
     const errors = validateStorybookConfig(config);
-    expect(errors.some((e) => e.field === 'stories')).toBe(true);
+    expect(errors).toContainEqual({
+      field: 'stories',
+      message: 'The "stories" field must be a string, array, or async function',
+    });
+  });
+
+  it('should fail validation with various invalid stories types', () => {
+    const invalidConfigs = [
+      { stories: 123, desc: 'number' },
+      { stories: true, desc: 'boolean' },
+      { stories: {}, desc: 'object' },
+      { stories: Symbol('test'), desc: 'symbol' },
+    ];
+
+    invalidConfigs.forEach(({ stories, desc }) => {
+      const config = { stories };
+      const errors = validateStorybookConfig(config);
+      expect(errors.some((e) => e.field === 'stories')).toBe(true, `Should fail for ${desc}`);
+    });
+  });
+
+  it('should pass validation with valid stories types', () => {
+    const validConfigs = [
+      { stories: './src/**/*.stories.ts', desc: 'string' },
+      { stories: ['./src/**/*.stories.ts'], desc: 'array' },
+      { stories: () => [], desc: 'function' },
+      { stories: async () => [], desc: 'async function' },
+    ];
+
+    validConfigs.forEach(({ stories, desc }) => {
+      const config = { stories };
+      const errors = validateStorybookConfig(config);
+      expect(errors.filter((e) => e.field === 'stories')).toHaveLength(
+        0,
+        `Should pass for ${desc}`
+      );
+    });
   });
 
   it('should fail validation when config is not an object', () => {

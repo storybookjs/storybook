@@ -41,7 +41,8 @@ export async function loadMainConfig({
     const out = await importModule(mainPath, { skipCache });
 
     // Validate config if strict mode is enabled or env var is set
-    const enableStrictValidation = strict || optionalEnvToBoolean(process.env.STORYBOOK_STRICT_CONFIG);
+    // Use optionalEnvToBoolean for consistent handling of 1/TRUE/0/FALSE/etc
+    const enableStrictValidation = strict || (optionalEnvToBoolean(process.env.STORYBOOK_STRICT_CONFIG) ?? false);
     if (enableStrictValidation) {
       const validationErrors = validateStorybookConfig(out, true);
       if (validationErrors.length > 0) {

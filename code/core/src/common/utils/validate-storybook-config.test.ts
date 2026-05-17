@@ -145,4 +145,23 @@ describe('validateStorybookConfig', () => {
     const errors = validateStorybookConfig(config, true);
     expect(errors.every((e) => e.field !== 'env' && e.field !== 'previewAnnotations')).toBe(true);
   });
+
+  it('should accept all supported StorybookConfig strict-mode keys', () => {
+    const config = {
+      stories: ['./src/**/*.stories.ts'],
+      previewMainTemplate: '.storybook/index.ejs',
+      tags: ['autodocs'],
+      experimental_indexers: [],
+    };
+
+    const errors = validateStorybookConfig(config, true);
+    expect(
+      errors.every(
+        (e) =>
+          e.field !== 'previewMainTemplate' &&
+          e.field !== 'tags' &&
+          e.field !== 'experimental_indexers'
+      )
+    ).toBe(true);
+  });
 });

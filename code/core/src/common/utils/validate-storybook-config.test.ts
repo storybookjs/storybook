@@ -46,14 +46,9 @@ describe('validateStorybookConfig', () => {
   });
 
   it('should fail validation with various invalid stories types', () => {
-    const invalidConfigs = [
-      { stories: 123, desc: 'number' },
-      { stories: true, desc: 'boolean' },
-      { stories: {}, desc: 'object' },
-      { stories: Symbol('test'), desc: 'symbol' },
-    ];
+    const invalidConfigs = [123, true, {}, Symbol('test')];
 
-    invalidConfigs.forEach(({ stories, desc }) => {
+    invalidConfigs.forEach((stories) => {
       const config = { stories };
       const errors = validateStorybookConfig(config);
       expect(errors.some((e) => e.field === 'stories')).toBe(true);
@@ -62,13 +57,13 @@ describe('validateStorybookConfig', () => {
 
   it('should pass validation with valid stories types', () => {
     const validConfigs = [
-      { stories: './src/**/*.stories.ts', desc: 'string' },
-      { stories: ['./src/**/*.stories.ts'], desc: 'array' },
-      { stories: () => [], desc: 'function' },
-      { stories: async () => [], desc: 'async function' },
+      './src/**/*.stories.ts',
+      ['./src/**/*.stories.ts'],
+      () => [],
+      async () => [],
     ];
 
-    validConfigs.forEach(({ stories, desc }) => {
+    validConfigs.forEach((stories) => {
       const config = { stories };
       const errors = validateStorybookConfig(config);
       expect(errors.filter((e) => e.field === 'stories')).toHaveLength(0);

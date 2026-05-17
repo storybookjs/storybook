@@ -79,11 +79,16 @@ describe('validateStorybookConfig', () => {
   });
 
   it('should fail validation when config is not an object', () => {
-    const config = 'not an object';
-    const errors = validateStorybookConfig(config);
-    expect(errors).toContainEqual({
-      field: 'root',
-      message: 'Configuration must be an object',
+    const invalidConfigs: unknown[] = ['not an object', 123, true, null, undefined];
+
+    invalidConfigs.forEach((config) => {
+      const errors = validateStorybookConfig(config);
+      expect(errors).toEqual([
+        {
+          field: 'root',
+          message: 'Configuration must be an object',
+        },
+      ]);
     });
   });
 

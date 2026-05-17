@@ -27,7 +27,7 @@ STORYBOOK_STRICT_CONFIG=true yarn storybook
 When loading the config programmatically, pass the `strict` parameter:
 
 ```typescript
-import { loadMainConfig } from 'storybook/internal/core-server';
+import { loadMainConfig } from 'storybook/internal/common';
 
 const config = await loadMainConfig({
   configDir: '.storybook',
@@ -188,13 +188,11 @@ The following fields are recognized as valid in strict mode:
 - `previewBody`
 - `previewHead`
 - `managerHead`
-- `managerBody`
-- `experimental_manifests`
-- `experimental_enrichCsf`
+- `previewMainTemplate`
+- `tags`
 - `env`
 - `previewAnnotations`
-- `managerEntries`
-- `previewEntries`
+- `experimental_indexers`
 - `webpackFinal`
 - `viteFinal`
 - `babelDefault`

@@ -36,7 +36,7 @@ describe('validateStorybookConfig', () => {
 
   it('should fail validation when stories has invalid type', () => {
     const config = {
-      stories: 123,
+      stories: 123 as any,
     };
     const errors = validateStorybookConfig(config);
     expect(errors).toContainEqual({
@@ -122,7 +122,7 @@ describe('validateStorybookConfig', () => {
   it('should fail validation when addon is missing name property', () => {
     const config = {
       stories: ['./src/**/*.stories.ts'],
-      addons: [{ options: {} }],
+      addons: [{ options: {} } as any],
     };
     const errors = validateStorybookConfig(config);
     expect(errors.some((e) => e.field === 'addons[0]')).toBe(true);
@@ -153,7 +153,7 @@ describe('validateStorybookConfig', () => {
   it('should not throw when addons contains null', () => {
     const config = {
       stories: ['./src/**/*.stories.ts'],
-      addons: [null],
+      addons: [null as any],
     };
     expect(() => validateStorybookConfig(config)).not.toThrow();
     const errors = validateStorybookConfig(config);
@@ -162,7 +162,7 @@ describe('validateStorybookConfig', () => {
 
   it('should validate stories array entries', () => {
     const config = {
-      stories: [42],
+      stories: [42 as any],
     };
     const errors = validateStorybookConfig(config);
     expect(errors.some((e) => e.field === 'stories[0]')).toBe(true);
@@ -171,7 +171,7 @@ describe('validateStorybookConfig', () => {
   it('should validate staticDirs array entries', () => {
     const config = {
       stories: ['./src/**/*.stories.ts'],
-      staticDirs: [42],
+      staticDirs: [42 as any],
     };
     const errors = validateStorybookConfig(config);
     expect(errors.some((e) => e.field === 'staticDirs[0]')).toBe(true);

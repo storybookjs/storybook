@@ -410,11 +410,17 @@ Symptom of the wrong target: recipe hits
 `TimeoutError: locator.waitFor: ... '#storybook-preview-iframe').contentFrame().locator('#storybook-root:visible, #storybook-docs:visible')`
 because internal-ui never reached the docs page for that addon block.
 
-### Triage rule for ActionBar / Canvas action buttons (HARD GATE)
+### Triage rule for docs-Canvas Zoom/Show-code action buttons (HARD GATE)
 
-ActionBar lives **inside** a story Canvas. Its action buttons (Show code,
-Zoom in/out, Reset) only appear after the user hovers the Canvas. Recipes
-testing ActionBar focus / aria / variants must:
+**Scope:** this rule is for the **docs-page Canvas toolbar** (the
+Zoom/Show-code/Reset bar that overlays a rendered story Canvas in autodocs).
+It is NOT the rule for changes to the generic `ActionBar` component itself
+(`code/core/src/components/components/ActionBar/**`) — see the next rule for
+those.
+
+The docs Canvas toolbar lives **inside** a story Canvas. Its action buttons
+(Show code, Zoom in/out, Reset) only appear after the user hovers the Canvas.
+Recipes testing the docs-Canvas toolbar must:
 
 1. Use a **sandbox** target (`// @verify-target: sandbox:react-vite/default-ts`).
    ActionBar renders on the docs page; internal-ui does not mount addon-docs
@@ -448,6 +454,66 @@ HARD prohibitions (each produced a false regression in eval):
 Symptom of the wrong approach:
 `expect(locator).toBeVisible() failed Locator: ... .docs-story').first().getByRole('button', { name: /show code/i }).first()`
 — Canvas not hovered / not scrolled into view.
+
+### Triage rule for additive-only API changes with no story/consumer (HARD GATE)
+
+**The #1 false-regression cause.** When the diff only *adds* an optional
+prop / param / interface field and **no story or in-diff consumer passes
+it**, there is **no observable UI surface**. A recipe that asserts the new
+attribute is present will always fail — nothing in the running Storybook
+emits it.
+
+Before writing a behavioral assertion, check: does a `*.stories.tsx` in or
+near the diff, or a consumer the diff wires up, actually *use* the new
+field? If NO:
+
+- The change is covered by `tsc` (type) and/or the PR's own unit test.
+- Use `@verify-mode: visual` with a **smoke** recipe on the component's
+  existing default story: assert it still renders + `filterPageErrors([])`
+  is clean. Do **not** assert the new attribute/behavior — it is not in
+  the DOM.
+- Say so explicitly in the diff-coverage comment ("additive API, no story
+  consumer; smoke + type/unit is the available signal").
+
+Worked example — `ActionItem.ariaLabel` (#28/#29: diff = `ariaLabel?:
+string | false` on the `ActionItem` interface + `aria-label={…}` on
+`ActionButton`; `ActionBar.stories.tsx` `SingleItem`/`ManyItems` do **not**
+pass `ariaLabel`; no consumer in the diff sets it). There is no story where
+the new `aria-label` appears. Correct recipe: `@verify-mode: visual`,
+navigate `?path=/story/components-actionbar--many-items`, assert the action
+buttons render (`getByRole('button')` by their text name) and console is
+clean. **Never** `getByRole('toolbar')` (the `ActionBar` component renders
+plain `<button>`s with **no** `toolbar` role) and **never** target
+`.docs-story` (that is the docs Canvas, a different surface).
+
+### Triage rule for Brand / `theme.brand.title` (custom HTML brand) (HARD GATE)
+
+`Brand` (`code/core/src/manager/components/sidebar/Brand.tsx`) renders the
+brand title via `dangerouslySetInnerHTML` **only when
+`theme.brand.image === null`** (the `image === null` branch). With the
+default theme (`image` undefined) it renders the Storybook logo and the
+title innerHTML path never executes — so a sanitizer / title change is
+**not** observable there.
+
+For diffs touching `Brand.tsx` / `theme.brand.title` sanitization:
+
+- Target the existing stories that already take the `image: null` custom-
+  HTML path: `?path=/story/manager-sidebar-heading--only-text` or
+  `manager-sidebar-heading--link-and-text` (both set `{ title, image: null }`).
+- Assert the title is rendered into the innerHTML container and boot is
+  clean (`filterPageErrors([])` empty) — i.e. the sanitizer is wired and
+  did not break Brand rendering.
+- The XSS-payload-is-inert assertion belongs to the PR's **unit test**
+  (e.g. `Brand.test.tsx`); the three-signal verdict already ANDs that in.
+  Do not try to re-prove sanitization through the UI.
+
+HARD prohibitions:
+- Do NOT drive this via runtime `api.setOptions({ theme: { brandTitle … }})`
+  — that does not reach Brand's ThemeProvider, and without `image: null`
+  never hits the sanitized innerHTML path (false regression: the injected
+  text never appears in the DOM).
+- Do NOT inject a `<script>` payload and assert it did not execute — the
+  unit test owns that; the recipe is a render/boot smoke of the real story.
 
 ### Triage rule for sidebar item interactions (HARD GATE)
 

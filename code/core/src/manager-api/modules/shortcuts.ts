@@ -116,7 +116,6 @@ export interface API_Shortcuts {
   nextStory: API_KeyCollection;
   shortcutsPage: API_KeyCollection;
   aboutPage: API_KeyCollection;
-  escape: API_KeyCollection;
   collapseAll: API_KeyCollection;
   expandAll: API_KeyCollection;
   remount: API_KeyCollection;
@@ -159,7 +158,6 @@ export const defaultShortcuts: API_Shortcuts = Object.freeze({
   nextStory: ['alt', 'ArrowRight'],
   shortcutsPage: [controlOrMetaKey(), 'shift', ','],
   aboutPage: [controlOrMetaKey(), ','],
-  escape: ['escape'], // This one is not customizable
   collapseAll: [controlOrMetaKey(), 'shift', 'ArrowUp'],
   expandAll: [controlOrMetaKey(), 'shift', 'ArrowDown'],
   remount: ['alt', 'R'],
@@ -277,15 +275,6 @@ export const init: ModuleFn = ({ store, fullAPI, provider }) => {
         event.preventDefault();
       }
       switch (feature) {
-        case 'escape': {
-          if (fullAPI.getIsFullscreen()) {
-            fullAPI.toggleFullscreen(false);
-          } else if (fullAPI.getIsNavShown()) {
-            fullAPI.toggleNav(true);
-          }
-          break;
-        }
-
         // Handled by react-aria and useLandmarkIndicator
         case 'goToNextLandmark':
         case 'goToPreviousLandmark':
@@ -527,8 +516,11 @@ export const init: ModuleFn = ({ store, fullAPI, provider }) => {
       (event: KeyboardEvent) => {
         if (!shouldSkipShortcut(event)) {
           const matched = api.handleKeydownEvent(event);
+          console.log(event, matched)
           if (matched && matched !== 'goToNextLandmark' && matched !== 'goToPreviousLandmark') {
             event.stopPropagation();
+          } else {
+            console.log('did not stop')
           }
         }
       },

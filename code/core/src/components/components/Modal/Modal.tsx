@@ -189,9 +189,7 @@ function BaseModal({
       } else {
         if (dismissOnEscape) {
           onEscapeKeyDown?.(e.nativeEvent);
-          if (!e.nativeEvent.defaultPrevented) {
-            close();
-          }
+          close();
         }
       }
     },

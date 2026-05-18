@@ -214,14 +214,14 @@ describe('ghostStoriesChannel', () => {
           testRunDuration: expect.any(Number),
         },
         results: {
-          runTotal: 2,
-          runPassed: 2,
-          runSuccessRate: 1,
-          runSuccessRateWithoutEmptyRender: 1,
-          runCategorizedErrors: expect.any(Object),
-          runCssCheck: 'not-run',
-          runUniqueErrorCount: 0,
-          runPassedButEmptyRender: 0,
+          total: 2,
+          passed: 2,
+          successRate: 1,
+          successRateWithoutEmptyRender: 1,
+          categorizedErrors: expect.any(Object),
+          cssCheck: 'not-run',
+          uniqueErrorCount: 0,
+          passedButEmptyRender: 0,
         },
       });
     });
@@ -314,14 +314,14 @@ describe('ghostStoriesChannel', () => {
             testRunDuration: expect.any(Number),
           },
           results: expect.objectContaining({
-            runTotal: 2,
-            runPassed: 0,
-            runSuccessRate: 0,
-            // runCategorizedErrors is an object keyed by error category
-            runCategorizedErrors: expect.any(Object),
-            runCssCheck: 'not-run',
-            runUniqueErrorCount: expect.any(Number),
-            runPassedButEmptyRender: 0,
+            total: 2,
+            passed: 0,
+            successRate: 0,
+            // categorizedErrors is an object keyed by error category
+            categorizedErrors: expect.any(Object),
+            cssCheck: 'not-run',
+            uniqueErrorCount: expect.any(Number),
+            passedButEmptyRender: 0,
           }),
         })
       );

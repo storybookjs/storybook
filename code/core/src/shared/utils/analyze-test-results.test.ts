@@ -70,14 +70,14 @@ describe('analyze-test-results', () => {
       ];
       const analysis = analyzeTestResults(results);
       expect(analysis).toEqual({
-        runTotal: 3,
-        runPassed: 3,
-        runPassedButEmptyRender: 0,
-        runSuccessRate: 1.0,
-        runSuccessRateWithoutEmptyRender: 1.0,
-        runUniqueErrorCount: 0,
-        runCategorizedErrors: {},
-        runCssCheck: 'not-run',
+        total: 3,
+        passed: 3,
+        passedButEmptyRender: 0,
+        successRate: 1.0,
+        successRateWithoutEmptyRender: 1.0,
+        uniqueErrorCount: 0,
+        categorizedErrors: {},
+        cssCheck: 'not-run',
       });
     });
 
@@ -88,10 +88,10 @@ describe('analyze-test-results', () => {
         { storyId: 's3', status: 'FAIL', error: 'Error: Module not found', stack: '' },
       ];
       const analysis = analyzeTestResults(results);
-      expect(analysis.runTotal).toBe(3);
-      expect(analysis.runPassed).toBe(1);
-      expect(analysis.runSuccessRate).toBe(0.33);
-      expect(analysis.runUniqueErrorCount).toBe(2);
+      expect(analysis.total).toBe(3);
+      expect(analysis.passed).toBe(1);
+      expect(analysis.successRate).toBe(0.33);
+      expect(analysis.uniqueErrorCount).toBe(2);
     });
 
     it('should count passedButEmptyRender', () => {
@@ -101,16 +101,16 @@ describe('analyze-test-results', () => {
         { storyId: 's3', status: 'PASS', emptyRender: true },
       ];
       const analysis = analyzeTestResults(results);
-      expect(analysis.runPassedButEmptyRender).toBe(2);
-      expect(analysis.runSuccessRate).toBe(1.0);
-      expect(analysis.runSuccessRateWithoutEmptyRender).toBe(0.33);
+      expect(analysis.passedButEmptyRender).toBe(2);
+      expect(analysis.successRate).toBe(1.0);
+      expect(analysis.successRateWithoutEmptyRender).toBe(0.33);
     });
 
     it('should handle zero tests', () => {
       const analysis = analyzeTestResults([]);
-      expect(analysis.runTotal).toBe(0);
-      expect(analysis.runSuccessRate).toBe(0);
-      expect(analysis.runSuccessRateWithoutEmptyRender).toBe(0);
+      expect(analysis.total).toBe(0);
+      expect(analysis.successRate).toBe(0);
+      expect(analysis.successRateWithoutEmptyRender).toBe(0);
       expect(analysis.cumulativeTotal).toBeUndefined();
     });
 
@@ -120,9 +120,9 @@ describe('analyze-test-results', () => {
         { storyId: 's2', status: 'PENDING' },
       ];
       const analysis = analyzeTestResults(results);
-      expect(analysis.runTotal).toBe(2);
-      expect(analysis.runPassed).toBe(1);
-      expect(analysis.runSuccessRate).toBe(0.5);
+      expect(analysis.total).toBe(2);
+      expect(analysis.passed).toBe(1);
+      expect(analysis.successRate).toBe(0.5);
     });
 
     describe('cumulative stats', () => {
@@ -154,8 +154,8 @@ describe('analyze-test-results', () => {
           { storyId: 's5', status: 'PASS' },
         ];
         const analysis = analyzeTestResults(run, cumulative);
-        expect(analysis.runTotal).toBe(3);
-        expect(analysis.runPassed).toBe(0);
+        expect(analysis.total).toBe(3);
+        expect(analysis.passed).toBe(0);
         expect(analysis.cumulativeTotal).toBe(5);
         expect(analysis.cumulativePassed).toBe(4);
         expect(analysis.cumulativeSuccessRate).toBe(0.8);
@@ -168,7 +168,7 @@ describe('analyze-test-results', () => {
           { storyId: 'components-button--primary', status: 'PASS' },
           { storyId: 'components-button--css-check', status: 'PASS' },
         ];
-        expect(analyzeTestResults(results).runCssCheck).toBe('pass');
+        expect(analyzeTestResults(results).cssCheck).toBe('pass');
       });
 
       it("is 'fail' when a --css-check story failed", () => {
@@ -179,14 +179,14 @@ describe('analyze-test-results', () => {
             error: 'expected rgb(37, 99, 235) but got rgba(0, 0, 0, 0)',
           },
         ];
-        expect(analyzeTestResults(results).runCssCheck).toBe('fail');
+        expect(analyzeTestResults(results).cssCheck).toBe('fail');
       });
 
       it("is 'not-run' when no --css-check story is present", () => {
         const results: StoryTestResult[] = [
           { storyId: 'components-button--primary', status: 'PASS' },
         ];
-        expect(analyzeTestResults(results).runCssCheck).toBe('not-run');
+        expect(analyzeTestResults(results).cssCheck).toBe('not-run');
       });
 
       it("is 'not-run' when the --css-check story was skipped / pending / todo", () => {
@@ -196,11 +196,11 @@ describe('analyze-test-results', () => {
         const results: StoryTestResult[] = [
           { storyId: 'components-button--css-check', status: 'PENDING' },
         ];
-        expect(analyzeTestResults(results).runCssCheck).toBe('not-run');
+        expect(analyzeTestResults(results).cssCheck).toBe('not-run');
       });
 
       it("is 'not-run' for an empty result list", () => {
-        expect(analyzeTestResults([]).runCssCheck).toBe('not-run');
+        expect(analyzeTestResults([]).cssCheck).toBe('not-run');
       });
 
       it('uses the first match when multiple --css-check stories exist', () => {
@@ -210,7 +210,7 @@ describe('analyze-test-results', () => {
           { storyId: 'components-button--css-check', status: 'PASS' },
           { storyId: 'components-card--css-check', status: 'FAIL', error: 'style mismatch' },
         ];
-        expect(analyzeTestResults(results).runCssCheck).toBe('pass');
+        expect(analyzeTestResults(results).cssCheck).toBe('pass');
       });
 
       it('is case-insensitive on the suffix (defensive)', () => {
@@ -219,7 +219,7 @@ describe('analyze-test-results', () => {
         const results: StoryTestResult[] = [
           { storyId: 'components-button--CSS-CHECK', status: 'PASS' },
         ];
-        expect(analyzeTestResults(results).runCssCheck).toBe('pass');
+        expect(analyzeTestResults(results).cssCheck).toBe('pass');
       });
     });
   });

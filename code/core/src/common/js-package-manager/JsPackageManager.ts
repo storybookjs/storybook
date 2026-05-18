@@ -189,6 +189,12 @@ export abstract class JsPackageManager {
     this.clearInstalledVersionCache();
   }
 
+  async precheckStorybookPackageInstall(options: {
+    storybookVersion: string;
+    nonInteractive: boolean;
+    installContext: 'create' | 'upgrade';
+  }): Promise<void> {}
+
   async dedupeDependencies(options?: { force?: boolean }) {
     await prompt.executeTask(
       (_signal) =>
@@ -665,7 +671,6 @@ export abstract class JsPackageManager {
     pattern?: string[],
     options?: { depth: number }
   ): Promise<InstallationMetadata | undefined>;
-  public abstract parseErrorFromLogs(logs?: string): string;
 
   // TODO: Remove pnp compatibility code in SB11
   /** Returns the installed (within node_modules or pnp zip) version of a specified package */

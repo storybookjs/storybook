@@ -1,21 +1,25 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { copyTemplateFiles, getBabelDependencies } from 'storybook/internal/cli';
-import { logger } from 'storybook/internal/node-logger';
+import { executeCommand } from 'storybook/internal/common';
+import { logger, prompt } from 'storybook/internal/node-logger';
 import { SupportedLanguage } from 'storybook/internal/types';
 
 import { DependencyCollector } from '../../dependency-collector.ts';
+import { TelemetryService } from '../../services/TelemetryService.ts';
 import reactNativeGenerator from './index.ts';
 import { generateReactNativeEntrypoint } from './generateEntrypoint.ts';
 import { runMetroCodemodOrFallback } from './metroConfig.ts';
 import { detectReactNativeEntrypointTemplateVariant } from './index.ts';
 
 vi.mock('storybook/internal/cli', { spy: true });
+vi.mock('storybook/internal/common', { spy: true });
 vi.mock('storybook/internal/node-logger', { spy: true });
 vi.mock('./generateEntrypoint', { spy: true });
 vi.mock('./metroConfig', { spy: true });
 
 describe('REACT_NATIVE generator module', () => {
+  const telemetryService = new TelemetryService();
   const createPackageManager = (scripts?: Record<string, string>) =>
     ({
       getDependencyVersion: vi.fn().mockReturnValue(null),
@@ -56,6 +60,7 @@ describe('REACT_NATIVE generator module', () => {
       renderer: reactNativeGenerator.metadata.renderer,
       builder: reactNativeGenerator.metadata.builderOverride as any,
       language: SupportedLanguage.JAVASCRIPT,
+      telemetryService,
       features: new Set(),
       dependencyCollector: new DependencyCollector(),
       yes: true,
@@ -87,6 +92,7 @@ describe('REACT_NATIVE generator module', () => {
       renderer: reactNativeGenerator.metadata.renderer,
       builder: reactNativeGenerator.metadata.builderOverride as any,
       language: SupportedLanguage.TYPESCRIPT,
+      telemetryService,
       features: new Set(),
       dependencyCollector: new DependencyCollector(),
       yes: true,
@@ -111,6 +117,7 @@ describe('REACT_NATIVE generator module', () => {
       renderer: reactNativeGenerator.metadata.renderer,
       builder: reactNativeGenerator.metadata.builderOverride as any,
       language: SupportedLanguage.JAVASCRIPT,
+      telemetryService,
       features: new Set(),
       dependencyCollector: new DependencyCollector(),
       yes: true,
@@ -133,6 +140,7 @@ describe('REACT_NATIVE generator module', () => {
       renderer: reactNativeGenerator.metadata.renderer,
       builder: reactNativeGenerator.metadata.builderOverride as any,
       language: SupportedLanguage.JAVASCRIPT,
+      telemetryService,
       features: new Set(),
       dependencyCollector: new DependencyCollector(),
       yes: true,
@@ -163,6 +171,7 @@ describe('REACT_NATIVE generator module', () => {
       renderer: reactNativeGenerator.metadata.renderer,
       builder: reactNativeGenerator.metadata.builderOverride as any,
       language: SupportedLanguage.JAVASCRIPT,
+      telemetryService,
       features: new Set(),
       dependencyCollector: new DependencyCollector(),
       yes: true,
@@ -171,6 +180,70 @@ describe('REACT_NATIVE generator module', () => {
     expect(packageManager.getVersionedPackages).toHaveBeenCalledWith(
       expect.not.arrayContaining(['cross-env'])
     );
+  });
+});
+
+describe('REACT_NATIVE generator postInstall', () => {
+  const createPackageManagerWithDeps = (allDependencies: Record<string, string>) =>
+    ({
+      getAllDependencies: vi.fn().mockReturnValue(allDependencies),
+    }) as any;
+
+  beforeEach(() => {
+    vi.mocked(prompt.taskLog).mockReturnValue({
+      message: vi.fn(),
+      success: vi.fn(),
+      error: vi.fn(),
+    } as unknown as ReturnType<typeof prompt.taskLog>);
+    vi.mocked(executeCommand).mockReturnValue({
+      stdout: '',
+    } as unknown as ReturnType<typeof executeCommand>);
+    vi.mocked(logger.warn).mockImplementation(() => {});
+  });
+
+  it('runs `npx expo install --fix` when expo is a dependency', async () => {
+    const packageManager = createPackageManagerWithDeps({ expo: '^54.0.0' });
+
+    await reactNativeGenerator.postInstall?.({ packageManager });
+
+    expect(executeCommand).toHaveBeenCalledWith(
+      expect.objectContaining({
+        command: 'npx',
+        args: ['expo', 'install', '--fix'],
+      })
+    );
+  });
+
+  it('runs `npx expo install --fix` when only expo-router is a dependency', async () => {
+    const packageManager = createPackageManagerWithDeps({ 'expo-router': '^4.0.0' });
+
+    await reactNativeGenerator.postInstall?.({ packageManager });
+
+    expect(executeCommand).toHaveBeenCalledWith(
+      expect.objectContaining({
+        command: 'npx',
+        args: ['expo', 'install', '--fix'],
+      })
+    );
+  });
+
+  it('skips `npx expo install --fix` for plain (non-expo) React Native projects', async () => {
+    const packageManager = createPackageManagerWithDeps({ 'react-native': '0.76.0' });
+
+    await reactNativeGenerator.postInstall?.({ packageManager });
+
+    expect(executeCommand).not.toHaveBeenCalled();
+  });
+
+  it('does not throw when `npx expo install --fix` fails and prints a warning instead', async () => {
+    const packageManager = createPackageManagerWithDeps({ expo: '^54.0.0' });
+    vi.mocked(executeCommand).mockImplementationOnce(() => {
+      throw new Error('boom');
+    });
+
+    await expect(reactNativeGenerator.postInstall?.({ packageManager })).resolves.toBeUndefined();
+
+    expect(logger.warn).toHaveBeenCalledWith(expect.stringContaining('npx expo install --fix'));
   });
 });
 

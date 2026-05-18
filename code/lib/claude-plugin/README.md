@@ -23,9 +23,21 @@ After editing plugin files in a running Claude Code session, reload plugins:
 The repository includes a Claude marketplace descriptor at `.claude-plugin/marketplace.json`.
 
 ```sh
-claude plugin validate .
-claude plugin marketplace add .
-claude plugin install storybook@storybook
+pnpm claude-plugin:install
+```
+
+This validates the marketplace and plugin manifests, adds this repository as the `storybook` Claude marketplace, and installs `storybook@storybook` at user scope so it is available in every project.
+
+After changing plugin files, update the installed plugin cache:
+
+```sh
+pnpm claude-plugin:update
+```
+
+Inspect the installed plugin:
+
+```sh
+pnpm claude-plugin:list
 ```
 
 ## Distribution

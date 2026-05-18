@@ -1,6 +1,7 @@
 {
 	"name": "@storybook/claude-code-plugin",
 	"version": "0.0.0",
+	"private": true,
 	"description": "Build, preview, and test UI components",
 	"keywords": [
 		"ai",
@@ -22,8 +23,5 @@
 		"skills",
 		"README.md"
 	],
-	"type": "module",
-	"publishConfig": {
-		"access": "public"
-	}
+	"type": "module"
 }

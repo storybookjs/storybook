@@ -28,11 +28,11 @@ claude plugin marketplace add .
 claude plugin install storybook@storybook
 ```
 
-## Publishing
+## Distribution
 
-The package can be published to npm as `@storybook/claude-code-plugin`. The Claude marketplace can also point directly at this repository subdirectory before the npm package is published.
+This package is private and is distributed through the repository's Claude marketplace entry. The marketplace points directly at this package directory.
 
-The npm package must include these files:
+The plugin directory must include these files:
 
 - `.claude-plugin/plugin.json`
 - `.mcp.json`
@@ -47,4 +47,4 @@ The plugin's `.mcp.json` starts:
 npx -y @storybook/mcp-proxy
 ```
 
-`@storybook/mcp-proxy` must be published before npm-backed or marketplace-backed installs can use the default MCP configuration successfully.
+`@storybook/mcp-proxy` must be published before marketplace installs can use the default MCP configuration successfully.

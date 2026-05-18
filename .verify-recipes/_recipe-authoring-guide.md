@@ -506,9 +506,31 @@ or wrong verdict. That is exactly the gap `behavioral` closes.
 
 **Do NOT use `pure-fn` or `build-config` yet.** The parser accepts them but
 the orchestrator is not wired for them — a recipe with those modes is
-reported `skipped` and **never executed**. Until they ship, a non-browser
-change still goes through `behavioral` (import + exercise the changed code via
-the running Storybook and assert observable DOM/console effects).
+reported `skipped` and **never executed**. Until they ship, a pure-logic /
+module-internal change still goes through `behavioral`.
+
+**HARD GATE — never reach the changed module directly.** A `behavioral`
+recipe asserts the change's *observable effect* through the real running
+Storybook UI. It must NOT, inside `page.evaluate()` or anywhere:
+
+- `import()` / dynamic-import a `dist`, `node_modules`, or source module
+  (e.g. `import('/node_modules/@storybook/addon-a11y/dist/a11yRunner.mjs')`);
+- monkeypatch module internals, stub `axe`/globals, or `eval` arbitrary code
+  to invoke the changed function.
+
+The deny-regex gate rejects these patterns **before any Playwright run** —
+the recipe never executes and the PR gets *no verdict*. This is the #1
+behavioral foot-gun for pure-logic diffs.
+
+Instead: drive the feature through its **public UI path** so the changed
+code runs as a side effect, then assert what the user/DOM/console observes
+(e.g. for an a11y-runner change: open the a11y addon panel on a story and
+assert the violations/rules it surfaces; for a sanitizer change: render the
+untrusted input through the real component and assert the DOM is inert). If
+the change has **no reachable UI path at all**, fall back to
+`@verify-mode: visual` with a smoke recipe + `filterPageErrors(...)` console
+assertion — a weak signal beats a deny-regex no-verdict. Do **not** fabricate
+a module import to force coverage.
 
 ### Worked example — aria-label added to a toolbar button (behavioral)
 

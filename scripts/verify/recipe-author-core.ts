@@ -392,16 +392,55 @@ export async function runRecipeAuthor(input: RunRecipeAuthorInput): Promise<Reci
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
       const deniedMatch = msg.match(/denied pattern "([^"]+)"/);
-      const result: RecipeAuthorResult = {
-        status: 'deny-regex-hit',
-        specPath: bundle.outputSpecPath,
-        attempts,
-        deniedPattern: deniedMatch?.[1],
-        agentModel,
-        generatedAt,
-      };
-      await writeResultJson(runDir, result);
-      return result;
+      const deniedPattern = deniedMatch?.[1];
+      const denyRetryMessage =
+        `Your recipe was REJECTED by the deny-regex gate before any Playwright ` +
+        `run. It matched a forbidden pattern${
+          deniedPattern ? `: ${deniedPattern}` : ''
+        }.\nRaw: ${msg}\n\n` +
+        `Rewrite the recipe WITHOUT that pattern. The usual cause is trying to ` +
+        `reach changed code directly: dynamic import() of a dist / node_modules ` +
+        `module, monkeypatching module internals, or arbitrary code inside ` +
+        `page.evaluate(). For a pure-logic / module-internal change assert the ` +
+        `OBSERVABLE behavior through the real Storybook UI — never import or ` +
+        `stub the changed module. See authoring-guide §12.5.`;
+
+      const exhausted = attempts >= MAX_RECIPE_ATTEMPTS;
+      if (exhausted) {
+        const result: RecipeAuthorResult = {
+          status: 'deny-regex-hit',
+          specPath: bundle.outputSpecPath,
+          attempts,
+          deniedPattern,
+          retryMessage: denyRetryMessage,
+          agentModel,
+          generatedAt,
+        };
+        await writeResultJson(runDir, result);
+        return result;
+      }
+
+      // First deny hit with attempts remaining — mirror the lint-failure
+      // retry path so the agent can self-correct (e.g. #36 a11yRunner:
+      // behavioral mode chosen correctly but reached for an in-browser
+      // dynamic import that the deny-regex blocks).
+      if (mode === 'stdin' && attempt === 1) {
+        const partial: RecipeAuthorResult = {
+          status: 'retry-requested',
+          specPath: bundle.outputSpecPath,
+          attempts,
+          deniedPattern,
+          retryMessage: denyRetryMessage,
+          runId: bundle.runId,
+          agentModel,
+          generatedAt,
+        };
+        await writeResultJson(runDir, partial, 'result.partial.json');
+        return partial;
+      }
+
+      retryMessageForNext = denyRetryMessage;
+      continue;
     }
 
     const header = buildProvenanceHeader(bundle, generatedAt);

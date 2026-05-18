@@ -2,6 +2,7 @@ import React, { type DOMAttributes, type ReactElement, useMemo } from 'react';
 
 import { type API_KeyCollection, shortcutToHumanString } from 'storybook/manager-api';
 
+import type { PopperPlacement } from '../../shared/overlayHelpers.tsx';
 import { TooltipNote } from '../../tooltip/TooltipNote.tsx';
 import { TooltipProvider } from '../../tooltip/TooltipProvider.tsx';
 
@@ -10,7 +11,8 @@ export const InteractiveTooltipWrapper: React.FC<{
   shortcut?: API_KeyCollection;
   disableAllTooltips?: boolean;
   tooltip?: string;
-}> = ({ children, disableAllTooltips, shortcut, tooltip }) => {
+  tooltipPlacement?: PopperPlacement;
+}> = ({ children, disableAllTooltips, shortcut, tooltip, tooltipPlacement = 'top' }) => {
   const tooltipLabel = useMemo(() => {
     // We read from document despite the lack of reactivity, because this
     // option isn't changeable in the UI. If it was, we'd need to fetch the
@@ -30,7 +32,7 @@ export const InteractiveTooltipWrapper: React.FC<{
 
   return tooltipLabel ? (
     <TooltipProvider
-      placement="top"
+      placement={tooltipPlacement}
       tooltip={<TooltipNote note={tooltipLabel} />}
       visible={!disableAllTooltips ? undefined : false}
     >

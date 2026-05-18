@@ -8,11 +8,7 @@ import { Tree as AriaTree } from 'react-aria-components/Tree';
 import { type TreeEntry, collapseSingleStoryComponents, indexToTree } from '../../utils/tree.ts';
 import { TreeNode, type TreeNodeProps } from './TreeNode.tsx';
 
-import {
-  type Status,
-  type StatusesByStoryIdAndTypeId,
-  type StoryId,
-} from 'storybook/internal/types';
+import { type StatusesByStoryIdAndTypeId } from 'storybook/internal/types';
 
 import { useStorybookApi } from 'storybook/manager-api';
 import type { IndexHash } from 'storybook/manager-api';
@@ -22,7 +18,7 @@ import { getGroupDualStatus } from '../../utils/status.tsx';
 import { useExpanded } from './useExpanded.ts';
 import { StatusContext } from './StatusContext.tsx';
 
-// FIXME/TODO: should clicking on a story with children also navigate to it? Review with MA
+// FIXME/TODO: Review with MA: should clicking on a story with children also navigate to it?
 // FIXME/TODO: implement sticky breadcrumbs
 
 const StyledAriaTree = styled(AriaTree)(() => ({
@@ -56,6 +52,8 @@ export const Tree = React.memo<TreeProps>(function Tree({
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const api = useStorybookApi();
+  const [focusedItemId, setFocusedItemId] = useState<string | null>(null);
+  const focusedItemIdRef = useRef<string | null>(null);
 
   // Context-menu state: which item's menu is open, and how it was triggered.
   // 'pointer' = click on the ⋯ button; 'keyboard' = global shortcut (shows extra actions).
@@ -117,6 +115,11 @@ export const Tree = React.memo<TreeProps>(function Tree({
   collapsedDataRef.current = collapsedData;
   const selectedStoryIdRef = useRef(selectedStoryId);
   selectedStoryIdRef.current = selectedStoryId;
+
+  const updateFocusedItemId = useCallback((itemId: string | null) => {
+    focusedItemIdRef.current = itemId;
+    setFocusedItemId((current) => (current === itemId ? current : itemId));
+  }, []);
 
   // Helper: returns true when an item ID corresponds to a branch (has children).
   const isBranch = useCallback((id: string): boolean => {
@@ -182,10 +185,7 @@ export const Tree = React.memo<TreeProps>(function Tree({
       return;
     }
     const handler = () => {
-      const focusedEl = containerRef.current?.querySelector<HTMLElement>(
-        '[data-focused="true"][data-item-id]'
-      );
-      const itemId = focusedEl?.getAttribute('data-item-id') ?? selectedStoryIdRef.current;
+      const itemId = focusedItemIdRef.current ?? selectedStoryIdRef.current;
       if (itemId) {
         openContextMenu(itemId, 'keyboard');
       }
@@ -195,6 +195,44 @@ export const Tree = React.memo<TreeProps>(function Tree({
       api.off(SIDEBAR_OPEN_CONTEXT_MENU, handler);
     };
   }, [api, openContextMenu]);
+
+  // Track focused item via MutationObserver to position the tooltip and open the ContextMenu.
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) {
+      return;
+    }
+
+    const focusedElement = container.querySelector<HTMLElement>(
+      '[data-focused="true"][data-item-id]'
+    );
+    updateFocusedItemId(focusedElement?.getAttribute('data-item-id') ?? null);
+
+    const observer = new MutationObserver((mutations) => {
+      for (const mutation of mutations) {
+        if (
+          mutation.type === 'attributes' &&
+          mutation.attributeName === 'data-focused' &&
+          mutation.target instanceof HTMLElement
+        ) {
+          const el = mutation.target;
+          if (el.getAttribute('data-focused') === 'true') {
+            updateFocusedItemId(el.getAttribute('data-item-id'));
+          } else if (focusedItemIdRef.current === el.getAttribute('data-item-id')) {
+            updateFocusedItemId(null);
+          }
+        }
+      }
+    });
+
+    observer.observe(container, {
+      attributes: true,
+      attributeFilter: ['data-focused'],
+      subtree: true,
+    });
+
+    return () => observer.disconnect();
+  }, [updateFocusedItemId]);
 
   // Scroll the selected story into view when it changes.
   useEffect(() => {
@@ -215,6 +253,7 @@ export const Tree = React.memo<TreeProps>(function Tree({
       renderNode({
         api,
         refId,
+        focusedItemId,
         onSelectStoryId,
         selectedStoryId,
         selectedParentId,
@@ -226,6 +265,7 @@ export const Tree = React.memo<TreeProps>(function Tree({
     [
       api,
       refId,
+      focusedItemId,
       onSelectStoryId,
       selectedStoryId,
       selectedParentId,
@@ -236,6 +276,7 @@ export const Tree = React.memo<TreeProps>(function Tree({
     ]
   );
 
+  // TODO: consider passing more data via the provider to limit prop drilling in renderNode? Any advantage?
   return (
     <StatusContext.Provider value={{ data, allStatuses, groupDualStatus }}>
       <StyledAriaTree
@@ -252,6 +293,7 @@ export const Tree = React.memo<TreeProps>(function Tree({
           items={tree}
           dependencies={[
             expanded,
+            focusedItemId,
             selectedStoryId,
             selectedParentId,
             contextMenuState,
@@ -268,32 +310,19 @@ export const Tree = React.memo<TreeProps>(function Tree({
 // Stable module-level constants so empty-state props don't bust React.memo equality checks.
 const EMPTY_KEYS: Set<string> = new Set();
 
-interface RenderNodeProps extends Omit<
-  TreeNodeProps,
-  | 'item'
-  | 'id'
-  | 'isOrphan'
-  | 'isSelected'
-  | 'isAlongsideSelected'
-  | 'isExpanded'
-  | 'children'
-  | 'statuses'
-  | 'isContextMenuOpen'
-  | 'contextMenuEntryMethod'
-  | 'openContextMenu'
-  | 'closeContextMenu'
-> {
-  groupDualStatus?: Record<StoryId, { change: Status; test: Status }>;
+interface RenderNodeProps extends Pick<TreeNodeProps, 'api' | 'refId' | 'onSelectStoryId'> {
+  focusedItemId: string | null;
   selectedStoryId: string | null;
   selectedParentId: string | null;
   expanded: Set<string>;
   contextMenuState: { itemId: string; entryMethod: 'pointer' | 'keyboard' } | null;
-  openContextMenu: (itemId: string, entryMethod: 'pointer' | 'keyboard') => void;
-  closeContextMenu: () => void;
+  openContextMenu: NonNullable<TreeNodeProps['openContextMenu']>;
+  closeContextMenu: NonNullable<TreeNodeProps['closeContextMenu']>;
 }
 
 function renderNode({
   expanded,
+  focusedItemId,
   selectedStoryId,
   selectedParentId,
   contextMenuState,
@@ -309,6 +338,7 @@ function renderNode({
         item={item}
         isOrphan={item.depth === 0 && item.type !== 'root'}
         isExpanded={expanded.has(item.id)}
+        isFocused={focusedItemId === item.id}
         isSelected={selectedStoryId === item.id}
         isAlongsideSelected={item.type !== 'root' && selectedParentId === item.parent}
         isContextMenuOpen={contextMenuState?.itemId === item.id}
@@ -321,11 +351,18 @@ function renderNode({
         {item.resolvedChildren && (
           <Collection
             items={item.resolvedChildren}
-            dependencies={[expanded, selectedStoryId, selectedParentId, contextMenuState]}
+            dependencies={[
+              expanded,
+              focusedItemId,
+              selectedStoryId,
+              selectedParentId,
+              contextMenuState,
+            ]}
           >
             {renderNode({
               ...props,
               expanded,
+              focusedItemId,
               selectedStoryId,
               selectedParentId,
               contextMenuState,

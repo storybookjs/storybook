@@ -1,6 +1,6 @@
 import React, { useCallback, useContext, useMemo } from 'react';
 
-import { Button, TooltipProvider } from 'storybook/internal/components';
+import { TooltipNote, TooltipProvider } from 'storybook/internal/components';
 import type { StatusValue } from 'storybook/internal/types';
 
 import { darken, transparentize } from 'polished';
@@ -12,12 +12,20 @@ import { styled, useTheme } from 'storybook/theming';
 import { getStatus } from '../../utils/status.tsx';
 import { type TreeEntry, createId } from '../../utils/tree.ts';
 import { useLayout } from '../layout/LayoutProvider.tsx';
-import { useContextMenu } from './ContextMenu.tsx';
+import { ContextMenu } from './ContextMenu.tsx';
 
 import { TypeIconWithSymbol } from './TypeIcon.tsx';
 import type { Item } from './types.ts';
 import { StatusContext } from './StatusContext.tsx';
 import { CollapseIcon } from './CollapseIcon.tsx';
+
+// FIXME/TODO: Review with MA: shortcut styling in TooltipNote VS Figma
+// FIXME/TODO: Review with MA: check spacing between top level sections, possible inconsistency in Figma
+// FIXME/TODO: Review with MA: how we wanna present stories with test children.
+// FIXME/TODO: prevent line wrapping on long items?
+// FIXME/TODO: dont let #storybook-explorer-menu be focused when there are no search results. It gets in the way of testing the tree
+// FIXME/TODO: we must find how to get PopoverProvider to autofocus the first menu item on menu open through RAC APIs.
+// FIXME/TODO: if contextmenu trigger visible, add right padding to the label to prevent overlap; or better yet swap absolute layout for one with negative margins
 
 const StyledTreeItem = styled(TreeItem)<{
   $level: number;
@@ -32,6 +40,7 @@ const StyledTreeItem = styled(TreeItem)<{
   minHeight: 28,
   borderRadius: 4,
   overflow: 'hidden',
+  cursor: 'pointer',
 
   // Indent based on tree level.
   paddingInlineStart: `calc(${$level} * 20px)`,
@@ -72,15 +81,16 @@ const StyledTreeItem = styled(TreeItem)<{
     visibility: 'hidden',
   },
 
-  '&:hover [data-displayed="off"], &:focus-visible [data-displayed="off"]': {
-    visibility: 'visible',
-  },
+  '&:hover [data-displayed="off"], &:focus-visible [data-displayed="off"], &:focus-within [data-displayed="off"]':
+    {
+      visibility: 'visible',
+    },
 
   '& span:has([data-displayed="on"]) + *': {
     visibility: 'hidden',
   },
 
-  '&:hover span:has([data-displayed="off"]) + *, &:focus-visible span:has([data-displayed="off"]) + *':
+  '&:hover span:has([data-displayed="off"]) + *, &:focus-visible span:has([data-displayed="off"]) + *, &:focus-within span:has([data-displayed="off"]) + *':
     {
       visibility: 'hidden',
     },
@@ -183,29 +193,8 @@ const StatusIconContainer = styled.span({
   height: 24,
   gap: 4,
   padding: 5,
+  zIndex: 1,
 });
-
-const SkipToContentLink = styled(Button)(({ theme }) => ({
-  display: 'none',
-  '@media (min-width: 600px)': {
-    display: 'block',
-    fontSize: '10px',
-    overflow: 'hidden',
-    width: 1,
-    height: '20px',
-    boxSizing: 'border-box',
-    opacity: 0,
-    padding: 0,
-
-    '&:focus': {
-      opacity: 1,
-      padding: '5px 10px',
-      background: 'white',
-      color: theme.color.secondary,
-      width: 'auto',
-    },
-  },
-}));
 
 export type ContextMenuEntryMethod = 'pointer' | 'keyboard';
 
@@ -217,6 +206,8 @@ export interface TreeNodeProps {
   refId: string;
   /** Whether this node has no parent and isn't a natural root. */
   isOrphan: boolean;
+  /** Whether this node is currently focused. */
+  isFocused: boolean;
   /** Whether this node is currently selected. */
   isSelected: boolean;
   /** Whether this node is a direct sibling to the selected node. */
@@ -241,12 +232,8 @@ function guardHasChildren(item: Item): item is Item & { children: string[] } {
   return 'children' in item && Array.isArray(item.children) && item.children.length > 0;
 }
 
-function guardHasContextMenu(
-  contextMenu: {
-    node: React.ReactNode;
-  } | null
-): contextMenu is { node: React.ReactNode } {
-  return contextMenu?.node !== null;
+function guardHasContextMenu(contextMenu: React.ReactNode | null): contextMenu is React.ReactNode {
+  return contextMenu !== null;
 }
 
 const StatusLabelsInAriaLabel: Record<StatusValue, string> = {
@@ -263,7 +250,7 @@ const StatusLabelsInAriaLabel: Record<StatusValue, string> = {
 export const TreeNode = React.memo<TreeNodeProps>(function TreeNode({
   item,
   refId,
-  isSelected,
+  isFocused,
   isAlongsideSelected,
   isExpanded,
   api,
@@ -293,13 +280,15 @@ export const TreeNode = React.memo<TreeNodeProps>(function TreeNode({
     [openContextMenu, closeContextMenu, item.id]
   );
 
-  const contextMenu = useContextMenu(
-    item,
-    isContextMenuOpen,
-    handleContextMenuOpenChange,
-    onSelectStoryId,
-    api,
-    contextMenuEntryMethod,
+  const contextMenu = (
+    <ContextMenu
+      context={item}
+      isOpen={isContextMenuOpen}
+      setIsOpen={handleContextMenuOpenChange}
+      onSelectStoryId={onSelectStoryId}
+      api={api}
+      entryMethod={contextMenuEntryMethod}
+    />
   );
 
   // Get all status icons for this node.
@@ -365,12 +354,13 @@ export const TreeNode = React.memo<TreeNodeProps>(function TreeNode({
     if (!hasContextMenu || !shortcutKeys?.contextMenu) {
       return null;
     }
-    return (
-      <>
-        Actions <kbd>{shortcutToHumanString(shortcutKeys.contextMenu)}</kbd>
-      </>
-    );
-  }, [shortcutKeys, hasContextMenu]);
+    const shortcut = shortcutToHumanString(shortcutKeys.contextMenu);
+    const label =
+      changeStatus !== 'status-value:unknown' || testStatus !== 'status-value:unknown'
+        ? 'Status and actions'
+        : 'Actions';
+    return `${label} ${shortcut ? `[${shortcut}]` : ''}`;
+  }, [shortcutKeys, hasContextMenu, changeStatus, testStatus]);
 
   const prefixAction = useMemo(() => {
     if (item.type === 'root') {
@@ -407,17 +397,12 @@ export const TreeNode = React.memo<TreeNodeProps>(function TreeNode({
           <Traces level={item.depth} isAlongsideSelected={isAlongsideSelected} />
           {prefixAction}
           <StyledLabel>{item.renderLabel?.(item, api, { location }) || item.name}</StyledLabel>
-          {hasContextMenu && <MenuTriggerContainer>{contextMenu.node}</MenuTriggerContainer>}
+          {hasContextMenu && <MenuTriggerContainer>{contextMenu}</MenuTriggerContainer>}
           {(changeStatusIcon || testStatusIcon) && (
             <StatusIconContainer role="status" aria-live="off" data-testid="tree-status-button">
               {changeStatusIcon}
               {testStatusIcon}
             </StatusIconContainer>
-          )}
-          {isSelected && (
-            <SkipToContentLink asChild ariaLabel={false}>
-              <a href="#storybook-preview-wrapper">Skip to content</a>
-            </SkipToContentLink>
           )}
         </StyledContent>
       </TreeItemContent>
@@ -425,5 +410,16 @@ export const TreeNode = React.memo<TreeNodeProps>(function TreeNode({
     </StyledTreeItem>
   );
 
-  return  shortcutLabel ? <TooltipProvider tooltip={shortcutLabel} triggerOnFocusOnly>{itemContent}</TooltipProvider> : itemContent;
+  return shortcutLabel ? (
+    <TooltipProvider
+      placement="bottom-end"
+      tooltip={<TooltipNote note={shortcutLabel} />}
+      triggerOnFocusOnly
+      visible={isFocused}
+    >
+      {itemContent}
+    </TooltipProvider>
+  ) : (
+    itemContent
+  );
 });

@@ -516,11 +516,8 @@ export const init: ModuleFn = ({ store, fullAPI, provider }) => {
       (event: KeyboardEvent) => {
         if (!shouldSkipShortcut(event)) {
           const matched = api.handleKeydownEvent(event);
-          console.log(event, matched)
           if (matched && matched !== 'goToNextLandmark' && matched !== 'goToPreviousLandmark') {
             event.stopPropagation();
-          } else {
-            console.log('did not stop')
           }
         }
       },

@@ -1,5 +1,5 @@
 import type { ComponentProps, FC, SyntheticEvent } from 'react';
-import React, { useContext, useMemo, useState } from 'react';
+import React, { memo, useCallback, useMemo } from 'react';
 
 import { PopoverProvider, TooltipLinkList } from 'storybook/internal/components';
 import {
@@ -7,51 +7,19 @@ import {
   type Addon_Collection,
   type Addon_TestProviderType,
   Addon_TypesEnum,
-  type StatusValue,
 } from 'storybook/internal/types';
 
 import { CopyIcon, EditorIcon, EllipsisIcon } from '@storybook/icons';
 
 import type { API } from 'storybook/manager-api';
-import { useTheme } from 'storybook/theming';
-import { internal_fullStatusStore, useStorybookApi } from 'storybook/manager-api';
+import { useStorybookApi } from 'storybook/manager-api';
 
 import { useCopyButton } from '../../../shared/useCopyButton.ts';
 import type { Link } from '../../../components/components/tooltip/TooltipLinkList.tsx';
 
 import { Shortcut } from '../Shortcut.tsx';
 import { ContextMenuButton } from './ContextMenuButton.tsx';
-import { StatusContext } from './StatusContext.tsx';
 import { TypeIconWithSymbol } from './TypeIcon.tsx';
-import { getStatus } from '../../utils/status.tsx';
-
-// FIXME/TODO: we must find how to get PopoverProvider to autofocus the first menu item on menu open.
-
-// FIXME/TODO: onMouseEnter is actually a data preloading mechanism for test providers to render custom React nodes.
-// It helps with perceived performance as it avoids showing loaders for a short span. Find a way to reinstate this.
-// AND: rename it to a more meaningful name.
-
-// FIXME/TODO: move all the status link stuff in here.
-// FIXME/TODO: Esc does not close the menu!
-// FIXME/TODO: find out why test entries show up as stories in the tree
-// FIXME/TODO: pressing ArrowRight in tree breaks kb nav
-// FIXME/TODO: check with MA how we wanna present stories with test children.
-
-const empty = {
-  onMouseEnter: () => {},
-  node: null,
-};
-
-const StatusLabelsInContextMenu: Record<StatusValue, string> = {
-  'status-value:success': 'Passing',
-  'status-value:error': 'Has errors',
-  'status-value:warning': 'Has warnings',
-  'status-value:pending': 'Status pending',
-  'status-value:unknown': 'Status unknown',
-  'status-value:new': 'New',
-  'status-value:modified': 'Modified',
-  'status-value:affected': 'Related', // TODO/FIXME: talk to MA about using better copy here.
-};
 
 export type ContextMenuEntryMethod = 'pointer' | 'keyboard';
 
@@ -69,17 +37,14 @@ function getGoToLabel(context: API_HashEntry): string | null {
   return null;
 }
 
-export const useContextMenu = (
-  context: API_HashEntry,
-  isOpen: boolean,
-  setIsOpen: (open: boolean) => void,
-  onSelectStoryId: (id: string) => void,
-  api: API,
-  entryMethod?: ContextMenuEntryMethod,
-) => {
-  const [hoverCount, setHoverCount] = useState(0);
-  const { allStatuses } = useContext(StatusContext);
-
+export const ContextMenu: FC<{
+  context: API_HashEntry;
+  isOpen: boolean;
+  setIsOpen: (open: boolean) => void;
+  onSelectStoryId: (id: string) => void;
+  api: API;
+  entryMethod?: ContextMenuEntryMethod;
+}> = memo(({ context, isOpen, setIsOpen, onSelectStoryId, api, entryMethod }) => {
   const exportName = context && 'exportName' in context ? (context.exportName ?? '') : '';
   const { children: copyText, buttonProps: copyButtonProps } = useCopyButton<string>({
     children: 'Copy story name',
@@ -144,114 +109,50 @@ export const useContextMenu = (
     return defaultLinks;
   }, [api, onSelectStoryId, context, copyText, copyButtonProps, entryMethod, setIsOpen]);
 
-  // FIXME/TODO: remove if possible.
-  const handlers = useMemo(() => {
-    return {
-      onMouseEnter: () => {
-        setHoverCount((c) => c + 1);
-      },
-      onOpen: (event: SyntheticEvent) => {
-        event.stopPropagation();
-        setIsOpen(true);
-      },
-      // FIXME/TODO: not called in practice
-      onClose: () => {
-        setIsOpen(false);
-      },
-    };
-  }, [setIsOpen]);
+  const handleOpen = useCallback(
+    (event: SyntheticEvent) => {
+      event.stopPropagation();
+      setIsOpen(true);
+    },
+    [setIsOpen]
+  );
 
-  /**
-   * Calculate the providerLinks whenever the user mouses over the container. We use an incrementor,
-   * instead of a simple boolean to ensure that the links are recalculated
-   */
-  const providerLinks = useMemo(() => {
-    const registeredTestProviders = api.getElements(Addon_TypesEnum.experimental_TEST_PROVIDER);
+  // Never show the ContextMenu in production
+  if (globalThis.CONFIG_TYPE !== 'DEVELOPMENT') {
+    return null;
+  }
 
-    if (hoverCount) {
-      return generateTestProviderLinks(registeredTestProviders, context);
-    }
-    return [];
-  }, [api, context, hoverCount]);
+  const shouldRender = !context.refId && topLinks.length > 0;
+  if (!shouldRender) {
+    return null;
+  }
 
-  const theme = useTheme();
-
-  // Compute status items to go in the ContextMenu.
-  const statusLinks = useMemo<Link[]>(() => {
-    if (context.type !== 'story' && context.type !== 'docs') {
-      return [];
-    }
-
-    return Object.entries(allStatuses?.[context.id] || {})
-      .filter(([, status]) => status.sidebarContextMenu !== false)
-      .map(([typeId, status]) => ({
-        id: typeId,
-        title: status.title,
-        description: status.description,
-        'aria-label': `${status.title}: ${StatusLabelsInContextMenu[status.value]}.`,
-        icon: getStatus(theme, status.value).icon,
-        onClick: () => {
-          onSelectStoryId(context.id);
-          // FIXME/TODO: use another import type as this is deprecated.
-          internal_fullStatusStore.selectStatuses([status]);
-        },
-      }));
-  }, [context.id, context.type, onSelectStoryId, allStatuses, theme]);
-
-
-  const xx = allStatuses?.[context.id]?.["storybook/change-detection"]?.sidebarContextMenu
-  const yy = allStatuses?.[context.id]?.["storybook/test"]?.sidebarContextMenu
-  if (xx || yy){  console.log('ContextMenu statusLinks', statusLinks, allStatuses?.[context.id]);} 
-
-  const shouldRender =
-    !context.refId && (providerLinks.length > 0 || topLinks.length > 0 || statusLinks.length > 0);
-
-  return useMemo(() => {
-    // Never show the SidebarContextMenu in production
-    if (globalThis.CONFIG_TYPE !== 'DEVELOPMENT') {
-      return empty;
-    }
-
-    const button = (
+  return (
+    <PopoverProvider
+      ariaLabel="Context menu"
+      placement="bottom-end"
+      defaultVisible={false}
+      visible={isOpen}
+      onVisibleChange={setIsOpen}
+      popover={<LiveContextMenu context={context} links={topLinks} />}
+      hasChrome={true}
+      padding={0}
+    >
       <ContextMenuButton
-        tabIndex={-1}
         data-displayed={isOpen ? 'on' : 'off'}
         data-testid="context-menu"
         ariaLabel="Open context menu"
         type="button"
-        onClick={handlers.onOpen}
+        onClick={handleOpen}
+        shortcut={api.getShortcutKeys().contextMenu}
+        tooltipPlacement="bottom-end"
       >
         <EllipsisIcon />
       </ContextMenuButton>
-    );
-
-    return {
-      onMouseEnter: handlers.onMouseEnter,
-      node: shouldRender ? (
-        <PopoverProvider
-          ariaLabel="Context menu"
-          placement="bottom-end"
-          defaultVisible={false}
-          visible={isOpen}
-          onVisibleChange={setIsOpen}
-          popover={<LiveContextMenu context={context} links={[...topLinks, ...statusLinks]} />}
-          hasChrome={true}
-          padding={0}
-        >
-          {button}
-        </PopoverProvider>
-      ) : null,
-    };
-  }, [
-    context,
-    handlers,
-    isOpen,
-    setIsOpen,
-    shouldRender,
-    statusLinks,
-    topLinks,
-  ]);
-};
+    </PopoverProvider>
+  );
+});
+ContextMenu.displayName = 'ContextMenu';
 
 /**
  * This component re-subscribes to storybook's core state, hence the Live prefix. It is used to

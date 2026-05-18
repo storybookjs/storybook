@@ -22,7 +22,7 @@ export async function getCsfFactoryTemplateForNewStoryFile(data: CsfFactoryTempl
   return dedent`
   ${previewImport}
 
-  ${importStatement};
+  ${importStatement}
 
   const meta = preview.meta({
     component: ${importName},

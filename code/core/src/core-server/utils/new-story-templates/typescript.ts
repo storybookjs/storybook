@@ -22,7 +22,7 @@ export async function getTypeScriptTemplateForNewStoryFile(data: TypeScriptTempl
   return dedent`
   import type { Meta, StoryObj } from '${data.frameworkPackage}';
 
-  ${importStatement};
+  ${importStatement}
 
   const meta = {
     component: ${importName},

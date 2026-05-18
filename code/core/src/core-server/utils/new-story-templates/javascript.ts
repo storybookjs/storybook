@@ -17,7 +17,7 @@ export async function getJavaScriptTemplateForNewStoryFile(data: JavaScriptTempl
     : `export const ${data.exportedStoryName} = {};`;
 
   return dedent`
-  ${importStatement};
+  ${importStatement}
 
   const meta = {
     component: ${importName},

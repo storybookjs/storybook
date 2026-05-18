@@ -8,17 +8,22 @@ export interface BaseTemplateData {
   args?: Record<string, any>;
 }
 
-export async function resolveComponentImport(data: {
-  basenameWithoutExtension: string;
-  componentExportName: string;
-  componentIsDefaultExport: boolean;
-}): Promise<{ importName: string; importStatement: string }> {
+export async function resolveComponentImport(
+  data: {
+    basenameWithoutExtension: string;
+    componentExportName: string;
+    componentIsDefaultExport: boolean;
+  },
+  options?: { trailingSemicolon?: boolean }
+): Promise<{ importName: string; importStatement: string }> {
+  const trailingSemicolon = options?.trailingSemicolon ?? true;
+
   const importName = data.componentIsDefaultExport
     ? await getComponentVariableName(data.basenameWithoutExtension)
     : data.componentExportName;
   const importStatement = data.componentIsDefaultExport
-    ? `import ${importName} from './${data.basenameWithoutExtension}'`
-    : `import { ${importName} } from './${data.basenameWithoutExtension}'`;
+    ? `import ${importName} from './${data.basenameWithoutExtension}'${trailingSemicolon ? ';' : ''}`
+    : `import { ${importName} } from './${data.basenameWithoutExtension}'${trailingSemicolon ? ';' : ''}`;
 
   return { importName, importStatement };
 }

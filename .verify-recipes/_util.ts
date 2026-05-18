@@ -157,3 +157,32 @@ export function filterPageErrors(pageErrors: readonly string[]): string[] {
 function isLowSignalPageError(text: string): boolean {
   return /SecurityError:\s*Failed to read the 'sessionStorage' property from 'Window'/.test(text);
 }
+
+/**
+ * Drop pre-existing environmental console errors that the harness's `srt`
+ * egress jail produces through no fault of the PR. **Mandatory** for any
+ * console-error assertion — never assert a raw `consoleErrors` array empty:
+ *
+ *   expect(filterConsoleErrors(consoleErrors)).toEqual([]);
+ *
+ * Known low-signal entries:
+ *  - `Failed to load resource: net::ERR_INTERNET_DISCONNECTED` (and other
+ *    `net::ERR_*` / blocked-by-client) — the egress jail denies any domain
+ *    not on the srt allowlist, so internal-ui's external probes (telemetry,
+ *    composed refs, fonts, analytics) always log a console error in CI.
+ *    These are environmental, not a regression in the PR under test.
+ *  - the same cross-origin `sessionStorage` `SecurityError` as pageerror.
+ */
+export function filterConsoleErrors(consoleErrors: readonly string[]): string[] {
+  return consoleErrors.filter((entry) => !isLowSignalConsoleError(entry));
+}
+
+function isLowSignalConsoleError(text: string): boolean {
+  return (
+    /Failed to load resource:\s*net::ERR_/.test(text) ||
+    /net::ERR_(INTERNET_DISCONNECTED|NAME_NOT_RESOLVED|BLOCKED_BY_CLIENT|CONNECTION_REFUSED|FAILED)/.test(
+      text
+    ) ||
+    isLowSignalPageError(text)
+  );
+}

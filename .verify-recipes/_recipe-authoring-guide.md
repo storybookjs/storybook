@@ -102,6 +102,25 @@ composed-ref auth probe touches chromatic-hosted iframes. The runner's
 runner's verdict logic** and prevents a "regression" verdict driven entirely
 by environmental noise. Never assert on the raw `pageErrors` array.
 
+### Filtering known low-signal consoleErrors (MANDATORY)
+
+The same applies to `consoleErrors` — wrap in `filterConsoleErrors(...)`
+from `./_util.ts`:
+
+```ts
+expect(filterConsoleErrors(consoleErrors)).toEqual([]);
+```
+
+The harness runs the preview inside an **`srt` egress jail** that denies
+every domain not on the allowlist. internal-ui's external probes
+(telemetry, composed refs, fonts, analytics) therefore **always** log
+`Failed to load resource: net::ERR_INTERNET_DISCONNECTED` (and other
+`net::ERR_*`) in CI — environmental, not a PR regression.
+`expect(consoleErrors).toEqual([])` on the **raw** array is a guaranteed
+false regression (eval #36). **Never assert the raw `consoleErrors`
+array — always `filterConsoleErrors(consoleErrors)`.** Import it from
+`./_util.ts` alongside `filterPageErrors`.
+
 ---
 
 ## 4. `RecipePage` API (the only helper)

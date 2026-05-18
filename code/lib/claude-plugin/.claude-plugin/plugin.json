@@ -1,0 +1,9 @@
+{
+	"name": "storybook",
+	"description": "Use Storybook MCP from Claude Code.",
+	"author": {
+		"name": "Storybook Core Team"
+	},
+	"homepage": "https://github.com/storybookjs/mcp/tree/main/packages/claude-plugin",
+	"license": "MIT"
+}

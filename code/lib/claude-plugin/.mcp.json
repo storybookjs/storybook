@@ -1,0 +1,8 @@
+{
+	"mcpServers": {
+		"storybook": {
+			"command": "npx",
+			"args": ["-y", "@storybook/mcp-proxy"]
+		}
+	}
+}

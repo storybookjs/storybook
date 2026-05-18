@@ -1,0 +1,29 @@
+{
+	"name": "@storybook/claude-code-plugin",
+	"version": "0.0.0",
+	"description": "Claude Code plugin for Storybook MCP workflows",
+	"keywords": [
+		"ai",
+		"claude-code",
+		"mcp",
+		"storybook"
+	],
+	"homepage": "https://github.com/storybookjs/mcp/tree/main/packages/claude-plugin#readme",
+	"license": "MIT",
+	"author": "Storybook Core Team",
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/storybookjs/mcp.git",
+		"directory": "packages/claude-plugin"
+	},
+	"files": [
+		".claude-plugin",
+		".mcp.json",
+		"skills",
+		"README.md"
+	],
+	"type": "module",
+	"publishConfig": {
+		"access": "public"
+	}
+}

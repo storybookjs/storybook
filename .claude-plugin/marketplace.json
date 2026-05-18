@@ -1,0 +1,17 @@
+{
+	"name": "storybook",
+	"owner": {
+		"name": "Storybook"
+	},
+	"metadata": {
+		"description": "Storybook plugins for Claude Code."
+	},
+	"plugins": [
+		{
+			"name": "storybook",
+			"description": "Use Storybook MCP from Claude Code.",
+			"source": "./packages/claude-plugin",
+			"homepage": "https://github.com/storybookjs/mcp/tree/main/packages/claude-plugin"
+		}
+	]
+}

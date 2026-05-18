@@ -1,6 +1,6 @@
 # Storybook Claude Code Plugin
 
-Claude Code plugin for Storybook MCP workflows.
+Build, preview, and test UI components from Claude Code.
 
 This package installs Storybook-specific skills and configures Claude Code to start the Storybook MCP proxy. The proxy discovers running Storybook projects and connects Claude Code to the MCP server exposed by `@storybook/addon-mcp`.
 

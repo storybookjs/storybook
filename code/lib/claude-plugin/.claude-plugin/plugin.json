@@ -1,6 +1,6 @@
 {
 	"name": "storybook",
-	"description": "Use Storybook MCP from Claude Code.",
+	"description": "Build, preview, and test UI components.",
 	"author": {
 		"name": "Storybook Core Team"
 	},

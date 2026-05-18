@@ -9,7 +9,7 @@
 	"plugins": [
 		{
 			"name": "storybook",
-			"description": "Use Storybook MCP from Claude Code.",
+			"description": "Build, preview, and test UI components.",
 			"source": "./packages/claude-plugin",
 			"homepage": "https://github.com/storybookjs/mcp/tree/main/packages/claude-plugin"
 		}

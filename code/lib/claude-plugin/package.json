@@ -1,7 +1,7 @@
 {
 	"name": "@storybook/claude-code-plugin",
 	"version": "0.0.0",
-	"description": "Claude Code plugin for Storybook MCP workflows",
+	"description": "Build, preview, and test UI components",
 	"keywords": [
 		"ai",
 		"claude-code",

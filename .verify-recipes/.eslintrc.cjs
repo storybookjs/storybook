@@ -12,6 +12,16 @@ module.exports = {
       { argsIgnorePattern: 'none', varsIgnorePattern: 'none' },
     ],
 
+    // Behavioral recipes must reach untyped runtime globals
+    // (`__STORYBOOK_ADDONS_MANAGER`, `__STORYBOOK_ADDONS_CHANNEL__`, the
+    // manager-api singleton) inside `page.evaluate()` — `as any` there is
+    // correct and unavoidable. `@typescript-eslint/recommended` makes
+    // `no-explicit-any` an error, which produced no-verdict failures on
+    // valid manager-api recipes (eval #31). This is a code-quality rule,
+    // NOT a security control — deny-regex + no-restricted-{globals,
+    // imports,syntax} remain the load-bearing gates. Off here.
+    '@typescript-eslint/no-explicit-any': 'off',
+
     // Security: forbid dynamic code execution
     'no-eval': 'error',
     'no-new-func': 'error',

@@ -532,6 +532,12 @@ the change has **no reachable UI path at all**, fall back to
 assertion — a weak signal beats a deny-regex no-verdict. Do **not** fabricate
 a module import to force coverage.
 
+`as any` is allowed and expected when reaching runtime globals inside
+`page.evaluate()` (`(window as any).__STORYBOOK_ADDONS_MANAGER`, the
+manager-api singleton, `__STORYBOOK_ADDONS_CHANNEL__`). The recipe ESLint
+config disables `no-explicit-any` — do not waste retries trying to type these;
+just cast and assert the observable effect.
+
 ### Worked example — aria-label added to a toolbar button (behavioral)
 
 ```ts

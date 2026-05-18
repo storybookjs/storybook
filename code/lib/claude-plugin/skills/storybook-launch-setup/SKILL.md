@@ -1,5 +1,5 @@
 ---
-name: launch-setup
+name: storybook-launch-setup
 description: Create or repair Claude Desktop launch configuration for starting Storybook from Claude.
 ---
 

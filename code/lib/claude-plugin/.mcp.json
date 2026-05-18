@@ -2,7 +2,7 @@
 	"mcpServers": {
 		"storybook": {
 			"command": "npx",
-			"args": ["-y", "@storybook/mcp-proxy"]
+			"args": ["-y", "@storybook/mcp-proxy@latest"]
 		}
 	}
 }

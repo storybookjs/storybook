@@ -52,9 +52,21 @@ export type Loader<TArgs = StrictArgs> = LoaderFunction<AngularRenderer, TArgs>;
 export type StoryContext<TArgs = StrictArgs> = GenericStoryContext<AngularRenderer, TArgs>;
 export type Preview = ProjectAnnotations<AngularRenderer>;
 
-/** Utility type that transforms InputSignal and EventEmitter types */
+/**
+ * Utility type that transforms InputSignal, ModelSignal, OutputEmitterRef and
+ * EventEmitter types.
+ *
+ * Composition is pinned (do NOT reorder): `TransformModelSignalType` is the
+ * INNERMOST wrapper so that (a) the synthesized `${K}Change` key is created
+ * before the outer transforms run and passes through them unchanged (it is
+ * `(e: E) => void`, which matches none of the Input/Output/Event extends
+ * clauses), and (b) since `ModelSignal<T> extends InputSignal<T>`, the model's
+ * value field — after `TransformModelSignalType` maps it to `E` — is
+ * idempotently re-collapsed by the outer `TransformInputSignalType` to the same
+ * `E` (no double-transform divergence).
+ */
 export type TransformComponentType<T> = TransformInputSignalType<
-  TransformOutputSignalType<TransformEventType<T>>
+  TransformOutputSignalType<TransformEventType<TransformModelSignalType<T>>>
 >;
 
 // @ts-ignore Angular < 17.2 doesn't export InputSignal
@@ -63,15 +75,19 @@ type AngularInputSignal<T> = AngularCore.InputSignal<T>;
 type AngularInputSignalWithTransform<T, U> = AngularCore.InputSignalWithTransform<T, U>;
 // @ts-ignore Angular < 17.3 doesn't export AngularOutputEmitterRef
 type AngularOutputEmitterRef<T> = AngularCore.OutputEmitterRef<T>;
+// @ts-ignore Angular < 17.2 doesn't export ModelSignal
+type AngularModelSignal<T> = AngularCore.ModelSignal<T>;
 
 type AngularHasInputSignal = typeof AngularCore extends { input: infer U } ? true : false;
 type AngularHasOutputSignal = typeof AngularCore extends { output: infer U } ? true : false;
+type AngularHasModelSignal = typeof AngularCore extends { model: infer U } ? true : false;
 
 type InputSignal<T> = AngularHasInputSignal extends true ? AngularInputSignal<T> : never;
 type InputSignalWithTransform<T, U> = AngularHasInputSignal extends true
   ? AngularInputSignalWithTransform<T, U>
   : never;
 type OutputEmitterRef<T> = AngularHasOutputSignal extends true ? AngularOutputEmitterRef<T> : never;
+type ModelSignal<T> = AngularHasModelSignal extends true ? AngularModelSignal<T> : never;
 
 type TransformInputSignalType<T> = {
   [K in keyof T]: T[K] extends InputSignal<infer E>
@@ -83,6 +99,31 @@ type TransformInputSignalType<T> = {
 
 type TransformOutputSignalType<T> = {
   [K in keyof T]: T[K] extends OutputEmitterRef<infer E> ? (e: E) => void : T[K];
+};
+
+/**
+ * Angular `model()` generates a binding pair: an input `x: T` plus a
+ * compiler-synthesized output `xChange: (e: T) => void`. The `xChange` member is
+ * NOT a real class member, so it can never be discovered by iterating
+ * `keyof T`; it must be synthesized here.
+ *
+ * This type maps every `ModelSignal<E>` field `K` to its value type `E`, and
+ * additionally synthesizes an intersection member keyed `` `${K}Change` `` typed
+ * `(e: E) => void`.
+ *
+ * Known limitation (documented for the AC-X3 changelog): aliased
+ * `model(prop, { alias: 'a' })` produces `aChange` at runtime, but the type
+ * layer can only synthesize `${propName}Change` (`propChange`) because
+ * TypeScript cannot observe the runtime alias. Runtime detection (Layer C, via
+ * the resolved binding name on `ɵcmp`) still handles aliasing correctly.
+ * `model.required()` has the same shape as `model()` and is fully covered.
+ */
+type TransformModelSignalType<T> = {
+  [K in keyof T]: T[K] extends ModelSignal<infer E> ? E : T[K];
+} & {
+  [K in keyof T as T[K] extends ModelSignal<infer _E>
+    ? `${K & string}Change`
+    : never]: T[K] extends ModelSignal<infer E> ? (e: E) => void : never;
 };
 
 type TransformEventType<T> = {

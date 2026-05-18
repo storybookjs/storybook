@@ -57,7 +57,16 @@ export class RecipePage {
   }
 
   previewRoot(): Locator {
-    return this.previewIframe().locator('#storybook-root:visible, #storybook-docs:visible');
+    // Select whichever preview container actually has rendered children.
+    // `:has(> *)` (not `:visible`) is deliberate: `layout: 'fullscreen'`
+    // and the internal-ui side-by-side / stacked theme decorator wrap the
+    // story so `#storybook-root` can have a zero-size (Playwright-"not
+    // visible") box even though the story rendered fine. `:visible` then
+    // matched nothing and `waitForStoryLoaded` timed out on a story that
+    // had in fact loaded. `:has(> *)` keeps the story-vs-docs
+    // disambiguation (the empty container is excluded) without the
+    // bounding-box requirement.
+    return this.previewIframe().locator('#storybook-root:has(> *), #storybook-docs:has(> *)');
   }
 
   async waitForStoryLoaded(): Promise<void> {

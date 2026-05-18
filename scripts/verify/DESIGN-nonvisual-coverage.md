@@ -170,3 +170,51 @@ touched the diff, killing the "passes by navigating elsewhere" false-verify.
 Same as prior waves: fork PR label-toggle on the existing eval set #22–#37.
 Success = the 5 non-visual misses (#27/#28/#29/#31/#32) flip to correct
 verdicts with no regression in the 7 already-passing visual PRs.
+
+## Eval outcome — 2026-05-18 (fork next 8900f3c → 8870a68, 7 commits)
+
+Critical precondition fixed first: the eval `try-pr-*` branches were polluted
+(base ≠ harness baseline → every diff = harness footprint + version skew, the
+real change buried). Rebuilt all 16 = fork `next` + only the real PR
+commit(s); fork `next` advanced so `pull_request_target` runs the new code.
+
+7 fixes shipped + validated (each via targeted fork re-trigger):
+
+1. `8900f3c` @verify-mode axis + behavioral router + vision-skip gate +
+   `.verify-scratch` RecipePage API — #32/#37 verified behaviorally.
+2. `651659d` deny-regex hits retryable (mirror lint path) + §12.5 HARD GATE
+   "never import()/monkeypatch the changed module" — #36/#31 self-corrected
+   past deny-regex.
+3. `4a95771` `@typescript-eslint/no-explicit-any: off` (non-security; was
+   no-verdict cause for manager-api recipes) + §12.5 `as any` note —
+   #31 no-verdict → verdict.
+4. `e356453` §12 triage: additive-only-API-with-no-consumer (the #1
+   false-regression cause) + Brand custom-HTML (`image:null` path) +
+   ActionBar docs-vs-component scope — #28/#29 regression → **verified**.
+5. `9a72d34` `previewRoot()` `:has(> *)` not `:visible` (fullscreen /
+   side-by-side stories have a zero-box root) + unit-test TMPDIR.
+6. `62a0e83` srt sandbox tmp comes from `CLAUDE_CODE_TMPDIR` (not TMPDIR);
+   `env -i` stripped it so srt fell back to a never-created `/tmp/claude`
+   → Yarn `mktempPromise` ENOENT → false "no JSON report". Pass it through.
+   + Brand rule bans `expect(#storybook-root).toBeVisible()`.
+7. `8870a68` `filterConsoleErrors()` for srt-egress `net::ERR_*` noise +
+   MANDATORY guide rule (mirror filterPageErrors).
+
+Scorecard (original 5 non-visual misses): **#27, #28, #29, #32 → verified**
+(4/5 flipped). #31 Playwright recipe now passes; residual regression is the
+PR's own `Brand.test.tsx` failing 1/N — the three-signal verdict correctly
+gating, real-vs-flake is a per-PR question, not a harness defect.
+
+#36 (try-pr-34649, a11yRunner) residual: a pure-logic, no-UI-surface change
+whose PR unit test genuinely fails 1/N → regression is the **correct**
+verdict. Recipe-author keeps hand-rolling weak Playwright instead of the
+§12.5 visual-smoke fallback for no-UI-path changes. Not pursued further:
+fighting a correct regression. Future: strengthen §12.5 routing so
+no-UI-surface changes deterministically pick visual-smoke, and/or wire
+`pure-fn` mode (still unwired — emits `skipped`).
+
+All harness mechanism / infra root causes are resolved. Remaining gaps are
+recipe-author *quality* (selector/strategy choice), not the
+mode/deny/lint/tmp/console mechanisms. Next decisive measurement: a full
+16-PR wave with all 7 fixes for an aggregate verified/regression number vs
+the polluted-baseline.

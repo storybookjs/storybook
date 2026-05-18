@@ -514,6 +514,16 @@ HARD prohibitions:
   text never appears in the DOM).
 - Do NOT inject a `<script>` payload and assert it did not execute — the
   unit test owns that; the recipe is a render/boot smoke of the real story.
+- Do NOT `expect(previewRoot()).toBeVisible()` or
+  `expect('#storybook-root').toBeVisible()`. `Sidebar/Heading` has
+  `parameters.layout:'fullscreen'` and the internal-ui side-by-side theme
+  decorator, so `#storybook-root` has a **zero-size box** (Playwright
+  "hidden") even though the story rendered — a guaranteed false regression.
+  Assert a **child** instead: `await expect(previewRoot().locator('a,
+  div').filter({ hasText: /My title/ }).first()).toBeAttached()` (the
+  `image:null` Brand renders the title into a `LogoLink`/`div` via
+  innerHTML). Use `toBeAttached()` / content assertions, never
+  `toBeVisible()` on the root for fullscreen/side-by-side stories.
 
 ### Triage rule for sidebar item interactions (HARD GATE)
 

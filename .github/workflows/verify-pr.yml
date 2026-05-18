@@ -460,11 +460,15 @@ jobs:
           mkdir -p "$PR_HEAD_DIR/.verify-output"
           REPORT="$PR_HEAD_DIR/.verify-output/unit-tests-report.json"
           VITEST_LOG="$PR_HEAD_DIR/.verify-output/vitest.log"
-          # `env -i` strips TMPDIR, so Yarn's run-temp realpaths a
-          # nonexistent srt path (`lstat '/tmp/claude'` ENOENT → yarn aborts
-          # before vitest starts → false "no JSON report" regression, e.g.
-          # eval #36). Pin TMPDIR to an existing allowWrite dir, same reason
-          # REPORT/VITEST_LOG live under $PR_HEAD_DIR/.verify-output.
+          # `env -i` strips CLAUDE_CODE_TMPDIR. srt derives its sandbox tmp
+          # from that var; the main recipe run inherits it via $GITHUB_ENV
+          # ($SANDBOX_TMPDIR), but here env -i drops it so srt falls back to
+          # its hardcoded default `/tmp/claude`, which is never created →
+          # Yarn's mktempPromise realpaths it (`lstat '/tmp/claude'` ENOENT)
+          # and aborts before vitest starts → false "no JSON report"
+          # regression (eval #36). Pass CLAUDE_CODE_TMPDIR (+ TMPDIR) to an
+          # existing allowWrite dir, same reason REPORT/VITEST_LOG live under
+          # $PR_HEAD_DIR/.verify-output.
           VITEST_TMPDIR="$PR_HEAD_DIR/.verify-output/vitest-tmp"
           mkdir -p "$VITEST_TMPDIR"
 
@@ -474,6 +478,7 @@ jobs:
             PATH="$PATH" \
             RUNNER_TEMP="$RUNNER_TEMP" \
             TMPDIR="$VITEST_TMPDIR" \
+            CLAUDE_CODE_TMPDIR="$VITEST_TMPDIR" \
             NX_NO_CLOUD=true \
             PR_HEAD_DIR="$PR_HEAD_DIR" \
             srt --settings "$SRT_SETTINGS" \

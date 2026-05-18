@@ -18,9 +18,11 @@ After editing plugin files in a running Claude Code session, reload plugins:
 /reload-plugins
 ```
 
-## Local marketplace testing
+## Testing
 
 The repository includes a Claude marketplace descriptor at `.claude-plugin/marketplace.json`.
+
+Install the plugin from this checkout at user scope:
 
 ```sh
 pnpm claude-plugin:install
@@ -28,16 +30,44 @@ pnpm claude-plugin:install
 
 This validates the marketplace and plugin manifests, adds this repository as the `storybook` Claude marketplace, and installs `storybook@storybook` at user scope so it is available in every project.
 
+Verify the installed plugin:
+
+```sh
+pnpm claude-plugin:list
+```
+
+The output should include `storybook@storybook` with:
+
+- `"scope": "user"`
+- `"enabled": true`
+- an MCP server named `storybook`
+
+Check that Claude Code picks up the plugin-provided MCP server:
+
+```sh
+claude mcp list
+```
+
+The output should include:
+
+```text
+plugin:storybook:storybook: npx -y @storybook/mcp-proxy
+```
+
+Until `@storybook/mcp-proxy` is published, this server is expected to fail to connect. The important signal for this package is that `plugin:storybook:storybook` appears in the MCP list.
+
+To test in Claude Desktop, restart Claude Desktop after installing the plugin, open a new Code session in any project, and check that the Storybook skills are available from the `+` menu.
+
 After changing plugin files, update the installed plugin cache:
 
 ```sh
 pnpm claude-plugin:update
 ```
 
-Inspect the installed plugin:
+Remove the user-scoped plugin after testing:
 
 ```sh
-pnpm claude-plugin:list
+claude plugin uninstall storybook@storybook --scope user
 ```
 
 ## Distribution

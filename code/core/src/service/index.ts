@@ -1,0 +1,68 @@
+/**
+ * Open Service Architecture — public entry point.
+ *
+ * Conceptual overview (see `./types.ts` for the long version):
+ *   - `defineService({ state, queries, commands, load })` declares a service.
+ *   - `defineCommand<TInput>()` declares an abstract command — implementation provided at registration.
+ *   - `defineCommand(handler)` wraps a concrete command (or just put the function in the commands map).
+ *   - `defineLoader(handler, enumerateInputs, options)` declares a loader (statically buildable).
+ *   - `registerService(def, { commands: { … } })` activates a service. Provides any abstract command bodies.
+ *   - `getService(defOrId)` looks up an already-registered service.
+ *   - `useServiceQuery(store, name, input?)` subscribes a React component to a query.
+ *
+ * State is private to the service. Read it via queries; change it via commands.
+ */
+
+export {
+  STATE_ARTIFACT_NAME,
+  buildServiceArtifacts,
+  buildServiceArtifactsFromRuntime,
+} from './build-artifacts.ts';
+export { defineCommand, defineLoader, defineService, isAbstractCommand } from './define-service.ts';
+export {
+  __resetServiceRegistry,
+  getService,
+  getServiceRuntime,
+  registerService,
+} from './register-service.ts';
+export { ServiceRuntime, type Patch } from './service-runtime.ts';
+export {
+  clearStaticTransport,
+  createBrowserStaticTransport,
+  getStaticTransport,
+  setStaticTransport,
+} from './static-transport.ts';
+export { useServiceQuery } from './use-service-query.ts';
+
+export type {
+  AbstractCommand,
+  BuildCtx,
+  CallableCommands,
+  CommandEntry,
+  CommandHandler,
+  CommandOverrides,
+  CommandsMap,
+  InputOfCommand,
+  InputOfLoader,
+  InputOfQuery,
+  LoaderDefinition,
+  LoaderEnumerate,
+  LoaderHandler,
+  LoaderOptions,
+  LoaderPath,
+  LoadersMap,
+  OutputOfCommand,
+  OutputOfQuery,
+  QueriesMap,
+  QueryHandler,
+  SelfHandle,
+  ServiceCtx,
+  ServiceDefinition,
+  ServiceRegistration,
+  ServiceStaticTransport,
+  ServiceStore,
+  StateMutator,
+  StatePatch,
+  SubscribableQueries,
+  SubscribableQuery,
+} from './types.ts';

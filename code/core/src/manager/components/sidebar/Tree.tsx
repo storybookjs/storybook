@@ -36,6 +36,11 @@ const StyledAriaTree = styled(AriaTree)(() => ({
   '&:hover, &:has(:focus-visible)': {
     '--trace-opacity': 1,
   },
+
+  // Add spacing between top-level expanded subtree and its next sibling.
+  '*[data-level]:not([data-level="1"]) + *[data-level="1"]': {
+    marginTop: 14,
+  },
 }));
 
 const FocusTooltipNote = styled(TooltipNote)({
@@ -320,6 +325,21 @@ export const Tree = React.memo<TreeProps>(function Tree({
       }
     }
   }, [selectedStoryId]);
+
+  // Scroll to selected item on the first mount, exactly one time.
+  const [mountCounter, setMountCounter] = useState(0);
+  useEffect(() => setMountCounter(1), []);
+  useEffect(() => {
+    if (mountCounter === 1 && selectedStoryId && containerRef.current) {
+      const element = containerRef.current.querySelector(
+        `[data-item-id="${CSS.escape(selectedStoryId)}"]`
+      );
+      if (element) {
+        element.scrollIntoView({ block: 'center' });
+        setMountCounter(2);
+      }
+    }
+  }, [mountCounter, selectedStoryId]);
 
   // Memoize renderNode's returned closure so Collection receives a stable children prop
   // as long as the relevant inputs are stable.

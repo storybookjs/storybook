@@ -1,4 +1,4 @@
-import React, { useCallback, useContext, useMemo } from 'react';
+import React, { useCallback, useContext, useEffect, useMemo, useRef } from 'react';
 
 import type { StatusValue } from 'storybook/internal/types';
 
@@ -18,15 +18,10 @@ import type { Item } from './types.ts';
 import { StatusContext } from './StatusContext.tsx';
 import { CollapseIcon } from './CollapseIcon.tsx';
 
-// FIXME/TODO: Review with MA: shortcut styling in TooltipNote VS Figma
-// -> Make it look good everywhere
 // FIXME/TODO: Review with MA: check spacing between top level sections, possible inconsistency in Figma
 // -> Add spacing when the above subtree is expanded 14px / .5 item
 // -> Add even more spacing between refs and remove the divider 28px / 1 item
-// FIXME/TODO: prevent line wrapping on long items?
-// FIXME/TODO: dont let #storybook-explorer-menu be focused when there are no search results. It gets in the way of testing the tree
 // FIXME/TODO: we must find how to get PopoverProvider to autofocus the first menu item on menu open through RAC APIs.
-// FIXME/TODO: if contextmenu trigger visible, add right padding to the label to prevent overlap; or better yet swap absolute layout for one with negative margins
 // FIXME/TODO: ensure there is no weird behaviour with top-level stories / orphans
 // FIXME/TODO: fix ref stories not loading at all
 
@@ -237,10 +232,6 @@ function guardHasChildren(item: Item): item is Item & { children: string[] } {
   return 'children' in item && Array.isArray(item.children) && item.children.length > 0;
 }
 
-function guardHasContextMenu(contextMenu: React.ReactNode | null): contextMenu is React.ReactNode {
-  return contextMenu !== null;
-}
-
 const StatusLabelsInAriaLabel: Record<StatusValue, string> = {
   'status-value:success': 'Tests passing',
   'status-value:error': 'Tests failing',
@@ -257,6 +248,7 @@ export const TreeNode = React.memo<TreeNodeProps>(function TreeNode({
   refId,
   isAlongsideSelected,
   isExpanded,
+  isSelected,
   api,
   onSelectStoryId,
   isContextMenuOpen,
@@ -362,7 +354,7 @@ export const TreeNode = React.memo<TreeNodeProps>(function TreeNode({
     return <TypeIconWithSymbol item={item} />;
   }, [item, isBranch, isExpanded]);
 
-  const itemContent = (
+  return (
     <StyledTreeItem
       $level={item.depth}
       $textColor={statusTextColor}
@@ -403,6 +395,4 @@ export const TreeNode = React.memo<TreeNodeProps>(function TreeNode({
       {children}
     </StyledTreeItem>
   );
-
-  return itemContent;
 });

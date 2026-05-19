@@ -208,6 +208,7 @@ describe('runStoryTestsTool', () => {
 				],
 				a11yStatuses: [],
 				a11yReports: {},
+				reports: {},
 				unhandledErrors: [],
 			},
 		});
@@ -265,6 +266,7 @@ describe('runStoryTestsTool', () => {
 				],
 				a11yStatuses: [],
 				a11yReports: {},
+				reports: {},
 				unhandledErrors: [],
 			},
 		});
@@ -309,6 +311,7 @@ describe('runStoryTestsTool', () => {
 				],
 				a11yStatuses: [],
 				a11yReports: {},
+				reports: {},
 				unhandledErrors: [],
 			},
 		});
@@ -365,6 +368,7 @@ describe('runStoryTestsTool', () => {
 				],
 				a11yStatuses: [],
 				a11yReports: {},
+				reports: {},
 				unhandledErrors: [],
 			},
 		});
@@ -416,6 +420,7 @@ describe('runStoryTestsTool', () => {
 				],
 				a11yStatuses: [],
 				a11yReports: {},
+				reports: {},
 				unhandledErrors: [],
 			},
 		});
@@ -467,6 +472,7 @@ describe('runStoryTestsTool', () => {
 				],
 				a11yStatuses: [],
 				a11yReports: {},
+				reports: {},
 				unhandledErrors: [],
 			},
 		});
@@ -534,6 +540,7 @@ describe('runStoryTestsTool', () => {
 						},
 					],
 				},
+				reports: {},
 				unhandledErrors: [],
 			},
 		});
@@ -607,6 +614,7 @@ describe('runStoryTestsTool', () => {
 						},
 					],
 				},
+				reports: {},
 				unhandledErrors: [],
 			},
 		});
@@ -668,6 +676,7 @@ describe('runStoryTestsTool', () => {
 						},
 					],
 				},
+				reports: {},
 				unhandledErrors: [],
 			},
 		});
@@ -712,6 +721,7 @@ describe('runStoryTestsTool', () => {
 				componentTestStatuses: [],
 				a11yStatuses: [],
 				a11yReports: {},
+				reports: {},
 				unhandledErrors: [
 					{
 						name: 'ReferenceError',
@@ -764,6 +774,7 @@ describe('runStoryTestsTool', () => {
 				componentTestStatuses: [],
 				a11yStatuses: [],
 				a11yReports: {},
+				reports: {},
 				unhandledErrors: [
 					{
 						name: 'Error',
@@ -845,6 +856,7 @@ describe('runStoryTestsTool', () => {
 				],
 				a11yStatuses: [],
 				a11yReports: {},
+				reports: {},
 				unhandledErrors: [
 					{
 						name: 'SyntaxError',
@@ -977,6 +989,7 @@ describe('runStoryTestsTool', () => {
 				],
 				a11yStatuses: [],
 				a11yReports: {},
+				reports: {},
 				unhandledErrors: [],
 			},
 		});
@@ -1044,6 +1057,7 @@ describe('runStoryTestsTool', () => {
 							],
 							a11yStatuses: [],
 							a11yReports: {},
+							reports: {},
 							unhandledErrors: [],
 						},
 					};

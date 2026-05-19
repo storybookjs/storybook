@@ -147,16 +147,13 @@ export type Feature = keyof typeof shortcutLabels;
 
 type ConfiguredShortcut = { shortcut: API_KeyCollection; error: boolean; hardcoded?: boolean };
 
-// Shortcuts that cannot be configured
-const fixedShortcuts = ['escape'];
-
 // Shortcuts that cannot be changed by the user (imposed by third-party libraries).
 const hardcodedShortcuts = ['goToPreviousLandmark', 'goToNextLandmark'];
 function toShortcutState(
   shortcutKeys: ShortcutsScreenProps['shortcutKeys']
 ): Record<Feature, ConfiguredShortcut> {
   const state: Record<string, ConfiguredShortcut> = {};
-  for (const key of Object.keys(shortcutKeys).filter((k) => !fixedShortcuts.includes(k))) {
+  for (const key of Object.keys(shortcutKeys)) {
     state[key] = {
       shortcut: shortcutKeys[key as Feature],
       error: false,

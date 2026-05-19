@@ -11,7 +11,7 @@ import { styled, useTheme } from 'storybook/theming';
 import { getStatus } from '../../utils/status.tsx';
 import { type TreeEntry, createId } from '../../utils/tree.ts';
 import { useLayout } from '../layout/LayoutProvider.tsx';
-import { ContextMenu } from './ContextMenu.tsx';
+import { ContextMenu, hasContextMenu } from './ContextMenu.tsx';
 
 import { TypeIconWithSymbol } from './TypeIcon.tsx';
 import type { Item } from './types.ts';
@@ -282,17 +282,6 @@ export const TreeNode = React.memo<TreeNodeProps>(function TreeNode({
     [openContextMenu, closeContextMenu, item.id]
   );
 
-  const contextMenu = (
-    <ContextMenu
-      context={item}
-      isOpen={isContextMenuOpen}
-      setIsOpen={handleContextMenuOpenChange}
-      onSelectStoryId={onSelectStoryId}
-      api={api}
-      entryMethod={contextMenuEntryMethod}
-    />
-  );
-
   // Get all status icons for this node.
   const { changeStatus, changeStatusIcon, testStatus, testStatusIcon, statusTextColor } = useMemo<{
     changeStatus: StatusValue;
@@ -330,7 +319,7 @@ export const TreeNode = React.memo<TreeNodeProps>(function TreeNode({
   }, [groupDualStatus, item.id, theme]);
 
   const isBranch = guardHasChildren(item);
-  const hasContextMenu = guardHasContextMenu(contextMenu);
+  const renderContextMenu = useMemo(() => hasContextMenu(item), [item]);
   const shortcutKeys = api.getShortcutKeys();
 
   // Compute final aria-label including test status and keyboard shortcut discovery.
@@ -345,12 +334,12 @@ export const TreeNode = React.memo<TreeNodeProps>(function TreeNode({
       label += `. ${StatusLabelsInAriaLabel[changeStatus]}`;
     }
 
-    if (hasContextMenu) {
+    if (renderContextMenu) {
       const shortcut = shortcutToHumanString(shortcutKeys.contextMenu);
       label += `. Press ${shortcut} for more actions`;
     }
     return label;
-  }, [item, api, location, hasContextMenu, changeStatus, testStatus, shortcutKeys]);
+  }, [item, api, location, renderContextMenu, changeStatus, testStatus, shortcutKeys]);
 
   const prefixAction = useMemo(() => {
     if (item.type === 'root') {
@@ -387,7 +376,20 @@ export const TreeNode = React.memo<TreeNodeProps>(function TreeNode({
           <Traces level={item.depth} isAlongsideSelected={isAlongsideSelected} />
           {prefixAction}
           <StyledLabel>{item.renderLabel?.(item, api, { location }) || item.name}</StyledLabel>
-          {hasContextMenu && <MenuTriggerContainer>{contextMenu}</MenuTriggerContainer>}
+          {renderContextMenu && (
+            <MenuTriggerContainer>
+              {
+                <ContextMenu
+                  context={item}
+                  isOpen={isContextMenuOpen}
+                  setIsOpen={handleContextMenuOpenChange}
+                  onSelectStoryId={onSelectStoryId}
+                  api={api}
+                  entryMethod={contextMenuEntryMethod}
+                />
+              }
+            </MenuTriggerContainer>
+          )}
           {(changeStatusIcon || testStatusIcon) && (
             <StatusIconContainer role="status" aria-live="off" data-testid="tree-status-button">
               {changeStatusIcon}

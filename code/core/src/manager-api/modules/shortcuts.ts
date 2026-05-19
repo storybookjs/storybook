@@ -173,6 +173,12 @@ export const defaultShortcuts: API_Shortcuts = Object.freeze({
 
 const addonsShortcuts: API_AddonShortcuts = {};
 
+/**
+ * Storage for recently removed features that still exist in users' browser cache.
+ * Prevents runtime errors in console for those users.
+ */
+const removedFeatures: string[] = ['escape'];
+
 function shouldSkipShortcut(event: KeyboardEvent) {
   const target = event.target as Element;
   if (/input|textarea/i.test(target.tagName) || target.getAttribute('contenteditable') !== null) {
@@ -253,6 +259,9 @@ export const init: ModuleFn = ({ store, fullAPI, provider }) => {
         shortcutMatchesShortcut(shortcut!, shortcuts[feature])
       );
       if (matchedFeature) {
+        if (removedFeatures.includes(matchedFeature)) {
+          return;
+        }
         api.handleShortcutFeature(matchedFeature, event);
       }
       return matchedFeature;

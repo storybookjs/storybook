@@ -37,6 +37,23 @@ function getGoToLabel(context: API_HashEntry): string | null {
   return null;
 }
 
+export function hasContextMenu(context: API_HashEntry): boolean {
+  // Never show the ContextMenu in production.
+  if (globalThis.CONFIG_TYPE !== 'DEVELOPMENT') {
+    return false;
+  }
+
+  if (context.refId) {
+    return false;
+  }
+
+  return (
+    ('importPath' in context && Boolean(context.importPath)) ||
+    context.type === 'story' ||
+    context.type === 'docs'
+  );
+}
+
 export const ContextMenu: FC<{
   context: API_HashEntry;
   isOpen: boolean;

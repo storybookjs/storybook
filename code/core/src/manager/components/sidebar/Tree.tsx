@@ -19,11 +19,10 @@ import { styled } from 'storybook/theming';
 import { getGroupDualStatus } from '../../utils/status.tsx';
 import { useExpanded } from './useExpanded.ts';
 import { StatusContext } from './StatusContext.tsx';
+import { hasContextMenu } from './ContextMenu.tsx';
 
 // FIXME/TODO: Review with MA: should clicking on a story with children also navigate to it?
 // -> Add a "Story" item in the tree, or get a commitment from the team to remove .test
-// FIXME/TODO: Review with MA: tooltip performance when tooltip is per TreeNode
-// -> Carte blanche to adjust the UI to have a single f without focus tracking
 // FIXME/TODO: implement sticky breadcrumbs
 // FIXME/TODO: Tree is no longer showing the section animation on F6 after an item is focused
 
@@ -113,6 +112,10 @@ export const Tree = React.memo<TreeProps>(function Tree({
 
     const shortcutKeys = api.getShortcutKeys();
     if (!shortcutKeys?.contextMenu) {
+      return null;
+    }
+
+    if (!hasContextMenu(item)) {
       return null;
     }
 
@@ -245,7 +248,7 @@ export const Tree = React.memo<TreeProps>(function Tree({
     };
   }, [api, openContextMenu]);
 
-  // Track focused item and focus-visible state via one MutationObserver, batched with rAF.
+  // Track focused item via one MutationObserver, batched with rAF.
   useEffect(() => {
     const container = containerRef.current;
     if (!container) {

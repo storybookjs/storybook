@@ -1,6 +1,6 @@
 # Storybook Codex Plugin
 
-Private workspace package for the Storybook Codex plugin. It bundles Storybook MCP configuration with setup, init, and upgrade skills for UI component workflows.
+Private workspace package for the Storybook Codex plugin. It bundles Storybook setup, init, and upgrade skills with MCP configuration for UI component workflows.
 
 This package is intentionally shaped like a Codex plugin while living under `packages/` so it can be tested from this repository and later referenced as a Git subdirectory. Codex does not install plugins from npm directly; it discovers plugin folders through a marketplace catalog. The repo-local marketplace at `../../.agents/plugins/marketplace.json` points at this package.
 
@@ -27,7 +27,7 @@ pnpm codex-plugin:marketplace:remove
 pnpm codex-plugin:marketplace:add
 ```
 
-The plugin currently points at `npx -y @storybook/mcp-proxy@latest`. Until that package is published, plugin installation, metadata, icon, MCP server configuration, and skills can be tested in Codex, but the MCP runtime will not fully connect.
+The plugin points at `npx -y @storybook/mcp-proxy@latest`. In this milestone, that package is a minimal placeholder MCP server that responds to initialization and returns an empty tool list. This lets plugin installation, metadata, icon, MCP server configuration, and skills be tested before the real proxy implementation exists.
 
 To test from a Git branch while the plugin still lives under `packages/`, add the repo as a Git marketplace and sparse-checkout both the marketplace catalog and plugin package:
 
@@ -84,6 +84,6 @@ The config should include a `[marketplaces.storybook]` entry whose `source` poin
 
 ## Included Skills
 
-- `storybook-mcp-setup`: Set up and use Storybook MCP in an existing project.
+- `storybook-mcp-setup`: Set up Storybook MCP readiness in an existing project.
 - `storybook-init`: Add Storybook to a project that does not have it yet.
 - `storybook-upgrade`: Upgrade older Storybook projects and repair MCP readiness issues.

@@ -36,7 +36,7 @@ npx storybook add @storybook/addon-mcp
 npx storybook@latest doctor
 ```
 
-8. Start Storybook, open it in Codex's in-app browser, and retry the Storybook MCP proxy tool with the exact `cwd`.
+8. Start Storybook and open it in Codex's in-app browser. When the real proxy is available, retry the Storybook MCP proxy tool with the exact `cwd`.
 
 ## Guardrails
 

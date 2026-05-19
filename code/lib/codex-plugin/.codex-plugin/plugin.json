@@ -1,7 +1,7 @@
 {
 	"name": "storybook",
 	"version": "0.0.0",
-	"description": "Build, preview, and test UI components with Storybook MCP tools and Codex skills.",
+	"description": "Build, preview, and test UI components with Storybook Codex skills.",
 	"author": {
 		"name": "Storybook Core Team",
 		"url": "https://storybook.js.org/"
@@ -15,7 +15,7 @@
 	"interface": {
 		"displayName": "Storybook",
 		"shortDescription": "Build, preview, and test UI components",
-		"longDescription": "Give Codex Storybook MCP tools plus setup, init, and upgrade skills for component development. Use it to discover component APIs, write stories, preview UI, run story tests, and repair Storybook setup.",
+		"longDescription": "Give Codex Storybook setup, init, and upgrade skills for component development. Use it to prepare projects for Storybook MCP workflows, preview UI in the browser, run story tests, and repair Storybook setup.",
 		"developerName": "Storybook",
 		"category": "Coding",
 		"capabilities": ["Interactive", "Write"],

@@ -331,6 +331,12 @@ This pattern (Save from Controls → wait for status flip → screenshot the now
 
 ## 9. What to AVOID (skill's deny-regex enforces several of these)
 
+> The authoritative, machine-enforced deny list is `DENY_PATTERNS` in
+> `scripts/verify/recipe-deny.ts` (regex tripwire) plus the ESLint allowlist
+> in `.verify-recipes/.eslintrc.cjs` (AST boundary). The table below is
+> non-exhaustive author guidance — do not treat it as the spec, and do not
+> copy it elsewhere. If the two disagree, the code wins.
+
 | Pattern | Why |
 |---|---|
 | `import ... from 'child_process'` / `require('child_process')` | Recipes never spawn subprocesses |

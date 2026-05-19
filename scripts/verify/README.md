@@ -141,47 +141,17 @@ Recipes live in `.verify-recipes/<name>.spec.ts`. They are committed to
 the repo and reviewed as part of the normal PR review — the spec at PR
 head is the lethal-trifecta breaker (see [`SECURITY.md`](./SECURITY.md)).
 
-Example skeleton (uses the slim helper, `.verify-recipes/_util.ts`):
-
-```ts
-// @verify-target: internal-ui
-import { expect, test } from '@playwright/test';
-import { RecipePage } from './_util.ts';
-
-test('my recipe', async ({ page }, testInfo) => {
-  const pageErrors: string[] = [];
-  const consoleErrors: string[] = [];
-
-  // CRITICAL: register listeners BEFORE the first page.goto.
-  page.on('pageerror', (err) => pageErrors.push(err.stack ?? err.message));
-  page.on('console', (msg) => {
-    if (msg.type() === 'error') consoleErrors.push(msg.text());
-  });
-
-  const baseURL =
-    process.env.STORYBOOK_URL ?? testInfo.project.use.baseURL ?? 'http://localhost:6006';
-
-  try {
-    await page.goto(`${baseURL}/?path=/story/example-button--primary`);
-    await new RecipePage(page, expect).waitUntilLoaded();
-    // ...assertions...
-  } finally {
-    await testInfo.attach('pageErrors', {
-      body: JSON.stringify(pageErrors),
-      contentType: 'application/json',
-    });
-    await testInfo.attach('consoleErrors', {
-      body: JSON.stringify(consoleErrors),
-      contentType: 'application/json',
-    });
-  }
-
-  expect(pageErrors).toEqual([]);
-});
-```
+The canonical, always-current skeleton is the committed
+[`.verify-recipes/example-smoke.spec.ts`](../../.verify-recipes/example-smoke.spec.ts)
+— it is the `verified` baseline the harness itself runs, so it cannot
+drift from the contract. **Copy that file as your starting point; do not
+hand-transcribe a skeleton here.** (A README copy would inevitably drift —
+e.g. importing `test`/`expect` from `@playwright/test`, which the
+deny-regex rejects, instead of from `./_util.ts`.)
 
 See [`.verify-recipes/_recipe-authoring-guide.md`](../../.verify-recipes/_recipe-authoring-guide.md)
-for the full authoring contract.
+for the full authoring contract (imports, listener-before-goto,
+`filterPageErrors`/`filterConsoleErrors`, final assertion).
 
 **Why the slim helper instead of `code/e2e-tests/util.ts`?** Playwright
 workers run under Node, which cannot strip the non-erasable TS enums
@@ -244,7 +214,7 @@ mutated outside `.verify-output/`.
 | `VERIFY_AGENT_MODEL`           | Overrides the default `claude-opus-4-7[1m]` hint baked into `prompt-bundle.json` (`agentModel`).             |
 | `VERIFY_MAX_COST_USD`          | Per-run cost cap (default `$2.00`). Aborts dispatch when the estimate exceeds the cap.                       |
 | `ANTHROPIC_BASE_URL`           | Optional override; restricted to `https://*.anthropic.com/` via `assertAnthropicBaseUrl`.                    |
-| `VERIFY_PROVENANCE_SECRET`     | When set, signs the provenance header with HMAC-SHA256 so downstream tampering is detectable.                |
+| `VERIFY_PROVENANCE_SECRET`     | When set, HMAC-signs the trusted-boundary `verify-result.json` verdict (consumed by `derive-verdict.ts`). The spec provenance header is informational only — deny-regex + scoped lint are the load-bearing controls on the untrusted spec. |
 | `VERIFY_PR_AUTHOR_STUB_REPLY`  | Absolute path to a fixture file used by tests; bypasses the live Anthropic call.                             |
 | `VERIFY_INCLUDE_SOURCE_DUMP`   | `1` to append full source dumps of touched non-stories files to the prompt.                                  |
 

@@ -40,6 +40,7 @@ import { sanitizeUntrustedText } from './verify/agent-prompt.ts';
 import { assertAnthropicBaseUrl } from './verify/anthropic-env.ts';
 import { isPng } from './verify/ci/push-screenshots.ts';
 import { appendNote, signResultFile, type VerifyResult } from './verify/core.ts';
+import { getModelPrice } from './verify/model-pricing.ts';
 
 assertAnthropicBaseUrl();
 
@@ -119,9 +120,7 @@ function truncateDiff(raw: string): string {
   return raw.slice(0, DIFF_TRUNCATE_BYTES) + '\n[...diff truncated]\n';
 }
 
-// Haiku-4-5 pricing: $1/MT input, $5/MT output (Dec-2025 list price).
-const HAIKU_INPUT_USD_PER_TOKEN = 0.000001;
-const HAIKU_OUTPUT_USD_PER_TOKEN = 0.000005;
+const VISION_PRICE = getModelPrice(MODEL);
 
 function assertVisionWithinCostBudget(): void {
   const raw = process.env.VERIFY_MAX_COST_USD;
@@ -133,8 +132,7 @@ function assertVisionWithinCostBudget(): void {
     );
   }
   const estimatedCostUsd =
-    EVIDENCE_INPUT_TOKEN_ESTIMATE * HAIKU_INPUT_USD_PER_TOKEN +
-    MAX_TOKENS * HAIKU_OUTPUT_USD_PER_TOKEN;
+    (EVIDENCE_INPUT_TOKEN_ESTIMATE * VISION_PRICE.i + MAX_TOKENS * VISION_PRICE.o) / 1_000_000;
   if (estimatedCostUsd > budgetUsd) {
     throw new VerifyCostBudgetError(
       `[evidence-check] estimated vision cost $${estimatedCostUsd.toFixed(

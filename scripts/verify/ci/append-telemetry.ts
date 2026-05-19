@@ -35,6 +35,8 @@ import { join, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parseArgs } from 'node:util';
 
+import { MODEL_PRICES_USD_PER_1M, modelKey } from '../model-pricing.ts';
+
 interface Args {
   result: string;
   pr: string;
@@ -121,45 +123,13 @@ export function summarizeDispatch(payload: any): DispatchSummary {
   };
 }
 
-// Anthropic public list prices in USD per 1M tokens, current as of
-// 2026-05-13. Mirrors the legacy bash/jq table in commit 3a52c415352.
-//   i   = input tokens
-//   o   = output tokens
-//   cr  = cache reads
-//   cw5 = 5-minute cache writes (SDK default)
-//   cw1 = 1-hour cache writes (extended cache)
-// Apps Script does NOT compute USD downstream — `cost_usd` ships in the
-// payload, and the sheet just writes the column.
-const PRICES_USD_PER_1M: Record<
-  string,
-  { i: number; o: number; cr: number; cw5: number; cw1: number }
-> = {
-  'claude-opus-4-7': { i: 5.0, o: 25.0, cr: 0.5, cw5: 6.25, cw1: 10.0 },
-  'claude-opus-4-6': { i: 5.0, o: 25.0, cr: 0.5, cw5: 6.25, cw1: 10.0 },
-  'claude-opus-4-5': { i: 5.0, o: 25.0, cr: 0.5, cw5: 6.25, cw1: 10.0 },
-  'claude-opus-4-1': { i: 15.0, o: 75.0, cr: 1.5, cw5: 18.75, cw1: 30.0 },
-  'claude-opus-4': { i: 15.0, o: 75.0, cr: 1.5, cw5: 18.75, cw1: 30.0 },
-  'claude-sonnet-4-6': { i: 3.0, o: 15.0, cr: 0.3, cw5: 3.75, cw1: 6.0 },
-  'claude-sonnet-4-5': { i: 3.0, o: 15.0, cr: 0.3, cw5: 3.75, cw1: 6.0 },
-  'claude-sonnet-4': { i: 3.0, o: 15.0, cr: 0.3, cw5: 3.75, cw1: 6.0 },
-  'claude-haiku-4-5': { i: 1.0, o: 5.0, cr: 0.1, cw5: 1.25, cw1: 2.0 },
-  'claude-haiku-3-5': { i: 0.8, o: 4.0, cr: 0.08, cw5: 1.0, cw1: 1.6 },
-  'claude-haiku-3': { i: 0.25, o: 1.25, cr: 0.03, cw5: 0.3, cw1: 0.5 },
-};
-
-// Strip trailing -YYYYMMDD date suffix Anthropic ships alongside the
-// rolling alias (e.g. claude-haiku-4-5-20251001 → claude-haiku-4-5).
-function modelKey(model: string): string {
-  return model.replace(/-\d{8}$/, '');
-}
-
 function dispatchCostUsd(d: DispatchSummary): number {
-  let p = PRICES_USD_PER_1M[modelKey(d.model)];
+  // Single-source pricing via model-pricing.ts (H2). Telemetry is a
+  // non-blocking side-channel, so unlike the authoritative budget/ledger
+  // path it does NOT throw on an unknown model — but a silent $0 charge is
+  // price-table drift, so make it loud (W1).
+  let p = MODEL_PRICES_USD_PER_1M[modelKey(d.model)];
   if (p === undefined) {
-    // Telemetry is an explicitly non-blocking side-channel, so we do NOT
-    // throw here (unlike the authoritative budget/ledger path in
-    // agent-dispatch.ts). But a $0 charge for an unknown model is silent
-    // price-table drift — make it loud so it surfaces in workflow logs.
     console.warn(
       `[telemetry] unknown model ${d.model || '(empty)'} — cost recorded as 0`
     );

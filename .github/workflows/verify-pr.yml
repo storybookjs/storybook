@@ -133,16 +133,14 @@ jobs:
           PROVENANCE_SECRET_PATH: ${{ steps.prep.outputs.provenance-secret-path }}
         run: |
           set -euo pipefail
-          # see RUNBOOK.md §verify-pr-secret-stripping
-          # C3: extended unset list. M2 note: VERIFY_PROVENANCE_SECRET no
-          # longer lives in $GITHUB_ENV, but unset is still defense-in-depth
-          # in case a future caller adds it.
-          unset GITHUB_TOKEN GH_TOKEN ANTHROPIC_API_KEY ANTHROPIC_AUTH_TOKEN \
-                ACTIONS_RUNTIME_TOKEN ACTIONS_ID_TOKEN_REQUEST_TOKEN \
-                ACTIONS_ID_TOKEN_REQUEST_URL ACTIONS_RESULTS_URL ACTIONS_CACHE_URL \
-                TELEMETRY_AGENTIC_VERIFICATION_WEBHOOK_URL \
-                TELEMETRY_AGENTIC_VERIFICATION_WEBHOOK_TOKEN \
-                VERIFY_PROVENANCE_SECRET
+          # strip untrusted-PR secrets — single source, TRUSTED base checkout
+          # only. Assert the path is absolute + present before sourcing so a
+          # future relative-path edit can't resolve it under the PR-head
+          # working dir; fail-closed (refuse to run untrusted code) otherwise.
+          STRIP_SH="$GITHUB_WORKSPACE/scripts/verify/ci/strip-untrusted-secrets.sh"
+          case "$GITHUB_WORKSPACE" in /*) : ;; *) echo "GITHUB_WORKSPACE not absolute" >&2; exit 1 ;; esac
+          test -f "$STRIP_SH" || { echo "trusted strip script missing — refusing to run untrusted code" >&2; exit 1; }
+          source "$STRIP_SH"
           PROVENANCE_SECRET="$(cat "$PROVENANCE_SECRET_PATH")"
           # UX1: redirect $GITHUB_ENV / $GITHUB_PATH / $GITHUB_OUTPUT to
           # throwaway sinks so an untrusted install / compile step can't
@@ -155,6 +153,26 @@ jobs:
           : > "$SINK_GITHUB_ENV"
           : > "$SINK_GITHUB_PATH"
           : > "$SINK_GITHUB_OUTPUT"
+          # Single source for the UX1/cache-poison env jail used by every
+          # untrusted install/compile call in THIS step: a clean env with
+          # only the vars they may see, GITHUB_* redirected to throwaway
+          # sinks. Per-call extras are passed as leading KEY=VAL pairs:
+          #   jailed YARN_ENABLE_SCRIPTS=false yarn install --immutable
+          # NOTE: the unit-test step's vitest call deliberately uses its
+          # own `env -i` (different step, no SINK_DIR, needs TMPDIR /
+          # CLAUDE_CODE_TMPDIR) and is intentionally NOT routed here.
+          jailed() {
+            env -i \
+              HOME="$HOME" \
+              PATH="$PATH" \
+              RUNNER_TEMP="$RUNNER_TEMP" \
+              NX_NO_CLOUD=true \
+              PR_HEAD_DIR="$PR_HEAD_DIR" \
+              GITHUB_ENV="$SINK_GITHUB_ENV" \
+              GITHUB_PATH="$SINK_GITHUB_PATH" \
+              GITHUB_OUTPUT="$SINK_GITHUB_OUTPUT" \
+              "$@"
+          }
           # SECURITY (fork→base cache poisoning): pin the untrusted PR
           # `yarn install` to a cache dir INSIDE $PR_HEAD_DIR (srt-allowWrite,
           # never the shared ~/.yarn/berry/cache that setup-node-and-install
@@ -163,27 +181,11 @@ jobs:
           # fork code physically cannot write the shared store.
           UNTRUSTED_YARN_CACHE="$PR_HEAD_DIR/.yarn-cache"
           mkdir -p "$UNTRUSTED_YARN_CACHE"
-          env -i \
-            HOME="$HOME" \
-            PATH="$PATH" \
-            RUNNER_TEMP="$RUNNER_TEMP" \
-            NX_NO_CLOUD=true \
-            PR_HEAD_DIR="$PR_HEAD_DIR" \
-            GITHUB_ENV="$SINK_GITHUB_ENV" \
-            GITHUB_PATH="$SINK_GITHUB_PATH" \
-            GITHUB_OUTPUT="$SINK_GITHUB_OUTPUT" \
+          jailed \
             YARN_ENABLE_SCRIPTS=false \
             YARN_CACHE_FOLDER="$UNTRUSTED_YARN_CACHE" \
             yarn install --immutable
-          env -i \
-            HOME="$HOME" \
-            PATH="$PATH" \
-            RUNNER_TEMP="$RUNNER_TEMP" \
-            NX_NO_CLOUD=true \
-            PR_HEAD_DIR="$PR_HEAD_DIR" \
-            GITHUB_ENV="$SINK_GITHUB_ENV" \
-            GITHUB_PATH="$SINK_GITHUB_PATH" \
-            GITHUB_OUTPUT="$SINK_GITHUB_OUTPUT" \
+          jailed \
             YARN_CACHE_FOLDER="$UNTRUSTED_YARN_CACHE" \
             yarn playwright install --with-deps chromium
 
@@ -224,16 +226,7 @@ jobs:
           fi
 
           srt_compile() {
-            env -i \
-              HOME="$HOME" \
-              PATH="$PATH" \
-              RUNNER_TEMP="$RUNNER_TEMP" \
-              NX_NO_CLOUD=true \
-              PR_HEAD_DIR="$PR_HEAD_DIR" \
-              GITHUB_ENV="$SINK_GITHUB_ENV" \
-              GITHUB_PATH="$SINK_GITHUB_PATH" \
-              GITHUB_OUTPUT="$SINK_GITHUB_OUTPUT" \
-              "$@"
+            jailed "$@"
           }
           if [ "$TARGET" = "sandbox" ]; then
             echo "[verify] spec targets sandbox '$TEMPLATE' — running 'nx run $TEMPLATE:sandbox'"
@@ -379,6 +372,11 @@ jobs:
 
           (
             cd "$PR_HEAD_DIR"
+            # Distinct jail by design (separate step from the main Verify
+            # step, so the `jailed()` helper is out of scope): no SINK_DIR
+            # GITHUB_* redirection here, and VERIFY_PROVENANCE_SECRET +
+            # VERIFY_RESULT_PATH are threaded in for the HMAC-signed verdict
+            # re-run. Keep this list explicit for security auditability.
             env -i \
               HOME="$HOME" \
               PATH="$PATH" \
@@ -445,12 +443,12 @@ jobs:
           RESULT: ${{ steps.verify.outputs.result-path }}
         run: |
           set -euo pipefail
-          unset GITHUB_TOKEN GH_TOKEN ANTHROPIC_API_KEY ANTHROPIC_AUTH_TOKEN \
-                ACTIONS_RUNTIME_TOKEN ACTIONS_ID_TOKEN_REQUEST_TOKEN \
-                ACTIONS_ID_TOKEN_REQUEST_URL ACTIONS_RESULTS_URL ACTIONS_CACHE_URL \
-                TELEMETRY_AGENTIC_VERIFICATION_WEBHOOK_URL \
-                TELEMETRY_AGENTIC_VERIFICATION_WEBHOOK_TOKEN \
-                VERIFY_PROVENANCE_SECRET
+          # strip untrusted-PR secrets — single source, TRUSTED base checkout
+          # only (see Verify PR step for rationale). Fail-closed if absent.
+          STRIP_SH="$GITHUB_WORKSPACE/scripts/verify/ci/strip-untrusted-secrets.sh"
+          case "$GITHUB_WORKSPACE" in /*) : ;; *) echo "GITHUB_WORKSPACE not absolute" >&2; exit 1 ;; esac
+          test -f "$STRIP_SH" || { echo "trusted strip script missing — refusing to run untrusted code" >&2; exit 1; }
+          source "$STRIP_SH"
           if [ ! -f "$RESULT" ]; then
             echo "no verify-result.json at $RESULT — skipping unit-test step"
             exit 0

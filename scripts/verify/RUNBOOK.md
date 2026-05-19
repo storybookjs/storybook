@@ -140,6 +140,23 @@ Restores `<sandbox>/package.json`, `yarn.lock`, `.yarnrc.yml` from
 
 ## CI workflow
 
+### verify-pr-secret-stripping
+
+The list of secrets unset before any untrusted PR code runs lives in **one**
+place: `scripts/verify/ci/strip-untrusted-secrets.sh`. Both untrusted steps
+(`Verify PR`, `Run PR-added unit tests`) `source` it from the **trusted base
+checkout** (`$GITHUB_WORKSPACE`, guarded by an absolute-path + existence
+check). Add a new secret here, nowhere else.
+
+> **Rollout ordering (critical).** `verify-pr.yml` runs under
+> `pull_request_target`, so `$GITHUB_WORKSPACE` resolves to the **base**
+> branch (`next`), not the PR head. `strip-untrusted-secrets.sh` must exist
+> in `next` **before** any PR that relies on it is verified. The
+> absolute-path + `test -f` guard is fail-closed: if the script is missing
+> the step aborts *before* untrusted code runs (harness bricked, secrets
+> NOT leaked). Recovery: never replace the `source` with an inline `unset`
+> or a relative/`|| true` path — land the script in `next` first.
+
 ### Signal: `Verify PR` step fails with `yarn install` errors
 
 The `Verify PR` step runs inside `pr-head/`, which is a fresh clone of

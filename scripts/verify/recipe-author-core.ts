@@ -269,47 +269,12 @@ function buildProvenanceHeader(bundle: PromptBundle, generatedAt: string): strin
   return `${signed}// @verify-provenance-hmac: ${mac}\n`;
 }
 
-/**
- * UC15: read a materialised recipe spec on disk and verify that its
- * provenance HMAC line matches the bundle the workflow believes drove
- * the recipe generation. Called by the verify-pr entry script BEFORE
- * Playwright executes the spec — tamper detection on the untrusted
- * PR-head workspace.
- *
- * - Local-dev (no secret): both header forms accepted; this helper is a
- *   no-op and resolves successfully.
- * - CI (secret set): the header MUST end with a matching HMAC line. A
- *   mismatch or missing line throws — callers should treat the throw as
- *   a fatal "spec tampered" event.
- */
-export function assertProvenanceMatchesBundle(
-  specPath: string,
-  bundle: PromptBundle
-): void {
-  const secret = process.env.VERIFY_PROVENANCE_SECRET;
-  if (!secret) return; // local-dev: nothing to verify.
-
-  const generatedAt = bundle.metadata.generatedAt;
-  const { signed } = buildSignedHeader(bundle, generatedAt);
-  const expectedMac = crypto.createHmac('sha256', secret).update(signed).digest('hex');
-
-  const source = fs.readFileSync(specPath, 'utf-8');
-  const hmacLineRe = /^\/\/ @verify-provenance-hmac:\s*([0-9a-f]+)\s*$/m;
-  const match = hmacLineRe.exec(source);
-  if (!match) {
-    throw new Error(
-      `[recipe-author-core] provenance HMAC missing from ${specPath}. Spec may have been tampered with.`
-    );
-  }
-  const actualMac = match[1];
-  const expected = Buffer.from(expectedMac, 'hex');
-  const actual = Buffer.from(actualMac, 'hex');
-  if (expected.length !== actual.length || !crypto.timingSafeEqual(expected, actual)) {
-    throw new Error(
-      `[recipe-author-core] provenance HMAC mismatch on ${specPath}. Bundle does not match the recipe on disk.`
-    );
-  }
-}
+// NOTE: there is intentionally no spec-side HMAC verifier here. The
+// provenance header is informational only (see buildSignedHeader text):
+// in v6 single-round, deny-regex + scoped lint are the load-bearing
+// controls on the untrusted PR-head spec. The HMAC secret is used solely
+// to sign the trusted-boundary verify-result.json verdict
+// (writeResult → derive-verdict.ts), not to gate spec execution.
 
 function violationsFromLint(
   ruleViolations: Array<{ ruleId: string | null; messages: Array<{ message: string }> }>

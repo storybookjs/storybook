@@ -18,6 +18,7 @@ import Anthropic from '@anthropic-ai/sdk';
 
 import { sanitizeUntrustedText } from './agent-prompt.ts';
 import { assertAnthropicBaseUrl } from './anthropic-env.ts';
+import { MODEL_PRICES_USD_PER_1M, modelKey } from './model-pricing.ts';
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 const RECIPES_DIR = path.resolve(repoRoot, '.verify-recipes');
@@ -46,30 +47,21 @@ const MAX_COST_USD_PER_RUN = 2.0;
 // actual realized cost expectations, not the hard cap.
 const BUDGET_OUTPUT_TOKEN_ESTIMATE = 2048;
 
-const MODEL_PRICING: Record<string, { inputUsd: number; outputUsd: number }> = {
-  'claude-opus-4-7': { inputUsd: 0.000015, outputUsd: 0.000075 },
-  'claude-opus-4-6': { inputUsd: 0.000015, outputUsd: 0.000075 },
-  'claude-haiku-4-5-20251001': { inputUsd: 0.000001, outputUsd: 0.000005 },
-  'claude-sonnet-4-5': { inputUsd: 0.000003, outputUsd: 0.000015 },
-  'claude-sonnet-4-6': { inputUsd: 0.000003, outputUsd: 0.000015 },
-};
-
-// The budget gate and the realized-cost ledger must never run an uncosted
-// model: an unknown id silently priced as opus would let a more expensive
-// model slip past the cap (under-charge) or skew the ledger. The gate's job
-// is to be conservative, so an unknown resolved id is a hard failure here.
-// KNOWN ids (including the legitimate opus keys) keep their exact pricing.
+// Single-source pricing via model-pricing.ts (H2). The budget gate and the
+// realized-cost ledger must never run an uncosted model: an unknown id
+// silently priced as opus (the lenient getModelPrice fallback) would let a
+// more expensive model slip past the cap or skew the ledger. The gate's job
+// is conservative (W1), so an unknown resolved id is a HARD failure here.
 function getPricing(modelId: string): { inputUsd: number; outputUsd: number } {
-  const pricing = MODEL_PRICING[modelId];
-  if (pricing === undefined) {
+  const p = MODEL_PRICES_USD_PER_1M[modelKey(modelId)];
+  if (p === undefined) {
     throw new VerifyCostBudgetError(
       `[verify-pr-author] no pricing entry for model id ${JSON.stringify(
         modelId
-      )}; refusing to run an uncosted model through the budget/ledger path. ` +
-        `Add it to MODEL_PRICING.`
+      )}; refusing to run an uncosted model through the budget/ledger path.`
     );
   }
-  return pricing;
+  return { inputUsd: p.i / 1_000_000, outputUsd: p.o / 1_000_000 };
 }
 
 export function resolveModelId(hint: string): string {

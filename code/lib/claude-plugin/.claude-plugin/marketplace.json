@@ -10,7 +10,7 @@
 		{
 			"name": "storybook",
 			"description": "Build, preview, and test UI components.",
-			"source": "./packages/claude-plugin",
+			"source": "./",
 			"homepage": "https://github.com/storybookjs/mcp/tree/main/packages/claude-plugin"
 		}
 	]

@@ -18,6 +18,7 @@
 		"directory": "packages/codex-plugin"
 	},
 	"files": [
+		".agents",
 		".codex-plugin",
 		".mcp.json",
 		"assets",
@@ -26,7 +27,7 @@
 	],
 	"type": "module",
 	"scripts": {
-		"marketplace:add": "codex plugin marketplace add ../..",
+		"marketplace:add": "codex plugin marketplace add .",
 		"marketplace:update": "codex plugin marketplace upgrade storybook",
 		"marketplace:remove": "codex plugin marketplace remove storybook"
 	}

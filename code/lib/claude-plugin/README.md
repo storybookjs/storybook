@@ -20,11 +20,11 @@ After editing plugin files in a running Claude Code session, reload plugins:
 
 ## Testing
 
-The repository includes a Claude marketplace descriptor at `.claude-plugin/marketplace.json`.
+This package includes a local Claude marketplace descriptor at `.claude-plugin/marketplace.json` for development. It points at this same directory so you can register and install the plugin without repo-root marketplace files.
 
 Claude has two lifecycle layers:
 
-- the **marketplace** entry, which tells Claude where to find this repository's plugin catalog
+- the **marketplace** entry, which tells Claude where to find this plugin catalog
 - the installed **plugin**, `storybook@storybook`, which is installed from that marketplace
 
 Run package scripts from the repository root with `pnpm --filter @storybook/claude-code-plugin run <script>`, or from this package directory with `pnpm run <script>`.
@@ -41,7 +41,7 @@ Install the plugin from this checkout at user scope:
 pnpm --filter @storybook/claude-code-plugin run plugin:install
 ```
 
-This validates the manifests, adds this repository as the `storybook` Claude marketplace, and installs `storybook@storybook` at user scope so it is available in every project.
+This validates the manifests, adds this package directory as the `storybook` Claude marketplace, and installs `storybook@storybook` at user scope so it is available in every project.
 
 Verify the installed plugin:
 
@@ -97,8 +97,8 @@ pnpm --filter @storybook/claude-code-plugin run marketplace:remove
 
 ## Scripts
 
-- `validate`: Validate the repository marketplace manifest and this plugin manifest.
-- `marketplace:add`: Add this repository as the `storybook` marketplace at user scope.
+- `validate`: Validate this package's marketplace and plugin manifests.
+- `marketplace:add`: Add this package directory as the `storybook` marketplace at user scope.
 - `marketplace:update`: Update the configured `storybook` marketplace checkout.
 - `marketplace:remove`: Remove the configured `storybook` marketplace.
 - `plugin:install`: Validate, add the marketplace, and install `storybook@storybook` at user scope.
@@ -108,10 +108,11 @@ pnpm --filter @storybook/claude-code-plugin run marketplace:remove
 
 ## Distribution
 
-This package is private and is distributed through the repository's Claude marketplace entry. The marketplace points directly at this package directory.
+This package is private during development. The local marketplace in `.claude-plugin/marketplace.json` is for testing only; the plugin will eventually ship through the official Claude plugin marketplace.
 
 The plugin directory must include these files:
 
+- `.claude-plugin/marketplace.json` (local testing only)
 - `.claude-plugin/plugin.json`
 - `.mcp.json`
 - `skills/**`

@@ -2,7 +2,7 @@
 
 Private workspace package for the Storybook Codex plugin. It bundles Storybook setup, init, and upgrade skills with MCP configuration for UI component workflows.
 
-This package is intentionally shaped like a Codex plugin while living under `packages/` so it can be tested from this repository and later referenced as a Git subdirectory. Codex does not install plugins from npm directly; it discovers plugin folders through a marketplace catalog. The repo-local marketplace at `../../.agents/plugins/marketplace.json` points at this package.
+This package is intentionally shaped like a Codex plugin while living under `packages/` so it can be tested from this repository and later submitted to the official Codex marketplace. Codex does not install plugins from npm directly; it discovers plugin folders through a marketplace catalog. For local development, this package includes `.agents/plugins/marketplace.json`, which points at this same directory.
 
 ## Local Testing
 
@@ -10,10 +10,16 @@ Codex exposes marketplace lifecycle commands in the CLI. Installing the plugin i
 
 Run package scripts from the repository root with `pnpm --filter @storybook/codex-plugin run <script>`, or from this package directory with `pnpm run <script>`.
 
-Add this repository as the local Storybook marketplace:
+Add this package directory as the local Storybook marketplace:
 
 ```sh
 pnpm --filter @storybook/codex-plugin run marketplace:add
+```
+
+Or from this directory:
+
+```sh
+pnpm run marketplace:add
 ```
 
 Then test the plugin in the Codex app:
@@ -33,10 +39,10 @@ pnpm --filter @storybook/codex-plugin run marketplace:add
 
 The plugin points at `npx -y @storybook/mcp-proxy@latest`. In this milestone, that package is a minimal placeholder MCP server that responds to initialization and returns an empty tool list. This lets plugin installation, metadata, icon, MCP server configuration, and skills be tested before the real proxy implementation exists.
 
-To test from a Git branch while the plugin still lives under `packages/`, add the repo as a Git marketplace and sparse-checkout both the marketplace catalog and plugin package:
+To test from a Git branch while the plugin still lives under `packages/`, sparse-checkout this package directory:
 
 ```sh
-codex plugin marketplace add storybookjs/mcp --ref <branch> --sparse .agents/plugins --sparse packages/codex-plugin
+codex plugin marketplace add storybookjs/mcp --ref <branch> --sparse packages/codex-plugin
 ```
 
 To remove the local marketplace after testing, run:
@@ -49,7 +55,7 @@ After installing the plugin, Codex loads it from its plugin cache. If changes do
 
 ## Scripts
 
-- `marketplace:add`: Add this repository as a Codex marketplace.
+- `marketplace:add`: Add this package directory as a Codex marketplace.
 - `marketplace:update`: Upgrade the configured `storybook` Codex marketplace checkout.
 - `marketplace:remove`: Remove the configured `storybook` Codex marketplace.
 
@@ -73,7 +79,7 @@ npx -y --package https://pkg.pr.new/storybookjs/mcp/@storybook/mcp-proxy@<previe
 
 ## Smoke Test
 
-Use a clean Codex config directory to verify that the marketplace descriptor is loadable without relying on existing local state:
+Use a clean Codex config directory to verify that the marketplace descriptor is loadable without relying on existing local state. Run this from `packages/codex-plugin`:
 
 ```sh
 CODEX_HOME=$(mktemp -d)
@@ -92,7 +98,7 @@ Then inspect the clean config:
 cat "$CODEX_HOME/config.toml"
 ```
 
-The config should include a `[marketplaces.storybook]` entry whose `source` points at this repository. After restarting Codex with your normal config and installing the plugin from the `Storybook` marketplace, the plugin card should show `Build, preview, and test UI components` and the plugin details should include the `storybook` MCP server from `.mcp.json`.
+The config should include a `[marketplaces.storybook]` entry whose `source` points at this package directory. After restarting Codex with your normal config and installing the plugin from the `Storybook` marketplace, the plugin card should show `Build, preview, and test UI components` and the plugin details should include the `storybook` MCP server from `.mcp.json`.
 
 ## Included Skills
 

@@ -89,6 +89,7 @@ export const FilterPanel = ({
       const isExcluded = excludedStatusFilters.includes(entry.statusValue);
       const isChecked = isIncluded || isExcluded;
       const { icon: statusIconEl, iconColor } = getStatus(theme, entry.statusValue);
+      const showIcon = statusIconEl && entry.statusValue !== 'status-value:affected';
 
       return {
         id: shortName,
@@ -96,7 +97,7 @@ export const FilterPanel = ({
         title: shortName.charAt(0).toUpperCase() + shortName.slice(1),
         tooltip: entry.description,
         count: entry.count,
-        icon: statusIconEl ? <StatusIcon $iconColor={iconColor}>{statusIconEl}</StatusIcon> : null,
+        icon: showIcon ? <StatusIcon $iconColor={iconColor}>{statusIconEl}</StatusIcon> : null,
         isIncluded,
         isExcluded,
         onCheckboxChange: () => {

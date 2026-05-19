@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import type { JsPackageManager } from 'storybook/internal/common';
+import { HandledError, type JsPackageManager } from 'storybook/internal/common';
+import { MinimumReleaseAgeHandledError } from 'storybook/internal/server-errors';
 import { Feature } from 'storybook/internal/types';
 
 import { DependencyCollector } from '../dependency-collector.ts';
@@ -19,6 +20,8 @@ describe('DependencyInstallationCommand', () => {
     command = new DependencyInstallationCommand(dependencyCollector, mockPackageManager);
 
     vi.clearAllMocks();
+    vi.mocked(mockPackageManager.addDependencies).mockResolvedValue(undefined);
+    vi.mocked(mockPackageManager.installDependencies).mockResolvedValue(undefined);
   });
 
   describe('execute', () => {
@@ -98,6 +101,34 @@ describe('DependencyInstallationCommand', () => {
 
       expect(mockPackageManager.addDependencies).not.toHaveBeenCalled();
       expect(mockPackageManager.installDependencies).not.toHaveBeenCalled();
+    });
+
+    it('should rethrow minimum-release-age install errors', async () => {
+      dependencyCollector.addDevDependencies(['storybook@10.4.0-alpha.17']);
+      vi.mocked(mockPackageManager.installDependencies).mockRejectedValue(
+        new MinimumReleaseAgeHandledError({ message: 'pnpm blocked package installation' })
+      );
+
+      await expect(
+        command.execute({
+          skipInstall: false,
+          selectedFeatures: new Set([Feature.DOCS]),
+        })
+      ).rejects.toThrow('pnpm blocked package installation');
+    });
+
+    it('should not rethrow unrelated handled install errors', async () => {
+      dependencyCollector.addDevDependencies(['storybook@10.4.0-alpha.17']);
+      vi.mocked(mockPackageManager.installDependencies).mockRejectedValue(
+        new HandledError('some other handled install error')
+      );
+
+      await expect(
+        command.execute({
+          skipInstall: false,
+          selectedFeatures: new Set([Feature.DOCS]),
+        })
+      ).resolves.toEqual({ status: 'failed' });
     });
 
     it('should not collect test dependencies if test feature is not selected', async () => {

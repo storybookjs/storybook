@@ -101,12 +101,20 @@ export class TelemetryService {
       ai: selectedFeatures.has(Feature.AI),
     };
 
-    await telemetry('init', {
+    await this.trackInit({
       projectType,
       features: telemetryFeatures,
       newUser,
       versionSpecifier,
       cliIntegration,
     });
+  }
+
+  async trackPromptCancel(prompt: string): Promise<void> {
+    await telemetry(
+      'canceled',
+      { eventType: 'init', prompt },
+      { stripMetadata: true, immediate: true }
+    );
   }
 }

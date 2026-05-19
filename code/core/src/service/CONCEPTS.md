@@ -88,7 +88,7 @@ What the runtime does with loaders:
 - On a query subscription (or callable read) for a given input, if the paired loader hasn't fired for that input, it fires now. Subsequent reads with the same input don't re-fire — there's a per-loader, per-input "has fired" set.
 - Concurrent subscriptions for the same input dedupe to one loader run via an in-flight map.
 - If a static transport is installed, the runtime fetches the loader's pre-rendered JSON first. On a non-null hit, the fetched state diff is deep-merged into state and the loader body is *not* called. On null, the runtime runs the body live. See STATIC-BUILD.md.
-- The loader's return value is ignored. After it resolves, the runtime invokes the same-named query with the same input and that's what subscribers see.
+- The loader's return value is ignored. Subscribers see whatever the paired query selector returns once state has settled — the loader's job is to populate state, not to produce a value directly.
 
 ## Definition vs registration
 

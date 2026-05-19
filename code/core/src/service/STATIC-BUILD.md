@@ -109,7 +109,7 @@ When a query subscription fires its paired loader, the runtime applies:
 3. Non-null result → deep-merge the fetched diff into state. Body is *not* called.
 4. Null result → run the body live.
 
-So a service with loaders behaves identically across dev and static deployments — the caller of `queries.foo.subscribe(input, ...)` doesn't know whether the data came from a fresh body run or a pre-rendered patch file.
+So a service with loaders behaves identically across dev and static deployments — the caller of `queries.foo.subscribe(input, ...)` doesn't know whether the data came from a fresh body run or a pre-rendered diff file.
 
 Fall-through-on-null matters: a transport need not know about every loader the app might fire. A partial build still works — files that exist are used, files that don't are recomputed live.
 
@@ -136,7 +136,7 @@ Two implications for state shape:
 - Bias state toward record-shaped slices (`{ byId: {...} }`) rather than arrays. Records compose under deep-merge; arrays are replaced wholesale (no element-level merging).
 - Don't put non-serialisable values in state. Diffs go through `JSON.stringify`.
 
-The build rejects two patch shapes that can't be expressed as a clean state-diff: array-index patches (when a loader mutates array elements directly) and `remove` patches (deletions). Both throw at build time with an actionable error. Loaders should produce data, and collections should be records.
+The build rejects two cases that can't be expressed as a clean state diff: array-index mutations (when a loader pushes/splices array elements directly) and deletions (when a loader removes keys). Both throw at build time with an actionable error. Loaders should produce data, and collections should be records.
 
 ## The mock transport pattern
 
@@ -180,7 +180,7 @@ it('reads from a pre-built loader file', async () => {
 Full round-trip from `build-artifacts.test.ts`:
 
 ```ts
-// 1. Build: enumerate inputs, run each in a sandbox, capture patches.
+// 1. Build: enumerate inputs, run each in a sandbox, capture the resulting state diff.
 const artifacts = await buildServiceArtifacts(def);
 
 // 2. Install a transport carrying those artifacts, keyed by `${serviceId}/${filename}`.

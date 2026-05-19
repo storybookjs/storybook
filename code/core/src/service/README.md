@@ -17,7 +17,7 @@ APIs are not yet stable. Used by the docgen-server project; will widen over time
 | `types.ts` | All public types. |
 | `define-service.ts` | `defineService`, `defineCommand`, `defineLoader`. |
 | `service-runtime.ts` | The `ServiceRuntime` class. Owns state, runs commands, fires loaders, drives subscriptions. |
-| `register-service.ts` | `registerService`, `getService`, `getServiceRuntime` (internal). |
+| `register-service.ts` | `registerService`, `getService`. |
 | `instances.ts` | Global registry. Separate module so it can be mocked in tests. |
 | `build-artifacts.ts` | `buildServiceArtifacts`. The static-build writer. |
 | `static-transport.ts` | The global transport. `setStaticTransport`, `clearStaticTransport`, `createBrowserStaticTransport`. Services do not configure transports; the app installs one at startup. |

@@ -18,13 +18,19 @@ function assert(condition, message) {
 
 const marketplace = JSON.parse(await readFile(marketplacePath, 'utf8'));
 assert(marketplace.name === 'storybook', 'marketplace name must be storybook');
-assert(marketplace.interface?.displayName === 'Storybook', 'marketplace displayName must be Storybook');
+assert(
+	marketplace.interface?.displayName === 'Storybook',
+	'marketplace displayName must be Storybook',
+);
 
 const entry = marketplace.plugins?.[0];
 assert(entry?.name === 'storybook', 'plugin entry name must be storybook');
 
 const pluginPath = entry?.source?.path;
-assert(typeof pluginPath === 'string' && pluginPath.startsWith('./'), 'plugin path must start with ./');
+assert(
+	typeof pluginPath === 'string' && pluginPath.startsWith('./'),
+	'plugin path must start with ./',
+);
 
 const pluginRoot = resolve(marketplaceRoot, pluginPath);
 assert(
@@ -38,14 +44,10 @@ assert(
 
 const codexHome = await mkdtemp(resolve(tmpdir(), 'codex-marketplace-'));
 try {
-	const stdout = execFileSync(
-		'codex',
-		['plugin', 'marketplace', 'add', marketplaceRoot],
-		{
-			env: { ...process.env, CODEX_HOME: codexHome },
-			encoding: 'utf8',
-		},
-	);
+	const stdout = execFileSync('codex', ['plugin', 'marketplace', 'add', marketplaceRoot], {
+		env: { ...process.env, CODEX_HOME: codexHome },
+		encoding: 'utf8',
+	});
 
 	assert(stdout.includes('Added marketplace `storybook`'), `unexpected codex output: ${stdout}`);
 

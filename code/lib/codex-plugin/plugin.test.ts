@@ -33,9 +33,7 @@ describe('Storybook Codex plugin package', () => {
 			},
 		});
 
-		const mcpConfig = JSON.parse(
-			await readFile(resolve(pluginRoot, '.mcp.json'), 'utf8'),
-		);
+		const mcpConfig = JSON.parse(await readFile(resolve(pluginRoot, '.mcp.json'), 'utf8'));
 		const storybook = mcpConfig.storybook;
 
 		expect(storybook.command).toBe('npx');

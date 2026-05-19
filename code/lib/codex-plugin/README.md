@@ -71,11 +71,11 @@ codex plugin marketplace add storybookjs/mcp --ref <branch> --sparse packages/co
 
 In the Codex **Add marketplace** UI, use the same values:
 
-| Field | Value |
-| --- | --- |
-| Source | `storybookjs/mcp` |
-| Git ref | your branch name, for example `kasper/create-claude-plugin-package` |
-| Sparse paths | `packages/codex-plugin` |
+| Field        | Value                                                               |
+| ------------ | ------------------------------------------------------------------- |
+| Source       | `storybookjs/mcp`                                                   |
+| Git ref      | your branch name, for example `kasper/create-claude-plugin-package` |
+| Sparse paths | `packages/codex-plugin`                                             |
 
 Do **not** use `plugins/codex` — that path does not exist in this repository.
 

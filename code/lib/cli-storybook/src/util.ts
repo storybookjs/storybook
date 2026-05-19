@@ -1,6 +1,13 @@
 import type { PackageJsonWithDepsAndDevDeps } from 'storybook/internal/common';
-import { HandledError, JsPackageManager, normalizeStories } from 'storybook/internal/common';
-import { getProjectRoot, isSatelliteAddon, versions } from 'storybook/internal/common';
+import {
+  HandledError,
+  JsPackageManager,
+  getPkgPrNewPackageSpecifier,
+  getProjectRoot,
+  isSatelliteAddon,
+  normalizeStories,
+  versions,
+} from 'storybook/internal/common';
 import { StoryIndexGenerator, experimental_loadStorybook } from 'storybook/internal/core-server';
 import { logTracker, logger, prompt } from 'storybook/internal/node-logger';
 import {
@@ -32,6 +39,7 @@ interface UpgradeConfig {
   readonly isCLIPrerelease: boolean;
   readonly isCLIExactPrerelease: boolean;
   readonly isCLIExactLatest: boolean;
+  readonly storybookVersionSpecifier?: string;
 }
 
 /** Result of successfully collecting project data */
@@ -429,6 +437,15 @@ export const generateUpgradeSpecs = async (
   // Generate core Storybook upgrades
   const storybookCoreUpgrades = monorepoDependencies.map((dependency) => {
     const versionSpec = dependencies[dependency];
+
+    const pkgPrNewSpecifier = getPkgPrNewPackageSpecifier(
+      dependency,
+      config.storybookVersionSpecifier
+    );
+
+    if (pkgPrNewSpecifier) {
+      return `${dependency}@${pkgPrNewSpecifier}`;
+    }
 
     if (!versionSpec) {
       return `${dependency}@${versions[dependency]}`;

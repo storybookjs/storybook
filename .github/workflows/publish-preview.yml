@@ -21,9 +21,12 @@ jobs:
   publish-preview:
     name: Publish preview packages
     if: |
-      contains(github.event.pull_request.labels.*.name, 'ci:normal') ||
-      contains(github.event.pull_request.labels.*.name, 'ci:merged') ||
-      contains(github.event.pull_request.labels.*.name, 'ci:daily')
+      (github.event.action == 'labeled' && contains(fromJSON('["ci:normal","ci:merged","ci:daily"]'), github.event.label.name)) ||
+      (github.event.action != 'labeled' && (
+        contains(github.event.pull_request.labels.*.name, 'ci:normal') ||
+        contains(github.event.pull_request.labels.*.name, 'ci:merged') ||
+        contains(github.event.pull_request.labels.*.name, 'ci:daily')
+      ))
     runs-on: ubuntu-latest
     steps:
       - name: Checkout pull request HEAD
@@ -104,6 +107,7 @@ jobs:
           echo 'EOF' >> "$GITHUB_OUTPUT"
 
       - name: Replace Pull Request Body
+        id: replace-pr-body
         continue-on-error: ${{ github.event.pull_request.head.repo.fork }}
         uses: ivangabriele/find-and-replace-pull-request-body@042438c6cbfbacf6a4701d6042f59b1f73db2fd8
         with:
@@ -114,7 +118,7 @@ jobs:
           replace: ${{ steps.preview-body.outputs.body }}
 
       - name: Create failing comment on PR
-        if: failure()
+        if: ${{ failure() && steps.replace-pr-body.outcome != 'failure' }}
         continue-on-error: ${{ github.event.pull_request.head.repo.fork }}
         env:
           GH_TOKEN: ${{ github.token }}

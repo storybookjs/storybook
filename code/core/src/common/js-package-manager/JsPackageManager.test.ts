@@ -46,5 +46,14 @@ describe('JsPackageManager', () => {
 
       expect(result).toEqual(['@storybook/new-addon@^next']);
     });
+
+    it('should map pkg.pr.new create-storybook specifiers to Storybook packages', async () => {
+      const result = await jsPackageManager.getVersionedPackages(['@storybook/react'], {
+        storybookVersionSpecifier: 'https://pkg.pr.new/create-storybook@abc123',
+      });
+
+      expect(result).toEqual(['@storybook/react@https://pkg.pr.new/@storybook/react@abc123']);
+      expect(mockLatestVersion).not.toHaveBeenCalled();
+    });
   });
 });

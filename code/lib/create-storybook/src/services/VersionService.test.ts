@@ -90,6 +90,17 @@ describe('VersionService', () => {
       expect(version).toBe('latest');
     });
 
+    it('should extract pkg.pr.new specifier from create-storybook command', () => {
+      const ancestry = [
+        { command: 'npx create-storybook@https://pkg.pr.new/create-storybook@abc123' },
+        { command: 'node /usr/local/bin/npm' },
+      ];
+
+      const version = versionService.getStorybookVersionFromAncestry(ancestry as any);
+
+      expect(version).toBe('https://pkg.pr.new/create-storybook@abc123');
+    });
+
     it('should return undefined if no version found', () => {
       const ancestry = [{ command: 'npm install' }, { command: 'node /usr/local/bin/npm' }];
 

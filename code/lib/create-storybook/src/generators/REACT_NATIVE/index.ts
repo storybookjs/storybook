@@ -77,7 +77,9 @@ export default defineGeneratorModule({
       'storybook',
     ];
 
-    const versionedPackages = await packageManager.getVersionedPackages(packagesToResolve);
+    const versionedPackages = await packageManager.getVersionedPackages(packagesToResolve, {
+      storybookVersionSpecifier: context.storybookVersionSpecifier,
+    });
     const babelDependencies = await getBabelDependencies(packageManager as any);
 
     const packages: string[] = [

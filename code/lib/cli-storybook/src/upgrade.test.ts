@@ -149,6 +149,28 @@ describe('toUpgradedDependencies', () => {
 
       expect(result).toEqual(['@storybook/react@9.0.0']);
     });
+
+    it('should use pkg.pr.new specs for monorepo packages when invoked from a preview URL', async () => {
+      const deps = {
+        '@storybook/react': '^8.0.0',
+        '@storybook/vue3': '~8.0.0',
+      };
+
+      const result = await generateUpgradeSpecs(deps, {
+        packageManager: mockPackageManager,
+        isCanary: false,
+        isCLIOutdated: false,
+        isCLIPrerelease: false,
+        isCLIExactPrerelease: false,
+        isCLIExactLatest: false,
+        storybookVersionSpecifier: 'https://pkg.pr.new/storybook@abc123',
+      });
+
+      expect(result).toEqual([
+        '@storybook/react@https://pkg.pr.new/@storybook/react@abc123',
+        '@storybook/vue3@https://pkg.pr.new/@storybook/vue3@abc123',
+      ]);
+    });
   });
 
   describe('satellite packages', () => {

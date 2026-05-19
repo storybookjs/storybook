@@ -19,7 +19,7 @@ vi.mock('storybook/internal/node-logger', async (importOriginal) => {
   return {
     ...original,
     prompt: {
-      executeTaskWithSpinner: (fn) => fn(),
+      executeTaskWithSpinner: (fn: any) => fn(),
     },
   };
 });

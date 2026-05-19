@@ -158,6 +158,42 @@ describe('Start Storybook Builder', () => {
     );
   });
 
+  it('should start storybook with custom stats.json path', async () => {
+    const run = await architect.scheduleBuilder('@storybook/angular:start-storybook', {
+      tsConfig: 'path/to/tsConfig.json',
+      port: 4400,
+      compodoc: false,
+      statsJson: './custom-stats.json',
+    });
+
+    const output = await run.result;
+
+    await run.stop();
+
+    expect(output.success).toBeTruthy();
+    expect(mockRunScript).not.toHaveBeenCalled();
+    expect(buildDevStandalone).toHaveBeenCalledWith(
+      expect.objectContaining({
+        angularBrowserTarget: undefined,
+        angularBuilderContext: expect.any(Object),
+        ci: false,
+        configDir: '.storybook',
+        disableTelemetry: undefined,
+        host: 'localhost',
+        https: false,
+        packageJson: expect.any(Object),
+        port: 4400,
+        quiet: false,
+        smokeTest: false,
+        sslCa: undefined,
+        sslCert: undefined,
+        sslKey: undefined,
+        tsConfig: 'path/to/tsConfig.json',
+        statsJson: './custom-stats.json',
+      })
+    );
+  });
+
   it('should throw error', async () => {
     vi.mocked(buildDevStandalone).mockRejectedValue(true);
 

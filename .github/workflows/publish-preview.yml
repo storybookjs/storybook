@@ -112,7 +112,6 @@ jobs:
         uses: ivangabriele/find-and-replace-pull-request-body@042438c6cbfbacf6a4701d6042f59b1f73db2fd8
         with:
           githubToken: ${{ github.token }}
-          prNumber: ${{ github.event.pull_request.number }}
           find: "CANARY_RELEASE_SECTION"
           isHtmlCommentTag: true
           replace: ${{ steps.preview-body.outputs.body }}

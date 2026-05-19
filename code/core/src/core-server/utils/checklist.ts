@@ -16,7 +16,7 @@ import { globalSettings } from '../../cli/index.ts';
 import { universalTestProviderStore } from '../stores/test-provider.ts';
 import { get as getEventCacheEntry } from '../../telemetry/event-cache.ts';
 import { isStoryCreatedByAISetup } from '../../telemetry/ai-setup-utils.ts';
-import { hasAiInitOptIn, hasAiSetupRun } from './ai-checklist-flags.ts';
+import { hasAiInitOptIn, hasAiSetupRun } from '../../shared/utils/ai-checklist-flags.ts';
 import {
   type ChecklistState,
   type StoreEvent,
@@ -78,15 +78,21 @@ export async function initializeChecklist(
         }) satisfies StoreState
     );
 
-    // AI opt-in flag (set in `init` when user accepted the AI feature).
+    // AI setup run and AI optin flags (set in `ai setup` and `init`respectively).
     // Read from the regular fs cache — NOT from the telemetry event cache
     // so the copy-prompt button appears for users who disabled telemetry.
     // Fire-and-forget so the store is never blocked waiting for this check.
+    hasAiSetupRun(configDir!)
+      .then((hasSetupRun) => {
+        if (hasSetupRun) {
+          store.setState((state) => ({ ...state, aiSetupRun: true }));
+        }
+      })
+      .catch(() => {});
+
     hasAiInitOptIn(configDir!)
       .then((hasOptedIn) => {
-        if (hasOptedIn) {
-          store.setState((state) => ({ ...state, aiOptIn: true }));
-        }
+        store.setState((state) => ({ ...state, aiOptIn: hasOptedIn }));
       })
       .catch(() => {});
 
@@ -170,7 +176,8 @@ export async function initializeChecklist(
       throttledSyncAiSetupStatus();
       clearTimeout(analyticsTimer);
       analyticsTimer = setTimeout(async () => {
-        if (!store.getState().aiOptIn) {
+        // If the CLI command never ran, don't emit analytics or ghost stories.
+        if (!store.getState().aiSetupRun) {
           return;
         }
         // Agents often run `npx vitest` for many minutes. If a recent

@@ -388,39 +388,121 @@ function stripServerOption(options: import('@babel/types').ObjectExpression): bo
 }
 
 /**
- * Remove import specifiers that are no longer referenced in the AST.
- * Drops entire import declarations when all specifiers are unreferenced.
+ * Collect all non-binding identifier references in the program.
+ * Excludes binding sites (declarations) and import specifiers.
  */
-function eliminateDeadImports(programPath: NodePath<import('@babel/types').Program>) {
-  const referencedIdentifiers = new Set<string>();
-
+function collectReferencedIdentifiers(
+  programPath: NodePath<import('@babel/types').Program>
+): Set<string> {
+  const referenced = new Set<string>();
   programPath.traverse({
     enter(path) {
       const { node } = path;
       if (!t.isIdentifier(node) || path.isBindingIdentifier()) {
         return;
       }
-      // Skip identifiers that live inside an import declaration's specifiers.
-      // Both `imported` and `local` are Identifiers, but neither should count
-      // as a real "use" of the binding for the purposes of dead-import removal.
       if (path.findParent((p) => p.isImportDeclaration())) {
         return;
       }
-      referencedIdentifiers.add(node.name);
+      referenced.add(node.name);
     },
   });
+  return referenced;
+}
+
+/**
+ * Remove top-level non-exported declarations whose bound names are never
+ * referenced elsewhere. This handles hoisted helpers that become dead after
+ * server code is eliminated (e.g. `function helper() { ... }` only called
+ * inside a `.handler()` arg that was replaced with `__sb_fn()`).
+ *
+ * Returns true when at least one declaration was removed.
+ */
+function removeDeadTopLevelDeclarations(
+  programPath: NodePath<import('@babel/types').Program>
+): boolean {
+  const referenced = collectReferencedIdentifiers(programPath);
+  let removed = false;
+
+  for (const stmtPath of programPath.get('body')) {
+    if (stmtPath.isImportDeclaration() || stmtPath.isExportDeclaration()) {
+      continue;
+    }
+
+    if (stmtPath.isFunctionDeclaration()) {
+      const id = stmtPath.node.id;
+      if (id && !referenced.has(id.name)) {
+        stmtPath.remove();
+        removed = true;
+      }
+      continue;
+    }
+
+    if (stmtPath.isVariableDeclaration()) {
+      // Only remove when every declarator is dead: plain identifier binding,
+      // unreferenced, and initializer absent or provably side-effect-free.
+      const allDead = stmtPath.get('declarations').every((declPath) => {
+        if (!t.isIdentifier(declPath.node.id)) return false;
+        if (referenced.has(declPath.node.id.name)) return false;
+        const initPath = declPath.get('init');
+        return !declPath.node.init || initPath.isPure();
+      });
+      if (allDead) {
+        stmtPath.remove();
+        removed = true;
+      }
+    }
+  }
+
+  return removed;
+}
+
+/**
+ * Remove import specifiers that are no longer referenced in the AST.
+ * Drops entire import declarations when all specifiers are unreferenced.
+ *
+ * Returns true when at least one specifier was removed.
+ */
+function removeDeadImportSpecifiers(
+  programPath: NodePath<import('@babel/types').Program>
+): boolean {
+  const referenced = collectReferencedIdentifiers(programPath);
+  let removed = false;
 
   programPath.traverse({
     ImportDeclaration(path) {
-      const specifiers = path.node.specifiers.filter((spec) =>
-        referencedIdentifiers.has(spec.local.name)
-      );
+      // Side-effect-only imports (`import './styles.css'`) have no specifiers
+      // and must never be removed by this pass.
+      if (path.node.specifiers.length === 0) {
+        return;
+      }
+
+      const specifiers = path.node.specifiers.filter((spec) => referenced.has(spec.local.name));
 
       if (specifiers.length === 0) {
         path.remove();
+        removed = true;
       } else if (specifiers.length !== path.node.specifiers.length) {
         path.node.specifiers = specifiers;
+        removed = true;
       }
     },
   });
+
+  return removed;
+}
+
+/**
+ * Iteratively eliminate dead top-level declarations and dead imports until
+ * the AST reaches a fixed point. The loop is needed because removing a dead
+ * declaration (e.g. a hoisted helper) may expose new dead imports, and
+ * removing a dead import may expose further dead declarations.
+ */
+function eliminateDeadImports(programPath: NodePath<import('@babel/types').Program>) {
+  let changed = true;
+  while (changed) {
+    const d = removeDeadTopLevelDeclarations(programPath);
+    const i = removeDeadImportSpecifiers(programPath);
+    changed = d || i;
+  }
 }

@@ -10,6 +10,7 @@ import { isExampleStoryId, telemetry } from 'storybook/internal/telemetry';
 import type { AgentInfo } from 'storybook/internal/telemetry';
 
 import { mergeAndWriteStoryHistory } from './agent-story-history-cache.ts';
+import { getAiSetupRunId } from '../../../../core/src/shared/utils/ai-checklist-flags.ts';
 
 interface AgentTelemetryReporterOptions {
   configDir: string;
@@ -75,6 +76,8 @@ export class AgentTelemetryReporter implements Reporter {
     const testModulesErrors = testModules.flatMap((t) => t.errors());
     const unhandledErrorCount = unhandledErrors.length + testModulesErrors.length;
 
+    const runId = await getAiSetupRunId(this.configDir);
+
     // Fire and forget — same pattern as the existing test-run telemetry
     telemetry(
       'ai-setup-self-healing-scoring',
@@ -84,6 +87,7 @@ export class AgentTelemetryReporter implements Reporter {
         unhandledErrorCount,
         duration,
         watch: this.ctx.config.watch,
+        runId,
       },
       { configDir: this.configDir, stripMetadata: true }
     );

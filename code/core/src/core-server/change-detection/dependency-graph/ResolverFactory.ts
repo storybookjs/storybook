@@ -56,7 +56,7 @@ class AliasNormalizer {
         for (const p of newPatterns) {
           this.warnedRegexAliases.add(p);
         }
-        logger.warn(
+        logger.debug(
           `Change detection: ignored ${skippedRegex.length} regex alias(es); related modules tracked as opaque-leaf.`
         );
         logger.debug(

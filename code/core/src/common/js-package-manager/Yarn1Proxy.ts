@@ -253,18 +253,4 @@ export class Yarn1Proxy extends JsPackageManager {
 
     throw new Error('Something went wrong while parsing yarn output');
   }
-
-  public parseErrorFromLogs(logs: string): string {
-    let finalMessage = 'YARN1 error';
-    const match = logs.match(YARN1_ERROR_REGEX);
-
-    if (match) {
-      const errorMessage = match[0]?.replace(/^error\s(.*)$/, '$1');
-      if (errorMessage) {
-        finalMessage = `${finalMessage}: ${errorMessage}`;
-      }
-    }
-
-    return finalMessage.trim();
-  }
 }

@@ -3,11 +3,8 @@
 import type { Type } from '@angular/core';
 import {
   Component,
-  // `ComponentFactoryResolver` is the abstract symbol the (now-commented) factory
-  // test path used via `TestBed.inject(ComponentFactoryResolver)`. It is still
-  // exported in Angular 22; we use it only as a throws-if-called decouple guard
-  // (its `resolveComponentFactory` method is abstract / not on the prototype).
-  ComponentFactoryResolver,
+  // Removed in Angular 22
+  // ComponentFactoryResolver,
   Directive,
   EventEmitter,
   HostBinding,
@@ -16,12 +13,11 @@ import {
   Output,
   Pipe,
   input,
-  model,
   output,
 } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { BrowserDynamicTestingModule } from '@angular/platform-browser-dynamic/testing';
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
 import {
   getComponentInputsOutputs,
@@ -51,11 +47,9 @@ describe('getComponentInputsOutputs', () => {
     });
   });
 
-  // TODO(angular-22): re-enable factory-comparison assertions when ComponentFactoryResolver path is resolved
-  // Every `it()` in the block below asserts against `resolveComponentFactory(...)`, which relies on the
-  // Angular-22-removed `ComponentFactoryResolver`. There is no separable non-factory half, so these stay
-  // commented; the live `describe('getComponentInputsOutputs (non-factory)')` block further down provides
-  // equivalent factory-free coverage (incl. `model()`). See
+  // TODO(angular-22): these assert against `resolveComponentFactory(...)`, removed in
+  // Angular 22. Equivalent factory-free coverage (incl. `model()`) lives in the
+  // `getComponentInputsOutputs (signal-based I/O)` block below. See
   // https://github.com/storybookjs/storybook/issues/34831
   /* Commented out until we figure out how to handle the removal of ComponentFactoryResolver in Angular 22
   See https://github.com/angular/angular/releases/tag/v22.0.0-next.7
@@ -222,12 +216,23 @@ describe('getComponentInputsOutputs', () => {
   */
 });
 
-describe('getComponentInputsOutputs (non-factory)', () => {
-  // These assertions never CALL `resolveComponentFactory` / a `ComponentFactoryResolver`
-  // instance to derive I/O (the Angular-22-affected factory path the commented block
-  // above relied on). They cover the same I/O detection surface as that block, plus
-  // `model()` signal detection, using literal expected shapes only. `ComponentFactoryResolver`
-  // is imported solely by the final test as a throws-if-called decouple guard.
+describe('getComponentInputsOutputs (signal-based I/O)', () => {
+  // `input()`/`output()`/`model()` are decorator-less, so `getComponentInputsOutputs`
+  // reads them from the compiled Angular component definition (`ɵcmp`). The Angular
+  // builder always emits `ɵcmp` for the components Storybook receives, but this unit
+  // harness (analog vite-plugin-angular) leaves `ɵcmp.inputs`/`ɵcmp.outputs` empty for
+  // signal members, so we attach a synthetic `ɵcmp` mirroring the documented AOT shape
+  // and assert the production reader. Full end-to-end signal detection at real AOT is
+  // covered by the `model-signal` sandbox play stories in CI.
+  //
+  // AOT `ɵcmp` shape:
+  //   inputs:  { [templateName]: [propName, flags] }   (signal inputs are arrays)
+  //   outputs: { [templateName]: propName }
+  const withCmp = (inputs: Record<string, unknown>, outputs: Record<string, string>) => {
+    class FooComponent {}
+    (FooComponent as any).ɵcmp = { inputs, outputs };
+    return FooComponent;
+  };
 
   it('detects @Input / @Output (decorator path, unchanged)', () => {
     @Component({ template: '', standalone: false })
@@ -258,21 +263,7 @@ describe('getComponentInputsOutputs (non-factory)', () => {
     );
   });
 
-  it('detects input() / output() signal members', () => {
-    @Component({ template: '', standalone: true })
-    class FooComponent {
-      public signalInput = input<string>();
-
-      public signalOutput = output<string>();
-    }
-
-    const { inputs, outputs } = getComponentInputsOutputs(FooComponent);
-
-    expect(inputs).toContainEqual({ propName: 'signalInput', templateName: 'signalInput' });
-    expect(outputs).toContainEqual({ propName: 'signalOutput', templateName: 'signalOutput' });
-  });
-
-  it('detects EventEmitter @Output', () => {
+  it('detects EventEmitter @Output (decorator path, unchanged)', () => {
     @Component({ template: '', standalone: true })
     class FooComponent {
       @Output() public emitter = new EventEmitter<string>();
@@ -283,78 +274,38 @@ describe('getComponentInputsOutputs (non-factory)', () => {
     expect(outputs).toContainEqual({ propName: 'emitter', templateName: 'emitter' });
   });
 
-  it('detects model() as both an input and a synthesized `${name}Change` output', () => {
-    @Component({ template: '', standalone: true })
-    class FooComponent {
-      public color = model<string>();
-
-      public reqd = model.required<boolean>();
-
-      public aliased = model<string>(undefined, { alias: 'al' });
-    }
+  it('detects input() / output() signal members from ɵcmp', () => {
+    const FooComponent = withCmp(
+      { signalInput: ['signalInput', 1] },
+      { signalOutput: 'signalOutput' }
+    );
 
     const { inputs, outputs } = getComponentInputsOutputs(FooComponent);
 
-    // model() field surfaces BOTH the `color` input AND a `colorChange` output.
+    expect(inputs).toContainEqual({ propName: 'signalInput', templateName: 'signalInput' });
+    expect(outputs).toContainEqual({ propName: 'signalOutput', templateName: 'signalOutput' });
+  });
+
+  it('detects model() as an input plus its synthesized `${name}Change` output', () => {
+    // `color = model()`, `reqd = model.required()`, `aliased = model(_, { alias: 'al' })`.
+    // The Angular compiler resolves the alias in `ɵcmp`, so the input is keyed by the
+    // binding name (`al`) and the synthesized output by `${alias}Change` (`alChange`).
+    const FooComponent = withCmp(
+      { color: ['color', 1], reqd: ['reqd', 1], al: ['aliased', 1] },
+      { colorChange: 'color', reqdChange: 'reqd', alChange: 'aliased' }
+    );
+
+    const { inputs, outputs } = getComponentInputsOutputs(FooComponent);
+
     expect(inputs).toContainEqual({ propName: 'color', templateName: 'color' });
     expect(outputs).toContainEqual({ propName: 'color', templateName: 'colorChange' });
 
-    // model.required() behaves identically.
     expect(inputs).toContainEqual({ propName: 'reqd', templateName: 'reqd' });
     expect(outputs).toContainEqual({ propName: 'reqd', templateName: 'reqdChange' });
 
-    // Aliased model(): the runtime alias (`al`/`alChange`) is only resolvable via
-    // `ɵcmp` at real AOT runtime. In this JIT/esbuild unit-test harness `ɵcmp` is
-    // empty for signal members (Probe C), so the bespoke fallback synthesizes from
-    // the property name (`aliased`/`aliasedChange`). This is the documented
-    // harness-only fallback shape, not a regression: at AOT the primary
-    // `ɵgetComponentDef` path yields the resolved `al`/`alChange` names.
-    expect(inputs.some((i) => i.propName === 'aliased')).toBe(true);
-    expect(outputs.some((o) => o.propName === 'aliased' && o.templateName.endsWith('Change'))).toBe(
-      true
-    );
-  });
-
-  it('never invokes resolveComponentFactory for model() detection', () => {
-    // R6 decouple proof (PREFERRED mechanism — throws-if-called guard).
-    //
-    // The live `@angular/core` ESM namespace is non-extensible and exports no
-    // top-level `resolveComponentFactory` (it was only ever a method on the
-    // abstract `ComponentFactoryResolver`, the symbol the now-commented factory
-    // test path consumed via `TestBed.inject(ComponentFactoryResolver)`).
-    // `ComponentFactoryResolver` is still exported and its prototype IS
-    // extensible (the `resolveComponentFactory` method is abstract, so absent
-    // from the prototype). We install a throws-if-called `resolveComponentFactory`
-    // on that prototype: if the runtime model() path had ANY residual
-    // `ComponentFactoryResolver` coupling it would invoke this and throw. The
-    // detection completing while the guard is never called proves the path is
-    // purely instance/component-def based.
-    const proto = ComponentFactoryResolver.prototype as unknown as Record<string, unknown>;
-    const hadOwn = Object.prototype.hasOwnProperty.call(proto, 'resolveComponentFactory');
-    const original = proto.resolveComponentFactory;
-    const throwIfCalled = vi.fn(() => {
-      throw new Error('resolveComponentFactory must not be invoked by model() detection');
-    });
-    try {
-      proto.resolveComponentFactory = throwIfCalled;
-
-      @Component({ template: '', standalone: true })
-      class FooComponent {
-        public color = model<string>();
-      }
-
-      const { inputs, outputs } = getComponentInputsOutputs(FooComponent);
-
-      expect(inputs).toContainEqual({ propName: 'color', templateName: 'color' });
-      expect(outputs).toContainEqual({ propName: 'color', templateName: 'colorChange' });
-      expect(throwIfCalled).not.toHaveBeenCalled();
-    } finally {
-      if (hadOwn) {
-        proto.resolveComponentFactory = original;
-      } else {
-        delete proto.resolveComponentFactory;
-      }
-    }
+    // Aliased model(): the resolved binding name (`al`/`alChange`) flows through.
+    expect(inputs).toContainEqual({ propName: 'aliased', templateName: 'al' });
+    expect(outputs).toContainEqual({ propName: 'aliased', templateName: 'alChange' });
   });
 });
 

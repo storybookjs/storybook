@@ -111,12 +111,12 @@ type TransformOutputSignalType<T> = {
  * additionally synthesizes an intersection member keyed `` `${K}Change` `` typed
  * `(e: E) => void`.
  *
- * Known limitation (documented for the AC-X3 changelog): aliased
- * `model(prop, { alias: 'a' })` produces `aChange` at runtime, but the type
- * layer can only synthesize `${propName}Change` (`propChange`) because
- * TypeScript cannot observe the runtime alias. Runtime detection (Layer C, via
- * the resolved binding name on `ɵcmp`) still handles aliasing correctly.
- * `model.required()` has the same shape as `model()` and is fully covered.
+ * Known limitation: aliased `model(prop, { alias: 'a' })` produces `aChange` at
+ * runtime, but the type layer can only synthesize `${propName}Change`
+ * (`propChange`) because TypeScript cannot observe the runtime alias. Runtime
+ * detection (via the resolved binding name on `ɵcmp`) still handles aliasing
+ * correctly. `model.required()` has the same shape as `model()` and is fully
+ * covered.
  */
 type TransformModelSignalType<T> = {
   [K in keyof T]: T[K] extends ModelSignal<infer E> ? E : T[K];

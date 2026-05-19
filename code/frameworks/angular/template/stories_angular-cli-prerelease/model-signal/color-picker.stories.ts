@@ -29,7 +29,7 @@ export default meta;
 type Story = StoryObj<ColorPickerComponent>;
 
 /**
- * AC-X2a — `colorChange` appears as an Action (fires on emit) and `color` is a Control/arg.
+ * `colorChange` appears as an Action (fires on emit) and `color` is a Control/arg.
  *
  * `play`:
  * 1. asserts the initial `color` arg rendered (it reached the component instance);
@@ -52,13 +52,12 @@ export const ControlsAndActions: Story = {
 };
 
 /**
- * AC-X2b — positive two-way `[(color)]` round-trip AND the live `storyProps$` update path.
+ * Positive two-way `[(color)]` round-trip plus the live args-update path.
  *
- * `play` runs the exact sequence:
+ * `play` runs the sequence:
  * 1. initial render → assert the initial `args.color` reached the component instance;
- * 2. trigger a LIVE `storyProps$` arg change via `updateArgs` → assert the new value reaches
- *    the instance (the StorybookWrapperComponent L125→L131 live-update path that AC-C3c flags
- *    as the highest-risk path now that `color` is an Input);
+ * 2. trigger a live arg change via `updateArgs` → assert the new value reaches the
+ *    instance (the highest-risk path now that `color` is an Input);
  * 3. trigger an in-component `colorChange` emission → assert it round-trips back to
  *    `args.color` (positive two-way `[(color)]`);
  * 4. assert the action received `colorChange`.
@@ -87,7 +86,7 @@ export const TwoWayRoundTrip: Story = {
     // 1. Initial render: the initial `args.color` reached the component instance.
     await expect(canvas.getByTestId('current-color')).toHaveTextContent('#345F92');
 
-    // 2. Live `storyProps$` arg change via Controls/args update reaches the instance.
+    // 2. A live arg change via Controls/args update reaches the instance.
     updateArgs({ color: '#FF0000' });
     await expect(canvas.getByTestId('current-color')).toHaveTextContent('#FF0000');
 

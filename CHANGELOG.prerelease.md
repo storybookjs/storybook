@@ -2,26 +2,6 @@
 
 - Angular: Add native `model()` signal support - [#34831](https://github.com/storybookjs/storybook/issues/34831), thanks @valentinpalkovic!
 
-  `@storybook/angular` now natively detects Angular `model()` signals across all three layers:
-  type inference (`Meta`/`StoryObj` argTypes accept the synthesized `${prop}Change` output with
-  no `TS2353`), Compodoc autodocs (the `${prop}Change` output row is generated), and runtime
-  binding/actions (the `model()` input is bound and the synthesized output appears in the Actions
-  panel and supports the two-way `[(prop)]` round-trip). The previously required hand-written
-  `Args` interface / manual `argTypes` workaround is no longer necessary. `model.required()` is
-  fully covered.
-
-  Known limitations: (1) for an aliased `model(prop, { alias: 'a' })`, the type layer can only
-  synthesize `${prop}Change` (`propChange`), not the runtime alias (`aChange`), because
-  TypeScript cannot see the runtime alias. The runtime layer resolves the alias correctly via
-  the Angular component definition at AOT, so aliased bindings work at runtime; only the static
-  type carries the property-name-based `${prop}Change` key. (2) Compodoc autodocs detect
-  `model()` via a name-in-both-`inputsClass`-and-`outputsClass` heuristic (compodoc emits no
-  `model()` marker), so a developer-authored same-name `@Input() x` + `@Output() x` pair is
-  misclassified as a `model()` (its bare-name output suppressed, a spurious `${x}Change`
-  synthesized). This is the accepted trade-off for version-tolerant detection through an
-  external, unpinned tool.
-
-
 ## 10.4.0-beta.0
 
 - CLI: Handle minimumReleaseAge conflicts across package managers - [#34769](https://github.com/storybookjs/storybook/pull/34769), thanks @JReinhold!

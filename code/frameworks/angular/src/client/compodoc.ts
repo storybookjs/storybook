@@ -241,26 +241,17 @@ export const extractArgTypesFromData = (componentData: Class | Directive | Injec
 
   // Detect Angular `model()` signals.
   //
-  // compodoc (verified against the captured v1.2.1 output committed at
-  // `code/frameworks/angular/src/client/docs/__testfixtures__/doc-model/compodoc-input.json`,
-  // byte-identical to the real Probe B capture) emits a `model()` member as an
-  // IDENTICAL entry — same bare name, e.g. `color` — in BOTH `inputsClass` AND
-  // `outputsClass`, with no `decorators`/`jsdoctags` and the `ModelSignal<T>`
-  // wrapper erased to the unwrapped value type. Plain `@Input`/`input()` only land
-  // in `inputsClass`; plain `@Output`/`output()`/`EventEmitter` only land in
-  // `outputsClass` (and never under the input's name). The only reliable,
-  // version-tolerant discriminator is therefore a property whose name appears in
-  // BOTH arrays of the same component.
+  // compodoc emits no `model()` marker: a `model()` member appears as the same bare
+  // name in BOTH `inputsClass` AND `outputsClass`, whereas plain `@Input`/`input()`
+  // only land in `inputsClass` and plain `@Output`/`output()` only in `outputsClass`.
+  // A name present in both arrays is therefore the only version-tolerant discriminator.
+  // (See the committed fixture under `__testfixtures__/doc-model/`.)
   //
-  // Known limitation: this both-arrays heuristic also matches a developer-authored
-  // same-name pair — an `@Input() x` together with an `@Output() x`, or an
-  // `@Input() set foo()` together with an `@Output() foo` — because compodoc has no
-  // `model()` marker to distinguish that hand-written pair from a real `model()`.
-  // Such a pair is misclassified as a `model()`: its bare-name output is suppressed
-  // below and a spurious `${name}Change` output is synthesized. This is an accepted
-  // limitation of detecting `model()` through an external, unpinned tool that emits
-  // no `model()` marker (per Probe B); a same-name `@Input`/`@Output` pair is rare
-  // and is the documented trade-off for version-tolerant detection.
+  // Known limitation: a developer-authored same-name `@Input() x` + `@Output() x`
+  // pair is indistinguishable from a real `model()` and is misclassified — its
+  // bare-name output is suppressed and a spurious `${name}Change` is synthesized.
+  // This is the accepted trade-off for detecting `model()` through an external,
+  // unpinned tool; such a pair is rare.
   const inputClassNames = new Set<string>(
     (((componentData as any).inputsClass as Property[]) || []).map((item) => item.name)
   );
@@ -274,12 +265,9 @@ export const extractArgTypesFromData = (componentData: Class | Directive | Injec
     data.forEach((item: Method | Property) => {
       const section = mapItemToSection(key, item);
 
-      // Suppress compodoc's spurious `outputsClass` duplicate of a `model()` property.
-      // The model property must surface as an INPUT control (via its `inputsClass`
-      // entry); the corresponding output is the synthesized `${name}Change` added
-      // below — not a plain bare-name output. See the model() detection note above
-      // (committed evidence fixture
-      // `code/frameworks/angular/src/client/docs/__testfixtures__/doc-model/compodoc-input.json`).
+      // Suppress compodoc's spurious bare-name `outputsClass` duplicate of a
+      // `model()`. The model surfaces as an INPUT control (from `inputsClass`); its
+      // output is the synthesized `${name}Change` added below.
       if (key === 'outputsClass' && !isMethod(item) && modelPropertyNames.has(item.name)) {
         return;
       }
@@ -314,34 +302,18 @@ export const extractArgTypesFromData = (componentData: Class | Directive | Injec
     });
   });
 
-  // Synthesize the `${name}Change` output for every detected `model()` property.
-  //
-  // compodoc does NOT emit a `${name}Change` member (it merely duplicates the
-  // property under its bare name into `outputsClass`), so Storybook synthesizes the
-  // two-way `${name}Change` output here, reusing the per-item output shape above.
-  //
-  // This runs unconditionally, AFTER the iteration loop, so it is deterministic
-  // across both `FEATURES.angularFilterNonInputControls` states:
-  //   - flag OFF: the model input control comes from `inputsClass`; the spurious
-  //     bare-name `outputsClass` duplicate is suppressed above; `${name}Change` is
-  //     added here.
-  //   - flag ON: iteration is restricted to `['inputsClass']` (filter L227-229), so
-  //     the model input control still surfaces, and `${name}Change` is re-surfaced
-  //     here despite `outputsClass` never being iterated.
-  // Evidence basis: committed fixture
-  // `code/frameworks/angular/src/client/docs/__testfixtures__/doc-model/compodoc-input.json`.
+  // Synthesize the `${name}Change` output for every detected `model()`. compodoc
+  // never emits it. This runs after the iteration loop so it is deterministic
+  // regardless of `FEATURES.angularFilterNonInputControls` (which restricts the
+  // loop to `inputsClass`): the model input control still comes from `inputsClass`
+  // and `${name}Change` is added here either way.
   modelProperties.forEach((item) => {
     const changeName = `${item.name}Change`;
 
-    // The synthesized member is an OUTPUT (an `EventEmitter`-equivalent), not the
-    // model INPUT it is derived from. It must therefore NOT inherit the input's
-    // Docs metadata: an event has no default value, and its `table.type.summary`
-    // should read like an output handler signature rather than the input value
-    // type. So we OMIT `defaultValue` and render the type as
-    // `(e: ${item.type}) => void` (the model value type as the emitted payload),
-    // matching how genuine `@Output`/`output()` members surface in the Docs table.
-    // This is Docs-table cosmetic only — Controls/Actions wiring (the `action`
-    // field below) and the both-arrays detection are unchanged.
+    // The synthesized member is an OUTPUT, not the model INPUT it derives from, so
+    // it must not inherit the input's Docs metadata: omit `defaultValue` and render
+    // the type as the emitted-payload handler signature, matching how genuine
+    // `@Output`/`output()` members appear in the Docs table.
     const argType = {
       name: changeName,
       description: item.rawdescription || item.description,

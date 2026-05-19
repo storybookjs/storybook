@@ -2,13 +2,9 @@ import type { Type } from '@angular/core';
 import {
   Component,
   Directive,
-  Injector,
   Input,
-  OutputEmitterRef,
   Output,
   Pipe,
-  isSignal,
-  runInInjectionContext,
   ɵReflectionCapabilities as ReflectionCapabilities,
   ɵgetComponentDef as getComponentDef,
 } from '@angular/core';
@@ -90,8 +86,8 @@ export const getComponentInputsOutputs = (component: any): ComponentInputsOutput
 
   // Additively surface signal-based I/O (`input()`, `output()`, `model()`), which carry
   // no decorator metadata and are therefore invisible to the decorator path above.
-  // This is intentionally additive and never mutates the decorator-derived results, so
-  // `@Input`/`@Output`/`EventEmitter` behavior is unchanged (zero regression).
+  // This is additive and never mutates the decorator-derived results, so
+  // `@Input`/`@Output`/`EventEmitter` behavior is unchanged.
   return addSignalInputsOutputs(component, decoratorDerived);
 };
 
@@ -102,30 +98,21 @@ const hasEntry = (
 ) => list.some((e) => e.propName === propName || e.templateName === templateName);
 
 /**
- * Surfaces signal-based I/O that the decorator-reflection path cannot see.
+ * Surfaces signal-based I/O (`input()`, `output()`, `model()`) that the
+ * decorator-reflection path cannot see.
  *
- * Angular's `model()` lowers to a binding pair: an `x` input + a compiler-synthesized
- * `xChange` output. `input()`/`output()` are likewise decorator-less. None of these appear
- * in `ɵReflectionCapabilities.propMetadata`, so without this path Storybook never binds
- * them at runtime nor wires up the `xChange` action.
+ * Angular's `model()` lowers to a binding pair: an `x` input plus a
+ * compiler-synthesized `xChange` output. `input()`/`output()` are likewise
+ * decorator-less, so none of them appear in `ɵReflectionCapabilities.propMetadata`.
  *
- * Two complementary strategies are used (the `model()` compodoc shape this mirrors
- * is captured in the committed evidence fixture
- * `code/frameworks/angular/src/client/docs/__testfixtures__/doc-model/compodoc-input.json`):
+ * They are read instead from the compiled Angular component definition (`ɵcmp`
+ * via `ɵgetComponentDef`). Storybook only ever receives components compiled by
+ * the Angular builder, so `ɵcmp.inputs`/`ɵcmp.outputs` already encode the
+ * resolved binding names — aliased `model(x, { alias })` and `model.required()`
+ * included. This is purely static: it never instantiates the component.
  *
- * 1. Primary — read the Angular component definition (`ɵcmp` via `ɵgetComponentDef`).
- *    At real AOT runtime (the Angular builder used by Storybook/sandboxes) `ɵcmp.inputs`
- *    and `ɵcmp.outputs` already encode the *resolved* binding names, so aliased
- *    `model(x, { alias })` and `model.required()` are handled correctly here.
- *
- * 2. Fallback — a `model()`/`input()`/`output()`-aware synthesis from the component
- *    instance shape. In the `@storybook/angular` JIT/esbuild unit-test harness (and any
- *    consumer receiving a non-AOT-compiled class) esbuild strips the AOT signal metadata
- *    and the JIT compiler cannot reflect decorator-less signal members, so `ɵcmp.inputs`
- *    / `ɵcmp.outputs` are empty for signal members (`ɵcmp.signals === false`). The
- *    fallback detects the runtime brand of each instance field instead.
- *
- * Both paths are additive and de-duplicated against the decorator-derived results.
+ * Results are additive and de-duplicated against the decorator-derived results,
+ * so `@Input`/`@Output`/`EventEmitter` behavior is unchanged.
  */
 const addSignalInputsOutputs = (
   component: any,
@@ -136,89 +123,36 @@ const addSignalInputsOutputs = (
     outputs: [...base.outputs],
   };
 
-  // 1. Primary: Angular component definition (resolved binding names, AOT-correct).
+  let def: any;
   try {
-    const def: any = getComponentDef(component);
-    if (def) {
-      // Angular's `ɵcmp` def keys the I/O maps by the *template* (public/binding)
-      // name, NOT the class property name:
-      //   def.inputs:  { [templateName]: propName | [propName, flags, transform] }
-      //   def.outputs: { [templateName]: propName }
-      // (verified empirically; aliased `@Input('a') b` → def.inputs = { a: ['b',…] }).
-      for (const templateName of Object.keys(def.inputs ?? {})) {
-        const rawPropName = def.inputs[templateName];
-        const propName = Array.isArray(rawPropName)
-          ? (rawPropName[0] ?? templateName)
-          : (rawPropName ?? templateName);
-        if (!hasEntry(result.inputs, propName, templateName)) {
-          result.inputs.push({ propName, templateName });
-        }
-      }
-      for (const templateName of Object.keys(def.outputs ?? {})) {
-        const propName = def.outputs[templateName] ?? templateName;
-        if (!hasEntry(result.outputs, propName, templateName)) {
-          result.outputs.push({ propName, templateName });
-        }
-      }
-    }
+    def = getComponentDef(component);
   } catch {
-    // `ɵgetComponentDef` may be unavailable for non-component classes; ignore.
+    // `ɵgetComponentDef` may be unavailable for non-component classes.
+    return result;
+  }
+  if (!def) {
+    return result;
   }
 
-  // 2. Fallback: synthesize from the component instance shape when signal members were
-  //    not surfaced by the component definition (non-AOT/JIT-compiled classes).
-  try {
-    let instance: any;
-    runInInjectionContext(Injector.create({ providers: [] }), () => {
-      instance = new component();
-    });
-
-    if (instance) {
-      for (const propName of Object.keys(instance)) {
-        const member = instance[propName];
-        if (member == null) {
-          continue;
-        }
-
-        // `isSignal()` narrows `member` to `Signal<unknown>`, which does not expose the
-        // writable (`set`/`update`) or subscribable (`subscribe`) members that brand a
-        // `model()`/`output()` at runtime. Probe those off an un-narrowed reference.
-        const memberAny = member as any;
-        const isWritableSignal =
-          isSignal(member) &&
-          typeof memberAny.set === 'function' &&
-          typeof memberAny.update === 'function';
-        const isSubscribable = typeof memberAny.subscribe === 'function';
-
-        if (isWritableSignal && isSubscribable) {
-          // `model()` / `model.required()`: input `x` + synthesized output `xChange`.
-          // The runtime alias is not observable on the instance; the resolved binding
-          // name is only available via `ɵcmp` (handled by the primary path at AOT).
-          const changeName = `${propName}Change`;
-          if (!hasEntry(result.inputs, propName, propName)) {
-            result.inputs.push({ propName, templateName: propName });
-          }
-          if (!hasEntry(result.outputs, propName, changeName)) {
-            result.outputs.push({ propName, templateName: changeName });
-          }
-        } else if (isSignal(member)) {
-          // `input()` / `input.required()`: writable-less signal → input only.
-          if (!hasEntry(result.inputs, propName, propName)) {
-            result.inputs.push({ propName, templateName: propName });
-          }
-        } else if (member instanceof OutputEmitterRef) {
-          // `output()`: not a signal, exposes `subscribe` → output only.
-          if (!hasEntry(result.outputs, propName, propName)) {
-            result.outputs.push({ propName, templateName: propName });
-          }
-        }
-      }
+  // `ɵcmp` keys the I/O maps by the *template* (public/binding) name, not the
+  // class property name:
+  //   def.inputs:  { [templateName]: propName | [propName, flags, transform] }
+  //   def.outputs: { [templateName]: propName }
+  // (aliased `@Input('a') b` → def.inputs = { a: ['b', …] }).
+  for (const templateName of Object.keys(def.inputs ?? {})) {
+    const rawPropName = def.inputs[templateName];
+    const propName = Array.isArray(rawPropName)
+      ? (rawPropName[0] ?? templateName)
+      : (rawPropName ?? templateName);
+    if (!hasEntry(result.inputs, propName, templateName)) {
+      result.inputs.push({ propName, templateName });
     }
-  } catch {
-    // The component may not be instantiable outside its real DI context (e.g. it
-    // requires constructor dependencies). The primary path above already covers the
-    // AOT runtime case; failing instantiation here is non-fatal and just means no
-    // extra fallback-derived signal members are added.
+  }
+  for (const templateName of Object.keys(def.outputs ?? {})) {
+    const propName = def.outputs[templateName] ?? templateName;
+    if (!hasEntry(result.outputs, propName, templateName)) {
+      result.outputs.push({ propName, templateName });
+    }
   }
 
   return result;

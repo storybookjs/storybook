@@ -17,7 +17,8 @@ const OriginalNextImage =
 const originalGetImageProps =
   NextImageNamespace.getImageProps ??
   (typeof _raw === "object" && _raw !== null && "getImageProps" in _raw
-    ? (_raw as Record<string, typeof NextImageNamespace.getImageProps>).getImageProps
+    ? (_raw as Record<string, typeof NextImageNamespace.getImageProps>)
+        .getImageProps
     : undefined);
 
 const MockedNextImage = React.forwardRef<

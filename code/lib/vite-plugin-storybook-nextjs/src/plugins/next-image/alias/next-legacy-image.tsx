@@ -10,7 +10,9 @@ import type * as _NextLegacyImage from "next/legacy/image";
 // See: https://rolldown.rs/in-depth/bundling-cjs#recommendations-for-library-authors
 const _rawLegacy = _NextLegacyImageNamespace.default;
 const OriginalNextLegacyImage =
-  typeof _rawLegacy === "object" && _rawLegacy !== null && "__esModule" in _rawLegacy
+  typeof _rawLegacy === "object" &&
+  _rawLegacy !== null &&
+  "__esModule" in _rawLegacy
     ? (_rawLegacy as Record<string, typeof _rawLegacy>).default
     : _rawLegacy;
 

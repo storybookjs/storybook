@@ -18,9 +18,6 @@ import type { Item } from './types.ts';
 import { StatusContext } from './StatusContext.tsx';
 import { CollapseIcon } from './CollapseIcon.tsx';
 
-// FIXME/TODO: Review with MA: check spacing between top level sections, possible inconsistency in Figma
-// -> Add spacing when the above subtree is expanded 14px / .5 item
-// -> Add even more spacing between refs and remove the divider 28px / 1 item
 // FIXME/TODO: we must find how to get PopoverProvider to autofocus the first menu item on menu open through RAC APIs.
 // FIXME/TODO: ensure there is no weird behaviour with top-level stories / orphans
 // FIXME/TODO: fix ref stories not loading at all

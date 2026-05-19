@@ -1,6 +1,8 @@
 import type { FC } from 'react';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
+import { BookIcon } from '@storybook/icons';
+
 import { useStorybookState, type API } from 'storybook/manager-api';
 import { styled } from 'storybook/theming';
 
@@ -27,51 +29,72 @@ const Wrapper = styled.div<{ isMain: boolean }>(({ isMain }) => ({
 }));
 
 const RefHead = styled.div(({ theme }) => ({
-  fontWeight: theme.typography.weight.bold,
-  fontSize: theme.typography.size.s2,
-
-  // Similar to ListItem.tsx
-  textDecoration: 'none',
-  lineHeight: '16px',
+  position: 'relative',
   display: 'flex',
   alignItems: 'center',
-  justifyContent: 'space-between',
   background: 'transparent',
-
+  minHeight: 28,
+  borderRadius: 4,
   width: '100%',
-  marginTop: 20,
-  paddingTop: 16,
-  paddingBottom: 12,
-  borderTop: `1px solid ${theme.appBorderColor}`,
-
+  marginTop: 28,
   color: theme.color.defaultText,
+
+  // Highlight the whole row on hover or when the toggle button is keyboard-focused.
+  '&:hover, &:has(button:focus-visible)': {
+    background: theme.background.hoverable,
+    color: theme.barHoverColor,
+  },
+
+  // Icon swap: BookIcon visible at rest, CollapseIcon visible on hover/focus.
+  '.hover-only': {
+    display: 'none',
+  },
+  '.static-only': {
+    display: 'flex',
+    alignItems: 'center',
+  },
+  '&:hover .hover-only, &:has(button:focus-visible) .hover-only': {
+    display: 'flex',
+    alignItems: 'center',
+  },
+  '&:hover .static-only, &:has(button:focus-visible) .static-only': {
+    display: 'none',
+  },
 }));
 
-const RefTitle = styled.div({
+const RefTitle = styled.span({
+  flex: '1 1 auto',
+  minWidth: 0,
+  overflow: 'hidden',
   textOverflow: 'ellipsis',
   whiteSpace: 'nowrap',
-  flex: 1,
-  overflow: 'hidden',
-  marginLeft: 2,
 });
 
-// TODO review
 const CollapseButton = styled.button(({ theme }) => ({
   all: 'unset',
   display: 'flex',
-  padding: '0px 8px',
-  gap: 6,
   alignItems: 'center',
+  flex: '1 1 auto',
+  minHeight: 28,
+  paddingInlineStart: 7,
+  gap: 6,
   cursor: 'pointer',
   overflow: 'hidden',
+  borderRadius: 4,
+  boxSizing: 'border-box',
 
-  '&:focus': {
-    borderColor: theme.color.secondary,
-    'span:first-of-type': {
-      borderLeftColor: theme.color.secondary,
-    },
+  '&:focus-visible': {
+    outline: 'none',
+    boxShadow: `0 0 0 2px ${theme.background.app}, 0 0 0 4px ${theme.color.secondary}`,
   },
 }));
+
+const RefBookIcon = styled(BookIcon)({
+  width: 14,
+  height: 14,
+  flex: '0 0 auto',
+  color: 'currentColor',
+});
 
 export const Ref: FC<RefType & RefProps> = React.memo(function Ref(props) {
   const storybookState = useStorybookState();
@@ -128,12 +151,19 @@ export const Ref: FC<RefType & RefProps> = React.memo(function Ref(props) {
   return (
     <>
       {isMain || (
-        <RefHead
-          aria-label={`${isExpanded ? 'Hide' : 'Show'} ${title} stories`}
-          aria-expanded={isExpanded}
-        >
-          <CollapseButton data-action="collapse-ref" onClick={handleClick}>
-            <CollapseIcon isExpanded={isExpanded} />
+        <RefHead>
+          <CollapseButton
+            data-action="collapse-ref"
+            onClick={handleClick}
+            aria-label={`${isExpanded ? 'Hide' : 'Show'} ${title} stories`}
+            aria-expanded={isExpanded}
+          >
+            <span className="static-only">
+              <RefBookIcon />
+            </span>
+            <span className="hover-only">
+              <CollapseIcon isExpanded={isExpanded} />
+            </span>
             <RefTitle title={title}>{title}</RefTitle>
           </CollapseButton>
           <RefIndicator {...props} state={state} ref={indicatorRef} />

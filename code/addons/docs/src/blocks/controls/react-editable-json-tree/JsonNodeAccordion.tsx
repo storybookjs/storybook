@@ -56,6 +56,13 @@ const Trigger = styled.button(({ theme }) => ({
   },
 }));
 
+const Heading = styled.h3({
+  margin: 0,
+  display: 'inline',
+  fontSize: 'inherit',
+  fontWeight: 'normal',
+});
+
 const Region = styled.div({
   display: 'inline',
 });
@@ -88,18 +95,20 @@ export function JsonNodeAccordion({
 
   return (
     <Container as={containerTag}>
-      <Trigger
-        type="button"
-        aria-expanded={!collapsed}
-        id={ids.trigger}
-        aria-controls={ids.region}
-        className="rejt-accordion-button"
-        {...props}
-      >
-        {name} :
-      </Trigger>
+      <Heading role="heading" aria-level={deep + 2}>
+        <Trigger
+          type="button"
+          aria-expanded={!collapsed}
+          id={ids.trigger}
+          aria-controls={ids.region}
+          className="rejt-accordion-button"
+          {...props}
+        >
+          {name} :
+        </Trigger>
+      </Heading>
       <Region
-        role="group"
+        role="region"
         id={ids.region}
         aria-labelledby={ids.trigger}
         className="rejt-accordion-region"

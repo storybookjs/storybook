@@ -288,6 +288,17 @@ Avoid `console.log`, `console.warn`, and `console.error` unless the file is isol
 
 These usually start long-running development servers and are the wrong default for agents.
 
+## Code Authoring Principles For Agents
+
+These are recurring failure modes in agent-authored changes to this repo. Apply them when writing or reviewing code, not just when asked.
+
+- **Comments are maintenance docs, not an investigation transcript.** Explain *why* for the next maintainer. Do not commit internal ticket / acceptance-criteria codes (`AC-X2`, `Probe B`, `R6`), the narrative of how you figured something out, "verified byte-identical" provenance prose, or cross-file line references (`L125→L131`) — they are noise and they rot. One or two sentences of rationale beats a paragraph of evidence.
+- **Never bend production code to satisfy the test harness.** If a test only passes because production instantiates something, adds a fallback, or branches for a non-production environment, fix the test instead. The Angular unit harness (analog vite-plugin) and the AOT builder differ — assert the contract production actually uses, with a synthetic fixture if needed.
+- **Verify environment assumptions empirically before encoding them.** If a design rests on "the bundler strips X" or "this metadata is empty here", prove it with a throwaway probe before building on it (and before writing it into a comment as fact). A 10-line experiment is cheaper than a wrong architecture.
+- **Test behavior and contracts, not implementation trivia.** A test asserting "internal API Y was not called" is over-engineered; assert the observable input/output instead.
+- **Match existing conventions, especially in generated/boilerplate files.** `CHANGELOG.prerelease.md` entries are a single line: `- Area: Short description - [#PR](url), thanks @user!`. Known-limitations and rationale belong in code comments or docs, not the changelog. Don't flip pre-existing commented-out / dead code to a different state unless the task requires it.
+- **Prefer deletion and simplicity over speculative generality.** No abstraction, fallback, or "flexibility" for a consumer or scenario that does not exist in this codebase today. If a change adds many lines, check whether the right change removes them.
+
 ## Maintenance Rules For Agents
 
 - Use this file as the canonical instruction source

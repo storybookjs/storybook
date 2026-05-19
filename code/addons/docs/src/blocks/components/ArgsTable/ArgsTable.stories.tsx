@@ -3,6 +3,7 @@ import React from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
 import { action } from 'storybook/actions';
+import { expect, within } from 'storybook/test';
 import { styled } from 'storybook/theming';
 
 import * as ArgRow from './ArgRow.stories';
@@ -156,10 +157,25 @@ export const Error = {
   },
 };
 
-export const Empty = {
+const expectEmptyState = async (canvasElement: HTMLElement) => {
+  const canvas = within(canvasElement);
+
+  await expect(await canvas.findByText('No controls available for this story')).toBeVisible();
+  await expect(
+    await canvas.findByText(/Storybook didn't find any controllable args for this story/i)
+  ).toBeVisible();
+  await expect(
+    await canvas.findByRole('link', { name: /Learn how to configure controls/i })
+  ).toBeVisible();
+};
+
+export const Empty: Story = {
   args: {},
   parameters: {
     layout: 'centered',
+  },
+  play: async ({ canvasElement }) => {
+    await expectEmptyState(canvasElement);
   },
 };
 
@@ -170,6 +186,9 @@ export const EmptyInsideAddonPanel: Story = {
   },
   parameters: {
     layout: 'centered',
+  },
+  play: async ({ canvasElement }) => {
+    await expectEmptyState(canvasElement);
   },
 };
 

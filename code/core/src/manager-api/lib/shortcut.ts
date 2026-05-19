@@ -150,9 +150,6 @@ export const keyToSymbol = (key: string): string => {
   if (key === 'Enter' || key === 'Backspace' || key === 'Esc') {
     return '';
   }
-  if (key === 'escape') {
-    return '';
-  }
   if (key === ' ') {
     return 'SPACE';
   }

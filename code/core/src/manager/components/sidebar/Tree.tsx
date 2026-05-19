@@ -99,19 +99,23 @@ export const Tree = React.memo<TreeProps>(function Tree({
     [collapsedData, allStatuses]
   );
 
+  const contextMenuShortcut = useMemo(() => {
+    const shortcutKeys = api.getShortcutKeys();
+    if (!shortcutKeys?.contextMenu) {
+      return undefined;
+    }
+
+    return shortcutToHumanString(shortcutKeys.contextMenu);
+  }, [api]);
+
   // Compute tooltip data only for the focused item (duplicates TreeNode logic by design).
   const focusedItemShortcutLabel = useMemo(() => {
-    if (!focusedItemId || !api) {
+    if (!focusedItemId || !contextMenuShortcut) {
       return null;
     }
 
     const item = collapsedData[focusedItemId];
     if (!item) {
-      return null;
-    }
-
-    const shortcutKeys = api.getShortcutKeys();
-    if (!shortcutKeys?.contextMenu) {
       return null;
     }
 
@@ -123,14 +127,10 @@ export const Tree = React.memo<TreeProps>(function Tree({
     const changeStatus = itemStatus?.change.value ?? 'status-value:unknown';
     const testStatus = itemStatus?.test.value ?? 'status-value:unknown';
 
-    const shortcut = shortcutToHumanString(shortcutKeys.contextMenu);
-    const label =
-      changeStatus !== 'status-value:unknown' || testStatus !== 'status-value:unknown'
-        ? 'Status and actions'
-        : 'Actions';
-
-    return `${label} ${shortcut ? `[${shortcut}]` : ''}`;
-  }, [focusedItemId, api, collapsedData, groupDualStatus]);
+    return changeStatus !== 'status-value:unknown' || testStatus !== 'status-value:unknown'
+      ? 'Status and actions'
+      : 'Actions';
+  }, [focusedItemId, contextMenuShortcut, collapsedData, groupDualStatus]);
 
   // React-aria expects a Set for selectedKeys. Memoize so Tree's children see a stable ref.
   const selectedKeys = useMemo(
@@ -375,7 +375,9 @@ export const Tree = React.memo<TreeProps>(function Tree({
           {nodeRenderer}
         </Collection>
       </StyledAriaTree>
-      {focusedItemShortcutLabel && <FocusTooltipNote note={focusedItemShortcutLabel} />}
+      {focusedItemShortcutLabel && (
+        <FocusTooltipNote note={focusedItemShortcutLabel} shortcut={contextMenuShortcut} />
+      )}
     </StatusContext.Provider>
   );
 });

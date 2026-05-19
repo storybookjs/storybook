@@ -140,10 +140,28 @@ a malicious shim against the matching malicious sha — fail-OPEN).
 
 ## §c1-hmac-verdict
 
-The `verify-result.json` file lives at
-`$PR_HEAD_DIR/.verify-out-trusted/verify-result.json` — inside the srt
-`allowWrite` set, because the legitimate writer (`scripts/verify-pr.ts`)
-itself runs inside srt and must be able to write there.
+The signed verify result lives at the path computed by
+`verifyResultPath(runDir)` in `scripts/verify/core.ts` — i.e.
+`<runDir>/` + `RESULT_FILENAME` (`verify-result.json`). In CI the run dir
+is `$PR_HEAD_DIR/.verify-output/<runId>/`; the orchestrator additionally
+publishes a copy at the `VERIFY_RESULT_PATH` the workflow exports. Both
+locations are inside the srt `allowWrite` set, because the legitimate
+writer (`scripts/verify-pr.ts`) itself runs inside srt and must be able
+to write there. This doc deliberately cites the code symbols
+(`RESULT_FILENAME` / `verifyResultPath(runDir)` — the single source of
+truth for the location, per the contract comments in `core.ts`) rather
+than a hardcoded literal so the security rationale cannot silently drift
+from where the file actually lands.
+
+**Re-sign invariant (W4):** every trusted post-processor that mutates
+`verify-result.json` after it is first signed (vision evidence-check,
+the `derive-verdict` unit-test merge, the workflow's `evidenceRetry` jq
+annotation) MUST call `signResultFile(resultPath, secret)` from
+`scripts/verify/core.ts` immediately after the mutation, so a result
+never exists on disk without a matching, current `.sig`. Today these
+mutations only survive because `SIGNED_FIELDS` happens to exclude the
+touched fields; the re-sign keeps the gate correct even if a future
+field is added to `SIGNED_FIELDS`.
 
 Without further controls, a PR-added Playwright spec / unit test running
 inside srt could overwrite the file with

@@ -81,6 +81,24 @@ export interface RunPaths {
   consoleLog: string;
 }
 
+/**
+ * CONTRACT (W4 / SECURITY.md): the single canonical filename for the signed
+ * verify result. Every producer/consumer of the result JSON MUST derive its
+ * path from this constant (via {@link verifyResultPath}) — never hardcode the
+ * literal string anywhere else (docs, code, telemetry, jq filters).
+ */
+export const RESULT_FILENAME = 'verify-result.json';
+
+/**
+ * CONTRACT (W4 / SECURITY.md): THE single source of truth for the location of
+ * the signed verify result. `buildRunPaths` and `writeResult` both resolve the
+ * result path through this helper so there is exactly one definition of where
+ * `verify-result.json` lives for a given run/output directory.
+ */
+export function verifyResultPath(runDir: string): string {
+  return path.join(runDir, RESULT_FILENAME);
+}
+
 export function buildRunPaths(runId?: string, baseDir?: string): RunPaths {
   const resolvedBaseDir = baseDir ?? path.resolve(process.cwd(), '.verify-output');
   const resolvedRunId = runId ?? new Date().toISOString().replace(/:/g, '-');
@@ -88,7 +106,7 @@ export function buildRunPaths(runId?: string, baseDir?: string): RunPaths {
   return {
     runId: resolvedRunId,
     runDir,
-    resultJson: path.join(runDir, 'verify-result.json'),
+    resultJson: verifyResultPath(runDir),
     consoleLog: path.join(runDir, 'console.log'),
   };
 }
@@ -146,18 +164,58 @@ function sigPathFor(resultJsonPath: string): string {
   return resultJsonPath + '.sig';
 }
 
+// fsync a file then atomically rename it over `dest`. rename(2) is atomic on
+// the same filesystem, so a reader never observes a partially-written file —
+// it sees either the old contents or the fully-fsynced new contents.
+async function atomicWrite(dest: string, contents: string): Promise<void> {
+  const tmp = dest + '.tmp-' + process.pid + '-' + Date.now();
+  const fh = await fs.open(tmp, 'w');
+  try {
+    await fh.writeFile(contents, 'utf-8');
+    await fh.sync();
+  } finally {
+    await fh.close();
+  }
+  await fs.rename(tmp, dest);
+}
+
+/**
+ * CONTRACT (W4): re-sign a verify result file IN PLACE after a trusted
+ * post-processor has legitimately mutated it. Reads the JSON at `resultPath`,
+ * recomputes the HMAC over {@link SIGNED_FIELDS}, and atomically rewrites the
+ * `.sig` sidecar (sig BEFORE result ordering is irrelevant here — the result
+ * already exists and is unchanged by this call). Use this instead of hand-
+ * rolling `signResult` + `writeFile` so the on-disk invariant (a result never
+ * exists without a matching, current `.sig`) is preserved.
+ *
+ * Returns the hex signature that was written.
+ */
+export async function signResultFile(resultPath: string, secret: string): Promise<string> {
+  const raw = await fs.readFile(resultPath, 'utf-8');
+  const result = JSON.parse(raw) as Partial<VerifyResult>;
+  const sig = signResult(result, secret);
+  await atomicWrite(sigPathFor(resultPath), sig + '\n');
+  return sig;
+}
+
 export async function writeResult(
   paths: RunPaths,
   result: VerifyResult,
   outputDir?: string,
   secret?: string
 ): Promise<void> {
-  const resultJson = outputDir ? path.join(outputDir, 'verify-result.json') : paths.resultJson;
+  const resultJson = outputDir ? verifyResultPath(outputDir) : paths.resultJson;
   await fs.mkdir(path.dirname(resultJson), { recursive: true });
-  await fs.writeFile(resultJson, JSON.stringify(result, null, 2) + '\n', 'utf-8');
+  const resultBody = JSON.stringify(result, null, 2) + '\n';
   if (secret) {
-    await fs.writeFile(sigPathFor(resultJson), signResult(result, secret) + '\n', 'utf-8');
+    // Write + fsync the `.sig` and rename it into place FIRST, then rename the
+    // RESULT last. Because each rename is atomic and the result is published
+    // strictly after its signature, a concurrent reader (derive-verdict,
+    // telemetry, jq) can never observe the result JSON without a valid,
+    // matching `.sig` — eliminating the false "forgery-detected" race.
+    await atomicWrite(sigPathFor(resultJson), signResult(result, secret) + '\n');
   }
+  await atomicWrite(resultJson, resultBody);
 }
 
 export function appendNote(result: VerifyResult, note: string): void {
@@ -208,19 +266,43 @@ export async function writeRegressionResult(
   await writeResult(paths, result, outputDir, secret);
 }
 
-export function computeVerdict(tests: RecipeTest[]): 'verified' | 'regression' {
+export interface VerdictOutcome {
+  verdict: 'verified' | 'regression';
+  /**
+   * Populated only for the zero-tests case so a "recipe loaded nothing"
+   * regression is distinguishable from a real failing-test regression.
+   */
+  regressionReason?: string;
+}
+
+/**
+ * Compute the verdict plus, for the ambiguous zero-tests case, an explicit
+ * `regressionReason`. A Playwright report with `suites:[]` (the spec import
+ * threw / failed to compile, so 0 tests ran) is still a `regression`, but
+ * without a reason it is indistinguishable from a real test regression. This
+ * is THE single source for that reason string.
+ */
+export function computeVerdictWithReason(tests: RecipeTest[]): VerdictOutcome {
   // Zero tests ran ⇒ regression (covers spec-import-error case where Playwright loads zero specs).
   if (tests.length === 0) {
-    return 'regression';
+    return {
+      verdict: 'regression',
+      regressionReason:
+        'recipe loaded zero tests — likely a spec import/compile error; see Playwright stdout',
+    };
   }
   for (const t of tests) {
-    if (t.status !== 'passed') return 'regression';
+    if (t.status !== 'passed') return { verdict: 'regression' };
     const significantPageErrors = t.pageErrors.filter((m) => !isLowSignalPageError(m));
-    if (significantPageErrors.length > 0) return 'regression';
+    if (significantPageErrors.length > 0) return { verdict: 'regression' };
     const significantConsoleErrors = t.consoleErrors.filter((m) => !isLowSignalConsoleError(m));
-    if (significantConsoleErrors.length > 0) return 'regression';
+    if (significantConsoleErrors.length > 0) return { verdict: 'regression' };
   }
-  return 'verified';
+  return { verdict: 'verified' };
+}
+
+export function computeVerdict(tests: RecipeTest[]): 'verified' | 'regression' {
+  return computeVerdictWithReason(tests).verdict;
 }
 
 /**
@@ -388,8 +470,22 @@ export async function pruneOldRuns(maxRuns = 10, baseDir?: string): Promise<void
       throw e;
     }
     const toDelete = entries.slice(maxRuns);
+    let failures = 0;
     for (const name of toDelete) {
-      await fs.rm(path.join(resolvedBaseDir, name), { recursive: true, force: true });
+      const dir = path.join(resolvedBaseDir, name);
+      try {
+        await fs.rm(dir, { recursive: true, force: true });
+      } catch (rmErr) {
+        failures++;
+        // Best-effort cleanup: do NOT throw, but make the swallowed failure
+        // loudly observable so `.verify-output` growing unbounded is visible.
+        console.error(`[pruneOldRuns] failed to remove ${dir}:`, rmErr);
+      }
+    }
+    if (toDelete.length > 0 && failures === toDelete.length) {
+      console.error(
+        `[pruneOldRuns] made NO progress — all ${failures} stale run dir(s) under ${resolvedBaseDir} are undeletable; .verify-output will grow unbounded`
+      );
     }
   } catch (err) {
     console.error('[pruneOldRuns] error:', err);

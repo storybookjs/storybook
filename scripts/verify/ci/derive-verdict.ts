@@ -20,7 +20,7 @@ import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parseArgs } from 'node:util';
 
-import { ANSI_RE, verifyResultSignature } from '../core.ts';
+import { ANSI_RE, signResultFile, verifyResultSignature } from '../core.ts';
 
 interface VerifyResultShape {
   verdict?: string;
@@ -168,7 +168,7 @@ function writeSummaryLine(line: string, summaryOut: string | undefined): void {
   }
 }
 
-function main(args: Args): void {
+async function main(args: Args): Promise<void> {
   const resultPath = resolve(args.result);
   const result = readJsonOrNull(resultPath) as VerifyResultShape | null;
   if (!result) {
@@ -176,6 +176,22 @@ function main(args: Args): void {
     return;
   }
 
+  // W4 CONTRACT (HMAC verdict integrity): every trusted writer that mutates
+  // verify-result.json MUST call signResultFile(resultPath, secret) after the
+  // mutation; readers (this gate) verify the `.sig` over SIGNED_FIELDS
+  // (see scripts/verify/core.ts — owned by W3, do NOT edit there). The three
+  // trusted post-processors that legitimately rewrite the signed result are:
+  //   1. verify-evidence-check.ts (merges evidence fields)
+  //   2. this script's deriveVerdict() unit-test merge (verdict downgrade)
+  //   3. the workflow's `jq '. + {evidenceRetry:true}'` retry annotation
+  // Each re-signs via signResultFile so the on-disk invariant — a result
+  // never exists without a matching, current `.sig` — always holds, even if
+  // a future field is added to SIGNED_FIELDS (today it survives only because
+  // SIGNED_FIELDS coincidentally excludes the mutated fields). The forgery-
+  // downgrade write below is deliberately NOT re-signed: it is the gate
+  // itself reacting to a missing/invalid sig, and its `verdict=regression`
+  // outcome is accepted on the unsigned path by design.
+  //
   // C1 fix: HMAC verification gate. The orchestrator (verify-pr.ts) signs
   // a stable subset of verify-result.json fields with VERIFY_PROVENANCE_SECRET
   // and emits the signature to `<result>.sig`. If a PR-added recipe forges
@@ -219,6 +235,19 @@ function main(args: Args): void {
   const { result: mutated, outcome } = deriveVerdict(result, report);
   if (outcome.changed && mutated) {
     writeFileSync(resultPath, JSON.stringify(mutated, null, 2) + '\n', 'utf-8');
+    // W4 CONTRACT: this is a trusted mutation of the signed result (unit-test
+    // merge can flip verdict verified→regression). Re-sign so the `.sig`
+    // stays current and a downstream reader never sees a stale signature.
+    // Local-dev has no secret ⇒ no `.sig` was ever written ⇒ skip (no-op,
+    // not an error), exactly as the gate above tolerates the unsigned path.
+    const resignSecret = process.env.VERIFY_PROVENANCE_SECRET;
+    if (resignSecret) {
+      try {
+        await signResultFile(resultPath, resignSecret);
+      } catch (err: any) {
+        console.error('[derive-verdict] re-sign after merge failed:', err?.message ?? err);
+      }
+    }
   }
   console.log(`verdict=${outcome.verdict}`);
   writeSummaryLine(`verdict: ${outcome.verdict}`, args.summaryOut);
@@ -234,10 +263,10 @@ const isMain =
   process.argv[1] === fileURLToPath(import.meta.url);
 
 if (isMain) {
-  try {
-    main(parseCliArgs(process.argv.slice(2)));
-  } catch (err: any) {
-    console.error('[derive-verdict] error:', err?.message ?? err);
-    process.exit(1);
-  }
+  Promise.resolve()
+    .then(() => main(parseCliArgs(process.argv.slice(2))))
+    .catch((err: any) => {
+      console.error('[derive-verdict] error:', err?.message ?? err);
+      process.exit(1);
+    });
 }

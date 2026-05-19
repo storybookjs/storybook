@@ -26,6 +26,7 @@ import { performance } from 'node:perf_hooks';
 import waitOn from 'wait-on';
 
 import { pickEnv } from '../utils/env.ts';
+import { gracefulKill } from './boot.ts';
 
 const repoRoot = path.resolve(import.meta.dirname, '..', '..');
 const codeDir = path.join(repoRoot, 'code');
@@ -48,7 +49,9 @@ export async function bootInternalUi(opts: {
     {
       cwd: codeDir,
       stdio: ['ignore', 'pipe', 'pipe'],
-      signal: opts.controller.signal,
+      // detached so the dev server gets its own process group; gracefulKill
+      // then signals the whole group so the Vite child dies with it.
+      detached: true,
       env: pickEnv({
         allow: [
           'PATH',
@@ -79,11 +82,27 @@ export async function bootInternalUi(opts: {
     console.error('[internal-ui] dev server error:', err);
   });
 
+  // On abort, tear down the dev server (and its process group) with
+  // SIGTERM -> bounded SIGKILL escalation so the Vite child can't orphan
+  // and hold the port for the next run.
+  const onAbort = () => {
+    void gracefulKill(child);
+  };
+  opts.controller.signal.addEventListener('abort', onAbort, { once: true });
+
+  // Reject-only race promise: auto-remove its listener on every exit
+  // path and neutralise the rejection so the normal end-of-run
+  // controller.abort() (verify-pr.ts) cannot surface as an
+  // unhandledRejection -> spurious exit(1).
+  const abortRaceController = new AbortController();
   const abortPromise = new Promise<never>((_, reject) => {
-    opts.controller.signal.addEventListener('abort', () => {
-      reject(new Error('bootInternalUi aborted'));
-    });
+    opts.controller.signal.addEventListener(
+      'abort',
+      () => reject(new Error('bootInternalUi aborted')),
+      { signal: abortRaceController.signal }
+    );
   });
+  abortPromise.catch(() => {});
 
   try {
     await Promise.race([
@@ -106,6 +125,8 @@ export async function bootInternalUi(opts: {
     throw new Error(
       `bootInternalUi failed: ${err instanceof Error ? err.message : String(err)}`
     );
+  } finally {
+    abortRaceController.abort();
   }
 
   return { bootMs: performance.now() - bootStart, child };

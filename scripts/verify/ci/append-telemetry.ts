@@ -154,7 +154,17 @@ function modelKey(model: string): string {
 }
 
 function dispatchCostUsd(d: DispatchSummary): number {
-  const p = PRICES_USD_PER_1M[modelKey(d.model)] ?? { i: 0, o: 0, cr: 0, cw5: 0, cw1: 0 };
+  let p = PRICES_USD_PER_1M[modelKey(d.model)];
+  if (p === undefined) {
+    // Telemetry is an explicitly non-blocking side-channel, so we do NOT
+    // throw here (unlike the authoritative budget/ledger path in
+    // agent-dispatch.ts). But a $0 charge for an unknown model is silent
+    // price-table drift — make it loud so it surfaces in workflow logs.
+    console.warn(
+      `[telemetry] unknown model ${d.model || '(empty)'} — cost recorded as 0`
+    );
+    p = { i: 0, o: 0, cr: 0, cw5: 0, cw1: 0 };
+  }
   return (
     (d.inputTokens * p.i +
       d.outputTokens * p.o +
@@ -314,18 +324,32 @@ function main(args: Args): void {
     : mkdtempSync(join(tmpdir(), 'verify-telemetry-'));
   const cfgPath = args.curlCfg ? resolve(args.curlCfg) : join(cfgDir, 'curl-cfg');
 
-  const response = curlPost(telemetryUrl, JSON.stringify(payload), cfgPath);
+  // Telemetry is a non-authoritative side-channel: a sink hiccup (non-JSON
+  // response, `ok !== true`, transport failure) must NOT gate the verify
+  // verdict. On any DELIVERY failure we warn loudly and return so the
+  // process exits 0. exit(1) is reserved exclusively for genuine misuse
+  // (bad argv / missing required args) handled at the isMain entrypoint.
+  let response: string;
+  try {
+    response = curlPost(telemetryUrl, JSON.stringify(payload), cfgPath);
+  } catch (err: any) {
+    console.warn(
+      '[append-telemetry] telemetry delivery failed (non-blocking):',
+      err?.message ?? err
+    );
+    return;
+  }
   console.log('telemetry response:', response);
   let parsed: any;
   try {
     parsed = JSON.parse(response);
   } catch {
-    console.error('[append-telemetry] non-JSON response:', response);
-    process.exit(1);
+    console.warn('[append-telemetry] non-JSON response (non-blocking):', response);
+    return;
   }
   if (parsed?.ok !== true) {
-    console.error('[append-telemetry] telemetry rejected:', response);
-    process.exit(1);
+    console.warn('[append-telemetry] telemetry rejected (non-blocking):', response);
+    return;
   }
 }
 

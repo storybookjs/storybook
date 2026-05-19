@@ -398,6 +398,31 @@ jobs:
             exit 0
           fi
           jq '. + {evidenceRetry: true}' "$RESULT" > "$RESULT.tmp" && mv "$RESULT.tmp" "$RESULT"
+          # W4 CONTRACT (HMAC verdict integrity): the jq mutation above is a
+          # trusted in-place rewrite of the signed verify-result.json. Every
+          # trusted writer MUST re-sign so the `.sig` stays current — today
+          # `evidenceRetry` is outside SIGNED_FIELDS so the old sig still
+          # validates, but adding any mutated field to SIGNED_FIELDS would
+          # otherwise flip every retried PR to forgery-detected. Re-sign via
+          # the exported signResultFile from the BASE-checkout core.ts (same
+          # trusted-script source as write-compile-failure-stub.ts /
+          # derive-verdict.ts). PROVENANCE_SECRET is already loaded above in
+          # this trusted step.
+          # Rollout-ordering guard: signResultFile is a NEW base-core.ts
+          # export. Until this change is merged to the base ref, a PR run
+          # (harness taken from base) imports an old core.ts lacking it.
+          # Feature-detect: if absent we are mid-rollout — warn and skip
+          # (the `.sig` is still valid over SIGNED_FIELDS since evidenceRetry
+          # is excluded); a genuine signing throw still fails the step loudly.
+          VERIFY_PROVENANCE_SECRET="$PROVENANCE_SECRET" \
+            node --experimental-strip-types --input-type=module -e '
+              const m = await import("'"$GITHUB_WORKSPACE"'/scripts/verify/core.ts");
+              if (typeof m.signResultFile !== "function") {
+                console.warn("[verify] signResultFile not in base core.ts yet (pre-rollout) — skipping re-sign; .sig still valid for unsigned fields");
+                process.exit(0);
+              }
+              await m.signResultFile(process.argv[1], process.env.VERIFY_PROVENANCE_SECRET);
+            ' "$RESULT"
 
           NEW_VERDICT=$(jq -r '.verdict' "$RESULT")
           if [ "$NEW_VERDICT" = "verified" ]; then

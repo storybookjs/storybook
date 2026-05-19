@@ -26,11 +26,11 @@ export async function syncCorePackage(opts: { sandboxDir: string }): Promise<Syn
   const symlinkStart = performance.now();
   const source = path.join(repoRoot, 'code', 'core', 'dist');
   const target = path.join(opts.sandboxDir, 'node_modules', 'storybook', 'dist');
-  try {
-    await ensureSymlinkOrCopy(source, target);
-  } catch (e) {
-    console.log('[sync] symlink skipped: ' + (e instanceof Error ? e.message : String(e)));
-  }
+  // Fail loud: a swallowed symlink/copy failure means the sandbox boots
+  // against STALE core and "verifies" nothing while reporting success. Let
+  // the failure propagate so verify-pr.ts's boot try/catch records a
+  // regression stub with the real cause.
+  await ensureSymlinkOrCopy(source, target);
   const symlinkMs = performance.now() - symlinkStart;
 
   return { compileMs, symlinkMs };

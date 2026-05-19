@@ -4,6 +4,7 @@ import * as fs from 'node:fs/promises';
 
 import type { RunPaths } from './core.ts';
 import { pickEnv } from '../utils/env.ts';
+import { gracefulKill } from './boot.ts';
 
 export interface RunRecipeOptions {
   specPath: string;

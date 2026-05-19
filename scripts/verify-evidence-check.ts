@@ -39,7 +39,7 @@ import {
 import { sanitizeUntrustedText } from './verify/agent-prompt.ts';
 import { assertAnthropicBaseUrl } from './verify/anthropic-env.ts';
 import { isPng } from './verify/ci/push-screenshots.ts';
-import { appendNote, type VerifyResult } from './verify/core.ts';
+import { appendNote, signResultFile, type VerifyResult } from './verify/core.ts';
 
 assertAnthropicBaseUrl();
 
@@ -144,11 +144,11 @@ function assertVisionWithinCostBudget(): void {
   }
 }
 
-function writeResult(
+async function writeResult(
   resultPath: string,
   original: VerifyResult,
   evidence: EvidenceFields
-): void {
+): Promise<void> {
   const merged = {
     ...original,
     ...evidence,
@@ -157,6 +157,25 @@ function writeResult(
     appendNote(merged, `evidence-check: NOT FOUND (reasoning: ${evidence.evidenceReasoning})`);
   }
   fs.writeFileSync(resultPath, JSON.stringify(merged, null, 2) + '\n', 'utf-8');
+  // W4 CONTRACT (HMAC verdict integrity): this is a trusted post-processor
+  // that mutates the signed verify-result.json (it merges evidence fields).
+  // Every trusted writer MUST re-sign so the `.sig` stays current and
+  // derive-verdict's gate never sees a stale signature — today the merge
+  // only survives because SIGNED_FIELDS coincidentally excludes the
+  // evidence* fields; one field addition to SIGNED_FIELDS would otherwise
+  // flip every verified PR to forgery-detected. The secret is read the same
+  // trusted way write-compile-failure-stub.ts reads it (process.env). When
+  // absent (local-dev: no `.sig` was ever written) skip silently — a no-op,
+  // not an error, matching how the gate tolerates the unsigned path.
+  const secret = process.env.VERIFY_PROVENANCE_SECRET;
+  if (secret) {
+    try {
+      await signResultFile(resultPath, secret);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      console.error(`[evidence-check] re-sign after evidence merge failed: ${msg}`);
+    }
+  }
 }
 
 export function hasEvidenceMissingNote(result: Pick<VerifyResult, 'notes'>): boolean {
@@ -249,7 +268,7 @@ async function main(rawArgv: string[]): Promise<number> {
   const screenshots = collectScreenshots(screenshotsDir).slice(0, MAX_SCREENSHOTS);
 
   if (screenshots.length === 0) {
-    writeResult(resultPath, original, {
+    await writeResult(resultPath, original, {
       evidenceVerdict: 'missing',
       evidenceReasoning: 'Recipe produced no screenshots — cannot verify visible evidence.',
       evidenceModel: MODEL,
@@ -258,7 +277,20 @@ async function main(rawArgv: string[]): Promise<number> {
   }
 
   if (!process.env.ANTHROPIC_API_KEY) {
+    // 1.7: missing-API-key contract hole. Previously this returned 1 leaving
+    // a `verified` result with NO evidence stanza, while the dispatch-error
+    // path writes evidenceVerdict:'undetermined'. Make the postcondition
+    // consistent — annotate the result so the JSON is never silently
+    // un-annotated — and re-sign per the W4 contract (writeResult handles
+    // re-signing). Still return 1 to preserve the original setup-error exit
+    // signal for callers that branch on it.
     console.error('[evidence-check] ANTHROPIC_API_KEY is required for the vision dispatch.');
+    await writeResult(resultPath, original, {
+      evidenceVerdict: 'undetermined',
+      evidenceReasoning:
+        'ANTHROPIC_API_KEY missing — vision evidence-check could not run; verdict left as-is but evidence is undetermined.',
+      evidenceModel: MODEL,
+    });
     return 1;
   }
 
@@ -302,7 +334,7 @@ async function main(rawArgv: string[]): Promise<number> {
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     console.error(`[evidence-check] ${msg}`);
-    writeResult(resultPath, original, {
+    await writeResult(resultPath, original, {
       evidenceVerdict: 'undetermined',
       evidenceReasoning: `Cost budget exceeded: ${msg.slice(0, 200)}`,
       evidenceModel: MODEL,
@@ -368,7 +400,7 @@ async function main(rawArgv: string[]): Promise<number> {
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     console.error(`[evidence-check] vision dispatch failed: ${msg}`);
-    writeResult(resultPath, original, {
+    await writeResult(resultPath, original, {
       evidenceVerdict: 'undetermined',
       evidenceReasoning: `Vision dispatch error: ${msg.slice(0, 200)}`,
       evidenceModel: MODEL,
@@ -381,7 +413,7 @@ async function main(rawArgv: string[]): Promise<number> {
     const stripped = reply.replace(/^```(?:json)?\s*/, '').replace(/\s*```$/, '');
     parsed = JSON.parse(stripped) as { verdict?: unknown; reasoning?: unknown };
   } catch {
-    writeResult(resultPath, original, {
+    await writeResult(resultPath, original, {
       evidenceVerdict: 'undetermined',
       evidenceReasoning: `Could not parse vision JSON; raw reply head: ${reply.slice(0, 200)}`,
       evidenceModel: MODEL,
@@ -398,7 +430,7 @@ async function main(rawArgv: string[]): Promise<number> {
   const reasoning =
     typeof parsed.reasoning === 'string' ? parsed.reasoning.slice(0, 2000) : '(no reasoning)';
 
-  writeResult(resultPath, original, {
+  await writeResult(resultPath, original, {
     evidenceVerdict: verdict,
     evidenceReasoning: reasoning,
     evidenceModel: MODEL,

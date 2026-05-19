@@ -54,8 +54,22 @@ const MODEL_PRICING: Record<string, { inputUsd: number; outputUsd: number }> = {
   'claude-sonnet-4-6': { inputUsd: 0.000003, outputUsd: 0.000015 },
 };
 
+// The budget gate and the realized-cost ledger must never run an uncosted
+// model: an unknown id silently priced as opus would let a more expensive
+// model slip past the cap (under-charge) or skew the ledger. The gate's job
+// is to be conservative, so an unknown resolved id is a hard failure here.
+// KNOWN ids (including the legitimate opus keys) keep their exact pricing.
 function getPricing(modelId: string): { inputUsd: number; outputUsd: number } {
-  return MODEL_PRICING[modelId] ?? MODEL_PRICING['claude-opus-4-7'];
+  const pricing = MODEL_PRICING[modelId];
+  if (pricing === undefined) {
+    throw new VerifyCostBudgetError(
+      `[verify-pr-author] no pricing entry for model id ${JSON.stringify(
+        modelId
+      )}; refusing to run an uncosted model through the budget/ledger path. ` +
+        `Add it to MODEL_PRICING.`
+    );
+  }
+  return pricing;
 }
 
 export function resolveModelId(hint: string): string {
@@ -131,6 +145,12 @@ export interface DispatchRecipeAuthorInput {
   model: string;
   retryMessage?: string;
   runDir?: string;
+  // Optional cancellation signal. When provided it is forwarded to the
+  // Anthropic SDK call so a SIGINT (CI cancel / Ctrl-C) can interrupt a
+  // hung or slow request mid-flight. Behavior is unchanged when omitted
+  // (the SDK simply receives no signal) — wiring an actual controller
+  // from verify-pr.ts is the caller's concern.
+  signal?: AbortSignal;
 }
 
 export interface DispatchRecipeAuthorResult {
@@ -262,23 +282,67 @@ export function recordDispatchCost(
       // missing or unreadable — start fresh
     }
     existing.push({ ts: new Date().toISOString(), ...entry });
-    fs.writeFileSync(ledgerPath, JSON.stringify(existing, null, 2) + '\n', 'utf-8');
+    // Atomic write: serialize to a tmp file then rename over the real path.
+    // rename(2) is atomic on a single filesystem, so a concurrent reader
+    // (loadCostLedger in the C11 retry-cost gate) can never observe a
+    // half-written / torn JSON document.
+    const tmpPath = path.join(
+      runDir,
+      `cost-ledger.json.${process.pid}.${Date.now()}.tmp`
+    );
+    fs.writeFileSync(tmpPath, JSON.stringify(existing, null, 2) + '\n', 'utf-8');
+    fs.renameSync(tmpPath, ledgerPath);
   } catch {
     // ledger emission is best-effort; never break the dispatch on this
   }
 }
 
+// FAIL-SAFE contract: the sole consumer is the C11 retry-cost gate in
+// verify-pr-generate.ts, which refuses a retry when `totalUsd > budget*0.5`.
+// A genuinely absent ledger (ENOENT) means no spend yet → legitimately
+// `{ totalUsd: 0 }`. ANY other read/parse failure (corrupt, torn mid-write,
+// EBUSY, EACCES, non-array JSON) is exactly the concurrent/torn-ledger
+// failure this gate exists to guard — silently zeroing it would bypass the
+// budget cap on its own worst case. So on any non-ENOENT failure we return
+// `totalUsd: Number.POSITIVE_INFINITY`, which the existing `> budget*0.5`
+// comparison treats as over-budget WITHOUT any caller change required.
 export function loadCostLedger(runDir: string): { totalUsd: number; entries: CostLedgerEntry[] } {
+  const ledgerPath = path.join(runDir, 'cost-ledger.json');
+  let raw: string;
   try {
-    const ledgerPath = path.join(runDir, 'cost-ledger.json');
-    const raw = fs.readFileSync(ledgerPath, 'utf-8');
+    raw = fs.readFileSync(ledgerPath, 'utf-8');
+  } catch (err: unknown) {
+    if ((err as NodeJS.ErrnoException)?.code === 'ENOENT') {
+      // Ledger genuinely absent — no dispatch recorded any cost yet.
+      return { totalUsd: 0, entries: [] };
+    }
+    // Corrupt / torn / locked / unreadable — fail safe (assume over budget).
+    console.warn(
+      `[verify-pr-author] cost ledger unreadable at ${ledgerPath} (${
+        (err as Error)?.message ?? err
+      }); treating run as over budget to fail safe.`
+    );
+    return { totalUsd: Number.POSITIVE_INFINITY, entries: [] };
+  }
+  try {
     const parsed = JSON.parse(raw);
-    if (!Array.isArray(parsed)) return { totalUsd: 0, entries: [] };
+    if (!Array.isArray(parsed)) {
+      console.warn(
+        `[verify-pr-author] cost ledger at ${ledgerPath} is not a JSON array; treating run as over budget to fail safe.`
+      );
+      return { totalUsd: Number.POSITIVE_INFINITY, entries: [] };
+    }
     const entries = parsed as CostLedgerEntry[];
     const totalUsd = entries.reduce((acc, e) => acc + (Number(e.costUsd) || 0), 0);
     return { totalUsd, entries };
-  } catch {
-    return { totalUsd: 0, entries: [] };
+  } catch (err: unknown) {
+    // Present but unparseable (torn write / corruption) — fail safe.
+    console.warn(
+      `[verify-pr-author] cost ledger at ${ledgerPath} failed to parse (${
+        (err as Error)?.message ?? err
+      }); treating run as over budget to fail safe.`
+    );
+    return { totalUsd: Number.POSITIVE_INFINITY, entries: [] };
   }
 }
 
@@ -399,7 +463,10 @@ export async function dispatchRecipeAuthor(
   let lastErr: unknown = null;
   for (let attempt = 0; attempt < MAX_TRANSPORT_ATTEMPTS; attempt += 1) {
     try {
-      const response = await client.messages.create(request);
+      const response = await client.messages.create(
+        request,
+        input.signal ? { signal: input.signal } : undefined
+      );
       const assistantText = Array.isArray(response.content)
         ? response.content
             .filter((b): b is Anthropic.TextBlock => b.type === 'text')

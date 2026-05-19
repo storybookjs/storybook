@@ -1,8 +1,7 @@
-import { applyPatches, enablePatches, produceWithPatches, type Patch } from 'immer';
+import { enablePatches, produceWithPatches, type Patch } from 'immer';
 
 import { isEqual } from 'es-toolkit/predicate';
 
-import { STATE_ARTIFACT_NAME } from './build-artifacts.ts';
 import { isAbstractCommand } from './define-service.ts';
 import { getStaticTransport } from './static-transport.ts';
 import type {
@@ -19,13 +18,16 @@ import type {
   SubscribableQuery,
 } from './types.ts';
 
+// Immer's patch tracking is opt-in. Enabling once at module load is fine — it's a global flag.
+enablePatches();
+
 /**
  * Deep-merge `source` onto `target`. Plain-object slices recurse; everything else (primitives,
- * arrays, class instances) is overwritten by `source`.
+ * arrays, class instances, null) is overwritten by `source`. Used when applying a fetched
+ * state-shaped diff (the on-disk format for loader artifacts).
  *
- * Used to apply a fetched `state.json` on top of the in-memory default state. Array semantics
- * are deliberately "replace whole array" — service authors who want fine-grained array updates
- * should normalise to a record keyed by id.
+ * Array semantics are "replace whole array" — service authors who want fine-grained array
+ * updates should normalise to a record keyed by id.
  */
 function deepMerge(target: Record<string, unknown>, source: Record<string, unknown>): void {
   for (const key of Object.keys(source)) {
@@ -46,11 +48,7 @@ function deepMerge(target: Record<string, unknown>, source: Record<string, unkno
   }
 }
 
-// Immer's patch tracking is opt-in. Enabling once at module load is fine — it's a global flag.
-enablePatches();
-
-/** Re-export for consumers who need to type a patch listener. */
-export type { Patch };
+export { deepMerge, type Patch };
 
 type StateListener<TState> = (
   state: TState,
@@ -96,18 +94,12 @@ export class ServiceRuntime<TDef extends ServiceDefinition<any, any, any, any>> 
   public readonly id: string;
   public readonly queries: SubscribableQueries<TDef['queries']>;
   public readonly commands: CallableCommands<TDef['commands']>;
-  /**
-   * Resolves once any static-mode initial loading has finished. If no static transport was
-   * supplied at registration, this is resolved synchronously at construction.
-   */
-  public readonly ready: Promise<void>;
   /** Public-facing view of this runtime. Stable reference across calls to `registerService`/`getService`. */
   public readonly publicStore: {
     readonly id: string;
     readonly definition: TDef;
     readonly queries: SubscribableQueries<TDef['queries']>;
     readonly commands: CallableCommands<TDef['commands']>;
-    readonly ready: Promise<void>;
   };
 
   constructor(definition: TDef, registration?: ServiceRegistration<TDef>) {
@@ -128,11 +120,6 @@ export class ServiceRuntime<TDef extends ServiceDefinition<any, any, any, any>> 
     this.queries = this._buildQueriesApi();
     this.commands = this._buildCommandsApi();
 
-    // Kick off static-mode initial loading via the architecture-global transport (if one
-    // has been installed). The `ready` promise resolves when this finishes (immediately if
-    // no transport is installed or the service has opted out).
-    this.ready = this._loadInitialFromTransport();
-
     // Build the public-facing view once and keep a stable reference. Note: state/setState/
     // subscribe/getLastPatches are deliberately omitted — they remain only on the runtime.
     this.publicStore = Object.freeze({
@@ -140,28 +127,6 @@ export class ServiceRuntime<TDef extends ServiceDefinition<any, any, any, any>> 
       definition: this.definition,
       queries: this.queries,
       commands: this.commands,
-      ready: this.ready,
-    });
-  }
-
-  /**
-   * If a global transport is installed and the service hasn't opted out, fetch `state.json`
-   * and deep-merge it onto the in-memory state. Treats `null` (transport's "file not present"
-   * signal) as a no-op.
-   */
-  private async _loadInitialFromTransport(): Promise<void> {
-    if (this.definition.load === false) return;
-    const transport = getStaticTransport();
-    if (!transport) return;
-
-    const fetched = await transport.fetch(this.id, STATE_ARTIFACT_NAME);
-    if (fetched == null) return;
-
-    // Apply via setState so subscribers see the change like any other mutation. Note that
-    // because deep-merge is into a draft, untouched slices retain reference equality via
-    // Immer's structural sharing — query subscribers only fire for slices that actually moved.
-    this.setState((draft) => {
-      deepMerge(draft as Record<string, unknown>, fetched as Record<string, unknown>);
     });
   }
 
@@ -392,12 +357,12 @@ export class ServiceRuntime<TDef extends ServiceDefinition<any, any, any, any>> 
   // ------------------------------ loaders ------------------------------
 
   /**
-   * The active loaders map, or undefined when there are none (no `load` field, empty map, or
-   * explicit opt-out via `load: false`).
+   * The active loaders map, or undefined when the service doesn't declare any. Services
+   * without loaders don't participate in static-build persistence.
    */
   private _loadersMap(): Record<string, LoaderDefinition<unknown, unknown>> | undefined {
     const load = this.definition.load;
-    if (load === false || !load) return undefined;
+    if (!load) return undefined;
     return load as Record<string, LoaderDefinition<unknown, unknown>>;
   }
 
@@ -434,21 +399,17 @@ export class ServiceRuntime<TDef extends ServiceDefinition<any, any, any, any>> 
   }
 
   /**
-   * Apply a list of Immer patches directly to state, bypassing the draft-mutator API. Used
-   * when restoring state from a fetched per-loader artifact in static mode. Emits the same
-   * state/query notifications as a normal `setState`.
+   * Apply a state-shaped diff to state. Used when restoring state from a fetched per-loader
+   * artifact in static mode — files contain JSON-Merge-Patch-shaped objects (`{a:{b:1}}`) rather
+   * than Immer patch lists, so the operation is a deep-merge. Emits the same state/query
+   * notifications as a normal `setState`.
    */
-  private _applyExternalPatches(patches: readonly Patch[]): void {
-    if (patches.length === 0) return;
-    const previous = this._state;
-    const next = applyPatches(previous as object, patches as Patch[]) as typeof previous;
-    if (next === previous) return;
-    this._state = next;
-    this._lastPatches = patches;
-    for (const listener of this._stateListeners) {
-      listener(next, previous, patches);
-    }
-    this._reRunSubscribedQueries();
+  private _applyStateDiff(diff: unknown): void {
+    if (diff === null || typeof diff !== 'object' || Array.isArray(diff)) return;
+    if (Object.keys(diff as object).length === 0) return;
+    this.setState((draft) => {
+      deepMerge(draft as Record<string, unknown>, diff as Record<string, unknown>);
+    });
   }
 
   private async _maybeFireLoader(queryName: string, input: unknown): Promise<void> {
@@ -476,7 +437,7 @@ export class ServiceRuntime<TDef extends ServiceDefinition<any, any, any, any>> 
           const filename = this._loaderFilename(queryName, loader, input);
           const fetched = await transport.fetch(this.id, filename);
           if (fetched != null) {
-            this._applyExternalPatches(fetched as readonly Patch[]);
+            this._applyStateDiff(fetched);
             resolvedFromStatic = true;
           }
         }

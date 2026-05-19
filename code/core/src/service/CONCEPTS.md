@@ -8,7 +8,7 @@ A service has four parts: a private `state`, pure `queries` that read from it, `
 
 Concretely:
 
-- The public `ServiceStore` from `registerService` exposes `id`, `definition`, `queries`, `commands`, and `ready`. No `getState`, no `setState`, no whole-state `subscribe`.
+- The public `ServiceStore` from `registerService` exposes `id`, `definition`, `queries`, `commands`. No `getState`, no `setState`, no whole-state `subscribe`.
 - Inside a command or loader body, `ctx.self.getState()` and `ctx.self.setState(...)` are how handlers touch state.
 - To read from another service, use its queries — not its state. (Cross-service composition via `ctx.runtime[serviceId]` is planned, not built.)
 - A related feature that needs a different on-disk shape is a different service. There is no "different file format for the same service."
@@ -23,7 +23,7 @@ One object per service, shape chosen by the author. The runtime stores it as an 
 
 Two conventions:
 
-- Model entries-keyed-by-id as `{ byId: Record<string, ...> }`, not as arrays. Records deep-merge cleanly and shard cleanly into per-id files. Arrays don't.
+- Model entries-keyed-by-id as `{ byId: Record<string, ...> }`, not as arrays. Records compose cleanly under patches; arrays don't.
 - State must be JSON-serialisable. No functions, class instances, or DOM nodes.
 
 ### Queries
@@ -66,7 +66,7 @@ The use case is one definition imported into multiple environments (manager, pre
 
 ### Loaders
 
-The read-triggered backing for a query. Optional; only needed for queries whose data is fetched lazily or pre-rendered to JSON.
+The read-triggered backing for a query. Optional, and the *only* mechanism for static-build persistence. A service that doesn't declare any loaders has no static artifacts and runs purely as session-local state.
 
 Declared as a `load:` map keyed by query name. `load.getX` is the loader for `queries.getX`. The 1:1 mapping is structural, not enforced — but it's the contract the runtime is built around.
 
@@ -76,11 +76,18 @@ A loader has three pieces:
 2. **Enumeration** — the inputs the static build pre-renders. An array, an async function returning an array, or `undefined` for no-input loaders.
 3. **Options** — `path: (ctx, input?) => string` controls the per-input JSON filename. If absent, defaults are `<name>.json` (no input) and `<name>-<input>.json` (string input). Non-string inputs require an explicit `path`.
 
+Two shapes for the loader pattern:
+
+- **Per-id chunking.** A loader keyed by id (e.g. `getComponentDocgenInfo(componentId)`) with many enumerated inputs and a per-input `path`. One file per id, fetched only when that id is asked about.
+- **Single-file whole-service load.** A no-input loader (e.g. `allStatuses()`) with `enumerateInputs: undefined`. One file for the whole service, fetched when any subscriber asks for it.
+
+Both shapes use the same machinery. The choice is whether you have one no-input loader or many input-keyed ones.
+
 What the runtime does with loaders:
 
 - On a query subscription (or callable read) for a given input, if the paired loader hasn't fired for that input, it fires now. Subsequent reads with the same input don't re-fire — there's a per-loader, per-input "has fired" set.
 - Concurrent subscriptions for the same input dedupe to one loader run via an in-flight map.
-- If a static transport is installed, the runtime fetches the loader's pre-rendered JSON first. On a non-null hit, the patches are applied via `applyPatches` and the loader body is *not* called. On null, the runtime runs the body live. See STATIC-BUILD.md.
+- If a static transport is installed, the runtime fetches the loader's pre-rendered JSON first. On a non-null hit, the fetched state diff is deep-merged into state and the loader body is *not* called. On null, the runtime runs the body live. See STATIC-BUILD.md.
 - The loader's return value is ignored. After it resolves, the runtime invokes the same-named query with the same input and that's what subscribers see.
 
 ## Definition vs registration
@@ -124,7 +131,7 @@ Registration activates the definition and returns the `ServiceStore`. It supplie
 - **Abstract command implementations.** Any `defineCommand()` without a handler must be implemented here.
 - **Concrete command overrides.** Optional; replace an inline command body per environment.
 
-Whether a service loads from JSON at boot is decided architecture-wide via `setStaticTransport`, not per-service. Re-registering the same definition returns the same `ServiceStore`.
+Whether a service loads from JSON is decided architecture-wide via `setStaticTransport`, not per-service. Re-registering the same definition returns the same `ServiceStore`.
 
 ## ctx and the self-handle
 

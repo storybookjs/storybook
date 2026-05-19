@@ -181,18 +181,12 @@ export interface ServiceDefinition<
   readonly queries: TQueries;
   readonly commands: TCommands;
   /**
-   * Persistence configuration. Three forms:
-   *
-   * - **Omitted (or empty map)** — default. The static build emits a `state.json` containing
-   *   this service's full state. Registration fetches and deep-merges it (if a transport is
-   *   installed).
-   * - **`false`** — opt out entirely. No artifacts emitted, no fetch attempted on registration.
-   *   For services whose state is session-local or always recomputed live.
-   * - **A loader map** — same as default, plus the static build also emits one JSON file per
-   *   enumerated input of each loader, and the runtime fetches those files lazily on query
-   *   subscriptions (in static mode) instead of running the loader body.
+   * Optional loaders. A loader bridges a query to async work (typically: producing a JSON file
+   * at build time, then fetching it lazily on the client). Services that don't declare loaders
+   * have no static-build artifacts and no fetch on registration — their state is purely
+   * session-local.
    */
-  readonly load?: TLoaders | false;
+  readonly load?: TLoaders;
 }
 
 // -------------------- registration --------------------
@@ -292,27 +286,4 @@ export interface ServiceStore<TDef extends ServiceDefinition<any, any, any, any>
   readonly definition: TDef;
   readonly queries: SubscribableQueries<TDef['queries']>;
   readonly commands: CallableCommands<TDef['commands']>;
-  /**
-   * Resolves once any static-mode initial loading has finished (fetching and deep-merging
-   * `state.json`). Resolves immediately if no static transport was supplied at registration.
-   *
-   * Queries can still be called before `ready` resolves — they'll just see the in-memory
-   * default state and may emit a follow-up notification once the fetched state is merged in.
-   */
-  readonly ready: Promise<void>;
-}
-
-// -------------------- patches (infrastructure-facing) --------------------
-
-/**
- * An Immer-style patch describing a single state mutation.
- *
- * Not part of the consumer-facing ServiceStore. Exposed via `ServiceRuntime`'s
- * infrastructure-facing API for the build pipeline (per-loader JSON file serialization)
- * and for the cross-runtime channel transport (sync messages).
- */
-export interface StatePatch {
-  op: 'replace' | 'remove' | 'add';
-  path: (string | number)[];
-  value?: unknown;
 }

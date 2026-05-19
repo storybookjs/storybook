@@ -1,6 +1,6 @@
 import type { Patch } from 'immer';
 
-import { ServiceRuntime } from './service-runtime.ts';
+import { ServiceRuntime, deepMerge } from './service-runtime.ts';
 import type {
   BuildCtx,
   LoaderDefinition,
@@ -8,92 +8,36 @@ import type {
   ServiceRegistration,
 } from './types.ts';
 
-/** Default filename for the whole-state artifact. */
-export const STATE_ARTIFACT_NAME = 'state.json';
-
 /**
  * Build the static-mode artifacts for a service definition.
  *
- * Constructs a fresh runtime from the definition + registration, then snapshots whatever the
- * runtime ends up with after construction. Additionally, iterates the loaders declared in
- * `definition.load`, runs each enumerated input through its own sandboxed runtime, captures
- * the patch list that loader produced, and writes that to the loader's file path.
+ * For each loader declared in `definition.load`, enumerates the loader's inputs and runs each
+ * input in its own sandboxed runtime. Captures the Immer patch list each loader produces,
+ * converts it to a state-shaped diff (JSON-Merge-Patch flavour: `{a:{b:1}}`), and stores that
+ * under the loader's `path(ctx, input)` callback (or a default).
  *
- * Returns a `Map<filename, value>`. The caller decides how to persist:
+ * If multiple loader-input pairs resolve to the same filename, their diffs are deep-merged
+ * into a single artifact at that path. This is the "many loaders, one file" pattern — useful
+ * when several queries share an underlying single-file backing store.
+ *
+ * Services that don't declare any loaders return an empty Map.
+ *
+ * Returns `Map<filename, value>`. The caller decides how to persist:
  *   - In a real build, iterate the map and `fs.writeFile(path, JSON.stringify(value))`.
  *   - In tests, hand the map straight to a Map-backed `ServiceStaticTransport`.
- *
- * Honours `definition.load === false` by returning an empty map.
  */
 export async function buildServiceArtifacts<TDef extends ServiceDefinition<any, any, any, any>>(
   definition: TDef,
   registration?: ServiceRegistration<TDef>
 ): Promise<Map<string, unknown>> {
-  const artifacts = new Map<string, unknown>();
+  const artifacts = new Map<string, Record<string, unknown>>();
+  if (!definition.load) return artifacts;
 
-  if (definition.load === false) {
-    return artifacts;
-  }
-
-  // 1. Emit `state.json` containing the post-setup state.
-  const runtime = new ServiceRuntime(definition, registration);
-  await runtime.ready;
-  artifacts.set(STATE_ARTIFACT_NAME, runtime.getState());
-
-  // 2. Emit per-loader-input files containing the patch list each loader produces.
-  if (definition.load) {
-    await emitLoaderArtifacts(definition, registration, artifacts);
-  }
-
-  return artifacts;
-}
-
-/**
- * Build artifacts from an existing runtime. Use this when you want to pre-mutate state (run
- * commands, populate caches) before snapshotting — e.g. running `generateDocgen` for every
- * component at build time so the resulting `state.json` already contains all the docgen data.
- *
- * Note: this form snapshots whatever state the runtime currently holds, but does NOT iterate
- * loaders. For loader-driven per-input files, use `buildServiceArtifacts` (which runs each
- * loader against a freshly-constructed sandbox runtime so each file contains only that
- * loader's patches, not the cumulative state).
- */
-export function buildServiceArtifactsFromRuntime<
-  TDef extends ServiceDefinition<any, any, any, any>,
->(runtime: ServiceRuntime<TDef>): Map<string, unknown> {
-  const artifacts = new Map<string, unknown>();
-  const definition = runtime.definition;
-
-  if (definition.load === false) {
-    return artifacts;
-  }
-
-  artifacts.set(STATE_ARTIFACT_NAME, runtime.getState());
-  return artifacts;
-}
-
-// -------------------- per-loader artifact emission --------------------
-
-/**
- * For each declared loader, resolve its enumerated inputs and fire each in turn against a
- * fresh sandbox runtime, capturing the patches produced and writing them to the loader's
- * file path. Each loader+input pair gets an independent runtime so the captured patches
- * contain only that loader's mutations, isolated from other loaders.
- */
-async function emitLoaderArtifacts<TDef extends ServiceDefinition<any, any, any, any>>(
-  definition: TDef,
-  registration: ServiceRegistration<TDef> | undefined,
-  artifacts: Map<string, unknown>
-): Promise<void> {
-  const load = definition.load;
-  if (!load || load === false) return;
-
-  const loaders = load as Record<string, LoaderDefinition<unknown, unknown>>;
+  const loaders = definition.load as Record<string, LoaderDefinition<unknown, unknown>>;
   for (const [queryName, loader] of Object.entries(loaders)) {
     const inputs = await resolveEnumerateInputs(loader);
     for (const input of inputs) {
       const sandbox = new ServiceRuntime(definition, registration);
-      await sandbox.ready;
 
       // Subscribe before firing so we capture every patch the loader's body produces (a
       // loader may call multiple commands and emit several state transitions).
@@ -109,9 +53,67 @@ async function emitLoaderArtifacts<TDef extends ServiceDefinition<any, any, any,
       }
 
       const filename = sandbox.loaderFilename(queryName, input);
-      artifacts.set(filename, collected);
+      const diff = patchesToStateDiff(collected, definition.id, queryName);
+
+      const existing = artifacts.get(filename);
+      if (existing) {
+        // Same filename used by another loader-input pair — merge into the existing artifact.
+        deepMerge(existing, diff);
+      } else {
+        artifacts.set(filename, diff);
+      }
     }
   }
+
+  return artifacts;
+}
+
+/**
+ * Convert a list of Immer patches into a nested-object state diff suitable for `JSON.stringify`
+ * and runtime `deepMerge`. Each patch's `path` becomes a chain of object keys ending at `value`.
+ *
+ * Constraints (matching the broader architecture's record-shaped-state guidance):
+ *   - Numeric path segments (Immer's array-index patches) are rejected. State should be modelled
+ *     as records (`{ byId: Record<...> }`) rather than arrays. Whole-array replacements are
+ *     fine — they show up as a single `replace` patch with no numeric segments.
+ *   - `remove` patches are rejected. Build-time loaders should be producing data, not deleting.
+ *
+ * Both rejections throw with an actionable hint pointing at the offending path.
+ */
+function patchesToStateDiff(
+  patches: readonly Patch[],
+  serviceId: string,
+  queryName: string
+): Record<string, unknown> {
+  const result: Record<string, unknown> = {};
+  for (const patch of patches) {
+    if (patch.op === 'remove') {
+      throw new Error(
+        `[service ${serviceId}] Loader "${queryName}" produced a 'remove' patch at ` +
+          `${JSON.stringify(patch.path)}. Build-time artifacts only support data-producing ` +
+          `patches (add/replace).`
+      );
+    }
+    if (patch.path.some((p) => typeof p === 'number')) {
+      throw new Error(
+        `[service ${serviceId}] Loader "${queryName}" produced an array-index patch at ` +
+          `${JSON.stringify(patch.path)}. Model collections as records (\`{ byId: Record<...> }\`) ` +
+          `rather than arrays so they compose under deep-merge.`
+      );
+    }
+    let target: Record<string, unknown> = result;
+    for (let i = 0; i < patch.path.length - 1; i++) {
+      const key = patch.path[i] as string;
+      const next = target[key];
+      if (next === null || typeof next !== 'object' || Array.isArray(next)) {
+        target[key] = {};
+      }
+      target = target[key] as Record<string, unknown>;
+    }
+    const lastKey = patch.path[patch.path.length - 1] as string;
+    target[lastKey] = patch.value;
+  }
+  return result;
 }
 
 /**

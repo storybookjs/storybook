@@ -1,11 +1,6 @@
 # Static build: save and load
 
-A statically-built Storybook serialises each service's state to JSON and re-hydrates it on the client. Per-service opt-out only; the default is "yes, persist."
-
-Two kinds of artifact:
-
-- **`state.json`** — one per service. The full post-setup state. Fetched eagerly on registration and deep-merged into in-memory state.
-- **Per-loader files** — emitted only when a service declares loaders. One file per enumerated input. Each contains the Immer patch list that loader produces. Fetched lazily on query subscription, in place of running the loader body.
+A statically-built Storybook serialises service state to JSON at build time and re-hydrates it lazily on the client. Loaders are the only mechanism — a service that doesn't declare loaders doesn't persist anything.
 
 ## Mental model
 
@@ -13,41 +8,65 @@ A service in static-build mode has the same API as a service in dev mode. The ru
 
 Two halves:
 
-- **Build (Node).** A helper takes a service definition (or a pre-mutated runtime) and produces a `Map<filename, value>`. The caller writes those to disk.
-- **Load (browser).** One transport is installed at app startup. On every `registerService`, the runtime asks the transport for the service's `state.json` and deep-merges it. On every loader fire, it asks for the loader's per-input file and applies the patches. If the transport returns null, the runtime falls back to live behaviour.
+- **Build (Node).** `buildServiceArtifacts(def, registration?)` iterates the service's declared loaders, runs each enumerated input in a sandboxed runtime, captures the resulting state diff in a JSON-friendly nested-object shape (`{a:{b:1}}`), and returns a `Map<filename, value>`. The caller writes those to disk.
+- **Load (browser).** One transport is installed at app startup. When a query subscription fires its paired loader, the runtime asks the transport for the loader's per-input file. On a hit, the fetched diff is deep-merged into state and the loader body is *not* called. On null (no file present), the runtime runs the body live as a fall-through.
 
-Services never see the transport. They declare relative filenames (`state.json` by convention; loaders via their `path` callback) and the transport composes those into URLs or Map keys.
+Services never see the transport. They declare relative filenames via the loader's `path` callback (or accept the default), and the transport composes those into URLs or Map keys.
 
 In tests, both halves run in one process. The "filesystem" is a `Map<string, unknown>`.
+
+## Two loader shapes
+
+How you structure loaders determines how state is split on disk.
+
+**Per-id chunking.** A loader keyed by an input, enumerated over many ids. One file per id, fetched only when that id is asked about. The docgen pattern:
+
+```ts
+load: {
+  getComponentDocgenInfo: defineLoader<DocgenState, string>(
+    async (id, ctx) => { await ctx.self.commands.generateDocgen(id); },
+    async () => listAllComponentIds(),
+    { path: (_ctx, id) => `docgen-${id}.json` }
+  ),
+}
+```
+
+**Single-file whole-service load.** A no-input loader (`enumerateInputs: undefined`) that populates the whole state in one go. One file for the service, fetched when any subscriber asks for the matching query. The StoryStatusService pattern:
+
+```ts
+load: {
+  allStatuses: defineLoader<StatusState, void>(
+    async (ctx) => {
+      const data = await fetchAllStatusesAtBuildTime();
+      ctx.self.setState((d) => { d.byStoryId = data; });
+    },
+    undefined,
+    { path: () => 'statuses.json' }
+  ),
+}
+```
+
+Both shapes use identical machinery. The choice is whether you want one no-input loader or many input-keyed ones.
 
 ## Writing
 
 ```ts
-import {
-  buildServiceArtifacts,
-  buildServiceArtifactsFromRuntime,
-  STATE_ARTIFACT_NAME, // 'state.json'
-} from 'storybook/internal/service';
-```
+import { buildServiceArtifacts } from 'storybook/internal/service';
 
-Two forms:
-
-```ts
-// From a definition. Constructs a fresh runtime, runs no commands, snapshots
-// definition.state. Also iterates loaders and emits per-input files.
 const artifacts = await buildServiceArtifacts(DocgenService, { /* registration */ });
+// artifacts is Map<filename, value>:
+//   'docgen-Button.json' → { byComponentId: { Button: { description: '...' } } }
+//   'docgen-Tabs.json'   → { byComponentId: { Tabs:   { description: '...' } } }
+//   ...one per enumerated input of every loader
 ```
 
-```ts
-// From a runtime you've already mutated. Use this when the build needs to pre-populate
-// state by running commands. Emits state.json only — does NOT iterate loaders.
-const runtime = new ServiceRuntime(DocgenService, { commands: { generateDocgen: realImpl } });
-await runtime.commands.generateDocgen('Button');
-await runtime.commands.generateDocgen('Tabs');
-const artifacts = buildServiceArtifactsFromRuntime(runtime);
-```
+Each loader-input pair runs against a fresh sandboxed runtime so its captured diff is isolated from other loaders. Filename comes from the loader's `path` callback or the default (`<name>.json` for no-input, `<name>-<input>.json` for string inputs; non-string inputs require an explicit `path`).
 
-Either way, `artifacts` is `Map<filename, value>` of parsed values. Caller serialises:
+When multiple loader-input pairs resolve to the same filename, their diffs are deep-merged at build time and written as a single artifact. This makes the "many loaders, one file" pattern natural — useful when several queries share an underlying single-file backing store.
+
+A service with no `load` field returns an empty Map — nothing to write.
+
+The caller serialises:
 
 ```ts
 for (const [filename, value] of artifacts) {
@@ -55,35 +74,7 @@ for (const [filename, value] of artifacts) {
 }
 ```
 
-For a service with loaders, `buildServiceArtifacts` runs each loader-input pair against a fresh sandboxed runtime (so the captured patches are isolated from other loaders) and writes one file per pair. Filename comes from the loader's `path` callback or the default. Example:
-
-```ts
-const DocgenService = defineService<DocgenState>()({
-  id: 'core/docgen',
-  state: { byComponentId: {} },
-  queries: { getComponentDocgenInfo: (s, id: string) => s.byComponentId[id] },
-  commands: { generateDocgen: defineCommand<string>() },
-  load: {
-    getComponentDocgenInfo: defineLoader<DocgenState, string>(
-      async (id, ctx) => { await ctx.self.commands.generateDocgen(id); },
-      async () => listAllComponentIds(),
-      { path: (_ctx, id) => `docgen-${id}.json` }
-    ),
-  },
-});
-
-const artifacts = await buildServiceArtifacts(DocgenService, { /* registration */ });
-// 'state.json'         — initial state (typically the empty byComponentId)
-// 'docgen-Button.json' — [{ op: 'add', path: ['byComponentId', 'Button'], value: {...} }]
-// 'docgen-Tabs.json'   — [{ op: 'add', path: ['byComponentId', 'Tabs'],   value: {...} }]
-// ...one per enumerated component
-```
-
-`buildServiceArtifactsFromRuntime` is the right tool when you've pre-mutated a runtime. It snapshots whatever state the runtime currently holds but skips loader iteration — use `buildServiceArtifacts` when you want the per-loader split.
-
 ## Loading
-
-Loading is automatic. Once a transport is installed, every `registerService` fetches `state.json` during construction. Every loader fire consults the transport before running its body.
 
 Install the transport once, at app startup:
 
@@ -97,9 +88,9 @@ if (isStaticBuild) {
 
 `createBrowserStaticTransport(baseUrl?)` builds a transport that fetches `${baseUrl}/${serviceId}/${filename}` via `globalThis.fetch`. Default base is `/services`. If `globalThis.fetch` isn't available (non-browser host), every call resolves to null — safe to install unconditionally.
 
-In dev mode, don't install a transport. Without one, `registerService` skips the `state.json` fetch entirely and `store.ready` resolves immediately. Loaders run their bodies live.
+In dev mode, don't install a transport. Without one, every loader runs its body live; no fetches are attempted.
 
-Registration code itself doesn't change between modes:
+Registration code is the same in both modes:
 
 ```ts
 registerService(DocgenService, {
@@ -107,9 +98,7 @@ registerService(DocgenService, {
 });
 ```
 
-`store.ready` resolves when the initial `state.json` load completes. You can await it before reading queries or call queries immediately and accept seeing the default value first, then a notification when the load lands.
-
-`null` from `transport.fetch` is the "no file present" signal. The runtime treats it as a no-op for `state.json` and as fall-through-to-body for loaders. A throw becomes a promise rejection on `store.ready`.
+Nothing is loaded eagerly. Every loader fetch is lazy, triggered by a query subscription or callable read.
 
 ## Loader branching
 
@@ -117,49 +106,37 @@ When a query subscription fires its paired loader, the runtime applies:
 
 1. No transport installed → run the body live.
 2. Transport installed → compute the loader's filename and fetch it.
-3. Non-null result → `applyPatches` to state. Body is *not* called.
+3. Non-null result → deep-merge the fetched diff into state. Body is *not* called.
 4. Null result → run the body live.
 
-So a service with loaders behaves identically across dev and static deployments — the caller of `queries.foo.subscribe(input, ...)` doesn't know whether the data came from a fresh body run or from a pre-rendered patch file.
+So a service with loaders behaves identically across dev and static deployments — the caller of `queries.foo.subscribe(input, ...)` doesn't know whether the data came from a fresh body run or a pre-rendered patch file.
 
 Fall-through-on-null matters: a transport need not know about every loader the app might fire. A partial build still works — files that exist are used, files that don't are recomputed live.
 
-## Per-loader files are lazy
+## Loader files are lazy
 
-The runtime fetches loader files only when their query is subscribed or called. Three guarantees verified by tests:
+Three guarantees verified by tests:
 
-- After `registerService` + `await ready`, only `state.json` has been fetched. No loader files.
-- Subscribing to `queries.foo(input)` triggers exactly one new fetch — the file for *this* loader and *this* input. Other inputs of the same loader are untouched.
+- Registration triggers no fetches.
+- Subscribing to `queries.foo(input)` triggers exactly one fetch — the file for *this* loader and *this* input. Other inputs of the same loader are untouched.
 - A second subscription for the same input does *not* refetch. The fired-input tracking set suppresses it.
 
-For a docgen service with 1000 enumerated components, browsing only "Button" pulls `state.json` + `docgen-Button.json`. The other 999 files are never requested.
+For a docgen service with 1000 enumerated components, browsing only "Button" pulls `docgen-Button.json` and nothing else. The other 999 files are never requested.
 
-## Opting out
+For a single-file service (no-input loader), the file is fetched on first subscription to the loader-backed query — typically immediately after registration when the UI mounts the relevant component.
 
-```ts
-defineService<S>()({
-  id: 'core/example',
-  state: { ... },
-  load: false,  // no artifacts emitted; no fetch attempted
-  queries: { ... },
-  commands: { ... },
-});
-```
+## State-shaped diffs
 
-`load: false` is enforced both sides: `buildServiceArtifacts` returns an empty Map, and the runtime skips the `state.json` fetch on registration and never tries the per-loader fetch path — bodies always run live. Useful for session-local services (focused panel, scroll position, etc.).
+Loader files contain JSON-friendly nested-object diffs — the shape of the state slice a loader produced — not Immer patch lists. The runtime applies them via deep-merge. Multiple loaders writing to disjoint state slices (e.g. `byComponentId.Button` and `byComponentId.Tabs`) compose cleanly because their object trees only touch their own paths.
 
-## Deep-merge semantics
+The build still uses Immer's `produceWithPatches` to capture what each loader changed; the patches are converted to a nested object before serialisation so files are inspectable and don't require Immer to read.
 
-When `state.json` is applied, the runtime deep-merges the fetched object into current state inside a `setState` draft:
+Two implications for state shape:
 
-- Plain objects merge recursively. Keys in the fetched object overwrite; keys not in the fetched object survive.
-- Everything else replaces. Primitives, arrays, class instances, null — the fetched value replaces the default. Arrays are not merged element-wise.
+- Bias state toward record-shaped slices (`{ byId: {...} }`) rather than arrays. Records compose under deep-merge; arrays are replaced wholesale (no element-level merging).
+- Don't put non-serialisable values in state. Diffs go through `JSON.stringify`.
 
-This is why state biases toward record-shaped slices (`{ byId: {...} }`) rather than arrays. Records compose under merge; arrays don't.
-
-Immer's structural sharing applies during the merge: untouched nested objects keep reference equality. A subscriber on `state.userPrefs.theme` fires only if the theme key is touched, even if other top-level keys change.
-
-Per-loader files apply via Immer's `applyPatches`, not deep-merge — patches are explicit operations and don't need structural reconciliation.
+The build rejects two patch shapes that can't be expressed as a clean state-diff: array-index patches (when a loader mutates array elements directly) and `remove` patches (deletions). Both throw at build time with an actionable error. Loaders should produce data, and collections should be records.
 
 ## The mock transport pattern
 
@@ -184,25 +161,27 @@ Install in `beforeEach`, clear in `afterEach`:
 ```ts
 afterEach(() => clearStaticTransport());
 
-it('loads state.json on registration', async () => {
+it('reads from a pre-built loader file', async () => {
   const transport = mockTransport();
-  transport.files.set(`${MyService.id}/state.json`, { x: 999 });
+  transport.files.set(`${MyService.id}/docgen-Button.json`, {
+    byComponentId: { Button: { description: '...' } },
+  });
   setStaticTransport(transport);
 
   const store = registerService(MyService);
-  await store.ready;
+  const listener = vi.fn();
+  store.queries.getComponentDocgenInfo.subscribe('Button', listener);
+  await new Promise((r) => setTimeout(r, 0));
 
-  expect(store.queries.get()).toBe(999);
+  expect(listener).toHaveBeenCalledWith({ description: '...' });
 });
 ```
 
 Full round-trip from `build-artifacts.test.ts`:
 
 ```ts
-// 1. Build: mutate a runtime, snapshot.
-const buildRuntime = new ServiceRuntime(def);
-await buildRuntime.commands.add({ id: 'a', name: 'Alice' });
-const artifacts = buildServiceArtifactsFromRuntime(buildRuntime);
+// 1. Build: enumerate inputs, run each in a sandbox, capture patches.
+const artifacts = await buildServiceArtifacts(def);
 
 // 2. Install a transport carrying those artifacts, keyed by `${serviceId}/${filename}`.
 const files = new Map<string, unknown>();
@@ -211,26 +190,22 @@ for (const [filename, value] of artifacts) {
 }
 setStaticTransport(mockTransport(files));
 
-// 3. Register fresh; the runtime auto-loads.
+// 3. Register fresh; subscribing triggers a fetch (not the body), data lands in state.
 const reloaded = registerService(def);
-await reloaded.ready;
+reloaded.queries.getOne.subscribe('Button', vi.fn());
+await new Promise((r) => setTimeout(r, 0));
 
-expect(reloaded.queries.get('a')).toEqual({ name: 'Alice' });
+expect(reloaded.queries.getOne('Button')).toEqual(/* built value */);
 ```
 
 `createBrowserStaticTransport` composes the same `${serviceId}/${filename}` key in production and asks `globalThis.fetch` with it.
 
 ## Filename ownership
 
-The transport receives `(serviceId, filename)` as separate arguments. The runtime never composes URLs or paths — it passes the pair to whatever transport is installed. The transport decides what those mean. Service authors only ever see relative filenames: `state.json` for the whole-state artifact, and whatever the loader's `path` callback returns for per-loader files.
+The transport receives `(serviceId, filename)` as separate arguments. The runtime never composes URLs or paths — it passes the pair to whatever transport is installed. The transport decides what those mean. Service authors only ever see relative filenames, controlled by the loader's `path` callback.
 
 ## State splitting
 
-For services like docgen — where state can be megabytes of per-component data — shipping one big `state.json` blocks first render and wastes bandwidth. Loaders are the chunking mechanism.
+For services like docgen — where state can be megabytes of per-component data — shipping one big file blocks first render and wastes bandwidth on data the user may never view. Loaders are the chunking mechanism, and the granularity is set by loader inputs.
 
-A service with loaders gets state split automatically:
-
-- `state.json` carries the initial state plus anything no loader writes to.
-- One file per enumerated loader input carries the patches that loader produces.
-
-The rule of thumb: **state-splitting granularity equals loader-input granularity.** A service with no loaders → one `state.json`. A service with a `byId(id)` loader → many small `<id>.json` files plus a small `state.json`. Authors pick by writing loaders shaped how they want the data chunked, and `path` callbacks name the files.
+**State-splitting granularity equals loader-input granularity.** A no-input loader → one file. An input-keyed loader with N enumerated inputs → N files. Pick by writing loaders shaped how you want the data chunked, and use `path` callbacks to name the files.

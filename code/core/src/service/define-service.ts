@@ -54,7 +54,7 @@ export function defineService<TState>(): <
   state: TState;
   queries: TQueries;
   commands: TCommands;
-  load?: TLoaders | false;
+  load?: TLoaders;
 }) => ServiceDefinition<TState, TQueries, TCommands, TLoaders>;
 export function defineService<
   TState,
@@ -66,7 +66,7 @@ export function defineService<
   state: TState;
   queries: TQueries;
   commands: TCommands;
-  load?: TLoaders | false;
+  load?: TLoaders;
 }): ServiceDefinition<TState, TQueries, TCommands, TLoaders>;
 export function defineService(definition?: unknown): unknown {
   if (definition === undefined) {

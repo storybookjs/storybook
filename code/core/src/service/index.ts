@@ -13,11 +13,7 @@
  * State is private to the service. Read it via queries; change it via commands.
  */
 
-export {
-  STATE_ARTIFACT_NAME,
-  buildServiceArtifacts,
-  buildServiceArtifactsFromRuntime,
-} from './build-artifacts.ts';
+export { buildServiceArtifacts } from './build-artifacts.ts';
 export { defineCommand, defineLoader, defineService, isAbstractCommand } from './define-service.ts';
 export {
   __resetServiceRegistry,
@@ -25,7 +21,7 @@ export {
   getServiceRuntime,
   registerService,
 } from './register-service.ts';
-export { ServiceRuntime, type Patch } from './service-runtime.ts';
+export { ServiceRuntime } from './service-runtime.ts';
 export {
   clearStaticTransport,
   createBrowserStaticTransport,
@@ -62,7 +58,6 @@ export type {
   ServiceStaticTransport,
   ServiceStore,
   StateMutator,
-  StatePatch,
   SubscribableQueries,
   SubscribableQuery,
 } from './types.ts';

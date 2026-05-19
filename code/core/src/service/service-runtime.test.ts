@@ -508,9 +508,8 @@ describe('encapsulation', () => {
     expect('setState' in store).toBe(false);
     expect('subscribe' in store).toBe(false);
 
-    // The only way in is queries / commands. `ready` is a Promise so static-mode loading
-    // is observable; everything else is the service's API.
-    expect(Object.keys(store).sort()).toEqual(['commands', 'definition', 'id', 'queries', 'ready']);
+    // The only way in is queries / commands.
+    expect(Object.keys(store).sort()).toEqual(['commands', 'definition', 'id', 'queries']);
     expect(store.queries.get()).toBe(42);
   });
 });

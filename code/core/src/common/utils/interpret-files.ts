@@ -22,11 +22,6 @@ export function getInterpretedFile(pathToFile: string) {
     .find((candidate) => existsSync(candidate));
 }
 
-/**
- * `mainFields: ['module', 'main']` makes the resolver prefer the ESM entry (`pkg.module`) over the
- * CJS entry (`pkg.main`). Storybook server processes run in Node ESM context, so consuming
- * `pkg.module` is safe.
- */
 const importResolver = new ResolverFactory({
   extensions: [...supportedExtensions],
   mainFields: ['module', 'main'],

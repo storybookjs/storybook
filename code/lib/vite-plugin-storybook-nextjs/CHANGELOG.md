@@ -1,5 +1,17 @@
 ## 3.1.12
 
+## 3.3.0
+
+### Minor Changes
+
+- [#121](https://github.com/storybookjs/vite-plugin-storybook-nextjs/pull/121) [`f1e1bc0`](https://github.com/storybookjs/vite-plugin-storybook-nextjs/commit/f1e1bc05648afa6ac6c3782f7413b89b4c3f8bfa) Thanks [@yatishgoel](https://github.com/yatishgoel)! - Add `next/link` mock with `useLinkStatus` support. Aliases `next/link`, `@storybook/nextjs/link.mock`, `@storybook/nextjs-vite/link.mock`, and `@storybook/experimental-nextjs-vite/link.mock` to a Storybook-friendly Link mock that records click actions and exposes a mockable `useLinkStatus` hook (defaults to `{ pending: false }`).
+
+### Patch Changes
+
+- [#117](https://github.com/storybookjs/vite-plugin-storybook-nextjs/pull/117) [`6ca36eb`](https://github.com/storybookjs/vite-plugin-storybook-nextjs/commit/6ca36ebc7eda8a99cd36e39fb29a4f77a947bf3c) Thanks [@k35o](https://github.com/k35o)! - Handle ambiguous default import from CJS module in next/image mocks. Defensively unwrap `__esModule` objects to extract the real default export and `getImageProps`, following Rolldown's recommendation for CJS interop.
+
+- [#123](https://github.com/storybookjs/vite-plugin-storybook-nextjs/pull/123) [`8158146`](https://github.com/storybookjs/vite-plugin-storybook-nextjs/commit/8158146844a77a1144668007e1e67c16702bfc36) Thanks [@valentinpalkovic](https://github.com/valentinpalkovic)! - Fix missing Next.js 16 internal exports (`ServerInsertedHTMLContext`, `RedirectStatusCode`) in Vite dev mode by adding `next/navigation` and `next/dist/client/components/redirect-error` to `optimizeDeps.include` for Next.js 16+. See [storybookjs/storybook#34688](https://github.com/storybookjs/storybook/issues/34688).
+
 ## 3.2.5
 
 ### Patch Changes

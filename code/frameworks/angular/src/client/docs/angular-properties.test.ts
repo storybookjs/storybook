@@ -50,11 +50,11 @@ describe('angular component properties', () => {
 
     // compodoc is an external, unpinned tool that is not a repo dependency, so it
     // cannot be invoked from the unit-test harness. Fixtures that ship a captured,
-    // parseable `compodoc-input.json` (the `model()` case captured by Probe B at
-    // `.omc/plans/probe-fixtures/compodoc-model-probe-documentation.json`) get the
-    // real `extractArgTypesFromData` assertions; legacy fixtures without it (which
-    // would require re-running compodoc) keep a trivial green test so they are not
-    // regressed.
+    // parseable `compodoc-input.json` (e.g. the `model()` case in
+    // `__testfixtures__/doc-model/compodoc-input.json`, byte-identical to the real
+    // compodoc v1.2.1 output) get the real `extractArgTypesFromData` assertions;
+    // legacy fixtures without it (which would require re-running compodoc) keep a
+    // trivial green test so they are not regressed.
     const hasCapturedCompodocJson = dirEntries.includes('compodoc-input.json');
     if (!hasCapturedCompodocJson) {
       it(`${testEntry.name} (compodoc capture not available)`, () => {

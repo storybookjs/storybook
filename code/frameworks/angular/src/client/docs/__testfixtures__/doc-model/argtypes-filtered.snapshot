@@ -22,12 +22,9 @@
     "name": "colorChange",
     "table": {
       "category": "outputs",
-      "defaultValue": {
-        "summary": "#345F92",
-      },
       "type": {
         "required": true,
-        "summary": "string",
+        "summary": "(e: string) => void",
       },
     },
     "type": {
@@ -58,12 +55,9 @@
     "name": "showTextChange",
     "table": {
       "category": "outputs",
-      "defaultValue": {
-        "summary": false,
-      },
       "type": {
         "required": true,
-        "summary": "boolean",
+        "summary": "(e: boolean) => void",
       },
     },
     "type": {

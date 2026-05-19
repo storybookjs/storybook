@@ -109,8 +109,9 @@ const hasEntry = (
  * in `ɵReflectionCapabilities.propMetadata`, so without this path Storybook never binds
  * them at runtime nor wires up the `xChange` action.
  *
- * Two complementary strategies are used (see
- * `.omc/plans/probe-results-angular-model-signal-outputs.md`, Probe C):
+ * Two complementary strategies are used (the `model()` compodoc shape this mirrors
+ * is captured in the committed evidence fixture
+ * `code/frameworks/angular/src/client/docs/__testfixtures__/doc-model/compodoc-input.json`):
  *
  * 1. Primary — read the Angular component definition (`ɵcmp` via `ɵgetComponentDef`).
  *    At real AOT runtime (the Angular builder used by Storybook/sandboxes) `ɵcmp.inputs`

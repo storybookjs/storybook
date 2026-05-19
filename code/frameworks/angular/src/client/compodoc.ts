@@ -241,15 +241,26 @@ export const extractArgTypesFromData = (componentData: Class | Directive | Injec
 
   // Detect Angular `model()` signals.
   //
-  // compodoc (verified against the captured v1.2.1 output at
-  // `.omc/plans/probe-fixtures/compodoc-model-probe-documentation.json`) emits a
-  // `model()` member as an IDENTICAL entry — same bare name, e.g. `color` — in BOTH
-  // `inputsClass` AND `outputsClass`, with no `decorators`/`jsdoctags` and the
-  // `ModelSignal<T>` wrapper erased to the unwrapped value type. Plain
-  // `@Input`/`input()` only land in `inputsClass`; plain `@Output`/`output()`/
-  // `EventEmitter` only land in `outputsClass` (and never under the input's name).
-  // The only reliable, version-tolerant discriminator is therefore a property whose
-  // name appears in BOTH arrays of the same component.
+  // compodoc (verified against the captured v1.2.1 output committed at
+  // `code/frameworks/angular/src/client/docs/__testfixtures__/doc-model/compodoc-input.json`,
+  // byte-identical to the real Probe B capture) emits a `model()` member as an
+  // IDENTICAL entry — same bare name, e.g. `color` — in BOTH `inputsClass` AND
+  // `outputsClass`, with no `decorators`/`jsdoctags` and the `ModelSignal<T>`
+  // wrapper erased to the unwrapped value type. Plain `@Input`/`input()` only land
+  // in `inputsClass`; plain `@Output`/`output()`/`EventEmitter` only land in
+  // `outputsClass` (and never under the input's name). The only reliable,
+  // version-tolerant discriminator is therefore a property whose name appears in
+  // BOTH arrays of the same component.
+  //
+  // Known limitation: this both-arrays heuristic also matches a developer-authored
+  // same-name pair — an `@Input() x` together with an `@Output() x`, or an
+  // `@Input() set foo()` together with an `@Output() foo` — because compodoc has no
+  // `model()` marker to distinguish that hand-written pair from a real `model()`.
+  // Such a pair is misclassified as a `model()`: its bare-name output is suppressed
+  // below and a spurious `${name}Change` output is synthesized. This is an accepted
+  // limitation of detecting `model()` through an external, unpinned tool that emits
+  // no `model()` marker (per Probe B); a same-name `@Input`/`@Output` pair is rare
+  // and is the documented trade-off for version-tolerant detection.
   const inputClassNames = new Set<string>(
     (((componentData as any).inputsClass as Property[]) || []).map((item) => item.name)
   );
@@ -267,7 +278,8 @@ export const extractArgTypesFromData = (componentData: Class | Directive | Injec
       // The model property must surface as an INPUT control (via its `inputsClass`
       // entry); the corresponding output is the synthesized `${name}Change` added
       // below — not a plain bare-name output. See the model() detection note above
-      // (`.omc/plans/probe-fixtures/compodoc-model-probe-documentation.json`).
+      // (committed evidence fixture
+      // `code/frameworks/angular/src/client/docs/__testfixtures__/doc-model/compodoc-input.json`).
       if (key === 'outputsClass' && !isMethod(item) && modelPropertyNames.has(item.name)) {
         return;
       }
@@ -316,11 +328,20 @@ export const extractArgTypesFromData = (componentData: Class | Directive | Injec
   //   - flag ON: iteration is restricted to `['inputsClass']` (filter L227-229), so
   //     the model input control still surfaces, and `${name}Change` is re-surfaced
   //     here despite `outputsClass` never being iterated.
-  // Evidence basis: `.omc/plans/probe-fixtures/compodoc-model-probe-documentation.json`.
+  // Evidence basis: committed fixture
+  // `code/frameworks/angular/src/client/docs/__testfixtures__/doc-model/compodoc-input.json`.
   modelProperties.forEach((item) => {
     const changeName = `${item.name}Change`;
-    const defaultValue = extractDefaultValue(item);
 
+    // The synthesized member is an OUTPUT (an `EventEmitter`-equivalent), not the
+    // model INPUT it is derived from. It must therefore NOT inherit the input's
+    // Docs metadata: an event has no default value, and its `table.type.summary`
+    // should read like an output handler signature rather than the input value
+    // type. So we OMIT `defaultValue` and render the type as
+    // `(e: ${item.type}) => void` (the model value type as the emitted payload),
+    // matching how genuine `@Output`/`output()` members surface in the Docs table.
+    // This is Docs-table cosmetic only — Controls/Actions wiring (the `action`
+    // field below) and the both-arrays detection are unchanged.
     const argType = {
       name: changeName,
       description: item.rawdescription || item.description,
@@ -329,10 +350,9 @@ export const extractArgTypesFromData = (componentData: Class | Directive | Injec
       table: {
         category: 'outputs',
         type: {
-          summary: item.type,
+          summary: `(e: ${item.type}) => void`,
           required: !item.optional,
         },
-        defaultValue: { summary: defaultValue },
       },
     };
 

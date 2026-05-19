@@ -10,11 +10,16 @@
   `Args` interface / manual `argTypes` workaround is no longer necessary. `model.required()` is
   fully covered.
 
-  Known limitation: for an aliased `model(prop, { alias: 'a' })`, the type layer can only
+  Known limitations: (1) for an aliased `model(prop, { alias: 'a' })`, the type layer can only
   synthesize `${prop}Change` (`propChange`), not the runtime alias (`aChange`), because
   TypeScript cannot see the runtime alias. The runtime layer resolves the alias correctly via
   the Angular component definition at AOT, so aliased bindings work at runtime; only the static
-  type carries the property-name-based `${prop}Change` key.
+  type carries the property-name-based `${prop}Change` key. (2) Compodoc autodocs detect
+  `model()` via a name-in-both-`inputsClass`-and-`outputsClass` heuristic (compodoc emits no
+  `model()` marker), so a developer-authored same-name `@Input() x` + `@Output() x` pair is
+  misclassified as a `model()` (its bare-name output suppressed, a spurious `${x}Change`
+  synthesized). This is the accepted trade-off for version-tolerant detection through an
+  external, unpinned tool.
 
 
 ## 10.4.0-beta.0

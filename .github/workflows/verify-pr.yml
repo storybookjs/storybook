@@ -61,11 +61,46 @@ jobs:
             --branch "$BASE_REF" \
             "https://x-access-token:${GITHUB_TOKEN}@github.com/${REPO}.git" \
             "$TMP"
-          git -C "$TMP" sparse-checkout set --no-cone .github
-          git -C "$TMP" checkout "$BASE_REF" -- .github
-          mkdir -p "$GITHUB_WORKSPACE/.github"
+          # Also fetch the trusted base copy of the srt pin lock file so the
+          # next step can source srt-version/srt-sha256 from a committed
+          # single source instead of inline literals. Same trust boundary as
+          # .github (BASE ref, never PR-head); the composite still performs
+          # the fail-closed post-install sha256 verification unchanged.
+          git -C "$TMP" sparse-checkout set --no-cone .github scripts/verify/srt.lock.json
+          git -C "$TMP" checkout "$BASE_REF" -- .github scripts/verify/srt.lock.json
+          mkdir -p "$GITHUB_WORKSPACE/.github" "$GITHUB_WORKSPACE/scripts/verify"
           cp -a "$TMP/.github/." "$GITHUB_WORKSPACE/.github/"
+          cp -a "$TMP/scripts/verify/srt.lock.json" "$GITHUB_WORKSPACE/scripts/verify/srt.lock.json"
           rm -rf "$TMP"
+
+      - name: Resolve srt pin from committed lock file
+        id: srt-pin
+        # Single source of truth: scripts/verify/srt.lock.json (trusted BASE
+        # checkout). Replaces the previous inline srt-version/srt-sha256
+        # manual-paste pair. The sha256 here is still consumed by the
+        # composite's fail-closed integrity check — this step only changes
+        # WHERE the pinned value comes from, never weakens the check.
+        # Bump procedure: run .github/workflows/_srt-sha-probe.yml, which
+        # EMITS a candidate scripts/verify/srt.lock.json (run summary +
+        # artifact). A human lands it via a normal reviewed PR — the probe
+        # never commits the pin so it stays part of the reviewed diff.
+        env:
+          LOCK_FILE: ${{ github.workspace }}/scripts/verify/srt.lock.json
+        run: |
+          set -euo pipefail
+          test -f "$LOCK_FILE" || { echo "srt lock file missing at $LOCK_FILE — refusing to run without a pinned srt sha (fail-closed)" >&2; exit 1; }
+          SRT_VERSION=$(jq -er '.version' "$LOCK_FILE")
+          SRT_SHA256=$(jq -er '.sha256' "$LOCK_FILE")
+          # Defensive: an empty/whitespace sha must hard-fail here too so the
+          # composite never receives a blank EXPECTED_SRT_SHA.
+          case "$SRT_VERSION" in ''|*[!0-9.]*|.*|*.|*..*) echo "invalid srt version '$SRT_VERSION' in lock file" >&2; exit 1 ;; esac
+          case "$SRT_SHA256" in
+            [0-9a-f]*) [ "${#SRT_SHA256}" -eq 64 ] || { echo "srt sha256 in lock file is not 64 hex chars" >&2; exit 1; } ;;
+            *) echo "srt sha256 in lock file is not lowercase hex" >&2; exit 1 ;;
+          esac
+          echo "version=$SRT_VERSION" >> "$GITHUB_OUTPUT"
+          echo "sha256=$SRT_SHA256" >> "$GITHUB_OUTPUT"
+          echo "[srt] pin resolved from lock file: version=$SRT_VERSION sha256=$SRT_SHA256"
 
       - name: Prepare agentic environment
         id: prep
@@ -76,12 +111,18 @@ jobs:
           base-sha: ${{ github.event.pull_request.base.sha }}
           pr-head-sha: ${{ github.event.pull_request.head.sha }}
           repo: ${{ github.repository }}
-          # H1: srt-sha256 inline so chore-bump PRs carry the heightened
-          # workflow-review bar (not lowered to "config default" review).
-          # Bump procedure: re-run .github/workflows/_srt-sha-probe.yml and
-          # paste the emitted sha here.
-          srt-version: '0.0.51'
-          srt-sha256: '36de38197ac22991c8c9edead4d6184914c8b786e040ecf27bdcf26abd166338'
+          # H1: srt-version/srt-sha256 are single-sourced from the committed
+          # scripts/verify/srt.lock.json (resolved one step above from the
+          # trusted BASE checkout), not inline literals. A chore-bump PR
+          # still carries the heightened workflow-review bar because the lock
+          # file is part of the reviewed diff; the composite still has NO
+          # default and still performs the fail-closed post-install sha256
+          # integrity check against this value.
+          # Bump procedure: run .github/workflows/_srt-sha-probe.yml — it
+          # emits a candidate srt.lock.json (summary + artifact) that a
+          # human lands via a normal reviewed PR (no workflow edit).
+          srt-version: ${{ steps.srt-pin.outputs.version }}
+          srt-sha256: ${{ steps.srt-pin.outputs.sha256 }}
           sync-files: |
             .verify-recipes/_util.ts:.verify-recipes/_util.ts
             .verify-recipes/example-smoke.spec.ts:.verify-recipes/example-smoke.spec.ts

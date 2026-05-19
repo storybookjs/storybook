@@ -10,13 +10,20 @@ Consumes a prompt bundle emitted by `yarn verify-pr-generate --pr <#>` and produ
 
 This skill is invoked **after** `yarn verify-pr-generate --pr <#>` succeeds. The bun script does the deterministic I/O (gh fetch, triage, prompt assembly, bundle write); this skill **only** dispatches the agent and pipes its raw reply into the `verify-pr-author` CLI. Extraction, deny-regex, provenance, file write, lint, the single retry, and `result.json` all live in TypeScript core — the skill never does them itself.
 
-The full design and acceptance criteria live in `/Users/valentinpalkovic/Projects/storybook/.omc/plans/pr-verify-v3-agent-generated-recipes.md` (§Lane C, §D6, §D8, §D9). Read the plan if anything below is ambiguous.
+> **Paths are repo-root-relative.** Every path below is written relative to
+> the repository root, denoted `$REPO_ROOT`. Resolve it once at runtime with
+> `REPO_ROOT="$(git rev-parse --show-toplevel)"` (works from any clone,
+> worktree, or CI checkout) and substitute it wherever `$REPO_ROOT` appears.
+> Never hardcode an absolute machine path — it breaks on every other
+> clone/worktree/CI runner.
+
+The full design and acceptance criteria live in `$REPO_ROOT/.omc/plans/pr-verify-v3-agent-generated-recipes.md` (§Lane C, §D6, §D8, §D9). Read the plan if anything below is ambiguous.
 
 ## Inputs
 
 No args required. The skill discovers the most recent bundle automatically. The caller may optionally pass an explicit bundle path as the skill argument.
 
-1. **Auto-discover (default)**: list `/Users/valentinpalkovic/Projects/storybook/.verify-output/`, pick the directory with the lexicographically largest name (ISO timestamps sort correctly), then read `prompt-bundle.json` inside it.
+1. **Auto-discover (default)**: list `$REPO_ROOT/.verify-output/`, pick the directory with the lexicographically largest name (ISO timestamps sort correctly), then read `prompt-bundle.json` inside it.
 2. **Explicit path**: if the user passed an absolute path to a `prompt-bundle.json`, read that file directly.
 
 Bundle shape (see `scripts/verify-pr-generate.ts` for the canonical emitter):
@@ -81,7 +88,7 @@ reply as `$REPLY` (do not parse or edit it).
 ### Step 4 — Pipe the raw reply to `verify-pr-author` (stdin mode)
 
 ```bash
-printf '%s' "$REPLY" | node /Users/valentinpalkovic/Projects/storybook/scripts/verify-pr-author.ts --bundle <abs-bundle-path> --dispatch-mode stdin
+printf '%s' "$REPLY" | node "$REPO_ROOT/scripts/verify-pr-author.ts" --bundle <abs-bundle-path> --dispatch-mode stdin
 ```
 
 The CLI performs extraction, deny-regex, provenance, file write, scoped
@@ -122,7 +129,7 @@ Assemble the retry prompt and re-dispatch the agent (same
 Pipe the new raw reply back through the CLI in retry mode:
 
 ```bash
-printf '%s' "$REPLY2" | node /Users/valentinpalkovic/Projects/storybook/scripts/verify-pr-author.ts --bundle <abs-bundle-path> --dispatch-mode stdin --retry-of <runId>
+printf '%s' "$REPLY2" | node "$REPO_ROOT/scripts/verify-pr-author.ts" --bundle <abs-bundle-path> --dispatch-mode stdin --retry-of <runId>
 ```
 
 The CLI enforces `MAX_RECIPE_ATTEMPTS` (read from
@@ -173,7 +180,7 @@ attempts are exhausted (CLI exit 1).
 ## Notes
 
 - This skill runs inside Claude Code; it uses `Agent`, `Read`, `Write`, `Bash`, and `Edit` tools.
-- All paths in invocations are absolute. Lint commands `cd code` via `yarn --cwd`.
+- Paths in invocations are repo-root-relative (`$REPO_ROOT`, resolved via `git rev-parse --show-toplevel` — see the note near the top); resolve `$REPO_ROOT` to an absolute path before invoking. Lint commands `cd code` via `yarn --cwd`.
 - Max attempts = `MAX_RECIPE_ATTEMPTS` (currently 2). Read the value from `scripts/verify/recipe-author-core.ts` — do not hardcode.
 - The skill **never executes** the generated spec. The human review gate (Phase-1 lethal-trifecta breaker) is preserved.
 - A first deny-regex hit is retried **once** in stdin mode (the CLI emits `retry-requested` / exit 75 so the agent can self-correct, e.g. eval #36); only an exhausted deny hit is the terminal `deny-regex-hit`. The deny-regex remains a security gate — the single self-correction attempt does not weaken it (every attempt is re-checked; a persistent hit still terminates).

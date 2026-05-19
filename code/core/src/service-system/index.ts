@@ -1,7 +1,7 @@
 /**
  * Signal-based service system — reactivity layer
  *
- * Uses @preact/signals-core for automatic fine-grained reactivity.
+ * Uses alien-signals for automatic fine-grained reactivity.
  *
  * Why not deepsignal?
  *   deepsignal lets you write mutable-style updates (state.x = ...) and tracks
@@ -10,10 +10,24 @@
  *   equality: when storyA changes, the computed for storyB re-evaluates but
  *   returns the same reference, so its effect does NOT fire. Fine-grained
  *   reactivity falls out of computed memoization for free.
+ *
+ * alien-signals API:
+ *   s()     read a signal
+ *   s(x)    write a signal
+ *   comp()  read a computed
+ *   startBatch() / endBatch()       batch writes into one notification flush
+ *   setActiveSub(undefined) → read → setActiveSub(prev)  untracked read
  */
 
 import { toMerged } from 'es-toolkit';
-import { batch, computed, effect, signal } from '@preact/signals-core';
+import {
+  computed,
+  effect,
+  endBatch,
+  setActiveSub,
+  signal,
+  startBatch,
+} from 'alien-signals';
 
 // ------------------------------------------------------------------ types --
 
@@ -250,13 +264,17 @@ function buildQueryAccessor<TState>(
   // subscribe is identical for sync and async queries.
   // Prefetch is always fire-and-forget here: the reactive effect handles updates.
   const subscribeMethod = (input: any, cb: (value: any) => void): (() => void) => {
-    queryDef.prefetch?.(input, stateSignal.peek(), commands);
+    const prevSub = setActiveSub(undefined);
+    const stateAtSubscribe = stateSignal();
+    setActiveSub(prevSub);
+    queryDef.prefetch?.(input, stateAtSubscribe, commands);
     // computed() memoizes by reference equality.
     // When storyA changes, the computed for storyB re-evaluates but returns
-    // the same stateSignal.value['storyB'] reference → its effect does NOT fire.
-    const comp = computed(() => queryDef.handler(input, stateSignal.value));
+    // the same value for storyB → its effect does NOT fire.
+    const comp = computed(() => queryDef.handler(input, stateSignal()));
     // effect() fires immediately (seeding the initial value) then on each change.
-    return effect(() => cb(comp.value));
+    // Wrapped in a void body so effect never sees a return value as a cleanup fn.
+    return effect(() => { cb(comp()); });
   };
 
   if (queryDef.prefetch) {
@@ -264,16 +282,19 @@ function buildQueryAccessor<TState>(
     // before reading state. This lets callers do `await query(input)` and
     // get back the fully-loaded value rather than the initial empty state.
     const asyncAccessor = async (input: any): Promise<any> => {
-      const pending = queryDef.prefetch!(input, stateSignal.peek(), commands);
+      const prevSub = setActiveSub(undefined);
+      const currentState = stateSignal();
+      setActiveSub(prevSub);
+      const pending = queryDef.prefetch!(input, currentState, commands);
       if (pending instanceof Promise) await pending;
-      return queryDef.handler(input, stateSignal.value);
+      return queryDef.handler(input, stateSignal());
     };
     asyncAccessor.subscribe = subscribeMethod;
     return asyncAccessor;
   }
 
   // Sync accessor (no prefetch): direct call reads state synchronously.
-  const syncAccessor = (input: any): any => queryDef.handler(input, stateSignal.value);
+  const syncAccessor = (input: any): any => queryDef.handler(input, stateSignal());
   syncAccessor.subscribe = subscribeMethod;
   return syncAccessor;
 }
@@ -285,14 +306,14 @@ function createLiveService<TState>(
 
   const ctx: CommandCtx<TState> = {
     get state() {
-      return stateSignal.value;
+      return stateSignal();
     },
     setState(updater) {
-      // batch() collapses multiple signal writes into one notification flush,
+      // startBatch/endBatch collapses writes into one notification flush,
       // so commands that touch several keys won't trigger intermediate renders.
-      batch(() => {
-        stateSignal.value = updater(stateSignal.value);
-      });
+      startBatch();
+      stateSignal(updater(stateSignal()));
+      endBatch();
     },
   };
 
@@ -318,12 +339,12 @@ function createStaticService<TState>(
 
   const ctx: CommandCtx<TState> = {
     get state() {
-      return stateSignal.value;
+      return stateSignal();
     },
     setState(updater) {
-      batch(() => {
-        stateSignal.value = updater(stateSignal.value);
-      });
+      startBatch();
+      stateSignal(updater(stateSignal()));
+      endBatch();
     },
   };
 
@@ -342,10 +363,9 @@ function createStaticService<TState>(
                   if (slice == null) return; // key missing from store — leave state unchanged
                   // Deep-merge the loaded slice into current state so concurrent
                   // loads for different inputs accumulate rather than overwrite.
-                  stateSignal.value = toMerged(
-                    stateSignal.value as object,
-                    slice as object
-                  ) as TState;
+                  stateSignal(
+                    toMerged(stateSignal() as object, slice as object) as TState
+                  );
                 })
               );
             }

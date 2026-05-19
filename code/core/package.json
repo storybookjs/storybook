@@ -268,6 +268,7 @@
     "@happy-dom/global-registrator": "^20.0.11",
     "@ngard/tiny-isequal": "^1.1.0",
     "@polka/compression": "^1.0.0-next.28",
+    "@preact/signals-core": "^1.14.2",
     "@radix-ui/react-scroll-area": "1.2.0-rc.7",
     "@radix-ui/react-slot": "^1.0.2",
     "@react-aria/interactions": "^3.25.5",

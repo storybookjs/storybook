@@ -1,5 +1,21 @@
 ## 10.5.0-alpha.0
 
+- Angular: Add native `model()` signal support - [#34831](https://github.com/storybookjs/storybook/issues/34831), thanks @valentinpalkovic!
+
+  `@storybook/angular` now natively detects Angular `model()` signals across all three layers:
+  type inference (`Meta`/`StoryObj` argTypes accept the synthesized `${prop}Change` output with
+  no `TS2353`), Compodoc autodocs (the `${prop}Change` output row is generated), and runtime
+  binding/actions (the `model()` input is bound and the synthesized output appears in the Actions
+  panel and supports the two-way `[(prop)]` round-trip). The previously required hand-written
+  `Args` interface / manual `argTypes` workaround is no longer necessary. `model.required()` is
+  fully covered.
+
+  Known limitation: for an aliased `model(prop, { alias: 'a' })`, the type layer can only
+  synthesize `${prop}Change` (`propChange`), not the runtime alias (`aChange`), because
+  TypeScript cannot see the runtime alias. The runtime layer resolves the alias correctly via
+  the Angular component definition at AOT, so aliased bindings work at runtime; only the static
+  type carries the property-name-based `${prop}Change` key.
+
 
 ## 10.4.0-beta.0
 

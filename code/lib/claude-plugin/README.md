@@ -22,18 +22,31 @@ After editing plugin files in a running Claude Code session, reload plugins:
 
 The repository includes a Claude marketplace descriptor at `.claude-plugin/marketplace.json`.
 
+Claude has two lifecycle layers:
+
+- the **marketplace** entry, which tells Claude where to find this repository's plugin catalog
+- the installed **plugin**, `storybook@storybook`, which is installed from that marketplace
+
+Run package scripts from the repository root with `pnpm --filter @storybook/claude-code-plugin run <script>`, or from this package directory with `pnpm run <script>`.
+
+Validate the marketplace and plugin manifests:
+
+```sh
+pnpm --filter @storybook/claude-code-plugin run validate
+```
+
 Install the plugin from this checkout at user scope:
 
 ```sh
-pnpm claude-plugin:install
+pnpm --filter @storybook/claude-code-plugin run plugin:install
 ```
 
-This validates the marketplace and plugin manifests, adds this repository as the `storybook` Claude marketplace, and installs `storybook@storybook` at user scope so it is available in every project.
+This validates the manifests, adds this repository as the `storybook` Claude marketplace, and installs `storybook@storybook` at user scope so it is available in every project.
 
 Verify the installed plugin:
 
 ```sh
-pnpm claude-plugin:list
+pnpm --filter @storybook/claude-code-plugin run plugin:list
 ```
 
 The output should include `storybook@storybook` with:
@@ -61,14 +74,37 @@ To test in Claude Desktop, restart Claude Desktop after installing the plugin, o
 After changing plugin files, update the installed plugin cache:
 
 ```sh
-pnpm claude-plugin:update
+pnpm --filter @storybook/claude-code-plugin run plugin:update
 ```
 
 Remove the user-scoped plugin after testing:
 
 ```sh
-claude plugin uninstall storybook@storybook --scope user
+pnpm --filter @storybook/claude-code-plugin run plugin:remove
 ```
+
+If you only need to refresh the marketplace checkout without changing the installed plugin, use:
+
+```sh
+pnpm --filter @storybook/claude-code-plugin run marketplace:update
+```
+
+To remove the marketplace entry itself, run:
+
+```sh
+pnpm --filter @storybook/claude-code-plugin run marketplace:remove
+```
+
+## Scripts
+
+- `validate`: Validate the repository marketplace manifest and this plugin manifest.
+- `marketplace:add`: Add this repository as the `storybook` marketplace at user scope.
+- `marketplace:update`: Update the configured `storybook` marketplace checkout.
+- `marketplace:remove`: Remove the configured `storybook` marketplace.
+- `plugin:install`: Validate, add the marketplace, and install `storybook@storybook` at user scope.
+- `plugin:update`: Update the installed `storybook@storybook` plugin cache.
+- `plugin:remove`: Uninstall `storybook@storybook` from user scope.
+- `plugin:list`: Print installed Claude plugins as JSON.
 
 ## Distribution
 

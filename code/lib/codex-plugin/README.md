@@ -6,10 +6,14 @@ This package is intentionally shaped like a Codex plugin while living under `pac
 
 ## Local Testing
 
-Run the local marketplace script from the repository root:
+Codex exposes marketplace lifecycle commands in the CLI. Installing the plugin itself happens in the Codex app after the marketplace is registered.
+
+Run package scripts from the repository root with `pnpm --filter @storybook/codex-plugin run <script>`, or from this package directory with `pnpm run <script>`.
+
+Add this repository as the local Storybook marketplace:
 
 ```sh
-pnpm codex-plugin:marketplace:add
+pnpm --filter @storybook/codex-plugin run marketplace:add
 ```
 
 Then test the plugin in the Codex app:
@@ -23,8 +27,8 @@ Then test the plugin in the Codex app:
 If you edit this package while testing, refresh the local marketplace by removing and adding it again:
 
 ```sh
-pnpm codex-plugin:marketplace:remove
-pnpm codex-plugin:marketplace:add
+pnpm --filter @storybook/codex-plugin run marketplace:remove
+pnpm --filter @storybook/codex-plugin run marketplace:add
 ```
 
 The plugin points at `npx -y @storybook/mcp-proxy@latest`. In this milestone, that package is a minimal placeholder MCP server that responds to initialization and returns an empty tool list. This lets plugin installation, metadata, icon, MCP server configuration, and skills be tested before the real proxy implementation exists.
@@ -38,10 +42,18 @@ codex plugin marketplace add storybookjs/mcp --ref <branch> --sparse .agents/plu
 To remove the local marketplace after testing, run:
 
 ```sh
-pnpm codex-plugin:marketplace:remove
+pnpm --filter @storybook/codex-plugin run marketplace:remove
 ```
 
 After installing the plugin, Codex loads it from its plugin cache. If changes do not show up, restart Codex and reinstall or refresh the plugin so the cache picks up the new contents.
+
+## Scripts
+
+- `marketplace:add`: Add this repository as a Codex marketplace.
+- `marketplace:update`: Upgrade the configured `storybook` Codex marketplace checkout.
+- `marketplace:remove`: Remove the configured `storybook` Codex marketplace.
+
+Codex does not currently expose matching CLI commands for plugin install, update, remove, or list. Use the Codex app plugin picker for the plugin lifecycle after registering the marketplace.
 
 ## MCP Runtime
 

@@ -23,5 +23,15 @@
 		"skills",
 		"README.md"
 	],
-	"type": "module"
+	"type": "module",
+	"scripts": {
+		"validate": "claude plugin validate ../.. && claude plugin validate .",
+		"marketplace:add": "claude plugin marketplace add ../.. --scope user",
+		"marketplace:update": "claude plugin marketplace update storybook",
+		"marketplace:remove": "claude plugin marketplace remove storybook",
+		"plugin:install": "pnpm run validate && pnpm run marketplace:add && claude plugin install storybook@storybook --scope user",
+		"plugin:update": "claude plugin update storybook@storybook",
+		"plugin:remove": "claude plugin uninstall storybook@storybook --scope user",
+		"plugin:list": "claude plugin list --json"
+	}
 }

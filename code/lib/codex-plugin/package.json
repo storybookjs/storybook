@@ -26,7 +26,8 @@
 	],
 	"type": "module",
 	"scripts": {
-		"codex:marketplace:add": "codex plugin marketplace add ../..",
-		"codex:marketplace:remove": "codex plugin marketplace remove storybook"
+		"marketplace:add": "codex plugin marketplace add ../..",
+		"marketplace:update": "codex plugin marketplace upgrade storybook",
+		"marketplace:remove": "codex plugin marketplace remove storybook"
 	}
 }

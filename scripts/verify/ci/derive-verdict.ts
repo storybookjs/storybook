@@ -15,12 +15,12 @@
 // Prints `verdict=<value>` lines to stdout for capture into
 // `$GITHUB_OUTPUT`.
 
-import { appendFileSync, readFileSync, writeFileSync, existsSync } from 'node:fs';
+import { appendFileSync, readFileSync, existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parseArgs } from 'node:util';
 
-import { ANSI_RE, signResultFile, verifyResultSignature } from '../core.ts';
+import { ANSI_RE, atomicWrite, signResultFile, verifyResultSignature } from '../core.ts';
 
 interface VerifyResultShape {
   verdict?: string;
@@ -223,7 +223,9 @@ async function main(args: Args): Promise<void> {
         'after signing. Treating verdict as regression to prevent privileged ' +
         'side-effects (verified-by-harness label).';
       try {
-        writeFileSync(resultPath, JSON.stringify(result, null, 2) + '\n', 'utf-8');
+        // atomicWrite (tmp+fsync+rename, O_EXCL|O_NOFOLLOW) so a reader never
+        // sees a torn forgery-downgrade and the temp path can't be hijacked.
+        await atomicWrite(resultPath, JSON.stringify(result, null, 2) + '\n');
       } catch {
         /* best-effort persist */
       }
@@ -234,7 +236,10 @@ async function main(args: Args): Promise<void> {
   const report = args.report && existsSync(args.report) ? readJsonOrNull(resolve(args.report)) : null;
   const { result: mutated, outcome } = deriveVerdict(result, report);
   if (outcome.changed && mutated) {
-    writeFileSync(resultPath, JSON.stringify(mutated, null, 2) + '\n', 'utf-8');
+    // Route the pre-re-sign write through core.ts atomicWrite (tmp+fsync+
+    // rename, O_EXCL|O_NOFOLLOW) so signResultFile() below re-reads a fully
+    // written file and the temp path can't be pre-planted/symlink-hijacked.
+    await atomicWrite(resultPath, JSON.stringify(mutated, null, 2) + '\n');
     // W4 CONTRACT: this is a trusted mutation of the signed result (unit-test
     // merge can flip verdict verified→regression). Re-sign so the `.sig`
     // stays current and a downstream reader never sees a stale signature.
@@ -245,7 +250,13 @@ async function main(args: Args): Promise<void> {
       try {
         await signResultFile(resultPath, resignSecret);
       } catch (err: any) {
+        // Fail LOUD: the new result is already published but its `.sig` is now
+        // stale/missing and cannot be regenerated. Reporting success here would
+        // ship a result the gate will (correctly) treat as forgery-detected on
+        // any later verification. Surface it as a non-zero exit instead of a
+        // silent console.error. (verdict= line + summary below still flush.)
         console.error('[derive-verdict] re-sign after merge failed:', err?.message ?? err);
+        process.exitCode = 1;
       }
     }
   }

@@ -2,7 +2,8 @@
 
 import * as path from 'node:path';
 import * as fs from 'node:fs/promises';
-import { createHmac, timingSafeEqual } from 'node:crypto';
+import { constants as fsConstants } from 'node:fs';
+import { createHmac, timingSafeEqual, randomBytes } from 'node:crypto';
 
 import type { VerifyMode } from './mode.ts';
 
@@ -132,6 +133,38 @@ const SIGNED_FIELDS = [
   'regressionReason',
 ] as const;
 
+/**
+ * Fields written by TRUSTED post-processors that run AFTER the result is
+ * signed and that deliberately do NOT re-sign:
+ *  - `unitTests`      — workflow jq+mv writers (verify-pr.yml ~470/528). That
+ *                       step sources strip-untrusted-secrets.sh, which UNSETS
+ *                       VERIFY_PROVENANCE_SECRET before running untrusted PR
+ *                       vitest, so no secret is even available to re-sign with.
+ *  - `evidenceRetry`  — workflow `jq '. + {evidenceRetry:true}'` annotation.
+ *  - `evidenceVerdict`— vision evidence-check output.
+ *
+ * The HMAC gate stays sound ONLY while these stay disjoint from
+ * {@link SIGNED_FIELDS}: writing them leaves the existing `.sig` (computed
+ * over SIGNED_FIELDS) valid. If a future change moves one of these into
+ * SIGNED_FIELDS, every verified PR would silently break (stale sig →
+ * forgery-downgrade). Assert the invariant at module load and crash early
+ * rather than ship a broken gate. See SECURITY.md §c1.
+ */
+const POST_PROCESSOR_FIELDS = ['unitTests', 'evidenceRetry', 'evidenceVerdict'] as const;
+{
+  const signed = new Set<string>(SIGNED_FIELDS);
+  const overlap = POST_PROCESSOR_FIELDS.filter((f) => signed.has(f));
+  if (overlap.length > 0) {
+    throw new Error(
+      `[verify/core] HMAC contract violation: SIGNED_FIELDS must stay disjoint ` +
+        `from post-processor-written fields, but overlaps on [${overlap.join(', ')}]. ` +
+        `These fields are mutated AFTER signing by trusted steps that deliberately ` +
+        `do NOT re-sign (the unit-test step has unset VERIFY_PROVENANCE_SECRET); ` +
+        `signing them would break every verified PR. See SECURITY.md §c1.`
+    );
+  }
+}
+
 export function signablePayload(result: Partial<VerifyResult>): string {
   const subset: Record<string, unknown> = {};
   for (const k of SIGNED_FIELDS) {
@@ -167,9 +200,26 @@ function sigPathFor(resultJsonPath: string): string {
 // fsync a file then atomically rename it over `dest`. rename(2) is atomic on
 // the same filesystem, so a reader never observes a partially-written file —
 // it sees either the old contents or the fully-fsynced new contents.
-async function atomicWrite(dest: string, contents: string): Promise<void> {
-  const tmp = dest + '.tmp-' + process.pid + '-' + Date.now();
-  const fh = await fs.open(tmp, 'w');
+//
+// CWE-377/59 hardening: the temp name uses an unpredictable random suffix
+// (not the guessable pid+timestamp) and is opened with
+// O_WRONLY|O_CREAT|O_EXCL|O_NOFOLLOW. O_EXCL makes open fail if the temp path
+// already exists, and O_NOFOLLOW makes it fail if the final component is a
+// symlink — so an attacker who can write into the parent dir cannot pre-plant
+// the temp path (or a symlink at it) to hijack, observe, or redirect the
+// trusted write before the atomic rename. Exported so every trusted writer of
+// the signed result (see ci/derive-verdict.ts) funnels through the one safe
+// primitive instead of plain writeFile.
+export async function atomicWrite(dest: string, contents: string): Promise<void> {
+  // 96 bits of CSPRNG entropy ⇒ an O_EXCL collision is not attacker-forceable.
+  // Do NOT add an EEXIST retry loop here: retrying would reintroduce a
+  // name-guessing oracle and defeat the CWE-377 hardening this provides.
+  const tmp = dest + '.tmp-' + randomBytes(12).toString('hex');
+  const fh = await fs.open(
+    tmp,
+    fsConstants.O_WRONLY | fsConstants.O_CREAT | fsConstants.O_EXCL | fsConstants.O_NOFOLLOW,
+    0o600
+  );
   try {
     await fh.writeFile(contents, 'utf-8');
     await fh.sync();

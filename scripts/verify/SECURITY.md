@@ -153,15 +153,44 @@ truth for the location, per the contract comments in `core.ts`) rather
 than a hardcoded literal so the security rationale cannot silently drift
 from where the file actually lands.
 
-**Re-sign invariant (W4):** every trusted post-processor that mutates
-`verify-result.json` after it is first signed (vision evidence-check,
-the `derive-verdict` unit-test merge, the workflow's `evidenceRetry` jq
-annotation) MUST call `signResultFile(resultPath, secret)` from
-`scripts/verify/core.ts` immediately after the mutation, so a result
-never exists on disk without a matching, current `.sig`. Today these
-mutations only survive because `SIGNED_FIELDS` happens to exclude the
-touched fields; the re-sign keeps the gate correct even if a future
-field is added to `SIGNED_FIELDS`.
+**Post-signing mutation invariant (W4).** Two *distinct* mechanisms keep
+the gate sound after the result is first signed — do not conflate them:
+
+1. **Disjointness (primary, machine-enforced).** The post-processor
+   fields `unitTests`, `evidenceRetry`, and `evidenceVerdict` are
+   *outside* `SIGNED_FIELDS`, so the existing `.sig` (computed over
+   `SIGNED_FIELDS`) stays valid whether or not the writer re-signs.
+   `scripts/verify/core.ts` enforces this at module load: a bare
+   assertion throws if `SIGNED_FIELDS ∩ {unitTests, evidenceRetry,
+   evidenceVerdict} ≠ ∅`, so moving one of those into the signed set
+   crashes the harness early instead of silently breaking every
+   verified PR (stale sig → forgery-downgrade). This disjointness — not
+   the re-sign — is the load-bearing guarantee.
+2. **Re-sign (belt-and-suspenders; mandatory only where a *signed* field
+   legitimately changes AND the secret is in scope).**
+   `scripts/verify/ci/derive-verdict.ts`'s unit-test merge can flip
+   `verdict` (a `SIGNED_FIELDS` member) verified→regression — there the
+   re-sign is *mandatory*: it runs in trusted bash *with*
+   `VERIFY_PROVENANCE_SECRET` available and calls
+   `signResultFile(resultPath, secret)` immediately after the mutation
+   (re-sign failure now fails the step loudly rather than persisting a
+   stale `.sig`). The workflow's `evidenceRetry` `jq` annotation
+   (`verify-pr.yml` ~398) *also* re-signs (feature-detected against the
+   base-checkout `core.ts`, secret in scope in that trusted step) purely
+   to keep the `.sig` exactly current; because `evidenceRetry` is
+   non-signed, that re-sign is defense-in-depth, not a correctness
+   requirement.
+
+> **The workflow's unit-test `jq` writers (`verify-pr.yml` ~470/528) are
+> DELIBERATELY not re-signed.** That step sources
+> `strip-untrusted-secrets.sh`, which *unsets* `VERIFY_PROVENANCE_SECRET`
+> before executing untrusted PR vitest — no secret is in scope to
+> re-sign with, and re-signing there would be unsafe (it would bind the
+> HMAC to attacker-influenced content and require exposing the secret to
+> the untrusted step). They are safe *only* because they touch
+> exclusively non-signed fields, which mechanism (1) guarantees. **Do
+> NOT "fix" this by adding a re-sign to that step or by moving
+> `unitTests`/`evidence*` into `SIGNED_FIELDS`.**
 
 Without further controls, a PR-added Playwright spec / unit test running
 inside srt could overwrite the file with

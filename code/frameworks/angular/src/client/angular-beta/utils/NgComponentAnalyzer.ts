@@ -84,10 +84,7 @@ export const getComponentInputsOutputs = (component: any): ComponentInputsOutput
         return previousValue;
       }, initialValue);
 
-  // Additively surface signal-based I/O (`input()`, `output()`, `model()`), which carry
-  // no decorator metadata and are therefore invisible to the decorator path above.
-  // This is additive and never mutates the decorator-derived results, so
-  // `@Input`/`@Output`/`EventEmitter` behavior is unchanged.
+  // Add signal-based I/O, which the decorator path above cannot see.
   return addSignalInputsOutputs(component, decoratorDerived);
 };
 
@@ -98,21 +95,13 @@ const hasEntry = (
 ) => list.some((e) => e.propName === propName || e.templateName === templateName);
 
 /**
- * Surfaces signal-based I/O (`input()`, `output()`, `model()`) that the
- * decorator-reflection path cannot see.
- *
- * Angular's `model()` lowers to a binding pair: an `x` input plus a
- * compiler-synthesized `xChange` output. `input()`/`output()` are likewise
- * decorator-less, so none of them appear in `ɵReflectionCapabilities.propMetadata`.
- *
- * They are read instead from the compiled Angular component definition (`ɵcmp`
- * via `ɵgetComponentDef`). Storybook only ever receives components compiled by
- * the Angular builder, so `ɵcmp.inputs`/`ɵcmp.outputs` already encode the
- * resolved binding names — aliased `model(x, { alias })` and `model.required()`
- * included. This is purely static: it never instantiates the component.
- *
- * Results are additive and de-duplicated against the decorator-derived results,
- * so `@Input`/`@Output`/`EventEmitter` behavior is unchanged.
+ * `model()`/`input()`/`output()` are decorator-less, so they never appear in
+ * `ɵReflectionCapabilities.propMetadata`. They are read instead from the compiled
+ * component definition (`ɵcmp`), which Storybook always receives from the Angular
+ * builder and which already encodes resolved binding names (aliased
+ * `model(x, { alias })` and `model.required()` included). Purely static — never
+ * instantiates the component. Results are additive and de-duplicated against
+ * `base`, so decorator-based I/O is unchanged.
  */
 const addSignalInputsOutputs = (
   component: any,
@@ -134,11 +123,9 @@ const addSignalInputsOutputs = (
     return result;
   }
 
-  // `ɵcmp` keys the I/O maps by the *template* (public/binding) name, not the
-  // class property name:
+  // `ɵcmp` keys the I/O maps by template (binding) name, not property name:
   //   def.inputs:  { [templateName]: propName | [propName, flags, transform] }
   //   def.outputs: { [templateName]: propName }
-  // (aliased `@Input('a') b` → def.inputs = { a: ['b', …] }).
   for (const templateName of Object.keys(def.inputs ?? {})) {
     const rawPropName = def.inputs[templateName];
     const propName = Array.isArray(rawPropName)

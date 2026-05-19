@@ -217,16 +217,10 @@ describe('getComponentInputsOutputs', () => {
 });
 
 describe('getComponentInputsOutputs (signal-based I/O)', () => {
-  // `input()`/`output()`/`model()` are decorator-less, so `getComponentInputsOutputs`
-  // reads them from the compiled Angular component definition (`ɵcmp`). The Angular
-  // builder always emits `ɵcmp` for the components Storybook receives, but this unit
-  // harness (analog vite-plugin-angular) leaves `ɵcmp.inputs`/`ɵcmp.outputs` empty for
-  // signal members, so we attach a synthetic `ɵcmp` mirroring the documented AOT shape
-  // and assert the production reader. Full end-to-end signal detection at real AOT is
-  // covered by the `model-signal` sandbox play stories in CI.
-  //
-  // AOT `ɵcmp` shape:
-  //   inputs:  { [templateName]: [propName, flags] }   (signal inputs are arrays)
+  // The unit harness leaves `ɵcmp` empty for signal members, so we attach a
+  // synthetic `ɵcmp` in the AOT shape and assert the production reader. Real
+  // end-to-end signal detection is covered by the `model-signal` sandbox stories.
+  //   inputs:  { [templateName]: [propName, flags] }
   //   outputs: { [templateName]: propName }
   const withCmp = (inputs: Record<string, unknown>, outputs: Record<string, string>) => {
     class FooComponent {}

@@ -239,19 +239,15 @@ export const extractArgTypesFromData = (componentData: Class | Directive | Injec
     | 'inputsClass'
     | 'outputsClass';
 
-  // Detect Angular `model()` signals.
+  // Detect Angular `model()` signals. compodoc emits no `model()` marker: a
+  // `model()` lands under the same bare name in BOTH `inputsClass` and
+  // `outputsClass`, whereas plain inputs/outputs land in only one. A name in both
+  // arrays is the only version-tolerant discriminator.
   //
-  // compodoc emits no `model()` marker: a `model()` member appears as the same bare
-  // name in BOTH `inputsClass` AND `outputsClass`, whereas plain `@Input`/`input()`
-  // only land in `inputsClass` and plain `@Output`/`output()` only in `outputsClass`.
-  // A name present in both arrays is therefore the only version-tolerant discriminator.
-  // (See the committed fixture under `__testfixtures__/doc-model/`.)
-  //
-  // Known limitation: a developer-authored same-name `@Input() x` + `@Output() x`
-  // pair is indistinguishable from a real `model()` and is misclassified — its
-  // bare-name output is suppressed and a spurious `${name}Change` is synthesized.
-  // This is the accepted trade-off for detecting `model()` through an external,
-  // unpinned tool; such a pair is rare.
+  // Known limitation: a hand-written same-name `@Input() x` + `@Output() x` pair is
+  // indistinguishable from a real `model()` and is misclassified (bare-name output
+  // suppressed, spurious `${name}Change` synthesized). Rare; accepted trade-off for
+  // an external, unpinned tool.
   const inputClassNames = new Set<string>(
     (((componentData as any).inputsClass as Property[]) || []).map((item) => item.name)
   );
@@ -302,18 +298,13 @@ export const extractArgTypesFromData = (componentData: Class | Directive | Injec
     });
   });
 
-  // Synthesize the `${name}Change` output for every detected `model()`. compodoc
-  // never emits it. This runs after the iteration loop so it is deterministic
-  // regardless of `FEATURES.angularFilterNonInputControls` (which restricts the
-  // loop to `inputsClass`): the model input control still comes from `inputsClass`
-  // and `${name}Change` is added here either way.
+  // Synthesize the `${name}Change` output compodoc never emits. Runs after the
+  // loop so it is unaffected by `FEATURES.angularFilterNonInputControls`.
   modelProperties.forEach((item) => {
     const changeName = `${item.name}Change`;
 
-    // The synthesized member is an OUTPUT, not the model INPUT it derives from, so
-    // it must not inherit the input's Docs metadata: omit `defaultValue` and render
-    // the type as the emitted-payload handler signature, matching how genuine
-    // `@Output`/`output()` members appear in the Docs table.
+    // This is an OUTPUT, not the model INPUT it derives from: omit `defaultValue`
+    // and render the type as the emitted-payload handler signature.
     const argType = {
       name: changeName,
       description: item.rawdescription || item.description,

@@ -103,20 +103,14 @@ type TransformOutputSignalType<T> = {
 
 /**
  * Angular `model()` generates a binding pair: an input `x: T` plus a
- * compiler-synthesized output `xChange: (e: T) => void`. The `xChange` member is
- * NOT a real class member, so it can never be discovered by iterating
- * `keyof T`; it must be synthesized here.
- *
- * This type maps every `ModelSignal<E>` field `K` to its value type `E`, and
- * additionally synthesizes an intersection member keyed `` `${K}Change` `` typed
- * `(e: E) => void`.
+ * compiler-synthesized output `xChange: (e: T) => void`. `xChange` is not a real
+ * class member, so it cannot be found by iterating `keyof T` and is synthesized
+ * here as an intersection member.
  *
  * Known limitation: aliased `model(prop, { alias: 'a' })` produces `aChange` at
- * runtime, but the type layer can only synthesize `${propName}Change`
- * (`propChange`) because TypeScript cannot observe the runtime alias. Runtime
- * detection (via the resolved binding name on `ɵcmp`) still handles aliasing
- * correctly. `model.required()` has the same shape as `model()` and is fully
- * covered.
+ * runtime, but the type layer can only synthesize `${propName}Change` because
+ * TypeScript cannot observe the runtime alias. Runtime detection (via `ɵcmp`)
+ * still handles aliasing correctly. `model.required()` is fully covered.
  */
 type TransformModelSignalType<T> = {
   [K in keyof T]: T[K] extends ModelSignal<infer E> ? E : T[K];

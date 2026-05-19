@@ -49,6 +49,50 @@ describe('commonConfig', () => {
     expect(config.configFile).toBe(false);
     expect(config.plugins).toBeDefined();
   });
+
+  it('should pass configLoader option to loadConfigFromFile', async () => {
+    const optionsWithConfigLoader: Options = {
+      ...dummyOptions,
+      presets: {
+        apply: async (key: string) =>
+          ({
+            framework: { name: '' },
+            addons: [],
+            core: {
+              builder: {
+                name: '@storybook/builder-vite',
+                options: {
+                  configLoader: 'native',
+                },
+              },
+            },
+            options: {},
+          })[key],
+      } as Presets,
+    };
+
+    // Inline mock: this test asserts a specific call signature, so it needs its
+    // own one-shot return value distinct from the shared default mock.
+    loadConfigFromFileMock.mockReturnValueOnce(
+      Promise.resolve({
+        config: {},
+        path: '',
+        dependencies: [],
+      })
+    );
+
+    await commonConfig(optionsWithConfigLoader, 'development');
+
+    // Verify loadConfigFromFile was called with configLoader as the 6th argument
+    expect(loadConfigFromFileMock).toHaveBeenCalledWith(
+      expect.objectContaining({ command: 'serve' }),
+      undefined,
+      expect.any(String),
+      undefined,
+      undefined,
+      'native'
+    );
+  });
 });
 
 describe('storybookConfigPlugin', () => {
@@ -87,46 +131,4 @@ describe('storybookConfigPlugin', () => {
     (allowPlugin.config as Function)(config);
     expect(config.server.fs.allow).toContain('/test/.storybook');
   });
-});
-
-it('should pass configLoader option to loadConfigFromFile', async () => {
-  const optionsWithConfigLoader: Options = {
-    ...dummyOptions,
-    presets: {
-      apply: async (key: string) =>
-        ({
-          framework: { name: '' },
-          addons: [],
-          core: {
-            builder: {
-              name: '@storybook/builder-vite',
-              options: {
-                configLoader: 'native'
-              }
-            },
-          },
-          options: {},
-        })[key],
-    } as Presets,
-  };
-
-  loadConfigFromFileMock.mockReturnValueOnce(
-    Promise.resolve({
-      config: {},
-      path: '',
-      dependencies: [],
-    })
-  );
-
-  await commonConfig(optionsWithConfigLoader, 'development');
-
-  // Verify loadConfigFromFile was called with configLoader as the 6th argument
-  expect(loadConfigFromFileMock).toHaveBeenCalledWith(
-    expect.objectContaining({ command: 'serve' }),
-    undefined,
-    expect.any(String),
-    undefined,
-    undefined,
-    'native'
-  );
 });

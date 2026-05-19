@@ -56,7 +56,7 @@ const bootTestRunner = async ({
   channel: Channel;
   store: Store;
   options: Options;
-  configLoader: BuilderOptions['configLoader'];
+  configLoader?: BuilderOptions['configLoader'];
 }) => {
   let stderr: string[] = [];
   const killChild = () => {
@@ -171,7 +171,7 @@ export const runTestRunner = async ({
   initEvent?: string;
   initArgs?: any[];
   options: Options;
-  configLoader: BuilderOptions['configLoader'];
+  configLoader?: BuilderOptions['configLoader'];
 }) => {
   if (!ready && initEvent) {
     eventQueue.push({ type: initEvent, args: initArgs });

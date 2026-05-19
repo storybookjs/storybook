@@ -19,6 +19,8 @@ Storybook provides a [`composeStories`](../../api/portable-stories/portable-stor
 
 <CodeSnippets path="component-test-with-testing-library.md" />
 
+These examples use Testing Library's `screen` queries because the composed stories run inside your unit test renderer. In a story's `play` function, prefer the provided `canvas` queries so interactions stay scoped to the rendered story.
+
 <Callout variant="warning">
 
 You **must** [configure your test environment to use portable stories](../../api/portable-stories/portable-stories-vitest.mdx#1-apply-project-level-annotations) to ensure your stories are composed with all aspects of your Storybook configuration, such as [decorators](../../writing-stories/decorators.mdx).

@@ -1,0 +1,61 @@
+---
+title: Agentic setup
+sidebar:
+  order: 1
+---
+
+<Callout variant="info" icon="🧪">
+
+Storybook's agentic setup is currently only available for projects using the [React](?renderer=react) renderer with the [Vite](../builders/vite.mdx) builder. Support for additional renderers and builders will follow.
+
+The API may change in future releases. We welcome feedback and contributions to help improve this feature.
+
+</Callout>
+
+<If renderer={['react']}>
+
+Configuring Storybook in an existing application is repetitive, project-specific work that AI agents handle well. When you add Storybook to a project using an agent, it analyzes your project (framework, renderer, builder, language, addons) and produces a Markdown guide with [step-by-step instructions](#generated-setup-instructions). By following this guide, your agent will configure your preview file, set up commonly needed mocks, and write stories for components in your codebase.
+
+After an agent follows those instructions, you have a working Storybook with stories for your components and a clear path to expanding coverage across your codebase.
+
+## Set up Storybook with an agent
+
+To set up Storybook in your project, copy/paste this prompt into your agent's chat:
+
+<CodeSnippets path="prompt-install-storybook.md" />
+
+The agent first runs [`storybook init`](../api/cli-options.mdx#init) to add Storybook to your project. When init completes, the agent offers to continue with project-specific configuration. If you agree, the agent generates the instructions, follows them step by step, and applies each change directly to your codebase so you can review its work.
+
+### Generated setup instructions
+
+The project-specific instructions cover the following steps:
+
+1. **Analyze the codebase:** read providers, global CSS, portals, and data-fetching patterns.
+2. **Configure the [preview](../configure/story-rendering.mdx):** set up [decorators](../writing-stories/decorators.mdx), [global styles](../configure/styling-and-css.mdx), and any framework-level providers in `preview.tsx`.
+3. **Support portals:** ensure portal roots exist in the Storybook preview DOM.
+4. **Mock side effects:** intercept [network requests](../writing-stories/mocking-data-and-modules/mocking-network-requests.mdx) (via MSW), storage, timers, and navigation at the preview level rather than per-story.
+5. **Write [stories](../writing-stories/index.mdx):** add stories from up to 10 components, from simple to complex, [tagging](../writing-stories/tags.mdx) them as `ai-generated` for your review.
+6. **Add [play functions](../writing-stories/play-function.mdx):** implement [interaction tests](../writing-tests/interaction-testing.mdx) for the most important flows.
+7. **Cover additional patterns:** expand coverage across the components the agent has already touched.
+8. **Verify:** run [Vitest](../writing-tests/integrations/vitest-addon/index.mdx) against every new story to confirm it renders, and run the type checker.
+9. **Install useful addons:** add and configure addons like [MCP](./mcp/overview.mdx) to help you (and your agent) get the most out of Storybook.
+
+## Next steps
+
+Once the agent has completed the setup:
+
+- [Run your new Storybook](../get-started/install.mdx#start-storybook) and review the generated configuration files ([main](../configure/index.mdx#configure-your-storybook-project) and [preview](../configure/index.mdx#configure-story-rendering), most importantly).
+- Review the stories tagged `ai-generated`, and remove the tag once you've validated each one.
+- Connect the [Storybook MCP server](./mcp/overview.mdx) to your agent so it can continue reading manifests, generating stories, and running tests against your live Storybook.
+- Follow the [best practices](./best-practices.mdx) to make your stories and documentation maximally useful to both humans and agents.
+
+</If>
+{/* End supported renderers */}
+
+**More AI resources**
+
+- [MCP server overview](./mcp/overview.mdx)
+- [MCP server API](./mcp/api.mdx)
+- [Sharing your MCP server](./mcp/sharing.mdx)
+- [Best practices for using Storybook with AI](./best-practices.mdx)
+- [Manifests](./manifests.mdx)

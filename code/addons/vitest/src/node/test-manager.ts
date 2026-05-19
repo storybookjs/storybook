@@ -10,14 +10,13 @@ import type {
 
 import type { BuilderOptions } from '@storybook/builder-vite';
 
-import type { A11yReport } from '@storybook/addon-a11y';
-
 import { throttle } from 'es-toolkit/function';
 import type { Report } from 'storybook/preview-api';
 
 import { STATUS_TYPE_ID_A11Y, STATUS_TYPE_ID_COMPONENT_TEST, storeOptions } from '../constants.ts';
 import type {
   CurrentRun,
+  RunConfig,
   RunTrigger,
   StoreEvent,
   StoreState,
@@ -61,7 +60,7 @@ export class TestManager {
 
   public storybookOptions: Options;
 
-  private configLoader?: TestManagerOptions['configLoader'];
+  public readonly configLoader?: TestManagerOptions['configLoader'];
 
   private batchedTestCaseResults: {
     storyId: string;
@@ -85,7 +84,9 @@ export class TestManager {
     this.store
       .untilReady()
       .then(() => {
-        return this.vitestManager.startVitest({ coverage: this.store.getState().config.coverage });
+        return this.vitestManager.startVitest({
+          coverage: this.store.getState().config.coverage,
+        });
       })
       .then(() => this.onReady?.())
       .catch((e) => {
@@ -135,7 +136,7 @@ export class TestManager {
   }: {
     storyIds?: string[];
     triggeredBy: RunTrigger;
-    configOverride?: StoreState['config'];
+    configOverride?: RunConfig;
     callback: () => Promise<void>;
   }) {
     this.componentTestStatusStore.unset(storyIds);
@@ -153,10 +154,6 @@ export class TestManager {
         config: runConfig,
       },
     }));
-    // set the config at the start of a test run,
-    // so that changing the config during the test run does not affect the currently running test run
-    process.env.VITEST_STORYBOOK_CONFIG = JSON.stringify(runConfig);
-
     await this.testProviderStore.runWithState(async () => {
       await callback();
       this.store.send({
@@ -235,14 +232,19 @@ export class TestManager {
     this.componentTestStatusStore.set(componentTestStatuses);
 
     const a11yReportsByStoryId: CurrentRun['a11yReports'] = {};
+    const reportsByStoryId: CurrentRun['reports'] = {};
     const a11yStatuses: typeof componentTestStatuses = [];
 
     for (const { storyId, reports } of testCaseResultsToFlush) {
+      if (reports?.length) {
+        reportsByStoryId[storyId] = reports;
+      }
+
       const storyA11yReports = reports?.filter((r) => r.type === 'a11y');
       if (!storyA11yReports?.length) {
         continue;
       }
-      a11yReportsByStoryId[storyId] = storyA11yReports.map((r) => r.result) as A11yReport[];
+      a11yReportsByStoryId[storyId] = storyA11yReports.map((report) => report.result);
       for (const a11yReport of storyA11yReports) {
         a11yStatuses.push({
           storyId,
@@ -287,12 +289,24 @@ export class TestManager {
         currentRun: {
           ...s.currentRun,
           componentTestCount: { success: ctSuccess, error: ctError },
-          a11yCount: { success: a11ySuccess, warning: a11yWarning, error: a11yError },
+          a11yCount: {
+            success: a11ySuccess,
+            warning: a11yWarning,
+            error: a11yError,
+          },
           componentTestStatuses: s.currentRun.componentTestStatuses.concat(componentTestStatuses),
           a11yStatuses: s.currentRun.a11yStatuses.concat(a11yStatuses),
+          /*
+            TODO: a11yReports is just here for backwards compatibility with older versions of addon-mcp.
+            They are also part of the more generic reports property, so we can remove this in a future major release when we can break compatibility.
+          */
           a11yReports: {
             ...s.currentRun.a11yReports,
             ...a11yReportsByStoryId,
+          },
+          reports: {
+            ...s.currentRun.reports,
+            ...reportsByStoryId,
           },
           // in some cases successes and errors can exceed the anticipated totalTestCount
           // e.g. when testing more tests than the stories we know about upfront

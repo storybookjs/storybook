@@ -1,9 +1,4 @@
-import type { MouseEvent } from 'react';
-import React, { useCallback, useEffect, useState } from 'react';
-
-import { logger } from 'storybook/internal/client-logger';
-
-import { global } from '@storybook/global';
+import React, { useEffect, useState } from 'react';
 
 import memoize from 'memoizerific';
 // @ts-expect-error (Converted from ts-ignore)
@@ -26,14 +21,12 @@ import { styled } from 'storybook/theming';
 import { ActionBar } from '../ActionBar/ActionBar.tsx';
 import type { ScrollAreaProps } from '../ScrollArea/ScrollArea.tsx';
 import { ScrollArea } from '../ScrollArea/ScrollArea.tsx';
-import { createCopyToClipboardFunction } from './clipboard.ts';
+import { useCopyButton } from '../../../shared/useCopyButton.ts';
 import type {
   SyntaxHighlighterProps,
   SyntaxHighlighterRenderer,
   SyntaxHighlighterRendererProps,
 } from './syntaxhighlighter-types.ts';
-
-const { window: globalWindow } = global;
 
 export const supportedLanguages = {
   jsextra: jsExtras,
@@ -56,8 +49,6 @@ Object.entries(supportedLanguages).forEach(([key, val]) => {
 const themedSyntax = memoize(2)((theme) =>
   Object.entries(theme.code || {}).reduce((acc, [key, val]) => ({ ...acc, [`* .${key}`]: val }), {})
 );
-
-const copyToClipboard: (text: string) => Promise<void> = createCopyToClipboardFunction();
 
 export interface WrapperProps {
   bordered?: boolean;
@@ -179,10 +170,6 @@ const wrapRenderer = (
   return defaultRenderer;
 };
 
-export interface SyntaxHighlighterState {
-  copied: boolean;
-}
-
 // copied from @types/react-syntax-highlighter/index.d.ts
 
 export const SyntaxHighlighter = ({
@@ -211,20 +198,9 @@ export const SyntaxHighlighter = ({
     }
   }, [children, format, formatter]);
 
-  const [copied, setCopied] = useState(false);
-
-  const onClick = useCallback(
-    (e: MouseEvent<HTMLButtonElement>) => {
-      e.preventDefault();
-      copyToClipboard(highlightableCode)
-        .then(() => {
-          setCopied(true);
-          globalWindow.setTimeout(() => setCopied(false), 1500);
-        })
-        .catch(logger.error);
-    },
-    [highlightableCode]
-  );
+  const { children: copyChildren, buttonProps: copyButtonProps } = useCopyButton<string>({
+    content: highlightableCode,
+  });
   const renderer = wrapRenderer(rest.renderer, showLineNumbers);
 
   return (
@@ -252,7 +228,15 @@ export const SyntaxHighlighter = ({
       </Scroller>
 
       {copyable ? (
-        <ActionBar actionItems={[{ title: copied ? 'Copied' : 'Copy', onClick }]} flexLayout />
+        <ActionBar
+          actionItems={[
+            {
+              title: copyChildren,
+              onClick: copyButtonProps.onClick,
+            },
+          ]}
+          flexLayout
+        />
       ) : null}
     </Wrapper>
   );

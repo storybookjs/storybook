@@ -1,8 +1,8 @@
 # Storybook Claude Code Plugin
 
-Build, preview, and test UI components from Claude Code.
+Build, preview, and test UI components from Claude.
 
-This package installs Storybook-specific skills and configures Claude Code to start the Storybook MCP proxy. The proxy discovers running Storybook projects and connects Claude Code to the MCP server exposed by `@storybook/addon-mcp`.
+This package installs Storybook-specific skills and configures Claude to start `@storybook/mcp-proxy`. In this milestone, that package is a minimal placeholder MCP server so Claude can discover and start the plugin-provided MCP entry before the real proxy implementation lands.
 
 ## Local development
 
@@ -54,7 +54,7 @@ The output should include:
 plugin:storybook:storybook: npx -y @storybook/mcp-proxy@latest
 ```
 
-Until `@storybook/mcp-proxy` is published, this server is expected to fail to connect. The important signal for this package is that `plugin:storybook:storybook` appears in the MCP list.
+The current `@storybook/mcp-proxy` implementation responds to MCP initialization and returns an empty tool list. The important signal for this package is that `plugin:storybook:storybook` appears and can be started once the package is available from npm or a pkg.pr.new preview URL.
 
 To test in Claude Desktop, restart Claude Desktop after installing the plugin, open a new Code session in any project, and check that the Storybook skills are available from the `+` menu.
 
@@ -89,11 +89,17 @@ The plugin's `.mcp.json` starts:
 npx -y @storybook/mcp-proxy@latest
 ```
 
-`@storybook/mcp-proxy` must be published before marketplace installs can use the default MCP configuration successfully.
+The package currently exposes no Storybook tools. Milestone 2 of storybookjs/storybook#34826 will replace the placeholder internals with the real proxy, which will discover running Storybook instances and proxy the seven Storybook MCP tools.
+
+Before `@storybook/mcp-proxy` is published to npm, use the pkg.pr.new URL from the `Publish preview` workflow if you want to test the MCP runtime from this PR:
+
+```sh
+npx -y --package https://pkg.pr.new/storybookjs/mcp/@storybook/mcp-proxy@<commit> storybook-mcp-proxy
+```
 
 ## Included Skills
 
-- `storybook-mcp-setup`: Set up and use Storybook MCP in an existing project.
+- `storybook-mcp-setup`: Set up Storybook MCP readiness in an existing project.
 - `storybook-init`: Add Storybook to a project that does not have it yet.
 - `storybook-upgrade`: Upgrade older Storybook projects and repair MCP readiness issues.
-- `storybook-launch-setup`: Create or repair Claude launch configuration for starting Storybook.
+- `storybook-launch-setup`: Create or repair Claude preview launch configuration for starting Storybook.

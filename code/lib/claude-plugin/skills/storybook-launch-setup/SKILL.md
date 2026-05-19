@@ -1,11 +1,11 @@
 ---
 name: storybook-launch-setup
-description: Create or repair Claude Desktop launch configuration for starting Storybook from Claude.
+description: Create or repair Claude launch configuration for starting a project's Storybook preview.
 ---
 
 # Storybook Launch Setup
 
-Use this skill when the user wants Claude Desktop or Claude Code links to start the project's Storybook process.
+Use this skill when the user wants Claude Desktop or Claude Code launch entries to start the project's Storybook preview.
 
 ## Workflow
 

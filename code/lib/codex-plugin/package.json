@@ -1,0 +1,32 @@
+{
+	"name": "@storybook/codex-plugin",
+	"version": "0.0.0",
+	"private": true,
+	"description": "Build, preview, and test UI components from Codex",
+	"keywords": [
+		"codex",
+		"mcp",
+		"plugin",
+		"storybook"
+	],
+	"homepage": "https://github.com/storybookjs/mcp/tree/main/packages/codex-plugin#readme",
+	"license": "MIT",
+	"author": "Storybook Core Team",
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/storybookjs/mcp.git",
+		"directory": "packages/codex-plugin"
+	},
+	"files": [
+		".codex-plugin",
+		".mcp.json",
+		"assets",
+		"skills",
+		"README.md"
+	],
+	"type": "module",
+	"scripts": {
+		"codex:marketplace:add": "codex plugin marketplace add ../..",
+		"codex:marketplace:remove": "codex plugin marketplace remove storybook"
+	}
+}

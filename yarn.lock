@@ -8311,6 +8311,18 @@ __metadata:
   languageName: unknown
   linkType: soft
 
+"@storybook/addon-review-changes@workspace:code/addons/review-changes":
+  version: 0.0.0-use.local
+  resolution: "@storybook/addon-review-changes@workspace:code/addons/review-changes"
+  dependencies:
+    react: "npm:^18.2.0"
+    react-dom: "npm:^18.2.0"
+    typescript: "npm:^5.9.3"
+  peerDependencies:
+    storybook: "workspace:^"
+  languageName: unknown
+  linkType: soft
+
 "@storybook/addon-themes@workspace:*, @storybook/addon-themes@workspace:code/addons/themes":
   version: 0.0.0-use.local
   resolution: "@storybook/addon-themes@workspace:code/addons/themes"

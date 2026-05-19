@@ -1,0 +1,60 @@
+{
+  "name": "@storybook/addon-review-changes",
+  "version": "10.4.0-alpha.17",
+  "description": "Storybook addon that renders an agent-pushed review of a code change",
+  "keywords": [
+    "storybook",
+    "storybook-addon",
+    "review",
+    "mcp",
+    "agent"
+  ],
+  "homepage": "https://github.com/storybookjs/storybook/tree/next/code/addons/review-changes",
+  "bugs": {
+    "url": "https://github.com/storybookjs/storybook/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/storybookjs/storybook.git",
+    "directory": "code/addons/review-changes"
+  },
+  "funding": {
+    "type": "opencollective",
+    "url": "https://opencollective.com/storybook"
+  },
+  "license": "MIT",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "code": "./src/index.ts",
+      "default": "./dist/index.js"
+    },
+    "./manager": "./dist/manager.js",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist/**/*",
+    "README.md",
+    "*.js",
+    "*.d.ts",
+    "!src/**/*"
+  ],
+  "devDependencies": {
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "typescript": "^5.9.3"
+  },
+  "peerDependencies": {
+    "storybook": "workspace:^"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "storybook": {
+    "displayName": "Review Changes",
+    "unsupportedFrameworks": [
+      "react-native"
+    ]
+  }
+}

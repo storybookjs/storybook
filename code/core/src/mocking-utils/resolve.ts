@@ -11,10 +11,6 @@ const require = createRequire(import.meta.url);
 /**
  * Browser-condition resolver used for `sb.mock()` external module resolution.
  *
- * - `browser` wins ahead of `import` / `module` / `default` in `exports` maps via `conditionNames`
- * - the package.json `browser` field is honoured via `aliasFields`
- * - `mainFields` order picks `pkg.browser` first, then `pkg.module`, then `pkg.main` when no
- *   `exports` map is present
  */
 const externalResolver = new OxcResolverFactory({
   conditionNames: ['browser', 'import', 'module', 'default'],

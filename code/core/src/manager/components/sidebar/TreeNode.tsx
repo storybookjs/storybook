@@ -83,21 +83,21 @@ const StyledTreeItem = styled(TreeItem)<{
    * ContextMenu button is shown on hover/focus and when already open;
    * StatusIcon is hidden when ContextMenu button is visible. */
   '& [data-displayed="off"]': {
-    visibility: 'hidden',
+    display: 'none',
   },
 
   '&:hover [data-displayed="off"], &:focus-visible [data-displayed="off"], &:focus-within [data-displayed="off"]':
     {
-      visibility: 'visible',
+      display: 'block',
     },
 
   '& span:has([data-displayed="on"]) + *': {
-    visibility: 'hidden',
+    display: 'none',
   },
 
   '&:hover span:has([data-displayed="off"]) + *, &:focus-visible span:has([data-displayed="off"]) + *, &:focus-within span:has([data-displayed="off"]) + *':
     {
-      visibility: 'hidden',
+      display: 'none',
     },
 
   /* CollapseIcon and TypeIcon visibility.
@@ -180,13 +180,15 @@ const Traces = ({
 
 const StyledLabel = styled.span({
   flex: '1 1 auto',
+  minWidth: 0,
   marginInlineStart: 6,
+  overflow: 'hidden',
+  textOverflow: 'ellipsis',
+  whiteSpace: 'nowrap',
 });
 
 const MenuTriggerContainer = styled.span({
-  position: 'absolute',
-  insetY: 0,
-  right: 0,
+  margin: -2,
 });
 
 const StatusIconContainer = styled.span({

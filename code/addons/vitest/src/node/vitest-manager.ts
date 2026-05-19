@@ -127,6 +127,7 @@ export class VitestManager {
     try {
       this.vitest = await createVitest('test', {
         root: vitestWorkspaceConfig ?? vitestConfigFallbackLocation,
+        configLoader: this.testManager.configLoader,
         watch: true,
         passWithNoTests: false,
         project: [projectName],

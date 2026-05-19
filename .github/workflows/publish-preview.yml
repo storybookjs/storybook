@@ -30,9 +30,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout pull request HEAD
-        uses: actions/checkout@v4
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
 
       - name: Setup Node.js and Install Dependencies
         uses: ./.github/actions/setup-node-and-install
@@ -47,11 +48,9 @@ jobs:
         id: publish
         working-directory: scripts
         run: |
-          rm -f ./pkg-pr-new-output.json
-
           yarn workspaces list --json --no-private \
             | jq -j '"../" + .location + "\u0000"' \
-            | xargs -0 -r yarn pkg-pr-new publish --no-template --comment=off --commentWithDev --json=./pkg-pr-new-output.json
+            | xargs -0 -r yarn pkg-pr-new publish --no-template --comment=off --json=./pkg-pr-new-output.json
 
           test -s ./pkg-pr-new-output.json
 
@@ -66,12 +65,10 @@ jobs:
           TRIGGERING_ACTOR: ${{ github.triggering_actor }}
           WORKFLOW_REPOSITORY: ${{ github.repository }}
         run: |
-          primary_package_name=$(jq -r '.packages[] | select(.name == "storybook") | .name' ./pkg-pr-new-output.json)
-          primary_package_url=$(jq -r '.packages[] | select(.name == "storybook") | .url' ./pkg-pr-new-output.json)
+          storybook_package_url=$(jq -r '.packages[] | select(.name == "storybook") | .url' ./pkg-pr-new-output.json)
 
-          if [[ -z "$primary_package_name" || -z "$primary_package_url" ]]; then
-            primary_package_name=$(jq -r '.packages[0].name' ./pkg-pr-new-output.json)
-            primary_package_url=$(jq -r '.packages[0].url' ./pkg-pr-new-output.json)
+          if [[ -z "$storybook_package_url" ]]; then
+            storybook_package_url="https://pkg.pr.new/storybook@$COMMIT_SHA"
           fi
 
           package_count=$(jq '.packages | length' ./pkg-pr-new-output.json)
@@ -82,34 +79,23 @@ jobs:
 
           echo 'body<<EOF' >> "$GITHUB_OUTPUT"
           cat <<EOF >> "$GITHUB_OUTPUT"
-          This pull request has been released as preview packages. Try it out in a new sandbox or an existing project with the published [$primary_package_name]($primary_package_url) package.
-          <details>
-          <summary>More information</summary>
+          This pull request has been released as preview packages. Try it out in a new project or update an existing project with the commands below.
 
-          | | |
-          | --- | --- |
-          | **Primary package** | [$primary_package_name]($primary_package_url) |
-          | **Published packages** | $package_count |
-          | **Triggered by** | @$TRIGGERING_ACTOR |
-          | **Repository** | [$REPOSITORY](https://github.com/$REPOSITORY) |
-          | **Branch** | [$BRANCH](https://github.com/$REPOSITORY/tree/$BRANCH) |
-          | **Commit** | [$short_sha](https://github.com/$REPOSITORY/commit/$COMMIT_SHA) |
-          | **Datetime** | $date ($timestamp) |
-          | **Workflow run** | [$RUN_ID](https://github.com/$WORKFLOW_REPOSITORY/actions/runs/$RUN_ID) |
+          ```sh
+          # For a new project
+          npm create storybook@$storybook_package_url
 
-          To request a new preview release of this pull request, mention the @storybookjs/core team.
+          # or for an existing project
+          npx storybook@$storybook_package_url upgrade
+          ```
 
-          | Package | Preview URL | Shasum |
-          | --- | --- | --- |
-          $package_rows
-          </details>
           EOF
           echo 'EOF' >> "$GITHUB_OUTPUT"
 
       - name: Replace Pull Request Body
         id: replace-pr-body
         continue-on-error: ${{ github.event.pull_request.head.repo.fork }}
-        uses: ivangabriele/find-and-replace-pull-request-body@042438c6cbfbacf6a4701d6042f59b1f73db2fd8
+        uses: ivangabriele/find-and-replace-pull-request-body@9d26f37218b2649daea37dbc04bfd092b9ebeeca # v1.1.5
         with:
           githubToken: ${{ github.token }}
           find: "CANARY_RELEASE_SECTION"

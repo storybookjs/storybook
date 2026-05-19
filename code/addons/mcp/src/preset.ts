@@ -10,6 +10,8 @@ import path from 'node:path';
 import { CompositionAuth, extractBearerToken, type ComposedRef } from './auth/index.ts';
 import { logger } from 'storybook/internal/node-logger';
 import type { Source } from '@storybook/mcp';
+import { APPLY_REVIEW_STATE_EVENT, REQUEST_REVIEW_STATE_EVENT } from './constants.ts';
+import { getReviewState } from './review-state-store.ts';
 
 export const previewAnnotations: PresetPropertyFn<'previewAnnotations'> = async (
 	existingAnnotations = [],
@@ -28,6 +30,17 @@ export const experimental_devServer: PresetPropertyFn<'experimental_devServer'> 
 	});
 
 	const origin = `http://localhost:${options.port}`;
+
+	// Replay the cached review state to any Storybook tab that mounts or
+	// refreshes after the agent already pushed. The tab emits
+	// `request-review-state`; we re-emit the cached state so it converges.
+	// The cache is the module singleton shared with the apply-review-state tool.
+	options.channel.on(REQUEST_REVIEW_STATE_EVENT, () => {
+		const state = getReviewState();
+		if (state) {
+			options.channel.emit(APPLY_REVIEW_STATE_EVENT, state);
+		}
+	});
 
 	// Get composed Storybook refs from config
 	const refs = await getRefsFromConfig(options);

@@ -239,10 +239,39 @@ export const extractArgTypesFromData = (componentData: Class | Directive | Injec
     | 'inputsClass'
     | 'outputsClass';
 
+  // Detect Angular `model()` signals.
+  //
+  // compodoc (verified against the captured v1.2.1 output at
+  // `.omc/plans/probe-fixtures/compodoc-model-probe-documentation.json`) emits a
+  // `model()` member as an IDENTICAL entry — same bare name, e.g. `color` — in BOTH
+  // `inputsClass` AND `outputsClass`, with no `decorators`/`jsdoctags` and the
+  // `ModelSignal<T>` wrapper erased to the unwrapped value type. Plain
+  // `@Input`/`input()` only land in `inputsClass`; plain `@Output`/`output()`/
+  // `EventEmitter` only land in `outputsClass` (and never under the input's name).
+  // The only reliable, version-tolerant discriminator is therefore a property whose
+  // name appears in BOTH arrays of the same component.
+  const inputClassNames = new Set<string>(
+    (((componentData as any).inputsClass as Property[]) || []).map((item) => item.name)
+  );
+  const modelProperties: Property[] = (
+    ((componentData as any).outputsClass as Property[]) || []
+  ).filter((item) => inputClassNames.has(item.name));
+  const modelPropertyNames = new Set<string>(modelProperties.map((item) => item.name));
+
   compodocClasses.forEach((key: COMPODOC_CLASS) => {
     const data = (componentData as any)[key] || [];
     data.forEach((item: Method | Property) => {
       const section = mapItemToSection(key, item);
+
+      // Suppress compodoc's spurious `outputsClass` duplicate of a `model()` property.
+      // The model property must surface as an INPUT control (via its `inputsClass`
+      // entry); the corresponding output is the synthesized `${name}Change` added
+      // below — not a plain bare-name output. See the model() detection note above
+      // (`.omc/plans/probe-fixtures/compodoc-model-probe-documentation.json`).
+      if (key === 'outputsClass' && !isMethod(item) && modelPropertyNames.has(item.name)) {
+        return;
+      }
+
       const defaultValue = isMethod(item) ? undefined : extractDefaultValue(item as Property);
 
       const type: SBType =
@@ -271,6 +300,46 @@ export const extractArgTypesFromData = (componentData: Class | Directive | Injec
       }
       sectionToItems[section].push(argType);
     });
+  });
+
+  // Synthesize the `${name}Change` output for every detected `model()` property.
+  //
+  // compodoc does NOT emit a `${name}Change` member (it merely duplicates the
+  // property under its bare name into `outputsClass`), so Storybook synthesizes the
+  // two-way `${name}Change` output here, reusing the per-item output shape above.
+  //
+  // This runs unconditionally, AFTER the iteration loop, so it is deterministic
+  // across both `FEATURES.angularFilterNonInputControls` states:
+  //   - flag OFF: the model input control comes from `inputsClass`; the spurious
+  //     bare-name `outputsClass` duplicate is suppressed above; `${name}Change` is
+  //     added here.
+  //   - flag ON: iteration is restricted to `['inputsClass']` (filter L227-229), so
+  //     the model input control still surfaces, and `${name}Change` is re-surfaced
+  //     here despite `outputsClass` never being iterated.
+  // Evidence basis: `.omc/plans/probe-fixtures/compodoc-model-probe-documentation.json`.
+  modelProperties.forEach((item) => {
+    const changeName = `${item.name}Change`;
+    const defaultValue = extractDefaultValue(item);
+
+    const argType = {
+      name: changeName,
+      description: item.rawdescription || item.description,
+      type: { name: 'other', value: 'void' } as SBType,
+      action: changeName,
+      table: {
+        category: 'outputs',
+        type: {
+          summary: item.type,
+          required: !item.optional,
+        },
+        defaultValue: { summary: defaultValue },
+      },
+    };
+
+    if (!sectionToItems.outputs) {
+      sectionToItems.outputs = [];
+    }
+    sectionToItems.outputs.push(argType);
   });
 
   const SECTIONS = [

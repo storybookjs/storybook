@@ -288,7 +288,7 @@ Avoid `console.log`, `console.warn`, and `console.error` unless the file is isol
 
 These usually start long-running development servers and are the wrong default for agents.
 
-## Code Authoring Principles For Agents
+## Code Authoring Principles
 
 These are recurring failure modes in agent-authored changes to this repo. Apply them when writing or reviewing code, not just when asked.
 

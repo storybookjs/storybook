@@ -10,7 +10,6 @@ const require = createRequire(import.meta.url);
 
 /**
  * Browser-condition resolver used for `sb.mock()` external module resolution.
- *
  */
 const externalResolver = new OxcResolverFactory({
   conditionNames: ['browser', 'import', 'module', 'default'],

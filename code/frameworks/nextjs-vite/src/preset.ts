@@ -47,9 +47,6 @@ export const optimizeViteDeps = [
   '@storybook/nextjs-vite > styled-jsx',
   '@storybook/nextjs-vite > styled-jsx/style',
   '@opentelemetry/api',
-  // Next.js 16 internal modules that need pre-bundling for Vite dev mode
-  // Fixes: ServerInsertedHTMLContext, RedirectStatusCode missing exports
-  // See: https://github.com/storybookjs/storybook/issues/34688
   'next/navigation',
   'next/dist/client/components/redirect-error',
 ];

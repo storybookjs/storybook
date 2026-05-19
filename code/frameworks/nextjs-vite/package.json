@@ -43,6 +43,11 @@
       "code": "./src/export-mocks/headers/index.ts",
       "default": "./dist/export-mocks/headers/index.js"
     },
+    "./link.mock": {
+      "types": "./dist/export-mocks/link/index.d.ts",
+      "code": "./src/export-mocks/link/index.tsx",
+      "default": "./dist/export-mocks/link/index.js"
+    },
     "./navigation.mock": {
       "types": "./dist/export-mocks/navigation/index.d.ts",
       "code": "./src/export-mocks/navigation/index.ts",

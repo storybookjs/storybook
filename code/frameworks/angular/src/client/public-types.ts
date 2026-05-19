@@ -53,17 +53,13 @@ export type StoryContext<TArgs = StrictArgs> = GenericStoryContext<AngularRender
 export type Preview = ProjectAnnotations<AngularRenderer>;
 
 /**
- * Utility type that transforms InputSignal, ModelSignal, OutputEmitterRef and
- * EventEmitter types.
+ * Transforms InputSignal, ModelSignal, OutputEmitterRef and EventEmitter member
+ * types into the values/handlers Storybook args expect.
  *
- * Composition is pinned (do NOT reorder): `TransformModelSignalType` is the
- * INNERMOST wrapper so that (a) the synthesized `${K}Change` key is created
- * before the outer transforms run and passes through them unchanged (it is
- * `(e: E) => void`, which matches none of the Input/Output/Event extends
- * clauses), and (b) since `ModelSignal<T> extends InputSignal<T>`, the model's
- * value field — after `TransformModelSignalType` maps it to `E` — is
- * idempotently re-collapsed by the outer `TransformInputSignalType` to the same
- * `E` (no double-transform divergence).
+ * Do NOT reorder: `TransformModelSignalType` must stay innermost. It synthesizes
+ * the `${K}Change` output key before the outer transforms run, and because
+ * `ModelSignal<T> extends InputSignal<T>` the model value field is then
+ * idempotently re-collapsed by `TransformInputSignalType` to the same type.
  */
 export type TransformComponentType<T> = TransformInputSignalType<
   TransformOutputSignalType<TransformEventType<TransformModelSignalType<T>>>

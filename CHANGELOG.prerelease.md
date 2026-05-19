@@ -1,6 +1,5 @@
 ## 10.5.0-alpha.0
 
-- Angular: Add native `model()` signal support - [#34831](https://github.com/storybookjs/storybook/issues/34831), thanks @valentinpalkovic!
 
 ## 10.4.0-beta.0
 

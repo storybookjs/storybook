@@ -241,13 +241,19 @@ export const extractArgTypesFromData = (componentData: Class | Directive | Injec
 
   // Detect Angular `model()` signals. compodoc emits no `model()` marker: a
   // `model()` lands under the same bare name in BOTH `inputsClass` and
-  // `outputsClass`, whereas plain inputs/outputs land in only one. A name in both
-  // arrays is the only version-tolerant discriminator.
+  // `outputsClass`, whereas plain inputs/outputs land in only one. A name in
+  // both arrays is the only version-tolerant discriminator.
   //
-  // Known limitation: a hand-written same-name `@Input() x` + `@Output() x` pair is
-  // indistinguishable from a real `model()` and is misclassified (bare-name output
-  // suppressed, spurious `${name}Change` synthesized). Rare; accepted trade-off for
-  // an external, unpinned tool.
+  // Known limitations (accepted trade-offs for an external, unpinned tool that
+  // emits no `model()` marker; both affect autodocs only):
+  // - Any same-name input/output pair is misclassified as a `model()` — a
+  //   hand-written `@Input() x` + `@Output() x`, an inherited member surfacing
+  //   in both arrays, or an accessor/property split — suppressing the bare
+  //   output and synthesizing a spurious `${name}Change`.
+  // - Aliased `model(prop, { alias })` is keyed by compodoc under the class
+  //   property name, so the synthesized output is `${propName}Change`, not the
+  //   runtime `${alias}Change`. Runtime detection (`ɵcmp`) resolves the alias
+  //   correctly.
   const inputClassNames = new Set<string>(
     (((componentData as any).inputsClass as Property[]) || []).map((item) => item.name)
   );

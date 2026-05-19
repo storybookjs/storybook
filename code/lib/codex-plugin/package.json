@@ -27,8 +27,13 @@
 	],
 	"type": "module",
 	"scripts": {
-		"marketplace:add": "codex plugin marketplace add .",
+		"test": "cd ../.. && pnpm vitest --project=@storybook/codex-plugin",
+		"test:run": "cd ../.. && pnpm vitest run --project=@storybook/codex-plugin",
+		"marketplace:add": "codex plugin marketplace add ./",
 		"marketplace:update": "codex plugin marketplace upgrade storybook",
 		"marketplace:remove": "codex plugin marketplace remove storybook"
+	},
+	"devDependencies": {
+		"tinyexec": "^1.0.2"
 	}
 }

@@ -10,6 +10,14 @@ Codex exposes marketplace lifecycle commands in the CLI. Installing the plugin i
 
 Run package scripts from the repository root with `pnpm --filter @storybook/codex-plugin run <script>`, or from this package directory with `pnpm run <script>`.
 
+Run the local plugin test suite before pushing changes:
+
+```sh
+pnpm --filter @storybook/codex-plugin test:run
+```
+
+This checks the marketplace/plugin files, MCP launch args, and smoke-tests the configured `@storybook/mcp-proxy` preview command.
+
 Add this package directory as the local Storybook marketplace:
 
 ```sh
@@ -66,10 +74,14 @@ Codex does not currently expose matching CLI commands for plugin install, update
 The plugin's `.mcp.json` configures Codex to run the latest `@storybook/mcp-proxy` preview from pkg.pr.new:
 
 ```sh
-npx -y --package https://pkg.pr.new/storybookjs/mcp/@storybook/mcp-proxy@227
+npx -y https://pkg.pr.new/storybookjs/mcp/@storybook/mcp-proxy@227
 ```
 
-The `@227` ref tracks the newest preview build for this PR. Switch to `@storybook/mcp-proxy@latest` after the package is published to npm.
+The `@227` ref tracks the newest preview build for this PR.
+
+> **TODO:** After this PR merges to `main`, switch `.mcp.json` to  
+> `https://pkg.pr.new/storybookjs/mcp/@storybook/mcp-proxy@main`  
+> **TODO:** After `@storybook/mcp-proxy` is published to npm, switch to `@storybook/mcp-proxy@latest`.
 
 The package currently exposes no Storybook tools. Milestone 2 of storybookjs/storybook#34826 will replace the placeholder internals with the real proxy, which will expose the stable Storybook MCP server for agentic development environments.
 

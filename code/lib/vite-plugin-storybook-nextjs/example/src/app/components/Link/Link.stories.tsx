@@ -1,6 +1,8 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
-import Link from "next/link";
+import { useLinkStatus as mockUseLinkStatus } from "@storybook/nextjs-vite/link.mock";
+import Link, { useLinkStatus } from "next/link";
 import React from "react";
+import { expect, within } from "storybook/test";
 
 import style from "./Link.stories.module.css";
 
@@ -74,5 +76,35 @@ export const InAppDir: StoryObj<typeof Component> = {
     nextjs: {
       appDirectory: true,
     },
+  },
+};
+
+function LinkStatusComponent() {
+  const { pending } = useLinkStatus();
+  return <div>{pending ? "Pending" : "Idle"}</div>;
+}
+
+export const DefaultLinkStatus: StoryObj<typeof Component> = {
+  render: () => <LinkStatusComponent />,
+  parameters: {
+    nextjs: { appDirectory: true },
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(canvas.getByText("Idle")).toBeInTheDocument();
+  },
+};
+
+export const PendingLinkStatus: StoryObj<typeof Component> = {
+  render: () => <LinkStatusComponent />,
+  parameters: {
+    nextjs: { appDirectory: true },
+  },
+  beforeEach() {
+    mockUseLinkStatus.mockReturnValue({ pending: true });
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(canvas.getByText("Pending")).toBeInTheDocument();
   },
 };

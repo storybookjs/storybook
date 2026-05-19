@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { SIDEBAR_OPEN_CONTEXT_MENU } from 'storybook/internal/core-events';
+import { TooltipNote } from 'storybook/internal/components';
 
 import { Collection } from 'react-aria-components/Collection';
 import { Tree as AriaTree } from 'react-aria-components/Tree';
@@ -11,6 +12,7 @@ import { TreeNode, type TreeNodeProps } from './TreeNode.tsx';
 import { type StatusesByStoryIdAndTypeId } from 'storybook/internal/types';
 
 import { useStorybookApi } from 'storybook/manager-api';
+import { shortcutToHumanString } from 'storybook/manager-api';
 import type { IndexHash } from 'storybook/manager-api';
 import { styled } from 'storybook/theming';
 
@@ -19,7 +21,11 @@ import { useExpanded } from './useExpanded.ts';
 import { StatusContext } from './StatusContext.tsx';
 
 // FIXME/TODO: Review with MA: should clicking on a story with children also navigate to it?
+// -> Add a "Story" item in the tree, or get a commitment from the team to remove .test
+// FIXME/TODO: Review with MA: tooltip performance when tooltip is per TreeNode
+// -> Carte blanche to adjust the UI to have a single f without focus tracking
 // FIXME/TODO: implement sticky breadcrumbs
+// FIXME/TODO: Tree is no longer showing the section animation on F6 after an item is focused
 
 const StyledAriaTree = styled(AriaTree)(() => ({
   listStyle: 'none',
@@ -32,6 +38,16 @@ const StyledAriaTree = styled(AriaTree)(() => ({
     '--trace-opacity': 1,
   },
 }));
+
+const FocusTooltipNote = styled(TooltipNote)({
+  marginBlockStart: 8,
+  marginInlineEnd: -4,
+  position: 'fixed',
+  zIndex: 2,
+  positionAnchor: '--focused-treenode',
+  positionArea: 'span-x-start y-end',
+  positionVisibility: 'anchors-valid',
+});
 
 interface TreeProps {
   isBrowsing: boolean;
@@ -52,7 +68,11 @@ export const Tree = React.memo<TreeProps>(function Tree({
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const api = useStorybookApi();
+
+  // Tracks the currently focused item for the ContextMenu global shortcut.
   const [focusedItemId, setFocusedItemId] = useState<string | null>(null);
+
+  // Tracks the last focused item to detect when we switch to no item being focused.
   const focusedItemIdRef = useRef<string | null>(null);
 
   // Context-menu state: which item's menu is open, and how it was triggered.
@@ -79,6 +99,35 @@ export const Tree = React.memo<TreeProps>(function Tree({
     () => getGroupDualStatus(collapsedData, allStatuses ?? {}),
     [collapsedData, allStatuses]
   );
+
+  // Compute tooltip data only for the focused item (duplicates TreeNode logic by design).
+  const focusedItemShortcutLabel = useMemo(() => {
+    if (!focusedItemId || !api) {
+      return null;
+    }
+
+    const item = collapsedData[focusedItemId];
+    if (!item) {
+      return null;
+    }
+
+    const shortcutKeys = api.getShortcutKeys();
+    if (!shortcutKeys?.contextMenu) {
+      return null;
+    }
+
+    const itemStatus = groupDualStatus?.[focusedItemId];
+    const changeStatus = itemStatus?.change.value ?? 'status-value:unknown';
+    const testStatus = itemStatus?.test.value ?? 'status-value:unknown';
+
+    const shortcut = shortcutToHumanString(shortcutKeys.contextMenu);
+    const label =
+      changeStatus !== 'status-value:unknown' || testStatus !== 'status-value:unknown'
+        ? 'Status and actions'
+        : 'Actions';
+
+    return `${label} ${shortcut ? `[${shortcut}]` : ''}`;
+  }, [focusedItemId, api, collapsedData, groupDualStatus]);
 
   // React-aria expects a Set for selectedKeys. Memoize so Tree's children see a stable ref.
   const selectedKeys = useMemo(
@@ -196,7 +245,7 @@ export const Tree = React.memo<TreeProps>(function Tree({
     };
   }, [api, openContextMenu]);
 
-  // Track focused item via MutationObserver to position the tooltip and open the ContextMenu.
+  // Track focused item and focus-visible state via one MutationObserver, batched with rAF.
   useEffect(() => {
     const container = containerRef.current;
     if (!container) {
@@ -206,22 +255,40 @@ export const Tree = React.memo<TreeProps>(function Tree({
     const focusedElement = container.querySelector<HTMLElement>(
       '[data-focused="true"][data-item-id]'
     );
-    updateFocusedItemId(focusedElement?.getAttribute('data-item-id') ?? null);
+    const focusedId = focusedElement?.getAttribute('data-item-id') ?? null;
+    updateFocusedItemId(focusedId);
 
-    const observer = new MutationObserver((mutations) => {
-      for (const mutation of mutations) {
+    let rafId: number | null = null;
+    const pendingMutations: MutationRecord[] = [];
+
+    const processMutations = () => {
+      rafId = null;
+
+      for (const mutation of pendingMutations) {
         if (
           mutation.type === 'attributes' &&
-          mutation.attributeName === 'data-focused' &&
+          (mutation.attributeName === 'data-focused' ||
+            mutation.attributeName === 'data-focus-visible') &&
           mutation.target instanceof HTMLElement
         ) {
           const el = mutation.target;
+          const itemId = el.getAttribute('data-item-id');
+
           if (el.getAttribute('data-focused') === 'true') {
-            updateFocusedItemId(el.getAttribute('data-item-id'));
-          } else if (focusedItemIdRef.current === el.getAttribute('data-item-id')) {
+            updateFocusedItemId(itemId);
+          } else if (focusedItemIdRef.current === itemId) {
             updateFocusedItemId(null);
           }
         }
+      }
+
+      pendingMutations.length = 0;
+    };
+
+    const observer = new MutationObserver((mutations) => {
+      pendingMutations.push(...mutations);
+      if (rafId === null) {
+        rafId = requestAnimationFrame(processMutations);
       }
     });
 
@@ -231,7 +298,12 @@ export const Tree = React.memo<TreeProps>(function Tree({
       subtree: true,
     });
 
-    return () => observer.disconnect();
+    return () => {
+      observer.disconnect();
+      if (rafId !== null) {
+        cancelAnimationFrame(rafId);
+      }
+    };
   }, [updateFocusedItemId]);
 
   // Scroll the selected story into view when it changes.
@@ -253,7 +325,6 @@ export const Tree = React.memo<TreeProps>(function Tree({
       renderNode({
         api,
         refId,
-        focusedItemId,
         onSelectStoryId,
         selectedStoryId,
         selectedParentId,
@@ -265,7 +336,6 @@ export const Tree = React.memo<TreeProps>(function Tree({
     [
       api,
       refId,
-      focusedItemId,
       onSelectStoryId,
       selectedStoryId,
       selectedParentId,
@@ -293,7 +363,6 @@ export const Tree = React.memo<TreeProps>(function Tree({
           items={tree}
           dependencies={[
             expanded,
-            focusedItemId,
             selectedStoryId,
             selectedParentId,
             contextMenuState,
@@ -303,6 +372,7 @@ export const Tree = React.memo<TreeProps>(function Tree({
           {nodeRenderer}
         </Collection>
       </StyledAriaTree>
+      {focusedItemShortcutLabel && <FocusTooltipNote note={focusedItemShortcutLabel} />}
     </StatusContext.Provider>
   );
 });
@@ -311,7 +381,6 @@ export const Tree = React.memo<TreeProps>(function Tree({
 const EMPTY_KEYS: Set<string> = new Set();
 
 interface RenderNodeProps extends Pick<TreeNodeProps, 'api' | 'refId' | 'onSelectStoryId'> {
-  focusedItemId: string | null;
   selectedStoryId: string | null;
   selectedParentId: string | null;
   expanded: Set<string>;
@@ -322,7 +391,6 @@ interface RenderNodeProps extends Pick<TreeNodeProps, 'api' | 'refId' | 'onSelec
 
 function renderNode({
   expanded,
-  focusedItemId,
   selectedStoryId,
   selectedParentId,
   contextMenuState,
@@ -338,7 +406,6 @@ function renderNode({
         item={item}
         isOrphan={item.depth === 0 && item.type !== 'root'}
         isExpanded={expanded.has(item.id)}
-        isFocused={focusedItemId === item.id}
         isSelected={selectedStoryId === item.id}
         isAlongsideSelected={item.type !== 'root' && selectedParentId === item.parent}
         isContextMenuOpen={contextMenuState?.itemId === item.id}
@@ -351,18 +418,11 @@ function renderNode({
         {item.resolvedChildren && (
           <Collection
             items={item.resolvedChildren}
-            dependencies={[
-              expanded,
-              focusedItemId,
-              selectedStoryId,
-              selectedParentId,
-              contextMenuState,
-            ]}
+            dependencies={[expanded, selectedStoryId, selectedParentId, contextMenuState]}
           >
             {renderNode({
               ...props,
               expanded,
-              focusedItemId,
               selectedStoryId,
               selectedParentId,
               contextMenuState,

@@ -40,7 +40,6 @@ const FullscreenTool: FC<{
   hasPanel: boolean;
   singleStory?: boolean;
 }> = ({ toggle, isFullscreen, hasPanel, singleStory }) => {
-
   if (singleStory && !hasPanel) {
     return null;
   }
@@ -48,9 +47,9 @@ const FullscreenTool: FC<{
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape' && isFullscreen) {
-       toggle();
-       e.stopPropagation();
-       e.preventDefault();
+        toggle();
+        e.stopPropagation();
+        e.preventDefault();
       }
     };
 
@@ -60,19 +59,19 @@ const FullscreenTool: FC<{
     };
   }, [isFullscreen, toggle]);
 
-  return  (
+  return (
     <Button
       key="full"
       padding="small"
       variant="ghost"
       onClick={() => toggle()}
       ariaLabel={isFullscreen ? 'Exit full screen' : 'Enter full screen'}
-      shortcut={['Escape']}
+      shortcut={isFullscreen ? ['Escape'] : undefined}
     >
       {isFullscreen ? <CloseIcon /> : <ExpandIcon />}
     </Button>
-  )
-}
+  );
+};
 
 export const fullScreenTool: Addon_BaseType = {
   title: 'fullscreen',
@@ -89,14 +88,14 @@ export const fullScreenTool: Addon_BaseType = {
 
     return (
       <Consumer filter={fullScreenMapper}>
-        {({ toggle, isFullscreen, hasPanel, singleStory }) =>
+        {({ toggle, isFullscreen, hasPanel, singleStory }) => (
           <FullscreenTool
             toggle={toggle}
             isFullscreen={isFullscreen}
             hasPanel={hasPanel}
             singleStory={singleStory}
           />
-        }
+        )}
       </Consumer>
     );
   },

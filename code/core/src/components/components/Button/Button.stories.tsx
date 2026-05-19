@@ -8,32 +8,11 @@ import { styled } from 'storybook/theming';
 import preview from '../../../../../.storybook/preview.tsx';
 import { Button } from './Button.tsx';
 
-const tooltipPlacementOptions = [
-  'top',
-  'top-start',
-  'top-end',
-  'bottom',
-  'bottom-start',
-  'bottom-end',
-  'left',
-  'left-start',
-  'left-end',
-  'right',
-  'right-start',
-  'right-end',
-] as const;
-
 const meta = preview.meta({
   id: 'button-component',
   title: 'Button',
   component: Button,
   args: { onClick: fn() },
-  argTypes: {
-    tooltipPlacement: {
-      control: 'select',
-      options: tooltipPlacementOptions,
-    },
-  },
 });
 
 const Stack = styled.div({ display: 'flex', flexDirection: 'column', gap: '1rem' });

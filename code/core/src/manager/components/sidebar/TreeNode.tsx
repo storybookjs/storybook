@@ -1,6 +1,5 @@
 import React, { useCallback, useContext, useMemo } from 'react';
 
-import { TooltipNote, TooltipProvider } from 'storybook/internal/components';
 import type { StatusValue } from 'storybook/internal/types';
 
 import { darken, transparentize } from 'polished';
@@ -20,12 +19,16 @@ import { StatusContext } from './StatusContext.tsx';
 import { CollapseIcon } from './CollapseIcon.tsx';
 
 // FIXME/TODO: Review with MA: shortcut styling in TooltipNote VS Figma
+// -> Make it look good everywhere
 // FIXME/TODO: Review with MA: check spacing between top level sections, possible inconsistency in Figma
-// FIXME/TODO: Review with MA: how we wanna present stories with test children.
+// -> Add spacing when the above subtree is expanded 14px / .5 item
+// -> Add even more spacing between refs and remove the divider 28px / 1 item
 // FIXME/TODO: prevent line wrapping on long items?
 // FIXME/TODO: dont let #storybook-explorer-menu be focused when there are no search results. It gets in the way of testing the tree
 // FIXME/TODO: we must find how to get PopoverProvider to autofocus the first menu item on menu open through RAC APIs.
 // FIXME/TODO: if contextmenu trigger visible, add right padding to the label to prevent overlap; or better yet swap absolute layout for one with negative margins
+// FIXME/TODO: ensure there is no weird behaviour with top-level stories / orphans
+// FIXME/TODO: fix ref stories not loading at all
 
 const StyledTreeItem = styled(TreeItem)<{
   $level: number;
@@ -72,6 +75,8 @@ const StyledTreeItem = styled(TreeItem)<{
     outline: 'none',
     boxShadow: `0 0 0 2px ${theme.background.app}, 0 0 0 4px ${theme.color.secondary}`,
     '--trace-color': transparentize(0.88, theme.color.secondary),
+    anchorName: '--focused-treenode',
+    zIndex: 1,
   },
 
   /* ContextMenu and StatusIcon visibility.
@@ -206,8 +211,6 @@ export interface TreeNodeProps {
   refId: string;
   /** Whether this node has no parent and isn't a natural root. */
   isOrphan: boolean;
-  /** Whether this node is currently focused. */
-  isFocused: boolean;
   /** Whether this node is currently selected. */
   isSelected: boolean;
   /** Whether this node is a direct sibling to the selected node. */
@@ -250,7 +253,6 @@ const StatusLabelsInAriaLabel: Record<StatusValue, string> = {
 export const TreeNode = React.memo<TreeNodeProps>(function TreeNode({
   item,
   refId,
-  isFocused,
   isAlongsideSelected,
   isExpanded,
   api,
@@ -350,18 +352,6 @@ export const TreeNode = React.memo<TreeNodeProps>(function TreeNode({
     return label;
   }, [item, api, location, hasContextMenu, changeStatus, testStatus, shortcutKeys]);
 
-  const shortcutLabel = useMemo(() => {
-    if (!hasContextMenu || !shortcutKeys?.contextMenu) {
-      return null;
-    }
-    const shortcut = shortcutToHumanString(shortcutKeys.contextMenu);
-    const label =
-      changeStatus !== 'status-value:unknown' || testStatus !== 'status-value:unknown'
-        ? 'Status and actions'
-        : 'Actions';
-    return `${label} ${shortcut ? `[${shortcut}]` : ''}`;
-  }, [shortcutKeys, hasContextMenu, changeStatus, testStatus]);
-
   const prefixAction = useMemo(() => {
     if (item.type === 'root') {
       return <CollapseIcon isExpanded={isExpanded} />;
@@ -410,16 +400,5 @@ export const TreeNode = React.memo<TreeNodeProps>(function TreeNode({
     </StyledTreeItem>
   );
 
-  return shortcutLabel ? (
-    <TooltipProvider
-      placement="bottom-end"
-      tooltip={<TooltipNote note={shortcutLabel} />}
-      triggerOnFocusOnly
-      visible={isFocused}
-    >
-      {itemContent}
-    </TooltipProvider>
-  ) : (
-    itemContent
-  );
+  return itemContent;
 });

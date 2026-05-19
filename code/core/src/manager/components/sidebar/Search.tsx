@@ -436,7 +436,7 @@ export const Search = React.memo<SearchProps>(function Search({
               {searchBarContent}
             </SearchBar>
             {!isOpen && belowSearchContent}
-            <FocusContainer tabIndex={0} id="storybook-explorer-menu">
+            <FocusContainer tabIndex={-1} id="storybook-explorer-menu">
               {children({
                 query: input,
                 results,

@@ -25,6 +25,7 @@ import { hasContextMenu } from './ContextMenu.tsx';
 // -> Add a "Story" item in the tree, or get a commitment from the team to remove .test
 // FIXME/TODO: implement sticky breadcrumbs
 // FIXME/TODO: Tree is no longer showing the section animation on F6 after an item is focused
+// FIXME/TODO: add a level for trees with a RefHead.
 
 const StyledAriaTree = styled(AriaTree)(() => ({
   listStyle: 'none',

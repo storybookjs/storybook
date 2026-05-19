@@ -8500,6 +8500,7 @@ __metadata:
     leven: "npm:^4.0.0"
     p-limit: "npm:^7.2.0"
     picocolors: "npm:^1.1.0"
+    process-ancestry: "npm:^0.0.2"
     semver: "npm:^7.7.3"
     slash: "npm:^5.0.0"
     storybook: "workspace:*"

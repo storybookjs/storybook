@@ -182,6 +182,17 @@ function VitePlugin({
                 ? ["@emotion/react/jsx-dev-runtime"]
                 : []),
               ...(isNext16orNewer ? [] : ["next/config"]),
+              // Next.js 16 ships internal re-export chains that Vite's esbuild
+              // pre-bundler fails to resolve in dev mode, causing missing exports
+              // like ServerInsertedHTMLContext and RedirectStatusCode. Forcing
+              // these modules to be pre-bundled fixes the resolution.
+              // See: https://github.com/storybookjs/storybook/issues/34688
+              ...(isNext16orNewer
+                ? [
+                    "next/navigation",
+                    "next/dist/client/components/redirect-error",
+                  ]
+                : []),
             ],
           },
           test: {

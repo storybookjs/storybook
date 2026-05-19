@@ -64,10 +64,10 @@ claude mcp list
 The output should include:
 
 ```text
-plugin:storybook:storybook: npx -y @storybook/mcp-proxy@latest
+plugin:storybook:storybook: npx -y --package https://pkg.pr.new/storybookjs/mcp/@storybook/mcp-proxy@227
 ```
 
-The current `@storybook/mcp-proxy` implementation responds to MCP initialization and returns an empty tool list. The important signal for this package is that `plugin:storybook:storybook` appears and can be started once the package is available from npm or a pkg.pr.new preview URL.
+The current `@storybook/mcp-proxy` preview responds to MCP initialization and returns an empty tool list. The important signal for this package is that `plugin:storybook:storybook` appears and can be started from the pkg.pr.new preview URL.
 
 To test in Claude Desktop, restart Claude Desktop after installing the plugin, open a new Code session in any project, and check that the Storybook skills are available from the `+` menu.
 
@@ -120,19 +120,15 @@ The plugin directory must include these files:
 
 ## MCP server
 
-The plugin's `.mcp.json` starts:
+The plugin's `.mcp.json` starts the latest `@storybook/mcp-proxy` preview from pkg.pr.new:
 
 ```sh
-npx -y @storybook/mcp-proxy@latest
+npx -y --package https://pkg.pr.new/storybookjs/mcp/@storybook/mcp-proxy@227
 ```
+
+The `@227` ref tracks the newest preview build for this PR. Switch to `@storybook/mcp-proxy@latest` after the package is published to npm.
 
 The package currently exposes no Storybook tools. Milestone 2 of storybookjs/storybook#34826 will replace the placeholder internals with the real proxy, which will discover running Storybook instances and proxy the seven Storybook MCP tools.
-
-Before `@storybook/mcp-proxy` is published to npm, use the pkg.pr.new URL from the `Publish preview` workflow if you want to test the MCP runtime from this PR:
-
-```sh
-npx -y --package https://pkg.pr.new/storybookjs/mcp/@storybook/mcp-proxy@<preview-id> storybook-mcp-proxy
-```
 
 ## Included Skills
 

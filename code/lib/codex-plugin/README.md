@@ -37,7 +37,7 @@ pnpm --filter @storybook/codex-plugin run marketplace:remove
 pnpm --filter @storybook/codex-plugin run marketplace:add
 ```
 
-The plugin points at `npx -y @storybook/mcp-proxy@latest`. In this milestone, that package is a minimal placeholder MCP server that responds to initialization and returns an empty tool list. This lets plugin installation, metadata, icon, MCP server configuration, and skills be tested before the real proxy implementation exists.
+The plugin points at the latest `@storybook/mcp-proxy` preview from pkg.pr.new. In this milestone, that package is a minimal placeholder MCP server that responds to initialization and returns an empty tool list. This lets plugin installation, metadata, icon, MCP server configuration, and skills be tested before the real proxy implementation exists.
 
 To test from a Git branch while the plugin still lives under `packages/`, sparse-checkout this package directory:
 
@@ -63,19 +63,15 @@ Codex does not currently expose matching CLI commands for plugin install, update
 
 ## MCP Runtime
 
-The plugin's `.mcp.json` configures Codex to run:
+The plugin's `.mcp.json` configures Codex to run the latest `@storybook/mcp-proxy` preview from pkg.pr.new:
 
 ```sh
-npx -y @storybook/mcp-proxy@latest
+npx -y --package https://pkg.pr.new/storybookjs/mcp/@storybook/mcp-proxy@227
 ```
+
+The `@227` ref tracks the newest preview build for this PR. Switch to `@storybook/mcp-proxy@latest` after the package is published to npm.
 
 The package currently exposes no Storybook tools. Milestone 2 of storybookjs/storybook#34826 will replace the placeholder internals with the real proxy, which will expose the stable Storybook MCP server for agentic development environments.
-
-Before `@storybook/mcp-proxy` is published to npm, use the pkg.pr.new URL from the `Publish preview` workflow if you want to test the MCP runtime from this PR:
-
-```sh
-npx -y --package https://pkg.pr.new/storybookjs/mcp/@storybook/mcp-proxy@<preview-id> storybook-mcp-proxy
-```
 
 ## Smoke Test
 

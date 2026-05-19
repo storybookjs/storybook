@@ -8,7 +8,7 @@
 			"name": "storybook",
 			"source": {
 				"source": "local",
-				"path": "."
+				"path": "./plugins/storybook"
 			},
 			"policy": {
 				"installation": "AVAILABLE",

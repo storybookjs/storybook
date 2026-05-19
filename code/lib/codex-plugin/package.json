@@ -19,21 +19,16 @@
 	},
 	"files": [
 		".agents",
-		".codex-plugin",
-		".mcp.json",
-		"assets",
-		"skills",
+		"plugins",
 		"README.md"
 	],
 	"type": "module",
 	"scripts": {
 		"test": "cd ../.. && pnpm vitest --project=@storybook/codex-plugin",
 		"test:run": "cd ../.. && pnpm vitest run --project=@storybook/codex-plugin",
+		"validate:marketplace": "node ./scripts/validate-marketplace.mjs",
+		"plugin:refresh": "node ./scripts/refresh-plugin-cache.mjs",
 		"marketplace:add": "codex plugin marketplace add ./",
-		"marketplace:update": "codex plugin marketplace upgrade storybook",
 		"marketplace:remove": "codex plugin marketplace remove storybook"
-	},
-	"devDependencies": {
-		"tinyexec": "^1.0.2"
 	}
 }

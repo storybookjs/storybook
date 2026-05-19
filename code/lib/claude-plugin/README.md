@@ -21,13 +21,13 @@ Validate the marketplace and plugin manifests:
 pnpm --filter @storybook/claude-code-plugin run validate
 ```
 
-Run the local plugin test suite before pushing changes:
+Run the local plugin contract test before pushing changes:
 
 ```sh
 pnpm --filter @storybook/claude-code-plugin test:run
 ```
 
-This checks the marketplace/plugin files, MCP launch args, and smoke-tests the configured `@storybook/mcp-proxy` preview command. If the Claude CLI is installed locally, it also runs `claude plugin validate`.
+This checks the marketplace/plugin files and that `.mcp.json` points at a pkg.pr.new preview for `@storybook/mcp-proxy`. For Claude manifest validation and install testing, use `validate` and `plugin:install`.
 
 Install the plugin from this checkout at user scope:
 

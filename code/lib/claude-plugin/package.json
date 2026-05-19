@@ -35,8 +35,5 @@
 		"plugin:update": "claude plugin update storybook@storybook",
 		"plugin:remove": "claude plugin uninstall storybook@storybook --scope user",
 		"plugin:list": "claude plugin list --json"
-	},
-	"devDependencies": {
-		"tinyexec": "^1.0.2"
 	}
 }

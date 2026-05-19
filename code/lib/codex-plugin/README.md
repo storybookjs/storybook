@@ -51,7 +51,13 @@ The plugin's `.mcp.json` configures Codex to run:
 npx -y @storybook/mcp-proxy@latest
 ```
 
-The proxy package is expected to expose the stable Storybook MCP server for agentic development environments. It should discover running Storybook instances and proxy the seven Storybook MCP tools to the matching local `/mcp` endpoint.
+The package currently exposes no Storybook tools. Milestone 2 of storybookjs/storybook#34826 will replace the placeholder internals with the real proxy, which will expose the stable Storybook MCP server for agentic development environments.
+
+Before `@storybook/mcp-proxy` is published to npm, use the pkg.pr.new URL from the `Publish preview` workflow if you want to test the MCP runtime from this PR:
+
+```sh
+npx -y --package https://pkg.pr.new/storybookjs/mcp/@storybook/mcp-proxy@<preview-id> storybook-mcp-proxy
+```
 
 ## Smoke Test
 

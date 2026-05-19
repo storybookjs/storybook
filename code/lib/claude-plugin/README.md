@@ -94,7 +94,7 @@ The package currently exposes no Storybook tools. Milestone 2 of storybookjs/sto
 Before `@storybook/mcp-proxy` is published to npm, use the pkg.pr.new URL from the `Publish preview` workflow if you want to test the MCP runtime from this PR:
 
 ```sh
-npx -y --package https://pkg.pr.new/storybookjs/mcp/@storybook/mcp-proxy@<commit> storybook-mcp-proxy
+npx -y --package https://pkg.pr.new/storybookjs/mcp/@storybook/mcp-proxy@<preview-id> storybook-mcp-proxy
 ```
 
 ## Included Skills

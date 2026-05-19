@@ -48,7 +48,7 @@ function deepMerge(target: Record<string, unknown>, source: Record<string, unkno
   }
 }
 
-export { deepMerge, type Patch };
+export { deepMerge };
 
 type StateListener<TState> = (
   state: TState,
@@ -120,8 +120,9 @@ export class ServiceRuntime<TDef extends ServiceDefinition<any, any, any, any>> 
     this.queries = this._buildQueriesApi();
     this.commands = this._buildCommandsApi();
 
-    // Build the public-facing view once and keep a stable reference. Note: state/setState/
-    // subscribe/getLastPatches are deliberately omitted — they remain only on the runtime.
+    // Build the public-facing view once and keep a stable reference. State-mutation hooks
+    // (getState/setState/subscribe/getLastPatches) are deliberately omitted — they remain on
+    // the runtime class for the build pipeline and the planned channel transport.
     this.publicStore = Object.freeze({
       id: this.id,
       definition: this.definition,
@@ -430,7 +431,8 @@ export class ServiceRuntime<TDef extends ServiceDefinition<any, any, any, any>> 
     const promise = (async () => {
       try {
         // Branching rule: if a transport is installed, fetch-first. On a non-null hit,
-        // apply the patches and skip the body. On null (or no transport), run the body live.
+        // deep-merge the state diff and skip the body. On null (or no transport), run the
+        // body live.
         const transport = getStaticTransport();
         let resolvedFromStatic = false;
         if (transport) {
@@ -490,10 +492,4 @@ export class ServiceRuntime<TDef extends ServiceDefinition<any, any, any, any>> 
     }
     return this._loaderFilename(queryName, loader, input);
   };
-
-  /** @internal Explicitly invalidate the "has fired" bit for a loader+input pair. */
-  invalidateLoader(loaderName: string, input?: unknown): void {
-    const inputKey = keyOfInput(input);
-    this._firedLoaderInputs.get(loaderName)?.delete(inputKey);
-  }
 }

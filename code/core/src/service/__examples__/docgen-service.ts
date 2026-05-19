@@ -36,8 +36,9 @@ async function listAllComponentIds(): Promise<readonly string[]> {
  * Environment-agnostic definition.
  *
  * The curried `defineService<DocgenState>()(...)` form binds the state interface once. Inside,
- * the `state` argument of every query, the `ctx` argument of every command, and the `draft`
- * argument of every `setState` callback are all inferred as `DocgenState` — no annotations.
+ * the `state` argument of every query and the `ctx` argument of every command/loader are
+ * inferred as `DocgenState` / `ServiceCtx<DocgenState>`. The `draft` argument of `setState`
+ * still needs an annotation — see the comment on `modifySomethingElse` for why.
  *
  * `generateDocgen` is abstract here: its body depends on environment-specific modules (the AST
  * analyzer in the server, etc.), so we delegate the implementation to the registration step.
@@ -59,14 +60,11 @@ export const DocgenService = defineService<DocgenState>()({
     // Abstract: signature declared here, implementation supplied at registration.
     generateDocgen: defineCommand<string>(),
 
-    // Concrete: pure local mutation, no environment-specific work. Note that `ctx` and `draft`
-    // are inferred — no `ServiceCtx<DocgenState>` annotation needed.
+    // Concrete: pure local mutation. `ctx` is inferred as `ServiceCtx<DocgenState>` via the
+    // curried form. `draft` needs an annotation because TypeScript won't propagate the bound
+    // generic through the command type's overloaded function shape to a nested function-typed
+    // parameter — ctx works because it's at the top level; draft is one level deeper.
     modifySomethingElse: (ctx) => {
-      // `ctx` is inferred as ServiceCtx<DocgenState> via the curried form.
-      // `draft` requires an annotation because the surrounding command type carries multiple
-      // call signatures (1-arg and 2-arg) and TS won't propagate the resolved generic through
-      // an overloaded function type to a nested function-typed parameter. ctx works because
-      // it's a top-level parameter; draft is one level deeper.
       ctx.self.setState((draft: DocgenState) => {
         draft.somethingElse = Math.floor(Math.random() * 100);
       });

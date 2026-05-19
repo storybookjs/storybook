@@ -31,27 +31,11 @@
  */
 export type StateMutator<TState> = (draft: TState) => void;
 
-// -------------------- query handlers --------------------
-
-/**
- * A query is a pure synchronous selector over state.
- * Either `(state) => output` (no input) or `(state, input) => output`.
- *
- * Hard rule: queries MUST NOT call commands, perform IO, or otherwise side-effect.
- * If a query needs to trigger loading, that lives in the paired `load.<name>` handler.
- */
-export type QueryHandler<TState, TInput, TOutput> = [TInput] extends [void]
-  ? (state: TState) => TOutput
-  : (state: TState, input: TInput) => TOutput;
-
 // -------------------- command handlers --------------------
 
 /**
  * A concrete command writes state via `ctx.self.setState`. May be async.
  * Either `(ctx)` (no input) or `(input, ctx)` (with input).
- *
- * Commands without a paired loader run live in any environment. Commands paired with a loader
- * are replaced by JSON-fetch+merge in static-build mode.
  */
 export type CommandHandler<TState, TInput> = [TInput] extends [void]
   ? (ctx: ServiceCtx<TState>) => void | Promise<void>
@@ -77,12 +61,10 @@ export type CommandEntry = ((...args: any[]) => any) | AbstractCommand<any, any>
 // -------------------- loader handlers --------------------
 
 /**
- * A loader handler runs the side-effects required to populate state for a query.
- * Typically it calls one or more commands.
- *
- * The loader's *return* value is intentionally ignored — after the loader resolves, the runtime
- * invokes the same-named query with the same input and returns that. This enforces the 1:1
- * mapping between queries and loaders.
+ * A loader handler runs the side-effects required to populate state for a query. Typically it
+ * calls one or more commands, which then write to state via `setState`. The loader's *return*
+ * value is ignored — the result subscribers see is whatever the paired query selector returns
+ * once state has settled.
  */
 export type LoaderHandler<TState, TInput> = [TInput] extends [void]
   ? (ctx: ServiceCtx<TState>) => void | Promise<void>
@@ -109,8 +91,10 @@ export type LoaderPath<TInput> = [TInput] extends [void]
 
 export interface LoaderOptions<TInput> {
   /**
-   * The path (relative to the service's static build directory) where this loader's JSON
-   * patch file lives. Defaults to `<loaderName>/<hash(input)>.json` if not specified.
+   * The filename (relative to the service's static build directory) where this loader's
+   * artifact lives. Defaults: `<loaderName>.json` for no-input loaders, and
+   * `<loaderName>-<input>.json` for string inputs. Non-string inputs (objects, numbers) must
+   * supply this callback explicitly — there's no sensible default for arbitrary shapes.
    */
   path?: LoaderPath<TInput>;
 }
@@ -155,14 +139,11 @@ export interface SelfHandle<TState> {
 // -------------------- service definition --------------------
 
 /**
- * Map types are intentionally permissive (`(...args: any[]) => any` rather than strict generics).
- * Tighter forms collide badly with TypeScript's contextual typing — they collapse via
- * `[any] extends [void]` distributive conditionals or fail to pick a single overload from a
- * union of function signatures, dropping `ctx` to implicit `any`.
- *
- * Trade-off: `ctx` in command/loader bodies must be annotated by the author for full
- * intellisense (`(input, ctx: ServiceCtx<MyState>) => …`). The runtime is unaffected — arity
- * is detected from `handler.length`, and abstract commands are detected via `__kind`.
+ * Map types used as constraints on `ServiceDefinition`. They're intentionally permissive — the
+ * runtime detects arity from `handler.length` and abstract commands from their `__kind` marker,
+ * so the type system doesn't need to enforce signatures here. The curried `defineService<S>()`
+ * form layers stricter shapes on top of these constraints to recover contextual typing for
+ * `state` and `ctx`.
  */
 export type QueriesMap<TState> = Record<string, (state: TState, ...rest: any[]) => any>;
 export type CommandsMap<TState> = Record<string, CommandEntry>;
@@ -176,7 +157,7 @@ export interface ServiceDefinition<
 > {
   /** Globally unique service id. Convention: `core/<name>` for built-ins, `<addonId>/<name>` for addons. */
   readonly id: string;
-  /** Initial state. Treated as the snapshot used to build the `state.json` artifact when this service participates in persistence. */
+  /** Initial state. Used as the starting value of every runtime constructed from this definition. */
   readonly state: TState;
   readonly queries: TQueries;
   readonly commands: TCommands;
@@ -278,8 +259,8 @@ export type CallableCommands<TC extends CommandsMap<any>> = {
  * State is *not* on this interface — it's internal to the service. To read data, call a query.
  * To change data, call a command. To react to changes, subscribe to a query.
  *
- * Infrastructure layers (build pipeline, transport) work against the `ServiceRuntime` class
- * directly, which retains state/patches APIs that aren't part of this public surface.
+ * Infrastructure layers (the build pipeline) work against the `ServiceRuntime` class directly,
+ * which exposes state-mutation hooks that aren't part of this public surface.
  */
 export interface ServiceStore<TDef extends ServiceDefinition<any, any, any, any>> {
   readonly id: string;

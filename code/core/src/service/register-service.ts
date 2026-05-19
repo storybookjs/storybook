@@ -6,7 +6,7 @@ import type { ServiceDefinition, ServiceRegistration, ServiceStore } from './typ
  * Public-only view of a runtime. Returns the runtime's stable `publicStore` reference, which
  * was built once at construction and omits the infrastructure-facing methods (getState,
  * setState, subscribe, getLastPatches). Application code only sees what it should: id,
- * definition, queries, commands, ready.
+ * definition, queries, commands.
  */
 function asServiceStore<TDef extends ServiceDefinition<any, any, any, any>>(
   runtime: ServiceRuntime<TDef>
@@ -65,25 +65,6 @@ export function getService(arg: string | ServiceDefinition<any, any, any, any>):
     );
   }
   return asServiceStore(runtime);
-}
-
-/**
- * @internal
- * Look up the underlying `ServiceRuntime` for a service. Infrastructure-only — for the build
- * pipeline, the channel transport layer, and tests that need to assert on patches.
- * Application code must not use this.
- */
-export function getServiceRuntime<TDef extends ServiceDefinition<any, any, any, any>>(
-  arg: string | TDef
-): ServiceRuntime<TDef> {
-  const id = typeof arg === 'string' ? arg : arg.id;
-  const runtime = instances.get(id);
-  if (!runtime) {
-    throw new Error(
-      `[service] No service is registered for id "${id}". Did you forget to call registerService?`
-    );
-  }
-  return runtime as ServiceRuntime<TDef>;
 }
 
 /** Test-only helper. Clear the global registry. */

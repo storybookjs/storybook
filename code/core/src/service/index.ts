@@ -1,7 +1,7 @@
 /**
  * Open Service Architecture — public entry point.
  *
- * Conceptual overview (see `./types.ts` for the long version):
+ * Conceptual overview (see `./CONCEPTS.md` for the long version):
  *   - `defineService({ state, queries, commands, load })` declares a service.
  *   - `defineCommand<TInput>()` declares an abstract command — implementation provided at registration.
  *   - `defineCommand(handler)` wraps a concrete command (or just put the function in the commands map).
@@ -14,18 +14,12 @@
  */
 
 export { buildServiceArtifacts } from './build-artifacts.ts';
-export { defineCommand, defineLoader, defineService, isAbstractCommand } from './define-service.ts';
-export {
-  __resetServiceRegistry,
-  getService,
-  getServiceRuntime,
-  registerService,
-} from './register-service.ts';
+export { defineCommand, defineLoader, defineService } from './define-service.ts';
+export { getService, registerService } from './register-service.ts';
 export { ServiceRuntime } from './service-runtime.ts';
 export {
   clearStaticTransport,
   createBrowserStaticTransport,
-  getStaticTransport,
   setStaticTransport,
 } from './static-transport.ts';
 export { useServiceQuery } from './use-service-query.ts';
@@ -33,31 +27,16 @@ export { useServiceQuery } from './use-service-query.ts';
 export type {
   AbstractCommand,
   BuildCtx,
-  CallableCommands,
-  CommandEntry,
-  CommandHandler,
-  CommandOverrides,
-  CommandsMap,
   InputOfCommand,
   InputOfLoader,
   InputOfQuery,
   LoaderDefinition,
-  LoaderEnumerate,
-  LoaderHandler,
   LoaderOptions,
-  LoaderPath,
-  LoadersMap,
-  OutputOfCommand,
   OutputOfQuery,
-  QueriesMap,
-  QueryHandler,
-  SelfHandle,
   ServiceCtx,
   ServiceDefinition,
   ServiceRegistration,
   ServiceStaticTransport,
   ServiceStore,
   StateMutator,
-  SubscribableQueries,
-  SubscribableQuery,
 } from './types.ts';

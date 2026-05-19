@@ -3,31 +3,29 @@
  *
  * Services do not configure this themselves. Instead, the architecture maintains a single
  * global transport, set once at application startup. In a Storybook static build, the manager
- * bundle calls `setStaticTransport(createBrowserStaticTransport())` during boot; in dev mode,
- * no transport is set and services skip the fetch entirely; in tests, the transport is swapped
+ * bundle calls `setStaticTransport(createBrowserStaticTransport())` during boot; in dev mode
+ * no transport is set and loaders run their bodies live; in tests, the transport is swapped
  * for a Map-backed mock in `beforeEach`.
  *
  * The transport's `fetch(serviceId, filename)` receives the service id and the relative
- * filename. The path-to-URL mapping is the transport's responsibility — service authors only
- * declare the relative filename via their loader's `path` callback (or by accepting the
- * default `state.json` for the whole-state artifact).
+ * filename produced by a loader's `path` callback. The path-to-URL mapping is the transport's
+ * responsibility — service authors only declare relative filenames.
  */
 export interface ServiceStaticTransport {
   /**
-   * Retrieve the parsed JSON artifact at `<serviceId>/<filename>` (relative to whatever
-   * base URL the transport is configured with).
+   * Retrieve the parsed JSON artifact identified by `(serviceId, filename)`.
    *
-   * Returning `null` is the explicit "no artifact present" signal — the runtime treats it
-   * as a no-op and keeps in-memory defaults. Throwing propagates as a promise rejection on
-   * the corresponding `store.ready`.
+   * Returning `null` is the "no artifact present" signal — the runtime falls through to
+   * running the loader body live. Throwing propagates as a promise rejection on the loader's
+   * in-flight call.
    */
   fetch(serviceId: string, filename: string): Promise<unknown | null>;
 }
 
 /**
- * The global transport. `null` means "no static loading happens" — services skip the fetch
- * during construction and resolve `ready` immediately. This is the right default for dev
- * mode and for tests that don't care about static artifacts.
+ * The global transport. `null` means "no static loading happens" — every loader runs its body
+ * live. This is the right default for dev mode and for tests that don't care about static
+ * artifacts.
  */
 let currentTransport: ServiceStaticTransport | null = null;
 
@@ -44,7 +42,7 @@ export function clearStaticTransport(): void {
   currentTransport = null;
 }
 
-/** @internal Used by `ServiceRuntime` to decide whether to fetch on construction. */
+/** @internal Used by `ServiceRuntime` when a loader fires, to decide whether to fetch first. */
 export function getStaticTransport(): ServiceStaticTransport | null {
   return currentTransport;
 }

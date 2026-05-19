@@ -101,13 +101,13 @@ type CommandsMapFor<TState> = Record<string, CommandFnFor<TState> | AbstractComm
 /**
  * Authoring helper for a loader.
  *
- * @param handler - side-effecting body. Typically calls one or more commands. The return value
- *   is ignored — after `handler` resolves, the runtime invokes the same-named query with the
- *   same input and returns that result.
+ * @param handler - side-effecting body. Typically calls one or more commands, which write to
+ *   state via `setState`. The handler's return value is ignored — subscribers see the result
+ *   the paired query selector produces once state has settled.
  * @param enumerateInputs - the set of inputs this loader should be pre-rendered for at build time.
- *   For zero-input loaders (state-only loading), pass `undefined`. For dynamic enumeration, pass
+ *   For zero-input loaders (single-file shape), pass `undefined`. For dynamic enumeration, pass
  *   a function (receives a `BuildCtx` so it can read other services in the future).
- * @param options - per-loader configuration. `path` controls the JSON file path emitted by the
+ * @param options - per-loader configuration. `path` controls the JSON filename emitted by the
  *   static build pipeline.
  */
 export function defineLoader<TState, TInput = void>(

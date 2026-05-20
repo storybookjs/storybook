@@ -8,6 +8,11 @@ on:
   # remote. The selected branch is exposed as `github.ref_name` and is used
   # below to decide which branch to generate sandboxes for.
   workflow_dispatch:
+  # TODO: remove this push trigger before merging — only here so the PR
+  # exercising the sandbox-generation rewrite gets CI feedback per commit.
+  push:
+    branches:
+      - valentin/sandbox-yarn4-migration
 
 env:
   YARN_ENABLE_IMMUTABLE_INSTALLS: 'false'
@@ -33,7 +38,7 @@ jobs:
           EVENT_NAME: ${{ github.event_name }}
           REF_NAME: ${{ github.ref_name }}
         run: |
-          if [ "$EVENT_NAME" = "workflow_dispatch" ]; then
+          if [ "$EVENT_NAME" = "workflow_dispatch" ] || [ "$EVENT_NAME" = "push" ]; then
             branches=$(jq -nc --arg ref "$REF_NAME" '[$ref]')
           else
             branches='["next","main"]'
@@ -103,7 +108,8 @@ jobs:
       - name: Publish
         # publish sandboxes even if the generation fails, as some sandboxes might have been generated successfully
         # when triggered manually, always publish to the `next` branch on the sandboxes repo
-        if: ${{ !cancelled() }}
+        # skip publish on `push` events — those are for PR-level CI feedback and must not pollute the public sandboxes repo
+        if: ${{ !cancelled() && github.event_name != 'push' }}
         run: yarn publish-sandboxes --remote=https://storybook-bot:${{ secrets.PAT_STORYBOOK_BOT }}@github.com/storybookjs/sandboxes.git --push --branch=${{ github.event_name == 'workflow_dispatch' && 'next' || matrix.branch }}
 
       - name: Report failure to Discord

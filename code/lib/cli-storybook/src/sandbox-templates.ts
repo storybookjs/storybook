@@ -101,6 +101,13 @@ export type Template = {
     // Some sandboxes (e.g. Angular) rely on Node 22.22.1 as minimum supported version and threfore it needs enforcing, even if the CI image comes with a different node version.
     ensureMinNodeVersion?: boolean;
   };
+  /**
+   * Templates that pin intentionally-fresh dependency versions
+   * (`create-next-app@canary`, `@angular/cli@next`, etc.) cannot satisfy the
+   * 7-day `npmMinimalAgeGate` and must opt out of it during sandbox lockfile
+   * refresh. Stable templates should leave this unset.
+   */
+  disableMinAgeGate?: boolean;
   /** Additional options to pass to the initiate command when initializing Storybook. */
   initOptions?: {
     builder?: SupportedBuilder;
@@ -260,6 +267,7 @@ export const baseTemplates = {
     name: 'Next.js Prerelease (Webpack | TypeScript)',
     script:
       'npx create-next-app@canary {{beforeDir}} --skip-install --eslint --tailwind --app --import-alias="@/*" --src-dir',
+    disableMinAgeGate: true,
     expected: {
       framework: '@storybook/nextjs',
       renderer: '@storybook/react',
@@ -701,6 +709,7 @@ export const baseTemplates = {
     name: 'Angular CLI Prerelease (Webpack | TypeScript)',
     script:
       'npx -p @angular/cli@next ng new angular-v16 --directory {{beforeDir}} --routing=true --minimal=true --style=scss --strict --skip-git --skip-install --package-manager=yarn --ssr',
+    disableMinAgeGate: true,
     modifications: {
       // extraDependencies: ['@standard-schema/spec@^1', '@angular/forms@next'],
       useCsfFactory: true,
@@ -848,6 +857,9 @@ export const baseTemplates = {
     // yarn portals.
     name: 'React Native Expo Latest (Vite | TypeScript)',
     script: 'npx create-expo-app -y --no-install {{beforeDir}}',
+    // Expo ships frequent dependency updates; pinned SDK versions are routinely
+    // within the 7-day npmMinimalAgeGate window.
+    disableMinAgeGate: true,
     expected: {
       framework: '@storybook/react-native-web-vite',
       renderer: '@storybook/react',

@@ -40,6 +40,33 @@ Internal tests and implementation code may import from the individual modules di
 - [fixtures.ts](./fixtures.ts): scenario fixtures used by the test suite
 - `*.test.ts`: focused tests for runtime behavior, validation behavior, and static builds
 
+```mermaid
+flowchart LR
+  A[index.ts\npublic API]
+  B[service-definition.ts\nauthoring helpers]
+  C[types.ts\ncore types]
+  D[service-runtime.ts\nlive runtime]
+  E[service-validation.ts\nschema validation]
+  F[errors.ts\nvalidation errors]
+  G[static-build.ts\nstatic snapshot builder]
+  H[fixtures.ts and tests\nexamples and coverage]
+
+  A --> B
+  A --> D
+  A --> G
+  A --> C
+  B --> C
+  D --> C
+  D --> E
+  E --> F
+  G --> D
+  G --> E
+  G --> C
+  H --> A
+  H --> D
+  H --> G
+```
+
 ## Core Concepts
 
 ### Service
@@ -122,6 +149,26 @@ When `createService(def)` is called:
 The singleton helper `getService(def)` keeps one instance per service id within the current process.
 Tests should call `clearRegistry()` in teardown to avoid cross-test leakage.
 
+```mermaid
+sequenceDiagram
+  participant Caller
+  participant Runtime as createService/createServiceRuntime
+  participant Schema as validateSchema
+  participant Query as query or command handler
+  participant State as self/state signal
+
+  Caller->>Runtime: createService(def)
+  Runtime->>Runtime: build self, commands, queries
+  Caller->>Runtime: query(input) or command(input)
+  Runtime->>Schema: validate input
+  Schema-->>Runtime: parsed input
+  Runtime->>Query: run handler(parsed input, ctx)
+  Query->>State: read state or setState(...)
+  Query-->>Runtime: output
+  Runtime->>Schema: validate output
+  Schema-->>Caller: parsed output
+```
+
 ## Subscription Flow
 
 Subscriptions are implemented with `alien-signals` in [service-runtime.ts](./service-runtime.ts):
@@ -134,6 +181,25 @@ Subscriptions are implemented with `alien-signals` in [service-runtime.ts](./ser
 
 Subscriptions are async in delivery semantics. Tests should use `vi.waitFor(...)` when asserting the
 first emission or follow-up emissions.
+
+```mermaid
+sequenceDiagram
+  participant Subscriber
+  participant Runtime as query.subscribe
+  participant Schema as validateSchema
+  participant Preload as preload/static store
+  participant Signals as computed + effect
+  participant Callback as subscriber callback
+
+  Subscriber->>Runtime: subscribe(raw input, callback)
+  Runtime->>Schema: validate input
+  Schema-->>Runtime: parsed input
+  Runtime->>Preload: start preload work
+  Runtime->>Signals: create computed(handler)
+  Signals-->>Runtime: reactive output changes
+  Runtime->>Schema: validate output
+  Schema-->>Callback: validated value
+```
 
 ## Static Preload Flow
 
@@ -155,6 +221,21 @@ If multiple tasks resolve to the same path, their states are deep-merged.
 At runtime, `createService(def, { store })` can preload from that store. The runtime caches pending
 merges per path so one static snapshot is only merged once even if multiple concurrent query calls
 request it.
+
+```mermaid
+flowchart TD
+  A[buildStaticFiles services] --> B{query has preload\nand static.inputs?}
+  B -- no --> C[skip query]
+  B -- yes --> D[create fresh runtime from initialState]
+  D --> E[resolve static inputs]
+  E --> F[validate each input]
+  F --> G[run preload for that input]
+  G --> H[resolve output path]
+  H --> I[capture runtime state snapshot]
+  I --> J[merge snapshots by path into StaticStore]
+  J --> K[createService def with store]
+  K --> L[query loads cached static state before handler]
+```
 
 ## How To Define A Service
 

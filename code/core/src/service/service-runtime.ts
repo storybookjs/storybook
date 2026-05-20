@@ -1,6 +1,5 @@
+import { computed, effect, endBatch, signal, startBatch } from 'alien-signals';
 import { applyPatches, enablePatches, produceWithPatches, type Patch } from 'immer';
-
-import { isEqual } from 'es-toolkit/predicate';
 
 import {
   SERVICE_PATCHES,
@@ -79,6 +78,9 @@ type StateListener<TState> = (
 ) => void;
 type QueryListener = (value: unknown) => void;
 
+/** Minimal shape of an alien-signals writable signal — `()` reads, `(v)` writes. */
+type StateSignal<T> = { (): T; (value: T): void };
+
 /**
  * Normalised "this query has a preload to fire" entry. Either the query-as-object form
  * (`definition.queries[name] = { select, preload, inputs?, path? }`) or the legacy loader
@@ -123,13 +125,20 @@ function fnv1a(str: string): string {
  *
  * State mutation goes through `immer.produceWithPatches`. The `setState` API takes a draft-style
  * mutator (`(draft) => { draft.foo = bar; }`); the runtime hands a real Immer draft to the
- * recipe and gets back the new immutable state plus the minimal patch list.
+ * recipe and gets back the new immutable state plus the minimal patch list. Reactivity is
+ * powered by `alien-signals`: the whole state is held in a single `signal<TState>`, and each
+ * `query.subscribe(input, listener)` builds a `computed(() => select(state, input))` whose
+ * value is observed by an `effect(() => listener(...))`. Reference-equality memoisation on
+ * the computed gives "fire only when the selected slice actually changes" for free.
  */
 export class ServiceRuntime<TDef extends ServiceDefinition<any, any, any>> {
-  private _state: TDef extends ServiceDefinition<infer S, any, any> ? S : never;
+  /**
+   * Source of truth for service state. Read it via `()`, write a new value via `(next)`.
+   * `setState` and the channel-sync paths both end up writing here; every active `computed`
+   * created in `_subscribeToQuery` re-evaluates automatically when the signal changes.
+   */
+  private _stateSignal: StateSignal<TDef extends ServiceDefinition<infer S, any, any> ? S : never>;
   private _stateListeners = new Set<StateListener<unknown>>();
-  private _queryListeners = new Map<string, Map<string, Set<QueryListener>>>();
-  private _queryResultCache = new Map<string, Map<string, unknown>>();
   private _firedLoaderInputs = new Map<string, Set<string>>();
   private _inflightLoaders = new Map<string, Map<string, Promise<void>>>();
   /** Patches accumulated for the most recent setState call. */
@@ -174,7 +183,7 @@ export class ServiceRuntime<TDef extends ServiceDefinition<any, any, any>> {
       Patch[],
       Patch[],
     ];
-    this._state = initial as typeof this._state;
+    this._stateSignal = signal(initial) as typeof this._stateSignal;
 
     // Resolve command handlers: registration override beats definition handler. Abstract
     // commands MUST be overridden — we throw at registration time if they aren't.
@@ -204,20 +213,29 @@ export class ServiceRuntime<TDef extends ServiceDefinition<any, any, any>> {
 
   /** @internal Read raw state. Application code should use a query instead. */
   getState = (): TDef extends ServiceDefinition<infer S, any, any> ? S : never => {
-    return this._state;
+    return this._stateSignal();
   };
 
   /** @internal Mutate state directly. Application code should use a command instead. */
   setState = (mutator: StateMutator<any>): void => {
-    const previous = this._state;
+    const previous = this._stateSignal();
     const [next, patches] = produceWithPatches(previous as object, (draft: any) => {
       mutator(draft);
     }) as unknown as [typeof previous, Patch[], Patch[]];
 
     if (patches.length === 0) return;
 
-    this._state = next;
     this._lastPatches = patches;
+    // Wrap the signal write in startBatch/endBatch so a command that touches several keys
+    // (each producing one Immer patch — but only one setState call) still fans out a single
+    // notification flush to subscribers. Today this is equivalent to a bare write since we
+    // only write once per setState, but it future-proofs us if setState is ever batched.
+    startBatch();
+    try {
+      this._stateSignal(next);
+    } finally {
+      endBatch();
+    }
 
     // Broadcast the patches over the channel so peers stay in sync — unless we're applying
     // state that just arrived from outside (welcome reply, ongoing patch from a peer, JSON
@@ -233,7 +251,9 @@ export class ServiceRuntime<TDef extends ServiceDefinition<any, any, any>> {
     for (const listener of this._stateListeners) {
       listener(next, previous, patches);
     }
-    this._reRunSubscribedQueries();
+    // No explicit re-run of subscribed queries — the signal write above already triggered
+    // every active `computed` to re-evaluate, and `effect()` notifies the subscriber if the
+    // computed's reference-equal output changed.
   };
 
   /** @internal Subscribe to whole-state changes. Receives patches alongside state. */
@@ -305,10 +325,14 @@ export class ServiceRuntime<TDef extends ServiceDefinition<any, any, any>> {
       throw new Error(`[${this.id}] Unknown query: ${queryName}`);
     }
     const select = unwrapQuery(entry).select;
+    // Read via the signal: when this method is invoked from inside a `computed` (the
+    // subscribe path), this read registers the dependency; from a plain callable read
+    // it's just a synchronous value fetch.
+    const state = this._stateSignal();
     if (select.length <= 1) {
-      return (select as (state: unknown) => unknown)(this._state);
+      return (select as (state: unknown) => unknown)(state);
     }
-    return (select as (state: unknown, input: unknown) => unknown)(this._state, input);
+    return (select as (state: unknown, input: unknown) => unknown)(state, input);
   }
 
   private _queryHasInput(queryName: string): boolean {
@@ -340,71 +364,43 @@ export class ServiceRuntime<TDef extends ServiceDefinition<any, any, any>> {
     return out as SubscribableQueries<TDef['queries']>;
   }
 
+  /**
+   * Subscribe a listener to a query/input pair. Built on `alien-signals`:
+   *
+   *   - `computed(() => select(state, input))` re-runs whenever the state signal changes,
+   *     memoised by reference equality on its output. Two consecutive evaluations that
+   *     return `===`-equal values produce no downstream notification — that's where our
+   *     "structurally equal? don't re-fire" behaviour for primitive-valued selectors comes
+   *     from automatically.
+   *
+   *   - `effect(() => listener(comp()))` fires on every change to the computed's value.
+   *     `effect` itself fires once synchronously at install time; we swallow that first
+   *     fire so existing subscribers retain "fire only on change" semantics. Callers that
+   *     want the initial value should read it via the callable form of the query.
+   *
+   *   - Returns the effect's stop handle: calling it tears down the computed/effect pair.
+   */
   private _subscribeToQuery(
     queryName: string,
     input: unknown,
     listener: QueryListener
   ): () => void {
-    const inputKey = keyOfInput(input);
+    const comp = computed(() => this._runQuery(queryName, input));
+    let initialFire = true;
+    const stop = effect(() => {
+      const value = comp();
+      if (initialFire) {
+        initialFire = false;
+        return;
+      }
+      listener(value);
+    });
 
-    let byInput = this._queryListeners.get(queryName);
-    if (!byInput) {
-      byInput = new Map();
-      this._queryListeners.set(queryName, byInput);
-    }
-    let listenerSet = byInput.get(inputKey);
-    if (!listenerSet) {
-      listenerSet = new Set();
-      byInput.set(inputKey, listenerSet);
-    }
-    listenerSet.add(listener);
-
-    let resultByInput = this._queryResultCache.get(queryName);
-    if (!resultByInput) {
-      resultByInput = new Map();
-      this._queryResultCache.set(queryName, resultByInput);
-    }
-    if (!resultByInput.has(inputKey)) {
-      resultByInput.set(inputKey, this._runQuery(queryName, input));
-    }
-
+    // Kick off the preload — fire-and-forget, the effect above will re-evaluate when the
+    // loader's setState lands.
     void this._maybeFireLoader(queryName, input);
 
-    return () => {
-      const ls = this._queryListeners.get(queryName)?.get(inputKey);
-      ls?.delete(listener);
-      if (ls && ls.size === 0) {
-        this._queryListeners.get(queryName)?.delete(inputKey);
-      }
-    };
-  }
-
-  private _reRunSubscribedQueries(): void {
-    for (const [queryName, byInput] of this._queryListeners) {
-      const resultByInput = this._queryResultCache.get(queryName) ?? new Map();
-      this._queryResultCache.set(queryName, resultByInput);
-
-      for (const [inputKey, listenerSet] of byInput) {
-        if (listenerSet.size === 0) continue;
-        const input = this._inputFromKey(queryName, inputKey);
-        const next = this._runQuery(queryName, input);
-        const prev = resultByInput.get(inputKey);
-        if (!isEqual(prev, next)) {
-          resultByInput.set(inputKey, next);
-          for (const listener of listenerSet) listener(next);
-        }
-      }
-    }
-  }
-
-  private _inputFromKey(queryName: string, inputKey: string): unknown {
-    if (!this._queryHasInput(queryName)) return undefined;
-    if (inputKey === '') return undefined;
-    try {
-      return JSON.parse(inputKey);
-    } catch {
-      return inputKey;
-    }
+    return stop;
   }
 
   // ------------------------------ commands ------------------------------
@@ -512,21 +508,26 @@ export class ServiceRuntime<TDef extends ServiceDefinition<any, any, any>> {
   /**
    * Apply a list of Immer patches received from a peer over the channel. Uses Immer's
    * `applyPatches` directly so removals and other patch ops are preserved (the state-shaped
-   * diff format loses removals). Sets `_applyingRemote` to suppress re-broadcast.
+   * diff format loses removals). Sets `_applyingRemote` to suppress re-broadcast. The new
+   * state is written through the signal so every active `computed` re-evaluates.
    */
   private _applyExternalPatches(patches: readonly Patch[]): void {
     if (patches.length === 0) return;
     this._applyingRemote = true;
     try {
-      const previous = this._state;
+      const previous = this._stateSignal();
       const next = applyPatches(previous as object, patches as Patch[]) as typeof previous;
       if (next === previous) return;
-      this._state = next;
       this._lastPatches = patches;
+      startBatch();
+      try {
+        this._stateSignal(next);
+      } finally {
+        endBatch();
+      }
       for (const listener of this._stateListeners) {
         listener(next, previous, patches);
       }
-      this._reRunSubscribedQueries();
     } finally {
       this._applyingRemote = false;
     }
@@ -544,7 +545,7 @@ export class ServiceRuntime<TDef extends ServiceDefinition<any, any, any>> {
       if (data.serviceId !== this.id) return;
       const payload: WelcomeReplyPayload = {
         serviceId: this.id,
-        state: this._state as Record<string, unknown>,
+        state: this._stateSignal() as Record<string, unknown>,
       };
       channel.emit(SERVICE_WELCOME_REPLY, payload);
     };

@@ -151,9 +151,10 @@ export function defineLoader<TState, TInput = void>(
  *    when the query needs read-triggered population (`preload`), build-time pre-rendering
  *    (`inputs`, `path`), or both.
  *
- * `defineQuery` itself is a pass-through; it exists for type inference and authoring clarity.
+ * `defineQuery` is a pass-through; it exists for authoring clarity. The shape is validated by
+ * the `QueriesMap<TState>` constraint when the query is placed into a `defineService(...)` call.
  */
-export function defineQuery<TState, TDef extends QueryDef<TState>>(def: TDef): TDef {
+export function defineQuery<TDef extends QueryDef<any>>(def: TDef): TDef {
   return def;
 }
 

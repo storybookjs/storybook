@@ -2,19 +2,22 @@
  * Worked example: the DocgenService from the architecture conversation.
  *
  * Demonstrates:
- *  - A query keyed by `componentId` (`getComponentDocgenInfo`) and a no-input query (`somethingElse`).
+ *  - A query keyed by `componentId` (`getComponentDocgenInfo`) declared via `defineQuery` so it
+ *    can also carry a `preload`, an `inputs` enumeration, and a `path` callback for the static
+ *    build.
+ *  - A no-input bare-selector query (`somethingElse`) — when a query has no preload/inputs/path,
+ *    the bare form is enough.
  *  - An **abstract** command (`generateDocgen`) — declared in the shared definition but implemented
  *    at registration time. Different environments (server, manager, preview) can provide different
  *    bodies for the same command without forking the definition.
- *  - A **concrete** command (`modifySomethingElse`) — local state mutation, no loader, identical
+ *  - A **concrete** command (`modifySomethingElse`) — local state mutation, no preload, identical
  *    behaviour everywhere.
- *  - A loader keyed by `componentId`, with a `path` callback that controls the per-input JSON file.
  *
  * Note that this file lives under `__examples__` and is NOT exported from the package entry. It
  * exists so the public API is exercised by a realistic-shaped service that type-checks.
  */
 
-import { defineCommand, defineLoader, defineService } from '../define-service.ts';
+import { defineCommand, defineQuery, defineService } from '../define-service.ts';
 import { registerService } from '../register-service.ts';
 
 interface ComponentDocgen {
@@ -36,7 +39,7 @@ async function listAllComponentIds(): Promise<readonly string[]> {
  * Environment-agnostic definition.
  *
  * The curried `defineService<DocgenState>()(...)` form binds the state interface once. Inside,
- * the `state` argument of every query and the `ctx` argument of every command/loader are
+ * the `state` argument of every query and the `ctx` argument of every command/preload are
  * inferred as `DocgenState` / `ServiceCtx<DocgenState>`. The `draft` argument of `setState`
  * still needs an annotation — see the comment on `modifySomethingElse` for why.
  *
@@ -52,7 +55,20 @@ export const DocgenService = defineService<DocgenState>()({
   },
 
   queries: {
-    getComponentDocgenInfo: (state, componentId: string) => state.byComponentId[componentId],
+    // Query-object form: selector + preload + inputs + path live together. The preload calls a
+    // command that populates the relevant slice of state; the static build runs this preload for
+    // every enumerated input and writes per-input JSON files at `path(input)`.
+    getComponentDocgenInfo: defineQuery({
+      select: (state: DocgenState, componentId: string) => state.byComponentId[componentId],
+      preload: async (componentId: string, ctx) => {
+        await ctx.self.commands.generateDocgen(componentId);
+      },
+      inputs: async () => listAllComponentIds(),
+      path: (_ctx, componentId: string) => `docgen-${componentId}.json`,
+    }),
+
+    // Bare-selector form: a query with no preload / inputs / path. No static build artifact;
+    // state changes happen only via commands.
     somethingElse: (state) => state.somethingElse,
   },
 
@@ -69,18 +85,6 @@ export const DocgenService = defineService<DocgenState>()({
         draft.somethingElse = Math.floor(Math.random() * 100);
       });
     },
-  },
-
-  load: {
-    getComponentDocgenInfo: defineLoader<DocgenState, string>(
-      async (componentId, ctx) => {
-        await ctx.self.commands.generateDocgen(componentId);
-      },
-      async () => listAllComponentIds(),
-      {
-        path: (_ctx, componentId) => `docgen-${componentId}.json`,
-      }
-    ),
   },
 });
 

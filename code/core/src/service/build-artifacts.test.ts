@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { buildServiceArtifacts } from './build-artifacts.ts';
-import { defineLoader, defineService } from './define-service.ts';
+import { defineLoader, defineQuery, defineService } from './define-service.ts';
 import { __resetServiceRegistry, registerService } from './register-service.ts';
 import {
   clearStaticTransport,
@@ -239,6 +239,110 @@ describe('buildServiceArtifacts', () => {
     });
 
     await expect(buildServiceArtifacts(def)).rejects.toThrow(/array-index patch/);
+  });
+
+  it('reads preload+inputs+path from a defineQuery on definition.queries (new form)', async () => {
+    interface S {
+      byId: Record<string, { name: string }>;
+    }
+    const def = defineService({
+      id: 'test/query-object-form',
+      state: { byId: {} } as S,
+      queries: {
+        getOne: defineQuery({
+          select: (s: S, id: string) => s.byId[id],
+          preload: async (id: string, ctx: ServiceCtx<S>) => {
+            await ctx.self.commands.load(id);
+          },
+          inputs: ['a', 'b'],
+          path: (_ctx, id: string) => `entries/${id}.json`,
+        }),
+      },
+      commands: {
+        load: async (id: string, ctx: ServiceCtx<S>) => {
+          ctx.self.setState((d) => {
+            d.byId[id] = { name: `loaded ${id}` };
+          });
+        },
+      },
+    });
+
+    const artifacts = await buildServiceArtifacts(def);
+
+    // Files are state-shaped diffs, identical shape to the legacy-loader case.
+    expect([...artifacts.keys()].sort()).toEqual(['entries/a.json', 'entries/b.json']);
+    expect(artifacts.get('entries/a.json')).toEqual({
+      byId: { a: { name: 'loaded a' } },
+    });
+    expect(artifacts.get('entries/b.json')).toEqual({
+      byId: { b: { name: 'loaded b' } },
+    });
+  });
+
+  it('reads a no-input query-object preload (single-file pattern, new form)', async () => {
+    interface S {
+      byId: Record<string, string>;
+    }
+    const def = defineService({
+      id: 'test/query-object-no-input',
+      state: { byId: {} } as S,
+      queries: {
+        allStatuses: defineQuery({
+          select: (s: S) => s.byId,
+          preload: async (ctx: ServiceCtx<S>) => {
+            await ctx.self.commands.loadAll();
+          },
+          path: () => 'statuses.json',
+        }),
+      },
+      commands: {
+        loadAll: async (ctx: ServiceCtx<S>) => {
+          ctx.self.setState((d) => {
+            d.byId = { 'story-1': 'pass', 'story-2': 'fail' };
+          });
+        },
+      },
+    });
+
+    const artifacts = await buildServiceArtifacts(def);
+    expect([...artifacts.keys()]).toEqual(['statuses.json']);
+    expect(artifacts.get('statuses.json')).toEqual({
+      byId: { 'story-1': 'pass', 'story-2': 'fail' },
+    });
+  });
+
+  it('rejects double-declaration of the same name in both queries.X.preload and load.X', async () => {
+    interface S {
+      x: number;
+    }
+    const def = defineService({
+      id: 'test/double-declaration',
+      state: { x: 0 } as S,
+      queries: {
+        getX: defineQuery({
+          select: (s: S) => s.x,
+          preload: async (ctx: ServiceCtx<S>) => {
+            ctx.self.setState((d) => {
+              d.x = 1;
+            });
+          },
+          path: () => 'getX.json',
+        }),
+      },
+      commands: {},
+      load: {
+        getX: defineLoader<S, void>(
+          async (ctx) => {
+            ctx.self.setState((d) => {
+              d.x = 2;
+            });
+          },
+          undefined
+        ),
+      },
+    });
+
+    await expect(buildServiceArtifacts(def)).rejects.toThrow(/declared both as queries\.getX\.preload and load\.getX/);
   });
 
   it('resolves enumerateInputs when given as an async function', async () => {

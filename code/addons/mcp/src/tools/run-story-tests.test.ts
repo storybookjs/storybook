@@ -207,8 +207,8 @@ describe('runStoryTestsTool', () => {
 					},
 				],
 				a11yStatuses: [],
-				reports: {},
 				a11yReports: {},
+				reports: {},
 				unhandledErrors: [],
 			},
 		});
@@ -265,8 +265,8 @@ describe('runStoryTestsTool', () => {
 					},
 				],
 				a11yStatuses: [],
-				reports: {},
 				a11yReports: {},
+				reports: {},
 				unhandledErrors: [],
 			},
 		});
@@ -310,8 +310,8 @@ describe('runStoryTestsTool', () => {
 					},
 				],
 				a11yStatuses: [],
-				reports: {},
 				a11yReports: {},
+				reports: {},
 				unhandledErrors: [],
 			},
 		});
@@ -367,8 +367,8 @@ describe('runStoryTestsTool', () => {
 					},
 				],
 				a11yStatuses: [],
-				reports: {},
 				a11yReports: {},
+				reports: {},
 				unhandledErrors: [],
 			},
 		});
@@ -419,8 +419,8 @@ describe('runStoryTestsTool', () => {
 					},
 				],
 				a11yStatuses: [],
-				reports: {},
 				a11yReports: {},
+				reports: {},
 				unhandledErrors: [],
 			},
 		});
@@ -471,8 +471,8 @@ describe('runStoryTestsTool', () => {
 					},
 				],
 				a11yStatuses: [],
-				reports: {},
 				a11yReports: {},
+				reports: {},
 				unhandledErrors: [],
 			},
 		});
@@ -520,7 +520,6 @@ describe('runStoryTestsTool', () => {
 					},
 				],
 				a11yStatuses: [],
-				reports: {},
 				a11yReports: {
 					'button--primary': [
 						{
@@ -541,6 +540,7 @@ describe('runStoryTestsTool', () => {
 						},
 					],
 				},
+				reports: {},
 				unhandledErrors: [],
 			},
 		});
@@ -594,7 +594,6 @@ describe('runStoryTestsTool', () => {
 					},
 				],
 				a11yStatuses: [],
-				reports: {},
 				a11yReports: {
 					'button--primary': [
 						{
@@ -615,6 +614,7 @@ describe('runStoryTestsTool', () => {
 						},
 					],
 				},
+				reports: {},
 				unhandledErrors: [],
 			},
 		});
@@ -656,7 +656,6 @@ describe('runStoryTestsTool', () => {
 					},
 				],
 				a11yStatuses: [],
-				reports: {},
 				a11yReports: {
 					'button--primary': [
 						{
@@ -677,6 +676,7 @@ describe('runStoryTestsTool', () => {
 						},
 					],
 				},
+				reports: {},
 				unhandledErrors: [],
 			},
 		});
@@ -720,8 +720,8 @@ describe('runStoryTestsTool', () => {
 				a11yCount: { success: 0, warning: 0, error: 0 },
 				componentTestStatuses: [],
 				a11yStatuses: [],
-				reports: {},
 				a11yReports: {},
+				reports: {},
 				unhandledErrors: [
 					{
 						name: 'ReferenceError',
@@ -773,8 +773,8 @@ describe('runStoryTestsTool', () => {
 				a11yCount: { success: 0, warning: 0, error: 0 },
 				componentTestStatuses: [],
 				a11yStatuses: [],
-				reports: {},
 				a11yReports: {},
+				reports: {},
 				unhandledErrors: [
 					{
 						name: 'Error',
@@ -855,8 +855,8 @@ describe('runStoryTestsTool', () => {
 					// button--loading has no status because it had an unhandled error
 				],
 				a11yStatuses: [],
-				reports: {},
 				a11yReports: {},
+				reports: {},
 				unhandledErrors: [
 					{
 						name: 'SyntaxError',
@@ -988,8 +988,8 @@ describe('runStoryTestsTool', () => {
 					},
 				],
 				a11yStatuses: [],
-				reports: {},
 				a11yReports: {},
+				reports: {},
 				unhandledErrors: [],
 			},
 		});
@@ -1056,8 +1056,8 @@ describe('runStoryTestsTool', () => {
 								},
 							],
 							a11yStatuses: [],
-							reports: {},
 							a11yReports: {},
+							reports: {},
 							unhandledErrors: [],
 						},
 					};

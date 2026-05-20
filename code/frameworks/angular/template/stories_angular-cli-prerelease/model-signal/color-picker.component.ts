@@ -11,12 +11,5 @@ import { Component, model } from '@angular/core';
   styleUrls: ['./color-picker.css'],
 })
 export default class ColorPickerComponent {
-  /**
-   * The currently selected color.
-   *
-   * `model()` creates a two-way binding: an input `color` plus a compiler-synthesized
-   * `colorChange` output. Native `@storybook/angular` `model()` support means this no longer
-   * requires a hand-written `Args` interface or manual `argTypes` workaround.
-   */
   color = model<string>('#345F92');
 }

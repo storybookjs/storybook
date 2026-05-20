@@ -1,3 +1,5 @@
+import type { ComponentType, MemoExoticComponent } from 'react';
+
 import {
   type PropDef,
   TypeSystem,
@@ -9,8 +11,13 @@ import { isMemo } from './docs/lib/componentTypes.ts';
 import { enhancePropTypesProps } from './docs/propTypes/handleProp.ts';
 import { enhanceTypeScriptProps } from './docs/typeScript/handleProp.ts';
 
-// FIXME
-type Component = any;
+// A React component as accepted by `extractProps`: a regular component or a
+// React.memo-wrapped one. `propTypes` is the legacy PropTypes attribute the
+// `getPropDefs` function checks before falling back to docgen extraction.
+type Component = (ComponentType<any> | MemoExoticComponent<ComponentType<any>>) & {
+  propTypes?: Record<string, unknown>;
+  type?: ComponentType<any>;
+};
 
 export interface PropDefMap {
   [p: string]: PropDef;

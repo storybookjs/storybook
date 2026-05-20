@@ -1,0 +1,35 @@
+import { dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+import { x } from 'tinyexec';
+import { describe, expect, it } from 'vitest';
+
+const packageRoot = dirname(fileURLToPath(import.meta.url));
+
+async function isClaudeCliAvailable() {
+	try {
+		const result = await x('claude', ['--version'], { nodeOptions: { cwd: packageRoot } });
+		return result.exitCode === 0;
+	} catch {
+		return false;
+	}
+}
+
+const hasClaudeCli = await isClaudeCliAvailable();
+
+describe('Storybook Claude plugin CLI validation', () => {
+	it.skipIf(!hasClaudeCli)(
+		'passes claude plugin validate for marketplace and plugin manifests',
+		async () => {
+			const marketplace = await x('claude', ['plugin', 'validate', '.'], {
+				nodeOptions: { cwd: packageRoot },
+			});
+			const plugin = await x('claude', ['plugin', 'validate', '.claude-plugin/plugin.json'], {
+				nodeOptions: { cwd: packageRoot },
+			});
+
+			expect(marketplace.exitCode).toBe(0);
+			expect(plugin.exitCode).toBe(0);
+		},
+	);
+});

@@ -1,6 +1,6 @@
 {
 	"storybook": {
 		"command": "npx",
-		"args": ["-y", "https://pkg.pr.new/storybookjs/mcp/@storybook/mcp-proxy@227"]
+		"args": ["-y", "https://pkg.pr.new/storybookjs/mcp/@storybook/mcp-proxy@main"]
 	}
 }

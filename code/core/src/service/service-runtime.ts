@@ -9,6 +9,8 @@ import type {
   CallableCommands,
   CommandHandler,
   LoaderDefinition,
+  QueryDef,
+  QueryEntry,
   SelfHandle,
   ServiceCtx,
   ServiceDefinition,
@@ -17,6 +19,17 @@ import type {
   SubscribableQueries,
   SubscribableQuery,
 } from './types.ts';
+
+/**
+ * Normalise a query entry to its object form. A bare selector function becomes
+ * `{ select: fn }`; an object passes through unchanged.
+ */
+function unwrapQuery(entry: QueryEntry): QueryDef {
+  if (typeof entry === 'function') {
+    return { select: entry as QueryDef['select'] };
+  }
+  return entry as QueryDef;
+}
 
 // Immer's patch tracking is opt-in. Enabling once at module load is fine — it's a global flag.
 enablePatches();
@@ -222,18 +235,19 @@ export class ServiceRuntime<TDef extends ServiceDefinition<any, any, any, any>> 
   // ------------------------------ queries ------------------------------
 
   private _runQuery(queryName: string, input: unknown): unknown {
-    const handler = this.definition.queries[queryName];
-    if (!handler) {
+    const entry = this.definition.queries[queryName];
+    if (!entry) {
       throw new Error(`[${this.id}] Unknown query: ${queryName}`);
     }
-    if (handler.length <= 1) {
-      return (handler as (state: unknown) => unknown)(this._state);
+    const select = unwrapQuery(entry).select;
+    if (select.length <= 1) {
+      return (select as (state: unknown) => unknown)(this._state);
     }
-    return (handler as (state: unknown, input: unknown) => unknown)(this._state, input);
+    return (select as (state: unknown, input: unknown) => unknown)(this._state, input);
   }
 
   private _queryHasInput(queryName: string): boolean {
-    return this.definition.queries[queryName].length > 1;
+    return unwrapQuery(this.definition.queries[queryName]).select.length > 1;
   }
 
   private _buildQueriesApi(): SubscribableQueries<TDef['queries']> {

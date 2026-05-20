@@ -104,9 +104,7 @@ npx -y https://pkg.pr.new/storybookjs/mcp/@storybook/mcp-proxy@227
 
 The `@227` ref tracks the newest preview build for this PR.
 
-> **TODO:** After this PR merges to `main`, switch `plugins/storybook/.mcp.json` to  
-> `https://pkg.pr.new/storybookjs/mcp/@storybook/mcp-proxy@main`  
-> **TODO:** After `@storybook/mcp-proxy` is published to npm, switch to `@storybook/mcp-proxy@latest`.
+`@storybook/mcp-proxy` is private and ignored by Changesets in this milestone, so it is not published to npm yet. When the proxy package is ready to publish, remove it from the Changesets ignore list, switch `plugins/storybook/.mcp.json` to `@storybook/mcp-proxy@latest`, and add the proxy package changeset in that publishing PR.
 
 ## Smoke Test
 

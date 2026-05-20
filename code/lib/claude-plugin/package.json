@@ -4,10 +4,10 @@
 	"private": true,
 	"description": "Build, preview, and test UI components",
 	"keywords": [
-		"storybook",
-		"mcp",
 		"components",
-		"stories"
+		"mcp",
+		"stories",
+		"storybook"
 	],
 	"homepage": "https://github.com/storybookjs/mcp/tree/main/packages/claude-plugin#readme",
 	"license": "MIT",

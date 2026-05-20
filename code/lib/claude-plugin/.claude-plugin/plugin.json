@@ -9,13 +9,5 @@
 	"homepage": "https://storybook.js.org/docs/ai/mcp/overview",
 	"repository": "https://github.com/storybookjs/mcp",
 	"license": "MIT",
-	"keywords": [
-		"storybook",
-		"mcp",
-		"components",
-		"stories",
-		"design-systems",
-		"testing",
-		"preview"
-	]
+	"keywords": ["storybook", "mcp", "components", "stories", "design-systems", "testing", "preview"]
 }

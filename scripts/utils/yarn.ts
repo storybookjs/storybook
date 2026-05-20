@@ -1,6 +1,7 @@
 import { access, mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 
+import satelliteAddons from '../../code/core/src/common/satellite-addons.ts';
 // TODO -- should we generate this file a second time outside of CLI?
 import storybookVersions from '../../code/core/src/common/versions.ts';
 import { allTemplates } from '../../code/lib/cli-storybook/src/sandbox-templates.ts';
@@ -52,7 +53,7 @@ export const addPackageResolutions = async ({ cwd, dryRun }: YarnOptions) => {
 // our own so sandboxes can install them immediately.
 const SANDBOX_NPM_MINIMAL_AGE_GATE_MINUTES = 7 * 24 * 60;
 const SANDBOX_NPM_PREAPPROVED_PACKAGES = Array.from(
-  new Set([...Object.keys(storybookVersions), '@chromatic-com/storybook'])
+  new Set([...Object.keys(storybookVersions), ...satelliteAddons])
 );
 
 export const installYarn2 = async ({ cwd, dryRun, debug }: YarnOptions) => {

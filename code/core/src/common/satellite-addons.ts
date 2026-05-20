@@ -8,6 +8,7 @@ export default [
   '@storybook/addon-webpack5-compiler-babel',
   '@storybook/addon-webpack5-compiler-swc',
   '@storybook/addon-mcp',
+  'vite-plugin-storybook-nextjs',
   // Storybook for React Native related packages
   // TODO: For Storybook 10, we should check about possible automigrations
   '@storybook/addon-ondevice-actions',

@@ -193,6 +193,15 @@ const getRecentVisibleSizes = (layoutState: API_Layout) => {
   };
 };
 
+/**
+ * Merges layout options into the existing layout state and translates the
+ * `showSidebar` / `showPanel` booleans into the underlying size fields.
+ *
+ * Numeric sizes from `options` are merged in first, so `recentVisibleSizes` is
+ * captured *after* that merge — meaning if a caller passes both a size and
+ * `show*: false` in the same payload, the new size is what we remember for
+ * later restoration via `togglePanel(true)` / `toggleNav(true)`.
+ */
 const applyLayoutOptions = (
   layoutState: API_Layout,
   options: API_LayoutOptions | undefined,
@@ -200,6 +209,7 @@ const applyLayoutOptions = (
 ) => {
   const { showPanel, showSidebar, ...layoutOptions } = options ?? {};
   const layoutKeys = Object.keys(layoutState) as (keyof API_Layout)[];
+  // Safety net: drop any unknown keys that aren't part of API_Layout.
   const nextLayoutState = toMerged(layoutState, pick(layoutOptions, layoutKeys)) as API_Layout;
 
   if (showSidebar === false) {
@@ -218,6 +228,7 @@ const applyLayoutOptions = (
     nextLayoutState.rightPanelWidth = nextLayoutState.recentVisibleSizes.rightPanelWidth;
   }
 
+  // singleStory always hides the sidebar regardless of the showSidebar option.
   if (singleStory) {
     nextLayoutState.navSize = 0;
   }

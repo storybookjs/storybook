@@ -1,7 +1,17 @@
-import { enablePatches, produceWithPatches, type Patch } from 'immer';
+import { applyPatches, enablePatches, produceWithPatches, type Patch } from 'immer';
 
 import { isEqual } from 'es-toolkit/predicate';
 
+import {
+  SERVICE_PATCHES,
+  SERVICE_WELCOME_REPLY,
+  SERVICE_WELCOME_REQUEST,
+  getServiceChannel,
+  type PatchesPayload,
+  type ServiceChannel,
+  type WelcomeReplyPayload,
+  type WelcomeRequestPayload,
+} from './channel-transport.ts';
 import { isAbstractCommand } from './define-service.ts';
 import { getStaticTransport } from './static-transport.ts';
 import type {
@@ -126,6 +136,22 @@ export class ServiceRuntime<TDef extends ServiceDefinition<any, any, any>> {
   private _lastPatches: readonly Patch[] = [];
   /** Resolved command handlers: definition handler or registration override. */
   private _commandHandlers: Record<string, (...args: any[]) => any>;
+  /**
+   * Set to true while applying state that arrived from outside (welcome reply, ongoing patch
+   * from a peer, JSON file fetch). Suppresses re-broadcast of the resulting setState so we
+   * don't loop. Always reset in a try/finally to survive thrown handlers.
+   */
+  private _applyingRemote = false;
+  /**
+   * Channel listeners we own, kept here so they can be detached in `dispose()`. Null when no
+   * channel was installed at construction time.
+   */
+  private _channelBindings: {
+    readonly channel: ServiceChannel;
+    readonly onWelcomeRequest: (data: WelcomeRequestPayload) => void;
+    readonly onWelcomeReply: (data: WelcomeReplyPayload) => void;
+    readonly onPatches: (data: PatchesPayload) => void;
+  } | null = null;
 
   public readonly definition: TDef;
   public readonly id: string;
@@ -157,9 +183,13 @@ export class ServiceRuntime<TDef extends ServiceDefinition<any, any, any>> {
     this.queries = this._buildQueriesApi();
     this.commands = this._buildCommandsApi();
 
+    // Wire channel-based sync if a channel has been installed at the architecture level.
+    // No-op if no channel exists (isolation case: tests, popped-out iframes, CLI scripts).
+    this._wireChannel();
+
     // Build the public-facing view once and keep a stable reference. State-mutation hooks
     // (getState/setState/subscribe/getLastPatches) are deliberately omitted — they remain on
-    // the runtime class for the build pipeline and the planned channel transport.
+    // the runtime class for the build pipeline and channel-sync infrastructure.
     this.publicStore = Object.freeze({
       id: this.id,
       definition: this.definition,
@@ -188,6 +218,17 @@ export class ServiceRuntime<TDef extends ServiceDefinition<any, any, any>> {
 
     this._state = next;
     this._lastPatches = patches;
+
+    // Broadcast the patches over the channel so peers stay in sync — unless we're applying
+    // state that just arrived from outside (welcome reply, ongoing patch from a peer, JSON
+    // file fetch). That would cause an infinite re-broadcast loop.
+    if (!this._applyingRemote) {
+      const channel = getServiceChannel();
+      if (channel) {
+        const payload: PatchesPayload = { serviceId: this.id, patches };
+        channel.emit(SERVICE_PATCHES, payload);
+      }
+    }
 
     for (const listener of this._stateListeners) {
       listener(next, previous, patches);
@@ -450,17 +491,95 @@ export class ServiceRuntime<TDef extends ServiceDefinition<any, any, any>> {
   }
 
   /**
-   * Apply a state-shaped diff to state. Used when restoring state from a fetched per-loader
-   * artifact in static mode — files contain JSON-Merge-Patch-shaped objects (`{a:{b:1}}`) rather
-   * than Immer patch lists, so the operation is a deep-merge. Emits the same state/query
-   * notifications as a normal `setState`.
+   * Apply a state-shaped diff to state. Used both when restoring state from a fetched static
+   * artifact AND when applying a welcome reply from a peer — files and welcome replies share
+   * the same on-the-wire shape (a JSON-Merge-Patch-flavoured nested object). Operation is a
+   * deep-merge. Sets `_applyingRemote` so the resulting `setState` doesn't re-broadcast.
    */
   private _applyStateDiff(diff: unknown): void {
     if (diff === null || typeof diff !== 'object' || Array.isArray(diff)) return;
     if (Object.keys(diff as object).length === 0) return;
-    this.setState((draft) => {
-      deepMerge(draft as Record<string, unknown>, diff as Record<string, unknown>);
-    });
+    this._applyingRemote = true;
+    try {
+      this.setState((draft) => {
+        deepMerge(draft as Record<string, unknown>, diff as Record<string, unknown>);
+      });
+    } finally {
+      this._applyingRemote = false;
+    }
+  }
+
+  /**
+   * Apply a list of Immer patches received from a peer over the channel. Uses Immer's
+   * `applyPatches` directly so removals and other patch ops are preserved (the state-shaped
+   * diff format loses removals). Sets `_applyingRemote` to suppress re-broadcast.
+   */
+  private _applyExternalPatches(patches: readonly Patch[]): void {
+    if (patches.length === 0) return;
+    this._applyingRemote = true;
+    try {
+      const previous = this._state;
+      const next = applyPatches(previous as object, patches as Patch[]) as typeof previous;
+      if (next === previous) return;
+      this._state = next;
+      this._lastPatches = patches;
+      for (const listener of this._stateListeners) {
+        listener(next, previous, patches);
+      }
+      this._reRunSubscribedQueries();
+    } finally {
+      this._applyingRemote = false;
+    }
+  }
+
+  /**
+   * Subscribe to channel events for this service's id, and emit the initial welcome-request.
+   * Listeners are stored on `_channelBindings` so they can be detached in `dispose()`.
+   */
+  private _wireChannel(): void {
+    const channel = getServiceChannel();
+    if (!channel) return;
+
+    const onWelcomeRequest = (data: WelcomeRequestPayload) => {
+      if (data.serviceId !== this.id) return;
+      const payload: WelcomeReplyPayload = {
+        serviceId: this.id,
+        state: this._state as Record<string, unknown>,
+      };
+      channel.emit(SERVICE_WELCOME_REPLY, payload);
+    };
+    const onWelcomeReply = (data: WelcomeReplyPayload) => {
+      if (data.serviceId !== this.id) return;
+      this._applyStateDiff(data.state);
+    };
+    const onPatches = (data: PatchesPayload) => {
+      if (data.serviceId !== this.id) return;
+      this._applyExternalPatches(data.patches as readonly Patch[]);
+    };
+
+    channel.on(SERVICE_WELCOME_REQUEST, onWelcomeRequest);
+    channel.on(SERVICE_WELCOME_REPLY, onWelcomeReply);
+    channel.on(SERVICE_PATCHES, onPatches);
+
+    this._channelBindings = { channel, onWelcomeRequest, onWelcomeReply, onPatches };
+
+    // Announce that we just joined. Any peer with state for this service replies; the rest
+    // ignore the event because the serviceId doesn't match theirs.
+    const requestPayload: WelcomeRequestPayload = { serviceId: this.id };
+    channel.emit(SERVICE_WELCOME_REQUEST, requestPayload);
+  }
+
+  /**
+   * @internal Detach channel listeners. Used by tests that swap out the channel between
+   * runs; not part of the application-facing API.
+   */
+  dispose(): void {
+    if (!this._channelBindings) return;
+    const { channel, onWelcomeRequest, onWelcomeReply, onPatches } = this._channelBindings;
+    channel.off(SERVICE_WELCOME_REQUEST, onWelcomeRequest);
+    channel.off(SERVICE_WELCOME_REPLY, onWelcomeReply);
+    channel.off(SERVICE_PATCHES, onPatches);
+    this._channelBindings = null;
   }
 
   private async _maybeFireLoader(queryName: string, input: unknown): Promise<void> {

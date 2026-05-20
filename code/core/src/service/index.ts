@@ -14,6 +14,11 @@
  */
 
 export { buildServiceArtifacts } from './build-artifacts.ts';
+export {
+  clearServiceChannel,
+  setServiceChannel,
+  type ServiceChannel,
+} from './channel-transport.ts';
 export { defineCommand, defineQuery, defineService } from './define-service.ts';
 export { getService, registerService } from './register-service.ts';
 export { ServiceRuntime } from './service-runtime.ts';

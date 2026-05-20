@@ -1,7 +1,7 @@
 import { realpathSync } from 'node:fs';
 import { createRequire } from 'node:module';
 
-import { ResolverFactory as OxcResolverFactory } from 'oxc-resolver';
+import { ResolverFactory } from 'oxc-resolver';
 import { dirname, isAbsolute, resolve } from 'pathe';
 
 import { isModuleDirectory } from './extract.ts';
@@ -11,7 +11,7 @@ const require = createRequire(import.meta.url);
 /**
  * Browser-condition resolver used for `sb.mock()` external module resolution.
  */
-const externalResolver = new OxcResolverFactory({
+const externalResolver = new ResolverFactory({
   conditionNames: ['browser', 'import', 'module', 'default'],
   mainFields: ['browser', 'module', 'main'],
   aliasFields: [['browser']],

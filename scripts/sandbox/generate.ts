@@ -30,7 +30,11 @@ import { esMain } from '../utils/esmain.ts';
 import type { OptionValues } from '../utils/options.ts';
 import { createOptions } from '../utils/options.ts';
 import { getStackblitzUrl, renderTemplate } from './utils/template.ts';
-import { localizeYarnConfigFiles, setupYarn } from './utils/yarn.ts';
+import {
+  localizeYarnConfigFiles,
+  refreshBeforeStorybookLockfile,
+  setupYarn,
+} from './utils/yarn.ts';
 
 const isCI = process.env.GITHUB_ACTIONS === 'true' || process.env.CI === 'true';
 
@@ -280,6 +284,26 @@ const runGenerators = async (
           }
 
           await localizeYarnConfigFiles(createBaseDir, createBeforeDir);
+
+          // Refresh the lockfile to a Yarn 4 one with a 7-day npmMinimalAgeGate
+          // so consumers who clone the published sandbox install a reproducible,
+          // non-freshly-quarantined dependency tree. Failure here degrades gracefully:
+          // the template's original lockfile is already gone, but the consumer can
+          // still install from package.json.
+          if (!script.includes('pnp')) {
+            try {
+              await refreshBeforeStorybookLockfile({ cwd: createBeforeDir, debug });
+            } catch (error) {
+              const message = `⚠️ Failed to refresh Yarn 4 lockfile for template: ${name} (${dirName}); shipping template default state`;
+              if (isCI) {
+                ghActions.warning(dedent`${message}
+                  ${(error as any).stack}`);
+              } else {
+                console.warn(message);
+                console.warn(error);
+              }
+            }
+          }
 
           // Now move the created before dir into it's final location and add storybook
           await moveDir(createBeforeDir, beforeDir);

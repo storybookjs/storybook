@@ -167,11 +167,11 @@ export class StoryIndexGenerator {
     // eslint-disable-next-line depend/ban-dependencies
     const { globby } = await import('globby');
 
-    // Execute globby within the new CWD to ensure `ignore` patterns work correctly.
     const files = await globby(globPattern, {
       absolute: true,
       cwd: globCwd,
       ...commonGlobOptions(globPattern),
+      onlyFiles: true,
     });
 
     if (files.length === 0 && !ignoreWarnings) {

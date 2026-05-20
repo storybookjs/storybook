@@ -42,6 +42,7 @@ export const previewAnnotations: PresetProperty<'previewAnnotations'> = (entry =
 };
 
 export const optimizeViteDeps = [
+  '@storybook/nextjs-vite/link.mock',
   '@storybook/nextjs-vite/navigation.mock',
   '@storybook/nextjs-vite/router.mock',
   '@storybook/nextjs-vite > styled-jsx',

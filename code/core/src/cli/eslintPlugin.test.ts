@@ -1,24 +1,24 @@
-import { readFile, writeFile } from 'node:fs/promises';
+import { readFile, writeFile } from "node:fs/promises";
 
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import * as find from 'empathic/find';
-import { dedent } from 'ts-dedent';
+import * as find from "empathic/find";
+import { dedent } from "ts-dedent";
 
-import type { PackageJsonWithDepsAndDevDeps } from '../common/index.ts';
-import type { JsPackageManager } from '../common/js-package-manager/JsPackageManager.ts';
+import type { PackageJsonWithDepsAndDevDeps } from "../common/index.ts";
+import type { JsPackageManager } from "../common/js-package-manager/JsPackageManager.ts";
 import {
   configureEslintPlugin,
   extractEslintInfo,
   findEslintFile,
   normalizeExtends,
-} from './eslintPlugin.ts';
+} from "./eslintPlugin.ts";
 
-vi.mock('empathic/find', () => ({
+vi.mock("empathic/find", () => ({
   up: vi.fn(),
 }));
 
-vi.mock(import('node:fs/promises'), async (importOriginal) => {
+vi.mock(import("node:fs/promises"), async (importOriginal) => {
   const actual = await importOriginal();
   return {
     ...actual,
@@ -27,13 +27,16 @@ vi.mock(import('node:fs/promises'), async (importOriginal) => {
   };
 });
 
-describe('extractEslintInfo', () => {
+describe("extractEslintInfo", () => {
   const mockPackageManager = {
     getAllDependencies: vi.fn(),
     primaryPackageJson: {
-      packageJson: { dependencies: {}, devDependencies: {} } as PackageJsonWithDepsAndDevDeps,
-      packageJsonPath: '/some/path',
-      operationDir: '/some/path',
+      packageJson: {
+        dependencies: {},
+        devDependencies: {},
+      } as PackageJsonWithDepsAndDevDeps,
+      packageJsonPath: "/some/path",
+      operationDir: "/some/path",
     },
   } satisfies Partial<JsPackageManager>;
 
@@ -42,35 +45,38 @@ describe('extractEslintInfo', () => {
     mockPackageManager.getAllDependencies.mockClear();
   });
 
-  it('should find ESLint config file with supported extension', async () => {
+  it("should find ESLint config file with supported extension", async () => {
     vi.mocked(find).up.mockImplementation((fileName) => {
-      return String(fileName) === '.eslintrc.js' ? String(fileName) : undefined;
+      return String(fileName) === ".eslintrc.js" ? String(fileName) : undefined;
     });
 
     const result = findEslintFile(process.cwd());
-    expect(result).toBe('.eslintrc.js');
+    expect(result).toBe(".eslintrc.js");
   });
 
-  it('should return undefined if no ESLint config file is found', async () => {
+  it("should return undefined if no ESLint config file is found", async () => {
     vi.mocked(find).up.mockImplementation(() => undefined);
 
     const result = findEslintFile(process.cwd());
     expect(result).toBeUndefined();
   });
 
-  it('should throw error for unsupported ESLint config file extensions', async () => {
+  it("should throw error for unsupported ESLint config file extensions", async () => {
     vi.mocked(find).up.mockImplementation(() => {
-      return '.eslintrc.yaml';
+      return ".eslintrc.yaml";
     });
 
     expect(() => findEslintFile(process.cwd())).toThrowError(
-      'Unsupported ESLint config extension: .yaml'
+      "Unsupported ESLint config extension: .yaml",
     );
   });
 
-  it('should handle missing ESLint config and no dependencies correctly', async () => {
+  it("should handle missing ESLint config and no dependencies correctly", async () => {
     mockPackageManager.getAllDependencies.mockReturnValue({});
-    mockPackageManager.primaryPackageJson.packageJson = { dependencies: {}, devDependencies: {} };
+    mockPackageManager.primaryPackageJson.packageJson = {
+      dependencies: {},
+      devDependencies: {},
+    };
 
     vi.mocked(find).up.mockImplementation(() => undefined);
 
@@ -81,37 +87,42 @@ describe('extractEslintInfo', () => {
     expect(result.eslintConfigFile).toBeUndefined();
   });
 
-  it('should extract ESLint info and detect ESLint config and Storybook plugin', async () => {
+  it("should extract ESLint info and detect ESLint config and Storybook plugin", async () => {
     mockPackageManager.getAllDependencies.mockReturnValue({
-      'eslint-plugin-storybook': '1.0.0',
-      eslint: '7.0.0',
+      "eslint-plugin-storybook": "1.0.0",
+      eslint: "7.0.0",
     });
     mockPackageManager.primaryPackageJson = {
       packageJson: {
         devDependencies: {},
         dependencies: {},
-        eslintConfig: '.eslintrc.js',
+        eslintConfig: ".eslintrc.js",
       },
-      packageJsonPath: '/some/path',
-      operationDir: '/some/path',
+      packageJsonPath: "/some/path",
+      operationDir: "/some/path",
     };
 
     vi.mocked(find).up.mockImplementation((fileName) =>
-      String(fileName) === '.eslintrc.js' ? String(fileName) : undefined
+      String(fileName) === ".eslintrc.js" ? String(fileName) : undefined,
     );
 
     const result = await extractEslintInfo(mockPackageManager as any);
 
     expect(result.hasEslint).toBe(true);
     expect(result.isStorybookPluginInstalled).toBe(true);
-    expect(result.eslintConfigFile).toBe('.eslintrc.js');
+    expect(result.eslintConfigFile).toBe(".eslintrc.js");
     expect(result.isFlatConfig).toBe(false);
   });
 });
 
-describe('configureEslintPlugin', () => {
-  describe('.eslintrc.json format', () => {
-    it('should not configure ESLint plugin if it is already configured', async () => {
+describe("configureEslintPlugin", () => {
+  beforeEach(() => {
+    vi.mocked(readFile).mockReset();
+    vi.mocked(writeFile).mockReset();
+  });
+
+  describe(".eslintrc.json format", () => {
+    it("should not configure ESLint plugin if it is already configured", async () => {
       const mockPackageManager = {
         getAllDependencies: vi.fn(),
       } satisfies Partial<JsPackageManager>;
@@ -123,14 +134,14 @@ describe('configureEslintPlugin', () => {
       vi.mocked(readFile).mockResolvedValue(mockConfigFile);
 
       await configureEslintPlugin({
-        eslintConfigFile: '.eslintrc.json',
+        eslintConfigFile: ".eslintrc.json",
         packageManager: mockPackageManager as any,
         isFlatConfig: false,
       });
       expect(vi.mocked(writeFile).mock.calls).toHaveLength(0);
     });
 
-    it('should configure ESLint plugin correctly', async () => {
+    it("should configure ESLint plugin correctly", async () => {
       const mockPackageManager = {
         getAllDependencies: vi.fn(),
       } satisfies Partial<JsPackageManager>;
@@ -142,12 +153,12 @@ describe('configureEslintPlugin', () => {
       vi.mocked(readFile).mockResolvedValue(mockConfigFile);
 
       await configureEslintPlugin({
-        eslintConfigFile: '.eslintrc.json',
+        eslintConfigFile: ".eslintrc.json",
         packageManager: mockPackageManager as any,
         isFlatConfig: false,
       });
       const [filePath, content] = vi.mocked(writeFile).mock.calls[0];
-      expect(filePath).toBe('.eslintrc.json');
+      expect(filePath).toBe(".eslintrc.json");
       expect(content).toMatchInlineSnapshot(`
         "{
           "extends": [
@@ -158,7 +169,7 @@ describe('configureEslintPlugin', () => {
       `);
     });
 
-    it('should correctly parse, configure, and preserve comments in comment-json .eslintrc.json', async () => {
+    it("should correctly parse, configure, and preserve comments in comment-json .eslintrc.json", async () => {
       const mockPackageManager = {
         getAllDependencies: vi.fn(),
       } satisfies Partial<JsPackageManager>;
@@ -182,7 +193,7 @@ describe('configureEslintPlugin', () => {
       vi.mocked(readFile).mockResolvedValue(mockConfigFile);
 
       await configureEslintPlugin({
-        eslintConfigFile: '.eslintrc.json',
+        eslintConfigFile: ".eslintrc.json",
         packageManager: mockPackageManager as any,
         isFlatConfig: false,
       });
@@ -191,7 +202,7 @@ describe('configureEslintPlugin', () => {
       expect(vi.mocked(writeFile)).toHaveBeenCalledTimes(1);
       const [filePath, content] = vi.mocked(writeFile).mock.calls[0];
 
-      expect(filePath).toBe('.eslintrc.json');
+      expect(filePath).toBe(".eslintrc.json");
       expect(content).toMatchInlineSnapshot(`
         "{
           // Top-level comment
@@ -208,9 +219,9 @@ describe('configureEslintPlugin', () => {
         }"
       `);
       // Check that the output contains the new extend AND the original comments
-      expect(content).toContain('// Top-level comment');
-      expect(content).toContain('plugin:storybook/recommended');
-      expect(content).toContain('// Trailing comment');
+      expect(content).toContain("// Top-level comment");
+      expect(content).toContain("plugin:storybook/recommended");
+      expect(content).toContain("// Trailing comment");
 
       // Optionally, check the full snapshot if formatting needs to be precise
       // Note: comment-json might slightly alter whitespace/placement vs original
@@ -232,8 +243,8 @@ describe('configureEslintPlugin', () => {
     });
   });
 
-  describe('.eslintrc.js format', () => {
-    it('should not configure ESLint plugin if it is already configured', async () => {
+  describe(".eslintrc.js format", () => {
+    it("should not configure ESLint plugin if it is already configured", async () => {
       const mockPackageManager = {
         getAllDependencies: vi.fn(),
       } satisfies Partial<JsPackageManager>;
@@ -247,14 +258,14 @@ describe('configureEslintPlugin', () => {
       vi.mocked(readFile).mockResolvedValue(mockConfigFile);
 
       await configureEslintPlugin({
-        eslintConfigFile: '.eslintrc.js',
+        eslintConfigFile: ".eslintrc.js",
         packageManager: mockPackageManager as any,
         isFlatConfig: false,
       });
       expect(vi.mocked(writeFile).mock.calls).toHaveLength(0);
     });
 
-    it('should configure ESLint plugin correctly', async () => {
+    it("should configure ESLint plugin correctly", async () => {
       const mockPackageManager = {
         getAllDependencies: vi.fn(),
       } satisfies Partial<JsPackageManager>;
@@ -268,7 +279,7 @@ describe('configureEslintPlugin', () => {
       vi.mocked(readFile).mockResolvedValue(mockConfigFile);
 
       await configureEslintPlugin({
-        eslintConfigFile: '.eslintrc.js',
+        eslintConfigFile: ".eslintrc.js",
         packageManager: mockPackageManager as any,
         isFlatConfig: false,
       });
@@ -281,8 +292,8 @@ describe('configureEslintPlugin', () => {
     });
   });
 
-  describe('flat config', () => {
-    it('should configure ESLint plugin correctly with default JS flat config', async () => {
+  describe("flat config", () => {
+    it("should configure ESLint plugin correctly with default JS flat config", async () => {
       const mockPackageManager = {
         getAllDependencies: vi.fn(),
       } satisfies Partial<JsPackageManager>;
@@ -297,7 +308,7 @@ describe('configureEslintPlugin', () => {
       vi.mocked(readFile).mockResolvedValue(mockConfigFile);
 
       await configureEslintPlugin({
-        eslintConfigFile: 'eslint.config.js',
+        eslintConfigFile: "eslint.config.js",
         packageManager: mockPackageManager as any,
         isFlatConfig: true,
       });
@@ -311,7 +322,7 @@ describe('configureEslintPlugin', () => {
       `);
     });
 
-    it('should configure ESLint plugin correctly with typescript-eslint flat config', async () => {
+    it("should configure ESLint plugin correctly with typescript-eslint flat config", async () => {
       const mockPackageManager = {
         getAllDependencies: vi.fn(),
       } satisfies Partial<JsPackageManager>;
@@ -325,7 +336,7 @@ describe('configureEslintPlugin', () => {
       vi.mocked(readFile).mockResolvedValue(mockConfigFile);
 
       await configureEslintPlugin({
-        eslintConfigFile: 'eslint.config.ts',
+        eslintConfigFile: "eslint.config.ts",
         packageManager: mockPackageManager as any,
         isFlatConfig: true,
       });
@@ -340,7 +351,7 @@ describe('configureEslintPlugin', () => {
       `);
     });
 
-    it('should configure ESLint plugin correctly with reexported const declaration', async () => {
+    it("should configure ESLint plugin correctly with reexported const declaration", async () => {
       const mockPackageManager = {
         getAllDependencies: vi.fn(),
       } satisfies Partial<JsPackageManager>;
@@ -356,7 +367,7 @@ describe('configureEslintPlugin', () => {
       vi.mocked(readFile).mockResolvedValue(mockConfigFile);
 
       await configureEslintPlugin({
-        eslintConfigFile: 'eslint.config.ts',
+        eslintConfigFile: "eslint.config.ts",
         packageManager: mockPackageManager as any,
         isFlatConfig: true,
       });
@@ -372,7 +383,7 @@ describe('configureEslintPlugin', () => {
       `);
     });
 
-    it('should configure ESLint plugin correctly with TS aliased config', async () => {
+    it("should configure ESLint plugin correctly with TS aliased config", async () => {
       const mockPackageManager = {
         getAllDependencies: vi.fn(),
       } satisfies Partial<JsPackageManager>;
@@ -387,7 +398,7 @@ describe('configureEslintPlugin', () => {
       vi.mocked(readFile).mockResolvedValue(mockConfigFile);
 
       await configureEslintPlugin({
-        eslintConfigFile: 'eslint.config.js',
+        eslintConfigFile: "eslint.config.js",
         packageManager: mockPackageManager as any,
         isFlatConfig: true,
       });
@@ -403,7 +414,7 @@ describe('configureEslintPlugin', () => {
       `);
     });
 
-    it('should configure ESLint plugin correctly with TS satisfies config', async () => {
+    it("should configure ESLint plugin correctly with TS satisfies config", async () => {
       const mockPackageManager = {
         getAllDependencies: vi.fn(),
       } satisfies Partial<JsPackageManager>;
@@ -416,7 +427,7 @@ describe('configureEslintPlugin', () => {
       vi.mocked(readFile).mockResolvedValue(mockConfigFile);
 
       await configureEslintPlugin({
-        eslintConfigFile: 'eslint.config.ts',
+        eslintConfigFile: "eslint.config.ts",
         packageManager: mockPackageManager as any,
         isFlatConfig: true,
       });
@@ -430,7 +441,7 @@ describe('configureEslintPlugin', () => {
       `);
     });
 
-    it('should configure ESLint plugin correctly with Next.js defineConfig style', async () => {
+    it("should configure ESLint plugin correctly with Next.js defineConfig style", async () => {
       const mockPackageManager = {
         getAllDependencies: vi.fn(),
       } satisfies Partial<JsPackageManager>;
@@ -455,7 +466,7 @@ describe('configureEslintPlugin', () => {
       vi.mocked(readFile).mockResolvedValue(mockConfigFile);
 
       await configureEslintPlugin({
-        eslintConfigFile: 'eslint.config.mjs',
+        eslintConfigFile: "eslint.config.mjs",
         packageManager: mockPackageManager as any,
         isFlatConfig: true,
       });
@@ -479,7 +490,31 @@ describe('configureEslintPlugin', () => {
       `);
     });
 
-    it('should configure ESLint plugin correctly with direct export default defineConfig', async () => {
+    it("should apply 'as any[]' cast for TypeScript defineConfig", async () => {
+      const mockPackageManager = {
+        getAllDependencies: vi.fn(),
+      } satisfies Partial<JsPackageManager>;
+
+      const mockConfigFile = dedent`import { defineConfig } from "eslint/config";
+    export default defineConfig([
+      { rules: { "no-console": "error" } },
+    ]);`;
+
+      vi.mocked(readFile).mockResolvedValue(mockConfigFile);
+
+      await configureEslintPlugin({
+        eslintConfigFile: "eslint.config.ts",
+        packageManager: mockPackageManager as any,
+        isFlatConfig: true,
+      });
+
+      const [, content] = vi.mocked(writeFile).mock.calls[0];
+
+      expect(content).toContain('storybook.configs["flat/recommended"]');
+      expect(content).toContain("as any[]");
+    });
+
+    it("should configure ESLint plugin correctly with direct export default defineConfig", async () => {
       const mockPackageManager = {
         getAllDependencies: vi.fn(),
       } satisfies Partial<JsPackageManager>;
@@ -502,7 +537,7 @@ describe('configureEslintPlugin', () => {
       vi.mocked(readFile).mockResolvedValue(mockConfigFile);
 
       await configureEslintPlugin({
-        eslintConfigFile: 'eslint.config.mjs',
+        eslintConfigFile: "eslint.config.mjs",
         packageManager: mockPackageManager as any,
         isFlatConfig: true,
       });
@@ -524,67 +559,76 @@ describe('configureEslintPlugin', () => {
       `);
     });
 
-    it('should just add an import if config uses defineConfig from non-eslint/config source', async () => {
+    it("should not modify config if config uses defineConfig from non-eslint/config source", async () => {
       const mockPackageManager = {
         getAllDependencies: vi.fn(),
       } satisfies Partial<JsPackageManager>;
 
       const mockConfigFile = dedent`import { defineConfig } from "some-other-config-lib";
-        
-        const eslintConfig = defineConfig([
-          { rules: { "no-console": "error" } },
-        ]);
+    
+    const eslintConfig = defineConfig([
+      { rules: { "no-console": "error" } },
+    ]);
 
-        export default eslintConfig;`;
+    export default eslintConfig;`;
 
       vi.mocked(readFile).mockResolvedValue(mockConfigFile);
 
       await configureEslintPlugin({
-        eslintConfigFile: 'eslint.config.js',
+        eslintConfigFile: "eslint.config.js",
         packageManager: mockPackageManager as any,
         isFlatConfig: true,
       });
-      const [, content] = vi.mocked(writeFile).mock.calls[0];
-      expect(content).toMatchInlineSnapshot(`
-        "// For more info, see https://github.com/storybookjs/eslint-plugin-storybook#configuration-flat-config-format
-        import storybook from "eslint-plugin-storybook";
 
-        import { defineConfig } from "some-other-config-lib";
-        
-        const eslintConfig = defineConfig([
-          { rules: { "no-console": "error" } },
-        ]);
-
-        export default eslintConfig;"
-      `);
+      expect(vi.mocked(writeFile).mock.calls).toHaveLength(0);
     });
 
-    it('should just add an import if config is of custom unknown format', async () => {
+    it("should not modify config if config is of custom unknown format", async () => {
       const mockPackageManager = {
         getAllDependencies: vi.fn(),
       } satisfies Partial<JsPackageManager>;
 
       const mockConfigFile = dedent`import someCustomConfig from 'my-eslint-config';
-      export default someCustomConfig({}, [{}]);`;
+  export default someCustomConfig({}, [{}]);`;
 
       vi.mocked(readFile).mockResolvedValue(mockConfigFile);
 
       await configureEslintPlugin({
-        eslintConfigFile: 'eslint.config.js',
+        eslintConfigFile: "eslint.config.js",
         packageManager: mockPackageManager as any,
         isFlatConfig: true,
       });
-      const [, content] = vi.mocked(writeFile).mock.calls[0];
-      expect(content).toMatchInlineSnapshot(`
-        "// For more info, see https://github.com/storybookjs/eslint-plugin-storybook#configuration-flat-config-format
-        import storybook from "eslint-plugin-storybook";
 
-        import someCustomConfig from 'my-eslint-config';
-        export default someCustomConfig({}, [{}]);"
-      `);
+      expect(vi.mocked(writeFile).mock.calls).toHaveLength(0);
     });
 
-    it('should not modify config if eslint-plugin-storybook is already imported', async () => {
+    it("should not add ESM import to untouched CommonJS flat config", async () => {
+      const mockPackageManager = {
+        getAllDependencies: vi.fn(),
+      } satisfies Partial<JsPackageManager>;
+
+      const mockConfigFile = dedent`
+    module.exports = [
+      {
+        rules: {
+          "no-console": "error",
+        },
+      },
+    ];
+  `;
+
+      vi.mocked(readFile).mockResolvedValue(mockConfigFile);
+
+      await configureEslintPlugin({
+        eslintConfigFile: "eslint.config.cjs",
+        packageManager: mockPackageManager as any,
+        isFlatConfig: true,
+      });
+
+      expect(vi.mocked(writeFile).mock.calls).toHaveLength(0);
+    });
+
+    it("should not modify config if eslint-plugin-storybook is already imported", async () => {
       const mockPackageManager = {
         getAllDependencies: vi.fn(),
       } satisfies Partial<JsPackageManager>;
@@ -599,14 +643,14 @@ describe('configureEslintPlugin', () => {
       vi.mocked(readFile).mockResolvedValue(mockConfigFile);
 
       await configureEslintPlugin({
-        eslintConfigFile: 'eslint.config.js',
+        eslintConfigFile: "eslint.config.js",
         packageManager: mockPackageManager as any,
         isFlatConfig: true,
       });
       expect(vi.mocked(writeFile).mock.calls).toHaveLength(0);
     });
 
-    it('should not modify config if eslint-plugin-storybook is already dynamically imported', async () => {
+    it("should not modify config if eslint-plugin-storybook is already dynamically imported", async () => {
       const mockPackageManager = {
         getAllDependencies: vi.fn(),
       } satisfies Partial<JsPackageManager>;
@@ -624,7 +668,7 @@ describe('configureEslintPlugin', () => {
       vi.mocked(readFile).mockResolvedValue(mockConfigFile);
 
       await configureEslintPlugin({
-        eslintConfigFile: 'eslint.config.js',
+        eslintConfigFile: "eslint.config.js",
         packageManager: mockPackageManager as any,
         isFlatConfig: true,
       });
@@ -633,21 +677,23 @@ describe('configureEslintPlugin', () => {
   });
 });
 
-describe('normalizeExtends', () => {
-  it('returns empty array when existingExtends is falsy', () => {
+describe("normalizeExtends", () => {
+  it("returns empty array when existingExtends is falsy", () => {
     expect(normalizeExtends(null)).toEqual([]);
     expect(normalizeExtends(undefined)).toEqual([]);
   });
 
-  it('returns existingExtends when it is a string', () => {
-    expect(normalizeExtends('foo')).toEqual(['foo']);
+  it("returns existingExtends when it is a string", () => {
+    expect(normalizeExtends("foo")).toEqual(["foo"]);
   });
 
-  it('returns existingExtends when it is an array', () => {
-    expect(normalizeExtends(['foo'])).toEqual(['foo']);
+  it("returns existingExtends when it is an array", () => {
+    expect(normalizeExtends(["foo"])).toEqual(["foo"]);
   });
 
-  it('throws when existingExtends is not a string or array', () => {
-    expect(() => normalizeExtends(true)).toThrowError('Invalid eslint extends true');
+  it("throws when existingExtends is not a string or array", () => {
+    expect(() => normalizeExtends(true)).toThrowError(
+      "Invalid eslint extends true",
+    );
   });
 });

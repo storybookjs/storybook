@@ -208,7 +208,7 @@ export const baseTemplates = {
   'nextjs/15-ts': {
     name: 'Next.js v15 (Webpack | TypeScript)',
     script:
-      'npx create-next-app@^15.5 {{beforeDir}} --eslint --tailwind --app --import-alias="@/*" --src-dir',
+      'npx create-next-app@^15.5 {{beforeDir}} --skip-install --eslint --tailwind --app --import-alias="@/*" --src-dir',
     expected: {
       framework: '@storybook/nextjs',
       renderer: '@storybook/react',
@@ -233,7 +233,7 @@ export const baseTemplates = {
   'nextjs/default-ts': {
     name: 'Next.js Latest (Webpack | TypeScript)',
     script:
-      'npx create-next-app {{beforeDir}} --eslint --tailwind --app --import-alias="@/*" --src-dir',
+      'npx create-next-app {{beforeDir}} --skip-install --eslint --tailwind --app --import-alias="@/*" --src-dir',
     expected: {
       framework: '@storybook/nextjs',
       renderer: '@storybook/react',
@@ -259,7 +259,7 @@ export const baseTemplates = {
   'nextjs/prerelease': {
     name: 'Next.js Prerelease (Webpack | TypeScript)',
     script:
-      'npx create-next-app@canary {{beforeDir}} --eslint --tailwind --app --import-alias="@/*" --src-dir',
+      'npx create-next-app@canary {{beforeDir}} --skip-install --eslint --tailwind --app --import-alias="@/*" --src-dir',
     expected: {
       framework: '@storybook/nextjs',
       renderer: '@storybook/react',
@@ -284,7 +284,7 @@ export const baseTemplates = {
   'nextjs-vite/14-ts': {
     name: 'Next.js v14 (Vite | TypeScript)',
     script:
-      'npx create-next-app@^14 {{beforeDir}} --eslint --tailwind --app --import-alias="@/*" --src-dir',
+      'npx create-next-app@^14 {{beforeDir}} --skip-install --eslint --tailwind --app --import-alias="@/*" --src-dir',
     expected: {
       framework: '@storybook/nextjs-vite',
       renderer: '@storybook/react',
@@ -307,7 +307,7 @@ export const baseTemplates = {
   'nextjs-vite/15-ts': {
     name: 'Next.js v15 (Vite | TypeScript)',
     script:
-      'npx create-next-app@^15 {{beforeDir}} --eslint --tailwind --app --import-alias="@/*" --src-dir',
+      'npx create-next-app@^15 {{beforeDir}} --skip-install --eslint --tailwind --app --import-alias="@/*" --src-dir',
     expected: {
       framework: '@storybook/nextjs-vite',
       renderer: '@storybook/react',
@@ -330,7 +330,7 @@ export const baseTemplates = {
   'nextjs-vite/default-ts': {
     name: 'Next.js Latest (Vite | TypeScript)',
     script:
-      'npx create-next-app {{beforeDir}} --eslint --no-tailwind --app --import-alias="@/*" --src-dir',
+      'npx create-next-app {{beforeDir}} --skip-install --eslint --no-tailwind --app --import-alias="@/*" --src-dir',
     expected: {
       framework: '@storybook/nextjs-vite',
       renderer: '@storybook/react',
@@ -528,7 +528,7 @@ export const baseTemplates = {
   },
   'tanstack-react-router/default-ts': {
     name: 'TanStack React Router Latest (Vite | TypeScript)',
-    script: 'npx @tanstack/cli@latest create {{beforeDir}} --tailwind --router-only',
+    script: 'npx @tanstack/cli@latest create {{beforeDir}} --no-install --tailwind --router-only',
     expected: {
       framework: '@storybook/tanstack-react',
       renderer: '@storybook/react',
@@ -548,7 +548,7 @@ export const baseTemplates = {
   },
   'tanstack-react-start/default-ts': {
     name: 'TanStack React Start Latest (Vite | TypeScript)',
-    script: 'npx @tanstack/cli@latest create {{beforeDir}} --tailwind',
+    script: 'npx @tanstack/cli@latest create {{beforeDir}} --no-install --tailwind',
     expected: {
       framework: '@storybook/tanstack-react',
       renderer: '@storybook/react',
@@ -818,7 +818,7 @@ export const baseTemplates = {
   // },
   'ember/3-js': {
     name: 'Ember v3 (Webpack | JavaScript)',
-    script: 'npx --package ember-cli@3.28.1 ember new {{beforeDir}}',
+    script: 'npx --package ember-cli@3.28.1 ember new {{beforeDir}} --skip-install',
     inDevelopment: true,
     expected: {
       framework: '@storybook/ember',
@@ -847,7 +847,7 @@ export const baseTemplates = {
     // Users & CI won't see this limitation because they are not using
     // yarn portals.
     name: 'React Native Expo Latest (Vite | TypeScript)',
-    script: 'npx create-expo-app -y {{beforeDir}}',
+    script: 'npx create-expo-app -y --no-install {{beforeDir}}',
     expected: {
       framework: '@storybook/react-native-web-vite',
       renderer: '@storybook/react',
@@ -877,7 +877,7 @@ export const baseTemplates = {
     // yarn portals.
     name: 'React Native CLI Latest (Vite | TypeScript)',
     script:
-      'npx @react-native-community/cli@latest init --install-pods=false --directory={{beforeDir}} rnapp',
+      'npx @react-native-community/cli@latest init --skip-install --install-pods=false --directory={{beforeDir}} rnapp',
     expected: {
       framework: '@storybook/react-native-web-vite',
       renderer: '@storybook/react',

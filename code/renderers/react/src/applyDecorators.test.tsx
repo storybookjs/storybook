@@ -3,8 +3,8 @@ import { describe, expect, it, vi } from 'vitest';
 
 import type { DecoratorFunction, LegacyStoryFn, StoryContext } from 'storybook/internal/types';
 
-import { applyDecorators } from './applyDecorators';
-import type { ReactRenderer } from './types';
+import { applyDecorators } from './applyDecorators.ts';
+import type { ReactRenderer } from './types.ts';
 
 const makeContext = (overrides: Partial<StoryContext<ReactRenderer>> = {}): StoryContext<ReactRenderer> =>
   ({

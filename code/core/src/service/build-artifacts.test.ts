@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { buildServiceArtifacts } from './build-artifacts.ts';
-import { defineLoader, defineQuery, defineService } from './define-service.ts';
+import { defineQuery, defineService } from './define-service.ts';
 import { __resetServiceRegistry, registerService } from './register-service.ts';
 import {
   clearStaticTransport,
@@ -70,22 +70,22 @@ describe('buildServiceArtifacts', () => {
     const def = defineService({
       id: 'test/loader-build',
       state: { byId: {} } as S,
-      queries: { getOne: (s: S, id: string) => s.byId[id] },
+      queries: {
+        getOne: defineQuery({
+          select: (s: S, id: string) => s.byId[id],
+          preload: async (id: string, ctx: ServiceCtx<S>) => {
+            await ctx.self.commands.load(id);
+          },
+          inputs: ['a', 'b'],
+          path: (_ctx, id: string) => `entries/${id}.json`,
+        }),
+      },
       commands: {
         load: async (id: string, ctx: ServiceCtx<S>) => {
           ctx.self.setState((d) => {
             d.byId[id] = { name: `Loaded ${id}` };
           });
         },
-      },
-      load: {
-        getOne: defineLoader<S, string>(
-          async (id, ctx) => {
-            await ctx.self.commands.load(id);
-          },
-          ['a', 'b'],
-          { path: (_ctx, id) => `entries/${id}.json` }
-        ),
       },
     });
 
@@ -108,21 +108,21 @@ describe('buildServiceArtifacts', () => {
     const def = defineService({
       id: 'test/loader-default-path',
       state: { byId: {} } as S,
-      queries: { getOne: (s: S, id: string) => s.byId[id] },
+      queries: {
+        getOne: defineQuery({
+          select: (s: S, id: string) => s.byId[id],
+          preload: async (id: string, ctx: ServiceCtx<S>) => {
+            await ctx.self.commands.load(id);
+          },
+          inputs: ['x', 'y'],
+        }),
+      },
       commands: {
         load: async (id: string, ctx: ServiceCtx<S>) => {
           ctx.self.setState((d) => {
             d.byId[id] = `name-${id}`;
           });
         },
-      },
-      load: {
-        getOne: defineLoader<S, string>(
-          async (id, ctx) => {
-            await ctx.self.commands.load(id);
-          },
-          ['x', 'y']
-        ),
       },
     });
 
@@ -137,23 +137,22 @@ describe('buildServiceArtifacts', () => {
     const def = defineService({
       id: 'test/single-file',
       state: { byId: {} } as S,
-      queries: { allStatuses: (s: S) => s.byId },
+      queries: {
+        // A no-input preload: paired with a "whole" query; produces a single file.
+        allStatuses: defineQuery({
+          select: (s: S) => s.byId,
+          preload: async (ctx: ServiceCtx<S>) => {
+            await ctx.self.commands.loadAll();
+          },
+          path: () => 'statuses.json',
+        }),
+      },
       commands: {
         loadAll: async (ctx: ServiceCtx<S>) => {
           ctx.self.setState((d) => {
             d.byId = { 'story-1': 'pass', 'story-2': 'fail' };
           });
         },
-      },
-      load: {
-        // A no-input loader: paired with a "whole" query; produces a single file.
-        allStatuses: defineLoader<S, void>(
-          async (ctx) => {
-            await ctx.self.commands.loadAll();
-          },
-          undefined,
-          { path: () => 'statuses.json' }
-        ),
       },
     });
 
@@ -174,8 +173,20 @@ describe('buildServiceArtifacts', () => {
       id: 'test/shared-path',
       state: { cats: {}, dogs: {} } as S,
       queries: {
-        allCats: (s: S) => s.cats,
-        allDogs: (s: S) => s.dogs,
+        allCats: defineQuery({
+          select: (s: S) => s.cats,
+          preload: async (ctx: ServiceCtx<S>) => {
+            await ctx.self.commands.loadCats();
+          },
+          path: () => 'pets.json',
+        }),
+        allDogs: defineQuery({
+          select: (s: S) => s.dogs,
+          preload: async (ctx: ServiceCtx<S>) => {
+            await ctx.self.commands.loadDogs();
+          },
+          path: () => 'pets.json',
+        }),
       },
       commands: {
         loadCats: async (ctx: ServiceCtx<S>) => {
@@ -188,22 +199,6 @@ describe('buildServiceArtifacts', () => {
             d.dogs = { rex: true };
           });
         },
-      },
-      load: {
-        allCats: defineLoader<S, void>(
-          async (ctx) => {
-            await ctx.self.commands.loadCats();
-          },
-          undefined,
-          { path: () => 'pets.json' }
-        ),
-        allDogs: defineLoader<S, void>(
-          async (ctx) => {
-            await ctx.self.commands.loadDogs();
-          },
-          undefined,
-          { path: () => 'pets.json' }
-        ),
       },
     });
 
@@ -223,18 +218,20 @@ describe('buildServiceArtifacts', () => {
     const def = defineService({
       id: 'test/array-index-rejected',
       state: { items: [] } as S,
-      queries: { getItems: (s: S) => s.items },
+      queries: {
+        getItems: defineQuery({
+          select: (s: S) => s.items,
+          preload: async (ctx: ServiceCtx<S>) => {
+            await ctx.self.commands.push(1);
+          },
+        }),
+      },
       commands: {
         push: async (n: number, ctx: ServiceCtx<S>) => {
           ctx.self.setState((d) => {
             d.items.push(n);
           });
         },
-      },
-      load: {
-        getItems: defineLoader<S, void>(async (ctx) => {
-          await ctx.self.commands.push(1);
-        }, undefined),
       },
     });
 
@@ -311,40 +308,6 @@ describe('buildServiceArtifacts', () => {
     });
   });
 
-  it('rejects double-declaration of the same name in both queries.X.preload and load.X', async () => {
-    interface S {
-      x: number;
-    }
-    const def = defineService({
-      id: 'test/double-declaration',
-      state: { x: 0 } as S,
-      queries: {
-        getX: defineQuery({
-          select: (s: S) => s.x,
-          preload: async (ctx: ServiceCtx<S>) => {
-            ctx.self.setState((d) => {
-              d.x = 1;
-            });
-          },
-          path: () => 'getX.json',
-        }),
-      },
-      commands: {},
-      load: {
-        getX: defineLoader<S, void>(
-          async (ctx) => {
-            ctx.self.setState((d) => {
-              d.x = 2;
-            });
-          },
-          undefined
-        ),
-      },
-    });
-
-    await expect(buildServiceArtifacts(def)).rejects.toThrow(/declared both as queries\.getX\.preload and load\.getX/);
-  });
-
   it('resolves enumerateInputs when given as an async function', async () => {
     interface S {
       byId: Record<string, true>;
@@ -352,21 +315,21 @@ describe('buildServiceArtifacts', () => {
     const def = defineService({
       id: 'test/loader-enumerate-fn',
       state: { byId: {} } as S,
-      queries: { getOne: (s: S, id: string) => s.byId[id] },
+      queries: {
+        getOne: defineQuery({
+          select: (s: S, id: string) => s.byId[id],
+          preload: async (id: string, ctx: ServiceCtx<S>) => {
+            await ctx.self.commands.load(id);
+          },
+          inputs: async () => ['p', 'q', 'r'],
+        }),
+      },
       commands: {
         load: async (id: string, ctx: ServiceCtx<S>) => {
           ctx.self.setState((d) => {
             d.byId[id] = true;
           });
         },
-      },
-      load: {
-        getOne: defineLoader<S, string>(
-          async (id, ctx) => {
-            await ctx.self.commands.load(id);
-          },
-          async () => ['p', 'q', 'r']
-        ),
       },
     });
 
@@ -390,7 +353,15 @@ describe('runtime loader branching', () => {
     const def = defineService({
       id: 'test/loader-live',
       state: { byId: {} } as S,
-      queries: { getOne: (s: S, id: string) => s.byId[id] },
+      queries: {
+        getOne: defineQuery({
+          select: (s: S, id: string) => s.byId[id],
+          preload: async (id: string, ctx: ServiceCtx<S>) => {
+            await ctx.self.commands.load(id);
+          },
+          inputs: ['a'],
+        }),
+      },
       commands: {
         load: async (id: string, ctx: ServiceCtx<S>) => {
           realLoadCalls.push(id);
@@ -398,14 +369,6 @@ describe('runtime loader branching', () => {
             d.byId[id] = `live-${id}`;
           });
         },
-      },
-      load: {
-        getOne: defineLoader<S, string>(
-          async (id, ctx) => {
-            await ctx.self.commands.load(id);
-          },
-          ['a']
-        ),
       },
     });
 
@@ -427,7 +390,16 @@ describe('runtime loader branching', () => {
     const def = defineService({
       id: 'test/loader-static',
       state: { byId: {} } as S,
-      queries: { getOne: (s: S, id: string) => s.byId[id] },
+      queries: {
+        getOne: defineQuery({
+          select: (s: S, id: string) => s.byId[id],
+          preload: async (id: string, ctx: ServiceCtx<S>) => {
+            await ctx.self.commands.load(id);
+          },
+          inputs: ['a'],
+          path: (_c, id: string) => `entries/${id}.json`,
+        }),
+      },
       commands: {
         load: async (id: string, ctx: ServiceCtx<S>) => {
           realLoadCalls.push(id);
@@ -435,15 +407,6 @@ describe('runtime loader branching', () => {
             d.byId[id] = `live-${id}`;
           });
         },
-      },
-      load: {
-        getOne: defineLoader<S, string>(
-          async (id, ctx) => {
-            await ctx.self.commands.load(id);
-          },
-          ['a'],
-          { path: (_c, id) => `entries/${id}.json` }
-        ),
       },
     });
 
@@ -471,7 +434,15 @@ describe('runtime loader branching', () => {
     const def = defineService({
       id: 'test/loader-static-fallback',
       state: { byId: {} } as S,
-      queries: { getOne: (s: S, id: string) => s.byId[id] },
+      queries: {
+        getOne: defineQuery({
+          select: (s: S, id: string) => s.byId[id],
+          preload: async (id: string, ctx: ServiceCtx<S>) => {
+            await ctx.self.commands.load(id);
+          },
+          inputs: ['a'],
+        }),
+      },
       commands: {
         load: async (id: string, ctx: ServiceCtx<S>) => {
           realLoadCalls.push(id);
@@ -479,14 +450,6 @@ describe('runtime loader branching', () => {
             d.byId[id] = `live-${id}`;
           });
         },
-      },
-      load: {
-        getOne: defineLoader<S, string>(
-          async (id, ctx) => {
-            await ctx.self.commands.load(id);
-          },
-          ['a']
-        ),
       },
     });
 
@@ -509,22 +472,22 @@ describe('runtime loader branching', () => {
     const def = defineService({
       id: 'test/loader-lazy',
       state: { byId: {} } as S,
-      queries: { getOne: (s: S, id: string) => s.byId[id] },
+      queries: {
+        getOne: defineQuery({
+          select: (s: S, id: string) => s.byId[id],
+          preload: async (id: string, ctx: ServiceCtx<S>) => {
+            await ctx.self.commands.load(id);
+          },
+          inputs: ['a', 'b', 'c'],
+          path: (_c, id: string) => `entries/${id}.json`,
+        }),
+      },
       commands: {
         load: async (id: string, ctx: ServiceCtx<S>) => {
           ctx.self.setState((d) => {
             d.byId[id] = `live-${id}`;
           });
         },
-      },
-      load: {
-        getOne: defineLoader<S, string>(
-          async (id, ctx) => {
-            await ctx.self.commands.load(id);
-          },
-          ['a', 'b', 'c'],
-          { path: (_c, id) => `entries/${id}.json` }
-        ),
       },
     });
 
@@ -575,7 +538,16 @@ describe('build → load round trip', () => {
     const def = defineService({
       id: 'test/roundtrip-docgen',
       state: { byComponentId: {} } as S,
-      queries: { getComponentDocgenInfo: (s: S, id: string) => s.byComponentId[id] },
+      queries: {
+        getComponentDocgenInfo: defineQuery({
+          select: (s: S, id: string) => s.byComponentId[id],
+          preload: async (id: string, ctx: ServiceCtx<S>) => {
+            await ctx.self.commands.generate(id);
+          },
+          inputs: ['Button', 'Tabs'],
+          path: (_c, id: string) => `docgen-${id}.json`,
+        }),
+      },
       commands: {
         generate: async (id: string, ctx: ServiceCtx<S>) => {
           realLoadCalls.push(id);
@@ -583,15 +555,6 @@ describe('build → load round trip', () => {
             d.byComponentId[id] = { description: `Docgen for ${id}` };
           });
         },
-      },
-      load: {
-        getComponentDocgenInfo: defineLoader<S, string>(
-          async (id, ctx) => {
-            await ctx.self.commands.generate(id);
-          },
-          ['Button', 'Tabs'],
-          { path: (_c, id) => `docgen-${id}.json` }
-        ),
       },
     });
 
@@ -625,7 +588,13 @@ describe('build → load round trip', () => {
       id: 'test/roundtrip-single-file',
       state: { byStoryId: {} } as S,
       queries: {
-        allStatuses: (s: S) => s.byStoryId,
+        allStatuses: defineQuery({
+          select: (s: S) => s.byStoryId,
+          preload: async (ctx: ServiceCtx<S>) => {
+            await ctx.self.commands.loadAll();
+          },
+          path: () => 'statuses.json',
+        }),
         getStoryStatus: (s: S, id: string) => s.byStoryId[id],
       },
       commands: {
@@ -635,15 +604,6 @@ describe('build → load round trip', () => {
             d.byStoryId = { 'story-1': 'pass', 'story-2': 'fail' };
           });
         },
-      },
-      load: {
-        allStatuses: defineLoader<S, void>(
-          async (ctx) => {
-            await ctx.self.commands.loadAll();
-          },
-          undefined,
-          { path: () => 'statuses.json' }
-        ),
       },
     });
 

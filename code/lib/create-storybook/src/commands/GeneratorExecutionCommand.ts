@@ -7,6 +7,7 @@ import { generatorRegistry } from '../generators/GeneratorRegistry.ts';
 import { baseGenerator } from '../generators/baseGenerator.ts';
 import type { CommandOptions, GeneratorModule, GeneratorOptions } from '../generators/types.ts';
 import { AddonService } from '../services/index.ts';
+import { TelemetryService } from '../services/TelemetryService.ts';
 import type { FrameworkDetectionResult } from './FrameworkDetectionCommand.ts';
 
 type ExecuteProjectGeneratorOptions = {
@@ -32,7 +33,8 @@ export class GeneratorExecutionCommand {
   constructor(
     private readonly dependencyCollector: DependencyCollector,
     private readonly jsPackageManager: JsPackageManager,
-    private readonly addonService = new AddonService()
+    private readonly addonService = new AddonService(),
+    private readonly telemetryService = new TelemetryService()
   ) {}
 
   async execute({
@@ -43,7 +45,7 @@ export class GeneratorExecutionCommand {
     language,
   }: ExecuteProjectGeneratorOptions) {
     // Get and execute generator (supports both old and new style)
-    const generatorResult = await this.executeProjectGenerator({
+    const { postInstall, ...generatorResult } = await this.executeProjectGenerator({
       projectType,
       frameworkInfo,
       options,
@@ -60,6 +62,11 @@ export class GeneratorExecutionCommand {
         generatorResult.storybookCommand !== undefined
           ? generatorResult.storybookCommand
           : this.jsPackageManager.getRunCommand('storybook'),
+      /**
+       * Hook to run after dependencies are installed. Optional — only the generators that need to do
+       * something after `installDependencies` will set this.
+       */
+      postInstall,
     };
   }
 
@@ -91,6 +98,7 @@ export class GeneratorExecutionCommand {
       renderer: frameworkInfo.renderer,
       builder: frameworkInfo.builder,
       language,
+      telemetryService: this.telemetryService,
       linkable: !!options.linkable,
       features: selectedFeatures,
       dependencyCollector: this.dependencyCollector,
@@ -110,6 +118,12 @@ export class GeneratorExecutionCommand {
       dependencyCollector: this.dependencyCollector,
     } as GeneratorOptions;
 
+    const postInstall = generatorModule.postInstall
+      ? async () => {
+          await generatorModule.postInstall?.({ packageManager: this.jsPackageManager });
+        }
+      : undefined;
+
     if (frameworkOptions.skipGenerator) {
       if (generatorModule.postConfigure) {
         await generatorModule.postConfigure({ packageManager: this.jsPackageManager });
@@ -119,6 +133,7 @@ export class GeneratorExecutionCommand {
         shouldRunDev: frameworkOptions.shouldRunDev,
         storybookCommand: frameworkOptions.storybookCommand,
         extraAddons: [],
+        postInstall,
       };
     }
 
@@ -142,6 +157,7 @@ export class GeneratorExecutionCommand {
     return {
       ...generatorResult,
       extraAddons,
+      postInstall,
     };
   };
 }

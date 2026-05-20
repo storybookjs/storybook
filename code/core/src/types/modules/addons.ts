@@ -1,6 +1,5 @@
 import type { FC, PropsWithChildren, ReactElement, ReactNode } from 'react';
 
-import type { State } from '../../manager-api/index.ts';
 import type { RenderData as RouterData } from '../../router/types.ts';
 import type { ThemeVars } from '../../theming/types.ts';
 import type { API_LayoutCustomisations, API_SidebarOptions } from './api.ts';
@@ -447,6 +446,8 @@ export interface Addon_TestProviderType {
   id: string;
   render: () => ReactNode;
   sidebarContextMenu?: (options: { context: API_HashEntry }) => ReactNode;
+  /** Called when the user clears all statuses. The provider should clear its own status stores. */
+  clear?: () => void;
 }
 
 type Addon_TypeBaseNames = Exclude<

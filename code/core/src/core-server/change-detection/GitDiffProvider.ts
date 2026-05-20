@@ -52,6 +52,11 @@ export class GitDiffProvider {
       const { stdout } = await execa('git', ['rev-parse', '--show-toplevel'], {
         cwd: this.cwd,
         stdio: 'pipe',
+        // Prevent git from acquiring .git/index.lock for stat-cache refreshes
+        // during read-only operations. Without this, parallel scans can race
+        // an interactive `git commit` and break the user's commit with
+        // "Unable to create '.git/index.lock': File exists".
+        env: { GIT_OPTIONAL_LOCKS: '0' },
       });
 
       this.repoRoot = stdout.trim();
@@ -63,13 +68,7 @@ export class GitDiffProvider {
 
   async getChangedFiles(): Promise<GitDiffResult> {
     const repoRoot = await this.getRepoRoot();
-    const runGitCommand = async (args: string[]) => {
-      try {
-        return await execa('git', args, { cwd: repoRoot, stdio: 'pipe' });
-      } catch (error) {
-        throw this.toGitError(error, `git ${args.join(' ')}`);
-      }
-    };
+    const runGitCommand = (args: string[]) => this.runGitCommand(repoRoot, args);
 
     const [staged, unstaged, added, intentToAdd, untracked] = await Promise.all([
       runGitCommand(['diff', '--name-only', '--diff-filter=ad', '--cached']),
@@ -90,6 +89,18 @@ export class GitDiffProvider {
         ...parseChangedFiles(untracked.stdout),
       ]),
     };
+  }
+
+  async getHeadCommit(): Promise<string> {
+    const repoRoot = await this.getRepoRoot();
+    const { stdout } = await this.runGitCommand(repoRoot, ['rev-parse', 'HEAD']);
+    return stdout.trim();
+  }
+
+  async isWorkingTreeClean(): Promise<boolean> {
+    const repoRoot = await this.getRepoRoot();
+    const { stdout } = await this.runGitCommand(repoRoot, ['status', '--porcelain']);
+    return stdout.trim().length === 0;
   }
 
   onGitStateChange(callback: GitStateChangeCallback): void {
@@ -205,6 +216,10 @@ export class GitDiffProvider {
     });
   }
 
+  dispose(): void {
+    this.stopWatching();
+  }
+
   private stopWatching(): void {
     if (this.watchingStopped) {
       return;
@@ -255,6 +270,24 @@ export class GitDiffProvider {
       if (!this.isEnoentError(error)) {
         throw error;
       }
+    }
+  }
+
+  private async runGitCommand(repoRoot: string, args: string[]) {
+    try {
+      return await execa('git', args, {
+        cwd: repoRoot,
+        stdio: 'pipe',
+        // GIT_OPTIONAL_LOCKS=0 disables the stat-cache refresh that
+        // `git status` and `git diff` would otherwise write into
+        // .git/index.lock. The diff/status output stays correct; we only
+        // skip the optional cache update. This prevents change detection
+        // scans from racing an interactive `git commit` running in the
+        // user's shell.
+        env: { GIT_OPTIONAL_LOCKS: '0' },
+      });
+    } catch (error) {
+      throw this.toGitError(error, `git ${args.join(' ')}`);
     }
   }
 

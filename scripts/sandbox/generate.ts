@@ -290,18 +290,16 @@ const runGenerators = async (
           // non-freshly-quarantined dependency tree. Failure here degrades gracefully:
           // the template's original lockfile is already gone, but the consumer can
           // still install from package.json.
-          if (!script.includes('pnp')) {
-            try {
-              await refreshBeforeStorybookLockfile({ cwd: createBeforeDir, debug });
-            } catch (error) {
-              const message = `⚠️ Failed to refresh Yarn 4 lockfile for template: ${name} (${dirName}); shipping template default state`;
-              if (isCI) {
-                ghActions.warning(dedent`${message}
-                  ${(error as any).stack}`);
-              } else {
-                console.warn(message);
-                console.warn(error);
-              }
+          try {
+            await refreshBeforeStorybookLockfile({ cwd: createBeforeDir, debug });
+          } catch (error) {
+            const message = `⚠️ Failed to refresh Yarn 4 lockfile for template: ${name} (${dirName}); shipping template default state`;
+            if (isCI) {
+              ghActions.warning(dedent`${message}
+                ${(error as any).stack}`);
+            } else {
+              console.warn(message);
+              console.warn(error);
             }
           }
 

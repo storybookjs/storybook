@@ -45,6 +45,16 @@ export const addPackageResolutions = async ({ cwd, dryRun }: YarnOptions) => {
   await writeFile(packageJsonPath, JSON.stringify(packageJson, null, 2));
 };
 
+// Storybook monorepo packages plus known satellite packages. These are freshly
+// published to the local Verdaccio registry on every sandbox run, so they would
+// always be blocked by yarn's `npmMinimalAgeGate` (default 1d since yarn 4.15.0).
+// We tighten the gate to 7 days for unknown third-party packages but preapprove
+// our own so sandboxes can install them immediately.
+const SANDBOX_NPM_MINIMAL_AGE_GATE_MINUTES = 7 * 24 * 60;
+const SANDBOX_NPM_PREAPPROVED_PACKAGES = Array.from(
+  new Set([...Object.keys(storybookVersions), '@chromatic-com/storybook'])
+);
+
 export const installYarn2 = async ({ cwd, dryRun, debug }: YarnOptions) => {
   await rm(join(cwd, '.yarnrc.yml'), { force: true }).catch(() => {});
 
@@ -59,10 +69,14 @@ export const installYarn2 = async ({ cwd, dryRun, debug }: YarnOptions) => {
     ])
   );
 
+  const preapprovedJson = JSON.stringify(JSON.stringify(SANDBOX_NPM_PREAPPROVED_PACKAGES));
+
   const command = [
     `yarn set version berry`,
     `yarn config set enableGlobalCache true`, // Use the global cache so we aren't re-caching dependencies each time we run sandbox
     `yarn config set checksumBehavior ignore`,
+    `yarn config set npmMinimalAgeGate ${SANDBOX_NPM_MINIMAL_AGE_GATE_MINUTES}`,
+    `yarn config set npmPreapprovedPackages --json ${preapprovedJson}`,
   ];
 
   if (!pnpApiExists) {

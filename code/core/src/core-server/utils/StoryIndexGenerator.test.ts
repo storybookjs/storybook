@@ -1,3 +1,4 @@
+import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -1997,6 +1998,28 @@ describe('StoryIndexGenerator', () => {
     });
 
     describe('warnings', () => {
+      it('does not match directories that have story-like names', async () => {
+        const specifier: NormalizedStoriesSpecifier = normalizeStoriesEntry(
+          './src/**/*.stories.tsx',
+          options
+        );
+
+        const files = await StoryIndexGenerator.findMatchingFiles(
+          specifier,
+          options.workingDir,
+          true
+        );
+        const storyLikeDirectory = join(
+          options.workingDir,
+          './src/__screenshots__/Button.stories.tsx'
+        );
+        const storyLikeDirectoryFile = join(storyLikeDirectory, 'Primary.png');
+
+        expect(existsSync(storyLikeDirectoryFile)).toBe(true);
+        expect(Object.keys(files)).not.toContain(storyLikeDirectory);
+        expect(Object.keys(files)).not.toContain(storyLikeDirectoryFile);
+      });
+
       it('when entries do not match any files', async () => {
         const generator = new StoryIndexGenerator(
           [normalizeStoriesEntry('./src/docs2/wrong.js', options)],

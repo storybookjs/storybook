@@ -25,6 +25,9 @@ describe('ProjectDetectionCommand', () => {
     detectLanguage: ReturnType<typeof vi.fn>;
     detectIncompatiblePackageVersions: ReturnType<typeof vi.fn>;
   };
+  let mockTelemetryService: {
+    trackPromptCancel: ReturnType<typeof vi.fn>;
+  };
   let options: CommandOptions;
 
   beforeEach(() => {
@@ -40,6 +43,10 @@ describe('ProjectDetectionCommand', () => {
       detectIncompatiblePackageVersions: vi.fn().mockResolvedValue([]),
     };
 
+    mockTelemetryService = {
+      trackPromptCancel: vi.fn().mockResolvedValue(undefined),
+    };
+
     vi.mocked(ProjectTypeService).mockImplementation(function () {
       return mockProjectTypeService;
     });
@@ -49,7 +56,12 @@ describe('ProjectDetectionCommand', () => {
       features: undefined as unknown as Array<Feature>,
     };
 
-    command = new ProjectDetectionCommand(options, mockPackageManager);
+    command = new ProjectDetectionCommand(
+      options,
+      mockPackageManager,
+      mockProjectTypeService as any,
+      mockTelemetryService as any
+    );
 
     // Mock HandledError constructor
     vi.mocked(HandledError).mockImplementation(
@@ -126,8 +138,30 @@ describe('ProjectDetectionCommand', () => {
       expect(prompt.select).toHaveBeenCalledWith(
         expect.objectContaining({
           message: "We've detected a React Native project. Install:",
-        })
+        }),
+        expect.objectContaining({ onCancel: expect.any(Function) })
       );
+    });
+
+    it('should track prompt cancellation for the React Native variant prompt and exit cleanly', async () => {
+      options.type = undefined;
+      options.yes = false;
+      vi.mocked(mockProjectTypeService.autoDetectProjectType).mockResolvedValue(
+        ProjectType.REACT_NATIVE
+      );
+      vi.mocked(prompt.select).mockResolvedValue(ProjectType.REACT_NATIVE_WEB);
+
+      await command.execute();
+
+      const onCancel = vi.mocked(prompt.select).mock.calls[0]?.[1]?.onCancel;
+      const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => undefined as never);
+
+      await onCancel?.();
+
+      expect(mockTelemetryService.trackPromptCancel).toHaveBeenCalledWith('react-native-variant');
+      expect(exitSpy).toHaveBeenCalledWith(0);
+
+      exitSpy.mockRestore();
     });
 
     it('should not prompt for React Native variant when yes flag is set', async () => {
@@ -168,7 +202,8 @@ describe('ProjectDetectionCommand', () => {
       expect(prompt.confirm).toHaveBeenCalledWith(
         expect.objectContaining({
           message: expect.stringContaining('already instantiated'),
-        })
+        }),
+        expect.objectContaining({ onCancel: expect.any(Function) })
       );
       expect(options.force).toBe(true);
     });

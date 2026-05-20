@@ -118,8 +118,8 @@ function summarizeResults(results: StoryTestResult[]): ResultSummary {
  *
  * @param results Story results from the current run.
  * @param cumulativeResults Optional aggregated results across runs (latest outcome per story).
- *   Only the agent self-healing flow tracks history and passes this; when omitted the returned
- *   analysis only contains `run*` fields and no `cumulative*` fields are emitted.
+ *   Only the agent self-healing flow tracks history and passes this; when omitted no
+ *   `cumulative*` fields are emitted.
  */
 export function analyzeTestResults(
   results: StoryTestResult[],
@@ -128,14 +128,14 @@ export function analyzeTestResults(
   const run = summarizeResults(results);
 
   const analysis: TestRunAnalysis = {
-    runTotal: run.total,
-    runPassed: run.passed,
-    runPassedButEmptyRender: run.passedButEmptyRender,
-    runSuccessRate: run.successRate,
-    runSuccessRateWithoutEmptyRender: run.successRateWithoutEmptyRender,
-    runUniqueErrorCount: run.uniqueErrorCount,
-    runCategorizedErrors: run.categorizedErrors,
-    runCssCheck: run.cssCheck,
+    total: run.total,
+    passed: run.passed,
+    passedButEmptyRender: run.passedButEmptyRender,
+    successRate: run.successRate,
+    successRateWithoutEmptyRender: run.successRateWithoutEmptyRender,
+    uniqueErrorCount: run.uniqueErrorCount,
+    categorizedErrors: run.categorizedErrors,
+    cssCheck: run.cssCheck,
   };
 
   if (cumulativeResults) {

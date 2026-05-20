@@ -1,6 +1,6 @@
 {
   "name": "@storybook/addon-vitest",
-  "version": "10.4.0-alpha.17",
+  "version": "10.5.0-alpha.0",
   "description": "Storybook Vitest addon: Blazing fast component testing using stories",
   "keywords": [
     "storybook",
@@ -81,6 +81,7 @@
   },
   "devDependencies": {
     "@storybook/addon-a11y": "workspace:*",
+    "@storybook/builder-vite": "workspace:*",
     "@types/istanbul-lib-report": "^3.0.3",
     "@types/micromatch": "^4.0.0",
     "@types/node": "^22.19.1",

@@ -20,28 +20,38 @@
  */
 
 import { toMerged } from 'es-toolkit';
-import {
-  computed,
-  effect,
-  endBatch,
-  setActiveSub,
-  signal,
-  startBatch,
-} from 'alien-signals';
+import { computed, effect, endBatch, setActiveSub, signal, startBatch } from 'alien-signals';
 
 // ------------------------------------------------------------------ types --
 
-type CommandCtx<TState> = {
+type CommandExecutors = Record<string, (input: any) => Promise<void>>;
+
+export type AsyncQueryAccessor<TInput, TOutput> = {
+  (input: TInput): Promise<TOutput>;
+  subscribe(input: TInput, callback: (value: TOutput) => void): () => void;
+};
+
+type ReadonlySelf<TState = any> = {
   readonly state: TState;
+  queries: Record<string, AsyncQueryAccessor<any, any>>;
+  commands: CommandExecutors;
+};
+
+type WritableSelf<TState = any> = ReadonlySelf<TState> & {
   setState(updater: (prev: TState) => TState): void;
 };
 
-/** Map of command name -> executor, passed to prefetch so queries can trigger loads. */
-type CommandExecutors = Record<string, (input: any) => Promise<void>>;
+export type QueryCtx<TState> = {
+  self: ReadonlySelf<TState>;
+};
+
+export type CommandCtx<TState> = {
+  self: WritableSelf<TState>;
+};
 
 export type QueryDef<TState, TInput, TOutput> = {
-  /** Pure function: derives output from (input, state). No side effects. */
-  handler: (input: TInput, state: TState) => TOutput;
+  /** Derives output from (input, ctx) where ctx.self.state is the current state snapshot. */
+  handler: (input: TInput, ctx: QueryCtx<TState>) => TOutput;
   /**
    * Optional. Called once when subscribe() is set up AND on direct calls.
    *
@@ -50,24 +60,35 @@ export type QueryDef<TState, TInput, TOutput> = {
    *   Direct calls resolve immediately with whatever is in state right now.
    *
    * - **Awaitable** (`Promise<void>` return): direct calls wait for the
-   *   prefetch to finish before returning the loaded value. `subscribe()` still
+   *   preload to finish before returning the loaded value. `subscribe()` still
    *   works reactively regardless of which form you use.
    *
    * @example fire-and-forget (subscribe only)
-   * prefetch: (input, state, commands) => {
-   *   if (!state[input.storyId]) commands.loadStatus(input);
+   * preload: (input, ctx) => {
+  *   if (!ctx.self.state[input.storyId]) ctx.self.commands.loadStatus(input);
    * }
    *
    * @example awaitable (direct call waits for the load)
-   * prefetch: (input, state, commands) => {
-   *   if (!state[input.storyId]) return commands.loadStatus(input);
+   * preload: (input, ctx) => {
+  *   if (!ctx.self.state[input.storyId]) return ctx.self.commands.loadStatus(input);
    * }
    */
-  prefetch?: (
-    input: TInput,
-    state: TState,
-    commands: CommandExecutors
-  ) => void | Promise<void>;
+  preload?: (input: TInput, ctx: QueryCtx<TState>) => void | Promise<void>;
+  /**
+   * Optional. Enables static-mode support for this query.
+   *
+   * At build time, `inputs()` enumerates the query inputs to precompute. For
+   * each input, `preload` is run against a fresh copy of `initialState` and the
+   * resulting state is written to `path(input)`.
+   *
+   * At runtime in static mode, the query accessor loads the captured state
+   * slice from the static store and deep-merges it into the service signal
+   * before running the query handler.
+   */
+  static?: {
+    path?: (input: TInput, ctx: QueryCtx<TState>) => string;
+    inputs: (ctx: QueryCtx<TState>) => TInput[] | Promise<TInput[]>;
+  };
 };
 
 export type CommandDef<TState, TInput> = {
@@ -76,33 +97,6 @@ export type CommandDef<TState, TInput> = {
    * can uniformly `await service.commands.anything()` regardless.
    */
   handler: (input: TInput, ctx: CommandCtx<TState>) => void | Promise<void>;
-  /**
-   * Optional. Enables static-mode support for this command.
-   *
-   * At **build time**: `inputs()` enumerates every input that needs a
-   * pre-computed file. For each input, the command `handler` is run against a
-   * fresh copy of `initialState` in a capture context. The resulting state is
-   * written to `path(input)`.
-   *
-   * At **runtime** (static mode): instead of running the live handler, the
-   * executor fetches the file at `path(input)` from the static store and deep-
-   * merges it into the state signal via `toMerged`. The query handler still
-   * executes against the merged signal — identical to live mode.
-   *
-   * Commands without this field are unavailable in static mode and reject.
-   */
-  static?: {
-    /**
-     * Derive the store key / file path for a given input.
-     * When omitted, defaults to `{serviceId}/{commandName}/{hash}.json` where
-     * `hash` is an 8-char FNV-1a hex digest of the stable-stringified input.
-     * The default is always filesystem-safe; override only when you need a
-     * specific location (e.g. a human-readable URL for SSG output).
-     */
-    path?: (input: TInput) => string;
-    /** Enumerate all inputs that need a pre-generated file. Called at build time only. */
-    inputs: () => TInput[] | Promise<TInput[]>;
-  };
 };
 
 type Queries<TState> = Record<string, QueryDef<TState, any, any>>;
@@ -119,39 +113,14 @@ export type ServiceDef<
   commands: TCommands;
 };
 
-// --------------------------------------------------------- runtime types --
-
-/** Accessor for a query without prefetch. Direct call is synchronous. */
-export type SyncQueryAccessor<TInput, TOutput> = {
-  (input: TInput): TOutput;
-  subscribe(input: TInput, callback: (value: TOutput) => void): () => void;
-};
-
-/**
- * Accessor for a query that has a prefetch. Direct call is async:
- * - If prefetch returns a Promise, the call waits for it before returning.
- * - If prefetch returns void, the call resolves immediately with current state.
- * `subscribe()` is always reactive regardless.
- */
-export type AsyncQueryAccessor<TInput, TOutput> = {
-  (input: TInput): Promise<TOutput>;
-  subscribe(input: TInput, callback: (value: TOutput) => void): () => void;
-};
-
 export type ServiceInstance<
   TState,
   TQueries extends Queries<TState>,
   TCommands extends Commands<TState>,
 > = {
   queries: {
-    [TKey in keyof TQueries]: TQueries[TKey] extends QueryDef<
-      TState,
-      infer TInput,
-      infer TOutput
-    >
-      ? TQueries[TKey] extends { prefetch: (...args: any[]) => any }
-        ? AsyncQueryAccessor<TInput, TOutput>
-        : SyncQueryAccessor<TInput, TOutput>
+    [TKey in keyof TQueries]: TQueries[TKey] extends QueryDef<TState, infer TInput, infer TOutput>
+      ? AsyncQueryAccessor<TInput, TOutput>
       : never;
   };
   commands: {
@@ -163,19 +132,12 @@ export type ServiceInstance<
 
 // --------------------------------------------------------------- factory --
 
-// Note: defineQuery uses `<TDef extends QueryDef<...>>(def: TDef): TDef` rather
-// than returning the base `QueryDef` type. This preserves whether `prefetch` is
-// present in the inferred type, which is what the conditional in
-// ServiceInstance uses to decide between SyncQueryAccessor and AsyncQueryAccessor.
-export const defineQuery = <
-  TState,
-  TInput,
-  TOutput,
-  TDef extends QueryDef<TState, TInput, TOutput>,
->(
-  def: TDef
-): TDef => def;
-export const defineCommand = <TState, TInput>(def: CommandDef<TState, TInput>) => def;
+export const defineQuery = <TState, TInput, TOutput>(
+  def: QueryDef<TState, TInput, TOutput>
+): QueryDef<TState, TInput, TOutput> => def;
+export const defineCommand = <TState, TInput>(
+  def: CommandDef<TState, TInput>
+): CommandDef<TState, TInput> => def;
 export const defineService = <
   TState,
   TQueries extends Queries<TState>,
@@ -217,29 +179,45 @@ function hashInput(value: unknown): string {
 }
 
 /**
- * Returns the store key for a given (service, command, input) triple.
- * When `commandDef.static.path` is provided it is used as-is; otherwise a
- * deterministic default of `{serviceId}/{commandName}/{hash}.json` is
+ * Returns the store key for a given (service, query, input) triple.
+ * When `queryDef.static.path` is provided it is used as-is; otherwise a
+ * deterministic default of `{serviceId}/{queryName}/{hash}.json` is
  * generated — where `hash` is an 8-char FNV-1a hex digest of the
  * stable-stringified input — so authors rarely need to specify a path.
  */
 function resolveStaticPath(
   serviceId: string,
-  commandName: string,
-  commandDef: CommandDef<any, any>,
-  input: unknown
+  queryName: string,
+  queryDef: QueryDef<any, any, any>,
+  input: unknown,
+  ctx: QueryCtx<any>
 ): string {
-  return commandDef.static?.path
-    ? commandDef.static.path(input as any)
-    : `${serviceId}/${commandName}/${hashInput(input)}.json`;
+  return queryDef.static?.path
+    ? queryDef.static.path(input as any, ctx)
+    : `${serviceId}/${queryName}/${hashInput(input)}.json`;
 }
 
 /** Internal registry entry — includes the raw signal for serialization. */
 type InternalService = {
-  queries: Record<string, SyncQueryAccessor<any, any> | AsyncQueryAccessor<any, any>>;
+  queries: Record<string, AsyncQueryAccessor<any, any>>;
   commands: CommandExecutors;
-  _stateSignal: ReturnType<typeof signal>;
+  _stateSignal: ReturnType<typeof signal<any>>;
 };
+
+function createSelfRef<TState>(stateSignal: ReturnType<typeof signal<TState>>): WritableSelf<TState> {
+  return {
+    get state() {
+      return stateSignal();
+    },
+    setState(updater) {
+      startBatch();
+      stateSignal(updater(stateSignal()));
+      endBatch();
+    },
+    queries: {},
+    commands: {},
+  };
+}
 
 function buildCommandExecutors<TState>(
   commands: Commands<TState>,
@@ -259,72 +237,75 @@ function buildCommandExecutors<TState>(
 function buildQueryAccessor<TState>(
   queryDef: QueryDef<TState, any, any>,
   stateSignal: ReturnType<typeof signal<TState>>,
-  commands: CommandExecutors
-): SyncQueryAccessor<any, any> | AsyncQueryAccessor<any, any> {
-  // subscribe is identical for sync and async queries.
-  // Prefetch is always fire-and-forget here: the reactive effect handles updates.
+  selfRef: WritableSelf<TState>,
+  loadStaticState?: (input: any) => Promise<void>
+): AsyncQueryAccessor<any, any> {
+  const createQueryCtx = (_state: TState): QueryCtx<TState> => ({ self: selfRef });
+
+  // Subscriptions always fire immediately, then update reactively.
+  // Any preload/static load is kicked off in the background.
   const subscribeMethod = (input: any, cb: (value: any) => void): (() => void) => {
     const prevSub = setActiveSub(undefined);
     const stateAtSubscribe = stateSignal();
     setActiveSub(prevSub);
-    queryDef.prefetch?.(input, stateAtSubscribe, commands);
+    if (loadStaticState) {
+      void loadStaticState(input);
+    } else {
+      void queryDef.preload?.(input, createQueryCtx(stateAtSubscribe));
+    }
     // computed() memoizes by reference equality.
     // When storyA changes, the computed for storyB re-evaluates but returns
     // the same value for storyB → its effect does NOT fire.
-    const comp = computed(() => queryDef.handler(input, stateSignal()));
+    const comp = computed(() => queryDef.handler(input, createQueryCtx(stateSignal())));
     // effect() fires immediately (seeding the initial value) then on each change.
     // Wrapped in a void body so effect never sees a return value as a cleanup fn.
-    return effect(() => { cb(comp()); });
+    return effect(() => {
+      cb(comp());
+    });
   };
 
-  if (queryDef.prefetch) {
-    // Async accessor: call prefetch, and if it returns a Promise, await it
-    // before reading state. This lets callers do `await query(input)` and
-    // get back the fully-loaded value rather than the initial empty state.
-    const asyncAccessor = async (input: any): Promise<any> => {
-      const prevSub = setActiveSub(undefined);
-      const currentState = stateSignal();
-      setActiveSub(prevSub);
-      const pending = queryDef.prefetch!(input, currentState, commands);
-      if (pending instanceof Promise) await pending;
-      return queryDef.handler(input, stateSignal());
-    };
-    asyncAccessor.subscribe = subscribeMethod;
-    return asyncAccessor;
-  }
+  const asyncAccessor = ((input: any): any => {
+    const prevSub = setActiveSub(undefined);
+    const currentState = stateSignal();
+    setActiveSub(prevSub);
 
-  // Sync accessor (no prefetch): direct call reads state synchronously.
-  const syncAccessor = (input: any): any => queryDef.handler(input, stateSignal());
-  syncAccessor.subscribe = subscribeMethod;
-  return syncAccessor;
+    if (loadStaticState) {
+      return loadStaticState(input).then(() =>
+        queryDef.handler(input, createQueryCtx(stateSignal()))
+      );
+    }
+
+    const pending = queryDef.preload?.(input, createQueryCtx(currentState));
+    if (pending instanceof Promise) {
+      return pending.then(() => queryDef.handler(input, createQueryCtx(stateSignal())));
+    }
+
+    return queryDef.handler(input, createQueryCtx(stateSignal()));
+  }) as AsyncQueryAccessor<any, any>;
+
+  asyncAccessor.subscribe = subscribeMethod;
+  return asyncAccessor;
 }
 
 function createLiveService<TState>(
   def: ServiceDef<TState, Queries<TState>, Commands<TState>>
 ): InternalService {
   const stateSignal = signal<TState>(def.initialState);
-
+  const selfRef = createSelfRef(stateSignal);
   const ctx: CommandCtx<TState> = {
-    get state() {
-      return stateSignal();
-    },
-    setState(updater) {
-      // startBatch/endBatch collapses writes into one notification flush,
-      // so commands that touch several keys won't trigger intermediate renders.
-      startBatch();
-      stateSignal(updater(stateSignal()));
-      endBatch();
-    },
+    self: selfRef,
   };
 
   const commands = buildCommandExecutors(def.commands, ctx);
+  selfRef.commands = commands;
 
   const queries = Object.fromEntries(
     Object.entries(def.queries).map(([name, queryDef]) => [
       name,
-      buildQueryAccessor(queryDef, stateSignal, commands),
+      buildQueryAccessor(queryDef, stateSignal, selfRef),
     ])
   );
+  selfRef.queries = queries;
 
   return { queries, commands, _stateSignal: stateSignal };
 }
@@ -336,54 +317,51 @@ function createStaticService<TState>(
   const stateSignal = signal<TState>(def.initialState);
   // Deduplicate concurrent loads by store key so the same path is only merged once.
   const loadsByPath = new Map<string, Promise<void>>();
+  const selfRef = createSelfRef(stateSignal);
 
-  const ctx: CommandCtx<TState> = {
-    get state() {
-      return stateSignal();
-    },
-    setState(updater) {
-      startBatch();
-      stateSignal(updater(stateSignal()));
-      endBatch();
-    },
-  };
-
-  // Commands with static config load from the store and deep-merge into state.
-  // Commands without static config are unavailable in static mode.
+  // Commands are unavailable in static mode. Queries load their pre-built state
+  // slices directly from the store instead.
   const commands: CommandExecutors = Object.fromEntries(
-    Object.entries(def.commands).map(([name, commandDef]) => [
+    Object.keys(def.commands).map((name) => [
       name,
-      commandDef.static
-        ? async (input: any): Promise<void> => {
-            const path = resolveStaticPath(def.id, name, commandDef, input);
-            if (!loadsByPath.has(path)) {
-              loadsByPath.set(
-                path,
-                Promise.resolve(store[path]).then((slice) => {
-                  if (slice == null) return; // key missing from store — leave state unchanged
-                  // Deep-merge the loaded slice into current state so concurrent
-                  // loads for different inputs accumulate rather than overwrite.
-                  stateSignal(
-                    toMerged(stateSignal() as object, slice as object) as TState
-                  );
-                })
-              );
-            }
-            return loadsByPath.get(path)!;
-          }
-        : () => Promise.reject(new Error(`Command "${name}" is unavailable in static mode`)),
+      () => Promise.reject(new Error(`Command "${name}" is unavailable in static mode`)),
     ])
   );
+  selfRef.commands = commands;
 
-  // Reuse buildQueryAccessor unchanged — prefetch calls commands, which in
-  // static mode fetch from the store instead of running the live handler.
-  // The query handler still executes against the same signal in both modes.
+  // In static mode, queries with static config load from the store. Queries
+  // without static config still run, but any preload that calls commands will
+  // reject because commands are unavailable.
   const queries = Object.fromEntries(
-    Object.entries(def.queries).map(([name, queryDef]) => [
-      name,
-      buildQueryAccessor(queryDef, stateSignal, commands),
-    ])
+    (Object.entries(def.queries) as [string, QueryDef<TState, any, any>][]).map(
+      ([name, queryDef]) => [
+        name,
+        buildQueryAccessor(
+          queryDef,
+          stateSignal,
+          selfRef,
+          queryDef.static
+            ? async (input: any) => {
+                const path = resolveStaticPath(def.id, name, queryDef, input, {
+                  self: selfRef,
+                });
+                if (!loadsByPath.has(path)) {
+                  loadsByPath.set(
+                    path,
+                    Promise.resolve(store[path]).then((slice) => {
+                      if (slice == null) return;
+                      stateSignal(toMerged(stateSignal() as object, slice as object) as TState);
+                    })
+                  );
+                }
+                return loadsByPath.get(path)!;
+              }
+            : undefined
+        ),
+      ]
+    )
   );
+  selfRef.queries = queries;
 
   return { queries, commands, _stateSignal: stateSignal };
 }
@@ -405,7 +383,7 @@ export function getService<
         : createLiveService(def);
     registry.set(def.id, service);
   }
-  return registry.get(def.id)! as ServiceInstance<TState, TQueries, TCommands>;
+  return registry.get(def.id)! as unknown as ServiceInstance<TState, TQueries, TCommands>;
 }
 
 // --------------------------------------------------------- static support --
@@ -414,10 +392,9 @@ export function getService<
  * Switch to static mode. Call this once at app boot — before any `getService()`
  * call — when running a statically-built Storybook.
  *
- * In static mode, commands that define `static.path` load their data from
- * `store` and deep-merge it into the service state via `toMerged`. The query
- * handler then runs against the merged signal, identical to live mode.
- * Commands without `static` config reject immediately.
+ * In static mode, queries that define `static.path` load their data from
+ * `store` and deep-merge it into the service state via `toMerged`. Commands
+ * are unavailable and reject immediately.
  *
  * @param options.store  The in-memory key→value store produced by
  *                       `buildStaticFiles()`. Defaults to `{}`.
@@ -427,9 +404,9 @@ export function configureStaticMode(options?: { store?: Record<string, unknown> 
 }
 
 /**
- * Build-time helper. For each service command that defines `static.path` +
- * `static.inputs`, runs the command handler for every input (starting from a
- * clean copy of `initialState`) and captures the resulting state.
+ * Build-time helper. For each service query that defines `static.path` +
+ * `static.inputs`, runs that query's preload phase for every input (starting
+ * from a clean copy of `initialState`) and captures the resulting state.
  *
  * Returns a **store** — a plain `Record<string, unknown>` mapping
  * `path(input) → capturedState` — that can be passed directly to
@@ -446,26 +423,49 @@ export async function buildStaticFiles(
   const store: Record<string, unknown> = {};
 
   for (const def of services) {
-    for (const [commandName, commandDef] of Object.entries(def.commands)) {
-      if (!commandDef.static) continue;
+    for (const [queryName, queryDef] of Object.entries(def.queries) as [
+      string,
+      QueryDef<any, any, any>,
+    ][]) {
+      if (!queryDef.static) continue;
 
-      const inputs = await commandDef.static.inputs();
+      const createBuildRuntime = () => {
+        const stateSignal = signal(structuredClone(def.initialState));
+        const buildSelfRef = createSelfRef(stateSignal);
+        const buildCtx: CommandCtx<any> = { self: buildSelfRef };
+
+        buildSelfRef.commands = Object.fromEntries(
+          (Object.entries(def.commands) as [string, CommandDef<any, any>][]).map(
+            ([cmdName, cmdDef]) => [
+              cmdName,
+              async (cmdInput: any) => cmdDef.handler(cmdInput, buildCtx),
+            ]
+          )
+        );
+        buildSelfRef.queries = Object.fromEntries(
+          (Object.entries(def.queries) as [string, QueryDef<any, any, any>][]).map(
+            ([qName, qDef]) => [qName, buildQueryAccessor(qDef, stateSignal, buildSelfRef)]
+          )
+        );
+
+        return { stateSignal, buildSelfRef, queryCtx: { self: buildSelfRef } as QueryCtx<any> };
+      };
+
+      const inputsRuntime = createBuildRuntime();
+      const inputs = await queryDef.static.inputs(inputsRuntime.queryCtx);
 
       for (const input of inputs) {
-        // Run the command from a clean copy of initialState in a capture context
-        // so each file contains only the data this command produces for this input.
-        const snapshot = { current: structuredClone(def.initialState) };
-        const buildCtx: CommandCtx<any> = {
-          get state() {
-            return snapshot.current;
-          },
-          setState(updater: (s: any) => any) {
-            snapshot.current = updater(snapshot.current);
-          },
-        };
-        await commandDef.handler(input, buildCtx);
+        // Run preload from a clean copy of initialState in a capture context so
+        // each file contains only the data this query input produces.
+        const buildRuntime = createBuildRuntime();
 
-        store[resolveStaticPath(def.id, commandName, commandDef, input)] = snapshot.current;
+        if (queryDef.preload) {
+          await queryDef.preload(input, buildRuntime.queryCtx);
+        }
+
+        store[
+          resolveStaticPath(def.id, queryName, queryDef, input, buildRuntime.queryCtx)
+        ] = buildRuntime.stateSignal();
       }
     }
   }

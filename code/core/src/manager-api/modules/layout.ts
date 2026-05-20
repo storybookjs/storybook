@@ -146,6 +146,7 @@ export const getDefaultLayoutState: () => SubState = () => {
       showTabs: true,
     },
     layoutCustomisations: {
+      showPanel: undefined,
       showSidebar: undefined,
       showToolbar: undefined,
     },
@@ -212,10 +213,11 @@ const applyLayoutOptions = (
   // Safety net: drop any unknown keys that aren't part of API_Layout.
   const nextLayoutState = toMerged(layoutState, pick(layoutOptions, layoutKeys)) as API_Layout;
 
-  if (showSidebar === false) {
+  // singleStory always hides the sidebar; otherwise honor showSidebar.
+  if (showSidebar === false || singleStory) {
     nextLayoutState.recentVisibleSizes = getRecentVisibleSizes(nextLayoutState);
     nextLayoutState.navSize = 0;
-  } else if (showSidebar === true && !singleStory) {
+  } else if (showSidebar === true) {
     nextLayoutState.navSize = nextLayoutState.recentVisibleSizes.navSize;
   }
 
@@ -226,11 +228,6 @@ const applyLayoutOptions = (
   } else if (showPanel === true) {
     nextLayoutState.bottomPanelHeight = nextLayoutState.recentVisibleSizes.bottomPanelHeight;
     nextLayoutState.rightPanelWidth = nextLayoutState.recentVisibleSizes.rightPanelWidth;
-  }
-
-  // singleStory always hides the sidebar regardless of the showSidebar option.
-  if (singleStory) {
-    nextLayoutState.navSize = 0;
   }
 
   return nextLayoutState;

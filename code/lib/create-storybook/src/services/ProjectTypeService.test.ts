@@ -203,7 +203,7 @@ describe('ProjectTypeService', () => {
     it('detects REACT_NATIVE via peerDependencies react-native-scripts', async () => {
       (pm as any).primaryPackageJson.packageJson = {
         peerDependencies: { react: '^18.0.0', 'react-native-scripts': '^5.0.0' },
-        };
+      };
       const service = new ProjectTypeService(pm);
       // @ts-expect-error private method spy
       vi.spyOn(service, 'isNxProject').mockReturnValue(false);

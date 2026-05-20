@@ -1,7 +1,6 @@
-import assert from 'node:assert/strict';
-import { describe, it } from 'node:test';
+import { describe, expect, it } from 'vitest';
 
-import { removeTomlSection } from './toml.ts';
+import { removeTomlSection } from './scripts/toml.ts';
 
 describe('removeTomlSection', () => {
 	it('removes a plugin section and keeps surrounding config', () => {
@@ -15,8 +14,7 @@ enabled = true
 trust_level = "trusted"
 `;
 
-		assert.equal(
-			removeTomlSection(input, '[plugins."storybook@storybook"]'),
+		expect(removeTomlSection(input, '[plugins."storybook@storybook"]')).toBe(
 			`[marketplaces.foo]
 source = "a"
 
@@ -31,14 +29,13 @@ trust_level = "trusted"
 enabled = true
 `;
 
-		assert.equal(removeTomlSection(input, '[plugins."storybook@storybook"]'), input);
+		expect(removeTomlSection(input, '[plugins."storybook@storybook"]')).toBe(input);
 	});
 
 	it('normalizes CRLF line endings in the remaining config', () => {
 		const input = `[plugins."storybook@storybook"]\r\nenabled = true\r\n\r\n[projects."/"]\r\nx = 1\r\n`;
 
-		assert.equal(
-			removeTomlSection(input, '[plugins."storybook@storybook"]'),
+		expect(removeTomlSection(input, '[plugins."storybook@storybook"]')).toBe(
 			`[projects."/"]\nx = 1\n`,
 		);
 	});

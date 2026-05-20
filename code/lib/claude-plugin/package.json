@@ -25,9 +25,6 @@
 		"README.md"
 	],
 	"type": "module",
-	"devDependencies": {
-		"tinyexec": "^1.0.2"
-	},
 	"scripts": {
 		"validate": "claude plugin validate . && claude plugin validate .claude-plugin/plugin.json",
 		"marketplace:add": "claude plugin marketplace add ./ --scope user",
@@ -38,5 +35,8 @@
 		"plugin:remove": "claude plugin uninstall storybook@storybook --scope user",
 		"remove": "node ./scripts/remove-plugin.ts",
 		"plugin:list": "claude plugin list --json"
+	},
+	"devDependencies": {
+		"tinyexec": "^1.0.2"
 	}
 }

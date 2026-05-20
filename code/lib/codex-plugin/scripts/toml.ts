@@ -18,5 +18,8 @@ export function removeTomlSection(content: string, sectionHeader: string) {
 		}
 	}
 
-	return `${kept.join('\n').replace(/\n{3,}/g, '\n\n').trimEnd()}\n`;
+	return `${kept
+		.join('\n')
+		.replace(/\n{3,}/g, '\n\n')
+		.trimEnd()}\n`;
 }

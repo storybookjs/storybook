@@ -23,14 +23,14 @@
 		"README.md"
 	],
 	"type": "module",
-	"devDependencies": {
-		"tinyexec": "^1.0.2"
-	},
 	"scripts": {
 		"validate:marketplace": "node ./scripts/validate-marketplace.ts",
-		"test:remove": "node --test ./scripts/remove-plugin.test.ts",
+		"test": "cd ../.. && pnpm vitest --project=@storybook/codex-plugin",
 		"marketplace:add": "codex plugin marketplace add ./",
 		"marketplace:remove": "codex plugin marketplace remove storybook",
 		"remove": "node ./scripts/remove-plugin.ts"
+	},
+	"devDependencies": {
+		"tinyexec": "^1.0.2"
 	}
 }

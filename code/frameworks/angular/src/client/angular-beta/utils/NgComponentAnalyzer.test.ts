@@ -47,11 +47,7 @@ describe('getComponentInputsOutputs', () => {
     });
   });
 
-  // TODO(angular-22): these assert against `resolveComponentFactory(...)`, removed in
-  // Angular 22. Equivalent factory-free coverage (incl. `model()`) lives in the
-  // `getComponentInputsOutputs (signal-based I/O)` block below. See
-  // https://github.com/storybookjs/storybook/issues/34831
-  /* Commented out until we figure out how to handle the removal of ComponentFactoryResolver in Angular 22
+/* Commented out until we figure out how to handle the removal of ComponentFactoryResolver in Angular 22
   See https://github.com/angular/angular/releases/tag/v22.0.0-next.7
 
   it('should return I/O', () => {

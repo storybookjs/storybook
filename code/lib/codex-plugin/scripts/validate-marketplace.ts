@@ -1,22 +1,29 @@
 import { existsSync } from 'node:fs';
-import { readFile } from 'node:fs/promises';
-import { mkdtemp, rm } from 'node:fs/promises';
-import { execFileSync } from 'node:child_process';
+import { mkdtemp, readFile, rm } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { tmpdir } from 'node:os';
+import { x } from 'tinyexec';
 
-const scriptRoot = dirname(fileURLToPath(import.meta.url));
-const marketplaceRoot = resolve(scriptRoot, '..');
+const marketplaceRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const marketplacePath = resolve(marketplaceRoot, '.agents/plugins/marketplace.json');
 
-function assert(condition, message) {
+type MarketplaceJson = {
+	name: string;
+	interface?: { displayName?: string };
+	plugins?: Array<{
+		name?: string;
+		source?: { path?: string };
+	}>;
+};
+
+function assert(condition: unknown, message: string): asserts condition {
 	if (!condition) {
 		throw new Error(message);
 	}
 }
 
-const marketplace = JSON.parse(await readFile(marketplacePath, 'utf8'));
+const marketplace = JSON.parse(await readFile(marketplacePath, 'utf8')) as MarketplaceJson;
 assert(marketplace.name === 'storybook', 'marketplace name must be storybook');
 assert(
 	marketplace.interface?.displayName === 'Storybook',
@@ -44,12 +51,12 @@ assert(
 
 const codexHome = await mkdtemp(resolve(tmpdir(), 'codex-marketplace-'));
 try {
-	const stdout = execFileSync('codex', ['plugin', 'marketplace', 'add', marketplaceRoot], {
-		env: { ...process.env, CODEX_HOME: codexHome },
-		encoding: 'utf8',
+	const result = await x('codex', ['plugin', 'marketplace', 'add', marketplaceRoot], {
+		nodeOptions: { env: { ...process.env, CODEX_HOME: codexHome } },
+		throwOnError: true,
 	});
 
-	assert(stdout.includes('Added marketplace `storybook`'), `unexpected codex output: ${stdout}`);
+	assert(result.stdout.includes('Added marketplace `storybook`'), result.stdout);
 
 	const config = await readFile(resolve(codexHome, 'config.toml'), 'utf8');
 	assert(config.includes('[marketplaces.storybook]'), 'config.toml missing storybook marketplace');

@@ -52,13 +52,14 @@ Then test the plugin in the Codex app:
 4. Install the `Storybook` plugin from the Coding section.
 5. Use one of the starter prompts, such as `Set up Storybook for Codex`, to verify the plugin metadata and bundled skills are available.
 
-If you edit this package while testing, refresh the installed plugin cache and restart Codex:
+If you edit this package while testing, force a clean reinstall:
 
 ```sh
-pnpm --filter @storybook/codex-plugin run plugin:refresh
+pnpm --filter @storybook/codex-plugin run remove
+pnpm --filter @storybook/codex-plugin run marketplace:add
 ```
 
-Codex installs local plugins into `~/.codex/plugins/cache/` and does not automatically pick up file changes while the version in `.codex-plugin/plugin.json` stays the same. The refresh script recopies `plugins/storybook/` into that cache directory.
+Then reinstall the Storybook plugin in the Codex app and restart Codex. Codex caches plugins under `~/.codex/plugins/cache/` and does not pick up file changes until you reinstall.
 
 The plugin points at the latest `@storybook/mcp-proxy` preview from pkg.pr.new.
 
@@ -84,15 +85,16 @@ For day-to-day development, prefer the local marketplace command instead of the 
 pnpm --filter @storybook/codex-plugin run marketplace:add
 ```
 
-After installing the plugin, Codex loads it from its plugin cache. If changes do not show up, restart Codex and reinstall or refresh the plugin so the cache picks up the new contents.
+After installing the plugin, Codex loads it from its plugin cache. If changes do not show up, run `remove` and `marketplace:add`, then reinstall the plugin in Codex.
 
 ## Scripts
 
 - `validate:marketplace`: Validate layout and run a clean `CODEX_HOME` marketplace add smoke test.
 - `marketplace:add`: Add this package directory as a Codex marketplace.
 - `marketplace:remove`: Remove the configured `storybook` Codex marketplace.
+- `remove`: Remove the marketplace, delete `[plugins."storybook@storybook"]` from `~/.codex/config.toml`, and delete `~/.codex/plugins/cache/storybook`.
 
-Codex does not currently expose matching CLI commands for plugin install, update, remove, or list. Use the Codex app plugin picker for the plugin lifecycle after registering the marketplace.
+Codex does not expose CLI commands for plugin install or update. Use the Codex app plugin picker to install after `marketplace:add`. Use `remove` for a full uninstall without manual config edits.
 
 ## MCP Runtime
 

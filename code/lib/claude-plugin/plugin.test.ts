@@ -1,4 +1,3 @@
-import { spawnSync } from 'node:child_process';
 import { dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -7,15 +6,12 @@ import { describe, expect, it } from 'vitest';
 
 const packageRoot = dirname(fileURLToPath(import.meta.url));
 
-function isClaudeCliAvailable(): boolean {
-	const result = spawnSync('claude', ['--version'], {
-		cwd: packageRoot,
-		stdio: 'ignore',
-	});
-	return !result.error && result.status === 0;
+async function isClaudeCliAvailable() {
+	const result = await x('claude', ['--version'], { nodeOptions: { cwd: packageRoot } });
+	return result.exitCode === 0;
 }
 
-const hasClaudeCli = isClaudeCliAvailable();
+const hasClaudeCli = await isClaudeCliAvailable();
 
 describe('Storybook Claude plugin CLI validation', () => {
 	it.skipIf(!hasClaudeCli)(

@@ -47,8 +47,14 @@ pnpm --filter @storybook/claude-code-plugin run plugin:update
 If the installed plugin cache still looks stale, reinstall it:
 
 ```sh
-pnpm --filter @storybook/claude-code-plugin run plugin:remove
+pnpm --filter @storybook/claude-code-plugin run remove
 pnpm --filter @storybook/claude-code-plugin run plugin:install
+```
+
+To fully uninstall Storybook from Claude (plugin, marketplace, and local cache):
+
+```sh
+pnpm --filter @storybook/claude-code-plugin run remove
 ```
 
 Verify the installed plugin:
@@ -88,6 +94,7 @@ To test in Claude Desktop, restart Claude Desktop after installing or updating t
 - `plugin:install`: Validate, add the marketplace, and install `storybook@storybook` at user scope.
 - `plugin:update`: Update the installed `storybook@storybook` plugin cache.
 - `plugin:remove`: Uninstall `storybook@storybook` from user scope.
+- `remove`: Uninstall the plugin, remove the marketplace, and delete `~/.claude/plugins/cache/storybook`.
 - `plugin:list`: Print installed Claude plugins as JSON.
 
 ## Distribution

@@ -23,10 +23,14 @@
 		"README.md"
 	],
 	"type": "module",
+	"devDependencies": {
+		"tinyexec": "^1.0.2"
+	},
 	"scripts": {
-		"validate:marketplace": "node ./scripts/validate-marketplace.mjs",
-		"plugin:refresh": "node ./scripts/refresh-plugin-cache.mjs",
+		"validate:marketplace": "node ./scripts/validate-marketplace.ts",
+		"test:remove": "node --test ./scripts/remove-plugin.test.ts",
 		"marketplace:add": "codex plugin marketplace add ./",
-		"marketplace:remove": "codex plugin marketplace remove storybook"
+		"marketplace:remove": "codex plugin marketplace remove storybook",
+		"remove": "node ./scripts/remove-plugin.ts"
 	}
 }

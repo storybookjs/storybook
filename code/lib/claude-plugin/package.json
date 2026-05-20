@@ -4,14 +4,14 @@
 	"private": true,
 	"description": "Build, preview, and test UI components",
 	"keywords": [
-		"ai",
-		"claude-code",
+		"storybook",
 		"mcp",
-		"storybook"
+		"components",
+		"stories"
 	],
 	"homepage": "https://github.com/storybookjs/mcp/tree/main/packages/claude-plugin#readme",
 	"license": "MIT",
-	"author": "Storybook Core Team",
+	"author": "Storybook",
 	"repository": {
 		"type": "git",
 		"url": "git+https://github.com/storybookjs/mcp.git",
@@ -20,6 +20,7 @@
 	"files": [
 		".claude-plugin",
 		".mcp.json",
+		"assets",
 		"skills",
 		"README.md"
 	],

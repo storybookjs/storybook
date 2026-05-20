@@ -1,9 +1,21 @@
 {
 	"name": "storybook",
-	"description": "Build, preview, and test UI components.",
+	"version": "0.0.0",
+	"description": "Build, preview, and test UI components with Storybook.",
 	"author": {
-		"name": "Storybook Core Team"
+		"name": "Storybook",
+		"url": "https://storybook.js.org/"
 	},
-	"homepage": "https://github.com/storybookjs/mcp/tree/main/packages/claude-plugin",
-	"license": "MIT"
+	"homepage": "https://storybook.js.org/docs/ai/mcp/overview",
+	"repository": "https://github.com/storybookjs/mcp",
+	"license": "MIT",
+	"keywords": [
+		"storybook",
+		"mcp",
+		"components",
+		"stories",
+		"design-systems",
+		"testing",
+		"preview"
+	]
 }

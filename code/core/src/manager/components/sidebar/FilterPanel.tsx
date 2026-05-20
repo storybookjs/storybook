@@ -1,14 +1,7 @@
-import React, { Fragment, useCallback, useMemo } from 'react';
+import React, { Fragment, useCallback, useMemo, useState } from 'react';
 
 import { ActionList } from 'storybook/internal/components';
-import type {
-  API_IndexHash,
-  API_LeafEntry,
-  StatusValue,
-  StatusesByStoryIdAndTypeId,
-  StoryIndex,
-  Tag,
-} from 'storybook/internal/types';
+import type { StatusValue, StatusesByStoryIdAndTypeId, StoryIndex } from 'storybook/internal/types';
 
 import { BatchAcceptIcon, DocumentIcon, ShareAltIcon, SweepIcon, UndoIcon } from '@storybook/icons';
 
@@ -18,10 +11,11 @@ import { styled, useTheme } from 'storybook/theming';
 import { getStatus } from '../../utils/status.tsx';
 import { createFilterLink, StatusIcon } from './FilterPanelLink.tsx';
 import {
-  BUILT_IN_TAGS,
   type FilterItem,
+  type FilterPreviewAction,
   areFiltersEqual,
-  getFilterFunction,
+  computeFilterPanelCounts,
+  getFilterPreviewDescription,
 } from './FilterPanel.utils.ts';
 import {
   type StatusFilterEntry,
@@ -39,10 +33,37 @@ const Wrapper = styled.div({
   scrollbarWidth: 'thin',
 });
 
+const SummaryRow = styled.div(({ theme }) => ({
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'space-between',
+  padding: '8px 12px 4px',
+  color: theme.textMutedColor,
+  fontSize: theme.typography.size.s1,
+}));
+
+const SummaryCount = styled.span<{ $delta: number; $isPreview: boolean }>(
+  ({ theme, $delta, $isPreview }) => ({
+    display: 'inline-flex',
+    alignItems: 'center',
+    borderRadius: 999,
+    padding: '2px 8px',
+    fontVariantNumeric: 'tabular-nums',
+    fontWeight: theme.typography.weight.bold,
+    background: $isPreview ? theme.background.hoverable : 'transparent',
+    color: $isPreview
+      ? $delta > 0
+        ? theme.color.positive
+        : $delta < 0
+          ? theme.color.negative
+          : theme.color.secondary
+      : 'inherit',
+  })
+);
+
 export interface FilterPanelProps {
   api: API;
   indexJson: StoryIndex;
-  filteredIndex: API_IndexHash | undefined;
   defaultIncludedFilters: string[];
   defaultExcludedFilters: string[];
   includedFilters: string[];
@@ -55,7 +76,6 @@ export interface FilterPanelProps {
 export const FilterPanel = ({
   api,
   indexJson,
-  filteredIndex,
   defaultIncludedFilters,
   defaultExcludedFilters,
   includedFilters,
@@ -65,67 +85,44 @@ export const FilterPanel = ({
   excludedStatusFilters,
 }: FilterPanelProps) => {
   const theme = useTheme();
+  const [previewState, setPreviewState] = useState<{
+    action: FilterPreviewAction;
+    itemId: string;
+  } | null>(null);
 
   const { builtInEntries, tagEntries } = useTagFilterEntries(indexJson);
   const statusEntries = useStatusFilterEntries(allStatuses);
 
-  // Compute filtered counts for custom tags
-  const filteredTagCounts = useMemo(() => {
-    return Object.values(filteredIndex || {}).reduce<{
-      [key: Tag]: number;
-    }>((acc, entry) => {
-      if (['story', 'docs'].includes(entry.type)) {
-        entry.tags?.forEach((tag: Tag) => {
-          if (!BUILT_IN_TAGS.has(tag)) {
-            acc[tag] = (acc[tag] || 0) + 1;
-          }
-        });
-      }
-      return acc;
-    }, {});
-  }, [filteredIndex]);
-
-  // Compute filtered counts for built-in tag filters
-  const filteredBuiltInCounts = useMemo(() => {
-    const counts: Record<string, number> = {};
-    const filteredEntries = Object.values(filteredIndex || {}).filter(
-      (e): e is API_LeafEntry => e.type === 'story' || e.type === 'docs'
-    );
-
-    builtInEntries.forEach((entry) => {
-      const filterFn = getFilterFunction(entry.id);
-      // Filter functions only use properties that exist on API_LeafEntry (type, tags, subtype)
-      // so the type assertion is safe even though the full type signature doesn't match
-      counts[entry.id] = filteredEntries.filter((e) =>
-        filterFn?.(e as unknown as Parameters<typeof filterFn>[0])
-      ).length;
-    });
-
-    return counts;
-  }, [filteredIndex, builtInEntries]);
-
-  // Compute filtered counts for status filters
-  const filteredStatusCounts = useMemo(() => {
-    if (!filteredIndex || !globalThis?.FEATURES?.changeDetection) {
-      return {} as Record<StatusValue, number>;
-    }
-
-    const counts = {} as Record<StatusValue, number>;
-    const filteredStoryIds = new Set(Object.keys(filteredIndex));
-
-    Object.entries(allStatuses).forEach(([storyId, statusByTypeId]) => {
-      if (filteredStoryIds.has(storyId)) {
-        Object.values(statusByTypeId).forEach((status) => {
-          counts[status.value] = (counts[status.value] ?? 0) + 1;
-        });
-      }
-    });
-
-    return counts;
-  }, [filteredIndex, allStatuses]);
+  const filterCounts = useMemo(
+    () =>
+      computeFilterPanelCounts({
+        allStatuses,
+        includedFilters,
+        excludedFilters,
+        includedStatusFilters,
+        excludedStatusFilters,
+        indexJson,
+        statusValues: statusEntries.map((entry) => entry.statusValue),
+        tagIds: [
+          ...builtInEntries.map((entry) => entry.id),
+          ...tagEntries.map((entry) => entry.id),
+        ],
+      }),
+    [
+      allStatuses,
+      builtInEntries,
+      excludedFilters,
+      excludedStatusFilters,
+      includedFilters,
+      includedStatusFilters,
+      indexJson,
+      statusEntries,
+      tagEntries,
+    ]
+  );
 
   const toTagFilterItem = useCallback(
-    (entry: TagFilterEntry, visibleCount: number): FilterItem | null => {
+    (entry: TagFilterEntry): FilterItem | null => {
       if (entry.count === 0 && entry.type === 'built-in') return null;
       const isIncluded = includedFilters.includes(entry.id);
       const isExcluded = excludedFilters.includes(entry.id);
@@ -135,7 +132,9 @@ export const FilterPanel = ({
         type: entry.type,
         title: entry.title,
         count: entry.count,
-        visibleCount,
+        visibleCount: filterCounts.tags[entry.id]?.visibleCount ?? 0,
+        toggle: filterCounts.tags[entry.id]?.toggle ?? { delta: 0, visibleCount: 0 },
+        invert: filterCounts.tags[entry.id]?.invert ?? { delta: 0, visibleCount: 0 },
         icon: entry.icon,
         isIncluded,
         isExcluded,
@@ -149,11 +148,11 @@ export const FilterPanel = ({
         onInvert: () => api.addTagFilters([entry.id], !isExcluded),
       };
     },
-    [api, includedFilters, excludedFilters]
+    [api, excludedFilters, filterCounts.tags, includedFilters]
   );
 
   const toStatusFilterItem = useCallback(
-    (entry: StatusFilterEntry, visibleCount: number): FilterItem => {
+    (entry: StatusFilterEntry): FilterItem => {
       const isIncluded = includedStatusFilters.includes(entry.statusValue);
       const isExcluded = excludedStatusFilters.includes(entry.statusValue);
       const isChecked = isIncluded || isExcluded;
@@ -163,7 +162,9 @@ export const FilterPanel = ({
         type: 'status',
         title: entry.shortName.charAt(0).toUpperCase() + entry.shortName.slice(1),
         count: entry.count,
-        visibleCount,
+        visibleCount: filterCounts.statuses[entry.statusValue]?.visibleCount ?? 0,
+        toggle: filterCounts.statuses[entry.statusValue]?.toggle ?? { delta: 0, visibleCount: 0 },
+        invert: filterCounts.statuses[entry.statusValue]?.invert ?? { delta: 0, visibleCount: 0 },
         icon: statusIconEl ? <StatusIcon $iconColor={iconColor}>{statusIconEl}</StatusIcon> : null,
         isIncluded,
         isExcluded,
@@ -177,33 +178,30 @@ export const FilterPanel = ({
         onInvert: () => api.addStatusFilters([entry.statusValue], !isExcluded),
       };
     },
-    [api, includedStatusFilters, excludedStatusFilters, theme]
+    [api, excludedStatusFilters, filterCounts.statuses, includedStatusFilters, theme]
   );
 
   const builtInItems = useMemo(
     () =>
       builtInEntries
         .sort((a, b) => a.id.localeCompare(b.id))
-        .map((entry) => toTagFilterItem(entry, filteredBuiltInCounts[entry.id] ?? 0))
+        .map(toTagFilterItem)
         .filter((f): f is FilterItem => f !== null),
-    [builtInEntries, toTagFilterItem, filteredBuiltInCounts]
+    [builtInEntries, toTagFilterItem]
   );
 
   const tagItems = useMemo(
     () =>
       tagEntries
         .sort((a, b) => a.id.localeCompare(b.id))
-        .map((entry) => toTagFilterItem(entry, filteredTagCounts[entry.id] ?? 0))
+        .map(toTagFilterItem)
         .filter((f): f is FilterItem => f !== null),
-    [tagEntries, toTagFilterItem, filteredTagCounts]
+    [tagEntries, toTagFilterItem]
   );
 
   const statusItems = useMemo(
-    () =>
-      statusEntries.map((entry) =>
-        toStatusFilterItem(entry, filteredStatusCounts[entry.statusValue] ?? 0)
-      ),
-    [statusEntries, toStatusFilterItem, filteredStatusCounts]
+    () => statusEntries.map(toStatusFilterItem),
+    [statusEntries, toStatusFilterItem]
   );
 
   const filterIds = useMemo(
@@ -231,12 +229,63 @@ export const FilterPanel = ({
     includedStatusFilters.length === 0 &&
     excludedStatusFilters.length === 0;
 
-  const hasItems = builtInItems.length > 0 || tagItems.length > 0;
+  const hasItems = builtInItems.length > 0 || tagItems.length > 0 || statusItems.length > 0;
+  const allItems = useMemo(
+    () => [...builtInItems, ...statusItems, ...tagItems],
+    [builtInItems, statusItems, tagItems]
+  );
+  const previewedItem = previewState
+    ? allItems.find((item) => `filter-${item.type}-${item.id}` === previewState.itemId)
+    : null;
+  const previewedProjection = previewedItem ? previewedItem[previewState!.action] : null;
+  const summaryCount = previewedProjection?.visibleCount ?? filterCounts.currentVisibleCount;
+  const summaryCountString = `${summaryCount}/${filterCounts.totalCount}`;
+  const summaryAriaLabel =
+    previewedItem && previewedProjection
+      ? `${summaryCount} of ${filterCounts.totalCount} items visible if ${getFilterPreviewDescription(
+          previewedItem,
+          previewState!.action
+        )}`
+      : `${summaryCount} of ${filterCounts.totalCount} items currently visible`;
+  const summaryLabel = previewedProjection ? 'If applied' : 'Shown';
+  const summaryDelta = previewedProjection?.delta ?? 0;
+
+  const renderItem = useCallback(
+    (item: FilterItem) => {
+      const link = createFilterLink(item, {
+        activePreviewAction:
+          previewState?.itemId === `filter-${item.type}-${item.id}` ? previewState.action : null,
+        onPreviewEnd: () => {
+          setPreviewState((current) =>
+            current?.itemId === `filter-${item.type}-${item.id}` ? null : current
+          );
+        },
+        onPreviewStart: (action) => {
+          setPreviewState({ action, itemId: `filter-${item.type}-${item.id}` });
+        },
+      });
+
+      return <Fragment key={link.id}>{link.content}</Fragment>;
+    },
+    [previewState]
+  );
 
   return (
     <Wrapper>
       {hasItems && (
         <ActionList as="div">
+          <ActionList.Item as="div">
+            <SummaryRow>
+              <span>{summaryLabel}</span>
+              <SummaryCount
+                aria-label={summaryAriaLabel}
+                $delta={summaryDelta}
+                $isPreview={Boolean(previewedProjection)}
+              >
+                <span aria-hidden>{summaryCountString}</span>
+              </SummaryCount>
+            </SummaryRow>
+          </ActionList.Item>
           <ActionList.Item as="div">
             {isNothingSelectedYet ? (
               <ActionList.Button
@@ -277,30 +326,9 @@ export const FilterPanel = ({
           </ActionList.Item>
         </ActionList>
       )}
-      {builtInItems.length > 0 && (
-        <ActionList>
-          {builtInItems.map((item) => {
-            const link = createFilterLink(item);
-            return <Fragment key={link.id}>{link.content}</Fragment>;
-          })}
-        </ActionList>
-      )}
-      {statusItems.length > 0 && (
-        <ActionList>
-          {statusItems.map((item) => {
-            const link = createFilterLink(item);
-            return <Fragment key={link.id}>{link.content}</Fragment>;
-          })}
-        </ActionList>
-      )}
-      {tagItems.length > 0 && (
-        <ActionList>
-          {tagItems.map((item) => {
-            const link = createFilterLink(item);
-            return <Fragment key={link.id}>{link.content}</Fragment>;
-          })}
-        </ActionList>
-      )}
+      {builtInItems.length > 0 && <ActionList>{builtInItems.map(renderItem)}</ActionList>}
+      {statusItems.length > 0 && <ActionList>{statusItems.map(renderItem)}</ActionList>}
+      {tagItems.length > 0 && <ActionList>{tagItems.map(renderItem)}</ActionList>}
       {tagItems.length === 0 && (
         <ActionList as="div">
           <ActionList.Item as="div">

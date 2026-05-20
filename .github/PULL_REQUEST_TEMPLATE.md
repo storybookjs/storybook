@@ -65,7 +65,7 @@ Thank you for contributing to Storybook! Please submit all PRs to the `next` bra
 
    </details>
 
-### 🦋 Canary release
+## 🦋 Canary release
 
 <!-- CANARY_RELEASE_SECTION -->
 

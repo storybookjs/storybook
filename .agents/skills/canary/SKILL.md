@@ -1,68 +1,158 @@
 ---
 name: canary
-description: Triggers a canary release for a Storybook PR. Use when the user wants to publish a canary version, create a pre-release, or test a PR via npm.
+description: Finds or publishes a pkg.pr.new preview release for a Storybook branch. Use when the user wants the preview package specifier for a branch or needs to trigger the preview workflow manually.
 allowed-tools: Bash
 ---
 
-# Publish Canary Release
+# Find Or Publish Preview Release
 
-Publishes a canary version of Storybook from a PR to npm.
+Use this skill to get a branch-specific preview build from `pkg.pr.new`.
 
-## Usage
+Preview publishes are driven by the `publish-preview.yml` workflow.
 
-To trigger a canary release, run:
+The labels that trigger automatic preview publishes on PRs are:
+
+- `ci:normal`
+- `ci:merged`
+- `ci:daily`
+
+## Version string
+
+The preview version string is constructed like this:
+
+```text
+storybook@https://pkg.pr.new/storybookjs/storybook/storybook@<SHA>
+```
+
+Replace `<SHA>` with the full commit SHA.
+
+## Check whether a preview already exists
 
 ```bash
-gh workflow run --repo storybookjs/storybook publish.yml --field pr=<PR_NUMBER>
+SHA=$(git rev-parse HEAD)
+curl -I "https://pkg.pr.new/storybookjs/storybook/storybook@$SHA"
 ```
 
-## What happens
+An HTTP `200` status code means the preview already exists for that commit.
 
-1. GitHub Actions builds and publishes the PR as `0.0.0-pr-<PR_NUMBER>-sha-<SHORT_SHA>`
-2. The version is published to npm with the `canary` tag
-3. The PR body is updated with the exact version and install instructions
+## Decision flow
 
-## Version format
+Use this skill with the following if-then behavior.
 
-The canary version follows a **predictable structure**:
+### A. If the branch already has a PR with one of the CI labels
 
-```
-0.0.0-pr-<PR_NUMBER>-sha-<SHORT_SHA>
-```
+If the branch already has an associated PR labeled `ci:normal`, `ci:merged`, or `ci:daily`, do not trigger anything manually first. Reuse the workflow run that should already exist.
 
-- `<PR_NUMBER>`: The PR number (e.g., `33526`)
-- `<SHORT_SHA>`: First 8 characters of the commit SHA (e.g., `a2e09fa2`)
-
-**Example:** For PR #33526 with commit `a2e09fa284a...`, the canary version is:
-`0.0.0-pr-33526-sha-a2e09fa2`
-
-You can construct the version yourself if you know the PR number and the latest commit SHA on that PR.
-
-## After publishing
-
-Check the PR body for the published version. It will show something like:
-
-> This pull request has been released as version `0.0.0-pr-33365-sha-b6656566`
-
-Then test with:
+Find the labeled PR for the current branch:
 
 ```bash
-npx storybook@<VERSION_FROM_PR> sandbox
+BRANCH=$(git branch --show-current)
+
+gh pr list \
+	--repo storybookjs/storybook \
+	--head "$BRANCH" \
+	--state open \
+	--json number,title,labels,url \
+	--jq '.[] | select(any(.labels[]?; .name == "ci:normal" or .name == "ci:merged" or .name == "ci:daily"))'
 ```
 
-Or upgrade an existing project:
+Find the latest successful preview workflow run for that branch:
 
 ```bash
-npx storybook@<VERSION_FROM_PR> upgrade
+BRANCH=$(git branch --show-current)
+
+RUN_ID=$(gh run list \
+	--repo storybookjs/storybook \
+	--workflow publish-preview.yml \
+	--branch "$BRANCH" \
+	--event pull_request \
+	--json databaseId,conclusion \
+	--jq '.[] | select(.conclusion == "success") | .databaseId' \
+	| head -n 1)
+
+gh run view "$RUN_ID" --repo storybookjs/storybook
+```
+
+Pull the SHA from that run and construct the version string from it:
+
+```bash
+RUN_SHA=$(gh run view "$RUN_ID" --repo storybookjs/storybook --json headSha --jq '.headSha')
+echo "storybook@https://pkg.pr.new/storybookjs/storybook/storybook@$RUN_SHA"
+```
+
+Optionally confirm the package is live:
+
+```bash
+curl -I "https://pkg.pr.new/storybookjs/storybook/storybook@$RUN_SHA"
+```
+
+### B. If the branch does not have a PR with one of the CI labels
+
+Trigger the preview workflow manually on the branch and watch it finish. It usually takes about 10 minutes.
+
+```bash
+BRANCH=$(git branch --show-current)
+
+gh workflow run --repo storybookjs/storybook publish-preview.yml --ref "$BRANCH"
+```
+
+Find the new workflow run and watch it:
+
+```bash
+BRANCH=$(git branch --show-current)
+
+RUN_ID=$(gh run list \
+	--repo storybookjs/storybook \
+	--workflow publish-preview.yml \
+	--branch "$BRANCH" \
+	--event workflow_dispatch \
+	--json databaseId \
+	--jq '.[0].databaseId')
+
+gh run watch "$RUN_ID" --repo storybookjs/storybook
+```
+
+When it finishes successfully, pull the SHA from the run and construct the version string:
+
+```bash
+RUN_SHA=$(gh run view "$RUN_ID" --repo storybookjs/storybook --json headSha --jq '.headSha')
+echo "storybook@https://pkg.pr.new/storybookjs/storybook/storybook@$RUN_SHA"
+```
+
+Optionally confirm the package is live:
+
+```bash
+curl -I "https://pkg.pr.new/storybookjs/storybook/storybook@$RUN_SHA"
+```
+
+## Use the preview
+
+For a new project:
+
+```bash
+npm create storybook@https://pkg.pr.new/storybookjs/storybook/storybook@<SHA>
+```
+
+For an existing project:
+
+```bash
+npx storybook@https://pkg.pr.new/storybookjs/storybook/storybook@<SHA> upgrade
 ```
 
 ## Requirements
 
-- You must have admin permissions on the storybookjs/storybook repo
-- The PR must exist and be open
-- You need `gh` CLI authenticated
+- You need `gh` CLI authenticated for `storybookjs/storybook`
+- You need permission to run workflows in the repository for manual dispatch
+- The preview workflow is `publish-preview.yml`
 
 ## Monitor progress
 
-Watch the workflow run at:
-https://github.com/storybookjs/storybook/actions/workflows/publish.yml
+Workflow page:
+
+- https://github.com/storybookjs/storybook/actions/workflows/publish-preview.yml
+
+CLI:
+
+```bash
+gh run list --repo storybookjs/storybook --workflow publish-preview.yml
+```

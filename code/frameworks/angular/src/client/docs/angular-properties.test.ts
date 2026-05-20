@@ -6,11 +6,6 @@ import { describe, expect, it, vi } from 'vitest';
 import { extractArgTypesFromData, findComponentByName } from '../compodoc.ts';
 import type { CompodocJson } from '../compodoc-types.ts';
 
-// `compodoc.ts` destructures `FEATURES` from the global scope at module-load time
-// (`const { FEATURES } = global`). The destructure captures the OBJECT REFERENCE, so
-// the flag object must exist on the global BEFORE the module is imported. `vi.hoisted`
-// is lifted above the imports during transform, so this runs first; per-state changes
-// are then applied by MUTATING that same object (never reassigning).
 const featureFlags = vi.hoisted(() => {
   const flags = { angularFilterNonInputControls: false };
   (globalThis as any).FEATURES = flags;

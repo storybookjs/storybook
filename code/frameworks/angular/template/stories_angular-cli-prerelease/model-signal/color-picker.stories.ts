@@ -7,15 +7,6 @@ import { expect, fn, userEvent, waitFor, within } from 'storybook/test';
 
 import ColorPickerComponent from './color-picker.component';
 
-/**
- * These stories exercise native `@storybook/angular` support for Angular's `model()` signal.
- *
- * `color = model<string>('#345F92')` produces a two-way binding: an input `color` plus a
- * compiler-synthesized `colorChange` output. Storybook now surfaces `color` as a Control and
- * `colorChange` as an Action automatically — no hand-written `Args` interface / manual
- * `argTypes` workaround is required (contrast with the `signal/` template stories, whose
- * comments note Compodoc does not support signal inputs/outputs).
- */
 const meta: Meta<ColorPickerComponent> = {
   component: ColorPickerComponent,
   tags: ['autodocs'],
@@ -30,13 +21,6 @@ export default meta;
 
 type Story = StoryObj<ColorPickerComponent>;
 
-/**
- * `colorChange` appears as an Action (fires on emit) and `color` is a Control/arg.
- *
- * `play`:
- * 1. asserts the initial `color` arg rendered (it reached the component instance);
- * 2. emits `colorChange` from inside the component and asserts the action spy received it.
- */
 export const ControlsAndActions: Story = {
   args: {
     color: '#345F92',
@@ -53,17 +37,6 @@ export const ControlsAndActions: Story = {
   },
 };
 
-/**
- * Positive two-way `[(color)]` round-trip plus the live args-update path.
- *
- * `play` runs the sequence:
- * 1. initial render → assert the initial `args.color` reached the component instance;
- * 2. push a live arg change over the channel → assert the new value reaches the
- *    instance (the highest-risk path now that `color` is an Input);
- * 3. trigger an in-component `colorChange` emission → assert it round-trips back to
- *    `args.color` (positive two-way `[(color)]`);
- * 4. assert the action received `colorChange`.
- */
 export const TwoWayRoundTrip: Story = {
   // Live args updates inside `play` disrupt the Vitest runner; sandbox + Chromatic cover it.
   tags: ['!vitest'],

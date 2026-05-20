@@ -280,6 +280,49 @@ Options include:
 | `--package-manager`             | Sets the package manager to use when running the health check.<br />Available package managers include `npm`, `yarn`, and `pnpm`.<br />`storybook doctor --package-manager pnpm` |
 | `--debug`                       | Outputs more logs in the CLI to assist debugging.<br />`storybook doctor --debug`                                                                                                |
 
+### `ai`
+
+Helpers for AI agents. The `ai` command exposes subcommands that generate AI-friendly instructions for automating Storybook tasks. See the [agentic setup docs](../ai/setup.mdx) for a full walkthrough.
+
+```shell
+storybook ai [options] [command]
+```
+
+Options include:
+
+| Option                  | Description                                                                                                               |
+| ----------------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| `-h`, `--help`          | Output usage information.<br />`storybook ai --help`                                                                      |
+| `-o`, `--output <path>` | Write the prompt output to a file instead of printing it to stdout.<br />`storybook ai setup --output storybook-setup.md` |
+
+#### `ai setup`
+
+Generates a detailed, project-aware Markdown prompt that instructs an AI agent to configure Storybook in your project and write initial stories for real components. The prompt is built from your detected Storybook configuration (framework, renderer, builder, language, addons) and covers analyzing the codebase, configuring the preview, mocking side effects, writing stories, and verifying them with Vitest.
+
+<Callout variant="info">
+
+`storybook ai setup` is currently only available for projects using the React renderer with the Vite builder.
+
+</Callout>
+
+```shell
+storybook ai setup [options]
+```
+
+Options include:
+
+| Option                          | Description                                                                                                                                                                          |
+| ------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `-h`, `--help`                  | Output usage information.<br />`storybook ai setup --help`                                                                                                                           |
+| `-c`, `--config-dir [dir-name]` | Storybook configuration directory.<br />`storybook ai setup -c .storybook`                                                                                                           |
+| `--package-manager <type>`      | Force package manager to use when detecting project information.<br />Available package managers include `npm`, `yarn`, and `pnpm`.<br />`storybook ai setup --package-manager pnpm` |
+| `--disable-telemetry`           | Disables Storybook's telemetry. Learn more about it [here](../configure/telemetry.mdx#how-to-opt-out).<br />`storybook ai setup --disable-telemetry`                                 |
+| `--debug`                       | Outputs more logs in the CLI to assist debugging.<br />`storybook ai setup --debug`                                                                                                  |
+| `--loglevel [level]`            | Controls level of logging.<br />Available options: `trace`, `debug`, `info` (default), `warn`, `error`, `silent`.<br />`storybook ai setup --loglevel warn`                          |
+| `--logfile [path]`              | Write debug logs to a file.<br />`storybook ai setup --logfile ./sb.log`                                                                                                             |
+
+When run without `--output`, the generated prompt is printed to stdout. This is how AI agents typically consume it, by running the command directly and reading the result. When run with `--output`, the prompt is written to the given file path so you can paste or attach it to an agent that doesn't have shell access.
+
 ### `info`
 
 Reports useful debugging information about your environment. Helpful in providing information when opening an issue or a discussion.

@@ -150,9 +150,7 @@ describe('ghostStoriesChannel', () => {
       });
 
       // Has ran tests successfully and written reports to JSON file in cache directory
-      vi.mocked(mockCommon.resolvePathInStorybookCache).mockReturnValue(
-        '/cache/ghost-stories-tests'
-      );
+      vi.mocked(mockCommon.resolvePathInStorybookCache).mockReturnValue('/cache/story-tests');
       vi.mocked(mockCommon.executeCommand).mockResolvedValue({} as any);
       mockFs.existsSync.mockReturnValue(true);
       mockFs.readFile.mockResolvedValue(
@@ -193,12 +191,13 @@ describe('ghostStoriesChannel', () => {
           'run',
           '--reporter=json',
           '--testTimeout=1000',
-          expect.stringContaining('--outputFile=/cache/ghost-stories-tests/test-results-'),
+          expect.stringContaining('--outputFile=/cache/story-tests/test-results-'),
           'component1.tsx',
           'component2.tsx',
         ],
         stdio: 'pipe',
         env: {
+          STORYBOOK_INTERNAL_TEST_RUN: '1',
           STORYBOOK_COMPONENT_PATHS: 'component1.tsx;component2.tsx',
         },
       } as any);
@@ -220,6 +219,7 @@ describe('ghostStoriesChannel', () => {
           successRate: 1,
           successRateWithoutEmptyRender: 1,
           categorizedErrors: expect.any(Object),
+          cssCheck: 'not-run',
           uniqueErrorCount: 0,
           passedButEmptyRender: 0,
         },
@@ -247,9 +247,7 @@ describe('ghostStoriesChannel', () => {
       });
 
       // Has ran tests but with failures, reports written to JSON file in cache directory
-      vi.mocked(mockCommon.resolvePathInStorybookCache).mockReturnValue(
-        '/cache/ghost-stories-tests'
-      );
+      vi.mocked(mockCommon.resolvePathInStorybookCache).mockReturnValue('/cache/story-tests');
       vi.mocked(mockCommon.executeCommand).mockResolvedValue({} as any);
       mockFs.existsSync.mockReturnValue(true);
       mockFs.readFile.mockResolvedValue(
@@ -292,12 +290,13 @@ describe('ghostStoriesChannel', () => {
           'run',
           '--reporter=json',
           '--testTimeout=1000',
-          expect.stringContaining('--outputFile=/cache/ghost-stories-tests/test-results-'),
+          expect.stringContaining('--outputFile=/cache/story-tests/test-results-'),
           'component1.tsx',
           'component2.tsx',
         ],
         stdio: 'pipe',
         env: {
+          STORYBOOK_INTERNAL_TEST_RUN: '1',
           STORYBOOK_COMPONENT_PATHS: 'component1.tsx;component2.tsx',
         },
       } as any);
@@ -318,8 +317,9 @@ describe('ghostStoriesChannel', () => {
             total: 2,
             passed: 0,
             successRate: 0,
-            // categorizedErrors is now an object with categories as keys
+            // categorizedErrors is an object keyed by error category
             categorizedErrors: expect.any(Object),
+            cssCheck: 'not-run',
             uniqueErrorCount: expect.any(Number),
             passedButEmptyRender: 0,
           }),
@@ -363,9 +363,68 @@ describe('ghostStoriesChannel', () => {
         });
 
         expect(mockTelemetry.getLastEvents).toHaveBeenCalled();
-        expect(mockTelemetry.getSessionId).toHaveBeenCalled();
+        // getSessionId is no longer checked by ghost stories — session matching
+        // was removed to support mid-session ai-setup triggers.
+        expect(mockTelemetry.getSessionId).not.toHaveBeenCalled();
         expect(mockTelemetry.getStorybookMetadata).not.toHaveBeenCalled();
         expect(mockStoryGeneration.getComponentCandidates).not.toHaveBeenCalled();
+      });
+
+      it('should skip discovery run when ghost stories ran and ai-setup scoring runId matches current ai-setup session', async () => {
+        mockChannel.addListener(GHOST_STORIES_RESPONSE, ghostStoriesEventListener);
+        vi.mocked(mockTelemetry.getLastEvents).mockResolvedValue({
+          'ghost-stories': { timestamp: Date.now(), body: {} },
+          'ai-setup': { body: { payload: { runId: 'session-A' } } },
+          'ai-setup-final-scoring': { body: { payload: { runId: 'session-A' } } },
+          init: { body: { sessionId: 'test-session' } },
+        } as any);
+
+        initGhostStoriesChannel(mockChannel, {} as Options);
+
+        mockChannel.emit(GHOST_STORIES_REQUEST);
+
+        await vi.waitFor(() => {
+          expect(ghostStoriesEventListener).toHaveBeenCalled();
+        });
+
+        expect(mockTelemetry.getStorybookMetadata).not.toHaveBeenCalled();
+        expect(mockStoryGeneration.getComponentCandidates).not.toHaveBeenCalled();
+      });
+
+      it('should run discovery again when ghost stories ran but ai-setup scoring runId is from an older session', async () => {
+        mockChannel.addListener(GHOST_STORIES_RESPONSE, ghostStoriesEventListener);
+        // Ghost stories has run before, but a new `ai setup` session has started
+        // (scoring runId is from session-A, ai-setup runId is now session-B)
+        vi.mocked(mockTelemetry.getLastEvents).mockResolvedValue({
+          'ghost-stories': { timestamp: Date.now(), body: {} },
+          'ai-setup': { body: { payload: { runId: 'session-B' } } },
+          'ai-setup-final-scoring': { body: { payload: { runId: 'session-A' } } },
+          init: { body: { sessionId: 'test-session' } },
+        } as any);
+
+        vi.mocked(mockTelemetry.getStorybookMetadata).mockResolvedValue({
+          renderer: '@storybook/react',
+          addons: { '@storybook/addon-vitest': {} },
+        } as any);
+
+        vi.mocked(mockStoryGeneration.getComponentCandidates).mockResolvedValue({
+          candidates: [],
+          globMatchCount: 0,
+          analyzedCount: 0,
+          avgComplexity: 0,
+        });
+
+        initGhostStoriesChannel(mockChannel, {} as Options);
+
+        mockChannel.emit(GHOST_STORIES_REQUEST);
+
+        await vi.waitFor(() => {
+          expect(ghostStoriesEventListener).toHaveBeenCalled();
+        });
+
+        // Should have proceeded past the skip condition
+        expect(mockTelemetry.getStorybookMetadata).toHaveBeenCalled();
+        expect(mockStoryGeneration.getComponentCandidates).toHaveBeenCalled();
       });
 
       it('should skip discovery run when not in a React + Vitest project', async () => {
@@ -389,7 +448,6 @@ describe('ghostStoriesChannel', () => {
         });
 
         expect(mockTelemetry.getLastEvents).toHaveBeenCalled();
-        expect(mockTelemetry.getSessionId).toHaveBeenCalled();
         expect(mockTelemetry.getStorybookMetadata).toHaveBeenCalled();
         expect(mockStoryGeneration.getComponentCandidates).not.toHaveBeenCalled();
       });
@@ -415,7 +473,6 @@ describe('ghostStoriesChannel', () => {
         });
 
         expect(mockTelemetry.getLastEvents).toHaveBeenCalled();
-        expect(mockTelemetry.getSessionId).toHaveBeenCalled();
         expect(mockTelemetry.getStorybookMetadata).toHaveBeenCalled();
         expect(mockStoryGeneration.getComponentCandidates).not.toHaveBeenCalled();
       });
@@ -518,9 +575,7 @@ describe('ghostStoriesChannel', () => {
           analyzedCount: 2,
           avgComplexity: 1.0,
         });
-        vi.mocked(mockCommon.resolvePathInStorybookCache).mockReturnValue(
-          '/cache/ghost-stories-tests'
-        );
+        vi.mocked(mockCommon.resolvePathInStorybookCache).mockReturnValue('/cache/story-tests');
         vi.mocked(mockCommon.executeCommand).mockRejectedValue(new Error('Test execution failed'));
         mockFs.existsSync.mockReturnValue(false);
 
@@ -563,9 +618,7 @@ describe('ghostStoriesChannel', () => {
           analyzedCount: 2,
           avgComplexity: 1.0,
         });
-        vi.mocked(mockCommon.resolvePathInStorybookCache).mockReturnValue(
-          '/cache/ghost-stories-tests'
-        );
+        vi.mocked(mockCommon.resolvePathInStorybookCache).mockReturnValue('/cache/story-tests');
         vi.mocked(mockCommon.executeCommand).mockRejectedValue(new Error('Startup Error'));
         mockFs.existsSync.mockReturnValue(true);
         mockFs.readFile.mockResolvedValue(

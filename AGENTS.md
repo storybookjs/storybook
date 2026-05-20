@@ -9,10 +9,11 @@ This file is the canonical instruction source for coding agents. Files like `CLA
 Storybook is a large TypeScript monorepo. The git root is the repo root, the main code lives in `code/`, and build tooling lives in `scripts/`. The default branch is `next`.
 
 - **Base branch**: `next` (all PRs should target `next`, not `main`)
-- **Node.js**: `22.21.1` (see `.nvmrc`)
+- **Node.js**: `22.22.1` (see `.nvmrc`) — supports `.ts` natively via type stripping (no loader needed)
 - **Package Manager**: Yarn Berry
 - **Task orchestration**: NX plus the custom `yarn task` runner
 - **CI environment**: Linux and Windows
+- **TS execution**: Migrating from `jiti` to native `node` for running `.ts` files. New scripts should use `node ./path/file.ts` with explicit `.ts` import extensions (enabled by `allowImportingTsExtensions` in tsconfig). Legacy scripts still use `jiti` but should be migrated over time.
 
 ## Repository Structure
 
@@ -212,7 +213,11 @@ Common templates:
 
 ## Testing Expectations
 
-- Use `yarn test` for unit tests
+> [!IMPORTANT]
+> **For React components, write Storybook stories with `play` functions — do NOT write `*.test.tsx` unit tests.** Behavior, accessibility, and interaction assertions belong in `*.stories.tsx` co-located with the component, executed via the Storybook Vitest project (`yarn storybook:vitest` or `vitest run --config code/vitest.config.storybook.ts`). Unit tests (`*.test.ts(x)`) are reserved for pure utilities, hooks, and non-React modules where rendering is not involved.
+
+- Use `yarn storybook:vitest` to run Storybook story tests (the primary test path for components)
+- Use `yarn test` for unit tests of utilities, hooks, and non-React modules
 - Use Storybook UI or Chromatic for visual validation
 - Use `yarn task e2e-tests --start-from auto` or `yarn task e2e-tests-dev --start-from auto` for E2E coverage
 - Use `yarn task test-runner --start-from auto` or `yarn task test-runner-dev --start-from auto` for test-runner scenarios
@@ -225,7 +230,13 @@ yarn test:watch
 yarn storybook:vitest
 ```
 
-When writing tests:
+When writing tests for components:
+
+- Add or update `<Component>.stories.tsx` with stories covering each behavior; use `play` functions with `expect`, `userEvent`, `within` from `storybook/test`
+- Mock external context (e.g. `ManagerContext.Provider`) inside story decorators or `beforeEach`
+- Run `vitest --config code/vitest.config.storybook.ts <story-file>` to verify play assertions
+
+When writing unit tests (utilities, hooks, non-React modules):
 
 - Export functions that need direct tests
 - Test real behavior, not just syntax patterns
@@ -236,7 +247,7 @@ When writing tests:
 
 After changing files:
 
-1. Format with `cd code && oxfmt`
+1. Format with `yarn fmt:write` (run from the repo root)
 2. Lint with `yarn --cwd code lint:js:cmd <file-relative-to-code-folder> --fix` or `cd code && yarn lint:js:cmd <file-relative-to-code-folder>`
 3. Run relevant tests before submitting a PR
 

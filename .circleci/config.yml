@@ -18,7 +18,7 @@ parameters:
     description: The PR number
     type: string
   ghTrustedAuthor:
-    default: 'true'
+    default: 'false'
     description: Whether the PR author is a trusted who should be allowed to persist to shared caches
     type: string
   workflow:

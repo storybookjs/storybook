@@ -153,7 +153,7 @@ program
   .option(
     '--gh-trusted-author <string>',
     'Whether the pipeline can persist to shared caches',
-    'true'
+    'false'
   )
   .parse(process.argv);
 

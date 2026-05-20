@@ -1,46 +1,42 @@
 import type { Patch } from 'immer';
 
 import { ServiceRuntime, deepMerge } from './service-runtime.ts';
-import type {
-  BuildCtx,
-  LoaderDefinition,
-  ServiceDefinition,
-  ServiceRegistration,
-} from './types.ts';
+import type { ServiceDefinition, ServiceRegistration } from './types.ts';
 
 /**
  * Build the static-mode artifacts for a service definition.
  *
- * For each loader declared in `definition.load`, enumerates the loader's inputs and runs each
- * input in its own sandboxed runtime. Captures the Immer patch list each loader produces,
- * converts it to a state-shaped diff (JSON-Merge-Patch flavour: `{a:{b:1}}`), and stores that
- * under the loader's `path(ctx, input)` callback (or a default).
+ * Iterates queries that declare a preload (either via the new `defineQuery({ preload, … })`
+ * form OR the legacy `load:` map), enumerates each preload's inputs, and runs each input in
+ * its own sandboxed runtime. Captures the Immer patch list produced, converts it to a
+ * state-shaped diff (`{a:{b:1}}`), and stores it under the query's `path(ctx, input)` callback
+ * (or a default).
  *
- * If multiple loader-input pairs resolve to the same filename, their diffs are deep-merged
- * into a single artifact at that path. This is the "many loaders, one file" pattern — useful
- * when several queries share an underlying single-file backing store.
+ * If multiple query-input pairs resolve to the same filename, their diffs are deep-merged
+ * into a single artifact at that path — the "many queries, one file" pattern, useful when
+ * several queries share an underlying single-file backing store.
  *
- * Services that don't declare any loaders return an empty Map.
- *
- * Returns `Map<filename, value>`. The caller decides how to persist:
- *   - In a real build, iterate the map and `fs.writeFile(path, JSON.stringify(value))`.
- *   - In tests, hand the map straight to a Map-backed `ServiceStaticTransport`.
+ * Services with no preloads (no `def.queries.X.preload` and no `def.load`) return an empty Map.
  */
 export async function buildServiceArtifacts<TDef extends ServiceDefinition<any, any, any, any>>(
   definition: TDef,
   registration?: ServiceRegistration<TDef>
 ): Promise<Map<string, unknown>> {
   const artifacts = new Map<string, Record<string, unknown>>();
-  if (!definition.load) return artifacts;
 
-  const loaders = definition.load as Record<string, LoaderDefinition<unknown, unknown>>;
-  for (const [queryName, loader] of Object.entries(loaders)) {
-    const inputs = await resolveEnumerateInputs(loader);
+  // Build a discovery runtime to enumerate which preloads exist. This runtime isn't used to
+  // capture patches — each query-input pair gets its own sandboxed runtime below.
+  const discovery = new ServiceRuntime(definition, registration);
+  const preloadNames = discovery.getPreloadNames();
+  if (preloadNames.length === 0) return artifacts;
+
+  for (const queryName of preloadNames) {
+    const inputs = await discovery.resolvePreloadInputs(queryName);
     for (const input of inputs) {
       const sandbox = new ServiceRuntime(definition, registration);
 
-      // Subscribe before firing so we capture every patch the loader's body produces (a
-      // loader may call multiple commands and emit several state transitions).
+      // Subscribe before firing so we capture every patch the preload produces (a preload
+      // may call multiple commands and emit several state transitions).
       const collected: Patch[] = [];
       const unsub = sandbox.subscribe((_state, _previous, patches) => {
         collected.push(...patches);
@@ -57,7 +53,7 @@ export async function buildServiceArtifacts<TDef extends ServiceDefinition<any, 
 
       const existing = artifacts.get(filename);
       if (existing) {
-        // Same filename used by another loader-input pair — merge into the existing artifact.
+        // Same filename used by another query-input pair — merge into the existing artifact.
         deepMerge(existing, diff);
       } else {
         artifacts.set(filename, diff);
@@ -76,7 +72,7 @@ export async function buildServiceArtifacts<TDef extends ServiceDefinition<any, 
  *   - Numeric path segments (Immer's array-index patches) are rejected. State should be modelled
  *     as records (`{ byId: Record<...> }`) rather than arrays. Whole-array replacements are
  *     fine — they show up as a single `replace` patch with no numeric segments.
- *   - `remove` patches are rejected. Build-time loaders should be producing data, not deleting.
+ *   - `remove` patches are rejected. Build-time preloads should be producing data, not deleting.
  *
  * Both rejections throw with an actionable hint pointing at the offending path.
  */
@@ -89,14 +85,14 @@ function patchesToStateDiff(
   for (const patch of patches) {
     if (patch.op === 'remove') {
       throw new Error(
-        `[service ${serviceId}] Loader "${queryName}" produced a 'remove' patch at ` +
+        `[service ${serviceId}] Query "${queryName}"'s preload produced a 'remove' patch at ` +
           `${JSON.stringify(patch.path)}. Build-time artifacts only support data-producing ` +
           `patches (add/replace).`
       );
     }
     if (patch.path.some((p) => typeof p === 'number')) {
       throw new Error(
-        `[service ${serviceId}] Loader "${queryName}" produced an array-index patch at ` +
+        `[service ${serviceId}] Query "${queryName}"'s preload produced an array-index patch at ` +
           `${JSON.stringify(patch.path)}. Model collections as records (\`{ byId: Record<...> }\`) ` +
           `rather than arrays so they compose under deep-merge.`
       );
@@ -114,24 +110,4 @@ function patchesToStateDiff(
     target[lastKey] = patch.value;
   }
   return result;
-}
-
-/**
- * Resolve a loader's `enumerateInputs` to a concrete list. Supports:
- *   - `undefined` → one synthetic "no input" call (single `undefined` input).
- *   - An array → used as-is.
- *   - A function → invoked with the build ctx; may be async.
- */
-async function resolveEnumerateInputs(
-  loader: LoaderDefinition<unknown, unknown>
-): Promise<readonly unknown[]> {
-  const e = loader.enumerateInputs;
-  if (e === undefined) return [undefined];
-  if (typeof e === 'function') {
-    const buildCtx: BuildCtx = { isBuild: true };
-    return await (e as (ctx: BuildCtx) => readonly unknown[] | Promise<readonly unknown[]>)(
-      buildCtx
-    );
-  }
-  return e as readonly unknown[];
 }

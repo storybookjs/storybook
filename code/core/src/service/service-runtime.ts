@@ -71,6 +71,17 @@ type StateListener<TState> = (
 type QueryListener = (value: unknown) => void;
 
 /**
+ * Normalised "this query has a preload to fire" entry. Either the query-as-object form
+ * (`definition.queries[name] = { select, preload, inputs?, path? }`) or the legacy loader
+ * form (`definition.load[name] = LoaderDefinition`) collapses into this shape.
+ */
+interface NormalizedPreload {
+  readonly handler: (...args: any[]) => void | Promise<void>;
+  readonly inputs?: readonly any[] | ((ctx: BuildCtx) => readonly any[] | Promise<readonly any[]>);
+  readonly path?: (...args: any[]) => string;
+}
+
+/**
  * Stable string key for a query/loader input.
  */
 function keyOfInput(input: unknown): string {
@@ -369,47 +380,77 @@ export class ServiceRuntime<TDef extends ServiceDefinition<any, any, any, any>> 
     return out as CallableCommands<TDef['commands']>;
   }
 
-  // ------------------------------ loaders ------------------------------
+  // ------------------------------ preloads (query-backed + legacy loader-backed) ------------------------------
 
   /**
-   * The active loaders map, or undefined when the service doesn't declare any. Services
-   * without loaders don't participate in static-build persistence.
+   * Normalised preload entry. Either source — `definition.queries[name].preload` (the new
+   * query-as-object form) or `definition.load[name]` (the legacy loader map) — produces this
+   * shape. The rest of the runtime treats them identically.
    */
-  private _loadersMap(): Record<string, LoaderDefinition<unknown, unknown>> | undefined {
-    const load = this.definition.load;
-    if (!load) return undefined;
-    return load as Record<string, LoaderDefinition<unknown, unknown>>;
-  }
+  private _preloadsMap(): Record<string, NormalizedPreload> | undefined {
+    if (this._preloadsCache !== undefined) return this._preloadsCache;
+    const map: Record<string, NormalizedPreload> = {};
 
-  private _loaderHasInput(loaderName: string): boolean {
-    const loader = this._loadersMap()?.[loaderName];
-    return !!loader && loader.handler.length > 1;
-  }
-
-  /**
-   * Compute the relative filename for a loader's JSON artifact (either to emit at build time
-   * or to fetch at runtime). Uses the loader's `path` callback when provided, otherwise falls
-   * back to a sensible default based on the loader name and input.
-   */
-  private _loaderFilename(
-    queryName: string,
-    loader: LoaderDefinition<unknown, unknown>,
-    input: unknown
-  ): string {
-    if (loader.options.path) {
-      const buildCtx: BuildCtx = { isBuild: true };
-      const hasInput = this._loaderHasInput(queryName);
-      if (hasInput) {
-        return (loader.options.path as (ctx: BuildCtx, input: unknown) => string)(buildCtx, input);
-      }
-      return (loader.options.path as (ctx: BuildCtx) => string)(buildCtx);
+    // From definition.queries — only query-object entries with a preload contribute.
+    for (const [name, entry] of Object.entries(this.definition.queries)) {
+      if (typeof entry === 'function') continue;
+      const q = entry as QueryDef;
+      if (!q.preload) continue;
+      map[name] = {
+        handler: q.preload,
+        inputs: q.inputs,
+        path: q.path,
+      };
     }
-    // Default: queryName.json for no-input loaders; queryName-<inputString>.json for string inputs.
-    if (input === undefined) return `${queryName}.json`;
-    if (typeof input === 'string') return `${queryName}-${input}.json`;
+
+    // From definition.load — the legacy loader-map form. Errors if it overlaps with a query
+    // that also has a preload (the two forms must not double-declare the same name).
+    if (this.definition.load) {
+      for (const [name, loader] of Object.entries(this.definition.load)) {
+        if (name in map) {
+          throw new Error(
+            `[service ${this.id}] "${name}" is declared both as queries.${name}.preload and load.${name}. Pick one.`
+          );
+        }
+        const l = loader as LoaderDefinition<unknown, unknown>;
+        map[name] = {
+          handler: l.handler,
+          inputs: l.enumerateInputs,
+          path: l.options.path,
+        };
+      }
+    }
+
+    this._preloadsCache = Object.keys(map).length > 0 ? map : undefined;
+    return this._preloadsCache;
+  }
+  private _preloadsCache: Record<string, NormalizedPreload> | undefined = undefined;
+
+  private _preloadHasInput(name: string): boolean {
+    const entry = this._preloadsMap()?.[name];
+    return !!entry && entry.handler.length > 1;
+  }
+
+  /**
+   * Compute the relative filename for a query's JSON artifact (either to emit at build time
+   * or to fetch at runtime). Uses the query's `path` callback when provided, otherwise falls
+   * back to a sensible default based on the query name and input.
+   */
+  private _preloadFilename(name: string, entry: NormalizedPreload, input: unknown): string {
+    if (entry.path) {
+      const buildCtx: BuildCtx = { isBuild: true };
+      const hasInput = this._preloadHasInput(name);
+      if (hasInput) {
+        return (entry.path as (ctx: BuildCtx, input: unknown) => string)(buildCtx, input);
+      }
+      return (entry.path as (ctx: BuildCtx) => string)(buildCtx);
+    }
+    // Default: queryName.json for no-input; queryName-<input>.json for string inputs.
+    if (input === undefined) return `${name}.json`;
+    if (typeof input === 'string') return `${name}-${input}.json`;
     throw new Error(
-      `[service ${this.id}] Loader "${queryName}" has non-string inputs (${typeof input}) ` +
-        `and no \`path\` callback. Supply one: defineLoader(handler, inputs, { path: (_ctx, input) => '...' })`
+      `[service ${this.id}] Query "${name}" has non-string inputs (${typeof input}) ` +
+        `and no \`path\` callback. Supply one on the query: { path: (_ctx, input) => '...' }`
     );
   }
 
@@ -428,8 +469,8 @@ export class ServiceRuntime<TDef extends ServiceDefinition<any, any, any, any>> 
   }
 
   private async _maybeFireLoader(queryName: string, input: unknown): Promise<void> {
-    const loader = this._loadersMap()?.[queryName];
-    if (!loader) return;
+    const entry = this._preloadsMap()?.[queryName];
+    if (!entry) return;
 
     const inputKey = keyOfInput(input);
 
@@ -441,7 +482,7 @@ export class ServiceRuntime<TDef extends ServiceDefinition<any, any, any, any>> 
     if (existing) return existing;
 
     const ctx = this._getCtx();
-    const hasInput = this._loaderHasInput(queryName);
+    const hasInput = this._preloadHasInput(queryName);
     const promise = (async () => {
       try {
         // Branching rule: if a transport is installed, fetch-first. On a non-null hit,
@@ -450,7 +491,7 @@ export class ServiceRuntime<TDef extends ServiceDefinition<any, any, any, any>> 
         const transport = getStaticTransport();
         let resolvedFromStatic = false;
         if (transport) {
-          const filename = this._loaderFilename(queryName, loader, input);
+          const filename = this._preloadFilename(queryName, entry, input);
           const fetched = await transport.fetch(this.id, filename);
           if (fetched != null) {
             this._applyStateDiff(fetched);
@@ -460,12 +501,12 @@ export class ServiceRuntime<TDef extends ServiceDefinition<any, any, any, any>> 
 
         if (!resolvedFromStatic) {
           if (hasInput) {
-            await (loader.handler as (i: unknown, c: ServiceCtx<unknown>) => void | Promise<void>)(
+            await (entry.handler as (i: unknown, c: ServiceCtx<unknown>) => void | Promise<void>)(
               input,
               ctx
             );
           } else {
-            await (loader.handler as (c: ServiceCtx<unknown>) => void | Promise<void>)(ctx);
+            await (entry.handler as (c: ServiceCtx<unknown>) => void | Promise<void>)(ctx);
           }
         }
 
@@ -491,19 +532,40 @@ export class ServiceRuntime<TDef extends ServiceDefinition<any, any, any, any>> 
   }
 
   /**
-   * @internal Trigger a loader explicitly. Used by the build pipeline to fire each
-   * loader-input pair against a fresh sandboxed runtime so its patches can be captured.
+   * @internal Trigger a preload explicitly. Used by the build pipeline to fire each
+   * query-input pair against a fresh sandboxed runtime so its patches can be captured.
    */
   fireLoader = async (queryName: string, input?: unknown): Promise<void> => {
     await this._maybeFireLoader(queryName, input);
   };
 
-  /** @internal Resolve the relative filename for a loader-input pair. */
+  /** @internal Resolve the relative filename for a query-input pair. */
   loaderFilename = (queryName: string, input?: unknown): string => {
-    const loader = this._loadersMap()?.[queryName];
-    if (!loader) {
-      throw new Error(`[service ${this.id}] No loader registered for query "${queryName}"`);
+    const entry = this._preloadsMap()?.[queryName];
+    if (!entry) {
+      throw new Error(`[service ${this.id}] No preload registered for query "${queryName}"`);
     }
-    return this._loaderFilename(queryName, loader, input);
+    return this._preloadFilename(queryName, entry, input);
+  };
+
+  /** @internal The names of queries that have preloads (from either source). Used by the build. */
+  getPreloadNames = (): string[] => {
+    const map = this._preloadsMap();
+    return map ? Object.keys(map) : [];
+  };
+
+  /** @internal Resolve a preload's enumerated inputs. Used by the build. */
+  resolvePreloadInputs = async (queryName: string): Promise<readonly unknown[]> => {
+    const entry = this._preloadsMap()?.[queryName];
+    if (!entry) return [];
+    const e = entry.inputs;
+    if (e === undefined) return [undefined];
+    if (typeof e === 'function') {
+      const buildCtx: BuildCtx = { isBuild: true };
+      return await (e as (ctx: BuildCtx) => readonly unknown[] | Promise<readonly unknown[]>)(
+        buildCtx
+      );
+    }
+    return e as readonly unknown[];
   };
 }

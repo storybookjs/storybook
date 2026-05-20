@@ -1,7 +1,7 @@
 name: Publish Preview Packages
-run-name: Publish preview packages for PR #${{ github.event.pull_request.number }}
 
 on:
+  workflow_dispatch:
   pull_request:
     types: [opened, synchronize, reopened, labeled]
 
@@ -14,25 +14,29 @@ permissions:
   pull-requests: write
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number }}
+  group: ${{ github.workflow }}-${{ github.event_name == 'workflow_dispatch' && github.ref_name || github.event.pull_request.number }}
   cancel-in-progress: true
 
 jobs:
   publish-preview:
     name: Publish preview packages
     if: |
-      (github.event.action == 'labeled' && contains(fromJSON('["ci:normal","ci:merged","ci:daily"]'), github.event.label.name)) ||
-      (github.event.action != 'labeled' && (
-        contains(github.event.pull_request.labels.*.name, 'ci:normal') ||
-        contains(github.event.pull_request.labels.*.name, 'ci:merged') ||
-        contains(github.event.pull_request.labels.*.name, 'ci:daily')
-      ))
+      github.event_name == 'workflow_dispatch' ||
+      (
+        (github.event.action == 'labeled' && contains(fromJSON('["ci:normal","ci:merged","ci:daily"]'), github.event.label.name)) ||
+        (github.event.action != 'labeled' && (
+          contains(github.event.pull_request.labels.*.name, 'ci:normal') ||
+          contains(github.event.pull_request.labels.*.name, 'ci:merged') ||
+          contains(github.event.pull_request.labels.*.name, 'ci:daily')
+        ))
+      )
     runs-on: ubuntu-latest
     steps:
       - name: Checkout pull request HEAD
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
-          ref: ${{ github.event.pull_request.head.sha }}
+          repository: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name || github.repository }}
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
           persist-credentials: false
 
       - name: Setup Node.js and Install Dependencies
@@ -56,11 +60,11 @@ jobs:
 
       - name: Build preview PR body
         id: preview-body
+        if: ${{ github.event_name == 'pull_request' }}
         working-directory: scripts
         env:
           BRANCH: ${{ github.event.pull_request.head.ref }}
           COMMIT_SHA: ${{ github.event.pull_request.head.sha }}
-          REPOSITORY: ${{ github.event.pull_request.head.repo.full_name }}
           RUN_ID: ${{ github.run_id }}
           TRIGGERING_ACTOR: ${{ github.triggering_actor }}
           WORKFLOW_REPOSITORY: ${{ github.repository }}
@@ -94,7 +98,8 @@ jobs:
 
       - name: Replace Pull Request Body
         id: replace-pr-body
-        continue-on-error: ${{ github.event.pull_request.head.repo.fork }}
+        if: ${{ github.event_name == 'pull_request' }}
+        continue-on-error: ${{ github.event.pull_request.head.repo.full_name != github.repository }}
         uses: ivangabriele/find-and-replace-pull-request-body@9d26f37218b2649daea37dbc04bfd092b9ebeeca # v1.1.5
         with:
           githubToken: ${{ github.token }}
@@ -103,8 +108,8 @@ jobs:
           replace: ${{ steps.preview-body.outputs.body }}
 
       - name: Create failing comment on PR
-        if: ${{ failure() && steps.replace-pr-body.outcome != 'failure' }}
-        continue-on-error: ${{ github.event.pull_request.head.repo.fork }}
+        if: ${{ github.event_name == 'pull_request' && failure() && steps.replace-pr-body.outcome != 'failure' }}
+        continue-on-error: ${{ github.event.pull_request.head.repo.full_name != github.repository }}
         env:
           GH_TOKEN: ${{ github.token }}
           PR_NUMBER: ${{ github.event.pull_request.number }}

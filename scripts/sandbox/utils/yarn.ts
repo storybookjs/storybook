@@ -43,6 +43,12 @@ export const BEFORE_SANDBOX_MIN_AGE_MINUTES = 7 * 24 * 60;
 interface RefreshLockfileOptions {
   cwd: string;
   debug?: boolean;
+  /**
+   * Skip the `npmMinimalAgeGate` setting. Required for templates that pin
+   * intentionally-fresh dependency versions (e.g. `create-next-app@canary`)
+   * whose pinned versions would otherwise be quarantined.
+   */
+  disableMinAgeGate?: boolean;
 }
 
 /**
@@ -61,7 +67,11 @@ interface RefreshLockfileOptions {
  * `YARN_ENABLE_IMMUTABLE_INSTALLS=false` is set via env (not `.yarnrc.yml`) so
  * the consumer-facing config stays clean.
  */
-export async function refreshBeforeStorybookLockfile({ cwd, debug }: RefreshLockfileOptions) {
+export async function refreshBeforeStorybookLockfile({
+  cwd,
+  debug,
+  disableMinAgeGate,
+}: RefreshLockfileOptions) {
   // Drop any non-Yarn-4 lockfile the template's CLI produced.
   await Promise.allSettled([
     rm(join(cwd, 'package-lock.json'), { force: true }),
@@ -82,11 +92,9 @@ export async function refreshBeforeStorybookLockfile({ cwd, debug }: RefreshLock
 
   await runCommand(`yarn set version berry`, { cwd }, debug);
   await runCommand(`yarn config set nodeLinker node-modules`, { cwd }, debug);
-  await runCommand(
-    `yarn config set npmMinimalAgeGate ${BEFORE_SANDBOX_MIN_AGE_MINUTES}`,
-    { cwd },
-    debug
-  );
+
+  const gateMinutes = disableMinAgeGate ? 0 : BEFORE_SANDBOX_MIN_AGE_MINUTES;
+  await runCommand(`yarn config set npmMinimalAgeGate ${gateMinutes}`, { cwd }, debug);
 
   const env = {
     ...process.env,
@@ -95,5 +103,19 @@ export async function refreshBeforeStorybookLockfile({ cwd, debug }: RefreshLock
   };
 
   await runCommand(`yarn install --mode=update-lockfile`, { cwd, env }, debug);
-  await runCommand(`yarn up '*' --mode=update-lockfile`, { cwd, env }, debug);
+
+  // `yarn up '*'` errors when the project has no direct dependencies
+  // (`internal/server-webpack5` is just `yarn init -y`). The lockfile from
+  // `yarn install` is already valid; a failure here is non-fatal.
+  try {
+    await runCommand(`yarn up '*' --mode=update-lockfile`, { cwd, env }, debug);
+  } catch (error) {
+    console.warn(
+      `⚠️ yarn up '*' skipped (likely no upgradeable dependencies); keeping the ` +
+        `lockfile from yarn install.`
+    );
+    if (debug) {
+      console.warn(error);
+    }
+  }
 }

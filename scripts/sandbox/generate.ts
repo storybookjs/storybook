@@ -222,7 +222,7 @@ const runGenerators = async (
   const limit = pLimit(1);
 
   const generationResults = await Promise.allSettled(
-    generators.map(({ dirName, name, script, env, initOptions }) =>
+    generators.map(({ dirName, name, script, env, initOptions, disableMinAgeGate }) =>
       limit(async () => {
         const baseDir = join(REPROS_DIRECTORY, dirName);
         const beforeDir = join(baseDir, BEFORE_DIR_NAME);
@@ -303,7 +303,11 @@ const runGenerators = async (
           // the template's original lockfile is already gone, but the consumer can
           // still install from package.json.
           try {
-            await refreshBeforeStorybookLockfile({ cwd: createBeforeDir, debug });
+            await refreshBeforeStorybookLockfile({
+              cwd: createBeforeDir,
+              debug,
+              disableMinAgeGate,
+            });
           } catch (error) {
             const message = `⚠️ Failed to refresh Yarn 4 lockfile for template: ${name} (${dirName}); shipping template default state`;
             if (isCI) {

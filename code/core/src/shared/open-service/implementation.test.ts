@@ -3,13 +3,12 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   buildStaticFiles,
   clearRegistry,
-  createQueryInputStaticPath,
   createService,
   defineCommand,
   defineQuery,
   defineService,
   getService,
-} from './index.ts';
+} from './implementation.ts';
 
 // ----------------------------------------------------------------- fixture --
 

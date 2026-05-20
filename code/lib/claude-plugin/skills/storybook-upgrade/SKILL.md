@@ -1,6 +1,6 @@
 ---
 name: storybook-upgrade
-description: Use when a project has an older Storybook version, incompatible Storybook MCP setup, missing addon registration, or proxy repair instructions that require upgrading Storybook.
+description: Use when a project has an older Storybook version or proxy repair instructions that require upgrading Storybook.
 ---
 
 # Storybook Upgrade
@@ -21,7 +21,7 @@ npx storybook@latest upgrade
 5. If you only need configuration repairs, use:
 
 ```sh
-npx storybook@latest automigrate
+npx storybook automigrate
 ```
 
 6. If the MCP addon is missing after upgrade, install it:
@@ -33,10 +33,10 @@ npx storybook add @storybook/addon-mcp
 7. Run Storybook's health check when useful:
 
 ```sh
-npx storybook@latest doctor
+npx storybook doctor
 ```
 
-8. Start Storybook. When the real proxy is available, retry the Storybook MCP proxy tool with the exact `cwd`.
+8. Start Storybook, then use `/storybook-setup` if the user still needs configuration or stories.
 
 ## Guardrails
 

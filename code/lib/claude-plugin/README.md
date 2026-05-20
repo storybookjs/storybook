@@ -2,7 +2,7 @@
 
 Build, preview, and test UI components from Claude.
 
-This package installs Storybook-specific skills and configures Claude to start `@storybook/mcp-proxy`. In this milestone, that package is a minimal placeholder MCP server so Claude can discover and start the plugin-provided MCP entry before the real proxy implementation lands.
+This package installs Storybook-specific skills and configures Claude to start `@storybook/mcp-proxy`.
 
 ## Local development
 
@@ -21,13 +21,13 @@ Validate the marketplace and plugin manifests:
 pnpm --filter @storybook/claude-code-plugin run validate
 ```
 
-Run the local plugin contract test before pushing changes:
+Run the same validation in vitest before pushing changes (from the repository root):
 
 ```sh
-pnpm --filter @storybook/claude-code-plugin test:run
+pnpm vitest run --project=@storybook/claude-code-plugin
 ```
 
-This checks the marketplace/plugin files and that `.mcp.json` points at a pkg.pr.new preview for `@storybook/mcp-proxy`. For Claude manifest validation and install testing, use `validate` and `plugin:install`.
+The test runs `claude plugin validate` for the marketplace and plugin manifests. It skips when the Claude CLI is not installed. Use `validate` for manual checks or CI, and `plugin:install` below for local install testing.
 
 Install the plugin from this checkout at user scope:
 
@@ -75,21 +75,9 @@ The output should include:
 plugin:storybook:storybook: npx -y https://pkg.pr.new/storybookjs/mcp/@storybook/mcp-proxy@227
 ```
 
-The current `@storybook/mcp-proxy` preview responds to MCP initialization and returns an empty tool list. The important signal for this package is that `plugin:storybook:storybook` appears and can be started from the pkg.pr.new preview URL.
+The important signal for this package is that `plugin:storybook:storybook` appears and can be started from the pkg.pr.new preview URL.
 
 To test in Claude Desktop, restart Claude Desktop after installing or updating the plugin, open a new Code session in any project, and check that the Storybook skills are available from the `+` menu.
-
-Remove the user-scoped plugin after testing:
-
-```sh
-pnpm --filter @storybook/claude-code-plugin run plugin:remove
-```
-
-To remove the marketplace entry itself, run:
-
-```sh
-pnpm --filter @storybook/claude-code-plugin run marketplace:remove
-```
 
 ## Scripts
 
@@ -128,11 +116,9 @@ The `@227` ref tracks the newest preview build for this PR.
 > `https://pkg.pr.new/storybookjs/mcp/@storybook/mcp-proxy@main`  
 > **TODO:** After `@storybook/mcp-proxy` is published to npm, switch to `@storybook/mcp-proxy@latest`.
 
-The package currently exposes no Storybook tools. Milestone 2 of storybookjs/storybook#34826 will replace the placeholder internals with the real proxy, which will discover running Storybook instances and proxy the seven Storybook MCP tools.
-
 ## Included Skills
 
-- `storybook-mcp-setup`: Set up Storybook MCP readiness in an existing project.
 - `storybook-init`: Add Storybook to a project that does not have it yet.
-- `storybook-upgrade`: Upgrade older Storybook projects and repair MCP readiness issues.
-- `storybook-launch-setup`: Create or repair Claude preview launch configuration for starting Storybook.
+- `storybook-setup`: Run `storybook ai setup` and follow its output.
+- `storybook-setup-claude-launch`: Create or repair `.claude/launch.json` for starting Storybook from Claude.
+- `storybook-upgrade`: Upgrade older Storybook projects when repair or version checks require it.

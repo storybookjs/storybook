@@ -26,8 +26,6 @@
 	],
 	"type": "module",
 	"scripts": {
-		"test": "cd ../.. && pnpm vitest --project=@storybook/claude-code-plugin",
-		"test:run": "cd ../.. && pnpm vitest run --project=@storybook/claude-code-plugin",
 		"validate": "claude plugin validate . && claude plugin validate .claude-plugin/plugin.json",
 		"marketplace:add": "claude plugin marketplace add ./ --scope user",
 		"marketplace:update": "claude plugin marketplace update storybook",

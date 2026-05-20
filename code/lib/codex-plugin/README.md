@@ -24,14 +24,13 @@ Codex exposes marketplace lifecycle commands in the CLI. Installing the plugin i
 
 Run package scripts from the repository root with `pnpm --filter @storybook/codex-plugin run <script>`, or from this package directory with `pnpm run <script>`.
 
-Run the local plugin contract test and marketplace validation before pushing changes:
+Run marketplace validation before pushing changes:
 
 ```sh
-pnpm --filter @storybook/codex-plugin test:run
 pnpm --filter @storybook/codex-plugin validate:marketplace
 ```
 
-This checks the marketplace/plugin files, that `.mcp.json` points at a pkg.pr.new preview for `@storybook/mcp-proxy`, and that `codex plugin marketplace add` succeeds against a clean `CODEX_HOME`.
+This checks the marketplace/plugin layout and that `codex plugin marketplace add` succeeds against a clean `CODEX_HOME`.
 
 Add this package directory as the local Storybook marketplace:
 
@@ -61,7 +60,7 @@ pnpm --filter @storybook/codex-plugin run plugin:refresh
 
 Codex installs local plugins into `~/.codex/plugins/cache/` and does not automatically pick up file changes while the version in `.codex-plugin/plugin.json` stays the same. The refresh script recopies `plugins/storybook/` into that cache directory.
 
-The plugin points at the latest `@storybook/mcp-proxy` preview from pkg.pr.new. In this milestone, that package is a minimal placeholder MCP server that responds to initialization and returns an empty tool list. This lets plugin installation, metadata, icon, MCP server configuration, and skills be tested before the real proxy implementation exists.
+The plugin points at the latest `@storybook/mcp-proxy` preview from pkg.pr.new.
 
 To test from a Git branch while the plugin still lives under `packages/`, sparse-checkout this package directory:
 
@@ -83,12 +82,6 @@ For day-to-day development, prefer the local marketplace command instead of the 
 
 ```sh
 pnpm --filter @storybook/codex-plugin run marketplace:add
-```
-
-To remove the local marketplace after testing, run:
-
-```sh
-pnpm --filter @storybook/codex-plugin run marketplace:remove
 ```
 
 After installing the plugin, Codex loads it from its plugin cache. If changes do not show up, restart Codex and reinstall or refresh the plugin so the cache picks up the new contents.
@@ -115,8 +108,6 @@ The `@227` ref tracks the newest preview build for this PR.
 > `https://pkg.pr.new/storybookjs/mcp/@storybook/mcp-proxy@main`  
 > **TODO:** After `@storybook/mcp-proxy` is published to npm, switch to `@storybook/mcp-proxy@latest`.
 
-The package currently exposes no Storybook tools. Milestone 2 of storybookjs/storybook#34826 will replace the placeholder internals with the real proxy, which will expose the stable Storybook MCP server for agentic development environments.
-
 ## Smoke Test
 
 Use a clean Codex config directory to verify that the marketplace descriptor is loadable without relying on existing local state. Run this from `packages/codex-plugin`:
@@ -142,6 +133,6 @@ The config should include a `[marketplaces.storybook]` entry whose `source` poin
 
 ## Included Skills
 
-- `storybook-mcp-setup`: Set up Storybook MCP readiness in an existing project.
-- `storybook-init`: Add Storybook to a project that does not have it yet.
-- `storybook-upgrade`: Upgrade older Storybook projects and repair MCP readiness issues.
+- `init`: Add Storybook to a project that does not have it yet.
+- `setup`: Run `storybook ai setup` and follow its output.
+- `upgrade`: Upgrade older Storybook projects when repair or version checks require it.

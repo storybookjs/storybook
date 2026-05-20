@@ -26,11 +26,10 @@ Use the matching package-manager command when appropriate, such as `pnpm create 
 npx storybook add @storybook/addon-mcp
 ```
 
-6. Start Storybook with the generated script.
-7. Once Storybook is running, use `$storybook-mcp-setup` to validate MCP readiness.
+6. Use `/storybook-setup-claude-launch` to configure `.claude/launch.json` and start Storybook through that launch entry.
+7. Note the Storybook invocation directory (where `storybook dev` runs) as `cwd` when using Storybook MCP proxy tools.
 
 ## Guardrails
 
 - Do not hand-write a full Storybook config when the official initializer can do it.
 - Preserve existing app source and package manager choices.
-- If the initializer prompts for destructive or broad changes, stop and ask the user before proceeding.

@@ -280,6 +280,7 @@
     "@react-stately/tabs": "^3.8.5",
     "@react-types/shared": "^3.32.0",
     "@rolldown/pluginutils": "1.0.0-beta.18",
+    "@standard-schema/spec": "^1.1.0",
     "@tanstack/react-virtual": "^3.3.0",
     "@testing-library/dom": "^10.4.1",
     "@testing-library/react": "^14.0.0",
@@ -386,6 +387,7 @@
     "typescript": "^5.8.3",
     "unique-string": "^3.0.0",
     "use-resize-observer": "^9.1.0",
+    "valibot": "^1.4.0",
     "watchpack": "^2.5.0",
     "wrap-ansi": "^9.0.2",
     "zod": "^3.25.76"

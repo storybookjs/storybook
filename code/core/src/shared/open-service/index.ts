@@ -25,17 +25,17 @@ import { computed, effect, endBatch, setActiveSub, signal, startBatch } from 'al
 
 // ------------------------------------------------------------------ types --
 
-type CommandExecutors = Record<string, (input: any) => Promise<void>>;
+type Command = Record<string, (input: any) => Promise<void>>;
 
-export type AsyncQueryAccessor<TInput, TOutput> = {
+export type Query<TInput, TOutput> = {
   (input: TInput): Promise<TOutput>;
   subscribe(input: TInput, callback: (value: TOutput) => void): () => void;
 };
 
 type ReadonlySelf<TState = any> = {
   readonly state: TState;
-  queries: Record<string, AsyncQueryAccessor<any, any>>;
-  commands: CommandExecutors;
+  queries: Record<string, Query<any, any>>;
+  commands: Command;
 };
 
 type WritableSelf<TState = any> = ReadonlySelf<TState> & {
@@ -121,7 +121,7 @@ export type ServiceInstance<
 > = {
   queries: {
     [TKey in keyof TQueries]: TQueries[TKey] extends QueryDef<TState, infer TInput, infer TOutput>
-      ? AsyncQueryAccessor<TInput, TOutput>
+      ? Query<TInput, TOutput>
       : never;
   };
   commands: {
@@ -150,59 +150,29 @@ export const defineService = <
 // --------------------------------------------------------- internal impl --
 
 /**
- * Serialises a value with sorted object keys so the result is consistent
- * regardless of property insertion order. Used as input to hashInput.
- */
-function stableStringify(value: unknown): string {
-  return JSON.stringify(value, (_key, val) => {
-    if (val !== null && typeof val === 'object' && !Array.isArray(val)) {
-      return Object.fromEntries(Object.entries(val as object).sort());
-    }
-    return val;
-  });
-}
-
-/**
- * FNV-1a 32-bit hash. Returns an 8-character lowercase hex string.
- *
- * Used to derive filesystem-safe, deterministic store key segments from
- * arbitrary input objects. Pure JS — works in Node.js and browser without
- * any crypto API dependency.
- */
-function hashInput(value: unknown): string {
-  const str = stableStringify(value);
-  let h = 0x811c9dc5; // FNV-1a offset basis
-  for (let i = 0; i < str.length; i++) {
-    h ^= str.charCodeAt(i);
-    h = Math.imul(h, 0x01000193) >>> 0; // FNV prime, keep unsigned 32-bit
-  }
-  return h.toString(16).padStart(8, '0');
-}
-
-/**
  * Returns the store key for a given (service, query, input) triple.
  * When `queryDef.static.path` is provided it is used as-is; otherwise a
- * deterministic default of `{serviceId}/{queryName}/{hash}.json` is
- * generated — where `hash` is an 8-char FNV-1a hex digest of the
- * stable-stringified input — so authors rarely need to specify a path.
+ * deterministic default of `{serviceId}.json` is generated so the whole
+ * service state is written into a single file by default.
  */
 function resolveStaticPath(
   serviceId: string,
-  queryName: string,
   queryDef: QueryDef<any, any, any>,
   input: unknown,
   ctx: QueryCtx<any>
 ): string {
-  return queryDef.static?.path
-    ? queryDef.static.path(input as any, ctx)
-    : `${serviceId}/${queryName}/${hashInput(input)}.json`;
+  return queryDef.static?.path ? queryDef.static.path(input as any, ctx) : `${serviceId}.json`;
 }
 
 /** Internal registry entry — includes the raw signal for serialization. */
 type InternalService = {
-  queries: Record<string, AsyncQueryAccessor<any, any>>;
-  commands: CommandExecutors;
+  queries: Record<string, Query<any, any>>;
+  commands: Command;
   _stateSignal: ReturnType<typeof signal<any>>;
+};
+
+type CreateServiceOptions = {
+  store?: Record<string, unknown>;
 };
 
 function createSelfRef<TState>(
@@ -225,7 +195,7 @@ function createSelfRef<TState>(
 function buildCommandExecutors<TState>(
   commands: Commands<TState>,
   ctx: CommandCtx<TState>
-): CommandExecutors {
+): Command {
   return Object.fromEntries(
     Object.entries(commands).map(([name, def]) => [
       name,
@@ -242,7 +212,7 @@ function buildQueryAccessor<TState>(
   stateSignal: ReturnType<typeof signal<TState>>,
   selfRef: WritableSelf<TState>,
   loadStaticState?: (input: any) => Promise<void>
-): AsyncQueryAccessor<any, any> {
+): Query<any, any> {
   const createQueryCtx = (_state: TState): QueryCtx<TState> => ({ self: selfRef });
 
   // Subscriptions always fire immediately, then update reactively.
@@ -284,57 +254,32 @@ function buildQueryAccessor<TState>(
     }
 
     return queryDef.handler(input, createQueryCtx(stateSignal()));
-  }) as AsyncQueryAccessor<any, any>;
+  }) as Query<any, any>;
 
   asyncAccessor.subscribe = subscribeMethod;
   return asyncAccessor;
 }
 
-function createLiveService<TState>(
-  def: ServiceDef<TState, Queries<TState>, Commands<TState>>
-): InternalService {
+export function createService<
+  TState,
+  TQueries extends Queries<TState>,
+  TCommands extends Commands<TState>,
+>(
+  def: ServiceDef<TState, TQueries, TCommands>,
+  options?: CreateServiceOptions
+): ServiceInstance<TState, TQueries, TCommands> {
   const stateSignal = signal<TState>(def.initialState);
+  const store = options?.store;
   const selfRef = createSelfRef(stateSignal);
-  const ctx: CommandCtx<TState> = {
-    self: selfRef,
-  };
+  const ctx: CommandCtx<TState> = { self: selfRef };
 
+  // Commands stay live regardless of whether a static store is present.
+  // Static behavior only changes how eligible queries populate state.
   const commands = buildCommandExecutors(def.commands, ctx);
   selfRef.commands = commands;
 
-  const queries = Object.fromEntries(
-    Object.entries(def.queries).map(([name, queryDef]) => [
-      name,
-      buildQueryAccessor(queryDef, stateSignal, selfRef),
-    ])
-  );
-  selfRef.queries = queries;
-
-  return { queries, commands, _stateSignal: stateSignal };
-}
-
-function createStaticService<TState>(
-  def: ServiceDef<TState, Queries<TState>, Commands<TState>>,
-  store: Record<string, unknown>
-): InternalService {
-  const stateSignal = signal<TState>(def.initialState);
-  // Deduplicate concurrent loads by store key so the same path is only merged once.
   const loadsByPath = new Map<string, Promise<void>>();
-  const selfRef = createSelfRef(stateSignal);
 
-  // Commands are unavailable in static mode. Queries load their pre-built state
-  // slices directly from the store instead.
-  const commands: CommandExecutors = Object.fromEntries(
-    Object.keys(def.commands).map((name) => [
-      name,
-      () => Promise.reject(new Error(`Command "${name}" is unavailable in static mode`)),
-    ])
-  );
-  selfRef.commands = commands;
-
-  // In static mode, queries with static config load from the store. Queries
-  // without static config still run, but any preload that calls commands will
-  // reject because commands are unavailable.
   const queries = Object.fromEntries(
     (Object.entries(def.queries) as [string, QueryDef<TState, any, any>][]).map(
       ([name, queryDef]) => [
@@ -343,9 +288,9 @@ function createStaticService<TState>(
           queryDef,
           stateSignal,
           selfRef,
-          queryDef.static
+          store !== undefined && queryDef.preload && queryDef.static?.inputs
             ? async (input: any) => {
-                const path = resolveStaticPath(def.id, name, queryDef, input, {
+                const path = resolveStaticPath(def.id, queryDef, input, {
                   self: selfRef,
                 });
                 if (!loadsByPath.has(path)) {
@@ -366,13 +311,16 @@ function createStaticService<TState>(
   );
   selfRef.queries = queries;
 
-  return { queries, commands, _stateSignal: stateSignal };
+  return { queries, commands, _stateSignal: stateSignal } as unknown as ServiceInstance<
+    TState,
+    TQueries,
+    TCommands
+  >;
 }
 
 // ---------------------------------------------------------------- registry --
 
-let staticModeConfig: { store: Record<string, unknown> } | null = null;
-const registry = new Map<string, InternalService>();
+const registry = new Map<string, ServiceInstance<any, any, any>>();
 
 export function getService<
   TState,
@@ -380,57 +328,36 @@ export function getService<
   TCommands extends Commands<TState>,
 >(def: ServiceDef<TState, TQueries, TCommands>): ServiceInstance<TState, TQueries, TCommands> {
   if (!registry.has(def.id)) {
-    const service =
-      staticModeConfig !== null
-        ? createStaticService(def, staticModeConfig.store)
-        : createLiveService(def);
+    const service = createService(def);
     registry.set(def.id, service);
   }
-  return registry.get(def.id)! as unknown as ServiceInstance<TState, TQueries, TCommands>;
-}
-
-// --------------------------------------------------------- static support --
-
-/**
- * Switch to static mode. Call this once at app boot — before any `getService()`
- * call — when running a statically-built Storybook.
- *
- * In static mode, queries that define `static.path` load their data from
- * `store` and deep-merge it into the service state via `toMerged`. Commands
- * are unavailable and reject immediately.
- *
- * @param options.store  The in-memory key→value store produced by
- *                       `buildStaticFiles()`. Defaults to `{}`.
- */
-export function configureStaticMode(options?: { store?: Record<string, unknown> }): void {
-  staticModeConfig = { store: options?.store ?? {} };
+  return registry.get(def.id)! as ServiceInstance<TState, TQueries, TCommands>;
 }
 
 /**
- * Build-time helper. For each service query that defines `static.path` +
+ * Build-time helper. For each service query that defines both `preload` and
  * `static.inputs`, runs that query's preload phase for every input (starting
  * from a clean copy of `initialState`) and captures the resulting state.
  *
  * Returns a **store** — a plain `Record<string, unknown>` mapping
  * `path(input) → capturedState` — that can be passed directly to
- * `configureStaticMode({ store })` at runtime.
+ * `createService(serviceDef, { store })` at runtime. Builds for different
+ * inputs always run from isolated initial state snapshots; entries that
+ * resolve to the same path are deep-merged together after the builds finish.
  *
  * @example
  * const store = await buildStaticFiles([auditServiceDef]);
- * // At app boot:
- * configureStaticMode({ store });
+ * const service = createService(auditServiceDef, { store });
  */
 export async function buildStaticFiles(
   services: ServiceDef<any, any, any>[]
 ): Promise<Record<string, unknown>> {
   const store: Record<string, unknown> = {};
+  const buildTasks: Array<Promise<{ path: string; state: unknown }>> = [];
 
   for (const def of services) {
-    for (const [queryName, queryDef] of Object.entries(def.queries) as [
-      string,
-      QueryDef<any, any, any>,
-    ][]) {
-      if (!queryDef.static) continue;
+    for (const [, queryDef] of Object.entries(def.queries) as [string, QueryDef<any, any, any>][]) {
+      if (!queryDef.preload || !queryDef.static?.inputs) continue;
 
       const createBuildRuntime = () => {
         const stateSignal = signal(structuredClone(def.initialState));
@@ -457,19 +384,25 @@ export async function buildStaticFiles(
       const inputsRuntime = createBuildRuntime();
       const inputs = await queryDef.static.inputs(inputsRuntime.queryCtx);
 
-      for (const input of inputs) {
-        // Run preload from a clean copy of initialState in a capture context so
-        // each file contains only the data this query input produces.
-        const buildRuntime = createBuildRuntime();
+      buildTasks.push(
+        ...inputs.map(async (input) => {
+          // Run preload from a clean copy of initialState in an isolated runtime,
+          // then deep-merge its result into any existing file with the same path.
+          const buildRuntime = createBuildRuntime();
+          const path = resolveStaticPath(def.id, queryDef, input, buildRuntime.queryCtx);
 
-        if (queryDef.preload) {
-          await queryDef.preload(input, buildRuntime.queryCtx);
-        }
+          await queryDef.preload!(input, buildRuntime.queryCtx);
 
-        store[resolveStaticPath(def.id, queryName, queryDef, input, buildRuntime.queryCtx)] =
-          buildRuntime.stateSignal();
-      }
+          return { path, state: buildRuntime.stateSignal() };
+        })
+      );
     }
+  }
+
+  const builtStates = await Promise.all(buildTasks);
+
+  for (const { path, state } of builtStates) {
+    store[path] = path in store ? toMerged(store[path] as object, state as object) : state;
   }
 
   return store;
@@ -478,5 +411,4 @@ export async function buildStaticFiles(
 /** Clear all registered services and reset static mode. Intended for tests only. */
 export function clearRegistry(): void {
   registry.clear();
-  staticModeConfig = null;
 }

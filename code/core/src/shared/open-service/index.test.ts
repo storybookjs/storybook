@@ -3,7 +3,8 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   buildStaticFiles,
   clearRegistry,
-  configureStaticMode,
+  createQueryInputStaticPath,
+  createService,
   defineCommand,
   defineQuery,
   defineService,
@@ -55,8 +56,8 @@ const auditServiceDef = defineService({
         }
       },
       static: {
-        // path is omitted — the default `{serviceId}/{queryName}/{hash}.json`
-        // is used, e.g. `test/audit/getAuditResult/4bd3f151.json`
+        // path is omitted — the default is a single service-level JSON file,
+        // e.g. `test/audit.json`
         inputs: async (_ctx) => [{ storyId: 'story-a' }, { storyId: 'story-b' }],
       },
     }),
@@ -344,24 +345,66 @@ describe('direct await — fire-and-forget preload (void return)', () => {
 });
 
 describe('buildStaticFiles', () => {
-  it('runs query preload from initialState for each input and stores the result', async () => {
+  it('runs query preload from initialState for each input and deep-merges by path', async () => {
     const store = await buildStaticFiles([auditServiceDef]);
     // Each input is isolated — started from a fresh initialState
-    expect(Object.values(store)).toEqual(
-      expect.arrayContaining([{ 'story-a': 'pass' }, { 'story-b': 'pass' }])
-    );
+    expect(store).toEqual({ 'test/audit.json': { 'story-a': 'pass', 'story-b': 'pass' } });
   });
 
-  it('produces one entry per input using a deterministic default path', async () => {
+  it('uses a single default path per service', async () => {
     const store = await buildStaticFiles([auditServiceDef]);
-    expect(Object.keys(store)).toHaveLength(2);
-    // Default path: {serviceId}/{queryName}/{8-char FNV-1a hex}.json — always filesystem-safe
-    for (const key of Object.keys(store)) {
-      expect(key).toMatch(/^test\/audit\/getAuditResult\/[0-9a-f]{8}\.json$/);
-    }
-    expect(Object.values(store)).toEqual(
-      expect.arrayContaining([{ 'story-a': 'pass' }, { 'story-b': 'pass' }])
-    );
+    expect(store).toEqual({ 'test/audit.json': { 'story-a': 'pass', 'story-b': 'pass' } });
+  });
+
+  it('deep-merges outputs from different queries that resolve to the same custom path', async () => {
+    type SharedPathState = { audit?: string; lint?: string };
+
+    const sharedPathServiceDef = defineService({
+      id: 'test/shared-path',
+      initialState: {} as SharedPathState,
+      queries: {
+        getAudit: defineQuery<SharedPathState, undefined, string | null>({
+          handler: (_input, ctx) => ctx.self.state.audit ?? null,
+          preload: async (_input, ctx) => {
+            await ctx.self.commands.runAudit(undefined);
+          },
+          static: {
+            path: () => 'shared.json',
+            inputs: async () => [undefined],
+          },
+        }),
+        getLint: defineQuery<SharedPathState, undefined, string | null>({
+          handler: (_input, ctx) => ctx.self.state.lint ?? null,
+          preload: async (_input, ctx) => {
+            await ctx.self.commands.runLint(undefined);
+          },
+          static: {
+            path: () => 'shared.json',
+            inputs: async () => [undefined],
+          },
+        }),
+      },
+      commands: {
+        runAudit: defineCommand<SharedPathState, undefined>({
+          handler: (_input, ctx) => {
+            ctx.self.setState((draft) => {
+              draft.audit = 'pass';
+            });
+          },
+        }),
+        runLint: defineCommand<SharedPathState, undefined>({
+          handler: (_input, ctx) => {
+            ctx.self.setState((draft) => {
+              draft.lint = 'pass';
+            });
+          },
+        }),
+      },
+    });
+
+    const store = await buildStaticFiles([sharedPathServiceDef]);
+
+    expect(store).toEqual({ 'shared.json': { audit: 'pass', lint: 'pass' } });
   });
 
   it('skips services and queries without static config', async () => {
@@ -370,14 +413,13 @@ describe('buildStaticFiles', () => {
   });
 });
 
-describe('static mode — configureStaticMode', () => {
-  // No fetch mocking needed — static mode reads from an in-memory store.
-  // Build the store with buildStaticFiles(), pass it to configureStaticMode({ store }).
+describe('static services — createService with store', () => {
+  // No fetch mocking needed — static services read from an in-memory store.
+  // Build the store with buildStaticFiles(), then pass it to createService(..., { store }).
 
   it('query with static config loads from the store and merges state', async () => {
     const store = await buildStaticFiles([auditServiceDef]);
-    configureStaticMode({ store });
-    const service = getService(auditServiceDef);
+    const service = createService(auditServiceDef, { store });
 
     expect(await service.queries.getAuditResult({ storyId: 'story-a' })).toBe('pass');
     expect(await service.queries.getAuditResult({ storyId: 'story-b' })).toBe('pass');
@@ -385,8 +427,7 @@ describe('static mode — configureStaticMode', () => {
 
   it('end-to-end: direct query load merges static state and returns correct value', async () => {
     const store = await buildStaticFiles([auditServiceDef]);
-    configureStaticMode({ store });
-    const service = getService(auditServiceDef);
+    const service = createService(auditServiceDef, { store });
 
     // Direct query loading waits for the store merge before reading.
     const result = await service.queries.getAuditResult({ storyId: 'story-a' });
@@ -395,8 +436,7 @@ describe('static mode — configureStaticMode', () => {
 
   it('subscribe fires immediately with initialState then updates reactively after merge', async () => {
     const store = await buildStaticFiles([auditServiceDef]);
-    configureStaticMode({ store });
-    const service = getService(auditServiceDef);
+    const service = createService(auditServiceDef, { store });
     const calls: any[] = [];
 
     const unsub = service.queries.getAuditResult.subscribe({ storyId: 'story-a' }, (v) =>
@@ -423,8 +463,7 @@ describe('static mode — configureStaticMode', () => {
         return Reflect.get(target, prop, receiver);
       },
     });
-    configureStaticMode({ store: monitoredStore });
-    const service = getService(auditServiceDef);
+    const service = createService(auditServiceDef, { store: monitoredStore });
 
     await Promise.all([
       service.queries.getAuditResult({ storyId: 'story-a' }),
@@ -438,8 +477,7 @@ describe('static mode — configureStaticMode', () => {
 
   it('different inputs load independently and accumulate in state via toMerged', async () => {
     const store = await buildStaticFiles([auditServiceDef]);
-    configureStaticMode({ store });
-    const service = getService(auditServiceDef);
+    const service = createService(auditServiceDef, { store });
 
     const [a, b] = await Promise.all([
       service.queries.getAuditResult({ storyId: 'story-a' }),
@@ -452,8 +490,7 @@ describe('static mode — configureStaticMode', () => {
 
   it('sequential loads accumulate — toMerged does not overwrite prior merges', async () => {
     const store = await buildStaticFiles([auditServiceDef]);
-    configureStaticMode({ store });
-    const service = getService(auditServiceDef);
+    const service = createService(auditServiceDef, { store });
 
     await service.queries.getAuditResult({ storyId: 'story-a' });
     await service.queries.getAuditResult({ storyId: 'story-b' });
@@ -463,17 +500,8 @@ describe('static mode — configureStaticMode', () => {
     expect(await service.queries.getAuditResult({ storyId: 'story-b' })).toBe('pass');
   });
 
-  it('commands without static config reject in static mode', async () => {
-    configureStaticMode({ store: {} });
-    const service = getService(statusServiceDef);
-    await expect(
-      service.commands.setStatus({ storyId: 'story-a', typeId: 'a11y', value: 'pass' })
-    ).rejects.toThrow('Command "setStatus" is unavailable in static mode');
-  });
-
   it('returns initialState value when store key is missing', async () => {
-    configureStaticMode({ store: {} }); // empty store — no pre-built files
-    const service = getService(auditServiceDef);
+    const service = createService(auditServiceDef, { store: {} }); // empty store — no pre-built files
 
     // getAuditResult tries to load from empty store; missing key → state unchanged
     const result = await service.queries.getAuditResult({ storyId: 'story-a' });

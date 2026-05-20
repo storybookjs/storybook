@@ -447,7 +447,8 @@ export async function upgrade(options: UpgradeOptions): Promise<void> {
             isCLIPrerelease: project.isCLIPrerelease,
             isCLIExactLatest: project.isCLIExactLatest,
             isCLIExactPrerelease: project.isCLIExactPrerelease,
-            storybookVersionSpecifier,
+            storybookVersionSpecifier:
+              storybookVersionSpecifier ?? project.storybookVersionSpecifier,
           });
         }
         task.success(`Updated package versions in package.json files`);

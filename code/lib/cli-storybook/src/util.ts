@@ -4,6 +4,7 @@ import {
   JsPackageManager,
   getPkgPrNewPackageSpecifier,
   getProjectRoot,
+  isPkgPrNewVersionSpecifier,
   isSatelliteAddon,
   normalizeStories,
   versions,
@@ -148,7 +149,10 @@ const getVersionModifier = (versionSpecifier: string): VersionModifier => {
  * @returns True if the version is a canary release
  */
 const isCanaryVersion = (version: string): boolean =>
-  version.startsWith('0.0.0') || version.startsWith('portal:') || version.startsWith('workspace:');
+  version.startsWith('0.0.0') ||
+  version.startsWith('portal:') ||
+  version.startsWith('workspace:') ||
+  isPkgPrNewVersionSpecifier(version);
 
 /**
  * Validates that a version string is not empty or undefined
@@ -299,6 +303,7 @@ const processProject = async ({
       packageManager,
       previewConfigPath,
       storiesPaths,
+      versionSpecifier,
       versionInstalled,
       hasCsfFactoryPreview,
     } = await getStorybookData({ configDir });
@@ -306,7 +311,10 @@ const processProject = async ({
     // Validate version and upgrade compatibility
     logger.debug(`${name} - Validating before version... ${versionInstalled}`);
     validateVersion(versionInstalled);
-    const isCanary = isCanaryVersion(currentCLIVersion) || isCanaryVersion(versionInstalled);
+    const isCanary =
+      isCanaryVersion(currentCLIVersion) ||
+      isCanaryVersion(versionInstalled) ||
+      isPkgPrNewVersionSpecifier(versionSpecifier);
     logger.debug(`${name} - Validating upgrade compatibility...`);
     validateUpgradeCompatibility(currentCLIVersion, versionInstalled, isCanary);
 
@@ -355,6 +363,7 @@ const processProject = async ({
       currentCLIVersion,
       latestCLIVersionOnNPM: latestCLIVersionOnNPM!,
       isCLIExactPrerelease,
+      storybookVersionSpecifier: versionSpecifier,
       autoblockerCheckResults,
       previewConfigPath,
       storiesPaths,

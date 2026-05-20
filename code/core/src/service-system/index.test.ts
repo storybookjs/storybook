@@ -26,10 +26,10 @@ const statusServiceDef = defineService({
   commands: {
     setStatus: defineCommand<StatusState, { storyId: string; typeId: string; value: string }>({
       handler: (input: { storyId: string; typeId: string; value: string }, ctx) => {
-        ctx.self.setState((s) => ({
-          ...s,
-          [input.storyId]: { ...s[input.storyId], [input.typeId]: input.value },
-        }));
+        ctx.self.setState((draft) => {
+          draft[input.storyId] ??= {};
+          draft[input.storyId]![input.typeId] = input.value;
+        });
       },
     }),
   },
@@ -66,7 +66,9 @@ const auditServiceDef = defineService({
       handler: async (input: { storyId: string }, ctx) => {
         // Simulate an async operation (network call, worker, etc.)
         await Promise.resolve();
-        ctx.self.setState((s) => ({ ...s, [input.storyId]: 'pass' }));
+        ctx.self.setState((draft) => {
+          draft[input.storyId] = 'pass';
+        });
       },
     }),
   },
@@ -90,7 +92,9 @@ const lazyAuditServiceDef = defineService({
     runAudit: defineCommand<AuditState, { storyId: string }>({
       handler: async (input: { storyId: string }, ctx) => {
         await Promise.resolve();
-        ctx.self.setState((s) => ({ ...s, [input.storyId]: 'pass' }));
+        ctx.self.setState((draft) => {
+          draft[input.storyId] = 'pass';
+        });
       },
     }),
   },

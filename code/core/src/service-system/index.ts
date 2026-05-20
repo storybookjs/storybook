@@ -5,8 +5,8 @@
  *
  * Why not deepsignal?
  *   deepsignal lets you write mutable-style updates (state.x = ...) and tracks
- *   at the individual property level. We use immutable updates instead
- *   (setState(s => ({...s, x: ...}))). computed() already memoizes by reference
+ *   at the individual property level. We use Immer-powered draft updates
+ *   instead (setState(draft => { draft.x = ... })). computed() already memoizes by reference
  *   equality: when storyA changes, the computed for storyB re-evaluates but
  *   returns the same reference, so its effect does NOT fire. Fine-grained
  *   reactivity falls out of computed memoization for free.
@@ -19,6 +19,7 @@
  *   setActiveSub(undefined) → read → setActiveSub(prev)  untracked read
  */
 
+import { produce } from 'immer';
 import { toMerged } from 'es-toolkit';
 import { computed, effect, endBatch, setActiveSub, signal, startBatch } from 'alien-signals';
 
@@ -38,7 +39,7 @@ type ReadonlySelf<TState = any> = {
 };
 
 type WritableSelf<TState = any> = ReadonlySelf<TState> & {
-  setState(updater: (prev: TState) => TState): void;
+  setState(mutate: (draft: TState) => void): void;
 };
 
 export type QueryCtx<TState> = {
@@ -65,12 +66,12 @@ export type QueryDef<TState, TInput, TOutput> = {
    *
    * @example fire-and-forget (subscribe only)
    * preload: (input, ctx) => {
-  *   if (!ctx.self.state[input.storyId]) ctx.self.commands.loadStatus(input);
+   *   if (!ctx.self.state[input.storyId]) ctx.self.commands.loadStatus(input);
    * }
    *
    * @example awaitable (direct call waits for the load)
    * preload: (input, ctx) => {
-  *   if (!ctx.self.state[input.storyId]) return ctx.self.commands.loadStatus(input);
+   *   if (!ctx.self.state[input.storyId]) return ctx.self.commands.loadStatus(input);
    * }
    */
   preload?: (input: TInput, ctx: QueryCtx<TState>) => void | Promise<void>;
@@ -204,14 +205,16 @@ type InternalService = {
   _stateSignal: ReturnType<typeof signal<any>>;
 };
 
-function createSelfRef<TState>(stateSignal: ReturnType<typeof signal<TState>>): WritableSelf<TState> {
+function createSelfRef<TState>(
+  stateSignal: ReturnType<typeof signal<TState>>
+): WritableSelf<TState> {
   return {
     get state() {
       return stateSignal();
     },
-    setState(updater) {
+    setState(mutate) {
       startBatch();
-      stateSignal(updater(stateSignal()));
+      stateSignal(produce(stateSignal(), mutate));
       endBatch();
     },
     queries: {},
@@ -463,9 +466,8 @@ export async function buildStaticFiles(
           await queryDef.preload(input, buildRuntime.queryCtx);
         }
 
-        store[
-          resolveStaticPath(def.id, queryName, queryDef, input, buildRuntime.queryCtx)
-        ] = buildRuntime.stateSignal();
+        store[resolveStaticPath(def.id, queryName, queryDef, input, buildRuntime.queryCtx)] =
+          buildRuntime.stateSignal();
       }
     }
   }

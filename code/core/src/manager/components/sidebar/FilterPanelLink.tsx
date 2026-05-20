@@ -25,10 +25,16 @@ const Count = styled.span(({ theme }) => ({
   color: theme.textMutedColor,
 }));
 
+const getDeltaColor = (
+  delta: number,
+  theme: { color: { negative: string; positive: string; secondary: string } }
+) => (delta > 0 ? theme.color.positive : delta < 0 ? theme.color.negative : theme.color.secondary);
+
 const Delta = styled(Count)<{ $delta: number }>(({ theme, $delta }) => ({
-  color:
-    $delta > 0 ? theme.color.positive : $delta < 0 ? theme.color.negative : theme.color.secondary,
+  color: getDeltaColor($delta, theme),
 }));
+
+const getItemText = (count: number) => `item${count === 1 ? '' : 's'}`;
 
 export const StatusIcon = styled.span<{ $iconColor?: string | null }>(({ $iconColor }) => ({
   display: 'contents',
@@ -41,7 +47,8 @@ export const StatusIcon = styled.span<{ $iconColor?: string | null }>(({ $iconCo
 const getActionCopy = (item: FilterItem, action: FilterPreviewAction) => {
   const projection = item[action];
   const description = getFilterPreviewDescription(item, action);
-  const deltaText = `${Math.abs(projection.delta)} item${Math.abs(projection.delta) === 1 ? '' : 's'} would be ${
+  const absoluteDelta = Math.abs(projection.delta);
+  const deltaText = `${absoluteDelta} ${getItemText(absoluteDelta)} would be ${
     projection.delta >= 0 ? 'added' : 'removed'
   }`;
 
@@ -52,20 +59,7 @@ const getActionCopy = (item: FilterItem, action: FilterPreviewAction) => {
 };
 
 export const createFilterLink = (
-  {
-    id,
-    type,
-    title,
-    count,
-    visibleCount,
-    toggle,
-    invert,
-    icon,
-    isIncluded,
-    isExcluded,
-    onCheckboxChange,
-    onInvert,
-  }: FilterItem,
+  item: FilterItem,
   {
     activePreviewAction,
     onPreviewEnd,
@@ -76,41 +70,22 @@ export const createFilterLink = (
     onPreviewStart: (action: FilterPreviewAction) => void;
   }
 ): Link => {
+  const {
+    id,
+    type,
+    title,
+    visibleCount,
+    toggle,
+    invert,
+    icon,
+    isIncluded,
+    isExcluded,
+    onCheckboxChange,
+    onInvert,
+  } = item;
   const isChecked = isIncluded || isExcluded;
-  const toggleAction = getActionCopy(
-    {
-      id,
-      type,
-      title,
-      count,
-      visibleCount,
-      toggle,
-      invert,
-      icon,
-      isIncluded,
-      isExcluded,
-      onCheckboxChange,
-      onInvert,
-    },
-    'toggle'
-  );
-  const invertAction = getActionCopy(
-    {
-      id,
-      type,
-      title,
-      count,
-      visibleCount,
-      toggle,
-      invert,
-      icon,
-      isIncluded,
-      isExcluded,
-      onCheckboxChange,
-      onInvert,
-    },
-    'invert'
-  );
+  const toggleAction = getActionCopy(item, 'toggle');
+  const invertAction = getActionCopy(item, 'invert');
   const activeProjection = activePreviewAction
     ? activePreviewAction === 'toggle'
       ? toggle
@@ -120,10 +95,10 @@ export const createFilterLink = (
     ? formatFilterDelta(activeProjection.delta)
     : `${visibleCount}`;
   const valueAriaLabel = activeProjection
-    ? `${Math.abs(activeProjection.delta)} item${
-        Math.abs(activeProjection.delta) === 1 ? '' : 's'
-      } would be ${activeProjection.delta >= 0 ? 'added' : 'removed'}`
-    : `${visibleCount} item${visibleCount === 1 ? '' : 's'} currently shown`;
+    ? `${Math.abs(activeProjection.delta)} ${getItemText(
+        Math.abs(activeProjection.delta)
+      )} would be ${activeProjection.delta >= 0 ? 'added' : 'removed'}`
+    : `${visibleCount} ${getItemText(visibleCount)} currently shown`;
 
   return {
     id: `filter-${type}-${id}`,

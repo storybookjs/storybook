@@ -42,7 +42,7 @@ type FilterState = {
   excludedStatusFilters: StatusValue[];
 };
 
-type FilterableEntry = Pick<API_PreparedIndexEntry, 'id' | 'subtype' | 'tags' | 'type'>;
+type FilterableEntry = API_PreparedIndexEntry;
 
 export type FilterPanelCounts = {
   currentVisibleCount: number;
@@ -120,12 +120,16 @@ export const getFilterPreviewDescription = (
 ) => `${getFilterActionVerb(item, action)} ${getFilterLabelType(item.type)} filter ${item.title}`;
 
 const getLeafEntries = (indexJson: StoryIndex): FilterableEntry[] =>
-  Object.entries(indexJson.entries).flatMap(([id, entry]) =>
-    entry.type === 'story' || entry.type === 'docs' ? [{ id, ...entry }] : []
-  );
+  Object.entries(indexJson.entries).reduce<FilterableEntry[]>((acc, [id, entry]) => {
+    if (entry.type === 'story' || entry.type === 'docs') {
+      acc.push({ id, ...entry } as FilterableEntry);
+    }
+
+    return acc;
+  }, []);
 
 const matchTag = (entry: FilterableEntry, tag: string) =>
-  getFilterFunction(tag as Tag)?.(entry as API_PreparedIndexEntry) ?? false;
+  getFilterFunction(tag as Tag)?.(entry) ?? false;
 
 const matchStatus = (
   entry: FilterableEntry,
@@ -162,15 +166,11 @@ const matchesFilters = (
 ) => {
   const matchesIncludedTags =
     compiledTags.included.length === 0 ||
-    compiledTags.included.every((group) =>
-      group.some((filterFn) => filterFn(entry as API_PreparedIndexEntry, false))
-    );
+    compiledTags.included.every((group) => group.some((filterFn) => filterFn(entry, false)));
 
   const matchesExcludedTags =
     compiledTags.excluded.length === 0 ||
-    compiledTags.excluded.every((group) =>
-      group.every((filterFn) => filterFn(entry as API_PreparedIndexEntry, true))
-    );
+    compiledTags.excluded.every((group) => group.every((filterFn) => filterFn(entry, true)));
 
   const statuses = Object.values(allStatuses[entry.id] ?? {}).map((status) => status.value);
   const matchesIncludedStatuses =
@@ -215,21 +215,29 @@ const updateFilterState = (
 
   const isIncluded = included.has(value);
   const isExcluded = excluded.has(value);
+  const includeValue = () => {
+    included.add(value);
+    excluded.delete(value);
+  };
+  const excludeValue = () => {
+    included.delete(value);
+    excluded.add(value);
+  };
+  const clearValue = () => {
+    included.delete(value);
+    excluded.delete(value);
+  };
 
   if (action === 'toggle') {
     if (isIncluded || isExcluded) {
-      included.delete(value);
-      excluded.delete(value);
+      clearValue();
     } else {
-      included.add(value);
-      excluded.delete(value);
+      includeValue();
     }
   } else if (isExcluded) {
-    included.add(value);
-    excluded.delete(value);
+    includeValue();
   } else {
-    included.delete(value);
-    excluded.add(value);
+    excludeValue();
   }
 
   return {
@@ -273,6 +281,7 @@ export const computeFilterPanelCounts = ({
     excludedStatusFilters,
   };
 
+  // Reuse projected visible counts across repeated hover/focus computations for the same filter state.
   const visibleCountCache = new Map<string, number>();
 
   const getVisibleCount = (state: FilterState) => {

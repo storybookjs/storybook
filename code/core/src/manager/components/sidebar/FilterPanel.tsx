@@ -42,6 +42,26 @@ const SummaryRow = styled.div(({ theme }) => ({
   fontSize: theme.typography.size.s1,
 }));
 
+const getSummaryCountColor = (
+  delta: number,
+  isPreview: boolean,
+  theme: { color: { negative: string; positive: string; secondary: string } }
+) => {
+  if (!isPreview) {
+    return 'inherit';
+  }
+
+  if (delta > 0) {
+    return theme.color.positive;
+  }
+
+  if (delta < 0) {
+    return theme.color.negative;
+  }
+
+  return theme.color.secondary;
+};
+
 const SummaryCount = styled.span<{ $delta: number; $isPreview: boolean }>(
   ({ theme, $delta, $isPreview }) => ({
     display: 'inline-flex',
@@ -51,15 +71,12 @@ const SummaryCount = styled.span<{ $delta: number; $isPreview: boolean }>(
     fontVariantNumeric: 'tabular-nums',
     fontWeight: theme.typography.weight.bold,
     background: $isPreview ? theme.background.hoverable : 'transparent',
-    color: $isPreview
-      ? $delta > 0
-        ? theme.color.positive
-        : $delta < 0
-          ? theme.color.negative
-          : theme.color.secondary
-      : 'inherit',
+    color: getSummaryCountColor($delta, $isPreview, theme),
   })
 );
+
+const getItemPreviewId = (item: Pick<FilterItem, 'id' | 'type'>) =>
+  `filter-${item.type}-${item.id}`;
 
 export interface FilterPanelProps {
   api: API;
@@ -234,17 +251,18 @@ export const FilterPanel = ({
     () => [...builtInItems, ...statusItems, ...tagItems],
     [builtInItems, statusItems, tagItems]
   );
+  const previewAction = previewState?.action ?? null;
   const previewedItem = previewState
     ? allItems.find((item) => `filter-${item.type}-${item.id}` === previewState.itemId)
     : null;
-  const previewedProjection = previewedItem ? previewedItem[previewState!.action] : null;
+  const previewedProjection = previewedItem && previewAction ? previewedItem[previewAction] : null;
   const summaryCount = previewedProjection?.visibleCount ?? filterCounts.currentVisibleCount;
   const summaryCountString = `${summaryCount}/${filterCounts.totalCount}`;
   const summaryAriaLabel =
-    previewedItem && previewedProjection
+    previewedItem && previewedProjection && previewAction
       ? `${summaryCount} of ${filterCounts.totalCount} items visible if ${getFilterPreviewDescription(
           previewedItem,
-          previewState!.action
+          previewAction
         )}`
       : `${summaryCount} of ${filterCounts.totalCount} items currently visible`;
   const summaryLabel = previewedProjection ? 'If applied' : 'Shown';
@@ -252,16 +270,14 @@ export const FilterPanel = ({
 
   const renderItem = useCallback(
     (item: FilterItem) => {
+      const itemPreviewId = getItemPreviewId(item);
       const link = createFilterLink(item, {
-        activePreviewAction:
-          previewState?.itemId === `filter-${item.type}-${item.id}` ? previewState.action : null,
+        activePreviewAction: previewState?.itemId === itemPreviewId ? previewState.action : null,
         onPreviewEnd: () => {
-          setPreviewState((current) =>
-            current?.itemId === `filter-${item.type}-${item.id}` ? null : current
-          );
+          setPreviewState((current) => (current?.itemId === itemPreviewId ? null : current));
         },
         onPreviewStart: (action) => {
-          setPreviewState({ action, itemId: `filter-${item.type}-${item.id}` });
+          setPreviewState({ action, itemId: itemPreviewId });
         },
       });
 

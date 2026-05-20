@@ -65,6 +65,8 @@ jobs:
     steps:
       - name: Checkout code from `next`/`main` branch (trusted code, not PR author code)
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          ref: ${{ github.event.pull_request.base.sha }}
 
       - name: Install script dependencies
         run: npm install --prefix .github/scripts

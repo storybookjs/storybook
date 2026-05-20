@@ -1,3 +1,27 @@
+## 10.5.0-alpha.0
+
+
+## 10.4.0-beta.0
+
+- CLI: Handle minimumReleaseAge conflicts across package managers - [#34769](https://github.com/storybookjs/storybook/pull/34769), thanks @JReinhold!
+- Core: Fix telemetry not handling canceling of prompts - [#34680](https://github.com/storybookjs/storybook/pull/34680), thanks @JReinhold!
+- Maintenance: Fix self healing payload - [#34782](https://github.com/storybookjs/storybook/pull/34782), thanks @yannbf!
+- Svelte: Fix Vite 8 + Vitest breaking rolldown deps scanner - [#34783](https://github.com/storybookjs/storybook/pull/34783), thanks @JReinhold!
+
+## 10.4.0-alpha.19
+
+- Agentic Setup: Add --extensive for an extra prompt - [#34730](https://github.com/storybookjs/storybook/pull/34730), thanks @Sidnioulz!
+- Agentic Setup: Rework ai-init-opt-in logic - [#34739](https://github.com/storybookjs/storybook/pull/34739), thanks @Sidnioulz!
+- CLI: Improve package incompatibility detection and warning - [#34559](https://github.com/storybookjs/storybook/pull/34559), thanks @copilot-swe-agent!
+- CLI: Remove extensive prompt option  - [#34740](https://github.com/storybookjs/storybook/pull/34740), thanks @yannbf!
+- Cli: Set ai prompt to yes if yes flag for react-vite to tanstack migration - [#34743](https://github.com/storybookjs/storybook/pull/34743), thanks @huang-julien!
+- Core: Fix "Open In Editor" support for VSCode - [#34747](https://github.com/storybookjs/storybook/pull/34747), thanks @JReinhold!
+- Core: Quiet change-detection regex warning and swap clear icon - [#34758](https://github.com/storybookjs/storybook/pull/34758), thanks @valentinpalkovic!
+- ReactNative: AppRegistry component name in template - [#34742](https://github.com/storybookjs/storybook/pull/34742), thanks @ndelangen!
+- Sidebar: Fix clear filter button not refreshing story list - [#34737](https://github.com/storybookjs/storybook/pull/34737), thanks @valentinpalkovic!
+- Sidebar: Show same status icon at story and group level - [#34702](https://github.com/storybookjs/storybook/pull/34702), thanks @valentinpalkovic!
+- Tanstack: Treeshake top-level unused functions - [#34760](https://github.com/storybookjs/storybook/pull/34760), thanks @huang-julien!
+
 ## 10.4.0-alpha.18
 
 - Agentic Setup: Allow failed stories to persist - [#34717](https://github.com/storybookjs/storybook/pull/34717), thanks @Sidnioulz!

@@ -50,14 +50,14 @@ export type CssCheckOutcome = 'pass' | 'fail' | 'not-run';
 
 export interface TestRunAnalysis {
   /** Stats for the current run (only stories executed in this run). */
-  runTotal: number;
-  runPassed: number;
-  runPassedButEmptyRender: number;
-  runSuccessRate: number;
-  runSuccessRateWithoutEmptyRender: number;
-  runUniqueErrorCount: number;
-  runCategorizedErrors: Record<string, CategorizedError>;
-  runCssCheck: CssCheckOutcome;
+  total: number;
+  passed: number;
+  passedButEmptyRender: number;
+  successRate: number;
+  successRateWithoutEmptyRender: number;
+  uniqueErrorCount: number;
+  categorizedErrors: Record<string, CategorizedError>;
+  cssCheck: CssCheckOutcome;
 
   /**
    * Stats accumulated across runs: for every story we've ever seen, we

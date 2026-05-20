@@ -9,13 +9,29 @@ import { isModuleDirectory } from './extract.ts';
 const require = createRequire(import.meta.url);
 
 /**
+ * Module file extensions the resolvers in this file know how to handle. Covers the JS/TS family
+ * plus JSON and common SFC types (`.vue`, `.svelte`).
+ */
+const moduleExtensions = [
+  '.js',
+  '.mjs',
+  '.cjs',
+  '.ts',
+  '.tsx',
+  '.jsx',
+  '.json',
+  '.vue',
+  '.svelte',
+] as const;
+
+/**
  * Browser-condition resolver used for `sb.mock()` external module resolution.
  */
 const externalResolver = new ResolverFactory({
   conditionNames: ['browser', 'import', 'module', 'default'],
   mainFields: ['browser', 'module', 'main'],
   aliasFields: [['browser']],
-  extensions: ['.js', '.mjs', '.cjs', '.ts', '.tsx', '.jsx', '.json', '.vue', '.svelte'],
+  extensions: [...moduleExtensions],
 });
 
 /**
@@ -117,9 +133,7 @@ export function getRealPath(path: string, preserveSymlinks: boolean): string {
  * @returns The resolved path
  */
 export function resolveWithExtensions(path: string, from: string) {
-  const extensions = ['.js', '.ts', '.tsx', '.mjs', '.cjs', '.svelte', '.vue'];
-
-  for (const extension of extensions) {
+  for (const extension of moduleExtensions) {
     try {
       return require.resolve(path + extension, { paths: [from] });
     } catch (e) {

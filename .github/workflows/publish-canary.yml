@@ -53,7 +53,7 @@ jobs:
           replace: "## 🦋 Canary Release - ⏳ [Pending](${{ steps.canary-status.outputs.run_url }})"
 
       - name: Checkout Pull Request Head
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        uses: actions/checkout@v4
         with:
           repository: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name || github.repository }}
           ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}

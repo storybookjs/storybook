@@ -3,15 +3,18 @@ import {
   type JsPackageManager,
   JsPackageManagerFactory,
   PackageManagerName,
+  getPrettyPackageManagerName,
+  isCI,
   invalidateProjectRootCache,
 } from 'storybook/internal/common';
 import { CLI_COLORS, deprecate, logger } from 'storybook/internal/node-logger';
+import { MinimumReleaseAgeHandledError } from 'storybook/internal/server-errors';
 
 import { dedent } from 'ts-dedent';
 
 import type { CommandOptions } from '../generators/types.ts';
 import { currentDirectoryIsEmpty, scaffoldNewProject } from '../scaffold-new-project.ts';
-import { VersionService } from '../services/index.ts';
+import { TelemetryService, VersionService } from '../services/index.ts';
 
 export interface PreflightCheckResult {
   packageManager: JsPackageManager;
@@ -29,7 +32,10 @@ export interface PreflightCheckResult {
  */
 export class PreflightCheckCommand {
   /** Execute preflight checks */
-  constructor(private readonly versionService = new VersionService()) {}
+  constructor(
+    private readonly versionService = new VersionService(),
+    private readonly telemetryService = new TelemetryService()
+  ) {}
   async execute(options: CommandOptions): Promise<PreflightCheckResult> {
     const isEmptyDirProject = options.force !== true && currentDirectoryIsEmpty();
     let packageManagerType = JsPackageManagerFactory.getPackageManagerType();
@@ -52,7 +58,7 @@ export class PreflightCheckCommand {
 
       // Prompt the user to create a new project from our list
       logger.intro(CLI_COLORS.info(`Initializing a new project`));
-      await scaffoldNewProject(packageManagerType, options);
+      await scaffoldNewProject(packageManagerType, this.telemetryService);
       logger.outro(CLI_COLORS.info(`Project created successfully`));
       invalidateProjectRootCache();
     }
@@ -62,6 +68,8 @@ export class PreflightCheckCommand {
     const packageManager = JsPackageManagerFactory.getPackageManager({
       force: options.packageManager,
     });
+
+    logger.info(`Package manager: ${getPrettyPackageManagerName(packageManager.type)}`);
 
     // Install base project dependencies if we scaffolded a new project
     if (isEmptyDirProject && !options.skipInstall) {
@@ -79,6 +87,19 @@ export class PreflightCheckCommand {
     this.checkPackageNameConflict(packageManager);
 
     await this.displayVersionInfo(packageManager);
+    try {
+      await packageManager.precheckStorybookPackageInstall({
+        storybookVersion: this.versionService.getCurrentVersion(),
+        nonInteractive: !!options.yes || !process.stdout.isTTY || !!isCI(),
+        installContext: 'create',
+      });
+    } catch (error) {
+      if (error instanceof MinimumReleaseAgeHandledError) {
+        throw error;
+      }
+
+      logger.debug(`Skipping minimum-release-age precheck after an unexpected failure: ${error}`);
+    }
 
     return { packageManager, isEmptyProject: isEmptyDirProject };
   }

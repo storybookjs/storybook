@@ -184,23 +184,6 @@ jobs:
           git commit -m "Update CHANGELOG.md for v$CURRENT_VERSION [skip ci]" --no-verify --allow-empty
           git push origin next
 
-      # Sync the next.json version file to the main branch so it gets deployed to the docs site
-      # but only if this is a prerelease, because in minor/major releases we're already force pushing next-release onto main, so it's already there
-      - name: Sync version JSONs from `next-release` to `main`
-        if: github.ref_name == 'next-release' && steps.is-prerelease.outputs.prerelease == 'true'
-        working-directory: .
-        env:
-          CURRENT_VERSION: ${{ steps.version.outputs.current-version }}
-        run: |
-          VERSION_FILE="./docs/versions/next.json"
-          git fetch origin main
-          git checkout main
-          git pull
-          git checkout origin/next-release $VERSION_FILE
-          git add $VERSION_FILE
-          git commit -m "Update $VERSION_FILE for v$CURRENT_VERSION"
-          git push origin main
-
       - name: Create Sentry release
         if: steps.publish-needed.outputs.published == 'false'
         uses: getsentry/action-release@v3

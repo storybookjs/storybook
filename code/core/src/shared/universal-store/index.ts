@@ -217,7 +217,7 @@ export class UniversalStore<
   /**
    * The syncing construct is used to keep track of if the instance's state has been synced with the
    * other instances. A leader will immediately have the promise resolved. A follower will initially
-   * be in a PENDING state, and resolve the the leader has sent the existing state, or reject if no
+   * be in a PENDING state, and resolve when the leader has sent the existing state, or reject if no
    * leader has responded before the timeout.
    */
   private syncing?: {

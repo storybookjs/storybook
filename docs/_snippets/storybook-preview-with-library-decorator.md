@@ -1,4 +1,4 @@
-```js filename=".storybook/preview.ts" renderer="angular" language="ts" tabTitle="preview"
+```ts filename=".storybook/preview.ts" renderer="angular" language="ts" tabTitle="preview"
 import type { Preview } from '@storybook/angular';
 
 import { setCompodocJson } from '@storybook/addon-docs/angular';

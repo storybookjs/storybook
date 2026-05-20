@@ -430,22 +430,22 @@ Before you start you should make sure that your working tree is clean and the re
 
 ## Canary Releases
 
-For most pull requests, no manual action is needed to get preview packages. PRs labeled `ci:normal`, `ci:merged`, or `ci:daily` automatically trigger the [preview publish workflow](../.github/workflows/publish-preview.yml), which publishes packages to `pkg.pr.new` and updates the PR body with commands for creating a new project or upgrading an existing one.
+For most pull requests, no manual action is needed to get canary packages. PRs labeled `ci:normal`, `ci:merged`, or `ci:daily` automatically trigger the [canary publish workflow](../.github/workflows/publish-canary.yml), which publishes packages to `pkg.pr.new` and updates the PR body with commands for creating a new project or upgrading an existing one.
 
 ### Manual Canary Release
 
-If you want to publish a preview without triggering the whole CI or on a branch that doesn't have a PR yet, you can trigger the preview publish workflow yourself on the branch you want to publish. Manual preview publishes only publish the packages; they do not edit any PR body or post comments, so you have to check the workflow to see the published version number.
+If you want to publish a canary without triggering the whole CI or on a branch that doesn't have a PR yet, you can trigger the canary publish workflow yourself on the branch you want to publish. Manual canary publishes only publish the packages; they do not edit any PR body or post comments, so you have to check the workflow to see the published version number.
 
 #### With GitHub UI
 
-1. Open the workflow UI at https://github.com/storybookjs/storybook/actions/workflows/publish-preview.yml
+1. Open the workflow UI at https://github.com/storybookjs/storybook/actions/workflows/publish-canary.yml
 2. On the top right corner, click "Run workflow"
-3. For "branch", select the branch you want to publish preview packages from
+3. For "branch", select the branch you want to publish canary packages from
 
 #### With the CLI
 
 ```bash
-gh workflow run --repo storybookjs/storybook publish-preview.yml --ref <BRANCH>
+gh workflow run --repo storybookjs/storybook publish-canary.yml --ref <BRANCH>
 ```
 
 ## Versioning Scenarios

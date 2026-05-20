@@ -1,4 +1,4 @@
-name: Publish Preview Packages
+name: Publish Canary Packages
 
 on:
   workflow_dispatch:
@@ -18,8 +18,8 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  publish-preview:
-    name: Publish preview packages
+  publish-canary:
+    name: Publish canary packages
     if: |
       github.event_name == 'workflow_dispatch' ||
       (
@@ -48,7 +48,7 @@ jobs:
         working-directory: code
         run: yarn task --task compile --start-from=auto --no-link
 
-      - name: Publish preview packages with pkg.pr.new
+      - name: Publish canary packages with pkg.pr.new
         id: publish
         working-directory: scripts
         run: |
@@ -58,8 +58,8 @@ jobs:
 
           test -s ./pkg-pr-new-output.json
 
-      - name: Build preview PR body
-        id: preview-body
+      - name: Build canary PR body
+        id: canary-body
         if: ${{ github.event_name == 'pull_request' }}
         working-directory: scripts
         env:
@@ -83,7 +83,7 @@ jobs:
 
           echo 'body<<EOF' >> "$GITHUB_OUTPUT"
           cat <<EOF >> "$GITHUB_OUTPUT"
-          This pull request has been released as preview packages. Try it out in a new project or update an existing project with the commands below.
+          This pull request has been released as canary packages. Try it out in a new project or update an existing project with the commands below.
 
           ```sh
           # For a new project
@@ -105,7 +105,7 @@ jobs:
           githubToken: ${{ github.token }}
           find: "CANARY_RELEASE_SECTION"
           isHtmlCommentTag: true
-          replace: ${{ steps.preview-body.outputs.body }}
+          replace: ${{ steps.canary-body.outputs.body }}
 
       - name: Create failing comment on PR
         if: ${{ github.event_name == 'pull_request' && failure() && steps.replace-pr-body.outcome != 'failure' }}
@@ -119,4 +119,4 @@ jobs:
         run: |
           gh pr comment "$PR_NUMBER" \
             --repo "$REPOSITORY" \
-            --body "Failed to publish preview packages for this pull request, triggered by @$TRIGGERING_ACTOR. See the failed workflow run at: https://github.com/$REPOSITORY/actions/runs/$RUN_ID"
+            --body "Failed to publish canary packages for this pull request, triggered by @$TRIGGERING_ACTOR. See the failed workflow run at: https://github.com/$REPOSITORY/actions/runs/$RUN_ID"

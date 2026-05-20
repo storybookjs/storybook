@@ -1,16 +1,16 @@
 ---
 name: canary
-description: Finds or publishes a pkg.pr.new preview release for a Storybook branch. Use when the user wants the preview package specifier for a branch or needs to trigger the preview workflow manually.
+description: Finds or publishes a pkg.pr.new canary release for a Storybook branch. Use when the user wants the canary package specifier for a branch or needs to trigger the canary workflow manually.
 allowed-tools: Bash
 ---
 
-# Find Or Publish Preview Release
+# Find Or Publish Canary Release
 
-Use this skill to get a branch-specific preview build from `pkg.pr.new`.
+Use this skill to get a branch-specific canary build from `pkg.pr.new`.
 
-Preview publishes are driven by the `publish-preview.yml` workflow.
+Canary publishes are driven by the `publish-canary.yml` workflow.
 
-The labels that trigger automatic preview publishes on PRs are:
+The labels that trigger automatic canary publishes on PRs are:
 
 - `ci:normal`
 - `ci:merged`
@@ -18,7 +18,7 @@ The labels that trigger automatic preview publishes on PRs are:
 
 ## Version string
 
-The preview version string is constructed like this:
+The canary version string is constructed like this:
 
 ```text
 storybook@https://pkg.pr.new/storybookjs/storybook/storybook@<SHA>
@@ -26,14 +26,14 @@ storybook@https://pkg.pr.new/storybookjs/storybook/storybook@<SHA>
 
 Replace `<SHA>` with the full commit SHA.
 
-## Check whether a preview already exists
+## Check whether a canary already exists
 
 ```bash
 SHA=$(git rev-parse HEAD)
 curl -I "https://pkg.pr.new/storybookjs/storybook/storybook@$SHA"
 ```
 
-An HTTP `200` status code means the preview already exists for that commit.
+An HTTP `200` status code means the canary already exists for that commit.
 
 ## Decision flow
 
@@ -56,14 +56,14 @@ gh pr list \
 	--jq '.[] | select(any(.labels[]?; .name == "ci:normal" or .name == "ci:merged" or .name == "ci:daily"))'
 ```
 
-Find the latest successful preview workflow run for that branch:
+Find the latest successful canary workflow run for that branch:
 
 ```bash
 BRANCH=$(git branch --show-current)
 
 RUN_ID=$(gh run list \
 	--repo storybookjs/storybook \
-	--workflow publish-preview.yml \
+	--workflow publish-canary.yml \
 	--branch "$BRANCH" \
 	--event pull_request \
 	--json databaseId,conclusion \
@@ -88,12 +88,12 @@ curl -I "https://pkg.pr.new/storybookjs/storybook/storybook@$RUN_SHA"
 
 ### B. If the branch does not have a PR with one of the CI labels
 
-Trigger the preview workflow manually on the branch and watch it finish. It usually takes about 10 minutes.
+Trigger the canary workflow manually on the branch and watch it finish. It usually takes about 10 minutes.
 
 ```bash
 BRANCH=$(git branch --show-current)
 
-gh workflow run --repo storybookjs/storybook publish-preview.yml --ref "$BRANCH"
+gh workflow run --repo storybookjs/storybook publish-canary.yml --ref "$BRANCH"
 ```
 
 Find the new workflow run and watch it:
@@ -103,7 +103,7 @@ BRANCH=$(git branch --show-current)
 
 RUN_ID=$(gh run list \
 	--repo storybookjs/storybook \
-	--workflow publish-preview.yml \
+	--workflow publish-canary.yml \
 	--branch "$BRANCH" \
 	--event workflow_dispatch \
 	--json databaseId \
@@ -125,7 +125,7 @@ Optionally confirm the package is live:
 curl -I "https://pkg.pr.new/storybookjs/storybook/storybook@$RUN_SHA"
 ```
 
-## Use the preview
+## Use the canary
 
 For a new project:
 
@@ -143,16 +143,16 @@ npx storybook@https://pkg.pr.new/storybookjs/storybook/storybook@<SHA> upgrade
 
 - You need `gh` CLI authenticated for `storybookjs/storybook`
 - You need permission to run workflows in the repository for manual dispatch
-- The preview workflow is `publish-preview.yml`
+- The canary workflow is `publish-canary.yml`
 
 ## Monitor progress
 
 Workflow page:
 
-- https://github.com/storybookjs/storybook/actions/workflows/publish-preview.yml
+- https://github.com/storybookjs/storybook/actions/workflows/publish-canary.yml
 
 CLI:
 
 ```bash
-gh run list --repo storybookjs/storybook --workflow publish-preview.yml
+gh run list --repo storybookjs/storybook --workflow publish-canary.yml
 ```

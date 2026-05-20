@@ -9,12 +9,41 @@ import { parseArgsParam } from './parseArgsParam.ts';
 
 const { history, document } = global;
 
-export function pathToId(path: string) {
-  const match = (path || '').match(/^\/story\/(.+)/);
-  if (!match) {
-    throw new Error(`Invalid path '${path}',  must start with '/story/'`);
+const INVALID_STORY_ID_PART_REGEXP =
+  /[\u0000-\u001F\u007F ’–—―′¿'`~!@#$%^&*()_|+=?;:'",.<>\{\}\[\]\\\/]/;
+
+const isValidStoryIdPart = (part: string) =>
+  part.length > 0 &&
+  part === part.toLowerCase() &&
+  !INVALID_STORY_ID_PART_REGEXP.test(part) &&
+  !part.startsWith('-') &&
+  !part.endsWith('-') &&
+  !part.includes('--');
+
+const isValidStoryId = (specifier: string) => {
+  const parts = specifier.split('--');
+  return parts.length <= 2 && parts.every(isValidStoryIdPart);
+};
+
+const isValidStorySpecifier = (specifier: string | void): specifier is string => {
+  if (!specifier) {
+    return false;
   }
-  return match[1];
+
+  if (specifier === '*') {
+    return true;
+  }
+
+  const [storyId, ...testIdParts] = specifier.split(':');
+  return isValidStoryId(storyId) && testIdParts.every(isValidStoryIdPart);
+};
+
+export function pathToId(path: string) {
+  const storyPathPrefix = '/story/';
+  if (!path?.startsWith(storyPathPrefix) || path.length === storyPathPrefix.length) {
+    throw new Error(`Invalid path, must start with '/story/'`);
+  }
+  return path.slice(storyPathPrefix.length);
 }
 
 const getQueryString = ({
@@ -83,7 +112,7 @@ export const getSelectionSpecifierFromPath: () => SelectionSpecifier | null = ()
     const path = getFirstString(query.path);
     const storyId = path ? pathToId(path) : getFirstString(query.id);
 
-    if (storyId) {
+    if (isValidStorySpecifier(storyId)) {
       return { storySpecifier: storyId, args, globals, viewMode };
     }
   }

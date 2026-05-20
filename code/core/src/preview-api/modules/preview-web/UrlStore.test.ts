@@ -28,6 +28,11 @@ describe('UrlStore', () => {
         expect(() => pathToId(path)).toThrow(/Invalid/);
       });
     });
+    it('should not include the invalid path value in the error message', () => {
+      expect(() => pathToId('/whatever/main%0APhishing')).toThrow(
+        "Invalid path, must start with '/story/'"
+      );
+    });
   });
 
   describe('setPath', () => {
@@ -96,6 +101,66 @@ describe('UrlStore', () => {
         storySpecifier: '*',
         viewMode: 'story',
       });
+    });
+    it('should handle simple id queries', () => {
+      document.location.search = '?id=story-1';
+      expect(getSelectionSpecifierFromPath()).toEqual({
+        storySpecifier: 'story-1',
+        viewMode: 'story',
+      });
+    });
+    it('should handle path queries', () => {
+      document.location.search = '?path=/story/story--id';
+      expect(getSelectionSpecifierFromPath()).toEqual({
+        storySpecifier: 'story--id',
+        viewMode: 'story',
+      });
+    });
+    it('should handle test id queries', () => {
+      document.location.search = '?id=story--id:test-name';
+      expect(getSelectionSpecifierFromPath()).toEqual({
+        storySpecifier: 'story--id:test-name',
+        viewMode: 'story',
+      });
+    });
+    it.each([
+      ['line feed', 'a%0Ab'],
+      ['carriage return', 'a%0Db'],
+      ['tab', 'a%09b'],
+      ['html tag', '%3Cscript%3E'],
+      ['empty test id part', 'story--id:'],
+      ['empty id', ''],
+      ['too many story id parts', 'story--id--extra'],
+      ['trailing hyphen', 'story-'],
+      ['leading hyphen', '-story'],
+      ['uppercase letters', 'STORY--ID'],
+      [
+        'reported phishing payload',
+        'main%27.%0APlease%20report%20it%20to%20www.MyWebSideErrors.com%0A%0APHISHING+TEXT%0D',
+      ],
+    ])('should ignore id queries with invalid story specifiers containing %s', (_, id) => {
+      document.location.search = `?id=${id}`;
+      expect(getSelectionSpecifierFromPath()).toEqual(null);
+    });
+    it('should handle test id queries with multiple parts', () => {
+      document.location.search = '?id=story--id:test1:test2';
+      expect(getSelectionSpecifierFromPath()).toEqual({
+        storySpecifier: 'story--id:test1:test2',
+        viewMode: 'story',
+      });
+    });
+    it.each([
+      ['line feed', '/story/a%0Ab'],
+      ['carriage return', '/story/a%0Db'],
+      ['tab', '/story/a%09b'],
+      ['html tag', '/story/%3Cscript%3E'],
+      [
+        'reported phishing payload',
+        '/story/main%27.%0APlease%20report%20it%20to%20www.MyWebSideErrors.com%0A%0APHISHING+TEXT%0D',
+      ],
+    ])('should ignore path queries with invalid story specifiers containing %s', (_, path) => {
+      document.location.search = `?path=${path}`;
+      expect(getSelectionSpecifierFromPath()).toEqual(null);
     });
     it('should parse args', () => {
       document.location.search = '?id=story--id&args=obj.key:val';

@@ -340,7 +340,7 @@ export const ProjectedTagCounts: Story = {
     await userEvent.hover(terCheckbox);
 
     await expect(
-      canvas.getByLabelText('20 of 20 items visible if include tag filter ter')
+      canvas.getByLabelText('20 of 20 items visible if you include tag filter ter')
     ).toBeVisible();
     await expect(canvas.getByLabelText('10 items would be added')).toBeVisible();
   },

@@ -253,14 +253,14 @@ export const FilterPanel = ({
   );
   const previewAction = previewState?.action ?? null;
   const previewedItem = previewState
-    ? allItems.find((item) => `filter-${item.type}-${item.id}` === previewState.itemId)
+    ? allItems.find((item) => getItemPreviewId(item) === previewState.itemId)
     : null;
   const previewedProjection = previewedItem && previewAction ? previewedItem[previewAction] : null;
   const summaryCount = previewedProjection?.visibleCount ?? filterCounts.currentVisibleCount;
   const summaryCountString = `${summaryCount}/${filterCounts.totalCount}`;
   const summaryAriaLabel =
     previewedItem && previewedProjection && previewAction
-      ? `${summaryCount} of ${filterCounts.totalCount} items visible if ${getFilterPreviewDescription(
+      ? `${summaryCount} of ${filterCounts.totalCount} items visible if you ${getFilterPreviewDescription(
           previewedItem,
           previewAction
         )}`

@@ -84,7 +84,7 @@ export class JsonTree extends Component<JsonTreeProps, JsonTreeState> {
 
     if (dataType === 'Object' || dataType === 'Array') {
       return (
-        <div className="rejt-tree">
+        <div className="rejt-tree" role="tree" aria-label={`${rootName || 'root'} JSON editor`}>
           <JsonNode
             data={data}
             name={rootName || 'root'}

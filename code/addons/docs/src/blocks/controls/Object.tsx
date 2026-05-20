@@ -31,6 +31,11 @@ const Wrapper = styled.div(({ theme }) => ({
       opacity: 1,
     },
   },
+  '.rejt-value-node:focus-within': {
+    '& > button': {
+      opacity: 1,
+    },
+  },
   '.rejt-add-form': {
     marginLeft: 10,
   },
@@ -58,6 +63,10 @@ const Wrapper = styled.div(({ theme }) => ({
     padding: '0 4px',
     cursor: 'text',
     color: theme.color.defaultText,
+    '&:focus-visible': {
+      outline: `1px solid ${theme.color.secondary}`,
+      outlineOffset: 1,
+    },
   },
   '.rejt-value-node:hover > .rejt-value': {
     background: theme.base === 'light' ? theme.color.lighter : 'hsl(0 0 100 / 0.02)',
@@ -98,7 +107,13 @@ const ActionButton = styled.button(({ theme }) => ({
   ':disabled': {
     cursor: 'not-allowed',
   },
-  ':hover, :focus-visible': {
+  ':focus-visible': {
+    opacity: 1,
+    outline: `1px solid ${theme.color.secondary}`,
+    outlineOffset: 2,
+    borderRadius: 2,
+  },
+  ':hover': {
     opacity: 1,
   },
   '&:hover:not(:disabled), &:focus-visible:not(:disabled)': {
@@ -226,6 +241,8 @@ export const ObjectControl: FC<ObjectProps> = ({ name, storyId, value, onChange,
       defaultValue={jsonString}
       onBlur={(event: FocusEvent<HTMLTextAreaElement>) => updateRaw(event.target.value)}
       placeholder="Edit JSON string..."
+      aria-label={`${name} JSON editor`}
+      aria-invalid={parseError ? true : undefined}
       autoFocus={forceVisible}
       valid={parseError ? 'error' : undefined}
       readOnly={readonly}

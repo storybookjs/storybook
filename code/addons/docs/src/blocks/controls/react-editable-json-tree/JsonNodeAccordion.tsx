@@ -85,9 +85,10 @@ export function JsonNodeAccordion({
   };
 
   const containerTag = keyPath.length > 0 ? 'li' : 'div';
+  const containerRole = keyPath.length > 0 ? 'treeitem' : undefined;
 
   return (
-    <Container as={containerTag}>
+    <Container as={containerTag} role={containerRole} aria-expanded={!collapsed}>
       <Trigger
         type="button"
         aria-expanded={!collapsed}

@@ -392,7 +392,7 @@ export class JsonArray extends Component<JsonArrayProps, JsonArrayState> {
       <>
         <span className="rejt-not-collapsed-delimiter">{startObject}</span>
         {!addFormVisible && addItemButton}
-        <ul className="rejt-not-collapsed-list">
+        <ul className="rejt-not-collapsed-list" role="group">
           {data.map((item, index) => (
             <JsonNode
               key={index}
@@ -636,7 +636,23 @@ export class JsonFunctionValue extends Component<JsonFunctionValueProps, JsonFun
       minusElement = null;
     } else {
       result = (
-        <span className="rejt-value" onClick={resultOnlyResult ? undefined : this.handleEditMode}>
+        <span
+          className="rejt-value"
+          role={resultOnlyResult ? undefined : 'button'}
+          tabIndex={resultOnlyResult ? undefined : 0}
+          onClick={resultOnlyResult ? undefined : this.handleEditMode}
+          onKeyDown={
+            resultOnlyResult
+              ? undefined
+              : (e: any) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    this.handleEditMode();
+                  }
+                }
+          }
+          aria-label={resultOnlyResult ? undefined : `Edit value of ${name}`}
+        >
           {value}
         </span>
       );
@@ -656,7 +672,7 @@ export class JsonFunctionValue extends Component<JsonFunctionValueProps, JsonFun
     }
 
     return (
-      <li className="rejt-value-node">
+      <li className="rejt-value-node" role="treeitem" aria-label={`${name}: function`}>
         <span className="rejt-name">{name} : </span>
         {result}
         {minusElement}
@@ -1269,7 +1285,7 @@ export class JsonObject extends Component<JsonObjectProps, JsonObjectState> {
       <>
         <span className="rejt-not-collapsed-delimiter">{startObject}</span>
         {!isReadOnly && addItemButton}
-        <ul className="rejt-not-collapsed-list">{list}</ul>
+        <ul className="rejt-not-collapsed-list" role="group">{list}</ul>
         {!isReadOnly && addFormVisible && (
           <div className="rejt-add-form">
             <JsonAddValue
@@ -1491,7 +1507,7 @@ export class JsonValue extends Component<JsonValueProps, JsonValueState> {
       });
 
     return (
-      <li className="rejt-value-node">
+      <li className="rejt-value-node" role="treeitem" aria-label={`${name}: ${String(value)}`}>
         <span className="rejt-name">
           {name}
           {' : '}
@@ -1499,7 +1515,23 @@ export class JsonValue extends Component<JsonValueProps, JsonValueState> {
         {isEditing ? (
           <span className="rejt-edit-form">{inputElementLayout}</span>
         ) : (
-          <span className="rejt-value" onClick={isReadOnly ? undefined : this.handleEditMode}>
+          <span
+            className="rejt-value"
+            role={isReadOnly ? undefined : 'button'}
+            tabIndex={isReadOnly ? undefined : 0}
+            onClick={isReadOnly ? undefined : this.handleEditMode}
+            onKeyDown={
+              isReadOnly
+                ? undefined
+                : (e: any) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      this.handleEditMode();
+                    }
+                  }
+            }
+            aria-label={isReadOnly ? undefined : `Edit value of ${name}`}
+          >
             {String(value)}
           </span>
         )}

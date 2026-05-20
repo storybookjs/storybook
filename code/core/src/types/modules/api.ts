@@ -95,7 +95,7 @@ export interface API_Layout {
   showToolbar: boolean;
 }
 
-export interface API_LayoutOptions extends Omit<Partial<API_Layout>, 'recentVisibleSizes'> {
+export interface API_LayoutOptions extends Partial<API_Layout> {
   showPanel?: boolean;
   showSidebar?: boolean;
   // Note: `showToolbar` is intentionally not declared here — it already comes

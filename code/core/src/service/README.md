@@ -6,7 +6,7 @@ APIs are not yet stable. Used by the docgen-server project; will widen over time
 
 ## Where to start
 
-1. [CONCEPTS.md](./CONCEPTS.md) — the four primitives (state, queries, commands, loaders), the encapsulation rule, the definition/registration split, the `defineService<S>()` forms.
+1. [CONCEPTS.md](./CONCEPTS.md) — the three primitives (state, queries, commands), the encapsulation rule, the definition/registration split, the `defineService<S>()` forms.
 2. [STATIC-BUILD.md](./STATIC-BUILD.md) — how the build writes JSON artifacts and how the runtime loads them back lazily.
 3. [`__examples__/docgen-service.ts`](./__examples__/docgen-service.ts) — a worked example.
 
@@ -15,8 +15,8 @@ APIs are not yet stable. Used by the docgen-server project; will widen over time
 | File | Purpose |
 | --- | --- |
 | `types.ts` | All public types. |
-| `define-service.ts` | `defineService`, `defineCommand`, `defineLoader`. |
-| `service-runtime.ts` | The `ServiceRuntime` class. Owns state, runs commands, fires loaders, drives subscriptions. |
+| `define-service.ts` | `defineService`, `defineCommand`, `defineQuery`. |
+| `service-runtime.ts` | The `ServiceRuntime` class. Owns state, runs commands, fires query preloads, drives subscriptions. |
 | `register-service.ts` | `registerService`, `getService`. |
 | `instances.ts` | Global registry. Separate module so it can be mocked in tests. |
 | `build-artifacts.ts` | `buildServiceArtifacts`. The static-build writer. |
@@ -27,12 +27,13 @@ APIs are not yet stable. Used by the docgen-server project; will widen over time
 
 ## What works today
 
-- Services with state, queries, commands, and optional loaders.
+- Services with state, queries, and commands.
+- Two ways to write queries: bare selector `(state, input) => result` for the common read-only case, or `defineQuery({ select, preload?, inputs?, path? })` when the query backs a static-build artifact.
 - Two ways to write commands: inline functions for concrete cases, `defineCommand<TInput>()` for abstract cases implemented at registration.
 - Two `defineService` forms: `defineService<S>()(...)` (curried, explicit state type) and `defineService(...)` (state inferred from the literal).
 - Immer-backed `setState` with patch capture.
 - Per-query subscriptions that re-render only when the selector result changes.
-- Loaders are the *only* persistence mechanism. A service that declares loaders writes one JSON file per enumerated input at build time and fetches each file lazily when the corresponding query is first subscribed. A service without loaders has no static artifacts and runs purely in session-local mode.
+- Queries with `preload`+`inputs`+`path` are the persistence mechanism. The build writes one JSON file per enumerated input; the runtime fetches lazily when the query is first subscribed. Queries without those fields have no static artifacts and run purely in session-local mode.
 
 ## Not yet
 

@@ -1,6 +1,6 @@
 # Concepts
 
-A service has four parts: a private `state`, pure `queries` that read from it, `commands` that mutate it, and optional `loaders` that bridge queries to async work (mainly: to JSON files written at build time).
+A service has three primitives: a private `state`, pure `queries` that read from it, and `commands` that mutate it. A query can optionally carry static-build metadata — a `preload` body, an `inputs` enumeration, and a `path` callback — which together let the build produce per-input JSON files that the runtime fetches lazily.
 
 ## The encapsulation rule
 
@@ -9,7 +9,7 @@ A service has four parts: a private `state`, pure `queries` that read from it, `
 Concretely:
 
 - The public `ServiceStore` from `registerService` exposes `id`, `definition`, `queries`, `commands`. No `getState`, no `setState`, no whole-state `subscribe`.
-- Inside a command or loader body, `ctx.self.getState()` and `ctx.self.setState(...)` are how handlers touch state.
+- Inside a command body or a query's `preload`, `ctx.self.getState()` and `ctx.self.setState(...)` are how handlers touch state.
 - To read from another service, use its queries — not its state. (Cross-service composition via `ctx.runtime[serviceId]` is planned, not built.)
 - A related feature that needs a different on-disk shape is a different service. There is no "different file format for the same service."
 
@@ -35,7 +35,7 @@ Pure synchronous selectors over state:
 (state, input) => result     // input-keyed
 ```
 
-Queries must not call commands or perform I/O. They are read-only by contract. If a query needs to trigger loading, that lives in the paired `load.<name>` handler.
+Queries (in their bare-function form) must not call commands or perform I/O. They are read-only by contract. If a query needs to trigger loading, that lives in the query's `preload` field (see below) — switching from the bare-function form to the `defineQuery({ select, preload, ... })` object form.
 
 Queries are the unit of subscription. Every `useServiceQuery` or `service.queries.foo.subscribe(...)` runs the selector against current state, caches the result, and re-runs it on each state change to decide whether to notify. Purity is what makes "result didn't change, don't re-render" trivially correct.
 
@@ -64,31 +64,29 @@ Commands can be async. A no-op `setState` (empty patch list) is detected and ski
 
 The use case is one definition imported into multiple environments (manager, preview, server) with environment-specific bodies. Concrete commands can also be overridden at registration.
 
-### Loaders
+### Query preloads (the static-build mechanism)
 
-The read-triggered backing for a query. Optional, and the *only* mechanism for static-build persistence. A service that doesn't declare any loaders has no static artifacts and runs purely as session-local state.
+Optional, and the only mechanism for static-build persistence. Queries declared as bare functions have no preload and no static artifact — they're just selectors. Queries declared via `defineQuery({ select, preload?, inputs?, path? })` can opt into any combination of those extras.
 
-Declared as a `load:` map keyed by query name. `load.getX` is the loader for `queries.getX`. The 1:1 mapping is structural, not enforced — but it's the contract the runtime is built around.
+A query's static-build fields:
 
-A loader has three pieces:
+1. **`preload`** — like a command body, takes optional input and `ctx`. Typically calls one or more commands to populate state for this query.
+2. **`inputs`** — the inputs the static build pre-renders. An array, an async function returning an array, or omitted for no-input queries.
+3. **`path`** — `(ctx, input?) => string`. Controls the per-input JSON filename. If absent, defaults are `<queryName>.json` (no input) and `<queryName>-<input>.json` (string input). Non-string inputs require an explicit `path`.
 
-1. **Handler** — like a command, takes optional input and `ctx`. Typically calls one or more commands to populate state.
-2. **Enumeration** — the inputs the static build pre-renders. An array, an async function returning an array, or `undefined` for no-input loaders.
-3. **Options** — `path: (ctx, input?) => string` controls the per-input JSON filename. If absent, defaults are `<name>.json` (no input) and `<name>-<input>.json` (string input). Non-string inputs require an explicit `path`.
+Two shapes for the pattern:
 
-Two shapes for the loader pattern:
+- **Per-id chunking.** A query keyed by id (e.g. `getComponentDocgenInfo(componentId)`) with many enumerated inputs and a per-input `path`. One file per id, fetched only when that id is asked about.
+- **Single-file whole-service load.** A no-input query (e.g. `allStatuses()`) with `inputs` omitted. One file for the whole service, fetched when any subscriber asks for it.
 
-- **Per-id chunking.** A loader keyed by id (e.g. `getComponentDocgenInfo(componentId)`) with many enumerated inputs and a per-input `path`. One file per id, fetched only when that id is asked about.
-- **Single-file whole-service load.** A no-input loader (e.g. `allStatuses()`) with `enumerateInputs: undefined`. One file for the whole service, fetched when any subscriber asks for it.
+Both shapes use the same machinery. The choice is whether you have one no-input query with a preload or many input-keyed ones.
 
-Both shapes use the same machinery. The choice is whether you have one no-input loader or many input-keyed ones.
+What the runtime does with preloads:
 
-What the runtime does with loaders:
-
-- On a query subscription (or callable read) for a given input, if the paired loader hasn't fired for that input, it fires now. Subsequent reads with the same input don't re-fire — there's a per-loader, per-input "has fired" set.
-- Concurrent subscriptions for the same input dedupe to one loader run via an in-flight map.
-- If a static transport is installed, the runtime fetches the loader's pre-rendered JSON first. On a non-null hit, the fetched state diff is deep-merged into state and the loader body is *not* called. On null, the runtime runs the body live. See STATIC-BUILD.md.
-- The loader's return value is ignored. Subscribers see whatever the paired query selector returns once state has settled — the loader's job is to populate state, not to produce a value directly.
+- On a query subscription (or callable read) for a given input, if the query's preload hasn't fired for that input, it fires now. Subsequent reads with the same input don't re-fire — there's a per-query, per-input "has fired" set.
+- Concurrent subscriptions for the same input dedupe to one preload run via an in-flight map.
+- If a static transport is installed, the runtime fetches the pre-rendered JSON first. On a non-null hit, the fetched state diff is deep-merged into state and the preload body is *not* called. On null, the runtime runs the body live. See STATIC-BUILD.md.
+- The preload's return value is ignored. Subscribers see whatever the query's `select` returns once state has settled — the preload's job is to populate state, not to produce a value directly.
 
 ## Definition vs registration
 
@@ -98,14 +96,21 @@ What the runtime does with loaders:
 const DocgenService = defineService<DocgenState>()({
   id: 'core/docgen',
   state: { byComponentId: {}, somethingElse: 42 },
-  queries: { ... },
+  queries: {
+    getComponentDocgenInfo: defineQuery({
+      select: (state, id: string) => state.byComponentId[id],
+      preload: async (id: string, ctx) => { await ctx.self.commands.generateDocgen(id); },
+      inputs: async () => listAllComponentIds(),
+      path: (_ctx, id: string) => `docgen-${id}.json`,
+    }),
+    somethingElse: (state) => state.somethingElse, // bare selector, no static artifact
+  },
   commands: {
     generateDocgen: defineCommand<string>(),
     modifySomethingElse: (ctx) => {
       ctx.self.setState((draft: DocgenState) => { ... });
     },
   },
-  load: { ... },
 });
 ```
 
@@ -135,7 +140,7 @@ Whether a service loads from JSON is decided architecture-wide via `setStaticTra
 
 ## ctx and the self-handle
 
-Every command and loader receives `ctx`. Today `ctx` has one field, `ctx.self`, which is the service's own handle. Inside a handler you can read state, mutate it, call another command, or invoke a query — all via `ctx.self`.
+Every command body and query preload receives `ctx`. Today `ctx` has one field, `ctx.self`, which is the service's own handle. Inside a handler you can read state, mutate it, call another command, or invoke a query — all via `ctx.self`.
 
 There is no `ctx.runtime[otherServiceId]` yet. When it lands, handlers will be able to read from other services via their public query API but never touch raw state of another service. The encapsulation rule extends across service boundaries.
 
@@ -149,7 +154,7 @@ Two equivalent ways to declare a service.
 defineService<DocgenState>()({ id, state, queries, commands, load })
 ```
 
-State type is fixed by the outer generic. `state` in queries and `ctx` in commands/loaders are inferred for you — no annotations.
+State type is fixed by the outer generic. `state` in queries and `ctx` in commands and preloads are inferred for you — no annotations.
 
 Two TypeScript quirks worth knowing:
 
@@ -184,6 +189,6 @@ The React hook `useServiceQuery(store, queryName, input?)` is a thin wrapper aro
 
 ## Worked example
 
-[`__examples__/docgen-service.ts`](./__examples__/docgen-service.ts) implements docgen against the current API: curried definition, both query shapes, an abstract command implemented at registration, a concrete inline command, a loader with an enumeration and a per-input file path.
+[`__examples__/docgen-service.ts`](./__examples__/docgen-service.ts) implements docgen against the current API: curried definition, both query shapes (bare selector + `defineQuery` with preload/inputs/path), an abstract command implemented at registration, a concrete inline command.
 
 Read it alongside `service-runtime.test.ts` and `build-artifacts.test.ts` — those test against the public surface only, so they double as usage examples.

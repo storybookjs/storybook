@@ -1,5 +1,6 @@
 import type {
   AbstractCommand,
+  BuildCtx,
   CommandsMap,
   LoaderDefinition,
   LoaderEnumerate,
@@ -7,6 +8,7 @@ import type {
   LoaderOptions,
   LoadersMap,
   QueriesMap,
+  QueryDef,
   ServiceCtx,
   ServiceDefinition,
 } from './types.ts';
@@ -82,8 +84,23 @@ export function defineService(definition?: unknown): unknown {
  * The curried form binds `TState` outside the argument's type, so query/command/loader handlers
  * can be contextually typed against it. The constraints below mention `TState` so handler
  * parameters get the right types without per-handler annotations.
+ *
+ * Queries accept either the bare-function form or the object form. Both are typed against
+ * `TState` so the selector's first parameter is inferred correctly.
  */
-type QueriesMapFor<TState> = Record<string, (state: TState, ...rest: any[]) => any>;
+type QueriesMapFor<TState> = Record<
+  string,
+  ((state: TState, ...rest: any[]) => any) | QueryDefFor<TState>
+>;
+
+interface QueryDefFor<TState> {
+  readonly select: (state: TState, ...rest: any[]) => any;
+  readonly preload?: (...args: any[]) => void | Promise<void>;
+  readonly inputs?:
+    | readonly any[]
+    | ((ctx: BuildCtx) => readonly any[] | Promise<readonly any[]>);
+  readonly path?: (...args: any[]) => string;
+}
 
 /**
  * Function-overload-as-interface. TS contextual typing picks the overload that matches the
@@ -121,6 +138,23 @@ export function defineLoader<TState, TInput = void>(
     enumerateInputs,
     options,
   };
+}
+
+/**
+ * Authoring helper for a query.
+ *
+ * Two ways to declare a query in a service definition:
+ *
+ *  - As a bare selector: `getFoo: (state, id: string) => state.byId[id]`. No preload, no
+ *    static build artifact. Most queries look like this.
+ *  - As an object: `getFoo: defineQuery({ select, preload?, inputs?, path? })`. Reach for this
+ *    when the query needs read-triggered population (`preload`), build-time pre-rendering
+ *    (`inputs`, `path`), or both.
+ *
+ * `defineQuery` itself is a pass-through; it exists for type inference and authoring clarity.
+ */
+export function defineQuery<TState, TDef extends QueryDef<TState>>(def: TDef): TDef {
+  return def;
 }
 
 /**

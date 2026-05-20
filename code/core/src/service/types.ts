@@ -136,16 +136,55 @@ export interface SelfHandle<TState> {
   readonly queries: Readonly<Record<string, (...args: any[]) => any>>;
 }
 
+// -------------------- query entries --------------------
+
+/**
+ * A query entry in the definition is either a bare selector function or an object with extra
+ * static-build metadata. Both forms are accepted; the object form is needed when the query
+ * has a preload, enumerated inputs for build-time pre-rendering, or a custom path callback.
+ *
+ *   - Bare function: `(state, input?) => result`. Pure selector. No preload, no static artifact.
+ *   - Object form: `{ select, preload?, inputs?, path? }`. The selector lives on `select`.
+ */
+export type QueryEntry<TState = any> =
+  | ((state: TState, ...rest: any[]) => any)
+  | QueryDef<TState>;
+
+export interface QueryDef<TState = any> {
+  /** Pure synchronous selector over state. Same contract as the bare-function form. */
+  readonly select: (state: TState, ...rest: any[]) => any;
+  /**
+   * Optional read-triggered side effect that populates state for this query. Typically calls
+   * one or more commands. The runtime fires it on first query subscription/read per input.
+   * Skipped in static mode if a transport-fetched diff is available.
+   */
+  readonly preload?: (...args: any[]) => void | Promise<void>;
+  /**
+   * Optional enumeration of inputs the static build should pre-render. An array, an async
+   * function returning an array, or `undefined` for no-input queries.
+   */
+  readonly inputs?:
+    | readonly any[]
+    | ((ctx: BuildCtx) => readonly any[] | Promise<readonly any[]>);
+  /**
+   * Optional filename for this query's per-input static artifact. If absent, the query has no
+   * static artifact regardless of whether `inputs` is declared. Defaults follow the same rules
+   * as the previous `LoaderOptions.path` — `<queryName>.json` for no-input, `<queryName>-<input>.json`
+   * for string inputs.
+   */
+  readonly path?: (...args: any[]) => string;
+}
+
 // -------------------- service definition --------------------
 
 /**
  * Map types used as constraints on `ServiceDefinition`. They're intentionally permissive — the
- * runtime detects arity from `handler.length` and abstract commands from their `__kind` marker,
- * so the type system doesn't need to enforce signatures here. The curried `defineService<S>()`
- * form layers stricter shapes on top of these constraints to recover contextual typing for
- * `state` and `ctx`.
+ * runtime detects arity from the selector's `length` and abstract commands from their `__kind`
+ * marker, so the type system doesn't need to enforce signatures here. The curried
+ * `defineService<S>()` form layers stricter shapes on top of these constraints to recover
+ * contextual typing for `state` and `ctx`.
  */
-export type QueriesMap<TState> = Record<string, (state: TState, ...rest: any[]) => any>;
+export type QueriesMap<TState> = Record<string, QueryEntry<TState>>;
 export type CommandsMap<TState> = Record<string, CommandEntry>;
 export type LoadersMap<TState> = Record<string, LoaderDefinition<TState, any>>;
 
@@ -204,13 +243,23 @@ export type CommandOverrides<TDef extends ServiceDefinition<any, any, any, any>>
  * because functions are contravariant in their parameters — `(a) => b` is a subtype of
  * `(a, c) => b`. The tuple form gives us the *declared* parameter list and lets us distinguish
  * 1-arg from 2-arg precisely.
+ *
+ * For queries, we additionally unwrap the object form `{ select, ... }` to look at `select`'s
+ * signature. Both `(state, input) => result` and `{ select: (state, input) => result }` produce
+ * the same input/output types.
  */
-export type InputOfQuery<Q> = Q extends (...args: infer P) => any
+type SelectorOf<Q> = Q extends { select: infer S } ? S : Q;
+
+type InputOfSelector<F> = F extends (...args: infer P) => any
   ? P extends readonly [any, infer I]
     ? I
     : void
   : void;
-export type OutputOfQuery<Q> = Q extends (state: any, ...args: any[]) => infer R ? R : never;
+
+type OutputOfSelector<F> = F extends (state: any, ...args: any[]) => infer R ? R : never;
+
+export type InputOfQuery<Q> = InputOfSelector<SelectorOf<Q>>;
+export type OutputOfQuery<Q> = OutputOfSelector<SelectorOf<Q>>;
 
 export type InputOfCommand<C> =
   C extends AbstractCommand<infer I, any>

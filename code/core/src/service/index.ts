@@ -14,7 +14,7 @@
  */
 
 export { buildServiceArtifacts } from './build-artifacts.ts';
-export { defineCommand, defineLoader, defineService } from './define-service.ts';
+export { defineCommand, defineLoader, defineQuery, defineService } from './define-service.ts';
 export { getService, registerService } from './register-service.ts';
 export { ServiceRuntime } from './service-runtime.ts';
 export {
@@ -33,6 +33,8 @@ export type {
   LoaderDefinition,
   LoaderOptions,
   OutputOfQuery,
+  QueryDef,
+  QueryEntry,
   ServiceCtx,
   ServiceDefinition,
   ServiceRegistration,

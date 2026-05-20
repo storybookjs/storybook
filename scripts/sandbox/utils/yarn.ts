@@ -62,11 +62,23 @@ interface RefreshLockfileOptions {
  * the consumer-facing config stays clean.
  */
 export async function refreshBeforeStorybookLockfile({ cwd, debug }: RefreshLockfileOptions) {
+  // Drop any non-Yarn-4 lockfile the template's CLI produced.
   await Promise.allSettled([
-    rm(join(cwd, 'yarn.lock'), { force: true }),
     rm(join(cwd, 'package-lock.json'), { force: true }),
     rm(join(cwd, 'pnpm-lock.yaml'), { force: true }),
   ]);
+
+  // Truncate yarn.lock to empty (instead of removing it). An empty yarn.lock here
+  // marks `cwd` as a self-contained Yarn 4 project, otherwise Yarn 4 walks up the
+  // filesystem and tries to treat `createBaseDir`'s leftover yarn.lock as the
+  // project root — which fails with `nearest package directory doesn't seem to be
+  // part of the project`.
+  await writeFile(join(cwd, 'yarn.lock'), '');
+
+  // Also clear the parent's leftover yarn.lock (left there by setupYarn so we
+  // could `yarn set version berry` against an empty fixture) — its presence is
+  // what makes Yarn 4 think `cwd` is a workspace of a non-existent project.
+  await rm(join(cwd, '..', 'yarn.lock'), { force: true });
 
   await runCommand(`yarn set version berry`, { cwd }, debug);
   await runCommand(`yarn config set nodeLinker node-modules`, { cwd }, debug);

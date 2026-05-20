@@ -15,7 +15,7 @@ import type { InputOfQuery, OutputOfQuery, ServiceDefinition, ServiceStore } fro
  * ```
  */
 export function useServiceQuery<
-  TDef extends ServiceDefinition<any, any, any, any>,
+  TDef extends ServiceDefinition<any, any, any>,
   TQueries extends TDef['queries'] = TDef['queries'],
   TKey extends keyof TQueries & string = keyof TQueries & string,
 >(

@@ -8,7 +8,6 @@ import type {
   BuildCtx,
   CallableCommands,
   CommandHandler,
-  LoaderDefinition,
   QueryDef,
   QueryEntry,
   SelfHandle,
@@ -102,8 +101,8 @@ function keyOfInput(input: unknown): string {
  * mutator (`(draft) => { draft.foo = bar; }`); the runtime hands a real Immer draft to the
  * recipe and gets back the new immutable state plus the minimal patch list.
  */
-export class ServiceRuntime<TDef extends ServiceDefinition<any, any, any, any>> {
-  private _state: TDef extends ServiceDefinition<infer S, any, any, any> ? S : never;
+export class ServiceRuntime<TDef extends ServiceDefinition<any, any, any>> {
+  private _state: TDef extends ServiceDefinition<infer S, any, any> ? S : never;
   private _stateListeners = new Set<StateListener<unknown>>();
   private _queryListeners = new Map<string, Map<string, Set<QueryListener>>>();
   private _queryResultCache = new Map<string, Map<string, unknown>>();
@@ -160,7 +159,7 @@ export class ServiceRuntime<TDef extends ServiceDefinition<any, any, any, any>> 
   // The build pipeline, transport, and tests-for-infrastructure use them deliberately.
 
   /** @internal Read raw state. Application code should use a query instead. */
-  getState = (): TDef extends ServiceDefinition<infer S, any, any, any> ? S : never => {
+  getState = (): TDef extends ServiceDefinition<infer S, any, any> ? S : never => {
     return this._state;
   };
 
@@ -383,15 +382,14 @@ export class ServiceRuntime<TDef extends ServiceDefinition<any, any, any, any>> 
   // ------------------------------ preloads (query-backed + legacy loader-backed) ------------------------------
 
   /**
-   * Normalised preload entry. Either source — `definition.queries[name].preload` (the new
-   * query-as-object form) or `definition.load[name]` (the legacy loader map) — produces this
-   * shape. The rest of the runtime treats them identically.
+   * Normalised preload entry built from query-object entries (`definition.queries[name] =
+   * { select, preload, inputs?, path? }`) that have a `preload`. Bare-selector queries don't
+   * contribute. Cached on first access.
    */
   private _preloadsMap(): Record<string, NormalizedPreload> | undefined {
     if (this._preloadsCache !== undefined) return this._preloadsCache;
     const map: Record<string, NormalizedPreload> = {};
 
-    // From definition.queries — only query-object entries with a preload contribute.
     for (const [name, entry] of Object.entries(this.definition.queries)) {
       if (typeof entry === 'function') continue;
       const q = entry as QueryDef;
@@ -401,24 +399,6 @@ export class ServiceRuntime<TDef extends ServiceDefinition<any, any, any, any>> 
         inputs: q.inputs,
         path: q.path,
       };
-    }
-
-    // From definition.load — the legacy loader-map form. Errors if it overlaps with a query
-    // that also has a preload (the two forms must not double-declare the same name).
-    if (this.definition.load) {
-      for (const [name, loader] of Object.entries(this.definition.load)) {
-        if (name in map) {
-          throw new Error(
-            `[service ${this.id}] "${name}" is declared both as queries.${name}.preload and load.${name}. Pick one.`
-          );
-        }
-        const l = loader as LoaderDefinition<unknown, unknown>;
-        map[name] = {
-          handler: l.handler,
-          inputs: l.enumerateInputs,
-          path: l.options.path,
-        };
-      }
     }
 
     this._preloadsCache = Object.keys(map).length > 0 ? map : undefined;

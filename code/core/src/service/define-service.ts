@@ -2,11 +2,6 @@ import type {
   AbstractCommand,
   BuildCtx,
   CommandsMap,
-  LoaderDefinition,
-  LoaderEnumerate,
-  LoaderHandler,
-  LoaderOptions,
-  LoadersMap,
   QueriesMap,
   QueryDef,
   ServiceCtx,
@@ -50,26 +45,22 @@ import type {
 export function defineService<TState>(): <
   const TQueries extends QueriesMapFor<TState>,
   TCommands extends CommandsMapFor<TState>,
-  const TLoaders extends LoadersMap<TState> = {},
 >(definition: {
   id: string;
   state: TState;
   queries: TQueries;
   commands: TCommands;
-  load?: TLoaders;
-}) => ServiceDefinition<TState, TQueries, TCommands, TLoaders>;
+}) => ServiceDefinition<TState, TQueries, TCommands>;
 export function defineService<
   TState,
   const TQueries extends QueriesMap<TState>,
   const TCommands extends CommandsMap<TState>,
-  const TLoaders extends LoadersMap<TState> = {},
 >(definition: {
   id: string;
   state: TState;
   queries: TQueries;
   commands: TCommands;
-  load?: TLoaders;
-}): ServiceDefinition<TState, TQueries, TCommands, TLoaders>;
+}): ServiceDefinition<TState, TQueries, TCommands>;
 export function defineService(definition?: unknown): unknown {
   if (definition === undefined) {
     // Curried form: return a function that takes the definition.
@@ -114,31 +105,6 @@ interface CommandFnFor<TState> {
 }
 
 type CommandsMapFor<TState> = Record<string, CommandFnFor<TState> | AbstractCommand<any, any>>;
-
-/**
- * Authoring helper for a loader.
- *
- * @param handler - side-effecting body. Typically calls one or more commands, which write to
- *   state via `setState`. The handler's return value is ignored — subscribers see the result
- *   the paired query selector produces once state has settled.
- * @param enumerateInputs - the set of inputs this loader should be pre-rendered for at build time.
- *   For zero-input loaders (single-file shape), pass `undefined`. For dynamic enumeration, pass
- *   a function (receives a `BuildCtx` so it can read other services in the future).
- * @param options - per-loader configuration. `path` controls the JSON filename emitted by the
- *   static build pipeline.
- */
-export function defineLoader<TState, TInput = void>(
-  handler: LoaderHandler<TState, TInput>,
-  enumerateInputs: LoaderEnumerate<TInput>,
-  options: LoaderOptions<TInput> = {}
-): LoaderDefinition<TState, TInput> {
-  return {
-    __kind: 'loader',
-    handler,
-    enumerateInputs,
-    options,
-  };
-}
 
 /**
  * Authoring helper for a query.

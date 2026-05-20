@@ -8,7 +8,7 @@ import type { ServiceDefinition, ServiceRegistration, ServiceStore } from './typ
  * setState, subscribe, getLastPatches). Application code only sees what it should: id,
  * definition, queries, commands.
  */
-function asServiceStore<TDef extends ServiceDefinition<any, any, any, any>>(
+function asServiceStore<TDef extends ServiceDefinition<any, any, any>>(
   runtime: ServiceRuntime<TDef>
 ): ServiceStore<TDef> {
   return runtime.publicStore as unknown as ServiceStore<TDef>;
@@ -27,7 +27,7 @@ function asServiceStore<TDef extends ServiceDefinition<any, any, any, any>>(
  * If an abstract command is declared in the definition but no handler is supplied at
  * registration, this throws with an actionable error message.
  */
-export function registerService<TDef extends ServiceDefinition<any, any, any, any>>(
+export function registerService<TDef extends ServiceDefinition<any, any, any>>(
   definition: TDef,
   registration?: ServiceRegistration<TDef>
 ): ServiceStore<TDef> {
@@ -52,11 +52,11 @@ export function registerService<TDef extends ServiceDefinition<any, any, any, an
  *
  * Throws if no service is registered for the given id.
  */
-export function getService<TDef extends ServiceDefinition<any, any, any, any>>(
+export function getService<TDef extends ServiceDefinition<any, any, any>>(
   definition: TDef
 ): ServiceStore<TDef>;
-export function getService(id: string): ServiceStore<ServiceDefinition<any, any, any, any>>;
-export function getService(arg: string | ServiceDefinition<any, any, any, any>): ServiceStore<any> {
+export function getService(id: string): ServiceStore<ServiceDefinition<any, any, any>>;
+export function getService(arg: string | ServiceDefinition<any, any, any>): ServiceStore<any> {
   const id = typeof arg === 'string' ? arg : arg.id;
   const runtime = instances.get(id);
   if (!runtime) {

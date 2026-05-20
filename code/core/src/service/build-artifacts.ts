@@ -18,7 +18,7 @@ import type { ServiceDefinition, ServiceRegistration } from './types.ts';
  *
  * Services with no preloads (no `def.queries.X.preload` and no `def.load`) return an empty Map.
  */
-export async function buildServiceArtifacts<TDef extends ServiceDefinition<any, any, any, any>>(
+export async function buildServiceArtifacts<TDef extends ServiceDefinition<any, any, any>>(
   definition: TDef,
   registration?: ServiceRegistration<TDef>
 ): Promise<Map<string, unknown>> {

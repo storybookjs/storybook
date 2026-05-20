@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { defineCommand, defineLoader, defineService } from './define-service.ts';
+import { defineCommand, defineQuery, defineService } from './define-service.ts';
 import { __resetServiceRegistry, registerService } from './register-service.ts';
 import type { ServiceCtx } from './types.ts';
 
@@ -282,7 +282,15 @@ describe('loaders', () => {
     const def = defineService({
       id: 'test/loader-fires',
       state: { byId: {} } as S,
-      queries: { getName: (s: S, id: string) => s.byId[id] },
+      queries: {
+        getName: defineQuery({
+          select: (s: S, id: string) => s.byId[id],
+          preload: async (id: string, ctx: ServiceCtx<S>) => {
+            await ctx.self.commands.load(id);
+          },
+          inputs: ['a', 'b'],
+        }),
+      },
       commands: {
         load: async (id: string, ctx: ServiceCtx<S>) => {
           const name = await generate(id);
@@ -290,14 +298,6 @@ describe('loaders', () => {
             d.byId[id] = name;
           });
         },
-      },
-      load: {
-        getName: defineLoader<S, string>(
-          async (id, ctx) => {
-            await ctx.self.commands.load(id);
-          },
-          ['a', 'b']
-        ),
       },
     });
     const store = registerService(def);
@@ -325,7 +325,15 @@ describe('loaders', () => {
     const def = defineService({
       id: 'test/loader-dedupe',
       state: { byId: {} } as S,
-      queries: { getName: (s: S, id: string) => s.byId[id] },
+      queries: {
+        getName: defineQuery({
+          select: (s: S, id: string) => s.byId[id],
+          preload: async (id: string, ctx: ServiceCtx<S>) => {
+            await ctx.self.commands.load(id);
+          },
+          inputs: ['a'],
+        }),
+      },
       commands: {
         load: async (id: string, ctx: ServiceCtx<S>) => {
           const name = await generate(id);
@@ -333,14 +341,6 @@ describe('loaders', () => {
             d.byId[id] = name;
           });
         },
-      },
-      load: {
-        getName: defineLoader<S, string>(
-          async (id, ctx) => {
-            await ctx.self.commands.load(id);
-          },
-          ['a']
-        ),
       },
     });
     const store = registerService(def);
@@ -363,7 +363,15 @@ describe('loaders', () => {
     const def = defineService({
       id: 'test/loader-per-input',
       state: { byId: {} } as S,
-      queries: { getName: (s: S, id: string) => s.byId[id] },
+      queries: {
+        getName: defineQuery({
+          select: (s: S, id: string) => s.byId[id],
+          preload: async (id: string, ctx: ServiceCtx<S>) => {
+            await ctx.self.commands.load(id);
+          },
+          inputs: ['a', 'b'],
+        }),
+      },
       commands: {
         load: async (id: string, ctx: ServiceCtx<S>) => {
           const name = await generate(id);
@@ -371,14 +379,6 @@ describe('loaders', () => {
             d.byId[id] = name;
           });
         },
-      },
-      load: {
-        getName: defineLoader<S, string>(
-          async (id, ctx) => {
-            await ctx.self.commands.load(id);
-          },
-          ['a', 'b']
-        ),
       },
     });
     const store = registerService(def);
@@ -405,7 +405,14 @@ describe('loaders', () => {
     const def = defineService({
       id: 'test/loader-on-call',
       state: { value: '' } as S,
-      queries: { get: (s: S) => s.value },
+      queries: {
+        get: defineQuery({
+          select: (s: S) => s.value,
+          preload: async (ctx: ServiceCtx<S>) => {
+            await ctx.self.commands.load();
+          },
+        }),
+      },
       commands: {
         load: async (ctx: ServiceCtx<S>) => {
           const v = await generate();
@@ -413,11 +420,6 @@ describe('loaders', () => {
             d.value = v;
           });
         },
-      },
-      load: {
-        get: defineLoader<S, void>(async (ctx) => {
-          await ctx.self.commands.load();
-        }, undefined),
       },
     });
     const store = registerService(def);

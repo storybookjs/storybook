@@ -58,22 +58,10 @@ export interface AbstractCommand<TInput = void, TOutput = void> {
 /** A command entry in the definition is either a concrete handler or an abstract marker. */
 export type CommandEntry = ((...args: any[]) => any) | AbstractCommand<any, any>;
 
-// -------------------- loader handlers --------------------
+// -------------------- build-time context --------------------
 
 /**
- * A loader handler runs the side-effects required to populate state for a query. Typically it
- * calls one or more commands, which then write to state via `setState`. The loader's *return*
- * value is ignored — the result subscribers see is whatever the paired query selector returns
- * once state has settled.
- */
-export type LoaderHandler<TState, TInput> = [TInput] extends [void]
-  ? (ctx: ServiceCtx<TState>) => void | Promise<void>
-  : (input: TInput, ctx: ServiceCtx<TState>) => void | Promise<void>;
-
-// -------------------- loader definition + options --------------------
-
-/**
- * Build-time context passed to loader enumeration and path callbacks.
+ * Build-time context passed to a query's `inputs` and `path` callbacks.
  * Will grow to include `ctx.runtime[serviceId].queries.x()` so enumeration can read from
  * other services (e.g. the story index for docgen).
  */
@@ -81,32 +69,7 @@ export interface BuildCtx {
   readonly isBuild: true;
 }
 
-export type LoaderEnumerate<TInput> = [TInput] extends [void]
-  ? undefined
-  : readonly TInput[] | ((ctx: BuildCtx) => readonly TInput[] | Promise<readonly TInput[]>);
-
-export type LoaderPath<TInput> = [TInput] extends [void]
-  ? (ctx: BuildCtx) => string
-  : (ctx: BuildCtx, input: TInput) => string;
-
-export interface LoaderOptions<TInput> {
-  /**
-   * The filename (relative to the service's static build directory) where this loader's
-   * artifact lives. Defaults: `<loaderName>.json` for no-input loaders, and
-   * `<loaderName>-<input>.json` for string inputs. Non-string inputs (objects, numbers) must
-   * supply this callback explicitly — there's no sensible default for arbitrary shapes.
-   */
-  path?: LoaderPath<TInput>;
-}
-
-export interface LoaderDefinition<TState, TInput> {
-  readonly __kind: 'loader';
-  readonly handler: LoaderHandler<TState, TInput>;
-  readonly enumerateInputs: LoaderEnumerate<TInput>;
-  readonly options: LoaderOptions<TInput>;
-}
-
-// -------------------- context handed to commands & loaders --------------------
+// -------------------- context handed to commands & query preloads --------------------
 
 /**
  * Runtime context handed to command and loader bodies.
@@ -169,7 +132,7 @@ export interface QueryDef<TState = any> {
   /**
    * Optional filename for this query's per-input static artifact. If absent, the query has no
    * static artifact regardless of whether `inputs` is declared. Defaults follow the same rules
-   * as the previous `LoaderOptions.path` — `<queryName>.json` for no-input, `<queryName>-<input>.json`
+   * applied: `<queryName>.json` for no-input, `<queryName>-<input>.json`
    * for string inputs.
    */
   readonly path?: (...args: any[]) => string;
@@ -186,13 +149,11 @@ export interface QueryDef<TState = any> {
  */
 export type QueriesMap<TState> = Record<string, QueryEntry<TState>>;
 export type CommandsMap<TState> = Record<string, CommandEntry>;
-export type LoadersMap<TState> = Record<string, LoaderDefinition<TState, any>>;
 
 export interface ServiceDefinition<
   TState = unknown,
   TQueries extends QueriesMap<TState> = QueriesMap<TState>,
   TCommands extends CommandsMap<TState> = CommandsMap<TState>,
-  TLoaders extends LoadersMap<TState> = LoadersMap<TState>,
 > {
   /** Globally unique service id. Convention: `core/<name>` for built-ins, `<addonId>/<name>` for addons. */
   readonly id: string;
@@ -200,13 +161,6 @@ export interface ServiceDefinition<
   readonly state: TState;
   readonly queries: TQueries;
   readonly commands: TCommands;
-  /**
-   * Optional loaders. A loader bridges a query to async work (typically: producing a JSON file
-   * at build time, then fetching it lazily on the client). Services that don't declare loaders
-   * have no static-build artifacts and no fetch on registration — their state is purely
-   * session-local.
-   */
-  readonly load?: TLoaders;
 }
 
 // -------------------- registration --------------------
@@ -219,7 +173,7 @@ export interface ServiceDefinition<
  * Note: there is no per-registration static transport. The architecture maintains a single
  * global transport (see `static-transport.ts`). Services never see or configure it.
  */
-export interface ServiceRegistration<TDef extends ServiceDefinition<any, any, any, any>> {
+export interface ServiceRegistration<TDef extends ServiceDefinition<any, any, any>> {
   commands?: CommandOverrides<TDef>;
 }
 
@@ -227,7 +181,7 @@ export interface ServiceRegistration<TDef extends ServiceDefinition<any, any, an
 // downstream importers that only reach for `./types.ts`.
 export type { ServiceStaticTransport } from './static-transport.ts';
 
-export type CommandOverrides<TDef extends ServiceDefinition<any, any, any, any>> = {
+export type CommandOverrides<TDef extends ServiceDefinition<any, any, any>> = {
   [K in keyof TDef['commands']]?: TDef['commands'][K] extends AbstractCommand<infer I, infer O>
     ? [I] extends [void]
       ? (ctx: ServiceCtx<TDef['state']>) => O | Promise<O>
@@ -277,8 +231,6 @@ export type OutputOfCommand<C> =
       ? Awaited<R>
       : void;
 
-export type InputOfLoader<L> = L extends LoaderDefinition<any, infer I> ? I : never;
-
 // -------------------- consumer-facing service handle --------------------
 
 /** A subscribable query handle: callable for one-shot reads, plus a `.subscribe()` method. */
@@ -311,7 +263,7 @@ export type CallableCommands<TC extends CommandsMap<any>> = {
  * Infrastructure layers (the build pipeline) work against the `ServiceRuntime` class directly,
  * which exposes state-mutation hooks that aren't part of this public surface.
  */
-export interface ServiceStore<TDef extends ServiceDefinition<any, any, any, any>> {
+export interface ServiceStore<TDef extends ServiceDefinition<any, any, any>> {
   readonly id: string;
   readonly definition: TDef;
   readonly queries: SubscribableQueries<TDef['queries']>;

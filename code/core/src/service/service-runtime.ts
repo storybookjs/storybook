@@ -90,6 +90,20 @@ function keyOfInput(input: unknown): string {
 }
 
 /**
+ * 32-bit FNV-1a hash of a string, encoded as 8 lowercase hex chars. Non-cryptographic; used
+ * only to derive deterministic filenames from non-string inputs when the query author didn't
+ * supply a `path` callback. Fast, no dependencies, stable across runs.
+ */
+function fnv1a(str: string): string {
+  let hash = 0x811c9dc5;
+  for (let i = 0; i < str.length; i++) {
+    hash ^= str.charCodeAt(i);
+    hash = Math.imul(hash, 0x01000193) >>> 0;
+  }
+  return hash.toString(16).padStart(8, '0');
+}
+
+/**
  * The in-memory runtime for a single registered service.
  *
  * State and state-mutation APIs (`getState`, `setState`, `subscribe`) live on this class but
@@ -425,13 +439,14 @@ export class ServiceRuntime<TDef extends ServiceDefinition<any, any, any>> {
       }
       return (entry.path as (ctx: BuildCtx) => string)(buildCtx);
     }
-    // Default: queryName.json for no-input; queryName-<input>.json for string inputs.
+    // Default filename rules:
+    //  - no input         → `${name}.json`
+    //  - string input     → `${name}-${input}.json`
+    //  - any other input  → `${name}-${fnv1a(JSON.stringify(input))}.json` (8-hex-char hash)
+    // Authors who want pretty URLs for non-string inputs supply a `path` callback explicitly.
     if (input === undefined) return `${name}.json`;
     if (typeof input === 'string') return `${name}-${input}.json`;
-    throw new Error(
-      `[service ${this.id}] Query "${name}" has non-string inputs (${typeof input}) ` +
-        `and no \`path\` callback. Supply one on the query: { path: (_ctx, input) => '...' }`
-    );
+    return `${name}-${fnv1a(JSON.stringify(input))}.json`;
   }
 
   /**

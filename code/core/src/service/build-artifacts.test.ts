@@ -238,6 +238,42 @@ describe('buildServiceArtifacts', () => {
     await expect(buildServiceArtifacts(def)).rejects.toThrow(/array-index patch/);
   });
 
+  it('hashes non-string inputs into a deterministic filename when no `path` is provided', async () => {
+    interface S {
+      byKey: Record<string, string>;
+    }
+    type Key = { kind: string; id: number };
+    const def = defineService({
+      id: 'test/hashed-default-path',
+      state: { byKey: {} } as S,
+      queries: {
+        getByKey: defineQuery({
+          select: (s: S, k: Key) => s.byKey[`${k.kind}:${k.id}`],
+          preload: async (k: Key, ctx: ServiceCtx<S>) => {
+            ctx.self.setState((d) => {
+              d.byKey[`${k.kind}:${k.id}`] = `${k.kind}-${k.id}`;
+            });
+          },
+          inputs: [
+            { kind: 'cat', id: 1 },
+            { kind: 'cat', id: 1 }, // duplicate — should map to the same file, merged
+            { kind: 'dog', id: 2 },
+          ],
+        }),
+      },
+      commands: {},
+    });
+
+    const artifacts = await buildServiceArtifacts(def);
+    const filenames = [...artifacts.keys()].sort();
+
+    // Two distinct objects → two files, each `getByKey-<8 hex chars>.json`.
+    expect(filenames).toHaveLength(2);
+    expect(filenames[0]).toMatch(/^getByKey-[0-9a-f]{8}\.json$/);
+    expect(filenames[1]).toMatch(/^getByKey-[0-9a-f]{8}\.json$/);
+    expect(filenames[0]).not.toBe(filenames[1]);
+  });
+
   it('reads preload+inputs+path from a defineQuery on definition.queries (new form)', async () => {
     interface S {
       byId: Record<string, { name: string }>;

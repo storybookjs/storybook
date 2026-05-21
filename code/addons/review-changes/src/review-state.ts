@@ -5,7 +5,7 @@
  * This is a DUPLICATE of the canonical valibot schema in the MCP addon
  * (`@storybook/addon-mcp`). This side only renders the data — it does not
  * validate — so it needs the type, not the validator. All fields beyond
- * `narrative` + `clusters` are optional: the minimal payload is still valid.
+ * `title` + `narrative` + `clusters` are required: this is the minimal payload.
  */
 
 export type ClusterKind = 'atomic' | 'consumer' | 'transitive' | 'catch-all';
@@ -28,8 +28,10 @@ export interface StoryMeta {
 }
 
 export interface ReviewState {
+  title: string;
   narrative: string;
   clusters: ReviewCluster[];
+  branchName?: string;
   changedFiles?: string[];
   diffHunks?: DiffHunk[];
   storyMeta?: Record<string, StoryMeta>;

@@ -15,7 +15,6 @@ const featureFlags = vi.hoisted(() => {
 // File hierarchy: __testfixtures__ / some-test-case / input.*
 const inputRegExp = /^input\..*$/;
 
-// Mirrors the historic `SNAPSHOT_OS` global (removed with the legacy jest setup):
 // compodoc output is path-sensitive, so snapshots are OS-suffixed.
 const SNAPSHOT_OS =
   process.platform === 'win32' ? 'windows' : process.platform ? 'posix' : 'undefined';

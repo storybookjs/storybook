@@ -3,7 +3,7 @@ import type { Meta, StoryObj } from '@storybook/angular';
 import { STORY_RENDERED, UPDATE_STORY_ARGS } from 'storybook/internal/core-events';
 
 import { addons, useArgs } from 'storybook/preview-api';
-import { expect, fn, userEvent, waitFor, within } from 'storybook/test';
+import { expect, fn, userEvent, waitFor } from 'storybook/test';
 
 import ColorPickerComponent from './color-picker.component';
 
@@ -25,9 +25,7 @@ export const ControlsAndActions: Story = {
   args: {
     color: '#345F92',
   },
-  play: async ({ canvasElement, args }) => {
-    const canvas = within(canvasElement);
-
+  play: async ({ canvas, args }) => {
     // `color` is a Control/arg: its value reached the component instance and rendered.
     await expect(canvas.getByTestId('current-color')).toHaveTextContent('#345F92');
 
@@ -56,8 +54,7 @@ export const TwoWayRoundTrip: Story = {
       },
     };
   },
-  play: async ({ canvasElement, args, id }) => {
-    const canvas = within(canvasElement);
+  play: async ({ canvas, args, id }) => {
     const channel = addons.getChannel();
 
     // 1. Initial render: the initial `args.color` reached the component instance.

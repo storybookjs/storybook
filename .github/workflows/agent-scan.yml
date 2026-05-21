@@ -89,7 +89,6 @@ jobs:
           # Safe because the cache is prefixed and only used here, and does not include
           # user-controlled content (can't spoof another actor's identity).
           key: agentscan-cache-${{ github.actor }}
-          restore-keys: agentscan-cache-
 
       - name: AgentScan
         if: steps.membership.outputs.should-scan == 'true'

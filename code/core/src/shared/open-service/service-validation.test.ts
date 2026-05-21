@@ -1,6 +1,8 @@
+import * as v from 'valibot';
 import { dedent } from 'ts-dedent';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
+import { defineQuery, defineService } from './service-definition.ts';
 import { buildStaticFiles } from './static-build.ts';
 import { clearRegistry, createService, getService } from './service-runtime.ts';
 import {
@@ -93,6 +95,39 @@ describe('service validation', () => {
       dedent`
         Invalid input for query "test/invalid-static-input.getPreloadedValue":
         entryId: Invalid key: Expected "entryId" but received undefined
+      `
+    );
+  });
+
+  it('shows nested field paths for validation issues inside arrays and objects', async () => {
+    const service = createService(
+      defineService({
+        id: 'test/nested-query-output',
+        initialState: {} as Record<string, never>,
+        queries: {
+          getBrokenTree: defineQuery<Record<string, never>>()({
+            input: v.undefined(),
+            output: v.object({
+              items: v.array(
+                v.object({
+                  name: v.string(),
+                })
+              ),
+            }),
+            handler: () => ({
+              items: [{ name: 1 as unknown as string }],
+            }),
+          }),
+        },
+        commands: {},
+      })
+    );
+
+    await expectValidationMessage(
+      () => service.queries.getBrokenTree(undefined),
+      dedent`
+        Invalid output for query "test/nested-query-output.getBrokenTree":
+        items[0].name: Invalid type: Expected string but received 1
       `
     );
   });

@@ -1,5 +1,7 @@
+import * as v from 'valibot';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
+import { defineQuery, defineService } from './service-definition.ts';
 import { clearRegistry, getService } from './service-runtime.ts';
 import {
   awaitedPreloadValueServiceDef,
@@ -156,6 +158,74 @@ describe('service runtime', () => {
       expect(callsB).toEqual([null, { marker: 'shared' }]);
       unsubscribeA();
       unsubscribeB();
+    });
+
+    it('does not notify after unsubscribe when an async query result resolves later', async () => {
+      let resolveValue!: () => void;
+      let handlerStarted = false;
+      let handlerFinished = false;
+      const valueReady = new Promise<void>((resolve) => {
+        resolveValue = resolve;
+      });
+      const delayedQueryServiceDef = defineService({
+        id: 'test/delayed-subscription-value',
+        description: 'Resolves a subscription value after the subscriber has already unsubscribed.',
+        initialState: {} as Record<string, never>,
+        queries: {
+          getValue: defineQuery<Record<string, never>>()({
+            input: v.undefined(),
+            output: v.string(),
+            handler: async () => {
+              handlerStarted = true;
+              await valueReady;
+              handlerFinished = true;
+
+              return 'late';
+            },
+          }),
+        },
+        commands: {},
+      });
+      const service = getService(delayedQueryServiceDef);
+      const calls: string[] = [];
+
+      const unsubscribe = service.queries.getValue.subscribe(undefined, (value) => {
+        calls.push(value);
+      });
+
+      await vi.waitFor(() => expect(handlerStarted).toBe(true));
+      unsubscribe();
+      resolveValue();
+
+      await vi.waitFor(() => expect(handlerFinished).toBe(true));
+      expect(calls).toEqual([]);
+    });
+
+    it('rethrows async subscription input validation failures through queueMicrotask', async () => {
+      const queuedCallbacks: Array<() => void> = [];
+      const queueMicrotaskSpy = vi
+        .spyOn(globalThis, 'queueMicrotask')
+        .mockImplementation((callback: VoidFunction) => {
+          queuedCallbacks.push(callback);
+        });
+      const service = getService(mutableRecordLookupServiceDef);
+
+      service.queries.getRecordFields.subscribe({} as unknown as { entryId: string }, () => {});
+
+      await vi.waitFor(() => expect(queuedCallbacks).toHaveLength(1));
+      try {
+        queuedCallbacks[0]();
+        expect.unreachable('Expected queued validation error to be thrown');
+      } catch (error) {
+        expect(error).toMatchObject({
+          fromStorybook: true,
+          code: 1001,
+          message:
+            'Invalid input for query "test/mutable-record-lookup.getRecordFields":\nentryId: Invalid key: Expected "entryId" but received undefined',
+        });
+      }
+
+      queueMicrotaskSpy.mockRestore();
     });
   });
 

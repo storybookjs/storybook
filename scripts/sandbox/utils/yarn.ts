@@ -11,7 +11,12 @@ interface SetupYarnOptions {
   version?: 'berry' | 'classic';
 }
 
-export async function setupYarn({ cwd, pnp = false, version = 'berry' }: SetupYarnOptions) {
+// NOTE: `version` defaults to `classic` (Yarn 1). This sets up Yarn only in the
+// scratch `createBaseDir`, which is the *parent* of the generated sandbox. It must
+// stay Yarn 1: Yarn 4 is strict about nested projects and would reject any install
+// a template's before-script runs inside the `before-storybook` subdirectory. The
+// sandbox itself is migrated to Yarn 4 afterwards by `refreshBeforeStorybookLockfile`.
+export async function setupYarn({ cwd, pnp = false, version = 'classic' }: SetupYarnOptions) {
   // force yarn
   await writeFile(join(cwd, 'yarn.lock'), '', { flag: 'a' });
   await runCommand(`yarn set version ${version}`, { cwd });

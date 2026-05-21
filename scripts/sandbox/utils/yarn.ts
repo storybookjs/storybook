@@ -1,7 +1,8 @@
-import { rename, rm, writeFile } from 'node:fs/promises';
+import { readFile, rename, rm, writeFile } from 'node:fs/promises';
 
 import { join } from 'path';
 
+import { ROOT_DIRECTORY } from '../../utils/constants.ts';
 import { runCommand } from '../generate.ts';
 
 interface SetupYarnOptions {
@@ -76,8 +77,8 @@ interface RefreshLockfileOptions {
  *
  * 1. Drop any non-Yarn-4 lockfile the template's CLI produced (`package-lock.json`,
  *    legacy `yarn.lock`, `pnpm-lock.yaml`).
- * 2. Re-set Yarn 4 in `package.json` (the template recreated `package.json`
- *    after `setupYarn`, so the `packageManager` field needs to be restored).
+ * 2. Pin Yarn 4 via the `package.json` `packageManager` field so corepack
+ *    resolves it deterministically (no network `yarn set version`).
  * 3. Set `npmMinimalAgeGate` to 7 days so resolution skips quarantined versions.
  * 4. Run `yarn install` + `yarn up '*'` in `--mode=update-lockfile` to produce
  *    a deterministic Yarn 4 lockfile pinned to the newest non-quarantined
@@ -104,12 +105,16 @@ export async function refreshBeforeStorybookLockfile({
   // part of the project`.
   await writeFile(join(cwd, 'yarn.lock'), '');
 
-  // Also clear the parent's leftover yarn.lock (left there by setupYarn so we
-  // could `yarn set version berry` against an empty fixture) — its presence is
-  // what makes Yarn 4 think `cwd` is a workspace of a non-existent project.
+  // Also clear any leftover yarn.lock in the parent directory — its presence
+  // would make Yarn 4 think `cwd` is a workspace of a non-existent project.
   await rm(join(cwd, '..', 'yarn.lock'), { force: true });
 
-  await runCommand(`yarn set version berry`, { cwd }, debug);
+  // Pin Yarn 4 via the package.json `packageManager` field so corepack resolves
+  // it deterministically. We deliberately do NOT run `yarn set version` here: it
+  // re-downloads Yarn over the network (and fails intermittently in CI), and is
+  // redundant — the sandbox only needs *a* Yarn 4 to produce the lockfile.
+  await pinYarnPackageManager(cwd);
+
   await runCommand(`yarn config set nodeLinker node-modules`, { cwd }, debug);
 
   const gateMinutes = disableMinAgeGate ? 0 : BEFORE_SANDBOX_MIN_AGE_MINUTES;
@@ -118,6 +123,7 @@ export async function refreshBeforeStorybookLockfile({
   const env = {
     ...process.env,
     YARN_ENABLE_IMMUTABLE_INSTALLS: 'false',
+    COREPACK_ENABLE_DOWNLOAD_PROMPT: '0',
     CI: 'true',
   };
 
@@ -137,4 +143,26 @@ export async function refreshBeforeStorybookLockfile({
       console.warn(error);
     }
   }
+}
+
+/**
+ * Copy the monorepo's pinned Yarn version into the sandbox `package.json`
+ * `packageManager` field. corepack then resolves Yarn 4 deterministically for
+ * every `yarn` command run in the sandbox, with no network `yarn set version`.
+ */
+async function pinYarnPackageManager(cwd: string) {
+  const rootPackageJson = JSON.parse(
+    await readFile(join(ROOT_DIRECTORY, 'package.json'), 'utf-8')
+  );
+  const packageManager: string | undefined = rootPackageJson.packageManager;
+  if (!packageManager?.startsWith('yarn@')) {
+    throw new Error(
+      `Expected a yarn "packageManager" in the monorepo package.json, got: ${packageManager}`
+    );
+  }
+
+  const packageJsonPath = join(cwd, 'package.json');
+  const packageJson = JSON.parse(await readFile(packageJsonPath, 'utf-8'));
+  packageJson.packageManager = packageManager;
+  await writeFile(packageJsonPath, `${JSON.stringify(packageJson, null, 2)}\n`);
 }

@@ -87,12 +87,21 @@ export const ReviewStateSchema = v.object({
 export type ReviewCollection = v.InferOutput<typeof ReviewCollectionSchema>;
 export type ReviewState = v.InferOutput<typeof ReviewStateSchema>;
 
-let cached: ReviewState | undefined;
+/**
+ * A pushed `ReviewState` plus server-added metadata. `branchName` is the
+ * target repo's current git branch, resolved server-side at push time —
+ * the agent's payload does not (and should not) carry it.
+ */
+export type StoredReviewState = ReviewState & {
+	branchName?: string;
+};
 
-export function setReviewState(state: ReviewState): void {
+let cached: StoredReviewState | undefined;
+
+export function setReviewState(state: StoredReviewState): void {
 	cached = state;
 }
 
-export function getReviewState(): ReviewState | undefined {
+export function getReviewState(): StoredReviewState | undefined {
 	return cached;
 }

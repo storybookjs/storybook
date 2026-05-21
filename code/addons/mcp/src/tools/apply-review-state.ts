@@ -2,9 +2,15 @@ import type { McpServer } from 'tmcp';
 import * as v from 'valibot';
 import type { AddonContext } from '../types.ts';
 import { errorToMCPContent } from '../utils/errors.ts';
-import { ReviewStateSchema, setReviewState, type ReviewState } from '../review-state-store.ts';
+import {
+	ReviewStateSchema,
+	setReviewState,
+	type ReviewState,
+	type StoredReviewState,
+} from '../review-state-store.ts';
 import { APPLY_REVIEW_STATE_EVENT, REVIEW_PAGE_PATH } from '../constants.ts';
 import { APPLY_REVIEW_STATE_TOOL_NAME } from './tool-names.ts';
+import { currentGitBranch } from '../utils/git-branch.ts';
 
 const ApplyReviewStateOutput = v.object({
 	reviewUrl: v.pipe(
@@ -72,14 +78,21 @@ Always include the returned reviewUrl in your final user-facing response so the 
 			try {
 				const reviewUrl = buildReviewUrl(server.ctx.custom ?? {});
 
-				setReviewState(input);
+				// Resolve the target repo's current git branch server-side and
+				// attach it — the agent's payload doesn't carry it, but the
+				// review page shows it. Best-effort: omitted on a detached HEAD
+				// or a non-git target.
+				const branchName = await currentGitBranch(process.cwd());
+				const state: StoredReviewState = branchName ? { ...input, branchName } : input;
+
+				setReviewState(state);
 
 				// Broadcast to all connected Storybook tabs. A warm tab navigates
 				// to the review page; a cold start relies on the returned URL.
-				server.ctx.custom?.options?.channel?.emit(APPLY_REVIEW_STATE_EVENT, input);
+				server.ctx.custom?.options?.channel?.emit(APPLY_REVIEW_STATE_EVENT, state);
 
-				const collectionCount = input.collections.length;
-				const storyCount = input.collections.reduce((n, c) => n + c.sampleStoryIds.length, 0);
+				const collectionCount = state.collections.length;
+				const storyCount = state.collections.reduce((n, c) => n + c.sampleStoryIds.length, 0);
 
 				return {
 					content: [

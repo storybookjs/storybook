@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { McpServer } from 'tmcp';
 import { ValibotJsonSchemaAdapter } from '@tmcp/adapter-valibot';
 import { addApplyReviewStateTool, buildReviewUrl } from './apply-review-state.ts';
@@ -6,6 +6,13 @@ import { APPLY_REVIEW_STATE_TOOL_NAME } from './tool-names.ts';
 import { APPLY_REVIEW_STATE_EVENT } from '../constants.ts';
 import { getReviewState, type ReviewState } from '../review-state-store.ts';
 import type { AddonContext } from '../types.ts';
+
+// The tool resolves the target repo's git branch server-side. Mock it so
+// the unit tests don't depend on the branch this repo happens to be on.
+const { mockCurrentGitBranch } = vi.hoisted(() => ({ mockCurrentGitBranch: vi.fn() }));
+vi.mock('../utils/git-branch.ts', () => ({
+	currentGitBranch: (...args: unknown[]) => mockCurrentGitBranch(...args),
+}));
 
 const sampleReview: ReviewState = {
 	title: 'Recolour the primary button',
@@ -73,6 +80,8 @@ describe('applyReviewStateTool', () => {
 
 	beforeEach(async () => {
 		emitted = [];
+		mockCurrentGitBranch.mockReset();
+		mockCurrentGitBranch.mockResolvedValue(undefined);
 		const adapter = new ValibotJsonSchemaAdapter();
 		server = new McpServer(
 			{
@@ -157,5 +166,15 @@ describe('applyReviewStateTool', () => {
 		expect(result?.structuredContent?.reviewUrl).toBe(
 			'https://sb.example.com/design-system/?path=/review-changes/',
 		);
+	});
+
+	it('attaches the target repo git branch resolved server-side', async () => {
+		mockCurrentGitBranch.mockResolvedValue('feature/badge-pink');
+
+		await callTool(sampleReview, makeContext());
+
+		const expected = { ...sampleReview, branchName: 'feature/badge-pink' };
+		expect(getReviewState()).toEqual(expected);
+		expect(emitted).toContainEqual({ event: APPLY_REVIEW_STATE_EVENT, payload: expected });
 	});
 });

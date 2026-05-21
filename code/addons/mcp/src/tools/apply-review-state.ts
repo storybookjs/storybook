@@ -23,8 +23,9 @@ export async function addApplyReviewStateTool(server: McpServer<any, AddonContex
 			description: `Push a curated review of the current change to Storybook's review page.
 
 After you finish a UI code change, call this to help the user spot-check it. Provide:
-- narrative: one paragraph on what changed and where to start.
-- clusters: labelled groups of representative story IDs, each with a rationale and, when you can tell, a kind ("atomic" for the directly changed component, "consumer" for direct dependents, "transitive" for pages/containers, "catch-all" otherwise).
+- title: a PR-style title for the change — short and specific.
+- description: a one-line summary of what changed and where to start reviewing.
+- collections: titled groups of representative story IDs. Give each a concise, PR-dense title, a one-sentence rationale, and — when you can tell — a kind ("atomic" for the directly changed component, "consumer" for direct dependents, "transitive" for pages/containers, "catch-all" otherwise).
 - changedFiles: the files you edited (most central first).
 - diffHunks: the actual diff of your change (you made it — include the hunks).
 - storyMeta: optional per-story { depth, chain }.
@@ -48,14 +49,14 @@ Always include the returned reviewUrl in your final user-facing response so the 
 				server.ctx.custom?.options?.channel?.emit(APPLY_REVIEW_STATE_EVENT, input);
 
 				const reviewUrl = `${origin}/?path=${REVIEW_PAGE_PATH}`;
-				const clusterCount = input.clusters.length;
-				const storyCount = input.clusters.reduce((n, c) => n + c.sampleStoryIds.length, 0);
+				const collectionCount = input.collections.length;
+				const storyCount = input.collections.reduce((n, c) => n + c.sampleStoryIds.length, 0);
 
 				return {
 					content: [
 						{
 							type: 'text' as const,
-							text: `Review applied: ${clusterCount} cluster${clusterCount === 1 ? '' : 's'}, ${storyCount} stor${storyCount === 1 ? 'y' : 'ies'}. Open it at: ${reviewUrl}`,
+							text: `Review applied: ${collectionCount} collection${collectionCount === 1 ? '' : 's'}, ${storyCount} stor${storyCount === 1 ? 'y' : 'ies'}. Open it at: ${reviewUrl}`,
 						},
 					],
 					structuredContent: { reviewUrl },

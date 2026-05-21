@@ -12,10 +12,10 @@
  */
 import * as v from 'valibot';
 
-export const ReviewClusterSchema = v.object({
-	label: v.pipe(
+export const ReviewCollectionSchema = v.object({
+	title: v.pipe(
 		v.string(),
-		v.description('Short human-readable cluster name, e.g. "Direct Button importers".'),
+		v.description('Short, PR-dense title for this collection, e.g. "Direct Button importers".'),
 	),
 	rationale: v.pipe(
 		v.string(),
@@ -24,13 +24,13 @@ export const ReviewClusterSchema = v.object({
 	sampleStoryIds: v.pipe(
 		v.array(v.string()),
 		v.description(
-			'Story IDs that represent this cluster (e.g. "button--primary"). The page renders exactly these.',
+			'Story IDs that represent this collection (e.g. "button--primary"). The page renders exactly these.',
 		),
 	),
 	kind: v.pipe(
 		v.optional(v.picklist(['atomic', 'consumer', 'transitive', 'catch-all'])),
 		v.description(
-			'Semantic role of this cluster in the change cascade: "atomic" = the directly changed component, "consumer" = direct dependents, "transitive" = pages/containers further away, "catch-all" = everything else. Omit if unknown.',
+			'Semantic role of this collection in the change cascade: "atomic" = the directly changed component, "consumer" = direct dependents, "transitive" = pages/containers further away, "catch-all" = everything else. Omit if unknown.',
 		),
 	),
 });
@@ -59,11 +59,15 @@ const DiffHunkSchema = v.object({
 });
 
 export const ReviewStateSchema = v.object({
-	narrative: v.pipe(
+	title: v.pipe(
 		v.string(),
-		v.description('One-paragraph overview of what changed and where to start.'),
+		v.description('PR-style title for the change — short and specific, e.g. "Recolour the primary button".'),
 	),
-	clusters: v.array(ReviewClusterSchema),
+	description: v.pipe(
+		v.string(),
+		v.description('One-line summary of what changed and where to start reviewing.'),
+	),
+	collections: v.array(ReviewCollectionSchema),
 	changedFiles: v.pipe(
 		v.optional(v.array(v.string())),
 		v.description('Paths of the files you changed, most central first.'),
@@ -78,7 +82,7 @@ export const ReviewStateSchema = v.object({
 	),
 });
 
-export type ReviewCluster = v.InferOutput<typeof ReviewClusterSchema>;
+export type ReviewCollection = v.InferOutput<typeof ReviewCollectionSchema>;
 export type ReviewState = v.InferOutput<typeof ReviewStateSchema>;
 
 let cached: ReviewState | undefined;

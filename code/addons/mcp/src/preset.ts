@@ -35,12 +35,22 @@ export const experimental_devServer: PresetPropertyFn<'experimental_devServer'> 
 	// refreshes after the agent already pushed. The tab emits
 	// `request-review-state`; we re-emit the cached state so it converges.
 	// The cache is the module singleton shared with the apply-review-state tool.
-	options.channel.on(REQUEST_REVIEW_STATE_EVENT, () => {
-		const state = getReviewState();
-		if (state) {
-			options.channel.emit(APPLY_REVIEW_STATE_EVENT, state);
-		}
-	});
+	//
+	// Older Storybooks (≤10.3) don't pass `options.channel` to dev-server
+	// presets — the rest of addon-mcp still works without channel replay,
+	// so guard rather than crash.
+	if (options.channel?.on) {
+		options.channel.on(REQUEST_REVIEW_STATE_EVENT, () => {
+			const state = getReviewState();
+			if (state) {
+				options.channel?.emit?.(APPLY_REVIEW_STATE_EVENT, state);
+			}
+		});
+	} else {
+		logger.info(
+			'[addon-mcp] options.channel is unavailable on this Storybook version; review-state replay disabled.',
+		);
+	}
 
 	// Get composed Storybook refs from config
 	const refs = await getRefsFromConfig(options);

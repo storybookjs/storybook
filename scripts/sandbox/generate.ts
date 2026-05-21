@@ -30,7 +30,11 @@ import { esMain } from '../utils/esmain.ts';
 import type { OptionValues } from '../utils/options.ts';
 import { createOptions } from '../utils/options.ts';
 import { getStackblitzUrl, renderTemplate } from './utils/template.ts';
-import { localizeYarnConfigFiles, setupYarn } from './utils/yarn.ts';
+import {
+  localizeYarnConfigFiles,
+  refreshBeforeStorybookLockfile,
+  setupYarn,
+} from './utils/yarn.ts';
 
 const isCI = process.env.GITHUB_ACTIONS === 'true' || process.env.CI === 'true';
 
@@ -124,7 +128,19 @@ const addStorybook = async ({
       await addResolutions(tmpDir);
     }
 
-    await sbInit(tmpDir, env, [...flags, `--package-manager=${PackageManagerName.YARN1}`], debug);
+    // Inherit the 7-day `npmMinimalAgeGate` from `before-storybook/.yarnrc.yml`
+    // would block freshly-published Verdaccio packages (storybook itself plus
+    // anything new in `extraDependencies`, e.g. `webpack@^5.107.0`). The
+    // after-storybook tree is internal CI scaffolding — Phase 1's publish-time
+    // filter strips this gate before anything reaches consumers — so disable
+    // it for this install via env (no `.yarnrc.yml` write).
+    const sbInitEnv = { ...env, YARN_NPM_MINIMAL_AGE_GATE: '0' };
+    await sbInit(
+      tmpDir,
+      sbInitEnv,
+      [...flags, `--package-manager=${PackageManagerName.YARN2}`],
+      debug
+    );
   } catch (e) {
     console.log('error', e);
     await rm(tmpDir, { recursive: true, force: true });
@@ -141,11 +157,25 @@ export const runCommand = async (script: string, options: ExecaOptions, debug = 
   }
 
   return execaCommand(script, {
-    stdout: debug ? 'inherit' : 'ignore',
+    // Capture (not discard) stdout when not streaming, so a failing command's
+    // output is available on the thrown error for diagnostics.
+    stdout: debug ? 'inherit' : 'pipe',
     shell: true,
     cleanup: true,
     ...options,
   });
+};
+
+/** Render an execa (or generic) error with its captured stdout/stderr for logs. */
+const formatCommandError = (error: unknown): string => {
+  const e = error as { stack?: string; message?: string; stdout?: string; stderr?: string };
+  return [
+    e.stack ?? e.message ?? String(error),
+    e.stdout ? `--- stdout ---\n${e.stdout}` : '',
+    e.stderr ? `--- stderr ---\n${e.stderr}` : '',
+  ]
+    .filter(Boolean)
+    .join('\n');
 };
 
 const addDocumentation = async (
@@ -206,7 +236,7 @@ const runGenerators = async (
   const limit = pLimit(1);
 
   const generationResults = await Promise.allSettled(
-    generators.map(({ dirName, name, script, env, initOptions }) =>
+    generators.map(({ dirName, name, script, env, initOptions, disableMinAgeGate }) =>
       limit(async () => {
         const baseDir = join(REPROS_DIRECTORY, dirName);
         const beforeDir = join(baseDir, BEFORE_DIR_NAME);
@@ -232,7 +262,7 @@ const runGenerators = async (
               const message = `❌ Failed to setup yarn in template: ${name} (${dirName})`;
               if (isCI) {
                 ghActions.error(dedent`${message}
-                  ${(error as any).stack}`);
+                  ${formatCommandError(error)}`);
               } else {
                 console.error(message);
                 console.error(error);
@@ -271,7 +301,7 @@ const runGenerators = async (
             const message = `❌ Failed to execute before-script for template: ${name} (${dirName})`;
             if (isCI) {
               ghActions.error(dedent`${message}
-                ${(error as any).stack}`);
+                ${formatCommandError(error)}`);
             } else {
               console.error(message);
               console.error(error);
@@ -280,6 +310,28 @@ const runGenerators = async (
           }
 
           await localizeYarnConfigFiles(createBaseDir, createBeforeDir);
+
+          // Refresh the lockfile to a Yarn 4 one with a 7-day npmMinimalAgeGate
+          // so consumers who clone the published sandbox install a reproducible,
+          // non-freshly-quarantined dependency tree. Failure here degrades gracefully:
+          // the template's original lockfile is already gone, but the consumer can
+          // still install from package.json.
+          try {
+            await refreshBeforeStorybookLockfile({
+              cwd: createBeforeDir,
+              debug,
+              disableMinAgeGate,
+            });
+          } catch (error) {
+            const message = `⚠️ Failed to refresh Yarn 4 lockfile for template: ${name} (${dirName}); shipping template default state`;
+            if (isCI) {
+              ghActions.warning(dedent`${message}
+                ${formatCommandError(error)}`);
+            } else {
+              console.warn(message);
+              console.warn(error);
+            }
+          }
 
           // Now move the created before dir into it's final location and add storybook
           await moveDir(createBeforeDir, beforeDir);
@@ -293,7 +345,7 @@ const runGenerators = async (
             const message = `❌ Failed to initialize Storybook in template: ${name} (${dirName})`;
             if (isCI) {
               ghActions.error(dedent`${message}
-                ${(error as any).stack}`);
+                ${formatCommandError(error)}`);
             } else {
               console.error(message);
               console.error(error);

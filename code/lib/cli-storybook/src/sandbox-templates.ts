@@ -101,6 +101,13 @@ export type Template = {
     // Some sandboxes (e.g. Angular) rely on Node 22.22.1 as minimum supported version and threfore it needs enforcing, even if the CI image comes with a different node version.
     ensureMinNodeVersion?: boolean;
   };
+  /**
+   * Templates that pin intentionally-fresh dependency versions
+   * (`create-next-app@canary`, `@angular/cli@next`, etc.) cannot satisfy the
+   * 7-day `npmMinimalAgeGate` and must opt out of it during sandbox lockfile
+   * refresh. Stable templates should leave this unset.
+   */
+  disableMinAgeGate?: boolean;
   /** Additional options to pass to the initiate command when initializing Storybook. */
   initOptions?: {
     builder?: SupportedBuilder;
@@ -183,7 +190,7 @@ export const baseTemplates = {
   'nextjs/14-ts': {
     name: 'Next.js v14.2 (Webpack | TypeScript)',
     script:
-      'yarn create next-app {{beforeDir}} -e https://github.com/vercel/next.js/tree/v14.2.17/examples/hello-world && cd {{beforeDir}} && npm pkg set "dependencies.next"="^14.2.17" && yarn && git add . && git commit --amend --no-edit && cd ..',
+      'npx create-next-app {{beforeDir}} -e https://github.com/vercel/next.js/tree/v14.2.17/examples/hello-world && cd {{beforeDir}} && npm pkg set "dependencies.next"="^14.2.17" && yarn && git add . && git commit --amend --no-edit && cd ..',
     expected: {
       framework: '@storybook/nextjs',
       renderer: '@storybook/react',
@@ -208,7 +215,7 @@ export const baseTemplates = {
   'nextjs/15-ts': {
     name: 'Next.js v15 (Webpack | TypeScript)',
     script:
-      'npx create-next-app@^15.5 {{beforeDir}} --eslint --tailwind --app --import-alias="@/*" --src-dir',
+      'npx create-next-app@^15.5 {{beforeDir}} --skip-install --eslint --tailwind --app --import-alias="@/*" --src-dir',
     expected: {
       framework: '@storybook/nextjs',
       renderer: '@storybook/react',
@@ -233,7 +240,7 @@ export const baseTemplates = {
   'nextjs/default-ts': {
     name: 'Next.js Latest (Webpack | TypeScript)',
     script:
-      'npx create-next-app {{beforeDir}} --eslint --tailwind --app --import-alias="@/*" --src-dir',
+      'npx create-next-app {{beforeDir}} --skip-install --eslint --tailwind --app --import-alias="@/*" --src-dir',
     expected: {
       framework: '@storybook/nextjs',
       renderer: '@storybook/react',
@@ -259,7 +266,8 @@ export const baseTemplates = {
   'nextjs/prerelease': {
     name: 'Next.js Prerelease (Webpack | TypeScript)',
     script:
-      'npx create-next-app@canary {{beforeDir}} --eslint --tailwind --app --import-alias="@/*" --src-dir',
+      'npx create-next-app@canary {{beforeDir}} --skip-install --eslint --tailwind --app --import-alias="@/*" --src-dir',
+    disableMinAgeGate: true,
     expected: {
       framework: '@storybook/nextjs',
       renderer: '@storybook/react',
@@ -284,7 +292,7 @@ export const baseTemplates = {
   'nextjs-vite/14-ts': {
     name: 'Next.js v14 (Vite | TypeScript)',
     script:
-      'npx create-next-app@^14 {{beforeDir}} --eslint --tailwind --app --import-alias="@/*" --src-dir',
+      'npx create-next-app@^14 {{beforeDir}} --skip-install --eslint --tailwind --app --import-alias="@/*" --src-dir',
     expected: {
       framework: '@storybook/nextjs-vite',
       renderer: '@storybook/react',
@@ -307,7 +315,7 @@ export const baseTemplates = {
   'nextjs-vite/15-ts': {
     name: 'Next.js v15 (Vite | TypeScript)',
     script:
-      'npx create-next-app@^15 {{beforeDir}} --eslint --tailwind --app --import-alias="@/*" --src-dir',
+      'npx create-next-app@^15 {{beforeDir}} --skip-install --eslint --tailwind --app --import-alias="@/*" --src-dir',
     expected: {
       framework: '@storybook/nextjs-vite',
       renderer: '@storybook/react',
@@ -330,7 +338,7 @@ export const baseTemplates = {
   'nextjs-vite/default-ts': {
     name: 'Next.js Latest (Vite | TypeScript)',
     script:
-      'npx create-next-app {{beforeDir}} --eslint --no-tailwind --app --import-alias="@/*" --src-dir',
+      'npx create-next-app {{beforeDir}} --skip-install --eslint --no-tailwind --app --import-alias="@/*" --src-dir',
     expected: {
       framework: '@storybook/nextjs-vite',
       renderer: '@storybook/react',
@@ -429,7 +437,7 @@ export const baseTemplates = {
   },
   'react-webpack/18-ts': {
     name: 'React Latest (Webpack | TypeScript)',
-    script: 'yarn create webpack5-react {{beforeDir}}',
+    script: 'npx create-webpack5-react {{beforeDir}}',
     expected: {
       framework: '@storybook/react-webpack5',
       renderer: '@storybook/react',
@@ -448,8 +456,7 @@ export const baseTemplates = {
   },
   'react-webpack/17-ts': {
     name: 'React v17 (Webpack | TypeScript)',
-    script:
-      'yarn create webpack5-react {{beforeDir}} --version-react="17" --version-react-dom="17"',
+    script: 'npx create-webpack5-react {{beforeDir}} --version-react="17" --version-react-dom="17"',
     expected: {
       framework: '@storybook/react-webpack5',
       renderer: '@storybook/react',
@@ -475,10 +482,10 @@ export const baseTemplates = {
      * 3. Add @types/react and @types/react-dom pointing to the beta packages
      */
     script: `
-      yarn create webpack5-react {{beforeDir}} --version-react="beta" --version-react-dom="beta" && \
+      npx create-webpack5-react {{beforeDir}} --version-react="beta" --version-react-dom="beta" && \
       cd {{beforeDir}} && \
       jq '.resolutions += {"@types/react": "npm:types-react@beta", "@types/react-dom": "npm:types-react-dom@beta"}' package.json > tmp.json && mv tmp.json package.json && \
-      yarn add --dev @types/react@npm:types-react@beta @types/react-dom@npm:types-react-dom@beta
+      yarn add @types/react@npm:types-react@beta @types/react-dom@npm:types-react-dom@beta
       `,
     expected: {
       framework: '@storybook/react-webpack5',
@@ -498,7 +505,7 @@ export const baseTemplates = {
   },
   'react-rsbuild/default-ts': {
     name: 'React Latest (RsBuild | TypeScript)',
-    script: 'yarn create rsbuild -d {{beforeDir}} -t react-ts --tools eslint',
+    script: 'npx create-rsbuild -d {{beforeDir}} -t react-ts --tools eslint',
     expected: {
       framework: 'storybook-react-rsbuild',
       renderer: '@storybook/react',
@@ -518,7 +525,7 @@ export const baseTemplates = {
   },
   'solid-vite/default-ts': {
     name: 'SolidJS Latest (Vite | TypeScript)',
-    script: 'yarn create solid {{beforeDir}} --vanilla --ts --template=with-vitest',
+    script: 'npx create-solid {{beforeDir}} --vanilla --ts --template=with-vitest',
     expected: {
       framework: 'storybook-solidjs-vite',
       renderer: 'storybook-solidjs-vite',
@@ -528,7 +535,7 @@ export const baseTemplates = {
   },
   'tanstack-react-router/default-ts': {
     name: 'TanStack React Router Latest (Vite | TypeScript)',
-    script: 'npx @tanstack/cli@latest create {{beforeDir}} --tailwind --router-only',
+    script: 'npx @tanstack/cli@latest create {{beforeDir}} --no-install --tailwind --router-only',
     expected: {
       framework: '@storybook/tanstack-react',
       renderer: '@storybook/react',
@@ -548,7 +555,7 @@ export const baseTemplates = {
   },
   'tanstack-react-start/default-ts': {
     name: 'TanStack React Start Latest (Vite | TypeScript)',
-    script: 'npx @tanstack/cli@latest create {{beforeDir}} --tailwind',
+    script: 'npx @tanstack/cli@latest create {{beforeDir}} --no-install --tailwind',
     expected: {
       framework: '@storybook/tanstack-react',
       renderer: '@storybook/react',
@@ -594,7 +601,7 @@ export const baseTemplates = {
   },
   'vue3-rsbuild/default-ts': {
     name: 'Vue Latest (RsBuild | TypeScript)',
-    script: 'yarn create rsbuild -d {{beforeDir}} -t vue-ts --tools eslint',
+    script: 'npx create-rsbuild -d {{beforeDir}} -t vue-ts --tools eslint',
     expected: {
       framework: 'storybook-vue3-rsbuild',
       renderer: '@storybook/vue3',
@@ -651,7 +658,7 @@ export const baseTemplates = {
   },
   'html-rsbuild/default-ts': {
     name: 'HTML Latest (RsBuild | TypeScript)',
-    script: 'yarn create rsbuild -d {{beforeDir}} -t vanilla-ts --tools eslint',
+    script: 'npx create-rsbuild -d {{beforeDir}} -t vanilla-ts --tools eslint',
     expected: {
       framework: 'storybook-html-rsbuild',
       renderer: '@storybook/html',
@@ -701,6 +708,7 @@ export const baseTemplates = {
     name: 'Angular CLI Prerelease (Webpack | TypeScript)',
     script:
       'npx -p @angular/cli@next ng new angular-v16 --directory {{beforeDir}} --routing=true --minimal=true --style=scss --strict --skip-git --skip-install --package-manager=yarn --ssr',
+    disableMinAgeGate: true,
     modifications: {
       // extraDependencies: ['@standard-schema/spec@^1', '@angular/forms@next'],
       useCsfFactory: true,
@@ -765,7 +773,7 @@ export const baseTemplates = {
   },
   'lit-rsbuild/default-ts': {
     name: 'Web Components Latest (RsBuild | TypeScript)',
-    script: 'yarn create rsbuild -d {{beforeDir}} -t lit-ts --tools eslint',
+    script: 'npx create-rsbuild -d {{beforeDir}} -t lit-ts --tools eslint',
     expected: {
       framework: 'storybook-web-components-rsbuild',
       renderer: '@storybook/web-components',
@@ -818,7 +826,7 @@ export const baseTemplates = {
   // },
   'ember/3-js': {
     name: 'Ember v3 (Webpack | JavaScript)',
-    script: 'npx --package ember-cli@3.28.1 ember new {{beforeDir}}',
+    script: 'npx --package ember-cli@3.28.1 ember new {{beforeDir}} --skip-install',
     inDevelopment: true,
     expected: {
       framework: '@storybook/ember',
@@ -847,7 +855,10 @@ export const baseTemplates = {
     // Users & CI won't see this limitation because they are not using
     // yarn portals.
     name: 'React Native Expo Latest (Vite | TypeScript)',
-    script: 'npx create-expo-app -y {{beforeDir}}',
+    script: 'npx create-expo-app -y --no-install {{beforeDir}}',
+    // Expo ships frequent dependency updates; pinned SDK versions are routinely
+    // within the 7-day npmMinimalAgeGate window.
+    disableMinAgeGate: true,
     expected: {
       framework: '@storybook/react-native-web-vite',
       renderer: '@storybook/react',
@@ -877,7 +888,7 @@ export const baseTemplates = {
     // yarn portals.
     name: 'React Native CLI Latest (Vite | TypeScript)',
     script:
-      'npx @react-native-community/cli@latest init --install-pods=false --directory={{beforeDir}} rnapp',
+      'npx @react-native-community/cli@latest init --skip-install --install-pods=false --directory={{beforeDir}} rnapp',
     expected: {
       framework: '@storybook/react-native-web-vite',
       renderer: '@storybook/react',
@@ -898,7 +909,7 @@ export const baseTemplates = {
 const internalTemplates = {
   'internal/react18-webpack-babel': {
     name: 'React with Babel Latest (Webpack | TypeScript)',
-    script: 'yarn create webpack5-react {{beforeDir}}',
+    script: 'npx create-webpack5-react {{beforeDir}}',
     expected: {
       framework: '@storybook/react-webpack5',
       renderer: '@storybook/react',
@@ -923,7 +934,7 @@ const internalTemplates = {
   'internal/react16-webpack': {
     name: 'React 16 (Webpack | TypeScript)',
     script:
-      'yarn create webpack5-react {{beforeDir}} --version-react=16 --version-react-dom=16 --version-@types/react=16 --version-@types/react-dom=16',
+      'npx create-webpack5-react {{beforeDir}} --version-react=16 --version-react-dom=16 --version-@types/react=16 --version-@types/react-dom=16',
     expected: {
       framework: '@storybook/react-webpack5',
       renderer: '@storybook/react',

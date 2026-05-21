@@ -157,7 +157,7 @@ const OcticonHeaders = SUPPORTED_MDX_HEADERS.reduce(
   {}
 );
 
-const OcticonAnchorWrapper = styled.span(() => ({
+const OcticonAnchorWrapper = styled.span({
   float: 'left',
   lineHeight: 'inherit',
   paddingRight: '10px',
@@ -168,7 +168,7 @@ const OcticonAnchorWrapper = styled.span(() => ({
     color: 'inherit',
     textDecoration: 'none',
   },
-}));
+});
 
 interface HeaderWithOcticonAnchorProps {
   as: string;

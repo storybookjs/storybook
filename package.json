@@ -58,7 +58,7 @@
     "playwright": "1.58.2",
     "playwright-core": "1.58.2",
     "react": "^18.2.0",
-    "type-fest": "~2.19",
+    "react-joyride/type-fest": "~2.19",
     "typescript": "^5.9.3"
   },
   "devDependencies": {

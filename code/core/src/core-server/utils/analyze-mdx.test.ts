@@ -48,6 +48,7 @@ describe('analyzeMdx', () => {
       `;
       await expect(analyzeMdx(input)).resolves.toMatchInlineSnapshot(`
         {
+          "id": undefined,
           "imports": [],
           "isTemplate": false,
           "metaTags": undefined,
@@ -79,6 +80,7 @@ describe('analyzeMdx', () => {
       `;
       await expect(analyzeMdx(input)).resolves.toMatchInlineSnapshot(`
         {
+          "id": undefined,
           "imports": [],
           "isTemplate": false,
           "metaTags": undefined,
@@ -101,6 +103,38 @@ describe('analyzeMdx', () => {
     });
   });
 
+  describe('id', () => {
+    it('string literal id', async () => {
+      const input = dedent`
+        # hello
+
+        <Meta title="foobar" id="custom-id" />
+      `;
+      await expect(analyzeMdx(input)).resolves.toMatchInlineSnapshot(`
+        {
+          "id": "custom-id",
+          "imports": [],
+          "isTemplate": false,
+          "metaTags": undefined,
+          "name": undefined,
+          "of": undefined,
+          "summary": undefined,
+          "title": "foobar",
+        }
+      `);
+    });
+    it('template literal id', async () => {
+      const input = dedent`
+        # hello
+
+        <Meta id={\`foobar\`} />
+      `;
+      await expect(analyzeMdx(input)).rejects.toThrowErrorMatchingInlineSnapshot(
+        `[Error: Expected string literal id, received JSXExpressionContainer]`
+      );
+    });
+  });
+
   describe('of', () => {
     it('basic', async () => {
       const input = dedent`
@@ -111,6 +145,7 @@ describe('analyzeMdx', () => {
       `;
       await expect(analyzeMdx(input)).resolves.toMatchInlineSnapshot(`
         {
+          "id": undefined,
           "imports": [
             "@storybook/blocks",
             "./Button.stories",
@@ -152,6 +187,7 @@ describe('analyzeMdx', () => {
       `;
       await expect(analyzeMdx(input)).resolves.toMatchInlineSnapshot(`
         {
+          "id": undefined,
           "imports": [
             "@storybook/blocks",
             "./Button.stories",
@@ -182,6 +218,7 @@ describe('analyzeMdx', () => {
       `;
       await expect(analyzeMdx(input)).resolves.toMatchInlineSnapshot(`
         {
+          "id": undefined,
           "imports": [
             "../src/A.stories",
           ],
@@ -214,6 +251,7 @@ describe('analyzeMdx', () => {
       `;
       await expect(analyzeMdx(input)).resolves.toMatchInlineSnapshot(`
         {
+          "id": undefined,
           "imports": [],
           "isTemplate": false,
           "metaTags": undefined,
@@ -241,6 +279,7 @@ describe('analyzeMdx', () => {
       `;
       await expect(analyzeMdx(input)).resolves.toMatchInlineSnapshot(`
         {
+          "id": undefined,
           "imports": [],
           "isTemplate": true,
           "metaTags": undefined,
@@ -257,6 +296,7 @@ describe('analyzeMdx', () => {
       `;
       await expect(analyzeMdx(input)).resolves.toMatchInlineSnapshot(`
         {
+          "id": undefined,
           "imports": [],
           "isTemplate": true,
           "metaTags": undefined,
@@ -273,6 +313,7 @@ describe('analyzeMdx', () => {
       `;
       await expect(analyzeMdx(input)).resolves.toMatchInlineSnapshot(`
         {
+          "id": undefined,
           "imports": [],
           "isTemplate": false,
           "metaTags": undefined,
@@ -312,6 +353,7 @@ describe('analyzeMdx', () => {
       `;
       await expect(analyzeMdx(input)).resolves.toMatchInlineSnapshot(`
         {
+          "id": undefined,
           "imports": [
             "./Button.stories",
           ],
@@ -361,6 +403,7 @@ describe('analyzeMdx', () => {
     `;
       await expect(analyzeMdx(input)).resolves.toMatchInlineSnapshot(`
         {
+          "id": undefined,
           "imports": [],
           "isTemplate": false,
           "metaTags": undefined,
@@ -379,6 +422,7 @@ describe('analyzeMdx', () => {
       `;
       await expect(analyzeMdx(input)).resolves.toMatchInlineSnapshot(`
         {
+          "id": undefined,
           "imports": [
             "./Button.stories",
           ],
@@ -423,6 +467,7 @@ describe('analyzeMdx', () => {
       `;
       await expect(analyzeMdx(input)).resolves.toMatchInlineSnapshot(`
         {
+          "id": undefined,
           "imports": [
             "./Button.stories",
           ],

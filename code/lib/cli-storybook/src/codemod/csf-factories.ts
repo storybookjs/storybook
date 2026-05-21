@@ -103,7 +103,6 @@ export const csfFactories: CommandFix = {
       );
       packageJson.imports = {
         ...packageJson.imports,
-        // @ts-expect-error we need to upgrade type-fest
         '#*': ['./*', './*.ts', './*.tsx', './*.js', './*.jsx'],
       };
       packageManager.writePackageJson(packageJson);

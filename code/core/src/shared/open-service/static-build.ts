@@ -42,7 +42,11 @@ export async function buildStaticFiles(services: RuntimeServiceDefinition[]): Pr
       }
 
       // Resolve the static input list from a clean runtime so discovery cannot leak state.
-      const inputsRuntime = createServiceRuntime(service, undefined, structuredClone(service.initialState));
+      const inputsRuntime = createServiceRuntime(
+        service,
+        undefined,
+        structuredClone(service.initialState)
+      );
       const inputs = await query.static.inputs(inputsRuntime.queryCtx);
 
       buildTasks.push(

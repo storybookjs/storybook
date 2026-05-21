@@ -220,7 +220,7 @@ describe('service runtime', () => {
         } catch (error) {
           expect(error).toMatchObject({
             fromStorybook: true,
-            code: 1001,
+            code: 5,
             message:
               'Invalid input for query "test/mutable-record-lookup.getRecordFields":\nentryId: Invalid key: Expected "entryId" but received undefined',
           });

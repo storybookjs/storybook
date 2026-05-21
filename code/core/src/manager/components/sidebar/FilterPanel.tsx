@@ -6,7 +6,7 @@ import type { StatusValue, StatusesByStoryIdAndTypeId, StoryIndex } from 'storyb
 import { BatchAcceptIcon, DocumentIcon, ShareAltIcon, SweepIcon, UndoIcon } from '@storybook/icons';
 
 import type { API } from 'storybook/manager-api';
-import { styled, useTheme } from 'storybook/theming';
+import { styled, useTheme, type Theme } from 'storybook/theming';
 
 import { getStatus } from '../../utils/status.tsx';
 import { createFilterLink, StatusIcon } from './FilterPanelLink.tsx';
@@ -23,6 +23,7 @@ import {
   useStatusFilterEntries,
   useTagFilterEntries,
 } from './useFilterData.tsx';
+import { transparentize } from 'polished';
 
 const Wrapper = styled.div({
   minWidth: 240,
@@ -33,49 +34,53 @@ const Wrapper = styled.div({
   scrollbarWidth: 'thin',
 });
 
-const SummaryRow = styled.div(({ theme }) => ({
+const StickyActionList = styled(ActionList)(({ theme }) => ({
+  position: 'sticky',
+  top: 0,
+  zIndex: 1,
+  background: theme.base === 'light' ? theme.background.content : theme.background.app,
+  borderBottom: `1px solid ${theme.appBorderColor}`,
+  '&& + *': {
+    borderTop: `none`,
+  },
+}));
+
+const SummaryRow = styled.div<{ $delta: number }>(({ theme, $delta }) => ({
   display: 'flex',
   alignItems: 'center',
   gap: 4,
   marginInlineStart: 'auto',
-  padding: '4px 12px 4px 8px',
-  color: theme.textMutedColor,
   fontSize: theme.typography.size.s1,
   whiteSpace: 'nowrap',
+  borderRadius: 999,
+  padding: '2px 8px',
+  fontVariantNumeric: 'tabular-nums',
+  // background: getSummaryCountBackgroundColor($delta, theme),
+  color: getSummaryCountColor($delta, theme),
 }));
 
-const getSummaryCountColor = (
-  delta: number,
-  isPreview: boolean,
-  theme: { color: { negative: string; positive: string; secondary: string } }
-) => {
-  if (!isPreview) {
-    return 'inherit';
-  }
-
+const getSummaryCountBackgroundColor = (delta: number, theme: Theme) => {
   if (delta > 0) {
-    return theme.color.positive;
+    return theme.background.positive;
   }
 
   if (delta < 0) {
-    return theme.color.negative;
+    return theme.background.negative;
   }
 
-  return theme.color.secondary;
+  return 'inherit';
 };
 
-const SummaryCount = styled.span<{ $delta: number; $isPreview: boolean }>(
-  ({ theme, $delta, $isPreview }) => ({
-    display: 'inline-flex',
-    alignItems: 'center',
-    borderRadius: 999,
-    padding: '2px 8px',
-    fontVariantNumeric: 'tabular-nums',
-    fontWeight: theme.typography.weight.bold,
-    background: $isPreview ? theme.background.hoverable : 'transparent',
-    color: getSummaryCountColor($delta, $isPreview, theme),
-  })
-);
+const getSummaryCountColor = (delta: number, theme: Theme) => {
+  if (delta > 0) {
+    return theme.color.positiveText;
+  }
+
+  if (delta < 0) {
+    return theme.color.negativeText;
+  }
+  return theme.textMutedColor;
+};
 
 const getItemPreviewId = (item: Pick<FilterItem, 'id' | 'type'>) =>
   `filter-${item.type}-${item.id}`;
@@ -267,7 +272,6 @@ export const FilterPanel = ({
           previewAction
         )}`
       : `${summaryCount} of ${filterCounts.totalCount} items currently visible`;
-  const summaryLabel = previewedProjection ? 'If applied' : 'Shown';
   const summaryDelta = previewedProjection?.delta ?? 0;
 
   const renderItem = useCallback(
@@ -291,7 +295,7 @@ export const FilterPanel = ({
   return (
     <Wrapper>
       {hasItems && (
-        <ActionList as="div">
+        <StickyActionList as="div">
           <ActionList.Item as="div">
             {isNothingSelectedYet ? (
               <ActionList.Button
@@ -329,18 +333,11 @@ export const FilterPanel = ({
                 <UndoIcon />
               </ActionList.Button>
             )}
-            <SummaryRow>
-              <span>{summaryLabel}</span>
-              <SummaryCount
-                aria-label={summaryAriaLabel}
-                $delta={summaryDelta}
-                $isPreview={Boolean(previewedProjection)}
-              >
-                <span aria-hidden>{summaryCountString}</span>
-              </SummaryCount>
+            <SummaryRow aria-label={summaryAriaLabel} $delta={summaryDelta}>
+              <span aria-hidden>{summaryCountString}</span>
             </SummaryRow>
           </ActionList.Item>
-        </ActionList>
+        </StickyActionList>
       )}
       {builtInItems.length > 0 && <ActionList>{builtInItems.map(renderItem)}</ActionList>}
       {statusItems.length > 0 && <ActionList>{statusItems.map(renderItem)}</ActionList>}

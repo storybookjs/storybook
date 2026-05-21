@@ -10,6 +10,8 @@ import type {
 } from 'storybook/internal/types';
 
 import { BUILT_IN_FILTERS, USER_TAG_FILTER } from '../../../shared/constants/tags.ts';
+import { StorybookError } from '../../../storybook-error.ts';
+import { FilterError } from '../../../manager-errors.ts';
 
 export { statusValueShortName, toStatusValue } from '../../../shared/status-store/index.ts';
 
@@ -90,6 +92,7 @@ export const formatFilterDelta = (delta: number) => {
     return `+${delta}`;
   }
 
+  // Already has - sign when negative
   return `${delta}`;
 };
 
@@ -101,7 +104,53 @@ export const getFilterFunction = (tag: Tag): FilterFunction | null => {
   }
 };
 
-const getFilterLabelType = (type: string) => (type === 'status' ? 'status' : 'tag');
+export const getFilterPreviewDescription = (
+  item: Pick<FilterItem, 'isIncluded' | 'isExcluded' | 'title' | 'type'>,
+  action: FilterPreviewAction
+) => {
+  const verb = getFilterActionVerb(item, action);
+
+  if (item.type === 'status') {
+    switch (verb) {
+      case 'include':
+        return `Show ${item.title} items`;
+      case 'exclude':
+        return `Exclude ${item.title} items`;
+      case 'remove':
+        return `Remove '${item.title}' status filter`;
+    }
+  }
+
+  if (item.type === 'tag') {
+    switch (verb) {
+      case 'include':
+        return `Show items tagged '${item.title}'`;
+      case 'exclude':
+        return `Exclude items tagged '${item.title}'`;
+      case 'remove':
+        return `Remove '${item.title}' tag filter`;
+    }
+  }
+
+  if (item.type === 'built-in') {
+    const suffix = {
+      Documentation: 'docs pages',
+      Play: 'stories with play functions',
+      Testing: 'tests',
+    }[item.title];
+
+    switch (verb) {
+      case 'include':
+        return `Show ${suffix}`;
+      case 'exclude':
+        return `Exclude ${suffix}`;
+      case 'remove':
+        return `Remove '${item.title}' filter`;
+    }
+  }
+
+  throw new FilterError(item);
+};
 
 const getFilterActionVerb = (
   { isIncluded, isExcluded }: Pick<FilterItem, 'isIncluded' | 'isExcluded'>,
@@ -113,11 +162,6 @@ const getFilterActionVerb = (
 
   return isExcluded ? 'include' : 'exclude';
 };
-
-export const getFilterPreviewDescription = (
-  item: Pick<FilterItem, 'isIncluded' | 'isExcluded' | 'title' | 'type'>,
-  action: FilterPreviewAction
-) => `${getFilterActionVerb(item, action)} ${getFilterLabelType(item.type)} filter ${item.title}`;
 
 const getLeafEntries = (indexJson: StoryIndex): FilterableEntry[] =>
   Object.entries(indexJson.entries).reduce<FilterableEntry[]>((acc, [id, entry]) => {

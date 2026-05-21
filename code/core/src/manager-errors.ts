@@ -1,3 +1,4 @@
+import { title } from './core-server/presets/common-preset.ts';
 import type { Status, StatusTypeId } from './shared/status-store/index.ts';
 import { StorybookError } from './storybook-error.ts';
 
@@ -27,6 +28,22 @@ export class ProviderDoesNotExtendBaseProviderError extends StorybookError {
       category: Category.MANAGER_UI,
       code: 1,
       message: `The Provider passed into Storybook's UI is not extended from the base Provider. Please check your Provider implementation.`,
+    });
+  }
+}
+
+export class FilterError extends StorybookError {
+  constructor(
+    public data: {
+      title: string;
+      type: string;
+    }
+  ) {
+    super({
+      name: 'FilterError',
+      category: Category.MANAGER_UI,
+      code: 1,
+      message: `Unknown filter type '${data.type}' with value '${data.title}'`,
     });
   }
 }

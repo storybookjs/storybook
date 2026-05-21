@@ -28,7 +28,7 @@ const Count = styled.span(({ theme }) => ({
 const getDeltaColor = (
   delta: number,
   theme: { color: { negative: string; positive: string; secondary: string } }
-) => (delta > 0 ? theme.color.positive : delta < 0 ? theme.color.negative : theme.color.secondary);
+) => (delta > 0 ? theme.color.positive : delta < 0 ? theme.color.negative : 'inherit');
 
 const Delta = styled(Count)<{ $delta: number }>(({ theme, $delta }) => ({
   color: getDeltaColor($delta, theme),
@@ -54,7 +54,7 @@ const getActionCopy = (item: FilterItem, action: FilterPreviewAction) => {
 
   return {
     ariaLabel: `${description}. ${deltaText}.`,
-    tooltip: `${description} (${formatFilterDelta(projection.delta)} items)`,
+    tooltip: `${description} (${projection.delta ? `${formatFilterDelta(projection.delta)} items` : 'no change'})`,
   };
 };
 
@@ -130,9 +130,11 @@ export const createFilterLink = (
             </span>
           </ActionList.Text>
           {activeProjection ? (
-            <Delta aria-label={valueAriaLabel} $delta={activeProjection.delta}>
-              <span aria-hidden>{valueText}</span>
-            </Delta>
+            activeProjection.delta ? (
+              <Delta aria-label={valueAriaLabel} $delta={activeProjection.delta}>
+                <span aria-hidden>{valueText}</span>
+              </Delta>
+            ) : null
           ) : (
             <Count aria-label={valueAriaLabel}>
               <span aria-hidden>{valueText}</span>

@@ -1,6 +1,6 @@
 {
   "name": "@storybook/vue3",
-  "version": "10.5.0-alpha.0",
+  "version": "10.5.0-alpha.1",
   "description": "Storybook Vue 3 renderer: Develop, document, and test UI components in isolation",
   "keywords": [
     "storybook",
@@ -51,7 +51,7 @@
   "dependencies": {
     "@storybook/global": "^5.0.0",
     "type-fest": "^5.6.0",
-    "vue-component-type-helpers": "latest"
+    "vue-component-type-helpers": "^3.2.9"
   },
   "devDependencies": {
     "@testing-library/vue": "^8.0.0",

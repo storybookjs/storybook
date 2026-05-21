@@ -1,5 +1,4 @@
 import { logConfig, normalizeStories } from 'storybook/internal/common';
-import { DOCS_PREPARED, STORY_RENDERED } from 'storybook/internal/core-events';
 import { logger } from 'storybook/internal/node-logger';
 import { MissingBuilderError } from 'storybook/internal/server-errors';
 import { CHANGE_DETECTION_STATUS_TYPE_ID } from 'storybook/internal/types';
@@ -9,8 +8,8 @@ import compression from '@polka/compression';
 import polka from 'polka';
 
 import { isTelemetryModuleEnabled, telemetry } from '../telemetry/index.ts';
+import type { ChangeDetectionAdapter } from './change-detection/index.ts';
 import { ChangeDetectionService } from './change-detection/index.ts';
-import { setChangeDetectionReadiness } from './change-detection/readiness.ts';
 import { getStatusStoreByTypeId } from './stores/status.ts';
 import type { StoryIndexGenerator } from './utils/StoryIndexGenerator.ts';
 import { doTelemetry } from './utils/doTelemetry.ts';
@@ -53,6 +52,7 @@ export async function storybookDevServer(
     storyIndexGeneratorPromise,
     statusStore: getStatusStoreByTypeId(CHANGE_DETECTION_STATUS_TYPE_ID),
     workingDir,
+    presets: options.presets,
   });
 
   app.use(compression({ level: 1 }));
@@ -125,7 +125,7 @@ export async function storybookDevServer(
 
   if (!options.ignorePreview) {
     if (!features.changeDetection) {
-      changeDetectionService.start(previewBuilder.onModuleGraphChange, false);
+      changeDetectionService.start(undefined, false);
     }
 
     logger.debug('Starting preview..');
@@ -154,26 +154,14 @@ export async function storybookDevServer(
       });
 
     if (features.changeDetection) {
-      let changeDetectionStarted = false;
-      const startChangeDetection = () => {
-        if (changeDetectionStarted) {
-          return;
-        }
-        try {
-          changeDetectionStarted = true;
-          changeDetectionService.start(previewBuilder.onModuleGraphChange, true);
-        } catch (error) {
-          logger.error('Failed to start change detection');
-          logger.error(error instanceof Error ? error : String(error));
-          setChangeDetectionReadiness({
-            status: 'error',
-            error: error instanceof Error ? error : new Error(String(error)),
-          });
-        }
-      };
-
-      options.channel.once(STORY_RENDERED, startChangeDetection);
-      options.channel.once(DOCS_PREPARED, startChangeDetection);
+      let adapter: ChangeDetectionAdapter | undefined;
+      try {
+        adapter = previewBuilder.changeDetectionAdapter?.();
+      } catch (err) {
+        logger.warn('Change detection: adapter initialisation failed');
+        logger.debug(err instanceof Error ? (err.stack ?? err.message) : String(err));
+      }
+      changeDetectionService.start(adapter, true);
     }
   }
 

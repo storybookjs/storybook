@@ -102,10 +102,7 @@ export default createStorybookRule({
               library: node.source.value,
             },
             *fix(fixer) {
-              yield fixer.replaceTextRange(
-                getRangeWithoutQuotes(node.source),
-                'storybook/test'
-              );
+              yield fixer.replaceTextRange(getRangeWithoutQuotes(node.source), 'storybook/test');
               if (hasDefaultImport(node.specifiers)) {
                 const specifiers = getSpecifiers(node);
                 if (specifiers) {

@@ -5,11 +5,6 @@ import { homedir } from 'node:os';
 
 import { join, resolve } from 'pathe';
 
-import { getAddonNames } from '../../common/utils/get-addon-names.ts';
-import type { StorybookConfig } from '../../types/modules/core-common.ts';
-
-const STORYBOOK_MCP_ADDON = '@storybook/addon-mcp';
-
 export type RuntimeInstanceRecord = {
   schemaVersion: 1;
   instanceId: string;
@@ -38,24 +33,11 @@ export function getOrigin(address: string) {
   return new URL(address).origin;
 }
 
-export function getMcpState(
-  mainConfig: StorybookConfig,
-  origin: string
-): RuntimeInstanceRecord['mcp'] {
-  const addons = getAddonNames(mainConfig);
-
-  if (addons.includes(STORYBOOK_MCP_ADDON)) {
-    return { status: 'ready', endpoint: `${origin}/mcp` };
-  }
-
-  return { status: 'not-installed' };
-}
-
 export function createRuntimeInstanceRecord({
   address,
   cwd = process.cwd(),
   instanceId = randomUUID(),
-  mainConfig,
+  mcp = { status: 'not-installed' },
   now = new Date(),
   pid = process.pid,
   port,
@@ -64,7 +46,7 @@ export function createRuntimeInstanceRecord({
   address: string;
   cwd?: string;
   instanceId?: string;
-  mainConfig: StorybookConfig;
+  mcp?: RuntimeInstanceRecord['mcp'];
   now?: Date;
   pid?: number;
   port: number;
@@ -83,7 +65,7 @@ export function createRuntimeInstanceRecord({
     storybookVersion,
     startedAt: timestamp,
     updatedAt: timestamp,
-    mcp: getMcpState(mainConfig, origin),
+    mcp,
   };
 }
 
@@ -131,7 +113,7 @@ function registerProcessCleanup(recordPath: string) {
 export async function writeStorybookRuntimeInstanceRecord({
   address,
   cwd,
-  mainConfig,
+  mcp,
   pid,
   port,
   registryDir,
@@ -140,7 +122,7 @@ export async function writeStorybookRuntimeInstanceRecord({
 }: {
   address: string;
   cwd?: string;
-  mainConfig: StorybookConfig;
+  mcp?: RuntimeInstanceRecord['mcp'];
   pid?: number;
   port: number;
   registryDir?: string;
@@ -150,7 +132,7 @@ export async function writeStorybookRuntimeInstanceRecord({
   const record = createRuntimeInstanceRecord({
     address,
     cwd,
-    mainConfig,
+    mcp,
     pid,
     port,
     storybookVersion,

@@ -625,6 +625,8 @@ export interface StorybookConfigRaw {
 
   storyIndexGenerator?: StoryIndexGenerator;
 
+  experimental_mcp?: { status: 'not-installed' } | { status: 'ready'; endpoint: string };
+
   experimental_devServer?: ServerApp;
 
   docs?: DocsOptions;

@@ -35,7 +35,11 @@ import { getManagerBuilder, getPreviewBuilder } from './utils/get-builders.ts';
 import { getServerChannel } from './utils/get-server-channel.ts';
 import { outputStartupInformation } from './utils/output-startup-information.ts';
 import { outputStats } from './utils/output-stats.ts';
-import { writeStorybookRuntimeInstanceRecord } from './utils/runtime-instance-registry.ts';
+import {
+  getOrigin,
+  type RuntimeInstanceRecord,
+  writeStorybookRuntimeInstanceRecord,
+} from './utils/runtime-instance-registry.ts';
 import { getServerAddresses, getServerChannelUrl, getServerPort } from './utils/server-address.ts';
 import { getServer } from './utils/server-init.ts';
 import { stripCommentsAndStrings } from './utils/strip-comments-and-strings.ts';
@@ -304,9 +308,23 @@ export async function buildDevStandalone(
     storybookDevServer(fullOptions, server)
   );
 
+  const mcp = await presets
+    .apply<RuntimeInstanceRecord['mcp']>(
+      'experimental_mcp',
+      { status: 'not-installed' },
+      {
+        origin: getOrigin(localAddress),
+      }
+    )
+    .catch((error: unknown) => {
+      logger.warn('Storybook failed to resolve runtime MCP metadata from presets.');
+      logger.debug(error instanceof Error ? (error.stack ?? error.message) : String(error));
+      return { status: 'not-installed' } as const;
+    });
+
   await writeStorybookRuntimeInstanceRecord({
     address: localAddress,
-    mainConfig: config,
+    mcp,
     port,
     storybookVersion,
   }).catch((error: unknown) => {

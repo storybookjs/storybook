@@ -28,7 +28,6 @@ describe('createRuntimeInstanceRecord', () => {
   const baseOptions = {
     address: 'http://localhost:6006/?path=/docs/button--primary',
     instanceId: '00000000-0000-4000-8000-000000000000',
-    mainConfig: { stories: [], addons: [] },
     now: new Date('2026-05-18T12:00:00.000Z'),
     pid: 12345,
     port: 6006,
@@ -52,27 +51,24 @@ describe('createRuntimeInstanceRecord', () => {
     });
   });
 
-  it('marks MCP as not-installed when @storybook/addon-mcp is absent', () => {
+  it('marks MCP as not-installed by default', () => {
     const record = createRuntimeInstanceRecord(baseOptions);
 
     expect(record.mcp).toEqual({ status: 'not-installed' });
     expect(record.mcp).not.toHaveProperty('endpoint');
   });
 
-  it('marks MCP as ready with an endpoint when @storybook/addon-mcp is configured', () => {
+  it('uses MCP state provided by presets', () => {
     const record = createRuntimeInstanceRecord({
       ...baseOptions,
       address: 'http://localhost:7007/?path=/story/example--primary',
-      mainConfig: {
-        stories: [],
-        addons: [{ name: '/repo/node_modules/@storybook/addon-mcp/preset.js' }],
-      },
+      mcp: { status: 'ready', endpoint: 'http://localhost:7007/storybook-mcp' },
       port: 7007,
     });
 
     expect(record.mcp).toEqual({
       status: 'ready',
-      endpoint: 'http://localhost:7007/mcp',
+      endpoint: 'http://localhost:7007/storybook-mcp',
     });
   });
 
@@ -80,15 +76,11 @@ describe('createRuntimeInstanceRecord', () => {
     const record = createRuntimeInstanceRecord({
       ...baseOptions,
       address: 'https://localhost:8008/?path=/story/example--primary',
-      mainConfig: { stories: [], addons: ['@storybook/addon-mcp'] },
       port: 8008,
     });
 
     expect(record.url).toBe('https://localhost:8008');
-    expect(record.mcp).toEqual({
-      status: 'ready',
-      endpoint: 'https://localhost:8008/mcp',
-    });
+    expect(record.mcp).toEqual({ status: 'not-installed' });
   });
 });
 
@@ -98,7 +90,6 @@ describe('writeRuntimeInstanceRecord', () => {
     const record = createRuntimeInstanceRecord({
       address: 'http://localhost:6006/',
       instanceId: '00000000-0000-4000-8000-000000000001',
-      mainConfig: { stories: [], addons: [] },
       now: new Date('2026-05-18T12:00:00.000Z'),
       pid: 12345,
       port: 6006,
@@ -118,7 +109,6 @@ describe('writeStorybookRuntimeInstanceRecord', () => {
     const registryDir = makeTempDir();
     const registration = await writeStorybookRuntimeInstanceRecord({
       address: 'http://localhost:6006/',
-      mainConfig: { stories: [], addons: [] },
       port: 6006,
       registerCleanup: false,
       registryDir,

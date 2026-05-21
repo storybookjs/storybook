@@ -318,14 +318,13 @@ export const computeFilterPanelCounts = ({
   const buildCounts = (
     kind: 'tag' | 'status',
     value: string,
-    predicate: (entry: FilterableEntry) => boolean,
-    isIncluded: boolean
+    predicate: (entry: FilterableEntry) => boolean
   ) => {
     const toggleState = updateFilterState(currentState, kind, value, 'toggle');
     const invertState = updateFilterState(currentState, kind, value, 'invert');
 
     return {
-      visibleCount: isIncluded ? currentVisibleEntries.filter(predicate).length : 0,
+      visibleCount: currentVisibleEntries.filter(predicate).length,
       toggle: {
         visibleCount: getVisibleCount(toggleState),
         delta: getVisibleCount(toggleState) - currentVisibleCount,
@@ -341,25 +340,12 @@ export const computeFilterPanelCounts = ({
     currentVisibleCount,
     totalCount: leafEntries.length,
     tags: Object.fromEntries(
-      tagIds.map((tagId) => [
-        tagId,
-        buildCounts(
-          'tag',
-          tagId,
-          (entry) => matchTag(entry, tagId),
-          includedFilters.includes(tagId)
-        ),
-      ])
+      tagIds.map((tagId) => [tagId, buildCounts('tag', tagId, (entry) => matchTag(entry, tagId))])
     ),
     statuses: Object.fromEntries(
       statusValues.map((statusValue) => [
         statusValue,
-        buildCounts(
-          'status',
-          statusValue,
-          (entry) => matchStatus(entry, allStatuses, statusValue),
-          includedStatusFilters.includes(statusValue)
-        ),
+        buildCounts('status', statusValue, (entry) => matchStatus(entry, allStatuses, statusValue)),
       ])
     ),
   };

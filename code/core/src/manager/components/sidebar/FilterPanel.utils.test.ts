@@ -51,7 +51,7 @@ describe('FilterPanel.utils', () => {
     expect(counts.totalCount).toBe(20);
     expect(counts.tags.foo.visibleCount).toBe(5);
     expect(counts.tags.bar.visibleCount).toBe(5);
-    expect(counts.tags.ter.visibleCount).toBe(0);
+    expect(counts.tags.ter.visibleCount).toBe(5);
     expect(counts.tags.ter.toggle).toEqual({ delta: 10, visibleCount: 20 });
     expect(counts.tags.ter.invert).toEqual({ delta: -5, visibleCount: 5 });
   });

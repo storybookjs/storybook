@@ -36,10 +36,12 @@ const Wrapper = styled.div({
 const SummaryRow = styled.div(({ theme }) => ({
   display: 'flex',
   alignItems: 'center',
-  justifyContent: 'space-between',
-  padding: '8px 12px 4px',
+  gap: 4,
+  marginInlineStart: 'auto',
+  padding: '4px 12px 4px 8px',
   color: theme.textMutedColor,
   fontSize: theme.typography.size.s1,
+  whiteSpace: 'nowrap',
 }));
 
 const getSummaryCountColor = (
@@ -291,18 +293,6 @@ export const FilterPanel = ({
       {hasItems && (
         <ActionList as="div">
           <ActionList.Item as="div">
-            <SummaryRow>
-              <span>{summaryLabel}</span>
-              <SummaryCount
-                aria-label={summaryAriaLabel}
-                $delta={summaryDelta}
-                $isPreview={Boolean(previewedProjection)}
-              >
-                <span aria-hidden>{summaryCountString}</span>
-              </SummaryCount>
-            </SummaryRow>
-          </ActionList.Item>
-          <ActionList.Item as="div">
             {isNothingSelectedYet ? (
               <ActionList.Button
                 ariaLabel={false}
@@ -339,6 +329,16 @@ export const FilterPanel = ({
                 <UndoIcon />
               </ActionList.Button>
             )}
+            <SummaryRow>
+              <span>{summaryLabel}</span>
+              <SummaryCount
+                aria-label={summaryAriaLabel}
+                $delta={summaryDelta}
+                $isPreview={Boolean(previewedProjection)}
+              >
+                <span aria-hidden>{summaryCountString}</span>
+              </SummaryCount>
+            </SummaryRow>
           </ActionList.Item>
         </ActionList>
       )}

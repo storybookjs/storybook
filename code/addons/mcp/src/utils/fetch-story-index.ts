@@ -89,8 +89,5 @@ export async function fetchStoryIndex(
 		await sleep(attempt * baseBackoffMs);
 	}
 
-	throw new Error(
-		lastErrorMessage ||
-			`Failed to fetch story index after ${maxAttempts} attempts`,
-	);
+	throw new Error(lastErrorMessage || `Failed to fetch story index after ${maxAttempts} attempts`);
 }

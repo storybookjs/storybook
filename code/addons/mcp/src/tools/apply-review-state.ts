@@ -15,6 +15,39 @@ const ApplyReviewStateOutput = v.object({
 	),
 });
 
+/**
+ * Resolve the Storybook manager root from the incoming MCP request.
+ *
+ * The MCP endpoint is mounted at `<storybook-root>/mcp`, so stripping the
+ * trailing `/mcp` segment from the request path yields the root the
+ * review page lives under. Unlike the context `origin` (always just
+ * `http://localhost:<port>`), this preserves the real host and any path
+ * prefix when Storybook is served behind a reverse proxy.
+ */
+function storybookRootFromRequest(request?: Request): string | undefined {
+	if (!request?.url) return undefined;
+	try {
+		const url = new URL(request.url);
+		const root = url.pathname.replace(/\/mcp\/?$/, '');
+		return `${url.origin}${root}`;
+	} catch {
+		return undefined;
+	}
+}
+
+/**
+ * Build the URL of the Storybook review page. Prefers the incoming
+ * request (carries the real host + path prefix); falls back to the
+ * context `origin` when there is no request.
+ */
+export function buildReviewUrl(ctx: { origin?: string; request?: Request }): string {
+	const root = storybookRootFromRequest(ctx.request) ?? ctx.origin;
+	if (!root) {
+		throw new Error('Cannot resolve the Storybook URL: no request or origin in addon context.');
+	}
+	return `${root.replace(/\/$/, '')}/?path=${REVIEW_PAGE_PATH}`;
+}
+
 export async function addApplyReviewStateTool(server: McpServer<any, AddonContext>) {
 	server.tool(
 		{
@@ -37,10 +70,7 @@ Always include the returned reviewUrl in your final user-facing response so the 
 		},
 		async (input: ReviewState) => {
 			try {
-				const { origin } = server.ctx.custom ?? {};
-				if (!origin) {
-					throw new Error('Origin is required in addon context');
-				}
+				const reviewUrl = buildReviewUrl(server.ctx.custom ?? {});
 
 				setReviewState(input);
 
@@ -48,7 +78,6 @@ Always include the returned reviewUrl in your final user-facing response so the 
 				// to the review page; a cold start relies on the returned URL.
 				server.ctx.custom?.options?.channel?.emit(APPLY_REVIEW_STATE_EVENT, input);
 
-				const reviewUrl = `${origin}/?path=${REVIEW_PAGE_PATH}`;
 				const collectionCount = input.collections.length;
 				const storyCount = input.collections.reduce((n, c) => n + c.sampleStoryIds.length, 0);
 

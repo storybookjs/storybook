@@ -19,6 +19,7 @@ describe('buildServerInstructions', () => {
 			- Treat that tool's output as the source of truth for framework-specific imports, story patterns, and testing conventions.
 			- After changing any component or story, call **get-changed-stories** to discover new/modified/related stories, then call **preview-stories** to retrieve preview URLs.
 			- Always include every returned preview URL in your user-facing response so the user can verify the visual result.
+			- After completing the change, call **apply-review-state** to publish a curated review to Storybook's review page, and include the returned reviewUrl in your final response.
 
 			## Validation Workflow
 
@@ -63,7 +64,8 @@ describe('buildServerInstructions', () => {
 			- Before creating or editing components or stories, call **get-storybook-story-instructions**.
 			- Treat that tool's output as the source of truth for framework-specific imports, story patterns, and testing conventions.
 			- After changing any component or story, call **get-changed-stories** to discover new/modified/related stories, then call **preview-stories** to retrieve preview URLs.
-			- Always include every returned preview URL in your user-facing response so the user can verify the visual result."
+			- Always include every returned preview URL in your user-facing response so the user can verify the visual result.
+			- After completing the change, call **apply-review-state** to publish a curated review to Storybook's review page, and include the returned reviewUrl in your final response."
 		`);
 	});
 

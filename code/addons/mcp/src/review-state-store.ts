@@ -61,7 +61,9 @@ const DiffHunkSchema = v.object({
 export const ReviewStateSchema = v.object({
 	title: v.pipe(
 		v.string(),
-		v.description('PR-style title for the change — short and specific, e.g. "Recolour the primary button".'),
+		v.description(
+			'PR-style title for the change — short and specific, e.g. "Recolour the primary button".',
+		),
 	),
 	description: v.pipe(
 		v.string(),

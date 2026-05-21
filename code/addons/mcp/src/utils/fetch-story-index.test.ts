@@ -37,9 +37,9 @@ describe('fetchStoryIndex', () => {
 			text: async () => '',
 		});
 
-		await expect(
-			fetchStoryIndex('http://localhost:6006', { sleep: vi.fn() }),
-		).rejects.toThrow(/Failed to fetch story index: 404 Not Found/);
+		await expect(fetchStoryIndex('http://localhost:6006', { sleep: vi.fn() })).rejects.toThrow(
+			/Failed to fetch story index: 404 Not Found/,
+		);
 		expect(mockFetch).toHaveBeenCalledTimes(1);
 	});
 
@@ -115,8 +115,18 @@ describe('fetchStoryIndex', () => {
 	it('should retry on 429 (too many requests) and 408 (timeout)', async () => {
 		const mockFetch = global.fetch as any;
 		mockFetch
-			.mockResolvedValueOnce({ ok: false, status: 429, statusText: 'Too Many Requests', text: async () => '' })
-			.mockResolvedValueOnce({ ok: false, status: 408, statusText: 'Request Timeout', text: async () => '' })
+			.mockResolvedValueOnce({
+				ok: false,
+				status: 429,
+				statusText: 'Too Many Requests',
+				text: async () => '',
+			})
+			.mockResolvedValueOnce({
+				ok: false,
+				status: 408,
+				statusText: 'Request Timeout',
+				text: async () => '',
+			})
 			.mockResolvedValueOnce({ ok: true, json: async () => smallStoryIndexFixture });
 		const sleep = vi.fn().mockResolvedValue(undefined);
 

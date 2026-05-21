@@ -308,14 +308,14 @@ export async function buildDevStandalone(
   );
 
   const mcpPreset = await presets
-    .apply<string | undefined>('experimental_mcp', undefined)
+    .apply<{ endpoint: string } | undefined>('experimental_mcp', undefined)
     .catch((error: unknown) => {
       logger.warn('Storybook failed to resolve runtime MCP metadata from presets.');
       logger.debug(error instanceof Error ? (error.stack ?? error.message) : String(error));
       return undefined;
     });
   const mcp: RuntimeInstanceRecord['mcp'] = mcpPreset
-    ? { status: 'ready', endpoint: mcpPreset }
+    ? { status: 'ready', endpoint: mcpPreset.endpoint }
     : { status: 'not-installed' };
 
   await writeStorybookRuntimeInstanceRecord({

@@ -625,7 +625,7 @@ export interface StorybookConfigRaw {
 
   storyIndexGenerator?: StoryIndexGenerator;
 
-  experimental_mcp?: string;
+  experimental_mcp?: { endpoint: string };
 
   experimental_devServer?: ServerApp;
 

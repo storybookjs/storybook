@@ -190,7 +190,7 @@ export const baseTemplates = {
   'nextjs/14-ts': {
     name: 'Next.js v14.2 (Webpack | TypeScript)',
     script:
-      'yarn create next-app {{beforeDir}} -e https://github.com/vercel/next.js/tree/v14.2.17/examples/hello-world && cd {{beforeDir}} && npm pkg set "dependencies.next"="^14.2.17" && yarn && git add . && git commit --amend --no-edit && cd ..',
+      'npx create-next-app {{beforeDir}} -e https://github.com/vercel/next.js/tree/v14.2.17/examples/hello-world && cd {{beforeDir}} && npm pkg set "dependencies.next"="^14.2.17" && yarn && git add . && git commit --amend --no-edit && cd ..',
     expected: {
       framework: '@storybook/nextjs',
       renderer: '@storybook/react',
@@ -437,7 +437,7 @@ export const baseTemplates = {
   },
   'react-webpack/18-ts': {
     name: 'React Latest (Webpack | TypeScript)',
-    script: 'yarn create webpack5-react {{beforeDir}}',
+    script: 'npx create-webpack5-react {{beforeDir}}',
     expected: {
       framework: '@storybook/react-webpack5',
       renderer: '@storybook/react',
@@ -456,8 +456,7 @@ export const baseTemplates = {
   },
   'react-webpack/17-ts': {
     name: 'React v17 (Webpack | TypeScript)',
-    script:
-      'yarn create webpack5-react {{beforeDir}} --version-react="17" --version-react-dom="17"',
+    script: 'npx create-webpack5-react {{beforeDir}} --version-react="17" --version-react-dom="17"',
     expected: {
       framework: '@storybook/react-webpack5',
       renderer: '@storybook/react',
@@ -483,7 +482,7 @@ export const baseTemplates = {
      * 3. Add @types/react and @types/react-dom pointing to the beta packages
      */
     script: `
-      yarn create webpack5-react {{beforeDir}} --version-react="beta" --version-react-dom="beta" && \
+      npx create-webpack5-react {{beforeDir}} --version-react="beta" --version-react-dom="beta" && \
       cd {{beforeDir}} && \
       jq '.resolutions += {"@types/react": "npm:types-react@beta", "@types/react-dom": "npm:types-react-dom@beta"}' package.json > tmp.json && mv tmp.json package.json && \
       yarn add --dev @types/react@npm:types-react@beta @types/react-dom@npm:types-react-dom@beta
@@ -506,7 +505,7 @@ export const baseTemplates = {
   },
   'react-rsbuild/default-ts': {
     name: 'React Latest (RsBuild | TypeScript)',
-    script: 'yarn create rsbuild -d {{beforeDir}} -t react-ts --tools eslint',
+    script: 'npx create-rsbuild -d {{beforeDir}} -t react-ts --tools eslint',
     expected: {
       framework: 'storybook-react-rsbuild',
       renderer: '@storybook/react',
@@ -526,7 +525,7 @@ export const baseTemplates = {
   },
   'solid-vite/default-ts': {
     name: 'SolidJS Latest (Vite | TypeScript)',
-    script: 'yarn create solid {{beforeDir}} --vanilla --ts --template=with-vitest',
+    script: 'npx create-solid {{beforeDir}} --vanilla --ts --template=with-vitest',
     expected: {
       framework: 'storybook-solidjs-vite',
       renderer: 'storybook-solidjs-vite',
@@ -602,7 +601,7 @@ export const baseTemplates = {
   },
   'vue3-rsbuild/default-ts': {
     name: 'Vue Latest (RsBuild | TypeScript)',
-    script: 'yarn create rsbuild -d {{beforeDir}} -t vue-ts --tools eslint',
+    script: 'npx create-rsbuild -d {{beforeDir}} -t vue-ts --tools eslint',
     expected: {
       framework: 'storybook-vue3-rsbuild',
       renderer: '@storybook/vue3',
@@ -659,7 +658,7 @@ export const baseTemplates = {
   },
   'html-rsbuild/default-ts': {
     name: 'HTML Latest (RsBuild | TypeScript)',
-    script: 'yarn create rsbuild -d {{beforeDir}} -t vanilla-ts --tools eslint',
+    script: 'npx create-rsbuild -d {{beforeDir}} -t vanilla-ts --tools eslint',
     expected: {
       framework: 'storybook-html-rsbuild',
       renderer: '@storybook/html',
@@ -774,7 +773,7 @@ export const baseTemplates = {
   },
   'lit-rsbuild/default-ts': {
     name: 'Web Components Latest (RsBuild | TypeScript)',
-    script: 'yarn create rsbuild -d {{beforeDir}} -t lit-ts --tools eslint',
+    script: 'npx create-rsbuild -d {{beforeDir}} -t lit-ts --tools eslint',
     expected: {
       framework: 'storybook-web-components-rsbuild',
       renderer: '@storybook/web-components',
@@ -910,7 +909,7 @@ export const baseTemplates = {
 const internalTemplates = {
   'internal/react18-webpack-babel': {
     name: 'React with Babel Latest (Webpack | TypeScript)',
-    script: 'yarn create webpack5-react {{beforeDir}}',
+    script: 'npx create-webpack5-react {{beforeDir}}',
     expected: {
       framework: '@storybook/react-webpack5',
       renderer: '@storybook/react',
@@ -935,7 +934,7 @@ const internalTemplates = {
   'internal/react16-webpack': {
     name: 'React 16 (Webpack | TypeScript)',
     script:
-      'yarn create webpack5-react {{beforeDir}} --version-react=16 --version-react-dom=16 --version-@types/react=16 --version-@types/react-dom=16',
+      'npx create-webpack5-react {{beforeDir}} --version-react=16 --version-react-dom=16 --version-@types/react=16 --version-@types/react-dom=16',
     expected: {
       framework: '@storybook/react-webpack5',
       renderer: '@storybook/react',

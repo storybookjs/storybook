@@ -76,14 +76,18 @@ jobs:
     if: github.repository_owner == 'storybookjs'
     runs-on: ubuntu-latest
     steps:
-      - if: github.event_name == 'pull_request_target' && (contains(github.event.pull_request.labels.*.name, 'ci:normal'))
-        run: echo "workflow=normal" >> $GITHUB_OUTPUT
-      - if: github.event_name == 'pull_request_target' && (contains(github.event.pull_request.labels.*.name, 'ci:docs'))
-        run: echo "workflow=docs" >> $GITHUB_OUTPUT
-      - if: github.event_name == 'push' || contains(github.event.pull_request.labels.*.name, 'ci:merged')
-        run: echo "workflow=merged" >> $GITHUB_OUTPUT
-      - if: github.event_name == 'pull_request_target' && (contains(github.event.pull_request.labels.*.name, 'ci:daily'))
-        run: echo "workflow=daily" >> $GITHUB_OUTPUT
+      - id: normal
+        if: github.event_name == 'pull_request_target' && (contains(github.event.pull_request.labels.*.name, 'ci:normal'))
+        run: echo "workflow=normal" >> "$GITHUB_OUTPUT"
+      - id: docs
+        if: github.event_name == 'pull_request_target' && (contains(github.event.pull_request.labels.*.name, 'ci:docs'))
+        run: echo "workflow=docs" >> "$GITHUB_OUTPUT"
+      - id: merged
+        if: github.event_name == 'push' || contains(github.event.pull_request.labels.*.name, 'ci:merged')
+        run: echo "workflow=merged" >> "$GITHUB_OUTPUT"
+      - id: daily
+        if: github.event_name == 'pull_request_target' && (contains(github.event.pull_request.labels.*.name, 'ci:daily'))
+        run: echo "workflow=daily" >> "$GITHUB_OUTPUT"
       - id: trusted-author
         env:
           EVENT_NAME: ${{ github.event_name }}
@@ -104,7 +108,7 @@ jobs:
             echo "result=false" >> $GITHUB_OUTPUT
           fi
     outputs:
-      workflow: ${{ steps.get-parameters.outputs.workflow }}
+      workflow: ${{ steps.normal.outputs.workflow || steps.docs.outputs.workflow || steps.merged.outputs.workflow || steps.daily.outputs.workflow }}
       ghBaseBranch: ${{ github.event.pull_request.base.ref }}
       ghPrNumber: ${{ github.event.pull_request.number }}
       ghTrustedAuthor: ${{ steps.trusted-author.outputs.result }}

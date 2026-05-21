@@ -34,6 +34,7 @@ vi.mock('../shared/utils/module', () => ({
       '/absolute/preset',
       '/absolute/addons',
       '@storybook/addon-docs',
+      '@storybook/addon-mcp/preset',
       '@storybook/addon-cool',
       '@storybook/addon-docs/preset',
       '@storybook/addon-essentials',
@@ -418,6 +419,33 @@ describe('presets', () => {
     expect(mockPresetBar).toHaveBeenCalledWith(undefined, expect.any(Object));
 
     expect(input).toBe(output);
+  });
+
+  it('loads an addon preset and applies experimental_mcp', async () => {
+    mockedResolveUtils.importModule.mockImplementation(async (path: string) => {
+      if (path === 'main-preset') {
+        return {
+          addons: [
+            {
+              name: '@storybook/addon-mcp',
+              options: {},
+            },
+          ],
+        };
+      }
+      if (path === '@storybook/addon-mcp/preset') {
+        return {
+          experimental_mcp: () => ({ endpoint: '/mcp' }),
+        };
+      }
+      throw new Error(`Could not resolve ${path}`);
+    });
+
+    const presets = await getPresets(['main-preset'], {} as any);
+
+    await expect(presets.apply('experimental_mcp', undefined)).resolves.toEqual({
+      endpoint: '/mcp',
+    });
   });
 
   afterEach(() => {

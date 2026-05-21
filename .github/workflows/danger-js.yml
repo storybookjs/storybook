@@ -63,6 +63,7 @@ jobs:
           # Checkout our own base code, NOT the untrusted PR code.
           ref: ${{ github.event.pull_request.base.sha }}
           persist-credentials: false
+          submodules: true
       - name: Danger JS
         uses: docker://ghcr.io/danger/danger-js@sha256:66d5394557aef115c9b8086e9886fc24ee32d82ad222efb83778468538a91ef0 # 13.0.5
         with:

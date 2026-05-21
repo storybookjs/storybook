@@ -32,37 +32,37 @@ export async function buildStaticFiles(services: RuntimeServiceDefinition[]): Pr
   const store: StaticStore = {};
   const buildTasks: Promise<BuildTaskResult>[] = [];
 
-  for (const def of services) {
-    for (const [queryName, queryDef] of Object.entries(def.queries) as [
+  for (const service of services) {
+    for (const [queryName, query] of Object.entries(service.queries) as [
       string,
       RuntimeQueryDefinition,
     ][]) {
-      if (!queryDef.preload || !queryDef.static?.inputs) {
+      if (!query.preload || !query.static?.inputs) {
         continue;
       }
 
       // Resolve the static input list from a clean runtime so discovery cannot leak state.
-      const inputsRuntime = createServiceRuntime(def, undefined, structuredClone(def.initialState));
-      const inputs = await queryDef.static.inputs(inputsRuntime.queryCtx);
+      const inputsRuntime = createServiceRuntime(service, undefined, structuredClone(service.initialState));
+      const inputs = await query.static.inputs(inputsRuntime.queryCtx);
 
       buildTasks.push(
         ...inputs.map(async (input) => {
           // Each input gets its own fresh runtime so the snapshot only reflects that preload path.
           const buildRuntime = createServiceRuntime(
-            def,
+            service,
             undefined,
-            structuredClone(def.initialState)
+            structuredClone(service.initialState)
           );
-          const validatedInput = await validateSchema(queryDef.input, input, {
+          const validatedInput = await validateSchema(query.input, input, {
             kind: 'query',
-            serviceId: def.id,
+            serviceId: service.id,
             name: queryName,
             phase: 'input',
           });
-          const path = resolveStaticPath(def.id, queryDef, validatedInput, buildRuntime.queryCtx);
+          const path = resolveStaticPath(service.id, query, validatedInput, buildRuntime.queryCtx);
 
           // Run the same preload logic used at runtime, but capture the resulting state to disk.
-          await queryDef.preload!(validatedInput, buildRuntime.queryCtx);
+          await query.preload!(validatedInput, buildRuntime.queryCtx);
 
           return { path, state: buildRuntime.stateSignal() };
         })

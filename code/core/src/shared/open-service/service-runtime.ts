@@ -246,7 +246,11 @@ function createStaticStateLoader<TState>(
       // Reuse the same in-flight load per path so concurrent callers share one state merge.
       loadsByPath.set(
         path,
-        Promise.resolve(store[path]).then((slice) => {
+        // Defer the store merge to a microtask so subscriptions first observe the current live
+        // state, then the merged static snapshot as a follow-up reactive update.
+        Promise.resolve().then(() => {
+          const slice = store[path];
+
           if (slice == null) {
             return;
           }

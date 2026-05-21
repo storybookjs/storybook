@@ -12538,14 +12538,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"alien-signals@npm:^3.0.0":
-  version: 3.1.0
-  resolution: "alien-signals@npm:3.1.0"
-  checksum: 10c0/1d949a6a524b392ae0c3f9887f64f7e5e99fd7d9a2216b1392152c09d8fb15a7805e298aad38b37a26eb20ae0b5b6c0acc3b324bbf0a42d1056811011ecd4574
-  languageName: node
-  linkType: hard
-
-"alien-signals@npm:^3.2.0":
+"alien-signals@npm:^3.0.0, alien-signals@npm:^3.2.0":
   version: 3.2.1
   resolution: "alien-signals@npm:3.2.1"
   checksum: 10c0/4c4064faa208126177224d1ed6a2310687d452dec0771994e276d9af4c72e853fcb969ae4a7fcd034b1d1b9accb9500f4941178326eeea1cb8f64ec612853ef8
@@ -31749,19 +31742,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"valibot@npm:^1.1.0":
-  version: 1.3.1
-  resolution: "valibot@npm:1.3.1"
-  peerDependencies:
-    typescript: ">=5"
-  peerDependenciesMeta:
-    typescript:
-      optional: true
-  checksum: 10c0/e20a4097fa726f57530da1e64558af47ddd2303129c77978fe93c522c66cf4c79540ea3af864523589283ea25e347c3d65b8044fa4913376208dde576b9f6382
-  languageName: node
-  linkType: hard
-
-"valibot@npm:^1.4.0":
+"valibot@npm:^1.1.0, valibot@npm:^1.4.0":
   version: 1.4.0
   resolution: "valibot@npm:1.4.0"
   peerDependencies:

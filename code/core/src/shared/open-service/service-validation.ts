@@ -1,6 +1,6 @@
 import type { StandardSchemaV1 } from '@standard-schema/spec';
 
-import { OpenServiceValidationError } from './errors.ts';
+import { OpenServiceValidationError } from '../../server-errors.ts';
 import type { AnySchema } from './types.ts';
 import type { ValidationMeta } from './errors.ts';
 
@@ -23,7 +23,7 @@ export function rethrowAsync(error: unknown): void {
 export async function validateSchema<TSchema extends AnySchema>(
   schema: TSchema,
   value: unknown,
-  meta: ValidationMeta
+  meta: Omit<ValidationMeta, 'issues'>
 ): Promise<StandardSchemaV1.InferOutput<TSchema>> {
   const validationResult = await schema['~standard'].validate(value);
 

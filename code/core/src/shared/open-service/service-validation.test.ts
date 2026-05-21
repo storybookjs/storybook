@@ -1,6 +1,7 @@
 import * as v from 'valibot';
 import { dedent } from 'ts-dedent';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { z } from 'zod';
 
 import { defineQuery, defineService } from './service-definition.ts';
 import { buildStaticFiles } from './static-build.ts';
@@ -21,7 +22,7 @@ const expectValidationMessage = vi.defineHelper(
   async (run: () => Promise<unknown>, expectedMessage: string): Promise<void> => {
     await expect(run()).rejects.toMatchObject({
       fromStorybook: true,
-      code: 1001,
+      code: 5,
       message: expectedMessage,
     });
   }
@@ -128,6 +129,33 @@ describe('service validation', () => {
       dedent`
         Invalid output for query "test/nested-query-output.getBrokenTree":
         items[0].name: Invalid type: Expected string but received 1
+      `
+    );
+  });
+
+  it('wraps zod schema issues in the same actionable validation error shape', async () => {
+    const service = createService(
+      defineService({
+        id: 'test/zod-query-input',
+        initialState: {} as Record<string, never>,
+        queries: {
+          getGreeting: defineQuery<Record<string, never>>()({
+            input: z.object({
+              name: z.string().min(2, 'Name must be at least 2 characters'),
+            }),
+            output: z.string(),
+            handler: ({ name }) => `Hello ${name}`,
+          }),
+        },
+        commands: {},
+      })
+    );
+
+    await expectValidationMessage(
+      () => service.queries.getGreeting({ name: 'x' }),
+      dedent`
+        Invalid input for query "test/zod-query-input.getGreeting":
+        name: Name must be at least 2 characters
       `
     );
   });

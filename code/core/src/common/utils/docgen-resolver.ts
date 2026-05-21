@@ -1,6 +1,6 @@
 import { extname } from 'node:path';
 
-import resolve from 'resolve';
+import { ResolverFactory } from 'oxc-resolver';
 
 export class ReactDocgenResolveError extends Error {
   // the magic string that react-docgen uses to check if a module is ignored
@@ -29,21 +29,29 @@ export const RESOLVE_EXTENSIONS = [
   '.mts',
   '.cts',
   '.jsx',
-];
+] as const;
+
+const docgenResolver = new ResolverFactory({
+  extensions: [...RESOLVE_EXTENSIONS],
+});
+
+const docgenResolverExact = new ResolverFactory({
+  extensions: [],
+});
+
+function resolveSync(filename: string, basedir: string, exact = false): string {
+  const result = (exact ? docgenResolverExact : docgenResolver).sync(basedir, filename);
+  if (result.path) {
+    return result.path;
+  }
+  throw new Error(result.error ?? `Cannot resolve '${filename}' from '${basedir}'`);
+}
 
 export function defaultLookupModule(filename: string, basedir: string): string {
-  const resolveOptions = {
-    basedir,
-    extensions: RESOLVE_EXTENSIONS,
-    // we do not need to check core modules as we cannot import them anyway
-    includeCoreModules: false,
-  };
-
   try {
-    return resolve.sync(filename, resolveOptions);
+    return resolveSync(filename, basedir);
   } catch (error) {
     const ext = extname(filename);
-    let newFilename: string;
 
     // if we try to import a JavaScript file it might be that we are actually pointing to
     // a TypeScript file. This can happen in ES modules as TypeScript requires to import other
@@ -56,24 +64,15 @@ export function defaultLookupModule(filename: string, basedir: string): string {
         // Try .ts first, then fall back to .tsx (for React components using ESM-style .js imports)
         const base = filename.slice(0, -2);
         try {
-          return resolve.sync(`${base}ts`, { ...resolveOptions, extensions: [] });
+          return resolveSync(`${base}ts`, basedir, true);
         } catch {
-          newFilename = `${base}tsx`;
+          return resolveSync(`${base}tsx`, basedir, true);
         }
-        break;
       }
-
       case '.jsx':
-        newFilename = `${filename.slice(0, -3)}tsx`;
-        break;
+        return resolveSync(`${filename.slice(0, -3)}tsx`, basedir, true);
       default:
         throw error;
     }
-
-    return resolve.sync(newFilename, {
-      ...resolveOptions,
-      // we already know that there is an extension at this point, so no need to check other extensions
-      extensions: [],
-    });
   }
 }

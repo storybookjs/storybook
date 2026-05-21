@@ -9386,7 +9386,7 @@ __metadata:
     type-fest: "npm:~2.19"
     typescript: "npm:^5.8.3"
     vue: "npm:^3.2.47"
-    vue-component-type-helpers: "npm:latest"
+    vue-component-type-helpers: "npm:^3.2.9"
     vue-tsc: "npm:latest"
   peerDependencies:
     storybook: "workspace:^"
@@ -32373,10 +32373,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"vue-component-type-helpers@npm:latest":
-  version: 3.1.4
-  resolution: "vue-component-type-helpers@npm:3.1.4"
-  checksum: 10c0/82a30a3ee271bab57c697e04b46716521575fde6a1f397edeb8c69f9edf7fe705d8bbc9cafa501e6294ceaee9e5585daadf3f6385209479bd82f88ae54730b25
+"vue-component-type-helpers@npm:^3.2.9":
+  version: 3.3.1
+  resolution: "vue-component-type-helpers@npm:3.3.1"
+  checksum: 10c0/eca9ed4e7fdf23dcae076be317d79c95f1fdc1f0cc870c08618c0b150a7a9ea5840a974ae934ce2bfd6139878b53cd3c25420536f44a02d5374ef071233d58aa
   languageName: node
   linkType: hard
 

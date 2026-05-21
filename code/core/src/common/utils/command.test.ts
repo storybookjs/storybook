@@ -55,30 +55,7 @@ describe('command', () => {
       });
     });
 
-    it('should use .exe when found in PATH for pnpm', async () => {
-      mockedExistsSync.mockImplementation((p) => String(p).endsWith('pnpm.exe'));
-      mockedExeca.mockResolvedValueOnce({
-        stdout: 'success',
-        stderr: '',
-      } as any);
-
-      await executeCommand({
-        command: 'pnpm',
-        args: ['--version'],
-      });
-
-      expect(mockedExeca).toHaveBeenCalledTimes(1);
-      expect(mockedExeca).toHaveBeenCalledWith(
-        'pnpm.exe',
-        ['--version'],
-        expect.objectContaining({
-          encoding: 'utf8',
-          cleanup: true,
-        })
-      );
-    });
-
-    it('should use .cmd when .exe not found but .cmd exists in PATH', async () => {
+    it('should use .cmd when found in PATH for pnpm', async () => {
       mockedExistsSync.mockImplementation((p) => String(p).endsWith('pnpm.cmd'));
       mockedExeca.mockResolvedValueOnce({
         stdout: 'success',
@@ -101,7 +78,30 @@ describe('command', () => {
       );
     });
 
-    it('should use .ps1 when neither .exe nor .cmd found but .ps1 exists in PATH', async () => {
+    it('should use .exe when .cmd not found but .exe exists in PATH', async () => {
+      mockedExistsSync.mockImplementation((p) => String(p).endsWith('pnpm.exe'));
+      mockedExeca.mockResolvedValueOnce({
+        stdout: 'success',
+        stderr: '',
+      } as any);
+
+      await executeCommand({
+        command: 'pnpm',
+        args: ['--version'],
+      });
+
+      expect(mockedExeca).toHaveBeenCalledTimes(1);
+      expect(mockedExeca).toHaveBeenCalledWith(
+        'pnpm.exe',
+        ['--version'],
+        expect.objectContaining({
+          encoding: 'utf8',
+          cleanup: true,
+        })
+      );
+    });
+
+    it('should use .ps1 when neither .cmd nor .exe found but .ps1 exists in PATH', async () => {
       mockedExistsSync.mockImplementation((p) => String(p).endsWith('pnpm.ps1'));
       mockedExeca.mockResolvedValueOnce({
         stdout: 'success',
@@ -140,7 +140,7 @@ describe('command', () => {
       expect(mockedExeca).toHaveBeenCalledWith('pnpm', ['--version'], expect.anything());
     });
 
-    it('should prefer .exe over .cmd when both exist in PATH', async () => {
+    it('should prefer .cmd over .exe when both exist in PATH', async () => {
       mockedExistsSync.mockImplementation(
         (p) => String(p).endsWith('pnpm.exe') || String(p).endsWith('pnpm.cmd')
       );
@@ -155,7 +155,7 @@ describe('command', () => {
       });
 
       expect(mockedExeca).toHaveBeenCalledTimes(1);
-      expect(mockedExeca).toHaveBeenCalledWith('pnpm.exe', ['--version'], expect.anything());
+      expect(mockedExeca).toHaveBeenCalledWith('pnpm.cmd', ['--version'], expect.anything());
     });
 
     it('should propagate errors from the resolved command', async () => {
@@ -179,9 +179,9 @@ describe('command', () => {
     });
 
     it('should propagate errors when resolved command is not found', async () => {
-      mockedExistsSync.mockImplementation((p) => String(p).endsWith('pnpm.exe'));
+      mockedExistsSync.mockImplementation((p) => String(p).endsWith('pnpm.cmd'));
       const error = {
-        stderr: "'pnpm.exe' is not recognized as an internal or external command",
+        stderr: "'pnpm.cmd' is not recognized as an internal or external command",
         message: 'Command failed',
       };
       mockedExeca.mockRejectedValueOnce(error);
@@ -309,7 +309,7 @@ describe('command', () => {
       });
     });
 
-    it('should try .exe first for pnpm and succeed', () => {
+    it('should try .cmd first for pnpm and succeed', () => {
       mockedExecaCommandSync.mockReturnValueOnce({
         stdout: '10.0.0',
         stderr: '',
@@ -323,7 +323,7 @@ describe('command', () => {
       expect(result).toBe('10.0.0');
       expect(mockedExecaCommandSync).toHaveBeenCalledTimes(1);
       expect(mockedExecaCommandSync).toHaveBeenCalledWith(
-        'pnpm.exe --version',
+        'pnpm.cmd --version',
         expect.objectContaining({
           encoding: 'utf8',
           cleanup: true,
@@ -331,16 +331,16 @@ describe('command', () => {
       );
     });
 
-    it('should try .cmd after .exe fails with "not recognized" error', () => {
-      // First call (.exe) fails
+    it('should try .exe after .cmd fails with "not recognized" error', () => {
+      // First call (.cmd) fails
       mockedExecaCommandSync.mockImplementationOnce(() => {
         throw {
-          stderr: "'pnpm.exe' is not recognized as an internal or external command",
+          stderr: "'pnpm.cmd' is not recognized as an internal or external command",
           message: 'Command failed',
         };
       });
 
-      // Second call (.cmd) succeeds
+      // Second call (.exe) succeeds
       mockedExecaCommandSync.mockReturnValueOnce({
         stdout: '10.0.0',
         stderr: '',
@@ -355,12 +355,12 @@ describe('command', () => {
       expect(mockedExecaCommandSync).toHaveBeenCalledTimes(2);
       expect(mockedExecaCommandSync).toHaveBeenNthCalledWith(
         1,
-        'pnpm.exe --version',
+        'pnpm.cmd --version',
         expect.anything()
       );
       expect(mockedExecaCommandSync).toHaveBeenNthCalledWith(
         2,
-        'pnpm.cmd --version',
+        'pnpm.exe --version',
         expect.anything()
       );
     });

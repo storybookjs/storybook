@@ -231,11 +231,11 @@ function resolveCommand(command: string): string[] {
 
   if (WINDOWS_SHIM_COMMANDS.has(command)) {
     // On Windows, try multiple variations in order of likelihood:
-    // 1. .exe - native executable (e.g., pnpm installed via Scoop/Mise)
-    // 2. .cmd - CMD shim (most common for npm-installed packages)
-    // 3. .ps1 - PowerShell shim (less common but possible)
+    // 1. .cmd - CMD shim (most common: npm-installed packages, corepack, PowerShell script)
+    // 2. .exe - native executable (less common: Scoop/Mise installations)
+    // 3. .ps1 - PowerShell shim (rare but possible)
     // 4. bare command - fallback
-    return [`${command}.exe`, `${command}.cmd`, `${command}.ps1`, command];
+    return [`${command}.cmd`, `${command}.exe`, `${command}.ps1`, command];
   }
 
   return [command];

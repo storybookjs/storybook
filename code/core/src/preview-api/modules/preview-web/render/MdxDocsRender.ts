@@ -94,10 +94,16 @@ export class MdxDocsRender<TRenderer extends Renderer> implements Render<TRender
   }
 
   isEqual(other: Render<TRenderer>): boolean {
+    const otherRender = other as MdxDocsRender<TRenderer>;
+    const sameReferencedCsfFiles =
+      this.csfFiles?.length === otherRender.csfFiles?.length &&
+      this.csfFiles?.every((csfFile, index) => csfFile === otherRender.csfFiles?.[index]);
+
     return !!(
       this.id === other.id &&
       this.exports &&
-      this.exports === (other as MdxDocsRender<TRenderer>).exports
+      this.exports === otherRender.exports &&
+      sameReferencedCsfFiles
     );
   }
 

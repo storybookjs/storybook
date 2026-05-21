@@ -115,6 +115,46 @@ describe('attaching', () => {
   });
 });
 
+describe('equality', () => {
+  it('treats changed referenced CSF files as a docs render change', async () => {
+    const mdxExports = { default: () => null };
+    const first = csfFileParts('meta--story', 'meta');
+    const second = csfFileParts('meta--story', 'meta');
+    const store = {
+      loadEntry: vi
+        .fn()
+        .mockResolvedValueOnce({
+          entryExports: mdxExports,
+          csfFiles: [first.csfFile],
+        })
+        .mockResolvedValueOnce({
+          entryExports: mdxExports,
+          csfFiles: [second.csfFile],
+        }),
+      storyFromCSFFile: ({ csfFile }: { csfFile: typeof first.csfFile }) =>
+        csfFile === first.csfFile ? first.story : second.story,
+    } as unknown as StoryStore<Renderer>;
+
+    const previousRender = new MdxDocsRender(
+      new Channel({}),
+      store,
+      attachedEntry,
+      {} as RenderContextCallbacks<Renderer>
+    );
+    await previousRender.prepare();
+
+    const nextRender = new MdxDocsRender(
+      new Channel({}),
+      store,
+      attachedEntry,
+      {} as RenderContextCallbacks<Renderer>
+    );
+    await nextRender.prepare();
+
+    expect(nextRender.isEqual(previousRender)).toBe(false);
+  });
+});
+
 describe('docs parameters', () => {
   it('uses the attached CSF story docs parameters for attached MDX docs', async () => {
     const renderPage = vi.fn();

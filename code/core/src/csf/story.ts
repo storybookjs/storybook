@@ -185,7 +185,7 @@ export interface GlobalTypes {
  * type-checked across all stories.
  */
 export interface AddonTypes {
-  tags?: unknown[];
+  tags?: string[];
   args?: unknown;
   parameters?: Record<string, any>;
   globals?: Record<string, any>;

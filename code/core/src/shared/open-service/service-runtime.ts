@@ -68,6 +68,7 @@ function createSelfRef<TState>(stateSignal: ServiceSignal<TState>): WritableSelf
       return stateSignal();
     },
     setState(mutate) {
+      // Batch signal writes so one command only triggers subscribers after the full draft update.
       startBatch();
       stateSignal(produce(stateSignal(), mutate));
       endBatch();
@@ -166,10 +167,13 @@ function createQuery<TState>(
         return;
       }
 
+      // Kick off preload in parallel so subscriptions can observe the state transition it causes.
       void prepareQuery(validatedInput).catch(rethrowAsync);
 
+      // `computed()` tracks which signals the handler reads so the effect can re-run on changes.
       const comp = computed(() => queryDef.handler(validatedInput, createQueryCtx()));
       unsubscribe = effect(() => {
+        // Normalize sync and async handlers before validating and publishing the next value.
         void Promise.resolve(comp()).then(async (output) => {
           const validatedOutput = await validateSchema(queryDef.output, output, {
             kind: 'query',
@@ -179,12 +183,14 @@ function createQuery<TState>(
           });
 
           if (active) {
+            // Guard against late async completions after the subscriber has already unsubscribed.
             callback(validatedOutput);
           }
         }, rethrowAsync);
       });
     };
 
+    // Validate once up front so the reactive graph only ever sees parsed query input.
     void validateSchema(queryDef.input, input, {
       kind: 'query',
       serviceId,
@@ -234,6 +240,7 @@ function createStaticStateLoader<TState>(
     const path = resolveStaticPath(serviceId, queryDef, input, { self: selfRef });
 
     if (!loadsByPath.has(path)) {
+      // Reuse the same in-flight load per path so concurrent callers share one state merge.
       loadsByPath.set(
         path,
         Promise.resolve(store[path]).then((slice) => {
@@ -241,6 +248,7 @@ function createStaticStateLoader<TState>(
             return;
           }
 
+          // Merge the prebuilt snapshot into the live signal so later reads/subscriptions see it.
           stateSignal(toMerged(stateSignal() as object, slice as object) as TState);
         })
       );
@@ -297,6 +305,7 @@ export function createServiceRuntime<
   options?: CreateServiceOptions,
   initialState: TState = def.initialState
 ): ServiceRuntime<TState, TQueries, TCommands> {
+  // The signal is the single source of truth that query computations subscribe to.
   const stateSignal = signal<TState>(initialState);
   const selfRef = createSelfRef(stateSignal);
   const commandCtx: CommandCtx<TState> = { self: selfRef };
@@ -308,6 +317,7 @@ export function createServiceRuntime<
   >['commands'];
   selfRef.commands = commands;
 
+  // Queries are attached after commands so preload hooks can call into `ctx.self.commands`.
   const queries = buildQueries(
     def.id,
     def.queries,

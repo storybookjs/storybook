@@ -41,11 +41,13 @@ export async function buildStaticFiles(services: RuntimeServiceDefinition[]): Pr
         continue;
       }
 
+      // Resolve the static input list from a clean runtime so discovery cannot leak state.
       const inputsRuntime = createServiceRuntime(def, undefined, structuredClone(def.initialState));
       const inputs = await queryDef.static.inputs(inputsRuntime.queryCtx);
 
       buildTasks.push(
         ...inputs.map(async (input) => {
+          // Each input gets its own fresh runtime so the snapshot only reflects that preload path.
           const buildRuntime = createServiceRuntime(
             def,
             undefined,
@@ -59,6 +61,7 @@ export async function buildStaticFiles(services: RuntimeServiceDefinition[]): Pr
           });
           const path = resolveStaticPath(def.id, queryDef, validatedInput, buildRuntime.queryCtx);
 
+          // Run the same preload logic used at runtime, but capture the resulting state to disk.
           await queryDef.preload!(validatedInput, buildRuntime.queryCtx);
 
           return { path, state: buildRuntime.stateSignal() };
@@ -70,6 +73,7 @@ export async function buildStaticFiles(services: RuntimeServiceDefinition[]): Pr
   const builtStates = await Promise.all(buildTasks);
 
   for (const { path, state } of builtStates) {
+    // Shared paths intentionally merge so multiple queries can contribute one serialized file.
     store[path] = path in store ? toMerged(store[path] as object, state as object) : state;
   }
 

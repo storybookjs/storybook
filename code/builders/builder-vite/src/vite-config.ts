@@ -63,6 +63,10 @@ export async function commonConfig(
     root: projectRoot,
     // Allow storybook deployed as subfolder. See https://github.com/storybookjs/builder-vite/issues/238
     base: './',
+    // Storybook manages static file copying via staticDirs. Disabling Vite's publicDir
+    // prevents double-copying when users configure a custom destination in staticDirs.
+    // The default ../public behavior is preserved by the staticDirs preset in preset.ts.
+    publicDir: false,
     ...(options.cacheKey
       ? { cacheDir: resolvePathInStorybookCache('sb-vite', options.cacheKey) }
       : {}),

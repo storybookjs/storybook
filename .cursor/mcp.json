@@ -5,6 +5,9 @@
       "args": [
         "~/.wallaby/mcp/"
       ]
+    },
+    "storybook-ui": {
+      "url": "http://localhost:6006/mcp"
     }
   }
 }

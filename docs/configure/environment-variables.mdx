@@ -1,8 +1,7 @@
 ---
-title: 'Environment variables'
+title: Environment variables
 sidebar:
   order: 8
-  title: Environment variables
 ---
 
 You can use environment variables in Storybook to change its behavior in different “modes”.
@@ -13,31 +12,31 @@ STORYBOOK_THEME=red STORYBOOK_DATA_KEY=12345 npm run storybook
 ```
 
 <Callout variant="info" icon="💡">
-  Do not store any secrets (e.g., private API keys) or other types of sensitive information in your Storybook. Environment variables are embedded into the build, meaning anyone can view them by inspecting your files.
+
+Do not store any secrets (e.g., private API keys) or other types of sensitive information in your Storybook. Environment variables are embedded into the build, meaning anyone can view them by inspecting your files.
+
 </Callout>
 
 Then we can access these environment variables anywhere inside our preview JavaScript code like below:
 
-<IfRenderer renderer={['angular', 'ember' ]}>
-  {/* prettier-ignore-start */}
+<If renderer={['angular', 'ember' ]}>
 
-  <CodeSnippets path="storybook-read-environment-variables.md" />
-</IfRenderer>
+<CodeSnippets path="storybook-read-environment-variables.md" />
 
-{/* prettier-ignore-end */}
+</If>
 
-<IfRenderer renderer={['html', 'react', 'qwik', 'preact','svelte', 'solid', 'vue', 'web-components' ]}>
-  {/* prettier-ignore-start */}
+<If renderer={['html', 'react', 'qwik', 'preact','svelte', 'solid', 'vue', 'web-components' ]}>
 
-  <CodeSnippets path="storybook-read-environment-variables.md" />
-</IfRenderer>
+<CodeSnippets path="storybook-read-environment-variables.md" />
 
-{/* prettier-ignore-end */}
+</If>
 
 You can also access these variables in your custom `<head>`/`<body>` using the substitution `%STORYBOOK_X%`, for example: `%STORYBOOK_THEME%` will become `red`.
 
 <Callout variant="info" icon="💡">
-  If using the environment variables as attributes or values in JavaScript, you may need to add quotes, as the value will be inserted directly, for example: `<link rel="stylesheet" href="%STORYBOOK_STYLE_URL%" />`.
+
+If using the environment variables as attributes or values in JavaScript, you may need to add quotes, as the value will be inserted directly, for example: `<link rel="stylesheet" href="%STORYBOOK_STYLE_URL%" />`.
+
 </Callout>
 
 ## Using .env files
@@ -50,26 +49,22 @@ STORYBOOK_DATA_KEY=12345
 
 Then you can access this environment variable anywhere, even within your stories:
 
-{/* prettier-ignore-start */}
-
 <CodeSnippets path="my-component-with-env-variables.md" />
 
-{/* prettier-ignore-end */}
+<If renderer={['html', 'react', 'qwik', 'preact','svelte', 'solid', 'vue', 'web-components' ]}>
 
-<IfRenderer renderer={['html', 'react', 'qwik', 'preact','svelte', 'solid', 'vue', 'web-components' ]}>
-  ### With Vite
+### With Vite
 
-  Out of the box, Storybook provides a [Vite builder](../builders/vite.mdx), which does not output Node.js globals like `process.env`. To access environment variables in Storybook (e.g., `STORYBOOK_`, `VITE_`), you can use `import.meta.env`. For example:
+Out of the box, Storybook provides a [Vite builder](../builders/vite.mdx), which does not output Node.js globals like `process.env`. To access environment variables in Storybook (e.g., `STORYBOOK_`, `VITE_`), you can use `import.meta.env`. For example:
 
-  {/* prettier-ignore-start */}
+<CodeSnippets path="my-component-vite-env-variables.md" />
 
-  <CodeSnippets path="my-component-vite-env-variables.md" />
-
-  {/* prettier-ignore-end */}
-</IfRenderer>
+</If>
 
 <Callout variant="info">
-  You can also use specific files for specific modes. Add a `.env.development` or `.env.production` to apply different values to your environment variables.
+
+You can also use specific files for specific modes. Add a `.env.development` or `.env.production` to apply different values to your environment variables.
+
 </Callout>
 
 You can also pass these environment variables when you are [building your Storybook](../sharing/publish-storybook.mdx) with `build-storybook`.
@@ -80,19 +75,11 @@ Then they'll be hardcoded to the static version of your Storybook.
 
 Additionally, you can extend your Storybook configuration file (i.e., [`.storybook/main.js|.ts`](../configure/index.mdx#configure-story-rendering)) and provide a configuration field that you can use to define specific variables (e.g., API URLs). For example:
 
-{/* prettier-ignore-start */}
-
 <CodeSnippets path="main-config-env.md" />
-
-{/* prettier-ignore-end */}
 
 When Storybook loads, it will enable you to access them in your stories similar as you would do if you were working with an `env` file:
 
-{/* prettier-ignore-start */}
-
 <CodeSnippets path="my-component-env-var-config.md" />
-
-{/* prettier-ignore-end */}
 
 ## Using environment variables to choose the browser
 
@@ -107,7 +94,9 @@ The table below lists the available options:
 | Chromium | `BROWSER="chromium"` |
 
 <Callout variant="info" icon="💡">
-  By default, Storybook will open a new Chrome window as part of its startup process. If you don't have Chrome installed, make sure to include one of the following options, or set your default browser accordingly.
+
+By default, Storybook will open a new Chrome window as part of its startup process. If you don't have Chrome installed, make sure to include one of the following options, or set your default browser accordingly.
+
 </Callout>
 
 ## Troubleshooting

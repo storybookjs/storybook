@@ -128,8 +128,13 @@ export class AddonStore {
     Object.values(this.loaders).forEach((value: any) => value(api));
   };
 
-  experimental_getRegisteredAddons() {
-    return Object.keys(this.loaders);
+  experimental_getRegisteredAddons<
+    T extends
+      | Addon_Types
+      | Addon_TypesEnum.experimental_PAGE
+      | Addon_TypesEnum.experimental_TEST_PROVIDER,
+  >(type?: T) {
+    return type ? Object.keys(this.getElements(type)) : Object.keys(this.loaders);
   }
 }
 

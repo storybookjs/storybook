@@ -72,10 +72,7 @@ This rule assumes that the `package.json` is located in the root of your project
 ```js
 module.exports = {
   rules: {
-    "storybook/no-uninstalled-addons": [
-      "error",
-      { packageJsonLocation: "./folder/package.json" },
-    ],
+    'storybook/no-uninstalled-addons': ['error', { packageJsonLocation: './folder/package.json' }],
   },
 };
 ```
@@ -89,11 +86,11 @@ You can also ignore specific addons by providing an ignore array in the options:
 ```js
 module.exports = {
   rules: {
-    "storybook/no-uninstalled-addons": [
-      "error",
+    'storybook/no-uninstalled-addons': [
+      'error',
       {
-        packageJsonLocation: "./folder/package.json",
-        ignore: ["custom-addon"],
+        packageJsonLocation: './folder/package.json',
+        ignore: ['custom-addon'],
       },
     ],
   },

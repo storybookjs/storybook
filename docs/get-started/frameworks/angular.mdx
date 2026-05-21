@@ -294,6 +294,72 @@ The full list of options can be found in the Angular builder schemas:
 - [Build Storybook](https://github.com/storybookjs/storybook/blob/next/code/frameworks/angular/build-schema.json)
 - [Start Storybook](https://github.com/storybookjs/storybook/blob/next/code/frameworks/angular/start-schema.json)
 
+
+## Angular standalone and NgModule configuration
+
+Storybook for Angular supports both standalone components (using `bootstrapApplication`) and
+NgModule-based setups (using `moduleMetadata`).
+
+### Using `bootstrapApplication` (standalone)
+
+If you're using Angular's standalone API with `bootstrapApplication`, Storybook will
+automatically detect and use your application's bootstrap configuration. No additional
+configuration is needed in most cases.
+
+```ts title="src/main.ts"
+import { bootstrapApplication } from '@angular/platform-browser';
+import { AppComponent } from './app/app.component';
+import { appConfig } from './app/app.config';
+
+bootstrapApplication(AppComponent, appConfig);
+```
+
+Storybook will use the same `appConfig` that your application uses, ensuring consistency
+between your Storybook stories and your actual application.
+
+### Using `moduleMetadata` (NgModule)
+
+For NgModule-based Angular applications, you can use the `moduleMetadata` parameter in your
+stories to provide the necessary module configuration:
+
+```ts title="src/app/button/button.component.stories.ts"
+import type { Meta, StoryObj } from '@storybook/angular';
+import { moduleMetadata } from '@storybook/angular';
+import { ButtonComponent } from './button.component';
+import { CommonModule } from '@angular/common';
+
+const meta: Meta<ButtonComponent> = {
+  title: 'Button',
+  component: ButtonComponent,
+  decorators: [
+    moduleMetadata({
+      imports: [CommonModule],
+      providers: [],
+    }),
+  ],
+};
+export default meta;
+type Story = StoryObj<ButtonComponent>;
+
+export const Primary: Story = {
+  args: {
+    label: 'Click me',
+  },
+};
+```
+
+The `moduleMetadata` decorator allows you to configure:
+- **imports** - Angular modules to import (e.g., `CommonModule`, `FormsModule`)
+- **providers** - Services to provide at the story level
+- **declarations** - Components, directives, and pipes to declare
+
+:::tip
+
+When using standalone components, you generally don't need `moduleMetadata`. Only use it
+when your standalone component depends on imports from NgModules.
+
+:::
+
 ## API
 
 ### Options

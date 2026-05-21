@@ -185,6 +185,7 @@ export interface GlobalTypes {
  * type-checked across all stories.
  */
 export interface AddonTypes {
+  tags?: unknown[];
   args?: unknown;
   parameters?: Record<string, any>;
   globals?: Record<string, any>;
@@ -413,7 +414,7 @@ export interface BaseAnnotations<TRenderer extends Renderer = Renderer, TArgs = 
   render?: ArgsStoryFn<TRenderer, TArgs>;
 
   /** Named tags for a story, used to filter stories in different contexts. */
-  tags?: Tag[];
+  tags?: (TRenderer['tags'] extends string[] ? TRenderer['tags'] : string[]) | undefined;
 
   mount?: (context: StoryContext<TRenderer, TArgs>) => TRenderer['mount'];
 }

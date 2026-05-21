@@ -80,9 +80,9 @@ interface RefreshLockfileOptions {
  * 2. Pin Yarn 4 via the `package.json` `packageManager` field so corepack
  *    resolves it deterministically (no network `yarn set version`).
  * 3. Set `npmMinimalAgeGate` to 7 days so resolution skips quarantined versions.
- * 4. Run `yarn install` + `yarn up '*'` in `--mode=update-lockfile` to produce
- *    a deterministic Yarn 4 lockfile pinned to the newest non-quarantined
- *    versions matching the template's `package.json` ranges.
+ * 4. Run `yarn up '*'` then `yarn install` (both `--mode=update-lockfile`).
+ *    `yarn up` runs first so it rewrites bleeding-edge `package.json` ranges
+ *    to the newest gate-satisfying versions before the install resolves them.
  *
  * `YARN_ENABLE_IMMUTABLE_INSTALLS=false` is set via env (not `.yarnrc.yml`) so
  * the consumer-facing config stays clean.
@@ -132,22 +132,26 @@ export async function refreshBeforeStorybookLockfile({
   const gateMinutes = disableMinAgeGate ? 0 : BEFORE_SANDBOX_MIN_AGE_MINUTES;
   await runCommand(`yarn config set npmMinimalAgeGate ${gateMinutes}`, { cwd, env }, debug);
 
-  await runCommand(`yarn install --mode=update-lockfile`, { cwd, env }, debug);
-
+  // `yarn up` must run BEFORE `yarn install`. The template's CLI pins
+  // bleeding-edge versions (`ng new` → `@angular/build@^21.x`) that are inside
+  // the age-gate window; resolving those as-is fails with "No candidates
+  // found". `yarn up '*'` rewrites every direct dependency in package.json to
+  // the newest version that satisfies the gate, so the subsequent install
+  // resolves cleanly.
+  //
   // `yarn up '*'` errors when the project has no direct dependencies
-  // (`internal/server-webpack5` is just `yarn init -y`). The lockfile from
-  // `yarn install` is already valid; a failure here is non-fatal.
+  // (`internal/server-webpack5` is just `yarn init -y`) — non-fatal, the
+  // install below still produces a valid lockfile.
   try {
     await runCommand(`yarn up '*' --mode=update-lockfile`, { cwd, env }, debug);
   } catch (error) {
-    console.warn(
-      `⚠️ yarn up '*' skipped (likely no upgradeable dependencies); keeping the ` +
-        `lockfile from yarn install.`
-    );
+    console.warn(`⚠️ yarn up '*' skipped (likely no upgradeable dependencies).`);
     if (debug) {
       console.warn(error);
     }
   }
+
+  await runCommand(`yarn install --mode=update-lockfile`, { cwd, env }, debug);
 }
 
 /**

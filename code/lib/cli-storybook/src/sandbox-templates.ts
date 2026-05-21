@@ -485,7 +485,7 @@ export const baseTemplates = {
       npx create-webpack5-react {{beforeDir}} --version-react="beta" --version-react-dom="beta" && \
       cd {{beforeDir}} && \
       jq '.resolutions += {"@types/react": "npm:types-react@beta", "@types/react-dom": "npm:types-react-dom@beta"}' package.json > tmp.json && mv tmp.json package.json && \
-      yarn add --dev @types/react@npm:types-react@beta @types/react-dom@npm:types-react-dom@beta
+      yarn add @types/react@npm:types-react@beta @types/react-dom@npm:types-react-dom@beta
       `,
     expected: {
       framework: '@storybook/react-webpack5',

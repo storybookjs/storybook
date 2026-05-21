@@ -104,12 +104,20 @@ type SelectProps = ControlProps<OptionsSelection> & SelectConfig;
 
 const NO_SELECTION = 'Choose option...';
 
-const SingleSelect: FC<SelectProps> = ({ name, storyId, value, options, onChange, argType }) => {
+const SingleSelect: FC<SelectProps> = ({
+  name,
+  storyId,
+  controlsId,
+  value,
+  options,
+  onChange,
+  argType,
+}) => {
   const handleChange = (e: ChangeEvent<HTMLSelectElement>) => {
     onChange(options[e.currentTarget.value]);
   };
   const selection = selectedKey(value, options) || NO_SELECTION;
-  const controlId = getControlId(name, storyId);
+  const controlId = getControlId(name, storyId, controlsId);
 
   const readonly = !!argType?.table?.readonly;
 
@@ -133,7 +141,15 @@ const SingleSelect: FC<SelectProps> = ({ name, storyId, value, options, onChange
   );
 };
 
-const MultiSelect: FC<SelectProps> = ({ name, storyId, value, options, onChange, argType }) => {
+const MultiSelect: FC<SelectProps> = ({
+  name,
+  storyId,
+  controlsId,
+  value,
+  options,
+  onChange,
+  argType,
+}) => {
   const handleChange = (e: ChangeEvent<HTMLSelectElement>) => {
     const selection = Array.from(e.currentTarget.options)
       .filter((option) => option.selected)
@@ -141,7 +157,7 @@ const MultiSelect: FC<SelectProps> = ({ name, storyId, value, options, onChange,
     onChange(selectedValues(selection, options));
   };
   const selection = selectedKeys(value, options);
-  const controlId = getControlId(name, storyId);
+  const controlId = getControlId(name, storyId, controlsId);
 
   const readonly = !!argType?.table?.readonly;
 

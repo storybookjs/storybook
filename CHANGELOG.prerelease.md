@@ -1,3 +1,13 @@
+## 10.5.0-alpha.1
+
+- Angular: Fix custom paths for stats.json on angular - [#34551](https://github.com/storybookjs/storybook/pull/34551), thanks @mrginglymus!
+- Builder-Vite: Support configLoader via builder options - [#34080](https://github.com/storybookjs/storybook/pull/34080), thanks @holvi-sebastian!
+- CLI: Run `npx expo install --fix` after init for Expo projects - [#34803](https://github.com/storybookjs/storybook/pull/34803), thanks @ndelangen!
+- Core: Ignore story-like directories in indexer - [#34806](https://github.com/storybookjs/storybook/pull/34806), thanks @MukundaKatta!
+- Next.js Vite: Add Link mock with useLinkStatus to nextjs-vite framework - [#34736](https://github.com/storybookjs/storybook/pull/34736), thanks @yatishgoel!
+- Next.js: Add useLinkStatus mock to next/link export mock - [#34593](https://github.com/storybookjs/storybook/pull/34593), thanks @philwolstenholme!
+- Test: Move @testing-library/dom to dependencies - [#34604](https://github.com/storybookjs/storybook/pull/34604), thanks @XionWCFM!
+
 ## 10.5.0-alpha.0
 
 

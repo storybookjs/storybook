@@ -9065,7 +9065,7 @@ __metadata:
     react-element-to-jsx-string: "npm:@7rulnik/react-element-to-jsx-string@15.0.1"
     require-from-string: "npm:^2.0.2"
     ts-dedent: "npm:^2.0.0"
-    type-fest: "npm:~2.19"
+    type-fest: "npm:^5.6.0"
   peerDependencies:
     "@types/react": ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
     "@types/react-dom": ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
@@ -9221,7 +9221,7 @@ __metadata:
     tinyglobby: "npm:^0.2.15"
     trash: "npm:^7.2.0"
     ts-dedent: "npm:^2.2.0"
-    type-fest: "npm:~2.19"
+    type-fest: "npm:^5.6.0"
     typescript: "npm:^5.9.3"
     uuid: "npm:^9.0.1"
     verdaccio: "npm:^5.33.0"
@@ -9300,7 +9300,7 @@ __metadata:
     svelte-check: "npm:^4.3.2"
     sveltedoc-parser: "npm:^4.2.1"
     ts-dedent: "npm:^2.0.0"
-    type-fest: "npm:~2.19"
+    type-fest: "npm:^5.6.0"
     typescript: "npm:^5.8.3"
     vite: "npm:^7.0.4"
   peerDependencies:
@@ -9382,7 +9382,7 @@ __metadata:
     "@storybook/global": "npm:^5.0.0"
     "@testing-library/vue": "npm:^8.0.0"
     "@vitejs/plugin-vue": "npm:^4.6.2"
-    type-fest: "npm:~2.19"
+    type-fest: "npm:^5.6.0"
     typescript: "npm:^5.8.3"
     vue: "npm:^3.2.47"
     vue-component-type-helpers: "npm:^3.2.9"
@@ -29693,7 +29693,7 @@ __metadata:
     tinyspy: "npm:^3.0.2"
     ts-dedent: "npm:^2.0.0"
     tsconfig-paths: "npm:^4.2.0"
-    type-fest: "npm:^4.18.1"
+    type-fest: "npm:^5.6.0"
     typescript: "npm:^5.8.3"
     unique-string: "npm:^3.0.0"
     use-resize-observer: "npm:^9.1.0"
@@ -30257,6 +30257,13 @@ __metadata:
   dependencies:
     acorn-node: "npm:^1.2.0"
   checksum: 10c0/435763d011943df551caa5a3bb84e00b6d22d7375e4ae115a922ebc2a239f136979f78b6a81b89c92383834d752692dc068aee59c2448e3f7fce00a52d9162d8
+  languageName: node
+  linkType: hard
+
+"tagged-tag@npm:^1.0.0":
+  version: 1.0.0
+  resolution: "tagged-tag@npm:1.0.0"
+  checksum: 10c0/91d25c9ffb86a91f20522cefb2cbec9b64caa1febe27ad0df52f08993ff60888022d771e868e6416cf2e72dab68449d2139e8709ba009b74c6c7ecd4000048d1
   languageName: node
   linkType: hard
 
@@ -31017,10 +31024,33 @@ __metadata:
   languageName: node
   linkType: hard
 
-"type-fest@npm:~2.19":
+"type-fest@npm:^0.20.2":
+  version: 0.20.2
+  resolution: "type-fest@npm:0.20.2"
+  checksum: 10c0/dea9df45ea1f0aaa4e2d3bed3f9a0bfe9e5b2592bddb92eb1bf06e50bcf98dbb78189668cd8bc31a0511d3fc25539b4cd5c704497e53e93e2d40ca764b10bfc3
+  languageName: node
+  linkType: hard
+
+"type-fest@npm:^1.0.1":
+  version: 1.4.0
+  resolution: "type-fest@npm:1.4.0"
+  checksum: 10c0/a3c0f4ee28ff6ddf800d769eafafcdeab32efa38763c1a1b8daeae681920f6e345d7920bf277245235561d8117dab765cb5f829c76b713b4c9de0998a5397141
+  languageName: node
+  linkType: hard
+
+"type-fest@npm:^2.14.0, type-fest@npm:~2.19":
   version: 2.19.0
   resolution: "type-fest@npm:2.19.0"
   checksum: 10c0/a5a7ecf2e654251613218c215c7493574594951c08e52ab9881c9df6a6da0aeca7528c213c622bc374b4e0cb5c443aa3ab758da4e3c959783ce884c3194e12cb
+  languageName: node
+  linkType: hard
+
+"type-fest@npm:^5.6.0":
+  version: 5.6.0
+  resolution: "type-fest@npm:5.6.0"
+  dependencies:
+    tagged-tag: "npm:^1.0.0"
+  checksum: 10c0/5468a8ffda7f3904e6f7bbd8069eb8b6dd4bd9156e206df7a01d09a73e28cd1afedf74ead9d0fc12841c8c90074194859feca240511c50800962fde1bd9ddcbc
   languageName: node
   linkType: hard
 

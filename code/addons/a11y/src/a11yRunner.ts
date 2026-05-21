@@ -22,19 +22,22 @@ const DISABLED_RULES = [
 ] as const;
 
 const getDisabledRules = (rules: Spec['rules'] = []) => {
-  const ruleStates = new Map<string, boolean>();
+  const disabledRules: NonNullable<RunOptions['rules']> = {};
 
-  rules.forEach(({ id, enabled }) => {
-    if (id && typeof enabled === 'boolean') {
-      ruleStates.set(id, enabled);
+  // Rules are applied in order, so a later entry overrides an earlier one for the same id.
+  for (const { id, enabled } of rules) {
+    if (!id || typeof enabled !== 'boolean') {
+      continue;
     }
-  });
 
-  return Object.fromEntries(
-    Array.from(ruleStates.entries())
-      .filter(([, enabled]) => !enabled)
-      .map(([id]) => [id, { enabled: false }])
-  ) as NonNullable<RunOptions['rules']>;
+    if (enabled) {
+      delete disabledRules[id];
+    } else {
+      disabledRules[id] = { enabled: false };
+    }
+  }
+
+  return disabledRules;
 };
 
 const mergeDisabledRulesIntoRunOptions = (options: RunOptions, config: Spec): RunOptions => {

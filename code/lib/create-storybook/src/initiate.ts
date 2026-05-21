@@ -123,7 +123,7 @@ export async function doInitiate(options: CommandOptions): Promise<
 
   // Step 5: Execute generator with dependency collector (now with frameworkInfo)
 
-  const { configDir, storybookCommand, shouldRunDev, extraAddons } =
+  const { configDir, storybookCommand, shouldRunDev, extraAddons, postInstall } =
     await executeGeneratorExecution({
       projectType,
       packageManager,
@@ -144,6 +144,17 @@ export async function doInitiate(options: CommandOptions): Promise<
 
   // After dependencies are installed, we must not use the dependency collector anymore
   dependencyCollector = null;
+
+  // Generators may need to perform tasks once dependencies are installed (e.g. running a CLI that
+  // ships with one of those dependencies). We only run this when the install actually succeeded
+  // and we didn't skip it, otherwise the dependency-provided binary likely isn't available.
+  if (postInstall && !options.skipInstall && dependencyInstallationResult.status === 'success') {
+    try {
+      await postInstall();
+    } catch (err) {
+      logger.warn(`Post-install step failed: ${err instanceof Error ? err.message : String(err)}`);
+    }
+  }
 
   // Step 7: Configure addons (run postinstall scripts for configuration only)
   await executeAddonConfiguration({

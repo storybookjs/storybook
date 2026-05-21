@@ -8,22 +8,36 @@ interface SetupYarnOptions {
   cwd: string;
   // TODO: Evaluate if this is correct after removing pnp compatibility code in SB11
   pnp?: boolean;
-  version?: 'berry' | 'classic';
 }
 
-// NOTE: `version` defaults to `classic` (Yarn 1). This sets up Yarn only in the
-// scratch `createBaseDir`, which is the *parent* of the generated sandbox. It must
-// stay Yarn 1: Yarn 4 is strict about nested projects and would reject any install
-// a template's before-script runs inside the `before-storybook` subdirectory. The
-// sandbox itself is migrated to Yarn 4 afterwards by `refreshBeforeStorybookLockfile`.
-export async function setupYarn({ cwd, pnp = false, version = 'classic' }: SetupYarnOptions) {
-  // force yarn
+/**
+ * Install Yarn 4 (Berry) into `cwd` — the scratch parent directory a template's
+ * before-script runs in.
+ *
+ * `cwd` is deliberately left in a non-project state afterwards: it keeps the
+ * `.yarn/` release and `.yarnrc.yml` config (so `yarn create …` invocations and
+ * the nested `before-storybook` install inherit Yarn 4), but has NO `yarn.lock`
+ * and NO `package.json`.
+ *
+ * This matters because the generated sandbox lives at `cwd/before-storybook`. If
+ * `cwd` looked like a Yarn project, Yarn 4 would either (a) error immediately on
+ * any `yarn` command run in `cwd` — a `yarn.lock` with no `package.json` is a
+ * broken project — or (b) treat `before-storybook` as a stray nested package and
+ * reject it. A bare config-only directory sidesteps both: `before-storybook`,
+ * which has its own `package.json`, is correctly resolved as the project root.
+ *
+ * The scratch `yarn.lock` exists only while `yarn set version` runs, then is
+ * removed.
+ */
+export async function setupYarn({ cwd, pnp = false }: SetupYarnOptions) {
+  // `yarn set version` treats `cwd` as a project when a yarn.lock is present.
   await writeFile(join(cwd, 'yarn.lock'), '', { flag: 'a' });
-  await runCommand(`yarn set version ${version}`, { cwd });
-  if (version === 'berry' && !pnp) {
+  await runCommand(`yarn set version berry`, { cwd });
+  if (!pnp) {
     await runCommand('yarn config set nodeLinker node-modules', { cwd });
   }
   await rm(join(cwd, 'package.json'), { force: true });
+  await rm(join(cwd, 'yarn.lock'), { force: true });
 }
 
 export async function localizeYarnConfigFiles(baseDir: string, beforeDir: string) {

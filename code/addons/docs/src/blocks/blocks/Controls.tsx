@@ -1,6 +1,8 @@
 /* eslint-disable react/destructuring-assignment */
 import type { FC } from 'react';
-import React, { useContext, useId } from 'react';
+import React, { useContext } from 'react';
+
+import { useId } from '@react-aria/utils';
 
 import type { Parameters, Renderer, StrictArgTypes } from 'storybook/internal/csf';
 import type { ArgTypesExtractor } from 'storybook/internal/docs-tools';
@@ -44,9 +46,9 @@ const ControlsImpl: FC<ControlsProps> = (props) => {
   const context = useContext(DocsContext);
   const primaryStory = usePrimaryStory();
   // Disambiguate multiple <Controls /> blocks rendered for the same story on a single page.
-  // React's useId produces a stable id per component instance; strip colons since they require
-  // escaping in CSS selectors.
-  const controlsId = useId().replace(/:/g, '');
+  // React Aria's useId gives a stable id per component instance, with a polyfill for
+  // React versions that lack the built-in useId.
+  const controlsId = useId();
 
   const story = of ? context.resolveOf(of, ['story']).story : primaryStory;
 

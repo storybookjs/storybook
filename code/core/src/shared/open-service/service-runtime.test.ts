@@ -214,18 +214,20 @@ describe('service runtime', () => {
 
       await vi.waitFor(() => expect(queuedCallbacks).toHaveLength(1));
       try {
-        queuedCallbacks[0]();
-        expect.unreachable('Expected queued validation error to be thrown');
-      } catch (error) {
-        expect(error).toMatchObject({
-          fromStorybook: true,
-          code: 1001,
-          message:
-            'Invalid input for query "test/mutable-record-lookup.getRecordFields":\nentryId: Invalid key: Expected "entryId" but received undefined',
-        });
+        try {
+          queuedCallbacks[0]();
+          expect.unreachable('Expected queued validation error to be thrown');
+        } catch (error) {
+          expect(error).toMatchObject({
+            fromStorybook: true,
+            code: 1001,
+            message:
+              'Invalid input for query "test/mutable-record-lookup.getRecordFields":\nentryId: Invalid key: Expected "entryId" but received undefined',
+          });
+        }
+      } finally {
+        queueMicrotaskSpy.mockRestore();
       }
-
-      queueMicrotaskSpy.mockRestore();
     });
   });
 

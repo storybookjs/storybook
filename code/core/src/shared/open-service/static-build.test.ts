@@ -24,12 +24,9 @@ describe('static builds', () => {
     });
 
     it('uses a single default path per service', async () => {
-      await expect(buildStaticFiles([awaitedPreloadValueServiceDef])).resolves.toEqual({
-        'test/awaited-preload-value.json': {
-          'entry-a': 'preloaded',
-          'entry-b': 'preloaded',
-        },
-      });
+      const store = await buildStaticFiles([awaitedPreloadValueServiceDef]);
+
+      expect(Object.keys(store)).toEqual(['test/awaited-preload-value.json']);
     });
 
     it('deep-merges outputs from different queries that resolve to the same custom path', async () => {

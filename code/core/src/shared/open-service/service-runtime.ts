@@ -70,8 +70,11 @@ function createSelfRef<TState>(stateSignal: ServiceSignal<TState>): WritableSelf
     setState(mutate) {
       // Batch signal writes so one command only triggers subscribers after the full draft update.
       startBatch();
-      stateSignal(produce(stateSignal(), mutate));
-      endBatch();
+      try {
+        stateSignal(produce(stateSignal(), mutate));
+      } finally {
+        endBatch();
+      }
     },
     queries: {},
     commands: {},

@@ -157,11 +157,25 @@ export const runCommand = async (script: string, options: ExecaOptions, debug = 
   }
 
   return execaCommand(script, {
-    stdout: debug ? 'inherit' : 'ignore',
+    // Capture (not discard) stdout when not streaming, so a failing command's
+    // output is available on the thrown error for diagnostics.
+    stdout: debug ? 'inherit' : 'pipe',
     shell: true,
     cleanup: true,
     ...options,
   });
+};
+
+/** Render an execa (or generic) error with its captured stdout/stderr for logs. */
+const formatCommandError = (error: unknown): string => {
+  const e = error as { stack?: string; message?: string; stdout?: string; stderr?: string };
+  return [
+    e.stack ?? e.message ?? String(error),
+    e.stdout ? `--- stdout ---\n${e.stdout}` : '',
+    e.stderr ? `--- stderr ---\n${e.stderr}` : '',
+  ]
+    .filter(Boolean)
+    .join('\n');
 };
 
 const addDocumentation = async (
@@ -248,7 +262,7 @@ const runGenerators = async (
               const message = `❌ Failed to setup yarn in template: ${name} (${dirName})`;
               if (isCI) {
                 ghActions.error(dedent`${message}
-                  ${(error as any).stack}`);
+                  ${formatCommandError(error)}`);
               } else {
                 console.error(message);
                 console.error(error);
@@ -287,7 +301,7 @@ const runGenerators = async (
             const message = `❌ Failed to execute before-script for template: ${name} (${dirName})`;
             if (isCI) {
               ghActions.error(dedent`${message}
-                ${(error as any).stack}`);
+                ${formatCommandError(error)}`);
             } else {
               console.error(message);
               console.error(error);
@@ -312,7 +326,7 @@ const runGenerators = async (
             const message = `⚠️ Failed to refresh Yarn 4 lockfile for template: ${name} (${dirName}); shipping template default state`;
             if (isCI) {
               ghActions.warning(dedent`${message}
-                ${(error as any).stack}`);
+                ${formatCommandError(error)}`);
             } else {
               console.warn(message);
               console.warn(error);
@@ -331,7 +345,7 @@ const runGenerators = async (
             const message = `❌ Failed to initialize Storybook in template: ${name} (${dirName})`;
             if (isCI) {
               ghActions.error(dedent`${message}
-                ${(error as any).stack}`);
+                ${formatCommandError(error)}`);
             } else {
               console.error(message);
               console.error(error);

@@ -92,17 +92,22 @@ export async function refreshBeforeStorybookLockfile({
   debug,
   disableMinAgeGate,
 }: RefreshLockfileOptions) {
-  // Drop any non-Yarn-4 lockfile the template's CLI produced.
+  // Start from a clean Yarn state. Drop the lockfiles the template's CLI
+  // produced, plus any `.yarnrc.yml` / `.yarn/` left behind by the staged
+  // setup: a stale `yarnPath` there points at a different Yarn release than
+  // the `packageManager` field we pin below, and corepack aborts on that
+  // version mismatch.
   await Promise.allSettled([
     rm(join(cwd, 'package-lock.json'), { force: true }),
     rm(join(cwd, 'pnpm-lock.yaml'), { force: true }),
+    rm(join(cwd, '.yarnrc.yml'), { force: true }),
+    rm(join(cwd, '.yarnrc'), { force: true }),
+    rm(join(cwd, '.yarn'), { recursive: true, force: true }),
   ]);
 
-  // Truncate yarn.lock to empty (instead of removing it). An empty yarn.lock here
-  // marks `cwd` as a self-contained Yarn 4 project, otherwise Yarn 4 walks up the
-  // filesystem and tries to treat `createBaseDir`'s leftover yarn.lock as the
-  // project root — which fails with `nearest package directory doesn't seem to be
-  // part of the project`.
+  // An empty yarn.lock marks `cwd` as a self-contained Yarn 4 project,
+  // otherwise Yarn 4 walks up the filesystem and tries to treat a parent
+  // directory as the project root.
   await writeFile(join(cwd, 'yarn.lock'), '');
 
   // Also clear any leftover yarn.lock in the parent directory — its presence
@@ -115,17 +120,17 @@ export async function refreshBeforeStorybookLockfile({
   // redundant — the sandbox only needs *a* Yarn 4 to produce the lockfile.
   await pinYarnPackageManager(cwd);
 
-  await runCommand(`yarn config set nodeLinker node-modules`, { cwd }, debug);
-
-  const gateMinutes = disableMinAgeGate ? 0 : BEFORE_SANDBOX_MIN_AGE_MINUTES;
-  await runCommand(`yarn config set npmMinimalAgeGate ${gateMinutes}`, { cwd }, debug);
-
   const env = {
     ...process.env,
     YARN_ENABLE_IMMUTABLE_INSTALLS: 'false',
     COREPACK_ENABLE_DOWNLOAD_PROMPT: '0',
     CI: 'true',
   };
+
+  await runCommand(`yarn config set nodeLinker node-modules`, { cwd, env }, debug);
+
+  const gateMinutes = disableMinAgeGate ? 0 : BEFORE_SANDBOX_MIN_AGE_MINUTES;
+  await runCommand(`yarn config set npmMinimalAgeGate ${gateMinutes}`, { cwd, env }, debug);
 
   await runCommand(`yarn install --mode=update-lockfile`, { cwd, env }, debug);
 

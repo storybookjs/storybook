@@ -95,6 +95,8 @@ export async function loadStorybook(
   const features = await presets.apply('features');
   global.FEATURES = features;
 
+  await presets.apply('services');
+
   return {
     ...options,
     presets,

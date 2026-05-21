@@ -1,7 +1,6 @@
 import * as v from 'valibot';
 
 import { defineCommand, defineQuery, defineService } from './service-definition.ts';
-import type { ServiceInstance } from './types.ts';
 
 /** Shared schema used by fixtures that address one logical record by id. */
 export const entryIdInputSchema = v.object({ entryId: v.string() });
@@ -187,13 +186,7 @@ export function createSharedStaticFileServiceDef() {
 }
 
 /** Creates a service that composes one service's query inside another service's query. */
-export function createDerivedBooleanFromChildQueryServiceDef(
-  sourceService: ServiceInstance<
-    MutableRecordState,
-    typeof mutableRecordLookupServiceDef.queries,
-    typeof mutableRecordLookupServiceDef.commands
-  >
-) {
+export function createDerivedBooleanFromChildQueryServiceDef() {
   type DerivedState = Record<string, never>;
 
   return defineService({
@@ -205,10 +198,11 @@ export function createDerivedBooleanFromChildQueryServiceDef(
         description: 'Returns whether the child query reports marker=match for an entry.',
         input: entryIdInputSchema,
         output: booleanOutputSchema,
-        handler: async (input) => {
-          const record = await sourceService.queries.getRecordFields({
+        handler: async (input, ctx) => {
+          const sourceService = await ctx.getService('test/mutable-record-lookup');
+          const record = (await sourceService.queries.getRecordFields({
             entryId: input.entryId,
-          });
+          })) as Record<string, string> | null;
 
           return record?.marker === 'match';
         },

@@ -167,6 +167,64 @@ export class OpenServiceValidationError extends StorybookError {
   }
 }
 
+export class OpenServiceDuplicateRegistrationError extends StorybookError {
+  constructor(public data: { serviceId: string }) {
+    super({
+      name: 'OpenServiceDuplicateRegistrationError',
+      category: Category.CORE_COMMON,
+      code: 6,
+      message: `A service with id "${data.serviceId}" is already registered.`,
+    });
+  }
+}
+
+export class OpenServiceMissingServiceError extends StorybookError {
+  constructor(public data: { serviceId: string }) {
+    super({
+      name: 'OpenServiceMissingServiceError',
+      category: Category.CORE_COMMON,
+      code: 7,
+      message: `No registered service with id "${data.serviceId}" exists in this environment.`,
+    });
+  }
+}
+
+export class OpenServiceUnimplementedOperationError extends StorybookError {
+  constructor(public data: { serviceId: string; name: string; kind: 'query' | 'command' }) {
+    super({
+      name: 'OpenServiceUnimplementedOperationError',
+      category: Category.CORE_COMMON,
+      code: 8,
+      message: `${data.kind[0].toUpperCase()}${data.kind.slice(1)} "${data.serviceId}.${data.name}" is not implemented for this environment.`,
+    });
+  }
+}
+
+export class OpenServiceUnavailableServiceLookupError extends StorybookError {
+  constructor(public data: { serviceId: string; source: 'createService' | 'static-build' }) {
+    super({
+      name: 'OpenServiceUnavailableServiceLookupError',
+      category: Category.CORE_COMMON,
+      code: 9,
+      message:
+        data.source === 'createService'
+          ? `ctx.getService("${data.serviceId}") is unavailable for services created with createService(). Register the service before resolving other services by id.`
+          : `ctx.getService("${data.serviceId}") is unavailable while building static service snapshots. Resolve services by id at runtime instead.`,
+    });
+  }
+}
+
+export class OpenServiceInvalidStaticPathError extends StorybookError {
+  constructor(public data: { serviceId: string; name: string; path: string }) {
+    super({
+      name: 'OpenServiceInvalidStaticPathError',
+      category: Category.CORE_COMMON,
+      code: 10,
+      message: `Invalid static path "${data.path}" for query "${data.serviceId}.${data.name}": use a relative path with forward slashes and no ".." segments.`,
+    });
+  }
+}
+
 export class WebpackMissingStatsError extends StorybookError {
   constructor() {
     super({

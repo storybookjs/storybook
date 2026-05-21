@@ -113,6 +113,11 @@ export interface Presets {
     config?: StorybookConfigRaw['staticDirs'],
     args?: any
   ): Promise<StorybookConfigRaw['staticDirs']>;
+  apply(
+    extension: 'services',
+    config?: StorybookConfigRaw['services'],
+    args?: any
+  ): Promise<void>;
 
   /** The second and third parameter are not needed. And make type inference easier. */
   apply<T extends keyof StorybookConfigRaw>(extension: T): Promise<StorybookConfigRaw[T]>;
@@ -638,6 +643,8 @@ export interface StorybookConfigRaw {
   managerHead?: string;
 
   tags?: TagsOptions;
+
+  services?: void;
 }
 
 /**
@@ -743,6 +750,9 @@ export interface StorybookConfig {
 
   /** Configure non-standard tag behaviors */
   tags?: PresetValue<StorybookConfigRaw['tags']>;
+
+  /** Run open-service registration side effects for the server environment. */
+  services?: PresetValue<StorybookConfigRaw['services']>;
 }
 
 export type PresetValue<T> = T | ((config: T, options: Options) => T | Promise<T>);

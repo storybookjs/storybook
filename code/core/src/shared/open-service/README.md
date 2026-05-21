@@ -8,52 +8,62 @@ Its goals are:
 - expose queries and commands with strong TypeScript inference
 - validate all query and command input/output through Standard Schema
 - support reactive query subscriptions through `alien-signals`
-- support static preloading into serialized state snapshots
+- support server-side static preloading into serialized state snapshots
 
 The main audience for this README is agents and maintainers who need to understand how the pieces
 fit together, where behavior lives, and how to define new services correctly.
 
 ## Public Surface
 
-External callers should import from [index.ts](./index.ts).
+External callers should import from one of two entrypoints:
 
-That public API consists of:
+- [index.ts](./index.ts) for environment-agnostic definition helpers and shared types
+- [server.ts](./server.ts) for server-only registration, discovery, and static snapshot writing
+
+The environment-agnostic API consists of:
 
 - `defineService`
 - `defineQuery`
 - `defineCommand`
-- `createService`
-- `buildStaticFiles`
 - the exported type aliases from [types.ts](./types.ts)
+
+The server-only API consists of:
+
+- `registerService`
+- `listServices`
+- `describeService`
+- `getService`
+- `getRegisteredServices`
+- `buildStaticFiles`
+- `writeOpenServiceStaticFiles`
 
 Internal tests and implementation code may import from the individual modules directly.
 
 ## File Layout
 
-- [index.ts](./index.ts): public barrel for service authors outside this directory
+- [index.ts](./index.ts): environment-agnostic barrel for definition helpers and shared types
+- [server.ts](./server.ts): server-only registry and static snapshot entrypoint
 - [types.ts](./types.ts): core type model for definitions, contexts, runtime instances, and static build data
 - [service-definition.ts](./service-definition.ts): helpers that preserve inference when declaring services
 - [service-validation.ts](./service-validation.ts): async schema validation helpers and error wrapping
-- [errors.ts](./errors.ts): categorized Storybook errors for validation failures
-- [service-runtime.ts](./service-runtime.ts): runtime creation, singleton registry, subscriptions, and store-backed preload handling
-- [static-build.ts](./static-build.ts): static snapshot generation for preload-enabled queries
+- [errors.ts](./errors.ts): validation metadata formatting helpers
+- [service-runtime.ts](./service-runtime.ts): runtime creation, logical static-path resolution, subscriptions, and store-backed preload handling
+- [service-registration.ts](./service-registration.ts): server-side global registry implementation
 - [fixtures.ts](./fixtures.ts): scenario fixtures used by the test suite
-- `*.test.ts`: focused tests for runtime behavior, validation behavior, and static builds
+- `*.test.ts`: focused tests for runtime behavior, validation behavior, server registration, and server static builds
 
 ```mermaid
 flowchart LR
-  A[index.ts\npublic API]
+  A[index.ts\nenvironment-agnostic API]
   B[service-definition.ts\nauthoring helpers]
   C[types.ts\ncore types]
   D[service-runtime.ts\nlive runtime]
   E[service-validation.ts\nschema validation]
-  F[errors.ts\nvalidation errors]
-  G[static-build.ts\nstatic snapshot builder]
+  F[errors.ts\nvalidation metadata helpers]
+  G[server.ts\nserver registry and static snapshots]
   H[fixtures.ts and tests\nexamples and coverage]
 
   A --> B
-  A --> D
-  A --> G
   A --> C
   B --> C
   D --> C
@@ -98,6 +108,7 @@ Query handlers receive:
 - `ctx.self.state`
 - `ctx.self.queries`
 - `ctx.self.commands`
+- `ctx.getService(serviceId)`
 
 But query handlers do not receive `setState` because queries are read-only.
 
@@ -136,37 +147,54 @@ Important: handling of extra object fields depends on the schema implementation 
 current test fixtures use Valibot `object(...)` schemas, which accept unexpected extra fields rather
 than rejecting them.
 
+## Server Registration Flow
+
+Server-side registration happens through the `services` preset hook. Storybook calls
+`await presets.apply('services')` during both dev startup and static builds, and each service
+author's preset implementation is responsible for calling `registerService(...)` directly.
+
+That split is intentional:
+
+- [index.ts](./index.ts) stays environment-agnostic so preview, manager, and server code can share
+  one definition surface
+- [server.ts](./server.ts) owns the concrete global registry and static snapshot writing for the
+  current server process
+
+The internal Storybook config also registers a debug-only example service through that hook when
+`logLevel` resolves to `'debug'`.
+
 ## Runtime Flow
 
-When `createService(def)` is called:
+When a server registers a service definition:
 
-1. [service-runtime.ts](./service-runtime.ts) creates a signal-backed state container from `initialState`.
-2. It builds a mutable `self` reference around that state.
-3. It builds commands that validate input, run handlers, and validate output.
-4. It builds queries that validate input, optionally run preload, run handlers, and validate output.
-5. It returns a `ServiceInstance` containing only runtime `queries` and `commands`.
-
-The singleton helper `getService(def)` keeps one instance per service id within the current process.
-Tests should call `clearRegistry()` in teardown to avoid cross-test leakage.
+1. [service-registration.ts](./service-registration.ts) merges any registration-time handler overrides.
+2. [service-runtime.ts](./service-runtime.ts) creates a signal-backed state container from `initialState`.
+3. It builds a mutable `self` reference around that state.
+4. It builds commands that validate input, run handlers, and validate output.
+5. It builds queries that validate input, optionally run preload, run handlers, and validate output.
+6. It stores the resulting runtime behind the server registry entry for later lookup.
 
 ```mermaid
 sequenceDiagram
-  participant Caller
-  participant Runtime as createService/createServiceRuntime
+  participant Preset as services preset
+  participant Registry as registerService
+  participant Runtime as createServiceRuntime
   participant Schema as validateSchema
-  participant Query as query or command handler
+  participant Handler as query or command handler
   participant State as self/state signal
 
-  Caller->>Runtime: createService(def)
+  Preset->>Registry: registerService(definition)
+  Registry->>Runtime: create runtime from initialState
   Runtime->>Runtime: build self, commands, queries
-  Caller->>Runtime: query(input) or command(input)
+  Registry-->>Preset: registered service runtime
+  Preset->>Runtime: query(input) or command(input)
   Runtime->>Schema: validate input
   Schema-->>Runtime: parsed input
-  Runtime->>Query: run handler(parsed input, ctx)
-  Query->>State: read state or setState(...)
-  Query-->>Runtime: output
+  Runtime->>Handler: run handler(parsed input, ctx)
+  Handler->>State: read state or setState(...)
+  Handler-->>Runtime: output
   Runtime->>Schema: validate output
-  Schema-->>Caller: parsed output
+  Schema-->>Preset: parsed output
 ```
 
 ## Subscription Flow
@@ -203,7 +231,7 @@ sequenceDiagram
 
 ## Static Preload Flow
 
-`buildStaticFiles(services)` in [static-build.ts](./static-build.ts) looks for queries that define:
+`buildStaticFiles(services)` in [server.ts](./server.ts) looks for queries that define:
 
 - `preload`
 - `static.inputs`
@@ -213,10 +241,21 @@ For each such query input it:
 1. creates a fresh runtime from `initialState`
 2. validates the static input using the query's `input` schema
 3. runs the query's preload step
-4. resolves the output file path
+4. resolves the normalized logical output path
 5. stores the resulting runtime state in the final `StaticStore`
 
 If multiple tasks resolve to the same path, their states are deep-merged.
+
+`writeOpenServiceStaticFiles(outputDir)` then writes those logical paths underneath
+`<outputDir>/services`, converting slash-separated logical keys into native filesystem paths for
+the current operating system.
+
+Static path rules:
+
+- authors should think in forward-slash logical paths such as `nested/file.json`
+- leading `./` and `/` are normalized away
+- backslashes are normalized to `/`
+- `..` segments are rejected so snapshots cannot escape `<outputDir>/services`
 
 At runtime, `createService(def, { store })` can preload from that store. The runtime caches pending
 merges per path so one static snapshot is only merged once even if multiple concurrent query calls
@@ -230,11 +269,12 @@ flowchart TD
   D --> E[resolve static inputs]
   E --> F[validate each input]
   F --> G[run preload for that input]
-  G --> H[resolve output path]
+  G --> H[resolve logical output path]
   H --> I[capture runtime state snapshot]
   I --> J[merge snapshots by path into StaticStore]
-  J --> K[createService def with store]
-  K --> L[query loads cached static state before handler]
+  J --> K[writeOpenServiceStaticFiles outputDir]
+  K --> L[createService def with store]
+  L --> M[query loads cached static state before handler]
 ```
 
 ## How To Define A Service
@@ -244,12 +284,8 @@ Use the helpers in this order:
 ```ts
 import * as v from 'valibot';
 
-import {
-  createService,
-  defineCommand,
-  defineQuery,
-  defineService,
-} from './index.ts';
+import { defineCommand, defineQuery, defineService } from './index.ts';
+import { registerService } from './server.ts';
 
 type ExampleState = {
   values: Record<string, string | undefined>;
@@ -292,7 +328,7 @@ export const exampleServiceDef = defineService({
   },
 });
 
-const exampleService = createService(exampleServiceDef);
+const exampleService = registerService(exampleServiceDef);
 await exampleService.queries.getValue({ entryId: 'a' });
 ```
 
@@ -302,13 +338,13 @@ await exampleService.queries.getValue({ entryId: 'a' });
 - Use query `preload` for read-side warming, not state mutation in the handler.
 - Use commands for all state mutation.
 - Treat queries and commands as async, even if the current implementation path is fast.
-- Keep public imports on [index.ts](./index.ts). Import internal modules directly only from tests or implementation code in this directory.
+- Keep environment-agnostic imports on [index.ts](./index.ts) and server-only imports on [server.ts](./server.ts). Import internal modules directly only from tests or implementation code in this directory.
 
 ## Testing Guidance
 
 - Runtime behavior belongs in [service-runtime.test.ts](./service-runtime.test.ts)
 - Validation behavior belongs in [service-validation.test.ts](./service-validation.test.ts)
-- Static snapshot behavior belongs in [static-build.test.ts](./static-build.test.ts)
+- Server registration and static snapshot behavior belong in [server.test.ts](./server.test.ts)
 - Reusable scenario definitions belong in [fixtures.ts](./fixtures.ts)
 
 When adding validation tests, prefer asserting the full exact error message. That keeps the tests
@@ -317,7 +353,7 @@ useful as executable documentation for callers and agents.
 ## Agent Notes
 
 - If you need to change runtime behavior, start in [service-runtime.ts](./service-runtime.ts).
+- If you need to change server registration or static snapshot writing, start in [server.ts](./server.ts).
 - If you need to change validation wording, start in [errors.ts](./errors.ts).
 - If you need to change schema handling, start in [service-validation.ts](./service-validation.ts).
 - If you need to change service authoring ergonomics, start in [service-definition.ts](./service-definition.ts) and [types.ts](./types.ts).
-- If you need to change static preload generation, start in [static-build.ts](./static-build.ts).

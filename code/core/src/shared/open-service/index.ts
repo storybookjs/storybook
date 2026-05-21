@@ -7,18 +7,22 @@
  */
 export { defineCommand, defineQuery, defineService } from './service-definition.ts';
 
-export { buildStaticFiles } from './static-build.ts';
-export { createService } from './service-runtime.ts';
-
 export type {
   CommandCtx,
   CommandDefinition,
   Command,
-  CreateServiceOptions,
+  CommandDescriptor,
   Query,
   QueryCtx,
+  QueryDescriptor,
   QueryDefinition,
+  RuntimeService,
+  SchemaDescriptor,
   ServiceDefinition,
+  ServiceDescriptor,
   ServiceInstance,
+  ServiceRegistrationOptions,
+  ServiceSummary,
+  ServerServiceRegistration,
   StaticStore,
 } from './types.ts';

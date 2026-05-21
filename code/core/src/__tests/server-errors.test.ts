@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 
-import { WebpackCompilationError } from '../server-errors.ts';
+import {
+  WebpackCompilationError,
+} from '../server-errors.ts';
 
 describe('WebpackCompilationError', () => {
   it('should correctly handle error with stats.compilation.errors', () => {

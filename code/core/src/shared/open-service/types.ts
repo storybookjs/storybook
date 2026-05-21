@@ -6,6 +6,9 @@ export type StaticStore = Record<string, unknown>;
 /** Generic Standard Schema constraint used across open-service definitions. */
 export type AnySchema = StandardSchemaV1<unknown, unknown>;
 
+/** Public schema shape exposed when describing a schema-backed service contract. */
+export type SchemaDescriptor = AnySchema;
+
 /** Convenience alias for declaring Standard Schema compatible input/output contracts. */
 export type Schema<TInput = unknown, TOutput = TInput> = StandardSchemaV1<TInput, TOutput>;
 
@@ -47,14 +50,53 @@ export type WritableSelf<TState = unknown> = ReadonlySelf<TState> & {
   setState(mutate: (draft: TState) => void): void;
 };
 
+export type ServiceSummary = {
+  id: string;
+  description?: string;
+  queryNames: string[];
+  commandNames: string[];
+};
+
+export type QueryDescriptor = {
+  name: string;
+  description?: string;
+  input: SchemaDescriptor;
+  output: SchemaDescriptor;
+};
+
+export type CommandDescriptor = {
+  name: string;
+  description?: string;
+  input: SchemaDescriptor;
+  output: SchemaDescriptor;
+};
+
+export type ServiceDescriptor = {
+  id: string;
+  description?: string;
+  queries: Record<string, QueryDescriptor>;
+  commands: Record<string, CommandDescriptor>;
+};
+
+export interface ServiceRegistryApi {
+  listServices(): Promise<ServiceSummary[]>;
+  describeService(serviceId: string): Promise<ServiceDescriptor>;
+  getService(serviceId: string): Promise<RuntimeService>;
+}
+
+export type RuntimeService = ServiceInstance<unknown, Queries<unknown>, Commands<unknown>> &
+  ServiceRegistryApi;
+
 /** Context passed to query handlers and static preload helpers. */
 export type QueryCtx<TState> = {
   self: ReadonlySelf<TState>;
+  getService: ServiceRegistryApi['getService'];
 };
 
 /** Context passed to command handlers. */
 export type CommandCtx<TState> = {
   self: WritableSelf<TState>;
+  getService: ServiceRegistryApi['getService'];
 };
 
 /**
@@ -82,7 +124,7 @@ export type QueryDefinition<
   description?: string;
   input: TInputSchema;
   output: TOutputSchema;
-  handler: (
+  handler?: (
     input: InferSchemaOutput<TInputSchema>,
     ctx: QueryCtx<TState>
   ) => InferSchemaInput<TOutputSchema> | Promise<InferSchemaInput<TOutputSchema>>;
@@ -107,7 +149,7 @@ export type CommandDefinition<
   description?: string;
   input: TInputSchema;
   output: TOutputSchema;
-  handler: (
+  handler?: (
     input: InferSchemaOutput<TInputSchema>,
     ctx: CommandCtx<TState>
   ) => InferSchemaInput<TOutputSchema> | Promise<InferSchemaInput<TOutputSchema>>;
@@ -118,7 +160,7 @@ export type AnyQueryDefinition<TState> = {
   description?: string;
   input: AnySchema;
   output: AnySchema;
-  handler: BivariantCallback<[input: unknown, ctx: QueryCtx<TState>], unknown | Promise<unknown>>;
+  handler?: BivariantCallback<[input: unknown, ctx: QueryCtx<TState>], unknown | Promise<unknown>>;
   preload?: BivariantCallback<[input: unknown, ctx: QueryCtx<TState>], void | Promise<void>>;
   static?: QueryStaticDefinition<TState, unknown, unknown>;
 };
@@ -128,7 +170,10 @@ export type AnyCommandDefinition<TState> = {
   description?: string;
   input: AnySchema;
   output: AnySchema;
-  handler: BivariantCallback<[input: unknown, ctx: CommandCtx<TState>], unknown | Promise<unknown>>;
+  handler?: BivariantCallback<
+    [input: unknown, ctx: CommandCtx<TState>],
+    unknown | Promise<unknown>
+  >;
 };
 
 /** Named query map attached to a service definition. */
@@ -179,6 +224,42 @@ export type ServiceInstance<
 export type CreateServiceOptions = {
   store?: StaticStore;
 };
+
+/** Internal runtime options when constructing a service runtime directly. */
+export type CreateServiceRuntimeOptions = CreateServiceOptions & {
+  registryApi: ServiceRegistryApi;
+};
+
+export type ServiceQueryRegistration<TState, TQuery extends AnyQueryDefinition<TState>> = Pick<
+  TQuery,
+  'handler' | 'preload' | 'static'
+>;
+
+export type ServiceCommandRegistration<
+  TState,
+  TCommand extends AnyCommandDefinition<TState>,
+> = Pick<TCommand, 'handler'>;
+
+export type ServiceRegistrationOptions<
+  TState,
+  TQueries extends Queries<TState>,
+  TCommands extends Commands<TState>,
+> = {
+  queries?: {
+    [TKey in keyof TQueries]?: ServiceQueryRegistration<TState, TQueries[TKey]>;
+  };
+  commands?: {
+    [TKey in keyof TCommands]?: ServiceCommandRegistration<TState, TCommands[TKey]>;
+  };
+};
+
+export type ServerServiceRegistration<
+  TState,
+  TQueries extends Queries<TState>,
+  TCommands extends Commands<TState>,
+> = {
+  definition: ServiceDefinition<TState, TQueries, TCommands>;
+} & ServiceRegistrationOptions<TState, TQueries, TCommands>;
 
 /** One completed static build task before it is merged into the final store map. */
 export type BuildTaskResult = {

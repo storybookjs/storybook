@@ -2,9 +2,12 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { defineMain } from '@storybook/react-vite/node';
+import type { Options, StorybookConfigRaw } from 'storybook/internal/types';
 
 import react from '@vitejs/plugin-react';
+import type { InlineConfig } from 'vite';
 
+import { registerOpenServiceDebugService } from './open-service-debug-service.ts';
 import { BROWSER_TARGETS } from '../core/src/shared/constants/environments-support.ts';
 
 const currentFilePath = fileURLToPath(import.meta.url);
@@ -151,8 +154,15 @@ const config = defineMain({
     experimentalTestSyntax: true,
     changeDetection: true,
   },
+  services: async (_value: void, options: Options) => {
+    await registerOpenServiceDebugService(
+      options.presets.apply<NonNullable<StorybookConfigRaw['storyIndexGenerator']>>(
+        'storyIndexGenerator'
+      )
+    );
+  },
   staticDirs: [{ from: './bench/bundle-analyzer', to: '/bundle-analyzer' }],
-  viteFinal: async (viteConfig, { configType }) => {
+  viteFinal: async (viteConfig: InlineConfig, { configType }: Options) => {
     const { mergeConfig } = await import('vite');
 
     return mergeConfig(viteConfig, {
@@ -184,7 +194,7 @@ const config = defineMain({
       },
     } satisfies typeof viteConfig);
   },
-  // logLevel: 'debug',
+  logLevel: 'verbose',
 });
 
 export default config;

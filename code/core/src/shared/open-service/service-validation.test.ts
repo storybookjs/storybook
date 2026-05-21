@@ -4,8 +4,8 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { z } from 'zod';
 
 import { defineQuery, defineService } from './service-definition.ts';
-import { buildStaticFiles } from './static-build.ts';
-import { clearRegistry, createService, getService } from './service-runtime.ts';
+import { createService } from './service-runtime.ts';
+import { buildStaticFiles, clearRegistry, registerService } from './server.ts';
 import {
   createInvalidCommandOutputServiceDef,
   createInvalidQueryOutputServiceDef,
@@ -34,7 +34,7 @@ afterEach(() => {
 
 describe('service validation', () => {
   it('shows the full actionable message for invalid query input', async () => {
-    const service = getService(mutableRecordLookupServiceDef);
+    const service = registerService(mutableRecordLookupServiceDef);
 
     await expectValidationMessage(
       () => service.queries.getRecordFields({} as unknown as { entryId: string }),
@@ -58,7 +58,7 @@ describe('service validation', () => {
   });
 
   it('shows the full actionable message for invalid command input', async () => {
-    const service = getService(mutableRecordLookupServiceDef);
+    const service = registerService(mutableRecordLookupServiceDef);
 
     await expectValidationMessage(
       () =>
@@ -161,7 +161,7 @@ describe('service validation', () => {
   });
 
   it('accepts unexpected query input fields when the schema allows them', async () => {
-    const service = getService(mutableRecordLookupServiceDef);
+    const service = registerService(mutableRecordLookupServiceDef);
 
     await expect(
       service.queries.getRecordFields({
@@ -172,7 +172,7 @@ describe('service validation', () => {
   });
 
   it('accepts unexpected command input fields when the schema allows them', async () => {
-    const service = getService(mutableRecordLookupServiceDef);
+    const service = registerService(mutableRecordLookupServiceDef);
 
     await expect(
       service.commands.assignRecordField({

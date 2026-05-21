@@ -1,6 +1,6 @@
 {
   "name": "@storybook/web-components-vite",
-  "version": "10.4.0-alpha.19",
+  "version": "10.5.0-alpha.0",
   "description": "Storybook for Web Components and Vite: Develop, document, and test UI components in isolation",
   "keywords": [
     "storybook",

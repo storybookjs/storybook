@@ -22,6 +22,7 @@ export interface ArgControlProps {
   updateArgs: (args: Args) => void;
   isHovered: boolean;
   storyId?: string;
+  controlsId?: string;
 }
 
 const Controls: Record<string, FC<any>> = {
@@ -44,7 +45,14 @@ const Controls: Record<string, FC<any>> = {
 
 const NoControl = () => <>-</>;
 
-export const ArgControl: FC<ArgControlProps> = ({ row, arg, updateArgs, isHovered, storyId }) => {
+export const ArgControl: FC<ArgControlProps> = ({
+  row,
+  arg,
+  updateArgs,
+  isHovered,
+  storyId,
+  controlsId,
+}) => {
   const { key, control } = row;
 
   const [isFocused, setFocused] = useState(false);
@@ -88,6 +96,7 @@ export const ArgControl: FC<ArgControlProps> = ({ row, arg, updateArgs, isHovere
   const props = {
     name: key,
     storyId,
+    controlsId,
     argType: row,
     value: boxedValue.value,
     onChange,

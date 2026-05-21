@@ -51,7 +51,7 @@
   "dependencies": {
     "@storybook/global": "^5.0.0",
     "type-fest": "~2.19",
-    "vue-component-type-helpers": "latest"
+    "vue-component-type-helpers": "^3.2.9"
   },
   "devDependencies": {
     "@testing-library/vue": "^8.0.0",

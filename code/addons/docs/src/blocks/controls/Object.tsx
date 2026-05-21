@@ -8,7 +8,7 @@ import { AddIcon, EditIcon, SubtractIcon } from '@storybook/icons';
 import { cloneDeep } from 'es-toolkit/object';
 import { styled, useTheme } from 'storybook/theming';
 
-import { getControlId, getControlSetterButtonId } from './helpers';
+import { getControlId, SetValueButton } from './helpers';
 import { JsonTree } from './react-editable-json-tree';
 import type { ControlProps, ObjectConfig, ObjectValue } from './types';
 
@@ -205,14 +205,9 @@ export const ObjectControl: FC<ObjectProps> = ({ name, storyId, value, onChange,
 
   if (!hasData) {
     return (
-      <Button
-        ariaLabel={false}
-        disabled={readonly}
-        id={getControlSetterButtonId(name, storyId)}
-        onClick={onForceVisible}
-      >
+      <SetValueButton name={name} storyId={storyId} onClick={onForceVisible} disabled={readonly}>
         Set object
-      </Button>
+      </SetValueButton>
     );
   }
 

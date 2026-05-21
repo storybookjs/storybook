@@ -1,11 +1,11 @@
 import type { ChangeEvent, FC } from 'react';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 
-import { Button, Form } from 'storybook/internal/components';
+import { Form } from 'storybook/internal/components';
 
 import { styled } from 'storybook/theming';
 
-import { getControlId, getControlSetterButtonId } from './helpers';
+import { getControlId, SetValueButton } from './helpers';
 import type { ControlProps, NumberConfig, NumberValue } from './types';
 
 const Wrapper = styled.label({
@@ -99,16 +99,9 @@ export const NumberControl: FC<NumberProps> = ({
 
   if (value === undefined) {
     return (
-      <Button
-        ariaLabel={false}
-        variant="outline"
-        size="medium"
-        id={getControlSetterButtonId(name, storyId)}
-        onClick={onForceVisible}
-        disabled={readonly}
-      >
+      <SetValueButton name={name} storyId={storyId} onClick={onForceVisible} disabled={readonly}>
         Set number
-      </Button>
+      </SetValueButton>
     );
   }
 

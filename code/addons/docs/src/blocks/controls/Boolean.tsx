@@ -1,13 +1,11 @@
 import type { FC } from 'react';
 import React, { useCallback } from 'react';
 
-import { Button } from 'storybook/internal/components';
-
 import { opacify, transparentize } from 'polished';
 import type { CSSObject, StorybookTheme } from 'storybook/theming';
 import { srOnlyStyles, styled } from 'storybook/theming';
 
-import { getControlId, getControlSetterButtonId } from './helpers';
+import { getControlId, SetValueButton } from './helpers';
 import type { BooleanConfig, BooleanValue, ControlProps } from './types';
 
 const getBooleanControlStyles = (theme: StorybookTheme): CSSObject => ({
@@ -133,16 +131,9 @@ export const BooleanControl: FC<BooleanProps> = ({
   const readonly = !!argType?.table?.readonly;
   if (value === undefined) {
     return (
-      <Button
-        ariaLabel={false}
-        variant="outline"
-        size="medium"
-        id={getControlSetterButtonId(name, storyId)}
-        onClick={onSetFalse}
-        disabled={readonly}
-      >
+      <SetValueButton name={name} storyId={storyId} onClick={onSetFalse} disabled={readonly}>
         Set boolean
-      </Button>
+      </SetValueButton>
     );
   }
   const controlId = getControlId(name, storyId);

@@ -37,7 +37,7 @@ const syncStoryIndexInputSchema = v.object({ reason: v.string() });
 
 type StoryIndexGeneratorInstance = NonNullable<StorybookConfigRaw['storyIndexGenerator']>;
 
-function createDebugServiceDef(storyIndexGeneratorPromise: Promise<any>) {
+function createDebugServiceDef(storyIndexGeneratorPromise: Promise<StoryIndexGeneratorInstance>) {
   return defineService({
     id: DEBUG_SERVICE_ID,
     description:

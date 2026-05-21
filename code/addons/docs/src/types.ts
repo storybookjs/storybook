@@ -69,6 +69,7 @@ type CanvasBlockParameters = {
    * buttons that do anything you specify in the onClick function.
    */
   additionalActions?: {
+    ariaLabel?: string;
     className?: string;
     disabled?: boolean;
     onClick: () => void;

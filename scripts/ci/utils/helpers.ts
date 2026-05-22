@@ -170,12 +170,8 @@ export const verdaccio = {
 export const workflow = {
   restoreLinux: (checkoutOpts: { forceHttps?: boolean; shallow?: boolean } = {}) => [
     git.checkout(checkoutOpts),
-    // Restore the shared cache first, then attach the pipeline workspace on top
-    // so the freshly-built `dist`/`node_modules` from `build_linux` always win
-    // over any stale (or missing) cache entry. The shared cache is gated on
-    // `isTrustedAuthor()`, so for community/fork PRs the workspace is the only
-    // reliable source — see `build_linux` in common-jobs.ts.
-    cache.attach(CACHE_KEYS()),
+    // Downstream jobs should consume precomputed outputs exclusively from the
+    // pipeline workspace to avoid stale cache interference and trust gating.
     workspace.attach(),
   ],
   restoreWindows: (at = WINDOWS_ROOT_DIR, checkoutOpts: { shallow?: boolean } = {}) => [

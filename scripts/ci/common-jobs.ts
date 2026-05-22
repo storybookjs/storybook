@@ -29,6 +29,7 @@ export const build_linux = defineJob('Build (linux)', (workflowName) => ({
   },
   steps: [
     git.checkout(),
+    cache.attach(CACHE_KEYS()),
     npm.install('.'),
     ...(isTrustedAuthor() ? [cache.persist(CACHE_PATHS, CACHE_KEYS()[0])] : []),
     git.check(),

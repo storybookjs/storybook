@@ -417,7 +417,7 @@ describe('MCP Endpoint E2E Tests', () => {
 				                "description": "One sentence explaining why these stories are grouped together.",
 				                "type": "string",
 				              },
-				              "sampleStoryIds": {
+				              "storyIds": {
 				                "description": "Story IDs that represent this collection (e.g. "button--primary"). The page renders exactly these.",
 				                "items": {
 				                  "type": "string",
@@ -432,7 +432,7 @@ describe('MCP Endpoint E2E Tests', () => {
 				            "required": [
 				              "title",
 				              "rationale",
-				              "sampleStoryIds",
+				              "storyIds",
 				            ],
 				            "type": "object",
 				          },

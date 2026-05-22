@@ -92,7 +92,7 @@ Always include the returned reviewUrl in your final user-facing response so the 
 				server.ctx.custom?.options?.channel?.emit(APPLY_REVIEW_STATE_EVENT, state);
 
 				const collectionCount = state.collections.length;
-				const storyCount = state.collections.reduce((n, c) => n + c.sampleStoryIds.length, 0);
+				const storyCount = state.collections.reduce((n, c) => n + c.storyIds.length, 0);
 
 				return {
 					content: [

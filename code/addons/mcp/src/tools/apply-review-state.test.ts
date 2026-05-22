@@ -21,13 +21,13 @@ const sampleReview: ReviewState = {
 		{
 			title: 'Button',
 			rationale: 'The directly changed component.',
-			sampleStoryIds: ['button--primary', 'button--secondary'],
+			storyIds: ['button--primary', 'button--secondary'],
 			kind: 'atomic',
 		},
 		{
 			title: 'Pages',
 			rationale: 'Pages that render Button.',
-			sampleStoryIds: ['page--home'],
+			storyIds: ['page--home'],
 			kind: 'transitive',
 		},
 	],

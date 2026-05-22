@@ -21,7 +21,7 @@ export const ReviewCollectionSchema = v.object({
 		v.string(),
 		v.description('One sentence explaining why these stories are grouped together.'),
 	),
-	sampleStoryIds: v.pipe(
+	storyIds: v.pipe(
 		v.array(v.string()),
 		v.description(
 			'Story IDs that represent this collection (e.g. "button--primary"). The page renders exactly these.',

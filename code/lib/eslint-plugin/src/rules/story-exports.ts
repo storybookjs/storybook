@@ -54,7 +54,7 @@ export default createStorybookRule({
     let hasStoriesOfImport = false;
     let nonStoryExportsConfig: IncludeExcludeOptions = {};
     let meta: TSESTree.ObjectExpression | null;
-    const namedExports: TSESTree.Identifier[] = [];
+    const namedExports: (TSESTree.Identifier | TSESTree.StringLiteral)[] = [];
 
     return {
       ImportSpecifier(node) {

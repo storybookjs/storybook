@@ -1153,6 +1153,104 @@ describe('CsfFile', () => {
       `);
     });
 
+    it('renamed export with a non-identifier string-literal name', () => {
+      // Repro: a story exported via `export { Local as '<string literal>' }` used to be
+      // silently dropped by the indexer instead of being picked up like any other story.
+      expect(
+        parse(
+          dedent`
+          export default { title: 'foo/bar' };
+          const ThisDoesNotWork = { args: { label: 'Button' } };
+          export { ThisDoesNotWork as 'あ' };
+        `,
+          true
+        )
+      ).toMatchInlineSnapshot(`
+        meta:
+          title: foo/bar
+        stories:
+          - id: foo-bar--あ
+            name: あ
+            localName: ThisDoesNotWork
+            parameters:
+              __id: foo-bar--あ
+            __stats:
+              play: false
+              render: false
+              loaders: false
+              beforeEach: false
+              globals: false
+              tags: false
+              storyFn: false
+              mount: false
+              moduleMock: false
+      `);
+    });
+
+    it('renamed export with a string-literal name containing spaces', () => {
+      expect(
+        parse(
+          dedent`
+          export default { title: 'foo/bar' };
+          const story = { render: () => {} };
+          export { story as 'With Spaces' };
+        `,
+          true
+        )
+      ).toMatchInlineSnapshot(`
+        meta:
+          title: foo/bar
+        stories:
+          - id: foo-bar--with-spaces
+            name: With Spaces
+            localName: story
+            parameters:
+              __id: foo-bar--with-spaces
+            __stats:
+              play: false
+              render: true
+              loaders: false
+              beforeEach: false
+              globals: false
+              tags: false
+              storyFn: false
+              mount: false
+              moduleMock: false
+      `);
+    });
+
+    it('meta exported via a string-literal default specifier', () => {
+      expect(
+        parse(
+          dedent`
+          const meta = { title: 'foo/bar' };
+          const story = {};
+          export { meta as 'default', story as A };
+        `,
+          true
+        )
+      ).toMatchInlineSnapshot(`
+        meta:
+          title: foo/bar
+        stories:
+          - id: foo-bar--a
+            name: A
+            localName: story
+            parameters:
+              __id: foo-bar--a
+            __stats:
+              play: false
+              render: false
+              loaders: false
+              beforeEach: false
+              globals: false
+              tags: false
+              storyFn: false
+              mount: false
+              moduleMock: false
+      `);
+    });
+
     it('support for parameter decorators', () => {
       expect(
         parse(dedent`
@@ -2158,6 +2256,38 @@ describe('CsfFile', () => {
           type: story
           subtype: story
           name: B
+      `);
+    });
+
+    it('generates index inputs for renamed string-literal exports', () => {
+      const { indexInputs } = loadCsf(
+        dedent`
+      export default { title: 'custom foo title' };
+
+      const ThisDoesNotWork = { args: { label: 'Button' } };
+      export { ThisDoesNotWork as 'あ' };
+    `,
+        { makeTitle, fileName: 'foo/bar.stories.js' }
+      ).parse();
+
+      expect(indexInputs).toMatchInlineSnapshot(`
+        - exportName: あ
+          title: custom foo title
+          tags: []
+          __id: custom-foo-title--あ
+          __stats:
+            play: false
+            render: false
+            loaders: false
+            beforeEach: false
+            globals: false
+            tags: false
+            storyFn: false
+            mount: false
+            moduleMock: false
+          type: story
+          subtype: story
+          name: あ
       `);
     });
 

@@ -26,8 +26,8 @@ function getSandboxSetupSteps(template: string) {
     extraSteps.push({
       'node/install': {
         'install-yarn': true,
-        // Currently using Node 22.22.1 as minimum supported version for Angular sandboxes
-        'node-version': '22.22.1',
+        // Currently using Node 22.22.3 as minimum supported version for Angular sandboxes
+        'node-version': '22.22.3',
       },
     });
   }

@@ -60,7 +60,6 @@
     "react": "^18.2.0",
     "react-joyride/type-fest": "~2.19",
     "rxjs": "^7.8.2",
-    "type-fest": "~2.19",
     "typescript": "^5.9.3"
   },
   "devDependencies": {

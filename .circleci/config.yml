@@ -17,6 +17,10 @@ parameters:
     default: ''
     description: The PR number
     type: string
+  ghTrustedAuthor:
+    default: 'false'
+    description: Whether the PR author is a trusted author who should be allowed to persist to shared caches
+    type: string
   workflow:
     default: skipped
     description: Which workflow to run
@@ -30,7 +34,7 @@ parameters:
 
 jobs:
   generate-and-run-config:
-    executor: 
+    executor:
       name: node/default
       resource_class: large
     steps:
@@ -44,7 +48,9 @@ jobs:
       - run:
           name: Generate config
           command: |
-            yarn dlx jiti ./scripts/ci/main.ts --workflow=<< pipeline.parameters.workflow >>
+            yarn dlx jiti ./scripts/ci/main.ts \
+              --workflow=<< pipeline.parameters.workflow >> \
+              --gh-trusted-author=<< pipeline.parameters.ghTrustedAuthor >>
       - continuation/continue:
           configuration_path: .circleci/config.generated.yml
 workflows:

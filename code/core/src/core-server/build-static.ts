@@ -130,7 +130,7 @@ export async function buildStaticStandalone(options: BuildStaticStandaloneOption
   const effects: Promise<void>[] = [];
 
   global.FEATURES = features;
-  await presets.apply('services');
+  await presets.apply('experimental_services');
 
   if (!options.previewOnly) {
     await buildOrThrow(async () =>

@@ -290,7 +290,7 @@ export async function buildDevStandalone(
 
   const features = await presets.apply('features');
   global.FEATURES = features;
-  await presets.apply('services');
+  await presets.apply('experimental_services');
   await presets.apply('experimental_serverChannel', channel);
 
   const fullOptions: Options = {

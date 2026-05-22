@@ -102,7 +102,8 @@ function applyRegistration<
   };
 }
 
-const registryApi: ServiceRegistryApi = {
+/** Shared registry-facing API handed to every runtime so handlers can resolve other services. */
+export const registryApi: ServiceRegistryApi = {
   listServices,
   describeService,
   getService,

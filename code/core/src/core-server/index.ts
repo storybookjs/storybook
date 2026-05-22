@@ -17,7 +17,11 @@ export { loadStorybook as experimental_loadStorybook } from './load.ts';
 
 export { Tag } from '../shared/constants/tags.ts';
 export { analyzeMdx } from './utils/analyze-mdx.ts';
-export { defineCommand, defineQuery, defineService } from '../shared/open-service/index.ts';
+export {
+  defineCommand as experimental_defineCommand,
+  defineQuery as experimental_defineQuery,
+  defineService as experimental_defineService,
+} from '../shared/open-service/index.ts';
 export type {
   Command,
   CommandCtx,
@@ -37,10 +41,10 @@ export type {
   ServerServiceRegistration,
 } from '../shared/open-service/index.ts';
 export {
-  describeService,
-  getService,
-  listServices,
-  registerService,
+  describeService as experimental_describeService,
+  getService as experimental_getService,
+  listServices as experimental_listServices,
+  registerService as experimental_registerService,
 } from '../shared/open-service/server.ts';
 
 export { UniversalStore as experimental_UniversalStore } from '../shared/universal-store/index.ts';

@@ -4,11 +4,12 @@ import type { StorybookConfigRaw } from 'storybook/internal/types';
 import { logger } from 'storybook/internal/node-logger';
 
 import {
-  describeService,
-  defineCommand,
-  defineQuery,
-  defineService,
-  registerService,
+  experimental_defineCommand as defineCommand,
+  experimental_defineQuery as defineQuery,
+  experimental_defineService as defineService,
+  experimental_describeService as describeService,
+  experimental_listServices as listServices,
+  experimental_registerService as registerService,
 } from 'storybook/internal/core-server';
 
 const DEBUG_SERVICE_ID = 'storybook/internal/open-service-debug';
@@ -94,9 +95,7 @@ function createDebugServiceDef(storyIndexGeneratorPromise: Promise<StoryIndexGen
         handler: async (input, ctx) => {
           const value = ctx.self.state.preloadedByEntryId[input.entryId] ?? null;
 
-          logger.info(
-            `[open-service debug] query getPreloadedValue(${input.entryId}) => ${value}`
-          );
+          logger.info(`[open-service debug] query getPreloadedValue(${input.entryId}) => ${value}`);
           return value;
         },
       }),
@@ -140,8 +139,7 @@ function createDebugServiceDef(storyIndexGeneratorPromise: Promise<StoryIndexGen
         input: preloadVisitInputSchema,
         output: v.undefined(),
         handler: async (input, ctx) => {
-          const selfService = await ctx.getService(DEBUG_SERVICE_ID);
-          const summary = (await selfService.queries.getStoryIndexSummary({
+          const summary = (await ctx.self.queries.getStoryIndexSummary({
             includeSampleIds: false,
           })) as { entryCount: number; sampleIds: string[] };
           const value = `${input.source}:${input.entryId}:${summary.entryCount}`;
@@ -172,12 +170,11 @@ function createDebugServiceDef(storyIndexGeneratorPromise: Promise<StoryIndexGen
 export async function registerOpenServiceDebugService(
   storyIndexGeneratorPromise: Promise<StoryIndexGeneratorInstance>
 ): Promise<void> {
-  try {
-    await describeService(DEBUG_SERVICE_ID);
+  const registeredServices = await listServices();
+
+  if (registeredServices.some((service) => service.id === DEBUG_SERVICE_ID)) {
     logger.info('[open-service debug] debug service already registered');
     return;
-  } catch {
-    // The service is not registered yet in this process.
   }
 
   const service = registerService(createDebugServiceDef(storyIndexGeneratorPromise));

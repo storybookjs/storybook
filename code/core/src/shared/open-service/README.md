@@ -149,9 +149,9 @@ than rejecting them.
 
 ## Server Registration Flow
 
-Server-side registration happens through the `services` preset hook. Storybook calls
-`await presets.apply('services')` during both dev startup and static builds, and each service
-author's preset implementation is responsible for calling `registerService(...)` directly.
+Server-side registration happens through the `experimental_services` preset hook. Storybook calls
+`await presets.apply('experimental_services')` during both dev startup and static builds, and each
+service author's preset implementation is responsible for calling `registerService(...)` directly.
 
 That split is intentional:
 
@@ -176,7 +176,7 @@ When a server registers a service definition:
 
 ```mermaid
 sequenceDiagram
-  participant Preset as services preset
+  participant Preset as experimental_services preset
   participant Registry as registerService
   participant Runtime as createServiceRuntime
   participant Schema as validateSchema

@@ -114,8 +114,8 @@ export interface Presets {
     args?: any
   ): Promise<StorybookConfigRaw['staticDirs']>;
   apply(
-    extension: 'services',
-    config?: StorybookConfigRaw['services'],
+    extension: 'experimental_services',
+    config?: StorybookConfigRaw['experimental_services'],
     args?: any
   ): Promise<void>;
 
@@ -644,7 +644,7 @@ export interface StorybookConfigRaw {
 
   tags?: TagsOptions;
 
-  services?: void;
+  experimental_services?: void;
 }
 
 /**
@@ -752,7 +752,7 @@ export interface StorybookConfig {
   tags?: PresetValue<StorybookConfigRaw['tags']>;
 
   /** Run open-service registration side effects for the server environment. */
-  services?: PresetValue<StorybookConfigRaw['services']>;
+  experimental_services?: PresetValue<StorybookConfigRaw['experimental_services']>;
 }
 
 export type PresetValue<T> = T | ((config: T, options: Options) => T | Promise<T>);

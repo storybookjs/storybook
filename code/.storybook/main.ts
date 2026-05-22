@@ -154,8 +154,10 @@ const config = defineMain({
     experimentalTestSyntax: true,
     changeDetection: true,
   },
-  services: async (_value: void, options: Options) => {
-    if (true) {
+  experimental_services: async (_value: void, options: Options) => {
+    const logLevel = await options.presets.apply('logLevel');
+
+    if (logLevel === 'debug') {
       await registerOpenServiceDebugService(
         options.presets.apply<NonNullable<StorybookConfigRaw['storyIndexGenerator']>>(
           'storyIndexGenerator'

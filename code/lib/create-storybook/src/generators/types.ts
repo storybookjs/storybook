@@ -122,6 +122,13 @@ export interface GeneratorModule {
   }: {
     packageManager: JsPackageManager;
   }) => Promise<void> | void;
+  /**
+   * The function that runs after dependencies have been installed. Use this for tasks that require
+   * the project's dependencies (e.g. CLI tools shipped by a dependency) to be available on disk.
+   *
+   * Examples: re-aligning native package versions in an Expo project with `npx expo install --fix`.
+   */
+  postInstall?: ({ packageManager }: { packageManager: JsPackageManager }) => Promise<void> | void;
 }
 
 export type CommandOptions = {

@@ -25,5 +25,6 @@ export const EXISTING_RESOLUTIONS = new Set([
   'react',
   'rxjs',
   'type-fest',
+  'react-joyride/type-fest',
   'typescript',
 ]);

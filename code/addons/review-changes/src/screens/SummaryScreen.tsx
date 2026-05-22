@@ -1,4 +1,4 @@
-import { type FC, useEffect, useState } from 'react';
+import React, { type FC, useEffect, useState } from 'react';
 
 import { Button, Collapsible, TabsView } from 'storybook/internal/components';
 import { styled } from 'storybook/theming';

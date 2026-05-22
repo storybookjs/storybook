@@ -1,4 +1,4 @@
-import type { FC } from 'react';
+import React, { type FC } from 'react';
 
 import { Button } from 'storybook/internal/components';
 import { styled } from 'storybook/theming';

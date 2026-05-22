@@ -2,6 +2,7 @@ import { readFile } from 'node:fs/promises';
 
 import {
   JsPackageManagerFactory,
+  cache,
   getConfigInfo,
   getInterpretedFile,
   getProjectRoot,
@@ -15,7 +16,7 @@ import {
 } from 'storybook/internal/common';
 import { CLI_COLORS, deprecate, logger, prompt } from 'storybook/internal/node-logger';
 import { MissingBuilderError, NoStatsForViteDevError } from 'storybook/internal/server-errors';
-import { oneWayHash, telemetry } from 'storybook/internal/telemetry';
+import { detectAgent, oneWayHash, telemetry } from 'storybook/internal/telemetry';
 import type { BuilderOptions, CLIOptions, LoadOptions, Options } from 'storybook/internal/types';
 
 import { global } from '@storybook/global';
@@ -34,12 +35,43 @@ import { getManagerBuilder, getPreviewBuilder } from './utils/get-builders.ts';
 import { getServerChannel } from './utils/get-server-channel.ts';
 import { outputStartupInformation } from './utils/output-startup-information.ts';
 import { outputStats } from './utils/output-stats.ts';
+import {
+  getMcpMetadataFromMainConfig,
+  type RuntimeInstanceRecord,
+  writeStorybookRuntimeInstanceRecord,
+} from './utils/runtime-instance-registry.ts';
 import { getServerAddresses, getServerChannelUrl, getServerPort } from './utils/server-address.ts';
 import { getServer } from './utils/server-init.ts';
 import { stripCommentsAndStrings } from './utils/strip-comments-and-strings.ts';
 import { updateCheck } from './utils/update-check.ts';
 import { warnOnIncompatibleAddons } from './utils/warnOnIncompatibleAddons.ts';
 import { warnWhenUsingArgTypesRegex } from './utils/warnWhenUsingArgTypesRegex.ts';
+
+/**
+ * Resolves the initialPath for the browser open URL.
+ * CLI-provided initialPath always wins. If not set and not running in an agent context,
+ * checks the project cache for an `onboarding-pending` entry written by `storybook init`.
+ * If found, returns '/onboarding' and removes the cache entry so it only triggers once.
+ * The cache entry is only written by init when onboarding is known to be supported,
+ * so no further addon check is needed here.
+ */
+export async function resolveOnboardingInitialPath(
+  cliInitialPath: string | undefined
+): Promise<string | undefined> {
+  if (cliInitialPath || detectAgent()) {
+    // Explicit CLI flag wins; leave cache intact for next run.
+    // Agent environments skip onboarding (no browser to open).
+    return cliInitialPath;
+  }
+  const onboardingPending = await cache.get('onboarding-pending').catch(() => {});
+  if (onboardingPending) {
+    try {
+      await cache.remove('onboarding-pending');
+    } catch {}
+    return '/onboarding';
+  }
+  return undefined;
+}
 
 export async function buildDevStandalone(
   options: CLIOptions &
@@ -87,19 +119,22 @@ export async function buildDevStandalone(
 
   const cacheKey = oneWayHash(relative(getProjectRoot(), configDir));
 
-  const cacheOutputDir = resolvePathInStorybookCache('public', cacheKey);
-  let outputDir = resolve(options.outputDir || cacheOutputDir);
-  if (options.smokeTest) {
-    outputDir = cacheOutputDir;
-  }
-
+  // Resolve initialPath: CLI flag takes precedence; fall back to onboarding-pending cache entry.
   invariant(port, 'expected options to have a port');
+  options.initialPath = await resolveOnboardingInitialPath(options.initialPath);
+
   const { address: localAddress, networkAddress } = getServerAddresses(
     port,
     options.host,
     options.https ? 'https' : 'http',
     options.initialPath
   );
+
+  const cacheOutputDir = resolvePathInStorybookCache('public', cacheKey);
+  let outputDir = resolve(options.outputDir || cacheOutputDir);
+  if (options.smokeTest) {
+    outputDir = cacheOutputDir;
+  }
 
   options.port = port;
   options.versionCheck = versionCheck;
@@ -124,6 +159,7 @@ export async function buildDevStandalone(
 
   const config = await loadMainConfig(options);
   const { core, framework } = config;
+
   const corePresets = [];
 
   let frameworkName = typeof framework === 'string' ? framework : framework?.name;
@@ -179,7 +215,7 @@ export async function buildDevStandalone(
     }),
   });
 
-  const { allowedHosts, renderer, builder, disableTelemetry } = await presets.apply('core', {});
+  const { allowedHosts, renderer, builder } = await presets.apply('core', {});
 
   // '0.0.0.0' binds to all interfaces, which is useful for Docker and other containerized environments.
   // By default we allow requests from all hosts in this case, but the user should be made aware of the risk.
@@ -198,10 +234,8 @@ export async function buildDevStandalone(
     throw new MissingBuilderError();
   }
 
-  if (!options.disableTelemetry && !disableTelemetry) {
-    if (versionCheck.success && !versionCheck.cached) {
-      telemetry('version-update');
-    }
+  if (versionCheck.success && !versionCheck.cached) {
+    telemetry('version-update');
   }
 
   const resolvedPreviewBuilder = typeof builder === 'string' ? builder : builder.name;
@@ -273,6 +307,18 @@ export async function buildDevStandalone(
   const { managerResult, previewResult } = await buildOrThrow(async () =>
     storybookDevServer(fullOptions, server)
   );
+
+  const mcp: RuntimeInstanceRecord['mcp'] = getMcpMetadataFromMainConfig(config);
+
+  await writeStorybookRuntimeInstanceRecord({
+    address: localAddress,
+    mcp,
+    port,
+    storybookVersion,
+  }).catch((error: unknown) => {
+    logger.warn('Storybook failed to write its runtime instance registry record.');
+    logger.debug(error instanceof Error ? (error.stack ?? error.message) : String(error));
+  });
 
   const previewTotalTime = previewResult?.totalTime;
   const managerTotalTime = managerResult?.totalTime;

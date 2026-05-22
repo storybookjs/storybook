@@ -20,6 +20,7 @@ export const afterEach: AfterEach<any> = async ({
 }) => {
   const a11yParameter: A11yParameters | undefined = parameters.a11y;
   const a11yGlobals = globals.a11y;
+  // we do not run a11y checks as part of ghost stories runs
   const isGhostStories = !!globals.ghostStories;
 
   const shouldRunEnvironmentIndependent =

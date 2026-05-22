@@ -183,7 +183,7 @@ export function extractMockCalls(
       },
     });
 
-    if (!options.coreOptions?.disableTelemetry) {
+    if (mocks.length > 0) {
       telemetry(
         'mocking',
         {

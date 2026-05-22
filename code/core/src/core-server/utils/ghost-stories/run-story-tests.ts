@@ -8,10 +8,21 @@ import { join } from 'pathe';
 import { parseVitestResults } from './parse-vitest-report.ts';
 import type { TestRunSummary } from './types.ts';
 
-export async function runStoryTests(componentFilePaths: string[]): Promise<TestRunSummary> {
+/**
+ * Run ghost stories: execute vitest on component file paths to auto-generate
+ * and test stories that don't exist on disk.
+ *
+ * @param componentFilePaths - Absolute paths to component files to test.
+ * @param options.cwd - Working directory for vitest. Defaults to process.cwd().
+ */
+export async function runStoryTests(
+  componentFilePaths: string[],
+  options?: { cwd?: string; ghostRun?: boolean }
+): Promise<TestRunSummary> {
+  const cwd = options?.cwd;
   try {
     // Create the cache directory for story discovery tests
-    const cacheDir = resolvePathInStorybookCache('ghost-stories-tests');
+    const cacheDir = resolvePathInStorybookCache('story-tests');
     await mkdir(cacheDir, { recursive: true });
 
     // Create timestamped output file
@@ -23,7 +34,14 @@ export async function runStoryTests(componentFilePaths: string[]): Promise<TestR
     let testFailureMessage;
 
     try {
-      // Execute the test runner command with specific story files
+      // Execute the test runner command with specific story files.
+      //
+      // STORYBOOK_INTERNAL_TEST_RUN marks this as a dev-server-initiated run
+      // (ghost-stories or ai-setup-final-scoring) so the vitest plugin can
+      // skip telemetry meant for agent-driven external runs. Without this,
+      // ghost-stories runs would trigger `ai-setup-self-healing-scoring`
+      // events whose results have nothing to do with the agent's iterative
+      // self-healing loop.
       const testProcess = executeCommand({
         command: 'npx',
         args: [
@@ -34,9 +52,11 @@ export async function runStoryTests(componentFilePaths: string[]): Promise<TestR
           `--outputFile=${outputFile}`,
           ...componentFilePaths,
         ],
+        cwd,
         stdio: 'pipe',
         env: {
-          STORYBOOK_COMPONENT_PATHS: componentFilePaths.join(';'),
+          STORYBOOK_INTERNAL_TEST_RUN: '1',
+          ...(options?.ghostRun ? { STORYBOOK_COMPONENT_PATHS: componentFilePaths.join(';') } : {}),
         },
       });
 

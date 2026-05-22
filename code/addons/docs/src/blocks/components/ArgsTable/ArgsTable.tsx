@@ -160,6 +160,17 @@ export const TableWrapper = styled.table<{
             },
           }),
     },
+    // High contrast mode: ensure borders are visible with system colors
+    '@media (forced-colors: active)': {
+      tbody: {
+        filter: 'none',
+
+        '> tr > *': {
+          borderColor: 'CanvasText',
+        },
+      },
+    },
+
     // End awesome table styling
   },
 }));
@@ -205,6 +216,7 @@ export interface ArgsTableOptionProps {
   isLoading?: boolean;
   sort?: SortType;
   storyId?: string;
+  controlsId?: string;
 }
 interface ArgsTableDataProps {
   rows: ArgTypes;
@@ -329,6 +341,7 @@ export const ArgsTable: FC<ArgsTableProps> = (props) => {
     sort = 'none',
     isLoading,
     storyId,
+    controlsId,
   } = props;
 
   if ('error' in props) {
@@ -382,7 +395,14 @@ export const ArgsTable: FC<ArgsTableProps> = (props) => {
   }
   const expandable = Object.keys(groups.sections).length > 0;
 
-  const common = { updateArgs, compact, inAddonPanel, initialExpandedArgs, storyId };
+  const common = {
+    updateArgs,
+    compact,
+    inAddonPanel,
+    initialExpandedArgs,
+    storyId,
+    controlsId,
+  };
 
   return (
     <ResetWrapper>

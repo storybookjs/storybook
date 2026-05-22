@@ -2,7 +2,7 @@
 title: Storybook for Web components with Vite
 hideRendererSelector: true
 sidebar:
-  order: 11
+  order: 12
   title: Web components (Vite)
 ---
 
@@ -18,11 +18,15 @@ You can then get started [writing stories](../whats-a-story.mdx), [running tests
 
 ### Requirements
 
-<GetStartedVersions versions={[{
-  name: 'Vite',
-  range: '≥ 5',
-  icon: '/images/logos/builders/vite.svg'
-}]} />
+<GetStartedVersions
+  versions={[
+    {
+      name: 'Vite',
+      range: '≥ 5',
+      icon: '/images/logos/builders/vite.svg',
+    },
+  ]}
+/>
 
 ## Run Storybook
 
@@ -37,23 +41,16 @@ To build Storybook, run:
 You will find the output in the configured `outputDir` (default is `storybook-static`).
 
 ## FAQ
+
 ### How do I manually install the Web Components framework?
 
 First, install the framework:
 
-{/* prettier-ignore-start */}
-
 <CodeSnippets path="web-components-vite-install.md" />
-
-{/* prettier-ignore-end */}
 
 Then, update your `.storybook/main.js|ts` to change the framework property:
 
-{/* prettier-ignore-start */}
-
 <CodeSnippets path="web-components-vite-add-framework.md" />
-
-{/* prettier-ignore-end */}
 
 ## API
 
@@ -61,11 +58,7 @@ Then, update your `.storybook/main.js|ts` to change the framework property:
 
 You can pass an options object for additional configuration if needed:
 
-{/* prettier-ignore-start */}
-
 <CodeSnippets path="web-components-vite-framework-options.md" />
-
-{/* prettier-ignore-end */}
 
 The available options are:
 

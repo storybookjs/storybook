@@ -1,5 +1,6 @@
 import { fileURLToPath } from 'node:url';
 
+import type { ImportParser } from 'storybook/internal/core-server';
 import type { PresetProperty } from 'storybook/internal/types';
 
 export const previewAnnotations: PresetProperty<'previewAnnotations'> = async (
@@ -15,4 +16,11 @@ export const previewAnnotations: PresetProperty<'previewAnnotations'> = async (
     .concat(
       docsEnabled ? [fileURLToPath(import.meta.resolve('@storybook/vue3/entry-preview-docs'))] : []
     );
+};
+
+export const experimental_importParsers = async (
+  input: ImportParser[] = []
+): Promise<ImportParser[]> => {
+  const { vueImportParser } = await import('./parsers/index.ts');
+  return [...input, vueImportParser];
 };

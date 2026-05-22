@@ -1,9 +1,10 @@
-import { afterEach, beforeAll, vi } from 'vitest';
+import { beforeEach, afterEach, beforeAll, vi } from 'vitest';
 import type { RunnerTask } from 'vitest';
 
 import { Channel } from 'storybook/internal/channels';
 
 import { COMPONENT_TESTING_PANEL_ID } from '../constants.ts';
+import { isFunction } from 'es-toolkit/predicate';
 
 declare global {
   // eslint-disable-next-line @typescript-eslint/ban-ts-comment
@@ -34,10 +35,62 @@ export const modifyErrorMessage = ({ task }: { task: Task }) => {
   }
 };
 
+export const resetMousePositionBeforeTests = async () => {
+  try {
+    const browserCommands = await import('vitest/browser').then((module) => module.commands);
+    if ('resetMousePosition' in browserCommands && isFunction(browserCommands.resetMousePosition)) {
+      await browserCommands.resetMousePosition();
+    }
+  } catch (error) {
+    // Retry with Vitest 3 context module when vitest/browser is not found.
+    if (error instanceof Error && error.message.includes("Cannot find module 'vitest/browser'")) {
+      try {
+        const browserCommands = await import('@vitest/browser/context').then(
+          (module) => module.commands
+        );
+        if (
+          'resetMousePosition' in browserCommands &&
+          isFunction(browserCommands.resetMousePosition)
+        ) {
+          await browserCommands.resetMousePosition();
+        }
+        return;
+      } catch (vitest3Error) {
+        if (
+          vitest3Error instanceof Error &&
+          vitest3Error.message.includes("Cannot find module '@vitest/browser/context'")
+        ) {
+          return;
+        }
+        if (
+          vitest3Error instanceof Error &&
+          vitest3Error.message.includes('can be imported only inside the Browser Mode')
+        ) {
+          return;
+        }
+        throw vitest3Error;
+      }
+    }
+
+    // Ignore "Error: vitest/browser can be imported only inside the Browser Mode."
+    if (
+      error instanceof Error &&
+      error.message.includes('can be imported only inside the Browser Mode')
+    ) {
+      return;
+    }
+
+    // Throw anything else
+    throw error;
+  }
+};
+
 beforeAll(() => {
   if (globalThis.globalProjectAnnotations) {
     return globalThis.globalProjectAnnotations.beforeAll();
   }
 });
+
+beforeEach(resetMousePositionBeforeTests);
 
 afterEach(modifyErrorMessage);

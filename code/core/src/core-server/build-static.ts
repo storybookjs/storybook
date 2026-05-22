@@ -112,7 +112,7 @@ export async function buildStaticStandalone(options: BuildStaticStandaloneOption
   ]);
 
   const invokedBy = process.env.STORYBOOK_INVOKED_BY;
-  if (!core?.disableTelemetry && invokedBy) {
+  if (invokedBy) {
     // NOTE: we don't await this event to avoid slowing things down.
     // This could result in telemetry events being lost.
     telemetry('test-run', { runner: invokedBy, watch: false }, { configDir: options.configDir });
@@ -208,7 +208,7 @@ export async function buildStaticStandalone(options: BuildStaticStandaloneOption
 
   // Now the code has successfully built, we can count this as a 'build' event.
   // NOTE: we don't send the 'build' event for test runs as we want to be as fast as possible.
-  if (!core?.disableTelemetry && !options.test) {
+  if (!options.test) {
     try {
       const generator = await storyIndexGeneratorPromise;
       const storyIndex = await generator?.getIndex();

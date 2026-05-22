@@ -21,6 +21,17 @@ export async function getManagerMainTemplate() {
   return getTemplatePath(`manager.ejs`);
 }
 
+export const customHeadHasFavicon = (head: string) => {
+  const linkTags = head.match(/<link\b[^>]*>/gi) || [];
+
+  return linkTags.some((tag) => {
+    const rel = tag.match(/\brel\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+))/i);
+    const value = rel?.[1] || rel?.[2] || rel?.[3] || '';
+
+    return value.split(/\s+/).some((token) => token.toLowerCase() === 'icon');
+  });
+};
+
 export const renderHTML = async (
   template: Promise<string>,
   title: Promise<string | false>,
@@ -38,6 +49,7 @@ export const renderHTML = async (
 ) => {
   const titleRef = await title;
   const templateRef = await template;
+  const headRef = (await customHead) || '';
   const stringifiedGlobals = Object.entries(globals).reduce(
     (transformed, [key, value]) => ({ ...transformed, [key]: JSON.stringify(value) }),
     {}
@@ -46,7 +58,7 @@ export const renderHTML = async (
   return render(templateRef, {
     title: titleRef ? `${titleRef} - Storybook` : 'Storybook',
     files: { js: jsFiles, css: cssFiles },
-    favicon: await favicon,
+    favicon: customHeadHasFavicon(headRef) ? '' : await favicon,
     globals: {
       FEATURES: JSON.stringify(await features, null, 2),
       REFS: JSON.stringify(await refs, null, 2),
@@ -59,7 +71,7 @@ export const renderHTML = async (
       TAGS_OPTIONS: JSON.stringify(await tagsOptions, null, 2),
       ...stringifiedGlobals,
     },
-    head: (await customHead) || '',
+    head: headRef,
     ignorePreview,
   });
 };

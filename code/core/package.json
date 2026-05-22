@@ -1,6 +1,6 @@
 {
   "name": "storybook",
-  "version": "10.5.0-alpha.1",
+  "version": "10.5.0-alpha.2",
   "description": "Storybook: Develop, document, and test UI components in isolation",
   "keywords": [
     "storybook",
@@ -381,6 +381,7 @@
     "ts-dedent": "^2.0.0",
     "tsconfig-paths": "^4.2.0",
     "type-fest": "^5.6.0",
+    "type-plus": "^8.0.0-beta.8",
     "typescript": "^5.8.3",
     "unique-string": "^3.0.0",
     "use-resize-observer": "^9.1.0",

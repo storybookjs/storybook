@@ -50,6 +50,17 @@ export const build_linux = defineJob('Build (linux)', (workflowName) => ({
     ...workflow.reportOnFailure(workflowName),
     artifact.persist(`code/bench/esbuild-metafiles`, 'bench'),
     workspace.persist([
+      // Workspace-root node_modules folders. Yarn hoists shared/singleton
+      // dependencies (e.g. `oxc-parser`, `vitest`, `type-fest`) here rather than
+      // into the per-package `code/<pkg>/node_modules` folders below. Downstream
+      // jobs otherwise only receive these via the shared `save_cache`, which is
+      // gated on `isTrustedAuthor()` — so community/fork PRs end up with a
+      // freshly-built `dist` but no root `node_modules`, producing errors like
+      // `Cannot find package 'oxc-parser'`. Persisting them to the (pipeline-
+      // scoped, un-gated) workspace makes downstream jobs correct for every PR.
+      `${WORKING_DIR}/node_modules`,
+      `${WORKING_DIR}/code/node_modules`,
+      `${WORKING_DIR}/scripts/node_modules`,
       ...glob
         .sync(['*/src', '*/*/src'], {
           cwd: join(dirname, '../../code'),

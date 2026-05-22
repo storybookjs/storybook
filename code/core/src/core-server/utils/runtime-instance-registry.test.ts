@@ -192,4 +192,26 @@ describe('writeStorybookRuntimeInstanceRecord', () => {
 
     await registration.cleanup();
   });
+
+  it('does not register process cleanup when disabled', async () => {
+    const listenerCounts = {
+      exit: process.listenerCount('exit'),
+      sigint: process.listenerCount('SIGINT'),
+      sigterm: process.listenerCount('SIGTERM'),
+    };
+    const registryDir = makeTempDir();
+    const registration = await writeStorybookRuntimeInstanceRecord({
+      address: 'http://localhost:6006/',
+      port: 6006,
+      registerCleanup: false,
+      registryDir,
+      storybookVersion: '10.5.0-alpha.0',
+    });
+
+    expect(process.listenerCount('exit')).toBe(listenerCounts.exit);
+    expect(process.listenerCount('SIGINT')).toBe(listenerCounts.sigint);
+    expect(process.listenerCount('SIGTERM')).toBe(listenerCounts.sigterm);
+
+    await registration.cleanup();
+  });
 });

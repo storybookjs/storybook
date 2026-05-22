@@ -6,7 +6,7 @@ import { Button, Form, ToggleButton } from 'storybook/internal/components';
 import { AddIcon, EditIcon, SubtractIcon } from '@storybook/icons';
 
 import { cloneDeep } from 'es-toolkit/object';
-import { styled, useTheme } from 'storybook/theming';
+import { styled } from 'storybook/theming';
 
 import { getControlId, getControlSetterButtonId } from './helpers';
 import { JsonTree } from './react-editable-json-tree';
@@ -171,7 +171,6 @@ export const ObjectControl: FC<ObjectProps> = ({
   onChange,
   argType,
 }) => {
-  const theme = useTheme();
   const data = useMemo(() => value && cloneDeep(value), [value]);
   const hasData = data !== null && data !== undefined;
   const [showRaw, setShowRaw] = useState(!hasData);
@@ -223,7 +222,7 @@ export const ObjectControl: FC<ObjectProps> = ({
     );
   }
 
-  const rawInputId = getControlId(name, storyId, controlsId)}
+  const rawInputId = getControlId(name, storyId, controlsId);
   const rawJSONForm = (
     <>
       <label htmlFor={rawInputId} className="sb-sr-only">
@@ -289,7 +288,7 @@ export const ObjectControl: FC<ObjectProps> = ({
               <SubtractIcon />
             </ActionButton>
           }
-          inputElement={(_: any, __: any, ___: any, key: string) =>
+          inputElement={(_: unknown, __: unknown, ___: unknown, key: string) =>
             key ? <Input onFocus={selectValue} onBlur={dispatchEnterKey} /> : <Input />
           }
           fallback={rawJSONForm}

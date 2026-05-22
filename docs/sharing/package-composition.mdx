@@ -1,8 +1,7 @@
 ---
-title: 'Package Composition'
+title: Package Composition
 sidebar:
   order: 5
-  title: Package Composition
 ---
 
 Storybook is widely used by component libraries and design systems. Design system authors can automatically compose their design systems inside their consumer’s Storybooks.
@@ -10,7 +9,9 @@ Storybook is widely used by component libraries and design systems. Design syste
 For example, if you use a design system package, its stories can appear alongside your own. That makes it convenient to cross reference usage documentation without leaving Storybook.
 
 <Callout variant="info">
-  Composition via a package requires a secure integration between the service where you publish Storybook and Storybook’s own APIs. We recommend [publishing Storybook to Chromatic](./publish-storybook.mdx#publish-storybook-with-chromatic) for full support of these features.
+
+Composition via a package requires a secure integration between the service where you publish Storybook and Storybook’s own APIs. We recommend [publishing Storybook to Chromatic](./publish-storybook.mdx#publish-storybook-with-chromatic) for full support of these features.
+
 </Callout>
 
 ## For consumers
@@ -23,11 +24,7 @@ Composition happens automatically if the package [supports](#for-authors) it. Wh
 
 If you want to configure how the composed Storybook behaves, you can disable the `ref` element in your [`.storybook/main.js`](../configure/index.mdx#configure-story-rendering)
 
-{/* prettier-ignore-start */}
-
 <CodeSnippets path="main-config-refs-disable.md" />
-
-{/* prettier-ignore-end */}
 
 ### Switching versions
 

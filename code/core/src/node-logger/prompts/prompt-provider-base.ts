@@ -40,7 +40,7 @@ export interface MultiSelectPromptOptions<T> extends BasePromptOptions {
 }
 
 export interface PromptOptions {
-  onCancel?: () => void;
+  onCancel?: () => void | Promise<void>;
 }
 
 export interface SpinnerInstance {

@@ -2,7 +2,7 @@ import { expect, within } from 'storybook/test';
 
 import preview from '../../../../.storybook/preview.tsx';
 import type { ReviewState } from '../review-state.ts';
-import { ReviewChangesScreen } from './ReviewChangesScreen.tsx';
+import { SummaryScreen } from './SummaryScreen.tsx';
 
 const minimal: ReviewState = {
   title: 'Button prop rename',
@@ -242,7 +242,7 @@ const atomicChange: ReviewState = {
 };
 
 const meta = preview.meta({
-  component: ReviewChangesScreen,
+  component: SummaryScreen,
   parameters: { layout: 'fullscreen' },
   args: {},
 });

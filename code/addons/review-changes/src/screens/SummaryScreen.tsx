@@ -12,9 +12,9 @@ import {
   StorybookIcon,
 } from '@storybook/icons';
 
-import type { ReviewCollection, ReviewState } from '../review-state.ts';
+import { CollectionGrid } from '../components/CollectionGrid.tsx';
 import { buildReviewChangesDetailsHref } from '../review-navigation.ts';
-import { ReviewCollectionGrid } from './ReviewCollectionGrid.tsx';
+import type { ReviewCollection, ReviewState } from '../review-state.ts';
 
 const Page = styled.div(({ theme }) => ({
   display: 'flex',
@@ -248,7 +248,7 @@ const CollectionsTab: FC<{
               </ClusterHead>
             )}
           >
-            <ReviewCollectionGrid
+            <CollectionGrid
               storyIds={collection.storyIds}
               getStoryHref={(_, storyIndex) =>
                 buildReviewChangesDetailsHref({ collectionIndex: index, storyIndex })
@@ -266,11 +266,11 @@ const CollectionsTab: FC<{
   </ClusterList>
 );
 
-export interface ReviewChangesScreenProps {
+export interface SummaryScreenProps {
   state: ReviewState | null;
 }
 
-export const ReviewChangesScreen: FC<ReviewChangesScreenProps> = ({ state }) => {
+export const SummaryScreen: FC<SummaryScreenProps> = ({ state }) => {
   const [tab, setTab] = useState<ReviewTab>('collections');
   const [expandedClusters, setExpandedClusters] = useState<Set<number>>(new Set());
 

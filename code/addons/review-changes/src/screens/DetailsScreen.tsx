@@ -82,7 +82,7 @@ const BottomRightPlaceholder = styled.div({
 
 const storyPreviewUrl = (id: string) => `iframe.html?id=${encodeURIComponent(id)}&viewMode=story`;
 
-export interface ReviewChangesDetailsScreenProps {
+export interface DetailsScreenProps {
   collectionTitle: string;
   storyId: string;
   storyIndex: number;
@@ -94,7 +94,7 @@ export interface ReviewChangesDetailsScreenProps {
   onMarkViewed?: () => void;
 }
 
-export const ReviewChangesDetailsScreen: FC<ReviewChangesDetailsScreenProps> = ({
+export const DetailsScreen: FC<DetailsScreenProps> = ({
   collectionTitle,
   storyId,
   storyIndex,

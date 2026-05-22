@@ -1,7 +1,7 @@
 import { expect, within } from 'storybook/test';
 
 import preview from '../../../../.storybook/preview.tsx';
-import { ReviewCollectionGrid } from './ReviewCollectionGrid.tsx';
+import { CollectionGrid } from './CollectionGrid.tsx';
 
 const demoStoryIds = [
   'button-component--base',
@@ -15,7 +15,7 @@ const demoStoryIds = [
 ];
 
 const meta = preview.meta({
-  component: ReviewCollectionGrid,
+  component: CollectionGrid,
   parameters: { layout: 'fullscreen' },
   args: {
     storyIds: demoStoryIds,

@@ -3,10 +3,10 @@ import { expect, within } from 'storybook/test';
 import { REVIEW_CHANGES_URL } from '../constants.ts';
 import { buildReviewChangesDetailsHref } from '../review-navigation.ts';
 import preview from '../../../../.storybook/preview.tsx';
-import { ReviewChangesDetailsScreen } from './ReviewChangesDetailsScreen.tsx';
+import { DetailsScreen } from './DetailsScreen.tsx';
 
 const meta = preview.meta({
-  component: ReviewChangesDetailsScreen,
+  component: DetailsScreen,
   parameters: { layout: 'fullscreen' },
   args: {
     collectionTitle: 'Checklist',
@@ -24,9 +24,7 @@ export const Default = meta.story({
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await expect(await canvas.findByRole('button', { name: '2/3' })).toBeInTheDocument();
-    await expect(
-      await canvas.findByText('Core Button - primary/solid variant')
-    ).toBeInTheDocument();
+    await expect(await canvas.findByText('Checklist')).toBeInTheDocument();
     await expect(
       await canvas.findByText('Latest on update/button-weight-and-padding')
     ).toBeInTheDocument();

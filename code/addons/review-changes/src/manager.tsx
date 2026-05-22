@@ -4,7 +4,7 @@ import { addons, types } from 'storybook/manager-api';
 import { Route } from 'storybook/internal/router';
 
 import { ADDON_ID, PAGE_ID, REVIEW_CHANGES_URL, EVENTS } from './constants.ts';
-import { ReviewChangesPage } from './components/ReviewChangesPage.tsx';
+import { ReviewChangesPage } from './ReviewChangesPage.tsx';
 
 addons.register(ADDON_ID, (api) => {
   // When the agent pushes a review, navigate any open tab to the page.

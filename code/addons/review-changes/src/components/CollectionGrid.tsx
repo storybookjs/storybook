@@ -1,4 +1,4 @@
-import { type FC, useEffect, useRef, useState } from 'react';
+import React, { type FC, useEffect, useRef, useState } from 'react';
 
 import { Button } from 'storybook/internal/components';
 import { styled } from 'storybook/theming';
@@ -105,13 +105,13 @@ const StoryPreviewCell: FC<{ storyId: string; href?: string }> = ({ storyId, hre
   );
 };
 
-export interface ReviewCollectionGridProps {
+export interface CollectionGridProps {
   storyIds: string[];
   getStoryHref?: (storyId: string, storyIndex: number) => string | undefined;
   reviewAllHref?: string;
 }
 
-export const ReviewCollectionGrid: FC<ReviewCollectionGridProps> = ({
+export const CollectionGrid: FC<CollectionGridProps> = ({
   storyIds,
   getStoryHref,
   reviewAllHref,

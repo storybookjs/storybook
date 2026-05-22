@@ -2,15 +2,15 @@ import { type FC, useEffect, useState } from 'react';
 
 import { useChannel } from 'storybook/manager-api';
 
-import { REVIEW_CHANGES_URL } from '../constants.ts';
-import { EVENTS } from '../constants.ts';
-import type { ReviewState } from '../review-state.ts';
+import { REVIEW_CHANGES_URL } from './constants.ts';
+import { EVENTS } from './constants.ts';
+import type { ReviewState } from './review-state.ts';
 import {
   buildReviewChangesDetailsHref,
   parseReviewChangesDetailsLocation,
-} from '../review-navigation.ts';
-import { ReviewChangesDetailsScreen } from './ReviewChangesDetailsScreen.tsx';
-import { ReviewChangesScreen } from './ReviewChangesScreen.tsx';
+} from './review-navigation.ts';
+import { DetailsScreen } from './screens/DetailsScreen.tsx';
+import { SummaryScreen } from './screens/SummaryScreen.tsx';
 
 // Container — wires the channel + manager api. The agent pushes a review via
 // the MCP addon; we cache nothing here, just reflect the latest pushed state.
@@ -38,7 +38,7 @@ export const ReviewChangesPage: FC = () => {
     const currentStoryId = collection.storyIds[normalizedStoryIndex];
 
     return (
-      <ReviewChangesDetailsScreen
+      <DetailsScreen
         collectionTitle={collection.title}
         storyId={currentStoryId}
         storyIndex={normalizedStoryIndex}
@@ -57,5 +57,5 @@ export const ReviewChangesPage: FC = () => {
     );
   }
 
-  return <ReviewChangesScreen state={state} />;
+  return <SummaryScreen state={state} />;
 };

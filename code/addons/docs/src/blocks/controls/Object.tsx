@@ -237,6 +237,7 @@ export const ObjectControl: FC<ObjectProps> = ({
         key={jsonString}
         defaultValue={jsonString}
         onBlur={(event: FocusEvent<HTMLTextAreaElement>) => updateRaw(event.target.value)}
+        placeholder="Edit JSON string..."
         autoFocus={forceVisible}
         valid={parseError ? 'error' : undefined}
         readOnly={readonly}

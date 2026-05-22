@@ -1,4 +1,4 @@
-import { existsSync, mkdtempSync, readFileSync, readdirSync, rmSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 
 import { join, resolve } from 'pathe';
@@ -129,6 +129,23 @@ describe('writeRuntimeInstanceRecord', () => {
     expect(readdirSync(registryDir)).toEqual([`${record.instanceId}.json`]);
     expect(JSON.parse(readFileSync(recordPath, 'utf-8'))).toEqual(record);
   });
+
+  it('removes the temporary file when the final rename fails', async () => {
+    const registryDir = makeTempDir();
+    const record = createRuntimeInstanceRecord({
+      address: 'http://localhost:6006/',
+      instanceId: '00000000-0000-4000-8000-000000000002',
+      now: new Date('2026-05-18T12:00:00.000Z'),
+      pid: 12345,
+      port: 6006,
+      storybookVersion: '10.5.0-alpha.0',
+    });
+    mkdirSync(join(registryDir, `${record.instanceId}.json`));
+
+    await expect(writeRuntimeInstanceRecord(record, registryDir)).rejects.toThrow();
+
+    expect(readdirSync(registryDir)).toEqual([`${record.instanceId}.json`]);
+  });
 });
 
 describe('writeStorybookRuntimeInstanceRecord', () => {
@@ -147,5 +164,32 @@ describe('writeStorybookRuntimeInstanceRecord', () => {
     await registration.cleanup();
 
     expect(existsSync(registration.recordPath)).toBe(false);
+  });
+
+  it('registers process cleanup by default and can unregister it', async () => {
+    const listenerCounts = {
+      exit: process.listenerCount('exit'),
+      sigint: process.listenerCount('SIGINT'),
+      sigterm: process.listenerCount('SIGTERM'),
+    };
+    const registryDir = makeTempDir();
+    const registration = await writeStorybookRuntimeInstanceRecord({
+      address: 'http://localhost:6006/',
+      port: 6006,
+      registryDir,
+      storybookVersion: '10.5.0-alpha.0',
+    });
+
+    expect(process.listenerCount('exit')).toBe(listenerCounts.exit + 1);
+    expect(process.listenerCount('SIGINT')).toBe(listenerCounts.sigint + 1);
+    expect(process.listenerCount('SIGTERM')).toBe(listenerCounts.sigterm + 1);
+
+    registration.unregisterProcessCleanup();
+
+    expect(process.listenerCount('exit')).toBe(listenerCounts.exit);
+    expect(process.listenerCount('SIGINT')).toBe(listenerCounts.sigint);
+    expect(process.listenerCount('SIGTERM')).toBe(listenerCounts.sigterm);
+
+    await registration.cleanup();
   });
 });

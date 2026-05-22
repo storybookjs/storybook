@@ -17,6 +17,7 @@ import {
   workflow,
   workspace,
 } from './utils/helpers.ts';
+import { isTrustedAuthor } from './utils/runtime.ts';
 import { defineJob, defineNoOpJob } from './utils/types.ts';
 
 const dirname = import.meta.dirname;
@@ -29,7 +30,7 @@ export const build_linux = defineJob('Build (linux)', (workflowName) => ({
   steps: [
     git.checkout(),
     npm.install('.'),
-    cache.persist(CACHE_PATHS, CACHE_KEYS()[0]),
+    ...(isTrustedAuthor() ? [cache.persist(CACHE_PATHS, CACHE_KEYS()[0])] : []),
     git.check(),
     npm.check(),
     {

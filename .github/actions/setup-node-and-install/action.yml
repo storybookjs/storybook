@@ -19,8 +19,11 @@ runs:
       shell: bash
       run: npm install -g npm@latest
 
-    - name: Cache dependencies
-      uses: actions/cache@v4
+    # Restore only — save is gated below. actions/cache's post-job save step uses a
+    # runner-internal token that bypasses `permissions:`, so splitting is the only
+    # reliable way to prevent pull_request_target runs from poisoning the shared cache.
+    - name: Restore cached dependencies
+      uses: actions/cache/restore@v4
       with:
         path: |
           ~/.yarn/berry/cache
@@ -39,3 +42,11 @@ runs:
       shell: bash
       working-directory: code
       run: yarn install
+
+    - name: Save cached dependencies
+      if: github.event_name != 'pull_request_target'
+      uses: actions/cache/save@v4
+      with:
+        path: |
+          ~/.yarn/berry/cache
+        key: yarn-v1-${{ hashFiles('yarn.lock') }}

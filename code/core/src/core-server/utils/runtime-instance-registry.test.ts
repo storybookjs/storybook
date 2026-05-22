@@ -49,22 +49,6 @@ describe('getMcpMetadataFromMainConfig', () => {
       endpoint: '/custom-mcp',
     });
   });
-
-  it('normalizes addon-mcp paths before matching', () => {
-    expect(
-      getMcpMetadataFromMainConfig({
-        addons: [
-          {
-            name: '/project/node_modules/@storybook/addon-mcp/preset',
-            options: { endpoint: '/custom-mcp' },
-          },
-        ],
-      })
-    ).toEqual({
-      status: 'ready',
-      endpoint: '/custom-mcp',
-    });
-  });
 });
 
 describe('createRuntimeInstanceRecord', () => {

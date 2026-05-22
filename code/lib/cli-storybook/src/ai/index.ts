@@ -11,6 +11,10 @@ import { ProjectTypeService } from '../../../create-storybook/src/services/Proje
 
 import { getStorybookData } from '../automigrate/helpers/mainConfigFile.ts';
 import { getAiSetupMarkdownOutput } from './setup-prompts/index.ts';
+import {
+  getUnsupportedAiSetupProjectMessage,
+  isAiSetupSupportedProject,
+} from './supported-project.ts';
 import type { ProjectInfo, AiSetupOptions } from './types.ts';
 
 export async function aiSetup(options: AiSetupOptions): Promise<void> {
@@ -67,16 +71,8 @@ export async function aiSetup(options: AiSetupOptions): Promise<void> {
     return;
   }
 
-  if (
-    projectInfo.rendererPackage !== '@storybook/react' ||
-    projectInfo.builderPackage !== '@storybook/builder-vite'
-  ) {
-    logger.log(
-      'AI-assisted setup is currently only available for projects using the React renderer with Vite builder. Detected renderer: ' +
-        projectInfo.rendererPackage +
-        ', builder: ' +
-        projectInfo.builderPackage
-    );
+  if (!isAiSetupSupportedProject(projectInfo)) {
+    logger.log(getUnsupportedAiSetupProjectMessage(projectInfo));
     return;
   }
 

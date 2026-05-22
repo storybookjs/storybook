@@ -428,14 +428,16 @@ describe('presets', () => {
           addons: [
             {
               name: '@storybook/addon-mcp',
-              options: {},
+              options: { endpoint: '/custom-mcp' },
             },
           ],
         };
       }
       if (path === '@storybook/addon-mcp/preset') {
         return {
-          experimental_mcp: () => ({ endpoint: '/mcp' }),
+          experimental_mcp: (_existing: unknown, options: { endpoint: string }) => ({
+            endpoint: options.endpoint,
+          }),
         };
       }
       throw new Error(`Could not resolve ${path}`);
@@ -444,7 +446,7 @@ describe('presets', () => {
     const presets = await getPresets(['main-preset'], {} as any);
 
     await expect(presets.apply('experimental_mcp', undefined)).resolves.toEqual({
-      endpoint: '/mcp',
+      endpoint: '/custom-mcp',
     });
   });
 

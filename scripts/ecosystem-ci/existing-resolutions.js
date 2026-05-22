@@ -24,7 +24,6 @@ export const EXISTING_RESOLUTIONS = new Set([
   'playwright-core',
   'react',
   'rxjs',
-  'type-fest',
   'react-joyride/type-fest',
   'typescript',
 ]);

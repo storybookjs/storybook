@@ -163,7 +163,14 @@ const selectValue = (event: SyntheticEvent<HTMLInputElement>) => {
 
 export type ObjectProps = ControlProps<ObjectValue> & ObjectConfig;
 
-export const ObjectControl: FC<ObjectProps> = ({ name, storyId, value, onChange, argType }) => {
+export const ObjectControl: FC<ObjectProps> = ({
+  name,
+  storyId,
+  controlsId,
+  value,
+  onChange,
+  argType,
+}) => {
   const theme = useTheme();
   const data = useMemo(() => value && cloneDeep(value), [value]);
   const hasData = data !== null && data !== undefined;
@@ -208,7 +215,7 @@ export const ObjectControl: FC<ObjectProps> = ({ name, storyId, value, onChange,
       <Button
         ariaLabel={false}
         disabled={readonly}
-        id={getControlSetterButtonId(name, storyId)}
+        id={getControlSetterButtonId(name, storyId, controlsId)}
         onClick={onForceVisible}
       >
         Set object
@@ -216,7 +223,7 @@ export const ObjectControl: FC<ObjectProps> = ({ name, storyId, value, onChange,
     );
   }
 
-  const rawInputId = getControlId(name, storyId);
+  const rawInputId = getControlId(name, storyId, controlsId)}
   const rawJSONForm = (
     <>
       <label htmlFor={rawInputId} className="sb-sr-only">

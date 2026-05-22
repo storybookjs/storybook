@@ -1,6 +1,6 @@
 {
   "name": "@storybook/react-vite",
-  "version": "10.4.0-alpha.17",
+  "version": "10.5.0-alpha.2",
   "description": "Storybook for React and Vite: Develop, document, and test UI components in isolation",
   "keywords": [
     "storybook",
@@ -71,7 +71,13 @@
     "react": "^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0",
     "react-dom": "^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0",
     "storybook": "workspace:^",
+    "typescript": ">= 4.9.x",
     "vite": "^5.0.0 || ^6.0.0 || ^7.0.0 || ^8.0.0"
+  },
+  "peerDependenciesMeta": {
+    "typescript": {
+      "optional": true
+    }
   },
   "publishConfig": {
     "access": "public"

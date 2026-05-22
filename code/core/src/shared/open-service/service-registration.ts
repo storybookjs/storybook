@@ -1,8 +1,5 @@
 import { createServiceRuntime } from './service-runtime.ts';
-import {
-  OpenServiceDuplicateRegistrationError,
-  OpenServiceMissingServiceError,
-} from '../../server-errors.ts';
+import { OpenServiceMissingServiceError } from '../../server-errors.ts';
 import type {
   Commands,
   Queries,
@@ -109,6 +106,14 @@ export const registryApi: ServiceRegistryApi = {
   getService,
 };
 
+/**
+ * Registers a service for the current server process and returns its runtime instance.
+ *
+ * Registration is idempotent by service id: if a service with the same id is already registered,
+ * the existing instance is returned and the new definition (including any registration-time
+ * overrides) is ignored. This lets the same definition be registered safely from more than one
+ * server entrypoint without the caller having to guard against duplicate registration.
+ */
 export function registerService<
   TState,
   TQueries extends Queries<TState>,
@@ -116,20 +121,20 @@ export function registerService<
 >(
   definition: ServiceDefinition<TState, TQueries, TCommands>,
   registration?: ServiceRegistrationOptions<TState, TQueries, TCommands>
-): ServiceInstance<TState, TQueries, TCommands> & ServiceRegistryApi {
+): ServiceInstance<TState, TQueries, TCommands> {
   const registry = getRegistry();
+  const existing = registry.get(definition.id);
 
-  if (registry.has(definition.id)) {
-    throw new OpenServiceDuplicateRegistrationError({ serviceId: definition.id });
+  if (existing) {
+    return existing.runtime as ServiceInstance<TState, TQueries, TCommands>;
   }
 
   const resolvedDefinition = applyRegistration(definition, registration);
   const runtime = createServiceRuntime(resolvedDefinition, { registryApi });
-  const registeredRuntime = {
+  const registeredRuntime: ServiceInstance<TState, TQueries, TCommands> = {
     queries: runtime.queries,
     commands: runtime.commands,
-    ...registryApi,
-  } as ServiceInstance<TState, TQueries, TCommands> & ServiceRegistryApi;
+  };
   const descriptor = describeDefinition(resolvedDefinition as AnyServiceDefinition);
 
   registry.set(definition.id, {

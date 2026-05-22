@@ -84,8 +84,8 @@ export interface ServiceRegistryApi {
   getService(serviceId: string): Promise<RuntimeService>;
 }
 
-export type RuntimeService = ServiceInstance<unknown, Queries<unknown>, Commands<unknown>> &
-  ServiceRegistryApi;
+/** A resolved service handle exposing only its own queries and commands. */
+export type RuntimeService = ServiceInstance<unknown, Queries<unknown>, Commands<unknown>>;
 
 /** Context passed to query handlers and static preload helpers. */
 export type QueryCtx<TState> = {

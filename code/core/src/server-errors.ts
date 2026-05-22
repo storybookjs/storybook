@@ -167,17 +167,6 @@ export class OpenServiceValidationError extends StorybookError {
   }
 }
 
-export class OpenServiceDuplicateRegistrationError extends StorybookError {
-  constructor(public data: { serviceId: string }) {
-    super({
-      name: 'OpenServiceDuplicateRegistrationError',
-      category: Category.CORE_COMMON,
-      code: 6,
-      message: `A service with id "${data.serviceId}" is already registered.`,
-    });
-  }
-}
-
 export class OpenServiceMissingServiceError extends StorybookError {
   constructor(public data: { serviceId: string }) {
     super({

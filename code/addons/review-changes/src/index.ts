@@ -1,8 +1,8 @@
 export { ADDON_ID, PAGE_ID, REVIEW_CHANGES_URL, EVENTS } from './constants.ts';
 export type {
   ReviewState,
-  ReviewCluster,
+  ReviewCollection,
   DiffHunk,
   StoryMeta,
-  ClusterKind,
+  CollectionKind,
 } from './review-state.ts';

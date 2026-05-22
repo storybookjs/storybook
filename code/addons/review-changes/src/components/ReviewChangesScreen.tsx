@@ -240,27 +240,35 @@ const storyPreviewUrl = (id: string) => `iframe.html?id=${encodeURIComponent(id)
 
 const StoryPreviewCell: React.FC<{ storyId: string }> = ({ storyId }) => {
   const hostRef = useRef<HTMLDivElement>(null);
-  const [visible, setVisible] = useState(false);
+  const [hasMounted, setHasMounted] = useState(false);
 
   useEffect(() => {
     const host = hostRef.current;
-    if (!host) {
+    if (!host || hasMounted) {
       return undefined;
     }
     if (typeof IntersectionObserver === 'undefined') {
-      setVisible(true);
+      setHasMounted(true);
       return undefined;
     }
-    const observer = new IntersectionObserver(([entry]) => setVisible(entry.isIntersecting), {
-      rootMargin: '100px 0px 100px 0px',
-    });
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setHasMounted(true);
+          observer.disconnect();
+        }
+      },
+      {
+        rootMargin: '100px 0px 100px 0px',
+      }
+    );
     observer.observe(host);
     return () => observer.disconnect();
-  }, []);
+  }, [hasMounted]);
 
   return (
     <GridCell ref={hostRef}>
-      {visible ? (
+      {hasMounted ? (
         <StoryPreview
           title={storyId}
           src={storyPreviewUrl(storyId)}

@@ -155,11 +155,13 @@ const config = defineMain({
     changeDetection: true,
   },
   services: async (_value: void, options: Options) => {
-    await registerOpenServiceDebugService(
-      options.presets.apply<NonNullable<StorybookConfigRaw['storyIndexGenerator']>>(
-        'storyIndexGenerator'
-      )
-    );
+    if (true) {
+      await registerOpenServiceDebugService(
+        options.presets.apply<NonNullable<StorybookConfigRaw['storyIndexGenerator']>>(
+          'storyIndexGenerator'
+        )
+      );
+    }
   },
   staticDirs: [{ from: './bench/bundle-analyzer', to: '/bundle-analyzer' }],
   viteFinal: async (viteConfig: InlineConfig, { configType }: Options) => {

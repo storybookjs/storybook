@@ -10,23 +10,25 @@
    * identity-stable proxy across updates. `$derived.by(() => storyFn())`
    * compares the returned `{ Component, props }` by identity, sees the
    * same proxy reference, and never re-fires — so the renderer freezes
-   * on the pre-HMR component code on any non-Vite builder. Under Vite,
-   * `vite-plugin-svelte` papers over this with private coordination
-   * channels; under webpack/Rspack there is no such bridge.
+   * on the pre-HMR component code on any non-Vite builder.
    *
-   * Both the Vite event API and the webpack/Rspack status-handler API
-   * are feature-detected so a single PreviewRender module works on
-   * every builder without import-time errors.
+   * This is scoped to webpack/Rspack on purpose. Under Vite,
+   * `vite-plugin-svelte` papers over the proxy issue with its own
+   * private coordination channels and performs fine-grained HMR that
+   * preserves component state. Forcing a full `{#key}` remount there
+   * would defeat that state preservation, so we deliberately do NOT
+   * listen to `vite:afterUpdate` and let Vite's native HMR handle it.
+   *
+   * The webpack/Rspack status-handler API is feature-detected so a
+   * single PreviewRender module works on every builder without
+   * import-time errors.
    */
   const hmrTick = writable(0);
 
   if (typeof import.meta !== 'undefined' && import.meta.hot) {
     const hot = import.meta.hot;
-    // Vite: fires after every HMR cycle completes.
-    if (typeof hot.on === 'function') {
-      hot.on('vite:afterUpdate', () => hmrTick.update((n) => n + 1));
-    }
     // webpack / Rspack: status transitions to 'idle' once apply finishes.
+    // Vite is intentionally excluded (see comment above).
     if (typeof hot.addStatusHandler === 'function') {
       let inCycle = false;
       hot.addStatusHandler((status) => {

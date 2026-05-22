@@ -122,16 +122,37 @@ const extractEnumValues = (compodocType: any) => {
   const compodocJson = getCompodocJson();
   const enumType = compodocJson?.miscellaneous?.enumerations?.find((x) => x.name === compodocType);
 
-  if (enumType?.childs.every((x) => x.value)) {
-    return enumType.childs.map((x) => x.value);
+  if (enumType?.childs?.every((x: any) => x?.value != null)) {
+    return enumType.childs.map((x: any) => x.value);
   }
 
-  if (typeof compodocType !== 'string' || compodocType.indexOf('|') === -1) {
+  if (typeof compodocType !== 'string' || !compodocType.includes('|')) {
     return null;
   }
 
   try {
-    return compodocType.split('|').map((value) => JSON.parse(value));
+    return compodocType
+      .split('|')
+      .map((v: string) => v.trim())
+      .map((segment: string) => {
+        let s = segment;
+        // Strip matching surrounding single or double quotes (compodoc may emit 'foo' | 'bar' or "foo" | "bar")
+        if (
+          (s.startsWith("'") && s.endsWith("'")) ||
+          (s.startsWith('"') && s.endsWith('"'))
+        ) {
+          s = s.slice(1, -1);
+        }
+        // Try to parse as JSON (after normalizing quotes for safety); fallback to the raw literal content
+        try {
+          // Normalize single quotes to double for valid JSON, handle simple cases
+          const jsonCandidate = s.replace(/^'|'$/g, '"').replace(/'/g, '"');
+          return JSON.parse(jsonCandidate);
+        } catch {
+          // Return as string literal (covers most identifier cases)
+          return s;
+        }
+      });
   } catch (e) {
     return null;
   }

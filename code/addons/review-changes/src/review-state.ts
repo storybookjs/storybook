@@ -2,19 +2,20 @@
  * The review payload an agent pushes via the `apply-review-state` MCP tool,
  * delivered to this addon over the Storybook channel.
  *
- * This is a DUPLICATE of the canonical valibot schema in the MCP addon
- * (`@storybook/addon-mcp`). This side only renders the data — it does not
- * validate — so it needs the type, not the validator. All fields beyond
- * `title` + `narrative` + `clusters` are required: this is the minimal payload.
+ * This mirrors the canonical valibot schema in the MCP addon
+ * (`@storybook/addon-mcp` → `review-state-store.ts`). This side only
+ * renders the data — it does not validate — so it needs the type, not the
+ * validator. Keep `title` / `description` / `collections` in sync with
+ * that schema.
  */
 
-export type ClusterKind = 'atomic' | 'consumer' | 'transitive' | 'catch-all';
+export type CollectionKind = 'atomic' | 'consumer' | 'transitive' | 'catch-all';
 
-export interface ReviewCluster {
-  label: string;
+export interface ReviewCollection {
+  title: string;
   rationale: string;
-  sampleStoryIds: string[];
-  kind?: ClusterKind;
+  storyIds: string[];
+  kind?: CollectionKind;
 }
 
 export interface DiffHunk {
@@ -29,8 +30,9 @@ export interface StoryMeta {
 
 export interface ReviewState {
   title: string;
-  narrative: string;
-  clusters: ReviewCluster[];
+  description: string;
+  collections: ReviewCollection[];
+  /** Optional UI-only field; not part of the MCP payload. */
   branchName?: string;
   changedFiles?: string[];
   diffHunks?: DiffHunk[];

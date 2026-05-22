@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 
 import { Button, Collapsible, TabsView } from 'storybook/internal/components';
 import { styled } from 'storybook/theming';
@@ -12,9 +12,8 @@ import {
   StorybookIcon,
 } from '@storybook/icons';
 
-import type { ReviewCluster, ReviewState } from '../review-state.ts';
+import type { ReviewCollection, ReviewState } from '../review-state.ts';
 
-const DEFAULT_BRANCH = 'update/button-styles';
 const PREVIEW_SCALE = 0.5;
 
 const Page = styled.div(({ theme }) => ({
@@ -275,23 +274,23 @@ const StoryPreviewCell: React.FC<{ storyId: string }> = ({ storyId }) => {
 };
 
 const CollectionsTab: React.FC<{
-  clusters: ReviewCluster[];
+  collections: ReviewCollection[];
   expanded: Set<number>;
   onToggleCluster: (index: number) => void;
-}> = ({ clusters, expanded, onToggleCluster }) => (
+}> = ({ collections, expanded, onToggleCluster }) => (
   <ClusterList>
-    {clusters.map((cluster, index) => {
+    {collections.map((collection, index) => {
       const isExpanded = expanded.has(index);
-      const sampleCount = cluster.sampleStoryIds.length;
-      const gridStories = cluster.sampleStoryIds.slice(0, 3);
+      const sampleCount = collection.storyIds.length;
+      const gridStories = collection.storyIds.slice(0, 3);
 
       return (
-        <ClusterBlock key={`${cluster.label}-${index}`}>
+        <ClusterBlock key={`${collection.title}-${index}`}>
           <Collapsible
             collapsed={!isExpanded}
             summary={() => (
               <ClusterHead onClick={() => onToggleCluster(index)}>
-                <ClusterLabel>{cluster.label}</ClusterLabel>
+                <ClusterLabel>{collection.title}</ClusterLabel>
                 <ClusterControls>
                   <ClusterCount>{sampleCount}</ClusterCount>
                   <Button
@@ -359,17 +358,17 @@ export const ReviewChangesScreen: React.FC<ReviewChangesScreenProps> = ({ state 
     return <Empty>Waiting for the agent to push a review…</Empty>;
   }
 
-  const branch = state.branchName ?? DEFAULT_BRANCH;
-
   return (
     <Page>
       <Header>
         <HeaderText>
           <Heading>{state.title}</Heading>
-          <HeaderMeta>
-            <DetailsText>Showing unstaged changes on</DetailsText>
-            <BranchCode>{branch}</BranchCode>
-          </HeaderMeta>
+          {state.branchName ? (
+            <HeaderMeta>
+              <DetailsText>Showing unstaged changes on</DetailsText>
+              <BranchCode>{state.branchName}</BranchCode>
+            </HeaderMeta>
+          ) : null}
         </HeaderText>
         <Button padding="small" asChild>
           <a href={window.location.href} target="_blank" rel="noreferrer">
@@ -406,7 +405,7 @@ export const ReviewChangesScreen: React.FC<ReviewChangesScreenProps> = ({ state 
                     </SearchField>
                   </SearchRow>
                   <CollectionsTab
-                    clusters={state.clusters}
+                    collections={state.collections}
                     expanded={expandedClusters}
                     onToggleCluster={(index) => {
                       setExpandedClusters((prev) => {

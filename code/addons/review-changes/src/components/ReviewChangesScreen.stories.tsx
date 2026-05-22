@@ -7,13 +7,13 @@ import { ReviewChangesScreen } from './ReviewChangesScreen.tsx';
 const minimal: ReviewState = {
   title: 'Button prop rename',
   branchName: 'update/button-styles',
-  narrative:
+  description:
     'Renamed the Button `appearance` prop to `variant` and updated all internal usages. No visual change is expected.',
-  clusters: [
+  collections: [
     {
-      label: 'Button',
+      title: 'Button',
       rationale: 'The directly changed component.',
-      sampleStoryIds: ['button-component--variants', 'button-component--base'],
+      storyIds: ['button-component--variants', 'button-component--base'],
     },
   ],
 };
@@ -21,25 +21,21 @@ const minimal: ReviewState = {
 const full: ReviewState = {
   title: 'Primary button visual refresh',
   branchName: 'update/button-weight-and-padding',
-  narrative:
+  description:
     'Made the primary/solid Button bolder: font-weight 700 → 800 and larger padding. Outline and ghost variants are unchanged. Start with Variants and Sizes/Paddings, then sanity-check ToggleButton and ReviewChangesButton.',
   changedFiles: ['code/core/src/components/components/Button/Button.tsx'],
-  clusters: [
+  collections: [
     {
-      label: 'Core Button — primary/solid variant',
+      title: 'Core Button — primary/solid variant',
       rationale: 'Render the solid variant directly; best show the heavier weight and padding.',
       kind: 'atomic',
-      sampleStoryIds: [
-        'button-component--variants',
-        'button-component--base',
-        'button-component--sizes',
-      ],
+      storyIds: ['button-component--variants', 'button-component--base', 'button-component--sizes'],
     },
     {
-      label: 'Related Button-based components',
+      title: 'Related Button-based components',
       rationale: 'ToggleButton and ReviewChangesButton build on the same Button primitive.',
       kind: 'transitive',
-      sampleStoryIds: ['components-togglebutton--variants', 'components-togglebutton--sizes'],
+      storyIds: ['components-togglebutton--variants', 'components-togglebutton--sizes'],
     },
   ],
   diffHunks: [
@@ -66,17 +62,17 @@ const full: ReviewState = {
 const largeCascade: ReviewState = {
   title: 'Theme token cascade review',
   branchName: 'refactor/theme-tokens',
-  narrative:
+  description:
     'Refactored the shared theme tokens. Change-detection flagged a broad cascade; most consumers are transitive and unlikely to shift visibly. Spot-check the atomic and consumer tiers first.',
   changedFiles: ['code/core/src/theming/tokens.ts', 'code/core/src/theming/create.ts'],
-  clusters: [
-    ...full.clusters,
+  collections: [
+    ...full.collections,
     {
-      label: 'Storybook manager surfaces',
+      title: 'Storybook manager surfaces',
       rationale:
         'Manager views consume shared typography, spacing, and theming tokens that can shift subtly.',
       kind: 'consumer',
-      sampleStoryIds: [
+      storyIds: [
         'manager-main--default',
         'manager-main--about-page',
         'manager-main--guide-page',
@@ -84,11 +80,11 @@ const largeCascade: ReviewState = {
       ],
     },
     {
-      label: 'Sidebar density and search experience',
+      title: 'Sidebar density and search experience',
       rationale:
         'Sidebar layouts are sensitive to token updates in spacing and color contrast, especially in filtered states.',
       kind: 'consumer',
-      sampleStoryIds: [
+      storyIds: [
         'manager-sidebar-sidebar--searching',
         'manager-sidebar-sidebar--statuses-open',
         'manager-sidebar-sidebar--with-refs',
@@ -96,11 +92,11 @@ const largeCascade: ReviewState = {
       ],
     },
     {
-      label: 'Settings and onboarding pages',
+      title: 'Settings and onboarding pages',
       rationale:
         'Settings pages use shared UI primitives and should be spot-checked for readability and alignment.',
       kind: 'transitive',
-      sampleStoryIds: [
+      storyIds: [
         'manager-settings-aboutscreen--default',
         'manager-settings-guidepage--default',
         'manager-settings-shortcutsscreen--defaults',
@@ -108,11 +104,11 @@ const largeCascade: ReviewState = {
       ],
     },
     {
-      label: 'Core UI primitives',
+      title: 'Core UI primitives',
       rationale:
         'Primitive components amplify token regressions across addons and manager surfaces.',
       kind: 'atomic',
-      sampleStoryIds: [
+      storyIds: [
         'components-tabs-tabsview--basic',
         'components-card--default',
         'components-collapsible--default',
@@ -120,11 +116,11 @@ const largeCascade: ReviewState = {
       ],
     },
     {
-      label: 'Performance and analyzer tools',
+      title: 'Performance and analyzer tools',
       rationale:
         'Bench and diagnostics views exercise dense layouts where token changes are easy to miss.',
       kind: 'catch-all',
-      sampleStoryIds: [
+      storyIds: [
         'bench--es-build-analyzer',
         'manager-sidebar-filesearchmodal--default',
         'manager-sidebar-filesearchlist--default',
@@ -145,18 +141,85 @@ const largeCascade: ReviewState = {
 const pagesAndBench: ReviewState = {
   title: 'Page components and bench analyzer',
   branchName: 'chore/review-pages-and-bench',
-  narrative:
+  description:
     'Validating the review grid with manager page stories alongside the bench analyzer story.',
-  clusters: [
+  collections: [
     {
-      label: 'Manager pages + Bench',
+      title: 'Manager pages + Bench',
       rationale: 'Mixes page-level stories with the ESBuild analyzer story for preview coverage.',
-      sampleStoryIds: [
+      storyIds: [
         'manager-settings-aboutscreen--default',
         'manager-settings-guidepage--default',
         'manager-main--about-page',
         'bench--es-build-analyzer',
       ],
+    },
+  ],
+};
+
+const atomicChange: ReviewState = {
+  title: 'Round up Button border-radius: 4px → 12px (3× theme multiplier)',
+  description:
+    'Changed `borderRadius: theme.input.borderRadius` to `theme.input.borderRadius * 3` in Button.tsx, making all buttons noticeably more pill-shaped; start reviewing Button/Variants and Toolbar/Basic to see the ripple.',
+  collections: [
+    {
+      title: 'Button — atomic',
+      rationale:
+        'Directly changed component; all variants and sizes now use 12px border-radius instead of 4px.',
+      storyIds: [
+        'button-component--variants',
+        'button-component--sizes',
+        'button-component--paddings',
+        'button-component--pseudo-states',
+        'button-component--icon-only',
+        'button-component--base',
+      ],
+      kind: 'atomic',
+    },
+    {
+      title: 'Toolbar, Tabs & Select — direct consumers',
+      rationale:
+        'These components embed Button directly and their toolbar/tab buttons will visually reflect the rounder corners.',
+      storyIds: [
+        'components-toolbar--basic',
+        'components-toolbar--scrollable',
+        'components-abstracttoolbar--basic',
+        'components-tabs--stateful-static',
+        'components-tabs--stateless-with-tools',
+        'select-component--base',
+      ],
+      kind: 'consumer',
+    },
+    {
+      title: 'Modal & Popover — overlays with buttons',
+      rationale:
+        'Modal and Popover action bars contain buttons whose rounded corners are now more prominent.',
+      storyIds: [
+        'overlay-modal--base',
+        'overlay-modal--interactive-mouse',
+        'overlay-popover--with-hide-button',
+        'overlay-popover--with-chrome',
+      ],
+      kind: 'consumer',
+    },
+    {
+      title: 'Docs blocks & Manager menu — transitive',
+      rationale:
+        'Preview action bars and manager menus further down the dependency graph pick up the change through toolbar/button usage.',
+      storyIds: [
+        'addons-docs-blocks-components-preview--with-toolbar',
+        'addons-docs-blocks-components-preview--code-expanded',
+        'manager-container-menu--with-shortcuts',
+        'manager-container-menu--with-shortcuts-active',
+      ],
+      kind: 'transitive',
+    },
+  ],
+  changedFiles: ['core/src/components/components/Button/Button.tsx'],
+  diffHunks: [
+    {
+      path: 'core/src/components/components/Button/Button.tsx',
+      hunk: "diff --git a/core/src/components/components/Button/Button.tsx b/core/src/components/components/Button/Button.tsx\nindex 81c8799be09..04d01a1dd82 100644\n--- a/core/src/components/components/Button/Button.tsx\n+++ b/core/src/components/components/Button/Button.tsx\n@@ -256,7 +256,7 @@ const StyledButton = styled('button', {\n       return theme.input.color;\n     })(),\n     boxShadow: variant === 'outline' ? `${theme.button.border} 0 0 0 1px inset` : 'none',\n-    borderRadius: theme.input.borderRadius,\n+    borderRadius: theme.input.borderRadius * 3,\n     // Making sure that the button never shrinks below its minimum size\n     flexShrink: 0,",
     },
   ],
 };
@@ -180,10 +243,9 @@ export const Minimal = meta.story({
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await expect(await canvas.findByText('Button prop rename')).toBeInTheDocument();
-    await expect(
-      await canvas.findByText(/Showing unstaged changes on update\/button-styles/i)
-    ).toBeInTheDocument();
-    await expect(await canvas.findByRole('button', { name: 'Collections' })).toBeInTheDocument();
+    await expect(await canvas.findByText(/Showing unstaged changes on/i)).toBeInTheDocument();
+    await expect(await canvas.findByText('update/button-styles')).toBeInTheDocument();
+    await expect(await canvas.findByRole('tab', { name: 'Collections' })).toBeInTheDocument();
   },
 });
 
@@ -192,9 +254,7 @@ export const Full = meta.story({
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await expect(await canvas.findByText('Primary button visual refresh')).toBeInTheDocument();
-    await expect(await canvas.findByRole('button', { name: 'Storybook' })).toBeInTheDocument();
-    await userEvent.click(await canvas.findByRole('button', { name: 'Components' }));
-    await expect(await canvas.findByText('Components view coming soon.')).toBeInTheDocument();
+    await expect(await canvas.findByRole('link', { name: 'Storybook' })).toBeInTheDocument();
   },
 });
 
@@ -214,4 +274,8 @@ export const PagesAndBench = meta.story({
     await expect(await canvas.findByText('Page components and bench analyzer')).toBeInTheDocument();
     await expect(await canvas.findByText('Manager pages + Bench')).toBeInTheDocument();
   },
+});
+
+export const RealAtomicChange = meta.story({
+  args: { state: atomicChange },
 });

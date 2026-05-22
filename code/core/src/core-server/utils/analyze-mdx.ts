@@ -15,6 +15,7 @@ export type MdxAnalysisResult = {
   title: string | undefined;
   of: string | undefined;
   name: string | undefined;
+  id: string | undefined;
   summary: string | undefined;
   isTemplate: boolean;
   metaTags?: string[];
@@ -43,6 +44,7 @@ const createEmptyMdxMetadata = (): MdxMetadata => ({
   title: undefined,
   of: undefined,
   name: undefined,
+  id: undefined,
   summary: undefined,
   isTemplate: false,
   metaTags: undefined,
@@ -182,6 +184,7 @@ const extractMeta = (metaElement: MdxJsxFlowElement, importMap: ImportMap): MdxM
   title: getStringAttribute(metaElement, 'title'),
   of: getOfImportPath(metaElement, importMap),
   name: getStringAttribute(metaElement, 'name'),
+  id: getStringAttribute(metaElement, 'id'),
   summary: getStringAttribute(metaElement, 'summary'),
   isTemplate: getIsTemplate(metaElement),
   metaTags: getMetaTags(metaElement),

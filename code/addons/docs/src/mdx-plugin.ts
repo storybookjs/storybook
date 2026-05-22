@@ -5,6 +5,7 @@ import type { Plugin } from 'vite';
 
 import type { CompileOptions } from './compiler';
 import { compile } from './compiler';
+import { fileURLToPath } from 'node:url';
 
 /**
  * Storybook uses a single loader when dealing with MDX:
@@ -36,8 +37,10 @@ export async function mdxPlugin(options: Options): Promise<Plugin> {
         const mdxLoaderOptions: CompileOptions = await presets.apply('mdxLoaderOptions', {
           ...mdxPluginOptions,
           mdxCompileOptions: {
-            providerImportSource: import.meta.resolve('@storybook/addon-docs/mdx-react-shim'),
             ...mdxPluginOptions?.mdxCompileOptions,
+            providerImportSource: fileURLToPath(
+              import.meta.resolve('@storybook/addon-docs/mdx-react-shim')
+            ),
             rehypePlugins: [
               ...(mdxPluginOptions?.mdxCompileOptions?.rehypePlugins ?? []),
               rehypeSlug,

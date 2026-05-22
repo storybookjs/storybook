@@ -12,12 +12,22 @@ import {
 import { DetailsScreen } from './screens/DetailsScreen.tsx';
 import { SummaryScreen } from './screens/SummaryScreen.tsx';
 
+export interface ReviewChangesPageProps {
+  /** Test hook for stories; defaults to manager-api useChannel. */
+  useChannelHook?: typeof useChannel;
+  /** Test hook for stories; defaults to window.location.search. */
+  locationSearch?: string;
+}
+
 // Container — wires the channel + manager api. The agent pushes a review via
 // the MCP addon; we cache nothing here, just reflect the latest pushed state.
-export const ReviewChangesPage: FC = () => {
+export const ReviewChangesPage: FC<ReviewChangesPageProps> = ({
+  useChannelHook = useChannel,
+  locationSearch,
+}) => {
   const [state, setState] = useState<ReviewState | null>(null);
 
-  const emit = useChannel({
+  const emit = useChannelHook({
     [EVENTS.APPLY_REVIEW_STATE]: (next: ReviewState) => setState(next),
   });
 
@@ -26,7 +36,9 @@ export const ReviewChangesPage: FC = () => {
     emit(EVENTS.REQUEST_REVIEW_STATE);
   }, [emit]);
 
-  const detailsLocation = parseReviewChangesDetailsLocation(window.location.search);
+  const detailsLocation = parseReviewChangesDetailsLocation(
+    locationSearch ?? window.location.search
+  );
   const collection = state?.collections[detailsLocation?.collectionIndex ?? -1];
   const totalStories = collection?.storyIds.length ?? 0;
   const hasDetailsState = !!collection && totalStories > 0 && detailsLocation !== null;

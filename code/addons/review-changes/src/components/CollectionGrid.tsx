@@ -1,4 +1,4 @@
-import React, { type FC, useEffect, useRef, useState } from 'react';
+import { type FC, useEffect, useRef, useState } from 'react';
 
 import { Button } from 'storybook/internal/components';
 import { styled } from 'storybook/theming';
@@ -42,6 +42,10 @@ const CellAction = styled.div({
   height: '100%',
   display: 'grid',
   placeItems: 'center',
+});
+
+const CompactActionRow = styled.div({
+  width: '100%',
 });
 
 const GridLink = styled.a({
@@ -159,19 +163,30 @@ export const CollectionGrid: FC<CollectionGridProps> = ({
           href={getStoryHref?.(storyId, storyIndex)}
         />
       ))}
-      {hasOverflow && (
-        <GridCell data-testid="review-collection-grid-cell">
-          <CellAction>
-            <Button size="medium" asChild={!!reviewAllHref}>
+      {hasOverflow &&
+        (columnsPerRow === 1 ? (
+          <CompactActionRow>
+            <Button size="medium" asChild={!!reviewAllHref} style={{ width: '100%' }}>
               {reviewAllHref ? (
                 <a href={reviewAllHref}>Review all {storyIds.length}</a>
               ) : (
                 <span>Review all {storyIds.length}</span>
               )}
             </Button>
-          </CellAction>
-        </GridCell>
-      )}
+          </CompactActionRow>
+        ) : (
+          <GridCell data-testid="review-collection-grid-cell">
+            <CellAction>
+              <Button size="medium" asChild={!!reviewAllHref}>
+                {reviewAllHref ? (
+                  <a href={reviewAllHref}>Review all {storyIds.length}</a>
+                ) : (
+                  <span>Review all {storyIds.length}</span>
+                )}
+              </Button>
+            </CellAction>
+          </GridCell>
+        ))}
     </Grid>
   );
 };

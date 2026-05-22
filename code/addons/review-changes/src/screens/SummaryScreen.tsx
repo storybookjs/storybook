@@ -150,16 +150,16 @@ const ComponentsPlaceholder = styled.div(({ theme }) => ({
   padding: '8px 2px',
 }));
 
-const ClusterList = styled.div({
+const CollectionList = styled.div({
   display: 'flex',
   flexDirection: 'column',
 });
 
-const ClusterBlock = styled.section(({ theme }) => ({
+const CollectionBlock = styled.section(({ theme }) => ({
   borderBottom: `1px solid ${theme.appBorderColor}`,
 }));
 
-const ClusterHead = styled.div({
+const CollectionHead = styled.div({
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'space-between',
@@ -169,7 +169,7 @@ const ClusterHead = styled.div({
   cursor: 'pointer',
 });
 
-const ClusterLabel = styled.strong({
+const CollectionLabel = styled.strong({
   minWidth: 0,
   overflow: 'hidden',
   textOverflow: 'ellipsis',
@@ -182,7 +182,7 @@ const ClusterLabel = styled.strong({
   color: '#2E3338',
 });
 
-const ClusterControls = styled.div({
+const CollectionControls = styled.div({
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'flex-end',
@@ -190,7 +190,7 @@ const ClusterControls = styled.div({
   flexGrow: 1,
 });
 
-const ClusterCount = styled.span({
+const CollectionCount = styled.span({
   minWidth: 28,
   height: 20,
   fontFamily: '"SF Mono", SFMono-Regular, Menlo, Monaco, Consolas, monospace',
@@ -207,27 +207,27 @@ type ReviewTab = 'collections' | 'components';
 const CollectionsTab: FC<{
   collections: ReviewCollection[];
   expanded: Set<number>;
-  onToggleCluster: (index: number) => void;
-}> = ({ collections, expanded, onToggleCluster }) => (
-  <ClusterList>
+  onToggleCollection: (index: number) => void;
+}> = ({ collections, expanded, onToggleCollection }) => (
+  <CollectionList>
     {collections.map((collection, index) => {
       const isExpanded = expanded.has(index);
       const sampleCount = collection.storyIds.length;
 
       return (
-        <ClusterBlock key={`${collection.title}-${index}`}>
+        <CollectionBlock key={`${collection.title}-${index}`}>
           <Collapsible
             collapsed={!isExpanded}
             summary={() => (
-              <ClusterHead onClick={() => onToggleCluster(index)}>
-                <ClusterLabel>{collection.title}</ClusterLabel>
-                <ClusterControls>
-                  <ClusterCount>{sampleCount}</ClusterCount>
+              <CollectionHead onClick={() => onToggleCollection(index)}>
+                <CollectionLabel>{collection.title}</CollectionLabel>
+                <CollectionControls>
+                  <CollectionCount>{sampleCount}</CollectionCount>
                   <Button
                     variant="ghost"
                     size="small"
                     padding="small"
-                    ariaLabel="Mark cluster reviewed"
+                    ariaLabel="Mark collection reviewed"
                     onClick={(event) => event.stopPropagation()}
                   >
                     <CheckIcon />
@@ -236,16 +236,16 @@ const CollectionsTab: FC<{
                     variant="ghost"
                     size="small"
                     padding="small"
-                    ariaLabel={isExpanded ? 'Collapse cluster' : 'Expand cluster'}
+                    ariaLabel={isExpanded ? 'Collapse collection' : 'Expand collection'}
                     onClick={(event) => {
                       event.stopPropagation();
-                      onToggleCluster(index);
+                      onToggleCollection(index);
                     }}
                   >
                     {isExpanded ? <ChevronSmallUpIcon /> : <ChevronSmallDownIcon />}
                   </Button>
-                </ClusterControls>
-              </ClusterHead>
+                </CollectionControls>
+              </CollectionHead>
             )}
           >
             <CollectionGrid
@@ -260,10 +260,10 @@ const CollectionsTab: FC<{
               }
             />
           </Collapsible>
-        </ClusterBlock>
+        </CollectionBlock>
       );
     })}
-  </ClusterList>
+  </CollectionList>
 );
 
 export interface SummaryScreenProps {
@@ -272,13 +272,13 @@ export interface SummaryScreenProps {
 
 export const SummaryScreen: FC<SummaryScreenProps> = ({ state }) => {
   const [tab, setTab] = useState<ReviewTab>('collections');
-  const [expandedClusters, setExpandedClusters] = useState<Set<number>>(new Set());
+  const [expandedCollections, setExpandedCollections] = useState<Set<number>>(new Set());
 
   useEffect(() => {
     if (!state) {
       return;
     }
-    setExpandedClusters(new Set(state.collections.map((_, index) => index)));
+    setExpandedCollections(new Set(state.collections.map((_, index) => index)));
     setTab('collections');
   }, [state]);
 
@@ -334,9 +334,9 @@ export const SummaryScreen: FC<SummaryScreenProps> = ({ state }) => {
                   </SearchRow>
                   <CollectionsTab
                     collections={state.collections}
-                    expanded={expandedClusters}
-                    onToggleCluster={(index) => {
-                      setExpandedClusters((prev) => {
+                    expanded={expandedCollections}
+                    onToggleCollection={(index) => {
+                      setExpandedCollections((prev) => {
                         const next = new Set(prev);
                         if (next.has(index)) {
                           next.delete(index);

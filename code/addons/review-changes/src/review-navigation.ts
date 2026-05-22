@@ -15,6 +15,9 @@ export const parseReviewChangesDetailsLocation = (
   search: string
 ): ReviewChangesDetailsLocation | null => {
   const params = new URLSearchParams(search);
+  if (!params.has('collection') || !params.has('story')) {
+    return null;
+  }
   const collectionIndex = Number(params.get('collection'));
   const storyIndex = Number(params.get('story'));
 

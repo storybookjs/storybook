@@ -41,6 +41,7 @@ import { initializeSaveStory } from '../utils/save-story/save-story.ts';
 import { parseStaticDir } from '../utils/server-statics.ts';
 import { type OptionsWithRequiredCache, initializeWhatsNew } from '../utils/whats-new.ts';
 import { getWsToken } from './wsToken.ts';
+import { initAIAnalyticsChannel } from '../server-channel/ai-setup-channel.ts';
 
 const interpolate = (string: string, data: Record<string, string> = {}) =>
   Object.entries(data).reduce((acc, [k, v]) => acc.replace(new RegExp(`%${k}%`, 'g'), v), string);
@@ -176,12 +177,10 @@ export const experimental_serverAPI = (extension: Record<string, Function>, opti
   const packageManager = JsPackageManagerFactory.getPackageManager({
     configDir: options.configDir,
   });
-  if (!options.disableTelemetry) {
-    removeAddon = async (id: string, opts: RemoveAddonOptions) => {
-      await telemetry('remove', { addon: id, source: 'api' });
-      return removeAddonBase(id, { ...opts, packageManager });
-    };
-  }
+  removeAddon = async (id: string, opts: RemoveAddonOptions) => {
+    await telemetry('remove', { addon: id, source: 'api' });
+    return removeAddonBase(id, { ...opts, packageManager });
+  };
   return { ...extension, removeAddon };
 };
 
@@ -197,7 +196,8 @@ export const core = async (existing: CoreConfig, options: Options): Promise<Core
     ...(existing?.channelOptions ?? {}),
     ...(options.configType === 'DEVELOPMENT' ? { wsToken: getWsToken() } : {}),
   },
-  disableTelemetry: options.disableTelemetry === true,
+  disableTelemetry:
+    options.disableTelemetry || optionalEnvToBoolean(process.env.STORYBOOK_DISABLE_TELEMETRY),
   enableCrashReports:
     options.enableCrashReports || optionalEnvToBoolean(process.env.STORYBOOK_ENABLE_CRASH_REPORTS),
 });
@@ -207,7 +207,7 @@ export const features: PresetProperty<'features'> = async (existing) => ({
   actions: true,
   argTypeTargetsV7: true,
   backgrounds: true,
-  changeDetection: false,
+  changeDetection: true,
   componentsManifest: false,
   controls: true,
   disallowImplicitActionsInRenderV8: true,
@@ -272,17 +272,15 @@ export const experimental_serverChannel = async (
   channel: Channel,
   options: OptionsWithRequiredCache
 ) => {
-  const coreOptions = await options.presets.apply('core');
-
-  initializeChecklist();
-  initializeWhatsNew(channel, options, coreOptions);
-  initializeSaveStory(channel, options, coreOptions);
-
-  initFileSearchChannel(channel, options, coreOptions);
-  initCreateNewStoryChannel(channel, options, coreOptions);
-  initGhostStoriesChannel(channel, options, coreOptions);
-  initOpenInEditorChannel(channel, options, coreOptions);
-  initTelemetryChannel(channel, options);
+  initAIAnalyticsChannel(channel, options, () => storyIndexGeneratorPromise);
+  initializeChecklist(channel, () => storyIndexGeneratorPromise, options.configDir);
+  initializeWhatsNew(channel, options);
+  initializeSaveStory(channel, options);
+  initFileSearchChannel(channel, options);
+  initCreateNewStoryChannel(channel, options);
+  initGhostStoriesChannel(channel, options);
+  initOpenInEditorChannel(channel);
+  initTelemetryChannel(channel);
 
   return channel;
 };

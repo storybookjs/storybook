@@ -18,12 +18,13 @@ import * as pkg from 'empathic/package';
 
 import { version } from '../../package.json';
 import { globalSettings } from '../cli/globalSettings.ts';
+import { detectAgent } from './detect-agent.ts';
 import { getApplicationFileCount } from './get-application-file-count.ts';
 import { getChromaticVersionSpecifier } from './get-chromatic-version.ts';
 import { getFrameworkInfo } from './get-framework-info.ts';
 import { getHasRouterPackage } from './get-has-router-package.ts';
 import { analyzeEcosystemPackages } from './get-known-packages.ts';
-import { getMonorepoType } from './get-monorepo-type.ts';
+import { getMonorepoType } from '../shared/utils/get-monorepo-type.ts';
 import { getPackageManagerInfo } from './get-package-manager-info.ts';
 import { getPortableStoriesFileCount } from './get-portable-stories-usage.ts';
 import { getActualPackageVersion, getActualPackageVersions } from './package-json.ts';
@@ -113,7 +114,7 @@ export const computeStorybookMetadata = async ({
   mainConfig?: StorybookConfig & Record<string, any>;
   configDir: string;
 }): Promise<StorybookMetadata> => {
-  const settings = isCI() ? undefined : await globalSettings();
+  const settings = isCI() && !detectAgent() ? undefined : await globalSettings();
   const metadata: Partial<StorybookMetadata> = {
     generatedAt: new Date().getTime(),
     userSince: settings?.value.userSince,

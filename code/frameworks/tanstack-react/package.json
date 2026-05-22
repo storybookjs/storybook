@@ -1,0 +1,112 @@
+{
+  "name": "@storybook/tanstack-react",
+  "version": "10.5.0-alpha.2",
+  "description": "Storybook for TanStack (React, Vite): Router and Start ready Storybook framework",
+  "keywords": [
+    "storybook",
+    "storybook-framework",
+    "tanstack",
+    "tanstack-router",
+    "tanstack-start",
+    "react",
+    "vite",
+    "component",
+    "components"
+  ],
+  "homepage": "https://github.com/storybookjs/storybook/tree/next/code/frameworks/tanstack-react",
+  "bugs": {
+    "url": "https://github.com/storybookjs/storybook/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/storybookjs/storybook.git",
+    "directory": "code/frameworks/tanstack-react"
+  },
+  "funding": {
+    "type": "opencollective",
+    "url": "https://opencollective.com/storybook"
+  },
+  "license": "MIT",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "code": "./src/index.ts",
+      "default": "./dist/index.js"
+    },
+    "./node": {
+      "types": "./dist/node/index.d.ts",
+      "code": "./src/node/index.ts",
+      "default": "./dist/node/index.js"
+    },
+    "./package.json": "./package.json",
+    "./preset": {
+      "types": "./dist/preset.d.ts",
+      "code": "./src/preset.ts",
+      "default": "./dist/preset.js"
+    },
+    "./preview": {
+      "types": "./dist/preview.d.ts",
+      "code": "./src/preview.tsx",
+      "default": "./dist/preview.js"
+    },
+    "./react-router": {
+      "types": "./dist/export-mocks/react-router.d.ts",
+      "code": "./src/export-mocks/react-router.ts",
+      "default": "./dist/export-mocks/react-router.js"
+    },
+    "./start": {
+      "types": "./dist/export-mocks/start.d.ts",
+      "code": "./src/export-mocks/start.ts",
+      "default": "./dist/export-mocks/start.js"
+    },
+    "./start-storage-context": {
+      "types": "./dist/export-mocks/start-storage-context.d.ts",
+      "code": "./src/export-mocks/start-storage-context.ts",
+      "default": "./dist/export-mocks/start-storage-context.js"
+    }
+  },
+  "files": [
+    "dist/**/*",
+    "template/**/*",
+    "README.md",
+    "*.js",
+    "*.d.ts",
+    "!src/**/*"
+  ],
+  "dependencies": {
+    "@storybook/builder-vite": "workspace:*",
+    "@storybook/react": "workspace:*",
+    "@storybook/react-vite": "workspace:*"
+  },
+  "devDependencies": {
+    "@tanstack/react-router": "^1.168.10",
+    "@tanstack/react-start": "^1.167.16",
+    "@tanstack/router-core": "^1.168.9",
+    "@tanstack/start-client-core": "^1.167.9",
+    "@types/node": "^22.19.1",
+    "typescript": "^5.9.3",
+    "vite": "^7.0.4"
+  },
+  "peerDependencies": {
+    "@tanstack/react-router": "^1.168.10",
+    "@tanstack/react-start": "^1.167.16",
+    "@tanstack/router-core": "^1.168.9",
+    "@tanstack/start-client-core": "^1.167.9",
+    "react": "^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0",
+    "react-dom": "^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0",
+    "storybook": "workspace:^",
+    "vite": "^5.0.0 || ^6.0.0 || ^7.0.0 || ^8.0.0"
+  },
+  "peerDependenciesMeta": {
+    "@tanstack/react-start": {
+      "optional": true
+    },
+    "@tanstack/start-client-core": {
+      "optional": true
+    }
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

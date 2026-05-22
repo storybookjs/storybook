@@ -536,7 +536,7 @@ async function run() {
           errorTitle += ` for ${picocolors.bgCyan(picocolors.white(details.key))}:`;
         }
         logger.error(errorTitle);
-        logger.error(JSON.stringify(err, null, 2));
+        logger.error(err);
 
         if (process.env.CI) {
           const separator = '\n--------------------------------------------\n';

@@ -1,6 +1,6 @@
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { type Task, modifyErrorMessage } from './setup-file.ts';
+import { type Task, modifyErrorMessage, resetMousePositionBeforeTests } from './setup-file.ts';
 
 describe('modifyErrorMessage', () => {
   const originalUrl = import.meta.env.__STORYBOOK_URL__;
@@ -75,5 +75,70 @@ describe('modifyErrorMessage', () => {
     modifyErrorMessage({ task });
 
     expect(task.result?.errors?.[0].message).toBe('Non story test failure');
+  });
+});
+
+describe('resetMousePositionBeforeTests', () => {
+  afterEach(() => {
+    vi.clearAllMocks();
+    vi.doUnmock('vitest/browser');
+    vi.doUnmock('@vitest/browser/context');
+  });
+
+  it('should reset the mouse position when the browser command exists', async () => {
+    const resetMousePosition = vi.fn().mockResolvedValue(undefined);
+
+    vi.doMock('vitest/browser', () => ({
+      commands: {
+        resetMousePosition,
+      },
+    }));
+
+    await resetMousePositionBeforeTests();
+
+    expect(resetMousePosition).toHaveBeenCalledTimes(1);
+  });
+
+  it('should do nothing when resetMousePosition is not callable', async () => {
+    vi.doMock('vitest/browser', () => ({
+      commands: {
+        resetMousePosition: 'not-a-function',
+      },
+    }));
+
+    await expect(resetMousePositionBeforeTests()).resolves.toBeUndefined();
+  });
+
+  it('should rethrow unexpected errors', async () => {
+    const error = new Error('boom');
+
+    vi.doMock('vitest/browser', () => {
+      throw error;
+    });
+
+    await expect(resetMousePositionBeforeTests()).rejects.toThrow();
+  });
+
+  it('should fallback to vitest v3 browser context when vitest/browser is not found', async () => {
+    const resetMousePosition = vi.fn().mockResolvedValue(undefined);
+
+    vi.doMock('vitest/browser', () => {
+      const browser = {};
+      Object.defineProperty(browser, 'commands', {
+        get: () => {
+          throw new Error("Cannot find module 'vitest/browser'");
+        },
+      });
+      return browser;
+    });
+    vi.doMock('@vitest/browser/context', () => ({
+      commands: {
+        resetMousePosition,
+      },
+    }));
+
+    await resetMousePositionBeforeTests();
+
+    expect(resetMousePosition).toHaveBeenCalledTimes(1);
   });
 });

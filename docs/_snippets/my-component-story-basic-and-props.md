@@ -251,7 +251,7 @@ export const Basic = {
 export const WithProp = {
   render: () => ({
     components: { MyComponent },
-    template: '<MyComponent prop="value"/>',
+    template: '<MyComponent prop="value" />',
   }),
 };
 ```
@@ -278,7 +278,7 @@ export const Basic: Story = {
 export const WithProp: Story = {
   render: () => ({
     components: { MyComponent },
-    template: '<MyComponent prop="value"/>',
+    template: '<MyComponent prop="value" />',
   }),
 };
 ```
@@ -302,7 +302,7 @@ export const Basic = meta.story({
 export const WithProp = meta.story({
   render: () => ({
     components: { MyComponent },
-    template: '<MyComponent prop="value"/>',
+    template: '<MyComponent prop="value" />',
   }),
 });
 ```
@@ -326,7 +326,7 @@ export const Basic = meta.story({
 export const WithProp = meta.story({
   render: () => ({
     components: { MyComponent },
-    template: '<MyComponent prop="value"/>',
+    template: '<MyComponent prop="value" />',
   }),
 });
 ```

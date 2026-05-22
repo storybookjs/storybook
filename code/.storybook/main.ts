@@ -115,6 +115,7 @@ const config = defineMain({
     '@storybook/addon-designs',
     '@storybook/addon-vitest',
     '@storybook/addon-a11y',
+    '@storybook/addon-mcp',
     'storybook-addon-pseudo-states',
     '@chromatic-com/storybook',
   ],
@@ -143,10 +144,12 @@ const config = defineMain({
   },
   core: {
     disableTelemetry: true,
+    changeDetection: true,
   },
   features: {
     developmentModeForBuild: true,
     experimentalTestSyntax: true,
+    changeDetection: true,
   },
   staticDirs: [{ from: './bench/bundle-analyzer', to: '/bundle-analyzer' }],
   viteFinal: async (viteConfig, { configType }) => {
@@ -154,8 +157,8 @@ const config = defineMain({
 
     return mergeConfig(viteConfig, {
       resolve: {
-        alias: {
-          ...(configType === 'DEVELOPMENT'
+        alias:
+          configType === 'DEVELOPMENT'
             ? {
                 'storybook/internal/components': componentsPath,
                 'storybook/manager-api': managerApiPath,
@@ -165,8 +168,7 @@ const config = defineMain({
               }
             : {
                 'storybook/manager-api': managerApiPath,
-              }),
-        },
+              },
       },
       plugins: [react()],
       build: {

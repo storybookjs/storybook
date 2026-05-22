@@ -27,6 +27,7 @@ vi.mock('storybook/internal/telemetry', async (importOriginal) => {
     getLastEvents: vi.fn(),
     getSessionId: vi.fn(),
     getStorybookMetadata: vi.fn(),
+    setTelemetryEnabled: vi.fn(),
     telemetry: vi.fn(),
   };
 });
@@ -68,6 +69,17 @@ const mockCommon = await import('storybook/internal/common');
 const mockTelemetry = await import('storybook/internal/telemetry');
 const mockStoryGeneration = await import('../utils/ghost-stories/get-candidates.ts');
 
+const expectGhostStoriesTelemetryPayload = async (expectedPayload: unknown) => {
+  const telemetryMock = vi.mocked(mockTelemetry.telemetry);
+  const lastCallIndex = telemetryMock.mock.calls.length - 1;
+
+  expect(telemetryMock.mock.calls[lastCallIndex]?.[0]).toBe('ghost-stories');
+
+  const payload = await telemetryMock.mock.results[lastCallIndex]?.value;
+
+  expect(payload).toEqual(expectedPayload);
+};
+
 describe('ghostStoriesChannel', () => {
   const transport = { setHandler: vi.fn(), send: vi.fn() } satisfies ChannelTransport;
   const mockChannel = new Channel({ transport });
@@ -94,7 +106,15 @@ describe('ghostStoriesChannel', () => {
     vi.mocked(mockTelemetry.getLastEvents).mockReset();
     vi.mocked(mockTelemetry.getSessionId).mockReset();
     vi.mocked(mockTelemetry.getStorybookMetadata).mockReset();
-    vi.mocked(mockTelemetry.telemetry).mockReset();
+    vi.mocked(mockTelemetry.setTelemetryEnabled).mockReset();
+    vi.mocked(mockTelemetry.telemetry)
+      .mockReset()
+      .mockImplementation(async (_eventType, payloadOrFactory) => {
+        if (typeof payloadOrFactory === 'function') {
+          return payloadOrFactory();
+        }
+        return payloadOrFactory;
+      });
     vi.mocked(mockStoryGeneration.getComponentCandidates).mockReset();
     mockFs.existsSync.mockReset();
     mockFs.mkdir.mockReset();
@@ -130,9 +150,7 @@ describe('ghostStoriesChannel', () => {
       });
 
       // Has ran tests successfully and written reports to JSON file in cache directory
-      vi.mocked(mockCommon.resolvePathInStorybookCache).mockReturnValue(
-        '/cache/ghost-stories-tests'
-      );
+      vi.mocked(mockCommon.resolvePathInStorybookCache).mockReturnValue('/cache/story-tests');
       vi.mocked(mockCommon.executeCommand).mockResolvedValue({} as any);
       mockFs.existsSync.mockReturnValue(true);
       mockFs.readFile.mockResolvedValue(
@@ -157,7 +175,7 @@ describe('ghostStoriesChannel', () => {
         })
       );
 
-      initGhostStoriesChannel(mockChannel, {} as Options, { disableTelemetry: false });
+      initGhostStoriesChannel(mockChannel, {} as Options);
 
       mockChannel.emit(GHOST_STORIES_REQUEST);
 
@@ -173,18 +191,19 @@ describe('ghostStoriesChannel', () => {
           'run',
           '--reporter=json',
           '--testTimeout=1000',
-          expect.stringContaining('--outputFile=/cache/ghost-stories-tests/test-results-'),
+          expect.stringContaining('--outputFile=/cache/story-tests/test-results-'),
           'component1.tsx',
           'component2.tsx',
         ],
         stdio: 'pipe',
         env: {
+          STORYBOOK_INTERNAL_TEST_RUN: '1',
           STORYBOOK_COMPONENT_PATHS: 'component1.tsx;component2.tsx',
         },
       } as any);
 
       // Telemetry is called with the correct data
-      expect(mockTelemetry.telemetry).toHaveBeenCalledWith('ghost-stories', {
+      await expectGhostStoriesTelemetryPayload({
         stats: {
           globMatchCount: 10,
           candidateAnalysisDuration: expect.any(Number),
@@ -200,6 +219,7 @@ describe('ghostStoriesChannel', () => {
           successRate: 1,
           successRateWithoutEmptyRender: 1,
           categorizedErrors: expect.any(Object),
+          cssCheck: 'not-run',
           uniqueErrorCount: 0,
           passedButEmptyRender: 0,
         },
@@ -227,9 +247,7 @@ describe('ghostStoriesChannel', () => {
       });
 
       // Has ran tests but with failures, reports written to JSON file in cache directory
-      vi.mocked(mockCommon.resolvePathInStorybookCache).mockReturnValue(
-        '/cache/ghost-stories-tests'
-      );
+      vi.mocked(mockCommon.resolvePathInStorybookCache).mockReturnValue('/cache/story-tests');
       vi.mocked(mockCommon.executeCommand).mockResolvedValue({} as any);
       mockFs.existsSync.mockReturnValue(true);
       mockFs.readFile.mockResolvedValue(
@@ -256,7 +274,7 @@ describe('ghostStoriesChannel', () => {
         })
       );
 
-      initGhostStoriesChannel(mockChannel, {} as Options, { disableTelemetry: false });
+      initGhostStoriesChannel(mockChannel, {} as Options);
 
       mockChannel.emit(GHOST_STORIES_REQUEST);
 
@@ -272,19 +290,19 @@ describe('ghostStoriesChannel', () => {
           'run',
           '--reporter=json',
           '--testTimeout=1000',
-          expect.stringContaining('--outputFile=/cache/ghost-stories-tests/test-results-'),
+          expect.stringContaining('--outputFile=/cache/story-tests/test-results-'),
           'component1.tsx',
           'component2.tsx',
         ],
         stdio: 'pipe',
         env: {
+          STORYBOOK_INTERNAL_TEST_RUN: '1',
           STORYBOOK_COMPONENT_PATHS: 'component1.tsx;component2.tsx',
         },
       } as any);
 
       // Telemetry is called with the correct data
-      expect(mockTelemetry.telemetry).toHaveBeenCalledWith(
-        'ghost-stories',
+      await expectGhostStoriesTelemetryPayload(
         expect.objectContaining({
           stats: {
             globMatchCount: 10,
@@ -299,8 +317,9 @@ describe('ghostStoriesChannel', () => {
             total: 2,
             passed: 0,
             successRate: 0,
-            // categorizedErrors is now an object with categories as keys
+            // categorizedErrors is an object keyed by error category
             categorizedErrors: expect.any(Object),
+            cssCheck: 'not-run',
             uniqueErrorCount: expect.any(Number),
             passedButEmptyRender: 0,
           }),
@@ -312,15 +331,16 @@ describe('ghostStoriesChannel', () => {
       it('should skip discovery run when telemetry is disabled', async () => {
         mockChannel.addListener(GHOST_STORIES_RESPONSE, ghostStoriesEventListener);
 
-        initGhostStoriesChannel(mockChannel, {} as Options, { disableTelemetry: true });
+        vi.mocked(mockTelemetry.telemetry).mockImplementation(async () => undefined);
+
+        initGhostStoriesChannel(mockChannel, {} as Options);
 
         mockChannel.emit(GHOST_STORIES_REQUEST);
 
-        // When telemetry is disabled, no listener is set up, so wait a bit and check nothing happened
+        // When telemetry is disabled, handler returns early after emitting response
         await new Promise((resolve) => setTimeout(resolve, 10));
 
-        expect(ghostStoriesEventListener).not.toHaveBeenCalled();
-        expect(mockCommon.cache.get).not.toHaveBeenCalled();
+        expect(ghostStoriesEventListener).toHaveBeenCalled();
         expect(mockTelemetry.getStorybookMetadata).not.toHaveBeenCalled();
         expect(mockStoryGeneration.getComponentCandidates).not.toHaveBeenCalled();
       });
@@ -334,7 +354,7 @@ describe('ghostStoriesChannel', () => {
         } as any);
         vi.mocked(mockTelemetry.getSessionId).mockResolvedValue('test-session');
 
-        initGhostStoriesChannel(mockChannel, {} as Options, { disableTelemetry: false });
+        initGhostStoriesChannel(mockChannel, {} as Options);
 
         mockChannel.emit(GHOST_STORIES_REQUEST);
 
@@ -343,9 +363,68 @@ describe('ghostStoriesChannel', () => {
         });
 
         expect(mockTelemetry.getLastEvents).toHaveBeenCalled();
-        expect(mockTelemetry.getSessionId).toHaveBeenCalled();
+        // getSessionId is no longer checked by ghost stories — session matching
+        // was removed to support mid-session ai-setup triggers.
+        expect(mockTelemetry.getSessionId).not.toHaveBeenCalled();
         expect(mockTelemetry.getStorybookMetadata).not.toHaveBeenCalled();
         expect(mockStoryGeneration.getComponentCandidates).not.toHaveBeenCalled();
+      });
+
+      it('should skip discovery run when ghost stories ran and ai-setup scoring runId matches current ai-setup session', async () => {
+        mockChannel.addListener(GHOST_STORIES_RESPONSE, ghostStoriesEventListener);
+        vi.mocked(mockTelemetry.getLastEvents).mockResolvedValue({
+          'ghost-stories': { timestamp: Date.now(), body: {} },
+          'ai-setup': { body: { payload: { runId: 'session-A' } } },
+          'ai-setup-final-scoring': { body: { payload: { runId: 'session-A' } } },
+          init: { body: { sessionId: 'test-session' } },
+        } as any);
+
+        initGhostStoriesChannel(mockChannel, {} as Options);
+
+        mockChannel.emit(GHOST_STORIES_REQUEST);
+
+        await vi.waitFor(() => {
+          expect(ghostStoriesEventListener).toHaveBeenCalled();
+        });
+
+        expect(mockTelemetry.getStorybookMetadata).not.toHaveBeenCalled();
+        expect(mockStoryGeneration.getComponentCandidates).not.toHaveBeenCalled();
+      });
+
+      it('should run discovery again when ghost stories ran but ai-setup scoring runId is from an older session', async () => {
+        mockChannel.addListener(GHOST_STORIES_RESPONSE, ghostStoriesEventListener);
+        // Ghost stories has run before, but a new `ai setup` session has started
+        // (scoring runId is from session-A, ai-setup runId is now session-B)
+        vi.mocked(mockTelemetry.getLastEvents).mockResolvedValue({
+          'ghost-stories': { timestamp: Date.now(), body: {} },
+          'ai-setup': { body: { payload: { runId: 'session-B' } } },
+          'ai-setup-final-scoring': { body: { payload: { runId: 'session-A' } } },
+          init: { body: { sessionId: 'test-session' } },
+        } as any);
+
+        vi.mocked(mockTelemetry.getStorybookMetadata).mockResolvedValue({
+          renderer: '@storybook/react',
+          addons: { '@storybook/addon-vitest': {} },
+        } as any);
+
+        vi.mocked(mockStoryGeneration.getComponentCandidates).mockResolvedValue({
+          candidates: [],
+          globMatchCount: 0,
+          analyzedCount: 0,
+          avgComplexity: 0,
+        });
+
+        initGhostStoriesChannel(mockChannel, {} as Options);
+
+        mockChannel.emit(GHOST_STORIES_REQUEST);
+
+        await vi.waitFor(() => {
+          expect(ghostStoriesEventListener).toHaveBeenCalled();
+        });
+
+        // Should have proceeded past the skip condition
+        expect(mockTelemetry.getStorybookMetadata).toHaveBeenCalled();
+        expect(mockStoryGeneration.getComponentCandidates).toHaveBeenCalled();
       });
 
       it('should skip discovery run when not in a React + Vitest project', async () => {
@@ -360,7 +439,7 @@ describe('ghostStoriesChannel', () => {
           addons: { '@storybook/addon-vitest': {} },
         } as any);
 
-        initGhostStoriesChannel(mockChannel, {} as Options, { disableTelemetry: false });
+        initGhostStoriesChannel(mockChannel, {} as Options);
 
         mockChannel.emit(GHOST_STORIES_REQUEST);
 
@@ -369,7 +448,6 @@ describe('ghostStoriesChannel', () => {
         });
 
         expect(mockTelemetry.getLastEvents).toHaveBeenCalled();
-        expect(mockTelemetry.getSessionId).toHaveBeenCalled();
         expect(mockTelemetry.getStorybookMetadata).toHaveBeenCalled();
         expect(mockStoryGeneration.getComponentCandidates).not.toHaveBeenCalled();
       });
@@ -386,7 +464,7 @@ describe('ghostStoriesChannel', () => {
           addons: {},
         } as any);
 
-        initGhostStoriesChannel(mockChannel, {} as Options, { disableTelemetry: false });
+        initGhostStoriesChannel(mockChannel, {} as Options);
 
         mockChannel.emit(GHOST_STORIES_REQUEST);
 
@@ -395,7 +473,6 @@ describe('ghostStoriesChannel', () => {
         });
 
         expect(mockTelemetry.getLastEvents).toHaveBeenCalled();
-        expect(mockTelemetry.getSessionId).toHaveBeenCalled();
         expect(mockTelemetry.getStorybookMetadata).toHaveBeenCalled();
         expect(mockStoryGeneration.getComponentCandidates).not.toHaveBeenCalled();
       });
@@ -419,7 +496,7 @@ describe('ghostStoriesChannel', () => {
           globMatchCount: 0,
         });
 
-        initGhostStoriesChannel(mockChannel, {} as Options, { disableTelemetry: false });
+        initGhostStoriesChannel(mockChannel, {} as Options);
 
         mockChannel.emit(GHOST_STORIES_REQUEST);
 
@@ -428,7 +505,7 @@ describe('ghostStoriesChannel', () => {
         });
 
         expect(mockStoryGeneration.getComponentCandidates).toHaveBeenCalled();
-        expect(mockTelemetry.telemetry).toHaveBeenCalledWith('ghost-stories', {
+        await expectGhostStoriesTelemetryPayload({
           runError: 'Failed to analyze components',
           stats: {
             globMatchCount: 0,
@@ -459,7 +536,7 @@ describe('ghostStoriesChannel', () => {
           avgComplexity: 1.5,
         });
 
-        initGhostStoriesChannel(mockChannel, {} as Options, { disableTelemetry: false });
+        initGhostStoriesChannel(mockChannel, {} as Options);
 
         mockChannel.emit(GHOST_STORIES_REQUEST);
 
@@ -468,7 +545,7 @@ describe('ghostStoriesChannel', () => {
         });
 
         expect(mockStoryGeneration.getComponentCandidates).toHaveBeenCalled();
-        expect(mockTelemetry.telemetry).toHaveBeenCalledWith('ghost-stories', {
+        await expectGhostStoriesTelemetryPayload({
           runError: 'No candidates found',
           stats: {
             globMatchCount: 5,
@@ -498,13 +575,11 @@ describe('ghostStoriesChannel', () => {
           analyzedCount: 2,
           avgComplexity: 1.0,
         });
-        vi.mocked(mockCommon.resolvePathInStorybookCache).mockReturnValue(
-          '/cache/ghost-stories-tests'
-        );
+        vi.mocked(mockCommon.resolvePathInStorybookCache).mockReturnValue('/cache/story-tests');
         vi.mocked(mockCommon.executeCommand).mockRejectedValue(new Error('Test execution failed'));
         mockFs.existsSync.mockReturnValue(false);
 
-        initGhostStoriesChannel(mockChannel, {} as Options, { disableTelemetry: false });
+        initGhostStoriesChannel(mockChannel, {} as Options);
 
         mockChannel.emit(GHOST_STORIES_REQUEST);
 
@@ -512,7 +587,7 @@ describe('ghostStoriesChannel', () => {
           expect(ghostStoriesEventListener).toHaveBeenCalled();
         });
 
-        expect(mockTelemetry.telemetry).toHaveBeenCalledWith('ghost-stories', {
+        await expectGhostStoriesTelemetryPayload({
           runError: 'JSON report not found',
           stats: {
             globMatchCount: 5,
@@ -543,9 +618,7 @@ describe('ghostStoriesChannel', () => {
           analyzedCount: 2,
           avgComplexity: 1.0,
         });
-        vi.mocked(mockCommon.resolvePathInStorybookCache).mockReturnValue(
-          '/cache/ghost-stories-tests'
-        );
+        vi.mocked(mockCommon.resolvePathInStorybookCache).mockReturnValue('/cache/story-tests');
         vi.mocked(mockCommon.executeCommand).mockRejectedValue(new Error('Startup Error'));
         mockFs.existsSync.mockReturnValue(true);
         mockFs.readFile.mockResolvedValue(
@@ -557,7 +630,7 @@ describe('ghostStoriesChannel', () => {
           })
         );
 
-        initGhostStoriesChannel(mockChannel, {} as Options, { disableTelemetry: false });
+        initGhostStoriesChannel(mockChannel, {} as Options);
 
         mockChannel.emit(GHOST_STORIES_REQUEST);
 
@@ -565,7 +638,7 @@ describe('ghostStoriesChannel', () => {
           expect(ghostStoriesEventListener).toHaveBeenCalled();
         });
 
-        expect(mockTelemetry.telemetry).toHaveBeenCalledWith('ghost-stories', {
+        await expectGhostStoriesTelemetryPayload({
           runError: 'Startup Error',
           stats: {
             globMatchCount: 5,
@@ -583,7 +656,7 @@ describe('ghostStoriesChannel', () => {
         mockChannel.addListener(GHOST_STORIES_RESPONSE, ghostStoriesEventListener);
         vi.mocked(mockTelemetry.getLastEvents).mockRejectedValue(new Error('Cache error') as any);
 
-        initGhostStoriesChannel(mockChannel, {} as Options, { disableTelemetry: false });
+        initGhostStoriesChannel(mockChannel, {} as Options);
 
         mockChannel.emit(GHOST_STORIES_REQUEST);
 
@@ -591,7 +664,7 @@ describe('ghostStoriesChannel', () => {
           expect(ghostStoriesEventListener).toHaveBeenCalled();
         });
 
-        expect(mockTelemetry.telemetry).toHaveBeenCalledWith('ghost-stories', {
+        await expectGhostStoriesTelemetryPayload({
           runError: 'Unknown error during ghost run',
           stats: {},
         });

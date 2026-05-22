@@ -11,6 +11,7 @@ import type {
 } from 'storybook/internal/types';
 
 import type { DependencyCollector } from '../dependency-collector.ts';
+import type { TelemetryService } from '../services/TelemetryService.ts';
 import type { FrameworkPreviewParts } from './configure.ts';
 
 export type GeneratorOptions = {
@@ -79,7 +80,11 @@ export interface GeneratorMetadata {
    * generators that need to determine the builder based on the project type in cases where the
    * builder cannot be detected (Webpack and Vite are both non-existent dependencies).
    */
-  builderOverride?: SupportedBuilder | (() => SupportedBuilder | Promise<SupportedBuilder>);
+  builderOverride?:
+    | SupportedBuilder
+    | ((context: {
+        telemetryService: TelemetryService;
+      }) => SupportedBuilder | Promise<SupportedBuilder>);
 }
 
 export interface GeneratorContext {
@@ -87,6 +92,7 @@ export interface GeneratorContext {
   renderer: SupportedRenderer;
   builder: SupportedBuilder;
   language: SupportedLanguage;
+  telemetryService: TelemetryService;
   features: Set<Feature>;
   dependencyCollector: DependencyCollector;
   linkable?: boolean;
@@ -113,6 +119,13 @@ export interface GeneratorModule {
   }: {
     packageManager: JsPackageManager;
   }) => Promise<void> | void;
+  /**
+   * The function that runs after dependencies have been installed. Use this for tasks that require
+   * the project's dependencies (e.g. CLI tools shipped by a dependency) to be available on disk.
+   *
+   * Examples: re-aligning native package versions in an Expo project with `npx expo install --fix`.
+   */
+  postInstall?: ({ packageManager }: { packageManager: JsPackageManager }) => Promise<void> | void;
 }
 
 export type CommandOptions = {
@@ -121,11 +134,13 @@ export type CommandOptions = {
   features?: Array<Feature>;
   type?: ProjectType;
   force?: any;
+  /** Whether this is being run via an ai agent */
+  agent?: boolean;
   html?: boolean;
   skipInstall?: boolean;
   language?: SupportedLanguage;
   parser?: string;
-  // Automatically answer yes to prompts
+  /** Automatically answer yes to prompts */
   yes?: boolean;
   builder?: SupportedBuilder;
   linkable?: boolean;

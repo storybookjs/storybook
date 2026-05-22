@@ -15,6 +15,7 @@ import serverGenerator from './SERVER/index.ts';
 import solidGenerator from './SOLID/index.ts';
 import svelteGenerator from './SVELTE/index.ts';
 import svelteKitGenerator from './SVELTEKIT/index.ts';
+import tanstackGenerator from './TANSTACK/index.ts';
 import vue3Generator from './VUE3/index.ts';
 import webComponentsGenerator from './WEB-COMPONENTS/index.ts';
 import type { GeneratorModule } from './types.ts';
@@ -38,6 +39,7 @@ const setOfGenerators = new Set<GeneratorModule>([
   solidGenerator,
   serverGenerator,
   qwikGenerator,
+  tanstackGenerator,
 ]);
 
 /** Register all framework generators with the central registry */

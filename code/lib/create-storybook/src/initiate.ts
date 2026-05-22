@@ -1,5 +1,8 @@
+import { resolve } from 'node:path';
+
 import { ProjectType } from 'storybook/internal/cli';
 import {
+  HandledError,
   type JsPackageManager,
   PackageManagerName,
   cache,
@@ -120,7 +123,7 @@ export async function doInitiate(options: CommandOptions): Promise<
 
   // Step 5: Execute generator with dependency collector (now with frameworkInfo)
 
-  const { configDir, storybookCommand, shouldRunDev, extraAddons } =
+  const { configDir, storybookCommand, shouldRunDev, extraAddons, postInstall } =
     await executeGeneratorExecution({
       projectType,
       packageManager,
@@ -142,6 +145,17 @@ export async function doInitiate(options: CommandOptions): Promise<
   // After dependencies are installed, we must not use the dependency collector anymore
   dependencyCollector = null;
 
+  // Generators may need to perform tasks once dependencies are installed (e.g. running a CLI that
+  // ships with one of those dependencies). We only run this when the install actually succeeded
+  // and we didn't skip it, otherwise the dependency-provided binary likely isn't available.
+  if (postInstall && !options.skipInstall && dependencyInstallationResult.status === 'success') {
+    try {
+      await postInstall();
+    } catch (err) {
+      logger.warn(`Post-install step failed: ${err instanceof Error ? err.message : String(err)}`);
+    }
+  }
+
   // Step 7: Configure addons (run postinstall scripts for configuration only)
   await executeAddonConfiguration({
     packageManager,
@@ -152,10 +166,24 @@ export async function doInitiate(options: CommandOptions): Promise<
 
   // Step 8: Print final summary
   const hasAiFeature = selectedFeatures.has(Feature.AI);
-  if (hasAiFeature) {
-    // Record the init-time AI opt-in in the telemetry event cache so the server can gate
-    // AI-related UI (checklist item, analytics) via the universal checklist store.
-    await telemetry('ai-init-opt-in', {}).catch(() => {});
+  if (configDir && isAiSetupAvailable) {
+    // Persist init-time AI opt-in/opt-out so the dev server can gate AI-related UI
+    // (checklist item, copy-prompt button) on the user's actual choice — not on
+    // a telemetry-event side effect. Scoped to the project's configDir so a
+    // monorepo with hoisted `node_modules/.cache` doesn't leak the flag across
+    // sibling Storybook projects. This is a tiny local file with no PII, so it
+    // is written even when telemetry is disabled.
+    await cache
+      .set('ai-init-opt-in', {
+        timestamp: Date.now(),
+        configDir: resolve(configDir),
+        answer: hasAiFeature,
+      })
+      .catch(() => {});
+    // Telemetry event remains for analytics. UI logic does not depend on it.
+    await telemetry('ai-init-opt-in', {
+      answer: hasAiFeature,
+    }).catch(() => {});
   }
   await executeFinalization({
     showAgentFollowUp: !!options.agent && hasAiFeature,
@@ -188,6 +216,7 @@ export async function doInitiate(options: CommandOptions): Promise<
 const handleCommandFailure = async (logFilePath: string | boolean | undefined): Promise<never> => {
   const logFile = await logTracker.writeToFile(logFilePath);
   logger.error('Storybook encountered an error during initialization');
+
   logger.log(`Debug logs are written to: ${logFile}`);
   logger.outro('Storybook exited with an error');
   process.exit(1);
@@ -208,17 +237,12 @@ export async function initiate(options: CommandOptions): Promise<void> {
       fallbackTelemetryState: true,
     },
     async () => {
-      // we need to explicitly set this before init to not delay the events until the end of the flow
-      await setTelemetryEnabled(!options.disableTelemetry);
-
       const result = await doInitiate(options);
-
       logger.outro('');
-
       return result;
     }
   ).catch(() => {
-    handleCommandFailure(options.logfile);
+    return handleCommandFailure(options.logfile);
   });
 
   // Launch dev server only if --dev was explicitly passed

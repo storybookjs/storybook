@@ -13,7 +13,7 @@ This rule encourages you to use inline property definitions for the default expo
 Examples of **incorrect** code for this rule:
 
 ```js
-const title = "Button";
+const title = 'Button';
 const args = { primary: true };
 
 export default {
@@ -27,7 +27,7 @@ Examples of **correct** code for this rule:
 
 ```js
 export default {
-  title: "Button",
+  title: 'Button',
   args: { primary: true },
   component: Button,
 };

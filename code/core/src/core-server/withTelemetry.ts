@@ -7,7 +7,6 @@ import {
 } from 'storybook/internal/common';
 import { logger, prompt } from 'storybook/internal/node-logger';
 import {
-  collectAiSetupEvidence,
   ErrorCollector,
   getPrecedingUpgrade,
   isTelemetryStateResolved,
@@ -190,6 +189,29 @@ async function resolveTelemetryState(options: TelemetryOptions) {
   await setTelemetryEnabled(options.fallbackTelemetryState ?? false);
 }
 
+function isInterruptionError(error: unknown): boolean {
+  if (!error || typeof error !== 'object') {
+    return false;
+  }
+
+  const signal = 'signal' in error ? error.signal : undefined;
+  const code = 'code' in error ? error.code : undefined;
+  const name = 'name' in error ? error.name : undefined;
+  const message =
+    'message' in error && typeof error.message === 'string' ? error.message : undefined;
+  const cause = 'cause' in error ? error.cause : undefined;
+
+  return (
+    signal === 'SIGINT' ||
+    code === 'ABORT_ERR' ||
+    code === 'ERR_CANCELED' ||
+    name === 'AbortError' ||
+    message?.includes('Command was killed with SIGINT') ||
+    message?.includes('The operation was aborted') ||
+    isInterruptionError(cause)
+  );
+}
+
 export async function withTelemetry<T>(
   eventType: EventType,
   options: TelemetryOptions,
@@ -221,15 +243,16 @@ export async function withTelemetry<T>(
 
   telemetry('boot', { eventType }, { stripMetadata: true });
 
-  // Fire-and-forget: don't await, don't block the command
-  const configDir = options.cliOptions.configDir || options.presetOptions?.configDir;
-  collectAiSetupEvidence(eventType, configDir);
-
   try {
     const result = await run();
     return result;
-  } catch (error: any) {
+  } catch (error: unknown) {
     if (canceled) {
+      return undefined;
+    }
+
+    if (eventType === 'init' && isInterruptionError(error)) {
+      await cancelTelemetry();
       return undefined;
     }
 

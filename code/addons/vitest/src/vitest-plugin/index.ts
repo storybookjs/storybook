@@ -3,6 +3,7 @@ import { fileURLToPath } from 'node:url';
 import type { Plugin } from 'vitest/config';
 import { mergeConfig } from 'vitest/config';
 import type { ViteUserConfig } from 'vitest/config';
+import type {} from '@vitest/browser-playwright';
 
 import {
   DEFAULT_FILES_PATTERN,
@@ -403,6 +404,19 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
                   screenshotFailures: false,
                 }
               : {}),
+
+            // Inject the cursor reset command we use to prevent accidental hover states when running
+            // Storybook tests in Chromium on Linux. There is a known race condition / special code path
+            // in Chromium causing it to sometimes apply :hover to the element under the mouse cursor even
+            // when there was no mouse movement.
+            commands: {
+              async resetMousePosition(ctx) {
+                if (ctx.provider.name === 'playwright') {
+                  const frame = await ctx.frame();
+                  await frame.page().mouse.move(-1000, -1000);
+                }
+              },
+            },
           },
         },
 
@@ -464,8 +478,15 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
 
       if (isTelemetryModuleEnabled()) {
         // When an agent is running vitest via CLI, inject a reporter that sends
-        // detailed test result telemetry (pass/fail, error analysis, empty renders)
-        if (agent && withinAgenticSetupSession) {
+        // detailed test result telemetry (pass/fail, error analysis, empty renders).
+        //
+        // STORYBOOK_INTERNAL_TEST_RUN is set by the dev server when it spawns
+        // vitest internally (ghost-stories, ai-setup-final-scoring). Those runs
+        // are not part of the agent's iterative self-healing loop, so we skip
+        // installing the reporter to avoid emitting `ai-setup-self-healing-scoring`
+        // events whose results would misleadingly attribute ghost-stories /
+        // final-scoring outcomes to the self-healing loop.
+        if (agent && withinAgenticSetupSession && !process.env.STORYBOOK_INTERNAL_TEST_RUN) {
           context.vitest.config.reporters.push(
             new AgentTelemetryReporter({
               configDir: finalOptions.configDir,

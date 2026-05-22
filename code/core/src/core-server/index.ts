@@ -16,7 +16,7 @@ export type { ComponentArgTypesData } from './utils/get-dummy-args-from-argtypes
 export { loadStorybook as experimental_loadStorybook } from './load.ts';
 
 export { Tag } from '../shared/constants/tags.ts';
-export { analyze as analyzeMdx } from '@storybook/docs-mdx';
+export { analyzeMdx } from './utils/analyze-mdx.ts';
 
 export { UniversalStore as experimental_UniversalStore } from '../shared/universal-store/index.ts';
 export { MockUniversalStore as experimental_MockUniversalStore } from '../shared/universal-store/mock.ts';
@@ -28,6 +28,19 @@ export {
 export {
   getChangeDetectionReadiness as experimental_getChangeDetectionReadiness,
   type ChangeDetectionReadiness as Experimental_ChangeDetectionReadiness,
+  ChangeDetectionFailureError,
+  ChangeDetectionUnavailableError,
+} from './change-detection/index.ts';
+export type {
+  ChangeDetectionAdapter,
+  FileChangeEvent,
+  ModuleResolveConfig,
+} from './change-detection/index.ts';
+export type {
+  ImportEdge,
+  ImportParser,
+  ImportParserContext,
+  ParseFileArgs,
 } from './change-detection/index.ts';
 export { ChangeDetectionService } from './change-detection/ChangeDetectionService.ts';
 export {
@@ -41,5 +54,9 @@ export { runStoryTests } from './utils/ghost-stories/run-story-tests.ts';
 export { getServerPort } from './utils/server-address.ts';
 
 export { analyzeTestResults } from '../shared/utils/analyze-test-results.ts';
-export type { StoryTestResult } from '../shared/utils/test-result-types.ts';
+export type {
+  StoryTestResult,
+  StoryTestResultHistory,
+  StoryTestResultHistoryEntry,
+} from '../shared/utils/test-result-types.ts';
 export { toStoryTestResult } from '../shared/utils/to-story-test-result.ts';

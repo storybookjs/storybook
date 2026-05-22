@@ -34,7 +34,14 @@ export async function runStoryTests(
     let testFailureMessage;
 
     try {
-      // Execute the test runner command with specific story files
+      // Execute the test runner command with specific story files.
+      //
+      // STORYBOOK_INTERNAL_TEST_RUN marks this as a dev-server-initiated run
+      // (ghost-stories or ai-setup-final-scoring) so the vitest plugin can
+      // skip telemetry meant for agent-driven external runs. Without this,
+      // ghost-stories runs would trigger `ai-setup-self-healing-scoring`
+      // events whose results have nothing to do with the agent's iterative
+      // self-healing loop.
       const testProcess = executeCommand({
         command: 'npx',
         args: [
@@ -47,9 +54,10 @@ export async function runStoryTests(
         ],
         cwd,
         stdio: 'pipe',
-        ...(options?.ghostRun
-          ? { env: { STORYBOOK_COMPONENT_PATHS: componentFilePaths.join(';') } }
-          : {}),
+        env: {
+          STORYBOOK_INTERNAL_TEST_RUN: '1',
+          ...(options?.ghostRun ? { STORYBOOK_COMPONENT_PATHS: componentFilePaths.join(';') } : {}),
+        },
       });
 
       await testProcess;

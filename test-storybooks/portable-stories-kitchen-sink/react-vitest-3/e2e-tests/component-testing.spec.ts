@@ -550,7 +550,7 @@ test.describe("component testing", () => {
       page.locator(
         '#storybook-explorer-menu [data-testid="tree-status-button"][aria-label="Test status: Success"]'
       )
-    ).toHaveCount(1);
+    ).toHaveCount(3); // 1 story, 1 component, 1 group
   });
 
   test("should show unhandled errors in the testing module", async ({

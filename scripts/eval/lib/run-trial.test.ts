@@ -37,6 +37,12 @@ vi.mock('./utils', async (importOriginal) => {
       evalBranch: 'test-branch',
       evalCommit: 'abc123',
     }),
+    resolveDispatcherPath: vi.fn().mockReturnValue('/repo/code/core/dist/bin/dispatcher.js'),
+    loadPrompt: vi
+      .fn()
+      .mockReturnValue(
+        'Run `node /repo/code/core/dist/bin/dispatcher.js ai setup` and follow its instructions precisely.'
+      ),
   };
 });
 vi.mock('./agents/claude-code', () => ({
@@ -166,7 +172,7 @@ describe('runTrial pipeline', () => {
 
     const params = vi.mocked(claudeAgent.execute).mock.calls[0][0];
     expect(params).toMatchObject({
-      prompt: expect.stringContaining('npx storybook ai setup'),
+      prompt: expect.stringMatching(/node .+dispatcher\.js ai setup/),
       projectPath: TMP,
       variant: { agent: 'claude', model: 'sonnet-4.6', effort: 'high' },
       resultsDir: join(TMP, '.storybook', 'eval-results'),
@@ -175,8 +181,8 @@ describe('runTrial pipeline', () => {
     expect(params.logger).toBeDefined();
 
     expect(vi.mocked(x)).toHaveBeenCalledWith(
-      'npx',
-      ['storybook', 'ai', 'setup'],
+      'node',
+      ['/repo/code/core/dist/bin/dispatcher.js', 'ai', 'setup'],
       expect.objectContaining({
         nodeOptions: expect.objectContaining({
           cwd: TMP,
@@ -259,7 +265,7 @@ describe('runTrial pipeline', () => {
     expect(data).not.toHaveProperty('artifacts.screenshotOutput');
 
     const promptContent = readFileSync(join(resultsDir, 'prompt.md'), 'utf-8');
-    expect(promptContent).toContain('npx storybook ai setup');
+    expect(promptContent).toMatch(/node .+dispatcher\.js ai setup/);
 
     const setupPromptContent = readFileSync(join(resultsDir, 'setup-prompt.md'), 'utf-8');
     expect(setupPromptContent).toContain('Full project-aware instructions');

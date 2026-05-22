@@ -8,7 +8,7 @@ import type { TestManager } from './test-manager.ts';
 
 export type StorybookCoverageReporterOptions = {
   testManager: TestManager;
-  coverageOptions: ResolvedCoverageOptions<'v8'> | undefined;
+  coverageOptions: ResolvedCoverageOptions | undefined;
 };
 
 class StorybookCoverageReporter extends ReportBase implements Partial<Visitor> {

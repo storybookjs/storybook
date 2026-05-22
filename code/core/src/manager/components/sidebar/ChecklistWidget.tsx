@@ -11,9 +11,9 @@ import {
 import {
   CheckIcon,
   ChevronSmallUpIcon,
+  CircleHollowIcon,
   EyeCloseIcon,
   ListUnorderedIcon,
-  StatusFailIcon,
   StatusPassIcon,
 } from '@storybook/icons';
 
@@ -178,6 +178,7 @@ const CopyButton = ({
   label,
   copyContent,
   onClick,
+  ...props
 }: {
   label: string;
   copyContent: string;
@@ -196,7 +197,11 @@ const CopyButton = ({
     content: copyContent,
   });
 
-  return <ActionList.Button {...copyButtonProps}>{copyChildren}</ActionList.Button>;
+  return (
+    <ActionList.Button {...props} {...copyButtonProps}>
+      {copyChildren}
+    </ActionList.Button>
+  );
 };
 
 export const ChecklistWidget = () => {
@@ -347,7 +352,7 @@ export const ChecklistWidget = () => {
                         ) : item.icon ? (
                           <item.icon />
                         ) : (
-                          <StatusFailIcon />
+                          <CircleHollowIcon />
                         )}
                       </ActionList.Icon>
                       <ActionList.Text>

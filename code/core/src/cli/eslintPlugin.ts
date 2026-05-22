@@ -315,16 +315,15 @@ export async function configureEslintPlugin({
     }
   } else {
     logger.debug('No ESLint config file found, configuring in package.json instead');
-    const { packageJson } = packageManager.primaryPackageJson;
+    const { packageJson, operationDir } = packageManager.primaryPackageJson;
     const existingExtends = normalizeExtends(packageJson.eslintConfig?.extends).filter(Boolean);
 
-    packageManager.writePackageJson({
-      ...packageJson,
-      eslintConfig: {
-        ...packageJson.eslintConfig,
-        extends: [...existingExtends, 'plugin:storybook/recommended'],
-      },
-    });
+    packageJson.eslintConfig = {
+      ...packageJson.eslintConfig,
+      extends: [...existingExtends, 'plugin:storybook/recommended'],
+    };
+
+    packageManager.writePackageJson(packageJson, operationDir);
   }
 }
 

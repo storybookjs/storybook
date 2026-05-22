@@ -4,7 +4,7 @@ import type { DetectResult } from 'package-manager-detector';
 
 import type { AgentInfo } from './detect-agent.ts';
 import type { KnownPackagesList } from './get-known-packages.ts';
-import type { MonorepoType } from './get-monorepo-type.ts';
+import type { MonorepoType } from '../shared/utils/get-monorepo-type.ts';
 
 export type EventType =
   | 'boot'
@@ -46,11 +46,10 @@ export type EventType =
   | 'share'
   | 'ghost-stories'
   | 'sidebar-filter'
-  | 'ai-setup'
-  | 'ai-setup-evidence'
-  | 'ai-setup-final-scoring'
-  | 'ai-prompt-nudge'
   | 'ai-init-opt-in'
+  | 'ai-prompt-nudge'
+  | 'ai-setup'
+  | 'ai-setup-final-scoring'
   | 'ai-setup-self-healing-scoring';
 export interface Dependency {
   version: string | undefined;

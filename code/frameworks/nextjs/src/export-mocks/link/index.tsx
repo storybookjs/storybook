@@ -64,3 +64,7 @@ MockLink.displayName = 'NextLink';
 
 export default MockLink;
 export { MockLink as Link };
+
+export const useLinkStatus = fn((): { pending: boolean } => ({ pending: false })).mockName(
+  'next/link::useLinkStatus'
+);

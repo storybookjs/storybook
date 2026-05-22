@@ -119,6 +119,7 @@ const hasFrameworkTemplates = (framework?: string) => {
     SupportedFramework.SOLID,
     SupportedFramework.SVELTE_VITE,
     SupportedFramework.SVELTEKIT,
+    SupportedFramework.TANSTACK_REACT,
     SupportedFramework.VUE3_VITE,
     SupportedFramework.WEB_COMPONENTS_VITE,
   ];

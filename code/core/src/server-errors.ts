@@ -457,6 +457,50 @@ export class GenerateNewProjectOnInitError extends StorybookError {
   }
 }
 
+type MinimumReleaseAgeHandledErrorData =
+  | {
+      message: string;
+      cause?: unknown;
+    }
+  | {
+      packageManagerName: string;
+      minimumReleaseAgeConfigName: string;
+      minimumReleaseAgeConfigDocs: string;
+      minimumReleaseAgeExclusionsConfigName?: string;
+      minimumReleaseAgeExclusionsConfigDocs?: string;
+      failedPackage?: string | null;
+      cause?: unknown;
+    };
+
+function createMinimumReleaseAgeHandledErrorMessage(data: MinimumReleaseAgeHandledErrorData) {
+  if ('message' in data) {
+    return data.message;
+  }
+
+  const followUp = data.minimumReleaseAgeExclusionsConfigName
+    ? `To fix this, either wait for the configured age window to pass and rerun the command, or add the blocked packages to ${data.packageManagerName}'s ${data.minimumReleaseAgeExclusionsConfigName} setting.`
+    : 'To fix this, either wait for the configured age window to pass and rerun the command, or rerun Storybook with an older compatible release.';
+
+  return dedent`
+    ${data.packageManagerName} blocked package installation because your project uses ${data.minimumReleaseAgeConfigName}.
+    ${data.failedPackage ? `\nFailed package: ${data.failedPackage}\n` : ''}
+    ${followUp}
+  `;
+}
+
+export class MinimumReleaseAgeHandledError extends StorybookError {
+  constructor(public data: MinimumReleaseAgeHandledErrorData) {
+    super({
+      name: 'MinimumReleaseAgeHandledError',
+      category: Category.CLI,
+      isHandledError: true,
+      code: 2,
+      cause: data.cause,
+      message: createMinimumReleaseAgeHandledErrorMessage(data),
+    });
+  }
+}
+
 export class AddonVitestPostinstallPrerequisiteCheckError extends StorybookError {
   constructor(public data: { reasons: string[] }) {
     super({

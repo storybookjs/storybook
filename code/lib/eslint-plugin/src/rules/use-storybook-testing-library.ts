@@ -27,7 +27,7 @@ export default createStorybookRule({
     messages: {
       updateImports: 'Update imports',
       dontUseTestingLibraryDirectly:
-        'Do not use `{{library}}` directly in the story. You should import the functions from `@storybook/test` (preferrably) or `@storybook/testing-library` instead.',
+        'Do not use `{{library}}` directly in the story. You should import the functions from `storybook/test` instead.',
     },
   },
 
@@ -102,10 +102,7 @@ export default createStorybookRule({
               library: node.source.value,
             },
             *fix(fixer) {
-              yield fixer.replaceTextRange(
-                getRangeWithoutQuotes(node.source),
-                '@storybook/testing-library'
-              );
+              yield fixer.replaceTextRange(getRangeWithoutQuotes(node.source), 'storybook/test');
               if (hasDefaultImport(node.specifiers)) {
                 const specifiers = getSpecifiers(node);
                 if (specifiers) {
@@ -120,7 +117,7 @@ export default createStorybookRule({
                 *fix(fixer) {
                   yield fixer.replaceTextRange(
                     getRangeWithoutQuotes(node.source),
-                    '@storybook/testing-library'
+                    'storybook/test'
                   );
                   if (hasDefaultImport(node.specifiers)) {
                     const specifiers = getSpecifiers(node);

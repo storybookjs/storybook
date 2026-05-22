@@ -1,6 +1,6 @@
 {
   "name": "@storybook/svelte",
-  "version": "10.4.0-alpha.7",
+  "version": "10.5.0-alpha.2",
   "description": "Storybook Svelte renderer: Develop, document, and test UI components in isolation.",
   "keywords": [
     "storybook",
@@ -54,7 +54,7 @@
   ],
   "dependencies": {
     "ts-dedent": "^2.0.0",
-    "type-fest": "~2.19"
+    "type-fest": "^5.6.0"
   },
   "devDependencies": {
     "@sveltejs/vite-plugin-svelte": "^6.2.0",

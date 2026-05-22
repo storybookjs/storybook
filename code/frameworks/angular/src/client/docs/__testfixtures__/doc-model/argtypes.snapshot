@@ -1,0 +1,68 @@
+{
+  "color": {
+    "description": "",
+    "name": "color",
+    "table": {
+      "category": "inputs",
+      "defaultValue": {
+        "summary": "#345F92",
+      },
+      "type": {
+        "required": true,
+        "summary": "string",
+      },
+    },
+    "type": {
+      "name": "string",
+    },
+  },
+  "colorChange": {
+    "action": "colorChange",
+    "description": "",
+    "name": "colorChange",
+    "table": {
+      "category": "outputs",
+      "type": {
+        "required": true,
+        "summary": "(e: string) => void",
+      },
+    },
+    "type": {
+      "name": "other",
+      "value": "void",
+    },
+  },
+  "showText": {
+    "description": "",
+    "name": "showText",
+    "table": {
+      "category": "inputs",
+      "defaultValue": {
+        "summary": false,
+      },
+      "type": {
+        "required": true,
+        "summary": "boolean",
+      },
+    },
+    "type": {
+      "name": "boolean",
+    },
+  },
+  "showTextChange": {
+    "action": "showTextChange",
+    "description": "",
+    "name": "showTextChange",
+    "table": {
+      "category": "outputs",
+      "type": {
+        "required": true,
+        "summary": "(e: boolean) => void",
+      },
+    },
+    "type": {
+      "name": "other",
+      "value": "void",
+    },
+  },
+}

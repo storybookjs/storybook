@@ -64,7 +64,7 @@ export async function addApplyReviewStateTool(server: McpServer<any, AddonContex
 After you finish a UI code change, call this to help the user spot-check it. Provide:
 - title: a PR-style title for the change — short and specific.
 - description: a one-line summary of what changed and where to start reviewing.
-- collections: titled groups of representative story IDs. Give each a concise, PR-dense title, a one-sentence rationale, and — when you can tell — a kind ("atomic" for the directly changed component, "consumer" for direct dependents, "transitive" for pages/containers, "catch-all" otherwise).
+- collections: titled groups of representative story IDs. Give each a concise, PR-dense title, a one-sentence rationale.
 - changedFiles: the files you edited (most central first).
 - diffHunks: the actual diff of your change (you made it — include the hunks).
 - storyMeta: optional per-story { depth, chain }.

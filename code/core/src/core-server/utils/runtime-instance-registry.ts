@@ -3,7 +3,14 @@ import { mkdir, rename, rm, writeFile } from 'node:fs/promises';
 import { randomUUID } from 'node:crypto';
 import { homedir } from 'node:os';
 
+import type { StorybookConfig } from 'storybook/internal/types';
+
 import { join, resolve } from 'pathe';
+
+import { getAddonName } from '../../common/utils/get-addon-names.ts';
+
+const STORYBOOK_MCP_ADDON = '@storybook/addon-mcp';
+const DEFAULT_MCP_ENDPOINT = '/mcp';
 
 export type RuntimeInstanceRecord = {
   schemaVersion: 1;
@@ -31,6 +38,23 @@ export function getDefaultRuntimeInstanceRegistryDir() {
 
 export function getOrigin(address: string) {
   return new URL(address).origin;
+}
+
+export function getMcpMetadataFromMainConfig(
+  mainConfig: Pick<StorybookConfig, 'addons'>
+): RuntimeInstanceRecord['mcp'] {
+  const addon = mainConfig.addons?.find((entry) => getAddonName(entry) === STORYBOOK_MCP_ADDON);
+
+  if (!addon) {
+    return { status: 'not-installed' };
+  }
+
+  const endpoint =
+    typeof addon === 'object' && typeof addon.options?.endpoint === 'string'
+      ? addon.options.endpoint
+      : DEFAULT_MCP_ENDPOINT;
+
+  return { status: 'ready', endpoint };
 }
 
 export function createRuntimeInstanceRecord({

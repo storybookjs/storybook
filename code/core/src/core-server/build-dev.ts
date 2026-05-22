@@ -36,6 +36,7 @@ import { getServerChannel } from './utils/get-server-channel.ts';
 import { outputStartupInformation } from './utils/output-startup-information.ts';
 import { outputStats } from './utils/output-stats.ts';
 import {
+  getMcpMetadataFromMainConfig,
   type RuntimeInstanceRecord,
   writeStorybookRuntimeInstanceRecord,
 } from './utils/runtime-instance-registry.ts';
@@ -307,16 +308,7 @@ export async function buildDevStandalone(
     storybookDevServer(fullOptions, server)
   );
 
-  const mcpPreset = await presets
-    .apply<{ endpoint: string } | undefined>('experimental_mcp', undefined)
-    .catch((error: unknown) => {
-      logger.warn('Storybook failed to resolve runtime MCP metadata from presets.');
-      logger.debug(error instanceof Error ? (error.stack ?? error.message) : String(error));
-      return undefined;
-    });
-  const mcp: RuntimeInstanceRecord['mcp'] = mcpPreset
-    ? { status: 'ready', endpoint: mcpPreset.endpoint }
-    : { status: 'not-installed' };
+  const mcp: RuntimeInstanceRecord['mcp'] = getMcpMetadataFromMainConfig(config);
 
   await writeStorybookRuntimeInstanceRecord({
     address: localAddress,

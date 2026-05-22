@@ -6,6 +6,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 
 import {
   createRuntimeInstanceRecord,
+  getMcpMetadataFromMainConfig,
   writeRuntimeInstanceRecord,
   writeStorybookRuntimeInstanceRecord,
 } from './runtime-instance-registry.ts';
@@ -22,6 +23,48 @@ afterEach(() => {
   while (tempDirs.length > 0) {
     rmSync(tempDirs.pop()!, { force: true, recursive: true });
   }
+});
+
+describe('getMcpMetadataFromMainConfig', () => {
+  it('marks MCP as not-installed when addon-mcp is not configured', () => {
+    expect(getMcpMetadataFromMainConfig({ addons: ['@storybook/addon-docs'] })).toEqual({
+      status: 'not-installed',
+    });
+  });
+
+  it('uses the default endpoint when addon-mcp is configured as a string', () => {
+    expect(getMcpMetadataFromMainConfig({ addons: ['@storybook/addon-mcp'] })).toEqual({
+      status: 'ready',
+      endpoint: '/mcp',
+    });
+  });
+
+  it('uses endpoint from addon-mcp options', () => {
+    expect(
+      getMcpMetadataFromMainConfig({
+        addons: [{ name: '@storybook/addon-mcp', options: { endpoint: '/custom-mcp' } }],
+      })
+    ).toEqual({
+      status: 'ready',
+      endpoint: '/custom-mcp',
+    });
+  });
+
+  it('normalizes addon-mcp paths before matching', () => {
+    expect(
+      getMcpMetadataFromMainConfig({
+        addons: [
+          {
+            name: '/project/node_modules/@storybook/addon-mcp/preset',
+            options: { endpoint: '/custom-mcp' },
+          },
+        ],
+      })
+    ).toEqual({
+      status: 'ready',
+      endpoint: '/custom-mcp',
+    });
+  });
 });
 
 describe('createRuntimeInstanceRecord', () => {
@@ -58,17 +101,17 @@ describe('createRuntimeInstanceRecord', () => {
     expect(record.mcp).not.toHaveProperty('endpoint');
   });
 
-  it('uses MCP state provided by presets', () => {
+  it('uses provided MCP state', () => {
     const record = createRuntimeInstanceRecord({
       ...baseOptions,
       address: 'http://localhost:7007/?path=/story/example--primary',
-      mcp: { status: 'ready', endpoint: 'http://localhost:7007/storybook-mcp' },
+      mcp: { status: 'ready', endpoint: '/storybook-mcp' },
       port: 7007,
     });
 
     expect(record.mcp).toEqual({
       status: 'ready',
-      endpoint: 'http://localhost:7007/storybook-mcp',
+      endpoint: '/storybook-mcp',
     });
   });
 

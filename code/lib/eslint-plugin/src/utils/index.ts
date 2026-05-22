@@ -79,20 +79,26 @@ export const getDescriptor = (
   }
 };
 
-export const isValidStoryExport = (
-  node: TSESTree.Identifier,
-  nonStoryExportsConfig: IncludeExcludeOptions
-) => isExportStory(node.name, nonStoryExportsConfig) && node.name !== '__namedExportsOrder';
+/** The exported name of a specifier can be an identifier or a string literal (`export { X as 'あ' }`). */
+const getExportName = (node: TSESTree.Identifier | TSESTree.StringLiteral) =>
+  isIdentifier(node) ? node.name : node.value;
 
-export const getAllNamedExports = (node: TSESTree.ExportNamedDeclaration) => {
-  // e.g. `export { MyStory }`
+export const isValidStoryExport = (
+  node: TSESTree.Identifier | TSESTree.StringLiteral,
+  nonStoryExportsConfig: IncludeExcludeOptions
+) => {
+  const name = getExportName(node);
+  return isExportStory(name, nonStoryExportsConfig) && name !== '__namedExportsOrder';
+};
+
+export const getAllNamedExports = (
+  node: TSESTree.ExportNamedDeclaration
+): (TSESTree.Identifier | TSESTree.StringLiteral)[] => {
+  // e.g. `export { MyStory }` or `export { MyStory as 'My Story' }`
   if (!node.declaration && node.specifiers) {
-    return node.specifiers.reduce((acc, specifier) => {
-      if (isIdentifier(specifier.exported)) {
-        acc.push(specifier.exported);
-      }
-      return acc;
-    }, [] as TSESTree.Identifier[]);
+    // `specifier.exported` is an identifier or a string literal (`export { X as 'あ' }`).
+    // Both forms are valid named exports and must be reported as stories, not dropped.
+    return node.specifiers.map((specifier) => specifier.exported);
   }
 
   const decl = node.declaration;

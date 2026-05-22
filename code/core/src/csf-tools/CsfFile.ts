@@ -113,6 +113,14 @@ const formatLocation = (node: t.Node, fileName?: string) => {
   return `${fileName || ''} ${loc}`.trim();
 };
 
+/**
+ * Resolve the exported name of an export specifier. The exported binding can be a string literal
+ * (`export { Story as 'あ' }`) as well as an identifier (`export { Story as Renamed }`). Both are
+ * valid ESM and must be indexed identically rather than silently dropped.
+ */
+const getExportSpecifierName = (exported: t.Identifier | t.StringLiteral) =>
+  t.isIdentifier(exported) ? exported.name : exported.value;
+
 export const isModuleMock = (importPath: string) => MODULE_MOCK_REGEX.test(importPath);
 
 const isArgsStory = (init: t.Node, parent: t.Node, csf: CsfFile) => {
@@ -680,10 +688,12 @@ export class CsfFile {
               }
             });
           } else if (node.specifiers.length > 0) {
-            // export { X as Y }
+            // export { X as Y } or export { X as 'Y' }
             node.specifiers.forEach((specifier) => {
-              if (t.isExportSpecifier(specifier) && t.isIdentifier(specifier.exported)) {
-                const { name: exportName } = specifier.exported;
+              if (t.isExportSpecifier(specifier)) {
+                // The exported name can be a string literal, e.g. `export { X as 'あ' }`.
+                // This is valid ESM, so it must be indexed like any other renamed export.
+                const exportName = getExportSpecifierName(specifier.exported);
                 const { name: localName } = specifier.local;
                 const decl = t.isProgram(parent)
                   ? findVarInitialization(localName, parent)

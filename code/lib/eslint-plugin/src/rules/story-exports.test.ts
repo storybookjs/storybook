@@ -35,6 +35,11 @@ ruleTester.run('story-exports', rule, {
       export default {}
       export { Primary, Secondary }
     `,
+    dedent`
+      const Primary = {}
+      export default {}
+      export { Primary as 'あ' }
+    `,
     `
       export default {
         title: 'MyComponent',
@@ -129,6 +134,22 @@ ruleTester.run('story-exports', rule, {
 
       //   export const Default = {}
       // `,
+      errors: [
+        {
+          messageId: 'shouldHaveStoryExportWithFilters',
+        },
+      ],
+    },
+    {
+      code: dedent`
+        export default {
+          excludeStories: /.*Data$/,
+        }
+
+        const mockData = {}
+
+        export { mockData as 'mockData' }
+      `,
       errors: [
         {
           messageId: 'shouldHaveStoryExportWithFilters',

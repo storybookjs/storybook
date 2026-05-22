@@ -1,0 +1,424 @@
+name: 'Prepare agentic PR environment'
+description: >
+  Universal trust-gate, sandbox setup, and PR-head clone for agentic
+  workflows running under `pull_request_target`. Carves out steps 1-8 and
+  11-14 of the original verify-pr.yml so future agentic actions can reuse
+  this trust-boundary plumbing without copy-pasting.
+
+  Caller contract:
+    - Workflow MUST use `pull_request_target` so this composite resolves
+      against the base ref (load-bearing for trust).
+    - Caller MUST declare `permissions:` and `concurrency:` blocks itself;
+      composites cannot.
+    - Caller MUST pass `srt-sha256` explicitly (kept inline so a "chore: bump
+      srt" PR cannot lower the social-review bar via single-approval default).
+
+inputs:
+  github-token:
+    description: 'GITHUB_TOKEN for base + PR-head manual clones'
+    required: true
+  base-ref:
+    description: 'Base branch ref (e.g. github.event.pull_request.base.ref)'
+    required: true
+  base-sha:
+    description: 'Base SHA (github.event.pull_request.base.sha)'
+    required: true
+  pr-head-sha:
+    description: 'PR head SHA (github.event.pull_request.head.sha)'
+    required: true
+  repo:
+    description: 'owner/name (github.repository)'
+    required: true
+  srt-version:
+    description: 'Pinned @anthropic-ai/sandbox-runtime version'
+    required: false
+    default: '0.0.51'
+  srt-sha256:
+    description: >
+      sha256 of the resolved srt shim at srt-version. H1: NO default — caller
+      must pass it inline in the workflow so a chore-bump PR cannot flip both
+      version and sha together via a single approval.
+    required: true
+  srt-allowed-domains:
+    description: 'Newline list of allowed network domains for srt jail'
+    required: false
+    default: |
+      localhost
+      127.0.0.1
+      registry.yarnpkg.com
+      registry.npmjs.org
+      registry.npmjs.com
+      objects.githubusercontent.com
+      playwright.azureedge.net
+      playwright-akamai.azureedge.net
+      playwright-verizon.azureedge.net
+      cdn.playwright.dev
+  srt-allow-write-paths:
+    description: 'Newline list of srt allowWrite paths (env vars expanded at composite runtime)'
+    required: false
+    default: |
+      $PR_HEAD_DIR
+      $SANDBOX_TMPDIR
+      $RUNNER_TEMP/storybook-sandboxes
+      /tmp
+      $HOME/.cache
+      $HOME/.local/share
+      $HOME/.storybook
+  srt-deny-read-paths:
+    description: 'Newline list of srt denyRead paths'
+    required: false
+    default: |
+      $HOME/.ssh
+      $HOME/.aws
+      $HOME/.docker
+      $HOME/.npmrc
+      $HOME/.gitconfig
+      $HOME/.config/gh
+      $GITHUB_WORKSPACE/.git
+  srt-deny-write-paths:
+    description: 'Newline list of srt denyWrite paths'
+    required: false
+    default: |
+      $GITHUB_WORKSPACE
+      $GITHUB_WORKSPACE/.git
+  sync-files:
+    description: >
+      Newline-delimited `src:dst` pairs (src relative to base checkout,
+      dst relative to PR_HEAD_DIR). H2: rejects `..`, leading `/`, or
+      extra `:`; refuses symlink at dst before `cp --no-dereference`.
+    required: false
+    default: ''
+  sync-trees:
+    description: >
+      Newline-delimited tree paths (relative). Each tree is copied with
+      `cp -aT` after refusing symlink at the dst root. H2 path-validated.
+    required: false
+    default: ''
+  provenance-secret:
+    description: >
+      Optional caller-supplied secret (e.g. secrets.VERIFY_PROVENANCE_SECRET).
+      If empty, a per-run random 32-byte hex secret is generated.
+    required: false
+    default: ''
+  install-code-deps:
+    description: 'Pass-through to setup-node-and-install'
+    required: false
+    default: 'true'
+
+outputs:
+  pr-head-dir:
+    description: 'Absolute path to untrusted PR-head workspace clone'
+    value: ${{ steps.paths.outputs.pr-head-dir }}
+  srt-settings-path:
+    description: 'Absolute path to srt-settings.json'
+    value: ${{ steps.srt-settings.outputs.srt-settings-path }}
+  diff-path:
+    description: 'Absolute path to captured pr.diff'
+    value: ${{ steps.diff.outputs.diff-path }}
+  provenance-secret-path:
+    description: >
+      M2: Absolute path to file holding the per-run provenance secret. Trusted
+      steps `cat` it explicitly; the secret is NOT written to $GITHUB_ENV so
+      a future caller forgetting an `env -i` allowlist cannot leak it.
+    value: ${{ steps.provenance.outputs.provenance-secret-path }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Check actor permission
+      uses: prince-chrismc/check-actor-permissions-action@d504e74ba31658f4cdf4fcfeb509d4c09736d88e # v3.0.2
+      with:
+        permission: write
+
+    - name: Checkout base (manual clone — no token persistence)
+      # Manual git clone instead of actions/checkout because the repo carries
+      # gitlinks (.external/addon-svelte-csf etc.) without a .gitmodules
+      # entry. actions/checkout's "Removing auth" cleanup walks the submodule
+      # tree under persist-credentials:false and aborts with
+      #   fatal: No url found for submodule path '.external/...'
+      # Manual clone never writes credentials into .git/config and never
+      # walks .gitmodules, so we get persist-credentials:false semantics
+      # without the cleanup-walk crash.
+      shell: bash
+      env:
+        GITHUB_TOKEN: ${{ inputs.github-token }}
+        BASE_REF: ${{ inputs.base-ref }}
+        BASE_SHA: ${{ inputs.base-sha }}
+        PR_HEAD_SHA: ${{ inputs.pr-head-sha }}
+        REPO: ${{ inputs.repo }}
+      run: |
+        set -euo pipefail
+        # Clone to $RUNNER_TEMP (outside workspace) then overlay contents
+        # onto $GITHUB_WORKSPACE via `cp -aT`. The caller's bootstrap
+        # sparse-checkout left `.github/` on disk; overlay overwrites it
+        # cleanly so the workspace ends up with the trusted base ref's
+        # full tree (including this composite's own action.yml).
+        TMP_CLONE="$RUNNER_TEMP/_base_clone"
+        rm -rf "$TMP_CLONE"
+        git -c protocol.version=2 clone \
+          --no-tags --depth=1 --branch "$BASE_REF" \
+          "https://x-access-token:${GITHUB_TOKEN}@github.com/${REPO}.git" \
+          "$TMP_CLONE"
+        cp -aT "$TMP_CLONE" "$GITHUB_WORKSPACE"
+        rm -rf "$TMP_CLONE"
+        git -C "$GITHUB_WORKSPACE" -c protocol.version=2 \
+          fetch --no-tags --depth=1 origin "$BASE_SHA" "$PR_HEAD_SHA"
+        git -C "$GITHUB_WORKSPACE" remote set-url origin "https://github.com/${REPO}.git"
+        git -C "$GITHUB_WORKSPACE" config --local --unset-all credential.helper 2>/dev/null || true
+        git -C "$GITHUB_WORKSPACE" config --local --unset-all http.https://github.com/.extraheader 2>/dev/null || true
+
+    - name: Setup Node.js and Install Dependencies
+      uses: ./.github/actions/setup-node-and-install
+      with:
+        install-code-deps: ${{ inputs.install-code-deps }}
+
+    - name: Setup Bun
+      uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+
+    - name: Compute paths
+      id: paths
+      shell: bash
+      run: |
+        set -euo pipefail
+        PR_HEAD_DIR="${RUNNER_TEMP}/pr-head"
+        echo "PR_HEAD_DIR=${PR_HEAD_DIR}" >> "$GITHUB_ENV"
+        echo "pr-head-dir=${PR_HEAD_DIR}" >> "$GITHUB_OUTPUT"
+
+    - name: Init provenance secret
+      id: provenance
+      # M2: write secret to file (mode 0600), NOT $GITHUB_ENV. A future
+      # caller forgetting the `env -i` allowlist would otherwise leak it
+      # to untrusted task steps. Trusted steps consume it via
+      # `cat "$(provenance-secret-path)"`.
+      shell: bash
+      env:
+        INHERITED: ${{ inputs.provenance-secret }}
+      run: |
+        set -euo pipefail
+        if [ -n "$INHERITED" ]; then
+          SECRET="$INHERITED"
+        else
+          SECRET="$(openssl rand -hex 32)"
+        fi
+        echo "::add-mask::$SECRET"
+        SECRET_FILE="$RUNNER_TEMP/provenance-secret"
+        umask 077
+        printf '%s' "$SECRET" > "$SECRET_FILE"
+        echo "provenance-secret-path=$SECRET_FILE" >> "$GITHUB_OUTPUT"
+
+    - name: Checkout PR head (untrusted execution context)
+      shell: bash
+      env:
+        GITHUB_TOKEN: ${{ inputs.github-token }}
+        PR_HEAD_SHA: ${{ inputs.pr-head-sha }}
+        BASE_SHA: ${{ inputs.base-sha }}
+        REPO: ${{ inputs.repo }}
+      run: |
+        set -euo pipefail
+        git -c protocol.version=2 clone \
+          --no-tags --no-checkout --filter=blob:none \
+          "https://x-access-token:${GITHUB_TOKEN}@github.com/${REPO}.git" \
+          "$PR_HEAD_DIR"
+        cd "$PR_HEAD_DIR"
+        git -c protocol.version=2 fetch --no-tags --depth=1 origin "$PR_HEAD_SHA"
+        git -c protocol.version=2 fetch --no-tags --depth=1 origin "$BASE_SHA"
+        git checkout --force "$PR_HEAD_SHA"
+        git remote set-url origin "https://github.com/${REPO}.git"
+        git config --local --unset-all credential.helper 2>/dev/null || true
+
+    - name: Fetch PR diff
+      id: diff
+      shell: bash
+      env:
+        PR_HEAD_SHA: ${{ inputs.pr-head-sha }}
+        BASE_SHA: ${{ inputs.base-sha }}
+      run: |
+        set -euo pipefail
+        DIFF_PATH="$RUNNER_TEMP/pr.diff"
+        git -C "$PR_HEAD_DIR" diff "$BASE_SHA" "$PR_HEAD_SHA" > "$DIFF_PATH"
+        echo "diff-path=$DIFF_PATH" >> "$GITHUB_OUTPUT"
+
+    - name: Sync trusted harness code into PR head
+      # H2: path-validate every src:dst pair from `sync-files` and every tree
+      # from `sync-trees`. Reject `..`, leading `/`, extra `:`; resolve
+      # realpath and assert under $PR_HEAD_DIR. Refuse symlink at dst
+      # before cp --no-dereference. M4: also rm -f .verify-recipes/pr-*.spec.ts
+      # belt-and-suspenders even though Author overwrites later.
+      shell: bash
+      env:
+        SYNC_FILES: ${{ inputs.sync-files }}
+        SYNC_TREES: ${{ inputs.sync-trees }}
+      run: |
+        set -euo pipefail
+
+        assert_safe_rel() {
+          local rel="$1" label="$2"
+          case "$rel" in
+            /*) echo "[sync] $label: absolute path rejected: '$rel'" >&2; exit 1 ;;
+            *..*) echo "[sync] $label: '..' rejected: '$rel'" >&2; exit 1 ;;
+            '') echo "[sync] $label: empty path rejected" >&2; exit 1 ;;
+          esac
+        }
+
+        assert_under_prhead() {
+          local resolved="$1" label="$2"
+          case "$resolved" in
+            "$PR_HEAD_DIR"|"$PR_HEAD_DIR"/*) : ;;
+            *) echo "[sync] $label: resolved path '$resolved' escapes \$PR_HEAD_DIR" >&2; exit 1 ;;
+          esac
+        }
+
+        mkdir -p "$PR_HEAD_DIR/.verify-recipes"
+        rm -f "$PR_HEAD_DIR"/.verify-recipes/pr-*.spec.ts
+
+        # sync-files: src:dst pairs
+        while IFS= read -r line; do
+          [ -z "$line" ] && continue
+          # Strip trailing whitespace
+          line="${line%"${line##*[![:space:]]}"}"
+          [ -z "$line" ] && continue
+          # Reject extra colons (more than one)
+          if [ "$(awk -F: '{print NF-1}' <<<"$line")" != "1" ]; then
+            echo "[sync] sync-files entry must contain exactly one ':' — got '$line'" >&2
+            exit 1
+          fi
+          src="${line%%:*}"
+          dst="${line#*:}"
+          assert_safe_rel "$src" "sync-files src"
+          assert_safe_rel "$dst" "sync-files dst"
+          src_abs="$GITHUB_WORKSPACE/$src"
+          dst_abs="$PR_HEAD_DIR/$dst"
+          # Assert dst resolves under PR_HEAD_DIR even if intermediate parents are symlinks.
+          dst_resolved="$(realpath -m "$dst_abs")"
+          assert_under_prhead "$dst_resolved" "sync-files dst"
+          if [ ! -f "$src_abs" ]; then
+            echo "[sync] sync-files src missing: $src_abs" >&2
+            exit 1
+          fi
+          mkdir -p "$(dirname "$dst_abs")"
+          if [ -L "$dst_abs" ]; then
+            echo "[sync] refusing to overwrite symlink at $dst_abs" >&2
+            exit 1
+          fi
+          cp --no-dereference --remove-destination "$src_abs" "$dst_abs"
+        done <<< "$SYNC_FILES"
+
+        # sync-trees: tree paths
+        while IFS= read -r line; do
+          [ -z "$line" ] && continue
+          line="${line%"${line##*[![:space:]]}"}"
+          [ -z "$line" ] && continue
+          assert_safe_rel "$line" "sync-trees"
+          src_abs="$GITHUB_WORKSPACE/$line"
+          dst_abs="$PR_HEAD_DIR/$line"
+          dst_resolved="$(realpath -m "$dst_abs")"
+          assert_under_prhead "$dst_resolved" "sync-trees dst"
+          if [ ! -d "$src_abs" ]; then
+            echo "[sync] sync-trees src missing: $src_abs" >&2
+            exit 1
+          fi
+          mkdir -p "$(dirname "$dst_abs")"
+          if [ -L "$dst_abs" ]; then
+            echo "[sync] refusing to overwrite symlink dir at $dst_abs" >&2
+            exit 1
+          fi
+          rm -rf "$dst_abs"
+          cp -aT "$src_abs" "$dst_abs"
+        done <<< "$SYNC_TREES"
+
+    - name: Install sandbox-runtime (Layer-2)
+      # H1: caller MUST pass srt-sha256 inline; no composite default.
+      shell: bash
+      env:
+        SRT_VERSION: ${{ inputs.srt-version }}
+        EXPECTED_SRT_SHA: ${{ inputs.srt-sha256 }}
+      run: |
+        set -euo pipefail
+        if [ -z "$EXPECTED_SRT_SHA" ]; then
+          echo "srt-sha256 input is required (no composite default — see SECURITY.md §pinning-sandbox-runtime)" >&2
+          exit 1
+        fi
+        sudo apt-get update -qq
+        sudo apt-get install -y --no-install-recommends bubblewrap socat ripgrep
+        sudo npm install -g --ignore-scripts "@anthropic-ai/sandbox-runtime@${SRT_VERSION}"
+        srt --version
+        actual=$(sha256sum "$(which srt)" | cut -d' ' -f1)
+        if [ "$actual" != "$EXPECTED_SRT_SHA" ]; then
+          echo "srt sha mismatch — expected=$EXPECTED_SRT_SHA actual=$actual" >&2
+          exit 1
+        fi
+        echo "[srt] sha verified: $actual"
+
+    - name: Build sandbox settings
+      id: srt-settings
+      # H3: emit JSON arrays via jq, never via shell string interpolation.
+      # Allows future callers to pass PR-controlled values without enabling
+      # JSON injection into the srt config.
+      shell: bash
+      env:
+        SRT_ALLOWED_DOMAINS: ${{ inputs.srt-allowed-domains }}
+        SRT_ALLOW_WRITE_PATHS: ${{ inputs.srt-allow-write-paths }}
+        SRT_DENY_READ_PATHS: ${{ inputs.srt-deny-read-paths }}
+        SRT_DENY_WRITE_PATHS: ${{ inputs.srt-deny-write-paths }}
+      run: |
+        set -euo pipefail
+        SANDBOX_TMPDIR="$RUNNER_TEMP/sandbox-tmp"
+        mkdir -p "$SANDBOX_TMPDIR"
+        mkdir -p "$PR_HEAD_DIR/.verify-scratch"
+        mkdir -p "$PR_HEAD_DIR/.verify-out-trusted"
+        mkdir -p "$HOME/.storybook"
+
+        # Expand $VAR refs in path lists at composite runtime, then drop
+        # blank lines. The newline-list-to-jq-array convention is
+        # `jq -R . | jq -s .` (read each line as string, then slurp to array).
+        expand_lines() {
+          local raw="$1"
+          # envsubst would also work but isn't installed everywhere. Use
+          # `eval echo` per line, then strip empties.
+          while IFS= read -r line; do
+            [ -z "$line" ] && continue
+            line="${line%"${line##*[![:space:]]}"}"
+            [ -z "$line" ] && continue
+            eval "printf '%s\n' \"$line\""
+          done <<< "$raw"
+        }
+
+        ALLOWED_DOMAINS_JSON=$(expand_lines "$SRT_ALLOWED_DOMAINS" | jq -R . | jq -s .)
+        ALLOW_WRITE_JSON=$(expand_lines "$SRT_ALLOW_WRITE_PATHS" | jq -R . | jq -s .)
+        DENY_READ_JSON=$(expand_lines "$SRT_DENY_READ_PATHS" | jq -R . | jq -s .)
+        DENY_WRITE_JSON=$(expand_lines "$SRT_DENY_WRITE_PATHS" | jq -R . | jq -s .)
+
+        SRT_SETTINGS_PATH="$RUNNER_TEMP/srt-settings.json"
+        jq -n \
+          --argjson allowedDomains "$ALLOWED_DOMAINS_JSON" \
+          --argjson allowWrite "$ALLOW_WRITE_JSON" \
+          --argjson denyRead "$DENY_READ_JSON" \
+          --argjson denyWrite "$DENY_WRITE_JSON" \
+          '{
+            network: {
+              allowLocalBinding: true,
+              allowedDomains: $allowedDomains,
+              deniedDomains: []
+            },
+            filesystem: {
+              allowRead: [],
+              allowWrite: $allowWrite,
+              denyRead: $denyRead,
+              denyWrite: $denyWrite
+            }
+          }' > "$SRT_SETTINGS_PATH"
+
+        echo "SRT_SETTINGS=$SRT_SETTINGS_PATH" >> "$GITHUB_ENV"
+        echo "CLAUDE_CODE_TMPDIR=$SANDBOX_TMPDIR" >> "$GITHUB_ENV"
+        echo "srt-settings-path=$SRT_SETTINGS_PATH" >> "$GITHUB_OUTPUT"
+        cat "$SRT_SETTINGS_PATH"
+
+    - name: Smoke-test srt egress policy
+      shell: bash
+      run: |
+        set -uo pipefail
+        if srt --settings "$SRT_SETTINGS" curl --max-time 5 https://example.com >/dev/null 2>&1; then
+          echo "[smoke] EGRESS POLICY BROKEN — example.com reachable inside srt" >&2
+          exit 1
+        fi
+        echo "[smoke] egress correctly denied"

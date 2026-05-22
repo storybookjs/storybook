@@ -11,16 +11,25 @@ runs:
   using: 'composite'
   steps:
     - name: Setup Node.js
-      uses: actions/setup-node@v4
+      uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
       with:
         node-version-file: '.nvmrc'
 
-    - name: Update npm to latest
-      shell: bash
-      run: npm install -g npm@latest
-
-    - name: Cache dependencies
-      uses: actions/cache@v4
+    # SECURITY (TanStack/router 2026-05-11 class): actions/cache's post-job
+    # SAVE uses a runner-internal token NOT gated by `permissions:` or the
+    # caller's `env -i`. Under `pull_request_target` the job runs untrusted
+    # fork code (verify-pr.yml clones the PR head and runs its `yarn install`
+    # into the shared ~/.yarn/berry/cache). An auto-save would write that
+    # poisoned store into the base-repo cache scope, where the trusted
+    # publish.yml (id-token: write + npm publish) would later restore it —
+    # the exact fork→base cache-poisoning detonation chain.
+    #
+    # Mitigation: split restore (always) from save (only when NOT triggered
+    # by pull_request_target). Untrusted PRT runs become cache READ-ONLY and
+    # can never write the shared scope. Trusted push / workflow_dispatch /
+    # release contexts still populate the cache normally.
+    - name: Restore dependency cache
+      uses: actions/cache/restore@5a3ec84eff668545956fd18022155c47e93e2684 # v4.2.3
       with:
         path: |
           ~/.yarn/berry/cache
@@ -39,3 +48,13 @@ runs:
       shell: bash
       working-directory: code
       run: yarn install
+
+    # Save only from trusted trigger contexts. pull_request_target runs
+    # untrusted fork code → never let it persist the shared cache scope.
+    - name: Save dependency cache
+      if: github.event_name != 'pull_request_target'
+      uses: actions/cache/save@5a3ec84eff668545956fd18022155c47e93e2684 # v4.2.3
+      with:
+        path: |
+          ~/.yarn/berry/cache
+        key: yarn-v1-${{ hashFiles('yarn.lock') }}

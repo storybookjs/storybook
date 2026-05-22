@@ -23,6 +23,7 @@ import { getSandboxes, sandboxesNoOpJob } from './sandboxes.ts';
 import { getTestStorybooks, testStorybooksNoOpJob } from './test-storybooks.ts';
 import { executors } from './utils/executors.ts';
 import { ensureRequiredJobs } from './utils/helpers.ts';
+import { setForkPipeline } from './utils/runtime.ts';
 import { orbs } from './utils/orbs.ts';
 import { parameters } from './utils/parameters.ts';
 import type {
@@ -149,7 +150,12 @@ console.log('--------------------------------');
 program
   .description('Generate CircleCI config')
   .requiredOption('-w, --workflow <string>', 'Workflow to generate config for')
+  .option('--is-fork <string>', 'Whether the triggering PR head is a fork (untrusted)', 'false')
   .parse(process.argv);
+
+// SECURITY: resolve fork status BEFORE generating jobs so cache-persist
+// steps can be omitted on fork pipelines (see utils/runtime.ts).
+setForkPipeline(program.opts().isFork === 'true');
 
 await fs.writeFile(
   join(dirname, '../../.circleci/config.generated.yml'),

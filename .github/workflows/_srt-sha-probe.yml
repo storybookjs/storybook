@@ -1,0 +1,71 @@
+name: srt sha probe (manual)
+
+# Manually-triggered ONLY. Resolves the sha256 of the `srt` shim for a given
+# @anthropic-ai/sandbox-runtime version and EMITS a candidate
+# scripts/verify/srt.lock.json for a human to land via a normal reviewed PR.
+# Never runs on PRs / pushes, and NEVER writes/commits/pushes the lock file
+# itself: the supply-chain pin is load-bearing and MUST stay part of the
+# reviewed diff (see scripts/verify/SECURITY.md and verify-pr.yml). This probe
+# only computes the value and surfaces it (step summary + output + artifact).
+#
+# Bump procedure: run this probe, copy the emitted {version, sha256} block
+# from the run summary (or download the srt-lock-candidate artifact) into
+# scripts/verify/srt.lock.json, and open a normal PR. The composite's
+# fail-closed post-install sha256 check is unchanged and still gates the run.
+on:
+  workflow_dispatch:
+    inputs:
+      srt-version:
+        description: 'sandbox-runtime npm version to pin (e.g. 0.0.51)'
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Resolve srt sha256 and emit lock-file candidate
+        id: probe
+        env:
+          SRT_VERSION: ${{ inputs.srt-version }}
+        run: |
+          set -euo pipefail
+          case "$SRT_VERSION" in ''|*[!0-9.]*|.*|*.|*..*) echo "invalid srt version '$SRT_VERSION'" >&2; exit 1 ;; esac
+          sudo npm install -g --ignore-scripts "@anthropic-ai/sandbox-runtime@${SRT_VERSION}"
+          srt --version
+          SHA=$(sha256sum "$(which srt)" | cut -d' ' -f1)
+          case "$SHA" in [0-9a-f]*) [ "${#SHA}" -eq 64 ] || { echo "computed sha is not 64 hex chars" >&2; exit 1; } ;; *) echo "computed sha is not lowercase hex" >&2; exit 1 ;; esac
+          CANDIDATE="$RUNNER_TEMP/srt.lock.json"
+          jq -n --arg v "$SRT_VERSION" --arg s "$SHA" '{version: $v, sha256: $s}' > "$CANDIDATE"
+          echo "candidate-path=$CANDIDATE" >> "$GITHUB_OUTPUT"
+          echo "version=$SRT_VERSION" >> "$GITHUB_OUTPUT"
+          echo "sha256=$SHA" >> "$GITHUB_OUTPUT"
+          {
+            echo "## srt pin candidate"
+            echo ""
+            echo "Update \`scripts/verify/srt.lock.json\` via a **normal reviewed PR**"
+            echo "with the block below (this probe deliberately does NOT commit it —"
+            echo "the supply-chain pin must stay part of the reviewed diff)."
+            echo ""
+            echo '```json'
+            cat "$CANDIDATE"
+            echo ""
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+          echo "[srt-probe] candidate emitted (NOT committed):"
+          cat "$CANDIDATE"
+
+      - name: Upload srt.lock.json candidate
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7
+        with:
+          name: srt-lock-candidate
+          path: ${{ steps.probe.outputs.candidate-path }}
+          if-no-files-found: error
+          retention-days: 7

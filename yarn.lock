@@ -474,6 +474,22 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@anthropic-ai/sdk@npm:0.65.0":
+  version: 0.65.0
+  resolution: "@anthropic-ai/sdk@npm:0.65.0"
+  dependencies:
+    json-schema-to-ts: "npm:^3.1.1"
+  peerDependencies:
+    zod: ^3.25.0 || ^4.0.0
+  peerDependenciesMeta:
+    zod:
+      optional: true
+  bin:
+    anthropic-ai-sdk: bin/cli
+  checksum: 10c0/81af18015c00c88fded154e7b862442645c72cc106b73e9f0ec70aff3d653ef24a518c5baea86ca31fd87c09350079a8f55f75e9259c461e29ee14dc69ebefab
+  languageName: node
+  linkType: hard
+
 "@aw-web-design/x-default-browser@npm:1.4.126":
   version: 1.4.126
   resolution: "@aw-web-design/x-default-browser@npm:1.4.126"
@@ -9088,6 +9104,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@storybook/root@workspace:."
   dependencies:
+    "@anthropic-ai/sdk": "npm:0.65.0"
     "@nx/workspace": "npm:^22.6.1"
     "@playwright/test": "npm:^1.58.2"
     "@types/kill-port": "npm:^2.0.3"
@@ -21603,6 +21620,16 @@ __metadata:
   languageName: node
   linkType: hard
 
+"json-schema-to-ts@npm:^3.1.1":
+  version: 3.1.1
+  resolution: "json-schema-to-ts@npm:3.1.1"
+  dependencies:
+    "@babel/runtime": "npm:^7.18.3"
+    ts-algebra: "npm:^2.0.0"
+  checksum: 10c0/609bae04aa5e860a11b6d30ccf41445fae1c7f66fb600c1d170257cf33aa468aa9d03aa046428c3688aff0ff450c2b0c76584b66fa4a5d0da8e33799e4c439a6
+  languageName: node
+  linkType: hard
+
 "json-schema-traverse@npm:^0.4.1":
   version: 0.4.1
   resolution: "json-schema-traverse@npm:0.4.1"
@@ -30846,6 +30873,13 @@ __metadata:
   version: 3.0.1
   resolution: "try-catch@npm:3.0.1"
   checksum: 10c0/43618d9838139ab8aa6d3bf68e9bad693ad3e154126771687e503f0b35e2d0a329d90336cd38d52533426d0a6c91aa02a6de03bac6db1cbfb1787bbf4a946e61
+  languageName: node
+  linkType: hard
+
+"ts-algebra@npm:^2.0.0":
+  version: 2.0.0
+  resolution: "ts-algebra@npm:2.0.0"
+  checksum: 10c0/4ae93bec1bada635bba425854eec323dad50b6ffe86bc04ad2d7f9ce3fb129d673dcf483e19a6e70d07a3a9083e6a0a7f4e004bb8d2164cddc60cc9540ba187f
   languageName: node
   linkType: hard
 

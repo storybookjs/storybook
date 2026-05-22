@@ -46,7 +46,7 @@ jobs:
       - name: AgentScan
         if: steps.membership.outputs.should-scan == 'true'
         id: agentscan
-        uses: MatteoGabriele/agentscan-action@f41545309db947a68e22ed2643f182e754f4d41a
+        uses: MatteoGabriele/agentscan-action@f41545309db947a68e22ed2643f182e754f4d41a # v1.8.0
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           agent-scan-comment: false

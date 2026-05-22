@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { type FC, useEffect, useState } from 'react';
 
 import { Button, Collapsible, TabsView } from 'storybook/internal/components';
 import { styled } from 'storybook/theming';
@@ -13,8 +13,7 @@ import {
 } from '@storybook/icons';
 
 import type { ReviewCollection, ReviewState } from '../review-state.ts';
-
-const PREVIEW_SCALE = 0.5;
+import { ReviewCollectionGrid } from './ReviewCollectionGrid.tsx';
 
 const Page = styled.div(({ theme }) => ({
   display: 'flex',
@@ -202,86 +201,9 @@ const ClusterCount = styled.span({
   color: '#5C6570',
 });
 
-const ClusterGrid = styled.div({
-  display: 'grid',
-  gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
-  gap: 12,
-  padding: '0 12px 12px',
-});
-
-const GridCell = styled.div(({ theme }) => ({
-  aspectRatio: '3 / 2',
-  borderRadius: 6,
-  overflow: 'hidden',
-  background: theme.background.app,
-  border: `1px solid ${theme.appBorderColor}`,
-}));
-
-const StoryPreview = styled.iframe({
-  width: `${(1 / PREVIEW_SCALE) * 100}%`,
-  height: `${(1 / PREVIEW_SCALE) * 100}%`,
-  border: 0,
-  display: 'block',
-  transform: `scale(${PREVIEW_SCALE})`,
-  transformOrigin: 'top left',
-  pointerEvents: 'none',
-});
-
-const CellAction = styled.div({
-  width: '100%',
-  height: '100%',
-  display: 'grid',
-  placeItems: 'center',
-});
-
 type ReviewTab = 'collections' | 'components';
 
-const storyPreviewUrl = (id: string) => `iframe.html?id=${encodeURIComponent(id)}&viewMode=story`;
-
-const StoryPreviewCell: React.FC<{ storyId: string }> = ({ storyId }) => {
-  const hostRef = useRef<HTMLDivElement>(null);
-  const [hasMounted, setHasMounted] = useState(false);
-
-  useEffect(() => {
-    const host = hostRef.current;
-    if (!host || hasMounted) {
-      return undefined;
-    }
-    if (typeof IntersectionObserver === 'undefined') {
-      setHasMounted(true);
-      return undefined;
-    }
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          setHasMounted(true);
-          observer.disconnect();
-        }
-      },
-      {
-        rootMargin: '100px 0px 100px 0px',
-      }
-    );
-    observer.observe(host);
-    return () => observer.disconnect();
-  }, [hasMounted]);
-
-  return (
-    <GridCell ref={hostRef}>
-      {hasMounted ? (
-        <StoryPreview
-          title={storyId}
-          src={storyPreviewUrl(storyId)}
-          loading="lazy"
-          tabIndex={-1}
-          scrolling="no"
-        />
-      ) : null}
-    </GridCell>
-  );
-};
-
-const CollectionsTab: React.FC<{
+const CollectionsTab: FC<{
   collections: ReviewCollection[];
   expanded: Set<number>;
   onToggleCluster: (index: number) => void;
@@ -290,7 +212,6 @@ const CollectionsTab: React.FC<{
     {collections.map((collection, index) => {
       const isExpanded = expanded.has(index);
       const sampleCount = collection.storyIds.length;
-      const gridStories = collection.storyIds.slice(0, 3);
 
       return (
         <ClusterBlock key={`${collection.title}-${index}`}>
@@ -326,18 +247,7 @@ const CollectionsTab: React.FC<{
               </ClusterHead>
             )}
           >
-            <ClusterGrid>
-              {gridStories.map((storyId) => (
-                <StoryPreviewCell key={storyId} storyId={storyId} />
-              ))}
-              {sampleCount > 3 && (
-                <GridCell>
-                  <CellAction>
-                    <Button size="medium">Review all {sampleCount}</Button>
-                  </CellAction>
-                </GridCell>
-              )}
-            </ClusterGrid>
+            <ReviewCollectionGrid storyIds={collection.storyIds} />
           </Collapsible>
         </ClusterBlock>
       );
@@ -349,16 +259,15 @@ export interface ReviewChangesScreenProps {
   state: ReviewState | null;
 }
 
-export const ReviewChangesScreen: React.FC<ReviewChangesScreenProps> = ({ state }) => {
+export const ReviewChangesScreen: FC<ReviewChangesScreenProps> = ({ state }) => {
   const [tab, setTab] = useState<ReviewTab>('collections');
-  const initialExpanded = useMemo(() => new Set([0]), []);
-  const [expandedClusters, setExpandedClusters] = useState<Set<number>>(initialExpanded);
+  const [expandedClusters, setExpandedClusters] = useState<Set<number>>(new Set());
 
   useEffect(() => {
     if (!state) {
       return;
     }
-    setExpandedClusters(new Set([0]));
+    setExpandedClusters(new Set(state.collections.map((_, index) => index)));
     setTab('collections');
   }, [state]);
 

@@ -1,4 +1,4 @@
-import { expect, userEvent, within } from 'storybook/test';
+import { expect, within } from 'storybook/test';
 
 import preview from '../../../../.storybook/preview.tsx';
 import type { ReviewState } from '../review-state.ts';
@@ -77,6 +77,8 @@ const largeCascade: ReviewState = {
         'manager-main--about-page',
         'manager-main--guide-page',
         'manager-sidebar-sidebar--simple',
+        'manager-sidebar-sidebar--with-refs',
+        'manager-sidebar-sidebar--statuses-open',
       ],
     },
     {
@@ -219,7 +221,22 @@ const atomicChange: ReviewState = {
   diffHunks: [
     {
       path: 'core/src/components/components/Button/Button.tsx',
-      hunk: "diff --git a/core/src/components/components/Button/Button.tsx b/core/src/components/components/Button/Button.tsx\nindex 81c8799be09..04d01a1dd82 100644\n--- a/core/src/components/components/Button/Button.tsx\n+++ b/core/src/components/components/Button/Button.tsx\n@@ -256,7 +256,7 @@ const StyledButton = styled('button', {\n       return theme.input.color;\n     })(),\n     boxShadow: variant === 'outline' ? `${theme.button.border} 0 0 0 1px inset` : 'none',\n-    borderRadius: theme.input.borderRadius,\n+    borderRadius: theme.input.borderRadius * 3,\n     // Making sure that the button never shrinks below its minimum size\n     flexShrink: 0,",
+      hunk: [
+        'diff --git a/core/src/components/components/Button/Button.tsx b/core/src/components/components/Button/Button.tsx',
+        'index 81c8799be09..04d01a1dd82 100644',
+        '--- a/core/src/components/components/Button/Button.tsx',
+        '+++ b/core/src/components/components/Button/Button.tsx',
+        "@@ -256,7 +256,7 @@ const StyledButton = styled('button', {",
+        '       return theme.input.color;',
+        '     })(),',
+        "     boxShadow: variant === 'outline' ? `" +
+          '$' +
+          "{theme.button.border} 0 0 0 1px inset` : 'none',",
+        '-    borderRadius: theme.input.borderRadius,',
+        '+    borderRadius: theme.input.borderRadius * 3,',
+        '     // Making sure that the button never shrinks below its minimum size',
+        '     flexShrink: 0,',
+      ].join('\n'),
     },
   ],
 };

@@ -194,7 +194,6 @@ const config = defineMain({
       },
     } satisfies typeof viteConfig);
   },
-  logLevel: 'verbose',
 });
 
 export default config;

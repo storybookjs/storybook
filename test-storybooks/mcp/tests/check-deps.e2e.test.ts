@@ -4,7 +4,7 @@ import path from 'node:path';
 
 const PACKAGES_TO_CHECK = ['@storybook/addon-docs', '@storybook/react-vite', 'storybook'];
 
-const stripPrerelease = (version: string) => version.split('-')[0]!;
+const stripPrerelease = (version: string) => version.split(/[+-]/)[0]!;
 
 describe('Storybook Dependencies', () => {
 	it('should be using latest versions from registry', async () => {
@@ -26,7 +26,7 @@ describe('Storybook Dependencies', () => {
 			});
 			const latestVersion = viewResult.stdout.trim();
 
-			// Compare only the semver core (major.minor.patch), ignoring alpha/beta/rc suffixes
+			// Compare only the semver core (major.minor.patch), ignoring prerelease/build suffixes
 			if (stripPrerelease(currentVersion) !== stripPrerelease(latestVersion)) {
 				outdated.push({ pkg, current: currentVersion, latest: latestVersion });
 			}

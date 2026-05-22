@@ -44,9 +44,16 @@ const CellAction = styled.div({
   placeItems: 'center',
 });
 
+const GridLink = styled.a({
+  display: 'block',
+  width: '100%',
+  height: '100%',
+  textDecoration: 'none',
+});
+
 const storyPreviewUrl = (id: string) => `iframe.html?id=${encodeURIComponent(id)}&viewMode=story`;
 
-const StoryPreviewCell: FC<{ storyId: string }> = ({ storyId }) => {
+const StoryPreviewCell: FC<{ storyId: string; href?: string }> = ({ storyId, href }) => {
   const hostRef = useRef<HTMLDivElement>(null);
   const [hasMounted, setHasMounted] = useState(false);
 
@@ -74,7 +81,18 @@ const StoryPreviewCell: FC<{ storyId: string }> = ({ storyId }) => {
 
   return (
     <GridCell ref={hostRef} data-testid="review-collection-grid-cell">
-      {hasMounted ? (
+      {hasMounted && href ? (
+        <GridLink href={href} aria-label={`Review story ${storyId}`}>
+          <StoryPreview
+            title={storyId}
+            src={storyPreviewUrl(storyId)}
+            loading="lazy"
+            tabIndex={-1}
+            scrolling="no"
+          />
+        </GridLink>
+      ) : null}
+      {hasMounted && !href ? (
         <StoryPreview
           title={storyId}
           src={storyPreviewUrl(storyId)}
@@ -89,9 +107,15 @@ const StoryPreviewCell: FC<{ storyId: string }> = ({ storyId }) => {
 
 export interface ReviewCollectionGridProps {
   storyIds: string[];
+  getStoryHref?: (storyId: string, storyIndex: number) => string | undefined;
+  reviewAllHref?: string;
 }
 
-export const ReviewCollectionGrid: FC<ReviewCollectionGridProps> = ({ storyIds }) => {
+export const ReviewCollectionGrid: FC<ReviewCollectionGridProps> = ({
+  storyIds,
+  getStoryHref,
+  reviewAllHref,
+}) => {
   const gridRef = useRef<HTMLDivElement>(null);
   const [columnsPerRow, setColumnsPerRow] = useState(1);
 
@@ -128,13 +152,23 @@ export const ReviewCollectionGrid: FC<ReviewCollectionGridProps> = ({ storyIds }
 
   return (
     <Grid ref={gridRef} data-testid="review-collection-grid">
-      {previewStoryIds.map((storyId) => (
-        <StoryPreviewCell key={storyId} storyId={storyId} />
+      {previewStoryIds.map((storyId, storyIndex) => (
+        <StoryPreviewCell
+          key={storyId}
+          storyId={storyId}
+          href={getStoryHref?.(storyId, storyIndex)}
+        />
       ))}
       {hasOverflow && (
         <GridCell data-testid="review-collection-grid-cell">
           <CellAction>
-            <Button size="medium">Review all {storyIds.length}</Button>
+            <Button size="medium" asChild={!!reviewAllHref}>
+              {reviewAllHref ? (
+                <a href={reviewAllHref}>Review all {storyIds.length}</a>
+              ) : (
+                <span>Review all {storyIds.length}</span>
+              )}
+            </Button>
           </CellAction>
         </GridCell>
       )}

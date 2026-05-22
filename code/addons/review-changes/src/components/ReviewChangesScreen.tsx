@@ -13,6 +13,7 @@ import {
 } from '@storybook/icons';
 
 import type { ReviewCollection, ReviewState } from '../review-state.ts';
+import { buildReviewChangesDetailsHref } from '../review-navigation.ts';
 import { ReviewCollectionGrid } from './ReviewCollectionGrid.tsx';
 
 const Page = styled.div(({ theme }) => ({
@@ -247,7 +248,17 @@ const CollectionsTab: FC<{
               </ClusterHead>
             )}
           >
-            <ReviewCollectionGrid storyIds={collection.storyIds} />
+            <ReviewCollectionGrid
+              storyIds={collection.storyIds}
+              getStoryHref={(_, storyIndex) =>
+                buildReviewChangesDetailsHref({ collectionIndex: index, storyIndex })
+              }
+              reviewAllHref={
+                collection.storyIds.length > 0
+                  ? buildReviewChangesDetailsHref({ collectionIndex: index, storyIndex: 0 })
+                  : undefined
+              }
+            />
           </Collapsible>
         </ClusterBlock>
       );

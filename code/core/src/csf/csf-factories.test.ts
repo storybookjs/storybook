@@ -1,7 +1,9 @@
 //* @vitest-environment happy-dom */
-import { describe, expect, test, vi } from 'vitest';
+import { describe, expect, expectTypeOf, test, vi } from 'vitest';
+import { testType } from 'type-plus';
 
 import { definePreview, definePreviewAddon, getStoryChildren } from './csf-factories.ts';
+import type { Tag } from './story.ts';
 
 interface Addon1Types {
   parameters: { foo?: { value: string } };
@@ -74,5 +76,62 @@ describe('test function', () => {
     // execute test
     await test.run();
     expect(testFn).toHaveBeenCalled();
+  });
+});
+
+describe('customize tags type', () => {
+  // Customizing tags type enables autocompletion of tags.
+  test('with addon', () => {
+    const addon = definePreviewAddon<{ tags: Array<'foo' | 'bar' | (string & {})> }>({});
+    const preview = definePreview({ addons: [addon] });
+    const meta = preview.meta({
+      tags: ['foo', 'something-else'],
+    });
+    meta.story({
+      tags: ['foo', 'something-else'],
+    });
+    testType.canAssign<
+      Parameters<typeof preview.meta>[0]['tags'],
+      Array<'foo' | 'bar' | (string & {})>
+    >(true);
+    testType.canAssign<
+      Parameters<typeof meta.story>[0] extends Object
+        ? Parameters<typeof meta.story>[0]['tags']
+        : never,
+      Array<'foo' | 'bar' | (string & {})>
+    >(true);
+    testType.canAssign<
+      Parameters<typeof meta.story>[0] extends Object
+        ? Parameters<typeof meta.story>[0]['tags']
+        : never,
+      Tag[]
+    >(true);
+  });
+  test('with type method', () => {
+    const preview = definePreview({ addons: [] }).type<{
+      tags: Array<'foo' | 'bar' | (string & {})>;
+    }>();
+    const meta = preview.meta({
+      tags: ['foo', 'something-else'],
+    });
+    meta.story({
+      tags: ['foo', 'something-else'],
+    });
+    testType.canAssign<
+      Parameters<typeof preview.meta>[0]['tags'],
+      Array<'foo' | 'bar' | (string & {})>
+    >(true);
+    testType.canAssign<
+      Parameters<typeof meta.story>[0] extends Object
+        ? Parameters<typeof meta.story>[0]['tags']
+        : never,
+      Array<'foo' | 'bar' | (string & {})>
+    >(true);
+    testType.canAssign<
+      Parameters<typeof meta.story>[0] extends Object
+        ? Parameters<typeof meta.story>[0]['tags']
+        : never,
+      Tag[]
+    >(true);
   });
 });

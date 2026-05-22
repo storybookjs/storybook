@@ -15,7 +15,7 @@ addons.register(ADDON_ID, (api) => {
   addons.add(PAGE_ID, {
     type: types.experimental_PAGE,
     url: REVIEW_CHANGES_URL,
-    title: 'Review changes:',
+    title: 'Review changes',
     render: () => (
       <Route path={REVIEW_CHANGES_URL} startsWith>
         <ReviewChangesPage />

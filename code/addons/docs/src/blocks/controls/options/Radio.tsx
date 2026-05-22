@@ -57,6 +57,7 @@ type RadioProps = ControlProps<OptionsSingleSelection> & RadioConfig;
 export const RadioControl: FC<RadioProps> = ({
   name,
   storyId,
+  controlsId,
   options,
   value,
   onChange,
@@ -68,7 +69,7 @@ export const RadioControl: FC<RadioProps> = ({
     return <>-</>;
   }
   const selection = selectedKey(value, options);
-  const controlId = getControlId(name, storyId);
+  const controlId = getControlId(name, storyId, controlsId);
 
   const readonly = !!argType?.table?.readonly;
 

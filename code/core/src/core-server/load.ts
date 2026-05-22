@@ -11,6 +11,7 @@ import type { BuilderOptions, CLIOptions, LoadOptions, Options } from 'storybook
 
 import { global } from '@storybook/global';
 
+import { existsSync } from 'node:fs';
 import { dirname, isAbsolute, join, relative, resolve } from 'pathe';
 
 import { resolvePackageDir } from '../shared/utils/module.ts';
@@ -74,7 +75,10 @@ export async function loadStorybook(
     */
     const isResolved = builderName.startsWith('file:') || isAbsolute(builderName);
     const builderPresetDir = isResolved ? dirname(builderName) : resolvePackageDir(builderName);
-    corePresets.push(join(builderPresetDir, 'preset.js'));
+    const builderPreset = join(builderPresetDir, 'preset.js');
+    if (existsSync(builderPreset)) {
+      corePresets.push(builderPreset);
+    }
   }
 
   // Load second pass: all presets are applied in order

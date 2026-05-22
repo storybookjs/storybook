@@ -318,11 +318,13 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
 
       finalOptions.includeStories = includeStories;
       const projectId = oneWayHash(finalOptions.configDir);
+      const builderName = typeof core?.builder === 'string' ? core.builder : core?.builder?.name;
+      const supportsAutomaticProjectAnnotations =
+        builderName?.includes('@storybook/builder-vite') || builderName?.includes('builder-vite');
 
-      const areProjectAnnotationRequired = await requiresProjectAnnotations(
-        nonMutableInputConfig.test,
-        finalOptions
-      );
+      const areProjectAnnotationRequired =
+        supportsAutomaticProjectAnnotations &&
+        (await requiresProjectAnnotations(nonMutableInputConfig.test, finalOptions));
 
       const internalSetupFiles = (
         [

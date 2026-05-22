@@ -32,6 +32,7 @@ export const storybookConfigExtensions = [
  * common single-file-component types (`.vue`, `.svelte`).
  */
 export const userModuleExtensions = [
+  '.astro',
   '.js',
   '.mjs',
   '.cjs',

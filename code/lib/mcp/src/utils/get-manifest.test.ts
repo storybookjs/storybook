@@ -270,6 +270,35 @@ Invalid key: Expected "v" but received undefined]`);
 			expect(global.fetch).toHaveBeenCalledWith('https://example.com/manifests/docs.json');
 		});
 
+		it.each([
+			['https://example.com/mcp', 'https://example.com'],
+			['https://example.com/mcp/', 'https://example.com'],
+			['https://example.com/tools/mcp?transport=sse', 'https://example.com'],
+			['https://example.com/storybook/tools/mcp', 'https://example.com'],
+			['http://localhost:6006/custom-mcp', 'http://localhost:6006'],
+		])('should derive manifest URLs from the request origin for %s', async (requestUrl, origin) => {
+			const validManifest: ComponentManifestMap = {
+				v: 1,
+				components: {
+					button: {
+						id: 'button',
+						path: 'src/components/Button.tsx',
+						name: 'Button',
+						description: 'A button component',
+					},
+				},
+			};
+
+			global.fetch = createFetchMock({ components: validManifest });
+
+			const request = createMockRequest(requestUrl);
+			const result = await getManifests(request);
+
+			expect(result).toEqual({ componentManifest: validManifest });
+			expect(global.fetch).toHaveBeenCalledWith(`${origin}/manifests/components.json`);
+			expect(global.fetch).toHaveBeenCalledWith(`${origin}/manifests/docs.json`);
+		});
+
 		it('should successfully fetch and parse both component and docs manifests', async () => {
 			const validComponentManifest: ComponentManifestMap = {
 				v: 1,

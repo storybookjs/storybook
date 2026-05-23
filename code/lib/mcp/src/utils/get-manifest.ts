@@ -162,20 +162,16 @@ export async function getManifests(
 }
 
 /**
- * Constructs the manifest URL from a request by replacing /mcp with the provided path
+ * Constructs the manifest URL from the request origin and the top-level manifest path.
  */
 function getManifestUrlFromRequest(request: Request, path: string): string {
-	const url = new URL(request.url);
-	// Replace /mcp endpoint with the provided path (e.g., './manifests/components.json')
-	// Remove leading './' from path if present
 	const normalizedPath = path.replace(/^\.\//, '');
-	url.pathname = url.pathname.replace(/\/mcp\/?$/, `/${normalizedPath}`);
-	return url.toString();
+	return new URL(`/${normalizedPath}`, request.url).toString();
 }
 
 /**
  * Default manifest provider that fetches from the same origin as the request,
- * replacing /mcp with the provided path
+ * using Storybook's top-level manifest path.
  */
 async function defaultManifestProvider(
 	request: Request | undefined,

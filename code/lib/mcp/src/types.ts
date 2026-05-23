@@ -39,7 +39,7 @@ export type StorybookContext = {
 	 * The function receives the request object, a path to the manifest file, and optionally
 	 * a source (in multi-source mode).
 	 * The default provider requires a request object and constructs the manifest URL from the request origin,
-	 * replacing /mcp with /manifests/components.json.
+	 * using the top-level manifest path such as /manifests/components.json.
 	 * Custom providers can use the request parameter to determine the manifest source, or ignore it entirely.
 	 */
 	manifestProvider?: (

@@ -1,9 +1,13 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { CompositionAuth, extractBearerToken } from './composition-auth.ts';
 
 describe('CompositionAuth', () => {
 	beforeEach(() => {
 		vi.restoreAllMocks();
+	});
+
+	afterEach(() => {
+		vi.unstubAllGlobals();
 	});
 
 	describe('extractBearerToken', () => {

@@ -32,12 +32,14 @@ export class ManifestGetError extends Error {
 }
 
 export class RequiresOwnMcpError extends Error {
+	public readonly source: SourceWithUrl;
 	public readonly endpoint: string;
 
-	constructor(public readonly source: SourceWithUrl) {
+	constructor(source: SourceWithUrl) {
 		const endpoint = getSourceMcpEndpoint(source);
 		super(`Composed Storybook "${source.title}" requires its own MCP endpoint: ${endpoint}`);
 		this.name = 'RequiresOwnMcpError';
+		this.source = source;
 		this.endpoint = endpoint;
 	}
 }

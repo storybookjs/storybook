@@ -6,7 +6,12 @@
  * MCP clients like VS Code to handle the OAuth flow with Chromatic.
  */
 
-import { ComponentManifestMap, DocsManifestMap, type Source } from '@storybook/mcp';
+import {
+	ComponentManifestMap,
+	DocsManifestMap,
+	RequiresOwnMcpError,
+	type Source,
+} from '@storybook/mcp';
 import * as v from 'valibot';
 
 export interface ComposedRef {
@@ -41,6 +46,10 @@ export type ManifestProvider = (
 	path: string,
 	source?: Source,
 ) => Promise<string>;
+type RemoteSource = Source & { url: string };
+
+export const STORYBOOK_MCP_PROXY_HEADER = 'X-Storybook-MCP-Proxy';
+export const STORYBOOK_MCP_PROXY_HEADER_VALUE = 'true';
 
 const MANIFEST_CACHE_TTL = 60 * 60 * 1000; // 60 minutes
 const REVALIDATION_TTL = 60 * 1000; // 60 seconds
@@ -144,14 +153,26 @@ export class CompositionAuth {
 	}
 
 	/** Create a manifest provider for multi-source mode. */
-	createManifestProvider(localOrigin: string): ManifestProvider {
+	createManifestProvider(
+		localOrigin: string,
+		options: { requiresOwnMcpForUnauthenticatedRequests?: boolean } = {},
+	): ManifestProvider {
 		return async (request, path, source) => {
 			const token = extractBearerToken(request?.headers.get('Authorization'));
-			const baseUrl = source?.url ?? localOrigin;
+			const remoteSource: RemoteSource | undefined = source?.url
+				? { ...source, url: source.url }
+				: undefined;
+			const baseUrl = remoteSource?.url ?? localOrigin;
 			const manifestUrl = `${baseUrl}${path.replace('./', '/')}`;
-			const isRemote = !!source?.url;
+			const isRemote = !!remoteSource;
 			const needsAuth = isRemote && this.#isAuthRequiredUrl(baseUrl);
 			const tokenForRequest = needsAuth ? token : null;
+			const shouldUseOwnMcp =
+				isRemote && !token && options.requiresOwnMcpForUnauthenticatedRequests;
+
+			if (needsAuth && shouldUseOwnMcp && remoteSource) {
+				throw new RequiresOwnMcpError(remoteSource);
+			}
 
 			// New token = user re-authenticated, invalidate all cached manifests
 			if (token && token !== this.#lastToken) {
@@ -197,6 +218,9 @@ export class CompositionAuth {
 				return text;
 			} catch (error) {
 				if (error instanceof AuthenticationError && request) {
+					if (shouldUseOwnMcp && remoteSource) {
+						throw new RequiresOwnMcpError(remoteSource);
+					}
 					this.#authErrors.set(request, error);
 				}
 				throw error;
@@ -354,4 +378,14 @@ export function extractBearerToken(
 	const values = Array.isArray(authHeader) ? authHeader : [authHeader];
 	const bearer = values.find((value) => typeof value === 'string' && value.startsWith('Bearer '));
 	return bearer ? bearer.slice(7) : null;
+}
+
+export function isStorybookMcpProxyRequest(
+	headerValue: string | string[] | null | undefined,
+): boolean {
+	const values = Array.isArray(headerValue) ? headerValue : [headerValue];
+	return values.some(
+		(value) =>
+			typeof value === 'string' && value.trim().toLowerCase() === STORYBOOK_MCP_PROXY_HEADER_VALUE,
+	);
 }

@@ -9,7 +9,9 @@ import htmlTemplate from './template.html';
 import path from 'node:path';
 import {
 	CompositionAuth,
+	STORYBOOK_MCP_PROXY_HEADER,
 	extractBearerToken,
+	isStorybookMcpProxyRequest as hasStorybookMcpProxyHeader,
 	type ComposedRef,
 	type ManifestProvider,
 } from './auth/index.ts';
@@ -18,6 +20,7 @@ import type { Source } from '@storybook/mcp';
 import type { IncomingMessage, ServerResponse } from 'node:http';
 
 const DEFAULT_MCP_ENDPOINT = '/mcp';
+const STORYBOOK_MCP_PROXY_HEADER_KEY = STORYBOOK_MCP_PROXY_HEADER.toLowerCase();
 
 export const previewAnnotations: PresetPropertyFn<'previewAnnotations'> = async (
 	existingAnnotations = [],
@@ -46,7 +49,7 @@ export const experimental_devServer: PresetPropertyFn<
 
 	// Build sources and manifest provider
 	let sources: Source[] | undefined;
-	let manifestProvider: ManifestProvider | undefined;
+	let createManifestProvider: ((req: IncomingMessage) => ManifestProvider) | undefined;
 
 	if (refs.length > 0) {
 		logger.info(`Initializing composition with ${refs.length} remote Storybook(s)`);
@@ -60,7 +63,10 @@ export const experimental_devServer: PresetPropertyFn<
 		logger.info(`Sources: ${sources.map((s) => s.id).join(', ')}`);
 
 		// Create manifest provider that handles multi-source
-		manifestProvider = compositionAuth.createManifestProvider(origin);
+		createManifestProvider = (req) =>
+			compositionAuth.createManifestProvider(origin, {
+				requiresOwnMcpForUnauthenticatedRequests: isStorybookMcpProxyHttpRequest(req),
+			});
 	}
 
 	// Serve .well-known/oauth-protected-resource for MCP auth
@@ -78,7 +84,7 @@ export const experimental_devServer: PresetPropertyFn<
 
 	const requireAuth = (req: IncomingMessage, res: ServerResponse): boolean => {
 		const token = extractBearerToken(req.headers['authorization']);
-		if (compositionAuth.requiresAuth && !token) {
+		if (compositionAuth.requiresAuth && !token && !isStorybookMcpProxyHttpRequest(req)) {
 			res.writeHead(401, {
 				'Content-Type': 'text/plain',
 				'WWW-Authenticate': compositionAuth.buildWwwAuthenticate(origin),
@@ -98,7 +104,7 @@ export const experimental_devServer: PresetPropertyFn<
 			options,
 			addonOptions,
 			sources,
-			manifestProvider,
+			manifestProvider: createManifestProvider?.(req),
 			compositionAuth,
 		});
 	});
@@ -121,7 +127,7 @@ export const experimental_devServer: PresetPropertyFn<
 				options,
 				addonOptions,
 				sources,
-				manifestProvider,
+				manifestProvider: createManifestProvider?.(req),
 				compositionAuth,
 			});
 		}
@@ -179,6 +185,12 @@ export const features: PresetPropertyFn<'features'> = async (existingFeatures) =
 		componentsManifest: true,
 	};
 };
+
+function isStorybookMcpProxyHttpRequest(req: IncomingMessage): boolean {
+	const headerValue =
+		req.headers[STORYBOOK_MCP_PROXY_HEADER_KEY] ?? req.headers[STORYBOOK_MCP_PROXY_HEADER];
+	return hasStorybookMcpProxyHeader(headerValue);
+}
 
 /**
  * Get composed Storybook refs from Storybook config.

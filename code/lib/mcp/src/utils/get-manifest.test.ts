@@ -1,5 +1,10 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { getManifests, getMultiSourceManifests, ManifestGetError } from './get-manifest.ts';
+import {
+	getManifests,
+	getMultiSourceManifests,
+	ManifestGetError,
+	RequiresOwnMcpError,
+} from './get-manifest.ts';
 import type { ComponentManifestMap, DocsManifestMap, Source } from '../types.ts';
 
 global.fetch = vi.fn();
@@ -451,7 +456,7 @@ Invalid key: Expected "v" but received undefined]`);
 
 	describe('getMultiSourceManifests', () => {
 		const localSource: Source = { id: 'local', title: 'Local' };
-		const remoteSource: Source = {
+		const remoteSource: Source & { url: string } = {
 			id: 'remote',
 			title: 'Remote',
 			url: 'http://remote.example.com',
@@ -529,6 +534,34 @@ Invalid key: Expected "v" but received undefined]`);
 			expect(results[0]!.componentManifest).toEqual(localManifest);
 			expect(results[1]!.error).toContain('401 Unauthorized');
 			expect(results[1]!.componentManifest).toEqual({ v: 1, components: {} });
+		});
+
+		it('should capture requires-own-mcp notices without treating them as failed output', async () => {
+			const manifestProvider = vi
+				.fn()
+				.mockImplementation((_req: Request | undefined, path: string, source?: Source) => {
+					if (source?.id === 'remote') {
+						return Promise.reject(new RequiresOwnMcpError(remoteSource));
+					}
+					if (path.includes('docs.json')) {
+						return Promise.reject(new Error('Not found'));
+					}
+					return Promise.resolve(JSON.stringify(localManifest));
+				});
+
+			const results = await getMultiSourceManifests(
+				[localSource, remoteSource],
+				undefined,
+				manifestProvider,
+			);
+
+			expect(results).toHaveLength(2);
+			expect(results[0]!.error).toBeUndefined();
+			expect(results[1]!.error).toBeUndefined();
+			expect(results[1]!.notice).toEqual({
+				kind: 'requires-own-mcp',
+				endpoint: 'http://remote.example.com/mcp',
+			});
 		});
 
 		it('should throw when all sources fail', async () => {

@@ -6,6 +6,9 @@ import {
 	type SourceManifests,
 } from '../types.ts';
 import * as v from 'valibot';
+import { formatRequiresOwnMcpNotice, getSourceMcpEndpoint } from './requires-own-mcp.ts';
+
+type SourceWithUrl = Source & { url: string };
 
 /**
  * The paths to the manifest files relative to the Storybook build
@@ -28,12 +31,23 @@ export class ManifestGetError extends Error {
 	}
 }
 
+export class RequiresOwnMcpError extends Error {
+	public readonly endpoint: string;
+
+	constructor(public readonly source: SourceWithUrl) {
+		const endpoint = getSourceMcpEndpoint(source);
+		super(`Composed Storybook "${source.title}" requires its own MCP endpoint: ${endpoint}`);
+		this.name = 'RequiresOwnMcpError';
+		this.endpoint = endpoint;
+	}
+}
+
 /**
- * MCP tool result type for error responses
+ * MCP tool result type for text responses
  */
-type MCPErrorResult = {
+type MCPTextResult = {
 	content: Array<{ type: 'text'; text: string }>;
-	isError: true;
+	isError?: true;
 };
 
 /**
@@ -42,7 +56,18 @@ type MCPErrorResult = {
  * @param error - The error to convert (can be any type)
  * @returns A tool result with error content and isError flag
  */
-export const errorToMCPContent = (error: unknown): MCPErrorResult => {
+export const errorToMCPContent = (error: unknown): MCPTextResult => {
+	if (error instanceof RequiresOwnMcpError) {
+		return {
+			content: [
+				{
+					type: 'text',
+					text: formatRequiresOwnMcpNotice(error.source, error.endpoint),
+				},
+			],
+		};
+	}
+
 	const errorPrefix =
 		error instanceof ManifestGetError ? 'Error getting manifest' : 'Unexpected error';
 	const errorMessage = error instanceof Error ? error.message : String(error);
@@ -121,6 +146,9 @@ export async function getManifests(
 
 	if (componentResult.status === 'rejected') {
 		const reason = componentResult.reason;
+		if (reason instanceof RequiresOwnMcpError) {
+			throw reason;
+		}
 		const is404 = reason instanceof ManifestGetError && reason.message.includes('404');
 		const hint = is404
 			? `\nHint: The Storybook at this URL may not have the component manifest enabled. Add \`features: { componentsManifest: true }\` (or \`features: { experimentalComponentsManifest: true }\` for older Storybook versions) to its main.ts config.`
@@ -234,6 +262,16 @@ export async function getMultiSourceManifests(
 				};
 			} catch (error) {
 				// Capture error but don't fail the entire request
+				if (error instanceof RequiresOwnMcpError) {
+					return {
+						source,
+						componentManifest: { v: 1, components: {} },
+						notice: {
+							kind: 'requires-own-mcp' as const,
+							endpoint: error.endpoint,
+						},
+					};
+				}
 				const errorMessage = error instanceof Error ? error.message : String(error);
 				return {
 					source,
@@ -244,9 +282,10 @@ export async function getMultiSourceManifests(
 		}),
 	);
 
-	// Check if at least one source succeeded
-	const successCount = results.filter((r) => !r.error).length;
-	if (successCount === 0) {
+	// Check if at least one source produced useful tool output.
+	const successCount = results.filter((r) => !r.error && !r.notice).length;
+	const noticeCount = results.filter((r) => r.notice).length;
+	if (successCount === 0 && noticeCount === 0) {
 		throw new ManifestGetError(
 			`Failed to fetch manifests from any source. Errors:\n${results.map((r) => `- ${r.source.title}: ${r.error}`).join('\n')}`,
 		);

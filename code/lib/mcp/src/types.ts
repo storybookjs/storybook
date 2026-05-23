@@ -13,6 +13,11 @@ export type Source = {
 	url?: string;
 };
 
+export type RequiresOwnMcpNotice = {
+	kind: 'requires-own-mcp';
+	endpoint: string;
+};
+
 /**
  * All manifests for a single source.
  */
@@ -22,6 +27,8 @@ export type SourceManifests = {
 	docsManifest?: DocsManifestMap;
 	/** Error message if fetching this source failed */
 	error?: string;
+	/** Non-error guidance for sources that must be accessed through their own MCP endpoint */
+	notice?: RequiresOwnMcpNotice;
 };
 
 /**

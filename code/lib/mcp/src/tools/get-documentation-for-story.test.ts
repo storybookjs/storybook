@@ -5,7 +5,7 @@ import {
 	addGetStoryDocumentationTool,
 	GET_STORY_TOOL_NAME,
 } from './get-documentation-for-story.ts';
-import type { StorybookContext } from '../types.ts';
+import type { Source, StorybookContext } from '../types.ts';
 import smallManifestFixture from '../../fixtures/small-manifest.fixture.json' with { type: 'json' };
 import * as getManifest from '../utils/get-manifest.ts';
 
@@ -375,6 +375,39 @@ describe('getComponentStoryDocumentationTool', () => {
 
 			expect((response.result as any).content[0].text).toContain('# Badge - Default');
 			expect(getManifestSpy).toHaveBeenCalledWith(mockHttpRequest, undefined, sources[1]);
+		});
+
+		it('should return a routing notice when the selected source requires its own MCP', async () => {
+			const remoteSource = sources[1] as Source & { url: string };
+			getManifestSpy.mockRejectedValue(new getManifest.RequiresOwnMcpError(remoteSource));
+
+			const request = {
+				jsonrpc: '2.0' as const,
+				id: 1,
+				method: 'tools/call',
+				params: {
+					name: GET_STORY_TOOL_NAME,
+					arguments: {
+						componentId: 'badge',
+						storyName: 'Default',
+						storybookId: 'remote',
+					},
+				},
+			};
+
+			const mockHttpRequest = new Request('https://example.com/mcp');
+			const response = await server.receive(request, {
+				custom: { request: mockHttpRequest, sources },
+			});
+
+			expect((response.result as any).isError).toBeUndefined();
+			expect((response.result as any).content[0].text).toBe(`# Remote
+id: remote
+
+This composed Storybook is private and cannot be read through the local Storybook MCP proxy.
+
+Use this source's own MCP endpoint instead:
+http://remote.example.com/mcp`);
 		});
 	});
 });

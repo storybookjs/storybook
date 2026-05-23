@@ -3,13 +3,40 @@ import React from 'react';
 import { addons, types } from 'storybook/manager-api';
 import { Route } from 'storybook/internal/router';
 
-import { ADDON_ID, PAGE_ID, REVIEW_CHANGES_URL, EVENTS } from './constants.ts';
+import {
+  ADDON_ID,
+  PAGE_ID,
+  REVIEW_CHANGES_URL,
+  RESTORE_NAV_SESSION_KEY,
+  EVENTS,
+} from './constants.ts';
 import { ReviewChangesPage } from './ReviewChangesPage.tsx';
 
 addons.register(ADDON_ID, (api) => {
-  // When the agent pushes a review, navigate any open tab to the page.
+  // Safety net: the review page hides the sidebar and has no in-app exit, so
+  // if the user left it via a full reload (typed URL, bookmark) the
+  // component cleanup never ran. On any manager load that is NOT the review
+  // route, restore a sidebar we hid. SPA exits (browser back) are already
+  // handled by ReviewChangesPage's effect cleanup.
+  const path = new URLSearchParams(window.location.search).get('path') ?? '';
+  if (
+    !path.startsWith(REVIEW_CHANGES_URL) &&
+    sessionStorage.getItem(RESTORE_NAV_SESSION_KEY) === 'restore'
+  ) {
+    sessionStorage.removeItem(RESTORE_NAV_SESSION_KEY);
+    api.toggleNav(true);
+  }
+
+  // When the agent pushes a review, pull any open tab to the page — but only
+  // if it is not already there. The review page replays cached state on load
+  // (REQUEST_REVIEW_STATE), which echoes back as APPLY_REVIEW_STATE; without
+  // this guard that echo would re-navigate to the bare review URL, dropping
+  // the &collection=&story= params and bouncing a detail page to the summary.
   api.getChannel()?.on(EVENTS.APPLY_REVIEW_STATE, () => {
-    api.navigate(REVIEW_CHANGES_URL);
+    const currentPath = new URLSearchParams(window.location.search).get('path') ?? '';
+    if (!currentPath.startsWith(REVIEW_CHANGES_URL)) {
+      api.navigate(REVIEW_CHANGES_URL);
+    }
   });
 
   addons.add(PAGE_ID, {

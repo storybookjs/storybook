@@ -3,7 +3,7 @@ import React, { type FC } from 'react';
 import { Button } from 'storybook/internal/components';
 import { styled } from 'storybook/theming';
 
-import { CheckIcon, ChevronSmallLeftIcon, ChevronSmallRightIcon } from '@storybook/icons';
+import { ChevronSmallLeftIcon, ChevronSmallRightIcon } from '@storybook/icons';
 
 const Page = styled.div(({ theme }) => ({
   display: 'flex',
@@ -33,7 +33,7 @@ const ToolbarSide = styled.div({
   minWidth: 0,
 });
 
-const CollectionTitle = styled.h2({
+const DetailTitle = styled.h2({
   margin: 0,
   minWidth: 0,
   overflow: 'hidden',
@@ -83,7 +83,8 @@ const BottomRightPlaceholder = styled.div({
 const storyPreviewUrl = (id: string) => `iframe.html?id=${encodeURIComponent(id)}&viewMode=story`;
 
 export interface DetailsScreenProps {
-  collectionTitle: string;
+  /** Component title or collection title shown in the toolbar. */
+  title: string;
   storyId: string;
   storyIndex: number;
   totalStories: number;
@@ -91,11 +92,13 @@ export interface DetailsScreenProps {
   previousHref: string;
   nextHref: string;
   branchName?: string;
-  onMarkViewed?: () => void;
 }
 
+// The preview <iframe> is intentionally a stable element: when the story
+// changes the parent only updates `src`, so the iframe navigates in place
+// without the manager (or this component) remounting — no flash.
 export const DetailsScreen: FC<DetailsScreenProps> = ({
-  collectionTitle,
+  title,
   storyId,
   storyIndex,
   totalStories,
@@ -103,23 +106,16 @@ export const DetailsScreen: FC<DetailsScreenProps> = ({
   previousHref,
   nextHref,
   branchName,
-  onMarkViewed,
 }) => (
   <Page>
     <Toolbar>
       <ToolbarSide>
-        <Button
-          variant="ghost"
-          size="small"
-          padding="small"
-          ariaLabel="Back to collections"
-          asChild
-        >
+        <Button variant="ghost" size="small" padding="small" ariaLabel="Back to review" asChild>
           <a href={backHref}>
             <ChevronSmallLeftIcon />
           </a>
         </Button>
-        <CollectionTitle>{collectionTitle}</CollectionTitle>
+        <DetailTitle>{title}</DetailTitle>
       </ToolbarSide>
 
       <ToolbarSide>
@@ -135,15 +131,6 @@ export const DetailsScreen: FC<DetailsScreenProps> = ({
           <a href={nextHref}>
             <ChevronSmallRightIcon />
           </a>
-        </Button>
-        <Button
-          variant="ghost"
-          size="small"
-          padding="small"
-          ariaLabel="Mark as viewed"
-          onClick={onMarkViewed}
-        >
-          <CheckIcon />
         </Button>
       </ToolbarSide>
     </Toolbar>

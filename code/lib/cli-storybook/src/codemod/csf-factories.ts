@@ -5,6 +5,7 @@ import {
 } from 'storybook/internal/common';
 import { logger, prompt } from 'storybook/internal/node-logger';
 
+import path from 'path';
 import picocolors from 'picocolors';
 import { dedent } from 'ts-dedent';
 
@@ -19,6 +20,7 @@ async function runStoriesCodemod(options: {
   packageManager: JsPackageManager;
   useSubPathImports: boolean;
   previewConfigPath: string;
+  configDir: string;
   yes: boolean | undefined;
   glob: string | undefined;
 }) {
@@ -56,6 +58,26 @@ async function runStoriesCodemod(options: {
   }
 }
 
+const LEGACY_SUBPATH_IMPORT = ['./*', './*.ts', './*.tsx', './*.js', './*.jsx'];
+
+const toPosixPath = (filePath: string) => filePath.replace(/\\/g, '/');
+
+export const getStorybookSubpathImportTarget = (configDir: string, packageJsonDir: string) => {
+  const absoluteConfigDir = path.isAbsolute(configDir) ? configDir : path.resolve(configDir);
+  const configDirFromPackageJson = toPosixPath(path.relative(packageJsonDir, absoluteConfigDir));
+
+  if (!configDirFromPackageJson) {
+    return './*';
+  }
+
+  return `./${configDirFromPackageJson.replace(/^\.\//, '')}/*`;
+};
+
+const isLegacySubpathImport = (value: unknown) =>
+  Array.isArray(value) &&
+  value.length === LEGACY_SUBPATH_IMPORT.length &&
+  value.every((entry, index) => entry === LEGACY_SUBPATH_IMPORT[index]);
+
 export const csfFactories: CommandFix = {
   id: 'csf-factories',
   promptType: 'command',
@@ -90,22 +112,41 @@ export const csfFactories: CommandFix = {
             label: "Relative imports (import preview from '../../.storybook/preview')",
             value: false,
           },
-          { label: "Subpath imports (import preview from '#.storybook/preview')", value: true },
+          { label: "Subpath imports (import preview from '#storybook/preview.ts')", value: true },
         ],
       });
     }
 
     const { packageJson } = packageManager.primaryPackageJson;
 
-    if (useSubPathImports && !packageJson.imports?.['#*']) {
-      logger.step(
-        `Adding imports map in ${picocolors.cyan(packageManager.primaryPackageJson.packageJsonPath)}`
+    if (useSubPathImports) {
+      const storybookImportTarget = getStorybookSubpathImportTarget(
+        configDir,
+        packageManager.primaryPackageJson.operationDir
       );
-      packageJson.imports = {
-        ...packageJson.imports,
-        '#*': ['./*', './*.ts', './*.tsx', './*.js', './*.jsx'],
-      };
-      packageManager.writePackageJson(packageJson);
+      const imports = { ...packageJson.imports };
+      let shouldWritePackageJson = false;
+
+      if (!imports['#storybook/*']) {
+        imports['#storybook/*'] = storybookImportTarget;
+        shouldWritePackageJson = true;
+      }
+
+      if (isLegacySubpathImport(imports['#*'])) {
+        delete imports['#*'];
+        shouldWritePackageJson = true;
+      }
+
+      if (shouldWritePackageJson) {
+        logger.step(
+          `Adding imports map in ${picocolors.cyan(packageManager.primaryPackageJson.packageJsonPath)}`
+        );
+        packageJson.imports = imports;
+        packageManager.writePackageJson(
+          packageJson,
+          packageManager.primaryPackageJson.operationDir
+        );
+      }
     }
 
     await runStoriesCodemod({
@@ -113,6 +154,7 @@ export const csfFactories: CommandFix = {
       packageManager,
       useSubPathImports,
       previewConfigPath: previewConfigPath!,
+      configDir,
       yes,
       glob,
     });

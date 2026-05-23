@@ -21,11 +21,35 @@ const typesDisallowList = [
 // Name of properties that should not be renamed to `Story.input.xyz`
 const reuseDisallowList = ['play', 'run', 'extends', 'story'];
 
-type Options = { previewConfigPath: string; useSubPathImports: boolean };
+type Options = { previewConfigPath: string; useSubPathImports: boolean; configDir?: string };
+
+const toPosixPath = (filePath: string) => filePath.replace(/\\/g, '/');
+
+const getSubpathPreviewImport = (previewConfigPath: string, configDir?: string) => {
+  if (!configDir) {
+    return '#.storybook/preview';
+  }
+
+  const absoluteConfigDir = path.isAbsolute(configDir) ? configDir : path.resolve(configDir);
+  const absolutePreviewConfigPath = path.isAbsolute(previewConfigPath)
+    ? previewConfigPath
+    : path.resolve(previewConfigPath);
+  let previewPathFromConfig = path.relative(absoluteConfigDir, absolutePreviewConfigPath);
+
+  if (
+    !previewPathFromConfig ||
+    previewPathFromConfig.startsWith('..') ||
+    path.isAbsolute(previewPathFromConfig)
+  ) {
+    previewPathFromConfig = path.basename(previewConfigPath);
+  }
+
+  return `#storybook/${toPosixPath(previewPathFromConfig)}`;
+};
 
 export async function storyToCsfFactory(
   info: FileInfo,
-  { previewConfigPath, useSubPathImports }: Options
+  { previewConfigPath, useSubPathImports, configDir }: Options
 ) {
   const csf = loadCsf(info.source, { makeTitle: () => 'FIXME' });
   try {
@@ -45,7 +69,7 @@ export async function storyToCsfFactory(
   /**
    * Add the preview import if it doesn't exist yet:
    *
-   * `import preview from '#.storybook/preview'`;
+   * `import preview from '#storybook/preview.ts'`;
    */
   const programNode = csf._ast.program;
   let previewImport: t.ImportDeclaration | undefined;
@@ -57,7 +81,7 @@ export async function storyToCsfFactory(
       n.declarations.some((declaration) => t.isIdentifier(declaration.id, { name: 'preview' }))
   );
 
-  let previewPath = '#.storybook/preview';
+  let previewPath = getSubpathPreviewImport(previewConfigPath, configDir);
   if (!useSubPathImports) {
     // calculate relative path from story file to preview file
     const relativePath = path.relative(path.dirname(info.path), previewConfigPath);

@@ -468,6 +468,59 @@ describe('stories codemod', () => {
       }
     });
 
+    it('uses a scoped Storybook subpath import with the preview file extension', async () => {
+      await expect(
+        formatFileContent(
+          'Component.stories.tsx',
+          await storyToCsfFactory(
+            {
+              source: dedent`
+                export default {};
+                export const A = {};
+              `,
+              path: 'Component.stories.tsx',
+            },
+            {
+              previewConfigPath: '.storybook/preview.ts',
+              configDir: '.storybook',
+              useSubPathImports: true,
+            }
+          )
+        )
+      ).resolves.toMatchInlineSnapshot(`
+        import preview from "#storybook/preview.ts";
+        const meta = preview.meta({});
+        export const A = meta.story();
+      `);
+    });
+
+    it('updates an existing legacy subpath preview import to the scoped Storybook import', async () => {
+      await expect(
+        formatFileContent(
+          'Component.stories.tsx',
+          await storyToCsfFactory(
+            {
+              source: dedent`
+                import preview, { extra } from '#.storybook/preview';
+                export default {};
+                export const A = {};
+              `,
+              path: 'Component.stories.tsx',
+            },
+            {
+              previewConfigPath: '.storybook/preview.ts',
+              configDir: '.storybook',
+              useSubPathImports: true,
+            }
+          )
+        )
+      ).resolves.toMatchInlineSnapshot(`
+        import preview, { extra } from "#storybook/preview.ts";
+        const meta = preview.meta({});
+        export const A = meta.story();
+      `);
+    });
+
     it('converts CSF1 into CSF4 with render', async () => {
       await expect(
         transform(dedent`

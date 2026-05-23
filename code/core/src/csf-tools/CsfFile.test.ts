@@ -3137,6 +3137,7 @@ describe('isModuleMock', () => {
 describe('isValidPreviewPath', () => {
   it.each([
     ['#.storybook/preview', true],
+    ['#storybook/preview.ts', true],
     ['../../.storybook/preview', true],
     ['/path/to/.storybook/preview', true],
     ['./preview', true],

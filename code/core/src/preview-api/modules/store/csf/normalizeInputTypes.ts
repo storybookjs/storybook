@@ -27,17 +27,35 @@ const normalizeControl = (control: InputType['control']): StrictInputType['contr
 
 export const normalizeInputType = (inputType: InputType, key: string): StrictInputType => {
   const { type, control, ...rest } = inputType;
+
+  // Hoist options nested inside the control object to the top level when the
+  // user writes { control: { type: 'select', options: [...] } } instead of the
+  // documented { control: { type: 'select' }, options: [...] } form.
+  let effectiveControl = control;
+  const effectiveRest = { ...rest };
+  if (
+    !effectiveRest.options &&
+    control &&
+    typeof control === 'object' &&
+    !Array.isArray(control) &&
+    'options' in control
+  ) {
+    const { options, ...controlWithoutOptions } = control as Record<string, unknown>;
+    effectiveRest.options = options as InputType['options'];
+    effectiveControl = controlWithoutOptions as InputType['control'];
+  }
+
   const normalized: StrictInputType = {
     name: key,
-    ...rest,
+    ...effectiveRest,
   };
 
   if (type) {
     normalized.type = normalizeType(type);
   }
-  if (control) {
-    normalized.control = normalizeControl(control);
-  } else if (control === false) {
+  if (effectiveControl) {
+    normalized.control = normalizeControl(effectiveControl);
+  } else if (effectiveControl === false) {
     normalized.control = { disable: true };
   }
   return normalized;

@@ -45,11 +45,17 @@ export const convert = (type: FlowType): SBType | void => {
     }
     case 'signature':
       return { ...base, ...convertSig(type) };
-    case 'union':
-      if (type.elements?.every(isLiteral)) {
-        return { ...base, name: 'enum', value: type.elements?.map(toEnumOption) };
+    case 'union': {
+      // Filter out Flow's nullable markers (void, null) so optional unions like
+      // ?('sm' | 'md' | 'lg') still resolve to an enum control.
+      const meaningfulElements = type.elements?.filter(
+        (element) => element.name !== 'void' && element.name !== 'null'
+      );
+      if (meaningfulElements && meaningfulElements.length > 0 && meaningfulElements.every(isLiteral)) {
+        return { ...base, name: 'enum', value: meaningfulElements.map(toEnumOption) };
       }
       return { ...base, name, value: type.elements?.map(convert) };
+    }
 
     case 'intersection':
       return { ...base, name, value: type.elements?.map(convert) };

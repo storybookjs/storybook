@@ -108,6 +108,37 @@ describe('normalizeInputType', () => {
       defaultValue: 'defaultValue',
     });
   });
+
+  it('hoists options nested inside control object to top level', () => {
+    expect(
+      normalizeInputType(
+        {
+          control: { type: 'select', options: ['sm', 'md', 'lg'] } as any,
+        },
+        'arg'
+      )
+    ).toEqual({
+      name: 'arg',
+      options: ['sm', 'md', 'lg'],
+      control: { type: 'select', disable: false },
+    });
+  });
+
+  it('preserves top-level options when control also has options', () => {
+    expect(
+      normalizeInputType(
+        {
+          options: ['xs', 'sm'],
+          control: { type: 'select', options: ['sm', 'md', 'lg'] } as any,
+        },
+        'arg'
+      )
+    ).toEqual({
+      name: 'arg',
+      options: ['xs', 'sm'],
+      control: { type: 'select', options: ['sm', 'md', 'lg'], disable: false },
+    });
+  });
 });
 
 describe('normalizeInputTypes', () => {

@@ -62,8 +62,11 @@ const LEGACY_SUBPATH_IMPORT = ['./*', './*.ts', './*.tsx', './*.js', './*.jsx'];
 
 const toPosixPath = (filePath: string) => filePath.replace(/\\/g, '/');
 
+const resolveFromOperationDir = (filePath: string, operationDir: string) =>
+  path.isAbsolute(filePath) ? filePath : path.resolve(operationDir, filePath);
+
 export const getStorybookSubpathImportTarget = (configDir: string, packageJsonDir: string) => {
-  const absoluteConfigDir = path.isAbsolute(configDir) ? configDir : path.resolve(configDir);
+  const absoluteConfigDir = resolveFromOperationDir(configDir, packageJsonDir);
   const configDirFromPackageJson = toPosixPath(path.relative(packageJsonDir, absoluteConfigDir));
 
   if (!configDirFromPackageJson) {
@@ -77,6 +80,26 @@ const isLegacySubpathImport = (value: unknown) =>
   Array.isArray(value) &&
   value.length === LEGACY_SUBPATH_IMPORT.length &&
   value.every((entry, index) => entry === LEGACY_SUBPATH_IMPORT[index]);
+
+export const getUpdatedStorybookImportsMap = (
+  imports: Record<string, unknown> | undefined,
+  storybookImportTarget: string
+) => {
+  const updatedImports = { ...imports };
+  let shouldWritePackageJson = false;
+
+  if (updatedImports['#storybook/*'] !== storybookImportTarget) {
+    updatedImports['#storybook/*'] = storybookImportTarget;
+    shouldWritePackageJson = true;
+  }
+
+  if (isLegacySubpathImport(updatedImports['#*'])) {
+    delete updatedImports['#*'];
+    shouldWritePackageJson = true;
+  }
+
+  return { imports: updatedImports, shouldWritePackageJson };
+};
 
 export const csfFactories: CommandFix = {
   id: 'csf-factories',
@@ -118,24 +141,24 @@ export const csfFactories: CommandFix = {
     }
 
     const { packageJson } = packageManager.primaryPackageJson;
+    const resolvedConfigDir = resolveFromOperationDir(
+      configDir,
+      packageManager.primaryPackageJson.operationDir
+    );
+    const resolvedPreviewConfigPath = resolveFromOperationDir(
+      previewConfigPath!,
+      packageManager.primaryPackageJson.operationDir
+    );
 
     if (useSubPathImports) {
       const storybookImportTarget = getStorybookSubpathImportTarget(
-        configDir,
+        resolvedConfigDir,
         packageManager.primaryPackageJson.operationDir
       );
-      const imports = { ...packageJson.imports };
-      let shouldWritePackageJson = false;
-
-      if (!imports['#storybook/*']) {
-        imports['#storybook/*'] = storybookImportTarget;
-        shouldWritePackageJson = true;
-      }
-
-      if (isLegacySubpathImport(imports['#*'])) {
-        delete imports['#*'];
-        shouldWritePackageJson = true;
-      }
+      const { imports, shouldWritePackageJson } = getUpdatedStorybookImportsMap(
+        packageJson.imports,
+        storybookImportTarget
+      );
 
       if (shouldWritePackageJson) {
         logger.step(
@@ -153,8 +176,8 @@ export const csfFactories: CommandFix = {
       dryRun,
       packageManager,
       useSubPathImports,
-      previewConfigPath: previewConfigPath!,
-      configDir,
+      previewConfigPath: resolvedPreviewConfigPath,
+      configDir: resolvedConfigDir,
       yes,
       glob,
     });

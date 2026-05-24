@@ -1,9 +1,11 @@
 import { logger } from 'storybook/internal/client-logger';
 import type {
-  ArgTypesEnhancer,
-  Renderer,
-  SBEnumType,
-  StrictInputType,
+ ArgTypesEnhancer,
+ Renderer,
+ SBEnumType,
+ SBUnionType,
+ SBLiteralType,
+ StrictInputType,
 } from 'storybook/internal/types';
 
 import { mapValues } from 'es-toolkit/object';
@@ -12,73 +14,89 @@ import { filterArgTypes } from './filterArgTypes.ts';
 import { combineParameters } from './parameters.ts';
 
 export type ControlsMatchers = {
-  date: RegExp;
-  color: RegExp;
+ date: RegExp;
+ color: RegExp;
 };
 
 const inferControl = (argType: StrictInputType, name: string, matchers: ControlsMatchers): any => {
-  const { type, options } = argType;
-  if (!type) {
-    return undefined;
-  }
+ const { type, options } = argType;
+ if (!type) {
+ return undefined;
+ }
 
-  // args that end with background or color e.g. iconColor
-  if (matchers.color && matchers.color.test(name)) {
-    const controlType = type.name;
+ // args that end with background or color e.g. iconColor
+ if (matchers.color && matchers.color.test(name)) {
+ const controlType = type.name;
 
-    if (controlType === 'string') {
-      return { control: { type: 'color' } };
-    }
+ if (controlType === 'string') {
+ return { control: { type: 'color' } };
+ }
 
-    if (controlType !== 'enum') {
-      logger.warn(
-        `Addon controls: Control of type color only supports string, received "${controlType}" instead`
-      );
-    }
-  }
+ if (controlType !== 'enum') {
+ logger.warn(
+ `Addon controls: Control of type color only supports string, received "${controlType}" instead`
+ );
+ }
+ }
 
-  // args that end with date e.g. purchaseDate
-  if (matchers.date && matchers.date.test(name)) {
-    return { control: { type: 'date' } };
-  }
+ // args that end with date e.g. purchaseDate
+ if (matchers.date && matchers.date.test(name)) {
+ return { control: { type: 'date' } };
+ }
 
-  switch (type.name) {
-    case 'array':
-      return { control: { type: 'object' } };
-    case 'boolean':
-      return { control: { type: 'boolean' } };
-    case 'string':
-      return { control: { type: 'text' } };
-    case 'number':
-      return { control: { type: 'number' } };
-    case 'enum': {
-      const { value } = type as SBEnumType;
-      return { control: { type: value?.length <= 5 ? 'radio' : 'select' }, options: value };
-    }
-    case 'function':
-    case 'symbol':
-      return null;
-    default:
-      return { control: { type: options ? 'select' : 'object' } };
-  }
+ switch (type.name) {
+ case 'array':
+ return { control: { type: 'object' } };
+ case 'boolean':
+ return { control: { type: 'boolean' } };
+ case 'string':
+ return { control: { type: 'text' } };
+ case 'number':
+ return { control: { type: 'number' } };
+ case 'enum': {
+ const { value } = type as SBEnumType;
+ return { control: { type: value?.length <= 5 ? 'radio' : 'select' }, options: value };
+ }
+ case 'union': {
+ const { value } = type as SBUnionType;
+ // Only infer select/radio control if all union members are string literals
+ const allStringLiterals =
+ Array.isArray(value) &&
+ value.length > 0 &&
+ value.every(
+ (v) => (v as SBLiteralType).name === 'literal' && typeof (v as SBLiteralType).value === 'string'
+ );
+ if (allStringLiterals) {
+ const opts = (value as SBLiteralType[]).map((v) => v.value);
+ return { control: { type: opts.length <= 5 ? 'radio' : 'select' }, options: opts };
+ }
+ // Fall through to default for non-string-literal unions
+ break;
+ }
+ case 'function':
+ case 'symbol':
+ return null;
+ default:
+ return { control: { type: options ? 'select' : 'object' } };
+ }
 };
 
 export const inferControls: ArgTypesEnhancer<Renderer> = (context) => {
-  const {
-    argTypes,
-    parameters: { __isArgsStory, controls: { include = null, exclude = null, matchers = {} } = {} },
-  } = context;
+ const {
+ argTypes,
+ parameters: { __isArgsStory, controls: { include = null, exclude = null, matchers = {} } = {} },
+ } = context;
 
-  if (!__isArgsStory) {
-    return argTypes;
-  }
+ if (!__isArgsStory) {
+ return argTypes;
+ }
 
-  const filteredArgTypes = filterArgTypes(argTypes, include, exclude);
-  const withControls = mapValues(filteredArgTypes, (argType, name) => {
-    return argType?.type && inferControl(argType, name.toString(), matchers);
-  });
+ const filteredArgTypes = filterArgTypes(argTypes, include, exclude);
+ const withControls = mapValues(filteredArgTypes, (argType, name) => {
+ return argType?.type && inferControl(argType, name.toString(), matchers);
+ });
 
-  return combineParameters(withControls, filteredArgTypes);
+ return combineParameters(withControls, filteredArgTypes);
 };
 
 inferControls.secondPass = true;

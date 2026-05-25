@@ -68,6 +68,19 @@ describe('pauseAnimations', () => {
     }
   });
 
+  test('swallows errors from finish() and continues with remaining animations', () => {
+    const throwing = runningAnimation();
+    throwing.finish.mockImplementation(() => {
+      throw new Error('InvalidStateError');
+    });
+    const next = runningAnimation();
+    stubAnimations(document, [throwing, next]);
+
+    expect(() => pauseAnimations()).not.toThrow();
+    expect(throwing.finish).toHaveBeenCalledTimes(1);
+    expect(next.finish).toHaveBeenCalledTimes(1);
+  });
+
   test('snaps animations inside shadow roots', () => {
     const host = document.createElement('div');
     document.body.appendChild(host);

@@ -1,5 +1,6 @@
 ```tsx filename=".storybook/preview.tsx" renderer="react" language="tsx" tabTitle="CSF 3"
 import { type QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import type { Preview } from '@storybook/tanstack-react';
 
 // 👇 Create a new QueryClient
 const queryClient = new QueryClient({
@@ -11,7 +12,7 @@ const queryClient = new QueryClient({
   },
 });
 
-export default {
+const preview: Preview = {
   beforeEach: () => {
     // 👇 Clear the cache between stories so each story starts fresh
     queryClient.clear();
@@ -19,7 +20,7 @@ export default {
   parameters: {
     tanstack: {
       router: {
-        // 👇 Make queryClient available to route loaders via ctx.context.queryClient
+        // 👇 Make queryClient available in stories' beforeEach via ctx.context.queryClient
         context: { queryClient },
       },
     },
@@ -33,6 +34,8 @@ export default {
     ),
   ],
 };
+
+export default preview;
 ```
 
 ```tsx filename=".storybook/preview.tsx" renderer="react" language="tsx" tabTitle="CSF Next 🧪"
@@ -57,7 +60,7 @@ export default definePreview({
   parameters: {
     tanstack: {
       router: {
-        // 👇 Make queryClient available to route loaders via ctx.context.queryClient
+        // 👇 Make queryClient available in stories' beforeEach via ctx.context.queryClient
         context: { queryClient },
       },
     },
@@ -72,5 +75,3 @@ export default definePreview({
   ],
 });
 ```
-
-<!-- JS snippets still needed while providing both CSF 3 & Next -->

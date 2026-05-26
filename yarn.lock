@@ -8330,6 +8330,7 @@ __metadata:
   resolution: "@storybook/addon-vitest@workspace:code/addons/vitest"
   dependencies:
     "@storybook/addon-a11y": "workspace:*"
+    "@storybook/builder-vite": "workspace:*"
     "@storybook/global": "npm:^5.0.0"
     "@storybook/icons": "npm:^2.0.2"
     "@types/istanbul-lib-report": "npm:^3.0.3"
@@ -8761,7 +8762,7 @@ __metadata:
     semver: "npm:^7.7.3"
     styled-jsx: "npm:5.1.6"
     typescript: "npm:^5.9.3"
-    vite-plugin-storybook-nextjs: "npm:^3.2.4"
+    vite-plugin-storybook-nextjs: "npm:^3.3.0"
   peerDependencies:
     "@types/react": ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
     "@types/react-dom": ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
@@ -9014,7 +9015,11 @@ __metadata:
     react: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
     react-dom: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
     storybook: "workspace:^"
+    typescript: ">= 4.9.x"
     vite: ^5.0.0 || ^6.0.0 || ^7.0.0 || ^8.0.0
+  peerDependenciesMeta:
+    typescript:
+      optional: true
   languageName: unknown
   linkType: soft
 
@@ -9065,7 +9070,7 @@ __metadata:
     react-element-to-jsx-string: "npm:@7rulnik/react-element-to-jsx-string@15.0.1"
     require-from-string: "npm:^2.0.2"
     ts-dedent: "npm:^2.0.0"
-    type-fest: "npm:~2.19"
+    type-fest: "npm:^5.6.0"
   peerDependencies:
     "@types/react": ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
     "@types/react-dom": ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
@@ -9221,7 +9226,7 @@ __metadata:
     tinyglobby: "npm:^0.2.15"
     trash: "npm:^7.2.0"
     ts-dedent: "npm:^2.2.0"
-    type-fest: "npm:~2.19"
+    type-fest: "npm:^5.6.0"
     typescript: "npm:^5.9.3"
     uuid: "npm:^9.0.1"
     verdaccio: "npm:^5.33.0"
@@ -9300,7 +9305,7 @@ __metadata:
     svelte-check: "npm:^4.3.2"
     sveltedoc-parser: "npm:^4.2.1"
     ts-dedent: "npm:^2.0.0"
-    type-fest: "npm:~2.19"
+    type-fest: "npm:^5.6.0"
     typescript: "npm:^5.8.3"
     vite: "npm:^7.0.4"
   peerDependencies:
@@ -9382,10 +9387,10 @@ __metadata:
     "@storybook/global": "npm:^5.0.0"
     "@testing-library/vue": "npm:^8.0.0"
     "@vitejs/plugin-vue": "npm:^4.6.2"
-    type-fest: "npm:~2.19"
+    type-fest: "npm:^5.6.0"
     typescript: "npm:^5.8.3"
     vue: "npm:^3.2.47"
-    vue-component-type-helpers: "npm:latest"
+    vue-component-type-helpers: "npm:^3.2.9"
     vue-tsc: "npm:latest"
   peerDependencies:
     storybook: "workspace:^"
@@ -20593,6 +20598,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"is-buffer@npm:^2.0.5":
+  version: 2.0.5
+  resolution: "is-buffer@npm:2.0.5"
+  checksum: 10c0/e603f6fced83cf94c53399cff3bda1a9f08e391b872b64a73793b0928be3e5f047f2bcece230edb7632eaea2acdbfcb56c23b33d8a20c820023b230f1485679a
+  languageName: node
+  linkType: hard
+
 "is-bun-module@npm:^2.0.0":
   version: 2.0.0
   resolution: "is-bun-module@npm:2.0.0"
@@ -27818,14 +27830,14 @@ __metadata:
   languageName: node
   linkType: hard
 
-"resolve.exports@npm:2.0.3, resolve.exports@npm:^2.0.3":
+"resolve.exports@npm:2.0.3":
   version: 2.0.3
   resolution: "resolve.exports@npm:2.0.3"
   checksum: 10c0/1ade1493f4642a6267d0a5e68faeac20b3d220f18c28b140343feb83694d8fed7a286852aef43689d16042c61e2ddb270be6578ad4a13990769e12065191200d
   languageName: node
   linkType: hard
 
-"resolve@npm:^1.10.0, resolve@npm:^1.10.1, resolve@npm:^1.13.1, resolve@npm:^1.15.1, resolve@npm:^1.17.0, resolve@npm:^1.19.0, resolve@npm:^1.22.1, resolve@npm:^1.22.10, resolve@npm:^1.22.11, resolve@npm:^1.22.8, resolve@npm:^1.4.0":
+"resolve@npm:^1.10.0, resolve@npm:^1.10.1, resolve@npm:^1.13.1, resolve@npm:^1.15.1, resolve@npm:^1.17.0, resolve@npm:^1.19.0, resolve@npm:^1.22.1, resolve@npm:^1.22.10, resolve@npm:^1.22.8, resolve@npm:^1.4.0":
   version: 1.22.11
   resolution: "resolve@npm:1.22.11"
   dependencies:
@@ -27851,7 +27863,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"resolve@patch:resolve@npm%3A^1.10.0#optional!builtin<compat/resolve>, resolve@patch:resolve@npm%3A^1.10.1#optional!builtin<compat/resolve>, resolve@patch:resolve@npm%3A^1.13.1#optional!builtin<compat/resolve>, resolve@patch:resolve@npm%3A^1.15.1#optional!builtin<compat/resolve>, resolve@patch:resolve@npm%3A^1.17.0#optional!builtin<compat/resolve>, resolve@patch:resolve@npm%3A^1.19.0#optional!builtin<compat/resolve>, resolve@patch:resolve@npm%3A^1.22.1#optional!builtin<compat/resolve>, resolve@patch:resolve@npm%3A^1.22.10#optional!builtin<compat/resolve>, resolve@patch:resolve@npm%3A^1.22.11#optional!builtin<compat/resolve>, resolve@patch:resolve@npm%3A^1.22.8#optional!builtin<compat/resolve>, resolve@patch:resolve@npm%3A^1.4.0#optional!builtin<compat/resolve>":
+"resolve@patch:resolve@npm%3A^1.10.0#optional!builtin<compat/resolve>, resolve@patch:resolve@npm%3A^1.10.1#optional!builtin<compat/resolve>, resolve@patch:resolve@npm%3A^1.13.1#optional!builtin<compat/resolve>, resolve@patch:resolve@npm%3A^1.15.1#optional!builtin<compat/resolve>, resolve@patch:resolve@npm%3A^1.17.0#optional!builtin<compat/resolve>, resolve@patch:resolve@npm%3A^1.19.0#optional!builtin<compat/resolve>, resolve@patch:resolve@npm%3A^1.22.1#optional!builtin<compat/resolve>, resolve@patch:resolve@npm%3A^1.22.10#optional!builtin<compat/resolve>, resolve@patch:resolve@npm%3A^1.22.8#optional!builtin<compat/resolve>, resolve@patch:resolve@npm%3A^1.4.0#optional!builtin<compat/resolve>":
   version: 1.22.11
   resolution: "resolve@patch:resolve@npm%3A1.22.11#optional!builtin<compat/resolve>::version=1.22.11&hash=c3c19d"
   dependencies:
@@ -29678,8 +29690,6 @@ __metadata:
     react-transition-state: "npm:^2.3.1"
     recast: "npm:^0.23.5"
     require-from-string: "npm:^2.0.2"
-    resolve: "npm:^1.22.11"
-    resolve.exports: "npm:^2.0.3"
     semver: "npm:^7.7.3"
     sirv: "npm:^2.0.4"
     slash: "npm:^5.0.0"
@@ -29693,7 +29703,8 @@ __metadata:
     tinyspy: "npm:^3.0.2"
     ts-dedent: "npm:^2.0.0"
     tsconfig-paths: "npm:^4.2.0"
-    type-fest: "npm:^4.18.1"
+    type-fest: "npm:^5.6.0"
+    type-plus: "npm:^8.0.0-beta.8"
     typescript: "npm:^5.8.3"
     unique-string: "npm:^3.0.0"
     use-resize-observer: "npm:^9.1.0"
@@ -30260,6 +30271,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"tagged-tag@npm:^1.0.0":
+  version: 1.0.0
+  resolution: "tagged-tag@npm:1.0.0"
+  checksum: 10c0/91d25c9ffb86a91f20522cefb2cbec9b64caa1febe27ad0df52f08993ff60888022d771e868e6416cf2e72dab68449d2139e8709ba009b74c6c7ecd4000048d1
+  languageName: node
+  linkType: hard
+
 "tapable@npm:^2.0.0, tapable@npm:^2.1.1, tapable@npm:^2.2.0, tapable@npm:^2.2.1, tapable@npm:^2.3.0":
   version: 2.3.0
   resolution: "tapable@npm:2.3.0"
@@ -30421,6 +30439,17 @@ __metadata:
   bin:
     terser: bin/terser
   checksum: 10c0/ee7a76692cb39b1ed22c30ff366c33ff3c977d9bb769575338ff5664676168fcba59192fb5168ef80c7cd901ef5411a1b0351261f5eaa50decf0fc71f63bde75
+  languageName: node
+  linkType: hard
+
+"tersify@npm:^3.11.1":
+  version: 3.12.1
+  resolution: "tersify@npm:3.12.1"
+  dependencies:
+    acorn: "npm:^8.8.2"
+    is-buffer: "npm:^2.0.5"
+    unpartial: "npm:^1.0.4"
+  checksum: 10c0/b2701bacb9c8f1e063ca2c1c1d1559cfac491230b95d1b33a273343aa9ad8c62130a9f54a64f381a221d56869df74f938c3a284187e769697db49bc8cc7e7e4a
   languageName: node
   linkType: hard
 
@@ -31017,10 +31046,33 @@ __metadata:
   languageName: node
   linkType: hard
 
-"type-fest@npm:~2.19":
+"type-fest@npm:^0.20.2":
+  version: 0.20.2
+  resolution: "type-fest@npm:0.20.2"
+  checksum: 10c0/dea9df45ea1f0aaa4e2d3bed3f9a0bfe9e5b2592bddb92eb1bf06e50bcf98dbb78189668cd8bc31a0511d3fc25539b4cd5c704497e53e93e2d40ca764b10bfc3
+  languageName: node
+  linkType: hard
+
+"type-fest@npm:^1.0.1":
+  version: 1.4.0
+  resolution: "type-fest@npm:1.4.0"
+  checksum: 10c0/a3c0f4ee28ff6ddf800d769eafafcdeab32efa38763c1a1b8daeae681920f6e345d7920bf277245235561d8117dab765cb5f829c76b713b4c9de0998a5397141
+  languageName: node
+  linkType: hard
+
+"type-fest@npm:^2.14.0, type-fest@npm:~2.19":
   version: 2.19.0
   resolution: "type-fest@npm:2.19.0"
   checksum: 10c0/a5a7ecf2e654251613218c215c7493574594951c08e52ab9881c9df6a6da0aeca7528c213c622bc374b4e0cb5c443aa3ab758da4e3c959783ce884c3194e12cb
+  languageName: node
+  linkType: hard
+
+"type-fest@npm:^5.6.0":
+  version: 5.6.0
+  resolution: "type-fest@npm:5.6.0"
+  dependencies:
+    tagged-tag: "npm:^1.0.0"
+  checksum: 10c0/5468a8ffda7f3904e6f7bbd8069eb8b6dd4bd9156e206df7a01d09a73e28cd1afedf74ead9d0fc12841c8c90074194859feca240511c50800962fde1bd9ddcbc
   languageName: node
   linkType: hard
 
@@ -31031,6 +31083,18 @@ __metadata:
     media-typer: "npm:0.3.0"
     mime-types: "npm:~2.1.24"
   checksum: 10c0/a23daeb538591b7efbd61ecf06b6feb2501b683ffdc9a19c74ef5baba362b4347e42f1b4ed81f5882a8c96a3bfff7f93ce3ffaf0cbbc879b532b04c97a55db9d
+  languageName: node
+  linkType: hard
+
+"type-plus@npm:^8.0.0-beta.8":
+  version: 8.0.0-beta.8
+  resolution: "type-plus@npm:8.0.0-beta.8"
+  dependencies:
+    tersify: "npm:^3.11.1"
+    unpartial: "npm:^1.0.4"
+  peerDependencies:
+    typescript: ">= 5.6.0"
+  checksum: 10c0/cbd44a56f6264f0909f23ffcfe04e0f57bdde1de9763343258b8e9ed121877dc47c4947623c515bd4ae37a01eac3e5ec974743a694897574e5efab59a0fb94c6
   languageName: node
   linkType: hard
 
@@ -31397,6 +31461,13 @@ __metadata:
   version: 1.1.4
   resolution: "unix-crypt-td-js@npm:1.1.4"
   checksum: 10c0/c4e3abd0d7ebcf39df7faff8be2cd137f477add743a2793c551682e04ec4e4f466e806a67e391d5a097229e4465b7cae4cb459990b9eb61dfe0b37d2388c6266
+  languageName: node
+  linkType: hard
+
+"unpartial@npm:^1.0.4":
+  version: 1.0.5
+  resolution: "unpartial@npm:1.0.5"
+  checksum: 10c0/bdfe89d0712679e22eee654a645493a2aad2428bf9cc0d27d5b56e986001e40c1c70b41407708f33d5ccffe1ced71ee3245e99bb62559fef3d6960feac625a07
   languageName: node
   linkType: hard
 
@@ -31978,9 +32049,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"vite-plugin-storybook-nextjs@npm:^3.2.4":
-  version: 3.2.4
-  resolution: "vite-plugin-storybook-nextjs@npm:3.2.4"
+"vite-plugin-storybook-nextjs@npm:^3.3.0":
+  version: 3.3.0
+  resolution: "vite-plugin-storybook-nextjs@npm:3.3.0"
   dependencies:
     "@next/env": "npm:16.0.0"
     image-size: "npm:^2.0.0"
@@ -31990,9 +32061,9 @@ __metadata:
     vite-tsconfig-paths: "npm:^5.1.4"
   peerDependencies:
     next: ^14.1.0 || ^15.0.0 || ^16.0.0
-    storybook: ^0.0.0-0 || ^9.0.0 || ^10.0.0 || ^10.0.0-0 || ^10.1.0-0 || ^10.2.0-0 || ^10.3.0-0 || ^10.4.0-0
+    storybook: ^0.0.0-0 || ^9.0.0 || ^10.0.0 || ^10.0.0-0 || ^10.1.0-0 || ^10.2.0-0 || ^10.3.0-0 || ^10.4.0-0 || ^10.5.0-0 || ^10.6.0-0
     vite: ^5.0.0 || ^6.0.0 || ^7.0.0 || ^8.0.0
-  checksum: 10c0/74c4969ec5f19e3045d301cfc72c2702134c19223851a81f955ae2f26252305a6f5ebe101d21e91bd2d88fd76d2ed10b7ae22a5c63b47f085328b87864a63664
+  checksum: 10c0/4582deb9566f5ffa05b15ac3544e32ec9058aec63893569ecd5d7c64f5c400f5f4c03c7c7ecdb114fba9bcacd0ae83cdec6ff6d4e61069832667f8c5124ca2e6
   languageName: node
   linkType: hard
 
@@ -32374,10 +32445,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"vue-component-type-helpers@npm:latest":
-  version: 3.1.4
-  resolution: "vue-component-type-helpers@npm:3.1.4"
-  checksum: 10c0/82a30a3ee271bab57c697e04b46716521575fde6a1f397edeb8c69f9edf7fe705d8bbc9cafa501e6294ceaee9e5585daadf3f6385209479bd82f88ae54730b25
+"vue-component-type-helpers@npm:^3.2.9":
+  version: 3.3.1
+  resolution: "vue-component-type-helpers@npm:3.3.1"
+  checksum: 10c0/eca9ed4e7fdf23dcae076be317d79c95f1fdc1f0cc870c08618c0b150a7a9ea5840a974ae934ce2bfd6139878b53cd3c25420536f44a02d5374ef071233d58aa
   languageName: node
   linkType: hard
 

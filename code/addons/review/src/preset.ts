@@ -1,5 +1,6 @@
+import { createProxyMiddleware } from 'http-proxy-middleware';
 import type { Channel } from 'storybook/internal/channels';
-import type { Options } from 'storybook/internal/types';
+import type { Middleware, Options, ServerApp } from 'storybook/internal/types';
 
 import { EVENTS } from './constants.ts';
 import type { ReviewState } from './review-state.ts';
@@ -69,4 +70,19 @@ export const experimental_serverChannel = async (
   });
 
   return channel;
+};
+
+const BASELINE_PROXY_PATH = '/__review-baseline';
+const BASELINE_TARGET_ORIGIN = 'https://next--635781f3500dd2c49e189caf.chromatic.com';
+
+export const experimental_devServer = (app: ServerApp) => {
+  const proxyRequest = createProxyMiddleware({
+    target: BASELINE_TARGET_ORIGIN,
+    changeOrigin: true,
+    pathRewrite: (path) =>
+      path.startsWith(BASELINE_PROXY_PATH) ? path.slice(BASELINE_PROXY_PATH.length) || '/' : path,
+  }) as unknown as Middleware;
+
+  app.use(BASELINE_PROXY_PATH, proxyRequest);
+  return app;
 };

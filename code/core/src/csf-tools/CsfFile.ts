@@ -682,8 +682,13 @@ export class CsfFile {
           } else if (node.specifiers.length > 0) {
             // export { X as Y }
             node.specifiers.forEach((specifier) => {
-              if (t.isExportSpecifier(specifier) && t.isIdentifier(specifier.exported)) {
-                const { name: exportName } = specifier.exported;
+              if (
+                t.isExportSpecifier(specifier) &&
+                (t.isIdentifier(specifier.exported) || t.isStringLiteral(specifier.exported))
+              ) {
+                const exportName = t.isIdentifier(specifier.exported)
+                  ? specifier.exported.name
+                  : specifier.exported.value;
                 const { name: localName } = specifier.local;
                 const decl = t.isProgram(parent)
                   ? findVarInitialization(localName, parent)

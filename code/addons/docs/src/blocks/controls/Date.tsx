@@ -69,6 +69,7 @@ export type DateProps = ControlProps<DateValue> & DateConfig;
 export const DateControl: FC<DateProps> = ({
   name,
   storyId,
+  controlsId,
   value,
   onChange,
   onFocus,
@@ -122,7 +123,7 @@ export const DateControl: FC<DateProps> = ({
     setValid(!!time);
   };
 
-  const controlId = getControlId(name, storyId);
+  const controlId = getControlId(name, storyId, controlsId);
 
   return (
     <FlexSpaced>

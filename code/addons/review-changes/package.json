@@ -1,6 +1,6 @@
 {
   "name": "@storybook/addon-review-changes",
-  "version": "10.4.0-alpha.17",
+  "version": "10.5.0-alpha.2",
   "description": "Storybook addon that renders an agent-pushed review of a code change",
   "keywords": [
     "storybook",

@@ -49,10 +49,30 @@ jobs:
         run: echo "workflow=merged" >> $GITHUB_ENV
       - if: github.event_name == 'pull_request_target' && (contains(github.event.pull_request.labels.*.name, 'ci:daily'))
         run: echo "workflow=daily" >> $GITHUB_ENV
+      - id: trusted-author
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          ASSOCIATION: ${{ github.event.pull_request.author_association }}
+          USER_TYPE: ${{ github.event.pull_request.user.type }}
+          USER_LOGIN: ${{ github.event.pull_request.user.login }}
+        run: |
+          # You can only push to `main` and `next` as a core team member, so the content is trustworthy.
+          if [ "$EVENT_NAME" = "push" ]; then
+            echo "result=true" >> $GITHUB_OUTPUT
+          # These commits are made by the release actions, which are gated to core team members.
+          elif [ "$USER_LOGIN" = "github-actions[bot]" ] && [ "$USER_TYPE" = "Bot" ]; then
+            echo "result=true" >> $GITHUB_OUTPUT
+          # Trusted members of the organization can also write to cache (core team, DX, and a few maintainers)
+          elif { [ "$ASSOCIATION" = "OWNER" ] || [ "$ASSOCIATION" = "MEMBER" ]; } && [ "$USER_TYPE" != "Bot" ]; then
+            echo "result=true" >> $GITHUB_OUTPUT
+          else
+            echo "result=false" >> $GITHUB_OUTPUT
+          fi
     outputs:
       workflow: ${{ env.workflow }}
       ghBaseBranch: ${{ github.event.pull_request.base.ref }}
       ghPrNumber: ${{ github.event.pull_request.number }}
+      ghTrustedAuthor: ${{ steps.trusted-author.outputs.result }}
 
   trigger-circle-ci-workflow:
     runs-on: ubuntu-latest

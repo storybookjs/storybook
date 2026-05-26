@@ -367,6 +367,7 @@ export type ColorControlProps = ControlProps<ColorValue> & ColorConfig;
 export const ColorControl: FC<ColorControlProps> = ({
   name,
   storyId,
+  controlsId,
   value: initialValue,
   onChange,
   onFocus,
@@ -385,7 +386,7 @@ export const ColorControl: FC<ColorControlProps> = ({
   const Picker = ColorPicker[colorSpace];
 
   const readOnly = !!argType?.table?.readonly;
-  const controlId = getControlId(name, storyId);
+  const controlId = getControlId(name, storyId, controlsId);
 
   return (
     <Wrapper>

@@ -9,10 +9,10 @@ export const RESTORE_NAV_SESSION_KEY = `${ADDON_ID}/restore-nav`;
 
 // Cross-repo channel contract with `@storybook/addon-mcp`. These string
 // values MUST match the emitter's constants exactly for the pipe to work.
-const APPLY_REVIEW_STATE = `${ADDON_ID}/apply-review-state`;
-const REQUEST_REVIEW_STATE = `${ADDON_ID}/request-review-state`;
+const DISPLAY_REVIEW = `${ADDON_ID}/display-review`;
+const REQUEST_REVIEW = `${ADDON_ID}/request-review`;
 
 export const EVENTS = {
-  APPLY_REVIEW_STATE,
-  REQUEST_REVIEW_STATE,
+  DISPLAY_REVIEW,
+  REQUEST_REVIEW,
 };

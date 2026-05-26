@@ -16,8 +16,8 @@ review UI on, not the final experience.
 Event names live in `src/constants.ts` and are the cross-repo contract with
 `@storybook/addon-mcp`. They must match the emitter's constants exactly.
 
-- `…/apply-review-state` — server → tabs: a new review overlay.
-- `…/request-review-state` — tab → server: replay the cached overlay (on mount).
+- `…/display-review` — server → tabs: a new review overlay.
+- `…/request-review` — tab → server: replay the cached overlay (on mount).
 
 ## Review state shape
 

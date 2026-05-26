@@ -32,12 +32,12 @@ const ReviewPageContent: FC<{ search: string }> = ({ search }) => {
   const navigate = useNavigate();
 
   const emit = useChannel({
-    [EVENTS.APPLY_REVIEW_STATE]: (next: ReviewState) => setState(next),
+    [EVENTS.DISPLAY_REVIEW]: (next: ReviewState) => setState(next),
   });
 
   // Late/refreshed tab: ask the server to replay the cached overlay.
   useEffect(() => {
-    emit(EVENTS.REQUEST_REVIEW_STATE);
+    emit(EVENTS.REQUEST_REVIEW);
   }, [emit]);
 
   const activeTab = parseReviewChangesActiveTab(search);

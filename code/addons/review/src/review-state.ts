@@ -1,5 +1,5 @@
 /**
- * The review payload an agent pushes via the `apply-review-state` MCP tool,
+ * The review payload an agent pushes via the `display-review` MCP tool,
  * delivered to this addon over the Storybook channel.
  *
  * This mirrors the canonical valibot schema in the MCP addon

@@ -45,8 +45,8 @@ const reviewState: ReviewState = {
 };
 
 const applyReviewState = () => {
-  expect(onMock).toHaveBeenCalledWith(EVENTS.APPLY_REVIEW_STATE, expect.any(Function));
-  emitMock(EVENTS.APPLY_REVIEW_STATE, reviewState);
+  expect(onMock).toHaveBeenCalledWith(EVENTS.DISPLAY_REVIEW, expect.any(Function));
+  emitMock(EVENTS.DISPLAY_REVIEW, reviewState);
 };
 
 const meta = preview.meta({
@@ -86,7 +86,7 @@ export const Collections = meta.story({
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await expect(await canvas.findByText(/Waiting for the agent/i)).toBeInTheDocument();
-    await expect(emitMock).toHaveBeenCalledWith(EVENTS.REQUEST_REVIEW_STATE);
+    await expect(emitMock).toHaveBeenCalledWith(EVENTS.REQUEST_REVIEW);
 
     applyReviewState();
 
@@ -98,7 +98,7 @@ export const Collections = meta.story({
 export const Components = meta.story({
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await expect(emitMock).toHaveBeenCalledWith(EVENTS.REQUEST_REVIEW_STATE);
+    await expect(emitMock).toHaveBeenCalledWith(EVENTS.REQUEST_REVIEW);
 
     applyReviewState();
 
@@ -117,7 +117,7 @@ export const Details = meta.story({
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await expect(emitMock).toHaveBeenCalledWith(EVENTS.REQUEST_REVIEW_STATE);
+    await expect(emitMock).toHaveBeenCalledWith(EVENTS.REQUEST_REVIEW);
 
     applyReviewState();
 

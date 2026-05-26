@@ -29,10 +29,10 @@ addons.register(ADDON_ID, (api) => {
 
   // When the agent pushes a review, pull any open tab to the page — but only
   // if it is not already there. The review page replays cached state on load
-  // (REQUEST_REVIEW_STATE), which echoes back as APPLY_REVIEW_STATE; without
+  // (REQUEST_REVIEW), which echoes back as DISPLAY_REVIEW; without
   // this guard that echo would re-navigate to the bare review URL, dropping
   // the &collection=&story= params and bouncing a detail page to the summary.
-  api.getChannel()?.on(EVENTS.APPLY_REVIEW_STATE, () => {
+  api.getChannel()?.on(EVENTS.DISPLAY_REVIEW, () => {
     const currentPath = new URLSearchParams(window.location.search).get('path') ?? '';
     if (!currentPath.startsWith(REVIEW_CHANGES_URL)) {
       api.navigate(REVIEW_CHANGES_URL);

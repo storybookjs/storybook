@@ -263,23 +263,31 @@ export class ServiceRuntime<TDef extends ServiceDefinition<any, any, any>> {
     registration?: ServiceRegistration<TDef>
   ): Record<string, (...args: any[]) => any> {
     const out: Record<string, (...args: any[]) => any> = {};
-    const overrides = (registration?.commands ?? {}) as Record<string, (...args: any[]) => any>;
+    const overrides = (registration?.commands ?? {}) as Record<
+      string,
+      ((...args: any[]) => any) | undefined
+    >;
 
     for (const [name, entry] of Object.entries(definition.commands)) {
       const cmdDef = entry as AnyCommandDef<unknown>;
       const override = overrides[name];
-      if (override) {
-        out[name] = override;
+      if (isAbstractCommand(cmdDef)) {
+        // Abstract command. A local handler is optional — when absent, the runtime will fail
+        // the call with an actionable error today, and (once the cross-runtime command-routing
+        // layer lands) will defer execution to a peer runtime that does have a handler.
+        if (override) {
+          out[name] = override;
+        }
         continue;
       }
-      if (isAbstractCommand(cmdDef)) {
+      // Concrete command. Overrides are forbidden — definitions own the implementation.
+      if (override) {
         throw new Error(
-          `[service ${definition.id}] command "${name}" is abstract (no \`handler\` in its definition) ` +
-            `and has no implementation at registration. ` +
-            `Provide one via registerService(def, { commands: { ${name}: (input, ctx) => ... } }).`
+          `[service ${definition.id}] command "${name}" is concrete (its definition has a \`handler\`) ` +
+            `and cannot be overridden at registration. ` +
+            `Remove the override, or change the definition to abstract by removing its \`handler\`.`
         );
       }
-      // Concrete handler — pull off the definition.
       out[name] = cmdDef.handler as (...args: any[]) => any;
     }
     return out;
@@ -430,13 +438,13 @@ export class ServiceRuntime<TDef extends ServiceDefinition<any, any, any>> {
     const out: Record<string, (input?: unknown) => Promise<unknown>> = {};
     for (const commandName of Object.keys(this.definition.commands)) {
       const cmdDef = this.definition.commands[commandName] as AnyCommandDef<unknown>;
-      const handler = this._commandHandlers[commandName] as (
-        ...args: any[]
-      ) => unknown | Promise<unknown>;
+      const handler = this._commandHandlers[commandName] as
+        | ((...args: any[]) => unknown | Promise<unknown>)
+        | undefined;
       // Dispatch by declared arity: `(ctx)` for no-input handlers, `(input, ctx)` for
       // input-keyed ones. We can't unconditionally call `(input, ctx)` because a no-input
       // handler would receive `input` as its first arg — which it expects to be `ctx`.
-      const handlerHasInput = handler.length > 1;
+      const handlerHasInput = !!handler && handler.length > 1;
 
       out[commandName] = async (rawInput?: unknown): Promise<unknown> => {
         // Validate the caller-facing input against the command's input schema. Throws
@@ -447,6 +455,17 @@ export class ServiceRuntime<TDef extends ServiceDefinition<any, any, any>> {
           name: commandName,
           phase: 'input',
         });
+        if (!handler) {
+          // No local handler — definition is abstract and registration didn't supply one.
+          // TODO(cross-runtime): once command-routing lands, defer to a peer runtime that
+          // has registered a handler instead of throwing here.
+          throw new Error(
+            `[service ${this.id}] command "${commandName}" has no handler in this runtime. ` +
+              `Provide one at registration via ` +
+              `registerService(def, { commands: { ${commandName}: (input, ctx) => ... } }), ` +
+              `or run the call against a runtime that has the handler.`
+          );
+        }
         const ctx = this._getCtx();
         const rawOutput = await (handlerHasInput ? handler(parsedInput, ctx) : handler(ctx));
         // Validate the handler's return value against the output schema before handing it back.

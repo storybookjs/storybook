@@ -107,6 +107,9 @@ export function registerDocgenServiceWithStubAnalyzer() {
           };
         });
       },
+      // Note: `modifySomethingElse` is concrete (its definition has a `handler`), so it
+      // is intentionally excluded from `CommandOverrides` — attempting to override it
+      // here would be rejected by the type system and by the runtime.
     },
   });
 }

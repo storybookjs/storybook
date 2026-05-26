@@ -5,8 +5,9 @@
  *   - `defineService<S>()(({ query, command }) => ({ state, queries, commands }))` declares a
  *     service (recommended). Schema-driven inference covers definition handlers and registration
  *     overrides; a command without `handler` is **abstract** and must be supplied at registration.
- *   - `registerService(def, { commands: { … } })` activates a service. Provides any abstract
- *     command bodies (and may override concrete ones).
+ *   - `registerService(def, { commands: { … } })` activates a service. Supplies handlers for
+ *     any abstract commands; concrete commands are owned by the definition and cannot be
+ *     overridden here.
  *   - `getService(defOrId)` looks up an already-registered service.
  *   - `useServiceQuery(store, name, input?)` subscribes a React component to a query.
  *
@@ -38,11 +39,14 @@ export {
 export { useServiceQuery } from './use-service-query.ts';
 
 export type {
+  AbstractCommandDef,
   AnyCommandDef,
   AnyQueryDef,
   AnySchema,
   BuildCtx,
   CommandDef,
+  CommandHandlerFn,
+  ConcreteCommandDef,
   InferSchemaInput,
   InferSchemaOutput,
   InputOfCommand,

@@ -14,9 +14,10 @@
  * Definition vs. registration:
  *  - A service *definition* declares state, queries, and commands. A command whose `handler`
  *    field is missing is **abstract** — its implementation must be supplied at registration.
- *  - At *registration* time, abstract handlers land and any concrete handlers can be overridden.
- *    That split lets one shared definition run in multiple environments (manager / preview /
- *    server) with environment-specific bodies.
+ *  - At *registration* time, abstract handlers land. Concrete handlers are owned by the
+ *    definition and cannot be overridden. That split lets one shared definition run in
+ *    multiple environments (manager / preview / server) with environment-specific bodies
+ *    for the abstract commands only.
  */
 
 import type { StandardSchemaV1 } from '@standard-schema/spec';
@@ -150,21 +151,19 @@ export interface QueryDef<
 // -------------------- command definition --------------------
 
 /**
- * A command is a schema-validated writer.
+ * Handler signature derived from a command's `input` / `output` schemas.
  *
- *  - `input` and `output` are Standard Schema v1 schemas.
- *  - `handler` (optional) is the body. If omitted the command is **abstract** and registration
- *    must supply a handler; the runtime throws at construction time if it's still missing.
- *  - Handlers may be sync or async; the runtime always returns `Promise<output>` to callers.
+ * - No-input schemas (e.g. `z.void()`) → `(ctx) => …`
+ * - Input-keyed schemas → `(input, ctx) => …`
+ *
+ * Handlers may be sync or async; the runtime always returns `Promise<output>` to callers.
  */
-export interface CommandDef<
-  TState = any,
-  TInputSchema extends AnySchema = AnySchema,
-  TOutputSchema extends AnySchema = AnySchema,
-> {
-  readonly input: TInputSchema;
-  readonly output: TOutputSchema;
-  readonly handler?: IsNoInputSchema<TInputSchema> extends true
+export type CommandHandlerFn<
+  TState,
+  TInputSchema extends AnySchema,
+  TOutputSchema extends AnySchema,
+> =
+  IsNoInputSchema<TInputSchema> extends true
     ? (
         ctx: ServiceCtx<TState>
       ) => InferSchemaInput<TOutputSchema> | Promise<InferSchemaInput<TOutputSchema>>
@@ -172,7 +171,48 @@ export interface CommandDef<
         input: InferSchemaOutput<TInputSchema>,
         ctx: ServiceCtx<TState>
       ) => InferSchemaInput<TOutputSchema> | Promise<InferSchemaInput<TOutputSchema>>;
+
+/**
+ * Abstract command — no `handler` on the definition. A registration MAY supply one, but isn't
+ * required to: the same definition is registered in multiple runtimes and typically only one
+ * of them implements a given abstract command. Calls in runtimes without a handler throw
+ * today, and will defer to a peer runtime once cross-runtime command routing lands.
+ */
+export interface AbstractCommandDef<
+  TState = any,
+  TInputSchema extends AnySchema = AnySchema,
+  TOutputSchema extends AnySchema = AnySchema,
+> {
+  readonly input: TInputSchema;
+  readonly output: TOutputSchema;
 }
+
+/**
+ * Concrete command — `handler` is required. Cannot be overridden at registration; the
+ * registration type excludes its key, and the runtime throws if an override slips through.
+ */
+export interface ConcreteCommandDef<
+  TState = any,
+  TInputSchema extends AnySchema = AnySchema,
+  TOutputSchema extends AnySchema = AnySchema,
+> extends AbstractCommandDef<TState, TInputSchema, TOutputSchema> {
+  readonly handler: CommandHandlerFn<TState, TInputSchema, TOutputSchema>;
+}
+
+/**
+ * A command is a schema-validated writer.
+ *
+ *  - `input` and `output` are Standard Schema v1 schemas.
+ *  - A command without `handler` is **abstract** — registration MUST supply a handler.
+ *  - A command with `handler` is **concrete** — registration CANNOT override it.
+ */
+export type CommandDef<
+  TState = any,
+  TInputSchema extends AnySchema = AnySchema,
+  TOutputSchema extends AnySchema = AnySchema,
+> =
+  | AbstractCommandDef<TState, TInputSchema, TOutputSchema>
+  | ConcreteCommandDef<TState, TInputSchema, TOutputSchema>;
 
 // -------------------- map constraints --------------------
 
@@ -225,9 +265,10 @@ export interface ServiceDefinition<
 // -------------------- registration --------------------
 
 /**
- * Registration-time options. Provides handlers for abstract commands declared in the definition,
- * and lets you override concrete command handlers if the same definition is used in multiple
- * environments with environment-specific bodies.
+ * Registration-time options. Supplies handlers for the definition's **abstract** commands.
+ *
+ * Concrete commands (those with a `handler` in the definition) are NOT overridable — their
+ * keys are removed from {@link CommandOverrides} and the runtime throws if one slips through.
  */
 export interface ServiceRegistration<TDef extends ServiceDefinition<any, any, any>> {
   commands?: CommandOverrides<TDef>;
@@ -237,22 +278,15 @@ export interface ServiceRegistration<TDef extends ServiceDefinition<any, any, an
 export type { ServiceStaticTransport } from './static-transport.ts';
 
 /**
- * Per-command override map. For each command, the override matches the `handler` shape the
- * command's input/output schemas imply. Optional throughout — abstract commands MUST be
- * supplied here; concrete commands MAY be overridden.
+ * Per-command override map. Only **abstract** commands appear here — concrete commands are
+ * filtered out via key remapping. Abstract overrides are typed from the command's `input` /
+ * `output` schemas.
  */
 export type CommandOverrides<TDef extends ServiceDefinition<any, any, any>> = {
-  [K in keyof TDef['commands']]?: TDef['commands'][K] extends CommandDef<
-    TDef['state'],
-    infer TIn,
-    infer TOut
-  >
-    ? IsNoInputSchema<TIn> extends true
-      ? (ctx: ServiceCtx<TDef['state']>) => InferSchemaInput<TOut> | Promise<InferSchemaInput<TOut>>
-      : (
-          input: InferSchemaOutput<TIn>,
-          ctx: ServiceCtx<TDef['state']>
-        ) => InferSchemaInput<TOut> | Promise<InferSchemaInput<TOut>>
+  [K in keyof TDef['commands'] as TDef['commands'][K] extends ConcreteCommandDef<any, any, any>
+    ? never
+    : K]?: TDef['commands'][K] extends AbstractCommandDef<TDef['state'], infer TIn, infer TOut>
+    ? CommandHandlerFn<TDef['state'], TIn, TOut>
     : never;
 };
 

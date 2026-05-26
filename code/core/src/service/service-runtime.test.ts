@@ -251,9 +251,12 @@ describe('abstract commands', () => {
     expect(store.queries.get('a')).toBe('Alice');
   });
 
-  it('throws at registration when an abstract command has no implementation', () => {
+  it('registers an abstract command without a handler (call defers/fails until handler arrives)', async () => {
+    // A service may be registered in multiple runtimes; only some need to handle a given
+    // abstract command. Registration succeeds with no override; calling the command throws
+    // until a handler is available (today via this registration, later via a peer runtime).
     const def = defineService()({
-      id: 'test/abstract-missing',
+      id: 'test/abstract-no-handler-registers',
       state: {},
       queries: {},
       commands: {
@@ -264,15 +267,17 @@ describe('abstract commands', () => {
       },
     });
 
-    expect(() => registerService(def)).toThrow(/abstract.*no implementation at registration/);
+    const store = registerService(def);
+
+    await expect(store.commands.load({ id: 'x' })).rejects.toThrow(/no handler in this runtime/);
   });
 
-  it('registration can override a concrete command (env-specific body)', async () => {
+  it('throws when registration tries to override a concrete command', () => {
     interface S {
       n: number;
     }
     const def = defineService()({
-      id: 'test/override-concrete',
+      id: 'test/override-concrete-rejected',
       state: { n: 0 } as S,
       queries: { get: { input: z.void(), output: z.number(), select: (s: S) => s.n } },
       commands: {
@@ -287,17 +292,18 @@ describe('abstract commands', () => {
       },
     });
 
-    const store = registerService(def, {
-      commands: {
-        bump: (ctx) =>
-          (ctx as ServiceCtx<S>).self.setState((d) => {
-            d.n += 100;
-          }),
-      },
-    });
-
-    await store.commands.bump();
-    expect(store.queries.get()).toBe(100);
+    expect(() =>
+      registerService(def, {
+        // Bypass the type system (concrete overrides are excluded from `CommandOverrides`)
+        // to assert the runtime guard fires.
+        commands: {
+          bump: (ctx: ServiceCtx<S>) =>
+            ctx.self.setState((d) => {
+              d.n += 100;
+            }),
+        } as never,
+      })
+    ).toThrow(/concrete.*cannot be overridden at registration/);
   });
 
   it('abstract command with no input arg', async () => {

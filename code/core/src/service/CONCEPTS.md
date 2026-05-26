@@ -71,10 +71,10 @@ Commands can be async. A no-op `setState` (empty patch list) is detected and ski
 
 #### Abstract vs concrete commands
 
-- **Concrete** — `handler` is present on the definition object.
-- **Abstract** — `handler` is omitted. The implementation must be supplied at registration via `registerService(def, { commands: { foo: handler } })`. If missing, registration throws.
+- **Concrete** — `handler` is present on the definition object. The definition owns the implementation; registration **cannot** override it. The key is excluded from `CommandOverrides` at the type level, and the runtime throws if an override slips through.
+- **Abstract** — `handler` is omitted from the definition. A registration **may** supply a handler, but isn't required to: the same definition is registered in multiple runtimes (manager, preview, server) and typically only one of them implements a given abstract command. Calling an abstract command in a runtime that has no local handler throws today; once cross-runtime command routing lands it will defer to a peer runtime that does.
 
-The use case is one definition imported into multiple environments (manager, preview, server) with environment-specific bodies. Concrete commands can also be overridden at registration.
+The use case is one shared definition imported into multiple environments, with environment-specific bodies provided per environment for the **abstract** commands. Concrete commands have a single shared body that lives in the definition.
 
 ### Query preloads (the static-build mechanism)
 

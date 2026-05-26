@@ -17,15 +17,19 @@ function asServiceStore<TDef extends ServiceDefinition<any, any, any>>(
 /**
  * Register a service definition with the global runtime.
  *
- * `registration` provides handlers for any abstract commands declared in the definition, and
- * can override concrete handlers if the same definition is used in multiple environments.
+ * `registration.commands` supplies handlers for the definition's **abstract** commands (those
+ * declared without a `handler`). Abstract handlers are optional — the same definition is
+ * registered in multiple runtimes and typically only one of them implements a given abstract
+ * command. A call to an abstract command in a runtime that has no local handler throws today;
+ * once cross-runtime command routing lands it will defer to a peer runtime that does.
+ *
+ * Concrete commands — those whose definition has a `handler` — are owned by the definition
+ * and **cannot** be overridden here; the type system removes their keys from
+ * {@link ServiceRegistration.commands} and the runtime throws if one slips through.
  *
  * Idempotent on the same `definition` reference: calling twice returns the same `ServiceStore`.
  * If a different definition is registered against an existing id, this throws — the
  * registry is global and definitions must be consistent across imports.
- *
- * If an abstract command is declared in the definition but no handler is supplied at
- * registration, this throws with an actionable error message.
  */
 export function registerService<TDef extends ServiceDefinition<any, any, any>>(
   definition: TDef,

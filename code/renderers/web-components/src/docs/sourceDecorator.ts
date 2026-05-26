@@ -41,13 +41,20 @@ export function sourceDecorator(
   });
 
   if (!skipSourceRender(context)) {
-    const container = window.document.createElement('div');
-    if (renderedForSource instanceof DocumentFragment) {
-      render(renderedForSource.cloneNode(true), container);
+    if (typeof renderedForSource === 'string') {
+      // Plain HTML string stories (common in web-components) should not be
+      // rendered into a container just to read innerHTML — lit treats strings
+      // as text nodes, which escapes tags into entities in the source panel.
+      source = renderedForSource.replace(LIT_EXPRESSION_COMMENTS, '');
     } else {
-      render(renderedForSource, container);
+      const container = window.document.createElement('div');
+      if (renderedForSource instanceof DocumentFragment) {
+        render(renderedForSource.cloneNode(true), container);
+      } else {
+        render(renderedForSource, container);
+      }
+      source = container.innerHTML.replace(LIT_EXPRESSION_COMMENTS, '');
     }
-    source = container.innerHTML.replace(LIT_EXPRESSION_COMMENTS, '');
   }
 
   return story;

@@ -82,6 +82,18 @@ describe('sourceDecorator', () => {
     expect(mockChannel.emit).not.toHaveBeenCalled();
   });
 
+  it('should use plain HTML string stories directly for source', async () => {
+    const storyFn = () => '<deepgram-header active="playground" debug="false"></deepgram-header>';
+    sourceDecorator(storyFn, mockContext as any);
+    await tick();
+
+    expect(render).not.toHaveBeenCalled();
+    expect(emitTransformCode).toHaveBeenCalledWith(
+      '<deepgram-header active="playground" debug="false"></deepgram-header>',
+      mockContext
+    );
+  });
+
   it('should handle DocumentFragment stories', async () => {
     const fragment = document.createDocumentFragment();
     const element = document.createElement('test-element');

@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { McpServer } from 'tmcp';
 import { ValibotJsonSchemaAdapter } from '@tmcp/adapter-valibot';
 import { addGetDocumentationTool, GET_TOOL_NAME } from './get-documentation.ts';
-import type { StorybookContext } from '../types.ts';
+import type { Source, StorybookContext } from '../types.ts';
 import smallManifestFixture from '../../fixtures/small-manifest.fixture.json' with { type: 'json' };
 import smallDocsManifestFixture from '../../fixtures/small-docs-manifest.fixture.json' with { type: 'json' };
 import * as getManifest from '../utils/get-manifest.ts';
@@ -643,6 +643,35 @@ describe('getDocumentationTool', () => {
 
 			expect((response.result as any).isError).toBe(true);
 			expect((response.result as any).content[0].text).toContain('in source "local"');
+		});
+
+		it('should return a routing notice when the selected source requires its own MCP', async () => {
+			const remoteSource = sources[1] as Source & { url: string };
+			getManifestsSpy.mockRejectedValue(new getManifest.RequiresOwnMcpError(remoteSource));
+
+			const request = {
+				jsonrpc: '2.0' as const,
+				id: 1,
+				method: 'tools/call',
+				params: {
+					name: GET_TOOL_NAME,
+					arguments: { id: 'badge', storybookId: 'remote' },
+				},
+			};
+
+			const mockHttpRequest = new Request('https://example.com/mcp');
+			const response = await server.receive(request, {
+				custom: { request: mockHttpRequest, sources },
+			});
+
+			expect((response.result as any).isError).toBeUndefined();
+			expect((response.result as any).content[0].text).toBe(`# Remote
+id: remote
+
+This composed Storybook is private and cannot be read through the local Storybook MCP proxy.
+
+Use this source's own MCP endpoint instead:
+http://remote.example.com/mcp`);
 		});
 
 		it('should call onGetDocumentation with storybookId', async () => {

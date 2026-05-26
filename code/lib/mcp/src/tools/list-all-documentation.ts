@@ -50,7 +50,7 @@ export async function addListAllDocumentationTool(
 						withStoryIds,
 					});
 
-					const firstSuccess = multiSourceManifests.find((m) => !m.error);
+					const firstSuccess = multiSourceManifests.find((m) => !m.error && !m.notice);
 					if (firstSuccess) {
 						await ctx.onListAllDocumentation?.({
 							context: ctx,

@@ -13,6 +13,11 @@ export type Source = {
 	url?: string;
 };
 
+export type RequiresOwnMcpNotice = {
+	kind: 'requires-own-mcp';
+	endpoint: string;
+};
+
 /**
  * All manifests for a single source.
  */
@@ -22,6 +27,8 @@ export type SourceManifests = {
 	docsManifest?: DocsManifestMap;
 	/** Error message if fetching this source failed */
 	error?: string;
+	/** Non-error guidance for sources that must be accessed through their own MCP endpoint */
+	notice?: RequiresOwnMcpNotice;
 };
 
 /**
@@ -39,7 +46,7 @@ export type StorybookContext = {
 	 * The function receives the request object, a path to the manifest file, and optionally
 	 * a source (in multi-source mode).
 	 * The default provider requires a request object and constructs the manifest URL from the request origin,
-	 * replacing /mcp with /manifests/components.json.
+	 * using the top-level manifest path such as /manifests/components.json.
 	 * Custom providers can use the request parameter to determine the manifest source, or ignore it entirely.
 	 */
 	manifestProvider?: (

@@ -1,17 +1,28 @@
 import { mcpServerHandler } from './mcp-handler.ts';
-import type { PresetPropertyFn } from 'storybook/internal/types';
-import { AddonOptions } from './types.ts';
+import type { PresetPropertyFn, StorybookConfigRaw } from 'storybook/internal/types';
+import { AddonOptions, type AddonOptionsInput } from './types.ts';
 import * as v from 'valibot';
 import { getManifestStatus } from './tools/is-manifest-available.ts';
 import { getAddonVitestConstants } from './tools/run-story-tests.ts';
 import { isAddonA11yEnabled } from './utils/is-addon-a11y-enabled.ts';
 import htmlTemplate from './template.html';
 import path from 'node:path';
-import { CompositionAuth, extractBearerToken, type ComposedRef } from './auth/index.ts';
+import {
+	CompositionAuth,
+	STORYBOOK_MCP_PROXY_HEADER,
+	extractBearerToken,
+	isStorybookMcpProxyRequest as hasStorybookMcpProxyHeader,
+	type ComposedRef,
+	type ManifestProvider,
+} from './auth/index.ts';
 import { logger } from 'storybook/internal/node-logger';
 import type { Source } from '@storybook/mcp';
 import { APPLY_REVIEW_STATE_EVENT, REQUEST_REVIEW_STATE_EVENT } from './constants.ts';
 import { getReviewState } from './review-state-store.ts';
+import type { IncomingMessage, ServerResponse } from 'node:http';
+
+const DEFAULT_MCP_ENDPOINT = '/mcp';
+const STORYBOOK_MCP_PROXY_HEADER_KEY = STORYBOOK_MCP_PROXY_HEADER.toLowerCase();
 
 export const previewAnnotations: PresetPropertyFn<'previewAnnotations'> = async (
 	existingAnnotations = [],
@@ -19,19 +30,22 @@ export const previewAnnotations: PresetPropertyFn<'previewAnnotations'> = async 
 	return [...existingAnnotations, path.join(import.meta.dirname, 'preview.js')];
 };
 
-export const experimental_devServer: PresetPropertyFn<'experimental_devServer'> = async (
-	app,
-	options,
-) => {
+export const experimental_devServer: PresetPropertyFn<
+	'experimental_devServer',
+	StorybookConfigRaw,
+	AddonOptionsInput
+> = async (app, options) => {
 	// There is no error handling here. This can make the whole storybook app crash with:
 	// ValiError: Invalid type: Expected boolean but received "false"
 	const addonOptions = v.parse(AddonOptions, {
-		toolsets: 'toolsets' in options ? options.toolsets : {},
+		endpoint: options.endpoint,
+		toolsets: options.toolsets ?? {},
 	});
 	const features = await options.presets.apply('features', {});
 	const changeDetectionEnabled = features?.changeDetection ?? false;
 
 	const origin = `http://localhost:${options.port}`;
+	const endpoint = addonOptions.endpoint ?? DEFAULT_MCP_ENDPOINT;
 
 	// Replay the cached review state to any Storybook tab that mounts or
 	// refreshes after the agent already pushed. The tab emits
@@ -58,11 +72,9 @@ export const experimental_devServer: PresetPropertyFn<'experimental_devServer'> 
 	const refs = await getRefsFromConfig(options);
 	const compositionAuth = new CompositionAuth();
 
-	// Build sources and manifest provider only if refs are configured
+	// Build sources and manifest provider
 	let sources: Source[] | undefined;
-	let manifestProvider:
-		| ((request: Request | undefined, path: string, source?: Source) => Promise<string>)
-		| undefined;
+	let createManifestProvider: ((req: IncomingMessage) => ManifestProvider) | undefined;
 
 	if (refs.length > 0) {
 		logger.info(`Initializing composition with ${refs.length} remote Storybook(s)`);
@@ -76,7 +88,10 @@ export const experimental_devServer: PresetPropertyFn<'experimental_devServer'> 
 		logger.info(`Sources: ${sources.map((s) => s.id).join(', ')}`);
 
 		// Create manifest provider that handles multi-source
-		manifestProvider = compositionAuth.createManifestProvider(origin);
+		createManifestProvider = (req) =>
+			compositionAuth.createManifestProvider(origin, {
+				requiresOwnMcpForUnauthenticatedRequests: isStorybookMcpProxyHttpRequest(req),
+			});
 	}
 
 	// Serve .well-known/oauth-protected-resource for MCP auth
@@ -92,12 +107,9 @@ export const experimental_devServer: PresetPropertyFn<'experimental_devServer'> 
 		res.end(JSON.stringify(wellKnown));
 	});
 
-	const requireAuth = (
-		req: import('node:http').IncomingMessage,
-		res: import('node:http').ServerResponse,
-	): boolean => {
+	const requireAuth = (req: IncomingMessage, res: ServerResponse): boolean => {
 		const token = extractBearerToken(req.headers['authorization']);
-		if (compositionAuth.requiresAuth && !token) {
+		if (compositionAuth.requiresAuth && !token && !isStorybookMcpProxyHttpRequest(req)) {
 			res.writeHead(401, {
 				'Content-Type': 'text/plain',
 				'WWW-Authenticate': compositionAuth.buildWwwAuthenticate(origin),
@@ -108,7 +120,7 @@ export const experimental_devServer: PresetPropertyFn<'experimental_devServer'> 
 		return false;
 	};
 
-	app!.post('/mcp', (req, res) => {
+	app!.post(endpoint, (req, res) => {
 		if (requireAuth(req, res)) return;
 
 		return mcpServerHandler({
@@ -117,7 +129,7 @@ export const experimental_devServer: PresetPropertyFn<'experimental_devServer'> 
 			options,
 			addonOptions,
 			sources,
-			manifestProvider,
+			manifestProvider: createManifestProvider?.(req),
 			compositionAuth,
 		});
 	});
@@ -130,7 +142,7 @@ export const experimental_devServer: PresetPropertyFn<'experimental_devServer'> 
 	const isDocsEnabled = manifestStatus.available && (addonOptions.toolsets?.docs ?? true);
 	const isTestEnabled = !!addonVitestConstants && (addonOptions.toolsets?.test ?? true);
 
-	app!.get('/mcp', (req, res) => {
+	app!.get(endpoint, (req, res) => {
 		if (!req.headers['accept']?.includes('text/html')) {
 			if (requireAuth(req, res)) return;
 
@@ -140,7 +152,7 @@ export const experimental_devServer: PresetPropertyFn<'experimental_devServer'> 
 				options,
 				addonOptions,
 				sources,
-				manifestProvider,
+				manifestProvider: createManifestProvider?.(req),
 				compositionAuth,
 			});
 		}
@@ -198,6 +210,12 @@ export const features: PresetPropertyFn<'features'> = async (existingFeatures) =
 		componentsManifest: true,
 	};
 };
+
+function isStorybookMcpProxyHttpRequest(req: IncomingMessage): boolean {
+	const headerValue =
+		req.headers[STORYBOOK_MCP_PROXY_HEADER_KEY] ?? req.headers[STORYBOOK_MCP_PROXY_HEADER];
+	return hasStorybookMcpProxyHeader(headerValue);
+}
 
 /**
  * Get composed Storybook refs from Storybook config.

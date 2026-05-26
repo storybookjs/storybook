@@ -14,6 +14,7 @@ import {
 } from '../parse-react-docgen.ts';
 import { dedent } from '../dedent.ts';
 import { extractDocsSummary, MAX_SUMMARY_LENGTH } from './extract-docs-summary.ts';
+import { formatRequiresOwnMcpNotice } from '../requires-own-mcp.ts';
 
 /**
  * Maximum number of stories to show in full detail in component manifests.
@@ -357,13 +358,19 @@ export function formatMultiSourceManifestsToLists(
 ): string {
 	const parts: string[] = [];
 
-	for (const { source, componentManifest, docsManifest, error } of manifests) {
+	for (const { source, componentManifest, docsManifest, error, notice } of manifests) {
 		parts.push(`# ${source.title}`);
 		parts.push(`id: ${source.id}`);
 		parts.push('');
 
 		if (error) {
 			parts.push(`error: ${error}`);
+			parts.push('');
+			continue;
+		}
+
+		if (notice) {
+			parts.push(formatRequiresOwnMcpNotice(source, notice.endpoint, { includeHeader: false }));
 			parts.push('');
 			continue;
 		}

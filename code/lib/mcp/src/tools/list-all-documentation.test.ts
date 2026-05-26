@@ -245,6 +245,56 @@ describe('listAllDocumentationTool', () => {
 
 			getMultiSourceManifestsSpy.mockRestore();
 		});
+
+		it('should show private composed sources as routing notices', async () => {
+			const getMultiSourceManifestsSpy = vi.spyOn(getManifest, 'getMultiSourceManifests');
+			getMultiSourceManifestsSpy.mockResolvedValue([
+				{
+					source: sources[0]!,
+					componentManifest: smallManifestFixture,
+				},
+				{
+					source: {
+						id: 'tetra',
+						title: 'Tetra Design System',
+						url: 'https://tetra.chromatic.com',
+					},
+					componentManifest: { v: 1, components: {} },
+					notice: {
+						kind: 'requires-own-mcp',
+						endpoint: 'https://tetra.chromatic.com/mcp',
+					},
+				},
+			]);
+
+			const request = {
+				jsonrpc: '2.0' as const,
+				id: 1,
+				method: 'tools/call',
+				params: {
+					name: LIST_TOOL_NAME,
+					arguments: {},
+				},
+			};
+
+			const mockHttpRequest = new Request('https://example.com/mcp');
+			const response = await server.receive(request, {
+				custom: { request: mockHttpRequest, sources },
+			});
+
+			const text = (response.result as any).content[0].text;
+			expect(text).toContain('# Local');
+			expect(text).toContain('Button (button)');
+			expect(text).toContain('# Tetra Design System');
+			expect(text).toContain('id: tetra');
+			expect(text).toContain(
+				'This composed Storybook is private and cannot be read through the local Storybook MCP proxy.',
+			);
+			expect(text).toContain('https://tetra.chromatic.com/mcp');
+			expect(text).not.toContain('error:');
+
+			getMultiSourceManifestsSpy.mockRestore();
+		});
 	});
 
 	it('should handle fetch errors gracefully', async () => {

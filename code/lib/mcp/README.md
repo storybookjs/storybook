@@ -260,10 +260,24 @@ type SourceManifests = {
 	componentManifest: ComponentManifestMap;
 	docsManifest?: DocsManifestMap;
 	error?: string;
+	notice?: RequiresOwnMcpNotice;
 };
 ```
 
-Represents fetched manifests (or an error) for a single source.
+Represents fetched manifests, an error, or non-error routing guidance for a single source.
+
+#### `RequiresOwnMcpNotice`
+
+Type:
+
+```ts
+type RequiresOwnMcpNotice = {
+	kind: 'requires-own-mcp';
+	endpoint: string;
+};
+```
+
+Indicates that a composed Storybook source cannot be read through the local MCP proxy and should be accessed through its own MCP endpoint instead.
 
 #### Tool registration exports
 

@@ -1,9 +1,14 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { RequiresOwnMcpError } from '@storybook/mcp';
 import { CompositionAuth, extractBearerToken } from './composition-auth.ts';
 
 describe('CompositionAuth', () => {
 	beforeEach(() => {
 		vi.restoreAllMocks();
+	});
+
+	afterEach(() => {
+		vi.unstubAllGlobals();
 	});
 
 	describe('extractBearerToken', () => {
@@ -320,6 +325,54 @@ describe('CompositionAuth', () => {
 			await expect(provider(request, './manifests/components.json', source)).rejects.toThrow(
 				'Authentication failed',
 			);
+		});
+
+		it('throws requires-own-mcp for trusted proxy requests without a token', async () => {
+			const auth = new CompositionAuth();
+
+			vi.stubGlobal(
+				'fetch',
+				vi
+					.fn()
+					.mockResolvedValueOnce({
+						ok: false,
+						status: 401,
+						headers: new Headers({
+							'WWW-Authenticate':
+								'Bearer resource_metadata="http://remote.example.com/.well-known/oauth-protected-resource"',
+						}),
+					})
+					.mockResolvedValueOnce({
+						ok: true,
+						json: () =>
+							Promise.resolve({
+								resource: 'http://remote.example.com/mcp',
+								authorization_servers: ['http://auth.example.com'],
+							}),
+					})
+					.mockResolvedValueOnce({
+						ok: true,
+						json: () =>
+							Promise.resolve({
+								issuer: 'http://auth.example.com',
+								authorization_endpoint: 'http://auth.example.com/authorize',
+								token_endpoint: 'http://auth.example.com/token',
+							}),
+					}),
+			);
+
+			const source = { id: 'remote', title: 'Remote', url: 'http://remote.example.com' };
+			await auth.initialize([source]);
+
+			const provider = auth.createManifestProvider('http://localhost:6006', {
+				requiresOwnMcpForUnauthenticatedRequests: true,
+			});
+			const request = new Request('http://localhost:6006/mcp');
+
+			await expect(provider(request, './manifests/components.json', source)).rejects.toBeInstanceOf(
+				RequiresOwnMcpError,
+			);
+			expect(auth.hadAuthError(request)).toBe(false);
 		});
 
 		it('throws auth error when response is invalid manifest and /mcp returns 401', async () => {

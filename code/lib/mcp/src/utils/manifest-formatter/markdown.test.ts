@@ -1,7 +1,11 @@
 import { describe, it, expect } from 'vitest';
 import type { AllManifests, ComponentManifest, ComponentManifestMap } from '../../types.ts';
 import fullManifestFixture from '../../../fixtures/full-manifest.fixture.json' with { type: 'json' };
-import { formatComponentManifest, formatManifestsToLists } from './markdown.ts';
+import {
+	formatComponentManifest,
+	formatManifestsToLists,
+	formatMultiSourceManifestsToLists,
+} from './markdown.ts';
 
 describe('MarkdownFormatter - formatComponentManifest', () => {
 	it('formats all full fixtures', () => {
@@ -1058,6 +1062,32 @@ describe('MarkdownFormatter - formatComponentManifest', () => {
 			}
 			\`\`\`"
 		`);
+	});
+});
+
+describe('MarkdownFormatter - formatMultiSourceManifestsToLists', () => {
+	it('formats requires-own-mcp source notices without an error prefix', () => {
+		const result = formatMultiSourceManifestsToLists([
+			{
+				source: { id: 'tetra', title: 'Tetra Design System', url: 'https://tetra.chromatic.com' },
+				componentManifest: { v: 1, components: {} },
+				notice: {
+					kind: 'requires-own-mcp',
+					endpoint: 'https://tetra.chromatic.com/mcp',
+				},
+			},
+		]);
+
+		expect(result).toMatchInlineSnapshot(`
+			"# Tetra Design System
+			id: tetra
+
+			This composed Storybook is private and cannot be read through the local Storybook MCP proxy.
+
+			Use this source's own MCP endpoint instead:
+			https://tetra.chromatic.com/mcp"
+		`);
+		expect(result).not.toContain('error:');
 	});
 });
 

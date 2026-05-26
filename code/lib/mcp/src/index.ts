@@ -22,11 +22,12 @@ export {
 export {
 	COMPONENT_MANIFEST_PATH,
 	DOCS_MANIFEST_PATH,
+	RequiresOwnMcpError,
 	getMultiSourceManifests,
 } from './utils/get-manifest.ts';
 
 // Export types for reuse
-export type { StorybookContext, Source, SourceManifests } from './types.ts';
+export type { RequiresOwnMcpNotice, StorybookContext, Source, SourceManifests } from './types.ts';
 
 // copied from tmcp internals as it's not exposed
 type InitializeRequestParams = {

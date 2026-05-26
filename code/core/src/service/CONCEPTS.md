@@ -28,24 +28,36 @@ Two conventions:
 
 ### Queries
 
-Every query is declared via `defineQuery({ select, preload?, inputs?, path? })`. The `select` selector is a pure synchronous function over state:
+Every query is an inline object with required `input` and `output` schemas (Standard Schema v1 — zod, valibot, arktype, etc.) plus a `select` selector. Wrap each entry with `query<State>()({ ... })` so `state`, parsed inputs, and `ctx` (in preloads) infer from the schemas — bare literals inside a `queries` map lose contextual types due to a TypeScript limitation.
 
 ```ts
-defineQuery({ select: (state) => result })            // no input
-defineQuery({ select: (state, input) => result })    // input-keyed
+// no input — use z.void() for the input schema
+getCount: query<State>()({ input: z.void(), output: z.number(), select: (state) => state.count })
+
+// input-keyed — `id` is inferred from `input: z.string()`
+getById: query<State>()({
+  input: z.string(),
+  output: z.string().optional(),
+  select: (state, id) => state.byId[id],
+})
 ```
 
-The `select` must not call commands or perform I/O — it's read-only by contract. If a query needs to trigger loading on first read, that lives in the query's `preload` field (see below).
+The runtime validates caller input before calling `select`, and validates the selector result before returning it. `select` must not call commands or perform I/O — it's read-only by contract. If a query needs to trigger loading on first read, add optional `preload`, `inputs`, and `path` fields (see below).
 
 Queries are the unit of subscription. Every `useServiceQuery` or `service.queries.foo.subscribe(...)` builds an alien-signals `computed` over the selector. The computed memoises by reference equality on its output, so subscribers only re-fire when this specific query's result actually changes. Purity is what makes "result didn't change, don't re-render" trivially correct.
 
 ### Commands
 
-The write API:
+Commands use the same pattern via `command<State>()({ ... })`:
 
 ```ts
-(ctx) => void | Promise<void>            // no input
-(input, ctx) => void | Promise<void>     // input-keyed
+bump: command<State>()({
+  input: z.void(),
+  output: z.void(),
+  handler: (ctx) => { ctx.self.setState((d) => { d.count += 1; }); },
+}),
+
+generate: command<State>()({ input: z.string(), output: z.void() }), // abstract — handler at registration
 ```
 
 `ctx.self` is how a command touches state:
@@ -59,8 +71,8 @@ Commands can be async. A no-op `setState` (empty patch list) is detected and ski
 
 #### Abstract vs concrete commands
 
-- **Concrete** — a plain function in the `commands:` map. Body inline.
-- **Abstract** — `defineCommand<TInput>()`. No body. The implementation must be supplied at registration via `registerService(def, { commands: { foo: handler } })`. If missing, registration throws.
+- **Concrete** — `handler` is present on the definition object.
+- **Abstract** — `handler` is omitted. The implementation must be supplied at registration via `registerService(def, { commands: { foo: handler } })`. If missing, registration throws.
 
 The use case is one definition imported into multiple environments (manager, preview, server) with environment-specific bodies. Concrete commands can also be overridden at registration.
 
@@ -93,25 +105,33 @@ What the runtime does with preloads:
 ### Definition
 
 ```ts
-const DocgenService = defineService<DocgenState>()({
+const DocgenService = defineService<DocgenState>()(({ query, command }) => ({
   id: 'core/docgen',
   state: { byComponentId: {}, somethingElse: 42 },
   queries: {
-    getComponentDocgenInfo: defineQuery({
-      select: (state, id: string) => state.byComponentId[id],
-      preload: async (id: string, ctx) => { await ctx.self.commands.generateDocgen(id); },
+    getComponentDocgenInfo: query({
+      input: z.string(),
+      output: docgenSchema.nullable(),
+      select: (state, id) => state.byComponentId[id] ?? null,
+      preload: async (id, ctx) => { await ctx.self.commands.generateDocgen(id); },
       inputs: async () => listAllComponentIds(),
-      path: (_ctx, id: string) => `docgen-${id}.json`,
+      path: (_ctx, id) => `docgen-${id}.json`,
     }),
-    somethingElse: defineQuery({ select: (state) => state.somethingElse }), // selector only, no static artifact
+    somethingElse: query({
+      input: z.void(),
+      output: z.number(),
+      select: (state) => state.somethingElse,
+    }), // selector only — no static artifact
   },
   commands: {
-    generateDocgen: defineCommand<string>(),
-    modifySomethingElse: (ctx) => {
-      ctx.self.setState((draft: DocgenState) => { ... });
-    },
+    generateDocgen: command({ input: z.string(), output: z.void() }), // abstract
+    modifySomethingElse: command({
+      input: z.void(),
+      output: z.void(),
+      handler: (ctx) => { ctx.self.setState((d) => { ... }); },
+    }),
   },
-});
+}));
 ```
 
 A definition is environment-agnostic — shape only, no running runtime. It can be imported into manager, preview, server, or test code. Definitions are singletons: re-importing the same module yields the same reference, and the registry's identity check is based on definition reference (not just `id`).
@@ -133,7 +153,7 @@ const store = registerService(DocgenService, {
 
 Registration activates the definition and returns the `ServiceStore`. It supplies:
 
-- **Abstract command implementations.** Any `defineCommand()` without a handler must be implemented here.
+- **Abstract command implementations.** Any command without a `handler` in the definition must be implemented here.
 - **Concrete command overrides.** Optional; replace an inline command body per environment.
 
 Whether a service loads from JSON is decided architecture-wide via `setStaticTransport`, not per-service. Re-registering the same definition returns the same `ServiceStore`.
@@ -144,32 +164,35 @@ Every command body and query preload receives `ctx`. Today `ctx` has one field, 
 
 There is no `ctx.runtime[otherServiceId]` yet. When it lands, handlers will be able to read from other services via their public query API but never touch raw state of another service. The encapsulation rule extends across service boundaries.
 
-## defineService — curried vs inferred
+## defineService — callback vs bare object
 
-Two equivalent ways to declare a service.
+Three ways to declare a service.
 
-### Curried form
-
-```ts
-defineService<DocgenState>()({ id, state, queries, commands, load })
-```
-
-State type is fixed by the outer generic. `state` in queries and `ctx` in commands and preloads are inferred for you — no annotations.
-
-Two TypeScript quirks worth knowing:
-
-- `draft` inside `ctx.self.setState((draft) => ...)` does *not* propagate the bound generic through the command-type's overloaded function shape, so it still needs `(draft: DocgenState) => ...` annotation. Reproducible in a minimal isolated example; not specific to our types.
-- Two-arg inline commands (`(input: T, ctx) => ...`) trip the same overload-typing limit and produce wrong `Parameters` inference. Switch to the inferred form below, or wrap the body in `defineCommand` and let the registration provide it.
-
-### Inferred form
+### Callback form (recommended)
 
 ```ts
-defineService({ id, state, queries, commands, load })
+defineService<DocgenState>()(({ query, command }) => ({ id, state, queries, commands }))
 ```
 
-State is inferred from the `state:` literal. Queries still get contextual `state` typing. Commands need an explicit `ctx: ServiceCtx<MyState>` because the contextual-type union over command arities doesn't pick a single signature for `ctx`. Two-arg inline commands work fine.
+State type is fixed by the outer generic. The inner call receives `query` / `command` helpers (runtime no-ops) so `select`, `preload`, `handler`, and **registration overrides** infer from each entry's schemas. Use the curried `defineService<State>()(setup)` form so TypeScript can infer the full definition object (`const D`); a single-call `defineService<State>(setup)` only passes one type argument and may widen command types.
 
-Both forms produce the same `ServiceDefinition`. Pick whichever is more ergonomic. The docgen example uses the curried form; tests with two-arg inline commands use the inferred form.
+### Bare object form
+
+```ts
+defineService<DocgenState>()({ id, state, queries, commands })
+```
+
+Same validation, but handlers inside the `queries` / `commands` map do not get contextual typing — use explicit parameter types or wrap entries with `query()` / `command()` (imported separately or via the callback form above).
+
+### Inferred state
+
+```ts
+defineService()({ id, state, queries, commands })
+```
+
+State is inferred from the `state:` literal (extra `()`, no `<…>`). Commands often need an explicit `ctx: ServiceCtx<MyState>` when not using the callback form.
+
+All forms produce the same `ServiceDefinition`. The docgen example uses the callback form; many tests use the bare object form with hand-written types.
 
 ## Subscriptions
 
@@ -189,6 +212,6 @@ The React hook `useServiceQuery(store, queryName, input?)` is a thin wrapper aro
 
 ## Worked example
 
-[`__examples__/docgen-service.ts`](./__examples__/docgen-service.ts) implements docgen against the current API: curried definition, `defineQuery({ select })` selector-only queries alongside one with full `preload`/`inputs`/`path` static-build hooks, an abstract command implemented at registration, a concrete inline command.
+[`__examples__/docgen-service.ts`](./__examples__/docgen-service.ts) implements docgen against the current API: curried definition with schema-validated queries and commands, a selector-only query alongside one with full `preload`/`inputs`/`path` static-build hooks, an abstract command implemented at registration, and a concrete command with an inline handler.
 
 Read it alongside `service-runtime.test.ts` and `build-artifacts.test.ts` — those test against the public surface only, so they double as usage examples.

@@ -2,13 +2,16 @@
  * Open Service Architecture — public entry point.
  *
  * Conceptual overview (see `./CONCEPTS.md` for the long version):
- *   - `defineService({ state, queries, commands, load })` declares a service.
- *   - `defineCommand<TInput>()` declares an abstract command — implementation provided at registration.
- *   - `defineCommand(handler)` wraps a concrete command (or just put the function in the commands map).
- *   - `defineQuery({ select, preload?, inputs?, path? })` declares a query with optional static-build metadata.
- *   - `registerService(def, { commands: { … } })` activates a service. Provides any abstract command bodies.
+ *   - `defineService<S>()(({ query, command }) => ({ state, queries, commands }))` declares a
+ *     service (recommended). Schema-driven inference covers definition handlers and registration
+ *     overrides; a command without `handler` is **abstract** and must be supplied at registration.
+ *   - `registerService(def, { commands: { … } })` activates a service. Provides any abstract
+ *     command bodies (and may override concrete ones).
  *   - `getService(defOrId)` looks up an already-registered service.
  *   - `useServiceQuery(store, name, input?)` subscribes a React component to a query.
+ *
+ * Schemas are required: every query/command declares Standard Schema v1 `input` and `output`.
+ * The runtime validates at the boundary; `ServiceValidationError` is thrown on mismatch.
  *
  * State is private to the service. Read it via queries; change it via commands.
  */
@@ -19,9 +22,14 @@ export {
   setServiceChannel,
   type ServiceChannel,
 } from './channel-transport.ts';
-export { defineCommand, defineQuery, defineService } from './define-service.ts';
+export { command, defineService, query } from './define-service.ts';
 export { getService, registerService } from './register-service.ts';
 export { ServiceRuntime } from './service-runtime.ts';
+export {
+  ServiceValidationError,
+  type ValidationKind,
+  type ValidationPhase,
+} from './service-validation.ts';
 export {
   clearStaticTransport,
   createBrowserStaticTransport,
@@ -30,10 +38,16 @@ export {
 export { useServiceQuery } from './use-service-query.ts';
 
 export type {
-  AbstractCommand,
+  AnyCommandDef,
+  AnyQueryDef,
+  AnySchema,
   BuildCtx,
+  CommandDef,
+  InferSchemaInput,
+  InferSchemaOutput,
   InputOfCommand,
   InputOfQuery,
+  OutputOfCommand,
   OutputOfQuery,
   QueryDef,
   ServiceCtx,

@@ -1,8 +1,9 @@
 // @vitest-environment happy-dom
 import { act, renderHook } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { z } from 'zod';
 
-import { defineQuery, defineService } from './define-service.ts';
+import { defineService } from './define-service.ts';
 import { __resetServiceRegistry, registerService } from './register-service.ts';
 import type { ServiceCtx } from './types.ts';
 import { useServiceQuery } from './use-service-query.ts';
@@ -20,10 +21,12 @@ describe('useServiceQuery — initial render', () => {
     interface S {
       count: number;
     }
-    const def = defineService({
+    const def = defineService()({
       id: 'test/hook-initial',
       state: { count: 7 } as S,
-      queries: { get: defineQuery({ select: (s: S) => s.count }) },
+      queries: {
+        get: { input: z.void(), output: z.number(), select: (s: S) => s.count },
+      },
       commands: {},
     });
     const store = registerService(def);
@@ -36,10 +39,16 @@ describe('useServiceQuery — initial render', () => {
     interface S {
       byId: Record<string, string>;
     }
-    const def = defineService({
+    const def = defineService()({
       id: 'test/hook-initial-input',
       state: { byId: { a: 'alpha' } } as S,
-      queries: { get: defineQuery({ select: (s: S, id: string) => s.byId[id] }) },
+      queries: {
+        get: {
+          input: z.string(),
+          output: z.string().optional(),
+          select: (s: S, id: string) => s.byId[id],
+        },
+      },
       commands: {},
     });
     const store = registerService(def);
@@ -56,15 +65,21 @@ describe('useServiceQuery — reactivity', () => {
     interface S {
       count: number;
     }
-    const def = defineService({
+    const def = defineService()({
       id: 'test/hook-rerender',
       state: { count: 0 } as S,
-      queries: { get: defineQuery({ select: (s: S) => s.count }) },
+      queries: {
+        get: { input: z.void(), output: z.number(), select: (s: S) => s.count },
+      },
       commands: {
-        bump: (ctx: ServiceCtx<S>) =>
-          ctx.self.setState((d) => {
-            d.count += 1;
-          }),
+        bump: {
+          input: z.void(),
+          output: z.void(),
+          handler: (ctx: ServiceCtx<S>) =>
+            ctx.self.setState((d) => {
+              d.count += 1;
+            }),
+        },
       },
     });
     const store = registerService(def);
@@ -91,18 +106,22 @@ describe('useServiceQuery — reactivity', () => {
       a: number;
       b: number;
     }
-    const def = defineService({
+    const def = defineService()({
       id: 'test/hook-no-rerender-unrelated',
       state: { a: 0, b: 0 } as S,
       queries: {
-        getA: defineQuery({ select: (s: S) => s.a }),
-        getB: defineQuery({ select: (s: S) => s.b }),
+        getA: { input: z.void(), output: z.number(), select: (s: S) => s.a },
+        getB: { input: z.void(), output: z.number(), select: (s: S) => s.b },
       },
       commands: {
-        bumpB: (ctx: ServiceCtx<S>) =>
-          ctx.self.setState((d) => {
-            d.b += 1;
-          }),
+        bumpB: {
+          input: z.void(),
+          output: z.void(),
+          handler: (ctx: ServiceCtx<S>) =>
+            ctx.self.setState((d) => {
+              d.b += 1;
+            }),
+        },
       },
     });
     const store = registerService(def);
@@ -129,15 +148,21 @@ describe('useServiceQuery — reactivity', () => {
     interface S {
       label: string;
     }
-    const def = defineService({
+    const def = defineService()({
       id: 'test/hook-no-rerender-equal',
       state: { label: 'hello' } as S,
-      queries: { get: defineQuery({ select: (s: S) => s.label }) },
+      queries: {
+        get: { input: z.void(), output: z.string(), select: (s: S) => s.label },
+      },
       commands: {
-        rewrite: (ctx: ServiceCtx<S>) =>
-          ctx.self.setState((d) => {
-            d.label = 'hello';
-          }),
+        rewrite: {
+          input: z.void(),
+          output: z.void(),
+          handler: (ctx: ServiceCtx<S>) =>
+            ctx.self.setState((d) => {
+              d.label = 'hello';
+            }),
+        },
       },
     });
     const store = registerService(def);
@@ -166,10 +191,16 @@ describe('useServiceQuery — input changes', () => {
     interface S {
       byId: Record<string, string>;
     }
-    const def = defineService({
+    const def = defineService()({
       id: 'test/hook-input-change',
       state: { byId: { a: 'alpha', b: 'beta' } } as S,
-      queries: { get: defineQuery({ select: (s: S, id: string) => s.byId[id] }) },
+      queries: {
+        get: {
+          input: z.string(),
+          output: z.string().optional(),
+          select: (s: S, id: string) => s.byId[id],
+        },
+      },
       commands: {},
     });
     const store = registerService(def);
@@ -196,23 +227,29 @@ describe('useServiceQuery — preloads', () => {
     }
     const generate = vi.fn(async (id: string) => `name-${id}`);
 
-    const def = defineService({
+    const def = defineService()({
       id: 'test/hook-preload',
       state: { byId: {} } as S,
       queries: {
-        getName: defineQuery({
+        getName: {
+          input: z.string(),
+          output: z.string().optional(),
           select: (s: S, id: string) => s.byId[id],
           preload: async (id: string, ctx: ServiceCtx<S>) => {
             await ctx.self.commands.load(id);
           },
-        }),
+        },
       },
       commands: {
-        load: async (id: string, ctx: ServiceCtx<S>) => {
-          const name = await generate(id);
-          ctx.self.setState((d) => {
-            d.byId[id] = name;
-          });
+        load: {
+          input: z.string(),
+          output: z.void(),
+          handler: async (id: string, ctx: ServiceCtx<S>) => {
+            const name = await generate(id);
+            ctx.self.setState((d) => {
+              d.byId[id] = name;
+            });
+          },
         },
       },
     });

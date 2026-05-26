@@ -12,12 +12,13 @@ import {
   type WelcomeRequestPayload,
 } from './channel-transport.ts';
 import { isAbstractCommand } from './define-service.ts';
+import { validateAsync, validateSync } from './service-validation.ts';
 import { getStaticTransport } from './static-transport.ts';
 import type {
+  AnyCommandDef,
+  AnyQueryDef,
   BuildCtx,
   CallableCommands,
-  CommandHandler,
-  QueryDef,
   SelfHandle,
   ServiceCtx,
   ServiceDefinition,
@@ -265,19 +266,21 @@ export class ServiceRuntime<TDef extends ServiceDefinition<any, any, any>> {
     const overrides = (registration?.commands ?? {}) as Record<string, (...args: any[]) => any>;
 
     for (const [name, entry] of Object.entries(definition.commands)) {
+      const cmdDef = entry as AnyCommandDef<unknown>;
       const override = overrides[name];
       if (override) {
         out[name] = override;
         continue;
       }
-      if (isAbstractCommand(entry)) {
+      if (isAbstractCommand(cmdDef)) {
         throw new Error(
-          `[service ${definition.id}] command "${name}" is abstract and has no implementation at registration. ` +
+          `[service ${definition.id}] command "${name}" is abstract (no \`handler\` in its definition) ` +
+            `and has no implementation at registration. ` +
             `Provide one via registerService(def, { commands: { ${name}: (input, ctx) => ... } }).`
         );
       }
-      // Concrete handler — use as-is.
-      out[name] = entry as (...args: any[]) => any;
+      // Concrete handler — pull off the definition.
+      out[name] = cmdDef.handler as (...args: any[]) => any;
     }
     return out;
   }
@@ -307,7 +310,17 @@ export class ServiceRuntime<TDef extends ServiceDefinition<any, any, any>> {
 
   // ------------------------------ queries ------------------------------
 
-  private _runQuery(queryName: string, input: unknown): unknown {
+  /**
+   * Run a query and return its (output-validated) result.
+   *
+   * `input` is the already-validated (parsed) input — callers pass it through `_validateQueryInput`
+   * first when receiving from the outside. This separation keeps validation off the inner
+   * computed re-evaluation path: the validated input is captured by closure in
+   * `_subscribeToQuery`, so re-running the computed never re-validates the input. Output
+   * validation, however, runs on every read — selectors are pure, so revalidating is cheap and
+   * catches schema regressions at the place that produced them.
+   */
+  private _runQuery(queryName: string, parsedInput: unknown): unknown {
     const entry = this.definition.queries[queryName];
     if (!entry) {
       throw new Error(`[${this.id}] Unknown query: ${queryName}`);
@@ -316,33 +329,53 @@ export class ServiceRuntime<TDef extends ServiceDefinition<any, any, any>> {
     // subscribe path), this read registers the dependency; from a plain callable read
     // it's just a synchronous value fetch.
     const state = this._stateSignal();
-    const select = entry.select;
-    if (select.length <= 1) {
-      return (select as (state: unknown) => unknown)(state);
-    }
-    return (select as (state: unknown, input: unknown) => unknown)(state, input);
+    // `select` is typed (state) | (state, input). JS lets us call either with both args —
+    // a 1-arg selector just ignores `parsedInput`.
+    const raw = (entry.select as (s: unknown, i: unknown) => unknown)(state, parsedInput);
+    return validateSync(entry.output, raw, {
+      serviceId: this.id,
+      kind: 'query',
+      name: queryName,
+      phase: 'output',
+    });
   }
 
-  private _queryHasInput(queryName: string): boolean {
-    return this.definition.queries[queryName].select.length > 1;
+  /** Validate a raw caller-facing input against the query's input schema. */
+  private _validateQueryInput(queryName: string, rawInput: unknown): unknown {
+    const entry = this.definition.queries[queryName];
+    return validateSync(entry.input, rawInput, {
+      serviceId: this.id,
+      kind: 'query',
+      name: queryName,
+      phase: 'input',
+    });
   }
 
   private _buildQueriesApi(): SubscribableQueries<TDef['queries']> {
     const out: Record<string, SubscribableQuery<any, any>> = {};
 
     for (const queryName of Object.keys(this.definition.queries)) {
-      const hasInput = this._queryHasInput(queryName);
-
+      // The callable accepts `(input?)` — for no-input queries declared via `input: z.void()`,
+      // the schema validates `undefined` and selectors that take only `(state)` simply ignore
+      // the second positional. Dispatch by `args.length`, matching the typed overloads.
       const callable = (...args: unknown[]): unknown => {
-        const input = hasInput ? args[0] : undefined;
-        void this._maybeFireLoader(queryName, input);
-        return this._runQuery(queryName, input);
+        const rawInput = args.length > 0 ? args[0] : undefined;
+        const parsedInput = this._validateQueryInput(queryName, rawInput);
+        void this._maybeFireLoader(queryName, parsedInput);
+        return this._runQuery(queryName, parsedInput);
       };
 
       const subscribe = (...args: unknown[]): (() => void) => {
-        const input = hasInput ? args[0] : undefined;
-        const listener = (hasInput ? args[1] : args[0]) as QueryListener;
-        return this._subscribeToQuery(queryName, input, listener);
+        // Two typed overloads:
+        //   subscribe(listener)              — no-input queries
+        //   subscribe(input, listener)       — input-keyed queries
+        // Dispatch by argument count.
+        if (args.length === 1) {
+          const parsedInput = this._validateQueryInput(queryName, undefined);
+          return this._subscribeToQuery(queryName, parsedInput, args[0] as QueryListener);
+        }
+        const parsedInput = this._validateQueryInput(queryName, args[0]);
+        return this._subscribeToQuery(queryName, parsedInput, args[1] as QueryListener);
       };
 
       (callable as any).subscribe = subscribe;
@@ -393,26 +426,36 @@ export class ServiceRuntime<TDef extends ServiceDefinition<any, any, any>> {
 
   // ------------------------------ commands ------------------------------
 
-  private _commandHasInput(commandName: string): boolean {
-    const resolved = this._commandHandlers[commandName];
-    return resolved.length > 1;
-  }
-
   private _buildCommandsApi(): CallableCommands<TDef['commands']> {
-    const out: Record<string, (...args: any[]) => Promise<void>> = {};
+    const out: Record<string, (input?: unknown) => Promise<unknown>> = {};
     for (const commandName of Object.keys(this.definition.commands)) {
-      const hasInput = this._commandHasInput(commandName);
-      const handler = this._commandHandlers[commandName] as CommandHandler<unknown, unknown>;
-      out[commandName] = async (input?: unknown): Promise<void> => {
+      const cmdDef = this.definition.commands[commandName] as AnyCommandDef<unknown>;
+      const handler = this._commandHandlers[commandName] as (
+        ...args: any[]
+      ) => unknown | Promise<unknown>;
+      // Dispatch by declared arity: `(ctx)` for no-input handlers, `(input, ctx)` for
+      // input-keyed ones. We can't unconditionally call `(input, ctx)` because a no-input
+      // handler would receive `input` as its first arg — which it expects to be `ctx`.
+      const handlerHasInput = handler.length > 1;
+
+      out[commandName] = async (rawInput?: unknown): Promise<unknown> => {
+        // Validate the caller-facing input against the command's input schema. Throws
+        // ServiceValidationError on mismatch.
+        const parsedInput = await validateAsync(cmdDef.input, rawInput, {
+          serviceId: this.id,
+          kind: 'command',
+          name: commandName,
+          phase: 'input',
+        });
         const ctx = this._getCtx();
-        if (hasInput) {
-          await (handler as (i: unknown, c: ServiceCtx<unknown>) => unknown | Promise<unknown>)(
-            input,
-            ctx
-          );
-        } else {
-          await (handler as (c: ServiceCtx<unknown>) => unknown | Promise<unknown>)(ctx);
-        }
+        const rawOutput = await (handlerHasInput ? handler(parsedInput, ctx) : handler(ctx));
+        // Validate the handler's return value against the output schema before handing it back.
+        return validateAsync(cmdDef.output, rawOutput, {
+          serviceId: this.id,
+          kind: 'command',
+          name: commandName,
+          phase: 'output',
+        });
       };
     }
     return out as CallableCommands<TDef['commands']>;
@@ -429,7 +472,7 @@ export class ServiceRuntime<TDef extends ServiceDefinition<any, any, any>> {
     const map: Record<string, NormalizedPreload> = {};
 
     for (const [name, entry] of Object.entries(this.definition.queries)) {
-      const q = entry as QueryDef;
+      const q = entry as AnyQueryDef<unknown>;
       if (!q.preload) continue;
       map[name] = {
         handler: q.preload,
@@ -443,6 +486,11 @@ export class ServiceRuntime<TDef extends ServiceDefinition<any, any, any>> {
   }
   private _preloadsCache: Record<string, NormalizedPreload> | undefined = undefined;
 
+  /**
+   * Whether a preload's handler expects an input arg, derived from the function's declared
+   * arity. The schema-driven type signature is `(ctx) => …` for void inputs and
+   * `(input, ctx) => …` otherwise; arity is the cheap, accurate way to dispatch at runtime.
+   */
   private _preloadHasInput(name: string): boolean {
     const entry = this._preloadsMap()?.[name];
     return !!entry && entry.handler.length > 1;
@@ -452,15 +500,15 @@ export class ServiceRuntime<TDef extends ServiceDefinition<any, any, any>> {
    * Compute the relative filename for a query's JSON artifact (either to emit at build time
    * or to fetch at runtime). Uses the query's `path` callback when provided, otherwise falls
    * back to a sensible default based on the query name and input.
+   *
+   * The `path` callback always takes `ctx` first (`(ctx) => string` for no-input,
+   * `(ctx, input) => string` for input-keyed), so we can always call it with both positionals
+   * — JS quietly drops the extra arg in the no-input case.
    */
   private _preloadFilename(name: string, entry: NormalizedPreload, input: unknown): string {
     if (entry.path) {
       const buildCtx: BuildCtx = { isBuild: true };
-      const hasInput = this._preloadHasInput(name);
-      if (hasInput) {
-        return (entry.path as (ctx: BuildCtx, input: unknown) => string)(buildCtx, input);
-      }
-      return (entry.path as (ctx: BuildCtx) => string)(buildCtx);
+      return (entry.path as (ctx: BuildCtx, input?: unknown) => string)(buildCtx, input);
     }
     // Default filename rules:
     //  - no input         → `${name}.json`

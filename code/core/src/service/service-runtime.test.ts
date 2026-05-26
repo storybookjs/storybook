@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { z } from 'zod';
 
-import { defineCommand, defineQuery, defineService } from './define-service.ts';
+import { defineService } from './define-service.ts';
 import { __resetServiceRegistry, registerService } from './register-service.ts';
 import type { ServiceCtx } from './types.ts';
 
@@ -22,10 +23,16 @@ afterEach(() => {
 
 describe('queries', () => {
   it('runs a no-input query', () => {
-    const def = defineService({
+    const def = defineService()({
       id: 'test/q-noinput',
       state: { value: 'hi' },
-      queries: { get: defineQuery({ select: (s: { value: string }) => s.value }) },
+      queries: {
+        get: {
+          input: z.void(),
+          output: z.string(),
+          select: (s: { value: string }) => s.value,
+        },
+      },
       commands: {},
     });
     const store = registerService(def);
@@ -37,10 +44,16 @@ describe('queries', () => {
     interface S {
       byId: Record<string, number>;
     }
-    const def = defineService({
+    const def = defineService()({
       id: 'test/q-input',
       state: { byId: { a: 1, b: 2 } } as S,
-      queries: { getById: defineQuery({ select: (s: S, id: string) => s.byId[id] }) },
+      queries: {
+        getById: {
+          input: z.string(),
+          output: z.number().optional(),
+          select: (s: S, id: string) => s.byId[id],
+        },
+      },
       commands: {},
     });
     const store = registerService(def);
@@ -54,22 +67,30 @@ describe('queries', () => {
       a: number;
       b: number;
     }
-    const def = defineService({
+    const def = defineService()({
       id: 'test/q-subscribe',
       state: { a: 0, b: 0 } as S,
       queries: {
-        getA: defineQuery({ select: (s: S) => s.a }),
-        getB: defineQuery({ select: (s: S) => s.b }),
+        getA: { input: z.void(), output: z.number(), select: (s: S) => s.a },
+        getB: { input: z.void(), output: z.number(), select: (s: S) => s.b },
       },
       commands: {
-        bumpA: (ctx: ServiceCtx<S>) =>
-          ctx.self.setState((d) => {
-            d.a += 1;
-          }),
-        bumpB: (ctx: ServiceCtx<S>) =>
-          ctx.self.setState((d) => {
-            d.b += 1;
-          }),
+        bumpA: {
+          input: z.void(),
+          output: z.void(),
+          handler: (ctx: ServiceCtx<S>) =>
+            ctx.self.setState((d) => {
+              d.a += 1;
+            }),
+        },
+        bumpB: {
+          input: z.void(),
+          output: z.void(),
+          handler: (ctx: ServiceCtx<S>) =>
+            ctx.self.setState((d) => {
+              d.b += 1;
+            }),
+        },
       },
     });
     const store = registerService(def);
@@ -93,17 +114,25 @@ describe('queries', () => {
     interface S {
       byId: Record<string, { name: string }>;
     }
-    const def = defineService({
+    const def = defineService()({
       id: 'test/q-dedupe',
       state: { byId: { a: { name: 'A' } } } as S,
       queries: {
-        getName: defineQuery({ select: (s: S, id: string) => s.byId[id]?.name }),
+        getName: {
+          input: z.string(),
+          output: z.string().optional(),
+          select: (s: S, id: string) => s.byId[id]?.name,
+        },
       },
       commands: {
-        rewriteAToSameValue: (ctx: ServiceCtx<S>) =>
-          ctx.self.setState((d) => {
-            d.byId.a = { name: 'A' };
-          }),
+        rewriteAToSameValue: {
+          input: z.void(),
+          output: z.void(),
+          handler: (ctx: ServiceCtx<S>) =>
+            ctx.self.setState((d) => {
+              d.byId.a = { name: 'A' };
+            }),
+        },
       },
     });
     const store = registerService(def);
@@ -123,15 +152,19 @@ describe('commands', () => {
     interface S {
       count: number;
     }
-    const def = defineService({
+    const def = defineService()({
       id: 'test/cmd-noinput',
       state: { count: 0 } as S,
-      queries: { get: defineQuery({ select: (s: S) => s.count }) },
+      queries: { get: { input: z.void(), output: z.number(), select: (s: S) => s.count } },
       commands: {
-        increment: (ctx: ServiceCtx<S>) =>
-          ctx.self.setState((d) => {
-            d.count += 1;
-          }),
+        increment: {
+          input: z.void(),
+          output: z.void(),
+          handler: (ctx: ServiceCtx<S>) =>
+            ctx.self.setState((d) => {
+              d.count += 1;
+            }),
+        },
       },
     });
     const store = registerService(def);
@@ -144,16 +177,26 @@ describe('commands', () => {
     interface S {
       byId: Record<string, string>;
     }
-    const def = defineService({
+    const def = defineService()({
       id: 'test/cmd-async',
       state: { byId: {} } as S,
-      queries: { get: defineQuery({ select: (s: S, id: string) => s.byId[id] }) },
+      queries: {
+        get: {
+          input: z.string(),
+          output: z.string().optional(),
+          select: (s: S, id: string) => s.byId[id],
+        },
+      },
       commands: {
-        setName: async (input: { id: string; name: string }, ctx: ServiceCtx<S>) => {
-          await Promise.resolve();
-          ctx.self.setState((d) => {
-            d.byId[input.id] = input.name;
-          });
+        setName: {
+          input: z.object({ id: z.string(), name: z.string() }),
+          output: z.void(),
+          handler: async (input: { id: string; name: string }, ctx: ServiceCtx<S>) => {
+            await Promise.resolve();
+            ctx.self.setState((d) => {
+              d.byId[input.id] = input.name;
+            });
+          },
         },
       },
     });
@@ -167,16 +210,26 @@ describe('commands', () => {
 // -------------------- abstract commands --------------------
 
 describe('abstract commands', () => {
-  it('definition declares abstract command; registration supplies handler', async () => {
+  it('definition declares abstract command (handler missing); registration supplies handler', async () => {
     interface S {
       byId: Record<string, string>;
     }
-    const def = defineService({
+    const def = defineService()({
       id: 'test/abstract-impl',
       state: { byId: {} } as S,
-      queries: { get: defineQuery({ select: (s: S, id: string) => s.byId[id] }) },
+      queries: {
+        get: {
+          input: z.string(),
+          output: z.string().optional(),
+          select: (s: S, id: string) => s.byId[id],
+        },
+      },
       commands: {
-        load: defineCommand<{ id: string; name: string }>(),
+        // No `handler` — abstract.
+        load: {
+          input: z.object({ id: z.string(), name: z.string() }),
+          output: z.void(),
+        },
       },
     });
 
@@ -199,33 +252,38 @@ describe('abstract commands', () => {
   });
 
   it('throws at registration when an abstract command has no implementation', () => {
-    const def = defineService({
+    const def = defineService()({
       id: 'test/abstract-missing',
       state: {},
       queries: {},
       commands: {
-        load: defineCommand<{ id: string }>(),
+        load: {
+          input: z.object({ id: z.string() }),
+          output: z.void(),
+        },
       },
     });
 
-    expect(() => registerService(def)).toThrow(
-      /abstract and has no implementation at registration/
-    );
+    expect(() => registerService(def)).toThrow(/abstract.*no implementation at registration/);
   });
 
   it('registration can override a concrete command (env-specific body)', async () => {
     interface S {
       n: number;
     }
-    const def = defineService({
+    const def = defineService()({
       id: 'test/override-concrete',
       state: { n: 0 } as S,
-      queries: { get: defineQuery({ select: (s: S) => s.n }) },
+      queries: { get: { input: z.void(), output: z.number(), select: (s: S) => s.n } },
       commands: {
-        bump: (ctx: ServiceCtx<S>) =>
-          ctx.self.setState((d) => {
-            d.n += 1;
-          }),
+        bump: {
+          input: z.void(),
+          output: z.void(),
+          handler: (ctx: ServiceCtx<S>) =>
+            ctx.self.setState((d) => {
+              d.n += 1;
+            }),
+        },
       },
     });
 
@@ -246,12 +304,12 @@ describe('abstract commands', () => {
     interface S {
       ready: boolean;
     }
-    const def = defineService({
+    const def = defineService()({
       id: 'test/abstract-noinput',
       state: { ready: false } as S,
-      queries: { isReady: defineQuery({ select: (s: S) => s.ready }) },
+      queries: { isReady: { input: z.void(), output: z.boolean(), select: (s: S) => s.ready } },
       commands: {
-        boot: defineCommand(),
+        boot: { input: z.void(), output: z.void() },
       },
     });
 
@@ -279,24 +337,30 @@ describe('loaders', () => {
     }
     const generate = vi.fn(async (id: string) => `name-${id}`);
 
-    const def = defineService({
+    const def = defineService()({
       id: 'test/loader-fires',
       state: { byId: {} } as S,
       queries: {
-        getName: defineQuery({
+        getName: {
+          input: z.string(),
+          output: z.string().optional(),
           select: (s: S, id: string) => s.byId[id],
           preload: async (id: string, ctx: ServiceCtx<S>) => {
             await ctx.self.commands.load(id);
           },
           inputs: ['a', 'b'],
-        }),
+        },
       },
       commands: {
-        load: async (id: string, ctx: ServiceCtx<S>) => {
-          const name = await generate(id);
-          ctx.self.setState((d) => {
-            d.byId[id] = name;
-          });
+        load: {
+          input: z.string(),
+          output: z.void(),
+          handler: async (id: string, ctx: ServiceCtx<S>) => {
+            const name = await generate(id);
+            ctx.self.setState((d) => {
+              d.byId[id] = name;
+            });
+          },
         },
       },
     });
@@ -322,24 +386,30 @@ describe('loaders', () => {
       return `name-${id}`;
     });
 
-    const def = defineService({
+    const def = defineService()({
       id: 'test/loader-dedupe',
       state: { byId: {} } as S,
       queries: {
-        getName: defineQuery({
+        getName: {
+          input: z.string(),
+          output: z.string().optional(),
           select: (s: S, id: string) => s.byId[id],
           preload: async (id: string, ctx: ServiceCtx<S>) => {
             await ctx.self.commands.load(id);
           },
           inputs: ['a'],
-        }),
+        },
       },
       commands: {
-        load: async (id: string, ctx: ServiceCtx<S>) => {
-          const name = await generate(id);
-          ctx.self.setState((d) => {
-            d.byId[id] = name;
-          });
+        load: {
+          input: z.string(),
+          output: z.void(),
+          handler: async (id: string, ctx: ServiceCtx<S>) => {
+            const name = await generate(id);
+            ctx.self.setState((d) => {
+              d.byId[id] = name;
+            });
+          },
         },
       },
     });
@@ -360,24 +430,30 @@ describe('loaders', () => {
     }
     const generate = vi.fn(async (id: string) => `name-${id}`);
 
-    const def = defineService({
+    const def = defineService()({
       id: 'test/loader-per-input',
       state: { byId: {} } as S,
       queries: {
-        getName: defineQuery({
+        getName: {
+          input: z.string(),
+          output: z.string().optional(),
           select: (s: S, id: string) => s.byId[id],
           preload: async (id: string, ctx: ServiceCtx<S>) => {
             await ctx.self.commands.load(id);
           },
           inputs: ['a', 'b'],
-        }),
+        },
       },
       commands: {
-        load: async (id: string, ctx: ServiceCtx<S>) => {
-          const name = await generate(id);
-          ctx.self.setState((d) => {
-            d.byId[id] = name;
-          });
+        load: {
+          input: z.string(),
+          output: z.void(),
+          handler: async (id: string, ctx: ServiceCtx<S>) => {
+            const name = await generate(id);
+            ctx.self.setState((d) => {
+              d.byId[id] = name;
+            });
+          },
         },
       },
     });
@@ -402,23 +478,29 @@ describe('loaders', () => {
     }
     const generate = vi.fn(async () => 'loaded');
 
-    const def = defineService({
+    const def = defineService()({
       id: 'test/loader-on-call',
       state: { value: '' } as S,
       queries: {
-        get: defineQuery({
+        get: {
+          input: z.void(),
+          output: z.string(),
           select: (s: S) => s.value,
           preload: async (ctx: ServiceCtx<S>) => {
             await ctx.self.commands.load();
           },
-        }),
+        },
       },
       commands: {
-        load: async (ctx: ServiceCtx<S>) => {
-          const v = await generate();
-          ctx.self.setState((d) => {
-            d.value = v;
-          });
+        load: {
+          input: z.void(),
+          output: z.void(),
+          handler: async (ctx: ServiceCtx<S>) => {
+            const v = await generate();
+            ctx.self.setState((d) => {
+              d.value = v;
+            });
+          },
         },
       },
     });
@@ -435,15 +517,19 @@ describe('loaders', () => {
     interface S {
       x: number;
     }
-    const def = defineService({
+    const def = defineService()({
       id: 'test/loader-absent',
       state: { x: 0 } as S,
-      queries: { get: defineQuery({ select: (s: S) => s.x }) },
+      queries: { get: { input: z.void(), output: z.number(), select: (s: S) => s.x } },
       commands: {
-        bump: (ctx: ServiceCtx<S>) =>
-          ctx.self.setState((d) => {
-            d.x += 1;
-          }),
+        bump: {
+          input: z.void(),
+          output: z.void(),
+          handler: (ctx: ServiceCtx<S>) =>
+            ctx.self.setState((d) => {
+              d.x += 1;
+            }),
+        },
       },
     });
     const store = registerService(def);
@@ -463,10 +549,12 @@ describe('loaders', () => {
 
 describe('registerService / getService', () => {
   it('is idempotent on the same definition', () => {
-    const def = defineService({
+    const def = defineService()({
       id: 'test/registry-idem',
       state: { v: 1 },
-      queries: { get: defineQuery({ select: (s: { v: number }) => s.v }) },
+      queries: {
+        get: { input: z.void(), output: z.number(), select: (s: { v: number }) => s.v },
+      },
       commands: {},
     });
     const a = registerService(def);
@@ -475,13 +563,13 @@ describe('registerService / getService', () => {
   });
 
   it('throws if a different definition is registered against the same id', () => {
-    const a = defineService({
+    const a = defineService()({
       id: 'test/registry-conflict',
       state: {},
       queries: {},
       commands: {},
     });
-    const b = defineService({
+    const b = defineService()({
       id: 'test/registry-conflict',
       state: {},
       queries: {},
@@ -496,10 +584,16 @@ describe('registerService / getService', () => {
 
 describe('encapsulation', () => {
   it('public ServiceStore does not expose state, setState, or whole-state subscribe', () => {
-    const def = defineService({
+    const def = defineService()({
       id: 'test/encapsulation',
       state: { secret: 42 },
-      queries: { get: defineQuery({ select: (s: { secret: number }) => s.secret }) },
+      queries: {
+        get: {
+          input: z.void(),
+          output: z.number(),
+          select: (s: { secret: number }) => s.secret,
+        },
+      },
       commands: {},
     });
     const store = registerService(def);
@@ -513,5 +607,67 @@ describe('encapsulation', () => {
     // The only way in is queries / commands.
     expect(Object.keys(store).sort()).toEqual(['commands', 'definition', 'id', 'queries']);
     expect(store.queries.get()).toBe(42);
+  });
+});
+
+// -------------------- schema validation --------------------
+
+describe('schema validation', () => {
+  it('throws ServiceValidationError on bad command input', async () => {
+    const def = defineService()({
+      id: 'test/validate-cmd-in',
+      state: { n: 0 },
+      queries: {
+        get: { input: z.void(), output: z.number(), select: (s: { n: number }) => s.n },
+      },
+      commands: {
+        set: {
+          input: z.number(),
+          output: z.void(),
+          handler: (n: number, ctx: ServiceCtx<{ n: number }>) =>
+            ctx.self.setState((d) => {
+              d.n = n;
+            }),
+        },
+      },
+    });
+    const store = registerService(def);
+
+    await expect(store.commands.set('not-a-number' as unknown as number)).rejects.toThrow(
+      /Invalid input for command/
+    );
+  });
+
+  it('throws ServiceValidationError on bad query input', () => {
+    const def = defineService()({
+      id: 'test/validate-q-in',
+      state: { byId: { a: 'alpha' } } as { byId: Record<string, string> },
+      queries: {
+        getById: {
+          input: z.string(),
+          output: z.string().optional(),
+          select: (s: { byId: Record<string, string> }, id: string) => s.byId[id],
+        },
+      },
+      commands: {},
+    });
+    const store = registerService(def);
+
+    expect(() => store.queries.getById(42 as unknown as string)).toThrow(/Invalid input for query/);
+  });
+
+  it('throws ServiceValidationError on bad query output (catches schema regressions)', () => {
+    // Selector returns a string when the schema demands a number — schema wins.
+    const def = defineService()({
+      id: 'test/validate-q-out',
+      state: { v: 'oops' as unknown as number },
+      queries: {
+        get: { input: z.void(), output: z.number(), select: (s: { v: number }) => s.v },
+      },
+      commands: {},
+    });
+    const store = registerService(def);
+
+    expect(() => store.queries.get()).toThrow(/Invalid output for query/);
   });
 });

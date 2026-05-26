@@ -1,7 +1,8 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { z } from 'zod';
 
 import { buildServiceArtifacts } from './build-artifacts.ts';
-import { defineQuery, defineService } from './define-service.ts';
+import { defineService } from './define-service.ts';
 import { __resetServiceRegistry, registerService } from './register-service.ts';
 import {
   clearStaticTransport,
@@ -55,7 +56,9 @@ describe('buildServiceArtifacts', () => {
     const def = defineService<{ x: number }>()({
       id: 'test/no-loaders',
       state: { x: 1 },
-      queries: { get: defineQuery({ select: (s) => s.x }) },
+      queries: {
+        get: { input: z.void(), output: z.number(), select: (s: { x: number }) => s.x },
+      },
       commands: {},
     });
 
@@ -67,24 +70,30 @@ describe('buildServiceArtifacts', () => {
     interface S {
       byId: Record<string, { name: string }>;
     }
-    const def = defineService({
+    const def = defineService<S>()({
       id: 'test/loader-build',
       state: { byId: {} } as S,
       queries: {
-        getOne: defineQuery({
+        getOne: {
+          input: z.string(),
+          output: z.any(),
           select: (s: S, id: string) => s.byId[id],
           preload: async (id: string, ctx: ServiceCtx<S>) => {
             await ctx.self.commands.load(id);
           },
           inputs: ['a', 'b'],
-          path: (_ctx, id: string) => `entries/${id}.json`,
-        }),
+          path: (_ctx: import('./types.ts').BuildCtx, id: string) => `entries/${id}.json`,
+        },
       },
       commands: {
-        load: async (id: string, ctx: ServiceCtx<S>) => {
-          ctx.self.setState((d) => {
-            d.byId[id] = { name: `Loaded ${id}` };
-          });
+        load: {
+          input: z.string(),
+          output: z.void(),
+          handler: async (id: string, ctx: ServiceCtx<S>) => {
+            ctx.self.setState((d) => {
+              d.byId[id] = { name: `Loaded ${id}` };
+            });
+          },
         },
       },
     });
@@ -105,23 +114,29 @@ describe('buildServiceArtifacts', () => {
     interface S {
       byId: Record<string, string>;
     }
-    const def = defineService({
+    const def = defineService<S>()({
       id: 'test/loader-default-path',
       state: { byId: {} } as S,
       queries: {
-        getOne: defineQuery({
+        getOne: {
+          input: z.string(),
+          output: z.any(),
           select: (s: S, id: string) => s.byId[id],
           preload: async (id: string, ctx: ServiceCtx<S>) => {
             await ctx.self.commands.load(id);
           },
           inputs: ['x', 'y'],
-        }),
+        },
       },
       commands: {
-        load: async (id: string, ctx: ServiceCtx<S>) => {
-          ctx.self.setState((d) => {
-            d.byId[id] = `name-${id}`;
-          });
+        load: {
+          input: z.string(),
+          output: z.void(),
+          handler: async (id: string, ctx: ServiceCtx<S>) => {
+            ctx.self.setState((d) => {
+              d.byId[id] = `name-${id}`;
+            });
+          },
         },
       },
     });
@@ -134,24 +149,30 @@ describe('buildServiceArtifacts', () => {
     interface S {
       byId: Record<string, string>;
     }
-    const def = defineService({
+    const def = defineService<S>()({
       id: 'test/single-file',
       state: { byId: {} } as S,
       queries: {
         // A no-input preload: paired with a "whole" query; produces a single file.
-        allStatuses: defineQuery({
+        allStatuses: {
+          input: z.void(),
+          output: z.any(),
           select: (s: S) => s.byId,
           preload: async (ctx: ServiceCtx<S>) => {
             await ctx.self.commands.loadAll();
           },
           path: () => 'statuses.json',
-        }),
+        },
       },
       commands: {
-        loadAll: async (ctx: ServiceCtx<S>) => {
-          ctx.self.setState((d) => {
-            d.byId = { 'story-1': 'pass', 'story-2': 'fail' };
-          });
+        loadAll: {
+          input: z.void(),
+          output: z.void(),
+          handler: async (ctx: ServiceCtx<S>) => {
+            ctx.self.setState((d) => {
+              d.byId = { 'story-1': 'pass', 'story-2': 'fail' };
+            });
+          },
         },
       },
     });
@@ -169,35 +190,47 @@ describe('buildServiceArtifacts', () => {
       cats: Record<string, true>;
       dogs: Record<string, true>;
     }
-    const def = defineService({
+    const def = defineService<S>()({
       id: 'test/shared-path',
       state: { cats: {}, dogs: {} } as S,
       queries: {
-        allCats: defineQuery({
+        allCats: {
+          input: z.void(),
+          output: z.any(),
           select: (s: S) => s.cats,
           preload: async (ctx: ServiceCtx<S>) => {
             await ctx.self.commands.loadCats();
           },
           path: () => 'pets.json',
-        }),
-        allDogs: defineQuery({
+        },
+        allDogs: {
+          input: z.void(),
+          output: z.any(),
           select: (s: S) => s.dogs,
           preload: async (ctx: ServiceCtx<S>) => {
             await ctx.self.commands.loadDogs();
           },
           path: () => 'pets.json',
-        }),
+        },
       },
       commands: {
-        loadCats: async (ctx: ServiceCtx<S>) => {
-          ctx.self.setState((d) => {
-            d.cats = { whiskers: true, mittens: true };
-          });
+        loadCats: {
+          input: z.void(),
+          output: z.void(),
+          handler: async (ctx: ServiceCtx<S>) => {
+            ctx.self.setState((d) => {
+              d.cats = { whiskers: true, mittens: true };
+            });
+          },
         },
-        loadDogs: async (ctx: ServiceCtx<S>) => {
-          ctx.self.setState((d) => {
-            d.dogs = { rex: true };
-          });
+        loadDogs: {
+          input: z.void(),
+          output: z.void(),
+          handler: async (ctx: ServiceCtx<S>) => {
+            ctx.self.setState((d) => {
+              d.dogs = { rex: true };
+            });
+          },
         },
       },
     });
@@ -215,22 +248,28 @@ describe('buildServiceArtifacts', () => {
     interface S {
       items: number[];
     }
-    const def = defineService({
+    const def = defineService<S>()({
       id: 'test/array-index-rejected',
-      state: { items: [] } as S,
+      state: { items: [] },
       queries: {
-        getItems: defineQuery({
+        getItems: {
+          input: z.void(),
+          output: z.any(),
           select: (s: S) => s.items,
           preload: async (ctx: ServiceCtx<S>) => {
             await ctx.self.commands.push(1);
           },
-        }),
+        },
       },
       commands: {
-        push: async (n: number, ctx: ServiceCtx<S>) => {
-          ctx.self.setState((d) => {
-            d.items.push(n);
-          });
+        push: {
+          input: z.number(),
+          output: z.void(),
+          handler: async (n: number, ctx: ServiceCtx<S>) => {
+            ctx.self.setState((d) => {
+              d.items.push(n);
+            });
+          },
         },
       },
     });
@@ -242,15 +281,17 @@ describe('buildServiceArtifacts', () => {
     interface S {
       byKey: Record<string, string>;
     }
-    type Key = { kind: string; id: number };
-    const def = defineService({
+    const keySchema = z.object({ kind: z.string(), id: z.number() });
+    const def = defineService<S>()({
       id: 'test/hashed-default-path',
-      state: { byKey: {} } as S,
+      state: { byKey: {} },
       queries: {
-        getByKey: defineQuery({
-          select: (s: S, k: Key) => s.byKey[`${k.kind}:${k.id}`],
-          preload: async (k: Key, ctx: ServiceCtx<S>) => {
-            ctx.self.setState((d) => {
+        getByKey: {
+          input: keySchema,
+          output: z.string(),
+          select: (s: S, k: z.infer<typeof keySchema>) => s.byKey[`${k.kind}:${k.id}`],
+          preload: async (k: z.infer<typeof keySchema>, ctx: ServiceCtx<S>) => {
+            ctx.self.setState((d: S) => {
               d.byKey[`${k.kind}:${k.id}`] = `${k.kind}-${k.id}`;
             });
           },
@@ -259,7 +300,7 @@ describe('buildServiceArtifacts', () => {
             { kind: 'cat', id: 1 }, // duplicate — should map to the same file, merged
             { kind: 'dog', id: 2 },
           ],
-        }),
+        },
       },
       commands: {},
     });
@@ -274,28 +315,34 @@ describe('buildServiceArtifacts', () => {
     expect(filenames[0]).not.toBe(filenames[1]);
   });
 
-  it('reads preload+inputs+path from a defineQuery on definition.queries (new form)', async () => {
+  it('reads preload+inputs+path from inline query definitions on definition.queries', async () => {
     interface S {
       byId: Record<string, { name: string }>;
     }
-    const def = defineService({
+    const def = defineService<S>()({
       id: 'test/query-object-form',
       state: { byId: {} } as S,
       queries: {
-        getOne: defineQuery({
+        getOne: {
+          input: z.string(),
+          output: z.any(),
           select: (s: S, id: string) => s.byId[id],
           preload: async (id: string, ctx: ServiceCtx<S>) => {
             await ctx.self.commands.load(id);
           },
           inputs: ['a', 'b'],
-          path: (_ctx, id: string) => `entries/${id}.json`,
-        }),
+          path: (_ctx: import('./types.ts').BuildCtx, id: string) => `entries/${id}.json`,
+        },
       },
       commands: {
-        load: async (id: string, ctx: ServiceCtx<S>) => {
-          ctx.self.setState((d) => {
-            d.byId[id] = { name: `loaded ${id}` };
-          });
+        load: {
+          input: z.string(),
+          output: z.void(),
+          handler: async (id: string, ctx: ServiceCtx<S>) => {
+            ctx.self.setState((d) => {
+              d.byId[id] = { name: `loaded ${id}` };
+            });
+          },
         },
       },
     });
@@ -316,23 +363,29 @@ describe('buildServiceArtifacts', () => {
     interface S {
       byId: Record<string, string>;
     }
-    const def = defineService({
+    const def = defineService<S>()({
       id: 'test/query-object-no-input',
       state: { byId: {} } as S,
       queries: {
-        allStatuses: defineQuery({
+        allStatuses: {
+          input: z.void(),
+          output: z.any(),
           select: (s: S) => s.byId,
           preload: async (ctx: ServiceCtx<S>) => {
             await ctx.self.commands.loadAll();
           },
           path: () => 'statuses.json',
-        }),
+        },
       },
       commands: {
-        loadAll: async (ctx: ServiceCtx<S>) => {
-          ctx.self.setState((d) => {
-            d.byId = { 'story-1': 'pass', 'story-2': 'fail' };
-          });
+        loadAll: {
+          input: z.void(),
+          output: z.void(),
+          handler: async (ctx: ServiceCtx<S>) => {
+            ctx.self.setState((d) => {
+              d.byId = { 'story-1': 'pass', 'story-2': 'fail' };
+            });
+          },
         },
       },
     });
@@ -348,23 +401,29 @@ describe('buildServiceArtifacts', () => {
     interface S {
       byId: Record<string, true>;
     }
-    const def = defineService({
+    const def = defineService<S>()({
       id: 'test/loader-enumerate-fn',
       state: { byId: {} } as S,
       queries: {
-        getOne: defineQuery({
-          select: (s: S, id: string) => s.byId[id],
+        getOne: {
+          input: z.string(),
+          output: z.any(),
+          select: (s: S, id: string): true | undefined => s.byId[id],
           preload: async (id: string, ctx: ServiceCtx<S>) => {
             await ctx.self.commands.load(id);
           },
           inputs: async () => ['p', 'q', 'r'],
-        }),
+        },
       },
       commands: {
-        load: async (id: string, ctx: ServiceCtx<S>) => {
-          ctx.self.setState((d) => {
-            d.byId[id] = true;
-          });
+        load: {
+          input: z.string(),
+          output: z.void(),
+          handler: async (id: string, ctx: ServiceCtx<S>) => {
+            ctx.self.setState((d) => {
+              d.byId[id] = true;
+            });
+          },
         },
       },
     });
@@ -386,24 +445,30 @@ describe('runtime loader branching', () => {
       byId: Record<string, string>;
     }
     const realLoadCalls: string[] = [];
-    const def = defineService({
+    const def = defineService<S>()({
       id: 'test/loader-live',
       state: { byId: {} } as S,
       queries: {
-        getOne: defineQuery({
+        getOne: {
+          input: z.string(),
+          output: z.any(),
           select: (s: S, id: string) => s.byId[id],
           preload: async (id: string, ctx: ServiceCtx<S>) => {
             await ctx.self.commands.load(id);
           },
           inputs: ['a'],
-        }),
+        },
       },
       commands: {
-        load: async (id: string, ctx: ServiceCtx<S>) => {
-          realLoadCalls.push(id);
-          ctx.self.setState((d) => {
-            d.byId[id] = `live-${id}`;
-          });
+        load: {
+          input: z.string(),
+          output: z.void(),
+          handler: async (id: string, ctx: ServiceCtx<S>) => {
+            realLoadCalls.push(id);
+            ctx.self.setState((d) => {
+              d.byId[id] = `live-${id}`;
+            });
+          },
         },
       },
     });
@@ -423,25 +488,31 @@ describe('runtime loader branching', () => {
       byId: Record<string, string>;
     }
     const realLoadCalls: string[] = [];
-    const def = defineService({
+    const def = defineService<S>()({
       id: 'test/loader-static',
       state: { byId: {} } as S,
       queries: {
-        getOne: defineQuery({
+        getOne: {
+          input: z.string(),
+          output: z.any(),
           select: (s: S, id: string) => s.byId[id],
           preload: async (id: string, ctx: ServiceCtx<S>) => {
             await ctx.self.commands.load(id);
           },
           inputs: ['a'],
-          path: (_c, id: string) => `entries/${id}.json`,
-        }),
+          path: (_c: import('./types.ts').BuildCtx, id: string) => `entries/${id}.json`,
+        },
       },
       commands: {
-        load: async (id: string, ctx: ServiceCtx<S>) => {
-          realLoadCalls.push(id);
-          ctx.self.setState((d) => {
-            d.byId[id] = `live-${id}`;
-          });
+        load: {
+          input: z.string(),
+          output: z.void(),
+          handler: async (id: string, ctx: ServiceCtx<S>) => {
+            realLoadCalls.push(id);
+            ctx.self.setState((d) => {
+              d.byId[id] = `live-${id}`;
+            });
+          },
         },
       },
     });
@@ -467,24 +538,30 @@ describe('runtime loader branching', () => {
       byId: Record<string, string>;
     }
     const realLoadCalls: string[] = [];
-    const def = defineService({
+    const def = defineService<S>()({
       id: 'test/loader-static-fallback',
       state: { byId: {} } as S,
       queries: {
-        getOne: defineQuery({
+        getOne: {
+          input: z.string(),
+          output: z.any(),
           select: (s: S, id: string) => s.byId[id],
           preload: async (id: string, ctx: ServiceCtx<S>) => {
             await ctx.self.commands.load(id);
           },
           inputs: ['a'],
-        }),
+        },
       },
       commands: {
-        load: async (id: string, ctx: ServiceCtx<S>) => {
-          realLoadCalls.push(id);
-          ctx.self.setState((d) => {
-            d.byId[id] = `live-${id}`;
-          });
+        load: {
+          input: z.string(),
+          output: z.void(),
+          handler: async (id: string, ctx: ServiceCtx<S>) => {
+            realLoadCalls.push(id);
+            ctx.self.setState((d) => {
+              d.byId[id] = `live-${id}`;
+            });
+          },
         },
       },
     });
@@ -505,24 +582,30 @@ describe('runtime loader branching', () => {
     interface S {
       byId: Record<string, string>;
     }
-    const def = defineService({
+    const def = defineService<S>()({
       id: 'test/loader-lazy',
       state: { byId: {} } as S,
       queries: {
-        getOne: defineQuery({
+        getOne: {
+          input: z.string(),
+          output: z.any(),
           select: (s: S, id: string) => s.byId[id],
           preload: async (id: string, ctx: ServiceCtx<S>) => {
             await ctx.self.commands.load(id);
           },
           inputs: ['a', 'b', 'c'],
-          path: (_c, id: string) => `entries/${id}.json`,
-        }),
+          path: (_c: import('./types.ts').BuildCtx, id: string) => `entries/${id}.json`,
+        },
       },
       commands: {
-        load: async (id: string, ctx: ServiceCtx<S>) => {
-          ctx.self.setState((d) => {
-            d.byId[id] = `live-${id}`;
-          });
+        load: {
+          input: z.string(),
+          output: z.void(),
+          handler: async (id: string, ctx: ServiceCtx<S>) => {
+            ctx.self.setState((d) => {
+              d.byId[id] = `live-${id}`;
+            });
+          },
         },
       },
     });
@@ -571,25 +654,31 @@ describe('build → load round trip', () => {
       byComponentId: Record<string, { description: string }>;
     }
     const realLoadCalls: string[] = [];
-    const def = defineService({
+    const def = defineService<S>()({
       id: 'test/roundtrip-docgen',
       state: { byComponentId: {} } as S,
       queries: {
-        getComponentDocgenInfo: defineQuery({
+        getComponentDocgenInfo: {
+          input: z.string(),
+          output: z.any(),
           select: (s: S, id: string) => s.byComponentId[id],
           preload: async (id: string, ctx: ServiceCtx<S>) => {
             await ctx.self.commands.generate(id);
           },
           inputs: ['Button', 'Tabs'],
-          path: (_c, id: string) => `docgen-${id}.json`,
-        }),
+          path: (_c: import('./types.ts').BuildCtx, id: string) => `docgen-${id}.json`,
+        },
       },
       commands: {
-        generate: async (id: string, ctx: ServiceCtx<S>) => {
-          realLoadCalls.push(id);
-          ctx.self.setState((d) => {
-            d.byComponentId[id] = { description: `Docgen for ${id}` };
-          });
+        generate: {
+          input: z.string(),
+          output: z.void(),
+          handler: async (id: string, ctx: ServiceCtx<S>) => {
+            realLoadCalls.push(id);
+            ctx.self.setState((d) => {
+              d.byComponentId[id] = { description: `Docgen for ${id}` };
+            });
+          },
         },
       },
     });
@@ -620,25 +709,35 @@ describe('build → load round trip', () => {
       byStoryId: Record<string, string>;
     }
     const realLoadCalls: number[] = [];
-    const def = defineService({
+    const def = defineService<S>()({
       id: 'test/roundtrip-single-file',
       state: { byStoryId: {} } as S,
       queries: {
-        allStatuses: defineQuery({
+        allStatuses: {
+          input: z.void(),
+          output: z.any(),
           select: (s: S) => s.byStoryId,
           preload: async (ctx: ServiceCtx<S>) => {
             await ctx.self.commands.loadAll();
           },
           path: () => 'statuses.json',
-        }),
-        getStoryStatus: defineQuery({ select: (s: S, id: string) => s.byStoryId[id] }),
+        },
+        getStoryStatus: {
+          input: z.string(),
+          output: z.any(),
+          select: (s: S, id: string) => s.byStoryId[id],
+        },
       },
       commands: {
-        loadAll: async (ctx: ServiceCtx<S>) => {
-          realLoadCalls.push(realLoadCalls.length + 1);
-          ctx.self.setState((d) => {
-            d.byStoryId = { 'story-1': 'pass', 'story-2': 'fail' };
-          });
+        loadAll: {
+          input: z.void(),
+          output: z.void(),
+          handler: async (ctx: ServiceCtx<S>) => {
+            realLoadCalls.push(realLoadCalls.length + 1);
+            ctx.self.setState((d) => {
+              d.byStoryId = { 'story-1': 'pass', 'story-2': 'fail' };
+            });
+          },
         },
       },
     });

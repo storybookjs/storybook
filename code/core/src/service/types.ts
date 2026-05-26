@@ -1,26 +1,69 @@
 /**
  * Core type definitions for the Open Service Architecture.
  *
- * The architecture has four primitives:
- *  - **state**: a single in-memory object per service, *private* to the service. Only the
- *    service's own handlers can read or write it; consumers never see it directly.
- *  - **queries**: pure, synchronous selectors over state. The only read API. Side-effect free.
- *  - **commands**: write+read functions that mutate state via `ctx.self.setState`. Async OK.
- *    The only write API.
- *  - **loaders**: the read-triggered backing for a query. Statically buildable.
+ * Four primitives:
+ *  - **state**: a single in-memory object per service, *private* to the service.
+ *  - **queries**: schema-validated, synchronous selectors over state. Read-only contract.
+ *  - **commands**: schema-validated, possibly async writers that mutate state via `ctx.self.setState`.
+ *  - **query preloads**: optional read-triggered population, statically pre-renderable.
  *
- * A query and its loader share a name — `queries.getX` is backed by `load.getX`.
+ * Schemas are required: every query and every command declares an `input` and `output` schema
+ * (Standard Schema v1 — zod, valibot, arktype all satisfy). The runtime validates at the
+ * boundary; types flow from the schemas via `StandardSchemaV1.InferInput / InferOutput`.
  *
  * Definition vs. registration:
- *  - A service *definition* declares the state shape, queries, commands, and loaders. Commands
- *    can be declared *abstractly* via `defineCommand<TInput>()` — no implementation yet.
- *  - At *registration* time, the abstract commands receive their implementations. Concrete
- *    commands from the definition can also be overridden.
- *
- * That split lets a single definition be imported into multiple environments (manager,
- * preview, server) with environment-specific command bodies, while keeping the shape (state,
- * queries, command signatures) shared.
+ *  - A service *definition* declares state, queries, and commands. A command whose `handler`
+ *    field is missing is **abstract** — its implementation must be supplied at registration.
+ *  - At *registration* time, abstract handlers land and any concrete handlers can be overridden.
+ *    That split lets one shared definition run in multiple environments (manager / preview /
+ *    server) with environment-specific bodies.
  */
+
+import type { StandardSchemaV1 } from '@standard-schema/spec';
+import type { z } from 'zod';
+
+// -------------------- schema utility types --------------------
+
+/** Standard Schema v1 constraint. Any zod / valibot / arktype schema satisfies it. */
+export type AnySchema = StandardSchemaV1<unknown, unknown>;
+
+/**
+ * Raw caller-facing value type accepted by a schema.
+ *
+ * Zod types are resolved via `z.input<>` — `@standard-schema/spec`'s `InferInput` does not
+ * connect to Zod's `~standard` metadata, so using it alone yields `unknown` for `z.string()` etc.
+ */
+export type InferSchemaInput<S extends AnySchema> = S extends z.ZodTypeAny
+  ? z.input<S>
+  : StandardSchemaV1.InferInput<S>;
+
+/** Parsed value type produced by a schema after validation. */
+export type InferSchemaOutput<S extends AnySchema> = S extends z.ZodTypeAny
+  ? z.infer<S>
+  : StandardSchemaV1.InferOutput<S>;
+
+/**
+ * True when a schema represents a no-input operation (`z.void()` → `void`, not `undefined`).
+ *
+ * We must not use `[undefined] extends [void]` — in TypeScript that is true, but `[void] extends
+ * [undefined]` is false, which incorrectly classifies `z.void()` as input-keyed.
+ */
+type IsNoInputSchema<S extends AnySchema> = [InferSchemaInput<S>] extends [never]
+  ? false
+  : [InferSchemaInput<S>] extends [undefined]
+    ? true
+    : [InferSchemaInput<S>] extends [void]
+      ? true
+      : false;
+
+/**
+ * Bivariant function type — keeps handler/selector maps assignable without collapsing parameter
+ * types to `unknown` when definitions are checked against `AnyQueryDef` / `AnyCommandDef`.
+ * Borrowed from the open-service PR (#34860).
+ */
+type BivariantCallback<TArgs extends unknown[], TResult> = {
+  bivarianceHack(...args: TArgs): TResult;
+}['bivarianceHack'];
 
 // -------------------- state mutation --------------------
 
@@ -31,116 +74,140 @@
  */
 export type StateMutator<TState> = (draft: TState) => void;
 
-// -------------------- command handlers --------------------
-
-/**
- * A concrete command writes state via `ctx.self.setState`. May be async.
- * Either `(ctx)` (no input) or `(input, ctx)` (with input).
- */
-export type CommandHandler<TState, TInput> = [TInput] extends [void]
-  ? (ctx: ServiceCtx<TState>) => void | Promise<void>
-  : (input: TInput, ctx: ServiceCtx<TState>) => void | Promise<void>;
-
-/**
- * An abstract command — declared at definition time, implementation provided at registration.
- *
- * Carries phantom `TInput`/`TOutput` types so consumer-side `store.commands.foo(input)` calls
- * remain type-safe even though the body lives in the registration overrides.
- */
-export interface AbstractCommand<TInput = void, TOutput = void> {
-  readonly __kind: 'abstract-command';
-  /** Phantom type slot. Never set at runtime. */
-  readonly _input?: TInput;
-  /** Phantom type slot. Never set at runtime. */
-  readonly _output?: TOutput;
-}
-
-/** A command entry in the definition is either a concrete handler or an abstract marker. */
-export type CommandEntry = ((...args: any[]) => any) | AbstractCommand<any, any>;
-
 // -------------------- build-time context --------------------
 
 /**
- * Build-time context passed to a query's `inputs` and `path` callbacks.
- * Will grow to include `ctx.runtime[serviceId].queries.x()` so enumeration can read from
- * other services (e.g. the story index for docgen).
+ * Build-time context passed to a query's `inputs` and `path` callbacks. Will grow to include
+ * `ctx.runtime[serviceId].queries.x()` so enumeration can read from other services.
  */
 export interface BuildCtx {
   readonly isBuild: true;
 }
 
-// -------------------- context handed to commands & query preloads --------------------
+// -------------------- runtime ctx handed to commands & query preloads --------------------
 
-/**
- * Runtime context handed to command and loader bodies.
- *
- * `ctx.self` exposes the running service's own state, setState, queries and commands.
- * Crucially, `ctx.self` is the ONLY way to touch state — there's no public state accessor
- * on the consumer-facing `ServiceStore`.
- */
 export interface ServiceCtx<TState> {
   readonly self: SelfHandle<TState>;
 }
 
 export interface SelfHandle<TState> {
-  /** Read the current state. Available only inside command/loader bodies. */
+  /** Read the current state. Available only inside command/preload bodies. */
   getState(): TState;
   /**
-   * Mutate state via an Immer draft. Available only inside command/loader bodies.
+   * Mutate state via an Immer draft. Available only inside command/preload bodies.
    *
    * The signature is inlined (rather than `mutator: StateMutator<TState>`) to give TypeScript
-   * the most direct contextual-typing path: the draft argument of the inner lambda inherits
-   * `TState` from the outer `ServiceCtx<TState>` without going through a type alias.
+   * the most direct contextual-typing path for the draft.
    */
   setState(mutator: (draft: TState) => void): void;
   /** Callable commands API on the service itself. Loose-typed inside the ctx. */
-  readonly commands: Readonly<Record<string, (...args: any[]) => Promise<void>>>;
+  readonly commands: Readonly<Record<string, (input?: any) => Promise<any>>>;
   /** Callable queries API on the service itself. */
-  readonly queries: Readonly<Record<string, (...args: any[]) => any>>;
+  readonly queries: Readonly<Record<string, (input?: any) => any>>;
 }
 
-// -------------------- query entries --------------------
+// -------------------- query definition --------------------
 
 /**
- * A query entry in the definition: a `select` selector plus optional static-build metadata
- * (`preload`, `inputs`, `path`). Authored via `defineQuery({ select, ... })`.
+ * A query is a schema-validated selector over state.
+ *
+ *  - `input` and `output` are Standard Schema v1 schemas.
+ *  - `select` derives the output value from state and (optionally) a parsed input. Pure and sync.
+ *  - `preload` (optional) is a read-triggered side effect that populates state; the static
+ *    build runs it for every enumerated input.
+ *  - `inputs` (optional) enumerates inputs the static build pre-renders.
+ *  - `path` (optional) controls the per-input filename.
+ *
+ * No-input queries are encoded by `input: <void schema>` (e.g. `z.void()`); `InferSchemaOutput`
+ * resolves to `void`, and the `select`/`preload`/`path` signatures collapse to their no-input
+ * variants automatically.
  */
-export type QueryDef<TState = any> = {
-  /** Pure synchronous selector over state. */
-  readonly select: (state: TState, ...rest: any[]) => any;
-  /**
-   * Optional read-triggered side effect that populates state for this query. Typically calls
-   * one or more commands. The runtime fires it on first query subscription/read per input.
-   * Skipped in static mode if a transport-fetched diff is available.
-   */
-  readonly preload?: (...args: any[]) => void | Promise<void>;
-  /**
-   * Optional enumeration of inputs the static build should pre-render. An array, an async
-   * function returning an array, or `undefined` for no-input queries.
-   */
+export interface QueryDef<
+  TState = any,
+  TInputSchema extends AnySchema = AnySchema,
+  TOutputSchema extends AnySchema = AnySchema,
+> {
+  readonly input: TInputSchema;
+  readonly output: TOutputSchema;
+  readonly select: IsNoInputSchema<TInputSchema> extends true
+    ? (state: TState) => InferSchemaOutput<TOutputSchema>
+    : (state: TState, input: InferSchemaOutput<TInputSchema>) => InferSchemaOutput<TOutputSchema>;
+  readonly preload?: IsNoInputSchema<TInputSchema> extends true
+    ? (ctx: ServiceCtx<TState>) => void | Promise<void>
+    : (input: InferSchemaOutput<TInputSchema>, ctx: ServiceCtx<TState>) => void | Promise<void>;
   readonly inputs?:
-    | readonly any[]
-    | ((ctx: BuildCtx) => readonly any[] | Promise<readonly any[]>);
-  /**
-   * Optional filename for this query's per-input static artifact. If absent, the query has no
-   * static artifact regardless of whether `inputs` is declared. Defaults follow the same rules
-   * applied: `<queryName>.json` for no-input, `<queryName>-<input>.json`
-   * for string inputs.
-   */
-  readonly path?: (...args: any[]) => string;
+    | readonly InferSchemaInput<TInputSchema>[]
+    | ((
+        ctx: BuildCtx
+      ) =>
+        | readonly InferSchemaInput<TInputSchema>[]
+        | Promise<readonly InferSchemaInput<TInputSchema>[]>);
+  readonly path?: IsNoInputSchema<TInputSchema> extends true
+    ? (ctx: BuildCtx) => string
+    : (ctx: BuildCtx, input: InferSchemaOutput<TInputSchema>) => string;
 }
+
+// -------------------- command definition --------------------
+
+/**
+ * A command is a schema-validated writer.
+ *
+ *  - `input` and `output` are Standard Schema v1 schemas.
+ *  - `handler` (optional) is the body. If omitted the command is **abstract** and registration
+ *    must supply a handler; the runtime throws at construction time if it's still missing.
+ *  - Handlers may be sync or async; the runtime always returns `Promise<output>` to callers.
+ */
+export interface CommandDef<
+  TState = any,
+  TInputSchema extends AnySchema = AnySchema,
+  TOutputSchema extends AnySchema = AnySchema,
+> {
+  readonly input: TInputSchema;
+  readonly output: TOutputSchema;
+  readonly handler?: IsNoInputSchema<TInputSchema> extends true
+    ? (
+        ctx: ServiceCtx<TState>
+      ) => InferSchemaInput<TOutputSchema> | Promise<InferSchemaInput<TOutputSchema>>
+    : (
+        input: InferSchemaOutput<TInputSchema>,
+        ctx: ServiceCtx<TState>
+      ) => InferSchemaInput<TOutputSchema> | Promise<InferSchemaInput<TOutputSchema>>;
+}
+
+// -------------------- map constraints --------------------
+
+/**
+ * Any query definition bound to `TState`. Used as the record value constraint in `QueriesMap`.
+ * Handlers are bivariant so concrete parameter types survive assignability checks.
+ */
+export type AnyQueryDef<TState = any> = {
+  readonly input: AnySchema;
+  readonly output: AnySchema;
+  readonly select: BivariantCallback<[state: TState, input?: unknown], unknown>;
+  readonly preload?: BivariantCallback<
+    [input: unknown, ctx: ServiceCtx<TState>],
+    void | Promise<void>
+  >;
+  readonly inputs?:
+    | readonly unknown[]
+    | ((ctx: BuildCtx) => readonly unknown[] | Promise<readonly unknown[]>);
+  readonly path?: BivariantCallback<[ctx: BuildCtx, input?: unknown], string>;
+};
+
+/** Any command definition bound to `TState`. */
+export type AnyCommandDef<TState = any> = {
+  readonly input: AnySchema;
+  readonly output: AnySchema;
+  readonly handler?: BivariantCallback<
+    [input: unknown, ctx: ServiceCtx<TState>],
+    unknown | Promise<unknown>
+  >;
+};
+
+export type QueriesMap<TState> = Record<string, AnyQueryDef<TState>>;
+export type CommandsMap<TState> = Record<string, AnyCommandDef<TState>>;
 
 // -------------------- service definition --------------------
-
-/**
- * Map types used as constraints on `ServiceDefinition`. They're intentionally permissive — the
- * runtime detects arity from the selector's `length` and abstract commands from their `__kind`
- * marker, so the type system doesn't need to enforce signatures here. The curried
- * `defineService<S>()` form layers stricter shapes on top of these constraints to recover
- * contextual typing for `state` and `ctx`.
- */
-export type QueriesMap<TState> = Record<string, QueryDef<TState>>;
-export type CommandsMap<TState> = Record<string, CommandEntry>;
 
 export interface ServiceDefinition<
   TState = unknown,
@@ -149,7 +216,7 @@ export interface ServiceDefinition<
 > {
   /** Globally unique service id. Convention: `core/<name>` for built-ins, `<addonId>/<name>` for addons. */
   readonly id: string;
-  /** Initial state. Used as the starting value of every runtime constructed from this definition. */
+  /** Initial state. */
   readonly state: TState;
   readonly queries: TQueries;
   readonly commands: TCommands;
@@ -161,72 +228,60 @@ export interface ServiceDefinition<
  * Registration-time options. Provides handlers for abstract commands declared in the definition,
  * and lets you override concrete command handlers if the same definition is used in multiple
  * environments with environment-specific bodies.
- *
- * Note: there is no per-registration static transport. The architecture maintains a single
- * global transport (see `static-transport.ts`). Services never see or configure it.
  */
 export interface ServiceRegistration<TDef extends ServiceDefinition<any, any, any>> {
   commands?: CommandOverrides<TDef>;
 }
 
-// `ServiceStaticTransport` lives in `static-transport.ts`. Re-export here for convenience of
-// downstream importers that only reach for `./types.ts`.
+// `ServiceStaticTransport` lives in `static-transport.ts`. Re-export here for convenience.
 export type { ServiceStaticTransport } from './static-transport.ts';
 
+/**
+ * Per-command override map. For each command, the override matches the `handler` shape the
+ * command's input/output schemas imply. Optional throughout — abstract commands MUST be
+ * supplied here; concrete commands MAY be overridden.
+ */
 export type CommandOverrides<TDef extends ServiceDefinition<any, any, any>> = {
-  [K in keyof TDef['commands']]?: TDef['commands'][K] extends AbstractCommand<infer I, infer O>
-    ? [I] extends [void]
-      ? (ctx: ServiceCtx<TDef['state']>) => O | Promise<O>
-      : (input: I, ctx: ServiceCtx<TDef['state']>) => O | Promise<O>
-    : (...args: any[]) => any;
+  [K in keyof TDef['commands']]?: TDef['commands'][K] extends CommandDef<
+    TDef['state'],
+    infer TIn,
+    infer TOut
+  >
+    ? IsNoInputSchema<TIn> extends true
+      ? (ctx: ServiceCtx<TDef['state']>) => InferSchemaInput<TOut> | Promise<InferSchemaInput<TOut>>
+      : (
+          input: InferSchemaOutput<TIn>,
+          ctx: ServiceCtx<TDef['state']>
+        ) => InferSchemaInput<TOut> | Promise<InferSchemaInput<TOut>>
+    : never;
 };
 
-// -------------------- input/output inference --------------------
+// -------------------- input/output inference for consumers --------------------
 
 /**
- * Param/return inference for queries and commands uses `Parameters<>` tuples so we can detect
- * actual arity. Plain `Q extends (state, input: infer I) => any` always succeeds for any function
- * because functions are contravariant in their parameters — `(a) => b` is a subtype of
- * `(a, c) => b`. The tuple form gives us the *declared* parameter list and lets us distinguish
- * 1-arg from 2-arg precisely.
- *
- * For queries, we additionally unwrap the object form `{ select, ... }` to look at `select`'s
- * signature. Both `(state, input) => result` and `{ select: (state, input) => result }` produce
- * the same input/output types.
+ * What a consumer passes in when calling a query. The raw caller-facing input, inferred from
+ * the query's `input` schema via `StandardSchemaV1.InferInput`. The runtime validates this and
+ * hands the parsed value to `select`.
  */
-type SelectorOf<Q> = Q extends { select: infer S } ? S : Q;
+export type InputOfQuery<Q> =
+  Q extends QueryDef<any, infer TIn, any> ? InferSchemaInput<TIn> : never;
 
-type InputOfSelector<F> = F extends (...args: infer P) => any
-  ? P extends readonly [any, infer I]
-    ? I
-    : void
-  : void;
+/** What a consumer gets back from a query. The parsed output, post-validation. */
+export type OutputOfQuery<Q> =
+  Q extends QueryDef<any, any, infer TOut> ? InferSchemaOutput<TOut> : never;
 
-type OutputOfSelector<F> = F extends (state: any, ...args: any[]) => infer R ? R : never;
-
-export type InputOfQuery<Q> = InputOfSelector<SelectorOf<Q>>;
-export type OutputOfQuery<Q> = OutputOfSelector<SelectorOf<Q>>;
-
+/** What a consumer passes in when calling a command. */
 export type InputOfCommand<C> =
-  C extends AbstractCommand<infer I, any>
-    ? I
-    : C extends (...args: infer P) => any
-      ? P extends readonly [infer I, any]
-        ? I
-        : void
-      : void;
+  C extends CommandDef<any, infer TIn, any> ? InferSchemaInput<TIn> : never;
 
+/** What a consumer gets back from a command (after output-schema validation). */
 export type OutputOfCommand<C> =
-  C extends AbstractCommand<any, infer O>
-    ? O
-    : C extends (...args: any[]) => infer R
-      ? Awaited<R>
-      : void;
+  C extends CommandDef<any, any, infer TOut> ? InferSchemaOutput<TOut> : never;
 
 // -------------------- consumer-facing service handle --------------------
 
 /** A subscribable query handle: callable for one-shot reads, plus a `.subscribe()` method. */
-export type SubscribableQuery<TInput, TOutput> = [TInput] extends [void]
+export type SubscribableQuery<TInput, TOutput> = [TInput] extends [void | undefined]
   ? {
       (): TOutput;
       subscribe(listener: (value: TOutput) => void): () => void;
@@ -241,9 +296,9 @@ export type SubscribableQueries<TQ extends QueriesMap<any>> = {
 };
 
 export type CallableCommands<TC extends CommandsMap<any>> = {
-  [K in keyof TC]: [InputOfCommand<TC[K]>] extends [void]
-    ? () => Promise<void>
-    : (input: InputOfCommand<TC[K]>) => Promise<void>;
+  [K in keyof TC]: [InputOfCommand<TC[K]>] extends [void | undefined]
+    ? () => Promise<OutputOfCommand<TC[K]>>
+    : (input: InputOfCommand<TC[K]>) => Promise<OutputOfCommand<TC[K]>>;
 };
 
 /**
@@ -251,9 +306,6 @@ export type CallableCommands<TC extends CommandsMap<any>> = {
  *
  * State is *not* on this interface — it's internal to the service. To read data, call a query.
  * To change data, call a command. To react to changes, subscribe to a query.
- *
- * Infrastructure layers (the build pipeline) work against the `ServiceRuntime` class directly,
- * which exposes state-mutation hooks that aren't part of this public surface.
  */
 export interface ServiceStore<TDef extends ServiceDefinition<any, any, any>> {
   readonly id: string;

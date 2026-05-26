@@ -15,7 +15,8 @@ APIs are not yet stable. Used by the docgen-server project; will widen over time
 | File | Purpose |
 | --- | --- |
 | `types.ts` | All public types. |
-| `define-service.ts` | `defineService`, `defineCommand`, `defineQuery`. |
+| `define-service.ts` | `defineService` (curried and inferred forms). |
+| `service-validation.ts` | Standard Schema validation + `ServiceValidationError`. |
 | `service-runtime.ts` | The `ServiceRuntime` class. Owns state, runs commands, fires query preloads, drives subscriptions. |
 | `register-service.ts` | `registerService`, `getService`. |
 | `instances.ts` | Global registry. Separate module so it can be mocked in tests. |
@@ -29,9 +30,9 @@ APIs are not yet stable. Used by the docgen-server project; will widen over time
 ## What works today
 
 - Services with state, queries, and commands.
-- Queries are always written as `defineQuery({ select, preload?, inputs?, path? })`. The optional `preload`/`inputs`/`path` fields opt the query into static-build persistence and load-on-subscribe; without them you've just written a selector.
-- Two ways to write commands: inline functions for concrete cases, `defineCommand<TInput>()` for abstract cases implemented at registration.
-- Two `defineService` forms: `defineService<S>()(...)` (curried, explicit state type) and `defineService(...)` (state inferred from the literal).
+- Queries and commands are inline objects: `{ input, output, select | handler, preload?, inputs?, path? }`. Every operation declares Standard Schema v1 `input` and `output` schemas; the runtime validates at the boundary.
+- A command without `handler` is **abstract** — its body must be supplied at registration via `registerService(def, { commands: { … } })`.
+- `defineService` forms: `defineService<S>(({ query, command }) => ({ … }))` (recommended), `defineService<S>()({ … })` (bare object), and `defineService()({ … })` (state inferred from the literal).
 - Immer-backed `setState` with patch capture.
 - Per-query subscriptions powered by `alien-signals`: a `computed(() => select(state, input))` per (query, input) memoises by reference equality, so subscribers re-fire only when this query's result actually changes. The React hook `useServiceQuery` is built on top.
 - Queries with `preload`+`inputs`+`path` are the persistence mechanism. The build writes one JSON file per enumerated input; the runtime fetches lazily when the query is first subscribed. Queries without those fields have no static artifacts and run purely in session-local mode.

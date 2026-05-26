@@ -1,6 +1,6 @@
 # Static build: save and load
 
-A statically-built Storybook serialises service state to JSON at build time and re-hydrates it lazily on the client. Queries with a `preload` are the only mechanism — a service whose queries are all selector-only (`defineQuery({ select })` with no `preload`) doesn't persist anything.
+A statically-built Storybook serialises service state to JSON at build time and re-hydrates it lazily on the client. Queries with a `preload` are the only mechanism — a service whose queries are all selector-only (no `preload` field) doesn't persist anything.
 
 ## Mental model
 
@@ -23,12 +23,14 @@ How you structure query preloads determines how state is split on disk.
 
 ```ts
 queries: {
-  getComponentDocgenInfo: defineQuery({
-    select: (state, id: string) => state.byComponentId[id],
-    preload: async (id: string, ctx) => { await ctx.self.commands.generateDocgen(id); },
+  getComponentDocgenInfo: {
+    input: z.string(),
+    output: docgenSchema.nullable(),
+    select: (state, id) => state.byComponentId[id] ?? null,
+    preload: async (id, ctx) => { await ctx.self.commands.generateDocgen(id); },
     inputs: async () => listAllComponentIds(),
     path: (_ctx, id) => `docgen-${id}.json`,
-  }),
+  },
 }
 ```
 
@@ -36,14 +38,16 @@ queries: {
 
 ```ts
 queries: {
-  allStatuses: defineQuery({
+  allStatuses: {
+    input: z.void(),
+    output: z.record(z.string(), z.string()),
     select: (state) => state.byStoryId,
     preload: async (ctx) => {
       const data = await fetchAllStatusesAtBuildTime();
       ctx.self.setState((d) => { d.byStoryId = data; });
     },
     path: () => 'statuses.json',
-  }),
+  },
 }
 ```
 

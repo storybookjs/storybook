@@ -6,8 +6,7 @@ import type { ServiceDefinition, ServiceRegistration } from './types.ts';
 /**
  * Build the static-mode artifacts for a service definition.
  *
- * Iterates queries that declare a preload (either via the new `defineQuery({ preload, … })`
- * form OR the legacy `load:` map), enumerates each preload's inputs, and runs each input in
+ * Iterates queries that declare a `preload`, enumerates each preload's inputs, and runs each input in
  * its own sandboxed runtime. Captures the Immer patch list produced, converts it to a
  * state-shaped diff (`{a:{b:1}}`), and stores it under the query's `path(ctx, input)` callback
  * (or a default).
@@ -16,7 +15,7 @@ import type { ServiceDefinition, ServiceRegistration } from './types.ts';
  * into a single artifact at that path — the "many queries, one file" pattern, useful when
  * several queries share an underlying single-file backing store.
  *
- * Services with no preloads (no `def.queries.X.preload` and no `def.load`) return an empty Map.
+ * Services with no preloads (no `def.queries.*.preload`) return an empty Map.
  */
 export async function buildServiceArtifacts<TDef extends ServiceDefinition<any, any, any>>(
   definition: TDef,

@@ -1,164 +1,181 @@
 import type {
-  AbstractCommand,
-  BuildCtx,
-  CommandsMap,
-  QueriesMap,
+  AnyCommandDef,
+  AnyQueryDef,
+  AnySchema,
+  CommandDef,
   QueryDef,
-  ServiceCtx,
   ServiceDefinition,
 } from './types.ts';
 
 /**
- * Authoring helper for a service definition.
+ * Authoring helpers for service definitions.
  *
- * Two equivalent call forms:
+ * Recommended: `defineService<MyState>()(({ query, command }) => ({ id, state, queries, commands }))`.
+ * The callback receives the `query` / `command` helpers, which provide per-entry inference for
+ * `select` / `preload` / `path` / `handler` parameters and return types. Wrapped entries are
+ * also strictly validated — e.g. a `select` that returns the wrong type errors at the entry.
  *
- *  - **Curried, explicit state** — `defineService<MyState>()({ ... })`. The state type is fixed
- *    by the outer generic; queries, commands, and loaders are inferred from the argument. Inside
- *    queries, `state` is typed as `MyState` automatically. Inside commands, `ctx` is typed as
- *    `ServiceCtx<MyState>` and `setState`'s draft is `MyState` — no per-handler annotations.
- *
- *  - **Inferred** — `defineService({ ... })`. State type is inferred from the `state:` literal.
- *    Queries still get contextual typing for `state`, but commands lose `ctx` typing because of
- *    contextual-typing limits over unions of function signatures, so command authors need to
- *    annotate `ctx: ServiceCtx<MyState>` themselves.
- *
- * The `load` map is keyed by query name — `load.foo` is the loader that backs `queries.foo`.
+ * Bare entries (without `query()` / `command()`) are accepted but only loosely validated; the
+ * runtime still validates `input` / `output` schemas at call time.
  *
  * @example
  *
  * ```ts
- * const DocgenService = defineService<DocgenState>()({
+ * const DocgenService = defineService<DocgenState>()(({ query, command }) => ({
  *   id: 'core/docgen',
  *   state: { byComponentId: {}, somethingElse: 42 },
  *   queries: {
- *     getComponentDocgenInfo: defineQuery({
- *       select: (state, id: string) => state.byComponentId[id],
+ *     getComponentDocgenInfo: query({
+ *       input: z.string(),
+ *       output: componentDocgenSchema.nullable(),
+ *       select: (state, componentId) => state.byComponentId[componentId] ?? null,
  *     }),
  *   },
  *   commands: {
- *     generateDocgen: defineCommand<string>(),
- *     bumpLocal: (ctx) => ctx.self.setState((d) => { d.somethingElse += 1 }),
+ *     generateDocgen: command({ input: z.string(), output: z.void() }),
  *   },
- * });
+ * }));
  * ```
  */
-export function defineService<TState>(): <
-  const TQueries extends QueriesMapFor<TState>,
-  TCommands extends CommandsMapFor<TState>,
->(definition: {
-  id: string;
-  state: TState;
-  queries: TQueries;
-  commands: TCommands;
-}) => ServiceDefinition<TState, TQueries, TCommands>;
-export function defineService<
-  TState,
-  const TQueries extends QueriesMap<TState>,
-  const TCommands extends CommandsMap<TState>,
->(definition: {
-  id: string;
-  state: TState;
-  queries: TQueries;
-  commands: TCommands;
-}): ServiceDefinition<TState, TQueries, TCommands>;
-export function defineService(definition?: unknown): unknown {
-  if (definition === undefined) {
-    // Curried form: return a function that takes the definition.
-    return (def: unknown) => def;
-  }
-  return definition;
+
+// -------------------- result narrowing --------------------
+
+type NarrowQueries<TState, Q> = {
+  [K in keyof Q]: Q[K] extends QueryDef<TState, infer TIn, infer TOut>
+    ? QueryDef<TState, TIn, TOut>
+    : AnyQueryDef<TState>;
+};
+
+type NarrowCommands<TState, C> = {
+  [K in keyof C]: C[K] extends CommandDef<TState, infer TIn, infer TOut>
+    ? CommandDef<TState, TIn, TOut>
+    : AnyCommandDef<TState>;
+};
+
+// -------------------- per-entry type helpers (runtime identity) --------------------
+
+/**
+ * Type-only helper for a query entry. At runtime this returns its argument unchanged.
+ *
+ * Required for inference: the object literal is checked as `QueryDef<TState, I, O>` directly,
+ * which contextually types `select` / `preload` / `path` from `input` / `output`.
+ */
+export function query<TState>() {
+  return <const I extends AnySchema, const O extends AnySchema>(
+    definition: QueryDef<TState, I, O>
+  ): QueryDef<TState, I, O> => definition;
 }
 
-// -------------------- contextually-typed map shapes for the curried form --------------------
-type Exact<T, Allowed extends object> = T &
-  { [K in Exclude<keyof T, keyof Allowed>]: never };
 /**
- * The curried form binds `TState` outside the argument's type, so query/command/loader handlers
- * can be contextually typed against it. The constraints below mention `TState` so handler
- * parameters (including the `select` selector inside `defineQuery({ select })`) get the right
- * types without per-handler annotations.
+ * Type-only helper for a command entry. At runtime this returns its argument unchanged.
  */
-type QueriesMapFor<TState> = Record<
-  string,
-  Exact<QueryDefFor<TState>, QueryDefFor<TState>>
+export function command<TState>() {
+  return <const I extends AnySchema, const O extends AnySchema>(
+    definition: CommandDef<TState, I, O>
+  ): CommandDef<TState, I, O> => definition;
+}
+
+export type QueryHelper<TState> = ReturnType<typeof query<TState>>;
+export type CommandHelper<TState> = ReturnType<typeof command<TState>>;
+
+export type ServiceAuthoringHelpers<TState> = {
+  query: QueryHelper<TState>;
+  command: CommandHelper<TState>;
+};
+
+/** The shape `setup` (or a bare object literal) must return. */
+type SetupShape<TState, TId extends string, TQueries, TCommands> = {
+  readonly id: TId;
+  readonly state: TState;
+  readonly queries: TQueries;
+  readonly commands: TCommands;
+};
+
+type ResolvedServiceDef<TState, TQueries, TCommands> = ServiceDefinition<
+  TState,
+  NarrowQueries<TState, TQueries>,
+  NarrowCommands<TState, TCommands>
 >;
 
-interface QueryDefFor<TState> {
-  readonly select: (state: TState, ...rest: any[]) => any;
-  readonly preload?: (...args: any[]) => void | Promise<void>;
-  readonly inputs?:
-    | readonly any[]
-    | ((ctx: BuildCtx) => readonly any[] | Promise<readonly any[]>);
-  readonly path?: (...args: any[]) => string;
-}
+/**
+ * Curried builder for an explicit-state service. Accepts either:
+ *   - `({ query, command }) => ({ … })` — preferred; helpers drive per-entry inference.
+ *   - A bare object literal `({ … })` — works when entry handlers carry explicit types.
+ *
+ * Bare entries are loosely validated by the `AnyQueryDef` / `AnyCommandDef` constraint;
+ * wrap an entry with `query()` / `command()` for strict per-entry type checking.
+ */
+type DefineServiceBuilder<TState> = {
+  <
+    const TId extends string,
+    const TQueries extends Record<string, AnyQueryDef<TState>>,
+    const TCommands extends Record<string, AnyCommandDef<TState>>,
+  >(
+    setup: (
+      helpers: ServiceAuthoringHelpers<TState>
+    ) => SetupShape<TState, TId, TQueries, TCommands>
+  ): ResolvedServiceDef<TState, TQueries, TCommands>;
+  <
+    const TId extends string,
+    const TQueries extends Record<string, AnyQueryDef<TState>>,
+    const TCommands extends Record<string, AnyCommandDef<TState>>,
+  >(
+    definition: SetupShape<TState, TId, TQueries, TCommands>
+  ): ResolvedServiceDef<TState, TQueries, TCommands>;
+};
+
+/** Curried builder that infers state from the `state` field of the literal. */
+type DefineServiceBuilderInferred = {
+  <
+    TState,
+    const TId extends string,
+    const TQueries extends Record<string, AnyQueryDef<TState>>,
+    const TCommands extends Record<string, AnyCommandDef<TState>>,
+  >(
+    setup: (
+      helpers: ServiceAuthoringHelpers<TState>
+    ) => SetupShape<TState, TId, TQueries, TCommands>
+  ): ResolvedServiceDef<TState, TQueries, TCommands>;
+  <
+    TState,
+    const TId extends string,
+    const TQueries extends Record<string, AnyQueryDef<TState>>,
+    const TCommands extends Record<string, AnyCommandDef<TState>>,
+  >(
+    definition: SetupShape<TState, TId, TQueries, TCommands>
+  ): ResolvedServiceDef<TState, TQueries, TCommands>;
+};
+
+const bindHelpers = <TState>(): ServiceAuthoringHelpers<TState> => ({
+  query: query<TState>(),
+  command: command<TState>(),
+});
 
 /**
- * Function-overload-as-interface. TS contextual typing picks the overload that matches the
- * literal's arity: `(ctx) => …` binds against the 1-arg overload (ctx becomes `ServiceCtx<TState>`),
- * `(input, ctx) => …` binds against the 2-arg overload. A variadic-tuple union does NOT achieve
- * this — TS fails to discriminate and falls back to `any` for the parameter.
+ * Declare a service.
+ *
+ * - `defineService<State>()(({ query, command }) => ({ … }))` — preferred (callback form).
+ * - `defineService<State>()({ … })` — bare object, explicit state.
+ * - `defineService()(({ query, command }) => ({ … }))` — callback, state inferred from `state`.
+ * - `defineService()({ … })` — bare object, state inferred from `state`.
  */
-interface CommandFnFor<TState> {
-  (ctx: ServiceCtx<TState>): void | Promise<void>;
-  (input: any, ctx: ServiceCtx<TState>): void | Promise<void>;
+export function defineService(): DefineServiceBuilderInferred;
+export function defineService<TState>(): DefineServiceBuilder<TState>;
+export function defineService(): unknown {
+  return (arg: unknown) => {
+    if (typeof arg === 'function') {
+      return (arg as (h: ServiceAuthoringHelpers<unknown>) => unknown)(bindHelpers());
+    }
+    return arg;
+  };
 }
 
-type CommandsMapFor<TState> = Record<string, CommandFnFor<TState> | AbstractCommand<any, any>>;
+// -------------------- abstract command detection --------------------
 
 /**
- * Authoring helper for a query.
- *
- * Every query is declared as an object: `getFoo: defineQuery({ select, preload?, inputs?, path? })`.
- * `select` is the pure selector over state. The other fields are static-build hooks: `preload`
- * runs on first subscribe (typically to invoke a command that populates state), `inputs`
- * enumerates inputs for build-time pre-rendering, and `path` overrides the default per-input
- * filename.
- *
- * `defineQuery` is a pass-through; it exists for authoring clarity and to give TS a precise
- * shape to infer against. Equivalent to placing the object literal directly into `queries`.
+ * A command is **abstract** when its definition has no `handler` field. The runtime checks for
+ * this at construction time and demands a registration-supplied implementation if so.
  */
-export function defineQuery<TDef extends QueryDef<any>>(def: TDef): TDef {
-  return def;
-}
-
-/**
- * Authoring helper for a command.
- *
- * Two forms:
- *
- *  - **Abstract** — `defineCommand<TInput>()`. Declares that the service has a command of this
- *    input type, but leaves the implementation to be supplied at registration. Useful when the
- *    same service definition runs in multiple environments (manager, preview, server) with
- *    environment-specific bodies, or when the body depends on environment-only modules.
- *
- *  - **Concrete** — `defineCommand((input, ctx) => …)`. Just a pass-through; equivalent to
- *    putting the function in the commands map directly. Provided for symmetry.
- *
- * Concrete commands written inline as plain functions also work — `defineCommand` is only
- * required when you want an abstract declaration.
- */
-export function defineCommand<TInput = void, TOutput = void>(): AbstractCommand<TInput, TOutput>;
-export function defineCommand<TInput, TOutput = void>(
-  handler: [TInput] extends [void]
-    ? (ctx: ServiceCtx<any>) => TOutput | Promise<TOutput>
-    : (input: TInput, ctx: ServiceCtx<any>) => TOutput | Promise<TOutput>
-): typeof handler;
-export function defineCommand(
-  handler?: (...args: any[]) => any
-): AbstractCommand<any, any> | ((...args: any[]) => any) {
-  if (handler) return handler;
-  return { __kind: 'abstract-command' };
-}
-
-/**
- * Runtime predicate: is this command entry an abstract declaration?
- * Used internally by the runtime to know whether a registration-time handler is required.
- */
-export function isAbstractCommand(entry: unknown): entry is AbstractCommand<any, any> {
-  return (
-    typeof entry === 'object' &&
-    entry !== null &&
-    (entry as { __kind?: string }).__kind === 'abstract-command'
-  );
+export function isAbstractCommand(entry: AnyCommandDef): boolean {
+  return typeof entry.handler !== 'function';
 }

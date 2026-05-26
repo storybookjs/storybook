@@ -7,6 +7,15 @@ import type {
 
 import { mapValues } from 'es-toolkit/object';
 
+type ControlWithOptions = Exclude<InputType['control'], string | false | undefined> & {
+  options?: InputType['options'] | Record<string, any>;
+};
+type OptionsInput = Pick<InputType, 'control' | 'options' | 'mapping'>;
+type NormalizedOptions = Pick<InputType, 'options' | 'mapping'>;
+
+const getControlOptions = (control: InputType['control']) =>
+  control && typeof control === 'object' ? (control as ControlWithOptions).options : undefined;
+
 const normalizeType = (type: InputType['type']): StrictInputType['type'] => {
   return typeof type === 'string' ? { name: type } : type;
 };
@@ -25,18 +34,51 @@ const normalizeControl = (control: InputType['control']): StrictInputType['contr
   return control;
 };
 
+const normalizeOptions = ({ control, options, mapping }: OptionsInput): NormalizedOptions => {
+  const inputOptions = options ?? getControlOptions(control);
+
+  if (!inputOptions || Array.isArray(inputOptions)) {
+    return {
+      ...(inputOptions && { options: inputOptions }),
+      ...(mapping && { mapping }),
+    };
+  }
+
+  return {
+    options: Object.keys(inputOptions),
+    mapping: mapping ?? inputOptions,
+  };
+};
+
 export const normalizeInputType = (inputType: InputType, key: string): StrictInputType => {
-  const { type, control, ...rest } = inputType;
+  const { type, control, options, mapping, ...rest } = inputType;
+  const controlOptions = getControlOptions(control);
+  const hasOptions = options !== undefined || controlOptions !== undefined;
   const normalized: StrictInputType = {
     name: key,
     ...rest,
+    ...normalizeOptions({ control, options, mapping }),
   };
 
   if (type) {
     normalized.type = normalizeType(type);
   }
   if (control) {
-    normalized.control = normalizeControl(control);
+    const normalizedControl = normalizeControl(control);
+    if (normalizedControl && typeof normalizedControl === 'object') {
+      const controlWithoutOptions = { ...normalizedControl } as ControlWithOptions;
+      delete controlWithoutOptions.options;
+      normalized.control =
+        hasOptions && !controlWithoutOptions.type
+          ? {
+              type: 'select',
+              ...controlWithoutOptions,
+              ...(!('disable' in controlWithoutOptions) && { disable: false }),
+            }
+          : controlWithoutOptions;
+    } else {
+      normalized.control = normalizedControl;
+    }
   } else if (control === false) {
     normalized.control = { disable: true };
   }

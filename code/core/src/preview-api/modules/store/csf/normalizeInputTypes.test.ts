@@ -108,6 +108,76 @@ describe('normalizeInputType', () => {
       defaultValue: 'defaultValue',
     });
   });
+
+  it('lifts legacy control.options arrays to top-level options', () => {
+    expect(
+      normalizeInputType(
+        {
+          control: { type: 'select', options: ['Alpha', 'Beta'] },
+        },
+        'icon'
+      )
+    ).toEqual({
+      name: 'icon',
+      control: { type: 'select', disable: false },
+      options: ['Alpha', 'Beta'],
+    });
+  });
+
+  it('defaults to select controls when top-level options are present', () => {
+    expect(
+      normalizeInputType(
+        {
+          options: ['Alpha', 'Beta'],
+          control: {},
+        },
+        'icon'
+      )
+    ).toEqual({
+      name: 'icon',
+      control: { type: 'select', disable: false },
+      options: ['Alpha', 'Beta'],
+    });
+  });
+
+  it('converts legacy control.options objects to serializable options and a mapping', () => {
+    const Alpha = { type: 'div', props: { children: 'alpha' } };
+    const Beta = { type: 'div', props: { children: 'beta' } };
+
+    expect(
+      normalizeInputType(
+        {
+          control: { options: { Alpha, Beta } },
+        },
+        'endIcon'
+      )
+    ).toEqual({
+      name: 'endIcon',
+      control: { type: 'select', disable: false },
+      options: ['Alpha', 'Beta'],
+      mapping: { Alpha, Beta },
+    });
+  });
+
+  it('preserves explicit mapping when normalizing legacy control.options objects', () => {
+    const Alpha = { type: 'div', props: { children: 'alpha' } };
+    const explicitMapping = { Alpha: 'mapped-alpha' };
+
+    expect(
+      normalizeInputType(
+        {
+          control: { type: 'select', options: { Alpha } },
+          mapping: explicitMapping,
+        },
+        'endIcon'
+      )
+    ).toEqual({
+      name: 'endIcon',
+      control: { type: 'select', disable: false },
+      options: ['Alpha'],
+      mapping: explicitMapping,
+    });
+  });
 });
 
 describe('normalizeInputTypes', () => {

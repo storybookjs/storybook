@@ -20,7 +20,7 @@ describe('buildServerInstructions', () => {
 			- After changing any component or story, call **get-changed-stories** to discover new/modified/related stories, then call **preview-stories** to retrieve preview URLs.
 			- In final user-facing responses, order links consistently: review page first (if available), changed-stories fallback next (if relevant), then specific preview URLs.
 			- Always include every returned preview URL in your user-facing response so the user can verify the visual result.
-			- After completing the change, call **apply-review-state** to publish a curated review to Storybook's review page, and include the returned reviewUrl in your final response.
+			- After completing the change, call **apply-review-state** to publish a curated review to Storybook's review page. If the session has a browser-preview tool, navigate it to the returned \`reviewUrl\` so the user sees the review without leaving the chat. Always include the \`reviewUrl\` in your final response as a fallback.
 
 			## Validation Workflow
 
@@ -67,7 +67,7 @@ describe('buildServerInstructions', () => {
 			- After changing any component or story, call **get-changed-stories** to discover new/modified/related stories, then call **preview-stories** to retrieve preview URLs.
 			- In final user-facing responses, order links consistently: review page first (if available), changed-stories fallback next (if relevant), then specific preview URLs.
 			- Always include every returned preview URL in your user-facing response so the user can verify the visual result.
-			- After completing the change, call **apply-review-state** to publish a curated review to Storybook's review page, and include the returned reviewUrl in your final response."
+			- After completing the change, call **apply-review-state** to publish a curated review to Storybook's review page. If the session has a browser-preview tool, navigate it to the returned \`reviewUrl\` so the user sees the review without leaving the chat. Always include the \`reviewUrl\` in your final response as a fallback."
 		`);
 	});
 

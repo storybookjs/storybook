@@ -18,6 +18,7 @@ export enum Category {
   MANAGER_CORE_EVENTS = 'MANAGER_CORE-EVENTS',
   MANAGER_ROUTER = 'MANAGER_ROUTER',
   MANAGER_THEMING = 'MANAGER_THEMING',
+  MANAGER_UNIVERSAL_STORE = 'MANAGER_UNIVERSAL-STORE',
 }
 
 export class ProviderDoesNotExtendBaseProviderError extends StorybookError {
@@ -63,6 +64,17 @@ export class StatusTypeIdMismatchError extends StorybookError {
         null,
         2
       )}`,
+    });
+  }
+}
+
+export class UniversalStoreFollowerTimeoutError extends StorybookError {
+  constructor(followerId: string) {
+    super({
+      name: 'UniversalStoreFollowerTimeoutError',
+      category: Category.MANAGER_UNIVERSAL_STORE,
+      code: 1,
+      message: `Timed out waiting for leader state for UniversalStore follower with id: '${followerId}'. Ensure a leader with the same id exists and is reachable before creating a follower.`,
     });
   }
 }

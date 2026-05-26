@@ -1,6 +1,6 @@
 import path from 'path';
 
-import type { JsPackageManager } from 'storybook/internal/common';
+import { syncStorybookAddons, type JsPackageManager } from 'storybook/internal/common';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { runCodemod } from '../automigrate/codemod.ts';
@@ -9,21 +9,13 @@ import {
   getStorybookSubpathImportTarget,
   getUpdatedStorybookImportsMap,
 } from './csf-factories.ts';
+import { configToCsfFactory } from './helpers/config-to-csf-factory.ts';
 import { storyToCsfFactory } from './helpers/story-to-csf-factory.ts';
 
-vi.mock('../automigrate/codemod.ts', () => ({
-  runCodemod: vi.fn(),
-}));
-vi.mock('./helpers/story-to-csf-factory.ts', () => ({
-  storyToCsfFactory: vi.fn(async () => 'transformed story'),
-}));
-vi.mock('./helpers/config-to-csf-factory.ts', () => ({
-  configToCsfFactory: vi.fn(async () => 'transformed config'),
-}));
-vi.mock('storybook/internal/common', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('storybook/internal/common')>()),
-  syncStorybookAddons: vi.fn(),
-}));
+vi.mock('../automigrate/codemod.ts', { spy: true });
+vi.mock('./helpers/story-to-csf-factory.ts', { spy: true });
+vi.mock('./helpers/config-to-csf-factory.ts', { spy: true });
+vi.mock('storybook/internal/common', { spy: true });
 
 const createPackageManager = (packageJsonImports: Record<string, unknown>): JsPackageManager =>
   ({
@@ -39,6 +31,10 @@ const createPackageManager = (packageJsonImports: Record<string, unknown>): JsPa
 beforeEach(() => {
   vi.clearAllMocks();
   process.env.IN_STORYBOOK_SANDBOX = '1';
+  vi.mocked(runCodemod).mockResolvedValue(undefined);
+  vi.mocked(storyToCsfFactory).mockResolvedValue('transformed story');
+  vi.mocked(configToCsfFactory).mockResolvedValue('transformed config');
+  vi.mocked(syncStorybookAddons).mockResolvedValue(undefined);
 });
 
 afterEach(() => {

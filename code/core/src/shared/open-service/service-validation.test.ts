@@ -4,7 +4,6 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { z } from 'zod';
 
 import { defineQuery, defineService } from './service-definition.ts';
-import { createService } from './service-runtime.ts';
 import { buildStaticFiles, clearRegistry, registerService } from './server.ts';
 import {
   createInvalidCommandOutputServiceDef,
@@ -46,7 +45,7 @@ describe('service validation', () => {
   });
 
   it('shows the full actionable message for invalid query output', async () => {
-    const service = createService(createInvalidQueryOutputServiceDef());
+    const service = registerService(createInvalidQueryOutputServiceDef());
 
     await expectValidationMessage(
       () => service.queries.getBrokenValue(undefined),
@@ -79,7 +78,7 @@ describe('service validation', () => {
   });
 
   it('shows the full actionable message for invalid command output', async () => {
-    const service = createService(createInvalidCommandOutputServiceDef());
+    const service = registerService(createInvalidCommandOutputServiceDef());
 
     await expectValidationMessage(
       () => service.commands.runBrokenCommand(undefined),
@@ -101,7 +100,7 @@ describe('service validation', () => {
   });
 
   it('shows nested field paths for validation issues inside arrays and objects', async () => {
-    const service = createService(
+    const service = registerService(
       defineService({
         id: 'test/nested-query-output',
         initialState: {} as Record<string, never>,
@@ -134,7 +133,7 @@ describe('service validation', () => {
   });
 
   it('wraps zod schema issues in the same actionable validation error shape', async () => {
-    const service = createService(
+    const service = registerService(
       defineService({
         id: 'test/zod-query-input',
         initialState: {} as Record<string, never>,

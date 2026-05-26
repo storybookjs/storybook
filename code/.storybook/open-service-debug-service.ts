@@ -94,9 +94,7 @@ function createDebugServiceDef(storyIndexGeneratorPromise: Promise<StoryIndexGen
         handler: async (input, ctx) => {
           const value = ctx.self.state.preloadedByEntryId[input.entryId] ?? null;
 
-          logger.info(
-            `[open-service debug] query getPreloadedValue(${input.entryId}) => ${value}`
-          );
+          logger.info(`[open-service debug] query getPreloadedValue(${input.entryId}) => ${value}`);
           return value;
         },
       }),

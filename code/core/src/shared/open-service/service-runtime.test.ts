@@ -2,7 +2,6 @@ import * as v from 'valibot';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { defineQuery, defineService } from './service-definition.ts';
-import { createService } from './service-runtime.ts';
 import { clearRegistry, registerService } from './server.ts';
 import {
   awaitedPreloadValueServiceDef,
@@ -34,36 +33,6 @@ describe('service runtime', () => {
 
       expect(await service.queries.getRecordFields({ entryId: 'entry-a' })).toEqual({
         marker: 'match',
-      });
-    });
-
-    it('throws a Storybook error when ctx.getService is used from createService()', async () => {
-      const service = createService(
-        defineService({
-          id: 'test/local-service-lookup',
-          description: 'Attempts to resolve another service from a local runtime.',
-          initialState: {} as Record<string, never>,
-          queries: {
-            getValue: defineQuery<Record<string, never>>()({
-              description: 'Resolves another service before returning a local value.',
-              input: v.undefined(),
-              output: v.string(),
-              handler: async (_input, ctx) => {
-                await ctx.getService('test/missing-service');
-
-                return 'unreachable';
-              },
-            }),
-          },
-          commands: {},
-        })
-      );
-
-      await expect(service.queries.getValue(undefined)).rejects.toMatchObject({
-        fromStorybook: true,
-        code: 9,
-        message:
-          'ctx.getService("test/missing-service") is unavailable for services created with createService(). Register the service before resolving other services by id.',
       });
     });
   });

@@ -47,7 +47,7 @@ Internal tests and implementation code may import from the individual modules di
 - [service-definition.ts](./service-definition.ts): helpers that preserve inference when declaring services
 - [service-validation.ts](./service-validation.ts): async schema validation helpers and error wrapping
 - [errors.ts](./errors.ts): validation metadata formatting helpers
-- [service-runtime.ts](./service-runtime.ts): runtime creation, logical static-path resolution, subscriptions, and store-backed preload handling
+- [service-runtime.ts](./service-runtime.ts): runtime creation, logical static-path resolution, and subscriptions
 - [service-registration.ts](./service-registration.ts): server-side global registry implementation
 - [fixtures.ts](./fixtures.ts): scenario fixtures used by the test suite
 - `*.test.ts`: focused tests for runtime behavior, validation behavior, server registration, and server static builds
@@ -160,8 +160,8 @@ That split is intentional:
 - [server.ts](./server.ts) owns the concrete global registry and static snapshot writing for the
   current server process
 
-The internal Storybook config also registers a debug-only example service through that hook when
-`logLevel` resolves to `'debug'`.
+The internal Storybook config also registers an example debug service through that hook behind a
+temporary boolean gate in `.storybook/main.ts`.
 
 ## Runtime Flow
 
@@ -257,10 +257,6 @@ Static path rules:
 - backslashes are normalized to `/`
 - `..` segments are rejected so snapshots cannot escape `<outputDir>/services`
 
-At runtime, `createService(def, { store })` can preload from that store. The runtime caches pending
-merges per path so one static snapshot is only merged once even if multiple concurrent query calls
-request it.
-
 ```mermaid
 flowchart TD
   A[buildStaticFiles services] --> B{query has preload\nand static.inputs?}
@@ -273,8 +269,6 @@ flowchart TD
   H --> I[capture runtime state snapshot]
   I --> J[merge snapshots by path into StaticStore]
   J --> K[writeOpenServiceStaticFiles outputDir]
-  K --> L[createService def with store]
-  L --> M[query loads cached static state before handler]
 ```
 
 ## How To Define A Service

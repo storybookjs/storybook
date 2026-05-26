@@ -220,13 +220,8 @@ export type ServiceInstance<
   };
 };
 
-/** Optional runtime options when creating a service instance. */
-export type CreateServiceOptions = {
-  store?: StaticStore;
-};
-
 /** Internal runtime options when constructing a service runtime directly. */
-export type CreateServiceRuntimeOptions = CreateServiceOptions & {
+export type CreateServiceRuntimeOptions = {
   registryApi: ServiceRegistryApi;
 };
 

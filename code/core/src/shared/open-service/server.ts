@@ -28,12 +28,6 @@ import type {
 type RuntimeServiceDefinition = ServiceDefinition<unknown, Queries<unknown>, Commands<unknown>>;
 type RuntimeQueryDefinition = QueryDefinition<unknown, AnySchema, AnySchema>;
 
-const serverRegistryApi: ServiceRegistryApi = {
-  listServices,
-  describeService,
-  getService,
-};
-
 export {
   clearRegistry,
   describeService,
@@ -66,7 +60,7 @@ export async function buildStaticFiles(services: RuntimeServiceDefinition[]): Pr
 
       const inputsRuntime = createServiceRuntime(
         service,
-        { registryApi: serverRegistryApi },
+        { registryApi: { listServices, describeService, getService } },
         structuredClone(service.initialState)
       );
       const inputs = await query.static.inputs(inputsRuntime.queryCtx);
@@ -77,7 +71,7 @@ export async function buildStaticFiles(services: RuntimeServiceDefinition[]): Pr
           // the one path this task is responsible for.
           const buildRuntime = createServiceRuntime(
             service,
-            { registryApi: serverRegistryApi },
+            { registryApi: { listServices, describeService, getService } },
             structuredClone(service.initialState)
           );
           const validatedInput = await validateSchema(query.input, input, {

@@ -200,20 +200,6 @@ export class OpenServiceUnimplementedOperationError extends StorybookError {
   }
 }
 
-export class OpenServiceUnavailableServiceLookupError extends StorybookError {
-  constructor(public data: { serviceId: string; source: 'createService' | 'static-build' }) {
-    super({
-      name: 'OpenServiceUnavailableServiceLookupError',
-      category: Category.CORE_COMMON,
-      code: 9,
-      message:
-        data.source === 'createService'
-          ? `ctx.getService("${data.serviceId}") is unavailable for services created with createService(). Register the service before resolving other services by id.`
-          : `ctx.getService("${data.serviceId}") is unavailable while building static service snapshots. Resolve services by id at runtime instead.`,
-    });
-  }
-}
-
 export class OpenServiceInvalidStaticPathError extends StorybookError {
   constructor(public data: { serviceId: string; name: string; path: string }) {
     super({

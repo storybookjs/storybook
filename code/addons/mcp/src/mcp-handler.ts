@@ -113,6 +113,7 @@ type McpServerHandlerParams = {
 	res: ServerResponse;
 	options: Options;
 	addonOptions: AddonOptionsOutput;
+	endpoint: string;
 	/** Sources for multi-source mode (when refs are configured) */
 	sources?: Source[];
 	/** Optional custom manifest provider, receives source as third param in multi-source mode */
@@ -130,6 +131,7 @@ export const mcpServerHandler = async ({
 	res,
 	options,
 	addonOptions,
+	endpoint,
 	sources,
 	manifestProvider,
 	compositionAuth,
@@ -148,6 +150,7 @@ export const mcpServerHandler = async ({
 
 	const addonContext: AddonContext = {
 		options,
+		endpoint,
 		toolsets: getToolsets(webRequest, addonOptions),
 		origin: origin!,
 		disableTelemetry: disableTelemetry!,

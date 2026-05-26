@@ -41,11 +41,12 @@ describe('buildReviewUrl', () => {
 		);
 	});
 
-	it('uses trusted origin host and request path prefix for a proxied Storybook', () => {
+	it('uses the configured endpoint to recover a proxied Storybook root', () => {
 		expect(
 			buildReviewUrl({
 				origin: 'http://localhost:6006',
-				request: new Request('https://example.com/storybook/mcp'),
+				request: new Request('https://example.com/storybook/custom-mcp'),
+				endpoint: '/custom-mcp',
 			}),
 		).toBe('http://localhost:6006/storybook/?path=/review/');
 	});
@@ -59,14 +60,8 @@ describe('buildReviewUrl', () => {
 		).toBe('http://localhost:6006/prefix/?path=/review/');
 	});
 
-	it('handles a request served at the host root', () => {
-		expect(buildReviewUrl({ request: new Request('http://localhost:6006/mcp') })).toBe(
-			'http://localhost:6006/?path=/review/',
-		);
-	});
-
 	it('throws when neither request nor origin is available', () => {
-		expect(() => buildReviewUrl({})).toThrow(/Cannot resolve the Storybook URL/);
+		expect(() => buildReviewUrl({} as any)).toThrow(/Cannot resolve the Storybook URL/);
 	});
 });
 

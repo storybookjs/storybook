@@ -21,49 +21,36 @@ const ApplyReviewStateOutput = v.object({
 	),
 });
 
-/**
- * Resolve the Storybook manager root from the incoming MCP request.
- *
- * Security note: authority (scheme + host + port) comes from a trusted
- * origin, not from request.url (which can be derived from the Host header).
- * The request contributes only the path prefix (Storybook may be mounted at
- * `/some/prefix/mcp`).
- */
 function storybookRootFromRequest(
 	request: Request | undefined,
 	trustedOrigin: string,
+	endpoint: string,
 ): string | undefined {
 	if (!request?.url) return undefined;
 	try {
 		const url = new URL(request.url);
-		const rootPath = url.pathname.replace(/\/mcp\/?$/, '');
+		const normalizedEndpoint = endpoint.replace(/\/$/, '');
+		const rootPath = url.pathname.endsWith(normalizedEndpoint)
+			? url.pathname.slice(0, -normalizedEndpoint.length)
+			: url.pathname.replace(/\/[^/]+\/?$/, '/');
 		return `${trustedOrigin.replace(/\/$/, '')}${rootPath}`;
 	} catch {
 		return undefined;
 	}
 }
 
-/**
- * Build the URL of the Storybook review page. Uses the trusted context
- * origin for host authority and preserves any request path prefix so this
- * works when Storybook is mounted behind a reverse proxy.
- */
-export function buildReviewUrl(ctx: { origin?: string; request?: Request }): string {
-	const requestOrigin = (() => {
-		if (!ctx.request?.url) return undefined;
-		try {
-			return new URL(ctx.request.url).origin;
-		} catch {
-			return undefined;
-		}
-	})();
-	const trustedOrigin = ctx.origin ?? requestOrigin;
+export function buildReviewUrl(ctx: {
+	origin: string;
+	request?: Request;
+	endpoint?: string;
+}): string {
+	const trustedOrigin = ctx.origin;
 	const root =
 		ctx.request && trustedOrigin
-			? storybookRootFromRequest(ctx.request, trustedOrigin)
+			? storybookRootFromRequest(ctx.request, trustedOrigin, ctx.endpoint ?? '/mcp')
 			: trustedOrigin;
 	if (!root) {
-		throw new Error('Cannot resolve the Storybook URL: no request or origin in addon context.');
+		throw new Error('Cannot resolve the Storybook URL: missing trusted origin in addon context.');
 	}
 	return `${root.replace(/\/$/, '')}/?path=${REVIEW_PAGE_PATH}`;
 }
@@ -92,7 +79,18 @@ Always include the returned reviewUrl in your final user-facing response so the 
 		},
 		async (input: ReviewState) => {
 			try {
-				const reviewUrl = buildReviewUrl(server.ctx.custom ?? {});
+				const customContext = server.ctx.custom;
+				if (!customContext?.origin) {
+					throw new Error(
+						'Cannot resolve the Storybook URL: missing trusted origin in addon context.',
+					);
+				}
+
+				const reviewUrl = buildReviewUrl({
+					origin: customContext.origin,
+					request: customContext.request,
+					endpoint: customContext.endpoint,
+				});
 
 				// Resolve the target repo's current git branch server-side and
 				// attach it — the agent's payload doesn't carry it, but the

@@ -55,17 +55,19 @@ export const experimental_devServer: PresetPropertyFn<
 	// Older Storybooks (≤10.3) don't pass `options.channel` to dev-server
 	// presets — the rest of addon-mcp still works without channel replay,
 	// so guard rather than crash.
-	if (changeDetectionEnabled && options.channel?.on) {
-		options.channel.on(REQUEST_REVIEW_STATE_EVENT, () => {
-			const state = getReviewState();
-			if (state) {
-				options.channel?.emit?.(APPLY_REVIEW_STATE_EVENT, state);
-			}
-		});
-	} else if (!options.channel?.on) {
-		logger.info(
-			'[addon-mcp] options.channel is unavailable on this Storybook version; review-state replay disabled.',
-		);
+	if (changeDetectionEnabled) {
+		if (options.channel?.on) {
+			options.channel.on(REQUEST_REVIEW_STATE_EVENT, () => {
+				const state = getReviewState();
+				if (state) {
+					options.channel?.emit?.(APPLY_REVIEW_STATE_EVENT, state);
+				}
+			});
+		} else {
+			logger.info(
+				'[addon-mcp] options.channel is unavailable on this Storybook version; review-state replay disabled.',
+			);
+		}
 	}
 
 	// Get composed Storybook refs from config
@@ -128,6 +130,7 @@ export const experimental_devServer: PresetPropertyFn<
 			res,
 			options,
 			addonOptions,
+			endpoint,
 			sources,
 			manifestProvider: createManifestProvider?.(req),
 			compositionAuth,
@@ -151,6 +154,7 @@ export const experimental_devServer: PresetPropertyFn<
 				res,
 				options,
 				addonOptions,
+				endpoint,
 				sources,
 				manifestProvider: createManifestProvider?.(req),
 				compositionAuth,

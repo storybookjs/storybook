@@ -5,9 +5,7 @@ import { type TemplateKey } from '../../code/lib/cli-storybook/src/sandbox-templ
 import { build_linux } from './common-jobs.ts';
 import { LINUX_ROOT_DIR, SANDBOX_DIR, WINDOWS_ROOT_DIR, WORKING_DIR } from './utils/constants.ts';
 import {
-  CACHE_KEYS,
   artifact,
-  cache,
   server,
   testResults,
   toId,
@@ -247,7 +245,6 @@ export function defineSandboxFlow<Key extends string>(key: Key) {
         ...getSandboxSetupSteps(key),
         'checkout', // we need the full git history for chromatic
         workspace.attach(),
-        cache.attach(CACHE_KEYS()),
         {
           // we copy to the working directory to get git history, which chromatic needs for baselines
           run: {

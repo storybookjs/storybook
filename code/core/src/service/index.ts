@@ -22,6 +22,18 @@
  */
 
 export { buildServiceArtifacts } from './build-artifacts.ts';
+export {
+  SERVICE_EVENT_PREFIX,
+  SERVICE_PATCHES,
+  SERVICE_WELCOME_REPLY,
+  SERVICE_WELCOME_REQUEST,
+  clearServiceChannel,
+  setServiceChannel,
+  type PatchesPayload,
+  type ServiceChannel,
+  type WelcomeReplyPayload,
+  type WelcomeRequestPayload,
+} from './channel-transport.ts';
 export { command, defineService, query } from './define-service.ts';
 export { __resetServiceRegistry, getService, registerService } from './register-service.ts';
 export { ServiceRuntime, createService } from './service-runtime.ts';

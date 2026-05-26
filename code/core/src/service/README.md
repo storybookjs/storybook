@@ -5,7 +5,7 @@ A small schema-driven service system for Storybook internals. A service is a sta
 The main audience for this README is agents and maintainers who need to understand how the pieces fit together, where behavior lives, and how to define new services correctly.
 
 > [!NOTE]
-> This document covers stages 1–2: definition, runtime, query subscriptions, static-build writer, static-load transport, service registration with abstract-command overrides. **Cross-runtime channel sync** and the **React hook** are tracked separately and land in follow-up stages — see the *Coming in later stages* section.
+> This document covers stages 1–3: definition, runtime, query subscriptions, static-build writer, static-load transport, service registration with abstract-command overrides, and cross-runtime channel sync. The **React hook** is tracked separately and lands in a follow-up stage — see the *Coming in later stages* section.
 
 ## Goals
 
@@ -27,6 +27,7 @@ The public API consists of:
 - `createService(def, registration?)` — build a fresh runtime without touching the global registry. Prefer `registerService` for production code.
 - `buildServiceArtifacts(def)` — produce the JSON-shaped state diffs for a service's preloads.
 - `setStaticTransport` / `clearStaticTransport` / `createBrowserStaticTransport` — install the runtime-side loader.
+- `setServiceChannel` / `clearServiceChannel` — install the cross-runtime sync channel.
 - `ServiceValidationError` and the exported type aliases from [types.ts](./types.ts).
 
 Internal tests and implementation code may import from the individual modules directly.
@@ -42,6 +43,7 @@ Internal tests and implementation code may import from the individual modules di
 - [instances.ts](./instances.ts) — the global registry map. Separate module so it can be mocked in tests.
 - [build-artifacts.ts](./build-artifacts.ts) — `buildServiceArtifacts`. The static-build writer.
 - [static-transport.ts](./static-transport.ts) — the global static-load transport.
+- [channel-transport.ts](./channel-transport.ts) — `setServiceChannel` / `clearServiceChannel`, event constants, payload types for cross-runtime sync.
 - [__examples__/docgen-service.ts](./__examples__/docgen-service.ts) — worked example for the docgen pattern.
 - `*.test.ts` — focused tests for runtime behavior, validation behavior, and static builds. Tests assert against the public API only, so they double as usage examples.
 
@@ -562,11 +564,49 @@ Read it alongside [`service-runtime.test.ts`](./service-runtime.test.ts) and [`b
 
 When adding validation tests, prefer asserting the full exact error message — that keeps the tests useful as executable documentation for callers and agents.
 
+## Cross-runtime sync
+
+A single architecture-global channel — typically Storybook's existing manager↔preview↔server channel — lets peer runtimes converge on the same state view. Install it once at app startup:
+
+```ts
+import { setServiceChannel } from 'storybook/internal/service';
+
+setServiceChannel(channel); // any { on, off, emit } shape
+```
+
+Without a channel, sync is disabled — each runtime runs with whatever state local activity produces (plus any static-build JSON the static transport pulls in). This is the *isolation* case: iframe popouts, unit tests, CLI scripts.
+
+Two parts:
+
+1. **Welcome handshake.** On registration, a runtime emits `services:welcome-request` for its service id. Any peer that already has a runtime for the same id replies with `services:welcome-reply` carrying its current state. The joiner deep-merges that state in. Multiple replies are idempotent (deep-merge of identical state is a no-op).
+2. **Ongoing patch broadcast.** Every `setState` that produces patches emits a `services:patches` event carrying the Immer patch list. Peers receive the patches and apply them via Immer's `applyPatches` so removals and other patch ops are preserved (the state-shaped diff format used for files would lose them). Loop suppression: applying remote patches sets an `_applyingRemote` flag so the resulting `setState` does NOT re-broadcast.
+
+```mermaid
+sequenceDiagram
+  participant Joiner as Joiner runtime
+  participant Channel as Service channel
+  participant Peer as Peer runtime (already has state)
+
+  Joiner->>Channel: emit services:welcome-request {serviceId}
+  Channel->>Peer: deliver welcome-request
+  Peer->>Channel: emit services:welcome-reply {serviceId, state}
+  Channel->>Joiner: deliver welcome-reply
+  Joiner->>Joiner: deep-merge state (no re-broadcast)
+
+  Note over Joiner,Peer: ...later, joiner mutates state...
+
+  Joiner->>Joiner: setState produces patches
+  Joiner->>Channel: emit services:patches {serviceId, patches}
+  Channel->>Peer: deliver patches
+  Peer->>Peer: applyPatches (no re-broadcast)
+```
+
+All sync events are scoped by `serviceId` and prefixed with `services:` so other channel traffic is unaffected. Runtimes ignore events for service ids they don't own.
+
 ## Coming in later stages
 
 The following are deliberately not in this stage. They land as separate, independently reviewable PRs:
 
-- **Cross-runtime channel sync.** A `ServiceChannel` so peer runtimes (manager ⇄ preview, etc.) exchange a welcome handshake + ongoing patch broadcast and converge on a shared state view.
 - **React hook** (`useServiceQuery`) — a `useSyncExternalStore` wrapper around `query.subscribe`.
 
 ## Agent Notes

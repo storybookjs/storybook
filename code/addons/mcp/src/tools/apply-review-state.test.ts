@@ -37,7 +37,7 @@ const sampleReview: ReviewState = {
 describe('buildReviewUrl', () => {
 	it('falls back to origin when there is no request', () => {
 		expect(buildReviewUrl({ origin: 'http://localhost:6006' })).toBe(
-			'http://localhost:6006/?path=/review-changes/',
+			'http://localhost:6006/?path=/review/',
 		);
 	});
 
@@ -47,7 +47,7 @@ describe('buildReviewUrl', () => {
 				origin: 'http://localhost:6006',
 				request: new Request('https://example.com/storybook/mcp'),
 			}),
-		).toBe('http://localhost:6006/storybook/?path=/review-changes/');
+		).toBe('http://localhost:6006/storybook/?path=/review/');
 	});
 
 	it('does not trust request host when origin is available', () => {
@@ -56,12 +56,12 @@ describe('buildReviewUrl', () => {
 				origin: 'http://localhost:6006',
 				request: new Request('https://evil.example.org/prefix/mcp'),
 			}),
-		).toBe('http://localhost:6006/prefix/?path=/review-changes/');
+		).toBe('http://localhost:6006/prefix/?path=/review/');
 	});
 
 	it('handles a request served at the host root', () => {
 		expect(buildReviewUrl({ request: new Request('http://localhost:6006/mcp') })).toBe(
-			'http://localhost:6006/?path=/review-changes/',
+			'http://localhost:6006/?path=/review/',
 		);
 	});
 
@@ -152,11 +152,9 @@ describe('applyReviewStateTool', () => {
 		const result = getResult(response);
 
 		expect(result?.isError).toBeFalsy();
-		expect(result?.structuredContent?.reviewUrl).toBe(
-			'http://localhost:6006/?path=/review-changes/',
-		);
+		expect(result?.structuredContent?.reviewUrl).toBe('http://localhost:6006/?path=/review/');
 		expect(result?.content?.[0]?.text).toContain('2 collections, 3 stories');
-		expect(result?.content?.[0]?.text).toContain('http://localhost:6006/?path=/review-changes/');
+		expect(result?.content?.[0]?.text).toContain('http://localhost:6006/?path=/review/');
 		expect(getReviewState()).toEqual(sampleReview);
 	});
 
@@ -173,7 +171,7 @@ describe('applyReviewStateTool', () => {
 		const result = getResult(response);
 
 		expect(result?.structuredContent?.reviewUrl).toBe(
-			'http://localhost:6006/design-system/?path=/review-changes/',
+			'http://localhost:6006/design-system/?path=/review/',
 		);
 	});
 

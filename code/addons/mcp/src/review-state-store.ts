@@ -7,7 +7,7 @@
  * restart clears it — server memory only, by design.
  *
  * This module owns the canonical valibot schema for the review contract;
- * `@storybook/addon-review-changes` duplicates the inferred TS shape on its
+ * `@storybook/addon-review` duplicates the inferred TS shape on its
  * side (it only renders, so it needs the type, not the validator).
  */
 import * as v from 'valibot';

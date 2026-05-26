@@ -19,11 +19,12 @@ import { SummaryScreen } from './screens/SummaryScreen.tsx';
 // Reading `location.search` from the router (rather than window.location)
 // makes the page re-render on every in-page navigation, so the detail screen
 // can swap stories without a manager reload.
-export const ReviewChangesPage: FC = () => (
-  <Location>{({ location }) => <ReviewChangesContent search={location.search ?? ''} />}</Location>
-);
+export const ReviewPage: FC = () =>
+  React.createElement(Location, null, ({ location }) =>
+    React.createElement(ReviewPageContent, { search: location.search ?? '' })
+  );
 
-const ReviewChangesContent: FC<{ search: string }> = ({ search }) => {
+const ReviewPageContent: FC<{ search: string }> = ({ search }) => {
   const [state, setState] = useState<ReviewState | null>(null);
 
   const api = useStorybookApi();
@@ -38,6 +39,25 @@ const ReviewChangesContent: FC<{ search: string }> = ({ search }) => {
   useEffect(() => {
     emit(EVENTS.REQUEST_REVIEW_STATE);
   }, [emit]);
+
+  const activeTab = parseReviewChangesActiveTab(search);
+
+  // Keep the summary route canonical: `/review/` should immediately become
+  // `/review/<tab>` so tab state is represented in the path. Preserve legacy
+  // `&tab=components` by redirecting root summary links to that tab path.
+  useEffect(() => {
+    const params = new URLSearchParams(search);
+    const path = params.get('path');
+    const isLegacySummaryPath =
+      path === REVIEW_CHANGES_URL || path === REVIEW_CHANGES_URL.slice(0, -1);
+    const hasDetailTarget =
+      params.get('story') !== null ||
+      params.get('collection') !== null ||
+      Boolean(params.get('component'));
+    if (isLegacySummaryPath && !hasDetailTarget) {
+      navigate(buildReviewChangesSummaryHref(activeTab), { plain: true });
+    }
+  }, [activeTab, navigate, search]);
 
   // The review page is a focused, full-width surface — hide the manager
   // sidebar while it is open and restore it on the way out. The user's prior
@@ -118,7 +138,6 @@ const ReviewChangesContent: FC<{ search: string }> = ({ search }) => {
     return () => container.removeEventListener('click', onClick);
   }, [navigate]);
 
-  const activeTab = parseReviewChangesActiveTab(search);
   const detailLocation = parseReviewChangesDetailLocation(search);
 
   let detailScreen: ReactNode = null;
@@ -148,30 +167,33 @@ const ReviewChangesContent: FC<{ search: string }> = ({ search }) => {
       const previousStoryIndex = (currentStoryIndex - 1 + totalStories) % totalStories;
       const nextStoryIndex = (currentStoryIndex + 1) % totalStories;
 
-      detailScreen = (
-        <DetailsScreen
-          title={detailTitle}
-          storyId={detailStoryIds[currentStoryIndex]}
-          storyIndex={currentStoryIndex}
-          totalStories={totalStories}
-          backHref={buildReviewChangesSummaryHref(activeTab)}
-          previousHref={buildReviewChangesDetailHref(
-            { ...detailLocation, storyIndex: previousStoryIndex },
-            activeTab
-          )}
-          nextHref={buildReviewChangesDetailHref(
-            { ...detailLocation, storyIndex: nextStoryIndex },
-            activeTab
-          )}
-          branchName={state.branchName}
-        />
-      );
+      detailScreen = React.createElement(DetailsScreen, {
+        title: detailTitle,
+        storyId: detailStoryIds[currentStoryIndex],
+        storyIndex: currentStoryIndex,
+        totalStories,
+        backHref: buildReviewChangesSummaryHref(activeTab),
+        previousHref: buildReviewChangesDetailHref(
+          { ...detailLocation, storyIndex: previousStoryIndex },
+          activeTab
+        ),
+        nextHref: buildReviewChangesDetailHref(
+          { ...detailLocation, storyIndex: nextStoryIndex },
+          activeTab
+        ),
+        branchName: state.branchName,
+      });
     }
   }
 
-  return (
-    <div ref={containerRef} style={{ display: 'contents' }}>
-      {detailScreen ?? <SummaryScreen state={state} initialTab={activeTab} storyInfo={storyInfo} />}
-    </div>
+  return React.createElement(
+    'div',
+    { ref: containerRef, style: { display: 'contents' } },
+    detailScreen ??
+      React.createElement(SummaryScreen, {
+        state,
+        initialTab: activeTab,
+        storyInfo,
+      })
   );
 };

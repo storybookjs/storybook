@@ -1,17 +1,31 @@
 import { expect, fn, userEvent, within } from 'storybook/test';
 
+import { ManagerContext } from 'storybook/manager-api';
+import { MemoryRouter } from 'storybook/internal/router';
+
 import preview from '../../../.storybook/preview.tsx';
-import { EVENTS } from './constants.ts';
+import { EVENTS, RESTORE_NAV_SESSION_KEY } from './constants.ts';
 import type { ReviewState } from './review-state.ts';
-import { ReviewChangesPage, type ReviewChangesPageProps } from './ReviewChangesPage.tsx';
+import { ReviewPage } from './ReviewPage.ts';
 
-let registeredEventMap: Record<string, ((payload: ReviewState) => void) | undefined> = {};
-const emitMock = fn();
+type EventListener = (payload?: unknown) => void;
 
-const useChannelMock: NonNullable<ReviewChangesPageProps['useChannelHook']> = (eventMap) => {
-  registeredEventMap = eventMap as typeof registeredEventMap;
-  return emitMock as ReturnType<NonNullable<ReviewChangesPageProps['useChannelHook']>>;
-};
+const eventListeners = new Map<string, Set<EventListener>>();
+const onMock = fn((eventName: string, listener: EventListener) => {
+  if (!eventListeners.has(eventName)) {
+    eventListeners.set(eventName, new Set());
+  }
+  eventListeners.get(eventName)?.add(listener);
+});
+const offMock = fn((eventName: string, listener: EventListener) => {
+  eventListeners.get(eventName)?.delete(listener);
+});
+const emitMock = fn((eventName: string, payload?: unknown) => {
+  eventListeners.get(eventName)?.forEach((listener) => {
+    listener(payload);
+  });
+});
+const toggleNavMock = fn();
 
 const reviewState: ReviewState = {
   title: 'Manager settings polish',
@@ -31,21 +45,40 @@ const reviewState: ReviewState = {
 };
 
 const applyReviewState = () => {
-  const applyEventHandler = registeredEventMap[EVENTS.APPLY_REVIEW_STATE];
-  expect(applyEventHandler).toBeTruthy();
-  applyEventHandler?.(reviewState);
+  expect(onMock).toHaveBeenCalledWith(EVENTS.APPLY_REVIEW_STATE, expect.any(Function));
+  emitMock(EVENTS.APPLY_REVIEW_STATE, reviewState);
 };
 
 const meta = preview.meta({
-  component: ReviewChangesPage,
+  component: ReviewPage,
   parameters: { layout: 'fullscreen' },
-  args: {
-    useChannelHook: useChannelMock,
-    locationSearch: '',
-  },
+  decorators: [
+    (Story, { parameters }) => (
+      <ManagerContext.Provider
+        value={{
+          state: { index: {} },
+          api: {
+            on: onMock,
+            off: offMock,
+            emit: emitMock,
+            getIsNavShown: () => true,
+            toggleNav: toggleNavMock,
+          },
+        }}
+      >
+        <MemoryRouter initialEntries={parameters?.routerInitialEntries ?? ['/']}>
+          <Story />
+        </MemoryRouter>
+      </ManagerContext.Provider>
+    ),
+  ],
   beforeEach: () => {
-    registeredEventMap = {};
+    eventListeners.clear();
+    onMock.mockReset();
+    offMock.mockReset();
     emitMock.mockReset();
+    toggleNavMock.mockReset();
+    sessionStorage.removeItem(RESTORE_NAV_SESSION_KEY);
   },
 });
 
@@ -72,13 +105,15 @@ export const Components = meta.story({
     const componentsTab = await canvas.findByRole('tab', { name: 'Components' });
     await userEvent.click(componentsTab);
 
-    await expect(await canvas.findByText('Components view coming soon.')).toBeInTheDocument();
+    await expect(
+      await canvas.findByRole('button', { name: 'Show all changes' })
+    ).toBeInTheDocument();
   },
 });
 
 export const Details = meta.story({
-  args: {
-    locationSearch: '?collection=0&story=1',
+  parameters: {
+    routerInitialEntries: ['/?path=/review/collections&collection=0&story=1'],
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);

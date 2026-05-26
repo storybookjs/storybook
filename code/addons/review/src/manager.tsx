@@ -10,14 +10,14 @@ import {
   RESTORE_NAV_SESSION_KEY,
   EVENTS,
 } from './constants.ts';
-import { ReviewChangesPage } from './ReviewChangesPage.tsx';
+import { ReviewPage } from './ReviewPage.ts';
 
 addons.register(ADDON_ID, (api) => {
   // Safety net: the review page hides the sidebar and has no in-app exit, so
   // if the user left it via a full reload (typed URL, bookmark) the
   // component cleanup never ran. On any manager load that is NOT the review
   // route, restore a sidebar we hid. SPA exits (browser back) are already
-  // handled by ReviewChangesPage's effect cleanup.
+  // handled by ReviewPage's effect cleanup.
   const path = new URLSearchParams(window.location.search).get('path') ?? '';
   if (
     !path.startsWith(REVIEW_CHANGES_URL) &&
@@ -45,7 +45,7 @@ addons.register(ADDON_ID, (api) => {
     title: 'Review changes',
     render: () => (
       <Route path={REVIEW_CHANGES_URL} startsWith>
-        <ReviewChangesPage />
+        <ReviewPage />
       </Route>
     ),
   });

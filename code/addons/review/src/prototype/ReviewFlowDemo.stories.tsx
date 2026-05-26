@@ -1,4 +1,4 @@
-import React, { type FC, useState } from 'react';
+import React, { type FC, type ReactNode, useEffect, useRef, useState } from 'react';
 
 import { expect, userEvent, within } from 'storybook/test';
 
@@ -28,31 +28,40 @@ const ReviewFlowPrototype: FC<{
   initialSearch?: string;
 }> = ({ state, storyInfo = {}, initialSearch = '' }) => {
   const [search, setSearch] = useState(initialSearch);
+  const containerRef = useRef<HTMLDivElement>(null);
 
-  const handleNavClick = (event: React.MouseEvent<HTMLDivElement>) => {
-    if (
-      event.defaultPrevented ||
-      event.button !== 0 ||
-      event.metaKey ||
-      event.ctrlKey ||
-      event.shiftKey ||
-      event.altKey
-    ) {
-      return;
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) {
+      return undefined;
     }
-    const anchor = (event.target as HTMLElement).closest('a');
-    const href = anchor?.getAttribute('href');
-    if (!href || !href.startsWith(`?path=${REVIEW_CHANGES_URL}`)) {
-      return;
-    }
-    event.preventDefault();
-    setSearch(href);
-  };
+    const onClick = (event: MouseEvent) => {
+      if (
+        event.defaultPrevented ||
+        event.button !== 0 ||
+        event.metaKey ||
+        event.ctrlKey ||
+        event.shiftKey ||
+        event.altKey
+      ) {
+        return;
+      }
+      const anchor = (event.target as HTMLElement | null)?.closest('a');
+      const href = anchor?.getAttribute('href');
+      if (!href || !href.startsWith(`?path=${REVIEW_CHANGES_URL}`)) {
+        return;
+      }
+      event.preventDefault();
+      setSearch(href);
+    };
+    container.addEventListener('click', onClick);
+    return () => container.removeEventListener('click', onClick);
+  }, []);
 
   const activeTab = parseReviewChangesActiveTab(search);
   const detailLocation = parseReviewChangesDetailLocation(search);
 
-  let detailScreen: React.ReactNode = null;
+  let detailScreen: ReactNode = null;
   if (detailLocation) {
     let detailTitle: string | undefined;
     let detailStoryIds: string[] | undefined;
@@ -101,7 +110,7 @@ const ReviewFlowPrototype: FC<{
   }
 
   return (
-    <div onClick={handleNavClick} style={{ display: 'contents' }}>
+    <div ref={containerRef} style={{ display: 'contents' }}>
       {detailScreen ?? <SummaryScreen state={state} initialTab={activeTab} storyInfo={storyInfo} />}
     </div>
   );
@@ -188,7 +197,7 @@ export const Default = meta.story({
 // deep link. Verifies the URL→view derivation in isolation.
 export const StartingOnDetail = meta.story({
   args: {
-    initialSearch: '?path=/review/&collection=0&story=1&tab=collections',
+    initialSearch: '?path=/review/collections&collection=0&story=1',
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
@@ -197,7 +206,7 @@ export const StartingOnDetail = meta.story({
 });
 
 // Switch tabs first, then drill from the Components grouping into a detail
-// page. The back link should carry tab=components so we land back on the
+// page. The back link should carry the components subpath so we land back on the
 // Components tab.
 export const ComponentDetailFlow = meta.story({
   play: async ({ canvasElement }) => {
@@ -226,7 +235,7 @@ export const SearchThenNavigate = meta.story({
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
 
-    const input = await canvas.findByPlaceholderText('Find stories');
+    const [input] = await canvas.findAllByPlaceholderText('Find stories');
     await userEvent.type(input, 'paddings');
 
     const [match] = await canvas.findAllByRole('link', { name: /Review story/ });

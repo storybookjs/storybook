@@ -1,11 +1,12 @@
-import React, { type FC, type ReactNode, useEffect, useState } from 'react';
+import React, { type FC, type ReactNode, useEffect, useMemo, useState } from 'react';
 
 import { Button, Collapsible, TabsView } from 'storybook/internal/components';
 import { styled } from 'storybook/theming';
 
 import {
   ChevronSmallDownIcon,
-  ChevronSmallUpIcon,
+  CollapseIcon,
+  ExpandAltIcon,
   FilterIcon,
   SearchIcon,
   StorybookIcon,
@@ -32,6 +33,7 @@ const Page = styled.div(({ theme }) => ({
   background: theme.background.content,
   color: theme.color.defaultText,
   fontFamily: theme.typography.fonts.base,
+  fontSize: theme.typography.size.s2,
 }));
 
 const Empty = styled.div(({ theme }) => ({
@@ -61,35 +63,22 @@ const HeaderText = styled.div({
   minWidth: 0,
 });
 
-const Heading = styled.h1({
+const Heading = styled.h1(({ theme }) => ({
   margin: 0,
   alignSelf: 'stretch',
-  fontFamily: '"Nunito Sans", sans-serif',
-  fontStyle: 'normal',
-  fontWeight: 700,
-  fontSize: 20,
-  lineHeight: '24px',
-  color: '#2E3338',
-});
+  fontSize: theme.typography.size.m1,
+  fontWeight: theme.typography.weight.bold,
+}));
 
-const HeaderMeta = styled.div({
+const HeaderMeta = styled.div(({ theme }) => ({
   display: 'flex',
   flexDirection: 'row',
   alignItems: 'center',
   gap: 5,
-});
+  color: theme.textMutedColor,
+}));
 
-const DetailsText = styled.p({
-  margin: 0,
-  fontFamily: '"Nunito Sans", sans-serif',
-  fontStyle: 'normal',
-  fontWeight: 400,
-  fontSize: 14,
-  lineHeight: '20px',
-  color: '#5C6570',
-});
-
-const BranchCode = styled.code({
+const BranchCode = styled.code(({ theme }) => ({
   boxSizing: 'border-box',
   display: 'inline-flex',
   flexDirection: 'row',
@@ -98,19 +87,15 @@ const BranchCode = styled.code({
   background: '#F7FAFC',
   border: '1px solid #DDE0E3',
   borderRadius: 2,
-  fontFamily: '"SF Mono", SFMono-Regular, Menlo, Monaco, Consolas, monospace',
-  fontStyle: 'normal',
-  fontWeight: 400,
-  fontSize: 12,
-  lineHeight: '14px',
-  color: '#2E3338',
-  opacity: 0.9,
-});
+  fontFamily: theme.typography.fonts.mono,
+  fontSize: theme.typography.size.s1,
+}));
 
-const Body = styled.div({
+const Body = styled.div(({ theme }) => ({
   flex: 1,
   minHeight: 0,
-});
+  background: theme.background.app,
+}));
 
 const TabPanelBody = styled.div({});
 
@@ -124,14 +109,24 @@ const SearchRow = styled.div({
   margin: '10px 12px',
 });
 
+const SearchActions = styled.div({
+  display: 'flex',
+  alignItems: 'center',
+  gap: 8,
+  marginLeft: 'auto',
+});
+
 const SearchField = styled.div(({ theme }) => ({
   display: 'flex',
   alignItems: 'center',
-  flex: 1,
+  flex: '0 1 240px',
+  width: 240,
+  maxWidth: '100%',
   minWidth: 0,
   minHeight: 30,
   borderRadius: theme.appBorderRadius + 2,
   boxShadow: `${theme.button.border} 0 0 0 1px inset`,
+  padding: 2,
   paddingLeft: 6,
 }));
 
@@ -190,25 +185,25 @@ const CollectionBlock = styled.section(({ theme }) => ({
   borderBottom: `1px solid ${theme.appBorderColor}`,
 }));
 
-const CollectionHead = styled.div({
+const CollectionHead = styled.div(({ theme }) => ({
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'space-between',
   gap: 8,
-  padding: '6px 12px 6px 16px',
+  padding: '6px 12px',
   minHeight: 40,
   cursor: 'pointer',
-});
+  '&:hover [data-collapsible-title], &:hover [data-collapsible-title] *': {
+    color: theme.color.secondary,
+  },
+}));
 
 const CollectionLabel = styled.strong({
   minWidth: 0,
   overflow: 'hidden',
   textOverflow: 'ellipsis',
   whiteSpace: 'nowrap',
-  fontFamily: '"Nunito Sans", sans-serif',
-  fontStyle: 'normal',
   fontWeight: 700,
-  fontSize: 14,
   lineHeight: '20px',
   color: '#2E3338',
 });
@@ -220,7 +215,7 @@ const ComponentPathPrefix = styled.span(({ theme }) => ({
   color: theme.textMutedColor,
 }));
 
-const ClusterControls = styled.div({
+const CollectionControls = styled.div({
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'flex-end',
@@ -228,7 +223,12 @@ const ClusterControls = styled.div({
   flexShrink: 0,
 });
 
-const ClusterHeadText = styled.div({
+const ToggleChevronIcon = styled(ChevronSmallDownIcon)<{ $expanded: boolean }>(({ $expanded }) => ({
+  transform: `rotate(${$expanded ? -180 : 0}deg)`,
+  transition: 'transform 160ms ease',
+}));
+
+const CollectionHeadText = styled.div({
   display: 'flex',
   flexDirection: 'column',
   gap: 2,
@@ -236,13 +236,9 @@ const ClusterHeadText = styled.div({
   minWidth: 0,
 });
 
-const ClusterRationale = styled.span({
-  fontFamily: '"Nunito Sans", sans-serif',
-  fontStyle: 'normal',
-  fontWeight: 400,
-  fontSize: 12,
-  lineHeight: '16px',
+const CollectionRationale = styled.p({
   color: '#5C6570',
+  margin: '0 12px 6px 12px',
 });
 
 const CollectionCount = styled.span({
@@ -305,8 +301,8 @@ const CollectionsTab: FC<{
   query: string;
   activeTab: ReviewTab;
   storyInfo: Record<string, StoryInfo>;
-  onToggleCluster: (index: number) => void;
-}> = ({ collections, expanded, query, activeTab, storyInfo, onToggleCluster }) => {
+  onToggleCollection: (index: number) => void;
+}> = ({ collections, expanded, query, activeTab, storyInfo, onToggleCollection }) => {
   const normalizedQuery = query.trim().toLowerCase();
   // Search narrows to the story level: a collection whose title matches keeps
   // all its stories, otherwise only the matching stories are shown. The
@@ -339,14 +335,11 @@ const CollectionsTab: FC<{
             <Collapsible
               collapsed={!isExpanded}
               summary={() => (
-                <CollectionHead onClick={() => onToggleCluster(index)}>
-                  <ClusterHeadText>
+                <CollectionHead onClick={() => onToggleCollection(index)}>
+                  <CollectionHeadText data-collapsible-title>
                     <CollectionLabel>{collection.title}</CollectionLabel>
-                    {collection.rationale ? (
-                      <ClusterRationale>{collection.rationale}</ClusterRationale>
-                    ) : null}
-                  </ClusterHeadText>
-                  <ClusterControls>
+                  </CollectionHeadText>
+                  <CollectionControls>
                     <CollectionCount>{storyIds.length}</CollectionCount>
                     <Button
                       variant="ghost"
@@ -355,15 +348,18 @@ const CollectionsTab: FC<{
                       ariaLabel={isExpanded ? 'Collapse cluster' : 'Expand cluster'}
                       onClick={(event) => {
                         event.stopPropagation();
-                        onToggleCluster(index);
+                        onToggleCollection(index);
                       }}
                     >
-                      {isExpanded ? <ChevronSmallUpIcon /> : <ChevronSmallDownIcon />}
+                      <ToggleChevronIcon $expanded={isExpanded} />
                     </Button>
-                  </ClusterControls>
+                  </CollectionControls>
                 </CollectionHead>
               )}
             >
+              {collection.rationale ? (
+                <CollectionRationale>{collection.rationale}</CollectionRationale>
+              ) : null}
               <CollectionGrid
                 storyIds={storyIds}
                 storyInfo={storyInfo}
@@ -429,8 +425,10 @@ const ComponentsTab: FC<{
               collapsed={!isExpanded}
               summary={() => (
                 <CollectionHead onClick={() => onToggleComponent(group.componentId)}>
-                  <ClusterHeadText>{renderComponentTitle(name)}</ClusterHeadText>
-                  <ClusterControls>
+                  <CollectionHeadText data-collapsible-title>
+                    {renderComponentTitle(name)}
+                  </CollectionHeadText>
+                  <CollectionControls>
                     <CollectionCount>{storyIds.length}</CollectionCount>
                     <Button
                       variant="ghost"
@@ -442,9 +440,9 @@ const ComponentsTab: FC<{
                         onToggleComponent(group.componentId);
                       }}
                     >
-                      {isExpanded ? <ChevronSmallUpIcon /> : <ChevronSmallDownIcon />}
+                      <ToggleChevronIcon $expanded={isExpanded} />
                     </Button>
-                  </ClusterControls>
+                  </CollectionControls>
                 </CollectionHead>
               )}
             >
@@ -505,16 +503,21 @@ export const SummaryScreen: FC<SummaryScreenProps> = ({
   storyInfo = {},
 }) => {
   const [tab, setTab] = useState<ReviewTab>(initialTab);
-  const [expandedClusters, setExpandedClusters] = useState<Set<number>>(new Set());
+  const [expandedCollections, setExpandedCollections] = useState<Set<number>>(new Set());
   const [expandedComponents, setExpandedComponents] = useState<Set<string>>(new Set());
   const [search, setSearch] = useState('');
   const [changeFilter, setChangeFilter] = useState<ChangeFilter>('agent');
+  const storybookRootHref = useMemo(() => {
+    const rootUrl = new URL(window.location.href);
+    rootUrl.searchParams.delete('path');
+    return rootUrl.toString();
+  }, []);
 
   useEffect(() => {
     if (!state) {
       return;
     }
-    setExpandedClusters(new Set(state.collections.map((_, index) => index)));
+    setExpandedCollections(new Set(state.collections.map((_, index) => index)));
     setExpandedComponents(
       new Set(groupStoriesByComponent(state.collections).map((group) => group.componentId))
     );
@@ -524,6 +527,14 @@ export const SummaryScreen: FC<SummaryScreenProps> = ({
     return <Empty>Waiting for the agent to push a review…</Empty>;
   }
 
+  const componentIds = groupStoriesByComponent(state.collections).map((group) => group.componentId);
+  const areAllCollectionsExpanded = state.collections.every((_, index) =>
+    expandedCollections.has(index)
+  );
+  const areAllComponentsExpanded = componentIds.every((componentId) =>
+    expandedComponents.has(componentId)
+  );
+
   return (
     <Page>
       <Header>
@@ -531,13 +542,13 @@ export const SummaryScreen: FC<SummaryScreenProps> = ({
           <Heading>{state.title}</Heading>
           {state.branchName ? (
             <HeaderMeta>
-              <DetailsText>Showing unstaged changes on</DetailsText>
+              <span>Showing unstaged changes on</span>
               <BranchCode>{state.branchName}</BranchCode>
             </HeaderMeta>
           ) : null}
         </HeaderText>
         <Button padding="small" asChild>
-          <a href={window.location.href} target="_blank" rel="noreferrer">
+          <a href={storybookRootHref} target="_blank" rel="noreferrer">
             <StorybookIcon />
             Storybook
           </a>
@@ -557,15 +568,36 @@ export const SummaryScreen: FC<SummaryScreenProps> = ({
                 <TabPanelBody>
                   <SearchRow>
                     <SearchBox value={search} onChange={setSearch} />
+                    <SearchActions>
+                      <Button
+                        variant="ghost"
+                        size="small"
+                        padding="small"
+                        ariaLabel={
+                          areAllCollectionsExpanded
+                            ? 'Collapse all collections'
+                            : 'Expand all collections'
+                        }
+                        onClick={() => {
+                          setExpandedCollections(
+                            areAllCollectionsExpanded
+                              ? new Set()
+                              : new Set(state.collections.map((_, index) => index))
+                          );
+                        }}
+                      >
+                        {areAllCollectionsExpanded ? <CollapseIcon /> : <ExpandAltIcon />}
+                      </Button>
+                    </SearchActions>
                   </SearchRow>
                   <CollectionsTab
                     collections={state.collections}
-                    expanded={expandedClusters}
+                    expanded={expandedCollections}
                     query={search}
                     activeTab={tab}
                     storyInfo={storyInfo}
-                    onToggleCluster={(index) => {
-                      setExpandedClusters((prev) => {
+                    onToggleCollection={(index) => {
+                      setExpandedCollections((prev) => {
                         const next = new Set(prev);
                         if (next.has(index)) {
                           next.delete(index);
@@ -586,24 +618,43 @@ export const SummaryScreen: FC<SummaryScreenProps> = ({
                 <TabPanelBody>
                   <SearchRow>
                     <SearchBox value={search} onChange={setSearch} />
-                    <ToggleGroup>
-                      <FilterToggle
-                        type="button"
-                        $selected={changeFilter === 'all'}
-                        aria-pressed={changeFilter === 'all'}
-                        onClick={() => setChangeFilter('all')}
+                    <SearchActions>
+                      <Button
+                        variant="ghost"
+                        size="small"
+                        padding="small"
+                        ariaLabel={
+                          areAllComponentsExpanded
+                            ? 'Collapse all components'
+                            : 'Expand all components'
+                        }
+                        onClick={() => {
+                          setExpandedComponents(
+                            areAllComponentsExpanded ? new Set() : new Set(componentIds)
+                          );
+                        }}
                       >
-                        Show all changes
-                      </FilterToggle>
-                      <FilterToggle
-                        type="button"
-                        $selected={changeFilter === 'agent'}
-                        aria-pressed={changeFilter === 'agent'}
-                        onClick={() => setChangeFilter('agent')}
-                      >
-                        Agent filtered
-                      </FilterToggle>
-                    </ToggleGroup>
+                        {areAllComponentsExpanded ? <CollapseIcon /> : <ExpandAltIcon />}
+                      </Button>
+                      <ToggleGroup>
+                        <FilterToggle
+                          type="button"
+                          $selected={changeFilter === 'all'}
+                          aria-pressed={changeFilter === 'all'}
+                          onClick={() => setChangeFilter('all')}
+                        >
+                          Show all changes
+                        </FilterToggle>
+                        <FilterToggle
+                          type="button"
+                          $selected={changeFilter === 'agent'}
+                          aria-pressed={changeFilter === 'agent'}
+                          onClick={() => setChangeFilter('agent')}
+                        >
+                          Agent filtered
+                        </FilterToggle>
+                      </ToggleGroup>
+                    </SearchActions>
                   </SearchRow>
                   <ComponentsTab
                     collections={state.collections}

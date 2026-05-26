@@ -28,6 +28,8 @@ export const experimental_devServer: PresetPropertyFn<'experimental_devServer'> 
 	const addonOptions = v.parse(AddonOptions, {
 		toolsets: 'toolsets' in options ? options.toolsets : {},
 	});
+	const features = await options.presets.apply('features', {});
+	const changeDetectionEnabled = features?.changeDetection ?? false;
 
 	const origin = `http://localhost:${options.port}`;
 
@@ -39,14 +41,14 @@ export const experimental_devServer: PresetPropertyFn<'experimental_devServer'> 
 	// Older Storybooks (≤10.3) don't pass `options.channel` to dev-server
 	// presets — the rest of addon-mcp still works without channel replay,
 	// so guard rather than crash.
-	if (options.channel?.on) {
+	if (changeDetectionEnabled && options.channel?.on) {
 		options.channel.on(REQUEST_REVIEW_STATE_EVENT, () => {
 			const state = getReviewState();
 			if (state) {
 				options.channel?.emit?.(APPLY_REVIEW_STATE_EVENT, state);
 			}
 		});
-	} else {
+	} else if (!options.channel?.on) {
 		logger.info(
 			'[addon-mcp] options.channel is unavailable on this Storybook version; review-state replay disabled.',
 		);

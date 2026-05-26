@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { Options } from 'storybook/internal/types';
 import { experimental_devServer } from './preset.ts';
 import * as runStoryTests from './tools/run-story-tests.ts';
+import { REQUEST_REVIEW_STATE_EVENT } from './constants.ts';
 
 describe('experimental_devServer', () => {
 	let mockApp: any;
@@ -33,6 +34,46 @@ describe('experimental_devServer', () => {
 
 		expect(mockApp.post).toHaveBeenCalledWith('/mcp', expect.any(Function));
 		expect(mcpHandler).toBeDefined();
+	});
+
+	it('registers review-state replay listener only when changeDetection is enabled', async () => {
+		const channel = { on: vi.fn(), emit: vi.fn() };
+		const optionsWithChangeDetection = {
+			...mockOptions,
+			channel,
+			presets: {
+				apply: vi.fn((key: string) => {
+					if (key === 'features') {
+						return Promise.resolve({ changeDetection: true });
+					}
+					return Promise.resolve(undefined);
+				}),
+			},
+		} as unknown as Options;
+
+		await (experimental_devServer as any)(mockApp, optionsWithChangeDetection);
+
+		expect(channel.on).toHaveBeenCalledWith(REQUEST_REVIEW_STATE_EVENT, expect.any(Function));
+	});
+
+	it('does not register review-state replay listener when changeDetection is disabled', async () => {
+		const channel = { on: vi.fn(), emit: vi.fn() };
+		const optionsWithoutChangeDetection = {
+			...mockOptions,
+			channel,
+			presets: {
+				apply: vi.fn((key: string) => {
+					if (key === 'features') {
+						return Promise.resolve({ changeDetection: false });
+					}
+					return Promise.resolve(undefined);
+				}),
+			},
+		} as unknown as Options;
+
+		await (experimental_devServer as any)(mockApp, optionsWithoutChangeDetection);
+
+		expect(channel.on).not.toHaveBeenCalledWith(REQUEST_REVIEW_STATE_EVENT, expect.any(Function));
 	});
 
 	it('should register /mcp GET endpoint', async () => {

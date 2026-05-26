@@ -122,7 +122,7 @@ const extractEnumValues = (compodocType: any) => {
   const compodocJson = getCompodocJson();
   const enumType = compodocJson?.miscellaneous?.enumerations?.find((x) => x.name === compodocType);
 
-  if (enumType?.childs.every((x) => x.value)) {
+  if (enumType?.childs.every((x) => x.value != null)) {
     return enumType.childs.map((x) => x.value);
   }
 
@@ -130,11 +130,21 @@ const extractEnumValues = (compodocType: any) => {
     return null;
   }
 
-  try {
-    return compodocType.split('|').map((value) => JSON.parse(value));
-  } catch (e) {
-    return null;
-  }
+  const values = compodocType.split('|').map((segment): unknown => {
+    const s = segment.trim();
+    // Compodoc emits TypeScript literal unions with single-quoted strings (e.g. 'S' | 'M' | 'L'),
+    // which JSON.parse rejects. Strip the surrounding quotes and unescape inner escaped quotes.
+    if (s.length >= 2 && s[0] === "'" && s[s.length - 1] === "'") {
+      return s.slice(1, -1).replace(/\\'/g, "'");
+    }
+    try {
+      return JSON.parse(s);
+    } catch {
+      return undefined;
+    }
+  });
+
+  return values.some((v) => v === undefined) ? null : values;
 };
 
 export const extractType = (property: Property, defaultValue: any): SBType => {

@@ -132,12 +132,12 @@
       "description": "URL path to be appended when visiting Storybook for the first time"
     },
     "webpackStatsJson": {
-      "type": ["boolean", "string"],
+      "type": ["string", "boolean"],
       "description": "Write Webpack Stats JSON to disk",
       "default": false
     },
     "statsJson": {
-      "type": ["boolean", "string"],
+      "type": ["string", "boolean"],
       "description": "Write stats JSON to disk",
       "default": false
     },

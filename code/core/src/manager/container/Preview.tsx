@@ -17,19 +17,13 @@ import { addonsTool } from '../components/preview/tools/addons.tsx';
 import { menuTool } from '../components/preview/tools/menu.tsx';
 import { openInEditorTool } from '../components/preview/tools/open-in-editor.tsx';
 import { remountTool } from '../components/preview/tools/remount.tsx';
-import { isolationModeTool } from '../components/preview/tools/share.tsx';
+import { shareTool } from '../components/preview/tools/share.tsx';
 import { zoomTool } from '../components/preview/tools/zoom.tsx';
 import type { PreviewProps } from '../components/preview/utils/types.tsx';
 
 const defaultTabs = [createCanvasTab()];
 const defaultTools = [menuTool, remountTool];
-const defaultToolsExtra = [
-  isolationModeTool,
-  zoomTool,
-  addonsTool,
-  fullScreenTool,
-  openInEditorTool,
-];
+const defaultToolsExtra = [zoomTool, addonsTool, fullScreenTool, shareTool, openInEditorTool];
 
 const emptyTabsList: Addon_BaseType[] = [];
 

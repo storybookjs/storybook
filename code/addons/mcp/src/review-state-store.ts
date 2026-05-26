@@ -1,9 +1,9 @@
 /**
  * In-memory store for the agent-pushed review state.
  *
- * The agent pushes a review via the `apply-review-state` MCP tool; the last
+ * The agent pushes a review via the `display-review` MCP tool; the last
  * one is cached here in module scope and replayed over the Storybook channel
- * to any tab that asks (the `request-review-state` event). A dev-server
+ * to any tab that asks (the `request-review` event). A dev-server
  * restart clears it — server memory only, by design.
  *
  * This module owns the canonical valibot schema for the review contract;

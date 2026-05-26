@@ -4,7 +4,7 @@ import { HttpTransport } from '@tmcp/transport-http';
 import pkgJson from '../package.json' with { type: 'json' };
 import { addPreviewStoriesTool } from './tools/preview-stories.ts';
 import { addGetChangedStoriesTool } from './tools/get-changed-stories.ts';
-import { addApplyReviewStateTool } from './tools/apply-review-state.ts';
+import { addDisplayReviewTool } from './tools/display-review.ts';
 import { addGetUIBuildingInstructionsTool } from './tools/get-storybook-story-instructions.ts';
 import {
 	addListAllDocumentationTool,
@@ -82,7 +82,7 @@ const initializeMCPServer = async (options: Options, multiSource?: boolean) => {
 
 	if (changeDetectionEnabled) {
 		await addGetChangedStoriesTool(server);
-		await addApplyReviewStateTool(server);
+		await addDisplayReviewTool(server);
 	}
 
 	// Register test addon tools

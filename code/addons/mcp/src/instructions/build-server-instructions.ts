@@ -23,9 +23,9 @@ export function buildServerInstructions(options: BuildServerInstructionsOptions)
 						: 'After changing any component or story, call **preview-stories** to retrieve preview URLs.',
 				)
 				.replace(
-					'{{APPLY_REVIEW_STATE_STEP}}',
+					'{{DISPLAY_REVIEW_STEP}}',
 					changeDetection
-						? "\n- After completing the change, call **apply-review-state** to publish a curated review to Storybook's review page. If the session has a browser-preview tool, navigate it to the returned `reviewUrl` so the user sees the review without leaving the chat. Always include the `reviewUrl` in your final response as a fallback."
+						? "\n- After completing the change, call **display-review** to publish a curated review to Storybook's review page. If the session has a browser-preview tool, navigate it to the returned `reviewUrl` so the user sees the review without leaving the chat. Always include the `reviewUrl` in your final response as a fallback."
 						: '',
 				)
 				.trim(),

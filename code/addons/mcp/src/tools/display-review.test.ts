@@ -1,9 +1,9 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { McpServer } from 'tmcp';
 import { ValibotJsonSchemaAdapter } from '@tmcp/adapter-valibot';
-import { addApplyReviewStateTool, buildReviewUrl } from './apply-review-state.ts';
-import { APPLY_REVIEW_STATE_TOOL_NAME } from './tool-names.ts';
-import { APPLY_REVIEW_STATE_EVENT } from '../constants.ts';
+import { addDisplayReviewTool, buildReviewUrl } from './display-review.ts';
+import { DISPLAY_REVIEW_TOOL_NAME } from './tool-names.ts';
+import { DISPLAY_REVIEW_EVENT } from '../constants.ts';
 import { getReviewState, type ReviewState } from '../review-state-store.ts';
 import type { AddonContext } from '../types.ts';
 
@@ -65,7 +65,7 @@ describe('buildReviewUrl', () => {
 	});
 });
 
-describe('applyReviewStateTool', () => {
+describe('displayReviewTool', () => {
 	let server: McpServer<any, AddonContext>;
 	let emitted: Array<{ event: string; payload: unknown }>;
 
@@ -91,7 +91,7 @@ describe('applyReviewStateTool', () => {
 			{
 				name: 'test-server',
 				version: '1.0.0',
-				description: 'Test server for apply-review-state tool',
+				description: 'Test server for display-review tool',
 			},
 			{
 				adapter,
@@ -115,7 +115,7 @@ describe('applyReviewStateTool', () => {
 			{ sessionId: 'test-session' },
 		);
 
-		await addApplyReviewStateTool(server);
+		await addDisplayReviewTool(server);
 	});
 
 	async function callTool(args: ReviewState, custom: AddonContext) {
@@ -124,7 +124,7 @@ describe('applyReviewStateTool', () => {
 				jsonrpc: '2.0' as const,
 				id: 1,
 				method: 'tools/call',
-				params: { name: APPLY_REVIEW_STATE_TOOL_NAME, arguments: args },
+				params: { name: DISPLAY_REVIEW_TOOL_NAME, arguments: args },
 			},
 			{ sessionId: 'test-session', custom },
 		);
@@ -155,7 +155,7 @@ describe('applyReviewStateTool', () => {
 
 	it('broadcasts the review over the Storybook channel', async () => {
 		await callTool(sampleReview, makeContext());
-		expect(emitted).toContainEqual({ event: APPLY_REVIEW_STATE_EVENT, payload: sampleReview });
+		expect(emitted).toContainEqual({ event: DISPLAY_REVIEW_EVENT, payload: sampleReview });
 	});
 
 	it('builds a subpath-aware review URL from the incoming request', async () => {
@@ -177,6 +177,6 @@ describe('applyReviewStateTool', () => {
 
 		const expected = { ...sampleReview, branchName: 'feature/badge-pink' };
 		expect(getReviewState()).toEqual(expected);
-		expect(emitted).toContainEqual({ event: APPLY_REVIEW_STATE_EVENT, payload: expected });
+		expect(emitted).toContainEqual({ event: DISPLAY_REVIEW_EVENT, payload: expected });
 	});
 });

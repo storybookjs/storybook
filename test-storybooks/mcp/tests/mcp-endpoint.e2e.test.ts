@@ -501,7 +501,7 @@ describe('MCP Endpoint E2E Tests', () => {
 				      ],
 				      "type": "object",
 				    },
-				    "name": "apply-review-state",
+				    "name": "display-review",
 				    "outputSchema": {
 				      "$schema": "http://json-schema.org/draft-07/schema#",
 				      "properties": {
@@ -515,7 +515,7 @@ describe('MCP Endpoint E2E Tests', () => {
 				      ],
 				      "type": "object",
 				    },
-				    "title": "Apply Storybook review state",
+				    "title": "Display Storybook review",
 				  },
 				  {
 				    "description": "Run story tests.
@@ -1040,7 +1040,7 @@ describe('MCP Endpoint E2E Tests', () => {
 				  "preview-stories",
 				  "get-storybook-story-instructions",
 				  "get-changed-stories",
-				  "apply-review-state",
+				  "display-review",
 				]
 			`);
 		});

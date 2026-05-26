@@ -6,4 +6,4 @@ export const PREVIEW_STORIES_TOOL_NAME = 'preview-stories';
 export const GET_CHANGED_STORIES_TOOL_NAME = 'get-changed-stories';
 export const GET_UI_BUILDING_INSTRUCTIONS_TOOL_NAME = 'get-storybook-story-instructions';
 export const RUN_STORY_TESTS_TOOL_NAME = 'run-story-tests';
-export const APPLY_REVIEW_STATE_TOOL_NAME = 'apply-review-state';
+export const DISPLAY_REVIEW_TOOL_NAME = 'display-review';

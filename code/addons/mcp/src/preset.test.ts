@@ -5,7 +5,7 @@ import { experimental_devServer } from './preset.ts';
 import { STORYBOOK_MCP_PROXY_HEADER } from './auth/index.ts';
 import * as mcpHandlerModule from './mcp-handler.ts';
 import * as runStoryTests from './tools/run-story-tests.ts';
-import { REQUEST_REVIEW_STATE_EVENT } from './constants.ts';
+import { REQUEST_REVIEW_EVENT } from './constants.ts';
 
 describe('experimental_devServer', () => {
 	let mockApp: any;
@@ -114,7 +114,7 @@ describe('experimental_devServer', () => {
 
 		await (experimental_devServer as any)(mockApp, optionsWithChangeDetection);
 
-		expect(channel.on).toHaveBeenCalledWith(REQUEST_REVIEW_STATE_EVENT, expect.any(Function));
+		expect(channel.on).toHaveBeenCalledWith(REQUEST_REVIEW_EVENT, expect.any(Function));
 	});
 
 	it('does not register review-state replay listener when changeDetection is disabled', async () => {
@@ -134,7 +134,7 @@ describe('experimental_devServer', () => {
 
 		await (experimental_devServer as any)(mockApp, optionsWithoutChangeDetection);
 
-		expect(channel.on).not.toHaveBeenCalledWith(REQUEST_REVIEW_STATE_EVENT, expect.any(Function));
+		expect(channel.on).not.toHaveBeenCalledWith(REQUEST_REVIEW_EVENT, expect.any(Function));
 	});
 
 	it('should register /mcp GET endpoint', async () => {

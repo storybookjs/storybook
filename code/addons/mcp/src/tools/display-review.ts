@@ -8,11 +8,11 @@ import {
 	type ReviewState,
 	type StoredReviewState,
 } from '../review-state-store.ts';
-import { APPLY_REVIEW_STATE_EVENT, REVIEW_PAGE_PATH } from '../constants.ts';
-import { APPLY_REVIEW_STATE_TOOL_NAME } from './tool-names.ts';
+import { DISPLAY_REVIEW_EVENT, REVIEW_PAGE_PATH } from '../constants.ts';
+import { DISPLAY_REVIEW_TOOL_NAME } from './tool-names.ts';
 import { currentGitBranch } from '../utils/git-branch.ts';
 
-const ApplyReviewStateOutput = v.object({
+const DisplayReviewOutput = v.object({
 	reviewUrl: v.pipe(
 		v.string(),
 		v.description(
@@ -55,11 +55,11 @@ export function buildReviewUrl(ctx: {
 	return `${root.replace(/\/$/, '')}/?path=${REVIEW_PAGE_PATH}`;
 }
 
-export async function addApplyReviewStateTool(server: McpServer<any, AddonContext>) {
+export async function addDisplayReviewTool(server: McpServer<any, AddonContext>) {
 	server.tool(
 		{
-			name: APPLY_REVIEW_STATE_TOOL_NAME,
-			title: 'Apply Storybook review state',
+			name: DISPLAY_REVIEW_TOOL_NAME,
+			title: 'Display Storybook review',
 			description: `Push a curated review of the current change to Storybook's review page.
 
 After you finish a UI code change, call this to help the user spot-check it. Provide:
@@ -74,7 +74,7 @@ The \`kind\` labels are for structured review grouping and UI behavior; do not r
 
 Always include the returned reviewUrl in your final user-facing response so the user can open it.`,
 			schema: ReviewStateSchema,
-			outputSchema: ApplyReviewStateOutput,
+			outputSchema: DisplayReviewOutput,
 			enabled: () => server.ctx.custom?.toolsets?.dev ?? true,
 		},
 		async (input: ReviewState) => {
@@ -103,7 +103,7 @@ Always include the returned reviewUrl in your final user-facing response so the 
 
 				// Broadcast to all connected Storybook tabs. A warm tab navigates
 				// to the review page; a cold start relies on the returned URL.
-				server.ctx.custom?.options?.channel?.emit(APPLY_REVIEW_STATE_EVENT, state);
+				server.ctx.custom?.options?.channel?.emit(DISPLAY_REVIEW_EVENT, state);
 
 				const collectionCount = state.collections.length;
 				const storyCount = state.collections.reduce((n, c) => n + c.storyIds.length, 0);

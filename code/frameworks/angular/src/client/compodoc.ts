@@ -122,19 +122,30 @@ const extractEnumValues = (compodocType: any) => {
   const compodocJson = getCompodocJson();
   const enumType = compodocJson?.miscellaneous?.enumerations?.find((x) => x.name === compodocType);
 
-  if (enumType?.childs.every((x) => x.value)) {
-    return enumType.childs.map((x) => x.value);
+  if (enumType?.childs?.every((x: any) => x?.value != null)) {
+    return enumType.childs.map((x: any) => x.value);
   }
 
-  if (typeof compodocType !== 'string' || compodocType.indexOf('|') === -1) {
+  if (typeof compodocType !== 'string' || !compodocType.includes('|')) {
     return null;
   }
 
-  try {
-    return compodocType.split('|').map((value) => JSON.parse(value));
-  } catch (e) {
-    return null;
-  }
+  const segments = compodocType.split('|').map((segment: string) => segment.trim());
+  const parsed = segments.map((segment: string) => {
+    if (
+      (segment.startsWith("'") && segment.endsWith("'")) ||
+      (segment.startsWith('"') && segment.endsWith('"'))
+    ) {
+      return segment.slice(1, -1);
+    }
+    try {
+      return JSON.parse(segment);
+    } catch {
+      return segment;
+    }
+  });
+
+  return parsed.length > 0 ? parsed : null;
 };
 
 export const extractType = (property: Property, defaultValue: any): SBType => {

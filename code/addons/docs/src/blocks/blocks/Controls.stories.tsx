@@ -4,7 +4,7 @@ import type { PlayFunctionContext } from 'storybook/internal/csf';
 
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
-import { expect, within } from 'storybook/test';
+import { expect, userEvent } from 'storybook/test';
 
 import * as ExampleStories from '../examples/ControlsParameters.stories';
 import * as SubcomponentsExampleStories from '../examples/ControlsWithSubcomponentsParameters.stories';
@@ -185,13 +185,14 @@ export const MultipleControlsOnSamePage: Story = {
 /**
  * When multiple Controls blocks for the SAME story are on the same docs page, each control should
  * still have a unique id (and unique name across blocks, so that radio button groups remain
- * independent). This verifies the fix for https://github.com/storybookjs/storybook/issues/29295.
+ * independent). This verifies the fix for https://github.com/storybookjs/storybook/issues/29295
+ * and https://github.com/storybookjs/storybook/issues/34864.
  */
 export const MultipleControlsForSameStoryOnSamePage: Story = {
   render: () => (
     <>
-      <Controls of={ExampleStories.NoParameters} />
-      <Controls of={ExampleStories.NoParameters} />
+      <Controls of={ExampleStories.WithInlineRadio} />
+      <Controls of={ExampleStories.WithInlineRadio} />
     </>
   ),
   play: async ({ canvasElement }) => {
@@ -201,5 +202,29 @@ export const MultipleControlsForSameStoryOnSamePage: Story = {
     const uniqueIds = new Set(allIds);
     await expect(allIds.length).toBeGreaterThan(0);
     await expect(uniqueIds.size).toBe(allIds.length);
+
+    const radioInputs = Array.from(
+      canvasElement.querySelectorAll<HTMLInputElement>('input[type="radio"]')
+    );
+    const radioNames = radioInputs.map((input) => input.name);
+    await expect(radioNames.length).toBeGreaterThan(0);
+    await expect(new Set(radioNames).size).toBe(radioNames.length);
+
+    const tables = canvasElement.querySelectorAll('.docblock-argstable');
+    await expect(tables.length).toBe(2);
+
+    const getCheckedValues = (table: Element) =>
+      Array.from(table.querySelectorAll<HTMLInputElement>('input[type="radio"]:checked')).map(
+        (input) => input.value
+      );
+
+    const firstBlockRadios = tables[0].querySelectorAll<HTMLInputElement>('input[type="radio"]');
+    const secondBlockRadios = tables[1].querySelectorAll<HTMLInputElement>('input[type="radio"]');
+
+    await userEvent.click(firstBlockRadios[1]);
+    await userEvent.click(secondBlockRadios[2]);
+
+    await expect(getCheckedValues(tables[0])).toEqual(['medium']);
+    await expect(getCheckedValues(tables[1])).toEqual(['large']);
   },
 };

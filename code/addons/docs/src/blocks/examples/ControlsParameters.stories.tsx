@@ -33,6 +33,16 @@ export const NoParameters: Story = {
   },
 };
 
+export const WithInlineRadio: Story = {
+  args: { a: 'small' },
+  argTypes: {
+    a: {
+      control: { type: 'inline-radio' },
+      options: ['small', 'medium', 'large'],
+    },
+  },
+};
+
 export const Include: Story = {
   ...NoParameters,
   parameters: { docs: { controls: { include: ['a'] } } },

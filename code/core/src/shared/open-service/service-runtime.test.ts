@@ -1,7 +1,7 @@
 import * as v from 'valibot';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { defineQuery, defineService } from './service-definition.ts';
+import { defineService } from './service-definition.ts';
 import { clearRegistry, getService } from './service-runtime.ts';
 import {
   awaitedPreloadValueServiceDef,
@@ -172,7 +172,7 @@ describe('service runtime', () => {
         description: 'Resolves a subscription value after the subscriber has already unsubscribed.',
         initialState: {} as Record<string, never>,
         queries: {
-          getValue: defineQuery<Record<string, never>>()({
+          getValue: {
             input: v.undefined(),
             output: v.string(),
             handler: async () => {
@@ -182,7 +182,7 @@ describe('service runtime', () => {
 
               return 'late';
             },
-          }),
+          },
         },
         commands: {},
       });

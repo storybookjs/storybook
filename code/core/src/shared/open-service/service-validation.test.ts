@@ -3,7 +3,7 @@ import { dedent } from 'ts-dedent';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { z } from 'zod';
 
-import { defineQuery, defineService } from './service-definition.ts';
+import { defineService } from './service-definition.ts';
 import { buildStaticFiles } from './static-build.ts';
 import { clearRegistry, createService, getService } from './service-runtime.ts';
 import {
@@ -106,7 +106,7 @@ describe('service validation', () => {
         id: 'test/nested-query-output',
         initialState: {} as Record<string, never>,
         queries: {
-          getBrokenTree: defineQuery<Record<string, never>>()({
+          getBrokenTree: {
             input: v.undefined(),
             output: v.object({
               items: v.array(
@@ -116,9 +116,9 @@ describe('service validation', () => {
               ),
             }),
             handler: () => ({
-              items: [{ name: 1 as unknown as string }],
+              items: [{ name: 1 as unknown as string }] as Array<{ name: string }>,
             }),
-          }),
+          },
         },
         commands: {},
       })
@@ -139,13 +139,13 @@ describe('service validation', () => {
         id: 'test/zod-query-input',
         initialState: {} as Record<string, never>,
         queries: {
-          getGreeting: defineQuery<Record<string, never>>()({
+          getGreeting: {
             input: z.object({
               name: z.string().min(2, 'Name must be at least 2 characters'),
             }),
             output: z.string(),
             handler: ({ name }) => `Hello ${name}`,
-          }),
+          },
         },
         commands: {},
       })

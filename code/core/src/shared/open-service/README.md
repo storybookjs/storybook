@@ -20,8 +20,6 @@ External callers should import from [index.ts](./index.ts).
 That public API consists of:
 
 - `defineService`
-- `defineQuery`
-- `defineCommand`
 - `createService`
 - `buildStaticFiles`
 - the exported type aliases from [types.ts](./types.ts)
@@ -32,7 +30,7 @@ Internal tests and implementation code may import from the individual modules di
 
 - [index.ts](./index.ts): public barrel for service authors outside this directory
 - [types.ts](./types.ts): core type model for definitions, contexts, runtime instances, and static build data
-- [service-definition.ts](./service-definition.ts): helpers that preserve inference when declaring services
+- [service-definition.ts](./service-definition.ts): `defineService()` typing that preserves inline inference when declaring services
 - [service-validation.ts](./service-validation.ts): async schema validation helpers and error wrapping
 - [errors.ts](./errors.ts): categorized Storybook errors for validation failures
 - [service-runtime.ts](./service-runtime.ts): runtime creation, singleton registry, subscriptions, and store-backed preload handling
@@ -43,7 +41,7 @@ Internal tests and implementation code may import from the individual modules di
 ```mermaid
 flowchart LR
   A[index.ts\npublic API]
-  B[service-definition.ts\nauthoring helpers]
+  B[service-definition.ts\ndefineService typing]
   C[types.ts\ncore types]
   D[service-runtime.ts\nlive runtime]
   E[service-validation.ts\nschema validation]
@@ -239,15 +237,14 @@ flowchart TD
 
 ## How To Define A Service
 
-Use the helpers in this order:
+Define queries and commands inline inside `defineService()` so the service-level schema maps can
+contextually type every handler, preload hook, and `ctx.self.commands.*` call:
 
 ```ts
 import * as v from 'valibot';
 
 import {
   createService,
-  defineCommand,
-  defineQuery,
   defineService,
 } from './index.ts';
 
@@ -263,7 +260,7 @@ export const exampleServiceDef = defineService({
   description: 'Example service used in documentation.',
   initialState: { values: {} } satisfies ExampleState,
   queries: {
-    getValue: defineQuery<ExampleState>()({
+    getValue: {
       description: 'Returns one value by id.',
       input: entryIdSchema,
       output: valueSchema,
@@ -276,10 +273,10 @@ export const exampleServiceDef = defineService({
       static: {
         inputs: async () => [{ entryId: 'a' }, { entryId: 'b' }],
       },
-    }),
+    },
   },
   commands: {
-    preloadValue: defineCommand<ExampleState>()({
+    preloadValue: {
       description: 'Fills state for one id.',
       input: entryIdSchema,
       output: v.void(),
@@ -288,7 +285,7 @@ export const exampleServiceDef = defineService({
           draft.values[input.entryId] = 'ready';
         });
       },
-    }),
+    },
   },
 });
 

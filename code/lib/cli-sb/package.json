@@ -10,14 +10,14 @@
     "upgrade",
     "init"
   ],
-  "homepage": "https://github.com/storybookjs/storybook/tree/next/code/lib/cli-sb",
+  "homepage": "https://github.com/storybookjs/storybook/tree/next/code/lib/cli-storybook",
   "bugs": {
     "url": "https://github.com/storybookjs/storybook/issues"
   },
   "repository": {
     "type": "git",
     "url": "https://github.com/storybookjs/storybook.git",
-    "directory": "code/lib/cli-sb"
+    "directory": "code/lib/cli-storybook"
   },
   "funding": {
     "type": "opencollective",

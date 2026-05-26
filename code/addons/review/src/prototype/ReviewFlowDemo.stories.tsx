@@ -20,7 +20,7 @@ import { SummaryScreen } from '../screens/SummaryScreen.tsx';
 // off a single piece of local state ("the URL search string") instead of the
 // manager router, so internal navigation (thumbnails, prev/next, back)
 // works end-to-end inside a Storybook preview iframe. The click handler
-// captures plain <a href="?path=/review-changes/…"> clicks, swallows them,
+// captures plain <a href="?path=/review/…"> clicks, swallows them,
 // and just updates the local search — no router, no manager-api required.
 const ReviewFlowPrototype: FC<{
   state: ReviewState;
@@ -188,7 +188,7 @@ export const Default = meta.story({
 // deep link. Verifies the URL→view derivation in isolation.
 export const StartingOnDetail = meta.story({
   args: {
-    initialSearch: '?path=/review-changes/&collection=0&story=1&tab=collections',
+    initialSearch: '?path=/review/&collection=0&story=1&tab=collections',
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);

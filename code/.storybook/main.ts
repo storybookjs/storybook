@@ -64,8 +64,8 @@ const config = defineMain({
       titlePrefix: 'addons/accessibility',
     },
     {
-      directory: '../addons/review-changes/src',
-      titlePrefix: 'addons/review-changes',
+      directory: '../addons/review/src',
+      titlePrefix: 'addons/review',
     },
     {
       directory: '../addons/a11y/template/stories',

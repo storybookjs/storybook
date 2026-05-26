@@ -1,7 +1,7 @@
 // @ts-ignore
 import a11yConfig from '../../../code/addons/a11y/build-config';
 // @ts-ignore
-import reviewChangesConfig from '../../../code/addons/review-changes/build-config';
+import reviewChangesConfig from '../../../code/addons/review/build-config';
 // @ts-ignore
 import docsConfig from '../../../code/addons/docs/build-config';
 // @ts-ignore

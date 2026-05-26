@@ -16,7 +16,7 @@ const useChannelMock: NonNullable<ReviewChangesPageProps['useChannelHook']> = (e
 const reviewState: ReviewState = {
   title: 'Manager settings polish',
   description: 'Updated settings views and spacing.',
-  branchName: 'feat/review-changes-page',
+  branchName: 'feat/review-page',
   collections: [
     {
       title: 'Settings',
@@ -88,6 +88,6 @@ export const Details = meta.story({
 
     await expect(await canvas.findByText('Settings')).toBeInTheDocument();
     await expect(await canvas.findByRole('button', { name: '2/3' })).toBeInTheDocument();
-    await expect(await canvas.findByText('Latest on feat/review-changes-page')).toBeInTheDocument();
+    await expect(await canvas.findByText('Latest on feat/review-page')).toBeInTheDocument();
   },
 });

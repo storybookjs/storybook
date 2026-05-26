@@ -1,6 +1,6 @@
 export const ADDON_ID = 'storybook/addon-review';
 export const PAGE_ID = `${ADDON_ID}/page`;
-export const REVIEW_CHANGES_URL = '/review-changes/';
+export const REVIEW_CHANGES_URL = '/review/';
 
 // sessionStorage key recording whether the manager sidebar (hidden while the
 // review page is open) should be restored when the user leaves. Survives the

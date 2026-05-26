@@ -8311,9 +8311,9 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@storybook/addon-review@workspace:code/addons/review-changes":
+"@storybook/addon-review@workspace:code/addons/review":
   version: 0.0.0-use.local
-  resolution: "@storybook/addon-review@workspace:code/addons/review-changes"
+  resolution: "@storybook/addon-review@workspace:code/addons/review"
   dependencies:
     react: "npm:^18.2.0"
     react-dom: "npm:^18.2.0"

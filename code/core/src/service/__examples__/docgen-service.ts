@@ -1,23 +1,25 @@
 /**
  * Worked example: a docgen-shaped service.
  *
- * Demonstrates:
- *  - A query keyed by `componentId` (`getComponentDocgenInfo`) with `preload`, `inputs`, and `path`
- *    for the static build.
- *  - A no-input selector-only query (`somethingElse`) — no static-build fields; just a reactive read.
- *  - Two concrete commands with inline handlers.
+ * Demonstrates the canonical authoring shape:
+ *  - A query keyed by `componentId` (`getComponentDocgenInfo`) with `preload`, `inputs`, and
+ *    `path` for the static build.
+ *  - A no-input selector-only query (`somethingElse`) — no static-build fields; just a
+ *    reactive read.
+ *  - An **abstract** command (`generateDocgen`) — `handler` omitted from the definition. Each
+ *    runtime supplies the body at registration time. A runtime without a handler throws when
+ *    that command is called (until cross-runtime routing lands).
+ *  - A **concrete** command (`modifySomethingElse`) — `handler` is inline; registration
+ *    cannot override.
  *
  * This file lives under `__examples__` and is NOT exported from the package entry. It exists
  * so the public API is exercised by a realistic-shaped service that type-checks.
- *
- * (Abstract commands — definitions without `handler` that registration supplies — arrive in a
- * follow-up stage. Today both commands here are concrete.)
  */
 
 import { z } from 'zod';
 
 import { defineService } from '../define-service.ts';
-import { createService } from '../service-runtime.ts';
+import { registerService } from '../register-service.ts';
 
 const componentDocgenSchema = z.object({
   description: z.string(),
@@ -29,16 +31,19 @@ interface DocgenState {
   somethingElse: number;
 }
 
-// Placeholder for the build-time component-id enumeration.
+// Placeholder for the build-time component-id enumeration. Real callers would scan the
+// project's stories.
 async function listAllComponentIds(): Promise<readonly string[]> {
   return [];
 }
 
 /**
- * Environment-agnostic definition.
+ * Environment-agnostic definition. Same module imported into manager, preview, and server.
  *
- * `defineService<DocgenState>()(({ query, command }) => …)` — state on the generic; schemas
- * and command handlers infer from the callback.
+ * - `getComponentDocgenInfo` is a static-build query — its `preload` calls the abstract
+ *   `generateDocgen` command. That command's body lives wherever docgen analysis can run
+ *   (typically the server build), supplied via `registerService` in that environment.
+ * - `modifySomethingElse` is concrete — its body is shared across all environments.
  */
 export const DocgenService = defineService<DocgenState>()(({ query, command }) => ({
   id: 'core/docgen',
@@ -54,9 +59,6 @@ export const DocgenService = defineService<DocgenState>()(({ query, command }) =
       output: componentDocgenSchema.nullable(),
       select: (state, componentId) => state.byComponentId[componentId] ?? null,
       preload: async (componentId, ctx) => {
-        // Stage 1: the handler lives inline on `generateDocgen`. Once abstract commands land,
-        // this preload will call the abstract command and registration will supply the body
-        // per environment.
         await ctx.self.commands.generateDocgen(componentId);
       },
       inputs: async () => listAllComponentIds(),
@@ -71,19 +73,14 @@ export const DocgenService = defineService<DocgenState>()(({ query, command }) =
   },
 
   commands: {
+    // Abstract: no `handler` on the definition. A registration MUST supply one for the
+    // command to be callable in this runtime.
     generateDocgen: command({
       input: z.string(),
       output: z.void(),
-      handler: async (componentId, ctx) => {
-        ctx.self.setState((draft) => {
-          draft.byComponentId[componentId] = {
-            description: `Docgen for ${componentId}`,
-            props: {},
-          };
-        });
-      },
     }),
 
+    // Concrete: inline `handler`. Registration cannot override.
     modifySomethingElse: command({
       input: z.void(),
       output: z.void(),
@@ -96,7 +93,22 @@ export const DocgenService = defineService<DocgenState>()(({ query, command }) =
   },
 }));
 
-/** Example consumer: build a fresh instance. */
-export function createDocgenService() {
-  return createService(DocgenService);
+/**
+ * Example consumer (server-side): registers with the abstract command body that calls the
+ * real docgen analyser.
+ */
+export function registerServerSideDocgen() {
+  return registerService(DocgenService, {
+    commands: {
+      generateDocgen: async (componentId, ctx) => {
+        // Real call would invoke the analyser; the stub here just writes a placeholder.
+        ctx.self.setState((draft) => {
+          draft.byComponentId[componentId] = {
+            description: `Docgen for ${componentId}`,
+            props: {},
+          };
+        });
+      },
+    },
+  });
 }

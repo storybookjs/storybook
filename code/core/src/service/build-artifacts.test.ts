@@ -3,7 +3,7 @@ import { z } from 'zod';
 
 import { buildServiceArtifacts, patchesToStateDiff } from './build-artifacts.ts';
 import { defineService } from './define-service.ts';
-import { clearRegistry, getService } from './service-runtime.ts';
+import { __resetServiceRegistry, registerService } from './register-service.ts';
 import {
   clearStaticTransport,
   createBrowserStaticTransport,
@@ -16,7 +16,7 @@ import type { ServiceCtx } from './types.ts';
 const tick = () => new Promise<void>((r) => setTimeout(r, 0));
 
 afterEach(() => {
-  clearRegistry();
+  __resetServiceRegistry();
   clearStaticTransport();
 });
 
@@ -474,7 +474,7 @@ describe('runtime loader branching', () => {
       },
     });
 
-    const store = getService(def);
+    const store = registerService(def);
     const listener = vi.fn();
     store.queries.getOne.subscribe('a', listener);
 
@@ -523,7 +523,7 @@ describe('runtime loader branching', () => {
     transport.files.set(`${def.id}/entries/a.json`, { byId: { a: 'from-static' } });
     setStaticTransport(transport);
 
-    const store = getService(def);
+    const store = registerService(def);
     const listener = vi.fn();
     store.queries.getOne.subscribe('a', listener);
 
@@ -570,7 +570,7 @@ describe('runtime loader branching', () => {
     // Transport installed but has no entry for this input — fetch returns null.
     setStaticTransport(mockTransport());
 
-    const store = getService(def);
+    const store = registerService(def);
     store.queries.getOne.subscribe('a', vi.fn());
 
     await tick();
@@ -626,11 +626,11 @@ describe('runtime loader branching', () => {
     });
 
     // Registration triggers no fetches — the runtime no longer fetches at registration.
-    getService(def);
+    registerService(def);
     expect(fetched).toEqual([]);
 
     // Subscribing to 'a' triggers exactly one fetch — entries/a.json.
-    const store = getService(def);
+    const store = registerService(def);
     store.queries.getOne.subscribe('a', vi.fn());
     await tick();
     expect(fetched).toEqual(['entries/a.json']);
@@ -692,7 +692,7 @@ describe('build → load round trip', () => {
     // Reload via transport. The loader body must NOT run again.
     realLoadCalls.length = 0;
     installTransportFromArtifacts(def.id, artifacts);
-    const reloaded = getService(def);
+    const reloaded = registerService(def);
 
     const listener = vi.fn();
     reloaded.queries.getComponentDocgenInfo.subscribe('Button', listener);
@@ -749,7 +749,7 @@ describe('build → load round trip', () => {
 
     realLoadCalls.length = 0;
     installTransportFromArtifacts(def.id, artifacts);
-    const reloaded = getService(def);
+    const reloaded = registerService(def);
 
     // First subscription to `allStatuses` fires the loader, which fetches statuses.json.
     const listener = vi.fn();

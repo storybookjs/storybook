@@ -5,10 +5,15 @@
  *   - `defineService<S>()(({ query, command }) => ({ state, queries, commands }))` declares a
  *     service. Schema-driven inference covers definition handlers; the runtime validates
  *     `input` / `output` on every call.
- *   - `createService(def)` builds a fresh runtime instance from the definition.
- *   - `getService(def)` looks up (or lazily creates) a singleton instance.
+ *   - `registerService(def, registration?)` activates the definition and returns a
+ *     `ServiceStore`. Idempotent on the definition; safe to call from multiple modules.
+ *   - `getService(def|id)` looks up an already-registered service.
  *   - `buildServiceArtifacts(def)` writes the per-input JSON files used by the static-build
  *     loader; `setStaticTransport(...)` installs the loader on the client.
+ *
+ * Commands come in two flavours: **concrete** (definition supplies the `handler`, registration
+ * cannot override) and **abstract** (no `handler` on the definition; registration MAY supply
+ * one — same definition typically registered in multiple runtimes).
  *
  * Schemas are required: every query/command declares Standard Schema v1 `input` and `output`.
  * The runtime validates at the boundary; `ServiceValidationError` is thrown on mismatch.
@@ -18,7 +23,8 @@
 
 export { buildServiceArtifacts } from './build-artifacts.ts';
 export { command, defineService, query } from './define-service.ts';
-export { ServiceRuntime, clearRegistry, createService, getService } from './service-runtime.ts';
+export { __resetServiceRegistry, getService, registerService } from './register-service.ts';
+export { ServiceRuntime, createService } from './service-runtime.ts';
 export {
   ServiceValidationError,
   type ValidationKind,
@@ -31,12 +37,15 @@ export {
 } from './static-transport.ts';
 
 export type {
+  AbstractCommandDef,
   AnyCommandDef,
   AnyQueryDef,
   AnySchema,
   BuildCtx,
   CommandDef,
   CommandHandlerFn,
+  CommandOverrides,
+  ConcreteCommandDef,
   InferSchemaInput,
   InferSchemaOutput,
   InputOfCommand,
@@ -47,6 +56,8 @@ export type {
   ServiceCtx,
   ServiceDefinition,
   ServiceInstance,
+  ServiceRegistration,
   ServiceStaticTransport,
+  ServiceStore,
   StateMutator,
 } from './types.ts';

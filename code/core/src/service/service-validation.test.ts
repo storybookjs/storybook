@@ -3,11 +3,11 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { z } from 'zod';
 
 import { defineService } from './define-service.ts';
-import { clearRegistry, getService } from './service-runtime.ts';
+import { __resetServiceRegistry, registerService } from './register-service.ts';
 import { ServiceValidationError } from './service-validation.ts';
 
 afterEach(() => {
-  clearRegistry();
+  __resetServiceRegistry();
 });
 
 describe('ServiceValidationError formatting', () => {
@@ -25,7 +25,7 @@ describe('ServiceValidationError formatting', () => {
       },
       commands: {},
     });
-    const service = getService(def);
+    const service = registerService(def);
 
     try {
       service.queries.getById({} as unknown as { entryId: string });
@@ -55,7 +55,7 @@ describe('ServiceValidationError formatting', () => {
       },
       commands: {},
     });
-    const service = getService(def);
+    const service = registerService(def);
 
     try {
       service.queries.getBrokenTree();
@@ -89,7 +89,7 @@ describe('ServiceValidationError formatting', () => {
         },
       },
     });
-    const service = getService(def);
+    const service = registerService(def);
 
     await expect(service.commands.set('x' as unknown as number)).rejects.toMatchObject({
       name: 'ServiceValidationError',

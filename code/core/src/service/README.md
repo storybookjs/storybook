@@ -5,7 +5,7 @@ A small schema-driven service system for Storybook internals. A service is a sta
 The main audience for this README is agents and maintainers who need to understand how the pieces fit together, where behavior lives, and how to define new services correctly.
 
 > [!NOTE]
-> This document covers **stage 1**: definition, runtime, query subscriptions, static-build writer, static-load transport. **Service registration** with abstract-command overrides, **cross-runtime channel sync**, and the **React hook** are tracked separately and land in follow-up stages — see the *Coming in later stages* section.
+> This document covers stages 1–2: definition, runtime, query subscriptions, static-build writer, static-load transport, service registration with abstract-command overrides. **Cross-runtime channel sync** and the **React hook** are tracked separately and land in follow-up stages — see the *Coming in later stages* section.
 
 ## Goals
 
@@ -22,8 +22,9 @@ External callers should import from [index.ts](./index.ts).
 The public API consists of:
 
 - `defineService` (with the `query` / `command` helpers exposed via the callback form).
-- `createService(def)` — build a fresh runtime instance.
-- `getService(def)` — lazy singleton per `definition.id`; `clearRegistry()` for tests.
+- `registerService(def, registration?)` — activate the definition; returns a public-only `ServiceStore`. Idempotent on the definition reference; supplies handlers for abstract commands. `__resetServiceRegistry()` for tests.
+- `getService(def)` (or `getService(id)`) — look up an already-registered service.
+- `createService(def, registration?)` — build a fresh runtime without touching the global registry. Prefer `registerService` for production code.
 - `buildServiceArtifacts(def)` — produce the JSON-shaped state diffs for a service's preloads.
 - `setStaticTransport` / `clearStaticTransport` / `createBrowserStaticTransport` — install the runtime-side loader.
 - `ServiceValidationError` and the exported type aliases from [types.ts](./types.ts).
@@ -37,6 +38,8 @@ Internal tests and implementation code may import from the individual modules di
 - [define-service.ts](./define-service.ts) — `defineService` curried builder plus the `query` / `command` per-entry helpers.
 - [service-validation.ts](./service-validation.ts) — Standard Schema validation, `ServiceValidationError`, sync and async paths.
 - [service-runtime.ts](./service-runtime.ts) — the `ServiceRuntime` class. Owns state, runs commands, fires query preloads, drives subscriptions.
+- [register-service.ts](./register-service.ts) — `registerService`, `getService`, `__resetServiceRegistry`. The public entry into the global registry.
+- [instances.ts](./instances.ts) — the global registry map. Separate module so it can be mocked in tests.
 - [build-artifacts.ts](./build-artifacts.ts) — `buildServiceArtifacts`. The static-build writer.
 - [static-transport.ts](./static-transport.ts) — the global static-load transport.
 - [__examples__/docgen-service.ts](./__examples__/docgen-service.ts) — worked example for the docgen pattern.
@@ -49,11 +52,14 @@ flowchart LR
   C[types.ts\ncore types]
   D[service-runtime.ts\nlive runtime]
   E[service-validation.ts\nschema validation + error]
+  R[register-service.ts\nglobal registry entry]
+  I[instances.ts\nregistry map]
   G[build-artifacts.ts\nstatic-build writer]
   T[static-transport.ts\nclient-side loader]
   H[tests + __examples__\ncoverage and usage]
 
   A --> B
+  A --> R
   A --> D
   A --> G
   A --> T
@@ -62,6 +68,9 @@ flowchart LR
   D --> C
   D --> E
   D --> T
+  D --> B
+  R --> D
+  R --> I
   G --> D
   G --> C
   H --> A
@@ -75,7 +84,7 @@ flowchart LR
 
 Concretely:
 
-- The public `ServiceInstance` exposes `id`, `definition`, `queries`, `commands`. State, mutation, and whole-state subscription are infrastructure-facing (used by the build pipeline and transport sync) and never appear on the public surface.
+- The public `ServiceStore` returned from `registerService` / `getService` exposes `id`, `definition`, `queries`, `commands`. State, mutation, and whole-state subscription are infrastructure-facing (used by the build pipeline and transport sync) and never appear on the public surface.
 - Inside a command body or a query's `preload`, `ctx.self.getState()` and `ctx.self.setState(...)` are how handlers touch state.
 - To read from another service, use its queries — not its state. (Cross-service composition via `ctx.runtime[serviceId]` is planned; not built yet.)
 - A related feature that needs a different on-disk shape is a different service. There is no "different file format for the same service."
@@ -132,6 +141,13 @@ bump: command({
 
 Commands can be async. A no-op `setState` (empty patch list) is detected and skips all notifications.
 
+#### Abstract vs concrete commands
+
+- **Concrete** — `handler` is present on the definition object. The definition owns the implementation; registration **cannot** override it. The key is excluded from `CommandOverrides` at the type level, and the runtime throws if an override slips through.
+- **Abstract** — `handler` is omitted from the definition. A registration **may** supply a handler, but isn't required to: the same definition is registered in multiple runtimes (manager, preview, server) and typically only one of them implements a given abstract command. Calling an abstract command in a runtime that has no local handler throws today; once cross-runtime command routing lands it will defer to a peer runtime that does.
+
+The use case is one shared definition imported into multiple environments, with environment-specific bodies provided per environment for the **abstract** commands. Concrete commands have a single shared body that lives in the definition.
+
 ### Validation
 
 Every query and command must declare both `input` and `output` schemas. Both must be Standard Schema v1 compatible (zod, valibot, arktype). The runtime validates:
@@ -152,14 +168,16 @@ Validation has two entry points: `validateSync` (fast path for query selectors) 
 
 ## Runtime Flow
 
-When `createService(def)` is called (or `getService(def)` on first access):
+When `registerService(def, registration?)` is called for the first time for a given `def.id`:
 
 1. [service-runtime.ts](./service-runtime.ts) creates a signal-backed state container from `def.state`.
-2. It builds the `ctx.self` reference around that state (`getState`, `setState`, `commands`, `queries`).
-3. It builds commands that validate input, run handlers (sync or async), and validate output.
-4. It builds queries with a callable form and a `.subscribe` form. Both validate input and route through the same internal `_runQuery(name, input)` that runs `select` and validates output.
+2. It resolves command handlers — registration overrides beat definition handlers for **abstract** commands. Concrete commands cannot be overridden; the runtime throws if an override is supplied.
+3. It builds the `ctx.self` reference around the state (`getState`, `setState`, `commands`, `queries`).
+4. It builds commands that validate input, run the resolved handler (sync or async), and validate output. Abstract commands with no resolved handler throw with an actionable message at call time.
+5. It builds queries with a callable form and a `.subscribe` form. Both validate input and route through the same internal `_runQuery(name, input)` that runs `select` and validates output.
+6. It freezes a `publicStore` view exposing only `id`, `definition`, `queries`, `commands`. That's what callers see.
 
-The singleton helper `getService(def)` keeps one instance per `definition.id` within the current process. Tests should call `clearRegistry()` in teardown to avoid cross-test leakage. Re-registering a different definition under the same id throws.
+The registry keeps one instance per `definition.id` within the current process. Tests should call `__resetServiceRegistry()` in teardown to avoid cross-test leakage. Re-registering a different definition under the same id throws.
 
 ```mermaid
 sequenceDiagram
@@ -395,7 +413,7 @@ it('reads from a pre-built artifact file', async () => {
   });
   setStaticTransport(transport);
 
-  const service = getService(MyService);
+  const service = registerService(MyService);
   const listener = vi.fn();
   service.queries.getComponentDocgenInfo.subscribe('Button', listener);
   await new Promise((r) => setTimeout(r, 0));
@@ -406,6 +424,53 @@ it('reads from a pre-built artifact file', async () => {
 
 `createBrowserStaticTransport` composes the same `${serviceId}/${filename}` key in production and asks `globalThis.fetch` with it. The transport receives `(serviceId, filename)` as separate arguments — the runtime never composes URLs or paths; it passes the pair to whatever transport is installed.
 
+## Definition vs Registration
+
+### Definition
+
+```ts
+const DocgenService = defineService<DocgenState>()(({ query, command }) => ({
+  id: 'core/docgen',
+  state: { byComponentId: {}, somethingElse: 42 },
+  queries: {
+    getComponentDocgenInfo: query({ /* ...with preload+inputs+path... */ }),
+    somethingElse: query({ input: z.void(), output: z.number(), select: (s) => s.somethingElse }),
+  },
+  commands: {
+    generateDocgen: command({ input: z.string(), output: z.void() }),       // abstract
+    modifySomethingElse: command({
+      input: z.void(),
+      output: z.void(),
+      handler: (ctx) => { /* ... */ },                                       // concrete
+    }),
+  },
+}));
+```
+
+A definition is environment-agnostic — shape only, no running runtime. It can be imported into manager, preview, server, or test code. Definitions are singletons: re-importing the same module yields the same reference, and the registry's identity check is based on definition reference (not just `id`).
+
+### Registration
+
+```ts
+const store = registerService(DocgenService, {
+  commands: {
+    generateDocgen: async (componentId, ctx) => {
+      const result = await callTheAnalyzer(componentId);
+      ctx.self.setState((d: DocgenState) => {
+        d.byComponentId[componentId] = result;
+      });
+    },
+  },
+});
+```
+
+Registration activates the definition and returns the `ServiceStore`. It supplies:
+
+- **Abstract command implementations.** Any command without a `handler` in the definition that this runtime needs to invoke must be implemented here.
+- Per-environment behaviour that's specific to where the runtime runs.
+
+Whether a service loads from JSON is decided architecture-wide via `setStaticTransport`, not per-service. Re-registering the same definition returns the same `ServiceStore`.
+
 ## How To Define A Service
 
 Recommended — the callback form, where `query` and `command` per-entry helpers infer types from each entry's schemas:
@@ -413,7 +478,7 @@ Recommended — the callback form, where `query` and `command` per-entry helpers
 ```ts
 import { z } from 'zod';
 
-import { defineService, getService } from 'storybook/internal/service';
+import { defineService, registerService } from 'storybook/internal/service';
 
 type ExampleState = {
   values: Record<string, string | undefined>;
@@ -454,7 +519,7 @@ export const ExampleService = defineService<ExampleState>()(({ query, command })
   },
 }));
 
-const service = getService(ExampleService);
+const service = registerService(ExampleService);
 service.queries.getValue({ entryId: 'a' });
 ```
 
@@ -501,7 +566,6 @@ When adding validation tests, prefer asserting the full exact error message — 
 
 The following are deliberately not in this stage. They land as separate, independently reviewable PRs:
 
-- **Service registration** (`registerService(def, registration?)`) with the abstract-command / concrete-command distinction, `ServiceStore` as a public-only view, and registration-time command-handler overrides for environments that share one definition (manager / preview / server). The `getService` singleton today is the temporary stage-1 form; registration replaces it.
 - **Cross-runtime channel sync.** A `ServiceChannel` so peer runtimes (manager ⇄ preview, etc.) exchange a welcome handshake + ongoing patch broadcast and converge on a shared state view.
 - **React hook** (`useServiceQuery`) — a `useSyncExternalStore` wrapper around `query.subscribe`.
 
@@ -510,5 +574,6 @@ The following are deliberately not in this stage. They land as separate, indepen
 - If you need to change runtime behavior, start in [service-runtime.ts](./service-runtime.ts).
 - If you need to change validation wording, start in [service-validation.ts](./service-validation.ts).
 - If you need to change service authoring ergonomics, start in [define-service.ts](./define-service.ts) and [types.ts](./types.ts).
+- If you need to change registration semantics or registry lookup, start in [register-service.ts](./register-service.ts).
 - If you need to change static-preload artifact generation, start in [build-artifacts.ts](./build-artifacts.ts).
 - If you need to change how artifacts are loaded on the client, start in [static-transport.ts](./static-transport.ts).

@@ -1,6 +1,8 @@
 import { computed, effect, endBatch, signal, startBatch } from 'alien-signals';
 import { enablePatches, produceWithPatches, type Patch } from 'immer';
 
+import { isAbstractCommand } from './define-service.ts';
+import { instances } from './instances.ts';
 import { rethrowAsync, validateAsync, validateSync } from './service-validation.ts';
 import { getStaticTransport } from './static-transport.ts';
 import type {
@@ -12,6 +14,7 @@ import type {
   ServiceCtx,
   ServiceDefinition,
   ServiceInstance,
+  ServiceRegistration,
   StateMutator,
   SubscribableQueries,
   SubscribableQuery,
@@ -112,13 +115,27 @@ export class ServiceRuntime<TDef extends ServiceDefinition<any, any, any>> {
   private _inflightPreloads = new Map<string, Map<string, Promise<void>>>();
   /** Patches accumulated for the most recent setState call. */
   private _lastPatches: readonly Patch[] = [];
+  /** Resolved command handlers: definition handler or registration override. */
+  private _commandHandlers: Record<string, (...args: any[]) => any>;
 
   public readonly definition: TDef;
   public readonly id: string;
   public readonly queries: SubscribableQueries<TDef['queries']>;
   public readonly commands: CallableCommands<TDef['commands']>;
+  /**
+   * Public-facing view of this runtime. Stable reference across calls to
+   * `registerService` / `getService`. State-mutation hooks (`getState`, `setState`,
+   * `subscribe`, `getLastPatches`) are deliberately omitted — they remain on the runtime
+   * class for the build pipeline and transport sync.
+   */
+  public readonly publicStore: {
+    readonly id: string;
+    readonly definition: TDef;
+    readonly queries: SubscribableQueries<TDef['queries']>;
+    readonly commands: CallableCommands<TDef['commands']>;
+  };
 
-  constructor(definition: TDef) {
+  constructor(definition: TDef, registration?: ServiceRegistration<TDef>) {
     this.definition = definition;
     this.id = definition.id;
 
@@ -131,8 +148,53 @@ export class ServiceRuntime<TDef extends ServiceDefinition<any, any, any>> {
         : never
     );
 
+    // Resolve command handlers: registration override beats definition handler. Abstract
+    // commands with no override remain unresolved — call-time throws with an actionable
+    // message until cross-runtime command routing lands.
+    this._commandHandlers = this._resolveCommandHandlers(definition, registration);
+
     this.queries = this._buildQueriesApi();
     this.commands = this._buildCommandsApi();
+
+    this.publicStore = Object.freeze({
+      id: this.id,
+      definition: this.definition,
+      queries: this.queries,
+      commands: this.commands,
+    });
+  }
+
+  // ------------------------------ command resolution ------------------------------
+
+  private _resolveCommandHandlers(
+    definition: TDef,
+    registration?: ServiceRegistration<TDef>
+  ): Record<string, (...args: any[]) => any> {
+    const out: Record<string, (...args: any[]) => any> = {};
+    const overrides = (registration?.commands ?? {}) as Record<
+      string,
+      ((...args: any[]) => any) | undefined
+    >;
+
+    for (const [name, entry] of Object.entries(definition.commands)) {
+      const cmdDef = entry as AnyCommandDef<unknown>;
+      const override = overrides[name];
+      if (isAbstractCommand(cmdDef)) {
+        if (override) {
+          out[name] = override;
+        }
+        continue;
+      }
+      if (override) {
+        throw new Error(
+          `[service ${definition.id}] command "${name}" is concrete (its definition has a \`handler\`) ` +
+            `and cannot be overridden at registration. ` +
+            `Remove the override, or change the definition to abstract by removing its \`handler\`.`
+        );
+      }
+      out[name] = cmdDef.handler as (...args: any[]) => any;
+    }
+    return out;
   }
 
   // ------------------------------ infrastructure-facing API ------------------------------
@@ -315,10 +377,13 @@ export class ServiceRuntime<TDef extends ServiceDefinition<any, any, any>> {
     const out: Record<string, (input?: unknown) => Promise<unknown>> = {};
     for (const commandName of Object.keys(this.definition.commands)) {
       const cmdDef = this.definition.commands[commandName] as AnyCommandDef<unknown>;
-      const handler = cmdDef.handler as (...args: any[]) => unknown | Promise<unknown>;
+      const handler = this._commandHandlers[commandName] as
+        | ((...args: any[]) => unknown | Promise<unknown>)
+        | undefined;
       // Dispatch by declared arity: `(ctx)` for no-input handlers, `(input, ctx)` for
-      // input-keyed ones.
-      const handlerHasInput = handler.length > 1;
+      // input-keyed ones. We can't unconditionally call `(input, ctx)` because a no-input
+      // handler would receive `input` as its first arg.
+      const handlerHasInput = !!handler && handler.length > 1;
 
       out[commandName] = async (rawInput?: unknown): Promise<unknown> => {
         const parsedInput = await validateAsync(cmdDef.input, rawInput, {
@@ -327,6 +392,17 @@ export class ServiceRuntime<TDef extends ServiceDefinition<any, any, any>> {
           name: commandName,
           phase: 'input',
         });
+        if (!handler) {
+          // No local handler — definition is abstract and registration didn't supply one.
+          // TODO(cross-runtime): once command-routing lands, defer to a peer runtime that
+          // has registered a handler instead of throwing here.
+          throw new Error(
+            `[service ${this.id}] command "${commandName}" has no handler in this runtime. ` +
+              `Provide one at registration via ` +
+              `registerService(def, { commands: { ${commandName}: (input, ctx) => ... } }), ` +
+              `or run the call against a runtime that has the handler.`
+          );
+        }
         const ctx = this._getCtx();
         const rawOutput = await (handlerHasInput ? handler(parsedInput, ctx) : handler(ctx));
         return validateAsync(cmdDef.output, rawOutput, {
@@ -526,44 +602,15 @@ export class ServiceRuntime<TDef extends ServiceDefinition<any, any, any>> {
 // ------------------------------ public entry points ------------------------------
 
 /**
- * Build a fresh runtime instance for the definition. Every call creates a new runtime —
- * callers that need a singleton per service id should use {@link getService} instead.
+ * Build a fresh runtime instance for the definition without touching the global registry.
+ *
+ * Prefer {@link './register-service.ts'.registerService} for production code — it is
+ * idempotent on the same definition and returns a public-only `ServiceStore` view.
  */
 export function createService<TDef extends ServiceDefinition<any, any, any>>(
-  definition: TDef
+  definition: TDef,
+  registration?: ServiceRegistration<TDef>
 ): ServiceInstance<TDef> {
-  const runtime = new ServiceRuntime(definition);
-  return runtime as unknown as ServiceInstance<TDef>;
-}
-
-const instances = new Map<string, ServiceRuntime<any>>();
-
-/**
- * Returns a shared singleton instance for the given service definition. Lazy: creates on first
- * access via {@link createService}, reuses thereafter.
- *
- * Throws if a different definition is already registered for the same id (`definition.id` is
- * the registry key, so two distinct definitions sharing an id would silently collide).
- */
-export function getService<TDef extends ServiceDefinition<any, any, any>>(
-  definition: TDef
-): ServiceInstance<TDef> {
-  const existing = instances.get(definition.id);
-  if (existing) {
-    if (existing.definition !== definition) {
-      throw new Error(
-        `[service] A different service definition is already registered for id "${definition.id}". ` +
-          `Service definitions must be singletons across the bundle.`
-      );
-    }
-    return existing as unknown as ServiceInstance<TDef>;
-  }
-  const runtime = new ServiceRuntime(definition);
-  instances.set(definition.id, runtime);
-  return runtime as unknown as ServiceInstance<TDef>;
-}
-
-/** Test-only helper. Clears the global registry. */
-export function clearRegistry(): void {
-  instances.clear();
+  const runtime = new ServiceRuntime(definition, registration);
+  return runtime.publicStore as unknown as ServiceInstance<TDef>;
 }

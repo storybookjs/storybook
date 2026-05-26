@@ -1,8 +1,10 @@
 import type {
+  AbstractCommandDef,
   AnyCommandDef,
   AnyQueryDef,
   AnySchema,
   CommandDef,
+  ConcreteCommandDef,
   QueryDef,
   ServiceDefinition,
 } from './types.ts';
@@ -69,11 +71,31 @@ export function query<TState>() {
   ): QueryDef<TState, I, O> => definition;
 }
 
-/** Type-only helper for a command entry. At runtime this returns its argument unchanged. */
+/**
+ * Type-only helper for a command entry. At runtime this returns its argument unchanged.
+ *
+ * Two overloads preserve the abstract/concrete distinction in the returned type:
+ *   - With a `handler` field → {@link ConcreteCommandDef} (registration cannot override).
+ *   - Without a `handler` field → {@link AbstractCommandDef} (registration must supply one).
+ */
+export function command<TState>(): {
+  <const I extends AnySchema, const O extends AnySchema>(
+    definition: ConcreteCommandDef<TState, I, O>
+  ): ConcreteCommandDef<TState, I, O>;
+  <const I extends AnySchema, const O extends AnySchema>(
+    definition: AbstractCommandDef<TState, I, O>
+  ): AbstractCommandDef<TState, I, O>;
+};
 export function command<TState>() {
-  return <const I extends AnySchema, const O extends AnySchema>(
-    definition: CommandDef<TState, I, O>
-  ): CommandDef<TState, I, O> => definition;
+  return (definition: CommandDef<TState>): CommandDef<TState> => definition;
+}
+
+/**
+ * A command is **abstract** when its definition has no `handler` field. The runtime checks
+ * for this at construction time and consults registration overrides if so.
+ */
+export function isAbstractCommand(entry: AnyCommandDef): boolean {
+  return typeof entry.handler !== 'function';
 }
 
 export type QueryHelper<TState> = ReturnType<typeof query<TState>>;

@@ -2,14 +2,15 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { z } from 'zod';
 
 import { defineService } from './define-service.ts';
-import { ServiceRuntime, clearRegistry, deepMerge, getService } from './service-runtime.ts';
+import { __resetServiceRegistry, registerService } from './register-service.ts';
+import { ServiceRuntime, deepMerge } from './service-runtime.ts';
 import type { ServiceCtx } from './types.ts';
 
 /** Wait a tick — enough for fire-and-forget preload promises to settle. */
 const tick = () => new Promise<void>((resolve) => setTimeout(resolve, 0));
 
 afterEach(() => {
-  clearRegistry();
+  __resetServiceRegistry();
 });
 
 // All tests below interact with services through the *official* surface:
@@ -35,7 +36,7 @@ describe('queries', () => {
       },
       commands: {},
     });
-    const service = getService(def);
+    const service = registerService(def);
 
     expect(service.queries.get()).toBe('hi');
   });
@@ -56,7 +57,7 @@ describe('queries', () => {
       },
       commands: {},
     });
-    const service = getService(def);
+    const service = registerService(def);
 
     expect(service.queries.getById('a')).toBe(1);
     expect(service.queries.getById('b')).toBe(2);
@@ -93,7 +94,7 @@ describe('queries', () => {
         },
       },
     });
-    const service = getService(def);
+    const service = registerService(def);
 
     const aListener = vi.fn();
     const bListener = vi.fn();
@@ -135,7 +136,7 @@ describe('queries', () => {
         },
       },
     });
-    const service = getService(def);
+    const service = registerService(def);
 
     const listener = vi.fn();
     service.queries.getName.subscribe('a', listener);
@@ -167,7 +168,7 @@ describe('commands', () => {
         },
       },
     });
-    const service = getService(def);
+    const service = registerService(def);
 
     await service.commands.increment();
     expect(service.queries.get()).toBe(1);
@@ -200,10 +201,158 @@ describe('commands', () => {
         },
       },
     });
-    const service = getService(def);
+    const service = registerService(def);
 
     await service.commands.setName({ id: 'a', name: 'Alice' });
     expect(service.queries.get('a')).toBe('Alice');
+  });
+});
+
+// -------------------- abstract commands --------------------
+
+describe('abstract commands', () => {
+  it('definition declares abstract command (handler missing); registration supplies handler', async () => {
+    interface S {
+      byId: Record<string, string>;
+    }
+    const def = defineService()({
+      id: 'test/abstract-impl',
+      state: { byId: {} } as S,
+      queries: {
+        get: {
+          input: z.string(),
+          output: z.string().optional(),
+          select: (s: S, id: string) => s.byId[id],
+        },
+      },
+      commands: {
+        load: {
+          input: z.object({ id: z.string(), name: z.string() }),
+          output: z.void(),
+        },
+      },
+    });
+
+    const handlerSpy = vi.fn(async (input: { id: string; name: string }, ctx: ServiceCtx<S>) => {
+      ctx.self.setState((d) => {
+        d.byId[input.id] = input.name;
+      });
+    });
+
+    const service = registerService(def, {
+      commands: {
+        load: handlerSpy,
+      },
+    });
+
+    await service.commands.load({ id: 'a', name: 'Alice' });
+
+    expect(handlerSpy).toHaveBeenCalledTimes(1);
+    expect(service.queries.get('a')).toBe('Alice');
+  });
+
+  it('registers an abstract command without a handler (call fails until handler arrives)', async () => {
+    const def = defineService()({
+      id: 'test/abstract-no-handler-registers',
+      state: {},
+      queries: {},
+      commands: {
+        load: {
+          input: z.object({ id: z.string() }),
+          output: z.void(),
+        },
+      },
+    });
+
+    const service = registerService(def);
+
+    await expect(service.commands.load({ id: 'x' })).rejects.toThrow(/no handler in this runtime/);
+  });
+
+  it('throws when registration tries to override a concrete command', () => {
+    interface S {
+      n: number;
+    }
+    const def = defineService()({
+      id: 'test/override-concrete-rejected',
+      state: { n: 0 } as S,
+      queries: { get: { input: z.void(), output: z.number(), select: (s: S) => s.n } },
+      commands: {
+        bump: {
+          input: z.void(),
+          output: z.void(),
+          handler: (ctx: ServiceCtx<S>) =>
+            ctx.self.setState((d) => {
+              d.n += 1;
+            }),
+        },
+      },
+    });
+
+    expect(() =>
+      registerService(def, {
+        // Bypass the type system (concrete overrides are excluded from `CommandOverrides`)
+        // to assert the runtime guard fires.
+        commands: {
+          bump: (ctx: ServiceCtx<S>) =>
+            ctx.self.setState((d) => {
+              d.n += 100;
+            }),
+        } as never,
+      })
+    ).toThrow(/concrete.*cannot be overridden at registration/);
+  });
+
+  it('abstract command with no input arg', async () => {
+    interface S {
+      ready: boolean;
+    }
+    const def = defineService()({
+      id: 'test/abstract-noinput',
+      state: { ready: false } as S,
+      queries: { isReady: { input: z.void(), output: z.boolean(), select: (s: S) => s.ready } },
+      commands: {
+        boot: { input: z.void(), output: z.void() },
+      },
+    });
+
+    const service = registerService(def, {
+      commands: {
+        boot: (ctx) =>
+          (ctx as ServiceCtx<S>).self.setState((d) => {
+            d.ready = true;
+          }),
+      },
+    });
+
+    expect(service.queries.isReady()).toBe(false);
+    await service.commands.boot();
+    expect(service.queries.isReady()).toBe(true);
+  });
+});
+
+// -------------------- encapsulation --------------------
+
+describe('encapsulation', () => {
+  it('public ServiceStore exposes only id/definition/queries/commands', () => {
+    const def = defineService()({
+      id: 'test/encapsulation',
+      state: { secret: 42 },
+      queries: {
+        get: {
+          input: z.void(),
+          output: z.number(),
+          select: (s: { secret: number }) => s.secret,
+        },
+      },
+      commands: {},
+    });
+    const service = registerService(def);
+
+    // The runtime class has getState/setState/subscribe for infrastructure use; the public
+    // store omits them. Object.keys reflects the frozen public view.
+    expect(Object.keys(service).sort()).toEqual(['commands', 'definition', 'id', 'queries']);
+    expect(service.queries.get()).toBe(42);
   });
 });
 
@@ -243,7 +392,7 @@ describe('preloads', () => {
         },
       },
     });
-    const service = getService(def);
+    const service = registerService(def);
 
     const listener = vi.fn();
     service.queries.getName.subscribe('a', listener);
@@ -292,7 +441,7 @@ describe('preloads', () => {
         },
       },
     });
-    const service = getService(def);
+    const service = registerService(def);
 
     service.queries.getName.subscribe('a', vi.fn());
     service.queries.getName.subscribe('a', vi.fn());
@@ -336,7 +485,7 @@ describe('preloads', () => {
         },
       },
     });
-    const service = getService(def);
+    const service = registerService(def);
 
     service.queries.getName.subscribe('a', vi.fn());
     service.queries.getName.subscribe('b', vi.fn());
@@ -383,7 +532,7 @@ describe('preloads', () => {
         },
       },
     });
-    const service = getService(def);
+    const service = registerService(def);
 
     // First read returns un-loaded value but kicks the preload off.
     expect(service.queries.get()).toBe('');
@@ -411,7 +560,7 @@ describe('preloads', () => {
         },
       },
     });
-    const service = getService(def);
+    const service = registerService(def);
 
     const listener = vi.fn();
     service.queries.get.subscribe(listener);
@@ -426,7 +575,7 @@ describe('preloads', () => {
 
 // -------------------- registry --------------------
 
-describe('getService', () => {
+describe('registerService / getService', () => {
   it('is idempotent on the same definition', () => {
     const def = defineService()({
       id: 'test/registry-idem',
@@ -436,8 +585,8 @@ describe('getService', () => {
       },
       commands: {},
     });
-    const a = getService(def);
-    const b = getService(def);
+    const a = registerService(def);
+    const b = registerService(def);
     expect(a).toBe(b);
   });
 
@@ -454,8 +603,8 @@ describe('getService', () => {
       queries: {},
       commands: {},
     });
-    getService(a);
-    expect(() => getService(b)).toThrow(/different service definition is already registered/);
+    registerService(a);
+    expect(() => registerService(b)).toThrow(/different service definition is already registered/);
   });
 });
 
@@ -480,7 +629,7 @@ describe('schema validation', () => {
         },
       },
     });
-    const service = getService(def);
+    const service = registerService(def);
 
     await expect(service.commands.set('not-a-number' as unknown as number)).rejects.toThrow(
       /Invalid input for command/
@@ -500,7 +649,7 @@ describe('schema validation', () => {
       },
       commands: {},
     });
-    const service = getService(def);
+    const service = registerService(def);
 
     expect(() => service.queries.getById(42 as unknown as string)).toThrow(
       /Invalid input for query/
@@ -517,7 +666,7 @@ describe('schema validation', () => {
       },
       commands: {},
     });
-    const service = getService(def);
+    const service = registerService(def);
 
     expect(() => service.queries.get()).toThrow(/Invalid output for query/);
   });
@@ -541,7 +690,7 @@ describe('runtime defensive guarantees', () => {
       },
       commands: {},
     });
-    const service = getService(def);
+    const service = registerService(def);
 
     // External mutation of the source object after the runtime was constructed.
     initial.byId.a.name = 'MUTATED';
@@ -617,7 +766,7 @@ describe('runtime defensive guarantees', () => {
     }
 
     try {
-      const service = getService(def);
+      const service = registerService(def);
       service.queries.get();
       await new Promise((r) => setTimeout(r, 10));
     } finally {

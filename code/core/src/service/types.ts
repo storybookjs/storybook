@@ -168,11 +168,12 @@ export type CommandHandlerFn<
       ) => InferSchemaInput<TOutputSchema> | Promise<InferSchemaInput<TOutputSchema>>;
 
 /**
- * A command is a schema-validated writer. `handler` is required at this stage.
- *
- * Abstract commands (no `handler`, supplied at registration) arrive in a follow-up stage.
+ * Abstract command — no `handler` on the definition. A registration MAY supply one, but isn't
+ * required to: the same definition is registered in multiple runtimes and typically only one
+ * of them implements a given abstract command. Calls in runtimes without a handler throw
+ * today, and will defer to a peer runtime once cross-runtime command routing lands.
  */
-export interface CommandDef<
+export interface AbstractCommandDef<
   TState = any,
   TInputSchema extends AnySchema = AnySchema,
   TOutputSchema extends AnySchema = AnySchema,
@@ -180,8 +181,34 @@ export interface CommandDef<
   readonly description?: string;
   readonly input: TInputSchema;
   readonly output: TOutputSchema;
+}
+
+/**
+ * Concrete command — `handler` is required. Cannot be overridden at registration; the
+ * registration type excludes its key, and the runtime throws if an override slips through.
+ */
+export interface ConcreteCommandDef<
+  TState = any,
+  TInputSchema extends AnySchema = AnySchema,
+  TOutputSchema extends AnySchema = AnySchema,
+> extends AbstractCommandDef<TState, TInputSchema, TOutputSchema> {
   readonly handler: CommandHandlerFn<TState, TInputSchema, TOutputSchema>;
 }
+
+/**
+ * A command is a schema-validated writer.
+ *
+ *  - `input` and `output` are Standard Schema v1 schemas.
+ *  - A command without `handler` is **abstract** — registration MUST supply a handler.
+ *  - A command with `handler` is **concrete** — registration CANNOT override it.
+ */
+export type CommandDef<
+  TState = any,
+  TInputSchema extends AnySchema = AnySchema,
+  TOutputSchema extends AnySchema = AnySchema,
+> =
+  | AbstractCommandDef<TState, TInputSchema, TOutputSchema>
+  | ConcreteCommandDef<TState, TInputSchema, TOutputSchema>;
 
 // -------------------- map constraints --------------------
 
@@ -204,12 +231,12 @@ export type AnyQueryDef<TState = any> = {
   readonly path?: BivariantCallback<[ctx: BuildCtx, input?: unknown], string>;
 };
 
-/** Any command definition bound to `TState`. */
+/** Any command definition bound to `TState`. `handler` is optional — absent means abstract. */
 export type AnyCommandDef<TState = any> = {
   readonly description?: string;
   readonly input: AnySchema;
   readonly output: AnySchema;
-  readonly handler: BivariantCallback<
+  readonly handler?: BivariantCallback<
     [input: unknown, ctx: ServiceCtx<TState>],
     unknown | Promise<unknown>
   >;
@@ -236,6 +263,31 @@ export interface ServiceDefinition<
 
 // `ServiceStaticTransport` lives in `static-transport.ts`. Re-export here for convenience.
 export type { ServiceStaticTransport } from './static-transport.ts';
+
+// -------------------- registration --------------------
+
+/**
+ * Registration-time options. Supplies handlers for the definition's **abstract** commands.
+ *
+ * Concrete commands (those with a `handler` in the definition) are NOT overridable — their
+ * keys are removed from {@link CommandOverrides} and the runtime throws if one slips through.
+ */
+export interface ServiceRegistration<TDef extends ServiceDefinition<any, any, any>> {
+  commands?: CommandOverrides<TDef>;
+}
+
+/**
+ * Per-command override map. Only **abstract** commands appear here — concrete commands are
+ * filtered out via key remapping. Abstract overrides are typed from the command's `input` /
+ * `output` schemas.
+ */
+export type CommandOverrides<TDef extends ServiceDefinition<any, any, any>> = {
+  [K in keyof TDef['commands'] as TDef['commands'][K] extends ConcreteCommandDef<any, any, any>
+    ? never
+    : K]?: TDef['commands'][K] extends AbstractCommandDef<TDef['state'], infer TIn, infer TOut>
+    ? CommandHandlerFn<TDef['state'], TIn, TOut>
+    : never;
+};
 
 // -------------------- input/output inference for consumers --------------------
 
@@ -283,14 +335,22 @@ export type CallableCommands<TC extends CommandsMap<any>> = {
 };
 
 /**
- * Runtime handle returned by `createService` / `getService`.
+ * Public-facing handle returned by `registerService` / `getService`.
  *
  * State is *not* on this interface — it's internal to the service. To read data, call a query.
  * To change data, call a command. To react to changes, subscribe to a query.
  */
-export interface ServiceInstance<TDef extends ServiceDefinition<any, any, any>> {
+export interface ServiceStore<TDef extends ServiceDefinition<any, any, any>> {
   readonly id: string;
   readonly definition: TDef;
   readonly queries: SubscribableQueries<TDef['queries']>;
   readonly commands: CallableCommands<TDef['commands']>;
 }
+
+/**
+ * Alias for {@link ServiceStore}. Kept for stage-1 callers that still use the older name.
+ *
+ * `createService(def)` continues to return this shape; new code should prefer
+ * `registerService(def, registration?)` and consume `ServiceStore`.
+ */
+export type ServiceInstance<TDef extends ServiceDefinition<any, any, any>> = ServiceStore<TDef>;

@@ -28,16 +28,16 @@ Two conventions:
 
 ### Queries
 
-Pure synchronous selectors over state:
+Every query is declared via `defineQuery({ select, preload?, inputs?, path? })`. The `select` selector is a pure synchronous function over state:
 
 ```ts
-(state) => result            // no input
-(state, input) => result     // input-keyed
+defineQuery({ select: (state) => result })            // no input
+defineQuery({ select: (state, input) => result })    // input-keyed
 ```
 
-Queries (in their bare-function form) must not call commands or perform I/O. They are read-only by contract. If a query needs to trigger loading, that lives in the query's `preload` field (see below) — switching from the bare-function form to the `defineQuery({ select, preload, ... })` object form.
+The `select` must not call commands or perform I/O — it's read-only by contract. If a query needs to trigger loading on first read, that lives in the query's `preload` field (see below).
 
-Queries are the unit of subscription. Every `useServiceQuery` or `service.queries.foo.subscribe(...)` runs the selector against current state, caches the result, and re-runs it on each state change to decide whether to notify. Purity is what makes "result didn't change, don't re-render" trivially correct.
+Queries are the unit of subscription. Every `useServiceQuery` or `service.queries.foo.subscribe(...)` builds an alien-signals `computed` over the selector. The computed memoises by reference equality on its output, so subscribers only re-fire when this specific query's result actually changes. Purity is what makes "result didn't change, don't re-render" trivially correct.
 
 ### Commands
 
@@ -66,7 +66,7 @@ The use case is one definition imported into multiple environments (manager, pre
 
 ### Query preloads (the static-build mechanism)
 
-Optional, and the only mechanism for static-build persistence. Queries declared as bare functions have no preload and no static artifact — they're just selectors. Queries declared via `defineQuery({ select, preload?, inputs?, path? })` can opt into any combination of those extras.
+Optional, and the only mechanism for static-build persistence. A query without `preload` is just a selector — no static artifact, no load-on-subscribe behaviour. Add `preload` (optionally with `inputs` and `path`) to opt in.
 
 A query's static-build fields:
 
@@ -103,7 +103,7 @@ const DocgenService = defineService<DocgenState>()({
       inputs: async () => listAllComponentIds(),
       path: (_ctx, id: string) => `docgen-${id}.json`,
     }),
-    somethingElse: (state) => state.somethingElse, // bare selector, no static artifact
+    somethingElse: defineQuery({ select: (state) => state.somethingElse }), // selector only, no static artifact
   },
   commands: {
     generateDocgen: defineCommand<string>(),
@@ -189,6 +189,6 @@ The React hook `useServiceQuery(store, queryName, input?)` is a thin wrapper aro
 
 ## Worked example
 
-[`__examples__/docgen-service.ts`](./__examples__/docgen-service.ts) implements docgen against the current API: curried definition, both query shapes (bare selector + `defineQuery` with preload/inputs/path), an abstract command implemented at registration, a concrete inline command.
+[`__examples__/docgen-service.ts`](./__examples__/docgen-service.ts) implements docgen against the current API: curried definition, `defineQuery({ select })` selector-only queries alongside one with full `preload`/`inputs`/`path` static-build hooks, an abstract command implemented at registration, a concrete inline command.
 
 Read it alongside `service-runtime.test.ts` and `build-artifacts.test.ts` — those test against the public surface only, so they double as usage examples.

@@ -25,7 +25,7 @@ describe('queries', () => {
     const def = defineService({
       id: 'test/q-noinput',
       state: { value: 'hi' },
-      queries: { get: (s: { value: string }) => s.value },
+      queries: { get: defineQuery({ select: (s: { value: string }) => s.value }) },
       commands: {},
     });
     const store = registerService(def);
@@ -40,7 +40,7 @@ describe('queries', () => {
     const def = defineService({
       id: 'test/q-input',
       state: { byId: { a: 1, b: 2 } } as S,
-      queries: { getById: (s: S, id: string) => s.byId[id] },
+      queries: { getById: defineQuery({ select: (s: S, id: string) => s.byId[id] }) },
       commands: {},
     });
     const store = registerService(def);
@@ -58,8 +58,8 @@ describe('queries', () => {
       id: 'test/q-subscribe',
       state: { a: 0, b: 0 } as S,
       queries: {
-        getA: (s: S) => s.a,
-        getB: (s: S) => s.b,
+        getA: defineQuery({ select: (s: S) => s.a }),
+        getB: defineQuery({ select: (s: S) => s.b }),
       },
       commands: {
         bumpA: (ctx: ServiceCtx<S>) =>
@@ -97,7 +97,7 @@ describe('queries', () => {
       id: 'test/q-dedupe',
       state: { byId: { a: { name: 'A' } } } as S,
       queries: {
-        getName: (s: S, id: string) => s.byId[id]?.name,
+        getName: defineQuery({ select: (s: S, id: string) => s.byId[id]?.name }),
       },
       commands: {
         rewriteAToSameValue: (ctx: ServiceCtx<S>) =>
@@ -126,7 +126,7 @@ describe('commands', () => {
     const def = defineService({
       id: 'test/cmd-noinput',
       state: { count: 0 } as S,
-      queries: { get: (s: S) => s.count },
+      queries: { get: defineQuery({ select: (s: S) => s.count }) },
       commands: {
         increment: (ctx: ServiceCtx<S>) =>
           ctx.self.setState((d) => {
@@ -147,7 +147,7 @@ describe('commands', () => {
     const def = defineService({
       id: 'test/cmd-async',
       state: { byId: {} } as S,
-      queries: { get: (s: S, id: string) => s.byId[id] },
+      queries: { get: defineQuery({ select: (s: S, id: string) => s.byId[id] }) },
       commands: {
         setName: async (input: { id: string; name: string }, ctx: ServiceCtx<S>) => {
           await Promise.resolve();
@@ -174,7 +174,7 @@ describe('abstract commands', () => {
     const def = defineService({
       id: 'test/abstract-impl',
       state: { byId: {} } as S,
-      queries: { get: (s: S, id: string) => s.byId[id] },
+      queries: { get: defineQuery({ select: (s: S, id: string) => s.byId[id] }) },
       commands: {
         load: defineCommand<{ id: string; name: string }>(),
       },
@@ -220,7 +220,7 @@ describe('abstract commands', () => {
     const def = defineService({
       id: 'test/override-concrete',
       state: { n: 0 } as S,
-      queries: { get: (s: S) => s.n },
+      queries: { get: defineQuery({ select: (s: S) => s.n }) },
       commands: {
         bump: (ctx: ServiceCtx<S>) =>
           ctx.self.setState((d) => {
@@ -249,7 +249,7 @@ describe('abstract commands', () => {
     const def = defineService({
       id: 'test/abstract-noinput',
       state: { ready: false } as S,
-      queries: { isReady: (s: S) => s.ready },
+      queries: { isReady: defineQuery({ select: (s: S) => s.ready }) },
       commands: {
         boot: defineCommand(),
       },
@@ -438,7 +438,7 @@ describe('loaders', () => {
     const def = defineService({
       id: 'test/loader-absent',
       state: { x: 0 } as S,
-      queries: { get: (s: S) => s.x },
+      queries: { get: defineQuery({ select: (s: S) => s.x }) },
       commands: {
         bump: (ctx: ServiceCtx<S>) =>
           ctx.self.setState((d) => {
@@ -466,7 +466,7 @@ describe('registerService / getService', () => {
     const def = defineService({
       id: 'test/registry-idem',
       state: { v: 1 },
-      queries: { get: (s: { v: number }) => s.v },
+      queries: { get: defineQuery({ select: (s: { v: number }) => s.v }) },
       commands: {},
     });
     const a = registerService(def);
@@ -499,7 +499,7 @@ describe('encapsulation', () => {
     const def = defineService({
       id: 'test/encapsulation',
       state: { secret: 42 },
-      queries: { get: (s: { secret: number }) => s.secret },
+      queries: { get: defineQuery({ select: (s: { secret: number }) => s.secret }) },
       commands: {},
     });
     const store = registerService(def);

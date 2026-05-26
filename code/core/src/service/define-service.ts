@@ -32,13 +32,14 @@ import type {
  *   id: 'core/docgen',
  *   state: { byComponentId: {}, somethingElse: 42 },
  *   queries: {
- *     getComponentDocgenInfo: (state, id: string) => state.byComponentId[id],
+ *     getComponentDocgenInfo: defineQuery({
+ *       select: (state, id: string) => state.byComponentId[id],
+ *     }),
  *   },
  *   commands: {
  *     generateDocgen: defineCommand<string>(),
  *     bumpLocal: (ctx) => ctx.self.setState((d) => { d.somethingElse += 1 }),
  *   },
- *   load: { ... },
  * });
  * ```
  */
@@ -70,18 +71,17 @@ export function defineService(definition?: unknown): unknown {
 }
 
 // -------------------- contextually-typed map shapes for the curried form --------------------
-
+type Exact<T, Allowed extends object> = T &
+  { [K in Exclude<keyof T, keyof Allowed>]: never };
 /**
  * The curried form binds `TState` outside the argument's type, so query/command/loader handlers
  * can be contextually typed against it. The constraints below mention `TState` so handler
- * parameters get the right types without per-handler annotations.
- *
- * Queries accept either the bare-function form or the object form. Both are typed against
- * `TState` so the selector's first parameter is inferred correctly.
+ * parameters (including the `select` selector inside `defineQuery({ select })`) get the right
+ * types without per-handler annotations.
  */
 type QueriesMapFor<TState> = Record<
   string,
-  ((state: TState, ...rest: any[]) => any) | QueryDefFor<TState>
+  Exact<QueryDefFor<TState>, QueryDefFor<TState>>
 >;
 
 interface QueryDefFor<TState> {
@@ -109,16 +109,14 @@ type CommandsMapFor<TState> = Record<string, CommandFnFor<TState> | AbstractComm
 /**
  * Authoring helper for a query.
  *
- * Two ways to declare a query in a service definition:
+ * Every query is declared as an object: `getFoo: defineQuery({ select, preload?, inputs?, path? })`.
+ * `select` is the pure selector over state. The other fields are static-build hooks: `preload`
+ * runs on first subscribe (typically to invoke a command that populates state), `inputs`
+ * enumerates inputs for build-time pre-rendering, and `path` overrides the default per-input
+ * filename.
  *
- *  - As a bare selector: `getFoo: (state, id: string) => state.byId[id]`. No preload, no
- *    static build artifact. Most queries look like this.
- *  - As an object: `getFoo: defineQuery({ select, preload?, inputs?, path? })`. Reach for this
- *    when the query needs read-triggered population (`preload`), build-time pre-rendering
- *    (`inputs`, `path`), or both.
- *
- * `defineQuery` is a pass-through; it exists for authoring clarity. The shape is validated by
- * the `QueriesMap<TState>` constraint when the query is placed into a `defineService(...)` call.
+ * `defineQuery` is a pass-through; it exists for authoring clarity and to give TS a precise
+ * shape to infer against. Equivalent to placing the object literal directly into `queries`.
  */
 export function defineQuery<TDef extends QueryDef<any>>(def: TDef): TDef {
   return def;

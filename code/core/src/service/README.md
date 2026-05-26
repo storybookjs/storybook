@@ -21,22 +21,23 @@ APIs are not yet stable. Used by the docgen-server project; will widen over time
 | `instances.ts` | Global registry. Separate module so it can be mocked in tests. |
 | `build-artifacts.ts` | `buildServiceArtifacts`. The static-build writer. |
 | `static-transport.ts` | The global transport. `setStaticTransport`, `clearStaticTransport`, `createBrowserStaticTransport`. Services do not configure transports; the app installs one at startup. |
-| `use-service-query.ts` | `useServiceQuery` React hook. |
+| `channel-transport.ts` | Optional cross-runtime channel: `setServiceChannel`, `clearServiceChannel`. Carries welcome-handshake + ongoing patch broadcast so peers in the same app stay in sync. |
+| `use-service-query.ts` | `useServiceQuery` React hook (signals-backed `useSyncExternalStore` wrapper). |
 | `index.ts` | Public entry point. |
 | `*.test.ts` | Vitest suites. Written against the public API only. |
 
 ## What works today
 
 - Services with state, queries, and commands.
-- Two ways to write queries: bare selector `(state, input) => result` for the common read-only case, or `defineQuery({ select, preload?, inputs?, path? })` when the query backs a static-build artifact.
+- Queries are always written as `defineQuery({ select, preload?, inputs?, path? })`. The optional `preload`/`inputs`/`path` fields opt the query into static-build persistence and load-on-subscribe; without them you've just written a selector.
 - Two ways to write commands: inline functions for concrete cases, `defineCommand<TInput>()` for abstract cases implemented at registration.
 - Two `defineService` forms: `defineService<S>()(...)` (curried, explicit state type) and `defineService(...)` (state inferred from the literal).
 - Immer-backed `setState` with patch capture.
-- Per-query subscriptions that re-render only when the selector result changes.
+- Per-query subscriptions powered by `alien-signals`: a `computed(() => select(state, input))` per (query, input) memoises by reference equality, so subscribers re-fire only when this query's result actually changes. The React hook `useServiceQuery` is built on top.
 - Queries with `preload`+`inputs`+`path` are the persistence mechanism. The build writes one JSON file per enumerated input; the runtime fetches lazily when the query is first subscribed. Queries without those fields have no static artifacts and run purely in session-local mode.
 
 ## Not yet
 
 - Cross-service composition via `ctx.runtime[serviceId]`. Handlers only see `ctx.self` today.
-- Channel-based multi-runtime sync.
+- Channel-based command forwarding for abstract commands (so a client without the override can invoke a command on a client that has it). Today abstract command bodies are local to whichever client supplied them at registration.
 - Env-specific entry points (`service/browser.ts`, `service/node.ts`) bundling the right transport setup so apps don't call `setStaticTransport` directly.

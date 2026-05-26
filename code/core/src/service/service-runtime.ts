@@ -18,7 +18,6 @@ import type {
   CallableCommands,
   CommandHandler,
   QueryDef,
-  QueryEntry,
   SelfHandle,
   ServiceCtx,
   ServiceDefinition,
@@ -27,17 +26,6 @@ import type {
   SubscribableQueries,
   SubscribableQuery,
 } from './types.ts';
-
-/**
- * Normalise a query entry to its object form. A bare selector function becomes
- * `{ select: fn }`; an object passes through unchanged.
- */
-function unwrapQuery(entry: QueryEntry): QueryDef {
-  if (typeof entry === 'function') {
-    return { select: entry as QueryDef['select'] };
-  }
-  return entry as QueryDef;
-}
 
 // Immer's patch tracking is opt-in. Enabling once at module load is fine — it's a global flag.
 enablePatches();
@@ -324,11 +312,11 @@ export class ServiceRuntime<TDef extends ServiceDefinition<any, any, any>> {
     if (!entry) {
       throw new Error(`[${this.id}] Unknown query: ${queryName}`);
     }
-    const select = unwrapQuery(entry).select;
     // Read via the signal: when this method is invoked from inside a `computed` (the
     // subscribe path), this read registers the dependency; from a plain callable read
     // it's just a synchronous value fetch.
     const state = this._stateSignal();
+    const select = entry.select;
     if (select.length <= 1) {
       return (select as (state: unknown) => unknown)(state);
     }
@@ -336,7 +324,7 @@ export class ServiceRuntime<TDef extends ServiceDefinition<any, any, any>> {
   }
 
   private _queryHasInput(queryName: string): boolean {
-    return unwrapQuery(this.definition.queries[queryName]).select.length > 1;
+    return this.definition.queries[queryName].select.length > 1;
   }
 
   private _buildQueriesApi(): SubscribableQueries<TDef['queries']> {
@@ -433,16 +421,14 @@ export class ServiceRuntime<TDef extends ServiceDefinition<any, any, any>> {
   // ------------------------------ preloads (query-backed + legacy loader-backed) ------------------------------
 
   /**
-   * Normalised preload entry built from query-object entries (`definition.queries[name] =
-   * { select, preload, inputs?, path? }`) that have a `preload`. Bare-selector queries don't
-   * contribute. Cached on first access.
+   * Normalised preload entry built from query entries that carry a `preload` field. Queries
+   * without `preload` don't contribute. Cached on first access.
    */
   private _preloadsMap(): Record<string, NormalizedPreload> | undefined {
     if (this._preloadsCache !== undefined) return this._preloadsCache;
     const map: Record<string, NormalizedPreload> = {};
 
     for (const [name, entry] of Object.entries(this.definition.queries)) {
-      if (typeof entry === 'function') continue;
       const q = entry as QueryDef;
       if (!q.preload) continue;
       map[name] = {

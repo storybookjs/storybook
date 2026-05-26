@@ -1,6 +1,6 @@
 # Static build: save and load
 
-A statically-built Storybook serialises service state to JSON at build time and re-hydrates it lazily on the client. Queries with a `preload` are the only mechanism — a service whose queries are all bare selectors doesn't persist anything.
+A statically-built Storybook serialises service state to JSON at build time and re-hydrates it lazily on the client. Queries with a `preload` are the only mechanism — a service whose queries are all selector-only (`defineQuery({ select })` with no `preload`) doesn't persist anything.
 
 ## Mental model
 

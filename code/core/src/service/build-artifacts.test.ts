@@ -55,7 +55,7 @@ describe('buildServiceArtifacts', () => {
     const def = defineService<{ x: number }>()({
       id: 'test/no-loaders',
       state: { x: 1 },
-      queries: { get: (s) => s.x },
+      queries: { get: defineQuery({ select: (s) => s.x }) },
       commands: {},
     });
 
@@ -631,7 +631,7 @@ describe('build → load round trip', () => {
           },
           path: () => 'statuses.json',
         }),
-        getStoryStatus: (s: S, id: string) => s.byStoryId[id],
+        getStoryStatus: defineQuery({ select: (s: S, id: string) => s.byStoryId[id] }),
       },
       commands: {
         loadAll: async (ctx: ServiceCtx<S>) => {

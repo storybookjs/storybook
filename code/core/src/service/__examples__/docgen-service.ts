@@ -2,11 +2,10 @@
  * Worked example: the DocgenService from the architecture conversation.
  *
  * Demonstrates:
- *  - A query keyed by `componentId` (`getComponentDocgenInfo`) declared via `defineQuery` so it
- *    can also carry a `preload`, an `inputs` enumeration, and a `path` callback for the static
- *    build.
- *  - A no-input bare-selector query (`somethingElse`) — when a query has no preload/inputs/path,
- *    the bare form is enough.
+ *  - A query keyed by `componentId` (`getComponentDocgenInfo`) declared via `defineQuery` with
+ *    a `preload`, an `inputs` enumeration, and a `path` callback for the static build.
+ *  - A no-input selector-only query (`somethingElse`) — `defineQuery({ select })` with no
+ *    static-build fields. No persistence, no load-on-subscribe; just a reactive read.
  *  - An **abstract** command (`generateDocgen`) — declared in the shared definition but implemented
  *    at registration time. Different environments (server, manager, preview) can provide different
  *    bodies for the same command without forking the definition.
@@ -55,11 +54,11 @@ export const DocgenService = defineService<DocgenState>()({
   },
 
   queries: {
-    // Query-object form: selector + preload + inputs + path live together. The preload calls a
-    // command that populates the relevant slice of state; the static build runs this preload for
-    // every enumerated input and writes per-input JSON files at `path(input)`.
+    // Selector + preload + inputs + path live together inside `defineQuery`. The preload calls
+    // a command that populates the relevant slice of state; the static build runs this preload
+    // for every enumerated input and writes per-input JSON files at `path(input)`.
     getComponentDocgenInfo: defineQuery({
-      select: (state: DocgenState, componentId: string) => state.byComponentId[componentId],
+      select: (state, componentId: string) => state.byComponentId[componentId],
       preload: async (componentId: string, ctx) => {
         await ctx.self.commands.generateDocgen(componentId);
       },
@@ -67,11 +66,12 @@ export const DocgenService = defineService<DocgenState>()({
       path: (_ctx, componentId: string) => `docgen-${componentId}.json`,
     }),
 
-    // Bare-selector form: a query with no preload / inputs / path. No static build artifact;
-    // state changes happen only via commands.
-    somethingElse: (state) => state.somethingElse,
+    // Selector-only query. No `preload`, so no static-build artifact and no load-on-subscribe
+    // behaviour — just a reactive read of `state.somethingElse`.
+    somethingElse: defineQuery({
+      select: (state) => state.somethingElse,
+    }),
   },
-
   commands: {
     // Abstract: signature declared here, implementation supplied at registration.
     generateDocgen: defineCommand<string>(),

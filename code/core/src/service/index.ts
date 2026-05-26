@@ -36,7 +36,6 @@ export type {
   InputOfQuery,
   OutputOfQuery,
   QueryDef,
-  QueryEntry,
   ServiceCtx,
   ServiceDefinition,
   ServiceRegistration,

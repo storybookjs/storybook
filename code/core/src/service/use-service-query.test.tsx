@@ -23,7 +23,7 @@ describe('useServiceQuery — initial render', () => {
     const def = defineService({
       id: 'test/hook-initial',
       state: { count: 7 } as S,
-      queries: { get: (s: S) => s.count },
+      queries: { get: defineQuery({ select: (s: S) => s.count }) },
       commands: {},
     });
     const store = registerService(def);
@@ -39,7 +39,7 @@ describe('useServiceQuery — initial render', () => {
     const def = defineService({
       id: 'test/hook-initial-input',
       state: { byId: { a: 'alpha' } } as S,
-      queries: { get: (s: S, id: string) => s.byId[id] },
+      queries: { get: defineQuery({ select: (s: S, id: string) => s.byId[id] }) },
       commands: {},
     });
     const store = registerService(def);
@@ -59,7 +59,7 @@ describe('useServiceQuery — reactivity', () => {
     const def = defineService({
       id: 'test/hook-rerender',
       state: { count: 0 } as S,
-      queries: { get: (s: S) => s.count },
+      queries: { get: defineQuery({ select: (s: S) => s.count }) },
       commands: {
         bump: (ctx: ServiceCtx<S>) =>
           ctx.self.setState((d) => {
@@ -95,8 +95,8 @@ describe('useServiceQuery — reactivity', () => {
       id: 'test/hook-no-rerender-unrelated',
       state: { a: 0, b: 0 } as S,
       queries: {
-        getA: (s: S) => s.a,
-        getB: (s: S) => s.b,
+        getA: defineQuery({ select: (s: S) => s.a }),
+        getB: defineQuery({ select: (s: S) => s.b }),
       },
       commands: {
         bumpB: (ctx: ServiceCtx<S>) =>
@@ -132,7 +132,7 @@ describe('useServiceQuery — reactivity', () => {
     const def = defineService({
       id: 'test/hook-no-rerender-equal',
       state: { label: 'hello' } as S,
-      queries: { get: (s: S) => s.label },
+      queries: { get: defineQuery({ select: (s: S) => s.label }) },
       commands: {
         rewrite: (ctx: ServiceCtx<S>) =>
           ctx.self.setState((d) => {
@@ -169,7 +169,7 @@ describe('useServiceQuery — input changes', () => {
     const def = defineService({
       id: 'test/hook-input-change',
       state: { byId: { a: 'alpha', b: 'beta' } } as S,
-      queries: { get: (s: S, id: string) => s.byId[id] },
+      queries: { get: defineQuery({ select: (s: S, id: string) => s.byId[id] }) },
       commands: {},
     });
     const store = registerService(def);

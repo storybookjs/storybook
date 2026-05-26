@@ -102,19 +102,11 @@ export interface SelfHandle<TState> {
 // -------------------- query entries --------------------
 
 /**
- * A query entry in the definition is either a bare selector function or an object with extra
- * static-build metadata. Both forms are accepted; the object form is needed when the query
- * has a preload, enumerated inputs for build-time pre-rendering, or a custom path callback.
- *
- *   - Bare function: `(state, input?) => result`. Pure selector. No preload, no static artifact.
- *   - Object form: `{ select, preload?, inputs?, path? }`. The selector lives on `select`.
+ * A query entry in the definition: a `select` selector plus optional static-build metadata
+ * (`preload`, `inputs`, `path`). Authored via `defineQuery({ select, ... })`.
  */
-export type QueryEntry<TState = any> =
-  | ((state: TState, ...rest: any[]) => any)
-  | QueryDef<TState>;
-
-export interface QueryDef<TState = any> {
-  /** Pure synchronous selector over state. Same contract as the bare-function form. */
+export type QueryDef<TState = any> = {
+  /** Pure synchronous selector over state. */
   readonly select: (state: TState, ...rest: any[]) => any;
   /**
    * Optional read-triggered side effect that populates state for this query. Typically calls
@@ -147,7 +139,7 @@ export interface QueryDef<TState = any> {
  * `defineService<S>()` form layers stricter shapes on top of these constraints to recover
  * contextual typing for `state` and `ctx`.
  */
-export type QueriesMap<TState> = Record<string, QueryEntry<TState>>;
+export type QueriesMap<TState> = Record<string, QueryDef<TState>>;
 export type CommandsMap<TState> = Record<string, CommandEntry>;
 
 export interface ServiceDefinition<

@@ -5,7 +5,7 @@ import {
   setServiceChannel,
   type ServiceChannel,
 } from './channel-transport.ts';
-import { defineService } from './define-service.ts';
+import { defineQuery, defineService } from './define-service.ts';
 import { __resetServiceRegistry, registerService } from './register-service.ts';
 import { ServiceRuntime } from './service-runtime.ts';
 import type { ServiceCtx } from './types.ts';
@@ -54,7 +54,7 @@ describe('isolation — no channel installed', () => {
     const def = defineService<S>()({
       id: 'test/isolation-no-channel',
       state: { n: 0 },
-      queries: { get: (s) => s.n },
+      queries: { get: defineQuery({ select: (s) => s.n }) },
       commands: {
         bump: (ctx) =>
           ctx.self.setState((d: S) => {
@@ -81,7 +81,7 @@ describe('welcome handshake', () => {
     const def = defineService<S>()({
       id: 'test/welcome-handshake',
       state: { counter: 0, byId: {} },
-      queries: { get: (s) => s },
+      queries: { get: defineQuery({ select: (s) => s }) },
       commands: {
         seed: (ctx) =>
           ctx.self.setState((d: S) => {
@@ -115,7 +115,7 @@ describe('welcome handshake', () => {
     const def = defineService<S>()({
       id: 'test/welcome-multi-reply',
       state: { n: 0 },
-      queries: { get: (s) => s.n },
+      queries: { get: defineQuery({ select: (s) => s.n }) },
       commands: {
         set: (n: number, ctx) =>
           ctx.self.setState((d: S) => {
@@ -146,7 +146,7 @@ describe('welcome handshake', () => {
     const def = defineService<S>()({
       id: 'test/welcome-isolated',
       state: { n: 5 },
-      queries: { get: (s) => s.n },
+      queries: { get: defineQuery({ select: (s) => s.n }) },
       commands: {},
     });
 
@@ -170,7 +170,7 @@ describe('ongoing patch sync', () => {
     const def = defineService<S>()({
       id: 'test/ongoing-sync',
       state: { byId: {} },
-      queries: { getOne: (s, id: string) => s.byId[id] },
+      queries: { getOne: defineQuery({ select: (s, id: string) => s.byId[id] }) },
       commands: {
         set: (input: { id: string; name: string }, ctx) =>
           ctx.self.setState((d: S) => {
@@ -209,7 +209,7 @@ describe('ongoing patch sync', () => {
     const def = defineService<S>()({
       id: 'test/loop-suppression',
       state: { n: 0 },
-      queries: { get: (s) => s.n },
+      queries: { get: defineQuery({ select: (s) => s.n }) },
       commands: {
         bump: (ctx) =>
           ctx.self.setState((d: S) => {
@@ -247,7 +247,7 @@ describe('ongoing patch sync', () => {
     const def = defineService<S>()({
       id: 'test/removal-sync',
       state: { byId: { a: 'alpha', b: 'beta' } },
-      queries: { getOne: (s, id: string) => s.byId[id] },
+      queries: { getOne: defineQuery({ select: (s, id: string) => s.byId[id] }) },
       commands: {
         remove: (id: string, ctx) =>
           ctx.self.setState((d: S) => {
@@ -284,7 +284,7 @@ describe('service-id filtering', () => {
     const defA = defineService<S>()({
       id: 'test/svc-A',
       state: { n: 0 },
-      queries: { get: (s) => s.n },
+      queries: { get: defineQuery({ select: (s) => s.n }) },
       commands: {
         set: (n: number, ctx) =>
           ctx.self.setState((d: S) => {
@@ -295,7 +295,7 @@ describe('service-id filtering', () => {
     const defB = defineService<S>()({
       id: 'test/svc-B',
       state: { n: 100 },
-      queries: { get: (s) => s.n },
+      queries: { get: defineQuery({ select: (s) => s.n }) },
       commands: {
         set: (n: number, ctx) =>
           ctx.self.setState((d: S) => {

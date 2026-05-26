@@ -160,14 +160,14 @@ export const Error = {
 const expectEmptyState = async (canvasElement: HTMLElement) => {
   const canvas = within(canvasElement);
 
-  await expect(canvas.queryByText('No controls available for this story')).not.toBeInTheDocument();
+  await expect(canvas.queryByText('This story has no controls')).not.toBeInTheDocument();
 
-  await expect(await canvas.findByText('No controls available for this story')).toBeVisible();
+  await expect(await canvas.findByText('This story has no controls')).toBeVisible();
   await expect(
-    await canvas.findByText(/Storybook didn't find any controllable args for this story/i)
+    await canvas.findByText(/Storybook couldn't find or generate any controls for this story/i)
   ).toBeVisible();
   const learnMoreLink = await canvas.findByRole('link', {
-    name: /Learn how to configure controls/i,
+    name: /Read docs/i,
   });
 
   await expect(learnMoreLink).toBeVisible();
@@ -178,7 +178,9 @@ const expectEmptyState = async (canvasElement: HTMLElement) => {
 };
 
 export const Empty: Story = {
-  args: {},
+  args: {
+    rows: {},
+  },
   parameters: {
     layout: 'centered',
   },

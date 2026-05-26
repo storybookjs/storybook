@@ -51,12 +51,12 @@ export const Empty: FC<EmptyProps> = ({ inAddonPanel }) => {
   return (
     <Wrapper inAddonPanel={inAddonPanel}>
       <EmptyTabContent
-        title="No controls available for this story"
+        title="This story has no controls"
         description={
           <>
-            Storybook didn&apos;t find any controllable args for this story. Add <code>args</code>{' '}
-            or <code>argTypes</code>, or enable docgen for your framework, and interactive controls
-            will appear here automatically.
+            Storybook couldn&apos;t find or generate any controls for this story. Define{' '}
+            <code>args</code> or <code>argTypes</code>, or configure docgen to let Storybook
+            generate controls automatically.
           </>
         }
         footer={
@@ -66,7 +66,7 @@ export const Empty: FC<EmptyProps> = ({ inAddonPanel }) => {
               target="_blank"
               withArrow
             >
-              <DocumentIcon /> Learn how to configure controls
+              <DocumentIcon /> Read docs
             </Link>
           </Links>
         }

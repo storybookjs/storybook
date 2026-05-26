@@ -5,7 +5,7 @@ A small schema-driven service system for Storybook internals. A service is a sta
 The main audience for this README is agents and maintainers who need to understand how the pieces fit together, where behavior lives, and how to define new services correctly.
 
 > [!NOTE]
-> This document covers stages 1–3: definition, runtime, query subscriptions, static-build writer, static-load transport, service registration with abstract-command overrides, and cross-runtime channel sync. The **React hook** is tracked separately and lands in a follow-up stage — see the *Coming in later stages* section.
+> This document covers stages 1–4: definition, runtime, query subscriptions, static-build writer, static-load transport, service registration with abstract-command overrides, cross-runtime channel sync, and the React hook (`useServiceQuery`).
 
 ## Goals
 
@@ -28,6 +28,7 @@ The public API consists of:
 - `buildServiceArtifacts(def)` — produce the JSON-shaped state diffs for a service's preloads.
 - `setStaticTransport` / `clearStaticTransport` / `createBrowserStaticTransport` — install the runtime-side loader.
 - `setServiceChannel` / `clearServiceChannel` — install the cross-runtime sync channel.
+- `useServiceQuery` — React hook for consuming a service query.
 - `ServiceValidationError` and the exported type aliases from [types.ts](./types.ts).
 
 Internal tests and implementation code may import from the individual modules directly.
@@ -44,6 +45,7 @@ Internal tests and implementation code may import from the individual modules di
 - [build-artifacts.ts](./build-artifacts.ts) — `buildServiceArtifacts`. The static-build writer.
 - [static-transport.ts](./static-transport.ts) — the global static-load transport.
 - [channel-transport.ts](./channel-transport.ts) — `setServiceChannel` / `clearServiceChannel`, event constants, payload types for cross-runtime sync.
+- [use-service-query.ts](./use-service-query.ts) — `useServiceQuery(store, queryName, input?)` React hook.
 - [__examples__/docgen-service.ts](./__examples__/docgen-service.ts) — worked example for the docgen pattern.
 - `*.test.ts` — focused tests for runtime behavior, validation behavior, and static builds. Tests assert against the public API only, so they double as usage examples.
 
@@ -603,11 +605,26 @@ sequenceDiagram
 
 All sync events are scoped by `serviceId` and prefixed with `services:` so other channel traffic is unaffected. Runtimes ignore events for service ids they don't own.
 
-## Coming in later stages
+## React
 
-The following are deliberately not in this stage. They land as separate, independently reviewable PRs:
+`useServiceQuery(store, queryName, input?)` is a thin React hook over a service query. It's built on `useSyncExternalStore` so it works in any React 18+ tree without a Babel transform or `useSignals()` opt-in.
 
-- **React hook** (`useServiceQuery`) — a `useSyncExternalStore` wrapper around `query.subscribe`.
+```tsx
+import { useServiceQuery } from 'storybook/internal/service';
+
+import { DocgenService } from './docgen-service';
+
+function ComponentDocs({ componentId }: { componentId: string }) {
+  const docgen = useServiceQuery(DocgenService, 'getComponentDocgenInfo', componentId);
+  return <pre>{JSON.stringify(docgen, null, 2)}</pre>;
+}
+```
+
+Under the hood the hook wraps `query(input)` in a `computed(() => query(input))`. `computed` memoises by reference equality on its output, so the component re-renders only when *this query's* result actually changes — no extra dedup layer needed. Unrelated mutations to the same service (a different slice, a structurally-equal write) don't cause re-renders.
+
+**Memoise object inputs at the call site.** The input is a hook dep; passing a new object literal each render rebuilds the computed and the subscription. For complex inputs wrap them in `useMemo`, or pass primitives.
+
+The hook has a no-input overload that mirrors the runtime — `useServiceQuery(store, 'count')` for `input: z.void()` queries.
 
 ## Agent Notes
 

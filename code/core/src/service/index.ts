@@ -47,6 +47,7 @@ export {
   createBrowserStaticTransport,
   setStaticTransport,
 } from './static-transport.ts';
+export { useServiceQuery } from './use-service-query.ts';
 
 export type {
   AbstractCommandDef,

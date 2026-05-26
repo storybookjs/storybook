@@ -3,18 +3,9 @@ import { extname } from 'node:path';
 
 import { ResolverFactory } from 'oxc-resolver';
 
-export const supportedExtensions = [
-  '.js',
-  '.ts',
-  '.jsx',
-  '.tsx',
-  '.mjs',
-  '.mts',
-  '.mtsx',
-  '.cjs',
-  '.cts',
-  '.ctsx',
-] as const;
+import { storybookConfigExtensions } from '../../shared/constants/extensions.ts';
+
+export const supportedExtensions = storybookConfigExtensions;
 
 export function getInterpretedFile(pathToFile: string) {
   return supportedExtensions

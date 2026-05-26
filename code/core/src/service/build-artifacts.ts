@@ -1,6 +1,7 @@
 import type { Patch } from 'immer';
 
-import { ServiceRuntime, deepMerge } from './service-runtime.ts';
+import { ServiceRuntime, UNSAFE_KEYS, deepMerge } from './service-runtime.ts';
+import { validateAsync } from './service-validation.ts';
 import type { ServiceDefinition } from './types.ts';
 
 /**
@@ -29,8 +30,23 @@ export async function buildServiceArtifacts<TDef extends ServiceDefinition<any, 
   if (preloadNames.length === 0) return artifacts;
 
   for (const queryName of preloadNames) {
+    const queryDef = definition.queries[queryName];
+    const inputSchema = queryDef?.input;
     const inputs = await discovery.resolvePreloadInputs(queryName);
-    for (const input of inputs) {
+    for (const rawInput of inputs) {
+      // Validate the enumerated input against the query's input schema (if declared) so the
+      // build keys artifacts off the *parsed* value — matching what runtime callers will
+      // request. A `z.string().transform(s => s.toUpperCase())` schema with `inputs: ['abc']`
+      // emits the artifact under `'ABC'`, not `'abc'`.
+      const input = inputSchema
+        ? await validateAsync(inputSchema, rawInput, {
+            serviceId: definition.id,
+            kind: 'query',
+            name: queryName,
+            phase: 'input',
+          })
+        : rawInput;
+
       const sandbox = new ServiceRuntime(definition);
 
       // Subscribe before firing so we capture every patch the preload produces (a preload
@@ -70,10 +86,16 @@ export async function buildServiceArtifacts<TDef extends ServiceDefinition<any, 
  *     as records (`{ byId: Record<...> }`) rather than arrays. Whole-array replacements are
  *     fine — they show up as a single `replace` patch with no numeric segments.
  *   - `remove` patches are rejected. Build-time preloads should be producing data, not deleting.
+ *   - Empty paths (root replacement) are rejected — preloads should mutate the draft, not
+ *     return a new object. The artifact format has no way to encode "replace the whole state".
+ *   - Path segments matching {@link UNSAFE_KEYS} (`__proto__`, `constructor`, `prototype`) are
+ *     rejected to prevent JSON-encoded prototype pollution slipping into shipped artifacts.
  *
- * Both rejections throw with an actionable hint pointing at the offending path.
+ * All rejections throw with an actionable hint pointing at the offending path.
+ *
+ * @internal Exported for direct testing of the guards. Not part of the public service API.
  */
-function patchesToStateDiff(
+export function patchesToStateDiff(
   patches: readonly Patch[],
   serviceId: string,
   queryName: string
@@ -87,11 +109,25 @@ function patchesToStateDiff(
           `patches (add/replace).`
       );
     }
+    if (patch.path.length === 0) {
+      throw new Error(
+        `[service ${serviceId}] Query "${queryName}"'s preload produced a root-replacement ` +
+          `patch (empty path). Mutate the draft (\`draft.byId[x] = ...\`) instead of returning ` +
+          `a new state object from \`setState\`.`
+      );
+    }
     if (patch.path.some((p) => typeof p === 'number')) {
       throw new Error(
         `[service ${serviceId}] Query "${queryName}"'s preload produced an array-index patch at ` +
           `${JSON.stringify(patch.path)}. Model collections as records (\`{ byId: Record<...> }\`) ` +
           `rather than arrays so they compose under deep-merge.`
+      );
+    }
+    if (patch.path.some((p) => typeof p === 'string' && UNSAFE_KEYS.has(p))) {
+      throw new Error(
+        `[service ${serviceId}] Query "${queryName}"'s preload wrote to an unsafe key at ` +
+          `${JSON.stringify(patch.path)} (one of: ${[...UNSAFE_KEYS].join(', ')}). These keys ` +
+          `can pollute Object.prototype when the artifact is rehydrated via JSON.parse.`
       );
     }
     let target: Record<string, unknown> = result;

@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { z } from 'zod';
 
 import { defineService } from './define-service.ts';
-import { clearRegistry, getService } from './service-runtime.ts';
+import { ServiceRuntime, clearRegistry, deepMerge, getService } from './service-runtime.ts';
 import type { ServiceCtx } from './types.ts';
 
 /** Wait a tick — enough for fire-and-forget preload promises to settle. */
@@ -520,5 +520,141 @@ describe('schema validation', () => {
     const service = getService(def);
 
     expect(() => service.queries.get()).toThrow(/Invalid output for query/);
+  });
+});
+
+// -------------------- defensive fixes (PR #34912 review) --------------------
+
+describe('runtime defensive guarantees', () => {
+  // Fix #1 — `structuredClone(definition.state)` in the constructor so post-hoc mutation
+  // of the definition object can't leak into runtime state.
+  it('isolates runtime state from later mutation of definition.state', () => {
+    interface S {
+      byId: Record<string, { name: string }>;
+    }
+    const initial: S = { byId: { a: { name: 'alpha' } } };
+    const def = defineService<S>()({
+      id: 'test/state-isolation',
+      state: initial,
+      queries: {
+        getAll: { input: z.void(), output: z.any(), select: (s: S) => s.byId },
+      },
+      commands: {},
+    });
+    const service = getService(def);
+
+    // External mutation of the source object after the runtime was constructed.
+    initial.byId.a.name = 'MUTATED';
+    initial.byId.b = { name: 'leaked' };
+
+    expect(service.queries.getAll()).toEqual({ a: { name: 'alpha' } });
+  });
+
+  // Fix #2/8 — `_maybeFirePreload` returns the raw promise so `firePreload` callers (build)
+  // observe rejections. The fire-and-forget call sites (query call / subscribe) attach
+  // their own `.catch(rethrowAsync)`.
+  it('firePreload rejects when the preload throws (build pipeline can see failures)', async () => {
+    const def = defineService<{ x: number }>()({
+      id: 'test/preload-rejects',
+      state: { x: 0 },
+      queries: {
+        get: {
+          input: z.void(),
+          output: z.number(),
+          select: (s: { x: number }) => s.x,
+          preload: async () => {
+            throw new Error('boom');
+          },
+        },
+      },
+      commands: {},
+    });
+
+    const runtime = new ServiceRuntime(def);
+    await expect(runtime.firePreload('get', undefined)).rejects.toThrow(/boom/);
+  });
+
+  it('surfaces fire-and-forget preload failures via rethrowAsync (no unhandled rejection)', async () => {
+    const def = defineService<{ x: number }>()({
+      id: 'test/preload-unhandled',
+      state: { x: 0 },
+      queries: {
+        get: {
+          input: z.void(),
+          output: z.number(),
+          select: (s: { x: number }) => s.x,
+          preload: async () => {
+            throw new Error('boom-fire-and-forget');
+          },
+        },
+      },
+      commands: {},
+    });
+
+    // Contract: the fire-and-forget call site uses `.catch(rethrowAsync)`. That means
+    //   (a) the promise *is* handled — no `unhandledRejection` event fires, and
+    //   (b) the error re-throws on the microtask queue, surfacing as an `uncaughtException`
+    //       in Node (or a window error in the browser), so devtools still sees it.
+    // We assert both halves so a future refactor of `rethrowAsync` that silently swallows
+    // the error fails this test.
+
+    const unhandledRejections: unknown[] = [];
+    const uncaughtExceptions: unknown[] = [];
+    const onRejection = (reason: unknown) => {
+      unhandledRejections.push(reason);
+    };
+    const onException = (err: unknown) => {
+      uncaughtExceptions.push(err);
+    };
+
+    process.on('unhandledRejection', onRejection);
+    process.prependListener('uncaughtException', onException);
+    // Replace any pre-existing uncaughtException listeners (e.g. vitest's own) so the
+    // microtask re-throw doesn't actually fail the test run.
+    const originalListeners = process.listeners('uncaughtException').slice();
+    for (const l of originalListeners) {
+      if (l !== onException) process.off('uncaughtException', l);
+    }
+
+    try {
+      const service = getService(def);
+      service.queries.get();
+      await new Promise((r) => setTimeout(r, 10));
+    } finally {
+      process.off('unhandledRejection', onRejection);
+      process.off('uncaughtException', onException);
+      for (const l of originalListeners) {
+        if (l !== onException) process.on('uncaughtException', l);
+      }
+    }
+
+    expect(unhandledRejections).toEqual([]);
+    expect(uncaughtExceptions).toHaveLength(1);
+    expect((uncaughtExceptions[0] as Error).message).toBe('boom-fire-and-forget');
+  });
+});
+
+// -------------------- prototype-pollution hardening (Fix #10) --------------------
+
+describe('deepMerge prototype-pollution guard', () => {
+  it('skips __proto__ keys so JSON-parsed sources cannot pollute Object.prototype', () => {
+    const target: Record<string, unknown> = {};
+    const poisoned = JSON.parse('{"__proto__":{"polluted":true},"safe":1}');
+
+    deepMerge(target, poisoned);
+
+    expect(target).toEqual({ safe: 1 });
+    expect((Object.prototype as Record<string, unknown>).polluted).toBeUndefined();
+    expect(({} as Record<string, unknown>).polluted).toBeUndefined();
+  });
+
+  it('skips constructor and prototype keys', () => {
+    const target: Record<string, unknown> = {};
+    deepMerge(target, {
+      constructor: { evil: true } as unknown,
+      prototype: { evil: true } as unknown,
+      legit: 1,
+    });
+    expect(target).toEqual({ legit: 1 });
   });
 });

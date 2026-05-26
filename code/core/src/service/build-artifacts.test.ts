@@ -1,11 +1,12 @@
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { z } from 'zod';
 
-import { buildServiceArtifacts } from './build-artifacts.ts';
+import { buildServiceArtifacts, patchesToStateDiff } from './build-artifacts.ts';
 import { defineService } from './define-service.ts';
 import { clearRegistry, getService } from './service-runtime.ts';
 import {
   clearStaticTransport,
+  createBrowserStaticTransport,
   setStaticTransport,
   type ServiceStaticTransport,
 } from './static-transport.ts';
@@ -52,7 +53,7 @@ function installTransportFromArtifacts(
 // -------------------- writer --------------------
 
 describe('buildServiceArtifacts', () => {
-  it('returns an empty Map for services with no `load` field', async () => {
+  it('returns an empty Map for services with no `preload` field', async () => {
     const def = defineService<{ x: number }>()({
       id: 'test/no-loaders',
       state: { x: 1 },
@@ -764,5 +765,203 @@ describe('build → load round trip', () => {
 
     // After the load lands, the derived `getStoryStatus` query reads from the populated state.
     expect(reloaded.queries.getStoryStatus('story-1')).toBe('pass');
+  });
+});
+
+// -------------------- defensive fixes (PR #34912 review) --------------------
+
+describe('build-time input validation (Fix #3)', () => {
+  it('emits artifacts keyed off the *parsed* input, not the raw enumerated value', async () => {
+    interface S {
+      byId: Record<string, { name: string }>;
+    }
+    const def = defineService<S>()({
+      id: 'test/build-input-validation',
+      state: { byId: {} } as S,
+      queries: {
+        getOne: {
+          // `transform` mutates the input — the build must run inputs through this so the
+          // artifact filename matches what the runtime will request after its own validation.
+          input: z.string().transform((s) => s.toUpperCase()),
+          output: z.any(),
+          select: (s: S, id: string) => s.byId[id],
+          preload: async (id: string, ctx: ServiceCtx<S>) => {
+            ctx.self.setState((d) => {
+              d.byId[id] = { name: `Loaded ${id}` };
+            });
+          },
+          inputs: ['abc'],
+          path: (_ctx, id: string) => `entries/${id}.json`,
+        },
+      },
+      commands: {},
+    });
+
+    const artifacts = await buildServiceArtifacts(def);
+    expect([...artifacts.keys()]).toEqual(['entries/ABC.json']);
+  });
+});
+
+describe('resolvePreloadInputs guard (Fix #4)', () => {
+  it('throws when an input-keyed preload omits `inputs`', async () => {
+    interface S {
+      byId: Record<string, { name: string }>;
+    }
+    const def = defineService<S>()({
+      id: 'test/preload-missing-inputs',
+      state: { byId: {} } as S,
+      queries: {
+        getOne: {
+          input: z.string(),
+          output: z.any(),
+          select: (s: S, id: string) => s.byId[id],
+          // Input-keyed preload arity (id, ctx) — but no `inputs: [...]` enumeration. The
+          // build can't guess what to pre-render, so this is an authoring bug and must throw.
+          preload: async (id: string, ctx: ServiceCtx<S>) => {
+            ctx.self.setState((d) => {
+              d.byId[id] = { name: `Loaded ${id}` };
+            });
+          },
+          path: (_ctx, id: string) => `entries/${id}.json`,
+        },
+      },
+      commands: {},
+    });
+
+    await expect(buildServiceArtifacts(def)).rejects.toThrow(/input-keyed preload but no `inputs`/);
+  });
+
+  it('keeps the [undefined] fallback for no-input preloads', async () => {
+    interface S {
+      list: number[];
+    }
+    const def = defineService<S>()({
+      id: 'test/preload-no-input-fallback',
+      state: { list: [] } as S,
+      queries: {
+        getAll: {
+          input: z.void(),
+          output: z.any(),
+          select: (s: S) => s.list,
+          // No-input preload arity (ctx only) — the [undefined] fallback is correct.
+          preload: async (ctx: ServiceCtx<S>) => {
+            ctx.self.setState((d) => {
+              d.list = [1, 2, 3];
+            });
+          },
+          path: () => 'all.json',
+        },
+      },
+      commands: {},
+    });
+
+    const artifacts = await buildServiceArtifacts(def);
+    expect([...artifacts.keys()]).toEqual(['all.json']);
+  });
+});
+
+describe('patchesToStateDiff guards (Fixes #7, #10)', () => {
+  // These guards can't be triggered through the public API today — Immer's `setState`
+  // implementation discards the recipe's return value (no root-replacement is possible
+  // through `setState((d) => ({...}))`), and Immer blocks `setPrototypeOf` on drafts so
+  // a preload can't write `draft.__proto__ = ...`. The guards exist to document the
+  // wire-format contract: if a synthetic or hand-written diff ever feeds in via a future
+  // codepath (artifact replay, manual patch construction), prototype pollution or
+  // root-clobbering can't slip through.
+
+  it('throws on a root-replacement patch (empty path) [Fix #7]', () => {
+    expect(() =>
+      patchesToStateDiff([{ op: 'replace', path: [], value: { v: 1 } }], 'svc', 'q')
+    ).toThrow(/root-replacement patch/);
+  });
+
+  it('throws on an unsafe `__proto__` segment [Fix #10]', () => {
+    expect(() =>
+      patchesToStateDiff(
+        [{ op: 'add', path: ['byId', '__proto__'], value: { polluted: true } }],
+        'svc',
+        'q'
+      )
+    ).toThrow(/unsafe key/);
+  });
+
+  it('throws on an unsafe `constructor` segment [Fix #10]', () => {
+    expect(() =>
+      patchesToStateDiff([{ op: 'add', path: ['constructor'], value: 'evil' }], 'svc', 'q')
+    ).toThrow(/unsafe key/);
+  });
+
+  it('throws on an unsafe `prototype` segment anywhere in the path [Fix #10]', () => {
+    expect(() =>
+      patchesToStateDiff([{ op: 'add', path: ['a', 'prototype', 'b'], value: 1 }], 'svc', 'q')
+    ).toThrow(/unsafe key/);
+  });
+
+  it('passes through safe paths', () => {
+    expect(
+      patchesToStateDiff(
+        [
+          { op: 'add', path: ['byId', 'a'], value: { name: 'alpha' } },
+          { op: 'replace', path: ['byId', 'b', 'name'], value: 'BETA' },
+        ],
+        'svc',
+        'q'
+      )
+    ).toEqual({
+      byId: { a: { name: 'alpha' }, b: { name: 'BETA' } },
+    });
+  });
+});
+
+describe('createBrowserStaticTransport status handling (Fix #5)', () => {
+  const originalFetch = (globalThis as { fetch?: typeof fetch }).fetch;
+  let fetchMock: ReturnType<typeof vi.fn>;
+
+  beforeEach(() => {
+    fetchMock = vi.fn();
+    (globalThis as { fetch?: typeof fetch }).fetch = fetchMock as unknown as typeof fetch;
+  });
+
+  afterEach(() => {
+    if (originalFetch) {
+      (globalThis as { fetch?: typeof fetch }).fetch = originalFetch;
+    } else {
+      delete (globalThis as { fetch?: typeof fetch }).fetch;
+    }
+  });
+
+  it('returns null on 404 (artifact not present, fall through to live)', async () => {
+    fetchMock.mockResolvedValue(new Response(null, { status: 404 }));
+    const t = createBrowserStaticTransport();
+    await expect(t.fetch('svc', 'all.json')).resolves.toBeNull();
+  });
+
+  it('returns null on 410 (artifact permanently gone)', async () => {
+    fetchMock.mockResolvedValue(new Response(null, { status: 410 }));
+    const t = createBrowserStaticTransport();
+    await expect(t.fetch('svc', 'all.json')).resolves.toBeNull();
+  });
+
+  it('throws on 500 so server errors do not silently fall through to live data', async () => {
+    fetchMock.mockResolvedValue(new Response(null, { status: 500 }));
+    const t = createBrowserStaticTransport();
+    await expect(t.fetch('svc', 'all.json')).rejects.toThrow(/returned 500/);
+  });
+
+  it('throws on 502 (upstream proxy errors must not be masked)', async () => {
+    fetchMock.mockResolvedValue(new Response(null, { status: 502 }));
+    const t = createBrowserStaticTransport();
+    await expect(t.fetch('svc', 'all.json')).rejects.toThrow(/returned 502/);
+  });
+
+  it('returns parsed JSON on 200', async () => {
+    fetchMock.mockResolvedValue(
+      new Response(JSON.stringify({ ok: true }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      })
+    );
+    const t = createBrowserStaticTransport();
+    await expect(t.fetch('svc', 'all.json')).resolves.toEqual({ ok: true });
   });
 });

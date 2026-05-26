@@ -63,6 +63,11 @@ export function getStaticTransport(): ServiceStaticTransport | null {
  * If `globalThis.fetch` isn't available (Node without polyfill), every call resolves to null.
  * That makes this transport safe to install in any environment — non-browser hosts simply
  * see no artifacts.
+ *
+ * Only 404/410 are interpreted as "no artifact present" (fall through to running the loader
+ * live). Any other non-OK response (5xx, network-flavoured 502/503, an upstream proxy
+ * returning 401/403) throws — masking those as "missing" would silently swap real production
+ * data for whatever the loader's live body produces, which is rarely what you want.
  */
 export function createBrowserStaticTransport(
   baseUrl: string = '/services'
@@ -74,7 +79,14 @@ export function createBrowserStaticTransport(
       if (typeof f !== 'function') return null;
       const url = `${trimmedBase}/${serviceId}/${filename}`;
       const res = await f(url);
-      if (!res.ok) return null;
+      if (res.status === 404 || res.status === 410) return null;
+      if (!res.ok) {
+        throw new Error(
+          `[service ${serviceId}] Static transport returned ${res.status} for ${url}. ` +
+            `Only 404/410 are treated as "artifact not present"; other non-OK responses ` +
+            `are surfaced so server errors don't silently fall through to a live loader.`
+        );
+      }
       return res.json();
     },
   };

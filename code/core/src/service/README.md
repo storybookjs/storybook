@@ -316,6 +316,8 @@ if (isStaticBuild) {
 
 `createBrowserStaticTransport(baseUrl?)` builds a transport that fetches `${baseUrl}/${serviceId}/${filename}` via `globalThis.fetch`. Default base is `/services`. If `globalThis.fetch` isn't available (non-browser host), every call resolves to null — safe to install unconditionally.
 
+Only `404` and `410` responses are treated as "artifact not present" (fall through to the live loader). Other non-OK responses (5xx, proxy errors, auth failures) throw, so server outages don't silently degrade to live data.
+
 In dev mode, don't install a transport. Without one, every preload runs its body live; no fetches are attempted.
 
 Nothing is loaded eagerly. Every preload fetch is lazy, triggered by a query subscription or callable read.

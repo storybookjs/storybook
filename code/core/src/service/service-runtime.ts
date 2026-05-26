@@ -21,15 +21,26 @@ import type {
 enablePatches();
 
 /**
+ * Object keys that can pollute `Object.prototype` if written to a plain object via dynamic
+ * assignment. We reject them in `patchesToStateDiff` and skip them in `deepMerge` so a
+ * JSON-parsed `{"__proto__": {...}}` from a static artifact can't corrupt the runtime.
+ */
+export const UNSAFE_KEYS: ReadonlySet<string> = new Set(['__proto__', 'constructor', 'prototype']);
+
+/**
  * Deep-merge `source` onto `target`. Plain-object slices recurse; everything else (primitives,
  * arrays, class instances, null) is overwritten by `source`. Used when applying a fetched
  * state-shaped diff (the on-disk format for loader artifacts).
  *
  * Array semantics are "replace whole array" — service authors who want fine-grained array
  * updates should normalise to a record keyed by id.
+ *
+ * Keys matching {@link UNSAFE_KEYS} are skipped so static artifacts can't perform a prototype
+ * pollution attack on the runtime via a `JSON.parse('{"__proto__":{...}}')` artifact.
  */
 export function deepMerge(target: Record<string, unknown>, source: Record<string, unknown>): void {
   for (const key of Object.keys(source)) {
+    if (UNSAFE_KEYS.has(key)) continue;
     const sv = source[key];
     const tv = target[key];
     if (
@@ -111,12 +122,14 @@ export class ServiceRuntime<TDef extends ServiceDefinition<any, any, any>> {
     this.definition = definition;
     this.id = definition.id;
 
-    const [initial] = produceWithPatches(definition.state as unknown as object, () => {}) as [
-      typeof definition.state,
-      Patch[],
-      Patch[],
-    ];
-    this._stateSignal = signal(initial) as typeof this._stateSignal;
+    // structuredClone breaks the reference to `definition.state` so post-hoc mutation of the
+    // definition object can't leak into runtime state. (`produceWithPatches(x, () => {})` returns
+    // the original reference when the recipe is a no-op, which is what we used to do.)
+    this._stateSignal = signal(
+      structuredClone(definition.state) as TDef extends ServiceDefinition<infer S, any, any>
+        ? S
+        : never
+    );
 
     this.queries = this._buildQueriesApi();
     this.commands = this._buildCommandsApi();
@@ -232,7 +245,7 @@ export class ServiceRuntime<TDef extends ServiceDefinition<any, any, any>> {
       const callable = (...args: unknown[]): unknown => {
         const rawInput = args.length > 0 ? args[0] : undefined;
         const parsedInput = this._validateQueryInput(queryName, rawInput);
-        void this._maybeFirePreload(queryName, parsedInput);
+        void this._maybeFirePreload(queryName, parsedInput).catch(rethrowAsync);
         return this._runQuery(queryName, parsedInput);
       };
 
@@ -289,8 +302,9 @@ export class ServiceRuntime<TDef extends ServiceDefinition<any, any, any>> {
     });
 
     // Kick off the preload — fire-and-forget, the effect above will re-evaluate when the
-    // preload's setState lands.
-    void this._maybeFirePreload(queryName, input);
+    // preload's setState lands. `rethrowAsync` surfaces preload failures on the microtask
+    // queue so they're observable but don't reject this synchronous subscribe path.
+    void this._maybeFirePreload(queryName, input).catch(rethrowAsync);
 
     return stop;
   }
@@ -452,7 +466,10 @@ export class ServiceRuntime<TDef extends ServiceDefinition<any, any, any>> {
     }
     inflightMap.set(inputKey, promise);
 
-    return promise.catch(rethrowAsync);
+    // Return the raw promise so awaited callers (build pipeline via `firePreload`) observe
+    // rejections normally. Fire-and-forget call sites attach their own `.catch(rethrowAsync)`
+    // so unhandled rejections still surface on the microtask queue rather than disappearing.
+    return promise;
   }
 
   /**
@@ -483,7 +500,19 @@ export class ServiceRuntime<TDef extends ServiceDefinition<any, any, any>> {
     const entry = this._preloadsMap()?.[queryName];
     if (!entry) return [];
     const e = entry.inputs;
-    if (e === undefined) return [undefined];
+    if (e === undefined) {
+      // No-input preloads are correctly served by a single `[undefined]` enumeration that
+      // produces one default-named artifact. For input-keyed preloads, an omitted `inputs`
+      // is an authoring bug — the build would silently emit one wrong artifact. Throw.
+      if (this._preloadHasInput(queryName)) {
+        throw new Error(
+          `[service ${this.id}] Query "${queryName}" declares an input-keyed preload but no ` +
+            `\`inputs\` enumeration. Add \`inputs: [...]\` (or a function returning the list) ` +
+            `so the build can pre-render artifacts for each input.`
+        );
+      }
+      return [undefined];
+    }
     if (typeof e === 'function') {
       const buildCtx: BuildCtx = { isBuild: true };
       return await (e as (ctx: BuildCtx) => readonly unknown[] | Promise<readonly unknown[]>)(

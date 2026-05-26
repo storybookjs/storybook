@@ -91,7 +91,7 @@ export const buildEntries = {
 
   // addons
   '@storybook/addon-a11y': a11yConfig,
-  '@storybook/addon-review-changes': reviewChangesConfig,
+  '@storybook/addon-review': reviewChangesConfig,
   '@storybook/addon-docs': docsConfig,
   '@storybook/addon-links': linksConfig,
   '@storybook/addon-onboarding': onboardingConfig,

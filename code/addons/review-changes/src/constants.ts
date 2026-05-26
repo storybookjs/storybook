@@ -1,4 +1,4 @@
-export const ADDON_ID = 'storybook/addon-review-changes';
+export const ADDON_ID = 'storybook/addon-review';
 export const PAGE_ID = `${ADDON_ID}/page`;
 export const REVIEW_CHANGES_URL = '/review-changes/';
 

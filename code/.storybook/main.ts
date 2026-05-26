@@ -120,7 +120,7 @@ const config = defineMain({
     '@storybook/addon-vitest',
     '@storybook/addon-a11y',
     '@storybook/addon-mcp',
-    '@storybook/addon-review-changes',
+    '@storybook/addon-review',
     'storybook-addon-pseudo-states',
     '@chromatic-com/storybook',
   ],

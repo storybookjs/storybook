@@ -78,7 +78,8 @@ export type Query<TInput, TOutput> = {
 export type ReadonlySelf<
   TState = unknown,
   TCommandInputSchemas extends OperationInputSchemas = OperationInputSchemas,
-  TCommandOutputSchemas extends MatchingOutputSchemas<TCommandInputSchemas> = MatchingOutputSchemas<TCommandInputSchemas>,
+  TCommandOutputSchemas extends MatchingOutputSchemas<TCommandInputSchemas> =
+    MatchingOutputSchemas<TCommandInputSchemas>,
 > = {
   readonly state: TState;
   queries: Record<string, Query<unknown, unknown>>;
@@ -89,7 +90,8 @@ export type ReadonlySelf<
 export type WritableSelf<
   TState = unknown,
   TCommandInputSchemas extends OperationInputSchemas = OperationInputSchemas,
-  TCommandOutputSchemas extends MatchingOutputSchemas<TCommandInputSchemas> = MatchingOutputSchemas<TCommandInputSchemas>,
+  TCommandOutputSchemas extends MatchingOutputSchemas<TCommandInputSchemas> =
+    MatchingOutputSchemas<TCommandInputSchemas>,
 > = ReadonlySelf<TState, TCommandInputSchemas, TCommandOutputSchemas> & {
   setState(mutate: (draft: TState) => void): void;
 };
@@ -135,7 +137,8 @@ export type RuntimeService = ServiceInstance<unknown, Queries<unknown>, Commands
 export type QueryCtx<
   TState,
   TCommandInputSchemas extends OperationInputSchemas = OperationInputSchemas,
-  TCommandOutputSchemas extends MatchingOutputSchemas<TCommandInputSchemas> = MatchingOutputSchemas<TCommandInputSchemas>,
+  TCommandOutputSchemas extends MatchingOutputSchemas<TCommandInputSchemas> =
+    MatchingOutputSchemas<TCommandInputSchemas>,
 > = {
   self: ReadonlySelf<TState, TCommandInputSchemas, TCommandOutputSchemas>;
   getService: ServiceRegistryApi['getService'];
@@ -145,7 +148,8 @@ export type QueryCtx<
 export type CommandCtx<
   TState,
   TCommandInputSchemas extends OperationInputSchemas = OperationInputSchemas,
-  TCommandOutputSchemas extends MatchingOutputSchemas<TCommandInputSchemas> = MatchingOutputSchemas<TCommandInputSchemas>,
+  TCommandOutputSchemas extends MatchingOutputSchemas<TCommandInputSchemas> =
+    MatchingOutputSchemas<TCommandInputSchemas>,
 > = {
   self: WritableSelf<TState, TCommandInputSchemas, TCommandOutputSchemas>;
   getService: ServiceRegistryApi['getService'];
@@ -162,7 +166,8 @@ export type QueryStaticDefinition<
   TInput = unknown,
   TParsedInput = TInput,
   TCommandInputSchemas extends OperationInputSchemas = OperationInputSchemas,
-  TCommandOutputSchemas extends MatchingOutputSchemas<TCommandInputSchemas> = MatchingOutputSchemas<TCommandInputSchemas>,
+  TCommandOutputSchemas extends MatchingOutputSchemas<TCommandInputSchemas> =
+    MatchingOutputSchemas<TCommandInputSchemas>,
 > = {
   path?: BivariantCallback<
     [input: TParsedInput, ctx: QueryCtx<TState, TCommandInputSchemas, TCommandOutputSchemas>],
@@ -185,7 +190,8 @@ export type QueryDefinition<
   TInputSchema extends AnySchema,
   TOutputSchema extends AnySchema,
   TCommandInputSchemas extends OperationInputSchemas = OperationInputSchemas,
-  TCommandOutputSchemas extends MatchingOutputSchemas<TCommandInputSchemas> = MatchingOutputSchemas<TCommandInputSchemas>,
+  TCommandOutputSchemas extends MatchingOutputSchemas<TCommandInputSchemas> =
+    MatchingOutputSchemas<TCommandInputSchemas>,
 > = {
   description?: string;
   input: TInputSchema;
@@ -300,11 +306,6 @@ export type ServiceInstance<
 /** Internal runtime options when constructing a service runtime directly. */
 export type CreateServiceRuntimeOptions = {
   registryApi: ServiceRegistryApi;
-};
-
-/** Optional runtime options when creating a standalone service instance. */
-export type CreateServiceOptions = {
-  store?: StaticStore;
 };
 
 export type ServiceQueryRegistration<TState, TQuery extends AnyQueryDefinition<TState>> = Pick<

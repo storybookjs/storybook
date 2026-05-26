@@ -17,8 +17,8 @@ import type {
   QueryCtx,
   QueryDefinition,
   ServiceDefinition,
-  ServiceRegistryApi,
   ServiceInstance,
+  ServiceRegistryApi,
   WritableSelf,
 } from './types.ts';
 
@@ -28,8 +28,8 @@ type RuntimeQueryDefinition<TState> = QueryDefinition<TState, AnySchema, AnySche
 /**
  * Internal runtime object returned while a service instance is being assembled.
  *
- * It keeps the raw signal and `self` reference available for static building, while callers
- * typically consume the simpler `ServiceInstance` shape.
+ * It keeps the raw signal and `self` reference available for static building and registration
+ * preloading, while callers typically consume the simpler `ServiceInstance` shape.
  */
 export type ServiceRuntime<
   TState,
@@ -163,10 +163,6 @@ function createQuery<TState>(
     getService: registryApi.getService,
   });
 
-  const prepareQuery = async (input: unknown) => {
-    await queryDef.preload?.(input, createQueryCtx());
-  };
-
   const getHandler = () => {
     if (!queryDef.handler) {
       throw new OpenServiceUnimplementedOperationError({
@@ -208,7 +204,9 @@ function createQuery<TState>(
       }
 
       // Kick off preload in parallel so subscriptions can observe the state transition it causes.
-      void prepareQuery(validatedInput).catch(rethrowAsync);
+      void Promise.resolve(queryDef.preload?.(validatedInput, createQueryCtx())).catch(
+        rethrowAsync
+      );
 
       // `computed()` tracks which signals the handler reads so the effect can re-run on changes.
       const comp = computed(() => getHandler()(validatedInput, createQueryCtx()));
@@ -252,7 +250,7 @@ function createQuery<TState>(
       phase: 'input',
     });
 
-    await prepareQuery(validatedInput);
+    await queryDef.preload?.(validatedInput, createQueryCtx());
 
     return runHandler(validatedInput);
   }) as Query<unknown, unknown>;
@@ -261,7 +259,7 @@ function createQuery<TState>(
   return query;
 }
 
-/** Builds the runtime query map and wires the live preload behavior for each query. */
+/** Builds the runtime query map for one service runtime. */
 function buildQueries<TState>(
   serviceId: string,
   queries: Queries<TState>,
@@ -270,9 +268,7 @@ function buildQueries<TState>(
 ): WritableSelf<TState>['queries'] {
   return Object.fromEntries(
     (Object.entries(queries) as [string, RuntimeQueryDefinition<TState>][]).map(
-      ([name, queryDef]) => {
-        return [name, createQuery(serviceId, name, queryDef, selfRef, registryApi)];
-      }
+      ([name, queryDef]) => [name, createQuery(serviceId, name, queryDef, selfRef, registryApi)]
     )
   );
 }
@@ -280,7 +276,7 @@ function buildQueries<TState>(
 /**
  * Creates the full runtime backing for a service definition.
  *
- * This is the lowest-level runtime entry point used by service registration and static builds.
+ * Callers must supply the registry API that query and command contexts should expose.
  */
 export function createServiceRuntime<
   TState,
@@ -288,13 +284,13 @@ export function createServiceRuntime<
   TCommands extends Commands<TState>,
 >(
   def: ServiceDefinition<TState, TQueries, TCommands>,
-  options: CreateServiceRuntimeOptions,
+  runtimeOptions: CreateServiceRuntimeOptions,
   initialState: TState = def.initialState
 ): ServiceRuntime<TState, TQueries, TCommands> {
   // The signal is the single source of truth that query computations subscribe to.
   const stateSignal = signal<TState>(initialState);
   const selfRef = createSelfRef(stateSignal);
-  const registryApi = options.registryApi;
+  const { registryApi } = runtimeOptions;
   const createCommandCtx = (): CommandCtx<TState> => ({
     self: selfRef,
     getService: registryApi.getService,

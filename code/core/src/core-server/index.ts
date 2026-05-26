@@ -17,7 +17,7 @@ export { loadStorybook as experimental_loadStorybook } from './load.ts';
 
 export { Tag } from '../shared/constants/tags.ts';
 export { analyzeMdx } from './utils/analyze-mdx.ts';
-export { defineCommand, defineQuery, defineService } from '../shared/open-service/index.ts';
+export { defineService } from '../shared/open-service/index.ts';
 export type {
   Command,
   CommandCtx,

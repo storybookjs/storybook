@@ -1,15 +1,10 @@
 import * as v from 'valibot';
 
-import type { StorybookConfigRaw } from 'storybook/internal/types';
 import { logger } from 'storybook/internal/node-logger';
+import type { StoryIndexGenerator } from '../core/src/core-server/utils/StoryIndexGenerator.ts';
 
-import {
-  describeService,
-  defineCommand,
-  defineQuery,
-  defineService,
-  registerService,
-} from 'storybook/internal/core-server';
+import { defineService } from '../core/src/shared/open-service/index.ts';
+import { describeService, registerService } from '../core/src/shared/open-service/server.ts';
 
 const DEBUG_SERVICE_ID = 'storybook/internal/open-service-debug';
 
@@ -35,49 +30,47 @@ const storyIndexSummaryOutputSchema = v.object({
 });
 const syncStoryIndexInputSchema = v.object({ reason: v.string() });
 
-type StoryIndexGeneratorInstance = NonNullable<StorybookConfigRaw['storyIndexGenerator']>;
-
-function createDebugServiceDef(storyIndexGeneratorPromise: Promise<StoryIndexGeneratorInstance>) {
+function createDebugServiceDef(storyIndexGeneratorPromise: Promise<StoryIndexGenerator>) {
   return defineService({
     id: DEBUG_SERVICE_ID,
     description:
       'Exercises Storybook open-service registration, queries, commands, preloads, subscriptions, static builds, and story-index integration inside the internal Storybook.',
     initialState: {
-      activity: [],
-      preloadedByEntryId: {},
-      lastObservedValue: null,
+      activity: [] as string[],
+      preloadedByEntryId: {} as Record<string, string>,
+      lastObservedValue: null as string | null,
       storyIndexEntryCount: 0,
-      storyIndexSampleIds: [],
-    } satisfies DebugServiceState,
+      storyIndexSampleIds: [] as string[],
+    },
     queries: {
-      getActivity: defineQuery<DebugServiceState>()({
+      getActivity: {
         description: 'Returns the latest activity entries for the debug service.',
         input: activityQueryInputSchema,
         output: v.array(v.string()),
         handler: async (input, ctx) => {
-          logger.info('[open-service debug] query getActivity');
+          logger.verbose('[open-service debug] query getActivity');
           return ctx.self.state.activity.slice(-input.limit);
         },
-      }),
-      getStoryIndexSummary: defineQuery<DebugServiceState>()({
+      },
+      getStoryIndexSummary: {
         description: 'Returns story-index-derived summary data captured by the debug service.',
         input: storyIndexSummaryInputSchema,
         output: storyIndexSummaryOutputSchema,
         handler: async (input, ctx) => {
-          logger.info('[open-service debug] query getStoryIndexSummary');
+          logger.verbose('[open-service debug] query getStoryIndexSummary');
           return {
             entryCount: ctx.self.state.storyIndexEntryCount,
             sampleIds: input.includeSampleIds ? ctx.self.state.storyIndexSampleIds : [],
           };
         },
-      }),
-      getPreloadedValue: defineQuery<DebugServiceState>()({
+      },
+      getPreloadedValue: {
         description:
           'Returns a preloaded value for one entry id and participates in static builds.',
         input: entryInputSchema,
         output: v.nullable(v.string()),
         preload: async (input, ctx) => {
-          logger.info(`[open-service debug] preload getPreloadedValue(${input.entryId})`);
+          logger.verbose(`[open-service debug] preload getPreloadedValue(${input.entryId})`);
           if (ctx.self.state.preloadedByEntryId[input.entryId] !== undefined) {
             return;
           }
@@ -94,26 +87,28 @@ function createDebugServiceDef(storyIndexGeneratorPromise: Promise<StoryIndexGen
         handler: async (input, ctx) => {
           const value = ctx.self.state.preloadedByEntryId[input.entryId] ?? null;
 
-          logger.info(`[open-service debug] query getPreloadedValue(${input.entryId}) => ${value}`);
+          logger.verbose(
+            `[open-service debug] query getPreloadedValue(${input.entryId}) => ${value}`
+          );
           return value;
         },
-      }),
+      },
     },
     commands: {
-      addActivity: defineCommand<DebugServiceState>()({
+      addActivity: {
         description: 'Appends one entry to the debug activity log.',
         input: messageInputSchema,
         output: v.undefined(),
         handler: async (input, ctx) => {
-          logger.info(`[open-service debug] command addActivity(${input.message})`);
+          logger.verbose(`[open-service debug] command addActivity(${input.message})`);
           ctx.self.setState((draft) => {
             draft.activity.push(input.message);
           });
 
           return undefined;
         },
-      }),
-      syncStoryIndex: defineCommand<DebugServiceState>()({
+      },
+      syncStoryIndex: {
         description: 'Reads the current story index and stores a compact summary in service state.',
         input: syncStoryIndexInputSchema,
         output: v.undefined(),
@@ -121,7 +116,7 @@ function createDebugServiceDef(storyIndexGeneratorPromise: Promise<StoryIndexGen
           const storyIndex = await (await storyIndexGeneratorPromise).getIndex();
           const sampleIds = Object.keys(storyIndex.entries).slice(0, 5);
 
-          logger.info(
+          logger.verbose(
             `[open-service debug] command syncStoryIndex(${input.reason}) => ${Object.keys(storyIndex.entries).length} entries`
           );
           ctx.self.setState((draft) => {
@@ -132,8 +127,8 @@ function createDebugServiceDef(storyIndexGeneratorPromise: Promise<StoryIndexGen
 
           return undefined;
         },
-      }),
-      recordPreloadVisit: defineCommand<DebugServiceState>()({
+      },
+      recordPreloadVisit: {
         description: 'Stores a generated value for one entry id and records the visit.',
         input: preloadVisitInputSchema,
         output: v.undefined(),
@@ -144,7 +139,7 @@ function createDebugServiceDef(storyIndexGeneratorPromise: Promise<StoryIndexGen
           })) as { entryCount: number; sampleIds: string[] };
           const value = `${input.source}:${input.entryId}:${summary.entryCount}`;
 
-          logger.info(
+          logger.verbose(
             `[open-service debug] command recordPreloadVisit(${input.entryId}, ${input.source}) => ${value}`
           );
           ctx.self.setState((draft) => {
@@ -155,7 +150,7 @@ function createDebugServiceDef(storyIndexGeneratorPromise: Promise<StoryIndexGen
 
           return undefined;
         },
-      }),
+      },
     },
   });
 }
@@ -168,11 +163,11 @@ function createDebugServiceDef(storyIndexGeneratorPromise: Promise<StoryIndexGen
  * generation, and story-index integration inside the internal Storybook.
  */
 export async function registerOpenServiceDebugService(
-  storyIndexGeneratorPromise: Promise<StoryIndexGeneratorInstance>
+  storyIndexGeneratorPromise: Promise<StoryIndexGenerator>
 ): Promise<void> {
   try {
     await describeService(DEBUG_SERVICE_ID);
-    logger.info('[open-service debug] debug service already registered');
+    logger.verbose('[open-service debug] debug service already registered');
     return;
   } catch {
     // The service is not registered yet in this process.
@@ -181,13 +176,13 @@ export async function registerOpenServiceDebugService(
   const service = registerService(createDebugServiceDef(storyIndexGeneratorPromise));
   const descriptor = await describeService(DEBUG_SERVICE_ID);
 
-  logger.info('[open-service debug] registered service descriptor');
-  logger.info(JSON.stringify(descriptor, null, 2));
+  logger.verbose('[open-service debug] registered service descriptor');
+  logger.verbose(JSON.stringify(descriptor, null, 2));
 
   const unsubscribe = service.queries.getPreloadedValue.subscribe(
     { entryId: 'startup' },
     (value) => {
-      logger.info(`[open-service debug] subscription getPreloadedValue(startup) => ${value}`);
+      logger.verbose(`[open-service debug] subscription getPreloadedValue(startup) => ${value}`);
     }
   );
 

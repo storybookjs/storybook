@@ -102,7 +102,7 @@ function applyRegistration<
   };
 }
 
-const registryApi: ServiceRegistryApi = {
+export const serviceRegistryApi: ServiceRegistryApi = {
   listServices,
   describeService,
   getService,
@@ -123,11 +123,11 @@ export function registerService<
   }
 
   const resolvedDefinition = applyRegistration(definition, registration);
-  const runtime = createServiceRuntime(resolvedDefinition, { registryApi });
+  const runtime = createServiceRuntime(resolvedDefinition, { registryApi: serviceRegistryApi });
   const registeredRuntime = {
     queries: runtime.queries,
     commands: runtime.commands,
-    ...registryApi,
+    ...serviceRegistryApi,
   } as ServiceInstance<TState, TQueries, TCommands> & ServiceRegistryApi;
   const descriptor = describeDefinition(resolvedDefinition as AnyServiceDefinition);
 

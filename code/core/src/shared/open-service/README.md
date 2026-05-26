@@ -23,7 +23,6 @@ External callers should import from one of two entrypoints:
 The environment-agnostic API consists of:
 
 - `defineService`
-- `createService`
 - the exported type aliases from [types.ts](./types.ts)
 
 The server-only API consists of:
@@ -41,13 +40,13 @@ Internal tests and implementation code may import from the individual modules di
 ## File Layout
 
 - [index.ts](./index.ts): environment-agnostic barrel for definition helpers and shared types
-- [server.ts](./server.ts): server-only registry and static snapshot entrypoint
+- [server.ts](./server.ts): server-only entrypoint that re-exports registration APIs and owns static snapshot building/writing
 - [types.ts](./types.ts): core type model for definitions, contexts, runtime instances, and static build data
 - [service-definition.ts](./service-definition.ts): `defineService()` typing that preserves inline inference when declaring services
 - [service-validation.ts](./service-validation.ts): async schema validation helpers and error wrapping
 - [errors.ts](./errors.ts): validation metadata formatting helpers
-- [service-runtime.ts](./service-runtime.ts): runtime creation, logical static-path resolution, and subscriptions
-- [service-registration.ts](./service-registration.ts): server-side global registry implementation
+- [service-runtime.ts](./service-runtime.ts): signal-backed runtime construction, logical static-path resolution, and subscriptions
+- [service-registration.ts](./service-registration.ts): server-side global registry implementation and the shared registry API passed into runtimes
 - [fixtures.ts](./fixtures.ts): scenario fixtures used by the test suite
 - `*.test.ts`: focused tests for runtime behavior, validation behavior, server registration, and server static builds
 
@@ -56,11 +55,12 @@ flowchart LR
   A[index.ts\nenvironment-agnostic API]
   B[service-definition.ts\ndefineService typing]
   C[types.ts\ncore types]
-  D[service-runtime.ts\nlive runtime]
+  D[service-runtime.ts\nruntime builder]
   E[service-validation.ts\nschema validation]
   F[errors.ts\nvalidation metadata helpers]
-  G[server.ts\nserver registry and static snapshots]
-  H[fixtures.ts and tests\nexamples and coverage]
+  G[service-registration.ts\nregistry + shared registry API]
+  H[server.ts\nserver entrypoint + static snapshots]
+  I[fixtures.ts and tests\nexamples and coverage]
 
   A --> B
   A --> C
@@ -69,11 +69,15 @@ flowchart LR
   D --> E
   E --> F
   G --> D
-  G --> E
   G --> C
-  H --> A
-  H --> D
   H --> G
+  H --> D
+  H --> E
+  H --> C
+  I --> A
+  I --> D
+  I --> G
+  I --> H
 ```
 
 ## Core Concepts
@@ -167,23 +171,26 @@ temporary boolean gate in `.storybook/main.ts`.
 When a server registers a service definition:
 
 1. [service-registration.ts](./service-registration.ts) merges any registration-time handler overrides.
-2. [service-runtime.ts](./service-runtime.ts) creates a signal-backed state container from `initialState`.
-3. It builds a mutable `self` reference around that state.
-4. It builds commands that validate input, run handlers, and validate output.
-5. It builds queries that validate input, optionally run preload, run handlers, and validate output.
-6. It stores the resulting runtime behind the server registry entry for later lookup.
+2. [service-registration.ts](./service-registration.ts) passes the shared registry API into [service-runtime.ts](./service-runtime.ts).
+3. [service-runtime.ts](./service-runtime.ts) creates a signal-backed state container from `initialState`.
+4. It builds a mutable `self` reference around that state.
+5. It builds commands that validate input, run handlers, and validate output.
+6. It builds queries that validate input, optionally run preload, run handlers, and validate output.
+7. [service-registration.ts](./service-registration.ts) stores the resulting runtime behind the server registry entry for later lookup.
 
 ```mermaid
 sequenceDiagram
   participant Preset as services preset
   participant Registry as registerService
   participant Runtime as createServiceRuntime
+  participant API as shared registry API
   participant Schema as validateSchema
   participant Handler as query or command handler
   participant State as self/state signal
 
   Preset->>Registry: registerService(definition)
-  Registry->>Runtime: create runtime from initialState
+  Registry->>API: assemble registry API
+  Registry->>Runtime: create runtime from initialState + registry API
   Runtime->>Runtime: build self, commands, queries
   Registry-->>Preset: registered service runtime
   Preset->>Runtime: query(input) or command(input)
@@ -214,7 +221,7 @@ sequenceDiagram
   participant Subscriber
   participant Runtime as query.subscribe
   participant Schema as validateSchema
-  participant Preload as preload/static store
+  participant Preload as preload
   participant Signals as computed + effect
   participant Callback as subscriber callback
 
@@ -248,6 +255,10 @@ If multiple tasks resolve to the same path, their states are deep-merged.
 `writeOpenServiceStaticFiles(outputDir)` then writes those logical paths underneath
 `<outputDir>/services`, converting slash-separated logical keys into native filesystem paths for
 the current operating system.
+
+These snapshots are currently only a build artifact for the server-side static build flow. This
+slice does not implement a separate runtime mode that consumes prebuilt snapshot stores instead of
+running `preload` normally.
 
 Static path rules:
 
@@ -347,7 +358,8 @@ useful as executable documentation for callers and agents.
 ## Agent Notes
 
 - If you need to change runtime behavior, start in [service-runtime.ts](./service-runtime.ts).
-- If you need to change server registration or static snapshot writing, start in [server.ts](./server.ts).
+- If you need to change server registration, start in [service-registration.ts](./service-registration.ts).
+- If you need to change static snapshot building or writing, start in [server.ts](./server.ts).
 - If you need to change validation wording, start in [errors.ts](./errors.ts).
 - If you need to change schema handling, start in [service-validation.ts](./service-validation.ts).
 - If you need to change service authoring ergonomics, start in [service-definition.ts](./service-definition.ts) and [types.ts](./types.ts).

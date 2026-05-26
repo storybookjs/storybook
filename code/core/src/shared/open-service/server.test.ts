@@ -6,7 +6,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { join } from 'pathe';
 import { vol } from 'memfs';
 
-import { defineCommand, defineQuery, defineService } from './service-definition.ts';
+import { defineService } from './service-definition.ts';
 import {
   buildStaticFiles,
   clearRegistry,
@@ -73,7 +73,7 @@ describe('server static builds', () => {
         description: 'Copies state from another registered service during static preload.',
         initialState: { value: null as string | null },
         queries: {
-          getValue: defineQuery<{ value: string | null }>()({
+          getValue: {
             description: 'Returns the value copied during static preload.',
             input: v.object({ build: v.literal('once') }),
             output: v.nullable(v.string()),
@@ -84,10 +84,10 @@ describe('server static builds', () => {
             static: {
               inputs: async () => [{ build: 'once' as const }],
             },
-          }),
+          },
         },
         commands: {
-          copyValue: defineCommand<{ value: string | null }>()({
+          copyValue: {
             description: 'Copies marker state from the registered lookup service.',
             input: v.undefined(),
             output: v.undefined(),
@@ -103,7 +103,7 @@ describe('server static builds', () => {
 
               return undefined;
             },
-          }),
+          },
         },
       });
 
@@ -120,7 +120,7 @@ describe('server static builds', () => {
         description: 'Exercises logical static path normalization.',
         initialState: { value: null as string | null },
         queries: {
-          getValue: defineQuery<{ value: string | null }>()({
+          getValue: {
             description: 'Stores one custom value per static input.',
             input: v.object({
               path: v.string(),
@@ -139,10 +139,10 @@ describe('server static builds', () => {
                 { path: 'windows\\style.json', value: 'windows' },
               ],
             },
-          }),
+          },
         },
         commands: {
-          setValue: defineCommand<{ value: string | null }>()({
+          setValue: {
             description:
               'Stores one value while preserving the custom path from the preload input.',
             input: v.object({
@@ -157,7 +157,7 @@ describe('server static builds', () => {
 
               return undefined;
             },
-          }),
+          },
         },
       });
 
@@ -174,7 +174,7 @@ describe('server static builds', () => {
         description: 'Attempts to escape the static snapshot root.',
         initialState: { value: null as string | null },
         queries: {
-          getValue: defineQuery<{ value: string | null }>()({
+          getValue: {
             description: 'Uses an invalid static path.',
             input: v.object({ build: v.literal('once') }),
             output: v.nullable(v.string()),
@@ -186,10 +186,10 @@ describe('server static builds', () => {
               path: () => '../escape.json',
               inputs: async () => [{ build: 'once' as const }],
             },
-          }),
+          },
         },
         commands: {
-          setValue: defineCommand<{ value: string | null }>()({
+          setValue: {
             description: 'Stores one placeholder value before the invalid path is resolved.',
             input: v.undefined(),
             output: v.undefined(),
@@ -200,7 +200,7 @@ describe('server static builds', () => {
 
               return undefined;
             },
-          }),
+          },
         },
       });
 
@@ -221,7 +221,7 @@ describe('server static builds', () => {
         description: 'Writes custom static paths to disk.',
         initialState: { value: null as string | null },
         queries: {
-          getValue: defineQuery<{ value: string | null }>()({
+          getValue: {
             description: 'Stores one custom value per static input.',
             input: v.object({
               path: v.string(),
@@ -240,10 +240,10 @@ describe('server static builds', () => {
                 { path: 'windows\\style.json', value: 'windows' },
               ],
             },
-          }),
+          },
         },
         commands: {
-          setValue: defineCommand<{ value: string | null }>()({
+          setValue: {
             description: 'Stores one value before the snapshot is written to disk.',
             input: v.object({
               path: v.string(),
@@ -257,7 +257,7 @@ describe('server static builds', () => {
 
               return undefined;
             },
-          }),
+          },
         },
       });
 

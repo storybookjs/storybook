@@ -11,6 +11,7 @@ import {
   getService,
   listServices,
   registerService,
+  serviceRegistryApi,
 } from './service-registration.ts';
 import { createServiceRuntime, resolveStaticPath } from './service-runtime.ts';
 import { validateSchema } from './service-validation.ts';
@@ -21,7 +22,6 @@ import type {
   Queries,
   QueryDefinition,
   ServiceDefinition,
-  ServiceRegistryApi,
   StaticStore,
 } from './types.ts';
 
@@ -60,7 +60,7 @@ export async function buildStaticFiles(services: RuntimeServiceDefinition[]): Pr
 
       const inputsRuntime = createServiceRuntime(
         service,
-        { registryApi: { listServices, describeService, getService } },
+        { registryApi: serviceRegistryApi },
         structuredClone(service.initialState)
       );
       const inputs = await query.static.inputs(inputsRuntime.queryCtx);
@@ -71,7 +71,7 @@ export async function buildStaticFiles(services: RuntimeServiceDefinition[]): Pr
           // the one path this task is responsible for.
           const buildRuntime = createServiceRuntime(
             service,
-            { registryApi: { listServices, describeService, getService } },
+            { registryApi: serviceRegistryApi },
             structuredClone(service.initialState)
           );
           const validatedInput = await validateSchema(query.input, input, {

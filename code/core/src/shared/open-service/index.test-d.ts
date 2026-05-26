@@ -1,7 +1,8 @@
 import * as v from 'valibot';
 import { describe, expectTypeOf, it } from 'vitest';
 
-import { createService, defineService } from './index.ts';
+import { defineService } from './index.ts';
+import { registerService } from './server.ts';
 
 type OpenServiceState = {
   count: number;
@@ -94,7 +95,7 @@ const openServiceDef = defineService({
   },
 });
 
-const openService = createService(openServiceDef);
+const openService = registerService(openServiceDef);
 
 describe('open-service type inference', () => {
   it('infers runtime query and command signatures from inline schemas', () => {

@@ -1,7 +1,7 @@
 import * as v from 'valibot';
 import { afterEach, describe, expect, it } from 'vitest';
 
-import { defineCommand, defineQuery, defineService } from './service-definition.ts';
+import { defineService } from './service-definition.ts';
 import {
   assignEntryFieldInputSchema,
   entryIdInputSchema,
@@ -91,18 +91,18 @@ describe('service registration', () => {
         description: 'Leaves handlers undefined so registration can supply them later.',
         initialState: {} as Record<string, never>,
         queries: {
-          getValue: defineQuery<Record<string, never>>()({
+          getValue: {
             description: 'Reads a value that is not implemented in this environment.',
             input: v.undefined(),
             output: v.string(),
-          }),
+          },
         },
         commands: {
-          run: defineCommand<Record<string, never>>()({
+          run: {
             description: 'Runs a command that is not implemented in this environment.',
             input: v.undefined(),
             output: voidOutputSchema,
-          }),
+          },
         },
       })
     );
@@ -127,7 +127,7 @@ describe('service registration', () => {
       description: 'Derives marker state by resolving another service through ctx.getService.',
       initialState: {} as Record<string, never>,
       queries: {
-        isEntryMarked: defineQuery<Record<string, never>>()({
+        isEntryMarked: {
           description: 'Returns whether the lookup service reports marker=match for an entry.',
           input: entryIdInputSchema,
           output: v.boolean(),
@@ -139,7 +139,7 @@ describe('service registration', () => {
 
             return record?.marker === 'match';
           },
-        }),
+        },
       },
       commands: {},
     });
@@ -164,24 +164,24 @@ describe('service registration', () => {
       description: 'Provides a command handler at registration time.',
       initialState: { count: 0 },
       queries: {
-        getCount: defineQuery<{ count: number }>()({
+        getCount: {
           description: 'Reads the current count.',
           input: v.undefined(),
           output: v.number(),
           handler: (_input, ctx) => ctx.self.state.count,
-        }),
+        },
       },
       commands: {
-        increment: defineCommand<{ count: number }>()({
+        increment: {
           description: 'Increments the current count.',
           input: v.undefined(),
           output: voidOutputSchema,
-        }),
-        assignFromLookup: defineCommand<{ count: number }>()({
+        },
+        assignFromLookup: {
           description: 'Reads another service and mirrors whether a marker exists.',
           input: assignEntryFieldInputSchema,
           output: voidOutputSchema,
-        }),
+        },
       },
     });
 

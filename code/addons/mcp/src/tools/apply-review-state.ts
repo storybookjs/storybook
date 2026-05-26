@@ -24,30 +24,44 @@ const ApplyReviewStateOutput = v.object({
 /**
  * Resolve the Storybook manager root from the incoming MCP request.
  *
- * The MCP endpoint is mounted at `<storybook-root>/mcp`, so stripping the
- * trailing `/mcp` segment from the request path yields the root the
- * review page lives under. Unlike the context `origin` (always just
- * `http://localhost:<port>`), this preserves the real host and any path
- * prefix when Storybook is served behind a reverse proxy.
+ * Security note: authority (scheme + host + port) comes from a trusted
+ * origin, not from request.url (which can be derived from the Host header).
+ * The request contributes only the path prefix (Storybook may be mounted at
+ * `/some/prefix/mcp`).
  */
-function storybookRootFromRequest(request?: Request): string | undefined {
+function storybookRootFromRequest(
+	request: Request | undefined,
+	trustedOrigin: string,
+): string | undefined {
 	if (!request?.url) return undefined;
 	try {
 		const url = new URL(request.url);
-		const root = url.pathname.replace(/\/mcp\/?$/, '');
-		return `${url.origin}${root}`;
+		const rootPath = url.pathname.replace(/\/mcp\/?$/, '');
+		return `${trustedOrigin.replace(/\/$/, '')}${rootPath}`;
 	} catch {
 		return undefined;
 	}
 }
 
 /**
- * Build the URL of the Storybook review page. Prefers the incoming
- * request (carries the real host + path prefix); falls back to the
- * context `origin` when there is no request.
+ * Build the URL of the Storybook review page. Uses the trusted context
+ * origin for host authority and preserves any request path prefix so this
+ * works when Storybook is mounted behind a reverse proxy.
  */
 export function buildReviewUrl(ctx: { origin?: string; request?: Request }): string {
-	const root = storybookRootFromRequest(ctx.request) ?? ctx.origin;
+	const requestOrigin = (() => {
+		if (!ctx.request?.url) return undefined;
+		try {
+			return new URL(ctx.request.url).origin;
+		} catch {
+			return undefined;
+		}
+	})();
+	const trustedOrigin = ctx.origin ?? requestOrigin;
+	const root =
+		ctx.request && trustedOrigin
+			? storybookRootFromRequest(ctx.request, trustedOrigin)
+			: trustedOrigin;
 	if (!root) {
 		throw new Error('Cannot resolve the Storybook URL: no request or origin in addon context.');
 	}
@@ -64,10 +78,12 @@ export async function addApplyReviewStateTool(server: McpServer<any, AddonContex
 After you finish a UI code change, call this to help the user spot-check it. Provide:
 - title: a PR-style title for the change — short and specific.
 - description: a one-line summary of what changed and where to start reviewing.
-- collections: titled groups of representative story IDs. Give each a concise, PR-dense title, a one-sentence rationale.
+- collections: titled groups of representative story IDs. Give each a concise, PR-dense title, a one-sentence rationale, and — when you can tell — a kind ("atomic" for the directly changed component, "consumer" for direct dependents, "transitive" for pages/containers, "catch-all" otherwise).
 - changedFiles: the files you edited (most central first).
 - diffHunks: the actual diff of your change (you made it — include the hunks).
 - storyMeta: optional per-story { depth, chain }.
+
+The \`kind\` labels are for structured review grouping and UI behavior; do not repeat these labels verbatim in user-facing prose unless the user explicitly asks for them.
 
 Always include the returned reviewUrl in your final user-facing response so the user can open it.`,
 			schema: ReviewStateSchema,

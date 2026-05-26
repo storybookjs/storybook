@@ -389,6 +389,8 @@ describe('MCP Endpoint E2E Tests', () => {
 				- diffHunks: the actual diff of your change (you made it — include the hunks).
 				- storyMeta: optional per-story { depth, chain }.
 
+				The \`kind\` labels are for structured review grouping and UI behavior; do not repeat these labels verbatim in user-facing prose unless the user explicitly asks for them.
+
 				Always include the returned reviewUrl in your final user-facing response so the user can open it.",
 				    "inputSchema": {
 				      "$schema": "http://json-schema.org/draft-07/schema#",

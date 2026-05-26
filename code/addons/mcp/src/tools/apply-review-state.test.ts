@@ -41,13 +41,22 @@ describe('buildReviewUrl', () => {
 		);
 	});
 
-	it('derives the host and path prefix from the request for a proxied Storybook', () => {
+	it('uses trusted origin host and request path prefix for a proxied Storybook', () => {
 		expect(
 			buildReviewUrl({
 				origin: 'http://localhost:6006',
 				request: new Request('https://example.com/storybook/mcp'),
 			}),
-		).toBe('https://example.com/storybook/?path=/review-changes/');
+		).toBe('http://localhost:6006/storybook/?path=/review-changes/');
+	});
+
+	it('does not trust request host when origin is available', () => {
+		expect(
+			buildReviewUrl({
+				origin: 'http://localhost:6006',
+				request: new Request('https://evil.example.org/prefix/mcp'),
+			}),
+		).toBe('http://localhost:6006/prefix/?path=/review-changes/');
 	});
 
 	it('handles a request served at the host root', () => {
@@ -164,7 +173,7 @@ describe('applyReviewStateTool', () => {
 		const result = getResult(response);
 
 		expect(result?.structuredContent?.reviewUrl).toBe(
-			'https://sb.example.com/design-system/?path=/review-changes/',
+			'http://localhost:6006/design-system/?path=/review-changes/',
 		);
 	});
 

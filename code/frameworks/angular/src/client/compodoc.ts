@@ -131,7 +131,18 @@ const extractEnumValues = (compodocType: any) => {
   }
 
   try {
-    return compodocType.split('|').map((value) => JSON.parse(value));
+    return compodocType.split('|').map((segment) => {
+      const trimmed = segment.trim();
+      // Compodoc may emit single-quoted strings (e.g. 'foo') which are not valid JSON.
+      // Strip surrounding quotes before parsing so both 'foo' and "foo" work correctly.
+      if (
+        (trimmed.startsWith("'") && trimmed.endsWith("'")) ||
+        (trimmed.startsWith('"') && trimmed.endsWith('"'))
+      ) {
+        return trimmed.slice(1, -1);
+      }
+      return JSON.parse(trimmed);
+    });
   } catch (e) {
     return null;
   }

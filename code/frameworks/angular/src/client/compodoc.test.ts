@@ -111,6 +111,8 @@ describe('extractType', () => {
       // ['T[]', { name: 'other', value: 'empty-enum' }], // seems to be wrong | TODO: REVISIT
       ['[]', { name: 'other', value: 'empty-enum' }],
       ['"primary" | "secondary"', { name: 'enum', value: ['primary', 'secondary'] }],
+      ["'S' | 'M' | 'L'", { name: 'enum', value: ['S', 'M', 'L'] }],
+      ["'foo bar' | 'baz'", { name: 'enum', value: ['foo bar', 'baz'] }],
       ['TypeAlias', { name: 'enum', value: ['Type Alias 1', 'Type Alias 2', 'Type Alias 3'] }],
       // ['EnumNumeric', { name: 'other', value: 'empty-enum' }], // seems to be wrong | TODO: REVISIT
       // ['EnumNumericInitial', { name: 'other', value: 'empty-enum' }], // seems to be wrong | TODO: REVISIT

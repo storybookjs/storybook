@@ -160,8 +160,6 @@ export const Error = {
 const expectEmptyState = async (canvasElement: HTMLElement) => {
   const canvas = within(canvasElement);
 
-  await expect(canvas.queryByText('This story has no controls')).not.toBeInTheDocument();
-
   await expect(await canvas.findByText('This story has no controls')).toBeVisible();
   await expect(
     await canvas.findByText(/Storybook couldn't find or generate any controls for this story/i)

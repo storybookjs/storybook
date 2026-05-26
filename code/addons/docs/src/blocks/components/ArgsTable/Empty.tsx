@@ -55,8 +55,8 @@ export const Empty: FC<EmptyProps> = ({ inAddonPanel }) => {
         description={
           <>
             Storybook didn&apos;t find any controllable args for this story. Add <code>args</code>{' '}
-            or <code>argTypes</code>, or enable docgen for your framework, and interactive
-            controls will appear here automatically.
+            or <code>argTypes</code>, or enable docgen for your framework, and interactive controls
+            will appear here automatically.
           </>
         }
         footer={

@@ -9015,7 +9015,11 @@ __metadata:
     react: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
     react-dom: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
     storybook: "workspace:^"
+    typescript: ">= 4.9.x"
     vite: ^5.0.0 || ^6.0.0 || ^7.0.0 || ^8.0.0
+  peerDependenciesMeta:
+    typescript:
+      optional: true
   languageName: unknown
   linkType: soft
 
@@ -20601,6 +20605,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"is-buffer@npm:^2.0.5":
+  version: 2.0.5
+  resolution: "is-buffer@npm:2.0.5"
+  checksum: 10c0/e603f6fced83cf94c53399cff3bda1a9f08e391b872b64a73793b0928be3e5f047f2bcece230edb7632eaea2acdbfcb56c23b33d8a20c820023b230f1485679a
+  languageName: node
+  linkType: hard
+
 "is-bun-module@npm:^2.0.0":
   version: 2.0.0
   resolution: "is-bun-module@npm:2.0.0"
@@ -29703,6 +29714,7 @@ __metadata:
     ts-dedent: "npm:^2.0.0"
     tsconfig-paths: "npm:^4.2.0"
     type-fest: "npm:^5.6.0"
+    type-plus: "npm:^8.0.0-beta.8"
     typescript: "npm:^5.8.3"
     unique-string: "npm:^3.0.0"
     use-resize-observer: "npm:^9.1.0"
@@ -30441,6 +30453,17 @@ __metadata:
   languageName: node
   linkType: hard
 
+"tersify@npm:^3.11.1":
+  version: 3.12.1
+  resolution: "tersify@npm:3.12.1"
+  dependencies:
+    acorn: "npm:^8.8.2"
+    is-buffer: "npm:^2.0.5"
+    unpartial: "npm:^1.0.4"
+  checksum: 10c0/b2701bacb9c8f1e063ca2c1c1d1559cfac491230b95d1b33a273343aa9ad8c62130a9f54a64f381a221d56869df74f938c3a284187e769697db49bc8cc7e7e4a
+  languageName: node
+  linkType: hard
+
 "test-exclude@npm:^6.0.0":
   version: 6.0.0
   resolution: "test-exclude@npm:6.0.0"
@@ -31074,6 +31097,18 @@ __metadata:
   languageName: node
   linkType: hard
 
+"type-plus@npm:^8.0.0-beta.8":
+  version: 8.0.0-beta.8
+  resolution: "type-plus@npm:8.0.0-beta.8"
+  dependencies:
+    tersify: "npm:^3.11.1"
+    unpartial: "npm:^1.0.4"
+  peerDependencies:
+    typescript: ">= 5.6.0"
+  checksum: 10c0/cbd44a56f6264f0909f23ffcfe04e0f57bdde1de9763343258b8e9ed121877dc47c4947623c515bd4ae37a01eac3e5ec974743a694897574e5efab59a0fb94c6
+  languageName: node
+  linkType: hard
+
 "typed-array-buffer@npm:^1.0.3":
   version: 1.0.3
   resolution: "typed-array-buffer@npm:1.0.3"
@@ -31437,6 +31472,13 @@ __metadata:
   version: 1.1.4
   resolution: "unix-crypt-td-js@npm:1.1.4"
   checksum: 10c0/c4e3abd0d7ebcf39df7faff8be2cd137f477add743a2793c551682e04ec4e4f466e806a67e391d5a097229e4465b7cae4cb459990b9eb61dfe0b37d2388c6266
+  languageName: node
+  linkType: hard
+
+"unpartial@npm:^1.0.4":
+  version: 1.0.5
+  resolution: "unpartial@npm:1.0.5"
+  checksum: 10c0/bdfe89d0712679e22eee654a645493a2aad2428bf9cc0d27d5b56e986001e40c1c70b41407708f33d5ccffe1ced71ee3245e99bb62559fef3d6960feac625a07
   languageName: node
   linkType: hard
 

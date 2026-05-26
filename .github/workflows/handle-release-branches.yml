@@ -3,15 +3,20 @@ name: Handle Release Branches
 on:
   push:
 
+permissions: {}
+
 jobs:
   branch-checks:
     if: github.repository_owner == 'storybookjs'
     runs-on: ubuntu-latest
+    permissions: {}
     steps:
       - id: get-branch
+        env:
+          REF: ${{ github.ref }}
         run: |
-          BRANCH=($(echo ${{ github.ref }} | sed -E 's/refs\/heads\///'))
-          echo "branch=$BRANCH" >> $GITHUB_OUTPUT
+          BRANCH="${REF#refs/heads/}"
+          echo "branch=$BRANCH" >> "$GITHUB_OUTPUT"
     outputs:
       branch: ${{ steps.get-branch.outputs.branch }}
       is-latest-branch: ${{ steps.get-branch.outputs.branch == 'main' }}
@@ -23,6 +28,8 @@ jobs:
     needs: branch-checks
     if: ${{ needs.branch-checks.outputs.is-latest-branch == 'true' }}
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
@@ -35,6 +42,8 @@ jobs:
     needs: branch-checks
     if: ${{ needs.branch-checks.outputs.is-next-branch == 'true' || needs.branch-checks.outputs.is-release-branch == 'true' }}
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
@@ -53,17 +62,24 @@ jobs:
     needs: [branch-checks, get-next-release-branch]
     if: ${{ needs.branch-checks.outputs.is-next-branch == 'true' }}
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - name: Checkout (with creds for later git push)
+        # zizmor: ignore[artipacked]  # git push origin requires persisted credentials
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           fetch-depth: 0
 
-      - run: |
+      - env:
+          TARGET_BRANCH: ${{ needs.get-next-release-branch.outputs.branch }}
+          SOURCE_BRANCH: ${{ needs.branch-checks.outputs.branch }}
+        run: |
           set +e
-          REMOTE_BRANCH=$(git branch -r | grep origin/${{ needs.get-next-release-branch.outputs.branch }})
-          if [[ ! -z $REMOTE_BRANCH ]]; then git push origin --delete ${{ needs.get-next-release-branch.outputs.branch }}; fi
-          echo 'Pushing branch ${{ needs.get-next-release-branch.outputs.branch }}...'
-          git push -f origin ${{ needs.branch-checks.outputs.branch }}:${{ needs.get-next-release-branch.outputs.branch }}
+          REMOTE_BRANCH=$(git branch -r | grep "origin/${TARGET_BRANCH}")
+          if [[ -n "$REMOTE_BRANCH" ]]; then git push origin --delete "$TARGET_BRANCH"; fi
+          echo "Pushing branch ${TARGET_BRANCH}..."
+          git push -f origin "${SOURCE_BRANCH}:${TARGET_BRANCH}"
     outputs:
       branch: ${{ needs.get-next-release-branch.outputs.branch }}
 
@@ -71,6 +87,7 @@ jobs:
     if: ${{ always() && github.repository_owner == 'storybookjs' }}
     needs: [branch-checks, get-next-release-branch]
     runs-on: ubuntu-latest
+    permissions: {}
     steps:
       - id: is-next-release-branch
         run: |
@@ -93,10 +110,15 @@ jobs:
     needs:
       [branch-checks, next-release-branch-check, create-next-release-branch]
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
       - if: ${{ needs.branch-checks.outputs.is-actionable-branch == 'true' && needs.branch-checks.outputs.is-latest-branch == 'false' && needs.next-release-branch-check.outputs.check == 'false' }}
+        env:
+          BRANCH: ${{ needs.create-next-release-branch.outputs.branch || needs.branch-checks.outputs.branch }}
+          FRONTPAGE_TOKEN: ${{ secrets.FRONTPAGE_ACCESS_TOKEN }}
         run: |
           curl -X POST https://api.github.com/repos/storybookjs/frontpage/dispatches \
-          -H 'Accept: application/vnd.github.v3+json' \
-          -u ${{ secrets.FRONTPAGE_ACCESS_TOKEN }} \
-          --data '{"event_type": "request-create-frontpage-branch", "client_payload": { "branch": "${{ needs.create-next-release-branch.outputs.branch || needs.branch-checks.outputs.branch }}" }}'
+            -H 'Accept: application/vnd.github.v3+json' \
+            -u "$FRONTPAGE_TOKEN" \
+            --data "{\"event_type\": \"request-create-frontpage-branch\", \"client_payload\": {\"branch\": \"${BRANCH}\"}}"

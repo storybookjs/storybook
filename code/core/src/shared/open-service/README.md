@@ -23,8 +23,7 @@ External callers should import from one of two entrypoints:
 The environment-agnostic API consists of:
 
 - `defineService`
-- `defineQuery`
-- `defineCommand`
+- `createService`
 - the exported type aliases from [types.ts](./types.ts)
 
 The server-only API consists of:
@@ -44,7 +43,7 @@ Internal tests and implementation code may import from the individual modules di
 - [index.ts](./index.ts): environment-agnostic barrel for definition helpers and shared types
 - [server.ts](./server.ts): server-only registry and static snapshot entrypoint
 - [types.ts](./types.ts): core type model for definitions, contexts, runtime instances, and static build data
-- [service-definition.ts](./service-definition.ts): helpers that preserve inference when declaring services
+- [service-definition.ts](./service-definition.ts): `defineService()` typing that preserves inline inference when declaring services
 - [service-validation.ts](./service-validation.ts): async schema validation helpers and error wrapping
 - [errors.ts](./errors.ts): validation metadata formatting helpers
 - [service-runtime.ts](./service-runtime.ts): runtime creation, logical static-path resolution, and subscriptions
@@ -55,7 +54,7 @@ Internal tests and implementation code may import from the individual modules di
 ```mermaid
 flowchart LR
   A[index.ts\nenvironment-agnostic API]
-  B[service-definition.ts\nauthoring helpers]
+  B[service-definition.ts\ndefineService typing]
   C[types.ts\ncore types]
   D[service-runtime.ts\nlive runtime]
   E[service-validation.ts\nschema validation]
@@ -273,12 +272,13 @@ flowchart TD
 
 ## How To Define A Service
 
-Use the helpers in this order:
+Define queries and commands inline inside `defineService()` so the service-level schema maps can
+contextually type every handler, preload hook, and `ctx.self.commands.*` call:
 
 ```ts
 import * as v from 'valibot';
 
-import { defineCommand, defineQuery, defineService } from './index.ts';
+import { defineService } from './index.ts';
 import { registerService } from './server.ts';
 
 type ExampleState = {
@@ -293,7 +293,7 @@ export const exampleServiceDef = defineService({
   description: 'Example service used in documentation.',
   initialState: { values: {} } satisfies ExampleState,
   queries: {
-    getValue: defineQuery<ExampleState>()({
+    getValue: {
       description: 'Returns one value by id.',
       input: entryIdSchema,
       output: valueSchema,
@@ -306,10 +306,10 @@ export const exampleServiceDef = defineService({
       static: {
         inputs: async () => [{ entryId: 'a' }, { entryId: 'b' }],
       },
-    }),
+    },
   },
   commands: {
-    preloadValue: defineCommand<ExampleState>()({
+    preloadValue: {
       description: 'Fills state for one id.',
       input: entryIdSchema,
       output: v.void(),
@@ -318,7 +318,7 @@ export const exampleServiceDef = defineService({
           draft.values[input.entryId] = 'ready';
         });
       },
-    }),
+    },
   },
 });
 

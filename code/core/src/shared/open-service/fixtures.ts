@@ -1,6 +1,7 @@
 import * as v from 'valibot';
 
-import { defineCommand, defineQuery, defineService } from './service-definition.ts';
+import { defineService } from './service-definition.ts';
+import type { ServiceInstance } from './types.ts';
 
 /** Shared schema used by fixtures that address one logical record by id. */
 export const entryIdInputSchema = v.object({ entryId: v.string() });
@@ -31,15 +32,15 @@ export const mutableRecordLookupServiceDef = defineService({
   description: 'Provides a mutable record lookup keyed by entry id.',
   initialState: {} as MutableRecordState,
   queries: {
-    getRecordFields: defineQuery<MutableRecordState>()({
+    getRecordFields: {
       description: 'Returns all stored fields for one entry, or null when absent.',
       input: entryIdInputSchema,
       output: recordFieldsOutputSchema,
       handler: (input, ctx) => ctx.self.state[input.entryId] ?? null,
-    }),
+    },
   },
   commands: {
-    assignRecordField: defineCommand<MutableRecordState>()({
+    assignRecordField: {
       description: 'Writes one field value onto the selected entry.',
       input: assignEntryFieldInputSchema,
       output: voidOutputSchema,
@@ -49,7 +50,7 @@ export const mutableRecordLookupServiceDef = defineService({
           draft[input.entryId]![input.fieldKey] = input.fieldValue;
         });
       },
-    }),
+    },
   },
 });
 
@@ -61,7 +62,7 @@ export const awaitedPreloadValueServiceDef = defineService({
   description: 'Preloads a value on demand and awaits preload before returning it.',
   initialState: {} as PreloadedValueState,
   queries: {
-    getPreloadedValue: defineQuery<PreloadedValueState>()({
+    getPreloadedValue: {
       description: 'Returns the value for an entry and preloads it first when missing.',
       input: entryIdInputSchema,
       output: preloadedValueOutputSchema,
@@ -74,10 +75,10 @@ export const awaitedPreloadValueServiceDef = defineService({
       static: {
         inputs: async () => [{ entryId: 'entry-a' }, { entryId: 'entry-b' }],
       },
-    }),
+    },
   },
   commands: {
-    preloadValue: defineCommand<PreloadedValueState>()({
+    preloadValue: {
       description: 'Preloads a deterministic value for one entry id.',
       input: entryIdInputSchema,
       output: voidOutputSchema,
@@ -87,7 +88,7 @@ export const awaitedPreloadValueServiceDef = defineService({
           draft[input.entryId] = 'preloaded';
         });
       },
-    }),
+    },
   },
 });
 
@@ -97,7 +98,7 @@ export const fireAndForgetPreloadValueServiceDef = defineService({
   description: 'Preloads a value in the background without awaiting preload.',
   initialState: {} as PreloadedValueState,
   queries: {
-    getPreloadedValue: defineQuery<PreloadedValueState>()({
+    getPreloadedValue: {
       description: 'Returns the current value and triggers a background preload when missing.',
       input: entryIdInputSchema,
       output: preloadedValueOutputSchema,
@@ -107,10 +108,10 @@ export const fireAndForgetPreloadValueServiceDef = defineService({
           void ctx.self.commands.preloadValue(input);
         }
       },
-    }),
+    },
   },
   commands: {
-    preloadValue: defineCommand<PreloadedValueState>()({
+    preloadValue: {
       description: 'Preloads a deterministic value for one entry id.',
       input: entryIdInputSchema,
       output: voidOutputSchema,
@@ -120,7 +121,7 @@ export const fireAndForgetPreloadValueServiceDef = defineService({
           draft[input.entryId] = 'preloaded';
         });
       },
-    }),
+    },
   },
 });
 
@@ -133,7 +134,7 @@ export function createSharedStaticFileServiceDef() {
     description: 'Builds two independent query outputs into one shared static file.',
     initialState: {} as SharedStaticFileState,
     queries: {
-      getLeftValue: defineQuery<SharedStaticFileState>()({
+      getLeftValue: {
         description: 'Preloads the left value into the shared file state.',
         input: noInputSchema,
         output: preloadedValueOutputSchema,
@@ -145,8 +146,8 @@ export function createSharedStaticFileServiceDef() {
           path: () => 'shared.json',
           inputs: async () => [undefined],
         },
-      }),
-      getRightValue: defineQuery<SharedStaticFileState>()({
+      },
+      getRightValue: {
         description: 'Preloads the right value into the shared file state.',
         input: noInputSchema,
         output: preloadedValueOutputSchema,
@@ -158,10 +159,10 @@ export function createSharedStaticFileServiceDef() {
           path: () => 'shared.json',
           inputs: async () => [undefined],
         },
-      }),
+      },
     },
     commands: {
-      writeLeftValue: defineCommand<SharedStaticFileState>()({
+      writeLeftValue: {
         description: 'Writes the left static value into state.',
         input: noInputSchema,
         output: voidOutputSchema,
@@ -170,8 +171,8 @@ export function createSharedStaticFileServiceDef() {
             draft.left = 'preloaded';
           });
         },
-      }),
-      writeRightValue: defineCommand<SharedStaticFileState>()({
+      },
+      writeRightValue: {
         description: 'Writes the right static value into state.',
         input: noInputSchema,
         output: voidOutputSchema,
@@ -180,13 +181,19 @@ export function createSharedStaticFileServiceDef() {
             draft.right = 'preloaded';
           });
         },
-      }),
+      },
     },
   });
 }
 
 /** Creates a service that composes one service's query inside another service's query. */
-export function createDerivedBooleanFromChildQueryServiceDef() {
+export function createDerivedBooleanFromChildQueryServiceDef(
+  sourceService: ServiceInstance<
+    MutableRecordState,
+    typeof mutableRecordLookupServiceDef.queries,
+    typeof mutableRecordLookupServiceDef.commands
+  >
+) {
   type DerivedState = Record<string, never>;
 
   return defineService({
@@ -194,19 +201,18 @@ export function createDerivedBooleanFromChildQueryServiceDef() {
     description: 'Derives a boolean from the child lookup query.',
     initialState: {} as DerivedState,
     queries: {
-      isEntryMarked: defineQuery<DerivedState>()({
+      isEntryMarked: {
         description: 'Returns whether the child query reports marker=match for an entry.',
         input: entryIdInputSchema,
         output: booleanOutputSchema,
-        handler: async (input, ctx) => {
-          const sourceService = await ctx.getService('test/mutable-record-lookup');
-          const record = (await sourceService.queries.getRecordFields({
+        handler: async (input) => {
+          const record = await sourceService.queries.getRecordFields({
             entryId: input.entryId,
-          })) as Record<string, string> | null;
+          });
 
           return record?.marker === 'match';
         },
-      }),
+      },
     },
     commands: {},
   });
@@ -219,12 +225,12 @@ export function createInvalidQueryOutputServiceDef() {
     description: 'Returns an invalid query output on purpose.',
     initialState: {} as Record<string, never>,
     queries: {
-      getBrokenValue: defineQuery<Record<string, never>>()({
+      getBrokenValue: {
         description: 'Returns a string-shaped output that is actually a number.',
         input: noInputSchema,
         output: preloadedValueOutputSchema,
         handler: () => 42 as unknown as string | null,
-      }),
+      },
     },
     commands: {},
   });
@@ -238,12 +244,12 @@ export function createInvalidCommandOutputServiceDef() {
     initialState: {} as Record<string, never>,
     queries: {},
     commands: {
-      runBrokenCommand: defineCommand<Record<string, never>>()({
+      runBrokenCommand: {
         description: 'Returns a string-shaped output that is actually a number.',
         input: noInputSchema,
         output: v.string(),
         handler: () => 42 as unknown as string,
-      }),
+      },
     },
   });
 }
@@ -255,7 +261,7 @@ export function createInvalidStaticInputServiceDef() {
     description: 'Provides an invalid static preload input on purpose.',
     initialState: {} as PreloadedValueState,
     queries: {
-      getPreloadedValue: defineQuery<PreloadedValueState>()({
+      getPreloadedValue: {
         description: 'Validates static inputs before preload runs.',
         input: entryIdInputSchema,
         output: preloadedValueOutputSchema,
@@ -264,7 +270,7 @@ export function createInvalidStaticInputServiceDef() {
         static: {
           inputs: async () => [{} as unknown as { entryId: string }],
         },
-      }),
+      },
     },
     commands: {},
   });

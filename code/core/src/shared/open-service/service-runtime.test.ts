@@ -1,8 +1,8 @@
 import * as v from 'valibot';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { defineQuery, defineService } from './service-definition.ts';
-import { clearRegistry, registerService } from './server.ts';
+import { defineService } from './service-definition.ts';
+import { clearRegistry, getService } from './service-runtime.ts';
 import {
   awaitedPreloadValueServiceDef,
   createDerivedBooleanFromChildQueryServiceDef,
@@ -17,13 +17,13 @@ afterEach(() => {
 describe('service runtime', () => {
   describe('direct query calls', () => {
     it('returns the initial record lookup value', async () => {
-      const service = registerService(mutableRecordLookupServiceDef);
+      const service = getService(mutableRecordLookupServiceDef);
 
       expect(await service.queries.getRecordFields({ entryId: 'entry-a' })).toBeNull();
     });
 
     it('reflects state after a mutating command', async () => {
-      const service = registerService(mutableRecordLookupServiceDef);
+      const service = getService(mutableRecordLookupServiceDef);
 
       await service.commands.assignRecordField({
         entryId: 'entry-a',
@@ -39,7 +39,7 @@ describe('service runtime', () => {
 
   describe('subscriptions', () => {
     it('delivers the current value after subscription starts', async () => {
-      const service = registerService(mutableRecordLookupServiceDef);
+      const service = getService(mutableRecordLookupServiceDef);
       const calls: Array<Record<string, string> | null> = [];
 
       const unsubscribe = service.queries.getRecordFields.subscribe(
@@ -54,7 +54,7 @@ describe('service runtime', () => {
     });
 
     it('notifies subscribers when their own record changes', async () => {
-      const service = registerService(mutableRecordLookupServiceDef);
+      const service = getService(mutableRecordLookupServiceDef);
       const calls: Array<Record<string, string> | null> = [];
 
       const unsubscribe = service.queries.getRecordFields.subscribe(
@@ -75,7 +75,7 @@ describe('service runtime', () => {
     });
 
     it('does not notify subscribers for a different record', async () => {
-      const service = registerService(mutableRecordLookupServiceDef);
+      const service = getService(mutableRecordLookupServiceDef);
       const callsA: Array<Record<string, string> | null> = [];
       const callsB: Array<Record<string, string> | null> = [];
 
@@ -105,7 +105,7 @@ describe('service runtime', () => {
     });
 
     it('stops notifying after unsubscribe', async () => {
-      const service = registerService(mutableRecordLookupServiceDef);
+      const service = getService(mutableRecordLookupServiceDef);
       const calls: Array<Record<string, string> | null> = [];
 
       const unsubscribe = service.queries.getRecordFields.subscribe(
@@ -131,7 +131,7 @@ describe('service runtime', () => {
     });
 
     it('supports multiple subscribers on the same query', async () => {
-      const service = registerService(mutableRecordLookupServiceDef);
+      const service = getService(mutableRecordLookupServiceDef);
       const callsA: Array<Record<string, string> | null> = [];
       const callsB: Array<Record<string, string> | null> = [];
 
@@ -172,7 +172,7 @@ describe('service runtime', () => {
         description: 'Resolves a subscription value after the subscriber has already unsubscribed.',
         initialState: {} as Record<string, never>,
         queries: {
-          getValue: defineQuery<Record<string, never>>()({
+          getValue: {
             input: v.undefined(),
             output: v.string(),
             handler: async () => {
@@ -182,11 +182,11 @@ describe('service runtime', () => {
 
               return 'late';
             },
-          }),
+          },
         },
         commands: {},
       });
-      const service = registerService(delayedQueryServiceDef);
+      const service = getService(delayedQueryServiceDef);
       const calls: string[] = [];
 
       const unsubscribe = service.queries.getValue.subscribe(undefined, (value) => {
@@ -208,7 +208,7 @@ describe('service runtime', () => {
         .mockImplementation((callback: VoidFunction) => {
           queuedCallbacks.push(callback);
         });
-      const service = registerService(mutableRecordLookupServiceDef);
+      const service = getService(mutableRecordLookupServiceDef);
 
       service.queries.getRecordFields.subscribe({} as unknown as { entryId: string }, () => {});
 
@@ -233,7 +233,7 @@ describe('service runtime', () => {
 
   describe('awaited preload', () => {
     it('preloads state when subscribing to an empty query', async () => {
-      const service = registerService(awaitedPreloadValueServiceDef);
+      const service = getService(awaitedPreloadValueServiceDef);
       const calls: Array<string | null> = [];
 
       const unsubscribe = service.queries.getPreloadedValue.subscribe(
@@ -249,7 +249,7 @@ describe('service runtime', () => {
     });
 
     it('does not trigger preload again after the value is already preloaded', async () => {
-      const service = registerService(awaitedPreloadValueServiceDef);
+      const service = getService(awaitedPreloadValueServiceDef);
       const preloadValueSpy = vi.spyOn(
         awaitedPreloadValueServiceDef.commands.preloadValue,
         'handler'
@@ -277,7 +277,7 @@ describe('service runtime', () => {
     });
 
     it('preloads distinct values independently by input', async () => {
-      const service = registerService(awaitedPreloadValueServiceDef);
+      const service = getService(awaitedPreloadValueServiceDef);
       const callsA: Array<string | null> = [];
       const callsB: Array<string | null> = [];
 
@@ -301,7 +301,7 @@ describe('service runtime', () => {
     });
 
     it('awaits preload before returning a direct query result', async () => {
-      const service = registerService(awaitedPreloadValueServiceDef);
+      const service = getService(awaitedPreloadValueServiceDef);
 
       await expect(service.queries.getPreloadedValue({ entryId: 'entry-a' })).resolves.toBe(
         'preloaded'
@@ -309,7 +309,7 @@ describe('service runtime', () => {
     });
 
     it('resolves immediately when state is already preloaded', async () => {
-      const service = registerService(awaitedPreloadValueServiceDef);
+      const service = getService(awaitedPreloadValueServiceDef);
       const preloadValueSpy = vi.spyOn(
         awaitedPreloadValueServiceDef.commands.preloadValue,
         'handler'
@@ -327,7 +327,7 @@ describe('service runtime', () => {
     });
 
     it('resolves correctly for concurrent awaits of the same key', async () => {
-      const service = registerService(awaitedPreloadValueServiceDef);
+      const service = getService(awaitedPreloadValueServiceDef);
 
       const [first, second] = await Promise.all([
         service.queries.getPreloadedValue({ entryId: 'entry-a' }),
@@ -341,13 +341,13 @@ describe('service runtime', () => {
 
   describe('fire-and-forget preload', () => {
     it('returns the current value immediately when preload does not await', async () => {
-      const service = registerService(fireAndForgetPreloadValueServiceDef);
+      const service = getService(fireAndForgetPreloadValueServiceDef);
 
       await expect(service.queries.getPreloadedValue({ entryId: 'entry-a' })).resolves.toBeNull();
     });
 
     it('still updates subscribers reactively after the background preload finishes', async () => {
-      const service = registerService(fireAndForgetPreloadValueServiceDef);
+      const service = getService(fireAndForgetPreloadValueServiceDef);
       const calls: Array<string | null> = [];
 
       const unsubscribe = service.queries.getPreloadedValue.subscribe(
@@ -365,9 +365,9 @@ describe('service runtime', () => {
 
   describe('cross-service query composition', () => {
     it('supports awaiting a child query from another service', async () => {
-      const sourceService = registerService(mutableRecordLookupServiceDef);
-      const derivedServiceDef = createDerivedBooleanFromChildQueryServiceDef();
-      const derivedService = registerService(derivedServiceDef);
+      const sourceService = getService(mutableRecordLookupServiceDef);
+      const derivedServiceDef = createDerivedBooleanFromChildQueryServiceDef(sourceService);
+      const derivedService = getService(derivedServiceDef);
 
       await expect(derivedService.queries.isEntryMarked({ entryId: 'entry-a' })).resolves.toBe(
         false

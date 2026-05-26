@@ -35,6 +35,11 @@ import { getManagerBuilder, getPreviewBuilder } from './utils/get-builders.ts';
 import { getServerChannel } from './utils/get-server-channel.ts';
 import { outputStartupInformation } from './utils/output-startup-information.ts';
 import { outputStats } from './utils/output-stats.ts';
+import {
+  getMcpMetadataFromMainConfig,
+  type RuntimeInstanceRecord,
+  writeStorybookRuntimeInstanceRecord,
+} from './utils/runtime-instance-registry.ts';
 import { getServerAddresses, getServerChannelUrl, getServerPort } from './utils/server-address.ts';
 import { getServer } from './utils/server-init.ts';
 import { stripCommentsAndStrings } from './utils/strip-comments-and-strings.ts';
@@ -303,6 +308,18 @@ export async function buildDevStandalone(
   const { managerResult, previewResult } = await buildOrThrow(async () =>
     storybookDevServer(fullOptions, server)
   );
+
+  const mcp: RuntimeInstanceRecord['mcp'] = getMcpMetadataFromMainConfig(config);
+
+  await writeStorybookRuntimeInstanceRecord({
+    address: localAddress,
+    mcp,
+    port,
+    storybookVersion,
+  }).catch((error: unknown) => {
+    logger.warn('Storybook failed to write its runtime instance registry record.');
+    logger.debug(error instanceof Error ? (error.stack ?? error.message) : String(error));
+  });
 
   const previewTotalTime = previewResult?.totalTime;
   const managerTotalTime = managerResult?.totalTime;

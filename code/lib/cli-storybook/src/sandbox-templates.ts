@@ -855,6 +855,10 @@ export const baseTemplates = {
     },
     modifications: {
       useCsfFactory: true,
+      // The React renderer's template-stories (e.g. js-argtypes.stories.jsx) import
+      // `prop-types`. Every other React-renderer sandbox declares it explicitly via
+      // extraDependencies; this template was missing it.
+      extraDependencies: ['prop-types'],
       mainConfig: {
         features: {
           experimentalTestSyntax: true,
@@ -882,6 +886,12 @@ export const baseTemplates = {
       framework: '@storybook/react-native-web-vite',
       renderer: '@storybook/react',
       builder: '@storybook/builder-vite',
+    },
+    modifications: {
+      // The React renderer's template-stories (e.g. js-argtypes.stories.jsx) import
+      // `prop-types`. Every other React-renderer sandbox declares it explicitly via
+      // extraDependencies; this template was missing it.
+      extraDependencies: ['prop-types'],
     },
     skipTasks: ['e2e-tests', 'bench', 'vitest-integration'],
     initOptions: {

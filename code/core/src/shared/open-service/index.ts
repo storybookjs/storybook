@@ -5,7 +5,7 @@
  * outside this directory should rely on. Tests and internal modules can import implementation
  * files directly without widening the supported public surface.
  */
-export { defineCommand, defineQuery, defineService } from './service-definition.ts';
+export { defineService } from './service-definition.ts';
 
 export type {
   CommandCtx,

@@ -144,7 +144,8 @@ const Mark = styled.mark(({ theme }) => ({
   fontWeight: 'inherit',
 }));
 
-const storyPreviewUrl = (id: string) => `iframe.html?id=${encodeURIComponent(id)}&viewMode=story`;
+const storyPreviewUrl = (id: string) =>
+  `iframe.html?id=${encodeURIComponent(id)}&viewMode=story&freeze=finished`;
 
 const isWithinPreloadRange = (element: HTMLElement, margin: number): boolean => {
   const rect = element.getBoundingClientRect();

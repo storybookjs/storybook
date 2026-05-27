@@ -1,4 +1,4 @@
-import { type FC, type ReactNode, useEffect, useMemo, useState } from 'react';
+import React, { type FC, type ReactNode, useEffect, useMemo, useState } from 'react';
 
 import { Button, Collapsible } from 'storybook/internal/components';
 import { styled } from 'storybook/theming';
@@ -91,15 +91,13 @@ const BranchCode = styled.code(({ theme }) => ({
   fontSize: theme.typography.size.s1,
 }));
 
-const Body = styled.div(({ theme }) => ({
+const Body = styled.div({
   flex: 1,
   minHeight: 0,
-  background: theme.background.app,
   display: 'flex',
   flexDirection: 'column',
-}));
+});
 
-const TabPanelBody = styled.div({});
 const TabHeader = styled.div(({ theme }) => ({
   display: 'flex',
   alignItems: 'center',
@@ -125,10 +123,11 @@ const TabButton = styled.button<{ $selected: boolean }>(({ theme, $selected }) =
     boxShadow: `inset 0 0 0 2px ${theme.barSelectedColor}`,
   },
 }));
-const TabPanels = styled.div({
+const TabPanels = styled.div(({ theme }) => ({
   flex: 1,
   minHeight: 0,
-});
+  background: theme.background.app,
+}));
 
 // Compact search row — the search field shares the row with optional
 // trailing controls (e.g. the Components tab change-filter toggle).
@@ -618,7 +617,7 @@ export const SummaryScreen: FC<SummaryScreenProps> = ({
         </TabHeader>
 
         <TabPanels>
-          <TabPanelBody
+          <div
             id={collectionsPanelId}
             role="tabpanel"
             aria-labelledby={collectionsTabId}
@@ -666,9 +665,9 @@ export const SummaryScreen: FC<SummaryScreenProps> = ({
                 });
               }}
             />
-          </TabPanelBody>
+          </div>
 
-          <TabPanelBody
+          <div
             id={componentsPanelId}
             role="tabpanel"
             aria-labelledby={componentsTabId}
@@ -712,7 +711,7 @@ export const SummaryScreen: FC<SummaryScreenProps> = ({
                 });
               }}
             />
-          </TabPanelBody>
+          </div>
         </TabPanels>
       </Body>
     </Page>

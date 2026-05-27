@@ -10,10 +10,12 @@ import { currentGitBranch } from './node/git-branch.ts';
 // is what REQUEST_REVIEW replays. It is intentionally not persisted to disk —
 // a dev-server restart wipes the slate.
 let cached: ReviewState | undefined;
+let latestPushSeq = 0;
 
 /** Test-only: reset the module-level cache between cases. */
 export function __resetCache(): void {
   cached = undefined;
+  latestPushSeq = 0;
 }
 
 async function enrichWithBranch(
@@ -46,7 +48,11 @@ export const experimental_serverChannel = async (
   const resolveBranch = serverOptions.resolveBranch ?? currentGitBranch;
 
   channel.on(EVENTS.PUSH_REVIEW, async (payload: ReviewState) => {
+    const seq = ++latestPushSeq;
     const enriched = await enrichWithBranch(payload, resolveBranch);
+    if (seq !== latestPushSeq) {
+      return;
+    }
     cached = enriched;
     channel.emit(EVENTS.DISPLAY_REVIEW, enriched);
   });

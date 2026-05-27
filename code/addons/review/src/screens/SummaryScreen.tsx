@@ -184,29 +184,6 @@ const SearchIconWrap = styled.span(({ theme }) => ({
   width: 22,
 }));
 
-const ToggleGroup = styled.div({
-  display: 'flex',
-  alignItems: 'center',
-  gap: 4,
-  flexShrink: 0,
-});
-
-// State-only toggle (no filtering logic wired yet): selecting one option
-// deselects the other.
-const FilterToggle = styled.button<{ $selected: boolean }>(({ theme, $selected }) => ({
-  appearance: 'none',
-  cursor: 'pointer',
-  border: `1px solid ${$selected ? theme.color.secondary : 'transparent'}`,
-  borderRadius: theme.appBorderRadius + 2,
-  padding: '5px 10px',
-  fontFamily: theme.typography.fonts.base,
-  fontSize: theme.typography.size.s1,
-  fontWeight: 700,
-  whiteSpace: 'nowrap',
-  background: $selected ? `${theme.color.secondary}1A` : 'transparent',
-  color: $selected ? theme.color.secondary : theme.textMutedColor,
-}));
-
 const CollectionList = styled.div({
   display: 'flex',
   flexDirection: 'column',
@@ -288,8 +265,6 @@ const NoResults = styled.div(({ theme }) => ({
   padding: 16,
   fontSize: 14,
 }));
-
-type ChangeFilter = 'all' | 'agent';
 
 // Renders a component title ("Components/Button") as a path with the leading
 // group segments dimmed and the component name emphasised.
@@ -513,13 +488,14 @@ const SearchBox: FC<{ value: string; onChange: (value: string) => void }> = ({
     </SearchIconWrap>
     <SearchInput
       type="search"
+      aria-label="Find stories"
       placeholder="Find stories"
       value={value}
       onChange={(event) => onChange(event.target.value)}
     />
-    <Button variant="ghost" size="small" padding="small" ariaLabel="Filter stories">
+    <SearchIconWrap aria-hidden="true">
       <FilterIcon />
-    </Button>
+    </SearchIconWrap>
   </SearchField>
 );
 

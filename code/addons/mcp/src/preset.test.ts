@@ -106,9 +106,6 @@ describe('experimental_devServer', () => {
 					if (key === 'features') {
 						return Promise.resolve({ changeDetection: true });
 					}
-					if (key === 'addons') {
-						return Promise.resolve(['@storybook/addon-review']);
-					}
 					return Promise.resolve(undefined);
 				}),
 			},

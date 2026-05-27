@@ -55,6 +55,13 @@ describe('buildReviewUrl', () => {
 	it('throws when neither request nor origin is available', () => {
 		expect(() => buildReviewUrl({} as any)).toThrow(/Cannot resolve the Storybook URL/);
 	});
+
+	it('throws when the request URL is unparseable', () => {
+		const badRequest = { url: '::::not a url' } as unknown as Request;
+		expect(() => buildReviewUrl({ origin: 'http://localhost:6006', request: badRequest })).toThrow(
+			/Cannot resolve the Storybook URL/,
+		);
+	});
 });
 
 describe('displayReviewTool', () => {
@@ -157,5 +164,18 @@ describe('displayReviewTool', () => {
 		expect(result?.structuredContent?.reviewUrl).toBe(
 			'http://localhost:6006/design-system/?path=/review/',
 		);
+	});
+
+	it('returns an MCP error when origin is missing from the addon context', async () => {
+		const response = await callTool(sampleReview, {
+			// Intentionally omit `origin` to exercise the error path.
+			options: {} as unknown as AddonContext['options'],
+			disableTelemetry: true,
+		} as AddonContext);
+		const result = getResult(response);
+
+		expect(result?.isError).toBe(true);
+		expect(result?.content?.[0]?.text).toMatch(/Cannot resolve the Storybook URL/);
+		expect(emitted).toEqual([]);
 	});
 });

@@ -1,24 +1,33 @@
-import { describe, it, expect, vi } from 'vitest';
-import { getReviewStatus } from './is-review-available.ts';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { Options } from 'storybook/internal/types';
+
+const { mockLoadMainConfig, mockGetAddonNames } = vi.hoisted(() => ({
+	mockLoadMainConfig: vi.fn(),
+	mockGetAddonNames: vi.fn(),
+}));
+
+vi.mock('storybook/internal/common', () => ({
+	loadMainConfig: (...args: unknown[]) => mockLoadMainConfig(...args),
+	getAddonNames: (...args: unknown[]) => mockGetAddonNames(...args),
+}));
+
+import { getReviewStatus } from './is-review-available.ts';
 
 function createMockOptions({
 	changeDetection = false,
-	addons = [] as Array<string | { name: string; options?: unknown }>,
 	hasFeaturesObject = true,
+	configDir = '/project/.storybook',
 }: {
 	changeDetection?: boolean;
-	addons?: Array<string | { name: string; options?: unknown }>;
 	hasFeaturesObject?: boolean;
+	configDir?: string;
 } = {}): Options {
 	return {
+		configDir,
 		presets: {
 			apply: vi.fn(async (key: string) => {
 				if (key === 'features') {
 					return hasFeaturesObject ? { changeDetection } : {};
-				}
-				if (key === 'addons') {
-					return addons;
 				}
 				return undefined;
 			}),
@@ -27,48 +36,46 @@ function createMockOptions({
 }
 
 describe('getReviewStatus', () => {
-	it.each([
-		{
-			description: 'both feature flag and addon are present (string entry)',
-			options: { changeDetection: true, addons: ['@storybook/addon-review'] },
-			expected: { available: true, hasFeatureFlag: true, hasAddon: true },
-		},
-		{
-			description: 'both feature flag and addon are present (object entry)',
-			options: { changeDetection: true, addons: [{ name: '@storybook/addon-review' }] },
-			expected: { available: true, hasFeatureFlag: true, hasAddon: true },
-		},
-		{
-			description: 'missing addon (unsupported config)',
-			options: { changeDetection: true, addons: [] },
-			expected: { available: false, hasFeatureFlag: true, hasAddon: false },
-		},
-		{
-			description: 'missing feature flag',
-			options: { changeDetection: false, addons: ['@storybook/addon-review'] },
-			expected: { available: false, hasFeatureFlag: false, hasAddon: true },
-		},
-		{
-			description: 'both are missing',
-			options: { changeDetection: false, addons: [] },
-			expected: { available: false, hasFeatureFlag: false, hasAddon: false },
-		},
-		{
-			description: 'features object is missing the flag',
-			options: { addons: ['@storybook/addon-review'], hasFeaturesObject: false },
-			expected: { available: false, hasFeatureFlag: false, hasAddon: true },
-		},
-		{
-			description: 'unrelated addons are ignored',
-			options: {
-				changeDetection: true,
-				addons: ['@storybook/addon-docs', { name: '@storybook/addon-a11y' }],
-			},
-			expected: { available: false, hasFeatureFlag: true, hasAddon: false },
-		},
-	])('returns the correct status when $description', async ({ options, expected }) => {
-		const mockOptions = createMockOptions(options);
-		const result = await getReviewStatus(mockOptions);
-		expect(result).toEqual(expected);
+	beforeEach(() => {
+		mockLoadMainConfig.mockReset();
+		mockGetAddonNames.mockReset();
+		mockLoadMainConfig.mockResolvedValue({ addons: [] });
+		mockGetAddonNames.mockReturnValue([]);
+	});
+
+	it('returns available when change detection is on and addon-review is in main.ts', async () => {
+		mockGetAddonNames.mockReturnValue(['@storybook/addon-docs', '@storybook/addon-review']);
+		const result = await getReviewStatus(createMockOptions({ changeDetection: true }));
+
+		expect(mockLoadMainConfig).toHaveBeenCalledWith({ configDir: '/project/.storybook' });
+		expect(result).toEqual({ available: true, hasFeatureFlag: true, hasAddon: true });
+	});
+
+	it('returns hasAddon=false when addon-review is not in main.ts', async () => {
+		mockGetAddonNames.mockReturnValue(['@storybook/addon-docs', '@storybook/addon-a11y']);
+		const result = await getReviewStatus(createMockOptions({ changeDetection: true }));
+
+		expect(result).toEqual({ available: false, hasFeatureFlag: true, hasAddon: false });
+	});
+
+	it('returns hasFeatureFlag=false when changeDetection is disabled', async () => {
+		mockGetAddonNames.mockReturnValue(['@storybook/addon-review']);
+		const result = await getReviewStatus(createMockOptions({ changeDetection: false }));
+
+		expect(result).toEqual({ available: false, hasFeatureFlag: false, hasAddon: true });
+	});
+
+	it('returns hasFeatureFlag=false when features object is missing the flag', async () => {
+		mockGetAddonNames.mockReturnValue(['@storybook/addon-review']);
+		const result = await getReviewStatus(createMockOptions({ hasFeaturesObject: false }));
+
+		expect(result).toEqual({ available: false, hasFeatureFlag: false, hasAddon: true });
+	});
+
+	it('treats a failure to load main.ts as "addon not present" rather than crashing', async () => {
+		mockLoadMainConfig.mockRejectedValue(new Error('main.ts blew up'));
+		const result = await getReviewStatus(createMockOptions({ changeDetection: true }));
+
+		expect(result).toEqual({ available: false, hasFeatureFlag: true, hasAddon: false });
 	});
 });

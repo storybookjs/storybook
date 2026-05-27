@@ -8,6 +8,12 @@ sidebar:
 
 Storybook for Angular with Vite is a [framework](../../contribute/framework.mdx) that makes it easy to develop and test UI components in isolation for [Angular](https://angular.io/) applications. It uses [Vite](https://vitejs.dev/) for faster builds, better performance, and [Storybook Testing](../../writing-tests/index.mdx) support. The Vite transform pipeline is powered by the [AnalogJS Vite plugin](https://analogjs.org).
 
+<Callout variant="warning">
+
+**`@storybook/angular-vite` is in preview.** The framework is feature-complete for the documented use cases, but APIs and defaults may change based on feedback before it is marked stable. Please report issues and share feedback on [GitHub](https://github.com/storybookjs/storybook/issues).
+
+</Callout>
+
 ## Install
 
 To install Storybook in an existing Angular project, run this command in your project's root directory:
@@ -39,25 +45,58 @@ You can then get started [writing stories](../whats-a-story.mdx), [running tests
 
 - Faster builds and HMR than the Webpack-based [`@storybook/angular`](./angular.mdx) framework
 - Full support for the [Vitest addon](../../writing-tests/integrations/vitest-addon/index.mdx) and in-browser component testing
-- A simpler configuration without Angular builders or Babel
+- A simpler configuration without Babel and a smaller dependency footprint
 
-Use [`@storybook/angular`](./angular.mdx) (Webpack 5) if your project requires Angular ≤ 20, needs Angular CLI builders, or has custom Webpack configurations you cannot migrate.
+Use [`@storybook/angular`](./angular.mdx) (Webpack 5) if your project requires Angular ≤ 20 or has custom Webpack configurations you cannot migrate.
 
 ## Run Storybook
 
-To run Storybook, use the standard Storybook CLI commands:
+You can run Storybook either with the standard Storybook CLI or, like `@storybook/angular`, through Angular CLI builders. Both paths share the same configuration.
+
+### With the Storybook CLI
 
 <CodeSnippets path="storybook-run-dev.md" />
 
-To build Storybook, run:
+To build:
 
 <CodeSnippets path="build-storybook-production-mode.md" />
 
-You will find the output in the configured `outputDir` (default is `storybook-static`).
+The output lands in the configured `outputDir` (default `storybook-static`).
+
+### With the Angular CLI
+
+Register the `start-storybook` and `build-storybook` builders in `angular.json`:
+
+```jsonc title="angular.json"
+{
+  "projects": {
+    "your-project": {
+      "architect": {
+        "storybook": {
+          "builder": "@storybook/angular-vite:start-storybook",
+          "options": {
+            "configDir": ".storybook",
+            "port": 6006
+          }
+        },
+        "build-storybook": {
+          "builder": "@storybook/angular-vite:build-storybook",
+          "options": {
+            "configDir": ".storybook",
+            "outputDir": "dist/storybook/your-project"
+          }
+        }
+      }
+    }
+  }
+}
+```
+
+Then run them with `ng run your-project:storybook` and `ng run your-project:build-storybook`.
 
 <Callout variant="info">
 
-Unlike `@storybook/angular`, this framework does **not** use Angular CLI builders. Storybook is started and built with the standard `storybook dev` and `storybook build` commands. You do not need to configure `angular.json`.
+Unlike the Webpack-based `@storybook/angular`, these builders do not take a `browserTarget` — Vite resolves your project's TypeScript and assets directly, so no Angular build target reference is required. Builder schemas live alongside the source: [`start-storybook`](https://github.com/storybookjs/storybook/blob/next/code/frameworks/angular-vite/src/builders/start-storybook/schema.json), [`build-storybook`](https://github.com/storybookjs/storybook/blob/next/code/frameworks/angular-vite/src/builders/build-storybook/schema.json).
 
 </Callout>
 
@@ -206,17 +245,11 @@ Then, update your `.storybook/main.ts` to change the framework property:
 
 <CodeSnippets path="angular-vite-add-framework.md" />
 
-If your Storybook configuration contains Angular CLI builder targets in `angular.json` (the `storybook` and `build-storybook` architect entries), those are no longer needed and can be removed. Storybook for Angular with Vite uses the standard `storybook dev` and `storybook build` CLI commands.
+If your existing `angular.json` already declares Storybook architect targets, update the builder reference from `@storybook/angular:start-storybook` / `@storybook/angular:build-storybook` to `@storybook/angular-vite:start-storybook` / `@storybook/angular-vite:build-storybook` and drop the `browserTarget` option (see [Run Storybook → With the Angular CLI](#with-the-angular-cli)). If you would rather invoke Storybook directly, you can also remove the architect entries entirely and switch to `storybook dev` / `storybook build`.
 
 If your configuration contains a `webpackFinal` hook, migrate it to [`viteFinal`](../../api/main-config/main-config-vite-final.mdx). See the [Vite builder documentation](../../builders/vite.mdx#migrating-from-webpack) for guidance.
 
-## Vitest integration (preview)
-
-<Callout variant="info">
-
-The Vitest integration for `@storybook/angular-vite` is in **preview**. It works, but breaking changes may land based on feedback. Please [open an issue](https://github.com/storybookjs/storybook/issues) if you encounter problems.
-
-</Callout>
+## Vitest integration
 
 Because `@storybook/angular-vite` is a Vite-based framework, it supports the [Vitest addon](../../writing-tests/integrations/vitest-addon/index.mdx) for running component tests directly inside Storybook.
 
@@ -238,7 +271,7 @@ The [Storybook test runner](../../writing-tests/integrations/test-runner.mdx) wo
 
 ### Does this framework support Angular CLI builders?
 
-No. `@storybook/angular-vite` uses the standard Storybook CLI. If you need Angular CLI builder integration (`ng run your-project:storybook`), use [`@storybook/angular`](./angular.mdx).
+Yes. `@storybook/angular-vite` ships `start-storybook` and `build-storybook` builders so you can run `ng run your-project:storybook` and `ng run your-project:build-storybook`. See [Run Storybook → With the Angular CLI](#with-the-angular-cli) for the `angular.json` setup. You can also invoke Storybook directly with `storybook dev` / `storybook build` — both paths are supported.
 
 ### Can I use this with Angular 20 or earlier?
 
@@ -250,7 +283,7 @@ Yes. The story format (CSF), decorators (`moduleMetadata`, `applicationConfig`, 
 
 ### Should I use `@storybook/angular` or `@storybook/angular-vite`?
 
-Use `@storybook/angular-vite` if you are on Angular 21 and want faster builds and the Vitest addon. Use [`@storybook/angular`](./angular.mdx) if you need Angular 18–20, Angular CLI builder support, or existing Webpack-based tooling you cannot migrate.
+Use `@storybook/angular-vite` if you are on Angular 21 and want faster builds and the Vitest addon. Use [`@storybook/angular`](./angular.mdx) if you need Angular 18–20 or existing Webpack-based tooling you cannot migrate. Both frameworks support Angular CLI builders.
 
 ## API
 

@@ -25,11 +25,11 @@
    */
   const hmrTick = writable(0);
 
-  if (typeof import.meta !== 'undefined' && import.meta.hot) {
-    const hot = import.meta.hot;
+  if (typeof import.meta !== 'undefined') {
+    const hot = import.meta.webpackHot ?? import.meta.hot;
     // webpack / Rspack: status transitions to 'idle' once apply finishes.
     // Vite is intentionally excluded (see comment above).
-    if (typeof hot.addStatusHandler === 'function') {
+    if (hot && typeof hot.addStatusHandler === 'function') {
       let inCycle = false;
       hot.addStatusHandler((status) => {
         if (status === 'check' || status === 'prepare') {

@@ -36,12 +36,12 @@ function createDebugServiceDef(storyIndexGeneratorPromise: Promise<StoryIndexGen
     description:
       'Exercises Storybook open-service registration, queries, commands, preloads, subscriptions, static builds, and story-index integration inside the internal Storybook.',
     initialState: {
-      activity: [] as string[],
-      preloadedByEntryId: {} as Record<string, string>,
-      lastObservedValue: null as string | null,
+      activity: [],
+      preloadedByEntryId: {},
+      lastObservedValue: null,
       storyIndexEntryCount: 0,
-      storyIndexSampleIds: [] as string[],
-    },
+      storyIndexSampleIds: [],
+    } as DebugServiceState,
     queries: {
       getActivity: {
         description: 'Returns the latest activity entries for the debug service.',
@@ -87,9 +87,7 @@ function createDebugServiceDef(storyIndexGeneratorPromise: Promise<StoryIndexGen
         handler: async (input, ctx) => {
           const value = ctx.self.state.preloadedByEntryId[input.entryId] ?? null;
 
-          logger.warn(
-            `[open-service debug] query getPreloadedValue(${input.entryId}) => ${value}`
-          );
+          logger.warn(`[open-service debug] query getPreloadedValue(${input.entryId}) => ${value}`);
           return value;
         },
       },

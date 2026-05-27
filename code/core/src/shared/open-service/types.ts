@@ -106,14 +106,7 @@ export type ServiceSummary = {
   commandNames: string[];
 };
 
-export type QueryDescriptor = {
-  name: string;
-  description?: string;
-  input: SchemaDescriptor;
-  output: SchemaDescriptor;
-};
-
-export type CommandDescriptor = {
+export type OperationDescriptor = {
   name: string;
   description?: string;
   input: SchemaDescriptor;
@@ -123,8 +116,8 @@ export type CommandDescriptor = {
 export type ServiceDescriptor = {
   id: ServiceId;
   description?: string;
-  queries: Record<string, QueryDescriptor>;
-  commands: Record<string, CommandDescriptor>;
+  queries: Record<string, OperationDescriptor>;
+  commands: Record<string, OperationDescriptor>;
 };
 
 export interface ServiceRegistryApi {
@@ -304,11 +297,6 @@ export type ServiceInstance<
       ? (input: InferSchemaInput<TInputSchema>) => Promise<InferSchemaOutput<TOutputSchema>>
       : never;
   };
-};
-
-/** Internal runtime options when constructing a service runtime directly. */
-export type CreateServiceRuntimeOptions = {
-  registryApi: ServiceRegistryApi;
 };
 
 export type ServiceQueryRegistration<TState, TQuery extends AnyQueryDefinition<TState>> = Pick<

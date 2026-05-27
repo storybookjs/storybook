@@ -45,58 +45,61 @@ export {
  */
 export async function buildStaticFiles(services: RuntimeServiceDefinition[]): Promise<StaticStore> {
   const store: StaticStore = {};
-  const buildTasks: Promise<BuildTaskResult>[] = [];
+  const buildTasks: Promise<BuildTaskResult[]>[] = [];
 
   for (const service of services) {
     for (const [queryName, query] of Object.entries(service.queries) as [
       string,
       RuntimeQueryDefinition,
     ][]) {
-      if (!query.preload || !query.static?.inputs) {
+      const { preload, static: staticConfig } = query;
+      if (!preload || !staticConfig?.inputs) {
         continue;
       }
 
-      const preload = query.preload;
-
-      const inputsRuntime = createServiceRuntime(
-        service,
-        { registryApi: serviceRegistryApi },
-        structuredClone(service.initialState)
-      );
-      const inputs = await query.static.inputs(inputsRuntime.queryCtx);
-
       buildTasks.push(
-        ...inputs.map(async (input) => {
-          // Build every static input from a clean initial state so the serialized output mirrors
-          // the one path this task is responsible for.
-          const buildRuntime = createServiceRuntime(
+        (async () => {
+          const inputsRuntime = createServiceRuntime(
             service,
             { registryApi: serviceRegistryApi },
             structuredClone(service.initialState)
           );
-          const validatedInput = await validateSchema(query.input, input, {
-            kind: 'query',
-            serviceId: service.id,
-            name: queryName,
-            phase: 'input',
-          });
-          const path = resolveStaticPath(
-            service.id,
-            queryName,
-            query,
-            validatedInput,
-            buildRuntime.queryCtx
+          const inputs = await staticConfig.inputs(inputsRuntime.queryCtx);
+
+          return Promise.all(
+            inputs.map(async (input) => {
+              // Build every static input from a clean initial state so the serialized output mirrors
+              // the one path this task is responsible for.
+              const buildRuntime = createServiceRuntime(
+                service,
+                { registryApi: serviceRegistryApi },
+                structuredClone(service.initialState)
+              );
+              const validatedInput = await validateSchema(query.input, input, {
+                kind: 'query',
+                serviceId: service.id,
+                name: queryName,
+                phase: 'input',
+              });
+              const path = resolveStaticPath(
+                service.id,
+                queryName,
+                query,
+                validatedInput,
+                buildRuntime.queryCtx
+              );
+
+              await preload(validatedInput, buildRuntime.queryCtx);
+
+              return { path, state: buildRuntime.stateSignal() };
+            })
           );
-
-          await preload(validatedInput, buildRuntime.queryCtx);
-
-          return { path, state: buildRuntime.stateSignal() };
-        })
+        })()
       );
     }
   }
 
-  const builtStates = await Promise.all(buildTasks);
+  const builtStates = (await Promise.all(buildTasks)).flat();
 
   for (const { path, state } of builtStates) {
     store[path] = path in store ? toMerged(store[path] as object, state as object) : state;

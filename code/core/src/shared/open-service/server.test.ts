@@ -60,7 +60,7 @@ describe('server static builds', () => {
       expect(Object.keys(store)).toHaveLength(0);
     });
 
-    it('uses the shared registry when static preload resolves another service', async () => {
+    it('uses the shared registry when static preload and static inputs resolve another service', async () => {
       const sourceService = registerService(mutableRecordLookupServiceDef);
       await sourceService.commands.assignRecordField({
         entryId: 'entry-a',
@@ -110,6 +110,107 @@ describe('server static builds', () => {
       await expect(buildStaticFiles([staticLookupServiceDef])).resolves.toEqual({
         'test/static-build-service-lookup.json': {
           value: 'match',
+        },
+      });
+
+      const readyEntryIds: string[] = [];
+      const parallelSourceServiceDef = defineService({
+        id: 'test/parallel-static-input-source',
+        description: 'Publishes static input ids once its own preload task starts running.',
+        initialState: { built: false },
+        queries: {
+          getReadyEntryIds: {
+            description: 'Returns the entry ids published by the source static build task.',
+            input: v.undefined(),
+            output: v.array(v.string()),
+            handler: async () => readyEntryIds,
+            preload: async (_input, ctx) => {
+              await Promise.resolve();
+              await ctx.self.commands.publishReadyEntryIds(undefined);
+            },
+            static: {
+              inputs: async () => [undefined],
+            },
+          },
+        },
+        commands: {
+          publishReadyEntryIds: {
+            description: 'Publishes one static entry id and marks the source snapshot as built.',
+            input: v.undefined(),
+            output: v.undefined(),
+            handler: async (_input, ctx) => {
+              readyEntryIds.splice(0, readyEntryIds.length, 'entry-a');
+              ctx.self.setState((draft) => {
+                draft.built = true;
+              });
+
+              return undefined;
+            },
+          },
+        },
+      });
+
+      registerService(parallelSourceServiceDef);
+
+      const parallelLookupServiceDef = defineService({
+        id: 'test/parallel-static-input-consumer',
+        description:
+          'Waits for another service query to publish its static inputs before preloading.',
+        initialState: { value: null as string | null },
+        queries: {
+          getValue: {
+            description: 'Stores one value for each id discovered through another service query.',
+            input: v.object({ entryId: v.string() }),
+            output: v.nullable(v.string()),
+            handler: async (_input, ctx) => ctx.self.state.value,
+            preload: async (input, ctx) => {
+              await ctx.self.commands.setValue(input);
+            },
+            static: {
+              inputs: async (ctx) => {
+                const source = await ctx.getService('test/parallel-static-input-source');
+
+                for (let attempt = 0; attempt < 5; attempt += 1) {
+                  const entryIds = (await source.queries.getReadyEntryIds(undefined)) as string[];
+
+                  if (entryIds.length > 0) {
+                    return entryIds.map((entryId) => ({ entryId }));
+                  }
+
+                  await Promise.resolve();
+                }
+
+                throw new Error(
+                  'Timed out waiting for parallel static inputs from the source service.'
+                );
+              },
+            },
+          },
+        },
+        commands: {
+          setValue: {
+            description: 'Stores the discovered entry id in the consumer snapshot.',
+            input: v.object({ entryId: v.string() }),
+            output: v.undefined(),
+            handler: async (input, ctx) => {
+              ctx.self.setState((draft) => {
+                draft.value = input.entryId;
+              });
+
+              return undefined;
+            },
+          },
+        },
+      });
+
+      await expect(
+        buildStaticFiles([parallelLookupServiceDef, parallelSourceServiceDef])
+      ).resolves.toEqual({
+        'test/parallel-static-input-consumer.json': {
+          value: 'entry-a',
+        },
+        'test/parallel-static-input-source.json': {
+          built: true,
         },
       });
     });

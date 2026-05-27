@@ -11,7 +11,6 @@ import type {
   Command,
   CommandCtx,
   Commands,
-  CreateServiceRuntimeOptions,
   Queries,
   Query,
   QueryCtx,
@@ -285,7 +284,9 @@ export function createServiceRuntime<
   TCommands extends Commands<TState>,
 >(
   def: ServiceDefinition<TState, TQueries, TCommands>,
-  runtimeOptions: CreateServiceRuntimeOptions,
+  runtimeOptions: {
+    registryApi: ServiceRegistryApi;
+  },
   initialState: TState = def.initialState
 ): ServiceRuntime<TState, TQueries, TCommands> {
   // The signal is the single source of truth that query computations subscribe to.

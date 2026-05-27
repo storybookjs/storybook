@@ -26,16 +26,31 @@ type RegistryEntry = {
 
 const OPEN_SERVICE_REGISTRY_SYMBOL = Symbol.for('storybook.open-service.registry');
 
+/**
+ * Returns the process-global registry backing server-side service registration.
+ *
+ * The registry is anchored on a symbol-keyed `globalThis` slot so all modules in the same process
+ * share one registration map even if this file is imported through different paths. That keeps
+ * runtime lookups, static builds, and tests pointed at the same service inventory.
+ */
 function getRegistry(): Map<string, RegistryEntry> {
   const registryGlobal = globalThis as {
     [key: symbol]: Map<string, RegistryEntry> | undefined;
   };
 
+  // Lazily create the registry so importing the module does not eagerly mutate global state.
   registryGlobal[OPEN_SERVICE_REGISTRY_SYMBOL] ??= new Map<string, RegistryEntry>();
 
   return registryGlobal[OPEN_SERVICE_REGISTRY_SYMBOL];
 }
 
+/**
+ * Converts one service definition into the serializable descriptor returned by registry metadata
+ * APIs.
+ *
+ * Descriptors intentionally expose schemas and descriptions, but not runtime handlers, so callers
+ * can inspect the contract of a registered service without gaining access to executable behavior.
+ */
 function describeDefinition(definition: AnyServiceDefinition): ServiceDescriptor {
   return {
     id: definition.id,
@@ -65,6 +80,12 @@ function describeDefinition(definition: AnyServiceDefinition): ServiceDescriptor
   };
 }
 
+/**
+ * Derives the lightweight summary returned by `listServices()` from a full descriptor.
+ *
+ * Keeping this separate avoids recomputing names from the live definition shape whenever callers
+ * only need discovery metadata for navigation or debugging UIs.
+ */
 function summarizeDescriptor(descriptor: ServiceDescriptor): ServiceSummary {
   return {
     id: descriptor.id,
@@ -74,6 +95,13 @@ function summarizeDescriptor(descriptor: ServiceDescriptor): ServiceSummary {
   };
 }
 
+/**
+ * Applies optional server-side overrides to an authored service definition.
+ *
+ * Registration overrides are shallow merges over the authored definition. That lets the server
+ * swap handlers, preload hooks, or static config per operation while the original schema contract
+ * and operation names remain the source of truth.
+ */
 function applyRegistration<
   TState,
   TQueries extends Queries<TState>,
@@ -103,12 +131,25 @@ function applyRegistration<
   };
 }
 
+/**
+ * Shared registry API injected into registered runtimes and static-build runtimes.
+ *
+ * Exporting the object keeps all call sites on the same lookup implementation instead of each
+ * environment assembling a structurally identical wrapper.
+ */
 export const serviceRegistryApi: ServiceRegistryApi = {
   listServices,
   describeService,
   getService,
 };
 
+/**
+ * Registers one service definition in the process-global registry and returns its runtime surface.
+ *
+ * Registration resolves any server-side operation overrides first, then builds the runtime that
+ * query and command callers will use, and finally stores both the runtime and its metadata in the
+ * shared registry. Duplicate ids are rejected up front so lookups remain deterministic.
+ */
 export function registerService<
   TState,
   TQueries extends Queries<TState>,
@@ -132,6 +173,8 @@ export function registerService<
   } as ServiceInstance<TState, TQueries, TCommands> & ServiceRegistryApi;
   const descriptor = describeDefinition(resolvedDefinition as AnyServiceDefinition);
 
+  // Persist the runtime together with precomputed metadata so later lookups stay cheap and do not
+  // need to rebuild descriptors from the authored definition each time.
   registry.set(definition.id, {
     definition: resolvedDefinition as AnyServiceDefinition,
     runtime: registeredRuntime as RuntimeService,
@@ -142,17 +185,30 @@ export function registerService<
   return registeredRuntime;
 }
 
-/** Returns the registered service definitions for the current server process. */
+/**
+ * Returns the authored definitions currently registered in this server process.
+ *
+ * Static build code uses this to discover which services contribute preload snapshots.
+ */
 export function getRegisteredServices(): AnyServiceDefinition[] {
   return Array.from(getRegistry().values(), ({ definition }) => definition);
 }
 
-/** Returns a summary entry for every service currently registered in this server process. */
+/**
+ * Returns one summary entry per registered service.
+ *
+ * This is the lowest-cost discovery endpoint for callers that only need ids, descriptions, and
+ * operation names.
+ */
 export async function listServices(): Promise<ServiceSummary[]> {
   return Array.from(getRegistry().values(), ({ summary }) => summary);
 }
 
-/** Returns the schema-backed descriptor for one registered service. */
+/**
+ * Returns the schema-backed descriptor for one registered service.
+ *
+ * The descriptor mirrors the public contract of the service without exposing handlers or state.
+ */
 export async function describeService(serviceId: ServiceId): Promise<ServiceDescriptor> {
   const entry = getRegistry().get(serviceId);
 
@@ -163,7 +219,12 @@ export async function describeService(serviceId: ServiceId): Promise<ServiceDesc
   return entry.descriptor;
 }
 
-/** Resolves a registered runtime service by id from the current server process. */
+/**
+ * Resolves a registered runtime service by id from the current server process.
+ *
+ * Query and command contexts delegate cross-service calls through this lookup so one service can
+ * reuse another service's runtime contract.
+ */
 export async function getService(serviceId: ServiceId): Promise<RuntimeService> {
   const entry = getRegistry().get(serviceId);
 
@@ -174,7 +235,11 @@ export async function getService(serviceId: ServiceId): Promise<RuntimeService> 
   return entry.runtime;
 }
 
-/** Clears the global server registry, primarily so tests can avoid cross-test leakage. */
+/**
+ * Clears the process-global registry.
+ *
+ * Tests call this after each case so registrations from one scenario do not leak into the next.
+ */
 export function clearRegistry(): void {
   getRegistry().clear();
 }

@@ -40,13 +40,53 @@ export const modifyErrorMessage = ({ task }: { task: Task }) => {
 
 export const resetMousePositionBeforeTests = async () => {
   const vitestVersion = inject(STORYBOOK_CORE_VITEST_VERSION_PROVIDE_KEY);
-  const browserCommands =
-    vitestVersion && vitestVersion.startsWith('3')
-      ? await import('@vitest/browser/context').then((module) => module.commands)
-      : await import('vitest/browser').then((module) => module.commands);
 
-  if ('resetMousePosition' in browserCommands && isFunction(browserCommands.resetMousePosition)) {
-    await browserCommands.resetMousePosition();
+  try {
+    const browserCommands =
+      vitestVersion && vitestVersion.startsWith('3')
+        ? await import('@vitest/browser/context').then((module) => module.commands)
+        : await import('vitest/browser').then((module) => module.commands);
+
+    if ('resetMousePosition' in browserCommands && isFunction(browserCommands.resetMousePosition)) {
+      await browserCommands.resetMousePosition();
+    }
+  } catch (error) {
+    if (!(error instanceof Error)) throw error;
+
+    // When vitest/browser is not found, retry with the Vitest 3 context module
+    if (error.message.includes("Cannot find module 'vitest/browser'")) {
+      try {
+        const browserCommands = await import('@vitest/browser/context').then(
+          (module) => module.commands
+        );
+        if (
+          'resetMousePosition' in browserCommands &&
+          isFunction(browserCommands.resetMousePosition)
+        ) {
+          await browserCommands.resetMousePosition();
+        }
+        return;
+      } catch (vitest3Error) {
+        if (
+          vitest3Error instanceof Error &&
+          (vitest3Error.message.includes("Cannot find module '@vitest/browser/context'") ||
+            vitest3Error.message.includes('can be imported only inside the Browser Mode'))
+        ) {
+          return;
+        }
+        throw vitest3Error;
+      }
+    }
+
+    // Ignore errors when running outside Browser Mode or when browser packages are not installed
+    if (
+      error.message.includes('can be imported only inside the Browser Mode') ||
+      error.message.includes("Cannot find module '@vitest/browser/context'")
+    ) {
+      return;
+    }
+
+    throw error;
   }
 };
 

@@ -1,4 +1,4 @@
-import React, { type FC, type ReactNode, useEffect, useMemo, useState } from 'react';
+import React, { type FC, type ReactNode, useEffect, useMemo, useRef, useState } from 'react';
 
 import { Button, Collapsible } from 'storybook/internal/components';
 import { styled } from 'storybook/theming';
@@ -540,6 +540,11 @@ export const SummaryScreen: FC<SummaryScreenProps> = ({
   const [expandedCollections, setExpandedCollections] = useState<Set<number>>(new Set());
   const [expandedComponents, setExpandedComponents] = useState<Set<string>>(new Set());
   const [search, setSearch] = useState('');
+  const tabOrder: [ReviewTab, ReviewTab] = ['collections', 'components'];
+  const tabRefs = useRef<Record<ReviewTab, HTMLButtonElement | null>>({
+    collections: null,
+    components: null,
+  });
   const collectionsTabId = 'review-tab-collections';
   const componentsTabId = 'review-tab-components';
   const collectionsPanelId = 'review-tabpanel-collections';
@@ -571,6 +576,39 @@ export const SummaryScreen: FC<SummaryScreenProps> = ({
   const areAllComponentsExpanded = componentIds.every((componentId) =>
     expandedComponents.has(componentId)
   );
+  const moveTabFocus = (nextTab: ReviewTab) => {
+    setTab(nextTab);
+    tabRefs.current[nextTab]?.focus();
+  };
+  const handleTabKeyDown = (
+    event: React.KeyboardEvent<HTMLButtonElement>,
+    currentTab: ReviewTab
+  ) => {
+    const currentIndex = tabOrder.indexOf(currentTab);
+    let nextTab: ReviewTab | null = null;
+
+    switch (event.key) {
+      case 'ArrowLeft':
+        nextTab = tabOrder[(currentIndex - 1 + tabOrder.length) % tabOrder.length];
+        break;
+      case 'ArrowRight':
+        nextTab = tabOrder[(currentIndex + 1) % tabOrder.length];
+        break;
+      case 'Home':
+        nextTab = tabOrder[0];
+        break;
+      case 'End':
+        nextTab = tabOrder[tabOrder.length - 1];
+        break;
+      default:
+        break;
+    }
+
+    if (nextTab) {
+      event.preventDefault();
+      moveTabFocus(nextTab);
+    }
+  };
 
   return (
     <Page>
@@ -598,11 +636,15 @@ export const SummaryScreen: FC<SummaryScreenProps> = ({
             id={collectionsTabId}
             type="button"
             role="tab"
+            ref={(element) => {
+              tabRefs.current.collections = element;
+            }}
             $selected={tab === 'collections'}
             aria-selected={tab === 'collections'}
             aria-controls={collectionsPanelId}
             tabIndex={tab === 'collections' ? 0 : -1}
             onClick={() => setTab('collections')}
+            onKeyDown={(event) => handleTabKeyDown(event, 'collections')}
           >
             Collections
           </TabButton>
@@ -610,11 +652,15 @@ export const SummaryScreen: FC<SummaryScreenProps> = ({
             id={componentsTabId}
             type="button"
             role="tab"
+            ref={(element) => {
+              tabRefs.current.components = element;
+            }}
             $selected={tab === 'components'}
             aria-selected={tab === 'components'}
             aria-controls={componentsPanelId}
             tabIndex={tab === 'components' ? 0 : -1}
             onClick={() => setTab('components')}
+            onKeyDown={(event) => handleTabKeyDown(event, 'components')}
           >
             Components
           </TabButton>

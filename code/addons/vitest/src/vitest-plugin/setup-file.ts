@@ -23,8 +23,8 @@ export type Task = Partial<RunnerTask> & {
 const transport = { setHandler: vi.fn(), send: vi.fn() };
 globalThis.__STORYBOOK_ADDONS_CHANNEL__ ??= new Channel({ transport });
 
-const importBrowserCommands = async (moduleId: string) =>
-  import(moduleId).then((module) => module.commands);
+const importVitest4BrowserCommands = async () =>
+  import(/* @vite-ignore */ 'vitest/browser').then((module) => module.commands);
 
 const importVitest3BrowserCommands = async () =>
   import('@vitest/browser/context').then((module) => module.commands);
@@ -51,7 +51,7 @@ export const resetMousePositionBeforeTests = async () => {
     const browserCommands =
       vitestVersion && vitestVersion.startsWith('3')
         ? await importVitest3BrowserCommands()
-        : await importBrowserCommands('vitest/browser');
+        : await importVitest4BrowserCommands();
 
     if ('resetMousePosition' in browserCommands && isFunction(browserCommands.resetMousePosition)) {
       await browserCommands.resetMousePosition();

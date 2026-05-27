@@ -127,6 +127,7 @@ const TabPanels = styled.div(({ theme }) => ({
   flex: 1,
   minHeight: 0,
   background: theme.background.app,
+  overflow: 'auto',
 }));
 
 // Compact search row — the search field shares the row with optional

@@ -49,7 +49,9 @@ async function webpack(
   const mdxLoaderOptions: CompileOptions = await options.presets.apply('mdxLoaderOptions', {
     ...mdxPluginOptions,
     mdxCompileOptions: {
-      providerImportSource: import.meta.resolve('@storybook/addon-docs/mdx-react-shim'),
+      providerImportSource: fileURLToPath(
+        import.meta.resolve('@storybook/addon-docs/mdx-react-shim')
+      ),
       ...mdxPluginOptions.mdxCompileOptions,
       rehypePlugins: [
         ...(mdxPluginOptions?.mdxCompileOptions?.rehypePlugins ?? []),

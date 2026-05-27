@@ -137,6 +137,13 @@ const Mark = styled.mark(({ theme }) => ({
 
 const storyPreviewUrl = (id: string) => `iframe.html?id=${encodeURIComponent(id)}&viewMode=story`;
 
+const isWithinPreloadRange = (element: HTMLElement, margin: number): boolean => {
+  const rect = element.getBoundingClientRect();
+  const viewportHeight =
+    typeof window === 'undefined' ? Number.POSITIVE_INFINITY : window.innerHeight || 0;
+  return rect.bottom >= -margin && rect.top <= viewportHeight + margin;
+};
+
 // Render `text`, wrapping every case-insensitive occurrence of `query` in a
 // <Mark>. With no query the text renders untouched.
 const Highlight: FC<{ text: string; query: string }> = ({ text, query }) => {
@@ -189,6 +196,12 @@ const StoryPreviewCell: FC<{
   useEffect(() => {
     const host = hostRef.current;
     if (!host || hasMounted) {
+      return undefined;
+    }
+    // Ensure above-the-fold previews mount on first paint even if the initial
+    // IntersectionObserver callback is deferred until the next scroll.
+    if (isWithinPreloadRange(host, 200)) {
+      setHasMounted(true);
       return undefined;
     }
     if (typeof IntersectionObserver === 'undefined') {

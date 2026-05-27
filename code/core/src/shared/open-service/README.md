@@ -46,7 +46,8 @@ Internal tests and implementation code may import from the individual modules di
 - [service-validation.ts](./service-validation.ts): async schema validation helpers and error wrapping
 - [errors.ts](./errors.ts): validation metadata formatting helpers
 - [service-runtime.ts](./service-runtime.ts): signal-backed runtime construction, logical static-path resolution, and subscriptions
-- [service-registration.ts](./service-registration.ts): server-side global registry implementation and the shared registry API passed into runtimes
+- [instances.ts](./instances.ts): module-local map of registered service runtimes used by [service-registration.ts](./service-registration.ts)
+- [service-registration.ts](./service-registration.ts): server-side registry implementation and the shared registry API passed into runtimes
 - [fixtures.ts](./fixtures.ts): scenario fixtures used by the test suite
 - `*.test.ts`: focused tests for runtime behavior, validation behavior, server registration, and server static builds
 
@@ -58,7 +59,8 @@ flowchart LR
   D[service-runtime.ts\nruntime builder]
   E[service-validation.ts\nschema validation]
   F[errors.ts\nvalidation metadata helpers]
-  G[service-registration.ts\nregistry + shared registry API]
+  G[service-registration.ts\nregistry API + registration]
+  J[instances.ts\nmodule-local registry map]
   H[server.ts\nserver entrypoint + static snapshots]
   I[fixtures.ts and tests\nexamples and coverage]
 
@@ -70,6 +72,7 @@ flowchart LR
   E --> F
   G --> D
   G --> C
+  G --> J
   H --> G
   H --> D
   H --> E
@@ -160,11 +163,23 @@ That split is intentional:
 
 - [index.ts](./index.ts) stays environment-agnostic so preview, manager, and server code can share
   one definition surface
-- [server.ts](./server.ts) owns the concrete global registry and static snapshot writing for the
-  current server process
+- [server.ts](./server.ts) owns the concrete registry and static snapshot writing for the current
+  server process
 
-The internal Storybook config also registers an example debug service through that hook behind a
-temporary boolean gate in `.storybook/main.ts`.
+`registerService(definition)` throws `OpenServiceDuplicateRegistrationError` if a service with the
+same id is already registered. Storybook applies the `services` preset exactly once per process
+(via `build-dev`, `build-static`, or `load`), so each `registerService` call is expected to run
+once and a duplicate registration indicates a real collision.
+
+The registry itself lives as a module-local `Map` in [instances.ts](./instances.ts), mirroring the
+`UniversalStore` pattern elsewhere in this codebase. There is no `globalThis` slot, which keeps
+test isolation cheap (`clearRegistry()` resets the map) and avoids cross-version collisions when
+two Storybook copies happen to share a process.
+
+The internal Storybook config registers an example debug service through a dedicated preset file
+([`code/.storybook/services-preset.ts`](../../../../.storybook/services-preset.ts)), gated on
+`STORYBOOK_OPEN_SERVICE_DEBUG=true`. The flag stays unset by default so normal `yarn storybook:ui`
+and `yarn storybook:ui:build` runs do not register the debug service.
 
 ## Runtime Flow
 
@@ -237,7 +252,8 @@ sequenceDiagram
 
 ## Static Preload Flow
 
-`buildStaticFiles(services)` in [server.ts](./server.ts) looks for queries that define:
+`buildStaticFiles()` in [server.ts](./server.ts) iterates every registered service and looks for
+queries that define:
 
 - `preload`
 - `static.inputs`
@@ -249,6 +265,10 @@ For each such query input it:
 3. runs the query's preload step
 4. resolves the normalized logical output path
 5. stores the resulting runtime state in the final `StaticStore`
+
+Cross-service `ctx.getService(...)` lookups during preload resolve through the same registry the
+dev server uses, so a preload sees the same set of services that any other handler in the process
+would see.
 
 If multiple tasks resolve to the same path, their states are deep-merged.
 
@@ -269,7 +289,7 @@ Static path rules:
 
 ```mermaid
 flowchart TD
-  A[buildStaticFiles services] --> B{query has preload\nand static.inputs?}
+  A[buildStaticFiles] --> B{query has preload\nand static.inputs?}
   B -- no --> C[skip query]
   B -- yes --> D[create fresh runtime from initialState]
   D --> E[resolve static inputs]

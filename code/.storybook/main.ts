@@ -2,12 +2,11 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { defineMain } from '@storybook/react-vite/node';
-import type { Options, StorybookConfigRaw } from 'storybook/internal/types';
+import type { Options } from 'storybook/internal/types';
 
 import react from '@vitejs/plugin-react';
 import type { InlineConfig } from 'vite';
 
-import { registerOpenServiceDebugService } from './open-service-debug-service.ts';
 import { BROWSER_TARGETS } from '../core/src/shared/constants/environments-support.ts';
 
 const currentFilePath = fileURLToPath(import.meta.url);
@@ -121,6 +120,7 @@ const config = defineMain({
     '@storybook/addon-mcp',
     'storybook-addon-pseudo-states',
     '@chromatic-com/storybook',
+    './services-preset.ts',
   ],
   previewAnnotations: [
     './core/template/stories/preview.ts',
@@ -153,15 +153,6 @@ const config = defineMain({
     developmentModeForBuild: true,
     experimentalTestSyntax: true,
     changeDetection: true,
-  },
-  services: async (_value: void, options: Options) => {
-    if (false) {
-      await registerOpenServiceDebugService(
-        options.presets.apply<NonNullable<StorybookConfigRaw['storyIndexGenerator']>>(
-          'storyIndexGenerator'
-        )
-      );
-    }
   },
   staticDirs: [{ from: './bench/bundle-analyzer', to: '/bundle-analyzer' }],
   viteFinal: async (viteConfig: InlineConfig, { configType }: Options) => {

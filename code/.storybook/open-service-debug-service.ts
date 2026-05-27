@@ -48,7 +48,7 @@ function createDebugServiceDef(storyIndexGeneratorPromise: Promise<StoryIndexGen
         input: activityQueryInputSchema,
         output: v.array(v.string()),
         handler: async (input, ctx) => {
-          logger.warn('[open-service debug] query getActivity');
+          logger.verbose('[open-service debug] query getActivity');
           return ctx.self.state.activity.slice(-input.limit);
         },
       },
@@ -57,7 +57,7 @@ function createDebugServiceDef(storyIndexGeneratorPromise: Promise<StoryIndexGen
         input: storyIndexSummaryInputSchema,
         output: storyIndexSummaryOutputSchema,
         handler: async (input, ctx) => {
-          logger.warn('[open-service debug] query getStoryIndexSummary');
+          logger.verbose('[open-service debug] query getStoryIndexSummary');
           return {
             entryCount: ctx.self.state.storyIndexEntryCount,
             sampleIds: input.includeSampleIds ? ctx.self.state.storyIndexSampleIds : [],
@@ -70,7 +70,7 @@ function createDebugServiceDef(storyIndexGeneratorPromise: Promise<StoryIndexGen
         input: entryInputSchema,
         output: v.nullable(v.string()),
         preload: async (input, ctx) => {
-          logger.warn(`[open-service debug] preload getPreloadedValue(${input.entryId})`);
+          logger.verbose(`[open-service debug] preload getPreloadedValue(${input.entryId})`);
           if (ctx.self.state.preloadedByEntryId[input.entryId] !== undefined) {
             return;
           }
@@ -87,7 +87,9 @@ function createDebugServiceDef(storyIndexGeneratorPromise: Promise<StoryIndexGen
         handler: async (input, ctx) => {
           const value = ctx.self.state.preloadedByEntryId[input.entryId] ?? null;
 
-          logger.warn(`[open-service debug] query getPreloadedValue(${input.entryId}) => ${value}`);
+          logger.verbose(
+            `[open-service debug] query getPreloadedValue(${input.entryId}) => ${value}`
+          );
           return value;
         },
       },
@@ -98,7 +100,7 @@ function createDebugServiceDef(storyIndexGeneratorPromise: Promise<StoryIndexGen
         input: messageInputSchema,
         output: v.undefined(),
         handler: async (input, ctx) => {
-          logger.warn(`[open-service debug] command addActivity(${input.message})`);
+          logger.verbose(`[open-service debug] command addActivity(${input.message})`);
           ctx.self.setState((draft) => {
             draft.activity.push(input.message);
           });
@@ -114,7 +116,7 @@ function createDebugServiceDef(storyIndexGeneratorPromise: Promise<StoryIndexGen
           const storyIndex = await (await storyIndexGeneratorPromise).getIndex();
           const sampleIds = Object.keys(storyIndex.entries).slice(0, 5);
 
-          logger.warn(
+          logger.verbose(
             `[open-service debug] command syncStoryIndex(${input.reason}) => ${Object.keys(storyIndex.entries).length} entries`
           );
           ctx.self.setState((draft) => {
@@ -131,13 +133,15 @@ function createDebugServiceDef(storyIndexGeneratorPromise: Promise<StoryIndexGen
         input: preloadVisitInputSchema,
         output: v.undefined(),
         handler: async (input, ctx) => {
-          const selfService = await ctx.getService(DEBUG_SERVICE_ID);
-          const summary = (await selfService.queries.getStoryIndexSummary({
+          // ctx.self already exposes this service's queries, so resolving the running runtime
+          // through the registry would be a needless detour. The cast bridges the loss of
+          // per-query output typing on `ReadonlySelf.queries`.
+          const summary = (await ctx.self.queries.getStoryIndexSummary({
             includeSampleIds: false,
           })) as { entryCount: number; sampleIds: string[] };
           const value = `${input.source}:${input.entryId}:${summary.entryCount}`;
 
-          logger.warn(
+          logger.verbose(
             `[open-service debug] command recordPreloadVisit(${input.entryId}, ${input.source}) => ${value}`
           );
           ctx.self.setState((draft) => {
@@ -158,39 +162,35 @@ function createDebugServiceDef(storyIndexGeneratorPromise: Promise<StoryIndexGen
  * features in one place.
  *
  * The service self-demonstrates queries, commands, preloads, subscriptions, static snapshot
- * generation, and story-index integration inside the internal Storybook.
+ * generation, and story-index integration inside the internal Storybook. It is gated behind the
+ * `STORYBOOK_OPEN_SERVICE_DEBUG=true` env flag in `code/.storybook/services-preset.ts`.
  */
 export async function registerOpenServiceDebugService(
   storyIndexGeneratorPromise: Promise<StoryIndexGenerator>
 ): Promise<void> {
-  try {
-    await describeService(DEBUG_SERVICE_ID);
-    logger.warn('[open-service debug] debug service already registered');
-    return;
-  } catch {
-    // The service is not registered yet in this process.
-  }
-
   const service = registerService(createDebugServiceDef(storyIndexGeneratorPromise));
   const descriptor = await describeService(DEBUG_SERVICE_ID);
 
-  logger.warn('[open-service debug] registered service descriptor');
-  logger.warn(JSON.stringify(descriptor, null, 2));
+  logger.verbose('[open-service debug] registered service descriptor');
+  logger.verbose(JSON.stringify(descriptor, null, 2));
 
   const unsubscribe = service.queries.getPreloadedValue.subscribe(
     { entryId: 'startup' },
     (value) => {
-      logger.warn(`[open-service debug] subscription getPreloadedValue(startup) => ${value}`);
+      logger.verbose(`[open-service debug] subscription getPreloadedValue(startup) => ${value}`);
     }
   );
 
-  // Trigger the main runtime behaviors once during registration so debug logs immediately show
-  // the command, query, preload, and subscription paths without extra manual setup.
-  await service.commands.syncStoryIndex({ reason: 'services-preset' });
-  await service.commands.addActivity({ message: 'registered via services preset' });
-  await service.queries.getActivity({ limit: 10 });
-  await service.queries.getStoryIndexSummary({ includeSampleIds: true });
-  await service.queries.getPreloadedValue({ entryId: 'startup' });
-  await new Promise<void>((resolve) => queueMicrotask(resolve));
-  unsubscribe();
+  try {
+    // Trigger the main runtime behaviors once during registration so debug logs immediately show
+    // the command, query, preload, and subscription paths without extra manual setup.
+    await service.commands.syncStoryIndex({ reason: 'services-preset' });
+    await service.commands.addActivity({ message: 'registered via services preset' });
+    await service.queries.getActivity({ limit: 10 });
+    await service.queries.getStoryIndexSummary({ includeSampleIds: true });
+    await service.queries.getPreloadedValue({ entryId: 'startup' });
+    await new Promise<void>((resolve) => queueMicrotask(resolve));
+  } finally {
+    unsubscribe();
+  }
 }

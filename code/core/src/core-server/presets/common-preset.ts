@@ -310,15 +310,11 @@ export const managerEntries = async (existing: any) => {
   ];
 };
 
-let servicesAlreadyRegistered = false;
-export const services = async (existing: any) => {
-  if (servicesAlreadyRegistered) {
-    throw new Error(
-      'The "services" preset property was applied twice, but should only be applied once. Multiple code paths applying it will cause service registration to fail.'
-    );
-  }
-  servicesAlreadyRegistered = true;
-};
+// Default services hook: a no-op that simply lets `presets.apply('services')` resolve. Concrete
+// service authors register their services from their own `services` hook implementation. Storybook
+// applies the `services` preset exactly once per process (one of build-dev, build-static, or
+// load), so each `registerService(...)` call also runs exactly once.
+export const services = async (): Promise<void> => {};
 
 // Store the promise (not the result) to prevent race conditions.
 // The promise is assigned synchronously, so concurrent calls will share the same initialization.

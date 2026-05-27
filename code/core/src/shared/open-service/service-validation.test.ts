@@ -91,8 +91,10 @@ describe('service validation', () => {
   });
 
   it('shows the full actionable message for invalid static preload input', async () => {
+    registerService(createInvalidStaticInputServiceDef());
+
     await expectValidationMessage(
-      () => buildStaticFiles([createInvalidStaticInputServiceDef()]),
+      () => buildStaticFiles(),
       dedent`
         Invalid input for query "test/invalid-static-input.getPreloadedValue":
         entryId: Invalid key: Expected "entryId" but received undefined

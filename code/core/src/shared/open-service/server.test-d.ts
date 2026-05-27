@@ -94,8 +94,6 @@ describe('open-service registration types', () => {
     expectTypeOf(registeredService.commands.preloadValue).parameter(0).toEqualTypeOf<{
       entryId: string;
     }>();
-    expectTypeOf(registeredService.getService).parameter(0).toEqualTypeOf<string>();
-    expectTypeOf(registeredService.getService).returns.toEqualTypeOf<Promise<RuntimeService>>();
   });
 
   it('rejects invalid registration overrides', () => {

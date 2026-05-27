@@ -204,9 +204,11 @@ function createQuery<TState>(
       }
 
       // Kick off preload in parallel so subscriptions can observe the state transition it causes.
-      void Promise.resolve(queryDef.preload?.(validatedInput, createQueryCtx())).catch(
-        rethrowAsync
-      );
+      // Defer the call into a `.then` callback so synchronous throws from the preload body land in
+      // the `.catch` below instead of escaping the surrounding async function.
+      void Promise.resolve()
+        .then(() => queryDef.preload?.(validatedInput, createQueryCtx()))
+        .catch(rethrowAsync);
 
       // `computed()` tracks which signals the handler reads so the effect can re-run on changes.
       const comp = computed(() => getHandler()(validatedInput, createQueryCtx()));

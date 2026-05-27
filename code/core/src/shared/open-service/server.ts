@@ -11,7 +11,7 @@ import {
   getService,
   listServices,
   registerService,
-  serviceRegistryApi,
+  registryApi,
 } from './service-registration.ts';
 import { createServiceRuntime, resolveStaticPath } from './service-runtime.ts';
 import { validateSchema } from './service-validation.ts';
@@ -38,16 +38,18 @@ export {
 };
 
 /**
- * Builds serialized static-state snapshots for preload-enabled queries in the server runtime.
+ * Builds serialized static-state snapshots for preload-enabled queries across every service
+ * currently in the registry.
  *
  * Each static input runs against a fresh service runtime so one preload path cannot leak state
- * into another path's snapshot.
+ * into another path's snapshot. Cross-service `ctx.getService(...)` lookups inside a preload
+ * resolve through the live registry, matching dev-server behavior.
  */
-export async function buildStaticFiles(services: RuntimeServiceDefinition[]): Promise<StaticStore> {
+export async function buildStaticFiles(): Promise<StaticStore> {
   const store: StaticStore = {};
   const buildTasks: Promise<BuildTaskResult[]>[] = [];
 
-  for (const service of services) {
+  for (const service of getRegisteredServices() as RuntimeServiceDefinition[]) {
     for (const [queryName, query] of Object.entries(service.queries) as [
       string,
       RuntimeQueryDefinition,
@@ -61,7 +63,7 @@ export async function buildStaticFiles(services: RuntimeServiceDefinition[]): Pr
         (async () => {
           const inputsRuntime = createServiceRuntime(
             service,
-            { registryApi: serviceRegistryApi },
+            { registryApi },
             structuredClone(service.initialState)
           );
           const inputs = await staticConfig.inputs(inputsRuntime.queryCtx);
@@ -72,7 +74,7 @@ export async function buildStaticFiles(services: RuntimeServiceDefinition[]): Pr
               // the one path this task is responsible for.
               const buildRuntime = createServiceRuntime(
                 service,
-                { registryApi: serviceRegistryApi },
+                { registryApi },
                 structuredClone(service.initialState)
               );
               const validatedInput = await validateSchema(query.input, input, {
@@ -115,7 +117,7 @@ export async function buildStaticFiles(services: RuntimeServiceDefinition[]): Pr
  * produce the correct native separators for the current operating system.
  */
 export async function writeOpenServiceStaticFiles(outputDir: string): Promise<void> {
-  const staticStore = await buildStaticFiles(getRegisteredServices());
+  const staticStore = await buildStaticFiles();
 
   await Promise.all(
     Object.entries(staticStore).map(async ([relativePath, state]) => {

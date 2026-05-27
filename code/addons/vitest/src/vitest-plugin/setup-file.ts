@@ -23,8 +23,9 @@ export type Task = Partial<RunnerTask> & {
 const transport = { setHandler: vi.fn(), send: vi.fn() };
 globalThis.__STORYBOOK_ADDONS_CHANNEL__ ??= new Channel({ transport });
 
-const importVitest4BrowserCommands = async () =>
-  import(/* @vite-ignore */ 'vitest/browser').then((module) => module.commands);
+/* Using a dynamic variable ensures the import is not statically analyzable, so it won't be reported as missing. */
+const importVitest4BrowserCommands = async (moduleId: string = 'vitest/browser') =>
+  import(/* @vite-ignore */ moduleId).then((module) => module.commands);
 
 const importVitest3BrowserCommands = async () =>
   import('@vitest/browser/context').then((module) => module.commands);

@@ -999,6 +999,14 @@ async function prepareAngularSandbox(cwd: string, templateName: string) {
 
   await writeFile(packageJsonPath, JSON.stringify(packageJson, null, 2));
 
+  // The generated `.storybook/preview.ts` statically imports `../documentation.json`,
+  // which is produced by `yarn docs:json` (compodoc). The storybook and build-storybook
+  // scripts above pre-run it, but other entry points (notably `vitest`) do not, so
+  // Vite's pre-transform fails to resolve the import before any task can run. Drop
+  // an empty stub so any consumer can start; the real content is written when
+  // `docs:json` runs.
+  await writeFile(join(cwd, 'documentation.json'), '{}');
+
   // Set tsConfig compilerOptions
 
   const tsConfigPath = join(cwd, '.storybook', 'tsconfig.json');

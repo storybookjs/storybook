@@ -1,3 +1,3 @@
-if [ -n "$STORYBOOK_COMPILE_ON_CHECKOUT" ]; then
+if [ "$STORYBOOK_COMPILE_ON_CHECKOUT" = "true" ]; then
   yarn && yarn task compile -s compile
 fi

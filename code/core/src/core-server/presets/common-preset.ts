@@ -310,6 +310,16 @@ export const managerEntries = async (existing: any) => {
   ];
 };
 
+let servicesAlreadyRegistered = false;
+export const services = async (existing: any) => {
+  if (servicesAlreadyRegistered) {
+    throw new Error(
+      'The "services" preset property was applied twice, but should only be applied once. Multiple code paths applying it will cause service registration to fail.'
+    );
+  }
+  servicesAlreadyRegistered = true;
+};
+
 // Store the promise (not the result) to prevent race conditions.
 // The promise is assigned synchronously, so concurrent calls will share the same initialization.
 // This is essentially an async singleton pattern.

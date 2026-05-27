@@ -54,7 +54,7 @@
   ],
   "dependencies": {
     "ts-dedent": "^2.0.0",
-    "type-fest": "~2.19"
+    "type-fest": "^5.6.0"
   },
   "devDependencies": {
     "@sveltejs/vite-plugin-svelte": "^6.2.0",

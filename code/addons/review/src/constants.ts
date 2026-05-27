@@ -7,12 +7,15 @@ export const REVIEW_CHANGES_URL = '/review/';
 // full-reload navigations between review screens. Value: 'restore' | 'keep'.
 export const RESTORE_NAV_SESSION_KEY = `${ADDON_ID}/restore-nav`;
 
-// Cross-repo channel contract with `@storybook/addon-mcp`. These string
-// values MUST match the emitter's constants exactly for the pipe to work.
+// `@storybook/addon-mcp` display-review tool call emits this event with the raw agent payload.
+const PUSH_REVIEW = `${ADDON_ID}/push-review`;
+// Display agent review in the UI
 const DISPLAY_REVIEW = `${ADDON_ID}/display-review`;
+// Requests for the cached state of the agent review
 const REQUEST_REVIEW = `${ADDON_ID}/request-review`;
 
 export const EVENTS = {
+  PUSH_REVIEW,
   DISPLAY_REVIEW,
   REQUEST_REVIEW,
 };

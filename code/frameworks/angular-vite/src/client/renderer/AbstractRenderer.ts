@@ -167,13 +167,13 @@ export abstract class AbstractRenderer {
   }
 
   /**
-   * Angular is unable to handle components that have selectors with accented attributes.
-   *
-   * Therefore, stories break when meta's title contains accents.
-   * https://github.com/storybookjs/storybook/issues/29132
-   *
-   * This method filters accents from a given raw id. For example, this method converts
-   * 'Example/Button with an "é" accent' into 'Example/Button with an "e" accent'.
+   * The story UID is interpolated into a CSS attribute selector
+   * (`${targetSelector}[${storyUid}]`) at bootstrap. Anything outside
+   * `[A-Za-z0-9_-]` — accents, emoji, Cyrillic, CJK, etc. — makes the
+   * selector invalid (see https://github.com/storybookjs/storybook/issues/29132
+   * for the accent case). Decompose accents first so the base letter survives,
+   * then drop the rest. Fall back to a stable token when nothing remains so
+   * `document.querySelector` still gets a valid input.
    *
    * @memberof AbstractRenderer
    * @protected
@@ -184,7 +184,20 @@ export abstract class AbstractRenderer {
     }
 
     const accentCharacters = /[\u0300-\u036f]/g;
-    return rawStoryUid.normalize('NFD').replace(accentCharacters, '');
+    const invalidSelectorChar = /[^A-Za-z0-9_-]/g;
+    const stripped = rawStoryUid
+      .normalize('NFD')
+      .replace(accentCharacters, '')
+      .replace(invalidSelectorChar, '')
+      .replace(/-+/g, '-')
+      .replace(/^-|-$/g, '');
+    if (!stripped) {
+      return 'sb-story-uid';
+    }
+    // A CSS identifier may not start with a digit, so the attribute name in
+    // `[storyUid]` would otherwise be rejected when the rawStoryUid had only
+    // non-ASCII chars before its counter (e.g. `\ud83d\ude00--\u0431\u0430\u0440-1` -> `1`).
+    return /^\d/.test(stripped) ? `sb-${stripped}` : stripped;
   }
 
   /** Adds DOM element that angular will use as bootstrap component. */

@@ -57,7 +57,8 @@ export const ActionButton = styled.button<{ disabled: boolean }>(
       outline: '0 none',
 
       '@media (forced-colors: active)': {
-        outline: '1px solid highlight',
+        outline: '2px solid ButtonBorder',
+        outlineOffset: '2px',
       },
     },
   }),
@@ -71,6 +72,7 @@ ActionButton.displayName = 'ActionButton';
 
 export interface ActionItem {
   title: string | ReactElement;
+  ariaLabel?: string;
   className?: string;
   onClick: (e: MouseEvent<HTMLButtonElement>) => void;
   disabled?: boolean;
@@ -89,8 +91,14 @@ export interface ActionBarProps {
 export const ActionBar = ({ actionItems, flexLayout = false, ...props }: ActionBarProps) => {
   return (
     <Container {...props} $flexLayout={flexLayout}>
-      {actionItems.map(({ title, className, onClick, disabled }, index: number) => (
-        <ActionButton key={index} className={className} onClick={onClick} disabled={!!disabled}>
+      {actionItems.map(({ title, ariaLabel, className, onClick, disabled }, index: number) => (
+        <ActionButton
+          key={index}
+          aria-label={ariaLabel}
+          className={className}
+          onClick={onClick}
+          disabled={!!disabled}
+        >
           {title}
         </ActionButton>
       ))}

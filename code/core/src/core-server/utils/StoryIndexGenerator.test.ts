@@ -1958,6 +1958,39 @@ describe('StoryIndexGenerator', () => {
         `);
       });
 
+      it('uses the explicit id prop on <Meta> for standalone mdx docs', async () => {
+        const docsSpecifier: NormalizedStoriesSpecifier = normalizeStoriesEntry(
+          './docs-id-generation/Standalone.docs.mdx',
+          options
+        );
+
+        const generator = new StoryIndexGenerator([docsSpecifier], options);
+        await generator.initialize();
+
+        const { storyIndex } = await generator.getIndexAndStats();
+        expect(storyIndex).toMatchInlineSnapshot(`
+          {
+            "entries": {
+              "custom-standalone-id--docs": {
+                "id": "custom-standalone-id--docs",
+                "importPath": "./docs-id-generation/Standalone.docs.mdx",
+                "name": "docs",
+                "storiesImports": [],
+                "tags": [
+                  "dev",
+                  "test",
+                  "manifest",
+                  "unattached-mdx",
+                ],
+                "title": "Standalone Page Title",
+                "type": "docs",
+              },
+            },
+            "v": 5,
+          }
+        `);
+      });
+
       it('puts the Meta of stories file first in storiesImports even when it is not the last import', async () => {
         const csfSpecifier: NormalizedStoriesSpecifier = normalizeStoriesEntry(
           './src/*.stories.(js|ts)',

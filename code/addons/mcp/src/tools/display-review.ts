@@ -35,29 +35,6 @@ export const ReviewCollectionSchema = v.object({
 	),
 });
 
-const StoryMetaSchema = v.object({
-	depth: v.pipe(
-		v.optional(v.number()),
-		v.description(
-			'Graph distance from the changed file(s) to this story (0 = the changed component itself).',
-		),
-	),
-	chain: v.pipe(
-		v.optional(v.array(v.string())),
-		v.description(
-			'Ordered intermediate file paths between the story file and the changed file, excluding both endpoints. Empty/omitted means a direct import.',
-		),
-	),
-});
-
-const DiffHunkSchema = v.object({
-	path: v.pipe(v.string(), v.description('Path of the changed file this hunk belongs to.')),
-	hunk: v.pipe(
-		v.string(),
-		v.description('Unified-diff text for this hunk (with +/- line prefixes).'),
-	),
-});
-
 export const ReviewStateSchema = v.object({
 	title: v.pipe(
 		v.string(),
@@ -73,14 +50,6 @@ export const ReviewStateSchema = v.object({
 	changedFiles: v.pipe(
 		v.optional(v.array(v.string())),
 		v.description('Paths of the files you changed, most central first.'),
-	),
-	diffHunks: v.pipe(
-		v.optional(v.array(DiffHunkSchema)),
-		v.description('The actual diff hunks of your change, shown in the review page.'),
-	),
-	storyMeta: v.pipe(
-		v.optional(v.record(v.string(), StoryMetaSchema)),
-		v.description('Optional per-story metadata keyed by story ID: { depth, chain }.'),
 	),
 });
 
@@ -137,13 +106,20 @@ export async function addDisplayReviewTool(server: McpServer<any, AddonContext>)
 			title: 'Display Storybook review',
 			description: `Push a curated review of the current change to Storybook's review page.
 
-After you finish a UI code change, call this to help the user spot-check it. Provide:
+After you finish a UI code change, call this to help the user spot-check it.
+
+Before composing collections, answer two questions:
+- *Where is this change rendered?* Trace upward from the edited file through the import graph until you hit page-level or top-level story files.
+- *What would a reviewer want to spot-check in real context?* Include at least one story per layer of that chain.
+
+Provide:
 - title: a PR-style title for the change — short and specific.
 - description: a one-line summary of what changed and where to start reviewing.
-- collections: titled groups of representative story IDs. Give each a concise, PR-dense title, a one-sentence rationale, and — when you can tell — a kind ("atomic" for the directly changed component, "consumer" for direct dependents, "transitive" for pages/containers, "catch-all" otherwise).
+- collections: titled groups of stories covering the **visual cascade** of the change — not just where the code is read, but everywhere a reviewer will see it. For any non-trivial UI change, include the atomic component, its direct consumers, and the pages/containers that render them transitively. A single-collection review is a smell: only do it if the component is genuinely standalone (e.g. has no parents in the story graph). Theme tokens, shared styles, and layout primitives almost always need transitive page coverage even when only one file imports them. Give each collection a concise, PR-dense title, a one-sentence rationale, and a \`kind\`.
+- kind (per collection): classify each collection as "atomic" (the directly changed component), "consumer" (direct dependents), "transitive" (pages/containers further away), or "catch-all" (everything else). Most UI changes should have at least two kinds present (e.g. \`consumer\` + \`transitive\`). A review with only \`atomic\` or only \`consumer\` is rarely complete.
 - changedFiles: the files you edited (most central first).
-- diffHunks: the actual diff of your change (you made it — include the hunks).
-- storyMeta: optional per-story { depth, chain }.
+
+Anti-pattern: editing a theme token that only one component reads, then publishing a review with just that one component's story. The token change is visible on every page that renders the component — include those pages.
 
 The \`kind\` labels are for structured review grouping and UI behavior; do not repeat these labels verbatim in user-facing prose unless the user explicitly asks for them.
 

@@ -21,23 +21,11 @@ export interface ReviewCollection {
   kind?: CollectionKind;
 }
 
-export interface DiffHunk {
-  path: string;
-  hunk: string;
-}
-
-export interface StoryMeta {
-  depth?: number;
-  chain?: string[];
-}
-
 export interface ReviewState {
   title: string;
   description: string;
   collections: ReviewCollection[];
   changedFiles?: string[];
-  diffHunks?: DiffHunk[];
-  storyMeta?: Record<string, StoryMeta>;
   /**
    * Current git branch of the target repo, resolved server-side by this
    * addon's preset; not part of the agent's MCP payload.

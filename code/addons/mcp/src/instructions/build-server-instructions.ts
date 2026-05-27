@@ -16,11 +16,6 @@ export function buildServerInstructions(options: BuildServerInstructionsOptions)
 	if (options.devEnabled) {
 		const changeDetection = options.changeDetectionEnabled ?? false;
 		const reviewEnabled = options.reviewEnabled ?? false;
-		// The DISPLAY_REVIEW_STEP placeholder lives on its own line in the
-		// template. Match the preceding newline too so that, when reviewEnabled
-		// is false, we don't leave a blank line behind — and when enabled, the
-		// replacement bullet renders cleanly without the template having to
-		// encode whitespace conventions in its replacement string.
 		sections.push(
 			devInstructions
 				.replace(
@@ -30,7 +25,7 @@ export function buildServerInstructions(options: BuildServerInstructionsOptions)
 						: 'After changing any component or story, call **preview-stories** to retrieve preview URLs.',
 				)
 				.replace(
-					/\n\{\{DISPLAY_REVIEW_STEP\}\}/,
+					'{{DISPLAY_REVIEW_STEP}}',
 					reviewEnabled
 						? "\n- After completing the change, call **display-review** to publish a curated review to Storybook's review page. If the session has a browser-preview tool, navigate it to the returned `reviewUrl` so the user sees the review without leaving the chat. Always include the `reviewUrl` in your final response as a fallback."
 						: '',

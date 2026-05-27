@@ -13,7 +13,7 @@ import { fileURLToPath } from 'node:url';
 
 import type { StandaloneOptions } from './builders/utils/standalone-options.ts';
 import type { FrameworkOptions } from './types.ts';
-import type { ConfigEnv, UserConfig, Plugin } from 'vite';
+import type { UserConfig, Plugin } from 'vite';
 
 export const addons: PresetProperty<'addons'> = [];
 
@@ -157,10 +157,9 @@ export const viteFinal = async (config: UserConfig, options?: StandaloneOptions)
           // `ButtonComponent` → `f` the lookup fails, no Output argTypes
           // are emitted, and `onClick`/other handlers get stripped from args
           // before the renderer sees them — manifesting as missing action
-          // bindings and unbound @Input() values (e.g. core-argmapping). The
-          // esbuild `keepNames` flag only governs the per-file TS→JS
-          // transform; the final minified bundle is produced by Rolldown's
-          // oxc minifier and needs its own opt-in here.
+          // bindings and unbound @Input() values (e.g. core-argmapping).
+          // Rolldown's oxc minifier renames by default, so the production
+          // bundle needs this explicit opt-in.
           keepNames: true,
           // Rolldown's lazy-init wrapper splits @angular/platform-browser and
           // @angular/common/http into separate chunks. The platform-browser
@@ -181,7 +180,7 @@ export const viteFinal = async (config: UserConfig, options?: StandaloneOptions)
       ...pluginsToInject,
       angularViteRedirectReapplyPlugin(options),
       angularOptionsPlugin(options, { normalizePath, zoneless }),
-      storybookEsbuildPlugin(),
+      storybookOxcPlugin(),
     ],
     define: {
       STORYBOOK_ANGULAR_OPTIONS: JSON.stringify({
@@ -332,18 +331,11 @@ function angularViteRedirectReapplyPlugin(options?: StandaloneOptions): Plugin {
   };
 }
 
-function storybookEsbuildPlugin() {
+function storybookOxcPlugin() {
   return {
-    name: 'storybook-angular-vite-esbuild-config',
-    config(_userConfig: UserConfig, env: ConfigEnv) {
+    name: 'storybook-angular-vite-oxc-config',
+    config() {
       return {
-        esbuild: {
-          // Don't mangle class names during the build
-          // This fixes display of compodoc argtypes
-          keepNames: true,
-          ...(env.command === 'build' ? { keepNames: true } : {}),
-          jsx: 'automatic',
-        },
         oxc: {
           jsx: { runtime: 'automatic' },
         },

@@ -61,7 +61,7 @@
     "@storybook/global": "^5.0.0",
     "telejson": "8.0.0",
     "ts-dedent": "^2.0.0",
-    "vite": ">=7.0.0"
+    "vite": ">=8.0.0"
   },
   "devDependencies": {
     "@analogjs/vite-plugin-angular": "^2.5.2",
@@ -98,7 +98,7 @@
     "rxjs": "^7.4.0",
     "storybook": "workspace:^",
     "typescript": "^5.9.0",
-    "vite": ">=7.0.0",
+    "vite": ">=8.0.0",
     "zone.js": ">=0.16.0"
   },
   "peerDependenciesMeta": {

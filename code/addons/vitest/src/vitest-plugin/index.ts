@@ -325,13 +325,11 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
         finalOptions
       );
 
-      const internalSetupFiles = (
-        [
-          '@storybook/addon-vitest/internal/setup-file',
-          areProjectAnnotationRequired &&
-            '@storybook/addon-vitest/internal/setup-file-with-project-annotations',
-        ].filter(Boolean) as string[]
-      ).map((filePath) => fileURLToPath(import.meta.resolve(filePath)));
+      const internalSetupFiles = [
+        '@storybook/addon-vitest/internal/setup-file',
+        areProjectAnnotationRequired &&
+          '@storybook/addon-vitest/internal/setup-file-with-project-annotations',
+      ].filter(Boolean) as string[];
 
       const baseConfig: Omit<ViteUserConfig, 'plugins'> = {
         cacheDir: resolvePathInStorybookCache('sb-vitest', projectId),

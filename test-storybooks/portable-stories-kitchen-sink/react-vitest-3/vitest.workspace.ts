@@ -3,6 +3,11 @@ import { storybookTest } from "@storybook/addon-vitest/vitest-plugin";
 
 export default defineWorkspace([
   {
+    server: {
+      fs: {
+        allow: ["../../../"],
+      }
+    },
     extends: "vite.config.ts",
     plugins: [
       storybookTest(

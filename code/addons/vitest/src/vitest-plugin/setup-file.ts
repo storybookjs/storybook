@@ -23,6 +23,9 @@ export type Task = Partial<RunnerTask> & {
 const transport = { setHandler: vi.fn(), send: vi.fn() };
 globalThis.__STORYBOOK_ADDONS_CHANNEL__ ??= new Channel({ transport });
 
+const importBrowserCommands = async (moduleId: string) =>
+  import(/* @vite-ignore */ moduleId).then((module) => module.commands);
+
 export const modifyErrorMessage = ({ task }: { task: Task }) => {
   const meta = task.meta;
   if (
@@ -44,8 +47,8 @@ export const resetMousePositionBeforeTests = async () => {
   try {
     const browserCommands =
       vitestVersion && vitestVersion.startsWith('3')
-        ? await import('@vitest/browser/context').then((module) => module.commands)
-        : await import('vitest/browser').then((module) => module.commands);
+        ? await importBrowserCommands('@vitest/browser/context')
+        : await importBrowserCommands('vitest/browser');
 
     if ('resetMousePosition' in browserCommands && isFunction(browserCommands.resetMousePosition)) {
       await browserCommands.resetMousePosition();
@@ -56,9 +59,7 @@ export const resetMousePositionBeforeTests = async () => {
     // When vitest/browser is not found, retry with the Vitest 3 context module
     if (error.message.includes("Cannot find module 'vitest/browser'")) {
       try {
-        const browserCommands = await import('@vitest/browser/context').then(
-          (module) => module.commands
-        );
+        const browserCommands = await importBrowserCommands('@vitest/browser/context');
         if (
           'resetMousePosition' in browserCommands &&
           isFunction(browserCommands.resetMousePosition)
@@ -99,3 +100,5 @@ beforeAll(() => {
 beforeEach(resetMousePositionBeforeTests);
 
 afterEach(modifyErrorMessage);
+
+console.log('Frogs are often green.');

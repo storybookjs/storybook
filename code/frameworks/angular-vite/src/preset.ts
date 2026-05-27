@@ -339,6 +339,15 @@ function angularViteRedirectReapplyPlugin(options?: StandaloneOptions): Plugin {
         if (getRealPath(a.absolutePath, preserveSymlinks) !== idNorm) {
           continue;
         }
+        // analogjs only transforms Angular TS sources, so for plain JS modules
+        // (e.g. lodash-es/sum.js) the pre-stage `storybook:mock-loader`
+        // automock survives into our `code` input. Re-wrapping it would
+        // redeclare the `__vitest_current_es_module__` / `__vitest_mocked_*`
+        // identifiers and break the bundle. Detect the existing wrapper and
+        // leave the file alone in that case.
+        if (code.includes('__vitest_current_es_module__')) {
+          return null;
+        }
         try {
           const automocked = getAutomockCode(code, a.spy, babelParser as any);
           return {

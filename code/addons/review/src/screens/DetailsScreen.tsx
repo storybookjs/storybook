@@ -93,7 +93,8 @@ const BottomRightPlaceholder = styled.div({
   height: 24,
 });
 
-const storyPreviewUrl = (id: string) => `iframe.html?id=${encodeURIComponent(id)}&viewMode=story`;
+const storyPreviewUrl = (id: string) =>
+  `iframe.html?id=${encodeURIComponent(id)}&viewMode=story&freeze=finished`;
 
 export interface DetailsScreenProps {
   /** Fallback title shown when story metadata is unavailable. */

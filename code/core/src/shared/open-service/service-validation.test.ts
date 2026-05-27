@@ -16,11 +16,18 @@ import {
 /**
  * Asserts the exact validation text we document for callers.
  *
- * `vi.defineHelper()` keeps failure stacks anchored at the individual test callsite.
+ * `vi.defineHelper()` keeps failure stacks anchored at the individual test callsite. The helper
+ * accepts both sync and async producers so it can target sync queries and async commands with the
+ * same assertion shape.
  */
 const expectValidationMessage = vi.defineHelper(
-  async (run: () => Promise<unknown>, expectedMessage: string): Promise<void> => {
-    await expect(run()).rejects.toMatchObject({
+  async (run: () => unknown, expectedMessage: string): Promise<void> => {
+    await expect(async () => {
+      const result = run();
+      if (result instanceof Promise) {
+        await result;
+      }
+    }).rejects.toMatchObject({
       fromStorybook: true,
       code: 5,
       message: expectedMessage,
@@ -90,7 +97,7 @@ describe('service validation', () => {
     );
   });
 
-  it('shows the full actionable message for invalid static preload input', async () => {
+  it('shows the full actionable message for invalid static load input', async () => {
     await expectValidationMessage(
       () => buildStaticFiles([createInvalidStaticInputServiceDef()]),
       dedent`
@@ -160,15 +167,15 @@ describe('service validation', () => {
     );
   });
 
-  it('accepts unexpected query input fields when the schema allows them', async () => {
+  it('accepts unexpected query input fields when the schema allows them', () => {
     const service = registerService(mutableRecordLookupServiceDef);
 
-    await expect(
+    expect(
       service.queries.getRecordFields({
         entryId: 'entry-a',
         unexpected: 'extra',
       } as unknown as { entryId: string })
-    ).resolves.toBeNull();
+    ).toBeNull();
   });
 
   it('accepts unexpected command input fields when the schema allows them', async () => {
@@ -187,7 +194,7 @@ describe('service validation', () => {
       })
     ).resolves.toBeUndefined();
 
-    await expect(service.queries.getRecordFields({ entryId: 'entry-a' })).resolves.toEqual({
+    expect(service.queries.getRecordFields({ entryId: 'entry-a' })).toEqual({
       marker: 'match',
     });
   });

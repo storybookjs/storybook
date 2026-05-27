@@ -16,10 +16,10 @@ afterEach(() => {
 
 describe('service runtime', () => {
   describe('direct query calls', () => {
-    it('returns the initial record lookup value', async () => {
+    it('returns the initial record lookup value synchronously', () => {
       const service = registerService(mutableRecordLookupServiceDef);
 
-      expect(await service.queries.getRecordFields({ entryId: 'entry-a' })).toBeNull();
+      expect(service.queries.getRecordFields({ entryId: 'entry-a' })).toBeNull();
     });
 
     it('reflects state after a mutating command', async () => {
@@ -31,7 +31,7 @@ describe('service runtime', () => {
         fieldValue: 'match',
       });
 
-      expect(await service.queries.getRecordFields({ entryId: 'entry-a' })).toEqual({
+      expect(service.queries.getRecordFields({ entryId: 'entry-a' })).toEqual({
         marker: 'match',
       });
     });
@@ -64,6 +64,7 @@ describe('service runtime', () => {
         }
       );
 
+      await vi.waitFor(() => expect(calls).toEqual([null]));
       await service.commands.assignRecordField({
         entryId: 'entry-a',
         fieldKey: 'marker',
@@ -92,6 +93,8 @@ describe('service runtime', () => {
         }
       );
 
+      await vi.waitFor(() => expect(callsA).toEqual([null]));
+      await vi.waitFor(() => expect(callsB).toEqual([null]));
       await service.commands.assignRecordField({
         entryId: 'entry-b',
         fieldKey: 'marker',
@@ -115,6 +118,7 @@ describe('service runtime', () => {
         }
       );
 
+      await vi.waitFor(() => expect(calls).toEqual([null]));
       await service.commands.assignRecordField({
         entryId: 'entry-a',
         fieldKey: 'marker',
@@ -148,6 +152,8 @@ describe('service runtime', () => {
         }
       );
 
+      await vi.waitFor(() => expect(callsA).toEqual([null]));
+      await vi.waitFor(() => expect(callsB).toEqual([null]));
       await service.commands.assignRecordField({
         entryId: 'entry-a',
         fieldKey: 'marker',
@@ -160,48 +166,58 @@ describe('service runtime', () => {
       unsubscribeB();
     });
 
-    it('does not notify after unsubscribe when an async query result resolves later', async () => {
-      let resolveValue!: () => void;
-      let handlerStarted = false;
-      let handlerFinished = false;
-      const valueReady = new Promise<void>((resolve) => {
-        resolveValue = resolve;
+    it('does not notify after unsubscribe when an in-flight load resolves later', async () => {
+      let resolveLoad!: () => void;
+      let loadStarted = false;
+      let loadFinished = false;
+      const loadReady = new Promise<void>((resolve) => {
+        resolveLoad = resolve;
       });
       const delayedQueryServiceDef = defineService({
         id: 'test/delayed-subscription-value',
-        description: 'Resolves a subscription value after the subscriber has already unsubscribed.',
-        initialState: {} as Record<string, never>,
+        description: 'Resolves a load after the subscriber has already unsubscribed.',
+        initialState: { value: null as string | null },
         queries: {
           getValue: {
             input: v.undefined(),
-            output: v.string(),
-            handler: async () => {
-              handlerStarted = true;
-              await valueReady;
-              handlerFinished = true;
-
-              return 'late';
+            output: v.nullable(v.string()),
+            handler: (_input, ctx) => ctx.self.state.value,
+            load: async (_input, ctx) => {
+              loadStarted = true;
+              await loadReady;
+              await ctx.self.commands.assignValue('late');
+              loadFinished = true;
             },
           },
         },
-        commands: {},
+        commands: {
+          assignValue: {
+            input: v.string(),
+            output: v.void(),
+            handler: (input, ctx) => {
+              ctx.self.setState((draft) => {
+                draft.value = input;
+              });
+            },
+          },
+        },
       });
       const service = registerService(delayedQueryServiceDef);
-      const calls: string[] = [];
+      const calls: Array<string | null> = [];
 
       const unsubscribe = service.queries.getValue.subscribe(undefined, (value) => {
         calls.push(value);
       });
 
-      await vi.waitFor(() => expect(handlerStarted).toBe(true));
+      await vi.waitFor(() => expect(loadStarted).toBe(true));
       unsubscribe();
-      resolveValue();
+      resolveLoad();
 
-      await vi.waitFor(() => expect(handlerFinished).toBe(true));
+      await vi.waitFor(() => expect(loadFinished).toBe(true));
       expect(calls).toEqual([]);
     });
 
-    it('rethrows async subscription input validation failures through queueMicrotask', async () => {
+    it('rethrows subscription input validation failures through queueMicrotask', async () => {
       const queuedCallbacks: Array<() => void> = [];
       const queueMicrotaskSpy = vi
         .spyOn(globalThis, 'queueMicrotask')
@@ -231,8 +247,39 @@ describe('service runtime', () => {
     });
   });
 
-  describe('awaited preload', () => {
-    it('preloads state when subscribing to an empty query', async () => {
+  describe('background load', () => {
+    it('returns the current value synchronously and triggers load in the background', async () => {
+      const service = registerService(awaitedPreloadValueServiceDef);
+
+      expect(service.queries.getPreloadedValue({ entryId: 'entry-a' })).toBeNull();
+
+      await vi.waitFor(() =>
+        expect(service.queries.getPreloadedValue({ entryId: 'entry-a' })).toBe('preloaded')
+      );
+    });
+
+    it('does not call the load command twice for concurrent in-flight calls', async () => {
+      const service = registerService(awaitedPreloadValueServiceDef);
+      const preloadValueSpy = vi.spyOn(
+        awaitedPreloadValueServiceDef.commands.preloadValue,
+        'handler'
+      );
+
+      try {
+        const [first, second] = await Promise.all([
+          service.queries.getPreloadedValue.loaded({ entryId: 'entry-a' }),
+          service.queries.getPreloadedValue.loaded({ entryId: 'entry-a' }),
+        ]);
+
+        expect(first).toBe('preloaded');
+        expect(second).toBe('preloaded');
+        expect(preloadValueSpy).toHaveBeenCalledTimes(1);
+      } finally {
+        preloadValueSpy.mockRestore();
+      }
+    });
+
+    it('defers the first emission until an in-flight load settles', async () => {
       const service = registerService(awaitedPreloadValueServiceDef);
       const calls: Array<string | null> = [];
 
@@ -243,37 +290,9 @@ describe('service runtime', () => {
         }
       );
 
-      await vi.waitFor(() => expect(calls).toEqual([null, 'preloaded']));
+      await vi.waitFor(() => expect(calls).toEqual(['preloaded']));
 
       unsubscribe();
-    });
-
-    it('does not trigger preload again after the value is already preloaded', async () => {
-      const service = registerService(awaitedPreloadValueServiceDef);
-      const preloadValueSpy = vi.spyOn(
-        awaitedPreloadValueServiceDef.commands.preloadValue,
-        'handler'
-      );
-
-      const unsubscribe = service.queries.getPreloadedValue.subscribe(
-        { entryId: 'entry-a' },
-        () => {}
-      );
-      await vi.waitFor(() => expect(preloadValueSpy).toHaveBeenCalledTimes(1));
-
-      const secondCalls: Array<string | null> = [];
-      const secondUnsubscribe = service.queries.getPreloadedValue.subscribe(
-        { entryId: 'entry-a' },
-        (value) => {
-          secondCalls.push(value);
-        }
-      );
-
-      await vi.waitFor(() => expect(secondCalls).toEqual(['preloaded']));
-
-      unsubscribe();
-      secondUnsubscribe();
-      preloadValueSpy.mockRestore();
     });
 
     it('preloads distinct values independently by input', async () => {
@@ -294,59 +313,63 @@ describe('service runtime', () => {
         }
       );
 
-      await vi.waitFor(() => expect(callsA).toEqual([null, 'preloaded']));
-      await vi.waitFor(() => expect(callsB).toEqual([null, 'preloaded']));
+      await vi.waitFor(() => expect(callsA).toEqual(['preloaded']));
+      await vi.waitFor(() => expect(callsB).toEqual(['preloaded']));
       unsubscribeA();
       unsubscribeB();
     });
 
-    it('awaits preload before returning a direct query result', async () => {
+    it('returns the fully loaded value from .loaded()', async () => {
       const service = registerService(awaitedPreloadValueServiceDef);
 
-      await expect(service.queries.getPreloadedValue({ entryId: 'entry-a' })).resolves.toBe(
+      await expect(service.queries.getPreloadedValue.loaded({ entryId: 'entry-a' })).resolves.toBe(
         'preloaded'
       );
     });
 
-    it('resolves immediately when state is already preloaded', async () => {
+    it('resolves .loaded() immediately when state is already populated', async () => {
       const service = registerService(awaitedPreloadValueServiceDef);
       const preloadValueSpy = vi.spyOn(
         awaitedPreloadValueServiceDef.commands.preloadValue,
         'handler'
       );
 
-      await service.queries.getPreloadedValue({ entryId: 'entry-a' });
-      preloadValueSpy.mockClear();
+      try {
+        await service.queries.getPreloadedValue.loaded({ entryId: 'entry-a' });
+        preloadValueSpy.mockClear();
 
-      await expect(service.queries.getPreloadedValue({ entryId: 'entry-a' })).resolves.toBe(
-        'preloaded'
-      );
-      expect(preloadValueSpy).not.toHaveBeenCalled();
-
-      preloadValueSpy.mockRestore();
+        await expect(
+          service.queries.getPreloadedValue.loaded({ entryId: 'entry-a' })
+        ).resolves.toBe('preloaded');
+        expect(preloadValueSpy).not.toHaveBeenCalled();
+      } finally {
+        preloadValueSpy.mockRestore();
+      }
     });
 
-    it('resolves correctly for concurrent awaits of the same key', async () => {
-      const service = registerService(awaitedPreloadValueServiceDef);
-
-      const [first, second] = await Promise.all([
-        service.queries.getPreloadedValue({ entryId: 'entry-a' }),
-        service.queries.getPreloadedValue({ entryId: 'entry-a' }),
-      ]);
-
-      expect(first).toBe('preloaded');
-      expect(second).toBe('preloaded');
-    });
-  });
-
-  describe('fire-and-forget preload', () => {
-    it('returns the current value immediately when preload does not await', async () => {
+    it('fires background load on every sync call but dedupes while in flight', async () => {
       const service = registerService(fireAndForgetPreloadValueServiceDef);
+      const preloadValueSpy = vi.spyOn(
+        fireAndForgetPreloadValueServiceDef.commands.preloadValue,
+        'handler'
+      );
 
-      await expect(service.queries.getPreloadedValue({ entryId: 'entry-a' })).resolves.toBeNull();
+      try {
+        expect(service.queries.getPreloadedValue({ entryId: 'entry-a' })).toBeNull();
+        expect(service.queries.getPreloadedValue({ entryId: 'entry-a' })).toBeNull();
+        expect(service.queries.getPreloadedValue({ entryId: 'entry-a' })).toBeNull();
+
+        await vi.waitFor(() =>
+          expect(service.queries.getPreloadedValue({ entryId: 'entry-a' })).toBe('preloaded')
+        );
+
+        expect(preloadValueSpy).toHaveBeenCalledTimes(1);
+      } finally {
+        preloadValueSpy.mockRestore();
+      }
     });
 
-    it('still updates subscribers reactively after the background preload finishes', async () => {
+    it('updates subscribers reactively after the background load finishes', async () => {
       const service = registerService(fireAndForgetPreloadValueServiceDef);
       const calls: Array<string | null> = [];
 
@@ -357,21 +380,19 @@ describe('service runtime', () => {
         }
       );
 
-      await vi.waitFor(() => expect(calls).toEqual([null, 'preloaded']));
+      await vi.waitFor(() => expect(calls).toEqual(['preloaded']));
 
       unsubscribe();
     });
   });
 
   describe('cross-service query composition', () => {
-    it('supports awaiting a child query from another service', async () => {
+    it('reads a child query synchronously from another service', async () => {
       const sourceService = registerService(mutableRecordLookupServiceDef);
       const derivedServiceDef = createDerivedBooleanFromChildQueryServiceDef(sourceService);
       const derivedService = registerService(derivedServiceDef);
 
-      await expect(derivedService.queries.isEntryMarked({ entryId: 'entry-a' })).resolves.toBe(
-        false
-      );
+      expect(derivedService.queries.isEntryMarked({ entryId: 'entry-a' })).toBe(false);
 
       await sourceService.commands.assignRecordField({
         entryId: 'entry-a',
@@ -379,9 +400,155 @@ describe('service runtime', () => {
         fieldValue: 'match',
       });
 
-      await expect(derivedService.queries.isEntryMarked({ entryId: 'entry-a' })).resolves.toBe(
-        true
+      expect(derivedService.queries.isEntryMarked({ entryId: 'entry-a' })).toBe(true);
+    });
+  });
+
+  describe('loaded() drain', () => {
+    it('awaits a transitive dependency before returning', async () => {
+      const sourceService = registerService(awaitedPreloadValueServiceDef);
+      const derivedDef = defineService({
+        id: 'test/derived-loaded-from-source',
+        description: 'Reads the loaded value from the source service through a query.',
+        initialState: {} as Record<string, never>,
+        queries: {
+          getLength: {
+            input: v.object({ entryId: v.string() }),
+            output: v.number(),
+            handler: (input) => {
+              const value = sourceService.queries.getPreloadedValue({ entryId: input.entryId });
+              return value === null ? 0 : value.length;
+            },
+          },
+        },
+        commands: {},
+      });
+      const derivedService = registerService(derivedDef);
+
+      await expect(derivedService.queries.getLength.loaded({ entryId: 'entry-a' })).resolves.toBe(
+        'preloaded'.length
       );
+    });
+
+    it('surfaces rejections from a transitive load through .loaded()', async () => {
+      const failingDef = defineService({
+        id: 'test/failing-loaded',
+        description: 'Rejects from the load body to exercise .loaded() error propagation.',
+        initialState: { value: null as string | null },
+        queries: {
+          getValue: {
+            input: v.undefined(),
+            output: v.nullable(v.string()),
+            handler: (_input, ctx) => ctx.self.state.value,
+            load: async () => {
+              throw new Error('boom');
+            },
+          },
+        },
+        commands: {},
+      });
+      const service = registerService(failingDef);
+
+      await expect(service.queries.getValue.loaded(undefined)).rejects.toThrow('boom');
+    });
+
+    it('breaks a load cycle without deadlocking', async () => {
+      const cycleDef = defineService({
+        id: 'test/load-cycle',
+        description: 'Two queries whose loads call each other through self.queries.',
+        initialState: { aDone: false, bDone: false },
+        queries: {
+          a: {
+            input: v.undefined(),
+            output: v.boolean(),
+            handler: (_input, ctx) => ctx.self.state.aDone,
+            load: async (_input, ctx) => {
+              // Reading b inside a's load would normally also await b's load — but since b's load
+              // would in turn read a (the running ancestor), the runtime must break the cycle.
+              ctx.self.queries.b(undefined);
+              await ctx.self.commands.markA(undefined);
+            },
+          },
+          b: {
+            input: v.undefined(),
+            output: v.boolean(),
+            handler: (_input, ctx) => ctx.self.state.bDone,
+            load: async (_input, ctx) => {
+              ctx.self.queries.a(undefined);
+              await ctx.self.commands.markB(undefined);
+            },
+          },
+        },
+        commands: {
+          markA: {
+            input: v.undefined(),
+            output: v.void(),
+            handler: (_input, ctx) => {
+              ctx.self.setState((draft) => {
+                draft.aDone = true;
+              });
+            },
+          },
+          markB: {
+            input: v.undefined(),
+            output: v.void(),
+            handler: (_input, ctx) => {
+              ctx.self.setState((draft) => {
+                draft.bDone = true;
+              });
+            },
+          },
+        },
+      });
+      const service = registerService(cycleDef);
+
+      await expect(service.queries.a.loaded(undefined)).resolves.toBe(true);
+      expect(service.queries.b(undefined)).toBe(true);
+    });
+
+    it('throws OpenServiceLoadedDrainExceededError on persistent oscillation', async () => {
+      const oscillatingDef = defineService({
+        id: 'test/oscillating-load',
+        description: 'Handler reads a dynamic-keyed query on every discovery pass.',
+        initialState: { counter: 0 },
+        queries: {
+          getCounter: {
+            input: v.undefined(),
+            output: v.number(),
+            handler: (_input, ctx) => {
+              // Each discovery pass produces a fresh input key, so the runtime can never observe
+              // a stable set of dependencies — the drain loop hits its iteration cap.
+              ctx.self.queries.dynamic({ tick: ctx.self.state.counter });
+              return ctx.self.state.counter;
+            },
+          },
+          dynamic: {
+            input: v.object({ tick: v.number() }),
+            output: v.number(),
+            handler: (input) => input.tick,
+            load: async (_input, ctx) => {
+              await ctx.self.commands.bump(undefined);
+            },
+          },
+        },
+        commands: {
+          bump: {
+            input: v.undefined(),
+            output: v.void(),
+            handler: (_input, ctx) => {
+              ctx.self.setState((draft) => {
+                draft.counter += 1;
+              });
+            },
+          },
+        },
+      });
+      const service = registerService(oscillatingDef);
+
+      await expect(service.queries.getCounter.loaded(undefined)).rejects.toMatchObject({
+        fromStorybook: true,
+        code: 11,
+      });
     });
   });
 });

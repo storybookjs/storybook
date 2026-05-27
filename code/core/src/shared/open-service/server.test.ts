@@ -31,7 +31,7 @@ afterEach(() => {
 
 describe('server static builds', () => {
   describe('buildStaticFiles', () => {
-    it('runs preload from initial state for each input and deep-merges by path', async () => {
+    it('runs load from initial state for each input and deep-merges by path', async () => {
       await expect(buildStaticFiles([awaitedPreloadValueServiceDef])).resolves.toEqual({
         'test/awaited-preload-value.json': {
           'entry-a': 'preloaded',
@@ -60,7 +60,7 @@ describe('server static builds', () => {
       expect(Object.keys(store)).toHaveLength(0);
     });
 
-    it('uses the shared registry when static preload and static inputs resolve another service', async () => {
+    it('uses the shared registry when static load and static inputs resolve another service', async () => {
       const sourceService = registerService(mutableRecordLookupServiceDef);
       await sourceService.commands.assignRecordField({
         entryId: 'entry-a',
@@ -70,15 +70,15 @@ describe('server static builds', () => {
 
       const staticLookupServiceDef = defineService({
         id: 'test/static-build-service-lookup',
-        description: 'Copies state from another registered service during static preload.',
+        description: 'Copies state from another registered service during static load.',
         initialState: { value: null as string | null },
         queries: {
           getValue: {
-            description: 'Returns the value copied during static preload.',
+            description: 'Returns the value copied during static load.',
             input: v.object({ build: v.literal('once') }),
             output: v.nullable(v.string()),
-            handler: async (_input, ctx) => ctx.self.state.value,
-            preload: async (_input, ctx) => {
+            handler: (_input, ctx) => ctx.self.state.value,
+            load: async (_input, ctx) => {
               await ctx.self.commands.copyValue(undefined);
             },
             static: {
@@ -92,10 +92,10 @@ describe('server static builds', () => {
             input: v.undefined(),
             output: v.undefined(),
             handler: async (_input, ctx) => {
-              const source = await ctx.getService('test/mutable-record-lookup');
-              const record = (await source.queries.getRecordFields({
+              const source = ctx.getService('test/mutable-record-lookup');
+              const record = source.queries.getRecordFields({
                 entryId: 'entry-a',
-              })) as Record<string, string> | null;
+              }) as Record<string, string> | null;
 
               ctx.self.setState((draft) => {
                 draft.value = record?.marker ?? null;
@@ -116,15 +116,15 @@ describe('server static builds', () => {
       const readyEntryIds: string[] = [];
       const parallelSourceServiceDef = defineService({
         id: 'test/parallel-static-input-source',
-        description: 'Publishes static input ids once its own preload task starts running.',
+        description: 'Publishes static input ids once its own load task starts running.',
         initialState: { built: false },
         queries: {
           getReadyEntryIds: {
             description: 'Returns the entry ids published by the source static build task.',
             input: v.undefined(),
             output: v.array(v.string()),
-            handler: async () => readyEntryIds,
-            preload: async (_input, ctx) => {
+            handler: () => readyEntryIds,
+            load: async (_input, ctx) => {
               await Promise.resolve();
               await ctx.self.commands.publishReadyEntryIds(undefined);
             },
@@ -155,23 +155,25 @@ describe('server static builds', () => {
       const parallelLookupServiceDef = defineService({
         id: 'test/parallel-static-input-consumer',
         description:
-          'Waits for another service query to publish its static inputs before preloading.',
+          'Waits for another service query to publish its static inputs before running load.',
         initialState: { value: null as string | null },
         queries: {
           getValue: {
             description: 'Stores one value for each id discovered through another service query.',
             input: v.object({ entryId: v.string() }),
             output: v.nullable(v.string()),
-            handler: async (_input, ctx) => ctx.self.state.value,
-            preload: async (input, ctx) => {
+            handler: (_input, ctx) => ctx.self.state.value,
+            load: async (input, ctx) => {
               await ctx.self.commands.setValue(input);
             },
             static: {
               inputs: async (ctx) => {
-                const source = await ctx.getService('test/parallel-static-input-source');
+                const source = ctx.getService('test/parallel-static-input-source');
 
                 for (let attempt = 0; attempt < 5; attempt += 1) {
-                  const entryIds = (await source.queries.getReadyEntryIds(undefined)) as string[];
+                  const entryIds = (await source.queries.getReadyEntryIds.loaded(
+                    undefined
+                  )) as string[];
 
                   if (entryIds.length > 0) {
                     return entryIds.map((entryId) => ({ entryId }));
@@ -228,8 +230,8 @@ describe('server static builds', () => {
               value: v.string(),
             }),
             output: v.nullable(v.string()),
-            handler: async (_input, ctx) => ctx.self.state.value,
-            preload: async (input, ctx) => {
+            handler: (_input, ctx) => ctx.self.state.value,
+            load: async (input, ctx) => {
               await ctx.self.commands.setValue(input);
             },
             static: {
@@ -244,8 +246,7 @@ describe('server static builds', () => {
         },
         commands: {
           setValue: {
-            description:
-              'Stores one value while preserving the custom path from the preload input.',
+            description: 'Stores one value while preserving the custom path from the load input.',
             input: v.object({
               path: v.string(),
               value: v.string(),
@@ -279,8 +280,8 @@ describe('server static builds', () => {
             description: 'Uses an invalid static path.',
             input: v.object({ build: v.literal('once') }),
             output: v.nullable(v.string()),
-            handler: async (_input, ctx) => ctx.self.state.value,
-            preload: async (_input, ctx) => {
+            handler: (_input, ctx) => ctx.self.state.value,
+            load: async (_input, ctx) => {
               await ctx.self.commands.setValue(undefined);
             },
             static: {
@@ -329,8 +330,8 @@ describe('server static builds', () => {
               value: v.string(),
             }),
             output: v.nullable(v.string()),
-            handler: async (_input, ctx) => ctx.self.state.value,
-            preload: async (input, ctx) => {
+            handler: (_input, ctx) => ctx.self.state.value,
+            load: async (input, ctx) => {
               await ctx.self.commands.setValue(input);
             },
             static: {

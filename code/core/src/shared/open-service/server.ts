@@ -38,10 +38,11 @@ export {
 };
 
 /**
- * Builds serialized static-state snapshots for preload-enabled queries in the server runtime.
+ * Builds serialized static-state snapshots for `load`-enabled queries in the server runtime.
  *
- * Each static input runs against a fresh service runtime so one preload path cannot leak state
- * into another path's snapshot.
+ * Each static input runs against a fresh service runtime so one load path cannot leak state into
+ * another path's snapshot. The runtime's `runLoadOnce` helper drives the load to completion
+ * (including transitively triggered self-queries) before the resulting state is captured.
  */
 export async function buildStaticFiles(services: RuntimeServiceDefinition[]): Promise<StaticStore> {
   const store: StaticStore = {};
@@ -52,8 +53,8 @@ export async function buildStaticFiles(services: RuntimeServiceDefinition[]): Pr
       string,
       RuntimeQueryDefinition,
     ][]) {
-      const { preload, static: staticConfig } = query;
-      if (!preload || !staticConfig?.inputs) {
+      const { load, static: staticConfig } = query;
+      if (!load || !staticConfig?.inputs) {
         continue;
       }
 
@@ -64,7 +65,7 @@ export async function buildStaticFiles(services: RuntimeServiceDefinition[]): Pr
             { registryApi: serviceRegistryApi },
             structuredClone(service.initialState)
           );
-          const inputs = await staticConfig.inputs(inputsRuntime.queryCtx);
+          const inputs = await staticConfig.inputs(inputsRuntime.loadCtxForStatic);
 
           return Promise.all(
             inputs.map(async (input) => {
@@ -86,10 +87,10 @@ export async function buildStaticFiles(services: RuntimeServiceDefinition[]): Pr
                 queryName,
                 query,
                 validatedInput,
-                buildRuntime.queryCtx
+                buildRuntime.loadCtxForStatic
               );
 
-              await preload(validatedInput, buildRuntime.queryCtx);
+              await buildRuntime.runLoadOnce(queryName, validatedInput);
 
               return { path, state: buildRuntime.stateSignal() };
             })

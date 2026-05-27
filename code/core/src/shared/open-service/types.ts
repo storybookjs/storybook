@@ -1,6 +1,6 @@
 import type { StandardSchemaV1 } from '@standard-schema/spec';
 
-/** File map used by static preloading. Each key represents one serialized state snapshot. */
+/** File map used by static snapshot building. Each key represents one serialized state snapshot. */
 export type StaticStore = Record<string, unknown>;
 
 /** Generic Standard Schema constraint used across open-service definitions. */
@@ -27,7 +27,7 @@ export type InferSchemaOutput<TSchema extends AnySchema> = StandardSchemaV1.Infe
  * `defineService()` infers one input-schema map and one output-schema map per operation family
  * (queries and commands). Keeping those maps separate gives TypeScript a place to correlate the
  * `input` and `output` properties of each inline object before it contextually types sibling
- * callbacks like `handler`, `preload`, and `static.path`.
+ * callbacks like `handler`, `load`, and `static.path`.
  */
 export type OperationInputSchemas = Record<string, AnySchema>;
 
@@ -70,32 +70,58 @@ export type CommandFunctions<
 /**
  * Public runtime shape of a query.
  *
- * Queries are always async and can also be subscribed to for reactive updates.
+ * The primary call returns the handler result synchronously. Calling it also triggers `load` in
+ * the background, deduped while another load for the same input is already in flight. Use
+ * `.loaded(input)` when the caller wants to await the full load (including transitive dependencies)
+ * before reading. Use `.subscribe(input, callback)` to receive updates whenever tracked state
+ * changes; subscribers receive their first value asynchronously.
  */
 export type Query<TInput, TOutput> = {
-  (input: TInput): Promise<TOutput>;
+  (input: TInput): TOutput;
+  loaded(input: TInput): Promise<TOutput>;
   subscribe(input: TInput, callback: (value: TOutput) => void): () => void;
 };
 
-/** Read-only service handle exposed to query handlers. */
-export type ReadonlySelf<
+/**
+ * Read-only service handle exposed to query handlers.
+ *
+ * Query handlers are strict readers: they can read state and call sibling queries, but they cannot
+ * mutate state and cannot invoke commands. Mutations belong in commands; load-side preparation
+ * belongs in `load`.
+ */
+export type QuerySelf<TState = unknown> = {
+  readonly state: TState;
+  queries: Record<string, Query<unknown, unknown>>;
+};
+
+/**
+ * Load handle exposed to `load` functions.
+ *
+ * `load` may read state and queries, and may invoke declared commands to mutate state. It does
+ * not receive `setState` directly — all writes must flow through commands so authors keep one
+ * documented mutation surface per service.
+ */
+export type LoadSelf<
   TState = unknown,
   TCommandInputSchemas extends OperationInputSchemas = OperationInputSchemas,
   TCommandOutputSchemas extends MatchingOutputSchemas<TCommandInputSchemas> =
     MatchingOutputSchemas<TCommandInputSchemas>,
-> = {
-  readonly state: TState;
-  queries: Record<string, Query<unknown, unknown>>;
+> = QuerySelf<TState> & {
   commands: CommandFunctions<TCommandInputSchemas, TCommandOutputSchemas>;
 };
 
-/** Mutable service handle exposed to command handlers. */
-export type WritableSelf<
+/**
+ * Mutable service handle exposed to command handlers.
+ *
+ * Commands receive both `setState` for direct draft mutation and `commands` so one command can
+ * delegate to another within the same service.
+ */
+export type CommandSelf<
   TState = unknown,
   TCommandInputSchemas extends OperationInputSchemas = OperationInputSchemas,
   TCommandOutputSchemas extends MatchingOutputSchemas<TCommandInputSchemas> =
     MatchingOutputSchemas<TCommandInputSchemas>,
-> = ReadonlySelf<TState, TCommandInputSchemas, TCommandOutputSchemas> & {
+> = LoadSelf<TState, TCommandInputSchemas, TCommandOutputSchemas> & {
   setState(mutate: (draft: TState) => void): void;
 };
 
@@ -123,20 +149,26 @@ export type ServiceDescriptor = {
 export interface ServiceRegistryApi {
   listServices(): Promise<ServiceSummary[]>;
   describeService(serviceId: ServiceId): Promise<ServiceDescriptor>;
-  getService(serviceId: ServiceId): Promise<RuntimeService>;
+  getService(serviceId: ServiceId): RuntimeService;
 }
 
 export type RuntimeService = ServiceInstance<unknown, Queries<unknown>, Commands<unknown>> &
   ServiceRegistryApi;
 
-/** Context passed to query handlers and static preload helpers. */
-export type QueryCtx<
+/** Context passed to query handlers. */
+export type QueryCtx<TState> = {
+  self: QuerySelf<TState>;
+  getService: ServiceRegistryApi['getService'];
+};
+
+/** Context passed to `load` functions and static-input enumerators. */
+export type LoadCtx<
   TState,
   TCommandInputSchemas extends OperationInputSchemas = OperationInputSchemas,
   TCommandOutputSchemas extends MatchingOutputSchemas<TCommandInputSchemas> =
     MatchingOutputSchemas<TCommandInputSchemas>,
 > = {
-  self: ReadonlySelf<TState, TCommandInputSchemas, TCommandOutputSchemas>;
+  self: LoadSelf<TState, TCommandInputSchemas, TCommandOutputSchemas>;
   getService: ServiceRegistryApi['getService'];
 };
 
@@ -147,12 +179,12 @@ export type CommandCtx<
   TCommandOutputSchemas extends MatchingOutputSchemas<TCommandInputSchemas> =
     MatchingOutputSchemas<TCommandInputSchemas>,
 > = {
-  self: WritableSelf<TState, TCommandInputSchemas, TCommandOutputSchemas>;
+  self: CommandSelf<TState, TCommandInputSchemas, TCommandOutputSchemas>;
   getService: ServiceRegistryApi['getService'];
 };
 
 /**
- * Optional static preload metadata for a query.
+ * Optional static metadata for a query.
  *
  * `inputs()` enumerates the raw caller-facing inputs that should be prebuilt, while `path()` can
  * customize which serialized state file receives the resulting state snapshot.
@@ -166,11 +198,11 @@ export type QueryStaticDefinition<
     MatchingOutputSchemas<TCommandInputSchemas>,
 > = {
   path?: BivariantCallback<
-    [input: TParsedInput, ctx: QueryCtx<TState, TCommandInputSchemas, TCommandOutputSchemas>],
+    [input: TParsedInput, ctx: LoadCtx<TState, TCommandInputSchemas, TCommandOutputSchemas>],
     string
   >;
   inputs: BivariantCallback<
-    [ctx: QueryCtx<TState, TCommandInputSchemas, TCommandOutputSchemas>],
+    [ctx: LoadCtx<TState, TCommandInputSchemas, TCommandOutputSchemas>],
     TInput[] | Promise<TInput[]>
   >;
 };
@@ -178,8 +210,9 @@ export type QueryStaticDefinition<
 /**
  * Declarative definition for one query.
  *
- * Queries validate caller input, optionally preload state, run against a read-only context, and
- * validate the resolved output before it is returned or emitted.
+ * Queries validate caller input synchronously, run a synchronous read-only handler, and validate
+ * the resolved output. The optional `load` hook is fired in the background on each query call
+ * (deduped while in flight) so subscribers and `.loaded()` callers see fully populated state.
  */
 export type QueryDefinition<
   TState,
@@ -193,16 +226,13 @@ export type QueryDefinition<
   input: TInputSchema;
   output: TOutputSchema;
   handler?: BivariantCallback<
-    [
-      input: InferSchemaOutput<TInputSchema>,
-      ctx: QueryCtx<TState, TCommandInputSchemas, TCommandOutputSchemas>,
-    ],
-    InferSchemaInput<TOutputSchema> | Promise<InferSchemaInput<TOutputSchema>>
+    [input: InferSchemaOutput<TInputSchema>, ctx: QueryCtx<TState>],
+    InferSchemaInput<TOutputSchema>
   >;
-  preload?: BivariantCallback<
+  load?: BivariantCallback<
     [
       input: InferSchemaOutput<TInputSchema>,
-      ctx: QueryCtx<TState, TCommandInputSchemas, TCommandOutputSchemas>,
+      ctx: LoadCtx<TState, TCommandInputSchemas, TCommandOutputSchemas>,
     ],
     void | Promise<void>
   >;
@@ -239,8 +269,8 @@ export type AnyQueryDefinition<TState> = {
   description?: string;
   input: AnySchema;
   output: AnySchema;
-  handler?: BivariantCallback<[input: unknown, ctx: QueryCtx<TState>], unknown | Promise<unknown>>;
-  preload?: BivariantCallback<[input: unknown, ctx: QueryCtx<TState>], void | Promise<void>>;
+  handler?: BivariantCallback<[input: unknown, ctx: QueryCtx<TState>], unknown>;
+  load?: BivariantCallback<[input: unknown, ctx: LoadCtx<TState>], void | Promise<void>>;
   static?: QueryStaticDefinition<TState, unknown, unknown>;
 };
 
@@ -301,7 +331,7 @@ export type ServiceInstance<
 
 export type ServiceQueryRegistration<TState, TQuery extends AnyQueryDefinition<TState>> = Pick<
   TQuery,
-  'handler' | 'preload' | 'static'
+  'handler' | 'load' | 'static'
 >;
 
 export type ServiceCommandRegistration<

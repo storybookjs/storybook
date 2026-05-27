@@ -26,7 +26,7 @@ describe('service registration', () => {
   it('registers services globally and exposes summaries and descriptors by id', async () => {
     const service = registerService(mutableRecordLookupServiceDef);
 
-    await expect(getService('test/mutable-record-lookup')).resolves.toBe(service);
+    expect(getService('test/mutable-record-lookup')).toBe(service);
     expect(getRegisteredServices()).toHaveLength(1);
     await expect(listServices()).resolves.toEqual([
       {
@@ -76,12 +76,10 @@ describe('service registration', () => {
     }
   });
 
-  it('throws a Storybook error when resolving a missing registered service id', async () => {
-    await expect(getService('test/missing-service')).rejects.toMatchObject({
-      fromStorybook: true,
-      code: 7,
-      message: 'No registered service with id "test/missing-service" exists in this environment.',
-    });
+  it('throws a Storybook error when resolving a missing registered service id', () => {
+    expect(() => getService('test/missing-service')).toThrow(
+      'No registered service with id "test/missing-service" exists in this environment.'
+    );
   });
 
   it('throws a Storybook error when a registered query or command is missing its handler', async () => {
@@ -107,12 +105,9 @@ describe('service registration', () => {
       })
     );
 
-    await expect(service.queries.getValue(undefined)).rejects.toMatchObject({
-      fromStorybook: true,
-      code: 8,
-      message:
-        'Query "test/unimplemented-operations.getValue" is not implemented for this environment.',
-    });
+    expect(() => service.queries.getValue(undefined)).toThrow(
+      'Query "test/unimplemented-operations.getValue" is not implemented for this environment.'
+    );
     await expect(service.commands.run(undefined)).rejects.toMatchObject({
       fromStorybook: true,
       code: 8,
@@ -131,11 +126,11 @@ describe('service registration', () => {
           description: 'Returns whether the lookup service reports marker=match for an entry.',
           input: entryIdInputSchema,
           output: v.boolean(),
-          handler: async (input, ctx) => {
-            const sourceService = await ctx.getService('test/mutable-record-lookup');
-            const record = (await sourceService.queries.getRecordFields({
+          handler: (input, ctx) => {
+            const sourceService = ctx.getService('test/mutable-record-lookup');
+            const record = sourceService.queries.getRecordFields({
               entryId: input.entryId,
-            })) as Record<string, string> | null;
+            }) as Record<string, string> | null;
 
             return record?.marker === 'match';
           },
@@ -147,7 +142,7 @@ describe('service registration', () => {
     const sourceService = registerService(mutableRecordLookupServiceDef);
     const derivedService = registerService(derivedServiceDef);
 
-    await expect(derivedService.queries.isEntryMarked({ entryId: 'entry-a' })).resolves.toBe(false);
+    expect(derivedService.queries.isEntryMarked({ entryId: 'entry-a' })).toBe(false);
 
     await sourceService.commands.assignRecordField({
       entryId: 'entry-a',
@@ -155,7 +150,7 @@ describe('service registration', () => {
       fieldValue: 'match',
     });
 
-    await expect(derivedService.queries.isEntryMarked({ entryId: 'entry-a' })).resolves.toBe(true);
+    expect(derivedService.queries.isEntryMarked({ entryId: 'entry-a' })).toBe(true);
   });
 
   it('allows server registration to provide handlers that are omitted from the definition', async () => {
@@ -197,13 +192,13 @@ describe('service registration', () => {
         },
         assignFromLookup: {
           handler: async (input, ctx) => {
-            const lookup = await ctx.getService('test/mutable-record-lookup');
+            const lookup = ctx.getService('test/mutable-record-lookup');
 
             await lookup.commands.assignRecordField(input);
 
-            const record = (await lookup.queries.getRecordFields({
+            const record = lookup.queries.getRecordFields({
               entryId: input.entryId,
-            })) as Record<string, string> | null;
+            }) as Record<string, string> | null;
             ctx.self.setState((draft) => {
               draft.count = record?.marker === input.fieldValue ? 1 : 0;
             });
@@ -213,19 +208,19 @@ describe('service registration', () => {
     });
 
     await service.commands.increment(undefined);
-    await expect(service.queries.getCount(undefined)).resolves.toBe(1);
+    expect(service.queries.getCount(undefined)).toBe(1);
 
     await service.commands.assignFromLookup({
       entryId: 'entry-a',
       fieldKey: 'marker',
       fieldValue: 'match',
     });
-    await expect(service.queries.getCount(undefined)).resolves.toBe(1);
+    expect(service.queries.getCount(undefined)).toBe(1);
 
-    await expect(
-      (await getService('test/mutable-record-lookup')).queries.getRecordFields({
+    expect(
+      getService('test/mutable-record-lookup').queries.getRecordFields({
         entryId: 'entry-a',
       })
-    ).resolves.toEqual({ marker: 'match' });
+    ).toEqual({ marker: 'match' });
   });
 });

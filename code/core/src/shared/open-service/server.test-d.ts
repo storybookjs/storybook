@@ -37,17 +37,18 @@ const registeredService = registerService(registrationOnlyServiceDef, {
       handler: (input, ctx) => {
         expectTypeOf(input).toEqualTypeOf<{ entryId: string }>();
         expectTypeOf(ctx.self.state.valuesById[input.entryId]).toEqualTypeOf<string | undefined>();
-        expectTypeOf(ctx.self.commands.increment).parameter(0).toEqualTypeOf<number>();
-        expectTypeOf(ctx.self.commands.preloadValue).parameter(0).toEqualTypeOf<{
-          entryId: string;
-        }>();
+        // @ts-expect-error query handlers do not receive commands on self
+        void ctx.self.commands;
         expectTypeOf(ctx.getService).parameter(0).toEqualTypeOf<string>();
-        expectTypeOf(ctx.getService).returns.toEqualTypeOf<Promise<RuntimeService>>();
+        expectTypeOf(ctx.getService).returns.toEqualTypeOf<RuntimeService>();
 
         return ctx.self.state.valuesById[input.entryId] ?? null;
       },
-      preload: async (input, ctx) => {
+      load: async (input, ctx) => {
         expectTypeOf(input).toEqualTypeOf<{ entryId: string }>();
+        expectTypeOf(ctx.self.commands.preloadValue).parameter(0).toEqualTypeOf<{
+          entryId: string;
+        }>();
         await ctx.self.commands.preloadValue(input);
       },
       static: {
@@ -84,7 +85,8 @@ describe('open-service registration types', () => {
     expectTypeOf(registeredService.queries.getValue).parameter(0).toEqualTypeOf<{
       entryId: string;
     }>();
-    expectTypeOf(registeredService.queries.getValue).returns.toEqualTypeOf<
+    expectTypeOf(registeredService.queries.getValue).returns.toEqualTypeOf<string | null>();
+    expectTypeOf(registeredService.queries.getValue.loaded).returns.toEqualTypeOf<
       Promise<string | null>
     >();
 
@@ -95,7 +97,7 @@ describe('open-service registration types', () => {
       entryId: string;
     }>();
     expectTypeOf(registeredService.getService).parameter(0).toEqualTypeOf<string>();
-    expectTypeOf(registeredService.getService).returns.toEqualTypeOf<Promise<RuntimeService>>();
+    expectTypeOf(registeredService.getService).returns.toEqualTypeOf<RuntimeService>();
   });
 
   it('rejects invalid registration overrides', () => {

@@ -13,7 +13,7 @@ export const assignEntryFieldInputSchema = v.object({
 });
 /** Shared schema for nullable record payloads returned from lookup queries. */
 export const recordFieldsOutputSchema = v.nullable(v.record(v.string(), v.string()));
-/** Shared schema for nullable string payloads used by preload-oriented fixtures. */
+/** Shared schema for nullable string payloads used by load-oriented fixtures. */
 export const preloadedValueOutputSchema = v.nullable(v.string());
 export const noInputSchema = v.undefined();
 export const voidOutputSchema = v.void();
@@ -56,18 +56,18 @@ export const mutableRecordLookupServiceDef = defineService({
 
 export type PreloadedValueState = Record<string, string | undefined>;
 
-/** Service fixture that awaits preload before resolving a query. */
+/** Service fixture that loads state from a command before returning it. */
 export const awaitedPreloadValueServiceDef = defineService({
   id: 'test/awaited-preload-value',
-  description: 'Preloads a value on demand and awaits preload before returning it.',
+  description: 'Loads a value on demand via a command and reads it back from state.',
   initialState: {} as PreloadedValueState,
   queries: {
     getPreloadedValue: {
-      description: 'Returns the value for an entry and preloads it first when missing.',
+      description: 'Returns the value for an entry; load triggers a command to populate state.',
       input: entryIdInputSchema,
       output: preloadedValueOutputSchema,
       handler: (input, ctx) => ctx.self.state[input.entryId] ?? null,
-      preload: (input, ctx) => {
+      load: (input, ctx) => {
         if (!(input.entryId in ctx.self.state)) {
           return ctx.self.commands.preloadValue(input).then(() => undefined);
         }
@@ -79,7 +79,7 @@ export const awaitedPreloadValueServiceDef = defineService({
   },
   commands: {
     preloadValue: {
-      description: 'Preloads a deterministic value for one entry id.',
+      description: 'Loads a deterministic value for one entry id.',
       input: entryIdInputSchema,
       output: voidOutputSchema,
       handler: async (input, ctx) => {
@@ -92,18 +92,19 @@ export const awaitedPreloadValueServiceDef = defineService({
   },
 });
 
-/** Service fixture that starts preload work in the background and returns immediately. */
+/** Service fixture that starts load work in the background and returns immediately. */
 export const fireAndForgetPreloadValueServiceDef = defineService({
   id: 'test/fire-and-forget-preload-value',
-  description: 'Preloads a value in the background without awaiting preload.',
+  description: 'Loads a value in the background without awaiting it.',
   initialState: {} as PreloadedValueState,
   queries: {
     getPreloadedValue: {
-      description: 'Returns the current value and triggers a background preload when missing.',
+      description:
+        'Returns the current value; load fires a command in the background when missing.',
       input: entryIdInputSchema,
       output: preloadedValueOutputSchema,
       handler: (input, ctx) => ctx.self.state[input.entryId] ?? null,
-      preload: (input, ctx) => {
+      load: (input, ctx) => {
         if (!(input.entryId in ctx.self.state)) {
           void ctx.self.commands.preloadValue(input);
         }
@@ -112,7 +113,7 @@ export const fireAndForgetPreloadValueServiceDef = defineService({
   },
   commands: {
     preloadValue: {
-      description: 'Preloads a deterministic value for one entry id.',
+      description: 'Loads a deterministic value for one entry id.',
       input: entryIdInputSchema,
       output: voidOutputSchema,
       handler: async (input, ctx) => {
@@ -135,11 +136,11 @@ export function createSharedStaticFileServiceDef() {
     initialState: {} as SharedStaticFileState,
     queries: {
       getLeftValue: {
-        description: 'Preloads the left value into the shared file state.',
+        description: 'Loads the left value into the shared file state.',
         input: noInputSchema,
         output: preloadedValueOutputSchema,
         handler: (_input, ctx) => ctx.self.state.left ?? null,
-        preload: async (_input, ctx) => {
+        load: async (_input, ctx) => {
           await ctx.self.commands.writeLeftValue(undefined);
         },
         static: {
@@ -148,11 +149,11 @@ export function createSharedStaticFileServiceDef() {
         },
       },
       getRightValue: {
-        description: 'Preloads the right value into the shared file state.',
+        description: 'Loads the right value into the shared file state.',
         input: noInputSchema,
         output: preloadedValueOutputSchema,
         handler: (_input, ctx) => ctx.self.state.right ?? null,
-        preload: async (_input, ctx) => {
+        load: async (_input, ctx) => {
           await ctx.self.commands.writeRightValue(undefined);
         },
         static: {
@@ -205,8 +206,8 @@ export function createDerivedBooleanFromChildQueryServiceDef(
         description: 'Returns whether the child query reports marker=match for an entry.',
         input: entryIdInputSchema,
         output: booleanOutputSchema,
-        handler: async (input) => {
-          const record = await sourceService.queries.getRecordFields({
+        handler: (input) => {
+          const record = sourceService.queries.getRecordFields({
             entryId: input.entryId,
           });
 
@@ -254,19 +255,19 @@ export function createInvalidCommandOutputServiceDef() {
   });
 }
 
-/** Creates a fixture that intentionally yields invalid static preload inputs. */
+/** Creates a fixture that intentionally yields invalid static load inputs. */
 export function createInvalidStaticInputServiceDef() {
   return defineService({
     id: 'test/invalid-static-input',
-    description: 'Provides an invalid static preload input on purpose.',
+    description: 'Provides an invalid static load input on purpose.',
     initialState: {} as PreloadedValueState,
     queries: {
       getPreloadedValue: {
-        description: 'Validates static inputs before preload runs.',
+        description: 'Validates static inputs before load runs.',
         input: entryIdInputSchema,
         output: preloadedValueOutputSchema,
         handler: (input, ctx) => ctx.self.state[input.entryId] ?? null,
-        preload: async () => {},
+        load: async () => {},
         static: {
           inputs: async () => [{} as unknown as { entryId: string }],
         },

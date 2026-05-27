@@ -99,7 +99,7 @@ function summarizeDescriptor(descriptor: ServiceDescriptor): ServiceSummary {
  * Applies optional server-side overrides to an authored service definition.
  *
  * Registration overrides are shallow merges over the authored definition. That lets the server
- * swap handlers, preload hooks, or static config per operation while the original schema contract
+ * swap handlers, load hooks, or static config per operation while the original schema contract
  * and operation names remain the source of truth.
  */
 function applyRegistration<
@@ -188,7 +188,7 @@ export function registerService<
 /**
  * Returns the authored definitions currently registered in this server process.
  *
- * Static build code uses this to discover which services contribute preload snapshots.
+ * Static build code uses this to discover which services contribute static snapshots.
  */
 export function getRegisteredServices(): AnyServiceDefinition[] {
   return Array.from(getRegistry().values(), ({ definition }) => definition);
@@ -223,9 +223,10 @@ export async function describeService(serviceId: ServiceId): Promise<ServiceDesc
  * Resolves a registered runtime service by id from the current server process.
  *
  * Query and command contexts delegate cross-service calls through this lookup so one service can
- * reuse another service's runtime contract.
+ * reuse another service's runtime contract. Synchronous because callers need it available inside
+ * sync query handlers.
  */
-export async function getService(serviceId: ServiceId): Promise<RuntimeService> {
+export function getService(serviceId: ServiceId): RuntimeService {
   const entry = getRegistry().get(serviceId);
 
   if (!entry) {

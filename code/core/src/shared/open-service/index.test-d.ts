@@ -25,9 +25,8 @@ const openServiceDef = defineService({
       handler: (input, ctx) => {
         expectTypeOf(input).toEqualTypeOf<undefined>();
         expectTypeOf(ctx.self.state).toEqualTypeOf<OpenServiceState>();
-        expectTypeOf(ctx.self.commands.increment).parameter(0).toEqualTypeOf<number>();
-        expectTypeOf(ctx.self.commands.increment).returns.toEqualTypeOf<Promise<void>>();
-
+        // @ts-expect-error query handlers do not receive commands on self
+        void ctx.self.commands;
         // @ts-expect-error queries only receive a read-only self handle
         ctx.self.setState(() => {});
 
@@ -39,19 +38,23 @@ const openServiceDef = defineService({
       output: v.nullable(v.string()),
       handler: (input, ctx) => {
         expectTypeOf(input).toEqualTypeOf<{ entryId: string }>();
+        // @ts-expect-error query handlers do not receive commands on self
+        void ctx.self.commands;
+
+        return ctx.self.state.valuesById[input.entryId] ?? null;
+      },
+      load: async (input, ctx) => {
+        expectTypeOf(input).toEqualTypeOf<{ entryId: string }>();
         expectTypeOf(ctx.self.commands.preloadValue).parameter(0).toEqualTypeOf<{
           entryId: string;
         }>();
         expectTypeOf(ctx.self.commands.preloadValue).returns.toEqualTypeOf<Promise<void>>();
-
-        return ctx.self.state.valuesById[input.entryId] ?? null;
-      },
-      preload: async (input, ctx) => {
-        expectTypeOf(input).toEqualTypeOf<{ entryId: string }>();
         await ctx.self.commands.preloadValue(input);
 
         // @ts-expect-error preloadValue requires an entryId object
         await ctx.self.commands.preloadValue({ entryId: 1 });
+        // @ts-expect-error load contexts do not receive setState directly
+        ctx.self.setState(() => {});
       },
       static: {
         path: (input, ctx) => {
@@ -100,12 +103,16 @@ const openService = registerService(openServiceDef);
 describe('open-service type inference', () => {
   it('infers runtime query and command signatures from inline schemas', () => {
     expectTypeOf(openService.queries.getCount).parameter(0).toEqualTypeOf<undefined>();
-    expectTypeOf(openService.queries.getCount).returns.toEqualTypeOf<Promise<number>>();
+    expectTypeOf(openService.queries.getCount).returns.toEqualTypeOf<number>();
+    expectTypeOf(openService.queries.getCount.loaded).returns.toEqualTypeOf<Promise<number>>();
 
     expectTypeOf(openService.queries.getValue).parameter(0).toEqualTypeOf<{
       entryId: string;
     }>();
-    expectTypeOf(openService.queries.getValue).returns.toEqualTypeOf<Promise<string | null>>();
+    expectTypeOf(openService.queries.getValue).returns.toEqualTypeOf<string | null>();
+    expectTypeOf(openService.queries.getValue.loaded).returns.toEqualTypeOf<
+      Promise<string | null>
+    >();
 
     expectTypeOf(openService.commands.increment).parameter(0).toEqualTypeOf<number>();
     expectTypeOf(openService.commands.increment).returns.toEqualTypeOf<Promise<void>>();

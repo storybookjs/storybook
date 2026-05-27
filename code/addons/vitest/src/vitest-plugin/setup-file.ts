@@ -24,7 +24,10 @@ const transport = { setHandler: vi.fn(), send: vi.fn() };
 globalThis.__STORYBOOK_ADDONS_CHANNEL__ ??= new Channel({ transport });
 
 const importBrowserCommands = async (moduleId: string) =>
-  import(/* @vite-ignore */ moduleId).then((module) => module.commands);
+  import(moduleId).then((module) => module.commands);
+
+const importVitest3BrowserCommands = async () =>
+  import('@vitest/browser/context').then((module) => module.commands);
 
 export const modifyErrorMessage = ({ task }: { task: Task }) => {
   const meta = task.meta;
@@ -47,7 +50,7 @@ export const resetMousePositionBeforeTests = async () => {
   try {
     const browserCommands =
       vitestVersion && vitestVersion.startsWith('3')
-        ? await importBrowserCommands('@vitest/browser/context')
+        ? await importVitest3BrowserCommands()
         : await importBrowserCommands('vitest/browser');
 
     if ('resetMousePosition' in browserCommands && isFunction(browserCommands.resetMousePosition)) {
@@ -59,7 +62,7 @@ export const resetMousePositionBeforeTests = async () => {
     // When vitest/browser is not found, retry with the Vitest 3 context module
     if (error.message.includes("Cannot find module 'vitest/browser'")) {
       try {
-        const browserCommands = await importBrowserCommands('@vitest/browser/context');
+        const browserCommands = await importVitest3BrowserCommands();
         if (
           'resetMousePosition' in browserCommands &&
           isFunction(browserCommands.resetMousePosition)

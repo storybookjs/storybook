@@ -8,20 +8,20 @@ tab:
   title: Guide
 ---
 
-<If notRenderer={['react', 'preact', 'vue', 'svelte', 'web-components']}>
+<If notRenderer={['react', 'preact', 'vue', 'svelte', 'web-components', 'angular']}>
   
 <Callout variant="info">
 
-The Vitest addon is supported and recommended for [React](?renderer=react), [Preact](?renderer=preact), [Vue](?renderer=vue), [Svelte](?renderer=svelte), and [Web Components](?renderer=web-components) projects, which use the [Vite builder](../../../builders/vite.mdx) (or the [Next.js framework with Vite](../../../get-started/frameworks/nextjs-vite.mdx)).
+The Vitest addon is supported and recommended for [React](?renderer=react), [Preact](?renderer=preact), [Vue](?renderer=vue), [Svelte](?renderer=svelte), [Web Components](?renderer=web-components), and [Angular with Vite](?renderer=angular) projects, which use the [Vite builder](../../../builders/vite.mdx) (or the [Next.js framework with Vite](../../../get-started/frameworks/nextjs-vite.mdx)).
 
-If you are using a different renderer (such as Angular) or the Webpack builder, you can use the [Storybook test runner](../test-runner.mdx) to test your stories.
+If you are using the Webpack builder, you can use the [Storybook test runner](../test-runner.mdx) to test your stories.
 
 </Callout>
 
 </If>
 {/* End non-supported renderers */}
 
-<If renderer={['react', 'preact', 'vue', 'svelte', 'web-components']}>
+<If renderer={['react', 'preact', 'vue', 'svelte', 'web-components', 'angular']}>
 
 Storybook's Vitest addon allows you to test your components directly inside Storybook. On its own, it transforms your [stories](../../../writing-stories/index.mdx) into component tests, which test the rendering and behavior of your components in a real browser environment. It can also calculate project [coverage](../../test-coverage.mdx) provided by your stories.
 

@@ -1,0 +1,321 @@
+---
+title: Storybook for Angular with Vite
+hideRendererSelector: true
+sidebar:
+  order: 2
+  title: Angular (Vite)
+---
+
+Storybook for Angular with Vite is a [framework](../../contribute/framework.mdx) that makes it easy to develop and test UI components in isolation for [Angular](https://angular.io/) applications. It uses [Vite](https://vitejs.dev/) for faster builds, better performance, and [Storybook Testing](../../writing-tests/index.mdx) support. The Vite transform pipeline is powered by the [AnalogJS Vite plugin](https://analogjs.org).
+
+## Install
+
+To install Storybook in an existing Angular project, run this command in your project's root directory:
+
+<CodeSnippets path="create-command.md" variant="new-users" copyEvent="CreateCommandCopy" />
+
+You can then get started [writing stories](../whats-a-story.mdx), [running tests](../../writing-tests/index.mdx) and [documenting your components](../../writing-docs/index.mdx). For more control over the installation process, refer to the [installation guide](../install.mdx).
+
+### Requirements
+
+<GetStartedVersions
+  versions={[
+    {
+      name: 'Angular',
+      range: '21',
+      icon: '/images/logos/renderers/logo-angular.svg',
+    },
+    {
+      name: 'Vite',
+      range: '≥ 8',
+      icon: '/images/logos/builders/vite.svg',
+    },
+  ]}
+/>
+
+## Choose between Vite and Webpack
+
+`@storybook/angular-vite` is the Vite-based Angular framework. Use it when you want:
+
+- Faster builds and HMR than the Webpack-based [`@storybook/angular`](./angular.mdx) framework
+- Full support for the [Vitest addon](../../writing-tests/integrations/vitest-addon/index.mdx) and in-browser component testing
+- A simpler configuration without Angular builders or Babel
+
+Use [`@storybook/angular`](./angular.mdx) (Webpack 5) if your project requires Angular ≤ 20, needs Angular CLI builders, or has custom Webpack configurations you cannot migrate.
+
+## Run Storybook
+
+To run Storybook, use the standard Storybook CLI commands:
+
+<CodeSnippets path="storybook-run-dev.md" />
+
+To build Storybook, run:
+
+<CodeSnippets path="build-storybook-production-mode.md" />
+
+You will find the output in the configured `outputDir` (default is `storybook-static`).
+
+<Callout variant="info">
+
+Unlike `@storybook/angular`, this framework does **not** use Angular CLI builders. Storybook is started and built with the standard `storybook dev` and `storybook build` commands. You do not need to configure `angular.json`.
+
+</Callout>
+
+## Configure
+
+The authoring surface — stories, decorators, parameters, compodoc setup, `moduleMetadata`, and `applicationConfig` — is identical to `@storybook/angular`. Existing stories migrate without changes. The sections below describe every configuration option available in this framework.
+
+### Compodoc
+
+JSDoc comments above components, directives, and other parts of your Angular code are picked up by [Compodoc](https://compodoc.app/) and surfaced as [automatic documentation](../../writing-docs/autodocs.mdx) in Storybook. Comments above `@Input` and `@Output` members are especially useful because those are the elements Storybook exposes as [controls](../../essentials/controls.mdx).
+
+#### Automatic setup
+
+When installing Storybook via `npx storybook@latest init`, Compodoc can be set up automatically.
+
+#### Manual setup
+
+Install Compodoc:
+
+```sh
+npm install --save-dev @compodoc/compodoc
+```
+
+Then configure Storybook to run it by adding the following to the builder options in your `angular.json`, **or** pass the `compodoc` and `compodocArgs` builder options directly (see [Builder options](#builder-options) below).
+
+For `@storybook/angular-vite`, the most common approach is to run Compodoc as a pre-step in your build script and point `preview.ts` at the generated JSON:
+
+<CodeSnippets path="angular-add-compodoc.md" />
+
+### Application-wide providers
+
+If your component relies on application-wide providers — such as those set up by [`BrowserAnimationsModule`](https://angular.dev/api/platform-browser/animations/BrowserAnimationsModule) or any module using the `forRoot` pattern — apply the `applicationConfig` [decorator](../../writing-stories/decorators.mdx) to supply them via the [bootstrapApplication](https://angular.dev/api/platform-browser/bootstrapApplication) function.
+
+<CodeSnippets path="angular-application-providers-in-meta-and-story.md" />
+
+### Angular dependencies
+
+If your component has dependencies on other Angular directives and modules, supply them using the `moduleMetadata` [decorator](../../writing-stories/decorators.mdx) either for all stories of a component or for individual stories.
+
+```ts title="YourComponent.stories.ts"
+import { Meta, moduleMetadata, StoryObj } from '@storybook/angular-vite';
+
+import { YourComponent } from './your.component';
+
+const meta: Meta<YourComponent> = {
+  component: YourComponent,
+  decorators: [
+    moduleMetadata({
+      imports: [...],
+      declarations: [...],
+      providers: [...],
+    }),
+  ],
+};
+export default meta;
+type Story = StoryObj<YourComponent>;
+
+export const Base: Story = {};
+```
+
+### Zoneless change detection
+
+By default, this framework runs with zoneless change detection (`zoneless: true`). To opt into Zone.js-based change detection, set the `zoneless` option to `false` in your builder options:
+
+```jsonc title="Builder options in .storybook/main.ts"
+framework: {
+  name: '@storybook/angular-vite',
+  options: {
+    zoneless: false,
+  },
+},
+```
+
+When `zoneless` is `false`, `zone.js` is automatically imported at the start of the preview.
+
+### Global styles
+
+To include application-wide stylesheets (e.g. `src/styles.css`), pass them via the `styles` builder option:
+
+```jsonc title=".storybook/main.ts"
+framework: {
+  name: '@storybook/angular-vite',
+  options: {
+    // Paths are relative to the Angular workspace root
+    styles: ['src/styles.css', 'src/styles.scss'],
+  },
+},
+```
+
+### Sass / SCSS
+
+SCSS is supported out of the box via Vite's built-in preprocessor support. To configure Sass load paths and other preprocessor options, use `stylePreprocessorOptions`:
+
+```jsonc title=".storybook/main.ts"
+framework: {
+  name: '@storybook/angular-vite',
+  options: {
+    stylePreprocessorOptions: {
+      loadPaths: ['src/styles'],
+    },
+  },
+},
+```
+
+### Custom Vite configuration
+
+You can extend the Vite configuration used by Storybook in your `.storybook/main.ts` file via [`viteFinal`](../../api/main-config/main-config-vite-final.mdx):
+
+```ts title=".storybook/main.ts"
+import type { StorybookConfig } from '@storybook/angular-vite';
+
+const config: StorybookConfig = {
+  framework: '@storybook/angular-vite',
+  async viteFinal(config) {
+    const { mergeConfig } = await import('vite');
+    return mergeConfig(config, {
+      // your overrides
+    });
+  },
+};
+
+export default config;
+```
+
+### TypeScript paths
+
+Storybook reads your `tsconfig.json`'s `baseUrl` and `paths` settings and maps them into Vite's resolver, so TypeScript path aliases work without additional configuration.
+
+## Migration from `@storybook/angular`
+
+### Automatic migration
+
+Run the Storybook automigration command to update your project automatically:
+
+```bash
+npx storybook automigrate
+```
+
+### Manual migration
+
+First, install the framework:
+
+<CodeSnippets path="angular-vite-install.md" />
+
+Then, update your `.storybook/main.ts` to change the framework property:
+
+<CodeSnippets path="angular-vite-add-framework.md" />
+
+If your Storybook configuration contains Angular CLI builder targets in `angular.json` (the `storybook` and `build-storybook` architect entries), those are no longer needed and can be removed. Storybook for Angular with Vite uses the standard `storybook dev` and `storybook build` CLI commands.
+
+If your configuration contains a `webpackFinal` hook, migrate it to [`viteFinal`](../../api/main-config/main-config-vite-final.mdx). See the [Vite builder documentation](../../builders/vite.mdx#migrating-from-webpack) for guidance.
+
+## Vitest integration (preview)
+
+<Callout variant="info">
+
+The Vitest integration for `@storybook/angular-vite` is in **preview**. It works, but breaking changes may land based on feedback. Please [open an issue](https://github.com/storybookjs/storybook/issues) if you encounter problems.
+
+</Callout>
+
+Because `@storybook/angular-vite` is a Vite-based framework, it supports the [Vitest addon](../../writing-tests/integrations/vitest-addon/index.mdx) for running component tests directly inside Storybook.
+
+### Install the addon
+
+Run the following command to install and configure the addon automatically:
+
+<CodeSnippets path="addon-test-install.md" />
+
+This will install `@storybook/addon-vitest`, configure Vitest in browser mode using Playwright's Chromium browser, and set up the Vitest plugin.
+
+The setup process for `@storybook/angular-vite` is the same as for any other Vite-based framework — no Angular-specific steps are required. Refer to the [Vitest addon guide](../../writing-tests/integrations/vitest-addon/index.mdx) for the full configuration reference.
+
+### Known delta from `@storybook/angular`
+
+The [Storybook test runner](../../writing-tests/integrations/test-runner.mdx) works with `@storybook/angular` (Webpack). With `@storybook/angular-vite`, the Vitest addon is the recommended testing path.
+
+## FAQ
+
+### Does this framework support Angular CLI builders?
+
+No. `@storybook/angular-vite` uses the standard Storybook CLI. If you need Angular CLI builder integration (`ng run your-project:storybook`), use [`@storybook/angular`](./angular.mdx).
+
+### Can I use this with Angular 20 or earlier?
+
+No. This framework requires Angular 21. For earlier Angular versions, use [`@storybook/angular`](./angular.mdx).
+
+### Are my existing stories compatible?
+
+Yes. The story format (CSF), decorators (`moduleMetadata`, `applicationConfig`, `componentWrapperDecorator`), parameters, and compodoc integration are identical between `@storybook/angular` and `@storybook/angular-vite`. Copy your story files over without changes.
+
+### Should I use `@storybook/angular` or `@storybook/angular-vite`?
+
+Use `@storybook/angular-vite` if you are on Angular 21 and want faster builds and the Vitest addon. Use [`@storybook/angular`](./angular.mdx) if you need Angular 18–20, Angular CLI builder support, or existing Webpack-based tooling you cannot migrate.
+
+## API
+
+### Options
+
+You can pass an options object for additional configuration:
+
+<CodeSnippets path="angular-vite-framework-options.md" />
+
+The available options are:
+
+#### `builder`
+
+Type: `Record<string, any>`
+
+Configure options for the [framework's builder](../../api/main-config/main-config-framework.mdx#optionsbuilder). Available options can be found in the [Vite builder docs](../../builders/vite.mdx).
+
+#### `jit`
+
+Type: `boolean`
+
+Default: `true`
+
+Whether to use Angular's JIT compiler. Passed to the AnalogJS Vite plugin.
+
+#### `liveReload`
+
+Type: `boolean`
+
+Default: `false`
+
+Whether to enable live-reload in the AnalogJS Vite plugin.
+
+#### `tsconfig`
+
+Type: `string`
+
+Default: `./.storybook/tsconfig.json`
+
+Path to the TypeScript configuration file, relative to the workspace root. Passed to the AnalogJS Vite plugin.
+
+#### `inlineStylesExtension`
+
+Type: `string`
+
+Default: `'css'`
+
+File extension used for inline component styles. Passed to the AnalogJS Vite plugin.
+
+#### `zoneless`
+
+Type: `boolean`
+
+Default: `true`
+
+Use zoneless change detection. When `false`, `zone.js` is automatically imported before the preview.
+
+#### `styles`
+
+Type: `string[]`
+
+Global stylesheets to inject at the start of the preview. Paths are resolved relative to the Angular workspace root.
+
+#### `stylePreprocessorOptions`
+
+Type: `{ loadPaths?: string[]; sass?: { fatalDeprecations?: string[]; silenceDeprecations?: string[]; futureDeprecations?: string[] } }`
+
+Options forwarded to the Sass preprocessor.

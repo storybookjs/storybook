@@ -9,9 +9,14 @@ import {
   Output,
   Pipe,
   ɵReflectionCapabilities as ReflectionCapabilities,
-  VERSION,
 } from '@angular/core';
 import { BrowserModule } from '@angular/platform-browser';
+import {
+  BrowserAnimationsModule,
+  NoopAnimationsModule,
+  provideAnimations,
+  provideNoopAnimations,
+} from '@angular/platform-browser/animations';
 import { dedent } from 'ts-dedent';
 
 import type { NgModuleMetadata } from '../../types.ts';
@@ -37,8 +42,8 @@ export class PropertyExtractor implements NgModuleMetadata {
     private component?: any
   ) {}
 
-  // With the new way of mounting standalone components to the DOM via bootstrapApplication API,
-  // we should now pass ModuleWithProviders to the providers array of the bootstrapApplication function.
+  // Stories built on top of `bootstrapApplication` should pass providers through
+  // `applicationConfig`, not via `ModuleWithProviders` entries in `moduleMetadata.imports`.
   static warnImportsModuleWithProviders(propertyExtractor: PropertyExtractor) {
     const hasModuleWithProvidersImport = propertyExtractor.imports.some(
       (importedModule) => 'ngModule' in importedModule
@@ -48,11 +53,10 @@ export class PropertyExtractor implements NgModuleMetadata {
       console.warn(
         dedent(
           `
-          Storybook Warning: 
-          moduleMetadata property 'imports' contains one or more ModuleWithProviders, likely the result of a 'Module.forRoot()'-style call.
-          In Storybook 7.0 we use Angular's new 'bootstrapApplication' API to mount the component to the DOM, which accepts a list of providers to set up application-wide providers.
-          Use the 'applicationConfig' decorator from '@storybook/angular' to pass your ModuleWithProviders to the 'providers' property in combination with the importProvidersFrom helper function from '@angular/core' to extract all the necessary providers.
-          Visit https://angular.io/guide/standalone-components#configuring-dependency-injection for more information
+          Storybook Warning:
+          moduleMetadata.imports contains one or more ModuleWithProviders (likely the result of a 'Module.forRoot()'-style call).
+          Use the 'applicationConfig' decorator from '@storybook/angular-vite' and pass the providers to its 'providers' array instead.
+          See https://angular.dev/guide/components/anatomy-of-components#configuring-dependency-injection for more information.
           `
         )
       );
@@ -108,54 +112,38 @@ export class PropertyExtractor implements NgModuleMetadata {
     return { ...metadata, imports, providers, applicationProviders, declarations };
   };
 
-  static analyzeRestricted = async (
-    ngModule: NgModule
-  ): Promise<[boolean] | [boolean, Provider]> => {
+  static analyzeRestricted = (ngModule: NgModule): [boolean] | [boolean, Provider] => {
     if (ngModule === BrowserModule) {
       console.warn(
         dedent`
           Storybook Warning:
-          You have imported the "BrowserModule", which is not necessary anymore. 
-          In Storybook v7.0 we are using Angular's new bootstrapApplication API to mount an Angular application to the DOM.
-          Note that the BrowserModule providers are automatically included when starting an application with bootstrapApplication()
-          Please remove the "BrowserModule" from the list of imports in your moduleMetadata definition to remove this warning.
+          "BrowserModule" is not needed when using bootstrapApplication — its providers are included automatically.
+          Please remove "BrowserModule" from moduleMetadata.imports to remove this warning.
         `
       );
       return [true];
     }
 
-    try {
-      const animations = await import('@angular/platform-browser/animations');
+    if (ngModule === BrowserAnimationsModule) {
+      console.warn(
+        dedent`
+          Storybook Warning:
+          "BrowserAnimationsModule" was added to moduleMetadata.imports.
+          Use the 'applicationConfig' decorator from '@storybook/angular-vite' and add 'provideAnimations()' to its providers instead.
+        `
+      );
+      return [true, provideAnimations()];
+    }
 
-      if (ngModule === animations.BrowserAnimationsModule) {
-        console.warn(
-          dedent`
-            Storybook Warning:
-            You have added the "BrowserAnimationsModule" to the list of "imports" in your moduleMetadata definition of your Story.
-            In Storybook 7.0 we use Angular's new 'bootstrapApplication' API to mount the component to the DOM, which accepts a list of providers to set up application-wide providers.
-            Use the 'applicationConfig' decorator from '@storybook/angular' and add the "provideAnimations" function to the list of "providers".
-            If your Angular version does not support "provide-like" functions, use the helper function importProvidersFrom instead to set up animations. For this case, please add "importProvidersFrom(BrowserAnimationsModule)" to the list of providers of your applicationConfig definition.
-            Please visit https://angular.io/guide/standalone-components#configuring-dependency-injection for more information.
-          `
-        );
-        return [true, animations.provideAnimations()];
-      }
-
-      if (ngModule === animations.NoopAnimationsModule) {
-        console.warn(
-          dedent`
-            Storybook Warning:
-            You have added the "NoopAnimationsModule" to the list of "imports" in your moduleMetadata definition of your Story.
-            In Storybook v7.0 we are using Angular's new bootstrapApplication API to mount an Angular application to the DOM, which accepts a list of providers to set up application-wide providers.
-            Use the 'applicationConfig' decorator from '@storybook/angular' and add the "provideNoopAnimations" function to the list of "providers".
-            If your Angular version does not support "provide-like" functions, use the helper function importProvidersFrom instead to set up noop animations and to extract all necessary providers from NoopAnimationsModule. For this case, please add "importProvidersFrom(NoopAnimationsModule)" to the list of providers of your applicationConfig definition.
-            Please visit https://angular.io/guide/standalone-components#configuring-dependency-injection for more information.
-          `
-        );
-        return [true, animations.provideNoopAnimations()];
-      }
-    } catch (e) {
-      return [false];
+    if (ngModule === NoopAnimationsModule) {
+      console.warn(
+        dedent`
+          Storybook Warning:
+          "NoopAnimationsModule" was added to moduleMetadata.imports.
+          Use the 'applicationConfig' decorator from '@storybook/angular-vite' and add 'provideNoopAnimations()' to its providers instead.
+        `
+      );
+      return [true, provideNoopAnimations()];
     }
 
     return [false];
@@ -172,7 +160,7 @@ export class PropertyExtractor implements NgModuleMetadata {
 
     // Check if the hierarchically lowest Component or Directive decorator (the only relevant for importing dependencies) is standalone.
 
-    let isStandalone =
+    const isStandalone =
       (isComponent || isDirective) &&
       [...decorators]
         .reverse() // reflectionCapabilities returns decorators in a hierarchically top-down order
@@ -181,12 +169,7 @@ export class PropertyExtractor implements NgModuleMetadata {
             this.isDecoratorInstanceOf(d, 'Component') || this.isDecoratorInstanceOf(d, 'Directive')
         )?.standalone;
 
-    //Starting in Angular 19 the default (in case it's undefined) value for standalone is true
-    if (isStandalone === undefined) {
-      isStandalone = !!(VERSION.major && Number(VERSION.major) >= 19);
-    }
-
-    return { isDeclarable, isStandalone };
+    return { isDeclarable, isStandalone: isStandalone ?? true };
   };
 
   static isDecoratorInstanceOf = (decorator: any, name: string) => {

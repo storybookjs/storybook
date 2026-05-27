@@ -54,27 +54,13 @@ export const core: PresetProperty<'core'> = async (config, options) => {
   };
 };
 
-async function resolveExperimentalZoneless(
+function resolveExperimentalZoneless(
   frameworkOptions: FrameworkOptions,
   angularBuilderOptions: StandaloneOptions['angularBuilderOptions']
 ) {
-  // 1. Explicit framework option (user's .storybook/main.ts)
-  if (typeof frameworkOptions?.experimentalZoneless === 'boolean') {
-    return frameworkOptions.experimentalZoneless;
-  }
-
-  // 2. Angular builder options (set by start-storybook/build-storybook)
-  if (typeof angularBuilderOptions?.experimentalZoneless === 'boolean') {
-    return angularBuilderOptions.experimentalZoneless;
-  }
-
-  // 3. Auto-detect Angular 21+ (matches @storybook/angular builder behavior)
-  try {
-    const { VERSION } = await import('@angular/core');
-    return !!(VERSION.major && Number(VERSION.major) >= 21);
-  } catch {
-    return false;
-  }
+  return (
+    frameworkOptions?.experimentalZoneless ?? angularBuilderOptions?.experimentalZoneless ?? true
+  );
 }
 
 export const viteFinal = async (config: UserConfig, options?: StandaloneOptions) => {
@@ -117,7 +103,7 @@ export const viteFinal = async (config: UserConfig, options?: StandaloneOptions)
 
   // @ts-expect-error options is possibly undefined here, but presets.apply is guarded at runtime
   const framework = await options.presets.apply('framework');
-  const experimentalZoneless = await resolveExperimentalZoneless(
+  const experimentalZoneless = resolveExperimentalZoneless(
     framework.options,
     options?.angularBuilderOptions
   );

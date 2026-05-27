@@ -1,4 +1,5 @@
 import type { ApplicationRef, NgModule } from '@angular/core';
+import { provideZonelessChangeDetection } from '@angular/core';
 import { bootstrapApplication } from '@angular/platform-browser';
 import type { Subject } from 'rxjs';
 import { BehaviorSubject } from 'rxjs';
@@ -9,7 +10,6 @@ import { getApplication } from './StorybookModule.ts';
 import { storyPropsProvider } from './StorybookProvider.ts';
 import { queueBootstrapping } from './utils/BootstrapQueue.ts';
 import { PropertyExtractor } from './utils/PropertyExtractor.ts';
-import { getProvideZonelessChangeDetectionFn } from './utils/Zoneless.ts';
 
 type StoryRenderInfo = {
   storyFnAngular: StoryFnAngularReturnType;
@@ -128,13 +128,7 @@ export abstract class AbstractRenderer {
     ];
 
     if (STORYBOOK_ANGULAR_OPTIONS?.experimentalZoneless) {
-      const provideZonelessChangeDetectionFn = await getProvideZonelessChangeDetectionFn();
-
-      if (!provideZonelessChangeDetectionFn) {
-        throw new Error('Zoneless change detection requires Angular 18 or higher');
-      } else {
-        providers.unshift(provideZonelessChangeDetectionFn());
-      }
+      providers.unshift(provideZonelessChangeDetection());
     }
 
     const applicationRef = await queueBootstrapping(() => {

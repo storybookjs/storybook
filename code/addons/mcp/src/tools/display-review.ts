@@ -2,7 +2,7 @@ import type { McpServer } from 'tmcp';
 import * as v from 'valibot';
 import type { AddonContext } from '../types.ts';
 import { errorToMCPContent } from '../utils/errors.ts';
-import { PUSH_REVIEW_EVENT, REVIEW_PAGE_PATH } from '../constants.ts';
+import { DEFAULT_MCP_ENDPOINT, PUSH_REVIEW_EVENT, REVIEW_PAGE_PATH } from '../constants.ts';
 import { DISPLAY_REVIEW_TOOL_NAME } from './tool-names.ts';
 
 /**
@@ -88,7 +88,7 @@ export function buildReviewUrl(ctx: {
 		throw new Error('Cannot resolve the Storybook URL: missing trusted origin in addon context.');
 	}
 	const root = ctx.request
-		? (storybookRootFromRequest(ctx.request, trustedOrigin, ctx.endpoint ?? '/mcp') ??
+		? (storybookRootFromRequest(ctx.request, trustedOrigin, ctx.endpoint ?? DEFAULT_MCP_ENDPOINT) ??
 			trustedOrigin)
 		: trustedOrigin;
 	return `${root.replace(/\/$/, '')}/?path=${REVIEW_PAGE_PATH}`;

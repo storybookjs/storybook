@@ -25,9 +25,7 @@ import { estimateTokens } from './utils/estimate-tokens.ts';
 import { isAddonA11yEnabled } from './utils/is-addon-a11y-enabled.ts';
 import type { CompositionAuth } from './auth/index.ts';
 import { buildServerInstructions } from './instructions/build-server-instructions.ts';
-
-/** Default MCP endpoint path. Kept in sync with `DEFAULT_MCP_ENDPOINT` in preset.ts. */
-const DEFAULT_ENDPOINT = '/mcp';
+import { DEFAULT_MCP_ENDPOINT } from './constants.ts';
 
 let transport: HttpTransport<AddonContext> | undefined;
 let origin: string | undefined;
@@ -128,7 +126,7 @@ type McpServerHandlerParams = {
 	 * The MCP endpoint path (e.g. `/mcp` or a user-configured override).
 	 * Used to derive the Storybook root from the incoming request URL inside
 	 * tools like `display-review`. Optional for backwards compatibility with
-	 * external callers; defaults to {@link DEFAULT_ENDPOINT}.
+	 * external callers; defaults to {@link DEFAULT_MCP_ENDPOINT}.
 	 */
 	endpoint?: string;
 	/** Sources for multi-source mode (when refs are configured) */
@@ -148,7 +146,7 @@ export const mcpServerHandler = async ({
 	res,
 	options,
 	addonOptions,
-	endpoint = DEFAULT_ENDPOINT,
+	endpoint = DEFAULT_MCP_ENDPOINT,
 	sources,
 	manifestProvider,
 	compositionAuth,

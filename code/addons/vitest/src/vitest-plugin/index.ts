@@ -44,6 +44,7 @@ import { withoutVitePlugins } from '../../../../builders/builder-vite/src/utils/
 import {
   STORYBOOK_CORE_GHOST_STORIES_PROVIDE_KEY,
   STORYBOOK_CORE_RENDER_ANALYSIS_PROVIDE_KEY,
+  STORYBOOK_CORE_VITEST_VERSION_PROVIDE_KEY,
 } from '../constants.ts';
 import type { InternalOptions, UserOptions } from './types.ts';
 import { requiresProjectAnnotations } from './utils.ts';
@@ -463,6 +464,8 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
     },
     async configureVitest(context) {
       context.vitest.config.coverage.exclude.push('storybook-static');
+
+      context.project.provide(STORYBOOK_CORE_VITEST_VERSION_PROVIDE_KEY, context.vitest.version);
 
       // NOTE: we start telemetry immediately but do not wait on it. Typically it should complete
       // before the tests do. If not we may miss the event, we are OK with that.

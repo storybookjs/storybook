@@ -53,6 +53,7 @@ describe('RendererFactory', () => {
         },
         forced: false,
         targetDOMNode: rootTargetDOMNode,
+        storyId: 'my-story',
       });
 
       expect(document.body.getElementsByTagName('storybook-root')[0].innerHTML).toBe('🦊');
@@ -70,6 +71,7 @@ describe('RendererFactory', () => {
         forced: false,
         component: FooComponent,
         targetDOMNode: rootTargetDOMNode,
+        storyId: 'my-story',
       });
 
       expect(document.body.getElementsByTagName('storybook-root')[0].innerHTML).toBe(
@@ -97,6 +99,7 @@ describe('RendererFactory', () => {
         },
         forced: false,
         targetDOMNode: rootTargetDOMNode,
+        storyId: 'my-story',
       });
 
       expect(document.body.getElementsByTagName('storybook-root')[0].innerHTML).toBe('🦊');
@@ -116,6 +119,7 @@ describe('RendererFactory', () => {
           },
           forced: true,
           targetDOMNode: rootTargetDOMNode,
+          storyId: 'my-story',
         });
       });
 
@@ -134,6 +138,7 @@ describe('RendererFactory', () => {
           },
           forced: true,
           targetDOMNode: rootTargetDOMNode,
+          storyId: 'my-story',
         });
 
         expect(document.body.getElementsByTagName('storybook-root')[0].innerHTML).toBe('👾: Fox');
@@ -150,6 +155,7 @@ describe('RendererFactory', () => {
           },
           forced: true,
           targetDOMNode: rootTargetDOMNode,
+          storyId: 'my-story',
         });
 
         expect(document.body.getElementsByTagName('storybook-root')[0].innerHTML).toBe('🍺');
@@ -168,6 +174,7 @@ describe('RendererFactory', () => {
           },
           forced: true,
           targetDOMNode: rootTargetDOMNode,
+          storyId: 'my-story',
         });
       });
 
@@ -206,6 +213,7 @@ describe('RendererFactory', () => {
           forced: false,
           component: FooComponent,
           targetDOMNode: targetDOMNode1,
+          storyId: 'story-1',
         });
 
         const targetDOMNode2 = global.document.createElement('div');
@@ -218,6 +226,7 @@ describe('RendererFactory', () => {
           forced: false,
           component: FooComponent,
           targetDOMNode: targetDOMNode2,
+          storyId: 'story-1',
         });
 
         expect(global.document.querySelectorAll('#story-1 > story-1')[0].innerHTML).toBe(
@@ -252,12 +261,14 @@ describe('RendererFactory', () => {
             forced: false,
             component: FooComponent,
             targetDOMNode: targetDOMNode1,
+            storyId: 'story-1',
           }),
           render.render({
             storyFnAngular: {},
             forced: false,
             component: FooComponent,
             targetDOMNode: targetDOMNode2,
+            storyId: 'story-2',
           }),
         ]);
 

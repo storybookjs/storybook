@@ -3,6 +3,7 @@ import { AbstractRenderer } from './AbstractRenderer.ts';
 
 export class CanvasRenderer extends AbstractRenderer {
   public async render(options: {
+    storyId: string;
     storyFnAngular: StoryFnAngularReturnType;
     forced: boolean;
     parameters: Parameters;

@@ -10,7 +10,12 @@ export const rendererFactory = new RendererFactory();
 export const render: ArgsStoryFn<AngularRenderer> = (props) => ({ props });
 
 export async function renderToCanvas(
-  { storyFn, showMain, forceRemount, storyContext: { component } }: RenderContext<AngularRenderer>,
+  {
+    storyFn,
+    showMain,
+    forceRemount,
+    storyContext: { component, id: storyId },
+  }: RenderContext<AngularRenderer>,
   element: HTMLElement
 ) {
   showMain();
@@ -18,6 +23,7 @@ export async function renderToCanvas(
   const renderer = await rendererFactory.getRendererInstance(element);
 
   await renderer.render({
+    storyId,
     storyFnAngular: storyFn(),
     component,
     forced: !forceRemount,

@@ -652,6 +652,7 @@ export default {
     'ProviderDoesNotExtendBaseProviderError',
     'StatusTypeIdMismatchError',
     'UncaughtManagerError',
+    'UniversalStoreFollowerTimeoutError',
   ],
   'storybook/internal/router': [
     'BaseLocationProvider',
@@ -676,7 +677,6 @@ export default {
     'CoreWebpackCompiler',
     'Feature',
     'SupportedBuilder',
-    'SupportedFramework',
     'SupportedLanguage',
     'SupportedRenderer',
   ],

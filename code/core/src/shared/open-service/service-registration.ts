@@ -9,6 +9,7 @@ import type {
   RuntimeService,
   ServiceDefinition,
   ServiceDescriptor,
+  ServiceId,
   ServiceInstance,
   ServiceRegistrationOptions,
   ServiceRegistryApi,
@@ -23,16 +24,16 @@ type RegistryEntry = {
   descriptor: ServiceDescriptor;
 };
 
-type GlobalRegistryStore = typeof globalThis & {
-  __STORYBOOK_OPEN_SERVICE_REGISTRY__?: Map<string, RegistryEntry>;
-};
+const OPEN_SERVICE_REGISTRY_SYMBOL = Symbol.for('storybook.open-service.registry');
 
 function getRegistry(): Map<string, RegistryEntry> {
-  const store = globalThis as GlobalRegistryStore;
+  const registryGlobal = globalThis as {
+    [key: symbol]: Map<string, RegistryEntry> | undefined;
+  };
 
-  store.__STORYBOOK_OPEN_SERVICE_REGISTRY__ ??= new Map<string, RegistryEntry>();
+  registryGlobal[OPEN_SERVICE_REGISTRY_SYMBOL] ??= new Map<string, RegistryEntry>();
 
-  return store.__STORYBOOK_OPEN_SERVICE_REGISTRY__;
+  return registryGlobal[OPEN_SERVICE_REGISTRY_SYMBOL];
 }
 
 function describeDefinition(definition: AnyServiceDefinition): ServiceDescriptor {
@@ -152,7 +153,7 @@ export async function listServices(): Promise<ServiceSummary[]> {
 }
 
 /** Returns the schema-backed descriptor for one registered service. */
-export async function describeService(serviceId: string): Promise<ServiceDescriptor> {
+export async function describeService(serviceId: ServiceId): Promise<ServiceDescriptor> {
   const entry = getRegistry().get(serviceId);
 
   if (!entry) {
@@ -163,7 +164,7 @@ export async function describeService(serviceId: string): Promise<ServiceDescrip
 }
 
 /** Resolves a registered runtime service by id from the current server process. */
-export async function getService(serviceId: string): Promise<RuntimeService> {
+export async function getService(serviceId: ServiceId): Promise<RuntimeService> {
   const entry = getRegistry().get(serviceId);
 
   if (!entry) {

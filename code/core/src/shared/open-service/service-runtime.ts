@@ -17,6 +17,7 @@ import type {
   QueryCtx,
   QueryDefinition,
   ServiceDefinition,
+  ServiceId,
   ServiceInstance,
   ServiceRegistryApi,
   WritableSelf,
@@ -49,7 +50,7 @@ export type ServiceRuntime<
  * Queries without a custom `static.path()` share one default file per service. The returned value
  * is a logical slash-separated store key, not a raw filesystem path.
  */
-function normalizeStaticStoragePath(serviceId: string, name: string, rawPath: string): string {
+function normalizeStaticStoragePath(serviceId: ServiceId, name: string, rawPath: string): string {
   const segments = rawPath
     .replaceAll('\\', '/')
     .split('/')
@@ -65,7 +66,7 @@ function normalizeStaticStoragePath(serviceId: string, name: string, rawPath: st
 }
 
 export function resolveStaticPath<TState>(
-  serviceId: string,
+  serviceId: ServiceId,
   name: string,
   queryDef: RuntimeQueryDefinition<TState>,
   input: unknown,
@@ -108,7 +109,7 @@ function createSelfRef<TState>(stateSignal: ServiceSignal<TState>): WritableSelf
  * validates the resolved output before returning it to the caller.
  */
 function buildCommands<TState>(
-  serviceId: string,
+  serviceId: ServiceId,
   commands: Commands<TState>,
   createCommandCtx: () => CommandCtx<TState>
 ): Command {
@@ -152,7 +153,7 @@ function buildCommands<TState>(
  * reactive updates when subscribed to.
  */
 function createQuery<TState>(
-  serviceId: string,
+  serviceId: ServiceId,
   name: string,
   queryDef: RuntimeQueryDefinition<TState>,
   selfRef: WritableSelf<TState>,
@@ -261,7 +262,7 @@ function createQuery<TState>(
 
 /** Builds the runtime query map for one service runtime. */
 function buildQueries<TState>(
-  serviceId: string,
+  serviceId: ServiceId,
   queries: Queries<TState>,
   selfRef: WritableSelf<TState>,
   registryApi: ServiceRegistryApi

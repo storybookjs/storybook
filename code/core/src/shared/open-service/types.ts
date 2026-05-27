@@ -6,6 +6,9 @@ export type StaticStore = Record<string, unknown>;
 /** Generic Standard Schema constraint used across open-service definitions. */
 export type AnySchema = StandardSchemaV1<unknown, unknown>;
 
+/** Stable alias for service identifiers across definition, runtime, and registration APIs. */
+export type ServiceId = string;
+
 /** Public schema shape exposed when describing a schema-backed service contract. */
 export type SchemaDescriptor = AnySchema;
 
@@ -97,7 +100,7 @@ export type WritableSelf<
 };
 
 export type ServiceSummary = {
-  id: string;
+  id: ServiceId;
   description?: string;
   queryNames: string[];
   commandNames: string[];
@@ -118,7 +121,7 @@ export type CommandDescriptor = {
 };
 
 export type ServiceDescriptor = {
-  id: string;
+  id: ServiceId;
   description?: string;
   queries: Record<string, QueryDescriptor>;
   commands: Record<string, CommandDescriptor>;
@@ -126,8 +129,8 @@ export type ServiceDescriptor = {
 
 export interface ServiceRegistryApi {
   listServices(): Promise<ServiceSummary[]>;
-  describeService(serviceId: string): Promise<ServiceDescriptor>;
-  getService(serviceId: string): Promise<RuntimeService>;
+  describeService(serviceId: ServiceId): Promise<ServiceDescriptor>;
+  getService(serviceId: ServiceId): Promise<RuntimeService>;
 }
 
 export type RuntimeService = ServiceInstance<unknown, Queries<unknown>, Commands<unknown>> &
@@ -270,7 +273,7 @@ export type ServiceDefinition<
   TQueries extends Queries<TState>,
   TCommands extends Commands<TState>,
 > = {
-  id: string;
+  id: ServiceId;
   description?: string;
   initialState: TState;
   queries: TQueries;

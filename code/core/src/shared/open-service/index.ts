@@ -20,6 +20,7 @@ export type {
   SchemaDescriptor,
   ServiceDefinition,
   ServiceDescriptor,
+  ServiceId,
   ServiceInstance,
   ServiceRegistrationOptions,
   ServiceSummary,

@@ -113,11 +113,7 @@ export interface Presets {
     config?: StorybookConfigRaw['staticDirs'],
     args?: any
   ): Promise<StorybookConfigRaw['staticDirs']>;
-  apply(
-    extension: 'services',
-    config?: StorybookConfigRaw['services'],
-    args?: any
-  ): Promise<void>;
+  apply(extension: 'services', config?: StorybookConfigRaw['services'], args?: any): Promise<void>;
 
   /** The second and third parameter are not needed. And make type inference easier. */
   apply<T extends keyof StorybookConfigRaw>(extension: T): Promise<StorybookConfigRaw[T]>;

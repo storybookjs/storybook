@@ -4,6 +4,7 @@ import { dedent } from 'ts-dedent';
 import type { Status } from './shared/status-store/index.ts';
 import type { StatusTypeId } from './shared/status-store/index.ts';
 import { formatIssues } from './shared/open-service/errors.ts';
+import type { ServiceId } from './shared/open-service/types.ts';
 import type { ValidationMeta } from './shared/open-service/errors.ts';
 import { StorybookError } from './storybook-error.ts';
 
@@ -168,7 +169,7 @@ export class OpenServiceValidationError extends StorybookError {
 }
 
 export class OpenServiceDuplicateRegistrationError extends StorybookError {
-  constructor(public data: { serviceId: string }) {
+  constructor(public data: { serviceId: ServiceId }) {
     super({
       name: 'OpenServiceDuplicateRegistrationError',
       category: Category.CORE_COMMON,
@@ -179,7 +180,7 @@ export class OpenServiceDuplicateRegistrationError extends StorybookError {
 }
 
 export class OpenServiceMissingServiceError extends StorybookError {
-  constructor(public data: { serviceId: string }) {
+  constructor(public data: { serviceId: ServiceId }) {
     super({
       name: 'OpenServiceMissingServiceError',
       category: Category.CORE_COMMON,
@@ -190,7 +191,7 @@ export class OpenServiceMissingServiceError extends StorybookError {
 }
 
 export class OpenServiceUnimplementedOperationError extends StorybookError {
-  constructor(public data: { serviceId: string; name: string; kind: 'query' | 'command' }) {
+  constructor(public data: { serviceId: ServiceId; name: string; kind: 'query' | 'command' }) {
     super({
       name: 'OpenServiceUnimplementedOperationError',
       category: Category.CORE_COMMON,
@@ -201,7 +202,7 @@ export class OpenServiceUnimplementedOperationError extends StorybookError {
 }
 
 export class OpenServiceInvalidStaticPathError extends StorybookError {
-  constructor(public data: { serviceId: string; name: string; path: string }) {
+  constructor(public data: { serviceId: ServiceId; name: string; path: string }) {
     super({
       name: 'OpenServiceInvalidStaticPathError',
       category: Category.CORE_COMMON,

@@ -2,8 +2,8 @@ import type { DecoratorFunction, StoryContext } from 'storybook/internal/types';
 
 import type { ApplicationConfig, Type } from '@angular/core';
 
-import { computesTemplateFromComponent } from './angular-beta/ComputesTemplateFromComponent.ts';
-import { isComponent } from './angular-beta/utils/NgComponentAnalyzer.ts';
+import { computesTemplateFromComponent } from './renderer/ComputesTemplateFromComponent.ts';
+import { isComponent } from './renderer/utils/NgComponentAnalyzer.ts';
 import type { AngularRenderer, ICollection, NgModuleMetadata } from './types.ts';
 
 // We use `any` here as the default type rather than `Args` because we need something that is

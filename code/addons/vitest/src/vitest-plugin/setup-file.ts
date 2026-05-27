@@ -101,7 +101,11 @@ beforeAll(() => {
   }
 });
 
-beforeEach(resetMousePositionBeforeTests);
+beforeEach(async () => {
+  if (globalThis.__vitest_browser__) {
+    await resetMousePositionBeforeTests();
+  }
+});
 
 afterEach(modifyErrorMessage);
 

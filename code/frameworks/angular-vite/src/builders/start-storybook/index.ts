@@ -190,15 +190,15 @@ const commandBuilder: BuilderHandlerFn<StorybookBuilderOptions> = (
         // so the dev server continues running. Architect will keep subscribing
         // until the Observable completes, which allows watch mode to work.
       } catch (error) {
-        // Write logs to file on failure when enabled
-        try {
-          if (logTracker.shouldWriteLogsToFile) {
-            try {
-              const logFile = await logTracker.writeToFile(options.logfile as any);
-              logger.outro(`Debug logs are written to: ${logFile}`);
-            } catch {}
+        // Best-effort: persist debug logs before bubbling the original error.
+        if (logTracker.shouldWriteLogsToFile) {
+          try {
+            const logFile = await logTracker.writeToFile(options.logfile as any);
+            logger.outro(`Debug logs are written to: ${logFile}`);
+          } catch (logWriteError) {
+            logger.debug(`Failed to write debug logs: ${logWriteError}`);
           }
-        } catch {}
+        }
         observer.error(error);
       }
     })();

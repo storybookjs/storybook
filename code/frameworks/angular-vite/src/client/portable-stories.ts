@@ -21,7 +21,7 @@ import type { AngularRenderer } from './types.ts';
  *
  * ```jsx
  * // setup-file.js
- * import { setProjectAnnotations } from '@storybook/angular';
+ * import { setProjectAnnotations } from '@storybook/angular-vite';
  *
  * import projectAnnotations from './.storybook/preview';
  *

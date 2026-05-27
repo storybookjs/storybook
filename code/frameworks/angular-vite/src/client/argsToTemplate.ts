@@ -37,7 +37,7 @@ export interface ArgsToTemplateOptions<T> {
  *  }
  *
  * // component.stories.ts
- * import { argsToTemplate } from '@storybook/angular';
+ * import { argsToTemplate } from '@storybook/angular-vite';
  * export const Input1: Story = {
  *  render: (args) => ({
  *    props: args,

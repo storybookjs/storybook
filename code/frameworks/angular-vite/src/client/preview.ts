@@ -34,7 +34,7 @@ import { type AngularRenderer } from './types.ts';
  *
  * ```ts
  * // .storybook/preview.ts
- * import { definePreview } from '@storybook/angular';
+ * import { definePreview } from '@storybook/angular-vite';
  *
  * export const preview = definePreview({
  *   addons: [],

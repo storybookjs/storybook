@@ -334,7 +334,7 @@ function angularViteRedirectReapplyPlugin(options?: StandaloneOptions): Plugin {
 
 function storybookEsbuildPlugin() {
   return {
-    name: 'storybookjs-angular-vite-esbuild-config',
+    name: 'storybook-angular-vite-esbuild-config',
     config(_userConfig: UserConfig, env: ConfigEnv) {
       return {
         esbuild: {

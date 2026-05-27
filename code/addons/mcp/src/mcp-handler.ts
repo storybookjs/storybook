@@ -26,6 +26,9 @@ import { isAddonA11yEnabled } from './utils/is-addon-a11y-enabled.ts';
 import type { CompositionAuth } from './auth/index.ts';
 import { buildServerInstructions } from './instructions/build-server-instructions.ts';
 
+/** Default MCP endpoint path. Kept in sync with `DEFAULT_MCP_ENDPOINT` in preset.ts. */
+const DEFAULT_ENDPOINT = '/mcp';
+
 let transport: HttpTransport<AddonContext> | undefined;
 let origin: string | undefined;
 // Promise that ensures single initialization, even with concurrent requests
@@ -39,10 +42,12 @@ const initializeMCPServer = async (options: Options, multiSource?: boolean) => {
 	const changeDetectionEnabled = features?.changeDetection ?? false;
 	disableTelemetry = core?.disableTelemetry ?? false;
 
-	// Determine tool availability before creating server so instructions can be tailored
+	// Determine tool availability before creating server so instructions can be tailored.
+	// Reuse the already-resolved `features` so getReviewStatus doesn't re-call
+	// `presets.apply('features', …)` and risk a different snapshot.
 	const addonVitestConstants = await getAddonVitestConstants();
 	const manifestStatus = await getManifestStatus(options);
-	const reviewStatus = await getReviewStatus(options);
+	const reviewStatus = await getReviewStatus(options, { features });
 	a11yEnabled = await isAddonA11yEnabled(options);
 
 	let server: McpServer<any, AddonContext>;
@@ -119,7 +124,13 @@ type McpServerHandlerParams = {
 	res: ServerResponse;
 	options: Options;
 	addonOptions: AddonOptionsOutput;
-	endpoint: string;
+	/**
+	 * The MCP endpoint path (e.g. `/mcp` or a user-configured override).
+	 * Used to derive the Storybook root from the incoming request URL inside
+	 * tools like `display-review`. Optional for backwards compatibility with
+	 * external callers; defaults to {@link DEFAULT_ENDPOINT}.
+	 */
+	endpoint?: string;
 	/** Sources for multi-source mode (when refs are configured) */
 	sources?: Source[];
 	/** Optional custom manifest provider, receives source as third param in multi-source mode */
@@ -137,7 +148,7 @@ export const mcpServerHandler = async ({
 	res,
 	options,
 	addonOptions,
-	endpoint,
+	endpoint = DEFAULT_ENDPOINT,
 	sources,
 	manifestProvider,
 	compositionAuth,

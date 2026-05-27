@@ -9,16 +9,20 @@ export type ReviewStatus = {
 	hasAddon: boolean;
 };
 
-export const getReviewStatus = async (options: Options): Promise<ReviewStatus> => {
-	const features = (await options.presets.apply('features', {})) as
-		| { changeDetection?: boolean }
-		| undefined;
-	const hasFeatureFlag = !!features?.changeDetection;
+export interface GetReviewStatusOptions {
+	features?: { changeDetection?: boolean } | undefined;
+}
 
-	// Read the user's `main.ts` addons array directly via Storybook's public
-	// helpers. `getAddonNames` normalizes each entry (strips `/preset`,
-	// `/manager`, `node_modules/`, file extensions, etc.) so we get the
-	// package name the user typed.
+export const getReviewStatus = async (
+	options: Options,
+	{ features }: GetReviewStatusOptions = {},
+): Promise<ReviewStatus> => {
+	const resolvedFeatures =
+		features ??
+		((await options.presets.apply('features', {})) as { changeDetection?: boolean } | undefined);
+	const hasFeatureFlag = !!resolvedFeatures?.changeDetection;
+
+	// Read the user's `main.ts` addons array and detect @storybook/addon-review presence
 	let hasAddon = false;
 	try {
 		const mainConfig = await loadMainConfig({ configDir: options.configDir });

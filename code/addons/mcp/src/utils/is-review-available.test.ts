@@ -78,4 +78,19 @@ describe('getReviewStatus', () => {
 
 		expect(result).toEqual({ available: false, hasFeatureFlag: true, hasAddon: false });
 	});
+
+	it('uses pre-resolved features when provided and skips presets.apply', async () => {
+		mockGetAddonNames.mockReturnValue(['@storybook/addon-review']);
+		const mockOptions = createMockOptions({ changeDetection: false });
+		// Pass features explicitly with changeDetection=true; the mock's
+		// `presets.apply` would return changeDetection=false if asked, so a
+		// `true` result here proves we used the provided value and didn't
+		// re-resolve.
+		const result = await getReviewStatus(mockOptions, {
+			features: { changeDetection: true },
+		});
+
+		expect(result).toEqual({ available: true, hasFeatureFlag: true, hasAddon: true });
+		expect(mockOptions.presets.apply).not.toHaveBeenCalledWith('features', expect.anything());
+	});
 });

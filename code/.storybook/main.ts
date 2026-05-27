@@ -155,7 +155,7 @@ const config = defineMain({
     changeDetection: true,
   },
   services: async (_value: void, options: Options) => {
-    if (true) {
+    if (false) {
       await registerOpenServiceDebugService(
         options.presets.apply<NonNullable<StorybookConfigRaw['storyIndexGenerator']>>(
           'storyIndexGenerator'

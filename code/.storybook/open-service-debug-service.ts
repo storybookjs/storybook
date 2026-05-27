@@ -48,7 +48,7 @@ function createDebugServiceDef(storyIndexGeneratorPromise: Promise<StoryIndexGen
         input: activityQueryInputSchema,
         output: v.array(v.string()),
         handler: async (input, ctx) => {
-          logger.verbose('[open-service debug] query getActivity');
+          logger.warn('[open-service debug] query getActivity');
           return ctx.self.state.activity.slice(-input.limit);
         },
       },
@@ -57,7 +57,7 @@ function createDebugServiceDef(storyIndexGeneratorPromise: Promise<StoryIndexGen
         input: storyIndexSummaryInputSchema,
         output: storyIndexSummaryOutputSchema,
         handler: async (input, ctx) => {
-          logger.verbose('[open-service debug] query getStoryIndexSummary');
+          logger.warn('[open-service debug] query getStoryIndexSummary');
           return {
             entryCount: ctx.self.state.storyIndexEntryCount,
             sampleIds: input.includeSampleIds ? ctx.self.state.storyIndexSampleIds : [],
@@ -70,7 +70,7 @@ function createDebugServiceDef(storyIndexGeneratorPromise: Promise<StoryIndexGen
         input: entryInputSchema,
         output: v.nullable(v.string()),
         preload: async (input, ctx) => {
-          logger.verbose(`[open-service debug] preload getPreloadedValue(${input.entryId})`);
+          logger.warn(`[open-service debug] preload getPreloadedValue(${input.entryId})`);
           if (ctx.self.state.preloadedByEntryId[input.entryId] !== undefined) {
             return;
           }
@@ -87,7 +87,7 @@ function createDebugServiceDef(storyIndexGeneratorPromise: Promise<StoryIndexGen
         handler: async (input, ctx) => {
           const value = ctx.self.state.preloadedByEntryId[input.entryId] ?? null;
 
-          logger.verbose(
+          logger.warn(
             `[open-service debug] query getPreloadedValue(${input.entryId}) => ${value}`
           );
           return value;
@@ -100,7 +100,7 @@ function createDebugServiceDef(storyIndexGeneratorPromise: Promise<StoryIndexGen
         input: messageInputSchema,
         output: v.undefined(),
         handler: async (input, ctx) => {
-          logger.verbose(`[open-service debug] command addActivity(${input.message})`);
+          logger.warn(`[open-service debug] command addActivity(${input.message})`);
           ctx.self.setState((draft) => {
             draft.activity.push(input.message);
           });
@@ -116,7 +116,7 @@ function createDebugServiceDef(storyIndexGeneratorPromise: Promise<StoryIndexGen
           const storyIndex = await (await storyIndexGeneratorPromise).getIndex();
           const sampleIds = Object.keys(storyIndex.entries).slice(0, 5);
 
-          logger.verbose(
+          logger.warn(
             `[open-service debug] command syncStoryIndex(${input.reason}) => ${Object.keys(storyIndex.entries).length} entries`
           );
           ctx.self.setState((draft) => {
@@ -139,7 +139,7 @@ function createDebugServiceDef(storyIndexGeneratorPromise: Promise<StoryIndexGen
           })) as { entryCount: number; sampleIds: string[] };
           const value = `${input.source}:${input.entryId}:${summary.entryCount}`;
 
-          logger.verbose(
+          logger.warn(
             `[open-service debug] command recordPreloadVisit(${input.entryId}, ${input.source}) => ${value}`
           );
           ctx.self.setState((draft) => {
@@ -167,7 +167,7 @@ export async function registerOpenServiceDebugService(
 ): Promise<void> {
   try {
     await describeService(DEBUG_SERVICE_ID);
-    logger.verbose('[open-service debug] debug service already registered');
+    logger.warn('[open-service debug] debug service already registered');
     return;
   } catch {
     // The service is not registered yet in this process.
@@ -176,13 +176,13 @@ export async function registerOpenServiceDebugService(
   const service = registerService(createDebugServiceDef(storyIndexGeneratorPromise));
   const descriptor = await describeService(DEBUG_SERVICE_ID);
 
-  logger.verbose('[open-service debug] registered service descriptor');
-  logger.verbose(JSON.stringify(descriptor, null, 2));
+  logger.warn('[open-service debug] registered service descriptor');
+  logger.warn(JSON.stringify(descriptor, null, 2));
 
   const unsubscribe = service.queries.getPreloadedValue.subscribe(
     { entryId: 'startup' },
     (value) => {
-      logger.verbose(`[open-service debug] subscription getPreloadedValue(startup) => ${value}`);
+      logger.warn(`[open-service debug] subscription getPreloadedValue(startup) => ${value}`);
     }
   );
 

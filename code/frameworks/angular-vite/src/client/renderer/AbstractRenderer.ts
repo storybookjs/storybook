@@ -159,7 +159,11 @@ export abstract class AbstractRenderer {
   protected generateTargetSelectorFromStoryId(id: string) {
     const invalidHtmlTag = /[^A-Za-z0-9-]/g;
     const storyIdIsInvalidHtmlTagName = invalidHtmlTag.test(id);
-    return storyIdIsInvalidHtmlTagName ? `sb-${id.replace(invalidHtmlTag, '')}-component` : id;
+    if (!storyIdIsInvalidHtmlTagName) {
+      return id;
+    }
+    const cleaned = id.replace(invalidHtmlTag, '').replace(/-+/g, '-').replace(/^-|-$/g, '');
+    return cleaned ? `sb-${cleaned}-component` : 'sb-story-component';
   }
 
   /**

@@ -12,7 +12,15 @@ const meta = {
   async afterEach() {
     console.log('9 - [from meta afterEach]');
 
-    await expect(mocked(console.log).mock.calls).toEqual([
+    // Some framework runtimes (e.g. Angular's "Angular is running in development
+    // mode." on first `bootstrapApplication`) emit their own `console.log` calls
+    // during a story render. Filter to the numbered ordering markers this story
+    // emits so the hook-order signal isn't drowned out by framework noise.
+    const orderedCalls = mocked(console.log).mock.calls.filter(
+      ([msg]) => typeof msg === 'string' && /^\d+ - \[/.test(msg)
+    );
+
+    await expect(orderedCalls).toEqual([
       ['1 - [from loaders]'],
       ['2 - [from meta beforeEach]'],
       ['3 - [from story beforeEach]'],

@@ -3,6 +3,7 @@ import {
   babelParser,
   extractMockCalls,
   findMockRedirect,
+  getAutomockCode,
   getRealPath,
 } from 'storybook/internal/mocking-utils';
 import type { PresetProperty } from 'storybook/internal/types';
@@ -74,23 +75,19 @@ export const viteFinal = async (config: UserConfig, options?: StandaloneOptions)
   // after analogjs has produced its compiled JS, so the enrichment lands in
   // the bundle. csf-plugin reads the original source from disk (not the
   // upstream `code`), so the JSDoc/source extraction is unaffected.
+  // Drop any analogjs plugin loaded from the user's vite.config(.m)ts file —
+  // we register our own pinned-to-`enforce: 'pre'` instance below. Demote
+  // builder-vite's csf-plugin out of the `pre` bucket so analogjs (also
+  // `enforce: 'pre'`) doesn't overwrite csf-plugin's docs/story enrichment.
+  // The post-analogjs `angularViteRedirectReapplyPlugin` handles every mock
+  // contract (redirects + automock) on top of analogjs's emitted JS, so we
+  // don't need to demote `storybook:mock-loader` here.
   config.plugins = (config.plugins ?? [])
     .flat()
     .filter((plugin: any) => !plugin.name.includes('analogjs'))
     .map((plugin: any) => {
       if (plugin?.name === 'plugin-csf' && plugin.enforce === 'pre') {
         return { ...plugin, enforce: undefined };
-      }
-      // mock-loader's `transform.order: 'pre'` runs before analogjs's
-      // `enforce: 'pre'` (hook-level order beats plugin-level enforce in
-      // Vite), and analogjs then re-emits the file from its own TS emitter,
-      // discarding mock-loader's automock output. Demote mock-loader out of
-      // 'pre' so it runs in the normal stage after analogjs has produced its
-      // compiled JS — the automock then operates on that JS and survives to
-      // the bundle.
-      if (plugin?.name === 'storybook:mock-loader' && plugin.transform?.order === 'pre') {
-        const { order: _order, ...restTransform } = plugin.transform;
-        return { ...plugin, transform: restTransform };
       }
       return plugin;
     });
@@ -262,20 +259,27 @@ function angularOptionsPlugin(
   };
 }
 
-// mock-loader's `load` hook returns manual mock contents for files with
-// a matching `__mocks__/…` redirect. analogjs's transform then re-emits
-// the file from its own TS emitter and discards that mock content. The
-// automock case is handled by demoting mock-loader's transform out of
-// 'pre' (in viteFinal); the redirect case isn't — analogjs only runs
-// once and mock-loader's `load` doesn't run again after it. So we
-// re-apply the redirect after analogjs in the normal stage: for each
-// file with a redirect path, return the redirect contents as the
-// transform output. Plain `sb.mock(...)` automocks are intentionally
-// NOT handled here to avoid double-wrapping mock-loader's transform
-// output.
+// Re-apply Storybook's mock contracts AFTER analogjs has compiled the file.
+//
+// In Storybook's UI dev path, builder-vite has already populated `config.plugins`
+// by the time the framework's `viteFinal` runs, so we can demote
+// `storybook:mock-loader`'s `transform.order: 'pre'` out of the `pre` bucket and
+// let it transparently wrap exports after analogjs's `enforce: 'pre'`. Under
+// addon-vitest the framework's `viteFinal` is invoked with no plugins yet
+// registered (the storybookTest plugin merges them later), so the in-place
+// demote is a no-op and the original mock-loader's pre-stage transform fires
+// before analogjs — analogjs then discards the upstream `code` and re-emits
+// from its own TS emitter, dropping every mock.
+//
+// To stay correct in both paths we run our own post-stage plugin that consumes
+// the same mock calls and re-applies them on whatever analogjs produced:
+//   - `__mocks__/…` redirect → return the redirect file contents.
+//   - plain `sb.mock(...)` automock → wrap the post-analogjs exports with
+//     `getAutomockCode(code, spy, parse)`.
 function angularViteRedirectReapplyPlugin(options?: StandaloneOptions): Plugin {
   let viteConfig: { resolve?: { preserveSymlinks?: boolean } } = {};
   let redirects: Array<{ absolutePath: string; redirectPath: string }> = [];
+  let automocks: Array<{ absolutePath: string; spy: boolean }> = [];
   return {
     name: 'storybook-angular-vite-redirect-reapply',
     configResolved(c) {
@@ -290,12 +294,13 @@ function angularViteRedirectReapplyPlugin(options?: StandaloneOptions): Plugin {
         return;
       }
       try {
-        redirects = extractMockCalls(
+        const calls = extractMockCalls(
           { previewConfigPath, configDir: options.configDir },
           babelParser,
           (viteConfig as any).root ?? process.cwd(),
           findMockRedirect
-        )
+        );
+        redirects = calls
           .filter(
             (
               call
@@ -306,12 +311,16 @@ function angularViteRedirectReapplyPlugin(options?: StandaloneOptions): Plugin {
             absolutePath: call.absolutePath,
             redirectPath: call.redirectPath,
           }));
+        automocks = calls
+          .filter((call) => !call.redirectPath && !!call.absolutePath)
+          .map((call) => ({ absolutePath: call.absolutePath, spy: !!call.spy }));
       } catch {
         redirects = [];
+        automocks = [];
       }
     },
-    async transform(_code: string, id: string) {
-      if (redirects.length === 0) {
+    async transform(code: string, id: string) {
+      if (redirects.length === 0 && automocks.length === 0) {
         return null;
       }
       const preserveSymlinks = !!viteConfig.resolve?.preserveSymlinks;
@@ -325,6 +334,20 @@ function angularViteRedirectReapplyPlugin(options?: StandaloneOptions): Plugin {
           code: readFileSync(r.redirectPath, 'utf-8'),
           map: { mappings: '' },
         };
+      }
+      for (const a of automocks) {
+        if (getRealPath(a.absolutePath, preserveSymlinks) !== idNorm) {
+          continue;
+        }
+        try {
+          const automocked = getAutomockCode(code, a.spy, babelParser as any);
+          return {
+            code: automocked.toString(),
+            map: automocked.generateMap(),
+          };
+        } catch {
+          return null;
+        }
       }
       return null;
     },

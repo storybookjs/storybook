@@ -41,8 +41,23 @@ export class RendererFactory {
   }
 }
 
+// Pick the renderer by inspecting the target node's surroundings. The
+// classic UI puts every canvas mount on `#storybook-root` and every docs
+// mount inside `#storybook-docs`. Under `@storybook/addon-vitest` the test
+// runner creates a synthetic DIV that has neither id, but we want it to use
+// the canvas path (a single component bootstrap, no `getNextStoryUID`
+// suffixing), so docs mode is only chosen when the node is provably inside
+// `#storybook-docs`.
 export const getRenderType = (targetDOMNode: HTMLElement): RenderType => {
-  return targetDOMNode.id === 'storybook-root' ? 'canvas' : 'docs';
+  if (targetDOMNode.id === 'storybook-docs') {
+    return 'docs';
+  }
+  const doc = (targetDOMNode.ownerDocument ?? global.document) as Document | undefined;
+  const docsRoot = doc?.getElementById('storybook-docs') ?? null;
+  if (docsRoot && docsRoot !== targetDOMNode && docsRoot.contains(targetDOMNode)) {
+    return 'docs';
+  }
+  return 'canvas';
 };
 
 export function clearRootHTMLElement(renderType: RenderType) {

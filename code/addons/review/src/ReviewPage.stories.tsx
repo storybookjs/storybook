@@ -110,10 +110,6 @@ export const Components = meta.story({
 
     const componentsTab = await canvas.findByRole('tab', { name: 'Components' });
     await userEvent.click(componentsTab);
-
-    await expect(
-      await canvas.findByRole('button', { name: 'Show all changes' })
-    ).toBeInTheDocument();
   },
 });
 

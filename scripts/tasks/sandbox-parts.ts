@@ -1003,9 +1003,22 @@ async function prepareAngularSandbox(cwd: string, templateName: string) {
   // which is produced by `yarn docs:json` (compodoc). The storybook and build-storybook
   // scripts above pre-run it, but other entry points (notably `vitest`) do not, so
   // Vite's pre-transform fails to resolve the import before any task can run. Drop
-  // an empty stub so any consumer can start; the real content is written when
-  // `docs:json` runs.
-  await writeFile(join(cwd, 'documentation.json'), '{}');
+  // a minimal valid-shape stub so any consumer can start; `checkValidCompodocJson`
+  // in the framework requires `components` to be truthy, so an empty `{}` is not
+  // enough. The real content is written when `docs:json` runs.
+  await writeFile(
+    join(cwd, 'documentation.json'),
+    JSON.stringify({
+      components: [],
+      directives: [],
+      modules: [],
+      pipes: [],
+      classes: [],
+      injectables: [],
+      interfaces: [],
+      miscellaneous: {},
+    })
+  );
 
   // Set tsConfig compilerOptions
 

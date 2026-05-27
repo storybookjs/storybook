@@ -18,7 +18,7 @@ type StoryRenderInfo = {
 
 declare global {
   const STORYBOOK_ANGULAR_OPTIONS: {
-    experimentalZoneless: boolean;
+    zoneless: boolean;
   };
 }
 
@@ -127,7 +127,7 @@ export abstract class AbstractRenderer {
       ...(storyFnAngular.applicationConfig?.providers ?? []),
     ];
 
-    if (STORYBOOK_ANGULAR_OPTIONS?.experimentalZoneless) {
+    if (STORYBOOK_ANGULAR_OPTIONS?.zoneless) {
       providers.unshift(provideZonelessChangeDetection());
     }
 

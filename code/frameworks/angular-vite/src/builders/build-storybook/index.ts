@@ -47,7 +47,7 @@ export type StorybookBuilderOptions = JsonObject & {
   preserveSymlinks?: boolean;
   assets?: AssetPattern[];
   sourceMap?: SourceMapUnion;
-  experimentalZoneless?: boolean;
+  zoneless?: boolean;
 } & Pick<
     // makes sure the option exists
     CLIOptions,
@@ -117,7 +117,7 @@ const commandBuilder: BuilderHandlerFn<StorybookBuilderOptions> = async (
     previewUrl,
     sourceMap = false,
     preserveSymlinks = false,
-    experimentalZoneless = true,
+    zoneless = true,
   } = options;
 
   const packageJsonPath = pkg.up({ cwd: __dirname });
@@ -142,7 +142,7 @@ const commandBuilder: BuilderHandlerFn<StorybookBuilderOptions> = async (
       ...(assets ? { assets } : {}),
       sourceMap,
       preserveSymlinks,
-      experimentalZoneless,
+      zoneless,
     },
     tsConfig,
     statsJson,

@@ -65,10 +65,10 @@
       "type": "string",
       "description": "Disables the default storybook preview and lets you use your own"
     },
-    "experimentalZoneless": {
+    "zoneless": {
       "type": "boolean",
-      "description": "Experimental: Use zoneless change detection.",
-      "default": false
+      "description": "Use zoneless change detection.",
+      "default": true
     },
     "styles": {
       "type": "array",

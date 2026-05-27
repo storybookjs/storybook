@@ -54,13 +54,11 @@ export const core: PresetProperty<'core'> = async (config, options) => {
   };
 };
 
-function resolveExperimentalZoneless(
+function resolveZoneless(
   frameworkOptions: FrameworkOptions,
   angularBuilderOptions: StandaloneOptions['angularBuilderOptions']
 ) {
-  return (
-    frameworkOptions?.experimentalZoneless ?? angularBuilderOptions?.experimentalZoneless ?? true
-  );
+  return frameworkOptions?.zoneless ?? angularBuilderOptions?.zoneless ?? true;
 }
 
 export const viteFinal = async (config: UserConfig, options?: StandaloneOptions) => {
@@ -103,10 +101,7 @@ export const viteFinal = async (config: UserConfig, options?: StandaloneOptions)
 
   // @ts-expect-error options is possibly undefined here, but presets.apply is guarded at runtime
   const framework = await options.presets.apply('framework');
-  const experimentalZoneless = resolveExperimentalZoneless(
-    framework.options,
-    options?.angularBuilderOptions
-  );
+  const zoneless = resolveZoneless(framework.options, options?.angularBuilderOptions);
   const angularPlugins = angular({
     jit: typeof framework.options?.jit !== 'undefined' ? framework.options?.jit : true,
     liveReload:
@@ -148,7 +143,7 @@ export const viteFinal = async (config: UserConfig, options?: StandaloneOptions)
         '@angular/platform-browser/animations',
         '@angular/common/http',
         'tslib',
-        ...(experimentalZoneless ? [] : ['zone.js']),
+        ...(zoneless ? [] : ['zone.js']),
       ],
     },
     build: {
@@ -185,12 +180,12 @@ export const viteFinal = async (config: UserConfig, options?: StandaloneOptions)
     plugins: [
       ...pluginsToInject,
       angularViteRedirectReapplyPlugin(options),
-      angularOptionsPlugin(options, { normalizePath, experimentalZoneless }),
+      angularOptionsPlugin(options, { normalizePath, zoneless }),
       storybookEsbuildPlugin(),
     ],
     define: {
       STORYBOOK_ANGULAR_OPTIONS: JSON.stringify({
-        experimentalZoneless: !!experimentalZoneless,
+        zoneless: !!zoneless,
       }),
     },
   });
@@ -198,7 +193,7 @@ export const viteFinal = async (config: UserConfig, options?: StandaloneOptions)
 
 function angularOptionsPlugin(
   options: StandaloneOptions,
-  { normalizePath, experimentalZoneless }: any
+  { normalizePath, zoneless }: any
 ): Plugin {
   let resolvedConfig: UserConfig;
   return {
@@ -236,7 +231,7 @@ function angularOptionsPlugin(
           });
         }
 
-        if (!experimentalZoneless) {
+        if (!zoneless) {
           imports.push('zone.js');
         }
 

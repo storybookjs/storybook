@@ -101,10 +101,10 @@
       "description": "Controls level of logging during build. Can be one of: [silly, verbose, info (default), warn, error, silent].",
       "pattern": "(silly|verbose|info|warn|silent)"
     },
-    "experimentalZoneless": {
+    "zoneless": {
       "type": "boolean",
-      "description": "Experimental: Use zoneless change detection.",
-      "default": false
+      "description": "Use zoneless change detection.",
+      "default": true
     },
     "styles": {
       "type": "array",

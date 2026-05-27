@@ -8,7 +8,7 @@ export type StandaloneOptions = CLIOptions &
     enableProdMode: boolean;
     angularBrowserTarget: string | null;
     angularBuilderOptions?: Record<string, any> & {
-      experimentalZoneless?: boolean;
+      zoneless?: boolean;
     };
     angularBuilderContext?: BuilderContext | null;
     tsConfig?: string;

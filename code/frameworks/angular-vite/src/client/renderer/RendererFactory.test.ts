@@ -27,7 +27,7 @@ describe('RendererFactory', () => {
     (platformBrowserDynamic as any).mockImplementation(platformBrowserDynamicTesting);
     vi.spyOn(console, 'log').mockImplementation(() => {});
     // @ts-expect-error Ignore
-    globalThis.STORYBOOK_ANGULAR_OPTIONS = { experimentalZoneless: false };
+    globalThis.STORYBOOK_ANGULAR_OPTIONS = { zoneless: false };
   });
 
   afterEach(() => {

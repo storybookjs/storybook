@@ -1,6 +1,6 @@
-import React, { type FC, type ReactNode, useEffect, useMemo, useState } from 'react';
+import { type FC, type ReactNode, useEffect, useMemo, useState } from 'react';
 
-import { Button, Collapsible, TabsView } from 'storybook/internal/components';
+import { Button, Collapsible } from 'storybook/internal/components';
 import { styled } from 'storybook/theming';
 
 import {
@@ -18,8 +18,8 @@ import { buildReviewChangesDetailHref, type ReviewTab } from '../review-navigati
 import type { ReviewCollection, ReviewState } from '../review-state.ts';
 
 // A definite height (not `minHeight`) is what makes the page scrollable:
-// the inner flex chain — Body → TabsView → TabPanel — needs a bounded height
-// to resolve against so the TabsView's own ScrollArea can take over
+// the inner flex chain — Body → TabPanels → TabPanelBody — needs a bounded
+// height to resolve against so the panel content can take over
 // scrolling. `minHeight: 100vh` left the page free to grow taller than its
 // container with nothing scrollable — hence the "can't scroll" bug. `100dvh`
 // (matching DetailsScreen) fills the manager's page cell and also works in
@@ -95,9 +95,40 @@ const Body = styled.div(({ theme }) => ({
   flex: 1,
   minHeight: 0,
   background: theme.background.app,
+  display: 'flex',
+  flexDirection: 'column',
 }));
 
 const TabPanelBody = styled.div({});
+const TabHeader = styled.div(({ theme }) => ({
+  display: 'flex',
+  alignItems: 'center',
+  borderBottom: `1px solid ${theme.appBorderColor}`,
+  minHeight: 40,
+}));
+const TabButton = styled.button<{ $selected: boolean }>(({ theme, $selected }) => ({
+  appearance: 'none',
+  border: 0,
+  borderBottom: `3px solid ${$selected ? theme.barSelectedColor : 'transparent'}`,
+  background: 'transparent',
+  color: $selected ? theme.barSelectedColor : theme.barTextColor,
+  cursor: 'pointer',
+  fontSize: 13,
+  fontWeight: 700,
+  height: 40,
+  padding: '0 15px',
+  '&:hover': {
+    color: $selected ? theme.barSelectedColor : theme.barHoverColor,
+  },
+  '&:focus-visible': {
+    outline: '0 none',
+    boxShadow: `inset 0 0 0 2px ${theme.barSelectedColor}`,
+  },
+}));
+const TabPanels = styled.div({
+  flex: 1,
+  minHeight: 0,
+});
 
 // Compact search row — the search field shares the row with optional
 // trailing controls (e.g. the Components tab change-filter toggle).
@@ -506,7 +537,10 @@ export const SummaryScreen: FC<SummaryScreenProps> = ({
   const [expandedCollections, setExpandedCollections] = useState<Set<number>>(new Set());
   const [expandedComponents, setExpandedComponents] = useState<Set<string>>(new Set());
   const [search, setSearch] = useState('');
-  const [changeFilter, setChangeFilter] = useState<ChangeFilter>('agent');
+  const collectionsTabId = 'review-tab-collections';
+  const componentsTabId = 'review-tab-components';
+  const collectionsPanelId = 'review-tabpanel-collections';
+  const componentsPanelId = 'review-tabpanel-components';
   const storybookRootHref = useMemo(() => {
     const rootUrl = new URL(window.location.href);
     rootUrl.searchParams.delete('path');
@@ -556,129 +590,130 @@ export const SummaryScreen: FC<SummaryScreenProps> = ({
       </Header>
 
       <Body>
-        <TabsView
-          selected={tab}
-          onSelectionChange={(key) => setTab(key as ReviewTab)}
-          panelProps={{ renderAllChildren: true }}
-          tabs={[
-            {
-              id: 'collections',
-              title: 'Collections',
-              children: (
-                <TabPanelBody>
-                  <SearchRow>
-                    <SearchBox value={search} onChange={setSearch} />
-                    <SearchActions>
-                      <Button
-                        variant="ghost"
-                        size="small"
-                        padding="small"
-                        ariaLabel={
-                          areAllCollectionsExpanded
-                            ? 'Collapse all collections'
-                            : 'Expand all collections'
-                        }
-                        onClick={() => {
-                          setExpandedCollections(
-                            areAllCollectionsExpanded
-                              ? new Set()
-                              : new Set(state.collections.map((_, index) => index))
-                          );
-                        }}
-                      >
-                        {areAllCollectionsExpanded ? <CollapseIcon /> : <ExpandAltIcon />}
-                      </Button>
-                    </SearchActions>
-                  </SearchRow>
-                  <CollectionsTab
-                    collections={state.collections}
-                    expanded={expandedCollections}
-                    query={search}
-                    activeTab={tab}
-                    storyInfo={storyInfo}
-                    onToggleCollection={(index) => {
-                      setExpandedCollections((prev) => {
-                        const next = new Set(prev);
-                        if (next.has(index)) {
-                          next.delete(index);
-                        } else {
-                          next.add(index);
-                        }
-                        return next;
-                      });
-                    }}
-                  />
-                </TabPanelBody>
-              ),
-            },
-            {
-              id: 'components',
-              title: 'Components',
-              children: (
-                <TabPanelBody>
-                  <SearchRow>
-                    <SearchBox value={search} onChange={setSearch} />
-                    <SearchActions>
-                      <Button
-                        variant="ghost"
-                        size="small"
-                        padding="small"
-                        ariaLabel={
-                          areAllComponentsExpanded
-                            ? 'Collapse all components'
-                            : 'Expand all components'
-                        }
-                        onClick={() => {
-                          setExpandedComponents(
-                            areAllComponentsExpanded ? new Set() : new Set(componentIds)
-                          );
-                        }}
-                      >
-                        {areAllComponentsExpanded ? <CollapseIcon /> : <ExpandAltIcon />}
-                      </Button>
-                      <ToggleGroup>
-                        <FilterToggle
-                          type="button"
-                          $selected={changeFilter === 'all'}
-                          aria-pressed={changeFilter === 'all'}
-                          onClick={() => setChangeFilter('all')}
-                        >
-                          Show all changes
-                        </FilterToggle>
-                        <FilterToggle
-                          type="button"
-                          $selected={changeFilter === 'agent'}
-                          aria-pressed={changeFilter === 'agent'}
-                          onClick={() => setChangeFilter('agent')}
-                        >
-                          Agent filtered
-                        </FilterToggle>
-                      </ToggleGroup>
-                    </SearchActions>
-                  </SearchRow>
-                  <ComponentsTab
-                    collections={state.collections}
-                    storyInfo={storyInfo}
-                    expanded={expandedComponents}
-                    query={search}
-                    activeTab={tab}
-                    onToggleComponent={(componentId) => {
-                      setExpandedComponents((prev) => {
-                        const next = new Set(prev);
-                        if (next.has(componentId)) {
-                          next.delete(componentId);
-                        } else {
-                          next.add(componentId);
-                        }
-                        return next;
-                      });
-                    }}
-                  />
-                </TabPanelBody>
-              ),
-            },
-          ]}
-        />
+        <TabHeader role="tablist" aria-label="Review tabs">
+          <TabButton
+            id={collectionsTabId}
+            type="button"
+            role="tab"
+            $selected={tab === 'collections'}
+            aria-selected={tab === 'collections'}
+            aria-controls={collectionsPanelId}
+            tabIndex={tab === 'collections' ? 0 : -1}
+            onClick={() => setTab('collections')}
+          >
+            Collections
+          </TabButton>
+          <TabButton
+            id={componentsTabId}
+            type="button"
+            role="tab"
+            $selected={tab === 'components'}
+            aria-selected={tab === 'components'}
+            aria-controls={componentsPanelId}
+            tabIndex={tab === 'components' ? 0 : -1}
+            onClick={() => setTab('components')}
+          >
+            Components
+          </TabButton>
+        </TabHeader>
+
+        <TabPanels>
+          <TabPanelBody
+            id={collectionsPanelId}
+            role="tabpanel"
+            aria-labelledby={collectionsTabId}
+            hidden={tab !== 'collections'}
+          >
+            <SearchRow>
+              <SearchBox value={search} onChange={setSearch} />
+              <SearchActions>
+                <Button
+                  variant="ghost"
+                  size="small"
+                  padding="small"
+                  ariaLabel={
+                    areAllCollectionsExpanded
+                      ? 'Collapse all collections'
+                      : 'Expand all collections'
+                  }
+                  onClick={() => {
+                    setExpandedCollections(
+                      areAllCollectionsExpanded
+                        ? new Set()
+                        : new Set(state.collections.map((_, index) => index))
+                    );
+                  }}
+                >
+                  {areAllCollectionsExpanded ? <CollapseIcon /> : <ExpandAltIcon />}
+                </Button>
+              </SearchActions>
+            </SearchRow>
+            <CollectionsTab
+              collections={state.collections}
+              expanded={expandedCollections}
+              query={search}
+              activeTab={tab}
+              storyInfo={storyInfo}
+              onToggleCollection={(index) => {
+                setExpandedCollections((prev) => {
+                  const next = new Set(prev);
+                  if (next.has(index)) {
+                    next.delete(index);
+                  } else {
+                    next.add(index);
+                  }
+                  return next;
+                });
+              }}
+            />
+          </TabPanelBody>
+
+          <TabPanelBody
+            id={componentsPanelId}
+            role="tabpanel"
+            aria-labelledby={componentsTabId}
+            hidden={tab !== 'components'}
+          >
+            <SearchRow>
+              <SearchBox value={search} onChange={setSearch} />
+              <SearchActions>
+                <Button
+                  variant="ghost"
+                  size="small"
+                  padding="small"
+                  ariaLabel={
+                    areAllComponentsExpanded ? 'Collapse all components' : 'Expand all components'
+                  }
+                  onClick={() => {
+                    setExpandedComponents(
+                      areAllComponentsExpanded ? new Set() : new Set(componentIds)
+                    );
+                  }}
+                >
+                  {areAllComponentsExpanded ? <CollapseIcon /> : <ExpandAltIcon />}
+                </Button>
+              </SearchActions>
+            </SearchRow>
+            <ComponentsTab
+              collections={state.collections}
+              storyInfo={storyInfo}
+              expanded={expandedComponents}
+              query={search}
+              activeTab={tab}
+              onToggleComponent={(componentId) => {
+                setExpandedComponents((prev) => {
+                  const next = new Set(prev);
+                  if (next.has(componentId)) {
+                    next.delete(componentId);
+                  } else {
+                    next.add(componentId);
+                  }
+                  return next;
+                });
+              }}
+            />
+          </TabPanelBody>
+        </TabPanels>
       </Body>
     </Page>
   );

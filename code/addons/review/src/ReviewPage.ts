@@ -1,7 +1,7 @@
 import React, { type FC, type ReactNode, useEffect, useMemo, useRef, useState } from 'react';
 
 import { useChannel, useStorybookApi, useStorybookState } from 'storybook/manager-api';
-import { Location, useNavigate } from 'storybook/internal/router';
+import { Location, type RenderData, useNavigate } from 'storybook/internal/router';
 
 import type { StoryInfo } from './components/CollectionGrid.tsx';
 import { EVENTS, RESTORE_NAV_SESSION_KEY, REVIEW_CHANGES_URL } from './constants.ts';
@@ -20,9 +20,10 @@ import { SummaryScreen } from './screens/SummaryScreen.tsx';
 // makes the page re-render on every in-page navigation, so the detail screen
 // can swap stories without a manager reload.
 export const ReviewPage: FC = () =>
-  React.createElement(Location, null, ({ location }) =>
-    React.createElement(ReviewPageContent, { search: location.search ?? '' })
-  );
+  React.createElement(Location, null, (({ location }: RenderData) =>
+    React.createElement(ReviewPageContent, {
+      search: location.search ?? '',
+    })) as unknown as ReactNode);
 
 const ReviewPageContent: FC<{ search: string }> = ({ search }) => {
   const [state, setState] = useState<ReviewState | null>(null);

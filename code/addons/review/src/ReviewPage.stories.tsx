@@ -1,6 +1,6 @@
 import { expect, fn, userEvent, within } from 'storybook/test';
 
-import { ManagerContext } from 'storybook/manager-api';
+import { ManagerContext, type API, type State } from 'storybook/manager-api';
 import { MemoryRouter } from 'storybook/internal/router';
 
 import preview from '../../../.storybook/preview.tsx';
@@ -11,14 +11,18 @@ import { ReviewPage } from './ReviewPage.ts';
 type EventListener = (payload?: unknown) => void;
 
 const eventListeners = new Map<string, Set<EventListener>>();
-const onMock = fn((eventName: string, listener: EventListener) => {
+const removeEventListener = (eventName: string, listener: EventListener) => {
+  eventListeners.get(eventName)?.delete(listener);
+};
+const onMock = fn((eventName: string, listener: EventListener): (() => void) => {
   if (!eventListeners.has(eventName)) {
     eventListeners.set(eventName, new Set());
   }
   eventListeners.get(eventName)?.add(listener);
+  return () => removeEventListener(eventName, listener);
 });
 const offMock = fn((eventName: string, listener: EventListener) => {
-  eventListeners.get(eventName)?.delete(listener);
+  removeEventListener(eventName, listener);
 });
 const emitMock = fn((eventName: string, payload?: unknown) => {
   eventListeners.get(eventName)?.forEach((listener) => {
@@ -26,6 +30,14 @@ const emitMock = fn((eventName: string, payload?: unknown) => {
   });
 });
 const toggleNavMock = fn();
+const managerState: State = { index: {} } as State;
+const managerApi: API = {
+  on: onMock,
+  off: offMock,
+  emit: emitMock,
+  getIsNavShown: () => true,
+  toggleNav: toggleNavMock,
+} as unknown as API;
 
 const reviewState: ReviewState = {
   title: 'Manager settings polish',
@@ -56,14 +68,8 @@ const meta = preview.meta({
     (Story, { parameters }) => (
       <ManagerContext.Provider
         value={{
-          state: { index: {} },
-          api: {
-            on: onMock,
-            off: offMock,
-            emit: emitMock,
-            getIsNavShown: () => true,
-            toggleNav: toggleNavMock,
-          },
+          state: managerState,
+          api: managerApi,
         }}
       >
         <MemoryRouter initialEntries={parameters?.routerInitialEntries ?? ['/']}>

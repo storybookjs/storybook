@@ -253,10 +253,9 @@ const CollectionControls = styled.div({
   flexShrink: 0,
 });
 
-const ToggleChevronIcon = styled(ChevronSmallDownIcon)<{ $expanded: boolean }>(({ $expanded }) => ({
-  transform: `rotate(${$expanded ? -180 : 0}deg)`,
+const ToggleChevronIcon = styled(ChevronSmallDownIcon)({
   transition: 'transform 160ms ease',
-}));
+});
 
 const CollectionHeadText = styled.div({
   display: 'flex',
@@ -381,7 +380,9 @@ const CollectionsTab: FC<{
                         onToggleCollection(index);
                       }}
                     >
-                      <ToggleChevronIcon $expanded={isExpanded} />
+                      <ToggleChevronIcon
+                        style={{ transform: `rotate(${isExpanded ? -180 : 0}deg)` }}
+                      />
                     </Button>
                   </CollectionControls>
                 </CollectionHead>
@@ -470,7 +471,9 @@ const ComponentsTab: FC<{
                         onToggleComponent(group.componentId);
                       }}
                     >
-                      <ToggleChevronIcon $expanded={isExpanded} />
+                      <ToggleChevronIcon
+                        style={{ transform: `rotate(${isExpanded ? -180 : 0}deg)` }}
+                      />
                     </Button>
                   </CollectionControls>
                 </CollectionHead>

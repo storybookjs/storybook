@@ -3,8 +3,6 @@ import type { NormalizedStoriesSpecifier } from 'storybook/internal/types';
 
 import { dedent } from 'ts-dedent';
 
-import { importPipeline } from './importPipeline.ts';
-
 function adjustRegexToExcludeNodeModules(originalRegex: RegExp) {
   const originalRegexString = originalRegex.source;
   const startsWithCaret = originalRegexString.startsWith('^');
@@ -59,28 +57,15 @@ export function toImportFnPart(specifier: NormalizedStoriesSpecifier) {
   `;
 }
 
-export function toImportFn(
-  stories: NormalizedStoriesSpecifier[],
-  { needPipelinedImport }: { needPipelinedImport?: boolean } = {}
-) {
-  let pipelinedImport = `const pipeline = (x) => x();`;
-  if (needPipelinedImport) {
-    pipelinedImport = `
-      const importPipeline = ${importPipeline};
-      const pipeline = importPipeline();
-    `;
-  }
-
+export function toImportFn(stories: NormalizedStoriesSpecifier[]) {
   return dedent`
-    ${pipelinedImport}
-
     const importers = [
       ${stories.map(toImportFnPart).join(',\n')}
     ];
 
     export async function importFn(path) {
       for (let i = 0; i < importers.length; i++) {
-        const moduleExports = await pipeline(() => importers[i](path));
+        const moduleExports = await importers[i](path);
         if (moduleExports) {
           return moduleExports;
         }

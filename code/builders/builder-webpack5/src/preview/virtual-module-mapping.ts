@@ -1,12 +1,7 @@
 import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import {
-  getBuilderOptions,
-  loadPreviewOrConfigFile,
-  normalizeStories,
-  readTemplate,
-} from 'storybook/internal/common';
+import { loadPreviewOrConfigFile, normalizeStories, readTemplate } from 'storybook/internal/common';
 import type { Options, PreviewAnnotation } from 'storybook/internal/types';
 
 import { toImportFn } from '@storybook/core-webpack';
@@ -14,13 +9,9 @@ import { toImportFn } from '@storybook/core-webpack';
 // eslint-disable-next-line depend/ban-dependencies
 import slash from 'slash';
 
-import type { BuilderOptions } from '../types.ts';
-
 export const getVirtualModules = async (options: Options) => {
   const virtualModules: Record<string, string> = {};
-  const builderOptions = await getBuilderOptions<BuilderOptions>(options);
   const workingDir = process.cwd();
-  const isProd = options.configType === 'PRODUCTION';
   const nonNormalizedStories = await options.presets.apply('stories', []);
   const entries = [];
 
@@ -48,8 +39,7 @@ export const getVirtualModules = async (options: Options) => {
   const storiesFilename = 'storybook-stories.js';
   const storiesPath = resolve(join(workingDir, storiesFilename));
 
-  const needPipelinedImport = !!builderOptions.lazyCompilation && !isProd;
-  virtualModules[storiesPath] = toImportFn(stories, { needPipelinedImport });
+  virtualModules[storiesPath] = toImportFn(stories);
   const configEntryPath = resolve(join(workingDir, 'storybook-config-entry.js'));
   virtualModules[configEntryPath] = (
     await readTemplate(

@@ -58,7 +58,7 @@ describe('buildServiceArtifacts', () => {
       id: 'test/no-loaders',
       state: { x: 1 },
       queries: {
-        get: { input: z.void(), output: z.number(), select: (s: { x: number }) => s.x },
+        get: { input: z.void(), output: z.number(), handler: (s: { x: number }) => s.x },
       },
       commands: {},
     });
@@ -78,7 +78,7 @@ describe('buildServiceArtifacts', () => {
         getOne: {
           input: z.string(),
           output: z.any(),
-          select: (s: S, id: string) => s.byId[id],
+          handler: (s: S, id: string) => s.byId[id],
           preload: async (id: string, ctx: ServiceCtx<S>) => {
             await ctx.self.commands.load(id);
           },
@@ -122,7 +122,7 @@ describe('buildServiceArtifacts', () => {
         getOne: {
           input: z.string(),
           output: z.any(),
-          select: (s: S, id: string) => s.byId[id],
+          handler: (s: S, id: string) => s.byId[id],
           preload: async (id: string, ctx: ServiceCtx<S>) => {
             await ctx.self.commands.load(id);
           },
@@ -158,7 +158,7 @@ describe('buildServiceArtifacts', () => {
         allStatuses: {
           input: z.void(),
           output: z.any(),
-          select: (s: S) => s.byId,
+          handler: (s: S) => s.byId,
           preload: async (ctx: ServiceCtx<S>) => {
             await ctx.self.commands.loadAll();
           },
@@ -198,7 +198,7 @@ describe('buildServiceArtifacts', () => {
         allCats: {
           input: z.void(),
           output: z.any(),
-          select: (s: S) => s.cats,
+          handler: (s: S) => s.cats,
           preload: async (ctx: ServiceCtx<S>) => {
             await ctx.self.commands.loadCats();
           },
@@ -207,7 +207,7 @@ describe('buildServiceArtifacts', () => {
         allDogs: {
           input: z.void(),
           output: z.any(),
-          select: (s: S) => s.dogs,
+          handler: (s: S) => s.dogs,
           preload: async (ctx: ServiceCtx<S>) => {
             await ctx.self.commands.loadDogs();
           },
@@ -256,7 +256,7 @@ describe('buildServiceArtifacts', () => {
         getItems: {
           input: z.void(),
           output: z.any(),
-          select: (s: S) => s.items,
+          handler: (s: S) => s.items,
           preload: async (ctx: ServiceCtx<S>) => {
             await ctx.self.commands.push(1);
           },
@@ -290,7 +290,7 @@ describe('buildServiceArtifacts', () => {
         getByKey: {
           input: keySchema,
           output: z.string(),
-          select: (s: S, k: z.infer<typeof keySchema>) => s.byKey[`${k.kind}:${k.id}`],
+          handler: (s: S, k: z.infer<typeof keySchema>) => s.byKey[`${k.kind}:${k.id}`],
           preload: async (k: z.infer<typeof keySchema>, ctx: ServiceCtx<S>) => {
             ctx.self.setState((d: S) => {
               d.byKey[`${k.kind}:${k.id}`] = `${k.kind}-${k.id}`;
@@ -327,7 +327,7 @@ describe('buildServiceArtifacts', () => {
         getOne: {
           input: z.string(),
           output: z.any(),
-          select: (s: S, id: string) => s.byId[id],
+          handler: (s: S, id: string) => s.byId[id],
           preload: async (id: string, ctx: ServiceCtx<S>) => {
             await ctx.self.commands.load(id);
           },
@@ -371,7 +371,7 @@ describe('buildServiceArtifacts', () => {
         allStatuses: {
           input: z.void(),
           output: z.any(),
-          select: (s: S) => s.byId,
+          handler: (s: S) => s.byId,
           preload: async (ctx: ServiceCtx<S>) => {
             await ctx.self.commands.loadAll();
           },
@@ -409,7 +409,7 @@ describe('buildServiceArtifacts', () => {
         getOne: {
           input: z.string(),
           output: z.any(),
-          select: (s: S, id: string): true | undefined => s.byId[id],
+          handler: (s: S, id: string): true | undefined => s.byId[id],
           preload: async (id: string, ctx: ServiceCtx<S>) => {
             await ctx.self.commands.load(id);
           },
@@ -453,7 +453,7 @@ describe('runtime loader branching', () => {
         getOne: {
           input: z.string(),
           output: z.any(),
-          select: (s: S, id: string) => s.byId[id],
+          handler: (s: S, id: string) => s.byId[id],
           preload: async (id: string, ctx: ServiceCtx<S>) => {
             await ctx.self.commands.load(id);
           },
@@ -496,7 +496,7 @@ describe('runtime loader branching', () => {
         getOne: {
           input: z.string(),
           output: z.any(),
-          select: (s: S, id: string) => s.byId[id],
+          handler: (s: S, id: string) => s.byId[id],
           preload: async (id: string, ctx: ServiceCtx<S>) => {
             await ctx.self.commands.load(id);
           },
@@ -546,7 +546,7 @@ describe('runtime loader branching', () => {
         getOne: {
           input: z.string(),
           output: z.any(),
-          select: (s: S, id: string) => s.byId[id],
+          handler: (s: S, id: string) => s.byId[id],
           preload: async (id: string, ctx: ServiceCtx<S>) => {
             await ctx.self.commands.load(id);
           },
@@ -590,7 +590,7 @@ describe('runtime loader branching', () => {
         getOne: {
           input: z.string(),
           output: z.any(),
-          select: (s: S, id: string) => s.byId[id],
+          handler: (s: S, id: string) => s.byId[id],
           preload: async (id: string, ctx: ServiceCtx<S>) => {
             await ctx.self.commands.load(id);
           },
@@ -662,7 +662,7 @@ describe('build → load round trip', () => {
         getComponentDocgenInfo: {
           input: z.string(),
           output: z.any(),
-          select: (s: S, id: string) => s.byComponentId[id],
+          handler: (s: S, id: string) => s.byComponentId[id],
           preload: async (id: string, ctx: ServiceCtx<S>) => {
             await ctx.self.commands.generate(id);
           },
@@ -717,7 +717,7 @@ describe('build → load round trip', () => {
         allStatuses: {
           input: z.void(),
           output: z.any(),
-          select: (s: S) => s.byStoryId,
+          handler: (s: S) => s.byStoryId,
           preload: async (ctx: ServiceCtx<S>) => {
             await ctx.self.commands.loadAll();
           },
@@ -726,7 +726,7 @@ describe('build → load round trip', () => {
         getStoryStatus: {
           input: z.string(),
           output: z.any(),
-          select: (s: S, id: string) => s.byStoryId[id],
+          handler: (s: S, id: string) => s.byStoryId[id],
         },
       },
       commands: {
@@ -784,7 +784,7 @@ describe('build-time input validation (Fix #3)', () => {
           // artifact filename matches what the runtime will request after its own validation.
           input: z.string().transform((s) => s.toUpperCase()),
           output: z.any(),
-          select: (s: S, id: string) => s.byId[id],
+          handler: (s: S, id: string) => s.byId[id],
           preload: async (id: string, ctx: ServiceCtx<S>) => {
             ctx.self.setState((d) => {
               d.byId[id] = { name: `Loaded ${id}` };
@@ -814,7 +814,7 @@ describe('resolvePreloadInputs guard (Fix #4)', () => {
         getOne: {
           input: z.string(),
           output: z.any(),
-          select: (s: S, id: string) => s.byId[id],
+          handler: (s: S, id: string) => s.byId[id],
           // Input-keyed preload arity (id, ctx) — but no `inputs: [...]` enumeration. The
           // build can't guess what to pre-render, so this is an authoring bug and must throw.
           preload: async (id: string, ctx: ServiceCtx<S>) => {
@@ -842,7 +842,7 @@ describe('resolvePreloadInputs guard (Fix #4)', () => {
         getAll: {
           input: z.void(),
           output: z.any(),
-          select: (s: S) => s.list,
+          handler: (s: S) => s.list,
           // No-input preload arity (ctx only) — the [undefined] fallback is correct.
           preload: async (ctx: ServiceCtx<S>) => {
             ctx.self.setState((d) => {

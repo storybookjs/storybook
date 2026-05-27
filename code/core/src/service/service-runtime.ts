@@ -101,7 +101,7 @@ function fnv1a(str: string): string {
  * mutator (`(draft) => { draft.foo = bar; }`); the runtime hands a real Immer draft to the
  * recipe and gets back the new immutable state plus the minimal patch list. Reactivity is
  * powered by `alien-signals`: the whole state is held in a single `signal<TState>`, and each
- * `query.subscribe(input, listener)` builds a `computed(() => select(state, input))` whose
+ * `query.subscribe(input, listener)` builds a `computed(() => handler(state, input))` whose
  * value is observed by an `effect(() => listener(...))`. Reference-equality memoisation on
  * the computed gives "fire only when the selected slice actually changes" for free.
  */
@@ -218,7 +218,7 @@ export class ServiceRuntime<TDef extends ServiceDefinition<any, any, any>> {
       throw new Error(`[${this.id}] Unknown query: ${queryName}`);
     }
     const state = this._stateSignal();
-    const raw = (entry.select as (s: unknown, i: unknown) => unknown)(state, parsedInput);
+    const raw = (entry.handler as (s: unknown, i: unknown) => unknown)(state, parsedInput);
     return validateSync(entry.output, raw, {
       serviceId: this.id,
       kind: 'query',
@@ -272,11 +272,11 @@ export class ServiceRuntime<TDef extends ServiceDefinition<any, any, any>> {
   /**
    * Subscribe a listener to a query/input pair. Built on `alien-signals`:
    *
-   *   - `computed(() => select(state, input))` re-runs whenever the state signal changes,
+   *   - `computed(() => handler(state, input))` re-runs whenever the state signal changes,
    *     memoised by reference equality on its output. Two consecutive evaluations that
    *     return `===`-equal values produce no downstream notification — that's where our
-   *     "structurally equal? don't re-fire" behaviour for primitive-valued selectors comes
-   *     from automatically.
+   *     "structurally equal? don't re-fire" behaviour for primitive-valued query handlers
+   *     comes from automatically.
    *
    *   - `effect(() => listener(comp()))` fires on every change to the computed's value.
    *     `effect` itself fires once synchronously at install time; we swallow that first

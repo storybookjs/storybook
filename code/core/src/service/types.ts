@@ -3,7 +3,7 @@
  *
  * Four primitives:
  *  - **state**: a single in-memory object per service, *private* to the service.
- *  - **queries**: schema-validated, synchronous selectors over state. Read-only contract.
+ *  - **queries**: schema-validated, synchronous read handlers over state. Read-only contract.
  *  - **commands**: schema-validated, possibly async writers that mutate state via `ctx.self.setState`.
  *  - **query preloads**: optional read-triggered population, statically pre-renderable.
  *
@@ -53,8 +53,8 @@ type IsNoInputSchema<S extends AnySchema> = [InferSchemaInput<S>] extends [never
       : false;
 
 /**
- * Bivariant function type — keeps handler/selector maps assignable without collapsing parameter
- * types to `unknown` when definitions are checked against `AnyQueryDef` / `AnyCommandDef`.
+ * Bivariant function type — keeps handler maps assignable without collapsing parameter types
+ * to `unknown` when definitions are checked against `AnyQueryDef` / `AnyCommandDef`.
  */
 type BivariantCallback<TArgs extends unknown[], TResult> = {
   bivarianceHack(...args: TArgs): TResult;
@@ -104,17 +104,17 @@ export interface SelfHandle<TState> {
 // -------------------- query definition --------------------
 
 /**
- * A query is a schema-validated selector over state.
+ * A query is a schema-validated read-only operation over state.
  *
  *  - `input` and `output` are Standard Schema v1 schemas.
- *  - `select` derives the output value from state and (optionally) a parsed input. Pure and sync.
+ *  - `handler` derives the output value from state and (optionally) a parsed input. Pure and sync.
  *  - `preload` (optional) is a read-triggered side effect that populates state; the static
  *    build runs it for every enumerated input.
  *  - `inputs` (optional) enumerates inputs the static build pre-renders.
  *  - `path` (optional) controls the per-input filename.
  *
  * No-input queries are encoded by `input: <void schema>` (e.g. `z.void()`); `InferSchemaOutput`
- * resolves to `void`, and the `select`/`preload`/`path` signatures collapse to their no-input
+ * resolves to `void`, and the `handler`/`preload`/`path` signatures collapse to their no-input
  * variants automatically.
  */
 export interface QueryDef<
@@ -125,7 +125,7 @@ export interface QueryDef<
   readonly description?: string;
   readonly input: TInputSchema;
   readonly output: TOutputSchema;
-  readonly select: IsNoInputSchema<TInputSchema> extends true
+  readonly handler: IsNoInputSchema<TInputSchema> extends true
     ? (state: TState) => InferSchemaOutput<TOutputSchema>
     : (state: TState, input: InferSchemaOutput<TInputSchema>) => InferSchemaOutput<TOutputSchema>;
   readonly preload?: IsNoInputSchema<TInputSchema> extends true
@@ -193,7 +193,7 @@ export type AnyQueryDef<TState = any> = {
   readonly description?: string;
   readonly input: AnySchema;
   readonly output: AnySchema;
-  readonly select: BivariantCallback<[state: TState, input?: unknown], unknown>;
+  readonly handler: BivariantCallback<[state: TState, input?: unknown], unknown>;
   readonly preload?: BivariantCallback<
     [input: unknown, ctx: ServiceCtx<TState>],
     void | Promise<void>
@@ -242,7 +242,7 @@ export type { ServiceStaticTransport } from './static-transport.ts';
 /**
  * What a consumer passes in when calling a query. The raw caller-facing input, inferred from
  * the query's `input` schema via `StandardSchemaV1.InferInput`. The runtime validates this and
- * hands the parsed value to `select`.
+ * hands the parsed value to the query's `handler`.
  */
 export type InputOfQuery<Q> =
   Q extends QueryDef<any, infer TIn, any> ? InferSchemaInput<TIn> : never;

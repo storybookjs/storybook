@@ -12,7 +12,7 @@ import type {
  *
  * Recommended: `defineService<MyState>()(({ query, command }) => ({ id, state, queries, commands }))`.
  * The callback receives the `query` / `command` helpers, which provide per-entry inference for
- * `select` / `preload` / `path` / `handler` parameters and return types.
+ * the `handler` / `preload` / `path` parameters and return types.
  *
  * Bare entries (without `query()` / `command()`) are accepted but only loosely validated; the
  * runtime still validates `input` / `output` schemas at call time.
@@ -27,7 +27,7 @@ import type {
  *     getComponentDocgenInfo: query({
  *       input: z.string(),
  *       output: componentDocgenSchema.nullable(),
- *       select: (state, componentId) => state.byComponentId[componentId] ?? null,
+ *       handler: (state, componentId) => state.byComponentId[componentId] ?? null,
  *     }),
  *   },
  *   commands: {
@@ -61,7 +61,7 @@ type NarrowCommands<TState, C> = {
  * Type-only helper for a query entry. At runtime this returns its argument unchanged.
  *
  * Required for inference: the object literal is checked as `QueryDef<TState, I, O>` directly,
- * which contextually types `select` / `preload` / `path` from `input` / `output`.
+ * which contextually types `handler` / `preload` / `path` from `input` / `output`.
  */
 export function query<TState>() {
   return <const I extends AnySchema, const O extends AnySchema>(

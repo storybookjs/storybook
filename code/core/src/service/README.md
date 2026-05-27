@@ -10,7 +10,7 @@ The main audience for this README is agents and maintainers who need to understa
 ## Goals
 
 - Declare a stateful service in one object: `state` + `queries` + `commands`.
-- Strong TypeScript inference for query selectors and command handlers from Standard Schema v1 schemas.
+- Strong TypeScript inference for query and command handlers from Standard Schema v1 schemas.
 - Validate every query and command input/output through the schema.
 - Reactive query subscriptions via `alien-signals` — fire only when the selected slice actually changes.
 - Persist service state as JSON at build time; re-hydrate lazily on the client.
@@ -93,23 +93,23 @@ Two conventions:
 
 ### Queries
 
-Every query is an object with required `input` and `output` schemas plus a `select` selector. The runtime validates caller input before calling `select`, and validates the selector result before returning it.
+Every query is an object with required `input` and `output` schemas plus a `handler`. The handler receives state (and optionally a parsed input) and returns the output. The runtime validates caller input before calling `handler`, and validates the handler's result before returning it.
 
 ```ts
 // no input — use z.void() / v.void() for the input schema
-getCount: query({ input: z.void(), output: z.number(), select: (state) => state.count })
+getCount: query({ input: z.void(), output: z.number(), handler: (state) => state.count })
 
 // input-keyed — `id` is inferred from `input: z.string()`
 getById: query({
   input: z.string(),
   output: z.string().optional(),
-  select: (state, id) => state.byId[id],
+  handler: (state, id) => state.byId[id],
 })
 ```
 
-`select` must not call commands or perform I/O — it's read-only by contract. If a query needs to trigger loading on first read, add optional `preload`, `inputs`, and `path` fields (see *Static Build*).
+A query `handler` must not call commands or perform I/O — it's read-only by contract. If a query needs to trigger loading on first read, add optional `preload`, `inputs`, and `path` fields (see *Static Build*).
 
-Queries are the unit of subscription. Every `query.subscribe(...)` builds an `alien-signals` `computed(() => select(state, input))`. The computed memoises by reference equality on its output, so subscribers re-fire only when this query's result actually changes.
+Queries are the unit of subscription. Every `query.subscribe(...)` builds an `alien-signals` `computed(() => handler(state, input))`. The computed memoises by reference equality on its output, so subscribers re-fire only when this query's result actually changes.
 
 ### Commands
 
@@ -146,7 +146,7 @@ Failures throw `ServiceValidationError`, whose message includes:
 - the full `serviceId.operationName`;
 - one line per issue with field path and the schema's expectation text.
 
-Validation has two entry points: `validateSync` (fast path for query selectors) and `validateAsync` (command boundaries, async-schema friendly).
+Validation has two entry points: `validateSync` (fast path for query handlers) and `validateAsync` (command boundaries, async-schema friendly).
 
 > Note: handling of unexpected object fields depends on the schema implementation. Both zod's `z.object()` and valibot's `v.object()` accept extra fields by default; use `z.object(...).strict()` / valibot `objectStrict(...)` to reject them.
 
@@ -157,7 +157,7 @@ When `createService(def)` is called (or `getService(def)` on first access):
 1. [service-runtime.ts](./service-runtime.ts) creates a signal-backed state container from `def.state`.
 2. It builds the `ctx.self` reference around that state (`getState`, `setState`, `commands`, `queries`).
 3. It builds commands that validate input, run handlers (sync or async), and validate output.
-4. It builds queries with a callable form and a `.subscribe` form. Both validate input and route through the same internal `_runQuery(name, input)` that runs `select` and validates output.
+4. It builds queries with a callable form and a `.subscribe` form. Both validate input and route through the same internal `_runQuery(name, input)` that runs the query `handler` and validates output.
 
 The singleton helper `getService(def)` keeps one instance per `definition.id` within the current process. Tests should call `clearRegistry()` in teardown to avoid cross-test leakage. Re-registering a different definition under the same id throws.
 
@@ -166,7 +166,7 @@ sequenceDiagram
   participant Caller
   participant Runtime as ServiceRuntime
   participant Schema as validateSync / validateAsync
-  participant Op as select or handler
+  participant Op as handler
   participant State as state signal
 
   Caller->>Runtime: createService(def)
@@ -176,7 +176,7 @@ sequenceDiagram
   Caller->>Runtime: query(input) or command(input)
   Runtime->>Schema: validate input
   Schema-->>Runtime: parsed input
-  Runtime->>Op: run select(state, input) or handler(input, ctx)
+  Runtime->>Op: run handler(state, input) for queries or handler(input, ctx) for commands
   Op->>State: read state or setState(...)
   Op-->>Runtime: raw output
   Runtime->>Schema: validate output
@@ -188,7 +188,7 @@ sequenceDiagram
 Subscriptions are powered by `alien-signals`:
 
 1. The query's input is validated once (captured in the subscription closure).
-2. A `computed(() => select(state, input))` re-runs whenever the state signal changes.
+2. A `computed(() => handler(state, input))` re-runs whenever the state signal changes.
 3. An `effect(() => listener(comp()))` observes the computed. The first synchronous fire is **swallowed** so subscribers see changes only — read the initial value via the callable form of the query.
 4. Output validation runs each time the listener is about to be notified.
 5. Reference-equality memoisation on the computed gives "result didn't change → don't re-notify" for free.
@@ -209,7 +209,7 @@ sequenceDiagram
   Subscriber->>Runtime: subscribe(input?, listener)
   Runtime->>Schema: validate input
   Schema-->>Runtime: parsed input
-  Runtime->>Signals: install computed(() => select(state, input))
+  Runtime->>Signals: install computed(() => handler(state, input))
   Runtime->>Preload: kick off preload (fire-and-forget)
   Signals->>Signals: first fire SWALLOWED
   Note over Signals: subscribers see changes only
@@ -227,7 +227,7 @@ sequenceDiagram
 
 ## Static Build
 
-A statically-built Storybook serialises service state to JSON at build time and re-hydrates it lazily on the client. Queries with a `preload` are the only mechanism — a service whose queries are all selector-only doesn't persist anything.
+A statically-built Storybook serialises service state to JSON at build time and re-hydrates it lazily on the client. Queries with a `preload` are the only mechanism — a service whose queries have no preloads doesn't persist anything.
 
 ### Mental model
 
@@ -251,7 +251,7 @@ queries: {
   getComponentDocgenInfo: query({
     input: z.string(),
     output: docgenSchema.nullable(),
-    select: (state, id) => state.byComponentId[id] ?? null,
+    handler: (state, id) => state.byComponentId[id] ?? null,
     preload: async (id, ctx) => { await ctx.self.commands.generateDocgen(id); },
     inputs: async () => listAllComponentIds(),
     path: (_ctx, id) => `docgen-${id}.json`,
@@ -266,7 +266,7 @@ queries: {
   allStatuses: query({
     input: z.void(),
     output: z.record(z.string(), z.string()),
-    select: (state) => state.byStoryId,
+    handler: (state) => state.byStoryId,
     preload: async (ctx) => {
       const data = await fetchAllStatusesAtBuildTime();
       ctx.self.setState((d) => { d.byStoryId = data; });
@@ -431,7 +431,7 @@ export const ExampleService = defineService<ExampleState>()(({ query, command })
       description: 'Returns one value by id.',
       input: entryIdSchema,
       output: valueSchema,
-      select: (state, input) => state.values[input.entryId] ?? null,
+      handler: (state, input) => state.values[input.entryId] ?? null,
       preload: async (input, ctx) => {
         if (!(input.entryId in ctx.self.getState().values)) {
           await ctx.self.commands.preloadValue(input);
@@ -474,7 +474,7 @@ All forms produce the same `ServiceDefinition`. The callback form is preferred b
 
 ## Worked example
 
-[`__examples__/docgen-service.ts`](./__examples__/docgen-service.ts) implements docgen against the current API: curried definition with schema-validated queries and commands, a selector-only query alongside one with full `preload` / `inputs` / `path` static-build hooks, and concrete inline-handler commands.
+[`__examples__/docgen-service.ts`](./__examples__/docgen-service.ts) implements docgen against the current API: curried definition with schema-validated queries and commands, a no-preload query alongside one with full `preload` / `inputs` / `path` static-build hooks, and concrete inline-handler commands.
 
 Read it alongside [`service-runtime.test.ts`](./service-runtime.test.ts) and [`build-artifacts.test.ts`](./build-artifacts.test.ts) — those test against the public surface only, so they double as usage examples.
 

@@ -19,7 +19,7 @@ describe('ServiceValidationError formatting', () => {
         getById: {
           input: z.object({ entryId: z.string() }),
           output: z.string().optional(),
-          select: (s: { byId: Record<string, string> }, { entryId }: { entryId: string }) =>
+          handler: (s: { byId: Record<string, string> }, { entryId }: { entryId: string }) =>
             s.byId[entryId],
         },
       },
@@ -48,7 +48,7 @@ describe('ServiceValidationError formatting', () => {
           output: z.object({
             items: z.array(z.object({ name: z.string() })),
           }),
-          select: () => ({
+          handler: () => ({
             items: [{ name: 1 as unknown as string }],
           }),
         },
@@ -76,7 +76,7 @@ describe('ServiceValidationError formatting', () => {
       id: 'test/validate-cmd-in',
       state: { n: 0 },
       queries: {
-        get: { input: z.void(), output: z.number(), select: (s: { n: number }) => s.n },
+        get: { input: z.void(), output: z.number(), handler: (s: { n: number }) => s.n },
       },
       commands: {
         set: {

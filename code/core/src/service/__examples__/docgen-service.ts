@@ -4,7 +4,7 @@
  * Demonstrates:
  *  - A query keyed by `componentId` (`getComponentDocgenInfo`) with `preload`, `inputs`, and `path`
  *    for the static build.
- *  - A no-input selector-only query (`somethingElse`) — no static-build fields; just a reactive read.
+ *  - A no-input query without preload (`somethingElse`) — no static-build fields; just a reactive read.
  *  - Two concrete commands with inline handlers.
  *
  * This file lives under `__examples__` and is NOT exported from the package entry. It exists
@@ -38,7 +38,7 @@ async function listAllComponentIds(): Promise<readonly string[]> {
  * Environment-agnostic definition.
  *
  * `defineService<DocgenState>()(({ query, command }) => …)` — state on the generic; schemas
- * and command handlers infer from the callback.
+ * and handlers infer from the callback.
  */
 export const DocgenService = defineService<DocgenState>()(({ query, command }) => ({
   id: 'core/docgen',
@@ -52,7 +52,7 @@ export const DocgenService = defineService<DocgenState>()(({ query, command }) =
     getComponentDocgenInfo: query({
       input: z.string(),
       output: componentDocgenSchema.nullable(),
-      select: (state, componentId) => state.byComponentId[componentId] ?? null,
+      handler: (state, componentId) => state.byComponentId[componentId] ?? null,
       preload: async (componentId, ctx) => {
         // Stage 1: the handler lives inline on `generateDocgen`. Once abstract commands land,
         // this preload will call the abstract command and registration will supply the body
@@ -66,7 +66,7 @@ export const DocgenService = defineService<DocgenState>()(({ query, command }) =
     somethingElse: query({
       input: z.void(),
       output: z.number(),
-      select: (state) => state.somethingElse,
+      handler: (state) => state.somethingElse,
     }),
   },
 

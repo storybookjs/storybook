@@ -74,9 +74,10 @@ function storybookRootFromRequest(
 	try {
 		const url = new URL(request.url);
 		const normalizedEndpoint = endpoint.replace(/\/$/, '');
-		const rootPath = url.pathname.endsWith(normalizedEndpoint)
-			? url.pathname.slice(0, -normalizedEndpoint.length)
-			: url.pathname.replace(/\/[^/]+\/?$/, '/');
+		const normalizedPathname = url.pathname.replace(/\/$/, '');
+		const rootPath = normalizedPathname.endsWith(normalizedEndpoint)
+			? normalizedPathname.slice(0, -normalizedEndpoint.length)
+			: normalizedPathname.replace(/\/[^/]+$/, '');
 		return `${trustedOrigin.replace(/\/$/, '')}${rootPath}`;
 	} catch {
 		return undefined;
@@ -89,13 +90,13 @@ export function buildReviewUrl(ctx: {
 	endpoint?: string;
 }): string {
 	const trustedOrigin = ctx.origin;
-	const root =
-		ctx.request && trustedOrigin
-			? storybookRootFromRequest(ctx.request, trustedOrigin, ctx.endpoint ?? '/mcp')
-			: trustedOrigin;
-	if (!root) {
+	if (!trustedOrigin) {
 		throw new Error('Cannot resolve the Storybook URL: missing trusted origin in addon context.');
 	}
+	const root = ctx.request
+		? (storybookRootFromRequest(ctx.request, trustedOrigin, ctx.endpoint ?? '/mcp') ??
+			trustedOrigin)
+		: trustedOrigin;
 	return `${root.replace(/\/$/, '')}/?path=${REVIEW_PAGE_PATH}`;
 }
 

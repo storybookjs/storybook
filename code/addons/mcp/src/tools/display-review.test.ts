@@ -56,11 +56,30 @@ describe('buildReviewUrl', () => {
 		expect(() => buildReviewUrl({} as any)).toThrow(/Cannot resolve the Storybook URL/);
 	});
 
-	it('throws when the request URL is unparseable', () => {
+	it('falls back to origin when the request URL is unparseable', () => {
 		const badRequest = { url: '::::not a url' } as unknown as Request;
-		expect(() => buildReviewUrl({ origin: 'http://localhost:6006', request: badRequest })).toThrow(
-			/Cannot resolve the Storybook URL/,
+		expect(buildReviewUrl({ origin: 'http://localhost:6006', request: badRequest })).toBe(
+			'http://localhost:6006/?path=/review/',
 		);
+	});
+
+	it('handles a trailing slash on the request pathname', () => {
+		expect(
+			buildReviewUrl({
+				origin: 'http://localhost:6006',
+				request: new Request('https://example.com/storybook/mcp/'),
+			}),
+		).toBe('http://localhost:6006/storybook/?path=/review/');
+	});
+
+	it('strips a multi-segment endpoint with a trailing slash on the request', () => {
+		expect(
+			buildReviewUrl({
+				origin: 'http://localhost:6006',
+				request: new Request('https://example.com/api/mcp/'),
+				endpoint: '/api/mcp',
+			}),
+		).toBe('http://localhost:6006/?path=/review/');
 	});
 });
 

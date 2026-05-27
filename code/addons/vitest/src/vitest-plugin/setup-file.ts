@@ -1,4 +1,4 @@
-import { beforeEach, afterEach, beforeAll, inject, vi, vitest } from 'vitest';
+import { beforeEach, afterEach, beforeAll, inject, vi } from 'vitest';
 import type { RunnerTask } from 'vitest';
 
 import { Channel } from 'storybook/internal/channels';

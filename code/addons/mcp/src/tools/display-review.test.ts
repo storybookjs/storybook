@@ -14,13 +14,11 @@ const sampleReview: ReviewState = {
 			title: 'Button',
 			rationale: 'The directly changed component.',
 			storyIds: ['button--primary', 'button--secondary'],
-			kind: 'atomic',
 		},
 		{
 			title: 'Pages',
 			rationale: 'Pages that render Button.',
 			storyIds: ['page--home'],
-			kind: 'transitive',
 		},
 	],
 	changedFiles: ['src/Button.tsx'],

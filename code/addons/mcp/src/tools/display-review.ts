@@ -27,12 +27,6 @@ export const ReviewCollectionSchema = v.object({
 			'Story IDs that represent this collection (e.g. "button--primary"). The page renders exactly these.',
 		),
 	),
-	kind: v.pipe(
-		v.optional(v.picklist(['atomic', 'consumer', 'transitive', 'catch-all'])),
-		v.description(
-			'Semantic role of this collection in the change cascade: "atomic" = the directly changed component, "consumer" = direct dependents, "transitive" = pages/containers further away, "catch-all" = everything else. Omit if unknown.',
-		),
-	),
 });
 
 export const ReviewStateSchema = v.object({
@@ -116,13 +110,10 @@ Before composing collections, answer two questions:
 Provide:
 - title: a PR-style title for the change — short and specific.
 - description: a one-line summary of what changed and where to start reviewing.
-- collections: titled groups of stories covering the **visual cascade** of the change — not just where the code is read, but everywhere a reviewer will see it. For any non-trivial UI change, include the atomic component, its direct consumers, and the pages/containers that render them transitively. A single-collection review is a smell: only do it if the component is genuinely standalone (e.g. has no parents in the story graph). Theme tokens, shared styles, and layout primitives almost always need transitive page coverage even when only one file imports them. Give each collection a concise, PR-dense title, a one-sentence rationale, and a \`kind\`.
-- kind (per collection): classify each collection as "atomic" (the directly changed component), "consumer" (direct dependents), "transitive" (pages/containers further away), or "catch-all" (everything else). Most UI changes should have at least two kinds present (e.g. \`consumer\` + \`transitive\`). A review with only \`atomic\` or only \`consumer\` is rarely complete.
+- collections: titled groups of stories covering the **visual cascade** of the change — not just where the code is read, but everywhere a reviewer will see it. For any non-trivial UI change, include the changed component itself, the components that directly import it, and the pages/containers that render them further up the tree. A single-collection review is a smell: only do it if the component is genuinely standalone (e.g. has no parents in the story graph). Theme tokens, shared styles, and layout primitives almost always need page-level coverage even when only one file imports them. Give each collection a concise, PR-dense title and a one-sentence rationale. Titles should describe *what stories the reviewer is looking at* (e.g. "Button — all variants", "Checkout pages"), not the collection's role in the cascade.
 - changedFiles: the files you edited (most central first).
 
 Anti-pattern: editing a theme token that only one component reads, then publishing a review with just that one component's story. The token change is visible on every page that renders the component — include those pages.
-
-The \`kind\` labels are for structured review grouping and UI behavior; do not repeat these labels verbatim in user-facing prose unless the user explicitly asks for them.
 
 Always include the returned reviewUrl in your final user-facing response so the user can open it.`,
 			schema: ReviewStateSchema,

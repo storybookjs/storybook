@@ -76,19 +76,19 @@ Register the `start-storybook` and `build-storybook` builders in `angular.json`:
           "builder": "@storybook/angular-vite:start-storybook",
           "options": {
             "configDir": ".storybook",
-            "port": 6006
-          }
+            "port": 6006,
+          },
         },
         "build-storybook": {
           "builder": "@storybook/angular-vite:build-storybook",
           "options": {
             "configDir": ".storybook",
-            "outputDir": "dist/storybook/your-project"
-          }
-        }
-      }
-    }
-  }
+            "outputDir": "dist/storybook/your-project",
+          },
+        },
+      },
+    },
+  },
 }
 ```
 

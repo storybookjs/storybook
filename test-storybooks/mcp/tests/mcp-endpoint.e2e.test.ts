@@ -100,7 +100,7 @@ describe('MCP Endpoint E2E Tests', () => {
 
 			expect(response.result).toHaveProperty('tools');
 			// Dev, docs, and test tools should be present
-			expect(response.result.tools).toHaveLength(8);
+			expect(response.result.tools).toHaveLength(7);
 
 			expect(response.result.tools).toMatchInlineSnapshot(`
 				[
@@ -377,145 +377,6 @@ describe('MCP Endpoint E2E Tests', () => {
 				    },
 				    "name": "get-changed-stories",
 				    "title": "Get changed stories metadata",
-				  },
-				  {
-				    "description": "Push a curated review of the current change to Storybook's review page.
-
-				After you finish a UI code change, call this to help the user spot-check it. Provide:
-				- title: a PR-style title for the change — short and specific.
-				- description: a one-line summary of what changed and where to start reviewing.
-				- collections: titled groups of representative story IDs. Give each a concise, PR-dense title, a one-sentence rationale, and — when you can tell — a kind ("atomic" for the directly changed component, "consumer" for direct dependents, "transitive" for pages/containers, "catch-all" otherwise).
-				- changedFiles: the files you edited (most central first).
-				- diffHunks: the actual diff of your change (you made it — include the hunks).
-				- storyMeta: optional per-story { depth, chain }.
-
-				The \`kind\` labels are for structured review grouping and UI behavior; do not repeat these labels verbatim in user-facing prose unless the user explicitly asks for them.
-
-				Always include the returned reviewUrl in your final user-facing response so the user can open it.",
-				    "inputSchema": {
-				      "$schema": "http://json-schema.org/draft-07/schema#",
-				      "properties": {
-				        "changedFiles": {
-				          "description": "Paths of the files you changed, most central first.",
-				          "items": {
-				            "type": "string",
-				          },
-				          "type": "array",
-				        },
-				        "collections": {
-				          "items": {
-				            "properties": {
-				              "kind": {
-				                "description": "Semantic role of this collection in the change cascade: "atomic" = the directly changed component, "consumer" = direct dependents, "transitive" = pages/containers further away, "catch-all" = everything else. Omit if unknown.",
-				                "enum": [
-				                  "atomic",
-				                  "consumer",
-				                  "transitive",
-				                  "catch-all",
-				                ],
-				                "type": "string",
-				              },
-				              "rationale": {
-				                "description": "One sentence explaining why these stories are grouped together.",
-				                "type": "string",
-				              },
-				              "storyIds": {
-				                "description": "Story IDs that represent this collection (e.g. "button--primary"). The page renders exactly these.",
-				                "items": {
-				                  "type": "string",
-				                },
-				                "type": "array",
-				              },
-				              "title": {
-				                "description": "Short, PR-dense title for this collection, e.g. "Direct Button importers".",
-				                "type": "string",
-				              },
-				            },
-				            "required": [
-				              "title",
-				              "rationale",
-				              "storyIds",
-				            ],
-				            "type": "object",
-				          },
-				          "type": "array",
-				        },
-				        "description": {
-				          "description": "One-line summary of what changed and where to start reviewing.",
-				          "type": "string",
-				        },
-				        "diffHunks": {
-				          "description": "The actual diff hunks of your change, shown in the review page.",
-				          "items": {
-				            "properties": {
-				              "hunk": {
-				                "description": "Unified-diff text for this hunk (with +/- line prefixes).",
-				                "type": "string",
-				              },
-				              "path": {
-				                "description": "Path of the changed file this hunk belongs to.",
-				                "type": "string",
-				              },
-				            },
-				            "required": [
-				              "path",
-				              "hunk",
-				            ],
-				            "type": "object",
-				          },
-				          "type": "array",
-				        },
-				        "storyMeta": {
-				          "additionalProperties": {
-				            "properties": {
-				              "chain": {
-				                "description": "Ordered intermediate file paths between the story file and the changed file, excluding both endpoints. Empty/omitted means a direct import.",
-				                "items": {
-				                  "type": "string",
-				                },
-				                "type": "array",
-				              },
-				              "depth": {
-				                "description": "Graph distance from the changed file(s) to this story (0 = the changed component itself).",
-				                "type": "number",
-				              },
-				            },
-				            "required": [],
-				            "type": "object",
-				          },
-				          "description": "Optional per-story metadata keyed by story ID: { depth, chain }.",
-				          "propertyNames": {
-				            "type": "string",
-				          },
-				          "type": "object",
-				        },
-				        "title": {
-				          "description": "PR-style title for the change — short and specific, e.g. "Recolour the primary button".",
-				          "type": "string",
-				        },
-				      },
-				      "required": [
-				        "title",
-				        "description",
-				        "collections",
-				      ],
-				      "type": "object",
-				    },
-				    "name": "display-review",
-				    "outputSchema": {
-				      "$schema": "http://json-schema.org/draft-07/schema#",
-				      "properties": {
-				        "reviewUrl": {
-				          "description": "URL of the Storybook review page. Always include this URL in your final user-facing response so the user can open it directly.",
-				          "type": "string",
-				        },
-				      },
-				      "required": [
-				        "reviewUrl",
-				      ],
-				      "type": "object",
-				    },
-				    "title": "Display Storybook review",
 				  },
 				  {
 				    "description": "Run story tests.
@@ -1040,7 +901,6 @@ describe('MCP Endpoint E2E Tests', () => {
 				  "preview-stories",
 				  "get-storybook-story-instructions",
 				  "get-changed-stories",
-				  "display-review",
 				]
 			`);
 		});

@@ -19,6 +19,7 @@ import { collectTelemetry } from './telemetry.ts';
 import type { AddonContext, AddonOptionsOutput } from './types.ts';
 import { logger } from 'storybook/internal/node-logger';
 import { getManifestStatus } from './tools/is-manifest-available.ts';
+import { getReviewStatus } from './utils/is-review-available.ts';
 import { addRunStoryTestsTool, getAddonVitestConstants } from './tools/run-story-tests.ts';
 import { estimateTokens } from './utils/estimate-tokens.ts';
 import { isAddonA11yEnabled } from './utils/is-addon-a11y-enabled.ts';
@@ -41,6 +42,7 @@ const initializeMCPServer = async (options: Options, multiSource?: boolean) => {
 	// Determine tool availability before creating server so instructions can be tailored
 	const addonVitestConstants = await getAddonVitestConstants();
 	const manifestStatus = await getManifestStatus(options);
+	const reviewStatus = await getReviewStatus(options);
 	a11yEnabled = await isAddonA11yEnabled(options);
 
 	let server: McpServer<any, AddonContext>;
@@ -53,6 +55,7 @@ const initializeMCPServer = async (options: Options, multiSource?: boolean) => {
 				testEnabled: (server?.ctx.custom?.toolsets?.test ?? true) && !!addonVitestConstants,
 				docsEnabled: (server?.ctx.custom?.toolsets?.docs ?? true) && manifestStatus.available,
 				changeDetectionEnabled,
+				reviewEnabled: reviewStatus.available,
 			});
 		},
 		capabilities: {
@@ -82,6 +85,9 @@ const initializeMCPServer = async (options: Options, multiSource?: boolean) => {
 
 	if (changeDetectionEnabled) {
 		await addGetChangedStoriesTool(server);
+	}
+
+	if (reviewStatus.available) {
 		await addDisplayReviewTool(server);
 	}
 

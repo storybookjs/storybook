@@ -1,18 +1,10 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import { McpServer } from 'tmcp';
 import { ValibotJsonSchemaAdapter } from '@tmcp/adapter-valibot';
-import { addDisplayReviewTool, buildReviewUrl } from './display-review.ts';
+import { addDisplayReviewTool, buildReviewUrl, type ReviewState } from './display-review.ts';
 import { DISPLAY_REVIEW_TOOL_NAME } from './tool-names.ts';
-import { DISPLAY_REVIEW_EVENT } from '../constants.ts';
-import { getReviewState, type ReviewState } from '../review-state-store.ts';
+import { PUSH_REVIEW_EVENT } from '../constants.ts';
 import type { AddonContext } from '../types.ts';
-
-// The tool resolves the target repo's git branch server-side. Mock it so
-// the unit tests don't depend on the branch this repo happens to be on.
-const { mockCurrentGitBranch } = vi.hoisted(() => ({ mockCurrentGitBranch: vi.fn() }));
-vi.mock('../utils/git-branch.ts', () => ({
-	currentGitBranch: (...args: unknown[]) => mockCurrentGitBranch(...args),
-}));
 
 const sampleReview: ReviewState = {
 	title: 'Recolour the primary button',
@@ -84,8 +76,6 @@ describe('displayReviewTool', () => {
 
 	beforeEach(async () => {
 		emitted = [];
-		mockCurrentGitBranch.mockReset();
-		mockCurrentGitBranch.mockResolvedValue(undefined);
 		const adapter = new ValibotJsonSchemaAdapter();
 		server = new McpServer(
 			{
@@ -142,7 +132,7 @@ describe('displayReviewTool', () => {
 		).result;
 	}
 
-	it('stores the review state and returns the review URL', async () => {
+	it('returns the review URL and a human summary', async () => {
 		const response = await callTool(sampleReview, makeContext());
 		const result = getResult(response);
 
@@ -150,12 +140,11 @@ describe('displayReviewTool', () => {
 		expect(result?.structuredContent?.reviewUrl).toBe('http://localhost:6006/?path=/review/');
 		expect(result?.content?.[0]?.text).toContain('2 collections, 3 stories');
 		expect(result?.content?.[0]?.text).toContain('http://localhost:6006/?path=/review/');
-		expect(getReviewState()).toEqual(sampleReview);
 	});
 
-	it('broadcasts the review over the Storybook channel', async () => {
+	it('hands the payload off to addon-review via the PUSH_REVIEW channel event', async () => {
 		await callTool(sampleReview, makeContext());
-		expect(emitted).toContainEqual({ event: DISPLAY_REVIEW_EVENT, payload: sampleReview });
+		expect(emitted).toEqual([{ event: PUSH_REVIEW_EVENT, payload: sampleReview }]);
 	});
 
 	it('builds a subpath-aware review URL from the incoming request', async () => {
@@ -168,15 +157,5 @@ describe('displayReviewTool', () => {
 		expect(result?.structuredContent?.reviewUrl).toBe(
 			'http://localhost:6006/design-system/?path=/review/',
 		);
-	});
-
-	it('attaches the target repo git branch resolved server-side', async () => {
-		mockCurrentGitBranch.mockResolvedValue('feature/badge-pink');
-
-		await callTool(sampleReview, makeContext());
-
-		const expected = { ...sampleReview, branchName: 'feature/badge-pink' };
-		expect(getReviewState()).toEqual(expected);
-		expect(emitted).toContainEqual({ event: DISPLAY_REVIEW_EVENT, payload: expected });
 	});
 });

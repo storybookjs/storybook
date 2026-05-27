@@ -2,15 +2,90 @@ import type { McpServer } from 'tmcp';
 import * as v from 'valibot';
 import type { AddonContext } from '../types.ts';
 import { errorToMCPContent } from '../utils/errors.ts';
-import {
-	ReviewStateSchema,
-	setReviewState,
-	type ReviewState,
-	type StoredReviewState,
-} from '../review-state-store.ts';
-import { DISPLAY_REVIEW_EVENT, REVIEW_PAGE_PATH } from '../constants.ts';
+import { PUSH_REVIEW_EVENT, REVIEW_PAGE_PATH } from '../constants.ts';
 import { DISPLAY_REVIEW_TOOL_NAME } from './tool-names.ts';
-import { currentGitBranch } from '../utils/git-branch.ts';
+
+/**
+ * Canonical schema for the agent-pushed review payload.
+ *
+ * Server-side state caching and git-branch enrichment live on the
+ * `@storybook/addon-review` server preset, not here — this tool just
+ * validates the agent's input and forwards it over the channel.
+ */
+export const ReviewCollectionSchema = v.object({
+	title: v.pipe(
+		v.string(),
+		v.description('Short, PR-dense title for this collection, e.g. "Direct Button importers".'),
+	),
+	rationale: v.pipe(
+		v.string(),
+		v.description('One sentence explaining why these stories are grouped together.'),
+	),
+	storyIds: v.pipe(
+		v.array(v.string()),
+		v.description(
+			'Story IDs that represent this collection (e.g. "button--primary"). The page renders exactly these.',
+		),
+	),
+	kind: v.pipe(
+		v.optional(v.picklist(['atomic', 'consumer', 'transitive', 'catch-all'])),
+		v.description(
+			'Semantic role of this collection in the change cascade: "atomic" = the directly changed component, "consumer" = direct dependents, "transitive" = pages/containers further away, "catch-all" = everything else. Omit if unknown.',
+		),
+	),
+});
+
+const StoryMetaSchema = v.object({
+	depth: v.pipe(
+		v.optional(v.number()),
+		v.description(
+			'Graph distance from the changed file(s) to this story (0 = the changed component itself).',
+		),
+	),
+	chain: v.pipe(
+		v.optional(v.array(v.string())),
+		v.description(
+			'Ordered intermediate file paths between the story file and the changed file, excluding both endpoints. Empty/omitted means a direct import.',
+		),
+	),
+});
+
+const DiffHunkSchema = v.object({
+	path: v.pipe(v.string(), v.description('Path of the changed file this hunk belongs to.')),
+	hunk: v.pipe(
+		v.string(),
+		v.description('Unified-diff text for this hunk (with +/- line prefixes).'),
+	),
+});
+
+export const ReviewStateSchema = v.object({
+	title: v.pipe(
+		v.string(),
+		v.description(
+			'PR-style title for the change — short and specific, e.g. "Recolour the primary button".',
+		),
+	),
+	description: v.pipe(
+		v.string(),
+		v.description('One-line summary of what changed and where to start reviewing.'),
+	),
+	collections: v.array(ReviewCollectionSchema),
+	changedFiles: v.pipe(
+		v.optional(v.array(v.string())),
+		v.description('Paths of the files you changed, most central first.'),
+	),
+	diffHunks: v.pipe(
+		v.optional(v.array(DiffHunkSchema)),
+		v.description('The actual diff hunks of your change, shown in the review page.'),
+	),
+	storyMeta: v.pipe(
+		v.optional(v.record(v.string(), StoryMetaSchema)),
+		v.description('Optional per-story metadata keyed by story ID: { depth, chain }.'),
+	),
+});
+
+export type ReviewCollection = v.InferOutput<typeof ReviewCollectionSchema>;
+export type ReviewState = v.InferOutput<typeof ReviewStateSchema>;
 
 const DisplayReviewOutput = v.object({
 	reviewUrl: v.pipe(
@@ -92,21 +167,11 @@ Always include the returned reviewUrl in your final user-facing response so the 
 					endpoint: customContext.endpoint,
 				});
 
-				// Resolve the target repo's current git branch server-side and
-				// attach it — the agent's payload doesn't carry it, but the
-				// review page shows it. Best-effort: omitted on a detached HEAD
-				// or a non-git target.
-				const branchName = await currentGitBranch(process.cwd());
-				const state: StoredReviewState = branchName ? { ...input, branchName } : input;
+				// Hand the payload off to @storybook/addon-review
+				server.ctx.custom?.options?.channel?.emit(PUSH_REVIEW_EVENT, input);
 
-				setReviewState(state);
-
-				// Broadcast to all connected Storybook tabs. A warm tab navigates
-				// to the review page; a cold start relies on the returned URL.
-				server.ctx.custom?.options?.channel?.emit(DISPLAY_REVIEW_EVENT, state);
-
-				const collectionCount = state.collections.length;
-				const storyCount = state.collections.reduce((n, c) => n + c.storyIds.length, 0);
+				const collectionCount = input.collections.length;
+				const storyCount = input.collections.reduce((n, c) => n + c.storyIds.length, 0);
 
 				return {
 					content: [

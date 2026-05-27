@@ -7,6 +7,7 @@ export type BuildServerInstructionsOptions = {
 	testEnabled: boolean;
 	docsEnabled: boolean;
 	changeDetectionEnabled?: boolean;
+	reviewEnabled?: boolean;
 };
 
 export function buildServerInstructions(options: BuildServerInstructionsOptions): string {
@@ -14,6 +15,7 @@ export function buildServerInstructions(options: BuildServerInstructionsOptions)
 
 	if (options.devEnabled) {
 		const changeDetection = options.changeDetectionEnabled ?? false;
+		const reviewEnabled = options.reviewEnabled ?? false;
 		sections.push(
 			devInstructions
 				.replace(
@@ -24,7 +26,7 @@ export function buildServerInstructions(options: BuildServerInstructionsOptions)
 				)
 				.replace(
 					'{{DISPLAY_REVIEW_STEP}}',
-					changeDetection
+					reviewEnabled
 						? "\n- After completing the change, call **display-review** to publish a curated review to Storybook's review page. If the session has a browser-preview tool, navigate it to the returned `reviewUrl` so the user sees the review without leaving the chat. Always include the `reviewUrl` in your final response as a fallback."
 						: '',
 				)

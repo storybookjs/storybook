@@ -17,8 +17,6 @@ import {
 } from './auth/index.ts';
 import { logger } from 'storybook/internal/node-logger';
 import type { Source } from '@storybook/mcp';
-import { DISPLAY_REVIEW_EVENT, REQUEST_REVIEW_EVENT } from './constants.ts';
-import { getReviewState } from './review-state-store.ts';
 import type { IncomingMessage, ServerResponse } from 'node:http';
 
 const DEFAULT_MCP_ENDPOINT = '/mcp';
@@ -41,34 +39,9 @@ export const experimental_devServer: PresetPropertyFn<
 		endpoint: options.endpoint,
 		toolsets: options.toolsets ?? {},
 	});
-	const features = await options.presets.apply('features', {});
-	const changeDetectionEnabled = features?.changeDetection ?? false;
 
 	const origin = `http://localhost:${options.port}`;
 	const endpoint = addonOptions.endpoint ?? DEFAULT_MCP_ENDPOINT;
-
-	// Replay the cached review state to any Storybook tab that mounts or
-	// refreshes after the agent already pushed. The tab emits
-	// `request-review`; we re-emit the cached state so it converges.
-	// The cache is the module singleton shared with the display-review tool.
-	//
-	// Older Storybooks (≤10.3) don't pass `options.channel` to dev-server
-	// presets — the rest of addon-mcp still works without channel replay,
-	// so guard rather than crash.
-	if (changeDetectionEnabled) {
-		if (options.channel?.on) {
-			options.channel.on(REQUEST_REVIEW_EVENT, () => {
-				const state = getReviewState();
-				if (state) {
-					options.channel?.emit?.(DISPLAY_REVIEW_EVENT, state);
-				}
-			});
-		} else {
-			logger.info(
-				'[addon-mcp] options.channel is unavailable on this Storybook version; review-state replay disabled.',
-			);
-		}
-	}
 
 	// Get composed Storybook refs from config
 	const refs = await getRefsFromConfig(options);

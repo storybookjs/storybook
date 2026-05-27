@@ -5,7 +5,6 @@ import { experimental_devServer } from './preset.ts';
 import { STORYBOOK_MCP_PROXY_HEADER } from './auth/index.ts';
 import * as mcpHandlerModule from './mcp-handler.ts';
 import * as runStoryTests from './tools/run-story-tests.ts';
-import { REQUEST_REVIEW_EVENT } from './constants.ts';
 
 describe('experimental_devServer', () => {
 	let mockApp: any;
@@ -97,9 +96,9 @@ describe('experimental_devServer', () => {
 		expect(mcpHandler).toBeDefined();
 	});
 
-	it('registers review-state replay listener only when changeDetection is enabled', async () => {
+	it('does not register any review-related channel listeners (handled by addon-review preset)', async () => {
 		const channel = { on: vi.fn(), emit: vi.fn() };
-		const optionsWithChangeDetection = {
+		const optionsWithReview = {
 			...mockOptions,
 			channel,
 			presets: {
@@ -107,34 +106,17 @@ describe('experimental_devServer', () => {
 					if (key === 'features') {
 						return Promise.resolve({ changeDetection: true });
 					}
-					return Promise.resolve(undefined);
-				}),
-			},
-		} as unknown as Options;
-
-		await (experimental_devServer as any)(mockApp, optionsWithChangeDetection);
-
-		expect(channel.on).toHaveBeenCalledWith(REQUEST_REVIEW_EVENT, expect.any(Function));
-	});
-
-	it('does not register review-state replay listener when changeDetection is disabled', async () => {
-		const channel = { on: vi.fn(), emit: vi.fn() };
-		const optionsWithoutChangeDetection = {
-			...mockOptions,
-			channel,
-			presets: {
-				apply: vi.fn((key: string) => {
-					if (key === 'features') {
-						return Promise.resolve({ changeDetection: false });
+					if (key === 'addons') {
+						return Promise.resolve(['@storybook/addon-review']);
 					}
 					return Promise.resolve(undefined);
 				}),
 			},
 		} as unknown as Options;
 
-		await (experimental_devServer as any)(mockApp, optionsWithoutChangeDetection);
+		await (experimental_devServer as any)(mockApp, optionsWithReview);
 
-		expect(channel.on).not.toHaveBeenCalledWith(REQUEST_REVIEW_EVENT, expect.any(Function));
+		expect(channel.on).not.toHaveBeenCalled();
 	});
 
 	it('should register /mcp GET endpoint', async () => {

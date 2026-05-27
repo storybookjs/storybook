@@ -57,7 +57,7 @@ export const DocgenService = defineService<DocgenState>()(({ query, command }) =
     getComponentDocgenInfo: query({
       input: z.string(),
       output: componentDocgenSchema.nullable(),
-      select: (state, componentId) => state.byComponentId[componentId] ?? null,
+      handler: (state, componentId) => state.byComponentId[componentId] ?? null,
       preload: async (componentId, ctx) => {
         await ctx.self.commands.generateDocgen(componentId);
       },
@@ -68,7 +68,7 @@ export const DocgenService = defineService<DocgenState>()(({ query, command }) =
     somethingElse: query({
       input: z.void(),
       output: z.number(),
-      select: (state) => state.somethingElse,
+      handler: (state) => state.somethingElse,
     }),
   },
 

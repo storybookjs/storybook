@@ -55,7 +55,7 @@ describe('isolation — no channel installed', () => {
     const def = defineService<S>()({
       id: 'test/isolation-no-channel',
       state: { n: 0 },
-      queries: { get: { input: z.void(), output: z.number(), select: (s: S) => s.n } },
+      queries: { get: { input: z.void(), output: z.number(), handler: (s: S) => s.n } },
       commands: {
         bump: {
           input: z.void(),
@@ -90,7 +90,7 @@ describe('welcome handshake', () => {
         get: {
           input: z.void(),
           output: z.object({ counter: z.number(), byId: z.record(z.string(), z.string()) }),
-          select: (s: S) => s,
+          handler: (s: S) => s,
         },
       },
       commands: {
@@ -130,7 +130,7 @@ describe('welcome handshake', () => {
     const def = defineService<S>()({
       id: 'test/welcome-multi-reply',
       state: { n: 0 },
-      queries: { get: { input: z.void(), output: z.number(), select: (s: S) => s.n } },
+      queries: { get: { input: z.void(), output: z.number(), handler: (s: S) => s.n } },
       commands: {
         set: {
           input: z.number(),
@@ -165,7 +165,7 @@ describe('welcome handshake', () => {
     const def = defineService<S>()({
       id: 'test/welcome-isolated',
       state: { n: 5 },
-      queries: { get: { input: z.void(), output: z.number(), select: (s: S) => s.n } },
+      queries: { get: { input: z.void(), output: z.number(), handler: (s: S) => s.n } },
       commands: {},
     });
 
@@ -193,7 +193,7 @@ describe('ongoing patch sync', () => {
         getOne: {
           input: z.string(),
           output: z.string().optional(),
-          select: (s: S, id: string) => s.byId[id],
+          handler: (s: S, id: string) => s.byId[id],
         },
       },
       commands: {
@@ -238,7 +238,7 @@ describe('ongoing patch sync', () => {
     const def = defineService<S>()({
       id: 'test/loop-suppression',
       state: { n: 0 },
-      queries: { get: { input: z.void(), output: z.number(), select: (s: S) => s.n } },
+      queries: { get: { input: z.void(), output: z.number(), handler: (s: S) => s.n } },
       commands: {
         bump: {
           input: z.void(),
@@ -284,7 +284,7 @@ describe('ongoing patch sync', () => {
         getOne: {
           input: z.string(),
           output: z.string().optional(),
-          select: (s: S, id: string) => s.byId[id],
+          handler: (s: S, id: string) => s.byId[id],
         },
       },
       commands: {
@@ -327,7 +327,7 @@ describe('service-id filtering', () => {
     const defA = defineService<S>()({
       id: 'test/svc-A',
       state: { n: 0 },
-      queries: { get: { input: z.void(), output: z.number(), select: (s: S) => s.n } },
+      queries: { get: { input: z.void(), output: z.number(), handler: (s: S) => s.n } },
       commands: {
         set: {
           input: z.number(),
@@ -342,7 +342,7 @@ describe('service-id filtering', () => {
     const defB = defineService<S>()({
       id: 'test/svc-B',
       state: { n: 100 },
-      queries: { get: { input: z.void(), output: z.number(), select: (s: S) => s.n } },
+      queries: { get: { input: z.void(), output: z.number(), handler: (s: S) => s.n } },
       commands: {
         set: {
           input: z.number(),

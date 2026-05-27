@@ -31,7 +31,7 @@ describe('queries', () => {
         get: {
           input: z.void(),
           output: z.string(),
-          select: (s: { value: string }) => s.value,
+          handler: (s: { value: string }) => s.value,
         },
       },
       commands: {},
@@ -52,7 +52,7 @@ describe('queries', () => {
         getById: {
           input: z.string(),
           output: z.number().optional(),
-          select: (s: S, id: string) => s.byId[id],
+          handler: (s: S, id: string) => s.byId[id],
         },
       },
       commands: {},
@@ -72,8 +72,8 @@ describe('queries', () => {
       id: 'test/q-subscribe',
       state: { a: 0, b: 0 } as S,
       queries: {
-        getA: { input: z.void(), output: z.number(), select: (s: S) => s.a },
-        getB: { input: z.void(), output: z.number(), select: (s: S) => s.b },
+        getA: { input: z.void(), output: z.number(), handler: (s: S) => s.a },
+        getB: { input: z.void(), output: z.number(), handler: (s: S) => s.b },
       },
       commands: {
         bumpA: {
@@ -122,7 +122,7 @@ describe('queries', () => {
         getName: {
           input: z.string(),
           output: z.string().optional(),
-          select: (s: S, id: string) => s.byId[id]?.name,
+          handler: (s: S, id: string) => s.byId[id]?.name,
         },
       },
       commands: {
@@ -156,7 +156,7 @@ describe('commands', () => {
     const def = defineService()({
       id: 'test/cmd-noinput',
       state: { count: 0 } as S,
-      queries: { get: { input: z.void(), output: z.number(), select: (s: S) => s.count } },
+      queries: { get: { input: z.void(), output: z.number(), handler: (s: S) => s.count } },
       commands: {
         increment: {
           input: z.void(),
@@ -185,7 +185,7 @@ describe('commands', () => {
         get: {
           input: z.string(),
           output: z.string().optional(),
-          select: (s: S, id: string) => s.byId[id],
+          handler: (s: S, id: string) => s.byId[id],
         },
       },
       commands: {
@@ -222,7 +222,7 @@ describe('abstract commands', () => {
         get: {
           input: z.string(),
           output: z.string().optional(),
-          select: (s: S, id: string) => s.byId[id],
+          handler: (s: S, id: string) => s.byId[id],
         },
       },
       commands: {
@@ -276,7 +276,7 @@ describe('abstract commands', () => {
     const def = defineService()({
       id: 'test/override-concrete-rejected',
       state: { n: 0 } as S,
-      queries: { get: { input: z.void(), output: z.number(), select: (s: S) => s.n } },
+      queries: { get: { input: z.void(), output: z.number(), handler: (s: S) => s.n } },
       commands: {
         bump: {
           input: z.void(),
@@ -310,7 +310,7 @@ describe('abstract commands', () => {
     const def = defineService()({
       id: 'test/abstract-noinput',
       state: { ready: false } as S,
-      queries: { isReady: { input: z.void(), output: z.boolean(), select: (s: S) => s.ready } },
+      queries: { isReady: { input: z.void(), output: z.boolean(), handler: (s: S) => s.ready } },
       commands: {
         boot: { input: z.void(), output: z.void() },
       },
@@ -342,7 +342,7 @@ describe('encapsulation', () => {
         get: {
           input: z.void(),
           output: z.number(),
-          select: (s: { secret: number }) => s.secret,
+          handler: (s: { secret: number }) => s.secret,
         },
       },
       commands: {},
@@ -372,7 +372,7 @@ describe('preloads', () => {
         getName: {
           input: z.string(),
           output: z.string().optional(),
-          select: (s: S, id: string) => s.byId[id],
+          handler: (s: S, id: string) => s.byId[id],
           preload: async (id: string, ctx: ServiceCtx<S>) => {
             await ctx.self.commands.load(id);
           },
@@ -421,7 +421,7 @@ describe('preloads', () => {
         getName: {
           input: z.string(),
           output: z.string().optional(),
-          select: (s: S, id: string) => s.byId[id],
+          handler: (s: S, id: string) => s.byId[id],
           preload: async (id: string, ctx: ServiceCtx<S>) => {
             await ctx.self.commands.load(id);
           },
@@ -465,7 +465,7 @@ describe('preloads', () => {
         getName: {
           input: z.string(),
           output: z.string().optional(),
-          select: (s: S, id: string) => s.byId[id],
+          handler: (s: S, id: string) => s.byId[id],
           preload: async (id: string, ctx: ServiceCtx<S>) => {
             await ctx.self.commands.load(id);
           },
@@ -513,7 +513,7 @@ describe('preloads', () => {
         get: {
           input: z.void(),
           output: z.string(),
-          select: (s: S) => s.value,
+          handler: (s: S) => s.value,
           preload: async (ctx: ServiceCtx<S>) => {
             await ctx.self.commands.load();
           },
@@ -548,7 +548,7 @@ describe('preloads', () => {
     const def = defineService()({
       id: 'test/preload-absent',
       state: { x: 0 } as S,
-      queries: { get: { input: z.void(), output: z.number(), select: (s: S) => s.x } },
+      queries: { get: { input: z.void(), output: z.number(), handler: (s: S) => s.x } },
       commands: {
         bump: {
           input: z.void(),
@@ -581,7 +581,7 @@ describe('registerService / getService', () => {
       id: 'test/registry-idem',
       state: { v: 1 },
       queries: {
-        get: { input: z.void(), output: z.number(), select: (s: { v: number }) => s.v },
+        get: { input: z.void(), output: z.number(), handler: (s: { v: number }) => s.v },
       },
       commands: {},
     });
@@ -616,7 +616,7 @@ describe('schema validation', () => {
       id: 'test/validate-cmd-in',
       state: { n: 0 },
       queries: {
-        get: { input: z.void(), output: z.number(), select: (s: { n: number }) => s.n },
+        get: { input: z.void(), output: z.number(), handler: (s: { n: number }) => s.n },
       },
       commands: {
         set: {
@@ -644,7 +644,7 @@ describe('schema validation', () => {
         getById: {
           input: z.string(),
           output: z.string().optional(),
-          select: (s: { byId: Record<string, string> }, id: string) => s.byId[id],
+          handler: (s: { byId: Record<string, string> }, id: string) => s.byId[id],
         },
       },
       commands: {},
@@ -662,7 +662,7 @@ describe('schema validation', () => {
       id: 'test/validate-q-out',
       state: { v: 'oops' as unknown as number },
       queries: {
-        get: { input: z.void(), output: z.number(), select: (s: { v: number }) => s.v },
+        get: { input: z.void(), output: z.number(), handler: (s: { v: number }) => s.v },
       },
       commands: {},
     });
@@ -686,7 +686,7 @@ describe('runtime defensive guarantees', () => {
       id: 'test/state-isolation',
       state: initial,
       queries: {
-        getAll: { input: z.void(), output: z.any(), select: (s: S) => s.byId },
+        getAll: { input: z.void(), output: z.any(), handler: (s: S) => s.byId },
       },
       commands: {},
     });
@@ -710,7 +710,7 @@ describe('runtime defensive guarantees', () => {
         get: {
           input: z.void(),
           output: z.number(),
-          select: (s: { x: number }) => s.x,
+          handler: (s: { x: number }) => s.x,
           preload: async () => {
             throw new Error('boom');
           },
@@ -731,7 +731,7 @@ describe('runtime defensive guarantees', () => {
         get: {
           input: z.void(),
           output: z.number(),
-          select: (s: { x: number }) => s.x,
+          handler: (s: { x: number }) => s.x,
           preload: async () => {
             throw new Error('boom-fire-and-forget');
           },

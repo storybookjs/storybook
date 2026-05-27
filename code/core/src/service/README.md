@@ -106,23 +106,23 @@ Two conventions:
 
 ### Queries
 
-Every query is an object with required `input` and `output` schemas plus a `select` selector. The runtime validates caller input before calling `select`, and validates the selector result before returning it.
+Every query is an object with required `input` and `output` schemas plus a `handler` selector. The runtime validates caller input before calling `handler`, and validates the handler result before returning it.
 
 ```ts
 // no input — use z.void() / v.void() for the input schema
-getCount: query({ input: z.void(), output: z.number(), select: (state) => state.count })
+getCount: query({ input: z.void(), output: z.number(), handler: (state) => state.count })
 
 // input-keyed — `id` is inferred from `input: z.string()`
 getById: query({
   input: z.string(),
   output: z.string().optional(),
-  select: (state, id) => state.byId[id],
+  handler: (state, id) => state.byId[id],
 })
 ```
 
-`select` must not call commands or perform I/O — it's read-only by contract. If a query needs to trigger loading on first read, add optional `preload`, `inputs`, and `path` fields (see *Static Build*).
+A query `handler` must not call commands or perform I/O — it's read-only by contract. If a query needs to trigger loading on first read, add optional `preload`, `inputs`, and `path` fields (see *Static Build*).
 
-Queries are the unit of subscription. Every `query.subscribe(...)` builds an `alien-signals` `computed(() => select(state, input))`. The computed memoises by reference equality on its output, so subscribers re-fire only when this query's result actually changes.
+Queries are the unit of subscription. Every `query.subscribe(...)` builds an `alien-signals` `computed(() => handler(state, input))`. The computed memoises by reference equality on its output, so subscribers re-fire only when this query's result actually changes.
 
 ### Commands
 
@@ -178,7 +178,7 @@ When `registerService(def, registration?)` is called for the first time for a gi
 2. It resolves command handlers — registration overrides beat definition handlers for **abstract** commands. Concrete commands cannot be overridden; the runtime throws if an override is supplied.
 3. It builds the `ctx.self` reference around the state (`getState`, `setState`, `commands`, `queries`).
 4. It builds commands that validate input, run the resolved handler (sync or async), and validate output. Abstract commands with no resolved handler throw with an actionable message at call time.
-5. It builds queries with a callable form and a `.subscribe` form. Both validate input and route through the same internal `_runQuery(name, input)` that runs `select` and validates output.
+5. It builds queries with a callable form and a `.subscribe` form. Both validate input and route through the same internal `_runQuery(name, input)` that runs the query `handler` and validates output.
 6. It freezes a `publicStore` view exposing only `id`, `definition`, `queries`, `commands`. That's what callers see.
 
 The registry keeps one instance per `definition.id` within the current process. Tests should call `__resetServiceRegistry()` in teardown to avoid cross-test leakage. Re-registering a different definition under the same id throws.
@@ -188,7 +188,7 @@ sequenceDiagram
   participant Caller
   participant Runtime as ServiceRuntime
   participant Schema as validateSync / validateAsync
-  participant Op as select or handler
+  participant Op as query or command handler
   participant State as state signal
 
   Caller->>Runtime: createService(def)
@@ -198,7 +198,7 @@ sequenceDiagram
   Caller->>Runtime: query(input) or command(input)
   Runtime->>Schema: validate input
   Schema-->>Runtime: parsed input
-  Runtime->>Op: run select(state, input) or handler(input, ctx)
+  Runtime->>Op: run handler(state, input) or handler(input, ctx)
   Op->>State: read state or setState(...)
   Op-->>Runtime: raw output
   Runtime->>Schema: validate output
@@ -210,7 +210,7 @@ sequenceDiagram
 Subscriptions are powered by `alien-signals`:
 
 1. The query's input is validated once (captured in the subscription closure).
-2. A `computed(() => select(state, input))` re-runs whenever the state signal changes.
+2. A `computed(() => handler(state, input))` re-runs whenever the state signal changes.
 3. An `effect(() => listener(comp()))` observes the computed. The first synchronous fire is **swallowed** so subscribers see changes only — read the initial value via the callable form of the query.
 4. Output validation runs each time the listener is about to be notified.
 5. Reference-equality memoisation on the computed gives "result didn't change → don't re-notify" for free.
@@ -231,7 +231,7 @@ sequenceDiagram
   Subscriber->>Runtime: subscribe(input?, listener)
   Runtime->>Schema: validate input
   Schema-->>Runtime: parsed input
-  Runtime->>Signals: install computed(() => select(state, input))
+  Runtime->>Signals: install computed(() => handler(state, input))
   Runtime->>Preload: kick off preload (fire-and-forget)
   Signals->>Signals: first fire SWALLOWED
   Note over Signals: subscribers see changes only
@@ -273,7 +273,7 @@ queries: {
   getComponentDocgenInfo: query({
     input: z.string(),
     output: docgenSchema.nullable(),
-    select: (state, id) => state.byComponentId[id] ?? null,
+    handler: (state, id) => state.byComponentId[id] ?? null,
     preload: async (id, ctx) => { await ctx.self.commands.generateDocgen(id); },
     inputs: async () => listAllComponentIds(),
     path: (_ctx, id) => `docgen-${id}.json`,
@@ -288,7 +288,7 @@ queries: {
   allStatuses: query({
     input: z.void(),
     output: z.record(z.string(), z.string()),
-    select: (state) => state.byStoryId,
+    handler: (state) => state.byStoryId,
     preload: async (ctx) => {
       const data = await fetchAllStatusesAtBuildTime();
       ctx.self.setState((d) => { d.byStoryId = data; });
@@ -438,7 +438,7 @@ const DocgenService = defineService<DocgenState>()(({ query, command }) => ({
   state: { byComponentId: {}, somethingElse: 42 },
   queries: {
     getComponentDocgenInfo: query({ /* ...with preload+inputs+path... */ }),
-    somethingElse: query({ input: z.void(), output: z.number(), select: (s) => s.somethingElse }),
+    somethingElse: query({ input: z.void(), output: z.number(), handler: (s) => s.somethingElse }),
   },
   commands: {
     generateDocgen: command({ input: z.string(), output: z.void() }),       // abstract
@@ -500,7 +500,7 @@ export const ExampleService = defineService<ExampleState>()(({ query, command })
       description: 'Returns one value by id.',
       input: entryIdSchema,
       output: valueSchema,
-      select: (state, input) => state.values[input.entryId] ?? null,
+      handler: (state, input) => state.values[input.entryId] ?? null,
       preload: async (input, ctx) => {
         if (!(input.entryId in ctx.self.getState().values)) {
           await ctx.self.commands.preloadValue(input);

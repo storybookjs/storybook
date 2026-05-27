@@ -3,7 +3,7 @@
  *
  * Every query and command declares Standard Schema v1 `input` and `output` schemas. The
  * runtime calls these helpers at the boundary — incoming caller input is validated before the
- * selector/handler runs; the returned value is validated before it leaves the service. Schema
+ * handler runs; the returned value is validated before it leaves the service. Schema
  * mismatches surface as `ServiceValidationError`s.
  */
 

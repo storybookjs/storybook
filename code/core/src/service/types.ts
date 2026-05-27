@@ -107,14 +107,14 @@ export interface SelfHandle<TState> {
  * A query is a schema-validated selector over state.
  *
  *  - `input` and `output` are Standard Schema v1 schemas.
- *  - `select` derives the output value from state and (optionally) a parsed input. Pure and sync.
+ *  - `handler` derives the output value from state and (optionally) a parsed input. Pure and sync.
  *  - `preload` (optional) is a read-triggered side effect that populates state; the static
  *    build runs it for every enumerated input.
  *  - `inputs` (optional) enumerates inputs the static build pre-renders.
  *  - `path` (optional) controls the per-input filename.
  *
  * No-input queries are encoded by `input: <void schema>` (e.g. `z.void()`); `InferSchemaOutput`
- * resolves to `void`, and the `select`/`preload`/`path` signatures collapse to their no-input
+ * resolves to `void`, and the `handler`/`preload`/`path` signatures collapse to their no-input
  * variants automatically.
  */
 export interface QueryDef<
@@ -125,7 +125,7 @@ export interface QueryDef<
   readonly description?: string;
   readonly input: TInputSchema;
   readonly output: TOutputSchema;
-  readonly select: IsNoInputSchema<TInputSchema> extends true
+  readonly handler: IsNoInputSchema<TInputSchema> extends true
     ? (state: TState) => InferSchemaOutput<TOutputSchema>
     : (state: TState, input: InferSchemaOutput<TInputSchema>) => InferSchemaOutput<TOutputSchema>;
   readonly preload?: IsNoInputSchema<TInputSchema> extends true
@@ -220,7 +220,7 @@ export type AnyQueryDef<TState = any> = {
   readonly description?: string;
   readonly input: AnySchema;
   readonly output: AnySchema;
-  readonly select: BivariantCallback<[state: TState, input?: unknown], unknown>;
+  readonly handler: BivariantCallback<[state: TState, input?: unknown], unknown>;
   readonly preload?: BivariantCallback<
     [input: unknown, ctx: ServiceCtx<TState>],
     void | Promise<void>
@@ -294,7 +294,7 @@ export type CommandOverrides<TDef extends ServiceDefinition<any, any, any>> = {
 /**
  * What a consumer passes in when calling a query. The raw caller-facing input, inferred from
  * the query's `input` schema via `StandardSchemaV1.InferInput`. The runtime validates this and
- * hands the parsed value to `select`.
+ * hands the parsed value to `handler`.
  */
 export type InputOfQuery<Q> =
   Q extends QueryDef<any, infer TIn, any> ? InferSchemaInput<TIn> : never;

@@ -25,7 +25,7 @@ describe('useServiceQuery — initial render', () => {
       id: 'test/hook-initial',
       state: { count: 7 } as S,
       queries: {
-        get: { input: z.void(), output: z.number(), select: (s: S) => s.count },
+        get: { input: z.void(), output: z.number(), handler: (s: S) => s.count },
       },
       commands: {},
     });
@@ -46,7 +46,7 @@ describe('useServiceQuery — initial render', () => {
         get: {
           input: z.string(),
           output: z.string().optional(),
-          select: (s: S, id: string) => s.byId[id],
+          handler: (s: S, id: string) => s.byId[id],
         },
       },
       commands: {},
@@ -69,7 +69,7 @@ describe('useServiceQuery — reactivity', () => {
       id: 'test/hook-rerender',
       state: { count: 0 } as S,
       queries: {
-        get: { input: z.void(), output: z.number(), select: (s: S) => s.count },
+        get: { input: z.void(), output: z.number(), handler: (s: S) => s.count },
       },
       commands: {
         bump: {
@@ -110,8 +110,8 @@ describe('useServiceQuery — reactivity', () => {
       id: 'test/hook-no-rerender-unrelated',
       state: { a: 0, b: 0 } as S,
       queries: {
-        getA: { input: z.void(), output: z.number(), select: (s: S) => s.a },
-        getB: { input: z.void(), output: z.number(), select: (s: S) => s.b },
+        getA: { input: z.void(), output: z.number(), handler: (s: S) => s.a },
+        getB: { input: z.void(), output: z.number(), handler: (s: S) => s.b },
       },
       commands: {
         bumpB: {
@@ -152,7 +152,7 @@ describe('useServiceQuery — reactivity', () => {
       id: 'test/hook-no-rerender-equal',
       state: { label: 'hello' } as S,
       queries: {
-        get: { input: z.void(), output: z.string(), select: (s: S) => s.label },
+        get: { input: z.void(), output: z.string(), handler: (s: S) => s.label },
       },
       commands: {
         rewrite: {
@@ -198,7 +198,7 @@ describe('useServiceQuery — input changes', () => {
         get: {
           input: z.string(),
           output: z.string().optional(),
-          select: (s: S, id: string) => s.byId[id],
+          handler: (s: S, id: string) => s.byId[id],
         },
       },
       commands: {},
@@ -234,7 +234,7 @@ describe('useServiceQuery — preloads', () => {
         getName: {
           input: z.string(),
           output: z.string().optional(),
-          select: (s: S, id: string) => s.byId[id],
+          handler: (s: S, id: string) => s.byId[id],
           preload: async (id: string, ctx: ServiceCtx<S>) => {
             await ctx.self.commands.load(id);
           },

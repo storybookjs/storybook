@@ -1,7 +1,7 @@
 import { existsSync, rmSync } from 'node:fs';
 import { mkdir, rename, rm, writeFile } from 'node:fs/promises';
 import { randomUUID } from 'node:crypto';
-import { homedir } from 'node:os';
+import { tmpdir } from 'node:os';
 
 import type { StorybookConfig } from 'storybook/internal/types';
 
@@ -31,7 +31,7 @@ export type RuntimeInstanceRegistration = {
 };
 
 export function getDefaultRuntimeInstanceRegistryDir() {
-  return join(homedir(), '.storybook', 'instances');
+  return join(tmpdir(), '.storybook', 'instances');
 }
 
 export function getOrigin(address: string) {

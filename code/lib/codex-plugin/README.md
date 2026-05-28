@@ -101,7 +101,7 @@ Codex does not expose CLI commands for plugin install or update. Use the Codex a
 The plugin's `plugins/storybook/.mcp.json` configures Codex to run the latest `@storybook/mcp-proxy` preview from pkg.pr.new:
 
 ```sh
-npx -y https://pkg.pr.new/storybookjs/mcp/@storybook/mcp-proxy@main
+npx -y --prefer-online https://pkg.pr.new/storybookjs/mcp/@storybook/mcp-proxy@main
 ```
 
 The `@main` ref tracks the latest preview build from the `main` branch.

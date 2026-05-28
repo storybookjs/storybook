@@ -3,6 +3,8 @@ import { dedent } from 'ts-dedent';
 
 import type { Status } from './shared/status-store/index.ts';
 import type { StatusTypeId } from './shared/status-store/index.ts';
+import { formatIssues } from './shared/open-service/errors.ts';
+import type { ValidationMeta } from './shared/open-service/errors.ts';
 import { StorybookError } from './storybook-error.ts';
 
 export { StorybookError } from './storybook-error.ts';
@@ -148,6 +150,19 @@ export class InvalidStoriesEntryError extends StorybookError {
         Your main configuration does not contain a 'stories' field, or it resolved to an empty array.
         
         Please check your main configuration file and make sure it exports a 'stories' field that is not an empty array.`,
+    });
+  }
+}
+
+export class OpenServiceValidationError extends StorybookError {
+  constructor(public data: ValidationMeta) {
+    super({
+      name: 'OpenServiceValidationError',
+      category: Category.CORE_COMMON,
+      code: 5,
+      message: `Invalid ${data.phase} for ${data.kind} "${data.serviceId}.${data.name}":\n${formatIssues(
+        data.issues
+      )}`,
     });
   }
 }

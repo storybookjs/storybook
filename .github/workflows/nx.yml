@@ -84,7 +84,7 @@ jobs:
             });
       - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e #6.4.0
         with:
-          node-version: 22
+          node-version-file: '.nvmrc'
           cache: 'yarn'
       - run: yarn install --immutable
       - uses: nrwl/nx-set-shas@afb73a62d26e41464e9254689e1fd6122ee683c1 # v5.0.1

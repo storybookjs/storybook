@@ -77,19 +77,6 @@ const HeaderMeta = styled.div(({ theme }) => ({
   color: theme.textMutedColor,
 }));
 
-const BranchCode = styled.code(({ theme }) => ({
-  boxSizing: 'border-box',
-  display: 'inline-flex',
-  flexDirection: 'row',
-  alignItems: 'flex-start',
-  padding: '3px 5px',
-  background: '#F7FAFC',
-  border: '1px solid #DDE0E3',
-  borderRadius: 2,
-  fontFamily: theme.typography.fonts.mono,
-  fontSize: theme.typography.size.s1,
-}));
-
 const Body = styled.div({
   flex: 1,
   minHeight: 0,
@@ -574,6 +561,7 @@ export const SummaryScreen: FC<SummaryScreenProps> = ({
     return <Empty>Waiting for the agent to push a review…</Empty>;
   }
 
+  const storyCount = new Set(state.collections.flatMap((collection) => collection.storyIds)).size;
   const componentIds = groupStoriesByComponent(state.collections).map((group) => group.componentId);
   const areAllCollectionsExpanded = state.collections.every((_, index) =>
     expandedCollections.has(index)
@@ -622,8 +610,10 @@ export const SummaryScreen: FC<SummaryScreenProps> = ({
           <Heading>{state.title}</Heading>
           {state.branchName ? (
             <HeaderMeta>
-              <span>Showing unstaged changes on</span>
-              <BranchCode>{state.branchName}</BranchCode>
+              <span>
+                Showing {storyCount} agent-curated {storyCount === 1 ? 'story' : 'stories'} for
+                quick review.
+              </span>
             </HeaderMeta>
           ) : null}
         </HeaderText>

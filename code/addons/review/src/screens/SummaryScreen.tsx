@@ -1,4 +1,12 @@
-import React, { type FC, type ReactNode, useEffect, useMemo, useRef, useState } from 'react';
+import React, {
+  type FC,
+  type ReactNode,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 
 import { Button, Collapsible } from 'storybook/internal/components';
 import { styled } from 'storybook/theming';
@@ -15,6 +23,8 @@ import { CollectionGrid, type StoryInfo } from '../components/CollectionGrid.tsx
 import { groupStoriesByComponent, prettifyComponentId } from '../review-grouping.ts';
 import { buildReviewChangesDetailHref, type ReviewTab } from '../review-navigation.ts';
 import type { ReviewCollection, ReviewState } from '../review-state.ts';
+import { useReviewView } from '../review-view-state.tsx';
+import { useScrollRestore } from '../use-scroll-restore.ts';
 
 // A definite height (not `minHeight`) is what makes the page scrollable:
 // the inner flex chain — Body → TabPanels → TabPanelBody — needs a bounded
@@ -317,12 +327,12 @@ const storyMatchesQuery = (
 
 const CollectionsTab: FC<{
   collections: ReviewCollection[];
-  expanded: Set<number>;
   query: string;
   activeTab: ReviewTab;
   storyInfo: Record<string, StoryInfo>;
-  onToggleCollection: (index: number) => void;
-}> = ({ collections, expanded, query, activeTab, storyInfo, onToggleCollection }) => {
+}> = ({ collections, query, activeTab, storyInfo }) => {
+  const { expandedCollections, showAllCollections, toggleCollection, markCollectionShowAll } =
+    useReviewView();
   const normalizedQuery = query.trim().toLowerCase();
   // Search narrows to the story level: a collection whose title matches keeps
   // all its stories, otherwise only the matching stories are shown. The
@@ -348,14 +358,14 @@ const CollectionsTab: FC<{
   return (
     <CollectionList>
       {visibleCollections.map(({ collection, index, storyIds }) => {
-        const isExpanded = expanded.has(index);
+        const isExpanded = expandedCollections.has(index);
 
         return (
           <CollectionBlock key={`${collection.title}-${index}`}>
             <Collapsible
               collapsed={!isExpanded}
               summary={() => (
-                <CollectionHead onClick={() => onToggleCollection(index)}>
+                <CollectionHead onClick={() => toggleCollection(index)}>
                   <CollectionHeadInner>
                     <CollectionHeadText data-collapsible-title>
                       <CollectionLabel>{collection.title}</CollectionLabel>
@@ -369,7 +379,7 @@ const CollectionsTab: FC<{
                         ariaLabel={isExpanded ? 'Collapse cluster' : 'Expand cluster'}
                         onClick={(event) => {
                           event.stopPropagation();
-                          onToggleCollection(index);
+                          toggleCollection(index);
                         }}
                       >
                         <ToggleChevronIcon
@@ -386,6 +396,12 @@ const CollectionsTab: FC<{
               ) : null}
               <CollectionGrid
                 storyIds={storyIds}
+                initialShowAll={showAllCollections.has(index)}
+                onShowAllChange={(showAll) => {
+                  if (showAll) {
+                    markCollectionShowAll(index);
+                  }
+                }}
                 storyInfo={storyInfo}
                 query={query}
                 getStoryHref={(storyId) =>
@@ -410,11 +426,11 @@ const CollectionsTab: FC<{
 const ComponentsTab: FC<{
   collections: ReviewCollection[];
   storyInfo: Record<string, StoryInfo>;
-  expanded: Set<string>;
   query: string;
   activeTab: ReviewTab;
-  onToggleComponent: (componentId: string) => void;
-}> = ({ collections, storyInfo, expanded, query, activeTab, onToggleComponent }) => {
+}> = ({ collections, storyInfo, query, activeTab }) => {
+  const { expandedComponents, showAllComponents, toggleComponent, markComponentShowAll } =
+    useReviewView();
   const normalizedQuery = query.trim().toLowerCase();
   // Search narrows to the story level here too: a component whose name
   // matches keeps all its stories, otherwise only matching stories show.
@@ -441,14 +457,14 @@ const ComponentsTab: FC<{
   return (
     <CollectionList>
       {visibleGroups.map(({ group, name, storyIds }) => {
-        const isExpanded = expanded.has(group.componentId);
+        const isExpanded = expandedComponents.has(group.componentId);
 
         return (
           <CollectionBlock key={group.componentId}>
             <Collapsible
               collapsed={!isExpanded}
               summary={() => (
-                <CollectionHead onClick={() => onToggleComponent(group.componentId)}>
+                <CollectionHead onClick={() => toggleComponent(group.componentId)}>
                   <CollectionHeadInner>
                     <CollectionHeadText data-collapsible-title>
                       {renderComponentTitle(name)}
@@ -462,7 +478,7 @@ const ComponentsTab: FC<{
                         ariaLabel={isExpanded ? 'Collapse component' : 'Expand component'}
                         onClick={(event) => {
                           event.stopPropagation();
-                          onToggleComponent(group.componentId);
+                          toggleComponent(group.componentId);
                         }}
                       >
                         <ToggleChevronIcon
@@ -476,13 +492,18 @@ const ComponentsTab: FC<{
             >
               <CollectionGrid
                 storyIds={storyIds}
+                initialShowAll={showAllComponents.has(group.componentId)}
+                onShowAllChange={(showAll) => {
+                  if (showAll) {
+                    markComponentShowAll(group.componentId);
+                  }
+                }}
                 storyInfo={storyInfo}
                 query={query}
                 getStoryHref={(storyId) =>
                   buildReviewChangesDetailHref(
                     {
                       kind: 'component',
-                      componentId: group.componentId,
                       storyId,
                     },
                     activeTab
@@ -531,9 +552,8 @@ export const SummaryScreen: FC<SummaryScreenProps> = ({
   onTabChange,
   storyInfo = {},
 }) => {
+  const view = useReviewView();
   const [tab, setTab] = useState<ReviewTab>(initialTab);
-  const [expandedCollections, setExpandedCollections] = useState<Set<number>>(new Set());
-  const [expandedComponents, setExpandedComponents] = useState<Set<string>>(new Set());
   const [search, setSearch] = useState('');
   const tabOrder: [ReviewTab, ReviewTab] = ['collections', 'components'];
   const tabRefs = useRef<Record<ReviewTab, HTMLButtonElement | null>>({
@@ -544,6 +564,8 @@ export const SummaryScreen: FC<SummaryScreenProps> = ({
   const componentsTabId = 'review-tab-components';
   const collectionsPanelId = 'review-tabpanel-collections';
   const componentsPanelId = 'review-tabpanel-components';
+  const collectionsPanelRef = useRef<HTMLDivElement | null>(null);
+  const componentsPanelRef = useRef<HTMLDivElement | null>(null);
   const storybookRootHref = useMemo(() => {
     const rootUrl = new URL(window.location.href);
     rootUrl.searchParams.delete('path');
@@ -551,18 +573,26 @@ export const SummaryScreen: FC<SummaryScreenProps> = ({
   }, []);
 
   useEffect(() => {
-    if (!state) {
-      return;
-    }
-    setExpandedCollections(new Set(state.collections.map((_, index) => index)));
-    setExpandedComponents(
-      new Set(groupStoriesByComponent(state.collections).map((group) => group.componentId))
-    );
-  }, [state]);
-
-  useEffect(() => {
     setTab(initialTab);
   }, [initialTab]);
+
+  // Scroll offsets are kept live by the panels' onScroll handlers, so by the
+  // time this screen remounts the store already holds the right value to
+  // restore. Reading lazily keeps the restore loop from chasing a stale goal.
+  const getCollectionsScroll = useCallback(() => view.getScroll('collections'), [view]);
+  const getComponentsScroll = useCallback(() => view.getScroll('components'), [view]);
+  useScrollRestore({
+    panelRef: collectionsPanelRef,
+    isActive: tab === 'collections',
+    getTargetScrollTop: getCollectionsScroll,
+    resetKey: view.reviewVersion,
+  });
+  useScrollRestore({
+    panelRef: componentsPanelRef,
+    isActive: tab === 'components',
+    getTargetScrollTop: getComponentsScroll,
+    resetKey: view.reviewVersion,
+  });
 
   if (!state) {
     return <Empty>Waiting for the agent to push a review…</Empty>;
@@ -571,10 +601,10 @@ export const SummaryScreen: FC<SummaryScreenProps> = ({
   const storyCount = new Set(state.collections.flatMap((collection) => collection.storyIds)).size;
   const componentIds = groupStoriesByComponent(state.collections).map((group) => group.componentId);
   const areAllCollectionsExpanded = state.collections.every((_, index) =>
-    expandedCollections.has(index)
+    view.expandedCollections.has(index)
   );
   const areAllComponentsExpanded = componentIds.every((componentId) =>
-    expandedComponents.has(componentId)
+    view.expandedComponents.has(componentId)
   );
   const setActiveTab = (nextTab: ReviewTab) => {
     setTab(nextTab);
@@ -678,6 +708,10 @@ export const SummaryScreen: FC<SummaryScreenProps> = ({
             role="tabpanel"
             aria-labelledby={collectionsTabId}
             hidden={tab !== 'collections'}
+            ref={collectionsPanelRef}
+            onScroll={(event) => {
+              view.setScroll('collections', event.currentTarget.scrollTop);
+            }}
           >
             <SearchRow>
               <SearchBox value={search} onChange={setSearch} />
@@ -692,10 +726,8 @@ export const SummaryScreen: FC<SummaryScreenProps> = ({
                       : 'Expand all collections'
                   }
                   onClick={() => {
-                    setExpandedCollections(
-                      areAllCollectionsExpanded
-                        ? new Set()
-                        : new Set(state.collections.map((_, index) => index))
+                    view.setCollectionsExpanded(
+                      areAllCollectionsExpanded ? [] : state.collections.map((_, index) => index)
                     );
                   }}
                 >
@@ -705,21 +737,9 @@ export const SummaryScreen: FC<SummaryScreenProps> = ({
             </SearchRow>
             <CollectionsTab
               collections={state.collections}
-              expanded={expandedCollections}
               query={search}
               activeTab={tab}
               storyInfo={storyInfo}
-              onToggleCollection={(index) => {
-                setExpandedCollections((prev) => {
-                  const next = new Set(prev);
-                  if (next.has(index)) {
-                    next.delete(index);
-                  } else {
-                    next.add(index);
-                  }
-                  return next;
-                });
-              }}
             />
           </TabPanelBody>
 
@@ -728,6 +748,10 @@ export const SummaryScreen: FC<SummaryScreenProps> = ({
             role="tabpanel"
             aria-labelledby={componentsTabId}
             hidden={tab !== 'components'}
+            ref={componentsPanelRef}
+            onScroll={(event) => {
+              view.setScroll('components', event.currentTarget.scrollTop);
+            }}
           >
             <SearchRow>
               <SearchBox value={search} onChange={setSearch} />
@@ -740,9 +764,7 @@ export const SummaryScreen: FC<SummaryScreenProps> = ({
                     areAllComponentsExpanded ? 'Collapse all components' : 'Expand all components'
                   }
                   onClick={() => {
-                    setExpandedComponents(
-                      areAllComponentsExpanded ? new Set() : new Set(componentIds)
-                    );
+                    view.setComponentsExpanded(areAllComponentsExpanded ? [] : componentIds);
                   }}
                 >
                   {areAllComponentsExpanded ? <CollapseIcon /> : <ExpandAltIcon />}
@@ -752,20 +774,8 @@ export const SummaryScreen: FC<SummaryScreenProps> = ({
             <ComponentsTab
               collections={state.collections}
               storyInfo={storyInfo}
-              expanded={expandedComponents}
               query={search}
               activeTab={tab}
-              onToggleComponent={(componentId) => {
-                setExpandedComponents((prev) => {
-                  const next = new Set(prev);
-                  if (next.has(componentId)) {
-                    next.delete(componentId);
-                  } else {
-                    next.add(componentId);
-                  }
-                  return next;
-                });
-              }}
             />
           </TabPanelBody>
         </TabPanels>

@@ -13,6 +13,7 @@ import {
   parseReviewChangesDetailLocation,
 } from '../review-navigation.ts';
 import type { ReviewState } from '../review-state.ts';
+import { StandaloneReviewView } from '../review-view-state.tsx';
 import { DetailsScreen } from '../screens/DetailsScreen.tsx';
 import { SummaryScreen } from '../screens/SummaryScreen.tsx';
 
@@ -136,9 +137,13 @@ const ReviewFlowPrototype: FC<{
   }
 
   return (
-    <div ref={containerRef} style={{ display: 'contents' }}>
-      {detailScreen ?? <SummaryScreen state={state} initialTab={activeTab} storyInfo={storyInfo} />}
-    </div>
+    <StandaloneReviewView state={state}>
+      <div ref={containerRef} style={{ display: 'contents' }}>
+        {detailScreen ?? (
+          <SummaryScreen state={state} initialTab={activeTab} storyInfo={storyInfo} />
+        )}
+      </div>
+    </StandaloneReviewView>
   );
 };
 

@@ -262,6 +262,10 @@ const StoryPreviewCell: FC<{
 export interface CollectionGridProps {
   storyIds: string[];
   getStoryHref?: (storyId: string, storyIndex: number) => string | undefined;
+  /** Persisted "review all" expansion state for this specific grid. */
+  initialShowAll?: boolean;
+  /** Persist "review all" expansion changes back to parent state. */
+  onShowAllChange?: (showAll: boolean) => void;
   /** Story id → component title + story name, for the floating thumbnail label. */
   storyInfo?: Record<string, StoryInfo>;
   /** Active search query — matches in the thumbnail label are highlighted. */
@@ -271,13 +275,19 @@ export interface CollectionGridProps {
 export const CollectionGrid: FC<CollectionGridProps> = ({
   storyIds,
   getStoryHref,
+  initialShowAll = false,
+  onShowAllChange,
   storyInfo,
   query = '',
 }) => {
   const gridRef = useRef<HTMLDivElement>(null);
   const [columnsPerRow, setColumnsPerRow] = useState(1);
   // "Review all" expands every story of this category inline.
-  const [showAll, setShowAll] = useState(false);
+  const [showAll, setShowAll] = useState(initialShowAll);
+
+  useEffect(() => {
+    setShowAll(initialShowAll);
+  }, [initialShowAll]);
 
   useEffect(() => {
     const grid = gridRef.current;
@@ -325,7 +335,13 @@ export const CollectionGrid: FC<CollectionGridProps> = ({
       {hasOverflow && (
         <GridCell data-testid="review-collection-grid-cell">
           <CellAction>
-            <Button size="medium" onClick={() => setShowAll(true)}>
+            <Button
+              size="medium"
+              onClick={() => {
+                setShowAll(true);
+                onShowAllChange?.(true);
+              }}
+            >
               Review all {storyIds.length}
             </Button>
           </CellAction>

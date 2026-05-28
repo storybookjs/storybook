@@ -11,8 +11,10 @@ import {
   buildReviewChangesSummaryHref,
   parseReviewChangesActiveTab,
   parseReviewChangesDetailLocation,
+  type ReviewTab,
 } from './review-navigation.ts';
 import type { ReviewState } from './review-state.ts';
+import { ReviewViewProvider, useReviewViewStore } from './review-view-state.tsx';
 import { DetailsScreen } from './screens/DetailsScreen.tsx';
 import { SummaryScreen } from './screens/SummaryScreen.tsx';
 
@@ -27,13 +29,19 @@ export const ReviewPage: FC = () =>
 
 const ReviewPageContent: FC<{ search: string }> = ({ search }) => {
   const [state, setState] = useState<ReviewState | null>(null);
+  // Lives here, above SummaryScreen, so expand/scroll state survives the
+  // unmount that happens whenever the user drills into a detail page.
+  const view = useReviewViewStore();
 
   const api = useStorybookApi();
   const { index } = useStorybookState();
   const navigate = useNavigate();
 
   const emit = useChannel({
-    [EVENTS.DISPLAY_REVIEW]: (next: ReviewState) => setState(next),
+    [EVENTS.DISPLAY_REVIEW]: (next: ReviewState) => {
+      view.reset(next.collections);
+      setState(next);
+    },
   });
 
   // Late/refreshed tab: ask the server to replay the cached overlay.
@@ -210,14 +218,18 @@ const ReviewPageContent: FC<{ search: string }> = ({ search }) => {
   return React.createElement(
     'div',
     { ref: containerRef, style: { display: 'contents' } },
-    detailScreen ??
-      React.createElement(SummaryScreen, {
-        state,
-        initialTab: activeTab,
-        onTabChange: (nextTab) => {
-          navigate(buildReviewChangesSummaryHref(nextTab), { plain: true });
-        },
-        storyInfo,
-      })
+    React.createElement(
+      ReviewViewProvider,
+      { value: view },
+      detailScreen ??
+        React.createElement(SummaryScreen, {
+          state,
+          initialTab: activeTab,
+          onTabChange: (nextTab: ReviewTab) => {
+            navigate(buildReviewChangesSummaryHref(nextTab), { plain: true });
+          },
+          storyInfo,
+        })
+    )
   );
 };

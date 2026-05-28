@@ -1,7 +1,10 @@
+import React from 'react';
+
 import { expect, within } from 'storybook/test';
 
 import preview from '../../../../.storybook/preview.tsx';
 import type { ReviewState } from '../review-state.ts';
+import { StandaloneReviewView } from '../review-view-state.tsx';
 import { SummaryScreen } from './SummaryScreen.tsx';
 
 const minimal: ReviewState = {
@@ -197,6 +200,13 @@ const meta = preview.meta({
   component: SummaryScreen,
   parameters: { layout: 'fullscreen' },
   args: {},
+  decorators: [
+    (Story, { args }) => (
+      <StandaloneReviewView state={(args as { state: ReviewState | null }).state}>
+        <Story />
+      </StandaloneReviewView>
+    ),
+  ],
 });
 
 export const Empty = meta.story({

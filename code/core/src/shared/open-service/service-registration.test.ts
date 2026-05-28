@@ -26,21 +26,21 @@ describe('service registration', () => {
   it('registers services globally and exposes summaries and descriptors by id', async () => {
     const service = registerService(mutableRecordLookupServiceDef);
 
-    expect(getService('test/mutable-record-lookup')).toBe(service);
+    expect(getService('internal-fixture/mutable-record-lookup')).toBe(service);
     expect(getRegisteredServices()).toHaveLength(1);
     await expect(listServices()).resolves.toEqual([
       {
-        id: 'test/mutable-record-lookup',
+        id: 'internal-fixture/mutable-record-lookup',
         description: 'Provides a mutable record lookup keyed by entry id.',
         queryNames: ['getRecordFields'],
         commandNames: ['assignRecordField'],
       },
     ]);
 
-    const descriptor = await describeService('test/mutable-record-lookup');
+    const descriptor = await describeService('internal-fixture/mutable-record-lookup');
 
     expect(descriptor).toMatchObject({
-      id: 'test/mutable-record-lookup',
+      id: 'internal-fixture/mutable-record-lookup',
       description: 'Provides a mutable record lookup keyed by entry id.',
       queries: {
         getRecordFields: {
@@ -71,21 +71,22 @@ describe('service registration', () => {
       expect(error).toMatchObject({
         fromStorybook: true,
         code: 6,
-        message: 'A service with id "test/mutable-record-lookup" is already registered.',
+        message:
+          'A service with id "internal-fixture/mutable-record-lookup" is already registered.',
       });
     }
   });
 
   it('throws a Storybook error when resolving a missing registered service id', () => {
-    expect(() => getService('test/missing-service')).toThrow(
-      'No registered service with id "test/missing-service" exists in this environment.'
+    expect(() => getService('internal-fixture/missing-service')).toThrow(
+      'No registered service with id "internal-fixture/missing-service" exists in this environment.'
     );
   });
 
   it('throws a Storybook error when a registered query or command is missing its handler', async () => {
     const service = registerService(
       defineService({
-        id: 'test/unimplemented-operations',
+        id: 'internal-fixture/unimplemented-operations',
         description: 'Leaves handlers undefined so registration can supply them later.',
         initialState: {} as Record<string, never>,
         queries: {
@@ -106,19 +107,19 @@ describe('service registration', () => {
     );
 
     expect(() => service.queries.getValue(undefined)).toThrow(
-      'Query "test/unimplemented-operations.getValue" is not implemented for this environment.'
+      'Query "internal-fixture/unimplemented-operations.getValue" is not implemented for this environment.'
     );
     await expect(service.commands.run(undefined)).rejects.toMatchObject({
       fromStorybook: true,
       code: 8,
       message:
-        'Command "test/unimplemented-operations.run" is not implemented for this environment.',
+        'Command "internal-fixture/unimplemented-operations.run" is not implemented for this environment.',
     });
   });
 
   it('lets handlers resolve another registered service by id through ctx.getService', async () => {
     const derivedServiceDef = defineService({
-      id: 'test/derived-boolean-from-service-id',
+      id: 'internal-fixture/derived-boolean-from-service-id',
       description: 'Derives marker state by resolving another service through ctx.getService.',
       initialState: {} as Record<string, never>,
       queries: {
@@ -127,7 +128,7 @@ describe('service registration', () => {
           input: entryIdInputSchema,
           output: v.boolean(),
           handler: (input, ctx) => {
-            const sourceService = ctx.getService('test/mutable-record-lookup');
+            const sourceService = ctx.getService('internal-fixture/mutable-record-lookup');
             const record = sourceService.queries.getRecordFields({
               entryId: input.entryId,
             }) as Record<string, string> | null;
@@ -155,7 +156,7 @@ describe('service registration', () => {
 
   it('allows server registration to provide handlers that are omitted from the definition', async () => {
     const incrementableServiceDef = defineService({
-      id: 'test/registered-command-override',
+      id: 'internal-fixture/registered-command-override',
       description: 'Provides a command handler at registration time.',
       initialState: { count: 0 },
       queries: {
@@ -192,7 +193,7 @@ describe('service registration', () => {
         },
         assignFromLookup: {
           handler: async (input, ctx) => {
-            const lookup = ctx.getService('test/mutable-record-lookup');
+            const lookup = ctx.getService('internal-fixture/mutable-record-lookup');
 
             await lookup.commands.assignRecordField(input);
 
@@ -218,7 +219,7 @@ describe('service registration', () => {
     expect(service.queries.getCount(undefined)).toBe(1);
 
     expect(
-      getService('test/mutable-record-lookup').queries.getRecordFields({
+      getService('internal-fixture/mutable-record-lookup').queries.getRecordFields({
         entryId: 'entry-a',
       })
     ).toEqual({ marker: 'match' });

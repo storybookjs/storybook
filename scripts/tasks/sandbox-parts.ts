@@ -977,14 +977,6 @@ async function prepareAngularSandbox(cwd: string, templateName: string) {
 
   Object.keys(angularJson.projects).forEach((projectName: string) => {
     /**
-     * Sets compodoc option in angular.json projects to false. We have to generate compodoc manually
-     * to avoid symlink issues related to the template-stories folder. In a second step a docs:json
-     * script is placed into the package.json to generate the Compodoc documentation.json, which
-     * respects symlinks
-     */
-    angularJson.projects[projectName].architect.storybook.options.compodoc = false;
-    angularJson.projects[projectName].architect['build-storybook'].options.compodoc = false;
-    /**
      * Sets preserveSymlinks option in angular.json projects to true. This is necessary to respect
      * symlinks so that Angular doesn't complain about wrong types in @storybook/* packages
      */
@@ -1005,27 +997,6 @@ async function prepareAngularSandbox(cwd: string, templateName: string) {
   };
 
   await writeFile(packageJsonPath, JSON.stringify(packageJson, null, 2));
-
-  // The generated `.storybook/preview.ts` statically imports `../documentation.json`,
-  // which is produced by `yarn docs:json` (compodoc). The storybook and build-storybook
-  // scripts above pre-run it, but other entry points (notably `vitest`) do not, so
-  // Vite's pre-transform fails to resolve the import before any task can run. Drop
-  // a minimal valid-shape stub so any consumer can start; `checkValidCompodocJson`
-  // in the framework requires `components` to be truthy, so an empty `{}` is not
-  // enough. The real content is written when `docs:json` runs.
-  await writeFile(
-    join(cwd, 'documentation.json'),
-    JSON.stringify({
-      components: [],
-      directives: [],
-      modules: [],
-      pipes: [],
-      classes: [],
-      injectables: [],
-      interfaces: [],
-      miscellaneous: {},
-    })
-  );
 
   // Set tsConfig compilerOptions
 

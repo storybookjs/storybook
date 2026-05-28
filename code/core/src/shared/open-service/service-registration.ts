@@ -5,8 +5,11 @@ import {
 } from '../../server-errors.ts';
 import type {
   AnyServiceDefinition,
+  AnyQueryDefinition,
   Commands,
+  LoadCtx,
   Queries,
+  RegisteredStaticInputs,
   RuntimeService,
   ServiceDefinition,
   ServiceDescriptor,
@@ -97,6 +100,29 @@ function summarizeDescriptor(descriptor: ServiceDescriptor): ServiceSummary {
 }
 
 /**
+ * Normalizes definition-layer staticInputs into the registration shape used by static builds.
+ *
+ * Definition authors may declare dependency-free `() => inputs` enumerators. Registration may
+ * override or supply `(ctx) => inputs` when the list depends on server context.
+ */
+function resolveRegisteredStaticInputs<TState>(
+  query: AnyQueryDefinition<TState>,
+  registrationQuery?: { staticInputs?: RegisteredStaticInputs<TState> }
+): RegisteredStaticInputs<TState> | undefined {
+  if (registrationQuery?.staticInputs) {
+    return registrationQuery.staticInputs;
+  }
+
+  if (!query.staticInputs) {
+    return undefined;
+  }
+
+  const definitionStaticInputs = query.staticInputs as () => unknown[] | Promise<unknown[]>;
+
+  return (_ctx: LoadCtx<TState>) => definitionStaticInputs();
+}
+
+/**
  * Applies optional server-side overrides to an authored service definition.
  *
  * Registration overrides are shallow merges over the authored definition. That lets the server
@@ -114,12 +140,19 @@ function applyRegistration<
   return {
     ...definition,
     queries: Object.fromEntries(
-      Object.entries(definition.queries).map(([name, query]) => [
-        name,
-        registration?.queries?.[name as keyof TQueries]
-          ? { ...query, ...registration.queries[name as keyof TQueries] }
-          : query,
-      ])
+      Object.entries(definition.queries).map(([name, query]) => {
+        const registrationQuery = registration?.queries?.[name as keyof TQueries];
+        const staticInputs = resolveRegisteredStaticInputs(query, registrationQuery);
+
+        return [
+          name,
+          {
+            ...query,
+            ...registrationQuery,
+            ...(staticInputs ? { staticInputs } : {}),
+          },
+        ];
+      })
     ) as TQueries,
     commands: Object.fromEntries(
       Object.entries(definition.commands).map(([name, command]) => [
@@ -178,7 +211,7 @@ export function registerService<
   // need to rebuild descriptors from the authored definition each time.
   registry.set(definition.id, {
     definition: resolvedDefinition as AnyServiceDefinition,
-    runtime: registeredRuntime as RuntimeService,
+    runtime: registeredRuntime as unknown as RuntimeService,
     descriptor,
     summary: summarizeDescriptor(descriptor),
   });
@@ -240,7 +273,7 @@ export function getService<TDefinition extends AnyServiceDefinition>(
     throw new OpenServiceMissingServiceError({ serviceId });
   }
 
-  return entry.runtime as ServiceInstanceOf<TDefinition>;
+  return entry.runtime as unknown as ServiceInstanceOf<TDefinition>;
 }
 
 /**

@@ -165,6 +165,12 @@ export type LoadCtx<
   getService: ServiceRegistryApi['getService'];
 };
 
+/** Static input enumerator stored on registered definitions; always receives load context. */
+export type RegisteredStaticInputs<TState> = BivariantCallback<
+  [ctx: LoadCtx<TState>],
+  unknown[] | Promise<unknown[]>
+>;
+
 /** Context passed to command handlers. */
 export type CommandCtx<
   TState,
@@ -243,7 +249,7 @@ export type AnyQueryDefinition<TState> = {
   input: AnySchema;
   output: AnySchema;
   filePath?: BivariantCallback<[input: unknown], string>;
-  staticInputs?: BivariantCallback<[], unknown[] | Promise<unknown[]>>;
+  staticInputs?: RegisteredStaticInputs<TState>;
   handler?: BivariantCallback<[input: unknown, ctx: QueryCtx<TState>], unknown>;
   load?: BivariantCallback<[input: unknown, ctx: LoadCtx<TState>], void | Promise<void>>;
 };
@@ -287,20 +293,18 @@ export type ServiceInstance<
   TCommands extends Commands<TState>,
 > = {
   queries: {
-    [TKey in keyof TQueries]: TQueries[TKey] extends QueryDefinition<
-      TState,
-      infer TInputSchema,
-      infer TOutputSchema
-    >
+    [TKey in keyof TQueries]: TQueries[TKey] extends {
+      input: infer TInputSchema extends AnySchema;
+      output: infer TOutputSchema extends AnySchema;
+    }
       ? Query<InferSchemaInput<TInputSchema>, InferSchemaOutput<TOutputSchema>>
       : never;
   };
   commands: {
-    [TKey in keyof TCommands]: TCommands[TKey] extends CommandDefinition<
-      TState,
-      infer TInputSchema,
-      infer TOutputSchema
-    >
+    [TKey in keyof TCommands]: TCommands[TKey] extends {
+      input: infer TInputSchema extends AnySchema;
+      output: infer TOutputSchema extends AnySchema;
+    }
       ? (input: InferSchemaInput<TInputSchema>) => Promise<InferSchemaOutput<TOutputSchema>>
       : never;
   };
@@ -324,18 +328,12 @@ export interface ServiceRegistryApi {
 export type RuntimeService = ServiceInstance<unknown, Queries<unknown>, Commands<unknown>> &
   ServiceRegistryApi;
 
-export type ServiceQueryRegistration<
-  TState,
-  TQuery extends AnyQueryDefinition<TState>,
-  TCommandInputSchemas extends OperationInputSchemas = OperationInputSchemas,
-  TCommandOutputSchemas extends MatchingOutputSchemas<TCommandInputSchemas> =
-    MatchingOutputSchemas<TCommandInputSchemas>,
-> = Pick<TQuery, 'handler' | 'load'> & {
+export type ServiceQueryRegistration<TState, TQuery extends AnyQueryDefinition<TState>> = Pick<
+  TQuery,
+  'handler' | 'load'
+> & {
   /** Static build inputs that may depend on registry or other server context. */
-  staticInputs?: BivariantCallback<
-    [ctx: LoadCtx<TState, TCommandInputSchemas, TCommandOutputSchemas>],
-    unknown[] | Promise<unknown[]>
-  >;
+  staticInputs?: RegisteredStaticInputs<TState>;
 };
 
 export type ServiceCommandRegistration<
@@ -347,17 +345,9 @@ export type ServiceRegistrationOptions<
   TState,
   TQueries extends Queries<TState>,
   TCommands extends Commands<TState>,
-  TCommandInputSchemas extends OperationInputSchemas = OperationInputSchemas,
-  TCommandOutputSchemas extends MatchingOutputSchemas<TCommandInputSchemas> =
-    MatchingOutputSchemas<TCommandInputSchemas>,
 > = {
   queries?: {
-    [TKey in keyof TQueries]?: ServiceQueryRegistration<
-      TState,
-      TQueries[TKey],
-      TCommandInputSchemas,
-      TCommandOutputSchemas
-    >;
+    [TKey in keyof TQueries]?: ServiceQueryRegistration<TState, TQueries[TKey]>;
   };
   commands?: {
     [TKey in keyof TCommands]?: ServiceCommandRegistration<TState, TCommands[TKey]>;

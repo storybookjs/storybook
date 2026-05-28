@@ -16,17 +16,16 @@ import {
 import { createServiceRuntime, resolveStaticPath } from './service-runtime.ts';
 import { validateSchema } from './service-validation.ts';
 import type {
-  AnySchema,
+  AnyQueryDefinition,
   BuildTaskResult,
   Commands,
   Queries,
-  QueryDefinition,
   ServiceDefinition,
   StaticStore,
 } from './types.ts';
 
 type RuntimeServiceDefinition = ServiceDefinition<unknown, Queries<unknown>, Commands<unknown>>;
-type RuntimeQueryDefinition = QueryDefinition<unknown, AnySchema, AnySchema>;
+type RuntimeQueryDefinition = AnyQueryDefinition<unknown>;
 
 export {
   clearRegistry,
@@ -85,7 +84,7 @@ export async function buildStaticFiles(): Promise<StaticStore> {
                 name: queryName,
                 phase: 'input',
               });
-              const path = resolveStaticPath(service.id, queryName, query, validatedInput);
+              const path = resolveStaticPath(service.id, queryName, { filePath }, validatedInput);
 
               await buildRuntime.runLoadOnce(queryName, validatedInput);
 

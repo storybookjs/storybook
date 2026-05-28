@@ -13,7 +13,6 @@ import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import type { StandaloneOptions } from './builders/utils/standalone-options.ts';
-import type { FrameworkOptions } from './types.ts';
 import type { UserConfig, Plugin } from 'vite';
 
 export const addons: PresetProperty<'addons'> = [];
@@ -55,11 +54,8 @@ export const core: PresetProperty<'core'> = async (config, options) => {
   };
 };
 
-function resolveZoneless(
-  frameworkOptions: FrameworkOptions,
-  angularBuilderOptions: StandaloneOptions['angularBuilderOptions']
-) {
-  return frameworkOptions?.zoneless ?? angularBuilderOptions?.zoneless ?? true;
+function resolveZoneless(angularBuilderOptions: StandaloneOptions['angularBuilderOptions']) {
+  return angularBuilderOptions?.zoneless ?? true;
 }
 
 export const viteFinal = async (config: UserConfig, options?: StandaloneOptions) => {
@@ -141,7 +137,7 @@ export const viteFinal = async (config: UserConfig, options?: StandaloneOptions)
     }
   }
 
-  const zoneless = resolveZoneless(framework.options, options?.angularBuilderOptions);
+  const zoneless = resolveZoneless(options?.angularBuilderOptions);
   const angularPlugins = angular({
     jit: typeof framework.options?.jit !== 'undefined' ? framework.options?.jit : true,
     liveReload:

@@ -179,13 +179,13 @@ export const Base: Story = {};
 
 ### Zoneless change detection
 
-By default, this framework runs with zoneless change detection (`zoneless: true`). To opt into Zone.js-based change detection, set the `zoneless` option to `false` in your builder options:
+By default, this framework runs with zoneless change detection (`zoneless: true`). To opt into Zone.js-based change detection, set the `zoneless` option to `false` on the Storybook builder target in your `angular.json`:
 
-```jsonc title="Builder options in .storybook/main.ts"
-framework: {
-  name: '@storybook/angular-vite',
-  options: {
-    zoneless: false,
+```jsonc title="angular.json"
+"storybook": {
+  "builder": "@storybook/angular-vite:start-storybook",
+  "options": {
+    "zoneless": false,
   },
 },
 ```
@@ -323,14 +323,6 @@ Type: `string`
 Default: `'css'`
 
 File extension used for inline component styles. Passed to the AnalogJS Vite plugin.
-
-#### `zoneless`
-
-Type: `boolean`
-
-Default: `true`
-
-Use zoneless change detection. When `false`, `zone.js` is automatically imported before the preview.
 
 #### `compodoc`
 

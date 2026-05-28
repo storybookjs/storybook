@@ -13,7 +13,6 @@ export type FrameworkOptions = {
   liveReload?: boolean;
   inlineStylesExtension?: string;
   tsconfig?: string;
-  zoneless?: boolean;
   compodoc?: boolean;
   compodocArgs?: string[];
 };

@@ -35,6 +35,15 @@ const layoutClassMap = {
 } as const;
 type Layout = keyof typeof layoutClassMap | 'none';
 
+const resetScroll = (element: Element | null) => {
+  if (!element) {
+    return;
+  }
+
+  element.scrollTop = 0;
+  element.scrollLeft = 0;
+};
+
 const ansiConverter = new AnsiToHtml({
   escapeXML: true,
 });
@@ -71,8 +80,7 @@ export class WebView implements View<HTMLElement> {
     this.showStory();
     this.applyLayout(story.parameters.layout);
 
-    document.documentElement.scrollTop = 0;
-    document.documentElement.scrollLeft = 0;
+    this.resetScrollPosition();
 
     return this.storyRoot();
   }
@@ -86,8 +94,7 @@ export class WebView implements View<HTMLElement> {
     this.showDocs();
     this.applyLayout('fullscreen');
 
-    document.documentElement.scrollTop = 0;
-    document.documentElement.scrollLeft = 0;
+    this.resetScrollPosition();
 
     return this.docsRoot();
   }
@@ -204,5 +211,15 @@ export class WebView implements View<HTMLElement> {
     // See https://github.com/storybookjs/storybook/issues/16847 and
     //   http://localhost:9011/?path=/story/core-rendering--auto-focus (official SB)
     document.body.classList.add(classes.MAIN);
+  }
+
+  private resetScrollPosition() {
+    [
+      document.scrollingElement,
+      document.documentElement,
+      document.body,
+      this.storyRoot(),
+      this.docsRoot(),
+    ].forEach(resetScroll);
   }
 }

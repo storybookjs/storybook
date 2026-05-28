@@ -23,7 +23,9 @@ describe('RendererFactory', () => {
       '<div id="storybook-root"></div><div id="root-docs"><div id="story-in-docs"></div></div>' +
       '<div id="storybook-docs"></div>';
     rootTargetDOMNode = global.document.getElementById('storybook-root');
-    rootDocstargetDOMNode = global.document.getElementById('root-docs');
+    // The renderer's `getRenderType` requires the docs target to be inside (or be)
+    // `#storybook-docs` — the legacy `#root-docs` fixture node no longer qualifies.
+    rootDocstargetDOMNode = global.document.getElementById('storybook-docs');
     (platformBrowserDynamic as any).mockImplementation(platformBrowserDynamicTesting);
     vi.spyOn(console, 'log').mockImplementation(() => {});
     // @ts-expect-error Ignore
@@ -56,7 +58,7 @@ describe('RendererFactory', () => {
         storyId: 'my-story',
       });
 
-      expect(document.body.getElementsByTagName('storybook-root')[0].innerHTML).toBe('🦊');
+      expect(document.body.getElementsByTagName('my-story')[0].innerHTML).toBe('🦊');
     });
 
     it('should render my-story for story component', async () => {
@@ -74,7 +76,7 @@ describe('RendererFactory', () => {
         storyId: 'my-story',
       });
 
-      expect(document.body.getElementsByTagName('storybook-root')[0].innerHTML).toBe(
+      expect(document.body.getElementsByTagName('my-story')[0].innerHTML).toBe(
         '<foo>🦊</foo><!--container-->'
       );
     });
@@ -102,7 +104,7 @@ describe('RendererFactory', () => {
         storyId: 'my-story',
       });
 
-      expect(document.body.getElementsByTagName('storybook-root')[0].innerHTML).toBe('🦊');
+      expect(document.body.getElementsByTagName('my-story')[0].innerHTML).toBe('🦊');
     });
 
     describe('when forced=true', () => {
@@ -124,7 +126,7 @@ describe('RendererFactory', () => {
       });
 
       it('should be rendered a first time', async () => {
-        expect(document.body.getElementsByTagName('storybook-root')[0].innerHTML).toBe('🦊: Fox');
+        expect(document.body.getElementsByTagName('my-story')[0].innerHTML).toBe('🦊: Fox');
       });
 
       it('should not be re-rendered when only props change', async () => {
@@ -141,7 +143,7 @@ describe('RendererFactory', () => {
           storyId: 'my-story',
         });
 
-        expect(document.body.getElementsByTagName('storybook-root')[0].innerHTML).toBe('👾: Fox');
+        expect(document.body.getElementsByTagName('my-story')[0].innerHTML).toBe('👾: Fox');
       });
 
       it('should be re-rendered when template change', async () => {
@@ -158,7 +160,7 @@ describe('RendererFactory', () => {
           storyId: 'my-story',
         });
 
-        expect(document.body.getElementsByTagName('storybook-root')[0].innerHTML).toBe('🍺');
+        expect(document.body.getElementsByTagName('my-story')[0].innerHTML).toBe('🍺');
       });
     });
   });

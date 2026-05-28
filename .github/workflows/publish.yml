@@ -44,6 +44,7 @@ jobs:
     permissions:
       contents: write
       issues: write
+      actions: write # required for yarn release:cancel-preparation-runs
       id-token: write # required for npm provenance via yarn release:publish
     defaults:
       run:

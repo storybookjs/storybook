@@ -12,7 +12,7 @@ export type RegisterDocgenServiceOptions = {
    */
   getIndex: () => Promise<StoryIndex>;
   /**
-   * Fully composed docgen provider chain produced by `presets.apply('experimental_docgen', ...)`.
+   * Fully composed docgen provider chain produced by `presets.apply('experimental_docgenProvider', ...)`.
    * Wraps each registered preset on top of the identity provider seed.
    */
   provider: DocgenProvider;

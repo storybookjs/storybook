@@ -316,11 +316,11 @@ export const managerEntries = async (existing: any) => {
 globalThis.STORYBOOK_SERVICES_LOADED = globalThis.STORYBOOK_SERVICES_LOADED ?? false;
 
 /**
- * Seed provider for the experimental_docgen middleware chain.
+ * Seed provider for the experimental_docgenProvider middleware chain.
  *
  * Returns an empty payload so a chain with zero registered providers still produces a defined
- * result (rather than throwing). Real providers registered through `experimental_docgen` wrap
- * this and either replace or merge with its output.
+ * result (rather than throwing). Real providers registered through `experimental_docgenProvider`
+ * wrap this and either replace or merge with its output.
  */
 const identityDocgenProvider: DocgenProvider = async (input) => ({
   componentId: input.componentId,
@@ -341,7 +341,7 @@ export const services = async (_value: void, options: Options): Promise<void> =>
     await options.presets.apply<Promise<StoryIndexGenerator>>('storyIndexGenerator');
 
   const provider = await options.presets.apply<DocgenProvider>(
-    'experimental_docgen',
+    'experimental_docgenProvider',
     identityDocgenProvider
   );
 

@@ -122,7 +122,7 @@ export interface Presets {
   ): Promise<StorybookConfigRaw['staticDirs']>;
   apply(extension: 'services', config?: StorybookConfigRaw['services'], args?: any): Promise<void>;
   apply(
-    extension: 'experimental_docgen',
+    extension: 'experimental_docgenProvider',
     config: DocgenProvider,
     args?: any
   ): Promise<DocgenProvider>;
@@ -449,7 +449,7 @@ export interface StorybookConfigRaw {
   core?: CoreConfig;
   experimental_manifests?: Manifests;
   experimental_enrichCsf?: CsfEnricher;
-  experimental_docgen?: DocgenProvider;
+  experimental_docgenProvider?: DocgenProvider;
   staticDirs?: (DirectoryMapping | string)[];
   logLevel?: string;
   features?: {
@@ -768,7 +768,7 @@ export interface StorybookConfig {
    * previously accumulated provider as its config argument and returns a wrapping provider that
    * may delegate to it via the input forwarding pattern.
    */
-  experimental_docgen?: PresetValue<StorybookConfigRaw['experimental_docgen']>;
+  experimental_docgenProvider?: PresetValue<StorybookConfigRaw['experimental_docgenProvider']>;
 }
 
 export type PresetValue<T> = T | ((config: T, options: Options) => T | Promise<T>);

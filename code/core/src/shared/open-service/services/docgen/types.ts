@@ -28,7 +28,7 @@ export interface DocgenPayload {
 }
 
 /**
- * Middleware-style provider function registered through the `experimental_docgen` preset.
+ * Middleware-style provider function registered through the `experimental_docgenProvider` preset.
  *
  * Each registrant returns a wrapper around the previous accumulated provider (received as the
  * preset's `config` argument). The wrapper may call its inner `nextDocgen` to merge with

@@ -264,7 +264,7 @@ jobs:
       - name: Publish v${{ steps.version.outputs.next-version }}
         env:
           NX_CLOUD_ACCESS_TOKEN: ${{ secrets.NX_CLOUD_ACCESS_TOKEN }}
-          NPM_CONFIG_PROVENANCE: true
+          YARN_NPM_CONFIG_PROVENANCE: true
         working-directory: scripts
         run: yarn release:publish --tag canary --verbose
 

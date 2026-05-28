@@ -14,6 +14,8 @@ env:
   CLEANUP_SANDBOX_NODE_MODULES: 'true'
   NX_CLOUD_ACCESS_TOKEN: ${{ secrets.NX_CLOUD_ACCESS_TOKEN }}
 
+permissions: {}
+
 defaults:
   run:
     working-directory: ./code
@@ -23,6 +25,7 @@ jobs:
     name: Resolve target branches
     if: github.repository_owner == 'storybookjs'
     runs-on: ubuntu-latest
+    permissions: {}
     outputs:
       branches: ${{ steps.set.outputs.branches }}
     steps:
@@ -44,6 +47,8 @@ jobs:
     needs: set-branches
     if: github.repository_owner == 'storybookjs'
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     strategy:
       fail-fast: false
       matrix:
@@ -69,6 +74,7 @@ jobs:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           ref: ${{ matrix.branch }}
+          persist-credentials: false
 
       - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e #6.4.0
         with:
@@ -103,7 +109,10 @@ jobs:
         # publish sandboxes even if the generation fails, as some sandboxes might have been generated successfully
         # when triggered manually, always publish to the `next` branch on the sandboxes repo
         if: ${{ !cancelled() }}
-        run: yarn publish-sandboxes --remote=https://storybook-bot:${{ secrets.PAT_STORYBOOK_BOT }}@github.com/storybookjs/sandboxes.git --push --branch=${{ github.event_name == 'workflow_dispatch' && 'next' || matrix.branch }}
+        env:
+          PAT: ${{ secrets.PAT_STORYBOOK_BOT }}
+          BRANCH: ${{ github.event_name == 'workflow_dispatch' && 'next' || matrix.branch }}
+        run: yarn publish-sandboxes --remote="https://storybook-bot:${PAT}@github.com/storybookjs/sandboxes.git" --push --branch="$BRANCH"
 
       - name: Report failure to Discord
         if: failure()

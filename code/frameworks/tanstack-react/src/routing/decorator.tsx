@@ -201,12 +201,13 @@ function resolveTree(Story: ComponentType, context: Parameters<Decorator>[1]): R
     id: plainRouteId,
     ...plainRouteRest
   } = plainOptions as Record<string, unknown>;
+  const syntheticRouteId = plainRoutePath ? undefined : (plainRouteId as string | undefined);
   const syntheticRoot = createRootRoute(
     (routeOverrides as Record<string, any> | undefined)?.__root__ ?? {}
   );
   const syntheticChild = createRoute({
     component: () => <Story />,
-    id: plainRoutePath ? undefined : ((plainRouteId as string | undefined) ?? 'storybook-story'),
+    id: plainRoutePath ? undefined : (syntheticRouteId ?? 'storybook-story'),
     path: plainRoutePath as string | undefined,
     ...plainRouteRest,
     getParentRoute: () => syntheticRoot,

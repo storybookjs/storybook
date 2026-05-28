@@ -27,6 +27,7 @@ jobs:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           ref: main
+          persist-credentials: false
 
       - run: curl -X POST "https://api.netlify.com/build_hooks/${{ secrets.FRONTPAGE_HOOK }}"
 
@@ -39,6 +40,7 @@ jobs:
         with:
           ref: next
           path: next
+          persist-credentials: false
 
       - id: next-release-branch
         run: |

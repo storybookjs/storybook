@@ -40,6 +40,39 @@ const FreezeHarness = () => {
   );
 };
 
+const FreezeAnimationHarness = () => {
+  return (
+    <div style={{ padding: 24, display: 'grid', gap: 12 }}>
+      <h2>Freeze animation end-state playground</h2>
+      <p>
+        The square below bounces back and forth continuously in normal mode. With
+        <code> freeze=finished</code>, freeze should instantly lock it to the final frame.
+      </p>
+      <div
+        data-testid="freeze-end-state-box"
+        style={{
+          width: 72,
+          height: 72,
+          borderRadius: 8,
+          animation: `bounce 2s linear infinite alternate forwards`,
+        }}
+      />
+      <style>{`
+        @keyframes bounce {
+          from {
+            transform: translateX(0px);
+            background: red;
+          }
+          to {
+            transform: translateX(200px);
+            background: blue;
+          }
+        }
+      `}</style>
+    </div>
+  );
+};
+
 const meta = preview.meta({
   component: FreezeHarness,
   parameters: {
@@ -63,4 +96,9 @@ export const DelayedCompletion = meta.story({
     new Promise<void>((resolve) => {
       window.setTimeout(resolve, 3000);
     }),
+});
+
+export const AnimationEndsOnFreeze = meta.story({
+  name: 'Animation Ends On Freeze',
+  render: () => <FreezeAnimationHarness />,
 });

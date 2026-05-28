@@ -230,17 +230,6 @@ export class OpenServiceAsyncSchemaError extends StorybookError {
   }
 }
 
-export class OpenServiceLoadedDrainExceededError extends StorybookError {
-  constructor(public data: { serviceId: ServiceId; name: string; iterations: number }) {
-    super({
-      name: 'OpenServiceLoadedDrainExceededError',
-      category: Category.CORE_COMMON,
-      code: 11,
-      message: `Query "${data.serviceId}.${data.name}".loaded(...) did not settle after ${data.iterations} drain iterations. Check for handlers that keep discovering new dependencies after every state change.`,
-    });
-  }
-}
-
 export class WebpackMissingStatsError extends StorybookError {
   constructor() {
     super({

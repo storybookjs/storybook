@@ -3,7 +3,6 @@ import { computed, effect, endBatch, signal, startBatch } from 'alien-signals';
 
 import {
   OpenServiceInvalidStaticPathError,
-  OpenServiceLoadedDrainExceededError,
   OpenServiceUnimplementedOperationError,
 } from '../../server-errors.ts';
 import { rethrowAsync, validateSchema, validateSchemaSync } from './service-validation.ts';
@@ -50,30 +49,6 @@ export type ServiceRuntime<
   runLoadOnce(queryName: string, validatedInput: unknown): Promise<void>;
 };
 
-/** Max number of drain iterations before `.loaded()` gives up to avoid infinite oscillation. */
-const MAX_DRAIN_ITERATIONS = 32;
-
-/**
- * One pending load promise plus the load key that identifies it for cycle and dedup checks.
- *
- * The key is stored alongside the promise so collectors can be drained and marked settled in one
- * pass without re-deriving the key from the promise after the fact.
- */
-type CollectorEntry = { key: string; promise: Promise<unknown> };
-
-/**
- * State shared by every sync handler call inside one `.loaded()` invocation.
- *
- * The session tracks the set of load keys that are ancestors in the call chain (for cycle
- * detection), the loads collected during this iteration (waiting to be drained), and the load
- * keys that have already settled in this session so re-running the handler does not refire them.
- */
-type LoadedSession = {
-  ancestorChain: ReadonlySet<string>;
-  collector: Set<CollectorEntry>;
-  settledKeys: Set<string>;
-};
-
 /**
  * Process-global registry of in-flight `load` promises keyed by `${serviceId}::${queryName}::${hash}`.
  *
@@ -82,17 +57,6 @@ type LoadedSession = {
  * queries that depend on the same dependency share one load.
  */
 const inFlightLoads = new Map<string, Promise<unknown>>();
-
-/**
- * Active session for `.loaded()` while a sync handler is being re-run for dependency discovery.
- *
- * Default query functions consult this variable to know whether to register their load promise
- * into a caller-owned collector. Sync handlers don't `await`, so the variable is stable for the
- * duration of one handler call and can safely live at module scope.
- */
-let activeHandlerLoadSession: LoadedSession | undefined;
-
-const EMPTY_SET: ReadonlySet<string> = new Set();
 
 /**
  * Returns a deterministic JSON encoding so the same logical input always produces the same key.
@@ -104,7 +68,6 @@ const EMPTY_SET: ReadonlySet<string> = new Set();
 function stableHash(value: unknown): string {
   return JSON.stringify(value, (_key, raw) => {
     if (raw === undefined) {
-      // `JSON.stringify` would otherwise drop `undefined` from object values silently.
       return '__undefined__';
     }
     if (raw && typeof raw === 'object' && !Array.isArray(raw)) {
@@ -134,8 +97,6 @@ function normalizeStaticStoragePath(serviceId: ServiceId, name: string, rawPath:
     .split('/')
     .filter((segment) => segment.length > 0 && segment !== '.');
 
-  // Keep static snapshot keys relative so server-side writers can always anchor them under the
-  // build output, regardless of whether authors used '/', './', or Windows-style separators.
   if (segments.length === 0 || segments.some((segment) => segment === '..')) {
     throw new OpenServiceInvalidStaticPathError({ serviceId, name, path: rawPath });
   }
@@ -156,80 +117,6 @@ export function resolveStaticPath<TState>(
 }
 
 /**
- * Surfaces the first rejected settlement as the thrown error, aggregating the rest under `cause`.
- *
- * Drainers use `Promise.allSettled` so one rejected dependency does not prevent siblings from
- * finishing their work; this helper preserves all rejections without losing the primary one.
- */
-function surfaceRejections(settlements: PromiseSettledResult<unknown>[]): void {
-  const rejections = settlements.filter((s): s is PromiseRejectedResult => s.status === 'rejected');
-
-  if (rejections.length === 0) {
-    return;
-  }
-
-  const [first, ...rest] = rejections.map((r) => r.reason);
-
-  if (rest.length > 0) {
-    if (first instanceof Error) {
-      const aggregated = Reflect.get(first, 'cause');
-
-      if (aggregated === undefined) {
-        try {
-          Reflect.set(first, 'cause', { aggregated: rest });
-        } catch {
-          // Frozen errors keep their primary message; aggregated rejections are still observable
-          // through the `rest` array if a caller decides to traverse it themselves.
-        }
-      }
-    }
-  }
-
-  throw first;
-}
-
-/**
- * Drains a collector of pending load promises until no new entries appear.
- *
- * Each iteration snapshots the current entries, clears the collector, awaits them with
- * `Promise.allSettled`, marks their keys as settled (for caller bookkeeping), then loops if the
- * settled loads' bodies surfaced more entries. Caps at `MAX_DRAIN_ITERATIONS` to avoid hanging on
- * pathological oscillation.
- */
-async function drainCollector(
-  collector: Set<CollectorEntry>,
-  settledKeys: Set<string> | undefined,
-  serviceId: ServiceId,
-  queryName: string
-): Promise<void> {
-  let iterations = 0;
-
-  while (collector.size > 0) {
-    if (iterations++ > MAX_DRAIN_ITERATIONS) {
-      throw new OpenServiceLoadedDrainExceededError({
-        serviceId,
-        name: queryName,
-        iterations: MAX_DRAIN_ITERATIONS,
-      });
-    }
-
-    const pending = [...collector];
-    collector.clear();
-
-    const settlements = await Promise.allSettled(pending.map((entry) => entry.promise));
-
-    if (settledKeys) {
-      // Mark keys as settled even for rejected loads so the discovery loop does not refire them.
-      for (const entry of pending) {
-        settledKeys.add(entry.key);
-      }
-    }
-
-    surfaceRejections(settlements);
-  }
-}
-
-/**
  * Creates the writable `self` object that backs every runtime ctx for one service instance.
  *
  * State writes are wrapped in an alien-signals batch so one command can update multiple fields
@@ -241,7 +128,6 @@ function createCommandSelf<TState>(stateSignal: ServiceSignal<TState>): CommandS
       return stateSignal();
     },
     setState(mutate) {
-      // Batch signal writes so one command only triggers subscribers after the full draft update.
       startBatch();
       try {
         stateSignal(produce(stateSignal(), mutate));
@@ -256,9 +142,6 @@ function createCommandSelf<TState>(stateSignal: ServiceSignal<TState>): CommandS
 
 /**
  * Builds the runtime command map from the declarative command definitions.
- *
- * Each runtime command validates raw caller input, invokes the handler with parsed values, and
- * validates the resolved output before returning it to the caller.
  */
 function buildCommands<TState>(
   serviceId: ServiceId,
@@ -298,12 +181,6 @@ function buildCommands<TState>(
   );
 }
 
-/**
- * Captures the per-runtime data needed by query helpers that operate across multiple queries.
- *
- * Bundling the references lets `createDefaultQuery`, the load body wrapper, and `.loaded()` share
- * the same closure shape without each one re-deriving the per-service callbacks.
- */
 type QueryRuntimeRefs<TState> = {
   serviceId: ServiceId;
   commandSelf: CommandSelf<TState>;
@@ -313,10 +190,6 @@ type QueryRuntimeRefs<TState> = {
   defaultQueries: Record<string, Query<unknown, unknown>>;
 };
 
-/**
- * Validates query input synchronously, falling through to the dedicated async-schema error if a
- * schema returns a Promise.
- */
 function validateQueryInput<TState>(
   refs: QueryRuntimeRefs<TState>,
   queryName: string,
@@ -345,19 +218,11 @@ function validateQueryOutput<TState>(
   });
 }
 
-/**
- * Runs the query handler synchronously and validates the resolved value.
- *
- * The `selfQueries` parameter lets the caller swap in load-aware wrappers when running inside a
- * load body or a `.loaded()` discovery pass; ordinary handler calls pass the default queries.
- */
 function runHandlerSync<TState>(
   refs: QueryRuntimeRefs<TState>,
   queryName: string,
   queryDef: RuntimeQueryDefinition<TState>,
-  validatedInput: unknown,
-  selfQueries: Record<string, Query<unknown, unknown>>,
-  getService: ServiceRegistryApi['getService']
+  validatedInput: unknown
 ): unknown {
   if (!queryDef.handler) {
     throw new OpenServiceUnimplementedOperationError({
@@ -371,9 +236,12 @@ function runHandlerSync<TState>(
     get state() {
       return refs.stateSignal();
     },
-    queries: selfQueries,
+    queries: refs.defaultQueries,
   };
-  const handlerCtx: QueryCtx<TState> = { self: handlerSelf, getService };
+  const handlerCtx: QueryCtx<TState> = {
+    self: handlerSelf,
+    getService: refs.registryApi.getService,
+  };
   const result = queryDef.handler(validatedInput, handlerCtx);
 
   return validateQueryOutput(refs, queryName, queryDef, result);
@@ -382,31 +250,26 @@ function runHandlerSync<TState>(
 /**
  * Triggers a `load` if one is not already in flight for the same key.
  *
- * Returns the in-flight promise (whether newly created or reused). The parent caller passes its
- * own ancestor chain; the dependency runs with that chain extended by its own load key so any
- * transitive read of an ancestor's load short-circuits via cycle detection instead of deadlocking.
+ * Returns the in-flight promise (whether newly created or reused). The promise is registered into
+ * `inFlightLoads` before the body runs so synchronous reentrant calls during the body's prefix
+ * observe the load as in-flight and share the same promise. There is no cycle detection; authors
+ * who write self-awaiting load chains (`a.load` calls `b.loaded()` which calls `a.loaded()`) will
+ * deadlock — surface those bugs through tests.
  */
 function triggerLoad<TState>(
   refs: QueryRuntimeRefs<TState>,
   queryName: string,
   queryDef: RuntimeQueryDefinition<TState>,
   validatedInput: unknown,
-  loadKey: string,
-  parentAncestorChain: ReadonlySet<string>
+  loadKey: string
 ): Promise<unknown> {
   const existing = inFlightLoads.get(loadKey);
   if (existing) {
     return existing;
   }
 
-  const extendedChain = new Set(parentAncestorChain);
-  extendedChain.add(loadKey);
-
-  // Register the promise into `inFlightLoads` BEFORE the load body starts so any recursive query
-  // call made inside the body's synchronous prefix sees this load as in-flight and short-circuits
-  // via cycle detection instead of starting a duplicate run.
   const promise = Promise.resolve()
-    .then(() => runLoadBody(refs, queryName, queryDef, validatedInput, extendedChain))
+    .then(() => runLoadBody(refs, queryName, queryDef, validatedInput))
     .finally(() => {
       if (inFlightLoads.get(loadKey) === promise) {
         inFlightLoads.delete(loadKey);
@@ -418,197 +281,66 @@ function triggerLoad<TState>(
 }
 
 /**
- * Executes one `load` invocation with its own local collector and a wrapped `self`.
+ * Executes one `load` invocation against the runtime's default `self`.
  *
- * The wrapper around `self.queries` registers transitively triggered loads into the local
- * collector so the returned promise only resolves once every dependency the load body touched has
- * also settled. Cross-service `getService(...).queries.*` calls are intentionally not wrapped —
- * authors must use `.loaded()` when they need to await cross-service dependencies inside a load.
+ * The load body sees the same query map as a handler, with one difference: the load is async and
+ * may call `await ctx.self.queries.foo.loaded(input)` (or `ctx.getService(id).queries.foo.loaded()`)
+ * to explicitly await a dependency it needs settled. Sync reads inside the body fire dependent
+ * loads in the background just like any other call site, but they are not awaited automatically.
  */
 async function runLoadBody<TState>(
   refs: QueryRuntimeRefs<TState>,
   queryName: string,
   queryDef: RuntimeQueryDefinition<TState>,
-  validatedInput: unknown,
-  ancestorChain: ReadonlySet<string>
+  validatedInput: unknown
 ): Promise<void> {
   if (!queryDef.load) {
     return;
   }
 
-  const collector = new Set<CollectorEntry>();
-  const wrappedQueries = buildLoadWrappedQueries(refs, ancestorChain, collector);
   const loadSelf: LoadSelf<TState> = {
     get state() {
       return refs.stateSignal();
     },
-    queries: wrappedQueries,
+    queries: refs.defaultQueries,
     commands: refs.commandSelf.commands as LoadSelf<TState>['commands'],
   };
   const loadCtx: LoadCtx<TState> = { self: loadSelf, getService: refs.registryApi.getService };
 
-  await Promise.resolve(queryDef.load(validatedInput, loadCtx));
-  await drainCollector(collector, undefined, refs.serviceId, queryName);
+  await queryDef.load(validatedInput, loadCtx);
 }
 
 /**
- * Wraps each query so calls inside a load body register the dependency's load into the load-local
- * collector.
+ * Implements `query.loaded(input)`: await this query's own `load`, then return the handler result.
  *
- * Wrappers honor cycle detection: a dependency whose key is already in the caller's ancestor chain
- * is skipped (not added to the collector) to prevent self-awaiting deadlocks. Nested handler reads
- * use the same wrappers so transitive dependencies also flow into the same collector. `.loaded()`
- * inherits the ancestor chain so a load-body author can still write `await ctx.self.queries.foo
- * .loaded(input)` without risking deadlock against itself. `.subscribe` passes through unchanged
- * because subscriptions never participate in the load drain.
- */
-function buildLoadWrappedQueries<TState>(
-  refs: QueryRuntimeRefs<TState>,
-  ancestorChain: ReadonlySet<string>,
-  collector: Set<CollectorEntry>
-): Record<string, Query<unknown, unknown>> {
-  const wrappedQueries: Record<string, Query<unknown, unknown>> = {};
-
-  for (const [name, queryDef] of refs.queryDefinitions) {
-    const defaultQuery = refs.defaultQueries[name];
-    const wrapped = ((input: unknown) => {
-      const validatedInput = validateQueryInput(refs, name, queryDef, input);
-      const loadKey = makeLoadKey(refs.serviceId, name, validatedInput);
-
-      if (queryDef.load) {
-        const promise = triggerLoad(refs, name, queryDef, validatedInput, loadKey, ancestorChain);
-
-        if (!ancestorChain.has(loadKey)) {
-          collector.add({ key: loadKey, promise });
-        }
-      }
-
-      return runHandlerSync(
-        refs,
-        name,
-        queryDef,
-        validatedInput,
-        wrappedQueries,
-        refs.registryApi.getService
-      );
-    }) as Query<unknown, unknown>;
-
-    wrapped.loaded = (input: unknown) =>
-      runLoaded(refs, name, queryDef, input, ancestorChain) as Promise<unknown>;
-    wrapped.subscribe = defaultQuery.subscribe;
-    wrappedQueries[name] = wrapped;
-  }
-
-  return wrappedQueries;
-}
-
-/**
- * Implements `query.loaded(input)` by draining all transitively triggered loads before reading.
- *
- * The discovery loop alternates draining the collector with re-running the sync handler. The
- * handler reveals freshly-callable dependencies after each state change; once a discovery pass
- * adds nothing new, the loop terminates and the function returns the final validated output.
+ * Dependencies are *not* discovered automatically. A query whose handler reads another query is
+ * responsible for awaiting that dependency inside its own `load` (`await ctx.self.queries.foo
+ * .loaded(input)`). If it does not, `.loaded()` returns whatever the handler can read from the
+ * current state — possibly a partial value. Authors should add a test that asserts the loaded
+ * value to catch missing dependency awaits.
  */
 async function runLoaded<TState>(
   refs: QueryRuntimeRefs<TState>,
   queryName: string,
   queryDef: RuntimeQueryDefinition<TState>,
-  rawInput: unknown,
-  parentAncestorChain: ReadonlySet<string> = EMPTY_SET
+  rawInput: unknown
 ): Promise<unknown> {
   const validatedInput = validateQueryInput(refs, queryName, queryDef, rawInput);
-  const loadKey = makeLoadKey(refs.serviceId, queryName, validatedInput);
-  const ancestorChain = new Set<string>(parentAncestorChain);
-  ancestorChain.add(loadKey);
 
-  const session: LoadedSession = {
-    ancestorChain,
-    collector: new Set<CollectorEntry>(),
-    settledKeys: new Set<string>(),
-  };
-
-  if (queryDef.load && !parentAncestorChain.has(loadKey)) {
-    const promise = triggerLoad(
-      refs,
-      queryName,
-      queryDef,
-      validatedInput,
-      loadKey,
-      parentAncestorChain
-    );
-    session.collector.add({ key: loadKey, promise });
+  if (queryDef.load) {
+    const loadKey = makeLoadKey(refs.serviceId, queryName, validatedInput);
+    await triggerLoad(refs, queryName, queryDef, validatedInput, loadKey);
   }
 
-  let iterations = 0;
-  let hasMoreWork = true;
-
-  // Always run at least one discovery pass even when this query has no `load` of its own — the
-  // handler may still call other queries whose loads need to be awaited.
-  while (hasMoreWork) {
-    if (iterations++ > MAX_DRAIN_ITERATIONS) {
-      throw new OpenServiceLoadedDrainExceededError({
-        serviceId: refs.serviceId,
-        name: queryName,
-        iterations: MAX_DRAIN_ITERATIONS,
-      });
-    }
-
-    while (session.collector.size > 0) {
-      const pending = [...session.collector];
-      session.collector.clear();
-
-      const settlements = await Promise.allSettled(pending.map((entry) => entry.promise));
-
-      // Mark keys as settled before surfacing rejections so the discovery pass below does not
-      // refire them even when the very first load failed.
-      for (const entry of pending) {
-        session.settledKeys.add(entry.key);
-      }
-
-      surfaceRejections(settlements);
-    }
-
-    // Discovery: run the handler under the session so each sync read of a dependency that is not
-    // settled yet (and not on the ancestor chain) gets registered into the session collector.
-    const previousSession = activeHandlerLoadSession;
-    activeHandlerLoadSession = session;
-
-    try {
-      runHandlerSync(
-        refs,
-        queryName,
-        queryDef,
-        validatedInput,
-        refs.defaultQueries,
-        refs.registryApi.getService
-      );
-    } catch {
-      // Handlers may throw when state isn't fully populated yet; the next drain iteration may fix
-      // it. The final post-loop handler call propagates any persistent failure.
-    } finally {
-      activeHandlerLoadSession = previousSession;
-    }
-
-    hasMoreWork = session.collector.size > 0;
-  }
-
-  return runHandlerSync(
-    refs,
-    queryName,
-    queryDef,
-    validatedInput,
-    refs.defaultQueries,
-    refs.registryApi.getService
-  );
+  return runHandlerSync(refs, queryName, queryDef, validatedInput);
 }
 
 /**
  * Creates the default query function exposed on the service runtime.
  *
  * Every call validates input, fires the dependency's `load` in the background (deduped while in
- * flight), and returns the handler result synchronously. If the call runs inside a `.loaded()`
- * discovery pass, the load promise is also registered into the session collector so the caller
- * can await it before returning.
+ * flight), and returns the handler result synchronously. The background load is fire-and-forget;
+ * rejections are surfaced via `rethrowAsync` so they are not silently swallowed.
  */
 function createDefaultQuery<TState>(
   refs: QueryRuntimeRefs<TState>,
@@ -617,41 +349,13 @@ function createDefaultQuery<TState>(
 ): Query<unknown, unknown> {
   const query = ((input: unknown) => {
     const validatedInput = validateQueryInput(refs, queryName, queryDef, input);
-    const loadKey = makeLoadKey(refs.serviceId, queryName, validatedInput);
 
     if (queryDef.load) {
-      const session = activeHandlerLoadSession;
-      const skip = session
-        ? session.ancestorChain.has(loadKey) || session.settledKeys.has(loadKey)
-        : false;
-
-      if (!skip) {
-        const promise = triggerLoad(
-          refs,
-          queryName,
-          queryDef,
-          validatedInput,
-          loadKey,
-          session?.ancestorChain ?? EMPTY_SET
-        );
-
-        if (session) {
-          session.collector.add({ key: loadKey, promise });
-        } else {
-          // Background fire-and-forget: surface failures so they are not silently swallowed.
-          promise.catch(rethrowAsync);
-        }
-      }
+      const loadKey = makeLoadKey(refs.serviceId, queryName, validatedInput);
+      triggerLoad(refs, queryName, queryDef, validatedInput, loadKey).catch(rethrowAsync);
     }
 
-    return runHandlerSync(
-      refs,
-      queryName,
-      queryDef,
-      validatedInput,
-      refs.defaultQueries,
-      refs.registryApi.getService
-    );
+    return runHandlerSync(refs, queryName, queryDef, validatedInput);
   }) as Query<unknown, unknown>;
 
   query.loaded = (input: unknown) => runLoaded(refs, queryName, queryDef, input);
@@ -694,28 +398,10 @@ function subscribeToQuery<TState>(
 
     if (queryDef.load) {
       const loadKey = makeLoadKey(refs.serviceId, queryName, validatedInput);
-      const pendingLoad = triggerLoad(
-        refs,
-        queryName,
-        queryDef,
-        validatedInput,
-        loadKey,
-        EMPTY_SET
-      );
-      // Subscribers do not block on rejections, but we still want them visible to global handlers.
-      pendingLoad.catch(rethrowAsync);
+      triggerLoad(refs, queryName, queryDef, validatedInput, loadKey).catch(rethrowAsync);
     }
 
-    const comp = computed(() =>
-      runHandlerSync(
-        refs,
-        queryName,
-        queryDef,
-        validatedInput,
-        refs.defaultQueries,
-        refs.registryApi.getService
-      )
-    );
+    const comp = computed(() => runHandlerSync(refs, queryName, queryDef, validatedInput));
     teardown = effect(() => {
       let value: unknown;
       try {
@@ -737,7 +423,6 @@ function subscribeToQuery<TState>(
   };
 }
 
-/** Builds the runtime query map for one service runtime. */
 function buildQueries<TState>(
   refs: QueryRuntimeRefs<TState>
 ): Record<string, Query<unknown, unknown>> {
@@ -752,8 +437,6 @@ function buildQueries<TState>(
 
 /**
  * Creates the full runtime backing for a service definition.
- *
- * Callers must supply the registry API that query and command contexts should expose.
  */
 export function createServiceRuntime<
   TState,
@@ -766,7 +449,6 @@ export function createServiceRuntime<
   },
   initialState: TState = def.initialState
 ): ServiceRuntime<TState, TQueries, TCommands> {
-  // The signal is the single source of truth that query computations subscribe to.
   const stateSignal = signal<TState>(initialState);
   const commandSelf = createCommandSelf(stateSignal);
   const { registryApi } = runtimeOptions;
@@ -795,7 +477,6 @@ export function createServiceRuntime<
     defaultQueries,
   };
 
-  // Build queries after commands so handler/load ctx surfaces resolve the same command map.
   const builtQueries = buildQueries(refs);
   for (const [name, query] of Object.entries(builtQueries)) {
     defaultQueries[name] = query;
@@ -821,12 +502,6 @@ export function createServiceRuntime<
     getService: registryApi.getService,
   };
 
-  /**
-   * Runs one query's `load` body against this runtime instance, drained to completion.
-   *
-   * Used by the static build pipeline to populate state for a single input without holding the
-   * load in the in-flight registry afterwards.
-   */
   const runLoadOnce = async (queryName: string, validatedInput: unknown): Promise<void> => {
     const queryDef = queryDefinitions.get(queryName);
 
@@ -834,10 +509,7 @@ export function createServiceRuntime<
       return;
     }
 
-    const loadKey = makeLoadKey(def.id, queryName, validatedInput);
-    const ancestorChain = new Set<string>([loadKey]) as ReadonlySet<string>;
-
-    await runLoadBody(refs, queryName, queryDef, validatedInput, ancestorChain);
+    await runLoadBody(refs, queryName, queryDef, validatedInput);
   };
 
   return {
@@ -850,9 +522,6 @@ export function createServiceRuntime<
     runLoadOnce,
   };
 }
-
-/** Re-export so external modules can address the in-flight load registry for tests if needed. */
-export const __internalInFlightLoads = inFlightLoads;
 
 /** Type referenced from the registry surface for cross-service callers. */
 export type { RuntimeService };

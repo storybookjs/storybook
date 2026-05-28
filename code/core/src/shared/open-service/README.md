@@ -158,17 +158,22 @@ When a server registers a service definition:
 
 `service-runtime.ts` owns one process-global in-flight load registry keyed by `${serviceId}::${queryName}::${stableHash(parsedInput)}`. The hash uses stable JSON (sorted keys) computed from the post-validation parsed input, so inputs are expected to be JSON-safe. Two concurrent callers for the same key share one load; once it settles, the entry is removed so future calls can refire it. There is no caller-facing invalidation API.
 
-## `.loaded()` Drain
+## `.loaded()` Semantics
 
-`query.loaded(input)` returns a promise that settles only when the load body and every dependency the handler reads are fully populated:
+`query.loaded(input)` is intentionally narrow: it awaits **only this query's own** `load` (deduped via the in-flight registry), then returns the synchronous handler result.
 
-1. Trigger this query's own `load` (deduped).
-2. Drain the collected loads via `Promise.allSettled`, surfacing any rejection (the rest are attached as `cause.aggregated`).
-3. Run the handler under a session that tracks dependency reads. The handler's sync reads of dependencies fire their loads and register the promises into the session collector — provided the dependency's load key is not already on the session's ancestor chain (cycle detection) and not in the session's settled-keys set (no refire of already-completed loads).
-4. If the discovery pass added more entries, drain again and re-run the handler. Loop until a discovery pass adds nothing new.
-5. Run the handler one final time without the session and return the validated output.
+Dependencies are **not** discovered automatically. A query whose handler reads from another query is responsible for awaiting that dependency inside its own `load`:
 
-The drain loop is capped at 32 iterations. Buggy oscillation (e.g. a handler that reads a query with an ever-changing input key) throws `OpenServiceLoadedDrainExceededError` instead of hanging.
+```ts
+load: async (input, ctx) => {
+  // Explicit chain — must mirror what the handler reads.
+  await ctx.getService('other-service').queries.someQuery.loaded(input);
+}
+```
+
+If a load forgets to chain a dependency, `.loaded()` returns whatever the handler can read from the current state — possibly a partial value (often `null`). Author-side tests that assert the loaded value catch missing chains quickly.
+
+There is no cycle detection. Authors who write self-awaiting load chains (`a.load` awaits `b.loaded`, `b.load` awaits `a.loaded`) get a real promise deadlock — surface those bugs through tests.
 
 ## Subscription Flow
 

@@ -405,12 +405,16 @@ describe('service runtime', () => {
     });
   });
 
-  describe('loaded() drain', () => {
-    it('awaits a transitive dependency before returning', async () => {
+  describe('loaded() — explicit dependency chaining', () => {
+    it('returns a partial value when the load does not explicitly await the dependency', async () => {
+      // This is the "breakage" case after dropping implicit dep tracking:
+      // the handler reads a source query whose data has not been loaded yet, but the load body
+      // does not await it. .loaded() therefore returns whatever the handler reads from the
+      // current (empty) state.
       const sourceService = registerService(awaitedPreloadValueServiceDef);
       const derivedDef = defineService({
-        id: 'test/derived-loaded-from-source',
-        description: 'Reads the loaded value from the source service through a query.',
+        id: 'test/derived-without-explicit-chain',
+        description: 'Handler reads a source query but the load body does not await its .loaded().',
         initialState: {} as Record<string, never>,
         queries: {
           getLength: {
@@ -419,6 +423,39 @@ describe('service runtime', () => {
             handler: (input) => {
               const value = sourceService.queries.getPreloadedValue({ entryId: input.entryId });
               return value === null ? 0 : value.length;
+            },
+            // No load. The runtime cannot discover the source dep on its own.
+          },
+        },
+        commands: {},
+      });
+      const derivedService = registerService(derivedDef);
+
+      // First call reports the partial value (0) because the source's load has not settled yet.
+      await expect(derivedService.queries.getLength.loaded({ entryId: 'entry-a' })).resolves.toBe(
+        0
+      );
+    });
+
+    it('returns the fully resolved value when the load chains the dependency explicitly', async () => {
+      const sourceService = registerService(awaitedPreloadValueServiceDef);
+      const derivedDef = defineService({
+        id: 'test/derived-with-explicit-chain',
+        description: 'Handler reads a source query and the load awaits its .loaded() explicitly.',
+        initialState: {} as Record<string, never>,
+        queries: {
+          getLength: {
+            input: v.object({ entryId: v.string() }),
+            output: v.number(),
+            handler: (input) => {
+              const value = sourceService.queries.getPreloadedValue({ entryId: input.entryId });
+              return value === null ? 0 : value.length;
+            },
+            // Explicit chain — author signals the dependency in the load body.
+            load: async (input, ctx) => {
+              await ctx
+                .getService('test/awaited-preload-value')
+                .queries.getPreloadedValue.loaded(input);
             },
           },
         },
@@ -431,7 +468,7 @@ describe('service runtime', () => {
       );
     });
 
-    it('surfaces rejections from a transitive load through .loaded()', async () => {
+    it('surfaces rejections from this query.load through .loaded()', async () => {
       const failingDef = defineService({
         id: 'test/failing-loaded',
         description: 'Rejects from the load body to exercise .loaded() error propagation.',
@@ -451,105 +488,6 @@ describe('service runtime', () => {
       const service = registerService(failingDef);
 
       await expect(service.queries.getValue.loaded(undefined)).rejects.toThrow('boom');
-    });
-
-    it('breaks a load cycle without deadlocking', async () => {
-      const cycleDef = defineService({
-        id: 'test/load-cycle',
-        description: 'Two queries whose loads call each other through self.queries.',
-        initialState: { aDone: false, bDone: false },
-        queries: {
-          a: {
-            input: v.undefined(),
-            output: v.boolean(),
-            handler: (_input, ctx) => ctx.self.state.aDone,
-            load: async (_input, ctx) => {
-              // Reading b inside a's load would normally also await b's load — but since b's load
-              // would in turn read a (the running ancestor), the runtime must break the cycle.
-              ctx.self.queries.b(undefined);
-              await ctx.self.commands.markA(undefined);
-            },
-          },
-          b: {
-            input: v.undefined(),
-            output: v.boolean(),
-            handler: (_input, ctx) => ctx.self.state.bDone,
-            load: async (_input, ctx) => {
-              ctx.self.queries.a(undefined);
-              await ctx.self.commands.markB(undefined);
-            },
-          },
-        },
-        commands: {
-          markA: {
-            input: v.undefined(),
-            output: v.void(),
-            handler: (_input, ctx) => {
-              ctx.self.setState((draft) => {
-                draft.aDone = true;
-              });
-            },
-          },
-          markB: {
-            input: v.undefined(),
-            output: v.void(),
-            handler: (_input, ctx) => {
-              ctx.self.setState((draft) => {
-                draft.bDone = true;
-              });
-            },
-          },
-        },
-      });
-      const service = registerService(cycleDef);
-
-      await expect(service.queries.a.loaded(undefined)).resolves.toBe(true);
-      expect(service.queries.b(undefined)).toBe(true);
-    });
-
-    it('throws OpenServiceLoadedDrainExceededError on persistent oscillation', async () => {
-      const oscillatingDef = defineService({
-        id: 'test/oscillating-load',
-        description: 'Handler reads a dynamic-keyed query on every discovery pass.',
-        initialState: { counter: 0 },
-        queries: {
-          getCounter: {
-            input: v.undefined(),
-            output: v.number(),
-            handler: (_input, ctx) => {
-              // Each discovery pass produces a fresh input key, so the runtime can never observe
-              // a stable set of dependencies — the drain loop hits its iteration cap.
-              ctx.self.queries.dynamic({ tick: ctx.self.state.counter });
-              return ctx.self.state.counter;
-            },
-          },
-          dynamic: {
-            input: v.object({ tick: v.number() }),
-            output: v.number(),
-            handler: (input) => input.tick,
-            load: async (_input, ctx) => {
-              await ctx.self.commands.bump(undefined);
-            },
-          },
-        },
-        commands: {
-          bump: {
-            input: v.undefined(),
-            output: v.void(),
-            handler: (_input, ctx) => {
-              ctx.self.setState((draft) => {
-                draft.counter += 1;
-              });
-            },
-          },
-        },
-      });
-      const service = registerService(oscillatingDef);
-
-      await expect(service.queries.getCounter.loaded(undefined)).rejects.toMatchObject({
-        fromStorybook: true,
-        code: 11,
-      });
     });
   });
 });

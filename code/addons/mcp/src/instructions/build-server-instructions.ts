@@ -27,7 +27,7 @@ export function buildServerInstructions(options: BuildServerInstructionsOptions)
 				.replace(
 					'{{DISPLAY_REVIEW_STEP}}',
 					reviewEnabled
-						? "\n- After completing the change, call **display-review** to publish a curated review to Storybook's review page. If the session has a browser-preview tool, navigate it to the returned `reviewUrl` so the user sees the review without leaving the chat. Always include the `reviewUrl` in your final response as a fallback."
+						? "\n- After completing the change, call **display-review** to publish a curated review to Storybook's review page. If the session has a browser-preview tool, navigate it to the returned `reviewUrl` so the user sees the review without leaving the chat. Always include the `reviewUrl` in your final response as a fallback. Call this tool again whenever the user iterates on the changes, so you keep the review up to date."
 						: '',
 				)
 				.trim(),

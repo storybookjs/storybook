@@ -115,7 +115,7 @@ Provide:
 
 Anti-pattern: editing a theme token that only one component reads, then publishing a review with just that one component's story. The token change is visible on every page that renders the component — include those pages.
 
-Always include the returned reviewUrl in your final user-facing response so the user can open it.`,
+Always include the returned reviewUrl in your final user-facing response so the user can open it. This tool maintains a single active review state; each call replaces the previously published review.`,
 			schema: ReviewStateSchema,
 			outputSchema: DisplayReviewOutput,
 			enabled: () => server.ctx.custom?.toolsets?.dev ?? true,

@@ -4,6 +4,7 @@ import { STORY_RENDER_PHASE_CHANGED } from 'storybook/internal/core-events';
 import { global } from '@storybook/global';
 
 const FREEZE_STYLE_ID = 'storybook-freeze-after-finished';
+const PRE_FREEZE_STYLE_ID = 'storybook-freeze-end-frame-preload';
 
 type TimerId = ReturnType<Window['setTimeout']>;
 type IntervalId = ReturnType<Window['setInterval']>;
@@ -68,6 +69,46 @@ const addFreezeStyles = (documentRef: Document) => {
     }
   `;
   documentRef.head?.appendChild(style);
+};
+
+const addPreFreezeStyles = (documentRef: Document) => {
+  if (documentRef.getElementById(PRE_FREEZE_STYLE_ID)) {
+    return;
+  }
+
+  const style = documentRef.createElement('style');
+  style.id = PRE_FREEZE_STYLE_ID;
+  style.textContent = `
+    *, *::before, *::after {
+      animation-delay: 0s !important;
+      animation-direction: reverse !important;
+      animation-play-state: paused !important;
+      transition: none !important;
+      caret-color: transparent !important;
+    }
+  `;
+  documentRef.head?.appendChild(style);
+};
+
+const finishAndPauseAnimations = (documentRef: Document) => {
+  if (typeof documentRef.getAnimations !== 'function') {
+    return;
+  }
+
+  const animations = documentRef.getAnimations();
+  animations.forEach((animation) => {
+    try {
+      animation.finish();
+    } catch {
+      // Infinite or unresolved animations cannot be finished; still pause them in place.
+    }
+
+    try {
+      animation.pause();
+    } catch {
+      // Best-effort only, some animations may no longer be pausable.
+    }
+  });
 };
 
 const blockInteractions = (documentRef: Document) => {
@@ -196,6 +237,7 @@ const createStoryFreezer = (windowRef: Window, documentRef: Document) => {
     trackedIntervals.clear();
     trackedRafs.clear();
 
+    finishAndPauseAnimations(documentRef);
     stripScriptElements(documentRef);
     stripInlineEventHandlers(documentRef);
     addFreezeStyles(documentRef);
@@ -216,6 +258,7 @@ export const setupStoryFreezer = (channel: Pick<Channel, 'on'>) => {
     return false;
   }
 
+  addPreFreezeStyles(documentRef);
   const freezer = createStoryFreezer(windowRef, documentRef);
   channel.on(STORY_RENDER_PHASE_CHANGED, ({ newPhase }) => {
     if (newPhase === 'finished') {

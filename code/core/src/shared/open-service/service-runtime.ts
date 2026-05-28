@@ -68,6 +68,7 @@ const inFlightLoads = new Map<string, Promise<unknown>>();
 function stableHash(value: unknown): string {
   return JSON.stringify(value, (_key, raw) => {
     if (raw === undefined) {
+      // `JSON.stringify` would otherwise drop `undefined` from object values silently.
       return '__undefined__';
     }
     if (raw && typeof raw === 'object' && !Array.isArray(raw)) {
@@ -97,6 +98,8 @@ function normalizeStaticStoragePath(serviceId: ServiceId, name: string, rawPath:
     .split('/')
     .filter((segment) => segment.length > 0 && segment !== '.');
 
+  // Keep static snapshot keys relative so server-side writers can always anchor them under the
+  // build output, regardless of whether authors used '/', './', or Windows-style separators.
   if (segments.length === 0 || segments.some((segment) => segment === '..')) {
     throw new OpenServiceInvalidStaticPathError({ serviceId, name, path: rawPath });
   }
@@ -128,6 +131,7 @@ function createCommandSelf<TState>(stateSignal: ServiceSignal<TState>): CommandS
       return stateSignal();
     },
     setState(mutate) {
+      // Batch signal writes so one command only triggers subscribers after the full draft update.
       startBatch();
       try {
         stateSignal(produce(stateSignal(), mutate));
@@ -142,6 +146,9 @@ function createCommandSelf<TState>(stateSignal: ServiceSignal<TState>): CommandS
 
 /**
  * Builds the runtime command map from the declarative command definitions.
+ *
+ * Each runtime command validates raw caller input, invokes the handler with parsed values, and
+ * validates the resolved output before returning it to the caller.
  */
 function buildCommands<TState>(
   serviceId: ServiceId,
@@ -181,6 +188,12 @@ function buildCommands<TState>(
   );
 }
 
+/**
+ * Captures the per-runtime data needed by query helpers that operate across multiple queries.
+ *
+ * Bundling the references lets `createDefaultQuery`, `runLoadBody`, and `runLoaded` share the
+ * same closure shape without each one re-deriving the per-service callbacks.
+ */
 type QueryRuntimeRefs<TState> = {
   serviceId: ServiceId;
   commandSelf: CommandSelf<TState>;
@@ -190,6 +203,10 @@ type QueryRuntimeRefs<TState> = {
   defaultQueries: Record<string, Query<unknown, unknown>>;
 };
 
+/**
+ * Validates query input synchronously, falling through to the dedicated async-schema error if a
+ * schema returns a Promise.
+ */
 function validateQueryInput<TState>(
   refs: QueryRuntimeRefs<TState>,
   queryName: string,
@@ -218,6 +235,13 @@ function validateQueryOutput<TState>(
   });
 }
 
+/**
+ * Runs the query handler synchronously and validates the resolved value.
+ *
+ * Handlers always see `refs.defaultQueries` on `ctx.self.queries`; load bodies do not get a
+ * different map here because dependency tracking is explicit in this branch (authors chain
+ * `.loaded()` themselves).
+ */
 function runHandlerSync<TState>(
   refs: QueryRuntimeRefs<TState>,
   queryName: string,
@@ -268,9 +292,15 @@ function triggerLoad<TState>(
     return existing;
   }
 
+  // Register the promise into `inFlightLoads` BEFORE the body runs so any reentrant query call
+  // made inside the body's synchronous prefix sees this load as in-flight and reuses the same
+  // promise instead of starting a duplicate run. The body is wrapped in `Promise.resolve().then`
+  // to enforce a microtask boundary between registration and execution.
   const promise = Promise.resolve()
     .then(() => runLoadBody(refs, queryName, queryDef, validatedInput))
     .finally(() => {
+      // Only clear the entry if it still points at this promise — another caller may have already
+      // overwritten it with a fresh in-flight load for the next round.
       if (inFlightLoads.get(loadKey) === promise) {
         inFlightLoads.delete(loadKey);
       }
@@ -352,6 +382,7 @@ function createDefaultQuery<TState>(
 
     if (queryDef.load) {
       const loadKey = makeLoadKey(refs.serviceId, queryName, validatedInput);
+      // Background fire-and-forget: surface failures so they are not silently swallowed.
       triggerLoad(refs, queryName, queryDef, validatedInput, loadKey).catch(rethrowAsync);
     }
 
@@ -398,6 +429,7 @@ function subscribeToQuery<TState>(
 
     if (queryDef.load) {
       const loadKey = makeLoadKey(refs.serviceId, queryName, validatedInput);
+      // Subscribers do not block on rejections, but we still want them visible to global handlers.
       triggerLoad(refs, queryName, queryDef, validatedInput, loadKey).catch(rethrowAsync);
     }
 
@@ -437,6 +469,8 @@ function buildQueries<TState>(
 
 /**
  * Creates the full runtime backing for a service definition.
+ *
+ * Callers must supply the registry API that query and command contexts should expose.
  */
 export function createServiceRuntime<
   TState,
@@ -449,6 +483,7 @@ export function createServiceRuntime<
   },
   initialState: TState = def.initialState
 ): ServiceRuntime<TState, TQueries, TCommands> {
+  // The signal is the single source of truth that query computations subscribe to.
   const stateSignal = signal<TState>(initialState);
   const commandSelf = createCommandSelf(stateSignal);
   const { registryApi } = runtimeOptions;
@@ -477,6 +512,7 @@ export function createServiceRuntime<
     defaultQueries,
   };
 
+  // Build queries after commands so handler and load ctx surfaces resolve the same command map.
   const builtQueries = buildQueries(refs);
   for (const [name, query] of Object.entries(builtQueries)) {
     defaultQueries[name] = query;
@@ -502,6 +538,13 @@ export function createServiceRuntime<
     getService: registryApi.getService,
   };
 
+  /**
+   * Runs one query's `load` body against this runtime instance.
+   *
+   * Used by the static build pipeline to populate state for a single input without holding the
+   * load in the process-global in-flight registry afterwards. Dependencies inside the load body
+   * are awaited if (and only if) the author explicitly chained them via `.loaded()`.
+   */
   const runLoadOnce = async (queryName: string, validatedInput: unknown): Promise<void> => {
     const queryDef = queryDefinitions.get(queryName);
 

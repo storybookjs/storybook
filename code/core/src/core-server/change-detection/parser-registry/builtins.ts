@@ -1,11 +1,12 @@
 import { parseWithOxc } from 'storybook/internal/oxc-parser';
 
+import { jsTsSourceExtensions } from '../../../shared/constants/extensions.ts';
 import { mdxParse } from './mdx-parse.ts';
 import type { ImportParser } from './types.ts';
 
 /** Default parser for JavaScript/TypeScript source. Uses `oxc-parser` under the hood. */
 export const oxcImportParser: ImportParser = {
-  extensions: ['.ts', '.tsx', '.js', '.jsx', '.mjs', '.cjs'],
+  extensions: [...jsTsSourceExtensions],
   async parse({ filePath, source }) {
     return parseWithOxc(filePath, source);
   },

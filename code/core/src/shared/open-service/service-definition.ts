@@ -1,9 +1,10 @@
 import type {
+  CommandDefinition,
   MatchingOutputSchemas,
   OperationInputSchemas,
-  ServiceDefinition,
-  CommandDefinition,
   QueryDefinition,
+  ServiceDefinition,
+  ServiceId,
 } from './types.ts';
 
 /**
@@ -73,7 +74,7 @@ export const defineService = <
   const TCommandInputSchemas extends OperationInputSchemas,
   const TCommandOutputSchemas extends MatchingOutputSchemas<TCommandInputSchemas>,
 >(def: {
-  id: string;
+  id: ServiceId;
   description?: string;
   initialState: TState;
   queries: DefinedQueries<

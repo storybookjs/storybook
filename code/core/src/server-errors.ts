@@ -4,6 +4,7 @@ import { dedent } from 'ts-dedent';
 import type { Status } from './shared/status-store/index.ts';
 import type { StatusTypeId } from './shared/status-store/index.ts';
 import { formatIssues } from './shared/open-service/errors.ts';
+import type { ServiceId } from './shared/open-service/types.ts';
 import type { ValidationMeta } from './shared/open-service/errors.ts';
 import { StorybookError } from './storybook-error.ts';
 
@@ -163,6 +164,50 @@ export class OpenServiceValidationError extends StorybookError {
       message: `Invalid ${data.phase} for ${data.kind} "${data.serviceId}.${data.name}":\n${formatIssues(
         data.issues
       )}`,
+    });
+  }
+}
+
+export class OpenServiceDuplicateRegistrationError extends StorybookError {
+  constructor(public data: { serviceId: ServiceId }) {
+    super({
+      name: 'OpenServiceDuplicateRegistrationError',
+      category: Category.CORE_COMMON,
+      code: 6,
+      message: `A service with id "${data.serviceId}" is already registered.`,
+    });
+  }
+}
+
+export class OpenServiceMissingServiceError extends StorybookError {
+  constructor(public data: { serviceId: ServiceId }) {
+    super({
+      name: 'OpenServiceMissingServiceError',
+      category: Category.CORE_COMMON,
+      code: 7,
+      message: `No registered service with id "${data.serviceId}" exists in this environment.`,
+    });
+  }
+}
+
+export class OpenServiceUnimplementedOperationError extends StorybookError {
+  constructor(public data: { serviceId: ServiceId; name: string; kind: 'query' | 'command' }) {
+    super({
+      name: 'OpenServiceUnimplementedOperationError',
+      category: Category.CORE_COMMON,
+      code: 8,
+      message: `${data.kind[0].toUpperCase()}${data.kind.slice(1)} "${data.serviceId}.${data.name}" is not implemented for this environment.`,
+    });
+  }
+}
+
+export class OpenServiceInvalidStaticPathError extends StorybookError {
+  constructor(public data: { serviceId: ServiceId; name: string; path: string }) {
+    super({
+      name: 'OpenServiceInvalidStaticPathError',
+      category: Category.CORE_COMMON,
+      code: 10,
+      message: `Invalid static path "${data.path}" for query "${data.serviceId}.${data.name}": use a relative path with forward slashes and no ".." segments.`,
     });
   }
 }

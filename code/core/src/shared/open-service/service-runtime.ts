@@ -1,34 +1,33 @@
 import { produce } from 'immer';
+import { toMerged } from 'es-toolkit/object';
 import { computed, effect, endBatch, signal, startBatch } from 'alien-signals';
 
-import {
-  OpenServiceInvalidStaticPathError,
-  OpenServiceUnimplementedOperationError,
-} from '../../server-errors.ts';
 import { rethrowAsync, validateSchema } from './service-validation.ts';
 import type {
   AnySchema,
   Command,
   CommandCtx,
   Commands,
+  CreateServiceOptions,
   Queries,
   Query,
   QueryCtx,
   QueryDefinition,
   ServiceDefinition,
-  ServiceId,
   ServiceInstance,
-  ServiceRegistryApi,
+  StaticStore,
   WritableSelf,
 } from './types.ts';
 
 type ServiceSignal<TState> = ReturnType<typeof signal<TState>>;
 type RuntimeQueryDefinition<TState> = QueryDefinition<TState, AnySchema, AnySchema>;
+type RegisteredService = ServiceInstance<unknown, Queries<unknown>, Commands<unknown>>;
+type StaticStateLoader = (input: unknown) => Promise<void>;
 
 /**
  * Internal runtime object returned while a service instance is being assembled.
  *
- * It keeps the raw signal and `self` reference available for static building and registration
+ * It keeps the raw signal and `self` reference available for static building and store-backed
  * preloading, while callers typically consume the simpler `ServiceInstance` shape.
  */
 export type ServiceRuntime<
@@ -46,34 +45,15 @@ export type ServiceRuntime<
 /**
  * Resolves which serialized static-state file should back a query input.
  *
- * Queries without a custom `static.path()` share one default file per service. The returned value
- * is a logical slash-separated store key, not a raw filesystem path.
+ * Queries without a custom `static.path()` share one default file per service.
  */
-function normalizeStaticStoragePath(serviceId: ServiceId, name: string, rawPath: string): string {
-  const segments = rawPath
-    .replaceAll('\\', '/')
-    .split('/')
-    .filter((segment) => segment.length > 0 && segment !== '.');
-
-  // Keep static snapshot keys relative so server-side writers can always anchor them under the
-  // build output, regardless of whether authors used '/', './', or Windows-style separators.
-  if (segments.length === 0 || segments.some((segment) => segment === '..')) {
-    throw new OpenServiceInvalidStaticPathError({ serviceId, name, path: rawPath });
-  }
-
-  return segments.join('/');
-}
-
 export function resolveStaticPath<TState>(
-  serviceId: ServiceId,
-  name: string,
+  serviceId: string,
   queryDef: RuntimeQueryDefinition<TState>,
   input: unknown,
   ctx: QueryCtx<TState>
 ): string {
-  const rawPath = queryDef.static?.path ? queryDef.static.path(input, ctx) : `${serviceId}.json`;
-
-  return normalizeStaticStoragePath(serviceId, name, rawPath);
+  return queryDef.static?.path ? queryDef.static.path(input, ctx) : `${serviceId}.json`;
 }
 
 /**
@@ -108,30 +88,22 @@ function createSelfRef<TState>(stateSignal: ServiceSignal<TState>): WritableSelf
  * validates the resolved output before returning it to the caller.
  */
 function buildCommands<TState>(
-  serviceId: ServiceId,
+  serviceId: string,
   commands: Commands<TState>,
-  createCommandCtx: () => CommandCtx<TState>
+  ctx: CommandCtx<TState>
 ): Command {
   return Object.fromEntries(
     Object.entries(commands).map(([name, def]) => {
       return [
         name,
         async (input: unknown) => {
-          if (!def.handler) {
-            throw new OpenServiceUnimplementedOperationError({
-              kind: 'command',
-              serviceId,
-              name,
-            });
-          }
-
           const validatedInput = await validateSchema(def.input, input, {
             kind: 'command',
             serviceId,
             name,
             phase: 'input',
           });
-          const output = await def.handler(validatedInput, createCommandCtx());
+          const output = await def.handler(validatedInput, ctx);
 
           return validateSchema(def.output, output, {
             kind: 'command',
@@ -152,32 +124,17 @@ function buildCommands<TState>(
  * reactive updates when subscribed to.
  */
 function createQuery<TState>(
-  serviceId: ServiceId,
+  serviceId: string,
   name: string,
   queryDef: RuntimeQueryDefinition<TState>,
   selfRef: WritableSelf<TState>,
-  registryApi: ServiceRegistryApi
+  loadStaticState?: StaticStateLoader
 ): Query<unknown, unknown> {
-  const createQueryCtx = (): QueryCtx<TState> => ({
-    self: selfRef,
-    getService: registryApi.getService,
-  });
-
-  const getHandler = () => {
-    if (!queryDef.handler) {
-      throw new OpenServiceUnimplementedOperationError({
-        kind: 'query',
-        serviceId,
-        name,
-      });
-    }
-
-    return queryDef.handler;
-  };
+  const createQueryCtx = (): QueryCtx<TState> => ({ self: selfRef });
 
   /** Runs the query handler and validates the resolved output value. */
   const runHandler = async (input: unknown): Promise<unknown> => {
-    const output = await getHandler()(input, createQueryCtx());
+    const output = await queryDef.handler(input, createQueryCtx());
 
     return validateSchema(queryDef.output, output, {
       kind: 'query',
@@ -185,6 +142,16 @@ function createQuery<TState>(
       name,
       phase: 'output',
     });
+  };
+
+  /** Runs either static-store preloading or the query's own preload hook before execution. */
+  const prepareQuery = async (input: unknown): Promise<void> => {
+    if (loadStaticState !== undefined) {
+      await loadStaticState(input);
+      return;
+    }
+
+    await queryDef.preload?.(input, createQueryCtx());
   };
 
   /**
@@ -204,14 +171,10 @@ function createQuery<TState>(
       }
 
       // Kick off preload in parallel so subscriptions can observe the state transition it causes.
-      // Defer the call into a `.then` callback so synchronous throws from the preload body land in
-      // the `.catch` below instead of escaping the surrounding async function.
-      void Promise.resolve()
-        .then(() => queryDef.preload?.(validatedInput, createQueryCtx()))
-        .catch(rethrowAsync);
+      void prepareQuery(validatedInput).catch(rethrowAsync);
 
       // `computed()` tracks which signals the handler reads so the effect can re-run on changes.
-      const comp = computed(() => getHandler()(validatedInput, createQueryCtx()));
+      const comp = computed(() => queryDef.handler(validatedInput, createQueryCtx()));
       unsubscribe = effect(() => {
         // Normalize sync and async handlers before validating and publishing the next value.
         void Promise.resolve(comp()).then(async (output) => {
@@ -252,7 +215,7 @@ function createQuery<TState>(
       phase: 'input',
     });
 
-    await queryDef.preload?.(validatedInput, createQueryCtx());
+    await prepareQuery(validatedInput);
 
     return runHandler(validatedInput);
   }) as Query<unknown, unknown>;
@@ -261,16 +224,76 @@ function createQuery<TState>(
   return query;
 }
 
-/** Builds the runtime query map for one service runtime. */
-function buildQueries<TState>(
-  serviceId: ServiceId,
-  queries: Queries<TState>,
+/**
+ * Creates a per-query static-state preloader backed by the generated static store map.
+ *
+ * Multiple requests for the same file path share the same pending merge promise so state is only
+ * merged once per snapshot.
+ */
+function createStaticStateLoader<TState>(
+  serviceId: string,
+  queryDef: RuntimeQueryDefinition<TState>,
+  stateSignal: ServiceSignal<TState>,
   selfRef: WritableSelf<TState>,
-  registryApi: ServiceRegistryApi
+  store: StaticStore
+): StaticStateLoader {
+  const loadsByPath = new Map<string, Promise<void>>();
+
+  return async (input: unknown) => {
+    const path = resolveStaticPath(serviceId, queryDef, input, { self: selfRef });
+
+    if (!loadsByPath.has(path)) {
+      // Reuse the same in-flight load per path so concurrent callers share one state merge.
+      loadsByPath.set(
+        path,
+        // Defer the store merge to a microtask so subscriptions first observe the current live
+        // state, then the merged static snapshot as a follow-up reactive update.
+        Promise.resolve().then(() => {
+          const slice = store[path];
+
+          if (slice == null) {
+            return;
+          }
+
+          // Merge the prebuilt snapshot into the live signal so later reads/subscriptions see it.
+          stateSignal(toMerged(stateSignal() as object, slice as object) as TState);
+        })
+      );
+    }
+
+    return loadsByPath.get(path)!;
+  };
+}
+
+/** Builds the runtime query map and optionally wires static-store-backed preloaders. */
+function buildQueries<TState>(
+  serviceId: string,
+  queries: Queries<TState>,
+  stateSignal: ServiceSignal<TState>,
+  selfRef: WritableSelf<TState>,
+  store?: StaticStore
 ): WritableSelf<TState>['queries'] {
   return Object.fromEntries(
     (Object.entries(queries) as [string, RuntimeQueryDefinition<TState>][]).map(
-      ([name, queryDef]) => [name, createQuery(serviceId, name, queryDef, selfRef, registryApi)]
+      ([name, queryDef]) => {
+        let loadStaticState: StaticStateLoader | undefined;
+
+        if (
+          store !== undefined &&
+          queryDef.preload !== undefined &&
+          queryDef.static?.inputs !== undefined
+        ) {
+          loadStaticState = createStaticStateLoader(
+            serviceId,
+            queryDef,
+            stateSignal,
+            selfRef,
+            store
+          );
+        }
+
+        return [name, createQuery(serviceId, name, queryDef, selfRef, loadStaticState)];
+      }
     )
   );
 }
@@ -278,7 +301,7 @@ function buildQueries<TState>(
 /**
  * Creates the full runtime backing for a service definition.
  *
- * Callers must supply the registry API that query and command contexts should expose.
+ * This is the lowest-level runtime entry point used by both `createService()` and static builds.
  */
 export function createServiceRuntime<
   TState,
@@ -286,21 +309,15 @@ export function createServiceRuntime<
   TCommands extends Commands<TState>,
 >(
   def: ServiceDefinition<TState, TQueries, TCommands>,
-  runtimeOptions: {
-    registryApi: ServiceRegistryApi;
-  },
+  options?: CreateServiceOptions,
   initialState: TState = def.initialState
 ): ServiceRuntime<TState, TQueries, TCommands> {
   // The signal is the single source of truth that query computations subscribe to.
   const stateSignal = signal<TState>(initialState);
   const selfRef = createSelfRef(stateSignal);
-  const { registryApi } = runtimeOptions;
-  const createCommandCtx = (): CommandCtx<TState> => ({
-    self: selfRef,
-    getService: registryApi.getService,
-  });
+  const commandCtx: CommandCtx<TState> = { self: selfRef };
 
-  const commands = buildCommands(def.id, def.commands, createCommandCtx) as ServiceInstance<
+  const commands = buildCommands(def.id, def.commands, commandCtx) as ServiceInstance<
     TState,
     TQueries,
     TCommands
@@ -308,18 +325,64 @@ export function createServiceRuntime<
   selfRef.commands = commands;
 
   // Queries are attached after commands so preload hooks can call into `ctx.self.commands`.
-  const queries = buildQueries(def.id, def.queries, selfRef, registryApi) as ServiceInstance<
-    TState,
-    TQueries,
-    TCommands
-  >['queries'];
+  const queries = buildQueries(
+    def.id,
+    def.queries,
+    stateSignal,
+    selfRef,
+    options?.store
+  ) as ServiceInstance<TState, TQueries, TCommands>['queries'];
   selfRef.queries = queries;
 
   return {
     stateSignal,
     selfRef,
-    queryCtx: { self: selfRef, getService: registryApi.getService },
+    queryCtx: { self: selfRef },
     commands,
     queries,
   };
+}
+
+/** Creates a callable service instance from a declarative service definition. */
+export function createService<
+  TState,
+  TQueries extends Queries<TState>,
+  TCommands extends Commands<TState>,
+>(
+  def: ServiceDefinition<TState, TQueries, TCommands>,
+  options?: CreateServiceOptions
+): ServiceInstance<TState, TQueries, TCommands> {
+  const runtime = createServiceRuntime(def, options);
+
+  return {
+    queries: runtime.queries,
+    commands: runtime.commands,
+  };
+}
+
+const registry = new Map<string, RegisteredService>();
+
+/**
+ * Returns a shared singleton instance for the given service definition.
+ *
+ * This is useful when multiple modules want to refer to the same in-memory service inside one
+ * environment.
+ */
+export function getService<
+  TState,
+  TQueries extends Queries<TState>,
+  TCommands extends Commands<TState>,
+>(
+  def: ServiceDefinition<TState, TQueries, TCommands>
+): ServiceInstance<TState, TQueries, TCommands> {
+  if (!registry.has(def.id)) {
+    registry.set(def.id, createService(def) as RegisteredService);
+  }
+
+  return registry.get(def.id)! as ServiceInstance<TState, TQueries, TCommands>;
+}
+
+/** Clears the singleton registry, primarily for test isolation. */
+export function clearRegistry(): void {
+  registry.clear();
 }

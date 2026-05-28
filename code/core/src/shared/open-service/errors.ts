@@ -1,7 +1,5 @@
 import type { StandardSchemaV1 } from '@standard-schema/spec';
 
-import type { ServiceId } from './types.ts';
-
 /** Identifies which operation surface produced a validation failure. */
 export type OperationKind = 'query' | 'command';
 
@@ -10,7 +8,7 @@ export type OperationKind = 'query' | 'command';
  */
 export type ValidationMeta = {
   kind: OperationKind;
-  serviceId: ServiceId;
+  serviceId: string;
   name: string;
   phase: 'input' | 'output';
   issues: ReadonlyArray<StandardSchemaV1.Issue>;

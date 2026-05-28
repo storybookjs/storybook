@@ -295,7 +295,10 @@ export async function buildDevStandalone(
 
   const features = await presets.apply('features');
   global.FEATURES = features;
-  await presets.apply('services');
+  if (!globalThis.STORYBOOK_SERVICES_LOADED) {
+    await presets.apply('services');
+    globalThis.STORYBOOK_SERVICES_LOADED = true;
+  }
   await presets.apply('experimental_serverChannel', channel);
 
   const fullOptions: Options = {

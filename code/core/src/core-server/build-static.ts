@@ -130,7 +130,10 @@ export async function buildStaticStandalone(options: BuildStaticStandaloneOption
   const effects: Promise<void>[] = [];
 
   global.FEATURES = features;
-  await presets.apply('services');
+  if (!globalThis.STORYBOOK_SERVICES_LOADED) {
+    await presets.apply('services');
+    globalThis.STORYBOOK_SERVICES_LOADED = true;
+  }
 
   if (!options.previewOnly) {
     await buildOrThrow(async () =>

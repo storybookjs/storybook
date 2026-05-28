@@ -15,7 +15,7 @@ import { dirname, isAbsolute, join, relative, resolve } from 'pathe';
 
 import { resolvePackageDir } from '../shared/utils/module.ts';
 
-globalThis.STORYBOOK_SERVICES_LOADED = false;
+globalThis.STORYBOOK_SERVICES_LOADED = globalThis.STORYBOOK_SERVICES_LOADED ?? false;
 
 export async function loadStorybook(
   options: CLIOptions &

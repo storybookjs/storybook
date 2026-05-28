@@ -84,15 +84,17 @@ export const Link = ({
  * because the org `createFileRoute` doesn't set the path in the Route
  */
 export function createFileRoute(path: string) {
+  const normalizedPath = path.replace(/\/\([^/]+\)/g, '') || '/';
+
   return (options: any) => {
     return createRoute({
-      path,
+      path: normalizedPath,
       ...options,
       isRoot: false,
     }).update({
       id: path,
-      path: path,
-      fullPath: path,
+      path: normalizedPath,
+      fullPath: normalizedPath,
       // any because tanstack router does that
     } as any);
   };

@@ -176,8 +176,8 @@ Subscriptions are implemented with `alien-signals` in [service-runtime.ts](./ser
 
 1. `subscribe(input, callback)` defers all work to a microtask.
 2. The microtask validates the input synchronously and fires the dependency's `load` in the background.
-3. If an in-flight load exists for `(query, input)`, the first emission is deferred until the load settles so subscribers do not observe a transient pre-load value.
-4. A `computed()` value wraps the synchronous handler. An `effect()` re-runs whenever the handler's tracked state dependencies change.
+3. A `computed()` value wraps the synchronous handler. An `effect()` runs the handler immediately (delivering the current value to the callback) and re-runs whenever the handler's tracked state dependencies change.
+4. Subscribers receive the current state right away, then a follow-up emission once the load settles and state changes. UI consumers that want to suppress the pre-load emission should branch on the value (e.g. show a spinner for `null`).
 5. Each emitted value is output-validated before the subscriber callback runs.
 
 Tests should use `vi.waitFor(...)` when asserting the first emission or follow-up emissions.

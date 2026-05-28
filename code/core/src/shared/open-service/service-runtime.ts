@@ -664,9 +664,10 @@ function createDefaultQuery<TState>(
 /**
  * Subscribes to a query by running its handler under an alien-signals `computed()` and `effect()`.
  *
- * The first emission is deferred to a microtask. If a `load` is already in flight for this input,
- * the first emission is also deferred until that load settles so subscribers do not see a transient
- * value derived from empty state. Subsequent emissions follow whenever the tracked state changes.
+ * The first emission is deferred to a microtask so callers always receive their unsubscribe handle
+ * before the callback fires. The runtime kicks `load` off in the background but does not wait for
+ * it — subscribers see the current state immediately and a follow-up emission once the load
+ * settles and tracked state changes.
  */
 function subscribeToQuery<TState>(
   refs: QueryRuntimeRefs<TState>,
@@ -691,56 +692,43 @@ function subscribeToQuery<TState>(
       return;
     }
 
-    const loadKey = makeLoadKey(refs.serviceId, queryName, validatedInput);
-    let pendingLoad: Promise<unknown> | undefined;
-
     if (queryDef.load) {
-      pendingLoad = triggerLoad(refs, queryName, queryDef, validatedInput, loadKey, EMPTY_SET);
+      const loadKey = makeLoadKey(refs.serviceId, queryName, validatedInput);
+      const pendingLoad = triggerLoad(
+        refs,
+        queryName,
+        queryDef,
+        validatedInput,
+        loadKey,
+        EMPTY_SET
+      );
       // Subscribers do not block on rejections, but we still want them visible to global handlers.
       pendingLoad.catch(rethrowAsync);
     }
 
-    const connect = () => {
-      if (!active) {
+    const comp = computed(() =>
+      runHandlerSync(
+        refs,
+        queryName,
+        queryDef,
+        validatedInput,
+        refs.defaultQueries,
+        refs.registryApi.getService
+      )
+    );
+    teardown = effect(() => {
+      let value: unknown;
+      try {
+        value = comp();
+      } catch (error) {
+        rethrowAsync(error);
         return;
       }
 
-      const comp = computed(() =>
-        runHandlerSync(
-          refs,
-          queryName,
-          queryDef,
-          validatedInput,
-          refs.defaultQueries,
-          refs.registryApi.getService
-        )
-      );
-      teardown = effect(() => {
-        let value: unknown;
-        try {
-          value = comp();
-        } catch (error) {
-          rethrowAsync(error);
-          return;
-        }
-
-        if (active) {
-          callback(value);
-        }
-      });
-    };
-
-    if (pendingLoad) {
-      // Wait for the pending load to settle before the first emission so the subscriber does not
-      // observe a transient pre-load value.
-      pendingLoad.then(connect, () => {
-        if (active) {
-          connect();
-        }
-      });
-    } else {
-      connect();
-    }
+      if (active) {
+        callback(value);
+      }
+    });
   });
 
   return () => {

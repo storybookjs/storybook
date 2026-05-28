@@ -166,7 +166,7 @@ describe('service runtime', () => {
       unsubscribeB();
     });
 
-    it('does not notify after unsubscribe when an in-flight load resolves later', async () => {
+    it('emits the initial value but skips the late value when unsubscribed before a load settles', async () => {
       let resolveLoad!: () => void;
       let loadStarted = false;
       let loadFinished = false;
@@ -210,11 +210,12 @@ describe('service runtime', () => {
       });
 
       await vi.waitFor(() => expect(loadStarted).toBe(true));
+      await vi.waitFor(() => expect(calls).toEqual([null]));
       unsubscribe();
       resolveLoad();
 
       await vi.waitFor(() => expect(loadFinished).toBe(true));
-      expect(calls).toEqual([]);
+      expect(calls).toEqual([null]);
     });
 
     it('rethrows subscription input validation failures through queueMicrotask', async () => {
@@ -279,7 +280,7 @@ describe('service runtime', () => {
       }
     });
 
-    it('defers the first emission until an in-flight load settles', async () => {
+    it('emits the current value immediately and the loaded value once load settles', async () => {
       const service = registerService(awaitedPreloadValueServiceDef);
       const calls: Array<string | null> = [];
 
@@ -290,7 +291,7 @@ describe('service runtime', () => {
         }
       );
 
-      await vi.waitFor(() => expect(calls).toEqual(['preloaded']));
+      await vi.waitFor(() => expect(calls).toEqual([null, 'preloaded']));
 
       unsubscribe();
     });
@@ -313,8 +314,8 @@ describe('service runtime', () => {
         }
       );
 
-      await vi.waitFor(() => expect(callsA).toEqual(['preloaded']));
-      await vi.waitFor(() => expect(callsB).toEqual(['preloaded']));
+      await vi.waitFor(() => expect(callsA).toEqual([null, 'preloaded']));
+      await vi.waitFor(() => expect(callsB).toEqual([null, 'preloaded']));
       unsubscribeA();
       unsubscribeB();
     });
@@ -380,7 +381,7 @@ describe('service runtime', () => {
         }
       );
 
-      await vi.waitFor(() => expect(calls).toEqual(['preloaded']));
+      await vi.waitFor(() => expect(calls).toEqual([null, 'preloaded']));
 
       unsubscribe();
     });

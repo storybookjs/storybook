@@ -166,7 +166,7 @@ const OcticonAnchorWrapper = styled.span({
   top: 0,
   right: '100%',
   lineHeight: 'inherit',
-  paddingRight: '10px',
+  paddingRight: '8px',
   // Allow the theme's text color to override the default link color.
   color: 'inherit',
   '& a': {
@@ -195,7 +195,13 @@ const HeaderWithOcticonAnchor: FC<PropsWithChildren<HeaderWithOcticonAnchorProps
   return (
     <OcticonHeader id={id} {...rest}>
       <OcticonAnchorWrapper>
-        <Button asChild variant="ghost" size="small" ariaLabel="Copy heading URL to address bar">
+        <Button
+          asChild
+          variant="ghost"
+          size="small"
+          padding="small"
+          ariaLabel="Copy heading URL to address bar"
+        >
           <a
             href={hash}
             target="_self"

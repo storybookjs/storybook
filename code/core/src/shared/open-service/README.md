@@ -160,15 +160,43 @@ When a server registers a service definition:
 
 ## `.loaded()` Drain
 
-`query.loaded(input)` returns a promise that settles only when the load body and every dependency the handler reads are fully populated:
+`query.loaded(input)` returns a promise that settles only when the load body and every dependency the handler transitively reads are fully populated. Implementation lives in `runLoaded` in [service-runtime.ts](./service-runtime.ts).
 
-1. Trigger this query's own `load` (deduped).
-2. Drain the collected loads via `Promise.allSettled`, surfacing any rejection (the rest are attached as `cause.aggregated`).
-3. Run the handler under a session that tracks dependency reads. The handler's sync reads of dependencies fire their loads and register the promises into the session collector — provided the dependency's load key is not already on the session's ancestor chain (cycle detection) and not in the session's settled-keys set (no refire of already-completed loads).
-4. If the discovery pass added more entries, drain again and re-run the handler. Loop until a discovery pass adds nothing new.
-5. Run the handler one final time without the session and return the validated output.
+### Algorithm
 
-The drain loop is capped at 32 iterations. Buggy oscillation (e.g. a handler that reads a query with an ever-changing input key) throws `OpenServiceLoadedDrainExceededError` instead of hanging.
+1. **Setup.** Validate input. Build a `LoadedSession`:
+   - `ancestorChain` — the set of load keys we are currently nested inside (used to break cycles). Inherits from any parent `.loaded()` chain and is extended with this query's own key.
+   - `collector` — load promises waiting to be drained.
+   - `settledKeys` — load keys that have already settled in this session (do not refire them).
+2. **Fire own load.** If this query has a `load` hook, push its promise into the collector via the in-flight registry. Skip if the key is already on the parent ancestor chain.
+3. **Drain + discover loop** (capped at 32 iterations):
+   - **Drain**: while `collector` has entries, snapshot them, clear, `Promise.allSettled` them, mark their keys settled, surface the first rejection (others attached as `cause.aggregated`).
+   - **Discovery**: run the sync handler under `activeHandlerLoadSession = session`. Sync reads of dependencies fire and register their loads into `collector` — provided the dep is not already on the ancestor chain (cycle) and not already settled this session (already loaded).
+   - If discovery added new entries, loop. Otherwise exit.
+4. **Final read.** Run the handler one last time without the session and return the validated output.
+
+If iteration count exceeds 32, throw `OpenServiceLoadedDrainExceededError`. This catches pathological cases (e.g. a handler that reads a query with an ever-changing input key) instead of hanging.
+
+### Worked example
+
+`bar.loaded(input)` where `bar.handler` reads `foo` and `foo` has its own `load`:
+
+| Step | What happens |
+|------|--------------|
+| Setup | `session = { ancestorChain: {barKey}, collector: ∅, settledKeys: ∅ }`. `bar.load` is undefined → no own load fired. |
+| Iter 1, drain | Collector empty, skip. |
+| Iter 1, discovery | Handler runs. Reads `ctx.self.queries.foo(...)`. Default `foo` query sees the session, sees `fooKey` is not in ancestor or settled, fires `foo.load` and pushes promise into `collector`. Handler returns (state still empty). |
+| Iter 2, drain | `await Promise.allSettled([fooPromise])`. Mark `fooKey` settled. State now populated by `foo.load`. |
+| Iter 2, discovery | Handler runs again. `foo` is in `settledKeys` → fires nothing. Collector stays empty. |
+| Exit | Final handler call (no session): returns the now-populated value. |
+
+### Inside a `load` body
+
+When the discovery handler runs, sync reads via `ctx.self.queries.*` go through the *default* query map (the same one consumers see) and register against `activeHandlerLoadSession`. That works for sync code because module-scoped state is stable across one synchronous handler call.
+
+When an **async** `load` body runs, it instead gets a *wrapped* `ctx.self.queries.*` from `buildLoadWrappedQueries`. Each wrapper closes over the load's own ancestor chain and local collector, so reads inside the body register dependencies regardless of how many `await`s the body has between them. After the body resolves, the load promise waits for its local collector to drain before settling — which is what gives `.loaded()` its transitive guarantee through async load bodies.
+
+Cross-service `ctx.getService(id).queries.*` calls inside a load body are **not** wrapped; authors must use `.loaded()` explicitly when they need a cross-service dep awaited from inside a load. From a sync handler, cross-service queries are tracked because they consult the module-scoped session like any other call.
 
 ## Subscription Flow
 

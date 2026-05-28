@@ -49,6 +49,11 @@ export type AddonContext = StorybookContext & {
 	options: Options;
 
 	/**
+	 * The resolved MCP endpoint pathname for this Storybook instance.
+	 */
+	endpoint?: string;
+
+	/**
 	 * The origin URL of the running Storybook instance.
 	 * Typically http://localhost:{port}
 	 */

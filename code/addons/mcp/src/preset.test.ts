@@ -96,6 +96,26 @@ describe('experimental_devServer', () => {
 		expect(mcpHandler).toBeDefined();
 	});
 
+	it('does not register any review-related channel listeners (handled by addon-review preset)', async () => {
+		const channel = { on: vi.fn(), emit: vi.fn() };
+		const optionsWithReview = {
+			...mockOptions,
+			channel,
+			presets: {
+				apply: vi.fn((key: string) => {
+					if (key === 'features') {
+						return Promise.resolve({ changeDetection: true });
+					}
+					return Promise.resolve(undefined);
+				}),
+			},
+		} as unknown as Options;
+
+		await (experimental_devServer as any)(mockApp, optionsWithReview);
+
+		expect(channel.on).not.toHaveBeenCalled();
+	});
+
 	it('should register /mcp GET endpoint', async () => {
 		await (experimental_devServer as any)(mockApp, mockOptions);
 

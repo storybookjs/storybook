@@ -18,8 +18,8 @@ import {
 import { logger } from 'storybook/internal/node-logger';
 import type { Source } from '@storybook/mcp';
 import type { IncomingMessage, ServerResponse } from 'node:http';
+import { DEFAULT_MCP_ENDPOINT } from './constants.ts';
 
-const DEFAULT_MCP_ENDPOINT = '/mcp';
 const STORYBOOK_MCP_PROXY_HEADER_KEY = STORYBOOK_MCP_PROXY_HEADER.toLowerCase();
 
 export const previewAnnotations: PresetPropertyFn<'previewAnnotations'> = async (
@@ -103,6 +103,7 @@ export const experimental_devServer: PresetPropertyFn<
 			res,
 			options,
 			addonOptions,
+			endpoint,
 			sources,
 			manifestProvider: createManifestProvider?.(req),
 			compositionAuth,
@@ -126,6 +127,7 @@ export const experimental_devServer: PresetPropertyFn<
 				res,
 				options,
 				addonOptions,
+				endpoint,
 				sources,
 				manifestProvider: createManifestProvider?.(req),
 				compositionAuth,

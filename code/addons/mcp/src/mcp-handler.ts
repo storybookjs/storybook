@@ -4,6 +4,7 @@ import { HttpTransport } from '@tmcp/transport-http';
 import pkgJson from '../package.json' with { type: 'json' };
 import { addPreviewStoriesTool } from './tools/preview-stories.ts';
 import { addGetChangedStoriesTool } from './tools/get-changed-stories.ts';
+import { addDisplayReviewTool } from './tools/display-review.ts';
 import { addGetUIBuildingInstructionsTool } from './tools/get-storybook-story-instructions.ts';
 import {
 	addListAllDocumentationTool,
@@ -18,11 +19,13 @@ import { collectTelemetry } from './telemetry.ts';
 import type { AddonContext, AddonOptionsOutput } from './types.ts';
 import { logger } from 'storybook/internal/node-logger';
 import { getManifestStatus } from './tools/is-manifest-available.ts';
+import { getReviewStatus } from './utils/is-review-available.ts';
 import { addRunStoryTestsTool, getAddonVitestConstants } from './tools/run-story-tests.ts';
 import { estimateTokens } from './utils/estimate-tokens.ts';
 import { isAddonA11yEnabled } from './utils/is-addon-a11y-enabled.ts';
 import type { CompositionAuth } from './auth/index.ts';
 import { buildServerInstructions } from './instructions/build-server-instructions.ts';
+import { DEFAULT_MCP_ENDPOINT } from './constants.ts';
 
 let transport: HttpTransport<AddonContext> | undefined;
 let origin: string | undefined;
@@ -37,9 +40,12 @@ const initializeMCPServer = async (options: Options, multiSource?: boolean) => {
 	const changeDetectionEnabled = features?.changeDetection ?? false;
 	disableTelemetry = core?.disableTelemetry ?? false;
 
-	// Determine tool availability before creating server so instructions can be tailored
+	// Determine tool availability before creating server so instructions can be tailored.
+	// Reuse the already-resolved `features` so getReviewStatus doesn't re-call
+	// `presets.apply('features', …)` and risk a different snapshot.
 	const addonVitestConstants = await getAddonVitestConstants();
 	const manifestStatus = await getManifestStatus(options);
+	const reviewStatus = await getReviewStatus(options, { features });
 	a11yEnabled = await isAddonA11yEnabled(options);
 
 	let server: McpServer<any, AddonContext>;
@@ -52,6 +58,7 @@ const initializeMCPServer = async (options: Options, multiSource?: boolean) => {
 				testEnabled: (server?.ctx.custom?.toolsets?.test ?? true) && !!addonVitestConstants,
 				docsEnabled: (server?.ctx.custom?.toolsets?.docs ?? true) && manifestStatus.available,
 				changeDetectionEnabled,
+				reviewEnabled: reviewStatus.available,
 			});
 		},
 		capabilities: {
@@ -83,6 +90,10 @@ const initializeMCPServer = async (options: Options, multiSource?: boolean) => {
 		await addGetChangedStoriesTool(server);
 	}
 
+	if (reviewStatus.available) {
+		await addDisplayReviewTool(server);
+	}
+
 	// Register test addon tools
 	await addRunStoryTestsTool(server, { a11yEnabled });
 
@@ -111,6 +122,13 @@ type McpServerHandlerParams = {
 	res: ServerResponse;
 	options: Options;
 	addonOptions: AddonOptionsOutput;
+	/**
+	 * The MCP endpoint path (e.g. `/mcp` or a user-configured override).
+	 * Used to derive the Storybook root from the incoming request URL inside
+	 * tools like `display-review`. Optional for backwards compatibility with
+	 * external callers; defaults to {@link DEFAULT_MCP_ENDPOINT}.
+	 */
+	endpoint?: string;
 	/** Sources for multi-source mode (when refs are configured) */
 	sources?: Source[];
 	/** Optional custom manifest provider, receives source as third param in multi-source mode */
@@ -128,6 +146,7 @@ export const mcpServerHandler = async ({
 	res,
 	options,
 	addonOptions,
+	endpoint = DEFAULT_MCP_ENDPOINT,
 	sources,
 	manifestProvider,
 	compositionAuth,
@@ -146,6 +165,7 @@ export const mcpServerHandler = async ({
 
 	const addonContext: AddonContext = {
 		options,
+		endpoint,
 		toolsets: getToolsets(webRequest, addonOptions),
 		origin: origin!,
 		disableTelemetry: disableTelemetry!,

@@ -18,6 +18,10 @@ const registrationOnlyServiceDef = defineService({
     getValue: {
       input: entryIdInputSchema,
       output: v.nullable(v.string()),
+      filePath: (input) => {
+        expectTypeOf(input).toEqualTypeOf<{ entryId: string }>();
+        return `${input.entryId}.json`;
+      },
     },
   },
   commands: {
@@ -54,13 +58,7 @@ const registeredService = registerService(registrationOnlyServiceDef, {
         }>();
         await ctx.self.commands.preloadValue(input);
       },
-      static: {
-        path: (input) => {
-          expectTypeOf(input).toEqualTypeOf<{ entryId: string }>();
-          return `${input.entryId}.json`;
-        },
-        inputs: () => [{ entryId: 'entry-a' }],
-      },
+      staticInputs: () => [{ entryId: 'entry-a' }],
     },
   },
   commands: {

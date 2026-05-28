@@ -4,6 +4,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { defineService } from './service-definition.ts';
 import {
   assignEntryFieldInputSchema,
+  awaitedPreloadValueServiceDef,
   createDerivedBooleanFromChildQueryServiceDef,
   entryIdInputSchema,
   mutableRecordLookupServiceDef,
@@ -11,6 +12,7 @@ import {
   voidOutputSchema,
 } from './fixtures.ts';
 import {
+  buildStaticFiles,
   clearRegistry,
   describeService,
   getRegisteredServices,
@@ -58,6 +60,7 @@ describe('service registration', () => {
     });
     expect(descriptor.queries.getRecordFields.input).toBe(entryIdInputSchema);
     expect(descriptor.queries.getRecordFields.output).toBe(recordFieldsOutputSchema);
+    expect(descriptor.queries.getRecordFields.filePath).toBeUndefined();
     expect(descriptor.commands.assignRecordField.input).toBe(assignEntryFieldInputSchema);
     expect(descriptor.commands.assignRecordField.output).toBe(voidOutputSchema);
   });
@@ -204,5 +207,69 @@ describe('service registration', () => {
         entryId: 'entry-a',
       })
     ).toEqual({ marker: 'match' });
+  });
+
+  it('exposes filePath presence on query descriptors', async () => {
+    registerService(awaitedPreloadValueServiceDef);
+
+    const descriptor = await describeService('internal-fixture/awaited-preload-value');
+
+    expect(descriptor.queries.getPreloadedValue.filePath).toBe(true);
+  });
+
+  it('allows load and staticInputs to be supplied only at registration time', async () => {
+    const serviceDef = defineService({
+      id: 'internal-fixture/registration-only-static-build',
+      description: 'Declares filePath in the definition and load at registration.',
+      initialState: { value: null as string | null },
+      queries: {
+        getValue: {
+          description: 'Returns one statically built value.',
+          input: v.object({ build: v.literal('once') }),
+          output: v.nullable(v.string()),
+          handler: (_input, ctx) => ctx.self.state.value,
+          filePath: () => 'state.json',
+          staticInputs: async () => [{ build: 'once' as const }],
+        },
+      },
+      commands: {
+        setValue: {
+          description: 'Stores one value during static load.',
+          input: v.undefined(),
+          output: voidOutputSchema,
+        },
+      },
+    });
+
+    registerService(serviceDef, {
+      queries: {
+        getValue: {
+          load: async (_input, ctx) => {
+            await ctx.self.commands.setValue(undefined);
+          },
+        },
+      },
+      commands: {
+        setValue: {
+          handler: async (_input, ctx) => {
+            ctx.self.setState((draft) => {
+              draft.value = 'built-at-registration';
+            });
+          },
+        },
+      },
+    });
+
+    await expect(buildStaticFiles()).resolves.toEqual({
+      'internal-fixture/registration-only-static-build/state.json': {
+        value: 'built-at-registration',
+      },
+    });
+
+    expect(
+      getService('internal-fixture/registration-only-static-build').queries.getValue({
+        build: 'once',
+      })
+    ).toBe(null);
   });
 });

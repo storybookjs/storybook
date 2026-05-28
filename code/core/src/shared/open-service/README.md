@@ -73,7 +73,7 @@ A query is:
 - **load-coupled**: calling a query also fires its optional `load` hook in the background, deduped per `(service, query, input)` while one is already in flight
 - **subscribable** through `query.subscribe(input, callback)`
 - **awaitable in full** through `query.loaded(input)`, which returns a promise that settles once the load and every transitively touched dependency have completed
-- **statically buildable** through `static.inputs`
+- **statically buildable** when the query declares `filePath` and `staticInputs`
 
 Query handlers receive a `QueryCtx`:
 
@@ -259,16 +259,27 @@ Tests should use `vi.waitFor(...)` when asserting the first emission or follow-u
 `buildStaticFiles()` in [server.ts](./server.ts) iterates every registered service and looks for
 queries that define:
 
-- `load`
-- `static.inputs`
+- `filePath` at definition time
+- `load` (definition or registration)
+- `staticInputs` (definition or registration)
 
 For each static input it:
 
 1. creates a fresh runtime from `initialState`
 2. validates the static input using the query's `input` schema
 3. runs the runtime's `runLoadOnce(queryName, validatedInput)` helper, which drives the load body (and any loads it triggers via wrapped self queries) to completion
-4. resolves the normalized logical output path
+4. resolves the normalized logical output path as `<serviceId>/<filePath(input)>`
 5. stores the resulting runtime state in the final `StaticStore`
+
+`filePath` is declared on the definition layer as `(input) => string`, relative to the service's
+own output folder. The static build always prepends the service id so two services cannot write to
+the same JSON path. It is exposed to callers through `describeService()` as `filePath: true` on the
+matching query descriptor. Manager code can use that flag to choose between live runtime queries
+and prebuilt JSON snapshots.
+
+`staticInputs` may be declared in the definition when the input list has no runtime dependencies.
+Registration may override or supply `staticInputs` when the enumerator needs registry access,
+story-index data, or other server context.
 
 Cross-service `ctx.getService(...)` lookups during load resolve through the same registry the
 dev server uses, so a load sees the same set of services that any other handler in the process
@@ -282,20 +293,21 @@ These snapshots are currently only a build artifact for the server-side static b
 
 Static path rules:
 
-- authors should think in forward-slash logical paths such as `nested/file.json`
+- `filePath` values are relative to the service; the build prepends `<serviceId>/` automatically
+- authors should think in forward-slash logical paths such as `nested/file.json` or `${input.entryId}.json`
 - leading `./` and `/` are normalized away
 - backslashes are normalized to `/`
-- `..` segments are rejected so snapshots cannot escape `<outputDir>/services`
+- `..` segments are rejected so snapshots cannot escape the service folder
 
 ```mermaid
 flowchart TD
-  A[buildStaticFiles] --> B{query has load\nand static.inputs?}
+  A[buildStaticFiles] --> B{query has filePath,\nload, and staticInputs?}
   B -- no --> C[skip query]
   B -- yes --> D[create fresh runtime from initialState]
   D --> E[resolve static inputs]
   E --> F[validate each input]
   F --> G[run load for that input]
-  G --> H[resolve logical output path]
+  G --> H[resolve logical output path from filePath]
   H --> I[capture runtime state snapshot]
   I --> J[merge snapshots by path into StaticStore]
   J --> K[writeOpenServiceStaticFiles outputDir]
@@ -333,9 +345,8 @@ export const exampleServiceDef = defineService({
           await ctx.self.commands.preloadValue(input);
         }
       },
-      static: {
-        inputs: async () => [{ entryId: 'a' }, { entryId: 'b' }],
-      },
+      filePath: () => 'state.json',
+      staticInputs: async () => [{ entryId: 'a' }, { entryId: 'b' }],
     },
   },
   commands: {

@@ -56,20 +56,11 @@ const openServiceDef = defineService({
         // @ts-expect-error load contexts do not receive setState directly
         ctx.self.setState(() => {});
       },
-      static: {
-        path: (input, ctx) => {
-          expectTypeOf(input).toEqualTypeOf<{ entryId: string }>();
-          expectTypeOf(ctx.self.commands.preloadValue).parameter(0).toEqualTypeOf<{
-            entryId: string;
-          }>();
-
-          return `${input.entryId}.json`;
-        },
-        inputs: (ctx) => {
-          expectTypeOf(ctx.self.state).toEqualTypeOf<OpenServiceState>();
-          return [{ entryId: 'entry-a' }];
-        },
+      filePath: (input) => {
+        expectTypeOf(input).toEqualTypeOf<{ entryId: string }>();
+        return `${input.entryId}.json`;
       },
+      staticInputs: () => [{ entryId: 'entry-a' }],
     },
   },
   commands: {
@@ -141,6 +132,23 @@ describe('open-service type inference', () => {
           output: v.number(),
           // @ts-expect-error query handler output must match the output schema input type
           handler: () => 'wrong',
+        },
+      },
+      commands: {},
+    });
+  });
+
+  it('rejects dependency-aware staticInputs on the definition layer', () => {
+    defineService({
+      id: 'internal-fixture/invalid-definition-static-inputs',
+      initialState: {} as OpenServiceState,
+      queries: {
+        getValue: {
+          input: entryIdInputSchema,
+          output: v.nullable(v.string()),
+          filePath: () => 'value.json',
+          // @ts-expect-error definition staticInputs cannot depend on load context
+          staticInputs: (_ctx) => [{ entryId: 'entry-a' }],
         },
       },
       commands: {},

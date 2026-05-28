@@ -71,9 +71,8 @@ export const awaitedPreloadValueServiceDef = defineService({
           return ctx.self.commands.preloadValue(input).then(() => undefined);
         }
       },
-      static: {
-        inputs: async () => [{ entryId: 'entry-a' }, { entryId: 'entry-b' }],
-      },
+      filePath: () => 'state.json',
+      staticInputs: async () => [{ entryId: 'entry-a' }, { entryId: 'entry-b' }],
     },
   },
   commands: {
@@ -142,10 +141,8 @@ export function createSharedStaticFileServiceDef() {
         load: async (_input, ctx) => {
           await ctx.self.commands.writeLeftValue(undefined);
         },
-        static: {
-          path: () => 'shared.json',
-          inputs: async () => [undefined],
-        },
+        filePath: () => 'shared.json',
+        staticInputs: async () => [undefined],
       },
       getRightValue: {
         description: 'Loads the right value into the shared file state.',
@@ -155,10 +152,8 @@ export function createSharedStaticFileServiceDef() {
         load: async (_input, ctx) => {
           await ctx.self.commands.writeRightValue(undefined);
         },
-        static: {
-          path: () => 'shared.json',
-          inputs: async () => [undefined],
-        },
+        filePath: () => 'shared.json',
+        staticInputs: async () => [undefined],
       },
     },
     commands: {
@@ -270,9 +265,8 @@ export function createInvalidStaticInputServiceDef() {
         output: preloadedValueOutputSchema,
         handler: (input, ctx) => ctx.self.state[input.entryId] ?? null,
         load: async () => {},
-        static: {
-          inputs: async () => [{} as unknown as { entryId: string }],
-        },
+        filePath: () => 'state.json',
+        staticInputs: async () => [{} as unknown as { entryId: string }],
       },
     },
     commands: {},

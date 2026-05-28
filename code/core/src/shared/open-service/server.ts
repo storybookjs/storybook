@@ -56,8 +56,8 @@ export async function buildStaticFiles(): Promise<StaticStore> {
       string,
       RuntimeQueryDefinition,
     ][]) {
-      const { load, static: staticConfig } = query;
-      if (!load || !staticConfig?.inputs) {
+      const { load, filePath, staticInputs } = query;
+      if (!filePath || !load || !staticInputs) {
         continue;
       }
 
@@ -68,7 +68,7 @@ export async function buildStaticFiles(): Promise<StaticStore> {
             { registryApi: serviceRegistryApi },
             structuredClone(service.initialState)
           );
-          const inputs = await staticConfig.inputs(inputsRuntime.loadCtxForStatic);
+          const inputs = await staticInputs(inputsRuntime.loadCtxForStatic);
 
           return Promise.all(
             inputs.map(async (input) => {
@@ -85,13 +85,7 @@ export async function buildStaticFiles(): Promise<StaticStore> {
                 name: queryName,
                 phase: 'input',
               });
-              const path = resolveStaticPath(
-                service.id,
-                queryName,
-                query,
-                validatedInput,
-                buildRuntime.loadCtxForStatic
-              );
+              const path = resolveStaticPath(service.id, queryName, query, validatedInput);
 
               await buildRuntime.runLoadOnce(queryName, validatedInput);
 

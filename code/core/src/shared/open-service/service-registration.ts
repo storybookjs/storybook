@@ -63,6 +63,7 @@ function describeDefinition(definition: AnyServiceDefinition): ServiceDescriptor
           description: query.description,
           input: query.input,
           output: query.output,
+          ...(query.filePath ? { filePath: true as const } : {}),
         },
       ])
     ),
@@ -99,8 +100,8 @@ function summarizeDescriptor(descriptor: ServiceDescriptor): ServiceSummary {
  * Applies optional server-side overrides to an authored service definition.
  *
  * Registration overrides are shallow merges over the authored definition. That lets the server
- * swap handlers, load hooks, or static config per operation while the original schema contract
- * and operation names remain the source of truth.
+ * swap handlers, load hooks, or dependency-aware static input enumerators per operation while the
+ * original schema contract, `filePath`, and operation names remain the source of truth.
  */
 function applyRegistration<
   TState,

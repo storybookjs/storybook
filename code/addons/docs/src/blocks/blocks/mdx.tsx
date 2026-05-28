@@ -145,6 +145,10 @@ const OcticonHeaders = SUPPORTED_MDX_HEADERS.reduce(
     ...acc,
     [headerType]: styled(headerType)({
       position: 'relative',
+      display: 'flex',
+      gap: 8,
+      marginInlineStart: -40,
+      alignItems: 'center',
       '& svg': {
         position: 'relative',
         top: '-0.1em',
@@ -162,11 +166,8 @@ const OcticonAnchorWrapper = styled.span({
   // Position the anchor in the heading's left gutter instead of floating it, so the
   // Button's dimensions never shift the heading text. The parent header is relatively
   // positioned to anchor this.
-  position: 'absolute',
-  top: 0,
-  right: '100%',
   lineHeight: 'inherit',
-  paddingRight: '8px',
+  marginInline: '2px -2px',
   // Allow the theme's text color to override the default link color.
   color: 'inherit',
   '& a': {

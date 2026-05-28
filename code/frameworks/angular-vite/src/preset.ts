@@ -63,6 +63,23 @@ function resolveZoneless(
 }
 
 export const viteFinal = async (config: UserConfig, options?: StandaloneOptions) => {
+  // Hydrate angularBuilderOptions from the env var set by the parent
+  // storybook dev/build process when this preset runs in the addon-vitest
+  // child (where no BuilderContext is available).
+  if (
+    options &&
+    !options.angularBuilderOptions &&
+    process.env.STORYBOOK_ANGULAR_BUILDER_OPTIONS_JSON
+  ) {
+    try {
+      options.angularBuilderOptions = JSON.parse(
+        process.env.STORYBOOK_ANGULAR_BUILDER_OPTIONS_JSON
+      );
+    } catch {
+      // leave undefined; graceful degradation
+    }
+  }
+
   // Remove any loaded analogjs plugins from a vite.config.(m)ts file, and
   // demote storybook's CSF plugin out of the "pre" bucket. csf-plugin and
   // analogjs both declare `enforce: 'pre'`; within the same enforce bucket
@@ -98,6 +115,32 @@ export const viteFinal = async (config: UserConfig, options?: StandaloneOptions)
 
   // @ts-expect-error options is possibly undefined here, but presets.apply is guarded at runtime
   const framework = await options.presets.apply('framework');
+
+  // Generate compodoc's documentation.json on cold start when no builder
+  // path has produced it yet (e.g. addon-vitest child, ng run without the
+  // Angular CLI builder). Skipped when the file already exists or when the
+  // user opts out via framework.options.compodoc === false.
+  if (framework.options?.compodoc !== false) {
+    const { existsSync } = await import('node:fs');
+    const path = await import('node:path');
+    const workspaceRoot =
+      (options as any)?.angularBuilderContext?.workspaceRoot ?? config?.root ?? process.cwd();
+    const documentationJsonPath = path.resolve(workspaceRoot, 'documentation.json');
+    if (!existsSync(documentationJsonPath)) {
+      const { runCompodoc } = await import('./builders/utils/run-compodoc.ts');
+      const tsconfig =
+        framework.options?.tsconfig ??
+        (options as any)?.angularBuilderOptions?.tsConfig ??
+        path.resolve(workspaceRoot, 'tsconfig.json');
+      const compodocArgs = framework.options?.compodocArgs ?? ['-e', 'json', '-d', '.'];
+      try {
+        await runCompodoc({ compodocArgs, tsconfig, workspaceRoot });
+      } catch (err) {
+        console.warn('[storybook-angular-vite] compodoc generation failed:', err);
+      }
+    }
+  }
+
   const zoneless = resolveZoneless(framework.options, options?.angularBuilderOptions);
   const angularPlugins = angular({
     jit: typeof framework.options?.jit !== 'undefined' ? framework.options?.jit : true,

@@ -241,4 +241,25 @@ describe.skip('Build Storybook Builder', () => {
       })
     );
   });
+
+  it('should bridge angularBuilderOptions to the addon-vitest child via env var', async () => {
+    delete process.env.STORYBOOK_ANGULAR_BUILDER_OPTIONS_JSON;
+    const run = await architect.scheduleBuilder('@storybook/angular:build-storybook', {
+      tsConfig: 'path/to/tsConfig.json',
+      compodoc: false,
+      styles: ['style.scss'],
+    });
+
+    await run.result;
+    await run.stop();
+
+    expect(process.env.STORYBOOK_ANGULAR_BUILDER_OPTIONS_JSON).toBeDefined();
+    const parsed = JSON.parse(process.env.STORYBOOK_ANGULAR_BUILDER_OPTIONS_JSON!);
+    expect(parsed).toEqual(
+      expect.objectContaining({
+        styles: ['style.scss'],
+        zoneless: true,
+      })
+    );
+  });
 });

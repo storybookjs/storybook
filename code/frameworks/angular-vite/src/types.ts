@@ -14,6 +14,8 @@ export type FrameworkOptions = {
   inlineStylesExtension?: string;
   tsconfig?: string;
   zoneless?: boolean;
+  compodoc?: boolean;
+  compodocArgs?: string[];
 };
 
 type StorybookConfigFramework = {

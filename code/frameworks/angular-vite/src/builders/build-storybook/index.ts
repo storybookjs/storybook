@@ -88,10 +88,11 @@ const commandBuilder: BuilderHandlerFn<StorybookBuilderOptions> = async (
   });
 
   if (options.compodoc) {
-    await runCompodoc(
-      { compodocArgs: options.compodocArgs, tsconfig: docTSConfig ?? tsConfig },
-      context
-    );
+    await runCompodoc({
+      compodocArgs: options.compodocArgs,
+      tsconfig: docTSConfig ?? tsConfig,
+      workspaceRoot: context.workspaceRoot,
+    });
   }
 
   getEnvConfig(options, {
@@ -148,6 +149,14 @@ const commandBuilder: BuilderHandlerFn<StorybookBuilderOptions> = async (
     statsJson,
     previewUrl,
   };
+
+  // Bridge angularBuilderOptions to the addon-vitest child process
+  // (spawned later inside buildStaticStandalone with extendEnv: true) so
+  // its framework preset sees the same Angular config the parent build
+  // sees.
+  process.env.STORYBOOK_ANGULAR_BUILDER_OPTIONS_JSON = JSON.stringify(
+    standaloneOptions.angularBuilderOptions
+  );
 
   await runInstance({ ...standaloneOptions, mode: 'static' });
   if (logTracker.shouldWriteLogsToFile) {

@@ -2,7 +2,6 @@ import { isAbsolute, relative } from 'node:path';
 
 import { JsPackageManagerFactory } from 'storybook/internal/common';
 
-import type { BuilderContext } from '@angular-devkit/architect';
 import { prompt } from 'storybook/internal/node-logger';
 
 const hasTsConfigArg = (args: string[]) => args.indexOf('-p') !== -1;
@@ -15,15 +14,19 @@ const toRelativePath = (pathToTsConfig: string) => {
   return isAbsolute(pathToTsConfig) ? relative('.', pathToTsConfig) : pathToTsConfig;
 };
 
-export const runCompodoc = async (
-  { compodocArgs, tsconfig }: { compodocArgs: string[]; tsconfig: string },
-  context: BuilderContext
-): Promise<void> => {
+export type RunCompodocOptions = {
+  compodocArgs: string[];
+  tsconfig: string;
+  workspaceRoot: string;
+};
+
+export const runCompodoc = async (opts: RunCompodocOptions): Promise<void> => {
+  const { compodocArgs, tsconfig, workspaceRoot } = opts;
   const tsConfigPath = toRelativePath(tsconfig);
   const finalCompodocArgs = [
     'compodoc',
     ...(hasTsConfigArg(compodocArgs) ? [] : ['-p', tsConfigPath]),
-    ...(hasOutputArg(compodocArgs) ? [] : ['-d', `${context.workspaceRoot || '.'}`]),
+    ...(hasOutputArg(compodocArgs) ? [] : ['-d', `${workspaceRoot || '.'}`]),
     ...compodocArgs,
   ];
 
@@ -33,7 +36,7 @@ export const runCompodoc = async (
     () =>
       packageManager.runPackageCommand({
         args: finalCompodocArgs,
-        cwd: context.workspaceRoot,
+        cwd: workspaceRoot,
       }),
     {
       id: 'compodoc',

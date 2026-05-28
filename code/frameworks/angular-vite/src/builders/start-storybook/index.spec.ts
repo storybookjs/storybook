@@ -230,4 +230,26 @@ describe.skip('Start Storybook Builder', () => {
       tsConfig: 'path/to/tsConfig.json',
     });
   });
+
+  it('should bridge angularBuilderOptions to the addon-vitest child via env var', async () => {
+    delete process.env.STORYBOOK_ANGULAR_BUILDER_OPTIONS_JSON;
+    const run = await architect.scheduleBuilder('@storybook/angular:start-storybook', {
+      tsConfig: 'path/to/tsConfig.json',
+      port: 4400,
+      compodoc: false,
+      styles: ['src/styles.css'],
+    });
+
+    await run.result;
+    await run.stop();
+
+    expect(process.env.STORYBOOK_ANGULAR_BUILDER_OPTIONS_JSON).toBeDefined();
+    const parsed = JSON.parse(process.env.STORYBOOK_ANGULAR_BUILDER_OPTIONS_JSON!);
+    expect(parsed).toEqual(
+      expect.objectContaining({
+        styles: ['src/styles.css'],
+        zoneless: true,
+      })
+    );
+  });
 });

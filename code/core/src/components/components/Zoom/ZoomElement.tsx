@@ -8,8 +8,12 @@ import useResizeObserver from 'use-resize-observer';
 const ZoomElementWrapper = styled.div<{ centered?: boolean; scale: number; elementHeight: number }>(
   ({ centered = false, scale = 1, elementHeight }) => ({
     height: elementHeight || 'auto',
-    transformOrigin: centered ? 'center top' : 'left top',
-    transform: `scale(${1 / scale})`,
+    ...(scale !== 1
+      ? {
+          transformOrigin: centered ? 'center top' : 'left top',
+          transform: `scale(${1 / scale})`,
+        }
+      : {}),
   })
 );
 

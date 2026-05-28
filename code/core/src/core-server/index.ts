@@ -22,15 +22,25 @@ export type {
   Command,
   CommandCtx,
   CommandDefinition,
+  OperationDescriptor,
   Query,
   QueryCtx,
   QueryDefinition,
+  RuntimeService,
   SchemaDescriptor,
   ServiceDefinition,
+  ServiceDescriptor,
   ServiceInstance,
   ServiceRegistrationOptions,
+  ServiceSummary,
+  ServerServiceRegistration,
 } from '../shared/open-service/index.ts';
-export { registerService as experimental_registerService } from '../shared/open-service/server.ts';
+export {
+  describeService,
+  getService,
+  listServices,
+  registerService as experimental_registerService,
+} from '../shared/open-service/server.ts';
 
 export { UniversalStore as experimental_UniversalStore } from '../shared/universal-store/index.ts';
 export { MockUniversalStore as experimental_MockUniversalStore } from '../shared/universal-store/mock.ts';

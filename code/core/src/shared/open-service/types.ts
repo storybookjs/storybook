@@ -120,17 +120,14 @@ export type ServiceDescriptor = {
   commands: Record<string, OperationDescriptor>;
 };
 
-/**
- * Minimal lookup surface that runtime contexts (`QueryCtx`, `CommandCtx`) receive so handlers can
- * resolve another registered service by id. Discovery APIs like `listServices()` and
- * `describeService()` are exposed separately as standalone exports because handlers don't need
- * them.
- */
 export interface ServiceRegistryApi {
+  listServices(): Promise<ServiceSummary[]>;
+  describeService(serviceId: ServiceId): Promise<ServiceDescriptor>;
   getService(serviceId: ServiceId): Promise<RuntimeService>;
 }
 
-export type RuntimeService = ServiceInstance<unknown, Queries<unknown>, Commands<unknown>>;
+export type RuntimeService = ServiceInstance<unknown, Queries<unknown>, Commands<unknown>> &
+  ServiceRegistryApi;
 
 /** Context passed to query handlers and static preload helpers. */
 export type QueryCtx<

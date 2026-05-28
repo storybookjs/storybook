@@ -3,7 +3,6 @@ import {
   OpenServiceDuplicateRegistrationError,
   OpenServiceMissingServiceError,
 } from '../../server-errors.ts';
-import { instances, type AnyServiceDefinition, type RegistryEntry } from './instances.ts';
 import type {
   Commands,
   Queries,
@@ -16,6 +15,34 @@ import type {
   ServiceRegistryApi,
   ServiceSummary,
 } from './types.ts';
+
+type AnyServiceDefinition = ServiceDefinition<unknown, Queries<unknown>, Commands<unknown>>;
+type RegistryEntry = {
+  definition: AnyServiceDefinition;
+  runtime: RuntimeService;
+  summary: ServiceSummary;
+  descriptor: ServiceDescriptor;
+};
+
+const OPEN_SERVICE_REGISTRY_SYMBOL = Symbol.for('storybook.open-service.registry');
+
+/**
+ * Returns the process-global registry backing server-side service registration.
+ *
+ * The registry is anchored on a symbol-keyed `globalThis` slot so all modules in the same process
+ * share one registration map even if this file is imported through different paths. That keeps
+ * runtime lookups, static builds, and tests pointed at the same service inventory.
+ */
+function getRegistry(): Map<string, RegistryEntry> {
+  const registryGlobal = globalThis as {
+    [key: symbol]: Map<string, RegistryEntry> | undefined;
+  };
+
+  // Lazily create the registry so importing the module does not eagerly mutate global state.
+  registryGlobal[OPEN_SERVICE_REGISTRY_SYMBOL] ??= new Map<string, RegistryEntry>();
+
+  return registryGlobal[OPEN_SERVICE_REGISTRY_SYMBOL];
+}
 
 /**
  * Converts one service definition into the serializable descriptor returned by registry metadata
@@ -105,22 +132,23 @@ function applyRegistration<
 }
 
 /**
- * Shared registry API injected into registered runtimes.
+ * Shared registry API injected into registered runtimes and static-build runtimes.
  *
- * The runtime contexts only need cross-service `getService` lookups; discovery APIs like
- * `listServices` and `describeService` live as standalone exports so the runtime contract stays
- * minimal.
+ * Exporting the object keeps all call sites on the same lookup implementation instead of each
+ * environment assembling a structurally identical wrapper.
  */
-export const registryApi: ServiceRegistryApi = {
+export const serviceRegistryApi: ServiceRegistryApi = {
+  listServices,
+  describeService,
   getService,
 };
 
 /**
- * Registers one service definition in the module-local registry and returns its runtime instance.
+ * Registers one service definition in the process-global registry and returns its runtime surface.
  *
- * Throws `OpenServiceDuplicateRegistrationError` if a service with the same id is already
- * registered: the registry must have exactly one canonical definition per id, and callers are
- * expected to register each service exactly once per process.
+ * Registration resolves any server-side operation overrides first, then builds the runtime that
+ * query and command callers will use, and finally stores both the runtime and its metadata in the
+ * shared registry. Duplicate ids are rejected up front so lookups remain deterministic.
  */
 export function registerService<
   TState,
@@ -129,26 +157,30 @@ export function registerService<
 >(
   definition: ServiceDefinition<TState, TQueries, TCommands>,
   registration?: ServiceRegistrationOptions<TState, TQueries, TCommands>
-): ServiceInstance<TState, TQueries, TCommands> {
-  if (instances.has(definition.id)) {
+): ServiceInstance<TState, TQueries, TCommands> & ServiceRegistryApi {
+  const registry = getRegistry();
+
+  if (registry.has(definition.id)) {
     throw new OpenServiceDuplicateRegistrationError({ serviceId: definition.id });
   }
 
   const resolvedDefinition = applyRegistration(definition, registration);
-  const runtime = createServiceRuntime(resolvedDefinition, { registryApi });
-  const registeredRuntime: ServiceInstance<TState, TQueries, TCommands> = {
+  const runtime = createServiceRuntime(resolvedDefinition, { registryApi: serviceRegistryApi });
+  const registeredRuntime = {
     queries: runtime.queries,
     commands: runtime.commands,
-  };
+    ...serviceRegistryApi,
+  } as ServiceInstance<TState, TQueries, TCommands> & ServiceRegistryApi;
   const descriptor = describeDefinition(resolvedDefinition as AnyServiceDefinition);
-  const entry: RegistryEntry = {
-    definition: definition as AnyServiceDefinition,
+
+  // Persist the runtime together with precomputed metadata so later lookups stay cheap and do not
+  // need to rebuild descriptors from the authored definition each time.
+  registry.set(definition.id, {
+    definition: resolvedDefinition as AnyServiceDefinition,
     runtime: registeredRuntime as RuntimeService,
     descriptor,
     summary: summarizeDescriptor(descriptor),
-  };
-
-  instances.set(definition.id, entry);
+  });
 
   return registeredRuntime;
 }
@@ -159,7 +191,7 @@ export function registerService<
  * Static build code uses this to discover which services contribute preload snapshots.
  */
 export function getRegisteredServices(): AnyServiceDefinition[] {
-  return Array.from(instances.values(), ({ definition }) => definition);
+  return Array.from(getRegistry().values(), ({ definition }) => definition);
 }
 
 /**
@@ -169,7 +201,7 @@ export function getRegisteredServices(): AnyServiceDefinition[] {
  * operation names.
  */
 export async function listServices(): Promise<ServiceSummary[]> {
-  return Array.from(instances.values(), ({ summary }) => summary);
+  return Array.from(getRegistry().values(), ({ summary }) => summary);
 }
 
 /**
@@ -178,7 +210,7 @@ export async function listServices(): Promise<ServiceSummary[]> {
  * The descriptor mirrors the public contract of the service without exposing handlers or state.
  */
 export async function describeService(serviceId: ServiceId): Promise<ServiceDescriptor> {
-  const entry = instances.get(serviceId);
+  const entry = getRegistry().get(serviceId);
 
   if (!entry) {
     throw new OpenServiceMissingServiceError({ serviceId });
@@ -194,7 +226,7 @@ export async function describeService(serviceId: ServiceId): Promise<ServiceDesc
  * reuse another service's runtime contract.
  */
 export async function getService(serviceId: ServiceId): Promise<RuntimeService> {
-  const entry = instances.get(serviceId);
+  const entry = getRegistry().get(serviceId);
 
   if (!entry) {
     throw new OpenServiceMissingServiceError({ serviceId });
@@ -204,10 +236,10 @@ export async function getService(serviceId: ServiceId): Promise<RuntimeService> 
 }
 
 /**
- * Clears the module-local registry.
+ * Clears the process-global registry.
  *
  * Tests call this after each case so registrations from one scenario do not leak into the next.
  */
 export function clearRegistry(): void {
-  instances.clear();
+  getRegistry().clear();
 }

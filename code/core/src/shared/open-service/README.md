@@ -46,8 +46,7 @@ Internal tests and implementation code may import from the individual modules di
 - [service-validation.ts](./service-validation.ts): async schema validation helpers and error wrapping
 - [errors.ts](./errors.ts): validation metadata formatting helpers
 - [service-runtime.ts](./service-runtime.ts): signal-backed runtime construction, logical static-path resolution, and subscriptions
-- [instances.ts](./instances.ts): module-local map of registered service runtimes used by [service-registration.ts](./service-registration.ts)
-- [service-registration.ts](./service-registration.ts): server-side registry implementation and the shared registry API passed into runtimes
+- [service-registration.ts](./service-registration.ts): server-side global registry implementation and the shared registry API passed into runtimes
 - [fixtures.ts](./fixtures.ts): scenario fixtures used by the test suite
 - `*.test.ts`: focused tests for runtime behavior, validation behavior, server registration, and server static builds
 
@@ -59,8 +58,7 @@ flowchart LR
   D[service-runtime.ts\nruntime builder]
   E[service-validation.ts\nschema validation]
   F[errors.ts\nvalidation metadata helpers]
-  G[service-registration.ts\nregistry API + registration]
-  J[instances.ts\nmodule-local registry map]
+  G[service-registration.ts\nregistry + shared registry API]
   H[server.ts\nserver entrypoint + static snapshots]
   I[fixtures.ts and tests\nexamples and coverage]
 
@@ -72,7 +70,6 @@ flowchart LR
   E --> F
   G --> D
   G --> C
-  G --> J
   H --> G
   H --> D
   H --> E
@@ -167,14 +164,9 @@ That split is intentional:
   server process
 
 `registerService(definition)` throws `OpenServiceDuplicateRegistrationError` if a service with the
-same id is already registered. Storybook applies the `services` preset exactly once per process
-(via `build-dev`, `build-static`, or `load`), so each `registerService` call is expected to run
-once and a duplicate registration indicates a real collision.
-
-The registry itself lives as a module-local `Map` in [instances.ts](./instances.ts), mirroring the
-`UniversalStore` pattern elsewhere in this codebase. There is no `globalThis` slot, which keeps
-test isolation cheap (`clearRegistry()` resets the map) and avoids cross-version collisions when
-two Storybook copies happen to share a process.
+same id is already registered. The default `services` preset hook in
+[common-preset.ts](../../../core-server/presets/common-preset.ts) also throws if the preset is applied
+more than once in the same process, which catches duplicate registration paths early.
 
 The internal Storybook config registers an example debug service through a dedicated preset file
 ([`code/.storybook/services-preset.ts`](../../../../.storybook/services-preset.ts)), gated on

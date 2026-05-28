@@ -746,6 +746,9 @@ export interface StorybookConfig {
 
   /** Configure non-standard tag behaviors */
   tags?: PresetValue<StorybookConfigRaw['tags']>;
+
+  /** Run open-service registration side effects for the server environment. */
+  services?: PresetValue<StorybookConfigRaw['services']>;
 }
 
 export type PresetValue<T> = T | ((config: T, options: Options) => T | Promise<T>);

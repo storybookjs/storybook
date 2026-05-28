@@ -11,7 +11,7 @@ import {
   getService,
   listServices,
   registerService,
-  registryApi,
+  serviceRegistryApi,
 } from './service-registration.ts';
 import { createServiceRuntime, resolveStaticPath } from './service-runtime.ts';
 import { validateSchema } from './service-validation.ts';
@@ -63,7 +63,7 @@ export async function buildStaticFiles(): Promise<StaticStore> {
         (async () => {
           const inputsRuntime = createServiceRuntime(
             service,
-            { registryApi },
+            { registryApi: serviceRegistryApi },
             structuredClone(service.initialState)
           );
           const inputs = await staticConfig.inputs(inputsRuntime.queryCtx);
@@ -74,7 +74,7 @@ export async function buildStaticFiles(): Promise<StaticStore> {
               // the one path this task is responsible for.
               const buildRuntime = createServiceRuntime(
                 service,
-                { registryApi },
+                { registryApi: serviceRegistryApi },
                 structuredClone(service.initialState)
               );
               const validatedInput = await validateSchema(query.input, input, {

@@ -4,6 +4,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { defineService } from './service-definition.ts';
 import {
   assignEntryFieldInputSchema,
+  createDerivedBooleanFromChildQueryServiceDef,
   entryIdInputSchema,
   mutableRecordLookupServiceDef,
   recordFieldsOutputSchema,
@@ -26,7 +27,7 @@ describe('service registration', () => {
   it('registers services globally and exposes summaries and descriptors by id', async () => {
     const service = registerService(mutableRecordLookupServiceDef);
 
-    expect(getService('test/mutable-record-lookup')).toBe(service);
+    expect(getService('internal-fixture/mutable-record-lookup')).toBe(service);
     expect(getRegisteredServices()).toHaveLength(1);
     await expect(listServices()).resolves.toEqual([
       {
@@ -37,7 +38,7 @@ describe('service registration', () => {
       },
     ]);
 
-    const descriptor = await describeService('test/mutable-record-lookup');
+    const descriptor = await describeService('internal-fixture/mutable-record-lookup');
 
     expect(descriptor).toMatchObject({
       id: 'internal-fixture/mutable-record-lookup',
@@ -71,14 +72,15 @@ describe('service registration', () => {
       expect(error).toMatchObject({
         fromStorybook: true,
         code: 6,
-        message: 'A service with id "test/mutable-record-lookup" is already registered.',
+        message:
+          'A service with id "internal-fixture/mutable-record-lookup" is already registered.',
       });
     }
   });
 
   it('throws a Storybook error when resolving a missing registered service id', () => {
-    expect(() => getService('test/missing-service')).toThrow(
-      'No registered service with id "test/missing-service" exists in this environment.'
+    expect(() => getService('internal-fixture/missing-service')).toThrow(
+      'No registered service with id "internal-fixture/missing-service" exists in this environment.'
     );
   });
 
@@ -106,41 +108,19 @@ describe('service registration', () => {
     );
 
     expect(() => service.queries.getValue(undefined)).toThrow(
-      'Query "test/unimplemented-operations.getValue" is not implemented for this environment.'
+      'Query "internal-fixture/unimplemented-operations.getValue" is not implemented for this environment.'
     );
     await expect(service.commands.run(undefined)).rejects.toMatchObject({
       fromStorybook: true,
       code: 8,
       message:
-        'Command "test/unimplemented-operations.run" is not implemented for this environment.',
+        'Command "internal-fixture/unimplemented-operations.run" is not implemented for this environment.',
     });
   });
 
   it('lets handlers resolve another registered service by id through ctx.getService', async () => {
-    const derivedServiceDef = defineService({
-      id: 'internal-fixture/derived-boolean-from-service-id',
-      description: 'Derives marker state by resolving another service through ctx.getService.',
-      initialState: {} as Record<string, never>,
-      queries: {
-        isEntryMarked: {
-          description: 'Returns whether the lookup service reports marker=match for an entry.',
-          input: entryIdInputSchema,
-          output: v.boolean(),
-          handler: (input, ctx) => {
-            const sourceService = ctx.getService('test/mutable-record-lookup');
-            const record = sourceService.queries.getRecordFields({
-              entryId: input.entryId,
-            }) as Record<string, string> | null;
-
-            return record?.marker === 'match';
-          },
-        },
-      },
-      commands: {},
-    });
-
     const sourceService = registerService(mutableRecordLookupServiceDef);
-    const derivedService = registerService(derivedServiceDef);
+    const derivedService = registerService(createDerivedBooleanFromChildQueryServiceDef());
 
     expect(derivedService.queries.isEntryMarked({ entryId: 'entry-a' })).toBe(false);
 
@@ -192,7 +172,7 @@ describe('service registration', () => {
         },
         assignFromLookup: {
           handler: async (input, ctx) => {
-            const lookup = ctx.getService('test/mutable-record-lookup');
+            const lookup = ctx.getService('internal-fixture/mutable-record-lookup');
 
             await lookup.commands.assignRecordField(input);
 
@@ -218,7 +198,7 @@ describe('service registration', () => {
     expect(service.queries.getCount(undefined)).toBe(1);
 
     expect(
-      getService('test/mutable-record-lookup').queries.getRecordFields({
+      getService('internal-fixture/mutable-record-lookup').queries.getRecordFields({
         entryId: 'entry-a',
       })
     ).toEqual({ marker: 'match' });

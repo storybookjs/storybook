@@ -49,7 +49,7 @@ describe('server static builds', () => {
       registerService(awaitedPreloadValueServiceDef);
 
       await expect(buildStaticFiles()).resolves.toEqual({
-        'test/awaited-preload-value.json': {
+        'internal-fixture/awaited-preload-value.json': {
           'entry-a': 'preloaded',
           'entry-b': 'preloaded',
         },
@@ -61,7 +61,7 @@ describe('server static builds', () => {
 
       const store = await buildStaticFiles();
 
-      expect(Object.keys(store)).toEqual(['test/awaited-preload-value.json']);
+      expect(Object.keys(store)).toEqual(['internal-fixture/awaited-preload-value.json']);
     });
 
     it('deep-merges outputs from different queries that resolve to the same custom path', async () => {
@@ -112,7 +112,7 @@ describe('server static builds', () => {
             input: v.undefined(),
             output: v.undefined(),
             handler: async (_input, ctx) => {
-              const source = ctx.getService('test/mutable-record-lookup');
+              const source = ctx.getService('internal-fixture/mutable-record-lookup');
               const record = source.queries.getRecordFields({
                 entryId: 'entry-a',
               }) as Record<string, string> | null;
@@ -130,7 +130,7 @@ describe('server static builds', () => {
       registerService(staticLookupServiceDef);
 
       await expect(buildStaticFiles()).resolves.toEqual({
-        'test/static-build-service-lookup.json': {
+        'internal-fixture/static-build-service-lookup.json': {
           value: 'match',
         },
       });
@@ -190,7 +190,7 @@ describe('server static builds', () => {
             },
             static: {
               inputs: async (ctx) => {
-                const source = ctx.getService('test/parallel-static-input-source');
+                const source = ctx.getService('internal-fixture/parallel-static-input-source');
 
                 for (let attempt = 0; attempt < 5; attempt += 1) {
                   const entryIds = (await source.queries.getReadyEntryIds.loaded(
@@ -231,10 +231,10 @@ describe('server static builds', () => {
       registerService(parallelLookupServiceDef);
 
       await expect(buildStaticFiles()).resolves.toEqual({
-        'test/parallel-static-input-consumer.json': {
+        'internal-fixture/parallel-static-input-consumer.json': {
           value: 'entry-a',
         },
-        'test/parallel-static-input-source.json': {
+        'internal-fixture/parallel-static-input-source.json': {
           built: true,
         },
       });
@@ -337,7 +337,7 @@ describe('server static builds', () => {
         fromStorybook: true,
         code: 10,
         message:
-          'Invalid static path "../escape.json" for query "test/invalid-static-path.getValue": use a relative path with forward slashes and no ".." segments.',
+          'Invalid static path "../escape.json" for query "internal-fixture/invalid-static-path.getValue": use a relative path with forward slashes and no ".." segments.',
       });
     });
   });

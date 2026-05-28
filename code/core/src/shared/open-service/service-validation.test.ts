@@ -46,7 +46,7 @@ describe('service validation', () => {
     await expectValidationMessage(
       () => service.queries.getRecordFields({} as unknown as { entryId: string }),
       dedent`
-        Invalid input for query "test/mutable-record-lookup.getRecordFields":
+        Invalid input for query "internal-fixture/mutable-record-lookup.getRecordFields":
         entryId: Invalid key: Expected "entryId" but received undefined
       `
     );
@@ -58,7 +58,7 @@ describe('service validation', () => {
     await expectValidationMessage(
       () => service.queries.getBrokenValue(undefined),
       dedent`
-        Invalid output for query "test/invalid-query-output.getBrokenValue":
+        Invalid output for query "internal-fixture/invalid-query-output.getBrokenValue":
         Invalid type: Expected string but received 42
       `
     );
@@ -79,7 +79,7 @@ describe('service validation', () => {
           fieldValue: string;
         }),
       dedent`
-        Invalid input for command "test/mutable-record-lookup.assignRecordField":
+        Invalid input for command "internal-fixture/mutable-record-lookup.assignRecordField":
         fieldValue: Invalid type: Expected string but received 1
       `
     );
@@ -91,7 +91,7 @@ describe('service validation', () => {
     await expectValidationMessage(
       () => service.commands.runBrokenCommand(undefined),
       dedent`
-        Invalid output for command "test/invalid-command-output.runBrokenCommand":
+        Invalid output for command "internal-fixture/invalid-command-output.runBrokenCommand":
         Invalid type: Expected string but received 42
       `
     );
@@ -103,7 +103,7 @@ describe('service validation', () => {
     await expectValidationMessage(
       () => buildStaticFiles(),
       dedent`
-        Invalid input for query "test/invalid-static-input.getPreloadedValue":
+        Invalid input for query "internal-fixture/invalid-static-input.getPreloadedValue":
         entryId: Invalid key: Expected "entryId" but received undefined
       `
     );
@@ -136,7 +136,7 @@ describe('service validation', () => {
     await expectValidationMessage(
       () => service.queries.getBrokenTree(undefined),
       dedent`
-        Invalid output for query "test/nested-query-output.getBrokenTree":
+        Invalid output for query "internal-fixture/nested-query-output.getBrokenTree":
         items[0].name: Invalid type: Expected string but received 1
       `
     );
@@ -163,7 +163,7 @@ describe('service validation', () => {
     await expectValidationMessage(
       () => service.queries.getGreeting({ name: 'x' }),
       dedent`
-        Invalid input for query "test/zod-query-input.getGreeting":
+        Invalid input for query "internal-fixture/zod-query-input.getGreeting":
         name: Name must be at least 2 characters
       `
     );

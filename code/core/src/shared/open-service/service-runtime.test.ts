@@ -239,7 +239,7 @@ describe('service runtime', () => {
             fromStorybook: true,
             code: 5,
             message:
-              'Invalid input for query "test/mutable-record-lookup.getRecordFields":\nentryId: Invalid key: Expected "entryId" but received undefined',
+              'Invalid input for query "internal-fixture/mutable-record-lookup.getRecordFields":\nentryId: Invalid key: Expected "entryId" but received undefined',
           });
         }
       } finally {
@@ -390,8 +390,7 @@ describe('service runtime', () => {
   describe('cross-service query composition', () => {
     it('reads a child query synchronously from another service', async () => {
       const sourceService = registerService(mutableRecordLookupServiceDef);
-      const derivedServiceDef = createDerivedBooleanFromChildQueryServiceDef(sourceService);
-      const derivedService = registerService(derivedServiceDef);
+      const derivedService = registerService(createDerivedBooleanFromChildQueryServiceDef());
 
       expect(derivedService.queries.isEntryMarked({ entryId: 'entry-a' })).toBe(false);
 

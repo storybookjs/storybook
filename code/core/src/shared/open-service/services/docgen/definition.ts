@@ -3,38 +3,7 @@ import * as v from 'valibot';
 import { defineService } from '../../service-definition.ts';
 import type { DocgenPayload } from './types.ts';
 
-/** Caller-facing input to the `getDocgen` query and the `extractDocgen` command. */
-export const docgenInputSchema = v.object({ componentId: v.string() });
-
-/**
- * Phase-1 docgen payload schema.
- *
- * `props` is intentionally a permissive `array(unknown)` slot so the service can ship before its
- * real shape is designed in phase 3 (RCM-backed extraction).
- */
-export const docgenPayloadSchema = v.object({
-  componentId: v.string(),
-  name: v.string(),
-  description: v.string(),
-  props: v.array(v.unknown()),
-});
-
-/** Output of `getDocgen` — undefined when the component has not been extracted yet. */
-export const docgenOutputSchema = v.optional(docgenPayloadSchema);
-
-const voidOutputSchema = v.void();
-
-// Compile-time guard that the schema's inferred output matches the published DocgenPayload type.
-// If a future schema change diverges from the public type the file will fail typecheck here, so
-// the two definitions stay in lockstep without a runtime duplication.
-type _DocgenPayloadShapeMatches =
-  DocgenPayload extends v.InferOutput<typeof docgenPayloadSchema>
-    ? v.InferOutput<typeof docgenPayloadSchema> extends DocgenPayload
-      ? true
-      : never
-    : never;
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-const _assertDocgenPayloadShapeMatches: _DocgenPayloadShapeMatches = true;
+const docgenInputSchema = v.object({ componentId: v.string() });
 
 export type DocgenServiceState = {
   /** Extracted docgen keyed by componentId. Populated by the `extractDocgen` command. */
@@ -61,7 +30,14 @@ export const docgenServiceDef = defineService({
     getDocgen: {
       description: 'Returns the docgen payload for one componentId, or undefined when not loaded.',
       input: docgenInputSchema,
-      output: docgenOutputSchema,
+      output: v.optional(
+        v.object({
+          componentId: v.string(),
+          name: v.string(),
+          description: v.string(),
+          props: v.array(v.unknown()),
+        })
+      ),
       handler: (input, ctx) => ctx.self.state.components[input.componentId],
     },
   },
@@ -70,7 +46,7 @@ export const docgenServiceDef = defineService({
       description:
         'Resolves story entries for a componentId, runs the registered extractor chain, and writes the result into state.',
       input: docgenInputSchema,
-      output: voidOutputSchema,
+      output: v.void(),
       // Handler is supplied at registration time so it can close over the story index and the
       // composed experimental_docgenProvider chain.
     },

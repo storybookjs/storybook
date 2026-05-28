@@ -8,11 +8,13 @@ describe('initTransport', () => {
   afterEach(() => {
     // Cleanup the global channel so each test can assert initialization behavior independently.
 
-    delete globalThis.__STORYBOOK_ADDONS_CHANNEL__;
+    (globalThis as { __STORYBOOK_ADDONS_CHANNEL__?: Channel }).__STORYBOOK_ADDONS_CHANNEL__ =
+      undefined;
   });
 
   it('should initialize the addons channel when missing', () => {
-    delete globalThis.__STORYBOOK_ADDONS_CHANNEL__;
+    (globalThis as { __STORYBOOK_ADDONS_CHANNEL__?: Channel }).__STORYBOOK_ADDONS_CHANNEL__ =
+      undefined;
 
     initTransport();
 

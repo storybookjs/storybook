@@ -8318,6 +8318,7 @@ __metadata:
     http-proxy-middleware: "npm:^4.0.0"
     react: "npm:^18.2.0"
     react-dom: "npm:^18.2.0"
+    sirv: "npm:^2.0.4"
     typescript: "npm:^5.9.3"
   peerDependencies:
     storybook: "workspace:^"

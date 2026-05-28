@@ -10,10 +10,17 @@ import type { Server as NetServer } from 'net';
 import type { Options as TelejsonOptions } from 'telejson';
 import type { PackageJson as PackageJsonFromTypeFest } from 'type-fest';
 
+import type { DocgenExtractor } from '../../shared/open-service/services/docgen/types.ts';
 import type { SupportedBuilder } from './builders.ts';
 import type { SupportedFramework } from './frameworks.ts';
 import type { Indexer, StoriesEntry } from './indexer.ts';
 import type { SupportedRenderer } from './renderers.ts';
+
+export type {
+  DocgenExtractor,
+  DocgenExtractorInput,
+  DocgenPayload,
+} from '../../shared/open-service/services/docgen/types.ts';
 
 /** ⚠️ This file contains internal WIP types they MUST NOT be exported outside this package for now! */
 
@@ -114,6 +121,11 @@ export interface Presets {
     args?: any
   ): Promise<StorybookConfigRaw['staticDirs']>;
   apply(extension: 'services', config?: StorybookConfigRaw['services'], args?: any): Promise<void>;
+  apply(
+    extension: 'experimental_docgen',
+    config: DocgenExtractor,
+    args?: any
+  ): Promise<DocgenExtractor>;
 
   /** The second and third parameter are not needed. And make type inference easier. */
   apply<T extends keyof StorybookConfigRaw>(extension: T): Promise<StorybookConfigRaw[T]>;
@@ -437,6 +449,7 @@ export interface StorybookConfigRaw {
   core?: CoreConfig;
   experimental_manifests?: Manifests;
   experimental_enrichCsf?: CsfEnricher;
+  experimental_docgen?: DocgenExtractor;
   staticDirs?: (DirectoryMapping | string)[];
   logLevel?: string;
   features?: {
@@ -749,6 +762,13 @@ export interface StorybookConfig {
 
   /** Run open-service registration side effects for the server environment. */
   services?: PresetValue<StorybookConfigRaw['services']>;
+
+  /**
+   * Middleware-style extractor for the experimental docgen service. Each registrant receives the
+   * previously accumulated extractor as its config argument and returns a wrapping extractor that
+   * may delegate to it via the input forwarding pattern.
+   */
+  experimental_docgen?: PresetValue<StorybookConfigRaw['experimental_docgen']>;
 }
 
 export type PresetValue<T> = T | ((config: T, options: Options) => T | Promise<T>);

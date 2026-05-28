@@ -30,6 +30,8 @@ export { manifests as experimental_manifests } from './componentManifest/generat
 
 export { enrichCsf as experimental_enrichCsf } from './enrichCsf.ts';
 
+export { experimental_docgen } from './docgen/preset.ts';
+
 export const previewAnnotations: PresetProperty<'previewAnnotations'> = async (
   input = [],
   options

@@ -18,12 +18,15 @@ import { logger } from 'storybook/internal/node-logger';
 import { telemetry } from 'storybook/internal/telemetry';
 import type {
   CoreConfig,
+  DocgenExtractor,
   Indexer,
   Options,
   PresetProperty,
   PresetPropertyFn,
   StorybookConfigRaw,
 } from 'storybook/internal/types';
+
+import { registerDocgenService } from '../../shared/open-service/services/docgen/server.ts';
 
 import { isAbsolute, join } from 'pathe';
 import * as pathe from 'pathe';
@@ -311,13 +314,41 @@ export const managerEntries = async (existing: any) => {
 };
 
 globalThis.STORYBOOK_SERVICES_LOADED = globalThis.STORYBOOK_SERVICES_LOADED ?? false;
-export const services = async () => {
+
+/**
+ * Seed extractor for the experimental_docgen middleware chain.
+ *
+ * Returns an empty payload so a chain with zero registered extractors still produces a defined
+ * result (rather than throwing). Real extractors registered through `experimental_docgen` wrap
+ * this and either replace or merge with its output.
+ */
+const identityDocgenExtractor: DocgenExtractor = async (input) => ({
+  componentId: input.componentId,
+  name: '',
+  description: '',
+  props: [],
+});
+
+export const services = async (_value: void, options: Options): Promise<void> => {
   if (globalThis.STORYBOOK_SERVICES_LOADED) {
     throw new Error(
       'The "services" preset property was applied twice, but should only be applied once. Multiple code paths applying it will cause service registration to fail.'
     );
   }
   globalThis.STORYBOOK_SERVICES_LOADED = true;
+
+  const generator =
+    await options.presets.apply<Promise<StoryIndexGenerator>>('storyIndexGenerator');
+
+  const extractor = await options.presets.apply<DocgenExtractor>(
+    'experimental_docgen',
+    identityDocgenExtractor
+  );
+
+  registerDocgenService({
+    getIndex: () => generator.getIndex(),
+    extractor,
+  });
 };
 
 // Store the promise (not the result) to prevent race conditions.

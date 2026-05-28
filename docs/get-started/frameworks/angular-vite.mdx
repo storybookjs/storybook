@@ -120,11 +120,31 @@ Install Compodoc:
 npm install --save-dev @compodoc/compodoc
 ```
 
-Then configure Storybook to run it by adding the following to the builder options in your `angular.json`, **or** pass the `compodoc` and `compodocArgs` builder options directly (see [Builder options](#builder-options) below).
+Then configure Storybook to run Compodoc via `framework.options` in your `.storybook/main.ts`:
 
-For `@storybook/angular-vite`, the most common approach is to run Compodoc as a pre-step in your build script and point `preview.ts` at the generated JSON:
+```ts title=".storybook/main.ts"
+import type { StorybookConfig } from '@storybook/angular-vite';
 
-<CodeSnippets path="angular-add-compodoc.md" />
+const config: StorybookConfig = {
+  framework: {
+    name: '@storybook/angular-vite',
+    options: {
+      compodoc: true,
+      compodocArgs: ['-e', 'json', '-d', '.'],
+    },
+  },
+};
+
+export default config;
+```
+
+`compodoc` defaults to `true` and `compodocArgs` defaults to `['-e', 'json', '-d', '.']`. When enabled, the framework preset generates `documentation.json` on cold start if the file does not already exist.
+
+#### Supported invocation paths
+
+- **`ng run app:storybook`** — Uses `angular.json` for Angular build settings. The framework preset runs Compodoc at cold start so `documentation.json` is generated before stories render.
+- **Vitest addon panel** (inside a running `storybook dev`) — The addon-vitest child process inherits builder options from the parent process automatically; no extra configuration is needed.
+- **Standalone `yarn vitest`** (without a parent `storybook dev`) — Out of scope for this framework. Users who need standalone Vitest support should follow the Analog-documented pattern using `@analogjs/vite-plugin-angular` in their own `vitest.config.ts`. See the [Analog Storybook integration docs](https://analogjs.org/docs/integrations/storybook) for details.
 
 ### Application-wide providers
 
@@ -171,35 +191,6 @@ framework: {
 ```
 
 When `zoneless` is `false`, `zone.js` is automatically imported at the start of the preview.
-
-### Global styles
-
-To include application-wide stylesheets (e.g. `src/styles.css`), pass them via the `styles` builder option:
-
-```jsonc title=".storybook/main.ts"
-framework: {
-  name: '@storybook/angular-vite',
-  options: {
-    // Paths are relative to the Angular workspace root
-    styles: ['src/styles.css', 'src/styles.scss'],
-  },
-},
-```
-
-### Sass / SCSS
-
-SCSS is supported out of the box via Vite's built-in preprocessor support. To configure Sass load paths and other preprocessor options, use `stylePreprocessorOptions`:
-
-```jsonc title=".storybook/main.ts"
-framework: {
-  name: '@storybook/angular-vite',
-  options: {
-    stylePreprocessorOptions: {
-      loadPaths: ['src/styles'],
-    },
-  },
-},
-```
 
 ### Custom Vite configuration
 
@@ -341,14 +332,18 @@ Default: `true`
 
 Use zoneless change detection. When `false`, `zone.js` is automatically imported before the preview.
 
-#### `styles`
+#### `compodoc`
+
+Type: `boolean`
+
+Default: `true`
+
+Whether to run [Compodoc](https://compodoc.app/) on cold start to generate `documentation.json`. When `true`, the framework preset invokes Compodoc once if `documentation.json` does not already exist. Set to `false` to skip generation entirely (e.g. when you manage Compodoc outside of Storybook).
+
+#### `compodocArgs`
 
 Type: `string[]`
 
-Global stylesheets to inject at the start of the preview. Paths are resolved relative to the Angular workspace root.
+Default: `['-e', 'json', '-d', '.']`
 
-#### `stylePreprocessorOptions`
-
-Type: `{ loadPaths?: string[]; sass?: { fatalDeprecations?: string[]; silenceDeprecations?: string[]; futureDeprecations?: string[] } }`
-
-Options forwarded to the Sass preprocessor.
+Arguments passed to the `@compodoc/compodoc` CLI when `compodoc` is `true`. The defaults produce a `documentation.json` file in the workspace root.

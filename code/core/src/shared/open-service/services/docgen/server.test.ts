@@ -211,6 +211,14 @@ describe('docgen open service', () => {
     });
 
     it('merges output from three stacked providers (identity → A → B)', async () => {
+      const makeProp = (name: string) => ({
+        name,
+        required: false,
+        type: { name: 'string' },
+        description: '',
+        defaultValue: null,
+      });
+
       // Identity seed produced by core's services preset.
       const identity: DocgenProvider = async (input) => ({
         componentId: input.componentId,
@@ -225,7 +233,7 @@ describe('docgen open service', () => {
         return {
           ...downstream,
           name: 'A-name',
-          props: [...downstream.props, { source: 'A' }],
+          props: [...downstream.props, makeProp('a')],
         };
       };
 
@@ -235,7 +243,7 @@ describe('docgen open service', () => {
         return {
           ...downstream,
           description: `${downstream.description || ''}B-description`,
-          props: [...downstream.props, { source: 'B' }],
+          props: [...downstream.props, makeProp('b')],
         };
       };
 
@@ -248,7 +256,7 @@ describe('docgen open service', () => {
         componentId: 'button',
         name: 'A-name',
         description: 'B-description',
-        props: [{ source: 'A' }, { source: 'B' }],
+        props: [makeProp('a'), makeProp('b')],
       });
     });
   });

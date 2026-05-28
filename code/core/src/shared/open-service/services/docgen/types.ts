@@ -13,18 +13,62 @@ export interface DocgenProviderInput {
   entries: IndexEntry[];
 }
 
+/** Free-form error attached to a payload, subcomponent, or story snippet. */
+export interface DocgenError {
+  name: string;
+  message: string;
+}
+
+/** Compact JSDoc tag map: tag name → list of tag values (e.g. `@example a` → `{ example: ['a'] }`). */
+export type DocgenJsDocTags = Record<string, string[]>;
+
+/** One prop on a component (and any subcomponent). Mirrors RCM's `PropItem` shape. */
+export interface DocgenProp {
+  name: string;
+  required: boolean;
+  type: { name: string; raw?: string; value?: { value: string }[] };
+  description: string;
+  defaultValue: { value: string } | null;
+  jsDocTags?: DocgenJsDocTags;
+}
+
+/** Snippet + metadata for one story under a component. */
+export interface DocgenStory {
+  id: string;
+  name: string;
+  snippet?: string;
+  description?: string;
+  summary?: string;
+  error?: DocgenError;
+}
+
+/** Component-level summary + props + JSDoc for one subcomponent. */
+export interface DocgenSubcomponent {
+  name: string;
+  description?: string;
+  summary?: string;
+  jsDocTags?: DocgenJsDocTags;
+  props: DocgenProp[];
+  error?: DocgenError;
+}
+
 /**
- * Phase-1 docgen payload returned by `core/docgen`'s `getDocgen` query.
+ * Docgen payload returned by `core/docgen`'s `getDocgen` query.
  *
- * The schema is intentionally minimal so the first slice ships without committing to a final
- * props/subcomponent shape. Phase 3 will extend this with real `props`, `subcomponents`, and
- * `stories[]` fields backed by RCM output.
+ * Producers (renderer + addon providers) populate the fields they have data for; the others stay
+ * empty/undefined. Consumers should treat every field as optionally present in a real-world
+ * payload, even if the schema requires it (validation pads missing fields where possible).
  */
 export interface DocgenPayload {
   componentId: string;
   name: string;
   description: string;
-  props: unknown[];
+  summary?: string;
+  jsDocTags?: DocgenJsDocTags;
+  props: DocgenProp[];
+  subcomponents?: Record<string, DocgenSubcomponent>;
+  stories?: DocgenStory[];
+  error?: DocgenError;
 }
 
 /**

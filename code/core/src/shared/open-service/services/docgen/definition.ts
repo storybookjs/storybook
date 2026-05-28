@@ -10,12 +10,62 @@ export type DocgenServiceState = {
   components: Record<string, DocgenPayload | undefined>;
 };
 
+const docgenErrorSchema = v.object({
+  name: v.string(),
+  message: v.string(),
+});
+
+const docgenJsDocTagsSchema = v.record(v.string(), v.array(v.string()));
+
+const docgenPropSchema = v.object({
+  name: v.string(),
+  required: v.boolean(),
+  type: v.object({
+    name: v.string(),
+    raw: v.optional(v.string()),
+    value: v.optional(v.array(v.object({ value: v.string() }))),
+  }),
+  description: v.string(),
+  defaultValue: v.nullable(v.object({ value: v.string() })),
+  jsDocTags: v.optional(docgenJsDocTagsSchema),
+});
+
+const docgenStorySchema = v.object({
+  id: v.string(),
+  name: v.string(),
+  snippet: v.optional(v.string()),
+  description: v.optional(v.string()),
+  summary: v.optional(v.string()),
+  error: v.optional(docgenErrorSchema),
+});
+
+const docgenSubcomponentSchema = v.object({
+  name: v.string(),
+  description: v.optional(v.string()),
+  summary: v.optional(v.string()),
+  jsDocTags: v.optional(docgenJsDocTagsSchema),
+  props: v.array(docgenPropSchema),
+  error: v.optional(docgenErrorSchema),
+});
+
+const docgenPayloadSchema = v.object({
+  componentId: v.string(),
+  name: v.string(),
+  description: v.string(),
+  summary: v.optional(v.string()),
+  jsDocTags: v.optional(docgenJsDocTagsSchema),
+  props: v.array(docgenPropSchema),
+  subcomponents: v.optional(v.record(v.string(), docgenSubcomponentSchema)),
+  stories: v.optional(v.array(docgenStorySchema)),
+  error: v.optional(docgenErrorSchema),
+});
+
 /**
  * Definition for the `core/docgen` open service.
  *
  * The query is a thin synchronous read of `state.components[componentId]` — it returns undefined
  * when nothing has been extracted yet rather than throwing, matching the open-service convention
- * for sync reads. The real work — story index lookup, extractor invocation, error handling —
+ * for sync reads. The real work — story index lookup, provider invocation, error handling —
  * lives in the `extractDocgen` command, whose body is supplied at registration time because it
  * needs to close over the server-only story index and the composed `experimental_docgenProvider`
  * chain. The query's `load` hook (also supplied at registration) just calls `extractDocgen`, so
@@ -30,14 +80,7 @@ export const docgenServiceDef = defineService({
     getDocgen: {
       description: 'Returns the docgen payload for one componentId, or undefined when not loaded.',
       input: docgenInputSchema,
-      output: v.optional(
-        v.object({
-          componentId: v.string(),
-          name: v.string(),
-          description: v.string(),
-          props: v.array(v.unknown()),
-        })
-      ),
+      output: v.optional(docgenPayloadSchema),
       handler: (input, ctx) => ctx.self.state.components[input.componentId],
       filePath: (input) => `${input.componentId}.json`,
     },
@@ -45,7 +88,7 @@ export const docgenServiceDef = defineService({
   commands: {
     extractDocgen: {
       description:
-        'Resolves story entries for a componentId, runs the registered extractor chain, and writes the result into state.',
+        'Resolves story entries for a componentId, runs the registered provider chain, and writes the result into state.',
       input: docgenInputSchema,
       output: v.void(),
       // Handler is supplied at registration time so it can close over the story index and the

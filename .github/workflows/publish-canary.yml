@@ -1,0 +1,158 @@
+name: Publish Canary Packages
+
+on:
+  workflow_dispatch:
+  pull_request:
+    types: [opened, synchronize, reopened, labeled]
+
+env:
+  PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: 1
+  PUPPETEER_SKIP_CHROMIUM_DOWNLOAD: 1
+
+permissions:
+  contents: read
+  pull-requests: write
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event_name == 'workflow_dispatch' && github.ref_name || github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  publish-canary:
+    name: Publish Canary Packages
+    if: |
+      github.event_name == 'workflow_dispatch' ||
+      (
+        (github.event.action == 'labeled' && contains(fromJSON('["ci:normal","ci:merged","ci:daily"]'), github.event.label.name)) ||
+        (github.event.action != 'labeled' && (
+          contains(github.event.pull_request.labels.*.name, 'ci:normal') ||
+          contains(github.event.pull_request.labels.*.name, 'ci:merged') ||
+          contains(github.event.pull_request.labels.*.name, 'ci:daily')
+        ))
+      )
+    runs-on: ubuntu-latest
+    steps:
+      - name: Build Canary Release Status
+        id: canary-status
+        if: ${{ github.event_name == 'pull_request' }}
+        env:
+          REPOSITORY: ${{ github.repository }}
+          RUN_ID: ${{ github.run_id }}
+        run: |
+          echo "run_url=https://github.com/$REPOSITORY/actions/runs/$RUN_ID" >> "$GITHUB_OUTPUT"
+
+      - name: "Update Canary Release Heading: Pending"
+        id: replace-canary-heading-pending
+        if: ${{ github.event_name == 'pull_request' }}
+        continue-on-error: ${{ github.event.pull_request.head.repo.full_name != github.repository }}
+        uses: ivangabriele/find-and-replace-pull-request-body@9d26f37218b2649daea37dbc04bfd092b9ebeeca # v1.1.5
+        with:
+          githubToken: ${{ github.token }}
+          find: "CANARY_RELEASE_HEADING"
+          isHtmlCommentTag: true
+          replace: "## 🦋 Canary Release - ⏳ [Pending](${{ steps.canary-status.outputs.run_url }})"
+
+      - name: Checkout Pull Request Head
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name || github.repository }}
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+
+      - name: Setup Node.js and Install Dependencies
+        uses: ./.github/actions/setup-node-and-install
+        with:
+          install-code-deps: true
+
+      - name: Build
+        working-directory: code
+        run: yarn task --task compile --start-from=auto --no-link
+
+      - name: Publish
+        id: publish
+        working-directory: scripts
+        run: |
+          yarn workspaces list --json --no-private \
+            | jq -j '"../" + .location + "\u0000"' \
+            | xargs -0 -r yarn pkg-pr-new publish --no-template --comment=off --json=./pkg-pr-new-output.json
+
+          test -s ./pkg-pr-new-output.json
+
+      - name: Build Canary Release Content
+        id: canary-content
+        if: ${{ github.event_name == 'pull_request' }}
+        working-directory: scripts
+        env:
+          COMMIT_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          storybook_package_url=$(jq -r '.packages[] | select(.name == "storybook") | .url' ./pkg-pr-new-output.json)
+
+          if [[ -z "$storybook_package_url" ]]; then
+            storybook_package_url="https://pkg.pr.new/storybookjs/storybook/storybook@$COMMIT_SHA"
+          fi
+
+          echo 'heading<<EOF' >> "$GITHUB_OUTPUT"
+          printf '## 🦋 Canary Release - 🚢 Released `%s`\n' "$storybook_package_url" >> "$GITHUB_OUTPUT"
+          echo 'EOF' >> "$GITHUB_OUTPUT"
+
+          echo 'body<<EOF' >> "$GITHUB_OUTPUT"
+          cat <<EOF >> "$GITHUB_OUTPUT"
+          This pull request has been released as canary packages. Try it out in a new project or update an existing project with the commands below.
+
+          ```sh
+          # For a new project
+          npm create storybook@$storybook_package_url
+
+          # or for an existing project
+          npx storybook@$storybook_package_url upgrade
+          ```
+
+          EOF
+          echo 'EOF' >> "$GITHUB_OUTPUT"
+
+      - name: "Update Canary Release Heading: Released"
+        id: replace-canary-heading-released
+        if: ${{ github.event_name == 'pull_request' && steps.canary-content.outcome == 'success' }}
+        continue-on-error: ${{ github.event.pull_request.head.repo.full_name != github.repository }}
+        uses: ivangabriele/find-and-replace-pull-request-body@9d26f37218b2649daea37dbc04bfd092b9ebeeca # v1.1.5
+        with:
+          githubToken: ${{ github.token }}
+          find: "CANARY_RELEASE_HEADING"
+          isHtmlCommentTag: true
+          replace: ${{ steps.canary-content.outputs.heading }}
+
+      - name: Update Canary Release Body
+        id: replace-pr-body
+        if: ${{ github.event_name == 'pull_request' }}
+        continue-on-error: ${{ github.event.pull_request.head.repo.full_name != github.repository }}
+        uses: ivangabriele/find-and-replace-pull-request-body@9d26f37218b2649daea37dbc04bfd092b9ebeeca # v1.1.5
+        with:
+          githubToken: ${{ github.token }}
+          find: "CANARY_RELEASE_SECTION"
+          isHtmlCommentTag: true
+          replace: ${{ steps.canary-content.outputs.body }}
+
+      - name: "Update Canary Release Heading: Failed"
+        id: replace-canary-heading-failed
+        if: ${{ github.event_name == 'pull_request' && failure() && steps.publish.outcome != 'success' }}
+        continue-on-error: ${{ github.event.pull_request.head.repo.full_name != github.repository }}
+        uses: ivangabriele/find-and-replace-pull-request-body@9d26f37218b2649daea37dbc04bfd092b9ebeeca # v1.1.5
+        with:
+          githubToken: ${{ github.token }}
+          find: "CANARY_RELEASE_HEADING"
+          isHtmlCommentTag: true
+          replace: "## 🦋 Canary Release - 💥 [Failed](${{ steps.canary-status.outputs.run_url }})"
+
+      - name: Create Failure Comment on PR
+        if: ${{ github.event_name == 'pull_request' && failure() && steps.publish.outcome != 'success' && steps.replace-pr-body.outcome != 'failure' }}
+        continue-on-error: ${{ github.event.pull_request.head.repo.full_name != github.repository }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          REPOSITORY: ${{ github.repository }}
+          TRIGGERING_ACTOR: ${{ github.triggering_actor }}
+          RUN_ID: ${{ github.run_id }}
+        run: |
+          gh pr comment "$PR_NUMBER" \
+            --repo "$REPOSITORY" \
+            --body "Failed to publish canary packages for this pull request, triggered by @$TRIGGERING_ACTOR. See the failed workflow run at: https://github.com/$REPOSITORY/actions/runs/$RUN_ID"

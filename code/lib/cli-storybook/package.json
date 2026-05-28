@@ -16,7 +16,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/storybookjs/storybook.git",
+    "url": "git+https://github.com/storybookjs/storybook.git",
     "directory": "code/lib/cli-storybook"
   },
   "funding": {
@@ -56,6 +56,7 @@
     "leven": "^4.0.0",
     "p-limit": "^7.2.0",
     "picocolors": "^1.1.0",
+    "process-ancestry": "^0.0.2",
     "semver": "^7.7.3",
     "slash": "^5.0.0",
     "tiny-invariant": "^1.3.3",

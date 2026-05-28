@@ -19,6 +19,7 @@ export type GeneratorOptions = {
   builder: SupportedBuilder;
   framework: SupportedFramework;
   renderer: SupportedRenderer;
+  storybookVersionSpecifier?: string;
   linkable: boolean;
   // TODO: Remove in SB11
   pnp: boolean;
@@ -92,6 +93,7 @@ export interface GeneratorContext {
   renderer: SupportedRenderer;
   builder: SupportedBuilder;
   language: SupportedLanguage;
+  storybookVersionSpecifier?: string;
   telemetryService: TelemetryService;
   features: Set<Feature>;
   dependencyCollector: DependencyCollector;
@@ -130,6 +132,7 @@ export interface GeneratorModule {
 
 export type CommandOptions = {
   packageManager: PackageManagerName;
+  storybookVersionSpecifier?: string;
   usePnp?: boolean;
   features?: Array<Feature>;
   type?: ProjectType;

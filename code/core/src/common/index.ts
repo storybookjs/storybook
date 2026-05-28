@@ -10,6 +10,7 @@ export * from './utils/envs.ts';
 export * from './utils/common-glob-options.ts';
 export * from './utils/framework.ts';
 export * from './utils/get-builder-options.ts';
+export * from './utils/get-pkg-pr-new-package-specifier.ts';
 export * from './utils/get-framework-name.ts';
 export * from './utils/get-renderer-name.ts';
 export * from './utils/get-storybook-configuration.ts';

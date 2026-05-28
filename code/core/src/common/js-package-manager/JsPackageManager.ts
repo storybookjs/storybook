@@ -15,6 +15,7 @@ import invariant from 'tiny-invariant';
 
 import { HandledError } from '../utils/HandledError.ts';
 import type { ExecuteCommandOptions } from '../utils/command.ts';
+import { getPkgPrNewPackageSpecifier } from '../utils/get-pkg-pr-new-package-specifier.ts';
 import { findFilesUp, getProjectRoot } from '../utils/paths.ts';
 import storybookPackagesVersions from '../versions.ts';
 import type { PackageJson, PackageJsonWithDepsAndDevDeps } from './PackageJson.ts';
@@ -71,14 +72,20 @@ export function getPrettyPackageManagerName(packageManager: string | undefined):
  * @returns A tuple of 2 elements: [packageName, packageVersion]
  */
 export function getPackageDetails(pkg: string): [string, string?] {
-  const idx = pkg.lastIndexOf('@');
-  // If the only `@` is the first character, it is a scoped package
-  // If it isn't in the string, it will be -1
-  if (idx <= 0) {
+  const isScopedPackage = pkg.startsWith('@');
+  const scopeSeparatorIndex = isScopedPackage ? pkg.indexOf('/') : -1;
+  const versionSeparatorIndex = isScopedPackage
+    ? scopeSeparatorIndex === -1
+      ? -1
+      : pkg.indexOf('@', scopeSeparatorIndex + 1)
+    : pkg.indexOf('@');
+
+  if (versionSeparatorIndex <= 0) {
     return [pkg, undefined];
   }
-  const packageName = pkg.slice(0, idx);
-  const packageVersion = pkg.slice(idx + 1);
+
+  const packageName = pkg.slice(0, versionSeparatorIndex);
+  const packageVersion = pkg.slice(versionSeparatorIndex + 1);
   return [packageName, packageVersion];
 }
 
@@ -420,7 +427,10 @@ export abstract class JsPackageManager {
    *
    * @param packages
    */
-  public getVersionedPackages(packages: string[]): Promise<string[]> {
+  public getVersionedPackages(
+    packages: string[],
+    options?: { storybookVersionSpecifier?: string }
+  ): Promise<string[]> {
     return Promise.all(
       packages.map(async (pkg) => {
         const [packageName, packageVersion] = getPackageDetails(pkg);
@@ -429,6 +439,17 @@ export abstract class JsPackageManager {
         // just return the requested version.
         if (packageVersion && !(packageName in storybookPackagesVersions)) {
           return pkg;
+        }
+
+        if (packageName in storybookPackagesVersions) {
+          const pkgPrNewSpecifier = getPkgPrNewPackageSpecifier(
+            packageName,
+            options?.storybookVersionSpecifier
+          );
+
+          if (pkgPrNewSpecifier) {
+            return `${packageName}@${pkgPrNewSpecifier}`;
+          }
         }
 
         const latestInRange = await this.latestVersion(packageName, packageVersion);

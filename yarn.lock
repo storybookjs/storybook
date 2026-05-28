@@ -8501,6 +8501,7 @@ __metadata:
     leven: "npm:^4.0.0"
     p-limit: "npm:^7.2.0"
     picocolors: "npm:^1.1.0"
+    process-ancestry: "npm:^0.0.2"
     semver: "npm:^7.7.3"
     slash: "npm:^5.0.0"
     storybook: "workspace:*"
@@ -9201,6 +9202,7 @@ __metadata:
     p-retry: "npm:^7.1.0"
     pathe: "npm:^1.1.2"
     picocolors: "npm:^1.1.0"
+    pkg-pr-new: "npm:^0.0.72"
     playwright: "npm:1.58.2"
     playwright-core: "npm:1.58.2"
     polka: "npm:^1.0.0-next.28"
@@ -25896,6 +25898,15 @@ __metadata:
   dependencies:
     find-up: "npm:^6.3.0"
   checksum: 10c0/1afb23d2efb1ec9d8b2c4a0c37bf146822ad2774f074cb05b853be5dca1b40815c5960dd126df30ab8908349262a266f31b771e877235870a3b8fd313beebec5
+  languageName: node
+  linkType: hard
+
+"pkg-pr-new@npm:^0.0.72":
+  version: 0.0.72
+  resolution: "pkg-pr-new@npm:0.0.72"
+  bin:
+    pkg-pr-new: bin/cli.js
+  checksum: 10c0/020a2dea1f4d23aeb1cb6d405762c6ae00d796edec233780986c5d39e7de4a1975da37efc74aeb3aa1fb9c5876bddc303bd08ca7e3c7992fdcc2778276b1f574
   languageName: node
   linkType: hard
 

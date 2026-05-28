@@ -1,6 +1,14 @@
 import type { PackageJsonWithDepsAndDevDeps } from 'storybook/internal/common';
-import { HandledError, JsPackageManager, normalizeStories } from 'storybook/internal/common';
-import { getProjectRoot, isSatelliteAddon, versions } from 'storybook/internal/common';
+import {
+  HandledError,
+  JsPackageManager,
+  getPkgPrNewPackageSpecifier,
+  getProjectRoot,
+  isPkgPrNewVersionSpecifier,
+  isSatelliteAddon,
+  normalizeStories,
+  versions,
+} from 'storybook/internal/common';
 import { StoryIndexGenerator, experimental_loadStorybook } from 'storybook/internal/core-server';
 import { logTracker, logger, prompt } from 'storybook/internal/node-logger';
 import {
@@ -32,6 +40,7 @@ interface UpgradeConfig {
   readonly isCLIPrerelease: boolean;
   readonly isCLIExactPrerelease: boolean;
   readonly isCLIExactLatest: boolean;
+  readonly storybookVersionSpecifier?: string;
 }
 
 /** Result of successfully collecting project data */
@@ -140,7 +149,10 @@ const getVersionModifier = (versionSpecifier: string): VersionModifier => {
  * @returns True if the version is a canary release
  */
 const isCanaryVersion = (version: string): boolean =>
-  version.startsWith('0.0.0') || version.startsWith('portal:') || version.startsWith('workspace:');
+  version.startsWith('0.0.0') ||
+  version.startsWith('portal:') ||
+  version.startsWith('workspace:') ||
+  isPkgPrNewVersionSpecifier(version);
 
 /**
  * Validates that a version string is not empty or undefined
@@ -291,6 +303,7 @@ const processProject = async ({
       packageManager,
       previewConfigPath,
       storiesPaths,
+      versionSpecifier,
       versionInstalled,
       hasCsfFactoryPreview,
     } = await getStorybookData({ configDir });
@@ -298,7 +311,10 @@ const processProject = async ({
     // Validate version and upgrade compatibility
     logger.debug(`${name} - Validating before version... ${versionInstalled}`);
     validateVersion(versionInstalled);
-    const isCanary = isCanaryVersion(currentCLIVersion) || isCanaryVersion(versionInstalled);
+    const isCanary =
+      isCanaryVersion(currentCLIVersion) ||
+      isCanaryVersion(versionInstalled) ||
+      isPkgPrNewVersionSpecifier(versionSpecifier);
     logger.debug(`${name} - Validating upgrade compatibility...`);
     validateUpgradeCompatibility(currentCLIVersion, versionInstalled, isCanary);
 
@@ -347,6 +363,7 @@ const processProject = async ({
       currentCLIVersion,
       latestCLIVersionOnNPM: latestCLIVersionOnNPM!,
       isCLIExactPrerelease,
+      storybookVersionSpecifier: versionSpecifier,
       autoblockerCheckResults,
       previewConfigPath,
       storiesPaths,
@@ -429,6 +446,15 @@ export const generateUpgradeSpecs = async (
   // Generate core Storybook upgrades
   const storybookCoreUpgrades = monorepoDependencies.map((dependency) => {
     const versionSpec = dependencies[dependency];
+
+    const pkgPrNewSpecifier = getPkgPrNewPackageSpecifier(
+      dependency,
+      config.storybookVersionSpecifier
+    );
+
+    if (pkgPrNewSpecifier) {
+      return `${dependency}@${pkgPrNewSpecifier}`;
+    }
 
     if (!versionSpec) {
       return `${dependency}@${versions[dependency]}`;

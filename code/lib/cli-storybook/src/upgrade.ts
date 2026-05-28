@@ -22,6 +22,7 @@ import { telemetry } from 'storybook/internal/telemetry';
 
 import { sync as spawnSync } from 'cross-spawn';
 import picocolors from 'picocolors';
+import { getProcessAncestry } from 'process-ancestry';
 import semver, { clean, lt } from 'semver';
 import { dedent } from 'ts-dedent';
 
@@ -77,6 +78,21 @@ const deprecatedPackages = [
 ];
 
 const formatPackage = (pkg: Package) => `${pkg.package}@${pkg.version}`;
+
+const getStorybookVersionSpecifierFromAncestry = (): string | undefined => {
+  try {
+    for (const ancestor of getProcessAncestry().toReversed()) {
+      const match = ancestor.command?.match(/\s(?:create-storybook|storybook)@([^\s]+)/);
+      if (match) {
+        return match[1];
+      }
+    }
+  } catch {
+    // Ignore ancestry lookup failures and fall back to embedded version behavior.
+  }
+
+  return undefined;
+};
 
 const warnPackages = (pkgs: Package[]) => pkgs.map((pkg) => `- ${formatPackage(pkg)}`).join('\n');
 
@@ -326,6 +342,7 @@ async function sendMultiUpgradeTelemetry(options: MultiUpgradeTelemetryOptions) 
 }
 
 export async function upgrade(options: UpgradeOptions): Promise<void> {
+  const storybookVersionSpecifier = getStorybookVersionSpecifierFromAncestry();
   const projectsResult = await getProjects(options);
 
   if (projectsResult === undefined || projectsResult.selectedProjects.length === 0) {
@@ -430,6 +447,8 @@ export async function upgrade(options: UpgradeOptions): Promise<void> {
             isCLIPrerelease: project.isCLIPrerelease,
             isCLIExactLatest: project.isCLIExactLatest,
             isCLIExactPrerelease: project.isCLIExactPrerelease,
+            storybookVersionSpecifier:
+              storybookVersionSpecifier ?? project.storybookVersionSpecifier,
           });
         }
         task.success(`Updated package versions in package.json files`);

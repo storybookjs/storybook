@@ -133,6 +133,7 @@
     "p-retry": "^7.1.0",
     "pathe": "^1.1.2",
     "picocolors": "^1.1.0",
+    "pkg-pr-new": "^0.0.72",
     "playwright": "1.58.2",
     "playwright-core": "1.58.2",
     "polka": "^1.0.0-next.28",

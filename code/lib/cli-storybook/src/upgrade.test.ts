@@ -4,13 +4,22 @@ import type * as sbcc from 'storybook/internal/common';
 import type { JsPackageManager } from 'storybook/internal/common';
 
 import { getStorybookVersion } from './upgrade.ts';
-import { generateUpgradeSpecs } from './util.ts';
+import { collectProjects, generateUpgradeSpecs } from './util.ts';
 
 const findInstallationsMock =
   vi.fn<(arg: string[]) => Promise<sbcc.InstallationMetadata | undefined>>();
 const getInstalledVersionMock = vi.fn<(arg: string) => Promise<string | undefined>>();
+const { getStorybookDataMock } = vi.hoisted(() => ({
+  getStorybookDataMock: vi.fn(),
+}));
 
 vi.mock('storybook/internal/telemetry');
+vi.mock('./autoblock/index.ts', () => ({
+  autoblock: vi.fn(async () => null),
+}));
+vi.mock('./automigrate/helpers/mainConfigFile.ts', () => ({
+  getStorybookData: getStorybookDataMock,
+}));
 vi.mock('storybook/internal/common', async (importOriginal) => {
   const originalModule = (await importOriginal()) as typeof sbcc;
   return {
@@ -148,6 +157,58 @@ describe('toUpgradedDependencies', () => {
       });
 
       expect(result).toEqual(['@storybook/react@9.0.0']);
+    });
+
+    it('should use pkg.pr.new specs for monorepo packages when invoked from a preview URL', async () => {
+      const deps = {
+        '@storybook/react': '^8.0.0',
+        '@storybook/vue3': '~8.0.0',
+      };
+
+      const result = await generateUpgradeSpecs(deps, {
+        packageManager: mockPackageManager,
+        isCanary: false,
+        isCLIOutdated: false,
+        isCLIPrerelease: false,
+        isCLIExactPrerelease: false,
+        isCLIExactLatest: false,
+        storybookVersionSpecifier: 'https://pkg.pr.new/storybook@abc123',
+      });
+
+      expect(result).toEqual([
+        '@storybook/react@https://pkg.pr.new/@storybook/react@abc123',
+        '@storybook/vue3@https://pkg.pr.new/@storybook/vue3@abc123',
+      ]);
+    });
+
+    it('should treat pkg.pr.new Storybook specifiers as canaries during project collection', async () => {
+      const mockPackageManager = {
+        latestVersion: vi.fn(async (packageName: string) =>
+          packageName === 'storybook@next' ? '9.1.0-beta.1' : '9.0.0'
+        ),
+      } as unknown as JsPackageManager;
+
+      getStorybookDataMock.mockResolvedValueOnce({
+        configDir: '.storybook',
+        mainConfig: false,
+        mainConfigPath: undefined,
+        packageManager: mockPackageManager,
+        previewConfigPath: undefined,
+        storiesPaths: [],
+        versionSpecifier: 'https://pkg.pr.new/storybookjs/storybook/storybook@abc123',
+        versionInstalled: '10.0.0',
+        hasCsfFactoryPreview: false,
+      });
+
+      const results = await collectProjects({ force: true } as any, ['.storybook'], () => {});
+
+      expect(results).toHaveLength(1);
+      expect(results[0]).toMatchObject({
+        isCanary: true,
+        beforeVersion: '10.0.0',
+        currentCLIVersion: '9.0.0',
+        storybookVersionSpecifier: 'https://pkg.pr.new/storybookjs/storybook/storybook@abc123',
+      });
     });
   });
 

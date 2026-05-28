@@ -114,7 +114,7 @@ The plugin directory must include these files:
 The plugin's `.mcp.json` starts the latest `@storybook/mcp-proxy` preview from pkg.pr.new:
 
 ```sh
-npx -y https://pkg.pr.new/storybookjs/mcp/@storybook/mcp-proxy@main
+npx -y --prefer-online https://pkg.pr.new/storybookjs/mcp/@storybook/mcp-proxy@main
 ```
 
 The `@main` ref tracks the latest preview build from the `main` branch.

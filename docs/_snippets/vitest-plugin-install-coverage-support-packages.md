@@ -1,4 +1,4 @@
-```shell renderer="common" language="js" packageManager="npm"
+```shell renderer="common" packageManager="npm"
 # For v8
 npm install --save-dev @vitest/coverage-v8
 
@@ -6,7 +6,7 @@ npm install --save-dev @vitest/coverage-v8
 npm install --save-dev @vitest/coverage-istanbul
 ```
 
-```shell renderer="common" language="js" packageManager="pnpm"
+```shell renderer="common" packageManager="pnpm"
 # For v8
 pnpm add --save-dev @vitest/coverage-v8
 
@@ -14,7 +14,7 @@ pnpm add --save-dev @vitest/coverage-v8
 pnpm add --save-dev @vitest/coverage-istanbul
 ```
 
-```shell renderer="common" language="js" packageManager="yarn"
+```shell renderer="common" packageManager="yarn"
 # For v8
 yarn add --dev @vitest/coverage-v8
 

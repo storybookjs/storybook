@@ -17,6 +17,7 @@ import { global } from '@storybook/global';
 import { join, relative, resolve } from 'pathe';
 import picocolors from 'picocolors';
 
+import { writeOpenServiceStaticFiles } from '../shared/open-service/server.ts';
 import { resolvePackageDir } from '../shared/utils/module.ts';
 import type { StoryIndexGenerator } from './utils/StoryIndexGenerator.ts';
 import { buildOrThrow } from './utils/build-or-throw.ts';
@@ -112,7 +113,7 @@ export async function buildStaticStandalone(options: BuildStaticStandaloneOption
   ]);
 
   const invokedBy = process.env.STORYBOOK_INVOKED_BY;
-  if (!core?.disableTelemetry && invokedBy) {
+  if (invokedBy) {
     // NOTE: we don't await this event to avoid slowing things down.
     // This could result in telemetry events being lost.
     telemetry('test-run', { runner: invokedBy, watch: false }, { configDir: options.configDir });
@@ -129,6 +130,7 @@ export async function buildStaticStandalone(options: BuildStaticStandaloneOption
   const effects: Promise<void>[] = [];
 
   global.FEATURES = features;
+  await presets.apply('services');
 
   if (!options.previewOnly) {
     await buildOrThrow(async () =>
@@ -143,7 +145,8 @@ export async function buildStaticStandalone(options: BuildStaticStandaloneOption
   }
 
   const coreServerPublicDir = join(resolvePackageDir('storybook'), 'assets/browser');
-  effects.push(cp(coreServerPublicDir, options.outputDir, { recursive: true }));
+  effects.push(cp(coreServerPublicDir, options.outputDir, { recursive: true, force: true }));
+  effects.push(writeOpenServiceStaticFiles(options.outputDir));
 
   let storyIndexGeneratorPromise: Promise<StoryIndexGenerator | undefined> =
     Promise.resolve(undefined);
@@ -208,7 +211,7 @@ export async function buildStaticStandalone(options: BuildStaticStandaloneOption
 
   // Now the code has successfully built, we can count this as a 'build' event.
   // NOTE: we don't send the 'build' event for test runs as we want to be as fast as possible.
-  if (!core?.disableTelemetry && !options.test) {
+  if (!options.test) {
     try {
       const generator = await storyIndexGeneratorPromise;
       const storyIndex = await generator?.getIndex();

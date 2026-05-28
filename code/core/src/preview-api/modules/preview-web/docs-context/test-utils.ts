@@ -1,11 +1,17 @@
 import type { CSFFile, PreparedStory } from 'storybook/internal/types';
 
-export function csfFileParts(storyId = 'meta--story', metaId = 'meta') {
+export function csfFileParts(
+  storyId = 'meta--story',
+  metaId = 'meta',
+  { includeDefaultExport = true }: { includeDefaultExport?: boolean } = {}
+) {
   // These compose the raw exports of the CSF file
   const component = {};
   const metaExport = { component };
   const storyExport = {};
-  const moduleExports = { default: metaExport, story: storyExport };
+  const moduleExports = includeDefaultExport
+    ? { default: metaExport, story: storyExport }
+    : { story: storyExport };
 
   // This is the prepared story + CSF file after SB has processed them
   const storyAnnotations = {

@@ -48,9 +48,10 @@ export interface API_Provider<API> {
   getConfig(): {
     sidebar?: API_SidebarOptions<API>;
     theme?: ThemeVars;
+    selectedPanel?: string;
     StoryMapper?: API_StoryMapper;
     [k: string]: any;
-  } & Partial<API_UIOptions>;
+  };
   [key: string]: any;
 }
 
@@ -62,17 +63,6 @@ export type API_IframeRenderer = (
   scale: number,
   queryParams: Record<string, any>
 ) => ReactElement<any, any> | null;
-
-export interface API_UIOptions {
-  name?: string;
-  url?: string;
-  goFullScreen: boolean;
-  showStoriesPanel: boolean;
-  showAddonPanel: boolean;
-  addonPanelInRight: boolean;
-  theme?: ThemeVars;
-  selectedPanel?: string;
-}
 
 export type FilterFunction = (entry: API_PreparedIndexEntry, excluded?: boolean) => boolean;
 
@@ -91,15 +81,10 @@ export interface API_Layout {
     rightPanelWidth: number;
   };
   panelPosition: API_PanelPositions;
+  showNav: boolean;
+  showPanel: boolean;
   showTabs: boolean;
   showToolbar: boolean;
-}
-
-export interface API_LayoutOptions extends Partial<API_Layout> {
-  showPanel?: boolean;
-  showSidebar?: boolean;
-  // Note: `showToolbar` is intentionally not declared here — it already comes
-  // from Partial<API_Layout> as the underlying layout field.
 }
 
 export interface API_LayoutCustomisations {

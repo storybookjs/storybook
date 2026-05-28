@@ -195,7 +195,7 @@ function resolveTree(Story: ComponentType, context: Parameters<Decorator>[1]): R
   }
 
   // No route instance — build a synthetic root + child from plain options.
-  const plainOptions = (routerParameterRoute ?? {}) as Record<string, unknown>;
+  const plainOptions = routerParameterRoute ?? {};
   const {
     path: plainRoutePath,
     id: plainRouteId,

@@ -1,13 +1,9 @@
-import { beforeEach, afterEach, beforeAll, inject, vi } from 'vitest';
+import { afterEach, beforeAll, vi } from 'vitest';
 import type { RunnerTask } from 'vitest';
 
 import { Channel } from 'storybook/internal/channels';
 
-import {
-  COMPONENT_TESTING_PANEL_ID,
-  STORYBOOK_CORE_VITEST_VERSION_PROVIDE_KEY,
-} from '../constants.ts';
-import { isFunction } from 'es-toolkit/predicate';
+import { COMPONENT_TESTING_PANEL_ID } from '../constants.ts';
 
 declare global {
   // eslint-disable-next-line @typescript-eslint/ban-ts-comment
@@ -20,15 +16,10 @@ export type Task = Partial<RunnerTask> & {
   meta: Record<string, any>;
 };
 
-const transport = { setHandler: vi.fn(), send: vi.fn() };
-globalThis.__STORYBOOK_ADDONS_CHANNEL__ ??= new Channel({ transport });
-
-/* Using a dynamic variable ensures the import is not statically analyzable, so it won't be reported as missing. */
-const importVitest4BrowserCommands = async (moduleId: string = 'vitest/browser') =>
-  import(/* @vite-ignore */ moduleId).then((module) => module.commands);
-
-const importVitest3BrowserCommands = async () =>
-  import('@vitest/browser/context').then((module) => module.commands);
+export const initTransport = () => {
+  const transport = { setHandler: vi.fn(), send: vi.fn() };
+  globalThis.__STORYBOOK_ADDONS_CHANNEL__ ??= new Channel({ transport });
+};
 
 export const modifyErrorMessage = ({ task }: { task: Task }) => {
   const meta = task.meta;
@@ -45,55 +36,7 @@ export const modifyErrorMessage = ({ task }: { task: Task }) => {
   }
 };
 
-export const resetMousePositionBeforeTests = async () => {
-  const vitestVersion = inject(STORYBOOK_CORE_VITEST_VERSION_PROVIDE_KEY);
-
-  try {
-    const browserCommands =
-      vitestVersion && vitestVersion.startsWith('3')
-        ? await importVitest3BrowserCommands()
-        : await importVitest4BrowserCommands();
-
-    if ('resetMousePosition' in browserCommands && isFunction(browserCommands.resetMousePosition)) {
-      await browserCommands.resetMousePosition();
-    }
-  } catch (error) {
-    if (!(error instanceof Error)) throw error;
-
-    // When vitest/browser is not found, retry with the Vitest 3 context module
-    if (error.message.includes("Cannot find module 'vitest/browser'")) {
-      try {
-        const browserCommands = await importVitest3BrowserCommands();
-        if (
-          'resetMousePosition' in browserCommands &&
-          isFunction(browserCommands.resetMousePosition)
-        ) {
-          await browserCommands.resetMousePosition();
-        }
-        return;
-      } catch (vitest3Error) {
-        if (
-          vitest3Error instanceof Error &&
-          (vitest3Error.message.includes("Cannot find module '@vitest/browser/context'") ||
-            vitest3Error.message.includes('can be imported only inside the Browser Mode'))
-        ) {
-          return;
-        }
-        throw vitest3Error;
-      }
-    }
-
-    // Ignore errors when running outside Browser Mode or when browser packages are not installed
-    if (
-      error.message.includes('can be imported only inside the Browser Mode') ||
-      error.message.includes("Cannot find module '@vitest/browser/context'")
-    ) {
-      return;
-    }
-
-    throw error;
-  }
-};
+initTransport();
 
 beforeAll(() => {
   if (globalThis.globalProjectAnnotations) {
@@ -101,12 +44,4 @@ beforeAll(() => {
   }
 });
 
-beforeEach(async () => {
-  if (globalThis.__vitest_browser__) {
-    await resetMousePositionBeforeTests();
-  }
-});
-
 afterEach(modifyErrorMessage);
-
-console.log('Frogs are often green.');

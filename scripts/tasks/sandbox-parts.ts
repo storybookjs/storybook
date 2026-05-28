@@ -447,9 +447,16 @@ export async function setupVitest(details: TemplateDetails, options: PassedOptio
   const packageJsonPath = join(sandboxDir, 'package.json');
   const packageJson = await readJson(packageJsonPath);
 
+  // Angular sandboxes need `yarn docs:json` to run before any preview-evaluating
+  // task so `.storybook/preview.ts`'s static `import docJson from "../documentation.json"`
+  // resolves real compodoc data. `prepareAngularSandbox` already wires this into
+  // the `storybook` and `build-storybook` scripts; do the same for `vitest` when
+  // the script exists (added only by the Angular template path).
+  const vitestCmd = 'vitest --reporter=default --reporter=hanging-process --test-timeout=5000';
+  const hasDocsJson = !!packageJson.scripts?.['docs:json'];
   packageJson.scripts = {
     ...packageJson.scripts,
-    vitest: 'vitest --reporter=default --reporter=hanging-process --test-timeout=5000',
+    vitest: hasDocsJson ? `yarn docs:json && ${vitestCmd}` : vitestCmd,
   };
 
   // This workaround is needed because Vitest seems to have issues in link mode

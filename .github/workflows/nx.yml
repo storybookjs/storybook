@@ -30,7 +30,7 @@ jobs:
     env:
       ALL_TASKS: compile,check,knip,test,lint,fmt,sandbox,build,e2e-tests,e2e-tests-dev,test-runner,vitest-integration,check-sandbox,e2e-ui,jest,vitest,playwright-ct
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           filter: tree:0
           fetch-depth: 0
@@ -66,7 +66,7 @@ jobs:
           fi
       - run: npx nx-cloud@latest start-ci-run --distribute-on="${{ steps.dist.outputs.config }}" --stop-agents-after="$ALL_TASKS"
       - name: Create Nx Cloud Status (pending)
-        uses: actions/github-script@v7
+        uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b #7.1.0
         with:
           script: |
             const tag = ${{ toJson(steps.tag.outputs.tag) }} || 'normal';
@@ -82,12 +82,12 @@ jobs:
               description: 'NX Cloud is running your tests',
               context: `nx: ${tag}`,
             });
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e #6.4.0
         with:
           node-version-file: '.nvmrc'
           cache: 'yarn'
       - run: yarn install --immutable
-      - uses: nrwl/nx-set-shas@v4
+      - uses: nrwl/nx-set-shas@afb73a62d26e41464e9254689e1fd6122ee683c1 # v5.0.1
       - id: nx
         name: 'Run nx'
         run: |
@@ -99,7 +99,7 @@ jobs:
 
       - name: Create per-task Nx statuses
         if: always()
-        uses: actions/github-script@v7
+        uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b #7.1.0
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |

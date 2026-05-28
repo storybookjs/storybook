@@ -11,7 +11,7 @@ on:
     # Manual canary releases on PRs
     inputs:
       pr:
-        description: "⚠️ CANARY RELEASES ONLY - Enter the pull request number to create a canary release for"
+        description: '⚠️ CANARY RELEASES ONLY - Enter the pull request number to create a canary release for'
         required: true
         type: number
   pull_request:
@@ -22,10 +22,7 @@ env:
   PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: 1
   PUPPETEER_SKIP_CHROMIUM_DOWNLOAD: 1
 
-permissions:
-  id-token: write
-  contents: write
-  pull-requests: write
+permissions: {}
 
 concurrency:
   # Group concurrent runs based on the event type:
@@ -44,11 +41,17 @@ jobs:
       (github.ref_name == 'latest-release' || github.ref_name == 'next-release') &&
       contains(github.event.head_commit.message, '[skip ci]') != true
     environment: Release
+    permissions:
+      contents: write
+      issues: write
+      actions: write # required for yarn release:cancel-preparation-runs
+      id-token: write # required for npm provenance via yarn release:publish
     defaults:
       run:
         working-directory: scripts
     steps:
       - name: Checkout ${{ github.ref_name }}
+        # zizmor: ignore[artipacked]  # git push origin runs at multiple steps using persisted GH_TOKEN
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           fetch-depth: 100
@@ -201,7 +204,7 @@ jobs:
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_MONITORING_URL }}
         uses: Ilshidur/action-discord@d2594079a10f1d6739ee50a2471f0ca57418b554 # v0.4.0
         with:
-          args: "The GitHub Action for publishing version ${{ steps.version.outputs.current-version }} (triggered by ${{ github.triggering_actor }}) failed! See run at: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          args: 'The GitHub Action for publishing version ${{ steps.version.outputs.current-version }} (triggered by ${{ github.triggering_actor }}) failed! See run at: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}'
 
   publish-canary:
     name: Publish canary version
@@ -214,6 +217,10 @@ jobs:
       ) &&
       contains(github.event.head_commit.message, '[skip ci]') != true
     environment: Release
+    permissions:
+      contents: read
+      pull-requests: write
+      id-token: write # required for npm provenance via yarn release:publish
     steps:
       - name: Fail if triggering actor is not administrator
         uses: prince-chrismc/check-actor-permissions-action@87c6d9b36c730377858fd9719fbbac1b58fa678d # no version attached, ahead of last release
@@ -245,6 +252,7 @@ jobs:
           repository: ${{ steps.info.outputs.isFork == 'true' && steps.info.outputs.repository || null }}
           ref: ${{ steps.info.outputs.sha }}
           token: ${{ secrets.GH_TOKEN }}
+          persist-credentials: false
 
       - name: Setup Node.js and Install Dependencies
         uses: ./.github/actions/setup-node-and-install
@@ -271,7 +279,7 @@ jobs:
         with:
           githubToken: ${{ secrets.GH_TOKEN }}
           prNumber: ${{ github.event_name == 'workflow_dispatch' && inputs.pr || '' }}
-          find: "CANARY_RELEASE_SECTION"
+          find: 'CANARY_RELEASE_SECTION'
           isHtmlCommentTag: true
           replace: |
             This pull request has been released as version `${{ steps.version.outputs.next-version }}`. Try it out in a new sandbox by running `npx storybook@${{ steps.version.outputs.next-version }} sandbox` or in an existing project with `npx storybook@${{ steps.version.outputs.next-version }} upgrade`.

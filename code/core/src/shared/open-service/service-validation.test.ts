@@ -4,8 +4,8 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { z } from 'zod';
 
 import { defineService } from './service-definition.ts';
-import { buildStaticFiles } from './static-build.ts';
-import { clearRegistry, createService, getService } from './service-runtime.ts';
+import { clearRegistry, registerService } from './server.ts';
+import { buildStaticFiles } from './server.ts';
 import {
   createInvalidCommandOutputServiceDef,
   createInvalidQueryOutputServiceDef,
@@ -34,7 +34,7 @@ afterEach(() => {
 
 describe('service validation', () => {
   it('shows the full actionable message for invalid query input', async () => {
-    const service = getService(mutableRecordLookupServiceDef);
+    const service = registerService(mutableRecordLookupServiceDef);
 
     await expectValidationMessage(
       () => service.queries.getRecordFields({} as unknown as { entryId: string }),
@@ -46,7 +46,7 @@ describe('service validation', () => {
   });
 
   it('shows the full actionable message for invalid query output', async () => {
-    const service = createService(createInvalidQueryOutputServiceDef());
+    const service = registerService(createInvalidQueryOutputServiceDef());
 
     await expectValidationMessage(
       () => service.queries.getBrokenValue(undefined),
@@ -58,7 +58,7 @@ describe('service validation', () => {
   });
 
   it('shows the full actionable message for invalid command input', async () => {
-    const service = getService(mutableRecordLookupServiceDef);
+    const service = registerService(mutableRecordLookupServiceDef);
 
     await expectValidationMessage(
       () =>
@@ -79,7 +79,7 @@ describe('service validation', () => {
   });
 
   it('shows the full actionable message for invalid command output', async () => {
-    const service = createService(createInvalidCommandOutputServiceDef());
+    const service = registerService(createInvalidCommandOutputServiceDef());
 
     await expectValidationMessage(
       () => service.commands.runBrokenCommand(undefined),
@@ -91,8 +91,10 @@ describe('service validation', () => {
   });
 
   it('shows the full actionable message for invalid static preload input', async () => {
+    registerService(createInvalidStaticInputServiceDef());
+
     await expectValidationMessage(
-      () => buildStaticFiles([createInvalidStaticInputServiceDef()]),
+      () => buildStaticFiles(),
       dedent`
         Invalid input for query "test/invalid-static-input.getPreloadedValue":
         entryId: Invalid key: Expected "entryId" but received undefined
@@ -101,7 +103,7 @@ describe('service validation', () => {
   });
 
   it('shows nested field paths for validation issues inside arrays and objects', async () => {
-    const service = createService(
+    const service = registerService(
       defineService({
         id: 'test/nested-query-output',
         initialState: {} as Record<string, never>,
@@ -134,7 +136,7 @@ describe('service validation', () => {
   });
 
   it('wraps zod schema issues in the same actionable validation error shape', async () => {
-    const service = createService(
+    const service = registerService(
       defineService({
         id: 'test/zod-query-input',
         initialState: {} as Record<string, never>,
@@ -161,7 +163,7 @@ describe('service validation', () => {
   });
 
   it('accepts unexpected query input fields when the schema allows them', async () => {
-    const service = getService(mutableRecordLookupServiceDef);
+    const service = registerService(mutableRecordLookupServiceDef);
 
     await expect(
       service.queries.getRecordFields({
@@ -172,7 +174,7 @@ describe('service validation', () => {
   });
 
   it('accepts unexpected command input fields when the schema allows them', async () => {
-    const service = getService(mutableRecordLookupServiceDef);
+    const service = registerService(mutableRecordLookupServiceDef);
 
     await expect(
       service.commands.assignRecordField({

@@ -518,10 +518,12 @@ const ComponentsTab: FC<{
   );
 };
 
-const SearchBox: FC<{ value: string; onChange: (value: string) => void }> = ({
-  value,
-  onChange,
-}) => (
+const SearchBox: FC<{
+  value: string;
+  onChange: (value: string) => void;
+  onFocus?: () => void;
+  onBlur?: () => void;
+}> = ({ value, onChange, onFocus, onBlur }) => (
   <SearchField>
     <SearchIconWrap>
       <SearchIcon />
@@ -532,6 +534,8 @@ const SearchBox: FC<{ value: string; onChange: (value: string) => void }> = ({
       placeholder="Find stories"
       value={value}
       onChange={(event) => onChange(event.target.value)}
+      onFocus={onFocus}
+      onBlur={onBlur}
     />
   </SearchField>
 );
@@ -555,6 +559,9 @@ export const SummaryScreen: FC<SummaryScreenProps> = ({
   const view = useReviewView();
   const [tab, setTab] = useState<ReviewTab>(initialTab);
   const [search, setSearch] = useState('');
+  // Focusing the search field reveals every thumbnail's info bar at once, so
+  // labels are scannable while filtering (they otherwise only show on hover).
+  const [isSearchFocused, setIsSearchFocused] = useState(false);
   const tabOrder: [ReviewTab, ReviewTab] = ['collections', 'components'];
   const tabRefs = useRef<Record<ReviewTab, HTMLButtonElement | null>>({
     collections: null,
@@ -645,7 +652,7 @@ export const SummaryScreen: FC<SummaryScreenProps> = ({
   };
 
   return (
-    <Page>
+    <Page data-search-active={isSearchFocused || undefined}>
       <Header>
         <HeaderText>
           <Heading>{state.title}</Heading>
@@ -714,7 +721,12 @@ export const SummaryScreen: FC<SummaryScreenProps> = ({
             }}
           >
             <SearchRow>
-              <SearchBox value={search} onChange={setSearch} />
+              <SearchBox
+                value={search}
+                onChange={setSearch}
+                onFocus={() => setIsSearchFocused(true)}
+                onBlur={() => setIsSearchFocused(false)}
+              />
               <SearchActions>
                 <Button
                   variant="ghost"
@@ -754,7 +766,12 @@ export const SummaryScreen: FC<SummaryScreenProps> = ({
             }}
           >
             <SearchRow>
-              <SearchBox value={search} onChange={setSearch} />
+              <SearchBox
+                value={search}
+                onChange={setSearch}
+                onFocus={() => setIsSearchFocused(true)}
+                onBlur={() => setIsSearchFocused(false)}
+              />
               <SearchActions>
                 <Button
                   variant="ghost"

@@ -43,6 +43,7 @@ const GridCell = styled.div(({ theme }) => ({
   // descendant (the GridLink itself, or the "Review all" button) is focused.
   '&:hover [data-story-info], &:focus-within [data-story-info]': {
     opacity: 1,
+    transform: 'translateY(0)',
   },
   // Keyboard focus ring lives on the cell so it isn't clipped by the cell's
   // own `overflow: hidden`. Tabbing into the GridLink triggers `:focus-within`.
@@ -100,8 +101,16 @@ const InfoBar = styled.div(({ theme }) => ({
   fontSize: 14,
   lineHeight: '21px',
   opacity: 0,
-  transition: 'opacity 120ms ease',
+  // Hidden state sits flush below the cell and slides up into view on reveal.
+  transform: 'translateY(100%)',
+  transition: 'opacity 120ms ease, transform 120ms ease',
   pointerEvents: 'none',
+  // While the search field is focused, reveal every thumbnail's label at once
+  // (the summary marks an ancestor with data-search-active).
+  '[data-search-active] &': {
+    opacity: 1,
+    transform: 'translateY(0)',
+  },
 }));
 
 const InfoComponent = styled.span({

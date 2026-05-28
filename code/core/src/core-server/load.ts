@@ -98,8 +98,8 @@ export async function loadStorybook(
   global.FEATURES = features;
 
   if (!globalThis.STORYBOOK_SERVICES_LOADED) {
-    await presets.apply('services');
     globalThis.STORYBOOK_SERVICES_LOADED = true;
+    await presets.apply('services');
   }
 
   return {

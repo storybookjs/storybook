@@ -131,8 +131,8 @@ export async function buildStaticStandalone(options: BuildStaticStandaloneOption
 
   global.FEATURES = features;
   if (!globalThis.STORYBOOK_SERVICES_LOADED) {
-    await presets.apply('services');
     globalThis.STORYBOOK_SERVICES_LOADED = true;
+    await presets.apply('services');
   }
 
   if (!options.previewOnly) {

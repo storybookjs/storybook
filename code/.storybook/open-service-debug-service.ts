@@ -80,10 +80,8 @@ function createDebugServiceDef(storyIndexGeneratorPromise: Promise<StoryIndexGen
             source: 'load',
           });
         },
-        static: {
-          inputs: async () => [{ entryId: 'static-a' }, { entryId: 'static-b' }],
-          path: (input) => `debug-service/${input.entryId}.json`,
-        },
+        filePath: (input) => `${input.entryId}.json`,
+        staticInputs: async () => [{ entryId: 'static-a' }, { entryId: 'static-b' }],
         handler: (input, ctx) => {
           const value = ctx.self.state.preloadedByEntryId[input.entryId] ?? null;
 

@@ -4,19 +4,22 @@ import {
   OpenServiceMissingServiceError,
 } from '../../server-errors.ts';
 import type {
+  AnyServiceDefinition,
+  AnyQueryDefinition,
   Commands,
+  LoadCtx,
   Queries,
+  RegisteredStaticInputs,
   RuntimeService,
   ServiceDefinition,
   ServiceDescriptor,
   ServiceId,
   ServiceInstance,
+  ServiceInstanceOf,
   ServiceRegistrationOptions,
   ServiceRegistryApi,
   ServiceSummary,
 } from './types.ts';
-
-type AnyServiceDefinition = ServiceDefinition<unknown, Queries<unknown>, Commands<unknown>>;
 type RegistryEntry = {
   definition: AnyServiceDefinition;
   runtime: RuntimeService;
@@ -63,6 +66,7 @@ function describeDefinition(definition: AnyServiceDefinition): ServiceDescriptor
           description: query.description,
           input: query.input,
           output: query.output,
+          ...(query.filePath ? { filePath: true as const } : {}),
         },
       ])
     ),
@@ -96,11 +100,34 @@ function summarizeDescriptor(descriptor: ServiceDescriptor): ServiceSummary {
 }
 
 /**
+ * Normalizes definition-layer staticInputs into the registration shape used by static builds.
+ *
+ * Definition authors may declare dependency-free `() => inputs` enumerators. Registration may
+ * override or supply `(ctx) => inputs` when the list depends on server context.
+ */
+function resolveRegisteredStaticInputs<TState>(
+  query: AnyQueryDefinition<TState>,
+  registrationQuery?: { staticInputs?: RegisteredStaticInputs<TState> }
+): RegisteredStaticInputs<TState> | undefined {
+  if (registrationQuery?.staticInputs) {
+    return registrationQuery.staticInputs;
+  }
+
+  if (!query.staticInputs) {
+    return undefined;
+  }
+
+  const definitionStaticInputs = query.staticInputs as () => unknown[] | Promise<unknown[]>;
+
+  return (_ctx: LoadCtx<TState>) => definitionStaticInputs();
+}
+
+/**
  * Applies optional server-side overrides to an authored service definition.
  *
  * Registration overrides are shallow merges over the authored definition. That lets the server
- * swap handlers, load hooks, or static config per operation while the original schema contract
- * and operation names remain the source of truth.
+ * swap handlers, load hooks, or dependency-aware static input enumerators per operation while the
+ * original schema contract, `filePath`, and operation names remain the source of truth.
  */
 function applyRegistration<
   TState,
@@ -113,12 +140,19 @@ function applyRegistration<
   return {
     ...definition,
     queries: Object.fromEntries(
-      Object.entries(definition.queries).map(([name, query]) => [
-        name,
-        registration?.queries?.[name as keyof TQueries]
-          ? { ...query, ...registration.queries[name as keyof TQueries] }
-          : query,
-      ])
+      Object.entries(definition.queries).map(([name, query]) => {
+        const registrationQuery = registration?.queries?.[name as keyof TQueries];
+        const staticInputs = resolveRegisteredStaticInputs(query, registrationQuery);
+
+        return [
+          name,
+          {
+            ...query,
+            ...registrationQuery,
+            ...(staticInputs ? { staticInputs } : {}),
+          },
+        ];
+      })
     ) as TQueries,
     commands: Object.fromEntries(
       Object.entries(definition.commands).map(([name, command]) => [
@@ -177,7 +211,7 @@ export function registerService<
   // need to rebuild descriptors from the authored definition each time.
   registry.set(definition.id, {
     definition: resolvedDefinition as AnyServiceDefinition,
-    runtime: registeredRuntime as RuntimeService,
+    runtime: registeredRuntime as unknown as RuntimeService,
     descriptor,
     summary: summarizeDescriptor(descriptor),
   });
@@ -226,14 +260,20 @@ export async function describeService(serviceId: ServiceId): Promise<ServiceDesc
  * reuse another service's runtime contract. Synchronous because callers need it available inside
  * sync query handlers.
  */
-export function getService(serviceId: ServiceId): RuntimeService {
+export function getService(serviceId: ServiceId): RuntimeService;
+export function getService<TDefinition extends AnyServiceDefinition>(
+  serviceId: ServiceId
+): ServiceInstanceOf<TDefinition>;
+export function getService<TDefinition extends AnyServiceDefinition>(
+  serviceId: ServiceId
+): RuntimeService | ServiceInstanceOf<TDefinition> {
   const entry = getRegistry().get(serviceId);
 
   if (!entry) {
     throw new OpenServiceMissingServiceError({ serviceId });
   }
 
-  return entry.runtime;
+  return entry.runtime as unknown as ServiceInstanceOf<TDefinition>;
 }
 
 /**

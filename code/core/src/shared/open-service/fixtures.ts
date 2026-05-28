@@ -1,7 +1,6 @@
 import * as v from 'valibot';
 
 import { defineService } from './service-definition.ts';
-import type { ServiceInstance } from './types.ts';
 
 /** Shared schema used by fixtures that address one logical record by id. */
 export const entryIdInputSchema = v.object({ entryId: v.string() });
@@ -15,7 +14,7 @@ export const assignEntryFieldInputSchema = v.object({
 export const recordFieldsOutputSchema = v.nullable(v.record(v.string(), v.string()));
 /** Shared schema for nullable string payloads used by load-oriented fixtures. */
 export const preloadedValueOutputSchema = v.nullable(v.string());
-export const noInputSchema = v.undefined();
+export const noInputSchema = v.void();
 export const voidOutputSchema = v.void();
 export const booleanOutputSchema = v.boolean();
 
@@ -28,7 +27,7 @@ export type MutableRecordState = Record<string, Record<string, string> | undefin
  * domain-specific logic.
  */
 export const mutableRecordLookupServiceDef = defineService({
-  id: 'test/mutable-record-lookup',
+  id: 'internal-fixture/mutable-record-lookup',
   description: 'Provides a mutable record lookup keyed by entry id.',
   initialState: {} as MutableRecordState,
   queries: {
@@ -58,7 +57,7 @@ export type PreloadedValueState = Record<string, string | undefined>;
 
 /** Service fixture that loads state from a command before returning it. */
 export const awaitedPreloadValueServiceDef = defineService({
-  id: 'test/awaited-preload-value',
+  id: 'internal-fixture/awaited-preload-value',
   description: 'Loads a value on demand via a command and reads it back from state.',
   initialState: {} as PreloadedValueState,
   queries: {
@@ -72,9 +71,8 @@ export const awaitedPreloadValueServiceDef = defineService({
           return ctx.self.commands.preloadValue(input).then(() => undefined);
         }
       },
-      static: {
-        inputs: async () => [{ entryId: 'entry-a' }, { entryId: 'entry-b' }],
-      },
+      filePath: () => 'state.json',
+      staticInputs: async () => [{ entryId: 'entry-a' }, { entryId: 'entry-b' }],
     },
   },
   commands: {
@@ -94,7 +92,7 @@ export const awaitedPreloadValueServiceDef = defineService({
 
 /** Service fixture that starts load work in the background and returns immediately. */
 export const fireAndForgetPreloadValueServiceDef = defineService({
-  id: 'test/fire-and-forget-preload-value',
+  id: 'internal-fixture/fire-and-forget-preload-value',
   description: 'Loads a value in the background without awaiting it.',
   initialState: {} as PreloadedValueState,
   queries: {
@@ -131,7 +129,7 @@ export type SharedStaticFileState = { left?: string; right?: string };
 /** Creates a fixture where multiple queries contribute state to one shared static file. */
 export function createSharedStaticFileServiceDef() {
   return defineService({
-    id: 'test/shared-static-file',
+    id: 'internal-fixture/shared-static-file',
     description: 'Builds two independent query outputs into one shared static file.',
     initialState: {} as SharedStaticFileState,
     queries: {
@@ -143,10 +141,8 @@ export function createSharedStaticFileServiceDef() {
         load: async (_input, ctx) => {
           await ctx.self.commands.writeLeftValue(undefined);
         },
-        static: {
-          path: () => 'shared.json',
-          inputs: async () => [undefined],
-        },
+        filePath: () => 'shared.json',
+        staticInputs: async () => [undefined],
       },
       getRightValue: {
         description: 'Loads the right value into the shared file state.',
@@ -156,10 +152,8 @@ export function createSharedStaticFileServiceDef() {
         load: async (_input, ctx) => {
           await ctx.self.commands.writeRightValue(undefined);
         },
-        static: {
-          path: () => 'shared.json',
-          inputs: async () => [undefined],
-        },
+        filePath: () => 'shared.json',
+        staticInputs: async () => [undefined],
       },
     },
     commands: {
@@ -187,18 +181,18 @@ export function createSharedStaticFileServiceDef() {
   });
 }
 
-/** Creates a service that composes one service's query inside another service's query. */
-export function createDerivedBooleanFromChildQueryServiceDef(
-  sourceService: ServiceInstance<
-    MutableRecordState,
-    typeof mutableRecordLookupServiceDef.queries,
-    typeof mutableRecordLookupServiceDef.commands
-  >
-) {
+/**
+ * Creates a service that composes one service's query inside another service's query.
+ *
+ * The derived service resolves the source service through `ctx.getService(...)` at call time —
+ * the same lookup any consumer code would use — rather than capturing the registered instance in
+ * a closure. The source service must already be registered when the derived query runs.
+ */
+export function createDerivedBooleanFromChildQueryServiceDef() {
   type DerivedState = Record<string, never>;
 
   return defineService({
-    id: 'test/derived-boolean-from-child-query',
+    id: 'internal-fixture/derived-boolean-from-child-query',
     description: 'Derives a boolean from the child lookup query.',
     initialState: {} as DerivedState,
     queries: {
@@ -206,8 +200,11 @@ export function createDerivedBooleanFromChildQueryServiceDef(
         description: 'Returns whether the child query reports marker=match for an entry.',
         input: entryIdInputSchema,
         output: booleanOutputSchema,
-        handler: (input) => {
-          const record = sourceService.queries.getRecordFields({
+        handler: (input, ctx) => {
+          const source = ctx.getService<typeof mutableRecordLookupServiceDef>(
+            mutableRecordLookupServiceDef.id
+          );
+          const record = source.queries.getRecordFields({
             entryId: input.entryId,
           });
 
@@ -222,7 +219,7 @@ export function createDerivedBooleanFromChildQueryServiceDef(
 /** Creates a fixture that intentionally returns an invalid query output. */
 export function createInvalidQueryOutputServiceDef() {
   return defineService({
-    id: 'test/invalid-query-output',
+    id: 'internal-fixture/invalid-query-output',
     description: 'Returns an invalid query output on purpose.',
     initialState: {} as Record<string, never>,
     queries: {
@@ -240,7 +237,7 @@ export function createInvalidQueryOutputServiceDef() {
 /** Creates a fixture that intentionally returns an invalid command output. */
 export function createInvalidCommandOutputServiceDef() {
   return defineService({
-    id: 'test/invalid-command-output',
+    id: 'internal-fixture/invalid-command-output',
     description: 'Returns an invalid command output on purpose.',
     initialState: {} as Record<string, never>,
     queries: {},
@@ -258,7 +255,7 @@ export function createInvalidCommandOutputServiceDef() {
 /** Creates a fixture that intentionally yields invalid static load inputs. */
 export function createInvalidStaticInputServiceDef() {
   return defineService({
-    id: 'test/invalid-static-input',
+    id: 'internal-fixture/invalid-static-input',
     description: 'Provides an invalid static load input on purpose.',
     initialState: {} as PreloadedValueState,
     queries: {
@@ -268,9 +265,8 @@ export function createInvalidStaticInputServiceDef() {
         output: preloadedValueOutputSchema,
         handler: (input, ctx) => ctx.self.state[input.entryId] ?? null,
         load: async () => {},
-        static: {
-          inputs: async () => [{} as unknown as { entryId: string }],
-        },
+        filePath: () => 'state.json',
+        staticInputs: async () => [{} as unknown as { entryId: string }],
       },
     },
     commands: {},

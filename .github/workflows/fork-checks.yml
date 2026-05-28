@@ -7,11 +7,15 @@ on:
 env:
   NODE_OPTIONS: '--max_old_space_size=4096'
 
+permissions: {}
+
 jobs:
   check:
     name: Core Type Checking
     if: github.repository_owner != 'storybookjs'
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
@@ -30,6 +34,8 @@ jobs:
     name: Core Formatting
     if: github.repository_owner != 'storybookjs'
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
@@ -51,6 +57,8 @@ jobs:
     runs-on: ${{ matrix.os }}
     name: Core Unit Tests, ${{ matrix.os }}
     if: github.repository_owner != 'storybookjs'
+    permissions:
+      contents: read
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:

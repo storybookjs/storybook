@@ -15,7 +15,7 @@ export const assignEntryFieldInputSchema = v.object({
 export const recordFieldsOutputSchema = v.nullable(v.record(v.string(), v.string()));
 /** Shared schema for nullable string payloads used by load-oriented fixtures. */
 export const preloadedValueOutputSchema = v.nullable(v.string());
-export const noInputSchema = v.undefined();
+export const noInputSchema = v.void();
 export const voidOutputSchema = v.void();
 export const booleanOutputSchema = v.boolean();
 

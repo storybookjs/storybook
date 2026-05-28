@@ -1,7 +1,0 @@
-rules:
-  template-injection:
-    ignore:
-      # `${{ toJson(...) }}` in actions/github-script is the documented safe
-      # pattern; inline ignores aren't possible inside a `script: |` block.
-      - nx.yml:71
-      - nx.yml:105

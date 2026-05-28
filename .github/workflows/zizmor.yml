@@ -2,7 +2,7 @@ name: GitHub Actions Security Analysis with zizmor 🌈
 
 on:
   push:
-    branches: ["main", "next"]
+    branches: ["main", "next", "next-release", "latest-release", "release-*"]
   pull_request:
     branches: ["**"]
 

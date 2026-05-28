@@ -43,7 +43,7 @@ jobs:
     environment: Release
     permissions:
       contents: write
-      pull-requests: write
+      issues: write
       id-token: write # required for npm provenance via yarn release:publish
     defaults:
       run:

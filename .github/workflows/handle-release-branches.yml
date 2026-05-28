@@ -118,7 +118,9 @@ jobs:
           BRANCH: ${{ needs.create-next-release-branch.outputs.branch || needs.branch-checks.outputs.branch }}
           FRONTPAGE_TOKEN: ${{ secrets.FRONTPAGE_ACCESS_TOKEN }}
         run: |
+          DISPATCH_PAYLOAD=$(jq -n --arg branch "$BRANCH" \
+            '{event_type: "request-create-frontpage-branch", client_payload: {branch: $branch}}')
           curl -X POST https://api.github.com/repos/storybookjs/frontpage/dispatches \
             -H 'Accept: application/vnd.github.v3+json' \
             -u "$FRONTPAGE_TOKEN" \
-            --data "{\"event_type\": \"request-create-frontpage-branch\", \"client_payload\": {\"branch\": \"${BRANCH}\"}}"
+            --data "$DISPATCH_PAYLOAD"

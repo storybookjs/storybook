@@ -73,8 +73,10 @@ const ReviewFlowPrototype: FC<{
         detailStoryIds = collection.storyIds;
       }
     } else {
-      const group = groupStoriesByComponent(state.collections).find(
-        (candidate) => candidate.componentId === detailLocation.componentId
+      const grouped = groupStoriesByComponent(state.collections);
+      const targetStoryId = detailLocation.storyId;
+      const group = grouped.find(
+        (candidate) => targetStoryId !== undefined && candidate.storyIds.includes(targetStoryId)
       );
       if (group) {
         detailStoryIds = group.storyIds;
@@ -84,9 +86,15 @@ const ReviewFlowPrototype: FC<{
 
     if (detailTitle !== undefined && detailStoryIds && detailStoryIds.length > 0) {
       const totalStories = detailStoryIds.length;
-      const currentStoryIndex = detailLocation.storyIndex % totalStories;
+      const resolvedIndexFromStoryId =
+        detailLocation.storyId !== undefined
+          ? detailStoryIds.findIndex((storyId) => storyId === detailLocation.storyId)
+          : -1;
+      const currentStoryIndex = resolvedIndexFromStoryId >= 0 ? resolvedIndexFromStoryId : 0;
       const previousStoryIndex = (currentStoryIndex - 1 + totalStories) % totalStories;
       const nextStoryIndex = (currentStoryIndex + 1) % totalStories;
+      const previousStoryId = detailStoryIds[previousStoryIndex];
+      const nextStoryId = detailStoryIds[nextStoryIndex];
 
       detailScreen = (
         <DetailsScreen
@@ -96,11 +104,29 @@ const ReviewFlowPrototype: FC<{
           totalStories={totalStories}
           backHref={buildReviewChangesSummaryHref(activeTab)}
           previousHref={buildReviewChangesDetailHref(
-            { ...detailLocation, storyIndex: previousStoryIndex },
+            detailLocation.kind === 'collection'
+              ? {
+                  kind: 'collection',
+                  collectionIndex: detailLocation.collectionIndex,
+                  storyId: previousStoryId,
+                }
+              : {
+                  kind: 'component',
+                  storyId: previousStoryId,
+                },
             activeTab
           )}
           nextHref={buildReviewChangesDetailHref(
-            { ...detailLocation, storyIndex: nextStoryIndex },
+            detailLocation.kind === 'collection'
+              ? {
+                  kind: 'collection',
+                  collectionIndex: detailLocation.collectionIndex,
+                  storyId: nextStoryId,
+                }
+              : {
+                  kind: 'component',
+                  storyId: nextStoryId,
+                },
             activeTab
           )}
           branchName={state.branchName}
@@ -197,7 +223,7 @@ export const Default = meta.story({
 // deep link. Verifies the URL→view derivation in isolation.
 export const StartingOnDetail = meta.story({
   args: {
-    initialSearch: '?path=/review/collections&collection=0&story=1',
+    initialSearch: '?path=/review/collections/0/button-component--sizes',
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);

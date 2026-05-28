@@ -115,7 +115,7 @@ export const Components = meta.story({
 
 export const Details = meta.story({
   parameters: {
-    routerInitialEntries: ['/?path=/review/collections&collection=0&story=1'],
+    routerInitialEntries: ['/?path=/review/collections/0/manager-settings-guidepage--default'],
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);

@@ -31,7 +31,7 @@ addons.register(ADDON_ID, (api) => {
   // if it is not already there. The review page replays cached state on load
   // (REQUEST_REVIEW), which echoes back as DISPLAY_REVIEW; without
   // this guard that echo would re-navigate to the bare review URL, dropping
-  // the &collection=&story= params and bouncing a detail page to the summary.
+  // the detail subpath and bouncing a detail page to the summary.
   api.getChannel()?.on(EVENTS.DISPLAY_REVIEW, () => {
     const currentPath = new URLSearchParams(window.location.search).get('path') ?? '';
     if (!currentPath.startsWith(REVIEW_CHANGES_URL)) {

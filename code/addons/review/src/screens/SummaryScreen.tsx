@@ -393,7 +393,7 @@ const CollectionsTab: FC<{
                     {
                       kind: 'collection',
                       collectionIndex: index,
-                      storyIndex: collection.storyIds.indexOf(storyId),
+                      storyId,
                     },
                     activeTab
                   )
@@ -483,7 +483,7 @@ const ComponentsTab: FC<{
                     {
                       kind: 'component',
                       componentId: group.componentId,
-                      storyIndex: group.storyIds.indexOf(storyId),
+                      storyId,
                     },
                     activeTab
                   )
@@ -519,6 +519,8 @@ export interface SummaryScreenProps {
   state: ReviewState | null;
   /** Tab to open initially — carried in the URL so the back button restores it. */
   initialTab?: ReviewTab;
+  /** Optional callback to keep summary-tab URL in sync with tab switches. */
+  onTabChange?: (tab: ReviewTab) => void;
   /** Story id → component title + name, resolved from the Storybook index. */
   storyInfo?: Record<string, StoryInfo>;
 }
@@ -526,6 +528,7 @@ export interface SummaryScreenProps {
 export const SummaryScreen: FC<SummaryScreenProps> = ({
   state,
   initialTab = 'collections',
+  onTabChange,
   storyInfo = {},
 }) => {
   const [tab, setTab] = useState<ReviewTab>(initialTab);
@@ -557,6 +560,10 @@ export const SummaryScreen: FC<SummaryScreenProps> = ({
     );
   }, [state]);
 
+  useEffect(() => {
+    setTab(initialTab);
+  }, [initialTab]);
+
   if (!state) {
     return <Empty>Waiting for the agent to push a review…</Empty>;
   }
@@ -569,8 +576,12 @@ export const SummaryScreen: FC<SummaryScreenProps> = ({
   const areAllComponentsExpanded = componentIds.every((componentId) =>
     expandedComponents.has(componentId)
   );
-  const moveTabFocus = (nextTab: ReviewTab) => {
+  const setActiveTab = (nextTab: ReviewTab) => {
     setTab(nextTab);
+    onTabChange?.(nextTab);
+  };
+  const moveTabFocus = (nextTab: ReviewTab) => {
+    setActiveTab(nextTab);
     tabRefs.current[nextTab]?.focus();
   };
   const handleTabKeyDown = (
@@ -638,7 +649,7 @@ export const SummaryScreen: FC<SummaryScreenProps> = ({
             aria-selected={tab === 'collections'}
             aria-controls={collectionsPanelId}
             tabIndex={tab === 'collections' ? 0 : -1}
-            onClick={() => setTab('collections')}
+            onClick={() => setActiveTab('collections')}
             onKeyDown={(event) => handleTabKeyDown(event, 'collections')}
           >
             Collections
@@ -654,7 +665,7 @@ export const SummaryScreen: FC<SummaryScreenProps> = ({
             aria-selected={tab === 'components'}
             aria-controls={componentsPanelId}
             tabIndex={tab === 'components' ? 0 : -1}
-            onClick={() => setTab('components')}
+            onClick={() => setActiveTab('components')}
             onKeyDown={(event) => handleTabKeyDown(event, 'components')}
           >
             Components

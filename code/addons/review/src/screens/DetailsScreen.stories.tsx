@@ -19,12 +19,12 @@ const meta = preview.meta({
     previousHref: buildReviewChangesDetailHref({
       kind: 'collection',
       collectionIndex: 0,
-      storyIndex: 0,
+      storyId: 'components-toolbar--compact',
     }),
     nextHref: buildReviewChangesDetailHref({
       kind: 'collection',
       collectionIndex: 0,
-      storyIndex: 2,
+      storyId: 'components-toolbar--dense',
     }),
     branchName: 'update/button-weight-and-padding',
   },
@@ -49,19 +49,23 @@ export const WrapAroundNavigation = meta.story({
     previousHref: buildReviewChangesDetailHref({
       kind: 'collection',
       collectionIndex: 0,
-      storyIndex: 2,
+      storyId: 'components-toolbar--dense',
     }),
     nextHref: buildReviewChangesDetailHref({
       kind: 'collection',
       collectionIndex: 0,
-      storyIndex: 1,
+      storyId: 'components-toolbar--basic',
     }),
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     const previousButton = await canvas.findByRole('link', { name: 'Previous story' });
     const nextButton = await canvas.findByRole('link', { name: 'Next story' });
-    await expect(previousButton.getAttribute('href')).toContain('story=2');
-    await expect(nextButton.getAttribute('href')).toContain('story=1');
+    await expect(previousButton.getAttribute('href')).toContain(
+      '/review/collections/0/components-toolbar--dense'
+    );
+    await expect(nextButton.getAttribute('href')).toContain(
+      '/review/collections/0/components-toolbar--basic'
+    );
   },
 });

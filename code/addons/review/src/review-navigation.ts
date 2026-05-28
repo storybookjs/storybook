@@ -3,11 +3,10 @@ import { REVIEW_CHANGES_URL } from './constants.ts';
 export type ReviewTab = 'collections' | 'components';
 
 // A detail-screen target: either a collection (indexed into state.collections)
-// or a component group (keyed by component id). Both track a story index into
-// their respective story list, so the same DetailsScreen drives both flows.
+// or a component grouping selected by a unique storyId.
 export type ReviewDetailLocation =
-  | { kind: 'collection'; collectionIndex: number; storyIndex: number }
-  | { kind: 'component'; componentId: string; storyIndex: number };
+  | { kind: 'collection'; collectionIndex: number; storyId?: string }
+  | { kind: 'component'; storyId: string };
 
 const tabPath = (tab: ReviewTab = 'collections') => `${REVIEW_CHANGES_URL}${tab}`;
 
@@ -22,11 +21,14 @@ export const buildReviewChangesDetailHref = (
   location: ReviewDetailLocation,
   tab: ReviewTab = 'collections'
 ): string => {
-  const target =
-    location.kind === 'collection'
-      ? `&collection=${location.collectionIndex}`
-      : `&component=${location.componentId}`;
-  return `?path=${tabPath(tab)}${target}&story=${location.storyIndex}`;
+  if (location.kind === 'collection') {
+    const base = `${tabPath(tab)}/${location.collectionIndex}`;
+    const target = location.storyId ? `${base}/${encodeURIComponent(location.storyId)}` : base;
+    return `?path=${target}`;
+  }
+  const base = tabPath(tab);
+  const target = `${base}/${encodeURIComponent(location.storyId)}`;
+  return `?path=${target}`;
 };
 
 // The summary tab the user last had open, carried through detail-page links
@@ -37,41 +39,42 @@ export const parseReviewChangesActiveTab = (search: string): ReviewTab => {
   if (path.startsWith(`${REVIEW_CHANGES_URL}components`)) {
     return 'components';
   }
-  // Back-compat for legacy review URLs that still encode the tab as `&tab=…`.
-  if (params.get('tab') === 'components') {
-    return 'components';
-  }
   return 'collections';
 };
 
 // Parse a detail-screen target out of the URL. Returns null for the summary.
 export const parseReviewChangesDetailLocation = (search: string): ReviewDetailLocation | null => {
   const params = new URLSearchParams(search);
+  const path = params.get('path') ?? '';
 
-  // URLSearchParams.get() returns null for a missing param, and Number(null)
-  // is 0 — so every numeric param is null-checked before coercion, otherwise
-  // an absent param would parse as 0 and wrongly force the detail screen.
-  const storyParam = params.get('story');
-  if (storyParam === null) {
-    return null;
-  }
-  const storyIndex = Number(storyParam);
-  if (!Number.isInteger(storyIndex) || storyIndex < 0) {
-    return null;
-  }
-
-  const componentId = params.get('component');
-  if (componentId) {
-    return { kind: 'component', componentId, storyIndex };
+  if (path.startsWith(`${REVIEW_CHANGES_URL}collections/`)) {
+    const segments = path.slice(`${REVIEW_CHANGES_URL}collections/`.length).split('/');
+    const collectionParam = segments[0];
+    const collectionIndex = Number(collectionParam);
+    if (!Number.isInteger(collectionIndex) || collectionIndex < 0) {
+      return null;
+    }
+    const storySegment = segments[1];
+    return {
+      kind: 'collection',
+      collectionIndex,
+      storyId: storySegment ? decodeURIComponent(storySegment) : undefined,
+    };
   }
 
-  const collectionParam = params.get('collection');
-  if (collectionParam === null) {
-    return null;
+  if (path.startsWith(`${REVIEW_CHANGES_URL}components/`)) {
+    const segments = path.slice(`${REVIEW_CHANGES_URL}components/`.length).split('/');
+    const firstSegment = segments[0];
+    if (!firstSegment) {
+      return null;
+    }
+    if (segments.length > 1 && segments[1]) {
+      return null;
+    }
+    return {
+      kind: 'component',
+      storyId: decodeURIComponent(firstSegment),
+    };
   }
-  const collectionIndex = Number(collectionParam);
-  if (!Number.isInteger(collectionIndex) || collectionIndex < 0) {
-    return null;
-  }
-  return { kind: 'collection', collectionIndex, storyIndex };
+  return null;
 };

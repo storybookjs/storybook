@@ -42,23 +42,19 @@ const ReviewPageContent: FC<{ search: string }> = ({ search }) => {
   }, [emit]);
 
   const activeTab = parseReviewChangesActiveTab(search);
+  const detailLocation = parseReviewChangesDetailLocation(search);
 
-  // Keep the summary route canonical: `/review/` should immediately become
-  // `/review/<tab>` so tab state is represented in the path. Preserve legacy
-  // `&tab=components` by redirecting root summary links to that tab path.
+  // Keep the summary route canonical: `/review/` immediately becomes
+  // `/review/<tab>` so tab state is represented in the path.
   useEffect(() => {
     const params = new URLSearchParams(search);
     const path = params.get('path');
     const isLegacySummaryPath =
       path === REVIEW_CHANGES_URL || path === REVIEW_CHANGES_URL.slice(0, -1);
-    const hasDetailTarget =
-      params.get('story') !== null ||
-      params.get('collection') !== null ||
-      Boolean(params.get('component'));
-    if (isLegacySummaryPath && !hasDetailTarget) {
+    if (isLegacySummaryPath && !detailLocation) {
       navigate(buildReviewChangesSummaryHref(activeTab), { plain: true });
     }
-  }, [activeTab, navigate, search]);
+  }, [activeTab, detailLocation, navigate, search]);
 
   // The review page is a focused, full-width surface — hide the manager
   // sidebar while it is open and restore it on the way out. The user's prior
@@ -139,8 +135,6 @@ const ReviewPageContent: FC<{ search: string }> = ({ search }) => {
     return () => container.removeEventListener('click', onClick);
   }, [navigate]);
 
-  const detailLocation = parseReviewChangesDetailLocation(search);
-
   let detailScreen: ReactNode = null;
   if (state && detailLocation) {
     let detailTitle: string | undefined;
@@ -153,8 +147,10 @@ const ReviewPageContent: FC<{ search: string }> = ({ search }) => {
         detailStoryIds = collection.storyIds;
       }
     } else {
-      const group = groupStoriesByComponent(state.collections).find(
-        (candidate) => candidate.componentId === detailLocation.componentId
+      const grouped = groupStoriesByComponent(state.collections);
+      const targetStoryId = detailLocation.storyId;
+      const group = grouped.find(
+        (candidate) => targetStoryId !== undefined && candidate.storyIds.includes(targetStoryId)
       );
       if (group) {
         detailStoryIds = group.storyIds;
@@ -164,10 +160,16 @@ const ReviewPageContent: FC<{ search: string }> = ({ search }) => {
 
     if (detailTitle !== undefined && detailStoryIds && detailStoryIds.length > 0) {
       const totalStories = detailStoryIds.length;
-      const currentStoryIndex = detailLocation.storyIndex % totalStories;
+      const resolvedIndexFromStoryId =
+        detailLocation.storyId !== undefined
+          ? detailStoryIds.findIndex((storyId) => storyId === detailLocation.storyId)
+          : -1;
+      const currentStoryIndex = resolvedIndexFromStoryId >= 0 ? resolvedIndexFromStoryId : 0;
       const previousStoryIndex = (currentStoryIndex - 1 + totalStories) % totalStories;
       const nextStoryIndex = (currentStoryIndex + 1) % totalStories;
 
+      const previousStoryId = detailStoryIds[previousStoryIndex];
+      const nextStoryId = detailStoryIds[nextStoryIndex];
       detailScreen = React.createElement(DetailsScreen, {
         title: detailTitle,
         storyId: detailStoryIds[currentStoryIndex],
@@ -175,11 +177,29 @@ const ReviewPageContent: FC<{ search: string }> = ({ search }) => {
         totalStories,
         backHref: buildReviewChangesSummaryHref(activeTab),
         previousHref: buildReviewChangesDetailHref(
-          { ...detailLocation, storyIndex: previousStoryIndex },
+          detailLocation.kind === 'collection'
+            ? {
+                kind: 'collection',
+                collectionIndex: detailLocation.collectionIndex,
+                storyId: previousStoryId,
+              }
+            : {
+                kind: 'component',
+                storyId: previousStoryId,
+              },
           activeTab
         ),
         nextHref: buildReviewChangesDetailHref(
-          { ...detailLocation, storyIndex: nextStoryIndex },
+          detailLocation.kind === 'collection'
+            ? {
+                kind: 'collection',
+                collectionIndex: detailLocation.collectionIndex,
+                storyId: nextStoryId,
+              }
+            : {
+                kind: 'component',
+                storyId: nextStoryId,
+              },
           activeTab
         ),
         branchName: state.branchName,
@@ -194,6 +214,9 @@ const ReviewPageContent: FC<{ search: string }> = ({ search }) => {
       React.createElement(SummaryScreen, {
         state,
         initialTab: activeTab,
+        onTabChange: (nextTab) => {
+          navigate(buildReviewChangesSummaryHref(nextTab), { plain: true });
+        },
         storyInfo,
       })
   );

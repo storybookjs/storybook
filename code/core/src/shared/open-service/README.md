@@ -104,6 +104,40 @@ A command is:
 
 Commands receive a `CommandCtx` whose `self` includes `state`, `queries`, `commands`, and `setState`.
 
+### Cross-service composition
+
+Handlers resolve other registered services through `ctx.getService(serviceId)`. Without a type
+parameter, the return type is `RuntimeService` — query and command results are erased to
+`unknown`.
+
+Pass the source service definition as a generic to recover the full typed runtime surface:
+
+```ts
+import type { mutableRecordLookupServiceDef } from './mutable-record-lookup.ts';
+
+handler: (input, ctx) => {
+  const lookup = ctx.getService<typeof mutableRecordLookupServiceDef>(
+    'internal-fixture/mutable-record-lookup'
+  );
+
+  const record = lookup.queries.getRecordFields({ entryId: input.entryId });
+  // record is fully typed — do not cast individual query results
+
+  return record?.marker === 'match';
+};
+```
+
+Guidelines:
+
+- Import the source definition **type-only** when it is only needed for the generic parameter
+- Pair the generic with the correct service id — TypeScript cannot verify they match at compile time
+- Omit the generic when the target service is not known statically; the untyped `RuntimeService`
+  surface is the correct fallback
+- Do **not** cast individual query or command results; type the service handle once instead
+
+The exported `ServiceInstanceOf<typeof sourceDef>` alias is available for named handle types when
+a service is referenced from many call sites.
+
 ### Validation
 
 Every query and command must declare:

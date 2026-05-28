@@ -112,10 +112,12 @@ describe('server static builds', () => {
             input: v.undefined(),
             output: v.undefined(),
             handler: async (_input, ctx) => {
-              const source = ctx.getService('internal-fixture/mutable-record-lookup');
+              const source = ctx.getService<typeof mutableRecordLookupServiceDef>(
+                'internal-fixture/mutable-record-lookup'
+              );
               const record = source.queries.getRecordFields({
                 entryId: 'entry-a',
-              }) as Record<string, string> | null;
+              });
 
               ctx.self.setState((draft) => {
                 draft.value = record?.marker ?? null;

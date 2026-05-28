@@ -206,10 +206,12 @@ export function createDerivedBooleanFromChildQueryServiceDef() {
         input: entryIdInputSchema,
         output: booleanOutputSchema,
         handler: (input, ctx) => {
-          const source = ctx.getService(mutableRecordLookupServiceDef.id);
+          const source = ctx.getService<typeof mutableRecordLookupServiceDef>(
+            mutableRecordLookupServiceDef.id
+          );
           const record = source.queries.getRecordFields({
             entryId: input.entryId,
-          }) as Record<string, string> | null;
+          });
 
           return record?.marker === 'match';
         },

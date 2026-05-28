@@ -119,28 +119,6 @@ describe('service registration', () => {
   });
 
   it('lets handlers resolve another registered service by id through ctx.getService', async () => {
-    const derivedServiceDef = defineService({
-      id: 'internal-fixture/derived-boolean-from-service-id',
-      description: 'Derives marker state by resolving another service through ctx.getService.',
-      initialState: {} as Record<string, never>,
-      queries: {
-        isEntryMarked: {
-          description: 'Returns whether the lookup service reports marker=match for an entry.',
-          input: entryIdInputSchema,
-          output: v.boolean(),
-          handler: (input, ctx) => {
-            const sourceService = ctx.getService('internal-fixture/mutable-record-lookup');
-            const record = sourceService.queries.getRecordFields({
-              entryId: input.entryId,
-            }) as Record<string, string> | null;
-
-            return record?.marker === 'match';
-          },
-        },
-      },
-      commands: {},
-    });
-
     const sourceService = registerService(mutableRecordLookupServiceDef);
     const derivedService = registerService(createDerivedBooleanFromChildQueryServiceDef());
 
@@ -194,13 +172,15 @@ describe('service registration', () => {
         },
         assignFromLookup: {
           handler: async (input, ctx) => {
-            const lookup = ctx.getService('internal-fixture/mutable-record-lookup');
+            const lookup = ctx.getService<typeof mutableRecordLookupServiceDef>(
+              'internal-fixture/mutable-record-lookup'
+            );
 
             await lookup.commands.assignRecordField(input);
 
             const record = lookup.queries.getRecordFields({
               entryId: input.entryId,
-            }) as Record<string, string> | null;
+            });
             ctx.self.setState((draft) => {
               draft.count = record?.marker === input.fieldValue ? 1 : 0;
             });

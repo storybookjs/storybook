@@ -146,15 +146,6 @@ export type ServiceDescriptor = {
   commands: Record<string, OperationDescriptor>;
 };
 
-export interface ServiceRegistryApi {
-  listServices(): Promise<ServiceSummary[]>;
-  describeService(serviceId: ServiceId): Promise<ServiceDescriptor>;
-  getService(serviceId: ServiceId): RuntimeService;
-}
-
-export type RuntimeService = ServiceInstance<unknown, Queries<unknown>, Commands<unknown>> &
-  ServiceRegistryApi;
-
 /** Context passed to query handlers. */
 export type QueryCtx<TState> = {
   self: QuerySelf<TState>;
@@ -303,6 +294,9 @@ export type ServiceDefinition<
   commands: TCommands;
 };
 
+/** Structural constraint for any service definition stored in the registry. */
+export type AnyServiceDefinition = ServiceDefinition<unknown, Queries<unknown>, Commands<unknown>>;
+
 /** Runtime service instance derived from a `ServiceDefinition`. */
 export type ServiceInstance<
   TState,
@@ -328,6 +322,24 @@ export type ServiceInstance<
       : never;
   };
 };
+
+/** Runtime instance type recovered from one authored service definition. */
+export type ServiceInstanceOf<TDefinition extends AnyServiceDefinition> =
+  TDefinition extends ServiceDefinition<infer TState, infer TQueries, infer TCommands>
+    ? ServiceInstance<TState, TQueries, TCommands>
+    : never;
+
+export interface ServiceRegistryApi {
+  listServices(): Promise<ServiceSummary[]>;
+  describeService(serviceId: ServiceId): Promise<ServiceDescriptor>;
+  getService(serviceId: ServiceId): RuntimeService;
+  getService<TDefinition extends AnyServiceDefinition>(
+    serviceId: ServiceId
+  ): ServiceInstanceOf<TDefinition>;
+}
+
+export type RuntimeService = ServiceInstance<unknown, Queries<unknown>, Commands<unknown>> &
+  ServiceRegistryApi;
 
 export type ServiceQueryRegistration<TState, TQuery extends AnyQueryDefinition<TState>> = Pick<
   TQuery,

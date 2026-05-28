@@ -4,6 +4,7 @@ import {
   OpenServiceMissingServiceError,
 } from '../../server-errors.ts';
 import type {
+  AnyServiceDefinition,
   Commands,
   Queries,
   RuntimeService,
@@ -11,12 +12,11 @@ import type {
   ServiceDescriptor,
   ServiceId,
   ServiceInstance,
+  ServiceInstanceOf,
   ServiceRegistrationOptions,
   ServiceRegistryApi,
   ServiceSummary,
 } from './types.ts';
-
-type AnyServiceDefinition = ServiceDefinition<unknown, Queries<unknown>, Commands<unknown>>;
 type RegistryEntry = {
   definition: AnyServiceDefinition;
   runtime: RuntimeService;
@@ -226,14 +226,20 @@ export async function describeService(serviceId: ServiceId): Promise<ServiceDesc
  * reuse another service's runtime contract. Synchronous because callers need it available inside
  * sync query handlers.
  */
-export function getService(serviceId: ServiceId): RuntimeService {
+export function getService(serviceId: ServiceId): RuntimeService;
+export function getService<TDefinition extends AnyServiceDefinition>(
+  serviceId: ServiceId
+): ServiceInstanceOf<TDefinition>;
+export function getService<TDefinition extends AnyServiceDefinition>(
+  serviceId: ServiceId
+): RuntimeService | ServiceInstanceOf<TDefinition> {
   const entry = getRegistry().get(serviceId);
 
   if (!entry) {
     throw new OpenServiceMissingServiceError({ serviceId });
   }
 
-  return entry.runtime;
+  return entry.runtime as ServiceInstanceOf<TDefinition>;
 }
 
 /**

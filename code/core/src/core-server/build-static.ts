@@ -17,6 +17,7 @@ import { global } from '@storybook/global';
 import { join, relative, resolve } from 'pathe';
 import picocolors from 'picocolors';
 
+import { applyServicesPresetOnce } from './utils/apply-services-preset-once.ts';
 import { writeOpenServiceStaticFiles } from '../shared/open-service/server.ts';
 import { resolvePackageDir } from '../shared/utils/module.ts';
 import type { StoryIndexGenerator } from './utils/StoryIndexGenerator.ts';
@@ -130,7 +131,7 @@ export async function buildStaticStandalone(options: BuildStaticStandaloneOption
   const effects: Promise<void>[] = [];
 
   global.FEATURES = features;
-  await presets.apply('services');
+  await applyServicesPresetOnce(presets);
 
   if (!options.previewOnly) {
     await buildOrThrow(async () =>

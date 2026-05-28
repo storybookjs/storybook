@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 
 import { Button } from 'storybook/internal/components';
 import { STORY_RENDERED } from 'storybook/internal/core-events';

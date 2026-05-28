@@ -7,7 +7,6 @@ import {
   ChevronSmallDownIcon,
   CollapseIcon,
   ExpandAltIcon,
-  FilterIcon,
   SearchIcon,
   StorybookIcon,
 } from '@storybook/icons';
@@ -500,9 +499,6 @@ const SearchBox: FC<{ value: string; onChange: (value: string) => void }> = ({
       value={value}
       onChange={(event) => onChange(event.target.value)}
     />
-    <SearchIconWrap aria-hidden="true">
-      <FilterIcon />
-    </SearchIconWrap>
   </SearchField>
 );
 

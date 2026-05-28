@@ -1,9 +1,9 @@
 ---
-title: Storybook for Angular
+title: Storybook for Angular with Webpack
 hideRendererSelector: true
 sidebar:
-  order: 1
-  title: Angular
+  order: 2
+  title: Angular (Webpack)
 ---
 
 Storybook for Angular is a [framework](../../contribute/framework.mdx) that makes it easy to develop and test UI components in isolation for [Angular](https://angular.io/) applications. It uses Angular builders and integrates with [Compodoc](https://compodoc.app/) to provide automatic documentation generation.
@@ -232,8 +232,8 @@ Then, adjust your `package.json` script section, to replace the existing Storybo
   "scripts": {
 -    "storybook": "start-storybook -p 6006", // or `storybook dev -p 6006`
 -    "build-storybook": "build-storybook" // or `storybook build`
-+    "storybook": "ng run <project-name:storybook",
-+    "storybook": "ng run <project-name:storybook",
++    "storybook": "ng run <project-name>:storybook",
++    "build-storybook": "ng run <project-name>:build-storybook",
   }
 }
 ```
@@ -246,8 +246,8 @@ Note that `compodoc` is now built into `@storybook/angular`; you don't have to c
 -    "docs:json": "compodoc -p tsconfig.json -e json -d ./documentation",
 -    "storybook": "npm run docs:json && start-storybook -p 6006",
 -    "build-storybook": "npm run docs:json && build-storybook"
-+    "storybook": "ng run <project-name:storybook",
-+    "storybook": "ng run <project-name:storybook",
++    "storybook": "ng run <project-name>:storybook",
++    "build-storybook": "ng run <project-name>:build-storybook",
   }
 }
 ```

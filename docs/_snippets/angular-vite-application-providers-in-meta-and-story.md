@@ -1,5 +1,5 @@
 ```ts filename="ChipsModule.stories.ts" renderer="angular" language="ts" tabTitle="CSF 3"
-import { type Meta, type StoryObj, applicationConfig } from '@storybook/angular';
+import { type Meta, type StoryObj, applicationConfig } from '@storybook/angular-vite';
 
 import { BrowserAnimationsModule, provideAnimations } from '@angular/platform-browser/animations';
 import { importProvidersFrom } from '@angular/core';
@@ -38,7 +38,7 @@ export const WithCustomApplicationProvider: Story = {
 ```
 
 ```ts filename="ChipsModule.stories.ts" renderer="angular" language="ts" tabTitle="CSF Next 🧪"
-import { applicationConfig } from '@storybook/angular';
+import { applicationConfig } from '@storybook/angular-vite';
 
 import { BrowserAnimationsModule, provideAnimations } from '@angular/platform-browser/animations';
 import { importProvidersFrom } from '@angular/core';

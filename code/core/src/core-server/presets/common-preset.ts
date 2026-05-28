@@ -18,7 +18,7 @@ import { logger } from 'storybook/internal/node-logger';
 import { telemetry } from 'storybook/internal/telemetry';
 import type {
   CoreConfig,
-  DocgenExtractor,
+  DocgenProvider,
   Indexer,
   Options,
   PresetProperty,
@@ -316,13 +316,13 @@ export const managerEntries = async (existing: any) => {
 globalThis.STORYBOOK_SERVICES_LOADED = globalThis.STORYBOOK_SERVICES_LOADED ?? false;
 
 /**
- * Seed extractor for the experimental_docgen middleware chain.
+ * Seed provider for the experimental_docgen middleware chain.
  *
- * Returns an empty payload so a chain with zero registered extractors still produces a defined
- * result (rather than throwing). Real extractors registered through `experimental_docgen` wrap
+ * Returns an empty payload so a chain with zero registered providers still produces a defined
+ * result (rather than throwing). Real providers registered through `experimental_docgen` wrap
  * this and either replace or merge with its output.
  */
-const identityDocgenExtractor: DocgenExtractor = async (input) => ({
+const identityDocgenProvider: DocgenProvider = async (input) => ({
   componentId: input.componentId,
   name: '',
   description: '',
@@ -340,14 +340,14 @@ export const services = async (_value: void, options: Options): Promise<void> =>
   const generator =
     await options.presets.apply<Promise<StoryIndexGenerator>>('storyIndexGenerator');
 
-  const extractor = await options.presets.apply<DocgenExtractor>(
+  const provider = await options.presets.apply<DocgenProvider>(
     'experimental_docgen',
-    identityDocgenExtractor
+    identityDocgenProvider
   );
 
   registerDocgenService({
     getIndex: () => generator.getIndex(),
-    extractor,
+    provider,
   });
 };
 

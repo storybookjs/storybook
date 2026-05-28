@@ -3,7 +3,7 @@ import { OpenServiceDocgenMissingComponentError } from '../../../../server-error
 import type { StoryIndex } from '../../../../types/modules/indexer.ts';
 import { registerService } from '../../service-registration.ts';
 import { docgenServiceDef } from './definition.ts';
-import type { DocgenExtractor } from './types.ts';
+import type { DocgenProvider } from './types.ts';
 
 export type RegisterDocgenServiceOptions = {
   /**
@@ -12,17 +12,17 @@ export type RegisterDocgenServiceOptions = {
    */
   getIndex: () => Promise<StoryIndex>;
   /**
-   * Fully composed docgen extractor chain produced by `presets.apply('experimental_docgen', ...)`.
-   * Wraps each registered preset on top of the identity extractor seed.
+   * Fully composed docgen provider chain produced by `presets.apply('experimental_docgen', ...)`.
+   * Wraps each registered preset on top of the identity provider seed.
    */
-  extractor: DocgenExtractor;
+  provider: DocgenProvider;
 };
 
 /**
  * Registers the docgen open service against the process-global registry.
  *
  * The `extractDocgen` command does the work: it reads the story index, resolves entries for the
- * requested componentId, delegates to the composed extractor chain, and writes the payload into
+ * requested componentId, delegates to the composed provider chain, and writes the payload into
  * state. The `getDocgen` query's load hook simply invokes that command. `static.inputs`
  * enumerates every distinct componentId for the static-build snapshot pass.
  */
@@ -58,7 +58,9 @@ export function registerDocgenService(options: RegisterDocgenServiceOptions) {
             throw new OpenServiceDocgenMissingComponentError({ componentId: input.componentId });
           }
 
-          const payload = await options.extractor({
+          // Provider errors bubble out of the command unchanged; consumers see the underlying
+          // failure rather than a generic "missing".
+          const payload = await options.provider({
             componentId: input.componentId,
             entries,
           });

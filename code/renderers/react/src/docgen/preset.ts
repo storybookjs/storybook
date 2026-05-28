@@ -1,9 +1,9 @@
-import type { DocgenExtractor, PresetPropertyFn } from 'storybook/internal/types';
+import type { DocgenProvider, PresetPropertyFn } from 'storybook/internal/types';
 
 // Seed used as a defensive default for `nextDocgen`. In practice core seeds the middleware chain
-// with its own identity extractor, so `nextDocgen` is always supplied at runtime — this default
+// with its own identity provider, so `nextDocgen` is always supplied at runtime — this default
 // just satisfies the optional-typed preset slot without a non-null assertion.
-const passthroughDocgen: DocgenExtractor = async (input) => ({
+const identityDocgenProvider: DocgenProvider = async (input) => ({
   componentId: input.componentId,
   name: '',
   description: '',
@@ -11,17 +11,17 @@ const passthroughDocgen: DocgenExtractor = async (input) => ({
 });
 
 /**
- * Phase-1 mock docgen extractor for the React renderer.
+ * Phase-1 mock docgen provider for the React renderer.
  *
- * Wraps the previously accumulated extractor (received as the preset `config`) and returns a new
- * extractor that synthesizes a deterministic name + description from the componentId. The wrapper
+ * Wraps the previously accumulated provider (received as the preset `config`) and returns a new
+ * provider that synthesizes a deterministic name + description from the componentId. The wrapper
  * still calls `nextDocgen` so the middleware-merge code path is exercised end-to-end before phase
- * 3 replaces this body with a real RCM-backed extractor.
+ * 3 replaces this body with a real RCM-backed provider.
  */
 export const experimental_docgen: PresetPropertyFn<'experimental_docgen'> = async (
-  nextDocgen = passthroughDocgen
+  nextDocgen = identityDocgenProvider
 ) => {
-  const wrapped: DocgenExtractor = async (input) => {
+  const wrapped: DocgenProvider = async (input) => {
     const downstream = await nextDocgen(input);
     const fallbackName = input.entries[0]?.title.split('/').at(-1) ?? input.componentId;
     return {

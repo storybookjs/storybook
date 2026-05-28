@@ -10,16 +10,16 @@ import type { Server as NetServer } from 'net';
 import type { Options as TelejsonOptions } from 'telejson';
 import type { PackageJson as PackageJsonFromTypeFest } from 'type-fest';
 
-import type { DocgenExtractor } from '../../shared/open-service/services/docgen/types.ts';
+import type { DocgenProvider } from '../../shared/open-service/services/docgen/types.ts';
 import type { SupportedBuilder } from './builders.ts';
 import type { SupportedFramework } from './frameworks.ts';
 import type { Indexer, StoriesEntry } from './indexer.ts';
 import type { SupportedRenderer } from './renderers.ts';
 
 export type {
-  DocgenExtractor,
-  DocgenExtractorInput,
   DocgenPayload,
+  DocgenProvider,
+  DocgenProviderInput,
 } from '../../shared/open-service/services/docgen/types.ts';
 
 /** ⚠️ This file contains internal WIP types they MUST NOT be exported outside this package for now! */
@@ -123,9 +123,9 @@ export interface Presets {
   apply(extension: 'services', config?: StorybookConfigRaw['services'], args?: any): Promise<void>;
   apply(
     extension: 'experimental_docgen',
-    config: DocgenExtractor,
+    config: DocgenProvider,
     args?: any
-  ): Promise<DocgenExtractor>;
+  ): Promise<DocgenProvider>;
 
   /** The second and third parameter are not needed. And make type inference easier. */
   apply<T extends keyof StorybookConfigRaw>(extension: T): Promise<StorybookConfigRaw[T]>;
@@ -449,7 +449,7 @@ export interface StorybookConfigRaw {
   core?: CoreConfig;
   experimental_manifests?: Manifests;
   experimental_enrichCsf?: CsfEnricher;
-  experimental_docgen?: DocgenExtractor;
+  experimental_docgen?: DocgenProvider;
   staticDirs?: (DirectoryMapping | string)[];
   logLevel?: string;
   features?: {
@@ -764,8 +764,8 @@ export interface StorybookConfig {
   services?: PresetValue<StorybookConfigRaw['services']>;
 
   /**
-   * Middleware-style extractor for the experimental docgen service. Each registrant receives the
-   * previously accumulated extractor as its config argument and returns a wrapping extractor that
+   * Middleware-style provider for the experimental docgen service. Each registrant receives the
+   * previously accumulated provider as its config argument and returns a wrapping provider that
    * may delegate to it via the input forwarding pattern.
    */
   experimental_docgen?: PresetValue<StorybookConfigRaw['experimental_docgen']>;

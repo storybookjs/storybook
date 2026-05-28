@@ -1,14 +1,14 @@
 import type { IndexEntry } from '../../../../types/modules/indexer.ts';
 
 /**
- * Caller-facing input to the docgen extractor middleware.
+ * Caller-facing input to a docgen provider middleware.
  *
  * `componentId` is the story-index componentId (the prefix before the first `--` in a story id).
  * `entries` is the set of story / attached-docs entries that resolve to that componentId — the
- * docgen service pre-resolves them from the story index so each extractor can act without
+ * docgen service pre-resolves them from the story index so each provider can act without
  * re-reading the index.
  */
-export interface DocgenExtractorInput {
+export interface DocgenProviderInput {
   componentId: string;
   entries: IndexEntry[];
 }
@@ -28,10 +28,10 @@ export interface DocgenPayload {
 }
 
 /**
- * Middleware-style extractor function registered through the `experimental_docgen` preset.
+ * Middleware-style provider function registered through the `experimental_docgen` preset.
  *
- * Each registrant returns a wrapper around the previous accumulated extractor (received as the
+ * Each registrant returns a wrapper around the previous accumulated provider (received as the
  * preset's `config` argument). The wrapper may call its inner `nextDocgen` to merge with
- * downstream extractors, and must produce a complete {@link DocgenPayload}.
+ * downstream providers, and must produce a complete {@link DocgenPayload}.
  */
-export type DocgenExtractor = (input: DocgenExtractorInput) => Promise<DocgenPayload>;
+export type DocgenProvider = (input: DocgenProviderInput) => Promise<DocgenPayload>;

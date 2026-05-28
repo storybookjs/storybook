@@ -23,6 +23,7 @@ import type ts from 'typescript';
 
 import type { StoryRef } from '../getComponentImports.ts';
 import { groupByToMap } from '../utils.ts';
+import type { ComponentDoc } from './componentMetaExtractor.ts';
 import { ComponentMetaProject } from './ComponentMetaProject.ts';
 
 // Adapted from:
@@ -95,6 +96,30 @@ export class ComponentMetaManager {
         logger.debug(`[reactComponentMeta] Batch extraction failed: ${err}`);
       }
     }
+  }
+
+  /**
+   * Extract docgen for one component's set of story references and return the resolved
+   * {@link ComponentDoc}, or `undefined` when nothing extractable was found.
+   *
+   * Intended for per-component callers like the docgen open service: pass only the story refs
+   * relevant to one componentId. The TS program, file-snapshot cache, and watcher all live on
+   * `this`, so successive calls for different components share parsing work and stay in sync with
+   * source-file edits without the caller needing to manage state.
+   *
+   * The first non-empty `reactComponentMeta` produced by the batch is returned. Callers that need
+   * to pick between multiple resolved components (e.g. story files that render both a primary and
+   * a subcomponent) should narrow the input set ahead of time.
+   */
+  extractDocForComponent(entries: StoryRef[]): ComponentDoc | undefined {
+    this.batchExtract(entries);
+    for (const entry of entries) {
+      const doc = entry.component?.reactComponentMeta;
+      if (doc) {
+        return doc;
+      }
+    }
+    return undefined;
   }
 
   // ---------------------------------------------------------------------------

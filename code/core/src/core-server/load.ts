@@ -15,8 +15,6 @@ import { dirname, isAbsolute, join, relative, resolve } from 'pathe';
 
 import { resolvePackageDir } from '../shared/utils/module.ts';
 
-globalThis.STORYBOOK_SERVICES_LOADED = globalThis.STORYBOOK_SERVICES_LOADED ?? false;
-
 export async function loadStorybook(
   options: CLIOptions &
     LoadOptions &
@@ -96,11 +94,6 @@ export async function loadStorybook(
 
   const features = await presets.apply('features');
   global.FEATURES = features;
-
-  if (!globalThis.STORYBOOK_SERVICES_LOADED) {
-    await presets.apply('services');
-    globalThis.STORYBOOK_SERVICES_LOADED = true;
-  }
 
   return {
     ...options,

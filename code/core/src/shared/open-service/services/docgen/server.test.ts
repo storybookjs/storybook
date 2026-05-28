@@ -163,8 +163,11 @@ describe('docgen open service', () => {
 
       const store = await buildStaticFiles();
 
-      expect(Object.keys(store).sort()).toEqual(['docgen/button.json', 'docgen/card.json']);
-      expect(store['docgen/button.json']).toMatchObject({
+      expect(Object.keys(store).sort()).toEqual([
+        'core/docgen/button.json',
+        'core/docgen/card.json',
+      ]);
+      expect(store['core/docgen/button.json']).toMatchObject({
         components: {
           button: {
             componentId: 'button',

@@ -39,6 +39,7 @@ export const docgenServiceDef = defineService({
         })
       ),
       handler: (input, ctx) => ctx.self.state.components[input.componentId],
+      filePath: (input) => `${input.componentId}.json`,
     },
   },
   commands: {

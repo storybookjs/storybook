@@ -33,16 +33,13 @@ export function registerDocgenService(options: RegisterDocgenServiceOptions) {
         load: async (input, ctx) => {
           await ctx.self.commands.extractDocgen(input);
         },
-        static: {
-          path: (input) => `docgen/${input.componentId}.json`,
-          inputs: async () => {
-            const index = await options.getIndex();
-            const componentIds = new Set<string>();
-            for (const entry of Object.values(index.entries)) {
-              componentIds.add(getComponentIdFromEntry(entry));
-            }
-            return Array.from(componentIds, (componentId) => ({ componentId }));
-          },
+        staticInputs: async () => {
+          const index = await options.getIndex();
+          const componentIds = new Set<string>();
+          for (const entry of Object.values(index.entries)) {
+            componentIds.add(getComponentIdFromEntry(entry));
+          }
+          return Array.from(componentIds, (componentId) => ({ componentId }));
         },
       },
     },

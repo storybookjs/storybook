@@ -27,7 +27,7 @@ export type InferSchemaOutput<TSchema extends AnySchema> = StandardSchemaV1.Infe
  * `defineService()` infers one input-schema map and one output-schema map per operation family
  * (queries and commands). Keeping those maps separate gives TypeScript a place to correlate the
  * `input` and `output` properties of each inline object before it contextually types sibling
- * callbacks like `handler`, `load`, and `static.path`.
+ * callbacks like `handler`, `load`, `filePath`, and `staticInputs`.
  */
 export type OperationInputSchemas = Record<string, AnySchema>;
 
@@ -137,6 +137,8 @@ export type OperationDescriptor = {
   description?: string;
   input: SchemaDescriptor;
   output: SchemaDescriptor;
+  /** Present when the query declares `filePath` at definition time. */
+  filePath?: true;
 };
 
 export type ServiceDescriptor = {
@@ -145,15 +147,6 @@ export type ServiceDescriptor = {
   queries: Record<string, OperationDescriptor>;
   commands: Record<string, OperationDescriptor>;
 };
-
-export interface ServiceRegistryApi {
-  listServices(): Promise<ServiceSummary[]>;
-  describeService(serviceId: ServiceId): Promise<ServiceDescriptor>;
-  getService(serviceId: ServiceId): RuntimeService;
-}
-
-export type RuntimeService = ServiceInstance<unknown, Queries<unknown>, Commands<unknown>> &
-  ServiceRegistryApi;
 
 /** Context passed to query handlers. */
 export type QueryCtx<TState> = {
@@ -172,6 +165,12 @@ export type LoadCtx<
   getService: ServiceRegistryApi['getService'];
 };
 
+/** Static input enumerator stored on registered definitions; always receives load context. */
+export type RegisteredStaticInputs<TState> = BivariantCallback<
+  [ctx: LoadCtx<TState>],
+  unknown[] | Promise<unknown[]>
+>;
+
 /** Context passed to command handlers. */
 export type CommandCtx<
   TState,
@@ -184,35 +183,15 @@ export type CommandCtx<
 };
 
 /**
- * Optional static metadata for a query.
- *
- * `inputs()` enumerates the raw caller-facing inputs that should be prebuilt, while `path()` can
- * customize which serialized state file receives the resulting state snapshot.
- */
-export type QueryStaticDefinition<
-  TState,
-  TInput = unknown,
-  TParsedInput = TInput,
-  TCommandInputSchemas extends OperationInputSchemas = OperationInputSchemas,
-  TCommandOutputSchemas extends MatchingOutputSchemas<TCommandInputSchemas> =
-    MatchingOutputSchemas<TCommandInputSchemas>,
-> = {
-  path?: BivariantCallback<
-    [input: TParsedInput, ctx: LoadCtx<TState, TCommandInputSchemas, TCommandOutputSchemas>],
-    string
-  >;
-  inputs: BivariantCallback<
-    [ctx: LoadCtx<TState, TCommandInputSchemas, TCommandOutputSchemas>],
-    TInput[] | Promise<TInput[]>
-  >;
-};
-
-/**
  * Declarative definition for one query.
  *
  * Queries validate caller input synchronously, run a synchronous read-only handler, and validate
  * the resolved output. The optional `load` hook is fired in the background on each query call
  * (deduped while in flight) so subscribers and `.loaded()` callers see fully populated state.
+ *
+ * Queries that participate in static JSON generation declare `filePath` at definition time.
+ * `staticInputs` may also be declared here when the input list has no runtime dependencies; inputs
+ * that need registry or story-index context belong in server registration instead.
  */
 export type QueryDefinition<
   TState,
@@ -225,6 +204,13 @@ export type QueryDefinition<
   description?: string;
   input: TInputSchema;
   output: TOutputSchema;
+  /** Logical path for the serialized state snapshot, relative to this service's output folder. */
+  filePath?: BivariantCallback<[input: InferSchemaOutput<TInputSchema>], string>;
+  /** Dependency-free static build inputs declared alongside the public contract. */
+  staticInputs?: BivariantCallback<
+    [],
+    InferSchemaInput<TInputSchema>[] | Promise<InferSchemaInput<TInputSchema>[]>
+  >;
   handler?: BivariantCallback<
     [input: InferSchemaOutput<TInputSchema>, ctx: QueryCtx<TState>],
     InferSchemaInput<TOutputSchema>
@@ -235,13 +221,6 @@ export type QueryDefinition<
       ctx: LoadCtx<TState, TCommandInputSchemas, TCommandOutputSchemas>,
     ],
     void | Promise<void>
-  >;
-  static?: QueryStaticDefinition<
-    TState,
-    InferSchemaInput<TInputSchema>,
-    InferSchemaOutput<TInputSchema>,
-    TCommandInputSchemas,
-    TCommandOutputSchemas
   >;
 };
 
@@ -269,9 +248,10 @@ export type AnyQueryDefinition<TState> = {
   description?: string;
   input: AnySchema;
   output: AnySchema;
+  filePath?: BivariantCallback<[input: unknown], string>;
+  staticInputs?: RegisteredStaticInputs<TState>;
   handler?: BivariantCallback<[input: unknown, ctx: QueryCtx<TState>], unknown>;
   load?: BivariantCallback<[input: unknown, ctx: LoadCtx<TState>], void | Promise<void>>;
-  static?: QueryStaticDefinition<TState, unknown, unknown>;
 };
 
 /** Internal structural constraint used to store any command definition in a record. */
@@ -303,6 +283,9 @@ export type ServiceDefinition<
   commands: TCommands;
 };
 
+/** Structural constraint for any service definition stored in the registry. */
+export type AnyServiceDefinition = ServiceDefinition<unknown, Queries<unknown>, Commands<unknown>>;
+
 /** Runtime service instance derived from a `ServiceDefinition`. */
 export type ServiceInstance<
   TState,
@@ -310,29 +293,48 @@ export type ServiceInstance<
   TCommands extends Commands<TState>,
 > = {
   queries: {
-    [TKey in keyof TQueries]: TQueries[TKey] extends QueryDefinition<
-      TState,
-      infer TInputSchema,
-      infer TOutputSchema
-    >
+    [TKey in keyof TQueries]: TQueries[TKey] extends {
+      input: infer TInputSchema extends AnySchema;
+      output: infer TOutputSchema extends AnySchema;
+    }
       ? Query<InferSchemaInput<TInputSchema>, InferSchemaOutput<TOutputSchema>>
       : never;
   };
   commands: {
-    [TKey in keyof TCommands]: TCommands[TKey] extends CommandDefinition<
-      TState,
-      infer TInputSchema,
-      infer TOutputSchema
-    >
+    [TKey in keyof TCommands]: TCommands[TKey] extends {
+      input: infer TInputSchema extends AnySchema;
+      output: infer TOutputSchema extends AnySchema;
+    }
       ? (input: InferSchemaInput<TInputSchema>) => Promise<InferSchemaOutput<TOutputSchema>>
       : never;
   };
 };
 
+/** Runtime instance type recovered from one authored service definition. */
+export type ServiceInstanceOf<TDefinition extends AnyServiceDefinition> =
+  TDefinition extends ServiceDefinition<infer TState, infer TQueries, infer TCommands>
+    ? ServiceInstance<TState, TQueries, TCommands>
+    : never;
+
+export interface ServiceRegistryApi {
+  listServices(): Promise<ServiceSummary[]>;
+  describeService(serviceId: ServiceId): Promise<ServiceDescriptor>;
+  getService(serviceId: ServiceId): RuntimeService;
+  getService<TDefinition extends AnyServiceDefinition>(
+    serviceId: ServiceId
+  ): ServiceInstanceOf<TDefinition>;
+}
+
+export type RuntimeService = ServiceInstance<unknown, Queries<unknown>, Commands<unknown>> &
+  ServiceRegistryApi;
+
 export type ServiceQueryRegistration<TState, TQuery extends AnyQueryDefinition<TState>> = Pick<
   TQuery,
-  'handler' | 'load' | 'static'
->;
+  'handler' | 'load'
+> & {
+  /** Static build inputs that may depend on registry or other server context. */
+  staticInputs?: RegisteredStaticInputs<TState>;
+};
 
 export type ServiceCommandRegistration<
   TState,

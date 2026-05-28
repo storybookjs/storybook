@@ -8,6 +8,7 @@
 export { defineService } from './service-definition.ts';
 
 export type {
+  AnyServiceDefinition,
   Command,
   CommandCtx,
   CommandDefinition,
@@ -26,6 +27,7 @@ export type {
   ServiceDescriptor,
   ServiceId,
   ServiceInstance,
+  ServiceInstanceOf,
   ServiceRegistrationOptions,
   ServiceSummary,
   StaticStore,

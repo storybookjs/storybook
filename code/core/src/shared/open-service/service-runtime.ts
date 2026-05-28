@@ -185,8 +185,8 @@ function makeLoadKey(serviceId: ServiceId, queryName: string, validatedInput: un
 /**
  * Resolves which serialized static-state file should back a query input.
  *
- * Queries without a custom `static.path()` share one default file per service. The returned value
- * is a logical slash-separated store key, not a raw filesystem path.
+ * The returned value is a logical slash-separated store key scoped under the service id, not a raw
+ * filesystem path.
  */
 function normalizeStaticStoragePath(serviceId: ServiceId, name: string, rawPath: string): string {
   const segments = rawPath
@@ -203,16 +203,17 @@ function normalizeStaticStoragePath(serviceId: ServiceId, name: string, rawPath:
   return segments.join('/');
 }
 
-export function resolveStaticPath<TState>(
+export function resolveStaticPath(
   serviceId: ServiceId,
   name: string,
-  queryDef: RuntimeQueryDefinition<TState>,
-  input: unknown,
-  ctx: LoadCtx<TState>
+  queryDef: { filePath: (input: unknown) => string },
+  input: unknown
 ): string {
-  const rawPath = queryDef.static?.path ? queryDef.static.path(input, ctx) : `${serviceId}.json`;
+  const rawPath = queryDef.filePath(input);
+  const relativePath = normalizeStaticStoragePath(serviceId, name, rawPath);
 
-  return normalizeStaticStoragePath(serviceId, name, rawPath);
+  // Scope every snapshot under the service id so two services cannot collide on disk.
+  return `${serviceId}/${relativePath}`;
 }
 
 /**

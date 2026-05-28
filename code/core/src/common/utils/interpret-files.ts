@@ -3,6 +3,8 @@ import { extname } from 'node:path';
 
 import { ResolverFactory } from 'oxc-resolver';
 
+import { storybookConfigExtensions } from '../../shared/constants/extensions.ts';
+
 const typescriptFallbackExtensions: Record<string, string[]> = {
   '.js': ['.ts', '.tsx'],
   '.mjs': ['.mts', '.mtsx'],
@@ -10,18 +12,7 @@ const typescriptFallbackExtensions: Record<string, string[]> = {
   '.jsx': ['.tsx'],
 };
 
-export const supportedExtensions = [
-  '.js',
-  '.ts',
-  '.jsx',
-  '.tsx',
-  '.mjs',
-  '.mts',
-  '.mtsx',
-  '.cjs',
-  '.cts',
-  '.ctsx',
-] as const;
+export const supportedExtensions = storybookConfigExtensions;
 
 export function getInterpretedFile(pathToFile: string) {
   return supportedExtensions

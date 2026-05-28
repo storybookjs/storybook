@@ -181,3 +181,25 @@ export const MultipleControlsOnSamePage: Story = {
     await expect(uniqueIds.size).toBe(allIds.length);
   },
 };
+
+/**
+ * When multiple Controls blocks for the SAME story are on the same docs page, each control should
+ * still have a unique id (and unique name across blocks, so that radio button groups remain
+ * independent). This verifies the fix for https://github.com/storybookjs/storybook/issues/29295.
+ */
+export const MultipleControlsForSameStoryOnSamePage: Story = {
+  render: () => (
+    <>
+      <Controls of={ExampleStories.NoParameters} />
+      <Controls of={ExampleStories.NoParameters} />
+    </>
+  ),
+  play: async ({ canvasElement }) => {
+    const allIds = Array.from(canvasElement.querySelectorAll('[id^="control-"]')).map(
+      (el) => el.id
+    );
+    const uniqueIds = new Set(allIds);
+    await expect(allIds.length).toBeGreaterThan(0);
+    await expect(uniqueIds.size).toBe(allIds.length);
+  },
+};

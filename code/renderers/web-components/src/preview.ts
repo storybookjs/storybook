@@ -16,7 +16,7 @@ import type {
   StoryAnnotations,
 } from 'storybook/internal/types';
 
-import type { RemoveIndexSignature, SetOptional, Simplify, UnionToIntersection } from 'type-fest';
+import type { OmitIndexSignature, SetOptional, Simplify, UnionToIntersection } from 'type-fest';
 
 import * as webComponentsAnnotations from './entry-preview.ts';
 import * as webComponentsDocsAnnotations from './entry-preview-docs.ts';
@@ -53,7 +53,7 @@ export function __definePreview<Addons extends PreviewAddon<never>[]>(
 }
 
 type InferArgs<TArgs, T, Decorators> = Simplify<
-  TArgs & Simplify<RemoveIndexSignature<DecoratorsArgs<WebComponentsTypes & T, Decorators>>>
+  TArgs & Simplify<OmitIndexSignature<DecoratorsArgs<WebComponentsTypes & T, Decorators>>>
 >;
 
 type InferWebComponentsTypes<T, TArgs, Decorators> = WebComponentsTypes &

@@ -16,8 +16,10 @@ export type Task = Partial<RunnerTask> & {
   meta: Record<string, any>;
 };
 
-const transport = { setHandler: vi.fn(), send: vi.fn() };
-globalThis.__STORYBOOK_ADDONS_CHANNEL__ ??= new Channel({ transport });
+export const initTransport = () => {
+  const transport = { setHandler: vi.fn(), send: vi.fn() };
+  globalThis.__STORYBOOK_ADDONS_CHANNEL__ ??= new Channel({ transport });
+};
 
 export const modifyErrorMessage = ({ task }: { task: Task }) => {
   const meta = task.meta;
@@ -33,6 +35,8 @@ export const modifyErrorMessage = ({ task }: { task: Task }) => {
     currentError.message = `\n\x1B[34mClick to debug the error directly in Storybook: ${storyUrl}\x1B[39m\n\n${currentError.message}`;
   }
 };
+
+initTransport();
 
 beforeAll(() => {
   if (globalThis.globalProjectAnnotations) {

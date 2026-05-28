@@ -186,7 +186,13 @@ export function createSharedStaticFileServiceDef() {
   });
 }
 
-/** Creates a service that composes one service's query inside another service's query. */
+/**
+ * Creates a service that composes one service's query inside another service's query.
+ *
+ * The derived service resolves the source service through `ctx.getService(...)` at call time —
+ * the same lookup any consumer code would use — rather than capturing the registered instance in
+ * a closure. The source service must already be registered when the derived query runs.
+ */
 export function createDerivedBooleanFromChildQueryServiceDef() {
   type DerivedState = Record<string, never>;
 
@@ -200,7 +206,8 @@ export function createDerivedBooleanFromChildQueryServiceDef() {
         input: entryIdInputSchema,
         output: booleanOutputSchema,
         handler: (input, ctx) => {
-          const record = ctx.getService(mutableRecordLookupServiceDef.id).queries.getRecordFields({
+          const source = ctx.getService(mutableRecordLookupServiceDef.id);
+          const record = source.queries.getRecordFields({
             entryId: input.entryId,
           }) as Record<string, string> | null;
 

@@ -126,8 +126,14 @@ const TabPanels = styled.div(({ theme }) => ({
   flex: 1,
   minHeight: 0,
   background: theme.background.app,
-  overflow: 'auto',
+  overflow: 'hidden',
 }));
+
+const TabPanelBody = styled.div({
+  height: '100%',
+  minHeight: 0,
+  overflow: 'auto',
+});
 
 // Compact search row — the search field shares the row with optional
 // trailing controls (e.g. the Components tab change-filter toggle).
@@ -201,12 +207,28 @@ const CollectionBlock = styled.section(({ theme }) => ({
 
 const CollectionHead = styled.div(({ theme }) => ({
   display: 'flex',
+  width: '100%',
+  cursor: 'pointer',
+  position: 'sticky',
+  top: 0,
+  zIndex: 1,
+  background: theme.background.app,
+  containerType: 'scroll-state',
+  containerName: 'sticky-heading',
+}));
+
+const CollectionHeadInner = styled.div(({ theme }) => ({
+  display: 'flex',
+  width: '100%',
   alignItems: 'center',
   justifyContent: 'space-between',
   gap: 8,
   padding: '6px 12px',
   minHeight: 40,
-  cursor: 'pointer',
+  boxShadow: 'inset 0 -1px 0 transparent',
+  '@container sticky-heading scroll-state(stuck: top)': {
+    boxShadow: `0 1px 0 ${theme.appBorderColor}`,
+  },
   '&:hover [data-collapsible-title], &:hover [data-collapsible-title] *': {
     color: theme.color.secondary,
   },
@@ -347,26 +369,28 @@ const CollectionsTab: FC<{
               collapsed={!isExpanded}
               summary={() => (
                 <CollectionHead onClick={() => onToggleCollection(index)}>
-                  <CollectionHeadText data-collapsible-title>
-                    <CollectionLabel>{collection.title}</CollectionLabel>
-                  </CollectionHeadText>
-                  <CollectionControls>
-                    <CollectionCount>{storyIds.length}</CollectionCount>
-                    <Button
-                      variant="ghost"
-                      size="small"
-                      padding="small"
-                      ariaLabel={isExpanded ? 'Collapse cluster' : 'Expand cluster'}
-                      onClick={(event) => {
-                        event.stopPropagation();
-                        onToggleCollection(index);
-                      }}
-                    >
-                      <ToggleChevronIcon
-                        style={{ transform: `rotate(${isExpanded ? -180 : 0}deg)` }}
-                      />
-                    </Button>
-                  </CollectionControls>
+                  <CollectionHeadInner>
+                    <CollectionHeadText data-collapsible-title>
+                      <CollectionLabel>{collection.title}</CollectionLabel>
+                    </CollectionHeadText>
+                    <CollectionControls>
+                      <CollectionCount>{storyIds.length}</CollectionCount>
+                      <Button
+                        variant="ghost"
+                        size="small"
+                        padding="small"
+                        ariaLabel={isExpanded ? 'Collapse cluster' : 'Expand cluster'}
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          onToggleCollection(index);
+                        }}
+                      >
+                        <ToggleChevronIcon
+                          style={{ transform: `rotate(${isExpanded ? -180 : 0}deg)` }}
+                        />
+                      </Button>
+                    </CollectionControls>
+                  </CollectionHeadInner>
                 </CollectionHead>
               )}
             >
@@ -438,26 +462,28 @@ const ComponentsTab: FC<{
               collapsed={!isExpanded}
               summary={() => (
                 <CollectionHead onClick={() => onToggleComponent(group.componentId)}>
-                  <CollectionHeadText data-collapsible-title>
-                    {renderComponentTitle(name)}
-                  </CollectionHeadText>
-                  <CollectionControls>
-                    <CollectionCount>{storyIds.length}</CollectionCount>
-                    <Button
-                      variant="ghost"
-                      size="small"
-                      padding="small"
-                      ariaLabel={isExpanded ? 'Collapse component' : 'Expand component'}
-                      onClick={(event) => {
-                        event.stopPropagation();
-                        onToggleComponent(group.componentId);
-                      }}
-                    >
-                      <ToggleChevronIcon
-                        style={{ transform: `rotate(${isExpanded ? -180 : 0}deg)` }}
-                      />
-                    </Button>
-                  </CollectionControls>
+                  <CollectionHeadInner>
+                    <CollectionHeadText data-collapsible-title>
+                      {renderComponentTitle(name)}
+                    </CollectionHeadText>
+                    <CollectionControls>
+                      <CollectionCount>{storyIds.length}</CollectionCount>
+                      <Button
+                        variant="ghost"
+                        size="small"
+                        padding="small"
+                        ariaLabel={isExpanded ? 'Collapse component' : 'Expand component'}
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          onToggleComponent(group.componentId);
+                        }}
+                      >
+                        <ToggleChevronIcon
+                          style={{ transform: `rotate(${isExpanded ? -180 : 0}deg)` }}
+                        />
+                      </Button>
+                    </CollectionControls>
+                  </CollectionHeadInner>
                 </CollectionHead>
               )}
             >
@@ -646,7 +672,7 @@ export const SummaryScreen: FC<SummaryScreenProps> = ({
         </TabHeader>
 
         <TabPanels>
-          <div
+          <TabPanelBody
             id={collectionsPanelId}
             role="tabpanel"
             aria-labelledby={collectionsTabId}
@@ -694,9 +720,9 @@ export const SummaryScreen: FC<SummaryScreenProps> = ({
                 });
               }}
             />
-          </div>
+          </TabPanelBody>
 
-          <div
+          <TabPanelBody
             id={componentsPanelId}
             role="tabpanel"
             aria-labelledby={componentsTabId}
@@ -740,7 +766,7 @@ export const SummaryScreen: FC<SummaryScreenProps> = ({
                 });
               }}
             />
-          </div>
+          </TabPanelBody>
         </TabPanels>
       </Body>
     </Page>

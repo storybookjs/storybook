@@ -2,6 +2,7 @@ import { sanitizeStoryContextUpdate } from 'storybook/preview-api';
 import type { DecoratorFunction, LegacyStoryFn, StoryContext } from 'storybook/internal/types';
 
 import { computesTemplateFromComponent } from './renderer/ComputesTemplateFromComponent.ts';
+import { getComponentInputsOutputs } from './renderer/utils/NgComponentAnalyzer.ts';
 import type { AngularRenderer } from './types.ts';
 
 export default function decorateStory(
@@ -64,13 +65,26 @@ const cleanArgsDecorator: DecoratorFunction<AngularRenderer> = (storyFn, context
     return storyFn();
   }
 
+  // Without compodoc-derived argTypes the decorator-extracted control/action
+  // signal disappears for component inputs/outputs, so fall back to Angular's
+  // own runtime metadata: any arg whose name matches a component @Input/@Output
+  // (incl. signal inputs/outputs) must be passed through even if its argType is
+  // missing/incomplete.
+  const componentIO = context.component
+    ? getComponentInputsOutputs(context.component)
+    : { inputs: [], outputs: [] };
+  const componentBindings = new Set([
+    ...componentIO.inputs.map((i) => i.templateName),
+    ...componentIO.outputs.map((o) => o.templateName),
+  ]);
+
   const argsToClean = context.args;
 
   context.args = Object.entries(argsToClean).reduce((obj, [key, arg]) => {
     const argType = context.argTypes[key];
 
-    // Only keeps args with a control or an action in argTypes
-    if (argType?.action || argType?.control) {
+    // Keep args declared as component inputs/outputs OR with a control/action.
+    if (argType?.action || argType?.control || componentBindings.has(key)) {
       return { ...obj, [key]: arg };
     }
     return obj;

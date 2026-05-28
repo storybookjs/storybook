@@ -131,10 +131,9 @@ function createDebugServiceDef(storyIndexGeneratorPromise: Promise<StoryIndexGen
         input: preloadVisitInputSchema,
         output: v.undefined(),
         handler: async (input, ctx) => {
-          const selfService = ctx.getService(DEBUG_SERVICE_ID);
-          const summary = selfService.queries.getStoryIndexSummary({
+          const summary = (await ctx.self.queries.getStoryIndexSummary({
             includeSampleIds: false,
-          }) as { entryCount: number; sampleIds: string[] };
+          })) as { entryCount: number; sampleIds: string[] };
           const value = `${input.source}:${input.entryId}:${summary.entryCount}`;
 
           logger.warn(
@@ -158,19 +157,12 @@ function createDebugServiceDef(storyIndexGeneratorPromise: Promise<StoryIndexGen
  * features in one place.
  *
  * The service self-demonstrates queries, commands, loads, subscriptions, static snapshot
- * generation, and story-index integration inside the internal Storybook.
+ * generation, and story-index integration inside the internal Storybook. It is gated behind the
+ * `STORYBOOK_OPEN_SERVICE_DEBUG=true` env flag in `code/.storybook/services-preset.ts`.
  */
 export async function registerOpenServiceDebugService(
   storyIndexGeneratorPromise: Promise<StoryIndexGenerator>
 ): Promise<void> {
-  try {
-    await describeService(DEBUG_SERVICE_ID);
-    logger.warn('[open-service debug] debug service already registered');
-    return;
-  } catch {
-    // The service is not registered yet in this process.
-  }
-
   const service = registerService(createDebugServiceDef(storyIndexGeneratorPromise));
   const descriptor = await describeService(DEBUG_SERVICE_ID);
 
@@ -184,13 +176,16 @@ export async function registerOpenServiceDebugService(
     }
   );
 
-  // Trigger the main runtime behaviors once during registration so debug logs immediately show
-  // the command, query, load, and subscription paths without extra manual setup.
-  await service.commands.syncStoryIndex({ reason: 'services-preset' });
-  await service.commands.addActivity({ message: 'registered via services preset' });
-  service.queries.getActivity({ limit: 10 });
-  service.queries.getStoryIndexSummary({ includeSampleIds: true });
-  await service.queries.getPreloadedValue.loaded({ entryId: 'startup' });
-  await new Promise<void>((resolve) => queueMicrotask(resolve));
-  unsubscribe();
+  try {
+    // Trigger the main runtime behaviors once during registration so debug logs immediately show
+    // the command, query, load, and subscription paths without extra manual setup.
+    await service.commands.syncStoryIndex({ reason: 'services-preset' });
+    await service.commands.addActivity({ message: 'registered via services preset' });
+    service.queries.getActivity({ limit: 10 });
+    service.queries.getStoryIndexSummary({ includeSampleIds: true });
+    await service.queries.getPreloadedValue.loaded({ entryId: 'startup' });
+    await new Promise<void>((resolve) => queueMicrotask(resolve));
+  } finally {
+    unsubscribe();
+  }
 }

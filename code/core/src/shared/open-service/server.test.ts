@@ -1,7 +1,7 @@
-import { readFile } from 'node:fs/promises';
+import { mkdir, readFile, writeFile } from 'node:fs/promises';
 
 import * as v from 'valibot';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { join } from 'pathe';
 import { vol } from 'memfs';
@@ -19,9 +19,23 @@ import {
   mutableRecordLookupServiceDef,
 } from './fixtures.ts';
 
-vi.mock('node:fs/promises', async () => {
+// Spy-only mock: keep the real `node:fs/promises` module shape, then redirect the calls used by
+// the static-files writer (and this test's own `readFile` assertions) to `memfs` so disk state
+// stays scoped to `vol`.
+vi.mock('node:fs/promises', { spy: true });
+
+beforeEach(async () => {
   const memfs = await vi.importActual<typeof import('memfs')>('memfs');
-  return memfs.fs.promises;
+
+  vi.mocked(mkdir).mockImplementation(
+    memfs.fs.promises.mkdir as unknown as typeof import('node:fs/promises').mkdir
+  );
+  vi.mocked(writeFile).mockImplementation(
+    memfs.fs.promises.writeFile as unknown as typeof import('node:fs/promises').writeFile
+  );
+  vi.mocked(readFile).mockImplementation(
+    memfs.fs.promises.readFile as unknown as typeof import('node:fs/promises').readFile
+  );
 });
 
 afterEach(() => {
@@ -32,7 +46,9 @@ afterEach(() => {
 describe('server static builds', () => {
   describe('buildStaticFiles', () => {
     it('runs load from initial state for each input and deep-merges by path', async () => {
-      await expect(buildStaticFiles([awaitedPreloadValueServiceDef])).resolves.toEqual({
+      registerService(awaitedPreloadValueServiceDef);
+
+      await expect(buildStaticFiles()).resolves.toEqual({
         'test/awaited-preload-value.json': {
           'entry-a': 'preloaded',
           'entry-b': 'preloaded',
@@ -41,21 +57,25 @@ describe('server static builds', () => {
     });
 
     it('uses a single default path per service', async () => {
-      const store = await buildStaticFiles([awaitedPreloadValueServiceDef]);
+      registerService(awaitedPreloadValueServiceDef);
+
+      const store = await buildStaticFiles();
 
       expect(Object.keys(store)).toEqual(['test/awaited-preload-value.json']);
     });
 
     it('deep-merges outputs from different queries that resolve to the same custom path', async () => {
-      const sharedStaticFileServiceDef = createSharedStaticFileServiceDef();
+      registerService(createSharedStaticFileServiceDef());
 
-      await expect(buildStaticFiles([sharedStaticFileServiceDef])).resolves.toEqual({
+      await expect(buildStaticFiles()).resolves.toEqual({
         'shared.json': { left: 'preloaded', right: 'preloaded' },
       });
     });
 
     it('skips services and queries without static config', async () => {
-      const store = await buildStaticFiles([mutableRecordLookupServiceDef]);
+      registerService(mutableRecordLookupServiceDef);
+
+      const store = await buildStaticFiles();
 
       expect(Object.keys(store)).toHaveLength(0);
     });
@@ -88,7 +108,7 @@ describe('server static builds', () => {
         },
         commands: {
           copyValue: {
-            description: 'Copies marker state from the registered lookup service.',
+            description: 'Reads marker state from the lookup service in the registry.',
             input: v.undefined(),
             output: v.undefined(),
             handler: async (_input, ctx) => {
@@ -107,12 +127,16 @@ describe('server static builds', () => {
         },
       });
 
-      await expect(buildStaticFiles([staticLookupServiceDef])).resolves.toEqual({
+      registerService(staticLookupServiceDef);
+
+      await expect(buildStaticFiles()).resolves.toEqual({
         'test/static-build-service-lookup.json': {
           value: 'match',
         },
       });
+    });
 
+    it('runs load tasks in parallel so one snapshot can read state another snapshot publishes', async () => {
       const readyEntryIds: string[] = [];
       const parallelSourceServiceDef = defineService({
         id: 'test/parallel-static-input-source',
@@ -149,8 +173,6 @@ describe('server static builds', () => {
           },
         },
       });
-
-      registerService(parallelSourceServiceDef);
 
       const parallelLookupServiceDef = defineService({
         id: 'test/parallel-static-input-consumer',
@@ -205,9 +227,10 @@ describe('server static builds', () => {
         },
       });
 
-      await expect(
-        buildStaticFiles([parallelLookupServiceDef, parallelSourceServiceDef])
-      ).resolves.toEqual({
+      registerService(parallelSourceServiceDef);
+      registerService(parallelLookupServiceDef);
+
+      await expect(buildStaticFiles()).resolves.toEqual({
         'test/parallel-static-input-consumer.json': {
           value: 'entry-a',
         },
@@ -263,7 +286,9 @@ describe('server static builds', () => {
         },
       });
 
-      await expect(buildStaticFiles([customPathServiceDef])).resolves.toEqual({
+      registerService(customPathServiceDef);
+
+      await expect(buildStaticFiles()).resolves.toEqual({
         'nested/value.json': { value: 'dot' },
         'rooted.json': { value: 'rooted' },
         'windows/style.json': { value: 'windows' },
@@ -306,7 +331,9 @@ describe('server static builds', () => {
         },
       });
 
-      await expect(buildStaticFiles([invalidPathServiceDef])).rejects.toMatchObject({
+      registerService(invalidPathServiceDef);
+
+      await expect(buildStaticFiles()).rejects.toMatchObject({
         fromStorybook: true,
         code: 10,
         message:

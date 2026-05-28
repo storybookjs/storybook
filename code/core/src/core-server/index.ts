@@ -17,7 +17,7 @@ export { loadStorybook as experimental_loadStorybook } from './load.ts';
 
 export { Tag } from '../shared/constants/tags.ts';
 export { analyzeMdx } from './utils/analyze-mdx.ts';
-export { defineService } from '../shared/open-service/index.ts';
+export { defineService as experimental_defineService } from '../shared/open-service/index.ts';
 export type {
   Command,
   CommandCtx,
@@ -39,7 +39,7 @@ export {
   describeService,
   getService,
   listServices,
-  registerService,
+  registerService as experimental_registerService,
 } from '../shared/open-service/server.ts';
 
 export { UniversalStore as experimental_UniversalStore } from '../shared/universal-store/index.ts';

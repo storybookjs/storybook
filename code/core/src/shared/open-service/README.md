@@ -137,10 +137,20 @@ Server-side registration happens through the `services` preset hook. Storybook c
 
 That split is intentional:
 
-- [index.ts](./index.ts) stays environment-agnostic so preview, manager, and server code can share one definition surface
-- [server.ts](./server.ts) owns the concrete global registry and static snapshot writing for the current server process
+- [index.ts](./index.ts) stays environment-agnostic so preview, manager, and server code can share
+  one definition surface
+- [server.ts](./server.ts) owns the concrete registry and static snapshot writing for the current
+  server process
 
-The internal Storybook config also registers an example debug service through that hook behind a temporary boolean gate in `.storybook/main.ts`.
+`registerService(definition)` throws `OpenServiceDuplicateRegistrationError` if a service with the
+same id is already registered. The default `services` preset hook in
+[common-preset.ts](../../../core-server/presets/common-preset.ts) also throws if the preset is applied
+more than once in the same process, which catches duplicate registration paths early.
+
+The internal Storybook config registers an example debug service through a dedicated preset file
+([`code/.storybook/services-preset.ts`](../../../../.storybook/services-preset.ts)), gated on
+`STORYBOOK_OPEN_SERVICE_DEBUG=true`. The flag stays unset by default so normal `yarn storybook:ui`
+and `yarn storybook:ui:build` runs do not register the debug service.
 
 ## Runtime Flow
 
@@ -212,7 +222,8 @@ Tests should use `vi.waitFor(...)` when asserting the first emission or follow-u
 
 ## Static Snapshot Flow
 
-`buildStaticFiles(services)` in [server.ts](./server.ts) looks for queries that define:
+`buildStaticFiles()` in [server.ts](./server.ts) iterates every registered service and looks for
+queries that define:
 
 - `load`
 - `static.inputs`
@@ -224,6 +235,10 @@ For each static input it:
 3. runs the runtime's `runLoadOnce(queryName, validatedInput)` helper, which drives the load body (and any loads it triggers via wrapped self queries) to completion
 4. resolves the normalized logical output path
 5. stores the resulting runtime state in the final `StaticStore`
+
+Cross-service `ctx.getService(...)` lookups during load resolve through the same registry the
+dev server uses, so a load sees the same set of services that any other handler in the process
+would see.
 
 If multiple tasks resolve to the same path, their states are deep-merged.
 
@@ -237,6 +252,20 @@ Static path rules:
 - leading `./` and `/` are normalized away
 - backslashes are normalized to `/`
 - `..` segments are rejected so snapshots cannot escape `<outputDir>/services`
+
+```mermaid
+flowchart TD
+  A[buildStaticFiles] --> B{query has load\nand static.inputs?}
+  B -- no --> C[skip query]
+  B -- yes --> D[create fresh runtime from initialState]
+  D --> E[resolve static inputs]
+  E --> F[validate each input]
+  F --> G[run load for that input]
+  G --> H[resolve logical output path]
+  H --> I[capture runtime state snapshot]
+  I --> J[merge snapshots by path into StaticStore]
+  J --> K[writeOpenServiceStaticFiles outputDir]
+```
 
 ## How To Define A Service
 

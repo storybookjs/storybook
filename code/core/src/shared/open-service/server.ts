@@ -38,17 +38,20 @@ export {
 };
 
 /**
- * Builds serialized static-state snapshots for `load`-enabled queries in the server runtime.
+ * Builds serialized static-state snapshots for `load`-enabled queries across every service
+ * currently in the registry.
  *
- * Each static input runs against a fresh service runtime so one load path cannot leak state into
- * another path's snapshot. The runtime's `runLoadOnce` helper drives the load to completion
+ * Each static input runs against a fresh service runtime so one load path cannot leak state
+ * into another path's snapshot. The runtime's `runLoadOnce` helper drives the load to completion
  * (including transitively triggered self-queries) before the resulting state is captured.
+ * Cross-service `ctx.getService(...)` lookups inside a load resolve through the live registry,
+ * matching dev-server behavior.
  */
-export async function buildStaticFiles(services: RuntimeServiceDefinition[]): Promise<StaticStore> {
+export async function buildStaticFiles(): Promise<StaticStore> {
   const store: StaticStore = {};
   const buildTasks: Promise<BuildTaskResult[]>[] = [];
 
-  for (const service of services) {
+  for (const service of getRegisteredServices() as RuntimeServiceDefinition[]) {
     for (const [queryName, query] of Object.entries(service.queries) as [
       string,
       RuntimeQueryDefinition,
@@ -116,7 +119,7 @@ export async function buildStaticFiles(services: RuntimeServiceDefinition[]): Pr
  * produce the correct native separators for the current operating system.
  */
 export async function writeOpenServiceStaticFiles(outputDir: string): Promise<void> {
-  const staticStore = await buildStaticFiles(getRegisteredServices());
+  const staticStore = await buildStaticFiles();
 
   await Promise.all(
     Object.entries(staticStore).map(async ([relativePath, state]) => {

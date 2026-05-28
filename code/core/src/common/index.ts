@@ -27,6 +27,7 @@ export * from './utils/load-preview-or-config-file.ts';
 export * from './utils/log-config.ts';
 export * from './utils/normalize-stories.ts';
 export * from './utils/paths.ts';
+export * from './utils/read-dependency-manifest.ts';
 export * from './utils/readTemplate.ts';
 export * from './utils/remove.ts';
 export * from './utils/resolve-path-in-sb-cache.ts';

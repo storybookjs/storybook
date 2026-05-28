@@ -11,20 +11,23 @@ jobs:
       - id: get-branch
         run: |
           BRANCH=($(echo ${{ github.ref }} | sed -E 's/refs\/heads\///'))
-          echo "branch=$BRANCH" >> $GITHUB_ENV
+          echo "branch=$BRANCH" >> $GITHUB_OUTPUT
     outputs:
-      branch: ${{ env.branch }}
-      is-latest-branch: ${{ env.branch == 'main' }}
-      is-next-branch: ${{ env.branch == 'next' }}
-      is-release-branch: ${{ startsWith(env.branch, 'release-') }}
-      is-actionable-branch: ${{ env.branch == 'main' || env.branch == 'next' || startsWith(env.branch, 'release-') }}
+      branch: ${{ steps.get-branch.outputs.branch }}
+      is-latest-branch: ${{ steps.get-branch.outputs.branch == 'main' }}
+      is-next-branch: ${{ steps.get-branch.outputs.branch == 'next' }}
+      is-release-branch: ${{ startsWith(steps.get-branch.outputs.branch, 'release-') }}
+      is-actionable-branch: ${{ steps.get-branch.outputs.branch == 'main' || steps.get-branch.outputs.branch == 'next' || startsWith(steps.get-branch.outputs.branch, 'release-') }}
 
   handle-latest:
     needs: branch-checks
     if: ${{ needs.branch-checks.outputs.is-latest-branch == 'true' }}
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          ref: main
+          persist-credentials: false
 
       - run: curl -X POST "https://api.netlify.com/build_hooks/${{ secrets.FRONTPAGE_HOOK }}"
 
@@ -33,29 +36,25 @@ jobs:
     if: ${{ needs.branch-checks.outputs.is-next-branch == 'true' || needs.branch-checks.outputs.is-release-branch == 'true' }}
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           ref: next
           path: next
+          persist-credentials: false
 
-      - id: next-version
-        uses: notiz-dev/github-action-json-property@release
-        with:
-          path: ${{ github.workspace }}/next/code/package.json
-          prop_path: version
-
-      - run: |
-          NEXT_RELEASE_BRANCH=($(echo ${{ steps.next-version.outputs.prop }} | sed -E 's/([0-9]+)\.([0-9]+).*/release-\1-\2/'))
-          echo "next-release-branch=$NEXT_RELEASE_BRANCH" >> $GITHUB_ENV
+      - id: next-release-branch
+        run: |
+          NEXT_RELEASE_BRANCH=$(jq -r '.version | capture("^(?<maj>[0-9]+)\\.(?<min>[0-9]+)") | "release-\(.maj)-\(.min)"' next/code/package.json)
+          echo "branch=$NEXT_RELEASE_BRANCH" >> $GITHUB_OUTPUT
     outputs:
-      branch: ${{ env.next-release-branch }}
+      branch: ${{ steps.next-release-branch.outputs.branch }}
 
   create-next-release-branch:
     needs: [branch-checks, get-next-release-branch]
     if: ${{ needs.branch-checks.outputs.is-next-branch == 'true' }}
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           fetch-depth: 0
 
@@ -73,19 +72,21 @@ jobs:
     needs: [branch-checks, get-next-release-branch]
     runs-on: ubuntu-latest
     steps:
-      - run: |
-          IS_NEXT_RELEASE_BRANCH=${{ needs.branch-checks.outputs.branch == needs.get-next-release-branch.outputs.branch }}
-          echo "is-next-release-branch=$IS_NEXT_RELEASE_BRANCH" >> $GITHUB_ENV
-
-      - if: ${{ env.is-next-release-branch == 'true' }}
-        run: echo "relevant-base-branch=next" >> $GITHUB_ENV
-
-      - if: ${{ env.is-next-release-branch == 'true' }}
+      - id: is-next-release-branch
         run: |
-          echo 'WARNING: Do not push directly to the `${{ needs.branch-checks.outputs.branch }}` branch. This branch is created and force-pushed over after pushing to the `${{ env.relevant-base-branch }}` branch and the changes you just pushed will be lost.'
+          IS_NEXT_RELEASE_BRANCH=${{ needs.branch-checks.outputs.branch == needs.get-next-release-branch.outputs.branch }}
+          echo "result=$IS_NEXT_RELEASE_BRANCH" >> $GITHUB_OUTPUT
+
+      - id: relevant-base-branch
+        if: ${{ steps.is-next-release-branch.outputs.result == 'true' }}
+        run: echo "relevant-base-branch=next" >> $GITHUB_OUTPUT
+
+      - if: ${{ steps.is-next-release-branch.outputs.result == 'true' }}
+        run: |
+          echo 'WARNING: Do not push directly to the `${{ needs.branch-checks.outputs.branch }}` branch. This branch is created and force-pushed over after pushing to the `${{ steps.relevant-base-branch.outputs.relevant-base-branch }}` branch and the changes you just pushed will be lost.'
           exit 1
     outputs:
-      check: ${{ env.is-next-release-branch }}
+      check: ${{ steps.is-next-release-branch.outputs.result }}
 
   request-create-frontpage-branch:
     if: ${{ always() && github.repository_owner == 'storybookjs' }}

@@ -30,6 +30,7 @@ export async function copyAllStaticFiles(staticDirs: any[] | undefined, outputDi
             preserveTimestamps: true,
             filter: (_, dest) => !skipPaths.includes(dest),
             recursive: true,
+            force: true,
           });
         } catch (e) {
           if (e instanceof Error) {
@@ -73,6 +74,7 @@ export async function copyAllStaticFilesRelativeToMain(
       preserveTimestamps: true,
       filter: (_, dest) => !skipPaths.includes(dest),
       recursive: true,
+      force: true,
     });
   }, Promise.resolve());
 }

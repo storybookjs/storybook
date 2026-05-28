@@ -30,7 +30,7 @@ describe('service registration', () => {
     expect(getRegisteredServices()).toHaveLength(1);
     await expect(listServices()).resolves.toEqual([
       {
-        id: 'test/mutable-record-lookup',
+        id: 'internal-fixture/mutable-record-lookup',
         description: 'Provides a mutable record lookup keyed by entry id.',
         queryNames: ['getRecordFields'],
         commandNames: ['assignRecordField'],
@@ -40,7 +40,7 @@ describe('service registration', () => {
     const descriptor = await describeService('test/mutable-record-lookup');
 
     expect(descriptor).toMatchObject({
-      id: 'test/mutable-record-lookup',
+      id: 'internal-fixture/mutable-record-lookup',
       description: 'Provides a mutable record lookup keyed by entry id.',
       queries: {
         getRecordFields: {
@@ -85,7 +85,7 @@ describe('service registration', () => {
   it('throws a Storybook error when a registered query or command is missing its handler', async () => {
     const service = registerService(
       defineService({
-        id: 'test/unimplemented-operations',
+        id: 'internal-fixture/unimplemented-operations',
         description: 'Leaves handlers undefined so registration can supply them later.',
         initialState: {} as Record<string, never>,
         queries: {
@@ -118,7 +118,7 @@ describe('service registration', () => {
 
   it('lets handlers resolve another registered service by id through ctx.getService', async () => {
     const derivedServiceDef = defineService({
-      id: 'test/derived-boolean-from-service-id',
+      id: 'internal-fixture/derived-boolean-from-service-id',
       description: 'Derives marker state by resolving another service through ctx.getService.',
       initialState: {} as Record<string, never>,
       queries: {
@@ -155,7 +155,7 @@ describe('service registration', () => {
 
   it('allows server registration to provide handlers that are omitted from the definition', async () => {
     const incrementableServiceDef = defineService({
-      id: 'test/registered-command-override',
+      id: 'internal-fixture/registered-command-override',
       description: 'Provides a command handler at registration time.',
       initialState: { count: 0 },
       queries: {

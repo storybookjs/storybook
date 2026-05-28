@@ -112,7 +112,7 @@ describe('service validation', () => {
   it('shows nested field paths for validation issues inside arrays and objects', async () => {
     const service = registerService(
       defineService({
-        id: 'test/nested-query-output',
+        id: 'internal-fixture/nested-query-output',
         initialState: {} as Record<string, never>,
         queries: {
           getBrokenTree: {
@@ -145,7 +145,7 @@ describe('service validation', () => {
   it('wraps zod schema issues in the same actionable validation error shape', async () => {
     const service = registerService(
       defineService({
-        id: 'test/zod-query-input',
+        id: 'internal-fixture/zod-query-input',
         initialState: {} as Record<string, never>,
         queries: {
           getGreeting: {

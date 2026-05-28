@@ -28,7 +28,7 @@ export type MutableRecordState = Record<string, Record<string, string> | undefin
  * domain-specific logic.
  */
 export const mutableRecordLookupServiceDef = defineService({
-  id: 'test/mutable-record-lookup',
+  id: 'internal-fixture/mutable-record-lookup',
   description: 'Provides a mutable record lookup keyed by entry id.',
   initialState: {} as MutableRecordState,
   queries: {
@@ -58,7 +58,7 @@ export type PreloadedValueState = Record<string, string | undefined>;
 
 /** Service fixture that loads state from a command before returning it. */
 export const awaitedPreloadValueServiceDef = defineService({
-  id: 'test/awaited-preload-value',
+  id: 'internal-fixture/awaited-preload-value',
   description: 'Loads a value on demand via a command and reads it back from state.',
   initialState: {} as PreloadedValueState,
   queries: {
@@ -94,7 +94,7 @@ export const awaitedPreloadValueServiceDef = defineService({
 
 /** Service fixture that starts load work in the background and returns immediately. */
 export const fireAndForgetPreloadValueServiceDef = defineService({
-  id: 'test/fire-and-forget-preload-value',
+  id: 'internal-fixture/fire-and-forget-preload-value',
   description: 'Loads a value in the background without awaiting it.',
   initialState: {} as PreloadedValueState,
   queries: {
@@ -131,7 +131,7 @@ export type SharedStaticFileState = { left?: string; right?: string };
 /** Creates a fixture where multiple queries contribute state to one shared static file. */
 export function createSharedStaticFileServiceDef() {
   return defineService({
-    id: 'test/shared-static-file',
+    id: 'internal-fixture/shared-static-file',
     description: 'Builds two independent query outputs into one shared static file.',
     initialState: {} as SharedStaticFileState,
     queries: {
@@ -198,7 +198,7 @@ export function createDerivedBooleanFromChildQueryServiceDef(
   type DerivedState = Record<string, never>;
 
   return defineService({
-    id: 'test/derived-boolean-from-child-query',
+    id: 'internal-fixture/derived-boolean-from-child-query',
     description: 'Derives a boolean from the child lookup query.',
     initialState: {} as DerivedState,
     queries: {
@@ -222,7 +222,7 @@ export function createDerivedBooleanFromChildQueryServiceDef(
 /** Creates a fixture that intentionally returns an invalid query output. */
 export function createInvalidQueryOutputServiceDef() {
   return defineService({
-    id: 'test/invalid-query-output',
+    id: 'internal-fixture/invalid-query-output',
     description: 'Returns an invalid query output on purpose.',
     initialState: {} as Record<string, never>,
     queries: {
@@ -240,7 +240,7 @@ export function createInvalidQueryOutputServiceDef() {
 /** Creates a fixture that intentionally returns an invalid command output. */
 export function createInvalidCommandOutputServiceDef() {
   return defineService({
-    id: 'test/invalid-command-output',
+    id: 'internal-fixture/invalid-command-output',
     description: 'Returns an invalid command output on purpose.',
     initialState: {} as Record<string, never>,
     queries: {},
@@ -258,7 +258,7 @@ export function createInvalidCommandOutputServiceDef() {
 /** Creates a fixture that intentionally yields invalid static load inputs. */
 export function createInvalidStaticInputServiceDef() {
   return defineService({
-    id: 'test/invalid-static-input',
+    id: 'internal-fixture/invalid-static-input',
     description: 'Provides an invalid static load input on purpose.',
     initialState: {} as PreloadedValueState,
     queries: {

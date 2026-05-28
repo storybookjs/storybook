@@ -13,7 +13,7 @@ const entryIdInputSchema = v.object({ entryId: v.string() });
 const incrementInputSchema = v.number();
 
 const openServiceDef = defineService({
-  id: 'test/open-service-types',
+  id: 'internal-fixture/open-service-types',
   initialState: {
     count: 0,
     valuesById: {} as Record<string, string | undefined>,
@@ -133,7 +133,7 @@ describe('open-service type inference', () => {
 
   it('rejects handlers that do not match the declared schemas', () => {
     defineService({
-      id: 'test/invalid-open-service-types',
+      id: 'internal-fixture/invalid-open-service-types',
       initialState: {} as Record<string, never>,
       queries: {
         getBrokenValue: {

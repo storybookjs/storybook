@@ -174,7 +174,7 @@ describe('service runtime', () => {
         resolveLoad = resolve;
       });
       const delayedQueryServiceDef = defineService({
-        id: 'test/delayed-subscription-value',
+        id: 'internal-fixture/delayed-subscription-value',
         description: 'Resolves a load after the subscriber has already unsubscribed.',
         initialState: { value: null as string | null },
         queries: {
@@ -409,7 +409,7 @@ describe('service runtime', () => {
     it('awaits a transitive dependency before returning', async () => {
       const sourceService = registerService(awaitedPreloadValueServiceDef);
       const derivedDef = defineService({
-        id: 'test/derived-loaded-from-source',
+        id: 'internal-fixture/derived-loaded-from-source',
         description: 'Reads the loaded value from the source service through a query.',
         initialState: {} as Record<string, never>,
         queries: {
@@ -433,7 +433,7 @@ describe('service runtime', () => {
 
     it('surfaces rejections from a transitive load through .loaded()', async () => {
       const failingDef = defineService({
-        id: 'test/failing-loaded',
+        id: 'internal-fixture/failing-loaded',
         description: 'Rejects from the load body to exercise .loaded() error propagation.',
         initialState: { value: null as string | null },
         queries: {
@@ -455,7 +455,7 @@ describe('service runtime', () => {
 
     it('breaks a load cycle without deadlocking', async () => {
       const cycleDef = defineService({
-        id: 'test/load-cycle',
+        id: 'internal-fixture/load-cycle',
         description: 'Two queries whose loads call each other through self.queries.',
         initialState: { aDone: false, bDone: false },
         queries: {
@@ -509,7 +509,7 @@ describe('service runtime', () => {
 
     it('throws OpenServiceLoadedDrainExceededError on persistent oscillation', async () => {
       const oscillatingDef = defineService({
-        id: 'test/oscillating-load',
+        id: 'internal-fixture/oscillating-load',
         description: 'Handler reads a dynamic-keyed query on every discovery pass.',
         initialState: { counter: 0 },
         queries: {

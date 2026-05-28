@@ -8,7 +8,7 @@ import type { RuntimeService } from './types.ts';
 const entryIdInputSchema = v.object({ entryId: v.string() });
 
 const registrationOnlyServiceDef = defineService({
-  id: 'test/open-service-registration-types',
+  id: 'internal-fixture/open-service-registration-types',
   initialState: {
     count: 0,
     valuesById: {} as Record<string, string | undefined>,

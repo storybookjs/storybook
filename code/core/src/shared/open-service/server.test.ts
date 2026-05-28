@@ -89,7 +89,7 @@ describe('server static builds', () => {
       });
 
       const staticLookupServiceDef = defineService({
-        id: 'test/static-build-service-lookup',
+        id: 'internal-fixture/static-build-service-lookup',
         description: 'Copies state from another registered service during static load.',
         initialState: { value: null as string | null },
         queries: {
@@ -139,7 +139,7 @@ describe('server static builds', () => {
     it('runs load tasks in parallel so one snapshot can read state another snapshot publishes', async () => {
       const readyEntryIds: string[] = [];
       const parallelSourceServiceDef = defineService({
-        id: 'test/parallel-static-input-source',
+        id: 'internal-fixture/parallel-static-input-source',
         description: 'Publishes static input ids once its own load task starts running.',
         initialState: { built: false },
         queries: {
@@ -175,7 +175,7 @@ describe('server static builds', () => {
       });
 
       const parallelLookupServiceDef = defineService({
-        id: 'test/parallel-static-input-consumer',
+        id: 'internal-fixture/parallel-static-input-consumer',
         description:
           'Waits for another service query to publish its static inputs before running load.',
         initialState: { value: null as string | null },
@@ -242,7 +242,7 @@ describe('server static builds', () => {
 
     it('normalizes custom static paths to slash-separated logical keys', async () => {
       const customPathServiceDef = defineService({
-        id: 'test/custom-static-paths',
+        id: 'internal-fixture/custom-static-paths',
         description: 'Exercises logical static path normalization.',
         initialState: { value: null as string | null },
         queries: {
@@ -297,7 +297,7 @@ describe('server static builds', () => {
 
     it('rejects static paths that escape the services output root', async () => {
       const invalidPathServiceDef = defineService({
-        id: 'test/invalid-static-path',
+        id: 'internal-fixture/invalid-static-path',
         description: 'Attempts to escape the static snapshot root.',
         initialState: { value: null as string | null },
         queries: {
@@ -346,7 +346,7 @@ describe('server static builds', () => {
     it('writes normalized snapshot files underneath outputDir/services', async () => {
       const outputDir = '/app/dist';
       const customPathServiceDef = defineService({
-        id: 'test/write-open-service-static-files',
+        id: 'internal-fixture/write-open-service-static-files',
         description: 'Writes custom static paths to disk.',
         initialState: { value: null as string | null },
         queries: {

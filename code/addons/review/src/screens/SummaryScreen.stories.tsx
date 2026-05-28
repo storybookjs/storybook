@@ -38,25 +38,6 @@ const full: ReviewState = {
       storyIds: ['components-togglebutton--variants', 'components-togglebutton--sizes'],
     },
   ],
-  diffHunks: [
-    {
-      path: 'code/core/src/components/components/Button/Button.tsx',
-      hunk: [
-        '@@ -120,7 +120,7 @@',
-        '-  fontWeight: theme.typography.weight.bold,',
-        '+  fontWeight: variant === "solid" ? 800 : theme.typography.weight.bold,',
-        '-  padding: size === "small" ? "0 10px" : "0 12px",',
-        '+  padding: size === "small" ? "0 14px" : "0 16px",',
-      ].join('\n'),
-    },
-  ],
-  storyMeta: {
-    'button-component--variants': { depth: 0, chain: [] },
-    'components-togglebutton--variants': {
-      depth: 2,
-      chain: ['code/core/src/components/components/ToggleButton/ToggleButton.tsx'],
-    },
-  },
 };
 
 const largeCascade: ReviewState = {
@@ -128,14 +109,6 @@ const largeCascade: ReviewState = {
         'manager-sidebar-filesearchlist--default',
         'manager-components-preview-viewport--default',
       ],
-    },
-  ],
-  diffHunks: [
-    {
-      path: 'code/core/src/theming/tokens.ts',
-      hunk: Array.from({ length: 40 })
-        .map((_, i) => (i % 3 === 0 ? `-  token${i}: '#aaa',` : `+  token${i}: '#bbb',`))
-        .join('\n'),
     },
   ],
 };
@@ -218,27 +191,6 @@ const atomicChange: ReviewState = {
     },
   ],
   changedFiles: ['core/src/components/components/Button/Button.tsx'],
-  diffHunks: [
-    {
-      path: 'core/src/components/components/Button/Button.tsx',
-      hunk: [
-        'diff --git a/core/src/components/components/Button/Button.tsx b/core/src/components/components/Button/Button.tsx',
-        'index 81c8799be09..04d01a1dd82 100644',
-        '--- a/core/src/components/components/Button/Button.tsx',
-        '+++ b/core/src/components/components/Button/Button.tsx',
-        "@@ -256,7 +256,7 @@ const StyledButton = styled('button', {",
-        '       return theme.input.color;',
-        '     })(),',
-        "     boxShadow: variant === 'outline' ? `" +
-          '$' +
-          "{theme.button.border} 0 0 0 1px inset` : 'none',",
-        '-    borderRadius: theme.input.borderRadius,',
-        '+    borderRadius: theme.input.borderRadius * 3,',
-        '     // Making sure that the button never shrinks below its minimum size',
-        '     flexShrink: 0,',
-      ].join('\n'),
-    },
-  ],
 };
 
 const meta = preview.meta({

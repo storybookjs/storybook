@@ -13,6 +13,13 @@ const config: BuildEntries = {
         dts: false,
       },
     ],
+    node: [
+      {
+        exportEntries: ['./preset'],
+        entryPoint: './src/preset.ts',
+        dts: false,
+      },
+    ],
   },
 };
 

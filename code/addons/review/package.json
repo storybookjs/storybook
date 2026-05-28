@@ -1,7 +1,7 @@
 {
-  "name": "@storybook/addon-review-changes",
+  "name": "@storybook/addon-review",
   "version": "10.5.0-alpha.2",
-  "description": "Storybook addon that renders an agent-pushed review of a code change",
+  "description": "Storybook addon that renders agent-pushed reviews",
   "keywords": [
     "storybook",
     "storybook-addon",
@@ -9,14 +9,14 @@
     "mcp",
     "agent"
   ],
-  "homepage": "https://github.com/storybookjs/storybook/tree/next/code/addons/review-changes",
+  "homepage": "https://github.com/storybookjs/storybook/tree/next/code/addons/review",
   "bugs": {
     "url": "https://github.com/storybookjs/storybook/issues"
   },
   "repository": {
     "type": "git",
     "url": "https://github.com/storybookjs/storybook.git",
-    "directory": "code/addons/review-changes"
+    "directory": "code/addons/review"
   },
   "funding": {
     "type": "opencollective",
@@ -31,7 +31,8 @@
       "default": "./dist/index.js"
     },
     "./manager": "./dist/manager.js",
-    "./package.json": "./package.json"
+    "./package.json": "./package.json",
+    "./preset": "./dist/preset.js"
   },
   "files": [
     "dist/**/*",

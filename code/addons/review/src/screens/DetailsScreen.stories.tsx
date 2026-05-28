@@ -1,7 +1,9 @@
 import { expect, within } from 'storybook/test';
 
-import { REVIEW_CHANGES_URL } from '../constants.ts';
-import { buildReviewChangesDetailsHref } from '../review-navigation.ts';
+import {
+  buildReviewChangesDetailHref,
+  buildReviewChangesSummaryHref,
+} from '../review-navigation.ts';
 import preview from '../../../../.storybook/preview.tsx';
 import { DetailsScreen } from './DetailsScreen.tsx';
 
@@ -9,13 +11,21 @@ const meta = preview.meta({
   component: DetailsScreen,
   parameters: { layout: 'fullscreen' },
   args: {
-    collectionTitle: 'Checklist',
-    storyId: 'manager-settings-checklist--default',
+    title: 'Toolbar',
+    storyId: 'components-toolbar--basic',
     storyIndex: 1,
     totalStories: 3,
-    backHref: REVIEW_CHANGES_URL,
-    previousHref: buildReviewChangesDetailsHref({ collectionIndex: 0, storyIndex: 0 }),
-    nextHref: buildReviewChangesDetailsHref({ collectionIndex: 0, storyIndex: 2 }),
+    backHref: buildReviewChangesSummaryHref(),
+    previousHref: buildReviewChangesDetailHref({
+      kind: 'collection',
+      collectionIndex: 0,
+      storyIndex: 0,
+    }),
+    nextHref: buildReviewChangesDetailHref({
+      kind: 'collection',
+      collectionIndex: 0,
+      storyIndex: 2,
+    }),
     branchName: 'update/button-weight-and-padding',
   },
 });
@@ -24,7 +34,7 @@ export const Default = meta.story({
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await expect(await canvas.findByRole('button', { name: '2/3' })).toBeInTheDocument();
-    await expect(await canvas.findByText('Checklist')).toBeInTheDocument();
+    await expect(await canvas.findByText('Toolbar')).toBeInTheDocument();
     await expect(
       await canvas.findByText('Latest on update/button-weight-and-padding')
     ).toBeInTheDocument();
@@ -33,11 +43,19 @@ export const Default = meta.story({
 
 export const WrapAroundNavigation = meta.story({
   args: {
-    storyId: 'manager-settings-checklist--default',
+    storyId: 'components-toolbar--basic',
     storyIndex: 0,
     totalStories: 3,
-    previousHref: buildReviewChangesDetailsHref({ collectionIndex: 0, storyIndex: 2 }),
-    nextHref: buildReviewChangesDetailsHref({ collectionIndex: 0, storyIndex: 1 }),
+    previousHref: buildReviewChangesDetailHref({
+      kind: 'collection',
+      collectionIndex: 0,
+      storyIndex: 2,
+    }),
+    nextHref: buildReviewChangesDetailHref({
+      kind: 'collection',
+      collectionIndex: 0,
+      storyIndex: 1,
+    }),
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);

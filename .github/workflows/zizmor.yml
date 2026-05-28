@@ -32,6 +32,7 @@ jobs:
 
       - name: Upload SARIF file
         uses: github/codeql-action/upload-sarif@7211b7c8077ea37d8641b6271f6a365a22a5fbfa # v4.36.0
+        if: github.repository_owner == 'storybookjs'
         with:
           sarif_file: results.sarif
           category: zizmor

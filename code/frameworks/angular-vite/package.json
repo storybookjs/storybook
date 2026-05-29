@@ -42,7 +42,12 @@
       "default": "./dist/node/index.js"
     },
     "./package.json": "./package.json",
-    "./preset": "./dist/preset.js"
+    "./preset": "./dist/preset.js",
+    "./vitest": {
+      "types": "./dist/node/vitest.d.ts",
+      "code": "./src/node/vitest.ts",
+      "default": "./dist/node/vitest.js"
+    }
   },
   "files": [
     "builders.json",

@@ -34,6 +34,10 @@ const config: BuildEntries = {
         entryPoint: './src/node/index.ts',
       },
       {
+        exportEntries: ['./vitest'],
+        entryPoint: './src/node/vitest.ts',
+      },
+      {
         exportEntries: ['./preset'],
         entryPoint: './src/preset.ts',
         dts: false,

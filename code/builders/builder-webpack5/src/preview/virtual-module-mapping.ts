@@ -1,17 +1,43 @@
 import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { loadPreviewOrConfigFile, normalizeStories, readTemplate } from 'storybook/internal/common';
+import {
+  getBuilderOptions,
+  loadPreviewOrConfigFile,
+  normalizeStories,
+  readTemplate,
+} from 'storybook/internal/common';
 import type { Options, PreviewAnnotation } from 'storybook/internal/types';
 
 import { toImportFn } from '@storybook/core-webpack';
 
 // eslint-disable-next-line depend/ban-dependencies
 import slash from 'slash';
+import webpackModule from 'webpack';
+
+import type { BuilderOptions } from '../types.ts';
+
+/**
+ * Returns true if the given webpack version string is >= the given minimum version.
+ * Falls back to false if the version is not available.
+ */
+function isWebpackVersionAtLeast(version: string | undefined, minVersion: string): boolean {
+  if (!version) return false;
+  const parts = version.split('.').map(Number);
+  const min = minVersion.split('.').map(Number);
+  for (let i = 0; i < min.length; i++) {
+    const p = parts[i] ?? 0;
+    if (p > min[i]) return true;
+    if (p < min[i]) return false;
+  }
+  return true;
+}
 
 export const getVirtualModules = async (options: Options) => {
   const virtualModules: Record<string, string> = {};
+  const builderOptions = await getBuilderOptions<BuilderOptions>(options);
   const workingDir = process.cwd();
+  const isProd = options.configType === 'PRODUCTION';
   const nonNormalizedStories = await options.presets.apply('stories', []);
   const entries = [];
 
@@ -39,7 +65,14 @@ export const getVirtualModules = async (options: Options) => {
   const storiesFilename = 'storybook-stories.js';
   const storiesPath = resolve(join(workingDir, storiesFilename));
 
-  virtualModules[storiesPath] = toImportFn(stories);
+  // The import pipeline is a workaround for a webpack lazy-compilation bug that was fixed in
+  // webpack 5.101.3 (https://github.com/webpack/webpack/issues/15541#issuecomment-1143138832).
+  // We only enable it for lazy compilation in dev mode on older webpack versions.
+  const needPipelinedImport =
+    !!builderOptions.lazyCompilation &&
+    !isProd &&
+    !isWebpackVersionAtLeast(webpackModule.version, '5.101.3');
+  virtualModules[storiesPath] = toImportFn(stories, { needPipelinedImport });
   const configEntryPath = resolve(join(workingDir, 'storybook-config-entry.js'));
   virtualModules[configEntryPath] = (
     await readTemplate(

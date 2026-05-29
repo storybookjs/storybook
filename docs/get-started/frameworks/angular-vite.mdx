@@ -144,7 +144,7 @@ export default config;
 
 - **`ng run app:storybook`**: Uses `angular.json` for Angular build settings. The framework preset runs Compodoc at cold start so `documentation.json` is generated before stories render.
 - **Vitest addon panel** (inside a running `storybook dev`): The addon-vitest child process inherits builder options from the parent process automatically; no extra configuration is needed.
-- **Standalone `yarn vitest`** (without a parent `storybook dev`): Out of scope for this framework. Users who need standalone Vitest support should follow the Analog-documented pattern using `@analogjs/vite-plugin-angular` in their own `vitest.config.ts`. See the [Analog Storybook integration docs](https://analogjs.org/docs/integrations/storybook) for details.
+- **Standalone `yarn vitest`** (without a parent `storybook dev`): Supported via `storybookAngularVitest` from `@storybook/angular-vite/vitest`. Add it to the same `plugins` array as `storybookTest` in your `vitest.config.ts`; it forwards your Angular build options (styles, stylePreprocessorOptions, assets, zoneless) into the channel the framework already reads. If the env var is already set (e.g. a parent `storybook dev` is running), the existing value wins and a warning is logged so you know which options are active.
 
 ### Application-wide providers
 
@@ -260,9 +260,49 @@ Run the following command to install and configure the addon automatically:
 
 <CodeSnippets path="addon-test-install.md" />
 
-This will install `@storybook/addon-vitest`, configure Vitest in browser mode using Playwright's Chromium browser, and set up the Vitest plugin.
+This will install `@storybook/addon-vitest`, configure Vitest in browser mode using Playwright's Chromium browser, and set up the Vitest plugin. For Angular projects, the installer also scaffolds `storybookAngularVitest({})` next to `storybookTest()` in your `vitest.config.ts` so standalone `yarn vitest` runs pick up your Angular build options automatically.
 
-The setup process for `@storybook/angular-vite` is the same as for any other Vite-based framework; no Angular-specific steps are required. Refer to the [Vitest addon guide](../../writing-tests/integrations/vitest-addon/index.mdx) for the full configuration reference.
+Refer to the [Vitest addon guide](../../writing-tests/integrations/vitest-addon/index.mdx) for the full configuration reference.
+
+### Standalone `yarn vitest` (without Storybook dev)
+
+When you run `yarn vitest` outside of a running `storybook dev`, the `storybookAngularVitest` helper from `@storybook/angular-vite/vitest` forwards your Angular build options (styles, stylePreprocessorOptions, assets, zoneless) into the channel the framework reads. Place it in the same `plugins` array as `storybookTest`:
+
+```ts title="vitest.config.ts"
+import { storybookAngularVitest } from '@storybook/angular-vite/vitest';
+import { storybookTest } from '@storybook/addon-vitest/vitest-plugin';
+import { defineConfig } from 'vitest/config';
+
+export default defineConfig({
+  test: {
+    projects: [
+      {
+        plugins: [
+          // Bridge Angular build options into standalone vitest runs.
+          // When a parent `storybook dev` is running, the existing env var
+          // wins and a warning is logged; options here are ignored in that run.
+          storybookAngularVitest({
+            // styles: ['src/styles.css'],
+            // stylePreprocessorOptions: { includePaths: ['src'] },
+            // assets: [{ glob: '**/*', input: 'src/assets', output: 'assets' }],
+            // zoneless: true,
+          }),
+          storybookTest({ configDir: '.storybook' }),
+        ],
+        test: {
+          browser: {
+            enabled: true,
+            provider: 'playwright',
+            instances: [{ browser: 'chromium' }],
+          },
+        },
+      },
+    ],
+  },
+});
+```
+
+If you use a Vitest workspace file or a setup other than `storybookTest()`, follow the [Analog Storybook integration docs](https://analogjs.org/docs/integrations/storybook) instead.
 
 ## FAQ
 

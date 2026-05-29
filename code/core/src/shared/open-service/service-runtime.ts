@@ -1037,7 +1037,23 @@ export function createServiceRuntime<
     const loadKey = makeLoadKey(def.id, queryName, validatedInput);
     const ancestorChain = new Set<string>([loadKey]) as ReadonlySet<string>;
 
-    await runLoadBody(refs, queryName, queryDef, validatedInput, ancestorChain);
+    // Register this runtime's root load without joining an unrelated in-flight entry from another
+    // runtime instance (e.g. the live singleton during parallel staticInputs resolution).
+    const previous = inFlightLoads.get(loadKey);
+    const promise = Promise.resolve()
+      .then(() => runLoadBody(refs, queryName, queryDef, validatedInput, ancestorChain))
+      .finally(() => {
+        if (inFlightLoads.get(loadKey) === promise) {
+          if (previous) {
+            inFlightLoads.set(loadKey, previous);
+          } else {
+            inFlightLoads.delete(loadKey);
+          }
+        }
+      });
+
+    inFlightLoads.set(loadKey, promise);
+    await promise;
   };
 
   return {

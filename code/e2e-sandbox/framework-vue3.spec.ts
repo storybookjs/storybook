@@ -46,4 +46,41 @@ test.describe('Vue 3', () => {
     await sbPage.selectToolbar('[aria-label^="Internationalization locale"]', 'text=/Español/');
     await expect(sbPage.previewRoot()).toContainText('Hola');
   });
+
+  test('docs preserve unicode prop defaults from vue-component-meta', async ({ page }) => {
+    const sbPage = new SbPage(page, expect);
+    const docsPages = [
+      {
+        title: 'stories/renderers/vue3_vue3-vite-default-ts/component-meta/unicode-with-defaults',
+        expectedDefaults: [
+          ['label', 'こんにちは'],
+          ['size', '大きい'],
+          ['icon', '🚀'],
+        ],
+      },
+      {
+        title: 'stories/renderers/vue3_vue3-vite-default-ts/component-meta/unicode-define-props',
+        expectedDefaults: [
+          ['label', '你好'],
+          ['size', '大きい'],
+          ['icon', '✨'],
+        ],
+      },
+    ];
+
+    for (const { title, expectedDefaults } of docsPages) {
+      await sbPage.deepLinkToStory(storybookUrl, title, 'docs');
+
+      const argsTable = sbPage.previewRoot().locator('.docblock-argstable');
+      await expect(argsTable).toBeVisible();
+
+      for (const [propName, defaultValue] of expectedDefaults) {
+        await expect(argsTable.getByRole('row', { name: new RegExp(propName) })).toContainText(
+          defaultValue
+        );
+      }
+
+      await expect(argsTable).not.toContainText('\\u');
+    }
+  });
 });

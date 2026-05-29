@@ -6,6 +6,10 @@ export {
   type ChangeDetectionReadiness,
 } from './readiness.ts';
 export { ChangeDetectionService } from './ChangeDetectionService.ts';
+export {
+  getActiveChangeDetectionService,
+  setActiveChangeDetectionService,
+} from './active-service-registry.ts';
 export type {
   ChangeDetectionAdapter,
   FileChangeEvent,

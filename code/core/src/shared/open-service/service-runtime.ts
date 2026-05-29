@@ -650,9 +650,10 @@ function buildLoadWrappedQueries<TState>(
  *    - If the handler threw, swallow (state might still be partial; a later iteration may fix it).
  *    - If the handler added nothing to the collector, we have converged — exit the loop.
  *
- * 4. **Return** — run the handler one final time without the session and return the validated
- *    output. This is the value the caller sees. If state is still incomplete at this point the
- *    handler may throw, and that throw propagates.
+ * 4. **Return** — run the handler one final time under the same session (so dependency reads
+ *    respect `settledKeys` and do not refire loads) and return the validated output. This is the
+ *    value the caller sees. If state is still incomplete at this point the handler may throw, and
+ *    that throw propagates.
  *
  * ### Worked example: `bar.loaded(input)` where `bar.handler` reads `foo`
  *
@@ -762,14 +763,21 @@ async function runLoaded<TState>(
     hasMoreWork = session.collector.size > 0;
   }
 
-  return runHandlerSync(
-    refs,
-    queryName,
-    queryDef,
-    validatedInput,
-    refs.defaultQueries,
-    refs.registryApi.getService
-  );
+  const previousSession = activeHandlerLoadSession;
+  activeHandlerLoadSession = session;
+
+  try {
+    return runHandlerSync(
+      refs,
+      queryName,
+      queryDef,
+      validatedInput,
+      refs.defaultQueries,
+      refs.registryApi.getService
+    );
+  } finally {
+    activeHandlerLoadSession = previousSession;
+  }
 }
 
 /**

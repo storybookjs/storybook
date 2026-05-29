@@ -77,7 +77,8 @@ jobs:
   get-parameters:
     if: github.repository_owner == 'storybookjs'
     runs-on: ubuntu-latest
-    permissions: {}
+    permissions:
+      members: read
     steps:
       - id: normal
         if: github.event_name == 'pull_request_target' && (contains(github.event.pull_request.labels.*.name, 'ci:normal'))
@@ -152,7 +153,7 @@ jobs:
             --arg ghBaseBranch "$GH_BASE_BRANCH" \
             --arg ghPrNumber "$GH_PR_NUMBER" \
             --arg ghTrustedAuthor "$GH_TRUSTED_AUTHOR" \
-            '{workflow: $workflow, ghBaseBranch: $ghBaseBranch, ghPrNumber: $ghPrNumber}')
+            '{workflow: $workflow, ghBaseBranch: $ghBaseBranch, ghPrNumber: $ghPrNumber, ghTrustedAuthor: $ghTrustedAuthor}')
           PAYLOAD=$(jq -nc --arg branch "$BRANCH" --argjson parameters "$PARAMETERS" \
             '{branch: $branch, parameters: $parameters}')
           curl -sS --fail-with-body -X POST \

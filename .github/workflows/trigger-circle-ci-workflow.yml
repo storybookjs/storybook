@@ -145,11 +145,13 @@ jobs:
           WORKFLOW: ${{ needs.get-parameters.outputs.workflow }}
           GH_BASE_BRANCH: ${{ needs.get-parameters.outputs.ghBaseBranch }}
           GH_PR_NUMBER: ${{ needs.get-parameters.outputs.ghPrNumber }}
+          GH_TRUSTED_AUTHOR: ${{ needs.get-parameters.outputs.ghTrustedAuthor }}
         run: |
           PARAMETERS=$(jq -nc \
             --arg workflow "$WORKFLOW" \
             --arg ghBaseBranch "$GH_BASE_BRANCH" \
             --arg ghPrNumber "$GH_PR_NUMBER" \
+            --arg ghTrustedAuthor "$GH_TRUSTED_AUTHOR" \
             '{workflow: $workflow, ghBaseBranch: $ghBaseBranch, ghPrNumber: $ghPrNumber}')
           PAYLOAD=$(jq -nc --arg branch "$BRANCH" --argjson parameters "$PARAMETERS" \
             '{branch: $branch, parameters: $parameters}')

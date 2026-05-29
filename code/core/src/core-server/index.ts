@@ -43,6 +43,12 @@ export type {
   ParseFileArgs,
 } from './change-detection/index.ts';
 export { ChangeDetectionService } from './change-detection/ChangeDetectionService.ts';
+export { getActiveChangeDetectionService as experimental_getActiveChangeDetectionService } from './change-detection/active-service-registry.ts';
+// Note: the reverse-index implementation type is intentionally not re-exported.
+// Addon consumers reach it via `experimental_getActiveChangeDetectionService()
+// .getReverseIndex()` and only need the structural `lookup(path) -> Map<string,
+// number>` shape; pinning the impl name to the public surface would constrain
+// internal refactors with no current caller.
 export {
   getTestProviderStoreById as experimental_getTestProviderStore,
   fullTestProviderStore as internal_fullTestProviderStore,

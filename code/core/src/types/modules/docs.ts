@@ -104,6 +104,13 @@ export interface DocsContextProps<TRenderer extends Renderer = Renderer> {
 
   /** Project annotations -- can be read to get the project's global annotations */
   projectAnnotations: NormalizedProjectAnnotations<TRenderer>;
+
+  /**
+   * When true, `<Primary />` and `<Controls />` filter the CSF file's stories to those tagged
+   * `autodocs`. Defaults to true on the autodocs page; MDX or custom docs pages set this to
+   * false so the page author's story selection is respected.
+   */
+  filterByAutodocs?: boolean;
 }
 
 export type DocsRenderFunction<TRenderer extends Renderer> = (

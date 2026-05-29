@@ -6,15 +6,15 @@ import type { PreparedStory } from 'storybook/internal/types';
 import { DocsContext } from './DocsContext';
 
 /**
- * A hook to get the primary story for the current component's doc page. It prefers the first story
- * that includes the 'autodocs' tag, falling back to the first story without an explicit '!autodocs'
- * tag for custom MDX docs pages.
+ * Returns the primary story for the current docs page. Autodocs pages pick the first story tagged
+ * `autodocs`; MDX or custom pages pick the first story regardless of tag (driven by
+ * `DocsContext.filterByAutodocs`, set in `Docs.tsx`).
  */
 export const usePrimaryStory = (): PreparedStory | undefined => {
   const context = useContext(DocsContext);
   const stories = context.componentStories();
-  return (
-    stories.find((story) => story.tags.includes(Tag.AUTODOCS)) ??
-    stories.find((story) => !story.tags.includes(`!${Tag.AUTODOCS}`))
-  );
+  if (context.filterByAutodocs === false) {
+    return stories[0];
+  }
+  return stories.find((story) => story.tags.includes(Tag.AUTODOCS));
 };

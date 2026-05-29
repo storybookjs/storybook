@@ -19,8 +19,13 @@ const stories: Record<string, Partial<PreparedStory>> = {
   story4: { name: 'Story Four', tags: [] },
 };
 
-const createMockContext = (storyList: PreparedStory[]) => ({
+const createMockContext = (
+  storyList: PreparedStory[],
+  overrides: Partial<DocsContextProps> = {}
+) => ({
   componentStories: vi.fn(() => storyList),
+  filterByAutodocs: true,
+  ...overrides,
 });
 
 const Wrapper: FC<PropsWithChildren<{ context: Partial<DocsContextProps> }>> = ({
@@ -28,7 +33,7 @@ const Wrapper: FC<PropsWithChildren<{ context: Partial<DocsContextProps> }>> = (
   context,
 }) => <DocsContext.Provider value={context as DocsContextProps}>{children}</DocsContext.Provider>;
 
-describe('usePrimaryStory', () => {
+describe('usePrimaryStory — autodocs page (filterByAutodocs: true)', () => {
   it('ignores !autodocs stories', () => {
     const mockContext = createMockContext([
       stories.story1,
@@ -49,16 +54,8 @@ describe('usePrimaryStory', () => {
     expect(result.current?.name).toBe('Story Two');
   });
 
-  it('falls back to first non-!autodocs story when no story has "autodocs" tag', () => {
+  it('returns undefined when no story has the autodocs tag', () => {
     const mockContext = createMockContext([stories.story1, stories.story4] as PreparedStory[]);
-    const { result } = renderHook(() => usePrimaryStory(), {
-      wrapper: ({ children }) => <Wrapper context={mockContext}>{children}</Wrapper>,
-    });
-    expect(result.current?.name).toBe('Story Four');
-  });
-
-  it('returns undefined when all stories have !autodocs tag', () => {
-    const mockContext = createMockContext([stories.story1] as PreparedStory[]);
     const { result } = renderHook(() => usePrimaryStory(), {
       wrapper: ({ children }) => <Wrapper context={mockContext}>{children}</Wrapper>,
     });
@@ -71,5 +68,18 @@ describe('usePrimaryStory', () => {
       wrapper: ({ children }) => <Wrapper context={mockContext}>{children}</Wrapper>,
     });
     expect(result.current).toBeUndefined();
+  });
+});
+
+describe('usePrimaryStory — MDX / custom page (filterByAutodocs: false)', () => {
+  it('returns the first story regardless of autodocs tag', () => {
+    const mockContext = createMockContext(
+      [stories.story1, stories.story2, stories.story3] as PreparedStory[],
+      { filterByAutodocs: false }
+    );
+    const { result } = renderHook(() => usePrimaryStory(), {
+      wrapper: ({ children }) => <Wrapper context={mockContext}>{children}</Wrapper>,
+    });
+    expect(result.current?.name).toBe('Story One');
   });
 });

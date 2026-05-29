@@ -60,7 +60,7 @@ describe('service registration', () => {
     });
     expect(descriptor.queries.getRecordFields.input).toBe(entryIdInputSchema);
     expect(descriptor.queries.getRecordFields.output).toBe(recordFieldsOutputSchema);
-    expect(descriptor.queries.getRecordFields.filePath).toBeUndefined();
+    expect(descriptor.queries.getRecordFields.staticPath).toBeUndefined();
     expect(descriptor.commands.assignRecordField.input).toBe(assignEntryFieldInputSchema);
     expect(descriptor.commands.assignRecordField.output).toBe(voidOutputSchema);
   });
@@ -209,18 +209,18 @@ describe('service registration', () => {
     ).toEqual({ marker: 'match' });
   });
 
-  it('exposes filePath presence on query descriptors', async () => {
+  it('exposes staticPath presence on query descriptors', async () => {
     registerService(awaitedPreloadValueServiceDef);
 
     const descriptor = await describeService('internal-fixture/awaited-preload-value');
 
-    expect(descriptor.queries.getPreloadedValue.filePath).toBe(true);
+    expect(descriptor.queries.getPreloadedValue.staticPath).toBe(true);
   });
 
   it('allows load and staticInputs to be supplied only at registration time', async () => {
     const serviceDef = defineService({
       id: 'internal-fixture/registration-only-static-build',
-      description: 'Declares filePath in the definition and load at registration.',
+      description: 'Declares staticPath in the definition and load at registration.',
       initialState: { value: null as string | null },
       queries: {
         getValue: {
@@ -228,7 +228,7 @@ describe('service registration', () => {
           input: v.object({ build: v.literal('once') }),
           output: v.nullable(v.string()),
           handler: (_input, ctx) => ctx.self.state.value,
-          filePath: () => 'state.json',
+          staticPath: () => 'state.json',
           staticInputs: async () => [{ build: 'once' as const }],
         },
       },

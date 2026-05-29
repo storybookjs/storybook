@@ -206,10 +206,10 @@ function normalizeStaticStoragePath(serviceId: ServiceId, name: string, rawPath:
 export function resolveStaticPath(
   serviceId: ServiceId,
   name: string,
-  queryDef: { filePath: (input: unknown) => string },
+  queryDef: { staticPath: (input: unknown) => string },
   input: unknown
 ): string {
-  const rawPath = queryDef.filePath(input);
+  const rawPath = queryDef.staticPath(input);
   const relativePath = normalizeStaticStoragePath(serviceId, name, rawPath);
 
   // Scope every snapshot under the service id so two services cannot collide on disk.

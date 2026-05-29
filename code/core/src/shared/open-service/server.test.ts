@@ -56,7 +56,7 @@ describe('server static builds', () => {
       });
     });
 
-    it('uses a single filePath for every input on one query', async () => {
+    it('uses a single staticPath for every input on one query', async () => {
       registerService(awaitedPreloadValueServiceDef);
 
       const store = await buildStaticFiles();
@@ -64,7 +64,7 @@ describe('server static builds', () => {
       expect(Object.keys(store)).toEqual(['internal-fixture/awaited-preload-value/state.json']);
     });
 
-    it('skips services and queries without filePath or staticInputs', async () => {
+    it('skips services and queries without staticPath or staticInputs', async () => {
       registerService(mutableRecordLookupServiceDef);
 
       const store = await buildStaticFiles();
@@ -72,7 +72,7 @@ describe('server static builds', () => {
       expect(Object.keys(store)).toHaveLength(0);
     });
 
-    it('deep-merges outputs from different queries that resolve to the same filePath', async () => {
+    it('deep-merges outputs from different queries that resolve to the same staticPath', async () => {
       registerService(createSharedStaticFileServiceDef());
 
       await expect(buildStaticFiles()).resolves.toEqual({
@@ -104,7 +104,7 @@ describe('server static builds', () => {
             load: async (_input, ctx) => {
               await ctx.self.commands.copyValue(undefined);
             },
-            filePath: () => 'state.json',
+            staticPath: () => 'state.json',
             staticInputs: async () => [{ build: 'once' as const }],
           },
         },
@@ -156,7 +156,7 @@ describe('server static builds', () => {
               await Promise.resolve();
               await ctx.self.commands.publishReadyEntryIds(undefined);
             },
-            filePath: () => 'state.json',
+            staticPath: () => 'state.json',
             staticInputs: async () => [undefined],
           },
         },
@@ -191,7 +191,7 @@ describe('server static builds', () => {
             load: async (input, ctx) => {
               await ctx.self.commands.setValue(input);
             },
-            filePath: () => 'state.json',
+            staticPath: () => 'state.json',
           },
         },
         commands: {
@@ -264,7 +264,7 @@ describe('server static builds', () => {
             load: async (input, ctx) => {
               await ctx.self.commands.setValue(input);
             },
-            filePath: (input) => input.path,
+            staticPath: (input) => input.path,
             staticInputs: async () => [
               { path: './nested/value.json', value: 'dot' },
               { path: '/rooted.json', value: 'rooted' },
@@ -300,10 +300,10 @@ describe('server static builds', () => {
       });
     });
 
-    it('scopes filePath values under the service id so two services cannot collide', async () => {
+    it('scopes staticPath values under the service id so two services cannot collide', async () => {
       const firstServiceDef = defineService({
         id: 'internal-fixture/scoped-static-path-a',
-        description: 'Uses the same relative filePath as another service.',
+        description: 'Uses the same relative staticPath as another service.',
         initialState: { value: 'a' },
         queries: {
           getValue: {
@@ -312,7 +312,7 @@ describe('server static builds', () => {
             output: v.string(),
             handler: (_input, ctx) => ctx.self.state.value,
             load: async () => {},
-            filePath: () => 'state.json',
+            staticPath: () => 'state.json',
             staticInputs: async () => [undefined],
           },
         },
@@ -321,7 +321,7 @@ describe('server static builds', () => {
 
       const secondServiceDef = defineService({
         id: 'internal-fixture/scoped-static-path-b',
-        description: 'Uses the same relative filePath as another service.',
+        description: 'Uses the same relative staticPath as another service.',
         initialState: { value: 'b' },
         queries: {
           getValue: {
@@ -330,7 +330,7 @@ describe('server static builds', () => {
             output: v.string(),
             handler: (_input, ctx) => ctx.self.state.value,
             load: async () => {},
-            filePath: () => 'state.json',
+            staticPath: () => 'state.json',
             staticInputs: async () => [undefined],
           },
         },
@@ -360,7 +360,7 @@ describe('server static builds', () => {
             load: async (_input, ctx) => {
               await ctx.self.commands.setValue(undefined);
             },
-            filePath: () => '../escape.json',
+            staticPath: () => '../escape.json',
             staticInputs: async () => [{ build: 'once' as const }],
           },
         },
@@ -410,7 +410,7 @@ describe('server static builds', () => {
             load: async (input, ctx) => {
               await ctx.self.commands.setValue(input);
             },
-            filePath: (input) => input.path,
+            staticPath: (input) => input.path,
             staticInputs: async () => [
               { path: './nested/value.json', value: 'dot' },
               { path: '/rooted.json', value: 'rooted' },

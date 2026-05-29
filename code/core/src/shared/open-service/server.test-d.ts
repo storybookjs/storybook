@@ -18,7 +18,7 @@ const registrationOnlyServiceDef = defineService({
     getValue: {
       input: entryIdInputSchema,
       output: v.nullable(v.string()),
-      filePath: (input) => {
+      staticPath: (input) => {
         expectTypeOf(input).toEqualTypeOf<{ entryId: string }>();
         return `${input.entryId}.json`;
       },

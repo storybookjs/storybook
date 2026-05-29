@@ -79,10 +79,25 @@ jobs:
     needs: [get-branch, get-parameters]
     if: github.repository_owner == 'storybookjs' && needs.get-parameters.outputs.workflow != ''
     steps:
-      - name: Trigger Normal tests
-        uses: fjogeleit/http-request-action@v1
-        with:
-          url: 'https://circleci.com/api/v2/project/gh/storybookjs/storybook/pipeline'
-          method: 'POST'
-          customHeaders: '{"Content-Type": "application/json", "Circle-Token": "${{ secrets.CIRCLE_CI_TOKEN }}"}'
-          data: '{ "branch": "${{needs.get-branch.outputs.branch}}", "parameters": ${{toJson(needs.get-parameters.outputs)}} }'
+      - name: Trigger CircleCI pipeline
+        env:
+          CIRCLE_CI_TOKEN: ${{ secrets.CIRCLE_CI_TOKEN }}
+          BRANCH: ${{ needs.get-branch.outputs.branch }}
+          WORKFLOW: ${{ needs.get-parameters.outputs.workflow }}
+          GH_BASE_BRANCH: ${{ needs.get-parameters.outputs.ghBaseBranch }}
+          GH_PR_NUMBER: ${{ needs.get-parameters.outputs.ghPrNumber }}
+          GH_TRUSTED_AUTHOR: ${{ needs.get-parameters.outputs.ghTrustedAuthor }}
+        run: |
+          PARAMETERS=$(jq -nc \
+            --arg workflow "$WORKFLOW" \
+            --arg ghBaseBranch "$GH_BASE_BRANCH" \
+            --arg ghPrNumber "$GH_PR_NUMBER" \
+            --arg ghTrustedAuthor "$GH_TRUSTED_AUTHOR" \
+            '{workflow: $workflow, ghBaseBranch: $ghBaseBranch, ghPrNumber: $ghPrNumber}')
+          PAYLOAD=$(jq -nc --arg branch "$BRANCH" --argjson parameters "$PARAMETERS" \
+            '{branch: $branch, parameters: $parameters}')
+          curl -sS --fail-with-body -X POST \
+            -H "Content-Type: application/json" \
+            -H "Circle-Token: $CIRCLE_CI_TOKEN" \
+            -d "$PAYLOAD" \
+            "https://circleci.com/api/v2/project/gh/storybookjs/storybook/pipeline"

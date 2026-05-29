@@ -43,6 +43,7 @@ export type {
   ParseFileArgs,
 } from './change-detection/index.ts';
 export { ChangeDetectionService } from './change-detection/ChangeDetectionService.ts';
+export { getActiveChangeDetectionService as experimental_getActiveChangeDetectionService } from './change-detection/active-service-registry.ts';
 export {
   getTestProviderStoreById as experimental_getTestProviderStore,
   fullTestProviderStore as internal_fullTestProviderStore,

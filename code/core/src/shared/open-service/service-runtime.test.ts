@@ -436,42 +436,8 @@ describe('service runtime', () => {
     });
 
     it('does not refire dependency loads on the final .loaded() evaluation', async () => {
-      const loadSpy = vi.fn(
-        async (
-          _input: unknown,
-          ctx: {
-            self: { commands: { preloadValue: (input: { entryId: string }) => Promise<void> } };
-          }
-        ) => {
-          await ctx.self.commands.preloadValue({ entryId: 'entry-a' });
-        }
-      );
-      const sourceDef = defineService({
-        id: 'internal-fixture/source-with-spied-load',
-        description: 'Source query whose load body is spied for refire detection.',
-        initialState: {} as Record<string, string | undefined>,
-        queries: {
-          getPreloadedValue: {
-            input: entryIdInputSchema,
-            output: preloadedValueOutputSchema,
-            handler: (input, ctx) => ctx.self.state[input.entryId] ?? null,
-            load: loadSpy,
-          },
-        },
-        commands: {
-          preloadValue: {
-            input: entryIdInputSchema,
-            output: voidOutputSchema,
-            handler: async (input, ctx) => {
-              await Promise.resolve();
-              ctx.self.setState((draft) => {
-                draft[input.entryId] = 'preloaded';
-              });
-            },
-          },
-        },
-      });
-      const sourceService = registerService(sourceDef);
+      const loadSpy = vi.spyOn(awaitedPreloadValueServiceDef.queries.getPreloadedValue, 'load');
+      const sourceService = registerService(awaitedPreloadValueServiceDef);
       const derivedDef = defineService({
         id: 'internal-fixture/derived-loaded-from-spied-source',
         description: 'Reads the spied source query from a sync handler.',
@@ -490,10 +456,14 @@ describe('service runtime', () => {
       });
       const derivedService = registerService(derivedDef);
 
-      await expect(derivedService.queries.getLength.loaded({ entryId: 'entry-a' })).resolves.toBe(
-        'preloaded'.length
-      );
-      expect(loadSpy).toHaveBeenCalledTimes(1);
+      try {
+        await expect(derivedService.queries.getLength.loaded({ entryId: 'entry-a' })).resolves.toBe(
+          'preloaded'.length
+        );
+        expect(loadSpy).toHaveBeenCalledTimes(1);
+      } finally {
+        loadSpy.mockRestore();
+      }
     });
 
     it('surfaces rejections from a transitive load through .loaded()', async () => {

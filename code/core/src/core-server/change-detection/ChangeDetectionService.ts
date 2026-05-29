@@ -30,6 +30,7 @@ import { extractBaselineEntryIds, IndexBaselineService } from './IndexBaselineSe
 import type { ImportParser } from './parser-registry/index.ts';
 import { ParserRegistry, builtinImportParsers } from './parser-registry/index.ts';
 import { resetChangeDetectionReadiness, setChangeDetectionReadiness } from './readiness.ts';
+import { notifySourceFileChange } from './source-changes.ts';
 
 const CHANGE_DETECTION_DEBOUNCE_MS = 200;
 
@@ -514,6 +515,9 @@ export class ChangeDetectionService {
     if (this.disposed || !this.incrementalPatcher) {
       return;
     }
+    // Surface the raw change to external subscribers (e.g. addon-review's
+    // staleness check) before patching — they only care that a file changed.
+    notifySourceFileChange(event);
     try {
       await this.incrementalPatcher.patch(event);
     } catch (error) {

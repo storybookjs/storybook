@@ -76,6 +76,16 @@ export const Default = meta.story({
   },
 });
 
+export const Stale = meta.story({
+  args: { isStale: true },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(
+      await canvas.findByText('New changes were made. This review may be stale.')
+    ).toBeInTheDocument();
+  },
+});
+
 export const WrapAroundNavigation = meta.story({
   args: {
     storyId: 'manager-settings-guidepage--default',

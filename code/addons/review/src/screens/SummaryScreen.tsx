@@ -12,6 +12,7 @@ import {
 } from '@storybook/icons';
 
 import { CollectionGrid, type StoryInfo } from '../components/CollectionGrid.tsx';
+import { StaleBanner } from '../components/StaleBanner.tsx';
 import { groupStoriesByComponent, prettifyComponentId } from '../review-grouping.ts';
 import { buildReviewChangesDetailHref, type ReviewTab } from '../review-navigation.ts';
 import type { ReviewCollection, ReviewState } from '../review-state.ts';
@@ -562,6 +563,8 @@ export interface SummaryScreenProps {
   onTabChange?: (tab: ReviewTab) => void;
   /** Story id → component title + name, resolved from the Storybook index. */
   storyInfo?: Record<string, StoryInfo>;
+  /** When true, render the "this review may be stale" banner at the top. */
+  isStale?: boolean;
 }
 
 export const SummaryScreen: FC<SummaryScreenProps> = ({
@@ -569,6 +572,7 @@ export const SummaryScreen: FC<SummaryScreenProps> = ({
   initialTab = 'collections',
   onTabChange,
   storyInfo = {},
+  isStale = false,
 }) => {
   const [tab, setTab] = useState<ReviewTab>(initialTab);
   const [search, setSearch] = useState('');
@@ -708,6 +712,7 @@ export const SummaryScreen: FC<SummaryScreenProps> = ({
 
   return (
     <Page data-search-active={isSearchFocused || undefined}>
+      {isStale ? <StaleBanner /> : null}
       <Header>
         <HeaderText>
           <Heading>{state.title}</Heading>

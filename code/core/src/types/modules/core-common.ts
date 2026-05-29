@@ -20,6 +20,7 @@ export type {
   DocgenPayload,
   DocgenProvider,
   DocgenProviderInput,
+  DocgenProviderPreset,
 } from '../../shared/open-service/services/docgen/types.ts';
 
 /** ⚠️ This file contains internal WIP types they MUST NOT be exported outside this package for now! */

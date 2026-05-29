@@ -1,4 +1,4 @@
-import { defineDocgenProvider } from 'storybook/internal/common';
+import type { DocgenProviderPreset } from 'storybook/internal/types';
 
 /**
  * Addon-docs docgen provider.
@@ -7,15 +7,18 @@ import { defineDocgenProvider } from 'storybook/internal/common';
  * consumers can tell that addon-docs participated. Does NOT produce docgen on its own — when no
  * downstream provider supplied a payload it returns undefined so the chain falls through.
  */
-export const experimental_docgenProvider = defineDocgenProvider((next) => async (input) => {
-  const downstream = await next(input);
-  if (!downstream) {
-    return undefined;
-  }
-  return {
-    ...downstream,
-    description: downstream.description
-      ? `${downstream.description} (docs enabled)`
-      : 'docs enabled',
+export const experimental_docgenProvider: DocgenProviderPreset = async (nextDocgen) => {
+  return async (input) => {
+    const downstream = await nextDocgen(input);
+    if (!downstream) {
+      return undefined;
+    }
+    return {
+      ...downstream,
+      description: downstream.description
+        ? `${downstream.description} (docs enabled)`
+        : 'docs enabled',
+      props: [...downstream.props, { source: '@storybook/addon-docs', kind: 'docs-marker' }],
+    };
   };
-});
+};

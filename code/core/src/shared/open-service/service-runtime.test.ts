@@ -5,11 +5,8 @@ import { defineService } from './service-definition.ts';
 import { clearRegistry, registerService } from './server.ts';
 import {
   type DocgenLikePayload,
-  type DocgenLikeState,
   awaitedPreloadValueServiceDef,
   createDerivedBooleanFromChildQueryServiceDef,
-  docgenLikeOutputSchema,
-  entryIdInputSchema,
   fireAndForgetPreloadValueServiceDef,
   freshEqualPayloadOnLoadServiceDef,
   mutableRecordLookupServiceDef,
@@ -301,11 +298,12 @@ describe('service runtime', () => {
       unsubscribe();
     });
 
-    // Documents why re-subscribing to an already-populated entry emits a redundant second value:
-    // alien-signals' `computed()` compares its output with `!==` (referential identity), so a load
-    // that rewrites a deeply-equal but freshly-allocated object is treated as a change. This is the
-    // docgen "second navigation" behavior observed in the internal Storybook emulation.
-    it('re-emits a deeply-equal payload because alien-signals compares computed output by reference', async () => {
+    // Reference churn must not be mistaken for a value change. Output-schema validation rebuilds
+    // the handler result into a fresh object and a load that rewrites a deeply-equal payload yields
+    // a new Immer slice; both produce a new reference for unchanged data. The runtime memoizes the
+    // subscription computed by value so these do not re-fire subscribers. This is the docgen
+    // "second navigation" behavior observed in the internal Storybook emulation.
+    it('does not re-emit when a load rewrites a deeply-equal but freshly-allocated payload', async () => {
       const service = registerService(freshEqualPayloadOnLoadServiceDef);
 
       // First subscription: undefined -> populated. After this, state holds payload #1.
@@ -321,6 +319,7 @@ describe('service runtime', () => {
 
       // Second subscription, entry already populated: the immediate emission carries the stored
       // payload, then load reruns and stores a brand-new object that is deeply equal but not `===`.
+      // The redundant emission must be suppressed.
       const secondCalls: Array<DocgenLikePayload | null> = [];
       const unsubscribeSecond = service.queries.getPayload.subscribe(
         { entryId: 'components-card' },
@@ -329,78 +328,47 @@ describe('service runtime', () => {
         }
       );
 
-      await vi.waitFor(() => expect(secondCalls).toHaveLength(2));
+      await vi.waitFor(() => expect(secondCalls).toEqual([{ name: 'Card', props: 5 }]));
+      // Give the background load time to run and (not) notify.
+      await new Promise((resolve) => setTimeout(resolve, 50));
 
-      // Both emissions are deeply equal: nothing the consumer cares about changed.
-      expect(secondCalls[0]).toEqual({ name: 'Card', props: 5 });
-      expect(secondCalls[1]).toEqual({ name: 'Card', props: 5 });
-      // ...yet they are distinct object references, which is exactly what makes alien-signals
-      // notify a second time. Reference identity, not value, drives the redundant emission.
-      expect(secondCalls[1]).not.toBe(secondCalls[0]);
+      expect(secondCalls).toEqual([{ name: 'Card', props: 5 }]);
 
       unsubscribeSecond();
     });
 
-    // Contrast case proving the redundant emission is caused by the fresh allocation, not by load
-    // running at all: when the command stores the identical reference already in state, immer keeps
-    // the snapshot and alien-signals sees no change, so no second emission fires.
-    it('does not re-emit when load rewrites the identical reference already in state', async () => {
-      const stablePayload: DocgenLikePayload = { name: 'Card', props: 5 };
-      const stableRefServiceDef = defineService({
-        id: 'internal-fixture/stable-ref-payload-on-load',
-        description: 'Rewrites the identical payload reference on every load.',
-        initialState: {} as DocgenLikeState,
-        queries: {
-          getPayload: {
-            input: entryIdInputSchema,
-            output: docgenLikeOutputSchema,
-            handler: (input, ctx) => ctx.self.state[input.entryId] ?? null,
-            load: async (input, ctx) => {
-              await ctx.self.commands.extractPayload(input);
-            },
-          },
-        },
-        commands: {
-          extractPayload: {
-            input: entryIdInputSchema,
-            output: docgenLikeOutputSchema,
-            handler: async (input, ctx) => {
-              await Promise.resolve();
-              ctx.self.setState((draft) => {
-                draft[input.entryId] = stablePayload;
-              });
-              return stablePayload;
-            },
-          },
-        },
+    // Output-schema validation reconstructs the handler result into a new object on every
+    // evaluation, so without value-based memoization any write to the service — even to an
+    // unrelated key — would re-fire every object-valued subscriber. Immer keeps the untouched slice
+    // referentially stable, so the only thing that can change is the validation reconstruction.
+    it('does not re-emit an object-valued subscriber when an unrelated key changes', async () => {
+      const service = registerService(mutableRecordLookupServiceDef);
+
+      await service.commands.assignRecordField({
+        entryId: 'entry-a',
+        fieldKey: 'marker',
+        fieldValue: 'match',
       });
-      const service = registerService(stableRefServiceDef);
 
-      const firstCalls: Array<DocgenLikePayload | null> = [];
-      const unsubscribeFirst = service.queries.getPayload.subscribe(
-        { entryId: 'components-card' },
+      const callsA: Array<Record<string, string> | null> = [];
+      const unsubscribe = service.queries.getRecordFields.subscribe(
+        { entryId: 'entry-a' },
         (value) => {
-          firstCalls.push(value);
+          callsA.push(value);
         }
       );
-      await vi.waitFor(() => expect(firstCalls).toEqual([null, stablePayload]));
-      unsubscribeFirst();
+      await vi.waitFor(() => expect(callsA).toEqual([{ marker: 'match' }]));
 
-      const secondCalls: Array<DocgenLikePayload | null> = [];
-      const unsubscribeSecond = service.queries.getPayload.subscribe(
-        { entryId: 'components-card' },
-        (value) => {
-          secondCalls.push(value);
-        }
-      );
+      await service.commands.assignRecordField({
+        entryId: 'entry-b',
+        fieldKey: 'marker',
+        fieldValue: 'other',
+      });
+      await new Promise((resolve) => setTimeout(resolve, 30));
 
-      // Give the background load time to run and (not) notify.
-      await vi.waitFor(() => expect(secondCalls).toEqual([stablePayload]));
-      await new Promise((resolve) => setTimeout(resolve, 50));
+      expect(callsA).toEqual([{ marker: 'match' }]);
 
-      expect(secondCalls).toEqual([stablePayload]);
-
-      unsubscribeSecond();
+      unsubscribe();
     });
 
     it('preloads distinct values independently by input', async () => {

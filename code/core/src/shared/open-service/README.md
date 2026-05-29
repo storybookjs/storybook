@@ -259,6 +259,7 @@ Subscriptions are implemented with `alien-signals` in [service-runtime.ts](./ser
 3. A `computed()` value wraps the synchronous handler. An `effect()` runs the handler immediately (delivering the current value to the callback) and re-runs whenever the handler's tracked state dependencies change.
 4. Subscribers receive the current state right away, then a follow-up emission once the load settles and state changes. UI consumers that want to suppress the pre-load emission should branch on the value (e.g. show a spinner for `null`).
 5. Each emitted value is output-validated before the subscriber callback runs.
+6. Emissions are deduped by value. Output validation and Immer both mint a fresh reference for unchanged data, which would defeat `alien-signals`' identity-based dedup, so the `computed()` keeps the previous reference when the new value is deeply equal (`es-toolkit` `isEqual`). Subscribers are only notified when the value actually changes — a load that rewrites a deeply-equal payload, or a write to an unrelated key, does not re-fire them.
 
 Tests should use `vi.waitFor(...)` when asserting the first emission or follow-up emissions.
 

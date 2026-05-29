@@ -60,6 +60,7 @@
  */
 import { produce } from 'immer';
 import { computed, effect, endBatch, signal, startBatch } from 'alien-signals';
+import { isEqual } from 'es-toolkit/predicate';
 
 import {
   OpenServiceInvalidStaticPathError,
@@ -898,16 +899,23 @@ function subscribeToQuery<TState>(
       pendingLoad.catch(rethrowAsync);
     }
 
-    const comp = computed(() =>
-      runHandlerSync(
+    // Re-engage alien-signals' identity-based dedup. The handler result is rebuilt into a fresh
+    // reference on every evaluation — output-schema validation reconstructs the object, and Immer
+    // returns a new state slice whenever a load rewrites a deeply-equal value — so a bare computed
+    // would treat every state write as a change and re-fire subscribers with unchanged data.
+    // Returning the previous reference when the value is deeply equal keeps the computed
+    // referentially stable, so only genuine value changes propagate to the callback.
+    const comp = computed((previous?: unknown) => {
+      const next = runHandlerSync(
         refs,
         queryName,
         queryDef,
         validatedInput,
         refs.defaultQueries,
         refs.registryApi.getService
-      )
-    );
+      );
+      return isEqual(previous, next) ? previous : next;
+    });
     teardown = effect(() => {
       let value: unknown;
       try {

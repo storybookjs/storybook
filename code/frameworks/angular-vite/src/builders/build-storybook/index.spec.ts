@@ -181,37 +181,6 @@ describe.skip('Build Storybook Builder', () => {
     }
   });
 
-  it('should run compodoc', async () => {
-    const run = await architect.scheduleBuilder('@storybook/angular:build-storybook', {
-      browserTarget: 'angular-cli:build-2',
-    });
-
-    const output = await run.result;
-
-    await run.stop();
-
-    expect(output.success).toBeTruthy();
-    expect(mockRunScript).toHaveBeenCalledWith(
-      'compodoc',
-      ['-p', './storybook/tsconfig.ts', '-d', '.', '-e', 'json'],
-      ''
-    );
-    expect(buildStaticStandaloneMock).toHaveBeenCalledWith(
-      expect.objectContaining({
-        angularBrowserTarget: 'angular-cli:build-2',
-        angularBuilderContext: expect.any(Object),
-        configDir: '.storybook',
-        loglevel: undefined,
-        quiet: false,
-        outputDir: 'storybook-static',
-        packageJson: expect.any(Object),
-        mode: 'static',
-        tsConfig: './storybook/tsconfig.ts',
-        statsJson: false,
-      })
-    );
-  });
-
   it('should start storybook with styles options', async () => {
     const run = await architect.scheduleBuilder('@storybook/angular:build-storybook', {
       tsConfig: 'path/to/tsConfig.json',

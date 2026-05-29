@@ -126,6 +126,7 @@ export const viteFinal = async (config: UserConfig, options?: StandaloneOptions)
       const { runCompodoc } = await import('./builders/utils/run-compodoc.ts');
       const tsconfig =
         framework.options?.tsconfig ??
+        (options as any)?.tsConfig ??
         (options as any)?.angularBuilderOptions?.tsConfig ??
         path.resolve(workspaceRoot, 'tsconfig.json');
       const compodocArgs = framework.options?.compodocArgs ?? ['-e', 'json', '-d', '.'];

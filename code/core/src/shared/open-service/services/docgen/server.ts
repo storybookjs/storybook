@@ -61,14 +61,15 @@ export function registerDocgenService(options: RegisterDocgenServiceOptions) {
           const payload = await options.provider({ importPath: entry.importPath });
 
           if (!payload) {
-            // No provider produced docgen for this file — leave state untouched so the query
-            // returns undefined.
-            return;
+            // No provider produced docgen for this file — leave state untouched and signal
+            // "nothing here" to the caller.
+            return undefined;
           }
 
           ctx.self.setState((draft) => {
             draft.components[input.componentId] = payload;
           });
+          return payload;
         },
       },
     },

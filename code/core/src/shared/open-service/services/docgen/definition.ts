@@ -22,8 +22,6 @@ export const docgenPayloadSchema = v.object({
 /** Output of `getDocgen` — undefined when the component has not been extracted yet. */
 export const docgenOutputSchema = v.optional(docgenPayloadSchema);
 
-const voidOutputSchema = v.void();
-
 // Compile-time guard that the schema's inferred output matches the published DocgenPayload type.
 // If a future schema change diverges from the public type the file will fail typecheck here, so
 // the two definitions stay in lockstep without a runtime duplication.
@@ -69,9 +67,9 @@ export const docgenServiceDef = defineService({
   commands: {
     extractDocgen: {
       description:
-        'Resolves story entries for a componentId, runs the registered extractor chain, and writes the result into state.',
+        'Resolves story entries for a componentId, runs the registered provider chain, writes the result into state, and returns it (or undefined when no provider produced docgen).',
       input: docgenInputSchema,
-      output: voidOutputSchema,
+      output: docgenOutputSchema,
       // Handler is supplied at registration time so it can close over the story index and the
       // composed experimental_docgenProvider chain.
     },

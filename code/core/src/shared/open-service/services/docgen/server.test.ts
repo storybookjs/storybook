@@ -30,13 +30,14 @@ function makeGetIndex(entries: IndexEntry[]) {
 
 describe('docgen open service', () => {
   describe('extractDocgen command', () => {
-    it('hands the entry importPath to the provider and stores its payload', async () => {
-      const provider = vi.fn<DocgenProvider>(async () => ({
+    it('hands the entry importPath to the provider, stores its payload, and returns it', async () => {
+      const payload = {
         componentId: 'button',
         name: 'Button',
         description: 'A button',
         props: [],
-      }));
+      };
+      const provider = vi.fn<DocgenProvider>(async () => payload);
 
       const service = registerDocgenService({
         getIndex: makeGetIndex([
@@ -46,27 +47,24 @@ describe('docgen open service', () => {
         provider,
       });
 
-      await service.commands.extractDocgen({ componentId: 'button' });
+      const returned = await service.commands.extractDocgen({ componentId: 'button' });
 
-      expect(service.queries.getDocgen({ componentId: 'button' })).toEqual({
-        componentId: 'button',
-        name: 'Button',
-        description: 'A button',
-        props: [],
-      });
+      expect(returned).toEqual(payload);
+      expect(service.queries.getDocgen({ componentId: 'button' })).toEqual(payload);
 
       expect(provider).toHaveBeenCalledTimes(1);
       expect(provider.mock.calls[0][0]).toEqual({ importPath: './button.stories.tsx' });
     });
 
-    it('leaves state untouched when the provider returns undefined', async () => {
+    it('returns undefined and leaves state untouched when the provider returns undefined', async () => {
       const service = registerDocgenService({
         getIndex: makeGetIndex([makeStoryEntry('button--primary', 'Button')]),
         provider: async () => undefined,
       });
 
-      await service.commands.extractDocgen({ componentId: 'button' });
+      const returned = await service.commands.extractDocgen({ componentId: 'button' });
 
+      expect(returned).toBeUndefined();
       expect(service.queries.getDocgen({ componentId: 'button' })).toBeUndefined();
     });
 

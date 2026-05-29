@@ -10,6 +10,10 @@ export {
   subscribeToSourceFileChanges,
   internal_resetSourceFileChangeListeners,
 } from './source-changes.ts';
+export {
+  getActiveChangeDetectionService,
+  setActiveChangeDetectionService,
+} from './active-service-registry.ts';
 export type {
   ChangeDetectionAdapter,
   FileChangeEvent,

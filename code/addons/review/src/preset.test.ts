@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { Channel } from 'storybook/internal/channels';
+import type { FileChangeEvent } from 'storybook/internal/core-server';
 import type { Options } from 'storybook/internal/types';
 
 import { EVENTS } from './constants.ts';
@@ -8,8 +9,8 @@ import type { ReviewState } from './review-state.ts';
 import { __resetCache, experimental_serverChannel } from './preset.ts';
 
 function createMockSubscribe() {
-  let captured: ((event: unknown) => void) | undefined;
-  const subscribeToSourceFileChanges = vi.fn((listener: (event: unknown) => void) => {
+  let captured: ((event: FileChangeEvent) => void) | undefined;
+  const subscribeToSourceFileChanges = vi.fn((listener: (event: FileChangeEvent) => void) => {
     captured = listener;
     return () => {
       captured = undefined;
@@ -17,7 +18,7 @@ function createMockSubscribe() {
   });
   return {
     subscribeToSourceFileChanges,
-    fireChange: (event: unknown = { kind: 'change', path: '/repo/src/Button.tsx' }) =>
+    fireChange: (event: FileChangeEvent = { kind: 'change', path: '/repo/src/Button.tsx' }) =>
       captured?.(event),
   };
 }

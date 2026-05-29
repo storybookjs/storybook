@@ -9,7 +9,10 @@ import polka from 'polka';
 
 import { isTelemetryModuleEnabled, telemetry } from '../telemetry/index.ts';
 import type { ChangeDetectionAdapter } from './change-detection/index.ts';
-import { ChangeDetectionService } from './change-detection/index.ts';
+import {
+  ChangeDetectionService,
+  setActiveChangeDetectionService,
+} from './change-detection/index.ts';
 import { getStatusStoreByTypeId } from './stores/status.ts';
 import type { StoryIndexGenerator } from './utils/StoryIndexGenerator.ts';
 import { doTelemetry } from './utils/doTelemetry.ts';
@@ -54,6 +57,9 @@ export async function storybookDevServer(
     workingDir,
     presets: options.presets,
   });
+  // Expose to in-process consumers (addon presets) via the active-service registry.
+  // Dev server is single-instance, so only one service is ever active.
+  setActiveChangeDetectionService(changeDetectionService);
 
   app.use(compression({ level: 1 }));
 

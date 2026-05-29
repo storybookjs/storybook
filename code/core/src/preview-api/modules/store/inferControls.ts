@@ -42,6 +42,11 @@ const inferControl = (argType: StrictInputType, name: string, matchers: Controls
     return { control: { type: 'date' } };
   }
 
+  // If options are present, infer select control regardless of type name
+  if (options) {
+    return { control: { type: 'select' }, options };
+  }
+
   switch (type.name) {
     case 'array':
       return { control: { type: 'object' } };
@@ -59,7 +64,7 @@ const inferControl = (argType: StrictInputType, name: string, matchers: Controls
     case 'symbol':
       return null;
     default:
-      return { control: { type: options ? 'select' : 'object' } };
+      return { control: { type: 'object' } };
   }
 };
 

@@ -133,4 +133,36 @@ describe('inferControls', () => {
     expect(Object.keys(excludeArray)).toEqual(['labelName', 'borderWidth']);
     expect(Object.keys(excludeRegex)).toEqual(['borderWidth']);
   });
+
+  it('should infer select control when options are present without explicit control type', () => {
+    const inferredControls = inferControls(
+      getStoryContext({
+        argTypes: {
+          size: {
+            type: { name: 'string' },
+            options: ['S', 'M', 'L'],
+          },
+        },
+      })
+    );
+
+    const control = inferredControls.size.control;
+    expect(typeof control === 'object' && control.type).toEqual('select');
+  });
+
+  it('should infer select control when options are present with number type', () => {
+    const inferredControls = inferControls(
+      getStoryContext({
+        argTypes: {
+          count: {
+            type: { name: 'number' },
+            options: [1, 2, 3],
+          },
+        },
+      })
+    );
+
+    const control = inferredControls.count.control;
+    expect(typeof control === 'object' && control.type).toEqual('select');
+  });
 });

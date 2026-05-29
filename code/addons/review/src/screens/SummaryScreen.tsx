@@ -544,8 +544,6 @@ const SearchBox: FC<{
   </SearchField>
 );
 
-const CREATED_AT_TICK_MS = 30_000;
-
 const formatCreatedAgo = (createdAt: number, nowMs: number): string => {
   const elapsedMs = Math.max(0, nowMs - createdAt);
   if (elapsedMs < 60_000) {
@@ -594,6 +592,7 @@ export const SummaryScreen: FC<SummaryScreenProps> = ({
   const storybookRootHref = useMemo(() => {
     const rootUrl = new URL(window.location.href);
     rootUrl.searchParams.delete('path');
+    rootUrl.searchParams.set('statuses', 'modified;new;related');
     return rootUrl.toString();
   }, []);
 
@@ -604,7 +603,7 @@ export const SummaryScreen: FC<SummaryScreenProps> = ({
   useEffect(() => {
     const intervalId = window.setInterval(() => {
       setNowMs(Date.now());
-    }, CREATED_AT_TICK_MS);
+    }, 10000);
     return () => window.clearInterval(intervalId);
   }, []);
 

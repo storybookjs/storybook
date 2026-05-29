@@ -6,6 +6,10 @@ export {
   type ChangeDetectionReadiness,
 } from './readiness.ts';
 export { ChangeDetectionService } from './ChangeDetectionService.ts';
+export {
+  subscribeToSourceFileChanges,
+  internal_resetSourceFileChangeListeners,
+} from './source-changes.ts';
 export type {
   ChangeDetectionAdapter,
   FileChangeEvent,

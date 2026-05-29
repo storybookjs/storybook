@@ -5,6 +5,8 @@ import { styled } from 'storybook/theming';
 
 import { ChevronSmallLeftIcon, ChevronSmallRightIcon } from '@storybook/icons';
 
+import { StaleBanner } from '../components/StaleBanner.tsx';
+
 const Page = styled.div(({ theme }) => ({
   display: 'flex',
   flexDirection: 'column',
@@ -107,6 +109,8 @@ export interface DetailsScreenProps {
   componentTitle?: string;
   storyName?: string;
   branchName?: string;
+  /** When true, render the "this review may be stale" banner at the top. */
+  isStale?: boolean;
 }
 
 const renderDetailTitle = ({
@@ -148,8 +152,10 @@ export const DetailsScreen: FC<DetailsScreenProps> = ({
   componentTitle,
   storyName,
   branchName,
+  isStale = false,
 }) => (
   <Page>
+    {isStale ? <StaleBanner /> : null}
     <Toolbar>
       <ToolbarSide>
         <Button variant="ghost" size="small" padding="small" ariaLabel="Back to review" asChild>

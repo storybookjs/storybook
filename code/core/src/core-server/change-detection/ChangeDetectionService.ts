@@ -17,6 +17,7 @@ import { CHANGE_DETECTION_STATUS_TYPE_ID } from 'storybook/internal/types';
 
 import type { StoryIndexGenerator } from '../utils/StoryIndexGenerator.ts';
 import type { ChangeDetectionAdapter, FileChangeEvent } from './adapters/index.ts';
+import { setActiveChangeDetectionService } from './active-service-registry.ts';
 import {
   ChangeDetectionResolverFactory,
   DependencyGraphBuilder,
@@ -489,9 +490,47 @@ export class ChangeDetectionService {
     }
   }
 
+  /**
+   * Returns the live reverse-dependency index, or `undefined` if the graph
+   * hasn't finished its cold-start build yet (or change detection is unavailable).
+   *
+   * The returned instance is the same reference patched by `IncrementalPatcher`
+   * on file changes — callers read it lazily at query time, not snapshotted.
+   *
+   * @experimental
+   */
+  getReverseIndex(): ReverseIndexImpl | undefined {
+    return this.reverseIndex;
+  }
+
+  /**
+   * Returns a map from absolute story file path → set of story IDs declared in
+   * that file, derived from the current story index.
+   *
+   * Useful for callers (e.g. addons) that consume {@link getReverseIndex} output:
+   * the reverse-index entries are keyed by absolute file path, but consumers
+   * typically need story IDs.
+   *
+   * @experimental
+   */
+  async getStoryIdsByFile(): Promise<Map<string, Set<string>>> {
+    const generator = await this.options.storyIndexGeneratorPromise;
+    const storyIndex = await generator.getIndex();
+    return getStoryIdsByAbsolutePath(this.storyIdsByFileCache, storyIndex, this.workingDir);
+  }
+
+  /** @experimental Working directory used to resolve relative paths. */
+  getWorkingDir(): string {
+    return this.workingDir;
+  }
+
   async dispose(): Promise<void> {
     this.disposed = true;
     this.rerunAfterCurrentScan = false;
+
+    // Clear the active-service registry so in-process consumers stop seeing
+    // a disposed instance after dev-server shutdown.
+    setActiveChangeDetectionService(undefined);
 
     if (this.debounceTimer) {
       clearTimeout(this.debounceTimer);

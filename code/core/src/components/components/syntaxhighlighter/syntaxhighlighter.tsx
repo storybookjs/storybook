@@ -1,18 +1,33 @@
 import React, { useEffect, useState } from 'react';
 
 import memoize from 'memoizerific';
+// react-syntax-highlighter ships no types for these deep ESM entrypoints, and TS 6.0 no
+// longer falls back to @types/react-syntax-highlighter for them, so each import is suppressed.
+// @ts-expect-error untyped deep ESM entrypoint
 import createElement from 'react-syntax-highlighter/dist/esm/create-element';
+// @ts-expect-error untyped deep ESM entrypoint
 import bash from 'react-syntax-highlighter/dist/esm/languages/prism/bash';
+// @ts-expect-error untyped deep ESM entrypoint
 import css from 'react-syntax-highlighter/dist/esm/languages/prism/css';
+// @ts-expect-error untyped deep ESM entrypoint
 import graphql from 'react-syntax-highlighter/dist/esm/languages/prism/graphql';
+// @ts-expect-error untyped deep ESM entrypoint
 import jsExtras from 'react-syntax-highlighter/dist/esm/languages/prism/js-extras';
+// @ts-expect-error untyped deep ESM entrypoint
 import json from 'react-syntax-highlighter/dist/esm/languages/prism/json';
+// @ts-expect-error untyped deep ESM entrypoint
 import jsx from 'react-syntax-highlighter/dist/esm/languages/prism/jsx';
+// @ts-expect-error untyped deep ESM entrypoint
 import md from 'react-syntax-highlighter/dist/esm/languages/prism/markdown';
+// @ts-expect-error untyped deep ESM entrypoint
 import html from 'react-syntax-highlighter/dist/esm/languages/prism/markup';
+// @ts-expect-error untyped deep ESM entrypoint
 import tsx from 'react-syntax-highlighter/dist/esm/languages/prism/tsx';
+// @ts-expect-error untyped deep ESM entrypoint
 import typescript from 'react-syntax-highlighter/dist/esm/languages/prism/typescript';
+// @ts-expect-error untyped deep ESM entrypoint
 import yml from 'react-syntax-highlighter/dist/esm/languages/prism/yaml';
+// @ts-expect-error untyped deep ESM entrypoint
 import ReactSyntaxHighlighter from 'react-syntax-highlighter/dist/esm/prism-light';
 import { styled } from 'storybook/theming';
 

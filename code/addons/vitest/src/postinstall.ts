@@ -28,6 +28,11 @@ import { coerce, satisfies } from 'semver';
 import { dedent } from 'ts-dedent';
 
 import { type PostinstallOptions } from '../../../lib/cli-storybook/src/add.ts';
+import {
+  injectAngularVitestIntoAst,
+  injectAngularVitestIntoConfig,
+  isAngularVitestAlreadyWired,
+} from './angular-vitest-postinstall.ts';
 import { DOCUMENTATION_LINK } from './constants.ts';
 import { loadTemplate, updateConfigFile, updateWorkspaceFile } from './updateVitestFile.ts';
 
@@ -213,6 +218,45 @@ export default async function postInstall(options: PostinstallOptions) {
     return 'vitest.config.template';
   };
 
+  const isAngularVite = info.framework === SupportedFramework.ANGULAR_VITE;
+
+  /**
+   * For Angular projects, co-locate `storybookAngularVitest()` in the same nested plugins array as
+   * `storybookTest()` so standalone `vitest` runs receive the Angular build options. Reads the file
+   * back from disk so it always operates on the just-written content, formats, and writes once. On a
+   * non-locatable plugins array the injector returns `null` and we emit the manual-setup error.
+   */
+  const maybeWireAngular = async (
+    filePath: string,
+    content: string,
+    ErrorClass:
+      | typeof AddonVitestPostinstallConfigUpdateError
+      | typeof AddonVitestPostinstallWorkspaceUpdateError = AddonVitestPostinstallConfigUpdateError
+  ) => {
+    if (!isAngularVite || isAngularVitestAlreadyWired(content)) {
+      return;
+    }
+
+    const injected = injectAngularVitestIntoConfig(content);
+    if (injected === null) {
+      logger.error(dedent`
+        We configured @storybook/addon-vitest, but could not automatically add the
+        @storybook/angular-vite standalone-vitest bridge to:
+        ${filePath}
+
+        Please add storybookAngularVitest({}) to the plugins array next to storybookTest()
+        and import it from "@storybook/angular-vite/vitest". See:
+        https://storybook.js.org/docs/next/${DOCUMENTATION_LINK}#manual-setup-advanced
+      `);
+      errors.push(new ErrorClass({ filePath }));
+      return;
+    }
+
+    const formattedContent = await formatFileContent(filePath, injected);
+    await writeFile(filePath, formattedContent);
+    logger.step('Added the @storybook/angular-vite standalone-vitest bridge.');
+  };
+
   // If there's an existing workspace file, we update that file to include the Storybook Addon Vitest plugin.
   // We assume the existing workspaces include the Vite(st) config, so we won't add it.
   if (vitestWorkspaceFile) {
@@ -220,6 +264,13 @@ export default async function postInstall(options: PostinstallOptions) {
     const alreadyConfigured = isConfigAlreadySetup(vitestWorkspaceFile, workspaceFileContent);
 
     if (alreadyConfigured) {
+      // storybookTest is already wired, but the Angular bridge may still be missing (e.g.
+      // addon-vitest was set up before angular-vite). Wire it before the early return.
+      await maybeWireAngular(
+        vitestWorkspaceFile,
+        workspaceFileContent,
+        AddonVitestPostinstallWorkspaceUpdateError
+      );
       logger.step(
         CLI_COLORS.success('Vitest for Storybook is already properly configured. Skipping setup.')
       );
@@ -240,6 +291,28 @@ export default async function postInstall(options: PostinstallOptions) {
       logger.step(`Updating your Vitest workspace file...`);
 
       logger.log(`${vitestWorkspaceFile}`);
+
+      // The workspace template adds a storybookTest plugins array inline, so the Angular bridge can
+      // be co-located in the merged target. If the workspace only references external config files
+      // (no inline plugins array), the injector returns false and we degrade to manual setup.
+      if (isAngularVite && !isAngularVitestAlreadyWired(workspaceFileContent)) {
+        if (injectAngularVitestIntoAst(target)) {
+          logger.step('Added the @storybook/angular-vite standalone-vitest bridge.');
+        } else {
+          logger.error(dedent`
+            We configured @storybook/addon-vitest, but could not automatically add the
+            @storybook/angular-vite standalone-vitest bridge to your workspace file:
+            ${vitestWorkspaceFile}
+
+            Please add storybookAngularVitest({}) to the plugins array next to storybookTest()
+            in the referenced config and import it from "@storybook/angular-vite/vitest". See:
+            https://storybook.js.org/docs/next/${DOCUMENTATION_LINK}#manual-setup-advanced
+          `);
+          errors.push(
+            new AddonVitestPostinstallWorkspaceUpdateError({ filePath: vitestWorkspaceFile })
+          );
+        }
+      }
 
       const formattedContent = await formatFileContent(vitestWorkspaceFile, generate(target).code);
       await writeFile(vitestWorkspaceFile, formattedContent);
@@ -284,12 +357,36 @@ export default async function postInstall(options: PostinstallOptions) {
     }
 
     if (alreadyConfigured) {
+      // storybookTest is already wired, but the Angular bridge may still be missing. Operate on the
+      // current on-disk content (no merge happened in this branch).
+      await maybeWireAngular(rootConfig, configFile);
       logger.step(
         CLI_COLORS.success('Vitest for Storybook is already properly configured. Skipping setup.')
       );
     } else if (target && updated) {
       logger.step(`Updating your ${vitestConfigFile ? 'Vitest' : 'Vite'} config file:`);
       logger.log(`  ${rootConfig}`);
+
+      // Inject the Angular bridge into the already-merged target so it co-locates with the freshly
+      // added storybookTest call, before the single generate/format/write below. Arrow-function
+      // configs are rejected by updateConfigFile (updated is falsy), so they never reach here and
+      // defer to the manual-setup error in the else branch.
+      if (isAngularVite && !isAngularVitestAlreadyWired(configFile)) {
+        if (injectAngularVitestIntoAst(target)) {
+          logger.step('Added the @storybook/angular-vite standalone-vitest bridge.');
+        } else {
+          logger.error(dedent`
+            We configured @storybook/addon-vitest, but could not automatically add the
+            @storybook/angular-vite standalone-vitest bridge to:
+            ${rootConfig}
+
+            Please add storybookAngularVitest({}) to the plugins array next to storybookTest()
+            and import it from "@storybook/angular-vite/vitest". See:
+            https://storybook.js.org/docs/next/${DOCUMENTATION_LINK}#manual-setup-advanced
+          `);
+          errors.push(new AddonVitestPostinstallConfigUpdateError({ filePath: rootConfig }));
+        }
+      }
 
       const formattedContent = await formatFileContent(rootConfig, generate(target).code);
       // Only add triple slash reference to vite.config files, not vitest.config files
@@ -323,7 +420,18 @@ export default async function postInstall(options: PostinstallOptions) {
     logger.step(`Creating a Vitest config file:`);
     logger.log(`${newConfigFile}`);
 
-    const formattedContent = await formatFileContent(newConfigFile, configTemplate);
+    // For Angular, co-locate the standalone-vitest bridge in the template's storybookTest plugins
+    // array. The template always has a locatable array, so the injector never returns null here.
+    let configContent = configTemplate;
+    if (isAngularVite) {
+      const injected = injectAngularVitestIntoConfig(configTemplate);
+      if (injected !== null) {
+        configContent = injected;
+        logger.step('Added the @storybook/angular-vite standalone-vitest bridge.');
+      }
+    }
+
+    const formattedContent = await formatFileContent(newConfigFile, configContent);
     await writeFile(newConfigFile, formattedContent);
   }
 

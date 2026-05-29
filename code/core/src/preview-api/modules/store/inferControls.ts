@@ -3,6 +3,8 @@ import type {
   ArgTypesEnhancer,
   Renderer,
   SBEnumType,
+  SBUnionType,
+  SBLiteralType,
   StrictInputType,
 } from 'storybook/internal/types';
 
@@ -54,6 +56,51 @@ const inferControl = (argType: StrictInputType, name: string, matchers: Controls
     case 'enum': {
       const { value } = type as SBEnumType;
       return { control: { type: value?.length <= 5 ? 'radio' : 'select' }, options: value };
+    }
+    case 'union': {
+      const { value } = type as SBUnionType;
+      if (!value || !Array.isArray(value)) {
+        return { control: { type: 'object' } };
+      }
+
+      const QUOTE_REGEX = /^['"]|['"]$/g;
+      const trimQuotes = (str: string) => str.replace(QUOTE_REGEX, '');
+      const includesQuotes = (str: string) => QUOTE_REGEX.test(str);
+
+      const inferredOptions = (
+        value.filter((val) => {
+          if (val.name === 'literal') {
+            return val.value !== undefined && val.value !== null;
+          }
+          return false;
+        }) as SBLiteralType[]
+      ).map((val: SBLiteralType) => {
+        const v = val.value;
+        if (typeof v === 'string') {
+          const trimmedValue = trimQuotes(v);
+          return includesQuotes(v) || Number.isNaN(Number(trimmedValue))
+            ? (trimmedValue === 'true' ? true : trimmedValue === 'false' ? false : trimmedValue)
+            : Number(trimmedValue);
+        }
+        return v;
+      });
+
+      const hasComplexTypes = value.some((val) => {
+        if (val.name === 'literal') return false;
+        if (val.name === 'other') {
+          return val.value !== 'undefined' && val.value !== 'void' && val.value !== 'null';
+        }
+        return true;
+      });
+
+      if (inferredOptions.length > 0 && !hasComplexTypes) {
+        return {
+          control: { type: inferredOptions.length <= 5 ? 'radio' : 'select' },
+          options: inferredOptions,
+        };
+      }
+
+      return { control: { type: 'object' } };
     }
     case 'function':
     case 'symbol':

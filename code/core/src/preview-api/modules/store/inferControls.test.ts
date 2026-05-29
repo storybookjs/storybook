@@ -133,4 +133,84 @@ describe('inferControls', () => {
     expect(Object.keys(excludeArray)).toEqual(['labelName', 'borderWidth']);
     expect(Object.keys(excludeRegex)).toEqual(['borderWidth']);
   });
+
+  describe('union type inference', () => {
+    it('should infer select control for literal unions with > 5 items', () => {
+      const inferredControls = inferControls(
+        getStoryContext({
+          argTypes: {
+            size: {
+              type: {
+                name: 'union',
+                value: [
+                  { name: 'literal', value: '"small"' },
+                  { name: 'literal', value: '"medium"' },
+                  { name: 'literal', value: '"large"' },
+                  { name: 'literal', value: '"xlarge"' },
+                  { name: 'literal', value: '"xxlarge"' },
+                  { name: 'literal', value: '"xxxlarge"' },
+                  { name: 'other', value: 'undefined' },
+                ],
+              },
+              name: 'size',
+            },
+          },
+        })
+      );
+
+      expect(inferredControls.size.control).toEqual({ type: 'select' });
+      expect(inferredControls.size.options).toEqual([
+        'small',
+        'medium',
+        'large',
+        'xlarge',
+        'xxlarge',
+        'xxxlarge',
+      ]);
+    });
+
+    it('should infer radio control for literal unions with <= 5 items', () => {
+      const inferredControls = inferControls(
+        getStoryContext({
+          argTypes: {
+            theme: {
+              type: {
+                name: 'union',
+                value: [
+                  { name: 'literal', value: '"light"' },
+                  { name: 'literal', value: '"dark"' },
+                  { name: 'other', value: 'void' },
+                ],
+              },
+              name: 'theme',
+            },
+          },
+        })
+      );
+
+      expect(inferredControls.theme.control).toEqual({ type: 'radio' });
+      expect(inferredControls.theme.options).toEqual(['light', 'dark']);
+    });
+
+    it('should fallback to object control for complex mixed unions', () => {
+      const inferredControls = inferControls(
+        getStoryContext({
+          argTypes: {
+            custom: {
+              type: {
+                name: 'union',
+                value: [
+                  { name: 'literal', value: '"simple"' },
+                  { name: 'object', value: { x: { name: 'number' } } },
+                ],
+              },
+              name: 'custom',
+            },
+          },
+        })
+      );
+
+      expect(inferredControls.custom.control).toEqual({ type: 'object' });
+    });
+  });
 });

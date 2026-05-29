@@ -1,4 +1,6 @@
-import { expect, within } from 'storybook/test';
+import { expect, fn, within } from 'storybook/test';
+
+import { ManagerContext, type API, type State } from 'storybook/manager-api';
 
 import {
   buildReviewChangesDetailHref,
@@ -7,9 +9,37 @@ import {
 import preview from '../../../../.storybook/preview.tsx';
 import { DetailsScreen } from './DetailsScreen.tsx';
 
+// DetailsScreen uses useAddonState (via the preview-mode toggle), which reads
+// the manager API off ManagerContext. Provide a minimal in-memory mock so the
+// stories render outside the real manager.
+const addonStateStore: Record<string, unknown> = {};
+const managerApi = {
+  on: fn(() => () => {}),
+  off: fn(),
+  emit: fn(),
+  getAddonState: fn((id: string) => addonStateStore[id]),
+  setAddonState: fn((id: string, value: unknown) => {
+    addonStateStore[id] = typeof value === 'function' ? value(addonStateStore[id]) : value;
+    return Promise.resolve(addonStateStore[id]);
+  }),
+} as unknown as API;
+const managerState = {} as State;
+
 const meta = preview.meta({
   component: DetailsScreen,
   parameters: { layout: 'fullscreen' },
+  decorators: [
+    (Story) => (
+      <ManagerContext.Provider value={{ state: managerState, api: managerApi }}>
+        <Story />
+      </ManagerContext.Provider>
+    ),
+  ],
+  beforeEach: () => {
+    for (const key of Object.keys(addonStateStore)) {
+      delete addonStateStore[key];
+    }
+  },
   args: {
     title: 'Guide Page',
     componentTitle: 'Manager/Settings/GuidePage',

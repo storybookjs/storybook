@@ -30,6 +30,14 @@ const emitMock = fn((eventName: string, payload?: unknown) => {
   });
 });
 const toggleNavMock = fn();
+// DetailsScreen (rendered inside the review page) uses useAddonState for its
+// preview-mode toggle, which calls these off the manager API.
+const addonStateStore: Record<string, unknown> = {};
+const getAddonStateMock = fn((id: string) => addonStateStore[id]);
+const setAddonStateMock = fn((id: string, value: unknown) => {
+  addonStateStore[id] = typeof value === 'function' ? value(addonStateStore[id]) : value;
+  return Promise.resolve(addonStateStore[id]);
+});
 const managerState: State = {
   index: {
     'manager-settings-checklist--default': {
@@ -58,6 +66,8 @@ const managerApi: API = {
   emit: emitMock,
   getIsNavShown: () => true,
   toggleNav: toggleNavMock,
+  getAddonState: getAddonStateMock,
+  setAddonState: setAddonStateMock,
 } as unknown as API;
 
 const reviewState: ReviewState = {
@@ -105,6 +115,11 @@ const meta = preview.meta({
     offMock.mockReset();
     emitMock.mockReset();
     toggleNavMock.mockReset();
+    getAddonStateMock.mockClear();
+    setAddonStateMock.mockClear();
+    for (const key of Object.keys(addonStateStore)) {
+      delete addonStateStore[key];
+    }
     sessionStorage.removeItem(RESTORE_NAV_SESSION_KEY);
   },
 });

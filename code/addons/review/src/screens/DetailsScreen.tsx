@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 
 import { Button } from 'storybook/internal/components';
 import { STORY_RENDERED } from 'storybook/internal/core-events';
+import { useAddonState } from 'storybook/manager-api';
 import { styled } from 'storybook/theming';
 
 import {
@@ -11,6 +12,10 @@ import {
   SideBySideIcon,
   TransferIcon,
 } from '@storybook/icons';
+
+import { PREVIEW_MODE_STATE_KEY } from '../constants.ts';
+
+const DEFAULT_PREVIEW_MODE: PreviewMode = '2up';
 
 const Page = styled.div(({ theme }) => ({
   display: 'flex',
@@ -155,8 +160,10 @@ const BottomLabel = styled.div({
 });
 
 const BASELINE_PROXY_PATH = '/__review-baseline';
-const storyPreviewUrl = (id: string) =>
-  `iframe.html?id=${encodeURIComponent(id)}&viewMode=story&freeze=finished`;
+// No `freeze=finished` here: the detail view shows both previews live so the
+// reviewer can interact with them. (The grid thumbnails still freeze.) The
+// baseline URL is derived from this one, so both panes inherit the same params.
+const storyPreviewUrl = (id: string) => `iframe.html?id=${encodeURIComponent(id)}&viewMode=story`;
 const toBaselinePreviewUrl = (latestUrlString: string) => {
   const latestUrl = new URL(latestUrlString, window.location.href);
   return new URL(
@@ -224,7 +231,10 @@ export const DetailsScreen = ({
   );
   const baselinePreviewSrcRef = useRef(baselinePreviewSrc);
   const [isBaselineReady, setIsBaselineReady] = useState(false);
-  const [previewMode, setPreviewMode] = useState<PreviewMode>('1up');
+  const [previewMode, setPreviewMode] = useAddonState<PreviewMode>(
+    PREVIEW_MODE_STATE_KEY,
+    DEFAULT_PREVIEW_MODE
+  );
   const [visibleSide, setVisibleSide] = useState<VisibleSide>('latest');
   const isSingleUp = previewMode === '1up';
   const effectiveVisibleSide = isBaselineReady ? visibleSide : 'latest';
@@ -474,7 +484,7 @@ export const DetailsScreen = ({
                 padding="small"
                 ariaLabel="Single preview mode"
                 active={previewMode === '1up'}
-                onClick={() => setPreviewMode('1up')}
+                onClick={() => setPreviewMode('1up', { persistence: 'session' })}
               >
                 <CategoryIcon />
               </Button>
@@ -484,7 +494,7 @@ export const DetailsScreen = ({
                 padding="small"
                 ariaLabel="Side-by-side preview mode"
                 active={previewMode === '2up'}
-                onClick={() => setPreviewMode('2up')}
+                onClick={() => setPreviewMode('2up', { persistence: 'session' })}
               >
                 <SideBySideIcon />
               </Button>

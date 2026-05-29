@@ -7,6 +7,11 @@ export const REVIEW_CHANGES_URL = '/review/';
 // full-reload navigations between review screens. Value: 'restore' | 'keep'.
 export const RESTORE_NAV_SESSION_KEY = `${ADDON_ID}/restore-nav`;
 
+// Addon-state key remembering the last selected preview mode in the details
+// screen. Persisted to localStorage via useAddonState's 'permanent' option so
+// it survives across sessions. Value: '1up' | '2up'.
+export const PREVIEW_MODE_STATE_KEY = `${ADDON_ID}/preview-mode`;
+
 // `@storybook/addon-mcp` display-review tool call emits this event with the raw agent payload.
 const PUSH_REVIEW = `${ADDON_ID}/push-review`;
 // Display agent review in the UI

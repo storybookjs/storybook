@@ -8311,6 +8311,20 @@ __metadata:
   languageName: unknown
   linkType: soft
 
+"@storybook/addon-review@workspace:*, @storybook/addon-review@workspace:code/addons/review":
+  version: 0.0.0-use.local
+  resolution: "@storybook/addon-review@workspace:code/addons/review"
+  dependencies:
+    http-proxy-middleware: "npm:^4.0.0"
+    react: "npm:^18.2.0"
+    react-dom: "npm:^18.2.0"
+    sirv: "npm:^2.0.4"
+    typescript: "npm:^5.9.3"
+  peerDependencies:
+    storybook: "workspace:^"
+  languageName: unknown
+  linkType: soft
+
 "@storybook/addon-themes@workspace:*, @storybook/addon-themes@workspace:code/addons/themes":
   version: 0.0.0-use.local
   resolution: "@storybook/addon-themes@workspace:code/addons/themes"
@@ -8525,6 +8539,7 @@ __metadata:
     "@storybook/addon-links": "workspace:*"
     "@storybook/addon-mcp": "npm:*"
     "@storybook/addon-onboarding": "workspace:*"
+    "@storybook/addon-review": "workspace:*"
     "@storybook/addon-themes": "workspace:*"
     "@storybook/addon-vitest": "workspace:*"
     "@storybook/angular": "workspace:*"
@@ -9067,7 +9082,7 @@ __metadata:
     prop-types: "npm:^15.7.2"
     react-docgen: "npm:^8.0.2"
     react-docgen-typescript: "npm:^2.2.2"
-    react-element-to-jsx-string: "patch:react-element-to-jsx-string@npm%3A@7rulnik/react-element-to-jsx-string@15.0.1#~/.yarn/patches/@7rulnik-react-element-to-jsx-string-npm-15.0.1-e53b67c4b3.patch"
+    react-element-to-jsx-string: "npm:@7rulnik/react-element-to-jsx-string@15.0.1"
     require-from-string: "npm:^2.0.2"
     ts-dedent: "npm:^2.0.0"
     type-fest: "npm:^5.6.0"
@@ -9916,8 +9931,8 @@ __metadata:
   linkType: hard
 
 "@tmcp/adapter-valibot@npm:^0.1.5":
-  version: 0.1.5
-  resolution: "@tmcp/adapter-valibot@npm:0.1.5"
+  version: 0.1.6
+  resolution: "@tmcp/adapter-valibot@npm:0.1.6"
   dependencies:
     "@standard-schema/spec": "npm:^1.0.0"
     "@valibot/to-json-schema": "npm:^1.3.0"
@@ -9925,24 +9940,24 @@ __metadata:
   peerDependencies:
     tmcp: ^1.17.0
     valibot: ^1.1.0
-  checksum: 10c0/176be80a74285f986ba8900116bf1ec2b97d249177b48127940b06bd08c70965a2e50d0aaa3785d4bdadd70f8e3f341fd881ce24c317a9d890cdb24ebf059399
+  checksum: 10c0/4261efa7318f335eb7a8787f16a4db285a3e38288c31bc3b21fe61808c7e0c2057e09675d7b86d14cbe3ba2babad2ffe1891c4498001b27f74cb22fa135eef02
   languageName: node
   linkType: hard
 
-"@tmcp/session-manager@npm:^0.2.1":
-  version: 0.2.1
-  resolution: "@tmcp/session-manager@npm:0.2.1"
+"@tmcp/session-manager@npm:^0.2.2":
+  version: 0.2.2
+  resolution: "@tmcp/session-manager@npm:0.2.2"
   peerDependencies:
     tmcp: ^1.16.3
-  checksum: 10c0/dadcfe6cf0e2be2536f0969aab3782355f2ff705d0a782ee9017e644b31c7eb57a593954676c252373a7d042ec6cd026e27db27460085b1c1036f7dcb1b37af5
+  checksum: 10c0/a29507e7e36568f4eb5f0e7525c651adf4ec16d11273499f538f2e5cc4071920294c08cc4771b11cb52bc9f999e3a1a32466bb6521f605fc482cc932139b5d25
   languageName: node
   linkType: hard
 
 "@tmcp/transport-http@npm:^0.8.5":
-  version: 0.8.5
-  resolution: "@tmcp/transport-http@npm:0.8.5"
+  version: 0.8.6
+  resolution: "@tmcp/transport-http@npm:0.8.6"
   dependencies:
-    "@tmcp/session-manager": "npm:^0.2.1"
+    "@tmcp/session-manager": "npm:^0.2.2"
     esm-env: "npm:^1.2.2"
   peerDependencies:
     "@tmcp/auth": ^0.3.3 || ^0.4.0
@@ -9950,7 +9965,7 @@ __metadata:
   peerDependenciesMeta:
     "@tmcp/auth":
       optional: true
-  checksum: 10c0/208ba54571188e69ec57a33cc316ece812f3013c2e5c2355be62cb17e90665b258e069bd7eadce7898612018a7bd0ce958db95357a409930ca7a119a00d3c28e
+  checksum: 10c0/da9a734cf15bcc84527194b2848ebcb33815fb9c26d579a90b2f0052eb193d764c1857f4c172f87167a51339f78cf7e17eba2b15f8a90459158b54a519291527
   languageName: node
   linkType: hard
 
@@ -11289,11 +11304,11 @@ __metadata:
   linkType: hard
 
 "@valibot/to-json-schema@npm:^1.3.0":
-  version: 1.6.0
-  resolution: "@valibot/to-json-schema@npm:1.6.0"
+  version: 1.7.0
+  resolution: "@valibot/to-json-schema@npm:1.7.0"
   peerDependencies:
-    valibot: ^1.3.0
-  checksum: 10c0/3dabbb9ed0f135c436a9f4a22ff1ad3df500e0bdff1b771eb9a03f4ba7a412bb1873a9cc1ff32c09ff47d10be8d1834a540705229380b9fc46fb65a9b41dbae2
+    valibot: ^1.4.0
+  checksum: 10c0/d354217270f5855ceea547bcf696546e30075b04016757603c9e826b4395aefecbd0f8a79bea4431838b28960e09a2b7543aa5c5f8672c9abb2ab7d39354f533
   languageName: node
   linkType: hard
 
@@ -12542,10 +12557,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"alien-signals@npm:^3.0.0, alien-signals@npm:^3.2.0":
-  version: 3.2.1
-  resolution: "alien-signals@npm:3.2.1"
-  checksum: 10c0/4c4064faa208126177224d1ed6a2310687d452dec0771994e276d9af4c72e853fcb969ae4a7fcd034b1d1b9accb9500f4941178326eeea1cb8f64ec612853ef8
+"alien-signals@npm:^3.0.0":
+  version: 3.1.0
+  resolution: "alien-signals@npm:3.1.0"
+  checksum: 10c0/1d949a6a524b392ae0c3f9887f64f7e5e99fd7d9a2216b1392152c09d8fb15a7805e298aad38b37a26eb20ae0b5b6c0acc3b324bbf0a42d1056811011ecd4574
   languageName: node
   linkType: hard
 
@@ -15562,7 +15577,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"debug@npm:4, debug@npm:^4.0.0, debug@npm:^4.1.0, debug@npm:^4.1.1, debug@npm:^4.3.1, debug@npm:^4.3.2, debug@npm:^4.3.4, debug@npm:^4.3.6, debug@npm:^4.3.7, debug@npm:^4.4.0, debug@npm:^4.4.1":
+"debug@npm:4, debug@npm:^4.0.0, debug@npm:^4.1.0, debug@npm:^4.1.1, debug@npm:^4.3.1, debug@npm:^4.3.2, debug@npm:^4.3.4, debug@npm:^4.3.6, debug@npm:^4.3.7, debug@npm:^4.4.0, debug@npm:^4.4.1, debug@npm:^4.4.3":
   version: 4.4.3
   resolution: "debug@npm:4.4.3"
   dependencies:
@@ -20124,6 +20139,19 @@ __metadata:
   languageName: node
   linkType: hard
 
+"http-proxy-middleware@npm:^4.0.0":
+  version: 4.0.0
+  resolution: "http-proxy-middleware@npm:4.0.0"
+  dependencies:
+    debug: "npm:^4.4.3"
+    httpxy: "npm:^0.5.1"
+    is-glob: "npm:^4.0.3"
+    is-plain-obj: "npm:^4.1.0"
+    micromatch: "npm:^4.0.8"
+  checksum: 10c0/956cfec006b3619433e5c5ce24e9379bbe2e2ae885705df82c261530392c94c101205ef891845fe7d39b9d646a463c302b3b6d90125dc6e8dc42fbd7c6211c69
+  languageName: node
+  linkType: hard
+
 "http-proxy@npm:^1.18.1":
   version: 1.18.1
   resolution: "http-proxy@npm:1.18.1"
@@ -20218,6 +20246,13 @@ __metadata:
     agent-base: "npm:^7.1.2"
     debug: "npm:4"
   checksum: 10c0/f729219bc735edb621fa30e6e84e60ee5d00802b8247aac0d7b79b0bd6d4b3294737a337b93b86a0bd9e68099d031858a39260c976dc14cdbba238ba1f8779ac
+  languageName: node
+  linkType: hard
+
+"httpxy@npm:^0.5.1":
+  version: 0.5.3
+  resolution: "httpxy@npm:0.5.3"
+  checksum: 10c0/8120753638d1a50b13396d7c55536db076a04609dfb7eea19f5b461f9541acf4646fa6bfb8991f14bad62e0037b524481c5d625892b4ff94a6ab744149ed9387
   languageName: node
   linkType: hard
 
@@ -20337,13 +20372,6 @@ __metadata:
   bin:
     image-size: bin/image-size.js
   checksum: 10c0/655204163af06732f483a9fe7cce9dff4a29b7b2e88f5c957a5852e8143fa750f5e54b1955a2ca83de99c5220dbd680002d0d4e09140b01433520f4d5a0b1f4c
-  languageName: node
-  linkType: hard
-
-"immer@npm:11.1.8":
-  version: 11.1.8
-  resolution: "immer@npm:11.1.8"
-  checksum: 10c0/df971d8a8f6a5312c6dca4a8437e20b3185d6c9cd6830ad526c18ffd50f4037ef8db4f332b0adbcb9f8c5ee2fbe117cf0623e8554e24777105b3cc9faf866d34
   languageName: node
   linkType: hard
 
@@ -26993,20 +27021,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"react-element-to-jsx-string@patch:react-element-to-jsx-string@npm%3A@7rulnik/react-element-to-jsx-string@15.0.1#~/.yarn/patches/@7rulnik-react-element-to-jsx-string-npm-15.0.1-e53b67c4b3.patch":
-  version: 15.0.1
-  resolution: "react-element-to-jsx-string@patch:@7rulnik/react-element-to-jsx-string@npm%3A15.0.1#~/.yarn/patches/@7rulnik-react-element-to-jsx-string-npm-15.0.1-e53b67c4b3.patch::version=15.0.1&hash=a50fcc"
-  dependencies:
-    "@base2/pretty-print-object": "npm:1.0.1"
-    is-plain-object: "npm:5.0.0"
-    react-is: "npm:18.1.0"
-  peerDependencies:
-    react: ^0.14.8 || ^15.0.1 || ^16.0.0 || ^17.0.1 || ^18.0.0
-    react-dom: ^0.14.8 || ^15.0.1 || ^16.0.0 || ^17.0.1 || ^18.0.0
-  checksum: 10c0/33f06a86ad7f8ea81bcdc0dc1111f42a7030910b9c8d5deba0adbc79eaaa38618976211d928ee664142286108b7c2955a5ab7709288c86778d1077f21a8177c3
-  languageName: node
-  linkType: hard
-
 "react-fast-compare@npm:^3.0.1, react-fast-compare@npm:^3.2.0":
   version: 3.2.2
   resolution: "react-fast-compare@npm:3.2.2"
@@ -29612,7 +29626,6 @@ __metadata:
     "@react-stately/tabs": "npm:^3.8.5"
     "@react-types/shared": "npm:^3.32.0"
     "@rolldown/pluginutils": "npm:1.0.0-beta.18"
-    "@standard-schema/spec": "npm:^1.1.0"
     "@storybook/global": "npm:^5.0.0"
     "@storybook/icons": "npm:^2.0.2"
     "@tanstack/react-virtual": "npm:^3.3.0"
@@ -29643,7 +29656,6 @@ __metadata:
     "@yarnpkg/libzip": "npm:2.3.0"
     acorn: "npm:^8.15.0"
     acorn-jsx: "npm:^5.3.2"
-    alien-signals: "npm:^3.2.0"
     ansi-to-html: "npm:^0.7.2"
     browser-dtector: "npm:^3.4.0"
     bundle-require: "npm:^5.1.0"
@@ -29674,7 +29686,6 @@ __metadata:
     globby: "npm:^14.1.0"
     hast-util-to-estree: "npm:^3.0.0"
     host-validation-middleware: "npm:^0.1.2"
-    immer: "npm:11.1.8"
     jiti: "npm:^2.6.1"
     js-yaml: "npm:^4.1.0"
     jsdoc-type-pratt-parser: "npm:^4.0.0"
@@ -29733,7 +29744,6 @@ __metadata:
     unique-string: "npm:^3.0.0"
     use-resize-observer: "npm:^9.1.0"
     use-sync-external-store: "npm:^1.5.0"
-    valibot: "npm:^1.4.0"
     watchpack: "npm:^2.5.0"
     wrap-ansi: "npm:^9.0.2"
     ws: "npm:^8.18.0"
@@ -30682,15 +30692,15 @@ __metadata:
   linkType: hard
 
 "tmcp@npm:^1.19.3":
-  version: 1.19.3
-  resolution: "tmcp@npm:1.19.3"
+  version: 1.19.4
+  resolution: "tmcp@npm:1.19.4"
   dependencies:
     "@standard-schema/spec": "npm:^1.0.0"
     json-rpc-2.0: "npm:^1.7.1"
     sqids: "npm:^0.3.0"
     uri-template-matcher: "npm:^1.1.1"
     valibot: "npm:^1.1.0"
-  checksum: 10c0/c310c21b32aa6716037eebd126eb39a62e86ef99a9d95b8dc53b7e5d212b7109beefa56506a489193018e3caed471809da8d1b07de00e747b259d0396b9b49c3
+  checksum: 10c0/fcb275c74fe4dd80da3eb4702d7631423e73f2dd9ec537228457b997a9206ece899295035a492a9238184e28a46017034f63c6a4aa82d1fe0ee486fb7b33449a
   languageName: node
   linkType: hard
 
@@ -31828,15 +31838,15 @@ __metadata:
   languageName: node
   linkType: hard
 
-"valibot@npm:^1.1.0, valibot@npm:^1.4.0":
-  version: 1.4.0
-  resolution: "valibot@npm:1.4.0"
+"valibot@npm:^1.1.0":
+  version: 1.4.1
+  resolution: "valibot@npm:1.4.1"
   peerDependencies:
     typescript: ">=5"
   peerDependenciesMeta:
     typescript:
       optional: true
-  checksum: 10c0/9eb9f02c1a4d685e0a76c312ae898b0012c2bdea24f75968c133fcf6019cde80c4d1d7e41f52e9a1189dde76a923baee05506fb412a0811d8d482d597bcfb4b9
+  checksum: 10c0/8a492d9c6d21032abea4fa29eafa355e5c31f1df6a3ba4b207abf20433c00b66b30884f60b225c3348113a327f20bb19e01e9b7771663e462cf94398ff39d233
   languageName: node
   linkType: hard
 

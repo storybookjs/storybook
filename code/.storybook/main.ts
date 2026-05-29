@@ -66,6 +66,10 @@ const config = defineMain({
       titlePrefix: 'addons/accessibility',
     },
     {
+      directory: '../addons/review/src',
+      titlePrefix: 'addons/review',
+    },
+    {
       directory: '../addons/a11y/template/stories',
       titlePrefix: 'addons/accessibility',
     },
@@ -118,6 +122,7 @@ const config = defineMain({
     '@storybook/addon-vitest',
     '@storybook/addon-a11y',
     '@storybook/addon-mcp',
+    '@storybook/addon-review',
     'storybook-addon-pseudo-states',
     '@chromatic-com/storybook',
     './services-preset.ts',

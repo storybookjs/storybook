@@ -21,6 +21,7 @@ import {
   getRegisteredServices,
   writeOpenServiceStaticFiles,
 } from '../shared/open-service/server.ts';
+import { applyServicesPresetOnce } from './utils/apply-services-preset-once.ts';
 import { resolvePackageDir } from '../shared/utils/module.ts';
 import type { StoryIndexGenerator } from './utils/StoryIndexGenerator.ts';
 import { buildOrThrow } from './utils/build-or-throw.ts';
@@ -133,7 +134,7 @@ export async function buildStaticStandalone(options: BuildStaticStandaloneOption
   const effects: Promise<void>[] = [];
 
   global.FEATURES = features;
-  await presets.apply('services');
+  await applyServicesPresetOnce(presets);
 
   if (!options.previewOnly) {
     await buildOrThrow(async () =>

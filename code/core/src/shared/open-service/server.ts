@@ -55,8 +55,8 @@ export async function buildStaticFiles(): Promise<StaticStore> {
       string,
       RuntimeQueryDefinition,
     ][]) {
-      const { load, filePath, staticInputs } = query;
-      if (!filePath || !load || !staticInputs) {
+      const { load, staticPath, staticInputs } = query;
+      if (!staticPath || !load || !staticInputs) {
         continue;
       }
 
@@ -84,7 +84,7 @@ export async function buildStaticFiles(): Promise<StaticStore> {
                 name: queryName,
                 phase: 'input',
               });
-              const path = resolveStaticPath(service.id, queryName, { filePath }, validatedInput);
+              const path = resolveStaticPath(service.id, queryName, { staticPath }, validatedInput);
 
               await buildRuntime.runLoadOnce(queryName, validatedInput);
 

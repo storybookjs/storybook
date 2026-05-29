@@ -56,7 +56,7 @@ const openServiceDef = defineService({
         // @ts-expect-error load contexts do not receive setState directly
         ctx.self.setState(() => {});
       },
-      filePath: (input) => {
+      staticPath: (input) => {
         expectTypeOf(input).toEqualTypeOf<{ entryId: string }>();
         return `${input.entryId}.json`;
       },
@@ -146,7 +146,7 @@ describe('open-service type inference', () => {
         getValue: {
           input: entryIdInputSchema,
           output: v.nullable(v.string()),
-          filePath: () => 'value.json',
+          staticPath: () => 'value.json',
           // @ts-expect-error definition staticInputs cannot depend on load context
           staticInputs: (_ctx) => [{ entryId: 'entry-a' }],
         },

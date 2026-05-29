@@ -71,7 +71,7 @@ export const awaitedPreloadValueServiceDef = defineService({
           return ctx.self.commands.preloadValue(input).then(() => undefined);
         }
       },
-      filePath: () => 'state.json',
+      staticPath: () => 'state.json',
       staticInputs: async () => [{ entryId: 'entry-a' }, { entryId: 'entry-b' }],
     },
   },
@@ -141,7 +141,7 @@ export function createSharedStaticFileServiceDef() {
         load: async (_input, ctx) => {
           await ctx.self.commands.writeLeftValue(undefined);
         },
-        filePath: () => 'shared.json',
+        staticPath: () => 'shared.json',
         staticInputs: async () => [undefined],
       },
       getRightValue: {
@@ -152,7 +152,7 @@ export function createSharedStaticFileServiceDef() {
         load: async (_input, ctx) => {
           await ctx.self.commands.writeRightValue(undefined);
         },
-        filePath: () => 'shared.json',
+        staticPath: () => 'shared.json',
         staticInputs: async () => [undefined],
       },
     },
@@ -265,7 +265,7 @@ export function createInvalidStaticInputServiceDef() {
         output: preloadedValueOutputSchema,
         handler: (input, ctx) => ctx.self.state[input.entryId] ?? null,
         load: async () => {},
-        filePath: () => 'state.json',
+        staticPath: () => 'state.json',
         staticInputs: async () => [{} as unknown as { entryId: string }],
       },
     },

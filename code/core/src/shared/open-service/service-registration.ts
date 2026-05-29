@@ -66,7 +66,7 @@ function describeDefinition(definition: AnyServiceDefinition): ServiceDescriptor
           description: query.description,
           input: query.input,
           output: query.output,
-          ...(query.filePath ? { filePath: true as const } : {}),
+          ...(query.staticPath ? { staticPath: true as const } : {}),
         },
       ])
     ),
@@ -127,7 +127,7 @@ function resolveRegisteredStaticInputs<TState>(
  *
  * Registration overrides are shallow merges over the authored definition. That lets the server
  * swap handlers, load hooks, or dependency-aware static input enumerators per operation while the
- * original schema contract, `filePath`, and operation names remain the source of truth.
+ * original schema contract, `staticPath`, and operation names remain the source of truth.
  */
 function applyRegistration<
   TState,

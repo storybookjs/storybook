@@ -1,6 +1,4 @@
 import { recast } from 'storybook/internal/babel';
-import { getComponentIdFromEntry } from 'storybook/internal/common';
-import { Tag } from 'storybook/internal/core-server';
 import { storyNameFromExport } from 'storybook/internal/csf';
 import { extractDescription, loadCsf } from 'storybook/internal/csf-tools';
 import type {
@@ -10,8 +8,6 @@ import type {
   DocgenProviderInput,
   DocgenStory,
   DocgenSubcomponent,
-  DocsIndexEntry,
-  IndexEntry,
 } from 'storybook/internal/types';
 
 import path from 'pathe';
@@ -19,46 +15,19 @@ import path from 'pathe';
 import type { ComponentMetaManager } from '../componentManifest/componentMeta/ComponentMetaManager.ts';
 import type { ComponentDoc } from '../componentManifest/componentMeta/componentMetaExtractor.ts';
 import { getCodeSnippet } from '../componentManifest/generateCodeSnippet.ts';
+import { findMatchingComponent } from '../componentManifest/generator.ts';
 import {
   type ComponentRef,
   type StoryRef,
   type TypescriptOptions,
   getComponents,
 } from '../componentManifest/getComponentImports.ts';
-import { findMatchingComponent } from '../componentManifest/generator.ts';
 import { extractJSDocInfo } from '../componentManifest/jsdocTags.ts';
 import {
   extractDeclaredSubcomponents,
   findExactComponentMatch,
 } from '../componentManifest/subcomponents.ts';
 import { cachedReadTextFileSync } from '../componentManifest/utils.ts';
-
-function isAttachedDocsEntry(
-  entry: IndexEntry
-): entry is DocsIndexEntry & { storiesImports: [string, ...string[]] } {
-  return (
-    entry.type === 'docs' &&
-    entry.tags?.includes(Tag.ATTACHED_MDX) === true &&
-    entry.storiesImports.length > 0
-  );
-}
-
-/**
- * Pick the single most authoritative entry for one componentId — a story entry beats an attached
- * docs entry. Mirrors {@link selectComponentEntries} in the manifest generator, but operates on
- * one component's pre-filtered entry list.
- */
-function pickAuthoritativeEntry(
-  componentId: string,
-  entries: IndexEntry[]
-): IndexEntry | undefined {
-  const ours = entries.filter((entry) => getComponentIdFromEntry(entry) === componentId);
-  return (
-    ours.find((entry) => entry.type === 'story' && entry.subtype === 'story') ??
-    ours.find(isAttachedDocsEntry) ??
-    ours[0]
-  );
-}
 
 function mapProps(doc: ComponentDoc | undefined): DocgenProp[] {
   if (!doc) {
@@ -87,82 +56,61 @@ function buildSubcomponentEntry(name: string, component: ComponentRef): DocgenSu
 
 function buildStories(
   csf: ReturnType<ReturnType<typeof loadCsf>['parse']>,
-  componentName: string | undefined,
-  ownedEntryIds: Set<string>
+  componentName: string | undefined
 ): DocgenStory[] {
-  return Object.entries(csf._stories)
-    .filter(([, story]) => ownedEntryIds.has(story.id))
-    .map(([storyExport, story]): DocgenStory => {
-      const name = story.name ?? storyNameFromExport(storyExport);
-      try {
-        const jsdocComment = extractDescription(csf._storyStatements[storyExport]);
-        const { tags = {}, description } = jsdocComment ? extractJSDocInfo(jsdocComment) : {};
-        const finalDescription = (tags?.describe?.[0] || tags?.desc?.[0]) ?? description;
-        return {
-          id: story.id,
-          name,
-          snippet: recast.print(getCodeSnippet(csf, storyExport, componentName)).code,
-          description: finalDescription?.trim(),
-          summary: tags.summary?.[0],
-        };
-      } catch (e) {
-        const err = e instanceof Error ? e : new Error(String(e));
-        return {
-          id: story.id,
-          name,
-          error: { name: err.name, message: err.message },
-        };
-      }
-    });
+  return Object.entries(csf._stories).map(([storyExport, story]): DocgenStory => {
+    const name = story.name ?? storyNameFromExport(storyExport);
+    try {
+      const jsdocComment = extractDescription(csf._storyStatements[storyExport]);
+      const { tags = {}, description } = jsdocComment ? extractJSDocInfo(jsdocComment) : {};
+      const finalDescription = (tags?.describe?.[0] || tags?.desc?.[0]) ?? description;
+      return {
+        id: story.id,
+        name,
+        snippet: recast.print(getCodeSnippet(csf, storyExport, componentName)).code,
+        description: finalDescription?.trim(),
+        summary: tags.summary?.[0],
+      };
+    } catch (e) {
+      const err = e instanceof Error ? e : new Error(String(e));
+      return { id: story.id, name, error: { name: err.name, message: err.message } };
+    }
+  });
 }
 
 export interface BuildDocgenContext {
   manager: ComponentMetaManager;
   typescriptOptions?: Partial<TypescriptOptions>;
-  /** Resolve a story import path to an absolute file path. Defaults to `process.cwd()` join. */
+  /** Resolve a CSF import path to an absolute file path. Defaults to `process.cwd()` join. */
   resolvePath?: (importPath: string) => string;
 }
 
 /**
- * Build a {@link DocgenPayload} for one component using RCM-backed extraction.
+ * Build a {@link DocgenPayload} for the component found in one CSF story file.
  *
  * Reads the story file, resolves the component reference (and any declared subcomponents) via
- * {@link getComponents}, kicks the {@link ComponentMetaManager} to extract `ComponentDoc`s in a
- * single batch (so the TS program and file-snapshot cache are shared across the primary component
- * and its subcomponents), then maps the result into the docgen-service schema.
+ * {@link getComponents}, batch-extracts `ComponentDoc`s through the shared {@link ComponentMetaManager}
+ * (so the TS program and file-snapshot cache are reused across the primary component and its
+ * subcomponents), then maps the result into the docgen-service schema.
  *
- * The returned payload is always shape-complete — if the story file can't be parsed or the
- * component can't be resolved, an empty payload is returned with an `error` field set, so callers
- * can still validate it against the open-service schema.
+ * Returns `undefined` when the file cannot be read, can't be parsed as CSF, or doesn't resolve to
+ * any extractable component — the docgen-service provider chain treats undefined as "no docgen
+ * here, fall through to the next provider".
  */
 export async function buildDocgenPayload(
   input: DocgenProviderInput,
   context: BuildDocgenContext
-): Promise<DocgenPayload> {
-  const { componentId, entries } = input;
+): Promise<DocgenPayload | undefined> {
   const resolvePath =
     context.resolvePath ?? ((importPath: string) => path.join(process.cwd(), importPath));
+  const storyPath = resolvePath(input.importPath);
 
-  const entry = pickAuthoritativeEntry(componentId, entries);
-  if (!entry) {
-    return emptyPayload(componentId);
-  }
-
-  const storyFilePath =
-    entry.type === 'story' ? entry.importPath : (entry.storiesImports[0] as string);
-  const storyPath = resolvePath(storyFilePath);
-
-  let storyFile: string;
   let csf: ReturnType<ReturnType<typeof loadCsf>['parse']>;
   try {
-    storyFile = cachedReadTextFileSync(storyPath);
-    csf = loadCsf(storyFile, { makeTitle: () => entry.title }).parse();
-  } catch (e) {
-    const err = e instanceof Error ? e : new Error(String(e));
-    return {
-      ...emptyPayload(componentId),
-      error: { name: err.name, message: err.message },
-    };
+    const storyFile = cachedReadTextFileSync(storyPath);
+    csf = loadCsf(storyFile, { makeTitle: () => input.importPath }).parse();
+  } catch {
+    return undefined;
   }
 
   const declaredSubcomponents = extractDeclaredSubcomponents(csf);
@@ -175,31 +123,31 @@ export async function buildDocgenPayload(
   });
 
   const metaComponentName = csf._meta?.component;
-  const component = findMatchingComponent(allComponents, metaComponentName, entry.title);
+  const title = csf._meta?.title ?? '';
+  const component = findMatchingComponent(allComponents, metaComponentName, title);
+
+  if (!component) {
+    return undefined;
+  }
+
   const resolvedSubcomponents = declaredSubcomponents.flatMap((declared) => {
     const ref = findExactComponentMatch(allComponents, declared.componentName);
     return ref ? [{ name: declared.name, component: ref }] : [];
   });
 
   const storyRefs: StoryRef[] = [
-    ...(component ? [{ storyPath, component }] : []),
+    { storyPath, component },
     ...resolvedSubcomponents.map(({ component: ref }) => ({ storyPath, component: ref })),
   ];
+  context.manager.batchExtract(storyRefs);
 
-  if (storyRefs.length > 0) {
-    context.manager.batchExtract(storyRefs);
-  }
-
-  const doc = component?.reactComponentMeta;
-  const title = entry.title.split('/').at(-1) ?? componentId;
-  const name = component?.componentName ?? metaComponentName ?? title;
+  const doc = component.reactComponentMeta;
+  const componentId = component.componentName ?? metaComponentName ?? input.importPath;
+  const name = component.componentName ?? metaComponentName ?? componentId;
   const description = (doc?.description ?? '').trim();
-  const jsDocTags: DocgenJsDocTags | undefined = component?.componentJsDocTags ?? doc?.jsDocTags;
+  const jsDocTags: DocgenJsDocTags | undefined = component.componentJsDocTags ?? doc?.jsDocTags;
   const props = mapProps(doc);
-
-  const ownedEntryIds = new Set(entries.map((e) => e.id));
-  const stories = buildStories(csf, component?.componentName, ownedEntryIds);
-
+  const stories = buildStories(csf, component.componentName);
   const subcomponents =
     resolvedSubcomponents.length > 0
       ? Object.fromEntries(
@@ -218,14 +166,5 @@ export async function buildDocgenPayload(
     props,
     ...(subcomponents ? { subcomponents } : {}),
     ...(stories.length > 0 ? { stories } : {}),
-  };
-}
-
-function emptyPayload(componentId: string): DocgenPayload {
-  return {
-    componentId,
-    name: '',
-    description: '',
-    props: [],
   };
 }

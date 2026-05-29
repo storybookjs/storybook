@@ -8,7 +8,7 @@ import { buildDocgenPayload } from './buildDocgen.ts';
 /**
  * Module-scoped {@link ComponentMetaManager} singleton. Created lazily on the first docgen call
  * and reused for the lifetime of the process so the file-snapshot cache and any future TS programs
- * stay hot across multiple per-component extractions. Returns `undefined` if TypeScript is not
+ * stay hot across multiple per-file extractions. Returns `undefined` if TypeScript is not
  * available in the runtime environment.
  */
 let managerPromise: Promise<ComponentMetaManager | undefined> | undefined;
@@ -31,10 +31,10 @@ function getManager(): Promise<ComponentMetaManager | undefined> {
 /**
  * React renderer docgen provider — phase 3: real RCM-backed extraction.
  *
- * Wraps the previously accumulated provider (received as the preset `config`), calls
- * `nextDocgen?.(input)` to get the downstream payload (typically an empty seed from core), and
- * replaces / fills in the component-level fields using the React Component Meta extractor.
- * Fields the downstream chain set are preserved when this provider has nothing better.
+ * Receives a single `importPath` from the docgen service. Bails to `nextDocgen` for non-CSF
+ * paths (e.g. `.mdx` attached-docs entries) and when TypeScript isn't available. Otherwise
+ * delegates to {@link buildDocgenPayload} which runs RCM against the file and returns a complete
+ * {@link DocgenPayload} or `undefined` when nothing extractable is found.
  */
 export const experimental_docgenProvider: PresetPropertyFn<'experimental_docgenProvider'> = async (
   nextDocgen,
@@ -48,35 +48,21 @@ export const experimental_docgenProvider: PresetPropertyFn<'experimental_docgenP
       | undefined) ?? {};
 
   const wrapped: DocgenProvider = async (input) => {
-    const downstream = await nextDocgen?.(input);
-    const manager = await getManager();
+    if (!/\.stories\.[cm]?[jt]sx?$/.test(input.importPath)) {
+      return nextDocgen?.(input);
+    }
 
+    const manager = await getManager();
     if (!manager) {
-      // TypeScript missing — return the downstream payload unchanged (or a minimal fallback).
-      return (
-        downstream ?? {
-          componentId: input.componentId,
-          name: input.componentId,
-          description: '',
-          props: [],
-        }
-      );
+      return nextDocgen?.(input);
     }
 
     const ours = await buildDocgenPayload(input, { manager, typescriptOptions });
+    if (ours) {
+      return ours;
+    }
 
-    // Merge strategy: our component-level fields win when present; downstream fields fill gaps.
-    return {
-      componentId: input.componentId,
-      name: ours.name || downstream?.name || input.componentId,
-      description: ours.description || downstream?.description || '',
-      summary: ours.summary ?? downstream?.summary,
-      jsDocTags: ours.jsDocTags ?? downstream?.jsDocTags,
-      props: ours.props.length > 0 ? ours.props : (downstream?.props ?? []),
-      subcomponents: ours.subcomponents ?? downstream?.subcomponents,
-      stories: ours.stories ?? downstream?.stories,
-      error: ours.error ?? downstream?.error,
-    };
+    return nextDocgen?.(input);
   };
 
   return wrapped;

@@ -27,7 +27,7 @@ export type InferSchemaOutput<TSchema extends AnySchema> = StandardSchemaV1.Infe
  * `defineService()` infers one input-schema map and one output-schema map per operation family
  * (queries and commands). Keeping those maps separate gives TypeScript a place to correlate the
  * `input` and `output` properties of each inline object before it contextually types sibling
- * callbacks like `handler`, `load`, `filePath`, and `staticInputs`.
+ * callbacks like `handler`, `load`, `staticPath`, and `staticInputs`.
  */
 export type OperationInputSchemas = Record<string, AnySchema>;
 
@@ -137,8 +137,8 @@ export type OperationDescriptor = {
   description?: string;
   input: SchemaDescriptor;
   output: SchemaDescriptor;
-  /** Present when the query declares `filePath` at definition time. */
-  filePath?: true;
+  /** Present when the query declares `staticPath` at definition time. */
+  staticPath?: true;
 };
 
 export type ServiceDescriptor = {
@@ -189,7 +189,7 @@ export type CommandCtx<
  * the resolved output. The optional `load` hook is fired in the background on each query call
  * (deduped while in flight) so subscribers and `.loaded()` callers see fully populated state.
  *
- * Queries that participate in static JSON generation declare `filePath` at definition time.
+ * Queries that participate in static JSON generation declare `staticPath` at definition time.
  * `staticInputs` may also be declared here when the input list has no runtime dependencies; inputs
  * that need registry or story-index context belong in server registration instead.
  */
@@ -205,7 +205,7 @@ export type QueryDefinition<
   input: TInputSchema;
   output: TOutputSchema;
   /** Logical path for the serialized state snapshot, relative to this service's output folder. */
-  filePath?: BivariantCallback<[input: InferSchemaOutput<TInputSchema>], string>;
+  staticPath?: BivariantCallback<[input: InferSchemaOutput<TInputSchema>], string>;
   /** Dependency-free static build inputs declared alongside the public contract. */
   staticInputs?: BivariantCallback<
     [],
@@ -248,7 +248,7 @@ export type AnyQueryDefinition<TState> = {
   description?: string;
   input: AnySchema;
   output: AnySchema;
-  filePath?: BivariantCallback<[input: unknown], string>;
+  staticPath?: BivariantCallback<[input: unknown], string>;
   staticInputs?: RegisteredStaticInputs<TState>;
   handler?: BivariantCallback<[input: unknown, ctx: QueryCtx<TState>], unknown>;
   load?: BivariantCallback<[input: unknown, ctx: LoadCtx<TState>], void | Promise<void>>;

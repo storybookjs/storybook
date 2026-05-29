@@ -60,6 +60,8 @@ const docgenPayloadSchema = v.object({
   error: v.optional(docgenErrorSchema),
 });
 
+const docgenOutputSchema = v.optional(docgenPayloadSchema);
+
 /**
  * Definition for the `core/docgen` open service.
  *
@@ -80,17 +82,17 @@ export const docgenServiceDef = defineService({
     getDocgen: {
       description: 'Returns the docgen payload for one componentId, or undefined when not loaded.',
       input: docgenInputSchema,
-      output: v.optional(docgenPayloadSchema),
+      output: docgenOutputSchema,
       handler: (input, ctx) => ctx.self.state.components[input.componentId],
-      filePath: (input) => `${input.componentId}.json`,
+      staticPath: (input) => `${input.componentId}.json`,
     },
   },
   commands: {
     extractDocgen: {
       description:
-        'Resolves story entries for a componentId, runs the registered provider chain, and writes the result into state.',
+        'Resolves the story entry for a componentId, runs the registered provider chain, writes the result into state, and returns it (or undefined when no provider produced docgen).',
       input: docgenInputSchema,
-      output: v.void(),
+      output: docgenOutputSchema,
       // Handler is supplied at registration time so it can close over the story index and the
       // composed experimental_docgenProvider chain.
     },

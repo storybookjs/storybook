@@ -2,8 +2,6 @@ import * as path from 'node:path';
 
 import { afterEach, describe, expect, it } from 'vitest';
 
-import type { IndexEntry } from 'storybook/internal/types';
-
 import { dedent } from 'ts-dedent';
 import ts from 'typescript';
 
@@ -27,17 +25,6 @@ afterEach(() => {
     tempDir = undefined;
   }
 });
-
-function makeStoryEntry(id: string, importPath: string, title = 'Comp'): IndexEntry {
-  return {
-    id,
-    name: id.split('--').slice(1).join('--') || 'Default',
-    title,
-    type: 'story',
-    subtype: 'story',
-    importPath,
-  };
-}
 
 describe('buildDocgenPayload', () => {
   it(
@@ -63,14 +50,9 @@ describe('buildDocgenPayload', () => {
       });
 
       manager = new ComponentMetaManager(ts);
-      const storyEntry = makeStoryEntry(
-        'forms-button--primary',
-        files['Button.stories.tsx'],
-        'Forms/Button'
-      );
 
       const payload = await buildDocgenPayload(
-        { componentId: 'forms-button', entries: [storyEntry] },
+        { importPath: files['Button.stories.tsx'] },
         {
           manager,
           resolvePath: (importPath) =>
@@ -78,44 +60,35 @@ describe('buildDocgenPayload', () => {
         }
       );
 
-      expect(payload.componentId).toBe('forms-button');
-      expect(payload.name).toBe('Button');
-      expect(payload.description).toContain('clickable button');
-      expect(payload.props.map((p) => p.name).sort()).toEqual(['disabled', 'label']);
-      const labelProp = payload.props.find((p) => p.name === 'label');
+      expect(payload).toBeDefined();
+      expect(payload!.name).toBe('Button');
+      expect(payload!.description).toContain('clickable button');
+      expect(payload!.props.map((p) => p.name).sort()).toEqual(['disabled', 'label']);
+      const labelProp = payload!.props.find((p) => p.name === 'label');
       expect(labelProp?.required).toBe(true);
-      expect(payload.stories).toHaveLength(1);
-      expect(payload.stories?.[0]).toMatchObject({
-        id: 'forms-button--primary',
+      expect(payload!.stories).toHaveLength(1);
+      expect(payload!.stories?.[0]).toMatchObject({
+        id: expect.stringMatching(/--primary$/),
         name: 'Primary',
       });
-      expect(payload.stories?.[0].snippet).toMatch(/<Button label="hi"/);
+      expect(payload!.stories?.[0].snippet).toMatch(/<Button label="hi"/);
     }
   );
 
-  it(
-    'returns shape-complete payload with error field when story file is missing',
-    { timeout: 15_000 },
-    async () => {
-      tempDir = createTempDir('docgen-build');
-      manager = new ComponentMetaManager(ts);
+  it('returns undefined when the story file is missing', { timeout: 15_000 }, async () => {
+    tempDir = createTempDir('docgen-build');
+    manager = new ComponentMetaManager(ts);
 
-      const entry = makeStoryEntry('missing--default', 'does-not-exist.stories.tsx', 'Missing');
+    const payload = await buildDocgenPayload(
+      { importPath: 'does-not-exist.stories.tsx' },
+      {
+        manager,
+        resolvePath: (importPath) => path.join(tempDir!, importPath),
+      }
+    );
 
-      const payload = await buildDocgenPayload(
-        { componentId: 'missing', entries: [entry] },
-        {
-          manager,
-          resolvePath: (importPath) => path.join(tempDir!, importPath),
-        }
-      );
-
-      expect(payload.componentId).toBe('missing');
-      expect(payload.props).toEqual([]);
-      expect(payload.error).toBeDefined();
-      expect(payload.error?.message).toMatch(/does-not-exist/);
-    }
-  );
+    expect(payload).toBeUndefined();
+  });
 
   it('walks declared subcomponents into the subcomponents field', { timeout: 30_000 }, async () => {
     tempDir = createTempDir('docgen-build');
@@ -144,10 +117,9 @@ describe('buildDocgenPayload', () => {
     });
 
     manager = new ComponentMetaManager(ts);
-    const entry = makeStoryEntry('layout-card--default', files['Card.stories.tsx'], 'Layout/Card');
 
     const payload = await buildDocgenPayload(
-      { componentId: 'layout-card', entries: [entry] },
+      { importPath: files['Card.stories.tsx'] },
       {
         manager,
         resolvePath: (importPath) =>
@@ -155,9 +127,10 @@ describe('buildDocgenPayload', () => {
       }
     );
 
-    expect(payload.name).toBe('Card');
-    expect(payload.subcomponents).toBeDefined();
-    expect(Object.keys(payload.subcomponents ?? {})).toEqual(['CardHeader']);
-    expect(payload.subcomponents?.CardHeader.props.map((p) => p.name)).toContain('level');
+    expect(payload).toBeDefined();
+    expect(payload!.name).toBe('Card');
+    expect(payload!.subcomponents).toBeDefined();
+    expect(Object.keys(payload!.subcomponents ?? {})).toEqual(['CardHeader']);
+    expect(payload!.subcomponents?.CardHeader.props.map((p) => p.name)).toContain('level');
   });
 });

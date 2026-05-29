@@ -318,16 +318,11 @@ globalThis.STORYBOOK_SERVICES_LOADED = globalThis.STORYBOOK_SERVICES_LOADED ?? f
 /**
  * Seed provider for the experimental_docgenProvider middleware chain.
  *
- * Returns an empty payload so a chain with zero registered providers still produces a defined
- * result (rather than throwing). Real providers registered through `experimental_docgenProvider`
- * wrap this and either replace or merge with its output.
+ * Returns `undefined` so the bottom of the chain signals "no docgen here" — each upstream
+ * provider can either replace this with its own payload, return its own undefined, or call
+ * `nextDocgen` and merge with downstream output.
  */
-const identityDocgenProvider: DocgenProvider = async (input) => ({
-  componentId: input.componentId,
-  name: '',
-  description: '',
-  props: [],
-});
+const identityDocgenProvider: DocgenProvider = async () => undefined;
 
 export const services = async (_value: void, options: Options): Promise<void> => {
   if (globalThis.STORYBOOK_SERVICES_LOADED) {
@@ -337,18 +332,22 @@ export const services = async (_value: void, options: Options): Promise<void> =>
   }
   globalThis.STORYBOOK_SERVICES_LOADED = true;
 
-  const generator =
-    await options.presets.apply<Promise<StoryIndexGenerator>>('storyIndexGenerator');
+  const features = await options.presets.apply('features');
 
-  const provider = await options.presets.apply<DocgenProvider>(
-    'experimental_docgenProvider',
-    identityDocgenProvider
-  );
+  if (features?.experimentalDocgenServer) {
+    const generator =
+      await options.presets.apply<Promise<StoryIndexGenerator>>('storyIndexGenerator');
 
-  registerDocgenService({
-    getIndex: () => generator.getIndex(),
-    provider,
-  });
+    const provider = await options.presets.apply<DocgenProvider>(
+      'experimental_docgenProvider',
+      identityDocgenProvider
+    );
+
+    registerDocgenService({
+      getIndex: () => generator.getIndex(),
+      provider,
+    });
+  }
 };
 
 // Store the promise (not the result) to prevent race conditions.

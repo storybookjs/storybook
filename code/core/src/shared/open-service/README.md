@@ -73,7 +73,7 @@ A query is:
 - **load-coupled**: calling a query also fires its optional `load` hook in the background, deduped per `(service, query, input)` while one is already in flight
 - **subscribable** through `query.subscribe(input, callback)`
 - **awaitable in full** through `query.loaded(input)`, which returns a promise that settles once the load and every transitively touched dependency have completed
-- **statically buildable** when the query declares `filePath` and `staticInputs`
+- **statically buildable** when the query declares `staticPath` and `staticInputs`
 
 Query handlers receive a `QueryCtx`:
 
@@ -93,6 +93,14 @@ Query handlers do **not** receive `commands` or `setState`. Mutations belong in 
 - `ctx.getService(serviceId)` — synchronous
 
 `load` mutations must go through commands. Cross-service `getService(...).queries.*` calls inside a load body are not auto-tracked for the drain; use `await ctx.getService(id).queries.foo.loaded(input)` when you need a cross-service dependency awaited before your own load completes.
+
+**Keep `load` bodies as small as possible.** Almost always, `load` should be a one-liner that calls a command — the real work (input resolution, side effects, validation, state mutation) belongs in the command. This pays off for three reasons:
+
+- **Reusability.** Anyone can call the command directly (other services, tests, integrations) without going through the query's load path. Logic stuck inside a load is unreachable from outside the drain.
+- **Testability.** Commands have a typed input/output contract you can assert against. Load bodies don't return anything useful.
+- **Clear contract.** A query says "read state". A command says "do work that produces state". A bloated load blurs the line and makes the service harder to reason about.
+
+A good rule of thumb: if `load` does anything more than `await ctx.self.commands.someCommand(input)`, ask whether that "more" belongs in the command instead.
 
 ### Command
 
@@ -259,7 +267,7 @@ Tests should use `vi.waitFor(...)` when asserting the first emission or follow-u
 `buildStaticFiles()` in [server.ts](./server.ts) iterates every registered service and looks for
 queries that define:
 
-- `filePath` at definition time
+- `staticPath` at definition time
 - `load` (definition or registration)
 - `staticInputs` (definition or registration)
 
@@ -268,12 +276,12 @@ For each static input it:
 1. creates a fresh runtime from `initialState`
 2. validates the static input using the query's `input` schema
 3. runs the runtime's `runLoadOnce(queryName, validatedInput)` helper, which drives the load body (and any loads it triggers via wrapped self queries) to completion
-4. resolves the normalized logical output path as `<serviceId>/<filePath(input)>`
+4. resolves the normalized logical output path as `<serviceId>/<staticPath(input)>`
 5. stores the resulting runtime state in the final `StaticStore`
 
-`filePath` is declared on the definition layer as `(input) => string`, relative to the service's
+`staticPath` is declared on the definition layer as `(input) => string`, relative to the service's
 own output folder. The static build always prepends the service id so two services cannot write to
-the same JSON path. It is exposed to callers through `describeService()` as `filePath: true` on the
+the same JSON path. It is exposed to callers through `describeService()` as `staticPath: true` on the
 matching query descriptor. Manager code can use that flag to choose between live runtime queries
 and prebuilt JSON snapshots.
 
@@ -293,7 +301,7 @@ These snapshots are currently only a build artifact for the server-side static b
 
 Static path rules:
 
-- `filePath` values are relative to the service; the build prepends `<serviceId>/` automatically
+- `staticPath` values are relative to the service; the build prepends `<serviceId>/` automatically
 - authors should think in forward-slash logical paths such as `nested/file.json` or `${input.entryId}.json`
 - leading `./` and `/` are normalized away
 - backslashes are normalized to `/`
@@ -301,13 +309,13 @@ Static path rules:
 
 ```mermaid
 flowchart TD
-  A[buildStaticFiles] --> B{query has filePath,\nload, and staticInputs?}
+  A[buildStaticFiles] --> B{query has staticPath,\nload, and staticInputs?}
   B -- no --> C[skip query]
   B -- yes --> D[create fresh runtime from initialState]
   D --> E[resolve static inputs]
   E --> F[validate each input]
   F --> G[run load for that input]
-  G --> H[resolve logical output path from filePath]
+  G --> H[resolve logical output path from staticPath]
   H --> I[capture runtime state snapshot]
   I --> J[merge snapshots by path into StaticStore]
   J --> K[writeOpenServiceStaticFiles outputDir]
@@ -345,7 +353,7 @@ export const exampleServiceDef = defineService({
           await ctx.self.commands.preloadValue(input);
         }
       },
-      filePath: () => 'state.json',
+      staticPath: () => 'state.json',
       staticInputs: async () => [{ entryId: 'a' }, { entryId: 'b' }],
     },
   },
@@ -376,6 +384,7 @@ const ready = await exampleService.queries.getValue.loaded({ entryId: 'a' });
 
 - Always declare both `input` and `output` schemas on every query and command.
 - Use `load` for read-side warming. The hook is async and must mutate via commands.
+- **Keep `load` bodies minimal — ideally one line that calls a command.** Push input resolution, side effects, and state mutation into the command itself so it stays callable, testable, and reusable on its own.
 - Query handlers are strict readers: sync, no commands, no `setState`.
 - Use commands for all state mutation.
 - Keep environment-agnostic imports on [index.ts](./index.ts) and server-only imports on [server.ts](./server.ts). Import internal modules directly only from tests or implementation code in this directory.

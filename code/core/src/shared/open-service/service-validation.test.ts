@@ -169,36 +169,45 @@ describe('service validation', () => {
     );
   });
 
-  it('accepts unexpected query input fields when the schema allows them', () => {
+  it('throws when a strict object schema would strip unexpected input fields (a conversion)', () => {
     const service = registerService(mutableRecordLookupServiceDef);
 
-    expect(
+    // Open-service schemas validate shape only; a strict `v.object` would drop the unexpected key,
+    // which is a conversion and must surface as an error rather than silently reshaping the value.
+    expect(() =>
       service.queries.getRecordFields({
         entryId: 'entry-a',
         unexpected: 'extra',
       } as unknown as { entryId: string })
-    ).toBeNull();
+    ).toThrowError(
+      expect.objectContaining({ code: 13, _name: 'OpenServiceSchemaConversionError' })
+    );
   });
 
-  it('accepts unexpected command input fields when the schema allows them', async () => {
-    const service = registerService(mutableRecordLookupServiceDef);
-
-    await expect(
-      service.commands.assignRecordField({
-        entryId: 'entry-a',
-        fieldKey: 'marker',
-        fieldValue: 'match',
-        unexpected: 'extra',
-      } as unknown as {
-        entryId: string;
-        fieldKey: string;
-        fieldValue: string;
+  it('preserves unexpected fields when a loose schema genuinely allows them', () => {
+    const service = registerService(
+      defineService({
+        id: 'internal-fixture/loose-input',
+        initialState: { lastInput: null as { entryId: string } | null },
+        queries: {
+          echoInput: {
+            // A loose object keeps unknown keys, so validation does not reshape the value.
+            input: v.looseObject({ entryId: v.string() }),
+            output: v.nullable(v.looseObject({ entryId: v.string() })),
+            handler: (input, ctx) => ctx.self.state.lastInput,
+          },
+        },
+        commands: {},
       })
-    ).resolves.toBeUndefined();
+    );
 
-    expect(service.queries.getRecordFields({ entryId: 'entry-a' })).toEqual({
-      marker: 'match',
-    });
+    // Does not throw even though an unexpected field is present, because the schema allows it.
+    expect(
+      service.queries.echoInput({
+        entryId: 'entry-a',
+        unexpected: 'extra',
+      } as unknown as { entryId: string })
+    ).toBeNull();
   });
 
   it('stores optional description metadata on services, queries, and commands', () => {

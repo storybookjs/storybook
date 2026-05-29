@@ -6,8 +6,10 @@ Its goals are:
 
 - define stateful services in one declarative object
 - expose synchronous queries and async commands with strong TypeScript inference
-- validate all query and command input/output through Standard Schema
-- support reactive query subscriptions through `alien-signals`
+- validate the _shape_ of all query and command input/output through Standard Schema (validation
+  only — schemas never convert values)
+- support fine-grained reactive query subscriptions through deep signals (`deepsignal` +
+  `@preact/signals-core`)
 - support server-side static state snapshots driven by query `load` hooks
 
 The main audience for this README is agents and maintainers who need to understand how the pieces
@@ -160,6 +162,14 @@ The runtime validates:
 - caller input before a handler runs
 - handler output before the result is returned or emitted
 
+**Schemas validate shape only — they never convert values.** The runtime discards a schema's
+normalized output and passes the _original_ reference through, so the reactive deep-signal graph
+stays referentially stable. As a contract, schemas must not transform, coerce, or inject defaults,
+and must not reshape values (e.g. a strict `v.object` that strips unknown keys is a conversion). In
+development the runtime compares the schema's output against the original value and throws
+`OpenServiceSchemaConversionError` when they differ; the check is skipped in production. Use a loose
+schema (e.g. `v.looseObject`, `v.record`) when you intend to allow extra keys.
+
 Queries validate **synchronously**. Their input and output schemas must produce sync results. If a Standard Schema returns a Promise during a query validation, the runtime throws `OpenServiceAsyncSchemaError` immediately.
 
 Commands validate asynchronously and accept async schemas.
@@ -250,16 +260,30 @@ When an **async** `load` body runs, it instead gets a *wrapped* `ctx.self.querie
 
 Cross-service `ctx.getService(id).queries.*` calls inside a load body are **not** wrapped; authors must use `.loaded()` explicitly when they need a cross-service dep awaited from inside a load. From a sync handler, cross-service queries are tracked because they consult the module-scoped session like any other call.
 
+## State and reactivity
+
+State is a **deep reactive proxy** (`deepSignal` from `deepsignal`, backed by `@preact/signals-core`)
+created in [service-runtime.ts](./service-runtime.ts). There is no top-level state atom and no Immer:
+
+- Reading a field through `ctx.self.state` tracks a fine-grained signal for exactly that field
+  (including not-yet-present record keys, which fire when the key is later added).
+- `setState((draft) => …)` mutates the proxy **in place** inside a batch, so one command notifies
+  subscribers once, and only the fields it actually changed are invalidated.
+- The proxy is internal: every value returned to consumers (query results and subscription
+  emissions) is a detached, plain, immutable snapshot. State must be JSON-serializable (the same
+  constraint the static-build pipeline relies on).
+
 ## Subscription Flow
 
-Subscriptions are implemented with `alien-signals` in [service-runtime.ts](./service-runtime.ts):
+Subscriptions are implemented in [service-runtime.ts](./service-runtime.ts):
 
-1. `subscribe(input, callback)` defers all work to a microtask.
+1. `subscribe(input, callback)` (or `subscribe(input, selector, callback)`) defers all work to a microtask.
 2. The microtask validates the input synchronously and fires the dependency's `load` in the background.
-3. A `computed()` value wraps the synchronous handler. An `effect()` runs the handler immediately (delivering the current value to the callback) and re-runs whenever the handler's tracked state dependencies change.
-4. Subscribers receive the current state right away, then a follow-up emission once the load settles and state changes. UI consumers that want to suppress the pre-load emission should branch on the value (e.g. show a spinner for `null`).
-5. Each emitted value is output-validated before the subscriber callback runs.
-6. Emissions are deduped by value. Output validation and Immer both mint a fresh reference for unchanged data, which would defeat `alien-signals`' identity-based dedup, so the `computed()` keeps the previous reference when the new value is deeply equal (`es-toolkit` `isEqual`). Subscribers are only notified when the value actually changes — a load that rewrites a deeply-equal payload, or a write to an unrelated key, does not re-fire them.
+3. A `computed()` wraps the synchronous handler and reads state through the deep-signal proxy, so it only re-runs when the exact fields it touched change. It returns a detached snapshot of the value (or of `selector(value)` when a selector is given).
+4. An `effect()` runs the computed immediately (delivering the current value) and re-runs only when the computed's tracked fields change. A write to an unrelated key or field never re-runs the handler.
+5. Subscribers receive the current state right away, then a follow-up emission once the load settles and state changes. UI consumers that want to suppress the pre-load emission should branch on the value (e.g. show a spinner for `null`).
+6. Each emitted value is output-validated (shape only) and deduped by value: the effect compares the new snapshot with the last emitted one via `es-toolkit` `isEqual` and skips the callback when they are equal. So a load that rewrites a deeply-equal payload does not re-fire subscribers.
+7. An optional `selector` narrows what the subscriber depends on: the callback receives the selected slice and fires only when that slice changes by value — the same pattern as `universal-store`.
 
 Tests should use `vi.waitFor(...)` when asserting the first emission or follow-up emissions.
 

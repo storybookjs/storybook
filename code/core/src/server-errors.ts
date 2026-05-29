@@ -252,6 +252,24 @@ export class OpenServiceDocgenMissingComponentError extends StorybookError {
   }
 }
 
+export class OpenServiceSchemaConversionError extends StorybookError {
+  constructor(
+    public data: {
+      serviceId: ServiceId;
+      name: string;
+      kind: 'query' | 'command';
+      phase: 'input' | 'output';
+    }
+  ) {
+    super({
+      name: 'OpenServiceSchemaConversionError',
+      category: Category.CORE_COMMON,
+      code: 13,
+      message: `Schema for ${data.kind} "${data.serviceId}.${data.name}" (${data.phase}) transformed its value. Open-service schemas may only validate shape, never convert values: remove transforms, coercions, and defaults so the original reference is preserved.`,
+    });
+  }
+}
+
 export class WebpackMissingStatsError extends StorybookError {
   constructor() {
     super({

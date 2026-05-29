@@ -298,11 +298,10 @@ describe('service runtime', () => {
       unsubscribe();
     });
 
-    // Reference churn must not be mistaken for a value change. Output-schema validation rebuilds
-    // the handler result into a fresh object and a load that rewrites a deeply-equal payload yields
-    // a new Immer slice; both produce a new reference for unchanged data. The runtime memoizes the
-    // subscription computed by value so these do not re-fire subscribers. This is the docgen
-    // "second navigation" behavior observed in the internal Storybook emulation.
+    // A load that re-runs and rewrites a deeply-equal payload produces a new state slice, so the
+    // subscription computed re-runs — but the emitted snapshot is value-equal to the last one, so
+    // the `isEqual` emit gate suppresses the redundant callback. This is the docgen "second
+    // navigation" behavior observed in the internal Storybook emulation.
     it('does not re-emit when a load rewrites a deeply-equal but freshly-allocated payload', async () => {
       const service = registerService(freshEqualPayloadOnLoadServiceDef);
 
@@ -337,36 +336,86 @@ describe('service runtime', () => {
       unsubscribeSecond();
     });
 
-    // Output-schema validation reconstructs the handler result into a new object on every
-    // evaluation, so without value-based memoization any write to the service — even to an
-    // unrelated key — would re-fire every object-valued subscriber. Immer keeps the untouched slice
-    // referentially stable, so the only thing that can change is the validation reconstruction.
-    it('does not re-emit an object-valued subscriber when an unrelated key changes', async () => {
+    // True fine-grained reactivity: the deep-signal proxy tracks reads per field, so writing an
+    // unrelated key must not re-run the subscriber's handler at all (not merely suppress the
+    // emission). The handler spy proves the computed did not re-evaluate. Before the deep-signal
+    // migration this assertion failed — the handler re-ran on every write and the test only passed
+    // because the emitted value happened to be value-equal.
+    it('does not re-run a subscriber handler when an unrelated key changes', async () => {
+      const handlerSpy = vi.spyOn(mutableRecordLookupServiceDef.queries.getRecordFields, 'handler');
+      try {
+        const service = registerService(mutableRecordLookupServiceDef);
+
+        await service.commands.assignRecordField({
+          entryId: 'entry-a',
+          fieldKey: 'marker',
+          fieldValue: 'match',
+        });
+
+        const callsA: Array<Record<string, string> | null> = [];
+        const unsubscribe = service.queries.getRecordFields.subscribe(
+          { entryId: 'entry-a' },
+          (value) => {
+            callsA.push(value);
+          }
+        );
+        await vi.waitFor(() => expect(callsA).toEqual([{ marker: 'match' }]));
+        const handlerRunsAfterSubscribe = handlerSpy.mock.calls.length;
+
+        await service.commands.assignRecordField({
+          entryId: 'entry-b',
+          fieldKey: 'marker',
+          fieldValue: 'other',
+        });
+        await new Promise((resolve) => setTimeout(resolve, 30));
+
+        // No emission and — crucially — no handler re-run for entry-a.
+        expect(callsA).toEqual([{ marker: 'match' }]);
+        expect(handlerSpy.mock.calls.length).toBe(handlerRunsAfterSubscribe);
+
+        unsubscribe();
+      } finally {
+        handlerSpy.mockRestore();
+      }
+    });
+
+    // A `selector` narrows what the subscriber depends on: changing a sibling field that the
+    // selector does not read must not fire the callback, even though the same record changed.
+    it('only re-emits for the selected slice of a query value', async () => {
       const service = registerService(mutableRecordLookupServiceDef);
 
       await service.commands.assignRecordField({
         entryId: 'entry-a',
-        fieldKey: 'marker',
-        fieldValue: 'match',
+        fieldKey: 'name',
+        fieldValue: 'Card',
       });
 
-      const callsA: Array<Record<string, string> | null> = [];
+      const selected: Array<string | undefined> = [];
       const unsubscribe = service.queries.getRecordFields.subscribe(
         { entryId: 'entry-a' },
-        (value) => {
-          callsA.push(value);
+        (record) => record?.name,
+        (name) => {
+          selected.push(name);
         }
       );
-      await vi.waitFor(() => expect(callsA).toEqual([{ marker: 'match' }]));
+      await vi.waitFor(() => expect(selected).toEqual(['Card']));
 
+      // Change an unrelated field on the same record: the selector reads only `name`, so no emit.
       await service.commands.assignRecordField({
-        entryId: 'entry-b',
-        fieldKey: 'marker',
-        fieldValue: 'other',
+        entryId: 'entry-a',
+        fieldKey: 'props',
+        fieldValue: '5',
       });
       await new Promise((resolve) => setTimeout(resolve, 30));
+      expect(selected).toEqual(['Card']);
 
-      expect(callsA).toEqual([{ marker: 'match' }]);
+      // Change the selected field: the callback fires with the new selected value.
+      await service.commands.assignRecordField({
+        entryId: 'entry-a',
+        fieldKey: 'name',
+        fieldValue: 'Renamed',
+      });
+      await vi.waitFor(() => expect(selected).toEqual(['Card', 'Renamed']));
 
       unsubscribe();
     });

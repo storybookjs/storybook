@@ -79,7 +79,17 @@ export type CommandFunctions<
 export type Query<TInput, TOutput> = {
   (input: TInput): TOutput;
   loaded(input: TInput): Promise<TOutput>;
+  /**
+   * Subscribe to a query. The callback fires once with the current value and again whenever the
+   * tracked state it reads changes. An optional `selector` narrows what the subscriber depends on:
+   * the callback receives the selected slice and only fires when that slice changes by value.
+   */
   subscribe(input: TInput, callback: (value: TOutput) => void): () => void;
+  subscribe<TSelected>(
+    input: TInput,
+    selector: (value: TOutput) => TSelected,
+    callback: (selected: TSelected) => void
+  ): () => void;
 };
 
 /**

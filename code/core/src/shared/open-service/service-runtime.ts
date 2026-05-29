@@ -58,8 +58,8 @@
  * path because handler reads are tracked by `activeHandlerLoadSession`, which is module-scoped
  * and stable for the duration of a sync handler call.
  */
-import { produce } from 'immer';
-import { computed, effect, endBatch, signal, startBatch } from 'alien-signals';
+import { batch, computed, effect } from '@preact/signals-core';
+import { deepSignal } from 'deepsignal/core';
 import { isEqual } from 'es-toolkit/predicate';
 
 import {
@@ -88,7 +88,6 @@ import type {
   ServiceRegistryApi,
 } from './types.ts';
 
-type ServiceSignal<TState> = ReturnType<typeof signal<TState>>;
 type RuntimeQueryDefinition<TState> = QueryDefinition<TState, AnySchema, AnySchema>;
 
 /**
@@ -102,7 +101,8 @@ export type ServiceRuntime<
   TQueries extends Queries<TState>,
   TCommands extends Commands<TState>,
 > = {
-  stateSignal: ServiceSignal<TState>;
+  /** Returns a plain, detached snapshot of the current state for serialization. */
+  getStateSnapshot(): TState;
   commandSelf: CommandSelf<TState>;
   queryCtx: QueryCtx<TState>;
   loadCtxForStatic: LoadCtx<TState>;
@@ -294,26 +294,40 @@ async function drainCollector(
 /**
  * Creates the writable `self` object that backs every runtime ctx for one service instance.
  *
- * State writes are wrapped in an alien-signals batch so one command can update multiple fields
- * without causing intermediate reactive notifications between writes.
+ * State is a deep reactive proxy: mutations applied to the draft notify only the fine-grained
+ * signals for the fields that actually changed. Writes are wrapped in a batch so one command only
+ * notifies subscribers after the full draft mutation completes.
  */
-function createCommandSelf<TState>(stateSignal: ServiceSignal<TState>): CommandSelf<TState> {
+function createCommandSelf<TState>(state: TState): CommandSelf<TState> {
   return {
     get state() {
-      return stateSignal();
+      return state;
     },
     setState(mutate) {
-      // Batch signal writes so one command only triggers subscribers after the full draft update.
-      startBatch();
-      try {
-        stateSignal(produce(stateSignal(), mutate));
-      } finally {
-        endBatch();
-      }
+      batch(() => {
+        mutate(state);
+      });
     },
     queries: {},
     commands: {},
   };
+}
+
+/**
+ * Detaches a query value from the reactive deep-signal proxy into a plain, immutable snapshot.
+ *
+ * The proxy must never escape the runtime: handing it to consumers would leak a live, mutable view
+ * of state and bypass the command-only mutation contract. Primitives pass through untouched; objects
+ * and arrays are structurally cloned. State is required to be JSON-serializable (the same constraint
+ * the static-build pipeline already relies on), so a JSON round-trip is a sufficient deep clone and
+ * also reads every field of the value — which, inside a `computed`, registers the precise
+ * fine-grained dependencies the subscription should track.
+ */
+function detachSnapshot<TValue>(value: TValue): TValue {
+  if (value === null || typeof value !== 'object') {
+    return value;
+  }
+  return JSON.parse(JSON.stringify(value)) as TValue;
 }
 
 /**
@@ -369,7 +383,8 @@ function buildCommands<TState>(
 type QueryRuntimeRefs<TState> = {
   serviceId: ServiceId;
   commandSelf: CommandSelf<TState>;
-  stateSignal: ServiceSignal<TState>;
+  /** Deep reactive proxy backing this service's state; reads inside a computed track fine-grained. */
+  state: TState;
   registryApi: ServiceRegistryApi;
   queryDefinitions: Map<string, RuntimeQueryDefinition<TState>>;
   defaultQueries: Record<string, Query<unknown, unknown>>;
@@ -431,7 +446,7 @@ function runHandlerSync<TState>(
 
   const handlerSelf: QuerySelf<TState> = {
     get state() {
-      return refs.stateSignal();
+      return refs.state;
     },
     queries: selfQueries,
   };
@@ -541,7 +556,7 @@ async function runLoadBody<TState>(
   const wrappedQueries = buildLoadWrappedQueries(refs, ancestorChain, collector);
   const loadSelf: LoadSelf<TState> = {
     get state() {
-      return refs.stateSignal();
+      return refs.state;
     },
     queries: wrappedQueries,
     commands: refs.commandSelf.commands as LoadSelf<TState>['commands'],
@@ -606,13 +621,15 @@ function buildLoadWrappedQueries<TState>(
         }
       }
 
-      return runHandlerSync(
-        refs,
-        name,
-        queryDef,
-        validatedInput,
-        wrappedQueries,
-        refs.registryApi.getService
+      return detachSnapshot(
+        runHandlerSync(
+          refs,
+          name,
+          queryDef,
+          validatedInput,
+          wrappedQueries,
+          refs.registryApi.getService
+        )
       );
     }) as Query<unknown, unknown>;
 
@@ -763,13 +780,15 @@ async function runLoaded<TState>(
     hasMoreWork = session.collector.size > 0;
   }
 
-  return runHandlerSync(
-    refs,
-    queryName,
-    queryDef,
-    validatedInput,
-    refs.defaultQueries,
-    refs.registryApi.getService
+  return detachSnapshot(
+    runHandlerSync(
+      refs,
+      queryName,
+      queryDef,
+      validatedInput,
+      refs.defaultQueries,
+      refs.registryApi.getService
+    )
   );
 }
 
@@ -837,36 +856,62 @@ function createDefaultQuery<TState>(
       }
     }
 
-    return runHandlerSync(
-      refs,
-      queryName,
-      queryDef,
-      validatedInput,
-      refs.defaultQueries,
-      refs.registryApi.getService
+    // Detach from the reactive proxy: consumers always receive a plain, immutable snapshot.
+    return detachSnapshot(
+      runHandlerSync(
+        refs,
+        queryName,
+        queryDef,
+        validatedInput,
+        refs.defaultQueries,
+        refs.registryApi.getService
+      )
     );
   }) as Query<unknown, unknown>;
 
   query.loaded = (input: unknown) => runLoaded(refs, queryName, queryDef, input);
-  query.subscribe = (input: unknown, callback: (value: unknown) => void): (() => void) =>
-    subscribeToQuery(refs, queryName, queryDef, input, callback);
+  query.subscribe = ((
+    input: unknown,
+    selectorOrCallback: ((value: unknown) => unknown) | ((value: unknown) => void),
+    maybeCallback?: (value: unknown) => void
+  ): (() => void) =>
+    subscribeToQuery(
+      refs,
+      queryName,
+      queryDef,
+      input,
+      maybeCallback ? (selectorOrCallback as (value: unknown) => unknown) : undefined,
+      maybeCallback ?? (selectorOrCallback as (value: unknown) => void)
+    )) as Query<unknown, unknown>['subscribe'];
 
   return query;
 }
 
 /**
- * Subscribes to a query by running its handler under an alien-signals `computed()` and `effect()`.
+ * Subscribes to a query by running its handler inside a deep-signal-aware `computed()` and
+ * notifying through an `effect()`.
  *
  * The first emission is deferred to a microtask so callers always receive their unsubscribe handle
  * before the callback fires. The runtime kicks `load` off in the background but does not wait for
- * it — subscribers see the current state immediately and a follow-up emission once the load
- * settles and tracked state changes.
+ * it — subscribers see the current state immediately and a follow-up emission once the load settles
+ * and tracked state changes.
+ *
+ * Two layers keep emissions precise:
+ *
+ * 1. **Fine-grained reads** — the handler (and the optional `selector`) read through the deep-signal
+ *    proxy, so the computed only re-runs when the exact fields it touched change. A write to an
+ *    unrelated key or field never re-runs the handler.
+ * 2. **Value dedup** — the emitted value is detached into a plain snapshot and compared with the
+ *    previously emitted snapshot via `isEqual`. A re-run that produces a deeply-equal value (e.g. a
+ *    load that rewrites an equal payload) does not fire the callback. With a `selector`, only the
+ *    selected slice is snapshotted and compared, so subscribers depend on exactly the data they use.
  */
 function subscribeToQuery<TState>(
   refs: QueryRuntimeRefs<TState>,
   queryName: string,
   queryDef: RuntimeQueryDefinition<TState>,
   rawInput: unknown,
+  selector: ((value: unknown) => unknown) | undefined,
   callback: (value: unknown) => void
 ): () => void {
   let active = true;
@@ -899,14 +944,11 @@ function subscribeToQuery<TState>(
       pendingLoad.catch(rethrowAsync);
     }
 
-    // Re-engage alien-signals' identity-based dedup. The handler result is rebuilt into a fresh
-    // reference on every evaluation — output-schema validation reconstructs the object, and Immer
-    // returns a new state slice whenever a load rewrites a deeply-equal value — so a bare computed
-    // would treat every state write as a change and re-fire subscribers with unchanged data.
-    // Returning the previous reference when the value is deeply equal keeps the computed
-    // referentially stable, so only genuine value changes propagate to the callback.
-    const comp = computed((previous?: unknown) => {
-      const next = runHandlerSync(
+    // The computed reads through the deep-signal proxy (fine-grained tracking) and returns a
+    // detached snapshot of the selected value. `detachSnapshot` reads every field it emits, which is
+    // what registers the precise dependency set this subscription should react to.
+    const comp = computed(() => {
+      const output = runHandlerSync(
         refs,
         queryName,
         queryDef,
@@ -914,20 +956,34 @@ function subscribeToQuery<TState>(
         refs.defaultQueries,
         refs.registryApi.getService
       );
-      return isEqual(previous, next) ? previous : next;
+      return detachSnapshot(selector ? selector(output) : output);
     });
+
+    let hasEmitted = false;
+    let lastEmitted: unknown;
     teardown = effect(() => {
       let value: unknown;
       try {
-        value = comp();
+        value = comp.value;
       } catch (error) {
         rethrowAsync(error);
         return;
       }
 
-      if (active) {
-        callback(value);
+      if (!active) {
+        return;
       }
+
+      // Skip re-runs that did not change the (selected) value. The computed already gates on
+      // fine-grained reads; this gates on the rarer case where tracked state changed but the
+      // emitted value is deeply equal (e.g. a load rewriting an equal payload).
+      if (hasEmitted && isEqual(value, lastEmitted)) {
+        return;
+      }
+
+      hasEmitted = true;
+      lastEmitted = value;
+      callback(value);
     });
   });
 
@@ -966,9 +1022,15 @@ export function createServiceRuntime<
   },
   initialState: TState = def.initialState
 ): ServiceRuntime<TState, TQueries, TCommands> {
-  // The signal is the single source of truth that query computations subscribe to.
-  const stateSignal = signal<TState>(initialState);
-  const commandSelf = createCommandSelf(stateSignal);
+  // `rawState` is the plain backing object that the deep-signal proxy writes through to; it stays
+  // in sync with every mutation and is the source for serialization snapshots. Cloning the incoming
+  // state keeps a service definition's shared `initialState` from being mutated in place.
+  const rawState = structuredClone(initialState) as TState;
+  // The deep reactive proxy is the single source of truth that query computations track, at
+  // per-field granularity.
+  const state = deepSignal(rawState as object) as TState;
+  const getStateSnapshot = (): TState => structuredClone(rawState);
+  const commandSelf = createCommandSelf(state);
   const { registryApi } = runtimeOptions;
   const createCommandCtx = (): CommandCtx<TState> => ({
     self: commandSelf,
@@ -989,7 +1051,7 @@ export function createServiceRuntime<
   const refs: QueryRuntimeRefs<TState> = {
     serviceId: def.id,
     commandSelf,
-    stateSignal,
+    state,
     registryApi,
     queryDefinitions,
     defaultQueries,
@@ -1005,7 +1067,7 @@ export function createServiceRuntime<
   const queries = defaultQueries as ServiceInstance<TState, TQueries, TCommands>['queries'];
   const queryCtxSelf: QuerySelf<TState> = {
     get state() {
-      return stateSignal();
+      return state;
     },
     queries: defaultQueries,
   };
@@ -1013,7 +1075,7 @@ export function createServiceRuntime<
   const loadCtxForStatic: LoadCtx<TState> = {
     self: {
       get state() {
-        return stateSignal();
+        return state;
       },
       queries: defaultQueries,
       commands: commands as LoadSelf<TState>['commands'],
@@ -1041,7 +1103,7 @@ export function createServiceRuntime<
   };
 
   return {
-    stateSignal,
+    getStateSnapshot,
     commandSelf,
     queryCtx,
     loadCtxForStatic,

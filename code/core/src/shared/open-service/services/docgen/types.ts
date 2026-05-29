@@ -27,9 +27,16 @@ export interface DocgenPayload {
 /**
  * Middleware-style provider function registered through the `experimental_docgenProvider` preset.
  *
- * Each registrant returns a wrapper around the previous accumulated provider (received as the
- * preset's `config` argument). The wrapper may call its inner `nextDocgen` to merge with
- * downstream providers, and either returns a complete {@link DocgenPayload} or `undefined` when
- * no docgen is available for the given file.
+ * Each registrant returns a wrapper around the previous accumulated provider; it may call that
+ * inner provider to merge with downstream output, and either returns a complete
+ * {@link DocgenPayload} or `undefined` when no docgen is available for the given file.
+ *
+ * **Merge convention.** When combining your output with downstream's, use spread
+ * (`{ ...downstream, ...yourOverrides }`) and `downstream?.field ?? yours` rather than rebuilding
+ * the payload field-by-field. Manual reconstruction silently drops any fields a future provider
+ * (or future schema change) adds and your provider doesn't know about. `??` preserves explicit
+ * values from downstream — including empty strings — so providers that intentionally set a field
+ * are not overridden by a later provider's defaults. Prefer authoring with `defineDocgenProvider`
+ * from `storybook/internal/common`, which encodes the contract.
  */
 export type DocgenProvider = (input: DocgenProviderInput) => Promise<DocgenPayload | undefined>;

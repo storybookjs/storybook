@@ -1,6 +1,6 @@
 import { existsSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
-import { dirname, extname, join, normalize, relative, resolve, sep } from 'node:path';
+import { dirname, extname, isAbsolute, join, normalize, relative, resolve, sep } from 'node:path';
 
 import { commonGlobOptions, getProjectRoot, normalizeStoryPath } from 'storybook/internal/common';
 import { combineTags, storyNameFromExport, toId } from 'storybook/internal/csf';
@@ -437,7 +437,8 @@ export class StoryIndexGenerator {
       if (path.startsWith('virtual:')) {
         return path;
       }
-      return slash(normalizeStoryPath(relative(this.options.workingDir, path)));
+      const relativePath = isAbsolute(path) ? relative(this.options.workingDir, path) : path;
+      return slash(normalizeStoryPath(relativePath));
     };
 
     const storyEntries: ((StoryIndexEntryWithExtra | DocsCacheEntry) & { tags: Tag[] })[] =

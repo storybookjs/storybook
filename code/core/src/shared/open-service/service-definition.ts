@@ -13,7 +13,7 @@ import type {
  * The second mapped-type intersection is deliberate. During experiments, TypeScript would infer
  * the `input` schema for each inline query, but then lose the corresponding `output` schema before
  * it contextually typed sibling callbacks. Repeating the output map through a keyed `output` view
- * keeps each query key's input and output schemas correlated while handlers, preload hooks, and
+ * keeps each query key's input and output schemas correlated while handlers, load hooks, and
  * static callbacks are being typed.
  */
 type DefinedQueries<

@@ -34,7 +34,7 @@ function createDebugServiceDef(storyIndexGeneratorPromise: Promise<StoryIndexGen
   return defineService({
     id: DEBUG_SERVICE_ID,
     description:
-      'Exercises Storybook open-service registration, queries, commands, preloads, subscriptions, static builds, and story-index integration inside the internal Storybook.',
+      'Exercises Storybook open-service registration, queries, commands, loads, subscriptions, static builds, and story-index integration inside the internal Storybook.',
     initialState: {
       activity: [],
       preloadedByEntryId: {},
@@ -47,7 +47,7 @@ function createDebugServiceDef(storyIndexGeneratorPromise: Promise<StoryIndexGen
         description: 'Returns the latest activity entries for the debug service.',
         input: activityQueryInputSchema,
         output: v.array(v.string()),
-        handler: async (input, ctx) => {
+        handler: (input, ctx) => {
           logger.warn('[open-service debug] query getActivity');
           return ctx.self.state.activity.slice(-input.limit);
         },
@@ -56,7 +56,7 @@ function createDebugServiceDef(storyIndexGeneratorPromise: Promise<StoryIndexGen
         description: 'Returns story-index-derived summary data captured by the debug service.',
         input: storyIndexSummaryInputSchema,
         output: storyIndexSummaryOutputSchema,
-        handler: async (input, ctx) => {
+        handler: (input, ctx) => {
           logger.warn('[open-service debug] query getStoryIndexSummary');
           return {
             entryCount: ctx.self.state.storyIndexEntryCount,
@@ -69,22 +69,20 @@ function createDebugServiceDef(storyIndexGeneratorPromise: Promise<StoryIndexGen
           'Returns a preloaded value for one entry id and participates in static builds.',
         input: entryInputSchema,
         output: v.nullable(v.string()),
-        preload: async (input, ctx) => {
-          logger.warn(`[open-service debug] preload getPreloadedValue(${input.entryId})`);
+        load: async (input, ctx) => {
+          logger.warn(`[open-service debug] load getPreloadedValue(${input.entryId})`);
           if (ctx.self.state.preloadedByEntryId[input.entryId] !== undefined) {
             return;
           }
 
           await ctx.self.commands.recordPreloadVisit({
             entryId: input.entryId,
-            source: 'preload',
+            source: 'load',
           });
         },
-        static: {
-          inputs: async () => [{ entryId: 'static-a' }, { entryId: 'static-b' }],
-          path: (input) => `debug-service/${input.entryId}.json`,
-        },
-        handler: async (input, ctx) => {
+        staticPath: (input) => `${input.entryId}.json`,
+        staticInputs: async () => [{ entryId: 'static-a' }, { entryId: 'static-b' }],
+        handler: (input, ctx) => {
           const value = ctx.self.state.preloadedByEntryId[input.entryId] ?? null;
 
           logger.warn(`[open-service debug] query getPreloadedValue(${input.entryId}) => ${value}`);
@@ -131,9 +129,6 @@ function createDebugServiceDef(storyIndexGeneratorPromise: Promise<StoryIndexGen
         input: preloadVisitInputSchema,
         output: v.undefined(),
         handler: async (input, ctx) => {
-          // ctx.self already exposes this service's queries, so resolving the running runtime
-          // through the registry would be a needless detour. The cast bridges the loss of
-          // per-query output typing on `ReadonlySelf.queries`.
           const summary = (await ctx.self.queries.getStoryIndexSummary({
             includeSampleIds: false,
           })) as { entryCount: number; sampleIds: string[] };
@@ -159,7 +154,7 @@ function createDebugServiceDef(storyIndexGeneratorPromise: Promise<StoryIndexGen
  * Registers the internal Storybook debug service that exercises the server-side open-service
  * features in one place.
  *
- * The service self-demonstrates queries, commands, preloads, subscriptions, static snapshot
+ * The service self-demonstrates queries, commands, loads, subscriptions, static snapshot
  * generation, and story-index integration inside the internal Storybook. It is gated behind the
  * `STORYBOOK_OPEN_SERVICE_DEBUG=true` env flag in `code/.storybook/services-preset.ts`.
  */
@@ -181,12 +176,12 @@ export async function registerOpenServiceDebugService(
 
   try {
     // Trigger the main runtime behaviors once during registration so debug logs immediately show
-    // the command, query, preload, and subscription paths without extra manual setup.
+    // the command, query, load, and subscription paths without extra manual setup.
     await service.commands.syncStoryIndex({ reason: 'services-preset' });
     await service.commands.addActivity({ message: 'registered via services preset' });
-    await service.queries.getActivity({ limit: 10 });
-    await service.queries.getStoryIndexSummary({ includeSampleIds: true });
-    await service.queries.getPreloadedValue({ entryId: 'startup' });
+    service.queries.getActivity({ limit: 10 });
+    service.queries.getStoryIndexSummary({ includeSampleIds: true });
+    await service.queries.getPreloadedValue.loaded({ entryId: 'startup' });
     await new Promise<void>((resolve) => queueMicrotask(resolve));
   } finally {
     unsubscribe();

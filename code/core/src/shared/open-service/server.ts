@@ -16,17 +16,16 @@ import {
 import { createServiceRuntime, resolveStaticPath } from './service-runtime.ts';
 import { validateSchema } from './service-validation.ts';
 import type {
-  AnySchema,
+  AnyQueryDefinition,
   BuildTaskResult,
   Commands,
   Queries,
-  QueryDefinition,
   ServiceDefinition,
   StaticStore,
 } from './types.ts';
 
 type RuntimeServiceDefinition = ServiceDefinition<unknown, Queries<unknown>, Commands<unknown>>;
-type RuntimeQueryDefinition = QueryDefinition<unknown, AnySchema, AnySchema>;
+type RuntimeQueryDefinition = AnyQueryDefinition<unknown>;
 
 export {
   clearRegistry,
@@ -38,12 +37,14 @@ export {
 };
 
 /**
- * Builds serialized static-state snapshots for preload-enabled queries across every service
+ * Builds serialized static-state snapshots for `load`-enabled queries across every service
  * currently in the registry.
  *
- * Each static input runs against a fresh service runtime so one preload path cannot leak state
- * into another path's snapshot. Cross-service `ctx.getService(...)` lookups inside a preload
- * resolve through the live registry, matching dev-server behavior.
+ * Each static input runs against a fresh service runtime so one load path cannot leak state
+ * into another path's snapshot. The runtime's `runLoadOnce` helper drives the load to completion
+ * (including transitively triggered self-queries) before the resulting state is captured.
+ * Cross-service `ctx.getService(...)` lookups inside a load resolve through the live registry,
+ * matching dev-server behavior.
  */
 export async function buildStaticFiles(): Promise<StaticStore> {
   const store: StaticStore = {};
@@ -54,8 +55,8 @@ export async function buildStaticFiles(): Promise<StaticStore> {
       string,
       RuntimeQueryDefinition,
     ][]) {
-      const { preload, static: staticConfig } = query;
-      if (!preload || !staticConfig?.inputs) {
+      const { load, staticPath, staticInputs } = query;
+      if (!staticPath || !load || !staticInputs) {
         continue;
       }
 
@@ -66,7 +67,7 @@ export async function buildStaticFiles(): Promise<StaticStore> {
             { registryApi: serviceRegistryApi },
             structuredClone(service.initialState)
           );
-          const inputs = await staticConfig.inputs(inputsRuntime.queryCtx);
+          const inputs = await staticInputs(inputsRuntime.loadCtxForStatic);
 
           return Promise.all(
             inputs.map(async (input) => {
@@ -83,15 +84,9 @@ export async function buildStaticFiles(): Promise<StaticStore> {
                 name: queryName,
                 phase: 'input',
               });
-              const path = resolveStaticPath(
-                service.id,
-                queryName,
-                query,
-                validatedInput,
-                buildRuntime.queryCtx
-              );
+              const path = resolveStaticPath(service.id, queryName, { staticPath }, validatedInput);
 
-              await preload(validatedInput, buildRuntime.queryCtx);
+              await buildRuntime.runLoadOnce(queryName, validatedInput);
 
               return { path, state: buildRuntime.stateSignal() };
             })

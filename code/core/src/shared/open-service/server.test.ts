@@ -45,34 +45,26 @@ afterEach(() => {
 
 describe('server static builds', () => {
   describe('buildStaticFiles', () => {
-    it('runs preload from initial state for each input and deep-merges by path', async () => {
+    it('runs load from initial state for each input and deep-merges by path', async () => {
       registerService(awaitedPreloadValueServiceDef);
 
       await expect(buildStaticFiles()).resolves.toEqual({
-        'test/awaited-preload-value.json': {
+        'internal-fixture/awaited-preload-value/state.json': {
           'entry-a': 'preloaded',
           'entry-b': 'preloaded',
         },
       });
     });
 
-    it('uses a single default path per service', async () => {
+    it('uses a single staticPath for every input on one query', async () => {
       registerService(awaitedPreloadValueServiceDef);
 
       const store = await buildStaticFiles();
 
-      expect(Object.keys(store)).toEqual(['test/awaited-preload-value.json']);
+      expect(Object.keys(store)).toEqual(['internal-fixture/awaited-preload-value/state.json']);
     });
 
-    it('deep-merges outputs from different queries that resolve to the same custom path', async () => {
-      registerService(createSharedStaticFileServiceDef());
-
-      await expect(buildStaticFiles()).resolves.toEqual({
-        'shared.json': { left: 'preloaded', right: 'preloaded' },
-      });
-    });
-
-    it('skips services and queries without static config', async () => {
+    it('skips services and queries without staticPath or staticInputs', async () => {
       registerService(mutableRecordLookupServiceDef);
 
       const store = await buildStaticFiles();
@@ -80,27 +72,40 @@ describe('server static builds', () => {
       expect(Object.keys(store)).toHaveLength(0);
     });
 
-    it('resolves cross-service preload lookups through the registry', async () => {
-      // Register the source first, then the consumer whose preload reads from it via
-      // `ctx.getService(...)`. The same registry that the dev server uses backs both lookups.
-      registerService(mutableRecordLookupServiceDef);
+    it('deep-merges outputs from different queries that resolve to the same staticPath', async () => {
+      registerService(createSharedStaticFileServiceDef());
+
+      await expect(buildStaticFiles()).resolves.toEqual({
+        'internal-fixture/shared-static-file/shared.json': {
+          left: 'preloaded',
+          right: 'preloaded',
+        },
+      });
+    });
+
+    it('uses the shared registry when static load and static inputs resolve another service', async () => {
+      const sourceService = registerService(mutableRecordLookupServiceDef);
+      await sourceService.commands.assignRecordField({
+        entryId: 'entry-a',
+        fieldKey: 'marker',
+        fieldValue: 'match',
+      });
 
       const staticLookupServiceDef = defineService({
-        id: 'test/static-build-service-lookup',
-        description: 'Reads another registered service during static preload.',
+        id: 'internal-fixture/static-build-service-lookup',
+        description: 'Copies state from another registered service during static load.',
         initialState: { value: null as string | null },
         queries: {
           getValue: {
-            description: 'Returns the value copied during static preload.',
+            description: 'Returns the value copied during static load.',
             input: v.object({ build: v.literal('once') }),
             output: v.nullable(v.string()),
-            handler: async (_input, ctx) => ctx.self.state.value,
-            preload: async (_input, ctx) => {
+            handler: (_input, ctx) => ctx.self.state.value,
+            load: async (_input, ctx) => {
               await ctx.self.commands.copyValue(undefined);
             },
-            static: {
-              inputs: async () => [{ build: 'once' as const }],
-            },
+            staticPath: () => 'state.json',
+            staticInputs: async () => [{ build: 'once' as const }],
           },
         },
         commands: {
@@ -109,10 +114,12 @@ describe('server static builds', () => {
             input: v.undefined(),
             output: v.undefined(),
             handler: async (_input, ctx) => {
-              const source = await ctx.getService('test/mutable-record-lookup');
-              const record = (await source.queries.getRecordFields({
+              const source = ctx.getService<typeof mutableRecordLookupServiceDef>(
+                'internal-fixture/mutable-record-lookup'
+              );
+              const record = source.queries.getRecordFields({
                 entryId: 'entry-a',
-              })) as Record<string, string> | null;
+              });
 
               ctx.self.setState((draft) => {
                 draft.value = record?.marker ?? null;
@@ -127,31 +134,30 @@ describe('server static builds', () => {
       registerService(staticLookupServiceDef);
 
       await expect(buildStaticFiles()).resolves.toEqual({
-        'test/static-build-service-lookup.json': {
-          value: null,
+        'internal-fixture/static-build-service-lookup/state.json': {
+          value: 'match',
         },
       });
     });
 
-    it('runs preload tasks in parallel so one snapshot can read state another snapshot publishes', async () => {
+    it('runs load tasks in parallel so one snapshot can read state another snapshot publishes', async () => {
       const readyEntryIds: string[] = [];
       const parallelSourceServiceDef = defineService({
-        id: 'test/parallel-static-input-source',
-        description: 'Publishes static input ids once its own preload task starts running.',
+        id: 'internal-fixture/parallel-static-input-source',
+        description: 'Publishes static input ids once its own load task starts running.',
         initialState: { built: false },
         queries: {
           getReadyEntryIds: {
             description: 'Returns the entry ids published by the source static build task.',
             input: v.undefined(),
             output: v.array(v.string()),
-            handler: async () => readyEntryIds,
-            preload: async (_input, ctx) => {
+            handler: () => readyEntryIds,
+            load: async (_input, ctx) => {
               await Promise.resolve();
               await ctx.self.commands.publishReadyEntryIds(undefined);
             },
-            static: {
-              inputs: async () => [undefined],
-            },
+            staticPath: () => 'state.json',
+            staticInputs: async () => [undefined],
           },
         },
         commands: {
@@ -172,38 +178,20 @@ describe('server static builds', () => {
       });
 
       const parallelLookupServiceDef = defineService({
-        id: 'test/parallel-static-input-consumer',
+        id: 'internal-fixture/parallel-static-input-consumer',
         description:
-          'Waits for another service query to publish its static inputs before preloading.',
+          'Waits for another service query to publish its static inputs before running load.',
         initialState: { value: null as string | null },
         queries: {
           getValue: {
             description: 'Stores one value for each id discovered through another service query.',
             input: v.object({ entryId: v.string() }),
             output: v.nullable(v.string()),
-            handler: async (_input, ctx) => ctx.self.state.value,
-            preload: async (input, ctx) => {
+            handler: (_input, ctx) => ctx.self.state.value,
+            load: async (input, ctx) => {
               await ctx.self.commands.setValue(input);
             },
-            static: {
-              inputs: async (ctx) => {
-                const source = await ctx.getService('test/parallel-static-input-source');
-
-                for (let attempt = 0; attempt < 5; attempt += 1) {
-                  const entryIds = (await source.queries.getReadyEntryIds(undefined)) as string[];
-
-                  if (entryIds.length > 0) {
-                    return entryIds.map((entryId) => ({ entryId }));
-                  }
-
-                  await Promise.resolve();
-                }
-
-                throw new Error(
-                  'Timed out waiting for parallel static inputs from the source service.'
-                );
-              },
-            },
+            staticPath: () => 'state.json',
           },
         },
         commands: {
@@ -223,13 +211,37 @@ describe('server static builds', () => {
       });
 
       registerService(parallelSourceServiceDef);
-      registerService(parallelLookupServiceDef);
+      registerService(parallelLookupServiceDef, {
+        queries: {
+          getValue: {
+            staticInputs: async (ctx) => {
+              const source = ctx.getService('internal-fixture/parallel-static-input-source');
+
+              for (let attempt = 0; attempt < 5; attempt += 1) {
+                const entryIds = (await source.queries.getReadyEntryIds.loaded(
+                  undefined
+                )) as string[];
+
+                if (entryIds.length > 0) {
+                  return entryIds.map((entryId) => ({ entryId }));
+                }
+
+                await Promise.resolve();
+              }
+
+              throw new Error(
+                'Timed out waiting for parallel static inputs from the source service.'
+              );
+            },
+          },
+        },
+      });
 
       await expect(buildStaticFiles()).resolves.toEqual({
-        'test/parallel-static-input-consumer.json': {
+        'internal-fixture/parallel-static-input-consumer/state.json': {
           value: 'entry-a',
         },
-        'test/parallel-static-input-source.json': {
+        'internal-fixture/parallel-static-input-source/state.json': {
           built: true,
         },
       });
@@ -237,7 +249,7 @@ describe('server static builds', () => {
 
     it('normalizes custom static paths to slash-separated logical keys', async () => {
       const customPathServiceDef = defineService({
-        id: 'test/custom-static-paths',
+        id: 'internal-fixture/custom-static-paths',
         description: 'Exercises logical static path normalization.',
         initialState: { value: null as string | null },
         queries: {
@@ -248,24 +260,21 @@ describe('server static builds', () => {
               value: v.string(),
             }),
             output: v.nullable(v.string()),
-            handler: async (_input, ctx) => ctx.self.state.value,
-            preload: async (input, ctx) => {
+            handler: (_input, ctx) => ctx.self.state.value,
+            load: async (input, ctx) => {
               await ctx.self.commands.setValue(input);
             },
-            static: {
-              path: (input) => input.path,
-              inputs: async () => [
-                { path: './nested/value.json', value: 'dot' },
-                { path: '/rooted.json', value: 'rooted' },
-                { path: 'windows\\style.json', value: 'windows' },
-              ],
-            },
+            staticPath: (input) => input.path,
+            staticInputs: async () => [
+              { path: './nested/value.json', value: 'dot' },
+              { path: '/rooted.json', value: 'rooted' },
+              { path: 'windows\\style.json', value: 'windows' },
+            ],
           },
         },
         commands: {
           setValue: {
-            description:
-              'Stores one value while preserving the custom path from the preload input.',
+            description: 'Stores one value while preserving the custom path from the load input.',
             input: v.object({
               path: v.string(),
               value: v.string(),
@@ -285,15 +294,61 @@ describe('server static builds', () => {
       registerService(customPathServiceDef);
 
       await expect(buildStaticFiles()).resolves.toEqual({
-        'nested/value.json': { value: 'dot' },
-        'rooted.json': { value: 'rooted' },
-        'windows/style.json': { value: 'windows' },
+        'internal-fixture/custom-static-paths/nested/value.json': { value: 'dot' },
+        'internal-fixture/custom-static-paths/rooted.json': { value: 'rooted' },
+        'internal-fixture/custom-static-paths/windows/style.json': { value: 'windows' },
       });
     });
 
-    it('rejects static paths that escape the services output root', async () => {
+    it('scopes staticPath values under the service id so two services cannot collide', async () => {
+      const firstServiceDef = defineService({
+        id: 'internal-fixture/scoped-static-path-a',
+        description: 'Uses the same relative staticPath as another service.',
+        initialState: { value: 'a' },
+        queries: {
+          getValue: {
+            description: 'Returns one scoped value.',
+            input: v.undefined(),
+            output: v.string(),
+            handler: (_input, ctx) => ctx.self.state.value,
+            load: async () => {},
+            staticPath: () => 'state.json',
+            staticInputs: async () => [undefined],
+          },
+        },
+        commands: {},
+      });
+
+      const secondServiceDef = defineService({
+        id: 'internal-fixture/scoped-static-path-b',
+        description: 'Uses the same relative staticPath as another service.',
+        initialState: { value: 'b' },
+        queries: {
+          getValue: {
+            description: 'Returns one scoped value.',
+            input: v.undefined(),
+            output: v.string(),
+            handler: (_input, ctx) => ctx.self.state.value,
+            load: async () => {},
+            staticPath: () => 'state.json',
+            staticInputs: async () => [undefined],
+          },
+        },
+        commands: {},
+      });
+
+      registerService(firstServiceDef);
+      registerService(secondServiceDef);
+
+      await expect(buildStaticFiles()).resolves.toEqual({
+        'internal-fixture/scoped-static-path-a/state.json': { value: 'a' },
+        'internal-fixture/scoped-static-path-b/state.json': { value: 'b' },
+      });
+    });
+
+    it('rejects static paths that escape the service output folder', async () => {
       const invalidPathServiceDef = defineService({
-        id: 'test/invalid-static-path',
+        id: 'internal-fixture/invalid-static-path',
         description: 'Attempts to escape the static snapshot root.',
         initialState: { value: null as string | null },
         queries: {
@@ -301,14 +356,12 @@ describe('server static builds', () => {
             description: 'Uses an invalid static path.',
             input: v.object({ build: v.literal('once') }),
             output: v.nullable(v.string()),
-            handler: async (_input, ctx) => ctx.self.state.value,
-            preload: async (_input, ctx) => {
+            handler: (_input, ctx) => ctx.self.state.value,
+            load: async (_input, ctx) => {
               await ctx.self.commands.setValue(undefined);
             },
-            static: {
-              path: () => '../escape.json',
-              inputs: async () => [{ build: 'once' as const }],
-            },
+            staticPath: () => '../escape.json',
+            staticInputs: async () => [{ build: 'once' as const }],
           },
         },
         commands: {
@@ -333,7 +386,7 @@ describe('server static builds', () => {
         fromStorybook: true,
         code: 10,
         message:
-          'Invalid static path "../escape.json" for query "test/invalid-static-path.getValue": use a relative path with forward slashes and no ".." segments.',
+          'Invalid static path "../escape.json" for query "internal-fixture/invalid-static-path.getValue": use a relative path with forward slashes and no ".." segments.',
       });
     });
   });
@@ -342,7 +395,7 @@ describe('server static builds', () => {
     it('writes normalized snapshot files underneath outputDir/services', async () => {
       const outputDir = '/app/dist';
       const customPathServiceDef = defineService({
-        id: 'test/write-open-service-static-files',
+        id: 'internal-fixture/write-open-service-static-files',
         description: 'Writes custom static paths to disk.',
         initialState: { value: null as string | null },
         queries: {
@@ -353,18 +406,16 @@ describe('server static builds', () => {
               value: v.string(),
             }),
             output: v.nullable(v.string()),
-            handler: async (_input, ctx) => ctx.self.state.value,
-            preload: async (input, ctx) => {
+            handler: (_input, ctx) => ctx.self.state.value,
+            load: async (input, ctx) => {
               await ctx.self.commands.setValue(input);
             },
-            static: {
-              path: (input) => input.path,
-              inputs: async () => [
-                { path: './nested/value.json', value: 'dot' },
-                { path: '/rooted.json', value: 'rooted' },
-                { path: 'windows\\style.json', value: 'windows' },
-              ],
-            },
+            staticPath: (input) => input.path,
+            staticInputs: async () => [
+              { path: './nested/value.json', value: 'dot' },
+              { path: '/rooted.json', value: 'rooted' },
+              { path: 'windows\\style.json', value: 'windows' },
+            ],
           },
         },
         commands: {
@@ -391,13 +442,42 @@ describe('server static builds', () => {
       await writeOpenServiceStaticFiles(outputDir);
 
       await expect(
-        readFile(join(outputDir, 'services', 'nested', 'value.json'), 'utf8')
+        readFile(
+          join(
+            outputDir,
+            'services',
+            'internal-fixture',
+            'write-open-service-static-files',
+            'nested',
+            'value.json'
+          ),
+          'utf8'
+        )
       ).resolves.toBe(JSON.stringify({ value: 'dot' }, null, 2));
-      await expect(readFile(join(outputDir, 'services', 'rooted.json'), 'utf8')).resolves.toBe(
-        JSON.stringify({ value: 'rooted' }, null, 2)
-      );
       await expect(
-        readFile(join(outputDir, 'services', 'windows', 'style.json'), 'utf8')
+        readFile(
+          join(
+            outputDir,
+            'services',
+            'internal-fixture',
+            'write-open-service-static-files',
+            'rooted.json'
+          ),
+          'utf8'
+        )
+      ).resolves.toBe(JSON.stringify({ value: 'rooted' }, null, 2));
+      await expect(
+        readFile(
+          join(
+            outputDir,
+            'services',
+            'internal-fixture',
+            'write-open-service-static-files',
+            'windows',
+            'style.json'
+          ),
+          'utf8'
+        )
       ).resolves.toBe(JSON.stringify({ value: 'windows' }, null, 2));
     });
   });

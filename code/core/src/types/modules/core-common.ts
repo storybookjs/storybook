@@ -23,6 +23,7 @@ export type {
   DocgenProp,
   DocgenProvider,
   DocgenProviderInput,
+  DocgenProviderPreset,
   DocgenStory,
   DocgenSubcomponent,
 } from '../../shared/open-service/services/docgen/types.ts';

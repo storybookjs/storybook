@@ -1,3 +1,5 @@
+import type { Options } from '../../../../types/modules/core-common.ts';
+
 /**
  * Caller-facing input to a docgen provider middleware.
  *
@@ -80,7 +82,21 @@ export interface DocgenPayload {
  * the payload field-by-field. Manual reconstruction silently drops any fields a future provider
  * (or future schema change) adds and your provider doesn't know about. `??` preserves explicit
  * values from downstream — including empty strings — so providers that intentionally set a field
- * are not overridden by a later provider's defaults. Prefer authoring with `defineDocgenProvider`
- * from `storybook/internal/common`, which encodes the contract.
+ * are not overridden by a later provider's defaults.
  */
 export type DocgenProvider = (input: DocgenProviderInput) => Promise<DocgenPayload | undefined>;
+
+/**
+ * Preset signature for `experimental_docgenProvider`.
+ *
+ * Like `PresetPropertyFn<'experimental_docgenProvider'>` but with `nextDocgen` typed as
+ * non-nullable. Core's `services` preset always seeds the middleware chain with an identity
+ * provider, so the optional typing inherited from `StorybookConfigRaw` is impossible-state
+ * defense at the provider-author level — use this type to drop the `?.` noise. If the seed is
+ * ever missing at runtime, that's a preset-wiring bug and the provider will throw on the first
+ * `nextDocgen(...)` call rather than silently degrading.
+ */
+export type DocgenProviderPreset = (
+  nextDocgen: DocgenProvider,
+  options: Options
+) => DocgenProvider | Promise<DocgenProvider>;

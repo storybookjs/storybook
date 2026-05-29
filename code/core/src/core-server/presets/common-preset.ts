@@ -315,15 +315,6 @@ export const managerEntries = async (existing: any) => {
 
 globalThis.STORYBOOK_SERVICES_LOADED = globalThis.STORYBOOK_SERVICES_LOADED ?? false;
 
-/**
- * Seed provider for the experimental_docgenProvider middleware chain.
- *
- * Returns `undefined` so the bottom of the chain signals "no docgen here" — each upstream
- * provider can either replace this with its own payload, return its own undefined, or call
- * `nextDocgen` and merge with downstream output.
- */
-const identityDocgenProvider: DocgenProvider = async () => undefined;
-
 export const services = async (_value: void, options: Options): Promise<void> => {
   if (globalThis.STORYBOOK_SERVICES_LOADED) {
     throw new Error(
@@ -344,7 +335,14 @@ export const services = async (_value: void, options: Options): Promise<void> =>
 
     const provider = await options.presets.apply<DocgenProvider>(
       'experimental_docgenProvider',
-      identityDocgenProvider
+      /**
+       * Seed provider for the experimental_docgenProvider middleware chain.
+       *
+       * Returns `undefined` so the bottom of the chain signals "no docgen here" — each upstream
+       * provider can either replace this with its own payload, return its own undefined, or call
+       * `nextDocgen` and merge with downstream output.
+       */
+      async () => undefined
     );
 
     registerDocgenService({

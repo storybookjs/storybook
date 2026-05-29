@@ -124,6 +124,55 @@ export const fireAndForgetPreloadValueServiceDef = defineService({
   },
 });
 
+export type DocgenLikePayload = { name: string; props: number };
+export type DocgenLikeState = Record<string, DocgenLikePayload | undefined>;
+
+/** Shared schema for the docgen-like payload used by the referential-equality fixture. */
+export const docgenLikeOutputSchema = v.nullable(v.object({ name: v.string(), props: v.number() }));
+
+/**
+ * Service fixture that mirrors the docgen service's load shape: every load run resolves a fresh
+ * payload object (new reference) whose value is deeply equal to whatever is already in state, then
+ * writes it back via a command.
+ *
+ * This reproduces the real-world behavior where re-subscribing to an already-populated entry emits
+ * a redundant second value: the immediate emission plus a load-driven emission carrying an
+ * equal-but-not-identical object.
+ */
+export const freshEqualPayloadOnLoadServiceDef = defineService({
+  id: 'internal-fixture/fresh-equal-payload-on-load',
+  description: 'Rewrites a deeply-equal but freshly-allocated payload object on every load.',
+  initialState: {} as DocgenLikeState,
+  queries: {
+    getPayload: {
+      description:
+        'Returns the payload for an entry; load always rewrites a fresh-but-equal value.',
+      input: entryIdInputSchema,
+      output: docgenLikeOutputSchema,
+      handler: (input, ctx) => ctx.self.state[input.entryId] ?? null,
+      load: async (input, ctx) => {
+        await ctx.self.commands.extractPayload(input);
+      },
+    },
+  },
+  commands: {
+    extractPayload: {
+      description: 'Always allocates a brand-new payload object with a stable value and stores it.',
+      input: entryIdInputSchema,
+      output: docgenLikeOutputSchema,
+      handler: async (input, ctx) => {
+        await Promise.resolve();
+        // A new object literal every call: deeply equal to any prior value, never `===` to it.
+        const payload: DocgenLikePayload = { name: 'Card', props: 5 };
+        ctx.self.setState((draft) => {
+          draft[input.entryId] = payload;
+        });
+        return payload;
+      },
+    },
+  },
+});
+
 export type SharedStaticFileState = { left?: string; right?: string };
 
 /** Creates a fixture where multiple queries contribute state to one shared static file. */

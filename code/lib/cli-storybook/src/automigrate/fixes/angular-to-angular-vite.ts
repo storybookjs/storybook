@@ -229,6 +229,24 @@ export const angularToAngularVite: Fix<AngularToAngularViteOptions> = {
       }
     }
 
+    // 3b. Rewrite Angular builder references in Nx `project.json` files.
+    // Nx workspaces scatter `project.json` files (e.g. `libs/*/project.json`)
+    // away from `package.json` and use `executor` rather than angular.json's
+    // `builder`; the `@storybook/angular:<target>` string is identical, so the
+    // same rewrite applies. Glob the workspace since they are not co-located
+    // with package.json the way angular.json is.
+    // eslint-disable-next-line depend/ban-dependencies
+    const { globby } = await import('globby');
+    const projectJsonFiles = await globby(['**/project.json'], {
+      ignore: ['**/node_modules/**', '**/dist/**'],
+      absolute: true,
+    });
+    for (const projectJsonPath of projectJsonFiles) {
+      if (await transformJsonFile(projectJsonPath, dryRun)) {
+        logger.debug(`Updated Nx builder references in ${projectJsonPath}`);
+      }
+    }
+
     // 4. Rewrite Angular CLI builder references in package.json scripts.
     for (const pkgJsonPath of packageManager.packageJsonPaths) {
       if (await transformJsonFile(pkgJsonPath, dryRun)) {
@@ -238,8 +256,6 @@ export const angularToAngularVite: Fix<AngularToAngularViteOptions> = {
 
     // 5. Update import statements across config and story files.
     logger.debug('Scanning and updating import statements...');
-    // eslint-disable-next-line depend/ban-dependencies
-    const { globby } = await import('globby');
     const configFiles = configDir ? await globby([`${configDir}/**/*`]) : [];
     const allFiles = [...storiesPaths, ...configFiles].filter(Boolean) as string[];
 

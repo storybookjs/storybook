@@ -406,6 +406,55 @@ export default { framework: { name: '${ANGULAR_VITE_PACKAGE}', options: {} } };`
       );
     });
 
+    it('rewrites Nx project.json executor entries', async () => {
+      mockPromptConfirm.mockResolvedValue(false);
+
+      // Nx project.json files are scattered and discovered via globby, not
+      // co-located with package.json like angular.json. The project.json glob
+      // (step 3b) is the first globby call; the configDir glob falls back to
+      // the default empty mock.
+      // eslint-disable-next-line depend/ban-dependencies
+      const { globby } = await import('globby');
+      vi.mocked(globby).mockResolvedValueOnce(['/project/libs/soba/project.json']);
+
+      const projectJsonContent = JSON.stringify({
+        name: 'soba',
+        targets: {
+          storybook: { executor: '@storybook/angular:start-storybook' },
+          'build-storybook': { executor: '@storybook/angular:build-storybook' },
+        },
+      });
+
+      mockReadFile.mockImplementation((filePath: any) => {
+        const p = String(filePath);
+        if (p.endsWith('project.json')) {
+          return Promise.resolve(projectJsonContent) as any;
+        }
+        // angular.json / package.json / main config: no @storybook/angular
+        // builder strings, so no write occurs for them.
+        return Promise.resolve(`export default { framework: '${ANGULAR_PACKAGE}' };`) as any;
+      });
+
+      await angularToAngularVite.run!({
+        result: baseResult,
+        dryRun: false,
+        packageManager: mockPackageManager,
+        mainConfigPath: '/project/.storybook/main.ts',
+        storiesPaths: [],
+        configDir: '.storybook',
+        storybookVersion: '9.0.0',
+      } as any);
+
+      expect(mockWriteFile).toHaveBeenCalledWith(
+        '/project/libs/soba/project.json',
+        expect.stringContaining(`${ANGULAR_VITE_PACKAGE}:start-storybook`)
+      );
+      expect(mockWriteFile).toHaveBeenCalledWith(
+        '/project/libs/soba/project.json',
+        expect.stringContaining(`${ANGULAR_VITE_PACKAGE}:build-storybook`)
+      );
+    });
+
     it('skips dependency and file updates in dry-run mode', async () => {
       mockReadFile.mockResolvedValue(`export default { framework: '${ANGULAR_PACKAGE}' };`);
 

@@ -1,16 +1,13 @@
-import type { IndexEntry } from '../../../../types/modules/indexer.ts';
-
 /**
  * Caller-facing input to a docgen provider middleware.
  *
- * `componentId` is the story-index componentId (the prefix before the first `--` in a story id).
- * `entries` is the set of story / attached-docs entries that resolve to that componentId — the
- * docgen service pre-resolves them from the story index so each provider can act without
- * re-reading the index.
+ * `importPath` is the value taken directly from the matching {@link IndexEntry.importPath} — a
+ * relative path to a CSF story file (or an .mdx file for attached-docs entries). Providers that
+ * only know how to read CSF should bail (return `undefined` or forward to `nextDocgen`) when the
+ * path does not point at a story file they understand.
  */
 export interface DocgenProviderInput {
-  componentId: string;
-  entries: IndexEntry[];
+  importPath: string;
 }
 
 /**
@@ -32,6 +29,7 @@ export interface DocgenPayload {
  *
  * Each registrant returns a wrapper around the previous accumulated provider (received as the
  * preset's `config` argument). The wrapper may call its inner `nextDocgen` to merge with
- * downstream providers, and must produce a complete {@link DocgenPayload}.
+ * downstream providers, and either returns a complete {@link DocgenPayload} or `undefined` when
+ * no docgen is available for the given file.
  */
-export type DocgenProvider = (input: DocgenProviderInput) => Promise<DocgenPayload>;
+export type DocgenProvider = (input: DocgenProviderInput) => Promise<DocgenPayload | undefined>;

@@ -12,8 +12,9 @@ export type RegisterDocgenServiceOptions = {
    */
   getIndex: () => Promise<StoryIndex>;
   /**
-   * Fully composed docgen provider chain produced by `presets.apply('experimental_docgenProvider', ...)`.
-   * Wraps each registered preset on top of the identity provider seed.
+   * Fully composed docgen provider chain produced by
+   * `presets.apply('experimental_docgenProvider', ...)`. May return `undefined` when no provider
+   * in the chain has docgen for the requested file.
    */
   provider: DocgenProvider;
 };
@@ -21,10 +22,10 @@ export type RegisterDocgenServiceOptions = {
 /**
  * Registers the docgen open service against the process-global registry.
  *
- * The `extractDocgen` command does the work: it reads the story index, resolves entries for the
- * requested componentId, delegates to the composed provider chain, and writes the payload into
- * state. The `getDocgen` query's load hook simply invokes that command. `static.inputs`
- * enumerates every distinct componentId for the static-build snapshot pass.
+ * The `extractDocgen` command does the work: it reads the story index, picks an entry for the
+ * requested componentId, hands the entry's `importPath` to the provider chain, and stores the
+ * returned payload (if any) into state. The `getDocgen` query's load hook simply invokes that
+ * command. `static.inputs` enumerates every distinct componentId for the static-build pass.
  */
 export function registerDocgenService(options: RegisterDocgenServiceOptions) {
   return registerService(docgenServiceDef, {
@@ -47,20 +48,23 @@ export function registerDocgenService(options: RegisterDocgenServiceOptions) {
       extractDocgen: {
         handler: async (input, ctx) => {
           const index = await options.getIndex();
-          const entries = Object.values(index.entries).filter(
-            (entry) => getComponentIdFromEntry(entry) === input.componentId
+          const entry = Object.values(index.entries).find(
+            (e) => getComponentIdFromEntry(e) === input.componentId
           );
 
-          if (entries.length === 0) {
+          if (!entry) {
             throw new OpenServiceDocgenMissingComponentError({ componentId: input.componentId });
           }
 
           // Provider errors bubble out of the command unchanged; consumers see the underlying
           // failure rather than a generic "missing".
-          const payload = await options.provider({
-            componentId: input.componentId,
-            entries,
-          });
+          const payload = await options.provider({ importPath: entry.importPath });
+
+          if (!payload) {
+            // No provider produced docgen for this file — leave state untouched so the query
+            // returns undefined.
+            return;
+          }
 
           ctx.self.setState((draft) => {
             draft.components[input.componentId] = payload;

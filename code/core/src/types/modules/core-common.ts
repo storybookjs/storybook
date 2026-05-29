@@ -585,6 +585,18 @@ export interface StorybookConfigRaw {
     experimentalCodeExamples?: boolean;
 
     /**
+     * Enable the experimental docgen open service.
+     *
+     * When true, Storybook registers the `core/docgen` service in the open-service registry and
+     * generates per-component docgen JSON snapshots during static builds. Renderer and addon
+     * providers contribute through the `experimental_docgenProvider` preset.
+     *
+     * @default false
+     * @experimental This feature is in early development and may change significantly in future releases.
+     */
+    experimentalDocgenServer?: boolean;
+
+    /**
      * Enable change detection
      * TODO: Turn to true before 10.4 release
      * @default false

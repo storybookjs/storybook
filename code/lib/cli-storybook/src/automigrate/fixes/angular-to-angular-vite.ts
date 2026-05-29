@@ -7,6 +7,7 @@ import semver from 'semver';
 import { dedent } from 'ts-dedent';
 
 import { add } from '../../add.ts';
+import { updateMainConfig } from '../helpers/mainConfigFile.ts';
 import type { Fix } from '../types.ts';
 
 export const ANGULAR_PACKAGE = '@storybook/angular';
@@ -58,18 +59,61 @@ const transformMainConfig = async (mainConfigPath: string, dryRun: boolean): Pro
   }
 };
 
-const transformJsonFile = async (filePath: string, dryRun: boolean): Promise<boolean> => {
+/**
+ * Detect whether a Storybook builder target in an `angular.json` or Nx
+ * `project.json` explicitly disables Compodoc (`options.compodoc: false`).
+ * Compodoc now runs only from the framework Vite plugin (default on), so a
+ * disabled builder option must be carried into `main.ts` framework.options to
+ * preserve intent — otherwise the cold-start default would re-enable it.
+ */
+const detectDisabledCompodoc = (content: string): boolean => {
+  let json: any;
+  try {
+    json = JSON.parse(content);
+  } catch {
+    return false;
+  }
+
+  const targetDisablesCompodoc = (target: any): boolean => {
+    const ref: unknown = target?.builder ?? target?.executor;
+    return (
+      typeof ref === 'string' &&
+      (ref.endsWith(':start-storybook') || ref.endsWith(':build-storybook')) &&
+      target?.options?.compodoc === false
+    );
+  };
+
+  // angular.json: projects.<name>.architect.<target>; project.json: targets.<target>
+  const targetGroups: any[] = [];
+  if (json?.projects && typeof json.projects === 'object') {
+    for (const project of Object.values<any>(json.projects)) {
+      targetGroups.push(project?.architect, project?.targets);
+    }
+  }
+  targetGroups.push(json?.targets);
+
+  return targetGroups.some(
+    (group) =>
+      group && typeof group === 'object' && Object.values<any>(group).some(targetDisablesCompodoc)
+  );
+};
+
+const transformJsonFile = async (
+  filePath: string,
+  dryRun: boolean
+): Promise<{ changed: boolean; disablesCompodoc: boolean }> => {
   try {
     const content = await readFile(filePath, 'utf-8');
     const transformed = rewriteBuilderRefs(content);
+    const changed = transformed !== content;
 
-    if (transformed !== content && !dryRun) {
+    if (changed && !dryRun) {
       await writeFile(filePath, transformed);
     }
 
-    return transformed !== content;
+    return { changed, disablesCompodoc: detectDisabledCompodoc(content) };
   } catch {
-    return false;
+    return { changed: false, disablesCompodoc: false };
   }
 };
 
@@ -219,12 +263,18 @@ export const angularToAngularVite: Fix<AngularToAngularViteOptions> = {
       await transformMainConfig(mainConfigPath, dryRun);
     }
 
+    // Track whether any migrated builder config disabled Compodoc, so the
+    // intent can be carried into framework.options (step 4b).
+    let disableCompodoc = false;
+
     // 3. Rewrite Angular CLI builder references in angular.json.
     // Search for angular.json beside every package.json we know about.
     for (const pkgJsonPath of packageManager.packageJsonPaths) {
       const dir = pkgJsonPath.replace(/[/\\]package\.json$/, '');
       const angularJsonPath = `${dir}/angular.json`;
-      if (await transformJsonFile(angularJsonPath, dryRun)) {
+      const { changed, disablesCompodoc } = await transformJsonFile(angularJsonPath, dryRun);
+      disableCompodoc ||= disablesCompodoc;
+      if (changed) {
         logger.debug(`Updated Angular CLI builder references in ${angularJsonPath}`);
       }
     }
@@ -242,15 +292,38 @@ export const angularToAngularVite: Fix<AngularToAngularViteOptions> = {
       absolute: true,
     });
     for (const projectJsonPath of projectJsonFiles) {
-      if (await transformJsonFile(projectJsonPath, dryRun)) {
+      const { changed, disablesCompodoc } = await transformJsonFile(projectJsonPath, dryRun);
+      disableCompodoc ||= disablesCompodoc;
+      if (changed) {
         logger.debug(`Updated Nx builder references in ${projectJsonPath}`);
       }
     }
 
     // 4. Rewrite Angular CLI builder references in package.json scripts.
     for (const pkgJsonPath of packageManager.packageJsonPaths) {
-      if (await transformJsonFile(pkgJsonPath, dryRun)) {
+      const { changed } = await transformJsonFile(pkgJsonPath, dryRun);
+      if (changed) {
         logger.debug(`Updated builder references in ${pkgJsonPath}`);
+      }
+    }
+
+    // 4b. Carry a disabled Compodoc setting into framework.options. Compodoc is
+    // now generated only by the framework Vite plugin (default on), so a builder
+    // `compodoc: false` must move to main.ts — otherwise the cold-start default
+    // would silently re-enable it.
+    if (disableCompodoc && mainConfigPath) {
+      try {
+        await updateMainConfig({ mainConfigPath, dryRun: !!dryRun }, async (main) => {
+          if (!dryRun) {
+            main.setFieldValue(['framework', 'options', 'compodoc'], false);
+          }
+        });
+        logger.debug('Carried `compodoc: false` into framework.options.');
+      } catch (error) {
+        logger.warn(
+          `Could not set \`framework.options.compodoc\` automatically: ${error}. ` +
+            "Set `compodoc: false` in your main config's framework.options manually."
+        );
       }
     }
 

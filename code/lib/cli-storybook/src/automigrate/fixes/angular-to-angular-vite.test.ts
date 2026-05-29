@@ -7,6 +7,7 @@ import type { JsPackageManager } from 'storybook/internal/common';
 import { prompt } from 'storybook/internal/node-logger';
 
 import { add } from '../../add.ts';
+import { updateMainConfig } from '../helpers/mainConfigFile.ts';
 import type { CheckOptions } from './index.ts';
 import {
   ANGULAR_PACKAGE,
@@ -46,10 +47,15 @@ vi.mock('../../add.ts', () => ({
   add: vi.fn().mockResolvedValue(undefined),
 }));
 
+vi.mock('../helpers/mainConfigFile.ts', () => ({
+  updateMainConfig: vi.fn(),
+}));
+
 const mockReadFile = vi.mocked(readFile);
 const mockWriteFile = vi.mocked(writeFile);
 const mockPromptConfirm = vi.mocked(prompt.confirm);
 const mockAdd = vi.mocked(add);
+const mockUpdateMainConfig = vi.mocked(updateMainConfig);
 
 describe('angular-to-angular-vite', () => {
   const mockPackageManager = {
@@ -453,6 +459,86 @@ export default { framework: { name: '${ANGULAR_VITE_PACKAGE}', options: {} } };`
         '/project/libs/soba/project.json',
         expect.stringContaining(`${ANGULAR_VITE_PACKAGE}:build-storybook`)
       );
+    });
+
+    it('carries a builder compodoc:false into framework.options', async () => {
+      mockPromptConfirm.mockResolvedValue(false);
+
+      // eslint-disable-next-line depend/ban-dependencies
+      const { globby } = await import('globby');
+      vi.mocked(globby).mockResolvedValueOnce(['/project/libs/soba/project.json']);
+
+      const projectJsonContent = JSON.stringify({
+        name: 'soba',
+        targets: {
+          storybook: {
+            executor: '@storybook/angular:start-storybook',
+            options: { compodoc: false },
+          },
+        },
+      });
+
+      mockReadFile.mockImplementation((filePath: any) => {
+        const p = String(filePath);
+        if (p.endsWith('project.json')) {
+          return Promise.resolve(projectJsonContent) as any;
+        }
+        return Promise.resolve(`export default { framework: '${ANGULAR_PACKAGE}' };`) as any;
+      });
+
+      // Drive the updateMainConfig callback so we can assert the field write.
+      const setFieldValue = vi.fn();
+      mockUpdateMainConfig.mockImplementation((async (_opts: any, cb: any) => {
+        await cb({ setFieldValue });
+      }) as any);
+
+      await angularToAngularVite.run!({
+        result: baseResult,
+        dryRun: false,
+        packageManager: mockPackageManager,
+        mainConfigPath: '/project/.storybook/main.ts',
+        storiesPaths: [],
+        configDir: '.storybook',
+        storybookVersion: '9.0.0',
+      } as any);
+
+      expect(mockUpdateMainConfig).toHaveBeenCalled();
+      expect(setFieldValue).toHaveBeenCalledWith(['framework', 'options', 'compodoc'], false);
+    });
+
+    it('does not touch framework.options when compodoc is not disabled', async () => {
+      mockPromptConfirm.mockResolvedValue(false);
+
+      // eslint-disable-next-line depend/ban-dependencies
+      const { globby } = await import('globby');
+      vi.mocked(globby).mockResolvedValueOnce(['/project/libs/soba/project.json']);
+
+      const projectJsonContent = JSON.stringify({
+        name: 'soba',
+        targets: {
+          storybook: { executor: '@storybook/angular:start-storybook', options: {} },
+        },
+      });
+
+      mockReadFile.mockImplementation((filePath: any) => {
+        const p = String(filePath);
+        if (p.endsWith('project.json')) {
+          return Promise.resolve(projectJsonContent) as any;
+        }
+        return Promise.resolve(`export default { framework: '${ANGULAR_PACKAGE}' };`) as any;
+      });
+
+      await angularToAngularVite.run!({
+        result: baseResult,
+        dryRun: false,
+        packageManager: mockPackageManager,
+        mainConfigPath: '/project/.storybook/main.ts',
+        storiesPaths: [],
+        configDir: '.storybook',
+        storybookVersion: '9.0.0',
+      } as any);
+
+      expect(mockUpdateMainConfig).not.toHaveBeenCalled();
     });
 
     it('skips dependency and file updates in dry-run mode', async () => {

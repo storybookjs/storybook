@@ -1,5 +1,5 @@
+import { defineDocgenProvider } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
-import type { DocgenProvider, PresetPropertyFn } from 'storybook/internal/types';
 
 import { ComponentMetaManager } from '../componentManifest/componentMeta/ComponentMetaManager.ts';
 import type { TypescriptOptions } from '../componentManifest/getComponentImports.ts';
@@ -31,39 +31,42 @@ function getManager(): Promise<ComponentMetaManager | undefined> {
 /**
  * React renderer docgen provider — phase 3: real RCM-backed extraction.
  *
- * Receives a single `importPath` from the docgen service. Bails to `nextDocgen` for non-CSF
- * paths (e.g. `.mdx` attached-docs entries) and when TypeScript isn't available. Otherwise
- * delegates to {@link buildDocgenPayload} which runs RCM against the file and returns a complete
- * {@link DocgenPayload} or `undefined` when nothing extractable is found.
+ * Receives a single `importPath` from the docgen service. Bails to `next` for non-CSF paths
+ * (e.g. `.mdx` attached-docs entries) and when TypeScript isn't available. Otherwise delegates
+ * to {@link buildDocgenPayload} which runs RCM against the file and returns a complete
+ * {@link DocgenPayload}, or falls through to `next` when nothing extractable is found.
+ *
+ * When extraction succeeds, the payload is merged with downstream via the documented
+ * `{ ...downstream, ...ours }` spread idiom so any fields a future provider sets and we don't
+ * know about survive intact.
  */
-export const experimental_docgenProvider: PresetPropertyFn<'experimental_docgenProvider'> = async (
-  nextDocgen,
-  options
-) => {
+export const experimental_docgenProvider = defineDocgenProvider((next, options) => {
   // Resolve the typescript options preset once at chain-build time so the provider closure does
   // not re-read it on every call.
-  const typescriptOptions =
-    ((await options.presets?.apply<Partial<TypescriptOptions>>('typescript', {})) as
-      | Partial<TypescriptOptions>
-      | undefined) ?? {};
+  const typescriptOptionsPromise = (options.presets?.apply<Partial<TypescriptOptions>>(
+    'typescript',
+    {}
+  ) ?? Promise.resolve({})) as Promise<Partial<TypescriptOptions>>;
 
-  const wrapped: DocgenProvider = async (input) => {
+  return async (input) => {
     if (!/\.stories\.[cm]?[jt]sx?$/.test(input.importPath)) {
-      return nextDocgen?.(input);
+      return next(input);
     }
 
     const manager = await getManager();
     if (!manager) {
-      return nextDocgen?.(input);
+      return next(input);
     }
 
-    const ours = await buildDocgenPayload(input, { manager, typescriptOptions });
-    if (ours) {
-      return ours;
+    const ours = await buildDocgenPayload(input, {
+      manager,
+      typescriptOptions: await typescriptOptionsPromise,
+    });
+    if (!ours) {
+      return next(input);
     }
 
-    return nextDocgen?.(input);
+    const downstream = await next(input);
+    return { ...downstream, ...ours };
   };
-
-  return wrapped;
-};
+});

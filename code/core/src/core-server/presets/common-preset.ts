@@ -334,7 +334,11 @@ export const services = async (_value: void, options: Options): Promise<void> =>
 
   const features = await options.presets.apply('features');
 
-  if (features?.experimentalDocgenServer) {
+  // Skip when previewing is off — the docgen service's staticInputs depends on the story index,
+  // so registering it would force full story-index generation during manager-only builds (and
+  // produce docgen files that wouldn't be served anywhere). Mirrors the !options.ignorePreview
+  // gate around index.json and writeManifests in build-static.ts.
+  if (features?.experimentalDocgenServer && !options.ignorePreview) {
     const generator =
       await options.presets.apply<Promise<StoryIndexGenerator>>('storyIndexGenerator');
 

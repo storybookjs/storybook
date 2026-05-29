@@ -44,6 +44,8 @@ declare module 'ansi-to-html';
 declare module 'lazy-universal-dotenv';
 declare module 'pnp-webpack-plugin';
 declare module 'react-inspector';
+// @types/react-syntax-highlighter does not declare the deep ESM language/build entrypoints
+declare module 'react-syntax-highlighter/dist/esm/*';
 
 declare var STORIES: any;
 

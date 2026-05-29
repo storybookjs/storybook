@@ -1,12 +1,10 @@
 import React, { useEffect, useState } from 'react';
 
 import memoize from 'memoizerific';
-// @ts-expect-error (Converted from ts-ignore)
 import createElement from 'react-syntax-highlighter/dist/esm/create-element';
 import bash from 'react-syntax-highlighter/dist/esm/languages/prism/bash';
 import css from 'react-syntax-highlighter/dist/esm/languages/prism/css';
 import graphql from 'react-syntax-highlighter/dist/esm/languages/prism/graphql';
-// @ts-expect-error (Converted from ts-ignore)
 import jsExtras from 'react-syntax-highlighter/dist/esm/languages/prism/js-extras';
 import json from 'react-syntax-highlighter/dist/esm/languages/prism/json';
 import jsx from 'react-syntax-highlighter/dist/esm/languages/prism/jsx';

@@ -30,7 +30,28 @@ const emitMock = fn((eventName: string, payload?: unknown) => {
   });
 });
 const toggleNavMock = fn();
-const managerState: State = { index: {} } as State;
+const managerState: State = {
+  index: {
+    'manager-settings-checklist--default': {
+      type: 'story',
+      id: 'manager-settings-checklist--default',
+      title: 'Manager/Settings/Checklist',
+      name: 'Default',
+    },
+    'manager-settings-guidepage--default': {
+      type: 'story',
+      id: 'manager-settings-guidepage--default',
+      title: 'Manager/Settings/Guide Page',
+      name: 'Default',
+    },
+    'manager-settings-aboutscreen--default': {
+      type: 'story',
+      id: 'manager-settings-aboutscreen--default',
+      title: 'Manager/Settings/About Screen',
+      name: 'Default',
+    },
+  },
+} as unknown as State;
 const managerApi: API = {
   on: onMock,
   off: offMock,
@@ -123,7 +144,8 @@ export const Details = meta.story({
 
     applyReviewState();
 
-    await expect(await canvas.findByText('Settings')).toBeInTheDocument();
+    await expect(await canvas.findByText('Guide Page')).toBeInTheDocument();
+    await expect(await canvas.findByText('Default')).toBeInTheDocument();
     await expect(await canvas.findByRole('button', { name: '2/3' })).toBeInTheDocument();
     await expect(await canvas.findByText('Latest on feat/review-page')).toBeInTheDocument();
   },

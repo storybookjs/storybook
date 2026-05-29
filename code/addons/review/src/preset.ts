@@ -23,7 +23,12 @@ async function enrichWithBranch(
   resolveBranch: (cwd: string) => Promise<string | undefined>
 ): Promise<ReviewState> {
   const branchName = await resolveBranch(process.cwd());
-  return branchName ? { ...payload, branchName } : payload;
+  const enriched: ReviewState = {
+    ...payload,
+    // Server-side timestamp is authoritative for "Created x minutes ago".
+    createdAt: Date.now(),
+  };
+  return branchName ? { ...enriched, branchName } : enriched;
 }
 
 export interface ServerChannelOptions {

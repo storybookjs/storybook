@@ -12,6 +12,8 @@ const meta = preview.meta({
   parameters: { layout: 'fullscreen' },
   args: {
     title: 'Toolbar',
+    componentTitle: 'Manager/Components/Toolbar',
+    storyName: 'Basic',
     storyId: 'components-toolbar--basic',
     storyIndex: 1,
     totalStories: 3,
@@ -35,6 +37,7 @@ export const Default = meta.story({
     const canvas = within(canvasElement);
     await expect(await canvas.findByRole('button', { name: '2/3' })).toBeInTheDocument();
     await expect(await canvas.findByText('Toolbar')).toBeInTheDocument();
+    await expect(await canvas.findByText('Basic')).toBeInTheDocument();
     await expect(
       await canvas.findByText('Latest on update/button-weight-and-padding')
     ).toBeInTheDocument();

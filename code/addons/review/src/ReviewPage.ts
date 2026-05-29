@@ -9,12 +9,12 @@ import { groupStoriesByComponent, prettifyComponentId } from './review-grouping.
 import {
   buildReviewChangesDetailHref,
   buildReviewChangesSummaryHref,
+  normalizeReviewStoryId,
   parseReviewChangesActiveTab,
   parseReviewChangesDetailLocation,
   type ReviewTab,
 } from './review-navigation.ts';
 import type { ReviewState } from './review-state.ts';
-import { ReviewViewProvider, useReviewViewStore } from './review-view-state.tsx';
 import { DetailsScreen } from './screens/DetailsScreen.tsx';
 import { SummaryScreen } from './screens/SummaryScreen.tsx';
 
@@ -29,9 +29,6 @@ export const ReviewPage: FC = () =>
 
 const ReviewPageContent: FC<{ search: string }> = ({ search }) => {
   const [state, setState] = useState<ReviewState | null>(null);
-  // Lives here, above SummaryScreen, so expand/scroll state survives the
-  // unmount that happens whenever the user drills into a detail page.
-  const view = useReviewViewStore();
 
   const api = useStorybookApi();
   const { index } = useStorybookState();
@@ -39,8 +36,14 @@ const ReviewPageContent: FC<{ search: string }> = ({ search }) => {
 
   const emit = useChannel({
     [EVENTS.DISPLAY_REVIEW]: (next: ReviewState) => {
-      view.reset(next.collections);
-      setState(next);
+      const normalizedState: ReviewState = {
+        ...next,
+        collections: next.collections.map((collection) => ({
+          ...collection,
+          storyIds: collection.storyIds.map((storyId) => normalizeReviewStoryId(storyId)),
+        })),
+      };
+      setState(normalizedState);
     },
   });
 
@@ -178,11 +181,15 @@ const ReviewPageContent: FC<{ search: string }> = ({ search }) => {
 
       const previousStoryId = detailStoryIds[previousStoryIndex];
       const nextStoryId = detailStoryIds[nextStoryIndex];
+      const currentStoryId = detailStoryIds[currentStoryIndex];
+      const currentStoryInfo = storyInfo[currentStoryId];
       detailScreen = React.createElement(DetailsScreen, {
         title: detailTitle,
-        storyId: detailStoryIds[currentStoryIndex],
+        storyId: currentStoryId,
         storyIndex: currentStoryIndex,
         totalStories,
+        componentTitle: currentStoryInfo?.title,
+        storyName: currentStoryInfo?.name,
         backHref: buildReviewChangesSummaryHref(activeTab),
         previousHref: buildReviewChangesDetailHref(
           detailLocation.kind === 'collection'
@@ -215,13 +222,21 @@ const ReviewPageContent: FC<{ search: string }> = ({ search }) => {
     }
   }
 
+  const hasDetailScreen = detailScreen !== null;
+
   return React.createElement(
     'div',
     { ref: containerRef, style: { display: 'contents' } },
     React.createElement(
-      ReviewViewProvider,
-      { value: view },
-      detailScreen ??
+      'div',
+      { style: { position: 'relative', height: '100dvh' } },
+      React.createElement(
+        'div',
+        {
+          'aria-hidden': hasDetailScreen || undefined,
+          inert: hasDetailScreen || undefined,
+          style: hasDetailScreen ? { pointerEvents: 'none' } : undefined,
+        },
         React.createElement(SummaryScreen, {
           state,
           initialTab: activeTab,
@@ -230,6 +245,14 @@ const ReviewPageContent: FC<{ search: string }> = ({ search }) => {
           },
           storyInfo,
         })
+      ),
+      hasDetailScreen
+        ? React.createElement(
+            'div',
+            { style: { position: 'absolute', inset: 0, zIndex: 1 } },
+            detailScreen
+          )
+        : null
     )
   );
 };

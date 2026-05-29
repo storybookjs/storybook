@@ -31,4 +31,9 @@ export interface ReviewState {
    * addon's preset; not part of the agent's MCP payload.
    */
   branchName?: string;
+  /**
+   * Server-side creation timestamp (unix ms) assigned when PUSH_REVIEW is
+   * received; used for live "Created x minutes ago" UI in the summary.
+   */
+  createdAt?: number;
 }

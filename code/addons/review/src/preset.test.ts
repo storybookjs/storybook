@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { Channel } from 'storybook/internal/channels';
 import type { Options } from 'storybook/internal/types';
@@ -47,8 +47,15 @@ const sampleReview: ReviewState = {
 };
 
 describe('addon-review experimental_serverChannel', () => {
+  const NOW = 1_700_000_000_000;
+
   beforeEach(() => {
     __resetCache();
+    vi.spyOn(Date, 'now').mockReturnValue(NOW);
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
   });
 
   it('on PUSH_REVIEW, enriches with git branch, caches, and broadcasts DISPLAY_REVIEW', async () => {
@@ -62,7 +69,7 @@ describe('addon-review experimental_serverChannel', () => {
     expect(emitted).toEqual([
       {
         event: EVENTS.DISPLAY_REVIEW,
-        payload: { ...sampleReview, branchName: 'feature/badge-pink' },
+        payload: { ...sampleReview, branchName: 'feature/badge-pink', createdAt: NOW },
       },
     ]);
   });
@@ -74,7 +81,9 @@ describe('addon-review experimental_serverChannel', () => {
     await experimental_serverChannel(channel, {} as Options, { resolveBranch });
     await (channel as any).fire(EVENTS.PUSH_REVIEW, sampleReview);
 
-    expect(emitted).toEqual([{ event: EVENTS.DISPLAY_REVIEW, payload: sampleReview }]);
+    expect(emitted).toEqual([
+      { event: EVENTS.DISPLAY_REVIEW, payload: { ...sampleReview, createdAt: NOW } },
+    ]);
   });
 
   it('overwrites an agent-supplied branchName with the locally resolved one', async () => {
@@ -89,7 +98,7 @@ describe('addon-review experimental_serverChannel', () => {
     expect(emitted).toEqual([
       {
         event: EVENTS.DISPLAY_REVIEW,
-        payload: { ...sampleReview, branchName: 'local/branch' },
+        payload: { ...sampleReview, branchName: 'local/branch', createdAt: NOW },
       },
     ]);
   });
@@ -117,7 +126,7 @@ describe('addon-review experimental_serverChannel', () => {
     expect(emitted).toEqual([
       {
         event: EVENTS.DISPLAY_REVIEW,
-        payload: { ...sampleReview, branchName: 'feature/badge-pink' },
+        payload: { ...sampleReview, branchName: 'feature/badge-pink', createdAt: NOW },
       },
     ]);
   });

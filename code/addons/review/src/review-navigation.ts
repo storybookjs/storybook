@@ -10,6 +10,49 @@ export type ReviewDetailLocation =
 
 const tabPath = (tab: ReviewTab = 'collections') => `${REVIEW_CHANGES_URL}${tab}`;
 
+const tryDecodeURIComponent = (value: string): string => {
+  try {
+    return decodeURIComponent(value);
+  } catch {
+    return value;
+  }
+};
+
+// Defensive normalization for callers that accidentally provide a preview URL
+// (`iframe.html?id=...`) instead of a plain story id (`button--primary`).
+export const normalizeReviewStoryId = (value: string): string => {
+  const trimmed = value.trim();
+  if (!trimmed) {
+    return value;
+  }
+
+  const shouldTreatAsUrl =
+    trimmed.startsWith('http://') ||
+    trimmed.startsWith('https://') ||
+    trimmed.startsWith('/iframe.html') ||
+    trimmed.startsWith('iframe.html') ||
+    trimmed.startsWith('./iframe.html');
+
+  if (shouldTreatAsUrl) {
+    try {
+      const url = new URL(trimmed, 'https://storybook.local');
+      const id = url.searchParams.get('id');
+      if (id) {
+        return tryDecodeURIComponent(id);
+      }
+    } catch {
+      // Fall through to the regex-based extraction below.
+    }
+  }
+
+  const queryIdMatch = trimmed.match(/(?:^|[?&])id=([^&#]+)/);
+  if (queryIdMatch?.[1]) {
+    return tryDecodeURIComponent(queryIdMatch[1]);
+  }
+
+  return trimmed;
+};
+
 // Storybook's manager router keeps the active route in the `path` query param
 // (see core/src/router) — `Route`/`api.navigate` read `?path=…`, not
 // window.location.pathname. Hrefs therefore wrap the route in `?path=…` and
@@ -23,11 +66,13 @@ export const buildReviewChangesDetailHref = (
 ): string => {
   if (location.kind === 'collection') {
     const base = `${tabPath(tab)}/${location.collectionIndex}`;
-    const target = location.storyId ? `${base}/${encodeURIComponent(location.storyId)}` : base;
+    const target = location.storyId
+      ? `${base}/${encodeURIComponent(normalizeReviewStoryId(location.storyId))}`
+      : base;
     return `?path=${target}`;
   }
   const base = tabPath(tab);
-  const target = `${base}/${encodeURIComponent(location.storyId)}`;
+  const target = `${base}/${encodeURIComponent(normalizeReviewStoryId(location.storyId))}`;
   return `?path=${target}`;
 };
 
@@ -58,7 +103,7 @@ export const parseReviewChangesDetailLocation = (search: string): ReviewDetailLo
     return {
       kind: 'collection',
       collectionIndex,
-      storyId: storySegment ? decodeURIComponent(storySegment) : undefined,
+      storyId: storySegment ? normalizeReviewStoryId(decodeURIComponent(storySegment)) : undefined,
     };
   }
 
@@ -73,7 +118,7 @@ export const parseReviewChangesDetailLocation = (search: string): ReviewDetailLo
     }
     return {
       kind: 'component',
-      storyId: decodeURIComponent(firstSegment),
+      storyId: normalizeReviewStoryId(decodeURIComponent(firstSegment)),
     };
   }
   return null;

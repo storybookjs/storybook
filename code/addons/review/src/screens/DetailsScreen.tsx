@@ -44,6 +44,19 @@ const DetailTitle = styled.h2({
   lineHeight: '20px',
 });
 
+const DetailTitleMuted = styled.span(({ theme }) => ({
+  color: theme.textMutedColor,
+  fontWeight: 400,
+}));
+
+const DetailTitleStrong = styled.span({
+  fontWeight: 700,
+});
+
+const DetailTitleRegular = styled.span({
+  fontWeight: 400,
+});
+
 const PreviewFrameWrap = styled.div({
   flex: 1,
   minHeight: 0,
@@ -83,7 +96,7 @@ const BottomRightPlaceholder = styled.div({
 const storyPreviewUrl = (id: string) => `iframe.html?id=${encodeURIComponent(id)}&viewMode=story`;
 
 export interface DetailsScreenProps {
-  /** Component title or collection title shown in the toolbar. */
+  /** Fallback title shown when story metadata is unavailable. */
   title: string;
   storyId: string;
   storyIndex: number;
@@ -91,8 +104,35 @@ export interface DetailsScreenProps {
   backHref: string;
   previousHref: string;
   nextHref: string;
+  componentTitle?: string;
+  storyName?: string;
   branchName?: string;
 }
+
+const renderDetailTitle = ({
+  title,
+  componentTitle,
+  storyName,
+}: Pick<DetailsScreenProps, 'title' | 'componentTitle' | 'storyName'>) => {
+  if (!componentTitle || !storyName) {
+    return title;
+  }
+
+  const componentName =
+    componentTitle
+      .split('/')
+      .map((part) => part.trim())
+      .filter(Boolean)
+      .pop() ?? componentTitle;
+
+  return (
+    <>
+      <DetailTitleStrong>{componentName}</DetailTitleStrong>
+      <DetailTitleMuted>{' / '}</DetailTitleMuted>
+      <DetailTitleRegular>{storyName}</DetailTitleRegular>
+    </>
+  );
+};
 
 // The preview <iframe> is intentionally a stable element: when the story
 // changes the parent only updates `src`, so the iframe navigates in place
@@ -105,6 +145,8 @@ export const DetailsScreen: FC<DetailsScreenProps> = ({
   backHref,
   previousHref,
   nextHref,
+  componentTitle,
+  storyName,
   branchName,
 }) => (
   <Page>
@@ -115,7 +157,7 @@ export const DetailsScreen: FC<DetailsScreenProps> = ({
             <ChevronSmallLeftIcon />
           </a>
         </Button>
-        <DetailTitle>{title}</DetailTitle>
+        <DetailTitle>{renderDetailTitle({ title, componentTitle, storyName })}</DetailTitle>
       </ToolbarSide>
 
       <ToolbarSide>

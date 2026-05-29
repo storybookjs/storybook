@@ -13,7 +13,6 @@ import {
   parseReviewChangesDetailLocation,
 } from '../review-navigation.ts';
 import type { ReviewState } from '../review-state.ts';
-import { StandaloneReviewView } from '../review-view-state.tsx';
 import { DetailsScreen } from '../screens/DetailsScreen.tsx';
 import { SummaryScreen } from '../screens/SummaryScreen.tsx';
 
@@ -96,13 +95,17 @@ const ReviewFlowPrototype: FC<{
       const nextStoryIndex = (currentStoryIndex + 1) % totalStories;
       const previousStoryId = detailStoryIds[previousStoryIndex];
       const nextStoryId = detailStoryIds[nextStoryIndex];
+      const currentStoryId = detailStoryIds[currentStoryIndex];
+      const currentStoryInfo = storyInfo[currentStoryId];
 
       detailScreen = (
         <DetailsScreen
           title={detailTitle}
-          storyId={detailStoryIds[currentStoryIndex]}
+          storyId={currentStoryId}
           storyIndex={currentStoryIndex}
           totalStories={totalStories}
+          componentTitle={currentStoryInfo?.title}
+          storyName={currentStoryInfo?.name}
           backHref={buildReviewChangesSummaryHref(activeTab)}
           previousHref={buildReviewChangesDetailHref(
             detailLocation.kind === 'collection'
@@ -137,13 +140,9 @@ const ReviewFlowPrototype: FC<{
   }
 
   return (
-    <StandaloneReviewView state={state}>
-      <div ref={containerRef} style={{ display: 'contents' }}>
-        {detailScreen ?? (
-          <SummaryScreen state={state} initialTab={activeTab} storyInfo={storyInfo} />
-        )}
-      </div>
-    </StandaloneReviewView>
+    <div ref={containerRef} style={{ display: 'contents' }}>
+      {detailScreen ?? <SummaryScreen state={state} initialTab={activeTab} storyInfo={storyInfo} />}
+    </div>
   );
 };
 

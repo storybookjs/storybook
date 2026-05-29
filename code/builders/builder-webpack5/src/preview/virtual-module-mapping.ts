@@ -23,8 +23,9 @@ import type { BuilderOptions } from '../types.ts';
  */
 function isWebpackVersionAtLeast(version: string | undefined, minVersion: string): boolean {
   if (!version) return false;
-  const parts = version.split('.').map(Number);
-  const min = minVersion.split('.').map(Number);
+  // parseInt handles prerelease suffixes (e.g. '5.101.3-alpha.1' → 5, 101, 3)
+  const parts = version.split('.').map((p) => parseInt(p, 10));
+  const min = minVersion.split('.').map((p) => parseInt(p, 10));
   for (let i = 0; i < min.length; i++) {
     const p = parts[i] ?? 0;
     if (p > min[i]) return true;

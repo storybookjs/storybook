@@ -33,7 +33,7 @@ type TSObjectSigType = TSBaseType & {
 };
 
 type TSScalarType = TSBaseType & {
-  name: 'any' | 'boolean' | 'number' | 'void' | 'string' | 'symbol' | 'undefined';
+  name: 'any' | 'boolean' | 'number' | 'void' | 'string' | 'symbol' | 'undefined' | 'null';
 };
 
 type TSLiteralType = TSBaseType & {

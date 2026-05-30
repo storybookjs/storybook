@@ -6,10 +6,17 @@ import type { TSSigType, TSType } from './types.ts';
 
 // Type guards for narrowing TSType discriminant unions
 type TSLiteralType = Extract<TSType, { name: 'literal' }>;
+type TSNullType = Extract<TSType, { name: 'null' }>;
 type TSUndefinedType = Extract<TSType, { name: 'undefined' }>;
 
 const isLiteral = (type: TSType): type is TSLiteralType => type.name === 'literal';
+const isNull = (type: TSType): type is TSNullType => type.name === 'null';
 const isUndefined = (type: TSType): type is TSUndefinedType => type.name === 'undefined';
+const isEnumValue = (type: TSType): type is TSLiteralType | TSNullType =>
+  isLiteral(type) || isNull(type);
+
+const convertEnumValue = (type: TSLiteralType | TSNullType) =>
+  isNull(type) ? null : parseLiteral(type.value);
 
 const convertSig = (type: TSSigType) => {
   switch (type.type) {
@@ -43,6 +50,9 @@ export const convert = (type: TSType): SBType | void => {
     case 'boolean': {
       return { ...base, name };
     }
+    case 'null': {
+      return { ...base, name: 'other', value: name };
+    }
     case 'Array': {
       return { ...base, name: 'array', value: type.elements.map(convert) };
     }
@@ -50,15 +60,15 @@ export const convert = (type: TSType): SBType | void => {
       return { ...base, ...convertSig(type) };
     case 'union': {
       const nonUndefinedElements = type.elements.filter((element) => !isUndefined(element));
-      const allLiterals = nonUndefinedElements.length > 0 && nonUndefinedElements.every(isLiteral);
+      const allEnumValues = nonUndefinedElements.length > 0 && nonUndefinedElements.every(isEnumValue);
 
-      if (allLiterals) {
+      if (allEnumValues) {
         // TypeScript can't infer from .every(), so we filter again with the type guard
-        const literalElements = nonUndefinedElements.filter(isLiteral);
+        const enumElements = nonUndefinedElements.filter(isEnumValue);
         return {
           ...base,
           name: 'enum',
-          value: literalElements.map((element) => parseLiteral(element.value)),
+          value: enumElements.map(convertEnumValue),
         };
       }
       return { ...base, name, value: type.elements.map(convert) };

@@ -414,8 +414,9 @@ export const Minimal = meta.story({
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await expect(await canvas.findByText('Button prop rename')).toBeInTheDocument();
-    await expect(await canvas.findByText(/Showing unstaged changes on/i)).toBeInTheDocument();
-    await expect(await canvas.findByText('update/button-styles')).toBeInTheDocument();
+    await expect(
+      await canvas.findByText(/agent-curated stories for quick review/i)
+    ).toBeInTheDocument();
     await expect(await canvas.findByRole('tab', { name: 'Collections' })).toBeInTheDocument();
   },
 });

@@ -17,10 +17,8 @@ export function rethrowAsync(error: unknown): void {
 /**
  * Validates a value with a Standard Schema and returns the parsed output value.
  *
- * Schemas may transform, coerce, or inject defaults; the parsed value is returned to the caller.
- * Validation only ever runs on *pull* boundaries (a query/command call, `.loaded()`, the static
- * build) — never inside a subscription's reactive `computed` — so conversion cannot affect the
- * deep-signal dependency graph. Any schema issues are wrapped in `OpenServiceValidationError`.
+ * Any schema issues are wrapped in `OpenServiceValidationError`, which standardizes the operation
+ * metadata while preserving the schema's own expectation text for the actionable details.
  */
 export async function validateSchema<TSchema extends AnySchema>(
   schema: TSchema,

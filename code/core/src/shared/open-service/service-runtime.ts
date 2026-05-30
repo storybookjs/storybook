@@ -58,7 +58,7 @@
  * path because handler reads are tracked by `activeHandlerLoadSession`, which is module-scoped
  * and stable for the duration of a sync handler call.
  */
-import { batch, computed, effect } from '@preact/signals-core';
+import { batch, computed, effect, untracked } from '@preact/signals-core';
 import { deepSignal } from 'deepsignal/core';
 import { isEqual } from 'es-toolkit/predicate';
 
@@ -455,9 +455,9 @@ function runHandlerSync<TState>(
   const handlerCtx: QueryCtx<TState> = { self: handlerSelf, getService };
 
   // The handler result is returned raw. Output validation is intentionally *not* run here: this
-  // function executes inside the subscription `computed`, and reading the whole value to validate it
-  // would broaden the reactive dependency footprint (and, for converting schemas, churn references).
-  // Validation runs on pull boundaries instead — see `validateQueryOutput` call sites.
+  // function executes inside the subscription `computed`, where reading the whole value to validate
+  // it would broaden the reactive dependency footprint. Validation runs at the call sites instead —
+  // see `validateQueryOutput` usages.
   return queryDef.handler(validatedInput, handlerCtx);
 }
 
@@ -867,8 +867,8 @@ function createDefaultQuery<TState>(
       }
     }
 
-    // Validate (and convert) the output on this pull boundary. For object/array schemas valibot
-    // rebuilds a plain value, which also detaches it from the deep-signal proxy for the consumer.
+    // Validate the output on this pull boundary. Validation runs off the reactive path, so it never
+    // affects the deep-signal dependency graph; the validated value is what the consumer receives.
     return validateQueryOutput(
       refs,
       queryName,
@@ -959,14 +959,14 @@ function subscribeToQuery<TState>(
       pendingLoad.catch(rethrowAsync);
     }
 
-    // The computed reads through the deep-signal proxy, so its dependency footprint is exactly what
-    // it reads:
-    //   - With a `selector`, only the selected fields are read, then detached to a plain snapshot —
-    //     a sibling field the selector ignores never re-runs this computed.
-    //   - Without a selector, the value is validated (and converted) here. Reading the whole value
-    //     to validate it is the *correct* footprint for a whole-output subscriber, and conversion is
-    //     harmless to reactivity because emissions are deduped by value below. This also keeps a
-    //     subscriber's value identical to what a direct `query()` / `.loaded()` pull returns.
+    // The output is always validated, but the computed's dependency footprint must match only what
+    // the subscriber consumes:
+    //   - With a `selector`, validation runs untracked (so reading the whole value to validate it
+    //     does not register dependencies), and only the selected fields the selector reads are
+    //     tracked. A sibling field the selector ignores never re-runs this computed.
+    //   - Without a selector, validation runs tracked: reading the whole value is the correct
+    //     footprint for a whole-output subscriber, and the validated value is emitted (identical to
+    //     what a direct `query()` / `.loaded()` pull returns).
     const comp = computed(() => {
       const output = runHandlerSync(
         refs,
@@ -977,6 +977,7 @@ function subscribeToQuery<TState>(
         refs.registryApi.getService
       );
       if (selector) {
+        untracked(() => validateQueryOutput(refs, queryName, queryDef, output));
         return detachSnapshot(selector(output));
       }
       return validateQueryOutput(refs, queryName, queryDef, output);
@@ -1045,10 +1046,11 @@ export function createServiceRuntime<
   },
   initialState: TState = def.initialState
 ): ServiceRuntime<TState, TQueries, TCommands> {
-  // `rawState` is the plain backing object that the deep-signal proxy writes through to; it stays
-  // in sync with every mutation and is the source for serialization snapshots. Cloning the incoming
-  // state keeps a service definition's shared `initialState` from being mutated in place.
-  const rawState = structuredClone(initialState) as TState;
+  // `initialState` is the plain backing object that the deep-signal proxy writes through to; it
+  // stays in sync with every mutation and is the source for serialization snapshots. The runtime
+  // mutates it in place, so callers that share an object (e.g. a definition's `initialState`) must
+  // pass their own copy — `registerService` and the static build each do.
+  const rawState = initialState;
   // The deep reactive proxy is the single source of truth that query computations track, at
   // per-field granularity.
   const state = deepSignal(rawState as object) as TState;

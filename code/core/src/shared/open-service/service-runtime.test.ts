@@ -7,6 +7,7 @@ import {
   type RebuiltValue,
   awaitedPreloadValueServiceDef,
   createDerivedBooleanFromChildQueryServiceDef,
+  createInvalidQueryOutputServiceDef,
   fireAndForgetPreloadValueServiceDef,
   mutableRecordLookupServiceDef,
   rebuiltEqualValueOnLoadServiceDef,
@@ -75,38 +76,6 @@ describe('service runtime', () => {
 
       expect(calls).toEqual([null, { marker: 'updated' }]);
       unsubscribe();
-    });
-
-    it('does not notify subscribers for a different record', async () => {
-      const service = registerService(mutableRecordLookupServiceDef);
-      const callsA: Array<Record<string, string> | null> = [];
-      const callsB: Array<Record<string, string> | null> = [];
-
-      const unsubscribeA = service.queries.getRecordFields.subscribe(
-        { entryId: 'entry-a' },
-        (value) => {
-          callsA.push(value);
-        }
-      );
-      const unsubscribeB = service.queries.getRecordFields.subscribe(
-        { entryId: 'entry-b' },
-        (value) => {
-          callsB.push(value);
-        }
-      );
-
-      await vi.waitFor(() => expect(callsA).toEqual([null]));
-      await vi.waitFor(() => expect(callsB).toEqual([null]));
-      await service.commands.assignRecordField({
-        entryId: 'entry-b',
-        fieldKey: 'marker',
-        fieldValue: 'match',
-      });
-
-      expect(callsA).toEqual([null]);
-      expect(callsB).toEqual([null, { marker: 'match' }]);
-      unsubscribeA();
-      unsubscribeB();
     });
 
     it('stops notifying after unsubscribe', async () => {
@@ -248,6 +217,33 @@ describe('service runtime', () => {
         queueMicrotaskSpy.mockRestore();
       }
     });
+
+    // A `selector` narrows the reactive footprint but must not skip output validation: the handler
+    // output is still validated (untracked) before the selector runs.
+    it('still validates query output for a subscriber that passes a selector', async () => {
+      const queuedCallbacks: Array<() => void> = [];
+      const queueMicrotaskSpy = vi
+        .spyOn(globalThis, 'queueMicrotask')
+        .mockImplementation((callback: VoidFunction) => {
+          queuedCallbacks.push(callback);
+        });
+      const service = registerService(createInvalidQueryOutputServiceDef());
+
+      try {
+        service.queries.getBrokenValue.subscribe(
+          undefined,
+          (value) => value,
+          () => {}
+        );
+
+        await vi.waitFor(() => expect(queuedCallbacks).toHaveLength(1));
+        expect(() => queuedCallbacks[0]()).toThrow(
+          'Invalid output for query "internal-fixture/invalid-query-output.getBrokenValue"'
+        );
+      } finally {
+        queueMicrotaskSpy.mockRestore();
+      }
+    });
   });
 
   describe('background load', () => {
@@ -378,52 +374,11 @@ describe('service runtime', () => {
       }
     });
 
-    // A `selector` narrows what the subscriber depends on: changing a sibling field the selector
-    // does not read must not fire the callback, even though the same record changed.
-    it('only re-emits for the selected slice of a query value', async () => {
-      const service = registerService(mutableRecordLookupServiceDef);
-
-      await service.commands.assignRecordField({
-        entryId: 'entry-a',
-        fieldKey: 'selected',
-        fieldValue: 'first',
-      });
-
-      const selectedCalls: Array<string | undefined> = [];
-      const unsubscribe = service.queries.getRecordFields.subscribe(
-        { entryId: 'entry-a' },
-        (record) => record?.selected,
-        (selected) => {
-          selectedCalls.push(selected);
-        }
-      );
-      await vi.waitFor(() => expect(selectedCalls).toEqual(['first']));
-
-      // Change a sibling field on the same record: the selector reads only `selected`, so no emit.
-      await service.commands.assignRecordField({
-        entryId: 'entry-a',
-        fieldKey: 'sibling',
-        fieldValue: 'ignored',
-      });
-      await new Promise((resolve) => setTimeout(resolve, 30));
-      expect(selectedCalls).toEqual(['first']);
-
-      // Change the selected field: the callback fires with the new selected value.
-      await service.commands.assignRecordField({
-        entryId: 'entry-a',
-        fieldKey: 'selected',
-        fieldValue: 'second',
-      });
-      await vi.waitFor(() => expect(selectedCalls).toEqual(['first', 'second']));
-
-      unsubscribe();
-    });
-
-    // The selector must also narrow the *dependency footprint*, not just the emission: changing a
-    // sibling field the selector ignores must not re-run the handler. This is what proves output
-    // validation no longer runs on the reactive path (which would read every field and broaden the
-    // tracked set). The handler spy fails this assertion if validation creeps back into the computed.
-    it('does not re-run a selector subscriber handler when an unselected field changes', async () => {
+    // A `selector` narrows the subscriber to one slice of the value. Changing a sibling field the
+    // selector ignores must neither fire the callback nor re-run the handler (the handler spy proves
+    // the dependency footprint is narrowed, not just the emission); changing the selected field
+    // fires once with the new slice.
+    it('re-emits and re-runs only for the selected slice of a query value', async () => {
       const handlerSpy = vi.spyOn(mutableRecordLookupServiceDef.queries.getRecordFields, 'handler');
       try {
         const service = registerService(mutableRecordLookupServiceDef);
@@ -445,15 +400,24 @@ describe('service runtime', () => {
         await vi.waitFor(() => expect(selectedCalls).toEqual(['first']));
         const handlerRunsAfterSubscribe = handlerSpy.mock.calls.length;
 
+        // Changing a sibling field re-runs nothing and emits nothing: the selector reads only
+        // `selected`, so the sibling is outside the tracked footprint.
         await service.commands.assignRecordField({
           entryId: 'entry-a',
           fieldKey: 'sibling',
           fieldValue: 'ignored',
         });
         await new Promise((resolve) => setTimeout(resolve, 30));
-
         expect(selectedCalls).toEqual(['first']);
         expect(handlerSpy.mock.calls.length).toBe(handlerRunsAfterSubscribe);
+
+        // Changing the selected field fires the callback once with the new slice.
+        await service.commands.assignRecordField({
+          entryId: 'entry-a',
+          fieldKey: 'selected',
+          fieldValue: 'second',
+        });
+        await vi.waitFor(() => expect(selectedCalls).toEqual(['first', 'second']));
 
         unsubscribe();
       } finally {

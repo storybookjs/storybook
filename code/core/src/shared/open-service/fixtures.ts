@@ -44,9 +44,9 @@ export const mutableRecordLookupServiceDef = defineService({
       input: assignEntryFieldInputSchema,
       output: voidOutputSchema,
       handler: (input, ctx) => {
-        ctx.self.setState((draft) => {
-          draft[input.entryId] ??= {};
-          draft[input.entryId]![input.fieldKey] = input.fieldValue;
+        ctx.self.setState((state) => {
+          state[input.entryId] ??= {};
+          state[input.entryId]![input.fieldKey] = input.fieldValue;
         });
       },
     },
@@ -82,8 +82,8 @@ export const awaitedPreloadValueServiceDef = defineService({
       output: voidOutputSchema,
       handler: async (input, ctx) => {
         await Promise.resolve();
-        ctx.self.setState((draft) => {
-          draft[input.entryId] = 'preloaded';
+        ctx.self.setState((state) => {
+          state[input.entryId] = 'preloaded';
         });
       },
     },
@@ -116,8 +116,8 @@ export const fireAndForgetPreloadValueServiceDef = defineService({
       output: voidOutputSchema,
       handler: async (input, ctx) => {
         await Promise.resolve();
-        ctx.self.setState((draft) => {
-          draft[input.entryId] = 'preloaded';
+        ctx.self.setState((state) => {
+          state[input.entryId] = 'preloaded';
         });
       },
     },
@@ -164,8 +164,8 @@ export const rebuiltEqualValueOnLoadServiceDef = defineService({
         await Promise.resolve();
         // A new object literal every call: deeply equal to any prior value, never `===` to it.
         const value: RebuiltValue = { marker: 'stable', count: 1 };
-        ctx.self.setState((draft) => {
-          draft[input.entryId] = value;
+        ctx.self.setState((state) => {
+          state[input.entryId] = value;
         });
         return value;
       },
@@ -211,8 +211,8 @@ export function createSharedStaticFileServiceDef() {
         input: noInputSchema,
         output: voidOutputSchema,
         handler: (_input, ctx) => {
-          ctx.self.setState((draft) => {
-            draft.left = 'preloaded';
+          ctx.self.setState((state) => {
+            state.left = 'preloaded';
           });
         },
       },
@@ -221,8 +221,8 @@ export function createSharedStaticFileServiceDef() {
         input: noInputSchema,
         output: voidOutputSchema,
         handler: (_input, ctx) => {
-          ctx.self.setState((draft) => {
-            draft.right = 'preloaded';
+          ctx.self.setState((state) => {
+            state.right = 'preloaded';
           });
         },
       },

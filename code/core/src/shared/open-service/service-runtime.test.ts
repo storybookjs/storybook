@@ -166,8 +166,8 @@ describe('service runtime', () => {
             input: v.string(),
             output: v.void(),
             handler: (input, ctx) => {
-              ctx.self.setState((draft) => {
-                draft.value = input;
+              ctx.self.setState((state) => {
+                state.value = input;
               });
             },
           },
@@ -613,8 +613,8 @@ describe('service runtime', () => {
             input: v.undefined(),
             output: v.void(),
             handler: (_input, ctx) => {
-              ctx.self.setState((draft) => {
-                draft.aDone = true;
+              ctx.self.setState((state) => {
+                state.aDone = true;
               });
             },
           },
@@ -622,8 +622,8 @@ describe('service runtime', () => {
             input: v.undefined(),
             output: v.void(),
             handler: (_input, ctx) => {
-              ctx.self.setState((draft) => {
-                draft.bDone = true;
+              ctx.self.setState((state) => {
+                state.bDone = true;
               });
             },
           },
@@ -665,8 +665,8 @@ describe('service runtime', () => {
             input: v.undefined(),
             output: v.void(),
             handler: (_input, ctx) => {
-              ctx.self.setState((draft) => {
-                draft.counter += 1;
+              ctx.self.setState((state) => {
+                state.counter += 1;
               });
             },
           },

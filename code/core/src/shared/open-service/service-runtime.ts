@@ -294,9 +294,9 @@ async function drainCollector(
 /**
  * Creates the writable `self` object that backs every runtime ctx for one service instance.
  *
- * State is a deep reactive proxy: mutations applied to the draft notify only the fine-grained
- * signals for the fields that actually changed. Writes are wrapped in a batch so one command only
- * notifies subscribers after the full draft mutation completes.
+ * State is a deep reactive proxy: mutations applied to `state` notify only the fine-grained signals
+ * for the fields that actually changed. Writes are wrapped in a batch so one command only notifies
+ * subscribers after the full mutation completes.
  */
 function createCommandSelf<TState>(state: TState): CommandSelf<TState> {
   return {

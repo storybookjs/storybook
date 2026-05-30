@@ -123,7 +123,7 @@ export type LoadSelf<
 /**
  * Mutable service handle exposed to command handlers.
  *
- * Commands receive both `setState` for direct draft mutation and `commands` so one command can
+ * Commands receive both `setState` for direct state mutation and `commands` so one command can
  * delegate to another within the same service.
  */
 export type CommandSelf<
@@ -132,7 +132,7 @@ export type CommandSelf<
   TCommandOutputSchemas extends MatchingOutputSchemas<TCommandInputSchemas> =
     MatchingOutputSchemas<TCommandInputSchemas>,
 > = LoadSelf<TState, TCommandInputSchemas, TCommandOutputSchemas> & {
-  setState(mutate: (draft: TState) => void): void;
+  setState(mutate: (state: TState) => void): void;
 };
 
 export type ServiceSummary = {

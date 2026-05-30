@@ -141,7 +141,7 @@ describe('inferControls', () => {
           argTypes: {
             variant: {
               type: { name: 'string' },
-              options: ['primary', 'secondary', 'danger'],
+              options: ['primary', 'secondary', 'danger', 'warning', 'info', 'light'],
             },
           },
         })
@@ -216,7 +216,7 @@ describe('inferControls', () => {
       expect(inferredControls.variant.control.type).toEqual('select');
     });
 
-    it('should infer select when options provided without explicit type', () => {
+    it('should NOT infer a control when options are provided without an explicit type', () => {
       const inferredControls = inferControls(
         getStoryContext({
           argTypes: {

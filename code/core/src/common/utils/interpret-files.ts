@@ -32,16 +32,28 @@ export function resolveImport(id: string, options: ResolveImportOptions): string
     // a TypeScript file. This can happen in ES modules as TypeScript requires to import other
     // TypeScript files with .js extensions
     // https://www.typescriptlang.org/docs/handbook/esm-node.html#type-in-packagejson-and-new-extensions
-    const newId = ['.js', '.mjs', '.cjs'].includes(ext)
-      ? `${id.slice(0, -2)}ts`
+    const fallbackIds = ['.js', '.mjs', '.cjs'].includes(ext)
+      ? [
+          `${id.slice(0, -2)}ts`,
+          ...(ext === '.js' ? [`${id.slice(0, -2)}tsx`] : []),
+        ]
       : ext === '.jsx'
-        ? `${id.slice(0, -3)}tsx`
-        : null;
+        ? [`${id.slice(0, -3)}tsx`]
+        : [];
 
-    if (!newId) {
+    if (fallbackIds.length === 0) {
       throw error;
     }
-    return resolveSync(newId, options.basedir);
+
+    for (const fallbackId of fallbackIds) {
+      try {
+        return resolveSync(fallbackId, options.basedir);
+      } catch {
+        // Continue to the next TypeScript ESM fallback.
+      }
+    }
+
+    throw error;
   }
 }
 

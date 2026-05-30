@@ -48,6 +48,29 @@ test('addon parameters are inferred', () => {
   });
 });
 
+interface GlobalsAddonTypes {
+  globals: { theme: 'light' | 'dark'; locale: 'en' | 'fr' };
+}
+
+const globalsAddon = definePreviewAddon<GlobalsAddonTypes>({});
+const globalsPreview = definePreview({ addons: [globalsAddon], renderToCanvas: () => {} });
+const globalsMeta = globalsPreview.type<{ args: { label: string } }>().meta({
+  args: { label: 'foo' },
+  render: ({ label }) => 'hello' + label,
+});
+
+test('globals overrides may be partial, mirroring args', () => {
+  // A story may override a subset of the typed globals (here `theme` without `locale`).
+  globalsMeta.story({ globals: { theme: 'dark' } });
+
+  // The same applies to component-level (meta) overrides.
+  globalsPreview.type<{ args: { label: string } }>().meta({
+    args: { label: 'foo' },
+    render: ({ label }) => 'hello' + label,
+    globals: { locale: 'fr' },
+  });
+});
+
 describe('test function', () => {
   test('without overrides', async () => {
     const MyStory = meta.story({ args: { label: 'foo' } });

@@ -1,5 +1,8 @@
+import type { BoundFunctions } from '@testing-library/dom';
+import type { userEvent } from '@testing-library/user-event';
 import type { OmitIndexSignature, Simplify, UnionToIntersection } from 'type-fest';
 
+import type { queries } from '../test/testing-library.ts';
 import type { ToolbarArgType } from '../toolbar/index.ts';
 import type { SBScalarType, SBType } from './SBType.ts';
 import type { CoreTypes } from './core-annotations.ts';
@@ -264,7 +267,7 @@ export type AfterEach<TRenderer extends Renderer = Renderer, TArgs = Args> = (
   context: StoryContext<TRenderer, TArgs>
 ) => Awaitable<void>;
 
-export interface Canvas {}
+export interface Canvas extends BoundFunctions<typeof queries> {}
 
 export interface StoryContext<TRenderer extends Renderer = Renderer, TArgs = Args>
   extends StoryContextForEnhancers<TRenderer, TArgs>, Required<StoryContextUpdate<TArgs>> {
@@ -277,6 +280,7 @@ export interface StoryContext<TRenderer extends Renderer = Renderer, TArgs = Arg
   step: StepFunction<TRenderer, TArgs>;
   context: this;
   canvas: Canvas;
+  userEvent: ReturnType<typeof userEvent.setup>;
   mount: TRenderer['mount'];
   reporting: ReportingAPI;
 }

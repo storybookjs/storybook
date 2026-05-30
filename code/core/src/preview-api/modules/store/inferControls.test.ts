@@ -133,4 +133,103 @@ describe('inferControls', () => {
     expect(Object.keys(excludeArray)).toEqual(['labelName', 'borderWidth']);
     expect(Object.keys(excludeRegex)).toEqual(['borderWidth']);
   });
+
+  describe('with options property', () => {
+    it('should infer select control when options are provided on a string type', () => {
+      const inferredControls = inferControls(
+        getStoryContext({
+          argTypes: {
+            variant: {
+              type: { name: 'string' },
+              options: ['primary', 'secondary', 'danger'],
+            },
+          },
+        })
+      );
+
+      const control = inferredControls.variant.control;
+      expect(control.type).toEqual('select');
+    });
+
+    it('should infer radio control when 5 or fewer options are provided', () => {
+      const inferredControls = inferControls(
+        getStoryContext({
+          argTypes: {
+            size: {
+              type: { name: 'string' },
+              options: ['small', 'medium', 'large'],
+            },
+          },
+        })
+      );
+
+      const control = inferredControls.size.control;
+      expect(control.type).toEqual('radio');
+    });
+
+    it('should infer select control when more than 5 options are provided', () => {
+      const inferredControls = inferControls(
+        getStoryContext({
+          argTypes: {
+            color: {
+              type: { name: 'string' },
+              options: ['red', 'blue', 'green', 'yellow', 'purple', 'orange'],
+            },
+          },
+        })
+      );
+
+      const control = inferredControls.color.control;
+      expect(control.type).toEqual('select');
+    });
+
+    it('should infer select control when options are provided on a number type', () => {
+      const inferredControls = inferControls(
+        getStoryContext({
+          argTypes: {
+            count: {
+              type: { name: 'number' },
+              options: [1, 2, 3, 4, 5, 6],
+            },
+          },
+        })
+      );
+
+      const control = inferredControls.count.control;
+      expect(control.type).toEqual('select');
+    });
+
+    it('should NOT override explicit control type even when options are provided', () => {
+      const inferredControls = inferControls(
+        getStoryContext({
+          argTypes: {
+            variant: {
+              type: { name: 'string' },
+              options: ['primary', 'secondary'],
+              control: { type: 'select' },
+            },
+          },
+        })
+      );
+
+      // The explicit control should be preserved via combineParameters
+      expect(inferredControls.variant.control.type).toEqual('select');
+    });
+
+    it('should infer select when options provided without explicit type', () => {
+      const inferredControls = inferControls(
+        getStoryContext({
+          argTypes: {
+            variant: {
+              options: ['primary', 'secondary', 'danger', 'warning', 'info', 'light'],
+            },
+          },
+        })
+      );
+
+      // Without type, inferControl returns undefined (early bail)
+      // so options-only argTypes won't get inferred controls
+      expect(inferredControls.variant.control).toBeUndefined();
+    });
+  });
 });

@@ -42,6 +42,12 @@ const inferControl = (argType: StrictInputType, name: string, matchers: Controls
     return { control: { type: 'date' } };
   }
 
+  // When options are explicitly provided, infer select/radio control
+  // regardless of the underlying scalar type (string, number, etc.)
+  if (options) {
+    return { control: { type: options.length <= 5 ? 'radio' : 'select' }, options };
+  }
+
   switch (type.name) {
     case 'array':
       return { control: { type: 'object' } };
@@ -59,7 +65,7 @@ const inferControl = (argType: StrictInputType, name: string, matchers: Controls
     case 'symbol':
       return null;
     default:
-      return { control: { type: options ? 'select' : 'object' } };
+      return { control: { type: 'object' } };
   }
 };
 

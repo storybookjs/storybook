@@ -314,14 +314,16 @@ function createCommandSelf<TState>(state: TState): CommandSelf<TState> {
 }
 
 /**
- * Detaches a query value from the reactive deep-signal proxy into a plain, immutable snapshot.
+ * Detaches a value from the reactive deep-signal proxy into a plain snapshot.
  *
- * The proxy must never escape the runtime: handing it to consumers would leak a live, mutable view
- * of state and bypass the command-only mutation contract. Primitives pass through untouched; objects
- * and arrays are structurally cloned. State is required to be JSON-serializable (the same constraint
- * the static-build pipeline already relies on), so a JSON round-trip is a sufficient deep clone and
- * also reads every field of the value — which, inside a `computed`, registers the precise
- * fine-grained dependencies the subscription should track.
+ * Used for `selector` results on the subscription path: a selector can return a live proxy slice,
+ * which we strip so consumers get plain, comparable data (and reads inside the `computed` register
+ * only the fields the selector actually touched). Primitives pass through untouched.
+ *
+ * `structuredClone` cannot clone a `Proxy`, so this uses a JSON round-trip. That is sufficient
+ * because open-service state is required to be JSON-serializable (the same constraint the
+ * static-build pipeline relies on). For plain (already-detached) values such as the whole-state
+ * snapshot, the runtime uses `structuredClone` directly instead.
  */
 function detachSnapshot<TValue>(value: TValue): TValue {
   if (value === null || typeof value !== 'object') {
@@ -423,7 +425,7 @@ function validateQueryOutput<TState>(
 }
 
 /**
- * Runs the query handler synchronously and validates the resolved value.
+ * Runs the query handler synchronously and returns its raw result (no output validation).
  *
  * The `selfQueries` parameter lets the caller swap in load-aware wrappers when running inside a
  * load body or a `.loaded()` discovery pass; ordinary handler calls pass the default queries.
@@ -451,9 +453,12 @@ function runHandlerSync<TState>(
     queries: selfQueries,
   };
   const handlerCtx: QueryCtx<TState> = { self: handlerSelf, getService };
-  const result = queryDef.handler(validatedInput, handlerCtx);
 
-  return validateQueryOutput(refs, queryName, queryDef, result);
+  // The handler result is returned raw. Output validation is intentionally *not* run here: this
+  // function executes inside the subscription `computed`, and reading the whole value to validate it
+  // would broaden the reactive dependency footprint (and, for converting schemas, churn references).
+  // Validation runs on pull boundaries instead — see `validateQueryOutput` call sites.
+  return queryDef.handler(validatedInput, handlerCtx);
 }
 
 /**
@@ -621,7 +626,10 @@ function buildLoadWrappedQueries<TState>(
         }
       }
 
-      return detachSnapshot(
+      return validateQueryOutput(
+        refs,
+        name,
+        queryDef,
         runHandlerSync(
           refs,
           name,
@@ -780,7 +788,10 @@ async function runLoaded<TState>(
     hasMoreWork = session.collector.size > 0;
   }
 
-  return detachSnapshot(
+  return validateQueryOutput(
+    refs,
+    queryName,
+    queryDef,
     runHandlerSync(
       refs,
       queryName,
@@ -856,8 +867,12 @@ function createDefaultQuery<TState>(
       }
     }
 
-    // Detach from the reactive proxy: consumers always receive a plain, immutable snapshot.
-    return detachSnapshot(
+    // Validate (and convert) the output on this pull boundary. For object/array schemas valibot
+    // rebuilds a plain value, which also detaches it from the deep-signal proxy for the consumer.
+    return validateQueryOutput(
+      refs,
+      queryName,
+      queryDef,
       runHandlerSync(
         refs,
         queryName,
@@ -944,9 +959,14 @@ function subscribeToQuery<TState>(
       pendingLoad.catch(rethrowAsync);
     }
 
-    // The computed reads through the deep-signal proxy (fine-grained tracking) and returns a
-    // detached snapshot of the selected value. `detachSnapshot` reads every field it emits, which is
-    // what registers the precise dependency set this subscription should react to.
+    // The computed reads through the deep-signal proxy, so its dependency footprint is exactly what
+    // it reads:
+    //   - With a `selector`, only the selected fields are read, then detached to a plain snapshot —
+    //     a sibling field the selector ignores never re-runs this computed.
+    //   - Without a selector, the value is validated (and converted) here. Reading the whole value
+    //     to validate it is the *correct* footprint for a whole-output subscriber, and conversion is
+    //     harmless to reactivity because emissions are deduped by value below. This also keeps a
+    //     subscriber's value identical to what a direct `query()` / `.loaded()` pull returns.
     const comp = computed(() => {
       const output = runHandlerSync(
         refs,
@@ -956,7 +976,10 @@ function subscribeToQuery<TState>(
         refs.defaultQueries,
         refs.registryApi.getService
       );
-      return detachSnapshot(selector ? selector(output) : output);
+      if (selector) {
+        return detachSnapshot(selector(output));
+      }
+      return validateQueryOutput(refs, queryName, queryDef, output);
     });
 
     let hasEmitted = false;

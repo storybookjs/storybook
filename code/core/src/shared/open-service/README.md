@@ -6,8 +6,7 @@ Its goals are:
 
 - define stateful services in one declarative object
 - expose synchronous queries and async commands with strong TypeScript inference
-- validate the _shape_ of all query and command input/output through Standard Schema (validation
-  only — schemas never convert values)
+- validate all query and command input/output through Standard Schema (schemas may transform/coerce)
 - support fine-grained reactive query subscriptions through deep signals (`deepsignal` +
   `@preact/signals-core`)
 - support server-side static state snapshots driven by query `load` hooks
@@ -160,15 +159,13 @@ Both must be Standard Schema compatible.
 The runtime validates:
 
 - caller input before a handler runs
-- handler output before the result is returned or emitted
+- handler output on **pull boundaries** — a direct `query()` call, `query.loaded()`, and the static
+  build — and on a subscription's emission (see below)
 
-**Schemas validate shape only — they never convert values.** The runtime discards a schema's
-normalized output and passes the _original_ reference through, so the reactive deep-signal graph
-stays referentially stable. As a contract, schemas must not transform, coerce, or inject defaults,
-and must not reshape values (e.g. a strict `v.object` that strips unknown keys is a conversion). In
-development the runtime compares the schema's output against the original value and throws
-`OpenServiceSchemaConversionError` when they differ; the check is skipped in production. Use a loose
-schema (e.g. `v.looseObject`, `v.record`) when you intend to allow extra keys.
+Schemas may transform, coerce, or inject defaults; the parsed value is what callers receive. The one
+firm rule is that **validation never runs inside a subscription's reactive `computed`** when it
+would broaden tracking: output validation is a pull-boundary concern, so a converting schema can
+never churn references or expand the deep-signal dependency footprint. (See "Subscription Flow".)
 
 Queries validate **synchronously**. Their input and output schemas must produce sync results. If a Standard Schema returns a Promise during a query validation, the runtime throws `OpenServiceAsyncSchemaError` immediately.
 
@@ -269,9 +266,14 @@ created in [service-runtime.ts](./service-runtime.ts). There is no top-level sta
   (including not-yet-present record keys, which fire when the key is later added).
 - `setState((draft) => …)` mutates the proxy **in place** inside a batch, so one command notifies
   subscribers once, and only the fields it actually changed are invalidated.
-- The proxy is internal: every value returned to consumers (query results and subscription
-  emissions) is a detached, plain, immutable snapshot. State must be JSON-serializable (the same
-  constraint the static-build pipeline relies on).
+- The proxy is internal and does not escape:
+  - Query/`.loaded()` results are the schema-validated (and possibly converted) value. For object
+    and array schemas that rebuild a plain value, this naturally detaches the result from the proxy.
+  - Subscription emissions are detached to plain values (validated for whole-value subscribers, or
+    JSON-stripped for `selector` slices).
+  - The whole-state snapshot for the static build uses `structuredClone` of the plain backing
+    object. (`structuredClone` cannot clone a proxy, so proxy-slice stripping uses a JSON round-trip;
+    state must be JSON-serializable, the same constraint the static-build pipeline relies on.)
 
 ## Subscription Flow
 
@@ -279,11 +281,13 @@ Subscriptions are implemented in [service-runtime.ts](./service-runtime.ts):
 
 1. `subscribe(input, callback)` (or `subscribe(input, selector, callback)`) defers all work to a microtask.
 2. The microtask validates the input synchronously and fires the dependency's `load` in the background.
-3. A `computed()` wraps the synchronous handler and reads state through the deep-signal proxy, so it only re-runs when the exact fields it touched change. It returns a detached snapshot of the value (or of `selector(value)` when a selector is given).
+3. A `computed()` runs the synchronous handler against the deep-signal proxy, so its dependency footprint is exactly what it reads:
+   - **No selector:** the value is validated (and converted) here and emitted. Reading the whole value to validate it is the correct footprint for a whole-value subscriber, and it keeps the emitted value identical to a direct `query()` pull.
+   - **With a selector:** only `selector(value)` is read (then detached to a plain snapshot), so a sibling field the selector ignores never re-runs the handler.
 4. An `effect()` runs the computed immediately (delivering the current value) and re-runs only when the computed's tracked fields change. A write to an unrelated key or field never re-runs the handler.
 5. Subscribers receive the current state right away, then a follow-up emission once the load settles and state changes. UI consumers that want to suppress the pre-load emission should branch on the value (e.g. show a spinner for `null`).
-6. Each emitted value is output-validated (shape only) and deduped by value: the effect compares the new snapshot with the last emitted one via `es-toolkit` `isEqual` and skips the callback when they are equal. So a load that rewrites a deeply-equal payload does not re-fire subscribers.
-7. An optional `selector` narrows what the subscriber depends on: the callback receives the selected slice and fires only when that slice changes by value — the same pattern as `universal-store`.
+6. Emissions are deduped by value: the effect compares the new value with the last emitted one via `es-toolkit` `isEqual` and skips the callback when they are equal. So a load that rewrites a deeply-equal value does not re-fire subscribers (a converting schema is therefore harmless to reactivity — equal states produce equal converted values).
+7. The optional `selector` is the `universal-store` pattern: the callback receives the selected slice and fires only when that slice changes by value — and, because the selector drives the computed's reads, an unselected field change does not even re-run the handler.
 
 Tests should use `vi.waitFor(...)` when asserting the first emission or follow-up emissions.
 

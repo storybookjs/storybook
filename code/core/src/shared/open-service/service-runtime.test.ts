@@ -4,12 +4,12 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { defineService } from './service-definition.ts';
 import { clearRegistry, registerService } from './server.ts';
 import {
-  type DocgenLikePayload,
+  type RebuiltValue,
   awaitedPreloadValueServiceDef,
   createDerivedBooleanFromChildQueryServiceDef,
   fireAndForgetPreloadValueServiceDef,
-  freshEqualPayloadOnLoadServiceDef,
   mutableRecordLookupServiceDef,
+  rebuiltEqualValueOnLoadServiceDef,
 } from './fixtures.ts';
 
 afterEach(() => {
@@ -298,40 +298,39 @@ describe('service runtime', () => {
       unsubscribe();
     });
 
-    // A load that re-runs and rewrites a deeply-equal payload produces a new state slice, so the
-    // subscription computed re-runs — but the emitted snapshot is value-equal to the last one, so
-    // the `isEqual` emit gate suppresses the redundant callback. This is the docgen "second
-    // navigation" behavior observed in the internal Storybook emulation.
-    it('does not re-emit when a load rewrites a deeply-equal but freshly-allocated payload', async () => {
-      const service = registerService(freshEqualPayloadOnLoadServiceDef);
+    // A load that re-runs and rewrites a deeply-equal value produces a new state slice, so the
+    // subscription computed re-runs — but the emitted value is value-equal to the last one, so the
+    // `isEqual` emit gate suppresses the redundant callback.
+    it('does not re-emit when a load rewrites a deeply-equal but freshly-allocated value', async () => {
+      const service = registerService(rebuiltEqualValueOnLoadServiceDef);
 
-      // First subscription: undefined -> populated. After this, state holds payload #1.
-      const firstCalls: Array<DocgenLikePayload | null> = [];
-      const unsubscribeFirst = service.queries.getPayload.subscribe(
-        { entryId: 'components-card' },
+      // First subscription: null -> populated. After this, state holds value #1.
+      const firstCalls: Array<RebuiltValue | null> = [];
+      const unsubscribeFirst = service.queries.getRebuiltValue.subscribe(
+        { entryId: 'entry-a' },
         (value) => {
           firstCalls.push(value);
         }
       );
-      await vi.waitFor(() => expect(firstCalls).toEqual([null, { name: 'Card', props: 5 }]));
+      await vi.waitFor(() => expect(firstCalls).toEqual([null, { marker: 'stable', count: 1 }]));
       unsubscribeFirst();
 
       // Second subscription, entry already populated: the immediate emission carries the stored
-      // payload, then load reruns and stores a brand-new object that is deeply equal but not `===`.
+      // value, then load reruns and stores a brand-new object that is deeply equal but not `===`.
       // The redundant emission must be suppressed.
-      const secondCalls: Array<DocgenLikePayload | null> = [];
-      const unsubscribeSecond = service.queries.getPayload.subscribe(
-        { entryId: 'components-card' },
+      const secondCalls: Array<RebuiltValue | null> = [];
+      const unsubscribeSecond = service.queries.getRebuiltValue.subscribe(
+        { entryId: 'entry-a' },
         (value) => {
           secondCalls.push(value);
         }
       );
 
-      await vi.waitFor(() => expect(secondCalls).toEqual([{ name: 'Card', props: 5 }]));
+      await vi.waitFor(() => expect(secondCalls).toEqual([{ marker: 'stable', count: 1 }]));
       // Give the background load time to run and (not) notify.
       await new Promise((resolve) => setTimeout(resolve, 50));
 
-      expect(secondCalls).toEqual([{ name: 'Card', props: 5 }]);
+      expect(secondCalls).toEqual([{ marker: 'stable', count: 1 }]);
 
       unsubscribeSecond();
     });
@@ -379,45 +378,87 @@ describe('service runtime', () => {
       }
     });
 
-    // A `selector` narrows what the subscriber depends on: changing a sibling field that the
-    // selector does not read must not fire the callback, even though the same record changed.
+    // A `selector` narrows what the subscriber depends on: changing a sibling field the selector
+    // does not read must not fire the callback, even though the same record changed.
     it('only re-emits for the selected slice of a query value', async () => {
       const service = registerService(mutableRecordLookupServiceDef);
 
       await service.commands.assignRecordField({
         entryId: 'entry-a',
-        fieldKey: 'name',
-        fieldValue: 'Card',
+        fieldKey: 'selected',
+        fieldValue: 'first',
       });
 
-      const selected: Array<string | undefined> = [];
+      const selectedCalls: Array<string | undefined> = [];
       const unsubscribe = service.queries.getRecordFields.subscribe(
         { entryId: 'entry-a' },
-        (record) => record?.name,
-        (name) => {
-          selected.push(name);
+        (record) => record?.selected,
+        (selected) => {
+          selectedCalls.push(selected);
         }
       );
-      await vi.waitFor(() => expect(selected).toEqual(['Card']));
+      await vi.waitFor(() => expect(selectedCalls).toEqual(['first']));
 
-      // Change an unrelated field on the same record: the selector reads only `name`, so no emit.
+      // Change a sibling field on the same record: the selector reads only `selected`, so no emit.
       await service.commands.assignRecordField({
         entryId: 'entry-a',
-        fieldKey: 'props',
-        fieldValue: '5',
+        fieldKey: 'sibling',
+        fieldValue: 'ignored',
       });
       await new Promise((resolve) => setTimeout(resolve, 30));
-      expect(selected).toEqual(['Card']);
+      expect(selectedCalls).toEqual(['first']);
 
       // Change the selected field: the callback fires with the new selected value.
       await service.commands.assignRecordField({
         entryId: 'entry-a',
-        fieldKey: 'name',
-        fieldValue: 'Renamed',
+        fieldKey: 'selected',
+        fieldValue: 'second',
       });
-      await vi.waitFor(() => expect(selected).toEqual(['Card', 'Renamed']));
+      await vi.waitFor(() => expect(selectedCalls).toEqual(['first', 'second']));
 
       unsubscribe();
+    });
+
+    // The selector must also narrow the *dependency footprint*, not just the emission: changing a
+    // sibling field the selector ignores must not re-run the handler. This is what proves output
+    // validation no longer runs on the reactive path (which would read every field and broaden the
+    // tracked set). The handler spy fails this assertion if validation creeps back into the computed.
+    it('does not re-run a selector subscriber handler when an unselected field changes', async () => {
+      const handlerSpy = vi.spyOn(mutableRecordLookupServiceDef.queries.getRecordFields, 'handler');
+      try {
+        const service = registerService(mutableRecordLookupServiceDef);
+
+        await service.commands.assignRecordField({
+          entryId: 'entry-a',
+          fieldKey: 'selected',
+          fieldValue: 'first',
+        });
+
+        const selectedCalls: Array<string | undefined> = [];
+        const unsubscribe = service.queries.getRecordFields.subscribe(
+          { entryId: 'entry-a' },
+          (record) => record?.selected,
+          (selected) => {
+            selectedCalls.push(selected);
+          }
+        );
+        await vi.waitFor(() => expect(selectedCalls).toEqual(['first']));
+        const handlerRunsAfterSubscribe = handlerSpy.mock.calls.length;
+
+        await service.commands.assignRecordField({
+          entryId: 'entry-a',
+          fieldKey: 'sibling',
+          fieldValue: 'ignored',
+        });
+        await new Promise((resolve) => setTimeout(resolve, 30));
+
+        expect(selectedCalls).toEqual(['first']);
+        expect(handlerSpy.mock.calls.length).toBe(handlerRunsAfterSubscribe);
+
+        unsubscribe();
+      } finally {
+        handlerSpy.mockRestore();
+      }
     });
 
     it('preloads distinct values independently by input', async () => {

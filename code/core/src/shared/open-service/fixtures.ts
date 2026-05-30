@@ -124,50 +124,50 @@ export const fireAndForgetPreloadValueServiceDef = defineService({
   },
 });
 
-export type DocgenLikePayload = { name: string; props: number };
-export type DocgenLikeState = Record<string, DocgenLikePayload | undefined>;
+export type RebuiltValue = { marker: string; count: number };
+export type RebuiltValueState = Record<string, RebuiltValue | undefined>;
 
-/** Shared schema for the docgen-like payload used by the referential-equality fixture. */
-export const docgenLikeOutputSchema = v.nullable(v.object({ name: v.string(), props: v.number() }));
+/** Shared schema for the object value used by the rebuilt-equal-value fixture. */
+export const rebuiltValueOutputSchema = v.nullable(
+  v.object({ marker: v.string(), count: v.number() })
+);
 
 /**
- * Service fixture that mirrors the docgen service's load shape: every load run resolves a fresh
- * payload object (new reference) whose value is deeply equal to whatever is already in state, then
- * writes it back via a command.
+ * Service fixture whose `load` rebuilds a deeply-equal but freshly-allocated object value every
+ * time it runs, then writes it back via a command.
  *
- * This reproduces the real-world behavior where re-subscribing to an already-populated entry emits
- * a redundant second value: the immediate emission plus a load-driven emission carrying an
- * equal-but-not-identical object.
+ * It exercises the case where re-subscribing to an already-populated entry would emit a redundant
+ * second value (the immediate emission plus a load-driven emission carrying an equal-but-not-
+ * identical object) unless the runtime dedups by value.
  */
-export const freshEqualPayloadOnLoadServiceDef = defineService({
-  id: 'internal-fixture/fresh-equal-payload-on-load',
-  description: 'Rewrites a deeply-equal but freshly-allocated payload object on every load.',
-  initialState: {} as DocgenLikeState,
+export const rebuiltEqualValueOnLoadServiceDef = defineService({
+  id: 'internal-fixture/rebuilt-equal-value-on-load',
+  description: 'Rewrites a deeply-equal but freshly-allocated object value on every load.',
+  initialState: {} as RebuiltValueState,
   queries: {
-    getPayload: {
-      description:
-        'Returns the payload for an entry; load always rewrites a fresh-but-equal value.',
+    getRebuiltValue: {
+      description: 'Returns the value for an entry; load always rewrites a fresh-but-equal value.',
       input: entryIdInputSchema,
-      output: docgenLikeOutputSchema,
+      output: rebuiltValueOutputSchema,
       handler: (input, ctx) => ctx.self.state[input.entryId] ?? null,
       load: async (input, ctx) => {
-        await ctx.self.commands.extractPayload(input);
+        await ctx.self.commands.rebuildValue(input);
       },
     },
   },
   commands: {
-    extractPayload: {
-      description: 'Always allocates a brand-new payload object with a stable value and stores it.',
+    rebuildValue: {
+      description: 'Allocates a brand-new object with a stable value and stores it.',
       input: entryIdInputSchema,
-      output: docgenLikeOutputSchema,
+      output: rebuiltValueOutputSchema,
       handler: async (input, ctx) => {
         await Promise.resolve();
         // A new object literal every call: deeply equal to any prior value, never `===` to it.
-        const payload: DocgenLikePayload = { name: 'Card', props: 5 };
+        const value: RebuiltValue = { marker: 'stable', count: 1 };
         ctx.self.setState((draft) => {
-          draft[input.entryId] = payload;
+          draft[input.entryId] = value;
         });
-        return payload;
+        return value;
       },
     },
   },

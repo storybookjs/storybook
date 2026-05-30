@@ -169,45 +169,36 @@ describe('service validation', () => {
     );
   });
 
-  it('throws when a strict object schema would strip unexpected input fields (a conversion)', () => {
+  it('accepts unexpected query input fields when the schema allows them', () => {
     const service = registerService(mutableRecordLookupServiceDef);
 
-    // Open-service schemas validate shape only; a strict `v.object` would drop the unexpected key,
-    // which is a conversion and must surface as an error rather than silently reshaping the value.
-    expect(() =>
+    expect(
       service.queries.getRecordFields({
         entryId: 'entry-a',
         unexpected: 'extra',
       } as unknown as { entryId: string })
-    ).toThrowError(
-      expect.objectContaining({ code: 13, _name: 'OpenServiceSchemaConversionError' })
-    );
+    ).toBeNull();
   });
 
-  it('preserves unexpected fields when a loose schema genuinely allows them', () => {
-    const service = registerService(
-      defineService({
-        id: 'internal-fixture/loose-input',
-        initialState: { lastInput: null as { entryId: string } | null },
-        queries: {
-          echoInput: {
-            // A loose object keeps unknown keys, so validation does not reshape the value.
-            input: v.looseObject({ entryId: v.string() }),
-            output: v.nullable(v.looseObject({ entryId: v.string() })),
-            handler: (input, ctx) => ctx.self.state.lastInput,
-          },
-        },
-        commands: {},
-      })
-    );
+  it('accepts unexpected command input fields when the schema allows them', async () => {
+    const service = registerService(mutableRecordLookupServiceDef);
 
-    // Does not throw even though an unexpected field is present, because the schema allows it.
-    expect(
-      service.queries.echoInput({
+    await expect(
+      service.commands.assignRecordField({
         entryId: 'entry-a',
+        fieldKey: 'marker',
+        fieldValue: 'match',
         unexpected: 'extra',
-      } as unknown as { entryId: string })
-    ).toBeNull();
+      } as unknown as {
+        entryId: string;
+        fieldKey: string;
+        fieldValue: string;
+      })
+    ).resolves.toBeUndefined();
+
+    expect(service.queries.getRecordFields({ entryId: 'entry-a' })).toEqual({
+      marker: 'match',
+    });
   });
 
   it('stores optional description metadata on services, queries, and commands', () => {

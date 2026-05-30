@@ -1,11 +1,14 @@
 import React from 'react';
 
+import type { Channel } from 'storybook/internal/channels';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
-import { expect, within } from 'storybook/test';
+import { expect, waitFor, within } from 'storybook/test';
 import { styled } from 'storybook/theming';
 
+import { createDocsSlugger, DocsSluggerContext } from '../blocks/DocsSluggerContext';
 import { Heading } from '../blocks/Heading';
+import { Subheading } from '../blocks/Subheading';
 import { TableOfContents } from './TableOfContents';
 
 const MockPage = styled.div`
@@ -17,6 +20,31 @@ const MockContent = styled.div`
   width: 75%;
   border: 1px solid #ccc;
 `;
+
+const mockChannel = {
+  emit: () => {},
+} as unknown as Channel;
+
+const DuplicateHeadingDocs = () => {
+  const slugger = React.useMemo(() => createDocsSlugger(), []);
+
+  return (
+    <DocsSluggerContext.Provider value={slugger}>
+      <h1>Page title</h1>
+      {['Button', 'Input', 'Tooltip'].map((section) => (
+        <React.Fragment key={section}>
+          <Heading>{section}</Heading>
+          <Subheading>Properties</Subheading>
+          Lorem ipsum.
+          <Subheading>Slots</Subheading>
+          Lorem ipsum.
+          <Subheading>Events</Subheading>
+          Lorem ipsum.
+        </React.Fragment>
+      ))}
+    </DocsSluggerContext.Provider>
+  );
+};
 
 const meta = {
   component: TableOfContents,
@@ -50,7 +78,7 @@ export default meta;
 export const Default: StoryObj<typeof meta> = {
   args: {
     // Not used here yet. Would need to be mocked to test navigation.
-    channel: {} as any,
+    channel: mockChannel,
     headingSelector: 'h1, h2, h3',
     contentsSelector: '.local-story-docs',
   },
@@ -84,7 +112,7 @@ export const Default: StoryObj<typeof meta> = {
 
 export const WithTitle: StoryObj<typeof meta> = {
   args: {
-    channel: {} as any,
+    channel: mockChannel,
     headingSelector: 'h1, h2, h3',
     contentsSelector: '.local-story-docs',
     title: 'In this page',
@@ -111,7 +139,7 @@ export const WithTitle: StoryObj<typeof meta> = {
 
 export const WithReactTitle: StoryObj<typeof meta> = {
   args: {
-    channel: {} as any,
+    channel: mockChannel,
     headingSelector: 'h1, h2, h3',
     contentsSelector: '.local-story-docs',
     title: (
@@ -137,6 +165,50 @@ export const WithReactTitle: StoryObj<typeof meta> = {
 
     await step('Verify nav aria-labelledby', async () => {
       expect(toc).toHaveAttribute('aria-labelledby', title.id);
+    });
+  },
+};
+
+export const WithDuplicateSubheadings: StoryObj<typeof meta> = {
+  args: {
+    channel: mockChannel,
+    headingSelector: 'h2, h3',
+    contentsSelector: '.local-story-docs',
+  },
+  render: (args) => {
+    return (
+      <MockPage>
+        <MockContent className="local-story-docs">
+          <DuplicateHeadingDocs />
+        </MockContent>
+        <TableOfContents {...args} />
+      </MockPage>
+    );
+  },
+  play: async ({ canvasElement, step }) => {
+    const canvas = within(canvasElement);
+
+    const links = await waitFor(() => {
+      const tocLinks = canvas.getAllByRole('link');
+      expect(tocLinks).toHaveLength(12);
+      return tocLinks;
+    });
+
+    await step('Verify repeated subheadings get distinct TOC links', async () => {
+      expect(links.map((link) => link.getAttribute('href'))).toEqual([
+        '#button',
+        '#properties',
+        '#slots',
+        '#events',
+        '#input',
+        '#properties-1',
+        '#slots-1',
+        '#events-1',
+        '#tooltip',
+        '#properties-2',
+        '#slots-2',
+        '#events-2',
+      ]);
     });
   },
 };

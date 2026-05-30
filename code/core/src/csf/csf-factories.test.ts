@@ -69,6 +69,14 @@ test('globals overrides may be partial, mirroring args', () => {
     render: ({ label }) => 'hello' + label,
     globals: { locale: 'fr' },
   });
+
+  // Only the keys become optional — values stay type-checked.
+  globalsPreview.type<{ args: { label: string } }>().meta({
+    args: { label: 'foo' },
+    render: ({ label }) => 'hello' + label,
+    // @ts-expect-error theme must be 'light' | 'dark'
+    globals: { theme: 'blue' },
+  });
 });
 
 describe('test function', () => {

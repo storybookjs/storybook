@@ -390,6 +390,12 @@ type QueryRuntimeRefs<TState> = {
   registryApi: ServiceRegistryApi;
   queryDefinitions: Map<string, RuntimeQueryDefinition<TState>>;
   defaultQueries: Record<string, Query<unknown, unknown>>;
+  /**
+   * Builds a command map whose `setState` writes are dropped once `isCurrent()` returns false.
+   * Used by reactive subscription loads so a superseded (stale) re-run cannot overwrite the state
+   * produced by a newer run.
+   */
+  buildGatedCommands: (isCurrent: () => boolean) => CommandSelf<TState>['commands'];
 };
 
 /**
@@ -570,6 +576,43 @@ async function runLoadBody<TState>(
 
   await Promise.resolve(queryDef.load(validatedInput, loadCtx));
   await drainCollector(collector, undefined, refs.serviceId, queryName);
+}
+
+/**
+ * Runs a query's `load` as the body of a subscription's reactive effect.
+ *
+ * Unlike {@link runLoadBody}, this is invoked synchronously inside an `effect()`, so the external
+ * signals the load reads in its synchronous prefix are tracked — when they later change, the effect
+ * re-runs and the load re-fires, turning it into a reactive async resource. Loads are therefore an
+ * idempotent warming step (the documented guideline, now a hard contract); one-shot side effects
+ * belong in a command.
+ *
+ * Writes go through gated commands: if `isCurrent()` flips to false because a newer run started
+ * (deps changed again), this run's later writes are dropped, so a slow stale load cannot clobber the
+ * newer result. Sibling reads use the default queries — their loads fire-and-forget — so transitive
+ * dependencies stay warm without the `.loaded()` drain, which is only meaningful for awaited pulls.
+ */
+async function runReactiveLoad<TState>(
+  refs: QueryRuntimeRefs<TState>,
+  queryName: string,
+  queryDef: RuntimeQueryDefinition<TState>,
+  validatedInput: unknown,
+  isCurrent: () => boolean
+): Promise<void> {
+  if (!queryDef.load) {
+    return;
+  }
+
+  const loadSelf: LoadSelf<TState> = {
+    get state() {
+      return refs.state;
+    },
+    queries: refs.defaultQueries,
+    commands: refs.buildGatedCommands(isCurrent) as LoadSelf<TState>['commands'],
+  };
+  const loadCtx: LoadCtx<TState> = { self: loadSelf, getService: refs.registryApi.getService };
+
+  await Promise.resolve(queryDef.load(validatedInput, loadCtx));
 }
 
 /**
@@ -931,6 +974,7 @@ function subscribeToQuery<TState>(
 ): () => void {
   let active = true;
   let teardown: (() => void) | undefined;
+  let loadTeardown: (() => void) | undefined;
 
   Promise.resolve().then(() => {
     if (!active) {
@@ -946,17 +990,18 @@ function subscribeToQuery<TState>(
     }
 
     if (queryDef.load) {
-      const loadKey = makeLoadKey(refs.serviceId, queryName, validatedInput);
-      const pendingLoad = triggerLoad(
-        refs,
-        queryName,
-        queryDef,
-        validatedInput,
-        loadKey,
-        EMPTY_SET
-      );
-      // Subscribers do not block on rejections, but we still want them visible to global handlers.
-      pendingLoad.catch(rethrowAsync);
+      // Reactive load: run the load inside an effect so the external signals it reads synchronously
+      // are tracked. When they change, the effect re-runs and the load re-fires, keeping an
+      // asynchronously-produced value fresh. `epoch` gates writes so a superseded run can't clobber
+      // a newer one. Loads with no external synchronous reads (the existing ones) track nothing and
+      // therefore fire exactly once, so this is non-breaking.
+      let epoch = 0;
+      loadTeardown = effect(() => {
+        const myEpoch = ++epoch;
+        runReactiveLoad(refs, queryName, queryDef, validatedInput, () => myEpoch === epoch).catch(
+          rethrowAsync
+        );
+      });
     }
 
     // The output is always validated, but the computed's dependency footprint must match only what
@@ -1014,6 +1059,7 @@ function subscribeToQuery<TState>(
   return () => {
     active = false;
     teardown?.();
+    loadTeardown?.();
   };
 }
 
@@ -1073,6 +1119,33 @@ export function createServiceRuntime<
     Object.entries(def.queries) as [string, RuntimeQueryDefinition<TState>][]
   );
   const defaultQueries: Record<string, Query<unknown, unknown>> = {};
+
+  // Gated commands for reactive subscription loads: a stale run's writes are dropped once a newer
+  // run has started (`isCurrent()` returns false), so superseded loads cannot clobber fresh state.
+  const buildGatedCommands = (isCurrent: () => boolean): CommandSelf<TState>['commands'] => {
+    const gatedSelf: CommandSelf<TState> = {
+      get state() {
+        return state;
+      },
+      setState(mutate) {
+        if (!isCurrent()) {
+          return;
+        }
+        batch(() => {
+          mutate(state);
+        });
+      },
+      queries: defaultQueries,
+      commands: {},
+    };
+    const gated = buildCommands(def.id, def.commands, () => ({
+      self: gatedSelf,
+      getService: registryApi.getService,
+    }));
+    gatedSelf.commands = gated as CommandSelf<TState>['commands'];
+    return gated as CommandSelf<TState>['commands'];
+  };
+
   const refs: QueryRuntimeRefs<TState> = {
     serviceId: def.id,
     commandSelf,
@@ -1080,6 +1153,7 @@ export function createServiceRuntime<
     registryApi,
     queryDefinitions,
     defaultQueries,
+    buildGatedCommands,
   };
 
   // Build queries after commands so handler/load ctx surfaces resolve the same command map.

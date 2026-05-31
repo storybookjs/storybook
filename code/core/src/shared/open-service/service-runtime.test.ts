@@ -516,6 +516,301 @@ describe('service runtime', () => {
     });
   });
 
+  describe('reactive load', () => {
+    // Same-service: the load reads an external field (`source`) and writes a derived field;
+    // changing `source` must re-fire the load and refresh the value.
+    function createReactiveDerivedServiceDef() {
+      return defineService({
+        id: 'internal-fixture/reactive-derived-same-service',
+        initialState: { source: 1, derived: null as number | null },
+        queries: {
+          getDerived: {
+            input: v.void(),
+            output: v.nullable(v.number()),
+            handler: (_input, ctx) => ctx.self.state.derived,
+            load: async (_input, ctx) => {
+              const source = ctx.self.state.source; // external read -> tracked
+              await Promise.resolve();
+              await ctx.self.commands.setDerived(source * 10);
+            },
+          },
+        },
+        commands: {
+          setSource: {
+            input: v.number(),
+            output: v.void(),
+            handler: (next, ctx) =>
+              ctx.self.setState((state) => {
+                state.source = next;
+              }),
+          },
+          bumpSourceTwice: {
+            input: v.void(),
+            output: v.void(),
+            // Two writes in one command share one batch, so the load coalesces them into one re-fire.
+            handler: (_input, ctx) =>
+              ctx.self.setState((state) => {
+                state.source = 2;
+                state.source = 3;
+              }),
+          },
+          setDerived: {
+            input: v.number(),
+            output: v.void(),
+            handler: (next, ctx) =>
+              ctx.self.setState((state) => {
+                state.derived = next;
+              }),
+          },
+        },
+      });
+    }
+
+    it('re-fires load when a same-service external dependency changes', async () => {
+      const service = registerService(createReactiveDerivedServiceDef());
+      const calls: Array<number | null> = [];
+
+      const unsubscribe = service.queries.getDerived.subscribe(undefined, (value) => {
+        calls.push(value);
+      });
+
+      await vi.waitFor(() => expect(calls).toEqual([null, 10]));
+      await service.commands.setSource(5);
+      await vi.waitFor(() => expect(calls).toEqual([null, 10, 50]));
+
+      unsubscribe();
+    });
+
+    it('re-fires load when a cross-service dependency changes (via getService)', async () => {
+      const sourceDef = defineService({
+        id: 'internal-fixture/reactive-cross-source',
+        initialState: { value: 1 },
+        queries: {
+          getValue: {
+            input: v.void(),
+            output: v.number(),
+            handler: (_input, ctx) => ctx.self.state.value,
+          },
+        },
+        commands: {
+          setValue: {
+            input: v.number(),
+            output: v.void(),
+            handler: (next, ctx) =>
+              ctx.self.setState((state) => {
+                state.value = next;
+              }),
+          },
+        },
+      });
+      const derivedDef = defineService({
+        id: 'internal-fixture/reactive-cross-derived',
+        initialState: { derived: null as number | null },
+        queries: {
+          getDerived: {
+            input: v.void(),
+            output: v.nullable(v.number()),
+            handler: (_input, ctx) => ctx.self.state.derived,
+            load: async (_input, ctx) => {
+              const value = ctx.getService(sourceDef.id).queries.getValue(undefined) as number;
+              await Promise.resolve();
+              await ctx.self.commands.setDerived(value * 10);
+            },
+          },
+        },
+        commands: {
+          setDerived: {
+            input: v.number(),
+            output: v.void(),
+            handler: (next, ctx) =>
+              ctx.self.setState((state) => {
+                state.derived = next;
+              }),
+          },
+        },
+      });
+
+      const sourceService = registerService(sourceDef);
+      const derivedService = registerService(derivedDef);
+      const calls: Array<number | null> = [];
+
+      const unsubscribe = derivedService.queries.getDerived.subscribe(undefined, (value) => {
+        calls.push(value);
+      });
+
+      await vi.waitFor(() => expect(calls).toEqual([null, 10]));
+      await sourceService.commands.setValue(5);
+      await vi.waitFor(() => expect(calls).toEqual([null, 10, 50]));
+
+      unsubscribe();
+    });
+
+    it('does not infinite-loop when the load writes the state its handler reads', async () => {
+      const def = createReactiveDerivedServiceDef();
+      const loadSpy = vi.spyOn(def.queries.getDerived, 'load');
+      try {
+        const service = registerService(def);
+        const calls: Array<number | null> = [];
+
+        const unsubscribe = service.queries.getDerived.subscribe(undefined, (value) => {
+          calls.push(value);
+        });
+
+        await vi.waitFor(() => expect(calls).toEqual([null, 10]));
+        await new Promise((resolve) => setTimeout(resolve, 40));
+
+        // The load writes `derived` (read by the handler) but only reads `source`, so writing
+        // `derived` does not re-trigger it: it fires exactly once and settles.
+        expect(loadSpy).toHaveBeenCalledTimes(1);
+        expect(calls).toEqual([null, 10]);
+
+        unsubscribe();
+      } finally {
+        loadSpy.mockRestore();
+      }
+    });
+
+    it('coalesces rapid dependency changes in one batch into a single re-load', async () => {
+      const def = createReactiveDerivedServiceDef();
+      const loadSpy = vi.spyOn(def.queries.getDerived, 'load');
+      try {
+        const service = registerService(def);
+        const calls: Array<number | null> = [];
+
+        const unsubscribe = service.queries.getDerived.subscribe(undefined, (value) => {
+          calls.push(value);
+        });
+        await vi.waitFor(() => expect(calls).toEqual([null, 10]));
+        expect(loadSpy).toHaveBeenCalledTimes(1);
+
+        // Two writes to `source` within one batched command -> one re-load (not two).
+        await service.commands.bumpSourceTwice();
+        await vi.waitFor(() => expect(calls).toEqual([null, 10, 30]));
+
+        expect(loadSpy).toHaveBeenCalledTimes(2);
+
+        unsubscribe();
+      } finally {
+        loadSpy.mockRestore();
+      }
+    });
+
+    it('supersedes an in-flight load when dependencies change again', async () => {
+      const gates = new Map<number, () => void>();
+      const waitForGate = (source: number) =>
+        new Promise<void>((resolve) => {
+          gates.set(source, resolve);
+        });
+      const releaseGate = async (source: number) => {
+        await vi.waitFor(() => expect(gates.has(source)).toBe(true));
+        gates.get(source)!();
+      };
+
+      const def = defineService({
+        id: 'internal-fixture/reactive-superseding',
+        initialState: { source: 0, derived: null as number | null },
+        queries: {
+          getDerived: {
+            input: v.void(),
+            output: v.nullable(v.number()),
+            handler: (_input, ctx) => ctx.self.state.derived,
+            load: async (_input, ctx) => {
+              const source = ctx.self.state.source;
+              await waitForGate(source); // hold the load open until the test releases it
+              await ctx.self.commands.setDerived(source);
+            },
+          },
+        },
+        commands: {
+          setSource: {
+            input: v.number(),
+            output: v.void(),
+            handler: (next, ctx) =>
+              ctx.self.setState((state) => {
+                state.source = next;
+              }),
+          },
+          setDerived: {
+            input: v.number(),
+            output: v.void(),
+            handler: (next, ctx) =>
+              ctx.self.setState((state) => {
+                state.derived = next;
+              }),
+          },
+        },
+      });
+
+      const service = registerService(def);
+      const calls: Array<number | null> = [];
+      const unsubscribe = service.queries.getDerived.subscribe(undefined, (value) => {
+        calls.push(value);
+      });
+
+      // Initial load (source 0) settles first.
+      await vi.waitFor(() => expect(calls).toEqual([null]));
+      await releaseGate(0);
+      await vi.waitFor(() => expect(calls).toEqual([null, 0]));
+
+      // Start two loads back-to-back; release the stale one (1) first, then the newest (2).
+      await service.commands.setSource(1);
+      await service.commands.setSource(2);
+      await releaseGate(1);
+      await releaseGate(2);
+
+      await vi.waitFor(() => expect(calls).toEqual([null, 0, 2]));
+      // The superseded load (source 1) must never have written `derived`.
+      await new Promise((resolve) => setTimeout(resolve, 40));
+      expect(calls).toEqual([null, 0, 2]);
+
+      unsubscribe();
+    });
+
+    it('does not re-fire load for non-subscription query() calls', async () => {
+      const def = createReactiveDerivedServiceDef();
+      const loadSpy = vi.spyOn(def.queries.getDerived, 'load');
+      try {
+        const service = registerService(def);
+
+        // A plain query() call fires load once (fire-and-forget) and never sets up reactivity.
+        service.queries.getDerived(undefined);
+        await vi.waitFor(() => expect(loadSpy).toHaveBeenCalledTimes(1));
+
+        await service.commands.setSource(9);
+        await new Promise((resolve) => setTimeout(resolve, 40));
+
+        expect(loadSpy).toHaveBeenCalledTimes(1);
+      } finally {
+        loadSpy.mockRestore();
+      }
+    });
+
+    it('fires an existing self-contained load exactly once for a subscription', async () => {
+      const loadSpy = vi.spyOn(awaitedPreloadValueServiceDef.queries.getPreloadedValue, 'load');
+      try {
+        const service = registerService(awaitedPreloadValueServiceDef);
+        const calls: Array<string | null> = [];
+
+        const unsubscribe = service.queries.getPreloadedValue.subscribe(
+          { entryId: 'entry-a' },
+          (value) => {
+            calls.push(value);
+          }
+        );
+
+        await vi.waitFor(() => expect(calls).toEqual([null, 'preloaded']));
+        await new Promise((resolve) => setTimeout(resolve, 40));
+
+        // The load reads/writes only its own state (no external read), so it fires once.
+        expect(loadSpy).toHaveBeenCalledTimes(1);
+
+        unsubscribe();
+      } finally {
+        loadSpy.mockRestore();
+      }
+    });
+  });
+
   describe('cross-service query composition', () => {
     it('reads a child query synchronously from another service', async () => {
       const sourceService = registerService(mutableRecordLookupServiceDef);

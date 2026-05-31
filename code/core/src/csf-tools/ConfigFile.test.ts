@@ -1,6 +1,7 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
-import { babelPrint } from 'storybook/internal/babel';
+import { babelPrint, types as t } from 'storybook/internal/babel';
+import { logger } from 'storybook/internal/node-logger';
 
 import { dedent } from 'ts-dedent';
 
@@ -251,6 +252,30 @@ describe('ConfigFile', () => {
             `
           )
         ).toEqual('bar');
+      });
+
+      it('should not log warning when default export is Identifier, CallExpression, or MemberExpression', () => {
+        const warnSpy = vi.spyOn(logger, 'warn').mockImplementation(() => {});
+
+        // Identifier
+        loadConfig(dedent`
+          import config from './config';
+          export default config;
+        `).parse();
+
+        // CallExpression
+        loadConfig(dedent`
+          export default createConfig({ foo: 'bar' });
+        `).parse();
+
+        // MemberExpression
+        loadConfig(dedent`
+          const myConfig = { val: {} };
+          export default myConfig.val;
+        `).parse();
+
+        expect(warnSpy).not.toHaveBeenCalled();
+        warnSpy.mockRestore();
       });
     });
 

@@ -221,7 +221,12 @@ export class ConfigFile {
 
           if (t.isObjectExpression(decl)) {
             self._parseExportsObject(decl);
-          } else {
+          } else if (
+            decl &&
+            !t.isIdentifier(decl) &&
+            !t.isCallExpression(decl) &&
+            !t.isMemberExpression(decl)
+          ) {
             logger.warn(
               getCsfParsingErrorMessage({
                 expectedType: 'ObjectExpression',
@@ -304,7 +309,12 @@ export class ConfigFile {
                     self._exports[exportName] = exportVal as t.Expression;
                   }
                 });
-              } else {
+              } else if (
+                exportObject &&
+                !t.isIdentifier(exportObject) &&
+                !t.isCallExpression(exportObject) &&
+                !t.isMemberExpression(exportObject)
+              ) {
                 logger.warn(
                   getCsfParsingErrorMessage({
                     expectedType: 'ObjectExpression',

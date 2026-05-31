@@ -110,6 +110,25 @@ describe('inferControls', () => {
     expect(Object.keys(controls)).toEqual(['label', 'labelName', 'borderWidth']);
   });
 
+  it('should infer radio control and preserve options including null for enum type with <= 5 values', () => {
+    const inferredControls = inferControls(
+      getStoryContext({
+        argTypes: {
+          choice: {
+            type: {
+              name: 'enum',
+              value: ['primary', null, 1],
+            },
+            name: 'choice',
+          },
+        },
+      })
+    );
+
+    expect(inferredControls.choice.control).toEqual({ type: 'radio' });
+    expect(inferredControls.choice.options).toEqual(['primary', null, 1]);
+  });
+
   it('should return filtered argTypes when include is passed', () => {
     const [includeString, includeArray, includeRegex] = [
       inferControls(getStoryContext({ parameters: { controls: { include: 'label' } } })),

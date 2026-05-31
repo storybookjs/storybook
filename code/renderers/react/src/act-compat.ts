@@ -35,20 +35,32 @@ function withGlobalActEnvironment(actImplementation: (callback: () => void) => P
       });
       if (callbackNeedsToBeAwaited) {
         const thenable = actResult;
-        return {
-          then: (resolve: (param: any) => void, reject: (param: any) => void) => {
-            thenable.then(
-              (returnValue: any) => {
-                setReactActEnvironment(previousActEnvironment);
-                resolve(returnValue);
-              },
-              (error: any) => {
-                setReactActEnvironment(previousActEnvironment);
-                reject(error);
-              }
-            );
-          },
-        };
+        // Attach to React's act thenable eagerly (the executor runs
+        // synchronously) rather than returning a lazy thenable that only forwards
+        // `.then` once a caller awaits it. Some callers in the render pipeline
+        // (e.g. the testing-library `eventWrapper`, or async teardown paths)
+        // discard the result without awaiting it; with the lazy approach that
+        // left `IS_REACT_ACT_ENVIRONMENT` stuck `true`, leaking across story
+        // boundaries and causing React to log spurious
+        // "act(async () => ...) without await" warnings in multi-file Vitest
+        // browser-mode runs. Eagerly invoking React's `.then` ties the
+        // environment reset to the act work settling rather than to whether the
+        // caller awaits, and satisfies React's own await tracking. We wrap it in
+        // a real Promise because React's act thenable is non-conformant: its
+        // `.then` returns `undefined` rather than a chainable promise.
+        // See https://github.com/storybookjs/storybook/issues/34708.
+        return new Promise((resolve, reject) => {
+          thenable.then(
+            (returnValue: any) => {
+              setReactActEnvironment(previousActEnvironment);
+              resolve(returnValue);
+            },
+            (error: any) => {
+              setReactActEnvironment(previousActEnvironment);
+              reject(error);
+            }
+          );
+        });
       } else {
         setReactActEnvironment(previousActEnvironment);
         return actResult;

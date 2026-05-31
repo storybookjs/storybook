@@ -66,6 +66,7 @@ export async function commonConfig(
   // shared between @storybook/builder-vite and @storybook/addon-vitest.
   const sbConfig: InlineConfig = {
     configFile: false,
+    publicDir: false,
     plugins: await pluginConfig(options),
     root: projectRoot,
     // Allow storybook deployed as subfolder. See https://github.com/storybookjs/builder-vite/issues/238

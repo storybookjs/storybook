@@ -67,8 +67,8 @@ export function registerDocgenService(options: RegisterDocgenServiceOptions) {
             return undefined;
           }
 
-          ctx.self.setState((draft) => {
-            draft.components[input.componentId] = payload;
+          ctx.self.setState((state) => {
+            state.components[input.componentId] = payload;
           });
           return payload;
         },

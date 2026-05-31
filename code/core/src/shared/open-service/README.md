@@ -263,7 +263,7 @@ created in [service-runtime.ts](./service-runtime.ts). There is no top-level sta
 
 - Reading a field through `ctx.self.state` tracks a fine-grained signal for exactly that field
   (including not-yet-present record keys, which fire when the key is later added).
-- `setState((draft) => …)` mutates the proxy **in place** inside a batch, so one command notifies
+- `setState((state) => …)` mutates the proxy **in place** inside a batch, so one command notifies
   subscribers once, and only the fields it actually changed are invalidated.
 - The proxy is internal and does not escape:
   - Query/`.loaded()` results are the schema-validated value. For object and array schemas that
@@ -391,8 +391,8 @@ export const exampleServiceDef = defineService({
       input: entryIdSchema,
       output: v.void(),
       handler: async (input, ctx) => {
-        ctx.self.setState((draft) => {
-          draft.values[input.entryId] = 'ready';
+        ctx.self.setState((state) => {
+          state.values[input.entryId] = 'ready';
         });
       },
     },

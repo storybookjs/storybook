@@ -1,3 +1,4 @@
+import { logger } from '../../../../node-logger/index.ts';
 import { getComponentIdFromEntry } from '../../../../common/utils/component-id.ts';
 import { OpenServiceDocgenMissingComponentError } from '../../../../server-errors.ts';
 import type { StoryIndex } from '../../../../types/modules/indexer.ts';
@@ -70,6 +71,33 @@ export function registerDocgenService(options: RegisterDocgenServiceOptions) {
             draft.components[input.componentId] = payload;
           });
           return payload;
+        },
+      },
+      handleSourceChange: {
+        handler: async (input, ctx) => {
+          // Re-extract only components that are already in state ("present"). Absent components are
+          // left untouched so the next read's `load` extracts them lazily. We never null out an
+          // entry: `extractDocgen` overwrites in place (or no-ops when the provider yields nothing),
+          // so a current reader never flashes empty and a future reader sees fresh data.
+          for (const componentId of input.componentIds) {
+            if (ctx.self.state.components[componentId] === undefined) {
+              continue;
+            }
+
+            try {
+              await ctx.self.commands.extractDocgen({ componentId });
+            } catch (error) {
+              // Keep the last-good payload rather than blanking it — e.g. when a file is mid-edit
+              // and the provider throws on a transient syntax error.
+              logger.warn(
+                `core/docgen: failed to re-extract docgen for "${componentId}" after a source change; keeping last-known value. ${
+                  error instanceof Error ? error.message : String(error)
+                }`
+              );
+            }
+          }
+
+          return undefined;
         },
       },
     },

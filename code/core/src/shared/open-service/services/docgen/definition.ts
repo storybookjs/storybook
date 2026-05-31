@@ -6,6 +6,9 @@ import type { DocgenPayload } from './types.ts';
 /** Caller-facing input to the `getDocgen` query and the `extractDocgen` command. */
 export const docgenInputSchema = v.object({ componentId: v.string() });
 
+/** Input to the `handleSourceChange` command: component ids whose source may have changed. */
+export const handleSourceChangeInputSchema = v.object({ componentIds: v.array(v.string()) });
+
 /**
  * Phase-1 docgen payload schema.
  *
@@ -72,6 +75,14 @@ export const docgenServiceDef = defineService({
       output: docgenOutputSchema,
       // Handler is supplied at registration time so it can close over the story index and the
       // composed experimental_docgenProvider chain.
+    },
+    handleSourceChange: {
+      description:
+        'Re-extracts docgen for the given componentIds that are already present in state (leaving absent ones for lazy load on next read). Used to keep docgen fresh when source files change.',
+      input: handleSourceChangeInputSchema,
+      output: v.void(),
+      // Handler is supplied at registration time so it can log keep-last-good extraction failures
+      // without pulling a node-only logger into the environment-agnostic definition.
     },
   },
 });

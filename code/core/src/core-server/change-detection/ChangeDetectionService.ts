@@ -153,6 +153,8 @@ export class ChangeDetectionService {
   private indexBaselineService: IndexBaselineService | undefined;
   private readonly workingDir: string;
   private readonly debounceMs: number;
+  private readonly publishStatuses: boolean;
+  private readonly onInvalidate?: (affectedStoryFiles: string[]) => void;
   private adapter: ChangeDetectionAdapter | undefined;
   private dependencyGraphBuilder: DependencyGraphBuilder | undefined;
   private incrementalPatcher: IncrementalPatcher | undefined;
@@ -181,12 +183,27 @@ export class ChangeDetectionService {
       debounceMs?: number;
       /** Presets instance used to resolve `experimental_importParsers` contributions from framework/renderer plugins. */
       presets?: Presets;
+      /**
+       * When `false`, run the dependency graph + file watching + {@link onInvalidate} emit only,
+       * without computing or publishing git-diff statuses to the status store. Lets the graph power
+       * other consumers (e.g. the docgen service) without surfacing "review changes" sidebar
+       * statuses. Defaults to `true` (the existing full change-detection behavior).
+       */
+      publishStatuses?: boolean;
+      /**
+       * Called after each file-change batch with the absolute, normalized story files affected by
+       * the change (the changed file's reverse-index dependents, plus the file itself when it is a
+       * story). Independent of {@link publishStatuses}; fires in both modes.
+       */
+      onInvalidate?: (affectedStoryFiles: string[]) => void;
     }
   ) {
     this.gitDiffProvider = options.gitDiffProvider;
     this.indexBaselineService = options.indexBaselineService;
     this.workingDir = options.workingDir ?? process.cwd();
     this.debounceMs = options.debounceMs ?? CHANGE_DETECTION_DEBOUNCE_MS;
+    this.publishStatuses = options.publishStatuses ?? true;
+    this.onInvalidate = options.onInvalidate;
     resetChangeDetectionReadiness();
   }
 
@@ -345,20 +362,25 @@ export class ChangeDetectionService {
       });
     }
 
-    void this.getIndexBaselineService().start();
+    // Baseline + git-state subscriptions are status-only concerns. In graph-only mode (docgen)
+    // we skip them so the graph never depends on git and never publishes statuses.
+    if (this.publishStatuses) {
+      void this.getIndexBaselineService().start();
 
-    this.getGitDiffProvider().onGitStateChange(() => {
-      if (this.disposed) {
-        return;
-      }
+      this.getGitDiffProvider().onGitStateChange(() => {
+        if (this.disposed) {
+          return;
+        }
 
-      this.scheduleScan(this.debounceMs);
-      void this.getIndexBaselineService()
-        .handleGitStateChange()
-        .catch(() => undefined);
-    });
+        this.scheduleScan(this.debounceMs);
+        void this.getIndexBaselineService()
+          .handleGitStateChange()
+          .catch(() => undefined);
+      });
+    }
 
-    // Initial scan surfaces git-pending diffs immediately.
+    // Initial scan surfaces git-pending diffs immediately (and resolves readiness in graph-only
+    // mode).
     this.scheduleScan(0);
   }
 
@@ -514,6 +536,22 @@ export class ChangeDetectionService {
     if (this.disposed || !this.incrementalPatcher) {
       return;
     }
+
+    const path = normalize(event.path);
+    const affectedStoryFiles = new Set<string>();
+    const collectAffected = () => {
+      if (!this.reverseIndex) {
+        return;
+      }
+      for (const story of this.reverseIndex.lookup(path).keys()) {
+        affectedStoryFiles.add(story);
+      }
+    };
+    // Snapshot dependents before the patch so `unlink` (which prunes the reverse index) is still
+    // captured. The patcher may also early-return on a content-only edit with an unchanged import
+    // set, but the existing edges still resolve here.
+    collectAffected();
+
     try {
       await this.incrementalPatcher.patch(event);
     } catch (error) {
@@ -524,6 +562,17 @@ export class ChangeDetectionService {
     if (this.disposed) {
       return;
     }
+
+    // Snapshot again to capture dependents introduced by `add`/`change`, then include the file
+    // itself when it is a story root.
+    collectAffected();
+    if (this.storyFiles.has(path)) {
+      affectedStoryFiles.add(path);
+    }
+    if (this.onInvalidate && affectedStoryFiles.size > 0) {
+      this.onInvalidate([...affectedStoryFiles]);
+    }
+
     this.scheduleScan(this.debounceMs);
   }
 
@@ -561,6 +610,13 @@ export class ChangeDetectionService {
     this.scanInFlight = true;
 
     try {
+      // Graph-only mode: the dependency graph + invalidation emit are the only work; skip all
+      // git-diff status computation and publishing.
+      if (!this.publishStatuses) {
+        this.resolveReadiness({ status: 'ready' });
+        return;
+      }
+
       const nextStatuses = await this.buildStatuses(this.reverseIndex);
       if (this.disposed) {
         return;

@@ -1064,6 +1064,96 @@ describe('ChangeDetectionService', () => {
     await service.dispose();
   });
 
+  it('calls onInvalidate with the affected story files when a dependency changes', async () => {
+    // Button.tsx is imported by Button.stories.tsx (distance 1).
+    const reverseIndex = buildReverseIndex([
+      ['/repo/src/Button.tsx', '/repo/src/Button.stories.tsx', 1],
+      ['/repo/src/Button.stories.tsx', '/repo/src/Button.stories.tsx', 0],
+    ]);
+    const { buildSpy } = installDependencyGraphMocks(reverseIndex);
+    buildSpy.mockResolvedValue({ reverseIndex, graph: new Map() });
+
+    const storyIndex = createStoryIndex([
+      { storyId: 'button--primary', importPath: './src/Button.stories.tsx', title: 'Button' },
+    ]);
+    const { getStatusStoreByTypeId } = createStatusStore({
+      universalStatusStore: new MockUniversalStore(UNIVERSAL_STATUS_STORE_OPTIONS),
+      environment: 'server',
+    });
+    const onInvalidate = vi.fn();
+    const { adapter, emitFileChange } = createMockAdapter();
+    const service = new ChangeDetectionService({
+      storyIndexGeneratorPromise: Promise.resolve({
+        getIndex: vi.fn().mockResolvedValue(storyIndex),
+      } as never),
+      statusStore: getStatusStoreByTypeId(CHANGE_DETECTION_STATUS_TYPE_ID),
+      gitDiffProvider: createMockGitDiffProvider(),
+      indexBaselineService: createMockStoryIndexBaselineService(),
+      workingDir,
+      onInvalidate,
+    });
+
+    service.start(adapter, true);
+    await vi.runAllTimersAsync();
+
+    emitFileChange({ kind: 'change', path: '/repo/src/Button.tsx' });
+    await vi.runAllTimersAsync();
+
+    expect(onInvalidate).toHaveBeenCalledWith(['/repo/src/Button.stories.tsx']);
+
+    await service.dispose();
+  });
+
+  it('graph-only mode (publishStatuses:false) emits invalidations without publishing statuses or calling git', async () => {
+    const reverseIndex = buildReverseIndex([
+      ['/repo/src/Button.tsx', '/repo/src/Button.stories.tsx', 1],
+    ]);
+    const { buildSpy } = installDependencyGraphMocks(reverseIndex);
+    buildSpy.mockResolvedValue({ reverseIndex, graph: new Map() });
+
+    const storyIndex = createStoryIndex([
+      { storyId: 'button--primary', importPath: './src/Button.stories.tsx', title: 'Button' },
+    ]);
+    const { getStatusStoreByTypeId } = createStatusStore({
+      universalStatusStore: new MockUniversalStore(UNIVERSAL_STATUS_STORE_OPTIONS),
+      environment: 'server',
+    });
+    const gitDiffProvider = createMockGitDiffProvider((provider) => {
+      provider.getChangedFilesMock.mockResolvedValue({
+        changed: new Set(['src/Button.stories.tsx']),
+        new: new Set(),
+      });
+    });
+    const onInvalidate = vi.fn();
+    const { adapter, emitFileChange } = createMockAdapter();
+    const service = new ChangeDetectionService({
+      storyIndexGeneratorPromise: Promise.resolve({
+        getIndex: vi.fn().mockResolvedValue(storyIndex),
+      } as never),
+      statusStore: getStatusStoreByTypeId(CHANGE_DETECTION_STATUS_TYPE_ID),
+      gitDiffProvider,
+      indexBaselineService: createMockStoryIndexBaselineService(),
+      workingDir,
+      publishStatuses: false,
+      onInvalidate,
+    });
+
+    service.start(adapter, true);
+    await vi.runAllTimersAsync();
+
+    emitFileChange({ kind: 'change', path: '/repo/src/Button.tsx' });
+    await vi.runAllTimersAsync();
+
+    // Invalidations still fire, but no statuses are published and git is never consulted.
+    expect(onInvalidate).toHaveBeenCalledWith(['/repo/src/Button.stories.tsx']);
+    expect(getStatusStoreByTypeId(CHANGE_DETECTION_STATUS_TYPE_ID).getAll()).toEqual({});
+    expect(gitDiffProvider.getChangedFilesMock).not.toHaveBeenCalled();
+    expect(gitDiffProvider.onGitStateChangeMock).not.toHaveBeenCalled();
+    expect(await getChangeDetectionReadiness()).toEqual({ status: 'ready' });
+
+    await service.dispose();
+  });
+
   it('scan waits for the current patch to settle before reading reverseIndex', async () => {
     // Without the patchSnapshot await in scan(), a git-state-change that fires scheduleScan
     // while a patch is mid-rewalk (reverseIndex transiently empty) reads the empty index

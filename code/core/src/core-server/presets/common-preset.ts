@@ -27,6 +27,7 @@ import type {
 } from 'storybook/internal/types';
 
 import { registerDocgenService } from '../../shared/open-service/services/docgen/server.ts';
+import { registerModuleGraphService } from '../../shared/open-service/services/module-graph/server.ts';
 
 import { isAbsolute, join } from 'pathe';
 import * as pathe from 'pathe';
@@ -344,6 +345,14 @@ export const services = async (_value: void, options: Options): Promise<void> =>
        */
       async () => undefined
     );
+
+    // The module-graph service translates change-detection's affected story files into component
+    // ids so the docgen service can re-extract only the components that actually changed. It owns
+    // no file watching itself; it is fed by the change-detection graph (wired in dev-server).
+    registerModuleGraphService({
+      getIndex: () => generator.getIndex(),
+      workingDir: process.cwd(),
+    });
 
     registerDocgenService({
       getIndex: () => generator.getIndex(),

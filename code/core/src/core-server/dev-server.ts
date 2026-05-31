@@ -7,6 +7,9 @@ import type { Options } from 'storybook/internal/types';
 import compression from '@polka/compression';
 import polka from 'polka';
 
+import { getService } from '../shared/open-service/server.ts';
+import type { docgenServiceDef } from '../shared/open-service/services/docgen/definition.ts';
+import type { moduleGraphServiceDef } from '../shared/open-service/services/module-graph/definition.ts';
 import { isTelemetryModuleEnabled, telemetry } from '../telemetry/index.ts';
 import type { ChangeDetectionAdapter } from './change-detection/index.ts';
 import { ChangeDetectionService } from './change-detection/index.ts';
@@ -48,11 +51,51 @@ export async function storybookDevServer(
   const storyIndexGeneratorPromise =
     options.presets.apply<StoryIndexGenerator>('storyIndexGenerator');
 
+  // The docgen service (registered in the `services` preset) needs the change-detection dependency
+  // graph to know which components a file change affects, even when the change-detection *status*
+  // feature is off — so we run the graph (without publishing statuses) whenever docgen is enabled.
+  const experimentalDocgenServer = !!features?.experimentalDocgenServer && !options.ignorePreview;
+
+  /**
+   * Re-extracts docgen for components affected by a source change.
+   *
+   * Translates the change-detection graph's affected story files into component ids via the
+   * `core/module-graph` service, then asks `core/docgen` to re-extract the ones already in state
+   * (re-extract-if-present). Best-effort: failures are logged at debug and never break the watcher.
+   */
+  async function invalidateDocgenForStoryFiles(affectedStoryFiles: string[]): Promise<void> {
+    if (affectedStoryFiles.length === 0) {
+      return;
+    }
+    try {
+      const moduleGraph = getService<typeof moduleGraphServiceDef>('core/module-graph');
+      const docgen = getService<typeof docgenServiceDef>('core/docgen');
+      const { componentIds } = await moduleGraph.commands.resolveAffectedComponents({
+        storyFiles: affectedStoryFiles,
+      });
+      if (componentIds.length > 0) {
+        await docgen.commands.handleSourceChange({ componentIds });
+      }
+    } catch (error) {
+      logger.debug(
+        `Docgen invalidation skipped: ${error instanceof Error ? error.message : String(error)}`
+      );
+    }
+  }
+
   const changeDetectionService = new ChangeDetectionService({
     storyIndexGeneratorPromise,
     statusStore: getStatusStoreByTypeId(CHANGE_DETECTION_STATUS_TYPE_ID),
     workingDir,
     presets: options.presets,
+    // Only publish "review changes" sidebar statuses when the change-detection feature is on.
+    publishStatuses: !!features.changeDetection,
+    // When docgen is enabled, the graph drives docgen re-extraction on file changes.
+    onInvalidate: experimentalDocgenServer
+      ? (affectedStoryFiles) => {
+          void invalidateDocgenForStoryFiles(affectedStoryFiles);
+        }
+      : undefined,
   });
 
   app.use(compression({ level: 1 }));
@@ -124,7 +167,11 @@ export async function storybookDevServer(
     await Promise.resolve();
 
   if (!options.ignorePreview) {
-    if (!features.changeDetection) {
+    // Run the dependency graph when either the change-detection status feature or the docgen
+    // service needs it. `publishStatuses` (set above) decides whether statuses are surfaced.
+    const needsChangeDetectionGraph = !!features.changeDetection || experimentalDocgenServer;
+
+    if (!needsChangeDetectionGraph) {
       changeDetectionService.start(undefined, false);
     }
 
@@ -153,7 +200,7 @@ export async function storybookDevServer(
         throw e;
       });
 
-    if (features.changeDetection) {
+    if (needsChangeDetectionGraph) {
       let adapter: ChangeDetectionAdapter | undefined;
       try {
         adapter = previewBuilder.changeDetectionAdapter?.();

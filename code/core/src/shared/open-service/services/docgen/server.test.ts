@@ -139,6 +139,92 @@ describe('docgen open service', () => {
     });
   });
 
+  describe('handleSourceChange command', () => {
+    it('re-extracts components already in state and pushes the new value to subscribers', async () => {
+      let description = 'v1';
+      const service = registerDocgenService({
+        getIndex: makeGetIndex([makeStoryEntry('button--primary', 'Button')]),
+        provider: async () => ({
+          componentId: 'button',
+          name: 'Button',
+          description,
+          props: [],
+        }),
+      });
+
+      // Prime state so the component is "present".
+      await service.commands.extractDocgen({ componentId: 'button' });
+
+      const emitted: Array<{ description: string } | undefined> = [];
+      const unsubscribe = service.queries.getDocgen.subscribe(
+        { componentId: 'button' },
+        (value) => {
+          emitted.push(value as { description: string } | undefined);
+        }
+      );
+      await vi.waitFor(() => expect(emitted.length).toBeGreaterThan(0));
+
+      // The source "changes" so the provider now returns a different payload.
+      description = 'v2';
+      await service.commands.handleSourceChange({ componentIds: ['button'] });
+
+      expect(service.queries.getDocgen({ componentId: 'button' })).toMatchObject({
+        description: 'v2',
+      });
+      await vi.waitFor(() => expect(emitted.at(-1)).toMatchObject({ description: 'v2' }));
+
+      unsubscribe();
+    });
+
+    it('ignores components that are not already in state (re-extract-if-present)', async () => {
+      const provider = vi.fn<DocgenProvider>(async () => ({
+        componentId: 'button',
+        name: 'Button',
+        description: 'x',
+        props: [],
+      }));
+      const service = registerDocgenService({
+        getIndex: makeGetIndex([makeStoryEntry('button--primary', 'Button')]),
+        provider,
+      });
+
+      await service.commands.handleSourceChange({ componentIds: ['button'] });
+
+      // Never extracted -> absent -> provider must not have been invoked.
+      expect(provider).not.toHaveBeenCalled();
+      expect(service.queries.getDocgen({ componentId: 'button' })).toBeUndefined();
+    });
+
+    it('keeps the last-good payload when re-extraction throws', async () => {
+      let shouldThrow = false;
+      const service = registerDocgenService({
+        getIndex: makeGetIndex([makeStoryEntry('button--primary', 'Button')]),
+        provider: async () => {
+          if (shouldThrow) {
+            throw new Error('transient parse error');
+          }
+          return { componentId: 'button', name: 'Button', description: 'good', props: [] };
+        },
+      });
+
+      // Prime state with a good payload (command call, no fire-and-forget load involved).
+      await service.commands.extractDocgen({ componentId: 'button' });
+
+      shouldThrow = true;
+      await expect(
+        service.commands.handleSourceChange({ componentIds: ['button'] })
+      ).resolves.toBeUndefined();
+
+      // Re-enable success before reading via the query, whose `load` would otherwise re-run the
+      // throwing provider in the background. The assertion below confirms handleSourceChange kept
+      // the last-good payload despite the failed re-extraction.
+      shouldThrow = false;
+      expect(service.queries.getDocgen({ componentId: 'button' })).toMatchObject({
+        description: 'good',
+      });
+    });
+  });
+
   describe('static build', () => {
     it('writes one docgen JSON per componentId whose provider produced a payload', async () => {
       registerDocgenService({

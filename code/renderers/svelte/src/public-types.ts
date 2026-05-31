@@ -16,6 +16,7 @@ import type { Component, ComponentProps } from 'svelte';
 import type { SetOptional, Simplify } from 'type-fest';
 
 import type { SvelteRenderer } from './types.ts';
+import type {} from 'storybook/test';
 
 export type { Args, ArgTypes, Parameters, StrictArgs } from 'storybook/internal/types';
 

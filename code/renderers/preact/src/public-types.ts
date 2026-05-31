@@ -16,6 +16,7 @@ import type { ComponentProps, ComponentType } from 'preact';
 import type { SetOptional, Simplify } from 'type-fest';
 
 import type { PreactRenderer } from './types.ts';
+import type {} from 'storybook/test';
 
 export type { Args, ArgTypes, Parameters, StrictArgs } from 'storybook/internal/types';
 export type { PreactRenderer };

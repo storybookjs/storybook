@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { getAct, getReactActEnvironment, setReactActEnvironment } from './act-compat.ts';
 
@@ -13,16 +13,21 @@ import { getAct, getReactActEnvironment, setReactActEnvironment } from './act-co
 // browser-mode runs. The flag must be restored once the act work settles,
 // independent of whether the caller awaits the result.
 describe('act-compat', () => {
+  let errors: string[] = [];
+
   beforeEach(() => {
+    errors = [];
     setReactActEnvironment(false);
+    vi.spyOn(console, 'error').mockImplementation((...args: unknown[]) => {
+      errors.push(args.map((arg) => String(arg)).join(' '));
+    });
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
   });
 
   it('restores the act environment and does not warn for an un-awaited async act', async () => {
-    const errors: string[] = [];
-    const spy = vi.spyOn(console, 'error').mockImplementation((...args: unknown[]) => {
-      errors.push(args.map((arg) => String(arg)).join(' '));
-    });
-
     const act = await getAct();
 
     // Trigger an async act but never await the returned thenable, mimicking a
@@ -37,7 +42,6 @@ describe('act-compat', () => {
     // Let the act work and React's deferred await-tracking check settle without
     // the caller ever awaiting the thenable.
     await new Promise((resolve) => setTimeout(resolve, 0));
-    spy.mockRestore();
 
     const actWarnings = errors.filter((error) =>
       error.includes('You called act(async () => ...) without await')

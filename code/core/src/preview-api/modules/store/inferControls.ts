@@ -69,11 +69,16 @@ export const inferControls: ArgTypesEnhancer<Renderer> = (context) => {
     parameters: { __isArgsStory, controls: { include = null, exclude = null, matchers = {} } = {} },
   } = context;
 
+  // `parameters.controls.include` / `.exclude` should hide args regardless of whether the
+  // story renders with args — otherwise non-args stories that define `argTypes` manually
+  // ignore the filter and show every entry (including empty rows for filtered-out keys).
+  // See https://github.com/storybookjs/storybook/issues/14739
+  const filteredArgTypes = filterArgTypes(argTypes, include, exclude);
+
   if (!__isArgsStory) {
-    return argTypes;
+    return filteredArgTypes;
   }
 
-  const filteredArgTypes = filterArgTypes(argTypes, include, exclude);
   const withControls = mapValues(filteredArgTypes, (argType, name) => {
     return argType?.type && inferControl(argType, name.toString(), matchers);
   });

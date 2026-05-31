@@ -1,5 +1,5 @@
 import type { FC } from 'react';
-import React from 'react';
+import React, { useCallback, useRef, useState } from 'react';
 
 import { once } from 'storybook/internal/client-logger';
 import { Button, Link, ResetWrapper } from 'storybook/internal/components';
@@ -344,6 +344,23 @@ export const ArgsTable: FC<ArgsTableProps> = (props) => {
     controlsId,
   } = props;
 
+  const [isResetting, setIsResetting] = useState(false);
+  const isResettingRef = useRef(false);
+
+  const handleResetArgs = useCallback(() => {
+    if (isResettingRef.current || !resetArgs) {
+      return;
+    }
+    isResettingRef.current = true;
+    setIsResetting(true);
+    resetArgs();
+    // Allow re-enabling after a short debounce so the channel event completes
+    setTimeout(() => {
+      isResettingRef.current = false;
+      setIsResetting(false);
+    }, 300);
+  }, [resetArgs]);
+
   if ('error' in props) {
     const { error } = props;
     return (
@@ -412,7 +429,8 @@ export const ArgsTable: FC<ArgsTableProps> = (props) => {
             <StyledButton
               variant="ghost"
               padding="small"
-              onClick={() => resetArgs()}
+              disabled={isResetting}
+              onClick={handleResetArgs}
               ariaLabel="Reset controls"
             >
               <UndoIcon />

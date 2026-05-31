@@ -560,7 +560,7 @@ export function useChannel(eventMap: EventMap, deps: any[] = []) {
 export function useStoryContext<
   TRenderer extends Renderer,
   TArgs extends Args = Args,
->(): StoryContext<TRenderer> {
+>(): StoryContext<TRenderer, TArgs> {
   const { currentContext } = getHooksContextOrThrow<TRenderer, TArgs>();
   if (currentContext == null) {
     throw invalidHooksError();

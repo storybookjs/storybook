@@ -3,11 +3,9 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { join, normalize } from 'pathe';
 
 import type { IndexEntry, StoryIndex } from '../../../../types/modules/indexer.ts';
-import { clearRegistry, getService } from '../../server.ts';
-import type { docgenServiceDef } from './definition.ts';
-import { registerDocgenService } from './server.ts';
+import { clearRegistry } from '../../server.ts';
+import { connectDocgenToModuleGraph, registerDocgenService } from './server.ts';
 import type { DocgenProvider } from './types.ts';
-import type { moduleGraphServiceDef } from '../module-graph/definition.ts';
 import { registerModuleGraphService } from '../module-graph/server.ts';
 
 afterEach(() => {
@@ -40,22 +38,24 @@ function absStoryFile(fileBase: string): string {
 }
 
 /**
- * Mirrors the dev-server glue (`onInvalidate` -> module-graph -> docgen) against the real
- * process-global registry, proving the cross-service composition works end-to-end on the server.
+ * Sets up the same wiring the `services` preset does: register both services and connect docgen to
+ * the module graph via the open-service subscription. The change detector is simulated by calling
+ * the module graph's `resolveAffectedComponents` command directly (in production the dev server
+ * does this on file-change events).
  */
-async function invalidateDocgenForStoryFiles(affectedStoryFiles: string[]): Promise<void> {
-  const moduleGraph = getService<typeof moduleGraphServiceDef>('core/module-graph');
-  const docgen = getService<typeof docgenServiceDef>('core/docgen');
-  const { componentIds } = await moduleGraph.commands.resolveAffectedComponents({
-    storyFiles: affectedStoryFiles,
+function setup(provider: DocgenProvider) {
+  const entries = [makeStoryEntry('button--primary', 'button')];
+  const moduleGraph = registerModuleGraphService({
+    getIndex: makeGetIndex(entries),
+    workingDir: WORKING_DIR,
   });
-  if (componentIds.length > 0) {
-    await docgen.commands.handleSourceChange({ componentIds });
-  }
+  const docgen = registerDocgenService({ getIndex: makeGetIndex(entries), provider });
+  const unsubscribe = connectDocgenToModuleGraph(docgen, moduleGraph);
+  return { moduleGraph, docgen, unsubscribe };
 }
 
-describe('docgen invalidation (server-side end-to-end)', () => {
-  it('re-extracts and notifies subscribers when an affected story file changes', async () => {
+describe('docgen invalidation (server-side, open-service native wiring)', () => {
+  it('re-extracts and notifies subscribers when the module graph reports a change', async () => {
     // A content-sensitive provider whose output changes when the underlying source changes.
     const descriptionByImportPath: Record<string, string> = {
       './button.stories.tsx': 'v1',
@@ -67,37 +67,34 @@ describe('docgen invalidation (server-side end-to-end)', () => {
       props: [],
     });
 
-    registerModuleGraphService({
-      getIndex: makeGetIndex([makeStoryEntry('button--primary', 'button')]),
-      workingDir: WORKING_DIR,
-    });
-    const docgen = registerDocgenService({
-      getIndex: makeGetIndex([makeStoryEntry('button--primary', 'button')]),
-      provider,
-    });
+    const { moduleGraph, docgen, unsubscribe } = setup(provider);
 
-    // User navigates to the component: docgen is extracted and cached.
+    // User navigates to the component: docgen is extracted and cached ("present").
     await docgen.queries.getDocgen.loaded({ componentId: 'button' });
     expect(docgen.queries.getDocgen({ componentId: 'button' })).toMatchObject({
       description: 'v1',
     });
 
     const emitted: Array<{ description: string } | undefined> = [];
-    const unsubscribe = docgen.queries.getDocgen.subscribe({ componentId: 'button' }, (value) => {
+    const unsubDocgen = docgen.queries.getDocgen.subscribe({ componentId: 'button' }, (value) => {
       emitted.push(value as { description: string } | undefined);
     });
     await vi.waitFor(() => expect(emitted.at(-1)).toMatchObject({ description: 'v1' }));
 
-    // The component's source changes on disk.
+    // The component's source changes; the change detector feeds the module graph. No explicit
+    // docgen call here — docgen reacts through its subscription to the module graph.
     descriptionByImportPath['./button.stories.tsx'] = 'v2';
-    await invalidateDocgenForStoryFiles([absStoryFile('button')]);
+    await moduleGraph.commands.resolveAffectedComponents({ storyFiles: [absStoryFile('button')] });
 
     // Future reads are fresh (no stale data) and the live subscriber was notified (no flash).
-    expect(docgen.queries.getDocgen({ componentId: 'button' })).toMatchObject({
-      description: 'v2',
-    });
+    await vi.waitFor(() =>
+      expect(docgen.queries.getDocgen({ componentId: 'button' })).toMatchObject({
+        description: 'v2',
+      })
+    );
     await vi.waitFor(() => expect(emitted.at(-1)).toMatchObject({ description: 'v2' }));
 
+    unsubDocgen();
     unsubscribe();
   });
 
@@ -109,22 +106,49 @@ describe('docgen invalidation (server-side end-to-end)', () => {
       props: [],
     }));
 
-    registerModuleGraphService({
-      getIndex: makeGetIndex([makeStoryEntry('button--primary', 'button')]),
-      workingDir: WORKING_DIR,
-    });
-    registerDocgenService({
-      getIndex: makeGetIndex([makeStoryEntry('button--primary', 'button')]),
-      provider,
-    });
+    const { moduleGraph, unsubscribe } = setup(provider);
 
-    await invalidateDocgenForStoryFiles([absStoryFile('button')]);
+    await moduleGraph.commands.resolveAffectedComponents({ storyFiles: [absStoryFile('button')] });
+    // Let the docgen subscription run handleSourceChange.
+    await vi.waitFor(() =>
+      expect(moduleGraph.queries.getLastAffected({}).componentIds).toEqual(['button'])
+    );
+    await new Promise((resolve) => setTimeout(resolve, 0));
 
+    // Never extracted -> absent -> provider must not have been invoked by the invalidation.
     expect(provider).not.toHaveBeenCalled();
-    expect(
-      getService<typeof docgenServiceDef>('core/docgen').queries.getDocgen({
-        componentId: 'button',
-      })
-    ).toBeUndefined();
+
+    unsubscribe();
+  });
+
+  it('re-emits on repeated changes to the same component (revision defeats value-dedup)', async () => {
+    let version = 1;
+    const provider: DocgenProvider = async () => ({
+      componentId: 'button',
+      name: 'Button',
+      description: `v${version}`,
+      props: [],
+    });
+
+    const { moduleGraph, docgen, unsubscribe } = setup(provider);
+
+    await docgen.queries.getDocgen.loaded({ componentId: 'button' });
+
+    const emitted: string[] = [];
+    const unsubDocgen = docgen.queries.getDocgen.subscribe({ componentId: 'button' }, (value) => {
+      emitted.push((value as { description: string }).description);
+    });
+    await vi.waitFor(() => expect(emitted.at(-1)).toBe('v1'));
+
+    version = 2;
+    await moduleGraph.commands.resolveAffectedComponents({ storyFiles: [absStoryFile('button')] });
+    await vi.waitFor(() => expect(emitted.at(-1)).toBe('v2'));
+
+    version = 3;
+    await moduleGraph.commands.resolveAffectedComponents({ storyFiles: [absStoryFile('button')] });
+    await vi.waitFor(() => expect(emitted.at(-1)).toBe('v3'));
+
+    unsubDocgen();
+    unsubscribe();
   });
 });

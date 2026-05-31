@@ -8,7 +8,6 @@ import compression from '@polka/compression';
 import polka from 'polka';
 
 import { getService } from '../shared/open-service/server.ts';
-import type { docgenServiceDef } from '../shared/open-service/services/docgen/definition.ts';
 import type { moduleGraphServiceDef } from '../shared/open-service/services/module-graph/definition.ts';
 import { isTelemetryModuleEnabled, telemetry } from '../telemetry/index.ts';
 import type { ChangeDetectionAdapter } from './change-detection/index.ts';
@@ -57,28 +56,24 @@ export async function storybookDevServer(
   const experimentalDocgenServer = !!features?.experimentalDocgenServer && !options.ignorePreview;
 
   /**
-   * Re-extracts docgen for components affected by a source change.
+   * Feeds affected story files into the `core/module-graph` service.
    *
-   * Translates the change-detection graph's affected story files into component ids via the
-   * `core/module-graph` service, then asks `core/docgen` to re-extract the ones already in state
-   * (re-extract-if-present). Best-effort: failures are logged at debug and never break the watcher.
+   * This is the one imperative edge from the (non-open-service) change detector into the service
+   * world: it records which components changed into module-graph state. The docgen service reacts
+   * to that state change through an open-service subscription wired in the `services` preset — the
+   * dev server intentionally knows nothing about docgen here. Best-effort: failures are logged at
+   * debug and never break the watcher.
    */
-  async function invalidateDocgenForStoryFiles(affectedStoryFiles: string[]): Promise<void> {
+  async function recordAffectedStoryFiles(affectedStoryFiles: string[]): Promise<void> {
     if (affectedStoryFiles.length === 0) {
       return;
     }
     try {
       const moduleGraph = getService<typeof moduleGraphServiceDef>('core/module-graph');
-      const docgen = getService<typeof docgenServiceDef>('core/docgen');
-      const { componentIds } = await moduleGraph.commands.resolveAffectedComponents({
-        storyFiles: affectedStoryFiles,
-      });
-      if (componentIds.length > 0) {
-        await docgen.commands.handleSourceChange({ componentIds });
-      }
+      await moduleGraph.commands.resolveAffectedComponents({ storyFiles: affectedStoryFiles });
     } catch (error) {
       logger.debug(
-        `Docgen invalidation skipped: ${error instanceof Error ? error.message : String(error)}`
+        `Module-graph invalidation skipped: ${error instanceof Error ? error.message : String(error)}`
       );
     }
   }
@@ -90,10 +85,10 @@ export async function storybookDevServer(
     presets: options.presets,
     // Only publish "review changes" sidebar statuses when the change-detection feature is on.
     publishStatuses: !!features.changeDetection,
-    // When docgen is enabled, the graph drives docgen re-extraction on file changes.
+    // When docgen is enabled, feed file changes into the module-graph service; docgen reacts to it.
     onInvalidate: experimentalDocgenServer
       ? (affectedStoryFiles) => {
-          void invalidateDocgenForStoryFiles(affectedStoryFiles);
+          void recordAffectedStoryFiles(affectedStoryFiles);
         }
       : undefined,
   });

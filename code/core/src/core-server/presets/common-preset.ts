@@ -26,7 +26,10 @@ import type {
   StorybookConfigRaw,
 } from 'storybook/internal/types';
 
-import { registerDocgenService } from '../../shared/open-service/services/docgen/server.ts';
+import {
+  connectDocgenToModuleGraph,
+  registerDocgenService,
+} from '../../shared/open-service/services/docgen/server.ts';
 import { registerModuleGraphService } from '../../shared/open-service/services/module-graph/server.ts';
 
 import { isAbsolute, join } from 'pathe';
@@ -347,17 +350,22 @@ export const services = async (_value: void, options: Options): Promise<void> =>
     );
 
     // The module-graph service translates change-detection's affected story files into component
-    // ids so the docgen service can re-extract only the components that actually changed. It owns
-    // no file watching itself; it is fed by the change-detection graph (wired in dev-server).
-    registerModuleGraphService({
+    // ids. It owns no file watching itself; it is fed by the change-detection graph (the dev server
+    // calls its `resolveAffectedComponents` command on file changes).
+    const moduleGraph = registerModuleGraphService({
       getIndex: () => generator.getIndex(),
       workingDir: process.cwd(),
     });
 
-    registerDocgenService({
+    const docgen = registerDocgenService({
       getIndex: () => generator.getIndex(),
       provider,
     });
+
+    // Connect the two services with an open-service subscription: docgen re-extracts whenever the
+    // module graph reports an invalidation. The dev server only feeds the module graph; it never
+    // talks to docgen directly.
+    connectDocgenToModuleGraph(docgen, moduleGraph);
   }
 };
 

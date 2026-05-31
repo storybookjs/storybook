@@ -3,6 +3,8 @@ import { getComponentIdFromEntry } from '../../../../common/utils/component-id.t
 import { OpenServiceDocgenMissingComponentError } from '../../../../server-errors.ts';
 import type { StoryIndex } from '../../../../types/modules/indexer.ts';
 import { registerService } from '../../service-registration.ts';
+import type { ServiceInstanceOf } from '../../types.ts';
+import type { moduleGraphServiceDef } from '../module-graph/definition.ts';
 import { docgenServiceDef } from './definition.ts';
 import type { DocgenProvider } from './types.ts';
 
@@ -101,5 +103,34 @@ export function registerDocgenService(options: RegisterDocgenServiceOptions) {
         },
       },
     },
+  });
+}
+
+/**
+ * Connects `core/docgen` to `core/module-graph` so docgen re-extracts when source files change.
+ *
+ * This is the open-service-native link between the two services: docgen subscribes to the module
+ * graph's latest invalidation and re-extracts the affected components (re-extract-if-present, via
+ * `handleSourceChange`). Because the module graph bumps a monotonic `revision` on every change, two
+ * consecutive changes that affect the same components still emit distinct values, so value-dedup on
+ * the subscription never swallows a repeat change.
+ *
+ * Note: this is an explicit subscription rather than a pure reactive read because re-extraction is
+ * async/side-effecting and the open-service runtime fires a query's `load` only once (it does not
+ * re-run `load` when a tracked dependency changes). A future "reactive load" runtime primitive
+ * would let `getDocgen` depend on the revision directly and drop this wiring entirely.
+ *
+ * Returns an unsubscribe function; the caller (the `services` preset) keeps the subscription alive
+ * for the lifetime of the process.
+ */
+export function connectDocgenToModuleGraph(
+  docgen: ServiceInstanceOf<typeof docgenServiceDef>,
+  moduleGraph: ServiceInstanceOf<typeof moduleGraphServiceDef>
+): () => void {
+  return moduleGraph.queries.getLastAffected.subscribe({}, (affected) => {
+    if (affected.componentIds.length === 0) {
+      return;
+    }
+    void docgen.commands.handleSourceChange({ componentIds: affected.componentIds });
   });
 }

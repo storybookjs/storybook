@@ -69,8 +69,8 @@ export function registerModuleGraphService(options: RegisterModuleGraphServiceOp
             componentIds: Array.from(componentIds),
           };
 
-          ctx.self.setState((draft) => {
-            draft.lastAffected = result;
+          ctx.self.setState((state) => {
+            state.lastAffected = result;
           });
 
           return result;

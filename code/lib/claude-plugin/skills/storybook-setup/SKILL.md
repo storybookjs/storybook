@@ -23,3 +23,7 @@ npx storybook ai setup
 Use the repo's package manager when appropriate: `pnpm exec storybook ai setup`, `yarn exec storybook ai setup`.
 
 **Follow the printed Markdown precisely.** Do not substitute your own plan.
+
+## Guardrails
+
+- If Storybook needs to be started or previewed in Claude, use `/storybook-setup-claude-launch` and the Claude launcher entry. Do not start Storybook as an ad hoc Bash command or background task.

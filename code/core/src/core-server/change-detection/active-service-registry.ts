@@ -8,9 +8,10 @@ export function setDependencyGraphService(service: StoryDependencyGraphService |
 }
 
 /**
- * Returns the active graph service, or `undefined` if change detection is disabled, not yet
- * started, or disposed. Use {@link StoryDependencyGraphService.hasGraph} to check whether the
- * initial build has completed.
+ * Returns the active graph service registered by the dev-server lifecycle, or `undefined` when
+ * the dev-server has not finished booting yet or has already torn down. The service may exist even
+ * when change-detection statuses are disabled. Use {@link StoryDependencyGraphService.hasGraph} to
+ * check whether the initial build has completed.
  *
  * @experimental
  */

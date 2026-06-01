@@ -29,6 +29,7 @@ import { getChangeDetectionReadiness, internal_resetChangeDetectionReadiness } f
 import type { GitDiffResult } from './GitDiffProvider.ts';
 import { GitDiffProvider } from './GitDiffProvider.ts';
 import type { IndexBaselineService } from './IndexBaselineService.ts';
+import type { StoryDependencyGraphService } from './StoryDependencyGraphService.ts';
 
 vi.mock('storybook/internal/node-logger', { spy: true });
 vi.mock('./dependency-graph/index.ts', async (importOriginal) => {
@@ -611,6 +612,36 @@ describe('ChangeDetectionService', () => {
     await service.dispose();
   });
 
+  it('acts as a consumer when an external graph is injected', async () => {
+    const graph = {
+      start: vi.fn(),
+      dispose: vi.fn(async () => undefined),
+      whenSettled: vi.fn(async () => undefined),
+      hasGraph: vi.fn(() => false),
+      lookup: vi.fn(() => new Map<string, number>()),
+    } as unknown as StoryDependencyGraphService;
+    const { getStatusStoreByTypeId } = createStatusStore({
+      universalStatusStore: new MockUniversalStore(UNIVERSAL_STATUS_STORE_OPTIONS),
+      environment: 'server',
+    });
+    const service = new ChangeDetectionService({
+      graph,
+      storyIndexGeneratorPromise: Promise.resolve({
+        getIndex: vi.fn(),
+      } as never),
+      statusStore: getStatusStoreByTypeId(CHANGE_DETECTION_STATUS_TYPE_ID),
+      gitDiffProvider: createMockGitDiffProvider(),
+      indexBaselineService: createMockStoryIndexBaselineService(),
+      workingDir,
+    });
+
+    service.start(undefined, false);
+    await service.dispose();
+
+    expect(graph.start).not.toHaveBeenCalled();
+    expect(graph.dispose).not.toHaveBeenCalled();
+  });
+
   it('logs unavailability when the builder does not provide an adapter', async () => {
     const { getStatusStoreByTypeId } = createStatusStore({
       universalStatusStore: new MockUniversalStore(UNIVERSAL_STATUS_STORE_OPTIONS),
@@ -1045,7 +1076,7 @@ describe('ChangeDetectionService', () => {
     await vi.runAllTimersAsync();
     expect(gitDiffProvider.getChangedFilesMock).toHaveBeenCalledTimes(1);
 
-    service.onStoryIndexInvalidated();
+    service.onGraphChange();
     await vi.runAllTimersAsync();
     expect(gitDiffProvider.getChangedFilesMock).toHaveBeenCalledTimes(2);
 

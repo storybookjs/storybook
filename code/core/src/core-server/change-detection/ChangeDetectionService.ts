@@ -17,7 +17,6 @@ import { ChangeDetectionFailureError, ChangeDetectionUnavailableError } from './
 import { GitDiffProvider } from './GitDiffProvider.ts';
 import { extractBaselineEntryIds, IndexBaselineService } from './IndexBaselineService.ts';
 import { resetChangeDetectionReadiness, setChangeDetectionReadiness } from './readiness.ts';
-import { setDependencyGraphService } from './active-service-registry.ts';
 import { getStoryIdsByAbsolutePath } from './story-files.ts';
 import { StoryDependencyGraphService } from './StoryDependencyGraphService.ts';
 
@@ -100,7 +99,7 @@ export function buildIndexBaselineStatuses(
 
 /**
  * Publishes change-detection story statuses to the status store. It resolves git-changed files,
- * maps them to affected stories through a {@link StoryDependencyGraphService} it owns, and emits
+ * maps them to affected stories through a shared {@link StoryDependencyGraphService}, and emits
  * `modified`/`affected`/`new` statuses (plus index-baseline `new` entries).
  *
  * The module dependency graph itself — building the reverse index, watching builder file events,
@@ -115,15 +114,18 @@ export class ChangeDetectionService {
   private rerunAfterCurrentScan = false;
   private readinessResolved = false;
   private statusPipelineStarted = false;
+  private changeDetectionEnabled = false;
+  private readonly ownsGraph: boolean;
+  private readonly graph: StoryDependencyGraphService;
   private previousStatuses = new Map<string, Status>();
   private gitDiffProvider: GitDiffProvider | undefined;
   private indexBaselineService: IndexBaselineService | undefined;
-  private graph: StoryDependencyGraphService | undefined;
   private readonly workingDir: string;
   private readonly debounceMs: number;
 
   constructor(
     private readonly options: {
+      graph?: StoryDependencyGraphService;
       storyIndexGeneratorPromise: Promise<StoryIndexGenerator>;
       statusStore: StatusStoreByTypeId;
       gitDiffProvider?: GitDiffProvider;
@@ -138,7 +140,54 @@ export class ChangeDetectionService {
     this.indexBaselineService = options.indexBaselineService;
     this.workingDir = options.workingDir ?? process.cwd();
     this.debounceMs = options.debounceMs ?? CHANGE_DETECTION_DEBOUNCE_MS;
+    this.ownsGraph = !options.graph;
+    this.graph =
+      options.graph ??
+      new StoryDependencyGraphService({
+        storyIndexGeneratorPromise: options.storyIndexGeneratorPromise,
+        workingDir: this.workingDir,
+        presets: options.presets,
+        onReady: () => this.onGraphReady(),
+        onChange: () => this.onGraphChange(),
+        onError: (error) => this.onGraphError(error),
+        onUnavailable: (reason, error) => this.onGraphUnavailable(reason, error),
+      });
     resetChangeDetectionReadiness();
+  }
+
+  onGraphReady(): void {
+    if (this.disposed || !this.changeDetectionEnabled) {
+      return;
+    }
+
+    this.startStatusPipeline();
+  }
+
+  onGraphChange(): void {
+    if (this.disposed || !this.changeDetectionEnabled) {
+      return;
+    }
+
+    this.scheduleScan(this.debounceMs);
+  }
+
+  onGraphError(error: Error): void {
+    if (this.disposed || !this.changeDetectionEnabled) {
+      return;
+    }
+
+    this.resolveReadiness({ status: 'error', error });
+    void this.dispose().catch(() => undefined);
+  }
+
+  onGraphUnavailable(reason: string, error?: Error): void {
+    if (this.disposed || !this.changeDetectionEnabled) {
+      return;
+    }
+
+    logger.warn(`Change detection unavailable: ${reason}`);
+    this.resolveReadiness({ status: 'unavailable', reason, error });
+    void this.dispose();
   }
 
   start(adapter: ChangeDetectionAdapter | undefined, enabled: boolean | undefined): void {
@@ -161,41 +210,11 @@ export class ChangeDetectionService {
     }
 
     logger.debug('Change detection enabled.');
-
-    this.graph = new StoryDependencyGraphService({
-      storyIndexGeneratorPromise: this.options.storyIndexGeneratorPromise,
-      workingDir: this.workingDir,
-      presets: this.options.presets,
-      // Status work starts only once the graph is built and queryable.
-      onReady: () => this.startStatusPipeline(),
-      // A file change settled in the graph; recompute statuses (debounced).
-      onChange: () => {
-        if (this.disposed) {
-          return;
-        }
-        this.scheduleScan(this.debounceMs);
-      },
-      onError: (failure) => {
-        if (this.disposed) {
-          return;
-        }
-        this.resolveReadiness({ status: 'error', error: failure });
-        void this.dispose().catch(() => undefined);
-      },
-      onUnavailable: (reason, error) => {
-        if (this.disposed) {
-          return;
-        }
-        logger.warn(`Change detection unavailable: ${reason}`);
-        this.resolveReadiness({ status: 'unavailable', reason, error });
-        void this.dispose();
-      },
-    });
-
-    // Expose the live graph to in-process consumers (e.g. addon-mcp).
-    setDependencyGraphService(this.graph);
-
-    this.graph.start(adapter);
+    this.changeDetectionEnabled = true;
+    if (this.ownsGraph) {
+      this.graph.start(adapter);
+    }
+    this.onGraphReady();
   }
 
   /**
@@ -225,13 +244,6 @@ export class ChangeDetectionService {
     this.scheduleScan(0);
   }
 
-  onStoryIndexInvalidated(): void {
-    if (this.disposed) {
-      return;
-    }
-    this.graph?.onStoryIndexInvalidated();
-  }
-
   async dispose(): Promise<void> {
     if (this.disposed) {
       return;
@@ -245,9 +257,9 @@ export class ChangeDetectionService {
     }
 
     this.gitDiffProvider?.dispose();
-    setDependencyGraphService(undefined);
-    // Tear down the graph last: it drains in-flight patches before disposing the OXC parse pool.
-    await this.graph?.dispose();
+    if (this.ownsGraph) {
+      await this.graph.dispose();
+    }
   }
 
   private scheduleScan(delayMs: number): void {
@@ -262,7 +274,7 @@ export class ChangeDetectionService {
   }
 
   private async scan(): Promise<void> {
-    if (this.disposed || !this.graph) {
+    if (this.disposed) {
       return;
     }
 
@@ -353,7 +365,7 @@ export class ChangeDetectionService {
     const statuses = new Map<string, Status>();
 
     for (const changedFile of scannedFiles) {
-      const affectedStoryFiles = this.graph?.lookup(changedFile) ?? new Map<string, number>();
+      const affectedStoryFiles = this.graph.lookup(changedFile);
       // Include the changed file as a story-at-distance-0 if it IS a story.
       const allEntries = new Map(affectedStoryFiles);
       if (storyIdsByFile.has(changedFile)) {

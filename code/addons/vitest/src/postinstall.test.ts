@@ -8,7 +8,7 @@ import {
   injectAngularVitestIntoAst,
   injectAngularVitestIntoConfig,
 } from './angular-vitest-postinstall.ts';
-import { isConfigAlreadySetup } from './postinstall.ts';
+import { getTemplateConfigDir, isConfigAlreadySetup } from './postinstall.ts';
 import { loadTemplate, updateConfigFile } from './updateVitestFile.ts';
 
 vi.mock('storybook/internal/node-logger', () => ({
@@ -45,6 +45,27 @@ function pluginCalleesInSameArray(code: string, locatorName = 'storybookTest'): 
   });
   return elements;
 }
+
+describe('getTemplateConfigDir', () => {
+  it('returns the config dir relative to the generated config file directory', () => {
+    // Both inputs are cwd-relative, so the result is independent of the test cwd.
+    expect(getTemplateConfigDir('vitest.config.ts', '.storybook')).toBe('.storybook');
+  });
+
+  it('does not double the path when the config file lives in a monorepo subproject', () => {
+    // `storybook add --config-dir apps/x/.storybook` run from the repo root, with the
+    // new vitest.config.ts created inside apps/x.
+    expect(getTemplateConfigDir('apps/x/vitest.config.ts', 'apps/x/.storybook')).toBe('.storybook');
+  });
+
+  it('keeps a relative climb when the config dir is above the config file', () => {
+    expect(getTemplateConfigDir('apps/x/vitest.config.ts', '.storybook')).toBe('../../.storybook');
+  });
+
+  it('supports a custom config dir name', () => {
+    expect(getTemplateConfigDir('apps/x/vitest.config.ts', 'apps/x/sb-config')).toBe('sb-config');
+  });
+});
 
 describe('postinstall helpers', () => {
   it('detects a fully configured Vitest config with addon plugin', () => {
@@ -134,15 +155,23 @@ describe('Angular bridge wiring (postinstall integration)', () => {
     expect(pluginCalleesInSameArray(after, 'react')).toEqual(['react']);
   });
 
-  it('arrow-function config defers to manual setup: no merge, no injection (case 4)', () => {
-    // updateConfigFile rejects arrow-fn configs (updated stays false), so postinstall never reaches
-    // the injection step for them — they fall through to the existing manual-setup error.
-    const source = babelParse('export default defineConfig({ test: {} });');
+  it('arrow-function config: merges storybookTest and co-locates the bridge (case 4)', async () => {
+    // Function-notation configs (e.g. `defineConfig(() => ({ ... }))`) are now
+    // supported by updateConfigFile, so the merge succeeds and the Angular bridge
+    // co-locates with storybookTest in the same plugins array.
+    const source = babelParse(
+      await loadTemplate('vitest.config.4.template', { CONFIG_DIR: '.storybook' })
+    );
     const target = babelParse(`
       import { defineConfig } from 'vite'
       export default defineConfig(() => ({ test: { globals: true } }))
     `);
-    expect(updateConfigFile(source, target)).toBe(false);
+    expect(updateConfigFile(source, target)).toBe(true);
+    expect(injectAngularVitestIntoAst(target)).toBe(true);
+    expect(pluginCalleesInSameArray(generate(target).code)).toEqual([
+      ANGULAR_VITEST_PLUGIN_CALL,
+      'storybookTest',
+    ]);
   });
 
   it('early-return-safe: storybookTest present but bridge absent still injects (case 9)', () => {

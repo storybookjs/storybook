@@ -42,6 +42,18 @@ const STORYBOOK_TEST_PLUGIN_SOURCE = `${ADDON_NAME}/vitest-plugin`;
 
 const addonA11yName = '@storybook/addon-a11y';
 
+/**
+ * The Vitest config templates resolve the Storybook config dir against the
+ * generated config file's own directory (`path.join(dirname, CONFIG_DIR)`).
+ * So CONFIG_DIR must be the path FROM that file's directory TO the config dir,
+ * not the cwd-relative `--config-dir` value. Otherwise, in a monorepo where the
+ * config file is created inside the project (e.g. `apps/x/vitest.config.ts`) but
+ * `--config-dir apps/x/.storybook` is passed from the repo root, the path gets
+ * doubled to `apps/x/apps/x/.storybook`.
+ */
+export const getTemplateConfigDir = (configFilePath: string, configDir: string): string =>
+  relative(dirname(configFilePath), configDir);
+
 export default async function postInstall(options: PostinstallOptions) {
   const errors: InstanceType<typeof StorybookError>[] = [];
   const { logger, prompt } = options;
@@ -281,7 +293,7 @@ export default async function postInstall(options: PostinstallOptions) {
       EXTENDS_WORKSPACE: viteConfigFile
         ? relative(dirname(vitestWorkspaceFile), viteConfigFile)
         : '',
-      CONFIG_DIR: options.configDir,
+      CONFIG_DIR: getTemplateConfigDir(vitestWorkspaceFile, options.configDir),
     }).then((t) => t.replace(`\n  'ROOT_CONFIG',`, '').replace(/\s+extends: '',/, ''));
     const source = babelParse(workspaceTemplate);
     const target = babelParse(workspaceFileContent);
@@ -348,7 +360,7 @@ export default async function postInstall(options: PostinstallOptions) {
 
     if (templateName && !alreadyConfigured) {
       const configTemplate = await loadTemplate(templateName, {
-        CONFIG_DIR: options.configDir,
+        CONFIG_DIR: getTemplateConfigDir(rootConfig, options.configDir),
       });
 
       const source = babelParse(configTemplate);
@@ -414,7 +426,7 @@ export default async function postInstall(options: PostinstallOptions) {
     const newConfigFile = resolve(parentDir, `vitest.config.${fileExtension}`);
 
     const configTemplate = await loadTemplate(getTemplateName(), {
-      CONFIG_DIR: options.configDir,
+      CONFIG_DIR: getTemplateConfigDir(newConfigFile, options.configDir),
     });
 
     logger.step(`Creating a Vitest config file:`);

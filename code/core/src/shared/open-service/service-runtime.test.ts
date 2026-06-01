@@ -2,6 +2,8 @@ import * as v from 'valibot';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { defineService } from './service-definition.ts';
+import { serviceRegistryApi } from './service-registration.ts';
+import { createServiceRuntime } from './service-runtime.ts';
 import { clearRegistry, registerService } from './server.ts';
 import {
   type RebuiltValue,
@@ -854,6 +856,37 @@ describe('service runtime', () => {
       );
     });
 
+    it('does not refire dependency loads on the final .loaded() evaluation', async () => {
+      const loadSpy = vi.spyOn(awaitedPreloadValueServiceDef.queries.getPreloadedValue, 'load');
+      const sourceService = registerService(awaitedPreloadValueServiceDef);
+      const derivedDef = defineService({
+        id: 'internal-fixture/derived-loaded-from-spied-source',
+        description: 'Reads the spied source query from a sync handler.',
+        initialState: {} as Record<string, never>,
+        queries: {
+          getLength: {
+            input: v.object({ entryId: v.string() }),
+            output: v.number(),
+            handler: (input) => {
+              const value = sourceService.queries.getPreloadedValue({ entryId: input.entryId });
+              return value === null ? 0 : value.length;
+            },
+          },
+        },
+        commands: {},
+      });
+      const derivedService = registerService(derivedDef);
+
+      try {
+        await expect(derivedService.queries.getLength.loaded({ entryId: 'entry-a' })).resolves.toBe(
+          'preloaded'.length
+        );
+        expect(loadSpy).toHaveBeenCalledTimes(1);
+      } finally {
+        loadSpy.mockRestore();
+      }
+    });
+
     it('surfaces rejections from a transitive load through .loaded()', async () => {
       const failingDef = defineService({
         id: 'internal-fixture/failing-loaded',
@@ -973,6 +1006,69 @@ describe('service runtime', () => {
         fromStorybook: true,
         code: 11,
       });
+    });
+  });
+
+  /**
+   * `buildStaticFiles()` drives each snapshot through `runLoadOnce`. Load bodies normally pull
+   * dependencies via `ctx.self.queries.*`; those reads run `triggerLoad` during the synchronous
+   * prefix (before the first `await`). The root `runLoadOnce` load must therefore appear in the
+   * process-global in-flight map before the body starts, same as dev-server `.loaded()` does via
+   * `triggerLoad`. Otherwise a read that resolves to the same load key — including a deliberate
+   * same-query re-read or a short cycle back to the running query — starts a second `runLoadBody`
+   * and can double-apply command side effects in static output.
+   *
+   * The test below uses a same-query re-read as the smallest repro; reading other queries in the
+   * sync prefix is common too, but only same-key (or cyclic) paths hit this duplicate.
+   */
+  describe('runLoadOnce (static snapshot loads)', () => {
+    it('registers the root load so a synchronous self.queries re-read does not refire the load body', async () => {
+      const queryName = 'getValue';
+      const loadBodySpy = vi.fn();
+      const bumpCommandSpy = vi.fn();
+
+      const staticSnapshotServiceDef = defineService({
+        id: 'internal-fixture/run-load-once-sync-self-read',
+        description:
+          'Static build fixture: load reads its own query through wrapped self.queries before awaiting.',
+        initialState: { count: 0 },
+        queries: {
+          [queryName]: {
+            input: v.undefined(),
+            output: v.number(),
+            handler: (_input, ctx) => ctx.self.state.count,
+            load: async (_input, ctx) => {
+              loadBodySpy();
+              // Mirrors static snapshot loads: sync handler read before the first await.
+              ctx.self.queries[queryName](undefined);
+              await ctx.self.commands.bump(undefined);
+            },
+          },
+        },
+        commands: {
+          bump: {
+            input: v.undefined(),
+            output: v.void(),
+            handler: (_input, ctx) => {
+              bumpCommandSpy();
+              ctx.self.setState((state) => {
+                state.count += 1;
+              });
+            },
+          },
+        },
+      });
+
+      const buildRuntime = createServiceRuntime(staticSnapshotServiceDef, {
+        registryApi: serviceRegistryApi,
+      });
+
+      await buildRuntime.runLoadOnce(queryName, undefined);
+
+      // A duplicate load body would run bump twice and leave count at 2.
+      expect(buildRuntime.getStateSnapshot().count).toBe(1);
+      expect(loadBodySpy).toHaveBeenCalledTimes(1);
+      expect(bumpCommandSpy).toHaveBeenCalledTimes(1);
     });
   });
 });

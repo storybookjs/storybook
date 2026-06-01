@@ -719,9 +719,10 @@ function buildLoadWrappedQueries<TState>(
  *    - If the handler threw, swallow (state might still be partial; a later iteration may fix it).
  *    - If the handler added nothing to the collector, we have converged — exit the loop.
  *
- * 4. **Return** — run the handler one final time without the session and return the validated
- *    output. This is the value the caller sees. If state is still incomplete at this point the
- *    handler may throw, and that throw propagates.
+ * 4. **Return** — run the handler one final time under the same session (so dependency reads
+ *    respect `settledKeys` and do not refire loads) and return the validated output. This is the
+ *    value the caller sees. If state is still incomplete at this point the handler may throw, and
+ *    that throw propagates.
  *
  * ### Worked example: `bar.loaded(input)` where `bar.handler` reads `foo`
  *
@@ -831,19 +832,29 @@ async function runLoaded<TState>(
     hasMoreWork = session.collector.size > 0;
   }
 
-  return validateQueryOutput(
-    refs,
-    queryName,
-    queryDef,
-    runHandlerSync(
+  // Run the final handler call under the session so already-settled dependency loads are not
+  // refired during this last evaluation, and validate the output at this pull boundary (validation
+  // is intentionally kept out of the reactive `runHandlerSync` path).
+  const previousSession = activeHandlerLoadSession;
+  activeHandlerLoadSession = session;
+
+  try {
+    return validateQueryOutput(
       refs,
       queryName,
       queryDef,
-      validatedInput,
-      refs.defaultQueries,
-      refs.registryApi.getService
-    )
-  );
+      runHandlerSync(
+        refs,
+        queryName,
+        queryDef,
+        validatedInput,
+        refs.defaultQueries,
+        refs.registryApi.getService
+      )
+    );
+  } finally {
+    activeHandlerLoadSession = previousSession;
+  }
 }
 
 /**
@@ -1198,7 +1209,23 @@ export function createServiceRuntime<
     const loadKey = makeLoadKey(def.id, queryName, validatedInput);
     const ancestorChain = new Set<string>([loadKey]) as ReadonlySet<string>;
 
-    await runLoadBody(refs, queryName, queryDef, validatedInput, ancestorChain);
+    // Register this runtime's root load without joining an unrelated in-flight entry from another
+    // runtime instance (e.g. the live singleton during parallel staticInputs resolution).
+    const previous = inFlightLoads.get(loadKey);
+    const promise = Promise.resolve()
+      .then(() => runLoadBody(refs, queryName, queryDef, validatedInput, ancestorChain))
+      .finally(() => {
+        if (inFlightLoads.get(loadKey) === promise) {
+          if (previous) {
+            inFlightLoads.set(loadKey, previous);
+          } else {
+            inFlightLoads.delete(loadKey);
+          }
+        }
+      });
+
+    inFlightLoads.set(loadKey, promise);
+    await promise;
   };
 
   return {

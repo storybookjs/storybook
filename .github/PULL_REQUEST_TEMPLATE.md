@@ -49,6 +49,7 @@ Thank you for contributing to Storybook! Please submit all PRs to the `next` bra
 ## Checklist for Maintainers
 
 - [ ] When this PR is ready for testing, make sure to add `ci:normal`, `ci:merged` or `ci:daily` GH label to it to run a specific set of sandboxes. The particular set of sandboxes can be found in `code/lib/cli-storybook/src/sandbox-templates.ts`
+- [ ] Declare whether manual QA will be needed for this PR during the next release, through `qa:needed` or `qa:skip`
 - [ ] Make sure this PR contains **one** of the labels below:
    <details>
      <summary>Available labels</summary>

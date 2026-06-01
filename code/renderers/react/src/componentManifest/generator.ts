@@ -1,8 +1,6 @@
-import { recast } from 'storybook/internal/babel';
 import { getComponentIdFromEntry } from 'storybook/internal/common';
 import { Tag } from 'storybook/internal/core-server';
-import { storyNameFromExport } from 'storybook/internal/csf';
-import { extractDescription, loadCsf } from 'storybook/internal/csf-tools';
+import { extractDescription } from 'storybook/internal/csf-tools';
 import { logger } from 'storybook/internal/node-logger';
 import type { DocsIndexEntry, IndexEntry } from 'storybook/internal/types';
 import {
@@ -16,18 +14,12 @@ import path from 'pathe';
 
 import { ComponentMetaManager } from './componentMeta/ComponentMetaManager.ts';
 import type { ComponentDoc } from './componentMeta/componentMetaExtractor.ts';
-import { getCodeSnippet } from './generateCodeSnippet.ts';
-import {
-  type ComponentRef,
-  type TypescriptOptions,
-  getComponents,
-  getImports,
-} from './getComponentImports.ts';
+import { type ComponentRef, type TypescriptOptions, getImports } from './getComponentImports.ts';
 import { extractJSDocInfo } from './jsdocTags.ts';
-import { extractDeclaredSubcomponents, findExactComponentMatch } from './subcomponents.ts';
 import { type DocObj } from './reactDocgen.ts';
 import { type ComponentDocWithExportName, invalidateParser } from './reactDocgenTypescript.ts';
-import { cachedFindUp, cachedReadTextFileSync, invalidateCache, invariant } from './utils.ts';
+import { extractStorySnippets, resolveStoryFileComponents } from './resolveComponents.ts';
+import { cachedFindUp, cachedReadTextFileSync, invalidateCache } from './utils.ts';
 
 interface ReactSubcomponentManifest extends ComponentSubcomponentManifest {
   reactDocgen?: DocObj;
@@ -107,48 +99,6 @@ function selectComponentEntries(manifestEntries: IndexEntry[]) {
     });
 
   return [...entriesByComponentId.values()];
-}
-
-export function findMatchingComponent(
-  components: ComponentRef[],
-  componentName: string | undefined,
-  title: string
-) {
-  // When meta.component is set, find the exact match.
-  // meta.component is the local variable name (e.g. "Button", "Accordion"),
-  // and getComponents adds it to the component set as-is when it maps cleanly to a component ref.
-  // If that strict lookup misses (for example `const Root = Accordion.Root`), continue into the
-  // regular title-based candidate selection below.
-  const exactMatch = findExactComponentMatch(components, componentName);
-  if (exactMatch) {
-    return exactMatch;
-  }
-
-  // No meta.component — guess by title match.
-  const trimmedTitle = title.replace(/\s+/g, '');
-  const matches = components.filter(
-    (it) =>
-      trimmedTitle.includes(it.componentName) ||
-      (it.localImportName && trimmedTitle.includes(it.localImportName)) ||
-      (it.importName && trimmedTitle.includes(it.importName))
-  );
-
-  if (matches.length <= 1) {
-    return matches[0];
-  }
-
-  // Prefer the outermost component (shallowest JSX nesting depth).
-  // jsxDepth 0 means top-level JSX — can't get shallower, so pick it immediately.
-  let best = matches[0];
-  for (const cur of matches) {
-    if (cur.jsxDepth === 0) {
-      return cur;
-    }
-    if ((cur.jsxDepth ?? Infinity) < (best.jsxDepth ?? Infinity)) {
-      best = cur;
-    }
-  }
-  return best;
 }
 
 function getPackageInfo(componentPath: string | undefined, fallbackPath: string) {
@@ -263,41 +213,6 @@ function createSubcomponentManifest({
   };
 }
 
-function extractStories(
-  csf: ReturnType<ReturnType<typeof loadCsf>['parse']>,
-  componentName: string | undefined,
-  manifestEntries: IndexEntry[]
-) {
-  const manifestEntryIds = new Set(manifestEntries.map((entry) => entry.id));
-  return Object.entries(csf._stories)
-    .filter(([, story]) =>
-      // Only include stories that are in the list of entries already filtered for the 'manifest' tag
-      manifestEntryIds.has(story.id)
-    )
-    .map(([storyExport, story]) => {
-      try {
-        const jsdocComment = extractDescription(csf._storyStatements[storyExport]);
-        const { tags = {}, description } = jsdocComment ? extractJSDocInfo(jsdocComment) : {};
-        const finalDescription = (tags?.describe?.[0] || tags?.desc?.[0]) ?? description;
-
-        return {
-          id: story.id,
-          name: story.name ?? storyNameFromExport(storyExport),
-          snippet: recast.print(getCodeSnippet(csf, storyExport, componentName)).code,
-          description: finalDescription?.trim(),
-          summary: tags.summary?.[0],
-        };
-      } catch (e) {
-        invariant(e instanceof Error);
-        return {
-          id: story.id,
-          name: story.name ?? storyNameFromExport(storyExport),
-          error: { name: e.name, message: e.message },
-        };
-      }
-    });
-}
-
 function extractComponentDescription(
   metaJsDoc: string | undefined,
   docgenDescription: string | undefined,
@@ -339,7 +254,7 @@ export const manifests: PresetPropertyFn<
   try {
     const entriesByUniqueComponent = selectComponentEntries(manifestEntries);
 
-    // Step 1: Resolve components for all entries
+    // Step 1: Resolve components for all entries (one CSF file each).
     const resolvedEntries = await Promise.all(
       entriesByUniqueComponent.map(async (entry) => {
         const storyFilePath =
@@ -348,37 +263,13 @@ export const manifests: PresetPropertyFn<
             : // For attached docs entries, storiesImports[0] points to the stories file being attached to
               entry.storiesImports[0];
         const storyPath = path.join(process.cwd(), storyFilePath);
-        const storyFile = cachedReadTextFileSync(storyPath);
-        const csf = loadCsf(storyFile, {
-          makeTitle: () => entry.title,
-        }).parse();
-        const componentName = csf._meta?.component;
-        const declaredSubcomponents = extractDeclaredSubcomponents(csf);
-        const allComponents = await getComponents({
-          additionalComponentNames: declaredSubcomponents.map(
-            (subcomponent) => subcomponent.componentName
-          ),
-          csf,
-          storyFilePath: storyPath,
+        const resolved = await resolveStoryFileComponents({
+          storyPath,
+          title: entry.title,
           typescriptOptions,
           docgenEngine,
         });
-        const component = findMatchingComponent(allComponents, componentName, entry.title);
-        const subcomponents = declaredSubcomponents.map((declaredSubcomponent) => ({
-          component: findExactComponentMatch(allComponents, declaredSubcomponent.componentName),
-          name: declaredSubcomponent.name,
-        }));
-        return {
-          storyPath,
-          component,
-          entry,
-          storyFilePath,
-          storyFile,
-          csf,
-          componentName,
-          allComponents,
-          subcomponents,
-        };
+        return { entry, storyFilePath, ...resolved };
       })
     );
 
@@ -401,6 +292,7 @@ export const manifests: PresetPropertyFn<
     }
 
     // Step 3: Build manifests
+    const manifestEntryIds = new Set(manifestEntries.map((entry) => entry.id));
     const components = resolvedEntries
       .map(
         ({
@@ -423,7 +315,7 @@ export const manifests: PresetPropertyFn<
             getImports({ components: allComponents, packageName }).join('\n').trim() ||
             fallbackImport;
 
-          const stories = extractStories(csf, component?.componentName, manifestEntries);
+          const stories = extractStorySnippets(csf, component?.componentName, manifestEntryIds);
 
           const base = {
             id,

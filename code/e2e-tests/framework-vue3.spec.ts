@@ -53,7 +53,7 @@ test.describe('Vue 3', () => {
       {
         title: 'stories/renderers/vue3_vue3-vite-default-ts/component-meta/unicode-with-defaults',
         expectedDefaults: [
-          ['label', 'こんにちは'],
+          ['Greeting', 'こんにちは'],
           ['size', '大きい'],
           ['icon', '🚀'],
         ],
@@ -61,7 +61,7 @@ test.describe('Vue 3', () => {
       {
         title: 'stories/renderers/vue3_vue3-vite-default-ts/component-meta/unicode-define-props',
         expectedDefaults: [
-          ['label', '你好'],
+          ['Greeting', '你好'],
           ['size', '大きい'],
           ['icon', '✨'],
         ],

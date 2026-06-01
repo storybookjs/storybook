@@ -2,6 +2,8 @@ import MagicString from 'magic-string';
 import type { Plugin } from 'vite';
 import { parse } from 'vue-docgen-api';
 
+import { setupPropsDestructureHandler } from './vue-docgen-props-destructure.ts';
+
 export async function vueDocgen(): Promise<Plugin> {
   const { createFilter } = await import('vite');
 
@@ -18,7 +20,9 @@ export async function vueDocgen(): Promise<Plugin> {
           return undefined;
         }
 
-        const metaData = await parse(id);
+        const metaData = await parse(id, {
+          addScriptHandlers: [setupPropsDestructureHandler],
+        });
 
         const s = new MagicString(src);
 

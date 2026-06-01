@@ -73,8 +73,9 @@ export type CommandFunctions<
  * The primary call returns the handler result synchronously. Calling it also triggers `load` in
  * the background, deduped while another load for the same input is already in flight. Use
  * `.loaded(input)` when the caller wants to await the full load (including transitive dependencies)
- * before reading. Use `.subscribe(input, callback)` to receive updates whenever tracked state
- * changes; subscribers receive their first value asynchronously.
+ * before reading. Use `.subscribe(input, callback)` to receive the current value immediately
+ * (synchronously) and again after the background `load` settles (deduped while in-flight), plus
+ * further emissions whenever tracked state changes.
  */
 export type Query<TInput, TOutput> = {
   (input: TInput): TOutput;

@@ -17,7 +17,7 @@ import { ChangeDetectionFailureError, ChangeDetectionUnavailableError } from './
 import { GitDiffProvider } from './GitDiffProvider.ts';
 import { extractBaselineEntryIds, IndexBaselineService } from './IndexBaselineService.ts';
 import { resetChangeDetectionReadiness, setChangeDetectionReadiness } from './readiness.ts';
-import { setActiveStoryDependencyGraphService } from './active-service-registry.ts';
+import { setDependencyGraphService } from './active-service-registry.ts';
 import { getStoryIdsByAbsolutePath } from './story-files.ts';
 import { StoryDependencyGraphService } from './StoryDependencyGraphService.ts';
 
@@ -193,7 +193,7 @@ export class ChangeDetectionService {
     });
 
     // Expose the live graph to in-process consumers (e.g. addon-mcp).
-    setActiveStoryDependencyGraphService(this.graph);
+    setDependencyGraphService(this.graph);
 
     this.graph.start(adapter);
   }
@@ -245,7 +245,7 @@ export class ChangeDetectionService {
     }
 
     this.gitDiffProvider?.dispose();
-    setActiveStoryDependencyGraphService(undefined);
+    setDependencyGraphService(undefined);
     // Tear down the graph last: it drains in-flight patches before disposing the OXC parse pool.
     await this.graph?.dispose();
   }

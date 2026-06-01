@@ -8,10 +8,7 @@ export {
 export { ChangeDetectionService } from './ChangeDetectionService.ts';
 export { StoryDependencyGraphService } from './StoryDependencyGraphService.ts';
 export type { StoryDependencyGraphServiceOptions } from './StoryDependencyGraphService.ts';
-export {
-  getDependencyGraphService,
-  setActiveStoryDependencyGraphService,
-} from './active-service-registry.ts';
+export { getDependencyGraphService, setDependencyGraphService } from './active-service-registry.ts';
 export type {
   ChangeDetectionAdapter,
   FileChangeEvent,

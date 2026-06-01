@@ -6,3 +6,5 @@ addons.setConfig({
     renderLabel: ({ name, type }) => (type === 'story' ? name : startCase(name)),
   },
 });
+
+import './background-service/manager.tsx';

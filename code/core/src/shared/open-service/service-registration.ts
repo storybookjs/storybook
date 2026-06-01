@@ -1,4 +1,4 @@
-import { createServiceRuntime } from './service-runtime.ts';
+import { createServiceRuntime, type ServiceRuntime } from './service-runtime.ts';
 import {
   OpenServiceDuplicateRegistrationError,
   OpenServiceMissingServiceError,
@@ -19,9 +19,13 @@ import type {
   ServiceRegistryApi,
   ServiceSummary,
 } from './types.ts';
+
+type AnyServiceRuntime = ServiceRuntime<unknown, Queries<unknown>, Commands<unknown>>;
+
 type RegistryEntry = {
   definition: AnyServiceDefinition;
   runtime: RuntimeService;
+  serviceRuntime: AnyServiceRuntime;
   summary: ServiceSummary;
   descriptor: ServiceDescriptor;
 };
@@ -211,6 +215,7 @@ export function registerService<
   registry.set(definition.id, {
     definition: resolvedDefinition as AnyServiceDefinition,
     runtime: registeredRuntime as unknown as RuntimeService,
+    serviceRuntime: runtime as AnyServiceRuntime,
     descriptor,
     summary: summarizeDescriptor(descriptor),
   });
@@ -273,6 +278,22 @@ export function getService<TDefinition extends AnyServiceDefinition>(
   }
 
   return entry.runtime as unknown as ServiceInstanceOf<TDefinition>;
+}
+
+/**
+ * Returns the internal `ServiceRuntime` for a server-registered service.
+ *
+ * Primarily used by `connectServiceToChannel` to wire the server-side service into the
+ * cross-peer channel sync protocol without requiring the service to be re-registered.
+ */
+export function getServiceRuntime(serviceId: ServiceId): AnyServiceRuntime {
+  const entry = getRegistry().get(serviceId);
+
+  if (!entry) {
+    throw new OpenServiceMissingServiceError({ serviceId });
+  }
+
+  return entry.serviceRuntime;
 }
 
 /**

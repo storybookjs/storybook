@@ -323,6 +323,18 @@ export class ComponentMetaProject {
           );
         }
 
+        // Path 3: Fallback — resolve directly from the component's own source file export.
+        // Handles args-only CSF4 `preview.meta()` stories: no story-file JSX (Path 1) and a meta
+        // that is a local/imported binding rather than a default export (Path 2). The component
+        // file and export name are already known from the story's imports.
+        if (!resolvedComponent) {
+          resolvedComponent = this.resolveFromComponentExport(
+            checker,
+            componentSourceFile,
+            entryComponent
+          );
+        }
+
         if (!resolvedComponent) {
           continue;
         }
@@ -445,6 +457,52 @@ export class ComponentMetaProject {
       componentRef,
       propsType,
       symbol: selectedSymbol,
+    };
+  }
+
+  /**
+   * Path 3 fallback: resolve the component type from its own source file export.
+   *
+   * Activates for args-only stories where Path 1 (story-file JSX) found nothing and Path 2 found no
+   * default-export meta — most notably CSF4 `preview.meta()` + `meta.story({ args })`, whose meta is
+   * a local `const`/imported binding. The component path and export name are already resolved from
+   * the story's imports, so the props type is read straight from the component module.
+   *
+   * Member/compound components (`Accordion.Root`) are written with explicit JSX and resolve via
+   * Path 1, so they are intentionally left to that path.
+   */
+  private resolveFromComponentExport(
+    checker: ts.TypeChecker,
+    componentSourceFile: ts.SourceFile,
+    componentRef: ComponentRef
+  ): ResolvedComponentTarget | undefined {
+    const { importName, member: memberAccess } = componentRef;
+    if (!importName || memberAccess) {
+      return undefined;
+    }
+
+    const moduleSymbol = checker.getSymbolAtLocation(componentSourceFile);
+    if (!moduleSymbol) {
+      return undefined;
+    }
+
+    const exportSymbol = checker
+      .getExportsOfModule(moduleSymbol)
+      .find((e) => e.getName() === importName);
+    if (!exportSymbol) {
+      return undefined;
+    }
+
+    const componentType = checker.getTypeOfSymbol(exportSymbol);
+    const propsType = resolvePropsFromComponentType(this.typescript, checker, componentType);
+    if (!propsType) {
+      return undefined;
+    }
+
+    return {
+      componentRef,
+      propsType,
+      symbol: exportSymbol,
     };
   }
 }

@@ -201,7 +201,11 @@ function resolveTree(Story: ComponentType, context: Parameters<Decorator>[1]): R
   );
   const syntheticChild = createRoute({
     component: () => <Story />,
-    id: 'storybook-story',
+    // A TanStack route may define an `id` or a `path`, never both. Only assign the
+    // synthetic id when the user's plain options don't already provide a path,
+    // otherwise `parameters.tanstack.router.route = { path: '...' }` throws
+    // "Route cannot have both an 'id' and a 'path' option."
+    ...('path' in plainOptions ? {} : { id: 'storybook-story' }),
     ...plainOptions,
     getParentRoute: () => syntheticRoot,
   } as any);

@@ -2,9 +2,10 @@ import { expect, it, vi } from 'vitest';
 
 import { importPipeline } from './importPipeline.ts';
 
-const createGate = (): [Promise<any | undefined>, (_?: any) => void] => {
-  let openGate = (_?: any) => {};
-  const gate = new Promise<any | undefined>((resolve) => {
+const createGate = <T = void>(): [Promise<T>, (value?: T) => void] => {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  let openGate = (_value?: T) => {};
+  const gate = new Promise<T>((resolve) => {
     openGate = resolve;
   });
   return [gate, openGate];

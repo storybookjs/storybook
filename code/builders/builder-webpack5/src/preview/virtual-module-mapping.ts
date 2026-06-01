@@ -53,10 +53,12 @@ export const getVirtualModules = async (options: Options) => {
   // The import pipeline is a workaround for a webpack lazy-compilation bug that was fixed in
   // webpack 5.101.3 (https://github.com/webpack/webpack/issues/15541#issuecomment-1143138832).
   // We only enable it for lazy compilation in dev mode on older webpack versions.
+  const webpackVersion = webpackModule.version ? semver.coerce(webpackModule.version) : null;
   const needPipelinedImport =
     !!builderOptions.lazyCompilation &&
     !isProd &&
-    semver.lt(semver.coerce(webpackModule.version) || '0.0.0', '5.101.3');
+    !!webpackVersion &&
+    semver.lt(webpackVersion, '5.101.3');
   virtualModules[storiesPath] = toImportFn(stories, { needPipelinedImport });
   const configEntryPath = resolve(join(workingDir, 'storybook-config-entry.js'));
   virtualModules[configEntryPath] = (

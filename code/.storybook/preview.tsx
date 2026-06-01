@@ -51,6 +51,8 @@ sb.mock(import('lodash-es/sum'));
 sb.mock(import('uuid'));
 /* eslint-enable depend/ban-dependencies */
 
+import './background-service/preview.ts';
+
 const { document } = global;
 globalThis.CONFIG_TYPE = 'DEVELOPMENT';
 

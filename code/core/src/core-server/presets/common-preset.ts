@@ -27,6 +27,8 @@ import type {
 } from 'storybook/internal/types';
 
 import { registerDocgenService } from '../../shared/open-service/services/docgen/server.ts';
+import { getRegisteredServices } from '../../shared/open-service/server.ts';
+import { connectServiceToChannel } from '../../shared/open-service/service-server-channel.ts';
 
 import { isAbsolute, join } from 'pathe';
 import * as pathe from 'pathe';
@@ -284,6 +286,13 @@ export const experimental_serverChannel = async (
   initGhostStoriesChannel(channel, options);
   initOpenInEditorChannel(channel);
   initTelemetryChannel(channel);
+
+  // Wire every server-registered service into the channel sync protocol.
+  // The services hook (line 298 in build-dev.ts) runs before this hook, so all
+  // services are already in the registry by the time the channel arrives here.
+  for (const service of getRegisteredServices()) {
+    connectServiceToChannel(service.id, channel);
+  }
 
   return channel;
 };

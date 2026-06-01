@@ -16,10 +16,11 @@ fit together, where behavior lives, and how to define new services correctly.
 
 ## Public Surface
 
-External callers should import from one of two entrypoints:
+External callers should import from one of three entrypoints:
 
 - [index.ts](./index.ts) for environment-agnostic definition helpers and shared types
 - [server.ts](./server.ts) for server-only registration, discovery, and static snapshot writing
+- [client.ts](./client.ts) for browser-side (manager and preview) registration, channel setup, and React hooks
 
 The environment-agnostic API consists of:
 
@@ -35,6 +36,16 @@ The server-only API consists of:
 - `getRegisteredServices`
 - `buildStaticFiles`
 - `writeOpenServiceStaticFiles`
+- `connectServiceToChannel` (opt-in channel participation for server-registered services)
+
+The client-side API consists of:
+
+- `registerServiceClient` — creates a local runtime and wires it into the channel sync protocol
+- `unregisterServiceClient` — tears down one service's channel listeners and removes it from the registry
+- `clearClientRegistry` — removes all client registrations (use in `afterEach` in tests)
+- `setServiceChannel` / `clearServiceChannel` / `getServiceChannel` — channel lifecycle
+- `useServiceQuery` — React hook backed by `useSyncExternalStore`
+- `useServiceCommand` — React hook returning a stable command reference
 
 Internal tests and implementation code may import from the individual modules directly.
 
@@ -42,14 +53,20 @@ Internal tests and implementation code may import from the individual modules di
 
 - [index.ts](./index.ts): environment-agnostic barrel for definition helpers and shared types
 - [server.ts](./server.ts): server-only entrypoint that re-exports registration APIs and owns static snapshot building/writing
+- [client.ts](./client.ts): browser-side entrypoint for manager and preview code
 - [types.ts](./types.ts): core type model for definitions, contexts, runtime instances, and static build data
 - [service-definition.ts](./service-definition.ts): `defineService()` typing that preserves inline inference when declaring services
 - [service-validation.ts](./service-validation.ts): sync + async schema validation helpers and error wrapping
 - [errors.ts](./errors.ts): validation metadata formatting helpers
 - [service-runtime.ts](./service-runtime.ts): signal-backed runtime construction, in-flight load registry, drain logic, and subscriptions
 - [service-registration.ts](./service-registration.ts): server-side global registry implementation and the shared registry API passed into runtimes
+- [service-channel.ts](./service-channel.ts): `ServiceChannel` interface, event name constants, payload types, and module-level channel slot
+- [service-client.ts](./service-client.ts): client-side (browser) registry, `registerServiceClient`, and the multi-master channel sync protocol
+- [service-server-channel.ts](./service-server-channel.ts): opt-in channel participation for server-side registered services
+- [use-service-query.ts](./use-service-query.ts): `useServiceQuery` React hook backed by `useSyncExternalStore`
+- [use-service-command.ts](./use-service-command.ts): `useServiceCommand` React hook returning a stable command reference
 - [fixtures.ts](./fixtures.ts): scenario fixtures used by the test suite
-- `*.test.ts`: focused tests for runtime behavior, validation behavior, server registration, and server static builds
+- `*.test.ts` / `*.test.tsx`: focused tests for runtime behavior, validation behavior, server registration, server static builds, client sync, and React hooks
 
 ## Core Concepts
 
@@ -358,6 +375,119 @@ flowchart TD
   J --> K[writeOpenServiceStaticFiles outputDir]
 ```
 
+## Client Architecture (Multi-Master)
+
+Browser processes (manager and preview) each run their own full `ServiceRuntime` — identical in shape to the server-side one. State is reconciled peer-to-peer through Storybook's existing manager↔preview channel using a welcome-handshake + patch-broadcast protocol.
+
+```
+┌─────────────────────────┐     channel (services:*)     ┌─────────────────────────┐
+│  Manager process        │  ◄────────────────────────►  │  Preview process        │
+│                         │                               │                         │
+│  registerServiceClient  │                               │  registerServiceClient  │
+│  ┌─────────────────┐    │                               │  ┌─────────────────┐    │
+│  │  ServiceRuntime │    │                               │  │  ServiceRuntime │    │
+│  │  (deep signals) │    │                               │  │  (deep signals) │    │
+│  └─────────────────┘    │                               │  └─────────────────┘    │
+└─────────────────────────┘                               └─────────────────────────┘
+```
+
+### Channel setup
+
+Install the channel once at the manager or preview entry point before calling `registerServiceClient`:
+
+```ts
+import { setServiceChannel } from 'storybook/internal/open-service/client';
+
+setServiceChannel(addons.getChannel());
+```
+
+Without a channel, service runtimes operate in isolation — all reads and writes are local only. This is also the correct mode for unit tests that do not want cross-peer behaviour.
+
+### `registerServiceClient`
+
+Creates a local `ServiceRuntime` from the service definition (identical to the server-side one) and wires it into the sync protocol:
+
+1. **On registration** — emits `services:welcome-request` so any existing peer can reply with its current snapshot.
+2. **On welcome-reply** — applies the received snapshot into the local runtime so the new peer bootstraps from existing state.
+3. **After each local command** — broadcasts the full post-mutation state as `services:patches` so all peers stay in sync.
+4. **On incoming patches** — applies the received state into the local runtime via `commandSelf.setState`, which triggers fine-grained signal updates and re-renders subscribed components.
+
+### Loop prevention
+
+Every channel event carries the emitter's `clientId` (generated per `registerServiceClient` call). Listeners silently ignore events whose `clientId` matches their own, so peers never re-apply state they just emitted.
+
+### State application without re-broadcast
+
+Incoming state (from welcome-reply or patches) is applied via `serviceRuntime.commandSelf.setState(...)` directly — not through the wrapped commands — so no broadcast is triggered for received state.
+
+### `deepAssign`
+
+Rather than replacing the entire state object on each patch (which would invalidate all signal subscriptions), `deepAssign` recursively merges plain-object values in place. Arrays and primitives are replaced directly. This keeps fine-grained subscriptions on unaffected nested fields from firing spuriously.
+
+### State sync sequence
+
+```
+Peer A (manager)            Channel              Peer B (preview)
+─────────────────────────────────────────────────────────────────
+registerServiceClient()
+  └─ emit welcome-request ──────────────────────────────────────►
+                                                (no peer yet; silence)
+
+                                                registerServiceClient()
+◄─────────────────────────── emit welcome-request ──────────────
+  └─ reply with snapshot ──────────────────────────────────────►
+                                                  └─ apply snapshot
+
+service.commands.foo()
+  └─ local runtime mutates
+  └─ emit patches ─────────────────────────────────────────────►
+                                                  └─ apply state
+```
+
+### Server participation
+
+Server-side registered services can optionally join the same protocol by calling `connectServiceToChannel(serviceId)` from [service-server-channel.ts](./service-server-channel.ts). The server responds to welcome-requests and applies incoming patches, but does not emit patches of its own (server state changes happen through direct `registerService` flows, not wrapped commands).
+
+## React Hooks
+
+### `useServiceQuery`
+
+Subscribes to a service query and returns its current value, re-rendering when it changes.
+
+```tsx
+import { useServiceQuery } from 'storybook/internal/open-service/client';
+
+// With input
+const fields = useServiceQuery(service, 'getRecordFields', { entryId: 'a' });
+
+// Void-input query (no third argument)
+const summary = useServiceQuery(service, 'getSummary');
+```
+
+Backed by `useSyncExternalStore`. The subscription is torn down and recreated when `service`, `queryName`, or `input` changes.
+
+**Referential stability:** `getSnapshot` compares the new value with the previous via `isEqual` and returns the cached reference when they are deeply equal, so React bails out of re-rendering when the value hasn't logically changed.
+
+**Memoize complex inputs at the call site.** The input participates in the hook's React dependency array. Passing a new object literal on every render recreates the subscription each render. Wrap object inputs in `useMemo` or extract them to module scope.
+
+### `useServiceCommand`
+
+Returns a stable reference to a service command. The reference is stable as long as `service` and `commandName` do not change, so it is safe to pass to child components or include in effect dependency arrays.
+
+```tsx
+import { useServiceCommand } from 'storybook/internal/open-service/client';
+
+const assignField = useServiceCommand(service, 'assignRecordField');
+
+return (
+  <button onClick={() => assignField({ entryId: 'a', fieldKey: 'x', fieldValue: 'y' })}>
+    Update
+  </button>
+);
+```
+
+Fire-and-forget: the returned function returns a Promise. Callers manage their own loading and error state with `useState`, `useReducer`, TanStack Query, or whatever fits.
+
 ## How To Define A Service
 
 Define queries and commands inline inside `defineService()` so the service-level schema maps can contextually type every handler, load hook, and `ctx.self.commands.*` call:
@@ -424,17 +554,23 @@ const ready = await exampleService.queries.getValue.loaded({ entryId: 'a' });
 - **Keep `load` bodies minimal — ideally one line that calls a command.** Push input resolution, side effects, and state mutation into the command itself so it stays callable, testable, and reusable on its own.
 - Query handlers are strict readers: sync, no commands, no `setState`.
 - Use commands for all state mutation.
-- Keep environment-agnostic imports on [index.ts](./index.ts) and server-only imports on [server.ts](./server.ts). Import internal modules directly only from tests or implementation code in this directory.
+- Keep environment-agnostic imports on [index.ts](./index.ts), server-only imports on [server.ts](./server.ts), and browser-only imports on [client.ts](./client.ts). Import internal modules directly only from tests or implementation code in this directory.
 - Use `.loaded()` when a caller wants to await the full state; use the sync form when "current best" is fine.
+- Call `setServiceChannel(addons.getChannel())` once at the browser entry point before any `registerServiceClient` calls.
+- Call `clearClientRegistry()` and `clearServiceChannel()` in `afterEach` in tests that use `registerServiceClient`.
 
 ## Testing Guidance
 
 - Runtime behavior belongs in [service-runtime.test.ts](./service-runtime.test.ts)
 - Validation behavior belongs in [service-validation.test.ts](./service-validation.test.ts)
 - Server registration and static snapshot behavior belong in [server.test.ts](./server.test.ts)
+- Client registration and channel sync behavior belong in [service-client.test.ts](./service-client.test.ts)
+- React hook behavior belongs in [use-service-query.test.tsx](./use-service-query.test.tsx) and [use-service-command.test.tsx](./use-service-command.test.tsx)
 - Reusable scenario definitions belong in [fixtures.ts](./fixtures.ts)
 
 When adding validation tests, prefer asserting the full exact error message. That keeps the tests useful as executable documentation for callers and agents.
+
+React hook tests must include `// @vitest-environment happy-dom` as the first line and add `clearClientRegistry()` in `afterEach`. Use `waitFor(...)` (not `act`) when asserting state changes that flow through preact signals — `act` only flushes React's scheduler and is unaware of the signal effect queue.
 
 ## Agent Notes
 
@@ -444,3 +580,8 @@ When adding validation tests, prefer asserting the full exact error message. Tha
 - If you need to change validation wording, start in [errors.ts](./errors.ts).
 - If you need to change schema handling, start in [service-validation.ts](./service-validation.ts).
 - If you need to change service authoring ergonomics, start in [service-definition.ts](./service-definition.ts) and [types.ts](./types.ts).
+- If you need to change client-side sync or registration, start in [service-client.ts](./service-client.ts).
+- If you need to change the channel protocol (event names, payloads, channel slot), start in [service-channel.ts](./service-channel.ts).
+- If you need to change server-side channel participation, start in [service-server-channel.ts](./service-server-channel.ts).
+- If you need to change the React query hook, start in [use-service-query.ts](./use-service-query.ts).
+- If you need to change the React command hook, start in [use-service-command.ts](./use-service-command.ts).

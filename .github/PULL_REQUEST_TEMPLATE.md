@@ -30,11 +30,13 @@ Thank you for contributing to Storybook! Please submit all PRs to the `next` bra
 > [!CAUTION]
 > This section is mandatory for all contributions. If you believe no manual test is necessary, please state so explicitly. Thanks!
 
-<!-- Please include the steps to test your changes here. For example:
+<!-- Please include the steps that a human maintainer should follow, so they can verify that your changes work. For example:
 
 1. Run a sandbox for template, e.g. `yarn task --task sandbox --start-from auto --template react-vite/default-ts`
 2. Open Storybook in your browser
 3. Access X story
+
+Do not describe how YOU tested the PR code, but how a separate maintainer should do so. A good manual test often mirrors reproduction steps provided in an issue.
 
 -->
 

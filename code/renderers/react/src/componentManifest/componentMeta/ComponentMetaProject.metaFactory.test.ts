@@ -115,4 +115,45 @@ describe('prop extraction for CSF4 preview.meta() stories', () => {
       },
     });
   });
+
+  // A default-exported component reaches Path 3 with `importName === 'default'`; the module-export
+  // lookup must resolve it the same as a named export.
+  it('extracts props for an args-only story whose component is a default export', async () => {
+    const entry = await extractFromStory(
+      {
+        'csf4/DefaultComponent.tsx': dedent`
+          import React from 'react';
+          interface MyComponentProps {
+            /** The content to render */
+            children: React.ReactNode;
+            /** Visual emphasis */
+            emphasis?: 'low' | 'high';
+          }
+          function MyComponent({ children, emphasis }: MyComponentProps) {
+            return <div data-emphasis={emphasis}>{children}</div>;
+          }
+          export default MyComponent;
+        `,
+        'csf4/DefaultComponent.stories.tsx': dedent`
+          import preview from '#.storybook/preview';
+          import MyComponent from './DefaultComponent';
+          const meta = preview.meta({ component: MyComponent });
+          export const ArgsOnly = meta.story({ args: { children: 'Hello' } });
+        `,
+      },
+      'csf4/DefaultComponent.stories.tsx'
+    );
+
+    expect(entry.component?.reactComponentMeta).toMatchObject({
+      displayName: 'MyComponent',
+      exportName: 'default',
+      props: {
+        children: { required: true, description: 'The content to render' },
+        emphasis: {
+          type: { name: 'enum', value: [{ value: '"low"' }, { value: '"high"' }] },
+          required: false,
+        },
+      },
+    });
+  });
 });

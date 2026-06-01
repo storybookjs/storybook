@@ -487,9 +487,12 @@ export default { framework: { name: '${ANGULAR_VITE_PACKAGE}', options: {} } };`
       });
 
       // Drive the updateMainConfig callback so we can assert the field write.
+      // Object-form framework: getFieldValue returns an object, so the nested
+      // set is used (preserving the name/options).
       const setFieldValue = vi.fn();
+      const getFieldValue = vi.fn(() => ({ name: ANGULAR_VITE_PACKAGE, options: {} }));
       mockUpdateMainConfig.mockImplementation((async (_opts: any, cb: any) => {
-        await cb({ setFieldValue });
+        await cb({ setFieldValue, getFieldValue });
       }) as any);
 
       await angularToAngularVite.run!({
@@ -504,6 +507,58 @@ export default { framework: { name: '${ANGULAR_VITE_PACKAGE}', options: {} } };`
 
       expect(mockUpdateMainConfig).toHaveBeenCalled();
       expect(setFieldValue).toHaveBeenCalledWith(['framework', 'options', 'compodoc'], false);
+    });
+
+    it('preserves the framework name when carrying compodoc into a string framework', async () => {
+      mockPromptConfirm.mockResolvedValue(false);
+
+      // eslint-disable-next-line depend/ban-dependencies
+      const { globby } = await import('globby');
+      vi.mocked(globby).mockResolvedValueOnce(['/project/libs/soba/project.json']);
+
+      const projectJsonContent = JSON.stringify({
+        name: 'soba',
+        targets: {
+          storybook: {
+            executor: '@storybook/angular:start-storybook',
+            options: { compodoc: false },
+          },
+        },
+      });
+
+      mockReadFile.mockImplementation((filePath: any) => {
+        const p = String(filePath);
+        if (p.endsWith('project.json')) {
+          return Promise.resolve(projectJsonContent) as any;
+        }
+        return Promise.resolve(`export default { framework: '${ANGULAR_PACKAGE}' };`) as any;
+      });
+
+      // String-form framework: getFieldValue returns a string. Setting the
+      // nested path would drop the name, so the helper rebuilds the framework
+      // object preserving the name.
+      const setFieldValue = vi.fn();
+      const getFieldValue = vi.fn(() => ANGULAR_VITE_PACKAGE);
+      mockUpdateMainConfig.mockImplementation((async (_opts: any, cb: any) => {
+        await cb({ setFieldValue, getFieldValue });
+      }) as any);
+
+      await angularToAngularVite.run!({
+        result: baseResult,
+        dryRun: false,
+        packageManager: mockPackageManager,
+        mainConfigPath: '/project/.storybook/main.ts',
+        storiesPaths: [],
+        configDir: '.storybook',
+        storybookVersion: '9.0.0',
+      } as any);
+
+      expect(setFieldValue).toHaveBeenCalledWith(['framework'], {
+        name: ANGULAR_VITE_PACKAGE,
+        options: { compodoc: false },
+      });
+      // The name must NOT be dropped via the nested path on a string framework.
+      expect(setFieldValue).not.toHaveBeenCalledWith(['framework', 'options', 'compodoc'], false);
     });
 
     it('does not touch framework.options when compodoc is not disabled', async () => {

@@ -314,7 +314,29 @@ export const angularToAngularVite: Fix<AngularToAngularViteOptions> = {
     if (disableCompodoc && mainConfigPath) {
       try {
         await updateMainConfig({ mainConfigPath, dryRun: !!dryRun }, async (main) => {
-          if (!dryRun) {
+          if (dryRun) {
+            return;
+          }
+
+          // When `framework` is a bare string, `setFieldValue(['framework',
+          // 'options', ...])` replaces the string value and drops the framework
+          // name. Rebuild it as an object that preserves the name. Object forms
+          // (including a `getAbsolutePath`-wrapped name, where `getFieldValue`
+          // throws because the call cannot be evaluated) descend correctly via
+          // the nested set and keep the existing name and options.
+          let frameworkValue: unknown;
+          try {
+            frameworkValue = main.getFieldValue(['framework']);
+          } catch {
+            frameworkValue = undefined;
+          }
+
+          if (typeof frameworkValue === 'string') {
+            main.setFieldValue(['framework'], {
+              name: frameworkValue,
+              options: { compodoc: false },
+            });
+          } else {
             main.setFieldValue(['framework', 'options', 'compodoc'], false);
           }
         });

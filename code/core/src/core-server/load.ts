@@ -8,6 +8,7 @@ import {
 } from 'storybook/internal/common';
 import { oneWayHash } from 'storybook/internal/telemetry';
 import type { BuilderOptions, CLIOptions, LoadOptions, Options } from 'storybook/internal/types';
+import { applyServicesPresetOnce } from './utils/apply-services-preset-once.ts';
 
 import { global } from '@storybook/global';
 
@@ -94,6 +95,8 @@ export async function loadStorybook(
 
   const features = await presets.apply('features');
   global.FEATURES = features;
+
+  await applyServicesPresetOnce(presets);
 
   return {
     ...options,

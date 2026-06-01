@@ -11,28 +11,12 @@ import type { Options, PreviewAnnotation } from 'storybook/internal/types';
 
 import { toImportFn } from '@storybook/core-webpack';
 
+import semver from 'semver';
 // eslint-disable-next-line depend/ban-dependencies
 import slash from 'slash';
 import webpackModule from 'webpack';
 
 import type { BuilderOptions } from '../types.ts';
-
-/**
- * Returns true if the given webpack version string is >= the given minimum version.
- * Falls back to false if the version is not available.
- */
-function isWebpackVersionAtLeast(version: string | undefined, minVersion: string): boolean {
-  if (!version) return false;
-  // parseInt handles prerelease suffixes (e.g. '5.101.3-alpha.1' → 5, 101, 3)
-  const parts = version.split('.').map((p) => parseInt(p, 10));
-  const min = minVersion.split('.').map((p) => parseInt(p, 10));
-  for (let i = 0; i < min.length; i++) {
-    const p = parts[i] ?? 0;
-    if (p > min[i]) return true;
-    if (p < min[i]) return false;
-  }
-  return true;
-}
 
 export const getVirtualModules = async (options: Options) => {
   const virtualModules: Record<string, string> = {};
@@ -72,7 +56,7 @@ export const getVirtualModules = async (options: Options) => {
   const needPipelinedImport =
     !!builderOptions.lazyCompilation &&
     !isProd &&
-    !isWebpackVersionAtLeast(webpackModule.version, '5.101.3');
+    semver.lt(semver.coerce(webpackModule.version) || '0.0.0', '5.101.3');
   virtualModules[storiesPath] = toImportFn(stories, { needPipelinedImport });
   const configEntryPath = resolve(join(workingDir, 'storybook-config-entry.js'));
   virtualModules[configEntryPath] = (

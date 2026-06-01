@@ -1033,8 +1033,11 @@ function subscribeToQuery<TState>(
         refs.registryApi.getService
       );
       if (selector) {
-        untracked(() => validateQueryOutput(refs, queryName, queryDef, output));
-        return detachSnapshot(selector(output));
+        const validated = untracked(() => validateQueryOutput(refs, queryName, queryDef, output));
+        // Read the live handler output so the selector's field accesses stay on the reactive
+        // proxy; validation returns a plain parsed value that cannot carry those dependencies.
+        selector(output);
+        return detachSnapshot(selector(validated));
       }
       return validateQueryOutput(refs, queryName, queryDef, output);
     });

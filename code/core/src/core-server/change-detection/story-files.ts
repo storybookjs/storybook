@@ -7,7 +7,7 @@ type StoryIndex = Awaited<ReturnType<StoryIndexGenerator['getIndex']>>;
 /**
  * Maps each story index to its absolute-story-file -> story-id sets, keyed by the index object
  * so repeat calls within a scan/build reuse the result. The story index is referentially stable
- * for a given generation, so identity-keying is safe; the `workingDir` guard guards against the
+ * for a given generation, so identity-keying is safe; the `workingDir` field guards against the
  * (test-only) case of the same index resolved against a different working directory.
  */
 const cache = new WeakMap<

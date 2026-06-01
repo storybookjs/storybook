@@ -111,12 +111,9 @@ export function buildReverseIndex(
 
 /**
  * Stub the dependency-graph constructors so the service under test uses an in-test
- * ReverseIndexImpl + an inert IncrementalPatcher.
- *
- * Note: `vi.mock` replaces these exports with plain `vi.fn()` constructors. When the service calls
- * `new Ctor(...)` we must return objects via `mockImplementation` — but vitest invokes the impl
- * with `Reflect.construct` on `new`, so arrow-function impls throw "is not a constructor".
- * `function () { return obj; }` works because regular functions support `[[Construct]]`.
+ * ReverseIndexImpl + an inert IncrementalPatcher. The mock implementations must be regular
+ * `function`s, not arrow functions: the service calls them with `new`, which arrow functions do
+ * not support.
  */
 export function installDependencyGraphMocks(reverseIndex: ReverseIndexImpl): {
   patchSpy: ReturnType<typeof vi.fn>;

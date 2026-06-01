@@ -349,8 +349,7 @@ export class ChangeDetectionService {
 
     for (const changedFile of scannedFiles) {
       const affectedStoryFiles = this.graph?.lookup(changedFile) ?? new Map<string, number>();
-      // Include the changed file as a story-at-distance-0 if it IS a story (parity with
-      // legacy trace-changed.ts:10-12).
+      // Include the changed file as a story-at-distance-0 if it IS a story.
       const allEntries = new Map(affectedStoryFiles);
       if (storyIdsByFile.has(changedFile)) {
         allEntries.set(changedFile, 0);

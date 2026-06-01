@@ -28,7 +28,14 @@ export interface StoryDependencyGraphServiceOptions {
   presets?: Presets;
   /** Fired once the initial graph build succeeds and the reverse index is ready to be queried. */
   onReady?: () => void;
-  /** Fired after each file-change patch settles, so consumers can recompute derived state. */
+  /**
+   * Edge-triggered "the dependency graph may have changed; recompute derived state" signal. Fires
+   * after each settled file-change patch, and synchronously on a story-index invalidation (before
+   * its reconciliation patches are enqueued). It is a coalesce signal, NOT a settled read: do not
+   * call {@link StoryDependencyGraphService.lookup} synchronously inside the callback — schedule a
+   * (debounced) recompute whose first step is `await whenSettled()`. May fire more than once per
+   * logical change, so consumers must be idempotent.
+   */
   onChange?: () => void;
   /** Fired when the eager build (or start pipeline) fails irrecoverably. */
   onError?: (error: Error) => void;
@@ -56,6 +63,13 @@ export class StoryDependencyGraphService {
   private reverseIndex: ReverseIndexImpl | undefined;
   private storyFiles: Set<string> = new Set();
   private refreshInFlight = false;
+  /**
+   * Resolves once the in-flight story-index reconciliation has enqueued its add/unlink patches.
+   * {@link whenSettled} awaits this before snapshotting {@link patchQueue}, so a barrier taken
+   * while a reconciliation is still in `getIndex()` does not miss its patches (which would let a
+   * later {@link lookup} observe a pre-reconciliation graph).
+   */
+  private refreshSettled: Promise<void> = Promise.resolve();
   /**
    * Serialises file-change patches so two events touching the same dep set never interleave
    * across `await` points inside `IncrementalPatcher.patch`. The chain ignores rejections
@@ -95,12 +109,23 @@ export class StoryDependencyGraphService {
   }
 
   /**
-   * Resolves once the patches enqueued up to the moment of the call have settled. Snapshots the
-   * current tail of {@link patchQueue} (rather than re-reading the live field) so a continuous
-   * stream of file events cannot livelock the awaiter. Reads against {@link lookup} taken after
-   * this resolves observe a consistent, non-mid-patch reverse index.
+   * Read barrier. First awaits any in-flight story-index reconciliation so its add/unlink patches
+   * are enqueued, then snapshots the current tail of {@link patchQueue} (rather than re-reading the
+   * live field, so a continuous stream of file events cannot livelock the awaiter) and awaits it.
+   * When it resolves, every patch enqueued as of this call — including that reconciliation — has
+   * fully settled.
+   *
+   * This is a point-in-time barrier, not a freeze: file events arriving after the snapshot enqueue
+   * patches this call does not await, so a {@link lookup} taken after any further `await` may
+   * observe a newer (still non-mid-patch) graph. For a read pinned to this barrier, call
+   * {@link lookup} immediately after this resolves with no intervening `await`. Each new event
+   * re-fires {@link onChange}, so coalescing consumers converge without holding this barrier open.
    */
   async whenSettled(): Promise<void> {
+    // Phase 1: let any in-flight story-index reconciliation enqueue its add/unlink patches, so the
+    // tail snapshot below includes them.
+    await this.refreshSettled.catch(() => undefined);
+    // Phase 2: drain the patch chain, including any patches phase 1 just enqueued.
     const tail = this.patchQueue;
     await tail.catch(() => undefined);
   }
@@ -226,7 +251,20 @@ export class StoryDependencyGraphService {
     if (this.disposed) {
       return;
     }
-    void this.refreshStoryFiles().catch(() => undefined);
+    // Single-flight: a reconciliation already running will pick up this invalidation's changes when
+    // its getIndex() reads the (already-nulled) index cache, so we don't start a second. Track the
+    // running reconciliation in refreshSettled so whenSettled() can wait for it to enqueue its
+    // add/unlink patches before snapshotting the patch tail. The guard lives here (not inside
+    // refreshStoryFiles) so a dropped second invalidation can't overwrite refreshSettled with a
+    // resolved no-op and let the barrier skip the real in-flight reconciliation.
+    if (!this.refreshInFlight && this.incrementalPatcher) {
+      this.refreshInFlight = true;
+      this.refreshSettled = this.refreshStoryFiles()
+        .catch(() => undefined)
+        .finally(() => {
+          this.refreshInFlight = false;
+        });
+    }
     // The story index changed even when no story files were added/removed (e.g. a story renamed
     // within a file); signal consumers so derived state is recomputed.
     this.options.onChange?.();
@@ -238,53 +276,49 @@ export class StoryDependencyGraphService {
    * to walk it (so its forward edges are recorded). For each story that left the index, the
    * patcher is asked to unlink it (so its reverse-index entries are pruned). Replays are queued
    * behind {@link patchQueue} to keep the serialised-patch invariant intact.
+   *
+   * Single-flight is enforced by the sole caller, {@link onStoryIndexInvalidated}, which also
+   * exposes this run via {@link refreshSettled} so {@link whenSettled} can wait for the add/unlink
+   * patches to be enqueued.
    */
   private async refreshStoryFiles(): Promise<void> {
-    if (this.refreshInFlight || !this.incrementalPatcher) {
+    const storyIndexGenerator = await this.options.storyIndexGeneratorPromise;
+    const storyIndex = await storyIndexGenerator.getIndex();
+    if (this.disposed) {
       return;
     }
-    this.refreshInFlight = true;
-    try {
-      const storyIndexGenerator = await this.options.storyIndexGeneratorPromise;
-      const storyIndex = await storyIndexGenerator.getIndex();
-      if (this.disposed) {
-        return;
-      }
-      const storyIdsByFile = getStoryIdsByAbsolutePath(storyIndex, this.workingDir);
-      const next = new Set(storyIdsByFile.keys());
-      const previous = this.storyFiles;
+    const storyIdsByFile = getStoryIdsByAbsolutePath(storyIndex, this.workingDir);
+    const next = new Set(storyIdsByFile.keys());
+    const previous = this.storyFiles;
 
-      const added: string[] = [];
-      for (const path of next) {
-        if (!previous.has(path)) {
-          added.push(path);
-        }
+    const added: string[] = [];
+    for (const path of next) {
+      if (!previous.has(path)) {
+        added.push(path);
       }
-      const removed: string[] = [];
-      for (const path of previous) {
-        if (!next.has(path)) {
-          removed.push(path);
-        }
+    }
+    const removed: string[] = [];
+    for (const path of previous) {
+      if (!next.has(path)) {
+        removed.push(path);
       }
+    }
 
-      if (added.length === 0 && removed.length === 0) {
-        return;
-      }
+    if (added.length === 0 && removed.length === 0) {
+      return;
+    }
 
-      this.storyFiles = next;
+    this.storyFiles = next;
 
-      for (const path of added) {
-        this.patchQueue = this.patchQueue
-          .then(() => this.handleFileChange({ kind: 'add', path }))
-          .catch(() => undefined);
-      }
-      for (const path of removed) {
-        this.patchQueue = this.patchQueue
-          .then(() => this.handleFileChange({ kind: 'unlink', path }))
-          .catch(() => undefined);
-      }
-    } finally {
-      this.refreshInFlight = false;
+    for (const path of added) {
+      this.patchQueue = this.patchQueue
+        .then(() => this.handleFileChange({ kind: 'add', path }))
+        .catch(() => undefined);
+    }
+    for (const path of removed) {
+      this.patchQueue = this.patchQueue
+        .then(() => this.handleFileChange({ kind: 'unlink', path }))
+        .catch(() => undefined);
     }
   }
 

@@ -285,6 +285,71 @@ describe('StoryDependencyGraphService', () => {
     await service.dispose();
   });
 
+  it('whenSettled waits for an in-flight story-index reconciliation, so a later lookup is post-reconciliation', async () => {
+    // Regression guard for the onChange-before-reconciliation gap: onStoryIndexInvalidated starts
+    // an async refresh (getIndex + add/unlink) and fires onChange synchronously, before the
+    // reconciliation patches exist. whenSettled() must await that in-flight reconciliation, not
+    // just the current patch tail, or a consumer reacting to onChange would read a pre-reconciliation
+    // graph.
+    const reverseIndex = buildReverseIndex([]);
+    const getIndexDeferred = createDeferred<void>();
+    const { patchSpy, buildSpy } = installDependencyGraphMocks(reverseIndex);
+    buildSpy.mockResolvedValue({ reverseIndex, graph: new Map() });
+
+    // The reconciliation's add patch records B into the reverse index, so a post-reconciliation
+    // lookup can observe the freshly-walked story.
+    patchSpy.mockImplementation(async (event) => {
+      if (event.kind === 'add' && event.path === '/repo/src/B.stories.tsx') {
+        reverseIndex.record('/repo/src/B.stories.tsx', '/repo/src/B.stories.tsx', 0);
+      }
+    });
+
+    const initialIndex = createStoryIndex([
+      { storyId: 'a--default', importPath: './src/A.stories.tsx', title: 'A' },
+    ]);
+    const updatedIndex = createStoryIndex([
+      { storyId: 'a--default', importPath: './src/A.stories.tsx', title: 'A' },
+      { storyId: 'b--default', importPath: './src/B.stories.tsx', title: 'B' },
+    ]);
+    // Build reads the initial index; the reconciliation's getIndex parks until released.
+    const getIndex = vi
+      .fn()
+      .mockResolvedValueOnce(initialIndex)
+      .mockImplementationOnce(async () => {
+        await getIndexDeferred.promise;
+        return updatedIndex;
+      });
+
+    const { service, adapter } = setup({ getIndex });
+    service.start(adapter);
+    await vi.runAllTimersAsync();
+
+    service.onStoryIndexInvalidated();
+
+    let settled = false;
+    void service.whenSettled().then(() => {
+      settled = true;
+    });
+
+    // The reconciliation is parked in getIndex, so the barrier must not resolve and the add patch
+    // must not have run yet.
+    await Promise.resolve();
+    await Promise.resolve();
+    expect(settled).toBe(false);
+    expect(patchSpy).not.toHaveBeenCalled();
+
+    getIndexDeferred.resolve();
+    await vi.runAllTimersAsync();
+
+    expect(settled).toBe(true);
+    expect(patchSpy).toHaveBeenCalledWith({ kind: 'add', path: '/repo/src/B.stories.tsx' });
+    expect(service.lookup('/repo/src/B.stories.tsx')).toEqual(
+      new Map([['/repo/src/B.stories.tsx', 0]])
+    );
+
+    await service.dispose();
+  });
+
   it('fires onError, logs, and disposes the oxc pool when the eager build throws', async () => {
     const { buildSpy } = installDependencyGraphMocks(buildReverseIndex([]));
     buildSpy.mockImplementation(async () => {

@@ -7,8 +7,8 @@ import { storybookConfigExtensions } from '../../shared/constants/extensions.ts'
 
 const typescriptFallbackExtensions: Record<string, string[]> = {
   '.js': ['.ts', '.tsx'],
-  '.mjs': ['.mts', '.mtsx'],
-  '.cjs': ['.cts', '.ctsx'],
+  '.mjs': ['.mts'],
+  '.cjs': ['.cts'],
   '.jsx': ['.tsx'],
 };
 

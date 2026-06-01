@@ -29,31 +29,20 @@ describe('resolveImport', () => {
     temporaryDirectories.length = 0;
   });
 
-  it.each([
-    ['.js', '.tsx'],
-    ['.mjs', '.mtsx'],
-    ['.cjs', '.ctsx'],
-  ])('falls back from %s imports to %s files', (importExtension, fallbackExtension) => {
+  it('falls back from .js imports to .tsx files', () => {
     const directory = createTemporaryDirectory();
-    const expected = writeFixture(directory, `Component${fallbackExtension}`);
+    const expected = writeFixture(directory, 'Component.tsx');
 
-    expect(resolveImport(`./Component${importExtension}`, { basedir: directory })).toBe(expected);
+    expect(resolveImport('./Component.js', { basedir: directory })).toBe(expected);
   });
 
-  it.each([
-    ['.js', '.ts', '.tsx'],
-    ['.mjs', '.mts', '.mtsx'],
-    ['.cjs', '.cts', '.ctsx'],
-  ])(
-    'prefers the non-JSX TypeScript fallback before the JSX fallback',
-    (importExtension, preferredExtension, fallbackExtension) => {
-      const directory = createTemporaryDirectory();
-      const expected = writeFixture(directory, `Component${preferredExtension}`);
-      writeFixture(directory, `Component${fallbackExtension}`);
+  it('prefers .ts files before the .tsx fallback for .js imports', () => {
+    const directory = createTemporaryDirectory();
+    const expected = writeFixture(directory, 'Component.ts');
+    writeFixture(directory, 'Component.tsx');
 
-      expect(resolveImport(`./Component${importExtension}`, { basedir: directory })).toBe(expected);
-    }
-  );
+    expect(resolveImport('./Component.js', { basedir: directory })).toBe(expected);
+  });
 
   it('continues to fall back from .jsx imports to .tsx files', () => {
     const directory = createTemporaryDirectory();

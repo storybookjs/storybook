@@ -170,8 +170,9 @@ export const verdaccio = {
 export const workflow = {
   restoreLinux: (checkoutOpts: { forceHttps?: boolean; shallow?: boolean } = {}) => [
     git.checkout(checkoutOpts),
+    // Downstream jobs should consume precomputed outputs exclusively from the
+    // pipeline workspace to avoid stale cache interference and trust gating.
     workspace.attach(),
-    cache.attach(CACHE_KEYS()),
   ],
   restoreWindows: (at = WINDOWS_ROOT_DIR, checkoutOpts: { shallow?: boolean } = {}) => [
     git.checkout({ ...checkoutOpts, forceHttps: true }),

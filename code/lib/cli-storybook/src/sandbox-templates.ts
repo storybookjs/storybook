@@ -98,7 +98,7 @@ export type Template = {
   };
   /** Additional CI steps in case this template has special needs during CI. */
   extraCiSteps?: {
-    // Some sandboxes (e.g. Angular) rely on Node 22.22.1 as minimum supported version and threfore it needs enforcing, even if the CI image comes with a different node version.
+    // Some sandboxes (e.g. Angular) rely on Node 22.22.3 as minimum supported version and threfore it needs enforcing, even if the CI image comes with a different node version.
     ensureMinNodeVersion?: boolean;
   };
   /** Additional options to pass to the initiate command when initializing Storybook. */

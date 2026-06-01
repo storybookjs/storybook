@@ -48,6 +48,9 @@ export const RendersLeafInsideRootOutlet: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await expect(canvas.getByTestId('tanstack-outlet-root')).toBeInTheDocument();
+    await expect(
+      canvas.getByRole('heading', { level: 1, name: 'root layout' })
+    ).toBeInTheDocument();
     await expect(canvas.getByTestId('tanstack-outlet-leaf')).toBeInTheDocument();
   },
 };
@@ -62,6 +65,9 @@ export const RendersLeafViaRouteTreePath: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await expect(canvas.getByTestId('tanstack-outlet-root')).toBeInTheDocument();
+    await expect(
+      canvas.getByRole('heading', { level: 1, name: 'root layout' })
+    ).toBeInTheDocument();
     await expect(canvas.getByTestId('tanstack-outlet-leaf')).toBeInTheDocument();
   },
 };

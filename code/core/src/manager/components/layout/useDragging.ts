@@ -203,6 +203,16 @@ export function useDragging({
       window.removeEventListener('mouseup', onDragEnd);
       // make iframe capture pointer events again
       previewIframe?.removeAttribute('style');
+
+      // In Chrome, scrolling inside the preview iframe breaks after dragging
+      // a resize divider because Chrome doesn't restore scroll hit-testing
+      // when pointer-events is removed from an iframe. Blurring and immediately
+      // refocusing the iframe resets Chrome's internal scroll context so the
+      // user can scroll again without having to click inside first.
+      if (previewIframe) {
+        previewIframe.blur();
+        previewIframe.focus({ preventScroll: true });
+      }
       draggedElement = null;
     };
 

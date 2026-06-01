@@ -17,18 +17,9 @@ const docgenErrorSchema = v.object({
 
 const docgenJsDocTagsSchema = v.record(v.string(), v.array(v.string()));
 
-const docgenPropSchema = v.object({
-  name: v.string(),
-  required: v.boolean(),
-  type: v.object({
-    name: v.string(),
-    raw: v.optional(v.string()),
-    value: v.optional(v.array(v.object({ value: v.string() }))),
-  }),
-  description: v.string(),
-  defaultValue: v.nullable(v.object({ value: v.string() })),
-  jsDocTags: v.optional(docgenJsDocTagsSchema),
-});
+// Props are deliberately untyped: their shape is integration-specific (react-docgen-typescript,
+// vue-docgen, etc. all differ). See DocgenPayload in ./types.ts for the rationale.
+const docgenPropsSchema = v.array(v.unknown());
 
 const docgenStorySchema = v.object({
   id: v.string(),
@@ -44,7 +35,7 @@ const docgenSubcomponentSchema = v.object({
   description: v.optional(v.string()),
   summary: v.optional(v.string()),
   jsDocTags: v.optional(docgenJsDocTagsSchema),
-  props: v.array(docgenPropSchema),
+  props: docgenPropsSchema,
   error: v.optional(docgenErrorSchema),
 });
 
@@ -54,7 +45,7 @@ const docgenPayloadSchema = v.object({
   description: v.string(),
   summary: v.optional(v.string()),
   jsDocTags: v.optional(docgenJsDocTagsSchema),
-  props: v.array(docgenPropSchema),
+  props: docgenPropsSchema,
   subcomponents: v.optional(v.record(v.string(), docgenSubcomponentSchema)),
   stories: v.optional(v.array(docgenStorySchema)),
   error: v.optional(docgenErrorSchema),

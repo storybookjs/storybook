@@ -63,8 +63,10 @@ describe('buildDocgenPayload', () => {
       expect(payload).toBeDefined();
       expect(payload!.name).toBe('Button');
       expect(payload!.description).toContain('clickable button');
-      expect(payload!.props.map((p) => p.name).sort()).toEqual(['disabled', 'label']);
-      const labelProp = payload!.props.find((p) => p.name === 'label');
+      // props are typed `unknown` in the core contract; cast to the React provider's shape here.
+      const props = payload!.props as Array<{ name: string; required: boolean }>;
+      expect(props.map((p) => p.name).sort()).toEqual(['disabled', 'label']);
+      const labelProp = props.find((p) => p.name === 'label');
       expect(labelProp?.required).toBe(true);
       expect(payload!.stories).toHaveLength(1);
       expect(payload!.stories?.[0]).toMatchObject({
@@ -131,6 +133,9 @@ describe('buildDocgenPayload', () => {
     expect(payload!.name).toBe('Card');
     expect(payload!.subcomponents).toBeDefined();
     expect(Object.keys(payload!.subcomponents ?? {})).toEqual(['CardHeader']);
-    expect(payload!.subcomponents?.CardHeader.props.map((p) => p.name)).toContain('level');
+    const headerProps = (payload!.subcomponents?.CardHeader.props ?? []) as Array<{
+      name: string;
+    }>;
+    expect(headerProps.map((p) => p.name)).toContain('level');
   });
 });

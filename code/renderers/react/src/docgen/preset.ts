@@ -48,6 +48,13 @@ export const experimental_docgenProvider: DocgenProviderPreset = async (nextDocg
     {}
   ) ?? Promise.resolve({})) as Promise<Partial<TypescriptOptions>>;
 
+  // Pre-boot the TypeScript manager in the background, off the critical path. `import('typescript')`
+  // loads a multi-MB module; deferring it to the first docgen request adds several seconds of
+  // latency to that request. Kicking it off here (fire-and-forget) lets it warm up in parallel
+  // with the rest of server startup, so `await getManager()` below usually resolves instantly.
+  // getManager() memoizes and swallows its own errors, so this is safe to leave unawaited.
+  void getManager();
+
   return async (input) => {
     if (!/\.stories\.[cm]?[jt]sx?$/.test(input.importPath)) {
       return nextDocgen(input);

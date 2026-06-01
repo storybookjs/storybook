@@ -4,7 +4,6 @@ import { extractDescription, loadCsf } from 'storybook/internal/csf-tools';
 import type {
   DocgenJsDocTags,
   DocgenPayload,
-  DocgenProp,
   DocgenProviderInput,
   DocgenStory,
   DocgenSubcomponent,
@@ -29,7 +28,20 @@ import {
 } from '../componentManifest/subcomponents.ts';
 import { cachedReadTextFileSync } from '../componentManifest/utils.ts';
 
-function mapProps(doc: ComponentDoc | undefined): DocgenProp[] {
+/**
+ * Prop descriptor emitted by the React docgen provider, mirroring RCM's `PropItem`. The core
+ * docgen contract types props as `unknown` (the shape is integration-specific); this is the
+ * concrete shape the React renderer contributes.
+ */
+interface ReactDocgenProp {
+  name: string;
+  required: boolean;
+  type: ComponentDoc['props'][string]['type'];
+  description: string;
+  defaultValue: ComponentDoc['props'][string]['defaultValue'];
+}
+
+function mapProps(doc: ComponentDoc | undefined): ReactDocgenProp[] {
   if (!doc) {
     return [];
   }

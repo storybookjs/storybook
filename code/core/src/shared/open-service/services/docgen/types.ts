@@ -21,16 +21,6 @@ export interface DocgenError {
 /** Compact JSDoc tag map: tag name → list of tag values (e.g. `@example a` → `{ example: ['a'] }`). */
 export type DocgenJsDocTags = Record<string, string[]>;
 
-/** One prop on a component (and any subcomponent). Mirrors RCM's `PropItem` shape. */
-export interface DocgenProp {
-  name: string;
-  required: boolean;
-  type: { name: string; raw?: string; value?: { value: string }[] };
-  description: string;
-  defaultValue: { value: string } | null;
-  jsDocTags?: DocgenJsDocTags;
-}
-
 /** Snippet + metadata for one story under a component. */
 export interface DocgenStory {
   id: string;
@@ -47,16 +37,24 @@ export interface DocgenSubcomponent {
   description?: string;
   summary?: string;
   jsDocTags?: DocgenJsDocTags;
-  props: DocgenProp[];
+  /** Integration-specific prop descriptors — see {@link DocgenPayload.props}. */
+  props: unknown[];
   error?: DocgenError;
 }
 
 /**
  * Docgen payload returned by `core/docgen`'s `getDocgen` query.
  *
- * Producers (renderer + addon providers) populate the fields they have data for; the others stay
- * empty/undefined. Consumers should treat every field as optionally present in a real-world
- * payload, even if the schema requires it (validation pads missing fields where possible).
+ * The contract keeps an integration-agnostic core strictly typed — identity (`componentId`,
+ * `name`), human-readable text (`description`, `summary`, `jsDocTags`), CSF-level `stories`, and
+ * the `subcomponents` map — while deferring genuinely integration-specific data to loose types.
+ * The most important of these is `props`: react-docgen, react-docgen-typescript, react-component-
+ * meta, vue-docgen, etc. each describe a prop with a different shape, so baking one engine's
+ * `PropItem` into the core service contract would couple every consumer to React. This mirrors how
+ * Storybook MCP's component-manifest types keep `reactDocgen` / `reactComponentMeta` as `any`.
+ *
+ * Producers populate the fields they have; consumers should treat each prop entry as opaque and
+ * branch on the integration that produced the payload when they need a concrete shape.
  */
 export interface DocgenPayload {
   componentId: string;
@@ -64,7 +62,11 @@ export interface DocgenPayload {
   description: string;
   summary?: string;
   jsDocTags?: DocgenJsDocTags;
-  props: DocgenProp[];
+  /**
+   * Component props, as described by whichever docgen integration produced this payload. Entries
+   * are deliberately untyped because their shape is integration-specific.
+   */
+  props: unknown[];
   subcomponents?: Record<string, DocgenSubcomponent>;
   stories?: DocgenStory[];
   error?: DocgenError;

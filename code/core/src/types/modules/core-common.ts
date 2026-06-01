@@ -20,7 +20,6 @@ export type {
   DocgenError,
   DocgenJsDocTags,
   DocgenPayload,
-  DocgenProp,
   DocgenProvider,
   DocgenProviderInput,
   DocgenProviderPreset,

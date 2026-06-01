@@ -37,6 +37,12 @@ export interface FrameworkOptions {
   addComponents?: boolean;
   webpackCompiler?: ({ builder }: { builder: SupportedBuilder }) => 'babel' | 'swc' | undefined;
   extraMain?: any;
+  /**
+   * Options to attach to the framework field in main.ts, producing `framework: { name, options }`.
+   * Use this for framework-specific config (e.g. Angular's `compodoc`) that belongs in the
+   * framework options rather than as a top-level main field.
+   */
+  frameworkOptions?: Record<string, any>;
   extensions?: string[];
   storybookConfigFolder?: string;
   componentsDestinationPath?: string;

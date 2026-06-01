@@ -92,8 +92,15 @@ export class AngularJSON {
     const baseOptions = {
       configDir: storybookFolder,
       browserTarget: `${angularProjectName}:build`,
-      compodoc: useCompodoc,
-      ...(useCompodoc && { compodocArgs: ['-e', 'json', '-d', root || '.'] }),
+      // Compodoc for the Vite framework is configured in main.ts
+      // (framework.options) because the Vite plugin owns it; only the Webpack
+      // builder reads Compodoc options from angular.json.
+      ...(useVite
+        ? {}
+        : {
+            compodoc: useCompodoc,
+            ...(useCompodoc && { compodocArgs: ['-e', 'json', '-d', root || '.'] }),
+          }),
     };
 
     if (!architect.storybook) {

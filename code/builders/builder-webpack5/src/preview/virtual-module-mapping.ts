@@ -53,6 +53,8 @@ export const getVirtualModules = async (options: Options) => {
   // The import pipeline is a workaround for a webpack lazy-compilation bug that was fixed in
   // webpack 5.101.3 (https://github.com/webpack/webpack/issues/15541#issuecomment-1143138832).
   // We only enable it for lazy compilation in dev mode on older webpack versions.
+  // If the webpack version cannot be parsed, we conservatively disable the pipeline since
+  // the bug is fixed in newer versions and we prefer to avoid unnecessary performance overhead.
   const webpackVersion = webpackModule.version ? semver.coerce(webpackModule.version) : null;
   const needPipelinedImport =
     !!builderOptions.lazyCompilation &&

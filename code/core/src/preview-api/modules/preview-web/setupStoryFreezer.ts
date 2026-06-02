@@ -35,6 +35,14 @@ export const shouldFreeze = ({ search }: { search: string }) => {
   return freeze === 'finished' && viewMode === 'story';
 };
 
+/**
+ * Removes all `<script>` elements from the document.
+ *
+ * Ordering matters: this runs after {@link finishAndPauseAnimations} (so the page's own
+ * end-of-animation logic can still run while its scripts are present) but before the other
+ * DOM-mutating freeze steps. Stripping scripts first stops any page-registered
+ * `MutationObserver`s or handlers from reacting to the mutations those later steps perform.
+ */
 const stripScriptElements = (documentRef: Document) => {
   const scripts = Array.from(documentRef.querySelectorAll('script'));
   scripts.forEach((script) => {
@@ -90,6 +98,13 @@ const addPreFreezeStyles = (documentRef: Document) => {
   documentRef.head?.appendChild(style);
 };
 
+/**
+ * Settles running animations to their end frame and then pauses them.
+ *
+ * Must run before {@link stripScriptElements}: calling `finish()` can synchronously fire
+ * `finish`/`animationend` events, and we want the page's own scripts to handle those (and
+ * apply any final end-state styles) before we tear the scripts out of the document.
+ */
 const finishAndPauseAnimations = (documentRef: Document) => {
   if (typeof documentRef.getAnimations !== 'function') {
     return;
@@ -223,25 +238,30 @@ const createStoryFreezer = (windowRef: Window, documentRef: Document) => {
       return;
     }
 
-    frozen = true;
-    trackedTimeouts.forEach((timerId) => {
-      originalClearTimeout(timerId);
-    });
-    trackedIntervals.forEach((intervalId) => {
-      originalClearInterval(intervalId);
-    });
-    trackedRafs.forEach((rafId) => {
-      originalCancelAnimationFrame(rafId);
-    });
-    trackedTimeouts.clear();
-    trackedIntervals.clear();
-    trackedRafs.clear();
+    try {
+      trackedTimeouts.forEach((timerId) => {
+        originalClearTimeout(timerId);
+      });
+      trackedIntervals.forEach((intervalId) => {
+        originalClearInterval(intervalId);
+      });
+      trackedRafs.forEach((rafId) => {
+        originalCancelAnimationFrame(rafId);
+      });
+      trackedTimeouts.clear();
+      trackedIntervals.clear();
+      trackedRafs.clear();
 
-    finishAndPauseAnimations(documentRef);
-    stripScriptElements(documentRef);
-    stripInlineEventHandlers(documentRef);
-    addFreezeStyles(documentRef);
-    blockInteractions(documentRef);
+      finishAndPauseAnimations(documentRef);
+      addFreezeStyles(documentRef);
+      stripScriptElements(documentRef);
+      stripInlineEventHandlers(documentRef);
+      blockInteractions(documentRef);
+    } finally {
+      // Mark frozen last so a throw in any step can't leave the story
+      // wedged as "frozen" before the freeze actually completed.
+      frozen = true;
+    }
   };
 
   return { freeze };

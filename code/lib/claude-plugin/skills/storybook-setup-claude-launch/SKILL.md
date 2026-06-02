@@ -22,8 +22,8 @@ Use this skill when Storybook is configured but Claude needs a `.claude/launch.j
 
 Use the project's existing Storybook script instead of inventing a new command whenever possible.
 
-Do not start Storybook as an ad hoc Bash command or background task in Claude. The Claude flow should always start Storybook through `.claude/launch.json` and the Claude launcher.
+NEVER start Storybook with a Bash command or background task — not `npm run storybook`, not `storybook dev`, not `run_in_background`, not a detached process. "Start the preview" always means invoking the **Claude launcher** on the `.claude/launch.json` Storybook entry. A backgrounded dev server is not a launcher-managed preview and will not satisfy the story workflow.
 
 ## If this skill is invoked when creating stories
 
-If this skill is invoked as part of the story creation flow, start the preview server immediately after repairing the launch config, so that the user can continue with story creation without needing to manually start Storybook.
+If this skill is invoked as part of the story creation flow, start the preview immediately after repairing the launch config — by launching the `.claude/launch.json` Storybook entry through the Claude launcher — so the user can continue with story creation without manually starting Storybook.

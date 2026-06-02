@@ -58,5 +58,7 @@ export function registerService<
       setServiceChannel(ch as ServiceChannel);
     }
   }
-  return registerServiceClient(definition, registration);
+  // The manager is a relay hub: its channel bridges the dev server and every preview iframe, so it
+  // must forward adopted snapshots between those transports for them to converge.
+  return registerServiceClient(definition, registration, { relay: true });
 }

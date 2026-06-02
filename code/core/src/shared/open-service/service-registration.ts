@@ -1,4 +1,7 @@
 import { createServiceRuntime, type ServiceRuntime } from './service-runtime.ts';
+import { generateClientId, getServiceChannel } from './service-channel.ts';
+import { createSnapshotReconciler } from './service-sync.ts';
+import { connectRuntimeToChannel, wrapCommandsForBroadcast } from './service-transport.ts';
 import {
   OpenServiceDuplicateRegistrationError,
   OpenServiceMissingServiceError,
@@ -28,6 +31,8 @@ type RegistryEntry = {
   serviceRuntime: AnyServiceRuntime;
   summary: ServiceSummary;
   descriptor: ServiceDescriptor;
+  /** Tears down this service's channel listeners. A no-op when no channel was installed. */
+  disconnect: () => void;
 };
 
 const OPEN_SERVICE_REGISTRY_SYMBOL = Symbol.for('storybook.open-service.registry');
@@ -180,6 +185,13 @@ export const serviceRegistryApi: ServiceRegistryApi = {
  * Registration resolves any server-side operation overrides first, then builds the runtime that
  * query and command callers will use, and finally stores both the runtime and its metadata in the
  * shared registry. Duplicate ids are rejected up front so lookups remain deterministic.
+ *
+ * If a channel is installed via `setServiceChannel` before this runs — which the dev server does in
+ * the `services` preset, gated on a real websocket transport — registration also joins the
+ * cross-peer sync protocol immediately: commands are wrapped to broadcast their post-mutation state,
+ * and the runtime is wired as a relay hub so it bridges every connected manager tab. There is no
+ * separate connect step, mirroring how the manager and preview register. Without a channel (static
+ * builds) the runtime stays local-only.
  */
 export function registerService<
   TState,
@@ -195,6 +207,7 @@ export function registerService<
     throw new OpenServiceDuplicateRegistrationError({ serviceId: definition.id });
   }
 
+  const ownClientId = generateClientId();
   const resolvedDefinition = applyRegistration(definition, registration);
   // The runtime mutates its state object in place, so give it a copy rather than the definition's
   // shared `initialState` (which would otherwise leak state across registrations).
@@ -203,12 +216,54 @@ export function registerService<
     { registryApi: serviceRegistryApi },
     structuredClone(resolvedDefinition.initialState)
   );
+
+  // Owns the per-service last-write-wins stamp and the shared adopt/advance logic. Adopting a peer
+  // snapshot goes through `commandSelf.setState` here — not the wrapped commands below — which is how
+  // the broadcast loop is prevented (identical to the client transport in `service-client.ts`).
+  const reconciler = createSnapshotReconciler({
+    stateSchema: runtime.stateSchema,
+    setState: (mutate) =>
+      runtime.commandSelf.setState((state) => mutate(state as Record<string, unknown>)),
+    initialStamp: { version: 0, clientId: ownClientId },
+  });
+
+  const getSnapshot = (): Record<string, unknown> =>
+    runtime.getStateSnapshot() as Record<string, unknown>;
+
+  // Wrap commands so a server-authored mutation broadcasts its post-mutation snapshot to peers,
+  // exactly as the manager and preview do. The wrapper re-reads the channel at call time, so without
+  // a channel it is a no-op and static builds are unaffected.
   const registeredRuntime = {
     queries: runtime.queries,
-    commands: runtime.commands,
+    commands: wrapCommandsForBroadcast(
+      runtime.commands as Record<string, (input: unknown) => Promise<unknown>>,
+      {
+        serviceId: definition.id,
+        ownClientId,
+        reconciler,
+        getSnapshot,
+        getChannel: getServiceChannel,
+      }
+    ) as ServiceInstance<TState, TQueries, TCommands>['commands'],
     ...serviceRegistryApi,
   } as ServiceInstance<TState, TQueries, TCommands> & ServiceRegistryApi;
   const descriptor = describeDefinition(resolvedDefinition as AnyServiceDefinition);
+
+  // The dev server is a relay hub: it bridges every connected manager tab, each on its own channel
+  // transport. When a channel is installed (dev only — `setServiceChannel` is gated on a real
+  // websocket transport) registration wires the sync protocol right here, so there is no separate
+  // connect step. Without a channel the runtime stays local-only and there is nothing to tear down.
+  const channel = getServiceChannel();
+  const disconnect = channel
+    ? connectRuntimeToChannel({
+        serviceId: definition.id,
+        channel,
+        ownClientId,
+        reconciler,
+        getSnapshot,
+        relay: true,
+      })
+    : (): void => {};
 
   // Persist the runtime together with precomputed metadata so later lookups stay cheap and do not
   // need to rebuild descriptors from the authored definition each time.
@@ -218,6 +273,7 @@ export function registerService<
     serviceRuntime: runtime as AnyServiceRuntime,
     descriptor,
     summary: summarizeDescriptor(descriptor),
+    disconnect,
   });
 
   return registeredRuntime;
@@ -281,26 +337,17 @@ export function getService<TDefinition extends AnyServiceDefinition>(
 }
 
 /**
- * Returns the internal `ServiceRuntime` for a server-registered service.
+ * Clears the process-global registry, tearing down each service's channel listeners first.
  *
- * Primarily used by `connectServiceToChannel` to wire the server-side service into the
- * cross-peer channel sync protocol without requiring the service to be re-registered.
- */
-export function getServiceRuntime(serviceId: ServiceId): AnyServiceRuntime {
-  const entry = getRegistry().get(serviceId);
-
-  if (!entry) {
-    throw new OpenServiceMissingServiceError({ serviceId });
-  }
-
-  return entry.serviceRuntime;
-}
-
-/**
- * Clears the process-global registry.
- *
- * Tests call this after each case so registrations from one scenario do not leak into the next.
+ * Tests call this after each case so registrations — and the channel listeners a registration now
+ * attaches — from one scenario do not leak into the next.
  */
 export function clearRegistry(): void {
-  getRegistry().clear();
+  const registry = getRegistry();
+
+  for (const entry of registry.values()) {
+    entry.disconnect();
+  }
+
+  registry.clear();
 }

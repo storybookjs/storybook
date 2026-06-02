@@ -290,6 +290,12 @@ export type ServiceDefinition<
   id: ServiceId;
   description?: string;
   initialState: TState;
+  /**
+   * Optional schema validating the full state object. When present, every state snapshot received
+   * from another runtime is validated against it before being applied, so the schema is the
+   * interop contract between runtimes (and the trust boundary for untrusted channel payloads).
+   */
+  state?: AnySchema;
   queries: TQueries;
   commands: TCommands;
 };

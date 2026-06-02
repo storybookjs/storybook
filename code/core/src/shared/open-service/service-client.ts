@@ -15,23 +15,24 @@
  *
  * Loop prevention: every channel event carries the emitter's `clientId`. Events whose
  * `clientId` matches the local instance's id are silently ignored.
+ *
+ * Relay role: a runtime registered as a hub (`{ relay: true }`) re-emits every peer snapshot it
+ * adopts so peers reachable on its *other* channel transports converge too. Storybook's channel is
+ * point-to-point per transport and does not forward a received event between transports on its own,
+ * so without an explicit relay a manager could never bridge the server and a preview iframe (nor one
+ * dev server bridge two manager tabs). Previews are leaves (`relay` defaults to `false`): they have a
+ * single transport, so they have nothing to forward. The `(version, clientId)` gate makes relaying
+ * safe — a re-emitted snapshot that bounces back is recognized as not-newer and dropped.
  */
 
 import {
   OpenServiceDuplicateRegistrationError,
   OpenServiceMissingServiceError,
 } from '../../server-errors.ts';
-import {
-  SERVICE_PATCHES,
-  SERVICE_WELCOME_REPLY,
-  SERVICE_WELCOME_REQUEST,
-  generateClientId,
-  getServiceChannel,
-  type PatchesPayload,
-  type WelcomeReplyPayload,
-  type WelcomeRequestPayload,
-} from './service-channel.ts';
+import { generateClientId, getServiceChannel } from './service-channel.ts';
 import { createServiceRuntime, type ServiceRuntime } from './service-runtime.ts';
+import { createSnapshotReconciler } from './service-sync.ts';
+import { connectRuntimeToChannel, wrapCommandsForBroadcast } from './service-transport.ts';
 import type {
   AnyServiceDefinition,
   Commands,
@@ -120,33 +121,6 @@ export const clientRegistryApi: ServiceRegistryApi = {
 
 // ---- Utilities ----
 
-/**
- * Deep-assigns all keys from `source` onto `target` in place.
- *
- * Plain-object values are recursed so that fine-grained signal subscriptions on nested
- * fields are not unnecessarily invalidated. Arrays are replaced wholesale. Primitives are
- * assigned directly. Keys present in `target` but absent from `source` are left untouched.
- */
-function deepAssign(target: Record<string, unknown>, source: Record<string, unknown>): void {
-  for (const key of Object.keys(source)) {
-    const sv = source[key];
-    const tv = target[key];
-
-    if (
-      sv !== null &&
-      typeof sv === 'object' &&
-      !Array.isArray(sv) &&
-      tv !== null &&
-      typeof tv === 'object' &&
-      !Array.isArray(tv)
-    ) {
-      deepAssign(tv as Record<string, unknown>, sv as Record<string, unknown>);
-    } else {
-      target[key] = sv;
-    }
-  }
-}
-
 /** Applies registration-time overrides to a service definition. */
 function applyRegistration<
   TState,
@@ -179,6 +153,17 @@ function applyRegistration<
 
 // ---- Registration ----
 
+/** Channel-sync options that depend on the entrypoint rather than the service definition. */
+export interface ServiceClientSyncOptions {
+  /**
+   * Whether this runtime acts as a relay hub. A hub re-broadcasts every peer snapshot it adopts so
+   * peers on its other channel transports stay in sync (the manager bridges the server and preview
+   * iframes; a dev server bridges multiple manager tabs). Leaves — previews — keep the default
+   * `false`: with a single transport there is nothing to forward.
+   */
+  relay?: boolean;
+}
+
 /**
  * Registers a service on the client (manager or preview) and returns its runtime surface.
  *
@@ -186,6 +171,8 @@ function applyRegistration<
  * identically to the server side. If a channel is installed via `setServiceChannel`, the
  * service also participates in the cross-peer multi-master sync protocol.
  *
+ * @param sync - Channel-sync options. Pass `{ relay: true }` from a hub entrypoint (the manager) so
+ *   adopted peer snapshots are forwarded to its other transports; previews omit it (leaf default).
  * @throws {OpenServiceDuplicateRegistrationError} if a service with the same id is already
  *   registered in the client registry.
  */
@@ -195,7 +182,8 @@ export function registerServiceClient<
   TCommands extends Commands<TState>,
 >(
   definition: ServiceDefinition<TState, TQueries, TCommands>,
-  registration?: ServiceRegistrationOptions<TState, TQueries, TCommands>
+  registration?: ServiceRegistrationOptions<TState, TQueries, TCommands>,
+  sync?: ServiceClientSyncOptions
 ): ServiceInstance<TState, TQueries, TCommands> & ServiceRegistryApi {
   const registry = getClientRegistry();
 
@@ -212,29 +200,31 @@ export function registerServiceClient<
     structuredClone(resolvedDefinition.initialState)
   );
 
-  // Wrap each command to broadcast the full post-mutation state snapshot after execution.
-  // Only local command calls go through this wrapper — state applied via `commandSelf.setState`
-  // (for incoming patches) does not, which is how the loop is naturally prevented.
-  const wrappedCommands = Object.fromEntries(
-    Object.entries(
-      serviceRuntime.commands as Record<string, (input: unknown) => Promise<unknown>>
-    ).map(([name, cmd]) => [
-      name,
-      async (input: unknown) => {
-        const result = await cmd(input);
-        const channel = getServiceChannel();
+  // Owns the per-service last-write-wins stamp (held in the sync envelope, never inside user state)
+  // and the shared adopt/advance logic. Adopting a peer snapshot goes through `commandSelf.setState`
+  // here, not the wrapped commands below, which is how the broadcast loop is prevented.
+  const reconciler = createSnapshotReconciler({
+    stateSchema: serviceRuntime.stateSchema,
+    setState: (mutate) =>
+      serviceRuntime.commandSelf.setState((state) => mutate(state as Record<string, unknown>)),
+    initialStamp: { version: 0, clientId: ownClientId },
+  });
 
-        if (channel) {
-          channel.emit(SERVICE_PATCHES, {
-            serviceId: definition.id,
-            state: serviceRuntime.getStateSnapshot() as Record<string, unknown>,
-            clientId: ownClientId,
-          } satisfies PatchesPayload);
-        }
+  const getSnapshot = (): Record<string, unknown> =>
+    serviceRuntime.getStateSnapshot() as Record<string, unknown>;
 
-        return result;
-      },
-    ])
+  // Wrap each command so a successful local call broadcasts the post-mutation snapshot. Incoming
+  // peer state is applied through the reconciler's `setState` (passed below), not these wrappers, so
+  // an adopted snapshot never loops back out as a broadcast.
+  const wrappedCommands = wrapCommandsForBroadcast(
+    serviceRuntime.commands as Record<string, (input: unknown) => Promise<unknown>>,
+    {
+      serviceId: definition.id,
+      ownClientId,
+      reconciler,
+      getSnapshot,
+      getChannel: getServiceChannel,
+    }
   ) as ServiceInstance<TState, TQueries, TCommands>['commands'];
 
   const instance = {
@@ -243,62 +233,20 @@ export function registerServiceClient<
     ...clientRegistryApi,
   } as unknown as ServiceInstance<TState, TQueries, TCommands> & ServiceRegistryApi;
 
-  // Applies a received state snapshot into the local runtime without triggering a
-  // re-broadcast. The call goes through `commandSelf.setState` which batches signal updates
-  // so only the fields that actually changed re-fire subscriptions.
-  const applyReceivedState = (receivedState: Record<string, unknown>): void => {
-    serviceRuntime.commandSelf.setState((state) => {
-      deepAssign(state as Record<string, unknown>, receivedState);
-    });
-  };
-
-  let disconnect = (): void => {};
-
+  // The manager registers as a relay hub (`{ relay: true }`) so it bridges the server and preview
+  // iframes; previews are leaves and keep the default `false`. Without a channel installed the
+  // runtime stays local-only and there is nothing to tear down.
   const channel = getServiceChannel();
-
-  if (channel) {
-    // Reply to welcome-requests from other clients so they can bootstrap their state.
-    const onWelcomeRequest = (payload: unknown): void => {
-      const p = payload as WelcomeRequestPayload;
-      if (p.serviceId !== definition.id || p.clientId === ownClientId) return;
-
-      channel.emit(SERVICE_WELCOME_REPLY, {
+  const disconnect = channel
+    ? connectRuntimeToChannel({
         serviceId: definition.id,
-        state: serviceRuntime.getStateSnapshot() as Record<string, unknown>,
-        clientId: ownClientId,
-      } satisfies WelcomeReplyPayload);
-    };
-
-    // Apply the first welcome-reply we receive so we bootstrap from an existing peer.
-    const onWelcomeReply = (payload: unknown): void => {
-      const p = payload as WelcomeReplyPayload;
-      if (p.serviceId !== definition.id || p.clientId === ownClientId) return;
-      applyReceivedState(p.state);
-    };
-
-    // Apply state patches from other peers.
-    const onPatches = (payload: unknown): void => {
-      const p = payload as PatchesPayload;
-      if (p.serviceId !== definition.id || p.clientId === ownClientId) return;
-      applyReceivedState(p.state);
-    };
-
-    channel.on(SERVICE_WELCOME_REQUEST, onWelcomeRequest);
-    channel.on(SERVICE_WELCOME_REPLY, onWelcomeReply);
-    channel.on(SERVICE_PATCHES, onPatches);
-
-    disconnect = (): void => {
-      channel.off(SERVICE_WELCOME_REQUEST, onWelcomeRequest);
-      channel.off(SERVICE_WELCOME_REPLY, onWelcomeReply);
-      channel.off(SERVICE_PATCHES, onPatches);
-    };
-
-    // Ask any existing peer for the current state.
-    channel.emit(SERVICE_WELCOME_REQUEST, {
-      serviceId: definition.id,
-      clientId: ownClientId,
-    } satisfies WelcomeRequestPayload);
-  }
+        channel,
+        ownClientId,
+        reconciler,
+        getSnapshot,
+        relay: sync?.relay ?? false,
+      })
+    : (): void => {};
 
   registry.set(definition.id, {
     definition: resolvedDefinition as AnyServiceDefinition,

@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { mutableRecordLookupServiceDef } from './fixtures.ts';
+import { mutableRecordLookupServiceDef, schemaCounterServiceDef } from './fixtures.ts';
 import {
   SERVICE_PATCHES,
   SERVICE_WELCOME_REPLY,
@@ -140,6 +140,7 @@ describe('channel: welcome handshake', () => {
     channel.emitExternal(SERVICE_WELCOME_REPLY, {
       serviceId: mutableRecordLookupServiceDef.id,
       state: { 'entry-x': { label: 'hello' } },
+      version: 1,
       clientId: 'peer-abc',
     });
 
@@ -220,6 +221,7 @@ describe('channel: patch broadcast', () => {
     channel.emitExternal(SERVICE_PATCHES, {
       serviceId: mutableRecordLookupServiceDef.id,
       state: { 'entry-y': { marker: 'set' } },
+      version: 1,
       clientId: 'peer-xyz',
     });
 
@@ -256,12 +258,437 @@ describe('channel: patch broadcast', () => {
     channel.emitExternal(SERVICE_PATCHES, {
       serviceId: 'some-other-service',
       state: { 'entry-z': { x: '1' } },
+      version: 1,
       clientId: 'peer-xyz',
     });
 
     await new Promise<void>((resolve) => setTimeout(resolve, 10));
 
     expect(service.queries.getRecordFields({ entryId: 'entry-z' })).toBeNull();
+  });
+});
+
+describe('channel: last-write-wins convergence', () => {
+  it('converges on the higher clientId for concurrent (equal-version) writes', async () => {
+    const channel = createMockChannel();
+    setServiceChannel(channel);
+
+    const service = registerServiceClient(mutableRecordLookupServiceDef);
+
+    // Two peers write concurrently (same version). The lexicographically greater clientId wins.
+    channel.emitExternal(SERVICE_PATCHES, {
+      serviceId: mutableRecordLookupServiceDef.id,
+      state: { item: { color: 'red' } },
+      version: 1,
+      clientId: 'aaa',
+    });
+    channel.emitExternal(SERVICE_PATCHES, {
+      serviceId: mutableRecordLookupServiceDef.id,
+      state: { item: { color: 'blue' } },
+      version: 1,
+      clientId: 'zzz',
+    });
+
+    await vi.waitFor(() =>
+      expect(service.queries.getRecordFields({ entryId: 'item' })).toEqual({ color: 'blue' })
+    );
+  });
+
+  it('converges on the same winner regardless of arrival order', async () => {
+    const channel = createMockChannel();
+    setServiceChannel(channel);
+
+    const service = registerServiceClient(mutableRecordLookupServiceDef);
+
+    // Greater clientId arrives first; the later, lower-clientId write at the same version loses.
+    channel.emitExternal(SERVICE_PATCHES, {
+      serviceId: mutableRecordLookupServiceDef.id,
+      state: { item: { color: 'blue' } },
+      version: 1,
+      clientId: 'zzz',
+    });
+    channel.emitExternal(SERVICE_PATCHES, {
+      serviceId: mutableRecordLookupServiceDef.id,
+      state: { item: { color: 'red' } },
+      version: 1,
+      clientId: 'aaa',
+    });
+
+    await new Promise<void>((resolve) => setTimeout(resolve, 10));
+    expect(service.queries.getRecordFields({ entryId: 'item' })).toEqual({ color: 'blue' });
+  });
+
+  it('a higher version wins even against a greater clientId', async () => {
+    const channel = createMockChannel();
+    setServiceChannel(channel);
+
+    const service = registerServiceClient(mutableRecordLookupServiceDef);
+
+    // Greater clientId but lower version.
+    channel.emitExternal(SERVICE_PATCHES, {
+      serviceId: mutableRecordLookupServiceDef.id,
+      state: { item: { color: 'blue' } },
+      version: 1,
+      clientId: 'zzz',
+    });
+    // Smaller clientId but higher version — version dominates the tiebreak.
+    channel.emitExternal(SERVICE_PATCHES, {
+      serviceId: mutableRecordLookupServiceDef.id,
+      state: { item: { color: 'green' } },
+      version: 2,
+      clientId: 'aaa',
+    });
+
+    await vi.waitFor(() =>
+      expect(service.queries.getRecordFields({ entryId: 'item' })).toEqual({ color: 'green' })
+    );
+  });
+
+  it('drops a stale (lower-version) patch arriving after a newer one', async () => {
+    const channel = createMockChannel();
+    setServiceChannel(channel);
+
+    const service = registerServiceClient(mutableRecordLookupServiceDef);
+
+    channel.emitExternal(SERVICE_PATCHES, {
+      serviceId: mutableRecordLookupServiceDef.id,
+      state: { item: { color: 'green' } },
+      version: 2,
+      clientId: 'peer',
+    });
+    // A late, stale broadcast at an older version must not overwrite the newer state.
+    channel.emitExternal(SERVICE_PATCHES, {
+      serviceId: mutableRecordLookupServiceDef.id,
+      state: { item: { color: 'red' } },
+      version: 1,
+      clientId: 'peer',
+    });
+
+    await new Promise<void>((resolve) => setTimeout(resolve, 10));
+    expect(service.queries.getRecordFields({ entryId: 'item' })).toEqual({ color: 'green' });
+  });
+});
+
+describe('channel: multi-peer welcome bootstrap', () => {
+  it('converges on the newest welcome-reply when several peers answer out of order', async () => {
+    const channel = createMockChannel();
+    setServiceChannel(channel);
+
+    const service = registerServiceClient(mutableRecordLookupServiceDef);
+
+    // Three peers reply with different versions, out of order. Only the newest must stick — this is
+    // why bootstrap is version-gated rather than first-reply-wins.
+    channel.emitExternal(SERVICE_WELCOME_REPLY, {
+      serviceId: mutableRecordLookupServiceDef.id,
+      state: { item: { v: '1' } },
+      version: 1,
+      clientId: 'p1',
+    });
+    channel.emitExternal(SERVICE_WELCOME_REPLY, {
+      serviceId: mutableRecordLookupServiceDef.id,
+      state: { item: { v: '3' } },
+      version: 3,
+      clientId: 'p3',
+    });
+    channel.emitExternal(SERVICE_WELCOME_REPLY, {
+      serviceId: mutableRecordLookupServiceDef.id,
+      state: { item: { v: '2' } },
+      version: 2,
+      clientId: 'p2',
+    });
+
+    await vi.waitFor(() =>
+      expect(service.queries.getRecordFields({ entryId: 'item' })).toEqual({ v: '3' })
+    );
+  });
+});
+
+describe('channel: deletion propagation', () => {
+  it('deletes keys that are absent from a newer snapshot', async () => {
+    const channel = createMockChannel();
+    setServiceChannel(channel);
+
+    const service = registerServiceClient(mutableRecordLookupServiceDef);
+
+    channel.emitExternal(SERVICE_PATCHES, {
+      serviceId: mutableRecordLookupServiceDef.id,
+      state: { a: { k: 'v' }, b: { k: 'w' } },
+      version: 1,
+      clientId: 'peer',
+    });
+    await vi.waitFor(() =>
+      expect(service.queries.getRecordFields({ entryId: 'b' })).toEqual({ k: 'w' })
+    );
+
+    // A newer snapshot no longer contains `b`; the reconciler must remove it locally rather than
+    // leave a stale key (the old additive-only merge could never delete).
+    channel.emitExternal(SERVICE_PATCHES, {
+      serviceId: mutableRecordLookupServiceDef.id,
+      state: { a: { k: 'v' } },
+      version: 2,
+      clientId: 'peer',
+    });
+
+    await vi.waitFor(() => expect(service.queries.getRecordFields({ entryId: 'b' })).toBeNull());
+    expect(service.queries.getRecordFields({ entryId: 'a' })).toEqual({ k: 'v' });
+  });
+});
+
+describe('channel: untrusted payloads', () => {
+  it('does not pollute Object.prototype from a hostile snapshot', async () => {
+    const channel = createMockChannel();
+    setServiceChannel(channel);
+
+    const service = registerServiceClient(mutableRecordLookupServiceDef);
+
+    // `JSON.parse` creates own-enumerable `__proto__`/`constructor` keys (a literal would not), so
+    // this exercises the prototype-pollution guard in `deepReconcile`.
+    const hostileState = JSON.parse(
+      '{"good":{"k":"v"},"__proto__":{"polluted":"yes"},"constructor":{"polluted":"yes"}}'
+    );
+
+    expect(() =>
+      channel.emitExternal(SERVICE_PATCHES, {
+        serviceId: mutableRecordLookupServiceDef.id,
+        state: hostileState,
+        version: 1,
+        clientId: 'attacker',
+      })
+    ).not.toThrow();
+
+    // The legitimate field still applies…
+    await vi.waitFor(() =>
+      expect(service.queries.getRecordFields({ entryId: 'good' })).toEqual({ k: 'v' })
+    );
+    // …but nothing leaked onto the prototype chain.
+    expect(({} as Record<string, unknown>).polluted).toBeUndefined();
+    expect((Object.prototype as Record<string, unknown>).polluted).toBeUndefined();
+  });
+
+  it('drops malformed payloads without throwing or mutating state', async () => {
+    const channel = createMockChannel();
+    setServiceChannel(channel);
+
+    const service = registerServiceClient(mutableRecordLookupServiceDef);
+
+    const malformed: unknown[] = [
+      null,
+      undefined,
+      42,
+      'string',
+      {},
+      { serviceId: mutableRecordLookupServiceDef.id },
+      { serviceId: mutableRecordLookupServiceDef.id, state: { a: { k: 'v' } }, clientId: 'p' },
+      { serviceId: mutableRecordLookupServiceDef.id, state: { a: { k: 'v' } }, version: 1 },
+      {
+        serviceId: mutableRecordLookupServiceDef.id,
+        state: 'not-an-object',
+        version: 1,
+        clientId: 'p',
+      },
+      { serviceId: 123, state: { a: { k: 'v' } }, version: 1, clientId: 'p' },
+    ];
+
+    for (const payload of malformed) {
+      expect(() => channel.emitExternal(SERVICE_PATCHES, payload)).not.toThrow();
+      expect(() => channel.emitExternal(SERVICE_WELCOME_REPLY, payload)).not.toThrow();
+    }
+
+    await new Promise<void>((resolve) => setTimeout(resolve, 10));
+    expect(service.queries.getRecordFields({ entryId: 'a' })).toBeNull();
+  });
+});
+
+describe('channel: state schema validation', () => {
+  it('applies a schema-valid snapshot', async () => {
+    const channel = createMockChannel();
+    setServiceChannel(channel);
+
+    const service = registerServiceClient(schemaCounterServiceDef);
+
+    channel.emitExternal(SERVICE_PATCHES, {
+      serviceId: schemaCounterServiceDef.id,
+      state: { a: 1, b: 2 },
+      version: 1,
+      clientId: 'peer',
+    });
+
+    await vi.waitFor(() => expect(service.queries.getCount({ key: 'a' })).toBe(1));
+    expect(service.queries.getCount({ key: 'b' })).toBe(2);
+  });
+
+  it('drops a schema-invalid snapshot before it touches local state', async () => {
+    const channel = createMockChannel();
+    setServiceChannel(channel);
+
+    const service = registerServiceClient(schemaCounterServiceDef);
+
+    // Counter values must be numbers; a string violates the state schema and must be rejected.
+    channel.emitExternal(SERVICE_PATCHES, {
+      serviceId: schemaCounterServiceDef.id,
+      state: { a: 'not-a-number' },
+      version: 1,
+      clientId: 'peer',
+    });
+
+    await new Promise<void>((resolve) => setTimeout(resolve, 10));
+    expect(service.queries.getCount({ key: 'a' })).toBeNull();
+  });
+
+  it('a newer-but-invalid snapshot cannot corrupt already-valid state', async () => {
+    const channel = createMockChannel();
+    setServiceChannel(channel);
+
+    const service = registerServiceClient(schemaCounterServiceDef);
+
+    channel.emitExternal(SERVICE_PATCHES, {
+      serviceId: schemaCounterServiceDef.id,
+      state: { a: 1 },
+      version: 1,
+      clientId: 'peer',
+    });
+    await vi.waitFor(() => expect(service.queries.getCount({ key: 'a' })).toBe(1));
+
+    // Strictly newer by stamp, but invalid: it must be dropped, leaving the valid value intact.
+    channel.emitExternal(SERVICE_PATCHES, {
+      serviceId: schemaCounterServiceDef.id,
+      state: { a: 'corrupt' },
+      version: 2,
+      clientId: 'peer',
+    });
+
+    await new Promise<void>((resolve) => setTimeout(resolve, 10));
+    expect(service.queries.getCount({ key: 'a' })).toBe(1);
+  });
+});
+
+describe('channel: relay role', () => {
+  // The mock channel is a shared bus, so a relayed emit also bounces back to the emitter's own
+  // onPatches; the version gate must recognize it as not-newer and refuse to relay it again. We
+  // assert on the count of `services:patches` *emits* (relays), which `emitExternal` never produces.
+  function patchEmits(channel: ReturnType<typeof createMockChannel>) {
+    return channel.emit.mock.calls.filter(([event]) => event === SERVICE_PATCHES);
+  }
+
+  it('a hub re-broadcasts a peer patch it adopts, preserving the original stamp', () => {
+    const channel = createMockChannel();
+    setServiceChannel(channel);
+
+    registerServiceClient(mutableRecordLookupServiceDef, undefined, { relay: true });
+
+    channel.emitExternal(SERVICE_PATCHES, {
+      serviceId: mutableRecordLookupServiceDef.id,
+      state: { item: { color: 'red' } },
+      version: 1,
+      clientId: 'peer-1',
+    });
+
+    const relays = patchEmits(channel);
+    expect(relays).toHaveLength(1);
+    expect(relays[0][1]).toEqual(
+      expect.objectContaining({
+        serviceId: mutableRecordLookupServiceDef.id,
+        state: expect.objectContaining({ item: { color: 'red' } }),
+        version: 1,
+        clientId: 'peer-1',
+      })
+    );
+  });
+
+  it('a leaf adopts a peer patch but never re-broadcasts it', () => {
+    const channel = createMockChannel();
+    setServiceChannel(channel);
+
+    // Default role is leaf (no relay option).
+    const service = registerServiceClient(mutableRecordLookupServiceDef);
+
+    channel.emitExternal(SERVICE_PATCHES, {
+      serviceId: mutableRecordLookupServiceDef.id,
+      state: { item: { color: 'red' } },
+      version: 1,
+      clientId: 'peer-1',
+    });
+
+    expect(service.queries.getRecordFields({ entryId: 'item' })).toEqual({ color: 'red' });
+    expect(patchEmits(channel)).toHaveLength(0);
+  });
+
+  it('a hub relays each strictly-newer version once and drops echoes (no storm)', () => {
+    const channel = createMockChannel();
+    setServiceChannel(channel);
+
+    registerServiceClient(mutableRecordLookupServiceDef, undefined, { relay: true });
+
+    const base = { serviceId: mutableRecordLookupServiceDef.id, clientId: 'peer-1' };
+    channel.emitExternal(SERVICE_PATCHES, {
+      ...base,
+      state: { item: { color: 'red' } },
+      version: 1,
+    });
+    // Exact echo of v1 — already held, must not be relayed again.
+    channel.emitExternal(SERVICE_PATCHES, {
+      ...base,
+      state: { item: { color: 'red' } },
+      version: 1,
+    });
+    channel.emitExternal(SERVICE_PATCHES, {
+      ...base,
+      state: { item: { color: 'blue' } },
+      version: 2,
+    });
+
+    const relays = patchEmits(channel);
+    expect(relays.map(([, payload]) => (payload as { version: number }).version)).toEqual([1, 2]);
+  });
+
+  it('a hub does not relay a patch it drops as stale', () => {
+    const channel = createMockChannel();
+    setServiceChannel(channel);
+
+    registerServiceClient(mutableRecordLookupServiceDef, undefined, { relay: true });
+
+    const base = { serviceId: mutableRecordLookupServiceDef.id, clientId: 'peer-1' };
+    channel.emitExternal(SERVICE_PATCHES, {
+      ...base,
+      state: { item: { color: 'blue' } },
+      version: 2,
+    });
+    // Lower version than currently held: dropped, so not relayed.
+    channel.emitExternal(SERVICE_PATCHES, {
+      ...base,
+      state: { item: { color: 'red' } },
+      version: 1,
+    });
+
+    const relays = patchEmits(channel);
+    expect(relays).toHaveLength(1);
+    expect((relays[0][1] as { version: number }).version).toBe(2);
+  });
+
+  it('a hub relays state it adopts from a welcome-reply', () => {
+    const channel = createMockChannel();
+    setServiceChannel(channel);
+
+    registerServiceClient(mutableRecordLookupServiceDef, undefined, { relay: true });
+
+    // A leaf peer's welcome-reply only reaches the hub; the hub must forward it so peers on its
+    // other transports converge too.
+    channel.emitExternal(SERVICE_WELCOME_REPLY, {
+      serviceId: mutableRecordLookupServiceDef.id,
+      state: { item: { color: 'green' } },
+      version: 5,
+      clientId: 'peer-1',
+    });
+
+    const relays = patchEmits(channel);
+    expect(relays).toHaveLength(1);
+    expect(relays[0][1]).toEqual(
+      expect.objectContaining({
+        state: expect.objectContaining({ item: { color: 'green' } }),
+        version: 5,
+        clientId: 'peer-1',
+      })
+    );
   });
 });
 

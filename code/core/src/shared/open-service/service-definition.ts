@@ -1,4 +1,5 @@
 import type {
+  AnySchema,
   CommandDefinition,
   MatchingOutputSchemas,
   OperationInputSchemas,
@@ -77,6 +78,8 @@ export const defineService = <
   id: ServiceId;
   description?: string;
   initialState: TState;
+  /** Optional schema validating the full state object on every cross-runtime sync. */
+  state?: AnySchema;
   queries: DefinedQueries<
     TState,
     TQueryInputSchemas,

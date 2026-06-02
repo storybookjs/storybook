@@ -27,8 +27,10 @@ import type {
 } from 'storybook/internal/types';
 
 import { registerDocgenService } from '../../shared/open-service/services/docgen/server.ts';
-import { getRegisteredServices } from '../../shared/open-service/server.ts';
-import { connectServiceToChannel } from '../../shared/open-service/service-server-channel.ts';
+import {
+  setServiceChannel,
+  type ServiceChannel,
+} from '../../shared/open-service/service-channel.ts';
 
 import { isAbsolute, join } from 'pathe';
 import * as pathe from 'pathe';
@@ -287,12 +289,9 @@ export const experimental_serverChannel = async (
   initOpenInEditorChannel(channel);
   initTelemetryChannel(channel);
 
-  // Wire every server-registered service into the channel sync protocol.
-  // The services hook (line 298 in build-dev.ts) runs before this hook, so all
-  // services are already in the registry by the time the channel arrives here.
-  for (const service of getRegisteredServices()) {
-    connectServiceToChannel(service.id, channel);
-  }
+  // Open-service registration wires itself into this channel: the `services` preset installs the
+  // channel via `setServiceChannel` before any service registers (see below), so there is no
+  // separate connect step here.
 
   return channel;
 };
@@ -331,6 +330,14 @@ export const services = async (_value: void, options: Options): Promise<void> =>
     );
   }
   globalThis.STORYBOOK_SERVICES_LOADED = true;
+
+  // Install the channel before any service registers, so registration joins the cross-peer sync
+  // protocol immediately — no secondary connect step, mirroring the manager and preview. Gate on a
+  // real transport: only the dev server's websocket channel has one, so the no-op channels used by
+  // static builds and the index builder (hasTransport: false) leave services local-only.
+  if (options.channel?.hasTransport) {
+    setServiceChannel(options.channel as ServiceChannel);
+  }
 
   const features = await options.presets.apply('features');
 

@@ -103,6 +103,8 @@ export type ServiceRuntime<
 > = {
   /** Returns a plain, detached snapshot of the current state for serialization. */
   getStateSnapshot(): TState;
+  /** Optional schema for the full state object, forwarded from the definition for sync validation. */
+  stateSchema?: AnySchema;
   commandSelf: CommandSelf<TState>;
   queryCtx: QueryCtx<TState>;
   loadCtxForStatic: LoadCtx<TState>;
@@ -1230,6 +1232,7 @@ export function createServiceRuntime<
 
   return {
     getStateSnapshot,
+    stateSchema: def.state,
     commandSelf,
     queryCtx,
     loadCtxForStatic,

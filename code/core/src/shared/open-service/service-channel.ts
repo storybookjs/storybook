@@ -41,6 +41,8 @@ export interface WelcomeReplyPayload {
   serviceId: string;
   /** Full state snapshot at the time of reply. */
   state: Record<string, unknown>;
+  /** Version of the replied snapshot, paired with `clientId` for last-write-wins ordering. */
+  version: number;
   clientId: string;
 }
 
@@ -48,12 +50,17 @@ export interface WelcomeReplyPayload {
  * Broadcast by a peer after every local command execution.
  *
  * Contains the full post-mutation state snapshot so peers can apply it without tracking
- * individual mutations. Keyed by `clientId` so recipients suppress their own echo.
+ * individual mutations. The `(version, clientId)` pair is a last-write-wins stamp: recipients
+ * apply the snapshot only when it is strictly newer than their own (see `isNewer` in
+ * `service-sync.ts`), which suppresses echoes, breaks relay cycles, and converges concurrent
+ * writes deterministically.
  */
 export interface PatchesPayload {
   serviceId: string;
   /** Full state snapshot after the mutation. */
   state: Record<string, unknown>;
+  /** Version of the snapshot, paired with `clientId` for last-write-wins ordering. */
+  version: number;
   clientId: string;
 }
 

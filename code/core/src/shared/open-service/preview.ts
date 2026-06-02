@@ -106,5 +106,7 @@ export function registerService<
   if (!getServiceChannel()) {
     setServiceChannel(addons.getChannel());
   }
+  // The preview is a leaf: its channel has a single transport (to the manager), so it has nothing to
+  // relay and keeps the default `relay: false`. The manager and dev server are the relay hubs.
   return registerServiceClient(definition, registration);
 }

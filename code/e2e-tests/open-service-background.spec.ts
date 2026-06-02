@@ -6,9 +6,9 @@ import { SbPage } from './util.ts';
 /**
  * E2E regression for the open-service background demo (`code/.storybook/background-service`).
  *
- * Validates the reload bootstrap path (registration-order race): preview must converge via
- * manager postMessage — welcome retries and buffered patch flush on first preview message —
- * not only dev-server websocket.
+ * Validates the reload bootstrap path: preview must converge via manager postMessage
+ * (welcome handshake, buffered patch flush on first preview message) — not only dev-server websocket.
+ * Manager addon registration runs synchronously before the preview iframe mounts (Option A).
  *
  * Run (from `code/`):
  *   yarn nx compile core && yarn storybook:ui          # terminal 1

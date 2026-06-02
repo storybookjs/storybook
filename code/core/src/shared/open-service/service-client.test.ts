@@ -189,110 +189,77 @@ describe('channel: welcome handshake', () => {
     expect(replyCalls).toHaveLength(0);
   });
 
-  it('retries welcome-request until a peer reply is adopted (static-style, no server)', async () => {
-    vi.useFakeTimers();
-    try {
-      const channel = createMockChannel();
-      setServiceChannel(channel);
+  it('adopts a welcome-reply from a hub that was not listening at registration time', async () => {
+    const channel = createMockChannel();
+    setServiceChannel(channel);
 
-      const preview = registerServiceClient(mutableRecordLookupServiceDef, undefined, {
-        relay: false,
-      });
+    const preview = registerServiceClient(mutableRecordLookupServiceDef, undefined, {
+      relay: false,
+    });
 
-      await vi.advanceTimersByTimeAsync(50);
+    expect(channel.emit).toHaveBeenCalledWith(
+      SERVICE_WELCOME_REQUEST,
+      expect.objectContaining({ serviceId: mutableRecordLookupServiceDef.id })
+    );
 
-      channel.emitExternal(SERVICE_WELCOME_REPLY, {
-        serviceId: mutableRecordLookupServiceDef.id,
-        state: { 'entry-late': { marker: 'synced' } },
-        version: 1,
-        clientId: 'manager-hub',
-      });
+    channel.emitExternal(SERVICE_WELCOME_REPLY, {
+      serviceId: mutableRecordLookupServiceDef.id,
+      state: { 'entry-late': { marker: 'synced' } },
+      version: 1,
+      clientId: 'manager-hub',
+    });
 
-      await vi.waitFor(() =>
-        expect(preview.queries.getRecordFields({ entryId: 'entry-late' })).toEqual({
-          marker: 'synced',
-        })
-      );
+    expect(preview.queries.getRecordFields({ entryId: 'entry-late' })).toEqual({
+      marker: 'synced',
+    });
 
-      const requestsAfterSync = channel.emit.mock.calls.filter(
-        ([event]) => event === SERVICE_WELCOME_REQUEST
-      ).length;
-
-      await vi.advanceTimersByTimeAsync(2000);
-
-      expect(
-        channel.emit.mock.calls.filter(([event]) => event === SERVICE_WELCOME_REQUEST).length
-      ).toBe(requestsAfterSync);
-    } finally {
-      vi.useRealTimers();
-    }
+    expect(
+      channel.emit.mock.calls.filter(([event]) => event === SERVICE_WELCOME_REQUEST).length
+    ).toBe(1);
   });
 
-  it('keeps retrying after a stale v0 welcome-reply until a newer stamp arrives', async () => {
-    vi.useFakeTimers();
-    try {
-      const channel = createMockChannel();
-      setServiceChannel(channel);
+  it('converges via patches when a welcome-reply carried stale v0 state', async () => {
+    const channel = createMockChannel();
+    setServiceChannel(channel);
 
-      const preview = registerServiceClient(mutableRecordLookupServiceDef, undefined, {
-        relay: false,
-      });
+    const preview = registerServiceClient(mutableRecordLookupServiceDef, undefined, {
+      relay: false,
+    });
 
-      channel.emitExternal(SERVICE_WELCOME_REPLY, {
-        serviceId: mutableRecordLookupServiceDef.id,
-        state: { 'entry-stale': { marker: 'v0' } },
-        version: 0,
-        clientId: 'early-hub',
-      });
+    channel.emitExternal(SERVICE_WELCOME_REPLY, {
+      serviceId: mutableRecordLookupServiceDef.id,
+      state: { 'entry-stale': { marker: 'v0' } },
+      version: 0,
+      clientId: 'early-hub',
+    });
 
-      const requestsBeforeRetry = channel.emit.mock.calls.filter(
-        ([event]) => event === SERVICE_WELCOME_REQUEST
-      ).length;
+    channel.emitExternal(SERVICE_PATCHES, {
+      serviceId: mutableRecordLookupServiceDef.id,
+      state: { 'entry-stale': { marker: 'v1' } },
+      version: 1,
+      clientId: 'early-hub',
+    });
 
-      await vi.advanceTimersByTimeAsync(50);
-
-      expect(
-        channel.emit.mock.calls.filter(([event]) => event === SERVICE_WELCOME_REQUEST).length
-      ).toBeGreaterThan(requestsBeforeRetry);
-
-      channel.emitExternal(SERVICE_WELCOME_REPLY, {
-        serviceId: mutableRecordLookupServiceDef.id,
-        state: { 'entry-stale': { marker: 'v1' } },
-        version: 1,
-        clientId: 'early-hub',
-      });
-
-      await vi.waitFor(() =>
-        expect(preview.queries.getRecordFields({ entryId: 'entry-stale' })).toEqual({
-          marker: 'v1',
-        })
-      );
-    } finally {
-      vi.useRealTimers();
-    }
+    expect(preview.queries.getRecordFields({ entryId: 'entry-stale' })).toEqual({
+      marker: 'v1',
+    });
   });
 
-  it('stops bootstrap welcome retries after disconnect', async () => {
-    vi.useFakeTimers();
-    try {
-      const channel = createMockChannel();
-      setServiceChannel(channel);
+  it('teardown removes channel listeners after unregister', () => {
+    const channel = createMockChannel();
+    setServiceChannel(channel);
 
-      registerServiceClient(mutableRecordLookupServiceDef, undefined, { relay: false });
-      unregisterServiceClient(mutableRecordLookupServiceDef.id);
+    registerServiceClient(mutableRecordLookupServiceDef, undefined, { relay: false });
+    unregisterServiceClient(mutableRecordLookupServiceDef.id);
 
-      const requestsAtTeardown = channel.emit.mock.calls.filter(
-        ([event]) => event === SERVICE_WELCOME_REQUEST
-      ).length;
+    channel.emitExternal(SERVICE_WELCOME_REPLY, {
+      serviceId: mutableRecordLookupServiceDef.id,
+      state: { ghost: { marker: 'ignored' } },
+      version: 99,
+      clientId: 'after-teardown',
+    });
 
-      await vi.advanceTimersByTimeAsync(2000);
-
-      expect(
-        channel.emit.mock.calls.filter(([event]) => event === SERVICE_WELCOME_REQUEST).length
-      ).toBe(requestsAtTeardown);
-    } finally {
-      vi.useRealTimers();
-    }
+    expect(channel.off).toHaveBeenCalled();
   });
 });
 

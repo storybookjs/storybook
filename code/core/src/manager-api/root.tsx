@@ -194,6 +194,10 @@ class ManagerProvider extends Component<ManagerProviderProps, State> {
 
     this.state = state;
     this.api = api;
+
+    // Run addon register callbacks before the first render mounts the preview iframe, so manager-side
+    // listeners (e.g. open-service) exist before preview JS can emit welcome-request.
+    props.provider.handleAPI(this.api);
   }
 
   static getDerivedStateFromProps(props: ManagerProviderProps, state: State): State {

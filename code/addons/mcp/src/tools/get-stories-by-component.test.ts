@@ -240,7 +240,9 @@ describe('serializeComponentSection', () => {
 	});
 
 	it('singularizes the summary when there is exactly one match in one component', () => {
-		const text = serializeComponentSection('/repo/src/Button.tsx', [m('button--primary', 'Button', 0)]);
+		const text = serializeComponentSection('/repo/src/Button.tsx', [
+			m('button--primary', 'Button', 0),
+		]);
 		expect(text).toContain('→ 1 story across 1 component, distances 0..0 (d0=1)');
 	});
 
@@ -264,11 +266,10 @@ describe('serializeComponentSection', () => {
 	});
 
 	it('emits singular phrasing when exactly one match was clipped', () => {
-		const text = serializeComponentSection(
-			'/repo/src/Lib.ts',
-			[m('a--default', 'A', 0)],
-			{ maxDistance: 1, clipped: { count: 1, distances: [2] } },
-		);
+		const text = serializeComponentSection('/repo/src/Lib.ts', [m('a--default', 'A', 0)], {
+			maxDistance: 1,
+			clipped: { count: 1, distances: [2] },
+		});
 		expect(text).toContain('+1 more story at distance 2 hidden by `maxDistance: 1`');
 	});
 

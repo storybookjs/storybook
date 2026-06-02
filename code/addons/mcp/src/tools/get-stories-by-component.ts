@@ -278,9 +278,7 @@ Results are sorted by \`distance\` (lower = stronger signal). Prefer the lowest-
 				);
 
 				const text =
-					textSections.length > 0
-						? textSections.join('\n\n')
-						: 'No component paths provided.';
+					textSections.length > 0 ? textSections.join('\n\n') : 'No component paths provided.';
 
 				if (!disableTelemetry) {
 					await collectTelemetry({

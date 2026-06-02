@@ -53,10 +53,7 @@ function canonicalise(absolutePath: string): string | undefined {
 }
 
 /** Map absolute story-file path → story IDs declared in that file. Skips virtual entries. */
-function buildStoryIdsByFile(
-	storyIndex: StoryIndex,
-	workingDir: string,
-): Map<string, Set<string>> {
+function buildStoryIdsByFile(storyIndex: StoryIndex, workingDir: string): Map<string, Set<string>> {
 	const storyIdsByFile = new Map<string, Set<string>>();
 	for (const entry of Object.values(storyIndex.entries)) {
 		if (entry.type !== 'story' || entry.importPath.startsWith('virtual:')) continue;

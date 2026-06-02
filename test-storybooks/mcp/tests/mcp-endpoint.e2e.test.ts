@@ -387,7 +387,7 @@ describe('MCP Endpoint E2E Tests', () => {
 
 				Returns sorted results from the Storybook index — if a component has no matches here, it likely has no stories yet (say so, don't fabricate).
 
-				Backed by Storybook's live change-detection reverse dependency graph: distance is the import-graph hop count from the story file to the component (1 = directly imported, 2+ = transitively). Requires \`features.changeDetection\` to be enabled in the Storybook config; if not, the tool returns a typed error.
+				Backed by Storybook's live reverse dependency graph: distance is the import-graph hop count from the story file to the component (0 = the path you passed is itself a story file, 1 = directly imported, 2+ = transitively). Available when the Storybook dev server is running with a builder that supports change detection (e.g. Vite); otherwise the tool returns a typed error.
 
 				Results are sorted by \`distance\` (lower = stronger signal). Prefer the lowest-distance results first; widen only when needed. For shared components like Button or Icon, expect many indirect (\`distance\` ≥ 2) matches — pass \`maxDistance\` to cap noise.",
 				    "inputSchema": {
@@ -396,7 +396,8 @@ describe('MCP Endpoint E2E Tests', () => {
 				        "componentPaths": {
 				          "description": "Absolute paths to component source files (e.g. "/repo/src/Button.tsx").
 				Pass the components you actually want stories for — typically files you just read, edited, or that the user mentioned.
-				Do not pass story files (\`*.stories.*\`); pass the component the story renders.",
+				Relative paths are also accepted and resolved against the Storybook working directory, but absolute paths are preferred for unambiguous results.
+				Story files (\`*.stories.*\`) are accepted too: they appear at distance 0 as self-matches, plus any reverse-graph hits (other stories that import them).",
 				          "items": {
 				            "type": "string",
 				          },
@@ -404,11 +405,12 @@ describe('MCP Endpoint E2E Tests', () => {
 				          "type": "array",
 				        },
 				        "maxDistance": {
-				          "description": "Optional ceiling on the import depth to include in results.
+				          "description": "Ceiling on the import depth to include in results. Must be a positive integer.
 				- 1: only stories that directly import the component.
 				- 2+: also include stories that reach the component through N hops.
-				Omit to include everything. Lower values trade recall for precision; useful when one shared component (Button, Icon, …) would otherwise sweep in dozens of consumer stories.",
-				          "type": "number",
+				Defaults to 3; raise it to widen recall, lower it to tighten precision. Shared components (Button, Icon, …) accumulate noisy indirect matches at distance ≥ 3, so the default cap protects against runaway results.",
+				          "minimum": 1,
+				          "type": "integer",
 				        },
 				      },
 				      "required": [
@@ -449,7 +451,7 @@ describe('MCP Endpoint E2E Tests', () => {
 				                "items": {
 				                  "properties": {
 				                    "distance": {
-				                      "description": "Import-graph depth from the story file to the component (lower = stronger). 1: story file directly imports the component. 2+: reached through N hops.",
+				                      "description": "Import-graph depth from the story file to the component (lower = stronger). 0: the path you passed is itself a story file (self-match). 1: story file directly imports the component. 2+: reached through N hops.",
 				                      "type": "number",
 				                    },
 				                    "importPath": {

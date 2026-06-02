@@ -1,3 +1,5 @@
+import { logger } from 'storybook/internal/node-logger';
+
 import type { FileChangeEvent } from './adapters/index.ts';
 
 /**
@@ -26,13 +28,17 @@ export function subscribeToSourceFileChanges(listener: SourceFileChangeListener)
   };
 }
 
-/** Published by {@link ChangeDetectionService} for each file-change event. */
+/** Published by {@link StoryDependencyGraphService} for each file-change event. */
 export function notifySourceFileChange(event: FileChangeEvent): void {
   for (const listener of listeners) {
     try {
       listener(event);
-    } catch {
-      // A listener failure must never break change detection.
+    } catch (error) {
+      // A listener failure must never break change detection, but a fully
+      // silent swallow makes a misbehaving subscriber undiagnosable.
+      logger.debug(
+        `Source-file change listener threw: ${error instanceof Error ? error.message : String(error)}`
+      );
     }
   }
 }

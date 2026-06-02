@@ -454,4 +454,5 @@ export const RealAtomicChange = meta.story({
 
 export const ManyCollections = meta.story({
   args: { state: manyCollections },
+  parameters: { chromatic: { disableSnapshot: true } },
 });

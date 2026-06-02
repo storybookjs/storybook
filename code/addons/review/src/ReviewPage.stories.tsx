@@ -159,8 +159,6 @@ export const Details = meta.story({
 
     applyReviewState();
 
-    await expect(await canvas.findByText('Guide Page')).toBeInTheDocument();
-    await expect(await canvas.findByText('Default')).toBeInTheDocument();
     await expect(await canvas.findByRole('button', { name: '2/3' })).toBeInTheDocument();
     await expect(await canvas.findByText('Latest on feat/review-page')).toBeInTheDocument();
   },

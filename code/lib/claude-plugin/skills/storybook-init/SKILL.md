@@ -33,3 +33,4 @@ npx storybook add @storybook/addon-mcp
 
 - Do not hand-write a full Storybook config when the official initializer can do it.
 - Preserve existing app source and package manager choices.
+- Do not start Storybook as an ad hoc Bash command or background task in Claude; use the Claude launcher entry.

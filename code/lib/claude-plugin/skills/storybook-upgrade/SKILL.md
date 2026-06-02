@@ -36,10 +36,11 @@ npx storybook add @storybook/addon-mcp
 npx storybook doctor
 ```
 
-8. Start Storybook, then use `/storybook-setup` if the user still needs configuration or stories.
+8. Use `/storybook-setup-claude-launch` to configure or repair `.claude/launch.json`, then start Storybook through that launch entry. Use `/storybook-setup` if the user still needs configuration or stories.
 
 ## Guardrails
 
 - Do not skip across multiple major versions unless the official Storybook upgrade path supports it.
 - Preserve user changes in Storybook config files and story files.
 - If the upgrade command creates a `debug-storybook.log`, read it before guessing at fixes.
+- Do not start Storybook as an ad hoc Bash command or background task in Claude; use the Claude launcher entry.

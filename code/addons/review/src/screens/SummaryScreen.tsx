@@ -319,7 +319,6 @@ const storyMatchesQuery = (
 const CollectionsTab: FC<{
   collections: ReviewCollection[];
   query: string;
-  activeTab: ReviewTab;
   storyInfo: Record<string, StoryInfo>;
   expandedCollections: ReadonlySet<number>;
   showAllCollections: ReadonlySet<number>;
@@ -328,7 +327,6 @@ const CollectionsTab: FC<{
 }> = ({
   collections,
   query,
-  activeTab,
   storyInfo,
   expandedCollections,
   showAllCollections,
@@ -403,13 +401,18 @@ const CollectionsTab: FC<{
                 storyInfo={storyInfo}
                 query={query}
                 getStoryHref={(storyId) =>
+                  // The detail-route prefix encodes the detail *kind*, not the
+                  // active tab: a collection detail must always be
+                  // `collections/<index>/<story>` so it parses back with an
+                  // index (using the active tab here would drop the index for
+                  // the inactive panel and break navigation).
                   buildReviewChangesDetailHref(
                     {
                       kind: 'collection',
                       collectionIndex: index,
                       storyId,
                     },
-                    activeTab
+                    'collections'
                   )
                 }
               />
@@ -425,7 +428,6 @@ const ComponentsTab: FC<{
   collections: ReviewCollection[];
   storyInfo: Record<string, StoryInfo>;
   query: string;
-  activeTab: ReviewTab;
   expandedComponents: ReadonlySet<string>;
   showAllComponents: ReadonlySet<string>;
   onToggleComponent: (componentId: string) => void;
@@ -434,7 +436,6 @@ const ComponentsTab: FC<{
   collections,
   storyInfo,
   query,
-  activeTab,
   expandedComponents,
   showAllComponents,
   onToggleComponent,
@@ -506,12 +507,15 @@ const ComponentsTab: FC<{
                 storyInfo={storyInfo}
                 query={query}
                 getStoryHref={(storyId) =>
+                  // Component details always live under the `components/`
+                  // prefix regardless of which tab is currently active, so the
+                  // inactive panel's links stay valid.
                   buildReviewChangesDetailHref(
                     {
                       kind: 'component',
                       storyId,
                     },
-                    activeTab
+                    'components'
                   )
                 }
               />
@@ -806,7 +810,6 @@ export const SummaryScreen: FC<SummaryScreenProps> = ({
             <CollectionsTab
               collections={state.collections}
               query={search}
-              activeTab={tab}
               storyInfo={storyInfo}
               expandedCollections={expandedCollections}
               showAllCollections={showAllCollections}
@@ -848,7 +851,6 @@ export const SummaryScreen: FC<SummaryScreenProps> = ({
               collections={state.collections}
               storyInfo={storyInfo}
               query={search}
-              activeTab={tab}
               expandedComponents={expandedComponents}
               showAllComponents={showAllComponents}
               onToggleComponent={toggleComponent}

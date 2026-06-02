@@ -10,6 +10,9 @@ export {
   subscribeToSourceFileChanges,
   internal_resetSourceFileChangeListeners,
 } from './source-changes.ts';
+export { StoryDependencyGraphService } from './StoryDependencyGraphService.ts';
+export type { StoryDependencyGraphServiceOptions } from './StoryDependencyGraphService.ts';
+export { getDependencyGraphService, setDependencyGraphService } from './active-service-registry.ts';
 export type {
   ChangeDetectionAdapter,
   FileChangeEvent,

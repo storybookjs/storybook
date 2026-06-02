@@ -1,7 +1,6 @@
 import type { IframeHTMLAttributes } from 'react';
 import React from 'react';
 
-import { PREVIEW_IFRAME_LOADED_EVENT } from 'storybook/internal/channels';
 import { Zoom } from 'storybook/internal/components';
 
 import { styled } from 'storybook/theming';
@@ -34,10 +33,7 @@ export function IFrame(props: IFrameProps & IframeHTMLAttributes<HTMLIFrameEleme
     <Zoom.IFrame scale={scale} active={active} iFrameRef={iFrameRef}>
       <StyledIframe
         data-is-storybook={active ? 'true' : 'false'}
-        onLoad={(e) => {
-          e.currentTarget.setAttribute('data-is-loaded', 'true');
-          document.dispatchEvent(new CustomEvent(PREVIEW_IFRAME_LOADED_EVENT));
-        }}
+        onLoad={(e) => e.currentTarget.setAttribute('data-is-loaded', 'true')}
         id={id}
         title={title}
         src={src}

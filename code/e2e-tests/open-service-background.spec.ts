@@ -7,8 +7,8 @@ import { SbPage } from './util.ts';
  * E2E regression for the open-service background demo (`code/.storybook/background-service`).
  *
  * Validates the reload bootstrap path (registration-order race): preview must converge via
- * manager postMessage — welcome retries, buffered patch flush, and iframe gating — not only
- * dev-server websocket.
+ * manager postMessage — welcome retries and buffered patch flush on first preview message —
+ * not only dev-server websocket.
  *
  * Run (from `code/`):
  *   yarn nx compile core && yarn storybook:ui          # terminal 1

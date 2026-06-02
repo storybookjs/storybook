@@ -63,7 +63,6 @@ export const FramesRenderer: FC<FramesRendererProps> = ({
   const version = refs[refId]?.version;
   const active = getActive(refId, refs);
   const { current: frames } = useRef<Record<string, string>>({});
-  const addonsLoaded = api.getAddonsLoaded?.() ?? true;
 
   const refsToLoad = Object.values(refs).filter((ref) => {
     return ref.type === 'auto-inject' || ref.id === refId;
@@ -106,13 +105,7 @@ export const FramesRenderer: FC<FramesRendererProps> = ({
         }}
       </Consumer>
       {Object.entries(frames).map(([id, src]) => (
-        <Viewport
-          key={id}
-          id={id}
-          src={addonsLoaded ? src : undefined}
-          active={id === active}
-          scale={scale}
-        />
+        <Viewport key={id} id={id} src={src} active={id === active} scale={scale} />
       ))}
     </Fragment>
   );

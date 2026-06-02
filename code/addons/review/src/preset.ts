@@ -79,8 +79,25 @@ export const experimental_devServer = (app: ServerApp) => {
   const proxyRequest = createProxyMiddleware({
     target: BASELINE_TARGET_ORIGIN,
     changeOrigin: true,
+    // The baseline origin is a remote Chromatic server that can be slow or
+    // unreachable. Bound the wait and respond deterministically so a dead
+    // connection fails fast instead of hanging the review UI's baseline iframe.
+    timeout: 30_000,
+    proxyTimeout: 30_000,
     pathRewrite: (path) =>
       path.startsWith(BASELINE_PROXY_PATH) ? path.slice(BASELINE_PROXY_PATH.length) || '/' : path,
+    on: {
+      error: (_error, _req, res) => {
+        // `res` is a net.Socket on WebSocket upgrades; only HTTP responses
+        // carry a status code.
+        if ('writeHead' in res) {
+          if (!res.headersSent) {
+            res.writeHead(502, { 'Content-Type': 'text/plain' });
+          }
+          res.end('Baseline preview is unavailable.');
+        }
+      },
+    },
   }) as unknown as Middleware;
 
   app.use(BASELINE_PROXY_PATH, proxyRequest);

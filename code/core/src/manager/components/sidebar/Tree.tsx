@@ -73,6 +73,9 @@ const CollapseButton = styled(Button)(({ theme }) => ({
   padding: '0 8px',
   flex: '1 1 auto',
   justifyContent: 'flex-start',
+  '&:hover': {
+    background: 'transparent',
+  },
 }));
 
 export const LeafNodeStyleWrapper = styled.div(({ theme }) => ({

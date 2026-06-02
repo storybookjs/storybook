@@ -17,7 +17,7 @@ describe('createFileRoute', () => {
 
     expect(Route.options.id).toBe('/(group)/page');
     expect(Route.options.path).toBe('/page');
-    expect(Route.fullPath).toBe('/page');
+    expect(Route.options.fullPath).toBe('/page');
   });
 
   it('normalizes nested pathless group segments', () => {
@@ -25,7 +25,7 @@ describe('createFileRoute', () => {
 
     expect(Route.options.id).toBe('/(a)/(b)/page');
     expect(Route.options.path).toBe('/page');
-    expect(Route.fullPath).toBe('/page');
+    expect(Route.options.fullPath).toBe('/page');
   });
 
   it('normalizes a pure pathless group route to root path', () => {
@@ -33,7 +33,7 @@ describe('createFileRoute', () => {
 
     expect(Route.options.id).toBe('/(group)');
     expect(Route.options.path).toBe('/');
-    expect(Route.fullPath).toBe('/');
+    expect(Route.options.fullPath).toBe('/');
   });
 
   it('normalizes pathless `_layout` segments the same way the generator does', () => {
@@ -41,7 +41,7 @@ describe('createFileRoute', () => {
 
     expect(Route.options.id).toBe('/_layout/page');
     expect(Route.options.path).toBe('/page');
-    expect(Route.fullPath).toBe('/page');
+    expect(Route.options.fullPath).toBe('/page');
   });
 
   it('normalizes a mix of `_layout` and `(group)` segments', () => {
@@ -49,6 +49,6 @@ describe('createFileRoute', () => {
 
     expect(Route.options.id).toBe('/_layout/(group)/page');
     expect(Route.options.path).toBe('/page');
-    expect(Route.fullPath).toBe('/page');
+    expect(Route.options.fullPath).toBe('/page');
   });
 });

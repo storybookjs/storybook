@@ -205,7 +205,7 @@ export const Viewport = ({
 }: {
   active: boolean;
   id: string;
-  src: string;
+  src?: string;
   scale: number;
 }) => {
   const { width, height, isCustom, isDefault, lastSelectedOption, resize, rotate, select } =
@@ -362,7 +362,17 @@ export const Viewport = ({
             transformOrigin: 'top left',
           }}
         >
-          <IFrame allowFullScreen active={active} key={id} id={id} title={id} src={src} scale={1} />
+          {src ? (
+            <IFrame
+              allowFullScreen
+              active={active}
+              key={id}
+              id={id}
+              title={id}
+              src={src}
+              scale={1}
+            />
+          ) : null}
           {!isDefault && (
             <>
               <ScrollEdge data-edge="right" />

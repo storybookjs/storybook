@@ -33,8 +33,18 @@ import {
   parseStampedSnapshot,
   parseWelcomeRequest,
   type SnapshotReconciler,
+  type SyncStamp,
 } from './service-sync.ts';
 import type { ServiceId } from './types.ts';
+
+/**
+ * Delays (ms) for bootstrap `welcome-request` retries after the initial emit.
+ *
+ * A preview iframe often registers before a hub has installed its service listeners. Re-asking gives
+ * late-joining hubs (or a hub that just finished syncing) another chance to reply with the current
+ * snapshot. Retries stop once a peer snapshot with version > 0 is adopted, or when teardown runs.
+ */
+const BOOTSTRAP_WELCOME_RETRY_DELAYS_MS = [50, 200, 500, 1000, 2000, 3000];
 
 /** A runtime command as seen by the transport layer: `(input) => Promise<result>`. */
 type RuntimeCommand = (input: unknown) => Promise<unknown>;
@@ -113,6 +123,26 @@ export function connectRuntimeToChannel(
 ): () => void {
   const { serviceId, ownClientId, reconciler, getSnapshot, channel, relay } = context;
 
+  let bootstrapSynced = false;
+  const retryTimeouts: ReturnType<typeof setTimeout>[] = [];
+  const initialBootstrapStamp: SyncStamp = { ...reconciler.stamp };
+
+  const emitWelcomeRequest = (): void => {
+    channel.emit(SERVICE_WELCOME_REQUEST, {
+      serviceId,
+      clientId: ownClientId,
+    } satisfies WelcomeRequestPayload);
+  };
+
+  const markBootstrapSyncedIfReady = (incoming: SyncStamp): void => {
+    // A v0 welcome-reply from an early hub can carry stale initialState while the hub is still
+    // catching up (e.g. waiting on another transport). Keep retrying until a post-mutation stamp
+    // (version > 0) or the retry budget is exhausted.
+    if (incoming.version > initialBootstrapStamp.version) {
+      bootstrapSynced = true;
+    }
+  };
+
   // Relay hub only: forward an adopted snapshot to peers on our OTHER transports. We re-emit the
   // canonical post-merge snapshot under the SAME adopted stamp, so the copy that bounces back fails
   // `isNewer` and is dropped instead of looping.
@@ -123,6 +153,29 @@ export function connectRuntimeToChannel(
       version: reconciler.stamp.version,
       clientId: reconciler.stamp.clientId,
     } satisfies PatchesPayload);
+  };
+
+  const adoptPeerSnapshot = (snapshot: {
+    version: number;
+    clientId: string;
+    state: Record<string, unknown>;
+  }): boolean => {
+    const adopted = reconciler.tryAdopt(
+      { version: snapshot.version, clientId: snapshot.clientId },
+      snapshot.state
+    );
+
+    if (adopted) {
+      markBootstrapSyncedIfReady({
+        version: snapshot.version,
+        clientId: snapshot.clientId,
+      });
+      if (relay) {
+        relayAdopted();
+      }
+    }
+
+    return adopted;
   };
 
   // Reply to a peer's welcome-request with our current snapshot+stamp (which may be one we adopted
@@ -148,13 +201,7 @@ export function connectRuntimeToChannel(
     if (!snapshot || snapshot.serviceId !== serviceId) {
       return;
     }
-    const adopted = reconciler.tryAdopt(
-      { version: snapshot.version, clientId: snapshot.clientId },
-      snapshot.state
-    );
-    if (adopted && relay) {
-      relayAdopted();
-    }
+    adoptPeerSnapshot(snapshot);
   };
 
   // Apply patches from peers. The version gate drops echoes of our own broadcast and any
@@ -164,13 +211,7 @@ export function connectRuntimeToChannel(
     if (!snapshot || snapshot.serviceId !== serviceId) {
       return;
     }
-    const adopted = reconciler.tryAdopt(
-      { version: snapshot.version, clientId: snapshot.clientId },
-      snapshot.state
-    );
-    if (adopted && relay) {
-      relayAdopted();
-    }
+    adoptPeerSnapshot(snapshot);
   };
 
   channel.on(SERVICE_WELCOME_REQUEST, onWelcomeRequest);
@@ -178,12 +219,28 @@ export function connectRuntimeToChannel(
   channel.on(SERVICE_PATCHES, onPatches);
 
   // Ask any existing peer for the current state so we catch up to changes authored before we joined.
-  channel.emit(SERVICE_WELCOME_REQUEST, {
-    serviceId,
-    clientId: ownClientId,
-  } satisfies WelcomeRequestPayload);
+  emitWelcomeRequest();
+
+  for (const delay of BOOTSTRAP_WELCOME_RETRY_DELAYS_MS) {
+    retryTimeouts.push(
+      setTimeout(() => {
+        if (!bootstrapSynced) {
+          emitWelcomeRequest();
+        }
+      }, delay)
+    );
+  }
+
+  // A hub that already holds peer-adopted state (e.g. after a hot reload) pushes once so late
+  // joiners on other transports can converge without waiting for another mutation.
+  if (relay && reconciler.stamp.version > 0) {
+    relayAdopted();
+  }
 
   return (): void => {
+    for (const timeoutId of retryTimeouts) {
+      clearTimeout(timeoutId);
+    }
     channel.off(SERVICE_WELCOME_REQUEST, onWelcomeRequest);
     channel.off(SERVICE_WELCOME_REPLY, onWelcomeReply);
     channel.off(SERVICE_PATCHES, onPatches);

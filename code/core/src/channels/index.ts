@@ -13,7 +13,7 @@ export * from './main.ts';
 
 export default Channel;
 
-export { PostMessageTransport } from './postmessage/index.ts';
+export { PostMessageTransport, PREVIEW_IFRAME_LOADED_EVENT } from './postmessage/index.ts';
 export {
   WebsocketTransport,
   HEARTBEAT_INTERVAL,

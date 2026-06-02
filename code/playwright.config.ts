@@ -53,6 +53,19 @@ export default defineConfig({
   /* Configure projects for major browsers */
   projects: [
     {
+      name: 'open-service-internal',
+      testMatch: /open-service-background\.spec\.ts/,
+      use: {
+        ...devices['Desktop Chrome'],
+      },
+      webServer: {
+        command: 'yarn storybook:ui',
+        url: 'http://localhost:6006/index.json',
+        reuseExistingServer: !process.env.CI,
+        timeout: 300_000,
+      },
+    },
+    {
       // Playwright recommends project dependencies over globalSetup when setup needs runner features
       // like fixtures, traces, and retries:
       // https://playwright.dev/docs/test-global-setup-teardown

@@ -484,6 +484,7 @@ export default {
     'Channel',
     'HEARTBEAT_INTERVAL',
     'HEARTBEAT_MAX_LATENCY',
+    'PREVIEW_IFRAME_LOADED_EVENT',
     'PostMessageTransport',
     'WebsocketTransport',
     'createBrowserChannel',

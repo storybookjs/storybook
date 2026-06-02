@@ -188,6 +188,112 @@ describe('channel: welcome handshake', () => {
     const replyCalls = channel.emit.mock.calls.filter(([event]) => event === SERVICE_WELCOME_REPLY);
     expect(replyCalls).toHaveLength(0);
   });
+
+  it('retries welcome-request until a peer reply is adopted (static-style, no server)', async () => {
+    vi.useFakeTimers();
+    try {
+      const channel = createMockChannel();
+      setServiceChannel(channel);
+
+      const preview = registerServiceClient(mutableRecordLookupServiceDef, undefined, {
+        relay: false,
+      });
+
+      await vi.advanceTimersByTimeAsync(50);
+
+      channel.emitExternal(SERVICE_WELCOME_REPLY, {
+        serviceId: mutableRecordLookupServiceDef.id,
+        state: { 'entry-late': { marker: 'synced' } },
+        version: 1,
+        clientId: 'manager-hub',
+      });
+
+      await vi.waitFor(() =>
+        expect(preview.queries.getRecordFields({ entryId: 'entry-late' })).toEqual({
+          marker: 'synced',
+        })
+      );
+
+      const requestsAfterSync = channel.emit.mock.calls.filter(
+        ([event]) => event === SERVICE_WELCOME_REQUEST
+      ).length;
+
+      await vi.advanceTimersByTimeAsync(2000);
+
+      expect(
+        channel.emit.mock.calls.filter(([event]) => event === SERVICE_WELCOME_REQUEST).length
+      ).toBe(requestsAfterSync);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('keeps retrying after a stale v0 welcome-reply until a newer stamp arrives', async () => {
+    vi.useFakeTimers();
+    try {
+      const channel = createMockChannel();
+      setServiceChannel(channel);
+
+      const preview = registerServiceClient(mutableRecordLookupServiceDef, undefined, {
+        relay: false,
+      });
+
+      channel.emitExternal(SERVICE_WELCOME_REPLY, {
+        serviceId: mutableRecordLookupServiceDef.id,
+        state: { 'entry-stale': { marker: 'v0' } },
+        version: 0,
+        clientId: 'early-hub',
+      });
+
+      const requestsBeforeRetry = channel.emit.mock.calls.filter(
+        ([event]) => event === SERVICE_WELCOME_REQUEST
+      ).length;
+
+      await vi.advanceTimersByTimeAsync(50);
+
+      expect(
+        channel.emit.mock.calls.filter(([event]) => event === SERVICE_WELCOME_REQUEST).length
+      ).toBeGreaterThan(requestsBeforeRetry);
+
+      channel.emitExternal(SERVICE_WELCOME_REPLY, {
+        serviceId: mutableRecordLookupServiceDef.id,
+        state: { 'entry-stale': { marker: 'v1' } },
+        version: 1,
+        clientId: 'early-hub',
+      });
+
+      await vi.waitFor(() =>
+        expect(preview.queries.getRecordFields({ entryId: 'entry-stale' })).toEqual({
+          marker: 'v1',
+        })
+      );
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('stops bootstrap welcome retries after disconnect', async () => {
+    vi.useFakeTimers();
+    try {
+      const channel = createMockChannel();
+      setServiceChannel(channel);
+
+      registerServiceClient(mutableRecordLookupServiceDef, undefined, { relay: false });
+      unregisterServiceClient(mutableRecordLookupServiceDef.id);
+
+      const requestsAtTeardown = channel.emit.mock.calls.filter(
+        ([event]) => event === SERVICE_WELCOME_REQUEST
+      ).length;
+
+      await vi.advanceTimersByTimeAsync(2000);
+
+      expect(
+        channel.emit.mock.calls.filter(([event]) => event === SERVICE_WELCOME_REQUEST).length
+      ).toBe(requestsAtTeardown);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
 });
 
 describe('channel: patch broadcast', () => {

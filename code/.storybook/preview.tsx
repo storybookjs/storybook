@@ -143,9 +143,10 @@ const ThemedSetRoot = () => {
   const theme = useTheme();
 
   useEffect(() => {
-    document.body.style.background = theme.background.content;
+    // Body background is owned by the open-service background demo when registered; only sync
+    // the default text color from the manager theme here.
     document.body.style.color = theme.color.defaultText;
-  });
+  }, [theme]);
 
   return null;
 };

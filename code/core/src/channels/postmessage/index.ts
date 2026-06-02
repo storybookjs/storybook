@@ -22,6 +22,9 @@ export const KEY = 'storybook-channel';
 
 const defaultEventOptions = { maxDepth: 25 };
 
+/** Dispatched on the manager document when a preview iframe finishes loading. */
+export const PREVIEW_IFRAME_LOADED_EVENT = 'storybook-preview-iframe-loaded';
+
 // TODO: we should export a method for opening child windows here and keep track of em.
 // that way we can send postMessage to child windows as well, not just iframe
 // https://stackoverflow.com/questions/6340160/how-to-get-the-references-of-all-already-opened-child-windows
@@ -38,6 +41,14 @@ export class PostMessageTransport implements ChannelTransport {
 
     if (typeof global?.addEventListener === 'function') {
       global.addEventListener('message', this.handleEvent.bind(this), false);
+
+      if (config.page === 'manager' && typeof document?.addEventListener === 'function') {
+        document.addEventListener(PREVIEW_IFRAME_LOADED_EVENT, () => {
+          if (this.buffer.length) {
+            this.flush();
+          }
+        });
+      }
     }
 
     // Check whether the config.page parameter has a valid value
@@ -230,6 +241,14 @@ export class PostMessageTransport implements ChannelTransport {
         );
 
         invariant(this.handler, 'ChannelHandler should be set');
+
+        // Preview JS bootstraps after the iframe `load` event. Flushing here (on the first
+        // inbound postMessage from the preview) delivers any patches that were buffered while
+        // the iframe document existed but the preview channel was not ready yet.
+        if (this.config.page === 'manager' && this.buffer.length) {
+          this.flush();
+        }
+
         this.handler(event);
       }
     } catch (error) {

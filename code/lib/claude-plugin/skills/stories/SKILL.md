@@ -1,5 +1,5 @@
 ---
-name: storybook-stories
+name: stories
 description: >-
   Write, create, update, or review Storybook stories. Use whenever the user asks to write, add, or generate stories, to
   write Storybook stories for a component or project, to cover a component with

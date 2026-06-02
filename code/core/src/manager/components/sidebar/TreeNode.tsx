@@ -84,6 +84,7 @@ export const RootNode = styled.div(({ theme }) => ({
   marginBottom: 4,
   position: 'relative',
   overflow: 'hidden',
+  borderRadius: 4,
   '--tree-node-background-hover': theme.background.content,
 
   [MEDIA_DESKTOP_BREAKPOINT]: {
@@ -94,8 +95,9 @@ export const RootNode = styled.div(({ theme }) => ({
     marginTop: 0,
   },
 
-  '&:hover': {
+  '&:hover, &:focus-within': {
     '--tree-node-background-hover': theme.background.hoverable,
+    background: 'var(--tree-node-background-hover)',
   },
 
   '& [data-displayed="off"]': {

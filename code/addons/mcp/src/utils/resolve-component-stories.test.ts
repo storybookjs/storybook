@@ -43,6 +43,7 @@ function buildStoryIndex(byFile: Record<string, string[]>): StoryIndex {
 		for (const id of ids) {
 			entries[id] = {
 				type: 'story',
+				subtype: 'story',
 				id,
 				name: id,
 				title: id,
@@ -139,6 +140,7 @@ describe('resolveComponentStories', () => {
 			entries: {
 				'a--default': {
 					type: 'story',
+					subtype: 'story',
 					id: 'a--default',
 					name: 'Default',
 					title: 'A',
@@ -147,6 +149,7 @@ describe('resolveComponentStories', () => {
 				} as StoryIndex['entries'][string],
 				'virtual--page': {
 					type: 'story',
+					subtype: 'story',
 					id: 'virtual--page',
 					name: 'Virtual',
 					title: 'V',

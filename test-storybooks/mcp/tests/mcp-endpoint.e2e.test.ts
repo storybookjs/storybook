@@ -474,6 +474,10 @@ describe('MCP Endpoint E2E Tests', () => {
 				                },
 				                "type": "array",
 				              },
+				              "pathNotFound": {
+				                "description": "\`true\` when no file exists at the resolved absolute path. Distinguishes a typo from "this component has no stories yet". The agent should re-check the path it sent.",
+				                "type": "boolean",
+				              },
 				            },
 				            "required": [
 				              "componentPath",

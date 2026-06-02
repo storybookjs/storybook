@@ -5,7 +5,7 @@ import { addDisplayReviewTool, buildReviewUrl, type ReviewState } from './displa
 import { DISPLAY_REVIEW_TOOL_NAME } from './tool-names.ts';
 import { PUSH_REVIEW_EVENT } from '../constants.ts';
 import type { AddonContext } from '../types.ts';
-import * as fetchStoryIndex from '../utils/fetch-story-index.ts';
+import * as getStoryIndexModule from '../utils/get-story-index.ts';
 import type { StoryIndex } from 'storybook/internal/types';
 
 function makeIndex(ids: string[]): StoryIndex {
@@ -119,7 +119,7 @@ describe('displayReviewTool', () => {
 		emitted = [];
 		// Default: every story ID used in the sampleReview resolves. Individual
 		// tests override this to exercise the validation path.
-		vi.spyOn(fetchStoryIndex, 'fetchStoryIndex').mockResolvedValue(
+		vi.spyOn(getStoryIndexModule, 'getStoryIndex').mockResolvedValue(
 			makeIndex(['button--primary', 'button--secondary', 'page--home']),
 		);
 		const adapter = new ValibotJsonSchemaAdapter();
@@ -222,7 +222,7 @@ describe('displayReviewTool', () => {
 		it('rejects the whole review when any story ID is not in the live index', async () => {
 			// Two real IDs, two fabricated ones — the agent invented the
 			// "--default" exports based on naming conventions.
-			vi.spyOn(fetchStoryIndex, 'fetchStoryIndex').mockResolvedValue(
+			vi.spyOn(getStoryIndexModule, 'getStoryIndex').mockResolvedValue(
 				makeIndex(['button--primary', 'page--home']),
 			);
 			const reviewWithFakes: ReviewState = {
@@ -259,7 +259,7 @@ describe('displayReviewTool', () => {
 		});
 
 		it('lists each unknown ID only once even if reused across collections', async () => {
-			vi.spyOn(fetchStoryIndex, 'fetchStoryIndex').mockResolvedValue(makeIndex([]));
+			vi.spyOn(getStoryIndexModule, 'getStoryIndex').mockResolvedValue(makeIndex([]));
 			const review: ReviewState = {
 				...sampleReview,
 				collections: [
@@ -286,7 +286,7 @@ describe('displayReviewTool', () => {
 		});
 
 		it('skips the index fetch when there are no story IDs to validate', async () => {
-			const fetchSpy = vi.spyOn(fetchStoryIndex, 'fetchStoryIndex');
+			const fetchSpy = vi.spyOn(getStoryIndexModule, 'getStoryIndex');
 			const callCountBefore = fetchSpy.mock.calls.length;
 			const emptyReview: ReviewState = {
 				...sampleReview,

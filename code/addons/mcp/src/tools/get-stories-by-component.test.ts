@@ -7,7 +7,7 @@ import {
 	type ComponentStoryMatch,
 } from './get-stories-by-component.ts';
 import type { AddonContext } from '../types.ts';
-import * as fetchStoryIndex from '../utils/fetch-story-index.ts';
+import * as getStoryIndexModule from '../utils/get-story-index.ts';
 import * as componentStoriesModule from '../utils/resolve-component-stories.ts';
 import type { ComponentStoriesResponse } from '../utils/resolve-component-stories.ts';
 import smallStoryIndexFixture from '../../fixtures/small-story-index.fixture.json' with { type: 'json' };
@@ -56,7 +56,7 @@ describe('getStoriesByComponentTool', () => {
 		);
 
 		await addGetStoriesByComponentTool(server);
-		vi.spyOn(fetchStoryIndex, 'fetchStoryIndex').mockResolvedValue(
+		vi.spyOn(getStoryIndexModule, 'getStoryIndex').mockResolvedValue(
 			smallStoryIndexFixture as unknown as StoryIndex,
 		);
 	});

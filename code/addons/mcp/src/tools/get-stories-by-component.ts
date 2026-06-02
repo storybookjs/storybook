@@ -1,9 +1,8 @@
 import type { McpServer } from 'tmcp';
 import * as v from 'valibot';
-import type { StoryIndex } from 'storybook/internal/types';
 import { collectTelemetry } from '../telemetry.ts';
 import { errorToMCPContent } from '../utils/errors.ts';
-import { fetchStoryIndex } from '../utils/fetch-story-index.ts';
+import { getStoryIndex } from '../utils/get-story-index.ts';
 import {
 	resolveComponentStories,
 	type ComponentStoryDepth,
@@ -14,26 +13,6 @@ import {
 	GET_STORIES_BY_COMPONENT_TOOL_NAME,
 	PREVIEW_STORIES_TOOL_NAME,
 } from './tool-names.ts';
-
-/**
- * Memoise the story index per origin for a brief window. Agents commonly fire several tool
- * calls back-to-back within a single turn; without this each call re-hits `/index.json` over
- * loopback HTTP. TTL is short so HMR-added stories appear quickly on the next turn.
- */
-const STORY_INDEX_CACHE_TTL_MS = 2000;
-const storyIndexCache = new Map<string, { fetchedAt: number; index: Promise<StoryIndex> }>();
-
-function getStoryIndexCached(origin: string): Promise<StoryIndex> {
-	const now = Date.now();
-	const cached = storyIndexCache.get(origin);
-	if (cached && now - cached.fetchedAt < STORY_INDEX_CACHE_TTL_MS) return cached.index;
-	const index = fetchStoryIndex(origin);
-	// Drop the cache entry if the fetch rejects, so the next caller retries instead of inheriting
-	// the rejection forever.
-	index.catch(() => storyIndexCache.delete(origin));
-	storyIndexCache.set(origin, { fetchedAt: now, index });
-	return index;
-}
 
 /** When omitted by the caller, applied internally to keep result sets actionable on real codebases. */
 const DEFAULT_MAX_DISTANCE = 3;
@@ -237,12 +216,12 @@ Results are sorted by \`distance\` (lower = stronger signal). Prefer the lowest-
 		},
 		async (input) => {
 			try {
-				const { origin, disableTelemetry } = server.ctx.custom ?? {};
-				if (!origin) {
-					throw new Error('Origin is required in addon context');
+				const { options, disableTelemetry } = server.ctx.custom ?? {};
+				if (!options) {
+					throw new Error('Storybook options are required in addon context');
 				}
 
-				const index = await getStoryIndexCached(origin);
+				const index = await getStoryIndex(options);
 				const lookup = await resolveComponentStories(
 					{ componentPaths: input.componentPaths },
 					{ getStoryIndex: async () => index },

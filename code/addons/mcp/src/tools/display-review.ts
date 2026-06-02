@@ -2,7 +2,8 @@ import type { McpServer } from 'tmcp';
 import * as v from 'valibot';
 import type { AddonContext } from '../types.ts';
 import { errorToMCPContent } from '../utils/errors.ts';
-import { fetchStoryIndex } from '../utils/fetch-story-index.ts';
+import { getStoryIndex } from '../utils/get-story-index.ts';
+import type { Options } from 'storybook/internal/types';
 import { withFriendlyErrors } from '../utils/format-validation-issues.ts';
 import { DEFAULT_MCP_ENDPOINT, PUSH_REVIEW_EVENT, REVIEW_PAGE_PATH } from '../constants.ts';
 import { DISPLAY_REVIEW_TOOL_NAME } from './tool-names.ts';
@@ -103,7 +104,7 @@ export function buildReviewUrl(ctx: {
  */
 async function collectUnknownStoryIds(
 	collections: ReadonlyArray<{ readonly storyIds: ReadonlyArray<string> }>,
-	origin: string,
+	options: Options,
 ): Promise<string[]> {
 	const requested = new Set<string>();
 	const inOrder: string[] = [];
@@ -117,7 +118,7 @@ async function collectUnknownStoryIds(
 	}
 	if (inOrder.length === 0) return [];
 
-	const index = await fetchStoryIndex(origin);
+	const index = await getStoryIndex(options);
 	return inOrder.filter((id) => !index.entries[id]);
 }
 
@@ -163,6 +164,9 @@ Always include the returned reviewUrl in your final user-facing response so the 
 						'Cannot resolve the Storybook URL: missing trusted origin in addon context.',
 					);
 				}
+				if (!customContext.options) {
+					throw new Error('Storybook options are required in addon context.');
+				}
 
 				// Validate every storyId against the live index before publishing.
 				// Without this gate, fabricated IDs (e.g. derived from filenames or
@@ -172,7 +176,7 @@ Always include the returned reviewUrl in your final user-facing response so the 
 				// real IDs via get-stories-by-component before retrying.
 				const unknownIds = await collectUnknownStoryIds(
 					input.collections,
-					customContext.origin,
+					customContext.options,
 				);
 				if (unknownIds.length > 0) {
 					throw new Error(formatUnknownStoryIdsError(unknownIds));

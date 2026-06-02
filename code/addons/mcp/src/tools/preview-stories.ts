@@ -3,7 +3,7 @@ import url from 'node:url';
 import * as v from 'valibot';
 import { collectTelemetry } from '../telemetry.ts';
 import { buildArgsParam } from '../utils/build-args-param.ts';
-import { fetchStoryIndex } from '../utils/fetch-story-index.ts';
+import { getStoryIndex } from '../utils/get-story-index.ts';
 import { findStoryIds } from '../utils/find-story-ids.ts';
 import { errorToMCPContent } from '../utils/errors.ts';
 import type { AddonContext } from '../types.ts';
@@ -106,13 +106,16 @@ Always include each returned preview URL in your final user-facing response so u
 		},
 		async (input) => {
 			try {
-				const { origin, disableTelemetry } = server.ctx.custom ?? {};
+				const { origin, options, disableTelemetry } = server.ctx.custom ?? {};
 
 				if (!origin) {
 					throw new Error('Origin is required in addon context');
 				}
+				if (!options) {
+					throw new Error('Storybook options are required in addon context');
+				}
 
-				const index = await fetchStoryIndex(origin);
+				const index = await getStoryIndex(options);
 				const resolvedStories = findStoryIds(index, input.stories);
 
 				const structuredResult: PreviewStoriesOutput['stories'] = [];

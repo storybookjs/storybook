@@ -24,7 +24,7 @@ export * from './Subheading';
 export * from './Subtitle';
 export * from './Title';
 export * from './Unstyled';
-export * from './useArgs';
+export { useArgs, useDocsArgs } from './useArgs';
 export * from './Wrapper';
 
 export * from './useOf';

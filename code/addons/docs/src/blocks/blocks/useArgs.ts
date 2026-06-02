@@ -10,7 +10,7 @@ import type { Args, DocsContextProps, PreparedStory } from 'storybook/internal/t
 /**
  * Hook for managing args within docs blocks.
  * 
- * @deprecated Use useDocsArgs instead to avoid conflicts with preview-api useArgs
+ * @deprecated Use useDocsArgs instead to avoid conflicts with useArgs from @storybook/preview-api
  */
 export const useArgs = (
   story: PreparedStory,

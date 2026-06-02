@@ -608,8 +608,8 @@ export function useParameter<S>(parameterKey: string, defaultValue?: S): S | und
  * ```
  *
  * @template TArgs The type of the story's args.
- * @returns {[TArgs, (newArgs: Partial<TArgs>) => void, (argNames?: (keyof TArgs)[]) => void]} An
- *   array containing the current args, a function to update them, and a function to reset them.
+ * @returns {readonly [TArgs, (newArgs: Partial<TArgs>) => void, (argNames?: (keyof TArgs)[]) => void]} A
+ *   readonly tuple containing the current args, a function to update them, and a function to reset them.
  */
 export function useArgs<TArgs extends Args = Args>(): readonly [
   TArgs,

@@ -1,3 +1,26 @@
+## 10.5.0-alpha.4
+
+- Addon Vitest: Fix dynamic import failure with Vitest 3 - [#34927](https://github.com/storybookjs/storybook/pull/34927), thanks @Sidnioulz!
+- Bug: Fix Windows command resolution for non-Node package managers - [#33534](https://github.com/storybookjs/storybook/pull/33534), thanks @copilot-swe-agent!
+- CSF Next: Propagate skip tags to .test children - [#34964](https://github.com/storybookjs/storybook/pull/34964), thanks @kwonoj!
+- Controls: Improve ArgsTable empty state guidance - [#34857](https://github.com/storybookjs/storybook/pull/34857), thanks @Aniketiitk21!
+- Core: Add missing export to globals - [#34929](https://github.com/storybookjs/storybook/pull/34929), thanks @Sidnioulz!
+- Core: Clean stale runtime instance records - [#35023](https://github.com/storybookjs/storybook/pull/35023), thanks @kasperpeulen!
+- Core: Extract StoryDependencyGraphService from ChangeDetectionService - [#35009](https://github.com/storybookjs/storybook/pull/35009), thanks @valentinpalkovic!
+- Docs: Prevent heading anchor cutoff on docs pages - [#34945](https://github.com/storybookjs/storybook/pull/34945), thanks @copilot-swe-agent!
+- Manager: Fix layout.showPanel config - [#34777](https://github.com/storybookjs/storybook/pull/34777), thanks @kalinco-glitch!
+- Open Service: Sync queries, load/loaded() API, strict reader handlers - [#34932](https://github.com/storybookjs/storybook/pull/34932), thanks @JReinhold!
+- Open-Service: Add schema-driven service runtime - [#34860](https://github.com/storybookjs/storybook/pull/34860), thanks @JReinhold!
+- Open-service: Implement service registration on the server (attempt 2) - [#34961](https://github.com/storybookjs/storybook/pull/34961), thanks @JReinhold!
+- Open-service: Implement service registration on the server - [#34875](https://github.com/storybookjs/storybook/pull/34875), thanks @JReinhold!
+- Preview: Preserve @ts-expect-error in web-component and vue preview - [#34839](https://github.com/storybookjs/storybook/pull/34839), thanks @brentswisher!
+- Publish: Add npm provenance attestations - [#34936](https://github.com/storybookjs/storybook/pull/34936), thanks @copilot-swe-agent!
+- React: Render boolean props set to false in source snippets - [#34968](https://github.com/storybookjs/storybook/pull/34968), thanks @valentinpalkovic!
+- Tanstack: Export `TanStackPreview` from `@storybook/tanstack-react` to unblock CSF Next typing - [#34949](https://github.com/storybookjs/storybook/pull/34949), thanks @copilot-swe-agent!
+- Tanstack: Remove Outlet mock - [#35010](https://github.com/storybookjs/storybook/pull/35010), thanks @huang-julien!
+- Tanstack: Supply id OR path when using RouteOptions for route mock - [#34950](https://github.com/storybookjs/storybook/pull/34950), thanks @copilot-swe-agent!
+- Vue: Ensure vue-component-meta runs in post - [#34976](https://github.com/storybookjs/storybook/pull/34976), thanks @Sidnioulz!
+
 ## 10.5.0-alpha.3
 
 - A11y-Addon: Preserve disabled a11y rules with runOnly - [#34649](https://github.com/storybookjs/storybook/pull/34649), thanks @cyphercodes!

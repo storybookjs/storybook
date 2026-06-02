@@ -196,5 +196,6 @@
         "Dependency Upgrades"
       ]
     ]
-  }
+  },
+  "deferredNextVersion": "10.5.0-alpha.4"
 }

@@ -324,13 +324,11 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
         finalOptions
       );
 
-      const internalSetupFiles = (
-        [
-          '@storybook/addon-vitest/internal/setup-file',
-          areProjectAnnotationRequired &&
-            '@storybook/addon-vitest/internal/setup-file-with-project-annotations',
-        ].filter(Boolean) as string[]
-      ).map((filePath) => fileURLToPath(import.meta.resolve(filePath)));
+      const internalSetupFiles = [
+        '@storybook/addon-vitest/internal/setup-file',
+        areProjectAnnotationRequired &&
+          '@storybook/addon-vitest/internal/setup-file-with-project-annotations',
+      ].filter(Boolean) as string[];
 
       const baseConfig: Omit<ViteUserConfig, 'plugins'> = {
         cacheDir: resolvePathInStorybookCache('sb-vitest', projectId),
@@ -423,6 +421,8 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
         optimizeDeps: {
           include: [
             '@storybook/addon-vitest/internal/setup-file',
+            '@storybook/addon-vitest/internal/setup-file.browser.3',
+            '@storybook/addon-vitest/internal/setup-file.browser.4',
             '@storybook/addon-vitest/internal/global-setup',
             '@storybook/addon-vitest/internal/test-utils',
             'storybook/preview-api',
@@ -463,6 +463,21 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
     },
     async configureVitest(context) {
       context.vitest.config.coverage.exclude.push('storybook-static');
+
+      const isBrowserModeEnabled = context.vitest.config.browser?.enabled === true;
+
+      if (isBrowserModeEnabled) {
+        const setupFilePath = context.vitest.version.startsWith('3')
+          ? '@storybook/addon-vitest/internal/setup-file.browser.3'
+          : '@storybook/addon-vitest/internal/setup-file.browser.4';
+
+        context.vitest.config.setupFiles = [
+          setupFilePath,
+          ...(context.vitest.config.setupFiles ?? []).filter(
+            (configuredSetupFile) => configuredSetupFile !== setupFilePath
+          ),
+        ];
+      }
 
       // NOTE: we start telemetry immediately but do not wait on it. Typically it should complete
       // before the tests do. If not we may miss the event, we are OK with that.

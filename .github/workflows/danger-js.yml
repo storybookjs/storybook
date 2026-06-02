@@ -30,8 +30,11 @@
 #                                                                                                 #
 ###################################################################################################
 
+name: Danger JS
+
 on:
   # We need `pull_request_target` to check external contributor PRs.
+  # zizmor: ignore[dangerous-triggers]  # job checks out base.sha (trusted code), not the PR head; see security warning above
   pull_request_target:
     types:
       - opened
@@ -47,16 +50,16 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.event.number }}
   cancel-in-progress: true
 
-permissions:
-  contents: read
-  issues: read
-  pull-requests: write
+permissions: {}
 
-name: Danger JS
 jobs:
   dangerJS:
     name: Danger JS
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: read
+      pull-requests: write
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:

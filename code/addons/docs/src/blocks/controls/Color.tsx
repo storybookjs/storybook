@@ -307,7 +307,8 @@ const id = (value: string) => value.replace(/\s*/, '').toLowerCase();
 const usePresets = (
   presetColors: PresetColor[],
   currentColor: ParsedColor | undefined,
-  colorSpace: ColorSpace
+  colorSpace: ColorSpace,
+  maxPresetColors = 27
 ) => {
   const [selectedColors, setSelectedColors] = useState(currentColor?.valid ? [currentColor] : []);
 
@@ -330,8 +331,13 @@ const usePresets = (
       }
       return parseValue(preset.color);
     });
-    return initialPresets.concat(selectedColors).filter(Boolean).slice(-27);
-  }, [presetColors, selectedColors]);
+    const combined = initialPresets.concat(selectedColors).filter(Boolean);
+    if (maxPresetColors === 0 || maxPresetColors === Infinity) {
+      return combined;
+    }
+    const limit = Number.isInteger(maxPresetColors) && maxPresetColors > 0 ? maxPresetColors : 27;
+    return combined.slice(-limit);
+  }, [presetColors, selectedColors, maxPresetColors]);
 
   const addPreset: (color: ParsedColor) => void = useCallback(
     (color) => {
@@ -361,11 +367,13 @@ export type ColorControlProps = ControlProps<ColorValue> & ColorConfig;
 export const ColorControl: FC<ColorControlProps> = ({
   name,
   storyId,
+  controlsId,
   value: initialValue,
   onChange,
   onFocus,
   onBlur,
   presetColors,
+  maxPresetColors,
   startOpen = false,
   argType,
 }) => {
@@ -374,11 +382,11 @@ export const ColorControl: FC<ColorControlProps> = ({
     initialValue,
     debouncedOnChange
   );
-  const { presets, addPreset } = usePresets(presetColors ?? [], color, colorSpace);
+  const { presets, addPreset } = usePresets(presetColors ?? [], color, colorSpace, maxPresetColors);
   const Picker = ColorPicker[colorSpace];
 
   const readOnly = !!argType?.table?.readonly;
-  const controlId = getControlId(name, storyId);
+  const controlId = getControlId(name, storyId, controlsId);
 
   return (
     <Wrapper>

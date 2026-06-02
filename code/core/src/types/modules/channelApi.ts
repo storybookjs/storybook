@@ -1,4 +1,4 @@
-import type { API_ViewMode } from './api';
+import type { API_ViewMode } from './api.ts';
 import type {
   ArgTypes,
   Args,
@@ -8,7 +8,7 @@ import type {
   Parameters,
   StoryId,
   StoryKind,
-} from './csf';
+} from './csf.ts';
 
 // The data received on the (legacy) `setStories` event
 export interface SetStoriesStory {

@@ -4,10 +4,10 @@
  */
 import type { TSESTree } from '@typescript-eslint/utils';
 
-import { getMetaObjectExpression } from '../utils';
-import { isSpreadElement } from '../utils/ast';
-import { CategoryId } from '../utils/constants';
-import { createStorybookRule } from '../utils/create-storybook-rule';
+import { getMetaObjectExpression } from '../utils/index.ts';
+import { isSpreadElement } from '../utils/ast.ts';
+import { CategoryId } from '../utils/constants.ts';
+import { createStorybookRule } from '../utils/create-storybook-rule.ts';
 
 //------------------------------------------------------------------------------
 // Rule Definition

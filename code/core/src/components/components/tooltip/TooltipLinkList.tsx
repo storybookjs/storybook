@@ -5,8 +5,8 @@ import { deprecate } from 'storybook/internal/client-logger';
 
 import { styled } from 'storybook/theming';
 
-import type { LinkWrapperType, ListItemProps } from './ListItem';
-import ListItem from './ListItem';
+import type { LinkWrapperType, ListItemProps } from './ListItem.tsx';
+import ListItem from './ListItem.tsx';
 
 const List = styled.div(
   {

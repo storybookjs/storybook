@@ -6,17 +6,17 @@ import type { Options } from 'storybook/internal/types';
 
 import type { Plugin } from 'vite';
 
-import { importMetaResolve } from '../../../../core/src/shared/utils/module';
-import { generateImportFnScriptCode } from '../codegen-importfn-script';
-import { generateModernIframeScriptCode } from '../codegen-modern-iframe-script';
-import { generateAddonSetupCode } from '../codegen-set-addon-channel';
-import { transformIframeHtml } from '../transform-iframe-html';
-import { bundlerOptionsKey, ensureRolldownOptions } from '../utils/vite-features';
+import { importMetaResolve } from '../../../../core/src/shared/utils/module.ts';
+import { generateImportFnScriptCode } from '../codegen-importfn-script.ts';
+import { generateModernIframeScriptCode } from '../codegen-modern-iframe-script.ts';
+import { generateAddonSetupCode } from '../codegen-set-addon-channel.ts';
+import { transformIframeHtml } from '../transform-iframe-html.ts';
+import { bundlerOptionsKey, ensureRolldownOptions } from '../utils/vite-features.ts';
 import {
   SB_VIRTUAL_FILES,
   SB_VIRTUAL_FILE_IDS,
   getResolvedVirtualModuleId,
-} from '../virtual-file-names';
+} from '../virtual-file-names.ts';
 
 export function codeGeneratorPlugin(options: Options) {
   const iframePath = fileURLToPath(importMetaResolve('@storybook/builder-vite/input/iframe.html'));

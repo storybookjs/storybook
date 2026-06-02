@@ -1,26 +1,37 @@
 {
+  "editor.formatOnSave": true,
+  "[mdx]": {
+    "editor.formatOnSave": false
+  },
+  // We're defining the language-specific settings separately here,
+  // because using the multi-language syntax like "[javascript][typescript]" doesn't override user settings that are specified for single languages.
   "[javascript]": {
-    "editor.defaultFormatter": "dbaeumer.vscode-eslint",
-    "editor.formatOnSave": true
+    "editor.defaultFormatter": "oxc.oxc-vscode"
   },
   "[javascriptreact]": {
-    "editor.defaultFormatter": "dbaeumer.vscode-eslint",
-    "editor.formatOnSave": true
+    "editor.defaultFormatter": "oxc.oxc-vscode"
+  },
+  "[typescript]": {
+    "editor.defaultFormatter": "oxc.oxc-vscode"
+  },
+  "[typescriptreact]": {
+    "editor.defaultFormatter": "oxc.oxc-vscode"
+  },
+  "[json]": {
+    "editor.defaultFormatter": "oxc.oxc-vscode"
+  },
+  "[jsonc]": {
+    "editor.defaultFormatter": "oxc.oxc-vscode"
   },
   "[typescript]": {
     "editor.defaultFormatter": "oxc.oxc-vscode",
     "editor.formatOnSave": true
   },
-  "[typescriptreact]": {
-    "editor.defaultFormatter": "dbaeumer.vscode-eslint",
-    "editor.formatOnSave": true
-  },
   "editor.codeActionsOnSave": {
-    "source.fixAll.eslint": "explicit"
+    "source.fixAll.eslint": "explicit",
+    "source.fixAll.oxc": "explicit"
   },
-  "editor.formatOnSave": true,
   "editor.tabSize": 2,
-  "eslint.format.enable": true,
   "eslint.options": {
     "cache": true,
     "cacheLocation": ".cache/eslint",
@@ -37,7 +48,8 @@
   ],
   "eslint.workingDirectories": ["./code", "./scripts"],
   "files.associations": {
-    "*.js": "javascriptreact"
+    "*.js": "javascriptreact",
+    ".oxfmtrc.json": "json"
   },
   "javascript.preferences.importModuleSpecifier": "relative",
   "javascript.preferences.quoteStyle": "single",
@@ -48,7 +60,9 @@
   "typescript.preferences.preferTypeOnlyAutoImports": true,
   "typescript.preferences.quoteStyle": "single",
   "typescript.preferGoToSourceDefinition": true,
-  "typescript.tsdk": "./typescript/lib",
+  "typescript.tsdk": "./node_modules/typescript/lib",
   "vitest.workspaceConfig": "./code/vitest.workspace.ts",
   "vitest.rootConfig": "./code/vitest.workspace.ts",
+  "oxc.fmt.configPath": ".oxfmtrc.json",
+  "oxc.enable.oxlint": false
 }

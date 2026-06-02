@@ -2,7 +2,7 @@ import os from 'node:os';
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { cleanPaths, sanitizeError } from './sanitize';
+import { cleanPaths, sanitizeError } from './sanitize.ts';
 
 afterEach(() => {
   vi.restoreAllMocks();

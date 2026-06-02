@@ -3,7 +3,7 @@ import type { BuilderContext } from '@angular-devkit/architect';
 import type { LoggerApi } from '@angular-devkit/core/src/logger';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { runCompodoc } from './run-compodoc';
+import { runCompodoc } from './run-compodoc.ts';
 
 const mockRunScript = vi.fn().mockResolvedValue({ stdout: '' });
 

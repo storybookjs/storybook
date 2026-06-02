@@ -3,8 +3,8 @@ import { basename } from 'node:path';
 import { getRefs } from 'storybook/internal/common';
 import type { Options } from 'storybook/internal/types';
 
-import { executor, getConfig } from '../index';
-import { readTemplate } from './template';
+import { executor, getConfig } from '../index.ts';
+import { readTemplate } from './template.ts';
 
 export const getData = async (options: Options) => {
   const refs = getRefs(options);

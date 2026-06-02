@@ -1,10 +1,10 @@
-import type { RemoveIndexSignature, Simplify, UnionToIntersection } from 'type-fest';
+import type { OmitIndexSignature, Simplify, UnionToIntersection } from 'type-fest';
 
-import type { ToolbarArgType } from '../toolbar';
-import type { SBScalarType, SBType } from './SBType';
-import type { CoreTypes } from './core-annotations';
+import type { ToolbarArgType } from '../toolbar/index.ts';
+import type { SBScalarType, SBType } from './SBType.ts';
+import type { CoreTypes } from './core-annotations.ts';
 
-export * from './SBType';
+export * from './SBType.ts';
 export type StoryId = string;
 export type ComponentId = string;
 export type ComponentTitle = string;
@@ -185,6 +185,7 @@ export interface GlobalTypes {
  * type-checked across all stories.
  */
 export interface AddonTypes {
+  tags?: Tag[] | undefined;
   args?: unknown;
   parameters?: Record<string, any>;
   globals?: Record<string, any>;
@@ -413,7 +414,7 @@ export interface BaseAnnotations<TRenderer extends Renderer = Renderer, TArgs = 
   render?: ArgsStoryFn<TRenderer, TArgs>;
 
   /** Named tags for a story, used to filter stories in different contexts. */
-  tags?: Tag[];
+  tags?: (TRenderer['tags'] extends Tag[] ? TRenderer['tags'] : Tag[]) | undefined;
 
   mount?: (context: StoryContext<TRenderer, TArgs>) => TRenderer['mount'];
 }
@@ -588,7 +589,7 @@ export type ArgsFromMeta<TRenderer extends Renderer, Meta> = Meta extends {
   decorators?: (infer Decorators)[] | (infer Decorators);
 }
   ? Simplify<
-      RemoveIndexSignature<
+      OmitIndexSignature<
         RArgs & DecoratorsArgs<TRenderer, Decorators> & LoaderArgs<TRenderer, Loaders>
       >
     >

@@ -1,14 +1,16 @@
 ---
 title: Best practices for using Storybook with AI
 sidebar:
-  order: 2
+  order: 3
   title: Best practices
 ---
-  
-<Callout variant="info" icon="🧪">
-  The best practices here relate to the [generated manifests](./manifests.mdx), which are currently only supported for [React](?renderer=react) projects.
 
-  Additionally, the API may change in future releases. We welcome feedback and contributions to help improve this feature.
+<Callout variant="info" icon="🧪">
+
+The best practices here relate to the [generated manifests](./manifests.mdx), which are currently only supported for [React](?renderer=react) projects.
+
+Additionally, the API may change in future releases. We welcome feedback and contributions to help improve this feature.
+
 </Callout>
 
 <If renderer={['react']}>
@@ -74,17 +76,20 @@ export interface ButtonProps {
 
 For unattached MDX docs pages (such as documentation for design tokens, guidelines, etc.), you can provide a summary in the `Meta` tag, which will be included in the manifest and provided to the agent.
 
-```jsx title="Colors.mdx"
+```mdx title="Colors.mdx"
 import { Meta } from '@storybook/addon-docs/blocks';
 
-<Meta title="Design Tokens/Colors" summary="A list of our color tokens, their usages, and guidelines for using them." />
+<Meta
+  title="Design Tokens/Colors"
+  summary="A list of our color tokens, their usages, and guidelines for using them."
+/>
 ```
 
 ## Docs content
 
 Storybook generates this docs manifest through static analysis of your MDX files, which means it is limited to the information that is explicitly present in those files. For example, the manifest will _not_ include the color tokens in the document below, because their values are not explicitly in the source:
 
-```jsx title="Colors.mdx"
+```mdx title="Colors.mdx"
 import { Meta, ColorPalette, ColorItem } from '@storybook/addon-docs/blocks';
 import { colors } from '../src/tokens/colors';
 
@@ -93,6 +98,7 @@ import { colors } from '../src/tokens/colors';
 # Colors
 
 {/* 👇 These colors are *not* included in the manifest, because their values are not explicitly in the source */}
+
 <ColorPalette>
   {colors.map((color) => (
     <ColorItem key={color.name} color={color.value} name={color.name} />
@@ -116,7 +122,7 @@ You can also remove an entire component from the manifest, by removing the tag i
 
 Similarly, to exclude an entire MDX docs page from the manifests, you can remove the `manifest` tag from the page's metadata:
 
-```jsx title="DocForHumansOnly.mdx"
+```mdx title="DocForHumansOnly.mdx"
 import { Meta } from '@storybook/addon-docs/blocks';
 
 <Meta title="Doc for Humans Only" tags={['!manifest']} />
@@ -127,9 +133,8 @@ import { Meta } from '@storybook/addon-docs/blocks';
 
 **More AI resources**
 
+- [Agentic setup](./setup.mdx)
 - [MCP server overview](./mcp/overview.mdx)
 - [MCP server API](./mcp/api.mdx)
 - [Sharing your MCP server](./mcp/sharing.mdx)
 - [Manifests](./manifests.mdx)
-
-

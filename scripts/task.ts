@@ -12,32 +12,32 @@ import {
   allTemplates as TEMPLATES,
   type Template,
   type TemplateKey,
-} from '../code/lib/cli-storybook/src/sandbox-templates';
+} from '../code/lib/cli-storybook/src/sandbox-templates.ts';
 import { version } from '../code/package.json';
-import { bench } from './tasks/bench';
-import { build } from './tasks/build';
-import { check } from './tasks/check';
-import { checkSandbox } from './tasks/check-sandbox';
-import { chromatic } from './tasks/chromatic';
-import { compile } from './tasks/compile';
-import { dev } from './tasks/dev';
-import { e2eTestsBuild } from './tasks/e2e-tests-build';
-import { e2eTestsDev } from './tasks/e2e-tests-dev';
-import { generate } from './tasks/generate';
-import { install } from './tasks/install';
-import { publish } from './tasks/publish';
-import { runRegistryTask } from './tasks/run-registry';
-import { sandbox } from './tasks/sandbox';
-import { serve } from './tasks/serve';
-import { smokeTest } from './tasks/smoke-test';
-import { syncDocs } from './tasks/sync-docs';
-import { testRunnerBuild } from './tasks/test-runner-build';
-import { testRunnerDev } from './tasks/test-runner-dev';
-import { vitestTests } from './tasks/vitest-test';
-import { CODE_DIRECTORY, JUNIT_DIRECTORY, SANDBOX_DIRECTORY } from './utils/constants';
-import { findMostMatchText } from './utils/diff';
-import type { OptionValues } from './utils/options';
-import { createOptions, getCommand, getOptionsOrPrompt } from './utils/options';
+import { bench } from './tasks/bench.ts';
+import { build } from './tasks/build.ts';
+import { check } from './tasks/check.ts';
+import { checkSandbox } from './tasks/check-sandbox.ts';
+import { chromatic } from './tasks/chromatic.ts';
+import { compile } from './tasks/compile.ts';
+import { dev } from './tasks/dev.ts';
+import { e2eTestsBuild } from './tasks/e2e-tests-build.ts';
+import { e2eTestsDev } from './tasks/e2e-tests-dev.ts';
+import { generate } from './tasks/generate.ts';
+import { install } from './tasks/install.ts';
+import { publish } from './tasks/publish.ts';
+import { runRegistryTask } from './tasks/run-registry.ts';
+import { sandbox } from './tasks/sandbox.ts';
+import { serve } from './tasks/serve.ts';
+import { smokeTest } from './tasks/smoke-test.ts';
+import { syncDocs } from './tasks/sync-docs.ts';
+import { testRunnerBuild } from './tasks/test-runner-build.ts';
+import { testRunnerDev } from './tasks/test-runner-dev.ts';
+import { vitestTests } from './tasks/vitest-test.ts';
+import { CODE_DIRECTORY, JUNIT_DIRECTORY, SANDBOX_DIRECTORY } from './utils/constants.ts';
+import { findMostMatchText } from './utils/diff.ts';
+import type { OptionValues } from './utils/options.ts';
+import { createOptions, getCommand, getOptionsOrPrompt } from './utils/options.ts';
 
 export const extraAddons = ['@storybook/addon-a11y'];
 
@@ -536,7 +536,7 @@ async function run() {
           errorTitle += ` for ${picocolors.bgCyan(picocolors.white(details.key))}:`;
         }
         logger.error(errorTitle);
-        logger.error(JSON.stringify(err, null, 2));
+        logger.error(err);
 
         if (process.env.CI) {
           const separator = '\n--------------------------------------------\n';

@@ -3,10 +3,10 @@ import { program } from 'commander';
 import ora from 'ora';
 import { v4 as uuidv4 } from 'uuid';
 
-import { esMain } from '../utils/esmain';
-import { getPullInfoFromCommits, getRepo } from './utils/get-changes';
-import { getLatestTag, git } from './utils/git-client';
-import { getLabelIds, getUnpickedPRs, githubGraphQlClient } from './utils/github-client';
+import { esMain } from '../utils/esmain.ts';
+import { getPullInfoFromCommits, getRepo } from './utils/get-changes.ts';
+import { getLatestTag, git } from './utils/git-client.ts';
+import { getLabelIds, getUnpickedPRs, githubGraphQlClient } from './utils/github-client.ts';
 
 program
   .name('label-patches')

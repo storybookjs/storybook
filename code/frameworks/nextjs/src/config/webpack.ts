@@ -3,7 +3,7 @@ import { fileURLToPath } from 'node:url';
 import type { NextConfig } from 'next';
 import type { Configuration as WebpackConfig } from 'webpack';
 
-import { addScopedAlias, isNextVersionGte, resolveNextConfig } from '../utils';
+import { addScopedAlias, isNextVersionGte, resolveNextConfig } from '../utils.ts';
 
 const isNext16orNewer = isNextVersionGte('16.0.0');
 

@@ -12,7 +12,7 @@ import * as find from 'empathic/find';
 import semver from 'semver';
 import { dedent } from 'ts-dedent';
 
-import type { CommandOptions } from '../generators/types';
+import type { CommandOptions } from '../generators/types.ts';
 
 type TemplateMatcher = {
   files?: boolean[];
@@ -41,6 +41,13 @@ export class ProjectTypeService {
         dependencies: ['nuxt'],
         matcherFunction: ({ dependencies }) => {
           return dependencies?.every(Boolean) ?? true;
+        },
+      },
+      {
+        preset: ProjectType.TANSTACK_REACT,
+        dependencies: ['@tanstack/start', '@tanstack/react-start', '@tanstack/react-router'],
+        matcherFunction: ({ dependencies }) => {
+          return dependencies?.some(Boolean) ?? false;
         },
       },
       {
@@ -76,9 +83,10 @@ export class ProjectTypeService {
       },
       {
         preset: ProjectType.REACT_NATIVE,
-        dependencies: ['react-native', 'react-native-scripts'],
-        matcherFunction: ({ dependencies }) => {
-          return dependencies?.some(Boolean) ?? false;
+        dependencies: ['react-native', 'react-native-scripts', 'expo'],
+        peerDependencies: ['react-native', 'react-native-scripts', 'expo'],
+        matcherFunction: ({ dependencies, peerDependencies }) => {
+          return (dependencies?.some(Boolean) || peerDependencies?.some(Boolean)) ?? false;
         },
       },
       {
@@ -139,8 +147,9 @@ export class ProjectTypeService {
       {
         preset: ProjectType.REACT,
         dependencies: ['react'],
-        matcherFunction: ({ dependencies }) => {
-          return dependencies?.every(Boolean) ?? true;
+        peerDependencies: ['react'],
+        matcherFunction: ({ dependencies, peerDependencies }) => {
+          return (dependencies?.some(Boolean) || peerDependencies?.some(Boolean)) ?? false;
         },
       },
     ];
@@ -206,6 +215,25 @@ export class ProjectTypeService {
 
     const isTypescriptDirectDependency = !!this.jsPackageManager.getAllDependencies().typescript;
 
+    if (isTypescriptDirectDependency) {
+      const incompatibleReasons = await this.detectIncompatiblePackageVersions();
+      if (incompatibleReasons.length === 0) {
+        language = SupportedLanguage.TYPESCRIPT;
+      }
+    } else {
+      // No direct dependency on TypeScript, but could be a transitive dependency
+      // This is eg the case for Nuxt projects, which support a recent version of TypeScript
+      // Check for tsconfig.json (https://www.typescriptlang.org/docs/handbook/tsconfig-json.html)
+      if (existsSync('tsconfig.json')) {
+        language = SupportedLanguage.TYPESCRIPT;
+      }
+    }
+
+    return language;
+  }
+
+  /** Check installed tooling versions for TypeScript compatibility constraints */
+  async detectIncompatiblePackageVersions(): Promise<string[]> {
     const getModulePackageJSONVersion = async (pkg: string) => {
       return (await this.jsPackageManager.getModulePackageJSON(pkg))?.version ?? null;
     };
@@ -231,31 +259,39 @@ export class ProjectTypeService {
       return semver.satisfies(version, range, { includePrerelease: true });
     };
 
-    if (isTypescriptDirectDependency && typescriptVersion) {
-      if (
-        satisfies(typescriptVersion, '>=4.9.0') &&
-        (!prettierVersion || semver.gte(prettierVersion, '2.8.0')) &&
-        (!babelPluginTransformTypescriptVersion ||
-          satisfies(babelPluginTransformTypescriptVersion, '>=7.20.0')) &&
-        (!typescriptEslintParserVersion || satisfies(typescriptEslintParserVersion, '>=5.44.0')) &&
-        (!eslintPluginStorybookVersion || satisfies(eslintPluginStorybookVersion, '>=0.6.8'))
-      ) {
-        language = SupportedLanguage.TYPESCRIPT;
-      } else {
-        logger.warn(
-          'Detected TypeScript < 4.9 or incompatible tooling, populating with JavaScript examples'
-        );
-      }
-    } else {
-      // No direct dependency on TypeScript, but could be a transitive dependency
-      // This is eg the case for Nuxt projects, which support a recent version of TypeScript
-      // Check for tsconfig.json (https://www.typescriptlang.org/docs/handbook/tsconfig-json.html)
-      if (existsSync('tsconfig.json')) {
-        language = SupportedLanguage.TYPESCRIPT;
-      }
+    const incompatibleReasons: string[] = [];
+
+    if (typescriptVersion && !satisfies(typescriptVersion, '>=4.9.0')) {
+      incompatibleReasons.push(`typescript ${typescriptVersion} is below 4.9.0`);
+    }
+    if (prettierVersion && !semver.gte(prettierVersion, '2.8.0')) {
+      incompatibleReasons.push(`prettier ${prettierVersion} is below 2.8.0`);
+    }
+    if (
+      babelPluginTransformTypescriptVersion &&
+      !satisfies(babelPluginTransformTypescriptVersion, '>=7.20.0')
+    ) {
+      incompatibleReasons.push(
+        `@babel/plugin-transform-typescript ${babelPluginTransformTypescriptVersion} is below 7.20.0`
+      );
+    }
+    if (typescriptEslintParserVersion && !satisfies(typescriptEslintParserVersion, '>=5.44.0')) {
+      incompatibleReasons.push(
+        `@typescript-eslint/parser ${typescriptEslintParserVersion} is below 5.44.0`
+      );
+    }
+    // Treat Storybook canary/prerelease versions (e.g. 0.0.0-pr-*) as compatible
+    if (
+      eslintPluginStorybookVersion &&
+      !eslintPluginStorybookVersion.startsWith('0.0.0-') &&
+      !satisfies(eslintPluginStorybookVersion, '>=0.6.8')
+    ) {
+      incompatibleReasons.push(
+        `eslint-plugin-storybook ${eslintPluginStorybookVersion} is below 0.6.8`
+      );
     }
 
-    return language;
+    return incompatibleReasons;
   }
 
   private eqMajor(versionRange: string, major: number) {

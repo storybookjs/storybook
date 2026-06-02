@@ -9,10 +9,10 @@ import picocolors from 'picocolors';
 import { x } from 'tinyexec';
 import { dedent } from 'ts-dedent';
 
-import versions from '../../code/core/src/common/versions';
-import { maxConcurrentTasks } from '../utils/concurrency';
-import { esMain } from '../utils/esmain';
-import { safeMetafileArg } from './safe-args';
+import versions from '../../code/core/src/common/versions.ts';
+import { maxConcurrentTasks } from '../utils/concurrency.ts';
+import { esMain } from '../utils/esmain.ts';
+import { safeMetafileArg } from './safe-args.ts';
 
 const METAFILES_DIR = path.join(__dirname, '..', '..', 'code', 'bench', 'esbuild-metafiles');
 /**

@@ -1,22 +1,20 @@
 import { join } from 'path';
 
-import * as sandboxTemplates from '../../code/lib/cli-storybook/src/sandbox-templates';
-import { type TemplateKey } from '../../code/lib/cli-storybook/src/sandbox-templates';
-import { build_linux } from './common-jobs';
-import { LINUX_ROOT_DIR, SANDBOX_DIR, WINDOWS_ROOT_DIR, WORKING_DIR } from './utils/constants';
+import * as sandboxTemplates from '../../code/lib/cli-storybook/src/sandbox-templates.ts';
+import { type TemplateKey } from '../../code/lib/cli-storybook/src/sandbox-templates.ts';
+import { build_linux } from './common-jobs.ts';
+import { LINUX_ROOT_DIR, SANDBOX_DIR, WINDOWS_ROOT_DIR, WORKING_DIR } from './utils/constants.ts';
 import {
-  CACHE_KEYS,
   artifact,
-  cache,
   server,
   testResults,
   toId,
   verdaccio,
   workflow,
   workspace,
-} from './utils/helpers';
-import { defineJob, defineNoOpJob, isWorkflowOrAbove } from './utils/types';
-import type { JobOrNoOpJob, Workflow } from './utils/types';
+} from './utils/helpers.ts';
+import { defineJob, defineNoOpJob, isWorkflowOrAbove } from './utils/types.ts';
+import type { JobOrNoOpJob, Workflow } from './utils/types.ts';
 
 function getSandboxSetupSteps(template: string) {
   const extraSteps = [];
@@ -26,8 +24,8 @@ function getSandboxSetupSteps(template: string) {
     extraSteps.push({
       'node/install': {
         'install-yarn': true,
-        // Currently using Node 22.22.1 as minimum supported version for Angular sandboxes
-        'node-version': '22.22.1',
+        // Currently using Node 22.22.3 as minimum supported version for Angular sandboxes
+        'node-version': '22.22.3',
       },
     });
   }
@@ -247,7 +245,6 @@ export function defineSandboxFlow<Key extends string>(key: Key) {
         ...getSandboxSetupSteps(key),
         'checkout', // we need the full git history for chromatic
         workspace.attach(),
-        cache.attach(CACHE_KEYS()),
         {
           // we copy to the working directory to get git history, which chromatic needs for baselines
           run: {

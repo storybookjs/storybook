@@ -6,7 +6,8 @@ import { logger, prompt } from 'storybook/internal/node-logger';
 import { GenerateNewProjectOnInitError } from 'storybook/internal/server-errors';
 import { telemetry } from 'storybook/internal/telemetry';
 
-import type { CommandOptions } from './generators/types';
+import { createPromptCancelOptions } from './prompt-cancel.ts';
+import { TelemetryService } from './services/TelemetryService.ts';
 
 type CoercedPackageManagerName = 'npm' | 'yarn' | 'pnpm';
 
@@ -107,7 +108,7 @@ const buildProjectDisplayNameForPrint = ({ displayName }: SupportedProject) => {
  */
 export const scaffoldNewProject = async (
   packageManager: PackageManagerName,
-  { disableTelemetry }: CommandOptions
+  telemetryService = new TelemetryService()
 ) => {
   const packageManagerName = packageManagerToCoercedName(packageManager);
 
@@ -118,30 +119,31 @@ export const scaffoldNewProject = async (
   }
 
   if (!projectStrategy) {
-    projectStrategy = await prompt.select({
-      message: 'Empty directory detected:',
-      options: [
-        ...Object.entries(SUPPORTED_PROJECTS).map(([key, value]) => ({
-          label: buildProjectDisplayNameForPrint(value),
-          value: key,
-        })),
-        {
-          label: 'Other',
-          value: 'other',
-          hint: 'To install Storybook on another framework, first generate a project with that framework and then rerun this command.',
-        },
-      ],
-    });
+    projectStrategy = await prompt.select(
+      {
+        message: 'Empty directory detected:',
+        options: [
+          ...Object.entries(SUPPORTED_PROJECTS).map(([key, value]) => ({
+            label: buildProjectDisplayNameForPrint(value),
+            value: key,
+          })),
+          {
+            label: 'Other',
+            value: 'other',
+            hint: 'To install Storybook on another framework, first generate a project with that framework and then rerun this command.',
+          },
+        ],
+      },
+      createPromptCancelOptions(telemetryService, 'empty-directory')
+    );
   }
 
   if (projectStrategy === 'other') {
-    if (!disableTelemetry) {
-      await telemetry(
-        'exit',
-        { eventType: 'init', reason: 'scaffold-other' },
-        { stripMetadata: true, immediate: true }
-      );
-    }
+    await telemetry(
+      'exit',
+      { eventType: 'init', reason: 'scaffold-other' },
+      { stripMetadata: true, immediate: true }
+    );
     logger.warn(
       'To install Storybook on another framework, first generate a project with that framework and then rerun this command.'
     );
@@ -198,12 +200,10 @@ export const scaffoldNewProject = async (
 
   spinner.stop(`${projectDisplayName} project with ${packageManagerName} created successfully!`);
 
-  if (!disableTelemetry) {
-    await telemetry('scaffolded-empty', {
-      packageManager: packageManagerName,
-      projectType: projectStrategy,
-    });
-  }
+  await telemetry('scaffolded-empty', {
+    packageManager: packageManagerName,
+    projectType: projectStrategy,
+  });
 };
 
 const FILES_TO_IGNORE = [

@@ -1,14 +1,10 @@
 name: nx
 
+# NX Cloud license has expired. Triggers are disabled so this workflow does
+# not run on PRs, pushes, or schedules. It can still be started manually via
+# workflow_dispatch once the license is restored.
 on:
-  push:
-    branches:
-      - next
-  # TODO use pull_request_target in the future to also run on forks
-  pull_request:
-    types: [opened, synchronize, labeled, reopened]
-  schedule:
-    - cron: '0 23 * * *'
+  workflow_dispatch:
 
 permissions:
   actions: read
@@ -32,47 +28,50 @@ jobs:
 
     runs-on: ubuntu-latest
     env:
-      ALL_TASKS: compile,check,knip,test,pretty-docs,lint,sandbox,build,e2e-tests,e2e-tests-dev,test-runner,vitest-integration,check-sandbox,e2e-ui,jest,vitest,playwright-ct
+      ALL_TASKS: compile,check,knip,test,lint,fmt,sandbox,build,e2e-tests,e2e-tests-dev,test-runner,vitest-integration,check-sandbox,e2e-ui,jest,vitest,playwright-ct
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           filter: tree:0
           fetch-depth: 0
+          persist-credentials: false
       - name: Set Nx tag(s)
         id: tag
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          IS_MERGED: ${{ contains(github.event.pull_request.labels.*.name, 'ci:merged') }}
+          IS_DAILY: ${{ contains(github.event.pull_request.labels.*.name, 'ci:daily') }}
+          REF: ${{ github.ref }}
         run: |
           tags="normal"
-          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
-            if [[ "${{ contains(github.event.pull_request.labels.*.name, 'ci:merged') }}" == "true" ]]; then
-              tags="merged"
-            fi
-            if [[ "${{ contains(github.event.pull_request.labels.*.name, 'ci:daily') }}" == "true" ]]; then
-              tags="daily"
-            fi
+          if [[ "$EVENT_NAME" == "pull_request" ]]; then
+            if [[ "$IS_MERGED" == "true" ]]; then tags="merged"; fi
+            if [[ "$IS_DAILY" == "true" ]]; then tags="daily"; fi
           fi
-
-          if [[ "${{ github.event_name }}" == "push" && "${{ github.ref }}" == "refs/heads/next" ]]; then
+          if [[ "$EVENT_NAME" == "push" && "$REF" == "refs/heads/next" ]]; then
             tags="merged"
           fi
-
-          if [[ "${{ github.event_name }}" == "schedule" ]]; then
+          if [[ "$EVENT_NAME" == "schedule" ]]; then
             tags="daily"
           fi
-
           echo "tag=$tags" >> "$GITHUB_OUTPUT"
       - name: Select distribution config
         id: dist
+        env:
+          TAG: ${{ steps.tag.outputs.tag }}
         run: |
-          if [[ "${{ steps.tag.outputs.tag }}" == "daily" ]]; then
+          if [[ "$TAG" == "daily" ]]; then
             echo "config=./.nx/workflows/distribution-config-daily.yaml" >> "$GITHUB_OUTPUT"
           else
             echo "config=./.nx/workflows/distribution-config.yaml" >> "$GITHUB_OUTPUT"
           fi
-      - run: npx nx-cloud@latest start-ci-run --distribute-on="${{ steps.dist.outputs.config }}" --stop-agents-after="$ALL_TASKS"
+      - env:
+          DIST_CONFIG: ${{ steps.dist.outputs.config }}
+        run: npx nx-cloud@19.1.3 start-ci-run --distribute-on="$DIST_CONFIG" --stop-agents-after="$ALL_TASKS"
       - name: Create Nx Cloud Status (pending)
-        uses: actions/github-script@v7
+        uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b # v7.1.0
         with:
-          script: |
+          script: | # zizmor: ignore[template-injection] safe toJson context expansion in github-script
             const tag = ${{ toJson(steps.tag.outputs.tag) }} || 'normal';
 
             await github.rest.repos.createCommitStatus({
@@ -86,49 +85,51 @@ jobs:
               description: 'NX Cloud is running your tests',
               context: `nx: ${tag}`,
             });
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
         with:
-          node-version: 22
+          node-version-file: '.nvmrc'
           cache: 'yarn'
       - run: yarn install --immutable
-      - uses: nrwl/nx-set-shas@v4
+      - uses: nrwl/nx-set-shas@afb73a62d26e41464e9254689e1fd6122ee683c1 # v5.0.1
       - id: nx
         name: 'Run nx'
+        env:
+          TAG: ${{ steps.tag.outputs.tag }}
         run: |
           echo 'nx_output<<EOF' >> "$GITHUB_OUTPUT"
-          yarn nx run-many -t $ALL_TASKS -c production -p="tag:library,tag:ci:${{ steps.tag.outputs.tag }}" | tee -a "$GITHUB_OUTPUT"
+          yarn nx run-many -t $ALL_TASKS -c production -p="tag:library,tag:ci:${TAG}" | tee -a "$GITHUB_OUTPUT"
           status=${PIPESTATUS[0]}
           echo 'EOF' >> "$GITHUB_OUTPUT"
           exit $status
 
       - name: Create per-task Nx statuses
         if: always()
-        uses: actions/github-script@v7
+        uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b # v7.1.0
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
-          script: |
+          script: | # zizmor: ignore[template-injection] safe toJson context expansion in github-script
             const raw = ${{ toJson(steps.nx.outputs.nx_output) }} || '';
             const tag = ${{ toJson(steps.tag.outputs.tag) }} || '';
             const lines = raw.split('\n');
             const failures = [];
-            
+
             for (const [i, line] of lines.entries()) {
               if (!line.includes('✖')) continue;
-            
+
               const task =
                 line.match(/✖\s+([^│]+?)\s{2,}/)?.[1].trim() ||
                 'Unknown Nx task';
-            
+
               const url = lines
                 .slice(i + 1, i + 6)
                 .find(l => l.includes('Task logs:'))
                 ?.match(/Task logs:\s*(https:\/\/cloud\.nx\.app\/logs\/\S+)/)?.[1];
-            
+
               failures.push({ task, url });
             }
-            
+
             const sha = context.payload.pull_request?.head?.sha ?? context.sha;
-            
+
             // Per-task statuses (max 5)
             for (const { task, url } of failures.slice(0, 5)) {
               await github.rest.repos.createCommitStatus({
@@ -141,7 +142,7 @@ jobs:
                 description: 'Your test failed on NX Cloud',
               });
             }
-            
+
             const runMatches = raw.match(/https:\/\/cloud\.nx\.app\/runs\/\S+/g);
             const nxCloudUrl = runMatches ? runMatches[runMatches.length - 1] : undefined;
 

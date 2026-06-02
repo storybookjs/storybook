@@ -3,18 +3,19 @@ import { readFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 
 import { NoStatsForViteDevError } from 'storybook/internal/server-errors';
-import type { Middleware, Options } from 'storybook/internal/types';
+import type { Builder, Middleware, Options } from 'storybook/internal/types';
 
 import type { ViteDevServer } from 'vite';
 
-import { build as viteBuild } from './build';
-import type { ViteBuilder } from './types';
-import { createViteServer } from './vite-server';
+import { build as viteBuild } from './build.ts';
+import { createViteChangeDetectionAdapter } from './change-detection-adapter/index.ts';
+import type { ViteBuilder } from './types.ts';
+import { createViteServer } from './vite-server.ts';
 
-export { withoutVitePlugins } from './utils/without-vite-plugins';
-export { hasVitePlugins } from './utils/has-vite-plugins';
+export { withoutVitePlugins } from './utils/without-vite-plugins.ts';
+export { hasVitePlugins } from './utils/has-vite-plugins.ts';
 
-export * from './types';
+export * from './types.ts';
 
 function iframeHandler(options: Options, server: ViteDevServer): Middleware {
   return async (req, res) => {
@@ -37,6 +38,22 @@ let server: ViteDevServer;
 export async function bail(): Promise<void> {
   return server?.close();
 }
+
+/**
+ * Returns a {@link ChangeDetectionAdapter} bound to the Vite dev server created by `start()`.
+ *
+ * Throws if called before `start()` has resolved (i.e. before the Vite dev server exists).
+ */
+export const changeDetectionAdapter: NonNullable<
+  Builder<Options>['changeDetectionAdapter']
+> = () => {
+  if (!server) {
+    throw new Error(
+      'builder-vite: changeDetectionAdapter() called before start(); the Vite dev server is not ready yet.'
+    );
+  }
+  return createViteChangeDetectionAdapter(server);
+};
 
 export const start: ViteBuilder['start'] = async ({
   startTime,

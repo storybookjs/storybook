@@ -1,5 +1,5 @@
-import { LINUX_ROOT_DIR, WINDOWS_ROOT_DIR } from './constants';
-import { type JobOrNoOpJob, type Workflow } from './types';
+import { LINUX_ROOT_DIR, WINDOWS_ROOT_DIR } from './constants.ts';
+import { type JobOrNoOpJob, type Workflow } from './types.ts';
 
 export const workspace = {
   attach: (at = LINUX_ROOT_DIR) => {
@@ -168,14 +168,14 @@ export const verdaccio = {
 };
 
 export const workflow = {
-  restoreLinux: () => [
-    //
-    git.checkout(),
+  restoreLinux: (checkoutOpts: { forceHttps?: boolean; shallow?: boolean } = {}) => [
+    git.checkout(checkoutOpts),
+    // Downstream jobs should consume precomputed outputs exclusively from the
+    // pipeline workspace to avoid stale cache interference and trust gating.
     workspace.attach(),
-    cache.attach(CACHE_KEYS()),
   ],
-  restoreWindows: (at = WINDOWS_ROOT_DIR) => [
-    git.checkout({ forceHttps: true }),
+  restoreWindows: (at = WINDOWS_ROOT_DIR, checkoutOpts: { shallow?: boolean } = {}) => [
+    git.checkout({ ...checkoutOpts, forceHttps: true }),
     node.installOnWindows(),
     workspace.attach(at),
     /**

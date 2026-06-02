@@ -3,9 +3,9 @@ import { join } from 'node:path';
 // eslint-disable-next-line depend/ban-dependencies
 import { execaCommand } from 'execa';
 
-import type { Task } from '../task';
-import { CODE_DIRECTORY, ROOT_DIRECTORY } from '../utils/constants';
-import { getCodeWorkspaces } from '../utils/workspace';
+import type { Task } from '../task.ts';
+import { CODE_DIRECTORY, ROOT_DIRECTORY } from '../utils/constants.ts';
+import { getCodeWorkspaces } from '../utils/workspace.ts';
 
 export const check: Task = {
   description: 'Typecheck the source code of the monorepo',

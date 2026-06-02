@@ -10,7 +10,7 @@ import { transparentize } from 'polished';
 import { type State } from 'storybook/manager-api';
 import { keyframes, styled } from 'storybook/theming';
 
-import { MEDIA_DESKTOP_BREAKPOINT } from '../../constants';
+import { MEDIA_DESKTOP_BREAKPOINT } from '../../constants.ts';
 
 const slideIn = keyframes({
   '0%': {

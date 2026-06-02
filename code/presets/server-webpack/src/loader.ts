@@ -1,4 +1,4 @@
-import { compileCsfModule } from './lib/compiler';
+import { compileCsfModule } from './lib/compiler/index.ts';
 
 export default (content: string) => {
   try {

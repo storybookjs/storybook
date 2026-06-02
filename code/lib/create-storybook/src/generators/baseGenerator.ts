@@ -21,9 +21,9 @@ import { SupportedFramework, SupportedLanguage } from 'storybook/internal/types'
 import invariant from 'tiny-invariant';
 import { dedent } from 'ts-dedent';
 
-import { AddonService } from '../services';
-import { configureMain, configurePreview } from './configure';
-import type { FrameworkOptions, GeneratorOptions } from './types';
+import { AddonService } from '../services/index.ts';
+import { configureMain, configurePreview } from './configure.ts';
+import type { FrameworkOptions, GeneratorOptions } from './types.ts';
 
 const defaultOptions = {
   extraPackages: [],
@@ -119,6 +119,7 @@ const hasFrameworkTemplates = (framework?: string) => {
     SupportedFramework.SOLID,
     SupportedFramework.SVELTE_VITE,
     SupportedFramework.SVELTEKIT,
+    SupportedFramework.TANSTACK_REACT,
     SupportedFramework.VUE3_VITE,
     SupportedFramework.WEB_COMPONENTS_VITE,
   ];
@@ -283,6 +284,7 @@ export async function baseGenerator(
     storybookConfigFolder: storybookConfigFolder as string,
     language,
     frameworkPackage,
+    renderer,
   });
 
   if (addScripts) {

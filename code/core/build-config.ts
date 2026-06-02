@@ -2,7 +2,7 @@ import path from 'node:path';
 
 import { x as exec } from 'tinyexec';
 
-import type { BuildEntries } from '../../scripts/build/utils/entry-utils';
+import type { BuildEntries } from '../../scripts/build/utils/entry-utils.ts';
 
 const config: BuildEntries = {
   prebuild: async (cwd) => {
@@ -35,6 +35,14 @@ const config: BuildEntries = {
       },
       {
         entryPoint: './src/core-server/presets/common-preset.ts',
+        dts: false,
+      },
+      {
+        exportEntries: ['./internal/oxc-parser'],
+        entryPoint: './src/oxc-parser/index.ts',
+      },
+      {
+        entryPoint: './src/oxc-parser/worker.ts',
         dts: false,
       },
       {

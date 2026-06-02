@@ -2,16 +2,16 @@
 import npmLog from 'npmlog';
 import prettyTime from 'pretty-hrtime';
 
-import * as newLogger from './logger/logger';
+import * as newLogger from './logger/logger.ts';
 
-export { prompt } from './prompts';
-export { logTracker } from './logger/log-tracker';
-export type { SpinnerInstance, TaskLogInstance } from './prompts/prompt-provider-base';
-export { protectUrls, createHyperlink } from './wrap-utils';
-export { CLI_COLORS } from './logger/colors';
-export { ConsoleLogger, StyledConsoleLogger } from './logger/console';
+export { prompt } from './prompts/index.ts';
+export { logTracker } from './logger/log-tracker.ts';
+export type { SpinnerInstance, TaskLogInstance } from './prompts/prompt-provider-base.ts';
+export { protectUrls, createHyperlink } from './wrap-utils.ts';
+export { CLI_COLORS } from './logger/colors.ts';
+export { ConsoleLogger, StyledConsoleLogger } from './logger/console.ts';
 
-export type { LogLevel } from './logger/logger';
+export type { LogLevel } from './logger/logger.ts';
 
 // The default is stderr, which can cause some tools (like rush.js) to think
 // there are issues with the build: https://github.com/storybookjs/storybook/issues/14621

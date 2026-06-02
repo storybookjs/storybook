@@ -2,7 +2,7 @@
 import glob from 'fast-glob';
 import { join } from 'path/posix';
 
-import { WINDOWS_ROOT_DIR, WORKING_DIR } from './utils/constants';
+import { WINDOWS_ROOT_DIR, WORKING_DIR } from './utils/constants.ts';
 import {
   CACHE_KEYS,
   CACHE_PATHS,
@@ -16,8 +16,9 @@ import {
   verdaccio,
   workflow,
   workspace,
-} from './utils/helpers';
-import { defineJob, defineNoOpJob } from './utils/types';
+} from './utils/helpers.ts';
+import { isTrustedAuthor } from './utils/runtime.ts';
+import { defineJob, defineNoOpJob } from './utils/types.ts';
 
 const dirname = import.meta.dirname;
 
@@ -28,8 +29,9 @@ export const build_linux = defineJob('Build (linux)', (workflowName) => ({
   },
   steps: [
     git.checkout(),
+    cache.attach(CACHE_KEYS()),
     npm.install('.'),
-    cache.persist(CACHE_PATHS, CACHE_KEYS()[0]),
+    ...(isTrustedAuthor() ? [cache.persist(CACHE_PATHS, CACHE_KEYS()[0])] : []),
     git.check(),
     npm.check(),
     {
@@ -49,6 +51,17 @@ export const build_linux = defineJob('Build (linux)', (workflowName) => ({
     ...workflow.reportOnFailure(workflowName),
     artifact.persist(`code/bench/esbuild-metafiles`, 'bench'),
     workspace.persist([
+      // Workspace-root node_modules folders. Yarn hoists shared/singleton
+      // dependencies (e.g. `oxc-parser`, `vitest`, `type-fest`) here rather than
+      // into the per-package `code/<pkg>/node_modules` folders below. Downstream
+      // jobs otherwise only receive these via the shared `save_cache`, which is
+      // gated on `isTrustedAuthor()` — so community/fork PRs end up with a
+      // freshly-built `dist` but no root `node_modules`, producing errors like
+      // `Cannot find package 'oxc-parser'`. Persisting them to the (pipeline-
+      // scoped, un-gated) workspace makes downstream jobs correct for every PR.
+      `${WORKING_DIR}/node_modules`,
+      `${WORKING_DIR}/code/node_modules`,
+      `${WORKING_DIR}/scripts/node_modules`,
       ...glob
         .sync(['*/src', '*/*/src'], {
           cwd: join(dirname, '../../code'),
@@ -64,19 +77,18 @@ export const build_linux = defineJob('Build (linux)', (workflowName) => ({
   ],
 }));
 
-export const prettyDocs = defineJob('Prettify docs', () => ({
+export const fmt = defineJob('Format check', () => ({
   executor: {
     name: 'sb_node_22_classic',
-    class: 'medium+',
+    class: 'xlarge',
   },
   steps: [
     git.checkout(),
-    npm.installScripts(),
+    npm.install('.'),
     {
       run: {
-        name: 'Docs formatting',
-        working_directory: `scripts`,
-        command: 'yarn docs:fmt:check',
+        name: 'Format check',
+        command: 'yarn fmt:check',
       },
     },
   ],
@@ -129,7 +141,7 @@ export const storybookChromatic = defineJob(
       class: 'medium+',
     },
     steps: [
-      ...workflow.restoreLinux(),
+      ...workflow.restoreLinux({ shallow: false }),
       {
         run: {
           name: 'Build internal storybook',
@@ -180,7 +192,7 @@ export const check = defineJob(
 );
 
 export const lint = defineJob(
-  'EsLint & Prettier validation',
+  'ESLint',
   () => ({
     executor: {
       name: 'sb_node_22_classic',
@@ -193,13 +205,6 @@ export const lint = defineJob(
           name: 'Lint code JS',
           working_directory: `code`,
           command: 'yarn lint:js',
-        },
-      },
-      {
-        run: {
-          name: 'Lint code Other',
-          working_directory: `code`,
-          command: 'yarn lint:other',
         },
       },
       {

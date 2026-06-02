@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 
-import { SbPage, isReactSandbox } from './util';
+import { SbPage, isReactSandbox } from './util.ts';
 
 const storybookUrl = process.env.STORYBOOK_URL || 'http://localhost:8001';
 const templateName = process.env.STORYBOOK_TEMPLATE_NAME || '';
@@ -46,6 +46,10 @@ test.describe('tags', () => {
     await expect(preview.locator('#anchor--core-tags-remove--no-dev')).toHaveCount(1);
     await expect(preview.locator('#anchor--core-tags-remove--no-autodocs')).toHaveCount(0);
     await expect(preview.locator('#anchor--core-tags-remove--no-test')).toHaveCount(1);
+
+    // Static sidebar filter: entries tagged !dev must not appear (see no-dev-*.mdx in addons/docs)
+    await expect(page.locator('#addons-docs-docs2-no-dev-unattached--docs')).toHaveCount(0);
+    await expect(page.locator('#addons-docs-docs2-button--no-dev-attached')).toHaveCount(0);
   });
 
   test.describe('Tag filters tooltip', () => {

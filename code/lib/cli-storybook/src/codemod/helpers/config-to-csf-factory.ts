@@ -5,13 +5,13 @@ import { logger } from 'storybook/internal/node-logger';
 
 import picocolors from 'picocolors';
 
-import type { FileInfo } from '../../automigrate/codemod';
+import type { FileInfo } from '../../automigrate/codemod.ts';
 import {
   addImportToTop,
   cleanupTypeImports,
   getConfigProperties,
   removeExportDeclarations,
-} from './csf-factories-utils';
+} from './csf-factories-utils.ts';
 
 export async function configToCsfFactory(
   info: FileInfo,

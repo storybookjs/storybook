@@ -2,7 +2,7 @@ import type { IncomingMessage } from 'node:http';
 
 import { isHostAllowed } from 'host-validation-middleware';
 
-import type { Middleware } from '../../types';
+import type { Middleware } from '../../types/index.ts';
 
 export const DEFAULT_ALLOWED_HOSTS: string[] | true = [];
 

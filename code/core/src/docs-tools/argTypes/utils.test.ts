@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { createSummaryValue } from './utils';
+import { createSummaryValue } from './utils.ts';
 
 describe('createSummaryValue', () => {
   it('creates an object with just summary if detail is not passed', () => {

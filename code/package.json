@@ -1,6 +1,6 @@
 {
   "name": "@storybook/code",
-  "version": "10.4.0-alpha.3",
+  "version": "10.5.0-alpha.4",
   "private": true,
   "description": "Storybook root",
   "homepage": "https://storybook.js.org/",
@@ -24,12 +24,10 @@
     "github-release": "github-release-from-changelog",
     "i": "yarn --cwd .. i",
     "knip": "knip --config ../scripts/knip.config.ts",
-    "lint": "yarn lint:js && yarn lint:other",
+    "lint": "yarn lint:js",
     "lint:ejs": "ejslint **/*.ejs",
-    "lint:fmt": "oxfmt --check",
     "lint:js": "yarn lint:js:cmd . --quiet",
     "lint:js:cmd": "cross-env NODE_ENV=production eslint --cache --cache-location=../.cache/eslint --ext .js,.jsx,.json,.html,.ts,.tsx,.mjs --report-unused-disable-directives",
-    "lint:other": "yarn lint:fmt",
     "lint:package": "yarn --cwd ../scripts lint:package",
     "local-registry": "yarn --cwd ../scripts local-registry",
     "publish-sandboxes": "yarn --cwd ../scripts publish",
@@ -37,22 +35,6 @@
     "storybook:ui:build": "NODE_OPTIONS=\"--max_old_space_size=5120\" core/dist/bin/dispatcher.js build --config-dir ./.storybook --webpack-stats-json",
     "storybook:ui:chromatic": "chromatic --storybook-build-dir storybook-static --exit-zero-on-changes --exit-once-uploaded",
     "task": "yarn --cwd ../scripts task"
-  },
-  "lint-staged": {
-    "*.{js,jsx,mjs,ts,tsx}": [
-      "oxfmt",
-      "yarn lint:js:cmd"
-    ],
-    "*.{html,json}": [
-      "oxfmt",
-      "yarn lint:js:cmd"
-    ],
-    "*.ejs": [
-      "yarn --cwd ../scripts ejslint"
-    ],
-    "package.json": [
-      "yarn lint:package"
-    ]
   },
   "browserslist": [
     "chrome >= 131",
@@ -66,12 +48,13 @@
     "node >= 20"
   ],
   "dependencies": {
-    "@chromatic-com/storybook": "^5.0.0",
+    "@chromatic-com/storybook": "^5.1.2",
     "@playwright/test": "1.58.2",
     "@storybook/addon-a11y": "workspace:*",
     "@storybook/addon-designs": "^11.0.3",
     "@storybook/addon-docs": "workspace:*",
     "@storybook/addon-links": "workspace:*",
+    "@storybook/addon-mcp": "*",
     "@storybook/addon-onboarding": "workspace:*",
     "@storybook/addon-themes": "workspace:*",
     "@storybook/addon-vitest": "workspace:*",
@@ -112,10 +95,10 @@
     "@types/react-dom": "^18.0.11",
     "@vitejs/plugin-react": "^4.3.2",
     "@vitejs/plugin-vue": "^4.4.0",
-    "@vitest/browser": "^4.1.0",
-    "@vitest/browser-playwright": "^4.1.0",
-    "@vitest/coverage-istanbul": "^4.1.0",
-    "@vitest/coverage-v8": "^4.1.0",
+    "@vitest/browser": "^4.1.5",
+    "@vitest/browser-playwright": "^4.1.5",
+    "@vitest/coverage-istanbul": "^4.1.5",
+    "@vitest/coverage-v8": "^4.1.5",
     "chromatic": "^13.3.4",
     "create-storybook": "workspace:*",
     "cross-env": "^7.0.3",
@@ -127,7 +110,6 @@
     "happy-dom": "^17.6.3",
     "http-server": "^14.1.1",
     "knip": "^5.70.2",
-    "lint-staged": "^16.2.7",
     "mock-require": "^3.0.3",
     "prettier": "^3.7.1",
     "process": "^0.11.10",
@@ -143,7 +125,7 @@
     "uuid": "^11.1.0",
     "vite": "^7.0.4",
     "vite-plugin-inspect": "^11.0.0",
-    "vitest": "^4.1.0",
+    "vitest": "^4.1.5",
     "wait-on": "^8.0.3"
   },
   "devDependencies": {

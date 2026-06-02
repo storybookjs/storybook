@@ -9067,7 +9067,7 @@ __metadata:
     prop-types: "npm:^15.7.2"
     react-docgen: "npm:^8.0.2"
     react-docgen-typescript: "npm:^2.2.2"
-    react-element-to-jsx-string: "npm:@7rulnik/react-element-to-jsx-string@15.0.1"
+    react-element-to-jsx-string: "patch:react-element-to-jsx-string@npm%3A@7rulnik/react-element-to-jsx-string@15.0.1#~/.yarn/patches/@7rulnik-react-element-to-jsx-string-npm-15.0.1-e53b67c4b3.patch"
     require-from-string: "npm:^2.0.2"
     ts-dedent: "npm:^2.0.0"
     type-fest: "npm:^5.6.0"
@@ -12542,10 +12542,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"alien-signals@npm:^3.0.0":
-  version: 3.1.0
-  resolution: "alien-signals@npm:3.1.0"
-  checksum: 10c0/1d949a6a524b392ae0c3f9887f64f7e5e99fd7d9a2216b1392152c09d8fb15a7805e298aad38b37a26eb20ae0b5b6c0acc3b324bbf0a42d1056811011ecd4574
+"alien-signals@npm:^3.0.0, alien-signals@npm:^3.2.0":
+  version: 3.2.1
+  resolution: "alien-signals@npm:3.2.1"
+  checksum: 10c0/4c4064faa208126177224d1ed6a2310687d452dec0771994e276d9af4c72e853fcb969ae4a7fcd034b1d1b9accb9500f4941178326eeea1cb8f64ec612853ef8
   languageName: node
   linkType: hard
 
@@ -20340,6 +20340,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"immer@npm:11.1.8":
+  version: 11.1.8
+  resolution: "immer@npm:11.1.8"
+  checksum: 10c0/df971d8a8f6a5312c6dca4a8437e20b3185d6c9cd6830ad526c18ffd50f4037ef8db4f332b0adbcb9f8c5ee2fbe117cf0623e8554e24777105b3cc9faf866d34
+  languageName: node
+  linkType: hard
+
 "immutable@npm:^5.0.2":
   version: 5.1.4
   resolution: "immutable@npm:5.1.4"
@@ -26986,6 +26993,20 @@ __metadata:
   languageName: node
   linkType: hard
 
+"react-element-to-jsx-string@patch:react-element-to-jsx-string@npm%3A@7rulnik/react-element-to-jsx-string@15.0.1#~/.yarn/patches/@7rulnik-react-element-to-jsx-string-npm-15.0.1-e53b67c4b3.patch":
+  version: 15.0.1
+  resolution: "react-element-to-jsx-string@patch:@7rulnik/react-element-to-jsx-string@npm%3A15.0.1#~/.yarn/patches/@7rulnik-react-element-to-jsx-string-npm-15.0.1-e53b67c4b3.patch::version=15.0.1&hash=a50fcc"
+  dependencies:
+    "@base2/pretty-print-object": "npm:1.0.1"
+    is-plain-object: "npm:5.0.0"
+    react-is: "npm:18.1.0"
+  peerDependencies:
+    react: ^0.14.8 || ^15.0.1 || ^16.0.0 || ^17.0.1 || ^18.0.0
+    react-dom: ^0.14.8 || ^15.0.1 || ^16.0.0 || ^17.0.1 || ^18.0.0
+  checksum: 10c0/33f06a86ad7f8ea81bcdc0dc1111f42a7030910b9c8d5deba0adbc79eaaa38618976211d928ee664142286108b7c2955a5ab7709288c86778d1077f21a8177c3
+  languageName: node
+  linkType: hard
+
 "react-fast-compare@npm:^3.0.1, react-fast-compare@npm:^3.2.0":
   version: 3.2.2
   resolution: "react-fast-compare@npm:3.2.2"
@@ -29591,6 +29612,7 @@ __metadata:
     "@react-stately/tabs": "npm:^3.8.5"
     "@react-types/shared": "npm:^3.32.0"
     "@rolldown/pluginutils": "npm:1.0.0-beta.18"
+    "@standard-schema/spec": "npm:^1.1.0"
     "@storybook/global": "npm:^5.0.0"
     "@storybook/icons": "npm:^2.0.2"
     "@tanstack/react-virtual": "npm:^3.3.0"
@@ -29621,6 +29643,7 @@ __metadata:
     "@yarnpkg/libzip": "npm:2.3.0"
     acorn: "npm:^8.15.0"
     acorn-jsx: "npm:^5.3.2"
+    alien-signals: "npm:^3.2.0"
     ansi-to-html: "npm:^0.7.2"
     browser-dtector: "npm:^3.4.0"
     bundle-require: "npm:^5.1.0"
@@ -29651,6 +29674,7 @@ __metadata:
     globby: "npm:^14.1.0"
     hast-util-to-estree: "npm:^3.0.0"
     host-validation-middleware: "npm:^0.1.2"
+    immer: "npm:11.1.8"
     jiti: "npm:^2.6.1"
     js-yaml: "npm:^4.1.0"
     jsdoc-type-pratt-parser: "npm:^4.0.0"
@@ -29709,6 +29733,7 @@ __metadata:
     unique-string: "npm:^3.0.0"
     use-resize-observer: "npm:^9.1.0"
     use-sync-external-store: "npm:^1.5.0"
+    valibot: "npm:^1.4.0"
     watchpack: "npm:^2.5.0"
     wrap-ansi: "npm:^9.0.2"
     ws: "npm:^8.18.0"
@@ -31803,15 +31828,15 @@ __metadata:
   languageName: node
   linkType: hard
 
-"valibot@npm:^1.1.0":
-  version: 1.3.1
-  resolution: "valibot@npm:1.3.1"
+"valibot@npm:^1.1.0, valibot@npm:^1.4.0":
+  version: 1.4.0
+  resolution: "valibot@npm:1.4.0"
   peerDependencies:
     typescript: ">=5"
   peerDependenciesMeta:
     typescript:
       optional: true
-  checksum: 10c0/e20a4097fa726f57530da1e64558af47ddd2303129c77978fe93c522c66cf4c79540ea3af864523589283ea25e347c3d65b8044fa4913376208dde576b9f6382
+  checksum: 10c0/9eb9f02c1a4d685e0a76c312ae898b0012c2bdea24f75968c133fcf6019cde80c4d1d7e41f52e9a1189dde76a923baee05506fb412a0811d8d482d597bcfb4b9
   languageName: node
   linkType: hard
 

@@ -20,14 +20,13 @@ import { collectTelemetry } from './telemetry.ts';
 import type { AddonContext, AddonOptionsOutput } from './types.ts';
 import { logger } from 'storybook/internal/node-logger';
 import { getManifestStatus } from './tools/is-manifest-available.ts';
-import { getReviewStatus } from './utils/is-review-available.ts';
+import { getToolAvailability } from './utils/get-tool-availability.ts';
 import { addRunStoryTestsTool, getAddonVitestConstants } from './tools/run-story-tests.ts';
 import { estimateTokens } from './utils/estimate-tokens.ts';
 import { isAddonA11yEnabled } from './utils/is-addon-a11y-enabled.ts';
 import type { CompositionAuth } from './auth/index.ts';
 import { buildServerInstructions } from './instructions/build-server-instructions.ts';
 import { DEFAULT_MCP_ENDPOINT } from './constants.ts';
-import { isDependencyGraphSupported } from './utils/change-detection.ts';
 
 let transport: HttpTransport<AddonContext> | undefined;
 let origin: string | undefined;
@@ -39,19 +38,16 @@ let a11yEnabled: boolean | undefined;
 const initializeMCPServer = async (options: Options, multiSource?: boolean) => {
 	const core = await options.presets.apply('core', {});
 	const features = await options.presets.apply('features', {});
-	// The dependency graph and the change-detection status pipeline are independent in Storybook:
-	// the graph runs whenever the dev-server has a supporting builder; `features.changeDetection`
-	// only gates the status pipeline that powers `get-changed-stories`.
-	const dependencyGraphSupported = await isDependencyGraphSupported();
-	const changeDetectionEnabled = (features?.changeDetection ?? false) && dependencyGraphSupported;
 	disableTelemetry = core?.disableTelemetry ?? false;
 
 	// Determine tool availability before creating server so instructions can be tailored.
-	// Reuse the already-resolved `features` so getReviewStatus doesn't re-call
-	// `presets.apply('features', …)` and risk a different snapshot.
+	// Shares one source of truth with the browser landing page (see get-tool-availability.ts)
+	// so the registered tools and the page's enabled/disabled badges can't drift. Reuse the
+	// already-resolved `features` so it doesn't re-apply the preset and risk a different snapshot.
+	const { dependencyGraphSupported, changeDetectionEnabled, reviewStatus } =
+		await getToolAvailability(options, { features });
 	const addonVitestConstants = await getAddonVitestConstants();
 	const manifestStatus = await getManifestStatus(options);
-	const reviewStatus = await getReviewStatus(options, { features });
 	a11yEnabled = await isAddonA11yEnabled(options);
 
 	let server: McpServer<any, AddonContext>;

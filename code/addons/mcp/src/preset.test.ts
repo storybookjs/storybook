@@ -354,6 +354,30 @@ describe('experimental_devServer', () => {
 		expect(mockRes.end).toHaveBeenCalledWith(expect.stringContaining('<html'));
 	});
 
+	it('should list the change-detection and review tools in the landing page', async () => {
+		let getHandler: any;
+		mockApp.get = vi.fn((_path, handler) => {
+			getHandler = handler;
+		});
+
+		await (experimental_devServer as any)(mockApp, mockOptions);
+
+		const mockRes = { writeHead: vi.fn(), end: vi.fn() } as any;
+		await getHandler({ headers: { accept: 'text/html' } } as any, mockRes);
+
+		const html = mockRes.end.mock.calls[0][0] as string;
+		for (const tool of [
+			'get-stories-by-component',
+			'get-changed-stories',
+			'display-review',
+			'get-documentation-for-story',
+		]) {
+			expect(html).toContain(`<code>${tool}</code>`);
+		}
+		// Every placeholder must be substituted — no `{{...}}` may leak to the page.
+		expect(html).not.toMatch(/\{\{[A-Z_]+\}\}/);
+	});
+
 	it('should show Storybook version requirement for addon-vitest and a manual manifest link', async () => {
 		vi.spyOn(runStoryTests, 'getAddonVitestConstants').mockResolvedValue(undefined);
 		const manifestEnabledOptions = {

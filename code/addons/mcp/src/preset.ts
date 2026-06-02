@@ -5,6 +5,7 @@ import * as v from 'valibot';
 import { getManifestStatus } from './tools/is-manifest-available.ts';
 import { getAddonVitestConstants } from './tools/run-story-tests.ts';
 import { isAddonA11yEnabled } from './utils/is-addon-a11y-enabled.ts';
+import { getToolAvailability } from './utils/get-tool-availability.ts';
 import htmlTemplate from './template.html';
 import path from 'node:path';
 import {
@@ -113,6 +114,10 @@ export const experimental_devServer: PresetPropertyFn<
 	const manifestStatus = await getManifestStatus(options);
 	const addonVitestConstants = await getAddonVitestConstants();
 	const a11yEnabled = await isAddonA11yEnabled(options);
+	// Same gates the MCP server uses to register these tools, so the page can't
+	// claim a tool is available when it isn't (and vice versa).
+	const { dependencyGraphSupported, changeDetectionEnabled, reviewStatus } =
+		await getToolAvailability(options);
 
 	const isDevEnabled = addonOptions.toolsets?.dev ?? true;
 	const isDocsEnabled = manifestStatus.available && (addonOptions.toolsets?.docs ?? true);
@@ -163,8 +168,30 @@ export const experimental_devServer: PresetPropertyFn<
 			? ' <span class="toolset-status enabled">+ accessibility</span>'
 			: '';
 
+		// `get-stories-by-component`, `get-changed-stories`, and `display-review` are gated
+		// independently of the `dev` toolset (they need the dependency graph, the change-detection
+		// feature flag, and `@storybook/addon-review` respectively), so each shows its own badge.
+		const devNoticeLines = [
+			!dependencyGraphSupported &&
+				`<code>get-stories-by-component</code> and <code>get-changed-stories</code> require a dev server with a builder that supports the dependency graph (e.g. Vite).`,
+			dependencyGraphSupported &&
+				!changeDetectionEnabled &&
+				`<code>get-changed-stories</code> additionally requires enabling the <code>changeDetection</code> feature flag.`,
+			!reviewStatus.available &&
+				`<code>display-review</code> requires the <code>changeDetection</code> feature flag and <code>@storybook/addon-review</code>.`,
+		].filter(Boolean);
+		const devNotice = devNoticeLines.length
+			? `<div class="toolset-notice">${devNoticeLines.join('<br>')}</div>`
+			: '';
+
+		const statusWord = (enabled: boolean) => (enabled ? 'enabled' : 'disabled');
+
 		const html = htmlTemplate
 			.replaceAll('{{DEV_STATUS}}', isDevEnabled ? 'enabled' : 'disabled')
+			.replaceAll('{{STORIES_BY_COMPONENT_STATUS}}', statusWord(dependencyGraphSupported))
+			.replaceAll('{{CHANGE_DETECTION_STATUS}}', statusWord(changeDetectionEnabled))
+			.replaceAll('{{REVIEW_STATUS}}', statusWord(reviewStatus.available))
+			.replace('{{DEV_NOTICE}}', devNotice)
 			.replaceAll('{{DOCS_STATUS}}', isDocsEnabled ? 'enabled' : 'disabled')
 			.replace('{{DOCS_NOTICE}}', docsNotice)
 			.replaceAll('{{TEST_STATUS}}', isTestEnabled ? 'enabled' : 'disabled')

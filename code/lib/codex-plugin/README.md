@@ -2,7 +2,25 @@
 
 Private workspace package for the Storybook Codex plugin. It bundles Storybook setup, init, and upgrade skills with MCP configuration for UI component workflows.
 
-This package is intentionally shaped like a Codex plugin while living under `packages/` so it can be tested from this repository and later submitted to the official Codex marketplace. Codex does not install plugins from npm directly; it discovers plugin folders through a marketplace catalog. For local development, this package includes `.agents/plugins/marketplace.json`, which points at `plugins/storybook/`.
+This package is intentionally shaped like a Codex plugin while living under `packages/` so it can be tested from this repository and later submitted to the official Codex marketplace. Codex does not install plugins from npm directly; it discovers plugin folders through a marketplace catalog. The repository root contains the GitHub-installable marketplace, and this package includes `.agents/plugins/marketplace.json` for package-local development.
+
+## Testing from GitHub
+
+Install the Storybook marketplace directly from this repository's `main` branch:
+
+```sh
+codex plugin marketplace add storybookjs/mcp --ref main
+codex plugin add storybook@storybook
+```
+
+Verify the marketplace and plugin:
+
+```sh
+codex plugin marketplace list
+codex plugin list --marketplace storybook
+```
+
+The plugin should appear as `storybook@storybook` with status `installed, enabled`.
 
 ## Package layout
 
@@ -20,7 +38,7 @@ This matches the layout Codex expects for bundled marketplaces such as `openai-b
 
 ## Local Testing
 
-Codex exposes marketplace lifecycle commands in the CLI. Installing the plugin itself happens in the Codex app after the marketplace is registered.
+Codex exposes marketplace lifecycle and plugin install commands in the CLI.
 
 Run package scripts from the repository root with `pnpm --filter @storybook/codex-plugin run <script>`, or from this package directory with `pnpm run <script>`.
 
@@ -63,19 +81,20 @@ Then reinstall the Storybook plugin in the Codex app and restart Codex. Codex ca
 
 The plugin points at the latest `@storybook/mcp-proxy` preview from pkg.pr.new.
 
-To test from a Git branch while the plugin still lives under `packages/`, sparse-checkout this package directory:
+To test from a Git branch, install the repository-level marketplace and pin the
+branch:
 
 ```sh
-codex plugin marketplace add storybookjs/mcp --ref <branch> --sparse packages/codex-plugin
+codex plugin marketplace add storybookjs/mcp --ref <branch>
+codex plugin add storybook@storybook
 ```
 
 In the Codex **Add marketplace** UI, use the same values:
 
-| Field        | Value                                                               |
-| ------------ | ------------------------------------------------------------------- |
-| Source       | `storybookjs/mcp`                                                   |
-| Git ref      | your branch name, for example `kasper/create-claude-plugin-package` |
-| Sparse paths | `packages/codex-plugin`                                             |
+| Field   | Value                                                               |
+| ------- | ------------------------------------------------------------------- |
+| Source  | `storybookjs/mcp`                                                   |
+| Git ref | your branch name, for example `kasper/create-claude-plugin-package` |
 
 Do **not** use `plugins/codex` — that path does not exist in this repository.
 
@@ -90,11 +109,11 @@ After installing the plugin, Codex loads it from its plugin cache. If changes do
 ## Scripts
 
 - `validate:marketplace`: Validate layout and run a clean `CODEX_HOME` marketplace add smoke test.
-- `marketplace:add`: Add this package directory as a Codex marketplace.
+- `marketplace:add`: Add this package directory as a local Codex marketplace.
 - `marketplace:remove`: Remove the configured `storybook` Codex marketplace.
 - `remove`: Remove the marketplace, delete `[plugins."storybook@storybook"]` from `~/.codex/config.toml`, and delete `~/.codex/plugins/cache/storybook`.
 
-Codex does not expose CLI commands for plugin install or update. Use the Codex app plugin picker to install after `marketplace:add`. Use `remove` for a full uninstall without manual config edits.
+Use `remove` for a full uninstall without manual config edits.
 
 ## MCP Runtime
 

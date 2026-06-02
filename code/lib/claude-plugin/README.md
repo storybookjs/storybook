@@ -4,6 +4,26 @@ Build, preview, and test UI components from Claude.
 
 This package installs Storybook-specific skills and configures Claude to start `@storybook/mcp-proxy`.
 
+## Testing from GitHub
+
+Install the Storybook marketplace directly from this repository's `main` branch:
+
+```sh
+claude plugin marketplace add storybookjs/mcp@main --scope user
+claude plugin install storybook@storybook --scope user
+```
+
+Verify the installed plugin:
+
+```sh
+claude plugin list --json
+claude mcp list
+```
+
+The output should include `storybook@storybook` with `"enabled": true`, and
+`claude mcp list` should show `plugin:storybook:storybook` using the
+`@storybook/mcp-proxy` preview URL from `pkg.pr.new`.
+
 ## Local development
 
 This package includes a local Claude marketplace descriptor at `.claude-plugin/marketplace.json`. It points at this same directory so you can register, install, and update the plugin the same way users will once it ships through the official marketplace.
@@ -99,11 +119,15 @@ To test in Claude Desktop, restart Claude Desktop after installing or updating t
 
 ## Distribution
 
-This package is private during development. The local marketplace in `.claude-plugin/marketplace.json` is for testing only; the plugin will eventually ship through the official Claude plugin marketplace.
+This package is private during development. The repository root includes
+`.claude-plugin/marketplace.json` so testers can install from GitHub with
+`claude plugin marketplace add storybookjs/mcp@main`. The local marketplace in
+this package is for package-local development and validation. The plugin will
+eventually ship through the official Claude plugin marketplace.
 
 The plugin directory must include these files:
 
-- `.claude-plugin/marketplace.json` (local testing only)
+- `.claude-plugin/marketplace.json` (package-local testing only)
 - `.claude-plugin/plugin.json`
 - `.mcp.json`
 - `skills/**`

@@ -2,6 +2,8 @@ import type { McpServer } from 'tmcp';
 import * as v from 'valibot';
 import type { AddonContext } from '../types.ts';
 import { errorToMCPContent } from '../utils/errors.ts';
+import { fetchStoryIndex } from '../utils/fetch-story-index.ts';
+import { withFriendlyErrors } from '../utils/format-validation-issues.ts';
 import { DEFAULT_MCP_ENDPOINT, PUSH_REVIEW_EVENT, REVIEW_PAGE_PATH } from '../constants.ts';
 import { DISPLAY_REVIEW_TOOL_NAME } from './tool-names.ts';
 
@@ -94,12 +96,45 @@ export function buildReviewUrl(ctx: {
 	return `${root.replace(/\/$/, '')}/?path=${REVIEW_PAGE_PATH}`;
 }
 
+/**
+ * Returns the storyIds the agent passed that don't resolve against the live
+ * Storybook index. Order-preserving and deduplicated so the error message
+ * lists each fabricated ID once, in the order the agent provided them.
+ */
+async function collectUnknownStoryIds(
+	collections: ReadonlyArray<{ readonly storyIds: ReadonlyArray<string> }>,
+	origin: string,
+): Promise<string[]> {
+	const requested = new Set<string>();
+	const inOrder: string[] = [];
+	for (const collection of collections) {
+		for (const id of collection.storyIds) {
+			if (!requested.has(id)) {
+				requested.add(id);
+				inOrder.push(id);
+			}
+		}
+	}
+	if (inOrder.length === 0) return [];
+
+	const index = await fetchStoryIndex(origin);
+	return inOrder.filter((id) => !index.entries[id]);
+}
+
+function formatUnknownStoryIdsError(unknownIds: string[]): string {
+	const list = unknownIds.map((id) => `- \`${id}\``).join('\n');
+	const plural = unknownIds.length === 1 ? 'ID is' : 'IDs are';
+	return `Refusing to publish review: ${unknownIds.length} story ${plural} not in the live Storybook index:\n${list}\n\nThis usually means the IDs were inferred from file paths or naming conventions rather than returned by a tool. Resolve real IDs by calling \`get-stories-by-component\` (for components you've edited or want covered) or \`list-all-documentation\` (to browse the index), then retry \`display-review\` with the verified IDs. Do not invent IDs to satisfy this check.`;
+}
+
 export async function addDisplayReviewTool(server: McpServer<any, AddonContext>) {
 	server.tool(
 		{
 			name: DISPLAY_REVIEW_TOOL_NAME,
 			title: 'Display Storybook review',
 			description: `Push a curated review of the current change to Storybook's review page.
+
+**Every storyId you pass here must have come from a tool result in this session** — \`get-changed-stories\`, \`get-stories-by-component\`, or \`list-all-documentation\`. IDs derived from file paths, story-file naming conventions, feature names, or memory will not resolve. The tool validates every ID against the live Storybook index and rejects the whole review if any are unknown, so guessing is a hard failure, not a soft one. If you don't have a verified ID for a story you want to include, call \`get-stories-by-component\` first.
 
 After you finish a UI code change, call this to help the user spot-check it.
 
@@ -116,7 +151,7 @@ Provide:
 Anti-pattern: editing a theme token that only one component reads, then publishing a review with just that one component's story. The token change is visible on every page that renders the component — include those pages.
 
 Always include the returned reviewUrl in your final user-facing response so the user can open it. This tool maintains a single active review state; each call replaces the previously published review.`,
-			schema: ReviewStateSchema,
+			schema: withFriendlyErrors(ReviewStateSchema),
 			outputSchema: DisplayReviewOutput,
 			enabled: () => server.ctx.custom?.toolsets?.dev ?? true,
 		},
@@ -127,6 +162,20 @@ Always include the returned reviewUrl in your final user-facing response so the 
 					throw new Error(
 						'Cannot resolve the Storybook URL: missing trusted origin in addon context.',
 					);
+				}
+
+				// Validate every storyId against the live index before publishing.
+				// Without this gate, fabricated IDs (e.g. derived from filenames or
+				// naming conventions) make it into the review unchallenged — the
+				// agent gets a reviewUrl back, assumes success, and the user opens
+				// a broken page. Hard-failing here forces the agent to resolve
+				// real IDs via get-stories-by-component before retrying.
+				const unknownIds = await collectUnknownStoryIds(
+					input.collections,
+					customContext.origin,
+				);
+				if (unknownIds.length > 0) {
+					throw new Error(formatUnknownStoryIdsError(unknownIds));
 				}
 
 				const reviewUrl = buildReviewUrl({

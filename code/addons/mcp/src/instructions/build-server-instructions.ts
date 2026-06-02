@@ -7,6 +7,13 @@ export type BuildServerInstructionsOptions = {
 	testEnabled: boolean;
 	docsEnabled: boolean;
 	changeDetectionEnabled?: boolean;
+	/**
+	 * `get-stories-by-component` is registered whenever the dev-server exposes the dependency
+	 * graph — even if `features.changeDetection` is off and `get-changed-stories` is unavailable.
+	 * When true and `changeDetectionEnabled` is false, the workflow falls back to manual lookup
+	 * via `get-stories-by-component` instead of the status-store-driven `get-changed-stories`.
+	 */
+	dependencyGraphAvailable?: boolean;
 	reviewEnabled?: boolean;
 };
 
@@ -15,19 +22,20 @@ export function buildServerInstructions(options: BuildServerInstructionsOptions)
 
 	if (options.devEnabled) {
 		const changeDetection = options.changeDetectionEnabled ?? false;
+		const graphAvailable = options.dependencyGraphAvailable ?? false;
 		const reviewEnabled = options.reviewEnabled ?? false;
+		const previewStoriesStep = changeDetection
+			? 'After changing any component or story, call **get-changed-stories** to discover new/modified/related stories, then call **preview-stories** to retrieve preview URLs.'
+			: graphAvailable
+				? 'After changing any component or story, call **get-stories-by-component** with the absolute paths of the files you touched to find the stories that render them, then call **preview-stories** to retrieve preview URLs.'
+				: 'After changing any component or story, call **preview-stories** to retrieve preview URLs.';
 		sections.push(
 			devInstructions
-				.replace(
-					'{{PREVIEW_STORIES_STEP}}',
-					changeDetection
-						? 'After changing any component or story, call **get-changed-stories** to discover new/modified/related stories, then call **preview-stories** to retrieve preview URLs.'
-						: 'After changing any component or story, call **preview-stories** to retrieve preview URLs.',
-				)
+				.replace('{{PREVIEW_STORIES_STEP}}', previewStoriesStep)
 				.replace(
 					'{{DISPLAY_REVIEW_STEP}}',
 					reviewEnabled
-						? "\n- After completing the change, call **display-review** to publish a curated review to Storybook's review page. If the session has a browser-preview tool, navigate it to the returned `reviewUrl` so the user sees the review without leaving the chat. Always include the `reviewUrl` in your final response as a fallback. Call this tool again whenever the user iterates on the changes, so you keep the review up to date."
+						? "\n- After a UI change, call **display-review** to publish a curated review — but only when the change is expected to be visually observable. Pure refactors with no rendering impact (type-only edits, internal renames, dead-code removal, comment/import reorg) don't need a review; skip the call, or publish a single small collection and note in the description that no visible change is expected. When you're unsure whether a refactor has visual side-effects, publish the review and say so. If the session has a browser-preview tool, navigate it to the returned `reviewUrl` so the user sees the review without leaving the chat. Always include the `reviewUrl` in your final response as a fallback. Call this tool again whenever the user iterates on the changes."
 						: '',
 				)
 				.trim(),

@@ -30,7 +30,6 @@ interface FriendlyIssue {
 	message: string;
 }
 
-
 function formatPath(path: StandardSchemaIssue['path']): string {
 	if (!path || path.length === 0) return '';
 	let out = '';
@@ -86,9 +85,7 @@ function summarizeIssue(issue: StandardSchemaIssue): FriendlyIssue {
  * `~standard` slot, no prototype methods), so spread-and-replace is enough
  * — no Proxy required.
  */
-export function withFriendlyErrors<TSchema extends StandardSchemaV1>(
-	schema: TSchema,
-): TSchema {
+export function withFriendlyErrors<TSchema extends StandardSchemaV1>(schema: TSchema): TSchema {
 	const original = schema['~standard'];
 	return {
 		...schema,

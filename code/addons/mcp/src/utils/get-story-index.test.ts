@@ -37,9 +37,7 @@ describe('getStoryIndex', () => {
 		const apply = vi.fn().mockResolvedValue(undefined);
 		const options = makeOptions(apply as unknown as Options['presets']['apply']);
 
-		await expect(getStoryIndex(options)).rejects.toThrow(
-			/story index generator is unavailable/,
-		);
+		await expect(getStoryIndex(options)).rejects.toThrow(/story index generator is unavailable/);
 	});
 
 	it('propagates errors thrown by the generator', async () => {

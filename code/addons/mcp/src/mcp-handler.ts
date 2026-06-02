@@ -43,8 +43,7 @@ const initializeMCPServer = async (options: Options, multiSource?: boolean) => {
 	// the graph runs whenever the dev-server has a supporting builder; `features.changeDetection`
 	// only gates the status pipeline that powers `get-changed-stories`.
 	const dependencyGraphSupported = await isDependencyGraphSupported();
-	const changeDetectionEnabled =
-		(features?.changeDetection ?? false) && dependencyGraphSupported;
+	const changeDetectionEnabled = (features?.changeDetection ?? false) && dependencyGraphSupported;
 	disableTelemetry = core?.disableTelemetry ?? false;
 
 	// Determine tool availability before creating server so instructions can be tailored.

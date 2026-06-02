@@ -174,10 +174,7 @@ Always include the returned reviewUrl in your final user-facing response so the 
 				// agent gets a reviewUrl back, assumes success, and the user opens
 				// a broken page. Hard-failing here forces the agent to resolve
 				// real IDs via get-stories-by-component before retrying.
-				const unknownIds = await collectUnknownStoryIds(
-					input.collections,
-					customContext.options,
-				);
+				const unknownIds = await collectUnknownStoryIds(input.collections, customContext.options);
 				if (unknownIds.length > 0) {
 					throw new Error(formatUnknownStoryIdsError(unknownIds));
 				}

@@ -30,9 +30,7 @@ vi.mock('storybook/internal/core-server', () => ({
 }));
 
 vi.mock('node:child_process', async () => {
-	const actual = await vi.importActual<typeof import('node:child_process')>(
-		'node:child_process',
-	);
+	const actual = await vi.importActual<typeof import('node:child_process')>('node:child_process');
 	return { ...actual, execSync: (...args: unknown[]) => mockExecSync(...(args as [])) };
 });
 

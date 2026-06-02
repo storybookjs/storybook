@@ -117,9 +117,7 @@ describe('detectUnreachableChanges', () => {
 		mockService({
 			// reverse-graph knows about Badge.tsx but NOT theme.ts
 			lookup: (dep: string) =>
-				dep.endsWith('Badge.tsx')
-					? new Map([['/repo/src/Badge.stories.tsx', 1]])
-					: new Map(),
+				dep.endsWith('Badge.tsx') ? new Map([['/repo/src/Badge.stories.tsx', 1]]) : new Map(),
 		});
 		mockGit(' M src/styles/theme.ts\n M src/components/Badge/Badge.tsx\n');
 		const { detectUnreachableChanges } = await import('./detect-unreachable-changes.ts');

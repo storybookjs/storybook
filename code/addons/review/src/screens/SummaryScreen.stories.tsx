@@ -456,3 +456,14 @@ export const ManyCollections = meta.story({
   args: { state: manyCollections },
   parameters: { chromatic: { disableSnapshot: true } },
 });
+
+export const Stale = meta.story({
+  args: { state: full, isStale: true },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(
+      await canvas.findByText('New changes were made. This review may be stale.')
+    ).toBeInTheDocument();
+    await expect(await canvas.findByText('Primary button visual refresh')).toBeInTheDocument();
+  },
+});

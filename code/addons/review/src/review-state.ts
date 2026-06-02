@@ -36,4 +36,10 @@ export interface ReviewState {
    * received; used for live "Created x minutes ago" UI in the summary.
    */
   createdAt?: number;
+  /**
+   * Set server-side once a watched source file changes after `createdAt`.
+   * Drives the "this review may be stale" banner. Persisted on the cached
+   * review so REQUEST_REVIEW replays it to late/refreshed tabs.
+   */
+  stale?: boolean;
 }

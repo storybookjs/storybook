@@ -29,6 +29,7 @@ export const ReviewPage: FC = () =>
 
 const ReviewPageContent: FC<{ search: string }> = ({ search }) => {
   const [state, setState] = useState<ReviewState | null>(null);
+  const [isStale, setIsStale] = useState(false);
 
   const api = useStorybookApi();
   const { index } = useStorybookState();
@@ -44,6 +45,11 @@ const ReviewPageContent: FC<{ search: string }> = ({ search }) => {
         })),
       };
       setState(normalizedState);
+      // A fresh review resets staleness; a replayed (already-stale) one restores it.
+      setIsStale(!!next.stale);
+    },
+    [EVENTS.REVIEW_STALE]: () => {
+      setIsStale(true);
     },
   });
 
@@ -190,6 +196,7 @@ const ReviewPageContent: FC<{ search: string }> = ({ search }) => {
         totalStories,
         componentTitle: currentStoryInfo?.title,
         storyName: currentStoryInfo?.name,
+        isStale,
         backHref: buildReviewChangesSummaryHref(activeTab),
         previousHref: buildReviewChangesDetailHref(
           detailLocation.kind === 'collection'
@@ -244,6 +251,7 @@ const ReviewPageContent: FC<{ search: string }> = ({ search }) => {
             navigate(buildReviewChangesSummaryHref(nextTab), { plain: true });
           },
           storyInfo,
+          isStale,
         })
       ),
       hasDetailScreen

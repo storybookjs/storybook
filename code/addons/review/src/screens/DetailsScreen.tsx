@@ -17,6 +17,8 @@ import { PREVIEW_MODE_STATE_KEY } from '../constants.ts';
 
 const DEFAULT_PREVIEW_MODE: PreviewMode = '2up';
 
+import { StaleBanner } from '../components/StaleBanner.tsx';
+
 const Page = styled.div(({ theme }) => ({
   display: 'flex',
   flexDirection: 'column',
@@ -184,6 +186,8 @@ export interface DetailsScreenProps {
   componentTitle?: string;
   storyName?: string;
   branchName?: string;
+  /** When true, render the "this review may be stale" banner at the top. */
+  isStale?: boolean;
 }
 
 const renderDetailTitle = ({
@@ -224,6 +228,7 @@ export const DetailsScreen = ({
   nextHref,
   componentTitle,
   storyName,
+  isStale = false,
 }: DetailsScreenProps) => {
   const latestPreviewSrc = storyPreviewUrl(storyId);
   const [baselinePreviewSrc, setBaselinePreviewSrc] = useState(() =>
@@ -403,6 +408,7 @@ export const DetailsScreen = ({
 
   return (
     <Page>
+      {isStale ? <StaleBanner /> : null}
       <Toolbar>
         <ToolbarSide>
           <Button variant="ghost" size="small" padding="small" ariaLabel="Back to review" asChild>

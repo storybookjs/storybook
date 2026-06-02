@@ -19,6 +19,7 @@ import type { DependencyGraph, ReverseIndexImpl } from './dependency-graph/index
 import { ChangeDetectionFailureError } from './errors.ts';
 import type { ImportParser } from './parser-registry/index.ts';
 import { ParserRegistry, builtinImportParsers } from './parser-registry/index.ts';
+import { notifySourceFileChange } from './source-changes.ts';
 import { getStoryIdsByAbsolutePath } from './story-files.ts';
 
 export interface StoryDependencyGraphServiceOptions {
@@ -384,6 +385,9 @@ export class StoryDependencyGraphService {
     if (this.disposed || !this.incrementalPatcher) {
       return;
     }
+    // Surface the raw change to external subscribers (e.g. addon-review's
+    // staleness check) before patching — they only care that a file changed.
+    notifySourceFileChange(event);
     try {
       await this.incrementalPatcher.patch(event);
     } catch (error) {

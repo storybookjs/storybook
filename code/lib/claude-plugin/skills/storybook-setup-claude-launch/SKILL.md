@@ -27,8 +27,8 @@ Do not start Storybook as an ad hoc Bash command or background task in Claude. T
 ## Claude Launch Config Details
 
 - `autoPort` must be set to `true` to avoid port conflicts.
-- Storybook command must have a `--port` flag set with the port used from `autoPort` (for example, `--port $PORT`) to ensure Storybook starts on the expected port.
-- Storybook command must use `--ci` arguments to skip prompts and ensure it can run in a non-interactive environment.
+- Storybook command must pass a `--port` flag set to the launcher-provided port env var, using the appropriate interpolation syntax for the target shell/launcher (for example, `--port $PORT` in a POSIX shell or `--port %PORT%` on Windows), so Storybook starts on the expected port.
+- Storybook command must use the `--ci` flag to skip prompts and ensure it can run in a non-interactive environment.
 
 ## If this skill is invoked when creating stories
 

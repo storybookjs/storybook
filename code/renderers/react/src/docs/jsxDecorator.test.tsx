@@ -325,6 +325,18 @@ describe('renderJsx', () => {
     `);
   });
   /* eslint-enable react/display-name */
+
+  // Regression for #27127: react-element-to-jsx-string used to omit boolean
+  // props explicitly set to `false`. Patched via algolia/react-element-to-jsx-string#733
+  // so a `false` prop is rendered while a `true` prop keeps the shorthand syntax.
+  it('should render boolean props set to false', () => {
+    expect(renderJsx(<div hidden={false} draggable={true} />, {})).toMatchInlineSnapshot(`
+      <div
+        draggable
+        hidden={false}
+      />
+    `);
+  });
 });
 
 // @ts-expect-error (Converted from ts-ignore)

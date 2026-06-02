@@ -125,11 +125,10 @@ function resolveRegisteredStaticInputs<TState>(
 }
 
 /**
- * Applies optional server-side overrides to an authored service definition.
+ * Applies optional server-side static input overrides to an authored service definition.
  *
- * Registration overrides are shallow merges over the authored definition. That lets the server
- * swap handlers, load hooks, or dependency-aware static input enumerators per operation while the
- * original schema contract, `staticPath`, and operation names remain the source of truth.
+ * Query registration may only supply dependency-aware `staticInputs` enumerators. Handlers,
+ * `load`, and `staticPath` belong on the definition so every runtime shares the same contract.
  */
 function applyRegistration<
   TState,
@@ -150,7 +149,6 @@ function applyRegistration<
           name,
           {
             ...query,
-            ...registrationQuery,
             ...(staticInputs ? { staticInputs } : {}),
           },
         ];

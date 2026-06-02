@@ -24,16 +24,14 @@ export type RegisterDocgenServiceOptions = {
  *
  * The `extractDocgen` command does the work: it reads the story index, picks an entry for the
  * requested componentId, hands the entry's `importPath` to the provider chain, and stores the
- * returned payload (if any) into state. The `getDocgen` query's load hook simply invokes that
- * command. `static.inputs` enumerates every distinct componentId for the static-build pass.
+ * returned payload (if any) into state. The `getDocgen` query's load hook (on the definition)
+ * invokes that command. `staticInputs` enumerates every distinct componentId for the static-build
+ * pass at registration time.
  */
 export function registerDocgenService(options: RegisterDocgenServiceOptions) {
   return registerService(docgenServiceDef, {
     queries: {
       getDocgen: {
-        load: async (input, ctx) => {
-          await ctx.self.commands.extractDocgen(input);
-        },
         staticInputs: async () => {
           const index = await options.getIndex();
           const componentIds = new Set<string>();

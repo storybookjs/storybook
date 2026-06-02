@@ -345,10 +345,7 @@ export interface ServiceRegistryApi {
 export type RuntimeService = ServiceInstance<unknown, Queries<unknown>, Commands<unknown>> &
   ServiceRegistryApi;
 
-export type ServiceQueryRegistration<TState, TQuery extends AnyQueryDefinition<TState>> = Pick<
-  TQuery,
-  'handler' | 'load'
-> & {
+export type ServiceQueryRegistration<TState> = {
   /** Static build inputs that may depend on registry or other server context. */
   staticInputs?: RegisteredStaticInputs<TState>;
 };
@@ -364,7 +361,7 @@ export type ServiceRegistrationOptions<
   TCommands extends Commands<TState>,
 > = {
   queries?: {
-    [TKey in keyof TQueries]?: ServiceQueryRegistration<TState, TQueries[TKey]>;
+    [TKey in keyof TQueries]?: ServiceQueryRegistration<TState>;
   };
   commands?: {
     [TKey in keyof TCommands]?: ServiceCommandRegistration<TState, TCommands[TKey]>;

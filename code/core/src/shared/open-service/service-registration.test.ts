@@ -91,7 +91,7 @@ describe('service registration', () => {
     const service = registerService(
       defineService({
         id: 'internal-fixture/unimplemented-operations',
-        description: 'Leaves handlers undefined so registration can supply them later.',
+        description: 'Leaves command handlers undefined so registration can supply them later.',
         initialState: {} as Record<string, never>,
         queries: {
           getValue: {
@@ -217,10 +217,10 @@ describe('service registration', () => {
     expect(descriptor.queries.getPreloadedValue.staticPath).toBe(true);
   });
 
-  it('allows load and staticInputs to be supplied only at registration time', async () => {
+  it('allows staticInputs to be supplied only at registration time', async () => {
     const serviceDef = defineService({
       id: 'internal-fixture/registration-only-static-build',
-      description: 'Declares staticPath in the definition and load at registration.',
+      description: 'Declares staticPath and load in the definition; staticInputs at registration.',
       initialState: { value: null as string | null },
       queries: {
         getValue: {
@@ -228,8 +228,10 @@ describe('service registration', () => {
           input: v.object({ build: v.literal('once') }),
           output: v.nullable(v.string()),
           handler: (_input, ctx) => ctx.self.state.value,
+          load: async (_input, ctx) => {
+            await ctx.self.commands.setValue(undefined);
+          },
           staticPath: () => 'state.json',
-          staticInputs: async () => [{ build: 'once' as const }],
         },
       },
       commands: {
@@ -244,9 +246,7 @@ describe('service registration', () => {
     registerService(serviceDef, {
       queries: {
         getValue: {
-          load: async (_input, ctx) => {
-            await ctx.self.commands.setValue(undefined);
-          },
+          staticInputs: async () => [{ build: 'once' as const }],
         },
       },
       commands: {

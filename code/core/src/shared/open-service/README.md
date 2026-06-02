@@ -230,7 +230,7 @@ and `yarn storybook:ui:build` runs do not register the debug service.
 
 When a server registers a service definition:
 
-1. [service-registration.ts](./service-registration.ts) merges any registration-time handler overrides.
+1. [service-registration.ts](./service-registration.ts) merges any registration-time `staticInputs` overrides for queries and handler overrides for commands.
 2. It passes the shared registry API into [service-runtime.ts](./service-runtime.ts).
 3. [service-runtime.ts](./service-runtime.ts) creates a signal-backed state container from `initialState`.
 4. It builds a writable `commandSelf` reference around that state.
@@ -322,7 +322,7 @@ Tests should use `vi.waitFor(...)` when asserting the first emission or follow-u
 queries that define:
 
 - `staticPath` at definition time
-- `load` (definition or registration)
+- `load` on the definition
 - `staticInputs` (definition or registration)
 
 For each static input it:

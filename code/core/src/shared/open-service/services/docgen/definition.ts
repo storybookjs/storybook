@@ -47,8 +47,8 @@ export type DocgenServiceState = {
  * for sync reads. The real work — story index lookup, extractor invocation, error handling —
  * lives in the `extractDocgen` command, whose body is supplied at registration time because it
  * needs to close over the server-only story index and the composed `experimental_docgenProvider`
- * chain. The query's `load` hook (also supplied at registration) just calls `extractDocgen`, so
- * `getDocgen.loaded()` is the awaitable form and surfaces extraction errors.
+ * chain. The query's `load` hook calls `extractDocgen`, so `getDocgen.loaded()` is the awaitable
+ * form and surfaces extraction errors.
  */
 export const docgenServiceDef = defineService({
   id: 'core/docgen',
@@ -61,6 +61,9 @@ export const docgenServiceDef = defineService({
       input: docgenInputSchema,
       output: docgenOutputSchema,
       handler: (input, ctx) => ctx.self.state.components[input.componentId],
+      load: async (input, ctx) => {
+        await ctx.self.commands.extractDocgen(input);
+      },
       staticPath: (input) => `${input.componentId}.json`,
     },
   },

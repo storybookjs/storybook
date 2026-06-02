@@ -134,6 +134,7 @@ export async function buildDocgenPayload(
     componentId,
     name,
     description,
+    summary: jsDocTags?.summary?.[0],
     jsDocTags,
     props,
     ...(subcomponentEntries ? { subcomponents: subcomponentEntries } : {}),

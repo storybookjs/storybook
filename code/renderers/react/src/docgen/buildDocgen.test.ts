@@ -39,6 +39,7 @@ describe('buildDocgenPayload', () => {
           import React from 'react';
           /**
            * A clickable button.
+           * @summary The primary action button.
            */
           export const Button = (_props: { label: string; disabled?: boolean }) => <button />;
         `,
@@ -63,6 +64,7 @@ describe('buildDocgenPayload', () => {
       expect(payload).toBeDefined();
       expect(payload!.name).toBe('Button');
       expect(payload!.description).toContain('clickable button');
+      expect(payload!.summary).toBe('The primary action button.');
       // props are typed `unknown` in the core contract; cast to the React provider's shape here.
       const props = payload!.props as Array<{ name: string; required: boolean }>;
       expect(props.map((p) => p.name).sort()).toEqual(['disabled', 'label']);

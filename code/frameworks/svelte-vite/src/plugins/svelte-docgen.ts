@@ -108,7 +108,7 @@ function transformToSvelteDocParserDataItems(docgen: Docgen): SvelteDataItem[] {
 export async function svelteDocgen(): Promise<PluginOption> {
   const cwd = process.cwd();
   const include = /\.svelte$/;
-  const exclude = /node_modules\/.*/;
+  const exclude = [/node_modules\/.*/, /\.stories\.svelte$/];
   const { createFilter } = await import('vite');
 
   const filter = createFilter(include, exclude);

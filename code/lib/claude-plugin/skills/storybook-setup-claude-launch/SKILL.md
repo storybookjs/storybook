@@ -24,6 +24,12 @@ Use the project's existing Storybook script instead of inventing a new command w
 
 Do not start Storybook as an ad hoc Bash command or background task in Claude. The Claude flow should always start Storybook through `.claude/launch.json` and the Claude launcher.
 
+## Claude Launch Config Details
+
+- `autoPort` must be set to `true` to avoid port conflicts.
+- Storybook command must have a `--port` flag set with the port used from `autoPort` (for example, `--port $PORT`) to ensure Storybook starts on the expected port.
+- Storybook command must use `--ci` arguments to skip prompts and ensure it can run in a non-interactive environment.
+
 ## If this skill is invoked when creating stories
 
 If this skill is invoked as part of the story creation flow, start the preview server immediately after repairing the launch config, so that the user can continue with story creation without needing to manually start Storybook.

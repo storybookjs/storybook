@@ -240,14 +240,18 @@ export const DetailsScreen = ({
       return;
     }
 
-    iframeDocument.documentElement.style.overscrollBehavior = 'none';
-    iframeDocument.documentElement.style.overscrollBehaviorX = 'none';
-    iframeDocument.documentElement.style.overscrollBehaviorY = 'none';
+    const { documentElement, body } = iframeDocument;
 
-    if (iframeDocument.body) {
-      iframeDocument.body.style.overscrollBehavior = 'none';
-      iframeDocument.body.style.overscrollBehaviorX = 'none';
-      iframeDocument.body.style.overscrollBehaviorY = 'none';
+    if (documentElement) {
+      documentElement.style.overscrollBehavior = 'none';
+      documentElement.style.overscrollBehaviorX = 'none';
+      documentElement.style.overscrollBehaviorY = 'none';
+    }
+
+    if (body) {
+      body.style.overscrollBehavior = 'none';
+      body.style.overscrollBehaviorX = 'none';
+      body.style.overscrollBehaviorY = 'none';
     }
   }, []);
 

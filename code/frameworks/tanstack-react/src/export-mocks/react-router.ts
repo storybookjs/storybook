@@ -45,8 +45,6 @@ export const useRouteContext = fn(_useRouteContext).mockName(
 export const useCanGoBack = fn(_useCanGoBack).mockName('@tanstack/react-router::useCanGoBack');
 export const useLinkProps = fn(_useLinkProps).mockName('@tanstack/react-router::useLinkProps');
 
-export const Outlet = () => null;
-
 export const Navigate: typeof _Navigate = ({ to, href }) => {
   useEffect(() => {
     onNavigate({ to: (to as string) || href });

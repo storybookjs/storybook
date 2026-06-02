@@ -24,11 +24,6 @@ export function Docs<TRenderer extends Renderer = Renderer>({
 
   const Page = docsParameter.page || DocsPage;
 
-  // `context` is a DocsContext class instance, so we set the flag on it directly rather than
-  // spreading into a new object (which would drop its prototype methods). A custom `page`
-  // (MDX-compiled or user-defined) opts out of `autodocs`-tag filtering.
-  context.filterByAutodocs = !docsParameter.page;
-
   return (
     <Container context={context} theme={docsParameter.theme}>
       <Page />

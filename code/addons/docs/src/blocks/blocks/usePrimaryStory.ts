@@ -7,8 +7,8 @@ import { DocsContext } from './DocsContext';
 
 /**
  * Returns the primary story for the current docs page. Autodocs pages pick the first story tagged
- * `autodocs`; MDX or custom pages pick the first story regardless of tag (driven by
- * `DocsContext.filterByAutodocs`, set in `Docs.tsx`).
+ * `autodocs`; MDX pages pick the first story regardless of tag (driven by
+ * `DocsContext.filterByAutodocs`, set by the docs render based on the entry type).
  */
 export const usePrimaryStory = (): PreparedStory | undefined => {
   const context = useContext(DocsContext);

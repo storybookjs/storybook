@@ -200,17 +200,13 @@ export async function addGetStoriesByComponentTool(server: McpServer<any, AddonC
 		{
 			name: GET_STORIES_BY_COMPONENT_TOOL_NAME,
 			title: 'Get stories for component files',
-			description: `Map component source files to the stories that render them, so you can hand real story IDs to ${PREVIEW_STORIES_TOOL_NAME} instead of guessing.
+			description: `Map component source files to the stories that render them, returning grounded \`storyId\` values from the live Storybook index — hand these to ${PREVIEW_STORIES_TOOL_NAME} instead of guessing.
 
-**When to use this vs \`${GET_CHANGED_STORIES_TOOL_NAME}\`:** if the user just edited code, call \`${GET_CHANGED_STORIES_TOOL_NAME}\` first — it reads Storybook's live git-diff signal for free. Only call this tool when you need to map specific file paths to stories: the user described a feature/area by name, \`${GET_CHANGED_STORIES_TOOL_NAME}\` returned nothing (the change is outside the story graph and you need to find runtime consumers yourself), or it returned too much and you need to narrow.
+Reach for this to map specific file paths to stories: when the user names a feature/area, or when \`${GET_CHANGED_STORIES_TOOL_NAME}\` (try it first for "I just edited X") returned nothing or too much. The full file-paths → story-IDs workflow lives in the server instructions.
 
-**Use this whenever the user describes a part of the UI by feature, area, or topic** ("review the credit-card components", "preview every checkout story", "show me what cart looks like", "stories related to authentication") — first locate the relevant component files in the repo (grep/Glob), then pass their absolute paths here. The tool returns grounded \`storyId\` values from the live Storybook index; never invent IDs from file names, feature names, or memory.
+Never invent IDs from file names, feature names, or memory; if a component has no matches here, it has no stories yet (say so, don't fabricate).
 
-Returns sorted results from the Storybook index — if a component has no matches here, it likely has no stories yet (say so, don't fabricate).
-
-Backed by Storybook's live reverse dependency graph: distance is the import-graph hop count from the story file to the component (0 = the path you passed is itself a story file, 1 = directly imported, 2+ = transitively). Available when the Storybook dev server is running with a builder that supports change detection (e.g. Vite); otherwise the tool returns a typed error.
-
-Results are sorted by \`distance\` (lower = stronger signal). Prefer the lowest-distance results first; widen only when needed. For shared components like Button or Icon, expect many indirect (\`distance\` ≥ 2) matches — pass \`maxDistance\` to cap noise.`,
+Backed by Storybook's live reverse dependency graph, available only when the dev server runs a builder that supports change detection (e.g. Vite) — otherwise returns a typed error. Results are sorted by \`distance\` (lower = stronger); for shared components like Button or Icon, expect many indirect matches and use \`maxDistance\` to cap noise.`,
 			schema: GetStoriesByComponentInput,
 			outputSchema: GetStoriesByComponentOutput,
 			enabled: () => server.ctx.custom?.toolsets?.dev ?? true,

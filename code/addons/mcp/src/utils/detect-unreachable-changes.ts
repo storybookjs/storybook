@@ -1,6 +1,7 @@
 import { execSync } from 'node:child_process';
 import path from 'node:path';
 import { getDependencyGraphService } from './change-detection.ts';
+import { slash } from './slash.ts';
 
 const SOURCE_EXT_RE = /\.(?:tsx?|jsx?|mjs|cjs)$/i;
 
@@ -56,7 +57,9 @@ export async function detectUnreachableChanges(maxFiles = 10): Promise<string[]>
 
 	const unreachable: string[] = [];
 	for (const rel of relFiles) {
-		const abs = path.resolve(workingDir, rel);
+		// The reverse graph keys are forward-slash normalized; `path.resolve` emits backslashes on
+		// Windows, which would miss every key and wrongly flag reachable files as unreachable.
+		const abs = slash(path.resolve(workingDir, rel));
 		const hits = service.lookup(abs);
 		if (hits.size === 0) unreachable.push(rel);
 		if (unreachable.length >= maxFiles) break;

@@ -91,7 +91,6 @@ describe('getStoriesByComponentTool', () => {
 	it('returns stories with their reverse-graph depth', async () => {
 		mockLookup({
 			available: true,
-			workingDir: cwd,
 			results: [
 				{
 					componentPath: `${cwd}/src/Button.tsx`,
@@ -141,7 +140,6 @@ describe('getStoriesByComponentTool', () => {
 	it('reports components with no stories', async () => {
 		mockLookup({
 			available: true,
-			workingDir: cwd,
 			results: [{ componentPath: `${cwd}/src/Missing.tsx`, matches: [] }],
 		});
 
@@ -154,7 +152,6 @@ describe('getStoriesByComponentTool', () => {
 	it('handles multiple components in a single call', async () => {
 		mockLookup({
 			available: true,
-			workingDir: cwd,
 			results: [
 				{
 					componentPath: `${cwd}/src/Input.tsx`,
@@ -192,7 +189,6 @@ describe('getStoriesByComponentTool', () => {
 	it('applies maxDistance and records clipped tail', async () => {
 		mockLookup({
 			available: true,
-			workingDir: cwd,
 			results: [
 				{
 					componentPath: `${cwd}/src/Button.tsx`,

@@ -2,6 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import type { StoryIndex } from 'storybook/internal/types';
 import { getDependencyGraphService } from './change-detection.ts';
+import { slash } from './slash.ts';
 
 const SOURCE_EXTENSIONS = ['.ts', '.tsx', '.js', '.jsx', '.mjs', '.cjs'] as const;
 const INDEX_BASENAMES = SOURCE_EXTENSIONS.map((ext) => `index${ext}`);
@@ -30,8 +31,9 @@ function expandBarrelTargets(absoluteComponentPath: string): string[] {
 		}
 	}
 
-	// Storybook's reverse index keys paths via `pathe.normalize` (forward slashes).
-	return [...targets].map((p) => path.normalize(p));
+	// Storybook's reverse index keys paths via `pathe.normalize` (forward slashes), so emit
+	// forward slashes even on Windows where `path.normalize` would produce backslashes.
+	return [...targets].map((p) => slash(path.normalize(p)));
 }
 
 /**
@@ -58,7 +60,9 @@ function buildStoryIdsByFile(
 	const storyIdsByFile = new Map<string, Set<string>>();
 	for (const entry of Object.values(storyIndex.entries)) {
 		if (entry.type !== 'story' || entry.importPath.startsWith('virtual:')) continue;
-		const filePath = path.normalize(path.join(workingDir, entry.importPath));
+		// Keys must match `service.lookup`'s forward-slash-normalized keys; `path.join` emits
+		// backslashes on Windows, so normalize the separators here.
+		const filePath = slash(path.join(workingDir, entry.importPath));
 		let ids = storyIdsByFile.get(filePath);
 		if (!ids) {
 			ids = new Set<string>();

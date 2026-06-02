@@ -24,6 +24,7 @@ const GetStoriesByComponentInput = v.object({
 		v.description(
 			`Absolute paths to component source files (e.g. "/repo/src/Button.tsx").
 Pass the components you actually want stories for — typically files you just read, edited, or that the user mentioned.
+Relative paths are also accepted and resolved against the Storybook working directory, but absolute paths are preferred for unambiguous results.
 Story files (\`*.stories.*\`) are accepted too: they appear at distance 0 as self-matches, plus any reverse-graph hits (other stories that import them).`,
 		),
 	),
@@ -46,7 +47,7 @@ const StoryMatch = v.object({
 	distance: v.pipe(
 		v.number(),
 		v.description(
-			'Import-graph depth from the story file to the component (lower = stronger). 1: story file directly imports the component. 2+: reached through N hops.',
+			'Import-graph depth from the story file to the component (lower = stronger). 0: the path you passed is itself a story file (self-match). 1: story file directly imports the component. 2+: reached through N hops.',
 		),
 	),
 });
@@ -207,7 +208,7 @@ export async function addGetStoriesByComponentTool(server: McpServer<any, AddonC
 
 Returns sorted results from the Storybook index — if a component has no matches here, it likely has no stories yet (say so, don't fabricate).
 
-Backed by Storybook's live reverse dependency graph: distance is the import-graph hop count from the story file to the component (1 = directly imported, 2+ = transitively). Available when the Storybook dev server is running with a builder that supports change detection (e.g. Vite); otherwise the tool returns a typed error.
+Backed by Storybook's live reverse dependency graph: distance is the import-graph hop count from the story file to the component (0 = the path you passed is itself a story file, 1 = directly imported, 2+ = transitively). Available when the Storybook dev server is running with a builder that supports change detection (e.g. Vite); otherwise the tool returns a typed error.
 
 Results are sorted by \`distance\` (lower = stronger signal). Prefer the lowest-distance results first; widen only when needed. For shared components like Button or Icon, expect many indirect (\`distance\` ≥ 2) matches — pass \`maxDistance\` to cap noise.`,
 			schema: GetStoriesByComponentInput,

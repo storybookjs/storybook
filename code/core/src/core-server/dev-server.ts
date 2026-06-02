@@ -71,7 +71,6 @@ export async function storybookDevServer(
     storyIndexGeneratorPromise,
     statusStore: getStatusStoreByTypeId(CHANGE_DETECTION_STATUS_TYPE_ID),
     workingDir,
-    presets: options.presets,
   });
   changeDetectionServiceRef.current = changeDetectionService;
 

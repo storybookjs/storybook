@@ -16,6 +16,7 @@ import {
   createDeferred,
   createMockAdapter,
   createStoryIndex,
+  createWiredChangeDetection,
   installDependencyGraphMocks,
 } from './change-detection.test-helpers.ts';
 import {
@@ -163,7 +164,7 @@ describe('ChangeDetectionService', () => {
       });
     });
     const { adapter } = createMockAdapter();
-    const service = new ChangeDetectionService({
+    const { service, graph } = createWiredChangeDetection({
       storyIndexGeneratorPromise: Promise.resolve({
         getIndex: vi.fn().mockResolvedValue(storyIndex),
       } as never),
@@ -173,6 +174,7 @@ describe('ChangeDetectionService', () => {
       workingDir,
     });
 
+    graph.start(adapter);
     service.start(adapter, true);
     await vi.runAllTimersAsync();
 
@@ -199,6 +201,7 @@ describe('ChangeDetectionService', () => {
       },
     });
     await service.dispose();
+    await graph.dispose();
   });
 
   it('edits a non-story dep at distance 1 from one story and distance 2 from another -> nearest is modified, farther is affected', async () => {
@@ -233,7 +236,7 @@ describe('ChangeDetectionService', () => {
       });
     });
     const { adapter } = createMockAdapter();
-    const service = new ChangeDetectionService({
+    const { service, graph } = createWiredChangeDetection({
       storyIndexGeneratorPromise: Promise.resolve({
         getIndex: vi.fn().mockResolvedValue(storyIndex),
       } as never),
@@ -243,6 +246,7 @@ describe('ChangeDetectionService', () => {
       workingDir,
     });
 
+    graph.start(adapter);
     service.start(adapter, true);
     await vi.runAllTimersAsync();
 
@@ -254,6 +258,7 @@ describe('ChangeDetectionService', () => {
       'status-value:affected'
     );
     await service.dispose();
+    await graph.dispose();
   });
 
   it('edits a non-story dep at equal distance from two stories -> both stories tie and are both modified', async () => {
@@ -279,7 +284,7 @@ describe('ChangeDetectionService', () => {
       });
     });
     const { adapter } = createMockAdapter();
-    const service = new ChangeDetectionService({
+    const { service, graph } = createWiredChangeDetection({
       storyIndexGeneratorPromise: Promise.resolve({
         getIndex: vi.fn().mockResolvedValue(storyIndex),
       } as never),
@@ -289,6 +294,7 @@ describe('ChangeDetectionService', () => {
       workingDir,
     });
 
+    graph.start(adapter);
     service.start(adapter, true);
     await vi.runAllTimersAsync();
 
@@ -300,6 +306,7 @@ describe('ChangeDetectionService', () => {
       'status-value:modified'
     );
     await service.dispose();
+    await graph.dispose();
   });
 
   it('edits a non-story file with no story importers -> reverse-index lookup is empty -> no status emitted', async () => {
@@ -323,7 +330,7 @@ describe('ChangeDetectionService', () => {
       });
     });
     const { adapter } = createMockAdapter();
-    const service = new ChangeDetectionService({
+    const { service, graph } = createWiredChangeDetection({
       storyIndexGeneratorPromise: Promise.resolve({
         getIndex: vi.fn().mockResolvedValue(storyIndex),
       } as never),
@@ -333,12 +340,14 @@ describe('ChangeDetectionService', () => {
       workingDir,
     });
 
+    graph.start(adapter);
     service.start(adapter, true);
     await vi.runAllTimersAsync();
 
     expect(getStatusStoreByTypeId(CHANGE_DETECTION_STATUS_TYPE_ID).getAll()).toEqual({});
     expect(await getChangeDetectionReadiness()).toEqual({ status: 'ready' });
     await service.dispose();
+    await graph.dispose();
   });
 
   // ------------------------------------------------------------------
@@ -375,7 +384,7 @@ describe('ChangeDetectionService', () => {
       onGitStateChange = callback;
     });
     const { adapter } = createMockAdapter();
-    const service = new ChangeDetectionService({
+    const { service, graph } = createWiredChangeDetection({
       storyIndexGeneratorPromise: Promise.resolve({
         getIndex: vi.fn().mockResolvedValue(storyIndex),
       } as never),
@@ -386,6 +395,7 @@ describe('ChangeDetectionService', () => {
       debounceMs: 10,
     });
 
+    graph.start(adapter);
     service.start(adapter, true);
     await vi.runAllTimersAsync();
 
@@ -409,6 +419,7 @@ describe('ChangeDetectionService', () => {
       'new-button--primary': {},
     });
     await service.dispose();
+    await graph.dispose();
   });
 
   it('replaces prior scan status data instead of cumulatively merging with store state', async () => {
@@ -441,7 +452,7 @@ describe('ChangeDetectionService', () => {
       onGitStateChange = callback;
     });
     const { adapter } = createMockAdapter();
-    const service = new ChangeDetectionService({
+    const { service, graph } = createWiredChangeDetection({
       storyIndexGeneratorPromise: Promise.resolve({
         getIndex: vi.fn().mockResolvedValue(storyIndex),
       } as never),
@@ -452,6 +463,7 @@ describe('ChangeDetectionService', () => {
       debounceMs: 10,
     });
 
+    graph.start(adapter);
     service.start(adapter, true);
     await vi.runAllTimersAsync();
 
@@ -484,6 +496,7 @@ describe('ChangeDetectionService', () => {
       },
     });
     await service.dispose();
+    await graph.dispose();
   });
 
   it('rescans on git state changes using the normal debounce', async () => {
@@ -510,7 +523,7 @@ describe('ChangeDetectionService', () => {
       });
     });
     const { adapter } = createMockAdapter();
-    const service = new ChangeDetectionService({
+    const { service, graph } = createWiredChangeDetection({
       storyIndexGeneratorPromise: Promise.resolve({
         getIndex: vi.fn().mockResolvedValue(storyIndex),
       } as never),
@@ -521,6 +534,7 @@ describe('ChangeDetectionService', () => {
       debounceMs: 10,
     });
 
+    graph.start(adapter);
     service.start(adapter, true);
     await vi.runAllTimersAsync();
 
@@ -537,6 +551,7 @@ describe('ChangeDetectionService', () => {
     expect(gitDiffProvider.getChangedFilesMock).toHaveBeenCalledTimes(2);
 
     await service.dispose();
+    await graph.dispose();
   });
 
   it('debounces consecutive file-change events into a single scan', async () => {
@@ -551,7 +566,7 @@ describe('ChangeDetectionService', () => {
     });
     const gitDiffProvider = createMockGitDiffProvider();
     const { adapter, emitFileChange } = createMockAdapter();
-    const service = new ChangeDetectionService({
+    const { service, graph } = createWiredChangeDetection({
       storyIndexGeneratorPromise: Promise.resolve({
         getIndex: vi.fn().mockResolvedValue(storyIndex),
       } as never),
@@ -562,6 +577,7 @@ describe('ChangeDetectionService', () => {
       debounceMs: 50,
     });
 
+    graph.start(adapter);
     service.start(adapter, true);
     // First scan from initial start — debounce 0 runs synchronously.
     await vi.runAllTimersAsync();
@@ -582,6 +598,7 @@ describe('ChangeDetectionService', () => {
     expect(gitDiffProvider.getChangedFilesMock).toHaveBeenCalledTimes(2);
 
     await service.dispose();
+    await graph.dispose();
   });
 
   it('does not subscribe to git state when change detection is disabled', async () => {
@@ -591,7 +608,7 @@ describe('ChangeDetectionService', () => {
     });
     const gitDiffProvider = createMockGitDiffProvider();
     const { adapter, hasFileChangeSubscriber } = createMockAdapter();
-    const service = new ChangeDetectionService({
+    const { service, graph } = createWiredChangeDetection({
       storyIndexGeneratorPromise: Promise.resolve({
         getIndex: vi.fn(),
       } as never),
@@ -610,6 +627,7 @@ describe('ChangeDetectionService', () => {
       reason: 'disabled',
     });
     await service.dispose();
+    await graph.dispose();
   });
 
   it('acts as a consumer when an external graph is injected', async () => {
@@ -647,7 +665,7 @@ describe('ChangeDetectionService', () => {
       universalStatusStore: new MockUniversalStore(UNIVERSAL_STATUS_STORE_OPTIONS),
       environment: 'server',
     });
-    const service = new ChangeDetectionService({
+    const { service, graph } = createWiredChangeDetection({
       storyIndexGeneratorPromise: Promise.resolve({
         getIndex: vi.fn(),
       } as never),
@@ -667,6 +685,7 @@ describe('ChangeDetectionService', () => {
       reason: 'builder does not support change detection',
     });
     await service.dispose();
+    await graph.dispose();
   });
 
   it('resolves readiness as unavailable when the adapter reports a startup failure', async () => {
@@ -682,7 +701,7 @@ describe('ChangeDetectionService', () => {
       provider.getChangedFilesMock.mockImplementation(() => gitDeferred.promise);
     });
     const { adapter, emitStartupFailure } = createMockAdapter();
-    const service = new ChangeDetectionService({
+    const { service, graph } = createWiredChangeDetection({
       storyIndexGeneratorPromise: Promise.resolve({
         getIndex: vi.fn().mockResolvedValue(createStoryIndex([])),
       } as never),
@@ -692,6 +711,7 @@ describe('ChangeDetectionService', () => {
       workingDir,
     });
 
+    graph.start(adapter);
     service.start(adapter, true);
     // Let startInternal subscribe before emitting the failure (initial scan parked on git).
     await vi.runAllTimersAsync();
@@ -708,6 +728,7 @@ describe('ChangeDetectionService', () => {
     // Unblock the parked git call so dispose can drain.
     gitDeferred.resolve({ changed: new Set(), new: new Set() });
     await service.dispose();
+    await graph.dispose();
   });
 
   it('resolves readiness as error when the eager build throws', async () => {
@@ -721,7 +742,7 @@ describe('ChangeDetectionService', () => {
       environment: 'server',
     });
     const { adapter } = createMockAdapter();
-    const service = new ChangeDetectionService({
+    const { service, graph } = createWiredChangeDetection({
       storyIndexGeneratorPromise: Promise.resolve({
         getIndex: vi.fn().mockResolvedValue(createStoryIndex([])),
       } as never),
@@ -731,6 +752,7 @@ describe('ChangeDetectionService', () => {
       workingDir,
     });
 
+    graph.start(adapter);
     service.start(adapter, true);
     await vi.runAllTimersAsync();
 
@@ -742,6 +764,7 @@ describe('ChangeDetectionService', () => {
       error: expect.objectContaining({ message: 'graph build blew up' }),
     });
     await service.dispose();
+    await graph.dispose();
   });
 
   it('disposes the pool when startInternal throws', async () => {
@@ -759,7 +782,7 @@ describe('ChangeDetectionService', () => {
       environment: 'server',
     });
     const { adapter } = createMockAdapter();
-    const service = new ChangeDetectionService({
+    const { service, graph } = createWiredChangeDetection({
       storyIndexGeneratorPromise: Promise.resolve({
         getIndex: vi.fn().mockResolvedValue(createStoryIndex([])),
       } as never),
@@ -769,6 +792,7 @@ describe('ChangeDetectionService', () => {
       workingDir,
     });
 
+    graph.start(adapter);
     service.start(adapter, true);
     await vi.runAllTimersAsync();
 
@@ -776,6 +800,7 @@ describe('ChangeDetectionService', () => {
     expect(disposePoolSpy).toHaveBeenCalledTimes(1);
 
     await service.dispose();
+    await graph.dispose();
   });
 
   it('keeps the previous statuses when a live rescan fails', async () => {
@@ -804,7 +829,7 @@ describe('ChangeDetectionService', () => {
       onGitStateChange = callback;
     });
     const { adapter } = createMockAdapter();
-    const service = new ChangeDetectionService({
+    const { service, graph } = createWiredChangeDetection({
       storyIndexGeneratorPromise: Promise.resolve({
         getIndex: vi.fn().mockResolvedValue(storyIndex),
       } as never),
@@ -815,6 +840,7 @@ describe('ChangeDetectionService', () => {
       debounceMs: 10,
     });
 
+    graph.start(adapter);
     service.start(adapter, true);
     await vi.runAllTimersAsync();
 
@@ -835,6 +861,7 @@ describe('ChangeDetectionService', () => {
     });
     expect(logger.error).toHaveBeenCalledWith('Change detection failed: scan blew up');
     await service.dispose();
+    await graph.dispose();
   });
 
   it('does not apply scan results or rerun after disposal', async () => {
@@ -858,7 +885,7 @@ describe('ChangeDetectionService', () => {
       provider.getChangedFilesMock.mockImplementation(() => changedFilesDeferred.promise);
     });
     const { adapter } = createMockAdapter();
-    const service = new ChangeDetectionService({
+    const { service, graph } = createWiredChangeDetection({
       storyIndexGeneratorPromise: Promise.resolve({
         getIndex: vi.fn().mockResolvedValue(storyIndex),
       } as never),
@@ -869,9 +896,11 @@ describe('ChangeDetectionService', () => {
       debounceMs: 0,
     });
 
+    graph.start(adapter);
     service.start(adapter, true);
     await vi.advanceTimersByTimeAsync(0);
     await service.dispose();
+    await graph.dispose();
 
     changedFilesDeferred.resolve({
       changed: new Set(['src/Button.stories.tsx']),
@@ -902,7 +931,7 @@ describe('ChangeDetectionService', () => {
       );
     });
     const { adapter } = createMockAdapter();
-    const service = new ChangeDetectionService({
+    const { service, graph } = createWiredChangeDetection({
       storyIndexGeneratorPromise: Promise.resolve({
         getIndex: vi.fn().mockResolvedValue(createStoryIndex([])),
       } as never),
@@ -913,6 +942,7 @@ describe('ChangeDetectionService', () => {
       debounceMs: 0,
     });
 
+    graph.start(adapter);
     service.start(adapter, true);
     await vi.runAllTimersAsync();
 
@@ -924,6 +954,7 @@ describe('ChangeDetectionService', () => {
       error: expect.any(ChangeDetectionUnavailableError),
     });
     await service.dispose();
+    await graph.dispose();
   });
 
   it('scan waits for the current patch to settle before reading reverseIndex', async () => {
@@ -960,7 +991,7 @@ describe('ChangeDetectionService', () => {
       triggerGitStateChange = callback;
     });
     const { adapter, emitFileChange } = createMockAdapter();
-    const service = new ChangeDetectionService({
+    const { service, graph } = createWiredChangeDetection({
       storyIndexGeneratorPromise: Promise.resolve({
         getIndex: vi.fn().mockResolvedValue(storyIndex),
       } as never),
@@ -971,6 +1002,7 @@ describe('ChangeDetectionService', () => {
       debounceMs: 0,
     });
 
+    graph.start(adapter);
     service.start(adapter, true);
     await vi.runAllTimersAsync();
 
@@ -989,6 +1021,7 @@ describe('ChangeDetectionService', () => {
     );
 
     await service.dispose();
+    await graph.dispose();
   });
 
   it('calls gitDiffProvider.dispose() on service dispose when a git watcher was installed', async () => {
@@ -1001,7 +1034,7 @@ describe('ChangeDetectionService', () => {
       provider.onGitStateChangeMock.mockImplementation(() => undefined);
     });
     const { adapter } = createMockAdapter();
-    const service = new ChangeDetectionService({
+    const { service, graph } = createWiredChangeDetection({
       storyIndexGeneratorPromise: Promise.resolve({
         getIndex: vi.fn().mockResolvedValue(createStoryIndex([])),
       } as never),
@@ -1014,10 +1047,12 @@ describe('ChangeDetectionService', () => {
       workingDir,
     });
 
+    graph.start(adapter);
     service.start(adapter, true);
     await vi.runAllTimersAsync();
 
     await service.dispose();
+    await graph.dispose();
 
     expect(gitDiffProvider.disposeMock).toHaveBeenCalledTimes(1);
   });
@@ -1029,7 +1064,7 @@ describe('ChangeDetectionService', () => {
       universalStatusStore: new MockUniversalStore(UNIVERSAL_STATUS_STORE_OPTIONS),
       environment: 'server',
     });
-    const service = new ChangeDetectionService({
+    const { service, graph } = createWiredChangeDetection({
       storyIndexGeneratorPromise: Promise.resolve({
         getIndex: vi.fn(),
       } as never),
@@ -1043,6 +1078,7 @@ describe('ChangeDetectionService', () => {
     service.start(undefined, false);
     // Should not throw and should not attempt to call dispose on an unconstructed provider.
     await expect(service.dispose()).resolves.toBeUndefined();
+    await graph.dispose();
   });
 
   it('rescans the working tree when the story index is invalidated', async () => {
@@ -1061,7 +1097,7 @@ describe('ChangeDetectionService', () => {
     });
     const gitDiffProvider = createMockGitDiffProvider();
     const { adapter } = createMockAdapter();
-    const service = new ChangeDetectionService({
+    const { service, graph } = createWiredChangeDetection({
       storyIndexGeneratorPromise: Promise.resolve({
         getIndex: vi.fn().mockResolvedValue(storyIndex),
       } as never),
@@ -1072,6 +1108,7 @@ describe('ChangeDetectionService', () => {
       debounceMs: 10,
     });
 
+    graph.start(adapter);
     service.start(adapter, true);
     await vi.runAllTimersAsync();
     expect(gitDiffProvider.getChangedFilesMock).toHaveBeenCalledTimes(1);
@@ -1081,6 +1118,7 @@ describe('ChangeDetectionService', () => {
     expect(gitDiffProvider.getChangedFilesMock).toHaveBeenCalledTimes(2);
 
     await service.dispose();
+    await graph.dispose();
   });
 });
 

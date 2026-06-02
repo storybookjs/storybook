@@ -3,7 +3,6 @@ import { join, normalize } from 'pathe';
 import { dequal } from 'dequal';
 import { logger } from 'storybook/internal/node-logger';
 import type {
-  Presets,
   Status,
   StatusStoreByTypeId,
   StatusValue,
@@ -18,7 +17,7 @@ import { GitDiffProvider } from './GitDiffProvider.ts';
 import { extractBaselineEntryIds, IndexBaselineService } from './IndexBaselineService.ts';
 import { resetChangeDetectionReadiness, setChangeDetectionReadiness } from './readiness.ts';
 import { getStoryIdsByAbsolutePath } from './story-files.ts';
-import { StoryDependencyGraphService } from './StoryDependencyGraphService.ts';
+import type { StoryDependencyGraphService } from './StoryDependencyGraphService.ts';
 
 const CHANGE_DETECTION_DEBOUNCE_MS = 200;
 
@@ -115,7 +114,6 @@ export class ChangeDetectionService {
   private readinessResolved = false;
   private statusPipelineStarted = false;
   private changeDetectionEnabled = false;
-  private readonly ownsGraph: boolean;
   private readonly graph: StoryDependencyGraphService;
   private previousStatuses = new Map<string, Status>();
   private gitDiffProvider: GitDiffProvider | undefined;
@@ -125,38 +123,30 @@ export class ChangeDetectionService {
 
   constructor(
     private readonly options: {
-      graph?: StoryDependencyGraphService;
+      graph: StoryDependencyGraphService;
       storyIndexGeneratorPromise: Promise<StoryIndexGenerator>;
       statusStore: StatusStoreByTypeId;
       gitDiffProvider?: GitDiffProvider;
       indexBaselineService?: IndexBaselineService;
       workingDir?: string;
       debounceMs?: number;
-      /** Presets instance used to resolve `experimental_importParsers` contributions from plugins. */
-      presets?: Presets;
     }
   ) {
     this.gitDiffProvider = options.gitDiffProvider;
     this.indexBaselineService = options.indexBaselineService;
     this.workingDir = options.workingDir ?? process.cwd();
     this.debounceMs = options.debounceMs ?? CHANGE_DETECTION_DEBOUNCE_MS;
-    this.ownsGraph = !options.graph;
-    this.graph =
-      options.graph ??
-      new StoryDependencyGraphService({
-        storyIndexGeneratorPromise: options.storyIndexGeneratorPromise,
-        workingDir: this.workingDir,
-        presets: options.presets,
-        onReady: () => this.onGraphReady(),
-        onChange: () => this.onGraphChange(),
-        onError: (error) => this.onGraphError(error),
-        onUnavailable: (reason, error) => this.onGraphUnavailable(reason, error),
-      });
+    this.graph = options.graph;
     resetChangeDetectionReadiness();
   }
 
+  /** True while the service is live and change-detection status publishing is enabled. */
+  private isActive(): boolean {
+    return !this.disposed && this.changeDetectionEnabled;
+  }
+
   onGraphReady(): void {
-    if (this.disposed || !this.changeDetectionEnabled) {
+    if (!this.isActive()) {
       return;
     }
 
@@ -164,7 +154,7 @@ export class ChangeDetectionService {
   }
 
   onGraphChange(): void {
-    if (this.disposed || !this.changeDetectionEnabled) {
+    if (!this.isActive()) {
       return;
     }
 
@@ -172,7 +162,7 @@ export class ChangeDetectionService {
   }
 
   onGraphError(error: Error): void {
-    if (this.disposed || !this.changeDetectionEnabled) {
+    if (!this.isActive()) {
       return;
     }
 
@@ -181,7 +171,7 @@ export class ChangeDetectionService {
   }
 
   onGraphUnavailable(reason: string, error?: Error): void {
-    if (this.disposed || !this.changeDetectionEnabled) {
+    if (!this.isActive()) {
       return;
     }
 
@@ -211,9 +201,6 @@ export class ChangeDetectionService {
 
     logger.debug('Change detection enabled.');
     this.changeDetectionEnabled = true;
-    if (this.ownsGraph) {
-      this.graph.start(adapter);
-    }
     this.onGraphReady();
   }
 
@@ -257,9 +244,6 @@ export class ChangeDetectionService {
     }
 
     this.gitDiffProvider?.dispose();
-    if (this.ownsGraph) {
-      await this.graph.dispose();
-    }
   }
 
   private scheduleScan(delayMs: number): void {

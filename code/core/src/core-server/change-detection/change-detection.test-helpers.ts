@@ -3,12 +3,16 @@ import { vi } from 'vitest';
 import type { StoryIndex } from 'storybook/internal/types';
 
 import type { ChangeDetectionAdapter, FileChangeEvent } from './adapters/index.ts';
+import { ChangeDetectionService } from './ChangeDetectionService.ts';
 import {
   ChangeDetectionResolverFactory,
   DependencyGraphBuilder,
   IncrementalPatcher,
   ReverseIndexImpl,
 } from './dependency-graph/index.ts';
+import { StoryDependencyGraphService } from './StoryDependencyGraphService.ts';
+
+type ChangeDetectionServiceOptions = ConstructorParameters<typeof ChangeDetectionService>[0];
 
 /**
  * Shared scaffolding for the change-detection unit tests. The dependency-graph constructors are
@@ -54,6 +58,30 @@ export interface MockAdapterHandle {
   emitStartupFailure: (event: { reason: string; error?: Error }) => void;
   hasFileChangeSubscriber: () => boolean;
   hasStartupFailureSubscriber: () => boolean;
+}
+
+/**
+ * Constructs a {@link StoryDependencyGraphService} wired to a {@link ChangeDetectionService} the
+ * same way the dev-server does: the graph is always injected, and its lifecycle callbacks are
+ * routed to the service's `onGraph*` handlers. Tests drive `graph.start(adapter)` and
+ * `service.start(adapter, enabled)` themselves (to keep timing control) and dispose both.
+ */
+export function createWiredChangeDetection(options: Omit<ChangeDetectionServiceOptions, 'graph'>): {
+  service: ChangeDetectionService;
+  graph: StoryDependencyGraphService;
+} {
+  const ref: { current?: ChangeDetectionService } = {};
+  const graph = new StoryDependencyGraphService({
+    storyIndexGeneratorPromise: options.storyIndexGeneratorPromise,
+    workingDir: options.workingDir,
+    onReady: () => ref.current?.onGraphReady(),
+    onChange: () => ref.current?.onGraphChange(),
+    onError: (error) => ref.current?.onGraphError(error),
+    onUnavailable: (reason, error) => ref.current?.onGraphUnavailable(reason, error),
+  });
+  const service = new ChangeDetectionService({ ...options, graph });
+  ref.current = service;
+  return { service, graph };
 }
 
 export function createMockAdapter(opts?: {

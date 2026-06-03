@@ -1,7 +1,13 @@
 import React, { type FC, type ReactNode, useEffect, useMemo, useRef, useState } from 'react';
 
-import { useChannel, useStorybookApi, useStorybookState } from 'storybook/manager-api';
+import {
+  experimental_useStatusStore,
+  useChannel,
+  useStorybookApi,
+  useStorybookState,
+} from 'storybook/manager-api';
 import { Location, type RenderData, useNavigate } from 'storybook/internal/router';
+import type { StatusesByStoryIdAndTypeId } from 'storybook/internal/types';
 
 import type { StoryInfo } from './components/CollectionGrid.tsx';
 import { EVENTS, RESTORE_NAV_SESSION_KEY, REVIEW_CHANGES_URL } from './constants.ts';
@@ -31,6 +37,9 @@ export const ReviewPage: FC = () =>
 // Served through the dev-server proxy declared in `preset.ts`, pointing at the
 // baseline Storybook. Used to detect stories that don't exist in the baseline.
 const BASELINE_INDEX_URL = '/__review-baseline/index.json';
+
+// Change-detection status value marking a story as newly added.
+const NEW_STATUS_VALUE = 'status-value:new';
 
 const ReviewPageContent: FC<{ search: string }> = ({ search }) => {
   const [state, setState] = useState<ReviewState | null>(null);
@@ -149,6 +158,20 @@ const ReviewPageContent: FC<{ search: string }> = ({ search }) => {
     return info;
   }, [index, state]);
 
+  // Stories the change-detection mechanism flagged as newly added. This is an
+  // independent "New" signal from the baseline-index check: a story can be new
+  // here even when a baseline exists (e.g. added on this branch).
+  const allStatuses = experimental_useStatusStore() as StatusesByStoryIdAndTypeId;
+  const changeDetectedNewStoryIds = useMemo(() => {
+    const ids = new Set<string>();
+    for (const [storyId, statusesByType] of Object.entries(allStatuses)) {
+      if (Object.values(statusesByType).some((status) => status.value === NEW_STATUS_VALUE)) {
+        ids.add(storyId);
+      }
+    }
+    return ids;
+  }, [allStatuses]);
+
   // SPA navigation: imperatively attach a click listener to the container so
   // left-clicks on in-page review links push history and swap the iframe URL
   // without a manager reload (no flash). Real hrefs are kept for accessibility
@@ -222,9 +245,13 @@ const ReviewPageContent: FC<{ search: string }> = ({ search }) => {
       const nextStoryId = detailStoryIds[nextStoryIndex];
       const currentStoryId = detailStoryIds[currentStoryIndex];
       const currentStoryInfo = storyInfo[currentStoryId];
-      // Only flag as new once the baseline index has resolved and confirms the
-      // story is absent. While unresolved/unavailable (`null`) no badge shows.
-      const isNew = baselineStoryIds !== null && !baselineStoryIds.has(currentStoryId);
+      // A story is "New" if change-detection flagged it (regardless of any
+      // baseline), or once the baseline index has resolved and confirms the
+      // story is absent. While the baseline is unresolved/unavailable (`null`)
+      // it contributes nothing — only the change-detection signal applies.
+      const isNew =
+        changeDetectedNewStoryIds.has(currentStoryId) ||
+        (baselineStoryIds !== null && !baselineStoryIds.has(currentStoryId));
       detailScreen = React.createElement(DetailsScreen, {
         title: detailTitle,
         storyId: currentStoryId,

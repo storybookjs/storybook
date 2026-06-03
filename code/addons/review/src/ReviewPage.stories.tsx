@@ -1,6 +1,11 @@
 import { expect, fn, userEvent, within } from 'storybook/test';
 
-import { ManagerContext, type API, type State } from 'storybook/manager-api';
+import {
+  ManagerContext,
+  type API,
+  type State,
+  internal_fullStatusStore,
+} from 'storybook/manager-api';
 import { MemoryRouter } from 'storybook/internal/router';
 
 import preview from '../../../.storybook/preview.tsx';
@@ -143,6 +148,9 @@ const meta = preview.meta({
     toggleNavMock.mockReset();
     fetchMock.mockClear();
     sessionStore.remove(RESTORE_NAV_SESSION_KEY);
+    // Reset change-detection statuses so a story marking one "new" doesn't leak
+    // into stories that assert the absence of the badge.
+    internal_fullStatusStore.unset();
     globalThis.fetch = fetchMock as unknown as typeof globalThis.fetch;
     return () => {
       globalThis.fetch = originalFetch;
@@ -208,6 +216,36 @@ export const DetailsNewStory = meta.story({
       await canvas.findByTitle('Latest manager-settings-checklist--default')
     ).toBeInTheDocument();
     // checklist is absent from the baseline index, so it is newly added.
+    await expect(await canvas.findByText('New')).toBeInTheDocument();
+  },
+});
+
+export const DetailsChangeDetectedNew = meta.story({
+  parameters: {
+    routerInitialEntries: ['/?path=/review/collections/0/manager-settings-guidepage--default'],
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    // guidepage exists in the baseline index, so the baseline check alone would
+    // not flag it. Mark it new via the change-detection status store instead.
+    internal_fullStatusStore.set([
+      {
+        storyId: 'manager-settings-guidepage--default',
+        typeId: 'storybook/change-detection',
+        value: 'status-value:new',
+        title: 'Change Detection',
+        description: '',
+      },
+    ]);
+
+    await expect(emitMock).toHaveBeenCalledWith(EVENTS.REQUEST_REVIEW);
+
+    applyReviewState();
+
+    await expect(
+      await canvas.findByTitle('Latest manager-settings-guidepage--default')
+    ).toBeInTheDocument();
+    // Flagged "New" by change-detection despite existing in the baseline.
     await expect(await canvas.findByText('New')).toBeInTheDocument();
   },
 });

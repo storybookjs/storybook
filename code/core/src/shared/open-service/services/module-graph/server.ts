@@ -2,45 +2,62 @@ import type { ChannelLike } from 'storybook/internal/channels';
 import { STORY_INDEX_INVALIDATED } from 'storybook/internal/core-events';
 import type { Presets } from 'storybook/internal/types';
 
-import type { StoryIndexGenerator } from '../../../../core-server/utils/StoryIndexGenerator.ts';
 import { registerService } from '../../service-registration.ts';
-import { changeDetectionAdapterPromise } from './adapter-bridge.ts';
 import { setDependencyGraphService } from './active-service-registry.ts';
 import { moduleGraphServiceDef } from './definition.ts';
-import { ModuleGraphEngine } from './engine/ModuleGraphEngine.ts';
+import type { ChangeDetectionAdapter } from './engine/adapters/types.ts';
+import { ModuleGraphEngine, type ModuleGraphEngineOptions } from './engine/module-graph-engine.ts';
 
 export type RegisterModuleGraphServiceOptions = {
   channel: ChannelLike;
-  storyIndexGeneratorPromise: Promise<StoryIndexGenerator>;
+  getIndex: ModuleGraphEngineOptions['getIndex'];
   workingDir?: string;
   presets?: Presets;
 };
 
-let engineInstance: ModuleGraphEngine | undefined;
-let unsubscribeStoryIndex: (() => void) | undefined;
+/**
+ * Deferred builder adapter. Open-service registration runs early in the dev-server boot, but the
+ * preview builder that produces the {@link ChangeDetectionAdapter} is only ready later. The
+ * dev-server resolves this once the adapter exists; the engine awaits it before building the graph.
+ *
+ * `resolveChangeDetectionAdapter` is exported directly (rather than wrapped in a helper) so the
+ * dev-server can resolve the promise with one import.
+ */
+let resolveAdapter!: (adapter: ChangeDetectionAdapter) => void;
+
+export const changeDetectionAdapterPromise = new Promise<ChangeDetectionAdapter>((resolve) => {
+  resolveAdapter = resolve;
+});
+
+export function resolveChangeDetectionAdapter(adapter: ChangeDetectionAdapter): void {
+  resolveAdapter(adapter);
+}
 
 /**
- * Registers the `core/module-graph` open service, constructs the graph engine, wires state mirroring,
- * listens for story-index invalidation on the server channel, and starts the engine once the builder
- * adapter is provided.
+ * Registers the `core/module-graph` open service, constructs the graph engine, wires state mirroring
+ * into the service commands, and listens for story-index invalidation on the server channel. The
+ * engine starts once {@link resolveChangeDetectionAdapter} provides the builder adapter.
+ *
+ * The engine lives for the entire dev-server process, so there is no teardown path: the OS reclaims
+ * everything when the process exits.
  */
 export function registerModuleGraphService(options: RegisterModuleGraphServiceOptions) {
+  let engine: ModuleGraphEngine | undefined;
+
   const runtime = registerService(moduleGraphServiceDef, {
     queries: {
       getReady: {
-        load: async (_input, ctx) => {
-          const engine = engineInstance;
-          if (engine) {
-            await engine.whenSettled();
-          }
-          void ctx;
+        // The graph builds (and patches) asynchronously, so `loaded()` callers await this barrier to
+        // read a settled reverse index rather than a half-built one.
+        load: async () => {
+          await engine?.whenSettled();
         },
       },
     },
   });
 
-  const engine = new ModuleGraphEngine({
-    storyIndexGeneratorPromise: options.storyIndexGeneratorPromise,
+  engine = new ModuleGraphEngine({
+    getIndex: options.getIndex,
     workingDir: options.workingDir,
     presets: options.presets,
     onSnapshot: (storiesByFile) => {
@@ -51,23 +68,15 @@ export function registerModuleGraphService(options: RegisterModuleGraphServiceOp
     },
   });
 
-  engineInstance = engine;
   setDependencyGraphService(engine);
 
-  unsubscribeStoryIndex = options.channel.on(STORY_INDEX_INVALIDATED, () => {
-    engine.onStoryIndexInvalidated();
+  options.channel.on(STORY_INDEX_INVALIDATED, () => {
+    engine?.onStoryIndexInvalidated();
   });
 
-  engine.run(() => changeDetectionAdapterPromise);
+  void changeDetectionAdapterPromise.then((adapter) => {
+    engine?.start(adapter);
+  });
 
   return runtime;
-}
-
-/** @internal — tears down channel subscription and engine (dev-server shutdown). */
-export async function disposeModuleGraphService(): Promise<void> {
-  unsubscribeStoryIndex?.();
-  unsubscribeStoryIndex = undefined;
-  await engineInstance?.dispose().catch(() => undefined);
-  engineInstance = undefined;
-  setDependencyGraphService(undefined);
 }

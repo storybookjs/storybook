@@ -8,15 +8,13 @@ import { moduleGraphServiceDef } from '../../shared/open-service/services/module
 import type {
   ChangeDetectionAdapter,
   FileChangeEvent,
-} from '../../shared/open-service/services/module-graph/engine/adapters/index.ts';
-import {
-  ChangeDetectionResolverFactory,
-  DependencyGraphBuilder,
-  IncrementalPatcher,
-  ReverseIndexImpl,
-} from '../../shared/open-service/services/module-graph/engine/dependency-graph/index.ts';
-import { ModuleGraphEngine } from '../../shared/open-service/services/module-graph/engine/ModuleGraphEngine.ts';
-import { ChangeDetectionService } from './ChangeDetectionService.ts';
+} from '../../shared/open-service/services/module-graph/engine/adapters/types.ts';
+import { DependencyGraphBuilder } from '../../shared/open-service/services/module-graph/engine/dependency-graph/dependency-graph-builder.ts';
+import { IncrementalPatcher } from '../../shared/open-service/services/module-graph/engine/dependency-graph/incremental-patcher.ts';
+import { ChangeDetectionResolverFactory } from '../../shared/open-service/services/module-graph/engine/dependency-graph/resolver-factory.ts';
+import { ReverseIndexImpl } from '../../shared/open-service/services/module-graph/engine/dependency-graph/reverse-index.ts';
+import { ModuleGraphEngine } from '../../shared/open-service/services/module-graph/engine/module-graph-engine.ts';
+import { ChangeDetectionService } from './change-detection-service.ts';
 
 export {
   createDeferred,
@@ -55,7 +53,7 @@ export function installModuleGraphQueryMock(engine: ModuleGraphEngine): void {
       }),
       getStoryVersion: () => 0,
     },
-  } as ReturnType<typeof getService<typeof moduleGraphServiceDef>>);
+  } as unknown as ReturnType<typeof getService<typeof moduleGraphServiceDef>>);
 }
 
 /**
@@ -71,7 +69,10 @@ export function createWiredChangeDetection(
 } {
   const ref: { current?: ChangeDetectionService } = {};
   const graph = new ModuleGraphEngine({
-    storyIndexGeneratorPromise: options.storyIndexGeneratorPromise,
+    getIndex: async () => {
+      const storyIndexGenerator = await options.storyIndexGeneratorPromise;
+      return storyIndexGenerator.getIndex();
+    },
     workingDir: options.workingDir,
     onReady: () => ref.current?.onGraphReady(),
     onChange: () => ref.current?.onGraphChange(),

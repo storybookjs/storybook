@@ -50,27 +50,29 @@ export {
   universalStatusStore as internal_universalStatusStore,
 } from './stores/status.ts';
 export {
-  getChangeDetectionReadiness as experimental_getChangeDetectionReadiness,
-  type ChangeDetectionReadiness as Experimental_ChangeDetectionReadiness,
   ChangeDetectionFailureError,
   ChangeDetectionUnavailableError,
-} from './change-detection/index.ts';
+} from './change-detection/errors.ts';
+export {
+  getChangeDetectionReadiness as experimental_getChangeDetectionReadiness,
+  type ChangeDetectionReadiness as Experimental_ChangeDetectionReadiness,
+} from './change-detection/readiness.ts';
 export type {
   ChangeDetectionAdapter,
   FileChangeEvent,
   ModuleResolveConfig,
-} from './change-detection/index.ts';
+} from '../shared/open-service/services/module-graph/engine/adapters/types.ts';
 export type {
   ImportEdge,
   ImportParser,
   ImportParserContext,
   ParseFileArgs,
-} from './change-detection/index.ts';
-export { ChangeDetectionService } from './change-detection/ChangeDetectionService.ts';
+} from '../shared/open-service/services/module-graph/engine/parser-registry/types.ts';
+export { ChangeDetectionService } from './change-detection/change-detection-service.ts';
 export {
   ModuleGraphEngine as StoryDependencyGraphService,
   type ModuleGraphEngine,
-} from '../shared/open-service/services/module-graph/engine/ModuleGraphEngine.ts';
+} from '../shared/open-service/services/module-graph/engine/module-graph-engine.ts';
 export { getDependencyGraphService as experimental_getDependencyGraphService } from '../shared/open-service/services/module-graph/active-service-registry.ts';
 export {
   getTestProviderStoreById as experimental_getTestProviderStore,

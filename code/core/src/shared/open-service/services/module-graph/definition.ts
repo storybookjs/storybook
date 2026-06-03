@@ -1,34 +1,16 @@
-import * as v from 'valibot';
 import { normalize } from 'pathe';
+import * as v from 'valibot';
 
 import { defineService } from '../../service-definition.ts';
-import type { ModuleGraphServiceState, StoriesByFileRecord } from './types.ts';
+import type { ModuleGraphServiceState } from './types.ts';
 
-const storyDepthSchema = v.object({
-  storyFile: v.string(),
-  depth: v.number(),
-});
-
-const filesInputSchema = v.object({
-  files: v.array(v.string()),
-});
-
-const storyFileInputSchema = v.object({
-  storyFile: v.string(),
-});
-
+/**
+ * Reverse index shape `sourceFile -> storyFile -> breadth-first-search depth`. The depth is the
+ * shortest number of import edges between the source file and the affected story file.
+ */
 const storiesByFileSchema = v.record(v.string(), v.record(v.string(), v.number()));
 
-const snapshotInputSchema = v.object({
-  storiesByFile: storiesByFileSchema,
-});
-
-const updateInputSchema = v.object({
-  storiesByFile: storiesByFileSchema,
-  bumpedStoryFiles: v.array(v.string()),
-});
-
-/** Queries with no caller input — only `undefined` is accepted. */
+/** Queries with no caller input — only `undefined` is accepted. Reused across several queries. */
 const noInputSchema = v.undefined();
 
 export type { ModuleGraphServiceState } from './types.ts';
@@ -42,13 +24,13 @@ export const moduleGraphServiceDef = defineService({
     graphRevision: 0,
     storiesByFile: {},
     storyVersions: {},
-  } satisfies ModuleGraphServiceState,
+  } as ModuleGraphServiceState,
   queries: {
     getStoriesForFiles: {
       description:
-        'Returns, for each input file (same order), story files that depend on it and their BFS depths.',
-      input: filesInputSchema,
-      output: v.array(v.array(storyDepthSchema)),
+        'Returns, for each input file (same order), story files that depend on it and their breadth-first-search depth: the shortest number of import edges between the input file and the story file.',
+      input: v.object({ files: v.array(v.string()) }),
+      output: v.array(v.array(v.object({ storyFile: v.string(), depth: v.number() }))),
       handler: (input, ctx) => {
         return input.files.map((file) => {
           const entries = ctx.self.state.storiesByFile[normalize(file)];
@@ -78,7 +60,7 @@ export const moduleGraphServiceDef = defineService({
     getStoryVersion: {
       description:
         'Per-story-file version; increments when that story or any module in its graph changes.',
-      input: storyFileInputSchema,
+      input: v.object({ storyFile: v.string() }),
       output: v.number(),
       handler: (input, ctx) => ctx.self.state.storyVersions[normalize(input.storyFile)] ?? 0,
     },
@@ -86,13 +68,14 @@ export const moduleGraphServiceDef = defineService({
       description: 'Full map of story-file path to version (for bulk change subscriptions).',
       input: noInputSchema,
       output: v.record(v.string(), v.number()),
-      handler: (_input, ctx) => ({ ...ctx.self.state.storyVersions }),
+      handler: (_input, ctx) => ctx.self.state.storyVersions,
     },
   },
   commands: {
     applyGraphSnapshot: {
-      description: 'Replaces the reverse index after the initial graph build.',
-      input: snapshotInputSchema,
+      description:
+        'Internal use only: replaces the reverse index after the initial graph build. Called by the graph engine, not by external consumers.',
+      input: v.object({ storiesByFile: storiesByFileSchema }),
       output: v.void(),
       handler: async (input, ctx) => {
         ctx.self.setState((state) => {
@@ -104,8 +87,11 @@ export const moduleGraphServiceDef = defineService({
     },
     applyGraphUpdate: {
       description:
-        'Replaces the reverse index after an incremental patch and bumps versions for affected story files.',
-      input: updateInputSchema,
+        'Internal use only: replaces the reverse index after an incremental patch and bumps versions for affected story files. Called by the graph engine, not by external consumers.',
+      input: v.object({
+        storiesByFile: storiesByFileSchema,
+        bumpedStoryFiles: v.array(v.string()),
+      }),
       output: v.void(),
       handler: async (input, ctx) => {
         ctx.self.setState((state) => {

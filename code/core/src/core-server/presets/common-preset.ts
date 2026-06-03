@@ -324,12 +324,14 @@ export const services = async (_value: void, options: Options): Promise<void> =>
   }
   globalThis.STORYBOOK_SERVICES_LOADED = true;
 
-  const storyIndexGeneratorPromise =
-    await options.presets.apply<Promise<StoryIndexGenerator>>('storyIndexGenerator');
+  // `presets.apply` flattens the generator preset's returned promise, so this is the resolved
+  // generator, not a promise.
+  const storyIndexGenerator =
+    await options.presets.apply<StoryIndexGenerator>('storyIndexGenerator');
 
   registerModuleGraphService({
     channel: options.channel,
-    storyIndexGeneratorPromise,
+    getIndex: () => storyIndexGenerator.getIndex(),
     workingDir: process.cwd(),
     presets: options.presets,
   });
@@ -354,7 +356,7 @@ export const services = async (_value: void, options: Options): Promise<void> =>
     );
 
     registerDocgenService({
-      getIndex: () => storyIndexGeneratorPromise.then((g) => g.getIndex()),
+      getIndex: () => storyIndexGenerator.getIndex(),
       provider,
       workingDir: process.cwd(),
     });

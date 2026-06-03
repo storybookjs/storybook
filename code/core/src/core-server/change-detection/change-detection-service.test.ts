@@ -9,7 +9,6 @@ import {
   UNIVERSAL_STATUS_STORE_OPTIONS,
 } from '../../shared/status-store/index.ts';
 import { MockUniversalStore } from '../../shared/universal-store/mock.ts';
-import * as oxcParser from 'storybook/internal/oxc-parser';
 
 import { getService } from '../../shared/open-service/server.ts';
 import {
@@ -26,36 +25,34 @@ import {
   ChangeDetectionService,
   mergeChangeDetectionStatuses,
   mergeStatusValues,
-} from './ChangeDetectionService.ts';
+} from './change-detection-service.ts';
 import { ChangeDetectionFailureError, ChangeDetectionUnavailableError } from './errors.ts';
-import { getChangeDetectionReadiness, internal_resetChangeDetectionReadiness } from './index.ts';
+import {
+  getChangeDetectionReadiness,
+  resetChangeDetectionReadiness as internal_resetChangeDetectionReadiness,
+} from './readiness.ts';
 import type { GitDiffResult } from './GitDiffProvider.ts';
 import { GitDiffProvider } from './GitDiffProvider.ts';
 import type { IndexBaselineService } from './IndexBaselineService.ts';
-import type { ModuleGraphEngine } from '../../shared/open-service/services/module-graph/engine/ModuleGraphEngine.ts';
+import type { ModuleGraphEngine } from '../../shared/open-service/services/module-graph/engine/module-graph-engine.ts';
 
 vi.mock('storybook/internal/node-logger', { spy: true });
 vi.mock('../../shared/open-service/server.ts', () => ({
   getService: vi.fn(),
 }));
 vi.mock(
-  '../../shared/open-service/services/module-graph/engine/dependency-graph/index.ts',
-  async (importOriginal) => {
-    // Keep ReverseIndexImpl + types real so tests can build synthetic indexes; replace the
-    // ChangeDetectionResolverFactory / DependencyGraphBuilder / IncrementalPatcher constructors
-    // with `vi.fn()`s so tests can override their behaviour per-case via
-    // `vi.mocked(Ctor).mockImplementation(...)`.
-    const actual =
-      await importOriginal<
-        typeof import('../../shared/open-service/services/module-graph/engine/dependency-graph/index.ts')
-      >();
-    return {
-      ...actual,
-      ChangeDetectionResolverFactory: vi.fn(),
-      DependencyGraphBuilder: vi.fn(),
-      IncrementalPatcher: vi.fn(),
-    };
+  '../../shared/open-service/services/module-graph/engine/dependency-graph/resolver-factory.ts',
+  {
+    spy: true,
   }
+);
+vi.mock(
+  '../../shared/open-service/services/module-graph/engine/dependency-graph/dependency-graph-builder.ts',
+  { spy: true }
+);
+vi.mock(
+  '../../shared/open-service/services/module-graph/engine/dependency-graph/incremental-patcher.ts',
+  { spy: true }
 );
 
 class MockGitDiffProvider extends GitDiffProvider {
@@ -212,7 +209,6 @@ describe('ChangeDetectionService', () => {
       },
     });
     await service.dispose();
-    await graph.dispose();
   });
 
   it('edits a non-story dep at distance 1 from one story and distance 2 from another -> nearest is modified, farther is affected', async () => {
@@ -269,7 +265,6 @@ describe('ChangeDetectionService', () => {
       'status-value:affected'
     );
     await service.dispose();
-    await graph.dispose();
   });
 
   it('edits a non-story dep at equal distance from two stories -> both stories tie and are both modified', async () => {
@@ -317,7 +312,6 @@ describe('ChangeDetectionService', () => {
       'status-value:modified'
     );
     await service.dispose();
-    await graph.dispose();
   });
 
   it('edits a non-story file with no story importers -> reverse-index lookup is empty -> no status emitted', async () => {
@@ -358,7 +352,6 @@ describe('ChangeDetectionService', () => {
     expect(getStatusStoreByTypeId(CHANGE_DETECTION_STATUS_TYPE_ID).getAll()).toEqual({});
     expect(await getChangeDetectionReadiness()).toEqual({ status: 'ready' });
     await service.dispose();
-    await graph.dispose();
   });
 
   // ------------------------------------------------------------------
@@ -430,7 +423,6 @@ describe('ChangeDetectionService', () => {
       'new-button--primary': {},
     });
     await service.dispose();
-    await graph.dispose();
   });
 
   it('replaces prior scan status data instead of cumulatively merging with store state', async () => {
@@ -507,7 +499,6 @@ describe('ChangeDetectionService', () => {
       },
     });
     await service.dispose();
-    await graph.dispose();
   });
 
   it('rescans on git state changes using the normal debounce', async () => {
@@ -562,7 +553,6 @@ describe('ChangeDetectionService', () => {
     expect(gitDiffProvider.getChangedFilesMock).toHaveBeenCalledTimes(2);
 
     await service.dispose();
-    await graph.dispose();
   });
 
   it('debounces consecutive file-change events into a single scan', async () => {
@@ -609,7 +599,6 @@ describe('ChangeDetectionService', () => {
     expect(gitDiffProvider.getChangedFilesMock).toHaveBeenCalledTimes(2);
 
     await service.dispose();
-    await graph.dispose();
   });
 
   it('does not subscribe to git state when change detection is disabled', async () => {
@@ -638,7 +627,6 @@ describe('ChangeDetectionService', () => {
       reason: 'disabled',
     });
     await service.dispose();
-    await graph.dispose();
   });
 
   it('acts as a consumer of the module-graph open service', async () => {
@@ -694,7 +682,6 @@ describe('ChangeDetectionService', () => {
       reason: 'builder does not support change detection',
     });
     await service.dispose();
-    await graph.dispose();
   });
 
   it('resolves readiness as unavailable when the adapter reports a startup failure', async () => {
@@ -737,7 +724,6 @@ describe('ChangeDetectionService', () => {
     // Unblock the parked git call so dispose can drain.
     gitDeferred.resolve({ changed: new Set(), new: new Set() });
     await service.dispose();
-    await graph.dispose();
   });
 
   it('resolves readiness as error when the eager build throws', async () => {
@@ -771,43 +757,6 @@ describe('ChangeDetectionService', () => {
       error: expect.objectContaining({ message: 'graph build blew up' }),
     });
     await service.dispose();
-    await graph.dispose();
-  });
-
-  it('disposes the pool when startInternal throws', async () => {
-    // The startInternal pipeline throws after startup. Without the dispose() call in the
-    // catch handler disposeOxcParsePool would not be called.
-    const { buildSpy } = installDependencyGraphMocks(buildReverseIndex([]));
-    buildSpy.mockImplementation(async () => {
-      throw new ChangeDetectionFailureError('graph build blew up');
-    });
-
-    const disposePoolSpy = vi.spyOn(oxcParser, 'disposeOxcParsePool').mockResolvedValue(undefined);
-
-    const { getStatusStoreByTypeId } = createStatusStore({
-      universalStatusStore: new MockUniversalStore(UNIVERSAL_STATUS_STORE_OPTIONS),
-      environment: 'server',
-    });
-    const { adapter } = createMockAdapter();
-    const { service, graph } = createWiredChangeDetection({
-      storyIndexGeneratorPromise: Promise.resolve({
-        getIndex: vi.fn().mockResolvedValue(createStoryIndex([])),
-      } as never),
-      statusStore: getStatusStoreByTypeId(CHANGE_DETECTION_STATUS_TYPE_ID),
-      gitDiffProvider: createMockGitDiffProvider(),
-      indexBaselineService: createMockStoryIndexBaselineService(),
-      workingDir,
-    });
-
-    graph.start(adapter);
-    service.start(adapter, true);
-    await vi.runAllTimersAsync();
-
-    // dispose() must have been called, which calls disposeOxcParsePool exactly once.
-    expect(disposePoolSpy).toHaveBeenCalledTimes(1);
-
-    await service.dispose();
-    await graph.dispose();
   });
 
   it('keeps the previous statuses when a live rescan fails', async () => {
@@ -868,7 +817,6 @@ describe('ChangeDetectionService', () => {
     });
     expect(logger.error).toHaveBeenCalledWith('Change detection failed: scan blew up');
     await service.dispose();
-    await graph.dispose();
   });
 
   it('does not apply scan results or rerun after disposal', async () => {
@@ -907,8 +855,6 @@ describe('ChangeDetectionService', () => {
     service.start(adapter, true);
     await vi.advanceTimersByTimeAsync(0);
     await service.dispose();
-    await graph.dispose();
-
     changedFilesDeferred.resolve({
       changed: new Set(['src/Button.stories.tsx']),
       new: new Set(),
@@ -961,7 +907,6 @@ describe('ChangeDetectionService', () => {
       error: expect.any(ChangeDetectionUnavailableError),
     });
     await service.dispose();
-    await graph.dispose();
   });
 
   it('scan waits for the current patch to settle before reading reverseIndex', async () => {
@@ -1028,7 +973,6 @@ describe('ChangeDetectionService', () => {
     );
 
     await service.dispose();
-    await graph.dispose();
   });
 
   it('calls gitDiffProvider.dispose() on service dispose when a git watcher was installed', async () => {
@@ -1059,8 +1003,6 @@ describe('ChangeDetectionService', () => {
     await vi.runAllTimersAsync();
 
     await service.dispose();
-    await graph.dispose();
-
     expect(gitDiffProvider.disposeMock).toHaveBeenCalledTimes(1);
   });
 
@@ -1085,7 +1027,6 @@ describe('ChangeDetectionService', () => {
     service.start(undefined, false);
     // Should not throw and should not attempt to call dispose on an unconstructed provider.
     await expect(service.dispose()).resolves.toBeUndefined();
-    await graph.dispose();
   });
 
   it('rescans the working tree when the story index is invalidated', async () => {
@@ -1125,7 +1066,6 @@ describe('ChangeDetectionService', () => {
     expect(gitDiffProvider.getChangedFilesMock).toHaveBeenCalledTimes(2);
 
     await service.dispose();
-    await graph.dispose();
   });
 });
 

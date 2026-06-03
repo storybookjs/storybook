@@ -1,4 +1,4 @@
-import type { ModuleGraphEngine } from './engine/ModuleGraphEngine.ts';
+import type { ModuleGraphEngine } from './engine/module-graph-engine.ts';
 
 let activeModuleGraphEngine: ModuleGraphEngine | undefined;
 

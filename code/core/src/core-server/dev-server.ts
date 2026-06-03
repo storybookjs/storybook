@@ -7,11 +7,10 @@ import type { Options } from 'storybook/internal/types';
 import compression from '@polka/compression';
 import polka from 'polka';
 
-import { provideChangeDetectionAdapter } from '../shared/open-service/services/module-graph/adapter-bridge.ts';
-import { disposeModuleGraphService } from '../shared/open-service/services/module-graph/server.ts';
+import type { ChangeDetectionAdapter } from '../shared/open-service/services/module-graph/engine/adapters/types.ts';
+import { resolveChangeDetectionAdapter } from '../shared/open-service/services/module-graph/server.ts';
 import { isTelemetryModuleEnabled, telemetry } from '../telemetry/index.ts';
-import type { ChangeDetectionAdapter } from './change-detection/index.ts';
-import { ChangeDetectionService } from './change-detection/index.ts';
+import { ChangeDetectionService } from './change-detection/change-detection-service.ts';
 import { getStatusStoreByTypeId } from './stores/status.ts';
 import type { StoryIndexGenerator } from './utils/StoryIndexGenerator.ts';
 import { doTelemetry } from './utils/doTelemetry.ts';
@@ -58,7 +57,6 @@ export async function storybookDevServer(
 
   const disposeChangeDetectionRuntime = async () => {
     await changeDetectionService.dispose().catch(() => undefined);
-    await disposeModuleGraphService().catch(() => undefined);
   };
 
   app.use(compression({ level: 1 }));
@@ -163,7 +161,7 @@ export async function storybookDevServer(
     }
 
     if (adapter) {
-      provideChangeDetectionAdapter(adapter);
+      resolveChangeDetectionAdapter(adapter);
     }
 
     const isChangeDetectionStatusEnabled = features.changeDetection !== false;

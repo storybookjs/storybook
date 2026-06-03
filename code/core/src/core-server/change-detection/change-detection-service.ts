@@ -12,7 +12,7 @@ import { CHANGE_DETECTION_STATUS_TYPE_ID } from 'storybook/internal/types';
 
 import { getService } from '../../shared/open-service/server.ts';
 import { moduleGraphServiceDef } from '../../shared/open-service/services/module-graph/definition.ts';
-import type { ChangeDetectionAdapter } from '../../shared/open-service/services/module-graph/engine/adapters/index.ts';
+import type { ChangeDetectionAdapter } from '../../shared/open-service/services/module-graph/engine/adapters/types.ts';
 import { registerModuleGraphLifecycleConsumer } from '../../shared/open-service/services/module-graph/lifecycle-consumer.ts';
 import type { StoryIndexGenerator } from '../utils/StoryIndexGenerator.ts';
 import { ChangeDetectionFailureError, ChangeDetectionUnavailableError } from './errors.ts';

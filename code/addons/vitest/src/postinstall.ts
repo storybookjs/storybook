@@ -94,7 +94,10 @@ export default async function postInstall(options: PostinstallOptions) {
     ? satisfies(vitestVersionSpecifier, '>=4.0.0')
     : true;
 
-  const info = await getStorybookInfo(options.configDir);
+  // Skip the module cache: an automigration (e.g. angular-to-angular-vite) may have rewritten the
+  // main config earlier in this same process, and the cached version would still report the old
+  // framework/builder — causing the prerequisite check below to fail incorrectly.
+  const info = await getStorybookInfo(options.configDir, undefined, { skipCache: true });
   // only install these dependencies if they are not already installed
 
   const addonVitestService = new AddonVitestService(packageManager);

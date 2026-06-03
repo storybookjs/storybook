@@ -259,6 +259,12 @@ type ErrorMessage = string;
 export type AutomigrationResult = {
   automigrationStatuses: Record<FixId, FixStatus>;
   automigrationErrors: Record<FixId, ErrorMessage>;
+  /**
+   * Core addons added by fixes whose postinstall configuration must run after dependencies are
+   * installed. The upgrade flow installs once all projects' automigrations have run, so it
+   * configures these afterwards (see `upgrade.ts`).
+   */
+  addonsToConfigure?: string[];
 };
 /** Runs selected automigrations for each project */
 export async function runAutomigrationsForProjects(
@@ -339,6 +345,8 @@ export async function runAutomigrationsForProjects(
           };
     const fixResults: Record<FixId, FixStatus> = {};
     const fixFailures: Record<FixId, ErrorMessage> = {};
+    // Core addons added by fixes that must be configured after the upgrade installs dependencies.
+    const addonsToConfigure: string[] = [];
 
     for (const automigration of projectAutomigration) {
       const { fix, result, project, status } = automigration;
@@ -380,6 +388,7 @@ export async function runAutomigrationsForProjects(
             storybookVersion: project.storybookVersion,
             storiesPaths: project.storiesPaths,
             yes,
+            addonsToConfigure,
           };
 
           await fix.run(runOptions);
@@ -411,6 +420,7 @@ export async function runAutomigrationsForProjects(
     projectResults[configDir] = {
       automigrationStatuses: fixResults,
       automigrationErrors: fixFailures,
+      addonsToConfigure,
     };
   }
 

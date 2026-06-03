@@ -9,7 +9,7 @@ import invariant from 'tiny-invariant';
 import { dedent } from 'ts-dedent';
 
 import { doctor } from '../doctor/index.ts';
-import { postinstallAddon } from '../postinstallAddon.ts';
+import { configureDeferredAddons } from '../postinstallAddon.ts';
 import type {
   AutofixOptions,
   AutofixOptionsFromCLI,
@@ -87,21 +87,13 @@ export const doAutomigrate = async (options: AutofixOptionsFromCLI) => {
     // Configure addons whose postinstall a fix deferred until after install (mirrors CLI init's
     // install-then-configure ordering). Their postinstall hooks can only be resolved now that the
     // packages are on disk; running them earlier (during the fix) silently no-ops.
-    for (const addon of outcome?.addonsToConfigure ?? []) {
-      try {
-        await postinstallAddon(addon, {
-          packageManager: packageManager.type,
-          configDir,
-          yes: options.yes,
-          logger,
-          prompt,
-        });
-      } catch (e) {
-        logger.warn(
-          `Could not configure ${addon}: ${e}. Run \`npx storybook add ${addon}\` to set it up manually.`
-        );
-      }
-    }
+    await configureDeferredAddons(outcome?.addonsToConfigure ?? [], {
+      packageManager: packageManager.type,
+      configDir,
+      yes: options.yes,
+      logger,
+      prompt,
+    });
   }
 
   if (outcome && !options.skipDoctor) {

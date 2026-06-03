@@ -289,10 +289,6 @@ export const experimental_serverChannel = async (
   initOpenInEditorChannel(channel);
   initTelemetryChannel(channel);
 
-  // Open-service registration wires itself into this channel: the `services` preset installs the
-  // channel via `setServiceChannel` before any service registers (see below), so there is no
-  // separate connect step here.
-
   return channel;
 };
 

@@ -28,8 +28,6 @@ export const backgroundService = registerService(backgroundServiceDef);
 
 backgroundService.queries.getColor.subscribe(undefined, (color) => {
   if (typeof document !== 'undefined') {
-    // The internal Storybook preview no longer sets body background from the manager theme
-    // (see ThemedSetRoot in preview.tsx); a plain assignment is enough here.
     document.body.style.background = color;
   }
 });

@@ -18,10 +18,11 @@ fit together, where behavior lives, and how to define new services correctly.
 
 External callers import from one of these entrypoints:
 
-- [index.ts](./index.ts) for environment-agnostic definition helpers and shared types
+- `storybook/manager-api` for manager addons — `registerService` (relay hub), `useServiceQuery`, `useServiceCommand`, and shared types
+- `storybook/preview-api` for preview code — `registerService` (leaf) and shared types (no React hooks)
 - [server.ts](./server.ts) for server-side registration, discovery, and static snapshot writing
-- [client.ts](./client.ts) for the renderer-agnostic browser registration + channel surface
-- [manager.ts](./manager.ts) / [preview.ts](./preview.ts) for the manager (React) and preview entrypoints, which bake in the correct relay role
+- [index.ts](./index.ts) for environment-agnostic definition helpers and shared types used by server presets
+- [client.ts](./client.ts) is an internal/advanced barrel; prefer `manager-api` or `preview-api` in addon code
 
 `registerService` is the **single** registration function across every runtime. It lives in
 [service-registry.ts](./service-registry.ts) and is re-exported from each entrypoint with the right
@@ -66,7 +67,7 @@ Internal tests and implementation code may import from the individual modules di
 - [service-runtime.ts](./service-runtime.ts): signal-backed runtime construction, in-flight load registry, drain logic, and subscriptions
 - [service-registry.ts](./service-registry.ts): the single `registerService`, the realm-global registry, and the shared registry API passed into runtimes — used identically by server, manager, and preview
 - [service-channel.ts](./service-channel.ts): `ServiceChannel` interface, event name constants, payload types, and the `getServiceChannel` reader
-- [service-transport.ts](./service-transport.ts): shared channel transport — wraps commands to broadcast and wires the welcome-handshake + patch listeners (hub or leaf)
+- [service-transport.ts](./service-transport.ts): shared channel transport — wraps commands to broadcast and wires the sync-start initialization + patch listeners (hub or leaf)
 - [service-sync.ts](./service-sync.ts): last-write-wins ordering, the `deepReconcile` structural merge, and the per-service snapshot reconciler
 - [use-service-query.ts](./use-service-query.ts): `useServiceQuery` React hook backed by `useSyncExternalStore`
 - [use-service-command.ts](./use-service-command.ts): `useServiceCommand` React hook returning a stable command reference
@@ -383,9 +384,9 @@ flowchart TD
 
 ## Client Architecture (Multi-Master)
 
-Browser processes (manager and preview) each run their own full `ServiceRuntime` — identical in shape to the server-side one. State is reconciled peer-to-peer through Storybook's existing manager↔preview channel using a welcome-handshake + patch-broadcast protocol.
+Browser processes (manager and preview) each run their own full `ServiceRuntime` — identical in shape to the server-side one. State is reconciled peer-to-peer through Storybook's existing manager↔preview channel using a sync-start initialization + patch-broadcast protocol.
 
-```
+```text
 ┌─────────────────────────┐     channel (services:*)     ┌─────────────────────────┐
 │  Manager process        │  ◄────────────────────────►  │  Preview process        │
 │                         │                               │                         │
@@ -412,8 +413,8 @@ directly (or module-mock `service-channel.ts`).
 
 Creates a local `ServiceRuntime` from the service definition (identical across runtimes) and wires it into the sync protocol:
 
-1. **On registration** — emits `services:welcome-request` so any existing peer can reply with its current snapshot.
-2. **On welcome-reply** — applies the received snapshot into the local runtime so the new peer bootstraps from existing state.
+1. **On registration** — emits `services:sync-start` so any existing peer can reply with its current snapshot.
+2. **On sync-start-reply** — applies the received snapshot into the local runtime so the new peer bootstraps from existing state.
 3. **After each local command** — broadcasts the full post-mutation state as `services:patches` so all peers stay in sync.
 4. **On incoming patches** — applies the received state into the local runtime via `commandSelf.setState`, which triggers fine-grained signal updates and re-renders subscribed components.
 
@@ -423,7 +424,7 @@ Every channel event carries the emitter's `clientId` (generated per `registerSer
 
 ### State application without re-broadcast
 
-Incoming state (from welcome-reply or patches) is applied via `serviceRuntime.commandSelf.setState(...)` directly — not through the wrapped commands — so no broadcast is triggered for received state.
+Incoming state (from sync-start-reply or patches) is applied via `serviceRuntime.commandSelf.setState(...)` directly — not through the wrapped commands — so no broadcast is triggered for received state.
 
 ### `deepReconcile`
 
@@ -431,15 +432,15 @@ Rather than replacing the entire state object on each patch (which would invalid
 
 ### State sync sequence
 
-```
+```text
 Peer A (manager)            Channel              Peer B (preview)
 ─────────────────────────────────────────────────────────────────
 registerService()
-  └─ emit welcome-request ──────────────────────────────────────►
+  └─ emit sync-start ──────────────────────────────────────►
                                                 (no peer yet; silence)
 
                                                 registerService()
-◄─────────────────────────── emit welcome-request ──────────────
+◄─────────────────────────── emit sync-start ──────────────
   └─ reply with snapshot ──────────────────────────────────────►
                                                   └─ apply snapshot
 
@@ -451,7 +452,7 @@ service.commands.foo()
 
 ### Server participation
 
-The dev server is a full peer, not a passive observer. `registerService` on the server registers as a relay hub (`relay: true`): it wraps commands to broadcast their post-mutation snapshots, responds to welcome-requests, applies incoming patches, and re-broadcasts every adopted snapshot so peers on its other transports (each connected manager tab) converge. This is wired automatically at registration once the `services` preset has installed the channel — there is no separate connect step.
+The dev server is a full peer, not a passive observer. `registerService` on the server registers as a relay hub (`relay: true`): it wraps commands to broadcast their post-mutation snapshots, responds to sync-starts, applies incoming patches, and re-broadcasts every adopted snapshot so peers on its other transports (each connected manager tab) converge. This is wired automatically at registration once the `services` preset has installed the channel — there is no separate connect step.
 
 ## React Hooks
 
@@ -460,7 +461,7 @@ The dev server is a full peer, not a passive observer. `registerService` on the 
 Subscribes to a service query and returns its current value, re-rendering when it changes.
 
 ```tsx
-import { useServiceQuery } from 'storybook/internal/open-service/client';
+import { useServiceQuery } from 'storybook/manager-api';
 
 // With input
 const fields = useServiceQuery(service, 'getRecordFields', { entryId: 'a' });
@@ -480,7 +481,7 @@ Backed by `useSyncExternalStore`. The subscription is torn down and recreated wh
 Returns a stable reference to a service command. The reference is stable as long as `service` and `commandName` do not change, so it is safe to pass to child components or include in effect dependency arrays.
 
 ```tsx
-import { useServiceCommand } from 'storybook/internal/open-service/client';
+import { useServiceCommand } from 'storybook/manager-api';
 
 const assignField = useServiceCommand(service, 'assignRecordField');
 
@@ -559,7 +560,7 @@ const ready = await exampleService.queries.getValue.loaded({ entryId: 'a' });
 - **Keep `load` bodies minimal — ideally one line that calls a command.** Push input resolution, side effects, and state mutation into the command itself so it stays callable, testable, and reusable on its own.
 - Query handlers are strict readers: sync, no commands, no `setState`.
 - Use commands for all state mutation.
-- Keep environment-agnostic imports on [index.ts](./index.ts), server-only imports on [server.ts](./server.ts), and browser-only imports on [client.ts](./client.ts). Import internal modules directly only from tests or implementation code in this directory.
+- Manager addons import from `storybook/manager-api`; preview code imports from `storybook/preview-api`. Server presets use [server.ts](./server.ts). Import modules in this directory directly only from tests or implementation code.
 - Use `.loaded()` when a caller wants to await the full state; use the sync form when "current best" is fine.
 - No channel install is needed — `getServiceChannel()` reads `globalThis.__STORYBOOK_ADDONS_CHANNEL__`, which every runtime already populates.
 - Call `clearRegistry()` in `afterEach` in tests that register services; also clear `globalThis.__STORYBOOK_ADDONS_CHANNEL__` if a test installed a mock channel.

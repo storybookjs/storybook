@@ -17,8 +17,8 @@ import {
   registerService,
   useServiceCommand,
   useServiceQuery,
-} from '../../core/src/shared/open-service/manager.ts';
-import type { ServiceInstanceOf } from '../../core/src/shared/open-service/manager.ts';
+  type ServiceInstanceOf,
+} from 'storybook/manager-api';
 import { BACKGROUND_COLORS, backgroundServiceDef } from './definition.ts';
 
 const ADDON_ID = 'storybook/internal/example-background';
@@ -38,6 +38,9 @@ const Swatch = memo(function Swatch({
 }) {
   return (
     <button
+      type="button"
+      aria-label={label}
+      aria-pressed={active}
       title={label}
       onClick={onClick}
       style={{

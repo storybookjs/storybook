@@ -56,8 +56,24 @@ export function useServiceQuery<
   const input = args[0] as TInput;
 
   // Initialise synchronously so `getSnapshot` always returns a value on the first render,
-  // before the service's async first-emission microtask fires.
-  const snapshotRef = React.useRef<TOutput>(queryFn(input));
+  // before the service's async first-emission microtask fires. Lazy-init avoids calling
+  // `queryFn(input)` on every render — only when the ref is empty or the subscription changes.
+  // Compare inputs with `isEqual`, not reference identity, so inline object literals at the
+  // call site do not re-run the handler on every render.
+  const subscriptionKeyRef = React.useRef<{
+    queryFn: Query<TInput, TOutput>;
+    input: TInput;
+  } | null>(null);
+  const snapshotRef = React.useRef<TOutput | undefined>(undefined);
+
+  if (
+    snapshotRef.current === undefined ||
+    subscriptionKeyRef.current?.queryFn !== queryFn ||
+    !isEqual(subscriptionKeyRef.current?.input, input)
+  ) {
+    subscriptionKeyRef.current = { queryFn, input };
+    snapshotRef.current = queryFn(input);
+  }
 
   // Re-subscribe when `queryFn` or `input` changes. The service subscribe() fires the
   // callback immediately (deferred to a microtask) with the current value, then again
@@ -77,13 +93,14 @@ export function useServiceQuery<
   // of a subscriber notification (e.g. on React's concurrent-mode bailout checks).
   const getSnapshot = React.useCallback((): TOutput => {
     const value = queryFn(input);
+    const previous = snapshotRef.current as TOutput;
 
-    if (isEqual(value, snapshotRef.current)) {
-      return snapshotRef.current;
+    if (isEqual(value, previous)) {
+      return previous;
     }
 
     snapshotRef.current = value;
-    return snapshotRef.current;
+    return value;
   }, [queryFn, input]);
 
   return React.useSyncExternalStore(subscribe, getSnapshot, getSnapshot);

@@ -12,8 +12,8 @@
  *   advances the last-write-wins stamp and broadcasts the full post-mutation snapshot. The channel is
  *   re-read at call time (not capture time) so a runtime registered before its channel is installed
  *   still broadcasts once the channel arrives, and clearing the channel silently disables broadcasts.
- * - {@link connectRuntimeToChannel} attaches the welcome-handshake and patch listeners, emits the
- *   bootstrap welcome-request, and returns a teardown. A `relay` hub re-broadcasts every snapshot it
+ * - {@link connectRuntimeToChannel} attaches the sync-start initialization and patch listeners, emits
+ *   the bootstrap sync-start, and returns a teardown. A `relay` hub re-broadcasts every snapshot it
  *   adopts so peers on its *other* transports converge; leaves keep `relay: false`.
  *
  * The merge and ordering rules themselves live in `service-sync.ts`; this module only moves snapshots
@@ -22,18 +22,14 @@
 
 import {
   SERVICE_PATCHES,
-  SERVICE_WELCOME_REPLY,
-  SERVICE_WELCOME_REQUEST,
+  SERVICE_SYNC_START,
+  SERVICE_SYNC_START_REPLY,
   type PatchesPayload,
   type ServiceChannel,
-  type WelcomeReplyPayload,
-  type WelcomeRequestPayload,
+  type SyncStartPayload,
+  type SyncStartReplyPayload,
 } from './service-channel.ts';
-import {
-  parseStampedSnapshot,
-  parseWelcomeRequest,
-  type SnapshotReconciler,
-} from './service-sync.ts';
+import { parseStampedSnapshot, parseSyncStart, type SnapshotReconciler } from './service-sync.ts';
 import type { ServiceId } from './types.ts';
 
 /** A runtime command as seen by the transport layer: `(input) => Promise<result>`. */
@@ -99,10 +95,10 @@ export function wrapCommandsForBroadcast(
 /**
  * Attaches the channel listeners that keep one runtime in sync with its peers, and returns a teardown.
  *
- * Wires three handlers and emits a bootstrap `services:welcome-request` so a freshly-registered
- * runtime catches up to state authored before it joined:
- * - welcome-request → reply with our current snapshot+stamp (ignoring our own request);
- * - welcome-reply / patches → adopt iff strictly newer (and, on a relay hub, re-broadcast).
+ * Wires three handlers and emits a bootstrap `services:sync-start` so a freshly-registered runtime
+ * catches up to state authored before it joined:
+ * - sync-start → reply with our current snapshot+stamp (ignoring our own request);
+ * - sync-start-reply / patches → adopt iff strictly newer (and, on a relay hub, re-broadcast).
  *
  * A `relay` hub re-emits every snapshot it adopts under the SAME adopted stamp, so peers reachable on
  * its *other* transports converge while the copy bouncing back fails `isNewer` and stops the loop.
@@ -113,11 +109,11 @@ export function connectRuntimeToChannel(
 ): () => void {
   const { serviceId, ownClientId, reconciler, getSnapshot, channel, relay } = context;
 
-  const emitWelcomeRequest = (): void => {
-    channel.emit(SERVICE_WELCOME_REQUEST, {
+  const emitSyncStart = (): void => {
+    channel.emit(SERVICE_SYNC_START, {
       serviceId,
       clientId: ownClientId,
-    } satisfies WelcomeRequestPayload);
+    } satisfies SyncStartPayload);
   };
 
   // Relay hub only: forward an adopted snapshot to peers on our OTHER transports. We re-emit the
@@ -149,25 +145,25 @@ export function connectRuntimeToChannel(
     return adopted;
   };
 
-  // Reply to a peer's welcome-request with our current snapshot+stamp (which may be one we adopted
-  // from yet another peer, not necessarily our own clientId). Skip our own bootstrap request.
-  const onWelcomeRequest = (payload: unknown): void => {
-    const request = parseWelcomeRequest(payload);
+  // Reply to a peer's sync-start with our current snapshot+stamp (which may be one we adopted from yet
+  // another peer, not necessarily our own clientId). Skip our own bootstrap request.
+  const onSyncStart = (payload: unknown): void => {
+    const request = parseSyncStart(payload);
     if (!request || request.serviceId !== serviceId || request.clientId === ownClientId) {
       return;
     }
 
-    channel.emit(SERVICE_WELCOME_REPLY, {
+    channel.emit(SERVICE_SYNC_START_REPLY, {
       serviceId,
       state: getSnapshot(),
       version: reconciler.stamp.version,
       clientId: reconciler.stamp.clientId,
-    } satisfies WelcomeReplyPayload);
+    } satisfies SyncStartReplyPayload);
   };
 
-  // Bootstrap from a peer's welcome-reply. Version-gating (not a first-reply-only guard) is what makes
-  // this converge when several peers reply: each reply is adopted only if strictly newer.
-  const onWelcomeReply = (payload: unknown): void => {
+  // Bootstrap from a peer's sync-start-reply. Version-gating (not a first-reply-only guard) is what
+  // makes this converge when several peers reply: each reply is adopted only if strictly newer.
+  const onSyncStartReply = (payload: unknown): void => {
     const snapshot = parseStampedSnapshot(payload);
     if (!snapshot || snapshot.serviceId !== serviceId) {
       return;
@@ -185,12 +181,12 @@ export function connectRuntimeToChannel(
     adoptPeerSnapshot(snapshot);
   };
 
-  channel.on(SERVICE_WELCOME_REQUEST, onWelcomeRequest);
-  channel.on(SERVICE_WELCOME_REPLY, onWelcomeReply);
+  channel.on(SERVICE_SYNC_START, onSyncStart);
+  channel.on(SERVICE_SYNC_START_REPLY, onSyncStartReply);
   channel.on(SERVICE_PATCHES, onPatches);
 
   // Ask any existing peer for the current state so we catch up to changes authored before we joined.
-  emitWelcomeRequest();
+  emitSyncStart();
 
   // A hub that already holds peer-adopted state (e.g. after a hot reload) pushes once so late
   // joiners on other transports can converge without waiting for another mutation.
@@ -199,8 +195,8 @@ export function connectRuntimeToChannel(
   }
 
   return (): void => {
-    channel.off(SERVICE_WELCOME_REQUEST, onWelcomeRequest);
-    channel.off(SERVICE_WELCOME_REPLY, onWelcomeReply);
+    channel.off(SERVICE_SYNC_START, onSyncStart);
+    channel.off(SERVICE_SYNC_START_REPLY, onSyncStartReply);
     channel.off(SERVICE_PATCHES, onPatches);
   };
 }

@@ -3,8 +3,8 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { mutableRecordLookupServiceDef, schemaCounterServiceDef } from './fixtures.ts';
 import {
   SERVICE_PATCHES,
-  SERVICE_WELCOME_REPLY,
-  SERVICE_WELCOME_REQUEST,
+  SERVICE_SYNC_START_REPLY,
+  SERVICE_SYNC_START,
 } from './service-channel.ts';
 import { clearRegistry, registerService, unregisterService } from './service-registry.ts';
 
@@ -117,26 +117,26 @@ describe('subscriptions', () => {
 
 // ---- Channel sync ----
 
-describe('channel: welcome handshake', () => {
-  it('emits services:welcome-request on registration', () => {
+describe('channel: sync-start initialization', () => {
+  it('emits services:sync-start on registration', () => {
     const channel = createMockChannel();
     installChannel(channel);
 
     registerService(mutableRecordLookupServiceDef);
 
     expect(channel.emit).toHaveBeenCalledWith(
-      SERVICE_WELCOME_REQUEST,
+      SERVICE_SYNC_START,
       expect.objectContaining({ serviceId: mutableRecordLookupServiceDef.id })
     );
   });
 
-  it('applies state from a welcome-reply from an external peer', async () => {
+  it('applies state from a sync-start-reply from an external peer', async () => {
     const channel = createMockChannel();
     installChannel(channel);
 
     const service = registerService(mutableRecordLookupServiceDef);
 
-    channel.emitExternal(SERVICE_WELCOME_REPLY, {
+    channel.emitExternal(SERVICE_SYNC_START_REPLY, {
       serviceId: mutableRecordLookupServiceDef.id,
       state: { 'entry-x': { label: 'hello' } },
       version: 1,
@@ -148,7 +148,7 @@ describe('channel: welcome handshake', () => {
     );
   });
 
-  it('responds to a welcome-request from an external peer', async () => {
+  it('responds to a sync-start from an external peer', async () => {
     const channel = createMockChannel();
     installChannel(channel);
 
@@ -162,13 +162,13 @@ describe('channel: welcome handshake', () => {
     });
 
     // Another peer comes online and requests current state
-    channel.emitExternal(SERVICE_WELCOME_REQUEST, {
+    channel.emitExternal(SERVICE_SYNC_START, {
       serviceId: mutableRecordLookupServiceDef.id,
       clientId: 'new-peer',
     });
 
     expect(channel.emit).toHaveBeenCalledWith(
-      SERVICE_WELCOME_REPLY,
+      SERVICE_SYNC_START_REPLY,
       expect.objectContaining({
         serviceId: mutableRecordLookupServiceDef.id,
         state: expect.objectContaining({ a: { k: 'v' } }),
@@ -176,19 +176,21 @@ describe('channel: welcome handshake', () => {
     );
   });
 
-  it('ignores its own welcome-request echo', () => {
+  it('ignores its own sync-start echo', () => {
     const channel = createMockChannel();
     installChannel(channel);
 
     registerService(mutableRecordLookupServiceDef);
 
-    // The welcome-request emitted on registration echoes back through the channel.
+    // The sync-start emitted on registration echoes back through the channel.
     // The client must NOT reply to itself.
-    const replyCalls = channel.emit.mock.calls.filter(([event]) => event === SERVICE_WELCOME_REPLY);
+    const replyCalls = channel.emit.mock.calls.filter(
+      ([event]) => event === SERVICE_SYNC_START_REPLY
+    );
     expect(replyCalls).toHaveLength(0);
   });
 
-  it('adopts a welcome-reply from a hub that was not listening at registration time', async () => {
+  it('adopts a sync-start-reply from a hub that was not listening at registration time', async () => {
     const channel = createMockChannel();
     installChannel(channel);
 
@@ -197,11 +199,11 @@ describe('channel: welcome handshake', () => {
     });
 
     expect(channel.emit).toHaveBeenCalledWith(
-      SERVICE_WELCOME_REQUEST,
+      SERVICE_SYNC_START,
       expect.objectContaining({ serviceId: mutableRecordLookupServiceDef.id })
     );
 
-    channel.emitExternal(SERVICE_WELCOME_REPLY, {
+    channel.emitExternal(SERVICE_SYNC_START_REPLY, {
       serviceId: mutableRecordLookupServiceDef.id,
       state: { 'entry-late': { marker: 'synced' } },
       version: 1,
@@ -212,12 +214,12 @@ describe('channel: welcome handshake', () => {
       marker: 'synced',
     });
 
-    expect(
-      channel.emit.mock.calls.filter(([event]) => event === SERVICE_WELCOME_REQUEST).length
-    ).toBe(1);
+    expect(channel.emit.mock.calls.filter(([event]) => event === SERVICE_SYNC_START).length).toBe(
+      1
+    );
   });
 
-  it('converges via patches when a welcome-reply carried stale v0 state', async () => {
+  it('converges via patches when a sync-start-reply carried stale v0 state', async () => {
     const channel = createMockChannel();
     installChannel(channel);
 
@@ -225,7 +227,7 @@ describe('channel: welcome handshake', () => {
       relay: false,
     });
 
-    channel.emitExternal(SERVICE_WELCOME_REPLY, {
+    channel.emitExternal(SERVICE_SYNC_START_REPLY, {
       serviceId: mutableRecordLookupServiceDef.id,
       state: { 'entry-stale': { marker: 'v0' } },
       version: 0,
@@ -251,7 +253,7 @@ describe('channel: welcome handshake', () => {
     registerService(mutableRecordLookupServiceDef, undefined, { relay: false });
     unregisterService(mutableRecordLookupServiceDef.id);
 
-    channel.emitExternal(SERVICE_WELCOME_REPLY, {
+    channel.emitExternal(SERVICE_SYNC_START_REPLY, {
       serviceId: mutableRecordLookupServiceDef.id,
       state: { ghost: { marker: 'ignored' } },
       version: 99,
@@ -441,8 +443,8 @@ describe('channel: last-write-wins convergence', () => {
   });
 });
 
-describe('channel: multi-peer welcome bootstrap', () => {
-  it('converges on the newest welcome-reply when several peers answer out of order', async () => {
+describe('channel: multi-peer sync-start bootstrap', () => {
+  it('converges on the newest sync-start-reply when several peers answer out of order', async () => {
     const channel = createMockChannel();
     installChannel(channel);
 
@@ -450,19 +452,19 @@ describe('channel: multi-peer welcome bootstrap', () => {
 
     // Three peers reply with different versions, out of order. Only the newest must stick — this is
     // why bootstrap is version-gated rather than first-reply-wins.
-    channel.emitExternal(SERVICE_WELCOME_REPLY, {
+    channel.emitExternal(SERVICE_SYNC_START_REPLY, {
       serviceId: mutableRecordLookupServiceDef.id,
       state: { item: { v: '1' } },
       version: 1,
       clientId: 'p1',
     });
-    channel.emitExternal(SERVICE_WELCOME_REPLY, {
+    channel.emitExternal(SERVICE_SYNC_START_REPLY, {
       serviceId: mutableRecordLookupServiceDef.id,
       state: { item: { v: '3' } },
       version: 3,
       clientId: 'p3',
     });
-    channel.emitExternal(SERVICE_WELCOME_REPLY, {
+    channel.emitExternal(SERVICE_SYNC_START_REPLY, {
       serviceId: mutableRecordLookupServiceDef.id,
       state: { item: { v: '2' } },
       version: 2,
@@ -563,7 +565,7 @@ describe('channel: untrusted payloads', () => {
 
     for (const payload of malformed) {
       expect(() => channel.emitExternal(SERVICE_PATCHES, payload)).not.toThrow();
-      expect(() => channel.emitExternal(SERVICE_WELCOME_REPLY, payload)).not.toThrow();
+      expect(() => channel.emitExternal(SERVICE_SYNC_START_REPLY, payload)).not.toThrow();
     }
 
     await new Promise<void>((resolve) => setTimeout(resolve, 10));
@@ -737,15 +739,15 @@ describe('channel: relay role', () => {
     expect((relays[0][1] as { version: number }).version).toBe(2);
   });
 
-  it('a hub relays state it adopts from a welcome-reply', () => {
+  it('a hub relays state it adopts from a sync-start-reply', () => {
     const channel = createMockChannel();
     installChannel(channel);
 
     registerService(mutableRecordLookupServiceDef, undefined, { relay: true });
 
-    // A leaf peer's welcome-reply only reaches the hub; the hub must forward it so peers on its
+    // A leaf peer's sync-start-reply only reaches the hub; the hub must forward it so peers on its
     // other transports converge too.
-    channel.emitExternal(SERVICE_WELCOME_REPLY, {
+    channel.emitExternal(SERVICE_SYNC_START_REPLY, {
       serviceId: mutableRecordLookupServiceDef.id,
       state: { item: { color: 'green' } },
       version: 5,
@@ -773,8 +775,8 @@ describe('channel: disconnect on unregister', () => {
     unregisterService(mutableRecordLookupServiceDef.id);
 
     // All three event listeners should have been torn down
-    expect(channel.off).toHaveBeenCalledWith(SERVICE_WELCOME_REQUEST, expect.any(Function));
-    expect(channel.off).toHaveBeenCalledWith(SERVICE_WELCOME_REPLY, expect.any(Function));
+    expect(channel.off).toHaveBeenCalledWith(SERVICE_SYNC_START, expect.any(Function));
+    expect(channel.off).toHaveBeenCalledWith(SERVICE_SYNC_START_REPLY, expect.any(Function));
     expect(channel.off).toHaveBeenCalledWith(SERVICE_PATCHES, expect.any(Function));
   });
 });

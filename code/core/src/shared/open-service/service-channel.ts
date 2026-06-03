@@ -27,21 +27,21 @@ export interface ServiceChannel {
   emit(event: string, data: unknown): void;
 }
 
-export const SERVICE_WELCOME_REQUEST = 'services:welcome-request' as const;
-export const SERVICE_WELCOME_REPLY = 'services:welcome-reply' as const;
+export const SERVICE_SYNC_START = 'services:sync-start' as const;
+export const SERVICE_SYNC_START_REPLY = 'services:sync-start-reply' as const;
 export const SERVICE_PATCHES = 'services:patches' as const;
 export const SERVICE_COMMAND_INVOKE = 'services:command-invoke' as const;
 export const SERVICE_COMMAND_RESULT = 'services:command-result' as const;
 export const SERVICE_COMMAND_ERROR = 'services:command-error' as const;
 
-/** Sent by a newly-registered client to request the current state from any existing peer. */
-export interface WelcomeRequestPayload {
+/** Sent by a newly-registered peer to initialize its state from any existing peer. */
+export interface SyncStartPayload {
   serviceId: string;
   clientId: string;
 }
 
-/** Sent in reply to a `services:welcome-request` with the responding peer's current state. */
-export interface WelcomeReplyPayload {
+/** Sent in reply to a `services:sync-start` with the responding peer's current state. */
+export interface SyncStartReplyPayload {
   serviceId: string;
   /** Full state snapshot at the time of reply. */
   state: Record<string, unknown>;

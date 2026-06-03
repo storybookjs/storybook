@@ -232,7 +232,7 @@ export class PostMessageTransport implements ChannelTransport {
         invariant(this.handler, 'ChannelHandler should be set');
 
         // Preview channel bootstraps after the iframe document loads. When the preview sends its
-        // first postMessage (e.g. open-service welcome-request), flush any outbound events that
+        // first postMessage (e.g. open-service sync-start), flush any outbound events that
         // were buffered while the iframe was not yet a postMessage target.
         if (this.config.page === 'manager' && this.buffer.length) {
           this.flush();

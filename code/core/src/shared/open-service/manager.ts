@@ -8,8 +8,7 @@
  * Quick start:
  *
  * ```ts
- * import { registerService, useServiceQuery, useServiceCommand }
- *   from 'storybook/internal/open-service/manager';
+ * import { registerService, useServiceQuery, useServiceCommand } from 'storybook/manager-api';
  *
  * // Inside an addons.register callback:
  * const service = registerService(myServiceDef);

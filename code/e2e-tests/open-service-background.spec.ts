@@ -7,7 +7,7 @@ import { SbPage } from './util.ts';
  * E2E regression for the open-service background demo (`code/.storybook/background-service`).
  *
  * Validates the reload bootstrap path: preview must converge via manager postMessage
- * (welcome handshake, buffered patch flush on first preview message) — not only dev-server websocket.
+ * (sync-start initialization, buffered patch flush on first preview message) — not only dev-server websocket.
  * Manager addon registration runs synchronously before the preview iframe mounts (Option A).
  *
  * Run (from `code/`):

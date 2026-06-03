@@ -74,7 +74,7 @@ function isPlainObject(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
-/** Shape of a validated `services:patches` / `services:welcome-reply` payload. */
+/** Shape of a validated `services:patches` / `services:sync-start-reply` payload. */
 export type StampedSnapshot = {
   serviceId: string;
   state: Record<string, unknown>;
@@ -83,7 +83,7 @@ export type StampedSnapshot = {
 };
 
 /**
- * Narrows an untrusted patches/welcome-reply payload to a known shape before any field is trusted.
+ * Narrows an untrusted patches/sync-start-reply payload to a known shape before any field is trusted.
  *
  * Returns the typed payload, or `null` when it is malformed. Channel traffic is untrusted input, so
  * every field is checked (and `state` must be a plain object) before the snapshot is applied — and,
@@ -108,14 +108,14 @@ export function parseStampedSnapshot(payload: unknown): StampedSnapshot | null {
   return { serviceId, state, version, clientId };
 }
 
-/** Shape of a validated `services:welcome-request` payload. */
-export type WelcomeRequest = {
+/** Shape of a validated `services:sync-start` payload. */
+export type SyncStart = {
   serviceId: string;
   clientId: string;
 };
 
-/** Narrows an untrusted welcome-request payload, returning `null` when malformed. */
-export function parseWelcomeRequest(payload: unknown): WelcomeRequest | null {
+/** Narrows an untrusted sync-start payload, returning `null` when malformed. */
+export function parseSyncStart(payload: unknown): SyncStart | null {
   if (!isPlainObject(payload)) {
     return null;
   }
@@ -212,7 +212,7 @@ export type StateMutator = (state: Record<string, unknown>) => void;
  * the merge logic, which is exactly how they could silently drift apart.
  */
 export type SnapshotReconciler = {
-  /** The current local stamp (read for welcome-reply / broadcast envelopes). */
+  /** The current local stamp (read for sync-start-reply / broadcast envelopes). */
   readonly stamp: SyncStamp;
   /**
    * Records a locally authored change: bumps `version` and re-stamps with `clientId`. Call this

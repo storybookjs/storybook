@@ -7,7 +7,7 @@
  *  - Server registers and subscribes to log every color change.
  *
  * All three runtimes share this one definition and stay in sync automatically via
- * the channel welcome-handshake and patch-broadcast protocol.
+ * the channel sync-start initialization and patch-broadcast protocol.
  *
  * Import from here in all three contexts; never import environment-specific bits
  * (hooks, addons, node-logger) from this file.

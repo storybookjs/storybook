@@ -3,8 +3,8 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { mutableRecordLookupServiceDef, schemaCounterServiceDef } from './fixtures.ts';
 import {
   SERVICE_PATCHES,
-  SERVICE_WELCOME_REPLY,
-  SERVICE_WELCOME_REQUEST,
+  SERVICE_SYNC_START_REPLY,
+  SERVICE_SYNC_START,
 } from './service-channel.ts';
 import { clearRegistry, registerService } from './server.ts';
 
@@ -65,8 +65,8 @@ describe('registerService: channel wiring', () => {
 
     registerService(mutableRecordLookupServiceDef);
 
-    expect(channel.on).toHaveBeenCalledWith(SERVICE_WELCOME_REQUEST, expect.any(Function));
-    expect(channel.on).toHaveBeenCalledWith(SERVICE_WELCOME_REPLY, expect.any(Function));
+    expect(channel.on).toHaveBeenCalledWith(SERVICE_SYNC_START, expect.any(Function));
+    expect(channel.on).toHaveBeenCalledWith(SERVICE_SYNC_START_REPLY, expect.any(Function));
     expect(channel.on).toHaveBeenCalledWith(SERVICE_PATCHES, expect.any(Function));
   });
 
@@ -125,8 +125,8 @@ describe('server: command push', () => {
   });
 });
 
-describe('server: welcome handshake', () => {
-  it('replies to a welcome-request with its current snapshot and stamp', () => {
+describe('server: sync-start initialization', () => {
+  it('replies to a sync-start with its current snapshot and stamp', () => {
     const channel = createMockChannel();
     installChannel(channel);
 
@@ -144,13 +144,13 @@ describe('server: welcome handshake', () => {
 
     // A different peer comes online and asks for current state; the server answers with the snapshot
     // it now holds, stamped with the version/clientId it adopted (not its own initial clientId).
-    channel.emitExternal(SERVICE_WELCOME_REQUEST, {
+    channel.emitExternal(SERVICE_SYNC_START, {
       serviceId: recordServiceId,
       clientId: 'peer-2',
     });
 
     expect(channel.emit).toHaveBeenCalledWith(
-      SERVICE_WELCOME_REPLY,
+      SERVICE_SYNC_START_REPLY,
       expect.objectContaining({
         serviceId: recordServiceId,
         state: expect.objectContaining({ a: { k: 'v' } }),
@@ -160,18 +160,20 @@ describe('server: welcome handshake', () => {
     );
   });
 
-  it('does not reply to a welcome-request for a different service id', () => {
+  it('does not reply to a sync-start for a different service id', () => {
     const channel = createMockChannel();
     installChannel(channel);
 
     registerService(mutableRecordLookupServiceDef);
 
-    channel.emitExternal(SERVICE_WELCOME_REQUEST, {
+    channel.emitExternal(SERVICE_SYNC_START, {
       serviceId: 'some-other-service',
       clientId: 'peer-2',
     });
 
-    const replyCalls = channel.emit.mock.calls.filter(([event]) => event === SERVICE_WELCOME_REPLY);
+    const replyCalls = channel.emit.mock.calls.filter(
+      ([event]) => event === SERVICE_SYNC_START_REPLY
+    );
     expect(replyCalls).toHaveLength(0);
   });
 });
@@ -296,8 +298,8 @@ describe('server: teardown via clearRegistry', () => {
 
     clearRegistry();
 
-    expect(channel.off).toHaveBeenCalledWith(SERVICE_WELCOME_REQUEST, expect.any(Function));
-    expect(channel.off).toHaveBeenCalledWith(SERVICE_WELCOME_REPLY, expect.any(Function));
+    expect(channel.off).toHaveBeenCalledWith(SERVICE_SYNC_START, expect.any(Function));
+    expect(channel.off).toHaveBeenCalledWith(SERVICE_SYNC_START_REPLY, expect.any(Function));
     expect(channel.off).toHaveBeenCalledWith(SERVICE_PATCHES, expect.any(Function));
 
     // A strictly-newer patch after teardown must not reach the now-detached runtime.
@@ -312,26 +314,26 @@ describe('server: teardown via clearRegistry', () => {
 });
 
 describe('server: bootstrap on registration', () => {
-  it('emits a welcome-request so a freshly-registered server can catch up', () => {
+  it('emits a sync-start so a freshly-registered server can catch up', () => {
     const channel = createMockChannel();
     installChannel(channel);
 
     registerService(mutableRecordLookupServiceDef);
 
     expect(channel.emit).toHaveBeenCalledWith(
-      SERVICE_WELCOME_REQUEST,
+      SERVICE_SYNC_START,
       expect.objectContaining({ serviceId: recordServiceId })
     );
   });
 
-  it('adopts state from a welcome-reply (a late/restarted server catches up)', () => {
+  it('adopts state from a sync-start-reply (a late/restarted server catches up)', () => {
     const channel = createMockChannel();
     installChannel(channel);
 
     const service = registerService(mutableRecordLookupServiceDef);
 
     // A peer answers the server's bootstrap request with state authored while the server was down.
-    channel.emitExternal(SERVICE_WELCOME_REPLY, {
+    channel.emitExternal(SERVICE_SYNC_START_REPLY, {
       serviceId: recordServiceId,
       state: { a: { k: 'v' } },
       version: 3,
@@ -341,16 +343,18 @@ describe('server: bootstrap on registration', () => {
     expect(service.queries.getRecordFields({ entryId: 'a' })).toEqual({ k: 'v' });
   });
 
-  it('does not treat its own welcome-request echo as incoming state', () => {
+  it('does not treat its own sync-start echo as incoming state', () => {
     const channel = createMockChannel();
     installChannel(channel);
 
     const service = registerService(mutableRecordLookupServiceDef);
 
-    // The bootstrap welcome-request echoes back through the shared bus; it must not reply to itself
+    // The bootstrap sync-start echoes back through the shared bus; it must not reply to itself
     // nor mutate state. With no peer to answer, state stays empty.
     expect(service.queries.getRecordFields({ entryId: 'a' })).toBeNull();
-    const replyCalls = channel.emit.mock.calls.filter(([event]) => event === SERVICE_WELCOME_REPLY);
+    const replyCalls = channel.emit.mock.calls.filter(
+      ([event]) => event === SERVICE_SYNC_START_REPLY
+    );
     expect(replyCalls).toHaveLength(0);
   });
 });
@@ -388,13 +392,13 @@ describe('server: relay role', () => {
     );
   });
 
-  it('relays state it adopts during bootstrap (welcome-reply)', () => {
+  it('relays state it adopts during bootstrap (sync-start-reply)', () => {
     const channel = createMockChannel();
     installChannel(channel);
 
     registerService(mutableRecordLookupServiceDef);
 
-    channel.emitExternal(SERVICE_WELCOME_REPLY, {
+    channel.emitExternal(SERVICE_SYNC_START_REPLY, {
       serviceId: recordServiceId,
       state: { entry: { marker: 'boot' } },
       version: 4,

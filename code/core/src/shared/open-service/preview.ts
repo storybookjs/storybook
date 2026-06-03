@@ -11,7 +11,7 @@
  * Quick start:
  *
  * ```ts
- * import { registerService } from 'storybook/internal/open-service/preview';
+ * import { registerService } from 'storybook/preview-api';
  *
  * const service = registerService(myServiceDef);
  *
@@ -42,8 +42,8 @@ export {
   SERVICE_COMMAND_INVOKE,
   SERVICE_COMMAND_RESULT,
   SERVICE_PATCHES,
-  SERVICE_WELCOME_REPLY,
-  SERVICE_WELCOME_REQUEST,
+  SERVICE_SYNC_START,
+  SERVICE_SYNC_START_REPLY,
 } from './service-channel.ts';
 export type {
   CommandErrorPayload,
@@ -51,8 +51,8 @@ export type {
   CommandResultPayload,
   PatchesPayload,
   ServiceChannel,
-  WelcomeReplyPayload,
-  WelcomeRequestPayload,
+  SyncStartPayload,
+  SyncStartReplyPayload,
 } from './service-channel.ts';
 
 export type {

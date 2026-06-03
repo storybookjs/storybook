@@ -112,11 +112,14 @@ describe('useServiceQuery', () => {
 
     await service.commands.assignRecordField({ entryId: 'a', fieldKey: 'k', fieldValue: 'v' });
 
-    const { result } = renderHook(() =>
-      useServiceQuery(service, 'getRecordFields', { entryId: 'a' })
-    );
+    let renderCount = 0;
+    const { result } = renderHook(() => {
+      renderCount++;
+      return useServiceQuery(service, 'getRecordFields', { entryId: 'a' });
+    });
 
     const firstRef = result.current;
+    const countAfterMount = renderCount;
 
     // Assign the same value again — deeply equal, so no re-render.
     await service.commands.assignRecordField({ entryId: 'a', fieldKey: 'k', fieldValue: 'v' });
@@ -125,5 +128,6 @@ describe('useServiceQuery', () => {
     await new Promise<void>((resolve) => setTimeout(resolve, 20));
 
     expect(result.current).toBe(firstRef);
+    expect(renderCount).toBe(countAfterMount);
   });
 });

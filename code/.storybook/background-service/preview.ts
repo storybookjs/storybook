@@ -21,7 +21,7 @@
  * ```
  */
 
-import { registerService } from '../../core/src/shared/open-service/preview.ts';
+import { registerService } from 'storybook/preview-api';
 import { backgroundServiceDef } from './definition.ts';
 
 export const backgroundService = registerService(backgroundServiceDef);

@@ -32,8 +32,8 @@ export {
   SERVICE_COMMAND_INVOKE,
   SERVICE_COMMAND_RESULT,
   SERVICE_PATCHES,
-  SERVICE_WELCOME_REPLY,
-  SERVICE_WELCOME_REQUEST,
+  SERVICE_SYNC_START,
+  SERVICE_SYNC_START_REPLY,
 } from './service-channel.ts';
 export type {
   CommandErrorPayload,
@@ -41,8 +41,8 @@ export type {
   CommandResultPayload,
   PatchesPayload,
   ServiceChannel,
-  WelcomeReplyPayload,
-  WelcomeRequestPayload,
+  SyncStartPayload,
+  SyncStartReplyPayload,
 } from './service-channel.ts';
 
 export { useServiceCommand } from './use-service-command.ts';

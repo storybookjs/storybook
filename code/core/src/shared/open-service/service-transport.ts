@@ -4,8 +4,8 @@
  * Every runtime that participates in cross-peer sync — the manager (top window), a preview iframe,
  * and the dev server (Node) — does the same two things with its channel: it broadcasts the state its
  * own commands author, and it listens for peers' snapshots so it can reconcile. This module owns both
- * halves so the client transport (`service-client.ts`) and the server transport
- * (`service-registration.ts`) cannot drift apart in how they wrap commands, gate echoes, or relay
+ * halves so leaf registration (`service-registry.ts`, `relay: false`) and hub registration
+ * (`server.ts`, `relay: true`) cannot drift apart in how they wrap commands, gate echoes, or relay
  * adopted state.
  *
  * - {@link wrapCommandsForBroadcast} wraps a runtime's commands so each local call, after it resolves,

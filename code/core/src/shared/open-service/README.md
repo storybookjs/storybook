@@ -570,7 +570,7 @@ const ready = await exampleService.queries.getValue.loaded({ entryId: 'a' });
 - Runtime behavior belongs in [service-runtime.test.ts](./service-runtime.test.ts)
 - Validation behavior belongs in [service-validation.test.ts](./service-validation.test.ts)
 - Server registration and static snapshot behavior belong in [server.test.ts](./server.test.ts)
-- Client (leaf) registration and channel sync behavior belong in [service-client.test.ts](./service-client.test.ts); server (hub) channel sync in [service-registration-sync.test.ts](./service-registration-sync.test.ts)
+- Leaf channel sync (`relay: false`, preview path) belongs in [service-transport-leaf.test.ts](./service-transport-leaf.test.ts); hub channel sync (dev server) in [service-registration-sync.test.ts](./service-registration-sync.test.ts)
 - React hook behavior belongs in [use-service-query.test.tsx](./use-service-query.test.tsx) and [use-service-command.test.tsx](./use-service-command.test.tsx)
 - Reusable scenario definitions belong in [fixtures.ts](./fixtures.ts)
 

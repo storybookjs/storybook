@@ -4,9 +4,8 @@
  * Every runtime — server (Node), manager (top window), preview (iframe) — runs a full
  * `ServiceRuntime` and reconciles incoming state with the same two rules, so this module is the
  * single source of truth for all of them. The transport that moves snapshots on and off the channel
- * lives in `service-transport.ts`, which both the client (`service-client.ts`) and the server
- * (`service-registration.ts`) drive through these primitives (replacing the `deepAssign` that used
- * to be duplicated in each).
+ * lives in `service-transport.ts`, which every `registerService` entrypoint drives through these
+ * primitives (see `service-transport-leaf.test.ts` and `service-registration-sync.test.ts`).
  *
  * ## 1. `isNewer` — last-write-wins ordering
  *

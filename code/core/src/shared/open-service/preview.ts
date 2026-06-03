@@ -37,7 +37,6 @@ export { clearRegistry, serviceRegistryApi, unregisterService } from './service-
 
 export {
   generateClientId,
-  getServiceChannel,
   SERVICE_COMMAND_ERROR,
   SERVICE_COMMAND_INVOKE,
   SERVICE_COMMAND_RESULT,

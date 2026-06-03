@@ -344,7 +344,6 @@ export default {
     'experimental_useTestProviderStore',
     'experimental_useUniversalStore',
     'generateClientId',
-    'getServiceChannel',
     'internal_checklistStore',
     'internal_fullStatusStore',
     'internal_fullTestProviderStore',

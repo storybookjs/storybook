@@ -49,7 +49,6 @@ The browser API consists of:
 - `registerService` — creates a local runtime and joins the channel sync protocol
 - `unregisterService` — tears down one service's channel listeners and removes it from the registry
 - `clearRegistry` — removes all registrations (use in `afterEach` in tests)
-- `getServiceChannel` — reads the live Storybook channel from `globalThis.__STORYBOOK_ADDONS_CHANNEL__`
 - `useServiceQuery` — React hook backed by `useSyncExternalStore` (manager entrypoint)
 - `useServiceCommand` — React hook returning a stable command reference (manager entrypoint)
 

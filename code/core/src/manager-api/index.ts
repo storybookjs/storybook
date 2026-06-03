@@ -30,7 +30,6 @@ export {
   clearRegistry,
   defineService,
   generateClientId,
-  getServiceChannel,
   registerService,
   SERVICE_COMMAND_ERROR,
   SERVICE_COMMAND_INVOKE,

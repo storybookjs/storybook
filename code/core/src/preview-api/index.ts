@@ -88,50 +88,5 @@ export {
 } from './preview-web.ts';
 export type { SelectionStore, View } from './preview-web.ts';
 
-/** OPEN SERVICE API (preview leaf — no React hooks) */
-export {
-  clearRegistry,
-  defineService,
-  generateClientId,
-  registerService,
-  SERVICE_COMMAND_ERROR,
-  SERVICE_COMMAND_INVOKE,
-  SERVICE_COMMAND_RESULT,
-  SERVICE_PATCHES,
-  SERVICE_SYNC_START,
-  SERVICE_SYNC_START_REPLY,
-  serviceRegistryApi,
-  unregisterService,
-} from '../shared/open-service/preview.ts';
-export type {
-  AnyServiceDefinition,
-  Command,
-  CommandCtx,
-  CommandDefinition,
-  CommandSelf,
-  CommandErrorPayload,
-  CommandInvokePayload,
-  CommandResultPayload,
-  LoadCtx,
-  LoadSelf,
-  OperationDescriptor,
-  PatchesPayload,
-  Query,
-  QueryCtx,
-  QueryDefinition,
-  QuerySelf,
-  RuntimeService,
-  SchemaDescriptor,
-  ServerServiceRegistration,
-  ServiceChannel,
-  ServiceDefinition,
-  ServiceDescriptor,
-  ServiceId,
-  ServiceInstance,
-  ServiceInstanceOf,
-  ServiceRegistrationOptions,
-  ServiceSummary,
-  StaticStore,
-  SyncStartPayload,
-  SyncStartReplyPayload,
-} from '../shared/open-service/preview.ts';
+/** OPEN SERVICE API (preview leaf — register only; types on `storybook/open-service`) */
+export { registerService } from '../shared/open-service/preview.ts';

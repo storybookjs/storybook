@@ -2,11 +2,11 @@
  * Preview-side entrypoint for the open-service architecture.
  *
  * Import from here in preview (renderer) code. This entrypoint is intentionally renderer-agnostic —
- * it exposes the raw service API with no React dependencies. Use `.subscribe()` directly to react to
- * state changes in your renderer.
+ * it exposes only registration with no React dependencies. Use `.subscribe()` on queries to react
+ * to state changes in your renderer.
  *
- * The manager entrypoint (`./manager.ts`) additionally exports `useServiceQuery` and
- * `useServiceCommand` for React-based manager code.
+ * Define services with `storybook/open-service`. The manager entrypoint (`./manager.ts`) exports the
+ * broader registration, channel, and type surface plus `useServiceQuery` and `useServiceCommand`.
  *
  * Quick start:
  *
@@ -29,55 +29,6 @@ import type {
   ServiceInstance,
   ServiceRegistrationOptions,
   ServiceRegistryApi,
-} from './types.ts';
-
-export { defineService } from './service-definition.ts';
-
-export { clearRegistry, serviceRegistryApi, unregisterService } from './service-registry.ts';
-
-export {
-  generateClientId,
-  SERVICE_COMMAND_ERROR,
-  SERVICE_COMMAND_INVOKE,
-  SERVICE_COMMAND_RESULT,
-  SERVICE_PATCHES,
-  SERVICE_SYNC_START,
-  SERVICE_SYNC_START_REPLY,
-} from './service-channel.ts';
-export type {
-  CommandErrorPayload,
-  CommandInvokePayload,
-  CommandResultPayload,
-  PatchesPayload,
-  ServiceChannel,
-  SyncStartPayload,
-  SyncStartReplyPayload,
-} from './service-channel.ts';
-
-export type {
-  AnyServiceDefinition,
-  Command,
-  CommandCtx,
-  CommandDefinition,
-  CommandSelf,
-  LoadCtx,
-  LoadSelf,
-  OperationDescriptor,
-  Query,
-  QueryCtx,
-  QueryDefinition,
-  QuerySelf,
-  RuntimeService,
-  SchemaDescriptor,
-  ServerServiceRegistration,
-  ServiceDefinition,
-  ServiceDescriptor,
-  ServiceId,
-  ServiceInstance,
-  ServiceInstanceOf,
-  ServiceRegistrationOptions,
-  ServiceSummary,
-  StaticStore,
 } from './types.ts';
 
 /**

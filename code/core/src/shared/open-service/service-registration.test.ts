@@ -168,8 +168,8 @@ describe('service registration', () => {
       commands: {
         increment: {
           handler: async (_input, ctx) => {
-            ctx.self.setState((draft) => {
-              draft.count += 1;
+            ctx.self.setState((state) => {
+              state.count += 1;
             });
           },
         },
@@ -184,8 +184,8 @@ describe('service registration', () => {
             const record = lookup.queries.getRecordFields({
               entryId: input.entryId,
             });
-            ctx.self.setState((draft) => {
-              draft.count = record?.marker === input.fieldValue ? 1 : 0;
+            ctx.self.setState((state) => {
+              state.count = record?.marker === input.fieldValue ? 1 : 0;
             });
           },
         },
@@ -252,8 +252,8 @@ describe('service registration', () => {
       commands: {
         setValue: {
           handler: async (_input, ctx) => {
-            ctx.self.setState((draft) => {
-              draft.value = 'built-at-registration';
+            ctx.self.setState((state) => {
+              state.value = 'built-at-registration';
             });
           },
         },

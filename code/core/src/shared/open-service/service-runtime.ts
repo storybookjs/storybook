@@ -58,8 +58,9 @@
  * path because handler reads are tracked by `activeHandlerLoadSession`, which is module-scoped
  * and stable for the duration of a sync handler call.
  */
-import { produce } from 'immer';
-import { computed, effect, endBatch, signal, startBatch } from 'alien-signals';
+import { batch, computed, effect, untracked } from '@preact/signals-core';
+import { deepSignal } from 'deepsignal/core';
+import { isEqual } from 'es-toolkit/predicate';
 
 import {
   OpenServiceInvalidStaticPathError,
@@ -87,7 +88,6 @@ import type {
   ServiceRegistryApi,
 } from './types.ts';
 
-type ServiceSignal<TState> = ReturnType<typeof signal<TState>>;
 type RuntimeQueryDefinition<TState> = QueryDefinition<TState, AnySchema, AnySchema>;
 
 /**
@@ -101,7 +101,8 @@ export type ServiceRuntime<
   TQueries extends Queries<TState>,
   TCommands extends Commands<TState>,
 > = {
-  stateSignal: ServiceSignal<TState>;
+  /** Returns a plain, detached snapshot of the current state for serialization. */
+  getStateSnapshot(): TState;
   commandSelf: CommandSelf<TState>;
   queryCtx: QueryCtx<TState>;
   loadCtxForStatic: LoadCtx<TState>;
@@ -293,26 +294,42 @@ async function drainCollector(
 /**
  * Creates the writable `self` object that backs every runtime ctx for one service instance.
  *
- * State writes are wrapped in an alien-signals batch so one command can update multiple fields
- * without causing intermediate reactive notifications between writes.
+ * State is a deep reactive proxy: mutations applied to `state` notify only the fine-grained signals
+ * for the fields that actually changed. Writes are wrapped in a batch so one command only notifies
+ * subscribers after the full mutation completes.
  */
-function createCommandSelf<TState>(stateSignal: ServiceSignal<TState>): CommandSelf<TState> {
+function createCommandSelf<TState>(state: TState): CommandSelf<TState> {
   return {
     get state() {
-      return stateSignal();
+      return state;
     },
     setState(mutate) {
-      // Batch signal writes so one command only triggers subscribers after the full draft update.
-      startBatch();
-      try {
-        stateSignal(produce(stateSignal(), mutate));
-      } finally {
-        endBatch();
-      }
+      batch(() => {
+        mutate(state);
+      });
     },
     queries: {},
     commands: {},
   };
+}
+
+/**
+ * Detaches a value from the reactive deep-signal proxy into a plain snapshot.
+ *
+ * Used for `selector` results on the subscription path: a selector can return a live proxy slice,
+ * which we strip so consumers get plain, comparable data (and reads inside the `computed` register
+ * only the fields the selector actually touched). Primitives pass through untouched.
+ *
+ * `structuredClone` cannot clone a `Proxy`, so this uses a JSON round-trip. That is sufficient
+ * because open-service state is required to be JSON-serializable (the same constraint the
+ * static-build pipeline relies on). For plain (already-detached) values such as the whole-state
+ * snapshot, the runtime uses `structuredClone` directly instead.
+ */
+function detachSnapshot<TValue>(value: TValue): TValue {
+  if (value === null || typeof value !== 'object') {
+    return value;
+  }
+  return JSON.parse(JSON.stringify(value)) as TValue;
 }
 
 /**
@@ -368,10 +385,17 @@ function buildCommands<TState>(
 type QueryRuntimeRefs<TState> = {
   serviceId: ServiceId;
   commandSelf: CommandSelf<TState>;
-  stateSignal: ServiceSignal<TState>;
+  /** Deep reactive proxy backing this service's state; reads inside a computed track fine-grained. */
+  state: TState;
   registryApi: ServiceRegistryApi;
   queryDefinitions: Map<string, RuntimeQueryDefinition<TState>>;
   defaultQueries: Record<string, Query<unknown, unknown>>;
+  /**
+   * Builds a command map whose `setState` writes are dropped once `isCurrent()` returns false.
+   * Used by reactive subscription loads so a superseded (stale) re-run cannot overwrite the state
+   * produced by a newer run.
+   */
+  buildGatedCommands: (isCurrent: () => boolean) => CommandSelf<TState>['commands'];
 };
 
 /**
@@ -407,7 +431,7 @@ function validateQueryOutput<TState>(
 }
 
 /**
- * Runs the query handler synchronously and validates the resolved value.
+ * Runs the query handler synchronously and returns its raw result (no output validation).
  *
  * The `selfQueries` parameter lets the caller swap in load-aware wrappers when running inside a
  * load body or a `.loaded()` discovery pass; ordinary handler calls pass the default queries.
@@ -430,14 +454,17 @@ function runHandlerSync<TState>(
 
   const handlerSelf: QuerySelf<TState> = {
     get state() {
-      return refs.stateSignal();
+      return refs.state;
     },
     queries: selfQueries,
   };
   const handlerCtx: QueryCtx<TState> = { self: handlerSelf, getService };
-  const result = queryDef.handler(validatedInput, handlerCtx);
 
-  return validateQueryOutput(refs, queryName, queryDef, result);
+  // The handler result is returned raw. Output validation is intentionally *not* run here: this
+  // function executes inside the subscription `computed`, where reading the whole value to validate
+  // it would broaden the reactive dependency footprint. Validation runs at the call sites instead —
+  // see `validateQueryOutput` usages.
+  return queryDef.handler(validatedInput, handlerCtx);
 }
 
 /**
@@ -540,7 +567,7 @@ async function runLoadBody<TState>(
   const wrappedQueries = buildLoadWrappedQueries(refs, ancestorChain, collector);
   const loadSelf: LoadSelf<TState> = {
     get state() {
-      return refs.stateSignal();
+      return refs.state;
     },
     queries: wrappedQueries,
     commands: refs.commandSelf.commands as LoadSelf<TState>['commands'],
@@ -549,6 +576,43 @@ async function runLoadBody<TState>(
 
   await Promise.resolve(queryDef.load(validatedInput, loadCtx));
   await drainCollector(collector, undefined, refs.serviceId, queryName);
+}
+
+/**
+ * Runs a query's `load` as the body of a subscription's reactive effect.
+ *
+ * Unlike {@link runLoadBody}, this is invoked synchronously inside an `effect()`, so the external
+ * signals the load reads in its synchronous prefix are tracked — when they later change, the effect
+ * re-runs and the load re-fires, turning it into a reactive async resource. Loads are therefore an
+ * idempotent warming step (the documented guideline, now a hard contract); one-shot side effects
+ * belong in a command.
+ *
+ * Writes go through gated commands: if `isCurrent()` flips to false because a newer run started
+ * (deps changed again), this run's later writes are dropped, so a slow stale load cannot clobber the
+ * newer result. Sibling reads use the default queries — their loads fire-and-forget — so transitive
+ * dependencies stay warm without the `.loaded()` drain, which is only meaningful for awaited pulls.
+ */
+async function runReactiveLoad<TState>(
+  refs: QueryRuntimeRefs<TState>,
+  queryName: string,
+  queryDef: RuntimeQueryDefinition<TState>,
+  validatedInput: unknown,
+  isCurrent: () => boolean
+): Promise<void> {
+  if (!queryDef.load) {
+    return;
+  }
+
+  const loadSelf: LoadSelf<TState> = {
+    get state() {
+      return refs.state;
+    },
+    queries: refs.defaultQueries,
+    commands: refs.buildGatedCommands(isCurrent) as LoadSelf<TState>['commands'],
+  };
+  const loadCtx: LoadCtx<TState> = { self: loadSelf, getService: refs.registryApi.getService };
+
+  await Promise.resolve(queryDef.load(validatedInput, loadCtx));
 }
 
 /**
@@ -605,13 +669,18 @@ function buildLoadWrappedQueries<TState>(
         }
       }
 
-      return runHandlerSync(
+      return validateQueryOutput(
         refs,
         name,
         queryDef,
-        validatedInput,
-        wrappedQueries,
-        refs.registryApi.getService
+        runHandlerSync(
+          refs,
+          name,
+          queryDef,
+          validatedInput,
+          wrappedQueries,
+          refs.registryApi.getService
+        )
       );
     }) as Query<unknown, unknown>;
 
@@ -650,9 +719,10 @@ function buildLoadWrappedQueries<TState>(
  *    - If the handler threw, swallow (state might still be partial; a later iteration may fix it).
  *    - If the handler added nothing to the collector, we have converged — exit the loop.
  *
- * 4. **Return** — run the handler one final time without the session and return the validated
- *    output. This is the value the caller sees. If state is still incomplete at this point the
- *    handler may throw, and that throw propagates.
+ * 4. **Return** — run the handler one final time under the same session (so dependency reads
+ *    respect `settledKeys` and do not refire loads) and return the validated output. This is the
+ *    value the caller sees. If state is still incomplete at this point the handler may throw, and
+ *    that throw propagates.
  *
  * ### Worked example: `bar.loaded(input)` where `bar.handler` reads `foo`
  *
@@ -762,14 +832,29 @@ async function runLoaded<TState>(
     hasMoreWork = session.collector.size > 0;
   }
 
-  return runHandlerSync(
-    refs,
-    queryName,
-    queryDef,
-    validatedInput,
-    refs.defaultQueries,
-    refs.registryApi.getService
-  );
+  // Run the final handler call under the session so already-settled dependency loads are not
+  // refired during this last evaluation, and validate the output at this pull boundary (validation
+  // is intentionally kept out of the reactive `runHandlerSync` path).
+  const previousSession = activeHandlerLoadSession;
+  activeHandlerLoadSession = session;
+
+  try {
+    return validateQueryOutput(
+      refs,
+      queryName,
+      queryDef,
+      runHandlerSync(
+        refs,
+        queryName,
+        queryDef,
+        validatedInput,
+        refs.defaultQueries,
+        refs.registryApi.getService
+      )
+    );
+  } finally {
+    activeHandlerLoadSession = previousSession;
+  }
 }
 
 /**
@@ -836,40 +921,71 @@ function createDefaultQuery<TState>(
       }
     }
 
-    return runHandlerSync(
+    // Validate the output on this pull boundary. Validation runs off the reactive path, so it never
+    // affects the deep-signal dependency graph; the validated value is what the consumer receives.
+    return validateQueryOutput(
       refs,
       queryName,
       queryDef,
-      validatedInput,
-      refs.defaultQueries,
-      refs.registryApi.getService
+      runHandlerSync(
+        refs,
+        queryName,
+        queryDef,
+        validatedInput,
+        refs.defaultQueries,
+        refs.registryApi.getService
+      )
     );
   }) as Query<unknown, unknown>;
 
   query.loaded = (input: unknown) => runLoaded(refs, queryName, queryDef, input);
-  query.subscribe = (input: unknown, callback: (value: unknown) => void): (() => void) =>
-    subscribeToQuery(refs, queryName, queryDef, input, callback);
+  query.subscribe = ((
+    input: unknown,
+    selectorOrCallback: ((value: unknown) => unknown) | ((value: unknown) => void),
+    maybeCallback?: (value: unknown) => void
+  ): (() => void) =>
+    subscribeToQuery(
+      refs,
+      queryName,
+      queryDef,
+      input,
+      maybeCallback ? (selectorOrCallback as (value: unknown) => unknown) : undefined,
+      maybeCallback ?? (selectorOrCallback as (value: unknown) => void)
+    )) as Query<unknown, unknown>['subscribe'];
 
   return query;
 }
 
 /**
- * Subscribes to a query by running its handler under an alien-signals `computed()` and `effect()`.
+ * Subscribes to a query by running its handler inside a deep-signal-aware `computed()` and
+ * notifying through an `effect()`.
  *
  * The first emission is deferred to a microtask so callers always receive their unsubscribe handle
  * before the callback fires. The runtime kicks `load` off in the background but does not wait for
- * it — subscribers see the current state immediately and a follow-up emission once the load
- * settles and tracked state changes.
+ * it — subscribers see the current state immediately and a follow-up emission once the load settles
+ * and tracked state changes.
+ *
+ * Two layers keep emissions precise:
+ *
+ * 1. **Fine-grained reads** — the handler (and the optional `selector`) read through the deep-signal
+ *    proxy, so the computed only re-runs when the exact fields it touched change. A write to an
+ *    unrelated key or field never re-runs the handler.
+ * 2. **Value dedup** — the emitted value is detached into a plain snapshot and compared with the
+ *    previously emitted snapshot via `isEqual`. A re-run that produces a deeply-equal value (e.g. a
+ *    load that rewrites an equal payload) does not fire the callback. With a `selector`, only the
+ *    selected slice is snapshotted and compared, so subscribers depend on exactly the data they use.
  */
 function subscribeToQuery<TState>(
   refs: QueryRuntimeRefs<TState>,
   queryName: string,
   queryDef: RuntimeQueryDefinition<TState>,
   rawInput: unknown,
+  selector: ((value: unknown) => unknown) | undefined,
   callback: (value: unknown) => void
 ): () => void {
   let active = true;
   let teardown: (() => void) | undefined;
+  let loadTeardown: (() => void) | undefined;
 
   Promise.resolve().then(() => {
     if (!active) {
@@ -885,47 +1001,79 @@ function subscribeToQuery<TState>(
     }
 
     if (queryDef.load) {
-      const loadKey = makeLoadKey(refs.serviceId, queryName, validatedInput);
-      const pendingLoad = triggerLoad(
-        refs,
-        queryName,
-        queryDef,
-        validatedInput,
-        loadKey,
-        EMPTY_SET
-      );
-      // Subscribers do not block on rejections, but we still want them visible to global handlers.
-      pendingLoad.catch(rethrowAsync);
+      // Reactive load: run the load inside an effect so the external signals it reads synchronously
+      // are tracked. When they change, the effect re-runs and the load re-fires, keeping an
+      // asynchronously-produced value fresh. `epoch` gates writes so a superseded run can't clobber
+      // a newer one. Loads with no external synchronous reads (the existing ones) track nothing and
+      // therefore fire exactly once, so this is non-breaking.
+      let epoch = 0;
+      loadTeardown = effect(() => {
+        const myEpoch = ++epoch;
+        runReactiveLoad(refs, queryName, queryDef, validatedInput, () => myEpoch === epoch).catch(
+          rethrowAsync
+        );
+      });
     }
 
-    const comp = computed(() =>
-      runHandlerSync(
+    // The output is always validated, but the computed's dependency footprint must match only what
+    // the subscriber consumes:
+    //   - With a `selector`, validation runs untracked (so reading the whole value to validate it
+    //     does not register dependencies), and only the selected fields the selector reads are
+    //     tracked. A sibling field the selector ignores never re-runs this computed.
+    //   - Without a selector, validation runs tracked: reading the whole value is the correct
+    //     footprint for a whole-output subscriber, and the validated value is emitted (identical to
+    //     what a direct `query()` / `.loaded()` pull returns).
+    const comp = computed(() => {
+      const output = runHandlerSync(
         refs,
         queryName,
         queryDef,
         validatedInput,
         refs.defaultQueries,
         refs.registryApi.getService
-      )
-    );
+      );
+      if (selector) {
+        const validated = untracked(() => validateQueryOutput(refs, queryName, queryDef, output));
+        // Read the live handler output so the selector's field accesses stay on the reactive
+        // proxy; validation returns a plain parsed value that cannot carry those dependencies.
+        selector(output);
+        return detachSnapshot(selector(validated));
+      }
+      return validateQueryOutput(refs, queryName, queryDef, output);
+    });
+
+    let hasEmitted = false;
+    let lastEmitted: unknown;
     teardown = effect(() => {
       let value: unknown;
       try {
-        value = comp();
+        value = comp.value;
       } catch (error) {
         rethrowAsync(error);
         return;
       }
 
-      if (active) {
-        callback(value);
+      if (!active) {
+        return;
       }
+
+      // Skip re-runs that did not change the (selected) value. The computed already gates on
+      // fine-grained reads; this gates on the rarer case where tracked state changed but the
+      // emitted value is deeply equal (e.g. a load rewriting an equal payload).
+      if (hasEmitted && isEqual(value, lastEmitted)) {
+        return;
+      }
+
+      hasEmitted = true;
+      lastEmitted = value;
+      callback(value);
     });
   });
 
   return () => {
     active = false;
     teardown?.();
+    loadTeardown?.();
   };
 }
 
@@ -958,9 +1106,16 @@ export function createServiceRuntime<
   },
   initialState: TState = def.initialState
 ): ServiceRuntime<TState, TQueries, TCommands> {
-  // The signal is the single source of truth that query computations subscribe to.
-  const stateSignal = signal<TState>(initialState);
-  const commandSelf = createCommandSelf(stateSignal);
+  // `initialState` is the plain backing object that the deep-signal proxy writes through to; it
+  // stays in sync with every mutation and is the source for serialization snapshots. The runtime
+  // mutates it in place, so callers that share an object (e.g. a definition's `initialState`) must
+  // pass their own copy — `registerService` and the static build each do.
+  const rawState = initialState;
+  // The deep reactive proxy is the single source of truth that query computations track, at
+  // per-field granularity.
+  const state = deepSignal(rawState as object) as TState;
+  const getStateSnapshot = (): TState => structuredClone(rawState);
+  const commandSelf = createCommandSelf(state);
   const { registryApi } = runtimeOptions;
   const createCommandCtx = (): CommandCtx<TState> => ({
     self: commandSelf,
@@ -978,13 +1133,41 @@ export function createServiceRuntime<
     Object.entries(def.queries) as [string, RuntimeQueryDefinition<TState>][]
   );
   const defaultQueries: Record<string, Query<unknown, unknown>> = {};
+
+  // Gated commands for reactive subscription loads: a stale run's writes are dropped once a newer
+  // run has started (`isCurrent()` returns false), so superseded loads cannot clobber fresh state.
+  const buildGatedCommands = (isCurrent: () => boolean): CommandSelf<TState>['commands'] => {
+    const gatedSelf: CommandSelf<TState> = {
+      get state() {
+        return state;
+      },
+      setState(mutate) {
+        if (!isCurrent()) {
+          return;
+        }
+        batch(() => {
+          mutate(state);
+        });
+      },
+      queries: defaultQueries,
+      commands: {},
+    };
+    const gated = buildCommands(def.id, def.commands, () => ({
+      self: gatedSelf,
+      getService: registryApi.getService,
+    }));
+    gatedSelf.commands = gated as CommandSelf<TState>['commands'];
+    return gated as CommandSelf<TState>['commands'];
+  };
+
   const refs: QueryRuntimeRefs<TState> = {
     serviceId: def.id,
     commandSelf,
-    stateSignal,
+    state,
     registryApi,
     queryDefinitions,
     defaultQueries,
+    buildGatedCommands,
   };
 
   // Build queries after commands so handler/load ctx surfaces resolve the same command map.
@@ -997,7 +1180,7 @@ export function createServiceRuntime<
   const queries = defaultQueries as ServiceInstance<TState, TQueries, TCommands>['queries'];
   const queryCtxSelf: QuerySelf<TState> = {
     get state() {
-      return stateSignal();
+      return state;
     },
     queries: defaultQueries,
   };
@@ -1005,7 +1188,7 @@ export function createServiceRuntime<
   const loadCtxForStatic: LoadCtx<TState> = {
     self: {
       get state() {
-        return stateSignal();
+        return state;
       },
       queries: defaultQueries,
       commands: commands as LoadSelf<TState>['commands'],
@@ -1029,11 +1212,27 @@ export function createServiceRuntime<
     const loadKey = makeLoadKey(def.id, queryName, validatedInput);
     const ancestorChain = new Set<string>([loadKey]) as ReadonlySet<string>;
 
-    await runLoadBody(refs, queryName, queryDef, validatedInput, ancestorChain);
+    // Register this runtime's root load without joining an unrelated in-flight entry from another
+    // runtime instance (e.g. the live singleton during parallel staticInputs resolution).
+    const previous = inFlightLoads.get(loadKey);
+    const promise = Promise.resolve()
+      .then(() => runLoadBody(refs, queryName, queryDef, validatedInput, ancestorChain))
+      .finally(() => {
+        if (inFlightLoads.get(loadKey) === promise) {
+          if (previous) {
+            inFlightLoads.set(loadKey, previous);
+          } else {
+            inFlightLoads.delete(loadKey);
+          }
+        }
+      });
+
+    inFlightLoads.set(loadKey, promise);
+    await promise;
   };
 
   return {
-    stateSignal,
+    getStateSnapshot,
     commandSelf,
     queryCtx,
     loadCtxForStatic,

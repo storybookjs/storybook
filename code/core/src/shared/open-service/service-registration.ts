@@ -7,7 +7,6 @@ import type {
   AnyServiceDefinition,
   AnyQueryDefinition,
   Commands,
-  LoadCtx,
   Queries,
   RegisteredStaticInputs,
   RuntimeService,
@@ -100,10 +99,10 @@ function summarizeDescriptor(descriptor: ServiceDescriptor): ServiceSummary {
 }
 
 /**
- * Normalizes definition-layer staticInputs into the registration shape used by static builds.
+ * Resolves the static input enumerator stored on a registered query.
  *
- * Definition authors may declare dependency-free `() => inputs` enumerators. Registration may
- * override or supply `(ctx) => inputs` when the list depends on server context.
+ * Registration may override the authored definition. When it does not, the definition's
+ * `staticInputs` is forwarded as-is so ctx-aware enumerators keep receiving `LoadCtx` at call time.
  */
 function resolveRegisteredStaticInputs<TState>(
   query: AnyQueryDefinition<TState>,
@@ -113,13 +112,7 @@ function resolveRegisteredStaticInputs<TState>(
     return registrationQuery.staticInputs;
   }
 
-  if (!query.staticInputs) {
-    return undefined;
-  }
-
-  const definitionStaticInputs = query.staticInputs as () => unknown[] | Promise<unknown[]>;
-
-  return (_ctx: LoadCtx<TState>) => definitionStaticInputs();
+  return query.staticInputs;
 }
 
 /**
@@ -199,7 +192,13 @@ export function registerService<
   }
 
   const resolvedDefinition = applyRegistration(definition, registration);
-  const runtime = createServiceRuntime(resolvedDefinition, { registryApi: serviceRegistryApi });
+  // The runtime mutates its state object in place, so give it a copy rather than the definition's
+  // shared `initialState` (which would otherwise leak state across registrations).
+  const runtime = createServiceRuntime(
+    resolvedDefinition,
+    { registryApi: serviceRegistryApi },
+    structuredClone(resolvedDefinition.initialState)
+  );
   const registeredRuntime = {
     queries: runtime.queries,
     commands: runtime.commands,

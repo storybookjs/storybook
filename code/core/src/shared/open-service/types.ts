@@ -80,7 +80,17 @@ export type CommandFunctions<
 export type Query<TInput, TOutput> = {
   (input: TInput): TOutput;
   loaded(input: TInput): Promise<TOutput>;
+  /**
+   * Subscribe to a query. The callback fires once with the current value and again whenever the
+   * tracked state it reads changes. An optional `selector` narrows what the subscriber depends on:
+   * the callback receives the selected slice and only fires when that slice changes by value.
+   */
   subscribe(input: TInput, callback: (value: TOutput) => void): () => void;
+  subscribe<TSelected>(
+    input: TInput,
+    selector: (value: TOutput) => TSelected,
+    callback: (selected: TSelected) => void
+  ): () => void;
 };
 
 /**
@@ -114,7 +124,7 @@ export type LoadSelf<
 /**
  * Mutable service handle exposed to command handlers.
  *
- * Commands receive both `setState` for direct draft mutation and `commands` so one command can
+ * Commands receive both `setState` for direct state mutation and `commands` so one command can
  * delegate to another within the same service.
  */
 export type CommandSelf<
@@ -123,7 +133,7 @@ export type CommandSelf<
   TCommandOutputSchemas extends MatchingOutputSchemas<TCommandInputSchemas> =
     MatchingOutputSchemas<TCommandInputSchemas>,
 > = LoadSelf<TState, TCommandInputSchemas, TCommandOutputSchemas> & {
-  setState(mutate: (draft: TState) => void): void;
+  setState(mutate: (state: TState) => void): void;
 };
 
 export type ServiceSummary = {

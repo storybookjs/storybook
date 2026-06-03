@@ -88,7 +88,7 @@ export async function buildStaticFiles(): Promise<StaticStore> {
 
               await buildRuntime.runLoadOnce(queryName, validatedInput);
 
-              return { path, state: buildRuntime.stateSignal() };
+              return { path, state: buildRuntime.getStateSnapshot() };
             })
           );
         })()

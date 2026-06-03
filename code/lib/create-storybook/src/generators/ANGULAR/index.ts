@@ -42,7 +42,11 @@ export default defineGeneratorModule({
       return prompt.select({
         message: 'Which builder would you like to use?',
         options: [
-          { label: '@storybook/angular-vite (Vite)', value: SupportedBuilder.VITE },
+          {
+            label: '@storybook/angular-vite (Vite)',
+            value: SupportedBuilder.VITE,
+            hint: 'in preview',
+          },
           { label: '@storybook/angular (Webpack)', value: SupportedBuilder.WEBPACK5 },
         ],
       });

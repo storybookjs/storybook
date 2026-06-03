@@ -1,4 +1,4 @@
-// Copied from
+// Adapted from
 // https://github.com/testing-library/react-testing-library/blob/3dcd8a9649e25054c0e650d95fca2317b7008576/src/act-compat.js
 import * as React from 'react';
 
@@ -19,10 +19,32 @@ export function getReactActEnvironment() {
   return globalThis.IS_REACT_ACT_ENVIRONMENT;
 }
 
+// Storybook interleaves act calls across stories, so a per-call save/restore
+// (as react-testing-library does) is wrong: the first call to settle would
+// clear the flag while others are still in flight. Ref-count instead, and only
+// restore the captured baseline once the last concurrent act settles.
+// See https://github.com/storybookjs/storybook/issues/34708.
+const actEnvironment = {
+  depth: 0,
+  baseline: false,
+  enter() {
+    if (this.depth === 0) {
+      this.baseline = getReactActEnvironment();
+    }
+    this.depth = this.depth + 1;
+    setReactActEnvironment(true);
+  },
+  exit() {
+    this.depth = this.depth - 1;
+    if (this.depth === 0) {
+      setReactActEnvironment(this.baseline);
+    }
+  },
+};
+
 function withGlobalActEnvironment(actImplementation: (callback: () => void) => Promise<any>) {
   return (callback: () => any) => {
-    const previousActEnvironment = getReactActEnvironment();
-    setReactActEnvironment(true);
+    actEnvironment.enter();
     try {
       // The return value of `act` is always a thenable.
       let callbackNeedsToBeAwaited = false;
@@ -36,39 +58,31 @@ function withGlobalActEnvironment(actImplementation: (callback: () => void) => P
       if (callbackNeedsToBeAwaited) {
         const thenable = actResult;
         // Attach to React's act thenable eagerly (the executor runs
-        // synchronously) rather than returning a lazy thenable that only forwards
-        // `.then` once a caller awaits it. Some callers in the render pipeline
-        // (e.g. the testing-library `eventWrapper`, or async teardown paths)
-        // discard the result without awaiting it; with the lazy approach that
-        // left `IS_REACT_ACT_ENVIRONMENT` stuck `true`, leaking across story
-        // boundaries and causing React to log spurious
-        // "act(async () => ...) without await" warnings in multi-file Vitest
-        // browser-mode runs. Eagerly invoking React's `.then` ties the
-        // environment reset to the act work settling rather than to whether the
-        // caller awaits, and satisfies React's own await tracking. We wrap it in
-        // a real Promise because React's act thenable is non-conformant: its
-        // `.then` returns `undefined` rather than a chainable promise.
-        // See https://github.com/storybookjs/storybook/issues/34708.
+        // synchronously): some pipeline callers (e.g. the testing-library
+        // `eventWrapper`) discard the result without awaiting, yet the
+        // environment reset must still be tied to the act work settling. We wrap
+        // it in a real Promise because React's act thenable is non-conformant —
+        // its `.then` returns `undefined` rather than a chainable promise.
         return new Promise((resolve, reject) => {
           thenable.then(
             (returnValue: any) => {
-              setReactActEnvironment(previousActEnvironment);
+              actEnvironment.exit();
               resolve(returnValue);
             },
             (error: any) => {
-              setReactActEnvironment(previousActEnvironment);
+              actEnvironment.exit();
               reject(error);
             }
           );
         });
       } else {
-        setReactActEnvironment(previousActEnvironment);
+        actEnvironment.exit();
         return actResult;
       }
     } catch (error) {
-      // Can't be a `finally {}` block since we don't know if we have to immediately restore IS_REACT_ACT_ENVIRONMENT
-      // or if we have to await the callback first.
-      setReactActEnvironment(previousActEnvironment);
+      // Not a `finally`: the async branch defers exit() until the act thenable
+      // settles, so finally would call exit() twice. This only covers sync throws.
+      actEnvironment.exit();
       throw error;
     }
   };

@@ -192,16 +192,11 @@ const CollectionBlock = styled.section(({ theme }) => ({
   borderBottom: `1px solid ${theme.appBorderColor}`,
 }));
 
-const CollectionHead = styled.button(({ theme }) => ({
-  // Rendered as a real <button> so the whole header row toggles with the
-  // keyboard (Enter/Space) and is announced via aria-expanded.
-  appearance: 'none',
-  margin: 0,
-  padding: 0,
-  border: 0,
-  font: 'inherit',
-  textAlign: 'left',
-  color: 'inherit',
+// A plain clickable row, not a semantic control: making the whole header
+// toggle is just a convenience affordance for pointer users. The real
+// accessible control is the chevron <Button> inside, which carries the
+// aria-label and aria-expanded state for assistive technologies.
+const CollectionHead = styled.div(({ theme }) => ({
   display: 'flex',
   width: '100%',
   cursor: 'pointer',
@@ -211,10 +206,6 @@ const CollectionHead = styled.button(({ theme }) => ({
   background: theme.background.app,
   containerType: 'scroll-state',
   containerName: 'sticky-heading',
-  '&:focus-visible': {
-    outline: '0 none',
-    boxShadow: `inset 0 0 0 2px ${theme.barSelectedColor}`,
-  },
 }));
 
 const CollectionHeadInner = styled.div(({ theme }) => ({
@@ -377,22 +368,28 @@ const CollectionsTab: FC<{
             <Collapsible
               collapsed={!isExpanded}
               summary={() => (
-                <CollectionHead
-                  type="button"
-                  aria-expanded={isExpanded}
-                  aria-label={isExpanded ? 'Collapse cluster' : 'Expand cluster'}
-                  onClick={() => onToggleCollection(index)}
-                >
+                <CollectionHead onClick={() => onToggleCollection(index)}>
                   <CollectionHeadInner>
                     <CollectionHeadText data-collapsible-title>
                       <CollectionLabel>{collection.title}</CollectionLabel>
                     </CollectionHeadText>
                     <CollectionControls>
                       <CollectionCount>{storyIds.length}</CollectionCount>
-                      <ToggleChevronIcon
-                        aria-hidden
-                        style={{ transform: `rotate(${isExpanded ? -180 : 0}deg)` }}
-                      />
+                      <Button
+                        variant="ghost"
+                        size="small"
+                        padding="small"
+                        ariaLabel={isExpanded ? 'Collapse cluster' : 'Expand cluster'}
+                        aria-expanded={isExpanded}
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          onToggleCollection(index);
+                        }}
+                      >
+                        <ToggleChevronIcon
+                          style={{ transform: `rotate(${isExpanded ? -180 : 0}deg)` }}
+                        />
+                      </Button>
                     </CollectionControls>
                   </CollectionHeadInner>
                 </CollectionHead>
@@ -481,22 +478,28 @@ const ComponentsTab: FC<{
             <Collapsible
               collapsed={!isExpanded}
               summary={() => (
-                <CollectionHead
-                  type="button"
-                  aria-expanded={isExpanded}
-                  aria-label={isExpanded ? 'Collapse component' : 'Expand component'}
-                  onClick={() => onToggleComponent(group.componentId)}
-                >
+                <CollectionHead onClick={() => onToggleComponent(group.componentId)}>
                   <CollectionHeadInner>
                     <CollectionHeadText data-collapsible-title>
                       {renderComponentTitle(name)}
                     </CollectionHeadText>
                     <CollectionControls>
                       <CollectionCount>{storyIds.length}</CollectionCount>
-                      <ToggleChevronIcon
-                        aria-hidden
-                        style={{ transform: `rotate(${isExpanded ? -180 : 0}deg)` }}
-                      />
+                      <Button
+                        variant="ghost"
+                        size="small"
+                        padding="small"
+                        ariaLabel={isExpanded ? 'Collapse component' : 'Expand component'}
+                        aria-expanded={isExpanded}
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          onToggleComponent(group.componentId);
+                        }}
+                      >
+                        <ToggleChevronIcon
+                          style={{ transform: `rotate(${isExpanded ? -180 : 0}deg)` }}
+                        />
+                      </Button>
                     </CollectionControls>
                   </CollectionHeadInner>
                 </CollectionHead>

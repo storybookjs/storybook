@@ -322,14 +322,7 @@ export const services = async (_value: void, options: Options): Promise<void> =>
     );
   }
   globalThis.STORYBOOK_SERVICES_LOADED = true;
-
-  // Install the channel before any service registers, so registration joins the cross-peer sync
-  // protocol immediately — no secondary connect step, mirroring the manager and preview. Gate on a
-  // real transport: only the dev server's websocket channel has one, so the no-op channels used by
-  // static builds and the index builder (hasTransport: false) leave services local-only.
-  if (options.channel?.hasTransport) {
-    globalThis.__STORYBOOK_ADDONS_CHANNEL__ = options.channel;
-  }
+  globalThis.__STORYBOOK_ADDONS_CHANNEL__ = options.channel;
 
   const features = await options.presets.apply('features');
 

@@ -1,4 +1,4 @@
-import { expect, fn, userEvent, within } from 'storybook/test';
+import { expect, fn, userEvent, waitFor, within } from 'storybook/test';
 
 import {
   ManagerContext,
@@ -201,6 +201,30 @@ export const Details = meta.story({
     ).toBeInTheDocument();
     // guidepage exists in the baseline index, so it must not be flagged "New".
     await expect(canvas.queryByText('New')).not.toBeInTheDocument();
+  },
+});
+
+export const DetailsFocusesBackButton = meta.story({
+  parameters: {
+    routerInitialEntries: ['/?path=/review/collections/0/manager-settings-guidepage--default'],
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(emitMock).toHaveBeenCalledWith(EVENTS.REQUEST_REVIEW);
+
+    applyReviewState();
+
+    // Opening a detail moves focus to the back control.
+    const backButton = await canvas.findByRole('link', { name: 'Back to review' });
+    await waitFor(() => expect(backButton).toHaveFocus());
+
+    // The summary stays mounted behind the detail screen…
+    const summaryHeading = canvas.getByText('Manager settings polish');
+    expect(summaryHeading).toBeInTheDocument();
+    // …but is inert and hidden from assistive tech so focus can't reach it.
+    const inertWrapper = summaryHeading.closest('[inert]');
+    expect(inertWrapper).not.toBeNull();
+    expect(inertWrapper).toHaveAttribute('aria-hidden', 'true');
   },
 });
 

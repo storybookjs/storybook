@@ -180,6 +180,7 @@ const ReviewPageContent: FC<{ search: string }> = ({ search }) => {
   // interactions` doesn't flag the delegation root — the div isn't itself
   // interactive, it's just catching bubbled clicks from real <a> elements.
   const containerRef = useRef<HTMLDivElement>(null);
+  const summaryWrapperRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     const container = containerRef.current;
     if (!container) {
@@ -296,6 +297,17 @@ const ReviewPageContent: FC<{ search: string }> = ({ search }) => {
 
   const hasDetailScreen = detailScreen !== null;
 
+  // While the detail screen is open the summary stays mounted behind it, but
+  // must drop out of the tab order and the accessibility tree so keyboard and
+  // screen-reader focus can't reach it. React 18 doesn't serialize a boolean
+  // `inert` prop to the DOM, so toggle the property imperatively.
+  useEffect(() => {
+    const node = summaryWrapperRef.current;
+    if (node) {
+      node.inert = hasDetailScreen;
+    }
+  }, [hasDetailScreen]);
+
   return React.createElement(
     'div',
     { ref: containerRef, style: { display: 'contents' } },
@@ -305,8 +317,8 @@ const ReviewPageContent: FC<{ search: string }> = ({ search }) => {
       React.createElement(
         'div',
         {
+          ref: summaryWrapperRef,
           'aria-hidden': hasDetailScreen || undefined,
-          inert: hasDetailScreen || undefined,
           style: hasDetailScreen ? { pointerEvents: 'none' } : undefined,
         },
         React.createElement(SummaryScreen, {

@@ -251,8 +251,17 @@ export const DetailsScreen = ({
   const showBaseline = !isNew;
   const isSingleUp = previewMode === '1up' || !showBaseline;
 
+  const backButtonRef = useRef<HTMLAnchorElement>(null);
   const baselineFrameRef = useRef<HTMLIFrameElement>(null);
   const latestFrameRef = useRef<HTMLIFrameElement>(null);
+
+  // Entering the detail screen moves focus here so keyboard and screen-reader
+  // users land on the back control instead of being stranded on the now-inert
+  // summary. Runs once on mount: navigating between stories swaps the iframe
+  // src in place without remounting, so prev/next don't steal focus back.
+  useEffect(() => {
+    backButtonRef.current?.focus();
+  }, []);
   const cleanupScrollSyncRef = useRef<(() => void) | null>(null);
   const cleanupBaselineStoryRenderedRef = useRef<(() => void) | null>(null);
   const syncingTargetRef = useRef<VisibleSide | null>(null);
@@ -425,7 +434,7 @@ export const DetailsScreen = ({
       <Toolbar>
         <ToolbarSide>
           <Button variant="ghost" size="small" padding="small" ariaLabel="Back to review" asChild>
-            <a href={backHref}>
+            <a ref={backButtonRef} href={backHref}>
               <ChevronSmallLeftIcon />
             </a>
           </Button>

@@ -1,4 +1,5 @@
 import { recast } from 'storybook/internal/babel';
+import { getComponentIdFromEntry } from 'storybook/internal/common';
 import { Tag } from 'storybook/internal/core-server';
 import { storyNameFromExport } from 'storybook/internal/csf';
 import { extractDescription, loadCsf } from 'storybook/internal/csf-tools';
@@ -87,7 +88,7 @@ function selectComponentEntries(manifestEntries: IndexEntry[]) {
         isAttachedDocsEntry(entry)
     )
     .forEach((entry) => {
-      const componentId = entry.id.split('--')[0];
+      const componentId = getComponentIdFromEntry(entry);
       const existingEntry = entriesByComponentId.get(componentId);
 
       if (!existingEntry) {
@@ -413,7 +414,7 @@ export const manifests: PresetPropertyFn<
           allComponents,
           subcomponents,
         }): ReactComponentManifest | undefined => {
-          const id = entry.id.split('--')[0];
+          const id = getComponentIdFromEntry(entry);
           const title = entry.title.split('/').at(-1)!.replace(/\s+/g, '');
 
           const packageName = getPackageInfo(component?.path, storyPath);

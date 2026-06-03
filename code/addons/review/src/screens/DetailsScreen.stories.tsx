@@ -73,6 +73,33 @@ export const Default = meta.story({
     await expect(
       await canvas.findByTitle('Latest manager-settings-guidepage--default')
     ).toBeInTheDocument();
+    await expect(canvas.queryByText('New')).not.toBeInTheDocument();
+    // Baseline existence is known up front, so the comparison bar renders
+    // immediately — without waiting for the baseline iframe's load event.
+    await expect(
+      await canvas.findByRole('button', { name: 'Side-by-side preview mode' })
+    ).toBeInTheDocument();
+  },
+});
+
+export const NewStory = meta.story({
+  args: {
+    isNew: true,
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(await canvas.findByText('New')).toBeInTheDocument();
+    await expect(
+      await canvas.findByTitle('Latest manager-settings-guidepage--default')
+    ).toBeInTheDocument();
+    // A new story has no baseline to compare against: no baseline preview, no
+    // side-by-side toggle, no bottom comparison bar.
+    await expect(
+      canvas.queryByTitle('Baseline manager-settings-guidepage--default')
+    ).not.toBeInTheDocument();
+    await expect(
+      canvas.queryByRole('button', { name: 'Side-by-side preview mode' })
+    ).not.toBeInTheDocument();
   },
 });
 

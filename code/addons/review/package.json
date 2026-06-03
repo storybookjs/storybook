@@ -55,7 +55,7 @@
     "access": "public"
   },
   "storybook": {
-    "displayName": "Review Changes",
+    "displayName": "Review",
     "unsupportedFrameworks": [
       "react-native"
     ]

@@ -197,6 +197,11 @@
       "code": "./src/manager-api/index.ts",
       "default": "./dist/manager-api/index.js"
     },
+    "./open-service": {
+      "types": "./dist/shared/open-service/index.d.ts",
+      "code": "./src/shared/open-service/index.ts",
+      "default": "./dist/shared/open-service/index.js"
+    },
     "./package.json": "./package.json",
     "./preview-api": {
       "types": "./dist/preview-api/index.d.ts",

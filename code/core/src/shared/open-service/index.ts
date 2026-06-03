@@ -1,9 +1,8 @@
 /**
- * Public API for the open-service system.
+ * Environment-agnostic open-service API (`storybook/open-service`).
  *
- * This barrel intentionally exposes only the authoring and runtime entry points that callers
- * outside this directory should rely on. Tests and internal modules can import implementation
- * files directly without widening the supported public surface.
+ * Use this entrypoint for shared service definitions imported by manager, preview, and server.
+ * Registration and hooks live on `storybook/manager-api`, `storybook/preview-api`, and server APIs.
  */
 export { defineService } from './service-definition.ts';
 

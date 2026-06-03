@@ -1,6 +1,6 @@
 import * as v from 'valibot';
 
-import { defineService } from '../../service-definition.ts';
+import { defineService } from 'storybook/open-service';
 import type { DocgenPayload } from './types.ts';
 
 /** Caller-facing input to the `getDocgen` query and the `extractDocgen` command. */

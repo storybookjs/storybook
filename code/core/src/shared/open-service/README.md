@@ -18,10 +18,10 @@ fit together, where behavior lives, and how to define new services correctly.
 
 External callers import from one of these entrypoints:
 
+- `storybook/open-service` for environment-agnostic service definitions — `defineService` and shared types (no React, no registration)
 - `storybook/manager-api` for manager addons — `registerService` (relay hub), `useServiceQuery`, `useServiceCommand`, and shared types
 - `storybook/preview-api` for preview code — `registerService` (leaf) and shared types (no React hooks)
 - [server.ts](./server.ts) for server-side registration, discovery, and static snapshot writing
-- [index.ts](./index.ts) for environment-agnostic definition helpers and shared types used by server presets
 - [client.ts](./client.ts) is an internal/advanced barrel; prefer `manager-api` or `preview-api` in addon code
 
 `registerService` is the **single** registration function across every runtime. It lives in
@@ -501,7 +501,7 @@ Define queries and commands inline inside `defineService()` so the service-level
 ```ts
 import * as v from 'valibot';
 
-import { defineService } from './index.ts';
+import { defineService } from 'storybook/open-service';
 import { registerService } from './server.ts';
 
 type ExampleState = {

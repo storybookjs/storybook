@@ -186,6 +186,10 @@ const config: BuildEntries = {
         exportEntries: ['./internal/types'],
         entryPoint: './src/types/index.ts',
       },
+      {
+        exportEntries: ['./open-service'],
+        entryPoint: './src/shared/open-service/index.ts',
+      },
     ],
     runtime: [
       {

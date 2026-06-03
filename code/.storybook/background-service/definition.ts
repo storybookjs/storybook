@@ -15,7 +15,7 @@
 
 import * as v from 'valibot';
 
-import { defineService } from '../../core/src/shared/open-service/index.ts';
+import { defineService } from 'storybook/open-service';
 
 type BackgroundState = {
   color: string;

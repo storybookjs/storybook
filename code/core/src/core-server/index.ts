@@ -67,6 +67,8 @@ export type {
   ParseFileArgs,
 } from './change-detection/index.ts';
 export { ChangeDetectionService } from './change-detection/ChangeDetectionService.ts';
+export { StoryDependencyGraphService } from './change-detection/StoryDependencyGraphService.ts';
+export { getDependencyGraphService as experimental_getDependencyGraphService } from './change-detection/active-service-registry.ts';
 export {
   getTestProviderStoreById as experimental_getTestProviderStore,
   fullTestProviderStore as internal_fullTestProviderStore,

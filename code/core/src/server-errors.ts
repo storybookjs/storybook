@@ -212,6 +212,35 @@ export class OpenServiceInvalidStaticPathError extends StorybookError {
   }
 }
 
+export class OpenServiceAsyncSchemaError extends StorybookError {
+  constructor(
+    public data: {
+      serviceId: ServiceId;
+      name: string;
+      kind: 'query' | 'command';
+      phase: 'input' | 'output';
+    }
+  ) {
+    super({
+      name: 'OpenServiceAsyncSchemaError',
+      category: Category.CORE_COMMON,
+      code: 9,
+      message: `Async schema for ${data.kind} "${data.serviceId}.${data.name}" (${data.phase}): query input and output schemas must validate synchronously.`,
+    });
+  }
+}
+
+export class OpenServiceLoadedDrainExceededError extends StorybookError {
+  constructor(public data: { serviceId: ServiceId; name: string; iterations: number }) {
+    super({
+      name: 'OpenServiceLoadedDrainExceededError',
+      category: Category.CORE_COMMON,
+      code: 11,
+      message: `Query "${data.serviceId}.${data.name}".loaded(...) did not settle after ${data.iterations} drain iterations. Check for handlers that keep discovering new dependencies after every state change.`,
+    });
+  }
+}
+
 export class WebpackMissingStatsError extends StorybookError {
   constructor() {
     super({

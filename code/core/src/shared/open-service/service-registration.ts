@@ -4,19 +4,21 @@ import {
   OpenServiceMissingServiceError,
 } from '../../server-errors.ts';
 import type {
+  AnyServiceDefinition,
+  AnyQueryDefinition,
   Commands,
   Queries,
+  RegisteredStaticInputs,
   RuntimeService,
   ServiceDefinition,
   ServiceDescriptor,
   ServiceId,
   ServiceInstance,
+  ServiceInstanceOf,
   ServiceRegistrationOptions,
   ServiceRegistryApi,
   ServiceSummary,
 } from './types.ts';
-
-type AnyServiceDefinition = ServiceDefinition<unknown, Queries<unknown>, Commands<unknown>>;
 type RegistryEntry = {
   definition: AnyServiceDefinition;
   runtime: RuntimeService;
@@ -63,6 +65,7 @@ function describeDefinition(definition: AnyServiceDefinition): ServiceDescriptor
           description: query.description,
           input: query.input,
           output: query.output,
+          ...(query.staticPath ? { staticPath: true as const } : {}),
         },
       ])
     ),
@@ -96,11 +99,28 @@ function summarizeDescriptor(descriptor: ServiceDescriptor): ServiceSummary {
 }
 
 /**
+ * Resolves the static input enumerator stored on a registered query.
+ *
+ * Registration may override the authored definition. When it does not, the definition's
+ * `staticInputs` is forwarded as-is so ctx-aware enumerators keep receiving `LoadCtx` at call time.
+ */
+function resolveRegisteredStaticInputs<TState>(
+  query: AnyQueryDefinition<TState>,
+  registrationQuery?: { staticInputs?: RegisteredStaticInputs<TState> }
+): RegisteredStaticInputs<TState> | undefined {
+  if (registrationQuery?.staticInputs) {
+    return registrationQuery.staticInputs;
+  }
+
+  return query.staticInputs;
+}
+
+/**
  * Applies optional server-side overrides to an authored service definition.
  *
  * Registration overrides are shallow merges over the authored definition. That lets the server
- * swap handlers, preload hooks, or static config per operation while the original schema contract
- * and operation names remain the source of truth.
+ * swap handlers, load hooks, or dependency-aware static input enumerators per operation while the
+ * original schema contract, `staticPath`, and operation names remain the source of truth.
  */
 function applyRegistration<
   TState,
@@ -113,12 +133,19 @@ function applyRegistration<
   return {
     ...definition,
     queries: Object.fromEntries(
-      Object.entries(definition.queries).map(([name, query]) => [
-        name,
-        registration?.queries?.[name as keyof TQueries]
-          ? { ...query, ...registration.queries[name as keyof TQueries] }
-          : query,
-      ])
+      Object.entries(definition.queries).map(([name, query]) => {
+        const registrationQuery = registration?.queries?.[name as keyof TQueries];
+        const staticInputs = resolveRegisteredStaticInputs(query, registrationQuery);
+
+        return [
+          name,
+          {
+            ...query,
+            ...registrationQuery,
+            ...(staticInputs ? { staticInputs } : {}),
+          },
+        ];
+      })
     ) as TQueries,
     commands: Object.fromEntries(
       Object.entries(definition.commands).map(([name, command]) => [
@@ -177,7 +204,7 @@ export function registerService<
   // need to rebuild descriptors from the authored definition each time.
   registry.set(definition.id, {
     definition: resolvedDefinition as AnyServiceDefinition,
-    runtime: registeredRuntime as RuntimeService,
+    runtime: registeredRuntime as unknown as RuntimeService,
     descriptor,
     summary: summarizeDescriptor(descriptor),
   });
@@ -188,7 +215,7 @@ export function registerService<
 /**
  * Returns the authored definitions currently registered in this server process.
  *
- * Static build code uses this to discover which services contribute preload snapshots.
+ * Static build code uses this to discover which services contribute static snapshots.
  */
 export function getRegisteredServices(): AnyServiceDefinition[] {
   return Array.from(getRegistry().values(), ({ definition }) => definition);
@@ -223,16 +250,23 @@ export async function describeService(serviceId: ServiceId): Promise<ServiceDesc
  * Resolves a registered runtime service by id from the current server process.
  *
  * Query and command contexts delegate cross-service calls through this lookup so one service can
- * reuse another service's runtime contract.
+ * reuse another service's runtime contract. Synchronous because callers need it available inside
+ * sync query handlers.
  */
-export async function getService(serviceId: ServiceId): Promise<RuntimeService> {
+export function getService(serviceId: ServiceId): RuntimeService;
+export function getService<TDefinition extends AnyServiceDefinition>(
+  serviceId: ServiceId
+): ServiceInstanceOf<TDefinition>;
+export function getService<TDefinition extends AnyServiceDefinition>(
+  serviceId: ServiceId
+): RuntimeService | ServiceInstanceOf<TDefinition> {
   const entry = getRegistry().get(serviceId);
 
   if (!entry) {
     throw new OpenServiceMissingServiceError({ serviceId });
   }
 
-  return entry.runtime;
+  return entry.runtime as unknown as ServiceInstanceOf<TDefinition>;
 }
 
 /**

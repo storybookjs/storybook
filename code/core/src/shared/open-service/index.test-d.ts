@@ -13,7 +13,7 @@ const entryIdInputSchema = v.object({ entryId: v.string() });
 const incrementInputSchema = v.number();
 
 const openServiceDef = defineService({
-  id: 'test/open-service-types',
+  id: 'internal-fixture/open-service-types',
   initialState: {
     count: 0,
     valuesById: {} as Record<string, string | undefined>,
@@ -25,9 +25,8 @@ const openServiceDef = defineService({
       handler: (input, ctx) => {
         expectTypeOf(input).toEqualTypeOf<undefined>();
         expectTypeOf(ctx.self.state).toEqualTypeOf<OpenServiceState>();
-        expectTypeOf(ctx.self.commands.increment).parameter(0).toEqualTypeOf<number>();
-        expectTypeOf(ctx.self.commands.increment).returns.toEqualTypeOf<Promise<void>>();
-
+        // @ts-expect-error query handlers do not receive commands on self
+        void ctx.self.commands;
         // @ts-expect-error queries only receive a read-only self handle
         ctx.self.setState(() => {});
 
@@ -39,34 +38,29 @@ const openServiceDef = defineService({
       output: v.nullable(v.string()),
       handler: (input, ctx) => {
         expectTypeOf(input).toEqualTypeOf<{ entryId: string }>();
+        // @ts-expect-error query handlers do not receive commands on self
+        void ctx.self.commands;
+
+        return ctx.self.state.valuesById[input.entryId] ?? null;
+      },
+      load: async (input, ctx) => {
+        expectTypeOf(input).toEqualTypeOf<{ entryId: string }>();
         expectTypeOf(ctx.self.commands.preloadValue).parameter(0).toEqualTypeOf<{
           entryId: string;
         }>();
         expectTypeOf(ctx.self.commands.preloadValue).returns.toEqualTypeOf<Promise<void>>();
-
-        return ctx.self.state.valuesById[input.entryId] ?? null;
-      },
-      preload: async (input, ctx) => {
-        expectTypeOf(input).toEqualTypeOf<{ entryId: string }>();
         await ctx.self.commands.preloadValue(input);
 
         // @ts-expect-error preloadValue requires an entryId object
         await ctx.self.commands.preloadValue({ entryId: 1 });
+        // @ts-expect-error load contexts do not receive setState directly
+        ctx.self.setState(() => {});
       },
-      static: {
-        path: (input, ctx) => {
-          expectTypeOf(input).toEqualTypeOf<{ entryId: string }>();
-          expectTypeOf(ctx.self.commands.preloadValue).parameter(0).toEqualTypeOf<{
-            entryId: string;
-          }>();
-
-          return `${input.entryId}.json`;
-        },
-        inputs: (ctx) => {
-          expectTypeOf(ctx.self.state).toEqualTypeOf<OpenServiceState>();
-          return [{ entryId: 'entry-a' }];
-        },
+      staticPath: (input) => {
+        expectTypeOf(input).toEqualTypeOf<{ entryId: string }>();
+        return `${input.entryId}.json`;
       },
+      staticInputs: () => [{ entryId: 'entry-a' }],
     },
   },
   commands: {
@@ -100,12 +94,16 @@ const openService = registerService(openServiceDef);
 describe('open-service type inference', () => {
   it('infers runtime query and command signatures from inline schemas', () => {
     expectTypeOf(openService.queries.getCount).parameter(0).toEqualTypeOf<undefined>();
-    expectTypeOf(openService.queries.getCount).returns.toEqualTypeOf<Promise<number>>();
+    expectTypeOf(openService.queries.getCount).returns.toEqualTypeOf<number>();
+    expectTypeOf(openService.queries.getCount.loaded).returns.toEqualTypeOf<Promise<number>>();
 
     expectTypeOf(openService.queries.getValue).parameter(0).toEqualTypeOf<{
       entryId: string;
     }>();
-    expectTypeOf(openService.queries.getValue).returns.toEqualTypeOf<Promise<string | null>>();
+    expectTypeOf(openService.queries.getValue).returns.toEqualTypeOf<string | null>();
+    expectTypeOf(openService.queries.getValue.loaded).returns.toEqualTypeOf<
+      Promise<string | null>
+    >();
 
     expectTypeOf(openService.commands.increment).parameter(0).toEqualTypeOf<number>();
     expectTypeOf(openService.commands.increment).returns.toEqualTypeOf<Promise<void>>();
@@ -126,7 +124,7 @@ describe('open-service type inference', () => {
 
   it('rejects handlers that do not match the declared schemas', () => {
     defineService({
-      id: 'test/invalid-open-service-types',
+      id: 'internal-fixture/invalid-open-service-types',
       initialState: {} as Record<string, never>,
       queries: {
         getBrokenValue: {
@@ -134,6 +132,23 @@ describe('open-service type inference', () => {
           output: v.number(),
           // @ts-expect-error query handler output must match the output schema input type
           handler: () => 'wrong',
+        },
+      },
+      commands: {},
+    });
+  });
+
+  it('rejects dependency-aware staticInputs on the definition layer', () => {
+    defineService({
+      id: 'internal-fixture/invalid-definition-static-inputs',
+      initialState: {} as OpenServiceState,
+      queries: {
+        getValue: {
+          input: entryIdInputSchema,
+          output: v.nullable(v.string()),
+          staticPath: () => 'value.json',
+          // @ts-expect-error definition staticInputs cannot depend on load context
+          staticInputs: (_ctx) => [{ entryId: 'entry-a' }],
         },
       },
       commands: {},

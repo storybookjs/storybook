@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test';
 import process from 'process';
 
-import { SbPage } from './util.ts';
+import { SbPage } from '../e2e-sandbox/util.ts';
 
 /**
  * E2E regression for the open-service background demo (`code/.storybook/background-service`).
@@ -10,11 +10,12 @@ import { SbPage } from './util.ts';
  * (sync-start initialization, buffered patch flush on first preview message) — not only dev-server websocket.
  * Manager addon registration runs synchronously before the preview iframe mounts (Option A).
  *
- * Run (from `code/`):
+ * Run (from repo root):
+ *   yarn task e2e-tests-internal --no-link -s e2e-tests-internal
+ *
+ * Or manually (from `code/`):
  *   yarn nx compile core && yarn storybook:ui          # terminal 1
  *   yarn playwright test --project=open-service-internal  # terminal 2
- *
- * Or let Playwright start Storybook (CI): `CI=1 yarn playwright test --project=open-service-internal`
  */
 
 /** Internal Storybook UI (`code/.storybook`) — not a sandbox template. */

@@ -217,7 +217,6 @@ const ReviewPageContent: FC<{ search: string }> = ({ search }) => {
               },
           activeTab
         ),
-        branchName: state.branchName,
       });
     }
   }

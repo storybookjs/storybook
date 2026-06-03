@@ -175,7 +175,6 @@ export interface DetailsScreenProps {
   nextHref: string;
   componentTitle?: string;
   storyName?: string;
-  branchName?: string;
 }
 
 const renderDetailTitle = ({

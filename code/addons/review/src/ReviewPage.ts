@@ -196,7 +196,10 @@ const ReviewPageContent: FC<{ search: string }> = ({ search }) => {
       ) {
         return;
       }
-      const anchor = (event.target as HTMLElement | null)?.closest('a');
+      // `event.target` can be a non-Element node (e.g. a Text node), which has
+      // no `closest`; guard before treating it as an Element.
+      const { target } = event;
+      const anchor = target instanceof Element ? target.closest('a') : null;
       const href = anchor?.getAttribute('href');
       if (!href || !href.startsWith(`?path=${REVIEW_CHANGES_URL}`)) {
         return;

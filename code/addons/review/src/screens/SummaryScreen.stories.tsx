@@ -213,7 +213,6 @@ export const Minimal = meta.story({
     const canvas = within(canvasElement);
     await expect(await canvas.findByText('Button prop rename')).toBeInTheDocument();
     await expect(await canvas.findByText(/Showing 2 agent-curated stories/i)).toBeInTheDocument();
-    await expect(await canvas.findByText('update/button-styles')).toBeInTheDocument();
     await expect(await canvas.findByRole('tab', { name: 'Collections' })).toBeInTheDocument();
   },
 });

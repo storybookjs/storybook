@@ -398,6 +398,14 @@ describe('rewriteStyleSheet', () => {
     );
   });
 
+  it('supports combinators nested inside pseudo-classes with parameters', () => {
+    const sheet = new Sheet(':has(span > :hover) { color: red }');
+    rewriteStyleSheet(sheet as any);
+    expect(sheet.cssRules[0].cssText).toEqual(
+      ':has(span > :hover), :has(span > .pseudo-hover), .pseudo-hover-all :has(span > *) { color: red }'
+    );
+  });
+
   it('skips escaped pseudo-selectors "\\:hover"', () => {
     const sheet = new Sheet('a\\:hover { color: red }');
     rewriteStyleSheet(sheet as any);

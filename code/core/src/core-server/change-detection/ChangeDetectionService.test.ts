@@ -11,6 +11,7 @@ import {
 import { MockUniversalStore } from '../../shared/universal-store/mock.ts';
 import * as oxcParser from 'storybook/internal/oxc-parser';
 
+import { getService } from '../../shared/open-service/server.ts';
 import {
   buildReverseIndex,
   createDeferred,
@@ -18,6 +19,7 @@ import {
   createStoryIndex,
   createWiredChangeDetection,
   installDependencyGraphMocks,
+  installModuleGraphQueryMock,
 } from './change-detection.test-helpers.ts';
 import {
   buildIndexBaselineStatuses,
@@ -30,22 +32,31 @@ import { getChangeDetectionReadiness, internal_resetChangeDetectionReadiness } f
 import type { GitDiffResult } from './GitDiffProvider.ts';
 import { GitDiffProvider } from './GitDiffProvider.ts';
 import type { IndexBaselineService } from './IndexBaselineService.ts';
-import type { StoryDependencyGraphService } from './StoryDependencyGraphService.ts';
+import type { ModuleGraphEngine } from '../../shared/open-service/services/module-graph/engine/ModuleGraphEngine.ts';
 
 vi.mock('storybook/internal/node-logger', { spy: true });
-vi.mock('./dependency-graph/index.ts', async (importOriginal) => {
-  // Keep ReverseIndexImpl + types real so tests can build synthetic indexes; replace the
-  // ChangeDetectionResolverFactory / DependencyGraphBuilder / IncrementalPatcher constructors
-  // with `vi.fn()`s so tests can override their behaviour per-case via
-  // `vi.mocked(Ctor).mockImplementation(...)`.
-  const actual = await importOriginal<typeof import('./dependency-graph/index.ts')>();
-  return {
-    ...actual,
-    ChangeDetectionResolverFactory: vi.fn(),
-    DependencyGraphBuilder: vi.fn(),
-    IncrementalPatcher: vi.fn(),
-  };
-});
+vi.mock('../../shared/open-service/server.ts', () => ({
+  getService: vi.fn(),
+}));
+vi.mock(
+  '../../shared/open-service/services/module-graph/engine/dependency-graph/index.ts',
+  async (importOriginal) => {
+    // Keep ReverseIndexImpl + types real so tests can build synthetic indexes; replace the
+    // ChangeDetectionResolverFactory / DependencyGraphBuilder / IncrementalPatcher constructors
+    // with `vi.fn()`s so tests can override their behaviour per-case via
+    // `vi.mocked(Ctor).mockImplementation(...)`.
+    const actual =
+      await importOriginal<
+        typeof import('../../shared/open-service/services/module-graph/engine/dependency-graph/index.ts')
+      >();
+    return {
+      ...actual,
+      ChangeDetectionResolverFactory: vi.fn(),
+      DependencyGraphBuilder: vi.fn(),
+      IncrementalPatcher: vi.fn(),
+    };
+  }
+);
 
 class MockGitDiffProvider extends GitDiffProvider {
   readonly getChangedFilesMock = vi.fn(
@@ -630,20 +641,19 @@ describe('ChangeDetectionService', () => {
     await graph.dispose();
   });
 
-  it('acts as a consumer when an external graph is injected', async () => {
-    const graph = {
-      start: vi.fn(),
-      dispose: vi.fn(async () => undefined),
+  it('acts as a consumer of the module-graph open service', async () => {
+    const engine = {
       whenSettled: vi.fn(async () => undefined),
       hasGraph: vi.fn(() => false),
       lookup: vi.fn(() => new Map<string, number>()),
-    } as unknown as StoryDependencyGraphService;
+    } as unknown as ModuleGraphEngine;
+    installModuleGraphQueryMock(engine);
+
     const { getStatusStoreByTypeId } = createStatusStore({
       universalStatusStore: new MockUniversalStore(UNIVERSAL_STATUS_STORE_OPTIONS),
       environment: 'server',
     });
     const service = new ChangeDetectionService({
-      graph,
       storyIndexGeneratorPromise: Promise.resolve({
         getIndex: vi.fn(),
       } as never),
@@ -656,8 +666,7 @@ describe('ChangeDetectionService', () => {
     service.start(undefined, false);
     await service.dispose();
 
-    expect(graph.start).not.toHaveBeenCalled();
-    expect(graph.dispose).not.toHaveBeenCalled();
+    expect(engine.hasGraph).not.toHaveBeenCalled();
   });
 
   it('logs unavailability when the builder does not provide an adapter', async () => {
@@ -756,9 +765,7 @@ describe('ChangeDetectionService', () => {
     service.start(adapter, true);
     await vi.runAllTimersAsync();
 
-    expect(logger.error).toHaveBeenCalledWith(
-      'Change detection failed to start: graph build blew up'
-    );
+    expect(logger.error).toHaveBeenCalledWith('Module graph failed to start: graph build blew up');
     expect(await getChangeDetectionReadiness()).toEqual({
       status: 'error',
       error: expect.objectContaining({ message: 'graph build blew up' }),

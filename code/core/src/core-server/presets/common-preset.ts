@@ -27,6 +27,7 @@ import type {
 } from 'storybook/internal/types';
 
 import { registerDocgenService } from '../../shared/open-service/services/docgen/server.ts';
+import { registerModuleGraphService } from '../../shared/open-service/services/module-graph/server.ts';
 
 import { isAbsolute, join } from 'pathe';
 import * as pathe from 'pathe';
@@ -323,6 +324,16 @@ export const services = async (_value: void, options: Options): Promise<void> =>
   }
   globalThis.STORYBOOK_SERVICES_LOADED = true;
 
+  const storyIndexGeneratorPromise =
+    await options.presets.apply<Promise<StoryIndexGenerator>>('storyIndexGenerator');
+
+  registerModuleGraphService({
+    channel: options.channel,
+    storyIndexGeneratorPromise,
+    workingDir: process.cwd(),
+    presets: options.presets,
+  });
+
   const features = await options.presets.apply('features');
 
   // Skip when previewing is off — the docgen service's staticInputs depends on the story index,
@@ -330,9 +341,6 @@ export const services = async (_value: void, options: Options): Promise<void> =>
   // produce docgen files that wouldn't be served anywhere). Mirrors the !options.ignorePreview
   // gate around index.json and writeManifests in build-static.ts.
   if (features?.experimentalDocgenServer && !options.ignorePreview) {
-    const generator =
-      await options.presets.apply<Promise<StoryIndexGenerator>>('storyIndexGenerator');
-
     const provider = await options.presets.apply<DocgenProvider>(
       'experimental_docgenProvider',
       /**
@@ -346,8 +354,9 @@ export const services = async (_value: void, options: Options): Promise<void> =>
     );
 
     registerDocgenService({
-      getIndex: () => generator.getIndex(),
+      getIndex: () => storyIndexGeneratorPromise.then((g) => g.getIndex()),
       provider,
+      workingDir: process.cwd(),
     });
   }
 };

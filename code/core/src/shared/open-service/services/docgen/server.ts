@@ -1,11 +1,15 @@
+import { join, normalize } from 'pathe';
+
 import { getComponentIdFromEntry } from '../../../../common/utils/component-id.ts';
 import { OpenServiceDocgenMissingComponentError } from '../../../../server-errors.ts';
 import type { StoryIndex } from '../../../../types/modules/indexer.ts';
-import { registerService } from '../../service-registration.ts';
+import { getRegisteredServices, getService, registerService } from '../../service-registration.ts';
+import { moduleGraphServiceDef } from '../module-graph/definition.ts';
 import { docgenServiceDef } from './definition.ts';
 import type { DocgenProvider } from './types.ts';
 
 export type RegisterDocgenServiceOptions = {
+  workingDir?: string;
   /**
    * Returns the current story index when the service needs it. Callers should bind this to a
    * pre-resolved generator so each docgen call does not re-await generator initialization.
@@ -28,10 +32,29 @@ export type RegisterDocgenServiceOptions = {
  * command. `static.inputs` enumerates every distinct componentId for the static-build pass.
  */
 export function registerDocgenService(options: RegisterDocgenServiceOptions) {
-  return registerService(docgenServiceDef, {
+  const workingDir = options.workingDir ?? process.cwd();
+  const moduleGraphRegistered = getRegisteredServices().some(
+    (service) => service.id === 'core/module-graph'
+  );
+
+  const runtime = registerService(docgenServiceDef, {
     queries: {
       getDocgen: {
         load: async (input, ctx) => {
+          const index = await options.getIndex();
+          const entry = Object.values(index.entries).find(
+            (e) => getComponentIdFromEntry(e) === input.componentId
+          );
+          if (
+            moduleGraphRegistered &&
+            entry?.type === 'story' &&
+            !entry.importPath.startsWith('virtual:')
+          ) {
+            const storyFile = normalize(join(workingDir, entry.importPath));
+            ctx
+              .getService<typeof moduleGraphServiceDef>('core/module-graph')
+              .queries.getStoryVersion({ storyFile });
+          }
           await ctx.self.commands.extractDocgen(input);
         },
         staticInputs: async () => {
@@ -74,4 +97,54 @@ export function registerDocgenService(options: RegisterDocgenServiceOptions) {
       },
     },
   });
+
+  if (!moduleGraphRegistered) {
+    return runtime;
+  }
+
+  const moduleGraph = getService<typeof moduleGraphServiceDef>('core/module-graph');
+  let previousStoryVersions: Record<string, number> = {};
+  moduleGraph.queries.getAllStoryVersions.subscribe(undefined, (versions) => {
+    const bumpedStoryFiles: string[] = [];
+    for (const [storyFile, version] of Object.entries(versions)) {
+      if ((previousStoryVersions[storyFile] ?? 0) < version) {
+        bumpedStoryFiles.push(storyFile);
+      }
+    }
+    previousStoryVersions = { ...versions };
+
+    if (bumpedStoryFiles.length === 0) {
+      return;
+    }
+
+    void (async () => {
+      const index = await options.getIndex();
+      const componentIdsByStoryFile = new Map<string, Set<string>>();
+      for (const entry of Object.values(index.entries)) {
+        if (entry.type !== 'story' || entry.importPath.startsWith('virtual:')) {
+          continue;
+        }
+        const storyFile = normalize(join(workingDir, entry.importPath));
+        const componentId = getComponentIdFromEntry(entry);
+        const ids = componentIdsByStoryFile.get(storyFile) ?? new Set<string>();
+        ids.add(componentId);
+        componentIdsByStoryFile.set(storyFile, ids);
+      }
+
+      for (const storyFile of bumpedStoryFiles) {
+        const componentIds = componentIdsByStoryFile.get(storyFile);
+        if (!componentIds) {
+          continue;
+        }
+        for (const componentId of componentIds) {
+          if (runtime.queries.getDocgen({ componentId }) === undefined) {
+            continue;
+          }
+          await runtime.commands.extractDocgen({ componentId }).catch(() => undefined);
+        }
+      }
+    })();
+  });
+
+  return runtime;
 }

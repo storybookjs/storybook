@@ -7,13 +7,11 @@ import type { Options } from 'storybook/internal/types';
 import compression from '@polka/compression';
 import polka from 'polka';
 
+import { provideChangeDetectionAdapter } from '../shared/open-service/services/module-graph/adapter-bridge.ts';
+import { disposeModuleGraphService } from '../shared/open-service/services/module-graph/server.ts';
 import { isTelemetryModuleEnabled, telemetry } from '../telemetry/index.ts';
 import type { ChangeDetectionAdapter } from './change-detection/index.ts';
-import {
-  ChangeDetectionService,
-  setDependencyGraphService,
-  StoryDependencyGraphService,
-} from './change-detection/index.ts';
+import { ChangeDetectionService } from './change-detection/index.ts';
 import { getStatusStoreByTypeId } from './stores/status.ts';
 import type { StoryIndexGenerator } from './utils/StoryIndexGenerator.ts';
 import { doTelemetry } from './utils/doTelemetry.ts';
@@ -52,32 +50,15 @@ export async function storybookDevServer(
   const storyIndexGeneratorPromise =
     options.presets.apply<StoryIndexGenerator>('storyIndexGenerator');
 
-  // Graph callbacks are wired before service construction; callbacks no-op until assigned below.
-  const changeDetectionServiceRef: { current?: ChangeDetectionService } = {};
-  const storyDependencyGraphService = new StoryDependencyGraphService({
-    storyIndexGeneratorPromise,
-    workingDir,
-    presets: options.presets,
-    onReady: () => changeDetectionServiceRef.current?.onGraphReady(),
-    onChange: () => changeDetectionServiceRef.current?.onGraphChange(),
-    onError: (failure) => changeDetectionServiceRef.current?.onGraphError(failure),
-    onUnavailable: (reason, error) =>
-      changeDetectionServiceRef.current?.onGraphUnavailable(reason, error),
-  });
-  setDependencyGraphService(storyDependencyGraphService);
-
   const changeDetectionService = new ChangeDetectionService({
-    graph: storyDependencyGraphService,
     storyIndexGeneratorPromise,
     statusStore: getStatusStoreByTypeId(CHANGE_DETECTION_STATUS_TYPE_ID),
     workingDir,
   });
-  changeDetectionServiceRef.current = changeDetectionService;
 
   const disposeChangeDetectionRuntime = async () => {
     await changeDetectionService.dispose().catch(() => undefined);
-    setDependencyGraphService(undefined);
-    await storyDependencyGraphService.dispose().catch(() => undefined);
+    await disposeModuleGraphService().catch(() => undefined);
   };
 
   app.use(compression({ level: 1 }));
@@ -104,7 +85,6 @@ export async function storybookDevServer(
     channel: options.channel,
     workingDir,
     configDir,
-    onStoryIndexInvalidated: () => storyDependencyGraphService.onStoryIndexInvalidated(),
   });
 
   (await getMiddleware(options.configDir))(app);
@@ -183,14 +163,13 @@ export async function storybookDevServer(
     }
 
     if (adapter) {
-      storyDependencyGraphService.start(adapter);
+      provideChangeDetectionAdapter(adapter);
     }
 
     const isChangeDetectionStatusEnabled = features.changeDetection !== false;
     if (isChangeDetectionStatusEnabled) {
       changeDetectionService.start(adapter, true);
     } else {
-      // Status publication is explicitly feature-gated; graph service may still be consumed elsewhere.
       changeDetectionService.start(undefined, false);
     }
   }

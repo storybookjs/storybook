@@ -1,77 +1,76 @@
+import { normalize } from 'pathe';
 import { vi } from 'vitest';
 
 import type { StoryIndex } from 'storybook/internal/types';
 
-import type { ChangeDetectionAdapter, FileChangeEvent } from './adapters/index.ts';
-import { ChangeDetectionService } from './ChangeDetectionService.ts';
+import { getService } from '../../shared/open-service/server.ts';
+import { moduleGraphServiceDef } from '../../shared/open-service/services/module-graph/definition.ts';
+import type {
+  ChangeDetectionAdapter,
+  FileChangeEvent,
+} from '../../shared/open-service/services/module-graph/engine/adapters/index.ts';
 import {
   ChangeDetectionResolverFactory,
   DependencyGraphBuilder,
   IncrementalPatcher,
   ReverseIndexImpl,
-} from './dependency-graph/index.ts';
-import { StoryDependencyGraphService } from './StoryDependencyGraphService.ts';
+} from '../../shared/open-service/services/module-graph/engine/dependency-graph/index.ts';
+import { ModuleGraphEngine } from '../../shared/open-service/services/module-graph/engine/ModuleGraphEngine.ts';
+import { ChangeDetectionService } from './ChangeDetectionService.ts';
+
+export {
+  createDeferred,
+  createMockAdapter,
+  createStoryIndex,
+  buildReverseIndex,
+  installDependencyGraphMocks,
+  type MockAdapterHandle,
+} from '../../shared/open-service/services/module-graph/module-graph.test-helpers.ts';
 
 type ChangeDetectionServiceOptions = ConstructorParameters<typeof ChangeDetectionService>[0];
 
 /**
- * Shared scaffolding for the change-detection unit tests. The dependency-graph constructors are
- * mocked per test file (each file declares its own `vi.mock('./dependency-graph/index.ts', ...)`);
- * these helpers drive those mocks and build synthetic adapters / indexes / reverse indexes.
+ * Installs a `getService('core/module-graph')` mock backed by a real {@link ModuleGraphEngine}
+ * instance (for tests that call `graph.start(adapter)`).
  */
-
-export function createDeferred<T>() {
-  let resolve!: (value: T) => void;
-
-  return {
-    promise: new Promise<T>((fulfill) => {
-      resolve = fulfill;
-    }),
-    resolve,
-  };
-}
-
-export function createStoryIndex(
-  entries: Array<{ storyId: string; importPath: string; title?: string; name?: string }>
-): StoryIndex {
-  return {
-    v: 5,
-    entries: Object.fromEntries(
-      entries.map(({ storyId, importPath, title = 'Story', name = 'Default' }) => [
-        storyId,
-        {
-          id: storyId,
-          type: 'story',
-          subtype: 'story',
-          title,
-          name,
-          importPath,
+export function installModuleGraphQueryMock(engine: ModuleGraphEngine): void {
+  vi.mocked(getService).mockReturnValue({
+    queries: {
+      getReady: Object.assign(() => engine.hasGraph(), {
+        loaded: async () => {
+          await engine.whenSettled();
         },
-      ])
-    ),
-  };
-}
-
-export interface MockAdapterHandle {
-  adapter: ChangeDetectionAdapter;
-  emitFileChange: (event: FileChangeEvent) => void;
-  emitStartupFailure: (event: { reason: string; error?: Error }) => void;
-  hasFileChangeSubscriber: () => boolean;
-  hasStartupFailureSubscriber: () => boolean;
+        subscribe: vi.fn(() => () => undefined),
+      }),
+      getStoriesForFiles: ({ files }: { files: string[] }) =>
+        files.map((file) => {
+          const hits = engine.lookup(normalize(file));
+          return [...hits.entries()].map(([storyFile, depth]) => ({ storyFile, depth }));
+        }),
+      getGraphRevision: Object.assign(() => 0, {
+        subscribe: vi.fn(() => () => undefined),
+      }),
+      getAllStoryVersions: Object.assign(() => ({}), {
+        subscribe: vi.fn(() => () => undefined),
+      }),
+      getStoryVersion: () => 0,
+    },
+  } as ReturnType<typeof getService<typeof moduleGraphServiceDef>>);
 }
 
 /**
- * Constructs a {@link StoryDependencyGraphService} wired to a {@link ChangeDetectionService} the
- * same way the dev-server does: the graph is always injected, and its lifecycle callbacks are
- * routed to the service's `onGraph*` handlers. Tests drive `graph.start(adapter)` and
- * `service.start(adapter, enabled)` themselves (to keep timing control) and dispose both.
+ * Constructs {@link ChangeDetectionService} with lifecycle hooks wired to a
+ * {@link ModuleGraphEngine}, matching dev-server behaviour for integration-style tests.
  */
-export function createWiredChangeDetection(options: Omit<ChangeDetectionServiceOptions, 'graph'>): {
+export function createWiredChangeDetection(
+  options: Omit<ChangeDetectionServiceOptions, 'graph'>,
+  graphOptions?: { withoutStartupFailure?: boolean }
+): {
   service: ChangeDetectionService;
-  graph: StoryDependencyGraphService;
+  graph: ModuleGraphEngine;
 } {
   const ref: { current?: ChangeDetectionService } = {};
-  const graph = new StoryDependencyGraphService({
+  const graph = new ModuleGraphEngine({
     storyIndexGeneratorPromise: options.storyIndexGeneratorPromise,
     workingDir: options.workingDir,
     onReady: () => ref.current?.onGraphReady(),
@@ -79,88 +78,9 @@ export function createWiredChangeDetection(options: Omit<ChangeDetectionServiceO
     onError: (error) => ref.current?.onGraphError(error),
     onUnavailable: (reason, error) => ref.current?.onGraphUnavailable(reason, error),
   });
-  const service = new ChangeDetectionService({ ...options, graph });
+  const service = new ChangeDetectionService(options);
   ref.current = service;
+  installModuleGraphQueryMock(graph);
+  void graphOptions;
   return { service, graph };
-}
-
-export function createMockAdapter(opts?: {
-  resolveConfig?: { projectRoot?: string };
-  withoutStartupFailure?: boolean;
-}): MockAdapterHandle {
-  const fileHandlers = new Set<(e: FileChangeEvent) => void>();
-  const startupHandlers = new Set<(e: { reason: string; error?: Error }) => void>();
-
-  const adapter: ChangeDetectionAdapter = {
-    async getResolveConfig() {
-      return {
-        projectRoot: opts?.resolveConfig?.projectRoot ?? '/repo',
-      };
-    },
-    onFileChange(handler) {
-      fileHandlers.add(handler);
-      return () => fileHandlers.delete(handler);
-    },
-  };
-
-  if (!opts?.withoutStartupFailure) {
-    adapter.onStartupFailure = (handler) => {
-      startupHandlers.add(handler);
-      return () => startupHandlers.delete(handler);
-    };
-  }
-
-  return {
-    adapter,
-    emitFileChange: (event) => {
-      fileHandlers.forEach((h) => h(event));
-    },
-    emitStartupFailure: (event) => {
-      startupHandlers.forEach((h) => h(event));
-    },
-    hasFileChangeSubscriber: () => fileHandlers.size > 0,
-    hasStartupFailureSubscriber: () => startupHandlers.size > 0,
-  };
-}
-
-/**
- * Build a ReverseIndexImpl populated with the given (dep -> story -> depth) entries.
- * Used by tests to control what `reverseIndex.lookup(changedFile)` returns.
- */
-export function buildReverseIndex(
-  edges: Iterable<readonly [string, string, number]>
-): ReverseIndexImpl {
-  const reverseIndex = new ReverseIndexImpl();
-  for (const [dep, story, depth] of edges) {
-    reverseIndex.record(dep, story, depth);
-  }
-  return reverseIndex;
-}
-
-/**
- * Stub the dependency-graph constructors so the service under test uses an in-test
- * ReverseIndexImpl + an inert IncrementalPatcher. The mock implementations must be regular
- * `function`s, not arrow functions: the service calls them with `new`, which arrow functions do
- * not support.
- */
-export function installDependencyGraphMocks(reverseIndex: ReverseIndexImpl): {
-  patchSpy: ReturnType<typeof vi.fn>;
-  buildSpy: ReturnType<typeof vi.fn>;
-} {
-  const patchSpy = vi.fn(async () => undefined);
-  const buildSpy = vi.fn(async () => ({ reverseIndex, graph: new Map() }));
-
-  vi.mocked(ChangeDetectionResolverFactory).mockImplementation(function () {
-    return {
-      resolve: vi.fn(async () => null),
-    } as unknown as ChangeDetectionResolverFactory;
-  } as unknown as new () => ChangeDetectionResolverFactory);
-  vi.mocked(DependencyGraphBuilder).mockImplementation(function () {
-    return { build: buildSpy } as unknown as DependencyGraphBuilder;
-  } as unknown as new () => DependencyGraphBuilder);
-  vi.mocked(IncrementalPatcher).mockImplementation(function () {
-    return { patch: patchSpy } as unknown as IncrementalPatcher;
-  } as unknown as new () => IncrementalPatcher);
-
-  return { patchSpy, buildSpy };
 }

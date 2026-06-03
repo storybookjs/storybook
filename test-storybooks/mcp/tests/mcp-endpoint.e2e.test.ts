@@ -100,7 +100,7 @@ describe('MCP Endpoint E2E Tests', () => {
 
 			expect(response.result).toHaveProperty('tools');
 			// Dev, docs, and test tools should be present
-			expect(response.result.tools).toHaveLength(7);
+			expect(response.result.tools).toHaveLength(8);
 
 			expect(response.result.tools).toMatchInlineSnapshot(`
 				[
@@ -377,6 +377,123 @@ describe('MCP Endpoint E2E Tests', () => {
 				    },
 				    "name": "get-changed-stories",
 				    "title": "Get changed stories metadata",
+				  },
+				  {
+				    "description": "Map component source files to the stories that render them, returning grounded \`storyId\` values from the live Storybook index — hand these to preview-stories instead of guessing.
+
+				Reach for this to map specific file paths to stories: when the user names a feature/area, or when \`get-changed-stories\` (try it first for "I just edited X") returned nothing or too much. The full file-paths → story-IDs workflow lives in the server instructions.
+
+				Never invent IDs from file names, feature names, or memory; if a component has no matches here, it has no stories yet (say so, don't fabricate).
+
+				Backed by Storybook's live reverse dependency graph, available only when the dev server runs a builder that supports change detection (e.g. Vite) — otherwise returns a typed error. Results are sorted by \`distance\` (lower = stronger); for shared components like Button or Icon, expect many indirect matches and use \`maxDistance\` to cap noise.",
+				    "inputSchema": {
+				      "$schema": "http://json-schema.org/draft-07/schema#",
+				      "properties": {
+				        "componentPaths": {
+				          "description": "Absolute paths to component source files (e.g. "/repo/src/Button.tsx").
+				Pass the components you actually want stories for — typically files you just read, edited, or that the user mentioned.
+				Relative paths are also accepted and resolved against the Storybook working directory, but absolute paths are preferred for unambiguous results.
+				Story files (\`*.stories.*\`) are accepted too: they appear at distance 0 as self-matches, plus any reverse-graph hits (other stories that import them).",
+				          "items": {
+				            "type": "string",
+				          },
+				          "minItems": 1,
+				          "type": "array",
+				        },
+				        "maxDistance": {
+				          "description": "Ceiling on the import depth to include in results. Must be a positive integer.
+				- 1: only stories that directly import the component.
+				- 2+: also include stories that reach the component through N hops.
+				Defaults to 3; raise it to widen recall, lower it to tighten precision. Shared components (Button, Icon, …) accumulate noisy indirect matches at distance ≥ 3, so the default cap protects against runaway results.",
+				          "minimum": 1,
+				          "type": "integer",
+				        },
+				      },
+				      "required": [
+				        "componentPaths",
+				      ],
+				      "type": "object",
+				    },
+				    "name": "get-stories-by-component",
+				    "outputSchema": {
+				      "$schema": "http://json-schema.org/draft-07/schema#",
+				      "properties": {
+				        "results": {
+				          "items": {
+				            "properties": {
+				              "clipped": {
+				                "description": "Present only when \`maxDistance\` filtered out one or more matches. \`count\` is how many were dropped; \`distances\` lists the (sorted, distinct) distances those dropped matches sat at — widen \`maxDistance\` to include them.",
+				                "properties": {
+				                  "count": {
+				                    "type": "number",
+				                  },
+				                  "distances": {
+				                    "items": {
+				                      "type": "number",
+				                    },
+				                    "type": "array",
+				                  },
+				                },
+				                "required": [
+				                  "count",
+				                  "distances",
+				                ],
+				                "type": "object",
+				              },
+				              "componentPath": {
+				                "type": "string",
+				              },
+				              "matches": {
+				                "items": {
+				                  "properties": {
+				                    "distance": {
+				                      "description": "Import-graph depth from the story file to the component (lower = stronger). 0: the path you passed is itself a story file (self-match). 1: story file directly imports the component. 2+: reached through N hops.",
+				                      "type": "number",
+				                    },
+				                    "importPath": {
+				                      "type": "string",
+				                    },
+				                    "name": {
+				                      "type": "string",
+				                    },
+				                    "storyId": {
+				                      "type": "string",
+				                    },
+				                    "title": {
+				                      "type": "string",
+				                    },
+				                  },
+				                  "required": [
+				                    "storyId",
+				                    "title",
+				                    "name",
+				                    "importPath",
+				                    "distance",
+				                  ],
+				                  "type": "object",
+				                },
+				                "type": "array",
+				              },
+				              "pathNotFound": {
+				                "description": "\`true\` when no file exists at the resolved absolute path. Distinguishes a typo from "this component has no stories yet". The agent should re-check the path it sent.",
+				                "type": "boolean",
+				              },
+				            },
+				            "required": [
+				              "componentPath",
+				              "matches",
+				            ],
+				            "type": "object",
+				          },
+				          "type": "array",
+				        },
+				      },
+				      "required": [
+				        "results",
+				      ],
+				      "type": "object",
+				    },
+				    "title": "Get stories for component files",
 				  },
 				  {
 				    "description": "Run story tests.
@@ -901,6 +1018,7 @@ describe('MCP Endpoint E2E Tests', () => {
 				  "preview-stories",
 				  "get-storybook-story-instructions",
 				  "get-changed-stories",
+				  "get-stories-by-component",
 				]
 			`);
 		});

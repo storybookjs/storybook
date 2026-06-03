@@ -4,6 +4,7 @@ import { HttpTransport } from '@tmcp/transport-http';
 import pkgJson from '../package.json' with { type: 'json' };
 import { addPreviewStoriesTool } from './tools/preview-stories.ts';
 import { addGetChangedStoriesTool } from './tools/get-changed-stories.ts';
+import { addGetStoriesByComponentTool } from './tools/get-stories-by-component.ts';
 import { addDisplayReviewTool } from './tools/display-review.ts';
 import { addGetUIBuildingInstructionsTool } from './tools/get-storybook-story-instructions.ts';
 import {
@@ -26,6 +27,7 @@ import { isAddonA11yEnabled } from './utils/is-addon-a11y-enabled.ts';
 import type { CompositionAuth } from './auth/index.ts';
 import { buildServerInstructions } from './instructions/build-server-instructions.ts';
 import { DEFAULT_MCP_ENDPOINT } from './constants.ts';
+import { isDependencyGraphSupported } from './utils/change-detection.ts';
 
 let transport: HttpTransport<AddonContext> | undefined;
 let origin: string | undefined;
@@ -37,7 +39,11 @@ let a11yEnabled: boolean | undefined;
 const initializeMCPServer = async (options: Options, multiSource?: boolean) => {
 	const core = await options.presets.apply('core', {});
 	const features = await options.presets.apply('features', {});
-	const changeDetectionEnabled = features?.changeDetection ?? false;
+	// The dependency graph and the change-detection status pipeline are independent in Storybook:
+	// the graph runs whenever the dev-server has a supporting builder; `features.changeDetection`
+	// only gates the status pipeline that powers `get-changed-stories`.
+	const dependencyGraphSupported = await isDependencyGraphSupported();
+	const changeDetectionEnabled = (features?.changeDetection ?? false) && dependencyGraphSupported;
 	disableTelemetry = core?.disableTelemetry ?? false;
 
 	// Determine tool availability before creating server so instructions can be tailored.
@@ -58,6 +64,7 @@ const initializeMCPServer = async (options: Options, multiSource?: boolean) => {
 				testEnabled: (server?.ctx.custom?.toolsets?.test ?? true) && !!addonVitestConstants,
 				docsEnabled: (server?.ctx.custom?.toolsets?.docs ?? true) && manifestStatus.available,
 				changeDetectionEnabled,
+				dependencyGraphAvailable: dependencyGraphSupported,
 				reviewEnabled: reviewStatus.available,
 			});
 		},
@@ -88,6 +95,11 @@ const initializeMCPServer = async (options: Options, multiSource?: boolean) => {
 
 	if (changeDetectionEnabled) {
 		await addGetChangedStoriesTool(server);
+	}
+
+	// get-stories-by-component only needs the dependency graph, not the status pipeline.
+	if (dependencyGraphSupported) {
+		await addGetStoriesByComponentTool(server);
 	}
 
 	if (reviewStatus.available) {

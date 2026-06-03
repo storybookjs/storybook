@@ -3,7 +3,13 @@ import { experimental_getStatusStore } from 'storybook/internal/core-server';
 import { collectTelemetry } from '../telemetry.ts';
 import type { AddonContext } from '../types.ts';
 import { errorToMCPContent } from '../utils/errors.ts';
-import { fetchStoryIndex } from '../utils/fetch-story-index.ts';
+import { getStoryIndex } from '../utils/get-story-index.ts';
+import {
+	detectUnreachableChanges,
+	formatPartialCoverageBanner,
+	formatPartialCoverageHint,
+	formatUnreachableHint,
+} from '../utils/detect-unreachable-changes.ts';
 import { GET_CHANGED_STORIES_TOOL_NAME } from './tool-names.ts';
 
 const CHANGE_DETECTION_TYPE = 'storybook/change-detection';
@@ -59,9 +65,9 @@ export async function addGetChangedStoriesTool(server: McpServer<any, AddonConte
 		},
 		async () => {
 			try {
-				const { origin, disableTelemetry } = server.ctx.custom ?? {};
-				if (!origin) {
-					throw new Error('Origin is required in addon context');
+				const { options, disableTelemetry } = server.ctx.custom ?? {};
+				if (!options) {
+					throw new Error('Storybook options are required in addon context');
 				}
 
 				const statusStore = experimental_getStatusStore(CHANGE_DETECTION_TYPE);
@@ -87,14 +93,25 @@ export async function addGetChangedStoriesTool(server: McpServer<any, AddonConte
 						});
 					}
 
+					// Empty result doesn't mean "nothing to review" — files may be
+					// modified outside the story graph (theme tokens, decorators,
+					// utilities consumed at preview-runtime). Surface those so the
+					// agent knows to fall back to grep + get-stories-by-component
+					// rather than reporting "no impact".
+					const unreachable = await detectUnreachableChanges();
+					const hint = formatUnreachableHint(unreachable);
+
 					return {
 						content: [
-							{ type: 'text' as const, text: 'No new, modified, or related stories detected.' },
+							{
+								type: 'text' as const,
+								text: `No new, modified, or related stories detected.${hint}`,
+							},
 						],
 					};
 				}
 
-				const index = await fetchStoryIndex(origin);
+				const index = await getStoryIndex(options);
 				const stories = changedStoriesFromStatusStore.flatMap<ChangedStory>(
 					({ storyId, value }) => {
 						const entry = index.entries[storyId];
@@ -141,7 +158,16 @@ export async function addGetChangedStoriesTool(server: McpServer<any, AddonConte
 					});
 				}
 
-				let text = `Detected ${stories.length} changed stor${stories.length === 1 ? 'y' : 'ies'} (${counts.new} new, ${counts.modified} modified, ${counts.affected} related).`;
+				// Detect unreachable working-tree files first so the banner can
+				// front-load the warning. With a long story list (Chromatic-scale)
+				// the tail-positioned `formatPartialCoverageHint` can land past
+				// host-side tool-output truncation caps; the leading banner is the
+				// salience aid that survives. Tail hint also stays for agents that
+				// read the full response.
+				const unreachable = await detectUnreachableChanges();
+				const banner = formatPartialCoverageBanner(unreachable);
+
+				let text = `${banner}Detected ${stories.length} changed stor${stories.length === 1 ? 'y' : 'ies'} (${counts.new} new, ${counts.modified} modified, ${counts.affected} related).`;
 
 				const serializeStory = ({ storyId, title, name, importPath }: ChangedStory) =>
 					`- \`${storyId}\`: ${title} / ${name} (\`${importPath}\`)`;
@@ -158,6 +184,8 @@ export async function addGetChangedStoriesTool(server: McpServer<any, AddonConte
 					text += `\n\nRelated stories:\n`;
 					text += buckets.affected.map(serializeStory).join('\n');
 				}
+
+				text += formatPartialCoverageHint(unreachable);
 
 				return { content: [{ type: 'text' as const, text }] };
 			} catch (error) {

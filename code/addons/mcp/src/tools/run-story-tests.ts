@@ -1,7 +1,7 @@
 import type { McpServer } from 'tmcp';
 import { logger } from 'storybook/internal/node-logger';
 import * as v from 'valibot';
-import { fetchStoryIndex } from '../utils/fetch-story-index.ts';
+import { getStoryIndex } from '../utils/get-story-index.ts';
 import { findStoryIds, type FoundStory, type NotFoundStory } from '../utils/find-story-ids.ts';
 import { errorToMCPContent } from '../utils/errors.ts';
 import { collectTelemetry } from '../telemetry.ts';
@@ -146,7 +146,7 @@ For visual/design accessibility violations (for example color contrast), ask the
 				let inputStoryCount = 0;
 
 				if (input.stories) {
-					const index = await fetchStoryIndex(origin);
+					const index = await getStoryIndex(options);
 					const resolvedStories = findStoryIds(index, input.stories);
 
 					storyIds = resolvedStories

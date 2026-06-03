@@ -4,7 +4,7 @@ import { ValibotJsonSchemaAdapter } from '@tmcp/adapter-valibot';
 import { addRunStoryTestsTool, getAddonVitestConstants } from './run-story-tests.ts';
 import type { AddonContext } from '../types.ts';
 import smallStoryIndexFixture from '../../fixtures/small-story-index.fixture.json' with { type: 'json' };
-import * as fetchStoryIndex from '../utils/fetch-story-index.ts';
+import * as getStoryIndexModule from '../utils/get-story-index.ts';
 import type { TriggerTestRunResponsePayload } from '@storybook/addon-vitest/constants';
 import { RUN_STORY_TESTS_TOOL_NAME } from './tool-names.ts';
 
@@ -156,8 +156,8 @@ describe('runStoryTestsTool', () => {
 
 		await addRunStoryTestsTool(server, { a11yEnabled: true });
 
-		// Mock fetchStoryIndex to return the fixture
-		vi.spyOn(fetchStoryIndex, 'fetchStoryIndex').mockResolvedValue(smallStoryIndexFixture as any);
+		// Mock getStoryIndex to return the fixture
+		vi.spyOn(getStoryIndexModule, 'getStoryIndex').mockResolvedValue(smallStoryIndexFixture as any);
 	});
 
 	it('should include visual a11y handling guidance in tool description', async () => {

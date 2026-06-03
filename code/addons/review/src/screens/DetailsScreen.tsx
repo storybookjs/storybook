@@ -12,6 +12,8 @@ import {
   TransferIcon,
 } from '@storybook/icons';
 
+import { PREVIEW_MODE_SESSION_KEY } from '../constants.ts';
+
 const Page = styled.div(({ theme }) => ({
   display: 'flex',
   flexDirection: 'column',
@@ -73,6 +75,20 @@ const TitleBadge = styled.div({
 
 type PreviewMode = '1up' | '2up';
 type VisibleSide = 'baseline' | 'latest';
+
+const DEFAULT_PREVIEW_MODE: PreviewMode = '2up';
+
+// Read the persisted preview layout, defaulting to side-by-side. sessionStorage
+// can throw (privacy modes, disabled storage), so failures fall back silently.
+const readPreviewMode = (): PreviewMode => {
+  try {
+    return sessionStorage.getItem(PREVIEW_MODE_SESSION_KEY) === '1up'
+      ? '1up'
+      : DEFAULT_PREVIEW_MODE;
+  } catch {
+    return DEFAULT_PREVIEW_MODE;
+  }
+};
 
 const PreviewFrameWrap = styled.div<{ $singleUp: boolean }>(({ $singleUp }) => ({
   flex: 1,
@@ -231,11 +247,16 @@ export const DetailsScreen = ({
     toBaselinePreviewUrl(latestPreviewSrc)
   );
   const baselinePreviewSrcRef = useRef(baselinePreviewSrc);
-  const [isBaselineReady, setIsBaselineReady] = useState(false);
-  const [previewMode, setPreviewMode] = useState<PreviewMode>('1up');
+  const [previewMode, setPreviewMode] = useState<PreviewMode>(readPreviewMode);
   const [visibleSide, setVisibleSide] = useState<VisibleSide>('latest');
-  const isSingleUp = previewMode === '1up';
-  const effectiveVisibleSide = isBaselineReady ? visibleSide : 'latest';
+  // A newly added story has no baseline counterpart, so there's nothing to
+  // compare against: render only the latest preview, full-width, and hide the
+  // baseline pane, the side-by-side controls, and the bottom comparison bar.
+  // Baseline existence is known up front (from the index lookup in ReviewPage),
+  // so the baseline pane and comparison bar render immediately — no need to
+  // wait for the baseline iframe's load event.
+  const showBaseline = !isNew;
+  const isSingleUp = previewMode === '1up' || !showBaseline;
 
   const baselineFrameRef = useRef<HTMLIFrameElement>(null);
   const latestFrameRef = useRef<HTMLIFrameElement>(null);
@@ -316,9 +337,18 @@ export const DetailsScreen = ({
   }, [baselinePreviewSrc]);
 
   useEffect(() => {
-    setIsBaselineReady(false);
     setBaselinePreviewSrc(toBaselinePreviewUrl(latestPreviewSrc));
   }, [latestPreviewSrc]);
+
+  // Persist the user's layout choice so it carries across navigation between
+  // the detail and summary screens.
+  useEffect(() => {
+    try {
+      sessionStorage.setItem(PREVIEW_MODE_SESSION_KEY, previewMode);
+    } catch {
+      // Storage unavailable — the in-memory state still drives this session.
+    }
+  }, [previewMode]);
 
   useEffect(() => {
     const baselineFrame = baselineFrameRef.current;
@@ -373,7 +403,6 @@ export const DetailsScreen = ({
     };
 
     const handleBaselineFrameLoad = () => {
-      setIsBaselineReady(true);
       attachBaselineStoryRenderedListener();
       setupScrollSync();
     };
@@ -383,7 +412,6 @@ export const DetailsScreen = ({
       if (latestLocationHref) {
         const nextBaselineUrl = toBaselinePreviewUrl(latestLocationHref);
         if (baselinePreviewSrcRef.current !== nextBaselineUrl) {
-          setIsBaselineReady(false);
           setBaselinePreviewSrc(nextBaselineUrl);
         }
       }
@@ -438,34 +466,28 @@ export const DetailsScreen = ({
       </Toolbar>
 
       <PreviewFrameWrap $singleUp={isSingleUp}>
-        <PreviewPane
-          $singleUp={isSingleUp}
-          $active={!isSingleUp || effectiveVisibleSide === 'baseline'}
-        >
-          <PreviewFrame
-            ref={baselineFrameRef}
-            title={`Baseline ${storyId}`}
-            src={baselinePreviewSrc}
-          />
-        </PreviewPane>
-        {isSingleUp ? null : <PreviewDivider $singleUp={isSingleUp} />}
-        <PreviewPane
-          $singleUp={isSingleUp}
-          $active={!isSingleUp || effectiveVisibleSide === 'latest'}
-        >
+        {showBaseline ? (
+          <>
+            <PreviewPane $singleUp={isSingleUp} $active={!isSingleUp || visibleSide === 'baseline'}>
+              <PreviewFrame
+                ref={baselineFrameRef}
+                title={`Baseline ${storyId}`}
+                src={baselinePreviewSrc}
+              />
+            </PreviewPane>
+            {isSingleUp ? null : <PreviewDivider $singleUp={isSingleUp} />}
+          </>
+        ) : null}
+        <PreviewPane $singleUp={isSingleUp} $active={!isSingleUp || visibleSide === 'latest'}>
           <PreviewFrame ref={latestFrameRef} title={`Latest ${storyId}`} src={latestPreviewSrc} />
         </PreviewPane>
       </PreviewFrameWrap>
 
-      {isBaselineReady ? (
+      {showBaseline ? (
         <BottomToolbar>
           <BottomHalf>
             <BottomLabel>
-              {isSingleUp
-                ? effectiveVisibleSide === 'baseline'
-                  ? 'Baseline'
-                  : 'Latest'
-                : 'Baseline'}
+              {isSingleUp ? (visibleSide === 'baseline' ? 'Baseline' : 'Latest') : 'Baseline'}
             </BottomLabel>
           </BottomHalf>
           <BottomDivider $singleUp={isSingleUp} />

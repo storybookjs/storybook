@@ -192,7 +192,16 @@ const CollectionBlock = styled.section(({ theme }) => ({
   borderBottom: `1px solid ${theme.appBorderColor}`,
 }));
 
-const CollectionHead = styled.div(({ theme }) => ({
+const CollectionHead = styled.button(({ theme }) => ({
+  // Rendered as a real <button> so the whole header row toggles with the
+  // keyboard (Enter/Space) and is announced via aria-expanded.
+  appearance: 'none',
+  margin: 0,
+  padding: 0,
+  border: 0,
+  font: 'inherit',
+  textAlign: 'left',
+  color: 'inherit',
   display: 'flex',
   width: '100%',
   cursor: 'pointer',
@@ -202,6 +211,10 @@ const CollectionHead = styled.div(({ theme }) => ({
   background: theme.background.app,
   containerType: 'scroll-state',
   containerName: 'sticky-heading',
+  '&:focus-visible': {
+    outline: '0 none',
+    boxShadow: `inset 0 0 0 2px ${theme.barSelectedColor}`,
+  },
 }));
 
 const CollectionHeadInner = styled.div(({ theme }) => ({
@@ -221,15 +234,15 @@ const CollectionHeadInner = styled.div(({ theme }) => ({
   },
 }));
 
-const CollectionLabel = styled.strong({
+const CollectionLabel = styled.strong(({ theme }) => ({
   minWidth: 0,
   overflow: 'hidden',
   textOverflow: 'ellipsis',
   whiteSpace: 'nowrap',
   fontWeight: 700,
   lineHeight: '20px',
-  color: '#2E3338',
-});
+  color: theme.color.defaultText,
+}));
 
 // The leading group segments of a component title ("Components /"), kept
 // lighter so the component name itself stands out.
@@ -258,12 +271,12 @@ const CollectionHeadText = styled.div({
   minWidth: 0,
 });
 
-const CollectionRationale = styled.p({
-  color: '#5C6570',
+const CollectionRationale = styled.p(({ theme }) => ({
+  color: theme.textMutedColor,
   margin: '0 12px 6px 12px',
-});
+}));
 
-const CollectionCount = styled.span({
+const CollectionCount = styled.span(({ theme }) => ({
   minWidth: 28,
   height: 20,
   fontFamily: '"SF Mono", SFMono-Regular, Menlo, Monaco, Consolas, monospace',
@@ -272,8 +285,8 @@ const CollectionCount = styled.span({
   fontSize: 13,
   lineHeight: '20px',
   textAlign: 'center',
-  color: '#5C6570',
-});
+  color: theme.textMutedColor,
+}));
 
 const NoResults = styled.div(({ theme }) => ({
   color: theme.textMutedColor,
@@ -364,27 +377,22 @@ const CollectionsTab: FC<{
             <Collapsible
               collapsed={!isExpanded}
               summary={() => (
-                <CollectionHead onClick={() => onToggleCollection(index)}>
+                <CollectionHead
+                  type="button"
+                  aria-expanded={isExpanded}
+                  aria-label={isExpanded ? 'Collapse cluster' : 'Expand cluster'}
+                  onClick={() => onToggleCollection(index)}
+                >
                   <CollectionHeadInner>
                     <CollectionHeadText data-collapsible-title>
                       <CollectionLabel>{collection.title}</CollectionLabel>
                     </CollectionHeadText>
                     <CollectionControls>
                       <CollectionCount>{storyIds.length}</CollectionCount>
-                      <Button
-                        variant="ghost"
-                        size="small"
-                        padding="small"
-                        ariaLabel={isExpanded ? 'Collapse cluster' : 'Expand cluster'}
-                        onClick={(event) => {
-                          event.stopPropagation();
-                          onToggleCollection(index);
-                        }}
-                      >
-                        <ToggleChevronIcon
-                          style={{ transform: `rotate(${isExpanded ? -180 : 0}deg)` }}
-                        />
-                      </Button>
+                      <ToggleChevronIcon
+                        aria-hidden
+                        style={{ transform: `rotate(${isExpanded ? -180 : 0}deg)` }}
+                      />
                     </CollectionControls>
                   </CollectionHeadInner>
                 </CollectionHead>
@@ -473,27 +481,22 @@ const ComponentsTab: FC<{
             <Collapsible
               collapsed={!isExpanded}
               summary={() => (
-                <CollectionHead onClick={() => onToggleComponent(group.componentId)}>
+                <CollectionHead
+                  type="button"
+                  aria-expanded={isExpanded}
+                  aria-label={isExpanded ? 'Collapse component' : 'Expand component'}
+                  onClick={() => onToggleComponent(group.componentId)}
+                >
                   <CollectionHeadInner>
                     <CollectionHeadText data-collapsible-title>
                       {renderComponentTitle(name)}
                     </CollectionHeadText>
                     <CollectionControls>
                       <CollectionCount>{storyIds.length}</CollectionCount>
-                      <Button
-                        variant="ghost"
-                        size="small"
-                        padding="small"
-                        ariaLabel={isExpanded ? 'Collapse component' : 'Expand component'}
-                        onClick={(event) => {
-                          event.stopPropagation();
-                          onToggleComponent(group.componentId);
-                        }}
-                      >
-                        <ToggleChevronIcon
-                          style={{ transform: `rotate(${isExpanded ? -180 : 0}deg)` }}
-                        />
-                      </Button>
+                      <ToggleChevronIcon
+                        aria-hidden
+                        style={{ transform: `rotate(${isExpanded ? -180 : 0}deg)` }}
+                      />
                     </CollectionControls>
                   </CollectionHeadInner>
                 </CollectionHead>

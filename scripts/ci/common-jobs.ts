@@ -172,6 +172,15 @@ export const internalStorybookE2e = defineJob(
       ...workflow.restoreLinux(),
       {
         run: {
+          name: 'Run internal Storybook',
+          working_directory: 'code',
+          background: true,
+          command: 'yarn storybook:ui',
+        },
+      },
+      server.wait(['6006']),
+      {
+        run: {
           name: 'Run internal Storybook E2E tests',
           command: 'yarn task e2e-tests-internal --no-link -s e2e-tests-internal --junit',
         },

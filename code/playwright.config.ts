@@ -57,12 +57,6 @@ export default defineConfig({
       use: {
         ...devices['Desktop Chrome'],
       },
-      webServer: {
-        command: 'yarn storybook:ui',
-        url: 'http://localhost:6006/index.json',
-        reuseExistingServer: !process.env.CI,
-        timeout: 300_000,
-      },
     },
     {
       // Playwright recommends project dependencies over globalSetup when setup needs runner features

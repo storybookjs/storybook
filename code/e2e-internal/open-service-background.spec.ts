@@ -10,12 +10,11 @@ import { SbPage } from '../e2e-sandbox/util.ts';
  * (sync-start initialization, buffered patch flush on first preview message) — not only dev-server websocket.
  * Manager addon registration runs synchronously before the preview iframe mounts (Option A).
  *
- * Run (from repo root):
- *   yarn task e2e-tests-internal --no-link -s e2e-tests-internal
+ * Run (from repo root) with internal Storybook already running on port 6006:
+ *   cd code && yarn storybook:ui                         # terminal 1
+ *   yarn task e2e-tests-internal --no-link -s e2e-tests-internal  # terminal 2
  *
- * Or manually (from `code/`):
- *   yarn nx compile core && yarn storybook:ui          # terminal 1
- *   yarn playwright test --project=open-service-internal  # terminal 2
+ * CI starts Storybook automatically before the task runs.
  */
 
 /** Internal Storybook UI (`code/.storybook`) — not a sandbox template. */

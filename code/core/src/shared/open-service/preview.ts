@@ -1,9 +1,9 @@
 /**
  * Preview-side entrypoint for the open-service architecture.
  *
- * Import from here in preview (renderer) code. This entrypoint is intentionally
- * renderer-agnostic — it exposes the raw service API with no React dependencies.
- * Use `.subscribe()` directly to react to state changes in your renderer.
+ * Import from here in preview (renderer) code. This entrypoint is intentionally renderer-agnostic —
+ * it exposes the raw service API with no React dependencies. Use `.subscribe()` directly to react to
+ * state changes in your renderer.
  *
  * The manager entrypoint (`./manager.ts`) additionally exports `useServiceQuery` and
  * `useServiceCommand` for React-based manager code.
@@ -21,10 +21,7 @@
  * ```
  */
 
-import { addons } from 'storybook/preview-api';
-
-import { registerServiceClient } from './service-client.ts';
-import { getServiceChannel, setServiceChannel } from './service-channel.ts';
+import { registerService as registerServiceCore } from './service-registry.ts';
 import type {
   Commands,
   Queries,
@@ -36,14 +33,9 @@ import type {
 
 export { defineService } from './service-definition.ts';
 
-export {
-  clearClientRegistry,
-  clientRegistryApi,
-  unregisterServiceClient,
-} from './service-client.ts';
+export { clearRegistry, serviceRegistryApi, unregisterService } from './service-registry.ts';
 
 export {
-  clearServiceChannel,
   generateClientId,
   getServiceChannel,
   SERVICE_COMMAND_ERROR,
@@ -92,8 +84,9 @@ export type {
 /**
  * Registers a service in the preview and returns its runtime surface.
  *
- * Automatically wires the preview channel (`addons.getChannel()`) on first call so callers
- * never need to manage the channel directly.
+ * The preview is a leaf (`relay: false`): with a single channel transport there is nothing to
+ * forward. The channel is read from `globalThis.__STORYBOOK_ADDONS_CHANNEL__`, which both builders
+ * inject into the iframe, so no manual channel setup is needed.
  */
 export function registerService<
   TState,
@@ -103,8 +96,5 @@ export function registerService<
   definition: ServiceDefinition<TState, TQueries, TCommands>,
   registration?: ServiceRegistrationOptions<TState, TQueries, TCommands>
 ): ServiceInstance<TState, TQueries, TCommands> & ServiceRegistryApi {
-  if (!getServiceChannel()) {
-    setServiceChannel(addons.getChannel());
-  }
-  return registerServiceClient(definition, registration);
+  return registerServiceCore(definition, registration);
 }

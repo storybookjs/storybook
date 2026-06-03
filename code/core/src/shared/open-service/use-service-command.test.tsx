@@ -3,16 +3,16 @@ import { renderHook } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
 
 import { mutableRecordLookupServiceDef } from './fixtures.ts';
-import { clearClientRegistry, registerServiceClient } from './service-client.ts';
+import { clearRegistry, registerService } from './service-registry.ts';
 import { useServiceCommand } from './use-service-command.ts';
 
 afterEach(() => {
-  clearClientRegistry();
+  clearRegistry();
 });
 
 describe('useServiceCommand', () => {
   it('returns a callable async function', async () => {
-    const service = registerServiceClient(mutableRecordLookupServiceDef);
+    const service = registerService(mutableRecordLookupServiceDef);
 
     const { result } = renderHook(() => useServiceCommand(service, 'assignRecordField'));
 
@@ -22,7 +22,7 @@ describe('useServiceCommand', () => {
   });
 
   it('returns the same function reference across re-renders', () => {
-    const service = registerServiceClient(mutableRecordLookupServiceDef);
+    const service = registerService(mutableRecordLookupServiceDef);
 
     const { result, rerender } = renderHook(() => useServiceCommand(service, 'assignRecordField'));
 

@@ -19,7 +19,7 @@ import * as React from 'react';
 
 import { isEqual } from 'es-toolkit/predicate';
 
-import type { Query, RuntimeService } from './types.ts';
+import type { Query } from './types.ts';
 
 type QueryInput<TQuery> = TQuery extends Query<infer TInput, any> ? TInput : never;
 type QueryOutput<TQuery> = TQuery extends Query<any, infer TOutput> ? TOutput : never;
@@ -27,7 +27,7 @@ type QueryOutput<TQuery> = TQuery extends Query<any, infer TOutput> ? TOutput : 
 /**
  * Subscribe to a service query and receive reactive updates in a React component.
  *
- * @param service - A service instance from `registerServiceClient` or `registerService`.
+ * @param service - A service instance from `registerService`.
  * @param queryName - The name of the query to subscribe to.
  * @param args - The query input. Omit entirely for queries whose input type is `void`.
  *
@@ -37,7 +37,10 @@ type QueryOutput<TQuery> = TQuery extends Query<any, infer TOutput> ? TOutput : 
  * ```
  */
 export function useServiceQuery<
-  TInstance extends Pick<RuntimeService, 'queries'>,
+  // Accept any concretely-typed service: an object-input query (`Query<{ id }, ...>`) is not
+  // assignable to `Query<unknown, unknown>` under contravariance, so a `Pick<RuntimeService>`
+  // constraint would reject every service whose query takes an object input.
+  TInstance extends { queries: Record<string, Query<any, any>> },
   TKey extends keyof TInstance['queries'] & string,
 >(
   service: TInstance,

@@ -5,10 +5,8 @@ import {
   SERVICE_PATCHES,
   SERVICE_WELCOME_REPLY,
   SERVICE_WELCOME_REQUEST,
-  clearServiceChannel,
-  setServiceChannel,
 } from './service-channel.ts';
-import { clearRegistry, registerService } from './service-registration.ts';
+import { clearRegistry, registerService } from './server.ts';
 
 // ---- Mock channel factory ----
 
@@ -43,20 +41,27 @@ function createMockChannel() {
 
 const { id: recordServiceId } = mutableRecordLookupServiceDef;
 
+// Install a mock channel by writing the same ambient global the real runtimes read. `null` clears it
+// so a channel from one test never leaks into a local-only test.
+function installChannel(channel: ReturnType<typeof createMockChannel> | null): void {
+  (globalThis as { __STORYBOOK_ADDONS_CHANNEL__?: unknown }).__STORYBOOK_ADDONS_CHANNEL__ =
+    channel ?? undefined;
+}
+
 afterEach(() => {
   clearRegistry();
-  clearServiceChannel();
+  installChannel(null);
 });
 
-// These tests exercise the server transport that `registerService` wires when a channel is installed
-// via `setServiceChannel` BEFORE registration — the dev server does exactly this in its `services`
-// preset, so there is no separate connect step. The server is always a relay hub: one dev server
-// bridges every connected manager tab.
+// These tests exercise the server transport that `registerService` wires when a channel is present on
+// `globalThis.__STORYBOOK_ADDONS_CHANNEL__` BEFORE registration — the dev server installs it in its
+// `services` preset, so there is no separate connect step. The server is always a relay hub: one dev
+// server bridges every connected manager tab.
 
 describe('registerService: channel wiring', () => {
   it('wires the installed channel listeners on registration', () => {
     const channel = createMockChannel();
-    setServiceChannel(channel);
+    installChannel(channel);
 
     registerService(mutableRecordLookupServiceDef);
 
@@ -81,7 +86,7 @@ describe('registerService: channel wiring', () => {
 describe('server: command push', () => {
   it('broadcasts the post-mutation snapshot after a local command', async () => {
     const channel = createMockChannel();
-    setServiceChannel(channel);
+    installChannel(channel);
 
     const service = registerService(mutableRecordLookupServiceDef);
 
@@ -104,7 +109,7 @@ describe('server: command push', () => {
 
   it('advances the version on each subsequent command, keeping a stable clientId', async () => {
     const channel = createMockChannel();
-    setServiceChannel(channel);
+    installChannel(channel);
 
     const service = registerService(mutableRecordLookupServiceDef);
 
@@ -123,7 +128,7 @@ describe('server: command push', () => {
 describe('server: welcome handshake', () => {
   it('replies to a welcome-request with its current snapshot and stamp', () => {
     const channel = createMockChannel();
-    setServiceChannel(channel);
+    installChannel(channel);
 
     const service = registerService(mutableRecordLookupServiceDef);
 
@@ -157,7 +162,7 @@ describe('server: welcome handshake', () => {
 
   it('does not reply to a welcome-request for a different service id', () => {
     const channel = createMockChannel();
-    setServiceChannel(channel);
+    installChannel(channel);
 
     registerService(mutableRecordLookupServiceDef);
 
@@ -174,7 +179,7 @@ describe('server: welcome handshake', () => {
 describe('server: patch application', () => {
   it('applies a version-gated patch from a peer', () => {
     const channel = createMockChannel();
-    setServiceChannel(channel);
+    installChannel(channel);
 
     const service = registerService(mutableRecordLookupServiceDef);
 
@@ -190,7 +195,7 @@ describe('server: patch application', () => {
 
   it('drops a stale (lower-version) patch arriving after a newer one', () => {
     const channel = createMockChannel();
-    setServiceChannel(channel);
+    installChannel(channel);
 
     const service = registerService(mutableRecordLookupServiceDef);
 
@@ -212,7 +217,7 @@ describe('server: patch application', () => {
 
   it('ignores patches for a different service id', () => {
     const channel = createMockChannel();
-    setServiceChannel(channel);
+    installChannel(channel);
 
     const service = registerService(mutableRecordLookupServiceDef);
 
@@ -228,7 +233,7 @@ describe('server: patch application', () => {
 
   it('drops malformed patches without throwing or mutating state', () => {
     const channel = createMockChannel();
-    setServiceChannel(channel);
+    installChannel(channel);
 
     const service = registerService(mutableRecordLookupServiceDef);
 
@@ -250,7 +255,7 @@ describe('server: patch application', () => {
 describe('server: state schema validation', () => {
   it('applies a schema-valid snapshot and drops an invalid one', () => {
     const channel = createMockChannel();
-    setServiceChannel(channel);
+    installChannel(channel);
 
     const service = registerService(schemaCounterServiceDef);
 
@@ -277,7 +282,7 @@ describe('server: state schema validation', () => {
 describe('server: teardown via clearRegistry', () => {
   it('detaches channel listeners so later patches are ignored', () => {
     const channel = createMockChannel();
-    setServiceChannel(channel);
+    installChannel(channel);
 
     const service = registerService(mutableRecordLookupServiceDef);
 
@@ -309,7 +314,7 @@ describe('server: teardown via clearRegistry', () => {
 describe('server: bootstrap on registration', () => {
   it('emits a welcome-request so a freshly-registered server can catch up', () => {
     const channel = createMockChannel();
-    setServiceChannel(channel);
+    installChannel(channel);
 
     registerService(mutableRecordLookupServiceDef);
 
@@ -321,7 +326,7 @@ describe('server: bootstrap on registration', () => {
 
   it('adopts state from a welcome-reply (a late/restarted server catches up)', () => {
     const channel = createMockChannel();
-    setServiceChannel(channel);
+    installChannel(channel);
 
     const service = registerService(mutableRecordLookupServiceDef);
 
@@ -338,7 +343,7 @@ describe('server: bootstrap on registration', () => {
 
   it('does not treat its own welcome-request echo as incoming state', () => {
     const channel = createMockChannel();
-    setServiceChannel(channel);
+    installChannel(channel);
 
     const service = registerService(mutableRecordLookupServiceDef);
 
@@ -360,7 +365,7 @@ describe('server: relay role', () => {
 
   it('re-broadcasts a peer patch it adopts, preserving the original stamp', () => {
     const channel = createMockChannel();
-    setServiceChannel(channel);
+    installChannel(channel);
 
     registerService(mutableRecordLookupServiceDef);
 
@@ -385,7 +390,7 @@ describe('server: relay role', () => {
 
   it('relays state it adopts during bootstrap (welcome-reply)', () => {
     const channel = createMockChannel();
-    setServiceChannel(channel);
+    installChannel(channel);
 
     registerService(mutableRecordLookupServiceDef);
 
@@ -403,7 +408,7 @@ describe('server: relay role', () => {
 
   it('does not relay a patch it drops as stale, and terminates on the echo', () => {
     const channel = createMockChannel();
-    setServiceChannel(channel);
+    installChannel(channel);
 
     registerService(mutableRecordLookupServiceDef);
 

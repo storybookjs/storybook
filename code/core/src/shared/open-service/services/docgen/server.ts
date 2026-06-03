@@ -1,7 +1,7 @@
 import { getComponentIdFromEntry } from '../../../../common/utils/component-id.ts';
 import { OpenServiceDocgenMissingComponentError } from '../../../../server-errors.ts';
 import type { StoryIndex } from '../../../../types/modules/indexer.ts';
-import { registerService } from '../../service-registration.ts';
+import { registerService } from '../../server.ts';
 import { docgenServiceDef } from './definition.ts';
 import type { DocgenProvider } from './types.ts';
 

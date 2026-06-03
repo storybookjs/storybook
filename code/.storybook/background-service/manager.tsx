@@ -2,8 +2,8 @@
  * Manager-side registration and toolbar tool for the example background-color service.
  *
  * Service registration is deferred into the addons.register callback so it runs after the
- * Storybook manager channel is ready. registerService auto-wires the channel internally —
- * no manual setServiceChannel call is needed.
+ * Storybook manager channel is ready. registerService reads the shared channel from
+ * `globalThis.__STORYBOOK_ADDONS_CHANNEL__`, so no manual channel setup is needed.
  *
  * Clicking a color swatch calls `setColor`, which propagates to the preview via the
  * channel sync protocol.

@@ -4,16 +4,10 @@
  * Registers the service and subscribes to log every color change to the terminal,
  * including the previous and next value.
  *
- * To receive updates from the manager or preview, wire up the channel bridge after
- * calling this function:
- *
- * ```ts
- * import { connectServiceToChannel, setServiceChannel } from '...open-service/server';
- *
- * const disconnect = connectServiceToChannel(backgroundServiceDef.id, serverChannel);
- * ```
- *
- * Without the channel bridge the subscription only fires for server-local state changes.
+ * `registerService` joins the cross-peer sync protocol automatically as a relay hub when the dev
+ * server has installed the channel (the `services` preset does this on a real websocket transport),
+ * so updates from the manager or preview flow in with no extra wiring. Without a channel — static
+ * builds — the subscription only fires for server-local state changes.
  */
 
 import { registerService } from '../../core/src/shared/open-service/server.ts';

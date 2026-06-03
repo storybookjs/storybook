@@ -1,9 +1,9 @@
 /**
  * Manager-side entrypoint for the open-service architecture.
  *
- * Import from here in manager (React) code. This entrypoint re-exports the full
- * renderer-agnostic service API from `./preview.ts` and additionally exports the
- * React hooks `useServiceQuery` and `useServiceCommand`.
+ * Import from here in manager (React) code. This entrypoint re-exports the full renderer-agnostic
+ * service API from `./preview.ts` and additionally exports the React hooks `useServiceQuery` and
+ * `useServiceCommand`.
  *
  * Quick start:
  *
@@ -22,8 +22,7 @@
  * ```
  */
 
-import { registerServiceClient } from './service-client.ts';
-import { getServiceChannel, setServiceChannel, type ServiceChannel } from './service-channel.ts';
+import { registerService as registerServiceCore } from './service-registry.ts';
 import type {
   Commands,
   Queries,
@@ -41,8 +40,9 @@ export { useServiceQuery } from './use-service-query.ts';
 /**
  * Registers a service in the manager and returns its runtime surface.
  *
- * Automatically wires `window.__STORYBOOK_ADDONS_CHANNEL__` on first call. Call this
- * inside an `addons.register` callback where the channel is guaranteed to be ready.
+ * The manager is a relay hub: it bridges the dev server and the preview iframes. The channel is read
+ * from `globalThis.__STORYBOOK_ADDONS_CHANNEL__`, which the manager runtime installs before any
+ * `addons.register` callback runs, so no manual channel setup is needed.
  */
 export function registerService<
   TState,
@@ -52,11 +52,5 @@ export function registerService<
   definition: ServiceDefinition<TState, TQueries, TCommands>,
   registration?: ServiceRegistrationOptions<TState, TQueries, TCommands>
 ): ServiceInstance<TState, TQueries, TCommands> & ServiceRegistryApi {
-  if (!getServiceChannel()) {
-    const ch = (globalThis as Record<string, unknown>).__STORYBOOK_ADDONS_CHANNEL__;
-    if (ch) {
-      setServiceChannel(ch as ServiceChannel);
-    }
-  }
-  return registerServiceClient(definition, registration);
+  return registerServiceCore(definition, registration, { relay: true });
 }

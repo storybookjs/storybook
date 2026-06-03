@@ -3,16 +3,16 @@ import { renderHook, waitFor } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
 
 import { mutableRecordLookupServiceDef } from './fixtures.ts';
-import { clearClientRegistry, registerServiceClient } from './service-client.ts';
+import { clearRegistry, registerService } from './service-registry.ts';
 import { useServiceQuery } from './use-service-query.ts';
 
 afterEach(() => {
-  clearClientRegistry();
+  clearRegistry();
 });
 
 describe('useServiceQuery', () => {
   it('returns the initial synchronous query result', () => {
-    const service = registerServiceClient(mutableRecordLookupServiceDef);
+    const service = registerService(mutableRecordLookupServiceDef);
 
     const { result } = renderHook(() =>
       useServiceQuery(service, 'getRecordFields', { entryId: 'a' })
@@ -22,7 +22,7 @@ describe('useServiceQuery', () => {
   });
 
   it('re-renders when the query result changes after a command', async () => {
-    const service = registerServiceClient(mutableRecordLookupServiceDef);
+    const service = registerService(mutableRecordLookupServiceDef);
 
     const { result } = renderHook(() =>
       useServiceQuery(service, 'getRecordFields', { entryId: 'a' })
@@ -42,7 +42,7 @@ describe('useServiceQuery', () => {
   });
 
   it('does not re-render for an unrelated entry', async () => {
-    const service = registerServiceClient(mutableRecordLookupServiceDef);
+    const service = registerService(mutableRecordLookupServiceDef);
     let renderCount = 0;
 
     renderHook(() => {
@@ -66,7 +66,7 @@ describe('useServiceQuery', () => {
   });
 
   it('updates when input changes', async () => {
-    const service = registerServiceClient(mutableRecordLookupServiceDef);
+    const service = registerService(mutableRecordLookupServiceDef);
 
     await service.commands.assignRecordField({
       entryId: 'a',
@@ -88,7 +88,7 @@ describe('useServiceQuery', () => {
   });
 
   it('accumulates incremental updates', async () => {
-    const service = registerServiceClient(mutableRecordLookupServiceDef);
+    const service = registerService(mutableRecordLookupServiceDef);
 
     const { result } = renderHook(() =>
       useServiceQuery(service, 'getRecordFields', { entryId: 'a' })
@@ -108,7 +108,7 @@ describe('useServiceQuery', () => {
   });
 
   it('maintains referential stability when result is deeply equal', async () => {
-    const service = registerServiceClient(mutableRecordLookupServiceDef);
+    const service = registerService(mutableRecordLookupServiceDef);
 
     await service.commands.assignRecordField({ entryId: 'a', fieldKey: 'k', fieldValue: 'v' });
 

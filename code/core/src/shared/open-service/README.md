@@ -16,11 +16,17 @@ fit together, where behavior lives, and how to define new services correctly.
 
 ## Public Surface
 
-External callers should import from one of three entrypoints:
+External callers import from one of these entrypoints:
 
 - [index.ts](./index.ts) for environment-agnostic definition helpers and shared types
-- [server.ts](./server.ts) for server-only registration, discovery, and static snapshot writing
-- [client.ts](./client.ts) for browser-side (manager and preview) registration, channel setup, and React hooks
+- [server.ts](./server.ts) for server-side registration, discovery, and static snapshot writing
+- [client.ts](./client.ts) for the renderer-agnostic browser registration + channel surface
+- [manager.ts](./manager.ts) / [preview.ts](./preview.ts) for the manager (React) and preview entrypoints, which bake in the correct relay role
+
+`registerService` is the **single** registration function across every runtime. It lives in
+[service-registry.ts](./service-registry.ts) and is re-exported from each entrypoint with the right
+`relay` default — server and manager are relay hubs, the preview is a leaf. There is no separate
+client/server registration API.
 
 The environment-agnostic API consists of:
 
@@ -36,37 +42,36 @@ The server-only API consists of:
 - `getRegisteredServices`
 - `buildStaticFiles`
 - `writeOpenServiceStaticFiles`
-- `connectServiceToChannel` (opt-in channel participation for server-registered services)
 
-The client-side API consists of:
+The browser API consists of:
 
-- `registerServiceClient` — creates a local runtime and wires it into the channel sync protocol
-- `unregisterServiceClient` — tears down one service's channel listeners and removes it from the registry
-- `clearClientRegistry` — removes all client registrations (use in `afterEach` in tests)
-- `setServiceChannel` / `clearServiceChannel` / `getServiceChannel` — channel lifecycle
-- `useServiceQuery` — React hook backed by `useSyncExternalStore`
-- `useServiceCommand` — React hook returning a stable command reference
+- `registerService` — creates a local runtime and joins the channel sync protocol
+- `unregisterService` — tears down one service's channel listeners and removes it from the registry
+- `clearRegistry` — removes all registrations (use in `afterEach` in tests)
+- `getServiceChannel` — reads the live Storybook channel from `globalThis.__STORYBOOK_ADDONS_CHANNEL__`
+- `useServiceQuery` — React hook backed by `useSyncExternalStore` (manager entrypoint)
+- `useServiceCommand` — React hook returning a stable command reference (manager entrypoint)
 
 Internal tests and implementation code may import from the individual modules directly.
 
 ## File Layout
 
 - [index.ts](./index.ts): environment-agnostic barrel for definition helpers and shared types
-- [server.ts](./server.ts): server-only entrypoint that re-exports registration APIs and owns static snapshot building/writing
-- [client.ts](./client.ts): browser-side entrypoint for manager and preview code
+- [server.ts](./server.ts): server entrypoint that re-exports registration APIs (relay hub) and owns static snapshot building/writing
+- [client.ts](./client.ts): renderer-agnostic browser entrypoint; [manager.ts](./manager.ts) and [preview.ts](./preview.ts) add the relay defaults and (manager) the React hooks
 - [types.ts](./types.ts): core type model for definitions, contexts, runtime instances, and static build data
 - [service-definition.ts](./service-definition.ts): `defineService()` typing that preserves inline inference when declaring services
 - [service-validation.ts](./service-validation.ts): sync + async schema validation helpers and error wrapping
 - [errors.ts](./errors.ts): validation metadata formatting helpers
 - [service-runtime.ts](./service-runtime.ts): signal-backed runtime construction, in-flight load registry, drain logic, and subscriptions
-- [service-registration.ts](./service-registration.ts): server-side global registry implementation and the shared registry API passed into runtimes
-- [service-channel.ts](./service-channel.ts): `ServiceChannel` interface, event name constants, payload types, and module-level channel slot
-- [service-client.ts](./service-client.ts): client-side (browser) registry, `registerServiceClient`, and the multi-master channel sync protocol
-- [service-server-channel.ts](./service-server-channel.ts): opt-in channel participation for server-side registered services
+- [service-registry.ts](./service-registry.ts): the single `registerService`, the realm-global registry, and the shared registry API passed into runtimes — used identically by server, manager, and preview
+- [service-channel.ts](./service-channel.ts): `ServiceChannel` interface, event name constants, payload types, and the `getServiceChannel` reader
+- [service-transport.ts](./service-transport.ts): shared channel transport — wraps commands to broadcast and wires the welcome-handshake + patch listeners (hub or leaf)
+- [service-sync.ts](./service-sync.ts): last-write-wins ordering, the `deepReconcile` structural merge, and the per-service snapshot reconciler
 - [use-service-query.ts](./use-service-query.ts): `useServiceQuery` React hook backed by `useSyncExternalStore`
 - [use-service-command.ts](./use-service-command.ts): `useServiceCommand` React hook returning a stable command reference
 - [fixtures.ts](./fixtures.ts): scenario fixtures used by the test suite
-- `*.test.ts` / `*.test.tsx`: focused tests for runtime behavior, validation behavior, server registration, server static builds, client sync, and React hooks
+- `*.test.ts` / `*.test.tsx`: focused tests for runtime behavior, validation, registration, static builds, channel sync, and React hooks
 
 ## Core Concepts
 
@@ -213,8 +218,9 @@ That split is intentional:
 
 - [index.ts](./index.ts) stays environment-agnostic so preview, manager, and server code can share
   one definition surface
-- [server.ts](./server.ts) owns the concrete registry and static snapshot writing for the current
-  server process
+- [server.ts](./server.ts) exposes server-side registration (a relay hub) and owns static snapshot
+  writing for the current server process; the registry itself lives in
+  [service-registry.ts](./service-registry.ts), shared with the browser entrypoints
 
 `registerService(definition)` throws `OpenServiceDuplicateRegistrationError` if a service with the
 same id is already registered. The default `services` preset hook in
@@ -228,15 +234,15 @@ and `yarn storybook:ui:build` runs do not register the debug service.
 
 ## Runtime Flow
 
-When a server registers a service definition:
+When any runtime registers a service definition:
 
-1. [service-registration.ts](./service-registration.ts) merges any registration-time `staticInputs` overrides for queries and handler overrides for commands.
+1. [service-registry.ts](./service-registry.ts) merges any registration-time `staticInputs` overrides for queries and handler overrides for commands.
 2. It passes the shared registry API into [service-runtime.ts](./service-runtime.ts).
 3. [service-runtime.ts](./service-runtime.ts) creates a signal-backed state container from `initialState`.
 4. It builds a writable `commandSelf` reference around that state.
 5. It builds commands that validate input, run handlers, and validate output.
 6. It builds queries that validate input synchronously, fire any pending `load` in the background (deduped while in flight), run the handler synchronously, and validate the output.
-7. [service-registration.ts](./service-registration.ts) stores the resulting runtime behind the server registry entry for later lookup.
+7. [service-registry.ts](./service-registry.ts) wraps the commands to broadcast post-mutation snapshots, joins the channel sync protocol when a channel is present (as a hub or leaf), and stores the resulting instance behind the registry entry for later lookup.
 
 ## In-flight Load Registry
 
@@ -383,7 +389,7 @@ Browser processes (manager and preview) each run their own full `ServiceRuntime`
 ┌─────────────────────────┐     channel (services:*)     ┌─────────────────────────┐
 │  Manager process        │  ◄────────────────────────►  │  Preview process        │
 │                         │                               │                         │
-│  registerServiceClient  │                               │  registerServiceClient  │
+│  registerService        │                               │  registerService        │
 │  ┌─────────────────┐    │                               │  ┌─────────────────┐    │
 │  │  ServiceRuntime │    │                               │  │  ServiceRuntime │    │
 │  │  (deep signals) │    │                               │  │  (deep signals) │    │
@@ -393,19 +399,18 @@ Browser processes (manager and preview) each run their own full `ServiceRuntime`
 
 ### Channel setup
 
-Install the channel once at the manager or preview entry point before calling `registerServiceClient`:
+There is no channel install step. `getServiceChannel()` reads the live channel from the ambient
+`globalThis.__STORYBOOK_ADDONS_CHANNEL__` slot that every runtime already populates — the manager sets
+it in its runtime, both builders inject it into the preview iframe, and the dev server installs it in
+the `services` preset before any service registers.
 
-```ts
-import { setServiceChannel } from 'storybook/internal/open-service/client';
+Until that slot is populated, service runtimes operate in isolation — all reads and writes are local
+only. That is also the default in unit tests, which can install a mock channel by assigning the slot
+directly (or module-mock `service-channel.ts`).
 
-setServiceChannel(addons.getChannel());
-```
+### `registerService`
 
-Without a channel, service runtimes operate in isolation — all reads and writes are local only. This is also the correct mode for unit tests that do not want cross-peer behaviour.
-
-### `registerServiceClient`
-
-Creates a local `ServiceRuntime` from the service definition (identical to the server-side one) and wires it into the sync protocol:
+Creates a local `ServiceRuntime` from the service definition (identical across runtimes) and wires it into the sync protocol:
 
 1. **On registration** — emits `services:welcome-request` so any existing peer can reply with its current snapshot.
 2. **On welcome-reply** — applies the received snapshot into the local runtime so the new peer bootstraps from existing state.
@@ -414,26 +419,26 @@ Creates a local `ServiceRuntime` from the service definition (identical to the s
 
 ### Loop prevention
 
-Every channel event carries the emitter's `clientId` (generated per `registerServiceClient` call). Listeners silently ignore events whose `clientId` matches their own, so peers never re-apply state they just emitted.
+Every channel event carries the emitter's `clientId` (generated per `registerService` call). Listeners silently ignore events whose `clientId` matches their own, so peers never re-apply state they just emitted.
 
 ### State application without re-broadcast
 
 Incoming state (from welcome-reply or patches) is applied via `serviceRuntime.commandSelf.setState(...)` directly — not through the wrapped commands — so no broadcast is triggered for received state.
 
-### `deepAssign`
+### `deepReconcile`
 
-Rather than replacing the entire state object on each patch (which would invalidate all signal subscriptions), `deepAssign` recursively merges plain-object values in place. Arrays and primitives are replaced directly. This keeps fine-grained subscriptions on unaffected nested fields from firing spuriously.
+Rather than replacing the entire state object on each patch (which would invalidate all signal subscriptions), `deepReconcile` (in [service-sync.ts](./service-sync.ts)) recursively merges plain-object values in place: arrays and primitives are replaced directly, keys absent from the snapshot are deleted so deletions propagate, and `__proto__`/`constructor`/`prototype` are skipped to block prototype pollution. This keeps fine-grained subscriptions on unaffected nested fields from firing spuriously.
 
 ### State sync sequence
 
 ```
 Peer A (manager)            Channel              Peer B (preview)
 ─────────────────────────────────────────────────────────────────
-registerServiceClient()
+registerService()
   └─ emit welcome-request ──────────────────────────────────────►
                                                 (no peer yet; silence)
 
-                                                registerServiceClient()
+                                                registerService()
 ◄─────────────────────────── emit welcome-request ──────────────
   └─ reply with snapshot ──────────────────────────────────────►
                                                   └─ apply snapshot
@@ -446,7 +451,7 @@ service.commands.foo()
 
 ### Server participation
 
-Server-side registered services can optionally join the same protocol by calling `connectServiceToChannel(serviceId)` from [service-server-channel.ts](./service-server-channel.ts). The server responds to welcome-requests and applies incoming patches, but does not emit patches of its own (server state changes happen through direct `registerService` flows, not wrapped commands).
+The dev server is a full peer, not a passive observer. `registerService` on the server registers as a relay hub (`relay: true`): it wraps commands to broadcast their post-mutation snapshots, responds to welcome-requests, applies incoming patches, and re-broadcasts every adopted snapshot so peers on its other transports (each connected manager tab) converge. This is wired automatically at registration once the `services` preset has installed the channel — there is no separate connect step.
 
 ## React Hooks
 
@@ -556,32 +561,32 @@ const ready = await exampleService.queries.getValue.loaded({ entryId: 'a' });
 - Use commands for all state mutation.
 - Keep environment-agnostic imports on [index.ts](./index.ts), server-only imports on [server.ts](./server.ts), and browser-only imports on [client.ts](./client.ts). Import internal modules directly only from tests or implementation code in this directory.
 - Use `.loaded()` when a caller wants to await the full state; use the sync form when "current best" is fine.
-- Call `setServiceChannel(addons.getChannel())` once at the browser entry point before any `registerServiceClient` calls.
-- Call `clearClientRegistry()` and `clearServiceChannel()` in `afterEach` in tests that use `registerServiceClient`.
+- No channel install is needed — `getServiceChannel()` reads `globalThis.__STORYBOOK_ADDONS_CHANNEL__`, which every runtime already populates.
+- Call `clearRegistry()` in `afterEach` in tests that register services; also clear `globalThis.__STORYBOOK_ADDONS_CHANNEL__` if a test installed a mock channel.
 
 ## Testing Guidance
 
 - Runtime behavior belongs in [service-runtime.test.ts](./service-runtime.test.ts)
 - Validation behavior belongs in [service-validation.test.ts](./service-validation.test.ts)
 - Server registration and static snapshot behavior belong in [server.test.ts](./server.test.ts)
-- Client registration and channel sync behavior belong in [service-client.test.ts](./service-client.test.ts)
+- Client (leaf) registration and channel sync behavior belong in [service-client.test.ts](./service-client.test.ts); server (hub) channel sync in [service-registration-sync.test.ts](./service-registration-sync.test.ts)
 - React hook behavior belongs in [use-service-query.test.tsx](./use-service-query.test.tsx) and [use-service-command.test.tsx](./use-service-command.test.tsx)
 - Reusable scenario definitions belong in [fixtures.ts](./fixtures.ts)
 
 When adding validation tests, prefer asserting the full exact error message. That keeps the tests useful as executable documentation for callers and agents.
 
-React hook tests must include `// @vitest-environment happy-dom` as the first line and add `clearClientRegistry()` in `afterEach`. Use `waitFor(...)` (not `act`) when asserting state changes that flow through preact signals — `act` only flushes React's scheduler and is unaware of the signal effect queue.
+React hook tests must include `// @vitest-environment happy-dom` as the first line and add `clearRegistry()` in `afterEach`. Use `waitFor(...)` (not `act`) when asserting state changes that flow through preact signals — `act` only flushes React's scheduler and is unaware of the signal effect queue.
 
 ## Agent Notes
 
 - If you need to change runtime behavior, start in [service-runtime.ts](./service-runtime.ts).
-- If you need to change server registration, start in [service-registration.ts](./service-registration.ts).
+- If you need to change registration or the registry (any runtime), start in [service-registry.ts](./service-registry.ts).
 - If you need to change static snapshot building or writing, start in [server.ts](./server.ts).
 - If you need to change validation wording, start in [errors.ts](./errors.ts).
 - If you need to change schema handling, start in [service-validation.ts](./service-validation.ts).
 - If you need to change service authoring ergonomics, start in [service-definition.ts](./service-definition.ts) and [types.ts](./types.ts).
-- If you need to change client-side sync or registration, start in [service-client.ts](./service-client.ts).
-- If you need to change the channel protocol (event names, payloads, channel slot), start in [service-channel.ts](./service-channel.ts).
-- If you need to change server-side channel participation, start in [service-server-channel.ts](./service-server-channel.ts).
+- If you need to change channel transport or relay behavior, start in [service-transport.ts](./service-transport.ts).
+- If you need to change last-write-wins ordering or the structural merge, start in [service-sync.ts](./service-sync.ts).
+- If you need to change the channel protocol (event names, payloads, channel reader), start in [service-channel.ts](./service-channel.ts).
 - If you need to change the React query hook, start in [use-service-query.ts](./use-service-query.ts).
 - If you need to change the React command hook, start in [use-service-command.ts](./use-service-command.ts).

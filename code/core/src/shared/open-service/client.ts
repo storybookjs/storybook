@@ -1,34 +1,31 @@
 /**
  * Client-side entrypoint for the open-service architecture.
  *
- * Import from here in manager and preview code. The server-side entrypoint is
- * `./server.ts`, which re-exports registration helpers and static snapshot building for
- * the Node.js side.
+ * Import from here in browser code that wants the renderer-agnostic registration + channel surface
+ * directly. Manager (React) code should prefer `./manager.ts` and preview code `./preview.ts` — both
+ * bake in the correct relay role and delegate to the same unified registry as this barrel.
  *
  * Quick start:
  *
  * ```ts
- * // Entry point (manager or preview):
- * import { setServiceChannel } from 'storybook/internal/open-service/client';
- * setServiceChannel(addons.getChannel());
- *
- * // Service consumer:
- * import { registerServiceClient, useServiceQuery, useServiceCommand } from '...';
- * const service = registerServiceClient(myServiceDef);
+ * import { registerService, useServiceQuery, useServiceCommand } from '...';
+ * const service = registerService(myServiceDef);
  * ```
+ *
+ * The channel is read from `globalThis.__STORYBOOK_ADDONS_CHANNEL__` — the manager installs it and
+ * both builders inject it into the preview iframe, so there is no manual channel setup.
  */
 
 export { defineService } from './service-definition.ts';
 
 export {
-  clearClientRegistry,
-  clientRegistryApi,
-  registerServiceClient,
-  unregisterServiceClient,
-} from './service-client.ts';
+  clearRegistry,
+  registerService,
+  serviceRegistryApi,
+  unregisterService,
+} from './service-registry.ts';
 
 export {
-  clearServiceChannel,
   generateClientId,
   getServiceChannel,
   SERVICE_COMMAND_ERROR,
@@ -37,7 +34,6 @@ export {
   SERVICE_PATCHES,
   SERVICE_WELCOME_REPLY,
   SERVICE_WELCOME_REQUEST,
-  setServiceChannel,
 } from './service-channel.ts';
 export type {
   CommandErrorPayload,

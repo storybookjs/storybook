@@ -6,9 +6,13 @@
  * peers. The `services:` prefix keeps service events trivially filterable from other
  * channel traffic.
  *
- * Install the channel once at app startup via {@link setServiceChannel}. Without a channel
- * installed, service runtimes operate in isolation — all reads and writes are local only.
+ * The channel is read from the ambient `globalThis.__STORYBOOK_ADDONS_CHANNEL__` slot that every
+ * Storybook runtime already exposes — the manager sets it in its runtime, both builders inject it
+ * into the preview iframe, and the dev server installs it in the `services` preset. Until that slot
+ * is populated, {@link getServiceChannel} returns `null` and service runtimes operate in isolation
+ * (all reads and writes are local only) — which is also the default in unit tests.
  */
+import { global } from '@storybook/global';
 
 /**
  * Minimal channel contract needed for service sync.
@@ -84,37 +88,17 @@ export interface CommandErrorPayload {
   error: unknown;
 }
 
-// Use a globalThis slot (via Symbol.for) so the channel is shared across all module
-// instances. In Vite dev mode the .storybook/ files and the pre-bundled core package
-// resolve to separate module instances of this file; a plain `let` variable would give
-// each instance its own copy and setServiceChannel/getServiceChannel would disagree.
-const CHANNEL_SYMBOL = Symbol.for('storybook.open-service.channel');
-
-function getChannelStore(): { channel: ServiceChannel | null } {
-  const g = globalThis as Record<symbol, { channel: ServiceChannel | null } | undefined>;
-  g[CHANNEL_SYMBOL] ??= { channel: null };
-  return g[CHANNEL_SYMBOL]!;
-}
-
 /**
- * Install the channel used by all service client runtimes for cross-peer state sync.
+ * Returns the live Storybook channel shared by every service runtime, or `null` before it exists.
  *
- * Pass `window.__STORYBOOK_ADDONS_CHANNEL__` (the full bidirectional channel) from the
- * manager or preview entry point. Must be called after the channel is created — inside
- * an `addons.register` callback in manager code, or at module top level in preview code.
+ * Reads the ambient `globalThis.__STORYBOOK_ADDONS_CHANNEL__` slot rather than a private one: the
+ * manager, both preview builders, and the dev server's `services` preset all populate it, so every
+ * runtime converges on the same channel with no install step. The transport re-reads this at call
+ * time, so a runtime registered before the channel exists still starts broadcasting once it does.
+ * Unit tests can assign the slot directly or module-mock this function.
  */
-export function setServiceChannel(channel: ServiceChannel): void {
-  getChannelStore().channel = channel;
-}
-
-/** Remove the installed channel. Service runtimes will operate in isolation after this. */
-export function clearServiceChannel(): void {
-  getChannelStore().channel = null;
-}
-
-/** @internal Returns the channel installed by `setServiceChannel`, or `null` if none. */
 export function getServiceChannel(): ServiceChannel | null {
-  return getChannelStore().channel;
+  return (global.__STORYBOOK_ADDONS_CHANNEL__ as ServiceChannel | undefined) ?? null;
 }
 
 /**

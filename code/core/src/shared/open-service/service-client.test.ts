@@ -5,14 +5,8 @@ import {
   SERVICE_PATCHES,
   SERVICE_WELCOME_REPLY,
   SERVICE_WELCOME_REQUEST,
-  clearServiceChannel,
-  setServiceChannel,
 } from './service-channel.ts';
-import {
-  clearClientRegistry,
-  registerServiceClient,
-  unregisterServiceClient,
-} from './service-client.ts';
+import { clearRegistry, registerService, unregisterService } from './service-registry.ts';
 
 // ---- Mock channel factory ----
 
@@ -44,21 +38,28 @@ function createMockChannel() {
   };
 }
 
+// Install a mock channel by writing the same ambient global the real runtimes read. `null` clears it
+// so a channel from one test never leaks into a local-only test.
+function installChannel(channel: ReturnType<typeof createMockChannel> | null): void {
+  (globalThis as { __STORYBOOK_ADDONS_CHANNEL__?: unknown }).__STORYBOOK_ADDONS_CHANNEL__ =
+    channel ?? undefined;
+}
+
 afterEach(() => {
-  clearClientRegistry();
-  clearServiceChannel();
+  clearRegistry();
+  installChannel(null);
 });
 
 // ---- Basic registration ----
 
-describe('registerServiceClient', () => {
+describe('registerService (client)', () => {
   it('returns a service with functional queries', () => {
-    const service = registerServiceClient(mutableRecordLookupServiceDef);
+    const service = registerService(mutableRecordLookupServiceDef);
     expect(service.queries.getRecordFields({ entryId: 'a' })).toBeNull();
   });
 
   it('reflects state after a local command', async () => {
-    const service = registerServiceClient(mutableRecordLookupServiceDef);
+    const service = registerService(mutableRecordLookupServiceDef);
 
     await service.commands.assignRecordField({
       entryId: 'a',
@@ -70,18 +71,16 @@ describe('registerServiceClient', () => {
   });
 
   it('throws on duplicate registration', () => {
-    registerServiceClient(mutableRecordLookupServiceDef);
+    registerService(mutableRecordLookupServiceDef);
 
-    expect(() => registerServiceClient(mutableRecordLookupServiceDef)).toThrow(
-      'already registered'
-    );
+    expect(() => registerService(mutableRecordLookupServiceDef)).toThrow('already registered');
   });
 
   it('re-registration succeeds after unregisterServiceClient', () => {
-    registerServiceClient(mutableRecordLookupServiceDef);
-    unregisterServiceClient(mutableRecordLookupServiceDef.id);
+    registerService(mutableRecordLookupServiceDef);
+    unregisterService(mutableRecordLookupServiceDef.id);
 
-    expect(() => registerServiceClient(mutableRecordLookupServiceDef)).not.toThrow();
+    expect(() => registerService(mutableRecordLookupServiceDef)).not.toThrow();
   });
 });
 
@@ -89,7 +88,7 @@ describe('registerServiceClient', () => {
 
 describe('subscriptions', () => {
   it('delivers the current value immediately', async () => {
-    const service = registerServiceClient(mutableRecordLookupServiceDef);
+    const service = registerService(mutableRecordLookupServiceDef);
     const received: unknown[] = [];
 
     service.queries.getRecordFields.subscribe({ entryId: 'a' }, (v) => received.push(v));
@@ -99,7 +98,7 @@ describe('subscriptions', () => {
   });
 
   it('re-fires on state change from a local command', async () => {
-    const service = registerServiceClient(mutableRecordLookupServiceDef);
+    const service = registerService(mutableRecordLookupServiceDef);
     const received: unknown[] = [];
 
     service.queries.getRecordFields.subscribe({ entryId: 'a' }, (v) => received.push(v));
@@ -121,9 +120,9 @@ describe('subscriptions', () => {
 describe('channel: welcome handshake', () => {
   it('emits services:welcome-request on registration', () => {
     const channel = createMockChannel();
-    setServiceChannel(channel);
+    installChannel(channel);
 
-    registerServiceClient(mutableRecordLookupServiceDef);
+    registerService(mutableRecordLookupServiceDef);
 
     expect(channel.emit).toHaveBeenCalledWith(
       SERVICE_WELCOME_REQUEST,
@@ -133,9 +132,9 @@ describe('channel: welcome handshake', () => {
 
   it('applies state from a welcome-reply from an external peer', async () => {
     const channel = createMockChannel();
-    setServiceChannel(channel);
+    installChannel(channel);
 
-    const service = registerServiceClient(mutableRecordLookupServiceDef);
+    const service = registerService(mutableRecordLookupServiceDef);
 
     channel.emitExternal(SERVICE_WELCOME_REPLY, {
       serviceId: mutableRecordLookupServiceDef.id,
@@ -151,9 +150,9 @@ describe('channel: welcome handshake', () => {
 
   it('responds to a welcome-request from an external peer', async () => {
     const channel = createMockChannel();
-    setServiceChannel(channel);
+    installChannel(channel);
 
-    const service = registerServiceClient(mutableRecordLookupServiceDef);
+    const service = registerService(mutableRecordLookupServiceDef);
 
     // Put some local state in
     await service.commands.assignRecordField({
@@ -179,9 +178,9 @@ describe('channel: welcome handshake', () => {
 
   it('ignores its own welcome-request echo', () => {
     const channel = createMockChannel();
-    setServiceChannel(channel);
+    installChannel(channel);
 
-    registerServiceClient(mutableRecordLookupServiceDef);
+    registerService(mutableRecordLookupServiceDef);
 
     // The welcome-request emitted on registration echoes back through the channel.
     // The client must NOT reply to itself.
@@ -191,9 +190,9 @@ describe('channel: welcome handshake', () => {
 
   it('adopts a welcome-reply from a hub that was not listening at registration time', async () => {
     const channel = createMockChannel();
-    setServiceChannel(channel);
+    installChannel(channel);
 
-    const preview = registerServiceClient(mutableRecordLookupServiceDef, undefined, {
+    const preview = registerService(mutableRecordLookupServiceDef, undefined, {
       relay: false,
     });
 
@@ -220,9 +219,9 @@ describe('channel: welcome handshake', () => {
 
   it('converges via patches when a welcome-reply carried stale v0 state', async () => {
     const channel = createMockChannel();
-    setServiceChannel(channel);
+    installChannel(channel);
 
-    const preview = registerServiceClient(mutableRecordLookupServiceDef, undefined, {
+    const preview = registerService(mutableRecordLookupServiceDef, undefined, {
       relay: false,
     });
 
@@ -247,10 +246,10 @@ describe('channel: welcome handshake', () => {
 
   it('teardown removes channel listeners after unregister', () => {
     const channel = createMockChannel();
-    setServiceChannel(channel);
+    installChannel(channel);
 
-    registerServiceClient(mutableRecordLookupServiceDef, undefined, { relay: false });
-    unregisterServiceClient(mutableRecordLookupServiceDef.id);
+    registerService(mutableRecordLookupServiceDef, undefined, { relay: false });
+    unregisterService(mutableRecordLookupServiceDef.id);
 
     channel.emitExternal(SERVICE_WELCOME_REPLY, {
       serviceId: mutableRecordLookupServiceDef.id,
@@ -266,9 +265,9 @@ describe('channel: welcome handshake', () => {
 describe('channel: patch broadcast', () => {
   it('broadcasts services:patches after a local command', async () => {
     const channel = createMockChannel();
-    setServiceChannel(channel);
+    installChannel(channel);
 
-    const service = registerServiceClient(mutableRecordLookupServiceDef);
+    const service = registerService(mutableRecordLookupServiceDef);
 
     await service.commands.assignRecordField({
       entryId: 'b',
@@ -287,9 +286,9 @@ describe('channel: patch broadcast', () => {
 
   it('applies patches from an external peer', async () => {
     const channel = createMockChannel();
-    setServiceChannel(channel);
+    installChannel(channel);
 
-    const service = registerServiceClient(mutableRecordLookupServiceDef);
+    const service = registerService(mutableRecordLookupServiceDef);
 
     channel.emitExternal(SERVICE_PATCHES, {
       serviceId: mutableRecordLookupServiceDef.id,
@@ -305,9 +304,9 @@ describe('channel: patch broadcast', () => {
 
   it('does not re-apply its own patch echo (loop prevention)', async () => {
     const channel = createMockChannel();
-    setServiceChannel(channel);
+    installChannel(channel);
 
-    const service = registerServiceClient(mutableRecordLookupServiceDef);
+    const service = registerService(mutableRecordLookupServiceDef);
 
     const received: unknown[] = [];
     service.queries.getRecordFields.subscribe({ entryId: 'a' }, (v) => received.push(v));
@@ -324,9 +323,9 @@ describe('channel: patch broadcast', () => {
 
   it('ignores patches for a different service id', async () => {
     const channel = createMockChannel();
-    setServiceChannel(channel);
+    installChannel(channel);
 
-    const service = registerServiceClient(mutableRecordLookupServiceDef);
+    const service = registerService(mutableRecordLookupServiceDef);
 
     channel.emitExternal(SERVICE_PATCHES, {
       serviceId: 'some-other-service',
@@ -344,9 +343,9 @@ describe('channel: patch broadcast', () => {
 describe('channel: last-write-wins convergence', () => {
   it('converges on the higher clientId for concurrent (equal-version) writes', async () => {
     const channel = createMockChannel();
-    setServiceChannel(channel);
+    installChannel(channel);
 
-    const service = registerServiceClient(mutableRecordLookupServiceDef);
+    const service = registerService(mutableRecordLookupServiceDef);
 
     // Two peers write concurrently (same version). The lexicographically greater clientId wins.
     channel.emitExternal(SERVICE_PATCHES, {
@@ -369,9 +368,9 @@ describe('channel: last-write-wins convergence', () => {
 
   it('converges on the same winner regardless of arrival order', async () => {
     const channel = createMockChannel();
-    setServiceChannel(channel);
+    installChannel(channel);
 
-    const service = registerServiceClient(mutableRecordLookupServiceDef);
+    const service = registerService(mutableRecordLookupServiceDef);
 
     // Greater clientId arrives first; the later, lower-clientId write at the same version loses.
     channel.emitExternal(SERVICE_PATCHES, {
@@ -393,9 +392,9 @@ describe('channel: last-write-wins convergence', () => {
 
   it('a higher version wins even against a greater clientId', async () => {
     const channel = createMockChannel();
-    setServiceChannel(channel);
+    installChannel(channel);
 
-    const service = registerServiceClient(mutableRecordLookupServiceDef);
+    const service = registerService(mutableRecordLookupServiceDef);
 
     // Greater clientId but lower version.
     channel.emitExternal(SERVICE_PATCHES, {
@@ -419,9 +418,9 @@ describe('channel: last-write-wins convergence', () => {
 
   it('drops a stale (lower-version) patch arriving after a newer one', async () => {
     const channel = createMockChannel();
-    setServiceChannel(channel);
+    installChannel(channel);
 
-    const service = registerServiceClient(mutableRecordLookupServiceDef);
+    const service = registerService(mutableRecordLookupServiceDef);
 
     channel.emitExternal(SERVICE_PATCHES, {
       serviceId: mutableRecordLookupServiceDef.id,
@@ -445,9 +444,9 @@ describe('channel: last-write-wins convergence', () => {
 describe('channel: multi-peer welcome bootstrap', () => {
   it('converges on the newest welcome-reply when several peers answer out of order', async () => {
     const channel = createMockChannel();
-    setServiceChannel(channel);
+    installChannel(channel);
 
-    const service = registerServiceClient(mutableRecordLookupServiceDef);
+    const service = registerService(mutableRecordLookupServiceDef);
 
     // Three peers reply with different versions, out of order. Only the newest must stick — this is
     // why bootstrap is version-gated rather than first-reply-wins.
@@ -479,9 +478,9 @@ describe('channel: multi-peer welcome bootstrap', () => {
 describe('channel: deletion propagation', () => {
   it('deletes keys that are absent from a newer snapshot', async () => {
     const channel = createMockChannel();
-    setServiceChannel(channel);
+    installChannel(channel);
 
-    const service = registerServiceClient(mutableRecordLookupServiceDef);
+    const service = registerService(mutableRecordLookupServiceDef);
 
     channel.emitExternal(SERVICE_PATCHES, {
       serviceId: mutableRecordLookupServiceDef.id,
@@ -510,9 +509,9 @@ describe('channel: deletion propagation', () => {
 describe('channel: untrusted payloads', () => {
   it('does not pollute Object.prototype from a hostile snapshot', async () => {
     const channel = createMockChannel();
-    setServiceChannel(channel);
+    installChannel(channel);
 
-    const service = registerServiceClient(mutableRecordLookupServiceDef);
+    const service = registerService(mutableRecordLookupServiceDef);
 
     // `JSON.parse` creates own-enumerable `__proto__`/`constructor` keys (a literal would not), so
     // this exercises the prototype-pollution guard in `deepReconcile`.
@@ -540,9 +539,9 @@ describe('channel: untrusted payloads', () => {
 
   it('drops malformed payloads without throwing or mutating state', async () => {
     const channel = createMockChannel();
-    setServiceChannel(channel);
+    installChannel(channel);
 
-    const service = registerServiceClient(mutableRecordLookupServiceDef);
+    const service = registerService(mutableRecordLookupServiceDef);
 
     const malformed: unknown[] = [
       null,
@@ -575,9 +574,9 @@ describe('channel: untrusted payloads', () => {
 describe('channel: state schema validation', () => {
   it('applies a schema-valid snapshot', async () => {
     const channel = createMockChannel();
-    setServiceChannel(channel);
+    installChannel(channel);
 
-    const service = registerServiceClient(schemaCounterServiceDef);
+    const service = registerService(schemaCounterServiceDef);
 
     channel.emitExternal(SERVICE_PATCHES, {
       serviceId: schemaCounterServiceDef.id,
@@ -592,9 +591,9 @@ describe('channel: state schema validation', () => {
 
   it('drops a schema-invalid snapshot before it touches local state', async () => {
     const channel = createMockChannel();
-    setServiceChannel(channel);
+    installChannel(channel);
 
-    const service = registerServiceClient(schemaCounterServiceDef);
+    const service = registerService(schemaCounterServiceDef);
 
     // Counter values must be numbers; a string violates the state schema and must be rejected.
     channel.emitExternal(SERVICE_PATCHES, {
@@ -610,9 +609,9 @@ describe('channel: state schema validation', () => {
 
   it('a newer-but-invalid snapshot cannot corrupt already-valid state', async () => {
     const channel = createMockChannel();
-    setServiceChannel(channel);
+    installChannel(channel);
 
-    const service = registerServiceClient(schemaCounterServiceDef);
+    const service = registerService(schemaCounterServiceDef);
 
     channel.emitExternal(SERVICE_PATCHES, {
       serviceId: schemaCounterServiceDef.id,
@@ -645,9 +644,9 @@ describe('channel: relay role', () => {
 
   it('a hub re-broadcasts a peer patch it adopts, preserving the original stamp', () => {
     const channel = createMockChannel();
-    setServiceChannel(channel);
+    installChannel(channel);
 
-    registerServiceClient(mutableRecordLookupServiceDef, undefined, { relay: true });
+    registerService(mutableRecordLookupServiceDef, undefined, { relay: true });
 
     channel.emitExternal(SERVICE_PATCHES, {
       serviceId: mutableRecordLookupServiceDef.id,
@@ -670,10 +669,10 @@ describe('channel: relay role', () => {
 
   it('a leaf adopts a peer patch but never re-broadcasts it', () => {
     const channel = createMockChannel();
-    setServiceChannel(channel);
+    installChannel(channel);
 
     // Default role is leaf (no relay option).
-    const service = registerServiceClient(mutableRecordLookupServiceDef);
+    const service = registerService(mutableRecordLookupServiceDef);
 
     channel.emitExternal(SERVICE_PATCHES, {
       serviceId: mutableRecordLookupServiceDef.id,
@@ -688,9 +687,9 @@ describe('channel: relay role', () => {
 
   it('a hub relays each strictly-newer version once and drops echoes (no storm)', () => {
     const channel = createMockChannel();
-    setServiceChannel(channel);
+    installChannel(channel);
 
-    registerServiceClient(mutableRecordLookupServiceDef, undefined, { relay: true });
+    registerService(mutableRecordLookupServiceDef, undefined, { relay: true });
 
     const base = { serviceId: mutableRecordLookupServiceDef.id, clientId: 'peer-1' };
     channel.emitExternal(SERVICE_PATCHES, {
@@ -716,9 +715,9 @@ describe('channel: relay role', () => {
 
   it('a hub does not relay a patch it drops as stale', () => {
     const channel = createMockChannel();
-    setServiceChannel(channel);
+    installChannel(channel);
 
-    registerServiceClient(mutableRecordLookupServiceDef, undefined, { relay: true });
+    registerService(mutableRecordLookupServiceDef, undefined, { relay: true });
 
     const base = { serviceId: mutableRecordLookupServiceDef.id, clientId: 'peer-1' };
     channel.emitExternal(SERVICE_PATCHES, {
@@ -740,9 +739,9 @@ describe('channel: relay role', () => {
 
   it('a hub relays state it adopts from a welcome-reply', () => {
     const channel = createMockChannel();
-    setServiceChannel(channel);
+    installChannel(channel);
 
-    registerServiceClient(mutableRecordLookupServiceDef, undefined, { relay: true });
+    registerService(mutableRecordLookupServiceDef, undefined, { relay: true });
 
     // A leaf peer's welcome-reply only reaches the hub; the hub must forward it so peers on its
     // other transports converge too.
@@ -768,10 +767,10 @@ describe('channel: relay role', () => {
 describe('channel: disconnect on unregister', () => {
   it('stops listening after unregisterServiceClient', () => {
     const channel = createMockChannel();
-    setServiceChannel(channel);
+    installChannel(channel);
 
-    registerServiceClient(mutableRecordLookupServiceDef);
-    unregisterServiceClient(mutableRecordLookupServiceDef.id);
+    registerService(mutableRecordLookupServiceDef);
+    unregisterService(mutableRecordLookupServiceDef.id);
 
     // All three event listeners should have been torn down
     expect(channel.off).toHaveBeenCalledWith(SERVICE_WELCOME_REQUEST, expect.any(Function));
@@ -782,7 +781,7 @@ describe('channel: disconnect on unregister', () => {
 
 describe('no channel installed', () => {
   it('service works normally without a channel', async () => {
-    const service = registerServiceClient(mutableRecordLookupServiceDef);
+    const service = registerService(mutableRecordLookupServiceDef);
 
     await service.commands.assignRecordField({
       entryId: 'c',

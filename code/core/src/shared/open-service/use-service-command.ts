@@ -11,8 +11,6 @@
 
 import * as React from 'react';
 
-import type { RuntimeService } from './types.ts';
-
 type CommandFn<TCommands, TKey extends keyof TCommands> = TCommands[TKey] extends (
   ...args: any[]
 ) => any
@@ -22,7 +20,7 @@ type CommandFn<TCommands, TKey extends keyof TCommands> = TCommands[TKey] extend
 /**
  * Returns a stable reference to the named service command.
  *
- * @param service - A service instance from `registerServiceClient` or `registerService`.
+ * @param service - A service instance from `registerService`.
  * @param commandName - The name of the command to invoke.
  *
  * @example
@@ -37,7 +35,10 @@ type CommandFn<TCommands, TKey extends keyof TCommands> = TCommands[TKey] extend
  * ```
  */
 export function useServiceCommand<
-  TInstance extends Pick<RuntimeService, 'commands'>,
+  // Accept any concretely-typed service: a command typed `(input: { id }) => ...` is not assignable
+  // to `(input: unknown) => ...` under contravariance, so a `Pick<RuntimeService>` constraint would
+  // reject every service whose command takes an object input.
+  TInstance extends { commands: Record<string, (input: any) => Promise<any>> },
   TKey extends keyof TInstance['commands'] & string,
 >(service: TInstance, commandName: TKey): CommandFn<TInstance['commands'], TKey> {
   return React.useMemo(

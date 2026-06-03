@@ -27,7 +27,6 @@ import type {
 } from 'storybook/internal/types';
 
 import { registerDocgenService } from '../../shared/open-service/services/docgen/server.ts';
-import { type ServiceChannel } from '../../shared/open-service/service-channel.ts';
 
 import { isAbsolute, join } from 'pathe';
 import * as pathe from 'pathe';
@@ -329,8 +328,7 @@ export const services = async (_value: void, options: Options): Promise<void> =>
   // real transport: only the dev server's websocket channel has one, so the no-op channels used by
   // static builds and the index builder (hasTransport: false) leave services local-only.
   if (options.channel?.hasTransport) {
-    (globalThis as { __STORYBOOK_ADDONS_CHANNEL__?: ServiceChannel }).__STORYBOOK_ADDONS_CHANNEL__ =
-      options.channel as ServiceChannel;
+    globalThis.__STORYBOOK_ADDONS_CHANNEL__ = options.channel;
   }
 
   const features = await options.presets.apply('features');

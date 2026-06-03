@@ -19,12 +19,14 @@ addons.register(ADDON_ID, (api) => {
   // route, restore a sidebar we hid. SPA exits (browser back) are already
   // handled by ReviewPage's effect cleanup.
   const path = new URLSearchParams(window.location.search).get('path') ?? '';
-  if (
-    !path.startsWith(REVIEW_CHANGES_URL) &&
-    sessionStorage.getItem(RESTORE_NAV_SESSION_KEY) === 'restore'
-  ) {
+  const restoreNav = sessionStorage.getItem(RESTORE_NAV_SESSION_KEY);
+  if (!path.startsWith(REVIEW_CHANGES_URL) && restoreNav !== null) {
+    // Clear both 'restore' and 'keep' so a stale marker can't block fresh
+    // nav-state capture on the next review visit.
     sessionStorage.removeItem(RESTORE_NAV_SESSION_KEY);
-    api.toggleNav(true);
+    if (restoreNav === 'restore') {
+      api.toggleNav(true);
+    }
   }
 
   // When the agent pushes a review, pull any open tab to the page — but only

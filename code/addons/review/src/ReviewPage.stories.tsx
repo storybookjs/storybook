@@ -71,7 +71,9 @@ const reviewState: ReviewState = {
   description: 'Updated settings views and spacing.',
   branchName: 'feat/review-page',
   // Drives the baseline-index fetch (keyed on createdAt) for "New" detection.
-  createdAt: 1_700_000_000_000,
+  // Anchored to "now" so the "Created … ago" label stays small and stable
+  // instead of computing minutes against a fixed past timestamp.
+  createdAt: Date.now(),
   collections: [
     {
       title: 'Settings',

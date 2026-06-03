@@ -136,7 +136,6 @@ const ReviewFlowPrototype: FC<{
                 },
             activeTab
           )}
-          branchName={state.branchName}
         />
       );
     }

@@ -94,6 +94,14 @@ Query handlers do **not** receive `commands` or `setState`. Mutations belong in 
 
 `load` mutations must go through commands. Cross-service `getService(...).queries.*` calls inside a load body are not auto-tracked for the drain; use `await ctx.getService(id).queries.foo.loaded(input)` when you need a cross-service dependency awaited before your own load completes.
 
+**Keep `load` bodies as small as possible.** Almost always, `load` should be a one-liner that calls a command — the real work (input resolution, side effects, validation, state mutation) belongs in the command. This pays off for three reasons:
+
+- **Reusability.** Anyone can call the command directly (other services, tests, integrations) without going through the query's load path. Logic stuck inside a load is unreachable from outside the drain.
+- **Testability.** Commands have a typed input/output contract you can assert against. Load bodies don't return anything useful.
+- **Clear contract.** A query says "read state". A command says "do work that produces state". A bloated load blurs the line and makes the service harder to reason about.
+
+A good rule of thumb: if `load` does anything more than `await ctx.self.commands.someCommand(input)`, ask whether that "more" belongs in the command instead.
+
 ### Command
 
 A command is:
@@ -376,6 +384,7 @@ const ready = await exampleService.queries.getValue.loaded({ entryId: 'a' });
 
 - Always declare both `input` and `output` schemas on every query and command.
 - Use `load` for read-side warming. The hook is async and must mutate via commands.
+- **Keep `load` bodies minimal — ideally one line that calls a command.** Push input resolution, side effects, and state mutation into the command itself so it stays callable, testable, and reusable on its own.
 - Query handlers are strict readers: sync, no commands, no `setState`.
 - Use commands for all state mutation.
 - Keep environment-agnostic imports on [index.ts](./index.ts) and server-only imports on [server.ts](./server.ts). Import internal modules directly only from tests or implementation code in this directory.

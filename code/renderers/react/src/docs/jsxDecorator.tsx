@@ -1,22 +1,23 @@
-import type { ReactElement, ReactNode } from 'react';
-import React, { createElement, isValidElement } from 'react';
+import type { ReactElement, ReactNode } from "react";
+import React, { createElement, isValidElement } from "react";
 
-import { logger } from 'storybook/internal/client-logger';
-import { SourceType, getDocgenSection } from 'storybook/internal/docs-tools';
-import type { PartialStoryFn, StoryContext } from 'storybook/internal/types';
+import { logger } from "storybook/internal/client-logger";
+import { SourceType, getDocgenSection } from "storybook/internal/docs-tools";
+import type { PartialStoryFn, StoryContext } from "storybook/internal/types";
 
-import type { Options } from 'react-element-to-jsx-string';
-import type reactElementToJSXStringType from 'react-element-to-jsx-string';
+import type { Options } from "react-element-to-jsx-string";
+import type reactElementToJSXStringType from "react-element-to-jsx-string";
 // @ts-expect-error (this is needed, because our bundling prefers the `browser` field, but that yields CJS)
-import reactElementToJSXStringRaw from 'react-element-to-jsx-string/dist/esm/index.js';
-import { emitTransformCode, useEffect, useRef } from 'storybook/preview-api';
+import reactElementToJSXStringRaw from "react-element-to-jsx-string/dist/esm/index.js";
+import { emitTransformCode, useEffect, useRef } from "storybook/preview-api";
 
-import type { ReactRenderer } from '../types';
-import { isForwardRef, isMemo } from './lib/componentTypes';
+import type { ReactRenderer } from "../types";
+import { isForwardRef, isMemo } from "./lib/componentTypes";
 
 const reactElementToJSXString = reactElementToJSXStringRaw as typeof reactElementToJSXStringType;
 
-const toPascalCase = (str: string) => str.charAt(0).toUpperCase() + str.slice(1);
+const toPascalCase = (str: string) =>
+  str.charAt(0).toUpperCase() + str.slice(1);
 
 /**
  * Converts a React symbol to a React-like displayName
@@ -38,15 +39,17 @@ const toPascalCase = (str: string) => str.charAt(0).toUpperCase() + str.slice(1)
  */
 export const getReactSymbolName = (elementType: any): string => {
   const elementName = elementType.$$typeof || elementType;
-  const symbolDescription: string = elementName.toString().replace(/^Symbol\((.*)\)$/, '$1');
+  const symbolDescription: string = elementName
+    .toString()
+    .replace(/^Symbol\((.*)\)$/, "$1");
 
   const reactComponentName = symbolDescription
-    .split('.')
+    .split(".")
     .map((segment) => {
       // Split segment by underscore to handle cases like 'strict_mode' separately, and PascalCase them
-      return segment.split('_').map(toPascalCase).join('');
+      return segment.split("_").map(toPascalCase).join("");
     })
-    .join('.');
+    .join(".");
   return reactComponentName;
 };
 
@@ -58,16 +61,18 @@ function simplifyNodeForStringify(node: ReactNode): ReactNode {
       acc[cur] = simplifyNodeForStringify(node.props[cur]);
       return acc;
     }, {});
+
     return {
       ...node,
+      // preserve key even if it's non-enumerable
+      key: node.key,
       props,
       // @ts-expect-error (this is an internal or removed api)
       _owner: null,
     };
   }
-  if (Array.isArray(node)) {
-    return node.map(simplifyNodeForStringify);
-  }
+
+  if (Array.isArray(node)) return node.map(simplifyNodeForStringify);
   return node;
 }
 
@@ -79,13 +84,13 @@ type JSXOptions = Options & {
   /** Whether to format HTML or Vue markup */
   enableBeautify?: boolean;
   /** Override the display name used for a component */
-  displayName?: string | Options['displayName'];
+  displayName?: string | Options["displayName"];
 };
 
 /** Apply the users parameters and render the jsx for a story */
 export const renderJsx = (code: React.ReactElement, options?: JSXOptions) => {
-  if (typeof code === 'undefined') {
-    logger.warn('Too many skip or undefined component');
+  if (typeof code === "undefined") {
+    logger.warn("Too many skip or undefined component");
     return null;
   }
 
@@ -94,23 +99,26 @@ export const renderJsx = (code: React.ReactElement, options?: JSXOptions) => {
 
   // @ts-expect-error (Converted from ts-ignore)
   for (let i = 0; i < options?.skip; i += 1) {
-    if (typeof renderedJSX === 'undefined') {
-      logger.warn('Cannot skip undefined element');
+    if (typeof renderedJSX === "undefined") {
+      logger.warn("Cannot skip undefined element");
       return null;
     }
 
     if (React.Children.count(renderedJSX) > 1) {
-      logger.warn('Trying to skip an array of elements');
+      logger.warn("Trying to skip an array of elements");
       return null;
     }
 
-    if (typeof renderedJSX.props.children === 'undefined') {
-      logger.warn('Not enough children to skip elements.');
+    if (typeof renderedJSX.props.children === "undefined") {
+      logger.warn("Not enough children to skip elements.");
 
-      if (typeof renderedJSX.type === 'function' && renderedJSX.type.name === '') {
+      if (
+        typeof renderedJSX.type === "function" &&
+        renderedJSX.type.name === ""
+      ) {
         renderedJSX = <Type {...renderedJSX.props} />;
       }
-    } else if (typeof renderedJSX.props.children === 'function') {
+    } else if (typeof renderedJSX.props.children === "function") {
       renderedJSX = renderedJSX.props.children();
     } else {
       renderedJSX = renderedJSX.props.children;
@@ -119,8 +127,11 @@ export const renderJsx = (code: React.ReactElement, options?: JSXOptions) => {
 
   let displayNameDefaults;
 
-  if (typeof options?.displayName === 'string') {
-    displayNameDefaults = { showFunctions: true, displayName: () => options.displayName };
+  if (typeof options?.displayName === "string") {
+    displayNameDefaults = {
+      showFunctions: true,
+      displayName: () => options.displayName,
+    };
     /**
      * Add `renderedJSX?.type`to handle this case:
      *
@@ -136,19 +147,19 @@ export const renderJsx = (code: React.ReactElement, options?: JSXOptions) => {
       displayName: (el: any): string => {
         if (el.type.displayName) {
           return el.type.displayName;
-        } else if (getDocgenSection(el.type, 'displayName')) {
-          return getDocgenSection(el.type, 'displayName');
+        } else if (getDocgenSection(el.type, "displayName")) {
+          return getDocgenSection(el.type, "displayName");
         } else if (el.type.render?.displayName) {
           return el.type.render.displayName;
         } else if (
-          typeof el.type === 'symbol' ||
-          (el.type.$$typeof && typeof el.type.$$typeof === 'symbol')
+          typeof el.type === "symbol" ||
+          (el.type.$$typeof && typeof el.type.$$typeof === "symbol")
         ) {
           return getReactSymbolName(el.type);
-        } else if (el.type.name && el.type.name !== '_default') {
+        } else if (el.type.name && el.type.name !== "_default") {
           return el.type.name;
-        } else if (typeof el.type === 'function') {
-          return 'No Display Name';
+        } else if (typeof el.type === "function") {
+          return "No Display Name";
         } else if (isForwardRef(el.type)) {
           return el.type.render.name;
         } else if (isMemo(el.type)) {
@@ -172,15 +183,18 @@ export const renderJsx = (code: React.ReactElement, options?: JSXOptions) => {
 
   const result = React.Children.map(code, (c) => {
     // @ts-expect-error FIXME: workaround react-element-to-jsx-string
-    const child = typeof c === 'number' ? c.toString() : c;
+    const child = typeof c === "number" ? c.toString() : c;
     const toJSXString =
-      typeof reactElementToJSXString === 'function'
+      typeof reactElementToJSXString === "function"
         ? reactElementToJSXString
         : // @ts-expect-error (Converted from ts-ignore)
           reactElementToJSXString.default;
-    let string: string = toJSXString(simplifyNodeForStringify(child), opts as Options);
+    let string: string = toJSXString(
+      simplifyNodeForStringify(child),
+      opts as Options
+    );
 
-    if (string.indexOf('&quot;') > -1) {
+    if (string.indexOf("&quot;") > -1) {
       const matches = string.match(/\S+=\\"([^"]*)\\"/g);
       if (matches) {
         matches.forEach((match) => {
@@ -190,9 +204,9 @@ export const renderJsx = (code: React.ReactElement, options?: JSXOptions) => {
     }
 
     return string;
-  }).join('\n');
+  }).join("\n");
 
-  return result.replace(/function\s+noRefCheck\(\)\s*\{\}/g, '() => {}');
+  return result.replace(/function\s+noRefCheck\(\)\s*\{\}/g, "() => {}");
 };
 
 const defaultOpts = {
@@ -213,10 +227,13 @@ export const skipJsxRender = (context: StoryContext<ReactRenderer>) => {
 
   // never render if the user is forcing the block to render code, or
   // if the user provides code, or if it's not an args story.
-  return !isArgsStory || sourceParams?.code || sourceParams?.type === SourceType.CODE;
+  return (
+    !isArgsStory || sourceParams?.code || sourceParams?.type === SourceType.CODE
+  );
 };
 
-const isMdx = (node: any) => node.type?.displayName === 'MDXCreateElement' && !!node.props?.mdxType;
+const isMdx = (node: any) =>
+  node.type?.displayName === "MDXCreateElement" && !!node.props?.mdxType;
 
 const mdxToJsx = (node: any) => {
   if (!isMdx(node)) {

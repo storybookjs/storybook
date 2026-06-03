@@ -52,6 +52,9 @@ const DetailTitle = styled.h2({
   fontSize: 14,
   fontWeight: 700,
   lineHeight: '20px',
+  // Focused programmatically on entry to orient screen-reader users; it's not a
+  // tab stop, so don't paint a focus ring on this non-interactive heading.
+  outline: 'none',
 });
 
 const DetailTitleMuted = styled.span(({ theme }) => ({
@@ -251,16 +254,17 @@ export const DetailsScreen = ({
   const showBaseline = !isNew;
   const isSingleUp = previewMode === '1up' || !showBaseline;
 
-  const backButtonRef = useRef<HTMLAnchorElement>(null);
+  const titleRef = useRef<HTMLHeadingElement>(null);
   const baselineFrameRef = useRef<HTMLIFrameElement>(null);
   const latestFrameRef = useRef<HTMLIFrameElement>(null);
 
-  // Entering the detail screen moves focus here so keyboard and screen-reader
-  // users land on the back control instead of being stranded on the now-inert
-  // summary. Runs once on mount: navigating between stories swaps the iframe
-  // src in place without remounting, so prev/next don't steal focus back.
+  // Entering the detail screen moves focus to its heading so keyboard and
+  // screen-reader users are oriented by what they just opened instead of being
+  // stranded on the now-inert summary. Runs once on mount: navigating between
+  // stories swaps the iframe src in place without remounting, so prev/next
+  // don't steal focus back.
   useEffect(() => {
-    backButtonRef.current?.focus();
+    titleRef.current?.focus();
   }, []);
   const cleanupScrollSyncRef = useRef<(() => void) | null>(null);
   const cleanupBaselineStoryRenderedRef = useRef<(() => void) | null>(null);
@@ -434,11 +438,13 @@ export const DetailsScreen = ({
       <Toolbar>
         <ToolbarSide>
           <Button variant="ghost" size="small" padding="small" ariaLabel="Back to review" asChild>
-            <a ref={backButtonRef} href={backHref}>
+            <a href={backHref}>
               <ChevronSmallLeftIcon />
             </a>
           </Button>
-          <DetailTitle>{renderDetailTitle({ title, componentTitle, storyName })}</DetailTitle>
+          <DetailTitle ref={titleRef} tabIndex={-1}>
+            {renderDetailTitle({ title, componentTitle, storyName })}
+          </DetailTitle>
           {isNew ? (
             <TitleBadge>
               <Badge status="positive">New</Badge>

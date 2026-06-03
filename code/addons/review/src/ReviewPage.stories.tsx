@@ -204,7 +204,7 @@ export const Details = meta.story({
   },
 });
 
-export const DetailsFocusesBackButton = meta.story({
+export const DetailsFocusesTitle = meta.story({
   parameters: {
     routerInitialEntries: ['/?path=/review/collections/0/manager-settings-guidepage--default'],
   },
@@ -214,9 +214,11 @@ export const DetailsFocusesBackButton = meta.story({
 
     applyReviewState();
 
-    // Opening a detail moves focus to the back control.
-    const backButton = await canvas.findByRole('link', { name: 'Back to review' });
-    await waitFor(() => expect(backButton).toHaveFocus());
+    // Opening a detail moves focus to its heading so users are oriented by what
+    // they opened. The summary's h1 is inert/aria-hidden, so the detail h2 is
+    // the only heading the accessibility tree exposes.
+    const heading = await canvas.findByRole('heading', { level: 2 });
+    await waitFor(() => expect(heading).toHaveFocus());
 
     // The summary stays mounted behind the detail screen…
     const summaryHeading = canvas.getByText('Manager settings polish');

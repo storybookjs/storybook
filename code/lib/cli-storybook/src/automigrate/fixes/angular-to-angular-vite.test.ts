@@ -3,6 +3,7 @@ import { readFile, writeFile } from 'node:fs/promises';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { JsPackageManager } from 'storybook/internal/common';
+import { loadConfig, printConfig } from 'storybook/internal/csf-tools';
 
 import { prompt } from 'storybook/internal/node-logger';
 
@@ -13,6 +14,7 @@ import {
   ANGULAR_PACKAGE,
   ANGULAR_VITE_PACKAGE,
   angularToAngularVite,
+  setFrameworkCompodocFalse,
 } from './angular-to-angular-vite.ts';
 
 // Mock dependencies
@@ -461,7 +463,7 @@ export default { framework: { name: '${ANGULAR_VITE_PACKAGE}', options: {} } };`
       );
     });
 
-    it('carries a builder compodoc:false into framework.options', async () => {
+    it('carries a builder compodoc:false into framework.options without dropping the name', async () => {
       mockPromptConfirm.mockResolvedValue(false);
 
       // eslint-disable-next-line depend/ban-dependencies
@@ -486,13 +488,15 @@ export default { framework: { name: '${ANGULAR_VITE_PACKAGE}', options: {} } };`
         return Promise.resolve(`export default { framework: '${ANGULAR_PACKAGE}' };`) as any;
       });
 
-      // Drive the updateMainConfig callback so we can assert the field write.
-      // Object-form framework: getFieldValue returns an object, so the nested
-      // set is used (preserving the name/options).
-      const setFieldValue = vi.fn();
-      const getFieldValue = vi.fn(() => ({ name: ANGULAR_VITE_PACKAGE, options: {} }));
+      // Drive the callback with a real ConfigFile (matching what updateMainConfig provides) so the
+      // assertion reflects the actual AST transform, not a mocked field-setter.
+      let printed: string | undefined;
       mockUpdateMainConfig.mockImplementation((async (_opts: any, cb: any) => {
-        await cb({ setFieldValue, getFieldValue });
+        const main = loadConfig(
+          `export default { framework: getAbsolutePath('${ANGULAR_VITE_PACKAGE}') };`
+        ).parse();
+        await cb(main);
+        printed = printConfig(main).code;
       }) as any);
 
       await angularToAngularVite.run!({
@@ -506,59 +510,8 @@ export default { framework: { name: '${ANGULAR_VITE_PACKAGE}', options: {} } };`
       } as any);
 
       expect(mockUpdateMainConfig).toHaveBeenCalled();
-      expect(setFieldValue).toHaveBeenCalledWith(['framework', 'options', 'compodoc'], false);
-    });
-
-    it('preserves the framework name when carrying compodoc into a string framework', async () => {
-      mockPromptConfirm.mockResolvedValue(false);
-
-      // eslint-disable-next-line depend/ban-dependencies
-      const { globby } = await import('globby');
-      vi.mocked(globby).mockResolvedValueOnce(['/project/libs/soba/project.json']);
-
-      const projectJsonContent = JSON.stringify({
-        name: 'soba',
-        targets: {
-          storybook: {
-            executor: '@storybook/angular:start-storybook',
-            options: { compodoc: false },
-          },
-        },
-      });
-
-      mockReadFile.mockImplementation((filePath: any) => {
-        const p = String(filePath);
-        if (p.endsWith('project.json')) {
-          return Promise.resolve(projectJsonContent) as any;
-        }
-        return Promise.resolve(`export default { framework: '${ANGULAR_PACKAGE}' };`) as any;
-      });
-
-      // String-form framework: getFieldValue returns a string. Setting the
-      // nested path would drop the name, so the helper rebuilds the framework
-      // object preserving the name.
-      const setFieldValue = vi.fn();
-      const getFieldValue = vi.fn(() => ANGULAR_VITE_PACKAGE);
-      mockUpdateMainConfig.mockImplementation((async (_opts: any, cb: any) => {
-        await cb({ setFieldValue, getFieldValue });
-      }) as any);
-
-      await angularToAngularVite.run!({
-        result: baseResult,
-        dryRun: false,
-        packageManager: mockPackageManager,
-        mainConfigPath: '/project/.storybook/main.ts',
-        storiesPaths: [],
-        configDir: '.storybook',
-        storybookVersion: '9.0.0',
-      } as any);
-
-      expect(setFieldValue).toHaveBeenCalledWith(['framework'], {
-        name: ANGULAR_VITE_PACKAGE,
-        options: { compodoc: false },
-      });
-      // The name must NOT be dropped via the nested path on a string framework.
-      expect(setFieldValue).not.toHaveBeenCalledWith(['framework', 'options', 'compodoc'], false);
+      expect(printed).toContain('compodoc: false');
+      expect(printed).toContain(`getAbsolutePath('${ANGULAR_VITE_PACKAGE}')`);
     });
 
     it('does not touch framework.options when compodoc is not disabled', async () => {
@@ -669,5 +622,41 @@ export default { framework: { name: '${ANGULAR_VITE_PACKAGE}', options: {} } };`
 
       expect(mockAdd).not.toHaveBeenCalled();
     });
+  });
+});
+
+describe('setFrameworkCompodocFalse', () => {
+  const apply = (code: string) => {
+    const main = loadConfig(code).parse();
+    setFrameworkCompodocFalse(main);
+    return printConfig(main).code;
+  };
+
+  it('wraps a bare string framework into object form, preserving the name', () => {
+    const result = apply(`export default { framework: '${ANGULAR_VITE_PACKAGE}' };`);
+
+    expect(result).toContain(`name: '${ANGULAR_VITE_PACKAGE}'`);
+    expect(result).toContain('compodoc: false');
+  });
+
+  it('preserves a getAbsolutePath()-wrapped framework name', () => {
+    const result = apply(
+      `export default { framework: getAbsolutePath('${ANGULAR_VITE_PACKAGE}') };`
+    );
+
+    // Regression: the call expression must survive as `name`, not be replaced by
+    // `{ options: { compodoc: false } }`.
+    expect(result).toContain(`name: getAbsolutePath('${ANGULAR_VITE_PACKAGE}')`);
+    expect(result).toContain('compodoc: false');
+  });
+
+  it('keeps existing name and options on an object-form framework', () => {
+    const result = apply(
+      `export default { framework: { name: getAbsolutePath('${ANGULAR_VITE_PACKAGE}'), options: { foo: true } } };`
+    );
+
+    expect(result).toContain(`name: getAbsolutePath('${ANGULAR_VITE_PACKAGE}')`);
+    expect(result).toContain('foo: true');
+    expect(result).toContain('compodoc: false');
   });
 });

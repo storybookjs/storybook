@@ -1,6 +1,8 @@
 import { readFile, writeFile } from 'node:fs/promises';
 
+import { types as t } from 'storybook/internal/babel';
 import { transformImportFiles } from 'storybook/internal/common';
+import type { ConfigFile } from 'storybook/internal/csf-tools';
 import { logger, prompt } from 'storybook/internal/node-logger';
 
 import semver from 'semver';
@@ -115,6 +117,42 @@ const transformJsonFile = async (
   } catch {
     return { changed: false, disablesCompodoc: false };
   }
+};
+
+/**
+ * Set `framework.options.compodoc` to `false` in main config, preserving the framework name.
+ *
+ * `framework` can take three shapes, and each needs different handling so the name survives:
+ *
+ * - Bare string: `framework: '@storybook/angular-vite'`
+ * - Wrapped call: `framework: getAbsolutePath('@storybook/angular-vite')`
+ * - Object form: `framework: { name: ..., options: {...} }`
+ *
+ * For the string and call-expression shapes, a nested `setFieldValue(['framework', 'options',
+ * 'compodoc'], false)` would replace the whole `framework` value, dropping the name (e.g. producing
+ * `framework: { options: { compodoc: false } }`). So we operate on the AST node directly and wrap
+ * the original node as `name`, which preserves a `getAbsolutePath(...)` call verbatim. The object
+ * shape (inline or referenced via a variable) is already nestable, so the nested set is correct.
+ */
+export const setFrameworkCompodocFalse = (main: ConfigFile): void => {
+  const frameworkNode = main.getFieldNode(['framework']);
+
+  if (frameworkNode && (t.isStringLiteral(frameworkNode) || t.isCallExpression(frameworkNode))) {
+    main.setFieldNode(
+      ['framework'],
+      t.objectExpression([
+        t.objectProperty(t.identifier('name'), frameworkNode),
+        t.objectProperty(
+          t.identifier('options'),
+          t.objectExpression([t.objectProperty(t.identifier('compodoc'), t.booleanLiteral(false))])
+        ),
+      ])
+    );
+    return;
+  }
+
+  // Object form (inline or via a variable reference): keep the existing name and options.
+  main.setFieldValue(['framework', 'options', 'compodoc'], false);
 };
 
 export const angularToAngularVite: Fix<AngularToAngularViteOptions> = {
@@ -319,27 +357,7 @@ export const angularToAngularVite: Fix<AngularToAngularViteOptions> = {
             return;
           }
 
-          // When `framework` is a bare string, `setFieldValue(['framework',
-          // 'options', ...])` replaces the string value and drops the framework
-          // name. Rebuild it as an object that preserves the name. Object forms
-          // (including a `getAbsolutePath`-wrapped name, where `getFieldValue`
-          // throws because the call cannot be evaluated) descend correctly via
-          // the nested set and keep the existing name and options.
-          let frameworkValue: unknown;
-          try {
-            frameworkValue = main.getFieldValue(['framework']);
-          } catch {
-            frameworkValue = undefined;
-          }
-
-          if (typeof frameworkValue === 'string') {
-            main.setFieldValue(['framework'], {
-              name: frameworkValue,
-              options: { compodoc: false },
-            });
-          } else {
-            main.setFieldValue(['framework', 'options', 'compodoc'], false);
-          }
+          setFrameworkCompodocFalse(main);
         });
         logger.debug('Carried `compodoc: false` into framework.options.');
       } catch (error) {

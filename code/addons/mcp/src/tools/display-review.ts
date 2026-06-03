@@ -195,7 +195,7 @@ Always include the returned reviewUrl in your final user-facing response so the 
 					content: [
 						{
 							type: 'text' as const,
-							text: `Review applied: ${collectionCount} collection${collectionCount === 1 ? '' : 's'}, ${storyCount} stor${storyCount === 1 ? 'y' : 'ies'}. Next step: if a browser-preview tool is available in this session (e.g. preview_eval or an equivalent navigate tool), open ${reviewUrl} in it so the user sees the review immediately. Otherwise include the URL in your final response.`,
+							text: `Review applied: ${collectionCount} collection${collectionCount === 1 ? '' : 's'}, ${storyCount} stor${storyCount === 1 ? 'y' : 'ies'}. Storybook is already running at ${customContext.origin} — reuse it. Do NOT start another Storybook or change its port to view this review; the running instance already serves it. Next step: if a browser-preview tool is available in this session (e.g. preview_eval or an equivalent navigate tool), open ${reviewUrl} in it so the user sees the review immediately. Always include ${reviewUrl} in your final response so the user can open it.`,
 						},
 					],
 					structuredContent: { reviewUrl },

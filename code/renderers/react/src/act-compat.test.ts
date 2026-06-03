@@ -2,6 +2,23 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { getAct, getReactActEnvironment, setReactActEnvironment } from './act-compat.ts';
 
+// Top-level module mocks. `react` keeps its real exports, but the fallback test
+// can hide `act` (via the hoisted flag, so it's available to the hoisted mock
+// factory) to route getAct onto the deprecated react-dom/test-utils branch.
+const mockState = vi.hoisted(() => ({ reactExposesAct: true }));
+
+vi.mock('react', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('react')>();
+  return {
+    ...actual,
+    get act() {
+      return mockState.reactExposesAct ? actual.act : undefined;
+    },
+  };
+});
+
+vi.mock('react-dom/test-utils', { spy: true });
+
 // Regression coverage for https://github.com/storybookjs/storybook/issues/34708:
 // `IS_REACT_ACT_ENVIRONMENT` must be restored once the act work settles (so it
 // can't leak `true` across story boundaries) and stay set while concurrent acts
@@ -19,6 +36,7 @@ describe('act-compat', () => {
 
   afterEach(() => {
     vi.restoreAllMocks();
+    mockState.reactExposesAct = true;
   });
 
   describe('restores the environment once the act settles', () => {
@@ -146,28 +164,18 @@ describe('act-compat', () => {
     });
 
     it('falls back to react-dom/test-utils when React.act is unavailable', async () => {
+      // Hide `act` on the mocked react so getAct takes the fallback branch, then
+      // re-evaluate act-compat (it snapshots `{ ...React }` at module load).
+      mockState.reactExposesAct = false;
       vi.resetModules();
-      // Simulate an older React build without `act`, forcing the
-      // react-dom/test-utils fallback path.
-      vi.doMock('react', () => ({}));
-      const testUtilsAct = vi.fn((cb: () => unknown) => cb());
-      vi.doMock('react-dom/test-utils', () => ({
-        default: { act: testUtilsAct },
-        act: testUtilsAct,
-      }));
 
-      try {
-        const { getAct: getActFresh } = await import('./act-compat.ts');
-        const act = await getActFresh();
+      const { getAct: getActFresh } = await import('./act-compat.ts');
+      const testUtils = await import('react-dom/test-utils');
+      const act = await getActFresh();
 
-        act(() => {});
+      act(() => {});
 
-        expect(testUtilsAct).toHaveBeenCalledOnce();
-      } finally {
-        vi.doUnmock('react');
-        vi.doUnmock('react-dom/test-utils');
-        vi.resetModules();
-      }
+      expect(vi.mocked(testUtils).act).toHaveBeenCalledOnce();
     });
   });
 });

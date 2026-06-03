@@ -192,7 +192,13 @@ export function registerService<
   }
 
   const resolvedDefinition = applyRegistration(definition, registration);
-  const runtime = createServiceRuntime(resolvedDefinition, { registryApi: serviceRegistryApi });
+  // The runtime mutates its state object in place, so give it a copy rather than the definition's
+  // shared `initialState` (which would otherwise leak state across registrations).
+  const runtime = createServiceRuntime(
+    resolvedDefinition,
+    { registryApi: serviceRegistryApi },
+    structuredClone(resolvedDefinition.initialState)
+  );
   const registeredRuntime = {
     queries: runtime.queries,
     commands: runtime.commands,

@@ -1,9 +1,7 @@
 /**
  * Manager-side entrypoint for the open-service architecture.
  *
- * Import from here in manager (React) code. This entrypoint re-exports the renderer-agnostic
- * registration and channel API and additionally exports the React hooks `useServiceQuery` and
- * `useServiceCommand`.
+ * Import from here in manager (React) code. Define services with `storybook/open-service`.
  *
  * Quick start:
  *
@@ -29,55 +27,6 @@ import type {
   ServiceInstance,
   ServiceRegistrationOptions,
   ServiceRegistryApi,
-} from './types.ts';
-
-export { defineService } from './service-definition.ts';
-
-export { clearRegistry, serviceRegistryApi, unregisterService } from './service-registry.ts';
-
-export {
-  generateClientId,
-  SERVICE_COMMAND_ERROR,
-  SERVICE_COMMAND_INVOKE,
-  SERVICE_COMMAND_RESULT,
-  SERVICE_PATCHES,
-  SERVICE_SYNC_START,
-  SERVICE_SYNC_START_REPLY,
-} from './service-channel.ts';
-export type {
-  CommandErrorPayload,
-  CommandInvokePayload,
-  CommandResultPayload,
-  PatchesPayload,
-  ServiceChannel,
-  SyncStartPayload,
-  SyncStartReplyPayload,
-} from './service-channel.ts';
-
-export type {
-  AnyServiceDefinition,
-  Command,
-  CommandCtx,
-  CommandDefinition,
-  CommandSelf,
-  LoadCtx,
-  LoadSelf,
-  OperationDescriptor,
-  Query,
-  QueryCtx,
-  QueryDefinition,
-  QuerySelf,
-  RuntimeService,
-  SchemaDescriptor,
-  ServerServiceRegistration,
-  ServiceDefinition,
-  ServiceDescriptor,
-  ServiceId,
-  ServiceInstance,
-  ServiceInstanceOf,
-  ServiceRegistrationOptions,
-  ServiceSummary,
-  StaticStore,
 } from './types.ts';
 
 export { useServiceCommand } from './use-service-command.ts';

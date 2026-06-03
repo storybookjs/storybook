@@ -5,8 +5,8 @@
  * it exposes only registration with no React dependencies. Use `.subscribe()` on queries to react
  * to state changes in your renderer.
  *
- * Define services with `storybook/open-service`. The manager entrypoint (`./manager.ts`) exports the
- * broader registration, channel, and type surface plus `useServiceQuery` and `useServiceCommand`.
+ * Define services with `storybook/open-service`. The manager entrypoint (`./manager.ts`) adds
+ * `useServiceQuery` and `useServiceCommand` on top of relay registration.
  *
  * Quick start:
  *

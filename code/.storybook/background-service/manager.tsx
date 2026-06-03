@@ -13,12 +13,8 @@ import React, { memo } from 'react';
 
 import { addons, types } from 'storybook/manager-api';
 
-import {
-  registerService,
-  useServiceCommand,
-  useServiceQuery,
-  type ServiceInstanceOf,
-} from 'storybook/manager-api';
+import { registerService, useServiceCommand, useServiceQuery } from 'storybook/manager-api';
+import type { ServiceInstanceOf } from 'storybook/open-service';
 import { BACKGROUND_COLORS, backgroundServiceDef } from './definition.ts';
 
 const ADDON_ID = 'storybook/internal/example-background';

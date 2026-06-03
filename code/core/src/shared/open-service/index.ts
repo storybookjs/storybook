@@ -2,7 +2,8 @@
  * Environment-agnostic open-service API (`storybook/open-service`).
  *
  * Use this entrypoint for shared service definitions imported by manager, preview, and server.
- * Registration and hooks live on `storybook/manager-api`, `storybook/preview-api`, and server APIs.
+ * Register in the manager with `storybook/manager-api` (hooks), in preview with `storybook/preview-api`,
+ * or on the server via core-server experimental APIs.
  */
 export { defineService } from './service-definition.ts';
 

@@ -9,25 +9,28 @@ import {
   UNIVERSAL_STATUS_STORE_OPTIONS,
 } from '../../shared/status-store/index.ts';
 import { MockUniversalStore } from '../../shared/universal-store/mock.ts';
-import type { ChangeDetectionAdapter, FileChangeEvent } from './adapters/index.ts';
-import { getChangeDetectionReadiness, internal_resetChangeDetectionReadiness } from './index.ts';
-import { ChangeDetectionFailureError, ChangeDetectionUnavailableError } from './errors.ts';
+import * as oxcParser from 'storybook/internal/oxc-parser';
+
+import {
+  buildReverseIndex,
+  createDeferred,
+  createMockAdapter,
+  createStoryIndex,
+  createWiredChangeDetection,
+  installDependencyGraphMocks,
+} from './change-detection.test-helpers.ts';
 import {
   buildIndexBaselineStatuses,
   ChangeDetectionService,
   mergeChangeDetectionStatuses,
   mergeStatusValues,
 } from './ChangeDetectionService.ts';
-import * as oxcParser from 'storybook/internal/oxc-parser';
-import {
-  ChangeDetectionResolverFactory,
-  DependencyGraphBuilder,
-  IncrementalPatcher,
-  ReverseIndexImpl,
-} from './dependency-graph/index.ts';
+import { ChangeDetectionFailureError, ChangeDetectionUnavailableError } from './errors.ts';
+import { getChangeDetectionReadiness, internal_resetChangeDetectionReadiness } from './index.ts';
 import type { GitDiffResult } from './GitDiffProvider.ts';
 import { GitDiffProvider } from './GitDiffProvider.ts';
 import type { IndexBaselineService } from './IndexBaselineService.ts';
+import type { StoryDependencyGraphService } from './StoryDependencyGraphService.ts';
 
 vi.mock('storybook/internal/node-logger', { spy: true });
 vi.mock('./dependency-graph/index.ts', async (importOriginal) => {
@@ -43,85 +46,6 @@ vi.mock('./dependency-graph/index.ts', async (importOriginal) => {
     IncrementalPatcher: vi.fn(),
   };
 });
-
-function createDeferred<T>() {
-  let resolve!: (value: T) => void;
-
-  return {
-    promise: new Promise<T>((fulfill) => {
-      resolve = fulfill;
-    }),
-    resolve,
-  };
-}
-
-function createStoryIndex(
-  entries: Array<{ storyId: string; importPath: string; title?: string; name?: string }>
-): StoryIndex {
-  return {
-    v: 5,
-    entries: Object.fromEntries(
-      entries.map(({ storyId, importPath, title = 'Story', name = 'Default' }) => [
-        storyId,
-        {
-          id: storyId,
-          type: 'story',
-          subtype: 'story',
-          title,
-          name,
-          importPath,
-        },
-      ])
-    ),
-  };
-}
-
-interface MockAdapterHandle {
-  adapter: ChangeDetectionAdapter;
-  emitFileChange: (event: FileChangeEvent) => void;
-  emitStartupFailure: (event: { reason: string; error?: Error }) => void;
-  hasFileChangeSubscriber: () => boolean;
-  hasStartupFailureSubscriber: () => boolean;
-}
-
-function createMockAdapter(opts?: {
-  resolveConfig?: { projectRoot?: string };
-  withoutStartupFailure?: boolean;
-}): MockAdapterHandle {
-  const fileHandlers = new Set<(e: FileChangeEvent) => void>();
-  const startupHandlers = new Set<(e: { reason: string; error?: Error }) => void>();
-
-  const adapter: ChangeDetectionAdapter = {
-    async getResolveConfig() {
-      return {
-        projectRoot: opts?.resolveConfig?.projectRoot ?? '/repo',
-      };
-    },
-    onFileChange(handler) {
-      fileHandlers.add(handler);
-      return () => fileHandlers.delete(handler);
-    },
-  };
-
-  if (!opts?.withoutStartupFailure) {
-    adapter.onStartupFailure = (handler) => {
-      startupHandlers.add(handler);
-      return () => startupHandlers.delete(handler);
-    };
-  }
-
-  return {
-    adapter,
-    emitFileChange: (event) => {
-      fileHandlers.forEach((h) => h(event));
-    },
-    emitStartupFailure: (event) => {
-      startupHandlers.forEach((h) => h(event));
-    },
-    hasFileChangeSubscriber: () => fileHandlers.size > 0,
-    hasStartupFailureSubscriber: () => startupHandlers.size > 0,
-  };
-}
 
 class MockGitDiffProvider extends GitDiffProvider {
   readonly getChangedFilesMock = vi.fn(
@@ -197,50 +121,6 @@ function createStatus(value: Status['value'], data?: Status['data']): Status {
   };
 }
 
-/**
- * Build a ReverseIndexImpl populated with the given (dep -> story -> depth) entries.
- * Used by tests to control what `reverseIndex.lookup(changedFile)` returns.
- */
-function buildReverseIndex(edges: Iterable<readonly [string, string, number]>): ReverseIndexImpl {
-  const reverseIndex = new ReverseIndexImpl();
-  for (const [dep, story, depth] of edges) {
-    reverseIndex.record(dep, story, depth);
-  }
-  return reverseIndex;
-}
-
-/**
- * Stub the dependency-graph constructors so the service uses an in-test
- * ReverseIndexImpl + an inert IncrementalPatcher.
- *
- * Note: `vi.mock` replaces these exports with plain `vi.fn()` constructors. When the
- * service calls `new Ctor(...)` we must return objects via `mockImplementation` —
- * but vitest invokes the impl with `Reflect.construct` on `new`, so arrow-function
- * impls throw "is not a constructor". `function () { return obj; }` works because
- * regular functions support `[[Construct]]`.
- */
-function installDependencyGraphMocks(reverseIndex: ReverseIndexImpl): {
-  patchSpy: ReturnType<typeof vi.fn>;
-  buildSpy: ReturnType<typeof vi.fn>;
-} {
-  const patchSpy = vi.fn(async () => undefined);
-  const buildSpy = vi.fn(async () => ({ reverseIndex, graph: new Map() }));
-
-  vi.mocked(ChangeDetectionResolverFactory).mockImplementation(function () {
-    return {
-      resolve: vi.fn(async () => null),
-    } as unknown as ChangeDetectionResolverFactory;
-  } as unknown as new () => ChangeDetectionResolverFactory);
-  vi.mocked(DependencyGraphBuilder).mockImplementation(function () {
-    return { build: buildSpy } as unknown as DependencyGraphBuilder;
-  } as unknown as new () => DependencyGraphBuilder);
-  vi.mocked(IncrementalPatcher).mockImplementation(function () {
-    return { patch: patchSpy } as unknown as IncrementalPatcher;
-  } as unknown as new () => IncrementalPatcher);
-
-  return { patchSpy, buildSpy };
-}
-
 describe('ChangeDetectionService', () => {
   const workingDir = '/repo';
 
@@ -284,7 +164,7 @@ describe('ChangeDetectionService', () => {
       });
     });
     const { adapter } = createMockAdapter();
-    const service = new ChangeDetectionService({
+    const { service, graph } = createWiredChangeDetection({
       storyIndexGeneratorPromise: Promise.resolve({
         getIndex: vi.fn().mockResolvedValue(storyIndex),
       } as never),
@@ -294,6 +174,7 @@ describe('ChangeDetectionService', () => {
       workingDir,
     });
 
+    graph.start(adapter);
     service.start(adapter, true);
     await vi.runAllTimersAsync();
 
@@ -320,6 +201,7 @@ describe('ChangeDetectionService', () => {
       },
     });
     await service.dispose();
+    await graph.dispose();
   });
 
   it('edits a non-story dep at distance 1 from one story and distance 2 from another -> nearest is modified, farther is affected', async () => {
@@ -354,7 +236,7 @@ describe('ChangeDetectionService', () => {
       });
     });
     const { adapter } = createMockAdapter();
-    const service = new ChangeDetectionService({
+    const { service, graph } = createWiredChangeDetection({
       storyIndexGeneratorPromise: Promise.resolve({
         getIndex: vi.fn().mockResolvedValue(storyIndex),
       } as never),
@@ -364,6 +246,7 @@ describe('ChangeDetectionService', () => {
       workingDir,
     });
 
+    graph.start(adapter);
     service.start(adapter, true);
     await vi.runAllTimersAsync();
 
@@ -375,6 +258,7 @@ describe('ChangeDetectionService', () => {
       'status-value:affected'
     );
     await service.dispose();
+    await graph.dispose();
   });
 
   it('edits a non-story dep at equal distance from two stories -> both stories tie and are both modified', async () => {
@@ -400,7 +284,7 @@ describe('ChangeDetectionService', () => {
       });
     });
     const { adapter } = createMockAdapter();
-    const service = new ChangeDetectionService({
+    const { service, graph } = createWiredChangeDetection({
       storyIndexGeneratorPromise: Promise.resolve({
         getIndex: vi.fn().mockResolvedValue(storyIndex),
       } as never),
@@ -410,6 +294,7 @@ describe('ChangeDetectionService', () => {
       workingDir,
     });
 
+    graph.start(adapter);
     service.start(adapter, true);
     await vi.runAllTimersAsync();
 
@@ -421,6 +306,7 @@ describe('ChangeDetectionService', () => {
       'status-value:modified'
     );
     await service.dispose();
+    await graph.dispose();
   });
 
   it('edits a non-story file with no story importers -> reverse-index lookup is empty -> no status emitted', async () => {
@@ -444,7 +330,7 @@ describe('ChangeDetectionService', () => {
       });
     });
     const { adapter } = createMockAdapter();
-    const service = new ChangeDetectionService({
+    const { service, graph } = createWiredChangeDetection({
       storyIndexGeneratorPromise: Promise.resolve({
         getIndex: vi.fn().mockResolvedValue(storyIndex),
       } as never),
@@ -454,12 +340,14 @@ describe('ChangeDetectionService', () => {
       workingDir,
     });
 
+    graph.start(adapter);
     service.start(adapter, true);
     await vi.runAllTimersAsync();
 
     expect(getStatusStoreByTypeId(CHANGE_DETECTION_STATUS_TYPE_ID).getAll()).toEqual({});
     expect(await getChangeDetectionReadiness()).toEqual({ status: 'ready' });
     await service.dispose();
+    await graph.dispose();
   });
 
   // ------------------------------------------------------------------
@@ -496,7 +384,7 @@ describe('ChangeDetectionService', () => {
       onGitStateChange = callback;
     });
     const { adapter } = createMockAdapter();
-    const service = new ChangeDetectionService({
+    const { service, graph } = createWiredChangeDetection({
       storyIndexGeneratorPromise: Promise.resolve({
         getIndex: vi.fn().mockResolvedValue(storyIndex),
       } as never),
@@ -507,6 +395,7 @@ describe('ChangeDetectionService', () => {
       debounceMs: 10,
     });
 
+    graph.start(adapter);
     service.start(adapter, true);
     await vi.runAllTimersAsync();
 
@@ -530,6 +419,7 @@ describe('ChangeDetectionService', () => {
       'new-button--primary': {},
     });
     await service.dispose();
+    await graph.dispose();
   });
 
   it('replaces prior scan status data instead of cumulatively merging with store state', async () => {
@@ -562,7 +452,7 @@ describe('ChangeDetectionService', () => {
       onGitStateChange = callback;
     });
     const { adapter } = createMockAdapter();
-    const service = new ChangeDetectionService({
+    const { service, graph } = createWiredChangeDetection({
       storyIndexGeneratorPromise: Promise.resolve({
         getIndex: vi.fn().mockResolvedValue(storyIndex),
       } as never),
@@ -573,6 +463,7 @@ describe('ChangeDetectionService', () => {
       debounceMs: 10,
     });
 
+    graph.start(adapter);
     service.start(adapter, true);
     await vi.runAllTimersAsync();
 
@@ -605,6 +496,7 @@ describe('ChangeDetectionService', () => {
       },
     });
     await service.dispose();
+    await graph.dispose();
   });
 
   it('rescans on git state changes using the normal debounce', async () => {
@@ -631,7 +523,7 @@ describe('ChangeDetectionService', () => {
       });
     });
     const { adapter } = createMockAdapter();
-    const service = new ChangeDetectionService({
+    const { service, graph } = createWiredChangeDetection({
       storyIndexGeneratorPromise: Promise.resolve({
         getIndex: vi.fn().mockResolvedValue(storyIndex),
       } as never),
@@ -642,6 +534,7 @@ describe('ChangeDetectionService', () => {
       debounceMs: 10,
     });
 
+    graph.start(adapter);
     service.start(adapter, true);
     await vi.runAllTimersAsync();
 
@@ -658,6 +551,7 @@ describe('ChangeDetectionService', () => {
     expect(gitDiffProvider.getChangedFilesMock).toHaveBeenCalledTimes(2);
 
     await service.dispose();
+    await graph.dispose();
   });
 
   it('debounces consecutive file-change events into a single scan', async () => {
@@ -672,7 +566,7 @@ describe('ChangeDetectionService', () => {
     });
     const gitDiffProvider = createMockGitDiffProvider();
     const { adapter, emitFileChange } = createMockAdapter();
-    const service = new ChangeDetectionService({
+    const { service, graph } = createWiredChangeDetection({
       storyIndexGeneratorPromise: Promise.resolve({
         getIndex: vi.fn().mockResolvedValue(storyIndex),
       } as never),
@@ -683,6 +577,7 @@ describe('ChangeDetectionService', () => {
       debounceMs: 50,
     });
 
+    graph.start(adapter);
     service.start(adapter, true);
     // First scan from initial start — debounce 0 runs synchronously.
     await vi.runAllTimersAsync();
@@ -703,6 +598,7 @@ describe('ChangeDetectionService', () => {
     expect(gitDiffProvider.getChangedFilesMock).toHaveBeenCalledTimes(2);
 
     await service.dispose();
+    await graph.dispose();
   });
 
   it('does not subscribe to git state when change detection is disabled', async () => {
@@ -712,7 +608,7 @@ describe('ChangeDetectionService', () => {
     });
     const gitDiffProvider = createMockGitDiffProvider();
     const { adapter, hasFileChangeSubscriber } = createMockAdapter();
-    const service = new ChangeDetectionService({
+    const { service, graph } = createWiredChangeDetection({
       storyIndexGeneratorPromise: Promise.resolve({
         getIndex: vi.fn(),
       } as never),
@@ -731,6 +627,37 @@ describe('ChangeDetectionService', () => {
       reason: 'disabled',
     });
     await service.dispose();
+    await graph.dispose();
+  });
+
+  it('acts as a consumer when an external graph is injected', async () => {
+    const graph = {
+      start: vi.fn(),
+      dispose: vi.fn(async () => undefined),
+      whenSettled: vi.fn(async () => undefined),
+      hasGraph: vi.fn(() => false),
+      lookup: vi.fn(() => new Map<string, number>()),
+    } as unknown as StoryDependencyGraphService;
+    const { getStatusStoreByTypeId } = createStatusStore({
+      universalStatusStore: new MockUniversalStore(UNIVERSAL_STATUS_STORE_OPTIONS),
+      environment: 'server',
+    });
+    const service = new ChangeDetectionService({
+      graph,
+      storyIndexGeneratorPromise: Promise.resolve({
+        getIndex: vi.fn(),
+      } as never),
+      statusStore: getStatusStoreByTypeId(CHANGE_DETECTION_STATUS_TYPE_ID),
+      gitDiffProvider: createMockGitDiffProvider(),
+      indexBaselineService: createMockStoryIndexBaselineService(),
+      workingDir,
+    });
+
+    service.start(undefined, false);
+    await service.dispose();
+
+    expect(graph.start).not.toHaveBeenCalled();
+    expect(graph.dispose).not.toHaveBeenCalled();
   });
 
   it('logs unavailability when the builder does not provide an adapter', async () => {
@@ -738,7 +665,7 @@ describe('ChangeDetectionService', () => {
       universalStatusStore: new MockUniversalStore(UNIVERSAL_STATUS_STORE_OPTIONS),
       environment: 'server',
     });
-    const service = new ChangeDetectionService({
+    const { service, graph } = createWiredChangeDetection({
       storyIndexGeneratorPromise: Promise.resolve({
         getIndex: vi.fn(),
       } as never),
@@ -758,6 +685,7 @@ describe('ChangeDetectionService', () => {
       reason: 'builder does not support change detection',
     });
     await service.dispose();
+    await graph.dispose();
   });
 
   it('resolves readiness as unavailable when the adapter reports a startup failure', async () => {
@@ -773,7 +701,7 @@ describe('ChangeDetectionService', () => {
       provider.getChangedFilesMock.mockImplementation(() => gitDeferred.promise);
     });
     const { adapter, emitStartupFailure } = createMockAdapter();
-    const service = new ChangeDetectionService({
+    const { service, graph } = createWiredChangeDetection({
       storyIndexGeneratorPromise: Promise.resolve({
         getIndex: vi.fn().mockResolvedValue(createStoryIndex([])),
       } as never),
@@ -783,6 +711,7 @@ describe('ChangeDetectionService', () => {
       workingDir,
     });
 
+    graph.start(adapter);
     service.start(adapter, true);
     // Let startInternal subscribe before emitting the failure (initial scan parked on git).
     await vi.runAllTimersAsync();
@@ -799,6 +728,7 @@ describe('ChangeDetectionService', () => {
     // Unblock the parked git call so dispose can drain.
     gitDeferred.resolve({ changed: new Set(), new: new Set() });
     await service.dispose();
+    await graph.dispose();
   });
 
   it('resolves readiness as error when the eager build throws', async () => {
@@ -812,7 +742,7 @@ describe('ChangeDetectionService', () => {
       environment: 'server',
     });
     const { adapter } = createMockAdapter();
-    const service = new ChangeDetectionService({
+    const { service, graph } = createWiredChangeDetection({
       storyIndexGeneratorPromise: Promise.resolve({
         getIndex: vi.fn().mockResolvedValue(createStoryIndex([])),
       } as never),
@@ -822,6 +752,7 @@ describe('ChangeDetectionService', () => {
       workingDir,
     });
 
+    graph.start(adapter);
     service.start(adapter, true);
     await vi.runAllTimersAsync();
 
@@ -833,6 +764,7 @@ describe('ChangeDetectionService', () => {
       error: expect.objectContaining({ message: 'graph build blew up' }),
     });
     await service.dispose();
+    await graph.dispose();
   });
 
   it('disposes the pool when startInternal throws', async () => {
@@ -850,7 +782,7 @@ describe('ChangeDetectionService', () => {
       environment: 'server',
     });
     const { adapter } = createMockAdapter();
-    const service = new ChangeDetectionService({
+    const { service, graph } = createWiredChangeDetection({
       storyIndexGeneratorPromise: Promise.resolve({
         getIndex: vi.fn().mockResolvedValue(createStoryIndex([])),
       } as never),
@@ -860,6 +792,7 @@ describe('ChangeDetectionService', () => {
       workingDir,
     });
 
+    graph.start(adapter);
     service.start(adapter, true);
     await vi.runAllTimersAsync();
 
@@ -867,6 +800,7 @@ describe('ChangeDetectionService', () => {
     expect(disposePoolSpy).toHaveBeenCalledTimes(1);
 
     await service.dispose();
+    await graph.dispose();
   });
 
   it('keeps the previous statuses when a live rescan fails', async () => {
@@ -895,7 +829,7 @@ describe('ChangeDetectionService', () => {
       onGitStateChange = callback;
     });
     const { adapter } = createMockAdapter();
-    const service = new ChangeDetectionService({
+    const { service, graph } = createWiredChangeDetection({
       storyIndexGeneratorPromise: Promise.resolve({
         getIndex: vi.fn().mockResolvedValue(storyIndex),
       } as never),
@@ -906,6 +840,7 @@ describe('ChangeDetectionService', () => {
       debounceMs: 10,
     });
 
+    graph.start(adapter);
     service.start(adapter, true);
     await vi.runAllTimersAsync();
 
@@ -926,6 +861,7 @@ describe('ChangeDetectionService', () => {
     });
     expect(logger.error).toHaveBeenCalledWith('Change detection failed: scan blew up');
     await service.dispose();
+    await graph.dispose();
   });
 
   it('does not apply scan results or rerun after disposal', async () => {
@@ -949,7 +885,7 @@ describe('ChangeDetectionService', () => {
       provider.getChangedFilesMock.mockImplementation(() => changedFilesDeferred.promise);
     });
     const { adapter } = createMockAdapter();
-    const service = new ChangeDetectionService({
+    const { service, graph } = createWiredChangeDetection({
       storyIndexGeneratorPromise: Promise.resolve({
         getIndex: vi.fn().mockResolvedValue(storyIndex),
       } as never),
@@ -960,9 +896,11 @@ describe('ChangeDetectionService', () => {
       debounceMs: 0,
     });
 
+    graph.start(adapter);
     service.start(adapter, true);
     await vi.advanceTimersByTimeAsync(0);
     await service.dispose();
+    await graph.dispose();
 
     changedFilesDeferred.resolve({
       changed: new Set(['src/Button.stories.tsx']),
@@ -993,7 +931,7 @@ describe('ChangeDetectionService', () => {
       );
     });
     const { adapter } = createMockAdapter();
-    const service = new ChangeDetectionService({
+    const { service, graph } = createWiredChangeDetection({
       storyIndexGeneratorPromise: Promise.resolve({
         getIndex: vi.fn().mockResolvedValue(createStoryIndex([])),
       } as never),
@@ -1004,6 +942,7 @@ describe('ChangeDetectionService', () => {
       debounceMs: 0,
     });
 
+    graph.start(adapter);
     service.start(adapter, true);
     await vi.runAllTimersAsync();
 
@@ -1015,53 +954,7 @@ describe('ChangeDetectionService', () => {
       error: expect.any(ChangeDetectionUnavailableError),
     });
     await service.dispose();
-  });
-
-  it('serialises concurrent file-change events through the patch chain', async () => {
-    const reverseIndex = buildReverseIndex([]);
-    const { patchSpy, buildSpy } = installDependencyGraphMocks(reverseIndex);
-    buildSpy.mockResolvedValue({ reverseIndex, graph: new Map() });
-
-    let activePatches = 0;
-    let maxConcurrent = 0;
-    patchSpy.mockImplementation(async () => {
-      activePatches += 1;
-      maxConcurrent = Math.max(maxConcurrent, activePatches);
-      // Force an actual await so two concurrent calls would visibly interleave.
-      await new Promise((resolve) => setImmediate(resolve));
-      activePatches -= 1;
-    });
-
-    const storyIndex = createStoryIndex([
-      { storyId: 'button--primary', importPath: './src/Button.stories.tsx', title: 'Button' },
-    ]);
-    const { getStatusStoreByTypeId } = createStatusStore({
-      universalStatusStore: new MockUniversalStore(UNIVERSAL_STATUS_STORE_OPTIONS),
-      environment: 'server',
-    });
-    const { adapter, emitFileChange } = createMockAdapter();
-    const service = new ChangeDetectionService({
-      storyIndexGeneratorPromise: Promise.resolve({
-        getIndex: vi.fn().mockResolvedValue(storyIndex),
-      } as never),
-      statusStore: getStatusStoreByTypeId(CHANGE_DETECTION_STATUS_TYPE_ID),
-      gitDiffProvider: createMockGitDiffProvider(),
-      indexBaselineService: createMockStoryIndexBaselineService(),
-      workingDir,
-    });
-
-    service.start(adapter, true);
-    await vi.runAllTimersAsync();
-
-    emitFileChange({ kind: 'change', path: '/repo/src/Button.tsx' });
-    emitFileChange({ kind: 'change', path: '/repo/src/Other.tsx' });
-    emitFileChange({ kind: 'unlink', path: '/repo/src/Stale.tsx' });
-    await vi.runAllTimersAsync();
-
-    expect(patchSpy).toHaveBeenCalledTimes(3);
-    expect(maxConcurrent).toBe(1);
-
-    await service.dispose();
+    await graph.dispose();
   });
 
   it('scan waits for the current patch to settle before reading reverseIndex', async () => {
@@ -1098,7 +991,7 @@ describe('ChangeDetectionService', () => {
       triggerGitStateChange = callback;
     });
     const { adapter, emitFileChange } = createMockAdapter();
-    const service = new ChangeDetectionService({
+    const { service, graph } = createWiredChangeDetection({
       storyIndexGeneratorPromise: Promise.resolve({
         getIndex: vi.fn().mockResolvedValue(storyIndex),
       } as never),
@@ -1109,6 +1002,7 @@ describe('ChangeDetectionService', () => {
       debounceMs: 0,
     });
 
+    graph.start(adapter);
     service.start(adapter, true);
     await vi.runAllTimersAsync();
 
@@ -1127,54 +1021,7 @@ describe('ChangeDetectionService', () => {
     );
 
     await service.dispose();
-  });
-
-  it('does not patch file-change events emitted before the adapter subscription is installed (pre-build events are dropped)', async () => {
-    const reverseIndex = buildReverseIndex([]);
-    const buildDeferred = createDeferred<void>();
-    const { patchSpy, buildSpy } = installDependencyGraphMocks(reverseIndex);
-    buildSpy.mockImplementation(async () => {
-      await buildDeferred.promise;
-      return { reverseIndex, graph: new Map() };
-    });
-
-    const storyIndex = createStoryIndex([
-      { storyId: 'button--primary', importPath: './src/Button.stories.tsx', title: 'Button' },
-    ]);
-    const { getStatusStoreByTypeId } = createStatusStore({
-      universalStatusStore: new MockUniversalStore(UNIVERSAL_STATUS_STORE_OPTIONS),
-      environment: 'server',
-    });
-    const { adapter, emitFileChange } = createMockAdapter();
-    const service = new ChangeDetectionService({
-      storyIndexGeneratorPromise: Promise.resolve({
-        getIndex: vi.fn().mockResolvedValue(storyIndex),
-      } as never),
-      statusStore: getStatusStoreByTypeId(CHANGE_DETECTION_STATUS_TYPE_ID),
-      gitDiffProvider: createMockGitDiffProvider(),
-      indexBaselineService: createMockStoryIndexBaselineService(),
-      workingDir,
-    });
-
-    service.start(adapter, true);
-    // Allow startInternal to reach the build step and start awaiting it.
-    await Promise.resolve();
-    await Promise.resolve();
-
-    // The service subscribes to file-change events strictly after the eager build resolves,
-    // so anything emitted by the adapter before then has nowhere to land. Assert no patch
-    // calls have happened yet.
-    expect(patchSpy).not.toHaveBeenCalled();
-
-    buildDeferred.resolve();
-    await vi.runAllTimersAsync();
-
-    // Now the adapter has subscribers — file events go through the patcher.
-    emitFileChange({ kind: 'change', path: '/repo/src/Button.tsx' });
-    await vi.runAllTimersAsync();
-    expect(patchSpy).toHaveBeenCalledTimes(1);
-
-    await service.dispose();
+    await graph.dispose();
   });
 
   it('calls gitDiffProvider.dispose() on service dispose when a git watcher was installed', async () => {
@@ -1187,7 +1034,7 @@ describe('ChangeDetectionService', () => {
       provider.onGitStateChangeMock.mockImplementation(() => undefined);
     });
     const { adapter } = createMockAdapter();
-    const service = new ChangeDetectionService({
+    const { service, graph } = createWiredChangeDetection({
       storyIndexGeneratorPromise: Promise.resolve({
         getIndex: vi.fn().mockResolvedValue(createStoryIndex([])),
       } as never),
@@ -1200,10 +1047,12 @@ describe('ChangeDetectionService', () => {
       workingDir,
     });
 
+    graph.start(adapter);
     service.start(adapter, true);
     await vi.runAllTimersAsync();
 
     await service.dispose();
+    await graph.dispose();
 
     expect(gitDiffProvider.disposeMock).toHaveBeenCalledTimes(1);
   });
@@ -1215,7 +1064,7 @@ describe('ChangeDetectionService', () => {
       universalStatusStore: new MockUniversalStore(UNIVERSAL_STATUS_STORE_OPTIONS),
       environment: 'server',
     });
-    const service = new ChangeDetectionService({
+    const { service, graph } = createWiredChangeDetection({
       storyIndexGeneratorPromise: Promise.resolve({
         getIndex: vi.fn(),
       } as never),
@@ -1229,210 +1078,47 @@ describe('ChangeDetectionService', () => {
     service.start(undefined, false);
     // Should not throw and should not attempt to call dispose on an unconstructed provider.
     await expect(service.dispose()).resolves.toBeUndefined();
+    await graph.dispose();
   });
 
-  it('replays add/unlink through the patcher when onStoryIndexInvalidated reveals new/removed stories', async () => {
+  it('rescans the working tree when the story index is invalidated', async () => {
+    // Graph-side reconciliation (replaying add/unlink, the refreshInFlight guard) is covered by
+    // StoryDependencyGraphService.test.ts; here we assert the status side of the seam: an index
+    // invalidation re-runs the git-diff scan.
     const reverseIndex = buildReverseIndex([]);
-    const { patchSpy, buildSpy } = installDependencyGraphMocks(reverseIndex);
-    buildSpy.mockResolvedValue({ reverseIndex, graph: new Map() });
-
-    const initialIndex = createStoryIndex([
-      { storyId: 'a--default', importPath: './src/A.stories.tsx', title: 'A' },
-    ]);
-    const updatedIndex = createStoryIndex([
-      { storyId: 'a--default', importPath: './src/A.stories.tsx', title: 'A' },
-      { storyId: 'b--default', importPath: './src/B.stories.tsx', title: 'B' },
-    ]);
-    const getIndex = vi
-      .fn()
-      .mockResolvedValueOnce(initialIndex)
-      .mockResolvedValueOnce(initialIndex)
-      .mockResolvedValue(updatedIndex);
-
-    const { getStatusStoreByTypeId } = createStatusStore({
-      universalStatusStore: new MockUniversalStore(UNIVERSAL_STATUS_STORE_OPTIONS),
-      environment: 'server',
-    });
-    const { adapter } = createMockAdapter();
-    const service = new ChangeDetectionService({
-      storyIndexGeneratorPromise: Promise.resolve({ getIndex } as never),
-      statusStore: getStatusStoreByTypeId(CHANGE_DETECTION_STATUS_TYPE_ID),
-      gitDiffProvider: createMockGitDiffProvider(),
-      indexBaselineService: createMockStoryIndexBaselineService(),
-      workingDir,
-    });
-
-    service.start(adapter, true);
-    await vi.runAllTimersAsync();
-    expect(patchSpy).not.toHaveBeenCalled();
-
-    service.onStoryIndexInvalidated();
-    await vi.runAllTimersAsync();
-
-    expect(patchSpy).toHaveBeenCalledWith({
-      kind: 'add',
-      path: '/repo/src/B.stories.tsx',
-    });
-
-    await service.dispose();
-  });
-
-  it('file events emitted during the eager build are buffered and applied after build resolves', async () => {
-    // The service subscribes to file-change events BEFORE awaiting the build. Events arriving
-    // during the build window should be buffered and drained into patchQueue once the build
-    // completes — not silently dropped.
-    const reverseIndex = buildReverseIndex([]);
-    const buildDeferred = createDeferred<void>();
-    const { patchSpy, buildSpy } = installDependencyGraphMocks(reverseIndex);
-    buildSpy.mockImplementation(async () => {
-      await buildDeferred.promise;
-      return { reverseIndex, graph: new Map() };
-    });
+    installDependencyGraphMocks(reverseIndex);
 
     const storyIndex = createStoryIndex([
-      { storyId: 'button--primary', importPath: './src/Button.stories.tsx', title: 'Button' },
-    ]);
-    const { getStatusStoreByTypeId } = createStatusStore({
-      universalStatusStore: new MockUniversalStore(UNIVERSAL_STATUS_STORE_OPTIONS),
-      environment: 'server',
-    });
-    const { adapter, emitFileChange } = createMockAdapter();
-    const service = new ChangeDetectionService({
-      storyIndexGeneratorPromise: Promise.resolve({
-        getIndex: vi.fn().mockResolvedValue(storyIndex),
-      } as never),
-      statusStore: getStatusStoreByTypeId(CHANGE_DETECTION_STATUS_TYPE_ID),
-      gitDiffProvider: createMockGitDiffProvider(),
-      indexBaselineService: createMockStoryIndexBaselineService(),
-      workingDir,
-    });
-
-    service.start(adapter, true);
-    // Allow startInternal to advance past: getResolveConfig, storyIndexGeneratorPromise,
-    // getIndex, and the DependencyGraphBuilder constructor — reaching the build await.
-    // Each 'await' in the async function consumes one microtask tick.
-    for (let i = 0; i < 10; i++) {
-      await Promise.resolve();
-    }
-
-    // Emit a file-change event while the build is still in flight (buffering handler active).
-    emitFileChange({ kind: 'change', path: '/repo/src/Button.tsx' });
-
-    // Build has not resolved yet — no patch should have run.
-    expect(patchSpy).not.toHaveBeenCalled();
-
-    // Now resolve the build — the buffered event should be drained into patchQueue.
-    buildDeferred.resolve();
-    await vi.runAllTimersAsync();
-
-    // The buffered event must have been patched exactly once.
-    expect(patchSpy).toHaveBeenCalledTimes(1);
-    expect(patchSpy).toHaveBeenCalledWith({ kind: 'change', path: '/repo/src/Button.tsx' });
-
-    await service.dispose();
-  });
-
-  it('multiple file events buffered during build are all applied in order after build resolves', async () => {
-    const reverseIndex = buildReverseIndex([]);
-    const buildDeferred = createDeferred<void>();
-    const { patchSpy, buildSpy } = installDependencyGraphMocks(reverseIndex);
-    buildSpy.mockImplementation(async () => {
-      await buildDeferred.promise;
-      return { reverseIndex, graph: new Map() };
-    });
-
-    const storyIndex = createStoryIndex([]);
-    const { getStatusStoreByTypeId } = createStatusStore({
-      universalStatusStore: new MockUniversalStore(UNIVERSAL_STATUS_STORE_OPTIONS),
-      environment: 'server',
-    });
-    const { adapter, emitFileChange } = createMockAdapter();
-    const service = new ChangeDetectionService({
-      storyIndexGeneratorPromise: Promise.resolve({
-        getIndex: vi.fn().mockResolvedValue(storyIndex),
-      } as never),
-      statusStore: getStatusStoreByTypeId(CHANGE_DETECTION_STATUS_TYPE_ID),
-      gitDiffProvider: createMockGitDiffProvider(),
-      indexBaselineService: createMockStoryIndexBaselineService(),
-      workingDir,
-    });
-
-    service.start(adapter, true);
-    // Advance past all awaits in startInternal before the build step.
-    for (let i = 0; i < 10; i++) {
-      await Promise.resolve();
-    }
-
-    emitFileChange({ kind: 'change', path: '/repo/src/A.tsx' });
-    emitFileChange({ kind: 'change', path: '/repo/src/B.tsx' });
-    emitFileChange({ kind: 'unlink', path: '/repo/src/C.tsx' });
-
-    expect(patchSpy).not.toHaveBeenCalled();
-
-    buildDeferred.resolve();
-    await vi.runAllTimersAsync();
-
-    expect(patchSpy).toHaveBeenCalledTimes(3);
-    expect(patchSpy).toHaveBeenNthCalledWith(1, { kind: 'change', path: '/repo/src/A.tsx' });
-    expect(patchSpy).toHaveBeenNthCalledWith(2, { kind: 'change', path: '/repo/src/B.tsx' });
-    expect(patchSpy).toHaveBeenNthCalledWith(3, { kind: 'unlink', path: '/repo/src/C.tsx' });
-
-    await service.dispose();
-  });
-
-  it('calling onStoryIndexInvalidated twice rapidly does not enqueue duplicate patches', async () => {
-    // Two rapid onStoryIndexInvalidated() calls before the first refresh completes both
-    // compute the same diff from the same storyFiles baseline. The refreshInFlight guard
-    // ensures only one refresh runs; the second call is a no-op, preventing duplicate patches.
-    const reverseIndex = buildReverseIndex([]);
-    const { patchSpy, buildSpy } = installDependencyGraphMocks(reverseIndex);
-    buildSpy.mockResolvedValue({ reverseIndex, graph: new Map() });
-
-    const initialIndex = createStoryIndex([
       { storyId: 'a--default', importPath: './src/A.stories.tsx', title: 'A' },
     ]);
-    // After invalidation: B is added.
-    const updatedIndex = createStoryIndex([
-      { storyId: 'a--default', importPath: './src/A.stories.tsx', title: 'A' },
-      { storyId: 'b--default', importPath: './src/B.stories.tsx', title: 'B' },
-    ]);
-
-    // getIndex is called: (1) during startInternal (initial), (2+) during refreshStoryFiles.
-    // Both refresh calls will receive updatedIndex so they compute the same diff.
-    const getIndex = vi
-      .fn()
-      .mockResolvedValueOnce(initialIndex) // startInternal initial read
-      .mockResolvedValueOnce(initialIndex) // scan's storyIndexGenerator.getIndex()
-      .mockResolvedValue(updatedIndex); // both refresh calls
-
     const { getStatusStoreByTypeId } = createStatusStore({
       universalStatusStore: new MockUniversalStore(UNIVERSAL_STATUS_STORE_OPTIONS),
       environment: 'server',
     });
+    const gitDiffProvider = createMockGitDiffProvider();
     const { adapter } = createMockAdapter();
-    const service = new ChangeDetectionService({
-      storyIndexGeneratorPromise: Promise.resolve({ getIndex } as never),
+    const { service, graph } = createWiredChangeDetection({
+      storyIndexGeneratorPromise: Promise.resolve({
+        getIndex: vi.fn().mockResolvedValue(storyIndex),
+      } as never),
       statusStore: getStatusStoreByTypeId(CHANGE_DETECTION_STATUS_TYPE_ID),
-      gitDiffProvider: createMockGitDiffProvider(),
+      gitDiffProvider,
       indexBaselineService: createMockStoryIndexBaselineService(),
       workingDir,
+      debounceMs: 10,
     });
 
+    graph.start(adapter);
     service.start(adapter, true);
     await vi.runAllTimersAsync();
+    expect(gitDiffProvider.getChangedFilesMock).toHaveBeenCalledTimes(1);
 
-    // Two rapid calls before the first refresh completes.
-    service.onStoryIndexInvalidated();
-    service.onStoryIndexInvalidated();
+    service.onGraphChange();
     await vi.runAllTimersAsync();
-
-    // B.stories.tsx should be patched exactly once — not twice.
-    const addPatches = patchSpy.mock.calls.filter(
-      ([event]) => event.kind === 'add' && event.path === '/repo/src/B.stories.tsx'
-    );
-    expect(addPatches).toHaveLength(1);
+    expect(gitDiffProvider.getChangedFilesMock).toHaveBeenCalledTimes(2);
 
     await service.dispose();
+    await graph.dispose();
   });
 });
 

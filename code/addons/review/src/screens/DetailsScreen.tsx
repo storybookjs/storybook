@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 
-import { Button } from 'storybook/internal/components';
+import { Badge, Button } from 'storybook/internal/components';
 import { STORY_RENDERED } from 'storybook/internal/core-events';
 import { styled } from 'storybook/theming';
 
@@ -62,6 +62,13 @@ const DetailTitleStrong = styled.span({
 
 const DetailTitleRegular = styled.span({
   fontWeight: 400,
+});
+
+// Sibling of the (ellipsizing) title so the badge stays fully visible while a
+// long component/story name truncates instead of clipping the badge.
+const TitleBadge = styled.div({
+  flexShrink: 0,
+  display: 'inline-flex',
 });
 
 type PreviewMode = '1up' | '2up';
@@ -175,6 +182,8 @@ export interface DetailsScreenProps {
   nextHref: string;
   componentTitle?: string;
   storyName?: string;
+  /** Whether this story is newly added relative to the baseline Storybook. */
+  isNew?: boolean;
 }
 
 const renderDetailTitle = ({
@@ -215,6 +224,7 @@ export const DetailsScreen = ({
   nextHref,
   componentTitle,
   storyName,
+  isNew,
 }: DetailsScreenProps) => {
   const latestPreviewSrc = storyPreviewUrl(storyId);
   const [baselinePreviewSrc, setBaselinePreviewSrc] = useState(() =>
@@ -403,6 +413,11 @@ export const DetailsScreen = ({
             </a>
           </Button>
           <DetailTitle>{renderDetailTitle({ title, componentTitle, storyName })}</DetailTitle>
+          {isNew ? (
+            <TitleBadge>
+              <Badge status="positive">New</Badge>
+            </TitleBadge>
+          ) : null}
         </ToolbarSide>
 
         <ToolbarSide>

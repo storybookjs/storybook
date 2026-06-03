@@ -27,8 +27,16 @@ export const ReviewPage: FC = () =>
       search: location.search ?? '',
     })) as unknown as ReactNode);
 
+// Served through the dev-server proxy declared in `preset.ts`, pointing at the
+// baseline Storybook. Used to detect stories that don't exist in the baseline.
+const BASELINE_INDEX_URL = '/__review-baseline/index.json';
+
 const ReviewPageContent: FC<{ search: string }> = ({ search }) => {
   const [state, setState] = useState<ReviewState | null>(null);
+  // Story IDs present in the baseline Storybook's index. `null` means the
+  // baseline is unresolved or unavailable (no fetch yet, network/proxy error,
+  // or an unparseable index) — in which case no "New" badge is shown.
+  const [baselineStoryIds, setBaselineStoryIds] = useState<Set<string> | null>(null);
 
   const api = useStorybookApi();
   const { index } = useStorybookState();
@@ -51,6 +59,36 @@ const ReviewPageContent: FC<{ search: string }> = ({ search }) => {
   useEffect(() => {
     emit(EVENTS.REQUEST_REVIEW);
   }, [emit]);
+
+  // Resolve which stories exist in the baseline so newly added stories can be
+  // flagged. Keyed on `createdAt`: a freshly pushed review re-fetches the
+  // baseline index. Any non-OK outcome leaves the set `null` (no badge).
+  const reviewCreatedAt = state?.createdAt;
+  useEffect(() => {
+    if (reviewCreatedAt === undefined) {
+      return undefined;
+    }
+    let cancelled = false;
+    setBaselineStoryIds(null);
+    fetch(BASELINE_INDEX_URL)
+      .then((response) => (response.ok ? response.json() : null))
+      .then((data: { entries?: Record<string, unknown>; stories?: Record<string, unknown> }) => {
+        if (cancelled || !data) {
+          return;
+        }
+        const entries = data.entries ?? data.stories;
+        if (!entries || typeof entries !== 'object') {
+          return;
+        }
+        setBaselineStoryIds(new Set(Object.keys(entries)));
+      })
+      .catch(() => {
+        // Baseline unavailable — leave `null` so no "New" badge is shown.
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [reviewCreatedAt]);
 
   const activeTab = parseReviewChangesActiveTab(search);
   const detailLocation = parseReviewChangesDetailLocation(search);
@@ -183,6 +221,9 @@ const ReviewPageContent: FC<{ search: string }> = ({ search }) => {
       const nextStoryId = detailStoryIds[nextStoryIndex];
       const currentStoryId = detailStoryIds[currentStoryIndex];
       const currentStoryInfo = storyInfo[currentStoryId];
+      // Only flag as new once the baseline index has resolved and confirms the
+      // story is absent. While unresolved/unavailable (`null`) no badge shows.
+      const isNew = baselineStoryIds !== null && !baselineStoryIds.has(currentStoryId);
       detailScreen = React.createElement(DetailsScreen, {
         title: detailTitle,
         storyId: currentStoryId,
@@ -190,6 +231,7 @@ const ReviewPageContent: FC<{ search: string }> = ({ search }) => {
         totalStories,
         componentTitle: currentStoryInfo?.title,
         storyName: currentStoryInfo?.name,
+        isNew,
         backHref: buildReviewChangesSummaryHref(activeTab),
         previousHref: buildReviewChangesDetailHref(
           detailLocation.kind === 'collection'

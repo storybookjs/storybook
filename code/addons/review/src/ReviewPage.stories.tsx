@@ -64,6 +64,8 @@ const reviewState: ReviewState = {
   title: 'Manager settings polish',
   description: 'Updated settings views and spacing.',
   branchName: 'feat/review-page',
+  // Drives the baseline-index fetch (keyed on createdAt) for "New" detection.
+  createdAt: 1_700_000_000_000,
   collections: [
     {
       title: 'Settings',
@@ -76,6 +78,39 @@ const reviewState: ReviewState = {
     },
   ],
 };
+
+// Baseline index served via the dev-server proxy. Intentionally omits
+// `manager-settings-checklist--default` so it reads as a newly added story,
+// while guidepage/aboutscreen already exist in the baseline.
+const baselineIndex = {
+  v: 5,
+  entries: {
+    'manager-settings-guidepage--default': {
+      type: 'story',
+      id: 'manager-settings-guidepage--default',
+      title: 'Manager/Settings/Guide Page',
+      name: 'Default',
+    },
+    'manager-settings-aboutscreen--default': {
+      type: 'story',
+      id: 'manager-settings-aboutscreen--default',
+      title: 'Manager/Settings/About Screen',
+      name: 'Default',
+    },
+  },
+};
+
+const originalFetch = globalThis.fetch;
+const fetchMock = fn(async (input: RequestInfo | URL): Promise<Response> => {
+  const url = typeof input === 'string' ? input : input.toString();
+  if (url.includes('/__review-baseline/index.json')) {
+    return new Response(JSON.stringify(baselineIndex), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
+  return new Response(null, { status: 404 });
+});
 
 const applyReviewState = () => {
   expect(onMock).toHaveBeenCalledWith(EVENTS.DISPLAY_REVIEW, expect.any(Function));
@@ -105,7 +140,12 @@ const meta = preview.meta({
     offMock.mockReset();
     emitMock.mockReset();
     toggleNavMock.mockReset();
+    fetchMock.mockClear();
     sessionStorage.removeItem(RESTORE_NAV_SESSION_KEY);
+    globalThis.fetch = fetchMock as unknown as typeof globalThis.fetch;
+    return () => {
+      globalThis.fetch = originalFetch;
+    };
   },
 });
 
@@ -148,5 +188,25 @@ export const Details = meta.story({
     await expect(
       await canvas.findByTitle('Latest manager-settings-guidepage--default')
     ).toBeInTheDocument();
+    // guidepage exists in the baseline index, so it must not be flagged "New".
+    await expect(canvas.queryByText('New')).not.toBeInTheDocument();
+  },
+});
+
+export const DetailsNewStory = meta.story({
+  parameters: {
+    routerInitialEntries: ['/?path=/review/collections/0/manager-settings-checklist--default'],
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(emitMock).toHaveBeenCalledWith(EVENTS.REQUEST_REVIEW);
+
+    applyReviewState();
+
+    await expect(
+      await canvas.findByTitle('Latest manager-settings-checklist--default')
+    ).toBeInTheDocument();
+    // checklist is absent from the baseline index, so it is newly added.
+    await expect(await canvas.findByText('New')).toBeInTheDocument();
   },
 });

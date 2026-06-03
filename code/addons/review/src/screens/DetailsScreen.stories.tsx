@@ -43,6 +43,17 @@ export const Default = meta.story({
     await expect(
       await canvas.findByTitle('Latest manager-settings-guidepage--default')
     ).toBeInTheDocument();
+    await expect(canvas.queryByText('New')).not.toBeInTheDocument();
+  },
+});
+
+export const NewStory = meta.story({
+  args: {
+    isNew: true,
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(await canvas.findByText('New')).toBeInTheDocument();
   },
 });
 

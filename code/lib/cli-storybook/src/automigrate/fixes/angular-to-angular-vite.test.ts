@@ -622,6 +622,9 @@ export default { framework: { name: '${ANGULAR_VITE_PACKAGE}', options: {} } };`
 
       mockReadFile.mockResolvedValue(`export default { framework: '${ANGULAR_PACKAGE}' };`);
 
+      // The runner passes a collector that fixes push post-install addon names into.
+      const addonsToConfigure: string[] = [];
+
       await angularToAngularVite.run!({
         result: baseResult,
         dryRun: false,
@@ -630,16 +633,21 @@ export default { framework: { name: '${ANGULAR_VITE_PACKAGE}', options: {} } };`
         storiesPaths: [],
         configDir: '.storybook',
         storybookVersion: '9.0.0',
+        addonsToConfigure,
       } as any);
 
+      // Postinstall is deferred (skipPostinstall: true): the addon isn't installed yet, so the
+      // runner configures it after the batched install completes.
       expect(mockAdd).toHaveBeenCalledWith(
         '@storybook/addon-vitest',
-        expect.objectContaining({ skipInstall: true, skipPostinstall: false })
+        expect.objectContaining({ skipInstall: true, skipPostinstall: true })
       );
       expect(mockAdd).toHaveBeenCalledWith(
         '@storybook/addon-a11y',
-        expect.objectContaining({ skipInstall: true, skipPostinstall: false })
+        expect.objectContaining({ skipInstall: true, skipPostinstall: true })
       );
+      // Both accepted addons are queued for post-install configuration.
+      expect(addonsToConfigure).toEqual(['@storybook/addon-vitest', '@storybook/addon-a11y']);
     });
 
     it('does not invoke storybook add when addons are declined', async () => {

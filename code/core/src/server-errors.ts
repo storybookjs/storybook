@@ -252,6 +252,19 @@ export class OpenServiceDocgenMissingComponentError extends StorybookError {
   }
 }
 
+export class OpenServiceMissingChannelError extends StorybookError {
+  constructor(public data: { serviceId?: ServiceId } = {}) {
+    super({
+      name: 'OpenServiceMissingChannelError',
+      category: Category.CORE_COMMON,
+      code: 13,
+      message: data.serviceId
+        ? `Cannot register service "${data.serviceId}": the Storybook addons channel is not installed in this runtime.`
+        : 'The Storybook addons channel is not installed in this runtime.',
+    });
+  }
+}
+
 export class WebpackMissingStatsError extends StorybookError {
   constructor() {
     super({

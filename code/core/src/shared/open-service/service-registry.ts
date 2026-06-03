@@ -17,6 +17,7 @@
 
 import {
   OpenServiceDuplicateRegistrationError,
+  OpenServiceMissingChannelError,
   OpenServiceMissingServiceError,
 } from '../../server-errors.ts';
 import { generateClientId, getServiceChannel } from './service-channel.ts';
@@ -242,16 +243,19 @@ export function registerService<
   const descriptor = describeDefinition(resolvedDefinition as AnyServiceDefinition);
 
   const channel = getServiceChannel();
-  const disconnect = channel
-    ? connectRuntimeToChannel({
-        serviceId: definition.id,
-        channel,
-        ownClientId,
-        reconciler,
-        getSnapshot,
-        relay,
-      })
-    : (): void => {};
+
+  if (!channel) {
+    throw new OpenServiceMissingChannelError({ serviceId: definition.id });
+  }
+
+  const disconnect = connectRuntimeToChannel({
+    serviceId: definition.id,
+    channel,
+    ownClientId,
+    reconciler,
+    getSnapshot,
+    relay,
+  });
 
   // Persist the instance together with precomputed metadata so later lookups stay cheap and do not
   // rebuild descriptors from the authored definition each time.

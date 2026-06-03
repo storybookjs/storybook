@@ -119,6 +119,10 @@ const config: BuildEntries = {
         entryPoint: './src/actions/decorator.ts',
       },
       {
+        exportEntries: ['./backgrounds'],
+        entryPoint: './src/backgrounds/index.ts',
+      },
+      {
         exportEntries: ['./viewport'],
         entryPoint: './src/viewport/index.ts',
       },

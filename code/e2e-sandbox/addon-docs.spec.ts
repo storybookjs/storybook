@@ -154,6 +154,37 @@ test.describe('addon-docs', () => {
     await expect(storiesCode).toContainText('Basic');
   });
 
+  // Regression test for #28333: `useArgs` inside a story rendered in a <Stories>
+  // block must update that story, not the page's primary story.
+  test('useArgs updates the correct story inside a Stories block', async ({ page }) => {
+    test.skip(!isReactSandbox(templateName), 'Controlled useArgs render is React-specific');
+
+    const sbPage = new SbPage(page, expect);
+    await sbPage.navigateToStory('stories/renderers/react/use-args', 'docs');
+    const root = sbPage.previewRoot();
+
+    // Story A renders live in <Primary>; <Stories> renders A and B as static snapshots,
+    // so the primary is the only render that reflects arg updates.
+    const widgets = root.locator('[data-testid="value"]');
+    await expect(widgets).toHaveCount(3);
+
+    const primary = widgets.nth(0);
+    const storiesB = widgets.nth(2);
+    await expect(primary).toHaveText('story-a');
+    await expect(storiesB).toHaveText('story-b');
+
+    // Update args from Story B inside <Stories>. The bug routed this to the primary story.
+    await storiesB.click();
+
+    // Update the primary directly. This click is queued after Story B's, so its result
+    // reflects whether Story B leaked into the primary (its new value is derived from the
+    // primary's current text):
+    //   fixed  -> primary was 'story-a'         -> 'story-a-updated'
+    //   #28333 -> primary was 'story-b-updated' -> 'story-b-updated-updated'
+    await primary.click();
+    await expect(primary).toHaveText('story-a-updated');
+  });
+
   test('should not run autoplay stories without parameter', async ({ page }) => {
     const sbPage = new SbPage(page, expect);
     await sbPage.navigateToStory('addons/docs/docspage/autoplay', 'docs');

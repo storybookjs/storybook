@@ -9,7 +9,11 @@ import polka from 'polka';
 
 import { isTelemetryModuleEnabled, telemetry } from '../telemetry/index.ts';
 import type { ChangeDetectionAdapter } from './change-detection/index.ts';
-import { ChangeDetectionService } from './change-detection/index.ts';
+import {
+  ChangeDetectionService,
+  setDependencyGraphService,
+  StoryDependencyGraphService,
+} from './change-detection/index.ts';
 import { getStatusStoreByTypeId } from './stores/status.ts';
 import type { StoryIndexGenerator } from './utils/StoryIndexGenerator.ts';
 import { doTelemetry } from './utils/doTelemetry.ts';
@@ -48,12 +52,33 @@ export async function storybookDevServer(
   const storyIndexGeneratorPromise =
     options.presets.apply<StoryIndexGenerator>('storyIndexGenerator');
 
+  // Graph callbacks are wired before service construction; callbacks no-op until assigned below.
+  const changeDetectionServiceRef: { current?: ChangeDetectionService } = {};
+  const storyDependencyGraphService = new StoryDependencyGraphService({
+    storyIndexGeneratorPromise,
+    workingDir,
+    presets: options.presets,
+    onReady: () => changeDetectionServiceRef.current?.onGraphReady(),
+    onChange: () => changeDetectionServiceRef.current?.onGraphChange(),
+    onError: (failure) => changeDetectionServiceRef.current?.onGraphError(failure),
+    onUnavailable: (reason, error) =>
+      changeDetectionServiceRef.current?.onGraphUnavailable(reason, error),
+  });
+  setDependencyGraphService(storyDependencyGraphService);
+
   const changeDetectionService = new ChangeDetectionService({
+    graph: storyDependencyGraphService,
     storyIndexGeneratorPromise,
     statusStore: getStatusStoreByTypeId(CHANGE_DETECTION_STATUS_TYPE_ID),
     workingDir,
-    presets: options.presets,
   });
+  changeDetectionServiceRef.current = changeDetectionService;
+
+  const disposeChangeDetectionRuntime = async () => {
+    await changeDetectionService.dispose().catch(() => undefined);
+    setDependencyGraphService(undefined);
+    await storyDependencyGraphService.dispose().catch(() => undefined);
+  };
 
   app.use(compression({ level: 1 }));
 
@@ -79,7 +104,7 @@ export async function storybookDevServer(
     channel: options.channel,
     workingDir,
     configDir,
-    onStoryIndexInvalidated: () => changeDetectionService.onStoryIndexInvalidated(),
+    onStoryIndexInvalidated: () => storyDependencyGraphService.onStoryIndexInvalidated(),
   });
 
   (await getMiddleware(options.configDir))(app);
@@ -124,10 +149,6 @@ export async function storybookDevServer(
     await Promise.resolve();
 
   if (!options.ignorePreview) {
-    if (!features.changeDetection) {
-      changeDetectionService.start(undefined, false);
-    }
-
     logger.debug('Starting preview..');
     previewResult = await previewBuilder
       .start({
@@ -141,7 +162,7 @@ export async function storybookDevServer(
         logger.error('Failed to build the preview');
         process.exitCode = 1;
 
-        await changeDetectionService.dispose().catch(() => undefined);
+        await disposeChangeDetectionRuntime();
         await managerBuilder?.bail().catch(() => undefined);
         // For some reason, even when Webpack fails e.g. wrong main.js config,
         // the preview may continue to print to stdout, which can affect output
@@ -153,15 +174,24 @@ export async function storybookDevServer(
         throw e;
       });
 
-    if (features.changeDetection) {
-      let adapter: ChangeDetectionAdapter | undefined;
-      try {
-        adapter = previewBuilder.changeDetectionAdapter?.();
-      } catch (err) {
-        logger.warn('Change detection: adapter initialisation failed');
-        logger.debug(err instanceof Error ? (err.stack ?? err.message) : String(err));
-      }
+    let adapter: ChangeDetectionAdapter | undefined;
+    try {
+      adapter = previewBuilder.changeDetectionAdapter?.();
+    } catch (err) {
+      logger.warn('Change detection: adapter initialisation failed');
+      logger.debug(err instanceof Error ? (err.stack ?? err.message) : String(err));
+    }
+
+    if (adapter) {
+      storyDependencyGraphService.start(adapter);
+    }
+
+    const isChangeDetectionStatusEnabled = features.changeDetection !== false;
+    if (isChangeDetectionStatusEnabled) {
       changeDetectionService.start(adapter, true);
+    } else {
+      // Status publication is explicitly feature-gated; graph service may still be consumed elsewhere.
+      changeDetectionService.start(undefined, false);
     }
   }
 
@@ -180,6 +210,7 @@ export async function storybookDevServer(
       });
     }
   } catch (e) {
+    await disposeChangeDetectionRuntime();
     await managerBuilder?.bail().catch(() => undefined);
     await previewBuilder?.bail().catch(() => undefined);
     throw e;
@@ -211,6 +242,7 @@ export async function storybookDevServer(
       } catch {}
       await telemetry('canceled', payload, { immediate: true });
     } finally {
+      await disposeChangeDetectionRuntime();
       // Always terminate on signal, even when telemetry is disabled.
       process.exit(0);
     }

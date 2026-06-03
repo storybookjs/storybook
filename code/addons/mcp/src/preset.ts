@@ -2,9 +2,6 @@ import { mcpServerHandler } from './mcp-handler.ts';
 import type { PresetPropertyFn, StorybookConfigRaw } from 'storybook/internal/types';
 import { AddonOptions, type AddonOptionsInput } from './types.ts';
 import * as v from 'valibot';
-import { getManifestStatus } from './tools/is-manifest-available.ts';
-import { getAddonVitestConstants } from './tools/run-story-tests.ts';
-import { isAddonA11yEnabled } from './utils/is-addon-a11y-enabled.ts';
 import { getToolAvailability } from './utils/get-tool-availability.ts';
 import htmlTemplate from './template.html';
 import path from 'node:path';
@@ -111,17 +108,22 @@ export const experimental_devServer: PresetPropertyFn<
 		});
 	});
 
-	const manifestStatus = await getManifestStatus(options);
-	const addonVitestConstants = await getAddonVitestConstants();
-	const a11yEnabled = await isAddonA11yEnabled(options);
 	// Same gates the MCP server uses to register these tools, so the page can't
 	// claim a tool is available when it isn't (and vice versa).
-	const { dependencyGraphSupported, changeDetectionEnabled, reviewStatus } =
-		await getToolAvailability(options);
+	const {
+		dependencyGraphSupported,
+		changeDetectionEnabled,
+		reviewAvailable,
+		docsAvailable,
+		docsHasManifests,
+		docsFeatureEnabled,
+		testSupported,
+		a11yEnabled,
+	} = await getToolAvailability(options);
 
 	const isDevEnabled = addonOptions.toolsets?.dev ?? true;
-	const isDocsEnabled = manifestStatus.available && (addonOptions.toolsets?.docs ?? true);
-	const isTestEnabled = !!addonVitestConstants && (addonOptions.toolsets?.test ?? true);
+	const isDocsEnabled = docsAvailable && (addonOptions.toolsets?.docs ?? true);
+	const isTestEnabled = testSupported && (addonOptions.toolsets?.test ?? true);
 
 	app!.get(endpoint, (req, res) => {
 		if (!req.headers['accept']?.includes('text/html')) {
@@ -143,11 +145,11 @@ export const experimental_devServer: PresetPropertyFn<
 		res.writeHead(200, { 'Content-Type': 'text/html' });
 
 		let docsNotice = '';
-		if (!manifestStatus.hasManifests) {
+		if (!docsHasManifests) {
 			docsNotice = `<div class="toolset-notice">
 				This toolset is only supported in React-based setups.
 			</div>`;
-		} else if (!manifestStatus.hasFeatureFlag) {
+		} else if (!docsFeatureEnabled) {
 			docsNotice = `<div class="toolset-notice">
 				This toolset requires enabling the component manifest feature.
 				<a target="_blank" href="https://github.com/storybookjs/mcp/tree/main/packages/addon-mcp#docs-tools-experimental">Learn how to enable it</a>
@@ -155,7 +157,7 @@ export const experimental_devServer: PresetPropertyFn<
 		}
 
 		const testNoticeLines = [
-			!addonVitestConstants &&
+			!testSupported &&
 				`This toolset requires Storybook 10.3.0+ with <code>@storybook/addon-vitest</code>. <a target="_blank" href="https://storybook.js.org/docs/writing-tests/test-addon">Learn how to set it up</a>`,
 			!a11yEnabled &&
 				`Add <code>@storybook/addon-a11y</code> for accessibility testing. <a target="_blank" href="https://storybook.js.org/docs/writing-tests/accessibility-testing">Learn more</a>`,
@@ -171,15 +173,18 @@ export const experimental_devServer: PresetPropertyFn<
 		// `get-stories-by-component`, `get-changed-stories`, and `display-review` are gated
 		// independently of the `dev` toolset (they need the dependency graph, the change-detection
 		// feature flag, and `@storybook/addon-review` respectively), so each shows its own badge.
-		const devNoticeLines = [
-			!dependencyGraphSupported &&
-				`<code>get-stories-by-component</code> and <code>get-changed-stories</code> require a dev server with a builder that supports the dependency graph (e.g. Vite).`,
-			dependencyGraphSupported &&
-				!changeDetectionEnabled &&
-				`<code>get-changed-stories</code> additionally requires enabling the <code>changeDetection</code> feature flag.`,
-			!reviewStatus.available &&
-				`<code>display-review</code> requires the <code>changeDetection</code> feature flag and <code>@storybook/addon-review</code>.`,
-		].filter(Boolean);
+		// When the whole `dev` toolset is turned off via addon options every dev tool is
+		// disabled regardless of its own gate, so explain that instead of the per-tool reasons.
+		const devNoticeLines = !isDevEnabled
+			? [`The <code>dev</code> toolset is disabled via addon options.`]
+			: [
+					!dependencyGraphSupported &&
+						`<code>get-stories-by-component</code> requires a dev server with a builder that supports the dependency graph (e.g. Vite).`,
+					!changeDetectionEnabled &&
+						`<code>get-changed-stories</code> requires enabling the <code>changeDetection</code> feature flag.`,
+					!reviewAvailable &&
+						`<code>display-review</code> requires the <code>changeDetection</code> feature flag and <code>@storybook/addon-review</code>.`,
+				].filter(Boolean);
 		const devNotice = devNoticeLines.length
 			? `<div class="toolset-notice">${devNoticeLines.join('<br>')}</div>`
 			: '';
@@ -188,9 +193,12 @@ export const experimental_devServer: PresetPropertyFn<
 
 		const html = htmlTemplate
 			.replaceAll('{{DEV_STATUS}}', isDevEnabled ? 'enabled' : 'disabled')
-			.replaceAll('{{STORIES_BY_COMPONENT_STATUS}}', statusWord(dependencyGraphSupported))
-			.replaceAll('{{CHANGE_DETECTION_STATUS}}', statusWord(changeDetectionEnabled))
-			.replaceAll('{{REVIEW_STATUS}}', statusWord(reviewStatus.available))
+			.replaceAll(
+				'{{STORIES_BY_COMPONENT_STATUS}}',
+				statusWord(isDevEnabled && dependencyGraphSupported),
+			)
+			.replaceAll('{{CHANGE_DETECTION_STATUS}}', statusWord(isDevEnabled && changeDetectionEnabled))
+			.replaceAll('{{REVIEW_STATUS}}', statusWord(isDevEnabled && reviewAvailable))
 			.replace('{{DEV_NOTICE}}', devNotice)
 			.replaceAll('{{DOCS_STATUS}}', isDocsEnabled ? 'enabled' : 'disabled')
 			.replace('{{DOCS_NOTICE}}', docsNotice)
@@ -198,7 +206,7 @@ export const experimental_devServer: PresetPropertyFn<
 			.replace('{{TEST_NOTICE}}', testNotice)
 			.replace(
 				'{{MANIFEST_DEBUGGER_LINK}}',
-				manifestStatus.available
+				docsAvailable
 					? '<p>View the <a href="/manifests/components.html">component manifest debugger</a>.</p>'
 					: '',
 			)

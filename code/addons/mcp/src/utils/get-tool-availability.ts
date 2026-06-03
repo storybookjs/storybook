@@ -1,20 +1,27 @@
 import type { Options } from 'storybook/internal/types';
 import { isDependencyGraphSupported } from './change-detection.ts';
-import { getReviewStatus, type ReviewStatus } from './is-review-available.ts';
+import { getReviewStatus } from './is-review-available.ts';
+import { getManifestStatus } from '../tools/is-manifest-available.ts';
+import { getAddonVitestConstants } from '../tools/run-story-tests.ts';
+import { isAddonA11yEnabled } from './is-addon-a11y-enabled.ts';
 
 export interface ToolAvailability {
-	/**
-	 * Storybook ships the dependency-graph API (the dev-server builder supports it).
-	 * Gates `get-stories-by-component`.
-	 */
+	/** Dev-server builder supports the dependency-graph API. Gates `get-stories-by-component`. */
 	dependencyGraphSupported: boolean;
-	/**
-	 * The change-detection status pipeline AND the dependency graph are both available.
-	 * Gates `get-changed-stories`.
-	 */
+	/** The `changeDetection` feature flag is enabled. Gates `get-changed-stories`. */
 	changeDetectionEnabled: boolean;
-	/** Full review status; `.available` gates `display-review`. */
-	reviewStatus: ReviewStatus;
+	/** `changeDetection` flag + `@storybook/addon-review` are both present. Gates `display-review`. */
+	reviewAvailable: boolean;
+	/** Component-manifest feature is on AND manifests were found. Gates the `docs` toolset. */
+	docsAvailable: boolean;
+	/** Any component manifests were found (drives the docs "why disabled" copy). */
+	docsHasManifests: boolean;
+	/** The component-manifest feature flag is enabled (drives the docs "why disabled" copy). */
+	docsFeatureEnabled: boolean;
+	/** `@storybook/addon-vitest` is installed. Gates the `test` toolset (`run-story-tests`). */
+	testSupported: boolean;
+	/** `@storybook/addon-a11y` is enabled. Gates the accessibility sub-feature of `run-story-tests`. */
+	a11yEnabled: boolean;
 }
 
 export interface GetToolAvailabilityOptions {
@@ -26,12 +33,14 @@ export interface GetToolAvailabilityOptions {
 }
 
 /**
- * Single source of truth for the runtime gates that decide whether the
- * change-detection and review tools are registered.
+ * Single source of truth for the runtime gates that decide whether each tool is
+ * registered (and how the landing page badges it).
  *
- * Used both by the MCP server (to actually register the tools) and by the
- * browser landing page (to show accurate enabled/disabled badges), so the two
- * can never drift apart.
+ * Every dynamic gate lives here — the dependency graph, the change-detection
+ * pipeline, review, the component manifest (docs), addon-vitest (test) and the
+ * accessibility sub-feature — so the MCP server (which registers the tools) and
+ * the browser landing page (which shows enabled/disabled badges) can never drift
+ * apart. Add new gates here rather than computing them ad-hoc at a call site.
  */
 export async function getToolAvailability(
 	options: Options,
@@ -40,13 +49,29 @@ export async function getToolAvailability(
 	const resolvedFeatures =
 		features ??
 		((await options.presets.apply('features', {})) as { changeDetection?: boolean } | undefined);
-	// The dependency graph and the change-detection status pipeline are independent in Storybook:
-	// the graph runs whenever the dev-server has a supporting builder; `features.changeDetection`
-	// only gates the status pipeline that powers `get-changed-stories`.
-	const dependencyGraphSupported = await isDependencyGraphSupported();
-	const changeDetectionEnabled =
-		(resolvedFeatures?.changeDetection ?? false) && dependencyGraphSupported;
-	const reviewStatus = await getReviewStatus(options, { features: resolvedFeatures });
 
-	return { dependencyGraphSupported, changeDetectionEnabled, reviewStatus };
+	const [
+		dependencyGraphSupported,
+		reviewStatus,
+		manifestStatus,
+		addonVitestConstants,
+		a11yEnabled,
+	] = await Promise.all([
+		isDependencyGraphSupported(),
+		getReviewStatus(options, { features: resolvedFeatures }),
+		getManifestStatus(options),
+		getAddonVitestConstants(),
+		isAddonA11yEnabled(options),
+	]);
+
+	return {
+		dependencyGraphSupported,
+		changeDetectionEnabled: resolvedFeatures?.changeDetection ?? false,
+		reviewAvailable: reviewStatus.available,
+		docsAvailable: manifestStatus.available,
+		docsHasManifests: manifestStatus.hasManifests,
+		docsFeatureEnabled: manifestStatus.hasFeatureFlag,
+		testSupported: !!addonVitestConstants,
+		a11yEnabled,
+	};
 }

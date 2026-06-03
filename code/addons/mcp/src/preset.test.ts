@@ -5,6 +5,7 @@ import { experimental_devServer } from './preset.ts';
 import { STORYBOOK_MCP_PROXY_HEADER } from './auth/index.ts';
 import * as mcpHandlerModule from './mcp-handler.ts';
 import * as runStoryTests from './tools/run-story-tests.ts';
+import * as changeDetection from './utils/change-detection.ts';
 
 describe('experimental_devServer', () => {
 	let mockApp: any;
@@ -375,6 +376,40 @@ describe('experimental_devServer', () => {
 			expect(html).toContain(`<code>${tool}</code>`);
 		}
 		// Every placeholder must be substituted — no `{{...}}` may leak to the page.
+		expect(html).not.toMatch(/\{\{[A-Z_]+\}\}/);
+	});
+
+	it('marks dev tools disabled on the landing page when the dev toolset is turned off', async () => {
+		// Dependency graph IS supported, so `get-stories-by-component` would otherwise badge
+		// as enabled — proving the badge now also honors the `dev` toolset being disabled.
+		vi.spyOn(changeDetection, 'isDependencyGraphSupported').mockResolvedValue(true);
+
+		let getHandler: any;
+		mockApp.get = vi.fn((_path, handler) => {
+			getHandler = handler;
+		});
+
+		const devOffOptions = {
+			...mockOptions,
+			toolsets: { dev: false },
+		} as unknown as Options;
+
+		await (experimental_devServer as any)(mockApp, devOffOptions);
+
+		const mockRes = { writeHead: vi.fn(), end: vi.fn() } as any;
+		await getHandler({ headers: { accept: 'text/html' } } as any, mockRes);
+
+		const html = mockRes.end.mock.calls[0][0] as string;
+
+		const badgeFor = (tool: string) =>
+			html.match(
+				new RegExp(`<code>${tool}</code>\\s*<span class="toolset-status (enabled|disabled)"`),
+			)?.[1];
+
+		for (const tool of ['get-stories-by-component', 'get-changed-stories', 'display-review']) {
+			expect(badgeFor(tool)).toBe('disabled');
+		}
+		expect(html).toContain('The <code>dev</code> toolset is disabled via addon options.');
 		expect(html).not.toMatch(/\{\{[A-Z_]+\}\}/);
 	});
 

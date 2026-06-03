@@ -19,11 +19,9 @@ import { buffer } from 'node:stream/consumers';
 import { collectTelemetry } from './telemetry.ts';
 import type { AddonContext, AddonOptionsOutput } from './types.ts';
 import { logger } from 'storybook/internal/node-logger';
-import { getManifestStatus } from './tools/is-manifest-available.ts';
 import { getToolAvailability } from './utils/get-tool-availability.ts';
-import { addRunStoryTestsTool, getAddonVitestConstants } from './tools/run-story-tests.ts';
+import { addRunStoryTestsTool } from './tools/run-story-tests.ts';
 import { estimateTokens } from './utils/estimate-tokens.ts';
-import { isAddonA11yEnabled } from './utils/is-addon-a11y-enabled.ts';
 import type { CompositionAuth } from './auth/index.ts';
 import { buildServerInstructions } from './instructions/build-server-instructions.ts';
 import { DEFAULT_MCP_ENDPOINT } from './constants.ts';
@@ -44,11 +42,15 @@ const initializeMCPServer = async (options: Options, multiSource?: boolean) => {
 	// Shares one source of truth with the browser landing page (see get-tool-availability.ts)
 	// so the registered tools and the page's enabled/disabled badges can't drift. Reuse the
 	// already-resolved `features` so it doesn't re-apply the preset and risk a different snapshot.
-	const { dependencyGraphSupported, changeDetectionEnabled, reviewStatus } =
-		await getToolAvailability(options, { features });
-	const addonVitestConstants = await getAddonVitestConstants();
-	const manifestStatus = await getManifestStatus(options);
-	a11yEnabled = await isAddonA11yEnabled(options);
+	const {
+		dependencyGraphSupported,
+		changeDetectionEnabled,
+		reviewAvailable,
+		docsAvailable,
+		testSupported,
+		a11yEnabled: a11yAvailable,
+	} = await getToolAvailability(options, { features });
+	a11yEnabled = a11yAvailable;
 
 	let server: McpServer<any, AddonContext>;
 
@@ -57,11 +59,11 @@ const initializeMCPServer = async (options: Options, multiSource?: boolean) => {
 		get instructions() {
 			return buildServerInstructions({
 				devEnabled: server?.ctx.custom?.toolsets?.dev ?? true,
-				testEnabled: (server?.ctx.custom?.toolsets?.test ?? true) && !!addonVitestConstants,
-				docsEnabled: (server?.ctx.custom?.toolsets?.docs ?? true) && manifestStatus.available,
+				testEnabled: (server?.ctx.custom?.toolsets?.test ?? true) && testSupported,
+				docsEnabled: (server?.ctx.custom?.toolsets?.docs ?? true) && docsAvailable,
 				changeDetectionEnabled,
 				dependencyGraphAvailable: dependencyGraphSupported,
-				reviewEnabled: reviewStatus.available,
+				reviewEnabled: reviewAvailable,
 			});
 		},
 		capabilities: {
@@ -98,7 +100,7 @@ const initializeMCPServer = async (options: Options, multiSource?: boolean) => {
 		await addGetStoriesByComponentTool(server);
 	}
 
-	if (reviewStatus.available) {
+	if (reviewAvailable) {
 		await addDisplayReviewTool(server);
 	}
 
@@ -106,7 +108,7 @@ const initializeMCPServer = async (options: Options, multiSource?: boolean) => {
 	await addRunStoryTestsTool(server, { a11yEnabled });
 
 	// Only register the additional tools if the component manifest feature is enabled
-	if (manifestStatus.available) {
+	if (docsAvailable) {
 		logger.info('Experimental components manifest feature detected - registering component tools');
 		const contextAwareEnabled = () => server.ctx.custom?.toolsets?.docs ?? true;
 		await addListAllDocumentationTool(server, contextAwareEnabled);

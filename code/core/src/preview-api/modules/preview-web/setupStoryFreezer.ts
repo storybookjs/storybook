@@ -159,6 +159,9 @@ const blockInteractions = (documentRef: Document) => {
 
 const createStoryFreezer = (windowRef: Window, documentRef: Document) => {
   let frozen = false;
+  // Set as soon as freezing starts so wrappers reject any async work scheduled
+  // synchronously by animation-finish handlers, before `frozen` is committed.
+  let freezing = false;
 
   const trackedTimeouts = new Set<TimerId>();
   const trackedIntervals = new Set<IntervalId>();
@@ -173,7 +176,7 @@ const createStoryFreezer = (windowRef: Window, documentRef: Document) => {
   const originalQueueMicrotask = windowRef.queueMicrotask.bind(windowRef);
 
   const setTimeoutWrapper = ((handler: TimerHandler, timeout?: number, ...args: unknown[]) => {
-    if (frozen) {
+    if (frozen || freezing) {
       return -1 as TimerId;
     }
     const timerId = originalSetTimeout(handler, timeout, ...args);
@@ -189,7 +192,7 @@ const createStoryFreezer = (windowRef: Window, documentRef: Document) => {
   }) as Window['clearTimeout'];
 
   const setIntervalWrapper = ((handler: TimerHandler, timeout?: number, ...args: unknown[]) => {
-    if (frozen) {
+    if (frozen || freezing) {
       return -1 as IntervalId;
     }
     const timerId = originalSetInterval(handler, timeout, ...args);
@@ -205,7 +208,7 @@ const createStoryFreezer = (windowRef: Window, documentRef: Document) => {
   }) as Window['clearInterval'];
 
   const requestAnimationFrameWrapper = ((callback: FrameRequestCallback) => {
-    if (frozen) {
+    if (frozen || freezing) {
       return -1 as RafId;
     }
     const rafId = originalRequestAnimationFrame(callback);
@@ -219,7 +222,7 @@ const createStoryFreezer = (windowRef: Window, documentRef: Document) => {
   }) as Window['cancelAnimationFrame'];
 
   const queueMicrotaskWrapper: typeof windowRef.queueMicrotask = ((callback: VoidFunction) => {
-    if (frozen) {
+    if (frozen || freezing) {
       return;
     }
     originalQueueMicrotask(callback);
@@ -234,9 +237,10 @@ const createStoryFreezer = (windowRef: Window, documentRef: Document) => {
   tryReplaceProperty(windowRef, 'queueMicrotask', queueMicrotaskWrapper);
 
   const freeze = () => {
-    if (frozen) {
+    if (frozen || freezing) {
       return;
     }
+    freezing = true;
 
     try {
       trackedTimeouts.forEach((timerId) => {

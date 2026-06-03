@@ -453,4 +453,12 @@ export const RealAtomicChange = meta.story({
 export const ManyCollections = meta.story({
   args: { state: manyCollections },
   parameters: { chromatic: { disableSnapshot: true } },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(
+      await canvas.findByText('Large review surface: many collections and stories')
+    ).toBeInTheDocument();
+    await expect(await canvas.findByText('Collection 01 — Button core')).toBeInTheDocument();
+    await expect(await canvas.findByText('Collection 20 — Large mixed tail')).toBeInTheDocument();
+  },
 });

@@ -29,7 +29,7 @@ Story files (\`*.stories.*\`) are accepted too: they appear at distance 0 as sel
 		),
 	),
 	maxDistance: v.pipe(
-		v.optional(v.pipe(v.number(), v.integer(), v.minValue(1))),
+		v.optional(v.pipe(v.number(), v.minValue(1), v.integer())),
 		v.description(
 			`Ceiling on the import depth to include in results. Must be a positive integer.
 - 1: only stories that directly import the component.

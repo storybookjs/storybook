@@ -15,6 +15,7 @@ import {
   type ReviewTab,
 } from './review-navigation.ts';
 import type { ReviewState } from './review-state.ts';
+import { sessionStore } from './session-store.ts';
 import { DetailsScreen } from './screens/DetailsScreen.tsx';
 import { SummaryScreen } from './screens/SummaryScreen.tsx';
 
@@ -113,16 +114,16 @@ const ReviewPageContent: FC<{ search: string }> = ({ search }) => {
   // router handles as an SPA transition). A user who keeps the sidebar
   // collapsed by choice ('keep') is left untouched.
   useEffect(() => {
-    if (sessionStorage.getItem(RESTORE_NAV_SESSION_KEY) === null) {
-      sessionStorage.setItem(RESTORE_NAV_SESSION_KEY, api.getIsNavShown() ? 'restore' : 'keep');
+    if (sessionStore.read(RESTORE_NAV_SESSION_KEY) === null) {
+      sessionStore.write(RESTORE_NAV_SESSION_KEY, api.getIsNavShown() ? 'restore' : 'keep');
     }
     api.toggleNav(false);
 
     return () => {
-      if (sessionStorage.getItem(RESTORE_NAV_SESSION_KEY) === 'restore') {
+      if (sessionStore.read(RESTORE_NAV_SESSION_KEY) === 'restore') {
         api.toggleNav(true);
       }
-      sessionStorage.removeItem(RESTORE_NAV_SESSION_KEY);
+      sessionStore.remove(RESTORE_NAV_SESSION_KEY);
     };
   }, [api]);
 

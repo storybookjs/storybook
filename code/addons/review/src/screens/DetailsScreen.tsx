@@ -13,6 +13,7 @@ import {
 } from '@storybook/icons';
 
 import { PREVIEW_MODE_SESSION_KEY } from '../constants.ts';
+import { sessionStore } from '../session-store.ts';
 
 const Page = styled.div(({ theme }) => ({
   display: 'flex',
@@ -78,17 +79,9 @@ type VisibleSide = 'baseline' | 'latest';
 
 const DEFAULT_PREVIEW_MODE: PreviewMode = '2up';
 
-// Read the persisted preview layout, defaulting to side-by-side. sessionStorage
-// can throw (privacy modes, disabled storage), so failures fall back silently.
-const readPreviewMode = (): PreviewMode => {
-  try {
-    return sessionStorage.getItem(PREVIEW_MODE_SESSION_KEY) === '1up'
-      ? '1up'
-      : DEFAULT_PREVIEW_MODE;
-  } catch {
-    return DEFAULT_PREVIEW_MODE;
-  }
-};
+// Read the persisted preview layout, defaulting to side-by-side.
+const readPreviewMode = (): PreviewMode =>
+  sessionStore.read(PREVIEW_MODE_SESSION_KEY) === '1up' ? '1up' : DEFAULT_PREVIEW_MODE;
 
 const PreviewFrameWrap = styled.div<{ $singleUp: boolean }>(({ $singleUp }) => ({
   flex: 1,
@@ -343,11 +336,7 @@ export const DetailsScreen = ({
   // Persist the user's layout choice so it carries across navigation between
   // the detail and summary screens.
   useEffect(() => {
-    try {
-      sessionStorage.setItem(PREVIEW_MODE_SESSION_KEY, previewMode);
-    } catch {
-      // Storage unavailable — the in-memory state still drives this session.
-    }
+    sessionStore.write(PREVIEW_MODE_SESSION_KEY, previewMode);
   }, [previewMode]);
 
   useEffect(() => {

@@ -11,6 +11,7 @@ import {
   EVENTS,
 } from './constants.ts';
 import { ReviewPage } from './ReviewPage.ts';
+import { sessionStore } from './session-store.ts';
 
 addons.register(ADDON_ID, (api) => {
   // Safety net: the review page hides the sidebar and has no in-app exit, so
@@ -19,11 +20,11 @@ addons.register(ADDON_ID, (api) => {
   // route, restore a sidebar we hid. SPA exits (browser back) are already
   // handled by ReviewPage's effect cleanup.
   const path = new URLSearchParams(window.location.search).get('path') ?? '';
-  const restoreNav = sessionStorage.getItem(RESTORE_NAV_SESSION_KEY);
+  const restoreNav = sessionStore.read(RESTORE_NAV_SESSION_KEY);
   if (!path.startsWith(REVIEW_CHANGES_URL) && restoreNav !== null) {
     // Clear both 'restore' and 'keep' so a stale marker can't block fresh
     // nav-state capture on the next review visit.
-    sessionStorage.removeItem(RESTORE_NAV_SESSION_KEY);
+    sessionStore.remove(RESTORE_NAV_SESSION_KEY);
     if (restoreNav === 'restore') {
       api.toggleNav(true);
     }

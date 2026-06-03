@@ -3,8 +3,17 @@ import { vi, expect as vitestExpect } from 'vitest';
 import { setProjectAnnotations } from '@storybook/react';
 
 import { userEvent as storybookEvent, expect as storybookExpect } from 'storybook/test';
+import { getServiceChannel, setServiceChannel } from 'storybook/internal/preview-api';
+import { Channel } from 'storybook/internal/channels';
 
 import '../core/src/shared/utils/toHaveLiveRegion.ts';
+
+// Preview side-effect modules (e.g. background-service) register open services at import time.
+// Vitest may evaluate this setup file before the addon setup-file runs, so ensure a channel exists.
+if (!getServiceChannel()) {
+  setServiceChannel(new Channel({}));
+}
+
 import preview from './preview.tsx';
 
 vi.spyOn(console, 'warn').mockImplementation((...args) => console.log(...args));

@@ -9,9 +9,11 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { mutableRecordLookupServiceDef, schemaCounterServiceDef } from './fixtures.ts';
 import {
+  clearServiceChannel,
   SERVICE_PATCHES,
   SERVICE_SYNC_START_REPLY,
   SERVICE_SYNC_START,
+  setServiceChannel,
 } from './service-channel.ts';
 import { clearRegistry, registerService, unregisterService } from './service-registry.ts';
 
@@ -42,8 +44,11 @@ function createMockChannel() {
 }
 
 function installChannel(channel: ReturnType<typeof createMockChannel> | null): void {
-  (globalThis as { __STORYBOOK_ADDONS_CHANNEL__?: unknown }).__STORYBOOK_ADDONS_CHANNEL__ =
-    channel ?? undefined;
+  if (channel === null) {
+    clearServiceChannel();
+  } else {
+    setServiceChannel(channel);
+  }
 }
 
 afterEach(() => {

@@ -26,6 +26,7 @@ import type {
   StorybookConfigRaw,
 } from 'storybook/internal/types';
 
+import { setServiceChannel } from '../../shared/open-service/service-channel.ts';
 import { registerDocgenService } from '../../shared/open-service/services/docgen/server.ts';
 
 import { isAbsolute, join } from 'pathe';
@@ -322,7 +323,10 @@ export const services = async (_value: void, options: Options): Promise<void> =>
     );
   }
   globalThis.STORYBOOK_SERVICES_LOADED = true;
-  globalThis.__STORYBOOK_ADDONS_CHANNEL__ = options.channel;
+
+  if (options.channel) {
+    setServiceChannel(options.channel);
+  }
 
   const features = await options.presets.apply('features');
 

@@ -20,7 +20,11 @@ import {
   OpenServiceMissingChannelError,
   OpenServiceMissingServiceError,
 } from '../../server-errors.ts';
-import { generateClientId, getServiceChannel } from './service-channel.ts';
+import {
+  generateClientId,
+  getServiceChannel,
+  installNoopServiceChannel,
+} from './service-channel.ts';
 import { createServiceRuntime } from './service-runtime.ts';
 import { createSnapshotReconciler } from './service-sync.ts';
 import { connectRuntimeToChannel, wrapCommandsForBroadcast } from './service-transport.ts';
@@ -335,7 +339,8 @@ export function unregisterService(serviceId: ServiceId): void {
  * Clears the registry, tearing down each service's channel listeners first.
  *
  * Tests call this after each case so registrations — and the channel listeners a registration attaches
- * — from one scenario do not leak into the next.
+ * — from one scenario do not leak into the next. Re-installs a noop channel afterward so the next
+ * `registerService` call matches server presets that always assign `options.channel`.
  */
 export function clearRegistry(): void {
   const registry = getRegistry();
@@ -345,4 +350,6 @@ export function clearRegistry(): void {
   }
 
   registry.clear();
+
+  installNoopServiceChannel();
 }

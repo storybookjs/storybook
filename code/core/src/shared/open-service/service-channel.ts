@@ -9,10 +9,11 @@
  * The channel is read from the ambient `globalThis.__STORYBOOK_ADDONS_CHANNEL__` slot that every
  * Storybook runtime already exposes — the manager sets it in its runtime, both builders inject it
  * into the preview iframe, and the dev server installs it in the `services` preset. Until that slot
- * is populated, {@link getServiceChannel} returns `null` and service runtimes operate in isolation
- * (all reads and writes are local only) — which is also the default in unit tests.
+ * is populated, {@link getServiceChannel} returns `null`. Writes go through {@link setServiceChannel}
+ * so tests can mock the reader without touching the global slot from other modules.
  */
 import { global } from '@storybook/global';
+import { Channel } from 'storybook/internal/channels';
 
 /**
  * Minimal channel contract needed for service sync.
@@ -88,17 +89,62 @@ export interface CommandErrorPayload {
   error: unknown;
 }
 
+type ChannelSlotGlobal = {
+  __STORYBOOK_ADDONS_CHANNEL__?: ServiceChannel;
+};
+
+/** Storybook uses both `@storybook/global` and bare `globalThis` (e.g. Vitest setup, Vite preview preamble). */
+function readChannelSlot(): ServiceChannel | undefined {
+  const fromGlobal = (global as ChannelSlotGlobal).__STORYBOOK_ADDONS_CHANNEL__;
+  if (fromGlobal) {
+    return fromGlobal;
+  }
+
+  return (globalThis as ChannelSlotGlobal).__STORYBOOK_ADDONS_CHANNEL__;
+}
+
+function writeChannelSlot(channel: ServiceChannel | undefined): void {
+  const g = global as ChannelSlotGlobal;
+  const gt = globalThis as ChannelSlotGlobal;
+
+  if (channel === undefined) {
+    delete g.__STORYBOOK_ADDONS_CHANNEL__;
+    delete gt.__STORYBOOK_ADDONS_CHANNEL__;
+    return;
+  }
+
+  g.__STORYBOOK_ADDONS_CHANNEL__ = channel;
+  gt.__STORYBOOK_ADDONS_CHANNEL__ = channel;
+}
+
 /**
  * Returns the live Storybook channel shared by every service runtime, or `null` before it exists.
  *
- * Reads the ambient `globalThis.__STORYBOOK_ADDONS_CHANNEL__` slot rather than a private one: the
- * manager, both preview builders, and the dev server's `services` preset all populate it, so every
- * runtime converges on the same channel with no install step. The transport re-reads this at call
- * time, so a runtime registered before the channel exists still starts broadcasting once it does.
- * Unit tests can assign the slot directly or module-mock this function.
+ * Reads the ambient `__STORYBOOK_ADDONS_CHANNEL__` slot on `@storybook/global` and `globalThis` so
+ * manager, preview builders, Vitest setup, and the dev server `services` preset all converge. Unit
+ * tests can assign the slot via {@link setServiceChannel} or module-mock this function.
  */
 export function getServiceChannel(): ServiceChannel | null {
-  return (global.__STORYBOOK_ADDONS_CHANNEL__ as ServiceChannel | undefined) ?? null;
+  return readChannelSlot() ?? null;
+}
+
+/**
+ * Installs (or replaces) the ambient addons channel used by {@link getServiceChannel}.
+ *
+ * Pass `null` to clear the slot — e.g. tests asserting registration fails without a channel.
+ */
+export function setServiceChannel(channel: ServiceChannel | null): void {
+  writeChannelSlot(channel ?? undefined);
+}
+
+/** Clears the ambient channel slot. Alias for `setServiceChannel(null)`. */
+export function clearServiceChannel(): void {
+  setServiceChannel(null);
+}
+
+/** Installs a noop in-process channel, matching server presets that pass `new Channel({})`. */
+export function installNoopServiceChannel(): void {
+  setServiceChannel(new Channel({}));
 }
 
 /**
@@ -109,4 +155,9 @@ export function getServiceChannel(): ServiceChannel | null {
  */
 export function generateClientId(): string {
   return Math.random().toString(36).slice(2) + Date.now().toString(36);
+}
+
+// Node entrypoints that register services before the `services` preset runs (e.g. unit tests).
+if (!getServiceChannel()) {
+  installNoopServiceChannel();
 }

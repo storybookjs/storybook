@@ -26,8 +26,11 @@ export {
 } from './service-registry.ts';
 
 export {
+  clearServiceChannel,
   generateClientId,
   getServiceChannel,
+  installNoopServiceChannel,
+  setServiceChannel,
   SERVICE_COMMAND_ERROR,
   SERVICE_COMMAND_INVOKE,
   SERVICE_COMMAND_RESULT,

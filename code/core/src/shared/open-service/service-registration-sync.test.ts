@@ -2,9 +2,11 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { mutableRecordLookupServiceDef, schemaCounterServiceDef } from './fixtures.ts';
 import {
+  clearServiceChannel,
   SERVICE_PATCHES,
   SERVICE_SYNC_START_REPLY,
   SERVICE_SYNC_START,
+  setServiceChannel,
 } from './service-channel.ts';
 import { clearRegistry, registerService } from './server.ts';
 
@@ -41,11 +43,12 @@ function createMockChannel() {
 
 const { id: recordServiceId } = mutableRecordLookupServiceDef;
 
-// Install a mock channel by writing the same ambient global the real runtimes read. `null` clears it
-// so a channel from one test never leaks into a local-only test.
 function installChannel(channel: ReturnType<typeof createMockChannel> | null): void {
-  (globalThis as { __STORYBOOK_ADDONS_CHANNEL__?: unknown }).__STORYBOOK_ADDONS_CHANNEL__ =
-    channel ?? undefined;
+  if (channel === null) {
+    clearServiceChannel();
+  } else {
+    setServiceChannel(channel);
+  }
 }
 
 afterEach(() => {
@@ -70,16 +73,12 @@ describe('registerService: channel wiring', () => {
     expect(channel.on).toHaveBeenCalledWith(SERVICE_PATCHES, expect.any(Function));
   });
 
-  it('stays local-only when no channel is installed', async () => {
-    const channel = createMockChannel();
-    // Intentionally NOT calling setServiceChannel: the runtime must operate in isolation.
-    const service = registerService(mutableRecordLookupServiceDef);
+  it('throws when the addons channel is not installed', () => {
+    installChannel(null);
 
-    await service.commands.assignRecordField({ entryId: 'a', fieldKey: 'k', fieldValue: 'v' });
-
-    expect(service.queries.getRecordFields({ entryId: 'a' })).toEqual({ k: 'v' });
-    expect(channel.on).not.toHaveBeenCalled();
-    expect(channel.emit).not.toHaveBeenCalled();
+    expect(() => registerService(mutableRecordLookupServiceDef)).toThrow(
+      /addons channel is not installed/
+    );
   });
 });
 

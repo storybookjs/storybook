@@ -197,7 +197,7 @@ Always include the returned reviewUrl in your final user-facing response so the 
 					content: [
 						{
 							type: 'text' as const,
-							text: `Review applied: ${collectionCount} collection${collectionCount === 1 ? '' : 's'}, ${storyCount} stor${storyCount === 1 ? 'y' : 'ies'}. Storybook is already running at ${customContext.origin} — reuse it. Do NOT start another Storybook or change its port to view this review; the running instance already serves it. Next step: if a browser-preview tool is available in this session (e.g. preview_eval or an equivalent navigate tool), open ${reviewUrl} in it so the user sees the review immediately. Always include ${reviewUrl} in your final response so the user can open it.`,
+							text: `Review applied: ${collectionCount} collection${collectionCount === 1 ? '' : 's'}, ${storyCount} stor${storyCount === 1 ? 'y' : 'ies'}. Storybook is already running at ${customContext.origin} — reuse it. Do NOT start another Storybook or change its port to view this review; the running instance already serves it. Next step: if a browser-preview tool is available in this session (e.g. preview_eval or an equivalent navigate tool), open ${reviewUrl} in it so the user sees the review immediately. Surface the review link **prominently** in your final response — make it the first line, on its own, as a bold call-to-action, e.g. \`> 👀 **[Review these changes in Storybook](${reviewUrl})**\` — not a trailing sentence the user has to hunt for.`,
 						},
 					],
 					structuredContent: { reviewUrl },

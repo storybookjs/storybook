@@ -35,7 +35,7 @@ export function buildServerInstructions(options: BuildServerInstructionsOptions)
 		// was published, not merely on display-review being available — many valid
 		// paths (non-visual refactors) skip the review and have no reviewUrl.
 		const finalLinksStep = reviewEnabled
-			? 'In your final user-facing response, show one set of links — never both. If you published a review with **display-review**, link **only** the Storybook review page (a markdown link using the returned `reviewUrl`), phrased like: "You can see a curated summary of stories in the [Storybook review page](<reviewUrl>)." If you did not publish a review (e.g. a non-visual refactor, or you skipped it), include the returned preview URLs instead so the user can verify the visual result.'
+			? 'In your final user-facing response, show one set of links — never both. If you published a review with **display-review**, surface the review page **prominently**: make it the first line of your reply, on its own line, as a bold call-to-action link using the returned `reviewUrl` — for example a blockquote like `> 👀 **[Review these changes in Storybook](<reviewUrl>)**` — then write the rest of your summary below it. Never bury it at the bottom as a trailing sentence, and never also list the individual story or preview URLs. If you did not publish a review (e.g. a non-visual refactor, or you skipped it), include the returned preview URLs instead so the user can verify the visual result.'
 			: 'In your final user-facing response, include every returned preview URL so the user can verify the visual result, ordered consistently (changed-stories fallback first if relevant, then the specific preview URLs).';
 		sections.push(
 			devInstructions

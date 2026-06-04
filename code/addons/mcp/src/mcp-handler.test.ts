@@ -11,7 +11,9 @@ import { CompositionAuth } from './auth/index.ts';
 
 // Lets us flip `@storybook/addon-review` presence so the review tool's gate can be exercised.
 // Keep the real exports (e.g. `normalizeStoryPath`) so unrelated tools still register.
-const { mockGetAddonNames } = vi.hoisted(() => ({ mockGetAddonNames: vi.fn(() => [] as string[]) }));
+const { mockGetAddonNames } = vi.hoisted(() => ({
+	mockGetAddonNames: vi.fn(() => [] as string[]),
+}));
 vi.mock('storybook/internal/common', async (importActual) => ({
 	...(await importActual<typeof import('storybook/internal/common')>()),
 	loadMainConfig: vi.fn().mockResolvedValue({}),

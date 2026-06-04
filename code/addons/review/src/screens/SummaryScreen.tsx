@@ -13,6 +13,7 @@ import {
 
 import { CollectionGrid, type StoryInfo } from '../components/CollectionGrid.tsx';
 import { ReviewHeader } from '../components/ReviewHeader.tsx';
+import { StaleBanner } from '../components/StaleBanner.tsx';
 import { buildReviewChangesDetailHref } from '../review-navigation.ts';
 import type { ReviewState } from '../review-state.ts';
 
@@ -197,9 +198,15 @@ export interface SummaryScreenProps {
   state: ReviewState | null;
   /** Story id → component title + name, resolved from the Storybook index. */
   storyInfo?: Record<string, StoryInfo>;
+  /** When true, render the "this review may be stale" banner at the top. */
+  isStale?: boolean;
 }
 
-export const SummaryScreen: FC<SummaryScreenProps> = ({ state, storyInfo = {} }) => {
+export const SummaryScreen: FC<SummaryScreenProps> = ({
+  state,
+  storyInfo = {},
+  isStale = false,
+}) => {
   const [search, setSearch] = useState('');
   const [expandedCollections, setExpandedCollections] = useState<Set<number>>(() => new Set());
   const [showAllCollections, setShowAllCollections] = useState<Set<number>>(() => new Set());
@@ -273,6 +280,7 @@ export const SummaryScreen: FC<SummaryScreenProps> = ({ state, storyInfo = {} })
 
   return (
     <Page>
+      {isStale ? <StaleBanner /> : null}
       <ReviewHeader
         title={state.title}
         subtitle={

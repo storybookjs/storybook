@@ -114,6 +114,16 @@ export const NewStory = meta.story({
   },
 });
 
+export const Stale = meta.story({
+  args: { isStale: true },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(
+      await canvas.findByText('This review may be stale. Ask your agent to refresh it.')
+    ).toBeInTheDocument();
+  },
+});
+
 export const WrapAroundNavigation = meta.story({
   args: {
     storyId: 'components-toolbar--basic',

@@ -18,9 +18,13 @@ const PUSH_REVIEW = `${ADDON_ID}/push-review`;
 const DISPLAY_REVIEW = `${ADDON_ID}/display-review`;
 // Requests for the cached state of the agent review
 const REQUEST_REVIEW = `${ADDON_ID}/request-review`;
+// Server signals that a source file changed after the cached review was created,
+// so the open review page should surface a "may be stale" banner.
+const REVIEW_STALE = `${ADDON_ID}/review-stale`;
 
 export const EVENTS = {
   PUSH_REVIEW,
   DISPLAY_REVIEW,
   REQUEST_REVIEW,
+  REVIEW_STALE,
 };

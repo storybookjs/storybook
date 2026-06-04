@@ -18,6 +18,8 @@ import { PREVIEW_MODE_SESSION_KEY } from '../constants.ts';
 import { buildStorybookStoryHref } from '../review-navigation.ts';
 import { sessionStore } from '../session-store.ts';
 
+import { StaleBanner } from '../components/StaleBanner.tsx';
+
 const Page = styled.div(({ theme }) => ({
   display: 'flex',
   flexDirection: 'column',
@@ -156,6 +158,8 @@ export interface DetailsScreenProps {
   nextHref: string;
   componentTitle?: string;
   storyName?: string;
+  /** When true, render the "this review may be stale" banner at the top. */
+  isStale?: boolean;
   /** Enables the baseline/latest comparison controls when a baseline exists. */
   hasBaseline?: boolean;
   /** Whether this story is newly added relative to the baseline Storybook. */
@@ -224,6 +228,7 @@ export const DetailsScreen = ({
   nextHref,
   componentTitle,
   storyName,
+  isStale = false,
   hasBaseline = false,
   isNew,
 }: DetailsScreenProps) => {
@@ -455,6 +460,7 @@ export const DetailsScreen = ({
 
   return (
     <Page>
+      {isStale ? <StaleBanner /> : null}
       <ReviewHeader
         autoFocusTitle
         leading={

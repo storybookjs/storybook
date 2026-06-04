@@ -450,6 +450,17 @@ export const RealAtomicChange = meta.story({
   args: { state: atomicChange },
 });
 
+export const Stale = meta.story({
+  args: { state: full, isStale: true },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(
+      await canvas.findByText('This review may be stale. Ask your agent to refresh it.')
+    ).toBeInTheDocument();
+    await expect(await canvas.findByText('Primary button visual refresh')).toBeInTheDocument();
+  },
+});
+
 export const ManyCollections = meta.story({
   args: { state: manyCollections },
   parameters: { chromatic: { disableSnapshot: true } },

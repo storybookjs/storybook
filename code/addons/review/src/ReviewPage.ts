@@ -40,6 +40,7 @@ const NEW_STATUS_VALUE = 'status-value:new';
 
 const ReviewPageContent: FC<{ search: string }> = ({ search }) => {
   const [state, setState] = useState<ReviewState | null>(null);
+  const [isStale, setIsStale] = useState(false);
   // Story IDs present in the baseline Storybook's index. `null` means the
   // baseline is unresolved or unavailable (no fetch yet, network/proxy error,
   // or an unparseable index) — in which case no "New" badge is shown.
@@ -59,6 +60,11 @@ const ReviewPageContent: FC<{ search: string }> = ({ search }) => {
         })),
       };
       setState(normalizedState);
+      // A fresh review resets staleness; a replayed (already-stale) one restores it.
+      setIsStale(!!next.stale);
+    },
+    [EVENTS.REVIEW_STALE]: () => {
+      setIsStale(true);
     },
   });
 
@@ -226,6 +232,7 @@ const ReviewPageContent: FC<{ search: string }> = ({ search }) => {
         totalStories,
         componentTitle: currentStoryInfo?.title,
         storyName: currentStoryInfo?.name,
+        isStale,
         isNew,
         backHref: buildReviewChangesSummaryHref(),
         previousHref: buildReviewChangesDetailHref({
@@ -270,6 +277,7 @@ const ReviewPageContent: FC<{ search: string }> = ({ search }) => {
         React.createElement(SummaryScreen, {
           state,
           storyInfo,
+          isStale,
         })
       ),
       hasDetailScreen

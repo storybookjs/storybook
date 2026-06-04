@@ -37,6 +37,12 @@ export interface ReviewState {
    */
   createdAt?: number;
   /**
+   * Set server-side once a watched source file changes after `createdAt`.
+   * Drives the "this review may be stale" banner. Persisted on the cached
+   * review so REQUEST_REVIEW replays it to late/refreshed tabs.
+   */
+  stale?: boolean;
+  /**
    * Whether a baseline is available to compare against. Enables the
    * baseline/latest comparison controls on the detail screen. The baseline
    * source itself is provided on a separate branch; until then this stays

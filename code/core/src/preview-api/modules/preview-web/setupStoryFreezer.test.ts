@@ -56,17 +56,46 @@ declare global {
 }
 
 describe('setupStoryFreezer', () => {
+  // The freezer replaces scheduling globals and injects freeze styles into
+  // <head>; capture and restore them so a frozen test can't leak mutated
+  // globals or styles into later tests.
+  const SCHEDULING_GLOBALS = [
+    'setTimeout',
+    'clearTimeout',
+    'setInterval',
+    'clearInterval',
+    'requestAnimationFrame',
+    'cancelAnimationFrame',
+    'queueMicrotask',
+  ] as const;
+  const INJECTED_STYLE_IDS = [
+    'storybook-freeze-end-frame-preload',
+    'storybook-freeze-after-finished',
+  ];
+
   let previousHref: string;
   let previousBody: string;
+  let originalGlobals: Record<string, unknown>;
 
   beforeEach(() => {
     previousHref = window.location.href;
     previousBody = document.body.innerHTML;
+    originalGlobals = Object.fromEntries(
+      SCHEDULING_GLOBALS.map((key) => [key, (window as unknown as Record<string, unknown>)[key]])
+    );
   });
 
   afterEach(() => {
     window.history.replaceState({}, '', previousHref);
     document.body.innerHTML = previousBody;
+    INJECTED_STYLE_IDS.forEach((id) => document.getElementById(id)?.remove());
+    SCHEDULING_GLOBALS.forEach((key) => {
+      Object.defineProperty(window, key, {
+        configurable: true,
+        writable: true,
+        value: originalGlobals[key],
+      });
+    });
     delete window.__freezeInlineClicked;
     delete window.__freezeScriptExecuted;
   });

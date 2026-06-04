@@ -58,7 +58,7 @@ function buildSubcomponentEntry(name: string, component: ComponentRef): DocgenSu
 }
 
 export interface BuildDocgenContext {
-  manager: ComponentMetaManager;
+  componentMetaManager: ComponentMetaManager;
   typescriptOptions?: Partial<TypescriptOptions>;
   /** Resolve a CSF import path to an absolute file path. Defaults to `process.cwd()` join. */
   resolvePath?: (importPath: string) => string;
@@ -111,7 +111,7 @@ export async function buildDocgenPayload(
     { storyPath, component },
     ...usableSubcomponents.map((sub) => ({ storyPath, component: sub.component })),
   ];
-  context.manager.batchExtract(storyRefs);
+  context.componentMetaManager.batchExtract(storyRefs);
 
   const doc = component.reactComponentMeta;
   const componentId = component.componentName ?? metaComponentName ?? input.importPath;

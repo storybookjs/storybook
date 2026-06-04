@@ -15,11 +15,11 @@ import {
 import { buildDocgenPayload } from './buildDocgen.ts';
 
 let tempDir: string | undefined;
-let manager: ComponentMetaManager | undefined;
+let componentMetaManager: ComponentMetaManager | undefined;
 
 afterEach(() => {
-  manager?.dispose();
-  manager = undefined;
+  componentMetaManager?.dispose();
+  componentMetaManager = undefined;
   if (tempDir) {
     cleanup(tempDir);
     tempDir = undefined;
@@ -50,12 +50,12 @@ describe('buildDocgenPayload', () => {
         `,
       });
 
-      manager = new ComponentMetaManager(ts);
+      componentMetaManager = new ComponentMetaManager(ts);
 
       const payload = await buildDocgenPayload(
         { importPath: files['Button.stories.tsx'] },
         {
-          manager,
+          componentMetaManager,
           resolvePath: (importPath) =>
             path.isAbsolute(importPath) ? importPath : path.join(tempDir!, importPath),
         }
@@ -81,12 +81,12 @@ describe('buildDocgenPayload', () => {
 
   it('returns undefined when the story file is missing', { timeout: 15_000 }, async () => {
     tempDir = createTempDir('docgen-build');
-    manager = new ComponentMetaManager(ts);
+    componentMetaManager = new ComponentMetaManager(ts);
 
     const payload = await buildDocgenPayload(
       { importPath: 'does-not-exist.stories.tsx' },
       {
-        manager,
+        componentMetaManager,
         resolvePath: (importPath) => path.join(tempDir!, importPath),
       }
     );
@@ -120,12 +120,12 @@ describe('buildDocgenPayload', () => {
         `,
     });
 
-    manager = new ComponentMetaManager(ts);
+    componentMetaManager = new ComponentMetaManager(ts);
 
     const payload = await buildDocgenPayload(
       { importPath: files['Card.stories.tsx'] },
       {
-        manager,
+        componentMetaManager,
         resolvePath: (importPath) =>
           path.isAbsolute(importPath) ? importPath : path.join(tempDir!, importPath),
       }

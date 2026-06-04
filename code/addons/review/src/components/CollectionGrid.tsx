@@ -1,4 +1,4 @@
-import React, { type FC, type ReactNode, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState, type FC, type ReactNode } from 'react';
 
 import { Button } from 'storybook/internal/components';
 import { styled } from 'storybook/theming';
@@ -6,6 +6,102 @@ import { styled } from 'storybook/theming';
 import { prettifyComponentId } from '../review-grouping.ts';
 
 const PREVIEW_SCALE = 0.5;
+
+/**
+ * Each thumbnail is a full Storybook preview iframe, and booting one fires
+ * dozens of module requests. Mounting every in-view thumbnail at once (wide
+ * grids, or "Review all") floods the browser's connection pool and trips
+ * `net::ERR_INSUFFICIENT_RESOURCES`, leaving some iframes permanently blank.
+ *
+ * The scheduler below caps how many previews boot concurrently across the
+ * whole review page. A cell enqueues a task before it sets the iframe `src`;
+ * the task starts when a slot is free and finishes once the iframe loads
+ * (or errors / settles), so previews drain in waves instead of all at once.
+ * Hovering a cell promotes its task to start immediately, bypassing the cap.
+ */
+const MAX_CONCURRENT_PREVIEWS = 3;
+/**
+ * A started preview frees its slot when its iframe fires `load`, or after this
+ * delay — whichever comes first. The timeout guarantees the queue keeps
+ * draining automatically even when `load` is slow or never fires (so previews
+ * advance in steady waves rather than waiting on a single stuck frame), while
+ * still rate-limiting how fast new iframes boot to avoid flooding the network.
+ */
+const PREVIEW_SETTLE_TIMEOUT_MS = 1500;
+
+/**
+ * Viewport-relative margins (as IntersectionObserver `rootMargin`) for the
+ * preview lifecycle. A cell mounts its iframe once within one viewport of the
+ * fold and is evicted (iframe unmounted, memory freed) only once roughly three
+ * viewports away. The gap is hysteresis: a cell that briefly leaves the mount
+ * zone isn't torn down until it's well offscreen, so scrolling near a boundary
+ * doesn't thrash. This bounds live iframes to ~6–7 screens regardless of how
+ * many stories the review has.
+ */
+const PREVIEW_MOUNT_ROOT_MARGIN = '100% 0px';
+const PREVIEW_EVICT_ROOT_MARGIN = '200% 0px';
+
+interface PreviewTask {
+  /** Assigns the iframe src, kicking off the actual load. */
+  start: () => void;
+  started: boolean;
+  finished: boolean;
+}
+
+let activePreviewLoads = 0;
+const previewQueue: PreviewTask[] = [];
+
+function pumpPreviewQueue(): void {
+  while (activePreviewLoads < MAX_CONCURRENT_PREVIEWS) {
+    const task = previewQueue.shift();
+    if (!task) {
+      return;
+    }
+    if (task.started || task.finished) {
+      continue;
+    }
+    task.started = true;
+    activePreviewLoads += 1;
+    task.start();
+  }
+}
+
+function enqueuePreview(task: PreviewTask): void {
+  previewQueue.push(task);
+  pumpPreviewQueue();
+}
+
+/** Mark a task done (load/error/settle/unmount) and let the next one start. */
+function finishPreview(task: PreviewTask): void {
+  if (task.finished) {
+    return;
+  }
+  task.finished = true;
+  if (task.started) {
+    activePreviewLoads = Math.max(0, activePreviewLoads - 1);
+  } else {
+    const index = previewQueue.indexOf(task);
+    if (index !== -1) {
+      previewQueue.splice(index, 1);
+    }
+  }
+  pumpPreviewQueue();
+}
+
+/** Hover/focus: start a still-queued preview right away, bypassing the cap. */
+function forceStartPreview(task: PreviewTask): void {
+  if (task.started || task.finished) {
+    return;
+  }
+  const index = previewQueue.indexOf(task);
+  if (index !== -1) {
+    previewQueue.splice(index, 1);
+  }
+  task.started = true;
+  activePreviewLoads += 1;
+  task.start();
+}
+
 const GRID_MIN_CELL_WIDTH = 300;
 const GRID_GAP = 12;
 const GRID_HORIZONTAL_PADDING = 24;
@@ -206,47 +302,115 @@ const StoryPreviewCell: FC<{
   query: string;
 }> = ({ storyId, href, info, query }) => {
   const hostRef = useRef<HTMLDivElement>(null);
-  const [hasMounted, setHasMounted] = useState(false);
+  const [isInView, setIsInView] = useState(false);
+  // `src` stays unset until the scheduler starts this preview; the iframe only
+  // mounts (and starts requesting) once it does.
+  const [src, setSrc] = useState<string | undefined>(undefined);
+  const taskRef = useRef<PreviewTask | null>(null);
 
   useEffect(() => {
     const host = hostRef.current;
-    if (!host || hasMounted) {
-      return undefined;
-    }
-    // Ensure above-the-fold previews mount on first paint even if the initial
-    // IntersectionObserver callback is deferred until the next scroll.
-    if (isWithinPreloadRange(host, 200)) {
-      setHasMounted(true);
+    if (!host) {
       return undefined;
     }
     if (typeof IntersectionObserver === 'undefined') {
-      setHasMounted(true);
+      setIsInView(true);
       return undefined;
     }
-    const observer = new IntersectionObserver(
+    // Snappy first paint for above-the-fold cells: the observers' initial
+    // callbacks are deferred to the next frame, so seed the state synchronously.
+    if (isWithinPreloadRange(host, typeof window === 'undefined' ? 0 : window.innerHeight)) {
+      setIsInView(true);
+    }
+    // Mount when the cell comes within the mount margin of the viewport.
+    const mountObserver = new IntersectionObserver(
       ([entry]) => {
         if (entry.isIntersecting) {
-          setHasMounted(true);
-          observer.disconnect();
+          setIsInView(true);
         }
       },
-      { rootMargin: '200px' }
+      { rootMargin: PREVIEW_MOUNT_ROOT_MARGIN }
     );
-    observer.observe(host);
-    return () => observer.disconnect();
-  }, [hasMounted]);
+    // Evict once the cell moves beyond the (larger) evict margin, unmounting
+    // its iframe to free the preview runtime. The margin gap is hysteresis.
+    const evictObserver = new IntersectionObserver(
+      ([entry]) => {
+        if (!entry.isIntersecting) {
+          setIsInView(false);
+        }
+      },
+      { rootMargin: PREVIEW_EVICT_ROOT_MARGIN }
+    );
+    mountObserver.observe(host);
+    evictObserver.observe(host);
+    return () => {
+      mountObserver.disconnect();
+      evictObserver.disconnect();
+    };
+  }, []);
+
+  // Eviction: when the cell scrolls well out of range, drop the iframe so its
+  // preview runtime is reclaimed. It re-enqueues (below) if it scrolls back.
+  useEffect(() => {
+    if (!isInView) {
+      setSrc(undefined);
+    }
+  }, [isInView]);
+
+  // Once in view, enqueue a scheduler task; it sets `src` when a slot frees.
+  useEffect(() => {
+    if (!isInView) {
+      return undefined;
+    }
+    const task: PreviewTask = {
+      start: () => setSrc(storyPreviewUrl(storyId)),
+      started: false,
+      finished: false,
+    };
+    taskRef.current = task;
+    enqueuePreview(task);
+    return () => {
+      // Unmounting / scrolling away before load frees the slot (or dequeues).
+      finishPreview(task);
+      taskRef.current = null;
+    };
+  }, [isInView, storyId]);
+
+  const finishCurrent = useCallback(() => {
+    if (taskRef.current) {
+      finishPreview(taskRef.current);
+    }
+  }, []);
+
+  // Hover or keyboard focus promotes this preview to start immediately.
+  const forceStartCurrent = useCallback(() => {
+    if (taskRef.current) {
+      forceStartPreview(taskRef.current);
+    }
+  }, []);
+
+  // Free this preview's slot a short time after it starts even if `load`
+  // hasn't fired, so the queue keeps draining automatically in steady waves.
+  useEffect(() => {
+    if (!src) {
+      return undefined;
+    }
+    const timer = setTimeout(finishCurrent, PREVIEW_SETTLE_TIMEOUT_MS);
+    return () => clearTimeout(timer);
+  }, [src, finishCurrent]);
 
   const { component, name } = deriveStoryInfo(storyId, info);
 
   const content = (
     <>
-      {hasMounted ? (
+      {src ? (
         <StoryPreview
           title={storyId}
-          src={storyPreviewUrl(storyId)}
-          loading="lazy"
+          src={src}
           tabIndex={-1}
           scrolling="no"
+          onLoad={finishCurrent}
+          onError={finishCurrent}
         />
       ) : null}
       <InfoBar data-story-info>
@@ -262,7 +426,12 @@ const StoryPreviewCell: FC<{
   );
 
   return (
-    <GridCell ref={hostRef} data-testid="review-collection-grid-cell">
+    <GridCell
+      ref={hostRef}
+      data-testid="review-collection-grid-cell"
+      onMouseEnter={forceStartCurrent}
+      onFocus={forceStartCurrent}
+    >
       {href ? (
         <GridLink href={href} aria-label={`Review story ${storyId}`}>
           {content}

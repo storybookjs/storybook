@@ -29,10 +29,13 @@ export function buildServerInstructions(options: BuildServerInstructionsOptions)
 			: graphSupported
 				? 'After changing any component or story, call **get-stories-by-component** with the absolute paths of the files you touched to find the stories that render them, then call **preview-stories** to retrieve preview URLs.'
 				: 'After changing any component or story, call **preview-stories** to retrieve preview URLs.';
-		// When display-review is available, the curated review page supersedes the
-		// raw preview URLs in the final response — show one or the other, never both.
+		// Final response shows one set of links, never both: prefer the curated
+		// review page when a review was actually published (we have a reviewUrl),
+		// otherwise fall back to the raw preview URLs. Keyed on whether a review
+		// was published, not merely on display-review being available — many valid
+		// paths (non-visual refactors) skip the review and have no reviewUrl.
 		const finalLinksStep = reviewEnabled
-			? 'In your final user-facing response, link **only** the Storybook review page — do not also list the individual story or preview URLs. Write it as a markdown link using the returned `reviewUrl`, phrased like: "You can see a curated summary of stories in the [Storybook review page](<reviewUrl>)."'
+			? 'In your final user-facing response, show one set of links — never both. If you published a review with **display-review**, link **only** the Storybook review page (a markdown link using the returned `reviewUrl`), phrased like: "You can see a curated summary of stories in the [Storybook review page](<reviewUrl>)." If you did not publish a review (e.g. a non-visual refactor, or you skipped it), include the returned preview URLs instead so the user can verify the visual result.'
 			: 'In your final user-facing response, include every returned preview URL so the user can verify the visual result, ordered consistently (changed-stories fallback first if relevant, then the specific preview URLs).';
 		sections.push(
 			devInstructions

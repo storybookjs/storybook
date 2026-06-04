@@ -39,6 +39,9 @@ export function setup() {
     channel.emit(TELEMETRY_ERROR, prepareForTelemetry(error));
   };
 
+  // This gate only drives `inert` (interaction blocking) and keys on `freeze`
+  // alone. Whether the preview is actually frozen is gated separately (and more
+  // strictly, on viewMode=story) in setupStoryFreezer.shouldFreeze.
   const freeze = new URLSearchParams(global.location?.search ?? '').get('freeze') === 'finished';
   if (freeze) {
     setInert(true);

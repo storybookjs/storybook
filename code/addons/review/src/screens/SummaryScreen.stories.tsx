@@ -402,6 +402,7 @@ const fortyStoryCollection: ReviewState = {
   collections: [
     {
       title: 'All changed stories',
+      rationale: 'Every story affected by this change.',
       storyIds: [
         'button-component--base',
         'button-component--variants',

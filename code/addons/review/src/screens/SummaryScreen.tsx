@@ -1,12 +1,13 @@
 import React, { type FC, useEffect, useMemo, useState } from 'react';
 
-import { Badge, Button, Card, Collapsible, IconButton, ScrollArea } from 'storybook/internal/components';
+import { Badge, Button, Card, Collapsible, IconButton, ScrollArea, ToggleButton } from 'storybook/internal/components';
 import { styled } from 'storybook/theming';
 
 import {
   ChevronSmallDownIcon,
   CollapseIcon,
   ExpandAltIcon,
+  StatusNewIcon,
   WandIcon,
   SearchIcon,
   StorybookIcon,
@@ -216,6 +217,7 @@ export const SummaryScreen: FC<SummaryScreenProps> = ({
   const [search, setSearch] = useState('');
   const [expandedCollections, setExpandedCollections] = useState<Set<number>>(() => new Set());
   const [showAllCollections, setShowAllCollections] = useState<Set<number>>(() => new Set());
+  const [showNewOnly, setShowNewOnly] = useState(false);
   const [nowMs, setNowMs] = useState(() => Date.now());
 
   const storybookRootHref = useMemo(() => {
@@ -249,6 +251,15 @@ export const SummaryScreen: FC<SummaryScreenProps> = ({
   const storyCount = new Set(state.collections.flatMap((collection) => collection.storyIds)).size;
   const createdAgo = state.createdAt ? formatCreatedAgo(state.createdAt, nowMs) : null;
   const areAllExpanded = state.collections.every((_, index) => expandedCollections.has(index));
+  const newStoryCount = useMemo(
+    () =>
+      new Set(
+        state.collections
+          .flatMap((c) => c.storyIds)
+          .filter((id) => storyInfo[id]?.isNew)
+      ).size,
+    [state, storyInfo]
+  );
 
   const toggleCollection = (index: number) => {
     setExpandedCollections((previous) => {
@@ -270,16 +281,20 @@ export const SummaryScreen: FC<SummaryScreenProps> = ({
   const normalizedQuery = search.trim().toLowerCase();
   // Search narrows to the story level: a collection whose title matches keeps
   // all its stories, otherwise only the matching stories are shown. The
-  // original index is kept so expand state and detail links stay correct.
+  // "new only" filter is applied after search so both can be active together.
+  // The original index is kept so expand state and detail links stay correct.
   const visibleCollections = state.collections
     .map((collection, index) => {
       const titleMatch =
         !normalizedQuery || collection.title.toLowerCase().includes(normalizedQuery);
-      const storyIds = titleMatch
+      let storyIds = titleMatch
         ? collection.storyIds
         : collection.storyIds.filter((storyId) =>
             storyMatchesQuery(storyId, storyInfo, normalizedQuery)
           );
+      if (showNewOnly) {
+        storyIds = storyIds.filter((id) => storyInfo[id]?.isNew);
+      }
       return { collection, index, storyIds };
     })
     .filter((entry) => entry.storyIds.length > 0);
@@ -323,6 +338,20 @@ export const SummaryScreen: FC<SummaryScreenProps> = ({
                 onChange={(event) => setSearch(event.target.value)}
               />
             </SearchField>
+            {newStoryCount > 0 ? (
+              <ToggleButton
+                variant="ghost"
+                size="small"
+                padding="small"
+                ariaLabel={false}
+                tooltip="Toggle filtering of new stories"
+                pressed={showNewOnly}
+                onClick={() => setShowNewOnly((v) => !v)}
+              >
+                <StatusNewIcon />
+                {newStoryCount} new
+              </ToggleButton>
+            ) : null}
             <IconButton
               variant="ghost"
               size="small"

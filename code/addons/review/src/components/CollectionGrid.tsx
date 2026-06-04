@@ -3,8 +3,7 @@ import React, { useCallback, useEffect, useRef, useState, type FC, type ReactNod
 import { Button } from 'storybook/internal/components';
 import { styled } from 'storybook/theming';
 
-import { prettifyComponentId } from '../review-grouping.ts';
-import { storyPreviewUrl } from '../review-navigation.ts';
+import { prettifyComponentId, storyPreviewUrl } from '../review-navigation.ts';
 
 const PREVIEW_SCALE = 0.5;
 

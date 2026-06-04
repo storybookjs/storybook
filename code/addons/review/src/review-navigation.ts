@@ -1,5 +1,13 @@
 import { REVIEW_CHANGES_URL } from './constants.ts';
 
+// Fallback display name when the Storybook index has not resolved a title.
+export const prettifyComponentId = (componentId: string) =>
+  componentId
+    .split(/[-/]/)
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(' ');
+
 // A detail-screen target: a collection (indexed into state.collections) and,
 // optionally, the specific story within it that is being reviewed.
 export interface ReviewDetailLocation {

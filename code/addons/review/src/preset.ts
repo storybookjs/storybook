@@ -59,18 +59,16 @@ async function enrichWithBranch(
   resolveBranch: (cwd: string) => Promise<string | undefined>
 ): Promise<ReviewState> {
   const branchName = await resolveBranch(process.cwd());
-  const enriched: ReviewState = {
-    ...payload,
-    // branchName is server-resolved; overwrite any agent-supplied value so an
-    // unresolvable local branch can't leave a spoofed branch in the payload.
-    branchName,
+  // Drop any agent-supplied branchName: only the server-resolved value is
+  // trusted, so an unresolvable local branch can't leave a spoofed branch in
+  // the payload. The resolved branch is added back only when it exists.
+  const { branchName: _untrusted, ...rest } = payload;
+  return {
+    ...rest,
     // Server-side timestamp is authoritative for "Created x minutes ago".
     createdAt: Date.now(),
+    ...(branchName ? { branchName } : {}),
   };
-  if (enriched.branchName === undefined) {
-    delete enriched.branchName;
-  }
-  return enriched;
 }
 
 export interface ServerChannelOptions {

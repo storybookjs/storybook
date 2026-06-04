@@ -38,12 +38,17 @@ const ProgressBar = styled.div<{ $percent: number }>(({ theme, $percent }) => ({
   background: `linear-gradient(to right, ${theme.color.secondary} ${$percent}%, ${theme.appBorderColor} ${$percent}%)`,
 }));
 
-const SubtitleStrong = styled.span({
+const SubtitleStrong = styled.span(({ theme }) => ({
   fontWeight: 700,
-});
+  color: theme.color.defaultText,
+}));
 
 const SubtitleSeparator = styled.span(({ theme }) => ({
-  color: theme.textMutedColor,
+  color: theme.color.defaultText,
+}));
+
+const SubtitleText = styled.span(({ theme }) => ({
+  color: theme.color.defaultText,
 }));
 
 const Counter = styled(Button)(({ theme }) => ({
@@ -251,7 +256,7 @@ export const DetailsScreen = ({
       <>
         <SubtitleStrong>{componentName(componentTitle)}</SubtitleStrong>
         <SubtitleSeparator>/</SubtitleSeparator>
-        <span>{storyName}</span>
+        <SubtitleText>{storyName}</SubtitleText>
       </>
     ) : null;
 

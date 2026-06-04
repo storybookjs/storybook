@@ -37,8 +37,9 @@ type ChangeDetectionServiceOptions = ConstructorParameters<typeof ChangeDetectio
  * instance (for tests that call `graph.start(adapter)`).
  */
 export function installModuleGraphQueryMock(engine: ModuleGraphEngine) {
-  let status: ModuleGraphStatus = engine.hasGraph() ? { status: 'ready' } : { status: 'booting' };
+  let status: ModuleGraphStatus = engine.hasGraph() ? { value: 'ready' } : { value: 'booting' };
   let graphRevision = 0;
+  let latestChangedStoryFiles: string[] = [];
   const statusSubscribers = new Set<(next: ModuleGraphStatus) => void>();
   const revisionSubscribers = new Set<(next: number) => void>();
   const emitStatus = () => {
@@ -82,22 +83,25 @@ export function installModuleGraphQueryMock(engine: ModuleGraphEngine) {
           return () => revisionSubscribers.delete(callback);
         }),
       }),
-      getAllStoryVersions: Object.assign(() => ({}), {
-        subscribe: vi.fn(() => () => undefined),
-      }),
-      getStoryVersion: () => 0,
+      getLatestStoryChanges: Object.assign(
+        () => ({ revision: graphRevision, storyFiles: latestChangedStoryFiles }),
+        {
+          subscribe: vi.fn(() => () => undefined),
+        }
+      ),
     },
   } as unknown as ReturnType<typeof getService<typeof moduleGraphServiceDef>>);
 
   return {
     applySnapshot: () => {
-      status = { status: 'ready' };
+      status = { value: 'ready' };
       graphRevision += 1;
       emitStatus();
       emitRevision();
     },
     applyUpdate: () => {
       graphRevision += 1;
+      latestChangedStoryFiles = [];
       emitRevision();
     },
     bumpGraphRevision: () => {
@@ -105,12 +109,12 @@ export function installModuleGraphQueryMock(engine: ModuleGraphEngine) {
       emitRevision();
     },
     applyError: (error: Error) => {
-      status = { status: 'error', error: errorToErrorLike(error) };
+      status = { value: 'error', error: errorToErrorLike(error) };
       emitStatus();
     },
     applyUnavailable: (reason: string, error?: Error) => {
       status = {
-        status: 'unavailable',
+        value: 'unavailable',
         reason,
         ...(error ? { error: errorToErrorLike(error) } : {}),
       };

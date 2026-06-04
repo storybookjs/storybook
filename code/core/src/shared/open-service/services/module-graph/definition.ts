@@ -11,22 +11,22 @@ const errorLikeSchema: v.GenericSchema = v.object({
   cause: v.optional(v.lazy(() => errorLikeSchema)),
 });
 
-const moduleGraphStatusSchema = v.variant('status', [
+const moduleGraphStatusSchema = v.variant('value', [
   v.object({
-    status: v.literal('booting'),
+    value: v.literal('booting'),
   }),
   v.object({
-    status: v.literal('ready'),
+    value: v.literal('ready'),
   }),
   v.object({
-    status: v.literal('error'),
+    value: v.literal('error'),
     error: v.pipe(
       errorLikeSchema,
       v.description('Serializable error describing why the module graph failed unexpectedly.')
     ),
   }),
   v.object({
-    status: v.literal('unavailable'),
+    value: v.literal('unavailable'),
     reason: v.pipe(
       v.string(),
       v.description(
@@ -71,10 +71,10 @@ export const moduleGraphServiceDef = defineService({
   description:
     'Story module dependency graph: reverse index from source files to story files, with reactive updates.',
   initialState: {
-    status: { status: 'booting' },
+    status: { value: 'booting' },
     graphRevision: 0,
     storiesByFile: {},
-    storyVersions: {},
+    latestChangedStoryFiles: [],
   } as ModuleGraphServiceState,
   queries: {
     getStoriesForFiles: {
@@ -133,35 +133,26 @@ export const moduleGraphServiceDef = defineService({
       output: v.number(),
       handler: (_input, ctx) => ctx.self.state.graphRevision,
     },
-    getStoryVersion: {
+    getLatestStoryChanges: {
       description:
-        'Per-story-file version; increments when that story or any module in its graph changes.',
-      input: v.object({
-        storyFile: v.pipe(
-          v.string(),
+        'Latest story files whose module graph changed, paired with the graph revision that produced the change set.',
+      input: noInputSchema,
+      output: v.object({
+        revision: v.pipe(
+          v.number(),
+          v.description('Graph revision number for this latest story change set.')
+        ),
+        storyFiles: v.pipe(
+          v.array(storyIndexPathSchema),
           v.description(
-            'Story file path. Accepts absolute paths, story-index-style relative paths with `./`, or relative paths without `./`.'
+            'Story-index-relative story files touched by the latest module graph change set.'
           )
         ),
       }),
-      output: v.number(),
-      handler: (input, ctx) =>
-        ctx.self.state.storyVersions[toStoryIndexPath(input.storyFile, process.cwd())] ?? 0,
-    },
-    getAllStoryVersions: {
-      description:
-        'Full map of story-index-relative story file paths (`./src/Button.stories.tsx`) to versions, for bulk change subscriptions.',
-      input: noInputSchema,
-      output: v.record(
-        storyIndexPathSchema,
-        v.pipe(
-          v.number(),
-          v.description(
-            'Monotonic per-story version. It increments when that story file or any module in its graph changes.'
-          )
-        )
-      ),
-      handler: (_input, ctx) => ctx.self.state.storyVersions,
+      handler: (_input, ctx) => ({
+        revision: ctx.self.state.graphRevision,
+        storyFiles: ctx.self.state.latestChangedStoryFiles,
+      }),
     },
   },
   commands: {
@@ -179,7 +170,7 @@ export const moduleGraphServiceDef = defineService({
       output: v.void(),
       handler: async (input, ctx) => {
         ctx.self.setState((state) => {
-          state.status = { status: 'ready' };
+          state.status = { value: 'ready' };
           state.storiesByFile = input.storiesByFile;
           state.graphRevision += 1;
         });
@@ -207,9 +198,7 @@ export const moduleGraphServiceDef = defineService({
         ctx.self.setState((state) => {
           state.storiesByFile = input.storiesByFile;
           state.graphRevision += 1;
-          for (const storyFile of input.bumpedStoryFiles) {
-            state.storyVersions[storyFile] = (state.storyVersions[storyFile] ?? 0) + 1;
-          }
+          state.latestChangedStoryFiles = input.bumpedStoryFiles;
         });
       },
     },

@@ -83,28 +83,14 @@ export function registerDocgenService(options: RegisterDocgenServiceOptions) {
     },
   });
 
-  // Proactively keep already-extracted docgen fresh. The module graph bumps a story file's version
-  // whenever that story or any module in its dependency graph changes; we react to those bumps and
-  // re-extract docgen for the affected components — even when nobody is actively subscribed to them
-  // right now. Without this, an open docgen consumer would keep serving stale output until it
-  // happened to re-query.
+  // Proactively keep already-extracted docgen fresh. The module graph publishes the story files
+  // touched by the latest graph change; we react to that list and re-extract docgen for the affected
+  // components — even when nobody is actively subscribed to them right now. Without this, an open
+  // docgen consumer would keep serving stale output until it happened to re-query.
   const moduleGraph = getService<typeof moduleGraphServiceDef>('core/module-graph');
 
-  // Snapshot of the versions we last reacted to, so each tick we can diff and act only on the story
-  // files whose version actually increased.
-  let previousStoryVersions: Record<string, number> = {};
-
-  moduleGraph.queries.getAllStoryVersions.subscribe(undefined, async (versions) => {
-    // Find story files whose version increased since the previous tick.
-    const bumpedStoryFiles: string[] = [];
-    for (const [storyFile, version] of Object.entries(versions)) {
-      if ((previousStoryVersions[storyFile] ?? 0) < version) {
-        bumpedStoryFiles.push(storyFile);
-      }
-    }
-    previousStoryVersions = { ...versions };
-
-    if (bumpedStoryFiles.length === 0) {
+  moduleGraph.queries.getLatestStoryChanges.subscribe(undefined, async ({ storyFiles }) => {
+    if (storyFiles.length === 0) {
       return;
     }
 
@@ -116,7 +102,7 @@ export function registerDocgenService(options: RegisterDocgenServiceOptions) {
     const index = await options.getIndex();
     const indexEntries = Object.values(index.entries);
     const bumpedComponentIds = new Set<string>();
-    for (const storyFile of bumpedStoryFiles) {
+    for (const storyFile of storyFiles) {
       const entry = indexEntries.find((candidate) => {
         return (
           candidate.type === 'story' &&

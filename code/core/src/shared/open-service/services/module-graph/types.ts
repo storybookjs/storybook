@@ -15,16 +15,16 @@ export type ErrorLike = {
 };
 
 export type ModuleGraphStatus =
-  | { status: 'booting' }
-  | { status: 'ready' }
-  | { status: 'error'; error: ErrorLike }
-  | { status: 'unavailable'; reason: string; error?: ErrorLike };
+  | { value: 'booting' }
+  | { value: 'ready' }
+  | { value: 'error'; error: ErrorLike }
+  | { value: 'unavailable'; reason: string; error?: ErrorLike };
 
 export type ModuleGraphServiceState = {
   status: ModuleGraphStatus;
   graphRevision: number;
   storiesByFile: StoriesByFileRecord;
-  storyVersions: Record<string, number>;
+  latestChangedStoryFiles: string[];
 };
 
 export function errorToErrorLike(error: unknown): ErrorLike {

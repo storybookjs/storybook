@@ -36,10 +36,6 @@ function registerBareModuleGraph(workingDir = '/repo') {
           });
         },
       },
-      getStoryVersion: {
-        handler: (input, ctx) =>
-          ctx.self.state.storyVersions[toStoryIndexPath(input.storyFile, workingDir)] ?? 0,
-      },
     },
   });
 }
@@ -49,13 +45,13 @@ describe('module-graph open service', () => {
     it('starts not-ready with empty indexes and zeroed counters', () => {
       const runtime = registerBareModuleGraph();
 
-      expect(runtime.queries.getStatus(undefined)).toEqual({ status: 'booting' });
+      expect(runtime.queries.getStatus(undefined)).toEqual({ value: 'booting' });
       expect(runtime.queries.getGraphRevision(undefined)).toBe(0);
-      expect(runtime.queries.getAllStoryVersions(undefined)).toEqual({});
+      expect(runtime.queries.getLatestStoryChanges(undefined)).toEqual({
+        revision: 0,
+        storyFiles: [],
+      });
       expect(runtime.queries.getStoriesForFiles({ files: ['/repo/src/Button.tsx'] })).toEqual([[]]);
-      expect(runtime.queries.getStoryVersion({ storyFile: '/repo/src/Button.stories.tsx' })).toBe(
-        0
-      );
     });
   });
 
@@ -69,8 +65,12 @@ describe('module-graph open service', () => {
         },
       });
 
-      expect(runtime.queries.getStatus(undefined)).toEqual({ status: 'ready' });
+      expect(runtime.queries.getStatus(undefined)).toEqual({ value: 'ready' });
       expect(runtime.queries.getGraphRevision(undefined)).toBe(1);
+      expect(runtime.queries.getLatestStoryChanges(undefined)).toEqual({
+        revision: 1,
+        storyFiles: [],
+      });
       expect(runtime.queries.getStoriesForFiles({ files: ['/repo/src/Button.tsx'] })).toEqual([
         [{ storyFile: './src/Button.stories.tsx', depth: 1 }],
       ]);
@@ -99,12 +99,12 @@ describe('module-graph open service', () => {
       const runtime = registerBareModuleGraph();
 
       await runtime.commands.setStatus({
-        status: 'error',
+        value: 'error',
         error: { message: 'graph build blew up', name: 'ModuleGraphFailureError' },
       });
 
       expect(runtime.queries.getStatus(undefined)).toEqual({
-        status: 'error',
+        value: 'error',
         error: { message: 'graph build blew up', name: 'ModuleGraphFailureError' },
       });
     });
@@ -113,13 +113,13 @@ describe('module-graph open service', () => {
       const runtime = registerBareModuleGraph();
 
       await runtime.commands.setStatus({
-        status: 'unavailable',
+        value: 'unavailable',
         reason: 'builder does not support change detection',
         error: { message: 'adapter missing' },
       });
 
       expect(runtime.queries.getStatus(undefined)).toEqual({
-        status: 'unavailable',
+        value: 'unavailable',
         reason: 'builder does not support change detection',
         error: { message: 'adapter missing' },
       });
@@ -194,7 +194,7 @@ describe('module-graph open service', () => {
   });
 
   describe('applyGraphUpdate command', () => {
-    it('replaces the reverse index, bumps the revision, and increments affected story versions', async () => {
+    it('replaces the reverse index, bumps the revision, and records latest changed stories', async () => {
       const runtime = registerBareModuleGraph();
       await runtime.commands.applyGraphSnapshot({
         storiesByFile: { './src/Button.tsx': { './src/Button.stories.tsx': 1 } },
@@ -209,15 +209,16 @@ describe('module-graph open service', () => {
       });
 
       expect(runtime.queries.getGraphRevision(undefined)).toBe(2);
-      expect(runtime.queries.getStoryVersion({ storyFile: '/repo/src/Button.stories.tsx' })).toBe(
-        1
-      );
+      expect(runtime.queries.getLatestStoryChanges(undefined)).toEqual({
+        revision: 2,
+        storyFiles: ['./src/Button.stories.tsx'],
+      });
       expect(runtime.queries.getStoriesForFiles({ files: ['/repo/src/Icon.tsx'] })).toEqual([
         [{ storyFile: './src/Button.stories.tsx', depth: 2 }],
       ]);
     });
 
-    it('accumulates story versions across multiple updates', async () => {
+    it('replaces latest story changes with the newest revision payload', async () => {
       const runtime = registerBareModuleGraph();
 
       await runtime.commands.applyGraphUpdate({
@@ -229,9 +230,9 @@ describe('module-graph open service', () => {
         bumpedStoryFiles: ['./a.stories.tsx'],
       });
 
-      expect(runtime.queries.getAllStoryVersions(undefined)).toEqual({
-        './a.stories.tsx': 2,
-        './b.stories.tsx': 1,
+      expect(runtime.queries.getLatestStoryChanges(undefined)).toEqual({
+        revision: 2,
+        storyFiles: ['./a.stories.tsx'],
       });
       expect(runtime.queries.getGraphRevision(undefined)).toBe(2);
     });
@@ -242,24 +243,10 @@ describe('module-graph open service', () => {
       await runtime.commands.applyGraphUpdate({ storiesByFile: {}, bumpedStoryFiles: [] });
 
       expect(runtime.queries.getGraphRevision(undefined)).toBe(1);
-      expect(runtime.queries.getAllStoryVersions(undefined)).toEqual({});
-    });
-  });
-
-  describe('getStoryVersion query', () => {
-    it('returns 0 for an unknown story file and normalizes its input', async () => {
-      const runtime = registerBareModuleGraph();
-      await runtime.commands.applyGraphUpdate({
-        storiesByFile: {},
-        bumpedStoryFiles: ['./src/Button.stories.tsx'],
+      expect(runtime.queries.getLatestStoryChanges(undefined)).toEqual({
+        revision: 1,
+        storyFiles: [],
       });
-
-      expect(runtime.queries.getStoryVersion({ storyFile: '/repo/src/Unknown.stories.tsx' })).toBe(
-        0
-      );
-      expect(
-        runtime.queries.getStoryVersion({ storyFile: '/repo/src/../src/Button.stories.tsx' })
-      ).toBe(1);
     });
   });
 
@@ -290,7 +277,7 @@ describe('module-graph open service', () => {
       });
 
       expect(channel.on).toHaveBeenCalledWith(STORY_INDEX_INVALIDATED, expect.any(Function));
-      expect(runtime.queries.getStatus(undefined)).toEqual({ status: 'booting' });
+      expect(runtime.queries.getStatus(undefined)).toEqual({ value: 'booting' });
     });
 
     // Must run last: it resolves the process-global adapter promise, which cannot be un-resolved.
@@ -309,12 +296,12 @@ describe('module-graph open service', () => {
         workingDir: '/repo',
       });
 
-      expect(runtime.queries.getStatus(undefined)).toEqual({ status: 'booting' });
+      expect(runtime.queries.getStatus(undefined)).toEqual({ value: 'booting' });
 
       resolveChangeDetectionAdapter(adapter);
 
       await vi.waitFor(() => {
-        expect(runtime.queries.getStatus(undefined)).toEqual({ status: 'ready' });
+        expect(runtime.queries.getStatus(undefined)).toEqual({ value: 'ready' });
       });
 
       expect(runtime.queries.getStoriesForFiles({ files: ['/repo/src/Button.tsx'] })).toEqual([

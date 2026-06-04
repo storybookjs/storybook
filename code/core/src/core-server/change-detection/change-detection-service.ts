@@ -199,17 +199,17 @@ export class ChangeDetectionService {
       return;
     }
 
-    if (status.status === 'ready') {
+    if (status.value === 'ready') {
       this.onGraphReady();
       return;
     }
 
-    if (status.status === 'error') {
+    if (status.value === 'error') {
       this.onGraphError(errorLikeToError(status.error));
       return;
     }
 
-    if (status.status === 'unavailable') {
+    if (status.value === 'unavailable') {
       this.onGraphUnavailable(
         status.reason,
         status.error ? errorLikeToError(status.error) : undefined
@@ -322,7 +322,7 @@ export class ChangeDetectionService {
     const moduleGraph = this.getModuleGraph();
     const status = await moduleGraph.queries.getStatus.loaded(undefined);
 
-    if (this.disposed || status.status !== 'ready') {
+    if (this.disposed || status.value !== 'ready') {
       return;
     }
 

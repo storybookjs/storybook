@@ -72,10 +72,6 @@ export function registerModuleGraphService(options: RegisterModuleGraphServiceOp
           await engine?.whenSettled();
         },
       },
-      getStoryVersion: {
-        handler: (input, ctx) =>
-          ctx.self.state.storyVersions[toStoryIndexPath(input.storyFile, workingDir)] ?? 0,
-      },
     },
   });
 
@@ -93,11 +89,11 @@ export function registerModuleGraphService(options: RegisterModuleGraphServiceOp
       void runtime.commands.bumpGraphRevision(undefined);
     },
     onError: (error) => {
-      void runtime.commands.setStatus({ status: 'error', error: errorToErrorLike(error) });
+      void runtime.commands.setStatus({ value: 'error', error: errorToErrorLike(error) });
     },
     onUnavailable: (reason, error) => {
       void runtime.commands.setStatus({
-        status: 'unavailable',
+        value: 'unavailable',
         reason,
         ...(error ? { error: errorToErrorLike(error) } : {}),
       });
@@ -111,7 +107,7 @@ export function registerModuleGraphService(options: RegisterModuleGraphServiceOp
   void changeDetectionAdapterPromise.then((adapter) => {
     if (!adapter) {
       void runtime.commands.setStatus({
-        status: 'unavailable',
+        value: 'unavailable',
         reason: 'builder does not support change detection',
       });
       return;

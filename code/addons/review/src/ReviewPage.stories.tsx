@@ -1,4 +1,4 @@
-import { expect, fn, userEvent, waitFor, within } from 'storybook/test';
+import { expect, fn, waitFor, within } from 'storybook/test';
 
 import {
   ManagerContext,
@@ -70,6 +70,9 @@ const reviewState: ReviewState = {
   title: 'Manager settings polish',
   description: 'Updated settings views and spacing.',
   branchName: 'feat/review-page',
+  // A baseline exists, so the detail screen renders the baseline/latest
+  // comparison for stories that aren't newly added.
+  hasBaseline: true,
   // Drives the baseline-index fetch (keyed on createdAt) for "New" detection.
   // Anchored to "now" so the "Created … ago" label stays small and stable
   // instead of computing minutes against a fixed past timestamp.
@@ -169,25 +172,13 @@ export const Collections = meta.story({
     applyReviewState();
 
     await expect(await canvas.findByText('Manager settings polish')).toBeInTheDocument();
-    await expect(await canvas.findByRole('tab', { name: 'Collections' })).toBeInTheDocument();
-  },
-});
-
-export const Components = meta.story({
-  play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement);
-    await expect(emitMock).toHaveBeenCalledWith(EVENTS.REQUEST_REVIEW);
-
-    applyReviewState();
-
-    const componentsTab = await canvas.findByRole('tab', { name: 'Components' });
-    await userEvent.click(componentsTab);
+    await expect(await canvas.findByText('Settings')).toBeInTheDocument();
   },
 });
 
 export const Details = meta.story({
   parameters: {
-    routerInitialEntries: ['/?path=/review/collections/0/manager-settings-guidepage--default'],
+    routerInitialEntries: ['/?path=/review/0/manager-settings-guidepage--default'],
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
@@ -196,6 +187,7 @@ export const Details = meta.story({
     applyReviewState();
 
     await expect(await canvas.findByRole('button', { name: '2/3' })).toBeInTheDocument();
+    await expect(await canvas.findByRole('heading', { name: 'Settings' })).toBeInTheDocument();
     await expect(
       await canvas.findByTitle('Latest manager-settings-guidepage--default')
     ).toBeInTheDocument();
@@ -206,7 +198,7 @@ export const Details = meta.story({
 
 export const DetailsFocusesTitle = meta.story({
   parameters: {
-    routerInitialEntries: ['/?path=/review/collections/0/manager-settings-guidepage--default'],
+    routerInitialEntries: ['/?path=/review/0/manager-settings-guidepage--default'],
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
@@ -215,9 +207,9 @@ export const DetailsFocusesTitle = meta.story({
     applyReviewState();
 
     // Opening a detail moves focus to its heading so users are oriented by what
-    // they opened. The summary's h1 is inert/aria-hidden, so the detail h2 is
-    // the only heading the accessibility tree exposes.
-    const heading = await canvas.findByRole('heading', { level: 2 });
+    // they opened. The summary's heading is inert/aria-hidden, so the detail
+    // heading is the only one the accessibility tree exposes.
+    const heading = await canvas.findByRole('heading', { name: 'Settings' });
     await waitFor(() => expect(heading).toHaveFocus());
 
     // The summary stays mounted behind the detail screen…
@@ -232,7 +224,7 @@ export const DetailsFocusesTitle = meta.story({
 
 export const DetailsNewStory = meta.story({
   parameters: {
-    routerInitialEntries: ['/?path=/review/collections/0/manager-settings-checklist--default'],
+    routerInitialEntries: ['/?path=/review/0/manager-settings-checklist--default'],
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
@@ -250,7 +242,7 @@ export const DetailsNewStory = meta.story({
 
 export const DetailsChangeDetectedNew = meta.story({
   parameters: {
-    routerInitialEntries: ['/?path=/review/collections/0/manager-settings-guidepage--default'],
+    routerInitialEntries: ['/?path=/review/0/manager-settings-guidepage--default'],
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);

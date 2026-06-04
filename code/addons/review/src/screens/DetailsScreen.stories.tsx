@@ -41,20 +41,18 @@ const meta = preview.meta({
     }
   },
   args: {
-    title: 'Guide Page',
-    componentTitle: 'Manager/Settings/GuidePage',
-    storyName: 'Default',
-    storyId: 'manager-settings-guidepage--default',
+    title: 'Toolbar & direct consumers',
+    componentTitle: 'Manager/Components/Toolbar',
+    storyName: 'Basic',
+    storyId: 'components-toolbar--basic',
     storyIndex: 1,
     totalStories: 3,
     backHref: buildReviewChangesSummaryHref(),
     previousHref: buildReviewChangesDetailHref({
-      kind: 'collection',
       collectionIndex: 0,
       storyId: 'components-toolbar--compact',
     }),
     nextHref: buildReviewChangesDetailHref({
-      kind: 'collection',
       collectionIndex: 0,
       storyId: 'components-toolbar--dense',
     }),
@@ -65,40 +63,53 @@ export const Default = meta.story({
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await expect(await canvas.findByRole('button', { name: '2/3' })).toBeInTheDocument();
-    await expect(await canvas.findByText('GuidePage')).toBeInTheDocument();
-    await expect(await canvas.findByText('Default')).toBeInTheDocument();
     await expect(
-      await canvas.findByTitle('Baseline manager-settings-guidepage--default')
+      await canvas.findByRole('heading', { name: 'Toolbar & direct consumers' })
     ).toBeInTheDocument();
+    await expect(await canvas.findByText('Toolbar')).toBeInTheDocument();
+    await expect(await canvas.findByText('Basic')).toBeInTheDocument();
     await expect(
-      await canvas.findByTitle('Latest manager-settings-guidepage--default')
+      await canvas.findByRole('link', { name: 'View in Storybook' })
     ).toBeInTheDocument();
+    // No baseline by default: only the latest preview, no comparison controls.
+    await expect(await canvas.findByTitle('Latest components-toolbar--basic')).toBeInTheDocument();
+    await expect(canvas.queryByTitle('Baseline components-toolbar--basic')).not.toBeInTheDocument();
+  },
+});
+
+export const WithBaseline = meta.story({
+  args: {
+    hasBaseline: true,
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(await canvas.findByText('Baseline')).toBeInTheDocument();
+    await expect(await canvas.findByText('Latest')).toBeInTheDocument();
+    await expect(
+      await canvas.findByTitle('Baseline components-toolbar--basic')
+    ).toBeInTheDocument();
+    await expect(await canvas.findByTitle('Latest components-toolbar--basic')).toBeInTheDocument();
     await expect(canvas.queryByText('New')).not.toBeInTheDocument();
-    // Baseline existence is known up front, so the comparison bar renders
-    // immediately — without waiting for the baseline iframe's load event.
     await expect(
-      await canvas.findByRole('button', { name: 'Side-by-side preview mode' })
+      await canvas.findByRole('button', { name: 'Side-by-side view' })
     ).toBeInTheDocument();
   },
 });
 
 export const NewStory = meta.story({
   args: {
+    hasBaseline: true,
     isNew: true,
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await expect(await canvas.findByText('New')).toBeInTheDocument();
+    await expect(await canvas.findByTitle('Latest components-toolbar--basic')).toBeInTheDocument();
+    // A new story has no baseline to compare against: no baseline preview and no
+    // side-by-side comparison controls.
+    await expect(canvas.queryByTitle('Baseline components-toolbar--basic')).not.toBeInTheDocument();
     await expect(
-      await canvas.findByTitle('Latest manager-settings-guidepage--default')
-    ).toBeInTheDocument();
-    // A new story has no baseline to compare against: no baseline preview, no
-    // side-by-side toggle, no bottom comparison bar.
-    await expect(
-      canvas.queryByTitle('Baseline manager-settings-guidepage--default')
-    ).not.toBeInTheDocument();
-    await expect(
-      canvas.queryByRole('button', { name: 'Side-by-side preview mode' })
+      canvas.queryByRole('button', { name: 'Side-by-side view' })
     ).not.toBeInTheDocument();
   },
 });
@@ -115,18 +126,16 @@ export const Stale = meta.story({
 
 export const WrapAroundNavigation = meta.story({
   args: {
-    storyId: 'manager-settings-guidepage--default',
+    storyId: 'components-toolbar--basic',
     storyIndex: 0,
     totalStories: 3,
     previousHref: buildReviewChangesDetailHref({
-      kind: 'collection',
       collectionIndex: 0,
       storyId: 'components-toolbar--dense',
     }),
     nextHref: buildReviewChangesDetailHref({
-      kind: 'collection',
       collectionIndex: 0,
-      storyId: 'components-toolbar--basic',
+      storyId: 'components-toolbar--compact',
     }),
   },
   play: async ({ canvasElement }) => {
@@ -134,10 +143,10 @@ export const WrapAroundNavigation = meta.story({
     const previousButton = await canvas.findByRole('link', { name: 'Previous story' });
     const nextButton = await canvas.findByRole('link', { name: 'Next story' });
     await expect(previousButton.getAttribute('href')).toContain(
-      '/review/collections/0/components-toolbar--dense'
+      '/review/0/components-toolbar--dense'
     );
     await expect(nextButton.getAttribute('href')).toContain(
-      '/review/collections/0/components-toolbar--basic'
+      '/review/0/components-toolbar--compact'
     );
   },
 });

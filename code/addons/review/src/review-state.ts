@@ -42,4 +42,11 @@ export interface ReviewState {
    * review so REQUEST_REVIEW replays it to late/refreshed tabs.
    */
   stale?: boolean;
+  /**
+   * Whether a baseline is available to compare against. Enables the
+   * baseline/latest comparison controls on the detail screen. The baseline
+   * source itself is provided on a separate branch; until then this stays
+   * unset and the controls are hidden.
+   */
+  hasBaseline?: boolean;
 }

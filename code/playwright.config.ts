@@ -9,7 +9,6 @@ import { defineConfig, devices } from '@playwright/test';
 
 /** See https://playwright.dev/docs/test-configuration. */
 export default defineConfig({
-  testDir: './e2e-tests',
   /* Maximum time one test can run for. */
   timeout: 30 * 1000,
   expect: {
@@ -64,10 +63,13 @@ export default defineConfig({
       // like fixtures, traces, and retries:
       // https://playwright.dev/docs/test-global-setup-teardown
       name: 'setup',
+      testDir: './e2e-sandbox',
       testMatch: /.*\.setup\.ts/,
     },
     {
       name: 'chromium',
+      testDir: './e2e-sandbox',
+      testIgnore: /.*\.setup\.ts/,
       dependencies: ['setup'],
       use: {
         ...devices['Desktop Chrome'],

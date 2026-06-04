@@ -20,7 +20,7 @@ import {
   OpenServiceMissingChannelError,
   OpenServiceMissingServiceError,
 } from '../../server-errors.ts';
-import { getChannel, onChannelReplaced } from '../../channels/channel-slot.ts';
+import { getChannel } from '../../channels/channel-slot.ts';
 import { generateClientId } from './service-channel.ts';
 import { createServiceRuntime } from './service-runtime.ts';
 import { createSnapshotReconciler } from './service-sync.ts';
@@ -40,42 +40,15 @@ import type {
   ServiceSummary,
 } from './types.ts';
 
-type ServiceSyncWire = {
-  serviceId: string;
-  ownClientId: string;
-  reconciler: ReturnType<typeof createSnapshotReconciler>;
-  getSnapshot: () => Record<string, unknown>;
-  relay: boolean;
-};
-
 type RegistryEntry = {
   definition: AnyServiceDefinition;
   /** The public, channel-wrapped runtime surface returned from `registerService` and `getService`. */
   instance: RuntimeService;
   descriptor: ServiceDescriptor;
   summary: ServiceSummary;
-  /** Parameters needed to re-attach sync listeners when the ambient channel instance changes. */
-  syncWire: ServiceSyncWire;
-  /** Tears down this service's channel listeners. A no-op when no channel was installed. */
+  /** Tears down this service's channel listeners. */
   disconnect: () => void;
 };
-
-function wireServiceToChannel(
-  entry: RegistryEntry,
-  channel: NonNullable<ReturnType<typeof getChannel>>
-): void {
-  entry.disconnect();
-  entry.disconnect = connectRuntimeToChannel({
-    ...entry.syncWire,
-    channel,
-  });
-}
-
-onChannelReplaced((channel) => {
-  for (const entry of getRegistry().values()) {
-    wireServiceToChannel(entry, channel);
-  }
-});
 
 const REGISTRY_SYMBOL = Symbol.for('storybook.open-service.registry');
 
@@ -270,31 +243,25 @@ export function registerService<
 
   const descriptor = describeDefinition(resolvedDefinition as AnyServiceDefinition);
 
-  const syncWire: ServiceSyncWire = {
-    serviceId: definition.id,
-    ownClientId,
-    reconciler,
-    getSnapshot,
-    relay,
-  };
-
-  const entry: RegistryEntry = {
-    definition: resolvedDefinition as AnyServiceDefinition,
-    instance: instance as unknown as RuntimeService,
-    descriptor,
-    summary: summarizeDescriptor(descriptor),
-    syncWire,
-    disconnect: () => {},
-  };
-
   const channel = getChannel();
   if (!channel) {
     throw new OpenServiceMissingChannelError({ serviceId: definition.id });
   }
 
-  wireServiceToChannel(entry, channel);
-
-  registry.set(definition.id, entry);
+  registry.set(definition.id, {
+    definition: resolvedDefinition as AnyServiceDefinition,
+    instance: instance as unknown as RuntimeService,
+    descriptor,
+    summary: summarizeDescriptor(descriptor),
+    disconnect: connectRuntimeToChannel({
+      serviceId: definition.id,
+      channel,
+      ownClientId,
+      reconciler,
+      getSnapshot,
+      relay,
+    }),
+  });
 
   return instance;
 }

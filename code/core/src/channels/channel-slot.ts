@@ -16,16 +16,6 @@ type ChannelSlotGlobal = {
 
 let channel: ChannelLike | undefined;
 
-type ChannelReplacementListener = (channel: ChannelLike) => void;
-
-const channelReplacementListeners = new Set<ChannelReplacementListener>();
-
-/** Re-wire open-service (and other) listeners when the live channel instance changes. */
-export function onChannelReplaced(listener: ChannelReplacementListener): () => void {
-  channelReplacementListeners.add(listener);
-  return () => channelReplacementListeners.delete(listener);
-}
-
 function readGlobalSlot(): ChannelLike | undefined {
   const fromGlobal = (global as ChannelSlotGlobal).__STORYBOOK_ADDONS_CHANNEL__;
   if (fromGlobal) {
@@ -85,15 +75,8 @@ export function requireChannel(): ChannelLike {
 
 /** Installs (or replaces) the shared addons channel. Pass `null` to clear. */
 export function setChannel(next: ChannelLike | null): void {
-  const previous = channel;
   channel = next ?? undefined;
   syncGlobalSlot(channel);
-
-  if (channel && channel !== previous) {
-    for (const listener of channelReplacementListeners) {
-      listener(channel);
-    }
-  }
 }
 
 /** Clears the shared channel slot. Alias for `setChannel(null)`. */
@@ -119,7 +102,7 @@ export function ensureChannel(): void {
 }
 
 // Non-browser realms (Node server, Vitest without a DOM) bootstrap a noop channel at import so
-// presets and tests can register services before the live transport replaces it via setChannel.
+// presets and tests can register services when no websocket transport exists (e.g. static build).
 // Browser preview must not bootstrap here — builders install the real channel before preview config.
 if (typeof window === 'undefined') {
   ensureChannel();

@@ -11,9 +11,9 @@ export interface ToolAvailability {
 	/** The `changeDetection` feature flag is enabled. Gates `get-changed-stories`. */
 	changeDetectionEnabled: boolean;
 	/** `changeDetection` flag + `@storybook/addon-review` are both present. Gates `display-review`. */
-	reviewAvailable: boolean;
+	reviewEnabled: boolean;
 	/** Component-manifest feature is on AND manifests were found. Gates the `docs` toolset. */
-	docsAvailable: boolean;
+	docsEnabled: boolean;
 	/** Any component manifests were found (drives the docs "why disabled" copy). */
 	docsHasManifests: boolean;
 	/** The component-manifest feature flag is enabled (drives the docs "why disabled" copy). */
@@ -67,8 +67,8 @@ export async function getToolAvailability(
 	return {
 		dependencyGraphSupported,
 		changeDetectionEnabled: resolvedFeatures?.changeDetection ?? false,
-		reviewAvailable: reviewStatus.available,
-		docsAvailable: manifestStatus.available,
+		reviewEnabled: reviewStatus.available,
+		docsEnabled: manifestStatus.available,
 		docsHasManifests: manifestStatus.hasManifests,
 		docsFeatureEnabled: manifestStatus.hasFeatureFlag,
 		testSupported: !!addonVitestConstants,

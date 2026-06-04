@@ -42,15 +42,8 @@ const initializeMCPServer = async (options: Options, multiSource?: boolean) => {
 	// Shares one source of truth with the browser landing page (see get-tool-availability.ts)
 	// so the registered tools and the page's enabled/disabled badges can't drift. Reuse the
 	// already-resolved `features` so it doesn't re-apply the preset and risk a different snapshot.
-	const {
-		dependencyGraphSupported,
-		changeDetectionEnabled,
-		reviewAvailable,
-		docsAvailable,
-		testSupported,
-		a11yEnabled: a11yAvailable,
-	} = await getToolAvailability(options, { features });
-	a11yEnabled = a11yAvailable;
+	const availability = await getToolAvailability(options, { features });
+	a11yEnabled = availability.a11yEnabled;
 
 	let server: McpServer<any, AddonContext>;
 
@@ -59,11 +52,11 @@ const initializeMCPServer = async (options: Options, multiSource?: boolean) => {
 		get instructions() {
 			return buildServerInstructions({
 				devEnabled: server?.ctx.custom?.toolsets?.dev ?? true,
-				testEnabled: (server?.ctx.custom?.toolsets?.test ?? true) && testSupported,
-				docsEnabled: (server?.ctx.custom?.toolsets?.docs ?? true) && docsAvailable,
-				changeDetectionEnabled,
-				dependencyGraphAvailable: dependencyGraphSupported,
-				reviewEnabled: reviewAvailable,
+				testEnabled: (server?.ctx.custom?.toolsets?.test ?? true) && availability.testSupported,
+				docsEnabled: (server?.ctx.custom?.toolsets?.docs ?? true) && availability.docsEnabled,
+				changeDetectionEnabled: availability.changeDetectionEnabled,
+				dependencyGraphSupported: availability.dependencyGraphSupported,
+				reviewEnabled: availability.reviewEnabled,
 			});
 		},
 		capabilities: {
@@ -91,16 +84,16 @@ const initializeMCPServer = async (options: Options, multiSource?: boolean) => {
 	await addPreviewStoriesTool(server);
 	await addGetUIBuildingInstructionsTool(server);
 
-	if (changeDetectionEnabled) {
+	if (availability.changeDetectionEnabled) {
 		await addGetChangedStoriesTool(server);
 	}
 
 	// get-stories-by-component only needs the dependency graph, not the status pipeline.
-	if (dependencyGraphSupported) {
+	if (availability.dependencyGraphSupported) {
 		await addGetStoriesByComponentTool(server);
 	}
 
-	if (reviewAvailable) {
+	if (availability.reviewEnabled) {
 		await addDisplayReviewTool(server);
 	}
 
@@ -108,7 +101,7 @@ const initializeMCPServer = async (options: Options, multiSource?: boolean) => {
 	await addRunStoryTestsTool(server, { a11yEnabled });
 
 	// Only register the additional tools if the component manifest feature is enabled
-	if (docsAvailable) {
+	if (availability.docsEnabled) {
 		logger.info('Experimental components manifest feature detected - registering component tools');
 		const contextAwareEnabled = () => server.ctx.custom?.toolsets?.docs ?? true;
 		await addListAllDocumentationTool(server, contextAwareEnabled);

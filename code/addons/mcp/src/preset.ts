@@ -113,8 +113,8 @@ export const experimental_devServer: PresetPropertyFn<
 	const {
 		dependencyGraphSupported,
 		changeDetectionEnabled,
-		reviewAvailable,
-		docsAvailable,
+		reviewEnabled,
+		docsEnabled,
 		docsHasManifests,
 		docsFeatureEnabled,
 		testSupported,
@@ -122,7 +122,7 @@ export const experimental_devServer: PresetPropertyFn<
 	} = await getToolAvailability(options);
 
 	const isDevEnabled = addonOptions.toolsets?.dev ?? true;
-	const isDocsEnabled = docsAvailable && (addonOptions.toolsets?.docs ?? true);
+	const isDocsEnabled = docsEnabled && (addonOptions.toolsets?.docs ?? true);
 	const isTestEnabled = testSupported && (addonOptions.toolsets?.test ?? true);
 
 	app!.get(endpoint, (req, res) => {
@@ -182,7 +182,7 @@ export const experimental_devServer: PresetPropertyFn<
 						`<code>get-stories-by-component</code> requires a dev server with a builder that supports the dependency graph (e.g. Vite).`,
 					!changeDetectionEnabled &&
 						`<code>get-changed-stories</code> requires enabling the <code>changeDetection</code> feature flag.`,
-					!reviewAvailable &&
+					!reviewEnabled &&
 						`<code>display-review</code> requires the <code>changeDetection</code> feature flag and <code>@storybook/addon-review</code>.`,
 				].filter(Boolean);
 		const devNotice = devNoticeLines.length
@@ -198,7 +198,7 @@ export const experimental_devServer: PresetPropertyFn<
 				statusWord(isDevEnabled && dependencyGraphSupported),
 			)
 			.replaceAll('{{CHANGE_DETECTION_STATUS}}', statusWord(isDevEnabled && changeDetectionEnabled))
-			.replaceAll('{{REVIEW_STATUS}}', statusWord(isDevEnabled && reviewAvailable))
+			.replaceAll('{{REVIEW_STATUS}}', statusWord(isDevEnabled && reviewEnabled))
 			.replace('{{DEV_NOTICE}}', devNotice)
 			.replaceAll('{{DOCS_STATUS}}', isDocsEnabled ? 'enabled' : 'disabled')
 			.replace('{{DOCS_NOTICE}}', docsNotice)
@@ -206,7 +206,7 @@ export const experimental_devServer: PresetPropertyFn<
 			.replace('{{TEST_NOTICE}}', testNotice)
 			.replace(
 				'{{MANIFEST_DEBUGGER_LINK}}',
-				docsAvailable
+				docsEnabled
 					? '<p>View the <a href="/manifests/components.html">component manifest debugger</a>.</p>'
 					: '',
 			)

@@ -1,40 +1,23 @@
-import { getComponentIdFromEntry } from 'storybook/internal/common';
-import { Tag } from 'storybook/internal/core-server';
-import { extractDescription } from 'storybook/internal/csf-tools';
-import { logger } from 'storybook/internal/node-logger';
-import type { DocsIndexEntry, IndexEntry } from 'storybook/internal/types';
 import {
-  type ComponentManifest,
-  type ComponentSubcomponentManifest,
-  type PresetPropertyFn,
-  type StorybookConfigRaw,
-} from 'storybook/internal/types';
+  getStoryImportPathFromEntry,
+  selectComponentEntriesByComponentId,
+} from 'storybook/internal/common';
+import { logger } from 'storybook/internal/node-logger';
+import type { IndexEntry } from 'storybook/internal/types';
+import { type PresetPropertyFn, type StorybookConfigRaw } from 'storybook/internal/types';
 
 import path from 'pathe';
 
+import {
+  type DocgenEngine,
+  buildReactComponentDocgenFromResolved,
+  toReactComponentManifest,
+} from './buildReactComponentDocgen.ts';
 import { ComponentMetaManager } from './componentMeta/ComponentMetaManager.ts';
-import type { ComponentDoc } from './componentMeta/componentMetaExtractor.ts';
-import { type ComponentRef, type TypescriptOptions, getImports } from './getComponentImports.ts';
-import { extractJSDocInfo } from './jsdocTags.ts';
-import { type DocObj } from './reactDocgen.ts';
-import { type ComponentDocWithExportName, invalidateParser } from './reactDocgenTypescript.ts';
-import { extractStorySnippets, resolveStoryFileComponents } from './resolveComponents.ts';
-import { cachedFindUp, cachedReadTextFileSync, invalidateCache } from './utils.ts';
-
-interface ReactSubcomponentManifest extends ComponentSubcomponentManifest {
-  reactDocgen?: DocObj;
-  reactDocgenTypescript?: ComponentDocWithExportName;
-  reactComponentMeta?: ComponentDoc;
-}
-
-interface ReactComponentManifest extends ComponentManifest {
-  reactDocgen?: DocObj;
-  reactDocgenTypescript?: ComponentDocWithExportName;
-  reactComponentMeta?: ComponentDoc;
-  subcomponents?: Record<string, ReactSubcomponentManifest>;
-}
-
-type DocgenEngine = 'react-docgen' | 'react-docgen-typescript' | 'react-component-meta';
+import { type ComponentRef, type TypescriptOptions } from './getComponentImports.ts';
+import { invalidateParser } from './reactDocgenTypescript.ts';
+import { resolveStoryFileComponents } from './resolveComponents.ts';
+import { invalidateCache } from './utils.ts';
 
 let componentMetaManager: ComponentMetaManager | undefined;
 
@@ -56,178 +39,6 @@ async function createComponentMetaManager(
       '[reactComponentMeta] TypeScript not available, skipping component meta extraction'
     );
   }
-}
-
-function isAttachedDocsEntry(
-  entry: IndexEntry
-): entry is DocsIndexEntry & { storiesImports: [string, ...string[]] } {
-  return (
-    entry.type === 'docs' &&
-    entry.tags?.includes(Tag.ATTACHED_MDX) === true &&
-    entry.storiesImports.length > 0
-  );
-}
-
-function selectComponentEntries(manifestEntries: IndexEntry[]) {
-  const entriesByComponentId = new Map<string, IndexEntry>();
-
-  manifestEntries
-    .filter(
-      (entry) =>
-        (entry.type === 'story' && entry.subtype === 'story') ||
-        // Attached docs entries are the only docs entries that can contribute to a
-        // component manifest, because they point back to a story file through storiesImports.
-        isAttachedDocsEntry(entry)
-    )
-    .forEach((entry) => {
-      const componentId = getComponentIdFromEntry(entry);
-      const existingEntry = entriesByComponentId.get(componentId);
-
-      if (!existingEntry) {
-        // Keep the first eligible entry as a fallback so docs-only manifest coverage
-        // continues to work when no story entry for that component carries the manifest tag.
-        entriesByComponentId.set(componentId, entry);
-        return;
-      }
-
-      if (existingEntry.type === 'docs' && entry.type === 'story') {
-        // When both entries exist for the same component id, the story entry is authoritative.
-        // Attached docs may list unrelated stories first in storiesImports, so using the story
-        // entry avoids resolving the manifest from the wrong file.
-        entriesByComponentId.set(componentId, entry);
-      }
-    });
-
-  return [...entriesByComponentId.values()];
-}
-
-function getPackageInfo(componentPath: string | undefined, fallbackPath: string) {
-  const nearestPkg = cachedFindUp('package.json', {
-    cwd: path.dirname(componentPath ?? fallbackPath),
-  });
-
-  try {
-    if (!nearestPkg) {
-      return undefined;
-    }
-
-    const parsed = JSON.parse(cachedReadTextFileSync(nearestPkg));
-    return typeof parsed === 'object' &&
-      parsed &&
-      'name' in parsed &&
-      typeof parsed.name === 'string'
-      ? parsed.name
-      : undefined;
-  } catch {
-    return undefined;
-  }
-}
-
-function getFallbackImport(packageName: string | undefined, componentName: string | undefined) {
-  const exportName = componentName?.split('.').at(-1);
-  return packageName && exportName ? `import { ${exportName} } from "${packageName}";` : '';
-}
-
-function getComponentDocgenData(component: ComponentRef | undefined, docgenEngine: DocgenEngine) {
-  let reactDocgen;
-  let reactDocgenTypescript;
-  let reactComponentMeta;
-  let docgenDescription;
-  let docgenJsDocTags;
-  let docgenError;
-
-  if (docgenEngine === 'react-docgen') {
-    const result = component?.reactDocgen;
-    reactDocgen = result?.type === 'success' ? result.data : undefined;
-    docgenDescription = reactDocgen?.description;
-    docgenError = result?.type === 'error' ? result.error : undefined;
-  } else if (docgenEngine === 'react-docgen-typescript') {
-    reactDocgenTypescript = component?.reactDocgenTypescript;
-    docgenDescription = reactDocgenTypescript?.description;
-    docgenError = component?.reactDocgenTypescriptError;
-  } else {
-    reactComponentMeta = component?.reactComponentMeta;
-    docgenDescription = reactComponentMeta?.description;
-    docgenJsDocTags = component?.componentJsDocTags;
-  }
-
-  return {
-    docgenDescription,
-    docgenError,
-    docgenJsDocTags,
-    reactComponentMeta,
-    reactDocgen,
-    reactDocgenTypescript,
-  };
-}
-
-function createSubcomponentManifest({
-  component,
-  declaredName,
-  docgenEngine,
-  packageName,
-  storyFilePath,
-}: {
-  component: ComponentRef | undefined;
-  declaredName: string;
-  docgenEngine: DocgenEngine;
-  packageName: string | undefined;
-  storyFilePath: string;
-}): ReactSubcomponentManifest {
-  const imports =
-    getImports({ components: component ? [component] : [], packageName })
-      .join('\n')
-      .trim() || getFallbackImport(packageName, component?.componentName);
-  const {
-    reactDocgen,
-    reactDocgenTypescript,
-    reactComponentMeta,
-    docgenDescription,
-    docgenJsDocTags,
-    docgenError,
-  } = getComponentDocgenData(component, docgenEngine);
-  const { description, summary, jsDocTags } = extractComponentDescription(
-    undefined,
-    docgenDescription,
-    docgenJsDocTags
-  );
-
-  return {
-    name: declaredName,
-    path: component?.path ?? storyFilePath,
-    description,
-    summary,
-    import: imports || undefined,
-    jsDocTags,
-    reactDocgen,
-    reactDocgenTypescript,
-    reactComponentMeta,
-    error:
-      docgenError ??
-      (!component
-        ? {
-            name: 'No component import found',
-            message: `No component file found for the "${declaredName}" subcomponent.`,
-          }
-        : undefined),
-  };
-}
-
-function extractComponentDescription(
-  metaJsDoc: string | undefined,
-  docgenDescription: string | undefined,
-  docgenJsDocTags?: Record<string, string[]>
-) {
-  const jsdocComment = metaJsDoc || docgenDescription;
-  const extracted = jsdocComment ? extractJSDocInfo(jsdocComment) : undefined;
-  const tags = docgenJsDocTags ?? extracted?.tags ?? {};
-  const description = extracted?.description;
-
-  return {
-    description: ((tags?.describe?.[0] || tags?.desc?.[0]) ?? description)?.trim(),
-    summary: tags.summary?.[0],
-    jsDocTags: tags,
-  };
 }
 
 export const manifests: PresetPropertyFn<
@@ -252,16 +63,17 @@ export const manifests: PresetPropertyFn<
     docgenEngine === 'react-component-meta' ? await createComponentMetaManager(watch) : null;
 
   try {
-    const entriesByUniqueComponent = selectComponentEntries(manifestEntries);
+    const entriesByUniqueComponent = [
+      ...selectComponentEntriesByComponentId(manifestEntries).values(),
+    ];
 
     // Step 1: Resolve components for all entries (one CSF file each).
     const resolvedEntries = await Promise.all(
       entriesByUniqueComponent.map(async (entry) => {
-        const storyFilePath =
-          entry.type === 'story'
-            ? entry.importPath
-            : // For attached docs entries, storiesImports[0] points to the stories file being attached to
-              entry.storiesImports[0];
+        const storyFilePath = getStoryImportPathFromEntry(entry);
+        if (!storyFilePath) {
+          throw new Error(`No story file path for index entry ${entry.id}`);
+        }
         const storyPath = path.join(process.cwd(), storyFilePath);
         const resolved = await resolveStoryFileComponents({
           storyPath,
@@ -305,93 +117,22 @@ export const manifests: PresetPropertyFn<
           componentName,
           allComponents,
           subcomponents,
-        }): ReactComponentManifest | undefined => {
-          const id = getComponentIdFromEntry(entry);
-          const title = entry.title.split('/').at(-1)!.replace(/\s+/g, '');
-
-          const packageName = getPackageInfo(component?.path, storyPath);
-          const fallbackImport = getFallbackImport(packageName, componentName);
-          const imports =
-            getImports({ components: allComponents, packageName }).join('\n').trim() ||
-            fallbackImport;
-
-          const stories = extractStorySnippets(csf, component?.componentName, manifestEntryIds);
-
-          const base = {
-            id,
-            name: componentName ?? title,
-            path: storyFilePath,
-            stories,
-            import: imports,
-            jsDocTags: {},
-          } satisfies Partial<ComponentManifest>;
-
-          const {
-            reactDocgen,
-            reactDocgenTypescript,
-            reactComponentMeta,
-            docgenDescription,
-            docgenJsDocTags,
-            docgenError,
-          } = getComponentDocgenData(component, docgenEngine);
-
-          if (!reactDocgen && !reactDocgenTypescript && !reactComponentMeta) {
-            const error = !csf._meta?.component
-              ? {
-                  name: 'No component found',
-                  message:
-                    'We could not detect the component from your story file. Specify meta.component.',
-                }
-              : {
-                  name: 'No component import found',
-                  message: `No component file found for the "${csf.meta.component}" component.`,
-                };
-
-            return {
-              ...base,
-              error: docgenError ?? {
-                name: error.name,
-                message:
-                  (csf._metaStatementPath?.buildCodeFrameError(error.message).message ??
-                    error.message) + `\n\n${entry.importPath}:\n${storyFile}`,
-              },
-            };
-          }
-
-          const metaJsDoc = extractDescription(csf._metaStatement) || undefined;
-          const { description, summary, jsDocTags } = extractComponentDescription(
-            metaJsDoc,
-            docgenDescription,
-            docgenJsDocTags
-          );
-          const subcomponentEntries = Object.fromEntries(
-            subcomponents.map((subcomponent) => [
-              subcomponent.name,
-              createSubcomponentManifest({
-                component: subcomponent.component,
-                declaredName: subcomponent.name,
-                docgenEngine,
-                packageName,
-                storyFilePath,
-              }),
-            ])
-          );
-
-          return {
-            ...base,
-            description,
-            summary,
-            import: imports,
-            reactDocgen,
-            reactDocgenTypescript,
-            reactComponentMeta,
-            jsDocTags,
-            ...(Object.keys(subcomponentEntries).length > 0
-              ? { subcomponents: subcomponentEntries }
-              : {}),
-            error: docgenError,
-          };
-        }
+        }) =>
+          toReactComponentManifest(
+            buildReactComponentDocgenFromResolved({
+              entry,
+              storyPath,
+              storyFilePath,
+              storyFile,
+              csf,
+              componentName,
+              component,
+              allComponents,
+              subcomponents,
+              docgenEngine,
+              filterStoryIds: manifestEntryIds,
+            })
+          )
       )
       .filter((component) => component !== undefined);
 

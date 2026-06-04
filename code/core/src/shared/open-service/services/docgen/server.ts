@@ -1,4 +1,5 @@
 import { getComponentIdFromEntry } from '../../../../common/utils/component-id.ts';
+import { selectComponentEntryForComponentId } from '../../../../common/utils/select-component-entry.ts';
 import { OpenServiceDocgenMissingComponentError } from '../../../../server-errors.ts';
 import type { StoryIndex } from '../../../../types/modules/indexer.ts';
 import { registerService } from '../../service-registration.ts';
@@ -23,7 +24,7 @@ export type RegisterDocgenServiceOptions = {
  * Registers the docgen open service against the process-global registry.
  *
  * The `extractDocgen` command does the work: it reads the story index, picks an entry for the
- * requested componentId, hands the entry's `importPath` to the provider chain, and stores the
+ * requested componentId, hands the resolved index entry to the provider chain, and stores the
  * returned payload (if any) into state. The `getDocgen` query's load hook simply invokes that
  * command. `static.inputs` enumerates every distinct componentId for the static-build pass.
  */
@@ -48,8 +49,9 @@ export function registerDocgenService(options: RegisterDocgenServiceOptions) {
       extractDocgen: {
         handler: async (input, ctx) => {
           const index = await options.getIndex();
-          const entry = Object.values(index.entries).find(
-            (e) => getComponentIdFromEntry(e) === input.componentId
+          const entry = selectComponentEntryForComponentId(
+            Object.values(index.entries),
+            input.componentId
           );
 
           if (!entry) {
@@ -58,7 +60,7 @@ export function registerDocgenService(options: RegisterDocgenServiceOptions) {
 
           // Provider errors bubble out of the command unchanged; consumers see the underlying
           // failure rather than a generic "missing".
-          const payload = await options.provider({ importPath: entry.importPath });
+          const payload = await options.provider({ entry });
 
           if (!payload) {
             // No provider produced docgen for this file — leave state untouched and signal

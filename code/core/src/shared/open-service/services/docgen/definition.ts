@@ -32,8 +32,10 @@ const docgenStorySchema = v.object({
 
 const docgenSubcomponentSchema = v.object({
   name: v.string(),
+  path: v.string(),
   description: v.optional(v.string()),
   summary: v.optional(v.string()),
+  import: v.optional(v.string()),
   jsDocTags: v.optional(docgenJsDocTagsSchema),
   props: docgenPropsSchema,
   error: v.optional(docgenErrorSchema),
@@ -42,7 +44,9 @@ const docgenSubcomponentSchema = v.object({
 const docgenPayloadSchema = v.object({
   componentId: v.string(),
   name: v.string(),
+  path: v.string(),
   description: v.string(),
+  import: v.optional(v.string()),
   summary: v.optional(v.string()),
   jsDocTags: v.optional(docgenJsDocTagsSchema),
   props: docgenPropsSchema,

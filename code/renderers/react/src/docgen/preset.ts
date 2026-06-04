@@ -1,3 +1,4 @@
+import { getStoryImportPathFromEntry } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
 import type { DocgenProviderPreset } from 'storybook/internal/types';
 
@@ -31,8 +32,8 @@ function getComponentMetaManager(): Promise<ComponentMetaManager | undefined> {
 /**
  * React renderer docgen provider — phase 3: real RCM-backed extraction.
  *
- * Receives a single `importPath` from the docgen service. Bails to `nextDocgen` for non-CSF
- * paths (e.g. `.mdx` attached-docs entries) and when TypeScript isn't available. Otherwise
+ * Receives the authoritative index `entry` from the docgen service. Bails to `nextDocgen` when
+ * the entry does not resolve to a CSF story file and when TypeScript isn't available. Otherwise
  * delegates to {@link buildDocgenPayload} which runs RCM against the file and returns a complete
  * {@link DocgenPayload}, or falls through to `nextDocgen` when nothing extractable is found.
  *
@@ -56,7 +57,8 @@ export const experimental_docgenProvider: DocgenProviderPreset = async (nextDocg
   void getComponentMetaManager();
 
   return async (input) => {
-    if (!/\.stories\.[cm]?[jt]sx?$/.test(input.importPath)) {
+    const storyImportPath = getStoryImportPathFromEntry(input.entry);
+    if (!storyImportPath || !/\.stories\.[cm]?[jt]sx?$/.test(storyImportPath)) {
       return nextDocgen(input);
     }
 

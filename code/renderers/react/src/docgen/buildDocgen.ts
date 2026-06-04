@@ -1,12 +1,18 @@
 import type {
-  DocgenJsDocTags,
   DocgenPayload,
   DocgenProviderInput,
+  DocgenStory,
   DocgenSubcomponent,
 } from 'storybook/internal/types';
 
+import { getStoryImportPathFromEntry } from 'storybook/internal/common';
 import path from 'pathe';
 
+import {
+  type ReactResolvedComponentDocgen,
+  type ReactResolvedSubcomponentDocgen,
+  buildReactComponentDocgenFromResolved,
+} from '../componentManifest/buildReactComponentDocgen.ts';
 import type { ComponentMetaManager } from '../componentManifest/componentMeta/ComponentMetaManager.ts';
 import type { ComponentDoc } from '../componentManifest/componentMeta/componentMetaExtractor.ts';
 import type {
@@ -14,10 +20,7 @@ import type {
   StoryRef,
   TypescriptOptions,
 } from '../componentManifest/getComponentImports.ts';
-import {
-  extractStorySnippets,
-  resolveStoryFileComponents,
-} from '../componentManifest/resolveComponents.ts';
+import { resolveStoryFileComponents } from '../componentManifest/resolveComponents.ts';
 
 /**
  * Prop descriptor emitted by the React docgen provider, mirroring RCM's `PropItem`. The core
@@ -45,15 +48,54 @@ function mapProps(doc: ComponentDoc | undefined): ReactDocgenProp[] {
   }));
 }
 
-function buildSubcomponentEntry(name: string, component: ComponentRef): DocgenSubcomponent {
-  const doc = component.reactComponentMeta;
-  const description = doc?.description?.trim() || undefined;
-  const jsDocTags: DocgenJsDocTags | undefined = component.componentJsDocTags ?? doc?.jsDocTags;
+function mapSubcomponentToDocgen(sub: ReactResolvedSubcomponentDocgen): DocgenSubcomponent {
   return {
-    name,
-    description,
-    jsDocTags,
-    props: mapProps(doc),
+    name: sub.name,
+    path: sub.path,
+    description: sub.description,
+    summary: sub.summary,
+    import: sub.import,
+    jsDocTags: sub.jsDocTags,
+    props: mapProps(sub.reactComponentMeta),
+    error: sub.error,
+  };
+}
+
+function toDocgenPayload(resolved: ReactResolvedComponentDocgen): DocgenPayload {
+  const stories: DocgenStory[] | undefined =
+    resolved.stories.length > 0
+      ? resolved.stories.map((story) => ({
+          id: story.id,
+          name: story.name,
+          snippet: story.snippet,
+          description: story.description,
+          summary: story.summary,
+          error: story.error,
+        }))
+      : undefined;
+
+  const subcomponents =
+    resolved.subcomponents && Object.keys(resolved.subcomponents).length > 0
+      ? Object.fromEntries(
+          Object.entries(resolved.subcomponents).map(([key, sub]) => [
+            key,
+            mapSubcomponentToDocgen(sub),
+          ])
+        )
+      : undefined;
+
+  return {
+    componentId: resolved.componentId,
+    name: resolved.name,
+    path: resolved.path,
+    import: resolved.import,
+    description: resolved.description ?? '',
+    summary: resolved.summary,
+    jsDocTags: resolved.jsDocTags,
+    props: mapProps(resolved.reactComponentMeta),
+    error: resolved.error,
+    ...(subcomponents ? { subcomponents } : {}),
+    ...(stories ? { stories } : {}),
   };
 }
 
@@ -67,28 +109,32 @@ export interface BuildDocgenContext {
 /**
  * Build a {@link DocgenPayload} for the component found in one CSF story file.
  *
- * Resolution (read CSF, scan for component refs, match the primary component + declared
- * subcomponents) is shared with the manifest generator via {@link resolveStoryFileComponents};
- * this function adds the RCM extraction (`batchExtract` for the resolved refs) and maps the result
- * into the docgen-service schema.
+ * Uses {@link resolveStoryFileComponents} and {@link buildReactComponentDocgenFromResolved} for
+ * shared field shaping, runs RCM `batchExtract`, then maps the resolved docgen into the open-service
+ * schema via {@link toDocgenPayload}.
  *
- * Returns `undefined` when the file cannot be read, can't be parsed as CSF, or doesn't resolve to
- * any extractable component — the docgen-service provider chain treats undefined as "no docgen
- * here, fall through to the next provider".
+ * Returns `undefined` when the story file cannot be read or parsed — the docgen-service provider
+ * chain treats undefined as "no docgen here, fall through to the next provider". Resolution errors
+ * surfaced on the resolved docgen are returned as a payload (not undefined).
  */
 export async function buildDocgenPayload(
   input: DocgenProviderInput,
   context: BuildDocgenContext
 ): Promise<DocgenPayload | undefined> {
+  const storyFilePath = getStoryImportPathFromEntry(input.entry);
+  if (!storyFilePath) {
+    return undefined;
+  }
+
   const resolvePath =
     context.resolvePath ?? ((importPath: string) => path.join(process.cwd(), importPath));
-  const storyPath = resolvePath(input.importPath);
+  const storyPath = resolvePath(storyFilePath);
 
   let resolved;
   try {
     resolved = await resolveStoryFileComponents({
       storyPath,
-      title: input.importPath,
+      title: input.entry.title,
       typescriptOptions: context.typescriptOptions,
       docgenEngine: 'react-component-meta',
     });
@@ -96,48 +142,32 @@ export async function buildDocgenPayload(
     return undefined;
   }
 
-  const { csf, componentName: metaComponentName, component, subcomponents } = resolved;
-  if (!component) {
-    return undefined;
-  }
+  const { csf, componentName, component, allComponents, subcomponents, storyFile } = resolved;
 
   const usableSubcomponents = subcomponents.filter(
     (sub): sub is { name: string; component: ComponentRef } => sub.component !== undefined
   );
 
-  // Extract docgen for the primary component and every resolved subcomponent in one batch, so the
-  // TS program and file-snapshot cache are shared across them.
   const storyRefs: StoryRef[] = [
-    { storyPath, component },
+    ...(component ? [{ storyPath, component }] : []),
     ...usableSubcomponents.map((sub) => ({ storyPath, component: sub.component })),
   ];
-  context.componentMetaManager.batchExtract(storyRefs);
+  if (storyRefs.length > 0) {
+    context.componentMetaManager.batchExtract(storyRefs);
+  }
 
-  const doc = component.reactComponentMeta;
-  const componentId = component.componentName ?? metaComponentName ?? input.importPath;
-  const name = component.componentName ?? metaComponentName ?? componentId;
-  const description = (doc?.description ?? '').trim();
-  const jsDocTags: DocgenJsDocTags | undefined = component.componentJsDocTags ?? doc?.jsDocTags;
-  const props = mapProps(doc);
-  const stories = extractStorySnippets(csf, component.componentName);
-  const subcomponentEntries =
-    usableSubcomponents.length > 0
-      ? Object.fromEntries(
-          usableSubcomponents.map((sub) => [
-            sub.name,
-            buildSubcomponentEntry(sub.name, sub.component),
-          ])
-        )
-      : undefined;
+  const componentDocgen = buildReactComponentDocgenFromResolved({
+    entry: input.entry,
+    storyPath,
+    storyFilePath,
+    storyFile,
+    csf,
+    componentName,
+    component,
+    allComponents,
+    subcomponents,
+    docgenEngine: 'react-component-meta',
+  });
 
-  return {
-    componentId,
-    name,
-    description,
-    summary: jsDocTags?.summary?.[0],
-    jsDocTags,
-    props,
-    ...(subcomponentEntries ? { subcomponents: subcomponentEntries } : {}),
-    ...(stories.length > 0 ? { stories } : {}),
-  };
+  return toDocgenPayload(componentDocgen);
 }

@@ -70,11 +70,6 @@ export type {
 } from '../shared/open-service/services/module-graph/engine/parser-registry/types.ts';
 export { ChangeDetectionService } from './change-detection/change-detection-service.ts';
 export {
-  ModuleGraphEngine as StoryDependencyGraphService,
-  type ModuleGraphEngine,
-} from '../shared/open-service/services/module-graph/engine/module-graph-engine.ts';
-export { getDependencyGraphService as experimental_getDependencyGraphService } from '../shared/open-service/services/module-graph/active-service-registry.ts';
-export {
   getTestProviderStoreById as experimental_getTestProviderStore,
   fullTestProviderStore as internal_fullTestProviderStore,
   universalTestProviderStore as internal_universalTestProviderStore,

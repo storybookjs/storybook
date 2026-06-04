@@ -3,7 +3,6 @@ import { STORY_INDEX_INVALIDATED } from 'storybook/internal/core-events';
 import type { Presets } from 'storybook/internal/types';
 
 import { registerService } from '../../service-registration.ts';
-import { setDependencyGraphService } from './active-service-registry.ts';
 import { moduleGraphServiceDef } from './definition.ts';
 import type { ChangeDetectionAdapter } from './engine/adapters/types.ts';
 import { ModuleGraphEngine, type ModuleGraphEngineOptions } from './engine/module-graph-engine.ts';
@@ -67,8 +66,6 @@ export function registerModuleGraphService(options: RegisterModuleGraphServiceOp
       void runtime.commands.applyGraphUpdate({ storiesByFile, bumpedStoryFiles });
     },
   });
-
-  setDependencyGraphService(engine);
 
   options.channel.on(STORY_INDEX_INVALIDATED, () => {
     engine?.onStoryIndexInvalidated();

@@ -1031,7 +1031,7 @@ describe('ChangeDetectionService', () => {
 
   it('rescans the working tree when the story index is invalidated', async () => {
     // Graph-side reconciliation (replaying add/unlink, the refreshInFlight guard) is covered by
-    // StoryDependencyGraphService.test.ts; here we assert the status side of the seam: an index
+    // module-graph-engine.test.ts; here we assert the status side of the seam: an index
     // invalidation re-runs the git-diff scan.
     const reverseIndex = buildReverseIndex([]);
     installDependencyGraphMocks(reverseIndex);

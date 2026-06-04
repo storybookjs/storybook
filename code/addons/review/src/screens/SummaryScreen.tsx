@@ -164,12 +164,13 @@ const NoResults = styled.div(({ theme }) => ({
 }));
 
 // Temporary purple override until a shared "AI" badge variant is decided.
-const AICuratedBadge = styled(Badge)({
-  color: '#723aa6',
-  background: '#f5f0fa',
-  boxShadow: 'inset 0 0 0 1px #e1d2ef',
+// Light: purple-on-lavender. Dark: lighter purple text on a dark tinted base.
+const AICuratedBadge = styled(Badge)(({ theme }) => ({
+  color: theme.base === 'dark' ? '#b07fdc' : '#723aa6',
+  background: theme.base === 'dark' ? 'rgba(114,58,166,0.15)' : '#f5f0fa',
+  boxShadow: `inset 0 0 0 1px ${theme.base === 'dark' ? 'rgba(114,58,166,0.35)' : '#e1d2ef'}`,
   svg: { marginTop: 0 },
-});
+}));
 
 // A story matches the search if its id, component title, or story name
 // contains the query. Search narrows results to this story level, so a
@@ -244,6 +245,17 @@ export const SummaryScreen: FC<SummaryScreenProps> = ({
     setShowAllCollections(new Set());
   }, [state]);
 
+  // Must be computed before the early return — hooks cannot be called conditionally.
+  const newStoryCount = useMemo(
+    () =>
+      new Set(
+        (state?.collections ?? [])
+          .flatMap((c) => c.storyIds)
+          .filter((id) => storyInfo[id]?.isNew)
+      ).size,
+    [state, storyInfo]
+  );
+
   if (!state) {
     return <Empty>Waiting for the agent to push a review…</Empty>;
   }
@@ -251,15 +263,6 @@ export const SummaryScreen: FC<SummaryScreenProps> = ({
   const storyCount = new Set(state.collections.flatMap((collection) => collection.storyIds)).size;
   const createdAgo = state.createdAt ? formatCreatedAgo(state.createdAt, nowMs) : null;
   const areAllExpanded = state.collections.every((_, index) => expandedCollections.has(index));
-  const newStoryCount = useMemo(
-    () =>
-      new Set(
-        state.collections
-          .flatMap((c) => c.storyIds)
-          .filter((id) => storyInfo[id]?.isNew)
-      ).size,
-    [state, storyInfo]
-  );
 
   const toggleCollection = (index: number) => {
     setExpandedCollections((previous) => {
@@ -283,21 +286,26 @@ export const SummaryScreen: FC<SummaryScreenProps> = ({
   // all its stories, otherwise only the matching stories are shown. The
   // "new only" filter is applied after search so both can be active together.
   // The original index is kept so expand state and detail links stay correct.
-  const visibleCollections = state.collections
-    .map((collection, index) => {
-      const titleMatch =
-        !normalizedQuery || collection.title.toLowerCase().includes(normalizedQuery);
-      let storyIds = titleMatch
-        ? collection.storyIds
-        : collection.storyIds.filter((storyId) =>
-            storyMatchesQuery(storyId, storyInfo, normalizedQuery)
-          );
-      if (showNewOnly) {
-        storyIds = storyIds.filter((id) => storyInfo[id]?.isNew);
-      }
-      return { collection, index, storyIds };
-    })
-    .filter((entry) => entry.storyIds.length > 0);
+  // Memoized to avoid recomputing on unrelated re-renders (e.g. nowMs ticks).
+  const visibleCollections = useMemo(
+    () =>
+      state.collections
+        .map((collection, index) => {
+          const titleMatch =
+            !normalizedQuery || collection.title.toLowerCase().includes(normalizedQuery);
+          let storyIds = titleMatch
+            ? collection.storyIds
+            : collection.storyIds.filter((storyId) =>
+                storyMatchesQuery(storyId, storyInfo, normalizedQuery)
+              );
+          if (showNewOnly) {
+            storyIds = storyIds.filter((id) => storyInfo[id]?.isNew);
+          }
+          return { collection, index, storyIds };
+        })
+        .filter((entry) => entry.storyIds.length > 0),
+    [state.collections, normalizedQuery, showNewOnly, storyInfo]
+  );
 
   return (
     <Page>
@@ -306,14 +314,14 @@ export const SummaryScreen: FC<SummaryScreenProps> = ({
         title={state.title}
         subtitle={
           <>
-            <span>
-              {storyCount} {storyCount === 1 ? 'story' : 'stories'} for quick review
-              {createdAgo ? ` • ${createdAgo}` : ''}
-            </span>
             <AICuratedBadge>
               <WandIcon />
               AI-curated
             </AICuratedBadge>
+            <span>
+              {storyCount} {storyCount === 1 ? 'story' : 'stories'} for quick review
+              {createdAgo ? ` • ${createdAgo}` : ''}
+            </span>
           </>
         }
         actions={
@@ -374,7 +382,11 @@ export const SummaryScreen: FC<SummaryScreenProps> = ({
         <ScrollArea vertical>
           <List>
             {visibleCollections.length === 0 ? (
-              <NoResults>No collections match “{search.trim()}”.</NoResults>
+              <NoResults>
+                {showNewOnly && !search.trim()
+                  ? 'No new stories found.'
+                  : `No collections match “${search.trim()}”.`}
+              </NoResults>
             ) : (
               visibleCollections.map(({ collection, index, storyIds }) => {
                 const isExpanded = expandedCollections.has(index);

@@ -67,6 +67,7 @@ const PopoverList = styled.div(({ theme }) => ({
   maxHeight: '60vh',
   overflowY: 'auto',
   fontFamily: theme.typography.fonts.base,
+  // list role applied at usage; defined here as a reminder for future editors
 }));
 
 const PopoverItem = styled.a<{ $active: boolean }>(({ theme, $active }) => ({
@@ -89,7 +90,7 @@ const MiniPreviewWrap = styled.div(({ theme }) => ({
   height: 48,
   flexShrink: 0,
   position: 'relative',
-  borderRadius: 4,
+  borderRadius: 6,
   overflow: 'hidden',
   background: theme.background.app,
   border: `1px solid ${theme.appBorderColor}`,
@@ -200,7 +201,7 @@ const CollectionList: FC<{
   }, []);
 
   return (
-    <PopoverList>
+    <PopoverList role="list" aria-label="Stories in this collection">
       {storyIds.map((id) => {
         const { component, story } = derivePopoverLabel(id, storyInfo?.[id]);
         const href = buildReviewChangesDetailHref({ collectionIndex, storyId: id });
@@ -310,12 +311,16 @@ const BarControls = styled.div({
 type CompareMode = 'split' | 'single';
 type ComparePane = 'baseline' | 'latest';
 
-const DEFAULT_COMPARE_MODE: CompareMode = 'split';
+const DEFAULT_COMPARE_MODE: CompareMode = 'single';
 
 // The persisted preview layout reuses the historical '1up'/'2up' values so the
 // choice carries across sessions; map them to the local split/single model.
-const readCompareMode = (): CompareMode =>
-  sessionStore.read(PREVIEW_MODE_SESSION_KEY) === '1up' ? 'single' : DEFAULT_COMPARE_MODE;
+const readCompareMode = (): CompareMode => {
+  const stored = sessionStore.read(PREVIEW_MODE_SESSION_KEY);
+  if (stored === '1up') return 'single';
+  if (stored === '2up') return 'split';
+  return DEFAULT_COMPARE_MODE;
+};
 
 export interface DetailsScreenProps {
   /** Fallback title shown when story metadata is unavailable. */
@@ -472,11 +477,18 @@ export const DetailsScreen = ({
     )
   ) : undefined;
 
-  const progressPercent = ((storyIndex + 1) / totalStories) * 100;
+  const progressPercent = totalStories > 0 ? ((storyIndex + 1) / totalStories) * 100 : 0;
 
   return (
     <Page>
-      <ProgressBar $percent={progressPercent} />
+      <ProgressBar
+        $percent={progressPercent}
+        role="progressbar"
+        aria-label="Review progress"
+        aria-valuenow={storyIndex + 1}
+        aria-valuemin={1}
+        aria-valuemax={totalStories}
+      />
       {isStale ? <StaleBanner /> : null}
       <ReviewHeader
         autoFocusTitle
@@ -514,12 +526,17 @@ export const DetailsScreen = ({
                   </Popover>
                 )}
               >
-                <Counter variant="ghost" size="small">
+                <Counter
+                  variant="ghost"
+                  size="small"
+                  ariaLabel="Open story list"
+                  aria-haspopup="listbox"
+                >
                   {storyIndex + 1}/{totalStories}
                 </Counter>
               </WithTooltip>
             ) : (
-              <Counter variant="ghost" size="small" readOnly>
+              <Counter variant="ghost" size="small" ariaLabel={false} readOnly>
                 {storyIndex + 1}/{totalStories}
               </Counter>
             )}

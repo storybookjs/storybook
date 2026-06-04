@@ -53,6 +53,13 @@ export default defineConfig({
   /* Configure projects for major browsers */
   projects: [
     {
+      name: 'internal-storybook',
+      testDir: './e2e-internal',
+      use: {
+        ...devices['Desktop Chrome'],
+      },
+    },
+    {
       // Playwright recommends project dependencies over globalSetup when setup needs runner features
       // like fixtures, traces, and retries:
       // https://playwright.dev/docs/test-global-setup-teardown

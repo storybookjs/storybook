@@ -201,7 +201,7 @@ module.exports = {
       },
     },
     {
-      files: ['./e2e-tests/*.ts'],
+      files: ['./e2e-tests/*.ts', './e2e-internal/*.ts'],
       extends: ['plugin:playwright/recommended'],
       rules: {
         'playwright/no-skipped-test': [

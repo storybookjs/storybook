@@ -1,3 +1,4 @@
+import { getStoryImportPathFromEntry } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
 import type { DocgenProviderPreset } from 'storybook/internal/types';
 
@@ -11,11 +12,11 @@ import { buildDocgenPayload } from './buildDocgen.ts';
  * stay hot across multiple per-file extractions. Returns `undefined` if TypeScript is not
  * available in the runtime environment.
  */
-let managerPromise: Promise<ComponentMetaManager | undefined> | undefined;
+let componentMetaManagerPromise: Promise<ComponentMetaManager | undefined> | undefined;
 
-function getManager(): Promise<ComponentMetaManager | undefined> {
-  if (!managerPromise) {
-    managerPromise = (async () => {
+function getComponentMetaManager(): Promise<ComponentMetaManager | undefined> {
+  if (!componentMetaManagerPromise) {
+    componentMetaManagerPromise = (async () => {
       try {
         const ts = await import('typescript');
         return new ComponentMetaManager(ts);
@@ -25,14 +26,14 @@ function getManager(): Promise<ComponentMetaManager | undefined> {
       }
     })();
   }
-  return managerPromise;
+  return componentMetaManagerPromise;
 }
 
 /**
  * React renderer docgen provider — phase 3: real RCM-backed extraction.
  *
- * Receives a single `importPath` from the docgen service. Bails to `nextDocgen` for non-CSF
- * paths (e.g. `.mdx` attached-docs entries) and when TypeScript isn't available. Otherwise
+ * Receives the authoritative index `entry` from the docgen service. Bails to `nextDocgen` when
+ * the entry does not resolve to a CSF story file and when TypeScript isn't available. Otherwise
  * delegates to {@link buildDocgenPayload} which runs RCM against the file and returns a complete
  * {@link DocgenPayload}, or falls through to `nextDocgen` when nothing extractable is found.
  *
@@ -53,20 +54,21 @@ export const experimental_docgenProvider: DocgenProviderPreset = async (nextDocg
   // latency to that request. Kicking it off here (fire-and-forget) lets it warm up in parallel
   // with the rest of server startup, so `await getManager()` below usually resolves instantly.
   // getManager() memoizes and swallows its own errors, so this is safe to leave unawaited.
-  void getManager();
+  void getComponentMetaManager();
 
   return async (input) => {
-    if (!/\.stories\.[cm]?[jt]sx?$/.test(input.importPath)) {
+    const storyImportPath = getStoryImportPathFromEntry(input.entry);
+    if (!storyImportPath || !/\.stories\.[cm]?[jt]sx?$/.test(storyImportPath)) {
       return nextDocgen(input);
     }
 
-    const manager = await getManager();
-    if (!manager) {
+    const componentMetaManager = await getComponentMetaManager();
+    if (!componentMetaManager) {
       return nextDocgen(input);
     }
 
     const ours = await buildDocgenPayload(input, {
-      manager,
+      componentMetaManager,
       typescriptOptions: await typescriptOptionsPromise,
     });
     if (!ours) {

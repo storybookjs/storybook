@@ -1,18 +1,8 @@
 import { normalize } from 'pathe';
 import { vi } from 'vitest';
 
-import type { StoryIndex } from 'storybook/internal/types';
-
 import { getService } from '../../shared/open-service/server.ts';
-import { moduleGraphServiceDef } from '../../shared/open-service/services/module-graph/definition.ts';
-import type {
-  ChangeDetectionAdapter,
-  FileChangeEvent,
-} from '../../shared/open-service/services/module-graph/engine/adapters/types.ts';
-import { DependencyGraphBuilder } from '../../shared/open-service/services/module-graph/engine/dependency-graph/dependency-graph-builder.ts';
-import { IncrementalPatcher } from '../../shared/open-service/services/module-graph/engine/dependency-graph/incremental-patcher.ts';
-import { ChangeDetectionResolverFactory } from '../../shared/open-service/services/module-graph/engine/dependency-graph/resolver-factory.ts';
-import { ReverseIndexImpl } from '../../shared/open-service/services/module-graph/engine/dependency-graph/reverse-index.ts';
+import type { moduleGraphServiceDef } from '../../shared/open-service/services/module-graph/definition.ts';
 import { ModuleGraphEngine } from '../../shared/open-service/services/module-graph/engine/module-graph-engine.ts';
 import type { ModuleGraphStatus } from '../../shared/open-service/services/module-graph/types.ts';
 import {
@@ -135,21 +125,22 @@ export function createWiredChangeDetection(
   graph: ModuleGraphEngine;
   moduleGraphMock: ReturnType<typeof installModuleGraphQueryMock>;
 } {
-  let moduleGraphMock!: ReturnType<typeof installModuleGraphQueryMock>;
+  const moduleGraphMockRef: { current?: ReturnType<typeof installModuleGraphQueryMock> } = {};
   const graph = new ModuleGraphEngine({
     getIndex: async () => {
       const storyIndexGenerator = await options.storyIndexGeneratorPromise;
       return storyIndexGenerator.getIndex();
     },
     workingDir: options.workingDir,
-    onSnapshot: () => moduleGraphMock.applySnapshot(),
-    onUpdate: () => moduleGraphMock.applyUpdate(),
-    onStoryIndexInvalidated: () => moduleGraphMock.bumpGraphRevision(),
-    onError: (error) => moduleGraphMock.applyError(error),
-    onUnavailable: (reason, error) => moduleGraphMock.applyUnavailable(reason, error),
+    onSnapshot: () => moduleGraphMockRef.current?.applySnapshot(),
+    onUpdate: () => moduleGraphMockRef.current?.applyUpdate(),
+    onStoryIndexInvalidated: () => moduleGraphMockRef.current?.bumpGraphRevision(),
+    onError: (error) => moduleGraphMockRef.current?.applyError(error),
+    onUnavailable: (reason, error) => moduleGraphMockRef.current?.applyUnavailable(reason, error),
   });
   const service = new ChangeDetectionService(options);
-  moduleGraphMock = installModuleGraphQueryMock(graph);
+  const moduleGraphMock = installModuleGraphQueryMock(graph);
+  moduleGraphMockRef.current = moduleGraphMock;
   void graphOptions;
   return { service, graph, moduleGraphMock };
 }

@@ -46,7 +46,6 @@ export function resolveChangeDetectionAdapter(
  * everything when the process exits.
  */
 export function registerModuleGraphService(options: RegisterModuleGraphServiceOptions) {
-  let engine: ModuleGraphEngine | undefined;
   const workingDir = options.workingDir ?? process.cwd();
 
   const runtime = registerService(moduleGraphServiceDef, {
@@ -69,13 +68,13 @@ export function registerModuleGraphService(options: RegisterModuleGraphServiceOp
         // The graph builds (and patches) asynchronously, so `loaded()` callers await this barrier to
         // read a settled reverse index rather than a half-built one.
         load: async () => {
-          await engine?.whenSettled();
+          await engine.whenSettled();
         },
       },
     },
   });
 
-  engine = new ModuleGraphEngine({
+  const engine = new ModuleGraphEngine({
     getIndex: options.getIndex,
     workingDir,
     presets: options.presets,
@@ -101,7 +100,7 @@ export function registerModuleGraphService(options: RegisterModuleGraphServiceOp
   });
 
   options.channel.on(STORY_INDEX_INVALIDATED, () => {
-    engine?.onStoryIndexInvalidated();
+    engine.onStoryIndexInvalidated();
   });
 
   void changeDetectionAdapterPromise.then((adapter) => {
@@ -112,7 +111,7 @@ export function registerModuleGraphService(options: RegisterModuleGraphServiceOp
       });
       return;
     }
-    engine?.start(adapter);
+    engine.start(adapter);
   });
 
   return runtime;

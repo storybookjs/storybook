@@ -111,7 +111,7 @@ describe('MCP Endpoint E2E Tests', () => {
 				      },
 				    },
 				    "description": "Use this tool to get one or more Storybook preview URLs.
-				Always include each returned preview URL in your final user-facing response so users can open them directly.",
+				Include each returned preview URL in your final user-facing response so users can open them directly — unless you're also publishing a curated review via display-review, in which case link the review page instead of listing individual URLs.",
 				    "inputSchema": {
 				      "$schema": "http://json-schema.org/draft-07/schema#",
 				      "properties": {
@@ -221,7 +221,7 @@ describe('MCP Endpoint E2E Tests', () => {
 				                    "type": "string",
 				                  },
 				                  "previewUrl": {
-				                    "description": "Direct URL to open the story preview. Always include this URL in the final user-facing response so users can open it directly.",
+				                    "description": "Direct URL to open the story preview. Include this URL in the final user-facing response so users can open it directly — unless a curated review page is being published via display-review, in which case link the review page instead of listing individual URLs.",
 				                    "type": "string",
 				                  },
 				                  "title": {

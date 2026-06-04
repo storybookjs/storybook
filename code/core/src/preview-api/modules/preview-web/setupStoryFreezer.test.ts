@@ -144,7 +144,7 @@ describe('setupStoryFreezer', () => {
       getAnimations = vi.fn(() => [{ finish, pause } as unknown as Animation]);
       const storyDocument = globalRef.document as StoryDocument;
       previousGetAnimations = storyDocument.getAnimations;
-      storyDocument.getAnimations = getAnimations;
+      storyDocument.getAnimations = getAnimations as StoryDocument['getAnimations'];
       previousQueueMicrotask = window.queueMicrotask;
       // Run the scheduled freeze synchronously so the test can assert without timing flakiness.
       Object.defineProperty(window, 'queueMicrotask', {

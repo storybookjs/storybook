@@ -154,4 +154,65 @@ describe('open-service type inference', () => {
       commands: {},
     });
   });
+
+  it('accepts internal operations prefixed with _', () => {
+    defineService({
+      id: 'internal-fixture/valid-internal-naming',
+      initialState: {} as Record<string, never>,
+      queries: {
+        getValue: {
+          input: v.undefined(),
+          output: v.number(),
+          handler: () => 0,
+        },
+        _getInternalValue: {
+          internal: true,
+          input: v.undefined(),
+          output: v.number(),
+          handler: () => 0,
+        },
+      },
+      commands: {
+        _reset: {
+          internal: true,
+          input: v.undefined(),
+          output: v.void(),
+          handler: async () => {},
+        },
+      },
+    });
+  });
+
+  it('rejects internal: true without a _ prefix', () => {
+    defineService({
+      id: 'internal-fixture/invalid-internal-without-prefix',
+      initialState: {} as Record<string, never>,
+      queries: {
+        // @ts-expect-error internal operations must be prefixed with "_"
+        debugQuery: {
+          internal: true,
+          input: v.undefined(),
+          output: v.number(),
+          handler: () => 0,
+        },
+      },
+      commands: {},
+    });
+  });
+
+  it('rejects _ prefix without internal: true', () => {
+    defineService({
+      id: 'internal-fixture/invalid-prefix-without-internal',
+      initialState: {} as Record<string, never>,
+      queries: {
+        // @ts-expect-error operations prefixed with "_" must set internal: true
+        _debugQuery: {
+          input: v.undefined(),
+          output: v.number(),
+          handler: () => 0,
+        },
+      },
+      commands: {},
+    });
+  });
 });

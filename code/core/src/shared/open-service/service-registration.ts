@@ -58,27 +58,31 @@ function describeDefinition(definition: AnyServiceDefinition): ServiceDescriptor
     id: definition.id,
     description: definition.description,
     queries: Object.fromEntries(
-      Object.entries(definition.queries).map(([name, query]) => [
-        name,
-        {
+      Object.entries(definition.queries)
+        .filter(([, query]) => !query.internal)
+        .map(([name, query]) => [
           name,
-          description: query.description,
-          input: query.input,
-          output: query.output,
-          ...(query.staticPath ? { staticPath: true as const } : {}),
-        },
-      ])
+          {
+            name,
+            description: query.description,
+            input: query.input,
+            output: query.output,
+            ...(query.staticPath ? { staticPath: true as const } : {}),
+          },
+        ])
     ),
     commands: Object.fromEntries(
-      Object.entries(definition.commands).map(([name, command]) => [
-        name,
-        {
+      Object.entries(definition.commands)
+        .filter(([, command]) => !command.internal)
+        .map(([name, command]) => [
           name,
-          description: command.description,
-          input: command.input,
-          output: command.output,
-        },
-      ])
+          {
+            name,
+            description: command.description,
+            input: command.input,
+            output: command.output,
+          },
+        ])
     ),
   };
 }
@@ -228,7 +232,9 @@ export function getRegisteredServices(): AnyServiceDefinition[] {
  * operation names.
  */
 export async function listServices(): Promise<ServiceSummary[]> {
-  return Array.from(getRegistry().values(), ({ summary }) => summary);
+  return Array.from(getRegistry().values())
+    .filter(({ definition }) => !definition.internal)
+    .map(({ summary }) => summary);
 }
 
 /**

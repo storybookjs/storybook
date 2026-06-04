@@ -133,6 +133,23 @@ describe('addon-review experimental_serverChannel', () => {
     ]);
   });
 
+  it('drops an agent-supplied stale flag so a fresh push starts non-stale', async () => {
+    const { channel, emitted } = createMockChannel();
+    const resolveBranch = vi.fn().mockResolvedValue('feature/badge-pink');
+    const payloadWithStale: ReviewState = { ...sampleReview, stale: true };
+
+    await experimental_serverChannel(channel, {} as Options, { resolveBranch });
+    await (channel as any).fire(EVENTS.PUSH_REVIEW, payloadWithStale);
+
+    expect(emitted).toEqual([
+      {
+        event: EVENTS.DISPLAY_REVIEW,
+        payload: { ...sampleReview, branchName: 'feature/badge-pink', createdAt: NOW },
+      },
+    ]);
+    expect((emitted[0].payload as ReviewState).stale).toBeUndefined();
+  });
+
   it('on REQUEST_REVIEW with no cached state, emits nothing', async () => {
     const { channel, emitted } = createMockChannel();
 

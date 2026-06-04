@@ -1,4 +1,8 @@
+import { existsSync, statSync } from 'node:fs';
+import { resolve } from 'node:path';
+
 import { createProxyMiddleware } from 'http-proxy-middleware';
+import sirv from 'sirv';
 import type { Channel } from 'storybook/internal/channels';
 import type { Middleware, Options, ServerApp } from 'storybook/internal/types';
 
@@ -59,10 +63,12 @@ async function enrichWithBranch(
   resolveBranch: (cwd: string) => Promise<string | undefined>
 ): Promise<ReviewState> {
   const branchName = await resolveBranch(process.cwd());
-  // Drop any agent-supplied branchName: only the server-resolved value is
-  // trusted, so an unresolvable local branch can't leave a spoofed branch in
-  // the payload. The resolved branch is added back only when it exists.
-  const { branchName: _untrusted, ...rest } = payload;
+  // Drop agent-supplied fields the server owns:
+  // - branchName: only the server-resolved value is trusted, so an unresolvable
+  //   local branch can't leave a spoofed branch in the payload (re-added below).
+  // - stale: staleness is server-authoritative (set by the file-watch handler),
+  //   so a fresh push must never inherit a stale flag from the payload.
+  const { branchName: _untrustedBranch, stale: _untrustedStale, ...rest } = payload;
   return {
     ...rest,
     // Server-side timestamp is authoritative for "Created x minutes ago".
@@ -130,21 +136,38 @@ export const experimental_serverChannel = async (
   return channel;
 };
 
-// Origin of the deployed baseline Storybook the review screens compare against.
-// Overridable via env so it is not pinned to a single build. The default points
-// at a temporary Chromatic build and should be replaced with a real per-project
-// source before this graduates beyond experimental use.
-const BASELINE_TARGET_ORIGIN =
-  process.env.STORYBOOK_REVIEW_BASELINE_ORIGIN ??
-  'https://next--635781f3500dd2c49e189caf.chromatic.com';
+// Explicit origin of a deployed baseline Storybook to compare against. When set,
+// it always wins so the baseline can be pinned to a specific remote build.
+const BASELINE_TARGET_ORIGIN = process.env.STORYBOOK_REVIEW_BASELINE_ORIGIN;
+// Fallback remote baseline used only when no env origin is set and no local
+// build exists. Points at a temporary Chromatic build and should be replaced
+// with a real per-project source before this graduates beyond experimental use.
+const DEFAULT_BASELINE_TARGET_ORIGIN = 'https://next--635781f3500dd2c49e189caf.chromatic.com';
+// Locally-built baseline Storybook, served directly when present so a project
+// can compare against its own `storybook-static` instead of a remote origin.
+const BASELINE_STATIC_DIR = 'storybook-static';
 
 export const experimental_devServer = (app: ServerApp) => {
+  // Resolution order: an explicit env origin proxies remotely; otherwise a
+  // local `storybook-static` build is served directly; otherwise we proxy to
+  // the default remote baseline.
+  if (!BASELINE_TARGET_ORIGIN) {
+    const baselineStaticDir = resolve(process.cwd(), BASELINE_STATIC_DIR);
+    if (existsSync(baselineStaticDir) && statSync(baselineStaticDir).isDirectory()) {
+      app.use(
+        BASELINE_PROXY_PATH,
+        sirv(baselineStaticDir, { dev: true, etag: true, extensions: [] }) as unknown as Middleware
+      );
+      return app;
+    }
+  }
+
   const proxyRequest = createProxyMiddleware({
-    target: BASELINE_TARGET_ORIGIN,
+    target: BASELINE_TARGET_ORIGIN ?? DEFAULT_BASELINE_TARGET_ORIGIN,
     changeOrigin: true,
-    // The baseline origin is a remote Chromatic server that can be slow or
-    // unreachable. Bound the wait and respond deterministically so a dead
-    // connection fails fast instead of hanging the review UI's baseline iframe.
+    // The baseline origin is a remote server that can be slow or unreachable.
+    // Bound the wait and respond deterministically so a dead connection fails
+    // fast instead of hanging the review UI's baseline iframe.
     timeout: 30_000,
     proxyTimeout: 30_000,
     pathRewrite: (path) =>

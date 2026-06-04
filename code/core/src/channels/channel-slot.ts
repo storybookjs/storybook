@@ -69,7 +69,13 @@ export function installNoopChannel(): void {
   setChannel(new Channel({}));
 }
 
-// Node entrypoints that register services before runtime bootstrap (e.g. unit tests).
-if (!getChannel()) {
-  installNoopChannel();
+/** Installs a noop channel when none is present yet. Safe to call from test teardown or setup. */
+export function ensureChannel(): void {
+  if (!getChannel()) {
+    installNoopChannel();
+  }
 }
+
+// Bootstrap a noop channel when this module loads in Node/test runtimes that register services
+// before Storybook runtime wiring (builders, manager, vitest addon setup).
+ensureChannel();

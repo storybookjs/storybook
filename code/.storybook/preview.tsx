@@ -167,8 +167,9 @@ const loaders = [
   async ({ parameters: { relativeCsfPaths, attached = true } }) => {
     const preview = (window as any).__STORYBOOK_PREVIEW__ as PreviewWeb<ReactRenderer> | undefined;
     const channel = (window as any).__STORYBOOK_ADDONS_CHANNEL__ as Channel | undefined;
-    // __STORYBOOK_PREVIEW__ and __STORYBOOK_ADDONS_CHANNEL__ is set in the PreviewWeb constructor
-    // which isn't loaded in portable stories/vitest
+    // __STORYBOOK_PREVIEW__ is set in PreviewWeb; the addons channel is mirrored on
+    // `window.__STORYBOOK_ADDONS_CHANNEL__` when `addons.setChannel` runs (portable stories/vitest
+    // may not have either).
     if (!relativeCsfPaths || !preview || !channel) {
       return {};
     }

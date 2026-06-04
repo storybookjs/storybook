@@ -27,6 +27,7 @@ export {
 
 export {
   clearChannel,
+  ensureChannel,
   getChannel,
   installNoopChannel,
   setChannel,

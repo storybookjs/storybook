@@ -2,7 +2,10 @@ import type { Channel } from 'storybook/internal/channels';
 
 import { global } from '@storybook/global';
 
-import { setChannel as installStorybookChannel } from '../../../channels/channel-slot.ts';
+import {
+  getChannel as readInstalledChannel,
+  setChannel as installStorybookChannel,
+} from '../../../channels/channel-slot.ts';
 import { mockChannel } from './storybook-channel-mock.ts';
 
 export class AddonStore {
@@ -19,8 +22,14 @@ export class AddonStore {
   private resolve: any;
 
   getChannel = (): Channel => {
-    // this.channel should get overwritten by setChannel. If it wasn't called (e.g. in non-browser environment), set a mock instead.
     if (!this.channel) {
+      const installed = readInstalledChannel();
+      if (installed) {
+        this.channel = installed as Channel;
+        this.resolve();
+        return this.channel;
+      }
+
       const channel = mockChannel();
       this.setChannel(channel);
       return channel;
@@ -31,7 +40,7 @@ export class AddonStore {
 
   ready = (): Promise<Channel> => this.promise;
 
-  hasChannel = (): boolean => !!this.channel;
+  hasChannel = (): boolean => !!this.channel || !!readInstalledChannel();
 
   setChannel = (channel: Channel): void => {
     this.channel = channel;

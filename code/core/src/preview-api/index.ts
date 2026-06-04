@@ -92,6 +92,7 @@ export type { SelectionStore, View } from './preview-web.ts';
 export { registerService } from '../shared/open-service/preview.ts';
 export {
   clearChannel,
+  ensureChannel,
   getChannel,
   installNoopChannel,
   setChannel,

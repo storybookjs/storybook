@@ -1,0 +1,8288 @@
+/* Summary */
+
+box-sizing: border-box;
+
+/* Auto layout */
+display: flex;
+flex-direction: column;
+align-items: flex-start;
+padding: 0px;
+
+position: relative;
+width: 812px;
+height: 1378px;
+left: 100px;
+top: 288px;
+
+background: #ffffff;
+border: 1px solid #dde0e3;
+border-radius: 8px;
+
+/* Header */
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+align-items: flex-start;
+padding: 16px 16px 8px;
+gap: 20px;
+
+width: 812px;
+height: 72px;
+
+background: #ffffff;
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+align-self: stretch;
+flex-grow: 0;
+
+/* Build details */
+
+/* Auto layout */
+display: flex;
+flex-direction: column;
+align-items: flex-start;
+padding: 0px;
+gap: 4px;
+
+width: 636px;
+height: 48px;
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 1;
+
+/* Name of the PR */
+
+width: 636px;
+height: 24px;
+
+/* typography/headline/4 */
+font-family: 'Nunito Sans';
+font-style: normal;
+font-weight: 700;
+font-size: 20px;
+line-height: 24px;
+/* identical to box height, or 120% */
+
+color: #2e3338;
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+align-self: stretch;
+flex-grow: 0;
+
+/* Frame 804 */
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+align-items: center;
+padding: 0px;
+gap: 8px;
+
+width: 468px;
+height: 20px;
+
+/* Inside auto layout */
+flex: none;
+order: 1;
+flex-grow: 0;
+
+/* Frame 1277 */
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+align-items: center;
+padding: 0px;
+gap: 4px;
+
+width: 468px;
+height: 20px;
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 0;
+
+/* Frame 805 */
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+align-items: center;
+padding: 0px;
+gap: 8px;
+
+width: 468px;
+height: 20px;
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 0;
+
+/* Details */
+
+width: 468px;
+height: 20px;
+
+/* typography/body/medium */
+font-family: 'Nunito Sans';
+font-style: normal;
+font-weight: 400;
+font-size: 14px;
+line-height: 20px;
+/* identical to box height, or 143% */
+
+color: #5c6570;
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 0;
+
+/* Button
+
+<p>Button, Select, Toggle</p>
+*/
+
+box-sizing: border-box;
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+justify-content: center;
+align-items: center;
+padding: 6px 7px;
+gap: 6px;
+isolation: isolate;
+
+width: 124px;
+min-width: 28px;
+height: 28px;
+min-height: 28px;
+
+background: #f7fafc;
+border: 1px solid #dde0e3;
+border-radius: 4px;
+
+/* Inside auto layout */
+flex: none;
+order: 1;
+flex-grow: 0;
+
+/* Left icon */
+
+width: 14px;
+height: 14px;
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 0;
+z-index: 0;
+
+/* icon path */
+
+position: absolute;
+left: 9.87%;
+right: 9.87%;
+top: 0%;
+bottom: 0%;
+
+background: #2e3338;
+
+/* Label */
+
+width: 90px;
+height: 16px;
+
+/* typography/body/small.emphasized */
+font-family: 'Nunito Sans';
+font-style: normal;
+font-weight: 700;
+font-size: 12px;
+line-height: 16px;
+/* identical to box height, or 133% */
+display: flex;
+align-items: center;
+
+color: #2e3338;
+
+/* Inside auto layout */
+flex: none;
+order: 1;
+flex-grow: 1;
+z-index: 1;
+
+/* Right icon */
+
+display: none;
+width: 14px;
+height: 14px;
+
+/* Inside auto layout */
+flex: none;
+order: 2;
+flex-grow: 0;
+z-index: 2;
+
+/* Attention dot */
+
+position: absolute;
+display: none;
+width: 6px;
+height: 6px;
+right: 3px;
+top: 3px;
+
+background: #0069e0;
+
+/* Inside auto layout */
+flex: none;
+order: 3;
+flex-grow: 0;
+z-index: 3;
+
+/* Toolbar */
+
+box-sizing: border-box;
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+align-items: center;
+padding: 0px;
+
+width: 812px;
+height: 40px;
+min-height: 40px;
+
+background: #ffffff;
+border-bottom: 1px solid #dde0e3;
+
+/* Inside auto layout */
+flex: none;
+order: 1;
+align-self: stretch;
+flex-grow: 0;
+
+/* Primary actions */
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+align-items: center;
+padding: 0px 16px;
+gap: 6px;
+
+width: 406px;
+height: 40px;
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 1;
+
+/* Action group */
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+align-items: center;
+padding: 0px;
+gap: 6px;
+
+display: none;
+width: 198px;
+height: 28px;
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 0;
+
+/* Button
+
+<p>Button, Select, Toggle</p>
+*/
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+justify-content: center;
+align-items: center;
+padding: 6px 7px;
+gap: 6px;
+
+width: 28px;
+min-width: 28px;
+height: 28px;
+min-height: 28px;
+
+border-radius: 4px;
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 0;
+
+/* Button */
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+justify-content: center;
+align-items: center;
+padding: 6px 7px;
+gap: 6px;
+isolation: isolate;
+
+width: 28px;
+min-width: 28px;
+height: 28px;
+min-height: 28px;
+
+border-radius: 4px;
+
+/* Inside auto layout */
+flex: none;
+order: 1;
+flex-grow: 0;
+
+/* icon/commentadd */
+
+width: 14px;
+height: 14px;
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 0;
+z-index: 0;
+
+/* Vector 1357 */
+
+position: absolute;
+width: 0px;
+height: 4px;
+left: 7px;
+top: 5px;
+
+border: 1px solid #5c6570;
+
+/* Vector 1358 */
+
+position: absolute;
+width: 4px;
+height: 0px;
+left: 5px;
+top: 7px;
+
+border: 1px solid #5c6570;
+
+/* Vector 2749 */
+
+position: absolute;
+width: 2px;
+height: 2px;
+left: 5px;
+top: 7px;
+
+border: 1px solid #5c6570;
+transform: matrix(1, 0, 0, -1, 0, 0);
+
+/* Vector 2750 */
+
+position: absolute;
+width: 2px;
+height: 2px;
+left: 7px;
+top: 7px;
+
+border: 1px solid #5c6570;
+transform: rotate(180deg);
+
+/* Vector 2751 */
+
+position: absolute;
+width: 2px;
+height: 2px;
+left: 5px;
+top: 5px;
+
+border: 1px solid #5c6570;
+
+/* Vector 2752 */
+
+position: absolute;
+width: 2px;
+height: 2px;
+left: 7px;
+top: 5px;
+
+border: 1px solid #5c6570;
+transform: matrix(-1, 0, 0, 1, 0, 0);
+
+/* Rectangle 1104 */
+
+box-sizing: border-box;
+
+position: absolute;
+width: 12px;
+height: 10px;
+left: 1px;
+top: 2px;
+
+border: 1px solid #5c6570;
+border-radius: 0.5px;
+
+/* Vector 1359 */
+
+position: absolute;
+width: 0px;
+height: 2px;
+left: 3.5px;
+top: 11.5px;
+
+border: 1px solid #5c6570;
+
+/* Vector 1360 */
+
+position: absolute;
+width: 2px;
+height: 2px;
+left: 3.5px;
+top: 11.5px;
+
+border: 1px solid #5c6570;
+
+/* Vector 1361 */
+
+position: absolute;
+width: 2px;
+height: 2px;
+left: 3.5px;
+top: 11.5px;
+
+background: #5c6570;
+
+/* Label */
+
+display: none;
+width: 31px;
+height: 16px;
+
+/* typography/body/small.emphasized */
+font-family: 'Nunito Sans';
+font-style: normal;
+font-weight: 700;
+font-size: 12px;
+line-height: 16px;
+/* identical to box height, or 133% */
+
+color: #5c6570;
+
+/* Inside auto layout */
+flex: none;
+order: 1;
+flex-grow: 1;
+z-index: 1;
+
+/* Right icon */
+
+display: none;
+width: 14px;
+height: 14px;
+
+/* Inside auto layout */
+flex: none;
+order: 2;
+flex-grow: 0;
+z-index: 2;
+
+/* Attention dot */
+
+position: absolute;
+display: none;
+width: 6px;
+height: 6px;
+right: 3px;
+top: 3px;
+
+background: #0069e0;
+
+/* Inside auto layout */
+flex: none;
+order: 3;
+flex-grow: 0;
+z-index: 3;
+
+/* Button
+
+<p>Button, Select, Toggle</p>
+*/
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+justify-content: center;
+align-items: center;
+padding: 6px 7px;
+gap: 6px;
+
+width: 28px;
+min-width: 28px;
+height: 28px;
+min-height: 28px;
+
+border-radius: 4px;
+
+/* Inside auto layout */
+flex: none;
+order: 2;
+flex-grow: 0;
+
+/* Button
+
+<p>Button, Select, Toggle</p>
+*/
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+justify-content: center;
+align-items: center;
+padding: 6px 7px;
+gap: 6px;
+
+width: 28px;
+min-width: 28px;
+height: 28px;
+min-height: 28px;
+
+border-radius: 4px;
+
+/* Inside auto layout */
+flex: none;
+order: 3;
+flex-grow: 0;
+
+/* Button
+
+<p>Button, Select, Toggle</p>
+*/
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+justify-content: center;
+align-items: center;
+padding: 6px 7px;
+gap: 6px;
+
+width: 28px;
+min-width: 28px;
+height: 28px;
+min-height: 28px;
+
+border-radius: 4px;
+
+/* Inside auto layout */
+flex: none;
+order: 4;
+flex-grow: 0;
+
+/* Button
+
+<p>Button, Select, Toggle</p>
+*/
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+justify-content: center;
+align-items: center;
+padding: 6px 7px;
+gap: 6px;
+
+width: 28px;
+min-width: 28px;
+height: 28px;
+min-height: 28px;
+
+border-radius: 4px;
+
+/* Inside auto layout */
+flex: none;
+order: 5;
+flex-grow: 0;
+
+/* Text Field */
+
+box-sizing: border-box;
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+align-items: center;
+padding: 2px 2px 2px 8px;
+gap: 8px;
+
+width: 240px;
+min-width: 160px;
+height: 32px;
+min-height: 32px;
+
+border: 1px solid #dde0e3;
+border-radius: 6px;
+
+/* Inside auto layout */
+flex: none;
+order: 1;
+flex-grow: 0;
+
+/* Icon */
+
+width: 14px;
+height: 14px;
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 0;
+
+/* icon path */
+
+position: absolute;
+left: 3.57%;
+right: 3.57%;
+top: 3.57%;
+bottom: 3.57%;
+
+background: #5c6570;
+
+/* Label */
+
+width: 208px;
+height: 20px;
+
+/* typography/body/medium */
+font-family: 'Nunito Sans';
+font-style: normal;
+font-weight: 400;
+font-size: 14px;
+line-height: 20px;
+/* identical to box height, or 143% */
+
+color: #5c6570;
+
+/* Inside auto layout */
+flex: none;
+order: 1;
+flex-grow: 1;
+
+/* Secondary actions */
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+justify-content: flex-end;
+align-items: center;
+padding: 0px 10px 0px 0px;
+gap: 16px;
+
+width: 406px;
+height: 28px;
+
+/* Inside auto layout */
+flex: none;
+order: 1;
+flex-grow: 1;
+
+/* Button
+
+<p>Button, Select, Toggle</p>
+*/
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+justify-content: center;
+align-items: center;
+padding: 6px 7px;
+gap: 6px;
+
+display: none;
+width: 28px;
+min-width: 28px;
+height: 28px;
+min-height: 28px;
+
+border-radius: 4px;
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 0;
+
+/* Primary actions */
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+align-items: center;
+padding: 0px;
+gap: 8px;
+
+display: none;
+width: 62px;
+height: 40px;
+
+/* Inside auto layout */
+flex: none;
+order: 1;
+flex-grow: 0;
+
+/* Button
+
+<p>Button, Select, Toggle</p>
+*/
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+justify-content: center;
+align-items: center;
+padding: 6px 7px;
+gap: 6px;
+
+display: none;
+width: 28px;
+min-width: 28px;
+height: 28px;
+min-height: 28px;
+
+border-radius: 4px;
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 0;
+
+/* Separator */
+
+display: none;
+width: 1px;
+height: 24px;
+
+background: #dde0e3;
+
+/* Inside auto layout */
+flex: none;
+order: 1;
+flex-grow: 0;
+
+/* Tabs */
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+align-items: center;
+padding: 0px;
+
+display: none;
+width: 325px;
+height: 40px;
+
+/* Inside auto layout */
+flex: none;
+order: 2;
+flex-grow: 0;
+
+/* Separator */
+
+display: none;
+width: 1px;
+height: 24px;
+
+background: #dde0e3;
+
+/* Inside auto layout */
+flex: none;
+order: 3;
+flex-grow: 0;
+
+/* Action group */
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+align-items: center;
+padding: 0px;
+gap: 6px;
+
+width: 62px;
+height: 28px;
+
+/* Inside auto layout */
+flex: none;
+order: 4;
+flex-grow: 0;
+
+/* Button
+
+<p>Button, Select, Toggle</p>
+*/
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+justify-content: center;
+align-items: center;
+padding: 6px 7px;
+gap: 6px;
+
+width: 28px;
+min-width: 28px;
+height: 28px;
+min-height: 28px;
+
+border-radius: 4px;
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 0;
+
+/* Button
+
+<p>Button, Select, Toggle</p>
+*/
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+justify-content: center;
+align-items: center;
+padding: 6px 7px;
+gap: 6px;
+
+width: 28px;
+min-width: 28px;
+height: 28px;
+min-height: 28px;
+
+border-radius: 4px;
+
+/* Inside auto layout */
+flex: none;
+order: 1;
+flex-grow: 0;
+
+/* Button
+
+<p>Button, Select, Toggle</p>
+*/
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+justify-content: center;
+align-items: center;
+padding: 6px 7px;
+gap: 6px;
+
+width: 28px;
+min-width: 28px;
+height: 28px;
+min-height: 28px;
+
+border-radius: 4px;
+
+/* Inside auto layout */
+flex: none;
+order: 2;
+flex-grow: 0;
+
+/* Left icon */
+
+width: 14px;
+height: 14px;
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 0;
+
+/* icon path */
+
+position: absolute;
+left: 17.86%;
+right: 17.86%;
+top: 0%;
+bottom: 0%;
+
+background: #5c6570;
+
+/* Label */
+
+display: none;
+width: 31px;
+height: 16px;
+
+/* typography/body/small.emphasized */
+font-family: 'Nunito Sans';
+font-style: normal;
+font-weight: 700;
+font-size: 12px;
+line-height: 16px;
+/* identical to box height, or 133% */
+
+color: #5c6570;
+
+/* Inside auto layout */
+flex: none;
+order: 1;
+flex-grow: 0;
+
+/* Right icon */
+
+display: none;
+width: 14px;
+height: 14px;
+
+/* Inside auto layout */
+flex: none;
+order: 2;
+flex-grow: 0;
+
+/* Frame 1342 */
+
+/* Auto layout */
+display: flex;
+flex-direction: column;
+align-items: flex-start;
+padding: 0px;
+
+width: 812px;
+height: 1266px;
+
+background: #f7fafc;
+border-bottom: 1px solid #dde0e3;
+
+/* Inside auto layout */
+flex: none;
+order: 2;
+align-self: stretch;
+flex-grow: 0;
+
+/* Frame 1352 */
+
+/* Auto layout */
+display: flex;
+flex-direction: column;
+align-items: flex-start;
+padding: 12px;
+gap: 10px;
+
+width: 812px;
+height: 1266px;
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+align-self: stretch;
+flex-grow: 0;
+
+/* Frame 1338 */
+
+/* Auto layout */
+display: flex;
+flex-direction: column;
+align-items: flex-start;
+padding: 0px;
+
+width: 788px;
+height: 616px;
+
+background: #ffffff;
+/* Card */
+box-shadow: 0px 1px 3px rgba(0, 0, 0, 0.1);
+border-radius: 8px;
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+align-self: stretch;
+flex-grow: 0;
+
+/* Heading */
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+align-items: center;
+padding: 6px 10px 6px 16px;
+gap: 8px;
+
+width: 788px;
+height: 40px;
+min-height: 40px;
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+align-self: stretch;
+flex-grow: 0;
+
+/* Violation name */
+
+width: 227px;
+height: 20px;
+
+/* typography/body/medium.emphasized */
+font-family: 'Nunito Sans';
+font-style: normal;
+font-weight: 700;
+font-size: 14px;
+line-height: 20px;
+/* identical to box height, or 143% */
+
+color: #2e3338;
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 0;
+
+/* Right */
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+justify-content: flex-end;
+align-items: center;
+padding: 0px;
+gap: 6px;
+
+width: 527px;
+height: 28px;
+
+/* Inside auto layout */
+flex: none;
+order: 1;
+flex-grow: 1;
+
+/* Violation count/Default */
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+align-items: center;
+padding: 0px;
+
+width: 28px;
+min-width: 28px;
+height: 20px;
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 0;
+
+/* Value */
+
+width: 28px;
+height: 20px;
+
+/* typography/code/medium */
+font-family: 'SF Mono';
+font-size: 13px;
+line-height: 20px;
+/* identical to box height, or 154% */
+text-align: center;
+
+color: #5c6570;
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 1;
+
+/* Expand button
+
+<p>Button, Select, Toggle</p>
+*/
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+justify-content: center;
+align-items: center;
+padding: 6px 7px;
+gap: 6px;
+isolation: isolate;
+
+width: 28px;
+min-width: 28px;
+height: 28px;
+min-height: 28px;
+
+border-radius: 4px;
+
+/* Inside auto layout */
+flex: none;
+order: 1;
+flex-grow: 0;
+
+/* Left icon */
+
+width: 14px;
+height: 14px;
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 0;
+z-index: 0;
+
+/* icon path */
+
+position: absolute;
+left: 21.43%;
+right: 21.43%;
+top: 33.93%;
+bottom: 33.93%;
+
+background: #5c6570;
+transform: matrix(1, 0, 0, -1, 0, 0);
+
+/* Label */
+
+display: none;
+width: 31px;
+height: 16px;
+
+/* typography/body/small.emphasized */
+font-family: 'Nunito Sans';
+font-style: normal;
+font-weight: 700;
+font-size: 12px;
+line-height: 16px;
+/* identical to box height, or 133% */
+
+color: #5c6570;
+
+/* Inside auto layout */
+flex: none;
+order: 1;
+flex-grow: 1;
+z-index: 1;
+
+/* Right icon */
+
+display: none;
+width: 14px;
+height: 14px;
+
+/* Inside auto layout */
+flex: none;
+order: 2;
+flex-grow: 0;
+z-index: 2;
+
+/* Attention dot */
+
+position: absolute;
+display: none;
+width: 6px;
+height: 6px;
+right: 3px;
+top: 3px;
+
+background: #0069e0;
+
+/* Inside auto layout */
+flex: none;
+order: 3;
+flex-grow: 0;
+z-index: 3;
+
+/* Frame 1354 */
+
+/* Auto layout */
+display: flex;
+flex-direction: column;
+align-items: flex-start;
+padding: 0px 12px;
+gap: 16px;
+
+width: 788px;
+height: 576px;
+
+/* Inside auto layout */
+flex: none;
+order: 1;
+align-self: stretch;
+flex-grow: 0;
+
+/* Frame 1277 */
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+align-items: flex-start;
+padding: 0px;
+gap: 12px;
+isolation: isolate;
+
+width: 764px;
+height: 280px;
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+align-self: stretch;
+flex-grow: 0;
+
+/* Frame 1360 */
+
+/* Auto layout */
+display: flex;
+flex-direction: column;
+justify-content: center;
+align-items: flex-start;
+padding: 0px;
+
+width: 376px;
+height: 280px;
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 1;
+z-index: 0;
+
+/* Frame 1278 */
+
+/* Auto layout */
+display: flex;
+flex-direction: column;
+justify-content: center;
+align-items: center;
+padding: 0px;
+
+width: 376px;
+height: 240px;
+
+border: 1px solid #0069e0;
+border-radius: 4px;
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+align-self: stretch;
+flex-grow: 0;
+
+/* Preview */
+
+/* Auto layout */
+display: flex;
+flex-direction: column;
+justify-content: center;
+align-items: center;
+padding: 0px;
+
+width: 376px;
+height: 240px;
+
+background: #ffffff;
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+align-self: stretch;
+flex-grow: 1;
+
+/* Frame 1338 */
+
+width: 62px;
+height: 68px;
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 0;
+
+/* Pajamas / full page */
+
+position: absolute;
+width: 1440px;
+left: calc(50% - 1440px / 2 - 161px);
+top: -58.82%;
+bottom: -2592.65%;
+
+/* image 2 */
+
+position: absolute;
+left: 0%;
+right: 0%;
+top: 0%;
+bottom: 0%;
+
+background: url(image.png);
+
+/* Modal */
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+align-items: center;
+padding: 6px 0px;
+gap: 10px;
+
+width: 376px;
+height: 40px;
+
+backdrop-filter: blur(12px);
+/* Note: backdrop-filter has minimal browser support */
+
+/* Inside auto layout */
+flex: none;
+order: 1;
+align-self: stretch;
+flex-grow: 0;
+
+/* left */
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+align-items: center;
+padding: 0px;
+gap: 6px;
+
+width: 154px;
+height: 20px;
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 0;
+
+/* Frame 1358 */
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+align-items: center;
+padding: 0px 12px;
+gap: 4px;
+
+width: 154px;
+height: 20px;
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 0;
+
+/* Component */
+
+width: 45px;
+height: 20px;
+
+/* typography/body/medium.emphasized */
+font-family: 'Nunito Sans';
+font-style: normal;
+font-weight: 700;
+font-size: 14px;
+line-height: 20px;
+/* identical to box height, or 143% */
+
+color: #2e3338;
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 0;
+
+/* Component */
+
+width: 4px;
+height: 20px;
+
+/* typography/body/medium */
+font-family: 'Nunito Sans';
+font-style: normal;
+font-weight: 400;
+font-size: 14px;
+line-height: 20px;
+/* identical to box height, or 143% */
+
+color: #2e3338;
+
+/* Inside auto layout */
+flex: none;
+order: 1;
+flex-grow: 0;
+
+/* Story */
+
+width: 73px;
+height: 20px;
+
+/* typography/body/medium */
+font-family: 'Nunito Sans';
+font-style: normal;
+font-weight: 400;
+font-size: 14px;
+line-height: 20px;
+/* identical to box height, or 143% */
+
+color: #2e3338;
+
+/* Inside auto layout */
+flex: none;
+order: 2;
+flex-grow: 0;
+
+/* Frame 1357 */
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+justify-content: flex-end;
+align-items: center;
+padding: 0px;
+gap: 6px;
+
+width: 212px;
+height: 28px;
+
+/* Inside auto layout */
+flex: none;
+order: 1;
+flex-grow: 1;
+
+/* Button
+
+<p>Button, Select, Toggle</p>
+*/
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+justify-content: center;
+align-items: center;
+padding: 6px 7px;
+gap: 6px;
+isolation: isolate;
+
+width: 28px;
+min-width: 28px;
+height: 28px;
+min-height: 28px;
+
+border-radius: 4px;
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 0;
+
+/* Left icon */
+
+width: 14px;
+height: 14px;
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 0;
+z-index: 0;
+
+/* icon path */
+
+position: absolute;
+left: 9.87%;
+right: 9.87%;
+top: 0%;
+bottom: 0%;
+
+background: #5c6570;
+
+/* Label */
+
+display: none;
+width: 31px;
+height: 16px;
+
+/* typography/body/small.emphasized */
+font-family: 'Nunito Sans';
+font-style: normal;
+font-weight: 700;
+font-size: 12px;
+line-height: 16px;
+/* identical to box height, or 133% */
+
+color: #5c6570;
+
+/* Inside auto layout */
+flex: none;
+order: 1;
+flex-grow: 0;
+z-index: 1;
+
+/* Right icon */
+
+display: none;
+width: 14px;
+height: 14px;
+
+/* Inside auto layout */
+flex: none;
+order: 2;
+flex-grow: 0;
+z-index: 2;
+
+/* Attention dot */
+
+position: absolute;
+display: none;
+width: 6px;
+height: 6px;
+right: 3px;
+top: 3px;
+
+background: #0069e0;
+
+/* Inside auto layout */
+flex: none;
+order: 3;
+flex-grow: 0;
+z-index: 3;
+
+/* Cursor */
+
+position: absolute;
+width: 24px;
+height: 24px;
+left: 328px;
+top: 225px;
+
+transform: matrix(1, 0, 0, -1, 0, 0);
+
+/* Inside auto layout */
+flex: none;
+order: 1;
+flex-grow: 0;
+z-index: 1;
+
+/* Group 101 */
+
+position: absolute;
+left: 11.25%;
+right: 12.1%;
+top: 0%;
+bottom: 0.56%;
+
+/* Path */
+
+position: absolute;
+left: 11.25%;
+right: 12.1%;
+top: 0%;
+bottom: 0.56%;
+
+background: #121416;
+/* Tooltip */
+box-shadow:
+  0px 0px 15px rgba(0, 0, 0, 0.05),
+  0px 1px 2px rgba(0, 0, 0, 0.1);
+
+/* Fill 1 */
+
+position: absolute;
+left: 17.47%;
+right: 18.25%;
+top: 6.2%;
+bottom: 6.79%;
+
+background: #ffffff;
+
+/* Frame 1361 */
+
+/* Auto layout */
+display: flex;
+flex-direction: column;
+justify-content: center;
+align-items: flex-start;
+padding: 0px;
+
+width: 376px;
+height: 280px;
+
+/* Inside auto layout */
+flex: none;
+order: 2;
+align-self: stretch;
+flex-grow: 1;
+z-index: 2;
+
+/* Frame 1280 */
+
+/* Auto layout */
+display: flex;
+flex-direction: column;
+justify-content: center;
+align-items: center;
+padding: 0px;
+
+width: 376px;
+height: 240px;
+
+border: 1px solid #dde0e3;
+border-radius: 4px;
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+align-self: stretch;
+flex-grow: 1;
+
+/* Preview */
+
+/* Auto layout */
+display: flex;
+flex-direction: column;
+justify-content: center;
+align-items: center;
+padding: 0px;
+
+width: 376px;
+height: 240px;
+
+background: #ffffff;
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+align-self: stretch;
+flex-grow: 1;
+
+/* Frame 1338 */
+
+width: 376px;
+height: 40px;
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+align-self: stretch;
+flex-grow: 0;
+
+/* Pajamas / full page */
+
+position: absolute;
+width: 374px;
+height: 486px;
+left: 0px;
+top: 0.5px;
+
+/* image 2 */
+
+position: absolute;
+left: 0%;
+right: 0%;
+top: 0%;
+bottom: 0%;
+
+background: url(image.png);
+
+/* Modal */
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+align-items: center;
+padding: 6px 12px;
+gap: 10px;
+
+width: 376px;
+height: 40px;
+
+backdrop-filter: blur(12px);
+/* Note: backdrop-filter has minimal browser support */
+
+/* Inside auto layout */
+flex: none;
+order: 1;
+align-self: stretch;
+flex-grow: 0;
+
+/* left */
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+align-items: center;
+padding: 0px;
+gap: 6px;
+
+width: 149px;
+height: 20px;
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 0;
+
+/* Frame 1358 */
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+align-items: center;
+padding: 0px;
+gap: 12px;
+
+width: 149px;
+height: 20px;
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 0;
+
+/* Component */
+
+width: 48px;
+height: 20px;
+
+/* typography/body/medium.emphasized */
+font-family: 'Nunito Sans';
+font-style: normal;
+font-weight: 700;
+font-size: 14px;
+line-height: 20px;
+/* identical to box height, or 143% */
+
+color: #2e3338;
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 0;
+
+/* Component */
+
+width: 4px;
+height: 20px;
+
+/* typography/body/medium */
+font-family: 'Nunito Sans';
+font-style: normal;
+font-weight: 400;
+font-size: 14px;
+line-height: 20px;
+/* identical to box height, or 143% */
+
+color: #2e3338;
+
+opacity: 0;
+
+/* Inside auto layout */
+flex: none;
+order: 1;
+flex-grow: 0;
+
+/* Story */
+
+width: 73px;
+height: 20px;
+
+/* typography/body/medium */
+font-family: 'Nunito Sans';
+font-style: normal;
+font-weight: 400;
+font-size: 14px;
+line-height: 20px;
+/* identical to box height, or 143% */
+
+color: #2e3338;
+
+opacity: 0;
+
+/* Inside auto layout */
+flex: none;
+order: 2;
+flex-grow: 0;
+
+/* Frame 1357 */
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+justify-content: flex-end;
+align-items: center;
+padding: 0px;
+gap: 6px;
+
+width: 193px;
+height: 28px;
+
+opacity: 0;
+
+/* Inside auto layout */
+flex: none;
+order: 1;
+flex-grow: 1;
+
+/* Button
+
+<p>Button, Select, Toggle</p>
+*/
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+justify-content: center;
+align-items: center;
+padding: 6px 7px;
+gap: 6px;
+isolation: isolate;
+
+width: 28px;
+min-width: 28px;
+height: 28px;
+min-height: 28px;
+
+border-radius: 4px;
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 0;
+
+/* Left icon */
+
+width: 14px;
+height: 14px;
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 0;
+z-index: 0;
+
+/* icon path */
+
+position: absolute;
+left: 9.87%;
+right: 9.87%;
+top: 0%;
+bottom: 0%;
+
+background: #5c6570;
+
+/* Label */
+
+display: none;
+width: 31px;
+height: 16px;
+
+/* typography/body/small.emphasized */
+font-family: 'Nunito Sans';
+font-style: normal;
+font-weight: 700;
+font-size: 12px;
+line-height: 16px;
+/* identical to box height, or 133% */
+
+color: #5c6570;
+
+/* Inside auto layout */
+flex: none;
+order: 1;
+flex-grow: 0;
+z-index: 1;
+
+/* Right icon */
+
+display: none;
+width: 14px;
+height: 14px;
+
+/* Inside auto layout */
+flex: none;
+order: 2;
+flex-grow: 0;
+z-index: 2;
+
+/* Attention dot */
+
+position: absolute;
+display: none;
+width: 6px;
+height: 6px;
+right: 3px;
+top: 3px;
+
+background: #0069e0;
+
+/* Inside auto layout */
+flex: none;
+order: 3;
+flex-grow: 0;
+z-index: 3;
+
+/* Frame 1274 */
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+align-items: flex-start;
+padding: 0px;
+gap: 12px;
+
+width: 764px;
+height: 280px;
+
+/* Inside auto layout */
+flex: none;
+order: 1;
+align-self: stretch;
+flex-grow: 0;
+
+/* Frame 1356 */
+
+/* Auto layout */
+display: flex;
+flex-direction: column;
+justify-content: center;
+align-items: flex-start;
+padding: 0px;
+
+width: 376px;
+height: 280px;
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+align-self: stretch;
+flex-grow: 1;
+
+/* Frame 1275 */
+
+/* Auto layout */
+display: flex;
+flex-direction: column;
+align-items: flex-start;
+padding: 0px;
+
+width: 376px;
+height: 240px;
+
+border: 1px solid #dde0e3;
+border-radius: 4px;
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+align-self: stretch;
+flex-grow: 1;
+
+/* Preview */
+
+/* Auto layout */
+display: flex;
+flex-direction: column;
+align-items: center;
+padding: 0px;
+
+width: 376px;
+height: 240px;
+
+background: #ffffff;
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+align-self: stretch;
+flex-grow: 1;
+
+/* Pajamas / full page */
+
+width: 376px;
+height: 488.54px;
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+align-self: stretch;
+flex-grow: 0;
+
+/* image 2 */
+
+position: absolute;
+left: 0%;
+right: 0%;
+top: 0%;
+bottom: 0%;
+
+background: url(image.png);
+
+/* Modal */
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+align-items: center;
+padding: 6px 0px;
+gap: 10px;
+
+width: 376px;
+height: 40px;
+
+backdrop-filter: blur(12px);
+/* Note: backdrop-filter has minimal browser support */
+
+/* Inside auto layout */
+flex: none;
+order: 1;
+align-self: stretch;
+flex-grow: 0;
+
+/* left */
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+align-items: center;
+padding: 0px;
+gap: 6px;
+
+width: 209px;
+height: 20px;
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 0;
+
+/* Frame 1358 */
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+align-items: center;
+padding: 0px 12px;
+gap: 8px;
+
+width: 209px;
+height: 20px;
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 0;
+
+/* Component */
+
+width: 34px;
+height: 20px;
+
+/* typography/body/medium.emphasized */
+font-family: 'Nunito Sans';
+font-style: normal;
+font-weight: 700;
+font-size: 14px;
+line-height: 20px;
+/* identical to box height, or 143% */
+
+color: #2e3338;
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 0;
+
+/* Badge */
+
+box-sizing: border-box;
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+align-items: center;
+padding: 2px 12px;
+gap: 6px;
+
+width: 50px;
+height: 20px;
+min-height: 20px;
+
+background: #f3faef;
+border: 1px solid #c2e7b1;
+border-radius: 200px;
+
+/* Inside auto layout */
+flex: none;
+order: 1;
+flex-grow: 0;
+
+/* Icon */
+
+display: none;
+width: 12px;
+height: 12px;
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 0;
+
+/* Label */
+
+width: 26px;
+height: 16px;
+
+/* typography/body/small.emphasized */
+font-family: 'Nunito Sans';
+font-style: normal;
+font-weight: 700;
+font-size: 12px;
+line-height: 16px;
+/* identical to box height, or 133% */
+
+color: #427c27;
+
+/* Inside auto layout */
+flex: none;
+order: 1;
+flex-grow: 0;
+
+/* Component */
+
+width: 4px;
+height: 20px;
+
+/* typography/body/medium */
+font-family: 'Nunito Sans';
+font-style: normal;
+font-weight: 400;
+font-size: 14px;
+line-height: 20px;
+/* identical to box height, or 143% */
+
+color: #2e3338;
+
+opacity: 0;
+
+/* Inside auto layout */
+flex: none;
+order: 2;
+flex-grow: 0;
+
+/* Story */
+
+width: 73px;
+height: 20px;
+
+/* typography/body/medium */
+font-family: 'Nunito Sans';
+font-style: normal;
+font-weight: 400;
+font-size: 14px;
+line-height: 20px;
+/* identical to box height, or 143% */
+
+color: #2e3338;
+
+opacity: 0;
+
+/* Inside auto layout */
+flex: none;
+order: 3;
+flex-grow: 0;
+
+/* Frame 1357 */
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+justify-content: flex-end;
+align-items: center;
+padding: 0px;
+gap: 6px;
+
+width: 157px;
+height: 28px;
+
+opacity: 0;
+
+/* Inside auto layout */
+flex: none;
+order: 1;
+flex-grow: 1;
+
+/* Button
+
+<p>Button, Select, Toggle</p>
+*/
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+justify-content: center;
+align-items: center;
+padding: 6px 7px;
+gap: 6px;
+isolation: isolate;
+
+width: 28px;
+min-width: 28px;
+height: 28px;
+min-height: 28px;
+
+border-radius: 4px;
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 0;
+
+/* Left icon */
+
+width: 14px;
+height: 14px;
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 0;
+z-index: 0;
+
+/* icon path */
+
+position: absolute;
+left: 21.43%;
+right: 21.45%;
+top: 21.43%;
+bottom: 21.45%;
+
+background: #0069e0;
+
+/* Label */
+
+display: none;
+width: 31px;
+height: 16px;
+
+/* typography/body/small.emphasized */
+font-family: 'Nunito Sans';
+font-style: normal;
+font-weight: 700;
+font-size: 12px;
+line-height: 16px;
+/* identical to box height, or 133% */
+
+color: #5c6570;
+
+/* Inside auto layout */
+flex: none;
+order: 1;
+flex-grow: 0;
+z-index: 1;
+
+/* Right icon */
+
+display: none;
+width: 14px;
+height: 14px;
+
+/* Inside auto layout */
+flex: none;
+order: 2;
+flex-grow: 0;
+z-index: 2;
+
+/* Attention dot */
+
+position: absolute;
+display: none;
+width: 6px;
+height: 6px;
+right: 3px;
+top: 3px;
+
+background: #0069e0;
+
+/* Inside auto layout */
+flex: none;
+order: 3;
+flex-grow: 0;
+z-index: 3;
+
+/* Button
+
+<p>Button, Select, Toggle</p>
+*/
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+justify-content: center;
+align-items: center;
+padding: 6px 7px;
+gap: 6px;
+isolation: isolate;
+
+width: 28px;
+min-width: 28px;
+height: 28px;
+min-height: 28px;
+
+border-radius: 4px;
+
+/* Inside auto layout */
+flex: none;
+order: 1;
+flex-grow: 0;
+
+/* Left icon */
+
+width: 14px;
+height: 14px;
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 0;
+z-index: 0;
+
+/* icon path */
+
+position: absolute;
+left: 9.87%;
+right: 9.87%;
+top: 0%;
+bottom: 0%;
+
+background: #5c6570;
+
+/* Label */
+
+display: none;
+width: 31px;
+height: 16px;
+
+/* typography/body/small.emphasized */
+font-family: 'Nunito Sans';
+font-style: normal;
+font-weight: 700;
+font-size: 12px;
+line-height: 16px;
+/* identical to box height, or 133% */
+
+color: #5c6570;
+
+/* Inside auto layout */
+flex: none;
+order: 1;
+flex-grow: 0;
+z-index: 1;
+
+/* Right icon */
+
+display: none;
+width: 14px;
+height: 14px;
+
+/* Inside auto layout */
+flex: none;
+order: 2;
+flex-grow: 0;
+z-index: 2;
+
+/* Attention dot */
+
+position: absolute;
+display: none;
+width: 6px;
+height: 6px;
+right: 3px;
+top: 3px;
+
+background: #0069e0;
+
+/* Inside auto layout */
+flex: none;
+order: 3;
+flex-grow: 0;
+z-index: 3;
+
+/* Frame 1359 */
+
+/* Auto layout */
+display: flex;
+flex-direction: column;
+justify-content: center;
+align-items: flex-start;
+padding: 0px;
+
+width: 376px;
+height: 280px;
+
+/* Inside auto layout */
+flex: none;
+order: 1;
+align-self: stretch;
+flex-grow: 1;
+
+/* Frame 1276 */
+
+/* Auto layout */
+display: flex;
+flex-direction: column;
+align-items: flex-start;
+padding: 0px;
+
+width: 376px;
+height: 240px;
+
+border: 1px solid #dde0e3;
+border-radius: 4px;
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+align-self: stretch;
+flex-grow: 1;
+
+/* Preview */
+
+/* Auto layout */
+display: flex;
+flex-direction: column;
+justify-content: center;
+align-items: center;
+padding: 32px;
+isolation: isolate;
+
+width: 376px;
+height: 240px;
+
+background: #f4f5f6;
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+align-self: stretch;
+flex-grow: 1;
+
+/* Button
+
+<p>Button, Select, Toggle</p>
+*/
+
+box-sizing: border-box;
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+justify-content: center;
+align-items: center;
+padding: 6px 9px;
+gap: 6px;
+
+width: 107px;
+min-width: 32px;
+height: 32px;
+min-height: 32px;
+
+background: #f7fafc;
+border: 1px solid #dde0e3;
+border-radius: 4px;
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 0;
+z-index: 0;
+
+/* Left icon */
+
+display: none;
+width: 14px;
+height: 14px;
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 0;
+
+/* Label */
+
+width: 89px;
+height: 20px;
+
+/* typography/body/medium.emphasized */
+font-family: 'Nunito Sans';
+font-style: normal;
+font-weight: 700;
+font-size: 14px;
+line-height: 20px;
+/* identical to box height, or 143% */
+display: flex;
+align-items: center;
+
+color: #2e3338;
+
+/* Inside auto layout */
+flex: none;
+order: 1;
+flex-grow: 1;
+
+/* Right icon */
+
+display: none;
+width: 14px;
+height: 14px;
+
+/* Inside auto layout */
+flex: none;
+order: 2;
+flex-grow: 0;
+
+/* Highlight */
+
+position: absolute;
+display: none;
+width: 85px;
+height: 36px;
+left: calc(50% - 85px / 2);
+top: calc(50% - 36px / 2);
+
+/* Inside auto layout */
+flex: none;
+order: 1;
+flex-grow: 0;
+z-index: 1;
+
+/* Modal */
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+align-items: center;
+padding: 6px;
+gap: 10px;
+
+width: 376px;
+height: 40px;
+
+opacity: 0;
+backdrop-filter: blur(12px);
+/* Note: backdrop-filter has minimal browser support */
+
+/* Inside auto layout */
+flex: none;
+order: 1;
+align-self: stretch;
+flex-grow: 0;
+
+/* left */
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+align-items: center;
+padding: 0px;
+gap: 6px;
+
+width: 135px;
+height: 20px;
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 0;
+
+/* Frame 1358 */
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+align-items: center;
+padding: 0px;
+gap: 12px;
+
+width: 135px;
+height: 20px;
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 0;
+
+/* Component */
+
+width: 34px;
+height: 20px;
+
+/* typography/body/medium.emphasized */
+font-family: 'Nunito Sans';
+font-style: normal;
+font-weight: 700;
+font-size: 14px;
+line-height: 20px;
+/* identical to box height, or 143% */
+
+color: #2e3338;
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 0;
+
+/* Component */
+
+width: 4px;
+height: 20px;
+
+/* typography/body/medium */
+font-family: 'Nunito Sans';
+font-style: normal;
+font-weight: 400;
+font-size: 14px;
+line-height: 20px;
+/* identical to box height, or 143% */
+
+color: #2e3338;
+
+opacity: 0;
+
+/* Inside auto layout */
+flex: none;
+order: 1;
+flex-grow: 0;
+
+/* Story */
+
+width: 73px;
+height: 20px;
+
+/* typography/body/medium */
+font-family: 'Nunito Sans';
+font-style: normal;
+font-weight: 400;
+font-size: 14px;
+line-height: 20px;
+/* identical to box height, or 143% */
+
+color: #2e3338;
+
+opacity: 0;
+
+/* Inside auto layout */
+flex: none;
+order: 2;
+flex-grow: 0;
+
+/* Frame 1357 */
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+justify-content: flex-end;
+align-items: center;
+padding: 0px;
+gap: 6px;
+
+width: 219px;
+height: 28px;
+
+opacity: 0;
+
+/* Inside auto layout */
+flex: none;
+order: 1;
+flex-grow: 1;
+
+/* Button
+
+<p>Button, Select, Toggle</p>
+*/
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+justify-content: center;
+align-items: center;
+padding: 6px 7px;
+gap: 6px;
+isolation: isolate;
+
+width: 28px;
+min-width: 28px;
+height: 28px;
+min-height: 28px;
+
+border-radius: 4px;
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 0;
+
+/* Left icon */
+
+width: 14px;
+height: 14px;
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 0;
+z-index: 0;
+
+/* icon path */
+
+position: absolute;
+left: 9.87%;
+right: 9.87%;
+top: 0%;
+bottom: 0%;
+
+background: #5c6570;
+
+/* Label */
+
+display: none;
+width: 31px;
+height: 16px;
+
+/* typography/body/small.emphasized */
+font-family: 'Nunito Sans';
+font-style: normal;
+font-weight: 700;
+font-size: 12px;
+line-height: 16px;
+/* identical to box height, or 133% */
+
+color: #5c6570;
+
+/* Inside auto layout */
+flex: none;
+order: 1;
+flex-grow: 0;
+z-index: 1;
+
+/* Right icon */
+
+display: none;
+width: 14px;
+height: 14px;
+
+/* Inside auto layout */
+flex: none;
+order: 2;
+flex-grow: 0;
+z-index: 2;
+
+/* Attention dot */
+
+position: absolute;
+display: none;
+width: 6px;
+height: 6px;
+right: 3px;
+top: 3px;
+
+background: #0069e0;
+
+/* Inside auto layout */
+flex: none;
+order: 3;
+flex-grow: 0;
+z-index: 3;
+
+/* Frame 1341 */
+
+/* Auto layout */
+display: flex;
+flex-direction: column;
+align-items: flex-start;
+padding: 0px;
+
+width: 788px;
+height: 616px;
+
+background: #ffffff;
+/* Card */
+box-shadow: 0px 1px 3px rgba(0, 0, 0, 0.1);
+border-radius: 8px;
+
+/* Inside auto layout */
+flex: none;
+order: 1;
+align-self: stretch;
+flex-grow: 0;
+
+/* Heading */
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+align-items: center;
+padding: 6px 10px 6px 16px;
+gap: 8px;
+
+width: 788px;
+height: 40px;
+min-height: 40px;
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+align-self: stretch;
+flex-grow: 0;
+
+/* Violation name */
+
+width: 127px;
+height: 20px;
+
+/* typography/body/medium.emphasized */
+font-family: 'Nunito Sans';
+font-style: normal;
+font-weight: 700;
+font-size: 14px;
+line-height: 20px;
+/* identical to box height, or 143% */
+
+color: #2e3338;
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 0;
+
+/* Right */
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+justify-content: flex-end;
+align-items: center;
+padding: 0px;
+gap: 6px;
+
+width: 627px;
+height: 28px;
+
+/* Inside auto layout */
+flex: none;
+order: 1;
+flex-grow: 1;
+
+/* Violation count/Default */
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+align-items: center;
+padding: 0px;
+
+width: 28px;
+min-width: 28px;
+height: 20px;
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 0;
+
+/* Value */
+
+width: 28px;
+height: 20px;
+
+/* typography/code/medium */
+font-family: 'SF Mono';
+font-size: 13px;
+line-height: 20px;
+/* identical to box height, or 154% */
+text-align: center;
+
+color: #5c6570;
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 1;
+
+/* Expand button
+
+<p>Button, Select, Toggle</p>
+*/
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+justify-content: center;
+align-items: center;
+padding: 6px 7px;
+gap: 6px;
+isolation: isolate;
+
+width: 28px;
+min-width: 28px;
+height: 28px;
+min-height: 28px;
+
+border-radius: 4px;
+
+/* Inside auto layout */
+flex: none;
+order: 1;
+flex-grow: 0;
+
+/* Left icon */
+
+width: 14px;
+height: 14px;
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 0;
+z-index: 0;
+
+/* icon path */
+
+position: absolute;
+left: 21.43%;
+right: 21.43%;
+top: 33.93%;
+bottom: 33.93%;
+
+background: #5c6570;
+transform: matrix(1, 0, 0, -1, 0, 0);
+
+/* Label */
+
+display: none;
+width: 31px;
+height: 16px;
+
+/* typography/body/small.emphasized */
+font-family: 'Nunito Sans';
+font-style: normal;
+font-weight: 700;
+font-size: 12px;
+line-height: 16px;
+/* identical to box height, or 133% */
+
+color: #5c6570;
+
+/* Inside auto layout */
+flex: none;
+order: 1;
+flex-grow: 1;
+z-index: 1;
+
+/* Right icon */
+
+display: none;
+width: 14px;
+height: 14px;
+
+/* Inside auto layout */
+flex: none;
+order: 2;
+flex-grow: 0;
+z-index: 2;
+
+/* Attention dot */
+
+position: absolute;
+display: none;
+width: 6px;
+height: 6px;
+right: 3px;
+top: 3px;
+
+background: #0069e0;
+
+/* Inside auto layout */
+flex: none;
+order: 3;
+flex-grow: 0;
+z-index: 3;
+
+/* Frame 1354 */
+
+/* Auto layout */
+display: flex;
+flex-direction: column;
+align-items: flex-start;
+padding: 0px 12px;
+gap: 16px;
+
+width: 788px;
+height: 576px;
+
+/* Inside auto layout */
+flex: none;
+order: 1;
+align-self: stretch;
+flex-grow: 0;
+
+/* Frame 1277 */
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+align-items: flex-start;
+padding: 0px;
+gap: 12px;
+
+width: 764px;
+height: 280px;
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+align-self: stretch;
+flex-grow: 0;
+
+/* Frame 1360 */
+
+/* Auto layout */
+display: flex;
+flex-direction: column;
+justify-content: center;
+align-items: flex-start;
+padding: 0px;
+
+width: 376px;
+height: 280px;
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 1;
+
+/* Frame 1278 */
+
+/* Auto layout */
+display: flex;
+flex-direction: column;
+justify-content: center;
+align-items: center;
+padding: 0px;
+
+width: 376px;
+height: 240px;
+
+border: 1px solid #dde0e3;
+border-radius: 4px;
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+align-self: stretch;
+flex-grow: 0;
+
+/* Preview */
+
+/* Auto layout */
+display: flex;
+flex-direction: column;
+justify-content: center;
+align-items: center;
+padding: 0px;
+
+width: 376px;
+height: 240px;
+
+background: #ffffff;
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+align-self: stretch;
+flex-grow: 1;
+
+/* Frame 1338 */
+
+width: 62px;
+height: 68px;
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 0;
+
+/* Pajamas / full page */
+
+position: absolute;
+width: 1440px;
+left: calc(50% - 1440px / 2 - 161px);
+top: -58.82%;
+bottom: -2592.65%;
+
+/* image 2 */
+
+position: absolute;
+left: 0%;
+right: 0%;
+top: 0%;
+bottom: 0%;
+
+background: url(image.png);
+
+/* Modal */
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+align-items: center;
+padding: 6px 0px;
+gap: 10px;
+
+width: 376px;
+height: 40px;
+
+backdrop-filter: blur(12px);
+/* Note: backdrop-filter has minimal browser support */
+
+/* Inside auto layout */
+flex: none;
+order: 1;
+align-self: stretch;
+flex-grow: 0;
+
+/* left */
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+align-items: center;
+padding: 0px;
+gap: 6px;
+
+width: 170px;
+height: 20px;
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 0;
+
+/* Frame 1358 */
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+align-items: center;
+padding: 0px 12px;
+gap: 12px;
+
+width: 170px;
+height: 20px;
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 0;
+
+/* Component */
+
+width: 45px;
+height: 20px;
+
+/* typography/body/medium.emphasized */
+font-family: 'Nunito Sans';
+font-style: normal;
+font-weight: 700;
+font-size: 14px;
+line-height: 20px;
+/* identical to box height, or 143% */
+
+color: #2e3338;
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 0;
+
+/* Component */
+
+width: 4px;
+height: 20px;
+
+/* typography/body/medium */
+font-family: 'Nunito Sans';
+font-style: normal;
+font-weight: 400;
+font-size: 14px;
+line-height: 20px;
+/* identical to box height, or 143% */
+
+color: #2e3338;
+
+opacity: 0;
+
+/* Inside auto layout */
+flex: none;
+order: 1;
+flex-grow: 0;
+
+/* Story */
+
+width: 73px;
+height: 20px;
+
+/* typography/body/medium */
+font-family: 'Nunito Sans';
+font-style: normal;
+font-weight: 400;
+font-size: 14px;
+line-height: 20px;
+/* identical to box height, or 143% */
+
+color: #2e3338;
+
+opacity: 0;
+
+/* Inside auto layout */
+flex: none;
+order: 2;
+flex-grow: 0;
+
+/* Frame 1357 */
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+justify-content: flex-end;
+align-items: center;
+padding: 0px;
+gap: 6px;
+
+width: 196px;
+height: 28px;
+
+opacity: 0;
+
+/* Inside auto layout */
+flex: none;
+order: 1;
+flex-grow: 1;
+
+/* Button
+
+<p>Button, Select, Toggle</p>
+*/
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+justify-content: center;
+align-items: center;
+padding: 6px 7px;
+gap: 6px;
+isolation: isolate;
+
+width: 28px;
+min-width: 28px;
+height: 28px;
+min-height: 28px;
+
+border-radius: 4px;
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 0;
+
+/* Left icon */
+
+width: 14px;
+height: 14px;
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 0;
+z-index: 0;
+
+/* icon path */
+
+position: absolute;
+left: 9.87%;
+right: 9.87%;
+top: 0%;
+bottom: 0%;
+
+background: #5c6570;
+
+/* Label */
+
+display: none;
+width: 31px;
+height: 16px;
+
+/* typography/body/small.emphasized */
+font-family: 'Nunito Sans';
+font-style: normal;
+font-weight: 700;
+font-size: 12px;
+line-height: 16px;
+/* identical to box height, or 133% */
+
+color: #5c6570;
+
+/* Inside auto layout */
+flex: none;
+order: 1;
+flex-grow: 0;
+z-index: 1;
+
+/* Right icon */
+
+display: none;
+width: 14px;
+height: 14px;
+
+/* Inside auto layout */
+flex: none;
+order: 2;
+flex-grow: 0;
+z-index: 2;
+
+/* Attention dot */
+
+position: absolute;
+display: none;
+width: 6px;
+height: 6px;
+right: 3px;
+top: 3px;
+
+background: #0069e0;
+
+/* Inside auto layout */
+flex: none;
+order: 3;
+flex-grow: 0;
+z-index: 3;
+
+/* Frame 1361 */
+
+/* Auto layout */
+display: flex;
+flex-direction: column;
+justify-content: center;
+align-items: flex-start;
+padding: 0px;
+
+width: 376px;
+height: 280px;
+
+/* Inside auto layout */
+flex: none;
+order: 1;
+align-self: stretch;
+flex-grow: 1;
+
+/* Frame 1280 */
+
+/* Auto layout */
+display: flex;
+flex-direction: column;
+justify-content: center;
+align-items: center;
+padding: 0px;
+
+width: 376px;
+height: 240px;
+
+border: 1px solid #dde0e3;
+border-radius: 4px;
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+align-self: stretch;
+flex-grow: 1;
+
+/* Preview */
+
+/* Auto layout */
+display: flex;
+flex-direction: column;
+justify-content: center;
+align-items: center;
+padding: 0px;
+
+width: 376px;
+height: 240px;
+
+background: #ffffff;
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+align-self: stretch;
+flex-grow: 1;
+
+/* Frame 1338 */
+
+width: 376px;
+height: 40px;
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+align-self: stretch;
+flex-grow: 0;
+
+/* Pajamas / full page */
+
+position: absolute;
+width: 374px;
+height: 486px;
+left: 0px;
+top: 0.5px;
+
+/* image 2 */
+
+position: absolute;
+left: 0%;
+right: 0%;
+top: 0%;
+bottom: 0%;
+
+background: url(image.png);
+
+/* Modal */
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+align-items: center;
+padding: 6px;
+gap: 10px;
+
+width: 376px;
+height: 40px;
+
+backdrop-filter: blur(12px);
+/* Note: backdrop-filter has minimal browser support */
+
+/* Inside auto layout */
+flex: none;
+order: 1;
+align-self: stretch;
+flex-grow: 0;
+
+/* left */
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+align-items: center;
+padding: 0px;
+gap: 6px;
+
+width: 149px;
+height: 20px;
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 0;
+
+/* Frame 1358 */
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+align-items: center;
+padding: 0px;
+gap: 12px;
+
+width: 149px;
+height: 20px;
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 0;
+
+/* Component */
+
+width: 48px;
+height: 20px;
+
+/* typography/body/medium.emphasized */
+font-family: 'Nunito Sans';
+font-style: normal;
+font-weight: 700;
+font-size: 14px;
+line-height: 20px;
+/* identical to box height, or 143% */
+
+color: #2e3338;
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 0;
+
+/* Component */
+
+width: 4px;
+height: 20px;
+
+/* typography/body/medium */
+font-family: 'Nunito Sans';
+font-style: normal;
+font-weight: 400;
+font-size: 14px;
+line-height: 20px;
+/* identical to box height, or 143% */
+
+color: #2e3338;
+
+opacity: 0;
+
+/* Inside auto layout */
+flex: none;
+order: 1;
+flex-grow: 0;
+
+/* Story */
+
+width: 73px;
+height: 20px;
+
+/* typography/body/medium */
+font-family: 'Nunito Sans';
+font-style: normal;
+font-weight: 400;
+font-size: 14px;
+line-height: 20px;
+/* identical to box height, or 143% */
+
+color: #2e3338;
+
+opacity: 0;
+
+/* Inside auto layout */
+flex: none;
+order: 2;
+flex-grow: 0;
+
+/* Frame 1357 */
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+justify-content: flex-end;
+align-items: center;
+padding: 0px;
+gap: 6px;
+
+width: 205px;
+height: 28px;
+
+opacity: 0;
+
+/* Inside auto layout */
+flex: none;
+order: 1;
+flex-grow: 1;
+
+/* Button
+
+<p>Button, Select, Toggle</p>
+*/
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+justify-content: center;
+align-items: center;
+padding: 6px 7px;
+gap: 6px;
+isolation: isolate;
+
+width: 28px;
+min-width: 28px;
+height: 28px;
+min-height: 28px;
+
+border-radius: 4px;
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 0;
+
+/* Left icon */
+
+width: 14px;
+height: 14px;
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 0;
+z-index: 0;
+
+/* icon path */
+
+position: absolute;
+left: 9.87%;
+right: 9.87%;
+top: 0%;
+bottom: 0%;
+
+background: #5c6570;
+
+/* Label */
+
+display: none;
+width: 31px;
+height: 16px;
+
+/* typography/body/small.emphasized */
+font-family: 'Nunito Sans';
+font-style: normal;
+font-weight: 700;
+font-size: 12px;
+line-height: 16px;
+/* identical to box height, or 133% */
+
+color: #5c6570;
+
+/* Inside auto layout */
+flex: none;
+order: 1;
+flex-grow: 0;
+z-index: 1;
+
+/* Right icon */
+
+display: none;
+width: 14px;
+height: 14px;
+
+/* Inside auto layout */
+flex: none;
+order: 2;
+flex-grow: 0;
+z-index: 2;
+
+/* Attention dot */
+
+position: absolute;
+display: none;
+width: 6px;
+height: 6px;
+right: 3px;
+top: 3px;
+
+background: #0069e0;
+
+/* Inside auto layout */
+flex: none;
+order: 3;
+flex-grow: 0;
+z-index: 3;
+
+/* Frame 1274 */
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+align-items: flex-start;
+padding: 0px;
+gap: 12px;
+
+width: 764px;
+height: 280px;
+
+/* Inside auto layout */
+flex: none;
+order: 1;
+align-self: stretch;
+flex-grow: 0;
+
+/* Frame 1360 */
+
+/* Auto layout */
+display: flex;
+flex-direction: column;
+justify-content: center;
+align-items: flex-start;
+padding: 0px;
+
+width: 376px;
+height: 280px;
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+align-self: stretch;
+flex-grow: 1;
+
+/* Frame 1275 */
+
+/* Auto layout */
+display: flex;
+flex-direction: column;
+align-items: flex-start;
+padding: 0px;
+
+width: 376px;
+height: 240px;
+
+border: 1px solid #dde0e3;
+border-radius: 4px;
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+align-self: stretch;
+flex-grow: 1;
+
+/* Preview */
+
+/* Auto layout */
+display: flex;
+flex-direction: column;
+align-items: center;
+padding: 0px;
+
+width: 376px;
+height: 240px;
+
+background: #ffffff;
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+align-self: stretch;
+flex-grow: 1;
+
+/* Pajamas / full page */
+
+width: 376px;
+height: 488.54px;
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+align-self: stretch;
+flex-grow: 0;
+
+/* image 2 */
+
+position: absolute;
+left: 0%;
+right: 0%;
+top: 0%;
+bottom: 0%;
+
+background: url(image.png);
+
+/* Modal */
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+align-items: center;
+padding: 6px 0px;
+gap: 10px;
+
+width: 376px;
+height: 40px;
+
+backdrop-filter: blur(12px);
+/* Note: backdrop-filter has minimal browser support */
+
+/* Inside auto layout */
+flex: none;
+order: 1;
+align-self: stretch;
+flex-grow: 0;
+
+/* left */
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+align-items: center;
+padding: 0px;
+gap: 6px;
+
+width: 221px;
+height: 20px;
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 0;
+
+/* Frame 1358 */
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+align-items: center;
+padding: 0px 12px;
+gap: 12px;
+
+width: 221px;
+height: 20px;
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 0;
+
+/* Component */
+
+width: 34px;
+height: 20px;
+
+/* typography/body/medium.emphasized */
+font-family: 'Nunito Sans';
+font-style: normal;
+font-weight: 700;
+font-size: 14px;
+line-height: 20px;
+/* identical to box height, or 143% */
+
+color: #2e3338;
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 0;
+
+/* Badge */
+
+box-sizing: border-box;
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+align-items: center;
+padding: 2px 12px;
+gap: 6px;
+
+width: 50px;
+height: 20px;
+min-height: 20px;
+
+background: #f3faef;
+border: 1px solid #c2e7b1;
+border-radius: 200px;
+
+/* Inside auto layout */
+flex: none;
+order: 1;
+flex-grow: 0;
+
+/* Icon */
+
+display: none;
+width: 12px;
+height: 12px;
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 0;
+
+/* Label */
+
+width: 26px;
+height: 16px;
+
+/* typography/body/small.emphasized */
+font-family: 'Nunito Sans';
+font-style: normal;
+font-weight: 700;
+font-size: 12px;
+line-height: 16px;
+/* identical to box height, or 133% */
+
+color: #427c27;
+
+/* Inside auto layout */
+flex: none;
+order: 1;
+flex-grow: 0;
+
+/* Component */
+
+width: 4px;
+height: 20px;
+
+/* typography/body/medium */
+font-family: 'Nunito Sans';
+font-style: normal;
+font-weight: 400;
+font-size: 14px;
+line-height: 20px;
+/* identical to box height, or 143% */
+
+color: #2e3338;
+
+opacity: 0;
+
+/* Inside auto layout */
+flex: none;
+order: 2;
+flex-grow: 0;
+
+/* Story */
+
+width: 73px;
+height: 20px;
+
+/* typography/body/medium */
+font-family: 'Nunito Sans';
+font-style: normal;
+font-weight: 400;
+font-size: 14px;
+line-height: 20px;
+/* identical to box height, or 143% */
+
+color: #2e3338;
+
+opacity: 0;
+
+/* Inside auto layout */
+flex: none;
+order: 3;
+flex-grow: 0;
+
+/* Frame 1357 */
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+justify-content: flex-end;
+align-items: center;
+padding: 0px;
+gap: 6px;
+
+width: 145px;
+height: 28px;
+
+opacity: 0;
+
+/* Inside auto layout */
+flex: none;
+order: 1;
+flex-grow: 1;
+
+/* Button
+
+<p>Button, Select, Toggle</p>
+*/
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+justify-content: center;
+align-items: center;
+padding: 6px 7px;
+gap: 6px;
+isolation: isolate;
+
+width: 28px;
+min-width: 28px;
+height: 28px;
+min-height: 28px;
+
+border-radius: 4px;
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 0;
+
+/* Left icon */
+
+width: 14px;
+height: 14px;
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 0;
+z-index: 0;
+
+/* icon path */
+
+position: absolute;
+left: 21.43%;
+right: 21.45%;
+top: 21.43%;
+bottom: 21.45%;
+
+background: #0069e0;
+
+/* Label */
+
+display: none;
+width: 31px;
+height: 16px;
+
+/* typography/body/small.emphasized */
+font-family: 'Nunito Sans';
+font-style: normal;
+font-weight: 700;
+font-size: 12px;
+line-height: 16px;
+/* identical to box height, or 133% */
+
+color: #5c6570;
+
+/* Inside auto layout */
+flex: none;
+order: 1;
+flex-grow: 0;
+z-index: 1;
+
+/* Right icon */
+
+display: none;
+width: 14px;
+height: 14px;
+
+/* Inside auto layout */
+flex: none;
+order: 2;
+flex-grow: 0;
+z-index: 2;
+
+/* Attention dot */
+
+position: absolute;
+display: none;
+width: 6px;
+height: 6px;
+right: 3px;
+top: 3px;
+
+background: #0069e0;
+
+/* Inside auto layout */
+flex: none;
+order: 3;
+flex-grow: 0;
+z-index: 3;
+
+/* Button
+
+<p>Button, Select, Toggle</p>
+*/
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+justify-content: center;
+align-items: center;
+padding: 6px 7px;
+gap: 6px;
+isolation: isolate;
+
+width: 28px;
+min-width: 28px;
+height: 28px;
+min-height: 28px;
+
+border-radius: 4px;
+
+/* Inside auto layout */
+flex: none;
+order: 1;
+flex-grow: 0;
+
+/* Left icon */
+
+width: 14px;
+height: 14px;
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 0;
+z-index: 0;
+
+/* icon path */
+
+position: absolute;
+left: 9.87%;
+right: 9.87%;
+top: 0%;
+bottom: 0%;
+
+background: #5c6570;
+
+/* Label */
+
+display: none;
+width: 31px;
+height: 16px;
+
+/* typography/body/small.emphasized */
+font-family: 'Nunito Sans';
+font-style: normal;
+font-weight: 700;
+font-size: 12px;
+line-height: 16px;
+/* identical to box height, or 133% */
+
+color: #5c6570;
+
+/* Inside auto layout */
+flex: none;
+order: 1;
+flex-grow: 0;
+z-index: 1;
+
+/* Right icon */
+
+display: none;
+width: 14px;
+height: 14px;
+
+/* Inside auto layout */
+flex: none;
+order: 2;
+flex-grow: 0;
+z-index: 2;
+
+/* Attention dot */
+
+position: absolute;
+display: none;
+width: 6px;
+height: 6px;
+right: 3px;
+top: 3px;
+
+background: #0069e0;
+
+/* Inside auto layout */
+flex: none;
+order: 3;
+flex-grow: 0;
+z-index: 3;
+
+/* Frame 1359 */
+
+/* Auto layout */
+display: flex;
+flex-direction: column;
+justify-content: center;
+align-items: flex-start;
+padding: 0px;
+
+width: 376px;
+height: 280px;
+
+/* Inside auto layout */
+flex: none;
+order: 1;
+align-self: stretch;
+flex-grow: 1;
+
+/* Frame 1276 */
+
+/* Auto layout */
+display: flex;
+flex-direction: column;
+align-items: flex-start;
+padding: 0px;
+
+width: 376px;
+height: 240px;
+
+border: 1px solid #dde0e3;
+border-radius: 4px;
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+align-self: stretch;
+flex-grow: 1;
+
+/* Preview */
+
+/* Auto layout */
+display: flex;
+flex-direction: column;
+justify-content: center;
+align-items: center;
+padding: 32px;
+isolation: isolate;
+
+width: 376px;
+height: 240px;
+
+background: #f4f5f6;
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+align-self: stretch;
+flex-grow: 1;
+
+/* Button
+
+<p>Button, Select, Toggle</p>
+*/
+
+box-sizing: border-box;
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+justify-content: center;
+align-items: center;
+padding: 6px 9px;
+gap: 6px;
+
+width: 107px;
+min-width: 32px;
+height: 32px;
+min-height: 32px;
+
+background: #f7fafc;
+border: 1px solid #dde0e3;
+border-radius: 4px;
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 0;
+z-index: 0;
+
+/* Left icon */
+
+display: none;
+width: 14px;
+height: 14px;
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 0;
+
+/* Label */
+
+width: 89px;
+height: 20px;
+
+/* typography/body/medium.emphasized */
+font-family: 'Nunito Sans';
+font-style: normal;
+font-weight: 700;
+font-size: 14px;
+line-height: 20px;
+/* identical to box height, or 143% */
+display: flex;
+align-items: center;
+
+color: #2e3338;
+
+/* Inside auto layout */
+flex: none;
+order: 1;
+flex-grow: 1;
+
+/* Right icon */
+
+display: none;
+width: 14px;
+height: 14px;
+
+/* Inside auto layout */
+flex: none;
+order: 2;
+flex-grow: 0;
+
+/* Highlight */
+
+position: absolute;
+display: none;
+width: 85px;
+height: 36px;
+left: calc(50% - 85px / 2);
+top: calc(50% - 36px / 2);
+
+/* Inside auto layout */
+flex: none;
+order: 1;
+flex-grow: 0;
+z-index: 1;
+
+/* Modal */
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+align-items: center;
+padding: 6px;
+gap: 10px;
+
+width: 376px;
+height: 40px;
+
+opacity: 0;
+backdrop-filter: blur(12px);
+/* Note: backdrop-filter has minimal browser support */
+
+/* Inside auto layout */
+flex: none;
+order: 1;
+align-self: stretch;
+flex-grow: 0;
+
+/* left */
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+align-items: center;
+padding: 0px;
+gap: 6px;
+
+width: 135px;
+height: 20px;
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 0;
+
+/* Frame 1358 */
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+align-items: center;
+padding: 0px;
+gap: 12px;
+
+width: 135px;
+height: 20px;
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 0;
+
+/* Component */
+
+width: 34px;
+height: 20px;
+
+/* typography/body/medium.emphasized */
+font-family: 'Nunito Sans';
+font-style: normal;
+font-weight: 700;
+font-size: 14px;
+line-height: 20px;
+/* identical to box height, or 143% */
+
+color: #2e3338;
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 0;
+
+/* Component */
+
+width: 4px;
+height: 20px;
+
+/* typography/body/medium */
+font-family: 'Nunito Sans';
+font-style: normal;
+font-weight: 400;
+font-size: 14px;
+line-height: 20px;
+/* identical to box height, or 143% */
+
+color: #2e3338;
+
+opacity: 0;
+
+/* Inside auto layout */
+flex: none;
+order: 1;
+flex-grow: 0;
+
+/* Story */
+
+width: 73px;
+height: 20px;
+
+/* typography/body/medium */
+font-family: 'Nunito Sans';
+font-style: normal;
+font-weight: 400;
+font-size: 14px;
+line-height: 20px;
+/* identical to box height, or 143% */
+
+color: #2e3338;
+
+opacity: 0;
+
+/* Inside auto layout */
+flex: none;
+order: 2;
+flex-grow: 0;
+
+/* Frame 1357 */
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+justify-content: flex-end;
+align-items: center;
+padding: 0px;
+gap: 6px;
+
+width: 219px;
+height: 28px;
+
+opacity: 0;
+
+/* Inside auto layout */
+flex: none;
+order: 1;
+flex-grow: 1;
+
+/* Button
+
+<p>Button, Select, Toggle</p>
+*/
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+justify-content: center;
+align-items: center;
+padding: 6px 7px;
+gap: 6px;
+isolation: isolate;
+
+width: 28px;
+min-width: 28px;
+height: 28px;
+min-height: 28px;
+
+border-radius: 4px;
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 0;
+
+/* Left icon */
+
+width: 14px;
+height: 14px;
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 0;
+z-index: 0;
+
+/* icon path */
+
+position: absolute;
+left: 9.87%;
+right: 9.87%;
+top: 0%;
+bottom: 0%;
+
+background: #5c6570;
+
+/* Label */
+
+display: none;
+width: 31px;
+height: 16px;
+
+/* typography/body/small.emphasized */
+font-family: 'Nunito Sans';
+font-style: normal;
+font-weight: 700;
+font-size: 12px;
+line-height: 16px;
+/* identical to box height, or 133% */
+
+color: #5c6570;
+
+/* Inside auto layout */
+flex: none;
+order: 1;
+flex-grow: 0;
+z-index: 1;
+
+/* Right icon */
+
+display: none;
+width: 14px;
+height: 14px;
+
+/* Inside auto layout */
+flex: none;
+order: 2;
+flex-grow: 0;
+z-index: 2;
+
+/* Attention dot */
+
+position: absolute;
+display: none;
+width: 6px;
+height: 6px;
+right: 3px;
+top: 3px;
+
+background: #0069e0;
+
+/* Inside auto layout */
+flex: none;
+order: 3;
+flex-grow: 0;
+z-index: 3;
+
+/* Changes */
+
+box-sizing: border-box;
+
+/* Auto layout */
+display: flex;
+flex-direction: column;
+align-items: flex-start;
+padding: 0px;
+
+position: relative;
+width: 810px;
+height: 968px;
+left: 100px;
+top: 288px;
+
+border: 1px solid #dde0e3;
+border-radius: 8px;
+
+/* Header */
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+align-items: flex-start;
+padding: 16px 16px 8px;
+gap: 8px;
+
+width: 808px;
+height: 72px;
+
+background: #ffffff;
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+align-self: stretch;
+flex-grow: 0;
+
+/* Action group */
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+align-items: center;
+padding: 0px;
+gap: 6px;
+
+width: 28px;
+height: 28px;
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 0;
+
+/* Button
+
+<p>Button, Select, Toggle</p>
+*/
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+justify-content: center;
+align-items: center;
+padding: 6px 7px;
+gap: 6px;
+isolation: isolate;
+
+width: 28px;
+min-width: 28px;
+height: 28px;
+min-height: 28px;
+
+border-radius: 4px;
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 0;
+
+/* Left icon */
+
+width: 14px;
+height: 14px;
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 0;
+z-index: 0;
+
+/* icon path */
+
+position: absolute;
+left: 33.93%;
+right: 8.93%;
+top: 21.43%;
+bottom: 46.43%;
+
+background: #5c6570;
+transform: matrix(0, -1, -1, 0, 0, 0);
+
+/* Label */
+
+display: none;
+width: 31px;
+height: 16px;
+
+/* typography/body/small.emphasized */
+font-family: 'Nunito Sans';
+font-style: normal;
+font-weight: 700;
+font-size: 12px;
+line-height: 16px;
+/* identical to box height, or 133% */
+
+color: #5c6570;
+
+/* Inside auto layout */
+flex: none;
+order: 1;
+flex-grow: 1;
+z-index: 1;
+
+/* Right icon */
+
+display: none;
+width: 14px;
+height: 14px;
+
+/* Inside auto layout */
+flex: none;
+order: 2;
+flex-grow: 0;
+z-index: 2;
+
+/* Attention dot */
+
+position: absolute;
+display: none;
+width: 6px;
+height: 6px;
+right: 3px;
+top: 3px;
+
+background: #0069e0;
+
+/* Inside auto layout */
+flex: none;
+order: 3;
+flex-grow: 0;
+z-index: 3;
+
+/* Build details */
+
+/* Auto layout */
+display: flex;
+flex-direction: column;
+align-items: flex-start;
+padding: 0px;
+gap: 4px;
+
+width: 566px;
+height: 48px;
+
+/* Inside auto layout */
+flex: none;
+order: 1;
+flex-grow: 1;
+
+/* Name of the PR */
+
+width: 566px;
+height: 24px;
+
+/* typography/headline/4 */
+font-family: 'Nunito Sans';
+font-style: normal;
+font-weight: 700;
+font-size: 20px;
+line-height: 24px;
+/* identical to box height, or 120% */
+
+color: #2e3338;
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+align-self: stretch;
+flex-grow: 0;
+
+/* Frame 1277 */
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+align-items: center;
+padding: 0px;
+gap: 8px;
+
+width: 201px;
+height: 20px;
+
+/* Inside auto layout */
+flex: none;
+order: 1;
+flex-grow: 0;
+
+/* Heading */
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+align-items: center;
+padding: 0px;
+gap: 4px;
+
+width: 119px;
+height: 20px;
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 0;
+
+/* Component */
+
+width: 34px;
+height: 20px;
+
+/* typography/body/medium.emphasized */
+font-family: 'Nunito Sans';
+font-style: normal;
+font-weight: 700;
+font-size: 14px;
+line-height: 20px;
+/* identical to box height, or 143% */
+
+color: #2e3338;
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 0;
+
+/* Component */
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+align-items: center;
+padding: 0px;
+gap: 6px;
+
+width: 4px;
+height: 20px;
+
+/* Inside auto layout */
+flex: none;
+order: 1;
+flex-grow: 0;
+
+/* Component */
+
+width: 4px;
+height: 20px;
+
+/* typography/body/medium */
+font-family: 'Nunito Sans';
+font-style: normal;
+font-weight: 400;
+font-size: 14px;
+line-height: 20px;
+/* identical to box height, or 143% */
+
+color: #2e3338;
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 0;
+
+/* Story */
+
+width: 73px;
+height: 20px;
+
+/* typography/body/medium */
+font-family: 'Nunito Sans';
+font-style: normal;
+font-weight: 400;
+font-size: 14px;
+line-height: 20px;
+/* identical to box height, or 143% */
+
+color: #2e3338;
+
+/* Inside auto layout */
+flex: none;
+order: 2;
+flex-grow: 0;
+
+/* Badge */
+
+box-sizing: border-box;
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+align-items: center;
+padding: 2px 12px;
+gap: 6px;
+
+width: 74px;
+height: 20px;
+min-height: 20px;
+
+background: #fff7eb;
+border: 1px solid #ffdead;
+border-radius: 200px;
+
+/* Inside auto layout */
+flex: none;
+order: 1;
+flex-grow: 0;
+
+/* Icon */
+
+display: none;
+width: 12px;
+height: 12px;
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 0;
+
+/* Label */
+
+width: 50px;
+height: 16px;
+
+/* typography/body/small.emphasized */
+font-family: 'Nunito Sans';
+font-style: normal;
+font-weight: 700;
+font-size: 12px;
+line-height: 16px;
+/* identical to box height, or 133% */
+
+color: #a34c00;
+
+/* Inside auto layout */
+flex: none;
+order: 1;
+flex-grow: 0;
+
+/* Frame 1362 */
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+align-items: center;
+padding: 0px;
+gap: 16px;
+
+width: 166px;
+height: 28px;
+
+/* Inside auto layout */
+flex: none;
+order: 2;
+flex-grow: 0;
+
+/* Button
+
+<p>Button, Select, Toggle</p>
+*/
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+justify-content: center;
+align-items: center;
+padding: 6px 7px;
+gap: 6px;
+isolation: isolate;
+
+width: 44px;
+min-width: 28px;
+height: 28px;
+min-height: 28px;
+
+border-radius: 4px;
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 0;
+
+/* Left icon */
+
+display: none;
+width: 14px;
+height: 14px;
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 0;
+z-index: 0;
+
+/* Label */
+
+width: 30px;
+height: 16px;
+
+font-family: 'Nunito Sans';
+font-style: normal;
+font-weight: 400;
+font-size: 14px;
+line-height: 16px;
+/* identical to box height, or 114% */
+
+color: #5c6570;
+
+/* Inside auto layout */
+flex: none;
+order: 1;
+flex-grow: 1;
+z-index: 1;
+
+/* Right icon */
+
+display: none;
+width: 14px;
+height: 14px;
+
+/* Inside auto layout */
+flex: none;
+order: 2;
+flex-grow: 0;
+z-index: 2;
+
+/* Attention dot */
+
+position: absolute;
+display: none;
+width: 6px;
+height: 6px;
+right: 3px;
+top: 3px;
+
+background: #0069e0;
+
+/* Inside auto layout */
+flex: none;
+order: 3;
+flex-grow: 0;
+z-index: 3;
+
+/* Frame 1278 */
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+align-items: center;
+padding: 0px;
+gap: 6px;
+
+width: 62px;
+height: 28px;
+
+/* Inside auto layout */
+flex: none;
+order: 1;
+flex-grow: 0;
+
+/* Button
+
+<p>Button, Select, Toggle</p>
+*/
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+justify-content: center;
+align-items: center;
+padding: 6px 7px;
+gap: 6px;
+isolation: isolate;
+
+width: 28px;
+min-width: 28px;
+height: 28px;
+min-height: 28px;
+
+border-radius: 4px;
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 0;
+
+/* Left icon */
+
+width: 14px;
+height: 14px;
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 0;
+z-index: 0;
+
+/* icon path */
+
+position: absolute;
+left: 33.93%;
+right: 8.93%;
+top: 21.43%;
+bottom: 46.43%;
+
+background: #5c6570;
+transform: matrix(0, -1, -1, 0, 0, 0);
+
+/* Label */
+
+display: none;
+width: 31px;
+height: 16px;
+
+/* typography/body/small.emphasized */
+font-family: 'Nunito Sans';
+font-style: normal;
+font-weight: 700;
+font-size: 12px;
+line-height: 16px;
+/* identical to box height, or 133% */
+
+color: #5c6570;
+
+/* Inside auto layout */
+flex: none;
+order: 1;
+flex-grow: 1;
+z-index: 1;
+
+/* Right icon */
+
+display: none;
+width: 14px;
+height: 14px;
+
+/* Inside auto layout */
+flex: none;
+order: 2;
+flex-grow: 0;
+z-index: 2;
+
+/* Attention dot */
+
+position: absolute;
+display: none;
+width: 6px;
+height: 6px;
+right: 3px;
+top: 3px;
+
+background: #0069e0;
+
+/* Inside auto layout */
+flex: none;
+order: 3;
+flex-grow: 0;
+z-index: 3;
+
+/* Button
+
+<p>Button, Select, Toggle</p>
+*/
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+justify-content: center;
+align-items: center;
+padding: 6px 7px;
+gap: 6px;
+isolation: isolate;
+
+width: 28px;
+min-width: 28px;
+height: 28px;
+min-height: 28px;
+
+border-radius: 4px;
+
+/* Inside auto layout */
+flex: none;
+order: 1;
+flex-grow: 0;
+
+/* Left icon */
+
+width: 14px;
+height: 14px;
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 0;
+z-index: 0;
+
+/* icon path */
+
+position: absolute;
+left: 33.93%;
+right: 8.93%;
+top: 21.43%;
+bottom: 46.43%;
+
+background: #5c6570;
+transform: rotate(-90deg);
+
+/* Label */
+
+display: none;
+width: 31px;
+height: 16px;
+
+/* typography/body/small.emphasized */
+font-family: 'Nunito Sans';
+font-style: normal;
+font-weight: 700;
+font-size: 12px;
+line-height: 16px;
+/* identical to box height, or 133% */
+
+color: #5c6570;
+
+/* Inside auto layout */
+flex: none;
+order: 1;
+flex-grow: 1;
+z-index: 1;
+
+/* Right icon */
+
+display: none;
+width: 14px;
+height: 14px;
+
+/* Inside auto layout */
+flex: none;
+order: 2;
+flex-grow: 0;
+z-index: 2;
+
+/* Attention dot */
+
+position: absolute;
+display: none;
+width: 6px;
+height: 6px;
+right: 3px;
+top: 3px;
+
+background: #0069e0;
+
+/* Inside auto layout */
+flex: none;
+order: 3;
+flex-grow: 0;
+z-index: 3;
+
+/* Button
+
+<p>Button, Select, Toggle</p>
+*/
+
+box-sizing: border-box;
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+justify-content: center;
+align-items: center;
+padding: 6px 7px;
+gap: 6px;
+isolation: isolate;
+
+width: 28px;
+min-width: 28px;
+height: 28px;
+min-height: 28px;
+
+background: #f7fafc;
+border: 1px solid #dde0e3;
+border-radius: 4px;
+
+/* Inside auto layout */
+flex: none;
+order: 2;
+flex-grow: 0;
+
+/* Left icon */
+
+width: 14px;
+height: 14px;
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 0;
+z-index: 0;
+
+/* icon path */
+
+position: absolute;
+left: 9.87%;
+right: 9.87%;
+top: 0%;
+bottom: 0%;
+
+background: #2e3338;
+
+/* Label */
+
+display: none;
+width: 31px;
+height: 16px;
+
+/* typography/body/small.emphasized */
+font-family: 'Nunito Sans';
+font-style: normal;
+font-weight: 700;
+font-size: 12px;
+line-height: 16px;
+/* identical to box height, or 133% */
+display: flex;
+align-items: center;
+
+color: #2e3338;
+
+/* Inside auto layout */
+flex: none;
+order: 1;
+flex-grow: 0;
+z-index: 1;
+
+/* Right icon */
+
+display: none;
+width: 14px;
+height: 14px;
+
+/* Inside auto layout */
+flex: none;
+order: 2;
+flex-grow: 0;
+z-index: 2;
+
+/* Attention dot */
+
+position: absolute;
+display: none;
+width: 6px;
+height: 6px;
+right: 3px;
+top: 3px;
+
+background: #0069e0;
+
+/* Inside auto layout */
+flex: none;
+order: 3;
+flex-grow: 0;
+z-index: 3;
+
+/* Toolbar */
+
+box-sizing: border-box;
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+align-items: center;
+padding: 0px;
+
+width: 808px;
+height: 40px;
+min-height: 40px;
+
+background: #ffffff;
+border-bottom: 1px solid #dde0e3;
+
+/* Inside auto layout */
+flex: none;
+order: 1;
+align-self: stretch;
+flex-grow: 0;
+
+/* Primary actions */
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+align-items: center;
+padding: 0px 10px;
+gap: 6px;
+
+width: 404px;
+height: 40px;
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 1;
+
+/* Action group */
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+align-items: center;
+padding: 0px;
+gap: 6px;
+
+display: none;
+width: 198px;
+height: 28px;
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 0;
+
+/* Button
+
+<p>Button, Select, Toggle</p>
+*/
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+justify-content: center;
+align-items: center;
+padding: 6px 7px;
+gap: 6px;
+
+width: 28px;
+min-width: 28px;
+height: 28px;
+min-height: 28px;
+
+border-radius: 4px;
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 0;
+
+/* Button */
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+justify-content: center;
+align-items: center;
+padding: 6px 7px;
+gap: 6px;
+isolation: isolate;
+
+width: 28px;
+min-width: 28px;
+height: 28px;
+min-height: 28px;
+
+border-radius: 4px;
+
+/* Inside auto layout */
+flex: none;
+order: 1;
+flex-grow: 0;
+
+/* icon/commentadd */
+
+width: 14px;
+height: 14px;
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 0;
+z-index: 0;
+
+/* Vector 1357 */
+
+position: absolute;
+width: 0px;
+height: 4px;
+left: 7px;
+top: 5px;
+
+border: 1px solid #5c6570;
+
+/* Vector 1358 */
+
+position: absolute;
+width: 4px;
+height: 0px;
+left: 5px;
+top: 7px;
+
+border: 1px solid #5c6570;
+
+/* Vector 2749 */
+
+position: absolute;
+width: 2px;
+height: 2px;
+left: 5px;
+top: 7px;
+
+border: 1px solid #5c6570;
+transform: matrix(1, 0, 0, -1, 0, 0);
+
+/* Vector 2750 */
+
+position: absolute;
+width: 2px;
+height: 2px;
+left: 7px;
+top: 7px;
+
+border: 1px solid #5c6570;
+transform: rotate(180deg);
+
+/* Vector 2751 */
+
+position: absolute;
+width: 2px;
+height: 2px;
+left: 5px;
+top: 5px;
+
+border: 1px solid #5c6570;
+
+/* Vector 2752 */
+
+position: absolute;
+width: 2px;
+height: 2px;
+left: 7px;
+top: 5px;
+
+border: 1px solid #5c6570;
+transform: matrix(-1, 0, 0, 1, 0, 0);
+
+/* Rectangle 1104 */
+
+box-sizing: border-box;
+
+position: absolute;
+width: 12px;
+height: 10px;
+left: 1px;
+top: 2px;
+
+border: 1px solid #5c6570;
+border-radius: 0.5px;
+
+/* Vector 1359 */
+
+position: absolute;
+width: 0px;
+height: 2px;
+left: 3.5px;
+top: 11.5px;
+
+border: 1px solid #5c6570;
+
+/* Vector 1360 */
+
+position: absolute;
+width: 2px;
+height: 2px;
+left: 3.5px;
+top: 11.5px;
+
+border: 1px solid #5c6570;
+
+/* Vector 1361 */
+
+position: absolute;
+width: 2px;
+height: 2px;
+left: 3.5px;
+top: 11.5px;
+
+background: #5c6570;
+
+/* Label */
+
+display: none;
+width: 31px;
+height: 16px;
+
+/* typography/body/small.emphasized */
+font-family: 'Nunito Sans';
+font-style: normal;
+font-weight: 700;
+font-size: 12px;
+line-height: 16px;
+/* identical to box height, or 133% */
+
+color: #5c6570;
+
+/* Inside auto layout */
+flex: none;
+order: 1;
+flex-grow: 1;
+z-index: 1;
+
+/* Right icon */
+
+display: none;
+width: 14px;
+height: 14px;
+
+/* Inside auto layout */
+flex: none;
+order: 2;
+flex-grow: 0;
+z-index: 2;
+
+/* Attention dot */
+
+position: absolute;
+display: none;
+width: 6px;
+height: 6px;
+right: 3px;
+top: 3px;
+
+background: #0069e0;
+
+/* Inside auto layout */
+flex: none;
+order: 3;
+flex-grow: 0;
+z-index: 3;
+
+/* Button
+
+<p>Button, Select, Toggle</p>
+*/
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+justify-content: center;
+align-items: center;
+padding: 6px 7px;
+gap: 6px;
+
+width: 28px;
+min-width: 28px;
+height: 28px;
+min-height: 28px;
+
+border-radius: 4px;
+
+/* Inside auto layout */
+flex: none;
+order: 2;
+flex-grow: 0;
+
+/* Button
+
+<p>Button, Select, Toggle</p>
+*/
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+justify-content: center;
+align-items: center;
+padding: 6px 7px;
+gap: 6px;
+
+width: 28px;
+min-width: 28px;
+height: 28px;
+min-height: 28px;
+
+border-radius: 4px;
+
+/* Inside auto layout */
+flex: none;
+order: 3;
+flex-grow: 0;
+
+/* Button
+
+<p>Button, Select, Toggle</p>
+*/
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+justify-content: center;
+align-items: center;
+padding: 6px 7px;
+gap: 6px;
+
+width: 28px;
+min-width: 28px;
+height: 28px;
+min-height: 28px;
+
+border-radius: 4px;
+
+/* Inside auto layout */
+flex: none;
+order: 4;
+flex-grow: 0;
+
+/* Button
+
+<p>Button, Select, Toggle</p>
+*/
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+justify-content: center;
+align-items: center;
+padding: 6px 7px;
+gap: 6px;
+
+width: 28px;
+min-width: 28px;
+height: 28px;
+min-height: 28px;
+
+border-radius: 4px;
+
+/* Inside auto layout */
+flex: none;
+order: 5;
+flex-grow: 0;
+
+/* Secondary actions */
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+align-items: center;
+padding: 0px 0px 0px 10px;
+gap: 16px;
+
+width: 384px;
+height: 20px;
+
+/* Inside auto layout */
+flex: none;
+order: 1;
+flex-grow: 1;
+
+/* Button
+
+<p>Button, Select, Toggle</p>
+*/
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+justify-content: center;
+align-items: center;
+padding: 6px 7px;
+gap: 6px;
+
+display: none;
+width: 28px;
+min-width: 28px;
+height: 28px;
+min-height: 28px;
+
+border-radius: 4px;
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 0;
+
+/* Primary actions */
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+align-items: center;
+padding: 0px;
+gap: 8px;
+
+display: none;
+width: 62px;
+height: 40px;
+
+/* Inside auto layout */
+flex: none;
+order: 1;
+flex-grow: 0;
+
+/* Button
+
+<p>Button, Select, Toggle</p>
+*/
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+justify-content: center;
+align-items: center;
+padding: 6px 7px;
+gap: 6px;
+
+display: none;
+width: 28px;
+min-width: 28px;
+height: 28px;
+min-height: 28px;
+
+border-radius: 4px;
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 0;
+
+/* Separator */
+
+display: none;
+width: 1px;
+height: 24px;
+
+background: #dde0e3;
+
+/* Inside auto layout */
+flex: none;
+order: 1;
+flex-grow: 0;
+
+/* Tabs */
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+align-items: center;
+padding: 0px;
+
+display: none;
+width: 325px;
+height: 40px;
+
+/* Inside auto layout */
+flex: none;
+order: 2;
+flex-grow: 0;
+
+/* Separator */
+
+display: none;
+width: 1px;
+height: 24px;
+
+background: #dde0e3;
+
+/* Inside auto layout */
+flex: none;
+order: 3;
+flex-grow: 0;
+
+/* Action group */
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+align-items: center;
+padding: 0px;
+gap: 6px;
+
+width: 62px;
+height: 28px;
+
+/* Inside auto layout */
+flex: none;
+order: 4;
+flex-grow: 0;
+
+/* Button
+
+<p>Button, Select, Toggle</p>
+*/
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+justify-content: center;
+align-items: center;
+padding: 6px 7px;
+gap: 6px;
+
+width: 28px;
+min-width: 28px;
+height: 28px;
+min-height: 28px;
+
+border-radius: 4px;
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 0;
+
+/* Button
+
+<p>Button, Select, Toggle</p>
+*/
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+justify-content: center;
+align-items: center;
+padding: 6px 7px;
+gap: 6px;
+
+width: 28px;
+min-width: 28px;
+height: 28px;
+min-height: 28px;
+
+border-radius: 4px;
+
+/* Inside auto layout */
+flex: none;
+order: 1;
+flex-grow: 0;
+
+/* Frame 1278 */
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+align-items: center;
+padding: 0px 6px;
+gap: 8px;
+
+width: 53px;
+height: 20px;
+
+/* Inside auto layout */
+flex: none;
+order: 2;
+flex-grow: 0;
+
+/* Frame 1340 */
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+align-items: center;
+padding: 0px;
+gap: 4px;
+
+width: 41px;
+height: 20px;
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 0;
+
+/* Component */
+
+width: 41px;
+height: 20px;
+
+/* typography/body/medium.emphasized */
+font-family: 'Nunito Sans';
+font-style: normal;
+font-weight: 700;
+font-size: 14px;
+line-height: 20px;
+/* identical to box height, or 143% */
+
+color: #2e3338;
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 0;
+
+/* Secondary actions */
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+justify-content: flex-end;
+align-items: center;
+padding: 0px 10px 0px 0px;
+gap: 16px;
+
+width: 404px;
+height: 28px;
+
+/* Inside auto layout */
+flex: none;
+order: 1;
+flex-grow: 1;
+
+/* Frame 864 */
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+align-items: center;
+padding: 0px;
+gap: 6px;
+
+width: 90px;
+height: 28px;
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 0;
+
+/* Frame 1288 */
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+align-items: center;
+padding: 0px;
+gap: 6px;
+
+width: 90px;
+height: 28px;
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 0;
+
+/* Button
+
+<p>Button, Select, Toggle</p>
+*/
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+justify-content: center;
+align-items: center;
+padding: 6px 7px;
+gap: 6px;
+isolation: isolate;
+
+width: 28px;
+min-width: 28px;
+height: 28px;
+min-height: 28px;
+
+border-radius: 4px;
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 0;
+
+/* Left icon */
+
+width: 14px;
+height: 14px;
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 0;
+z-index: 0;
+
+/* icon path */
+
+position: absolute;
+left: 7.14%;
+right: 7.14%;
+top: 17.86%;
+bottom: 17.86%;
+
+background: #5c6570;
+
+/* Label */
+
+display: none;
+width: 31px;
+height: 16px;
+
+/* typography/body/small.emphasized */
+font-family: 'Nunito Sans';
+font-style: normal;
+font-weight: 700;
+font-size: 12px;
+line-height: 16px;
+/* identical to box height, or 133% */
+
+color: #5c6570;
+
+/* Inside auto layout */
+flex: none;
+order: 1;
+flex-grow: 0;
+z-index: 1;
+
+/* Right icon */
+
+display: none;
+width: 14px;
+height: 14px;
+
+/* Inside auto layout */
+flex: none;
+order: 2;
+flex-grow: 0;
+z-index: 2;
+
+/* Attention dot */
+
+position: absolute;
+display: none;
+width: 6px;
+height: 6px;
+right: 3px;
+top: 3px;
+
+background: #0069e0;
+
+/* Inside auto layout */
+flex: none;
+order: 3;
+flex-grow: 0;
+z-index: 3;
+
+/* ButtonGroup */
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+align-items: flex-start;
+padding: 0px;
+
+width: 56px;
+height: 28px;
+
+background: #ffffff;
+border-radius: 5px;
+
+/* Inside auto layout */
+flex: none;
+order: 1;
+flex-grow: 0;
+
+/* IconButton */
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+align-items: center;
+padding: 7px;
+gap: 6px;
+
+width: 28px;
+height: 28px;
+
+background: #ebf4ff;
+border-radius: 5px;
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 0;
+
+/* icon/credit */
+
+width: 14px;
+height: 14px;
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 0;
+
+/* Rectangle 1096 */
+
+box-sizing: border-box;
+
+position: absolute;
+width: 14px;
+height: 10px;
+left: 0px;
+top: 2px;
+
+border: 1px solid #0069e0;
+border-radius: 0.5px;
+
+/* Label */
+
+display: none;
+width: 94px;
+height: 13px;
+
+font-family: 'Nunito Sans';
+font-style: normal;
+font-weight: 400;
+font-size: 13px;
+line-height: 13px;
+/* identical to box height, or 100% */
+
+/* Monochrome / mediumdark */
+color: #73828c;
+
+/* Inside auto layout */
+flex: none;
+order: 1;
+flex-grow: 0;
+
+/* IconButton */
+
+box-sizing: border-box;
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+align-items: center;
+padding: 7px;
+gap: 6px;
+
+width: 28px;
+height: 28px;
+
+border: 1px solid #ffffff;
+border-radius: 5px;
+
+/* Inside auto layout */
+flex: none;
+order: 1;
+flex-grow: 0;
+
+/* icon/credit */
+
+width: 14px;
+height: 14px;
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 0;
+
+/* Rectangle 1096 */
+
+box-sizing: border-box;
+
+position: absolute;
+width: 6px;
+height: 10px;
+left: 0px;
+top: 2px;
+
+border: 1px solid #5c6570;
+border-radius: 0.5px;
+
+/* Rectangle 1097 */
+
+box-sizing: border-box;
+
+position: absolute;
+width: 6px;
+height: 10px;
+left: 8px;
+top: 2px;
+
+border: 1px solid #5c6570;
+border-radius: 0.5px;
+
+/* Label */
+
+display: none;
+width: 94px;
+height: 13px;
+
+font-family: 'Nunito Sans';
+font-style: normal;
+font-weight: 400;
+font-size: 13px;
+line-height: 13px;
+/* identical to box height, or 100% */
+
+/* Monochrome / mediumdark */
+color: #73828c;
+
+/* Inside auto layout */
+flex: none;
+order: 1;
+flex-grow: 0;
+
+/* Frame 1274 */
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+align-items: flex-start;
+padding: 0px;
+
+width: 808px;
+height: 854px;
+
+/* Inside auto layout */
+flex: none;
+order: 2;
+align-self: stretch;
+flex-grow: 1;
+
+/* Frame 1275 */
+
+/* Auto layout */
+display: flex;
+flex-direction: column;
+align-items: flex-start;
+padding: 0px;
+
+width: 808px;
+height: 854px;
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+align-self: stretch;
+flex-grow: 1;
+
+/* Preview */
+
+/* Auto layout */
+display: flex;
+flex-direction: column;
+align-items: flex-start;
+padding: 0px;
+
+width: 808px;
+height: 854px;
+
+background: #ffffff;
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+align-self: stretch;
+flex-grow: 1;
+
+/* After */
+
+/* Auto layout */
+display: flex;
+flex-direction: column;
+align-items: flex-start;
+padding: 0px;
+isolation: isolate;
+
+width: 808px;
+height: 1744px;
+min-height: 900px;
+
+background: #fdbbf9;
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+align-self: stretch;
+flex-grow: 0;
+
+/* Social Media App Header */
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+justify-content: space-between;
+align-items: center;
+padding: 24px;
+gap: 303px;
+
+width: 808px;
+height: 102px;
+
+background: #ffffff;
+border-bottom: 8px solid #000000;
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+align-self: stretch;
+flex-grow: 0;
+z-index: 1;
+
+/* Frame 1017 */
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+align-items: center;
+padding: 0px 40px 0px 17px;
+gap: 12px;
+
+width: 183.5px;
+height: 50.15px;
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 1;
+
+/* Rectangle */
+
+width: 40.02px;
+height: 50.15px;
+
+background: url(make a logo that is a turtle in pajamas. it should feel modern and be black on a transparent background);
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 0;
+
+/* Frame 1022 */
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+align-items: center;
+padding: 0px;
+gap: 16px;
+
+width: 393px;
+height: 48px;
+
+/* Inside auto layout */
+flex: none;
+order: 1;
+flex-grow: 0;
+
+/* Search / _Search */
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+align-items: center;
+padding: 12px;
+gap: 12px;
+
+width: 329px;
+height: 48px;
+
+border-width: 2px 2px 4px 2px;
+border-style: solid;
+border-color: #000000;
+border-radius: 4px;
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 0;
+
+/* Search */
+
+width: 24px;
+height: 24px;
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 0;
+
+/* icon path */
+
+position: absolute;
+left: 3.57%;
+right: 3.57%;
+top: 3.57%;
+bottom: 3.57%;
+
+background: #000000;
+
+/* Text */
+
+width: 269px;
+height: 20px;
+
+font-family: 'Martian Mono';
+font-style: normal;
+font-weight: 400;
+font-size: 16px;
+line-height: 20px;
+/* identical to box height, or 125% */
+
+color: #000000;
+
+/* Inside auto layout */
+flex: none;
+order: 1;
+flex-grow: 0;
+
+/* keyboard-shortcut */
+
+/* Auto layout */
+display: flex;
+flex-direction: column;
+align-items: flex-start;
+padding: 3px 6px;
+gap: 10px;
+
+display: none;
+width: 19px;
+height: 16px;
+
+background: rgba(0, 0, 0, 0.05);
+border-radius: 3px;
+
+/* Inside auto layout */
+flex: none;
+order: 2;
+flex-grow: 0;
+
+/* Search / _Search */
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+align-items: center;
+padding: 12px;
+gap: 12px;
+
+width: 48px;
+height: 48px;
+
+background: #fdbbf9;
+border-width: 2px 2px 4px 2px;
+border-style: solid;
+border-color: #000000;
+border-radius: 4px;
+
+/* Inside auto layout */
+flex: none;
+order: 1;
+flex-grow: 0;
+
+/* Plus */
+
+width: 24px;
+height: 24px;
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 0;
+
+/* icon path */
+
+position: absolute;
+left: 0%;
+right: 0%;
+top: 0%;
+bottom: 0%;
+
+background: #000000;
+
+/* keyboard-shortcut */
+
+/* Auto layout */
+display: flex;
+flex-direction: column;
+align-items: flex-start;
+padding: 3px 6px;
+gap: 10px;
+
+display: none;
+width: 19px;
+height: 16px;
+
+background: rgba(0, 0, 0, 0.05);
+border-radius: 3px;
+
+/* Inside auto layout */
+flex: none;
+order: 1;
+flex-grow: 0;
+
+/* Frame 1019 */
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+justify-content: flex-end;
+align-items: center;
+padding: 0px;
+gap: 12px;
+
+width: 183.5px;
+height: 54px;
+
+/* Inside auto layout */
+flex: none;
+order: 2;
+align-self: stretch;
+flex-grow: 1;
+
+/* Frame 1026 */
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+align-items: center;
+padding: 0px;
+gap: 6px;
+
+width: 102px;
+height: 48px;
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 0;
+
+/* Search / _Search */
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+align-items: center;
+padding: 12px;
+gap: 12px;
+
+width: 48px;
+height: 48px;
+
+border-radius: 4px;
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 0;
+
+/* Left icon */
+
+width: 24px;
+height: 24px;
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 0;
+
+/* icon path */
+
+position: absolute;
+left: 7.46%;
+right: 7.46%;
+top: 14.29%;
+bottom: 14.29%;
+
+background: #000000;
+
+/* keyboard-shortcut */
+
+/* Auto layout */
+display: flex;
+flex-direction: column;
+align-items: flex-start;
+padding: 3px 6px;
+gap: 10px;
+
+display: none;
+width: 19px;
+height: 16px;
+
+background: rgba(0, 0, 0, 0.05);
+border-radius: 3px;
+
+/* Inside auto layout */
+flex: none;
+order: 1;
+flex-grow: 0;
+
+/* Search / _Search */
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+align-items: center;
+padding: 12px;
+gap: 12px;
+
+width: 48px;
+height: 48px;
+
+border-radius: 4px;
+
+/* Inside auto layout */
+flex: none;
+order: 1;
+flex-grow: 0;
+
+/* Left icon */
+
+width: 24px;
+height: 24px;
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 0;
+
+/* icon path */
+
+position: absolute;
+left: 10.71%;
+right: 10.71%;
+top: 0%;
+bottom: 0%;
+
+background: #000000;
+
+/* keyboard-shortcut */
+
+/* Auto layout */
+display: flex;
+flex-direction: column;
+align-items: flex-start;
+padding: 3px 6px;
+gap: 10px;
+
+display: none;
+width: 19px;
+height: 16px;
+
+background: rgba(0, 0, 0, 0.05);
+border-radius: 3px;
+
+/* Inside auto layout */
+flex: none;
+order: 1;
+flex-grow: 0;
+
+/* zag */
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+align-items: center;
+padding: 0px;
+gap: 10px;
+
+width: 48px;
+height: 48px;
+
+border-width: 2px 2px 4px 2px;
+border-style: solid;
+border-color: #000000;
+border-radius: 4px;
+
+/* Inside auto layout */
+flex: none;
+order: 1;
+flex-grow: 0;
+
+/* zag */
+
+width: 48px;
+height: 48px;
+
+background: url(IMG_0093);
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+align-self: stretch;
+flex-grow: 1;
+
+/* Container */
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+align-items: flex-start;
+padding: 48px;
+isolation: isolate;
+
+width: 808px;
+height: 1634px;
+
+/* Inside auto layout */
+flex: none;
+order: 1;
+align-self: stretch;
+flex-grow: 0;
+z-index: 0;
+
+/* Main Content */
+
+/* Auto layout */
+display: flex;
+flex-direction: column;
+align-items: flex-start;
+padding: 0px;
+isolation: isolate;
+
+width: 712px;
+height: 1538px;
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 1;
+z-index: 0;
+
+/* Nine Image Gallery */
+
+/* Auto layout */
+display: flex;
+flex-direction: column;
+align-items: flex-start;
+padding: 0px;
+gap: 48px;
+
+width: 712px;
+height: 1538px;
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+align-self: stretch;
+flex-grow: 0;
+z-index: 0;
+
+/* row */
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+align-items: flex-start;
+padding: 0px;
+gap: 48px;
+
+width: 712px;
+height: 426px;
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+align-self: stretch;
+flex-grow: 0;
+
+/* Frame 1013 */
+
+box-sizing: border-box;
+
+/* Auto layout */
+display: flex;
+flex-direction: column;
+align-items: flex-start;
+padding: 0px;
+
+width: 334px;
+height: 426px;
+
+background: #ffffff;
+border-width: 4px 4px 8px 4px;
+border-style: solid;
+border-color: #000000;
+border-radius: 16px;
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 0;
+
+/* Rectangle */
+
+width: 326px;
+height: 326px;
+
+background: url(make a realistic square image of a goldfish wearing pajamas. It should be in water.png);
+border-bottom: 4px solid #000000;
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 0;
+
+/* Frame 1013 */
+
+/* Auto layout */
+display: flex;
+flex-direction: column;
+align-items: flex-start;
+padding: 16px;
+gap: 12px;
+
+width: 326px;
+height: 84px;
+
+/* Inside auto layout */
+flex: none;
+order: 1;
+align-self: stretch;
+flex-grow: 0;
+
+/* Engagement Container */
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+align-items: center;
+padding: 0px;
+gap: 16px;
+
+width: 294px;
+height: 24px;
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+align-self: stretch;
+flex-grow: 0;
+
+/* Frame 1025 */
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+align-items: center;
+padding: 0px;
+gap: 16px;
+
+width: 254px;
+height: 24px;
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 1;
+
+/* Left icon */
+
+width: 24px;
+height: 24px;
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 0;
+
+/* icon path */
+
+position: absolute;
+left: 0%;
+right: 0%;
+top: 7.14%;
+bottom: 7.14%;
+
+background: #9908b6;
+
+/* chat */
+
+width: 24px;
+height: 24px;
+
+/* Inside auto layout */
+flex: none;
+order: 1;
+flex-grow: 0;
+
+/* Union (Stroke) */
+
+position: absolute;
+left: 7.14%;
+right: 7.14%;
+top: 7.14%;
+bottom: 7.14%;
+
+background: #9908b6;
+
+/* Left icon */
+
+width: 24px;
+height: 24px;
+
+/* Inside auto layout */
+flex: none;
+order: 1;
+flex-grow: 0;
+
+/* icon path */
+
+position: absolute;
+left: 7.46%;
+right: 7.46%;
+top: 14.29%;
+bottom: 14.29%;
+
+background: #9908b6;
+
+/* 102 */
+
+width: 294px;
+height: 16px;
+
+font-family: 'Martian Mono';
+font-style: normal;
+font-weight: 500;
+font-size: 16px;
+line-height: 100%;
+/* identical to box height, or 16px */
+
+color: #9908b6;
+
+/* Inside auto layout */
+flex: none;
+order: 1;
+align-self: stretch;
+flex-grow: 0;
+
+/* Frame 1015 */
+
+box-sizing: border-box;
+
+/* Auto layout */
+display: flex;
+flex-direction: column;
+align-items: flex-start;
+padding: 0px;
+
+width: 334px;
+height: 426px;
+
+background: #ffffff;
+border-width: 4px 4px 8px 4px;
+border-style: solid;
+border-color: #000000;
+border-radius: 16px;
+
+/* Inside auto layout */
+flex: none;
+order: 1;
+flex-grow: 0;
+
+/* A small fluffy Pomeranian with a golden coat wearing colorful pajamas, sitting on a soft rug with a happy expression. */
+
+width: 326px;
+height: 326px;
+
+background: url(A small fluffy Pomeranian with a golden coat wearing colorful pajamas, sitting on a soft rug with a happy expression..png);
+mix-blend-mode: normal;
+border-bottom: 4px solid #000000;
+border-radius: 0px;
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 0;
+
+/* Frame 1014 */
+
+/* Auto layout */
+display: flex;
+flex-direction: column;
+align-items: flex-start;
+padding: 16px;
+gap: 12px;
+
+width: 326px;
+height: 84px;
+
+/* Inside auto layout */
+flex: none;
+order: 1;
+align-self: stretch;
+flex-grow: 0;
+
+/* Engagement Container */
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+align-items: center;
+padding: 0px;
+gap: 16px;
+
+width: 294px;
+height: 24px;
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+align-self: stretch;
+flex-grow: 0;
+
+/* Frame 1025 */
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+align-items: center;
+padding: 0px;
+gap: 16px;
+
+width: 254px;
+height: 24px;
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 1;
+
+/* Left icon */
+
+width: 24px;
+height: 24px;
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 0;
+
+/* icon path */
+
+position: absolute;
+left: 0%;
+right: 0%;
+top: 7.14%;
+bottom: 7.14%;
+
+background: #9908b6;
+
+/* chat */
+
+width: 24px;
+height: 24px;
+
+/* Inside auto layout */
+flex: none;
+order: 1;
+flex-grow: 0;
+
+/* Union (Stroke) */
+
+position: absolute;
+left: 7.14%;
+right: 7.14%;
+top: 7.14%;
+bottom: 7.14%;
+
+background: #9908b6;
+
+/* Left icon */
+
+width: 24px;
+height: 24px;
+
+/* Inside auto layout */
+flex: none;
+order: 1;
+flex-grow: 0;
+
+/* icon path */
+
+position: absolute;
+left: 7.46%;
+right: 7.46%;
+top: 14.29%;
+bottom: 14.29%;
+
+background: #9908b6;
+
+/* 102 */
+
+width: 294px;
+height: 16px;
+
+font-family: 'Martian Mono';
+font-style: normal;
+font-weight: 500;
+font-size: 16px;
+line-height: 100%;
+/* identical to box height, or 16px */
+
+color: #9908b6;
+
+/* Inside auto layout */
+flex: none;
+order: 1;
+align-self: stretch;
+flex-grow: 0;
+
+/* row */
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+align-items: flex-start;
+padding: 0px;
+gap: 48px;
+
+width: 712px;
+height: 508px;
+
+/* Inside auto layout */
+flex: none;
+order: 1;
+align-self: stretch;
+flex-grow: 0;
+
+/* Frame 1012 */
+
+box-sizing: border-box;
+
+/* Auto layout */
+display: flex;
+flex-direction: column;
+align-items: flex-start;
+padding: 0px;
+
+width: 334px;
+height: 426px;
+
+background: #ffffff;
+border-width: 4px 4px 8px 4px;
+border-style: solid;
+border-color: #000000;
+border-radius: 16px;
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 0;
+
+/* A sleek black Labrador wearing colorful pajamas, lying on a soft blanket with a playful look in its eyes. */
+
+width: 326px;
+height: 326px;
+
+background: url(A sleek black Labrador wearing colorful pajamas, lying on a soft blanket with a playful look in its eyes..png);
+mix-blend-mode: normal;
+border-bottom: 4px solid #000000;
+border-radius: 0px;
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 0;
+
+/* Frame 1014 */
+
+/* Auto layout */
+display: flex;
+flex-direction: column;
+align-items: flex-start;
+padding: 16px;
+gap: 12px;
+
+width: 326px;
+height: 84px;
+
+/* Inside auto layout */
+flex: none;
+order: 1;
+align-self: stretch;
+flex-grow: 0;
+
+/* Engagement Container */
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+align-items: center;
+padding: 0px;
+gap: 16px;
+
+width: 294px;
+height: 24px;
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+align-self: stretch;
+flex-grow: 0;
+
+/* Frame 1025 */
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+align-items: center;
+padding: 0px;
+gap: 16px;
+
+width: 254px;
+height: 24px;
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 1;
+
+/* Left icon */
+
+width: 24px;
+height: 24px;
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 0;
+
+/* icon path */
+
+position: absolute;
+left: 0%;
+right: 0%;
+top: 7.14%;
+bottom: 7.14%;
+
+background: #9908b6;
+
+/* chat */
+
+width: 24px;
+height: 24px;
+
+/* Inside auto layout */
+flex: none;
+order: 1;
+flex-grow: 0;
+
+/* Union (Stroke) */
+
+position: absolute;
+left: 7.14%;
+right: 7.14%;
+top: 7.14%;
+bottom: 7.14%;
+
+background: #9908b6;
+
+/* Left icon */
+
+width: 24px;
+height: 24px;
+
+/* Inside auto layout */
+flex: none;
+order: 1;
+flex-grow: 0;
+
+/* icon path */
+
+position: absolute;
+left: 7.46%;
+right: 7.46%;
+top: 14.29%;
+bottom: 14.29%;
+
+background: #9908b6;
+
+/* 102 */
+
+width: 294px;
+height: 16px;
+
+font-family: 'Martian Mono';
+font-style: normal;
+font-weight: 500;
+font-size: 16px;
+line-height: 100%;
+/* identical to box height, or 16px */
+
+color: #9908b6;
+
+/* Inside auto layout */
+flex: none;
+order: 1;
+align-self: stretch;
+flex-grow: 0;
+
+/* Frame 1017 */
+
+box-sizing: border-box;
+
+/* Auto layout */
+display: flex;
+flex-direction: column;
+align-items: flex-start;
+padding: 0px;
+
+width: 334px;
+height: 426px;
+
+background: #ffffff;
+border-width: 4px 4px 8px 4px;
+border-style: solid;
+border-color: #000000;
+border-radius: 16px;
+
+/* Inside auto layout */
+flex: none;
+order: 1;
+flex-grow: 0;
+
+/* A fluffy white cat wearing colorful pajamas lounging on a soft blanket. */
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+align-items: center;
+padding: 0px;
+gap: 10px;
+
+width: 326px;
+height: 326px;
+
+background: url(A fluffy white cat wearing colorful pajamas lounging on a soft blanket..png);
+mix-blend-mode: normal;
+border-bottom: 4px solid #000000;
+border-radius: 0px;
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 0;
+
+/* _70f4986b-8feb-4594-8dd9-aaa468b4c41d */
+
+width: 326px;
+height: 326px;
+
+background: url(_70f4986b-8feb-4594-8dd9-aaa468b4c41d.jpg);
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 0;
+
+/* Frame 1014 */
+
+/* Auto layout */
+display: flex;
+flex-direction: column;
+align-items: flex-start;
+padding: 16px;
+gap: 12px;
+
+width: 326px;
+height: 84px;
+
+/* Inside auto layout */
+flex: none;
+order: 1;
+align-self: stretch;
+flex-grow: 0;
+
+/* Engagement Container */
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+align-items: center;
+padding: 0px;
+gap: 16px;
+
+width: 294px;
+height: 24px;
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+align-self: stretch;
+flex-grow: 0;
+
+/* Frame 1025 */
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+align-items: center;
+padding: 0px;
+gap: 16px;
+
+width: 254px;
+height: 24px;
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 1;
+
+/* Left icon */
+
+width: 24px;
+height: 24px;
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 0;
+
+/* icon path */
+
+position: absolute;
+left: 0%;
+right: 0%;
+top: 7.14%;
+bottom: 7.14%;
+
+background: #9908b6;
+
+/* chat */
+
+width: 24px;
+height: 24px;
+
+/* Inside auto layout */
+flex: none;
+order: 1;
+flex-grow: 0;
+
+/* Union (Stroke) */
+
+position: absolute;
+left: 7.14%;
+right: 7.14%;
+top: 7.14%;
+bottom: 7.14%;
+
+background: #9908b6;
+
+/* Left icon */
+
+width: 24px;
+height: 24px;
+
+/* Inside auto layout */
+flex: none;
+order: 1;
+flex-grow: 0;
+
+/* icon path */
+
+position: absolute;
+left: 7.46%;
+right: 7.46%;
+top: 14.29%;
+bottom: 14.29%;
+
+background: #9908b6;
+
+/* 102 */
+
+width: 294px;
+height: 16px;
+
+font-family: 'Martian Mono';
+font-style: normal;
+font-weight: 500;
+font-size: 16px;
+line-height: 100%;
+/* identical to box height, or 16px */
+
+color: #9908b6;
+
+/* Inside auto layout */
+flex: none;
+order: 1;
+align-self: stretch;
+flex-grow: 0;
+
+/* Frame 1016 */
+
+box-sizing: border-box;
+
+/* Auto layout */
+display: flex;
+flex-direction: column;
+align-items: flex-start;
+padding: 0px;
+
+width: 416px;
+height: 508px;
+
+background: #ffffff;
+border-width: 4px 4px 8px 4px;
+border-style: solid;
+border-color: #000000;
+border-radius: 16px;
+
+/* Inside auto layout */
+flex: none;
+order: 2;
+flex-grow: 0;
+
+/* Rectangle */
+
+width: 408px;
+height: 408px;
+
+background: url(give it a matching pajama hat);
+border-bottom: 4px solid #000000;
+transform: matrix(-1, 0, 0, 1, 0, 0);
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 0;
+
+/* Frame 1014 */
+
+/* Auto layout */
+display: flex;
+flex-direction: column;
+align-items: flex-start;
+padding: 16px;
+gap: 12px;
+
+width: 408px;
+height: 84px;
+
+/* Inside auto layout */
+flex: none;
+order: 1;
+align-self: stretch;
+flex-grow: 0;
+
+/* Engagement Container */
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+align-items: center;
+padding: 0px;
+gap: 16px;
+
+width: 376px;
+height: 24px;
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+align-self: stretch;
+flex-grow: 0;
+
+/* Frame 1025 */
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+align-items: center;
+padding: 0px;
+gap: 16px;
+
+width: 336px;
+height: 24px;
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 1;
+
+/* Left icon */
+
+width: 24px;
+height: 24px;
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 0;
+
+/* icon path */
+
+position: absolute;
+left: 0%;
+right: 0%;
+top: 7.14%;
+bottom: 7.14%;
+
+background: #9908b6;
+
+/* chat */
+
+width: 24px;
+height: 24px;
+
+/* Inside auto layout */
+flex: none;
+order: 1;
+flex-grow: 0;
+
+/* Union (Stroke) */
+
+position: absolute;
+left: 7.14%;
+right: 7.14%;
+top: 7.14%;
+bottom: 7.14%;
+
+background: #9908b6;
+
+/* Left icon */
+
+width: 24px;
+height: 24px;
+
+/* Inside auto layout */
+flex: none;
+order: 1;
+flex-grow: 0;
+
+/* icon path */
+
+position: absolute;
+left: 7.46%;
+right: 7.46%;
+top: 14.29%;
+bottom: 14.29%;
+
+background: #9908b6;
+
+/* 102 */
+
+width: 376px;
+height: 16px;
+
+font-family: 'Martian Mono';
+font-style: normal;
+font-weight: 500;
+font-size: 16px;
+line-height: 100%;
+/* identical to box height, or 16px */
+
+color: #9908b6;
+
+/* Inside auto layout */
+flex: none;
+order: 1;
+align-self: stretch;
+flex-grow: 0;
+
+/* row */
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+align-items: flex-start;
+padding: 0px;
+gap: 48px;
+
+width: 712px;
+height: 508px;
+
+/* Inside auto layout */
+flex: none;
+order: 2;
+align-self: stretch;
+flex-grow: 0;
+
+/* Frame 1018 */
+
+box-sizing: border-box;
+
+/* Auto layout */
+display: flex;
+flex-direction: column;
+align-items: flex-start;
+padding: 0px;
+
+width: 416px;
+height: 508px;
+
+background: #ffffff;
+border-width: 4px 4px 8px 4px;
+border-style: solid;
+border-color: #000000;
+border-radius: 16px;
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 0;
+
+/* A fluffy rabbit with a mix of brown and white fur wearing a cute bowtie, sitting on a soft blanket with a curious look. */
+
+width: 408px;
+height: 408px;
+
+background: url(give this rabbit red pajamas to match the bowtie);
+mix-blend-mode: normal;
+border-bottom: 4px solid #000000;
+border-radius: 0px;
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 0;
+
+/* Frame 1014 */
+
+/* Auto layout */
+display: flex;
+flex-direction: column;
+align-items: flex-start;
+padding: 16px;
+gap: 12px;
+
+width: 408px;
+height: 84px;
+
+/* Inside auto layout */
+flex: none;
+order: 1;
+align-self: stretch;
+flex-grow: 0;
+
+/* Engagement Container */
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+align-items: center;
+padding: 0px;
+gap: 16px;
+
+width: 376px;
+height: 24px;
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+align-self: stretch;
+flex-grow: 0;
+
+/* Frame 1025 */
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+align-items: center;
+padding: 0px;
+gap: 16px;
+
+width: 336px;
+height: 24px;
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 1;
+
+/* Left icon */
+
+width: 24px;
+height: 24px;
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 0;
+
+/* icon path */
+
+position: absolute;
+left: 0%;
+right: 0%;
+top: 7.14%;
+bottom: 7.14%;
+
+background: #9908b6;
+
+/* chat */
+
+width: 24px;
+height: 24px;
+
+/* Inside auto layout */
+flex: none;
+order: 1;
+flex-grow: 0;
+
+/* Union (Stroke) */
+
+position: absolute;
+left: 7.14%;
+right: 7.14%;
+top: 7.14%;
+bottom: 7.14%;
+
+background: #9908b6;
+
+/* Left icon */
+
+width: 24px;
+height: 24px;
+
+/* Inside auto layout */
+flex: none;
+order: 1;
+flex-grow: 0;
+
+/* icon path */
+
+position: absolute;
+left: 7.46%;
+right: 7.46%;
+top: 14.29%;
+bottom: 14.29%;
+
+background: #9908b6;
+
+/* 102 */
+
+width: 376px;
+height: 16px;
+
+font-family: 'Martian Mono';
+font-style: normal;
+font-weight: 500;
+font-size: 16px;
+line-height: 100%;
+/* identical to box height, or 16px */
+
+color: #9908b6;
+
+/* Inside auto layout */
+flex: none;
+order: 1;
+align-self: stretch;
+flex-grow: 0;
+
+/* Frame 1014 */
+
+box-sizing: border-box;
+
+/* Auto layout */
+display: flex;
+flex-direction: column;
+align-items: flex-start;
+padding: 0px;
+
+width: 416px;
+height: 508px;
+
+background: #ffffff;
+border-width: 4px 4px 8px 4px;
+border-style: solid;
+border-color: #000000;
+border-radius: 16px;
+
+/* Inside auto layout */
+flex: none;
+order: 1;
+flex-grow: 0;
+
+/* A vibrant green parrot perched on a branch, wearing a tiny hat and looking cheerful against a tropical background. */
+
+width: 408px;
+height: 408px;
+
+background: url(give this parrot pajamas);
+mix-blend-mode: normal;
+border-bottom: 4px solid #000000;
+border-radius: 0px;
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 0;
+
+/* Frame 1014 */
+
+/* Auto layout */
+display: flex;
+flex-direction: column;
+align-items: flex-start;
+padding: 16px;
+gap: 12px;
+
+width: 408px;
+height: 84px;
+
+/* Inside auto layout */
+flex: none;
+order: 1;
+align-self: stretch;
+flex-grow: 0;
+
+/* Engagement Container */
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+align-items: center;
+padding: 0px;
+gap: 16px;
+
+width: 376px;
+height: 24px;
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+align-self: stretch;
+flex-grow: 0;
+
+/* Frame 1025 */
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+align-items: center;
+padding: 0px;
+gap: 16px;
+
+width: 336px;
+height: 24px;
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 1;
+
+/* Left icon */
+
+width: 24px;
+height: 24px;
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 0;
+
+/* icon path */
+
+position: absolute;
+left: 0%;
+right: 0%;
+top: 7.14%;
+bottom: 7.14%;
+
+background: #9908b6;
+
+/* chat */
+
+width: 24px;
+height: 24px;
+
+/* Inside auto layout */
+flex: none;
+order: 1;
+flex-grow: 0;
+
+/* Union (Stroke) */
+
+position: absolute;
+left: 7.14%;
+right: 7.14%;
+top: 7.14%;
+bottom: 7.14%;
+
+background: #9908b6;
+
+/* Left icon */
+
+width: 24px;
+height: 24px;
+
+/* Inside auto layout */
+flex: none;
+order: 1;
+flex-grow: 0;
+
+/* icon path */
+
+position: absolute;
+left: 7.46%;
+right: 7.46%;
+top: 14.29%;
+bottom: 14.29%;
+
+background: #9908b6;
+
+/* 102 */
+
+width: 376px;
+height: 16px;
+
+font-family: 'Martian Mono';
+font-style: normal;
+font-weight: 500;
+font-size: 16px;
+line-height: 100%;
+/* identical to box height, or 16px */
+
+color: #9908b6;
+
+/* Inside auto layout */
+flex: none;
+order: 1;
+align-self: stretch;
+flex-grow: 0;
+
+/* Frame 1017 */
+
+box-sizing: border-box;
+
+/* Auto layout */
+display: flex;
+flex-direction: column;
+align-items: flex-start;
+padding: 0px;
+
+width: 416px;
+height: 508px;
+
+background: #ffffff;
+border-width: 4px 4px 8px 4px;
+border-style: solid;
+border-color: #000000;
+border-radius: 16px;
+
+/* Inside auto layout */
+flex: none;
+order: 2;
+flex-grow: 0;
+
+/* A fluffy Maine Coon cat with a mix of gray and white fur, wearing colorful pajamas and lounging on a cozy couch. */
+
+width: 408px;
+height: 408px;
+
+background: url(A fluffy Maine Coon cat with a mix of gray and white fur, wearing colorful pajamas and lounging on a cozy couch.);
+mix-blend-mode: normal;
+border-bottom: 4px solid #000000;
+border-radius: 0px;
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 0;
+
+/* Frame 1013 */
+
+/* Auto layout */
+display: flex;
+flex-direction: column;
+align-items: flex-start;
+padding: 16px;
+gap: 12px;
+
+width: 408px;
+height: 84px;
+
+/* Inside auto layout */
+flex: none;
+order: 1;
+align-self: stretch;
+flex-grow: 0;
+
+/* Engagement Container */
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+align-items: center;
+padding: 0px;
+gap: 16px;
+
+width: 376px;
+height: 24px;
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+align-self: stretch;
+flex-grow: 0;
+
+/* Frame 1025 */
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+align-items: center;
+padding: 0px;
+gap: 16px;
+
+width: 336px;
+height: 24px;
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 1;
+
+/* Left icon */
+
+width: 24px;
+height: 24px;
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 0;
+
+/* icon path */
+
+position: absolute;
+left: 0%;
+right: 0%;
+top: 7.14%;
+bottom: 7.14%;
+
+background: #9908b6;
+
+/* chat */
+
+width: 24px;
+height: 24px;
+
+/* Inside auto layout */
+flex: none;
+order: 1;
+flex-grow: 0;
+
+/* Union (Stroke) */
+
+position: absolute;
+left: 7.14%;
+right: 7.14%;
+top: 7.14%;
+bottom: 7.14%;
+
+background: #9908b6;
+
+/* Left icon */
+
+width: 24px;
+height: 24px;
+
+/* Inside auto layout */
+flex: none;
+order: 1;
+flex-grow: 0;
+
+/* icon path */
+
+position: absolute;
+left: 7.46%;
+right: 7.46%;
+top: 14.29%;
+bottom: 14.29%;
+
+background: #9908b6;
+
+/* 102 */
+
+width: 376px;
+height: 16px;
+
+font-family: 'Martian Mono';
+font-style: normal;
+font-weight: 500;
+font-size: 16px;
+line-height: 100%;
+/* identical to box height, or 16px */
+
+color: #9908b6;
+
+/* Inside auto layout */
+flex: none;
+order: 1;
+align-self: stretch;
+flex-grow: 0;

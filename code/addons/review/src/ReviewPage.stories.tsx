@@ -1,4 +1,4 @@
-import { expect, fn, userEvent, within } from 'storybook/test';
+import { expect, fn, within } from 'storybook/test';
 
 import {
   ManagerContext,
@@ -167,25 +167,13 @@ export const Collections = meta.story({
     applyReviewState();
 
     await expect(await canvas.findByText('Manager settings polish')).toBeInTheDocument();
-    await expect(await canvas.findByRole('tab', { name: 'Collections' })).toBeInTheDocument();
-  },
-});
-
-export const Components = meta.story({
-  play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement);
-    await expect(emitMock).toHaveBeenCalledWith(EVENTS.REQUEST_REVIEW);
-
-    applyReviewState();
-
-    const componentsTab = await canvas.findByRole('tab', { name: 'Components' });
-    await userEvent.click(componentsTab);
+    await expect(await canvas.findByText('Settings')).toBeInTheDocument();
   },
 });
 
 export const Details = meta.story({
   parameters: {
-    routerInitialEntries: ['/?path=/review/collections/0/manager-settings-guidepage--default'],
+    routerInitialEntries: ['/?path=/review/0/manager-settings-guidepage--default'],
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
@@ -194,6 +182,7 @@ export const Details = meta.story({
     applyReviewState();
 
     await expect(await canvas.findByRole('button', { name: '2/3' })).toBeInTheDocument();
+    await expect(await canvas.findByRole('heading', { name: 'Settings' })).toBeInTheDocument();
     await expect(
       await canvas.findByTitle('Latest manager-settings-guidepage--default')
     ).toBeInTheDocument();
@@ -204,7 +193,7 @@ export const Details = meta.story({
 
 export const DetailsNewStory = meta.story({
   parameters: {
-    routerInitialEntries: ['/?path=/review/collections/0/manager-settings-checklist--default'],
+    routerInitialEntries: ['/?path=/review/0/manager-settings-checklist--default'],
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
@@ -222,7 +211,7 @@ export const DetailsNewStory = meta.story({
 
 export const DetailsChangeDetectedNew = meta.story({
   parameters: {
-    routerInitialEntries: ['/?path=/review/collections/0/manager-settings-guidepage--default'],
+    routerInitialEntries: ['/?path=/review/0/manager-settings-guidepage--default'],
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);

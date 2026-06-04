@@ -42,6 +42,7 @@
     "!src/**/*"
   ],
   "devDependencies": {
+    "http-proxy-middleware": "^4.0.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "typescript": "^5.9.3"
@@ -53,7 +54,7 @@
     "access": "public"
   },
   "storybook": {
-    "displayName": "Review Changes",
+    "displayName": "Review",
     "unsupportedFrameworks": [
       "react-native"
     ]

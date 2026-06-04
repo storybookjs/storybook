@@ -207,9 +207,16 @@ export class ChangeDetectionService {
       onUnavailable: (reason, error) => this.onGraphUnavailable(reason, error),
     });
 
-    if (this.getModuleGraph().queries.getReady(undefined)) {
-      this.onGraphReady();
-    }
+    void this.getModuleGraph()
+      .queries.getReady.loaded(undefined)
+      .then((ready) => {
+        if (ready) {
+          this.onGraphReady();
+        }
+      })
+      .catch((error) => {
+        this.onGraphError(error instanceof Error ? error : new Error(String(error)));
+      });
   }
 
   /**
@@ -275,9 +282,9 @@ export class ChangeDetectionService {
     // (between a story's removeStory and the re-walk's recordEdges) reads a transiently empty
     // reverse index and publishes incorrect statuses.
     const moduleGraph = this.getModuleGraph();
-    await moduleGraph.queries.getReady.loaded(undefined);
+    const ready = await moduleGraph.queries.getReady.loaded(undefined);
 
-    if (this.disposed || !moduleGraph.queries.getReady(undefined)) {
+    if (this.disposed || !ready) {
       return;
     }
 
@@ -359,7 +366,9 @@ export class ChangeDetectionService {
     const statuses = new Map<string, Status>();
     const scannedFilesArray = [...scannedFiles];
     const moduleGraph = this.getModuleGraph();
-    const lookupResults = moduleGraph.queries.getStoriesForFiles({ files: scannedFilesArray });
+    const lookupResults = await moduleGraph.queries.getStoriesForFiles.loaded({
+      files: scannedFilesArray,
+    });
 
     for (let i = 0; i < scannedFilesArray.length; i++) {
       const changedFile = scannedFilesArray[i];

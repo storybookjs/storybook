@@ -32,19 +32,27 @@ type ChangeDetectionServiceOptions = ConstructorParameters<typeof ChangeDetectio
  * instance (for tests that call `graph.start(adapter)`).
  */
 export function installModuleGraphQueryMock(engine: ModuleGraphEngine): void {
+  const getStoriesForFiles = ({ files }: { files: string[] }) =>
+    files.map((file) => {
+      const hits = engine.lookup(normalize(file));
+      return [...hits.entries()].map(([storyFile, depth]) => ({ storyFile, depth }));
+    });
+
   vi.mocked(getService).mockReturnValue({
     queries: {
       getReady: Object.assign(() => engine.hasGraph(), {
         loaded: async () => {
           await engine.whenSettled();
+          return engine.hasGraph();
         },
         subscribe: vi.fn(() => () => undefined),
       }),
-      getStoriesForFiles: ({ files }: { files: string[] }) =>
-        files.map((file) => {
-          const hits = engine.lookup(normalize(file));
-          return [...hits.entries()].map(([storyFile, depth]) => ({ storyFile, depth }));
-        }),
+      getStoriesForFiles: Object.assign(getStoriesForFiles, {
+        loaded: async (input: { files: string[] }) => {
+          await engine.whenSettled();
+          return getStoriesForFiles(input);
+        },
+      }),
       getGraphRevision: Object.assign(() => 0, {
         subscribe: vi.fn(() => () => undefined),
       }),

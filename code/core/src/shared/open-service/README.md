@@ -152,6 +152,11 @@ Guidelines:
 - Omit the generic when the target service is not known statically; the untyped `RuntimeService`
   surface is the correct fallback
 - Do **not** cast individual query or command results; type the service handle once instead
+- Prefer `await service.queries.foo.loaded(input)` for cross-service reads in operational code. A
+  direct `service.queries.foo(input)` read returns the current state immediately and only starts
+  that query's load in the background, so it can miss data that arrives during the load. Use the
+  direct sync form only when "current best effort" is the intended behavior, or when you are testing
+  the synchronous query contract itself.
 
 The exported `ServiceInstanceOf<typeof sourceDef>` alias is available for named handle types when
 a service is referenced from many call sites.

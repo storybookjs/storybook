@@ -1,5 +1,7 @@
-import { getComponentIdFromEntry } from '../../../../common/utils/component-id.ts';
-import { selectComponentEntryForComponentId } from '../../../../common/utils/select-component-entry.ts';
+import {
+  selectComponentEntriesByComponentId,
+  selectComponentEntryForComponentId,
+} from '../../../../common/utils/select-component-entry.ts';
 import { OpenServiceDocgenMissingComponentError } from '../../../../server-errors.ts';
 import type { StoryIndex } from '../../../../types/modules/indexer.ts';
 import { registerService } from '../../service-registration.ts';
@@ -26,7 +28,8 @@ export type RegisterDocgenServiceOptions = {
  * The `extractDocgen` command does the work: it reads the story index, picks an entry for the
  * requested componentId, hands the resolved index entry to the provider chain, and stores the
  * returned payload (if any) into state. The `getDocgen` query's load hook simply invokes that
- * command. `static.inputs` enumerates every distinct componentId for the static-build pass.
+ * command. `static.inputs` enumerates componentIds that have an eligible index entry (story or
+ * attached docs), matching {@link selectComponentEntryForComponentId}.
  */
 export function registerDocgenService(options: RegisterDocgenServiceOptions) {
   return registerService(docgenServiceDef, {
@@ -37,11 +40,8 @@ export function registerDocgenService(options: RegisterDocgenServiceOptions) {
         },
         staticInputs: async () => {
           const index = await options.getIndex();
-          const componentIds = new Set<string>();
-          for (const entry of Object.values(index.entries)) {
-            componentIds.add(getComponentIdFromEntry(entry));
-          }
-          return Array.from(componentIds, (componentId) => ({ componentId }));
+          const eligible = selectComponentEntriesByComponentId(Object.values(index.entries));
+          return Array.from(eligible.keys(), (componentId) => ({ componentId }));
         },
       },
     },

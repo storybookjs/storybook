@@ -156,6 +156,32 @@ describe('docgen open service', () => {
   });
 
   describe('static build', () => {
+    it('does not request docgen for componentIds that only exist on unattached docs entries', async () => {
+      const storyEntry = makeStoryEntry('button--primary', 'Button');
+      const unattachedDocs = {
+        id: 'orphan--docs',
+        name: 'Docs',
+        title: 'Orphan/Docs',
+        type: 'docs',
+        importPath: './orphan.mdx',
+        storiesImports: [],
+        tags: [Tag.UNATTACHED_MDX, 'docs'],
+      } satisfies DocsIndexEntry;
+
+      const provider = vi.fn<DocgenProvider>(async () => makeDocgenPayload());
+
+      registerDocgenService({
+        getIndex: makeGetIndex([storyEntry, unattachedDocs]),
+        provider,
+      });
+
+      const store = await buildStaticFiles();
+
+      expect(provider).toHaveBeenCalledTimes(1);
+      expect(provider.mock.calls[0][0].entry).toEqual(storyEntry);
+      expect(Object.keys(store)).toEqual(['core/docgen/button.json']);
+    });
+
     it('writes one docgen JSON per componentId whose provider produced a payload', async () => {
       registerDocgenService({
         getIndex: makeGetIndex([

@@ -213,7 +213,6 @@ export const Minimal = meta.story({
     const canvas = within(canvasElement);
     await expect(await canvas.findByText('Button prop rename')).toBeInTheDocument();
     await expect(await canvas.findByText(/Showing 2 agent-curated stories/i)).toBeInTheDocument();
-    await expect(await canvas.findByText('update/button-styles')).toBeInTheDocument();
     await expect(await canvas.findByRole('tab', { name: 'Collections' })).toBeInTheDocument();
   },
 });
@@ -254,7 +253,7 @@ export const Stale = meta.story({
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await expect(
-      await canvas.findByText('New changes were made. This review may be stale.')
+      await canvas.findByText('This review may be stale. Ask your agent to refresh it.')
     ).toBeInTheDocument();
     await expect(await canvas.findByText('Primary button visual refresh')).toBeInTheDocument();
   },

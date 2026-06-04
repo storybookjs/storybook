@@ -49,7 +49,7 @@ export const Stale = meta.story({
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await expect(
-      await canvas.findByText('New changes were made. This review may be stale.')
+      await canvas.findByText('This review may be stale. Ask your agent to refresh it.')
     ).toBeInTheDocument();
   },
 });

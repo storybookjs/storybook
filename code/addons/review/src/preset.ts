@@ -132,7 +132,13 @@ export const experimental_serverChannel = async (
   return channel;
 };
 
-const BASELINE_TARGET_ORIGIN = 'https://next--635781f3500dd2c49e189caf.chromatic.com';
+// Origin of the deployed baseline Storybook the review screens compare against.
+// Overridable via env so it is not pinned to a single build. The default points
+// at a temporary Chromatic build and should be replaced with a real per-project
+// source before this graduates beyond experimental use.
+const BASELINE_TARGET_ORIGIN =
+  process.env.STORYBOOK_REVIEW_BASELINE_ORIGIN ??
+  'https://next--635781f3500dd2c49e189caf.chromatic.com';
 
 export const experimental_devServer = (app: ServerApp) => {
   const proxyRequest = createProxyMiddleware({

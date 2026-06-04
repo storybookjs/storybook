@@ -1,4 +1,4 @@
-import React, { type FC, useEffect, useState } from 'react';
+import React, { useEffect, useState, type FC } from 'react';
 
 import { Badge, Button, IconButton } from 'storybook/internal/components';
 import { styled } from 'storybook/theming';

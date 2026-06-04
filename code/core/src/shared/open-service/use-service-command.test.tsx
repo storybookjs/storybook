@@ -1,13 +1,20 @@
 // @vitest-environment happy-dom
 import { renderHook } from '@testing-library/react';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+
+import { clearChannel, installNoopChannel } from '../../channels/channel-slot.ts';
 
 import { mutableRecordLookupServiceDef } from './fixtures.ts';
 import { clearRegistry, registerService } from './service-registry.ts';
 import { useServiceCommand } from './use-service-command.ts';
 
+beforeEach(() => {
+  installNoopChannel();
+});
+
 afterEach(() => {
   clearRegistry();
+  clearChannel();
 });
 
 describe('useServiceCommand', () => {

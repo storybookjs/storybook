@@ -26,16 +26,9 @@ export default defineConfig({
       ]
     : 'html',
   use: {
+    ...devices['Desktop Chrome'],
     actionTimeout: 0,
     trace: 'retain-on-failure',
   },
-  projects: [
-    {
-      name: 'internal-storybook',
-      use: {
-        ...devices['Desktop Chrome'],
-      },
-    },
-  ],
   outputDir: '../playwright-results/',
 });

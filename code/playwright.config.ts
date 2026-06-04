@@ -7,6 +7,9 @@ import { defineConfig, devices } from '@playwright/test';
 // process.env.STORYBOOK_URL = 'http://localhost:6006';
 // process.env.STORYBOOK_TEMPLATE_NAME = 'react-vite/default-ts';
 
+/** Set by `e2e-tests-internal` so sandbox e2e runs do not pick up internal UI specs. */
+const internalStorybookE2e = process.env.STORYBOOK_INTERNAL_E2E === 'true';
+
 /** See https://playwright.dev/docs/test-configuration. */
 export default defineConfig({
   /* Maximum time one test can run for. */
@@ -51,13 +54,17 @@ export default defineConfig({
 
   /* Configure projects for major browsers */
   projects: [
-    {
-      name: 'internal-storybook',
-      testDir: './e2e-internal',
-      use: {
-        ...devices['Desktop Chrome'],
-      },
-    },
+    ...(internalStorybookE2e
+      ? [
+          {
+            name: 'internal-storybook',
+            testDir: './e2e-internal',
+            use: {
+              ...devices['Desktop Chrome'],
+            },
+          },
+        ]
+      : []),
     {
       // Playwright recommends project dependencies over globalSetup when setup needs runner features
       // like fixtures, traces, and retries:

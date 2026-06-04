@@ -15,20 +15,11 @@ type InvalidUnderscoreWithoutInternal<TName extends string> = {
   __internal_naming_error: `Operation "${TName}" is prefixed with "_" and must set internal: true`;
 };
 
-/**
- * Ensures internal operations use a `_` prefix and that `_`-prefixed operations set `internal: true`.
- */
-type EnforceInternalOperationNaming<T extends Record<string, { internal?: boolean }>> = {
-  [K in keyof T]: T[K] extends infer TOp
-    ? K extends `_${string}`
-      ? TOp extends { internal: true }
-        ? TOp
-        : InvalidUnderscoreWithoutInternal<K & string>
-      : TOp extends { internal: true }
-        ? InvalidInternalOperationName<K & string>
-        : TOp
-    : never;
-};
+type InternalOperationNaming<TKey> = TKey extends string
+  ? TKey extends `_${string}`
+    ? { internal: true } | InvalidUnderscoreWithoutInternal<TKey>
+    : { internal?: false } | InvalidInternalOperationName<TKey>
+  : {};
 
 /**
  * Authoring-side query map derived from separate query input/output schema maps.
@@ -52,7 +43,8 @@ type DefinedQueries<
     TQueryOutputSchemas[TKey],
     TCommandInputSchemas,
     TCommandOutputSchemas
-  >;
+  > &
+    InternalOperationNaming<TKey>;
 } & {
   [TKey in keyof TQueryOutputSchemas]: {
     output: TQueryOutputSchemas[TKey];
@@ -75,7 +67,8 @@ type DefinedCommands<
     TState,
     TCommandInputSchemas[TKey],
     TCommandOutputSchemas[TKey]
-  >;
+  > &
+    InternalOperationNaming<TKey>;
 } & {
   [TKey in keyof TCommandOutputSchemas]: {
     output: TCommandOutputSchemas[TKey];
@@ -89,9 +82,6 @@ type DefinedCommands<
  * concrete query/command definition maps from those schemas. If we instead ask TypeScript to infer
  * the full runtime `ServiceDefinition` maps directly, it widens callback parameters to `unknown`
  * before it has correlated each inline object's `input` and `output` properties.
- *
- * Query and command maps are also inferred as separate const type parameters so internal naming
- * validation can inspect literal `internal: true` flags without losing handler inference.
  */
 export const defineService = <
   TState,
@@ -99,23 +89,27 @@ export const defineService = <
   const TQueryOutputSchemas extends MatchingOutputSchemas<TQueryInputSchemas>,
   const TCommandInputSchemas extends OperationInputSchemas,
   const TCommandOutputSchemas extends MatchingOutputSchemas<TCommandInputSchemas>,
-  const TQueries extends DefinedQueries<
+>(def: {
+  id: ServiceId;
+  description?: string;
+  internal?: boolean;
+  initialState: TState;
+  queries: DefinedQueries<
+    TState,
+    TQueryInputSchemas,
+    TQueryOutputSchemas,
+    TCommandInputSchemas,
+    TCommandOutputSchemas
+  >;
+  commands: DefinedCommands<TState, TCommandInputSchemas, TCommandOutputSchemas>;
+}): ServiceDefinition<
+  TState,
+  DefinedQueries<
     TState,
     TQueryInputSchemas,
     TQueryOutputSchemas,
     TCommandInputSchemas,
     TCommandOutputSchemas
   >,
-  const TCommands extends DefinedCommands<TState, TCommandInputSchemas, TCommandOutputSchemas>,
->(def: {
-  id: ServiceId;
-  description?: string;
-  /**
-   * When true, hides this service from `listServices()` output. Defaults to false. Does not disable
-   * the service at runtime.
-   */
-  internal?: boolean;
-  initialState: TState;
-  queries: TQueries & EnforceInternalOperationNaming<TQueries>;
-  commands: TCommands & EnforceInternalOperationNaming<TCommands>;
-}): ServiceDefinition<TState, TQueries, TCommands> => def;
+  DefinedCommands<TState, TCommandInputSchemas, TCommandOutputSchemas>
+> => def;

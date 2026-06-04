@@ -1,90 +1,47 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { type FC, useCallback, useEffect, useRef, useState } from 'react';
 
-import { Badge, Button } from 'storybook/internal/components';
+import { Badge, Button, IconButton } from 'storybook/internal/components';
 import { STORY_RENDERED } from 'storybook/internal/core-events';
 import { styled } from 'storybook/theming';
 
 import {
-  CategoryIcon,
   ChevronSmallLeftIcon,
   ChevronSmallRightIcon,
   SideBySideIcon,
+  StopAltHollowIcon,
+  StorybookIcon,
   TransferIcon,
 } from '@storybook/icons';
 
+import { ReviewHeader } from '../components/ReviewHeader.tsx';
 import { PREVIEW_MODE_SESSION_KEY } from '../constants.ts';
+import { buildStorybookStoryHref } from '../review-navigation.ts';
 import { sessionStore } from '../session-store.ts';
 
 const Page = styled.div(({ theme }) => ({
   display: 'flex',
   flexDirection: 'column',
   height: '100dvh',
-  minHeight: '100dvh',
+  minHeight: 0,
   overflow: 'hidden',
   background: theme.background.content,
   color: theme.color.defaultText,
   fontFamily: theme.typography.fonts.base,
 }));
 
-const Toolbar = styled.div(({ theme }) => ({
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'space-between',
-  gap: 6,
-  minHeight: 40,
-  padding: '0 10px',
-  borderBottom: `1px solid ${theme.appBorderColor}`,
-}));
-
-const ToolbarSide = styled.div({
-  display: 'flex',
-  alignItems: 'center',
-  gap: 6,
-  minWidth: 0,
-});
-
-const DetailTitle = styled.h2({
-  margin: 0,
-  minWidth: 0,
-  overflow: 'hidden',
-  textOverflow: 'ellipsis',
-  whiteSpace: 'nowrap',
-  fontSize: 14,
+const SubtitleStrong = styled.span({
   fontWeight: 700,
-  lineHeight: '20px',
-  // Focused programmatically on entry to orient screen-reader users; it's not a
-  // tab stop, so don't paint a focus ring on this non-interactive heading.
-  outline: 'none',
 });
 
-const DetailTitleMuted = styled.span(({ theme }) => ({
+const SubtitleSeparator = styled.span(({ theme }) => ({
   color: theme.textMutedColor,
-  fontWeight: 400,
 }));
 
-const DetailTitleStrong = styled.span({
-  fontWeight: 700,
-});
-
-const DetailTitleRegular = styled.span({
-  fontWeight: 400,
-});
-
-// Sibling of the (ellipsizing) title so the badge stays fully visible while a
-// long component/story name truncates instead of clipping the badge.
-const TitleBadge = styled.div({
-  flexShrink: 0,
-  display: 'inline-flex',
-});
-
-type PreviewMode = '1up' | '2up';
-type VisibleSide = 'baseline' | 'latest';
-
-const DEFAULT_PREVIEW_MODE: PreviewMode = '2up';
-
-// Read the persisted preview layout, defaulting to side-by-side.
-const readPreviewMode = (): PreviewMode =>
-  sessionStore.read(PREVIEW_MODE_SESSION_KEY) === '1up' ? '1up' : DEFAULT_PREVIEW_MODE;
+const Counter = styled(Button)(({ theme }) => ({
+  fontVariantNumeric: 'tabular-nums',
+  fontFamily: theme.typography.fonts.mono,
+  fontWeight: theme.typography.weight.regular,
+}));
 
 const PreviewFrameWrap = styled.div<{ $singleUp: boolean }>(({ $singleUp }) => ({
   flex: 1,
@@ -135,42 +92,36 @@ const PreviewFrame = styled.iframe({
   display: 'block',
 });
 
-const BottomToolbar = styled.div(({ theme }) => ({
+// The baseline comparison bar. A two-up (side-by-side) and one-up (single)
+// mode share a control cluster; the "switch" control only applies in one-up
+// mode, where it flips which pane (baseline or latest) is shown.
+const BaselineBar = styled.div({
   display: 'flex',
+  width: '100%',
   alignItems: 'center',
-  minHeight: 40,
-  borderTop: `1px solid ${theme.appBorderColor}`,
-}));
+});
 
-const BottomHalf = styled.div({
+const BarHalf = styled.div({
+  display: 'flex',
   flex: 1,
   minWidth: 0,
-  height: '100%',
-  display: 'flex',
   alignItems: 'center',
-  justifyContent: 'flex-start',
-  padding: '0 16px',
-});
-
-const BottomDivider = styled(PaneDivider)<{ $singleUp: boolean }>(({ $singleUp }) => ({
-  display: $singleUp ? 'none' : 'block',
-}));
-
-const RightBottomHalf = styled(BottomHalf)<{ $singleUp: boolean }>(({ $singleUp }) => ({
-  justifyContent: $singleUp ? 'flex-end' : 'space-between',
+  justifyContent: 'space-between',
   gap: 8,
-}));
-
-const BottomControls = styled.div({
-  display: 'flex',
-  alignItems: 'center',
-  gap: 4,
 });
 
-const BottomLabel = styled.div({
-  fontSize: 13,
+const BarLabel = styled.strong(({ theme }) => ({
+  fontWeight: theme.typography.weight.bold,
+  fontSize: 14,
   lineHeight: '20px',
-  fontWeight: 600,
+  whiteSpace: 'nowrap',
+}));
+
+const BarControls = styled.div({
+  display: 'flex',
+  alignItems: 'center',
+  gap: 6,
+  flexShrink: 0,
 });
 
 const BASELINE_PROXY_PATH = '/__review-baseline';
@@ -184,6 +135,16 @@ const toBaselinePreviewUrl = (latestUrlString: string) => {
   ).toString();
 };
 
+type CompareMode = 'split' | 'single';
+type ComparePane = 'baseline' | 'latest';
+
+const DEFAULT_COMPARE_MODE: CompareMode = 'split';
+
+// The persisted preview layout reuses the historical '1up'/'2up' values so the
+// choice carries across sessions; map them to the local split/single model.
+const readCompareMode = (): CompareMode =>
+  sessionStore.read(PREVIEW_MODE_SESSION_KEY) === '1up' ? 'single' : DEFAULT_COMPARE_MODE;
+
 export interface DetailsScreenProps {
   /** Fallback title shown when story metadata is unavailable. */
   title: string;
@@ -195,38 +156,64 @@ export interface DetailsScreenProps {
   nextHref: string;
   componentTitle?: string;
   storyName?: string;
+  /** Enables the baseline/latest comparison controls when a baseline exists. */
+  hasBaseline?: boolean;
   /** Whether this story is newly added relative to the baseline Storybook. */
   isNew?: boolean;
 }
 
-const renderDetailTitle = ({
-  title,
-  componentTitle,
-  storyName,
-}: Pick<DetailsScreenProps, 'title' | 'componentTitle' | 'storyName'>) => {
-  if (!componentTitle || !storyName) {
-    return title;
-  }
+const componentName = (componentTitle: string): string =>
+  componentTitle
+    .split('/')
+    .map((part) => part.trim())
+    .filter(Boolean)
+    .pop() ?? componentTitle;
 
-  const componentName =
-    componentTitle
-      .split('/')
-      .map((part) => part.trim())
-      .filter(Boolean)
-      .pop() ?? componentTitle;
+const CompareControls: FC<{
+  mode: CompareMode;
+  onModeChange: (mode: CompareMode) => void;
+  onSwitch: () => void;
+}> = ({ mode, onModeChange, onSwitch }) => (
+  <BarControls>
+    {mode === 'single' ? (
+      <IconButton
+        variant="ghost"
+        size="small"
+        padding="small"
+        ariaLabel="Switch baseline and latest"
+        onClick={onSwitch}
+      >
+        <TransferIcon />
+      </IconButton>
+    ) : null}
+    <IconButton
+      variant="ghost"
+      size="small"
+      padding="small"
+      active={mode === 'single'}
+      ariaLabel="Single view"
+      onClick={() => onModeChange('single')}
+    >
+      <StopAltHollowIcon />
+    </IconButton>
+    <IconButton
+      variant="ghost"
+      size="small"
+      padding="small"
+      active={mode === 'split'}
+      ariaLabel="Side-by-side view"
+      onClick={() => onModeChange('split')}
+    >
+      <SideBySideIcon />
+    </IconButton>
+  </BarControls>
+);
 
-  return (
-    <>
-      <DetailTitleStrong>{componentName}</DetailTitleStrong>
-      <DetailTitleMuted>{' / '}</DetailTitleMuted>
-      <DetailTitleRegular>{storyName}</DetailTitleRegular>
-    </>
-  );
-};
-
-// The preview <iframe> is intentionally a stable element: when the story
-// changes the parent only updates `src`, so the iframe navigates in place
-// without the manager (or this component) remounting — no flash.
+// The preview <iframe>s are intentionally stable elements: when the story
+// changes the parent only updates `src`, so each iframe navigates in place
+// without the manager (or this component) remounting — no flash. The baseline
+// pane mirrors the latest pane through the dev-server proxy and keeps its
+// scroll position in sync so side-by-side diffs line up.
 export const DetailsScreen = ({
   title,
   storyId,
@@ -237,6 +224,7 @@ export const DetailsScreen = ({
   nextHref,
   componentTitle,
   storyName,
+  hasBaseline = false,
   isNew,
 }: DetailsScreenProps) => {
   const latestPreviewSrc = storyPreviewUrl(storyId);
@@ -244,32 +232,20 @@ export const DetailsScreen = ({
     toBaselinePreviewUrl(latestPreviewSrc)
   );
   const baselinePreviewSrcRef = useRef(baselinePreviewSrc);
-  const [previewMode, setPreviewMode] = useState<PreviewMode>(readPreviewMode);
-  const [visibleSide, setVisibleSide] = useState<VisibleSide>('latest');
-  // A newly added story has no baseline counterpart, so there's nothing to
-  // compare against: render only the latest preview, full-width, and hide the
-  // baseline pane, the side-by-side controls, and the bottom comparison bar.
-  // Baseline existence is known up front (from the index lookup in ReviewPage),
-  // so the baseline pane and comparison bar render immediately — no need to
-  // wait for the baseline iframe's load event.
-  const showBaseline = !isNew;
-  const isSingleUp = previewMode === '1up' || !showBaseline;
+  const [mode, setMode] = useState<CompareMode>(readCompareMode);
+  const [activePane, setActivePane] = useState<ComparePane>('latest');
 
-  const titleRef = useRef<HTMLHeadingElement>(null);
+  // A newly added story has no baseline counterpart, and some repos have no
+  // baseline at all: in either case render only the latest preview, full-width,
+  // and hide the baseline pane plus the comparison controls.
+  const showBaseline = hasBaseline && !isNew;
+  const isSingleUp = mode === 'single' || !showBaseline;
+
   const baselineFrameRef = useRef<HTMLIFrameElement>(null);
   const latestFrameRef = useRef<HTMLIFrameElement>(null);
-
-  // Entering the detail screen moves focus to its heading so keyboard and
-  // screen-reader users are oriented by what they just opened instead of being
-  // stranded on the now-inert summary. Runs once on mount: navigating between
-  // stories swaps the iframe src in place without remounting, so prev/next
-  // don't steal focus back.
-  useEffect(() => {
-    titleRef.current?.focus();
-  }, []);
   const cleanupScrollSyncRef = useRef<(() => void) | null>(null);
   const cleanupBaselineStoryRenderedRef = useRef<(() => void) | null>(null);
-  const syncingTargetRef = useRef<VisibleSide | null>(null);
+  const syncingTargetRef = useRef<ComparePane | null>(null);
 
   const disableOverscrollBounce = useCallback((frameElement: HTMLIFrameElement | null) => {
     const iframeDocument = frameElement?.contentDocument;
@@ -350,8 +326,8 @@ export const DetailsScreen = ({
   // Persist the user's layout choice so it carries across navigation between
   // the detail and summary screens.
   useEffect(() => {
-    sessionStore.write(PREVIEW_MODE_SESSION_KEY, previewMode);
-  }, [previewMode]);
+    sessionStore.write(PREVIEW_MODE_SESSION_KEY, mode === 'single' ? '1up' : '2up');
+  }, [mode]);
 
   useEffect(() => {
     const baselineFrame = baselineFrameRef.current;
@@ -432,110 +408,118 @@ export const DetailsScreen = ({
       cleanupScrollSyncRef.current?.();
       cleanupScrollSyncRef.current = null;
     };
-  }, [setupScrollSync]);
+  }, [setupScrollSync, showBaseline]);
+
+  const metadataSubtitle =
+    componentTitle && storyName ? (
+      <>
+        <SubtitleStrong>{componentName(componentTitle)}</SubtitleStrong>
+        <SubtitleSeparator>/</SubtitleSeparator>
+        <span>{storyName}</span>
+      </>
+    ) : null;
+
+  const subtitle =
+    metadataSubtitle || isNew ? (
+      <>
+        {metadataSubtitle}
+        {isNew ? <Badge status="positive">New</Badge> : null}
+      </>
+    ) : undefined;
+
+  const baselineBar = showBaseline ? (
+    mode === 'split' ? (
+      <BaselineBar>
+        <BarHalf>
+          <BarLabel>Baseline</BarLabel>
+          <span />
+        </BarHalf>
+        <BarHalf>
+          <BarLabel>Latest</BarLabel>
+          <CompareControls mode={mode} onModeChange={setMode} onSwitch={() => {}} />
+        </BarHalf>
+      </BaselineBar>
+    ) : (
+      <BaselineBar>
+        <BarHalf>
+          <BarLabel>{activePane === 'baseline' ? 'Baseline' : 'Latest'}</BarLabel>
+          <CompareControls
+            mode={mode}
+            onModeChange={setMode}
+            onSwitch={() => setActivePane((pane) => (pane === 'baseline' ? 'latest' : 'baseline'))}
+          />
+        </BarHalf>
+      </BaselineBar>
+    )
+  ) : undefined;
 
   return (
     <Page>
-      <Toolbar>
-        <ToolbarSide>
-          <Button variant="ghost" size="small" padding="small" ariaLabel="Back to review" asChild>
+      <ReviewHeader
+        autoFocusTitle
+        leading={
+          <IconButton
+            variant="ghost"
+            size="small"
+            padding="small"
+            ariaLabel="Back to review"
+            asChild
+          >
             <a href={backHref}>
               <ChevronSmallLeftIcon />
             </a>
-          </Button>
-          <DetailTitle ref={titleRef} tabIndex={-1}>
-            {renderDetailTitle({ title, componentTitle, storyName })}
-          </DetailTitle>
-          {isNew ? (
-            <TitleBadge>
-              <Badge status="positive">New</Badge>
-            </TitleBadge>
-          ) : null}
-        </ToolbarSide>
-
-        <ToolbarSide>
-          <Button variant="ghost" size="small" readOnly>
-            {storyIndex + 1}/{totalStories}
-          </Button>
-          <Button variant="ghost" size="small" padding="small" ariaLabel="Previous story" asChild>
-            <a href={previousHref}>
-              <ChevronSmallLeftIcon />
-            </a>
-          </Button>
-          <Button variant="ghost" size="small" padding="small" ariaLabel="Next story" asChild>
-            <a href={nextHref}>
-              <ChevronSmallRightIcon />
-            </a>
-          </Button>
-        </ToolbarSide>
-      </Toolbar>
+          </IconButton>
+        }
+        title={title}
+        subtitle={subtitle}
+        actions={
+          <>
+            <Counter variant="ghost" size="small" readOnly>
+              {storyIndex + 1}/{totalStories}
+            </Counter>
+            <IconButton
+              variant="ghost"
+              size="small"
+              padding="small"
+              ariaLabel="Previous story"
+              asChild
+            >
+              <a href={previousHref}>
+                <ChevronSmallLeftIcon />
+              </a>
+            </IconButton>
+            <IconButton variant="ghost" size="small" padding="small" ariaLabel="Next story" asChild>
+              <a href={nextHref}>
+                <ChevronSmallRightIcon />
+              </a>
+            </IconButton>
+            <IconButton size="small" padding="small" ariaLabel="View in Storybook" asChild>
+              <a href={buildStorybookStoryHref(storyId)} target="_blank" rel="noreferrer">
+                <StorybookIcon />
+              </a>
+            </IconButton>
+          </>
+        }
+        secondRow={baselineBar}
+      />
 
       <PreviewFrameWrap $singleUp={isSingleUp}>
         {showBaseline ? (
           <>
-            <PreviewPane $singleUp={isSingleUp} $active={!isSingleUp || visibleSide === 'baseline'}>
+            <PreviewPane $singleUp={isSingleUp} $active={!isSingleUp || activePane === 'baseline'}>
               <PreviewFrame
                 ref={baselineFrameRef}
                 title={`Baseline ${storyId}`}
                 src={baselinePreviewSrc}
               />
             </PreviewPane>
-            {isSingleUp ? null : <PreviewDivider $singleUp={isSingleUp} />}
+            <PreviewDivider $singleUp={isSingleUp} />
           </>
         ) : null}
-        <PreviewPane $singleUp={isSingleUp} $active={!isSingleUp || visibleSide === 'latest'}>
+        <PreviewPane $singleUp={isSingleUp} $active={!isSingleUp || activePane === 'latest'}>
           <PreviewFrame ref={latestFrameRef} title={`Latest ${storyId}`} src={latestPreviewSrc} />
         </PreviewPane>
       </PreviewFrameWrap>
-
-      {showBaseline ? (
-        <BottomToolbar>
-          <BottomHalf>
-            <BottomLabel>
-              {isSingleUp ? (visibleSide === 'baseline' ? 'Baseline' : 'Latest') : 'Baseline'}
-            </BottomLabel>
-          </BottomHalf>
-          <BottomDivider $singleUp={isSingleUp} />
-          <RightBottomHalf $singleUp={isSingleUp}>
-            {!isSingleUp ? <BottomLabel>Latest</BottomLabel> : null}
-            <BottomControls>
-              {isSingleUp ? (
-                <Button
-                  variant="ghost"
-                  size="small"
-                  padding="small"
-                  ariaLabel="Swap visible preview"
-                  onClick={() =>
-                    setVisibleSide((current) => (current === 'latest' ? 'baseline' : 'latest'))
-                  }
-                >
-                  <TransferIcon />
-                </Button>
-              ) : null}
-              <Button
-                variant="ghost"
-                size="small"
-                padding="small"
-                ariaLabel="Single preview mode"
-                active={previewMode === '1up'}
-                onClick={() => setPreviewMode('1up')}
-              >
-                <CategoryIcon />
-              </Button>
-              <Button
-                variant="ghost"
-                size="small"
-                padding="small"
-                ariaLabel="Side-by-side preview mode"
-                active={previewMode === '2up'}
-                onClick={() => setPreviewMode('2up')}
-              >
-                <SideBySideIcon />
-              </Button>
-            </BottomControls>
-          </RightBottomHalf>
-        </BottomToolbar>
-      ) : null}
     </Page>
   );
 };

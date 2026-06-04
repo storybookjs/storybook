@@ -1,9 +1,12 @@
 import React, { useCallback, useEffect, useRef, useState, type FC, type ReactNode } from 'react';
 
-import { Button } from 'storybook/internal/components';
+import { Button, IconButton } from 'storybook/internal/components';
 import { styled } from 'storybook/theming';
 
+import { StorybookIcon } from '@storybook/icons';
+
 import { prettifyComponentId } from '../review-grouping.ts';
+import { buildStorybookStoryHref } from '../review-navigation.ts';
 
 const PREVIEW_SCALE = 0.5;
 
@@ -102,59 +105,86 @@ function forceStartPreview(task: PreviewTask): void {
   task.start();
 }
 
-const GRID_MIN_CELL_WIDTH = 300;
-const GRID_GAP = 12;
-const GRID_HORIZONTAL_PADDING = 24;
-const MAX_ROWS = 2;
-
 /** Component title + story name for a story, resolved from the Storybook index. */
 export interface StoryInfo {
   title: string;
   name: string;
 }
 
-const Grid = styled.div({
-  display: 'grid',
-  // Keep the CSS min track width in sync with the JS column-count math so
-  // overflow / "Review all" behavior can't drift from the rendered layout.
-  gridTemplateColumns: `repeat(auto-fit, minmax(min(100%, ${GRID_MIN_CELL_WIDTH}px), 1fr))`,
-  gap: 12,
-  // 6px top padding leaves clearance for the cell's focus outline (2px
-  // offset + 2px width = 4px outside the border box) — the parent
-  // Collapsible clips with `overflow: hidden` for its open/close animation,
-  // so without this the top edge of the outline gets cut off.
-  padding: '6px 12px 12px',
+// Column count is driven entirely by container width — 1 column on narrow
+// (mobile) widths up to 4 on wide screens — with each cell clamped to 400px so
+// a lone preview never stretches across the card. Each band also caps the grid
+// to two rows: once more stories exist than fit, the overflow cells are hidden
+// and a "Review all" cell takes the last visible slot. Both behaviors are pure
+// CSS (`:has()` + `:nth-child`), so no layout measurement runs in JS.
+const band = (cols: number) => {
+  const cap = cols * 2;
+  return {
+    gridTemplateColumns: `repeat(${cols}, minmax(0, 400px))`,
+    [`&:not([data-show-all]):has(> [data-cell]:nth-child(${cap + 1})) > [data-cell]:nth-child(n + ${cap})`]:
+      {
+        display: 'none',
+      },
+    [`&:not([data-show-all]):has(> [data-cell]:nth-child(${cap + 1})) > [data-review-all]`]: {
+      display: 'grid',
+    },
+  };
+};
+
+const GridContainer = styled.div({
+  containerType: 'inline-size',
+  containerName: 'review-grid',
 });
 
-const GridCell = styled.div(({ theme }) => ({
+const Grid = styled.div({
+  display: 'grid',
+  gap: 12,
+  padding: 12,
+  justifyContent: 'start',
+  // Fallback for browsers without container-query support: a single column and
+  // no two-row cap (every story is shown).
+  gridTemplateColumns: 'minmax(0, 400px)',
+  // Bands are mutually exclusive (ranged) so a narrower band's overflow rules
+  // never bleed into a wider one.
+  '@container review-grid (max-width: 629.98px)': band(1),
+  '@container review-grid (min-width: 630px) and (max-width: 844.98px)': band(2),
+  '@container review-grid (min-width: 845px) and (max-width: 1259.98px)': band(3),
+  '@container review-grid (min-width: 1260px)': band(4),
+});
+
+const Cell = styled.div({
+  display: 'flex',
+  flexDirection: 'column',
+  minWidth: 0,
+});
+
+// The bordered, clickable preview frame. Rendered as an <a> when a detail href
+// is provided, otherwise a plain <div>. Hover and keyboard focus are indicated
+// here (not on the surrounding cell) since the frame is the interactive target.
+const Frame = styled.a(({ theme }) => ({
   position: 'relative',
+  display: 'block',
   width: '100%',
-  justifySelf: 'stretch',
   aspectRatio: '3 / 2',
-  maxHeight: 400,
   borderRadius: 6,
   overflow: 'hidden',
   background: theme.background.app,
   border: `1px solid ${theme.appBorderColor}`,
   transition: 'border-color 120ms ease',
-  // Reveal the floating story-info banner on hover or while any focusable
-  // descendant (the GridLink itself, or the "Review all" button) is focused.
-  '&:hover [data-story-info], &:focus-within [data-story-info]': {
-    opacity: 1,
-    transform: 'translateY(0)',
-  },
-  '&:hover': {
+  textDecoration: 'none',
+  outline: 'none',
+  '&[href]:hover': {
     borderColor: theme.color.secondary,
   },
-  // Keyboard focus ring lives on the cell so it isn't clipped by the cell's
-  // own `overflow: hidden`. Tabbing into the GridLink triggers `:focus-within`.
-  '&:focus-within': {
+  '&:focus-visible': {
     outline: `${theme.barSelectedColor} solid 2px`,
     outlineOffset: 2,
   },
 }));
 
-const StoryPreview = styled.iframe({
+const Preview = styled.iframe({
+  position: 'absolute',
+  inset: 0,
   width: `${(1 / PREVIEW_SCALE) * 100}%`,
   height: `${(1 / PREVIEW_SCALE) * 100}%`,
   border: 0,
@@ -164,59 +194,27 @@ const StoryPreview = styled.iframe({
   pointerEvents: 'none',
 });
 
-const CellAction = styled.div({
-  width: '100%',
-  height: '100%',
-  display: 'grid',
-  placeItems: 'center',
+// The info/action bar below the preview: the component/story label stretches
+// and ellipsizes on the left; the action slot on the right never wraps.
+const ActionBar = styled.div({
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'space-between',
+  gap: 8,
+  minHeight: 36,
 });
 
-const GridLink = styled.a({
-  display: 'block',
-  width: '100%',
-  height: '100%',
-  textDecoration: 'none',
-  // Focus indicator is consolidated onto the parent GridCell so it isn't
-  // clipped by the cell's overflow and matches the cell's rounded corners.
-  outline: 'none',
-});
-
-// Floating story-info footer. Hidden by default — fades in on hover or
-// keyboard focus of the parent cell (selectors live on GridCell). Flush
-// full-width and clipped by the cell's rounded corners.
-const InfoBar = styled.div(({ theme }) => ({
-  position: 'absolute',
-  left: 0,
-  right: 0,
-  bottom: 0,
-  height: 41,
+const Label = styled.div({
   display: 'flex',
   alignItems: 'center',
   gap: 4,
-  padding: '10px 16px',
-  // Frosted overlay tuned per theme base so it stays a light scrim in light
-  // mode and a dark scrim in dark mode instead of always translucent white.
-  background: theme.base === 'dark' ? 'rgba(22, 23, 24, 0.85)' : 'rgba(255, 255, 255, 0.9)',
-  color: theme.color.defaultText,
-  backdropFilter: 'blur(24px)',
-  WebkitBackdropFilter: 'blur(24px)',
-  fontFamily: theme.typography.fonts.base,
-  fontSize: 14,
-  lineHeight: '21px',
-  opacity: 0,
-  // Hidden state sits flush below the cell and slides up into view on reveal.
-  transform: 'translateY(100%)',
-  transition: 'opacity 120ms ease, transform 120ms ease',
-  pointerEvents: 'none',
-  // While the search field is focused, reveal every thumbnail's label at once
-  // (the summary marks an ancestor with data-search-active).
-  '[data-search-active] &': {
-    opacity: 1,
-    transform: 'translateY(0)',
-  },
-}));
+  flex: 1,
+  minWidth: 0,
+  marginLeft: 10,
+  overflow: 'hidden',
+});
 
-const InfoComponent = styled.span({
+const LabelComponent = styled.span({
   fontWeight: 700,
   whiteSpace: 'nowrap',
   flexShrink: 0,
@@ -225,20 +223,37 @@ const InfoComponent = styled.span({
   textOverflow: 'ellipsis',
 });
 
-const InfoSeparator = styled.span(({ theme }) => ({
+const LabelSeparator = styled.span(({ theme }) => ({
   color: theme.textMutedColor,
   flexShrink: 0,
 }));
 
-const InfoStory = styled.span({
-  fontWeight: 400,
+const LabelStory = styled.span({
   whiteSpace: 'nowrap',
   overflow: 'hidden',
   textOverflow: 'ellipsis',
 });
 
-// Search matches are tinted with the accent colour; their weight is inherited
-// so a match keeps the bold component / normal story styling.
+const ActionSlot = styled.div({
+  display: 'flex',
+  alignItems: 'center',
+  gap: 4,
+  flexShrink: 0,
+  whiteSpace: 'nowrap',
+});
+
+const ReviewAllCell = styled.div(({ theme }) => ({
+  display: 'none',
+  placeItems: 'center',
+  width: '100%',
+  aspectRatio: '3 / 2',
+  borderRadius: 6,
+  background: theme.background.app,
+  border: `1px dashed ${theme.appBorderColor}`,
+}));
+
+// Search matches are tinted with the accent colour; weight is inherited so a
+// match keeps the bold component / normal story styling.
 const Mark = styled.mark(({ theme }) => ({
   background: 'transparent',
   color: theme.color.secondary,
@@ -250,6 +265,11 @@ const storyPreviewUrl = (id: string) =>
 
 const isWithinPreloadRange = (element: HTMLElement, margin: number): boolean => {
   const rect = element.getBoundingClientRect();
+  // Hidden cells (e.g. overflow beyond the two-row cap) have a zero-size box;
+  // don't seed them in-view or they'd boot iframes that never show.
+  if (rect.width === 0 && rect.height === 0) {
+    return false;
+  }
   const viewportHeight =
     typeof window === 'undefined' ? Number.POSITIVE_INFINITY : window.innerHeight || 0;
   return rect.bottom >= -margin && rect.top <= viewportHeight + margin;
@@ -301,7 +321,7 @@ const StoryPreviewCell: FC<{
   info?: StoryInfo;
   query: string;
 }> = ({ storyId, href, info, query }) => {
-  const hostRef = useRef<HTMLDivElement>(null);
+  const hostRef = useRef<HTMLAnchorElement>(null);
   const [isInView, setIsInView] = useState(false);
   // `src` stays unset until the scheduler starts this preview; the iframe only
   // mounts (and starts requesting) once it does.
@@ -401,45 +421,52 @@ const StoryPreviewCell: FC<{
 
   const { component, name } = deriveStoryInfo(storyId, info);
 
-  const content = (
-    <>
-      {src ? (
-        <StoryPreview
-          title={storyId}
-          src={src}
-          tabIndex={-1}
-          scrolling="no"
-          onLoad={finishCurrent}
-          onError={finishCurrent}
-        />
-      ) : null}
-      <InfoBar data-story-info>
-        <InfoComponent>
-          <Highlight text={component} query={query} />
-        </InfoComponent>
-        <InfoSeparator>/</InfoSeparator>
-        <InfoStory>
-          <Highlight text={name} query={query} />
-        </InfoStory>
-      </InfoBar>
-    </>
-  );
-
   return (
-    <GridCell
-      ref={hostRef}
-      data-testid="review-collection-grid-cell"
-      onMouseEnter={forceStartCurrent}
-      onFocus={forceStartCurrent}
-    >
-      {href ? (
-        <GridLink href={href} aria-label={`Review story ${storyId}`}>
-          {content}
-        </GridLink>
-      ) : (
-        content
-      )}
-    </GridCell>
+    <Cell data-cell data-testid="review-collection-grid-cell">
+      <Frame
+        as={href ? 'a' : 'div'}
+        href={href}
+        ref={hostRef}
+        aria-label={href ? `Review story ${storyId}` : undefined}
+        onMouseEnter={forceStartCurrent}
+        onFocus={forceStartCurrent}
+      >
+        {src ? (
+          <Preview
+            title={storyId}
+            src={src}
+            tabIndex={-1}
+            scrolling="no"
+            onLoad={finishCurrent}
+            onError={finishCurrent}
+          />
+        ) : null}
+      </Frame>
+      <ActionBar>
+        <Label>
+          <LabelComponent>
+            <Highlight text={component} query={query} />
+          </LabelComponent>
+          <LabelSeparator>/</LabelSeparator>
+          <LabelStory>
+            <Highlight text={name} query={query} />
+          </LabelStory>
+        </Label>
+        <ActionSlot>
+          {/* <IconButton
+            variant="ghost"
+            size="small"
+            padding="small"
+            ariaLabel="View in Storybook"
+            asChild
+          >
+            <a href={buildStorybookStoryHref(storyId)} target="_blank" rel="noreferrer">
+              <StorybookIcon />
+            </a>
+          </IconButton> */}
+        </ActionSlot>
+      </ActionBar>
+    </Cell>
   );
 };
 
@@ -450,9 +477,9 @@ export interface CollectionGridProps {
   showAll?: boolean;
   /** Called when the user expands to "Review all". */
   onShowAll?: () => void;
-  /** Story id → component title + story name, for the floating thumbnail label. */
+  /** Story id → component title + story name, for the cell label. */
   storyInfo?: Record<string, StoryInfo>;
-  /** Active search query — matches in the thumbnail label are highlighted. */
+  /** Active search query — matches in the cell label are highlighted. */
   query?: string;
 }
 
@@ -463,45 +490,10 @@ export const CollectionGrid: FC<CollectionGridProps> = ({
   onShowAll,
   storyInfo,
   query = '',
-}) => {
-  const gridRef = useRef<HTMLDivElement>(null);
-  const [columnsPerRow, setColumnsPerRow] = useState(1);
-
-  useEffect(() => {
-    const grid = gridRef.current;
-    if (!grid) {
-      return undefined;
-    }
-
-    const updateColumns = () => {
-      const contentWidth = Math.max(0, grid.clientWidth - GRID_HORIZONTAL_PADDING);
-      const nextColumns = Math.max(
-        1,
-        Math.floor((contentWidth + GRID_GAP) / (GRID_MIN_CELL_WIDTH + GRID_GAP))
-      );
-      setColumnsPerRow(nextColumns);
-    };
-
-    updateColumns();
-
-    if (typeof ResizeObserver === 'undefined') {
-      return undefined;
-    }
-
-    const observer = new ResizeObserver(updateColumns);
-    observer.observe(grid);
-    return () => observer.disconnect();
-  }, []);
-
-  const maxCells = columnsPerRow * MAX_ROWS;
-  const hasOverflow = !showAll && storyIds.length > maxCells;
-  // Reserve the last cell for the "Review all" button only while collapsed.
-  const visibleStoryCount = hasOverflow ? Math.max(0, maxCells - 1) : storyIds.length;
-  const previewStoryIds = storyIds.slice(0, visibleStoryCount);
-
-  return (
-    <Grid ref={gridRef} data-testid="review-collection-grid">
-      {previewStoryIds.map((storyId, storyIndex) => (
+}) => (
+  <GridContainer>
+    <Grid data-show-all={showAll || undefined} data-testid="review-collection-grid">
+      {storyIds.map((storyId, storyIndex) => (
         <StoryPreviewCell
           key={storyId}
           storyId={storyId}
@@ -510,20 +502,11 @@ export const CollectionGrid: FC<CollectionGridProps> = ({
           query={query}
         />
       ))}
-      {hasOverflow && (
-        <GridCell data-testid="review-collection-grid-cell">
-          <CellAction>
-            <Button
-              size="medium"
-              onClick={() => {
-                onShowAll?.();
-              }}
-            >
-              Review all {storyIds.length}
-            </Button>
-          </CellAction>
-        </GridCell>
-      )}
+      <ReviewAllCell data-review-all>
+        <Button size="medium" onClick={() => onShowAll?.()}>
+          Review all {storyIds.length}
+        </Button>
+      </ReviewAllCell>
     </Grid>
-  );
-};
+  </GridContainer>
+);

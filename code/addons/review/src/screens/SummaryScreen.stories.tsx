@@ -415,7 +415,7 @@ export const Minimal = meta.story({
     const canvas = within(canvasElement);
     await expect(await canvas.findByText('Button prop rename')).toBeInTheDocument();
     await expect(await canvas.findByText(/Showing 2 agent-curated stories/i)).toBeInTheDocument();
-    await expect(await canvas.findByRole('tab', { name: 'Collections' })).toBeInTheDocument();
+    await expect(await canvas.findByText('Button')).toBeInTheDocument();
   },
 });
 
@@ -424,7 +424,7 @@ export const Full = meta.story({
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await expect(await canvas.findByText('Primary button visual refresh')).toBeInTheDocument();
-    await expect(await canvas.findByRole('link', { name: 'Storybook' })).toBeInTheDocument();
+    await expect(await canvas.findByRole('link', { name: 'View Storybook' })).toBeInTheDocument();
   },
 });
 

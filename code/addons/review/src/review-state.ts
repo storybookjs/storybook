@@ -36,4 +36,11 @@ export interface ReviewState {
    * received; used for live "Created x minutes ago" UI in the summary.
    */
   createdAt?: number;
+  /**
+   * Whether a baseline is available to compare against. Enables the
+   * baseline/latest comparison controls on the detail screen. The baseline
+   * source itself is provided on a separate branch; until then this stays
+   * unset and the controls are hidden.
+   */
+  hasBaseline?: boolean;
 }

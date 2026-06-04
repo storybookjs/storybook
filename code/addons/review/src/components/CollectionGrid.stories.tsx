@@ -24,21 +24,17 @@ const meta = preview.meta({
 
 export const Default = meta.story({});
 
-export const ManyStoriesAutoFit = meta.story({
+// On a narrow (mobile) container the grid drops to a single column and caps at
+// two rows, so eight stories overflow into the "Review all" affordance.
+export const ManyStoriesOverflow = meta.story({
   globals: { viewport: { value: 'mobile1' } },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await expect(await canvas.findByRole('button', { name: /Review all/i })).toBeInTheDocument();
-
-    const cells = Array.from(
-      canvasElement.querySelectorAll('[data-testid="review-collection-grid-cell"]')
-    ) as HTMLElement[];
-    const rows = new Set(cells.map((cell) => Math.round(cell.getBoundingClientRect().top)));
-    await expect(rows.size).toBeGreaterThan(1);
   },
 });
 
-export const FewStoriesStretch = meta.story({
+export const FewStories = meta.story({
   args: {
     storyIds: ['manager-main--default', 'manager-settings-aboutscreen--default'],
   },
@@ -46,10 +42,15 @@ export const FewStoriesStretch = meta.story({
   play: async ({ canvasElement }) => {
     const cells = canvasElement.querySelectorAll('[data-testid="review-collection-grid-cell"]');
     await expect(cells.length).toBe(2);
+    await expect(
+      canvasElement.querySelector<HTMLButtonElement>('[data-review-all] button')
+    ).not.toBeVisible();
   },
 });
 
-export const HeightIsCapped = meta.story({
+// A single preview clamps to 400px instead of stretching to fill the card, so
+// the grid layout stays consistent regardless of story count.
+export const SingleCellClamped = meta.story({
   args: {
     storyIds: ['manager-main--default'],
   },
@@ -57,6 +58,6 @@ export const HeightIsCapped = meta.story({
   play: async ({ canvasElement }) => {
     const cell = canvasElement.querySelector('[data-testid="review-collection-grid-cell"]');
     await expect(cell).toBeTruthy();
-    await expect((cell as HTMLElement).getBoundingClientRect().height).toBeLessThanOrEqual(400);
+    await expect((cell as HTMLElement).getBoundingClientRect().width).toBeLessThanOrEqual(401);
   },
 });

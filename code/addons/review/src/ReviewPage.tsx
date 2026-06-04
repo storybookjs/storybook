@@ -78,6 +78,9 @@ const ReviewPageContent: FC<{ search: string }> = ({ search }) => {
   const reviewCreatedAt = state?.createdAt;
   useEffect(() => {
     if (reviewCreatedAt === undefined) {
+      // Clear any prior baseline so it can't leak into the next review's "New"
+      // badges before its own index is fetched.
+      setBaselineStoryIds(null);
       return undefined;
     }
     let cancelled = false;

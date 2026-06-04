@@ -346,7 +346,10 @@ export const DetailsScreen = ({
             <PreviewDivider $singleUp={isSingleUp} />
           </>
         ) : null}
-        <PreviewPane $singleUp={isSingleUp} $active={!isSingleUp || activePane === 'latest'}>
+        <PreviewPane
+          $singleUp={isSingleUp}
+          $active={!showBaseline || !isSingleUp || activePane === 'latest'}
+        >
           <PreviewFrame ref={latestFrameRef} title={`Latest ${storyId}`} src={latestPreviewSrc} />
         </PreviewPane>
       </PreviewFrameWrap>

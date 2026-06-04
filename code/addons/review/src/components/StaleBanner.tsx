@@ -45,13 +45,16 @@ export const StaleBanner: FC = () => {
 
   const handleCopy = () => {
     // eslint-disable-next-line compat/compat
-    navigator.clipboard?.writeText(REFRESH_REVIEW_PROMPT).then(() => {
-      setCopied(true);
-      if (timerRef.current) {
-        clearTimeout(timerRef.current);
-      }
-      timerRef.current = setTimeout(() => setCopied(false), COPIED_RESET_MS);
-    });
+    navigator.clipboard
+      ?.writeText(REFRESH_REVIEW_PROMPT)
+      .then(() => {
+        setCopied(true);
+        if (timerRef.current) {
+          clearTimeout(timerRef.current);
+        }
+        timerRef.current = setTimeout(() => setCopied(false), COPIED_RESET_MS);
+      })
+      .catch(() => {});
   };
 
   return (

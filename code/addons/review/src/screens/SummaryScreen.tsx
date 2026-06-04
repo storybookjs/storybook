@@ -350,7 +350,11 @@ export const SummaryScreen: FC<SummaryScreenProps> = ({
                               variant="ghost"
                               size="small"
                               padding="small"
-                              ariaLabel={isExpanded ? 'Collapse collection' : 'Expand collection'}
+                              ariaLabel={
+                                isExpanded
+                                  ? `Collapse collection ${collection.title}`
+                                  : `Expand collection ${collection.title}`
+                              }
                               aria-expanded={isExpanded}
                               onClick={(event) => {
                                 event.stopPropagation();

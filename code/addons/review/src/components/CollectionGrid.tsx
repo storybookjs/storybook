@@ -315,7 +315,7 @@ const StoryPreviewCell: FC<{
   info?: StoryInfo;
   query: string;
 }> = ({ storyId, href, info, query }) => {
-  const hostRef = useRef<HTMLAnchorElement>(null);
+  const hostRef = useRef<HTMLElement>(null);
   const [isInView, setIsInView] = useState(false);
   // `src` stays unset until the scheduler starts this preview; the iframe only
   // mounts (and starts requesting) once it does.

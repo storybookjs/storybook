@@ -110,6 +110,7 @@ export const DocsContent = styled.div(({ theme }) => {
     maxWidth: 1000,
     width: '100%',
     minWidth: 0,
+    flex: 1,
     [toGlobalSelector('a')]: {
       ...reset,
       fontSize: 'inherit',

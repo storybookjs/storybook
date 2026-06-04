@@ -9,6 +9,15 @@ import type { IncomingMessage, ServerResponse } from 'node:http';
 import { PassThrough } from 'node:stream';
 import { CompositionAuth } from './auth/index.ts';
 
+// Lets us flip `@storybook/addon-review` presence so the review tool's gate can be exercised.
+// Keep the real exports (e.g. `normalizeStoryPath`) so unrelated tools still register.
+const { mockGetAddonNames } = vi.hoisted(() => ({ mockGetAddonNames: vi.fn(() => [] as string[]) }));
+vi.mock('storybook/internal/common', async (importActual) => ({
+	...(await importActual<typeof import('storybook/internal/common')>()),
+	loadMainConfig: vi.fn().mockResolvedValue({}),
+	getAddonNames: () => mockGetAddonNames(),
+}));
+
 // Test helpers to reduce boilerplate
 function createMockIncomingMessage(options: {
 	method?: string;
@@ -231,6 +240,45 @@ describe('mcpServerHandler', () => {
 				clientInfo: { name: 'test-client', version: '1.0.0' },
 			},
 		};
+	}
+
+	// Initializes the server then asks for `tools/list`, returning the registered tool names.
+	async function getRegisteredToolNames(mockOptions: any, port: number): Promise<string[]> {
+		const host = `localhost:${port}`;
+		const addonOptions = { toolsets: { dev: true, docs: true } };
+
+		const initReq = createMockIncomingMessage({
+			method: 'POST',
+			headers: { 'content-type': 'application/json', host },
+			body: createMCPInitializeRequest(),
+		});
+		const { response: initResponse } = createMockServerResponse();
+		await mcpServerHandler({
+			req: initReq,
+			res: initResponse,
+			options: mockOptions,
+			addonOptions,
+			compositionAuth: new CompositionAuth(),
+		});
+
+		const listReq = createMockIncomingMessage({
+			method: 'POST',
+			headers: { 'content-type': 'application/json', host },
+			body: { jsonrpc: '2.0', id: 2, method: 'tools/list', params: {} },
+		});
+		const { response: listResponse, getResponseData } = createMockServerResponse();
+		await mcpServerHandler({
+			req: listReq,
+			res: listResponse,
+			options: mockOptions,
+			addonOptions,
+			compositionAuth: new CompositionAuth(),
+		});
+
+		const { body } = getResponseData();
+		const dataLine = body.split('\n').find((line) => line.startsWith('data: '));
+		const parsed = JSON.parse(dataLine!.replace(/^data: /, '').trim());
+		return parsed.result.tools.map((t: any) => t.name);
 	}
 
 	it('should initialize MCP server and handle requests', async () => {
@@ -463,6 +511,39 @@ describe('mcpServerHandler', () => {
 		expect(toolNames).toContain('list-all-documentation');
 		expect(toolNames).toContain('get-documentation');
 		expect(toolNames).toContain('get-documentation-for-story');
+	});
+
+	it('registers get-changed-stories when the changeDetection feature flag is on', async () => {
+		const mockOptions = createMockOptions({
+			port: 6009,
+			presets: {
+				apply: vi.fn(async (key: string, defaultValue?: any) => {
+					if (key === 'core') return { disableTelemetry: false };
+					if (key === 'features') return { changeDetection: true };
+					return defaultValue;
+				}),
+			},
+		});
+
+		const toolNames = await getRegisteredToolNames(mockOptions, 6009);
+		expect(toolNames).toContain('get-changed-stories');
+	});
+
+	it('registers display-review when changeDetection and @storybook/addon-review are present', async () => {
+		mockGetAddonNames.mockReturnValue(['@storybook/addon-review']);
+		const mockOptions = createMockOptions({
+			port: 6010,
+			presets: {
+				apply: vi.fn(async (key: string, defaultValue?: any) => {
+					if (key === 'core') return { disableTelemetry: false };
+					if (key === 'features') return { changeDetection: true };
+					return defaultValue;
+				}),
+			},
+		});
+
+		const toolNames = await getRegisteredToolNames(mockOptions, 6010);
+		expect(toolNames).toContain('display-review');
 	});
 });
 

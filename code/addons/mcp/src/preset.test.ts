@@ -413,6 +413,41 @@ describe('experimental_devServer', () => {
 		expect(html).not.toMatch(/\{\{[A-Z_]+\}\}/);
 	});
 
+	it('prompts to enable the manifest feature when manifests exist but the flag is off', async () => {
+		// Manifests are present on disk, but `componentsManifest` is not enabled — the docs
+		// toolset is unavailable for a different reason than "no manifests", so the page shows
+		// the "enable the feature" notice rather than the React-only one.
+		const manifestsNoFlagOptions = {
+			...mockOptions,
+			presets: {
+				apply: vi.fn(async (key: string) => {
+					if (key === 'features') {
+						return { componentsManifest: false };
+					}
+					if (key === 'experimental_manifests') {
+						return { components: { v: 1, components: {} } };
+					}
+					return undefined;
+				}),
+			},
+		} as unknown as Options;
+
+		let getHandler: any;
+		mockApp.get = vi.fn((_path, handler) => {
+			getHandler = handler;
+		});
+
+		await (experimental_devServer as any)(mockApp, manifestsNoFlagOptions);
+
+		const mockRes = { writeHead: vi.fn(), end: vi.fn() } as any;
+		await getHandler({ headers: { accept: 'text/html' } } as any, mockRes);
+
+		const html = mockRes.end.mock.calls[0][0] as string;
+		expect(html).toContain('This toolset requires enabling the component manifest feature.');
+		expect(html).not.toContain('only supported in React-based setups');
+		expect(html).not.toMatch(/\{\{[A-Z_]+\}\}/);
+	});
+
 	it('should show Storybook version requirement for addon-vitest and a manual manifest link', async () => {
 		vi.spyOn(runStoryTests, 'getAddonVitestConstants').mockResolvedValue(undefined);
 		const manifestEnabledOptions = {

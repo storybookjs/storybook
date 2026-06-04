@@ -27,8 +27,10 @@ export const CanvasWrap = styled.div<{ show: boolean }>(
     gridTemplateColumns: '100%',
     gridTemplateRows: '100%',
     position: 'relative',
-    minWidth: '100%',
-    minHeight: '100%',
+    // Firefox ESR collapses `min-height: 100%` on `display: grid` to ~100px
+    // (issue #33743); use `height` to match the sibling `IframeWrapper`.
+    width: '100%',
+    height: '100%',
   },
   ({ show }) => ({ display: show ? 'grid' : 'none' })
 );

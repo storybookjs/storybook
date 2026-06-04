@@ -57,6 +57,7 @@ afterEach(() => {
 
 describe('registerService (leaf)', () => {
   it('allows re-registration after unregisterService', () => {
+    installChannel(createMockChannel());
     registerService(mutableRecordLookupServiceDef);
     unregisterService(mutableRecordLookupServiceDef.id);
 

@@ -2,10 +2,13 @@ import { MANAGER_INERT_ATTRIBUTE_CHANGED, TELEMETRY_ERROR } from 'storybook/inte
 
 import { global } from '@storybook/global';
 
+import { getChannel } from '../channels/channel-slot.ts';
 import { globalPackages, globalsNameReferenceMap } from './globals/globals.ts';
 import { globalsNameValueMap } from './globals/runtime.ts';
 import { maybeSetupPreviewNavigator } from './preview-navigator.ts';
 import { prepareForTelemetry } from './utils.ts';
+
+const queuedTelemetryErrors: ReturnType<typeof prepareForTelemetry>[] = [];
 
 function errorListener(args: any) {
   const error = args.error || args;
@@ -27,8 +30,20 @@ export function setup() {
   });
 
   global.sendTelemetryError = (error: any) => {
-    const channel = global.__STORYBOOK_ADDONS_CHANNEL__;
-    channel.emit(TELEMETRY_ERROR, prepareForTelemetry(error));
+    const channel = getChannel();
+    const preparedError = prepareForTelemetry(error);
+
+    if (!channel) {
+      queuedTelemetryErrors.push(preparedError);
+      return;
+    }
+
+    while (queuedTelemetryErrors.length > 0) {
+      const queuedError = queuedTelemetryErrors.shift();
+      channel.emit(TELEMETRY_ERROR, queuedError);
+    }
+
+    channel.emit(TELEMETRY_ERROR, preparedError);
   };
 
   /**
@@ -39,7 +54,11 @@ export function setup() {
    * could reach a deadlock state and be unusable.
    */
   document.addEventListener('DOMContentLoaded', () => {
-    const channel = global.__STORYBOOK_ADDONS_CHANNEL__;
+    const channel = getChannel();
+    if (!channel) {
+      return;
+    }
+
     channel.on(MANAGER_INERT_ATTRIBUTE_CHANGED, (isInert: boolean) => {
       if (isInert) {
         document.body.setAttribute('inert', 'true');

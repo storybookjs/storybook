@@ -562,7 +562,7 @@ const ready = await exampleService.queries.getValue.loaded({ entryId: 'a' });
 - Manager addons import from `storybook/manager-api`; preview code imports from `storybook/preview-api`. Server presets use [server.ts](./server.ts). Import modules in this directory directly only from tests or implementation code.
 - Use `.loaded()` when a caller wants to await the full state; use the sync form when "current best" is fine.
 - No channel install is needed in manager/preview — `getChannel()` returns the channel `addons.setChannel` installed.
-- Call `clearRegistry()` in `afterEach` in tests that register services — it also calls `ensureChannel()` so the next registration has a noop channel. Use `setChannel(mock)` / `clearChannel()` when a test needs a specific channel setup.
+- Call `clearRegistry()` in `afterEach` in tests that register services. Use `setChannel(mock)` before `registerService` when a test needs sync. Node bootstraps a noop channel at import; browser preview gets the real channel from builders before `preview.ts` loads.
 
 ## Testing Guidance
 

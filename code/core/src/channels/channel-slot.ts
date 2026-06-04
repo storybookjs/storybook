@@ -16,6 +16,16 @@ type ChannelSlotGlobal = {
 
 let channel: ChannelLike | undefined;
 
+type ChannelReplacementListener = (channel: ChannelLike) => void;
+
+const channelReplacementListeners = new Set<ChannelReplacementListener>();
+
+/** Re-wire open-service (and other) listeners when the live channel instance changes. */
+export function onChannelReplaced(listener: ChannelReplacementListener): () => void {
+  channelReplacementListeners.add(listener);
+  return () => channelReplacementListeners.delete(listener);
+}
+
 function readGlobalSlot(): ChannelLike | undefined {
   const fromGlobal = (global as ChannelSlotGlobal).__STORYBOOK_ADDONS_CHANNEL__;
   if (fromGlobal) {
@@ -39,12 +49,14 @@ function syncGlobalSlot(next: ChannelLike | undefined): void {
   gt.__STORYBOOK_ADDONS_CHANNEL__ = next;
 }
 
-/** Returns the installed addons channel, or `null` before one exists. */
+/**
+ * Returns the installed addons channel, or `null` before one exists.
+ *
+ * The global slot wins over the module cache so duplicate copies of this module (e.g. dev-server
+ * preset code and `.storybook` service registration loading different bundles) still observe
+ * `setChannel` from whichever copy installed the live websocket channel.
+ */
 export function getChannel(): ChannelLike | null {
-  if (channel) {
-    return channel;
-  }
-
   const fromGlobal = readGlobalSlot();
   if (fromGlobal) {
     channel = fromGlobal;
@@ -53,10 +65,35 @@ export function getChannel(): ChannelLike | null {
   return channel ?? null;
 }
 
+/**
+ * Returns the installed addons channel.
+ *
+ * Callers assume each runtime has installed a channel at its entry boundary (builder iframe setup,
+ * manager boot, server `services` preset, or Node module bootstrap). Prefer this over nullable
+ * `getChannel()` when the channel must exist.
+ */
+export function requireChannel(): ChannelLike {
+  const installed = getChannel();
+  if (!installed) {
+    throw new Error(
+      'Storybook addons channel is not installed in this runtime. Install it via setChannel() or addons.setChannel() at the runtime entry point before registering services or emitting events.'
+    );
+  }
+
+  return installed;
+}
+
 /** Installs (or replaces) the shared addons channel. Pass `null` to clear. */
 export function setChannel(next: ChannelLike | null): void {
+  const previous = channel;
   channel = next ?? undefined;
   syncGlobalSlot(channel);
+
+  if (channel && channel !== previous) {
+    for (const listener of channelReplacementListeners) {
+      listener(channel);
+    }
+  }
 }
 
 /** Clears the shared channel slot. Alias for `setChannel(null)`. */
@@ -69,13 +106,21 @@ export function installNoopChannel(): void {
   setChannel(new Channel({}));
 }
 
-/** Installs a noop channel when none is present yet. Safe to call from test teardown or setup. */
+/**
+ * Installs a noop channel when none is present yet.
+ *
+ * Prefer explicit `setChannel` / `installNoopChannel` at runtime entry points. This helper remains for
+ * tests and tooling that need an in-process channel without a mock transport.
+ */
 export function ensureChannel(): void {
   if (!getChannel()) {
     installNoopChannel();
   }
 }
 
-// Bootstrap a noop channel when this module loads in Node/test runtimes that register services
-// before Storybook runtime wiring (builders, manager, vitest addon setup).
-ensureChannel();
+// Non-browser realms (Node server, Vitest without a DOM) bootstrap a noop channel at import so
+// presets and tests can register services before the live transport replaces it via setChannel.
+// Browser preview must not bootstrap here — builders install the real channel before preview config.
+if (typeof window === 'undefined') {
+  ensureChannel();
+}

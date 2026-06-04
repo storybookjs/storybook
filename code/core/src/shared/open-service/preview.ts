@@ -34,9 +34,8 @@ import type {
 /**
  * Registers a service in the preview and returns its runtime surface.
  *
- * The preview is a leaf (`relay: false`): with a single channel transport there is nothing to
- * forward. The channel is read via `getChannel()` from `storybook/internal/channels`, which both builders
- * inject into the iframe, so no manual channel setup is needed.
+ * The preview is a leaf (`relay: false`). Builders install the addons channel before preview config
+ * loads, so registration can assume the channel is already present.
  */
 export function registerService<
   TState,

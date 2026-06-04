@@ -15,6 +15,7 @@ export {
   ensureChannel,
   getChannel,
   installNoopChannel,
+  requireChannel,
   setChannel,
 } from './channel-slot.ts';
 

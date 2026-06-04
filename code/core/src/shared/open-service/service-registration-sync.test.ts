@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { mutableRecordLookupServiceDef, schemaCounterServiceDef } from './fixtures.ts';
-import { clearChannel, setChannel } from '../../channels/channel-slot.ts';
+import { clearChannel, installNoopChannel, setChannel } from '../../channels/channel-slot.ts';
 import {
   SERVICE_PATCHES,
   SERVICE_SYNC_START_REPLY,
@@ -71,12 +71,18 @@ describe('registerService: channel wiring', () => {
     expect(channel.on).toHaveBeenCalledWith(SERVICE_PATCHES, expect.any(Function));
   });
 
-  it('throws when the addons channel is not installed', () => {
+  it('rewires listeners when setChannel replaces the channel instance', () => {
     installChannel(null);
+    installNoopChannel();
 
-    expect(() => registerService(mutableRecordLookupServiceDef)).toThrow(
-      /addons channel is not installed/
-    );
+    registerService(mutableRecordLookupServiceDef);
+
+    const channel = createMockChannel();
+    setChannel(channel);
+
+    expect(channel.on).toHaveBeenCalledWith(SERVICE_SYNC_START, expect.any(Function));
+    expect(channel.on).toHaveBeenCalledWith(SERVICE_SYNC_START_REPLY, expect.any(Function));
+    expect(channel.on).toHaveBeenCalledWith(SERVICE_PATCHES, expect.any(Function));
   });
 });
 

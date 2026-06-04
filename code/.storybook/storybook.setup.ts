@@ -3,13 +3,8 @@ import { vi, expect as vitestExpect } from 'vitest';
 import { setProjectAnnotations } from '@storybook/react';
 
 import { userEvent as storybookEvent, expect as storybookExpect } from 'storybook/test';
-import { ensureChannel } from 'storybook/internal/channels';
 
 import '../core/src/shared/utils/toHaveLiveRegion.ts';
-
-// Side-effect import above bootstraps a channel; call again so preview modules that register
-// open services at import time see one even when this file runs before the vitest addon setup.
-ensureChannel();
 
 import preview from './preview.tsx';
 

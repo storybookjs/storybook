@@ -53,6 +53,17 @@ describe('channel slot', () => {
     expect(getChannel()).toBe(channel);
   });
 
+  it('prefers the global slot over a stale module-level noop', () => {
+    clearChannel();
+    installNoopChannel();
+
+    const real = new Channel({ transport: { setHandler: vi.fn(), send: vi.fn() } });
+    (global as ChannelSlotGlobal).__STORYBOOK_ADDONS_CHANNEL__ = real;
+    (globalThis as ChannelSlotGlobal).__STORYBOOK_ADDONS_CHANNEL__ = real;
+
+    expect(getChannel()).toBe(real);
+  });
+
   it('installNoopChannel provides an in-process channel', () => {
     clearChannel();
     installNoopChannel();
@@ -97,5 +108,22 @@ describe('channel slot', () => {
 
     expect(getChannel()).toBe(second);
     expect(readGlobalSlot()).toBe(second);
+  });
+});
+
+describe('module import', () => {
+  it('does not auto-install a channel in a browser-like environment', async () => {
+    vi.stubGlobal('window', {});
+    vi.stubGlobal('document', {});
+    vi.stubEnv('VITEST', '');
+
+    vi.resetModules();
+    const { getChannel } = await import('./channel-slot.ts');
+
+    expect(getChannel()).toBeNull();
+
+    vi.unstubAllGlobals();
+    vi.unstubAllEnvs();
+    vi.resetModules();
   });
 });

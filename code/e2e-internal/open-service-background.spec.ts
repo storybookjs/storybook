@@ -1,7 +1,6 @@
 import { expect, test } from '@playwright/test';
+import type { Page } from '@playwright/test';
 import process from 'process';
-
-import { SbPage } from '../e2e-sandbox/util.ts';
 
 /**
  * E2E regression for the open-service background demo (`code/.storybook/background-service`).
@@ -25,9 +24,11 @@ const STORY_PATH = '/story/core-basics--basic';
 const DARK_BG = 'rgb(27, 28, 29)'; // #1B1C1D
 const ACTIVE_SWATCH_BORDER = 'rgb(30, 167, 253)'; // #1ea7fd
 
-async function previewBodyBackground(page: import('@playwright/test').Page): Promise<string> {
-  const sbPage = new SbPage(page, expect);
-  return sbPage.getCanvasBodyElement().evaluate((el) => getComputedStyle(el).backgroundColor);
+async function previewBodyBackground(page: Page): Promise<string> {
+  return page
+    .frameLocator('#storybook-preview-iframe')
+    .locator('body')
+    .evaluate((el) => getComputedStyle(el).backgroundColor);
 }
 
 test.describe('open-service background example', () => {

@@ -1,12 +1,10 @@
 import React, { useCallback, useEffect, useRef, useState, type FC, type ReactNode } from 'react';
 
-import { Button, IconButton } from 'storybook/internal/components';
+import { Button } from 'storybook/internal/components';
 import { styled } from 'storybook/theming';
 
-import { StorybookIcon } from '@storybook/icons';
-
 import { prettifyComponentId } from '../review-grouping.ts';
-import { buildStorybookStoryHref, storyPreviewUrl } from '../review-navigation.ts';
+import { storyPreviewUrl } from '../review-navigation.ts';
 
 const PREVIEW_SCALE = 0.5;
 
@@ -449,19 +447,7 @@ const StoryPreviewCell: FC<{
             <Highlight text={name} query={query} />
           </LabelStory>
         </Label>
-        <ActionSlot>
-          {/* <IconButton
-            variant="ghost"
-            size="small"
-            padding="small"
-            ariaLabel="View in Storybook"
-            asChild
-          >
-            <a href={buildStorybookStoryHref(storyId)} target="_blank" rel="noreferrer">
-              <StorybookIcon />
-            </a>
-          </IconButton> */}
-        </ActionSlot>
+        <ActionSlot />
       </ActionBar>
     </Cell>
   );

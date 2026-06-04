@@ -160,15 +160,13 @@ export async function storybookDevServer(
       logger.debug(err instanceof Error ? (err.stack ?? err.message) : String(err));
     }
 
-    if (adapter) {
-      resolveChangeDetectionAdapter(adapter);
-    }
+    resolveChangeDetectionAdapter(adapter);
 
     const isChangeDetectionStatusEnabled = features.changeDetection !== false;
     if (isChangeDetectionStatusEnabled) {
-      changeDetectionService.start(adapter, true);
+      changeDetectionService.start(true);
     } else {
-      changeDetectionService.start(undefined, false);
+      changeDetectionService.start(false);
     }
   }
 

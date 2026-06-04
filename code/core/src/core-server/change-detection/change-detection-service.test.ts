@@ -654,15 +654,22 @@ describe('ChangeDetectionService', () => {
     service.start(undefined, false);
     await service.dispose();
 
-    expect(engine.hasGraph).not.toHaveBeenCalled();
+    expect(engine.lookup).not.toHaveBeenCalled();
   });
 
-  it('logs unavailability when the builder does not provide an adapter', async () => {
+  it('logs unavailability when the module graph service is unavailable', async () => {
+    const engine = {
+      whenSettled: vi.fn(async () => undefined),
+      hasGraph: vi.fn(() => false),
+      lookup: vi.fn(() => new Map<string, number>()),
+    } as unknown as ModuleGraphEngine;
+    const moduleGraphMock = installModuleGraphQueryMock(engine);
+
     const { getStatusStoreByTypeId } = createStatusStore({
       universalStatusStore: new MockUniversalStore(UNIVERSAL_STATUS_STORE_OPTIONS),
       environment: 'server',
     });
-    const { service, graph } = createWiredChangeDetection({
+    const service = new ChangeDetectionService({
       storyIndexGeneratorPromise: Promise.resolve({
         getIndex: vi.fn(),
       } as never),
@@ -673,6 +680,7 @@ describe('ChangeDetectionService', () => {
     });
 
     service.start(undefined, true);
+    moduleGraphMock.applyUnavailable('builder does not support change detection');
 
     expect(logger.warn).toHaveBeenCalledWith(
       'Change detection unavailable: builder does not support change detection'
@@ -1045,7 +1053,7 @@ describe('ChangeDetectionService', () => {
     });
     const gitDiffProvider = createMockGitDiffProvider();
     const { adapter } = createMockAdapter();
-    const { service, graph } = createWiredChangeDetection({
+    const { service, graph, moduleGraphMock } = createWiredChangeDetection({
       storyIndexGeneratorPromise: Promise.resolve({
         getIndex: vi.fn().mockResolvedValue(storyIndex),
       } as never),
@@ -1061,7 +1069,7 @@ describe('ChangeDetectionService', () => {
     await vi.runAllTimersAsync();
     expect(gitDiffProvider.getChangedFilesMock).toHaveBeenCalledTimes(1);
 
-    service.onGraphChange();
+    moduleGraphMock.bumpGraphRevision();
     await vi.runAllTimersAsync();
     expect(gitDiffProvider.getChangedFilesMock).toHaveBeenCalledTimes(2);
 

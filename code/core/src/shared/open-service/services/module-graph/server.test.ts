@@ -49,7 +49,7 @@ describe('module-graph open service', () => {
     it('starts not-ready with empty indexes and zeroed counters', () => {
       const runtime = registerBareModuleGraph();
 
-      expect(runtime.queries.getReady(undefined)).toBe(false);
+      expect(runtime.queries.getStatus(undefined)).toEqual({ status: 'booting' });
       expect(runtime.queries.getGraphRevision(undefined)).toBe(0);
       expect(runtime.queries.getAllStoryVersions(undefined)).toEqual({});
       expect(runtime.queries.getStoriesForFiles({ files: ['/repo/src/Button.tsx'] })).toEqual([[]]);
@@ -69,7 +69,7 @@ describe('module-graph open service', () => {
         },
       });
 
-      expect(runtime.queries.getReady(undefined)).toBe(true);
+      expect(runtime.queries.getStatus(undefined)).toEqual({ status: 'ready' });
       expect(runtime.queries.getGraphRevision(undefined)).toBe(1);
       expect(runtime.queries.getStoriesForFiles({ files: ['/repo/src/Button.tsx'] })).toEqual([
         [{ storyFile: './src/Button.stories.tsx', depth: 1 }],
@@ -91,6 +91,36 @@ describe('module-graph open service', () => {
         [{ storyFile: './src/B.stories.tsx', depth: 0 }],
       ]);
       expect(runtime.queries.getGraphRevision(undefined)).toBe(2);
+    });
+  });
+
+  describe('status commands', () => {
+    it('marks the graph failed with a serializable error', async () => {
+      const runtime = registerBareModuleGraph();
+
+      await runtime.commands.applyGraphError({
+        error: { message: 'graph build blew up', name: 'ModuleGraphFailureError' },
+      });
+
+      expect(runtime.queries.getStatus(undefined)).toEqual({
+        status: 'error',
+        error: { message: 'graph build blew up', name: 'ModuleGraphFailureError' },
+      });
+    });
+
+    it('marks the graph unavailable with a reason and optional error', async () => {
+      const runtime = registerBareModuleGraph();
+
+      await runtime.commands.applyGraphUnavailable({
+        reason: 'builder does not support change detection',
+        error: { message: 'adapter missing' },
+      });
+
+      expect(runtime.queries.getStatus(undefined)).toEqual({
+        status: 'unavailable',
+        reason: 'builder does not support change detection',
+        error: { message: 'adapter missing' },
+      });
     });
   });
 
@@ -258,7 +288,7 @@ describe('module-graph open service', () => {
       });
 
       expect(channel.on).toHaveBeenCalledWith(STORY_INDEX_INVALIDATED, expect.any(Function));
-      expect(runtime.queries.getReady(undefined)).toBe(false);
+      expect(runtime.queries.getStatus(undefined)).toEqual({ status: 'booting' });
     });
 
     // Must run last: it resolves the process-global adapter promise, which cannot be un-resolved.
@@ -277,12 +307,12 @@ describe('module-graph open service', () => {
         workingDir: '/repo',
       });
 
-      expect(runtime.queries.getReady(undefined)).toBe(false);
+      expect(runtime.queries.getStatus(undefined)).toEqual({ status: 'booting' });
 
       resolveChangeDetectionAdapter(adapter);
 
       await vi.waitFor(() => {
-        expect(runtime.queries.getReady(undefined)).toBe(true);
+        expect(runtime.queries.getStatus(undefined)).toEqual({ status: 'ready' });
       });
 
       expect(runtime.queries.getStoriesForFiles({ files: ['/repo/src/Button.tsx'] })).toEqual([

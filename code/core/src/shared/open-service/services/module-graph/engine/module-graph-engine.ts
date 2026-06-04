@@ -8,7 +8,6 @@ import type { Presets } from 'storybook/internal/types';
 
 import type { StoryIndex } from '../../../../../types/modules/indexer.ts';
 import { ModuleGraphFailureError } from '../errors.ts';
-import { getModuleGraphLifecycleConsumer } from '../lifecycle-consumer.ts';
 import { getStoryIdsByAbsolutePath } from '../story-files.ts';
 import { reverseIndexToStoriesByFile, toStoryIndexPath } from '../types.ts';
 import type { ChangeDetectionAdapter, FileChangeEvent } from './adapters/types.ts';
@@ -27,21 +26,12 @@ export interface ModuleGraphEngineOptions {
   workingDir?: string;
   /** Presets instance used to resolve `experimental_importParsers` contributions from plugins. */
   presets?: Presets;
-  /** Fired once the initial graph build succeeds and the reverse index is ready to be queried. */
-  onReady?: () => void;
-  /**
-   * Edge-triggered "the dependency graph may have changed; recompute derived state" signal. Fires
-   * after each settled file-change patch, and synchronously on a story-index invalidation (before
-   * its reconciliation patches are enqueued). It is a coalesce signal, NOT a settled read: do not
-   * call {@link ModuleGraphEngine.lookup} synchronously inside the callback — schedule a
-   * (debounced) recompute whose first step is `await whenSettled()`. May fire more than once per
-   * logical change, so consumers must be idempotent.
-   */
-  onChange?: () => void;
   /** Fired when the eager build (or start pipeline) fails irrecoverably. */
   onError?: (error: Error) => void;
   /** Fired when the builder adapter reports a startup failure. */
   onUnavailable?: (reason: string, error?: Error) => void;
+  /** Fired when the story index invalidates, even if no graph edges changed. */
+  onStoryIndexInvalidated?: () => void;
   /** Mirrors the built reverse index into the `core/module-graph` open service. */
   onSnapshot?: (storiesByFile: ReturnType<typeof reverseIndexToStoriesByFile>) => void;
   /** Mirrors state after each settled patch; includes story files whose graph may have changed. */
@@ -56,11 +46,10 @@ export interface ModuleGraphEngineOptions {
  * eagerly builds a reverse-dependency index from story files at startup, applies file-system events
  * incrementally to that index, and reconciles the story-root set when the story index changes.
  *
- * It is deliberately independent of git diffing, the status store, and the change-detection
- * readiness signal — those belong to the {@link ChangeDetectionService} status publisher (and, in
- * the future, other consumers such as server-side docgen). Consumers observe the graph through a
- * narrow surface: {@link lookup} for `changedFile -> affected stories`, {@link whenSettled} as a
- * patch-settle barrier, and lifecycle signals via {@link getModuleGraphLifecycleConsumer}.
+ * It is deliberately independent of git diffing and the status store — those belong to the
+ * {@link ChangeDetectionService} status publisher. Consumers observe the graph through the
+ * `core/module-graph` open service; the direct engine surface is only for the service registration
+ * wrapper that mirrors engine state into open-service state.
  */
 export class ModuleGraphEngine {
   private readonly workingDir: string;
@@ -94,28 +83,8 @@ export class ModuleGraphEngine {
     void this.startInternal().catch((error) => {
       const failure = error instanceof Error ? error : new ModuleGraphFailureError(String(error));
       logger.error(`Module graph failed to start: ${failure.message}`);
-      this.emitError(failure);
+      this.options.onError?.(failure);
     });
-  }
-
-  private emitReady(): void {
-    this.options.onReady?.();
-    getModuleGraphLifecycleConsumer()?.onReady?.();
-  }
-
-  private emitChange(): void {
-    this.options.onChange?.();
-    getModuleGraphLifecycleConsumer()?.onChange?.();
-  }
-
-  private emitError(error: Error): void {
-    this.options.onError?.(error);
-    getModuleGraphLifecycleConsumer()?.onError?.(error);
-  }
-
-  private emitUnavailable(reason: string, error?: Error): void {
-    this.options.onUnavailable?.(reason, error);
-    getModuleGraphLifecycleConsumer()?.onUnavailable?.(reason, error);
   }
 
   private mirrorSnapshot(): void {
@@ -171,8 +140,7 @@ export class ModuleGraphEngine {
    * This is a point-in-time barrier, not a freeze: file events arriving after the snapshot enqueue
    * patches this call does not await, so a {@link lookup} taken after any further `await` may
    * observe a newer (still non-mid-patch) graph. For a read pinned to this barrier, call
-   * {@link lookup} immediately after this resolves with no intervening `await`. Each new event
-   * re-fires {@link onChange}, so coalescing consumers converge without holding this barrier open.
+   * {@link lookup} immediately after this resolves with no intervening `await`.
    */
   async whenSettled(): Promise<void> {
     // Phase 1: let any in-flight story-index reconciliation enqueue its add/unlink patches, so the
@@ -185,7 +153,7 @@ export class ModuleGraphEngine {
 
   /**
    * Builds parser registry, resolver, dependency graph, and patcher; subscribes to file-change
-   * events queued behind {@link patchQueue}; then signals readiness via {@link onReady}.
+   * events queued behind {@link patchQueue}; then mirrors the initial snapshot to the service.
    */
   private async startInternal(): Promise<void> {
     const adapter = this.adapter;
@@ -267,11 +235,10 @@ export class ModuleGraphEngine {
     });
 
     adapter.onStartupFailure?.((event) => {
-      this.emitUnavailable(event.reason, event.error);
+      this.options.onUnavailable?.(event.reason, event.error);
     });
 
     this.mirrorSnapshot();
-    this.emitReady();
   }
 
   onStoryIndexInvalidated(): void {
@@ -291,7 +258,7 @@ export class ModuleGraphEngine {
     }
     // The story index changed even when no story files were added/removed (e.g. a story renamed
     // within a file); signal consumers so derived state is recomputed.
-    this.emitChange();
+    this.options.onStoryIndexInvalidated?.();
   }
 
   /**
@@ -412,6 +379,5 @@ export class ModuleGraphEngine {
       );
     }
     this.mirrorUpdate(event.path);
-    this.emitChange();
   }
 }

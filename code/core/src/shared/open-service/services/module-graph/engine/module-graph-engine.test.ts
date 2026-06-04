@@ -26,8 +26,9 @@ function setup(options?: {
   withoutStartupFailure?: boolean;
 }) {
   const callbacks = {
-    onReady: vi.fn(),
-    onChange: vi.fn(),
+    onSnapshot: vi.fn(),
+    onUpdate: vi.fn(),
+    onStoryIndexInvalidated: vi.fn(),
     onError: vi.fn(),
     onUnavailable: vi.fn(),
   };
@@ -60,7 +61,7 @@ describe('ModuleGraphEngine', () => {
     vi.resetAllMocks();
   });
 
-  it('builds the graph, fires onReady, and exposes the reverse index via lookup', async () => {
+  it('builds the graph, mirrors a snapshot, and exposes the reverse index via lookup', async () => {
     const reverseIndex = buildReverseIndex([
       ['/repo/src/Button.tsx', '/repo/src/Button.stories.tsx', 1],
     ]);
@@ -75,7 +76,7 @@ describe('ModuleGraphEngine', () => {
     service.start(adapter);
     await vi.runAllTimersAsync();
 
-    expect(callbacks.onReady).toHaveBeenCalledTimes(1);
+    expect(callbacks.onSnapshot).toHaveBeenCalledTimes(1);
     expect(callbacks.onError).not.toHaveBeenCalled();
     expect(service.hasGraph()).toBe(true);
     expect(service.lookup('/repo/src/Button.tsx')).toEqual(
@@ -155,7 +156,7 @@ describe('ModuleGraphEngine', () => {
     );
   });
 
-  it('fires onChange after each file-change patch settles, but not for the initial build', async () => {
+  it('mirrors an update after each file-change patch settles, but not for the initial build', async () => {
     installDependencyGraphMocks(buildReverseIndex([]));
     const { service, adapter, emitFileChange, callbacks } = setup({
       storyIndex: createStoryIndex([
@@ -165,13 +166,13 @@ describe('ModuleGraphEngine', () => {
 
     service.start(adapter);
     await vi.runAllTimersAsync();
-    expect(callbacks.onChange).not.toHaveBeenCalled();
+    expect(callbacks.onUpdate).not.toHaveBeenCalled();
 
     emitFileChange({ kind: 'change', path: '/repo/src/B.tsx' });
     emitFileChange({ kind: 'change', path: '/repo/src/C.tsx' });
     await vi.runAllTimersAsync();
 
-    expect(callbacks.onChange).toHaveBeenCalledTimes(2);
+    expect(callbacks.onUpdate).toHaveBeenCalledTimes(2);
   });
 
   it('buffers file events emitted during the build and applies them in order after build resolves', async () => {
@@ -229,8 +230,8 @@ describe('ModuleGraphEngine', () => {
     await vi.runAllTimersAsync();
 
     expect(patchSpy).toHaveBeenCalledWith({ kind: 'add', path: '/repo/src/B.stories.tsx' });
-    // The index changed, so consumers are notified to recompute derived state.
-    expect(callbacks.onChange).toHaveBeenCalled();
+    // The index changed, so the service wrapper is notified to bump graph revision.
+    expect(callbacks.onStoryIndexInvalidated).toHaveBeenCalled();
   });
 
   it('guards duplicate onStoryIndexInvalidated so a newly-added story is replayed only once', async () => {
@@ -263,10 +264,10 @@ describe('ModuleGraphEngine', () => {
   });
 
   it('whenSettled waits for an in-flight story-index reconciliation, so a later lookup is post-reconciliation', async () => {
-    // Regression guard for the onChange-before-reconciliation gap: onStoryIndexInvalidated starts
-    // an async refresh (getIndex + add/unlink) and fires onChange synchronously, before the
+    // Regression guard for the invalidation-before-reconciliation gap: onStoryIndexInvalidated starts
+    // an async refresh (getIndex + add/unlink) and notifies synchronously, before the
     // reconciliation patches exist. whenSettled() must await that in-flight reconciliation, not
-    // just the current patch tail, or a consumer reacting to onChange would read a pre-reconciliation
+    // just the current patch tail, or a consumer reacting to invalidation would read a pre-reconciliation
     // graph.
     const reverseIndex = buildReverseIndex([]);
     const getIndexDeferred = createDeferred<void>();
@@ -340,7 +341,7 @@ describe('ModuleGraphEngine', () => {
     expect(callbacks.onError).toHaveBeenCalledWith(
       expect.objectContaining({ message: 'graph build blew up' })
     );
-    expect(callbacks.onReady).not.toHaveBeenCalled();
+    expect(callbacks.onSnapshot).not.toHaveBeenCalled();
     expect(service.hasGraph()).toBe(false);
   });
 
@@ -353,7 +354,7 @@ describe('ModuleGraphEngine', () => {
 
     service.start(adapter);
     await vi.runAllTimersAsync();
-    expect(callbacks.onReady).toHaveBeenCalledTimes(1);
+    expect(callbacks.onSnapshot).toHaveBeenCalledTimes(1);
 
     emitStartupFailure({ reason: 'vite warmup failed', error: new Error('warmup failed') });
     await vi.runAllTimersAsync();

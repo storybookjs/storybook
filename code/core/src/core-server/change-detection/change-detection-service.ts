@@ -12,9 +12,11 @@ import { CHANGE_DETECTION_STATUS_TYPE_ID } from 'storybook/internal/types';
 
 import { getService } from '../../shared/open-service/server.ts';
 import { moduleGraphServiceDef } from '../../shared/open-service/services/module-graph/definition.ts';
-import type { ChangeDetectionAdapter } from '../../shared/open-service/services/module-graph/engine/adapters/types.ts';
-import { registerModuleGraphLifecycleConsumer } from '../../shared/open-service/services/module-graph/lifecycle-consumer.ts';
 import { getStoryIdsByAbsolutePath } from '../../shared/open-service/services/module-graph/story-files.ts';
+import type {
+  ErrorLike,
+  ModuleGraphStatus,
+} from '../../shared/open-service/services/module-graph/types.ts';
 import { storyIndexPathToAbsolutePath } from '../../shared/open-service/services/module-graph/types.ts';
 import type { StoryIndexGenerator } from '../utils/StoryIndexGenerator.ts';
 import { ChangeDetectionFailureError, ChangeDetectionUnavailableError } from './errors.ts';
@@ -23,6 +25,17 @@ import { extractBaselineEntryIds, IndexBaselineService } from './IndexBaselineSe
 import { resetChangeDetectionReadiness, setChangeDetectionReadiness } from './readiness.ts';
 
 const CHANGE_DETECTION_DEBOUNCE_MS = 200;
+
+function errorLikeToError(errorLike: ErrorLike): Error {
+  const error = new Error(errorLike.message, {
+    cause: errorLike.cause ? errorLikeToError(errorLike.cause) : undefined,
+  });
+  error.name = errorLike.name ?? error.name;
+  if (errorLike.stack) {
+    error.stack = errorLike.stack;
+  }
+  return error;
+}
 
 function isSameStatus(a: Status | undefined, b: Status): boolean {
   if (!a) {
@@ -115,6 +128,8 @@ export class ChangeDetectionService {
   private previousStatuses = new Map<string, Status>();
   private gitDiffProvider: GitDiffProvider | undefined;
   private indexBaselineService: IndexBaselineService | undefined;
+  private unsubscribeModuleGraphStatus: (() => void) | undefined;
+  private unsubscribeModuleGraphRevision: (() => void) | undefined;
   private readonly workingDir: string;
   private readonly debounceMs: number;
 
@@ -144,7 +159,7 @@ export class ChangeDetectionService {
     return !this.disposed && this.changeDetectionEnabled;
   }
 
-  onGraphReady(): void {
+  private onGraphReady(): void {
     if (!this.isActive()) {
       return;
     }
@@ -152,7 +167,7 @@ export class ChangeDetectionService {
     this.startStatusPipeline();
   }
 
-  onGraphChange(): void {
+  private onGraphChange(): void {
     if (!this.isActive()) {
       return;
     }
@@ -160,7 +175,7 @@ export class ChangeDetectionService {
     this.scheduleScan(this.debounceMs);
   }
 
-  onGraphError(error: Error): void {
+  private onGraphError(error: Error): void {
     if (!this.isActive()) {
       return;
     }
@@ -169,7 +184,7 @@ export class ChangeDetectionService {
     void this.dispose().catch(() => undefined);
   }
 
-  onGraphUnavailable(reason: string, error?: Error): void {
+  private onGraphUnavailable(reason: string, error?: Error): void {
     if (!this.isActive()) {
       return;
     }
@@ -179,7 +194,32 @@ export class ChangeDetectionService {
     void this.dispose();
   }
 
-  start(adapter: ChangeDetectionAdapter | undefined, enabled: boolean | undefined): void {
+  private onModuleGraphStatus(status: ModuleGraphStatus): void {
+    if (!this.isActive()) {
+      return;
+    }
+
+    if (status.status === 'ready') {
+      this.onGraphReady();
+      return;
+    }
+
+    if (status.status === 'error') {
+      this.onGraphError(errorLikeToError(status.error));
+      return;
+    }
+
+    if (status.status === 'unavailable') {
+      this.onGraphUnavailable(
+        status.reason,
+        status.error ? errorLikeToError(status.error) : undefined
+      );
+    }
+  }
+
+  start(adapterOrEnabled: unknown | boolean | undefined, maybeEnabled?: boolean): void {
+    const enabled = typeof adapterOrEnabled === 'boolean' ? adapterOrEnabled : maybeEnabled;
+
     if (enabled === false) {
       logger.debug('Change detection disabled.');
       this.resolveReadiness({
@@ -189,31 +229,27 @@ export class ChangeDetectionService {
       return;
     }
 
-    if (!adapter) {
-      logger.warn('Change detection unavailable: builder does not support change detection');
-      this.resolveReadiness({
-        status: 'unavailable',
-        reason: 'builder does not support change detection',
-      });
-      return;
-    }
-
     logger.debug('Change detection enabled.');
     this.changeDetectionEnabled = true;
 
-    registerModuleGraphLifecycleConsumer({
-      onReady: () => this.onGraphReady(),
-      onChange: () => this.onGraphChange(),
-      onError: (error) => this.onGraphError(error),
-      onUnavailable: (reason, error) => this.onGraphUnavailable(reason, error),
-    });
-
-    void this.getModuleGraph()
-      .queries.getReady.loaded(undefined)
-      .then((ready) => {
-        if (ready) {
-          this.onGraphReady();
+    const moduleGraph = this.getModuleGraph();
+    this.unsubscribeModuleGraphStatus = moduleGraph.queries.getStatus.subscribe(
+      undefined,
+      (status) => this.onModuleGraphStatus(status as ModuleGraphStatus)
+    );
+    this.unsubscribeModuleGraphRevision = moduleGraph.queries.getGraphRevision.subscribe(
+      undefined,
+      (revision) => {
+        if (revision > 0) {
+          this.onGraphChange();
         }
+      }
+    );
+
+    void moduleGraph.queries.getStatus
+      .loaded(undefined)
+      .then((status) => {
+        this.onModuleGraphStatus(status as ModuleGraphStatus);
       })
       .catch((error) => {
         this.onGraphError(error instanceof Error ? error : new Error(String(error)));
@@ -260,7 +296,10 @@ export class ChangeDetectionService {
     }
 
     this.gitDiffProvider?.dispose();
-    registerModuleGraphLifecycleConsumer(undefined);
+    this.unsubscribeModuleGraphStatus?.();
+    this.unsubscribeModuleGraphStatus = undefined;
+    this.unsubscribeModuleGraphRevision?.();
+    this.unsubscribeModuleGraphRevision = undefined;
   }
 
   private scheduleScan(delayMs: number): void {
@@ -283,9 +322,9 @@ export class ChangeDetectionService {
     // (between a story's removeStory and the re-walk's recordEdges) reads a transiently empty
     // reverse index and publishes incorrect statuses.
     const moduleGraph = this.getModuleGraph();
-    const ready = await moduleGraph.queries.getReady.loaded(undefined);
+    const status = await moduleGraph.queries.getStatus.loaded(undefined);
 
-    if (this.disposed || !ready) {
+    if (this.disposed || status.status !== 'ready') {
       return;
     }
 

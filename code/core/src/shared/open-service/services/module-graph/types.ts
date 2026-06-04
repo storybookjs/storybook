@@ -7,12 +7,38 @@ import type { ReverseIndex } from './engine/dependency-graph/types.ts';
 /** JSON-serializable reverse index shape stored in open-service state. */
 export type StoriesByFileRecord = Record<string, Record<string, number>>;
 
+export type ErrorLike = {
+  message: string;
+  name?: string;
+  stack?: string;
+  cause?: ErrorLike;
+};
+
+export type ModuleGraphStatus =
+  | { status: 'booting' }
+  | { status: 'ready' }
+  | { status: 'error'; error: ErrorLike }
+  | { status: 'unavailable'; reason: string; error?: ErrorLike };
+
 export type ModuleGraphServiceState = {
-  ready: boolean;
+  status: ModuleGraphStatus;
   graphRevision: number;
   storiesByFile: StoriesByFileRecord;
   storyVersions: Record<string, number>;
 };
+
+export function errorToErrorLike(error: unknown): ErrorLike {
+  if (!(error instanceof Error)) {
+    return { message: String(error) };
+  }
+
+  return {
+    message: error.message,
+    name: error.name,
+    stack: error.stack,
+    cause: error.cause === undefined ? undefined : errorToErrorLike(error.cause),
+  };
+}
 
 function isWindowsAbsolutePath(path: string): boolean {
   return win32.isAbsolute(path);

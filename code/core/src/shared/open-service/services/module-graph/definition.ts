@@ -1,8 +1,46 @@
 import * as v from 'valibot';
 
 import { defineService } from '../../service-definition.ts';
-import type { ModuleGraphServiceState } from './types.ts';
+import type { ErrorLike, ModuleGraphServiceState } from './types.ts';
 import { toStoryIndexPath } from './types.ts';
+
+const errorLikeSchema: v.GenericSchema = v.object({
+  message: v.pipe(v.string(), v.description('Human-readable error message.')),
+  name: v.optional(v.pipe(v.string(), v.description('Error class/name, when available.'))),
+  stack: v.optional(v.pipe(v.string(), v.description('Stack trace, when available.'))),
+  cause: v.optional(v.lazy(() => errorLikeSchema)),
+});
+
+const moduleGraphStatusSchema = v.variant('status', [
+  v.object({
+    status: v.literal('booting'),
+  }),
+  v.object({
+    status: v.literal('ready'),
+  }),
+  v.object({
+    status: v.literal('error'),
+    error: v.pipe(
+      errorLikeSchema,
+      v.description('Serializable error describing why the module graph failed unexpectedly.')
+    ),
+  }),
+  v.object({
+    status: v.literal('unavailable'),
+    reason: v.pipe(
+      v.string(),
+      v.description(
+        'Human-readable reason why the current builder/runtime cannot provide module graph functionality.'
+      )
+    ),
+    error: v.optional(
+      v.pipe(
+        errorLikeSchema,
+        v.description('Optional serializable error reported by the builder adapter.')
+      )
+    ),
+  }),
+]);
 
 /**
  * Reverse index shape `sourceFile -> storyFile -> breadth-first-search depth`. The depth is the
@@ -35,7 +73,7 @@ export const moduleGraphServiceDef = defineService({
   description:
     'Story module dependency graph: reverse index from source files to story files, with reactive updates.',
   initialState: {
-    ready: false,
+    status: { status: 'booting' },
     graphRevision: 0,
     storiesByFile: {},
     storyVersions: {},
@@ -83,11 +121,12 @@ export const moduleGraphServiceDef = defineService({
         });
       },
     },
-    getReady: {
-      description: 'True once the initial dependency graph has been built.',
+    getStatus: {
+      description:
+        'Current module graph lifecycle status. `booting` means the graph is still expected to become ready; `ready` means query state is populated; `error` means an unexpected graph failure; `unavailable` means the current builder/runtime cannot provide module graph functionality.',
       input: noInputSchema,
-      output: v.boolean(),
-      handler: (_input, ctx) => ctx.self.state.ready,
+      output: moduleGraphStatusSchema,
+      handler: (_input, ctx) => ctx.self.state.status,
     },
     getGraphRevision: {
       description:
@@ -142,7 +181,7 @@ export const moduleGraphServiceDef = defineService({
       output: v.void(),
       handler: async (input, ctx) => {
         ctx.self.setState((state) => {
-          state.ready = true;
+          state.status = { status: 'ready' };
           state.storiesByFile = input.storiesByFile;
           state.graphRevision += 1;
         });
@@ -173,6 +212,56 @@ export const moduleGraphServiceDef = defineService({
           for (const storyFile of input.bumpedStoryFiles) {
             state.storyVersions[storyFile] = (state.storyVersions[storyFile] ?? 0) + 1;
           }
+        });
+      },
+    },
+    bumpGraphRevision: {
+      description:
+        'Internal use only: bumps the graph revision when the story index invalidates without an immediate graph snapshot/update.',
+      input: noInputSchema,
+      output: v.void(),
+      handler: async (_input, ctx) => {
+        ctx.self.setState((state) => {
+          state.graphRevision += 1;
+        });
+      },
+    },
+    applyGraphError: {
+      description:
+        'Internal use only: marks the module graph as failed after an unexpected graph engine error.',
+      input: v.object({
+        error: v.pipe(
+          errorLikeSchema,
+          v.description('Serializable unexpected module graph error.')
+        ),
+      }),
+      output: v.void(),
+      handler: async (input, ctx) => {
+        ctx.self.setState((state) => {
+          state.status = { status: 'error', error: input.error as ErrorLike };
+        });
+      },
+    },
+    applyGraphUnavailable: {
+      description:
+        'Internal use only: marks the module graph unavailable because the current builder/runtime cannot provide graph functionality.',
+      input: v.object({
+        reason: v.pipe(
+          v.string(),
+          v.description('Human-readable reason why module graph functionality is unavailable.')
+        ),
+        error: v.optional(
+          v.pipe(errorLikeSchema, v.description('Optional serializable adapter error.'))
+        ),
+      }),
+      output: v.void(),
+      handler: async (input, ctx) => {
+        ctx.self.setState((state) => {
+          state.status = {
+            status: 'unavailable',
+            reason: input.reason,
+            ...(input.error ? { error: input.error as ErrorLike } : {}),
+          };
         });
       },
     },

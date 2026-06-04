@@ -6,7 +6,7 @@ import { registerService } from '../../service-registration.ts';
 import { moduleGraphServiceDef } from './definition.ts';
 import type { ChangeDetectionAdapter } from './engine/adapters/types.ts';
 import { ModuleGraphEngine, type ModuleGraphEngineOptions } from './engine/module-graph-engine.ts';
-import { toStoryIndexPath } from './types.ts';
+import { errorToErrorLike, toStoryIndexPath } from './types.ts';
 
 export type RegisterModuleGraphServiceOptions = {
   channel: ChannelLike;
@@ -23,13 +23,17 @@ export type RegisterModuleGraphServiceOptions = {
  * `resolveChangeDetectionAdapter` is exported directly (rather than wrapped in a helper) so the
  * dev-server can resolve the promise with one import.
  */
-let resolveAdapter!: (adapter: ChangeDetectionAdapter) => void;
+let resolveAdapter!: (adapter: ChangeDetectionAdapter | null | undefined) => void;
 
-export const changeDetectionAdapterPromise = new Promise<ChangeDetectionAdapter>((resolve) => {
-  resolveAdapter = resolve;
-});
+export const changeDetectionAdapterPromise = new Promise<ChangeDetectionAdapter | null | undefined>(
+  (resolve) => {
+    resolveAdapter = resolve;
+  }
+);
 
-export function resolveChangeDetectionAdapter(adapter: ChangeDetectionAdapter): void {
+export function resolveChangeDetectionAdapter(
+  adapter: ChangeDetectionAdapter | null | undefined
+): void {
   resolveAdapter(adapter);
 }
 
@@ -61,7 +65,7 @@ export function registerModuleGraphService(options: RegisterModuleGraphServiceOp
           });
         },
       },
-      getReady: {
+      getStatus: {
         // The graph builds (and patches) asynchronously, so `loaded()` callers await this barrier to
         // read a settled reverse index rather than a half-built one.
         load: async () => {
@@ -85,6 +89,18 @@ export function registerModuleGraphService(options: RegisterModuleGraphServiceOp
     onUpdate: ({ storiesByFile, bumpedStoryFiles }) => {
       void runtime.commands.applyGraphUpdate({ storiesByFile, bumpedStoryFiles });
     },
+    onStoryIndexInvalidated: () => {
+      void runtime.commands.bumpGraphRevision(undefined);
+    },
+    onError: (error) => {
+      void runtime.commands.applyGraphError({ error: errorToErrorLike(error) });
+    },
+    onUnavailable: (reason, error) => {
+      void runtime.commands.applyGraphUnavailable({
+        reason,
+        ...(error ? { error: errorToErrorLike(error) } : {}),
+      });
+    },
   });
 
   options.channel.on(STORY_INDEX_INVALIDATED, () => {
@@ -92,6 +108,12 @@ export function registerModuleGraphService(options: RegisterModuleGraphServiceOp
   });
 
   void changeDetectionAdapterPromise.then((adapter) => {
+    if (!adapter) {
+      void runtime.commands.applyGraphUnavailable({
+        reason: 'builder does not support change detection',
+      });
+      return;
+    }
     engine?.start(adapter);
   });
 

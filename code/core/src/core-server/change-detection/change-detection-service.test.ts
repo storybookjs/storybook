@@ -183,7 +183,7 @@ describe('ChangeDetectionService', () => {
     });
 
     graph.start(adapter);
-    service.start(adapter, true);
+    service.start(true);
     await vi.runAllTimersAsync();
 
     expect(getStatusStoreByTypeId(CHANGE_DETECTION_STATUS_TYPE_ID).getAll()).toEqual({
@@ -254,7 +254,7 @@ describe('ChangeDetectionService', () => {
     });
 
     graph.start(adapter);
-    service.start(adapter, true);
+    service.start(true);
     await vi.runAllTimersAsync();
 
     const all = getStatusStoreByTypeId(CHANGE_DETECTION_STATUS_TYPE_ID).getAll();
@@ -301,7 +301,7 @@ describe('ChangeDetectionService', () => {
     });
 
     graph.start(adapter);
-    service.start(adapter, true);
+    service.start(true);
     await vi.runAllTimersAsync();
 
     const all = getStatusStoreByTypeId(CHANGE_DETECTION_STATUS_TYPE_ID).getAll();
@@ -346,7 +346,7 @@ describe('ChangeDetectionService', () => {
     });
 
     graph.start(adapter);
-    service.start(adapter, true);
+    service.start(true);
     await vi.runAllTimersAsync();
 
     expect(getStatusStoreByTypeId(CHANGE_DETECTION_STATUS_TYPE_ID).getAll()).toEqual({});
@@ -400,7 +400,7 @@ describe('ChangeDetectionService', () => {
     });
 
     graph.start(adapter);
-    service.start(adapter, true);
+    service.start(true);
     await vi.runAllTimersAsync();
 
     expect(getStatusStoreByTypeId(CHANGE_DETECTION_STATUS_TYPE_ID).getAll()).toEqual({
@@ -467,7 +467,7 @@ describe('ChangeDetectionService', () => {
     });
 
     graph.start(adapter);
-    service.start(adapter, true);
+    service.start(true);
     await vi.runAllTimersAsync();
 
     expect(getStatusStoreByTypeId(CHANGE_DETECTION_STATUS_TYPE_ID).getAll()).toEqual({
@@ -537,7 +537,7 @@ describe('ChangeDetectionService', () => {
     });
 
     graph.start(adapter);
-    service.start(adapter, true);
+    service.start(true);
     await vi.runAllTimersAsync();
 
     expect(gitDiffProvider.onGitStateChangeMock).toHaveBeenCalledTimes(1);
@@ -579,7 +579,7 @@ describe('ChangeDetectionService', () => {
     });
 
     graph.start(adapter);
-    service.start(adapter, true);
+    service.start(true);
     // First scan from initial start — debounce 0 runs synchronously.
     await vi.runAllTimersAsync();
     expect(gitDiffProvider.getChangedFilesMock).toHaveBeenCalledTimes(1);
@@ -618,7 +618,7 @@ describe('ChangeDetectionService', () => {
       workingDir,
     });
 
-    service.start(adapter, false);
+    service.start(false);
 
     expect(hasFileChangeSubscriber()).toBe(false);
     expect(gitDiffProvider.onGitStateChangeMock).not.toHaveBeenCalled();
@@ -651,7 +651,7 @@ describe('ChangeDetectionService', () => {
       workingDir,
     });
 
-    service.start(undefined, false);
+    service.start(false);
     await service.dispose();
 
     expect(engine.lookup).not.toHaveBeenCalled();
@@ -679,7 +679,7 @@ describe('ChangeDetectionService', () => {
       workingDir,
     });
 
-    service.start(undefined, true);
+    service.start(true);
     moduleGraphMock.applyUnavailable('builder does not support change detection');
 
     expect(logger.warn).toHaveBeenCalledWith(
@@ -716,7 +716,7 @@ describe('ChangeDetectionService', () => {
     });
 
     graph.start(adapter);
-    service.start(adapter, true);
+    service.start(true);
     // Let startInternal subscribe before emitting the failure (initial scan parked on git).
     await vi.runAllTimersAsync();
 
@@ -756,7 +756,7 @@ describe('ChangeDetectionService', () => {
     });
 
     graph.start(adapter);
-    service.start(adapter, true);
+    service.start(true);
     await vi.runAllTimersAsync();
 
     expect(logger.error).toHaveBeenCalledWith('Module graph failed to start: graph build blew up');
@@ -805,7 +805,7 @@ describe('ChangeDetectionService', () => {
     });
 
     graph.start(adapter);
-    service.start(adapter, true);
+    service.start(true);
     await vi.runAllTimersAsync();
 
     onGitStateChange?.();
@@ -860,7 +860,7 @@ describe('ChangeDetectionService', () => {
     });
 
     graph.start(adapter);
-    service.start(adapter, true);
+    service.start(true);
     await vi.advanceTimersByTimeAsync(0);
     await service.dispose();
     changedFilesDeferred.resolve({
@@ -904,7 +904,7 @@ describe('ChangeDetectionService', () => {
     });
 
     graph.start(adapter);
-    service.start(adapter, true);
+    service.start(true);
     await vi.runAllTimersAsync();
 
     expect(gitDiffProvider.getChangedFilesMock).toHaveBeenCalledTimes(1);
@@ -963,7 +963,7 @@ describe('ChangeDetectionService', () => {
     });
 
     graph.start(adapter);
-    service.start(adapter, true);
+    service.start(true);
     await vi.runAllTimersAsync();
 
     // Start a patch that will block, then immediately schedule a scan mid-patch.
@@ -1007,7 +1007,7 @@ describe('ChangeDetectionService', () => {
     });
 
     graph.start(adapter);
-    service.start(adapter, true);
+    service.start(true);
     await vi.runAllTimersAsync();
 
     await service.dispose();
@@ -1032,7 +1032,7 @@ describe('ChangeDetectionService', () => {
       workingDir,
     });
 
-    service.start(undefined, false);
+    service.start(false);
     // Should not throw and should not attempt to call dispose on an unconstructed provider.
     await expect(service.dispose()).resolves.toBeUndefined();
   });
@@ -1065,7 +1065,7 @@ describe('ChangeDetectionService', () => {
     });
 
     graph.start(adapter);
-    service.start(adapter, true);
+    service.start(true);
     await vi.runAllTimersAsync();
     expect(gitDiffProvider.getChangedFilesMock).toHaveBeenCalledTimes(1);
 

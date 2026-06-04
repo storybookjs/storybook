@@ -217,9 +217,7 @@ export class ChangeDetectionService {
     }
   }
 
-  start(adapterOrEnabled: unknown | boolean | undefined, maybeEnabled?: boolean): void {
-    const enabled = typeof adapterOrEnabled === 'boolean' ? adapterOrEnabled : maybeEnabled;
-
+  start(enabled: boolean | undefined): void {
     if (enabled === false) {
       logger.debug('Change detection disabled.');
       this.resolveReadiness({

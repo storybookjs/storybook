@@ -173,7 +173,12 @@ const createStoryFreezer = (windowRef: Window, documentRef: Document) => {
   const originalClearInterval = windowRef.clearInterval.bind(windowRef);
   const originalRequestAnimationFrame = windowRef.requestAnimationFrame.bind(windowRef);
   const originalCancelAnimationFrame = windowRef.cancelAnimationFrame.bind(windowRef);
-  const originalQueueMicrotask = windowRef.queueMicrotask.bind(windowRef);
+  const originalQueueMicrotask =
+    typeof windowRef.queueMicrotask === 'function'
+      ? windowRef.queueMicrotask.bind(windowRef)
+      : (callback: VoidFunction) => {
+          originalSetTimeout(callback, 0);
+        };
 
   const setTimeoutWrapper = ((handler: TimerHandler, timeout?: number, ...args: unknown[]) => {
     if (frozen || freezing) {

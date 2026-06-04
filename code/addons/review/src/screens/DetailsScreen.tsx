@@ -176,7 +176,8 @@ const BottomLabel = styled.div({
 });
 
 const BASELINE_PROXY_PATH = '/__review-baseline';
-const storyPreviewUrl = (id: string) => `iframe.html?id=${encodeURIComponent(id)}&viewMode=story`;
+const storyPreviewUrl = (id: string) =>
+  `iframe.html?id=${encodeURIComponent(id)}&viewMode=story&freeze=finished`;
 const toBaselinePreviewUrl = (latestUrlString: string) => {
   const latestUrl = new URL(latestUrlString, window.location.href);
   return new URL(

@@ -32,7 +32,7 @@ export const e2eTestsInternal: Task = {
     }
 
     await exec(
-      'yarn playwright test -c playwright.internal.config.ts --project=internal-storybook',
+      'yarn playwright test -c e2e-internal/playwright.config.ts --project=internal-storybook',
       {
         env,
         cwd: codeDir,

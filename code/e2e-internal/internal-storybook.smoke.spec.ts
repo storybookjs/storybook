@@ -7,7 +7,7 @@ import process from 'process';
  * Run locally (from repo root) with internal Storybook on port 6006:
  *   cd code && yarn storybook:ui
  *   yarn task e2e-tests-internal --no-link -s e2e-tests-internal
- *   # or: yarn playwright test -c playwright.internal.config.ts
+ *   # or: yarn playwright test -c e2e-internal/playwright.config.ts
  */
 
 const storybookUrl = process.env.STORYBOOK_URL || 'http://localhost:6006';

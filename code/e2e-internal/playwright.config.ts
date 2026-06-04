@@ -1,11 +1,11 @@
 import { defineConfig, devices } from '@playwright/test';
 
 /**
- * Playwright config for internal Storybook UI e2e (`code/e2e-internal`).
- * Sandbox e2e uses `playwright.config.ts` and `code/e2e-sandbox/`.
+ * Playwright config for internal Storybook UI e2e (`code/.storybook`).
+ * Sandbox e2e uses `code/playwright.config.ts` and `code/e2e-sandbox/`.
  */
 export default defineConfig({
-  testDir: './e2e-internal',
+  testDir: '.',
   timeout: 30 * 1000,
   expect: {
     timeout: 5000,
@@ -37,5 +37,5 @@ export default defineConfig({
       },
     },
   ],
-  outputDir: 'playwright-results/',
+  outputDir: '../playwright-results/',
 });

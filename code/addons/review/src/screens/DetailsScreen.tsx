@@ -1,8 +1,7 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 
-import { Button } from 'storybook/internal/components';
+import { Badge, Button } from 'storybook/internal/components';
 import { STORY_RENDERED } from 'storybook/internal/core-events';
-import { useAddonState } from 'storybook/manager-api';
 import { styled } from 'storybook/theming';
 
 import {
@@ -13,9 +12,8 @@ import {
   TransferIcon,
 } from '@storybook/icons';
 
-import { PREVIEW_MODE_STATE_KEY } from '../constants.ts';
-
-const DEFAULT_PREVIEW_MODE: PreviewMode = '2up';
+import { PREVIEW_MODE_SESSION_KEY } from '../constants.ts';
+import { sessionStore } from '../session-store.ts';
 
 const Page = styled.div(({ theme }) => ({
   display: 'flex',
@@ -54,6 +52,9 @@ const DetailTitle = styled.h2({
   fontSize: 14,
   fontWeight: 700,
   lineHeight: '20px',
+  // Focused programmatically on entry to orient screen-reader users; it's not a
+  // tab stop, so don't paint a focus ring on this non-interactive heading.
+  outline: 'none',
 });
 
 const DetailTitleMuted = styled.span(({ theme }) => ({
@@ -69,8 +70,21 @@ const DetailTitleRegular = styled.span({
   fontWeight: 400,
 });
 
+// Sibling of the (ellipsizing) title so the badge stays fully visible while a
+// long component/story name truncates instead of clipping the badge.
+const TitleBadge = styled.div({
+  flexShrink: 0,
+  display: 'inline-flex',
+});
+
 type PreviewMode = '1up' | '2up';
 type VisibleSide = 'baseline' | 'latest';
+
+const DEFAULT_PREVIEW_MODE: PreviewMode = '2up';
+
+// Read the persisted preview layout, defaulting to side-by-side.
+const readPreviewMode = (): PreviewMode =>
+  sessionStore.read(PREVIEW_MODE_SESSION_KEY) === '1up' ? '1up' : DEFAULT_PREVIEW_MODE;
 
 const PreviewFrameWrap = styled.div<{ $singleUp: boolean }>(({ $singleUp }) => ({
   flex: 1,
@@ -160,10 +174,8 @@ const BottomLabel = styled.div({
 });
 
 const BASELINE_PROXY_PATH = '/__review-baseline';
-// No `freeze=finished` here: the detail view shows both previews live so the
-// reviewer can interact with them. (The grid thumbnails still freeze.) The
-// baseline URL is derived from this one, so both panes inherit the same params.
-const storyPreviewUrl = (id: string) => `iframe.html?id=${encodeURIComponent(id)}&viewMode=story`;
+const storyPreviewUrl = (id: string) =>
+  `iframe.html?id=${encodeURIComponent(id)}&viewMode=story&freeze=finished`;
 const toBaselinePreviewUrl = (latestUrlString: string) => {
   const latestUrl = new URL(latestUrlString, window.location.href);
   return new URL(
@@ -183,7 +195,8 @@ export interface DetailsScreenProps {
   nextHref: string;
   componentTitle?: string;
   storyName?: string;
-  branchName?: string;
+  /** Whether this story is newly added relative to the baseline Storybook. */
+  isNew?: boolean;
 }
 
 const renderDetailTitle = ({
@@ -224,23 +237,36 @@ export const DetailsScreen = ({
   nextHref,
   componentTitle,
   storyName,
+  isNew,
 }: DetailsScreenProps) => {
   const latestPreviewSrc = storyPreviewUrl(storyId);
   const [baselinePreviewSrc, setBaselinePreviewSrc] = useState(() =>
     toBaselinePreviewUrl(latestPreviewSrc)
   );
   const baselinePreviewSrcRef = useRef(baselinePreviewSrc);
-  const [isBaselineReady, setIsBaselineReady] = useState(false);
-  const [previewMode, setPreviewMode] = useAddonState<PreviewMode>(
-    PREVIEW_MODE_STATE_KEY,
-    DEFAULT_PREVIEW_MODE
-  );
+  const [previewMode, setPreviewMode] = useState<PreviewMode>(readPreviewMode);
   const [visibleSide, setVisibleSide] = useState<VisibleSide>('latest');
-  const isSingleUp = previewMode === '1up';
-  const effectiveVisibleSide = isBaselineReady ? visibleSide : 'latest';
+  // A newly added story has no baseline counterpart, so there's nothing to
+  // compare against: render only the latest preview, full-width, and hide the
+  // baseline pane, the side-by-side controls, and the bottom comparison bar.
+  // Baseline existence is known up front (from the index lookup in ReviewPage),
+  // so the baseline pane and comparison bar render immediately — no need to
+  // wait for the baseline iframe's load event.
+  const showBaseline = !isNew;
+  const isSingleUp = previewMode === '1up' || !showBaseline;
 
+  const titleRef = useRef<HTMLHeadingElement>(null);
   const baselineFrameRef = useRef<HTMLIFrameElement>(null);
   const latestFrameRef = useRef<HTMLIFrameElement>(null);
+
+  // Entering the detail screen moves focus to its heading so keyboard and
+  // screen-reader users are oriented by what they just opened instead of being
+  // stranded on the now-inert summary. Runs once on mount: navigating between
+  // stories swaps the iframe src in place without remounting, so prev/next
+  // don't steal focus back.
+  useEffect(() => {
+    titleRef.current?.focus();
+  }, []);
   const cleanupScrollSyncRef = useRef<(() => void) | null>(null);
   const cleanupBaselineStoryRenderedRef = useRef<(() => void) | null>(null);
   const syncingTargetRef = useRef<VisibleSide | null>(null);
@@ -251,14 +277,18 @@ export const DetailsScreen = ({
       return;
     }
 
-    iframeDocument.documentElement.style.overscrollBehavior = 'none';
-    iframeDocument.documentElement.style.overscrollBehaviorX = 'none';
-    iframeDocument.documentElement.style.overscrollBehaviorY = 'none';
+    const { documentElement, body } = iframeDocument;
 
-    if (iframeDocument.body) {
-      iframeDocument.body.style.overscrollBehavior = 'none';
-      iframeDocument.body.style.overscrollBehaviorX = 'none';
-      iframeDocument.body.style.overscrollBehaviorY = 'none';
+    if (documentElement) {
+      documentElement.style.overscrollBehavior = 'none';
+      documentElement.style.overscrollBehaviorX = 'none';
+      documentElement.style.overscrollBehaviorY = 'none';
+    }
+
+    if (body) {
+      body.style.overscrollBehavior = 'none';
+      body.style.overscrollBehaviorX = 'none';
+      body.style.overscrollBehaviorY = 'none';
     }
   }, []);
 
@@ -314,9 +344,14 @@ export const DetailsScreen = ({
   }, [baselinePreviewSrc]);
 
   useEffect(() => {
-    setIsBaselineReady(false);
     setBaselinePreviewSrc(toBaselinePreviewUrl(latestPreviewSrc));
   }, [latestPreviewSrc]);
+
+  // Persist the user's layout choice so it carries across navigation between
+  // the detail and summary screens.
+  useEffect(() => {
+    sessionStore.write(PREVIEW_MODE_SESSION_KEY, previewMode);
+  }, [previewMode]);
 
   useEffect(() => {
     const baselineFrame = baselineFrameRef.current;
@@ -371,7 +406,6 @@ export const DetailsScreen = ({
     };
 
     const handleBaselineFrameLoad = () => {
-      setIsBaselineReady(true);
       attachBaselineStoryRenderedListener();
       setupScrollSync();
     };
@@ -381,7 +415,6 @@ export const DetailsScreen = ({
       if (latestLocationHref) {
         const nextBaselineUrl = toBaselinePreviewUrl(latestLocationHref);
         if (baselinePreviewSrcRef.current !== nextBaselineUrl) {
-          setIsBaselineReady(false);
           setBaselinePreviewSrc(nextBaselineUrl);
         }
       }
@@ -410,7 +443,14 @@ export const DetailsScreen = ({
               <ChevronSmallLeftIcon />
             </a>
           </Button>
-          <DetailTitle>{renderDetailTitle({ title, componentTitle, storyName })}</DetailTitle>
+          <DetailTitle ref={titleRef} tabIndex={-1}>
+            {renderDetailTitle({ title, componentTitle, storyName })}
+          </DetailTitle>
+          {isNew ? (
+            <TitleBadge>
+              <Badge status="positive">New</Badge>
+            </TitleBadge>
+          ) : null}
         </ToolbarSide>
 
         <ToolbarSide>
@@ -431,34 +471,28 @@ export const DetailsScreen = ({
       </Toolbar>
 
       <PreviewFrameWrap $singleUp={isSingleUp}>
-        <PreviewPane
-          $singleUp={isSingleUp}
-          $active={!isSingleUp || effectiveVisibleSide === 'baseline'}
-        >
-          <PreviewFrame
-            ref={baselineFrameRef}
-            title={`Baseline ${storyId}`}
-            src={baselinePreviewSrc}
-          />
-        </PreviewPane>
-        {isSingleUp ? null : <PreviewDivider $singleUp={isSingleUp} />}
-        <PreviewPane
-          $singleUp={isSingleUp}
-          $active={!isSingleUp || effectiveVisibleSide === 'latest'}
-        >
+        {showBaseline ? (
+          <>
+            <PreviewPane $singleUp={isSingleUp} $active={!isSingleUp || visibleSide === 'baseline'}>
+              <PreviewFrame
+                ref={baselineFrameRef}
+                title={`Baseline ${storyId}`}
+                src={baselinePreviewSrc}
+              />
+            </PreviewPane>
+            {isSingleUp ? null : <PreviewDivider $singleUp={isSingleUp} />}
+          </>
+        ) : null}
+        <PreviewPane $singleUp={isSingleUp} $active={!isSingleUp || visibleSide === 'latest'}>
           <PreviewFrame ref={latestFrameRef} title={`Latest ${storyId}`} src={latestPreviewSrc} />
         </PreviewPane>
       </PreviewFrameWrap>
 
-      {isBaselineReady ? (
+      {showBaseline ? (
         <BottomToolbar>
           <BottomHalf>
             <BottomLabel>
-              {isSingleUp
-                ? effectiveVisibleSide === 'baseline'
-                  ? 'Baseline'
-                  : 'Latest'
-                : 'Baseline'}
+              {isSingleUp ? (visibleSide === 'baseline' ? 'Baseline' : 'Latest') : 'Baseline'}
             </BottomLabel>
           </BottomHalf>
           <BottomDivider $singleUp={isSingleUp} />
@@ -484,7 +518,7 @@ export const DetailsScreen = ({
                 padding="small"
                 ariaLabel="Single preview mode"
                 active={previewMode === '1up'}
-                onClick={() => setPreviewMode('1up', { persistence: 'session' })}
+                onClick={() => setPreviewMode('1up')}
               >
                 <CategoryIcon />
               </Button>
@@ -494,7 +528,7 @@ export const DetailsScreen = ({
                 padding="small"
                 ariaLabel="Side-by-side preview mode"
                 active={previewMode === '2up'}
-                onClick={() => setPreviewMode('2up', { persistence: 'session' })}
+                onClick={() => setPreviewMode('2up')}
               >
                 <SideBySideIcon />
               </Button>

@@ -1,5 +1,5 @@
 // @vitest-environment happy-dom
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { STORY_RENDER_PHASE_CHANGED } from 'storybook/internal/core-events';
 import { global as globalRef } from '@storybook/global';
@@ -48,7 +48,29 @@ describe('shouldEnableFreezeOnStoryFinished', () => {
   });
 });
 
+declare global {
+  interface Window {
+    __freezeInlineClicked?: boolean;
+    __freezeScriptExecuted?: boolean;
+  }
+}
+
 describe('setupStoryFreezer', () => {
+  let previousHref: string;
+  let previousBody: string;
+
+  beforeEach(() => {
+    previousHref = window.location.href;
+    previousBody = document.body.innerHTML;
+  });
+
+  afterEach(() => {
+    window.history.replaceState({}, '', previousHref);
+    document.body.innerHTML = previousBody;
+    delete window.__freezeInlineClicked;
+    delete window.__freezeScriptExecuted;
+  });
+
   it('installs for top-level iframe route when freeze=finished is set', () => {
     window.history.replaceState({}, '', '/iframe.html?id=example--story&freeze=finished');
     const channel = createChannel();
@@ -105,39 +127,35 @@ describe('setupStoryFreezer', () => {
     expect(interactionSpy).not.toHaveBeenCalled();
   });
 
-  it('runs animations to completion and pauses them when freezing', async () => {
-    window.history.replaceState(
-      {},
-      '',
-      '/iframe.html?id=example--story&viewMode=story&freeze=finished'
-    );
-
-    const finish = vi.fn();
-    const pause = vi.fn();
-    const getAnimations = vi.fn(() => [{ finish, pause } as unknown as Animation]);
-    const storyDocument = globalRef.document as Document & {
+  describe('animation freezing', () => {
+    type StoryDocument = Document & {
       getAnimations?: (options?: { subtree?: boolean }) => Animation[];
     };
-    const previousGetAnimations = storyDocument.getAnimations;
-    storyDocument.getAnimations = getAnimations;
-    const previousQueueMicrotask = window.queueMicrotask;
-    Object.defineProperty(window, 'queueMicrotask', {
-      configurable: true,
-      writable: true,
-      value: (callback: VoidFunction) => callback(),
+
+    let finish: ReturnType<typeof vi.fn>;
+    let pause: ReturnType<typeof vi.fn>;
+    let getAnimations: ReturnType<typeof vi.fn>;
+    let previousGetAnimations: StoryDocument['getAnimations'];
+    let previousQueueMicrotask: typeof window.queueMicrotask;
+
+    beforeEach(() => {
+      finish = vi.fn();
+      pause = vi.fn();
+      getAnimations = vi.fn(() => [{ finish, pause } as unknown as Animation]);
+      const storyDocument = globalRef.document as StoryDocument;
+      previousGetAnimations = storyDocument.getAnimations;
+      storyDocument.getAnimations = getAnimations as StoryDocument['getAnimations'];
+      previousQueueMicrotask = window.queueMicrotask;
+      // Run the scheduled freeze synchronously so the test can assert without timing flakiness.
+      Object.defineProperty(window, 'queueMicrotask', {
+        configurable: true,
+        writable: true,
+        value: (callback: VoidFunction) => callback(),
+      });
     });
 
-    try {
-      const channel = createChannel();
-      expect(setupStoryFreezer(channel)).toBe(true);
-
-      channel.emit(STORY_RENDER_PHASE_CHANGED, { newPhase: 'finished', storyId: 'example--story' });
-      await Promise.resolve();
-
-      expect(getAnimations).toHaveBeenCalledWith();
-      expect(finish).toHaveBeenCalledTimes(1);
-      expect(pause).toHaveBeenCalledTimes(1);
-    } finally {
+    afterEach(() => {
+      const storyDocument = globalRef.document as StoryDocument;
       if (previousGetAnimations) {
         storyDocument.getAnimations = previousGetAnimations;
       } else {
@@ -148,6 +166,24 @@ describe('setupStoryFreezer', () => {
         writable: true,
         value: previousQueueMicrotask,
       });
-    }
+    });
+
+    it('runs animations to completion and pauses them when freezing', async () => {
+      window.history.replaceState(
+        {},
+        '',
+        '/iframe.html?id=example--story&viewMode=story&freeze=finished'
+      );
+
+      const channel = createChannel();
+      expect(setupStoryFreezer(channel)).toBe(true);
+
+      channel.emit(STORY_RENDER_PHASE_CHANGED, { newPhase: 'finished', storyId: 'example--story' });
+      await Promise.resolve();
+
+      expect(getAnimations).toHaveBeenCalledWith();
+      expect(finish).toHaveBeenCalledTimes(1);
+      expect(pause).toHaveBeenCalledTimes(1);
+    });
   });
 });

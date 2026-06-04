@@ -1,42 +1,10 @@
-import { existsSync, statSync } from 'node:fs';
-import { resolve } from 'node:path';
-
 import { createProxyMiddleware } from 'http-proxy-middleware';
 import type { Channel } from 'storybook/internal/channels';
 import type { Middleware, Options, ServerApp } from 'storybook/internal/types';
-import sirv from 'sirv';
 
 import { EVENTS } from './constants.ts';
 import type { ReviewState } from './review-state.ts';
 import { currentGitBranch } from './node/git-branch.ts';
-
-const BASELINE_PROXY_PATH = '/__review-baseline';
-const BASELINE_TARGET_ORIGIN = 'https://next--635781f3500dd2c49e189caf.chromatic.com';
-const BASELINE_STATIC_DIR = 'storybook-static';
-
-export const experimental_devServer = (app: ServerApp) => {
-  const baselineStaticDir = resolve(process.cwd(), BASELINE_STATIC_DIR);
-  const hasLocalBaseline =
-    existsSync(baselineStaticDir) && statSync(baselineStaticDir).isDirectory();
-
-  if (hasLocalBaseline) {
-    app.use(
-      BASELINE_PROXY_PATH,
-      sirv(baselineStaticDir, { dev: true, etag: true, extensions: [] }) as unknown as Middleware
-    );
-    return app;
-  }
-
-  const proxyRequest = createProxyMiddleware({
-    target: BASELINE_TARGET_ORIGIN,
-    changeOrigin: true,
-    pathRewrite: (path) =>
-      path.startsWith(BASELINE_PROXY_PATH) ? path.slice(BASELINE_PROXY_PATH.length) || '/' : path,
-  }) as unknown as Middleware;
-
-  app.use(BASELINE_PROXY_PATH, proxyRequest);
-  return app;
-};
 
 // Server-side cache for the agent-pushed review. Storybook's dev server is
 // long-lived; this single slot survives across reconnecting browser tabs and
@@ -58,10 +26,16 @@ async function enrichWithBranch(
   const branchName = await resolveBranch(process.cwd());
   const enriched: ReviewState = {
     ...payload,
+    // branchName is server-resolved; overwrite any agent-supplied value so an
+    // unresolvable local branch can't leave a spoofed branch in the payload.
+    branchName,
     // Server-side timestamp is authoritative for "Created x minutes ago".
     createdAt: Date.now(),
   };
-  return branchName ? { ...enriched, branchName } : enriched;
+  if (enriched.branchName === undefined) {
+    delete enriched.branchName;
+  }
+  return enriched;
 }
 
 export interface ServerChannelOptions {
@@ -102,4 +76,36 @@ export const experimental_serverChannel = async (
   });
 
   return channel;
+};
+
+const BASELINE_PROXY_PATH = '/__review-baseline';
+const BASELINE_TARGET_ORIGIN = 'https://next--635781f3500dd2c49e189caf.chromatic.com';
+
+export const experimental_devServer = (app: ServerApp) => {
+  const proxyRequest = createProxyMiddleware({
+    target: BASELINE_TARGET_ORIGIN,
+    changeOrigin: true,
+    // The baseline origin is a remote Chromatic server that can be slow or
+    // unreachable. Bound the wait and respond deterministically so a dead
+    // connection fails fast instead of hanging the review UI's baseline iframe.
+    timeout: 30_000,
+    proxyTimeout: 30_000,
+    pathRewrite: (path) =>
+      path.startsWith(BASELINE_PROXY_PATH) ? path.slice(BASELINE_PROXY_PATH.length) || '/' : path,
+    on: {
+      error: (_error, _req, res) => {
+        // `res` is a net.Socket on WebSocket upgrades; only HTTP responses
+        // carry a status code.
+        if ('writeHead' in res) {
+          if (!res.headersSent) {
+            res.writeHead(502, { 'Content-Type': 'text/plain' });
+          }
+          res.end('Baseline preview is unavailable.');
+        }
+      },
+    },
+  }) as unknown as Middleware;
+
+  app.use(BASELINE_PROXY_PATH, proxyRequest);
+  return app;
 };

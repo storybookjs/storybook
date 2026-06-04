@@ -151,6 +151,13 @@ const SearchField = styled.div(({ theme }) => ({
   boxShadow: `${theme.button.border} 0 0 0 1px inset`,
   padding: 2,
   paddingLeft: 6,
+  // Mirror the sidebar search field: the wrapper owns the focus ring while the
+  // inner input stays outline-less, so the whole field reads as focused.
+  '&:has(input:focus), &:has(input:active)': {
+    background: theme.background.app,
+    outline: `2px solid ${theme.color.secondary}`,
+    outlineOffset: 2,
+  },
 }));
 
 const SearchInput = styled.input(({ theme }) => ({
@@ -192,6 +199,10 @@ const CollectionBlock = styled.section(({ theme }) => ({
   borderBottom: `1px solid ${theme.appBorderColor}`,
 }));
 
+// A plain clickable row, not a semantic control: making the whole header
+// toggle is just a convenience affordance for pointer users. The real
+// accessible control is the chevron <Button> inside, which carries the
+// aria-label and aria-expanded state for assistive technologies.
 const CollectionHead = styled.div(({ theme }) => ({
   display: 'flex',
   width: '100%',
@@ -221,15 +232,15 @@ const CollectionHeadInner = styled.div(({ theme }) => ({
   },
 }));
 
-const CollectionLabel = styled.strong({
+const CollectionLabel = styled.strong(({ theme }) => ({
   minWidth: 0,
   overflow: 'hidden',
   textOverflow: 'ellipsis',
   whiteSpace: 'nowrap',
   fontWeight: 700,
   lineHeight: '20px',
-  color: '#2E3338',
-});
+  color: theme.color.defaultText,
+}));
 
 // The leading group segments of a component title ("Components /"), kept
 // lighter so the component name itself stands out.
@@ -258,12 +269,12 @@ const CollectionHeadText = styled.div({
   minWidth: 0,
 });
 
-const CollectionRationale = styled.p({
-  color: '#5C6570',
+const CollectionRationale = styled.p(({ theme }) => ({
+  color: theme.textMutedColor,
   margin: '0 12px 6px 12px',
-});
+}));
 
-const CollectionCount = styled.span({
+const CollectionCount = styled.span(({ theme }) => ({
   minWidth: 28,
   height: 20,
   fontFamily: '"SF Mono", SFMono-Regular, Menlo, Monaco, Consolas, monospace',
@@ -272,8 +283,8 @@ const CollectionCount = styled.span({
   fontSize: 13,
   lineHeight: '20px',
   textAlign: 'center',
-  color: '#5C6570',
-});
+  color: theme.textMutedColor,
+}));
 
 const NoResults = styled.div(({ theme }) => ({
   color: theme.textMutedColor,
@@ -318,7 +329,6 @@ const storyMatchesQuery = (
 const CollectionsTab: FC<{
   collections: ReviewCollection[];
   query: string;
-  activeTab: ReviewTab;
   storyInfo: Record<string, StoryInfo>;
   expandedCollections: ReadonlySet<number>;
   showAllCollections: ReadonlySet<number>;
@@ -327,7 +337,6 @@ const CollectionsTab: FC<{
 }> = ({
   collections,
   query,
-  activeTab,
   storyInfo,
   expandedCollections,
   showAllCollections,
@@ -378,6 +387,7 @@ const CollectionsTab: FC<{
                         size="small"
                         padding="small"
                         ariaLabel={isExpanded ? 'Collapse cluster' : 'Expand cluster'}
+                        aria-expanded={isExpanded}
                         onClick={(event) => {
                           event.stopPropagation();
                           onToggleCollection(index);
@@ -402,13 +412,18 @@ const CollectionsTab: FC<{
                 storyInfo={storyInfo}
                 query={query}
                 getStoryHref={(storyId) =>
+                  // The detail-route prefix encodes the detail *kind*, not the
+                  // active tab: a collection detail must always be
+                  // `collections/<index>/<story>` so it parses back with an
+                  // index (using the active tab here would drop the index for
+                  // the inactive panel and break navigation).
                   buildReviewChangesDetailHref(
                     {
                       kind: 'collection',
                       collectionIndex: index,
                       storyId,
                     },
-                    activeTab
+                    'collections'
                   )
                 }
               />
@@ -424,7 +439,6 @@ const ComponentsTab: FC<{
   collections: ReviewCollection[];
   storyInfo: Record<string, StoryInfo>;
   query: string;
-  activeTab: ReviewTab;
   expandedComponents: ReadonlySet<string>;
   showAllComponents: ReadonlySet<string>;
   onToggleComponent: (componentId: string) => void;
@@ -433,7 +447,6 @@ const ComponentsTab: FC<{
   collections,
   storyInfo,
   query,
-  activeTab,
   expandedComponents,
   showAllComponents,
   onToggleComponent,
@@ -484,6 +497,7 @@ const ComponentsTab: FC<{
                         size="small"
                         padding="small"
                         ariaLabel={isExpanded ? 'Collapse component' : 'Expand component'}
+                        aria-expanded={isExpanded}
                         onClick={(event) => {
                           event.stopPropagation();
                           onToggleComponent(group.componentId);
@@ -505,12 +519,15 @@ const ComponentsTab: FC<{
                 storyInfo={storyInfo}
                 query={query}
                 getStoryHref={(storyId) =>
+                  // Component details always live under the `components/`
+                  // prefix regardless of which tab is currently active, so the
+                  // inactive panel's links stay valid.
                   buildReviewChangesDetailHref(
                     {
                       kind: 'component',
                       storyId,
                     },
-                    activeTab
+                    'components'
                   )
                 }
               />
@@ -801,7 +818,6 @@ export const SummaryScreen: FC<SummaryScreenProps> = ({
             <CollectionsTab
               collections={state.collections}
               query={search}
-              activeTab={tab}
               storyInfo={storyInfo}
               expandedCollections={expandedCollections}
               showAllCollections={showAllCollections}
@@ -843,7 +859,6 @@ export const SummaryScreen: FC<SummaryScreenProps> = ({
               collections={state.collections}
               storyInfo={storyInfo}
               query={search}
-              activeTab={tab}
               expandedComponents={expandedComponents}
               showAllComponents={showAllComponents}
               onToggleComponent={toggleComponent}

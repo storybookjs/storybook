@@ -23,7 +23,7 @@ const tryDecodeURIComponent = (value: string): string => {
 export const normalizeReviewStoryId = (value: string): string => {
   const trimmed = value.trim();
   if (!trimmed) {
-    return value;
+    return trimmed;
   }
 
   const shouldTreatAsUrl =
@@ -99,11 +99,18 @@ export const parseReviewChangesDetailLocation = (search: string): ReviewDetailLo
     if (!Number.isInteger(collectionIndex) || collectionIndex < 0) {
       return null;
     }
+    // Reject trailing junk (e.g. `collections/0/story/extra`) so the route is
+    // parsed as strictly as the components route below.
+    if (segments.length > 2 && segments[2]) {
+      return null;
+    }
     const storySegment = segments[1];
     return {
       kind: 'collection',
       collectionIndex,
-      storyId: storySegment ? normalizeReviewStoryId(decodeURIComponent(storySegment)) : undefined,
+      storyId: storySegment
+        ? normalizeReviewStoryId(tryDecodeURIComponent(storySegment))
+        : undefined,
     };
   }
 
@@ -118,7 +125,7 @@ export const parseReviewChangesDetailLocation = (search: string): ReviewDetailLo
     }
     return {
       kind: 'component',
-      storyId: normalizeReviewStoryId(decodeURIComponent(firstSegment)),
+      storyId: normalizeReviewStoryId(tryDecodeURIComponent(firstSegment)),
     };
   }
   return null;

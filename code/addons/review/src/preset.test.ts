@@ -103,6 +103,19 @@ describe('addon-review experimental_serverChannel', () => {
     ]);
   });
 
+  it('strips an agent-supplied branchName when the local branch is unresolvable', async () => {
+    const { channel, emitted } = createMockChannel();
+    const resolveBranch = vi.fn().mockResolvedValue(undefined);
+    const payloadWithBranch: ReviewState = { ...sampleReview, branchName: 'agent/explicit' };
+
+    await experimental_serverChannel(channel, {} as Options, { resolveBranch });
+    await (channel as any).fire(EVENTS.PUSH_REVIEW, payloadWithBranch);
+
+    expect(emitted).toEqual([
+      { event: EVENTS.DISPLAY_REVIEW, payload: { ...sampleReview, createdAt: NOW } },
+    ]);
+  });
+
   it('on REQUEST_REVIEW with no cached state, emits nothing', async () => {
     const { channel, emitted } = createMockChannel();
 

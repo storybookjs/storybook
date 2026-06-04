@@ -2,8 +2,10 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { defineMain } from '@storybook/react-vite/node';
+import type { Options } from 'storybook/internal/types';
 
 import react from '@vitejs/plugin-react';
+import type { InlineConfig } from 'vite';
 
 import { BROWSER_TARGETS } from '../core/src/shared/constants/environments-support.ts';
 
@@ -123,6 +125,7 @@ const config = defineMain({
     '@storybook/addon-review',
     'storybook-addon-pseudo-states',
     '@chromatic-com/storybook',
+    './services-preset.ts',
   ],
   previewAnnotations: [
     './core/template/stories/preview.ts',
@@ -154,10 +157,11 @@ const config = defineMain({
   features: {
     developmentModeForBuild: true,
     experimentalTestSyntax: true,
+    experimentalDocgenServer: true,
     changeDetection: true,
   },
   staticDirs: [{ from: './bench/bundle-analyzer', to: '/bundle-analyzer' }],
-  viteFinal: async (viteConfig, { configType }) => {
+  viteFinal: async (viteConfig: InlineConfig, { configType }: Options) => {
     const { mergeConfig } = await import('vite');
 
     return mergeConfig(viteConfig, {
@@ -189,7 +193,6 @@ const config = defineMain({
       },
     } satisfies typeof viteConfig);
   },
-  // logLevel: 'debug',
 });
 
 export default config;

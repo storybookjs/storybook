@@ -18,12 +18,15 @@ import { logger } from 'storybook/internal/node-logger';
 import { telemetry } from 'storybook/internal/telemetry';
 import type {
   CoreConfig,
+  DocgenProvider,
   Indexer,
   Options,
   PresetProperty,
   PresetPropertyFn,
   StorybookConfigRaw,
 } from 'storybook/internal/types';
+
+import { registerDocgenService } from '../../shared/open-service/services/docgen/server.ts';
 
 import { isAbsolute, join } from 'pathe';
 import * as pathe from 'pathe';
@@ -308,6 +311,45 @@ export const managerEntries = async (existing: any) => {
     pathe.join(resolvePackageDir('storybook'), 'dist/core-server/presets/common-manager.js'),
     ...(existing || []),
   ];
+};
+
+globalThis.STORYBOOK_SERVICES_LOADED = globalThis.STORYBOOK_SERVICES_LOADED ?? false;
+
+export const services = async (_value: void, options: Options): Promise<void> => {
+  if (globalThis.STORYBOOK_SERVICES_LOADED) {
+    throw new Error(
+      'The "services" preset property was applied twice, but should only be applied once. Multiple code paths applying it will cause service registration to fail.'
+    );
+  }
+  globalThis.STORYBOOK_SERVICES_LOADED = true;
+
+  const features = await options.presets.apply('features');
+
+  // Skip when previewing is off — the docgen service's staticInputs depends on the story index,
+  // so registering it would force full story-index generation during manager-only builds (and
+  // produce docgen files that wouldn't be served anywhere). Mirrors the !options.ignorePreview
+  // gate around index.json and writeManifests in build-static.ts.
+  if (features?.experimentalDocgenServer && !options.ignorePreview) {
+    const generator =
+      await options.presets.apply<Promise<StoryIndexGenerator>>('storyIndexGenerator');
+
+    const provider = await options.presets.apply<DocgenProvider>(
+      'experimental_docgenProvider',
+      /**
+       * Seed provider for the experimental_docgenProvider middleware chain.
+       *
+       * Returns `undefined` so the bottom of the chain signals "no docgen here" — each upstream
+       * provider can either replace this with its own payload, return its own undefined, or call
+       * `nextDocgen` and merge with downstream output.
+       */
+      async () => undefined
+    );
+
+    registerDocgenService({
+      getIndex: () => generator.getIndex(),
+      provider,
+    });
+  }
 };
 
 // Store the promise (not the result) to prevent race conditions.

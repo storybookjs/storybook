@@ -414,9 +414,7 @@ export const Minimal = meta.story({
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await expect(await canvas.findByText('Button prop rename')).toBeInTheDocument();
-    await expect(
-      await canvas.findByText(/agent-curated stories for quick review/i)
-    ).toBeInTheDocument();
+    await expect(await canvas.findByText(/Showing 2 agent-curated stories/i)).toBeInTheDocument();
     await expect(await canvas.findByRole('tab', { name: 'Collections' })).toBeInTheDocument();
   },
 });
@@ -454,4 +452,13 @@ export const RealAtomicChange = meta.story({
 
 export const ManyCollections = meta.story({
   args: { state: manyCollections },
+  parameters: { chromatic: { disableSnapshot: true } },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(
+      await canvas.findByText('Large review surface: many collections and stories')
+    ).toBeInTheDocument();
+    await expect(await canvas.findByText('Collection 01 — Button core')).toBeInTheDocument();
+    await expect(await canvas.findByText('Collection 20 — Large mixed tail')).toBeInTheDocument();
+  },
 });

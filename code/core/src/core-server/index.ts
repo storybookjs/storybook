@@ -17,6 +17,30 @@ export { loadStorybook as experimental_loadStorybook } from './load.ts';
 
 export { Tag } from '../shared/constants/tags.ts';
 export { analyzeMdx } from './utils/analyze-mdx.ts';
+export { defineService as experimental_defineService } from '../shared/open-service/index.ts';
+export type {
+  Command,
+  CommandCtx,
+  CommandDefinition,
+  OperationDescriptor,
+  Query,
+  QueryCtx,
+  QueryDefinition,
+  RuntimeService,
+  SchemaDescriptor,
+  ServiceDefinition,
+  ServiceDescriptor,
+  ServiceInstance,
+  ServiceRegistrationOptions,
+  ServiceSummary,
+  ServerServiceRegistration,
+} from '../shared/open-service/index.ts';
+export {
+  describeService,
+  getService,
+  listServices,
+  registerService as experimental_registerService,
+} from '../shared/open-service/server.ts';
 
 export { UniversalStore as experimental_UniversalStore } from '../shared/universal-store/index.ts';
 export { MockUniversalStore as experimental_MockUniversalStore } from '../shared/universal-store/mock.ts';
@@ -43,7 +67,8 @@ export type {
   ParseFileArgs,
 } from './change-detection/index.ts';
 export { ChangeDetectionService } from './change-detection/ChangeDetectionService.ts';
-export { getActiveChangeDetectionService as experimental_getActiveChangeDetectionService } from './change-detection/active-service-registry.ts';
+export { StoryDependencyGraphService } from './change-detection/StoryDependencyGraphService.ts';
+export { getDependencyGraphService as experimental_getDependencyGraphService } from './change-detection/active-service-registry.ts';
 export {
   getTestProviderStoreById as experimental_getTestProviderStore,
   fullTestProviderStore as internal_fullTestProviderStore,

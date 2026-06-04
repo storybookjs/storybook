@@ -35,6 +35,14 @@ export const shouldFreeze = ({ search }: { search: string }) => {
   return freeze === 'finished' && viewMode === 'story';
 };
 
+/**
+ * Removes all `<script>` elements from the document.
+ *
+ * Ordering matters: this runs after {@link finishAndPauseAnimations} (so the page's own
+ * end-of-animation logic can still run while its scripts are present) but before the other
+ * DOM-mutating freeze steps. Stripping scripts first stops any page-registered
+ * `MutationObserver`s or handlers from reacting to the mutations those later steps perform.
+ */
 const stripScriptElements = (documentRef: Document) => {
   const scripts = Array.from(documentRef.querySelectorAll('script'));
   scripts.forEach((script) => {
@@ -90,6 +98,13 @@ const addPreFreezeStyles = (documentRef: Document) => {
   documentRef.head?.appendChild(style);
 };
 
+/**
+ * Settles running animations to their end frame and then pauses them.
+ *
+ * Must run before {@link stripScriptElements}: calling `finish()` can synchronously fire
+ * `finish`/`animationend` events, and we want the page's own scripts to handle those (and
+ * apply any final end-state styles) before we tear the scripts out of the document.
+ */
 const finishAndPauseAnimations = (documentRef: Document) => {
   if (typeof documentRef.getAnimations !== 'function') {
     return;
@@ -144,6 +159,9 @@ const blockInteractions = (documentRef: Document) => {
 
 const createStoryFreezer = (windowRef: Window, documentRef: Document) => {
   let frozen = false;
+  // Set as soon as freezing starts so wrappers reject any async work scheduled
+  // synchronously by animation-finish handlers, before `frozen` is committed.
+  let freezing = false;
 
   const trackedTimeouts = new Set<TimerId>();
   const trackedIntervals = new Set<IntervalId>();
@@ -158,7 +176,7 @@ const createStoryFreezer = (windowRef: Window, documentRef: Document) => {
   const originalQueueMicrotask = windowRef.queueMicrotask.bind(windowRef);
 
   const setTimeoutWrapper = ((handler: TimerHandler, timeout?: number, ...args: unknown[]) => {
-    if (frozen) {
+    if (frozen || freezing) {
       return -1 as TimerId;
     }
     const timerId = originalSetTimeout(handler, timeout, ...args);
@@ -174,7 +192,7 @@ const createStoryFreezer = (windowRef: Window, documentRef: Document) => {
   }) as Window['clearTimeout'];
 
   const setIntervalWrapper = ((handler: TimerHandler, timeout?: number, ...args: unknown[]) => {
-    if (frozen) {
+    if (frozen || freezing) {
       return -1 as IntervalId;
     }
     const timerId = originalSetInterval(handler, timeout, ...args);
@@ -190,7 +208,7 @@ const createStoryFreezer = (windowRef: Window, documentRef: Document) => {
   }) as Window['clearInterval'];
 
   const requestAnimationFrameWrapper = ((callback: FrameRequestCallback) => {
-    if (frozen) {
+    if (frozen || freezing) {
       return -1 as RafId;
     }
     const rafId = originalRequestAnimationFrame(callback);
@@ -204,7 +222,7 @@ const createStoryFreezer = (windowRef: Window, documentRef: Document) => {
   }) as Window['cancelAnimationFrame'];
 
   const queueMicrotaskWrapper: typeof windowRef.queueMicrotask = ((callback: VoidFunction) => {
-    if (frozen) {
+    if (frozen || freezing) {
       return;
     }
     originalQueueMicrotask(callback);
@@ -219,29 +237,35 @@ const createStoryFreezer = (windowRef: Window, documentRef: Document) => {
   tryReplaceProperty(windowRef, 'queueMicrotask', queueMicrotaskWrapper);
 
   const freeze = () => {
-    if (frozen) {
+    if (frozen || freezing) {
       return;
     }
+    freezing = true;
 
-    frozen = true;
-    trackedTimeouts.forEach((timerId) => {
-      originalClearTimeout(timerId);
-    });
-    trackedIntervals.forEach((intervalId) => {
-      originalClearInterval(intervalId);
-    });
-    trackedRafs.forEach((rafId) => {
-      originalCancelAnimationFrame(rafId);
-    });
-    trackedTimeouts.clear();
-    trackedIntervals.clear();
-    trackedRafs.clear();
+    try {
+      trackedTimeouts.forEach((timerId) => {
+        originalClearTimeout(timerId);
+      });
+      trackedIntervals.forEach((intervalId) => {
+        originalClearInterval(intervalId);
+      });
+      trackedRafs.forEach((rafId) => {
+        originalCancelAnimationFrame(rafId);
+      });
+      trackedTimeouts.clear();
+      trackedIntervals.clear();
+      trackedRafs.clear();
 
-    finishAndPauseAnimations(documentRef);
-    stripScriptElements(documentRef);
-    stripInlineEventHandlers(documentRef);
-    addFreezeStyles(documentRef);
-    blockInteractions(documentRef);
+      finishAndPauseAnimations(documentRef);
+      addFreezeStyles(documentRef);
+      stripScriptElements(documentRef);
+      stripInlineEventHandlers(documentRef);
+      blockInteractions(documentRef);
+    } finally {
+      // Mark frozen last so a throw in any step can't leave the story
+      // wedged as "frozen" before the freeze actually completed.
+      frozen = true;
+    }
   };
 
   return { freeze };

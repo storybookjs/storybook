@@ -1,27 +1,20 @@
-import type { ChangeDetectionService } from './ChangeDetectionService.ts';
+import type { StoryDependencyGraphService } from './StoryDependencyGraphService.ts';
 
-let activeService: ChangeDetectionService | undefined;
+let activeStoryDependencyGraphService: StoryDependencyGraphService | undefined;
 
-/**
- * Records the change-detection service started by the current Storybook dev server
- * so that in-process consumers (addon presets) can reach it without going through a
- * preset hook. Dev server is single-instance, so only one service is ever active.
- *
- * @internal
- */
-export function setActiveChangeDetectionService(service: ChangeDetectionService | undefined): void {
-  activeService = service;
+/** @internal */
+export function setDependencyGraphService(service: StoryDependencyGraphService | undefined): void {
+  activeStoryDependencyGraphService = service;
 }
 
 /**
- * Returns the change-detection service for the current dev-server process, or
- * `undefined` when change detection is disabled / not yet started / disposed.
- *
- * Read at request time, not at preset load time — the service is constructed
- * after presets register.
+ * Returns the active graph service registered by the dev-server lifecycle, or `undefined` when
+ * the dev-server has not finished booting yet or has already torn down. The service may exist even
+ * when change-detection statuses are disabled. Use {@link StoryDependencyGraphService.hasGraph} to
+ * check whether the initial build has completed.
  *
  * @experimental
  */
-export function getActiveChangeDetectionService(): ChangeDetectionService | undefined {
-  return activeService;
+export function getDependencyGraphService(): StoryDependencyGraphService | undefined {
+  return activeStoryDependencyGraphService;
 }

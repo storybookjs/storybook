@@ -190,6 +190,18 @@ describe('rewriteStyleSheet', () => {
     expect(sheet.cssRules[0].getSelectors()).toContain('.pseudo-hover-all :is()');
   });
 
+  it('preserves specificity when original selector uses :where()', () => {
+    const sheet = new Sheet('.textLink:where(:focus-visible) { outline: 1px solid red; }');
+    rewriteStyleSheet(sheet as any);
+    const selectors = sheet.cssRules[0].getSelectors();
+    // Per-element class variant should stay zero-specificity
+    expect(selectors).toContain('.textLink:where(.pseudo-focus-visible)');
+    // Ancestor (-all) variant must also be zero-specificity: wrapped in :where()
+    expect(selectors).toContain(':where(.pseudo-focus-visible-all) .textLink');
+    // The broken old form must NOT appear
+    expect(selectors).not.toContain('.pseudo-focus-visible-all .textLink:where(*)');
+  });
+
   it('adds alternative selector for each pseudo selector', () => {
     const sheet = new Sheet('a:hover, a:focus { color: red }');
     rewriteStyleSheet(sheet as any);

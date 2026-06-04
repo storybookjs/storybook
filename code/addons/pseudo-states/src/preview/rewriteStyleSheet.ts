@@ -43,7 +43,7 @@ const replacePseudoStatesWithAncestorSelector = (
     return selector;
   }
 
-  const selectors = `${additionalHostSelectors ?? ''}${extracted.states.map((s) => `.pseudo-${s}-all`).join('')}`;
+  const selectors = `${additionalHostSelectors ?? ''}:where(${extracted.states.map((s) => `.pseudo-${s}-all`).join('')})`;
 
   // If there was a :host-context() containing only pseudo-states, we will later add a :host selector that replaces it.
   let { withoutPseudoStates } = extracted;
@@ -67,8 +67,11 @@ const extractPseudoStates = (selector: string) => {
         return '';
       })
       // If removing pseudo-state selectors from inside a functional selector left it empty (thus invalid), must fix it by adding '*'.
-      // The negative lookbehind ensures we don't replace :is() with :is(*).
-      .replaceAll(/(?<!is)\(\)/g, '(*)')
+      // The negative lookbehind ensures we don't replace :is() or :where() with :is(*) / :where(*).
+      .replaceAll(/(?<!is|here)\(\)/g, '(*)')
+      // :where() left empty after pseudo-state removal has no effect — strip it entirely so the
+      // ancestor rewrite doesn't produce ".textLink:where()" as the base selector.
+      .replaceAll(/:where\(\)/g, '')
       // If a selector list was left with blank items (e.g. ", foo, , bar, "), remove the extra commas/spaces.
       .replace(/(?<=[\s(]),\s+|(,\s+)+(?=\))/g, '') || '*';
 

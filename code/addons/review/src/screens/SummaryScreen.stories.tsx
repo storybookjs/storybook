@@ -9,6 +9,7 @@ const minimal: ReviewState = {
   branchName: 'update/button-styles',
   description:
     'Renamed the Button `appearance` prop to `variant` and updated all internal usages. No visual change is expected.',
+  createdAt: Date.now() - 2 * 60 * 1000,
   collections: [
     {
       title: 'Button',
@@ -21,6 +22,7 @@ const minimal: ReviewState = {
 const full: ReviewState = {
   title: 'Primary button visual refresh',
   branchName: 'update/button-weight-and-padding',
+  createdAt: Date.now() - 14 * 60 * 1000,
   description:
     'Made the primary/solid Button bolder: font-weight 700 → 800 and larger padding. Outline and ghost variants are unchanged. Start with Variants and Sizes/Paddings, then sanity-check ToggleButton and ReviewChangesButton.',
   changedFiles: ['code/core/src/components/components/Button/Button.tsx'],

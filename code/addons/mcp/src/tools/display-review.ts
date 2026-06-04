@@ -22,7 +22,9 @@ export const ReviewCollectionSchema = v.object({
 	),
 	rationale: v.pipe(
 		v.string(),
-		v.description('One sentence explaining why these stories are grouped together.'),
+		v.description(
+			'One sentence describing what these stories show — the component states, variants, or screens on display. Describe the content that appears on screen, not tasks for the reviewer. No imperatives ("verify", "check", "make sure", "ensure", "confirm"): say what is shown (e.g. "The default and error states across breakpoints"), not what to do (e.g. "Verify it still renders correctly").',
+		),
 	),
 	storyIds: v.pipe(
 		v.array(v.string()),
@@ -148,7 +150,7 @@ When reviewing a change, answer two questions before composing collections (skip
 Provide:
 - title: a PR-style title for the change — short and specific.
 - description: a one-line summary of what changed and where to start reviewing.
-- collections: titled groups of stories covering the **visual cascade** of the change — not just where the code is read, but everywhere a reviewer will see it. For any non-trivial UI change, include the changed component itself, the components that directly import it, and the pages/containers that render them further up the tree. A single-collection review is a smell: only do it if the component is genuinely standalone (e.g. has no parents in the story graph). Theme tokens, shared styles, and layout primitives almost always need page-level coverage even when only one file imports them. Give each collection a concise, PR-dense title and a one-sentence rationale. Titles should describe *what stories the reviewer is looking at* (e.g. "Button — all variants", "Checkout pages"), not the collection's role in the cascade.
+- collections: titled groups of stories covering the **visual cascade** of the change — not just where the code is read, but everywhere a reviewer will see it. For any non-trivial UI change, include the changed component itself, the components that directly import it, and the pages/containers that render them further up the tree. A single-collection review is a smell: only do it if the component is genuinely standalone (e.g. has no parents in the story graph). Theme tokens, shared styles, and layout primitives almost always need page-level coverage even when only one file imports them. Give each collection a concise, PR-dense title and a one-sentence rationale. Both should describe *what the reviewer is looking at* — the title names the stories (e.g. "Button — all variants", "Checkout pages"), the rationale says what's on screen in them. Describe the content, never instruct the reviewer, and avoid imperatives like "verify", "check", "ensure", "confirm".
 - changedFiles: the files you edited (most central first); omit when the user just wants to see stories rather than review a change.
 
 Anti-pattern: editing a theme token that only one component reads, then publishing a review with just that one component's story. The token change is visible on every page that renders the component — include those pages.

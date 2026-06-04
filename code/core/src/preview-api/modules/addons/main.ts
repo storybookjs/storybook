@@ -2,6 +2,7 @@ import type { Channel } from 'storybook/internal/channels';
 
 import { global } from '@storybook/global';
 
+import { setChannel as installStorybookChannel } from '../../../channels/channel-slot.ts';
 import { mockChannel } from './storybook-channel-mock.ts';
 
 export class AddonStore {
@@ -34,6 +35,7 @@ export class AddonStore {
 
   setChannel = (channel: Channel): void => {
     this.channel = channel;
+    installStorybookChannel(channel);
     this.resolve();
   };
 }

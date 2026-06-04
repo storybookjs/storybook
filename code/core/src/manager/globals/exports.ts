@@ -489,7 +489,11 @@ export default {
     'HEARTBEAT_MAX_LATENCY',
     'PostMessageTransport',
     'WebsocketTransport',
+    'clearChannel',
     'createBrowserChannel',
+    'getChannel',
+    'installNoopChannel',
+    'setChannel',
   ],
   'storybook/internal/client-logger': ['deprecate', 'logger', 'once', 'pretty'],
   'storybook/internal/components': [

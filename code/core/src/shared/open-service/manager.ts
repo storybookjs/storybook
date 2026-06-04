@@ -36,7 +36,7 @@ export { useServiceQuery } from './use-service-query.ts';
  * Registers a service in the manager and returns its runtime surface.
  *
  * The manager is a relay hub: it bridges the dev server and the preview iframes. The channel is read
- * from `globalThis.__STORYBOOK_ADDONS_CHANNEL__`, which the manager runtime installs before any
+ * via `getChannel()` from `storybook/internal/channels`, which the manager runtime installs before any
  * `addons.register` callback runs, so no manual channel setup is needed.
  */
 export function registerService<

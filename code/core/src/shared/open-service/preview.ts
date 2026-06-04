@@ -35,7 +35,7 @@ import type {
  * Registers a service in the preview and returns its runtime surface.
  *
  * The preview is a leaf (`relay: false`): with a single channel transport there is nothing to
- * forward. The channel is read from `globalThis.__STORYBOOK_ADDONS_CHANNEL__`, which both builders
+ * forward. The channel is read via `getChannel()` from `storybook/internal/channels`, which both builders
  * inject into the iframe, so no manual channel setup is needed.
  */
 export function registerService<

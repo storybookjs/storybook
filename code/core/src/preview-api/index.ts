@@ -90,4 +90,9 @@ export type { SelectionStore, View } from './preview-web.ts';
 
 /** OPEN SERVICE API (preview leaf — register only; types on `storybook/open-service`) */
 export { registerService } from '../shared/open-service/preview.ts';
-export { getServiceChannel, setServiceChannel } from '../shared/open-service/service-channel.ts';
+export {
+  clearChannel,
+  getChannel,
+  installNoopChannel,
+  setChannel,
+} from '../channels/channel-slot.ts';

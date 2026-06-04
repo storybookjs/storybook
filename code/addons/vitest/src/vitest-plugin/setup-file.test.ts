@@ -1,38 +1,36 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { Channel } from 'storybook/internal/channels';
-import { getServiceChannel } from 'storybook/internal/preview-api';
+import { Channel, clearChannel, getChannel } from 'storybook/internal/channels';
+
+import { global } from '@storybook/global';
 
 import { type Task, initTransport, modifyErrorMessage } from './setup-file.ts';
 
 describe('initTransport', () => {
   afterEach(() => {
-    // Cleanup the global channel so each test can assert initialization behavior independently.
-    (globalThis as { __STORYBOOK_ADDONS_CHANNEL__?: Channel }).__STORYBOOK_ADDONS_CHANNEL__ =
-      undefined;
-    (global as { __STORYBOOK_ADDONS_CHANNEL__?: Channel }).__STORYBOOK_ADDONS_CHANNEL__ = undefined;
+    clearChannel();
   });
 
   it('should initialize the addons channel when missing', () => {
-    (globalThis as { __STORYBOOK_ADDONS_CHANNEL__?: Channel }).__STORYBOOK_ADDONS_CHANNEL__ =
-      undefined;
-    (global as { __STORYBOOK_ADDONS_CHANNEL__?: Channel }).__STORYBOOK_ADDONS_CHANNEL__ = undefined;
+    clearChannel();
 
     initTransport();
 
-    expect(getServiceChannel()).toBeInstanceOf(Channel);
+    expect(getChannel()).toBeInstanceOf(Channel);
   });
 
   it('should not overwrite an existing addons channel', () => {
     const transport = { setHandler: vi.fn(), send: vi.fn() };
     const existingChannel = new Channel({ transport });
-    globalThis.__STORYBOOK_ADDONS_CHANNEL__ = existingChannel;
+    clearChannel();
+    (globalThis as { __STORYBOOK_ADDONS_CHANNEL__?: Channel }).__STORYBOOK_ADDONS_CHANNEL__ =
+      existingChannel;
     (global as { __STORYBOOK_ADDONS_CHANNEL__?: Channel }).__STORYBOOK_ADDONS_CHANNEL__ =
       existingChannel;
 
     initTransport();
 
-    expect(getServiceChannel()).toBe(existingChannel);
+    expect(getChannel()).toBe(existingChannel);
   });
 });
 

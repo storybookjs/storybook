@@ -20,11 +20,8 @@ import {
   OpenServiceMissingChannelError,
   OpenServiceMissingServiceError,
 } from '../../server-errors.ts';
-import {
-  generateClientId,
-  getServiceChannel,
-  installNoopServiceChannel,
-} from './service-channel.ts';
+import { getChannel, installNoopChannel } from '../../channels/channel-slot.ts';
+import { generateClientId } from './service-channel.ts';
 import { createServiceRuntime } from './service-runtime.ts';
 import { createSnapshotReconciler } from './service-sync.ts';
 import { connectRuntimeToChannel, wrapCommandsForBroadcast } from './service-transport.ts';
@@ -238,7 +235,7 @@ export function registerService<
         ownClientId,
         reconciler,
         getSnapshot,
-        getChannel: getServiceChannel,
+        getChannel,
       }
     ) as ServiceInstance<TState, TQueries, TCommands>['commands'],
     ...serviceRegistryApi,
@@ -246,7 +243,7 @@ export function registerService<
 
   const descriptor = describeDefinition(resolvedDefinition as AnyServiceDefinition);
 
-  const channel = getServiceChannel();
+  const channel = getChannel();
 
   if (!channel) {
     throw new OpenServiceMissingChannelError({ serviceId: definition.id });
@@ -351,5 +348,5 @@ export function clearRegistry(): void {
 
   registry.clear();
 
-  installNoopServiceChannel();
+  installNoopChannel();
 }

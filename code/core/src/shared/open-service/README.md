@@ -65,7 +65,8 @@ Internal tests and implementation code may import from the individual modules di
 - [errors.ts](./errors.ts): validation metadata formatting helpers
 - [service-runtime.ts](./service-runtime.ts): signal-backed runtime construction, in-flight load registry, drain logic, and subscriptions
 - [service-registry.ts](./service-registry.ts): the single `registerService`, the realm-global registry, and the shared registry API passed into runtimes — used identically by server, manager, and preview
-- [service-channel.ts](./service-channel.ts): `ServiceChannel` interface, event name constants, payload types, and the `getServiceChannel` reader
+- [service-channel.ts](./service-channel.ts): `ServiceChannel` interface, event name constants, and payload types
+- [channel-slot.ts](../../channels/channel-slot.ts): `getChannel` / `setChannel` — the shared channel install surface
 - [service-transport.ts](./service-transport.ts): shared channel transport — wraps commands to broadcast and wires the sync-start initialization + patch listeners (hub or leaf)
 - [service-sync.ts](./service-sync.ts): last-write-wins ordering, the `deepReconcile` structural merge, and the per-service snapshot reconciler
 - [use-service-query.ts](./use-service-query.ts): `useServiceQuery` React hook backed by `useSyncExternalStore`
@@ -399,14 +400,13 @@ Browser processes (manager and preview) each run their own full `ServiceRuntime`
 
 ### Channel setup
 
-There is no channel install step. `getServiceChannel()` reads the live channel from the ambient
-`globalThis.__STORYBOOK_ADDONS_CHANNEL__` slot that every runtime already populates — the manager sets
-it in its runtime, both builders inject it into the preview iframe, and the dev server installs it in
-the `services` preset before any service registers.
+There is no open-service-specific channel install step. `getChannel()` from `storybook/internal/channels`
+reads the live channel — the manager sets it via `addons.setChannel`, both builders inject it into the
+preview iframe, and the dev server installs it in the `services` preset before any service registers.
 
-Until that slot is populated, service runtimes operate in isolation — all reads and writes are local
-only. That is also the default in unit tests, which can install a mock channel by assigning the slot
-directly (or module-mock `service-channel.ts`).
+Until a channel is installed, service runtimes operate in isolation — all reads and writes are local
+only. Unit tests can install a mock channel with `setChannel(mock)` (or `clearChannel()` to assert
+registration fails without one).
 
 ### `registerService`
 
@@ -561,8 +561,8 @@ const ready = await exampleService.queries.getValue.loaded({ entryId: 'a' });
 - Use commands for all state mutation.
 - Manager addons import from `storybook/manager-api`; preview code imports from `storybook/preview-api`. Server presets use [server.ts](./server.ts). Import modules in this directory directly only from tests or implementation code.
 - Use `.loaded()` when a caller wants to await the full state; use the sync form when "current best" is fine.
-- No channel install is needed — `getServiceChannel()` reads `globalThis.__STORYBOOK_ADDONS_CHANNEL__`, which every runtime already populates.
-- Call `clearRegistry()` in `afterEach` in tests that register services; also clear `globalThis.__STORYBOOK_ADDONS_CHANNEL__` if a test installed a mock channel.
+- No channel install is needed in manager/preview — `getChannel()` returns the channel `addons.setChannel` installed.
+- Call `clearRegistry()` in `afterEach` in tests that register services; use `setChannel(mock)` / `clearChannel()` when a test needs a specific channel setup.
 
 ## Testing Guidance
 

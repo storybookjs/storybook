@@ -1,12 +1,11 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { mutableRecordLookupServiceDef, schemaCounterServiceDef } from './fixtures.ts';
+import { clearChannel, setChannel } from '../../channels/channel-slot.ts';
 import {
-  clearServiceChannel,
   SERVICE_PATCHES,
   SERVICE_SYNC_START_REPLY,
   SERVICE_SYNC_START,
-  setServiceChannel,
 } from './service-channel.ts';
 import { clearRegistry, registerService } from './server.ts';
 
@@ -45,9 +44,9 @@ const { id: recordServiceId } = mutableRecordLookupServiceDef;
 
 function installChannel(channel: ReturnType<typeof createMockChannel> | null): void {
   if (channel === null) {
-    clearServiceChannel();
+    clearChannel();
   } else {
-    setServiceChannel(channel);
+    setChannel(channel);
   }
 }
 
@@ -56,10 +55,9 @@ afterEach(() => {
   installChannel(null);
 });
 
-// These tests exercise the server transport that `registerService` wires when a channel is present on
-// `globalThis.__STORYBOOK_ADDONS_CHANNEL__` BEFORE registration — the dev server installs it in its
-// `services` preset, so there is no separate connect step. The server is always a relay hub: one dev
-// server bridges every connected manager tab.
+// These tests exercise the server transport that `registerService` wires when a channel is present
+// BEFORE registration — the dev server installs it in its `services` preset, so there is no separate
+// connect step. The server is always a relay hub: one dev server bridges every connected manager tab.
 
 describe('registerService: channel wiring', () => {
   it('wires the installed channel listeners on registration', () => {

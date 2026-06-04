@@ -12,8 +12,8 @@
  * const service = registerService(myServiceDef);
  * ```
  *
- * The channel is read from `globalThis.__STORYBOOK_ADDONS_CHANNEL__` — the manager installs it and
- * both builders inject it into the preview iframe, so there is no manual channel setup.
+ * The channel is read via `getChannel()` from `storybook/internal/channels` — the manager installs
+ * it and both builders inject it into the preview iframe, so there is no manual channel setup.
  */
 
 export { defineService } from './service-definition.ts';
@@ -26,11 +26,14 @@ export {
 } from './service-registry.ts';
 
 export {
-  clearServiceChannel,
+  clearChannel,
+  getChannel,
+  installNoopChannel,
+  setChannel,
+} from '../../channels/channel-slot.ts';
+
+export {
   generateClientId,
-  getServiceChannel,
-  installNoopServiceChannel,
-  setServiceChannel,
   SERVICE_COMMAND_ERROR,
   SERVICE_COMMAND_INVOKE,
   SERVICE_COMMAND_RESULT,
@@ -47,7 +50,6 @@ export type {
   SyncStartPayload,
   SyncStartReplyPayload,
 } from './service-channel.ts';
-
 export { useServiceCommand } from './use-service-command.ts';
 export { useServiceQuery } from './use-service-query.ts';
 

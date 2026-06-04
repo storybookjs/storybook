@@ -10,6 +10,7 @@ import { WebsocketTransport } from './websocket/index.ts';
 const { CHANNEL_OPTIONS, CONFIG_TYPE } = global;
 
 export * from './main.ts';
+export { clearChannel, getChannel, installNoopChannel, setChannel } from './channel-slot.ts';
 
 export default Channel;
 

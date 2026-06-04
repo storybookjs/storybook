@@ -18,6 +18,7 @@ import { Addon_TypesEnum } from 'storybook/internal/types';
 
 import { global } from '@storybook/global';
 
+import { setChannel as installStorybookChannel } from '../../channels/channel-slot.ts';
 import type { API } from '../root.tsx';
 import { mockChannel } from './storybook-channel-mock.ts';
 
@@ -62,6 +63,7 @@ export class AddonStore {
 
   setChannel = (channel: Channel): void => {
     this.channel = channel;
+    installStorybookChannel(channel);
     this.resolve();
   };
 

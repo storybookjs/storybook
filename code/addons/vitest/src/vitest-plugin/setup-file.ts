@@ -2,7 +2,7 @@ import { afterEach, beforeAll, vi } from 'vitest';
 import type { RunnerTask } from 'vitest';
 
 import { Channel } from 'storybook/internal/channels';
-import { getServiceChannel, setServiceChannel } from 'storybook/internal/preview-api';
+import { getChannel, setChannel } from 'storybook/internal/channels';
 
 import { COMPONENT_TESTING_PANEL_ID } from '../constants.ts';
 
@@ -18,12 +18,12 @@ export type Task = Partial<RunnerTask> & {
 };
 
 export const initTransport = () => {
-  if (getServiceChannel()) {
+  if (getChannel()) {
     return;
   }
 
   const transport = { setHandler: vi.fn(), send: vi.fn() };
-  setServiceChannel(new Channel({ transport }));
+  setChannel(new Channel({ transport }));
 };
 
 export const modifyErrorMessage = ({ task }: { task: Task }) => {

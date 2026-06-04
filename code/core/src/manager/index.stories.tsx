@@ -8,6 +8,8 @@ import { global } from '@storybook/global';
 import { FailedIcon } from '@storybook/icons';
 
 import { HelmetProvider } from 'react-helmet-async';
+import { clearChannel } from 'storybook/internal/channels';
+
 import type { API, AddonStore } from 'storybook/manager-api';
 import { addons, mockChannel } from 'storybook/manager-api';
 import { screen, within } from 'storybook/test';
@@ -18,6 +20,7 @@ import { Main } from './index.tsx';
 import Provider from './provider.ts';
 
 const WS_DISCONNECTED_NOTIFICATION_ID = 'CORE/WS_DISCONNECTED';
+const MOCK_STORY_PATH = '/?path=/story/example-button--primary';
 
 const channel = mockChannel() as unknown as Channel;
 
@@ -49,9 +52,6 @@ class ReactProvider extends Provider {
 
   constructor() {
     super();
-
-    addons.setChannel(channel);
-    channel.emit(CHANNEL_CREATED);
 
     this.addons = addons;
     this.channel = channel;
@@ -110,6 +110,11 @@ const meta = preview.meta({
   beforeEach: () => {
     global.PREVIEW_URL = 'about:blank';
 
+    // Vitest's setup-file installs its own channel; reset via the public slot API (not globals).
+    clearChannel();
+    addons.setChannel(channel);
+    channel.emit(CHANNEL_CREATED);
+
     Storage.prototype.getItem = () => null;
     Storage.prototype.setItem = () => {};
     Storage.prototype.clear = () => {};
@@ -122,7 +127,7 @@ const meta = preview.meta({
   decorators: [
     (Story) => (
       <HelmetProvider key="helmet.Provider">
-        <MemoryRouter key="location.provider">
+        <MemoryRouter initialEntries={[MOCK_STORY_PATH]} key="location.provider">
           <Story />
         </MemoryRouter>
       </HelmetProvider>

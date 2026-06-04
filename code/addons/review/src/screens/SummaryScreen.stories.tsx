@@ -193,6 +193,208 @@ const atomicChange: ReviewState = {
   changedFiles: ['core/src/components/components/Button/Button.tsx'],
 };
 
+const manyCollections: ReviewState = {
+  title: 'Large review surface: many collections and stories',
+  branchName: 'perf/review-large-dataset',
+  description:
+    'Stress-test the Summary screen with many collections and many story previews using real stories from the internal Storybook.',
+  collections: [
+    {
+      title: 'Collection 01 — Button core',
+      rationale: 'Base button stories and primary variants.',
+      kind: 'atomic',
+      storyIds: ['button-component--base', 'button-component--variants', 'button-component--sizes'],
+    },
+    {
+      title: 'Collection 02 — Button details',
+      rationale: 'Additional button states and icon usage.',
+      kind: 'atomic',
+      storyIds: [
+        'button-component--paddings',
+        'button-component--pseudo-states',
+        'button-component--icon-only',
+      ],
+    },
+    {
+      title: 'Collection 03 — Toggle and tabs',
+      rationale: 'ToggleButton and tab view combinations.',
+      kind: 'consumer',
+      storyIds: [
+        'components-togglebutton--variants',
+        'components-togglebutton--sizes',
+        'components-tabs-tabsview--basic',
+      ],
+    },
+    {
+      title: 'Collection 04 — Tabs and toolbar',
+      rationale: 'Navigation/tab states with toolbar layouts.',
+      kind: 'consumer',
+      storyIds: [
+        'components-tabs--stateful-static',
+        'components-tabs--stateless-with-tools',
+        'components-toolbar--basic',
+      ],
+    },
+    {
+      title: 'Collection 05 — Toolbar variants',
+      rationale: 'Scrollable toolbar and abstract toolbar coverage.',
+      kind: 'consumer',
+      storyIds: [
+        'components-toolbar--scrollable',
+        'components-abstracttoolbar--basic',
+        'select-component--base',
+      ],
+    },
+    {
+      title: 'Collection 06 — Surface primitives',
+      rationale: 'Cards, bars, and collapsible primitives.',
+      kind: 'consumer',
+      storyIds: [
+        'components-card--default',
+        'components-bar-bar--default',
+        'components-collapsible--default',
+      ],
+    },
+    {
+      title: 'Collection 07 — Overlay modal',
+      rationale: 'Modal base and interactive states.',
+      kind: 'consumer',
+      storyIds: [
+        'overlay-modal--base',
+        'overlay-modal--interactive-mouse',
+        'overlay-popover--with-hide-button',
+      ],
+    },
+    {
+      title: 'Collection 08 — Overlay popover',
+      rationale: 'Popover/chrome combinations and behavior.',
+      kind: 'consumer',
+      storyIds: [
+        'overlay-popover--with-chrome',
+        'overlay-popover--with-hide-button',
+        'overlay-modal--base',
+      ],
+    },
+    {
+      title: 'Collection 09 — Manager main',
+      rationale: 'Main manager page states.',
+      kind: 'consumer',
+      storyIds: ['manager-main--default', 'manager-main--about-page', 'manager-main--guide-page'],
+    },
+    {
+      title: 'Collection 10 — Manager settings',
+      rationale: 'Settings pages and checklist entry points.',
+      kind: 'consumer',
+      storyIds: [
+        'manager-settings-aboutscreen--default',
+        'manager-settings-guidepage--default',
+        'manager-settings-shortcutsscreen--defaults',
+      ],
+    },
+    {
+      title: 'Collection 11 — Guide variants',
+      rationale: 'Guide page variations for state coverage.',
+      kind: 'consumer',
+      storyIds: [
+        'manager-settings-guidepage--all-done',
+        'manager-settings-guidepage--ai-cta-open',
+        'manager-settings-guidepage--ai-cta-skipped',
+      ],
+    },
+    {
+      title: 'Collection 12 — Guide + freeze stories',
+      rationale: 'Guide and freeze test stories.',
+      kind: 'consumer',
+      storyIds: [
+        'manager-settings-guidepage--ai-cta-done',
+        'manager-settings-freezebehavior--play-clicks-button',
+        'manager-settings-freezebehavior--delayed-play-completion',
+      ],
+    },
+    {
+      title: 'Collection 13 — Freeze loop and sidebar',
+      rationale: 'Freeze animation loop and basic sidebar states.',
+      kind: 'consumer',
+      storyIds: [
+        'manager-settings-freezebehavior--continuous-loop-and-animation',
+        'manager-sidebar-sidebar--simple',
+        'manager-sidebar-sidebar--with-refs',
+      ],
+    },
+    {
+      title: 'Collection 14 — Sidebar status/search',
+      rationale: 'Search and status-focused sidebar views.',
+      kind: 'consumer',
+      storyIds: [
+        'manager-sidebar-sidebar--statuses-open',
+        'manager-sidebar-sidebar--searching',
+        'manager-sidebar-sidebar--with-cta-active',
+      ],
+    },
+    {
+      title: 'Collection 15 — Sidebar file search',
+      rationale: 'Sidebar file-search specific components.',
+      kind: 'consumer',
+      storyIds: [
+        'manager-sidebar-filesearchmodal--default',
+        'manager-sidebar-filesearchlist--default',
+        'manager-container-menu--with-shortcuts',
+      ],
+    },
+    {
+      title: 'Collection 16 — Menu and viewport',
+      rationale: 'Menu variants and preview viewport panel.',
+      kind: 'transitive',
+      storyIds: [
+        'manager-container-menu--with-shortcuts-active',
+        'manager-components-preview-viewport--default',
+        'manager-sidebar-sidebar--simple',
+      ],
+    },
+    {
+      title: 'Collection 17 — Docs preview blocks',
+      rationale: 'Docs block preview stories with toolbar/code.',
+      kind: 'transitive',
+      storyIds: [
+        'addons-docs-blocks-components-preview--with-toolbar',
+        'addons-docs-blocks-components-preview--code-expanded',
+        'manager-components-preview-viewport--default',
+      ],
+    },
+    {
+      title: 'Collection 18 — Bench + docs mix',
+      rationale: 'Heavier analyzer story plus docs previews.',
+      kind: 'catch-all',
+      storyIds: [
+        'bench--es-build-analyzer',
+        'addons-docs-blocks-components-preview--with-toolbar',
+        'addons-docs-blocks-components-preview--code-expanded',
+      ],
+    },
+    {
+      title: 'Collection 19 — Cross-manager mix',
+      rationale: 'Mixed manager states to create dense list.',
+      kind: 'catch-all',
+      storyIds: [
+        'manager-main--default',
+        'manager-settings-checklist--default',
+        'manager-sidebar-sidebar--statuses-open',
+      ],
+    },
+    {
+      title: 'Collection 20 — Large mixed tail',
+      rationale: 'Final mixed collection to reach 20 groups.',
+      kind: 'catch-all',
+      storyIds: [
+        'components-tabs-tabsview--basic',
+        'manager-container-menu--with-shortcuts',
+        'manager-settings-guidepage--default',
+        'bench--es-build-analyzer',
+      ],
+    },
+  ],
+};
+
 const meta = preview.meta({
   component: SummaryScreen,
   parameters: { layout: 'fullscreen' },
@@ -246,4 +448,17 @@ export const PagesAndBench = meta.story({
 
 export const RealAtomicChange = meta.story({
   args: { state: atomicChange },
+});
+
+export const ManyCollections = meta.story({
+  args: { state: manyCollections },
+  parameters: { chromatic: { disableSnapshot: true } },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(
+      await canvas.findByText('Large review surface: many collections and stories')
+    ).toBeInTheDocument();
+    await expect(await canvas.findByText('Collection 01 — Button core')).toBeInTheDocument();
+    await expect(await canvas.findByText('Collection 20 — Large mixed tail')).toBeInTheDocument();
+  },
 });

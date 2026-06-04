@@ -48,19 +48,41 @@ const Counter = styled(Button)(({ theme }) => ({
 // (side-by-side) and one-up (single) mode share a control cluster; the
 // "switch" control only applies in one-up mode, where it flips which pane
 // (baseline or latest) is shown.
+//
+// A two-column 1fr/1fr grid guarantees the column boundary sits at exactly
+// 50%, matching the split between the preview iframes below (flex halves can
+// drift when their content differs). Negative margins cancel ReviewHeader's
+// asymmetric second-row padding (16 left / 12 right) so the grid spans the
+// full header width and its center aligns with the iframe seam; each cell then
+// re-applies its own inset.
 const BaselineBar = styled.div({
-  display: 'flex',
-  width: '100%',
+  display: 'grid',
+  gridTemplateColumns: '1fr 1fr',
   alignItems: 'center',
+  // Full-bleed: cancel ReviewHeader's second-row padding (16 left / 12 right)
+  // with negative margins and grow the width to match, so the 50% column seam
+  // lines up with the preview iframes' seam below. flexShrink:0 stops the flex
+  // parent from collapsing it back to content width.
+  width: 'calc(100% + 28px)',
+  flexShrink: 0,
+  margin: '0 -12px 0 -16px',
 });
 
 const BarHalf = styled.div({
   display: 'flex',
-  flex: 1,
   minWidth: 0,
   alignItems: 'center',
   justifyContent: 'space-between',
   gap: 8,
+  // Inset the label to line up with the title/back-button column above, and
+  // mirror it on the right cell so "Baseline" and "Latest" share one offset.
+  padding: '0 12px 0 16px',
+});
+
+// Single (one-up) mode shows one full-width row, so no 1fr/1fr split is needed
+// — just the same full-bleed insets as a grid cell.
+const SingleBar = styled(BarHalf)({
+  margin: '0 -12px 0 -16px',
 });
 
 const BarLabel = styled.strong(({ theme }) => ({
@@ -427,16 +449,14 @@ export const DetailsScreen: FC<DetailsScreenProps> = ({
 
   const baselineBar = showBaseline ? (
     isSingleUp ? (
-      <BaselineBar>
-        <BarHalf>
-          <BarLabel>{visibleSide === 'baseline' ? 'Baseline' : 'Latest'}</BarLabel>
-          <CompareControls
-            previewMode={previewMode}
-            onModeChange={setPreviewMode}
-            onSwitch={() => setVisibleSide((side) => (side === 'baseline' ? 'latest' : 'baseline'))}
-          />
-        </BarHalf>
-      </BaselineBar>
+      <SingleBar>
+        <BarLabel>{visibleSide === 'baseline' ? 'Baseline' : 'Latest'}</BarLabel>
+        <CompareControls
+          previewMode={previewMode}
+          onModeChange={setPreviewMode}
+          onSwitch={() => setVisibleSide((side) => (side === 'baseline' ? 'latest' : 'baseline'))}
+        />
+      </SingleBar>
     ) : (
       <BaselineBar>
         <BarHalf>

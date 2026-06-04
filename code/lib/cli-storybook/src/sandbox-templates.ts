@@ -714,13 +714,14 @@ export const baseTemplates = {
       builder: '@storybook/builder-webpack5',
     },
     skipTasks: ['e2e-tests', 'bench', 'vitest-integration'],
+    initOptions: { builder: SupportedBuilder.WEBPACK5 },
   },
   'angular-cli/default-ts': {
     name: 'Angular CLI Latest (Webpack | TypeScript)',
     script:
       'npx -p @angular/cli ng new angular-latest --directory {{beforeDir}} --routing=true --minimal=true --style=scss --strict --skip-git --skip-install --package-manager=yarn --ssr',
     modifications: {
-      extraDependencies: ['@angular/forms@latest'],
+      extraDependencies: ['@angular/forms@latest', '@angular/animations@latest'],
       useCsfFactory: true,
     },
     extraCiSteps: {
@@ -732,6 +733,26 @@ export const baseTemplates = {
       builder: '@storybook/builder-webpack5',
     },
     skipTasks: ['bench', 'vitest-integration'],
+    initOptions: { builder: SupportedBuilder.WEBPACK5 },
+  },
+  'angular-cli/vite-default-ts': {
+    name: 'Angular CLI Latest (Vite | TypeScript)',
+    script:
+      'npx -p @angular/cli ng new angular-latest --directory {{beforeDir}} --routing=true --minimal=true --style=scss --strict --skip-git --skip-install --package-manager=yarn --ssr',
+    modifications: {
+      extraDependencies: ['@angular/forms@latest', '@angular/animations@latest'],
+      useCsfFactory: true,
+    },
+    extraCiSteps: {
+      ensureMinNodeVersion: true,
+    },
+    expected: {
+      framework: '@storybook/angular-vite',
+      renderer: '@storybook/angular-vite',
+      builder: '@storybook/builder-vite',
+    },
+    skipTasks: ['bench'],
+    initOptions: { builder: SupportedBuilder.VITE },
   },
   'lit-vite/default-js': {
     name: 'Lit Latest (Vite | JavaScript)',
@@ -1070,6 +1091,7 @@ export const normal: TemplateKey[] = [
   // 'cra/default-ts',
   'react-vite/default-ts',
   'angular-cli/default-ts',
+  'angular-cli/vite-default-ts',
   'vue3-vite/default-ts',
   // 'nuxt-vite/default-ts', // temporarily disabled because it's broken
   'lit-vite/default-ts',

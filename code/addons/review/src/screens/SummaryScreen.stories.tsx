@@ -414,13 +414,28 @@ export const Minimal = meta.story({
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await expect(await canvas.findByText('Button prop rename')).toBeInTheDocument();
-    await expect(await canvas.findByText(/Showing 2 agent-curated stories/i)).toBeInTheDocument();
+    await expect(await canvas.findByText(/2 stories for quick review/i)).toBeInTheDocument();
     await expect(await canvas.findByText('Button')).toBeInTheDocument();
   },
 });
 
 export const Full = meta.story({
-  args: { state: full },
+  args: {
+    state: full,
+    storyInfo: {
+      // Collection 1 — first story is new
+      'button-component--variants': { title: 'Button', name: 'Variants', isNew: true },
+      'button-component--base': { title: 'Button', name: 'Base' },
+      'button-component--sizes': { title: 'Button', name: 'Sizes' },
+      // Collection 2 — first story is new
+      'components-togglebutton--variants': {
+        title: 'ToggleButton',
+        name: 'Variants',
+        isNew: true,
+      },
+      'components-togglebutton--sizes': { title: 'ToggleButton', name: 'Sizes' },
+    },
+  },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await expect(await canvas.findByText('Primary button visual refresh')).toBeInTheDocument();

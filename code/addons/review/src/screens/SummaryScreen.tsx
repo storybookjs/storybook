@@ -1,12 +1,13 @@
 import React, { type FC, useEffect, useMemo, useState } from 'react';
 
-import { Button, Card, Collapsible, IconButton, ScrollArea } from 'storybook/internal/components';
+import { Badge, Button, Card, Collapsible, IconButton, ScrollArea } from 'storybook/internal/components';
 import { styled } from 'storybook/theming';
 
 import {
   ChevronSmallDownIcon,
   CollapseIcon,
   ExpandAltIcon,
+  WandIcon,
   SearchIcon,
   StorybookIcon,
 } from '@storybook/icons';
@@ -155,16 +156,19 @@ const ToggleChevronIcon = styled(ChevronSmallDownIcon)({
   transition: 'transform 160ms ease',
 });
 
-const CardRationale = styled.p(({ theme }) => ({
-  color: theme.textMutedColor,
-  margin: '0 12px',
-}));
-
 const NoResults = styled.div(({ theme }) => ({
   color: theme.textMutedColor,
   padding: 16,
   fontSize: 14,
 }));
+
+// Temporary purple override until a shared "AI" badge variant is decided.
+const AICuratedBadge = styled(Badge)({
+  color: '#723aa6',
+  background: '#f5f0fa',
+  boxShadow: 'inset 0 0 0 1px #e1d2ef',
+  svg: { marginTop: 0 },
+});
 
 // A story matches the search if its id, component title, or story name
 // contains the query. Search narrows results to this story level, so a
@@ -187,11 +191,13 @@ const storyMatchesQuery = (
 const formatCreatedAgo = (createdAt: number, nowMs: number): string => {
   const elapsedMs = Math.max(0, nowMs - createdAt);
   if (elapsedMs < 60_000) {
-    return 'Created just now.';
+    return 'just now';
   }
   const elapsedMinutes = Math.floor(elapsedMs / 60_000);
-  const minuteLabel = elapsedMinutes === 1 ? 'minute' : 'minutes';
-  return `Created ${elapsedMinutes} ${minuteLabel} ago.`;
+  if (elapsedMinutes < 60) {
+    return `${elapsedMinutes}m ago`;
+  }
+  return `${Math.floor(elapsedMinutes / 60)}h ago`;
 };
 
 export interface SummaryScreenProps {
@@ -284,10 +290,16 @@ export const SummaryScreen: FC<SummaryScreenProps> = ({
       <ReviewHeader
         title={state.title}
         subtitle={
-          <span>
-            Showing {storyCount} agent-curated {storyCount === 1 ? 'story' : 'stories'} for quick
-            review.{createdAgo ? ` ${createdAgo}` : ''}
-          </span>
+          <>
+            <span>
+              {storyCount} {storyCount === 1 ? 'story' : 'stories'} for quick review
+              {createdAgo ? ` • ${createdAgo}` : ''}
+            </span>
+            <AICuratedBadge>
+              <WandIcon />
+              AI-curated
+            </AICuratedBadge>
+          </>
         }
         actions={
           <Button padding="small" asChild>
@@ -369,9 +381,6 @@ export const SummaryScreen: FC<SummaryScreenProps> = ({
                         </CardHead>
                       }
                     >
-                      {collection.rationale ? (
-                        <CardRationale>{collection.rationale}</CardRationale>
-                      ) : null}
                       <CollectionGrid
                         storyIds={storyIds}
                         showAll={showAllCollections.has(index)}

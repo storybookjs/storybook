@@ -31,6 +31,13 @@ const Page = styled.div(({ theme }) => ({
   fontFamily: theme.typography.fonts.base,
 }));
 
+const ProgressBar = styled.div<{ $percent: number }>(({ theme, $percent }) => ({
+  height: 2,
+  width: '100%',
+  flexShrink: 0,
+  background: `linear-gradient(to right, ${theme.color.secondary} ${$percent}%, ${theme.appBorderColor} ${$percent}%)`,
+}));
+
 const SubtitleStrong = styled.span({
   fontWeight: 700,
 });
@@ -282,8 +289,11 @@ export const DetailsScreen = ({
     )
   ) : undefined;
 
+  const progressPercent = ((storyIndex + 1) / totalStories) * 100;
+
   return (
     <Page>
+      <ProgressBar $percent={progressPercent} />
       {isStale ? <StaleBanner /> : null}
       <ReviewHeader
         autoFocusTitle

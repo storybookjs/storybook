@@ -599,8 +599,7 @@ export interface StorybookConfigRaw {
 
     /**
      * Enable change detection
-     * TODO: Turn to true before 10.4 release
-     * @default false
+     * @default true
      */
     changeDetection?: boolean;
   };

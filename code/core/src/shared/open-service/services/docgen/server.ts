@@ -1,10 +1,9 @@
-import { join, normalize } from 'pathe';
-
 import { getComponentIdFromEntry } from '../../../../common/utils/component-id.ts';
 import { OpenServiceDocgenMissingComponentError } from '../../../../server-errors.ts';
 import type { StoryIndex } from '../../../../types/modules/indexer.ts';
 import { getService, registerService } from '../../service-registration.ts';
 import { moduleGraphServiceDef } from '../module-graph/definition.ts';
+import { toStoryIndexPath } from '../module-graph/types.ts';
 import { docgenServiceDef } from './definition.ts';
 import type { DocgenProvider } from './types.ts';
 
@@ -122,7 +121,7 @@ export function registerDocgenService(options: RegisterDocgenServiceOptions) {
         return (
           candidate.type === 'story' &&
           !candidate.importPath.startsWith('virtual:') &&
-          normalize(join(workingDir, candidate.importPath)) === storyFile
+          toStoryIndexPath(candidate.importPath, workingDir) === storyFile
         );
       });
       if (!entry) {

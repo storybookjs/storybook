@@ -14,12 +14,13 @@ import { getService } from '../../shared/open-service/server.ts';
 import { moduleGraphServiceDef } from '../../shared/open-service/services/module-graph/definition.ts';
 import type { ChangeDetectionAdapter } from '../../shared/open-service/services/module-graph/engine/adapters/types.ts';
 import { registerModuleGraphLifecycleConsumer } from '../../shared/open-service/services/module-graph/lifecycle-consumer.ts';
+import { getStoryIdsByAbsolutePath } from '../../shared/open-service/services/module-graph/story-files.ts';
+import { storyIndexPathToAbsolutePath } from '../../shared/open-service/services/module-graph/types.ts';
 import type { StoryIndexGenerator } from '../utils/StoryIndexGenerator.ts';
 import { ChangeDetectionFailureError, ChangeDetectionUnavailableError } from './errors.ts';
 import { GitDiffProvider } from './GitDiffProvider.ts';
 import { extractBaselineEntryIds, IndexBaselineService } from './IndexBaselineService.ts';
 import { resetChangeDetectionReadiness, setChangeDetectionReadiness } from './readiness.ts';
-import { getStoryIdsByAbsolutePath } from '../../shared/open-service/services/module-graph/story-files.ts';
 
 const CHANGE_DETECTION_DEBOUNCE_MS = 200;
 
@@ -374,7 +375,7 @@ export class ChangeDetectionService {
       const changedFile = scannedFilesArray[i];
       const allEntries = new Map<string, number>();
       for (const { storyFile, depth } of lookupResults[i]) {
-        allEntries.set(storyFile, depth);
+        allEntries.set(storyIndexPathToAbsolutePath(storyFile, this.workingDir), depth);
       }
       // Include the changed file as a story-at-distance-0 if it IS a story.
       if (storyIdsByFile.has(changedFile)) {

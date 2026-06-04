@@ -10,6 +10,7 @@ import {
   installDependencyGraphMocks,
 } from './module-graph.test-helpers.ts';
 import { registerModuleGraphService, resolveChangeDetectionAdapter } from './server.ts';
+import { toStoryIndexPath } from './types.ts';
 
 vi.mock('./engine/dependency-graph/resolver-factory.ts', { spy: true });
 vi.mock('./engine/dependency-graph/dependency-graph-builder.ts', { spy: true });
@@ -21,8 +22,26 @@ afterEach(() => {
 });
 
 /** Bare service registration (no engine), for exercising the query/command contract directly. */
-function registerBareModuleGraph() {
-  return registerService(moduleGraphServiceDef);
+function registerBareModuleGraph(workingDir = '/repo') {
+  return registerService(moduleGraphServiceDef, {
+    queries: {
+      getStoriesForFiles: {
+        handler: (input, ctx) => {
+          return input.files.map((file) => {
+            const entries = ctx.self.state.storiesByFile[toStoryIndexPath(file, workingDir)];
+            if (!entries) {
+              return [];
+            }
+            return Object.entries(entries).map(([storyFile, depth]) => ({ storyFile, depth }));
+          });
+        },
+      },
+      getStoryVersion: {
+        handler: (input, ctx) =>
+          ctx.self.state.storyVersions[toStoryIndexPath(input.storyFile, workingDir)] ?? 0,
+      },
+    },
+  });
 }
 
 describe('module-graph open service', () => {
@@ -46,14 +65,14 @@ describe('module-graph open service', () => {
 
       await runtime.commands.applyGraphSnapshot({
         storiesByFile: {
-          '/repo/src/Button.tsx': { '/repo/src/Button.stories.tsx': 1 },
+          './src/Button.tsx': { './src/Button.stories.tsx': 1 },
         },
       });
 
       expect(runtime.queries.getReady(undefined)).toBe(true);
       expect(runtime.queries.getGraphRevision(undefined)).toBe(1);
       expect(runtime.queries.getStoriesForFiles({ files: ['/repo/src/Button.tsx'] })).toEqual([
-        [{ storyFile: '/repo/src/Button.stories.tsx', depth: 1 }],
+        [{ storyFile: './src/Button.stories.tsx', depth: 1 }],
       ]);
     });
 
@@ -61,15 +80,15 @@ describe('module-graph open service', () => {
       const runtime = registerBareModuleGraph();
 
       await runtime.commands.applyGraphSnapshot({
-        storiesByFile: { '/repo/src/A.tsx': { '/repo/src/A.stories.tsx': 0 } },
+        storiesByFile: { './src/A.tsx': { './src/A.stories.tsx': 0 } },
       });
       await runtime.commands.applyGraphSnapshot({
-        storiesByFile: { '/repo/src/B.tsx': { '/repo/src/B.stories.tsx': 0 } },
+        storiesByFile: { './src/B.tsx': { './src/B.stories.tsx': 0 } },
       });
 
       expect(runtime.queries.getStoriesForFiles({ files: ['/repo/src/A.tsx'] })).toEqual([[]]);
       expect(runtime.queries.getStoriesForFiles({ files: ['/repo/src/B.tsx'] })).toEqual([
-        [{ storyFile: '/repo/src/B.stories.tsx', depth: 0 }],
+        [{ storyFile: './src/B.stories.tsx', depth: 0 }],
       ]);
       expect(runtime.queries.getGraphRevision(undefined)).toBe(2);
     });
@@ -80,10 +99,10 @@ describe('module-graph open service', () => {
       const runtime = registerBareModuleGraph();
       await runtime.commands.applyGraphSnapshot({
         storiesByFile: {
-          '/repo/src/Button.tsx': { '/repo/src/Button.stories.tsx': 1 },
-          '/repo/src/Card.tsx': {
-            '/repo/src/Card.stories.tsx': 1,
-            '/repo/src/Page.stories.tsx': 2,
+          './src/Button.tsx': { './src/Button.stories.tsx': 1 },
+          './src/Card.tsx': {
+            './src/Card.stories.tsx': 1,
+            './src/Page.stories.tsx': 2,
           },
         },
       });
@@ -93,24 +112,47 @@ describe('module-graph open service', () => {
       });
 
       expect(result).toEqual([
-        [{ storyFile: '/repo/src/Button.stories.tsx', depth: 1 }],
+        [{ storyFile: './src/Button.stories.tsx', depth: 1 }],
         [],
         [
-          { storyFile: '/repo/src/Card.stories.tsx', depth: 1 },
-          { storyFile: '/repo/src/Page.stories.tsx', depth: 2 },
+          { storyFile: './src/Card.stories.tsx', depth: 1 },
+          { storyFile: './src/Page.stories.tsx', depth: 2 },
         ],
       ]);
     });
 
-    it('normalizes input paths before looking them up', async () => {
+    it('accepts absolute, relative-with-dot, and relative-without-dot input paths', async () => {
       const runtime = registerBareModuleGraph();
       await runtime.commands.applyGraphSnapshot({
-        storiesByFile: { '/repo/src/Button.tsx': { '/repo/src/Button.stories.tsx': 1 } },
+        storiesByFile: { './src/Button.tsx': { './src/Button.stories.tsx': 1 } },
       });
 
       expect(
-        runtime.queries.getStoriesForFiles({ files: ['/repo/src/../src/Button.tsx'] })
-      ).toEqual([[{ storyFile: '/repo/src/Button.stories.tsx', depth: 1 }]]);
+        runtime.queries.getStoriesForFiles({
+          files: ['/repo/src/../src/Button.tsx', './src/Button.tsx', 'src/Button.tsx'],
+        })
+      ).toEqual([
+        [{ storyFile: './src/Button.stories.tsx', depth: 1 }],
+        [{ storyFile: './src/Button.stories.tsx', depth: 1 }],
+        [{ storyFile: './src/Button.stories.tsx', depth: 1 }],
+      ]);
+    });
+
+    it('accepts Windows-style absolute and relative input paths', async () => {
+      const runtime = registerBareModuleGraph('C:\\repo');
+      await runtime.commands.applyGraphSnapshot({
+        storiesByFile: { './src/Button.tsx': { './src/Button.stories.tsx': 1 } },
+      });
+
+      expect(
+        runtime.queries.getStoriesForFiles({
+          files: ['C:\\repo\\src\\Button.tsx', '.\\src\\Button.tsx', 'src\\Button.tsx'],
+        })
+      ).toEqual([
+        [{ storyFile: './src/Button.stories.tsx', depth: 1 }],
+        [{ storyFile: './src/Button.stories.tsx', depth: 1 }],
+        [{ storyFile: './src/Button.stories.tsx', depth: 1 }],
+      ]);
     });
 
     it('returns an empty array for an empty input list', () => {
@@ -123,15 +165,15 @@ describe('module-graph open service', () => {
     it('replaces the reverse index, bumps the revision, and increments affected story versions', async () => {
       const runtime = registerBareModuleGraph();
       await runtime.commands.applyGraphSnapshot({
-        storiesByFile: { '/repo/src/Button.tsx': { '/repo/src/Button.stories.tsx': 1 } },
+        storiesByFile: { './src/Button.tsx': { './src/Button.stories.tsx': 1 } },
       });
 
       await runtime.commands.applyGraphUpdate({
         storiesByFile: {
-          '/repo/src/Button.tsx': { '/repo/src/Button.stories.tsx': 1 },
-          '/repo/src/Icon.tsx': { '/repo/src/Button.stories.tsx': 2 },
+          './src/Button.tsx': { './src/Button.stories.tsx': 1 },
+          './src/Icon.tsx': { './src/Button.stories.tsx': 2 },
         },
-        bumpedStoryFiles: ['/repo/src/Button.stories.tsx'],
+        bumpedStoryFiles: ['./src/Button.stories.tsx'],
       });
 
       expect(runtime.queries.getGraphRevision(undefined)).toBe(2);
@@ -139,7 +181,7 @@ describe('module-graph open service', () => {
         1
       );
       expect(runtime.queries.getStoriesForFiles({ files: ['/repo/src/Icon.tsx'] })).toEqual([
-        [{ storyFile: '/repo/src/Button.stories.tsx', depth: 2 }],
+        [{ storyFile: './src/Button.stories.tsx', depth: 2 }],
       ]);
     });
 
@@ -148,16 +190,16 @@ describe('module-graph open service', () => {
 
       await runtime.commands.applyGraphUpdate({
         storiesByFile: {},
-        bumpedStoryFiles: ['/repo/a.stories.tsx', '/repo/b.stories.tsx'],
+        bumpedStoryFiles: ['./a.stories.tsx', './b.stories.tsx'],
       });
       await runtime.commands.applyGraphUpdate({
         storiesByFile: {},
-        bumpedStoryFiles: ['/repo/a.stories.tsx'],
+        bumpedStoryFiles: ['./a.stories.tsx'],
       });
 
       expect(runtime.queries.getAllStoryVersions(undefined)).toEqual({
-        '/repo/a.stories.tsx': 2,
-        '/repo/b.stories.tsx': 1,
+        './a.stories.tsx': 2,
+        './b.stories.tsx': 1,
       });
       expect(runtime.queries.getGraphRevision(undefined)).toBe(2);
     });
@@ -177,7 +219,7 @@ describe('module-graph open service', () => {
       const runtime = registerBareModuleGraph();
       await runtime.commands.applyGraphUpdate({
         storiesByFile: {},
-        bumpedStoryFiles: ['/repo/src/Button.stories.tsx'],
+        bumpedStoryFiles: ['./src/Button.stories.tsx'],
       });
 
       expect(runtime.queries.getStoryVersion({ storyFile: '/repo/src/Unknown.stories.tsx' })).toBe(
@@ -244,7 +286,7 @@ describe('module-graph open service', () => {
       });
 
       expect(runtime.queries.getStoriesForFiles({ files: ['/repo/src/Button.tsx'] })).toEqual([
-        [{ storyFile: '/repo/src/Button.stories.tsx', depth: 1 }],
+        [{ storyFile: './src/Button.stories.tsx', depth: 1 }],
       ]);
     });
   });

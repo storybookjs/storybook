@@ -10,7 +10,7 @@ import type { StoryIndex } from '../../../../../types/modules/indexer.ts';
 import { ModuleGraphFailureError } from '../errors.ts';
 import { getModuleGraphLifecycleConsumer } from '../lifecycle-consumer.ts';
 import { getStoryIdsByAbsolutePath } from '../story-files.ts';
-import { reverseIndexToStoriesByFile } from '../types.ts';
+import { reverseIndexToStoriesByFile, toStoryIndexPath } from '../types.ts';
 import type { ChangeDetectionAdapter, FileChangeEvent } from './adapters/types.ts';
 import { DependencyGraphBuilder } from './dependency-graph/dependency-graph-builder.ts';
 import { IncrementalPatcher } from './dependency-graph/incremental-patcher.ts';
@@ -122,7 +122,9 @@ export class ModuleGraphEngine {
     if (!this.reverseIndex) {
       return;
     }
-    this.options.onSnapshot?.(reverseIndexToStoriesByFile(this.reverseIndex.asMap()));
+    this.options.onSnapshot?.(
+      reverseIndexToStoriesByFile(this.reverseIndex.asMap(), this.workingDir)
+    );
   }
 
   private mirrorUpdate(changedFile: string): void {
@@ -138,8 +140,10 @@ export class ModuleGraphEngine {
       bumpedStoryFiles.add(normalized);
     }
     this.options.onUpdate?.({
-      storiesByFile: reverseIndexToStoriesByFile(this.reverseIndex.asMap()),
-      bumpedStoryFiles: [...bumpedStoryFiles],
+      storiesByFile: reverseIndexToStoriesByFile(this.reverseIndex.asMap(), this.workingDir),
+      bumpedStoryFiles: Array.from(bumpedStoryFiles, (storyFile) =>
+        toStoryIndexPath(storyFile, this.workingDir)
+      ),
     });
   }
 

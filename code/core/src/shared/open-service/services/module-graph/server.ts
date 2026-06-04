@@ -6,6 +6,7 @@ import { registerService } from '../../service-registration.ts';
 import { moduleGraphServiceDef } from './definition.ts';
 import type { ChangeDetectionAdapter } from './engine/adapters/types.ts';
 import { ModuleGraphEngine, type ModuleGraphEngineOptions } from './engine/module-graph-engine.ts';
+import { toStoryIndexPath } from './types.ts';
 
 export type RegisterModuleGraphServiceOptions = {
   channel: ChannelLike;
@@ -42,9 +43,24 @@ export function resolveChangeDetectionAdapter(adapter: ChangeDetectionAdapter): 
  */
 export function registerModuleGraphService(options: RegisterModuleGraphServiceOptions) {
   let engine: ModuleGraphEngine | undefined;
+  const workingDir = options.workingDir ?? process.cwd();
 
   const runtime = registerService(moduleGraphServiceDef, {
     queries: {
+      getStoriesForFiles: {
+        handler: (input, ctx) => {
+          return input.files.map((file) => {
+            const entries = ctx.self.state.storiesByFile[toStoryIndexPath(file, workingDir)];
+            if (!entries) {
+              return [];
+            }
+            return Object.entries(entries).map(([storyFile, depth]) => ({
+              storyFile,
+              depth,
+            }));
+          });
+        },
+      },
       getReady: {
         // The graph builds (and patches) asynchronously, so `loaded()` callers await this barrier to
         // read a settled reverse index rather than a half-built one.
@@ -52,12 +68,16 @@ export function registerModuleGraphService(options: RegisterModuleGraphServiceOp
           await engine?.whenSettled();
         },
       },
+      getStoryVersion: {
+        handler: (input, ctx) =>
+          ctx.self.state.storyVersions[toStoryIndexPath(input.storyFile, workingDir)] ?? 0,
+      },
     },
   });
 
   engine = new ModuleGraphEngine({
     getIndex: options.getIndex,
-    workingDir: options.workingDir,
+    workingDir,
     presets: options.presets,
     onSnapshot: (storiesByFile) => {
       void runtime.commands.applyGraphSnapshot({ storiesByFile });

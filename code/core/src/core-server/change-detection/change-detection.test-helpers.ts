@@ -14,6 +14,7 @@ import { IncrementalPatcher } from '../../shared/open-service/services/module-gr
 import { ChangeDetectionResolverFactory } from '../../shared/open-service/services/module-graph/engine/dependency-graph/resolver-factory.ts';
 import { ReverseIndexImpl } from '../../shared/open-service/services/module-graph/engine/dependency-graph/reverse-index.ts';
 import { ModuleGraphEngine } from '../../shared/open-service/services/module-graph/engine/module-graph-engine.ts';
+import { toStoryIndexPath } from '../../shared/open-service/services/module-graph/types.ts';
 import { ChangeDetectionService } from './change-detection-service.ts';
 
 export {
@@ -35,7 +36,10 @@ export function installModuleGraphQueryMock(engine: ModuleGraphEngine): void {
   const getStoriesForFiles = ({ files }: { files: string[] }) =>
     files.map((file) => {
       const hits = engine.lookup(normalize(file));
-      return [...hits.entries()].map(([storyFile, depth]) => ({ storyFile, depth }));
+      return [...hits.entries()].map(([storyFile, depth]) => ({
+        storyFile: toStoryIndexPath(storyFile, '/repo'),
+        depth,
+      }));
     });
 
   vi.mocked(getService).mockReturnValue({

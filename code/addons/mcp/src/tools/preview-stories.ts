@@ -35,7 +35,7 @@ const PreviewStoriesOutput = v.object({
 				previewUrl: v.pipe(
 					v.string(),
 					v.description(
-						'Direct URL to open the story preview. Always include this URL in the final user-facing response so users can open it directly.',
+						'Direct URL to open the story preview. Include this URL in the final user-facing response so users can open it directly — unless a curated review page is being published via display-review, in which case link the review page instead of listing individual URLs.',
 					),
 				),
 			}),
@@ -98,7 +98,7 @@ export async function addPreviewStoriesTool(server: McpServer<any, AddonContext>
 			name: PREVIEW_STORIES_TOOL_NAME,
 			title: 'Get story preview URLs',
 			description: `Use this tool to get one or more Storybook preview URLs.
-Always include each returned preview URL in your final user-facing response so users can open them directly.`,
+Include each returned preview URL in your final user-facing response so users can open them directly — unless you're also publishing a curated review via display-review, in which case link the review page instead of listing individual URLs.`,
 			schema: PreviewStoriesInput,
 			outputSchema: PreviewStoriesOutput,
 			enabled: () => server.ctx.custom?.toolsets?.dev ?? true,

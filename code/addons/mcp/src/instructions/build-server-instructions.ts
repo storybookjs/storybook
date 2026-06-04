@@ -29,9 +29,15 @@ export function buildServerInstructions(options: BuildServerInstructionsOptions)
 			: graphSupported
 				? 'After changing any component or story, call **get-stories-by-component** with the absolute paths of the files you touched to find the stories that render them, then call **preview-stories** to retrieve preview URLs.'
 				: 'After changing any component or story, call **preview-stories** to retrieve preview URLs.';
+		// When display-review is available, the curated review page supersedes the
+		// raw preview URLs in the final response — show one or the other, never both.
+		const finalLinksStep = reviewEnabled
+			? 'In your final user-facing response, link **only** the Storybook review page — do not also list the individual story or preview URLs. Write it as a markdown link using the returned `reviewUrl`, phrased like: "You can see a curated summary of stories in the [Storybook review page](<reviewUrl>)."'
+			: 'In your final user-facing response, include every returned preview URL so the user can verify the visual result, ordered consistently (changed-stories fallback first if relevant, then the specific preview URLs).';
 		sections.push(
 			devInstructions
 				.replace('{{PREVIEW_STORIES_STEP}}', previewStoriesStep)
+				.replace('{{FINAL_LINKS_STEP}}', finalLinksStep)
 				.replace(
 					'{{DISPLAY_REVIEW_STEP}}',
 					reviewEnabled

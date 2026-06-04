@@ -1,4 +1,4 @@
-import { getStoryImportPathFromEntry } from 'storybook/internal/common';
+import { STORY_FILE_TEST_REGEXP, getStoryImportPathFromEntry } from 'storybook/internal/common';
 import type { DocgenProviderPreset } from 'storybook/internal/types';
 
 import { getSharedComponentMetaManager } from '../componentManifest/componentMetaManagerSingleton.ts';
@@ -34,7 +34,7 @@ export const experimental_docgenProvider: DocgenProviderPreset = async (nextDocg
 
   return async (input) => {
     const storyImportPath = getStoryImportPathFromEntry(input.entry);
-    if (!storyImportPath || !/\.stories\.[cm]?[jt]sx?$/.test(storyImportPath)) {
+    if (!storyImportPath || !STORY_FILE_TEST_REGEXP.test(storyImportPath)) {
       return nextDocgen(input);
     }
 

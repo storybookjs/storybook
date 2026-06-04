@@ -5,7 +5,7 @@ import type { IndexEntry } from '../../../../types/modules/indexer.ts';
  * Caller-facing input to a docgen provider middleware.
  *
  * `entry` is the authoritative story-index entry for the requested component, selected with the
- * same rules as the React component manifest generator (`selectComponentEntryForComponentId` in
+ * same rules as the React component manifest generator (`selectComponentEntriesByComponentId` in
  * `storybook/internal/common`): eligible story entries and attached docs, with story entries
  * preferred over attached docs for the same componentId.
  */

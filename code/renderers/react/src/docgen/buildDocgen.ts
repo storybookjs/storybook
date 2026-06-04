@@ -33,6 +33,8 @@ interface ReactDocgenProp {
   type: ComponentDoc['props'][string]['type'];
   description: string;
   defaultValue: ComponentDoc['props'][string]['defaultValue'];
+  parent: ComponentDoc['props'][string]['parent'];
+  declarations: ComponentDoc['props'][string]['declarations'];
 }
 
 function mapProps(doc: ComponentDoc | undefined): ReactDocgenProp[] {
@@ -45,6 +47,8 @@ function mapProps(doc: ComponentDoc | undefined): ReactDocgenProp[] {
     type: prop.type,
     description: prop.description,
     defaultValue: prop.defaultValue,
+    parent: prop.parent,
+    declarations: prop.declarations,
   }));
 }
 

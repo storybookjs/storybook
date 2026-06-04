@@ -8,7 +8,7 @@ import type {
 
 import path from 'pathe';
 
-import type { ComponentDoc } from './componentMeta/componentMetaExtractor.ts';
+import type { ComponentDoc, PropItem } from './componentMeta/componentMetaExtractor.ts';
 import { extractComponentDescription } from './extractComponentDescription.ts';
 import { type ComponentRef, getImports } from './getComponentImports.ts';
 import { type DocObj } from './reactDocgen.ts';
@@ -98,6 +98,33 @@ function getFallbackImport(packageName: string | undefined, componentName: strin
   return packageName && exportName ? `import { ${exportName} } from "${packageName}";` : '';
 }
 
+/**
+ * Rewrites the absolute `fileName`s the RCM extractor records on each prop's `parent` /
+ * `declarations` into paths relative to the current working directory, so the emitted docgen (both
+ * the component manifest and the docgen service) stays portable and machine-independent. Returns a
+ * new {@link ComponentDoc}; the cached extractor result is left untouched.
+ */
+function relativizeComponentMetaPaths(doc: ComponentDoc): ComponentDoc {
+  const relativize = (fileName: string) => path.relative(process.cwd(), fileName);
+  const relativizeProp = (prop: PropItem): PropItem => ({
+    ...prop,
+    parent: prop.parent
+      ? { ...prop.parent, fileName: relativize(prop.parent.fileName) }
+      : prop.parent,
+    declarations: prop.declarations?.map((declaration) => ({
+      ...declaration,
+      fileName: relativize(declaration.fileName),
+    })),
+  });
+
+  return {
+    ...doc,
+    props: Object.fromEntries(
+      Object.entries(doc.props).map(([name, prop]) => [name, relativizeProp(prop)])
+    ),
+  };
+}
+
 function getComponentDocgenData(component: ComponentRef | undefined, docgenEngine: DocgenEngine) {
   let reactDocgen;
   let reactDocgenTypescript;
@@ -116,7 +143,9 @@ function getComponentDocgenData(component: ComponentRef | undefined, docgenEngin
     docgenDescription = reactDocgenTypescript?.description;
     docgenError = component?.reactDocgenTypescriptError;
   } else {
-    reactComponentMeta = component?.reactComponentMeta;
+    reactComponentMeta = component?.reactComponentMeta
+      ? relativizeComponentMetaPaths(component.reactComponentMeta)
+      : undefined;
     docgenDescription = reactComponentMeta?.description;
     docgenJsDocTags = component?.componentJsDocTags;
   }

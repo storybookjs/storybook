@@ -8,7 +8,7 @@ import {
   SERVICE_SYNC_START,
 } from './service-channel.ts';
 import { clearRegistry, registerService } from './server.ts';
-import { createTestChannel, installTestChannel } from '../../channels/mock-channel.ts';
+import { createTestChannel, installTestChannel } from '../../channels/test-channel.ts';
 
 const { id: recordServiceId } = mutableRecordLookupServiceDef;
 

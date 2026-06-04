@@ -14,7 +14,7 @@ import {
   SERVICE_SYNC_START,
 } from './service-channel.ts';
 import { clearRegistry, registerService, unregisterService } from './service-registry.ts';
-import { createTestChannel, installTestChannel } from '../../channels/mock-channel.ts';
+import { createTestChannel, installTestChannel } from '../../channels/test-channel.ts';
 
 const createMockChannel = createTestChannel;
 const installChannel = installTestChannel;

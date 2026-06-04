@@ -9,8 +9,8 @@ import type { Middleware, Options, ServerApp } from 'storybook/internal/types';
 import type { FileChangeEvent } from 'storybook/internal/core-server';
 
 import { BASELINE_PROXY_PATH, EVENTS } from './constants.ts';
-import type { ReviewState } from './review-state.ts';
 import { currentGitBranch } from './node/git-branch.ts';
+import type { ReviewState } from './review-state.ts';
 
 /**
  * Window after a review's `createdAt` during which source changes are ignored.

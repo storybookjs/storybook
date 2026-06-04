@@ -377,7 +377,7 @@ const StoryPreviewCell: FC<{
       return undefined;
     }
     const task: PreviewTask = {
-      start: () => setSrc(storyPreviewUrl(storyId)),
+      start: () => setSrc(storyPreviewUrl(storyId, { freeze: true })),
       started: false,
       finished: false,
     };

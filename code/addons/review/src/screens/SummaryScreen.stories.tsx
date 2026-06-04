@@ -395,6 +395,59 @@ const manyCollections: ReviewState = {
   ],
 };
 
+const fortyStoryCollection: ReviewState = {
+  title: 'Large collection overflow',
+  branchName: 'perf/large-collection',
+  description: 'A single collection with 40 stories to exercise the two-row cap and "Review all" overflow affordance.',
+  collections: [
+    {
+      title: 'All changed stories',
+      storyIds: [
+        'button-component--base',
+        'button-component--variants',
+        'button-component--sizes',
+        'button-component--paddings',
+        'button-component--pseudo-states',
+        'button-component--icon-only',
+        'components-togglebutton--variants',
+        'components-togglebutton--sizes',
+        'components-tabs-tabsview--basic',
+        'components-tabs--stateful-static',
+        'components-tabs--stateless-with-tools',
+        'components-toolbar--basic',
+        'components-toolbar--scrollable',
+        'components-abstracttoolbar--basic',
+        'select-component--base',
+        'components-card--default',
+        'components-bar-bar--default',
+        'components-collapsible--default',
+        'overlay-modal--base',
+        'overlay-modal--interactive-mouse',
+        'overlay-popover--with-hide-button',
+        'overlay-popover--with-chrome',
+        'manager-main--default',
+        'manager-main--about-page',
+        'manager-main--guide-page',
+        'manager-settings-aboutscreen--default',
+        'manager-settings-guidepage--default',
+        'manager-settings-shortcutsscreen--defaults',
+        'manager-settings-checklist--default',
+        'manager-sidebar-sidebar--simple',
+        'manager-sidebar-sidebar--with-refs',
+        'manager-sidebar-sidebar--statuses-open',
+        'manager-sidebar-sidebar--searching',
+        'manager-sidebar-sidebar--with-cta-active',
+        'manager-sidebar-filesearchmodal--default',
+        'manager-sidebar-filesearchlist--default',
+        'manager-container-menu--with-shortcuts',
+        'manager-container-menu--with-shortcuts-active',
+        'manager-components-preview-viewport--default',
+        'bench--es-build-analyzer',
+      ],
+    },
+  ],
+};
+
 const meta = preview.meta({
   component: SummaryScreen,
   parameters: { layout: 'fullscreen' },
@@ -473,6 +526,17 @@ export const Stale = meta.story({
       await canvas.findByText('This review may be stale. Ask your agent to refresh it.')
     ).toBeInTheDocument();
     await expect(await canvas.findByText('Primary button visual refresh')).toBeInTheDocument();
+  },
+});
+
+// A single collection with 40 stories: the grid caps at 2 rows and shows a
+// "Review all 40" button in the last slot until the user expands it.
+export const LargeCollectionOverflow = meta.story({
+  args: { state: fortyStoryCollection },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(await canvas.findByText('Large collection overflow')).toBeInTheDocument();
+    await expect(await canvas.findByRole('button', { name: /Review all 40/i })).toBeInTheDocument();
   },
 });
 

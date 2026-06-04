@@ -118,7 +118,7 @@ export interface StoryInfo {
 const band = (cols: number) => {
   const cap = cols * 2;
   return {
-    gridTemplateColumns: `repeat(${cols}, minmax(0, 400px))`,
+    gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))`,
     [`&:not([data-show-all]):has(> [data-cell]:nth-child(${cap + 1})) > [data-cell]:nth-child(n + ${cap})`]:
       {
         display: 'none',
@@ -138,10 +138,9 @@ const Grid = styled.div({
   display: 'grid',
   gap: 12,
   padding: 12,
-  justifyContent: 'start',
   // Fallback for browsers without container-query support: a single column and
   // no two-row cap (every story is shown).
-  gridTemplateColumns: 'minmax(0, 400px)',
+  gridTemplateColumns: 'minmax(0, 1fr)',
   // Bands are mutually exclusive (ranged) so a narrower band's overflow rules
   // never bleed into a wider one.
   '@container review-grid (max-width: 629.98px)': band(1),

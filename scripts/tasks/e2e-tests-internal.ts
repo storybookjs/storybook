@@ -17,7 +17,6 @@ export const e2eTestsInternal: Task = {
     const storybookUrl = `http://localhost:${STORYBOOK_PORT}`;
     const env = {
       CI: 'true',
-      STORYBOOK_INTERNAL_E2E: 'true',
       STORYBOOK_URL: storybookUrl,
       ...(junitFilename && {
         PLAYWRIGHT_JUNIT_OUTPUT_NAME: junitFilename,
@@ -33,7 +32,7 @@ export const e2eTestsInternal: Task = {
     }
 
     await exec(
-      'yarn playwright test --project=internal-storybook',
+      'yarn playwright test -c playwright.internal.config.ts --project=internal-storybook',
       {
         env,
         cwd: codeDir,

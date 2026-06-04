@@ -5,11 +5,9 @@ import { expect, userEvent, within } from 'storybook/test';
 import preview from '../../../../.storybook/preview.tsx';
 import type { StoryInfo } from '../components/CollectionGrid.tsx';
 import { REVIEW_CHANGES_URL } from '../constants.ts';
-import { groupStoriesByComponent, prettifyComponentId } from '../review-grouping.ts';
 import {
   buildReviewChangesDetailHref,
   buildReviewChangesSummaryHref,
-  parseReviewChangesActiveTab,
   parseReviewChangesDetailLocation,
 } from '../review-navigation.ts';
 import type { ReviewState } from '../review-state.ts';
@@ -61,33 +59,13 @@ const ReviewFlowPrototype: FC<{
     return () => container.removeEventListener('click', onClick);
   }, []);
 
-  const activeTab = parseReviewChangesActiveTab(search);
   const detailLocation = parseReviewChangesDetailLocation(search);
 
   let detailScreen: ReactNode = null;
   if (detailLocation) {
-    let detailTitle: string | undefined;
-    let detailStoryIds: string[] | undefined;
-
-    if (detailLocation.kind === 'collection') {
-      const collection = state.collections[detailLocation.collectionIndex];
-      if (collection) {
-        detailTitle = collection.title;
-        detailStoryIds = collection.storyIds;
-      }
-    } else {
-      const grouped = groupStoriesByComponent(state.collections);
-      const targetStoryId = detailLocation.storyId;
-      const group = grouped.find(
-        (candidate) => targetStoryId !== undefined && candidate.storyIds.includes(targetStoryId)
-      );
-      if (group) {
-        detailStoryIds = group.storyIds;
-        detailTitle = storyInfo[group.storyIds[0]]?.title ?? prettifyComponentId(group.componentId);
-      }
-    }
-
-    if (detailTitle !== undefined && detailStoryIds && detailStoryIds.length > 0) {
+    const collection = state.collections[detailLocation.collectionIndex];
+    if (collection && collection.storyIds.length > 0) {
+      const detailStoryIds = collection.storyIds;
       const totalStories = detailStoryIds.length;
       const resolvedIndexFromStoryId =
         detailLocation.storyId !== undefined
@@ -96,47 +74,27 @@ const ReviewFlowPrototype: FC<{
       const currentStoryIndex = resolvedIndexFromStoryId >= 0 ? resolvedIndexFromStoryId : 0;
       const previousStoryIndex = (currentStoryIndex - 1 + totalStories) % totalStories;
       const nextStoryIndex = (currentStoryIndex + 1) % totalStories;
-      const previousStoryId = detailStoryIds[previousStoryIndex];
-      const nextStoryId = detailStoryIds[nextStoryIndex];
       const currentStoryId = detailStoryIds[currentStoryIndex];
       const currentStoryInfo = storyInfo[currentStoryId];
 
       detailScreen = (
         <DetailsScreen
-          title={detailTitle}
+          title={collection.title}
           storyId={currentStoryId}
           storyIndex={currentStoryIndex}
           totalStories={totalStories}
           componentTitle={currentStoryInfo?.title}
           storyName={currentStoryInfo?.name}
-          backHref={buildReviewChangesSummaryHref(activeTab)}
-          previousHref={buildReviewChangesDetailHref(
-            detailLocation.kind === 'collection'
-              ? {
-                  kind: 'collection',
-                  collectionIndex: detailLocation.collectionIndex,
-                  storyId: previousStoryId,
-                }
-              : {
-                  kind: 'component',
-                  storyId: previousStoryId,
-                },
-            activeTab
-          )}
-          nextHref={buildReviewChangesDetailHref(
-            detailLocation.kind === 'collection'
-              ? {
-                  kind: 'collection',
-                  collectionIndex: detailLocation.collectionIndex,
-                  storyId: nextStoryId,
-                }
-              : {
-                  kind: 'component',
-                  storyId: nextStoryId,
-                },
-            activeTab
-          )}
-          branchName={state.branchName}
+          backHref={buildReviewChangesSummaryHref()}
+          previousHref={buildReviewChangesDetailHref({
+            collectionIndex: detailLocation.collectionIndex,
+            storyId: detailStoryIds[previousStoryIndex],
+          })}
+          nextHref={buildReviewChangesDetailHref({
+            collectionIndex: detailLocation.collectionIndex,
+            storyId: detailStoryIds[nextStoryIndex],
+          })}
+          hasBaseline={state.hasBaseline ?? false}
         />
       );
     }
@@ -144,7 +102,7 @@ const ReviewFlowPrototype: FC<{
 
   return (
     <div ref={containerRef} style={{ display: 'contents' }}>
-      {detailScreen ?? <SummaryScreen state={state} initialTab={activeTab} storyInfo={storyInfo} />}
+      {detailScreen ?? <SummaryScreen state={state} storyInfo={storyInfo} />}
     </div>
   );
 };
@@ -230,34 +188,11 @@ export const Default = meta.story({
 // deep link. Verifies the URL→view derivation in isolation.
 export const StartingOnDetail = meta.story({
   args: {
-    initialSearch: '?path=/review/collections/0/button-component--sizes',
+    initialSearch: '?path=/review/0/button-component--sizes',
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await expect(await canvas.findByRole('button', { name: '2/5' })).toBeInTheDocument();
-  },
-});
-
-// Switch tabs first, then drill from the Components grouping into a detail
-// page. The back link should carry the components subpath so we land back on the
-// Components tab.
-export const ComponentDetailFlow = meta.story({
-  play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement);
-
-    await userEvent.click(await canvas.findByRole('tab', { name: 'Components' }));
-
-    const [firstThumb] = await canvas.findAllByRole('link', { name: /Review story/ });
-    await userEvent.click(firstThumb);
-
-    await expect(await canvas.findByRole('link', { name: 'Back to review' })).toBeInTheDocument();
-
-    await userEvent.click(await canvas.findByRole('link', { name: 'Back to review' }));
-
-    // Back on the summary — the Components tab should still be active.
-    await expect(
-      await canvas.findByRole('tab', { name: 'Components', selected: true })
-    ).toBeInTheDocument();
   },
 });
 

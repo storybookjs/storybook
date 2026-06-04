@@ -5,14 +5,11 @@ import { Location, type RenderData, useNavigate } from 'storybook/internal/route
 
 import type { StoryInfo } from './components/CollectionGrid.tsx';
 import { EVENTS, RESTORE_NAV_SESSION_KEY, REVIEW_CHANGES_URL } from './constants.ts';
-import { groupStoriesByComponent, prettifyComponentId } from './review-grouping.ts';
 import {
   buildReviewChangesDetailHref,
   buildReviewChangesSummaryHref,
   normalizeReviewStoryId,
-  parseReviewChangesActiveTab,
   parseReviewChangesDetailLocation,
-  type ReviewTab,
 } from './review-navigation.ts';
 import type { ReviewState } from './review-state.ts';
 import { DetailsScreen } from './screens/DetailsScreen.tsx';
@@ -52,20 +49,7 @@ const ReviewPageContent: FC<{ search: string }> = ({ search }) => {
     emit(EVENTS.REQUEST_REVIEW);
   }, [emit]);
 
-  const activeTab = parseReviewChangesActiveTab(search);
   const detailLocation = parseReviewChangesDetailLocation(search);
-
-  // Keep the summary route canonical: `/review/` immediately becomes
-  // `/review/<tab>` so tab state is represented in the path.
-  useEffect(() => {
-    const params = new URLSearchParams(search);
-    const path = params.get('path');
-    const isLegacySummaryPath =
-      path === REVIEW_CHANGES_URL || path === REVIEW_CHANGES_URL.slice(0, -1);
-    if (isLegacySummaryPath && !detailLocation) {
-      navigate(buildReviewChangesSummaryHref(activeTab), { plain: true });
-    }
-  }, [activeTab, detailLocation, navigate, search]);
 
   // The review page is a focused, full-width surface — hide the manager
   // sidebar while it is open and restore it on the way out. The user's prior
@@ -89,8 +73,8 @@ const ReviewPageContent: FC<{ search: string }> = ({ search }) => {
   }, [api]);
 
   // Resolve each story's component title + name from the Storybook index.
-  // Drives the Components tab headers and the floating thumbnail labels;
-  // falls back gracefully (per-consumer) when the index has not loaded.
+  // Drives the cell labels and the detail subtitle; falls back gracefully
+  // (per-consumer) when the index has not loaded.
   const storyInfo = useMemo(() => {
     const info: Record<string, StoryInfo> = {};
     if (!state) {
@@ -151,28 +135,9 @@ const ReviewPageContent: FC<{ search: string }> = ({ search }) => {
 
   let detailScreen: ReactNode = null;
   if (state && detailLocation) {
-    let detailTitle: string | undefined;
-    let detailStoryIds: string[] | undefined;
-
-    if (detailLocation.kind === 'collection') {
-      const collection = state.collections[detailLocation.collectionIndex];
-      if (collection) {
-        detailTitle = collection.title;
-        detailStoryIds = collection.storyIds;
-      }
-    } else {
-      const grouped = groupStoriesByComponent(state.collections);
-      const targetStoryId = detailLocation.storyId;
-      const group = grouped.find(
-        (candidate) => targetStoryId !== undefined && candidate.storyIds.includes(targetStoryId)
-      );
-      if (group) {
-        detailStoryIds = group.storyIds;
-        detailTitle = storyInfo[group.storyIds[0]]?.title ?? prettifyComponentId(group.componentId);
-      }
-    }
-
-    if (detailTitle !== undefined && detailStoryIds && detailStoryIds.length > 0) {
+    const collection = state.collections[detailLocation.collectionIndex];
+    if (collection && collection.storyIds.length > 0) {
+      const detailStoryIds = collection.storyIds;
       const totalStories = detailStoryIds.length;
       const resolvedIndexFromStoryId =
         detailLocation.storyId !== undefined
@@ -182,45 +147,25 @@ const ReviewPageContent: FC<{ search: string }> = ({ search }) => {
       const previousStoryIndex = (currentStoryIndex - 1 + totalStories) % totalStories;
       const nextStoryIndex = (currentStoryIndex + 1) % totalStories;
 
-      const previousStoryId = detailStoryIds[previousStoryIndex];
-      const nextStoryId = detailStoryIds[nextStoryIndex];
       const currentStoryId = detailStoryIds[currentStoryIndex];
       const currentStoryInfo = storyInfo[currentStoryId];
       detailScreen = React.createElement(DetailsScreen, {
-        title: detailTitle,
+        title: collection.title,
         storyId: currentStoryId,
         storyIndex: currentStoryIndex,
         totalStories,
         componentTitle: currentStoryInfo?.title,
         storyName: currentStoryInfo?.name,
-        backHref: buildReviewChangesSummaryHref(activeTab),
-        previousHref: buildReviewChangesDetailHref(
-          detailLocation.kind === 'collection'
-            ? {
-                kind: 'collection',
-                collectionIndex: detailLocation.collectionIndex,
-                storyId: previousStoryId,
-              }
-            : {
-                kind: 'component',
-                storyId: previousStoryId,
-              },
-          activeTab
-        ),
-        nextHref: buildReviewChangesDetailHref(
-          detailLocation.kind === 'collection'
-            ? {
-                kind: 'collection',
-                collectionIndex: detailLocation.collectionIndex,
-                storyId: nextStoryId,
-              }
-            : {
-                kind: 'component',
-                storyId: nextStoryId,
-              },
-          activeTab
-        ),
-        branchName: state.branchName,
+        backHref: buildReviewChangesSummaryHref(),
+        previousHref: buildReviewChangesDetailHref({
+          collectionIndex: detailLocation.collectionIndex,
+          storyId: detailStoryIds[previousStoryIndex],
+        }),
+        nextHref: buildReviewChangesDetailHref({
+          collectionIndex: detailLocation.collectionIndex,
+          storyId: detailStoryIds[nextStoryIndex],
+        }),
+        hasBaseline: state.hasBaseline ?? false,
       });
     }
   }
@@ -242,10 +187,6 @@ const ReviewPageContent: FC<{ search: string }> = ({ search }) => {
         },
         React.createElement(SummaryScreen, {
           state,
-          initialTab: activeTab,
-          onTabChange: (nextTab: ReviewTab) => {
-            navigate(buildReviewChangesSummaryHref(nextTab), { plain: true });
-          },
           storyInfo,
         })
       ),

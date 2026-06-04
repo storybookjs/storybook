@@ -1,12 +1,18 @@
-import { expect, fn, userEvent, within } from 'storybook/test';
+import { expect, fn, userEvent, waitFor, within } from 'storybook/test';
 
-import { ManagerContext, type API, type State } from 'storybook/manager-api';
+import {
+  ManagerContext,
+  type API,
+  type State,
+  internal_fullStatusStore,
+} from 'storybook/manager-api';
 import { MemoryRouter } from 'storybook/internal/router';
 
 import preview from '../../../.storybook/preview.tsx';
 import { EVENTS, RESTORE_NAV_SESSION_KEY } from './constants.ts';
 import type { ReviewState } from './review-state.ts';
 import { ReviewPage } from './ReviewPage.ts';
+import { sessionStore } from './session-store.ts';
 
 type EventListener = (payload?: unknown) => void;
 
@@ -64,6 +70,10 @@ const reviewState: ReviewState = {
   title: 'Manager settings polish',
   description: 'Updated settings views and spacing.',
   branchName: 'feat/review-page',
+  // Drives the baseline-index fetch (keyed on createdAt) for "New" detection.
+  // Anchored to "now" so the "Created … ago" label stays small and stable
+  // instead of computing minutes against a fixed past timestamp.
+  createdAt: Date.now(),
   collections: [
     {
       title: 'Settings',
@@ -76,6 +86,39 @@ const reviewState: ReviewState = {
     },
   ],
 };
+
+// Baseline index served via the dev-server proxy. Intentionally omits
+// `manager-settings-checklist--default` so it reads as a newly added story,
+// while guidepage/aboutscreen already exist in the baseline.
+const baselineIndex = {
+  v: 5,
+  entries: {
+    'manager-settings-guidepage--default': {
+      type: 'story',
+      id: 'manager-settings-guidepage--default',
+      title: 'Manager/Settings/Guide Page',
+      name: 'Default',
+    },
+    'manager-settings-aboutscreen--default': {
+      type: 'story',
+      id: 'manager-settings-aboutscreen--default',
+      title: 'Manager/Settings/About Screen',
+      name: 'Default',
+    },
+  },
+};
+
+const originalFetch = globalThis.fetch;
+const fetchMock = fn(async (input: RequestInfo | URL): Promise<Response> => {
+  const url = typeof input === 'string' ? input : input.toString();
+  if (url.includes('/__review-baseline/index.json')) {
+    return new Response(JSON.stringify(baselineIndex), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
+  return new Response(null, { status: 404 });
+});
 
 const applyReviewState = () => {
   expect(onMock).toHaveBeenCalledWith(EVENTS.DISPLAY_REVIEW, expect.any(Function));
@@ -105,7 +148,15 @@ const meta = preview.meta({
     offMock.mockReset();
     emitMock.mockReset();
     toggleNavMock.mockReset();
-    sessionStorage.removeItem(RESTORE_NAV_SESSION_KEY);
+    fetchMock.mockClear();
+    sessionStore.remove(RESTORE_NAV_SESSION_KEY);
+    // Reset change-detection statuses so a story marking one "new" doesn't leak
+    // into stories that assert the absence of the badge.
+    internal_fullStatusStore.unset();
+    globalThis.fetch = fetchMock as unknown as typeof globalThis.fetch;
+    return () => {
+      globalThis.fetch = originalFetch;
+    };
   },
 });
 
@@ -145,6 +196,84 @@ export const Details = meta.story({
     applyReviewState();
 
     await expect(await canvas.findByRole('button', { name: '2/3' })).toBeInTheDocument();
-    await expect(await canvas.findByText('Latest on feat/review-page')).toBeInTheDocument();
+    await expect(
+      await canvas.findByTitle('Latest manager-settings-guidepage--default')
+    ).toBeInTheDocument();
+    // guidepage exists in the baseline index, so it must not be flagged "New".
+    await expect(canvas.queryByText('New')).not.toBeInTheDocument();
+  },
+});
+
+export const DetailsFocusesTitle = meta.story({
+  parameters: {
+    routerInitialEntries: ['/?path=/review/collections/0/manager-settings-guidepage--default'],
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(emitMock).toHaveBeenCalledWith(EVENTS.REQUEST_REVIEW);
+
+    applyReviewState();
+
+    // Opening a detail moves focus to its heading so users are oriented by what
+    // they opened. The summary's h1 is inert/aria-hidden, so the detail h2 is
+    // the only heading the accessibility tree exposes.
+    const heading = await canvas.findByRole('heading', { level: 2 });
+    await waitFor(() => expect(heading).toHaveFocus());
+
+    // The summary stays mounted behind the detail screen…
+    const summaryHeading = canvas.getByText('Manager settings polish');
+    expect(summaryHeading).toBeInTheDocument();
+    // …but is inert and hidden from assistive tech so focus can't reach it.
+    const inertWrapper = summaryHeading.closest('[inert]');
+    expect(inertWrapper).not.toBeNull();
+    expect(inertWrapper).toHaveAttribute('aria-hidden', 'true');
+  },
+});
+
+export const DetailsNewStory = meta.story({
+  parameters: {
+    routerInitialEntries: ['/?path=/review/collections/0/manager-settings-checklist--default'],
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(emitMock).toHaveBeenCalledWith(EVENTS.REQUEST_REVIEW);
+
+    applyReviewState();
+
+    await expect(
+      await canvas.findByTitle('Latest manager-settings-checklist--default')
+    ).toBeInTheDocument();
+    // checklist is absent from the baseline index, so it is newly added.
+    await expect(await canvas.findByText('New')).toBeInTheDocument();
+  },
+});
+
+export const DetailsChangeDetectedNew = meta.story({
+  parameters: {
+    routerInitialEntries: ['/?path=/review/collections/0/manager-settings-guidepage--default'],
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    // guidepage exists in the baseline index, so the baseline check alone would
+    // not flag it. Mark it new via the change-detection status store instead.
+    internal_fullStatusStore.set([
+      {
+        storyId: 'manager-settings-guidepage--default',
+        typeId: 'storybook/change-detection',
+        value: 'status-value:new',
+        title: 'Change Detection',
+        description: '',
+      },
+    ]);
+
+    await expect(emitMock).toHaveBeenCalledWith(EVENTS.REQUEST_REVIEW);
+
+    applyReviewState();
+
+    await expect(
+      await canvas.findByTitle('Latest manager-settings-guidepage--default')
+    ).toBeInTheDocument();
+    // Flagged "New" by change-detection despite existing in the baseline.
+    await expect(await canvas.findByText('New')).toBeInTheDocument();
   },
 });

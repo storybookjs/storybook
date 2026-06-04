@@ -10,7 +10,6 @@ const GRID_MIN_CELL_WIDTH = 300;
 const GRID_GAP = 12;
 const GRID_HORIZONTAL_PADDING = 24;
 const MAX_ROWS = 2;
-const INFO_TEXT_COLOR = '#2E3338';
 
 /** Component title + story name for a story, resolved from the Storybook index. */
 export interface StoryInfo {
@@ -20,7 +19,9 @@ export interface StoryInfo {
 
 const Grid = styled.div({
   display: 'grid',
-  gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 300px), 1fr))',
+  // Keep the CSS min track width in sync with the JS column-count math so
+  // overflow / "Review all" behavior can't drift from the rendered layout.
+  gridTemplateColumns: `repeat(auto-fit, minmax(min(100%, ${GRID_MIN_CELL_WIDTH}px), 1fr))`,
   gap: 12,
   // 6px top padding leaves clearance for the cell's focus outline (2px
   // offset + 2px width = 4px outside the border box) — the parent
@@ -39,16 +40,20 @@ const GridCell = styled.div(({ theme }) => ({
   overflow: 'hidden',
   background: theme.background.app,
   border: `1px solid ${theme.appBorderColor}`,
+  transition: 'border-color 120ms ease',
   // Reveal the floating story-info banner on hover or while any focusable
   // descendant (the GridLink itself, or the "Review all" button) is focused.
   '&:hover [data-story-info], &:focus-within [data-story-info]': {
     opacity: 1,
     transform: 'translateY(0)',
   },
+  '&:hover': {
+    borderColor: theme.color.secondary,
+  },
   // Keyboard focus ring lives on the cell so it isn't clipped by the cell's
   // own `overflow: hidden`. Tabbing into the GridLink triggers `:focus-within`.
   '&:focus-within': {
-    outline: 'rgb(0, 109, 235) solid 2px',
+    outline: `${theme.barSelectedColor} solid 2px`,
     outlineOffset: 2,
   },
 }));
@@ -93,10 +98,12 @@ const InfoBar = styled.div(({ theme }) => ({
   alignItems: 'center',
   gap: 4,
   padding: '10px 16px',
-  background: 'rgba(255, 255, 255, 0.9)',
+  // Frosted overlay tuned per theme base so it stays a light scrim in light
+  // mode and a dark scrim in dark mode instead of always translucent white.
+  background: theme.base === 'dark' ? 'rgba(22, 23, 24, 0.85)' : 'rgba(255, 255, 255, 0.9)',
+  color: theme.color.defaultText,
   backdropFilter: 'blur(24px)',
   WebkitBackdropFilter: 'blur(24px)',
-  borderTop: `1px solid ${theme.appBorderColor}`,
   fontFamily: theme.typography.fonts.base,
   fontSize: 14,
   lineHeight: '21px',
@@ -115,7 +122,6 @@ const InfoBar = styled.div(({ theme }) => ({
 
 const InfoComponent = styled.span({
   fontWeight: 700,
-  color: INFO_TEXT_COLOR,
   whiteSpace: 'nowrap',
   flexShrink: 0,
   maxWidth: '60%',
@@ -130,7 +136,6 @@ const InfoSeparator = styled.span(({ theme }) => ({
 
 const InfoStory = styled.span({
   fontWeight: 400,
-  color: INFO_TEXT_COLOR,
   whiteSpace: 'nowrap',
   overflow: 'hidden',
   textOverflow: 'ellipsis',

@@ -17,8 +17,11 @@ import { global } from '@storybook/global';
 import { join, relative, resolve } from 'pathe';
 import picocolors from 'picocolors';
 
+import {
+  getRegisteredServices,
+  writeOpenServiceStaticFiles,
+} from '../shared/open-service/server.ts';
 import { applyServicesPresetOnce } from './utils/apply-services-preset-once.ts';
-import { writeOpenServiceStaticFiles } from '../shared/open-service/server.ts';
 import { resolvePackageDir } from '../shared/utils/module.ts';
 import type { StoryIndexGenerator } from './utils/StoryIndexGenerator.ts';
 import { buildOrThrow } from './utils/build-or-throw.ts';
@@ -147,7 +150,11 @@ export async function buildStaticStandalone(options: BuildStaticStandaloneOption
 
   const coreServerPublicDir = join(resolvePackageDir('storybook'), 'assets/browser');
   effects.push(cp(coreServerPublicDir, options.outputDir, { recursive: true, force: true }));
-  effects.push(writeOpenServiceStaticFiles(options.outputDir));
+
+  if (getRegisteredServices().length > 0) {
+    logger.info('Building open services..');
+    effects.push(writeOpenServiceStaticFiles(options.outputDir));
+  }
 
   let storyIndexGeneratorPromise: Promise<StoryIndexGenerator | undefined> =
     Promise.resolve(undefined);

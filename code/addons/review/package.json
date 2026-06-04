@@ -45,6 +45,7 @@
     "http-proxy-middleware": "^4.0.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
+    "sirv": "^2.0.4",
     "typescript": "^5.9.3"
   },
   "peerDependencies": {

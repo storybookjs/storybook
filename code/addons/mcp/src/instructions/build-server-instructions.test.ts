@@ -133,7 +133,7 @@ describe('buildServerInstructions', () => {
 			testEnabled: false,
 			docsEnabled: false,
 			changeDetectionEnabled: false,
-			dependencyGraphAvailable: true,
+			dependencyGraphSupported: true,
 		});
 
 		// The status-store-driven get-changed-stories isn't registered, but the reverse

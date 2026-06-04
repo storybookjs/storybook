@@ -13,7 +13,7 @@ export type BuildServerInstructionsOptions = {
 	 * When true and `changeDetectionEnabled` is false, the workflow falls back to manual lookup
 	 * via `get-stories-by-component` instead of the status-store-driven `get-changed-stories`.
 	 */
-	dependencyGraphAvailable?: boolean;
+	dependencyGraphSupported?: boolean;
 	reviewEnabled?: boolean;
 };
 
@@ -22,11 +22,11 @@ export function buildServerInstructions(options: BuildServerInstructionsOptions)
 
 	if (options.devEnabled) {
 		const changeDetection = options.changeDetectionEnabled ?? false;
-		const graphAvailable = options.dependencyGraphAvailable ?? false;
+		const graphSupported = options.dependencyGraphSupported ?? false;
 		const reviewEnabled = options.reviewEnabled ?? false;
 		const previewStoriesStep = changeDetection
 			? 'After changing any component or story, call **get-changed-stories** to discover new/modified/related stories, then call **preview-stories** to retrieve preview URLs.'
-			: graphAvailable
+			: graphSupported
 				? 'After changing any component or story, call **get-stories-by-component** with the absolute paths of the files you touched to find the stories that render them, then call **preview-stories** to retrieve preview URLs.'
 				: 'After changing any component or story, call **preview-stories** to retrieve preview URLs.';
 		sections.push(

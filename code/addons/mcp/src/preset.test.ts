@@ -5,6 +5,7 @@ import { experimental_devServer } from './preset.ts';
 import { STORYBOOK_MCP_PROXY_HEADER } from './auth/index.ts';
 import * as mcpHandlerModule from './mcp-handler.ts';
 import * as runStoryTests from './tools/run-story-tests.ts';
+import * as changeDetection from './utils/change-detection.ts';
 
 describe('experimental_devServer', () => {
 	let mockApp: any;
@@ -352,6 +353,99 @@ describe('experimental_devServer', () => {
 			'Content-Type': 'text/html',
 		});
 		expect(mockRes.end).toHaveBeenCalledWith(expect.stringContaining('<html'));
+	});
+
+	it('should list the change-detection and review tools in the landing page', async () => {
+		let getHandler: any;
+		mockApp.get = vi.fn((_path, handler) => {
+			getHandler = handler;
+		});
+
+		await (experimental_devServer as any)(mockApp, mockOptions);
+
+		const mockRes = { writeHead: vi.fn(), end: vi.fn() } as any;
+		await getHandler({ headers: { accept: 'text/html' } } as any, mockRes);
+
+		const html = mockRes.end.mock.calls[0][0] as string;
+		for (const tool of [
+			'get-stories-by-component',
+			'get-changed-stories',
+			'display-review',
+			'get-documentation-for-story',
+		]) {
+			expect(html).toContain(`<code>${tool}</code>`);
+		}
+		// Every placeholder must be substituted — no `{{...}}` may leak to the page.
+		expect(html).not.toMatch(/\{\{[A-Z_]+\}\}/);
+	});
+
+	it('marks dev tools disabled on the landing page when the dev toolset is turned off', async () => {
+		// Dependency graph IS supported, so `get-stories-by-component` would otherwise badge
+		// as enabled — proving the badge now also honors the `dev` toolset being disabled.
+		vi.spyOn(changeDetection, 'isDependencyGraphSupported').mockResolvedValue(true);
+
+		let getHandler: any;
+		mockApp.get = vi.fn((_path, handler) => {
+			getHandler = handler;
+		});
+
+		const devOffOptions = {
+			...mockOptions,
+			toolsets: { dev: false },
+		} as unknown as Options;
+
+		await (experimental_devServer as any)(mockApp, devOffOptions);
+
+		const mockRes = { writeHead: vi.fn(), end: vi.fn() } as any;
+		await getHandler({ headers: { accept: 'text/html' } } as any, mockRes);
+
+		const html = mockRes.end.mock.calls[0][0] as string;
+
+		const badgeFor = (tool: string) =>
+			html.match(
+				new RegExp(`<code>${tool}</code>\\s*<span class="toolset-status (enabled|disabled)"`),
+			)?.[1];
+
+		for (const tool of ['get-stories-by-component', 'get-changed-stories', 'display-review']) {
+			expect(badgeFor(tool)).toBe('disabled');
+		}
+		expect(html).toContain('The <code>dev</code> toolset is disabled via addon options.');
+		expect(html).not.toMatch(/\{\{[A-Z_]+\}\}/);
+	});
+
+	it('prompts to enable the manifest feature when manifests exist but the flag is off', async () => {
+		// Manifests are present on disk, but `componentsManifest` is not enabled — the docs
+		// toolset is unavailable for a different reason than "no manifests", so the page shows
+		// the "enable the feature" notice rather than the React-only one.
+		const manifestsNoFlagOptions = {
+			...mockOptions,
+			presets: {
+				apply: vi.fn(async (key: string) => {
+					if (key === 'features') {
+						return { componentsManifest: false };
+					}
+					if (key === 'experimental_manifests') {
+						return { components: { v: 1, components: {} } };
+					}
+					return undefined;
+				}),
+			},
+		} as unknown as Options;
+
+		let getHandler: any;
+		mockApp.get = vi.fn((_path, handler) => {
+			getHandler = handler;
+		});
+
+		await (experimental_devServer as any)(mockApp, manifestsNoFlagOptions);
+
+		const mockRes = { writeHead: vi.fn(), end: vi.fn() } as any;
+		await getHandler({ headers: { accept: 'text/html' } } as any, mockRes);
+
+		const html = mockRes.end.mock.calls[0][0] as string;
+		expect(html).toContain('This toolset requires enabling the component manifest feature.');
+		expect(html).not.toContain('only supported in React-based setups');
+		expect(html).not.toMatch(/\{\{[A-Z_]+\}\}/);
 	});
 
 	it('should show Storybook version requirement for addon-vitest and a manual manifest link', async () => {

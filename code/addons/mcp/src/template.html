@@ -205,7 +205,24 @@
 					<ul class="toolset-tools">
 						<li><code>preview-stories</code></li>
 						<li><code>get-storybook-story-instructions</code></li>
+						<li>
+							<code>get-changed-stories</code>
+							<span class="toolset-status {{CHANGE_DETECTION_STATUS}}"
+								>{{CHANGE_DETECTION_STATUS}}</span
+							>
+						</li>
+						<li>
+							<code>get-stories-by-component</code>
+							<span class="toolset-status {{STORIES_BY_COMPONENT_STATUS}}"
+								>{{STORIES_BY_COMPONENT_STATUS}}</span
+							>
+						</li>
+						<li>
+							<code>display-review</code>
+							<span class="toolset-status {{REVIEW_STATUS}}">{{REVIEW_STATUS}}</span>
+						</li>
 					</ul>
+					{{DEV_NOTICE}}
 				</div>
 
 				<div class="toolset">
@@ -216,6 +233,7 @@
 					<ul class="toolset-tools">
 						<li><code>list-all-documentation</code></li>
 						<li><code>get-documentation</code></li>
+						<li><code>get-documentation-for-story</code></li>
 					</ul>
 					{{DOCS_NOTICE}}
 				</div>

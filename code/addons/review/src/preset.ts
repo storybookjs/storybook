@@ -4,7 +4,7 @@ import type { Middleware, Options, ServerApp } from 'storybook/internal/types';
 
 import type { FileChangeEvent } from 'storybook/internal/core-server';
 
-import { EVENTS } from './constants.ts';
+import { BASELINE_PROXY_PATH, EVENTS } from './constants.ts';
 import type { ReviewState } from './review-state.ts';
 import { currentGitBranch } from './node/git-branch.ts';
 
@@ -132,7 +132,6 @@ export const experimental_serverChannel = async (
   return channel;
 };
 
-const BASELINE_PROXY_PATH = '/__review-baseline';
 const BASELINE_TARGET_ORIGIN = 'https://next--635781f3500dd2c49e189caf.chromatic.com';
 
 export const experimental_devServer = (app: ServerApp) => {

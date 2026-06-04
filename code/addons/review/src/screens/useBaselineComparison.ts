@@ -2,10 +2,8 @@ import { type RefObject, useCallback, useEffect, useRef, useState } from 'react'
 
 import { STORY_RENDERED } from 'storybook/internal/core-events';
 
-const BASELINE_PROXY_PATH = '/__review-baseline';
-
-const storyPreviewUrl = (id: string) =>
-  `iframe.html?id=${encodeURIComponent(id)}&viewMode=story&freeze=finished`;
+import { BASELINE_PROXY_PATH } from '../constants.ts';
+import { storyPreviewUrl } from '../review-navigation.ts';
 
 const toBaselinePreviewUrl = (latestUrlString: string) => {
   const latestUrl = new URL(latestUrlString, window.location.href);

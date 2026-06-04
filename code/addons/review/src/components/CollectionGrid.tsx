@@ -6,7 +6,7 @@ import { styled } from 'storybook/theming';
 import { StorybookIcon } from '@storybook/icons';
 
 import { prettifyComponentId } from '../review-grouping.ts';
-import { buildStorybookStoryHref } from '../review-navigation.ts';
+import { buildStorybookStoryHref, storyPreviewUrl } from '../review-navigation.ts';
 
 const PREVIEW_SCALE = 0.5;
 
@@ -259,9 +259,6 @@ const Mark = styled.mark(({ theme }) => ({
   color: theme.color.secondary,
   fontWeight: 'inherit',
 }));
-
-const storyPreviewUrl = (id: string) =>
-  `iframe.html?id=${encodeURIComponent(id)}&viewMode=story&freeze=finished`;
 
 const isWithinPreloadRange = (element: HTMLElement, margin: number): boolean => {
   const rect = element.getBoundingClientRect();

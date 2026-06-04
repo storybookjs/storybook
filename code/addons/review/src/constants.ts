@@ -2,6 +2,14 @@ export const ADDON_ID = 'storybook/addon-review';
 export const PAGE_ID = `${ADDON_ID}/page`;
 export const REVIEW_CHANGES_URL = '/review/';
 
+// Dev-server route (declared in preset.ts) that proxies the deployed baseline
+// Storybook. Shared contract between the server-side proxy and the client-side
+// baseline iframes / index fetch — keep all consumers pointed at this constant.
+export const BASELINE_PROXY_PATH = '/__review-baseline';
+// The baseline Storybook's index, used to detect stories absent from the
+// baseline. Derived from the proxy path so the route stays single-sourced.
+export const BASELINE_INDEX_URL = `${BASELINE_PROXY_PATH}/index.json`;
+
 // sessionStorage key recording whether the manager sidebar (hidden while the
 // review page is open) should be restored when the user leaves. Survives the
 // full-reload navigations between review screens. Value: 'restore' | 'keep'.

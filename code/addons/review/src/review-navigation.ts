@@ -63,6 +63,12 @@ export const buildReviewChangesDetailHref = (location: ReviewDetailLocation): st
   return `?path=${target}`;
 };
 
+// Preview iframe URL for a story. `freeze=finished` is the contract read by the
+// core story freezer (setupStoryFreezer.shouldFreeze) to settle the preview to
+// a static end frame, so thumbnails and comparison panes don't keep animating.
+export const storyPreviewUrl = (storyId: string): string =>
+  `iframe.html?id=${encodeURIComponent(storyId)}&viewMode=story&freeze=finished`;
+
 // Link to a story in the regular Storybook manager. Kept under `/story/` so the
 // review page's SPA click handler (which only captures `/review/` links) lets it
 // through as a normal navigation.

@@ -10,7 +10,12 @@ import { Location, useNavigate } from 'storybook/internal/router';
 import type { StatusesByStoryIdAndTypeId } from 'storybook/internal/types';
 
 import type { StoryInfo } from './components/CollectionGrid.tsx';
-import { EVENTS, RESTORE_NAV_SESSION_KEY, REVIEW_CHANGES_URL } from './constants.ts';
+import {
+  BASELINE_INDEX_URL,
+  EVENTS,
+  RESTORE_NAV_SESSION_KEY,
+  REVIEW_CHANGES_URL,
+} from './constants.ts';
 import {
   buildReviewChangesDetailHref,
   buildReviewChangesSummaryHref,
@@ -28,10 +33,6 @@ import { SummaryScreen } from './screens/SummaryScreen.tsx';
 export const ReviewPage: FC = () => (
   <Location>{({ location }) => <ReviewPageContent search={location.search ?? ''} />}</Location>
 );
-
-// Served through the dev-server proxy declared in `preset.ts`, pointing at the
-// baseline Storybook. Used to detect stories that don't exist in the baseline.
-const BASELINE_INDEX_URL = '/__review-baseline/index.json';
 
 // Change-detection status value marking a story as newly added.
 const NEW_STATUS_VALUE = 'status-value:new';

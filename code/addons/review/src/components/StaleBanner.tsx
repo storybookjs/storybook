@@ -13,7 +13,6 @@ const Bar = styled.div(({ theme }) => ({
   color: theme.color.defaultText,
   borderBottom: `1px solid ${theme.appBorderColor}`,
   fontSize: theme.typography.size.s2,
-  fontWeight: theme.typography.weight.bold,
 }));
 
 /**
@@ -22,6 +21,6 @@ const Bar = styled.div(({ theme }) => ({
  */
 export const StaleBanner: FC = () => (
   <Bar role="status" aria-live="polite">
-    <span>New changes were made. This review may be stale.</span>
+    <span>This review may be stale. Ask your agent to refresh it.</span>
   </Bar>
 );

@@ -1,7 +1,7 @@
 import * as v from 'valibot';
 
 import { defineService } from '../../service-definition.ts';
-import type { ErrorLike, ModuleGraphServiceState } from './types.ts';
+import type { ModuleGraphServiceState } from './types.ts';
 import { toStoryIndexPath } from './types.ts';
 
 const errorLikeSchema: v.GenericSchema = v.object({
@@ -48,9 +48,7 @@ const moduleGraphStatusSchema = v.variant('status', [
  */
 const storyIndexPathSchema = v.pipe(
   v.string(),
-  v.description(
-    'A story-index-style relative path such as `./src/Button.stories.tsx`. The module graph service stores paths in this format so serialized state does not leak absolute filesystem roots.'
-  )
+  v.description('A story-index-style relative path such as `./src/Button.stories.tsx`.')
 );
 const storyDependencyDepthSchema = v.pipe(
   v.number(),
@@ -88,7 +86,7 @@ export const moduleGraphServiceDef = defineService({
             v.pipe(
               v.string(),
               v.description(
-                'Input source file path. Accepts absolute paths, story-index-style relative paths with `./`, or relative paths without `./`; paths are normalized internally before lookup and may use POSIX or Windows separators.'
+                'Input source file path. Accepts absolute paths, story-index-style relative paths with `./`, or relative paths without `./`.'
               )
             )
           ),
@@ -142,7 +140,7 @@ export const moduleGraphServiceDef = defineService({
         storyFile: v.pipe(
           v.string(),
           v.description(
-            'Story file path. Accepts absolute paths, story-index-style relative paths with `./`, or relative paths without `./`; paths are normalized internally before lookup and may use POSIX or Windows separators.'
+            'Story file path. Accepts absolute paths, story-index-style relative paths with `./`, or relative paths without `./`.'
           )
         ),
       }),
@@ -226,42 +224,14 @@ export const moduleGraphServiceDef = defineService({
         });
       },
     },
-    applyGraphError: {
+    setStatus: {
       description:
-        'Internal use only: marks the module graph as failed after an unexpected graph engine error.',
-      input: v.object({
-        error: v.pipe(
-          errorLikeSchema,
-          v.description('Serializable unexpected module graph error.')
-        ),
-      }),
+        'Internal use only: sets the module graph lifecycle status after engine startup, failure, or adapter availability changes.',
+      input: moduleGraphStatusSchema,
       output: v.void(),
       handler: async (input, ctx) => {
         ctx.self.setState((state) => {
-          state.status = { status: 'error', error: input.error as ErrorLike };
-        });
-      },
-    },
-    applyGraphUnavailable: {
-      description:
-        'Internal use only: marks the module graph unavailable because the current builder/runtime cannot provide graph functionality.',
-      input: v.object({
-        reason: v.pipe(
-          v.string(),
-          v.description('Human-readable reason why module graph functionality is unavailable.')
-        ),
-        error: v.optional(
-          v.pipe(errorLikeSchema, v.description('Optional serializable adapter error.'))
-        ),
-      }),
-      output: v.void(),
-      handler: async (input, ctx) => {
-        ctx.self.setState((state) => {
-          state.status = {
-            status: 'unavailable',
-            reason: input.reason,
-            ...(input.error ? { error: input.error as ErrorLike } : {}),
-          };
+          state.status = input as ModuleGraphServiceState['status'];
         });
       },
     },

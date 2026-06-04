@@ -98,7 +98,8 @@ describe('module-graph open service', () => {
     it('marks the graph failed with a serializable error', async () => {
       const runtime = registerBareModuleGraph();
 
-      await runtime.commands.applyGraphError({
+      await runtime.commands.setStatus({
+        status: 'error',
         error: { message: 'graph build blew up', name: 'ModuleGraphFailureError' },
       });
 
@@ -111,7 +112,8 @@ describe('module-graph open service', () => {
     it('marks the graph unavailable with a reason and optional error', async () => {
       const runtime = registerBareModuleGraph();
 
-      await runtime.commands.applyGraphUnavailable({
+      await runtime.commands.setStatus({
+        status: 'unavailable',
         reason: 'builder does not support change detection',
         error: { message: 'adapter missing' },
       });

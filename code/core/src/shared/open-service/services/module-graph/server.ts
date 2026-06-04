@@ -93,10 +93,11 @@ export function registerModuleGraphService(options: RegisterModuleGraphServiceOp
       void runtime.commands.bumpGraphRevision(undefined);
     },
     onError: (error) => {
-      void runtime.commands.applyGraphError({ error: errorToErrorLike(error) });
+      void runtime.commands.setStatus({ status: 'error', error: errorToErrorLike(error) });
     },
     onUnavailable: (reason, error) => {
-      void runtime.commands.applyGraphUnavailable({
+      void runtime.commands.setStatus({
+        status: 'unavailable',
         reason,
         ...(error ? { error: errorToErrorLike(error) } : {}),
       });
@@ -109,7 +110,8 @@ export function registerModuleGraphService(options: RegisterModuleGraphServiceOp
 
   void changeDetectionAdapterPromise.then((adapter) => {
     if (!adapter) {
-      void runtime.commands.applyGraphUnavailable({
+      void runtime.commands.setStatus({
+        status: 'unavailable',
         reason: 'builder does not support change detection',
       });
       return;

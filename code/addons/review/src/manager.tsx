@@ -10,7 +10,7 @@ import {
   RESTORE_NAV_SESSION_KEY,
   EVENTS,
 } from './constants.ts';
-import { ReviewPage } from './ReviewPage.ts';
+import { ReviewPage } from './ReviewPage.tsx';
 import { sessionStore } from './session-store.ts';
 
 addons.register(ADDON_ID, (api) => {

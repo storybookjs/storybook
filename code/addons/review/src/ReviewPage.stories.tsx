@@ -11,7 +11,7 @@ import { MemoryRouter } from 'storybook/internal/router';
 import preview from '../../../.storybook/preview.tsx';
 import { EVENTS, RESTORE_NAV_SESSION_KEY } from './constants.ts';
 import type { ReviewState } from './review-state.ts';
-import { ReviewPage } from './ReviewPage.ts';
+import { ReviewPage } from './ReviewPage.tsx';
 import { sessionStore } from './session-store.ts';
 
 type EventListener = (payload?: unknown) => void;

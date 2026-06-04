@@ -6,7 +6,7 @@ import {
   useStorybookApi,
   useStorybookState,
 } from 'storybook/manager-api';
-import { Location, type RenderData, useNavigate } from 'storybook/internal/router';
+import { Location, useNavigate } from 'storybook/internal/router';
 import type { StatusesByStoryIdAndTypeId } from 'storybook/internal/types';
 
 import type { StoryInfo } from './components/CollectionGrid.tsx';
@@ -25,11 +25,9 @@ import { SummaryScreen } from './screens/SummaryScreen.tsx';
 // Reading `location.search` from the router (rather than window.location)
 // makes the page re-render on every in-page navigation, so the detail screen
 // can swap stories without a manager reload.
-export const ReviewPage: FC = () =>
-  React.createElement(Location, null, (({ location }: RenderData) =>
-    React.createElement(ReviewPageContent, {
-      search: location.search ?? '',
-    })) as unknown as ReactNode);
+export const ReviewPage: FC = () => (
+  <Location>{({ location }) => <ReviewPageContent search={location.search ?? ''} />}</Location>
+);
 
 // Served through the dev-server proxy declared in `preset.ts`, pointing at the
 // baseline Storybook. Used to detect stories that don't exist in the baseline.
@@ -225,26 +223,28 @@ const ReviewPageContent: FC<{ search: string }> = ({ search }) => {
       const isNew =
         changeDetectedNewStoryIds.has(currentStoryId) ||
         (baselineStoryIds !== null && !baselineStoryIds.has(currentStoryId));
-      detailScreen = React.createElement(DetailsScreen, {
-        title: collection.title,
-        storyId: currentStoryId,
-        storyIndex: currentStoryIndex,
-        totalStories,
-        componentTitle: currentStoryInfo?.title,
-        storyName: currentStoryInfo?.name,
-        isStale,
-        isNew,
-        backHref: buildReviewChangesSummaryHref(),
-        previousHref: buildReviewChangesDetailHref({
-          collectionIndex: detailLocation.collectionIndex,
-          storyId: detailStoryIds[previousStoryIndex],
-        }),
-        nextHref: buildReviewChangesDetailHref({
-          collectionIndex: detailLocation.collectionIndex,
-          storyId: detailStoryIds[nextStoryIndex],
-        }),
-        hasBaseline: state.hasBaseline ?? false,
-      });
+      detailScreen = (
+        <DetailsScreen
+          title={collection.title}
+          storyId={currentStoryId}
+          storyIndex={currentStoryIndex}
+          totalStories={totalStories}
+          componentTitle={currentStoryInfo?.title}
+          storyName={currentStoryInfo?.name}
+          isStale={isStale}
+          isNew={isNew}
+          backHref={buildReviewChangesSummaryHref()}
+          previousHref={buildReviewChangesDetailHref({
+            collectionIndex: detailLocation.collectionIndex,
+            storyId: detailStoryIds[previousStoryIndex],
+          })}
+          nextHref={buildReviewChangesDetailHref({
+            collectionIndex: detailLocation.collectionIndex,
+            storyId: detailStoryIds[nextStoryIndex],
+          })}
+          hasBaseline={state.hasBaseline ?? false}
+        />
+      );
     }
   }
 
@@ -261,32 +261,20 @@ const ReviewPageContent: FC<{ search: string }> = ({ search }) => {
     }
   }, [hasDetailScreen]);
 
-  return React.createElement(
-    'div',
-    { ref: containerRef, style: { display: 'contents' } },
-    React.createElement(
-      'div',
-      { style: { position: 'relative', height: '100dvh' } },
-      React.createElement(
-        'div',
-        {
-          ref: summaryWrapperRef,
-          'aria-hidden': hasDetailScreen || undefined,
-          style: hasDetailScreen ? { pointerEvents: 'none' } : undefined,
-        },
-        React.createElement(SummaryScreen, {
-          state,
-          storyInfo,
-          isStale,
-        })
-      ),
-      hasDetailScreen
-        ? React.createElement(
-            'div',
-            { style: { position: 'absolute', inset: 0, zIndex: 1 } },
-            detailScreen
-          )
-        : null
-    )
+  return (
+    <div ref={containerRef} style={{ display: 'contents' }}>
+      <div style={{ position: 'relative', height: '100dvh' }}>
+        <div
+          ref={summaryWrapperRef}
+          aria-hidden={hasDetailScreen || undefined}
+          style={hasDetailScreen ? { pointerEvents: 'none' } : undefined}
+        >
+          <SummaryScreen state={state} storyInfo={storyInfo} isStale={isStale} />
+        </div>
+        {hasDetailScreen ? (
+          <div style={{ position: 'absolute', inset: 0, zIndex: 1 }}>{detailScreen}</div>
+        ) : null}
+      </div>
+    </div>
   );
 };

@@ -8,7 +8,7 @@ import { global } from '@storybook/global';
 import { FailedIcon } from '@storybook/icons';
 
 import { HelmetProvider } from 'react-helmet-async';
-import { clearChannel } from 'storybook/internal/channels';
+import { getChannel, setChannel } from 'storybook/internal/channels';
 
 import type { API, AddonStore } from 'storybook/manager-api';
 import { addons, mockChannel } from 'storybook/manager-api';
@@ -23,6 +23,9 @@ const WS_DISCONNECTED_NOTIFICATION_ID = 'CORE/WS_DISCONNECTED';
 const MOCK_STORY_PATH = '/?path=/story/example-button--primary';
 
 const channel = mockChannel() as unknown as Channel;
+
+// Captured after addon-vitest setup-file installs the preview channel (same browser session).
+const vitestChannel = getChannel();
 
 const originalGetItem = Storage.prototype.getItem;
 const originalSetItem = Storage.prototype.setItem;
@@ -110,8 +113,6 @@ const meta = preview.meta({
   beforeEach: () => {
     global.PREVIEW_URL = 'about:blank';
 
-    // Vitest's setup-file installs its own channel; reset via the public slot API (not globals).
-    clearChannel();
     addons.setChannel(channel);
     channel.emit(CHANNEL_CREATED);
 
@@ -120,6 +121,11 @@ const meta = preview.meta({
     Storage.prototype.clear = () => {};
   },
   afterEach: () => {
+    if (vitestChannel) {
+      setChannel(vitestChannel);
+      addons.setChannel(vitestChannel as Channel);
+    }
+
     Storage.prototype.getItem = originalGetItem;
     Storage.prototype.setItem = originalSetItem;
     Storage.prototype.clear = originalClear;

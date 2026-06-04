@@ -1,10 +1,15 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { Channel, clearChannel, getChannel } from 'storybook/internal/channels';
+import { Channel, clearChannel, getChannel, setChannel } from 'storybook/internal/channels';
 
 import { global } from '@storybook/global';
 
-import { type Task, initTransport, modifyErrorMessage } from './setup-file.ts';
+import {
+  type Task,
+  initTransport,
+  modifyErrorMessage,
+  restoreDefaultChannel,
+} from './setup-file.ts';
 
 describe('initTransport', () => {
   afterEach(() => {
@@ -17,6 +22,17 @@ describe('initTransport', () => {
     initTransport();
 
     expect(getChannel()).toBeInstanceOf(Channel);
+  });
+
+  it('restoreDefaultChannel reinstalls the default when the slot was replaced', () => {
+    initTransport();
+    const defaultRef = getChannel();
+
+    setChannel(new Channel({ transport: { setHandler: vi.fn(), send: vi.fn() } }));
+
+    restoreDefaultChannel();
+
+    expect(getChannel()).toBe(defaultRef);
   });
 
   it('should not overwrite an existing addons channel', () => {

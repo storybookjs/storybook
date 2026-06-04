@@ -8,47 +8,16 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { mutableRecordLookupServiceDef, schemaCounterServiceDef } from './fixtures.ts';
-import { clearChannel, setChannel } from '../../channels/channel-slot.ts';
 import {
   SERVICE_PATCHES,
   SERVICE_SYNC_START_REPLY,
   SERVICE_SYNC_START,
 } from './service-channel.ts';
 import { clearRegistry, registerService, unregisterService } from './service-registry.ts';
+import { createTestChannel, installTestChannel } from '../../channels/mock-channel.ts';
 
-function createMockChannel() {
-  const listeners = new Map<string, Set<(data: unknown) => void>>();
-
-  return {
-    on: vi.fn((event: string, listener: (data: unknown) => void) => {
-      if (!listeners.has(event)) {
-        listeners.set(event, new Set());
-      }
-      listeners.get(event)!.add(listener);
-    }),
-    off: vi.fn((event: string, listener: (data: unknown) => void) => {
-      listeners.get(event)?.delete(listener);
-    }),
-    emit: vi.fn((event: string, data: unknown) => {
-      for (const listener of listeners.get(event) ?? []) {
-        listener(data);
-      }
-    }),
-    emitExternal(event: string, data: unknown) {
-      for (const listener of listeners.get(event) ?? []) {
-        listener(data);
-      }
-    },
-  };
-}
-
-function installChannel(channel: ReturnType<typeof createMockChannel> | null): void {
-  if (channel === null) {
-    clearChannel();
-  } else {
-    setChannel(channel);
-  }
-}
+const createMockChannel = createTestChannel;
+const installChannel = installTestChannel;
 
 afterEach(() => {
   clearRegistry();

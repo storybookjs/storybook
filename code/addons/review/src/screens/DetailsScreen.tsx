@@ -1,4 +1,4 @@
-import React, { useEffect, useState, type FC } from 'react';
+import React, { useCallback, useEffect, useRef, useState, type FC } from 'react';
 
 import { Badge, Button, IconButton, Popover, WithTooltip } from 'storybook/internal/components';
 import { styled } from 'storybook/theming';
@@ -15,8 +15,7 @@ import {
 import { type StoryInfo } from '../components/CollectionGrid.tsx';
 import { ReviewHeader } from '../components/ReviewHeader.tsx';
 import { PREVIEW_MODE_SESSION_KEY } from '../constants.ts';
-import { buildReviewChangesDetailHref, buildStorybookStoryHref } from '../review-navigation.ts';
-import { prettifyComponentId } from '../review-grouping.ts';
+import { buildReviewChangesDetailHref, buildStorybookStoryHref, prettifyComponentId, storyPreviewUrl } from '../review-navigation.ts';
 import { sessionStore } from '../session-store.ts';
 import { useBaselineComparison } from './useBaselineComparison.ts';
 

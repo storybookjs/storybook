@@ -3,7 +3,9 @@ import React, { useCallback, useEffect, useRef, useState, type FC, type ReactNod
 import { Badge, Button, IconButton } from 'storybook/internal/components';
 import { styled } from 'storybook/theming';
 
-import { prettifyComponentId, storyPreviewUrl } from '../review-navigation.ts';
+import { StorybookIcon } from '@storybook/icons';
+
+import { buildStorybookStoryHref, prettifyComponentId, storyPreviewUrl } from '../review-navigation.ts';
 
 const PREVIEW_SCALE = 0.5;
 
@@ -323,7 +325,7 @@ const StoryPreviewCell: FC<{
   info?: StoryInfo;
   query: string;
 }> = ({ storyId, href, info, query }) => {
-  const hostRef = useRef<HTMLElement>(null);
+  const hostRef = useRef<HTMLAnchorElement>(null);
   const [isInView, setIsInView] = useState(false);
   // `src` stays unset until the scheduler starts this preview; the iframe only
   // mounts (and starts requesting) once it does.

@@ -10,9 +10,8 @@
  * referential-stability layer at the React boundary so the component sees a stable object
  * reference across snapshot reads that return the same logical value.
  *
- * **Memoize complex inputs at the call site.** The input participates in the hook's React
- * dependency array. Passing a new object literal on every render recreates the subscription
- * each render. Wrap object inputs in `useMemo` or extract them to module scope.
+ * Object inputs are compared with deep equality when deciding whether to re-subscribe, so inline
+ * literals at the call site are safe.
  */
 
 import * as React from 'react';
@@ -75,16 +74,22 @@ export function useServiceQuery<
     snapshotRef.current = queryFn(input);
   }
 
-  // Re-subscribe when `queryFn` or `input` changes. The service subscribe() fires the
+  // Stable for deep-equal inputs — only replaced when `queryFn` or the input value changes.
+  const subscriptionKey = subscriptionKeyRef.current!;
+
+  // Re-subscribe when `queryFn` or the input value changes. The service subscribe() fires the
   // callback immediately (deferred to a microtask) with the current value, then again
   // whenever tracked state changes.
   const subscribe = React.useCallback(
     (listener: () => void): (() => void) =>
-      queryFn.subscribe(input, (value) => {
+      queryFn.subscribe(subscriptionKey.input, (value) => {
+        if (isEqual(value, snapshotRef.current)) {
+          return;
+        }
         snapshotRef.current = value;
         listener();
       }),
-    [queryFn, input]
+    [queryFn, subscriptionKey]
   );
 
   // Read directly from the service to get the freshest synchronous value, but compare with
@@ -92,7 +97,7 @@ export function useServiceQuery<
   // deeply equal. This prevents unnecessary re-renders when `getSnapshot` is called outside
   // of a subscriber notification (e.g. on React's concurrent-mode bailout checks).
   const getSnapshot = React.useCallback((): TOutput => {
-    const value = queryFn(input);
+    const value = queryFn(subscriptionKey.input);
     const previous = snapshotRef.current as TOutput;
 
     if (isEqual(value, previous)) {
@@ -101,7 +106,7 @@ export function useServiceQuery<
 
     snapshotRef.current = value;
     return value;
-  }, [queryFn, input]);
+  }, [queryFn, subscriptionKey]);
 
   return React.useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
 }

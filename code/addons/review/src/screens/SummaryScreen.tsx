@@ -51,6 +51,13 @@ const SearchField = styled.div(({ theme }) => ({
   boxShadow: `${theme.button.border} 0 0 0 1px inset`,
   padding: 2,
   paddingLeft: 6,
+  // Mirror the sidebar search field: the wrapper owns the focus ring while the
+  // inner input stays outline-less, so the whole field reads as focused.
+  '&:has(input:focus), &:has(input:active)': {
+    background: theme.background.app,
+    outline: `2px solid ${theme.color.secondary}`,
+    outlineOffset: 2,
+  },
 }));
 
 const SearchInput = styled.input(({ theme }) => ({

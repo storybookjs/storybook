@@ -43,7 +43,7 @@ export const GuidePage = () => {
   return (
     <Container>
       <Intro>
-        <h1>Guide</h1>
+        <h1>Onboarding guide</h1>
         <p>
           Whether you&apos;re just getting started or looking for ways to level up, this checklist
           will help you make the most of your Storybook.

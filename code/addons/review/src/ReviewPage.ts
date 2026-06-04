@@ -1,7 +1,13 @@
 import React, { type FC, type ReactNode, useEffect, useMemo, useRef, useState } from 'react';
 
-import { useChannel, useStorybookApi, useStorybookState } from 'storybook/manager-api';
+import {
+  experimental_useStatusStore,
+  useChannel,
+  useStorybookApi,
+  useStorybookState,
+} from 'storybook/manager-api';
 import { Location, type RenderData, useNavigate } from 'storybook/internal/router';
+import type { StatusesByStoryIdAndTypeId } from 'storybook/internal/types';
 
 import type { StoryInfo } from './components/CollectionGrid.tsx';
 import { EVENTS, RESTORE_NAV_SESSION_KEY, REVIEW_CHANGES_URL } from './constants.ts';
@@ -12,6 +18,7 @@ import {
   parseReviewChangesDetailLocation,
 } from './review-navigation.ts';
 import type { ReviewState } from './review-state.ts';
+import { sessionStore } from './session-store.ts';
 import { DetailsScreen } from './screens/DetailsScreen.tsx';
 import { SummaryScreen } from './screens/SummaryScreen.tsx';
 
@@ -24,8 +31,19 @@ export const ReviewPage: FC = () =>
       search: location.search ?? '',
     })) as unknown as ReactNode);
 
+// Served through the dev-server proxy declared in `preset.ts`, pointing at the
+// baseline Storybook. Used to detect stories that don't exist in the baseline.
+const BASELINE_INDEX_URL = '/__review-baseline/index.json';
+
+// Change-detection status value marking a story as newly added.
+const NEW_STATUS_VALUE = 'status-value:new';
+
 const ReviewPageContent: FC<{ search: string }> = ({ search }) => {
   const [state, setState] = useState<ReviewState | null>(null);
+  // Story IDs present in the baseline Storybook's index. `null` means the
+  // baseline is unresolved or unavailable (no fetch yet, network/proxy error,
+  // or an unparseable index) — in which case no "New" badge is shown.
+  const [baselineStoryIds, setBaselineStoryIds] = useState<Set<string> | null>(null);
 
   const api = useStorybookApi();
   const { index } = useStorybookState();
@@ -49,6 +67,36 @@ const ReviewPageContent: FC<{ search: string }> = ({ search }) => {
     emit(EVENTS.REQUEST_REVIEW);
   }, [emit]);
 
+  // Resolve which stories exist in the baseline so newly added stories can be
+  // flagged. Keyed on `createdAt`: a freshly pushed review re-fetches the
+  // baseline index. Any non-OK outcome leaves the set `null` (no badge).
+  const reviewCreatedAt = state?.createdAt;
+  useEffect(() => {
+    if (reviewCreatedAt === undefined) {
+      return undefined;
+    }
+    let cancelled = false;
+    setBaselineStoryIds(null);
+    fetch(BASELINE_INDEX_URL)
+      .then((response) => (response.ok ? response.json() : null))
+      .then((data: { entries?: Record<string, unknown>; stories?: Record<string, unknown> }) => {
+        if (cancelled || !data) {
+          return;
+        }
+        const entries = data.entries ?? data.stories;
+        if (!entries || typeof entries !== 'object') {
+          return;
+        }
+        setBaselineStoryIds(new Set(Object.keys(entries)));
+      })
+      .catch(() => {
+        // Baseline unavailable — leave `null` so no "New" badge is shown.
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [reviewCreatedAt]);
+
   const detailLocation = parseReviewChangesDetailLocation(search);
 
   // The review page is a focused, full-width surface — hide the manager
@@ -59,16 +107,16 @@ const ReviewPageContent: FC<{ search: string }> = ({ search }) => {
   // router handles as an SPA transition). A user who keeps the sidebar
   // collapsed by choice ('keep') is left untouched.
   useEffect(() => {
-    if (sessionStorage.getItem(RESTORE_NAV_SESSION_KEY) === null) {
-      sessionStorage.setItem(RESTORE_NAV_SESSION_KEY, api.getIsNavShown() ? 'restore' : 'keep');
+    if (sessionStore.read(RESTORE_NAV_SESSION_KEY) === null) {
+      sessionStore.write(RESTORE_NAV_SESSION_KEY, api.getIsNavShown() ? 'restore' : 'keep');
     }
     api.toggleNav(false);
 
     return () => {
-      if (sessionStorage.getItem(RESTORE_NAV_SESSION_KEY) === 'restore') {
+      if (sessionStore.read(RESTORE_NAV_SESSION_KEY) === 'restore') {
         api.toggleNav(true);
       }
-      sessionStorage.removeItem(RESTORE_NAV_SESSION_KEY);
+      sessionStore.remove(RESTORE_NAV_SESSION_KEY);
     };
   }, [api]);
 
@@ -94,6 +142,20 @@ const ReviewPageContent: FC<{ search: string }> = ({ search }) => {
     return info;
   }, [index, state]);
 
+  // Stories the change-detection mechanism flagged as newly added. This is an
+  // independent "New" signal from the baseline-index check: a story can be new
+  // here even when a baseline exists (e.g. added on this branch).
+  const allStatuses = experimental_useStatusStore() as StatusesByStoryIdAndTypeId;
+  const changeDetectedNewStoryIds = useMemo(() => {
+    const ids = new Set<string>();
+    for (const [storyId, statusesByType] of Object.entries(allStatuses)) {
+      if (Object.values(statusesByType).some((status) => status.value === NEW_STATUS_VALUE)) {
+        ids.add(storyId);
+      }
+    }
+    return ids;
+  }, [allStatuses]);
+
   // SPA navigation: imperatively attach a click listener to the container so
   // left-clicks on in-page review links push history and swap the iframe URL
   // without a manager reload (no flash). Real hrefs are kept for accessibility
@@ -102,6 +164,7 @@ const ReviewPageContent: FC<{ search: string }> = ({ search }) => {
   // interactions` doesn't flag the delegation root — the div isn't itself
   // interactive, it's just catching bubbled clicks from real <a> elements.
   const containerRef = useRef<HTMLDivElement>(null);
+  const summaryWrapperRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     const container = containerRef.current;
     if (!container) {
@@ -149,6 +212,13 @@ const ReviewPageContent: FC<{ search: string }> = ({ search }) => {
 
       const currentStoryId = detailStoryIds[currentStoryIndex];
       const currentStoryInfo = storyInfo[currentStoryId];
+      // A story is "New" if change-detection flagged it (regardless of any
+      // baseline), or once the baseline index has resolved and confirms the
+      // story is absent. While the baseline is unresolved/unavailable (`null`)
+      // it contributes nothing — only the change-detection signal applies.
+      const isNew =
+        changeDetectedNewStoryIds.has(currentStoryId) ||
+        (baselineStoryIds !== null && !baselineStoryIds.has(currentStoryId));
       detailScreen = React.createElement(DetailsScreen, {
         title: collection.title,
         storyId: currentStoryId,
@@ -156,6 +226,7 @@ const ReviewPageContent: FC<{ search: string }> = ({ search }) => {
         totalStories,
         componentTitle: currentStoryInfo?.title,
         storyName: currentStoryInfo?.name,
+        isNew,
         backHref: buildReviewChangesSummaryHref(),
         previousHref: buildReviewChangesDetailHref({
           collectionIndex: detailLocation.collectionIndex,
@@ -172,6 +243,17 @@ const ReviewPageContent: FC<{ search: string }> = ({ search }) => {
 
   const hasDetailScreen = detailScreen !== null;
 
+  // While the detail screen is open the summary stays mounted behind it, but
+  // must drop out of the tab order and the accessibility tree so keyboard and
+  // screen-reader focus can't reach it. React 18 doesn't serialize a boolean
+  // `inert` prop to the DOM, so toggle the property imperatively.
+  useEffect(() => {
+    const node = summaryWrapperRef.current;
+    if (node) {
+      node.inert = hasDetailScreen;
+    }
+  }, [hasDetailScreen]);
+
   return React.createElement(
     'div',
     { ref: containerRef, style: { display: 'contents' } },
@@ -181,8 +263,8 @@ const ReviewPageContent: FC<{ search: string }> = ({ search }) => {
       React.createElement(
         'div',
         {
+          ref: summaryWrapperRef,
           'aria-hidden': hasDetailScreen || undefined,
-          inert: hasDetailScreen || undefined,
           style: hasDetailScreen ? { pointerEvents: 'none' } : undefined,
         },
         React.createElement(SummaryScreen, {

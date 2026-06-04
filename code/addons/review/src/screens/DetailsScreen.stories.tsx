@@ -41,6 +41,9 @@ export const Default = meta.story({
     await expect(
       await canvas.findByRole('link', { name: 'View in Storybook' })
     ).toBeInTheDocument();
+    // No baseline by default: only the latest preview, no comparison controls.
+    await expect(await canvas.findByTitle('Latest components-toolbar--basic')).toBeInTheDocument();
+    await expect(canvas.queryByTitle('Baseline components-toolbar--basic')).not.toBeInTheDocument();
   },
 });
 
@@ -53,8 +56,31 @@ export const WithBaseline = meta.story({
     await expect(await canvas.findByText('Baseline')).toBeInTheDocument();
     await expect(await canvas.findByText('Latest')).toBeInTheDocument();
     await expect(
+      await canvas.findByTitle('Baseline components-toolbar--basic')
+    ).toBeInTheDocument();
+    await expect(await canvas.findByTitle('Latest components-toolbar--basic')).toBeInTheDocument();
+    await expect(canvas.queryByText('New')).not.toBeInTheDocument();
+    await expect(
       await canvas.findByRole('button', { name: 'Side-by-side view' })
     ).toBeInTheDocument();
+  },
+});
+
+export const NewStory = meta.story({
+  args: {
+    hasBaseline: true,
+    isNew: true,
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(await canvas.findByText('New')).toBeInTheDocument();
+    await expect(await canvas.findByTitle('Latest components-toolbar--basic')).toBeInTheDocument();
+    // A new story has no baseline to compare against: no baseline preview and no
+    // side-by-side comparison controls.
+    await expect(canvas.queryByTitle('Baseline components-toolbar--basic')).not.toBeInTheDocument();
+    await expect(
+      canvas.queryByRole('button', { name: 'Side-by-side view' })
+    ).not.toBeInTheDocument();
   },
 });
 
@@ -69,7 +95,7 @@ export const WrapAroundNavigation = meta.story({
     }),
     nextHref: buildReviewChangesDetailHref({
       collectionIndex: 0,
-      storyId: 'components-toolbar--basic',
+      storyId: 'components-toolbar--compact',
     }),
   },
   play: async ({ canvasElement }) => {
@@ -79,6 +105,8 @@ export const WrapAroundNavigation = meta.story({
     await expect(previousButton.getAttribute('href')).toContain(
       '/review/0/components-toolbar--dense'
     );
-    await expect(nextButton.getAttribute('href')).toContain('/review/0/components-toolbar--basic');
+    await expect(nextButton.getAttribute('href')).toContain(
+      '/review/0/components-toolbar--compact'
+    );
   },
 });

@@ -1,6 +1,7 @@
-import React, { type FC, useState } from 'react';
+import React, { type FC, useCallback, useEffect, useRef, useState } from 'react';
 
-import { Button, IconButton } from 'storybook/internal/components';
+import { Badge, Button, IconButton } from 'storybook/internal/components';
+import { STORY_RENDERED } from 'storybook/internal/core-events';
 import { styled } from 'storybook/theming';
 
 import {
@@ -13,7 +14,9 @@ import {
 } from '@storybook/icons';
 
 import { ReviewHeader } from '../components/ReviewHeader.tsx';
+import { PREVIEW_MODE_SESSION_KEY } from '../constants.ts';
 import { buildStorybookStoryHref } from '../review-navigation.ts';
+import { sessionStore } from '../session-store.ts';
 
 const Page = styled.div(({ theme }) => ({
   display: 'flex',
@@ -40,12 +43,46 @@ const Counter = styled(Button)(({ theme }) => ({
   fontWeight: theme.typography.weight.regular,
 }));
 
-const PreviewFrameWrap = styled.div({
+const PreviewFrameWrap = styled.div<{ $singleUp: boolean }>(({ $singleUp }) => ({
   flex: 1,
   minHeight: 0,
   width: '100%',
   display: 'flex',
-});
+  position: 'relative',
+  ...($singleUp ? { overflow: 'hidden' } : {}),
+}));
+
+const PreviewPane = styled.div<{ $singleUp: boolean; $active: boolean }>(
+  ({ $singleUp, $active }) => ({
+    minWidth: 0,
+    minHeight: 0,
+    display: 'flex',
+    ...($singleUp
+      ? {
+          position: 'absolute',
+          inset: 0,
+          width: '100%',
+          height: '100%',
+          zIndex: $active ? 1 : -1,
+          pointerEvents: $active ? 'auto' : 'none',
+          visibility: $active ? 'visible' : 'hidden',
+        }
+      : {
+          flex: 1,
+          position: 'relative',
+        }),
+  })
+);
+
+const PaneDivider = styled.div(({ theme }) => ({
+  width: 1,
+  flexShrink: 0,
+  background: theme.color.border,
+}));
+
+const PreviewDivider = styled(PaneDivider)<{ $singleUp: boolean }>(({ $singleUp }) => ({
+  display: $singleUp ? 'none' : 'block',
+}));
 
 const PreviewFrame = styled.iframe({
   flex: 1,
@@ -87,10 +124,25 @@ const BarControls = styled.div({
   flexShrink: 0,
 });
 
+const BASELINE_PROXY_PATH = '/__review-baseline';
 const storyPreviewUrl = (id: string) => `iframe.html?id=${encodeURIComponent(id)}&viewMode=story`;
+const toBaselinePreviewUrl = (latestUrlString: string) => {
+  const latestUrl = new URL(latestUrlString, window.location.href);
+  return new URL(
+    `${BASELINE_PROXY_PATH}${latestUrl.pathname}${latestUrl.search}${latestUrl.hash}`,
+    window.location.origin
+  ).toString();
+};
 
 type CompareMode = 'split' | 'single';
 type ComparePane = 'baseline' | 'latest';
+
+const DEFAULT_COMPARE_MODE: CompareMode = 'split';
+
+// The persisted preview layout reuses the historical '1up'/'2up' values so the
+// choice carries across sessions; map them to the local split/single model.
+const readCompareMode = (): CompareMode =>
+  sessionStore.read(PREVIEW_MODE_SESSION_KEY) === '1up' ? 'single' : DEFAULT_COMPARE_MODE;
 
 export interface DetailsScreenProps {
   /** Fallback title shown when story metadata is unavailable. */
@@ -105,6 +157,8 @@ export interface DetailsScreenProps {
   storyName?: string;
   /** Enables the baseline/latest comparison controls when a baseline exists. */
   hasBaseline?: boolean;
+  /** Whether this story is newly added relative to the baseline Storybook. */
+  isNew?: boolean;
 }
 
 const componentName = (componentTitle: string): string =>
@@ -154,10 +208,12 @@ const CompareControls: FC<{
   </BarControls>
 );
 
-// The preview <iframe> is intentionally a stable element: when the story
-// changes the parent only updates `src`, so the iframe navigates in place
-// without the manager (or this component) remounting — no flash.
-export const DetailsScreen: FC<DetailsScreenProps> = ({
+// The preview <iframe>s are intentionally stable elements: when the story
+// changes the parent only updates `src`, so each iframe navigates in place
+// without the manager (or this component) remounting — no flash. The baseline
+// pane mirrors the latest pane through the dev-server proxy and keeps its
+// scroll position in sync so side-by-side diffs line up.
+export const DetailsScreen = ({
   title,
   storyId,
   storyIndex,
@@ -168,20 +224,209 @@ export const DetailsScreen: FC<DetailsScreenProps> = ({
   componentTitle,
   storyName,
   hasBaseline = false,
-}) => {
-  const [mode, setMode] = useState<CompareMode>('split');
+  isNew,
+}: DetailsScreenProps) => {
+  const latestPreviewSrc = storyPreviewUrl(storyId);
+  const [baselinePreviewSrc, setBaselinePreviewSrc] = useState(() =>
+    toBaselinePreviewUrl(latestPreviewSrc)
+  );
+  const baselinePreviewSrcRef = useRef(baselinePreviewSrc);
+  const [mode, setMode] = useState<CompareMode>(readCompareMode);
   const [activePane, setActivePane] = useState<ComparePane>('latest');
 
-  const subtitle =
+  // A newly added story has no baseline counterpart, and some repos have no
+  // baseline at all: in either case render only the latest preview, full-width,
+  // and hide the baseline pane plus the comparison controls.
+  const showBaseline = hasBaseline && !isNew;
+  const isSingleUp = mode === 'single' || !showBaseline;
+
+  const baselineFrameRef = useRef<HTMLIFrameElement>(null);
+  const latestFrameRef = useRef<HTMLIFrameElement>(null);
+  const cleanupScrollSyncRef = useRef<(() => void) | null>(null);
+  const cleanupBaselineStoryRenderedRef = useRef<(() => void) | null>(null);
+  const syncingTargetRef = useRef<ComparePane | null>(null);
+
+  const disableOverscrollBounce = useCallback((frameElement: HTMLIFrameElement | null) => {
+    const iframeDocument = frameElement?.contentDocument;
+    if (!iframeDocument) {
+      return;
+    }
+
+    const { documentElement, body } = iframeDocument;
+
+    if (documentElement) {
+      documentElement.style.overscrollBehavior = 'none';
+      documentElement.style.overscrollBehaviorX = 'none';
+      documentElement.style.overscrollBehaviorY = 'none';
+    }
+
+    if (body) {
+      body.style.overscrollBehavior = 'none';
+      body.style.overscrollBehaviorX = 'none';
+      body.style.overscrollBehaviorY = 'none';
+    }
+  }, []);
+
+  const setupScrollSync = useCallback(() => {
+    cleanupScrollSyncRef.current?.();
+    cleanupScrollSyncRef.current = null;
+
+    disableOverscrollBounce(baselineFrameRef.current);
+    disableOverscrollBounce(latestFrameRef.current);
+
+    const baselineWindow = baselineFrameRef.current?.contentWindow;
+    const latestWindow = latestFrameRef.current?.contentWindow;
+    if (!baselineWindow || !latestWindow) {
+      return;
+    }
+
+    const releaseSyncLock = () => {
+      window.requestAnimationFrame(() => {
+        syncingTargetRef.current = null;
+      });
+    };
+
+    const syncFromBaseline = () => {
+      if (syncingTargetRef.current === 'baseline') {
+        return;
+      }
+      syncingTargetRef.current = 'latest';
+      latestWindow.scrollTo(baselineWindow.scrollX, baselineWindow.scrollY);
+      releaseSyncLock();
+    };
+
+    const syncFromLatest = () => {
+      if (syncingTargetRef.current === 'latest') {
+        return;
+      }
+      syncingTargetRef.current = 'baseline';
+      baselineWindow.scrollTo(latestWindow.scrollX, latestWindow.scrollY);
+      releaseSyncLock();
+    };
+
+    baselineWindow.addEventListener('scroll', syncFromBaseline, { passive: true });
+    latestWindow.addEventListener('scroll', syncFromLatest, { passive: true });
+
+    cleanupScrollSyncRef.current = () => {
+      baselineWindow.removeEventListener('scroll', syncFromBaseline);
+      latestWindow.removeEventListener('scroll', syncFromLatest);
+      syncingTargetRef.current = null;
+    };
+  }, [disableOverscrollBounce]);
+
+  useEffect(() => {
+    baselinePreviewSrcRef.current = baselinePreviewSrc;
+  }, [baselinePreviewSrc]);
+
+  useEffect(() => {
+    setBaselinePreviewSrc(toBaselinePreviewUrl(latestPreviewSrc));
+  }, [latestPreviewSrc]);
+
+  // Persist the user's layout choice so it carries across navigation between
+  // the detail and summary screens.
+  useEffect(() => {
+    sessionStore.write(PREVIEW_MODE_SESSION_KEY, mode === 'single' ? '1up' : '2up');
+  }, [mode]);
+
+  useEffect(() => {
+    const baselineFrame = baselineFrameRef.current;
+    const latestFrame = latestFrameRef.current;
+    if (!baselineFrame || !latestFrame) {
+      return;
+    }
+
+    const syncBaselineToLatest = () => {
+      const baselineWindow = baselineFrameRef.current?.contentWindow;
+      const latestWindow = latestFrameRef.current?.contentWindow;
+      if (!baselineWindow || !latestWindow) {
+        return;
+      }
+      baselineWindow.scrollTo(latestWindow.scrollX, latestWindow.scrollY);
+    };
+
+    const attachBaselineStoryRenderedListener = () => {
+      cleanupBaselineStoryRenderedRef.current?.();
+      cleanupBaselineStoryRenderedRef.current = null;
+
+      const baselineChannel = (
+        baselineFrameRef.current?.contentWindow as Window & {
+          __STORYBOOK_ADDONS_CHANNEL__?: {
+            on?: (event: string, listener: () => void) => void;
+            off?: (event: string, listener: () => void) => void;
+            removeListener?: (event: string, listener: () => void) => void;
+          };
+        }
+      ).__STORYBOOK_ADDONS_CHANNEL__;
+
+      if (!baselineChannel?.on) {
+        return;
+      }
+
+      const onBaselineStoryRendered = () => {
+        syncBaselineToLatest();
+        setupScrollSync();
+        cleanupBaselineStoryRenderedRef.current?.();
+      };
+
+      cleanupBaselineStoryRenderedRef.current = () => {
+        if (baselineChannel.off) {
+          baselineChannel.off(STORY_RENDERED, onBaselineStoryRendered);
+        } else if (baselineChannel.removeListener) {
+          baselineChannel.removeListener(STORY_RENDERED, onBaselineStoryRendered);
+        }
+        cleanupBaselineStoryRenderedRef.current = null;
+      };
+
+      baselineChannel.on(STORY_RENDERED, onBaselineStoryRendered);
+    };
+
+    const handleBaselineFrameLoad = () => {
+      attachBaselineStoryRenderedListener();
+      setupScrollSync();
+    };
+
+    const handleLatestFrameLoad = () => {
+      const latestLocationHref = latestFrameRef.current?.contentWindow?.location.href;
+      if (latestLocationHref) {
+        const nextBaselineUrl = toBaselinePreviewUrl(latestLocationHref);
+        if (baselinePreviewSrcRef.current !== nextBaselineUrl) {
+          setBaselinePreviewSrc(nextBaselineUrl);
+        }
+      }
+      setupScrollSync();
+    };
+
+    baselineFrame.addEventListener('load', handleBaselineFrameLoad);
+    latestFrame.addEventListener('load', handleLatestFrameLoad);
+    setupScrollSync();
+
+    return () => {
+      cleanupBaselineStoryRenderedRef.current?.();
+      baselineFrame.removeEventListener('load', handleBaselineFrameLoad);
+      latestFrame.removeEventListener('load', handleLatestFrameLoad);
+      cleanupScrollSyncRef.current?.();
+      cleanupScrollSyncRef.current = null;
+    };
+  }, [setupScrollSync, showBaseline]);
+
+  const metadataSubtitle =
     componentTitle && storyName ? (
       <>
         <SubtitleStrong>{componentName(componentTitle)}</SubtitleStrong>
         <SubtitleSeparator>/</SubtitleSeparator>
         <span>{storyName}</span>
       </>
+    ) : null;
+
+  const subtitle =
+    metadataSubtitle || isNew ? (
+      <>
+        {metadataSubtitle}
+        {isNew ? <Badge status="positive">New</Badge> : null}
+      </>
     ) : undefined;
 
-  const baselineBar = hasBaseline ? (
+  const baselineBar = showBaseline ? (
     mode === 'split' ? (
       <BaselineBar>
         <BarHalf>
@@ -257,8 +502,22 @@ export const DetailsScreen: FC<DetailsScreenProps> = ({
         secondRow={baselineBar}
       />
 
-      <PreviewFrameWrap>
-        <PreviewFrame title={storyId} src={storyPreviewUrl(storyId)} />
+      <PreviewFrameWrap $singleUp={isSingleUp}>
+        {showBaseline ? (
+          <>
+            <PreviewPane $singleUp={isSingleUp} $active={!isSingleUp || activePane === 'baseline'}>
+              <PreviewFrame
+                ref={baselineFrameRef}
+                title={`Baseline ${storyId}`}
+                src={baselinePreviewSrc}
+              />
+            </PreviewPane>
+            <PreviewDivider $singleUp={isSingleUp} />
+          </>
+        ) : null}
+        <PreviewPane $singleUp={isSingleUp} $active={!isSingleUp || activePane === 'latest'}>
+          <PreviewFrame ref={latestFrameRef} title={`Latest ${storyId}`} src={latestPreviewSrc} />
+        </PreviewPane>
       </PreviewFrameWrap>
     </Page>
   );

@@ -146,19 +146,32 @@ const ReviewPageContent: FC<{ search: string }> = ({ search }) => {
     return info;
   }, [index, state]);
 
-  // Stories the change-detection mechanism flagged as newly added. This is an
-  // independent "New" signal from the baseline-index check: a story can be new
-  // here even when a baseline exists (e.g. added on this branch).
+  // The single source of truth for "newly added" stories, resolved from two
+  // independent inputs so the render path can do a plain `.has(storyId)`:
+  //   1. Change detection (server-computed, delivered via the reactive status
+  //      store): flags stories added/changed vs the git baseline. A story can
+  //      be new here even when a deployed baseline exists (added on this branch).
+  //   2. The deployed baseline index, once resolved: flags stories absent from
+  //      the deployed build. While it is unresolved/unavailable (`null`) it
+  //      contributes nothing — only the change-detection signal applies.
   const allStatuses = experimental_useStatusStore() as StatusesByStoryIdAndTypeId;
-  const changeDetectedNewStoryIds = useMemo(() => {
+  const newlyAddedStoryIds = useMemo(() => {
     const ids = new Set<string>();
-    for (const [storyId, statusesByType] of Object.entries(allStatuses)) {
-      if (Object.values(statusesByType).some((status) => status.value === NEW_STATUS_VALUE)) {
-        ids.add(storyId);
+    if (!state) {
+      return ids;
+    }
+    const isChangeDetectedNew = (storyId: string) =>
+      Object.values(allStatuses[storyId] ?? {}).some((status) => status.value === NEW_STATUS_VALUE);
+    for (const collection of state.collections) {
+      for (const storyId of collection.storyIds) {
+        const absentFromBaseline = baselineStoryIds !== null && !baselineStoryIds.has(storyId);
+        if (isChangeDetectedNew(storyId) || absentFromBaseline) {
+          ids.add(storyId);
+        }
       }
     }
     return ids;
-  }, [allStatuses]);
+  }, [allStatuses, baselineStoryIds, state]);
 
   // SPA navigation: imperatively attach a click listener to the container so
   // left-clicks on in-page review links push history and swap the iframe URL
@@ -216,13 +229,6 @@ const ReviewPageContent: FC<{ search: string }> = ({ search }) => {
 
       const currentStoryId = detailStoryIds[currentStoryIndex];
       const currentStoryInfo = storyInfo[currentStoryId];
-      // A story is "New" if change-detection flagged it (regardless of any
-      // baseline), or once the baseline index has resolved and confirms the
-      // story is absent. While the baseline is unresolved/unavailable (`null`)
-      // it contributes nothing — only the change-detection signal applies.
-      const isNew =
-        changeDetectedNewStoryIds.has(currentStoryId) ||
-        (baselineStoryIds !== null && !baselineStoryIds.has(currentStoryId));
       detailScreen = (
         <DetailsScreen
           title={collection.title}
@@ -232,7 +238,7 @@ const ReviewPageContent: FC<{ search: string }> = ({ search }) => {
           componentTitle={currentStoryInfo?.title}
           storyName={currentStoryInfo?.name}
           isStale={isStale}
-          isNew={isNew}
+          isNewlyAdded={newlyAddedStoryIds.has(currentStoryId)}
           backHref={buildReviewChangesSummaryHref()}
           previousHref={buildReviewChangesDetailHref({
             collectionIndex: detailLocation.collectionIndex,

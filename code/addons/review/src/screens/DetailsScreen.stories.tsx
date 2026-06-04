@@ -99,7 +99,7 @@ export const WithBaseline = meta.story({
 export const NewStory = meta.story({
   args: {
     hasBaseline: true,
-    isNew: true,
+    isNewlyAdded: true,
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);

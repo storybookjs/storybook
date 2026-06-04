@@ -152,7 +152,7 @@ export interface DetailsScreenProps {
   /** Enables the baseline/latest comparison controls when a baseline exists. */
   hasBaseline?: boolean;
   /** Whether this story is newly added relative to the baseline Storybook. */
-  isNew?: boolean;
+  isNewlyAdded?: boolean;
 }
 
 const componentName = (componentTitle: string): string =>
@@ -219,7 +219,7 @@ export const DetailsScreen = ({
   storyName,
   isStale = false,
   hasBaseline = false,
-  isNew,
+  isNewlyAdded,
 }: DetailsScreenProps) => {
   const [mode, setMode] = useState<CompareMode>(readCompareMode);
   const [activePane, setActivePane] = useState<ComparePane>('latest');
@@ -227,7 +227,7 @@ export const DetailsScreen = ({
   // A newly added story has no baseline counterpart, and some repos have no
   // baseline at all: in either case render only the latest preview, full-width,
   // and hide the baseline pane plus the comparison controls.
-  const showBaseline = hasBaseline && !isNew;
+  const showBaseline = hasBaseline && !isNewlyAdded;
   const isSingleUp = mode === 'single' || !showBaseline;
 
   const { baselineFrameRef, latestFrameRef, latestPreviewSrc, baselinePreviewSrc } =
@@ -249,10 +249,10 @@ export const DetailsScreen = ({
     ) : null;
 
   const subtitle =
-    metadataSubtitle || isNew ? (
+    metadataSubtitle || isNewlyAdded ? (
       <>
         {metadataSubtitle}
-        {isNew ? <Badge status="positive">New</Badge> : null}
+        {isNewlyAdded ? <Badge status="positive">New</Badge> : null}
       </>
     ) : undefined;
 

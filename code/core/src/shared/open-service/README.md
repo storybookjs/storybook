@@ -22,7 +22,6 @@ External callers import from one of these entrypoints:
 - `storybook/manager-api` for manager addons — `registerService` (relay hub), `useServiceQuery`, `useServiceCommand`, and shared types
 - `storybook/preview-api` for preview code — `registerService` (leaf) and shared types (no React hooks)
 - [server.ts](./server.ts) for server-side registration, discovery, and static snapshot writing
-- [client.ts](./client.ts) is an internal/advanced barrel; prefer `manager-api` or `preview-api` in addon code
 
 `registerService` is the **single** registration function across every runtime. It lives in
 [service-registry.ts](./service-registry.ts) and is re-exported from each entrypoint with the right
@@ -58,7 +57,8 @@ Internal tests and implementation code may import from the individual modules di
 
 - [index.ts](./index.ts): environment-agnostic barrel for definition helpers and shared types
 - [server.ts](./server.ts): server entrypoint that re-exports registration APIs (relay hub) and owns static snapshot building/writing
-- [client.ts](./client.ts): renderer-agnostic browser entrypoint; [manager.ts](./manager.ts) and [preview.ts](./preview.ts) add the relay defaults and (manager) the React hooks
+- [manager.ts](./manager.ts): manager entrypoint (`relay: true`) re-exported via `storybook/manager-api`; adds `useServiceQuery` and `useServiceCommand`
+- [preview.ts](./preview.ts): preview entrypoint (`relay: false`, leaf) re-exported via `storybook/preview-api`; registration only, no React hooks
 - [types.ts](./types.ts): core type model for definitions, contexts, runtime instances, and static build data
 - [service-definition.ts](./service-definition.ts): `defineService()` typing that preserves inline inference when declaring services
 - [service-validation.ts](./service-validation.ts): sync + async schema validation helpers and error wrapping

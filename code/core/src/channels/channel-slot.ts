@@ -1,42 +1,19 @@
+/// <reference path="../typings.d.ts" />
 /**
  * Canonical install/read surface for Storybook's shared addons channel.
  *
  * Each runtime (manager, preview, dev server) installs one channel instance here. The module slot
- * is the source of truth; {@link setChannel} also mirrors to `globalThis.__STORYBOOK_ADDONS_CHANNEL__`
+ * is the source of truth; {@link setChannel} also mirrors to `__STORYBOOK_ADDONS_CHANNEL__`
  * so legacy code and builder preamble that read the global slot stay in sync.
  */
-import { global } from '@storybook/global';
 
 import { Channel } from './main.ts';
 import type { ChannelLike } from './types.ts';
 
-type ChannelSlotGlobal = {
-  __STORYBOOK_ADDONS_CHANNEL__?: ChannelLike;
-};
-
 let channel: ChannelLike | undefined;
 
-function readGlobalSlot(): ChannelLike | undefined {
-  const fromGlobal = (global as ChannelSlotGlobal).__STORYBOOK_ADDONS_CHANNEL__;
-  if (fromGlobal) {
-    return fromGlobal;
-  }
-
-  return (globalThis as ChannelSlotGlobal).__STORYBOOK_ADDONS_CHANNEL__;
-}
-
 function syncGlobalSlot(next: ChannelLike | undefined): void {
-  const g = global as ChannelSlotGlobal;
-  const gt = globalThis as ChannelSlotGlobal;
-
-  if (next === undefined) {
-    delete g.__STORYBOOK_ADDONS_CHANNEL__;
-    delete gt.__STORYBOOK_ADDONS_CHANNEL__;
-    return;
-  }
-
-  g.__STORYBOOK_ADDONS_CHANNEL__ = next;
-  gt.__STORYBOOK_ADDONS_CHANNEL__ = next;
+  globalThis.__STORYBOOK_ADDONS_CHANNEL__ = next;
 }
 
 /**
@@ -47,7 +24,7 @@ function syncGlobalSlot(next: ChannelLike | undefined): void {
  * `setChannel` from whichever copy installed the live websocket channel.
  */
 export function getChannel(): ChannelLike | null {
-  const fromGlobal = readGlobalSlot();
+  const fromGlobal = globalThis.__STORYBOOK_ADDONS_CHANNEL__ as ChannelLike | undefined;
   if (fromGlobal) {
     channel = fromGlobal;
   }

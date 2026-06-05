@@ -16,8 +16,6 @@ import type {
 } from 'storybook/internal/types';
 import { Addon_TypesEnum } from 'storybook/internal/types';
 
-import { global } from '@storybook/global';
-
 import {
   getChannel as readInstalledChannel,
   setChannel as installStorybookChannel,
@@ -153,10 +151,10 @@ export class AddonStore {
 const KEY = '__STORYBOOK_ADDONS_MANAGER';
 
 function getAddonsStore(): AddonStore {
-  if (!global[KEY]) {
-    global[KEY] = new AddonStore();
+  if (!globalThis[KEY]) {
+    globalThis[KEY] = new AddonStore();
   }
-  return global[KEY];
+  return globalThis[KEY];
 }
 
 export const addons = getAddonsStore();

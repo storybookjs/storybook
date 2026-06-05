@@ -1,14 +1,10 @@
 /// <reference path="../../typings.d.ts" />
 import * as EVENTS from 'storybook/internal/core-events';
 
-import { global } from '@storybook/global';
-
 import { isJSON, parse, stringify } from 'telejson';
 import invariant from 'tiny-invariant';
 
 import type { ChannelHandler, ChannelTransport, Config } from '../types.ts';
-
-const { WebSocket } = global;
 
 type OnError = (message: Event) => void;
 
@@ -42,7 +38,7 @@ export class WebsocketTransport implements ChannelTransport {
   }
 
   constructor({ url, onError, page }: WebsocketTransportArgs) {
-    this.socket = new WebSocket(url);
+    this.socket = new globalThis.WebSocket(url);
     this.socket.onopen = () => {
       this.isReady = true;
       this.heartbeat();
@@ -95,7 +91,7 @@ export class WebsocketTransport implements ChannelTransport {
   private sendNow(event: any) {
     const data = stringify(event, {
       maxDepth: 15,
-      ...global.CHANNEL_OPTIONS,
+      ...(globalThis.CHANNEL_OPTIONS || {}),
     });
     this.socket.send(data);
   }

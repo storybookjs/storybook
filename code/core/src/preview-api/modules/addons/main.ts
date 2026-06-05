@@ -1,7 +1,5 @@
 import type { Channel } from 'storybook/internal/channels';
 
-import { global } from '@storybook/global';
-
 import {
   getChannel as readInstalledChannel,
   setChannel as installStorybookChannel,
@@ -53,10 +51,10 @@ export class AddonStore {
 const KEY = '__STORYBOOK_ADDONS_PREVIEW';
 
 function getAddonsStore(): AddonStore {
-  if (!global[KEY]) {
-    global[KEY] = new AddonStore();
+  if (!globalThis[KEY]) {
+    globalThis[KEY] = new AddonStore();
   }
-  return global[KEY];
+  return globalThis[KEY];
 }
 
 export const addons = getAddonsStore();

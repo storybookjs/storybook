@@ -1,7 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { global } from '@storybook/global';
-
 import { Channel } from './main.ts';
 import {
   clearChannel,
@@ -11,20 +9,10 @@ import {
   setChannel,
 } from './channel-slot.ts';
 
-type ChannelSlotGlobal = {
-  __STORYBOOK_ADDONS_CHANNEL__?: Channel;
-};
-
-function readGlobalSlot(): Channel | undefined {
-  return (
-    (global as ChannelSlotGlobal).__STORYBOOK_ADDONS_CHANNEL__ ??
-    (globalThis as ChannelSlotGlobal).__STORYBOOK_ADDONS_CHANNEL__
-  );
-}
-
 describe('channel slot', () => {
   afterEach(() => {
     clearChannel();
+    vi.unstubAllGlobals();
   });
 
   it('returns null after clearChannel', () => {
@@ -32,7 +20,7 @@ describe('channel slot', () => {
     clearChannel();
 
     expect(getChannel()).toBeNull();
-    expect(readGlobalSlot()).toBeUndefined();
+    expect(globalThis.__STORYBOOK_ADDONS_CHANNEL__).toBeUndefined();
   });
 
   it('mirrors setChannel to the global slot', () => {
@@ -41,14 +29,13 @@ describe('channel slot', () => {
     setChannel(channel);
 
     expect(getChannel()).toBe(channel);
-    expect(readGlobalSlot()).toBe(channel);
+    expect(globalThis.__STORYBOOK_ADDONS_CHANNEL__).toBe(channel);
   });
 
   it('hydrates the module slot from a pre-existing global assignment', () => {
     const channel = new Channel({});
     clearChannel();
-    (global as ChannelSlotGlobal).__STORYBOOK_ADDONS_CHANNEL__ = channel;
-    (globalThis as ChannelSlotGlobal).__STORYBOOK_ADDONS_CHANNEL__ = channel;
+    vi.stubGlobal('__STORYBOOK_ADDONS_CHANNEL__', channel);
 
     expect(getChannel()).toBe(channel);
   });
@@ -58,8 +45,7 @@ describe('channel slot', () => {
     installNoopChannel();
 
     const real = new Channel({ transport: { setHandler: vi.fn(), send: vi.fn() } });
-    (global as ChannelSlotGlobal).__STORYBOOK_ADDONS_CHANNEL__ = real;
-    (globalThis as ChannelSlotGlobal).__STORYBOOK_ADDONS_CHANNEL__ = real;
+    vi.stubGlobal('__STORYBOOK_ADDONS_CHANNEL__', real);
 
     expect(getChannel()).toBe(real);
   });
@@ -96,7 +82,7 @@ describe('channel slot', () => {
     setChannel(null);
 
     expect(getChannel()).toBeNull();
-    expect(readGlobalSlot()).toBeUndefined();
+    expect(globalThis.__STORYBOOK_ADDONS_CHANNEL__).toBeUndefined();
   });
 
   it('replaces an existing channel on setChannel', () => {
@@ -107,7 +93,7 @@ describe('channel slot', () => {
     setChannel(second);
 
     expect(getChannel()).toBe(second);
-    expect(readGlobalSlot()).toBe(second);
+    expect(globalThis.__STORYBOOK_ADDONS_CHANNEL__).toBe(second);
   });
 });
 

@@ -26,6 +26,7 @@ import {
 } from '@tanstack/react-router';
 import type { Navigate as _Navigate } from '@tanstack/react-router';
 import { onNavigate } from './spies.ts';
+import { normalizeFileRoutePath } from '../routing/path-utils.ts';
 
 // Mock navigation hooks — backed by real implementations so they work in stories
 export const useNavigate = fn(_useNavigate).mockName('@tanstack/react-router::useNavigate');
@@ -82,15 +83,17 @@ export const Link = ({
  * because the org `createFileRoute` doesn't set the path in the Route
  */
 export function createFileRoute(path: string) {
+  const normalizedPath = normalizeFileRoutePath(path);
+
   return (options: any) => {
     return createRoute({
-      path,
+      path: normalizedPath,
       ...options,
       isRoot: false,
     }).update({
       id: path,
-      path: path,
-      fullPath: path,
+      path: normalizedPath,
+      fullPath: normalizedPath,
       // any because tanstack router does that
     } as any);
   };

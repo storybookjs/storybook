@@ -152,6 +152,8 @@ const config = defineMain({
   features: {
     developmentModeForBuild: true,
     experimentalTestSyntax: true,
+    experimentalDocgenServer: true,
+    experimentalReactComponentMeta: true,
     changeDetection: true,
   },
   staticDirs: [{ from: './bench/bundle-analyzer', to: '/bundle-analyzer' }],

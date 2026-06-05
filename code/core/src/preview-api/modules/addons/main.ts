@@ -1,9 +1,8 @@
 import type { Channel } from 'storybook/internal/channels';
-
 import {
   getChannel as readInstalledChannel,
   setChannel as installStorybookChannel,
-} from '../../../channels/channel-slot.ts';
+} from 'storybook/internal/channels';
 import { mockChannel } from '../../../channels/mock-channel.ts';
 
 export class AddonStore {

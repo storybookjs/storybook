@@ -41,9 +41,7 @@ describe('normalizeOptions', () => {
     const options = ['reverse', 'map', 'filter'];
     const result = normalizeOptions(options, labelsAsArray);
     expect(result).toEqual({ reverse: 'reverse', map: 'map', filter: 'filter' });
-    expect(Object.keys(result as object)).not.toContain(
-      'function reverse() { [native code] }'
-    );
+    expect(Object.keys(result as object)).not.toContain('function reverse() { [native code] }');
   });
 
   it('returns the options object unchanged when options is not an array', () => {

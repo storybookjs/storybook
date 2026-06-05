@@ -329,7 +329,7 @@ export type RegistrationOnlyStaticBuildState = { value: string | null };
 export const registrationOnlyStaticBuildServiceDef = defineService({
   id: 'internal-fixture/registration-only-static-build',
   description: 'Declares staticPath in the definition and load at registration.',
-  initialState: { value: null } satisfies RegistrationOnlyStaticBuildState,
+  initialState: { value: null } as RegistrationOnlyStaticBuildState,
   queries: {
     getValue: {
       description: 'Returns one statically built value.',
@@ -421,7 +421,7 @@ export type InternalStaticBuildState = { value: string | null };
 export const internalStaticBuildServiceDef = defineService({
   id: 'internal-fixture/internal-static-build',
   description: 'Internal query participates in static builds.',
-  initialState: { value: null } satisfies InternalStaticBuildState,
+  initialState: { value: null } as InternalStaticBuildState,
   queries: {
     _getValue: {
       internal: true,

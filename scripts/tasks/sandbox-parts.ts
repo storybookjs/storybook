@@ -217,7 +217,13 @@ export const init: Task['run'] = async (
   }
 
   const nodeOptionsString = nodeOptions.join(' ');
-  const prefix = `NODE_OPTIONS='${nodeOptionsString}' STORYBOOK_TELEMETRY_URL="http://localhost:6007/event-log"`;
+  const prefix = [
+    `NODE_OPTIONS='${nodeOptionsString}'`,
+    `STORYBOOK_TELEMETRY_URL="http://localhost:6007/event-log"`,
+    // Pin the project root to the sandbox dir for templates that need it (e.g. vue-component-meta),
+    // since sandboxes have no `.git` marker and auto-detection could otherwise resolve too high.
+    ...(template.modifications?.setProjectRoot ? [`STORYBOOK_PROJECT_ROOT="${cwd}"`] : []),
+  ].join(' ');
 
   await updatePackageScripts({
     cwd,

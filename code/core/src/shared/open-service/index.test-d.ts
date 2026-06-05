@@ -69,9 +69,9 @@ const openServiceDef = defineService({
       output: v.void(),
       handler: (input, ctx) => {
         expectTypeOf(input).toEqualTypeOf<number>();
-        ctx.self.setState((draft) => {
-          expectTypeOf(draft).toEqualTypeOf<OpenServiceState>();
-          draft.count += input;
+        ctx.self.setState((state) => {
+          expectTypeOf(state).toEqualTypeOf<OpenServiceState>();
+          state.count += input;
         });
       },
     },
@@ -80,9 +80,9 @@ const openServiceDef = defineService({
       output: v.void(),
       handler: async (input, ctx) => {
         expectTypeOf(input).toEqualTypeOf<{ entryId: string }>();
-        ctx.self.setState((draft) => {
-          expectTypeOf(draft.valuesById[input.entryId]).toEqualTypeOf<string | undefined>();
-          draft.valuesById[input.entryId] = 'ready';
+        ctx.self.setState((state) => {
+          expectTypeOf(state.valuesById[input.entryId]).toEqualTypeOf<string | undefined>();
+          state.valuesById[input.entryId] = 'ready';
         });
       },
     },
@@ -96,6 +96,24 @@ describe('open-service type inference', () => {
     expectTypeOf(openService.queries.getCount).parameter(0).toEqualTypeOf<undefined>();
     expectTypeOf(openService.queries.getCount).returns.toEqualTypeOf<number>();
     expectTypeOf(openService.queries.getCount.loaded).returns.toEqualTypeOf<Promise<number>>();
+
+    const voidService = registerService(
+      defineService({
+        id: 'internal-fixture/void-query-types',
+        initialState: {},
+        queries: {
+          getAll: {
+            input: v.void(),
+            output: v.number(),
+            handler: () => 1,
+          },
+        },
+        commands: {},
+      })
+    );
+    expectTypeOf(voidService.queries.getAll).returns.toEqualTypeOf<number>();
+    expectTypeOf(voidService.queries.getAll()).toEqualTypeOf<number>();
+    expectTypeOf(voidService.queries.getAll.loaded()).toEqualTypeOf<Promise<number>>();
 
     expectTypeOf(openService.queries.getValue).parameter(0).toEqualTypeOf<{
       entryId: string;

@@ -76,12 +76,35 @@ export type CommandFunctions<
  * before reading. Use `.subscribe(input, callback)` to receive the current value immediately
  * (synchronously) and again after the background `load` settles (deduped while in-flight), plus
  * further emissions whenever tracked state changes.
+ *
+ * Queries whose input schema resolves to `undefined` (for example `v.void()`) may be called with
+ * zero arguments: `query()` and `query.loaded()`.
  */
-export type Query<TInput, TOutput> = {
+type InputQuery<TInput, TOutput> = {
   (input: TInput): TOutput;
   loaded(input: TInput): Promise<TOutput>;
   subscribe(input: TInput, callback: (value: TOutput) => void): () => void;
+  subscribe<TSelected>(
+    input: TInput,
+    selector: (value: TOutput) => TSelected,
+    callback: (selected: TSelected) => void
+  ): () => void;
 };
+
+/** Zero-argument overloads merged into {@link Query} when the input schema is void. */
+type VoidQuery<TOutput> = {
+  (): TOutput;
+  loaded(): Promise<TOutput>;
+  subscribe(callback: (value: TOutput) => void): () => void;
+  subscribe<TSelected>(
+    selector: (value: TOutput) => TSelected,
+    callback: (selected: TSelected) => void
+  ): () => void;
+};
+
+export type Query<TInput, TOutput> = undefined extends TInput
+  ? VoidQuery<TOutput> & InputQuery<TInput, TOutput>
+  : InputQuery<TInput, TOutput>;
 
 /**
  * Read-only service handle exposed to query handlers.
@@ -114,7 +137,7 @@ export type LoadSelf<
 /**
  * Mutable service handle exposed to command handlers.
  *
- * Commands receive both `setState` for direct draft mutation and `commands` so one command can
+ * Commands receive both `setState` for direct state mutation and `commands` so one command can
  * delegate to another within the same service.
  */
 export type CommandSelf<
@@ -123,7 +146,7 @@ export type CommandSelf<
   TCommandOutputSchemas extends MatchingOutputSchemas<TCommandInputSchemas> =
     MatchingOutputSchemas<TCommandInputSchemas>,
 > = LoadSelf<TState, TCommandInputSchemas, TCommandOutputSchemas> & {
-  setState(mutate: (draft: TState) => void): void;
+  setState(mutate: (state: TState) => void): void;
 };
 
 export type ServiceSummary = {

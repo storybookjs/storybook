@@ -1,3 +1,21 @@
+## 10.5.0-alpha.5
+
+- Addon Docs: DocsContent not filling available width when TOC is enabled - [#35043](https://github.com/storybookjs/storybook/pull/35043), thanks @k-utsumi!
+- Addon Docs: Fix Primary and Controls blocks not rendering in custom MDX pages - [#34496](https://github.com/storybookjs/storybook/pull/34496), thanks @NYCU-Chung!
+- CSF: Fix Canvas and userEvent types under Yarn PnP - [#34986](https://github.com/storybookjs/storybook/pull/34986), thanks @yatishgoel!
+- Controls: Load controls for stories from a composed ref - [#35050](https://github.com/storybookjs/storybook/pull/35050), thanks @TheSeydiCharyyev!
+- Core: Expose backgrounds types from public subpath - [#35044](https://github.com/storybookjs/storybook/pull/35044), thanks @ShaharAviram1!
+- Core: Respect !dev tag on MDX docs in sidebar - [#35031](https://github.com/storybookjs/storybook/pull/35031), thanks @JReinhold!
+- Docgen: Add mock open service - [#34954](https://github.com/storybookjs/storybook/pull/34954), thanks @JReinhold!
+- Docgen: Wire up react-component-meta with DocgenService - [#34963](https://github.com/storybookjs/storybook/pull/34963), thanks @JReinhold!
+- Docs: Fix Controls losing focus when subcomponents are defined - [#35018](https://github.com/storybookjs/storybook/pull/35018), thanks @cssinate!
+- Open Service: Fix reactivity on deep signals, fire subscribers on load dependencies - [#34979](https://github.com/storybookjs/storybook/pull/34979), thanks @JReinhold!
+- Preview: Use width/height instead of min-* in CanvasWrap - [#35056](https://github.com/storybookjs/storybook/pull/35056), thanks @DevLikhith5!
+- Pseudo States: Keep combinator broad pseudo selectors valid - [#35060](https://github.com/storybookjs/storybook/pull/35060), thanks @mturac!
+- React: Add support for resolving subcomponents attached as properties of a parent component - [#34967](https://github.com/storybookjs/storybook/pull/34967), thanks @yatishgoel!
+- TanStack: Normalize route-group handling in createRoute mock - [#34948](https://github.com/storybookjs/storybook/pull/34948), thanks @copilot-swe-agent!
+- UI: Prevent docs page scroll reset on HMR re-render - [#35021](https://github.com/storybookjs/storybook/pull/35021), thanks @LongTangGithub!
+
 ## 10.5.0-alpha.4
 
 - Addon Vitest: Fix dynamic import failure with Vitest 3 - [#34927](https://github.com/storybookjs/storybook/pull/34927), thanks @Sidnioulz!

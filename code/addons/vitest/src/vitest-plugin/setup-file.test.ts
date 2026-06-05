@@ -2,8 +2,6 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { Channel, clearChannel, getChannel, setChannel } from 'storybook/internal/channels';
 
-import { global } from '@storybook/global';
-
 import {
   type Task,
   initTransport,
@@ -40,8 +38,6 @@ describe('initTransport', () => {
     const existingChannel = new Channel({ transport });
     clearChannel();
     (globalThis as { __STORYBOOK_ADDONS_CHANNEL__?: Channel }).__STORYBOOK_ADDONS_CHANNEL__ =
-      existingChannel;
-    (global as { __STORYBOOK_ADDONS_CHANNEL__?: Channel }).__STORYBOOK_ADDONS_CHANNEL__ =
       existingChannel;
 
     initTransport();

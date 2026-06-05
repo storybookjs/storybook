@@ -1,12 +1,23 @@
 ---
 name: stories
-description: Write, create, update, or review Storybook stories for a component or a whole project. Use whenever the user asks to write, add, or generate stories, to write Storybook stories for a component or project, to cover a component with stories, or to create or edit any *.stories.* file (.stories.tsx/.ts/.jsx/.js/.svelte/.vue) — and when building or changing a UI component that should have stories, or before starting or previewing Storybook to verify UI. Pulls story-writing guidance from the Storybook MCP and keeps the preview running so stories can be verified.
+description: Write, create, update, or review Storybook stories for a component or a whole project. Use whenever the user asks to write, add, or generate stories, to write Storybook stories for a component or project, to cover a component with stories, or to create or edit any *.stories.* file (.stories.tsx/.ts/.jsx/.js/.svelte/.vue) — and on EVERY edit to a frontend component, with no exception: its props, variants, states, markup, layout, styling, CSS/Tailwind/styled, themes, tokens, icons, or assets. Invoke this even if you believe the change is cosmetic-only, internal, a refactor, or has "no behavior change" — that judgment is not yours to make; the skill always runs. Also use before starting or previewing Storybook to verify UI. Pulls story-writing guidance from the Storybook MCP and keeps the preview running so stories can be verified.
 ---
 
 # Storybook Stories
 
 The Storybook MCP is the source of truth for _how_ to write stories. This skill
 is the **mandatory, ordered process** for working on them.
+
+## Follow the MCP's own workflow first
+
+If the Storybook MCP is reachable through the MCP-proxy, it serves its own
+**server instructions** describing the authoritative tool workflow (routing,
+documentation lookup, previewing, working on stories, verification). When those
+instructions are available, read them and follow them **carefully and exactly** —
+they take precedence over any general assumption you might make about the tools.
+The gated steps below operate _within_ that MCP-provided workflow; they do not
+replace it. If the MCP exposes no instructions (proxy unavailable or Storybook
+not registered), fall back to the steps below.
 
 This is a STRICT, GATED workflow. You MUST execute the steps below in order and
 satisfy each step's **Gate** before moving to the next. Do NOT skip, reorder, or

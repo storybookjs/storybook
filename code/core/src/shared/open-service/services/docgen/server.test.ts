@@ -23,11 +23,11 @@ function makeStoryEntry(id: string, title = 'Comp'): IndexEntry {
 
 function makeDocgenPayload(overrides: Partial<DocgenPayload> = {}): DocgenPayload {
   return {
-    componentId: 'button',
+    id: 'button',
     name: 'Button',
     path: './button.stories.tsx',
-    description: '',
-    props: [],
+    jsDocTags: {},
+    stories: [],
     ...overrides,
   };
 }
@@ -48,20 +48,20 @@ describe('docgen open service', () => {
       const provider = vi.fn<DocgenProvider>(async () => payload);
 
       const service = registerDocgenService({
-        getIndex: makeGetIndex([entry, makeStoryEntry('button--secondary', 'Button')]),
+        getIndex: makeGetIndex([entry]),
         provider,
       });
 
-      const returned = await service.commands.extractDocgen({ componentId: 'button' });
+      const returned = await service.commands.extractDocgen({ id: 'button' });
 
       expect(returned).toEqual(payload);
-      expect(service.queries.getDocgen({ componentId: 'button' })).toEqual(payload);
+      expect(service.queries.getDocgen({ id: 'button' })).toEqual(payload);
 
       expect(provider).toHaveBeenCalledTimes(1);
       expect(provider.mock.calls[0][0]).toEqual({ entry });
     });
 
-    it('prefers a story index entry over attached docs for the same componentId', async () => {
+    it('prefers a story index entry over attached docs for the same component id', async () => {
       const storyEntry = makeStoryEntry('comp--default', 'Comp');
       const docsEntry = {
         id: 'comp--docs',
@@ -73,14 +73,14 @@ describe('docgen open service', () => {
         tags: [Tag.ATTACHED_MDX, 'docs'],
       } satisfies DocsIndexEntry;
 
-      const provider = vi.fn<DocgenProvider>(async () => makeDocgenPayload());
+      const provider = vi.fn<DocgenProvider>(async () => makeDocgenPayload({ id: 'comp' }));
 
       const service = registerDocgenService({
         getIndex: makeGetIndex([docsEntry, storyEntry]),
         provider,
       });
 
-      await service.commands.extractDocgen({ componentId: 'comp' });
+      await service.commands.extractDocgen({ id: 'comp' });
 
       expect(provider.mock.calls[0][0]).toEqual({ entry: storyEntry });
     });
@@ -91,20 +91,20 @@ describe('docgen open service', () => {
         provider: async () => undefined,
       });
 
-      const returned = await service.commands.extractDocgen({ componentId: 'button' });
+      const returned = await service.commands.extractDocgen({ id: 'button' });
 
       expect(returned).toBeUndefined();
-      expect(service.queries.getDocgen({ componentId: 'button' })).toBeUndefined();
+      expect(service.queries.getDocgen({ id: 'button' })).toBeUndefined();
     });
 
-    it('throws when no entry exists for the componentId', async () => {
+    it('throws when no entry exists for the component id', async () => {
       const service = registerDocgenService({
         getIndex: makeGetIndex([makeStoryEntry('button--primary', 'Button')]),
         provider: async () => undefined,
       });
 
-      await expect(service.commands.extractDocgen({ componentId: 'unknown' })).rejects.toThrow(
-        /No story or attached docs entry was found for componentId "unknown"/
+      await expect(service.commands.extractDocgen({ id: 'unknown' })).rejects.toThrow(
+        /No story or attached docs entry was found for component id "unknown"/
       );
     });
 
@@ -116,9 +116,39 @@ describe('docgen open service', () => {
         },
       });
 
-      await expect(service.commands.extractDocgen({ componentId: 'button' })).rejects.toThrow(
+      await expect(service.commands.extractDocgen({ id: 'button' })).rejects.toThrow(
         'provider blew up'
       );
+    });
+  });
+
+  describe('getDocgenForAllComponents query', () => {
+    it('returns every extracted component without filtering', async () => {
+      const manifestStory = { ...makeStoryEntry('button--primary', 'Button'), tags: [Tag.MANIFEST] };
+      const otherStory = makeStoryEntry('card--default', 'Card');
+
+      const service = registerDocgenService({
+        getIndex: makeGetIndex([manifestStory, otherStory]),
+        provider: async ({ entry }) =>
+          makeDocgenPayload({
+            id: entry.importPath.includes('button') ? 'button' : 'card',
+            name: entry.importPath.includes('button') ? 'Button' : 'Card',
+            path: entry.importPath,
+          }),
+      });
+
+      await expect(service.queries.getDocgenForAllComponents.loaded()).resolves.toEqual({
+        button: makeDocgenPayload({
+          id: 'button',
+          name: 'Button',
+          path: './button.stories.tsx',
+        }),
+        card: makeDocgenPayload({
+          id: 'card',
+          name: 'Card',
+          path: './card.stories.tsx',
+        }),
+      });
     });
   });
 
@@ -129,7 +159,7 @@ describe('docgen open service', () => {
         provider: async () => makeDocgenPayload(),
       });
 
-      expect(service.queries.getDocgen({ componentId: 'button' })).toBeUndefined();
+      expect(service.queries.getDocgen({ id: 'button' })).toBeUndefined();
     });
 
     it('.loaded() drives the load body which calls extractDocgen', async () => {
@@ -138,7 +168,7 @@ describe('docgen open service', () => {
         provider: async () => makeDocgenPayload({ description: 'from-loaded' }),
       });
 
-      await expect(service.queries.getDocgen.loaded({ componentId: 'button' })).resolves.toEqual(
+      await expect(service.queries.getDocgen.loaded({ id: 'button' })).resolves.toEqual(
         makeDocgenPayload({ description: 'from-loaded' })
       );
     });
@@ -149,14 +179,14 @@ describe('docgen open service', () => {
         provider: async () => undefined,
       });
 
-      await expect(service.queries.getDocgen.loaded({ componentId: 'unknown' })).rejects.toThrow(
-        /No story or attached docs entry was found for componentId "unknown"/
+      await expect(service.queries.getDocgen.loaded({ id: 'unknown' })).rejects.toThrow(
+        /No story or attached docs entry was found for component id "unknown"/
       );
     });
   });
 
   describe('static build', () => {
-    it('does not request docgen for componentIds that only exist on unattached docs entries', async () => {
+    it('does not request docgen for component ids that only exist on unattached docs entries', async () => {
       const storyEntry = makeStoryEntry('button--primary', 'Button');
       const unattachedDocs = {
         id: 'orphan--docs',
@@ -182,7 +212,7 @@ describe('docgen open service', () => {
       expect(Object.keys(store)).toEqual(['core/docgen/button.json']);
     });
 
-    it('writes one docgen JSON per componentId whose provider produced a payload', async () => {
+    it('writes one docgen JSON per component id whose provider produced a payload', async () => {
       registerDocgenService({
         getIndex: makeGetIndex([
           makeStoryEntry('button--primary', 'Button'),
@@ -192,7 +222,7 @@ describe('docgen open service', () => {
         provider: async ({ entry }) => {
           const isButton = entry.importPath.includes('button');
           return makeDocgenPayload({
-            componentId: isButton ? 'button' : 'card',
+            id: isButton ? 'button' : 'card',
             name: isButton ? 'Button' : 'Card',
             path: entry.importPath,
             description: `from ${entry.importPath}`,
@@ -209,11 +239,12 @@ describe('docgen open service', () => {
       expect(store['core/docgen/button.json']).toMatchObject({
         components: {
           button: {
-            componentId: 'button',
+            id: 'button',
             name: 'Button',
             path: './button.stories.tsx',
             description: 'from ./button.stories.tsx',
-            props: [],
+            jsDocTags: {},
+            stories: [],
           },
         },
       });
@@ -237,30 +268,19 @@ describe('docgen open service', () => {
         provider: outer,
       });
 
-      await expect(service.queries.getDocgen.loaded({ componentId: 'button' })).resolves.toEqual(
+      await expect(service.queries.getDocgen.loaded({ id: 'button' })).resolves.toEqual(
         makeDocgenPayload({ name: 'inner-name', description: 'outer-description' })
       );
     });
 
     it('merges output from three stacked providers (identity → A → B)', async () => {
-      const makeProp = (name: string) => ({
-        name,
-        required: false,
-        type: { name: 'string' },
-        description: '',
-        defaultValue: null,
-      });
-
-      // Identity seed produced by core's services preset.
       const identity: DocgenProvider = async () => undefined;
 
-      // First provider: sets a name and adds a prop.
       const providerA: DocgenProvider = async (input) => {
         await identity(input);
-        return makeDocgenPayload({ name: 'A-name', props: [makeProp('a')] });
+        return makeDocgenPayload({ name: 'A-name' });
       };
 
-      // Second provider: appends to description and stacks another prop.
       const providerB: DocgenProvider = async (input) => {
         const downstream = await providerA(input);
         if (!downstream) {
@@ -268,8 +288,7 @@ describe('docgen open service', () => {
         }
         return {
           ...downstream,
-          description: `${downstream.description}B-description`,
-          props: [...downstream.props, makeProp('b')],
+          description: `${downstream.description ?? ''}B-description`,
         };
       };
 
@@ -278,11 +297,10 @@ describe('docgen open service', () => {
         provider: providerB,
       });
 
-      await expect(service.queries.getDocgen.loaded({ componentId: 'button' })).resolves.toEqual(
+      await expect(service.queries.getDocgen.loaded({ id: 'button' })).resolves.toEqual(
         makeDocgenPayload({
           name: 'A-name',
           description: 'B-description',
-          props: [makeProp('a'), makeProp('b')],
         })
       );
     });
@@ -296,8 +314,8 @@ describe('docgen open service', () => {
         provider: passthrough,
       });
 
-      await service.commands.extractDocgen({ componentId: 'button' });
-      expect(service.queries.getDocgen({ componentId: 'button' })).toBeUndefined();
+      await service.commands.extractDocgen({ id: 'button' });
+      expect(service.queries.getDocgen({ id: 'button' })).toBeUndefined();
     });
   });
 });

@@ -97,6 +97,24 @@ describe('open-service type inference', () => {
     expectTypeOf(openService.queries.getCount).returns.toEqualTypeOf<number>();
     expectTypeOf(openService.queries.getCount.loaded).returns.toEqualTypeOf<Promise<number>>();
 
+    const voidService = registerService(
+      defineService({
+        id: 'internal-fixture/void-query-types',
+        initialState: {},
+        queries: {
+          getAll: {
+            input: v.void(),
+            output: v.number(),
+            handler: () => 1,
+          },
+        },
+        commands: {},
+      })
+    );
+    expectTypeOf(voidService.queries.getAll).returns.toEqualTypeOf<number>();
+    expectTypeOf(voidService.queries.getAll()).toEqualTypeOf<number>();
+    expectTypeOf(voidService.queries.getAll.loaded()).toEqualTypeOf<Promise<number>>();
+
     expectTypeOf(openService.queries.getValue).parameter(0).toEqualTypeOf<{
       entryId: string;
     }>();

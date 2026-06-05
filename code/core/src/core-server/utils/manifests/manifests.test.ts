@@ -1,4 +1,6 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { mkdir, readFile, writeFile } from 'node:fs/promises';
+
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { logger } from 'storybook/internal/node-logger';
 import type { ComponentsManifest, Manifests, Presets, StoryIndex } from 'storybook/internal/types';
@@ -6,18 +8,18 @@ import type { ComponentsManifest, Manifests, Presets, StoryIndex } from 'storybo
 import { vol } from 'memfs';
 import type { Polka } from 'polka';
 
+import { clearRegistry } from '../../../shared/open-service/server.ts';
+import { registerDocgenService } from '../../../shared/open-service/services/docgen/server.ts';
+import type { DocgenProvider } from '../../../shared/open-service/services/docgen/types.ts';
 import { Tag } from '../../../shared/constants/tags.ts';
 import { registerManifests, writeManifests } from './manifests.ts';
 
-// Mock dependencies
-vi.mock('node:fs/promises', async () => {
-  const fs = (await import('memfs')).fs.promises;
-  return { default: fs, ...fs };
-});
+vi.mock('node:fs/promises', { spy: true });
 vi.mock('storybook/internal/node-logger');
 
 describe('manifests', () => {
-  let mockGenerator: { getIndex: ReturnType<typeof vi.fn> };
+  let mockGetIndex: ReturnType<typeof vi.fn<() => Promise<StoryIndex>>>;
+  let mockGenerator: { getIndex: () => Promise<StoryIndex> };
   let mockManifests: Manifests | null;
 
   type RouteHandler = (req: { params?: { name?: string } }, res: MockResponse) => Promise<void>;
@@ -33,12 +35,14 @@ describe('manifests', () => {
     statusCode: undefined,
   });
 
-  const setupMockPresets = () => {
-    mockGenerator = {
-      getIndex: vi.fn().mockResolvedValue({
-        entries: {},
-      } as StoryIndex),
-    };
+  const setupMockPresets = (options?: {
+    componentsManifest?: boolean;
+    experimentalDocgenServer?: boolean;
+  }) => {
+    mockGetIndex = vi.fn<() => Promise<StoryIndex>>().mockResolvedValue({
+      entries: {},
+    } as StoryIndex);
+    mockGenerator = { getIndex: mockGetIndex };
     mockManifests = {};
 
     return {
@@ -48,6 +52,11 @@ describe('manifests', () => {
             return Promise.resolve(mockGenerator);
           case 'experimental_manifests':
             return Promise.resolve(mockManifests ?? undefined);
+          case 'features':
+            return Promise.resolve({
+              componentsManifest: options?.componentsManifest ?? true,
+              experimentalDocgenServer: options?.experimentalDocgenServer ?? false,
+            });
           default:
             return Promise.resolve(undefined);
         }
@@ -55,9 +64,25 @@ describe('manifests', () => {
     } satisfies Presets;
   };
 
-  beforeEach(() => {
+  beforeEach(async () => {
     vol.reset();
     vi.clearAllMocks();
+
+    const memfs = await vi.importActual<typeof import('memfs')>('memfs');
+
+    vi.mocked(mkdir).mockImplementation(
+      memfs.fs.promises.mkdir as unknown as typeof import('node:fs/promises').mkdir
+    );
+    vi.mocked(writeFile).mockImplementation(
+      memfs.fs.promises.writeFile as unknown as typeof import('node:fs/promises').writeFile
+    );
+    vi.mocked(readFile).mockImplementation(
+      memfs.fs.promises.readFile as unknown as typeof import('node:fs/promises').readFile
+    );
+  });
+
+  afterEach(() => {
+    clearRegistry();
   });
 
   describe('writeManifests', () => {
@@ -188,7 +213,7 @@ describe('manifests', () => {
     });
 
     it('should filter entries by manifest tag and pass manifestEntries to preset', async () => {
-      mockGenerator.getIndex.mockResolvedValue({
+      mockGetIndex.mockResolvedValue({
         v: 5,
         entries: {
           'story-with-manifest': {
@@ -252,6 +277,102 @@ describe('manifests', () => {
       expect(entryIds).toContain('docs');
       // Should NOT include story without manifest tag
       expect(entryIds).not.toContain('story-without-manifest');
+    });
+
+    it('does nothing when componentsManifest is disabled', async () => {
+      mockPresets = setupMockPresets({
+        componentsManifest: false,
+        experimentalDocgenServer: true,
+      });
+      mockManifests = { custom: { data: 'value' } };
+
+      await writeManifests('/output', mockPresets);
+
+      expect(vol.toJSON()).toEqual({});
+    });
+
+    it('writes ref-based components.json when experimentalDocgenServer is enabled', async () => {
+      mockPresets = setupMockPresets({
+        componentsManifest: true,
+        experimentalDocgenServer: true,
+      });
+      mockGetIndex.mockResolvedValue({
+        v: 5,
+        entries: {
+          'button--primary': {
+            type: 'story',
+            subtype: 'story',
+            id: 'button--primary',
+            name: 'Primary',
+            title: 'Button',
+            importPath: './button.stories.tsx',
+            tags: [Tag.MANIFEST],
+          },
+        },
+      } as StoryIndex);
+
+      mockManifests = {
+        components: {
+          v: 0,
+          components: {},
+          meta: { docgen: 'react-component-meta', durationMs: 0 },
+        },
+        docs: {
+          v: 0,
+          docs: {
+            'intro--docs': {
+              id: 'intro--docs',
+              name: 'docs',
+              path: './Intro.mdx',
+              title: 'Intro',
+            },
+          },
+        },
+      };
+
+      const provider: DocgenProvider = async () => ({
+        id: 'button',
+        name: 'Button',
+        path: './button.stories.tsx',
+        description: 'A button',
+        jsDocTags: {},
+        stories: [],
+      });
+
+      registerDocgenService({
+        getIndex: () => mockGenerator.getIndex(),
+        provider,
+      });
+
+      vol.fromNestedJSON({
+        '/output/services/core/docgen/button.json': JSON.stringify({
+          components: {
+            button: {
+              id: 'button',
+              name: 'Button',
+              path: './button.stories.tsx',
+              description: 'A button',
+              jsDocTags: {},
+              stories: [],
+            },
+          },
+        }),
+      });
+
+      await writeManifests('/output', mockPresets);
+
+      const files = vol.toJSON();
+      const componentsJson = JSON.parse(files['/output/manifests/components.json'] as string);
+      expect(componentsJson.v).toBe(1);
+      expect(componentsJson.components.button).toEqual({
+        id: 'button',
+        name: 'Button',
+        description: 'A button',
+        docgen: { $ref: '../services/core/docgen/button.json#/components/button' },
+      });
+      expect(files['/output/manifests/docs.json']).toBeDefined();
+      expect(files['/output/manifests/components.html']).toContain('Button');
+      expect(files['/output/manifests/components.html']).toContain('Unattached Docs');
     });
   });
 
@@ -325,6 +446,26 @@ describe('manifests', () => {
 
         expect(res.statusCode).toBe(404);
         expect(res.end).toHaveBeenCalledWith('Manifest "any" not found');
+      });
+
+      it('returns 404 for components.json when experimentalDocgenServer is enabled', async () => {
+        mockPresets = setupMockPresets({
+          componentsManifest: true,
+          experimentalDocgenServer: true,
+        });
+
+        registerManifests({ app: mockApp, presets: mockPresets });
+
+        const handler = mockGet.mock.calls[0][1] as RouteHandler;
+        const req = { params: { name: 'components' } };
+        const res = createResponse();
+
+        await handler(req, res);
+
+        expect(res.statusCode).toBe(404);
+        expect(res.end).toHaveBeenCalledWith(
+          'Manifest "components" is not available in dev when experimentalDocgenServer is enabled'
+        );
       });
 
       it('should handle errors with 500 status and log the error', async () => {

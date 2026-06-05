@@ -657,8 +657,13 @@ function buildLoadWrappedQueries<TState>(
 
   for (const [name, queryDef] of refs.queryDefinitions) {
     const defaultQuery = refs.defaultQueries[name];
-    const wrapped = ((input: unknown) => {
-      const validatedInput = validateQueryInput(refs, name, queryDef, input);
+    const wrapped = ((input?: unknown) => {
+      const validatedInput = validateQueryInput(
+        refs,
+        name,
+        queryDef,
+        arguments.length === 0 ? undefined : input
+      );
       const loadKey = makeLoadKey(refs.serviceId, name, validatedInput);
 
       if (queryDef.load) {
@@ -684,8 +689,15 @@ function buildLoadWrappedQueries<TState>(
       );
     }) as Query<unknown, unknown>;
 
-    wrapped.loaded = (input: unknown) =>
-      runLoaded(refs, name, queryDef, input, ancestorChain) as Promise<unknown>;
+    wrapped.loaded = function loaded(input?: unknown) {
+      return runLoaded(
+        refs,
+        name,
+        queryDef,
+        arguments.length === 0 ? undefined : input,
+        ancestorChain
+      ) as Promise<unknown>;
+    };
     wrapped.subscribe = defaultQuery.subscribe;
     wrappedQueries[name] = wrapped;
   }
@@ -885,8 +897,16 @@ function createDefaultQuery<TState>(
   queryName: string,
   queryDef: RuntimeQueryDefinition<TState>
 ): Query<unknown, unknown> {
-  const query = ((input: unknown) => {
-    const validatedInput = validateQueryInput(refs, queryName, queryDef, input);
+  const resolveInput = (input: unknown, argsLength: number) =>
+    argsLength === 0 ? undefined : input;
+
+  const query = ((input?: unknown) => {
+    const validatedInput = validateQueryInput(
+      refs,
+      queryName,
+      queryDef,
+      resolveInput(input, arguments.length)
+    );
     const loadKey = makeLoadKey(refs.serviceId, queryName, validatedInput);
 
     if (queryDef.load) {
@@ -938,20 +958,47 @@ function createDefaultQuery<TState>(
     );
   }) as Query<unknown, unknown>;
 
-  query.loaded = (input: unknown) => runLoaded(refs, queryName, queryDef, input);
-  query.subscribe = ((
-    input: unknown,
-    selectorOrCallback: ((value: unknown) => unknown) | ((value: unknown) => void),
-    maybeCallback?: (value: unknown) => void
-  ): (() => void) =>
-    subscribeToQuery(
+  query.loaded = function loaded(input?: unknown) {
+    return runLoaded(refs, queryName, queryDef, resolveInput(input, arguments.length));
+  };
+  query.subscribe = ((...args: unknown[]): (() => void) => {
+    if (args.length === 1 && typeof args[0] === 'function') {
+      return subscribeToQuery(
+        refs,
+        queryName,
+        queryDef,
+        undefined,
+        undefined,
+        args[0] as (value: unknown) => void
+      );
+    }
+
+    if (
+      args.length === 2 &&
+      typeof args[0] === 'function' &&
+      typeof args[1] === 'function'
+    ) {
+      return subscribeToQuery(
+        refs,
+        queryName,
+        queryDef,
+        undefined,
+        args[0] as (value: unknown) => unknown,
+        args[1] as (value: unknown) => void
+      );
+    }
+
+    const [input, selectorOrCallback, maybeCallback] = args;
+
+    return subscribeToQuery(
       refs,
       queryName,
       queryDef,
       input,
       maybeCallback ? (selectorOrCallback as (value: unknown) => unknown) : undefined,
-      maybeCallback ?? (selectorOrCallback as (value: unknown) => void)
-    )) as Query<unknown, unknown>['subscribe'];
+      (maybeCallback ?? selectorOrCallback) as (value: unknown) => void
+    );
+  }) as Query<unknown, unknown>['subscribe'];
 
   return query;
 }

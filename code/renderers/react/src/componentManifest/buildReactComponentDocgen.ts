@@ -15,7 +15,6 @@ import { type DocObj } from './reactDocgen.ts';
 import { type ComponentDocWithExportName } from './reactDocgenTypescript.ts';
 import {
   type ParsedCsf,
-  type ResolvedStory,
   type ResolvedSubcomponent,
   extractStorySnippets,
 } from './resolveComponents.ts';
@@ -23,52 +22,24 @@ import { cachedFindUp, cachedReadTextFileSync } from './utils.ts';
 
 export type DocgenEngine = 'react-docgen' | 'react-docgen-typescript' | 'react-component-meta';
 
-/** Resolved subcomponent docgen for one declared CSF subcomponent. */
-export interface ReactResolvedSubcomponentDocgen {
-  name: string;
-  path: string;
-  description?: string;
-  summary?: string;
-  import?: string;
-  jsDocTags: Record<string, string[]>;
+/** React subcomponent manifest with engine-specific docgen fields attached. */
+export interface ReactSubcomponentManifest extends ComponentSubcomponentManifest {
   reactDocgen?: DocObj;
   reactDocgenTypescript?: ComponentDocWithExportName;
   reactComponentMeta?: ComponentDoc;
-  error?: { name: string; message: string };
 }
 
 /**
- * Canonical React component docgen for one CSF file + index entry. The docgen open service consumes
- * this shape directly; the experimental component manifest adapts it via {@link toReactComponentManifest}.
+ * React component manifest with engine-specific docgen fields attached.
+ *
+ * This is the output shape for both the experimental components manifest and the docgen open
+ * service provider — there is no separate mapping step between "resolved docgen" and "manifest".
  */
-export interface ReactResolvedComponentDocgen {
-  componentId: string;
-  name: string;
-  path: string;
-  stories: ResolvedStory[];
-  import?: string;
-  description?: string;
-  summary?: string;
-  jsDocTags: Record<string, string[]>;
-  reactDocgen?: DocObj;
-  reactDocgenTypescript?: ComponentDocWithExportName;
-  reactComponentMeta?: ComponentDoc;
-  subcomponents?: Record<string, ReactResolvedSubcomponentDocgen>;
-  error?: { name: string; message: string };
-}
-
-/** Manifest output still uses `id`; maps from {@link ReactResolvedComponentDocgen}. */
 export interface ReactComponentManifest extends ComponentManifest {
   reactDocgen?: DocObj;
   reactDocgenTypescript?: ComponentDocWithExportName;
   reactComponentMeta?: ComponentDoc;
   subcomponents?: Record<string, ReactSubcomponentManifest>;
-}
-
-export interface ReactSubcomponentManifest extends ComponentSubcomponentManifest {
-  reactDocgen?: DocObj;
-  reactDocgenTypescript?: ComponentDocWithExportName;
-  reactComponentMeta?: ComponentDoc;
 }
 
 function getPackageInfo(componentPath: string | undefined, fallbackPath: string) {
@@ -172,7 +143,7 @@ function createSubcomponentDocgen({
   docgenEngine: DocgenEngine;
   packageName: string | undefined;
   storyFilePath: string;
-}): ReactResolvedSubcomponentDocgen {
+}): ReactSubcomponentManifest {
   const imports =
     getImports({ components: component ? [component] : [], packageName })
       .join('\n')
@@ -241,8 +212,8 @@ export function buildReactComponentDocgenFromResolved({
   docgenEngine: DocgenEngine;
   /** When set, only stories whose ids are in the set are included (manifest tag filtering). */
   filterStoryIds?: ReadonlySet<string>;
-}): ReactResolvedComponentDocgen {
-  const componentId = getComponentIdFromEntry(entry);
+}): ReactComponentManifest {
+  const id = getComponentIdFromEntry(entry);
   const title = entry.title.split('/').at(-1)!.replace(/\s+/g, '');
 
   const packageName = getPackageInfo(component?.path, storyPath);
@@ -253,13 +224,13 @@ export function buildReactComponentDocgenFromResolved({
   const stories = extractStorySnippets(csf, component?.componentName, filterStoryIds);
 
   const base = {
-    componentId,
+    id,
     name: componentName ?? title,
     path: storyFilePath,
     stories,
     import: imports || undefined,
     jsDocTags: {},
-  } satisfies Partial<ReactResolvedComponentDocgen>;
+  } satisfies Partial<ReactComponentManifest>;
 
   const {
     reactDocgen,
@@ -324,35 +295,5 @@ export function buildReactComponentDocgenFromResolved({
     jsDocTags,
     ...(Object.keys(subcomponentEntries).length > 0 ? { subcomponents: subcomponentEntries } : {}),
     error: docgenError,
-  };
-}
-
-/** Adapts resolved docgen into the experimental component manifest schema (`id` instead of `componentId`). */
-export function toReactComponentManifest(
-  resolved: ReactResolvedComponentDocgen
-): ReactComponentManifest {
-  const { componentId, subcomponents, ...rest } = resolved;
-  return {
-    ...rest,
-    id: componentId,
-    subcomponents: subcomponents
-      ? Object.fromEntries(
-          Object.entries(subcomponents).map(([key, sub]) => [
-            key,
-            {
-              name: sub.name,
-              path: sub.path,
-              description: sub.description,
-              summary: sub.summary,
-              import: sub.import,
-              jsDocTags: sub.jsDocTags,
-              error: sub.error,
-              reactDocgen: sub.reactDocgen,
-              reactDocgenTypescript: sub.reactDocgenTypescript,
-              reactComponentMeta: sub.reactComponentMeta,
-            },
-          ])
-        )
-      : undefined,
   };
 }

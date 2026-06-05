@@ -1,17 +1,20 @@
-import React, { type FC, useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState, type FC } from 'react';
 
 import { Button, Card, Collapsible, IconButton, ScrollArea } from 'storybook/internal/components';
 import { styled } from 'storybook/theming';
 
 import {
+  CheckIcon,
   ChevronSmallDownIcon,
   CollapseIcon,
   ExpandAltIcon,
   SearchIcon,
   StorybookIcon,
+  WandIcon,
 } from '@storybook/icons';
 
 import { CollectionGrid, type StoryInfo } from '../components/CollectionGrid.tsx';
+import { CopyButton } from '../components/CopyButton.tsx';
 import { ReviewHeader } from '../components/ReviewHeader.tsx';
 import { StaleBanner } from '../components/StaleBanner.tsx';
 import { buildReviewChangesDetailHref } from '../review-navigation.ts';
@@ -34,10 +37,17 @@ const Page = styled.div(({ theme }) => ({
 
 const Empty = styled.div(({ theme }) => ({
   display: 'flex',
+  flexDirection: 'column',
+  gap: 16,
   alignItems: 'center',
   justifyContent: 'center',
   height: '100dvh',
-  color: theme.color.mediumdark,
+  color: theme.color.defaultText,
+  '& > div': {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 8,
+  },
 }));
 
 const SearchField = styled.div(({ theme }) => ({
@@ -240,7 +250,27 @@ export const SummaryScreen: FC<SummaryScreenProps> = ({
   }, [state]);
 
   if (!state) {
-    return <Empty>Waiting for the agent to push a review…</Empty>;
+    return (
+      <Empty>
+        <span>Waiting for the agent to display a review…</span>
+        <div>
+          <CopyButton
+            padding="small"
+            ariaLabel="Copy prompt to refresh this review"
+            tooltip="Copy prompt"
+            copyText="Generate a Storybook review including my latest changes using the display-review tool."
+          >
+            {(copied) => <>{copied ? <CheckIcon /> : <WandIcon />} Copy prompt</>}
+          </CopyButton>
+          <Button padding="small" asChild>
+            <a href={storybookRootHref}>
+              <StorybookIcon />
+              View Storybook
+            </a>
+          </Button>
+        </div>
+      </Empty>
+    );
   }
 
   const storyCount = new Set(state.collections.flatMap((collection) => collection.storyIds)).size;

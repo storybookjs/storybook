@@ -1,9 +1,9 @@
-import React, { type FC, useEffect, useRef, useState } from 'react';
+import React, { type FC } from 'react';
 
-import { Button } from 'storybook/internal/components';
 import { styled } from 'storybook/theming';
 
 import { CheckIcon, WandIcon } from '@storybook/icons';
+import { CopyButton } from './CopyButton.tsx';
 
 const Bar = styled.div(({ theme }) => ({
   display: 'flex',
@@ -21,54 +21,22 @@ const Bar = styled.div(({ theme }) => ({
 
 // Prompt copied to the clipboard so a reviewer can paste it to their coding
 // agent to regenerate the review against the current working tree.
-const REFRESH_REVIEW_PROMPT =
-  'The Storybook review is stale. Generate a fresh review including my latest changes using the display-review tool.';
-
-const COPIED_RESET_MS = 2000;
 
 /**
  * Attention bar shown at the top of the review screens when the cached review
  * has been marked stale (a source file changed after it was created).
  */
-export const StaleBanner: FC = () => {
-  const [copied, setCopied] = useState(false);
-  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  useEffect(
-    () => () => {
-      if (timerRef.current) {
-        clearTimeout(timerRef.current);
-      }
-    },
-    []
-  );
-
-  const handleCopy = () => {
-    // eslint-disable-next-line compat/compat
-    navigator.clipboard
-      ?.writeText(REFRESH_REVIEW_PROMPT)
-      .then(() => {
-        setCopied(true);
-        if (timerRef.current) {
-          clearTimeout(timerRef.current);
-        }
-        timerRef.current = setTimeout(() => setCopied(false), COPIED_RESET_MS);
-      })
-      .catch(() => {});
-  };
-
-  return (
-    <Bar role="status" aria-live="polite">
-      <span>This review may be stale. Ask your agent to refresh it.</span>
-      <Button
-        variant="ghost"
-        padding="small"
-        ariaLabel="Copy prompt to refresh this review"
-        tooltip={copied ? 'Prompt copied' : 'Copy prompt'}
-        onClick={handleCopy}
-      >
-        {copied ? <CheckIcon /> : <WandIcon />}
-      </Button>
-    </Bar>
-  );
-};
+export const StaleBanner: FC = () => (
+  <Bar role="status" aria-live="polite">
+    <span>This review may be stale. Ask your agent to refresh it.</span>
+    <CopyButton
+      variant="ghost"
+      padding="small"
+      ariaLabel="Copy prompt to refresh this review"
+      tooltip="Copy prompt"
+      copyText="The Storybook review is stale. Generate a fresh review including my latest changes using the display-review tool."
+    >
+      {(copied) => (copied ? <CheckIcon /> : <WandIcon />)}
+    </CopyButton>
+  </Bar>
+);

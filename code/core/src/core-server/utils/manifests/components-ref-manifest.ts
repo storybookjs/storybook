@@ -33,11 +33,6 @@ export type ComponentsRefManifest = {
   meta?: ComponentsManifest['meta'];
 };
 
-/** Index row used when a component has no readable docgen snapshot (no `docgen` ref). */
-function minimalIndexEntry(id: string): ComponentManifestIndexEntry {
-  return { id, name: id };
-}
-
 /** Reads one component's docgen payload out of a built snapshot document, if present. */
 function readSnapshotPayload(document: unknown, id: string): DocgenPayload | undefined {
   const components = (document as { components?: Record<string, unknown> } | null)?.components;
@@ -46,45 +41,59 @@ function readSnapshotPayload(document: unknown, id: string): DocgenPayload | und
 }
 
 /**
- * Reads built docgen service snapshots from disk and builds index entries for
- * `manifests/components.json`.
+ * Reads the built docgen service snapshots for the given component ids from disk.
  *
- * When a snapshot is missing or has no payload for the component id, writes summary fields only
- * (no `docgen` ref).
+ * Returns only the ids with a readable payload; missing files and empty snapshots are skipped. The
+ * same payloads back both `manifests/components.json` and the components HTML debugger, so the static
+ * build reads docgen once instead of re-extracting it from the live service.
  */
-export async function loadComponentManifestIndexEntriesFromDisk(
+export async function loadDocgenPayloadsFromDisk(
   outputDir: string,
-  manifestComponentIds: string[]
-): Promise<Record<string, ComponentManifestIndexEntry>> {
+  componentIds: string[]
+): Promise<Record<string, DocgenPayload>> {
   const entries = await Promise.all(
-    manifestComponentIds.map(async (id) => {
+    componentIds.map(async (id) => {
       const snapshotPath = join(outputDir, 'services', ...docgenStaticStorePath(id).split('/'));
 
       try {
         const document = JSON.parse(await readFile(snapshotPath, 'utf8')) as unknown;
         const payload = readSnapshotPayload(document, id);
-
-        if (!payload) {
-          return [id, minimalIndexEntry(id)] as const;
-        }
-
-        return [
-          id,
-          {
-            id: payload.id ?? id,
-            name: payload.name ?? id,
-            ...(payload.description !== undefined ? { description: payload.description } : {}),
-            ...(payload.summary !== undefined ? { summary: payload.summary } : {}),
-            docgen: { $ref: docgenManifestRef(id) },
-          },
-        ] as const;
+        return payload ? ([id, payload] as const) : null;
       } catch {
-        return [id, minimalIndexEntry(id)] as const;
+        return null;
       }
     })
   );
 
-  return Object.fromEntries(entries);
+  return Object.fromEntries(entries.filter((entry) => entry !== null));
+}
+
+/**
+ * Builds `manifests/components.json` index rows for the given component ids.
+ *
+ * Components with a docgen payload get inlined summary fields plus a nested `docgen.$ref`; components
+ * without one (no readable snapshot) get summary fields only.
+ */
+export function toComponentManifestIndexEntries(
+  componentIds: string[],
+  payloads: Record<string, DocgenPayload>
+): Record<string, ComponentManifestIndexEntry> {
+  const entries: Record<string, ComponentManifestIndexEntry> = {};
+
+  for (const id of componentIds) {
+    const payload = payloads[id];
+    entries[id] = payload
+      ? {
+          id: payload.id ?? id,
+          name: payload.name ?? id,
+          ...(payload.description !== undefined ? { description: payload.description } : {}),
+          ...(payload.summary !== undefined ? { summary: payload.summary } : {}),
+          docgen: { $ref: docgenManifestRef(id) },
+        }
+      : { id, name: id };
+  }
+
+  return entries;
 }
 
 /** Builds a ref-based components manifest index (paths relative to `manifests/`). */

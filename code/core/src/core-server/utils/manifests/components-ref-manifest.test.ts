@@ -5,11 +5,13 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { vol } from 'memfs';
 
 import { docgenManifestRef } from '../../../shared/open-service/services/docgen/paths.ts';
+import type { DocgenPayload } from '../../../shared/open-service/services/docgen/types.ts';
 
 import {
   COMPONENTS_REF_MANIFEST_VERSION,
   buildComponentsRefManifest,
-  loadComponentManifestIndexEntriesFromDisk,
+  loadDocgenPayloadsFromDisk,
+  toComponentManifestIndexEntries,
 } from './components-ref-manifest.ts';
 
 vi.mock('node:fs/promises', { spy: true });
@@ -65,26 +67,43 @@ describe('components-ref-manifest', () => {
     });
   });
 
-  it('loads index entries from built docgen snapshots on disk', async () => {
+  it('loads full docgen payloads from built snapshots on disk', async () => {
+    const payload = {
+      id: 'button',
+      name: 'Button',
+      description: 'A button',
+      summary: 'Click me',
+      path: './button.stories.tsx',
+      jsDocTags: {},
+      stories: [],
+    };
     vol.fromNestedJSON({
       '/output/services/core/docgen/button.json': JSON.stringify({
-        components: {
-          button: {
-            id: 'button',
-            name: 'Button',
-            description: 'A button',
-            summary: 'Click me',
-            path: './button.stories.tsx',
-            jsDocTags: {},
-            stories: [],
-          },
-        },
+        components: { button: payload },
       }),
     });
 
-    await expect(
-      loadComponentManifestIndexEntriesFromDisk('/output', ['button'])
-    ).resolves.toEqual({
+    await expect(loadDocgenPayloadsFromDisk('/output', ['button'])).resolves.toEqual({
+      button: payload,
+    });
+  });
+
+  it('skips components without a readable snapshot', async () => {
+    await expect(loadDocgenPayloadsFromDisk('/output', ['button'])).resolves.toEqual({});
+  });
+
+  it('builds index entries with a nested docgen ref when a payload exists', () => {
+    const payload: DocgenPayload = {
+      id: 'button',
+      name: 'Button',
+      description: 'A button',
+      summary: 'Click me',
+      path: './button.stories.tsx',
+      jsDocTags: {},
+      stories: [],
+    };
+
+    expect(toComponentManifestIndexEntries(['button'], { button: payload })).toEqual({
       button: {
         id: 'button',
         name: 'Button',
@@ -95,14 +114,9 @@ describe('components-ref-manifest', () => {
     });
   });
 
-  it('omits docgen ref when the snapshot is missing', async () => {
-    await expect(
-      loadComponentManifestIndexEntriesFromDisk('/output', ['button'])
-    ).resolves.toEqual({
-      button: {
-        id: 'button',
-        name: 'button',
-      },
+  it('builds a minimal index entry (no docgen ref) when a payload is missing', () => {
+    expect(toComponentManifestIndexEntries(['button'], {})).toEqual({
+      button: { id: 'button', name: 'button' },
     });
   });
 });

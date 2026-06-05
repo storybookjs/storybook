@@ -318,14 +318,14 @@ describe('manifests', () => {
         },
       };
 
-      const provider: DocgenProvider = async () => ({
+      const provider = vi.fn<DocgenProvider>(async () => ({
         id: 'button',
         name: 'Button',
         path: './button.stories.tsx',
         description: 'A button',
         jsDocTags: {},
         stories: [],
-      });
+      }));
 
       registerDocgenService({
         getIndex: () => mockGenerator.getIndex(),
@@ -361,6 +361,9 @@ describe('manifests', () => {
       expect(files['/output/manifests/docs.json']).toBeDefined();
       expect(files['/output/manifests/components.html']).toContain('Button');
       expect(files['/output/manifests/components.html']).toContain('Unattached Docs');
+      // Both components.json and the HTML come from the on-disk snapshot, so the build must not
+      // re-extract docgen from the live service.
+      expect(provider).not.toHaveBeenCalled();
     });
   });
 

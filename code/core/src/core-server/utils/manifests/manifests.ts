@@ -15,7 +15,8 @@ import type { ComponentManifest, ComponentsManifest } from '../../../types/modul
 import type { DocgenPayload } from '../../../shared/open-service/services/docgen/types.ts';
 import {
   buildComponentsRefManifest,
-  loadComponentManifestIndexEntriesFromDisk,
+  loadDocgenPayloadsFromDisk,
+  toComponentManifestIndexEntries,
 } from './components-ref-manifest.ts';
 import { type DocsManifest, renderComponentsManifest } from './render-components-manifest.ts';
 
@@ -83,12 +84,29 @@ async function getManifests(
 }
 
 /**
- * Builds the components HTML debugger page from the docgen open service.
+ * Resolves the docgen `meta` for the components HTML debugger.
  *
- * Loads all docgen payloads, filters to the given manifest-tagged component ids, and merges
- * renderer-supplied metadata from `experimental_manifests` (notably `meta.docgen`).
+ * `meta.docgen` (the docgen engine id) is supplied by the renderer via `experimental_manifests`;
+ * core does not infer it. `durationMs` is how long collecting the docgen payloads took.
  */
-async function renderComponentsHtmlFromDocgenService(
+function resolveDocgenMeta(manifests: Manifests, durationMs: number): ComponentsManifest['meta'] {
+  const presetMeta = manifests.components?.meta;
+  invariant(
+    presetMeta?.docgen,
+    'experimental_manifests must supply components.meta.docgen when experimentalDocgenServer is enabled'
+  );
+
+  return { docgen: presetMeta.docgen, durationMs };
+}
+
+/**
+ * Renders the components HTML debugger from the live docgen service (dev only).
+ *
+ * Loads all docgen payloads and filters to the given manifest-tagged component ids. The static build
+ * renders from the on-disk snapshots instead (see {@link writeDocgenServerManifests}) so it does not
+ * re-extract docgen.
+ */
+async function renderComponentsHtmlFromService(
   manifests: Manifests,
   manifestComponentIds: string[],
   docsManifest?: DocsManifest
@@ -100,17 +118,9 @@ async function renderComponentsHtmlFromDocgenService(
   const components = Object.fromEntries(
     manifestComponentIds.flatMap((id) => (allPayloads[id] ? [[id, allPayloads[id]]] : []))
   );
-  const presetMeta = manifests.components?.meta;
-  invariant(
-    presetMeta?.docgen,
-    'experimental_manifests must supply components.meta.docgen when experimentalDocgenServer is enabled'
-  );
 
   return renderComponentsManifest(
-    buildComponentsManifest(components, {
-      docgen: presetMeta.docgen,
-      durationMs,
-    }),
+    buildComponentsManifest(components, resolveDocgenMeta(manifests, durationMs)),
     docsManifest
   );
 }
@@ -152,15 +162,21 @@ async function writeDocgenServerManifests(
   const manifestsDir = join(outputDir, 'manifests');
   await mkdir(manifestsDir, { recursive: true });
 
-  if (manifestComponentIds.length > 0) {
-    const components = await loadComponentManifestIndexEntriesFromDisk(
-      outputDir,
-      manifestComponentIds
-    );
+  // Read docgen once from the snapshots written by writeOpenServiceStaticFiles. The same payloads
+  // back both components.json and the HTML debugger, so the build never re-extracts from the service.
+  const startTime = performance.now();
+  const payloads = await loadDocgenPayloadsFromDisk(outputDir, manifestComponentIds);
+  const durationMs = Math.round(performance.now() - startTime);
 
+  if (manifestComponentIds.length > 0) {
     await writeFile(
       join(manifestsDir, 'components.json'),
-      JSON.stringify(buildComponentsRefManifest(components, manifests.components?.meta))
+      JSON.stringify(
+        buildComponentsRefManifest(
+          toComponentManifestIndexEntries(manifestComponentIds, payloads),
+          manifests.components?.meta
+        )
+      )
     );
   }
 
@@ -169,7 +185,10 @@ async function writeDocgenServerManifests(
   if (shouldWriteHtml) {
     await writeFile(
       join(manifestsDir, 'components.html'),
-      await renderComponentsHtmlFromDocgenService(manifests, manifestComponentIds, docsManifest)
+      renderComponentsManifest(
+        buildComponentsManifest(payloads, resolveDocgenMeta(manifests, durationMs)),
+        docsManifest
+      )
     );
   }
 }
@@ -276,7 +295,7 @@ export function registerManifests({ app, presets }: { app: Polka; presets: Prese
       if (await isDocgenServerEnabled()) {
         res.setHeader('Content-Type', 'text/html; charset=utf-8');
         res.end(
-          await renderComponentsHtmlFromDocgenService(
+          await renderComponentsHtmlFromService(
             manifests,
             getManifestComponentIds(manifestEntries),
             docsManifest

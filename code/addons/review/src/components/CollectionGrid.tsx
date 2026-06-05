@@ -1,9 +1,10 @@
-import React, { useCallback, useEffect, useRef, useState, type FC, type ReactNode } from 'react';
+import React, { useCallback, useEffect, useRef, useState, type FC } from 'react';
 
 import { Button } from 'storybook/internal/components';
 import { styled } from 'storybook/theming';
 
 import { prettifyComponentId, storyPreviewUrl } from '../review-navigation.ts';
+import { Highlight } from './Highlight.tsx';
 
 const PREVIEW_SCALE = 0.5;
 
@@ -240,18 +241,6 @@ const ReviewAllCell = styled.div(({ theme }) => ({
   border: `1px dashed ${theme.appBorderColor}`,
 }));
 
-const Mark = styled.mark(({ theme }) => ({
-  background: theme.color.secondary,
-  color: theme.color.lightest,
-  borderRadius: 2,
-  padding: '0 1px',
-  fontWeight: 'inherit',
-  '@media (forced-colors: active)': {
-    color: 'HighlightText',
-    background: 'Highlight',
-  },
-}));
-
 const isWithinPreloadRange = (element: HTMLElement, margin: number): boolean => {
   const rect = element.getBoundingClientRect();
   // Hidden cells (e.g. overflow beyond the two-row cap) have a zero-size box;
@@ -262,32 +251,6 @@ const isWithinPreloadRange = (element: HTMLElement, margin: number): boolean => 
   const viewportHeight =
     typeof window === 'undefined' ? Number.POSITIVE_INFINITY : window.innerHeight || 0;
   return rect.bottom >= -margin && rect.top <= viewportHeight + margin;
-};
-
-// Render `text`, wrapping every case-insensitive occurrence of `query` in a
-// <Mark>. With no query the text renders untouched.
-const Highlight: FC<{ text: string; query: string }> = ({ text, query }) => {
-  const needle = query.trim().toLowerCase();
-  if (!needle) {
-    return <>{text}</>;
-  }
-  const haystack = text.toLowerCase();
-  const segments: ReactNode[] = [];
-  let cursor = 0;
-  let match = haystack.indexOf(needle);
-  let key = 0;
-  while (match !== -1) {
-    if (match > cursor) {
-      segments.push(text.slice(cursor, match));
-    }
-    segments.push(<Mark key={key++}>{text.slice(match, match + needle.length)}</Mark>);
-    cursor = match + needle.length;
-    match = haystack.indexOf(needle, cursor);
-  }
-  if (cursor < text.length) {
-    segments.push(text.slice(cursor));
-  }
-  return <>{segments}</>;
 };
 
 const deriveStoryInfo = (

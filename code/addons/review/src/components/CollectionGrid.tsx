@@ -240,12 +240,16 @@ const ReviewAllCell = styled.div(({ theme }) => ({
   border: `1px dashed ${theme.appBorderColor}`,
 }));
 
-// Search matches are tinted with the accent colour; weight is inherited so a
-// match keeps the bold component / normal story styling.
 const Mark = styled.mark(({ theme }) => ({
-  background: 'transparent',
-  color: theme.color.secondary,
+  background: theme.color.secondary,
+  color: theme.color.lightest,
+  borderRadius: 2,
+  padding: '0 1px',
   fontWeight: 'inherit',
+  '@media (forced-colors: active)': {
+    color: 'HighlightText',
+    background: 'Highlight',
+  },
 }));
 
 const isWithinPreloadRange = (element: HTMLElement, margin: number): boolean => {

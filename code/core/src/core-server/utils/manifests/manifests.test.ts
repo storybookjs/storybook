@@ -279,18 +279,6 @@ describe('manifests', () => {
       expect(entryIds).not.toContain('story-without-manifest');
     });
 
-    it('does nothing when componentsManifest is disabled', async () => {
-      mockPresets = setupMockPresets({
-        componentsManifest: false,
-        experimentalDocgenServer: true,
-      });
-      mockManifests = { custom: { data: 'value' } };
-
-      await writeManifests('/output', mockPresets);
-
-      expect(vol.toJSON()).toEqual({});
-    });
-
     it('writes ref-based components.json when experimentalDocgenServer is enabled', async () => {
       mockPresets = setupMockPresets({
         componentsManifest: true,

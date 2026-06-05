@@ -9,11 +9,14 @@ import type { Polka } from 'polka';
 import invariant from 'tiny-invariant';
 
 import { getService } from '../../../shared/open-service/server.ts';
-import { docgenServiceDef } from '../../../shared/open-service/services/docgen/definition.ts';
+import type { docgenServiceDef } from '../../../shared/open-service/services/docgen/definition.ts';
 import { Tag } from '../../../shared/constants/tags.ts';
 import type { ComponentManifest, ComponentsManifest } from '../../../types/modules/core-common.ts';
 import type { DocgenPayload } from '../../../shared/open-service/services/docgen/types.ts';
-import { buildComponentsRefManifest, loadComponentManifestIndexEntriesFromDisk } from './json-references.ts';
+import {
+  buildComponentsRefManifest,
+  loadComponentManifestIndexEntriesFromDisk,
+} from './components-ref-manifest.ts';
 import { type DocsManifest, renderComponentsManifest } from './render-components-manifest.ts';
 
 /**
@@ -39,33 +42,38 @@ function isDocsManifest(manifest: unknown): manifest is DocsManifest {
 }
 
 /**
- * Returns component ids for index entries tagged with `manifest`.
+ * Returns the story index entries tagged with `manifest`.
+ *
+ * Computed once per operation and threaded into {@link getManifests} and
+ * {@link getManifestComponentIds} so a single write/render does not re-walk the index.
+ */
+async function getManifestEntries(presets: Presets) {
+  const generator = await presets.apply('storyIndexGenerator');
+  invariant(generator, 'storyIndexGenerator must be configured');
+  const index = await generator.getIndex();
+  return Object.values(index.entries).filter(
+    (entry) => entry.tags?.includes(Tag.MANIFEST) ?? false
+  );
+}
+
+type ManifestEntries = Awaited<ReturnType<typeof getManifestEntries>>;
+
+/**
+ * Returns component ids for the given manifest-tagged entries.
  *
  * Uses the same component-id selection rules as docgen extraction and the legacy React manifest
  * generator.
  */
-async function getManifestComponentIds(presets: Presets) {
-  const generator = await presets.apply('storyIndexGenerator');
-  invariant(generator, 'storyIndexGenerator must be configured');
-  const index = await generator.getIndex();
-  const manifestEntries = Object.values(index.entries).filter(
-    (entry) => entry.tags?.includes(Tag.MANIFEST) ?? false
-  );
-
+function getManifestComponentIds(manifestEntries: ManifestEntries) {
   return Array.from(selectComponentEntriesByComponentId(manifestEntries).keys());
 }
 
-/**
- * Loads all manifests from the `experimental_manifests` preset for entries tagged `manifest`.
- */
-async function getManifests(presets: Presets, { watch }: { watch?: boolean } = {}) {
-  const generator = await presets.apply('storyIndexGenerator');
-  invariant(generator, 'storyIndexGenerator must be configured');
-  const index = await generator.getIndex();
-  const manifestEntries = Object.values(index.entries).filter(
-    (entry) => entry.tags?.includes(Tag.MANIFEST) ?? false
-  );
-
+/** Loads all manifests from the `experimental_manifests` preset for the given manifest entries. */
+async function getManifests(
+  presets: Presets,
+  manifestEntries: ManifestEntries,
+  { watch }: { watch?: boolean } = {}
+) {
   return (
     (await presets.apply<Manifests>('experimental_manifests', undefined, {
       manifestEntries,
@@ -77,19 +85,21 @@ async function getManifests(presets: Presets, { watch }: { watch?: boolean } = {
 /**
  * Builds the components HTML debugger page from the docgen open service.
  *
- * Loads all docgen payloads, filters to manifest-tagged component ids, and merges renderer-supplied
- * metadata from `experimental_manifests` (notably `meta.docgen`).
+ * Loads all docgen payloads, filters to the given manifest-tagged component ids, and merges
+ * renderer-supplied metadata from `experimental_manifests` (notably `meta.docgen`).
  */
-async function renderComponentsHtmlFromDocgenService(presets: Presets, docsManifest?: DocsManifest) {
+async function renderComponentsHtmlFromDocgenService(
+  manifests: Manifests,
+  manifestComponentIds: string[],
+  docsManifest?: DocsManifest
+) {
   const docgenService = getService<typeof docgenServiceDef>('core/docgen');
   const startTime = performance.now();
   const allPayloads = await docgenService.queries.getDocgenForAllComponents.loaded();
   const durationMs = Math.round(performance.now() - startTime);
-  const manifestIds = await getManifestComponentIds(presets);
   const components = Object.fromEntries(
-    manifestIds.flatMap((id) => (allPayloads[id] ? [[id, allPayloads[id]]] : []))
+    manifestComponentIds.flatMap((id) => (allPayloads[id] ? [[id, allPayloads[id]]] : []))
   );
-  const manifests = await getManifests(presets);
   const presetMeta = manifests.components?.meta;
   invariant(
     presetMeta?.docgen,
@@ -103,11 +113,6 @@ async function renderComponentsHtmlFromDocgenService(presets: Presets, docsManif
     }),
     docsManifest
   );
-}
-
-/** Creates `outputDir/manifests` if it does not exist. */
-async function ensureManifestsDir(outputDir: string) {
-  await mkdir(join(outputDir, 'manifests'), { recursive: true });
 }
 
 /** Writes each manifest entry to `outputDir/manifests/<name>.json`. */
@@ -125,29 +130,27 @@ async function writeManifestJsonFiles(
   );
 }
 
-/** Writes the components HTML debugger page to `outputDir/manifests/components.html`. */
-async function writeComponentsHtml(outputDir: string, html: string) {
-  await writeFile(join(outputDir, 'manifests', 'components.html'), html);
-}
-
 /**
  * Static build path when `features.experimentalDocgenServer` is enabled.
  *
  * Writes a ref-based `components.json`, other manifests from `experimental_manifests`, and
  * `components.html` rendered from the docgen service.
  */
-async function writeDocgenServerManifests(outputDir: string, presets: Presets) {
-  const manifestComponentIds = await getManifestComponentIds(presets);
-  const manifests = await getManifests(presets);
-  const docsManifest = isDocsManifest(manifests.docs) ? manifests.docs : undefined;
+async function writeDocgenServerManifests(
+  outputDir: string,
+  manifests: Manifests,
+  manifestComponentIds: string[],
+  docsManifest?: DocsManifest
+) {
   const hasOtherManifests = Object.keys(manifests).some((name) => name !== 'components');
-  const shouldWriteHtml = manifestComponentIds.length > 0 || docsManifest;
+  const shouldWriteHtml = manifestComponentIds.length > 0 || !!docsManifest;
 
   if (!hasOtherManifests && !shouldWriteHtml) {
     return;
   }
 
-  await ensureManifestsDir(outputDir);
+  const manifestsDir = join(outputDir, 'manifests');
+  await mkdir(manifestsDir, { recursive: true });
 
   if (manifestComponentIds.length > 0) {
     const components = await loadComponentManifestIndexEntriesFromDisk(
@@ -156,7 +159,7 @@ async function writeDocgenServerManifests(outputDir: string, presets: Presets) {
     );
 
     await writeFile(
-      join(outputDir, 'manifests', 'components.json'),
+      join(manifestsDir, 'components.json'),
       JSON.stringify(buildComponentsRefManifest(components, manifests.components?.meta))
     );
   }
@@ -164,9 +167,9 @@ async function writeDocgenServerManifests(outputDir: string, presets: Presets) {
   await writeManifestJsonFiles(outputDir, manifests, { skipComponents: true });
 
   if (shouldWriteHtml) {
-    await writeComponentsHtml(
-      outputDir,
-      await renderComponentsHtmlFromDocgenService(presets, docsManifest)
+    await writeFile(
+      join(manifestsDir, 'components.html'),
+      await renderComponentsHtmlFromDocgenService(manifests, manifestComponentIds, docsManifest)
     );
   }
 }
@@ -174,20 +177,22 @@ async function writeDocgenServerManifests(outputDir: string, presets: Presets) {
 /**
  * Static build path for the legacy inline components manifest from `experimental_manifests`.
  */
-async function writeLegacyManifests(outputDir: string, presets: Presets) {
-  const manifests = await getManifests(presets);
-  const docsManifest = isDocsManifest(manifests.docs) ? manifests.docs : undefined;
-
+async function writeLegacyManifests(
+  outputDir: string,
+  manifests: Manifests,
+  docsManifest?: DocsManifest
+) {
   if (Object.keys(manifests).length === 0) {
     return;
   }
 
-  await ensureManifestsDir(outputDir);
+  const manifestsDir = join(outputDir, 'manifests');
+  await mkdir(manifestsDir, { recursive: true });
   await writeManifestJsonFiles(outputDir, manifests);
 
   if ('components' in manifests || 'docs' in manifests) {
-    await writeComponentsHtml(
-      outputDir,
+    await writeFile(
+      join(manifestsDir, 'components.html'),
       renderComponentsManifest(manifests.components, docsManifest)
     );
   }
@@ -197,13 +202,21 @@ async function writeLegacyManifests(outputDir: string, presets: Presets) {
 export async function writeManifests(outputDir: string, presets: Presets) {
   try {
     const features = await presets.apply('features');
+    const manifestEntries = await getManifestEntries(presets);
+    const manifests = await getManifests(presets, manifestEntries);
+    const docsManifest = isDocsManifest(manifests.docs) ? manifests.docs : undefined;
 
     if (features.experimentalDocgenServer) {
-      await writeDocgenServerManifests(outputDir, presets);
+      await writeDocgenServerManifests(
+        outputDir,
+        manifests,
+        getManifestComponentIds(manifestEntries),
+        docsManifest
+      );
       return;
     }
 
-    await writeLegacyManifests(outputDir, presets);
+    await writeLegacyManifests(outputDir, manifests, docsManifest);
   } catch (e) {
     logger.error('Failed to generate manifests');
     logger.error(e instanceof Error ? e : String(e));
@@ -236,7 +249,8 @@ export function registerManifests({ app, presets }: { app: Polka; presets: Prese
         return;
       }
 
-      const manifests = await getManifests(presets, { watch: true });
+      const manifestEntries = await getManifestEntries(presets);
+      const manifests = await getManifests(presets, manifestEntries, { watch: true });
       const manifest = manifests[req.params.name];
 
       if (manifest) {
@@ -255,12 +269,19 @@ export function registerManifests({ app, presets }: { app: Polka; presets: Prese
 
   app.get('/manifests/components.html', async (req, res) => {
     try {
-      const manifests = await getManifests(presets, { watch: true });
+      const manifestEntries = await getManifestEntries(presets);
+      const manifests = await getManifests(presets, manifestEntries, { watch: true });
       const docsManifest = isDocsManifest(manifests.docs) ? manifests.docs : undefined;
 
       if (await isDocgenServerEnabled()) {
         res.setHeader('Content-Type', 'text/html; charset=utf-8');
-        res.end(await renderComponentsHtmlFromDocgenService(presets, docsManifest));
+        res.end(
+          await renderComponentsHtmlFromDocgenService(
+            manifests,
+            getManifestComponentIds(manifestEntries),
+            docsManifest
+          )
+        );
         return;
       }
 

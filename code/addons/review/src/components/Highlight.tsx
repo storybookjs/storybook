@@ -7,6 +7,7 @@ const Mark = styled.mark(({ theme }) => ({
   color: theme.color.lightest,
   borderRadius: 2,
   padding: '0 1px',
+  margin: '0 -1px',
   fontWeight: 'inherit',
   '@media (forced-colors: active)': {
     color: 'HighlightText',

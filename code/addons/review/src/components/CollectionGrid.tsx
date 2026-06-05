@@ -30,8 +30,11 @@ const MAX_CONCURRENT_PREVIEWS = 3;
 const PREVIEW_SETTLE_TIMEOUT_MS = 1500;
 
 // IntersectionObserver `rootMargin`s for the preview lifecycle: mount a cell's
-// iframe within one viewport of the fold, evict it past two. The gap is
-// hysteresis so scrolling near a boundary doesn't thrash.
+// iframe within one root-height of the fold, evict it past two. The gap is
+// hysteresis so scrolling near a boundary doesn't thrash. These margins only
+// take effect when the observer's `root` is the real scroll container (see
+// `getScrollRoot`); `rootMargin` is not applied to intermediate scrollers, so
+// against the default viewport root they would be silently clipped to zero.
 const PREVIEW_MOUNT_ROOT_MARGIN = '100% 0px';
 const PREVIEW_EVICT_ROOT_MARGIN = '200% 0px';
 
@@ -240,12 +243,41 @@ const ReviewAllCell = styled.div(({ theme }) => ({
   border: `1px dashed ${theme.appBorderColor}`,
 }));
 
-const isWithinPreloadRange = (element: HTMLElement, margin: number): boolean => {
+// The cell lives inside a scrollable container (the review page keeps a single
+// Radix ScrollArea as its scroller), not the document viewport. The lifecycle
+// observers must use that container as their `root`, otherwise `rootMargin` is
+// ignored and cells evict the moment they leave the scroller. Falls back to the
+// viewport (null) when there is no scroll container, e.g. fullscreen stories.
+const getScrollRoot = (element: HTMLElement): HTMLElement | null => {
+  const radixViewport = element.closest<HTMLElement>('[data-radix-scroll-area-viewport]');
+  if (radixViewport) {
+    return radixViewport;
+  }
+  let current = element.parentElement;
+  while (current) {
+    const { overflowY } = window.getComputedStyle(current);
+    if (overflowY === 'auto' || overflowY === 'scroll') {
+      return current;
+    }
+    current = current.parentElement;
+  }
+  return null;
+};
+
+const isWithinPreloadRange = (
+  element: HTMLElement,
+  root: HTMLElement | null,
+  margin: number
+): boolean => {
   const rect = element.getBoundingClientRect();
   // Hidden cells (e.g. overflow beyond the two-row cap) have a zero-size box;
   // don't seed them in-view or they'd boot iframes that never show.
   if (rect.width === 0 && rect.height === 0) {
     return false;
+  }
+  if (root) {
+    const rootRect = root.getBoundingClientRect();
+    return rect.bottom >= rootRect.top - margin && rect.top <= rootRect.bottom + margin;
   }
   const viewportHeight =
     typeof window === 'undefined' ? Number.POSITIVE_INFINITY : window.innerHeight || 0;
@@ -280,19 +312,25 @@ const StoryPreviewCell: FC<{
       setIsInView(true);
       return undefined;
     }
+    const scrollRoot = getScrollRoot(host);
     // Snappy first paint for above-the-fold cells: the observers' initial
     // callbacks are deferred to the next frame, so seed the state synchronously.
-    if (isWithinPreloadRange(host, typeof window === 'undefined' ? 0 : window.innerHeight)) {
+    const seedMargin = scrollRoot
+      ? scrollRoot.clientHeight
+      : typeof window === 'undefined'
+        ? 0
+        : window.innerHeight;
+    if (isWithinPreloadRange(host, scrollRoot, seedMargin)) {
       setIsInView(true);
     }
-    // Mount when the cell comes within the mount margin of the viewport.
+    // Mount when the cell comes within the mount margin of the scroll root.
     const mountObserver = new IntersectionObserver(
       ([entry]) => {
         if (entry.isIntersecting) {
           setIsInView(true);
         }
       },
-      { rootMargin: PREVIEW_MOUNT_ROOT_MARGIN }
+      { root: scrollRoot, rootMargin: PREVIEW_MOUNT_ROOT_MARGIN }
     );
     // Evict once the cell moves beyond the (larger) evict margin, unmounting
     // its iframe to free the preview runtime. The margin gap is hysteresis.
@@ -302,7 +340,7 @@ const StoryPreviewCell: FC<{
           setIsInView(false);
         }
       },
-      { rootMargin: PREVIEW_EVICT_ROOT_MARGIN }
+      { root: scrollRoot, rootMargin: PREVIEW_EVICT_ROOT_MARGIN }
     );
     mountObserver.observe(host);
     evictObserver.observe(host);

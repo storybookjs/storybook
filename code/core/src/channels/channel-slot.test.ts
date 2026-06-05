@@ -104,12 +104,13 @@ describe('module import', () => {
     vi.stubEnv('VITEST', '');
 
     vi.resetModules();
-    const { getChannel } = await import('./channel-slot.ts');
-
-    expect(getChannel()).toBeNull();
-
-    vi.unstubAllGlobals();
-    vi.unstubAllEnvs();
-    vi.resetModules();
+    try {
+      const { getChannel } = await import('./channel-slot.ts');
+      expect(getChannel()).toBeNull();
+    } finally {
+      vi.unstubAllGlobals();
+      vi.unstubAllEnvs();
+      vi.resetModules();
+    }
   });
 });

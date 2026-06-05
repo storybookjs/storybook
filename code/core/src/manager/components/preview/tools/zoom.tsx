@@ -19,6 +19,12 @@ const ZoomButton = styled(ToggleButton)({
   minWidth: 48,
 });
 
+const ZoomAction = styled(ActionList.Action)(({ theme }) => ({
+  '&:focus-visible': {
+    outline: `2px solid ${theme.base === 'light' ? theme.color.darkest : theme.color.lightest}`,
+  },
+}));
+
 const ZoomResetButton = styled(ActionList.Button)<{ $isInitialValue: boolean }>(
   ({ $isInitialValue }) => ({
     visibility: $isInitialValue ? 'hidden' : undefined,
@@ -113,40 +119,40 @@ export const Zoom = memo<{
           </ActionList>
           <ActionList>
             <ActionList.Item>
-              <ActionList.Action
+              <ZoomAction
                 onClick={zoomIn}
                 ariaLabel="Zoom in"
                 disabled={value >= ZOOM_LEVELS.at(-1)!}
               >
                 <ActionList.Text>Zoom in</ActionList.Text>
                 <Shortcut keys={['alt', '+']} />
-              </ActionList.Action>
+              </ZoomAction>
             </ActionList.Item>
             <ActionList.Item>
-              <ActionList.Action
+              <ZoomAction
                 onClick={zoomOut}
                 ariaLabel="Zoom out"
                 disabled={value <= ZOOM_LEVELS.at(0)!}
               >
                 <ActionList.Text>Zoom out</ActionList.Text>
                 <Shortcut keys={['alt', '-']} />
-              </ActionList.Action>
+              </ZoomAction>
             </ActionList.Item>
             <ActionList.Item active={value === 0.5}>
-              <ActionList.Action onClick={() => zoomTo(0.5)} ariaLabel="Zoom to 50%">
+              <ZoomAction onClick={() => zoomTo(0.5)} ariaLabel="Zoom to 50%">
                 <ActionList.Text>50%</ActionList.Text>
-              </ActionList.Action>
+              </ZoomAction>
             </ActionList.Item>
             <ActionList.Item active={value === 1}>
-              <ActionList.Action onClick={() => zoomTo(1)} ariaLabel="Zoom to 100%">
+              <ZoomAction onClick={() => zoomTo(1)} ariaLabel="Zoom to 100%">
                 <ActionList.Text>100%</ActionList.Text>
                 <Shortcut keys={['alt', '0']} />
-              </ActionList.Action>
+              </ZoomAction>
             </ActionList.Item>
             <ActionList.Item active={value === 2}>
-              <ActionList.Action onClick={() => zoomTo(2)} ariaLabel="Zoom to 200%">
+              <ZoomAction onClick={() => zoomTo(2)} ariaLabel="Zoom to 200%">
                 200%
-              </ActionList.Action>
+              </ZoomAction>
             </ActionList.Item>
           </ActionList>
         </>

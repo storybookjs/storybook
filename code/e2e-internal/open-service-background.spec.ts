@@ -37,7 +37,6 @@ test.describe('open-service background example', () => {
   test('preview canvas keeps the dark background after a full page reload', async ({ page }) => {
     await page.goto(`${storybookUrl}/?path=${STORY_PATH}`);
     await page.waitForSelector('#storybook-preview-iframe');
-    await page.waitForTimeout(5_000);
 
     const darkSwatch = page.getByRole('toolbar').getByRole('button', { name: 'Dark', exact: true });
 
@@ -53,7 +52,6 @@ test.describe('open-service background example', () => {
 
     await page.reload();
     await page.waitForSelector('#storybook-preview-iframe');
-    await page.waitForTimeout(5_000);
 
     // Manager bootstraps from the dev-server's persisted state (still dark).
     await expect(darkSwatch).toHaveCSS('border-color', ACTIVE_SWATCH_BORDER);

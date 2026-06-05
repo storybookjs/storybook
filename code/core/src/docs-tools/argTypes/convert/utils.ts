@@ -1,10 +1,16 @@
-const QUOTE_REGEX = /^['"]|['"]$/g;
-export const trimQuotes = (str: string) => str.replace(QUOTE_REGEX, '');
-export const includesQuotes = (str: string) => QUOTE_REGEX.test(str);
-export const parseLiteral = (str: string) => {
-  const trimmedValue = trimQuotes(str);
+export const NULLISH_VALUES = ['null', 'undefined', 'void'];
+export const RADIO_CONTROL_THRESHOLD = 5;
 
-  return includesQuotes(str) || Number.isNaN(Number(trimmedValue))
-    ? trimmedValue
-    : Number(trimmedValue);
-};
+export function normalizeLiteralUnion(values: string[]): any[] {
+  const cleaned = values
+    .map((val) => val.trim().replace(/^['"]|['"]$/g, ''))
+    .filter((val) => !NULLISH_VALUES.includes(val));
+
+  return cleaned.map((val) => {
+    try {
+      return JSON.parse(val);
+    } catch {
+      return val;
+    }
+  });
+}

@@ -4,7 +4,7 @@ import type { PlayFunctionContext } from 'storybook/internal/csf';
 
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
-import { expect, within } from 'storybook/test';
+import { expect, userEvent, within } from 'storybook/test';
 
 import * as ExampleStories from '../examples/ControlsParameters.stories';
 import * as SubcomponentsExampleStories from '../examples/ControlsWithSubcomponentsParameters.stories';
@@ -117,6 +117,24 @@ export const SubcomponentsOfStory: Story = {
   play: async ({ canvasElement, step }) => {
     const canvas = within(canvasElement);
     await findSubcomponentTabs(canvas, step);
+  },
+};
+
+/**
+ * When a component declares subcomponents, editing a control on the main component tab should not
+ * remount the input and drop focus. This verifies the fix for
+ * https://github.com/storybookjs/storybook/issues/29028
+ */
+export const SubcomponentsRetainControlFocus: Story = {
+  args: {
+    of: SubcomponentsExampleStories.NoParameters,
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const input = await canvas.findByDisplayValue('b');
+    await userEvent.click(input);
+    await userEvent.type(input, 'x');
+    await expect(document.activeElement).toBe(input);
   },
 };
 

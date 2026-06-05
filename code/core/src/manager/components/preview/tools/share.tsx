@@ -90,7 +90,11 @@ export const isolationModeTool: Addon_BaseType = {
     <Consumer filter={mapper}>
       {({ api, storyId, refId }) => {
         if (!storyId) return null;
-        const originHrefs = api.getStoryHrefs(storyId, { base: 'origin', refId, inheritArgs: true });
+        const originHrefs = api.getStoryHrefs(storyId, {
+          base: 'origin',
+          refId,
+          inheritArgs: true,
+        });
         return (
           <Button
             padding="small"

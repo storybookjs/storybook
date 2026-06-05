@@ -16,6 +16,8 @@ interface WebsocketTransportArgs extends Partial<Config> {
 export const HEARTBEAT_INTERVAL = 15000;
 export const HEARTBEAT_MAX_LATENCY = 5000;
 
+const CHANNEL_OPTIONS = globalThis.CHANNEL_OPTIONS || {};
+
 export class WebsocketTransport implements ChannelTransport {
   private buffer: string[] = [];
 
@@ -92,7 +94,7 @@ export class WebsocketTransport implements ChannelTransport {
   private sendNow(event: any) {
     const data = stringify(event, {
       maxDepth: 15,
-      ...(globalThis.CHANNEL_OPTIONS || {}),
+      ...CHANNEL_OPTIONS,
     });
     this.socket.send(data);
   }

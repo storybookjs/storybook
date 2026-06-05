@@ -38,6 +38,7 @@ export * from './utils/satisfies.ts';
 export * from './utils/formatter.ts';
 export * from './utils/get-story-id.ts';
 export * from './utils/component-id.ts';
+export * from './utils/select-component-entry.ts';
 export * from './utils/posix.ts';
 export * from './utils/sync-main-preview-addons.ts';
 export * from './utils/setup-addon-in-config.ts';

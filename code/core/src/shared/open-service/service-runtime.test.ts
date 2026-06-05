@@ -909,6 +909,37 @@ describe('service runtime', () => {
       await expect(service.queries.getValue.loaded(undefined)).rejects.toThrow('boom');
     });
 
+    it('allows zero-argument .loaded() for v.void() queries', async () => {
+      const voidDef = defineService({
+        id: 'internal-fixture/void-loaded',
+        initialState: { ready: false },
+        queries: {
+          getReady: {
+            input: v.void(),
+            output: v.boolean(),
+            handler: (_input, ctx) => ctx.self.state.ready,
+            load: async (_input, ctx) => {
+              await ctx.self.commands.markReady(undefined);
+            },
+          },
+        },
+        commands: {
+          markReady: {
+            input: v.void(),
+            output: v.void(),
+            handler: (_input, ctx) => {
+              ctx.self.setState((state) => {
+                state.ready = true;
+              });
+            },
+          },
+        },
+      });
+      const service = registerService(voidDef);
+
+      await expect(service.queries.getReady.loaded()).resolves.toBe(true);
+    });
+
     it('breaks a load cycle without deadlocking', async () => {
       const cycleDef = defineService({
         id: 'internal-fixture/load-cycle',

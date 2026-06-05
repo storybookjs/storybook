@@ -2,7 +2,6 @@ import type { JsPackageManager } from 'storybook/internal/common';
 import { getVitePlusVersions } from 'storybook/internal/common';
 import { CLI_COLORS } from 'storybook/internal/node-logger';
 
-import picocolors from 'picocolors';
 import { coerce, gt, lt } from 'semver';
 
 import { shortenPath } from '../util.ts';

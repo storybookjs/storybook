@@ -38,7 +38,8 @@ export class WebsocketTransport implements ChannelTransport {
   }
 
   constructor({ url, onError, page }: WebsocketTransportArgs) {
-    this.socket = new globalThis.WebSocket(url);
+    // eslint-disable-next-line compat/compat
+    this.socket = new WebSocket(url);
     this.socket.onopen = () => {
       this.isReady = true;
       this.heartbeat();

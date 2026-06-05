@@ -89,7 +89,7 @@ export class PostMessageTransport implements ChannelTransport {
 
     const stringifyOptions = {
       ...defaultEventOptions,
-      ...(CHANNEL_OPTIONS || {}),
+      ...(globalThis.CHANNEL_OPTIONS || {}),
       ...eventOptions,
     };
 

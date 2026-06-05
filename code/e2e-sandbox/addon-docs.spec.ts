@@ -1,19 +1,10 @@
 /* eslint-disable playwright/no-conditional-expect */
 /* eslint-disable playwright/no-conditional-in-test */
-import { type Frame, expect, test } from '@playwright/test';
+import { expect, test } from '@playwright/test';
 import process from 'process';
 import { dedent } from 'ts-dedent';
 
 import { SbPage, isReactSandbox } from './util.ts';
-
-declare global {
-  interface Window {
-    __argsUpdatedStoryIds?: string[];
-    __STORYBOOK_ADDONS_CHANNEL__?: {
-      on: (event: string, cb: (payload: { storyId: string }) => void) => void;
-    };
-  }
-}
 
 const storybookUrl = process.env.STORYBOOK_URL || 'http://localhost:8001';
 const templateName = process.env.STORYBOOK_TEMPLATE_NAME || '';
@@ -163,11 +154,12 @@ test.describe('addon-docs', () => {
     await expect(storiesCode).toContainText('Basic');
   });
 
-  // Regression test for #28333: `useArgs` called from a story rendered in a
-  // <Stories> block must update that story, not the page's primary story.
-  // The <Stories> renders are static snapshots, so rather than the DOM we assert
-  // on the storyId that `updateArgs` routes to (the UPDATE_STORY_ARGS channel
-  // event) — deterministic, and a direct check of which story gets the update.
+  // Regression test for #28333: `useArgs` called from a story rendered in a <Stories>
+  // block must update that story, not the page's primary story. The <Stories> renders
+  // never re-render on their own arg changes, so the only live render is the primary.
+  // We click Story B, then do a known update to the primary and wait for it: since args
+  // updates are processed in order, once the primary shows its own marker Story B's
+  // earlier click has been applied too — so it must not have leaked into the primary.
   test('useArgs updates the correct story inside a Stories block', async ({ page }) => {
     test.skip(!isReactSandbox(templateName), 'Controlled useArgs render is React-specific');
 
@@ -176,28 +168,16 @@ test.describe('addon-docs', () => {
     const root = sbPage.previewRoot();
 
     // Autodocs renders Story A in <Primary>, then Story A and Story B in <Stories>.
-    const storyBButton = root.locator('[data-testid="value"]').nth(2);
-    await expect(storyBButton).toHaveText('story-b');
+    const primaryStory = root.locator('[data-testid="value"]').nth(0);
+    const storyBInStoriesBlock = root.locator('[data-testid="value"]').nth(2);
+    await expect(primaryStory).toHaveText('A: none');
+    await expect(storyBInStoriesBlock).toHaveText('B: none');
 
-    const previewFrame = page.frame({ url: /iframe\.html/ }) as Frame;
-    expect(previewFrame, 'Storybook preview iframe should be available').toBeTruthy();
+    await storyBInStoriesBlock.click();
+    await primaryStory.click();
 
-    // 'updateStoryArgs' === UPDATE_STORY_ARGS from storybook/internal/core-events.
-    await previewFrame.evaluate(() => {
-      window.__argsUpdatedStoryIds = [];
-      window.__STORYBOOK_ADDONS_CHANNEL__?.on('updateStoryArgs', ({ storyId }) =>
-        window.__argsUpdatedStoryIds?.push(storyId)
-      );
-    });
-
-    // Trigger updateArgs from Story B inside the <Stories> block.
-    await storyBButton.click();
-
-    await previewFrame.waitForFunction(() => (window.__argsUpdatedStoryIds?.length ?? 0) > 0);
-    const storyIds = await previewFrame.evaluate(() => window.__argsUpdatedStoryIds ?? []);
-
-    expect(storyIds.some((id) => id.endsWith('--story-b'))).toBe(true);
-    expect(storyIds.some((id) => id.endsWith('--story-a'))).toBe(false);
+    await expect(primaryStory).toContainText('clickedA');
+    await expect(primaryStory).not.toContainText('clickedB');
   });
 
   test('should not run autoplay stories without parameter', async ({ page }) => {

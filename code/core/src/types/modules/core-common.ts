@@ -10,10 +10,18 @@ import type { Server as NetServer } from 'net';
 import type { Options as TelejsonOptions } from 'telejson';
 import type { PackageJson as PackageJsonFromTypeFest } from 'type-fest';
 
+import type { DocgenProvider } from '../../shared/open-service/services/docgen/types.ts';
 import type { SupportedBuilder } from './builders.ts';
 import type { SupportedFramework } from './frameworks.ts';
 import type { Indexer, StoriesEntry } from './indexer.ts';
 import type { SupportedRenderer } from './renderers.ts';
+
+export type {
+  DocgenPayload,
+  DocgenProvider,
+  DocgenProviderInput,
+  DocgenProviderPreset,
+} from '../../shared/open-service/services/docgen/types.ts';
 
 /** ⚠️ This file contains internal WIP types they MUST NOT be exported outside this package for now! */
 
@@ -114,6 +122,11 @@ export interface Presets {
     args?: any
   ): Promise<StorybookConfigRaw['staticDirs']>;
   apply(extension: 'services', config?: StorybookConfigRaw['services'], args?: any): Promise<void>;
+  apply(
+    extension: 'experimental_docgenProvider',
+    config: DocgenProvider,
+    args?: any
+  ): Promise<DocgenProvider>;
 
   /** The second and third parameter are not needed. And make type inference easier. */
   apply<T extends keyof StorybookConfigRaw>(extension: T): Promise<StorybookConfigRaw[T]>;
@@ -437,6 +450,7 @@ export interface StorybookConfigRaw {
   core?: CoreConfig;
   experimental_manifests?: Manifests;
   experimental_enrichCsf?: CsfEnricher;
+  experimental_docgenProvider?: DocgenProvider;
   staticDirs?: (DirectoryMapping | string)[];
   logLevel?: string;
   features?: {
@@ -572,9 +586,20 @@ export interface StorybookConfigRaw {
     experimentalCodeExamples?: boolean;
 
     /**
-     * Enable change detection
-     * TODO: Turn to true before 10.4 release
+     * Enable the experimental docgen open service.
+     *
+     * When true, Storybook registers the `core/docgen` service in the open-service registry and
+     * generates per-component docgen JSON snapshots during static builds. Renderer and addon
+     * providers contribute through the `experimental_docgenProvider` preset.
+     *
      * @default false
+     * @experimental This feature is in early development and may change significantly in future releases.
+     */
+    experimentalDocgenServer?: boolean;
+
+    /**
+     * Enable change detection
+     * @default true
      */
     changeDetection?: boolean;
   };
@@ -749,6 +774,13 @@ export interface StorybookConfig {
 
   /** Run open-service registration side effects for the server environment. */
   services?: PresetValue<StorybookConfigRaw['services']>;
+
+  /**
+   * Middleware-style provider for the experimental docgen service. Each registrant receives the
+   * previously accumulated provider as its config argument and returns a wrapping provider that
+   * may delegate to it via the input forwarding pattern.
+   */
+  experimental_docgenProvider?: PresetValue<StorybookConfigRaw['experimental_docgenProvider']>;
 }
 
 export type PresetValue<T> = T | ((config: T, options: Options) => T | Promise<T>);

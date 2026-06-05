@@ -56,6 +56,11 @@
       "code": "./src/actions/decorator.ts",
       "default": "./dist/actions/decorator.js"
     },
+    "./backgrounds": {
+      "types": "./dist/backgrounds/index.d.ts",
+      "code": "./src/backgrounds/index.ts",
+      "default": "./dist/backgrounds/index.js"
+    },
     "./highlight": {
       "types": "./dist/highlight/index.d.ts",
       "code": "./src/highlight/index.ts",
@@ -233,6 +238,7 @@
     "!src/**/*"
   ],
   "dependencies": {
+    "@preact/signals-core": "^1.14.2",
     "@storybook/global": "^5.0.0",
     "@storybook/icons": "^2.0.2",
     "@testing-library/dom": "^10.4.1",
@@ -241,6 +247,7 @@
     "@vitest/expect": "3.2.4",
     "@vitest/spy": "3.2.4",
     "@webcontainer/env": "^1.1.1",
+    "deepsignal": "^1.6.0",
     "esbuild": "^0.18.0 || ^0.19.0 || ^0.20.0 || ^0.21.0 || ^0.22.0 || ^0.23.0 || ^0.24.0 || ^0.25.0 || ^0.26.0 || ^0.27.0",
     "open": "^10.2.0",
     "oxc-parser": "^0.127.0",
@@ -304,7 +311,6 @@
     "@yarnpkg/libzip": "2.3.0",
     "acorn": "^8.15.0",
     "acorn-jsx": "^5.3.2",
-    "alien-signals": "^3.2.0",
     "ansi-to-html": "^0.7.2",
     "browser-dtector": "^3.4.0",
     "bundle-require": "^5.1.0",

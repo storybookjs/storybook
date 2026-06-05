@@ -2,13 +2,14 @@ import * as v from 'valibot';
 import { describe, expectTypeOf, it } from 'vitest';
 
 import { defineService } from './index.ts';
+import { mutableRecordLookupServiceDef } from './fixtures.ts';
 import { registerService } from './server.ts';
 import type { RuntimeService } from './types.ts';
 
 const entryIdInputSchema = v.object({ entryId: v.string() });
 
 const registrationOnlyServiceDef = defineService({
-  id: 'test/open-service-registration-types',
+  id: 'internal-fixture/open-service-registration-types',
   initialState: {
     count: 0,
     valuesById: {} as Record<string, string | undefined>,
@@ -17,6 +18,10 @@ const registrationOnlyServiceDef = defineService({
     getValue: {
       input: entryIdInputSchema,
       output: v.nullable(v.string()),
+      staticPath: (input) => {
+        expectTypeOf(input).toEqualTypeOf<{ entryId: string }>();
+        return `${input.entryId}.json`;
+      },
     },
   },
   commands: {
@@ -37,42 +42,39 @@ const registeredService = registerService(registrationOnlyServiceDef, {
       handler: (input, ctx) => {
         expectTypeOf(input).toEqualTypeOf<{ entryId: string }>();
         expectTypeOf(ctx.self.state.valuesById[input.entryId]).toEqualTypeOf<string | undefined>();
-        expectTypeOf(ctx.self.commands.increment).parameter(0).toEqualTypeOf<number>();
-        expectTypeOf(ctx.self.commands.preloadValue).parameter(0).toEqualTypeOf<{
-          entryId: string;
-        }>();
+        // @ts-expect-error query handlers do not receive commands on self
+        void ctx.self.commands;
         expectTypeOf(ctx.getService).parameter(0).toEqualTypeOf<string>();
-        expectTypeOf(ctx.getService).returns.toEqualTypeOf<Promise<RuntimeService>>();
+        expectTypeOf(
+          ctx.getService('internal-fixture/missing-service')
+        ).toEqualTypeOf<RuntimeService>();
 
         return ctx.self.state.valuesById[input.entryId] ?? null;
       },
-      preload: async (input, ctx) => {
+      load: async (input, ctx) => {
         expectTypeOf(input).toEqualTypeOf<{ entryId: string }>();
+        expectTypeOf(ctx.self.commands.preloadValue).parameter(0).toEqualTypeOf<{
+          entryId: string;
+        }>();
         await ctx.self.commands.preloadValue(input);
       },
-      static: {
-        path: (input) => {
-          expectTypeOf(input).toEqualTypeOf<{ entryId: string }>();
-          return `${input.entryId}.json`;
-        },
-        inputs: () => [{ entryId: 'entry-a' }],
-      },
+      staticInputs: () => [{ entryId: 'entry-a' }],
     },
   },
   commands: {
     increment: {
       handler: (input, ctx) => {
         expectTypeOf(input).toEqualTypeOf<number>();
-        ctx.self.setState((draft) => {
-          draft.count += input;
+        ctx.self.setState((state) => {
+          state.count += input;
         });
       },
     },
     preloadValue: {
       handler: async (input, ctx) => {
         expectTypeOf(input).toEqualTypeOf<{ entryId: string }>();
-        ctx.self.setState((draft) => {
-          draft.valuesById[input.entryId] = 'ready';
+        ctx.self.setState((state) => {
+          state.valuesById[input.entryId] = 'ready';
         });
       },
     },
@@ -84,7 +86,8 @@ describe('open-service registration types', () => {
     expectTypeOf(registeredService.queries.getValue).parameter(0).toEqualTypeOf<{
       entryId: string;
     }>();
-    expectTypeOf(registeredService.queries.getValue).returns.toEqualTypeOf<
+    expectTypeOf(registeredService.queries.getValue).returns.toEqualTypeOf<string | null>();
+    expectTypeOf(registeredService.queries.getValue.loaded).returns.toEqualTypeOf<
       Promise<string | null>
     >();
 
@@ -94,6 +97,10 @@ describe('open-service registration types', () => {
     expectTypeOf(registeredService.commands.preloadValue).parameter(0).toEqualTypeOf<{
       entryId: string;
     }>();
+    expectTypeOf(registeredService.getService).parameter(0).toEqualTypeOf<string>();
+    expectTypeOf(
+      registeredService.getService('internal-fixture/missing-service')
+    ).toEqualTypeOf<RuntimeService>();
   });
 
   it('rejects invalid registration overrides', () => {
@@ -112,6 +119,32 @@ describe('open-service registration types', () => {
           // @ts-expect-error command registration input must match the declared schema
           handler: async (input: { entryId: number }) => {
             void input;
+          },
+        },
+      },
+    });
+  });
+
+  it('types cross-service lookups when getService receives a definition generic', () => {
+    registerService(mutableRecordLookupServiceDef);
+    registerService(registrationOnlyServiceDef, {
+      queries: {
+        getValue: {
+          handler: (_input, ctx) => {
+            const lookup = ctx.getService<typeof mutableRecordLookupServiceDef>(
+              'internal-fixture/mutable-record-lookup'
+            );
+
+            expectTypeOf(lookup.queries.getRecordFields).returns.toEqualTypeOf<Record<
+              string,
+              string
+            > | null>();
+            const missingService = ctx.getService('internal-fixture/missing-service');
+            expectTypeOf(missingService).toEqualTypeOf<RuntimeService>();
+            // @ts-expect-error getRecordFields requires an entryId string
+            lookup.queries.getRecordFields({});
+
+            return null;
           },
         },
       },

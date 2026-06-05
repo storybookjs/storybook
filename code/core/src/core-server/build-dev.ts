@@ -18,7 +18,7 @@ import { CLI_COLORS, deprecate, logger, prompt } from 'storybook/internal/node-l
 import { MissingBuilderError, NoStatsForViteDevError } from 'storybook/internal/server-errors';
 import { detectAgent, oneWayHash, telemetry } from 'storybook/internal/telemetry';
 import type { BuilderOptions, CLIOptions, LoadOptions, Options } from 'storybook/internal/types';
-
+import { applyServicesPresetOnce } from './utils/apply-services-preset-once.ts';
 import { global } from '@storybook/global';
 
 import { join, relative, resolve } from 'pathe';
@@ -295,7 +295,7 @@ export async function buildDevStandalone(
 
   const features = await presets.apply('features');
   global.FEATURES = features;
-  await presets.apply('services');
+  await applyServicesPresetOnce(presets);
   await presets.apply('experimental_serverChannel', channel);
 
   const fullOptions: Options = {

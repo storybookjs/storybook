@@ -529,7 +529,6 @@ export const DetailsScreen = ({
                   variant="ghost"
                   size="small"
                   ariaLabel="Open story list"
-                  aria-haspopup="listbox"
                 >
                   {storyIndex + 1}/{totalStories}
                 </Counter>

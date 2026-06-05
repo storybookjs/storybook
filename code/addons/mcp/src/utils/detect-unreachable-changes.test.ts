@@ -98,11 +98,20 @@ describe('detectUnreachableChanges', () => {
 		vi.doUnmock('node:child_process');
 	});
 
-	function mockService(opts: { lookup: (dep: string) => Map<string, number> }) {
+	function mockService(opts: {
+		status?: import('./module-graph.ts').ModuleGraphStatus;
+		/** Maps the batched input files to positional hit lists. */
+		getStoriesForFiles: (files: string[]) => import('./module-graph.ts').ModuleGraphStoryHit[][];
+	}) {
+		const status = opts.status ?? { value: 'ready' };
 		vi.doMock('storybook/internal/core-server', () => ({
-			experimental_getDependencyGraphService: () => ({
-				hasGraph: () => true,
-				lookup: opts.lookup,
+			getService: () => ({
+				queries: {
+					getStatus: { loaded: async () => status },
+					getStoriesForFiles: {
+						loaded: async ({ files }: { files: string[] }) => opts.getStoriesForFiles(files),
+					},
+				},
 			}),
 		}));
 	}
@@ -116,8 +125,10 @@ describe('detectUnreachableChanges', () => {
 	it('lists working-tree files that the reverse-graph does not reach', async () => {
 		mockService({
 			// reverse-graph knows about Badge.tsx but NOT theme.ts
-			lookup: (dep: string) =>
-				dep.endsWith('Badge.tsx') ? new Map([['/repo/src/Badge.stories.tsx', 1]]) : new Map(),
+			getStoriesForFiles: (files) =>
+				files.map((f) =>
+					f.endsWith('Badge.tsx') ? [{ storyFile: './src/Badge.stories.tsx', depth: 1 }] : [],
+				),
 		});
 		mockGit(' M src/styles/theme.ts\n M src/components/Badge/Badge.tsx\n');
 		const { detectUnreachableChanges } = await import('./detect-unreachable-changes.ts');
@@ -126,7 +137,8 @@ describe('detectUnreachableChanges', () => {
 
 	it('returns [] when every modified file IS in the graph', async () => {
 		mockService({
-			lookup: () => new Map([['/repo/src/x.stories.tsx', 1]]),
+			getStoriesForFiles: (files) =>
+				files.map(() => [{ storyFile: './src/x.stories.tsx', depth: 1 }]),
 		});
 		mockGit(' M src/components/Badge/Badge.tsx\n');
 		const { detectUnreachableChanges } = await import('./detect-unreachable-changes.ts');
@@ -135,44 +147,54 @@ describe('detectUnreachableChanges', () => {
 
 	it('returns [] when the service is not active', async () => {
 		vi.doMock('storybook/internal/core-server', () => ({
-			experimental_getDependencyGraphService: () => undefined,
+			getService: () => undefined,
 		}));
 		mockGit(' M src/styles/theme.ts\n');
 		const { detectUnreachableChanges } = await import('./detect-unreachable-changes.ts');
 		expect(await detectUnreachableChanges()).toEqual([]);
 	});
 
-	it('returns [] on older Storybook versions that lack the export', async () => {
-		// Backwards-compat: the named export is missing entirely.
+	it('returns [] on older Storybook versions that lack the open-service API', async () => {
+		// Backwards-compat: the `getService` export is missing entirely.
 		vi.doMock('storybook/internal/core-server', () => ({}));
 		mockGit(' M src/styles/theme.ts\n');
 		const { detectUnreachableChanges } = await import('./detect-unreachable-changes.ts');
 		expect(await detectUnreachableChanges()).toEqual([]);
 	});
 
+	it('returns [] when the module graph is not ready', async () => {
+		mockService({
+			status: { value: 'booting' },
+			getStoriesForFiles: (files) => files.map(() => []),
+		});
+		mockGit(' M src/styles/theme.ts\n');
+		const { detectUnreachableChanges } = await import('./detect-unreachable-changes.ts');
+		expect(await detectUnreachableChanges()).toEqual([]);
+	});
+
 	it('returns [] when the working tree is clean', async () => {
-		mockService({ lookup: () => new Map() });
+		mockService({ getStoriesForFiles: (files) => files.map(() => []) });
 		mockGit('');
 		const { detectUnreachableChanges } = await import('./detect-unreachable-changes.ts');
 		expect(await detectUnreachableChanges()).toEqual([]);
 	});
 
 	it('ignores non-source files (css, json, lockfiles, …)', async () => {
-		mockService({ lookup: () => new Map() });
+		mockService({ getStoriesForFiles: (files) => files.map(() => []) });
 		mockGit(' M src/styles/theme.css\n M package-lock.json\n M src/styles/theme.ts\n');
 		const { detectUnreachableChanges } = await import('./detect-unreachable-changes.ts');
 		expect(await detectUnreachableChanges()).toEqual(['src/styles/theme.ts']);
 	});
 
 	it('handles rename lines (`R  old -> new`) by keeping the new path', async () => {
-		mockService({ lookup: () => new Map() });
+		mockService({ getStoriesForFiles: (files) => files.map(() => []) });
 		mockGit('R  src/old.ts -> src/new.ts\n');
 		const { detectUnreachableChanges } = await import('./detect-unreachable-changes.ts');
 		expect(await detectUnreachableChanges()).toEqual(['src/new.ts']);
 	});
 
 	it('returns [] gracefully when git fails (not a repo, etc.)', async () => {
-		mockService({ lookup: () => new Map() });
+		mockService({ getStoriesForFiles: (files) => files.map(() => []) });
 		vi.doMock('node:child_process', () => ({
 			execSync: () => {
 				throw new Error('not a git repository');
@@ -183,7 +205,7 @@ describe('detectUnreachableChanges', () => {
 	});
 
 	it('caps the list at maxFiles to keep the agent response small', async () => {
-		mockService({ lookup: () => new Map() });
+		mockService({ getStoriesForFiles: (files) => files.map(() => []) });
 		const many = Array.from({ length: 50 }, (_, i) => ` M src/f${i}.ts\n`).join('');
 		mockGit(many);
 		const { detectUnreachableChanges } = await import('./detect-unreachable-changes.ts');

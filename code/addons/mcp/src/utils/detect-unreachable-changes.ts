@@ -1,6 +1,6 @@
 import { execSync } from 'node:child_process';
 import path from 'node:path';
-import { getDependencyGraphService } from './change-detection.ts';
+import { getModuleGraphService } from './module-graph.ts';
 import { slash } from './slash.ts';
 
 const SOURCE_EXT_RE = /\.(?:tsx?|jsx?|mjs|cjs)$/i;
@@ -36,8 +36,10 @@ function parsePorcelain(output: string): string[] {
  *     status-store result directly).
  */
 export async function detectUnreachableChanges(maxFiles = 10): Promise<string[]> {
-	const service = await getDependencyGraphService();
-	if (!service || !service.hasGraph()) return [];
+	const moduleGraph = await getModuleGraphService();
+	if (!moduleGraph) return [];
+	const status = await moduleGraph.queries.getStatus.loaded(undefined);
+	if (status.value !== 'ready') return [];
 	// Matches what the dev server uses, so paths line up with the reverse-index keys.
 	const workingDir = process.cwd();
 
@@ -55,16 +57,18 @@ export async function detectUnreachableChanges(maxFiles = 10): Promise<string[]>
 	const relFiles = parsePorcelain(porcelain).filter((f) => SOURCE_EXT_RE.test(f));
 	if (relFiles.length === 0) return [];
 
+	// The module graph accepts absolute paths but normalizes them with forward slashes; `path.resolve`
+	// emits backslashes on Windows, which would miss every key and wrongly flag reachable files.
+	const absFiles = relFiles.map((rel) => slash(path.resolve(workingDir, rel)));
+	// One batched lookup; output is positional (result `i` corresponds to `absFiles[i]`).
+	const hits = await moduleGraph.queries.getStoriesForFiles.loaded({ files: absFiles });
+
 	const unreachable: string[] = [];
-	for (const rel of relFiles) {
-		// The reverse graph keys are forward-slash normalized; `path.resolve` emits backslashes on
-		// Windows, which would miss every key and wrongly flag reachable files as unreachable.
-		const abs = slash(path.resolve(workingDir, rel));
-		const hits = service.lookup(abs);
-		if (hits.size === 0) unreachable.push(rel);
-		if (unreachable.length >= maxFiles) break;
-	}
-	return unreachable;
+	relFiles.forEach((rel, i) => {
+		if (unreachable.length >= maxFiles) return;
+		if ((hits[i]?.length ?? 0) === 0) unreachable.push(rel);
+	});
+	return unreachable.slice(0, maxFiles);
 }
 
 /**

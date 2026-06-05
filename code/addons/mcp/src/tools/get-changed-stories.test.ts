@@ -8,26 +8,39 @@ import smallStoryIndexFixture from '../../fixtures/small-story-index.fixture.jso
 import { GET_CHANGED_STORIES_TOOL_NAME } from './tool-names.ts';
 import type { StoryIndex } from 'storybook/internal/types';
 
-const { mockGetStatusStore, mockGetActiveStoryDependencyGraphService, mockExecSync } = vi.hoisted(
-	() => ({
-		mockGetStatusStore: vi.fn<(...args: any[]) => any>(),
-		// Defaults to "service inactive" — tests exercising the unreachable-files
-		// path override this with `mockGetActiveStoryDependencyGraphService.mockReturnValue`.
-		mockGetActiveStoryDependencyGraphService: vi.fn<(...args: any[]) => any>(),
-		// Hoisted because node:child_process is loaded inside
-		// detect-unreachable-changes.ts at module-eval time; ESM forbids
-		// retroactive vi.spyOn.
-		mockExecSync: vi.fn<(...args: any[]) => any>(),
-	}),
-);
+const { mockGetStatusStore, mockGetService, mockExecSync } = vi.hoisted(() => ({
+	mockGetStatusStore: vi.fn<(...args: any[]) => any>(),
+	// Resolves the `core/module-graph` open service. Defaults to "service inactive"
+	// (returns undefined); tests exercising the unreachable-files path override it
+	// with `mockGetService.mockReturnValue(moduleGraphStub(...))`.
+	mockGetService: vi.fn<(...args: any[]) => any>(),
+	// Hoisted because node:child_process is loaded inside
+	// detect-unreachable-changes.ts at module-eval time; ESM forbids
+	// retroactive vi.spyOn.
+	mockExecSync: vi.fn<(...args: any[]) => any>(),
+}));
 
 vi.mock('storybook/internal/core-server', () => ({
 	experimental_getStatusStore: (...args: unknown[]) => mockGetStatusStore(...args),
-	// `get-changed-stories` calls this via `detectUnreachableChanges` to surface
-	// modified working-tree files that aren't reached from any story root.
-	experimental_getDependencyGraphService: (...args: unknown[]) =>
-		mockGetActiveStoryDependencyGraphService(...args),
+	// `get-changed-stories` resolves this via `detectUnreachableChanges` to surface
+	// modified working-tree files that aren't reached from any story file.
+	getService: (...args: unknown[]) => mockGetService(...args),
 }));
+
+/**
+ * Builds a `core/module-graph` runtime stub. `getStoriesForFiles` maps the batched input files to
+ * positional hit lists — an empty list marks a file as unreachable from every story.
+ */
+function moduleGraphStub(getStoriesForFiles: (files: string[]) => Array<Array<unknown>>) {
+	return {
+		queries: {
+			getStatus: { loaded: async () => ({ value: 'ready' as const }) },
+			getStoriesForFiles: {
+				loaded: async ({ files }: { files: string[] }) => getStoriesForFiles(files),
+			},
+		},
+	};
+}
 
 vi.mock('node:child_process', async () => {
 	const actual = await vi.importActual<typeof import('node:child_process')>('node:child_process');
@@ -44,8 +57,8 @@ describe('getChangedStoriesTool', () => {
 
 	beforeEach(async () => {
 		mockGetStatusStore.mockReset();
-		mockGetActiveStoryDependencyGraphService.mockReset();
-		mockGetActiveStoryDependencyGraphService.mockReturnValue(undefined);
+		mockGetService.mockReset();
+		mockGetService.mockReturnValue(undefined);
 		mockExecSync.mockReset();
 		mockExecSync.mockReturnValue('');
 		const adapter = new ValibotJsonSchemaAdapter();
@@ -329,11 +342,8 @@ describe('getChangedStoriesTool', () => {
 		// this hint the agent reads "no impact" and stops — the original
 		// hallucination this whole feature exists to prevent.
 		mockGetStatusStore.mockReturnValue({ getAll: () => ({}) });
-		mockGetActiveStoryDependencyGraphService.mockReturnValue({
-			hasGraph: () => true,
-			// theme.ts is modified but no story file imports it.
-			lookup: (_dep: string) => new Map(),
-		});
+		// theme.ts is modified but no story file imports it.
+		mockGetService.mockReturnValue(moduleGraphStub((files) => files.map(() => [])));
 		mockExecSync.mockReturnValue(' M src/styles/theme.ts\n');
 
 		const response = await callTool();
@@ -360,10 +370,7 @@ describe('getChangedStoriesTool', () => {
 				},
 			}),
 		});
-		mockGetActiveStoryDependencyGraphService.mockReturnValue({
-			hasGraph: () => true,
-			lookup: () => new Map(),
-		});
+		mockGetService.mockReturnValue(moduleGraphStub((files) => files.map(() => [])));
 		mockExecSync.mockReturnValue(' M .storybook/main.ts\n M src/server.ts\n');
 
 		const response = await callTool();
@@ -391,11 +398,12 @@ describe('getChangedStoriesTool', () => {
 				},
 			}),
 		});
-		mockGetActiveStoryDependencyGraphService.mockReturnValue({
-			hasGraph: () => true,
-			// Every modified file IS in the graph — no unreachable callout fires.
-			lookup: () => new Map([['/repo/src/Button.stories.tsx', 1]]),
-		});
+		// Every modified file IS in the graph — no unreachable callout fires.
+		mockGetService.mockReturnValue(
+			moduleGraphStub((files) =>
+				files.map(() => [{ storyFile: './src/Button.stories.tsx', depth: 1 }]),
+			),
+		);
 		mockExecSync.mockReturnValue(' M src/Button.tsx\n');
 
 		const response = await callTool();

@@ -5,7 +5,7 @@ import { experimental_devServer } from './preset.ts';
 import { STORYBOOK_MCP_PROXY_HEADER } from './auth/index.ts';
 import * as mcpHandlerModule from './mcp-handler.ts';
 import * as runStoryTests from './tools/run-story-tests.ts';
-import * as changeDetection from './utils/change-detection.ts';
+import * as moduleGraph from './utils/module-graph.ts';
 
 describe('experimental_devServer', () => {
 	let mockApp: any;
@@ -382,7 +382,7 @@ describe('experimental_devServer', () => {
 	it('marks dev tools disabled on the landing page when the dev toolset is turned off', async () => {
 		// Dependency graph IS supported, so `get-stories-by-component` would otherwise badge
 		// as enabled — proving the badge now also honors the `dev` toolset being disabled.
-		vi.spyOn(changeDetection, 'isDependencyGraphSupported').mockResolvedValue(true);
+		vi.spyOn(moduleGraph, 'isModuleGraphSupported').mockResolvedValue(true);
 
 		let getHandler: any;
 		mockApp.get = vi.fn((_path, handler) => {

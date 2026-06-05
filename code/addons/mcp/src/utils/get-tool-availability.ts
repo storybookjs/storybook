@@ -1,12 +1,12 @@
 import type { Options } from 'storybook/internal/types';
-import { isDependencyGraphSupported } from './change-detection.ts';
+import { isModuleGraphSupported } from './module-graph.ts';
 import { getReviewStatus } from './is-review-available.ts';
 import { getManifestStatus } from '../tools/is-manifest-available.ts';
 import { getAddonVitestConstants } from '../tools/run-story-tests.ts';
 import { isAddonA11yEnabled } from './is-addon-a11y-enabled.ts';
 
 export interface ToolAvailability {
-	/** Dev-server builder supports the dependency-graph API. Gates `get-stories-by-component`. */
+	/** Storybook ships the `core/module-graph` open service. Gates `get-stories-by-component`. */
 	dependencyGraphSupported: boolean;
 	/** The `changeDetection` feature flag is enabled. Gates `get-changed-stories`. */
 	changeDetectionEnabled: boolean;
@@ -57,7 +57,7 @@ export async function getToolAvailability(
 		addonVitestConstants,
 		a11yEnabled,
 	] = await Promise.all([
-		isDependencyGraphSupported(),
+		isModuleGraphSupported(),
 		getReviewStatus(options, { features: resolvedFeatures }),
 		getManifestStatus(options),
 		getAddonVitestConstants(),

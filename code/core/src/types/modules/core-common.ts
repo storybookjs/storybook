@@ -17,10 +17,14 @@ import type { Indexer, StoriesEntry } from './indexer.ts';
 import type { SupportedRenderer } from './renderers.ts';
 
 export type {
+  DocgenError,
+  DocgenJsDocTags,
   DocgenPayload,
   DocgenProvider,
   DocgenProviderInput,
   DocgenProviderPreset,
+  DocgenStory,
+  DocgenSubcomponent,
 } from '../../shared/open-service/services/docgen/types.ts';
 
 /** ⚠️ This file contains internal WIP types they MUST NOT be exported outside this package for now! */

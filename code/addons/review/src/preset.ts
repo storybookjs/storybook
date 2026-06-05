@@ -1,9 +1,10 @@
 import { existsSync, statSync } from 'node:fs';
-import { resolve } from 'node:path';
+import { isAbsolute, relative, resolve } from 'node:path';
 
 import { createProxyMiddleware } from 'http-proxy-middleware';
 import sirv from 'sirv';
 import type { Channel } from 'storybook/internal/channels';
+import { logger } from 'storybook/internal/node-logger';
 import type { Middleware, Options, ServerApp } from 'storybook/internal/types';
 
 import type { FileChangeEvent } from 'storybook/internal/core-server';
@@ -117,34 +118,69 @@ export const experimental_serverChannel = async (
   return channel;
 };
 
-// Explicit origin of a deployed baseline Storybook to compare against. When set,
-// it always wins so the baseline can be pinned to a specific remote build.
-const BASELINE_TARGET_ORIGIN = process.env.STORYBOOK_REVIEW_BASELINE_ORIGIN;
-// Fallback remote baseline used only when no env origin is set and no local
-// build exists. Points at a temporary Chromatic build and should be replaced
-// with a real per-project source before this graduates beyond experimental use.
-const DEFAULT_BASELINE_TARGET_ORIGIN = 'https://next--635781f3500dd2c49e189caf.chromatic.com';
-// Locally-built baseline Storybook, served directly when present so a project
-// can compare against its own `storybook-static` instead of a remote origin.
-const BASELINE_STATIC_DIR = 'storybook-static';
+// The deployed baseline Storybook to compare against. A single env var that is
+// either a project-relative static-build directory (served directly) or a remote
+// origin URL (proxied). There is no default — without it, no baseline is served.
+const BASELINE = process.env.STORYBOOK_REVIEW_BASELINE;
+
+/**
+ * Resolve a `STORYBOOK_REVIEW_BASELINE` value to a project-relative static dir.
+ * Returns the absolute path when the value is a relative path that stays inside
+ * the cwd; returns undefined for URL-like values, absolute paths, or paths that
+ * escape the cwd via `..` — those are not treated as a local static dir.
+ */
+const resolveBaselineStaticDir = (value: string): string | undefined => {
+  if (/^[a-zA-Z][\w+.-]*:\/\//.test(value) || isAbsolute(value)) {
+    return undefined;
+  }
+  const root = process.cwd();
+  const resolved = resolve(root, value);
+  if (relative(root, resolved).startsWith('..')) {
+    return undefined;
+  }
+  return resolved;
+};
+
+const isValidBaselineOrigin = (value: string): boolean => {
+  try {
+    const { protocol } = new URL(value);
+    return protocol === 'http:' || protocol === 'https:';
+  } catch {
+    return false;
+  }
+};
 
 export const experimental_devServer = (app: ServerApp) => {
-  // Resolution order: an explicit env origin proxies remotely; otherwise a
-  // local `storybook-static` build is served directly; otherwise we proxy to
-  // the default remote baseline.
-  if (!BASELINE_TARGET_ORIGIN) {
-    const baselineStaticDir = resolve(process.cwd(), BASELINE_STATIC_DIR);
-    if (existsSync(baselineStaticDir) && statSync(baselineStaticDir).isDirectory()) {
-      app.use(
-        BASELINE_PROXY_PATH,
-        sirv(baselineStaticDir, { dev: true, etag: true, extensions: [] }) as unknown as Middleware
+  if (!BASELINE) {
+    return app;
+  }
+
+  // A safe relative path is served directly as a local static build…
+  const staticDir = resolveBaselineStaticDir(BASELINE);
+  if (staticDir) {
+    if (!existsSync(staticDir) || !statSync(staticDir).isDirectory()) {
+      logger.warn(
+        `[addon-review] STORYBOOK_REVIEW_BASELINE "${BASELINE}" is not an existing directory; ignoring.`
       );
       return app;
     }
+    app.use(
+      BASELINE_PROXY_PATH,
+      sirv(staticDir, { dev: true, etag: true, extensions: [] }) as unknown as Middleware
+    );
+    return app;
+  }
+
+  // …otherwise a valid URL is proxied as a remote origin.
+  if (!isValidBaselineOrigin(BASELINE)) {
+    logger.warn(
+      `[addon-review] STORYBOOK_REVIEW_BASELINE "${BASELINE}" is neither a valid relative path nor a valid URL; ignoring.`
+    );
+    return app;
   }
 
   const proxyRequest = createProxyMiddleware({
-    target: BASELINE_TARGET_ORIGIN ?? DEFAULT_BASELINE_TARGET_ORIGIN,
+    target: BASELINE,
     changeOrigin: true,
     // The baseline origin is a remote server that can be slow or unreachable.
     // Bound the wait and respond deterministically so a dead connection fails

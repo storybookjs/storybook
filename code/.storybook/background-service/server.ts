@@ -10,7 +10,7 @@
  * builds — the subscription only fires for server-local state changes.
  */
 
-import { registerService } from '../../core/src/shared/open-service/server.ts';
+import { registerService } from 'storybook/internal/common';
 import { backgroundServiceDef } from './definition.ts';
 
 export function registerBackgroundService() {

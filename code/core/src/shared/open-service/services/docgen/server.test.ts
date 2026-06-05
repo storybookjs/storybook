@@ -124,7 +124,10 @@ describe('docgen open service', () => {
 
   describe('getDocgenForAllComponents query', () => {
     it('returns every extracted component without filtering', async () => {
-      const manifestStory = { ...makeStoryEntry('button--primary', 'Button'), tags: [Tag.MANIFEST] };
+      const manifestStory = {
+        ...makeStoryEntry('button--primary', 'Button'),
+        tags: [Tag.MANIFEST],
+      };
       const otherStory = makeStoryEntry('card--default', 'Card');
 
       const service = registerDocgenService({

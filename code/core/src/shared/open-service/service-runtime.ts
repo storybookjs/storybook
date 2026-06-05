@@ -973,11 +973,7 @@ function createDefaultQuery<TState>(
       );
     }
 
-    if (
-      args.length === 2 &&
-      typeof args[0] === 'function' &&
-      typeof args[1] === 'function'
-    ) {
+    if (args.length === 2 && typeof args[0] === 'function' && typeof args[1] === 'function') {
       return subscribeToQuery(
         refs,
         queryName,

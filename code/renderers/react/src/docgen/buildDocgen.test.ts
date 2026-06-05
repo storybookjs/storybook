@@ -7,6 +7,7 @@ import { dedent } from 'ts-dedent';
 import ts from 'typescript';
 
 import { ComponentMetaManager } from '../componentManifest/componentMeta/ComponentMetaManager.ts';
+import type { ComponentDoc } from '../componentManifest/componentMeta/componentMetaExtractor.ts';
 import {
   cleanup,
   createTempDir,
@@ -80,11 +81,9 @@ describe('buildDocgenPayload', () => {
       expect(payload!.path).toBe(importPath);
       expect(payload!.description).toContain('clickable button');
       expect(payload!.summary).toBe('The primary action button.');
-      expect(Object.keys(payload!.reactComponentMeta?.props ?? {}).sort()).toEqual([
-        'disabled',
-        'label',
-      ]);
-      expect(payload!.reactComponentMeta?.props.label.required).toBe(true);
+      const meta = payload!.reactComponentMeta as ComponentDoc | undefined;
+      expect(Object.keys(meta?.props ?? {}).sort()).toEqual(['disabled', 'label']);
+      expect(meta?.props.label.required).toBe(true);
       expect(payload!.stories).toHaveLength(1);
       expect(payload!.stories?.[0]).toMatchObject({
         id: expect.stringMatching(/--primary$/),
@@ -152,8 +151,9 @@ describe('buildDocgenPayload', () => {
     expect(payload!.name).toBe('Card');
     expect(payload!.subcomponents).toBeDefined();
     expect(Object.keys(payload!.subcomponents ?? {})).toEqual(['CardHeader']);
-    expect(Object.keys(payload!.subcomponents?.CardHeader.reactComponentMeta?.props ?? {})).toContain(
-      'level'
-    );
+    const cardHeaderMeta = payload!.subcomponents?.CardHeader.reactComponentMeta as
+      | ComponentDoc
+      | undefined;
+    expect(Object.keys(cardHeaderMeta?.props ?? {})).toContain('level');
   });
 });

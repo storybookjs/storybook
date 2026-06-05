@@ -27,6 +27,7 @@ export interface ReactSubcomponentManifest extends ComponentSubcomponentManifest
   reactDocgen?: DocObj;
   reactDocgenTypescript?: ComponentDocWithExportName;
   reactComponentMeta?: ComponentDoc;
+  [key: string]: unknown;
 }
 
 /**
@@ -40,6 +41,7 @@ export interface ReactComponentManifest extends ComponentManifest {
   reactDocgenTypescript?: ComponentDocWithExportName;
   reactComponentMeta?: ComponentDoc;
   subcomponents?: Record<string, ReactSubcomponentManifest>;
+  [key: string]: unknown;
 }
 
 function getPackageInfo(componentPath: string | undefined, fallbackPath: string) {

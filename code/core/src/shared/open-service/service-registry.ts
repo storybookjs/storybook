@@ -140,13 +140,25 @@ function applyRegistration<
     queries: Object.fromEntries(
       Object.entries(definition.queries).map(([name, query]) => {
         const override = registration.queries?.[name as keyof TQueries];
-        return [name, override ? { ...query, ...override } : query];
+        // Only `staticInputs` is a supported query override. Picking it explicitly stops untyped JS
+        // callers from merging unsupported keys (e.g. `handler`, `load`) into the definition.
+        return [
+          name,
+          override && 'staticInputs' in override
+            ? { ...query, staticInputs: override.staticInputs }
+            : query,
+        ];
       })
     ) as TQueries,
     commands: Object.fromEntries(
       Object.entries(definition.commands).map(([name, command]) => {
         const override = registration.commands?.[name as keyof TCommands];
-        return [name, override ? { ...command, ...override } : command];
+        // Only `handler` is a supported command override. Picking it explicitly stops untyped JS
+        // callers from merging unsupported keys into the definition.
+        return [
+          name,
+          override && 'handler' in override ? { ...command, handler: override.handler } : command,
+        ];
       })
     ) as TCommands,
   };

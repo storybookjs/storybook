@@ -462,65 +462,127 @@ The dev server is a full peer, not a passive observer. `registerService` on the 
 
 ## Remote Command Execution
 
-Queries are local-only, but commands are not always implemented in every runtime. When a command's
-handler is supplied only in some runtimes (typically at server registration), the runtimes that lack
-it must still be able to invoke it. `registerService` decides this per command at registration: a
-command with a local handler runs locally and broadcasts state as usual; a command without one
-becomes a **remote invoker**. The protocol lives in
-[service-transport.ts](./service-transport.ts) (`connectCommandTransport`).
+Queries are local-only, but commands are not. A command's handler can be supplied in only **some**
+runtimes — the canonical case is a handler added at server registration that needs Node APIs or
+server context. The runtimes that lack the handler must still be able to invoke the command (from
+`useServiceCommand`, a test, or another service), so they ask a peer that can run it.
+
+`registerService` decides this **per command at registration time** by checking whether the resolved
+definition has a `handler`:
+
+- **Has a local handler** → the command runs locally and broadcasts its post-mutation state as usual
+  (the normal multi-master path), **and** the runtime listens for invoke requests so it can run the
+  command on behalf of peers that cannot.
+- **No local handler** → the command becomes a **remote invoker**: calling it sends a request over
+  the channel and returns a promise that settles when a peer answers.
+
+The protocol lives in [service-transport.ts](./service-transport.ts) (`connectCommandTransport`); the
+example background-color service (`code/.storybook/background-service/`) exercises it end to end —
+`setColor` is declared with no handler in the shared definition and implemented only at server
+registration, so the manager toolbar invokes it remotely.
 
 ### Roles
 
-Every registered runtime plays both roles simultaneously, per command:
+Every registered runtime plays **both** roles at once, decided per command:
 
-- **Requester** (no local handler): calling the command emits `services:command-invoke` with a unique
-  `callId` and returns a promise. The promise resolves with the first `services:command-result` for
-  that `callId`, or rejects with the deserialized error from the first `services:command-error`.
-- **Responder** (has a local handler): on a matching `services:command-invoke`, it emits
-  `services:command-ack` immediately, runs the command locally (which broadcasts the post-mutation
-  state through the normal command wrappers, so peers converge as usual), then emits
-  `services:command-result` or `services:command-error`.
+- **Requester** (no local handler): calling the command emits `services:command-invoke` carrying a
+  freshly generated `callId` and returns a promise. The promise resolves with the `result` of the
+  first `services:command-result` for that `callId`, or rejects with the reconstructed error from the
+  first `services:command-error`.
+- **Responder** (has a local handler): on a matching `services:command-invoke` it emits
+  `services:command-ack` **immediately** (before running), executes the command locally — which
+  validates input, mutates state, and broadcasts the post-mutation snapshot through the normal command
+  wrappers so every peer converges — then emits `services:command-result` or `services:command-error`.
 
-A runtime never requests a command it implements (it runs that locally), so it never answers its own
-invoke echo. The `services:command-ack` event is informational — it signals that a peer has picked the
-call up; the requester still settles only on the result/error reply.
+A runtime never requests a command it implements (it runs that locally), so a responder never answers
+its own invoke echo: `onInvoke` only acts on commands in its `implementedCommandNames` set.
 
 ### Events
 
-| Event | Direction | Payload |
-| ------------------------- | ----------------------- | ------------------------------------------------- |
-| `services:command-invoke` | requester → implementers | `{ serviceId, commandName, input, callId, clientId }` |
-| `services:command-ack`    | implementer → requester | `{ serviceId, callId, clientId }`                 |
-| `services:command-result` | implementer → requester | `{ serviceId, callId, result, clientId }`         |
-| `services:command-error`  | implementer → requester | `{ serviceId, callId, error, clientId }`          |
+All four events are namespaced under `services:` and carry the `serviceId` so a runtime that hosts
+several services routes them correctly.
 
-`error` is a transport-safe serialization of the thrown value, including its `cause` chain and
-Storybook fields like `code`/`fromStorybook` (see
-[service-error-serialization.ts](./service-error-serialization.ts)). The requester rethrows it as a
-reconstructed `Error`.
+| Event | Direction | Payload |
+| ------------------------- | ------------------------ | ----------------------------------------------------- |
+| `services:command-invoke` | requester → implementers | `{ serviceId, commandName, input, callId, clientId }` |
+| `services:command-ack`    | implementer → requester  | `{ serviceId, callId, clientId }`                     |
+| `services:command-result` | implementer → requester  | `{ serviceId, callId, result, clientId }`             |
+| `services:command-error`  | implementer → requester  | `{ serviceId, callId, error, clientId }`              |
+
+- `callId` is the per-invocation correlation id (see [Correlation and parallel calls](#correlation-and-parallel-calls)).
+- `clientId` is the id of the runtime that emitted the envelope — the requester on an invoke, the
+  responder on a reply.
+- `error` is a transport-safe serialization of the thrown value, including its full `cause` chain (and
+  arrays such as the `.loaded()` drain's `cause.aggregated`) plus Storybook fields like
+  `code`/`fromStorybook`. See [service-error-serialization.ts](./service-error-serialization.ts);
+  `Error` instances cannot cross a websocket (JSON) or postMessage (structured clone) boundary intact,
+  so they are flattened to a plain shape and rebuilt into a real `Error` on the requester.
+
+### Sequence
+
+Manager toolbar calls a command implemented only on the dev server:
+
+```text
+Manager (requester)              Channel               Server (responder)
+──────────────────────────────────────────────────────────────────────────
+service.commands.setColor(...)
+  └─ new callId
+  └─ emit command-invoke ───────────────────────────────────►
+                                                  └─ emit command-ack ──┐
+  ◄───────────────────────────────────────────────────────────────────┘
+                                                  └─ run setColor locally
+                                                       └─ mutate + emit patches ──►
+  ◄── apply patches (state converges) ───────────────────────────────────
+                                                  └─ emit command-result ──┐
+  ◄───────────────────────────────────────────────────────────────────────┘
+  └─ promise resolves with result
+```
+
+State still flows through the normal patch-broadcast path, so the requester gets the new state via
+`services:patches` and the resolved value via `services:command-result` — two independent channels of
+truth that both converge.
 
 ### Awaiting
 
 A command can be awaited from any runtime, even when it runs remotely: the returned promise resolves
-on success and rejects on failure exactly as if it had run locally. Callers do not need to know where
-the handler lives.
+on success and rejects on failure exactly as if the handler had been local. Callers never need to know
+where the handler lives.
 
-### Multiple implementers
+### Correlation and parallel calls
 
-If several peers implement the same command, each one runs it and replies. The requester keeps only
-the first reply per `callId` and ignores the rest, so a command can legitimately execute in more than
-one runtime. This is intentional for now — it is constrained by usage conventions and documentation
-rather than enforced in the protocol. Prefer implementing a command in exactly one runtime when its
-effects must not be duplicated.
+`callId` is generated fresh (`generateClientId()`) for **every** call, so it is effectively a unique
+execution id. This is what makes concurrent calls safe:
 
-### Topology limits
+- Two parallel calls — even with identical input — get two distinct `callId`s, two `pending` promise
+  entries, and two independent invoke envelopes. Replies are matched strictly by `callId`, so they can
+  never cross-wire and resolving one call never settles the other.
+- A reply whose `callId` is unknown (already settled, or for a different runtime's call) or whose
+  `serviceId` does not match is ignored.
+
+`callId` correlates **replies**; it does not make a command idempotent. Each invoke triggers a real
+execution on every responder that receives it.
+
+### Multiple implementers (at-most-once is not guaranteed)
+
+If several peers implement the same command, each one runs it (side effects and all) and replies. The
+requester keeps the **first** reply per `callId` and ignores the rest — so the *promise* is deduped,
+but the *execution* is not. A command can therefore legitimately run in more than one runtime.
+
+This is intentional for now and constrained by convention, not enforced by the protocol: **implement a
+command in exactly one runtime when its effects must not be duplicated.** Guaranteeing at-most-once
+across implementers would require electing a single executor per call, which this slice does not do.
+
+### Topology limits and timeouts
 
 Replies travel back over the same channel the invoke went out on, and command events are **not**
-relayed across a hub's other transports (unlike `services:patches`). The manager is connected to both
-the dev server and the preview, so it can invoke a command implemented in either. A preview cannot
-directly invoke a server-only command, and vice versa — route such calls through the manager, or
-implement the command on a directly-connected peer. There is no timeout: invoking a command no peer
-implements leaves the promise pending until the service is unregistered (which rejects it).
+relayed across a hub's other transports (unlike `services:patches`, which a relay hub re-broadcasts).
+The manager is connected to both the dev server and the preview, so it can invoke a command implemented
+in either; but a preview cannot directly invoke a server-only command, and vice versa — route such
+calls through the manager, or implement the command on a directly-connected peer.
+
+There is **no timeout**. Invoking a command that no reachable peer implements leaves the promise
+pending forever, until the service is unregistered — `disconnect` rejects every outstanding call with
+`OpenServiceRemoteCommandDisconnectedError`.
 
 ## React Hooks
 

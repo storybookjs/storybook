@@ -79,12 +79,14 @@ user:
 
 1. Inspect `.claude/launch.json` for a launch entry that starts this project's
    Storybook dev server.
-2. If that entry is missing, does not contain the Storybook command OR if the Storybook command doesn't use `autoPort`, repair it
-   first: invoke the **storybook-setup-claude-launch** skill, which creates or
-   repairs the `.claude/launch.json` Storybook entry.
-3. Start the preview by launching that `.claude/launch.json` entry through the
+    If: 
+      - the `.claude/launch.json` file does not exist
+      - no such entry exists
+      - the storybook entry does not use `autoPort`
+    repair it first: invoke the **storybook-setup-claude-launch** skill, which creates or repairs the `.claude/launch.json` Storybook entry.     
+2. Start the preview by launching that `.claude/launch.json` entry through the
    Claude launcher (never via Bash/background, per the Absolute rules).
-4. Retry the MCP tool call.
+3. Retry the MCP tool call.
 
 **Gate:** Do NOT proceed to Step 3 until an MCP tool call succeeds against a
 running Storybook. If launch setup reports an error, surface it to the user and

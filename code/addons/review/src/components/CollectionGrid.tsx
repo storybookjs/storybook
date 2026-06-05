@@ -1,9 +1,11 @@
 import React, { useCallback, useEffect, useRef, useState, type FC, type ReactNode } from 'react';
 
-import { Button } from 'storybook/internal/components';
+import { Badge, Button, IconButton } from 'storybook/internal/components';
 import { styled } from 'storybook/theming';
 
-import { prettifyComponentId, storyPreviewUrl } from '../review-navigation.ts';
+import { StorybookIcon } from '@storybook/icons';
+
+import { buildStorybookStoryHref, prettifyComponentId, storyPreviewUrl } from '../review-navigation.ts';
 
 const PREVIEW_SCALE = 0.5;
 
@@ -106,6 +108,7 @@ function forceStartPreview(task: PreviewTask): void {
 export interface StoryInfo {
   title: string;
   name: string;
+  isNew?: boolean;
 }
 
 // Column count is driven entirely by container width — 1 column on narrow
@@ -117,7 +120,7 @@ export interface StoryInfo {
 const band = (cols: number) => {
   const cap = cols * 2;
   return {
-    gridTemplateColumns: `repeat(${cols}, minmax(0, 400px))`,
+    gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))`,
     [`&:not([data-show-all]):has(> [data-cell]:nth-child(${cap + 1})) > [data-cell]:nth-child(n + ${cap})`]:
       {
         display: 'none',
@@ -137,10 +140,9 @@ const Grid = styled.div({
   display: 'grid',
   gap: 12,
   padding: 12,
-  justifyContent: 'start',
   // Fallback for browsers without container-query support: a single column and
   // no two-row cap (every story is shown).
-  gridTemplateColumns: 'minmax(0, 400px)',
+  gridTemplateColumns: 'minmax(0, 1fr)',
   // Bands are mutually exclusive (ranged) so a narrower band's overflow rules
   // never bleed into a wider one.
   '@container review-grid (max-width: 629.98px)': band(1),
@@ -237,6 +239,14 @@ const ActionSlot = styled.div({
   gap: 4,
   flexShrink: 0,
   whiteSpace: 'nowrap',
+  opacity: 0,
+  pointerEvents: 'none',
+  transition: 'opacity 120ms ease',
+  '@media (prefers-reduced-motion: reduce)': { transition: 'none' },
+  '[data-cell]:hover &, [data-cell]:focus-within &': {
+    opacity: 1,
+    pointerEvents: 'auto',
+  },
 });
 
 const ReviewAllCell = styled.div(({ theme }) => ({
@@ -445,8 +455,21 @@ const StoryPreviewCell: FC<{
           <LabelStory>
             <Highlight text={name} query={query} />
           </LabelStory>
+          {info?.isNew ? <Badge status="positive">New</Badge> : null}
         </Label>
-        <ActionSlot />
+        <ActionSlot>
+          <IconButton
+            variant="ghost"
+            size="small"
+            padding="small"
+            ariaLabel="View in Storybook"
+            asChild
+          >
+            <a href={buildStorybookStoryHref(storyId)} target="_blank" rel="noreferrer">
+              <StorybookIcon />
+            </a>
+          </IconButton>
+        </ActionSlot>
       </ActionBar>
     </Cell>
   );

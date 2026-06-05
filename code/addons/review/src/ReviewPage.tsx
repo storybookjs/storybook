@@ -253,6 +253,9 @@ const ReviewPageContent: FC<{ search: string }> = ({ search }) => {
             storyId: detailStoryIds[nextStoryIndex],
           })}
           hasBaseline={state.hasBaseline ?? false}
+          storyIds={detailStoryIds}
+          storyInfo={storyInfo}
+          collectionIndex={detailLocation.collectionIndex}
         />
       );
     }

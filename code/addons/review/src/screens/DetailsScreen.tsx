@@ -1,6 +1,6 @@
-import React, { useEffect, useState, type FC } from 'react';
+import React, { useCallback, useEffect, useRef, useState, type FC } from 'react';
 
-import { Badge, Button, IconButton } from 'storybook/internal/components';
+import { Badge, Button, IconButton, Popover, WithTooltip } from 'storybook/internal/components';
 import { styled } from 'storybook/theming';
 
 import {
@@ -12,9 +12,10 @@ import {
   TransferIcon,
 } from '@storybook/icons';
 
+import { type StoryInfo } from '../components/CollectionGrid.tsx';
 import { ReviewHeader } from '../components/ReviewHeader.tsx';
 import { PREVIEW_MODE_SESSION_KEY } from '../constants.ts';
-import { buildStorybookStoryHref } from '../review-navigation.ts';
+import { buildReviewChangesDetailHref, buildStorybookStoryHref, prettifyComponentId, storyPreviewUrl } from '../review-navigation.ts';
 import { sessionStore } from '../session-store.ts';
 import { useBaselineComparison } from './useBaselineComparison.ts';
 
@@ -31,12 +32,24 @@ const Page = styled.div(({ theme }) => ({
   fontFamily: theme.typography.fonts.base,
 }));
 
-const SubtitleStrong = styled.span({
+const ProgressBar = styled.div<{ $percent: number }>(({ theme, $percent }) => ({
+  height: 2,
+  width: '100%',
+  flexShrink: 0,
+  background: `linear-gradient(to right, ${theme.color.secondary} ${$percent}%, ${theme.appBorderColor} ${$percent}%)`,
+}));
+
+const SubtitleStrong = styled.span(({ theme }) => ({
   fontWeight: 700,
-});
+  color: theme.color.defaultText,
+}));
 
 const SubtitleSeparator = styled.span(({ theme }) => ({
-  color: theme.textMutedColor,
+  color: theme.color.defaultText,
+}));
+
+const SubtitleText = styled.span(({ theme }) => ({
+  color: theme.color.defaultText,
 }));
 
 const Counter = styled(Button)(({ theme }) => ({
@@ -44,6 +57,174 @@ const Counter = styled(Button)(({ theme }) => ({
   fontFamily: theme.typography.fonts.mono,
   fontWeight: theme.typography.weight.regular,
 }));
+
+const PopoverList = styled.div(({ theme }) => ({
+  display: 'flex',
+  flexDirection: 'column',
+  padding: '4px 0',
+  minWidth: 280,
+  maxHeight: '60vh',
+  overflowY: 'auto',
+  fontFamily: theme.typography.fonts.base,
+  // list role applied at usage; defined here as a reminder for future editors
+}));
+
+const PopoverItem = styled.a<{ $active: boolean }>(({ theme, $active }) => ({
+  display: 'flex',
+  alignItems: 'center',
+  gap: 10,
+  padding: '6px 10px',
+  background: $active ? theme.background.hoverable : 'transparent',
+  textDecoration: 'none',
+  color: theme.color.defaultText,
+  '&:hover': { background: theme.background.hoverable },
+  '&:focus-visible': {
+    outline: `2px solid ${theme.color.secondary}`,
+    outlineOffset: -2,
+  },
+}));
+
+const MiniPreviewWrap = styled.div(({ theme }) => ({
+  width: 72,
+  height: 48,
+  flexShrink: 0,
+  position: 'relative',
+  borderRadius: 6,
+  overflow: 'hidden',
+  background: theme.background.app,
+  border: `1px solid ${theme.appBorderColor}`,
+}));
+
+const MiniPreviewFrame = styled.iframe({
+  position: 'absolute',
+  top: 0,
+  left: 0,
+  width: '200%',
+  height: '200%',
+  border: 0,
+  transform: 'scale(0.5)',
+  transformOrigin: 'top left',
+  pointerEvents: 'none',
+});
+
+const PopoverItemText = styled.div({
+  display: 'flex',
+  alignItems: 'center',
+  gap: 4,
+  flex: 1,
+  minWidth: 0,
+  overflow: 'hidden',
+});
+
+const PopoverItemComponent = styled.span(({ theme }) => ({
+  fontWeight: theme.typography.weight.bold,
+  fontSize: theme.typography.size.s2,
+  whiteSpace: 'nowrap',
+  overflow: 'hidden',
+  textOverflow: 'ellipsis',
+  flexShrink: 0,
+  maxWidth: '55%',
+}));
+
+const PopoverItemSep = styled.span(({ theme }) => ({
+  color: theme.textMutedColor,
+  flexShrink: 0,
+}));
+
+const PopoverItemStoryName = styled.span(({ theme }) => ({
+  fontSize: theme.typography.size.s2,
+  color: theme.textMutedColor,
+  whiteSpace: 'nowrap',
+  overflow: 'hidden',
+  textOverflow: 'ellipsis',
+}));
+
+const derivePopoverLabel = (
+  storyId: string,
+  info?: StoryInfo
+): { component: string; story: string } => {
+  if (info) {
+    return { component: info.title.split('/').pop() ?? info.title, story: info.name };
+  }
+  const [componentId, ...rest] = storyId.split('--');
+  return {
+    component: prettifyComponentId(componentId),
+    story: prettifyComponentId(rest.join('--')) || 'Story',
+  };
+};
+
+const MiniPreview: FC<{ storyId: string }> = ({ storyId }) => {
+  const wrapRef = useRef<HTMLDivElement>(null);
+  const [src, setSrc] = useState<string | undefined>(undefined);
+
+  useEffect(() => {
+    const el = wrapRef.current;
+    if (!el) {
+      return undefined;
+    }
+    if (typeof IntersectionObserver === 'undefined') {
+      setSrc(storyPreviewUrl(storyId));
+      return undefined;
+    }
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setSrc(storyPreviewUrl(storyId));
+          observer.disconnect();
+        }
+      },
+      { rootMargin: '40px 0px' }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [storyId]);
+
+  return (
+    <MiniPreviewWrap ref={wrapRef}>
+      {src ? <MiniPreviewFrame title={storyId} src={src} tabIndex={-1} scrolling="no" /> : null}
+    </MiniPreviewWrap>
+  );
+};
+
+const CollectionList: FC<{
+  storyIds: string[];
+  storyInfo?: Record<string, StoryInfo>;
+  currentStoryId: string;
+  collectionIndex: number;
+  onClose: () => void;
+}> = ({ storyIds, storyInfo, currentStoryId, collectionIndex, onClose }) => {
+  const activeRef = useRef<HTMLAnchorElement>(null);
+
+  useEffect(() => {
+    activeRef.current?.scrollIntoView({ block: 'nearest' });
+  }, []);
+
+  return (
+    <PopoverList role="list" aria-label="Stories in this collection">
+      {storyIds.map((id) => {
+        const { component, story } = derivePopoverLabel(id, storyInfo?.[id]);
+        const href = buildReviewChangesDetailHref({ collectionIndex, storyId: id });
+        const isActive = id === currentStoryId;
+        return (
+          <PopoverItem
+            key={id}
+            $active={isActive}
+            ref={isActive ? activeRef : undefined}
+            href={href}
+            onClick={onClose}
+          >
+            <MiniPreview storyId={id} />
+            <PopoverItemText>
+              <PopoverItemComponent>{component}</PopoverItemComponent>
+              <PopoverItemSep>/</PopoverItemSep>
+              <PopoverItemStoryName>{story}</PopoverItemStoryName>
+            </PopoverItemText>
+          </PopoverItem>
+        );
+      })}
+    </PopoverList>
+  );
+};
 
 const PreviewFrameWrap = styled.div<{ $singleUp: boolean }>(({ $singleUp }) => ({
   flex: 1,
@@ -129,12 +310,16 @@ const BarControls = styled.div({
 type CompareMode = 'split' | 'single';
 type ComparePane = 'baseline' | 'latest';
 
-const DEFAULT_COMPARE_MODE: CompareMode = 'split';
+const DEFAULT_COMPARE_MODE: CompareMode = 'single';
 
 // The persisted preview layout reuses the historical '1up'/'2up' values so the
 // choice carries across sessions; map them to the local split/single model.
-const readCompareMode = (): CompareMode =>
-  sessionStore.read(PREVIEW_MODE_SESSION_KEY) === '1up' ? 'single' : DEFAULT_COMPARE_MODE;
+const readCompareMode = (): CompareMode => {
+  const stored = sessionStore.read(PREVIEW_MODE_SESSION_KEY);
+  if (stored === '1up') return 'single';
+  if (stored === '2up') return 'split';
+  return DEFAULT_COMPARE_MODE;
+};
 
 export interface DetailsScreenProps {
   /** Fallback title shown when story metadata is unavailable. */
@@ -153,6 +338,12 @@ export interface DetailsScreenProps {
   hasBaseline?: boolean;
   /** Whether this story is newly added relative to the baseline Storybook. */
   isNewlyAdded?: boolean;
+  /** All story IDs in the current collection — used to populate the jump list. */
+  storyIds?: string[];
+  /** Story metadata for labels in the jump list. */
+  storyInfo?: Record<string, StoryInfo>;
+  /** Index of the current collection in the review — used to build hrefs in the jump list. */
+  collectionIndex?: number;
 }
 
 const componentName = (componentTitle: string): string =>
@@ -220,6 +411,9 @@ export const DetailsScreen = ({
   isStale = false,
   hasBaseline = false,
   isNewlyAdded,
+  storyIds,
+  storyInfo,
+  collectionIndex,
 }: DetailsScreenProps) => {
   const [mode, setMode] = useState<CompareMode>(readCompareMode);
   const [activePane, setActivePane] = useState<ComparePane>('latest');
@@ -244,7 +438,7 @@ export const DetailsScreen = ({
       <>
         <SubtitleStrong>{componentName(componentTitle)}</SubtitleStrong>
         <SubtitleSeparator>/</SubtitleSeparator>
-        <span>{storyName}</span>
+        <SubtitleText>{storyName}</SubtitleText>
       </>
     ) : null;
 
@@ -282,8 +476,18 @@ export const DetailsScreen = ({
     )
   ) : undefined;
 
+  const progressPercent = totalStories > 0 ? ((storyIndex + 1) / totalStories) * 100 : 0;
+
   return (
     <Page>
+      <ProgressBar
+        $percent={progressPercent}
+        role="progressbar"
+        aria-label="Review progress"
+        aria-valuenow={storyIndex + 1}
+        aria-valuemin={1}
+        aria-valuemax={totalStories}
+      />
       {isStale ? <StaleBanner /> : null}
       <ReviewHeader
         autoFocusTitle
@@ -304,9 +508,36 @@ export const DetailsScreen = ({
         subtitle={subtitle}
         actions={
           <>
-            <Counter variant="ghost" size="small" readOnly>
-              {storyIndex + 1}/{totalStories}
-            </Counter>
+            {storyIds && storyIds.length > 0 && collectionIndex !== undefined ? (
+              <WithTooltip
+                trigger="click"
+                closeOnOutsideClick
+                placement="bottom"
+                tooltip={({ onHide }) => (
+                  <Popover hasChrome padding={0}>
+                    <CollectionList
+                      storyIds={storyIds}
+                      storyInfo={storyInfo}
+                      currentStoryId={storyId}
+                      collectionIndex={collectionIndex}
+                      onClose={onHide}
+                    />
+                  </Popover>
+                )}
+              >
+                <Counter
+                  variant="ghost"
+                  size="small"
+                  ariaLabel="Open story list"
+                >
+                  {storyIndex + 1}/{totalStories}
+                </Counter>
+              </WithTooltip>
+            ) : (
+              <Counter variant="ghost" size="small" ariaLabel={false} readOnly>
+                {storyIndex + 1}/{totalStories}
+              </Counter>
+            )}
             <IconButton
               variant="ghost"
               size="small"

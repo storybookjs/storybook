@@ -47,6 +47,17 @@ const meta = preview.meta({
     storyId: 'components-toolbar--basic',
     storyIndex: 1,
     totalStories: 3,
+    collectionIndex: 0,
+    storyIds: [
+      'components-toolbar--compact',
+      'components-toolbar--basic',
+      'components-toolbar--dense',
+    ],
+    storyInfo: {
+      'components-toolbar--compact': { title: 'Manager/Components/Toolbar', name: 'Compact' },
+      'components-toolbar--basic': { title: 'Manager/Components/Toolbar', name: 'Basic' },
+      'components-toolbar--dense': { title: 'Manager/Components/Toolbar', name: 'Dense' },
+    },
     backHref: buildReviewChangesSummaryHref(),
     previousHref: buildReviewChangesDetailHref({
       collectionIndex: 0,

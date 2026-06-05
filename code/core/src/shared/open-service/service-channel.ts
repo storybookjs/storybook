@@ -8,6 +8,8 @@
  *
  * The live channel is read via {@link getChannel} from `storybook/internal/channels`.
  */
+import { nanoid } from 'nanoid';
+
 import type { ChannelLike } from '../../channels/types.ts';
 import type { SerializedError } from './service-error-serialization.ts';
 
@@ -112,11 +114,12 @@ export interface CommandErrorPayload {
 }
 
 /**
- * Generates a unique id for one runtime instance.
+ * Generates a unique id for one runtime instance (and for one remote-command `callId`).
  *
- * Used to suppress looped channel events: when a peer receives an event with its own
- * `clientId`, it ignores it rather than applying state it already has.
+ * The id is identity-critical: it is the last-write-wins tiebreak for equal versions, the loop guard
+ * that drops a peer's own echoes, and the correlation key matching command replies to their calls.
+ * `nanoid` is used (over `Math.random`) so collisions cannot silently break that determinism.
  */
 export function generateClientId(): string {
-  return Math.random().toString(36).slice(2) + Date.now().toString(36);
+  return nanoid();
 }

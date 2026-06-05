@@ -8,10 +8,11 @@
  * (`server.ts`, `relay: true`) cannot drift apart in how they wrap commands, gate echoes, or relay
  * adopted state.
  *
+ * - {@link connectServiceToChannel} is the single entry point `registerService` uses. It wires all
+ *   three halves below against one channel so they can never be assembled inconsistently, and returns
+ *   the command map callers expose plus a combined teardown.
  * - {@link wrapCommandsForBroadcast} wraps a runtime's commands so each local call, after it resolves,
- *   advances the last-write-wins stamp and broadcasts the full post-mutation snapshot. The channel is
- *   re-read at call time (not capture time) so a runtime registered before its channel is installed
- *   still broadcasts once the channel arrives, and clearing the channel silently disables broadcasts.
+ *   advances the last-write-wins stamp and broadcasts the full post-mutation snapshot.
  * - {@link connectRuntimeToChannel} attaches the sync-start initialization and patch listeners, emits
  *   the bootstrap sync-start, and returns a teardown. A `relay` hub re-broadcasts every snapshot it
  *   adopts so peers on its *other* transports converge; leaves keep `relay: false`.
@@ -74,15 +75,12 @@ interface RuntimeTransportContext {
  * bounces back carries our just-advanced stamp and fails `isNewer`, so it is dropped instead of
  * re-applied. State adopted from peers flows through the reconciler's `setState`, never through these
  * wrappers, so an adopted snapshot never triggers a re-broadcast.
- *
- * `getChannel` is read at call time, not capture time: a runtime registered before its channel is
- * installed still broadcasts once the channel arrives, and clearing the channel disables broadcasts.
  */
 export function wrapCommandsForBroadcast(
   commands: Record<string, RuntimeCommand>,
-  context: RuntimeTransportContext & { getChannel: () => ServiceChannel | null }
+  context: RuntimeTransportContext & { channel: ServiceChannel }
 ): Record<string, RuntimeCommand> {
-  const { serviceId, ownClientId, reconciler, getSnapshot, getChannel } = context;
+  const { serviceId, ownClientId, reconciler, getSnapshot, channel } = context;
 
   return Object.fromEntries(
     Object.entries(commands).map(([name, cmd]) => [
@@ -94,16 +92,12 @@ export function wrapCommandsForBroadcast(
         // broadcast bouncing back to us is recognized as not-newer (equal stamp) and dropped.
         const stamp = reconciler.advanceLocal(ownClientId);
 
-        const channel = getChannel();
-
-        if (channel) {
-          channel.emit(SERVICE_PATCHES, {
-            serviceId,
-            state: getSnapshot(),
-            version: stamp.version,
-            clientId: stamp.clientId,
-          } satisfies PatchesPayload);
-        }
+        channel.emit(SERVICE_PATCHES, {
+          serviceId,
+          state: getSnapshot(),
+          version: stamp.version,
+          clientId: stamp.clientId,
+        } satisfies PatchesPayload);
 
         return result;
       },
@@ -448,6 +442,77 @@ export function connectCommandTransport(context: {
         entry.reject(new OpenServiceRemoteCommandDisconnectedError({ serviceId }));
       }
       pending.clear();
+    },
+  };
+}
+
+/**
+ * Wires one service runtime to the channel end to end and returns the command map callers expose plus
+ * a single teardown.
+ *
+ * This is the one entry point `registerService` uses, so the three transport halves — command
+ * broadcasting, the remote-command protocol, and the sync-start + patch listeners — are always
+ * assembled together against the same `channel` and can never drift into using different channels.
+ */
+export function connectServiceToChannel(
+  context: RuntimeTransportContext & {
+    channel: ServiceChannel;
+    relay: boolean;
+    /** The runtime's full command map (all names; unimplemented ones throw if run locally). */
+    commands: Record<string, RuntimeCommand>;
+    /** Command names that have a local handler in this runtime. */
+    implementedCommandNames: ReadonlySet<string>;
+    /** Every command name declared by the service definition. */
+    commandNames: readonly string[];
+  }
+): { commands: Record<string, RuntimeCommand>; disconnect: () => void } {
+  const {
+    serviceId,
+    ownClientId,
+    reconciler,
+    getSnapshot,
+    channel,
+    relay,
+    commands,
+    implementedCommandNames,
+    commandNames,
+  } = context;
+
+  // Wrap commands so a local mutation broadcasts its post-mutation snapshot. State adopted from peers
+  // flows through the reconciler's `setState`, never these wrappers, so it never re-broadcasts.
+  const broadcastCommands = wrapCommandsForBroadcast(commands, {
+    serviceId,
+    ownClientId,
+    reconciler,
+    getSnapshot,
+    channel,
+  });
+
+  // Where a local handler exists, callers run it (and broadcast) via `broadcastCommands`; where it
+  // does not, the returned command routes the call to a peer that implements it.
+  const commandTransport = connectCommandTransport({
+    serviceId,
+    ownClientId,
+    channel,
+    localCommands: broadcastCommands,
+    implementedCommandNames,
+    commandNames,
+  });
+
+  const disconnectSync = connectRuntimeToChannel({
+    serviceId,
+    ownClientId,
+    reconciler,
+    getSnapshot,
+    channel,
+    relay,
+  });
+
+  return {
+    commands: commandTransport.commands,
+    disconnect: (): void => {
+      disconnectSync();
+      commandTransport.disconnect();
     },
   };
 }

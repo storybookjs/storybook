@@ -20,9 +20,6 @@ import { isEqual } from 'es-toolkit/predicate';
 
 import type { Query } from './types.ts';
 
-type QueryInput<TQuery> = TQuery extends Query<infer TInput, any> ? TInput : never;
-type QueryOutput<TQuery> = TQuery extends Query<any, infer TOutput> ? TOutput : never;
-
 /**
  * Subscribe to a service query and receive reactive updates in a React component.
  *
@@ -35,22 +32,19 @@ type QueryOutput<TQuery> = TQuery extends Query<any, infer TOutput> ? TOutput : 
  * const fields = useServiceQuery(recordService, 'getRecordFields', { entryId: 'a' });
  * ```
  */
-export function useServiceQuery<
-  // Accept any concretely-typed service: an object-input query (`Query<{ id }, ...>`) is not
-  // assignable to `Query<unknown, unknown>` under contravariance, so a `Pick<RuntimeService>`
-  // constraint would reject every service whose query takes an object input.
-  TInstance extends { queries: Record<string, Query<any, any>> },
-  TKey extends keyof TInstance['queries'] & string,
->(
-  service: TInstance,
+// `TInput`/`TOutput` are inferred as direct type parameters from the query's call signature. This is
+// deliberate: a conditional over an indexed access like `Query<TInstance['queries'][TKey]>` is
+// evaluated against the index's *constraint* (`Query<any, any>`, which — being `VoidQuery & InputQuery`
+// — is callable with zero args and so always looks void), collapsing every query to "no input". Typing
+// the query value as a plain `(input: TInput) => TOutput` call signature recovers the concrete input
+// and output, and keeps the void-vs-input branch (`[TInput] extends [void]`) over a real type.
+export function useServiceQuery<TKey extends string, TInput, TOutput>(
+  service: { queries: Record<TKey, (input: TInput) => TOutput> },
   queryName: TKey,
-  ...args: [QueryInput<TInstance['queries'][TKey]>] extends [void]
-    ? []
-    : [input: QueryInput<TInstance['queries'][TKey]>]
-): QueryOutput<TInstance['queries'][TKey]> {
-  type TInput = QueryInput<TInstance['queries'][TKey]>;
-  type TOutput = QueryOutput<TInstance['queries'][TKey]>;
-
+  // A rest parameter so the input can be conditionally present: void-input queries take no third
+  // argument, every other query requires exactly one.
+  ...args: [TInput] extends [void] ? [] : [input: TInput]
+): TOutput {
   const queryFn = service.queries[queryName] as unknown as Query<TInput, TOutput>;
   const input = args[0] as TInput;
 

@@ -29,15 +29,9 @@ const MAX_CONCURRENT_PREVIEWS = 3;
  */
 const PREVIEW_SETTLE_TIMEOUT_MS = 1500;
 
-/**
- * Viewport-relative margins (as IntersectionObserver `rootMargin`) for the
- * preview lifecycle. A cell mounts its iframe once within one viewport of the
- * fold and is evicted (iframe unmounted, memory freed) only once roughly three
- * viewports away. The gap is hysteresis: a cell that briefly leaves the mount
- * zone isn't torn down until it's well offscreen, so scrolling near a boundary
- * doesn't thrash. This bounds live iframes to ~6–7 screens regardless of how
- * many stories the review has.
- */
+// IntersectionObserver `rootMargin`s for the preview lifecycle: mount a cell's
+// iframe within one viewport of the fold, evict it past two. The gap is
+// hysteresis so scrolling near a boundary doesn't thrash.
 const PREVIEW_MOUNT_ROOT_MARGIN = '100% 0px';
 const PREVIEW_EVICT_ROOT_MARGIN = '200% 0px';
 

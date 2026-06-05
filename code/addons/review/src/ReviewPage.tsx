@@ -41,15 +41,13 @@ export const ReviewPage: FC = () => (
   <Location>{({ location }) => <ReviewPageContent search={location.search ?? ''} />}</Location>
 );
 
-// Change-detection status value marking a story as newly added.
-const NEW_STATUS_VALUE = 'status-value:new';
-
 const ReviewPageContent: FC<{ search: string }> = ({ search }) => {
   const [state, setState] = useState<ReviewState | null>(null);
   const [isStale, setIsStale] = useState(false);
   // Story IDs present in the baseline Storybook's index. `null` means the
   // baseline is unresolved or unavailable (no fetch yet, network/proxy error,
-  // or an unparseable index) — in which case no "New" badge is shown.
+  // or an unparseable index) — in which case it contributes nothing to "New"
+  // detection (a story can still be flagged "New" by change detection).
   const [baselineStoryIds, setBaselineStoryIds] = useState<Set<string> | null>(null);
 
   const api = useStorybookApi();
@@ -105,7 +103,8 @@ const ReviewPageContent: FC<{ search: string }> = ({ search }) => {
         setBaselineStoryIds(new Set(Object.keys(entries)));
       })
       .catch(() => {
-        // Baseline unavailable — leave `null` so no "New" badge is shown.
+        // Baseline unavailable — leave `null` so it contributes nothing to
+        // "New" detection (change detection can still flag stories).
       });
     return () => {
       cancelled = true;
@@ -172,7 +171,9 @@ const ReviewPageContent: FC<{ search: string }> = ({ search }) => {
       return ids;
     }
     const isChangeDetectedNew = (storyId: string) =>
-      Object.values(allStatuses[storyId] ?? {}).some((status) => status.value === NEW_STATUS_VALUE);
+      Object.values(allStatuses[storyId] ?? {}).some(
+        (status) => status.value === 'status-value:new'
+      );
     for (const collection of state.collections) {
       for (const storyId of collection.storyIds) {
         const absentFromBaseline = baselineStoryIds !== null && !baselineStoryIds.has(storyId);

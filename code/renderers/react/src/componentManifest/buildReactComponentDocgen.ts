@@ -335,24 +335,26 @@ export function toReactComponentManifest(
   return {
     ...rest,
     id: componentId,
-    subcomponents: subcomponents
-      ? Object.fromEntries(
-          Object.entries(subcomponents).map(([key, sub]) => [
-            key,
-            {
-              name: sub.name,
-              path: sub.path,
-              description: sub.description,
-              summary: sub.summary,
-              import: sub.import,
-              jsDocTags: sub.jsDocTags,
-              error: sub.error,
-              reactDocgen: sub.reactDocgen,
-              reactDocgenTypescript: sub.reactDocgenTypescript,
-              reactComponentMeta: sub.reactComponentMeta,
-            },
-          ])
-        )
-      : undefined,
+    ...(subcomponents
+      ? {
+          subcomponents: Object.fromEntries(
+            Object.entries(subcomponents).map(([key, sub]) => [
+              key,
+              {
+                name: sub.name,
+                path: sub.path,
+                description: sub.description,
+                summary: sub.summary,
+                import: sub.import,
+                jsDocTags: sub.jsDocTags,
+                error: sub.error,
+                reactDocgen: sub.reactDocgen,
+                reactDocgenTypescript: sub.reactDocgenTypescript,
+                reactComponentMeta: sub.reactComponentMeta,
+              },
+            ])
+          ),
+        }
+      : {}),
   };
 }

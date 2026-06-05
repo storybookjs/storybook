@@ -25,11 +25,12 @@ export const experimental_docgenProvider: DocgenProviderPreset = async (nextDocg
     {}
   ) ?? Promise.resolve({})) as Promise<Partial<TypescriptOptions>>;
 
-  // Pre-boot the TypeScript manager in the background, off the critical path. `import('typescript')`
-  // loads a multi-MB module; deferring it to the first docgen request adds several seconds of
-  // latency to that request. Kicking it off here (fire-and-forget) lets it warm up in parallel
-  // with the rest of server startup, so `await getManager()` below usually resolves instantly.
-  // getManager() memoizes and swallows its own errors, so this is safe to leave unawaited.
+  // Pre-boot the component meta manager in the background, off the critical path.
+  // `import('typescript')` loads a multi-MB module; deferring it to the first docgen request adds
+  // several seconds of latency to that request. Kicking it off here (fire-and-forget) lets it warm
+  // up in parallel with the rest of server startup, so `await getSharedComponentMetaManager()`
+  // below usually resolves instantly. The singleton memoizes and swallows its own errors, so this
+  // is safe to leave unawaited.
   void getSharedComponentMetaManager();
 
   return async (input) => {

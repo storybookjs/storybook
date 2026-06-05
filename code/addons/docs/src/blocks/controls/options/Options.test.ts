@@ -23,6 +23,16 @@ describe('normalizeOptions', () => {
     });
   });
 
+  it('falls back to String(item) when a label key exists but its value is undefined', () => {
+    // Regression guard: { reverse: undefined } previously printed "undefined" as the label
+    // because Object.hasOwn found the key before we checked the value type.
+    const labels = { Bat: undefined as any, Cat: 'Catwoman' };
+    expect(normalizeOptions(['Bat', 'Cat'], labels)).toEqual({
+      Bat: 'Bat',
+      Catwoman: 'Cat',
+    });
+  });
+
   it('does not resolve Array.prototype methods when labels is an array (issue #30142)', () => {
     // When Svelte docgen incorrectly passes an array as `labels`, items whose name
     // matches an Array prototype method (e.g. 'reverse') must NOT resolve to the

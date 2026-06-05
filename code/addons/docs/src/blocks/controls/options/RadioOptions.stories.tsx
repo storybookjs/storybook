@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
-import { fn } from 'storybook/test';
+import { expect, fn } from 'storybook/test';
 
 import { OptionsControl } from './Options';
 
@@ -13,6 +13,12 @@ const labels = {
 // Only `Bat` is labelled; `Cat` and `Rat` should fall back to String(item).
 const partialLabels = {
   Bat: 'Batwoman',
+};
+// `Bat` key exists but has an undefined value — must fall back to String(item), not print "undefined".
+const undefinedValueLabels: Record<string, string> = {
+  Bat: undefined as any,
+  Cat: 'Catwoman',
+  Rat: 'Ratwoman',
 };
 // Options that collide with Array.prototype method names — the regression case.
 const prototypeCollisionOptions = ['reverse', 'map', 'filter'];
@@ -66,6 +72,11 @@ export const ArrayLabels: Story = {
     value: arrayOptions[0],
     labels,
   },
+  play: async ({ canvas }) => {
+    await expect(canvas.getByText('Batwoman')).toBeInTheDocument();
+    await expect(canvas.getByText('Catwoman')).toBeInTheDocument();
+    await expect(canvas.getByText('Ratwoman')).toBeInTheDocument();
+  },
 };
 
 export const ArrayInlineLabels: Story = {
@@ -73,6 +84,11 @@ export const ArrayInlineLabels: Story = {
     type: 'inline-radio',
     value: arrayOptions[1],
     labels,
+  },
+  play: async ({ canvas }) => {
+    await expect(canvas.getByText('Batwoman')).toBeInTheDocument();
+    await expect(canvas.getByText('Catwoman')).toBeInTheDocument();
+    await expect(canvas.getByText('Ratwoman')).toBeInTheDocument();
   },
 };
 
@@ -82,6 +98,11 @@ export const ArrayLabelsPartial: Story = {
     value: arrayOptions[0],
     labels: partialLabels,
   },
+  play: async ({ canvas }) => {
+    await expect(canvas.getByText('Batwoman')).toBeInTheDocument();
+    await expect(canvas.getByText('Cat')).toBeInTheDocument();
+    await expect(canvas.getByText('Rat')).toBeInTheDocument();
+  },
 };
 
 export const ArrayInlineLabelsPartial: Story = {
@@ -89,6 +110,27 @@ export const ArrayInlineLabelsPartial: Story = {
     type: 'inline-radio',
     value: arrayOptions[1],
     labels: partialLabels,
+  },
+  play: async ({ canvas }) => {
+    await expect(canvas.getByText('Batwoman')).toBeInTheDocument();
+    await expect(canvas.getByText('Cat')).toBeInTheDocument();
+    await expect(canvas.getByText('Rat')).toBeInTheDocument();
+  },
+};
+
+// Regression guard: label key exists with value undefined — must NOT render the string "undefined".
+export const ArrayLabelsUndefinedValue: Story = {
+  name: 'Array Labels (undefined label value — must not render "undefined")',
+  args: {
+    value: arrayOptions[0],
+    labels: undefinedValueLabels,
+  },
+  play: async ({ canvas }) => {
+    // 'Bat' has an undefined label value → falls back to String(item)
+    await expect(canvas.getByText('Bat')).toBeInTheDocument();
+    await expect(canvas.getByText('Catwoman')).toBeInTheDocument();
+    await expect(canvas.getByText('Ratwoman')).toBeInTheDocument();
+    await expect(canvas.queryByText('undefined')).not.toBeInTheDocument();
   },
 };
 
@@ -109,6 +151,12 @@ export const ArrayLabelsIsArray: Story = {
       options: prototypeCollisionOptions,
     },
   },
+  play: async ({ canvas }: Parameters<NonNullable<Story['play']>>[0]) => {
+    await expect(canvas.getByText('reverse')).toBeInTheDocument();
+    await expect(canvas.getByText('map')).toBeInTheDocument();
+    await expect(canvas.getByText('filter')).toBeInTheDocument();
+    await expect(canvas.queryByText(/\[native code\]/)).not.toBeInTheDocument();
+  },
 };
 
 export const ArrayInlineLabelsIsArray: Story = {
@@ -124,6 +172,12 @@ export const ArrayInlineLabelsIsArray: Story = {
       control: { type: 'inline-radio' },
       options: prototypeCollisionOptions,
     },
+  },
+  play: async ({ canvas }: Parameters<NonNullable<Story['play']>>[0]) => {
+    await expect(canvas.getByText('reverse')).toBeInTheDocument();
+    await expect(canvas.getByText('map')).toBeInTheDocument();
+    await expect(canvas.getByText('filter')).toBeInTheDocument();
+    await expect(canvas.queryByText(/\[native code\]/)).not.toBeInTheDocument();
   },
 };
 

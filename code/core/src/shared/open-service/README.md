@@ -66,8 +66,9 @@ Internal tests and implementation code may import from the individual modules di
 - [service-runtime.ts](./service-runtime.ts): signal-backed runtime construction, in-flight load registry, drain logic, and subscriptions
 - [service-registry.ts](./service-registry.ts): the single `registerService`, the realm-global registry, and the shared registry API passed into runtimes — used identically by server, manager, and preview
 - [service-channel.ts](./service-channel.ts): `ServiceChannel` interface, event name constants, and payload types
+- [service-error-serialization.ts](./service-error-serialization.ts): transport-safe (de)serialization of thrown errors and their `cause` chains, used by remote command replies
 - [channel-slot.ts](../../channels/channel-slot.ts): `getChannel` / `setChannel` — the shared channel install surface
-- [service-transport.ts](./service-transport.ts): shared channel transport — wraps commands to broadcast and wires the sync-start initialization + patch listeners (hub or leaf)
+- [service-transport.ts](./service-transport.ts): shared channel transport — wraps commands to broadcast, wires the sync-start initialization + patch listeners (hub or leaf), and runs the remote-command-execution protocol
 - [service-sync.ts](./service-sync.ts): last-write-wins ordering, the `deepReconcile` structural merge, and the per-service snapshot reconciler
 - [use-service-query.ts](./use-service-query.ts): `useServiceQuery` React hook backed by `useSyncExternalStore`
 - [use-service-command.ts](./use-service-command.ts): `useServiceCommand` React hook returning a stable command reference
@@ -144,6 +145,12 @@ A command is:
 - validated on both input and output
 
 Commands receive a `CommandCtx` whose `self` includes `state`, `queries`, `commands`, and `setState`.
+
+A command handler may be implemented in only **some** runtimes — most often a handler supplied at
+server registration that needs Node APIs or server context. A runtime that lacks a local handler does
+not throw when the command is called; it requests **remote command execution** from a peer that does
+implement it (see [Remote Command Execution](#remote-command-execution)). Queries stay local-only and
+still throw `OpenServiceUnimplementedOperationError` when no handler exists.
 
 ### Cross-service composition
 
@@ -453,6 +460,130 @@ service.commands.foo()
 
 The dev server is a full peer, not a passive observer. `registerService` on the server registers as a relay hub (`relay: true`): it wraps commands to broadcast their post-mutation snapshots, responds to sync-starts, applies incoming patches, and re-broadcasts every adopted snapshot so peers on its other transports (each connected manager tab) converge. This is wired automatically at registration once the `services` preset has installed the channel — there is no separate connect step.
 
+## Remote Command Execution
+
+Queries are local-only, but commands are not. A command's handler can be supplied in only **some**
+runtimes — the canonical case is a handler added at server registration that needs Node APIs or
+server context. The runtimes that lack the handler must still be able to invoke the command (from
+`useServiceCommand`, a test, or another service), so they ask a peer that can run it.
+
+`registerService` decides this **per command at registration time** by checking whether the resolved
+definition has a `handler`:
+
+- **Has a local handler** → the command runs locally and broadcasts its post-mutation state as usual
+  (the normal multi-master path), **and** the runtime listens for invoke requests so it can run the
+  command on behalf of peers that cannot.
+- **No local handler** → the command becomes a **remote invoker**: calling it sends a request over
+  the channel and returns a promise that settles when a peer answers.
+
+The protocol lives in [service-transport.ts](./service-transport.ts) (`connectCommandTransport`); the
+example background-color service (`code/.storybook/background-service/`) exercises it end to end —
+`setColor` is declared with no handler in the shared definition and implemented only at server
+registration, so the manager toolbar invokes it remotely.
+
+### Roles
+
+Every registered runtime plays **both** roles at once, decided per command:
+
+- **Requester** (no local handler): calling the command emits `services:command-invoke` carrying a
+  freshly generated `callId` and returns a promise. The promise resolves with the `result` of the
+  first `services:command-result` for that `callId`, or rejects with the reconstructed error from the
+  first `services:command-error`.
+- **Responder** (has a local handler): on a matching `services:command-invoke` it emits
+  `services:command-ack` **immediately** (before running), executes the command locally — which
+  validates input, mutates state, and broadcasts the post-mutation snapshot through the normal command
+  wrappers so every peer converges — then emits `services:command-result` or `services:command-error`.
+
+A runtime never requests a command it implements (it runs that locally), so a responder never answers
+its own invoke echo: `onInvoke` only acts on commands in its `implementedCommandNames` set.
+
+### Events
+
+All four events are namespaced under `services:` and carry the `serviceId` so a runtime that hosts
+several services routes them correctly.
+
+| Event | Direction | Payload |
+| ------------------------- | ------------------------ | ----------------------------------------------------- |
+| `services:command-invoke` | requester → implementers | `{ serviceId, commandName, input, callId, clientId }` |
+| `services:command-ack`    | implementer → requester  | `{ serviceId, callId, clientId }`                     |
+| `services:command-result` | implementer → requester  | `{ serviceId, callId, result, clientId }`             |
+| `services:command-error`  | implementer → requester  | `{ serviceId, callId, error, clientId }`              |
+
+- `callId` is the per-invocation correlation id (see [Correlation and parallel calls](#correlation-and-parallel-calls)).
+- `clientId` is the id of the runtime that emitted the envelope — the requester on an invoke, the
+  responder on a reply.
+- `error` is a transport-safe serialization of the thrown value, including its full `cause` chain (and
+  arrays such as the `.loaded()` drain's `cause.aggregated`) plus Storybook fields like
+  `code`/`fromStorybook`. See [service-error-serialization.ts](./service-error-serialization.ts);
+  `Error` instances cannot cross a websocket (JSON) or postMessage (structured clone) boundary intact,
+  so they are flattened to a plain shape and rebuilt into a real `Error` on the requester.
+
+### Sequence
+
+Manager toolbar calls a command implemented only on the dev server:
+
+```text
+Manager (requester)              Channel               Server (responder)
+──────────────────────────────────────────────────────────────────────────
+service.commands.setColor(...)
+  └─ new callId
+  └─ emit command-invoke ───────────────────────────────────►
+                                                  └─ emit command-ack ──┐
+  ◄───────────────────────────────────────────────────────────────────┘
+                                                  └─ run setColor locally
+                                                       └─ mutate + emit patches ──►
+  ◄── apply patches (state converges) ───────────────────────────────────
+                                                  └─ emit command-result ──┐
+  ◄───────────────────────────────────────────────────────────────────────┘
+  └─ promise resolves with result
+```
+
+State still flows through the normal patch-broadcast path, so the requester gets the new state via
+`services:patches` and the resolved value via `services:command-result` — two independent channels of
+truth that both converge.
+
+### Awaiting
+
+A command can be awaited from any runtime, even when it runs remotely: the returned promise resolves
+on success and rejects on failure exactly as if the handler had been local. Callers never need to know
+where the handler lives.
+
+### Correlation and parallel calls
+
+`callId` is generated fresh (`generateClientId()`) for **every** call, so it is effectively a unique
+execution id. This is what makes concurrent calls safe:
+
+- Two parallel calls — even with identical input — get two distinct `callId`s, two `pending` promise
+  entries, and two independent invoke envelopes. Replies are matched strictly by `callId`, so they can
+  never cross-wire and resolving one call never settles the other.
+- A reply whose `callId` is unknown (already settled, or for a different runtime's call) or whose
+  `serviceId` does not match is ignored.
+
+`callId` correlates **replies**; it does not make a command idempotent. Each invoke triggers a real
+execution on every responder that receives it.
+
+### Multiple implementers (at-most-once is not guaranteed)
+
+If several peers implement the same command, each one runs it (side effects and all) and replies. The
+requester keeps the **first** reply per `callId` and ignores the rest — so the *promise* is deduped,
+but the *execution* is not. A command can therefore legitimately run in more than one runtime.
+
+This is intentional for now and constrained by convention, not enforced by the protocol: **implement a
+command in exactly one runtime when its effects must not be duplicated.** Guaranteeing at-most-once
+across implementers would require electing a single executor per call, which this slice does not do.
+
+### Topology limits and timeouts
+
+Replies travel back over the same channel the invoke went out on, and command events are **not**
+relayed across a hub's other transports (unlike `services:patches`, which a relay hub re-broadcasts).
+The manager is connected to both the dev server and the preview, so it can invoke a command implemented
+in either; but a preview cannot directly invoke a server-only command, and vice versa — route such
+calls through the manager, or implement the command on a directly-connected peer.
+
+There is **no timeout**. Invoking a command that no reachable peer implements leaves the promise
+pending forever, until the service is unregistered — `disconnect` rejects every outstanding call with
+`OpenServiceRemoteCommandDisconnectedError`.
+
 ## React Hooks
 
 ### `useServiceQuery`
@@ -570,6 +701,7 @@ const ready = await exampleService.queries.getValue.loaded({ entryId: 'a' });
 - Validation behavior belongs in [service-validation.test.ts](./service-validation.test.ts)
 - Server registration and static snapshot behavior belong in [server.test.ts](./server.test.ts)
 - Leaf channel sync (`relay: false`, preview path) belongs in [service-transport-leaf.test.ts](./service-transport-leaf.test.ts); hub channel sync (dev server) in [service-registration-sync.test.ts](./service-registration-sync.test.ts)
+- Remote command execution (requester/responder protocol) belongs in [service-command-transport.test.ts](./service-command-transport.test.ts); error (de)serialization in [service-error-serialization.test.ts](./service-error-serialization.test.ts)
 - React hook behavior belongs in [use-service-query.test.tsx](./use-service-query.test.tsx) and [use-service-command.test.tsx](./use-service-command.test.tsx)
 - Reusable scenario definitions belong in [fixtures.ts](./fixtures.ts)
 
@@ -585,7 +717,8 @@ React hook tests must include `// @vitest-environment happy-dom` as the first li
 - If you need to change validation wording, start in [errors.ts](./errors.ts).
 - If you need to change schema handling, start in [service-validation.ts](./service-validation.ts).
 - If you need to change service authoring ergonomics, start in [service-definition.ts](./service-definition.ts) and [types.ts](./types.ts).
-- If you need to change channel transport or relay behavior, start in [service-transport.ts](./service-transport.ts).
+- If you need to change channel transport, relay behavior, or remote command execution, start in [service-transport.ts](./service-transport.ts).
+- If you need to change how thrown errors cross the channel for remote commands, start in [service-error-serialization.ts](./service-error-serialization.ts).
 - If you need to change last-write-wins ordering or the structural merge, start in [service-sync.ts](./service-sync.ts).
 - If you need to change the channel protocol (event names, payloads, channel reader), start in [service-channel.ts](./service-channel.ts).
 - If you need to change the React query hook, start in [use-service-query.ts](./use-service-query.ts).

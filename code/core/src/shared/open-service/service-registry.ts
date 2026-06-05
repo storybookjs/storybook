@@ -24,7 +24,11 @@ import { getChannel } from '../../channels/channel-slot.ts';
 import { generateClientId } from './service-channel.ts';
 import { createServiceRuntime } from './service-runtime.ts';
 import { createSnapshotReconciler } from './service-sync.ts';
-import { connectRuntimeToChannel, wrapCommandsForBroadcast } from './service-transport.ts';
+import {
+  connectCommandTransport,
+  connectRuntimeToChannel,
+  wrapCommandsForBroadcast,
+} from './service-transport.ts';
 import type {
   AnyServiceDefinition,
   Commands,
@@ -233,25 +237,6 @@ export function registerService<
   const getSnapshot = (): Record<string, unknown> =>
     runtime.getStateSnapshot() as Record<string, unknown>;
 
-  // Wrap commands so a local mutation broadcasts its post-mutation snapshot to peers. The wrapper
-  // re-reads the channel at call time, so without a channel it is a no-op and static builds are
-  // unaffected. State adopted from peers flows through the reconciler's `setState`, never these
-  // wrappers, so an adopted snapshot never loops back out as a broadcast.
-  const instance = {
-    queries: runtime.queries,
-    commands: wrapCommandsForBroadcast(
-      runtime.commands as Record<string, (input: unknown) => Promise<unknown>>,
-      {
-        serviceId: definition.id,
-        ownClientId,
-        reconciler,
-        getSnapshot,
-        getChannel,
-      }
-    ) as ServiceInstance<TState, TQueries, TCommands>['commands'],
-    ...serviceRegistryApi,
-  } as ServiceInstance<TState, TQueries, TCommands> & ServiceRegistryApi;
-
   const descriptor = describeDefinition(resolvedDefinition as AnyServiceDefinition);
 
   const channel = getChannel();
@@ -259,19 +244,62 @@ export function registerService<
     throw new OpenServiceMissingChannelError({ serviceId: definition.id });
   }
 
+  // Wrap commands so a local mutation broadcasts its post-mutation snapshot to peers. The wrapper
+  // re-reads the channel at call time, so without a channel it is a no-op and static builds are
+  // unaffected. State adopted from peers flows through the reconciler's `setState`, never these
+  // wrappers, so an adopted snapshot never loops back out as a broadcast.
+  const broadcastCommands = wrapCommandsForBroadcast(
+    runtime.commands as Record<string, (input: unknown) => Promise<unknown>>,
+    {
+      serviceId: definition.id,
+      ownClientId,
+      reconciler,
+      getSnapshot,
+      getChannel,
+    }
+  );
+
+  // A command may only have a handler in some runtimes (e.g. supplied at server registration). Where
+  // a local handler exists, callers run it here and broadcast; where it does not, the command map
+  // routes calls to a peer that implements it and awaits the reply. See `connectCommandTransport`.
+  const implementedCommandNames = new Set<string>(
+    Object.entries(resolvedDefinition.commands)
+      .filter(([, command]) => typeof command.handler === 'function')
+      .map(([name]) => name)
+  );
+  const commandTransport = connectCommandTransport({
+    serviceId: definition.id,
+    ownClientId,
+    channel,
+    localCommands: broadcastCommands,
+    implementedCommandNames,
+    commandNames: Object.keys(resolvedDefinition.commands),
+  });
+
+  const instance = {
+    queries: runtime.queries,
+    commands: commandTransport.commands as ServiceInstance<TState, TQueries, TCommands>['commands'],
+    ...serviceRegistryApi,
+  } as ServiceInstance<TState, TQueries, TCommands> & ServiceRegistryApi;
+
+  const disconnectSync = connectRuntimeToChannel({
+    serviceId: definition.id,
+    channel,
+    ownClientId,
+    reconciler,
+    getSnapshot,
+    relay,
+  });
+
   registry.set(definition.id, {
     definition: resolvedDefinition as AnyServiceDefinition,
     instance: instance as unknown as RuntimeService,
     descriptor,
     summary: summarizeDescriptor(descriptor),
-    disconnect: connectRuntimeToChannel({
-      serviceId: definition.id,
-      channel,
-      ownClientId,
-      reconciler,
-      getSnapshot,
-      relay,
-    }),
+    disconnect: (): void => {
+      disconnectSync();
+      commandTransport.disconnect();
+    },
   });
 
   return instance;

@@ -265,6 +265,17 @@ export class OpenServiceMissingChannelError extends StorybookError {
   }
 }
 
+export class OpenServiceRemoteCommandDisconnectedError extends StorybookError {
+  constructor(public data: { serviceId: ServiceId }) {
+    super({
+      name: 'OpenServiceRemoteCommandDisconnectedError',
+      category: Category.CORE_COMMON,
+      code: 14,
+      message: `Service "${data.serviceId}" was unregistered before a remote command resolved.`,
+    });
+  }
+}
+
 export class WebpackMissingStatsError extends StorybookError {
   constructor() {
     super({

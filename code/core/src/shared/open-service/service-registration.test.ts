@@ -87,11 +87,13 @@ describe('service registration', () => {
     );
   });
 
-  it('throws a Storybook error when a registered query or command is missing its handler', async () => {
+  it('throws a Storybook error when a registered query is missing its handler', () => {
+    // A command without a local handler does NOT throw here — it requests remote execution from a
+    // peer that implements it (see service-command-transport.test.ts). Queries stay local-only.
     const service = registerService(
       defineService({
         id: 'internal-fixture/unimplemented-operations',
-        description: 'Leaves command handlers undefined so registration can supply them later.',
+        description: 'Leaves the query handler undefined so registration can supply it later.',
         initialState: {} as Record<string, never>,
         queries: {
           getValue: {
@@ -100,25 +102,13 @@ describe('service registration', () => {
             output: v.string(),
           },
         },
-        commands: {
-          run: {
-            description: 'Runs a command that is not implemented in this environment.',
-            input: v.undefined(),
-            output: voidOutputSchema,
-          },
-        },
+        commands: {},
       })
     );
 
     expect(() => service.queries.getValue(undefined)).toThrow(
       'Query "internal-fixture/unimplemented-operations.getValue" is not implemented for this environment.'
     );
-    await expect(service.commands.run(undefined)).rejects.toMatchObject({
-      fromStorybook: true,
-      code: 8,
-      message:
-        'Command "internal-fixture/unimplemented-operations.run" is not implemented for this environment.',
-    });
   });
 
   it('lets handlers resolve another registered service by id through ctx.getService', async () => {

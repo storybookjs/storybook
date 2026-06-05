@@ -4,10 +4,13 @@
  * Demonstrates the open-service multi-runtime sync pattern:
  *  - Manager registers and provides a toolbar tool to pick a color.
  *  - Preview registers and subscribes to update the document background.
- *  - Server registers and subscribes to log every color change.
+ *  - Server registers, implements the `setColor` command, and subscribes to log every change.
  *
- * All three runtimes share this one definition and stay in sync automatically via
- * the channel sync-start initialization and patch-broadcast protocol.
+ * `setColor` intentionally has NO handler here: it is implemented only at server registration (see
+ * `server.ts`). The manager has no local handler, so clicking a swatch requests *remote* command
+ * execution from the server, which runs it and broadcasts the new state back. This exercises the
+ * remote-command-execution path end to end. The resulting state still syncs to every runtime via the
+ * channel sync-start initialization and patch-broadcast protocol.
  *
  * Import from here in all three contexts; never import environment-specific bits
  * (hooks, addons, node-logger) from this file.
@@ -41,14 +44,9 @@ export const backgroundServiceDef = defineService({
   },
   commands: {
     setColor: {
-      description: 'Sets the background color.',
+      description: 'Sets the background color. Implemented at server registration (see server.ts).',
       input: v.object({ color: v.string() }),
       output: v.void(),
-      handler: async (input, ctx) => {
-        ctx.self.setState((state) => {
-          state.color = input.color;
-        });
-      },
     },
   },
 });

@@ -20,8 +20,8 @@ import {
   getChannel as readInstalledChannel,
   setChannel as installStorybookChannel,
 } from '../../channels/channel-slot.ts';
+import { mockChannel } from '../../channels/mock-channel.ts';
 import type { API } from '../root.tsx';
-import { mockChannel } from './storybook-channel-mock.ts';
 
 export type { Addon_Type as Addon };
 export { Addon_TypesEnum as types };

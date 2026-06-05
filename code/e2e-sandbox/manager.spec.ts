@@ -237,6 +237,38 @@ test.describe('Manager UI', () => {
       await expect(sbPage.page.locator('.sidebar-container')).toBeHidden();
     });
 
+    test('Isolation mode preserves args', async ({ page }) => {
+      const sbPage = new SbPage(page, expect);
+
+      // Navigate to a story and change its args via controls
+      await sbPage.navigateToStory('example/button', 'primary');
+      await sbPage.viewAddonPanel('Controls');
+
+      const label = sbPage.panelContent().locator('textarea[name=label]');
+      await label.fill('Hello world');
+      await expect(sbPage.previewRoot().locator('button')).toContainText('Hello world');
+
+      // Wait for args to appear in the URL
+      await page.waitForURL((url) => url.search.includes('args=label:Hello+world'));
+
+      // Click "Open in isolation mode" and capture the new window
+      const isolationButton = page.locator('[aria-label="Open in isolation mode"]');
+      const [newPage] = await Promise.all([
+        page.context().waitForEvent('page'),
+        isolationButton.click(),
+      ]);
+      await newPage.waitForLoadState();
+
+      // The new window URL should contain the args
+      expect(newPage.url()).toContain('args=');
+      expect(newPage.url()).toContain('label:Hello+world');
+
+      // The new page is the iframe.html itself, so the story root is directly in the page
+      await expect(newPage.locator('#storybook-root button')).toContainText('Hello world');
+
+      await newPage.close();
+    });
+
     test('Settings page', async ({ page }) => {
       const sbPage = new SbPage(page, expect);
       await sbPage.page.locator('[aria-label="Settings"]').click();

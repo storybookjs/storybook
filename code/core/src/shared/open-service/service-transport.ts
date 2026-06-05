@@ -15,20 +15,39 @@
  * - {@link connectRuntimeToChannel} attaches the sync-start initialization and patch listeners, emits
  *   the bootstrap sync-start, and returns a teardown. A `relay` hub re-broadcasts every snapshot it
  *   adopts so peers on its *other* transports converge; leaves keep `relay: false`.
+ * - {@link connectCommandTransport} bridges the gap where a command is only implemented in *some*
+ *   runtimes (e.g. a handler supplied at server registration). A runtime without a local handler
+ *   requests remote execution; a runtime that has one listens for those requests, runs the command,
+ *   and replies. See its docs for the request/ack/result/error protocol.
  *
  * The merge and ordering rules themselves live in `service-sync.ts`; this module only moves snapshots
  * on and off the channel.
  */
 
+import { OpenServiceRemoteCommandDisconnectedError } from '../../server-errors.ts';
 import {
+  SERVICE_COMMAND_ACK,
+  SERVICE_COMMAND_ERROR,
+  SERVICE_COMMAND_INVOKE,
+  SERVICE_COMMAND_RESULT,
   SERVICE_PATCHES,
   SERVICE_SYNC_START,
   SERVICE_SYNC_START_REPLY,
+  type CommandAckPayload,
+  type CommandErrorPayload,
+  type CommandInvokePayload,
+  type CommandResultPayload,
   type PatchesPayload,
   type ServiceChannel,
   type SyncStartPayload,
   type SyncStartReplyPayload,
+  generateClientId,
 } from './service-channel.ts';
+import {
+  type SerializedError,
+  deserializeError,
+  serializeError,
+} from './service-error-serialization.ts';
 import { parseStampedSnapshot, parseSyncStart, type SnapshotReconciler } from './service-sync.ts';
 import type { ServiceId } from './types.ts';
 
@@ -198,5 +217,237 @@ export function connectRuntimeToChannel(
     channel.off(SERVICE_SYNC_START, onSyncStart);
     channel.off(SERVICE_SYNC_START_REPLY, onSyncStartReply);
     channel.off(SERVICE_PATCHES, onPatches);
+  };
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+/** Narrows an untrusted `services:command-invoke` payload, returning `null` when malformed. */
+function parseCommandInvoke(payload: unknown): CommandInvokePayload | null {
+  if (!isRecord(payload)) {
+    return null;
+  }
+
+  const { serviceId, commandName, callId, clientId } = payload;
+  if (
+    typeof serviceId !== 'string' ||
+    typeof commandName !== 'string' ||
+    typeof callId !== 'string' ||
+    typeof clientId !== 'string'
+  ) {
+    return null;
+  }
+
+  return { serviceId, commandName, callId, clientId, input: payload.input };
+}
+
+/** Narrows an untrusted `services:command-result` payload, returning `null` when malformed. */
+function parseCommandResult(payload: unknown): CommandResultPayload | null {
+  if (!isRecord(payload)) {
+    return null;
+  }
+
+  const { serviceId, callId, clientId } = payload;
+  if (typeof serviceId !== 'string' || typeof callId !== 'string' || typeof clientId !== 'string') {
+    return null;
+  }
+
+  return { serviceId, callId, clientId, result: payload.result };
+}
+
+/** Narrows an untrusted `services:command-error` payload, returning `null` when malformed. */
+function parseCommandError(payload: unknown): CommandErrorPayload | null {
+  if (!isRecord(payload)) {
+    return null;
+  }
+
+  const { serviceId, callId, clientId, error } = payload;
+  if (
+    typeof serviceId !== 'string' ||
+    typeof callId !== 'string' ||
+    typeof clientId !== 'string' ||
+    !isRecord(error)
+  ) {
+    return null;
+  }
+
+  return { serviceId, callId, clientId, error: error as unknown as SerializedError };
+}
+
+/**
+ * Wires the remote-command-execution protocol for one service runtime, returning the command map
+ * callers should use plus a teardown.
+ *
+ * ## Why this exists
+ *
+ * A command handler can be supplied at registration in only *some* runtimes — the canonical case is
+ * a server-only handler that needs Node APIs or server context. Runtimes without a local handler
+ * still expose the command (so `useServiceCommand`, tests, and other services can call it), but they
+ * cannot run it themselves; they must ask a peer that can.
+ *
+ * ## Protocol
+ *
+ * - **Requester** (no local handler): the returned command emits `services:command-invoke` with a
+ *   unique `callId` and returns a promise. The promise resolves with the first
+ *   `services:command-result` for that `callId`, or rejects with the (deserialized) error from the
+ *   first `services:command-error`.
+ * - **Responder** (has a local handler): on a matching `services:command-invoke` it emits
+ *   `services:command-ack` immediately, runs the command locally (which also broadcasts the
+ *   post-mutation state via the broadcast wrappers, so peers converge as usual), then emits
+ *   `services:command-result` or `services:command-error`.
+ *
+ * Both roles coexist on one runtime: it responds for the commands it implements and requests the
+ * ones it does not. A runtime never requests a command it implements (it runs that locally), so it
+ * never answers its own invoke echo.
+ *
+ * ## Multiple implementers
+ *
+ * If several peers implement the same command they will each run it and reply. The requester keeps
+ * only the first reply per `callId` and ignores the rest. Running a command in more than one runtime
+ * is therefore possible by construction; it is constrained by usage conventions and documentation
+ * rather than enforced here.
+ *
+ * ## Topology
+ *
+ * Replies travel back over the same channel the invoke went out on. A request reaches every peer on
+ * the requester's transports; the manager is connected to both the dev server and the preview, so it
+ * can invoke a command implemented in either. Command events are *not* relayed across a hub's other
+ * transports, so a preview cannot directly invoke a server-only command (and vice versa) — route such
+ * calls through the manager or implement the command on a directly-connected peer.
+ */
+export function connectCommandTransport(context: {
+  /** Id of the service these commands belong to; stamped on every emitted envelope. */
+  serviceId: ServiceId;
+  /** This runtime's stable id, stamped on replies so peers know who answered. */
+  ownClientId: string;
+  channel: ServiceChannel;
+  /**
+   * Broadcast-wrapped local commands keyed by name. Only entries in {@link implementedCommandNames}
+   * are runnable; the rest are present only so the map is complete.
+   */
+  localCommands: Record<string, RuntimeCommand>;
+  /** Command names that have a local handler in this runtime. */
+  implementedCommandNames: ReadonlySet<string>;
+  /** Every command name declared by the service definition. */
+  commandNames: readonly string[];
+}): { commands: Record<string, RuntimeCommand>; disconnect: () => void } {
+  const { serviceId, ownClientId, channel, localCommands, implementedCommandNames, commandNames } =
+    context;
+
+  // Requester bookkeeping: in-flight remote calls keyed by callId, settled by the first reply.
+  const pending = new Map<
+    string,
+    { resolve: (value: unknown) => void; reject: (error: unknown) => void }
+  >();
+
+  const settle = (
+    callId: string,
+    apply: (entry: { resolve: (v: unknown) => void; reject: (e: unknown) => void }) => void
+  ): void => {
+    const entry = pending.get(callId);
+    if (!entry) {
+      return;
+    }
+    pending.delete(callId);
+    apply(entry);
+  };
+
+  // Responder: run a locally-implemented command on a peer's request and reply with the outcome.
+  const onInvoke = (payload: unknown): void => {
+    const invoke = parseCommandInvoke(payload);
+    if (
+      !invoke ||
+      invoke.serviceId !== serviceId ||
+      !implementedCommandNames.has(invoke.commandName)
+    ) {
+      return;
+    }
+
+    channel.emit(SERVICE_COMMAND_ACK, {
+      serviceId,
+      callId: invoke.callId,
+      clientId: ownClientId,
+    } satisfies CommandAckPayload);
+
+    void Promise.resolve()
+      .then(() => localCommands[invoke.commandName](invoke.input))
+      .then(
+        (result) => {
+          channel.emit(SERVICE_COMMAND_RESULT, {
+            serviceId,
+            callId: invoke.callId,
+            result,
+            clientId: ownClientId,
+          } satisfies CommandResultPayload);
+        },
+        (error: unknown) => {
+          channel.emit(SERVICE_COMMAND_ERROR, {
+            serviceId,
+            callId: invoke.callId,
+            error: serializeError(error),
+            clientId: ownClientId,
+          } satisfies CommandErrorPayload);
+        }
+      );
+  };
+
+  // Requester: resolve/reject the pending promise for a reply addressed to one of our calls.
+  const onResult = (payload: unknown): void => {
+    const result = parseCommandResult(payload);
+    if (!result || result.serviceId !== serviceId) {
+      return;
+    }
+    settle(result.callId, (entry) => entry.resolve(result.result));
+  };
+
+  const onError = (payload: unknown): void => {
+    const failure = parseCommandError(payload);
+    if (!failure || failure.serviceId !== serviceId) {
+      return;
+    }
+    settle(failure.callId, (entry) => entry.reject(deserializeError(failure.error)));
+  };
+
+  channel.on(SERVICE_COMMAND_INVOKE, onInvoke);
+  channel.on(SERVICE_COMMAND_RESULT, onResult);
+  channel.on(SERVICE_COMMAND_ERROR, onError);
+
+  const requestRemote = (commandName: string, input: unknown): Promise<unknown> => {
+    const callId = generateClientId();
+
+    return new Promise<unknown>((resolve, reject) => {
+      pending.set(callId, { resolve, reject });
+      channel.emit(SERVICE_COMMAND_INVOKE, {
+        serviceId,
+        commandName,
+        input,
+        callId,
+        clientId: ownClientId,
+      } satisfies CommandInvokePayload);
+    });
+  };
+
+  const commands: Record<string, RuntimeCommand> = {};
+  for (const name of commandNames) {
+    commands[name] = implementedCommandNames.has(name)
+      ? localCommands[name]
+      : (input: unknown) => requestRemote(name, input);
+  }
+
+  return {
+    commands,
+    disconnect: (): void => {
+      channel.off(SERVICE_COMMAND_INVOKE, onInvoke);
+      channel.off(SERVICE_COMMAND_RESULT, onResult);
+      channel.off(SERVICE_COMMAND_ERROR, onError);
+
+      // Fail any still-pending remote calls so awaiters don't hang forever past teardown.
+      for (const [, entry] of pending) {
+        entry.reject(new OpenServiceRemoteCommandDisconnectedError({ serviceId }));
+      }
+      pending.clear();
+    },
   };
 }

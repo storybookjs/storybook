@@ -9,6 +9,7 @@
  * The live channel is read via {@link getChannel} from `storybook/internal/channels`.
  */
 import type { ChannelLike } from '../../channels/types.ts';
+import type { SerializedError } from './service-error-serialization.ts';
 
 /**
  * Minimal channel contract needed for service sync.
@@ -22,6 +23,7 @@ export const SERVICE_SYNC_START = 'services:sync-start' as const;
 export const SERVICE_SYNC_START_REPLY = 'services:sync-start-reply' as const;
 export const SERVICE_PATCHES = 'services:patches' as const;
 export const SERVICE_COMMAND_INVOKE = 'services:command-invoke' as const;
+export const SERVICE_COMMAND_ACK = 'services:command-ack' as const;
 export const SERVICE_COMMAND_RESULT = 'services:command-result' as const;
 export const SERVICE_COMMAND_ERROR = 'services:command-error' as const;
 
@@ -59,24 +61,54 @@ export interface PatchesPayload {
   clientId: string;
 }
 
-/** Payload for `services:command-invoke` (Option-A/hybrid reserved; unused in multi-master). */
+/**
+ * Sent by a runtime that wants a command executed but has no local handler for it.
+ *
+ * Any peer that *does* implement the command runs it and replies with an ack, then a result or
+ * error carrying the same `callId`. The requester awaits its promise until one of those arrives.
+ */
 export interface CommandInvokePayload {
   serviceId: string;
   commandName: string;
+  /** Raw (unvalidated) command input; the implementing peer validates it before running. */
   input: unknown;
+  /** Unique id correlating this invocation with its ack/result/error replies. */
   callId: string;
+  /** Id of the requesting runtime. */
+  clientId: string;
 }
 
-/** Payload for `services:command-result`. */
+/**
+ * Emitted by an implementing peer the moment it accepts a `services:command-invoke`.
+ *
+ * Purely informational: it tells observers (and the requester) that at least one peer has picked
+ * the call up. The requester still resolves/rejects only on the result/error reply.
+ */
+export interface CommandAckPayload {
+  serviceId: string;
+  callId: string;
+  /** Id of the runtime that accepted the invocation. */
+  clientId: string;
+}
+
+/** Sent by an implementing peer after a remote command resolves successfully. */
 export interface CommandResultPayload {
+  serviceId: string;
   callId: string;
+  /** Validated command output. */
   result: unknown;
+  /** Id of the runtime that executed the command. */
+  clientId: string;
 }
 
-/** Payload for `services:command-error`. */
+/** Sent by an implementing peer after a remote command throws. */
 export interface CommandErrorPayload {
+  serviceId: string;
   callId: string;
-  error: unknown;
+  /** Serialized error (including its `cause` chain) so the requester can rethrow a real Error. */
+  error: SerializedError;
+  /** Id of the runtime that executed the command. */
+  clientId: string;
 }
 
 /**

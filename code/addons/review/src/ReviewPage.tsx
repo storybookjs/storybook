@@ -129,8 +129,8 @@ const ReviewPageContent: FC<{ search: string }> = ({ search }) => {
   }, [api]);
 
   // Resolve each story's component title + name from the Storybook index.
-  // Drives the cell labels and the detail subtitle; falls back gracefully
-  // (per-consumer) when the index has not loaded.
+  // A story with no index entry is omitted: it has no resolvable metadata, so
+  // consumers treat it as invalid rather than guessing a label.
   const storyInfo = useMemo(() => {
     const info: Record<string, StoryInfo> = {};
     if (!state) {

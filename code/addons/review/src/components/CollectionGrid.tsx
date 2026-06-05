@@ -3,7 +3,7 @@ import React, { useCallback, useEffect, useRef, useState, type FC } from 'react'
 import { Button } from 'storybook/internal/components';
 import { styled } from 'storybook/theming';
 
-import { prettifyComponentId, storyPreviewUrl } from '../review-navigation.ts';
+import { storyPreviewUrl } from '../review-navigation.ts';
 import { Highlight } from './Highlight.tsx';
 
 const PREVIEW_SCALE = 0.5;
@@ -253,24 +253,15 @@ const isWithinPreloadRange = (element: HTMLElement, margin: number): boolean => 
   return rect.bottom >= -margin && rect.top <= viewportHeight + margin;
 };
 
-const deriveStoryInfo = (
-  storyId: string,
-  info?: StoryInfo
-): { component: string; name: string } => {
-  if (info) {
-    return { component: info.title.split('/').pop() ?? info.title, name: info.name };
-  }
-  const [componentId, ...rest] = storyId.split('--');
-  return {
-    component: prettifyComponentId(componentId),
-    name: prettifyComponentId(rest.join('--')) || 'Story',
-  };
-};
+const deriveStoryInfo = (info: StoryInfo): { component: string; name: string } => ({
+  component: info.title.split('/').pop() ?? info.title,
+  name: info.name,
+});
 
 const StoryPreviewCell: FC<{
   storyId: string;
   href?: string;
-  info?: StoryInfo;
+  info: StoryInfo;
   query: string;
 }> = ({ storyId, href, info, query }) => {
   const hostRef = useRef<HTMLElement>(null);
@@ -371,7 +362,7 @@ const StoryPreviewCell: FC<{
     return () => clearTimeout(timer);
   }, [src, finishCurrent]);
 
-  const { component, name } = deriveStoryInfo(storyId, info);
+  const { component, name } = deriveStoryInfo(info);
 
   return (
     <Cell data-cell data-testid="review-collection-grid-cell">
@@ -418,7 +409,7 @@ export interface CollectionGridProps {
   /** Called when the user expands to "Review all". */
   onShowAll?: () => void;
   /** Story id → component title + story name, for the cell label. */
-  storyInfo?: Record<string, StoryInfo>;
+  storyInfo: Record<string, StoryInfo>;
   /** Active search query — matches in the cell label are highlighted. */
   query?: string;
 }
@@ -433,15 +424,23 @@ export const CollectionGrid: FC<CollectionGridProps> = ({
 }) => (
   <GridContainer>
     <Grid data-show-all={showAll || undefined} data-testid="review-collection-grid">
-      {storyIds.map((storyId, storyIndex) => (
-        <StoryPreviewCell
-          key={storyId}
-          storyId={storyId}
-          href={getStoryHref?.(storyId, storyIndex)}
-          info={storyInfo?.[storyId]}
-          query={query}
-        />
-      ))}
+      {storyIds.map((storyId, storyIndex) => {
+        // A story with no index entry has no resolvable label and is treated as
+        // invalid, so it is skipped rather than rendered with a guessed name.
+        const info = storyInfo[storyId];
+        if (!info) {
+          return null;
+        }
+        return (
+          <StoryPreviewCell
+            key={storyId}
+            storyId={storyId}
+            href={getStoryHref?.(storyId, storyIndex)}
+            info={info}
+            query={query}
+          />
+        );
+      })}
       <ReviewAllCell data-review-all>
         <Button size="medium" onClick={() => onShowAll?.()}>
           Review all {storyIds.length}

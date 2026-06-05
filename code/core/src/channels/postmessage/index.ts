@@ -18,6 +18,8 @@ const { document, location } = globalThis;
 
 export const KEY = 'storybook-channel';
 
+const CHANNEL_OPTIONS = globalThis.CHANNEL_OPTIONS || {};
+
 const defaultEventOptions = { maxDepth: 25 };
 
 // TODO: we should export a method for opening child windows here and keep track of em.
@@ -89,7 +91,7 @@ export class PostMessageTransport implements ChannelTransport {
 
     const stringifyOptions = {
       ...defaultEventOptions,
-      ...(globalThis.CHANNEL_OPTIONS || {}),
+      ...CHANNEL_OPTIONS,
       ...eventOptions,
     };
 
@@ -193,7 +195,7 @@ export class PostMessageTransport implements ChannelTransport {
     try {
       const { data } = rawEvent;
       const { key, event, refId } =
-        typeof data === 'string' && isJSON(data) ? parse(data, CHANNEL_OPTIONS || {}) : data;
+        typeof data === 'string' && isJSON(data) ? parse(data, CHANNEL_OPTIONS) : data;
 
       if (key === KEY) {
         const pageString =

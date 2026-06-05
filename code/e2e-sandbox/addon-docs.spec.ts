@@ -290,9 +290,7 @@ test.describe('addon-docs', () => {
   });
 
   test('should reset scroll position between pages', async ({ page }) => {
-    await page.goto(storybookUrl);
     const sbPage = new SbPage(page, expect);
-    await sbPage.waitUntilLoaded();
 
     // Open a long docs page and scroll it down. The preview is rendered inside the iframe, so the
     // scroll lives on the iframe's documentElement (see WebView.prepareForDocs).

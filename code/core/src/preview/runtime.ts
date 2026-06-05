@@ -1,8 +1,7 @@
+import { getChannel } from 'storybook/internal/channels';
 import { MANAGER_INERT_ATTRIBUTE_CHANGED, TELEMETRY_ERROR } from 'storybook/internal/core-events';
 
 import { global } from '@storybook/global';
-
-import { getChannel } from '../channels/channel-slot.ts';
 import { globalPackages, globalsNameReferenceMap } from './globals/globals.ts';
 import { globalsNameValueMap } from './globals/runtime.ts';
 import { maybeSetupPreviewNavigator } from './preview-navigator.ts';

@@ -1,7 +1,6 @@
 /// <reference path="./typings.d.ts" />
+import { getChannel } from 'storybook/internal/channels';
 import { TELEMETRY_ERROR } from 'storybook/internal/core-events';
-
-import { getChannel } from '../channels/channel-slot.ts';
 import { globalPackages, globalsNameReferenceMap } from './globals/globals.ts';
 import { globalsNameValueMap } from './globals/runtime.ts';
 import { prepareForTelemetry, shouldSkipError } from './utils/prepareForTelemetry.ts';

@@ -1,16 +1,25 @@
-import React, { type FC, type ReactNode, useEffect, useMemo, useRef, useState } from 'react';
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type FC,
+  type ReactNode,
+} from 'react';
 
+import { Location, useNavigate } from 'storybook/internal/router';
+import type { StatusesByStoryIdAndTypeId } from 'storybook/internal/types';
 import {
   experimental_useStatusStore,
   useChannel,
   useStorybookApi,
   useStorybookState,
 } from 'storybook/manager-api';
-import { Location, useNavigate } from 'storybook/internal/router';
-import type { StatusesByStoryIdAndTypeId } from 'storybook/internal/types';
 
 import type { StoryInfo } from './components/CollectionGrid.tsx';
 import {
+  ADDON_ID,
   BASELINE_INDEX_URL,
   EVENTS,
   RESTORE_NAV_SESSION_KEY,
@@ -19,13 +28,17 @@ import {
 import {
   buildReviewChangesDetailHref,
   buildReviewChangesSummaryHref,
+  flattenReviewStories,
+  getAdjacentCollectionFirstStory,
+  getReviewDetailNeighbors,
   normalizeReviewStoryId,
   parseReviewChangesDetailLocation,
+  type ReviewShortcutHrefs,
 } from './review-navigation.ts';
 import type { ReviewState } from './review-state.ts';
-import { sessionStore } from './session-store.ts';
 import { DetailsScreen } from './screens/DetailsScreen.tsx';
 import { SummaryScreen } from './screens/SummaryScreen.tsx';
+import { sessionStore } from './session-store.ts';
 
 // Reading `location.search` from the router (rather than window.location)
 // makes the page re-render on every in-page navigation, so the detail screen
@@ -48,6 +61,23 @@ const ReviewPageContent: FC<{ search: string }> = ({ search }) => {
   const api = useStorybookApi();
   const { index } = useStorybookState();
   const navigate = useNavigate();
+
+  // The active detail screen's navigation targets, or null on the summary.
+  // Kept in a ref so the addon-shortcut actions (registered once) always read
+  // the current screen's hrefs without re-registering on every navigation.
+  const shortcutHrefsRef = useRef<ReviewShortcutHrefs | null>(null);
+
+  // Navigate to one of the current detail screen's shortcut targets, if any.
+  // No-ops on the summary, where there is nothing to step through.
+  const navigateToShortcut = useCallback(
+    (target: keyof ReviewShortcutHrefs) => {
+      const hrefs = shortcutHrefsRef.current;
+      if (hrefs) {
+        navigate(hrefs[target], { plain: true });
+      }
+    },
+    [navigate]
+  );
 
   const emit = useChannel({
     [EVENTS.DISPLAY_REVIEW]: (next: ReviewState) => {
@@ -127,6 +157,48 @@ const ReviewPageContent: FC<{ search: string }> = ({ search }) => {
       sessionStore.remove(RESTORE_NAV_SESSION_KEY);
     };
   }, [api]);
+
+  // Register the detail-screen navigation as customizable addon shortcuts, so
+  // they show up on the Shortcuts settings page and users can rebind them. The
+  // manager dispatches these through the same handler for both manager focus
+  // and the preview-iframe channel, and calls preventDefault for us — so no
+  // separate DOM/channel listeners are needed. The actions read the live
+  // targets from `shortcutHrefsRef`, so registering once is enough.
+  useEffect(() => {
+    api.setAddonShortcut(ADDON_ID, {
+      label: 'Review: back to overview',
+      defaultShortcut: ['escape'],
+      actionName: 'reviewBack',
+      action: () => navigateToShortcut('back'),
+    });
+    api.setAddonShortcut(ADDON_ID, {
+      label: 'Review: previous story',
+      // Plain arrows (not Opt+Arrow) so the review nav doesn't collide with the
+      // browser's Back/Forward chord, which some embedded browsers fire
+      // regardless of preventDefault.
+      defaultShortcut: ['ArrowLeft'],
+      actionName: 'reviewPreviousStory',
+      action: () => navigateToShortcut('previous'),
+    });
+    api.setAddonShortcut(ADDON_ID, {
+      label: 'Review: next story',
+      defaultShortcut: ['ArrowRight'],
+      actionName: 'reviewNextStory',
+      action: () => navigateToShortcut('next'),
+    });
+    api.setAddonShortcut(ADDON_ID, {
+      label: 'Review: previous collection',
+      defaultShortcut: ['ArrowUp'],
+      actionName: 'reviewPreviousCollection',
+      action: () => navigateToShortcut('previousCollection'),
+    });
+    api.setAddonShortcut(ADDON_ID, {
+      label: 'Review: next collection',
+      defaultShortcut: ['ArrowDown'],
+      actionName: 'reviewNextCollection',
+      action: () => navigateToShortcut('nextCollection'),
+    });
+  }, [api, navigateToShortcut]);
 
   // Resolve each story's component title + name from the Storybook index.
   // Drives the cell labels and the detail subtitle; falls back gracefully
@@ -222,40 +294,70 @@ const ReviewPageContent: FC<{ search: string }> = ({ search }) => {
     const collection = state.collections[detailLocation.collectionIndex];
     if (collection && collection.storyIds.length > 0) {
       const detailStoryIds = collection.storyIds;
-      const totalStories = detailStoryIds.length;
       const resolvedIndexFromStoryId =
         detailLocation.storyId !== undefined
           ? detailStoryIds.findIndex((storyId) => storyId === detailLocation.storyId)
           : -1;
       const currentStoryIndex = resolvedIndexFromStoryId >= 0 ? resolvedIndexFromStoryId : 0;
-      const previousStoryIndex = (currentStoryIndex - 1 + totalStories) % totalStories;
-      const nextStoryIndex = (currentStoryIndex + 1) % totalStories;
-
       const currentStoryId = detailStoryIds[currentStoryIndex];
+
+      // Prev/next walk every collection's stories as a single sequence, so
+      // reaching a collection's edge moves into the adjacent collection (which
+      // re-renders with that collection's title) rather than cycling within the
+      // current one.
+      const sequence = flattenReviewStories(state.collections);
+      const precedingStoryCount = state.collections
+        .slice(0, detailLocation.collectionIndex)
+        .reduce((sum, c) => sum + c.storyIds.length, 0);
+      const globalStoryIndex = precedingStoryCount + currentStoryIndex;
+      const neighbors = getReviewDetailNeighbors(sequence, globalStoryIndex);
+      const fallbackTarget = {
+        collectionIndex: detailLocation.collectionIndex,
+        storyId: currentStoryId,
+      };
+      // Opt+Up / Opt+Down jump to the first story of the adjacent collection
+      // (wrapping, skipping empties); fall back to the current story.
+      const previousCollectionTarget =
+        getAdjacentCollectionFirstStory(state.collections, detailLocation.collectionIndex, -1) ??
+        fallbackTarget;
+      const nextCollectionTarget =
+        getAdjacentCollectionFirstStory(state.collections, detailLocation.collectionIndex, 1) ??
+        fallbackTarget;
+
+      const shortcutHrefs: ReviewShortcutHrefs = {
+        back: buildReviewChangesSummaryHref(),
+        previous: buildReviewChangesDetailHref(neighbors?.previous ?? fallbackTarget),
+        next: buildReviewChangesDetailHref(neighbors?.next ?? fallbackTarget),
+        previousCollection: buildReviewChangesDetailHref(previousCollectionTarget),
+        nextCollection: buildReviewChangesDetailHref(nextCollectionTarget),
+      };
+      // Expose the current targets to the registered addon-shortcut actions.
+      shortcutHrefsRef.current = shortcutHrefs;
+
       const currentStoryInfo = storyInfo[currentStoryId];
       detailScreen = (
         <DetailsScreen
           title={collection.title}
           storyId={currentStoryId}
-          storyIndex={currentStoryIndex}
-          totalStories={totalStories}
+          storyIndex={globalStoryIndex}
+          totalStories={sequence.length}
           componentTitle={currentStoryInfo?.title}
           storyName={currentStoryInfo?.name}
           isStale={isStale}
           isNewlyAdded={newlyAddedStoryIds.has(currentStoryId)}
-          backHref={buildReviewChangesSummaryHref()}
-          previousHref={buildReviewChangesDetailHref({
-            collectionIndex: detailLocation.collectionIndex,
-            storyId: detailStoryIds[previousStoryIndex],
-          })}
-          nextHref={buildReviewChangesDetailHref({
-            collectionIndex: detailLocation.collectionIndex,
-            storyId: detailStoryIds[nextStoryIndex],
-          })}
+          backHref={shortcutHrefs.back}
+          previousHref={shortcutHrefs.previous}
+          nextHref={shortcutHrefs.next}
           hasBaseline={state.hasBaseline ?? false}
         />
       );
     }
+  }
+
+  // On the summary (no detail screen) the navigation shortcuts have nothing to
+  // step through, so clear the targets and let their actions no-op.
+  if (detailScreen === null) {
+    shortcutHrefsRef.current = null;
   }
 
   const hasDetailScreen = detailScreen !== null;

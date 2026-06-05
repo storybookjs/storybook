@@ -2,11 +2,11 @@ import { expect, fn, within } from 'storybook/test';
 
 import { ManagerContext, type API, type State } from 'storybook/manager-api';
 
+import preview from '../../../../.storybook/preview.tsx';
 import {
   buildReviewChangesDetailHref,
   buildReviewChangesSummaryHref,
 } from '../review-navigation.ts';
-import preview from '../../../../.storybook/preview.tsx';
 import { DetailsScreen } from './DetailsScreen.tsx';
 
 // DetailsScreen uses useAddonState (via the preview-mode toggle), which reads
@@ -121,6 +121,25 @@ export const Stale = meta.story({
     await expect(
       await canvas.findByText('This review may be stale. Ask your agent to refresh it.')
     ).toBeInTheDocument();
+  },
+});
+
+export const Progress = meta.story({
+  args: {
+    title: 'Hooks',
+    componentTitle: 'Core/Hooks',
+    storyName: 'Use State',
+    storyId: 'core-hooks--use-state',
+    // 7th of 10 stories: the fill spans index/(total-1) = 6/9 ≈ 66.7%, so the
+    // first story reads 0% and the last 100%.
+    storyIndex: 6,
+    totalStories: 10,
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(await canvas.findByRole('button', { name: '7/10' })).toBeInTheDocument();
+    const fill = await canvas.findByTestId<HTMLElement>('review-progress-fill');
+    await expect(Math.round(parseFloat(fill.style.width))).toBe(67);
   },
 });
 

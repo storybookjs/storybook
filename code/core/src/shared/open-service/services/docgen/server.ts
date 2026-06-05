@@ -3,7 +3,7 @@ import { OpenServiceDocgenMissingComponentError } from '../../../../server-error
 import type { StoryIndex } from '../../../../types/modules/indexer.ts';
 import { registerService } from '../../service-registration.ts';
 import { docgenServiceDef } from './definition.ts';
-import type { DocgenProvider } from './types.ts';
+import type { DocgenPayload, DocgenProvider } from './types.ts';
 
 export type RegisterDocgenServiceOptions = {
   /**
@@ -23,11 +23,11 @@ export type RegisterDocgenServiceOptions = {
  * Registers the docgen open service against the process-global registry.
  *
  * The `extractDocgen` command does the work: it reads the story index, picks an entry for the
- * requested componentId, hands the resolved index entry to the provider chain, and stores the
+ * requested component id, hands the resolved index entry to the provider chain, and stores the
  * returned payload (if any) into state. The `getDocgen` query's load hook simply invokes that
  * command. Both the `static.inputs` enumeration and the per-component pick use
  * {@link selectComponentEntriesByComponentId} — the same selection (and tie-breaking) the React
- * component manifest generator uses — so the two flows always resolve a componentId to the same
+ * component manifest generator uses — so the two flows always resolve a component id to the same
  * index entry.
  */
 export function registerDocgenService(options: RegisterDocgenServiceOptions) {
@@ -40,7 +40,16 @@ export function registerDocgenService(options: RegisterDocgenServiceOptions) {
         staticInputs: async () => {
           const index = await options.getIndex();
           const eligible = selectComponentEntriesByComponentId(Object.values(index.entries));
-          return Array.from(eligible.keys(), (componentId) => ({ componentId }));
+          return Array.from(eligible.keys(), (id) => ({ id }));
+        },
+      },
+      getDocgenForAllComponents: {
+        load: async (_input, ctx) => {
+          const index = await options.getIndex();
+          const ids = Array.from(
+            selectComponentEntriesByComponentId(Object.values(index.entries)).keys()
+          );
+          await Promise.all(ids.map((id) => ctx.self.commands.extractDocgen({ id })));
         },
       },
     },
@@ -49,11 +58,11 @@ export function registerDocgenService(options: RegisterDocgenServiceOptions) {
         handler: async (input, ctx) => {
           const index = await options.getIndex();
           const entry = selectComponentEntriesByComponentId(Object.values(index.entries)).get(
-            input.componentId
+            input.id
           );
 
           if (!entry) {
-            throw new OpenServiceDocgenMissingComponentError({ componentId: input.componentId });
+            throw new OpenServiceDocgenMissingComponentError({ id: input.id });
           }
 
           // Provider errors bubble out of the command unchanged; consumers see the underlying
@@ -67,7 +76,7 @@ export function registerDocgenService(options: RegisterDocgenServiceOptions) {
           }
 
           ctx.self.setState((state) => {
-            state.components[input.componentId] = payload;
+            state.components[input.id] = payload;
           });
           return payload;
         },

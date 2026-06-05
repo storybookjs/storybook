@@ -7,7 +7,7 @@ import type { IndexEntry } from '../../../../types/modules/indexer.ts';
  * `entry` is the authoritative story-index entry for the requested component, selected with the
  * same rules as the React component manifest generator (`selectComponentEntriesByComponentId` in
  * `storybook/internal/common`): eligible story entries and attached docs, with story entries
- * preferred over attached docs for the same componentId.
+ * preferred over attached docs for the same component id.
  */
 export interface DocgenProviderInput {
   entry: IndexEntry;
@@ -32,51 +32,38 @@ export interface DocgenStory {
   error?: DocgenError;
 }
 
-/** Component-level summary + props + JSDoc for one subcomponent. */
+/**
+ * Docgen payload returned by `core/docgen`'s `getDocgen` query.
+ *
+ * Aligns with {@link ComponentManifest} plus integration-specific keys (for example
+ * `reactComponentMeta`, `reactDocgen`, `reactDocgenTypescript`) via the index signature.
+ */
+export interface DocgenPayload {
+  id: string;
+  name: string;
+  /** CSF story file import path from the index entry (same as component manifest `path`). */
+  path: string;
+  description?: string;
+  /** Suggested import statement(s) for the component (same as component manifest `import`). */
+  import?: string;
+  summary?: string;
+  jsDocTags: DocgenJsDocTags;
+  stories: DocgenStory[];
+  subcomponents?: Record<string, DocgenSubcomponent>;
+  error?: DocgenError;
+  [key: string]: unknown;
+}
+
+/** Component-level summary + docgen for one subcomponent. */
 export interface DocgenSubcomponent {
   name: string;
   path: string;
   description?: string;
   summary?: string;
   import?: string;
-  jsDocTags?: DocgenJsDocTags;
-  /** Integration-specific prop descriptors — see {@link DocgenPayload.props}. */
-  props: unknown[];
+  jsDocTags: DocgenJsDocTags;
   error?: DocgenError;
-}
-
-/**
- * Docgen payload returned by `core/docgen`'s `getDocgen` query.
- *
- * The contract keeps an integration-agnostic core strictly typed — identity (`componentId`,
- * `name`), human-readable text (`description`, `summary`, `jsDocTags`), CSF-level `stories`, and
- * the `subcomponents` map — while deferring genuinely integration-specific data to loose types.
- * The most important of these is `props`: react-docgen, react-docgen-typescript, react-component-
- * meta, vue-docgen, etc. each describe a prop with a different shape, so baking one engine's
- * `PropItem` into the core service contract would couple every consumer to React. This mirrors how
- * Storybook MCP's component-manifest types keep `reactDocgen` / `reactComponentMeta` as `any`.
- *
- * Producers populate the fields they have; consumers should treat each prop entry as opaque and
- * branch on the integration that produced the payload when they need a concrete shape.
- */
-export interface DocgenPayload {
-  componentId: string;
-  name: string;
-  /** CSF story file import path from the index entry (same as component manifest `path`). */
-  path: string;
-  description: string;
-  /** Suggested import statement(s) for the component (same as component manifest `import`). */
-  import?: string;
-  summary?: string;
-  jsDocTags?: DocgenJsDocTags;
-  /**
-   * Component props, as described by whichever docgen integration produced this payload. Entries
-   * are deliberately untyped because their shape is integration-specific.
-   */
-  props: unknown[];
-  subcomponents?: Record<string, DocgenSubcomponent>;
-  stories?: DocgenStory[];
-  error?: DocgenError;
+  [key: string]: unknown;
 }
 
 /**

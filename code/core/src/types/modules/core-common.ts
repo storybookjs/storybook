@@ -413,6 +413,7 @@ export interface ComponentManifest {
   import?: string | undefined;
   summary?: string | undefined;
   stories: {
+    id: string;
     name: string;
     snippet?: string | undefined;
     description?: string | undefined;

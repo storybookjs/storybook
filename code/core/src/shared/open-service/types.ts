@@ -76,15 +76,13 @@ export type CommandFunctions<
  * before reading. Use `.subscribe(input, callback)` to receive the current value immediately
  * (synchronously) and again after the background `load` settles (deduped while in-flight), plus
  * further emissions whenever tracked state changes.
+ *
+ * Queries whose input schema resolves to `undefined` (for example `v.void()`) may be called with
+ * zero arguments: `query()` and `query.loaded()`.
  */
-export type Query<TInput, TOutput> = {
+type InputQuery<TInput, TOutput> = {
   (input: TInput): TOutput;
   loaded(input: TInput): Promise<TOutput>;
-  /**
-   * Subscribe to a query. The callback fires once with the current value and again whenever the
-   * tracked state it reads changes. An optional `selector` narrows what the subscriber depends on:
-   * the callback receives the selected slice and only fires when that slice changes by value.
-   */
   subscribe(input: TInput, callback: (value: TOutput) => void): () => void;
   subscribe<TSelected>(
     input: TInput,
@@ -92,6 +90,21 @@ export type Query<TInput, TOutput> = {
     callback: (selected: TSelected) => void
   ): () => void;
 };
+
+/** Zero-argument overloads merged into {@link Query} when the input schema is void. */
+type VoidQuery<TOutput> = {
+  (): TOutput;
+  loaded(): Promise<TOutput>;
+  subscribe(callback: (value: TOutput) => void): () => void;
+  subscribe<TSelected>(
+    selector: (value: TOutput) => TSelected,
+    callback: (selected: TSelected) => void
+  ): () => void;
+};
+
+export type Query<TInput, TOutput> = undefined extends TInput
+  ? VoidQuery<TOutput> & InputQuery<TInput, TOutput>
+  : InputQuery<TInput, TOutput>;
 
 /**
  * Read-only service handle exposed to query handlers.

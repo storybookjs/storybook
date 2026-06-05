@@ -99,6 +99,13 @@ export type Template = {
     resolutions?: Record<string, string>;
     editAddons?: (addons: string[]) => string[];
     useCsfFactory?: boolean;
+    /**
+     * Pin `STORYBOOK_PROJECT_ROOT` to the sandbox directory when running the sandbox's Storybook.
+     * Some docgen tools (e.g. `vue-component-meta`) build a TypeScript program rooted at the
+     * detected project root. Sandboxes have no `.git` marker, so detection can resolve too high and
+     * make the program scan a huge tree, exhausting memory. Setting this keeps it scoped.
+     */
+    setProjectRoot?: boolean;
   };
   /** Additional CI steps in case this template has special needs during CI. */
   extraCiSteps?: {
@@ -587,6 +594,14 @@ export const baseTemplates = {
     },
     modifications: {
       useCsfFactory: true,
+      mainConfig: {
+        framework: {
+          name: '@storybook/vue3-vite',
+          options: {
+            docgen: 'vue-docgen-api',
+          },
+        },
+      },
     },
     skipTasks: ['e2e-tests', 'bench'],
   },
@@ -600,6 +615,9 @@ export const baseTemplates = {
     },
     modifications: {
       useCsfFactory: true,
+      // vue-component-meta scans the TypeScript project from the detected project root; pin it to
+      // the sandbox dir so the absence of a `.git` marker doesn't make it scan a huge tree.
+      setProjectRoot: true,
     },
     skipTasks: ['bench'],
   },

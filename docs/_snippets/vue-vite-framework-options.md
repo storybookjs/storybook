@@ -3,7 +3,7 @@ export default {
   framework: {
     name: '@storybook/vue3-vite',
     options: {
-      docgen: 'vue-component-meta',
+      docgen: 'vue-docgen-api',
     },
   },
 };
@@ -16,7 +16,7 @@ const config: StorybookConfig = {
   framework: {
     name: '@storybook/vue3-vite',
     options: {
-      docgen: 'vue-component-meta',
+      docgen: 'vue-docgen-api',
     },
   },
 };
@@ -31,7 +31,7 @@ export default defineMain({
   framework: {
     name: '@storybook/vue3-vite',
     options: {
-      docgen: 'vue-component-meta',
+      docgen: 'vue-docgen-api',
     },
   },
 });
@@ -46,7 +46,7 @@ export default defineMain({
   framework: {
     name: '@storybook/vue3-vite',
     options: {
-      docgen: 'vue-component-meta',
+      docgen: 'vue-docgen-api',
     },
   },
 });

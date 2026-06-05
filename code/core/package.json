@@ -56,6 +56,11 @@
       "code": "./src/actions/decorator.ts",
       "default": "./dist/actions/decorator.js"
     },
+    "./backgrounds": {
+      "types": "./dist/backgrounds/index.d.ts",
+      "code": "./src/backgrounds/index.ts",
+      "default": "./dist/backgrounds/index.js"
+    },
     "./highlight": {
       "types": "./dist/highlight/index.d.ts",
       "code": "./src/highlight/index.ts",

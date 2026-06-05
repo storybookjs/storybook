@@ -3,6 +3,13 @@ import type { DocsIndexEntry, IndexEntry } from '../../types/modules/indexer.ts'
 
 import { getComponentIdFromEntry } from './component-id.ts';
 
+/**
+ * Filename test for CSF story files (e.g. `Button.stories.tsx`, `stories.ts`). Single source of
+ * truth shared by the CSF indexer and the React docgen provider so both agree on which files count
+ * as story files. Has no `g` flag, so the shared instance is safe to reuse across `.test()` calls.
+ */
+export const STORY_FILE_TEST_REGEXP = /(stories|story)\.(m?js|ts)x?$/;
+
 function isAttachedDocsEntry(
   entry: IndexEntry
 ): entry is DocsIndexEntry & { storiesImports: [string, ...string[]] } {
@@ -58,21 +65,4 @@ export function selectComponentEntriesByComponentId(
   }
 
   return entriesByComponentId;
-}
-
-/** Resolves the authoritative index entry for a componentId, or undefined when none is eligible. */
-export function selectComponentEntryForComponentId(
-  indexEntries: IndexEntry[],
-  componentId: string
-): IndexEntry | undefined {
-  const storyEntry = indexEntries.find(
-    (entry) => isEligibleStoryEntry(entry) && getComponentIdFromEntry(entry) === componentId
-  );
-  if (storyEntry) {
-    return storyEntry;
-  }
-
-  return indexEntries.find(
-    (entry) => isAttachedDocsEntry(entry) && getComponentIdFromEntry(entry) === componentId
-  );
 }

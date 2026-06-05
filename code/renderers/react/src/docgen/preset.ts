@@ -1,33 +1,9 @@
-import { getStoryImportPathFromEntry } from 'storybook/internal/common';
-import { logger } from 'storybook/internal/node-logger';
+import { STORY_FILE_TEST_REGEXP, getStoryImportPathFromEntry } from 'storybook/internal/common';
 import type { DocgenProviderPreset } from 'storybook/internal/types';
 
-import { ComponentMetaManager } from '../componentManifest/componentMeta/ComponentMetaManager.ts';
+import { getSharedComponentMetaManager } from '../componentManifest/componentMetaManagerSingleton.ts';
 import type { TypescriptOptions } from '../componentManifest/getComponentImports.ts';
 import { buildDocgenPayload } from './buildDocgen.ts';
-
-/**
- * Module-scoped {@link ComponentMetaManager} singleton. Created lazily on the first docgen call
- * and reused for the lifetime of the process so the file-snapshot cache and any future TS programs
- * stay hot across multiple per-file extractions. Returns `undefined` if TypeScript is not
- * available in the runtime environment.
- */
-let componentMetaManagerPromise: Promise<ComponentMetaManager | undefined> | undefined;
-
-function getComponentMetaManager(): Promise<ComponentMetaManager | undefined> {
-  if (!componentMetaManagerPromise) {
-    componentMetaManagerPromise = (async () => {
-      try {
-        const ts = await import('typescript');
-        return new ComponentMetaManager(ts);
-      } catch {
-        logger.debug('[docgen-provider] TypeScript not available — skipping RCM extraction.');
-        return undefined;
-      }
-    })();
-  }
-  return componentMetaManagerPromise;
-}
 
 /**
  * React renderer docgen provider — phase 3: real RCM-backed extraction.
@@ -49,20 +25,21 @@ export const experimental_docgenProvider: DocgenProviderPreset = async (nextDocg
     {}
   ) ?? Promise.resolve({})) as Promise<Partial<TypescriptOptions>>;
 
-  // Pre-boot the TypeScript manager in the background, off the critical path. `import('typescript')`
-  // loads a multi-MB module; deferring it to the first docgen request adds several seconds of
-  // latency to that request. Kicking it off here (fire-and-forget) lets it warm up in parallel
-  // with the rest of server startup, so `await getManager()` below usually resolves instantly.
-  // getManager() memoizes and swallows its own errors, so this is safe to leave unawaited.
-  void getComponentMetaManager();
+  // Pre-boot the component meta manager in the background, off the critical path.
+  // `import('typescript')` loads a multi-MB module; deferring it to the first docgen request adds
+  // several seconds of latency to that request. Kicking it off here (fire-and-forget) lets it warm
+  // up in parallel with the rest of server startup, so `await getSharedComponentMetaManager()`
+  // below usually resolves instantly. The singleton memoizes and swallows its own errors, so this
+  // is safe to leave unawaited.
+  void getSharedComponentMetaManager();
 
   return async (input) => {
     const storyImportPath = getStoryImportPathFromEntry(input.entry);
-    if (!storyImportPath || !/\.stories\.[cm]?[jt]sx?$/.test(storyImportPath)) {
+    if (!storyImportPath || !STORY_FILE_TEST_REGEXP.test(storyImportPath)) {
       return nextDocgen(input);
     }
 
-    const componentMetaManager = await getComponentMetaManager();
+    const componentMetaManager = await getSharedComponentMetaManager();
     if (!componentMetaManager) {
       return nextDocgen(input);
     }

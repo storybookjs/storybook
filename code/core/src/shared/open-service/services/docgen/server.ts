@@ -1,7 +1,6 @@
 import {
   getStoryImportPathFromEntry,
   selectComponentEntriesByComponentId,
-  selectComponentEntryForComponentId,
 } from '../../../../common/utils/select-component-entry.ts';
 import { OpenServiceDocgenMissingComponentError } from '../../../../server-errors.ts';
 import type { StoryIndex } from '../../../../types/modules/indexer.ts';
@@ -32,8 +31,10 @@ export type RegisterDocgenServiceOptions = {
  * The `extractDocgen` command does the work: it reads the story index, picks an entry for the
  * requested componentId, hands the resolved index entry to the provider chain, and stores the
  * returned payload (if any) into state. The `getDocgen` query's load hook simply invokes that
- * command. `static.inputs` enumerates componentIds that have an eligible index entry (story or
- * attached docs), matching {@link selectComponentEntryForComponentId}.
+ * command. Both the `static.inputs` enumeration and the per-component pick use
+ * {@link selectComponentEntriesByComponentId} — the same selection (and tie-breaking) the React
+ * component manifest generator uses — so the two flows always resolve a componentId to the same
+ * index entry.
  *
  * Requires the `core/module-graph` service to be registered (it always is in the dev server); we
  * subscribe to it to keep already-extracted docgen fresh when source files change.
@@ -58,8 +59,7 @@ export function registerDocgenService(options: RegisterDocgenServiceOptions) {
       extractDocgen: {
         handler: async (input, ctx) => {
           const index = await options.getIndex();
-          const entry = selectComponentEntryForComponentId(
-            Object.values(index.entries),
+          const entry = selectComponentEntriesByComponentId(Object.values(index.entries)).get(
             input.componentId
           );
 

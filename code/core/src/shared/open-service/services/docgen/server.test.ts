@@ -50,12 +50,12 @@ function makeGetIndex(entries: IndexEntry[]) {
 describe('docgen open service', () => {
   describe('extractDocgen command', () => {
     it('hands the resolved index entry to the provider, stores its payload, and returns it', async () => {
-      const entry = makeStoryEntry('button--primary', 'Button');
+      const entry = makeStoryEntry('button--secondary', 'Button');
       const payload = makeDocgenPayload({ description: 'A button' });
       const provider = vi.fn<DocgenProvider>(async () => payload);
 
       const service = registerDocgenService({
-        getIndex: makeGetIndex([entry, makeStoryEntry('button--secondary', 'Button')]),
+        getIndex: makeGetIndex([makeStoryEntry('button--primary', 'Button'), entry]),
         provider,
       });
 

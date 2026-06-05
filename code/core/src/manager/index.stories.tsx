@@ -22,10 +22,8 @@ import Provider from './provider.ts';
 const WS_DISCONNECTED_NOTIFICATION_ID = 'CORE/WS_DISCONNECTED';
 const MOCK_STORY_PATH = '/?path=/story/example-button--primary';
 
+const originalChannel = getChannel();
 const channel = mockChannel() as unknown as Channel;
-
-// Captured after addon-vitest setup-file installs the preview channel (same browser session).
-const vitestChannel = getChannel();
 
 const originalGetItem = Storage.prototype.getItem;
 const originalSetItem = Storage.prototype.setItem;
@@ -121,9 +119,9 @@ const meta = preview.meta({
     Storage.prototype.clear = () => {};
   },
   afterEach: () => {
-    if (vitestChannel) {
-      setChannel(vitestChannel);
-      addons.setChannel(vitestChannel as Channel);
+    if (originalChannel) {
+      setChannel(originalChannel);
+      addons.setChannel(originalChannel as Channel);
     }
 
     Storage.prototype.getItem = originalGetItem;

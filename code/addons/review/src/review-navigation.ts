@@ -15,41 +15,6 @@ const tryDecodeURIComponent = (value: string): string => {
   }
 };
 
-// Defensive normalization for callers that accidentally provide a preview URL
-// (`iframe.html?id=...`) instead of a plain story id (`button--primary`).
-export const normalizeReviewStoryId = (value: string): string => {
-  const trimmed = value.trim();
-  if (!trimmed) {
-    return trimmed;
-  }
-
-  const shouldTreatAsUrl =
-    trimmed.startsWith('http://') ||
-    trimmed.startsWith('https://') ||
-    trimmed.startsWith('/iframe.html') ||
-    trimmed.startsWith('iframe.html') ||
-    trimmed.startsWith('./iframe.html');
-
-  if (shouldTreatAsUrl) {
-    try {
-      const url = new URL(trimmed, 'https://storybook.local');
-      const id = url.searchParams.get('id');
-      if (id) {
-        return tryDecodeURIComponent(id);
-      }
-    } catch {
-      // Fall through to the regex-based extraction below.
-    }
-  }
-
-  const queryIdMatch = trimmed.match(/(?:^|[?&])id=([^&#]+)/);
-  if (queryIdMatch?.[1]) {
-    return tryDecodeURIComponent(queryIdMatch[1]);
-  }
-
-  return trimmed;
-};
-
 // Storybook's manager router keeps the active route in the `path` query param
 // (see core/src/router) — `Route`/`api.navigate` read `?path=…`, not
 // window.location.pathname. Hrefs therefore wrap the route in `?path=…`.
@@ -57,9 +22,7 @@ export const buildReviewChangesSummaryHref = () => `?path=${REVIEW_CHANGES_URL}`
 
 export const buildReviewChangesDetailHref = (location: ReviewDetailLocation): string => {
   const base = `${REVIEW_CHANGES_URL}${location.collectionIndex}`;
-  const target = location.storyId
-    ? `${base}/${encodeURIComponent(normalizeReviewStoryId(location.storyId))}`
-    : base;
+  const target = location.storyId ? `${base}/${encodeURIComponent(location.storyId)}` : base;
   return `?path=${target}`;
 };
 
@@ -89,6 +52,6 @@ export const parseReviewChangesDetailLocation = (search: string): ReviewDetailLo
   const storySegment = segments[1];
   return {
     collectionIndex,
-    storyId: storySegment ? normalizeReviewStoryId(tryDecodeURIComponent(storySegment)) : undefined,
+    storyId: storySegment ? tryDecodeURIComponent(storySegment) : undefined,
   };
 };

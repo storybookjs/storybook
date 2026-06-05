@@ -27,7 +27,6 @@ import {
 import {
   buildReviewChangesDetailHref,
   buildReviewChangesSummaryHref,
-  normalizeReviewStoryId,
   parseReviewChangesDetailLocation,
 } from './review-navigation.ts';
 import type { ReviewState } from './review-state.ts';
@@ -66,14 +65,7 @@ const ReviewPageContent: FC<{ search: string }> = ({ search }) => {
 
   const emit = useChannel({
     [EVENTS.DISPLAY_REVIEW]: (next: ReviewState) => {
-      const normalizedState: ReviewState = {
-        ...next,
-        collections: next.collections.map((collection) => ({
-          ...collection,
-          storyIds: collection.storyIds.map((storyId) => normalizeReviewStoryId(storyId)),
-        })),
-      };
-      setState(normalizedState);
+      setState(next);
       // A fresh review resets staleness; a replayed (already-stale) one restores it.
       setIsStale(!!next.stale);
     },

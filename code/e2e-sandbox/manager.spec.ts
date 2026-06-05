@@ -248,8 +248,11 @@ test.describe('Manager UI', () => {
       await label.fill('Hello world');
       await expect(sbPage.previewRoot().locator('button')).toContainText('Hello world');
 
-      // Wait for args to appear in the URL
-      await page.waitForURL((url) => url.search.includes('args=label:Hello+world'));
+      // Wait for args to appear in the URL (robust URL-decoding logic)
+      await page.waitForURL((url) => {
+        const args = new URL(url).searchParams.get('args');
+        return !!args && decodeURIComponent(args).includes('label:Hello world');
+      });
 
       // Click "Open in isolation mode" and capture the new window
       const isolationButton = page.locator('[aria-label="Open in isolation mode"]');
@@ -260,8 +263,8 @@ test.describe('Manager UI', () => {
       await newPage.waitForLoadState();
 
       // The new window URL should contain the args
-      expect(newPage.url()).toContain('args=');
-      expect(newPage.url()).toContain('label:Hello+world');
+      const newArgs = new URL(newPage.url()).searchParams.get('args');
+      expect(decodeURIComponent(newArgs || '')).toContain('label:Hello world');
 
       // The new page is the iframe.html itself, so the story root is directly in the page
       await expect(newPage.locator('#storybook-root button')).toContainText('Hello world');

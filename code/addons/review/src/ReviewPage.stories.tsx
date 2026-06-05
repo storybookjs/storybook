@@ -69,7 +69,6 @@ const managerApi: API = {
 const reviewState: ReviewState = {
   title: 'Manager settings polish',
   description: 'Updated settings views and spacing.',
-  branchName: 'feat/review-page',
   // A baseline exists, so the detail screen renders the baseline/latest
   // comparison for stories that aren't newly added.
   hasBaseline: true,

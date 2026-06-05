@@ -75,58 +75,11 @@ describe('addon-review experimental_serverChannel', () => {
     vi.restoreAllMocks();
   });
 
-  it('on PUSH_REVIEW, enriches with git branch, caches, and broadcasts DISPLAY_REVIEW', async () => {
+  it('on PUSH_REVIEW, stamps createdAt, caches, and broadcasts DISPLAY_REVIEW', async () => {
     const { channel, emitted } = createMockChannel();
-    const resolveBranch = vi.fn().mockResolvedValue('feature/badge-pink');
 
-    await experimental_serverChannel(channel, {} as Options, { resolveBranch });
+    await experimental_serverChannel(channel, {} as Options, {});
     await (channel as any).fire(EVENTS.PUSH_REVIEW, sampleReview);
-
-    expect(resolveBranch).toHaveBeenCalledTimes(1);
-    expect(emitted).toEqual([
-      {
-        event: EVENTS.DISPLAY_REVIEW,
-        payload: { ...sampleReview, branchName: 'feature/badge-pink', createdAt: NOW },
-      },
-    ]);
-  });
-
-  it('on PUSH_REVIEW with no resolvable branch (e.g. non-git target), broadcasts unchanged', async () => {
-    const { channel, emitted } = createMockChannel();
-    const resolveBranch = vi.fn().mockResolvedValue(undefined);
-
-    await experimental_serverChannel(channel, {} as Options, { resolveBranch });
-    await (channel as any).fire(EVENTS.PUSH_REVIEW, sampleReview);
-
-    expect(emitted).toEqual([
-      { event: EVENTS.DISPLAY_REVIEW, payload: { ...sampleReview, createdAt: NOW } },
-    ]);
-  });
-
-  it('overwrites an agent-supplied branchName with the locally resolved one', async () => {
-    const { channel, emitted } = createMockChannel();
-    const resolveBranch = vi.fn().mockResolvedValue('local/branch');
-    const payloadWithBranch: ReviewState = { ...sampleReview, branchName: 'agent/explicit' };
-
-    await experimental_serverChannel(channel, {} as Options, { resolveBranch });
-    await (channel as any).fire(EVENTS.PUSH_REVIEW, payloadWithBranch);
-
-    expect(resolveBranch).toHaveBeenCalledTimes(1);
-    expect(emitted).toEqual([
-      {
-        event: EVENTS.DISPLAY_REVIEW,
-        payload: { ...sampleReview, branchName: 'local/branch', createdAt: NOW },
-      },
-    ]);
-  });
-
-  it('strips an agent-supplied branchName when the local branch is unresolvable', async () => {
-    const { channel, emitted } = createMockChannel();
-    const resolveBranch = vi.fn().mockResolvedValue(undefined);
-    const payloadWithBranch: ReviewState = { ...sampleReview, branchName: 'agent/explicit' };
-
-    await experimental_serverChannel(channel, {} as Options, { resolveBranch });
-    await (channel as any).fire(EVENTS.PUSH_REVIEW, payloadWithBranch);
 
     expect(emitted).toEqual([
       { event: EVENTS.DISPLAY_REVIEW, payload: { ...sampleReview, createdAt: NOW } },
@@ -135,17 +88,13 @@ describe('addon-review experimental_serverChannel', () => {
 
   it('drops an agent-supplied stale flag so a fresh push starts non-stale', async () => {
     const { channel, emitted } = createMockChannel();
-    const resolveBranch = vi.fn().mockResolvedValue('feature/badge-pink');
     const payloadWithStale: ReviewState = { ...sampleReview, stale: true };
 
-    await experimental_serverChannel(channel, {} as Options, { resolveBranch });
+    await experimental_serverChannel(channel, {} as Options, {});
     await (channel as any).fire(EVENTS.PUSH_REVIEW, payloadWithStale);
 
     expect(emitted).toEqual([
-      {
-        event: EVENTS.DISPLAY_REVIEW,
-        payload: { ...sampleReview, branchName: 'feature/badge-pink', createdAt: NOW },
-      },
+      { event: EVENTS.DISPLAY_REVIEW, payload: { ...sampleReview, createdAt: NOW } },
     ]);
     expect((emitted[0].payload as ReviewState).stale).toBeUndefined();
   });
@@ -153,28 +102,22 @@ describe('addon-review experimental_serverChannel', () => {
   it('on REQUEST_REVIEW with no cached state, emits nothing', async () => {
     const { channel, emitted } = createMockChannel();
 
-    await experimental_serverChannel(channel, {} as Options, {
-      resolveBranch: vi.fn().mockResolvedValue(undefined),
-    });
+    await experimental_serverChannel(channel, {} as Options, {});
     await (channel as any).fire(EVENTS.REQUEST_REVIEW);
 
     expect(emitted).toEqual([]);
   });
 
-  it('on REQUEST_REVIEW after a PUSH_REVIEW, replays the cached enriched payload', async () => {
+  it('on REQUEST_REVIEW after a PUSH_REVIEW, replays the cached payload', async () => {
     const { channel, emitted } = createMockChannel();
-    const resolveBranch = vi.fn().mockResolvedValue('feature/badge-pink');
 
-    await experimental_serverChannel(channel, {} as Options, { resolveBranch });
+    await experimental_serverChannel(channel, {} as Options, {});
     await (channel as any).fire(EVENTS.PUSH_REVIEW, sampleReview);
     emitted.length = 0;
     await (channel as any).fire(EVENTS.REQUEST_REVIEW);
 
     expect(emitted).toEqual([
-      {
-        event: EVENTS.DISPLAY_REVIEW,
-        payload: { ...sampleReview, branchName: 'feature/badge-pink', createdAt: NOW },
-      },
+      { event: EVENTS.DISPLAY_REVIEW, payload: { ...sampleReview, createdAt: NOW } },
     ]);
   });
 
@@ -182,7 +125,6 @@ describe('addon-review experimental_serverChannel', () => {
     const { channel } = createMockChannel();
 
     await experimental_serverChannel(channel, {} as Options, {
-      resolveBranch: vi.fn().mockResolvedValue(undefined),
       subscribeToSourceFileChanges: vi.fn(() => () => {}),
     });
 
@@ -196,7 +138,6 @@ describe('addon-review experimental_serverChannel', () => {
       const { channel, emitted } = createMockChannel();
       const { subscribeToSourceFileChanges, fireChange } = createMockSubscribe();
       await experimental_serverChannel(channel, {} as Options, {
-        resolveBranch: vi.fn().mockResolvedValue('feature/badge-pink'),
         subscribeToSourceFileChanges,
       });
       return { channel, emitted, fireChange };
@@ -223,7 +164,6 @@ describe('addon-review experimental_serverChannel', () => {
           event: EVENTS.DISPLAY_REVIEW,
           payload: {
             ...sampleReview,
-            branchName: 'feature/badge-pink',
             createdAt: NOW,
             stale: true,
           },

@@ -20,12 +20,11 @@ Event names live in `src/constants.ts` and are the cross-repo contract with
 `@storybook/addon-mcp`. They must match the emitter's constants exactly.
 
 - `…/push-review` — agent → server: a new review payload.
-- `…/display-review` — server → tabs: broadcast a review (branch-enriched).
+- `…/display-review` — server → tabs: broadcast a review (`createdAt`-stamped).
 - `…/request-review` — tab → server: replay the cached review (on mount).
 
 ## Review state shape
 
 See `src/review-state.ts`. It is a duplicate of the canonical valibot schema
 that lives in the MCP addon; this side only renders, so it needs the type, not
-the validator. The `branchName` field is resolved server-side and is not
-trusted from the incoming agent payload.
+the validator.

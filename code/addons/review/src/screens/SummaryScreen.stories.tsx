@@ -6,7 +6,6 @@ import { SummaryScreen } from './SummaryScreen.tsx';
 
 const minimal: ReviewState = {
   title: 'Button prop rename',
-  branchName: 'update/button-styles',
   description:
     'Renamed the Button `appearance` prop to `variant` and updated all internal usages. No visual change is expected.',
   collections: [
@@ -20,7 +19,6 @@ const minimal: ReviewState = {
 
 const full: ReviewState = {
   title: 'Primary button visual refresh',
-  branchName: 'update/button-weight-and-padding',
   description:
     'Made the primary/solid Button bolder: font-weight 700 → 800 and larger padding. Outline and ghost variants are unchanged. Start with Variants and Sizes/Paddings, then sanity-check ToggleButton and ReviewChangesButton.',
   changedFiles: ['code/core/src/components/components/Button/Button.tsx'],
@@ -42,7 +40,6 @@ const full: ReviewState = {
 
 const largeCascade: ReviewState = {
   title: 'Theme token cascade review',
-  branchName: 'refactor/theme-tokens',
   description:
     'Refactored the shared theme tokens. Change-detection flagged a broad cascade; most consumers are transitive and unlikely to shift visibly. Spot-check the atomic and consumer tiers first.',
   changedFiles: ['code/core/src/theming/tokens.ts', 'code/core/src/theming/create.ts'],
@@ -115,7 +112,6 @@ const largeCascade: ReviewState = {
 
 const pagesAndBench: ReviewState = {
   title: 'Page components and bench analyzer',
-  branchName: 'chore/review-pages-and-bench',
   description:
     'Validating the review grid with manager page stories alongside the bench analyzer story.',
   collections: [
@@ -195,7 +191,6 @@ const atomicChange: ReviewState = {
 
 const manyCollections: ReviewState = {
   title: 'Large review surface: many collections and stories',
-  branchName: 'perf/review-large-dataset',
   description:
     'Stress-test the Summary screen with many collections and many story previews using real stories from the internal Storybook.',
   collections: [

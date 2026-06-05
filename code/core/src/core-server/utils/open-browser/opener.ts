@@ -134,7 +134,6 @@ function startBrowserProcess(browser: string | undefined, url: string, args: str
       'Google Chrome Dev',
       'Google Chrome Beta',
       'Google Chrome',
-      'Microsoft Edge',
       'Brave Browser',
       'Vivaldi',
       'Chromium',

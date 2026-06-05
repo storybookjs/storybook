@@ -10,6 +10,18 @@ import { BrowserEnvError, openBrowser } from './opener.ts';
 vi.mock('open', { spy: true });
 vi.mock('cross-spawn', { spy: true });
 
+// eslint-disable-next-line no-var
+var mockExecSync: ReturnType<typeof vi.fn>;
+vi.mock('node:child_process', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('node:child_process')>();
+  mockExecSync = vi.fn();
+  return { ...actual, execSync: mockExecSync };
+});
+vi.mock('../../../common/index.ts', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../../common/index.ts')>();
+  return { ...actual, resolvePackageDir: () => '/mock/storybook' };
+});
+
 describe('openBrowser BROWSER script handling', () => {
   const originalEnv = { ...process.env };
   const originalArgv = [...process.argv];
@@ -104,6 +116,77 @@ describe('openBrowser BROWSER script handling', () => {
     expect(vi.mocked(spawn)).not.toHaveBeenCalled();
     expect(vi.mocked(open)).toHaveBeenCalledWith('http://localhost:6006/', {
       app: { name: 'google chrome', arguments: ['--incognito'] },
+      wait: false,
+      url: true,
+    });
+  });
+});
+
+describe('openBrowser macOS Chromium probing', () => {
+  const originalEnv = { ...process.env };
+  let platformSpy: ReturnType<typeof vi.spyOn>;
+
+  beforeEach(() => {
+    vi.resetAllMocks();
+    platformSpy = vi.spyOn(process, 'platform', 'get').mockReturnValue('darwin');
+    process.env = { ...originalEnv };
+    delete process.env.BROWSER;
+
+    vi.mocked(open).mockImplementation(() => {
+      return Promise.resolve({} as unknown as Awaited<ReturnType<typeof open>>);
+    });
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+    process.env = originalEnv;
+  });
+
+  it('does not probe for Microsoft Edge via ps or osascript on default macOS path', () => {
+    mockExecSync.mockImplementation(() => {
+      throw new Error('not found');
+    });
+
+    openBrowser('http://localhost:6006/');
+
+    const psCalls = mockExecSync.mock.calls.filter(
+      (call) => typeof call[0] === 'string' && call[0].includes('Microsoft Edge')
+    );
+    expect(psCalls).toHaveLength(0);
+  });
+
+  it('uses AppleScript for a running Chromium browser (Google Chrome) on macOS', () => {
+    mockExecSync.mockImplementation((...args: any[]) => {
+      const cmd = args[0] as string;
+      if (cmd === 'ps cax | grep "Google Chrome"') {
+        return Buffer.from('');
+      }
+      if (cmd.startsWith('osascript')) {
+        return Buffer.from('');
+      }
+      throw new Error('not found');
+    });
+
+    const result = openBrowser('http://localhost:6006/');
+
+    expect(result).toBe(true);
+    const osascriptCalls = mockExecSync.mock.calls.filter(
+      (call) => typeof call[0] === 'string' && call[0].startsWith('osascript')
+    );
+    expect(osascriptCalls).toHaveLength(1);
+    expect(osascriptCalls[0][0]).toContain('Google Chrome');
+  });
+
+  it('falls back to open when no probed browser is running on macOS', () => {
+    mockExecSync.mockImplementation(() => {
+      throw new Error('not found');
+    });
+
+    const result = openBrowser('http://localhost:6006/');
+
+    expect(result).toBe(true);
+    expect(vi.mocked(open)).toHaveBeenCalledWith('http://localhost:6006/', {
+      app: undefined,
       wait: false,
       url: true,
     });

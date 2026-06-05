@@ -7,8 +7,6 @@ import { globalsNameValueMap } from './globals/runtime.ts';
 import { maybeSetupPreviewNavigator } from './preview-navigator.ts';
 import { prepareForTelemetry } from './utils.ts';
 
-const queuedTelemetryErrors: ReturnType<typeof prepareForTelemetry>[] = [];
-
 function errorListener(args: any) {
   const error = args.error || args;
   if (error.fromStorybook) {
@@ -30,19 +28,11 @@ export function setup() {
 
   global.sendTelemetryError = (error: any) => {
     const channel = getChannel();
-    const preparedError = prepareForTelemetry(error);
-
     if (!channel) {
-      queuedTelemetryErrors.push(preparedError);
       return;
     }
 
-    while (queuedTelemetryErrors.length > 0) {
-      const queuedError = queuedTelemetryErrors.shift();
-      channel.emit(TELEMETRY_ERROR, queuedError);
-    }
-
-    channel.emit(TELEMETRY_ERROR, preparedError);
+    channel.emit(TELEMETRY_ERROR, prepareForTelemetry(error));
   };
 
   /**

@@ -458,7 +458,7 @@ export class PreviewWithSelection<TRenderer extends Renderer> extends Preview<TR
       );
     } else {
       this.currentRender.renderToElement(
-        this.view.prepareForDocs(),
+        this.view.prepareForDocs({ scrollReset: storyIdChanged || viewModeChanged }),
         // This argument is used for docs, which is currently only compatible with HTMLElements
         this.renderStoryToElement.bind(this) as any
       );

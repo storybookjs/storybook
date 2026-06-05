@@ -57,7 +57,6 @@ const Subtitle = styled.div(({ theme }) => ({
   display: 'flex',
   alignItems: 'center',
   gap: 5,
-  minWidth: 0,
   color: theme.textMutedColor,
   fontSize: theme.typography.size.s2,
   lineHeight: '20px',

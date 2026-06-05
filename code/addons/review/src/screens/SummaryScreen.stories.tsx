@@ -1,6 +1,7 @@
 import { expect, within } from 'storybook/test';
 
 import preview from '../../../../.storybook/preview.tsx';
+import type { StoryInfo } from '../components/CollectionGrid.tsx';
 import type { ReviewState } from '../review-state.ts';
 import { SummaryScreen } from './SummaryScreen.tsx';
 
@@ -393,10 +394,34 @@ const manyCollections: ReviewState = {
   ],
 };
 
+const titleCase = (value: string) =>
+  value
+    .split(/[-/]/)
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(' ');
+
+// Stand-in for the Storybook index: every story referenced by a fixture resolves
+// to a title + name so the grid renders it (stories with no entry are skipped).
+const demoStoryInfo: Record<string, StoryInfo> = {};
+for (const state of [minimal, full, largeCascade, pagesAndBench, atomicChange, manyCollections]) {
+  for (const collection of state.collections) {
+    for (const id of collection.storyIds) {
+      if (!demoStoryInfo[id]) {
+        const [componentId, ...rest] = id.split('--');
+        demoStoryInfo[id] = {
+          title: titleCase(componentId),
+          name: titleCase(rest.join('--')) || 'Story',
+        };
+      }
+    }
+  }
+}
+
 const meta = preview.meta({
   component: SummaryScreen,
   parameters: { layout: 'fullscreen' },
-  args: { getStoryPreviewHref },
+  args: { getStoryPreviewHref, storyInfo: demoStoryInfo },
 });
 
 export const Empty = meta.story({

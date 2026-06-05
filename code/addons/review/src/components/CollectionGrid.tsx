@@ -420,7 +420,7 @@ const StoryPreviewCell: FC<{
       <Frame
         as={href ? 'a' : 'div'}
         href={href}
-        ref={hostRef}
+        ref={hostRef as React.RefObject<HTMLAnchorElement>}
         aria-label={href ? `Review story ${storyId}` : undefined}
         onMouseEnter={forceStartCurrent}
         onFocus={forceStartCurrent}

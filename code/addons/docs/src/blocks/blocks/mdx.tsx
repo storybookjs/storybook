@@ -209,7 +209,7 @@ const HeaderWithOcticonAnchor: FC<PropsWithChildren<HeaderWithOcticonAnchorProps
             variant="ghost"
             size="small"
             padding="small"
-            ariaLabel="Copy heading URL to address bar"
+            ariaLabel="Scroll to heading"
           >
             <a
               href={hash}

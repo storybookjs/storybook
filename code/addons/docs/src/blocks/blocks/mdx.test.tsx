@@ -147,24 +147,26 @@ describe('HeaderMdx heading anchor scrolling', () => {
     const originalScrollIntoView = Element.prototype.scrollIntoView;
     Element.prototype.scrollIntoView = scrollIntoView;
 
-    const { container } = render(
-      <HeaderMdx as="h2" id="my-heading">
-        My Heading
-      </HeaderMdx>
-    );
+    try {
+      const { container } = render(
+        <HeaderMdx as="h2" id="my-heading">
+          My Heading
+        </HeaderMdx>
+      );
 
-    const anchor = container.querySelector('a[href="#my-heading"]');
-    expect(anchor).toBeTruthy();
+      const anchor = container.querySelector('a[href="#my-heading"]');
+      expect(anchor).toBeTruthy();
 
-    fireEvent.click(anchor!);
+      fireEvent.click(anchor!);
 
-    expect(emitMock).not.toHaveBeenCalled();
-    expect(scrollIntoView).toHaveBeenCalledWith({
-      behavior: 'smooth',
-      block: 'start',
-      inline: 'nearest',
-    });
-
-    Element.prototype.scrollIntoView = originalScrollIntoView;
+      expect(emitMock).not.toHaveBeenCalled();
+      expect(scrollIntoView).toHaveBeenCalledWith({
+        behavior: 'smooth',
+        block: 'start',
+        inline: 'nearest',
+      });
+    } finally {
+      Element.prototype.scrollIntoView = originalScrollIntoView;
+    }
   });
 });

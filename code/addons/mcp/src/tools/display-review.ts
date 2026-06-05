@@ -199,7 +199,11 @@ Always include the returned reviewUrl in your final user-facing response so the 
 					content: [
 						{
 							type: 'text' as const,
-							text: `Review applied: ${collectionCount} collection${collectionCount === 1 ? '' : 's'}, ${storyCount} stor${storyCount === 1 ? 'y' : 'ies'}. Storybook is already running at ${customContext.origin} — reuse it. Do NOT start another Storybook or change its port to view this review; the running instance already serves it. Next step: if a browser-preview tool is available in this session (e.g. preview_eval or an equivalent navigate tool), open ${reviewUrl} in it so the user sees the review immediately. End your final response with a dedicated review section as the very last thing: its own heading on a line by itself (e.g. \`## 👀 Review your changes\`), then the review page as a markdown link \`[Open the Storybook review page](${reviewUrl})\`. Put nothing after it — not a trailing sentence the user has to hunt for.`,
+							text: `Review applied: ${collectionCount} collection${collectionCount === 1 ? '' : 's'}, ${storyCount} stor${storyCount === 1 ? 'y' : 'ies'}. Storybook is already running at ${customContext.origin} — reuse it. Do NOT start another Storybook or change its port to view this review; the running instance already serves it.
+
+Two things you must do now, both of them:
+1. **Open ${reviewUrl} yourself in your preview browser.** If you have any browser-preview or navigate tool in this session (e.g. preview_eval or an equivalent), call it on this URL so the review opens in your preview window immediately. Don't merely print the link and stop — actually open it.
+2. **Show the link to the user too.** End your final response with a dedicated review section as the very last thing: its own heading on a line by itself (e.g. \`## 👀 Review your changes\`), then the review page as a markdown link \`[Open the Storybook review page](${reviewUrl})\`. Put nothing after it — not a trailing sentence the user has to hunt for. The user needs to see this link even after you've opened it yourself.`,
 						},
 					],
 					structuredContent: { reviewUrl },

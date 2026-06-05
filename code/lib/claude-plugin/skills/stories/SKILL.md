@@ -36,7 +36,9 @@ working around it. Treat any shortcut as a failure of this workflow.
   detached process. A backgrounded dev server is not a verifiable preview and
   does NOT satisfy this workflow.
 - You MUST NOT report a story as done until its preview link has been produced
-  (Step 4). An unverified story is not a deliverable.
+  and verified (Step 4) AND the review page has been published and opened
+  (Step 5). An unverified story, or a change with no review page, is not a
+  deliverable.
 - Any Storybook dev server URL you show the user (a `preview-stories` URL, a
   story permalink, the Storybook root, an `iframe.html` link — any
   `http(s)://…` pointing at the running Storybook) MUST first be navigated to in
@@ -104,5 +106,33 @@ it in the preview browser and confirm the story renders without errors.
 
 **Gate:** Every URL you put in your final response MUST have been opened in the
 preview browser first — no exceptions, per the Absolute rules. Do NOT report the
-story as done until each preview link has been navigated and verified. Include
-the verified preview URLs in your final user-facing response.
+story as done until each preview link has been navigated and verified.
+
+## Step 5 — Publish the review page
+
+Once the stories render cleanly, call **display-review** so the user can review
+exactly what changed in one place. This tool does NOT just return a link — it
+publishes a curated **review page** inside the already-running Storybook and
+returns its `reviewUrl`. The review page IS the deliverable; the raw
+`preview-stories` URLs from Step 4 are for your own verification.
+
+- Group the stories you touched into `collections` covering the **visual
+  cascade** of the change: the changed component itself, the components that
+  import it, and the pages/containers that render them. Don't ship a
+  single-collection review unless the component is genuinely standalone.
+- Every `storyId` you pass MUST come from a tool result this session
+  (`get-changed-stories`, `get-stories-by-component`, or `list-all-documentation`).
+  `display-review` validates every ID against the live index and rejects the
+  whole review if any are unknown — never invent IDs.
+- Provide `title`, `description`, and `changedFiles` (the files you edited, most
+  central first).
+
+Because the `reviewUrl` is a page, you MUST navigate the preview browser to it
+(just like any other Storybook URL, per the Absolute rules) — do not merely
+print it. Then surface it to the user as the very last thing in your response,
+under its own heading (e.g. `## 👀 Review your changes`) as a markdown link, with
+nothing after it.
+
+**Gate:** Do NOT report the task as done until `display-review` has succeeded,
+you have opened the returned `reviewUrl` in the preview browser, and that link is
+the final element of your user-facing response.

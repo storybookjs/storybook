@@ -31,7 +31,8 @@ working around it. Treat any shortcut as a failure of this workflow.
   `get-storybook-story-instructions` output is the only acceptable source for
   imports, structure, and conventions.
 - You MUST NOT report a story as done until its preview link has been produced
-  (Step 4). An unverified story is not a deliverable.
+  (Step 4) AND the review page has been published and opened (Step 5). An
+  unverified story, or a change with no review page, is not a deliverable.
 
 ## Step 1 — Load the rules (before touching any story file)
 
@@ -67,10 +68,38 @@ Create or edit the story strictly following the Step 1 instructions.
 `get-storybook-story-instructions` output. If anything is unclear, re-read it
 rather than guessing.
 
-## Step 4 — Verify and share links
+## Step 4 — Verify
 
-After changes, call **preview-stories** and include the relevant preview links in
-your final user-facing response.
+After changes, call **preview-stories** and open the returned links in Codex's
+in-app browser to confirm the stories render without errors. These links are for
+your own verification.
 
-**Gate:** Do NOT claim the task is complete until preview links exist for the
+**Gate:** Do NOT proceed to Step 5 until preview links exist and render for the
 stories you created or changed.
+
+## Step 5 — Publish the review page
+
+Once the stories render cleanly, call **display-review** so the user can review
+exactly what changed in one place. This tool does NOT just return a link — it
+publishes a curated **review page** inside the already-running Storybook and
+returns its `reviewUrl`. The review page IS the deliverable.
+
+- Group the stories you touched into `collections` covering the **visual
+  cascade** of the change: the changed component itself, the components that
+  import it, and the pages/containers that render them. Don't ship a
+  single-collection review unless the component is genuinely standalone.
+- Every `storyId` you pass MUST come from a tool result this session
+  (`get-changed-stories`, `get-stories-by-component`, or `list-all-documentation`).
+  `display-review` validates every ID against the live index and rejects the
+  whole review if any are unknown — never invent IDs.
+- Provide `title`, `description`, and `changedFiles` (the files you edited, most
+  central first).
+
+Because the `reviewUrl` is a page, open it in Codex's in-app browser — do not
+merely print it. Then surface it to the user as the very last thing in your
+response, under its own heading (e.g. `## 👀 Review your changes`) as a markdown
+link, with nothing after it.
+
+**Gate:** Do NOT claim the task is complete until `display-review` has succeeded,
+you have opened the returned `reviewUrl`, and that link is the final element of
+your user-facing response.

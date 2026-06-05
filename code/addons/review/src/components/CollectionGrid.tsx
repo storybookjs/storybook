@@ -101,12 +101,9 @@ export interface StoryInfo {
   name: string;
 }
 
-// Column count is driven entirely by container width — 1 column on narrow
-// (mobile) widths up to 4 on wide screens — with each cell clamped to 400px so
-// a lone preview never stretches across the card. Each band also caps the grid
-// to two rows: once more stories exist than fit, the overflow cells are hidden
-// and a "Review all" cell takes the last visible slot. Both behaviors are pure
-// CSS (`:has()` + `:nth-child`), so no layout measurement runs in JS.
+// Per-breakpoint grid: `cols` columns (each cell clamped to 400px) capped at
+// two rows. Overflow beyond the cap is hidden and a "Review all" cell takes the
+// last slot — all via CSS (`:has()` + `:nth-child`), no JS measurement.
 const band = (cols: number) => {
   const cap = cols * 2;
   return {
@@ -135,7 +132,8 @@ const Grid = styled.div({
   // no two-row cap (every story is shown).
   gridTemplateColumns: 'minmax(0, 400px)',
   // Bands are mutually exclusive (ranged) so a narrower band's overflow rules
-  // never bleed into a wider one.
+  // never bleed into a wider one. The .98 upper bounds sit just below the next
+  // band's integer `min-width` so the two never both match at the boundary.
   '@container review-grid (max-width: 629.98px)': band(1),
   '@container review-grid (min-width: 630px) and (max-width: 844.98px)': band(2),
   '@container review-grid (min-width: 845px) and (max-width: 1259.98px)': band(3),

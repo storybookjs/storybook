@@ -1,10 +1,10 @@
 // @vitest-environment happy-dom
 import { renderHook, waitFor } from '@testing-library/react';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { clearChannel, installNoopChannel } from '../../channels/channel-slot.ts';
 
-import { mutableRecordLookupServiceDef } from './fixtures.ts';
+import { mutableRecordLookupServiceDef, undefinedOutputQueryServiceDef } from './fixtures.ts';
 import { clearRegistry, registerService } from './service-registry.ts';
 import { useServiceQuery } from './use-service-query.ts';
 
@@ -112,6 +112,26 @@ describe('useServiceQuery', () => {
     await waitFor(() => {
       expect(result.current).toEqual({ x: '1', y: '2' });
     });
+  });
+
+  it('treats an undefined query output as initialised, not as a recompute sentinel', () => {
+    const service = registerService(undefinedOutputQueryServiceDef);
+    // Re-subscription happens only when the lazy-init subscription key changes. If `undefined`
+    // output were mistaken for "uninitialised", the key would be rebuilt on every render and the
+    // hook would resubscribe each time.
+    const subscribeSpy = vi.spyOn(service.queries.getNothing, 'subscribe');
+
+    const { result, rerender } = renderHook(() => useServiceQuery(service, 'getNothing'));
+
+    expect(result.current).toBeUndefined();
+
+    const subscribeCallsAfterMount = subscribeSpy.mock.calls.length;
+
+    rerender();
+    rerender();
+
+    expect(result.current).toBeUndefined();
+    expect(subscribeSpy.mock.calls.length).toBe(subscribeCallsAfterMount);
   });
 
   it('maintains referential stability when result is deeply equal', async () => {

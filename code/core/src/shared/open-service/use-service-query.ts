@@ -57,6 +57,8 @@ export function useServiceQuery<
   // Initialise synchronously so `getSnapshot` always returns a value on the first render,
   // before the service's async first-emission microtask fires. Lazy-init avoids calling
   // `queryFn(input)` on every render — only when the ref is empty or the subscription changes.
+  // `subscriptionKeyRef` (null until the first run) is the initialisation sentinel, not the
+  // snapshot value: a query whose output is legitimately `undefined` must not look uninitialised.
   // Compare inputs with `isEqual`, not reference identity, so inline object literals at the
   // call site do not re-run the handler on every render.
   const subscriptionKeyRef = React.useRef<{
@@ -66,9 +68,9 @@ export function useServiceQuery<
   const snapshotRef = React.useRef<TOutput | undefined>(undefined);
 
   if (
-    snapshotRef.current === undefined ||
-    subscriptionKeyRef.current?.queryFn !== queryFn ||
-    !isEqual(subscriptionKeyRef.current?.input, input)
+    subscriptionKeyRef.current === null ||
+    subscriptionKeyRef.current.queryFn !== queryFn ||
+    !isEqual(subscriptionKeyRef.current.input, input)
   ) {
     subscriptionKeyRef.current = { queryFn, input };
     snapshotRef.current = queryFn(input);

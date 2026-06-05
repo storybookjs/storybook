@@ -88,9 +88,11 @@ export function parseStampedSnapshot(payload: unknown): StampedSnapshot | null {
 
   if (
     typeof serviceId !== 'string' ||
-    typeof version !== 'number' ||
     typeof clientId !== 'string' ||
-    !isPlainObject(state)
+    !isPlainObject(state) ||
+    typeof version !== 'number' ||
+    !Number.isSafeInteger(version) ||
+    version < 0
   ) {
     return null;
   }

@@ -198,6 +198,8 @@ export interface SummaryScreenProps {
   state: ReviewState | null;
   /** Story id → component title + name, resolved from the Storybook index. */
   storyInfo?: Record<string, StoryInfo>;
+  /** Builds the (frozen) preview iframe src for a story thumbnail. */
+  getStoryPreviewHref: (storyId: string) => string;
   /** When true, render the "this review may be stale" banner at the top. */
   isStale?: boolean;
 }
@@ -205,6 +207,7 @@ export interface SummaryScreenProps {
 export const SummaryScreen: FC<SummaryScreenProps> = ({
   state,
   storyInfo = {},
+  getStoryPreviewHref,
   isStale = false,
 }) => {
   const [search, setSearch] = useState('');
@@ -381,6 +384,7 @@ export const SummaryScreen: FC<SummaryScreenProps> = ({
                         getStoryHref={(storyId) =>
                           buildReviewChangesDetailHref({ collectionIndex: index, storyId })
                         }
+                        getStoryPreviewHref={getStoryPreviewHref}
                       />
                     </Collapsible>
                   </Card>

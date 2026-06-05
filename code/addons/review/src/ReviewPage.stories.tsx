@@ -64,6 +64,10 @@ const managerApi: API = {
   emit: emitMock,
   getIsNavShown: () => true,
   toggleNav: toggleNavMock,
+  getStoryHrefs: (storyId: string, options?: { freeze?: boolean }) => ({
+    managerHref: `?path=/story/${storyId}`,
+    previewHref: `iframe.html?id=${storyId}&viewMode=story${options?.freeze ? '&freeze=finished' : ''}`,
+  }),
 } as unknown as API;
 
 const reviewState: ReviewState = {

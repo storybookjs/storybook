@@ -4,6 +4,9 @@ import preview from '../../../../.storybook/preview.tsx';
 import type { ReviewState } from '../review-state.ts';
 import { SummaryScreen } from './SummaryScreen.tsx';
 
+const getStoryPreviewHref = (storyId: string) =>
+  `iframe.html?id=${encodeURIComponent(storyId)}&viewMode=story&freeze=finished`;
+
 const minimal: ReviewState = {
   title: 'Button prop rename',
   description:
@@ -393,7 +396,7 @@ const manyCollections: ReviewState = {
 const meta = preview.meta({
   component: SummaryScreen,
   parameters: { layout: 'fullscreen' },
-  args: {},
+  args: { getStoryPreviewHref },
 });
 
 export const Empty = meta.story({

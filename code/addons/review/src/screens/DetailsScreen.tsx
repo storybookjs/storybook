@@ -14,7 +14,6 @@ import {
 
 import { ReviewHeader } from '../components/ReviewHeader.tsx';
 import { PREVIEW_MODE_SESSION_KEY } from '../constants.ts';
-import { buildStorybookStoryHref } from '../review-navigation.ts';
 import { sessionStore } from '../session-store.ts';
 import { useBaselineComparison } from './useBaselineComparison.ts';
 
@@ -145,6 +144,10 @@ export interface DetailsScreenProps {
   backHref: string;
   previousHref: string;
   nextHref: string;
+  /** Preview iframe src for the latest (current) story. */
+  previewHref: string;
+  /** Manager href to open the story in the regular Storybook UI. */
+  storybookHref: string;
   componentTitle?: string;
   storyName?: string;
   /** When true, render the "this review may be stale" banner at the top. */
@@ -215,6 +218,8 @@ export const DetailsScreen = ({
   backHref,
   previousHref,
   nextHref,
+  previewHref,
+  storybookHref,
   componentTitle,
   storyName,
   isStale = false,
@@ -231,7 +236,7 @@ export const DetailsScreen = ({
   const isSingleUp = mode === 'single' || !showBaseline;
 
   const { baselineFrameRef, latestFrameRef, latestPreviewSrc, baselinePreviewSrc } =
-    useBaselineComparison(storyId, showBaseline);
+    useBaselineComparison(previewHref, showBaseline);
 
   // Persist the user's layout choice so it carries across navigation between
   // the detail and summary screens.
@@ -324,7 +329,7 @@ export const DetailsScreen = ({
               </a>
             </IconButton>
             <IconButton size="small" padding="small" ariaLabel="View in Storybook" asChild>
-              <a href={buildStorybookStoryHref(storyId)} target="_blank" rel="noreferrer">
+              <a href={storybookHref} target="_blank" rel="noreferrer">
                 <StorybookIcon />
               </a>
             </IconButton>

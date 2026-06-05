@@ -47,6 +47,8 @@ const meta = preview.meta({
     storyId: 'components-toolbar--basic',
     storyIndex: 1,
     totalStories: 3,
+    previewHref: 'iframe.html?id=components-toolbar--basic&viewMode=story',
+    storybookHref: '?path=/story/components-toolbar--basic',
     backHref: buildReviewChangesSummaryHref(),
     previousHref: buildReviewChangesDetailHref({
       collectionIndex: 0,

@@ -3,7 +3,6 @@ import React, { useCallback, useEffect, useRef, useState, type FC } from 'react'
 import { Button } from 'storybook/internal/components';
 import { styled } from 'storybook/theming';
 
-import { storyPreviewUrl } from '../review-navigation.ts';
 import { Highlight } from './Highlight.tsx';
 
 const PREVIEW_SCALE = 0.5;
@@ -263,7 +262,8 @@ const StoryPreviewCell: FC<{
   href?: string;
   info: StoryInfo;
   query: string;
-}> = ({ storyId, href, info, query }) => {
+  getPreviewHref: (storyId: string) => string;
+}> = ({ storyId, href, info, query, getPreviewHref }) => {
   const hostRef = useRef<HTMLElement>(null);
   const [isInView, setIsInView] = useState(false);
   // `src` stays unset until the scheduler starts this preview; the iframe only
@@ -326,7 +326,7 @@ const StoryPreviewCell: FC<{
       return undefined;
     }
     const task: PreviewTask = {
-      start: () => setSrc(storyPreviewUrl(storyId, { freeze: true })),
+      start: () => setSrc(getPreviewHref(storyId)),
       started: false,
       finished: false,
     };
@@ -337,7 +337,7 @@ const StoryPreviewCell: FC<{
       finishPreview(task);
       taskRef.current = null;
     };
-  }, [isInView, storyId]);
+  }, [isInView, storyId, getPreviewHref]);
 
   const finishCurrent = useCallback(() => {
     if (taskRef.current) {
@@ -404,6 +404,8 @@ const StoryPreviewCell: FC<{
 export interface CollectionGridProps {
   storyIds: string[];
   getStoryHref?: (storyId: string, storyIndex: number) => string | undefined;
+  /** Builds the (frozen) preview iframe src for a story thumbnail. */
+  getStoryPreviewHref: (storyId: string) => string;
   /** Persisted "review all" state from the parent list. */
   showAll?: boolean;
   /** Called when the user expands to "Review all". */
@@ -417,6 +419,7 @@ export interface CollectionGridProps {
 export const CollectionGrid: FC<CollectionGridProps> = ({
   storyIds,
   getStoryHref,
+  getStoryPreviewHref,
   showAll = false,
   onShowAll,
   storyInfo,
@@ -438,6 +441,7 @@ export const CollectionGrid: FC<CollectionGridProps> = ({
             href={getStoryHref?.(storyId, storyIndex)}
             info={info}
             query={query}
+            getPreviewHref={getStoryPreviewHref}
           />
         );
       })}

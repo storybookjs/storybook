@@ -1,4 +1,12 @@
-import React, { type FC, type ReactNode, useEffect, useMemo, useRef, useState } from 'react';
+import React, {
+  type FC,
+  type ReactNode,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 
 import {
   experimental_useStatusStore,
@@ -48,6 +56,13 @@ const ReviewPageContent: FC<{ search: string }> = ({ search }) => {
   const api = useStorybookApi();
   const { index } = useStorybookState();
   const navigate = useNavigate();
+
+  // Frozen preview thumbnails for the summary grid, built via the manager's
+  // canonical URL builder so they inherit globals like the rest of Storybook.
+  const getStoryPreviewHref = useCallback(
+    (storyId: string) => api.getStoryHrefs(storyId, { freeze: true }).previewHref,
+    [api]
+  );
 
   const emit = useChannel({
     [EVENTS.DISPLAY_REVIEW]: (next: ReviewState) => {
@@ -233,12 +248,15 @@ const ReviewPageContent: FC<{ search: string }> = ({ search }) => {
 
       const currentStoryId = detailStoryIds[currentStoryIndex];
       const currentStoryInfo = storyInfo[currentStoryId];
+      const currentStoryHrefs = api.getStoryHrefs(currentStoryId);
       detailScreen = (
         <DetailsScreen
           title={collection.title}
           storyId={currentStoryId}
           storyIndex={currentStoryIndex}
           totalStories={totalStories}
+          previewHref={currentStoryHrefs.previewHref}
+          storybookHref={currentStoryHrefs.managerHref}
           componentTitle={currentStoryInfo?.title}
           storyName={currentStoryInfo?.name}
           isStale={isStale}
@@ -279,7 +297,12 @@ const ReviewPageContent: FC<{ search: string }> = ({ search }) => {
           aria-hidden={hasDetailScreen || undefined}
           style={hasDetailScreen ? { pointerEvents: 'none' } : undefined}
         >
-          <SummaryScreen state={state} storyInfo={storyInfo} isStale={isStale} />
+          <SummaryScreen
+            state={state}
+            storyInfo={storyInfo}
+            getStoryPreviewHref={getStoryPreviewHref}
+            isStale={isStale}
+          />
         </div>
         {hasDetailScreen ? (
           <div style={{ position: 'absolute', inset: 0, zIndex: 1 }}>{detailScreen}</div>

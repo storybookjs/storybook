@@ -2,10 +2,11 @@
  * Shared sync primitives for the open-service multi-master protocol.
  *
  * Every runtime — server (Node), manager (top window), preview (iframe) — runs a full
- * `ServiceRuntime` and reconciles incoming state with the same two rules, so this module is the
- * single source of truth for all of them. The transport that moves snapshots on and off the channel
- * lives in `service-transport.ts`, which every `registerService` entrypoint drives through these
- * primitives (see `service-transport-leaf.test.ts` and `service-registration-sync.test.ts`).
+ * `ServiceRuntime` and reconciles incoming state with the same two rules — last-write-wins ordering
+ * and structural merge — so this module is the single source of truth for all of them. The
+ * transport that moves snapshots on and off the channel lives in `service-transport.ts`, which every
+ * `registerService` entrypoint drives through these primitives (see `service-transport-leaf.test.ts`
+ * and `service-registration-sync.test.ts`).
  *
  * ## 1. `isNewer` — last-write-wins ordering
  *
@@ -31,17 +32,7 @@
  * deletions propagate), arrays are replaced wholesale, primitives are assigned only when changed,
  * and the dangerous `__proto__`/`constructor`/`prototype` keys are skipped on both read and delete
  * so a hostile channel payload cannot pollute the prototype chain.
- *
- * ## 3. `validateSyncedState` — interop boundary
- *
- * When a service declares a `state` schema, every received snapshot is validated against it before
- * it is allowed to touch local state. Channel payloads are untrusted input; a peer that sends state
- * violating the contract must never be able to corrupt this runtime (and, on a relay hub, must
- * never be forwarded to other peers). Validation is synchronous on this hot path — an async schema
- * is treated as a misconfiguration and the snapshot is dropped.
  */
-
-import type { AnySchema } from './types.ts';
 
 /** Per-service last-write-wins stamp carried alongside every synced snapshot. */
 export type SyncStamp = {
@@ -172,33 +163,6 @@ export function deepReconcile(
   }
 }
 
-/**
- * Validates a received state snapshot against the service's optional `state` schema.
- *
- * Returns the validated snapshot, or `null` when validation cannot pass so the caller drops the
- * snapshot instead of corrupting (or relaying) bad state. A service without a `state` schema opts
- * out of validation and the snapshot is returned unchanged.
- *
- * Validation runs on the synchronous reconcile path, so a schema that returns a Promise is a
- * misconfiguration and the snapshot is dropped rather than silently applied unvalidated.
- */
-export function validateSyncedState(
-  schema: AnySchema | undefined,
-  state: Record<string, unknown>
-): Record<string, unknown> | null {
-  if (!schema) {
-    return state;
-  }
-
-  const result = schema['~standard'].validate(state);
-
-  if (result instanceof Promise || result.issues) {
-    return null;
-  }
-
-  return result.value as Record<string, unknown>;
-}
-
 /** In-place mutation of a runtime's live state object, as exposed by `commandSelf.setState`. */
 export type StateMutator = (state: Record<string, unknown>) => void;
 
@@ -219,8 +183,8 @@ export type SnapshotReconciler = {
    */
   advanceLocal(clientId: string): SyncStamp;
   /**
-   * Adopts an incoming snapshot iff it is strictly newer (LWW) and passes the optional state
-   * schema. Returns whether it was adopted, so relay hubs can re-broadcast only on a real advance.
+   * Adopts an incoming snapshot iff it is strictly newer (LWW). Returns whether it was adopted, so
+   * relay hubs can re-broadcast only on a real advance.
    */
   tryAdopt(incoming: SyncStamp, state: Record<string, unknown>): boolean;
 };
@@ -228,18 +192,16 @@ export type SnapshotReconciler = {
 /**
  * Builds a {@link SnapshotReconciler} bound to one runtime's state.
  *
- * @param stateSchema - Optional schema; received snapshots are validated against it before applying.
  * @param setState - The runtime's batched in-place mutator (`commandSelf.setState`), adapted to a
  *   plain record. Adopting goes through this rather than the wrapped commands so it never triggers
  *   a re-broadcast.
  * @param initialStamp - Starting stamp, typically `{ version: 0, clientId: <own id> }`.
  */
 export function createSnapshotReconciler(options: {
-  stateSchema: AnySchema | undefined;
   setState: (mutate: StateMutator) => void;
   initialStamp: SyncStamp;
 }): SnapshotReconciler {
-  const { stateSchema, setState, initialStamp } = options;
+  const { setState, initialStamp } = options;
   let localStamp = initialStamp;
 
   return {
@@ -257,15 +219,8 @@ export function createSnapshotReconciler(options: {
         return false;
       }
 
-      // Channel payloads are untrusted: validate against the state schema before touching state.
-      const validated = validateSyncedState(stateSchema, state);
-
-      if (!validated) {
-        return false;
-      }
-
       localStamp = { version: incoming.version, clientId: incoming.clientId };
-      setState((current) => deepReconcile(current, validated));
+      setState((current) => deepReconcile(current, state));
 
       return true;
     },

@@ -53,45 +53,6 @@ export const mutableRecordLookupServiceDef = defineService({
   },
 });
 
-export type SchemaCounterState = Record<string, number>;
-
-/** State schema validating the counter map exchanged between runtimes. */
-export const schemaCounterStateSchema = v.record(v.string(), v.number());
-
-/**
- * Fixture whose full state is validated by a `state` schema.
- *
- * Used to exercise validate-on-receive: a synced snapshot that violates the schema must be dropped
- * rather than allowed to corrupt local state (channel payloads are untrusted input).
- */
-export const schemaCounterServiceDef = defineService({
-  id: 'internal-fixture/schema-counter',
-  description:
-    'A counter map whose full state is validated by a schema on every cross-runtime sync.',
-  initialState: {} as SchemaCounterState,
-  state: schemaCounterStateSchema,
-  queries: {
-    getCount: {
-      description: 'Returns the counter for a key, or null when absent.',
-      input: v.object({ key: v.string() }),
-      output: v.nullable(v.number()),
-      handler: (input, ctx) => ctx.self.state[input.key] ?? null,
-    },
-  },
-  commands: {
-    setCount: {
-      description: 'Sets the counter for a key.',
-      input: v.object({ key: v.string(), value: v.number() }),
-      output: voidOutputSchema,
-      handler: (input, ctx) => {
-        ctx.self.setState((state) => {
-          state[input.key] = input.value;
-        });
-      },
-    },
-  },
-});
-
 export type PreloadedValueState = Record<string, string | undefined>;
 
 /** Service fixture that loads state from a command before returning it. */

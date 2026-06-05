@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { OpenServiceMissingChannelError } from '../../server-errors.ts';
-import { mutableRecordLookupServiceDef, schemaCounterServiceDef } from './fixtures.ts';
+import { mutableRecordLookupServiceDef } from './fixtures.ts';
 import {
   SERVICE_PATCHES,
   SERVICE_SYNC_START_REPLY,
@@ -213,33 +213,6 @@ describe('server: patch application', () => {
     }
 
     expect(service.queries.getRecordFields({ entryId: 'a' })).toBeNull();
-  });
-});
-
-describe('server: state schema validation', () => {
-  it('applies a schema-valid snapshot and drops an invalid one', () => {
-    const channel = createMockChannel();
-    installChannel(channel);
-
-    const service = registerService(schemaCounterServiceDef);
-
-    channel.emitExternal(SERVICE_PATCHES, {
-      serviceId: schemaCounterServiceDef.id,
-      state: { a: 1 },
-      version: 1,
-      clientId: 'peer',
-    });
-    expect(service.queries.getCount({ key: 'a' })).toBe(1);
-
-    // Strictly newer by stamp, but the value violates the state schema; the shared reconciler must
-    // reject it on the server exactly as it does on the client.
-    channel.emitExternal(SERVICE_PATCHES, {
-      serviceId: schemaCounterServiceDef.id,
-      state: { a: 'corrupt' },
-      version: 2,
-      clientId: 'peer',
-    });
-    expect(service.queries.getCount({ key: 'a' })).toBe(1);
   });
 });
 

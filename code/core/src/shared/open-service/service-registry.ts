@@ -213,7 +213,6 @@ export function registerService<
   // goes through `commandSelf.setState` — not the wrapped commands below — which is how the broadcast
   // loop is prevented.
   const reconciler = createSnapshotReconciler({
-    stateSchema: runtime.stateSchema,
     setState: (mutate) =>
       runtime.commandSelf.setState((state) => mutate(state as Record<string, unknown>)),
     initialStamp: { version: 0, clientId: ownClientId },

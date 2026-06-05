@@ -7,7 +7,7 @@
  */
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { mutableRecordLookupServiceDef, schemaCounterServiceDef } from './fixtures.ts';
+import { mutableRecordLookupServiceDef } from './fixtures.ts';
 import {
   SERVICE_PATCHES,
   SERVICE_SYNC_START_REPLY,
@@ -321,50 +321,6 @@ describe('channel: untrusted payloads', () => {
 
     await new Promise<void>((resolve) => setTimeout(resolve, 10));
     expect(service.queries.getRecordFields({ entryId: 'a' })).toBeNull();
-  });
-});
-
-describe('channel: state schema validation', () => {
-  it('drops a schema-invalid snapshot before it touches local state', async () => {
-    const channel = createMockChannel();
-    installChannel(channel);
-
-    const service = registerService(schemaCounterServiceDef);
-
-    channel.emitExternal(SERVICE_PATCHES, {
-      serviceId: schemaCounterServiceDef.id,
-      state: { a: 'not-a-number' },
-      version: 1,
-      clientId: 'peer',
-    });
-
-    await new Promise<void>((resolve) => setTimeout(resolve, 10));
-    expect(service.queries.getCount({ key: 'a' })).toBeNull();
-  });
-
-  it('a newer-but-invalid snapshot cannot corrupt already-valid state', async () => {
-    const channel = createMockChannel();
-    installChannel(channel);
-
-    const service = registerService(schemaCounterServiceDef);
-
-    channel.emitExternal(SERVICE_PATCHES, {
-      serviceId: schemaCounterServiceDef.id,
-      state: { a: 1 },
-      version: 1,
-      clientId: 'peer',
-    });
-    await vi.waitFor(() => expect(service.queries.getCount({ key: 'a' })).toBe(1));
-
-    channel.emitExternal(SERVICE_PATCHES, {
-      serviceId: schemaCounterServiceDef.id,
-      state: { a: 'corrupt' },
-      version: 2,
-      clientId: 'peer',
-    });
-
-    await new Promise<void>((resolve) => setTimeout(resolve, 10));
-    expect(service.queries.getCount({ key: 'a' })).toBe(1);
   });
 });
 

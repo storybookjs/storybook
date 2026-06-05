@@ -45,7 +45,7 @@ interface PreviewTask {
 let activePreviewLoads = 0;
 const previewQueue: PreviewTask[] = [];
 
-function pumpPreviewQueue(): void {
+function startQueuedPreviews(): void {
   while (activePreviewLoads < MAX_CONCURRENT_PREVIEWS) {
     const task = previewQueue.shift();
     if (!task) {
@@ -62,7 +62,7 @@ function pumpPreviewQueue(): void {
 
 function enqueuePreview(task: PreviewTask): void {
   previewQueue.push(task);
-  pumpPreviewQueue();
+  startQueuedPreviews();
 }
 
 /** Mark a task done (load/error/settle/unmount) and let the next one start. */
@@ -79,7 +79,7 @@ function finishPreview(task: PreviewTask): void {
       previewQueue.splice(index, 1);
     }
   }
-  pumpPreviewQueue();
+  startQueuedPreviews();
 }
 
 /** Hover/focus: start a still-queued preview right away, bypassing the cap. */

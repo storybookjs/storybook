@@ -20,24 +20,41 @@ const Dimensions = styled.div(({ theme }) => ({
 }));
 
 export const ViewportTool = () => {
-  const { name, value, isDefault, isLocked, options: viewportMap, reset, select } = useViewport();
+  const { name, value, isDefault, isCustom, isLocked, options: viewportMap, reset, select } =
+    useViewport();
 
-  const options = useMemo(
-    () =>
-      Object.entries(viewportMap).map(([k, value]) => ({
-        value: k,
-        title: value.name,
-        icon: iconsMap[value.type!],
-        right: (
-          <Dimensions>
-            <span>{value.styles.width.replace('px', '')}</span>
-            <span>&times;</span>
-            <span>{value.styles.height.replace('px', '')}</span>
-          </Dimensions>
-        ),
-      })),
-    [viewportMap]
-  );
+  const options = useMemo(() => {
+    const presetOptions = Object.entries(viewportMap).map(([k, value]) => ({
+      value: k,
+      title: value.name,
+      icon: iconsMap[value.type!],
+      right: (
+        <Dimensions>
+          <span>{value.styles.width.replace('px', '')}</span>
+          <span>&times;</span>
+          <span>{value.styles.height.replace('px', '')}</span>
+        </Dimensions>
+      ),
+    }));
+
+    // When a custom viewport is active (user has manually set width/height), inject
+    // a synthetic option matching the current value. This ensures the Select component
+    // detects a selection and renders the toolbar button in its active (highlighted) state.
+    // Without this, isCustom viewports match no preset key and $hasSelection stays false.
+    if (isCustom && value) {
+      return [
+        ...presetOptions,
+        {
+          value,
+          title: name,
+          icon: iconsMap['other'],
+          right: null,
+        },
+      ];
+    }
+
+    return presetOptions;
+  }, [viewportMap, isCustom, value, name]);
 
   return (
     <Select

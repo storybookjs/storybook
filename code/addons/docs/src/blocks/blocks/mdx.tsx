@@ -12,6 +12,7 @@ import { styled } from 'storybook/theming';
 import { Source } from '../components';
 import type { DocsContextProps } from './DocsContext';
 import { DocsContext } from './DocsContext';
+import { scrollToElement } from './utils';
 
 const { document } = globalThis;
 
@@ -71,8 +72,6 @@ interface AnchorInPageProps {
 }
 
 const AnchorInPage: FC<PropsWithChildren<AnchorInPageProps>> = ({ hash, children }) => {
-  const context = useContext(DocsContext);
-
   return (
     <A
       href={hash}
@@ -81,7 +80,8 @@ const AnchorInPage: FC<PropsWithChildren<AnchorInPageProps>> = ({ hash, children
         const id = hash.substring(1);
         const element = document.getElementById(id);
         if (element) {
-          navigate(context, hash);
+          event.preventDefault();
+          scrollToElement(element);
         }
       }}
     >
@@ -196,8 +196,6 @@ const HeaderWithOcticonAnchor: FC<PropsWithChildren<HeaderWithOcticonAnchorProps
   children,
   ...rest
 }) => {
-  const context = useContext(DocsContext);
-
   // @ts-expect-error (Converted from ts-ignore)
   const OcticonHeader = OcticonHeaders[as];
   const hash = `#${id}`;
@@ -220,7 +218,7 @@ const HeaderWithOcticonAnchor: FC<PropsWithChildren<HeaderWithOcticonAnchorProps
                 event.preventDefault();
                 const element = document.getElementById(id);
                 if (element) {
-                  navigate(context, hash);
+                  scrollToElement(element);
                 }
               }}
             >

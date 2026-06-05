@@ -96,7 +96,6 @@ function forceStartPreview(task: PreviewTask): void {
   task.start();
 }
 
-/** Component title + story name for a story, resolved from the Storybook index. */
 export interface StoryInfo {
   title: string;
   name: string;

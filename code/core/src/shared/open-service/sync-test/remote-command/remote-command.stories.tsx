@@ -26,30 +26,24 @@ function getCurrentValue() {
 }
 
 function RemoteCommandDemo() {
-  const value = useSyncExternalStore(
-    subscribeToCurrentValue,
-    getCurrentValue,
-    getCurrentValue
-  );
+  const value = useSyncExternalStore(subscribeToCurrentValue, getCurrentValue, getCurrentValue);
 
   return (
     <main style={{ fontFamily: 'sans-serif', maxWidth: 520, padding: 24 }}>
-      <h1 style={{ fontSize: 20, margin: '0 0 12px' }}>
-        Open service remote command sync demo
-      </h1>
+      <h1 style={{ fontSize: 20, margin: '0 0 12px' }}>Open service remote command sync demo</h1>
       <p style={{ lineHeight: 1.5, margin: '0 0 16px' }}>
         This story shares one open-service value with the manager toolbar input. Typing here or in
         the remote-command toolbar input invokes the server-only <code>setValue</code> command
         remotely, then syncs the updated state back to manager and preview.
       </p>
       <p style={{ lineHeight: 1.5, margin: '0 0 16px' }}>
-        In a built Storybook this variant intentionally does nothing: it depends on the dev server to
-        run <code>setValue</code> and mutate the service state.
+        In a built Storybook this variant intentionally does nothing: it depends on the dev server
+        to run <code>setValue</code> and mutate the service state.
       </p>
       <p style={{ lineHeight: 1.5, margin: '0 0 16px' }}>
-        The play-function variant is skipped in Storybook Vitest because that runner does not provide
-        the full manager/preview/server channel path. Run it in the Storybook UI interactions panel,
-        or use the internal Playwright e2e, to exercise the remote command path.
+        The play-function variant is skipped in Storybook Vitest because that runner does not
+        provide the full manager/preview/server channel path. Run it in the Storybook UI
+        interactions panel, or use the internal Playwright e2e, to exercise the remote command path.
       </p>
 
       <label style={{ display: 'grid', gap: 6 }}>
@@ -76,7 +70,9 @@ function RemoteCommandDemo() {
             margin: 0,
             padding: 12,
           }}
-        >{JSON.stringify(value)}</pre>
+        >
+          {JSON.stringify(value)}
+        </pre>
       </section>
     </main>
   );
@@ -96,7 +92,10 @@ const meta = {
   },
   beforeEach: () => {
     setCurrentValue(remoteCommandSyncService.queries.getValue());
-    const unsubscribe = remoteCommandSyncService.queries.getValue.subscribe(undefined, setCurrentValue);
+    const unsubscribe = remoteCommandSyncService.queries.getValue.subscribe(
+      undefined,
+      setCurrentValue
+    );
     return unsubscribe;
   },
 } satisfies Meta<typeof RemoteCommandDemo>;

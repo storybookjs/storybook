@@ -26,25 +26,19 @@ function getCurrentValue() {
 }
 
 function LocalCommandDemo() {
-  const value = useSyncExternalStore(
-    subscribeToCurrentValue,
-    getCurrentValue,
-    getCurrentValue
-  );
+  const value = useSyncExternalStore(subscribeToCurrentValue, getCurrentValue, getCurrentValue);
 
   return (
     <main style={{ fontFamily: 'sans-serif', maxWidth: 520, padding: 24 }}>
-      <h1 style={{ fontSize: 20, margin: '0 0 12px' }}>
-        Open service local command sync demo
-      </h1>
+      <h1 style={{ fontSize: 20, margin: '0 0 12px' }}>Open service local command sync demo</h1>
       <p style={{ lineHeight: 1.5, margin: '0 0 16px' }}>
         This story shares one open-service value with the manager toolbar input. Typing here or in
-        the local-command toolbar input runs <code>setValue</code> locally in that runtime, then syncs
-        the updated state to the other peers.
+        the local-command toolbar input runs <code>setValue</code> locally in that runtime, then
+        syncs the updated state to the other peers.
       </p>
       <p style={{ lineHeight: 1.5, margin: '0 0 16px' }}>
-        Unlike the remote-command sibling, this story can run in Storybook Vitest because the command
-        handler is part of the shared definition.
+        Unlike the remote-command sibling, this story can run in Storybook Vitest because the
+        command handler is part of the shared definition.
       </p>
 
       <label style={{ display: 'grid', gap: 6 }}>
@@ -71,7 +65,9 @@ function LocalCommandDemo() {
             margin: 0,
             padding: 12,
           }}
-        >{JSON.stringify(value)}</pre>
+        >
+          {JSON.stringify(value)}
+        </pre>
       </section>
     </main>
   );
@@ -89,7 +85,10 @@ const meta = {
   },
   beforeEach: () => {
     setCurrentValue(localCommandSyncService.queries.getValue());
-    const unsubscribe = localCommandSyncService.queries.getValue.subscribe(undefined, setCurrentValue);
+    const unsubscribe = localCommandSyncService.queries.getValue.subscribe(
+      undefined,
+      setCurrentValue
+    );
     return unsubscribe;
   },
 } satisfies Meta<typeof LocalCommandDemo>;

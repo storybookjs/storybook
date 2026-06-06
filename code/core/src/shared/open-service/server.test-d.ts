@@ -65,16 +65,16 @@ const registeredService = registerService(registrationOnlyServiceDef, {
     increment: {
       handler: (input, ctx) => {
         expectTypeOf(input).toEqualTypeOf<number>();
-        ctx.self.setState((draft) => {
-          draft.count += input;
+        ctx.self.setState((state) => {
+          state.count += input;
         });
       },
     },
     preloadValue: {
       handler: async (input, ctx) => {
         expectTypeOf(input).toEqualTypeOf<{ entryId: string }>();
-        ctx.self.setState((draft) => {
-          draft.valuesById[input.entryId] = 'ready';
+        ctx.self.setState((state) => {
+          state.valuesById[input.entryId] = 'ready';
         });
       },
     },

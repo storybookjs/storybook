@@ -241,6 +241,17 @@ export class OpenServiceLoadedDrainExceededError extends StorybookError {
   }
 }
 
+export class OpenServiceDocgenMissingComponentError extends StorybookError {
+  constructor(public data: { id: string }) {
+    super({
+      name: 'OpenServiceDocgenMissingComponentError',
+      category: Category.CORE_COMMON,
+      code: 12,
+      message: `No story or attached docs entry was found for component id "${data.id}". The docgen service can only return docs for components that are present in the story index.`,
+    });
+  }
+}
+
 export class WebpackMissingStatsError extends StorybookError {
   constructor() {
     super({

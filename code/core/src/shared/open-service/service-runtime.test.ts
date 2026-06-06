@@ -2,7 +2,7 @@ import * as v from 'valibot';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { defineService } from './service-definition.ts';
-import { serviceRegistryApi } from './service-registration.ts';
+import { serviceRegistryApi } from './service-registry.ts';
 import { createServiceRuntime } from './service-runtime.ts';
 import { clearRegistry, registerService } from './server.ts';
 import {

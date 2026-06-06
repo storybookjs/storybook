@@ -31,11 +31,19 @@ export const RESOLVE_EXTENSIONS = [
   '.jsx',
 ] as const;
 
+const docgenResolverOptions = {
+  aliasFields: [['browser']],
+  conditionNames: ['browser', 'import', 'module', 'default'],
+  mainFields: ['browser', 'module', 'main'],
+};
+
 const docgenResolver = new ResolverFactory({
+  ...docgenResolverOptions,
   extensions: [...RESOLVE_EXTENSIONS],
 });
 
 const docgenResolverExact = new ResolverFactory({
+  ...docgenResolverOptions,
   extensions: [],
 });
 

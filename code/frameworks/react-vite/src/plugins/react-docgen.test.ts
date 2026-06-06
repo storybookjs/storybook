@@ -18,6 +18,7 @@ vi.mock('./docgen-resolver', async (importOriginal) => {
   const actual = await importOriginal<typeof import('path')>();
   return {
     ...actual,
+    RESOLVE_EXTENSIONS: ['.js', '.ts', '.tsx', '.jsx'],
     defaultLookupModule: reactDocgenResolverMock.defaultLookupModule,
   };
 });

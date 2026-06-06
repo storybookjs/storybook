@@ -260,7 +260,9 @@ test.describe('Manager UI', () => {
         page.context().waitForEvent('page'),
         isolationButton.click(),
       ]);
-      await newPage.waitForLoadState();
+      
+      // 👉 【已修改】显式等待按钮在隔离页面中渲染完成，避免 JS 未加载完导致的断言失败
+      await newPage.waitForSelector('#storybook-root button');
 
       // The new window URL should contain the args
       const newArgs = new URL(newPage.url()).searchParams.get('args');
@@ -290,7 +292,7 @@ test.describe('Manager UI', () => {
     test.describe.configure({ retries: 3 });
     // TODO: remove this when SSV6 templates have been removed
     // Some assertions in these tests are not compatible with SSV6
-    // GIven that SSV6 will be removed before the new mobile UI released, it doesn't make sense to fix them
+    // Given that SSV6 will be removed before the new mobile UI released, it doesn't make sense to fix them
     test.skip(templateName?.includes('ssv6') || false, 'Skip mobile UI tests for SSV6');
 
     // standard iPhone viewport size

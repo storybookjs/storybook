@@ -260,8 +260,8 @@ test.describe('Manager UI', () => {
         page.context().waitForEvent('page'),
         isolationButton.click(),
       ]);
-      
-      // 👉 【已修改】显式等待按钮在隔离页面中渲染完成，避免 JS 未加载完导致的断言失败
+
+      // Wait for the story to render in the isolation page
       await newPage.waitForSelector('#storybook-root button');
 
       // The new window URL should contain the args

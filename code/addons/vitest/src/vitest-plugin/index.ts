@@ -319,27 +319,10 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
       finalOptions.includeStories = includeStories;
       const projectId = oneWayHash(finalOptions.configDir);
 
-      const areProjectAnnotationRequired = await requiresProjectAnnotations(
-        nonMutableInputConfig.test,
-        finalOptions
-      );
-
-      const internalSetupFiles = [
-        '@storybook/addon-vitest/internal/setup-file',
-        areProjectAnnotationRequired &&
-          '@storybook/addon-vitest/internal/setup-file-with-project-annotations',
-      ].filter(Boolean) as string[];
-
       const baseConfig: Omit<ViteUserConfig, 'plugins'> = {
         cacheDir: resolvePathInStorybookCache('sb-vitest', projectId),
         test: {
           expect: { requireAssertions: false },
-          setupFiles: [
-            ...internalSetupFiles,
-            // if the existing setupFiles is a string, we have to include it otherwise we're overwriting it
-            typeof nonMutableInputConfig.test?.setupFiles === 'string' &&
-              nonMutableInputConfig.test?.setupFiles,
-          ].filter(Boolean) as string[],
 
           ...(finalOptions.storybookScript
             ? {
@@ -462,22 +445,36 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
       return config;
     },
     async configureVitest(context) {
-      context.vitest.config.coverage.exclude.push('storybook-static');
+      const { config: projectConfig } = context.project;
 
-      const isBrowserModeEnabled = context.vitest.config.browser?.enabled === true;
+      projectConfig.coverage.exclude.push('storybook-static');
 
-      if (isBrowserModeEnabled) {
-        const setupFilePath = context.vitest.version.startsWith('3')
-          ? '@storybook/addon-vitest/internal/setup-file.browser.3'
-          : '@storybook/addon-vitest/internal/setup-file.browser.4';
+      const areProjectAnnotationsRequired = await requiresProjectAnnotations(
+        projectConfig,
+        finalOptions
+      );
 
-        context.vitest.config.setupFiles = [
-          setupFilePath,
-          ...(context.vitest.config.setupFiles ?? []).filter(
-            (configuredSetupFile) => configuredSetupFile !== setupFilePath
-          ),
-        ];
-      }
+      const internalSetupFileIds = [
+        projectConfig.browser?.enabled === true &&
+          (context.vitest.version.startsWith('3')
+            ? '@storybook/addon-vitest/internal/setup-file.browser.3'
+            : '@storybook/addon-vitest/internal/setup-file.browser.4'),
+        '@storybook/addon-vitest/internal/setup-file',
+        areProjectAnnotationsRequired &&
+          '@storybook/addon-vitest/internal/setup-file-with-project-annotations',
+      ].filter(Boolean) as string[];
+
+      const internalSetupFiles = internalSetupFileIds.map((setupFileId) =>
+        fileURLToPath(import.meta.resolve(setupFileId))
+      );
+
+      projectConfig.setupFiles = [
+        ...internalSetupFiles,
+        ...(projectConfig.setupFiles ?? []).filter(
+          (setupFile) =>
+            !internalSetupFiles.includes(setupFile) && !internalSetupFileIds.includes(setupFile)
+        ),
+      ];
 
       // NOTE: we start telemetry immediately but do not wait on it. Typically it should complete
       // before the tests do. If not we may miss the event, we are OK with that.

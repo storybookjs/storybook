@@ -7,4 +7,4 @@ addons.setConfig({
   },
 });
 
-import './background-service/manager.tsx';
+import '../core/src/shared/open-service/sync-test/manager.tsx';

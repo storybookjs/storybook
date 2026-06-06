@@ -503,10 +503,8 @@ definition has a `handler`:
 - **No local handler** → the command becomes a **remote invoker**: calling it sends a request over
   the channel and returns a promise that settles when a peer answers.
 
-The protocol lives in [service-transport.ts](./service-transport.ts) (`connectCommandTransport`); the
-example background-color service (`code/.storybook/background-service/`) exercises it end to end —
-`setColor` is declared with no handler in the shared definition and implemented only at server
-registration, so the manager toolbar invokes it remotely.
+The protocol lives in [service-transport.ts](./service-transport.ts) (`connectCommandTransport`) and
+is covered by the command transport tests.
 
 ### Roles
 
@@ -547,17 +545,17 @@ several services routes them correctly.
 
 ### Sequence
 
-Manager toolbar calls a command implemented only on the dev server:
+One runtime calls a command implemented only on the dev server:
 
 ```text
-Manager (requester)              Channel               Server (responder)
+Requester                        Channel               Server (responder)
 ──────────────────────────────────────────────────────────────────────────
-service.commands.setColor(...)
+service.commands.example(...)
   └─ new callId
   └─ emit command-invoke ───────────────────────────────────►
                                                   └─ emit command-ack ──┐
   ◄───────────────────────────────────────────────────────────────────┘
-                                                  └─ run setColor locally
+                                                  └─ run command locally
                                                        └─ mutate + emit patches ──►
   ◄── apply patches (state converges) ───────────────────────────────────
                                                   └─ emit command-result ──┐

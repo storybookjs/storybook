@@ -51,7 +51,7 @@ sb.mock(import('lodash-es/sum'));
 sb.mock(import('uuid'));
 /* eslint-enable depend/ban-dependencies */
 
-import './background-service/preview.ts';
+import '../core/src/shared/open-service/sync-test/preview.ts';
 
 const { document } = global;
 globalThis.CONFIG_TYPE = 'DEVELOPMENT';
@@ -143,10 +143,9 @@ const ThemedSetRoot = () => {
   const theme = useTheme();
 
   useEffect(() => {
-    // Body background is owned by the open-service background demo when registered; only sync
-    // the default text color from the manager theme here.
+    document.body.style.background = theme.background.content;
     document.body.style.color = theme.color.defaultText;
-  }, [theme]);
+  });
 
   return null;
 };
@@ -167,9 +166,8 @@ const loaders = [
   async ({ parameters: { relativeCsfPaths, attached = true } }) => {
     const preview = (window as any).__STORYBOOK_PREVIEW__ as PreviewWeb<ReactRenderer> | undefined;
     const channel = (window as any).__STORYBOOK_ADDONS_CHANNEL__ as Channel | undefined;
-    // __STORYBOOK_PREVIEW__ is set in PreviewWeb; the addons channel is mirrored on
-    // `window.__STORYBOOK_ADDONS_CHANNEL__` when `addons.setChannel` runs (portable stories/vitest
-    // may not have either).
+    // __STORYBOOK_PREVIEW__ and __STORYBOOK_ADDONS_CHANNEL__ is set in the PreviewWeb constructor
+    // which isn't loaded in portable stories/vitest
     if (!relativeCsfPaths || !preview || !channel) {
       return {};
     }

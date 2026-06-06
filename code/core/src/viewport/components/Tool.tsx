@@ -20,7 +20,7 @@ const Dimensions = styled.div(({ theme }) => ({
 }));
 
 export const ViewportTool = () => {
-  const { name, value, isDefault, isLocked, options: viewportMap, reset, select } = useViewport();
+  const { name, value, isDefault, isLocked, options: viewportMap, reset, select, isCustom } = useViewport();
 
   const options = useMemo(
     () =>
@@ -48,10 +48,11 @@ export const ViewportTool = () => {
       ariaLabel={isLocked ? 'Viewport size set by story parameters' : 'Viewport size'}
       ariaDescription="Select a viewport among predefined options for the preview area, or reset to the default viewport."
       tooltip={isLocked ? 'Viewport set by story parameters' : 'Change viewport'}
-      defaultOptions={value}
+      defaultOptions={isCustom ? undefined : value}
       options={options}
       onSelect={(selected) => select(selected as string)}
       icon={<GrowIcon />}
+      active={!isDefault}
     >
       {isDefault ? null : name}
     </Select>

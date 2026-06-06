@@ -85,6 +85,7 @@ export interface SelectProps extends Omit<
    * @default true
    */
   showSelectedOptionTitle?: boolean;
+  active?: boolean;
 }
 
 function valueToId(parentId: string, { value }: InternalOption | ResetOption): string {
@@ -216,6 +217,7 @@ export const Select = forwardRef<HTMLButtonElement, SelectProps>(
       tooltip,
       ariaLabel,
       showSelectedOptionTitle = true,
+      active = false,
       ...props
     },
     ref
@@ -253,6 +255,10 @@ export const Select = forwardRef<HTMLButtonElement, SelectProps>(
     const [selectedOptions, setSelectedOptions] = useState<InternalOption[]>(
       setSelectedFromDefault(calleeOptions, defaultOptions)
     );
+
+    useEffect(() => {
+      setSelectedOptions(setSelectedFromDefault(calleeOptions, defaultOptions));
+    }, [defaultOptions, calleeOptions]);
 
     // Selects an option (updating the selection state based on multiSelect).
     const handleSelectOption = useCallback(
@@ -318,11 +324,6 @@ export const Select = forwardRef<HTMLButtonElement, SelectProps>(
     // For instance, when a URL query param is passed for the theme addon, the
     // addon receives, undefined, then the default theme value (incorrectly),
     // then the actual URL query param as a selected theme.
-    useEffect(() => {
-      if (defaultOptions) {
-        setSelectedOptions(setSelectedFromDefault(calleeOptions, defaultOptions));
-      }
-    }, [defaultOptions, calleeOptions]);
 
     // The active option in the listbox, which will receive focus when the listbox is open.
     const [activeOption, setActiveOptionState] = useState<InternalOption | ResetOption | undefined>(
@@ -509,7 +510,7 @@ export const Select = forwardRef<HTMLButtonElement, SelectProps>(
           ref={triggerRef}
           padding={padding}
           $isOpen={isOpen}
-          $hasSelection={!!selectedOptions.length}
+          $hasSelection={!!selectedOptions.length || active}
           // Can be removed once #32325 is fixed (Button will then provide aria-disabled)
           aria-disabled={disabled}
           disabled={disabled}

@@ -24,3 +24,10 @@ export {
 } from './stores/checklist.ts';
 
 export { Tag } from '../shared/constants/tags.ts';
+
+/** OPEN SERVICE API (manager relay hub + React hooks; types on `storybook/open-service`) */
+export {
+  registerService,
+  useServiceCommand,
+  useServiceQuery,
+} from '../shared/open-service/manager.ts';

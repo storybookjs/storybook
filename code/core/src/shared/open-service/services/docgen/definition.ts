@@ -1,6 +1,6 @@
 import * as v from 'valibot';
 
-import { defineService } from '../../service-definition.ts';
+import { defineService } from 'storybook/open-service';
 import type { DocgenPayload } from './types.ts';
 import { docgenQueryStaticPath } from './paths.ts';
 
@@ -69,8 +69,9 @@ const docgenOutputSchema = v.optional(docgenPayloadSchema);
  * sync reads. The real work — story index lookup, provider invocation, error handling — lives in
  * the `extractDocgen` command, whose body is supplied at registration time because it needs to
  * close over the server-only story index and the composed `experimental_docgenProvider` chain.
- * The query's `load` hook (also supplied at registration) just calls `extractDocgen`, so
- * `getDocgen.loaded()` is the awaitable form and surfaces extraction errors.
+ * The query's `load` hook calls `extractDocgen`, so `getDocgen.loaded()` is the awaitable form and
+ * surfaces extraction errors. `getDocgenForAllComponents` delegates to the `extractAllDocgen`
+ * command, whose handler is supplied at registration because it needs the story index.
  */
 export const docgenServiceDef = defineService({
   id: 'core/docgen',
@@ -84,6 +85,9 @@ export const docgenServiceDef = defineService({
       output: docgenOutputSchema,
       handler: (input, ctx) =>
         input.id in ctx.self.state.components ? ctx.self.state.components[input.id] : undefined,
+      load: async (input, ctx) => {
+        await ctx.self.commands.extractDocgen(input);
+      },
       staticPath: (input) => docgenQueryStaticPath(input.id),
     },
     getDocgenForAllComponents: {
@@ -91,7 +95,9 @@ export const docgenServiceDef = defineService({
       input: v.void(),
       output: v.record(v.string(), docgenPayloadSchema),
       handler: (_input, ctx) => ctx.self.state.components,
-      // load is supplied at registration time so it can close over the story index.
+      load: async (_input, ctx) => {
+        await ctx.self.commands.extractAllDocgen(undefined);
+      },
     },
   },
   commands: {
@@ -102,6 +108,13 @@ export const docgenServiceDef = defineService({
       output: docgenOutputSchema,
       // Handler is supplied at registration time so it can close over the story index and the
       // composed experimental_docgenProvider chain.
+    },
+    extractAllDocgen: {
+      description:
+        'Extracts docgen for every component id in the story index by invoking `extractDocgen` for each.',
+      input: v.undefined(),
+      output: v.void(),
+      // Handler is supplied at registration time so it can close over the story index.
     },
   },
 });

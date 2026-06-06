@@ -462,25 +462,22 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
       return config;
     },
     async configureVitest(context) {
-      context.project.config.coverage.exclude.push('storybook-static');
+      context.vitest.config.coverage.exclude.push('storybook-static');
 
-      const { config: projectConfig } = context.project;
-      const setupFilesToPrepend = [
-        fileURLToPath(import.meta.resolve('@storybook/addon-vitest/internal/setup-file')),
-      ];
+      const isBrowserModeEnabled = context.vitest.config.browser?.enabled === true;
 
-      if (projectConfig.browser?.enabled === true) {
-        const browserSetupFile = context.vitest.version.startsWith('3')
+      if (isBrowserModeEnabled) {
+        const setupFilePath = context.vitest.version.startsWith('3')
           ? '@storybook/addon-vitest/internal/setup-file.browser.3'
           : '@storybook/addon-vitest/internal/setup-file.browser.4';
 
-        setupFilesToPrepend.push(fileURLToPath(import.meta.resolve(browserSetupFile)));
+        context.vitest.config.setupFiles = [
+          setupFilePath,
+          ...(context.vitest.config.setupFiles ?? []).filter(
+            (configuredSetupFile) => configuredSetupFile !== setupFilePath
+          ),
+        ];
       }
-
-      projectConfig.setupFiles = [
-        ...setupFilesToPrepend,
-        ...(projectConfig.setupFiles ?? []).filter((file) => !setupFilesToPrepend.includes(file)),
-      ];
 
       // NOTE: we start telemetry immediately but do not wait on it. Typically it should complete
       // before the tests do. If not we may miss the event, we are OK with that.

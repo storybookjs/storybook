@@ -124,7 +124,10 @@ export const RemoteCommandPlayFunction: Story = {
         expect(raw).toHaveTextContent(JSON.stringify(''));
       });
 
-      await userEvent.type(input, nextValue, { delay: 50 });
+      for (const character of nextValue) {
+        await userEvent.type(input, character);
+        await new Promise((resolve) => setTimeout(resolve, 50));
+      }
 
       await waitFor(() => {
         expect(raw).toHaveTextContent(JSON.stringify(nextValue));

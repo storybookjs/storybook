@@ -27,7 +27,7 @@ export class AddonStore {
         return this.channel;
       }
 
-      const channel = mockChannel();
+      const channel = mockChannel() as unknown as Channel;
       this.setChannel(channel);
       return channel;
     }

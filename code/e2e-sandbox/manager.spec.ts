@@ -232,7 +232,7 @@ test.describe('Manager UI', () => {
       // go fullscreen when panel is shown but sidebar is hidden
       await sbPage.page.locator('[aria-label="Show addon panel"]').click();
       await expect(sbPage.page.locator('#storybook-panel-root')).toBeVisible();
-      await sbPage.page.locator('[aria-label="Enter full screen"]').click();
+      await expect(sbPage.page.locator('[aria-label="Enter full screen"]').click();
       await expect(sbPage.page.locator('#storybook-panel-root')).toBeHidden();
       await expect(sbPage.page.locator('.sidebar-container')).toBeHidden();
     });
@@ -246,7 +246,9 @@ test.describe('Manager UI', () => {
 
       const label = sbPage.panelContent().locator('textarea[name=label]');
       await label.fill('Hello world');
-      await expect(sbPage.previewRoot().locator('button')).toContainText('Hello world');
+      
+      // Use generic text locator instead of tag selector to support multi-framework sandboxes
+      await expect(sbPage.previewRoot().getByText('Hello world')).toBeVisible();
 
       // Wait for args to appear in the URL (robust URL-decoding logic)
       await page.waitForURL((url) => {
@@ -261,15 +263,15 @@ test.describe('Manager UI', () => {
         isolationButton.click(),
       ]);
 
-      // Wait for the story to render in the isolation page
-      await newPage.waitForSelector('#storybook-root button');
+      // Wait for any child element inside story container to be attached
+      await newPage.locator('#storybook-root > *').first().waitFor({ state: 'attached', timeout: 10000 });
 
       // The new window URL should contain the args
       const newArgs = new URL(newPage.url()).searchParams.get('args');
       expect(decodeURIComponent(newArgs || '')).toContain('label:Hello world');
 
-      // The new page is the iframe.html itself, so the story root is directly in the page
-      await expect(newPage.locator('#storybook-root button')).toContainText('Hello world');
+      // Verify text presence dynamically without asserting strict HTML tag names
+      await expect(newPage.locator('#storybook-root').getByText('Hello world')).toBeVisible();
 
       await newPage.close();
     });

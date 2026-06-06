@@ -168,19 +168,20 @@ const ShareToolContent = ({
 }) => {
   const [copied, copyToClipboard] = useCopyToClipboard();
   const currentUrl = doc?.location?.href || '';
-  const originHrefs = api.getStoryHrefs(storyId, { base: 'origin', refId });
 
   const handleCopy = useCallback(() => {
     copyToClipboard(currentUrl);
   }, [copyToClipboard, currentUrl]);
+
+  if (!storyId) return null;
+
+  const originHrefs = api.getStoryHrefs(storyId, { base: 'origin', refId });
 
   const handleOpenIsolation = useCallback(() => {
     window.open(originHrefs.previewHref, '_blank', 'noopener,noreferrer');
     api.emit(SHARE_ISOLATE_MODE, originHrefs.previewHref);
     onHide?.();
   }, [api, originHrefs, onHide]);
-
-  if (!storyId) return null;
 
   return (
     <QRContainer>

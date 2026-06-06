@@ -9,6 +9,30 @@ export type AnySchema = StandardSchemaV1<unknown, unknown>;
 /** Stable alias for service identifiers across definition, runtime, and registration APIs. */
 export type ServiceId = string;
 
+/**
+ * Constrains a service's state to a plain object — the only shape the architecture supports.
+ *
+ * This is not an arbitrary restriction; two layers require it:
+ *
+ * 1. State is wrapped in a `deepSignal` proxy for fine-grained per-field reactivity, and `deepSignal`
+ *    throws ("this object can't be observed") on primitives, `null`, and `undefined` — there are no
+ *    fields to track on a scalar.
+ * 2. Cross-peer sync (`deepReconcile` in `service-sync.ts`) merges state by walking object keys; it
+ *    has no notion of replacing a whole scalar, so the wire protocol only carries keyed objects.
+ *
+ * Arrays are technically observable by `deepSignal` but are still rejected here: `deepReconcile`
+ * replaces arrays wholesale rather than merging by key, so a *top-level* array state would silently
+ * fail to sync between peers. Wrap collections in a field instead (`{ items: [...] }`).
+ *
+ * Authoring helpers pair this with an `extends object` bound (which rejects primitives, `null`, and
+ * `undefined` while still accepting both `interface` and `type` declarations). The naked `TState` in
+ * the intersection keeps it transparent to inference; only an array collapses to the branded error.
+ */
+export type ServiceState<TState> = TState &
+  (TState extends readonly unknown[]
+    ? { __openServiceStateError: 'Service state must be a plain object, not an array.' }
+    : unknown);
+
 /** Public schema shape exposed when describing a schema-backed service contract. */
 export type SchemaDescriptor = AnySchema;
 
@@ -302,6 +326,11 @@ export type ServiceDefinition<
 > = {
   id: ServiceId;
   description?: string;
+  /**
+   * Initial state for the service. Must be a plain object (not a primitive, `null`, or array) — see
+   * {@link ServiceState} for why. The authoring boundary (`defineService`) enforces this; the runtime
+   * type stays `TState` so already-constructed definitions flow through the registry unchanged.
+   */
   initialState: TState;
   queries: TQueries;
   commands: TCommands;

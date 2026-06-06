@@ -25,6 +25,8 @@
  * on and off the channel.
  */
 
+import * as v from 'valibot';
+
 import { OpenServiceRemoteCommandDisconnectedError } from '../../server-errors.ts';
 import {
   SERVICE_COMMAND_ACK,
@@ -42,14 +44,15 @@ import {
   type ServiceChannel,
   type SyncStartPayload,
   type SyncStartReplyPayload,
+  commandErrorSchema,
+  commandInvokeSchema,
+  commandResultSchema,
   generateClientId,
+  stampedSnapshotSchema,
+  syncStartSchema,
 } from './service-channel.ts';
-import {
-  type SerializedError,
-  deserializeError,
-  serializeError,
-} from './service-error-serialization.ts';
-import { parseStampedSnapshot, parseSyncStart, type SnapshotReconciler } from './service-sync.ts';
+import { deserializeError, serializeError } from './service-error-serialization.ts';
+import type { SnapshotReconciler } from './service-sync.ts';
 import type { ServiceId } from './types.ts';
 
 /** A runtime command as seen by the transport layer: `(input) => Promise<result>`. */
@@ -161,8 +164,12 @@ export function connectRuntimeToChannel(
   // Reply to a peer's sync-start with our current snapshot+stamp (which may be one we adopted from yet
   // another peer, not necessarily our own clientId). Skip our own bootstrap request.
   const onSyncStart = (payload: unknown): void => {
-    const request = parseSyncStart(payload);
-    if (!request || request.serviceId !== serviceId || request.clientId === ownClientId) {
+    const request = v.safeParse(syncStartSchema, payload);
+    if (
+      !request.success ||
+      request.output.serviceId !== serviceId ||
+      request.output.clientId === ownClientId
+    ) {
       return;
     }
 
@@ -177,21 +184,21 @@ export function connectRuntimeToChannel(
   // Bootstrap from a peer's sync-start-reply. Version-gating (not a first-reply-only guard) is what
   // makes this converge when several peers reply: each reply is adopted only if strictly newer.
   const onSyncStartReply = (payload: unknown): void => {
-    const snapshot = parseStampedSnapshot(payload);
-    if (!snapshot || snapshot.serviceId !== serviceId) {
+    const snapshot = v.safeParse(stampedSnapshotSchema, payload);
+    if (!snapshot.success || snapshot.output.serviceId !== serviceId) {
       return;
     }
-    adoptPeerSnapshot(snapshot);
+    adoptPeerSnapshot(snapshot.output);
   };
 
   // Apply patches from peers. The version gate drops echoes of our own broadcast and any
   // already-applied snapshot, so no explicit self-clientId check is needed here.
   const onPatches = (payload: unknown): void => {
-    const snapshot = parseStampedSnapshot(payload);
-    if (!snapshot || snapshot.serviceId !== serviceId) {
+    const snapshot = v.safeParse(stampedSnapshotSchema, payload);
+    if (!snapshot.success || snapshot.output.serviceId !== serviceId) {
       return;
     }
-    adoptPeerSnapshot(snapshot);
+    adoptPeerSnapshot(snapshot.output);
   };
 
   channel.on(SERVICE_SYNC_START, onSyncStart);
@@ -212,62 +219,6 @@ export function connectRuntimeToChannel(
     channel.off(SERVICE_SYNC_START_REPLY, onSyncStartReply);
     channel.off(SERVICE_PATCHES, onPatches);
   };
-}
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null && !Array.isArray(value);
-}
-
-/** Narrows an untrusted `services:command-invoke` payload, returning `null` when malformed. */
-function parseCommandInvoke(payload: unknown): CommandInvokePayload | null {
-  if (!isRecord(payload)) {
-    return null;
-  }
-
-  const { serviceId, commandName, callId, clientId } = payload;
-  if (
-    typeof serviceId !== 'string' ||
-    typeof commandName !== 'string' ||
-    typeof callId !== 'string' ||
-    typeof clientId !== 'string'
-  ) {
-    return null;
-  }
-
-  return { serviceId, commandName, callId, clientId, input: payload.input };
-}
-
-/** Narrows an untrusted `services:command-result` payload, returning `null` when malformed. */
-function parseCommandResult(payload: unknown): CommandResultPayload | null {
-  if (!isRecord(payload)) {
-    return null;
-  }
-
-  const { serviceId, callId, clientId } = payload;
-  if (typeof serviceId !== 'string' || typeof callId !== 'string' || typeof clientId !== 'string') {
-    return null;
-  }
-
-  return { serviceId, callId, clientId, result: payload.result };
-}
-
-/** Narrows an untrusted `services:command-error` payload, returning `null` when malformed. */
-function parseCommandError(payload: unknown): CommandErrorPayload | null {
-  if (!isRecord(payload)) {
-    return null;
-  }
-
-  const { serviceId, callId, clientId, error } = payload;
-  if (
-    typeof serviceId !== 'string' ||
-    typeof callId !== 'string' ||
-    typeof clientId !== 'string' ||
-    !isRecord(error)
-  ) {
-    return null;
-  }
-
-  return { serviceId, callId, clientId, error: error as unknown as SerializedError };
 }
 
 /**
@@ -350,14 +301,15 @@ export function connectCommandTransport(context: {
 
   // Responder: run a locally-implemented command on a peer's request and reply with the outcome.
   const onInvoke = (payload: unknown): void => {
-    const invoke = parseCommandInvoke(payload);
+    const parsed = v.safeParse(commandInvokeSchema, payload);
     if (
-      !invoke ||
-      invoke.serviceId !== serviceId ||
-      !implementedCommandNames.has(invoke.commandName)
+      !parsed.success ||
+      parsed.output.serviceId !== serviceId ||
+      !implementedCommandNames.has(parsed.output.commandName)
     ) {
       return;
     }
+    const invoke = parsed.output;
 
     channel.emit(SERVICE_COMMAND_ACK, {
       serviceId,
@@ -389,19 +341,19 @@ export function connectCommandTransport(context: {
 
   // Requester: resolve/reject the pending promise for a reply addressed to one of our calls.
   const onResult = (payload: unknown): void => {
-    const result = parseCommandResult(payload);
-    if (!result || result.serviceId !== serviceId) {
+    const result = v.safeParse(commandResultSchema, payload);
+    if (!result.success || result.output.serviceId !== serviceId) {
       return;
     }
-    settle(result.callId, (entry) => entry.resolve(result.result));
+    settle(result.output.callId, (entry) => entry.resolve(result.output.result));
   };
 
   const onError = (payload: unknown): void => {
-    const failure = parseCommandError(payload);
-    if (!failure || failure.serviceId !== serviceId) {
+    const failure = v.safeParse(commandErrorSchema, payload);
+    if (!failure.success || failure.output.serviceId !== serviceId) {
       return;
     }
-    settle(failure.callId, (entry) => entry.reject(deserializeError(failure.error)));
+    settle(failure.output.callId, (entry) => entry.reject(deserializeError(failure.output.error)));
   };
 
   channel.on(SERVICE_COMMAND_INVOKE, onInvoke);

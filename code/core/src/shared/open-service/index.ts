@@ -29,6 +29,7 @@ export type {
   ServiceInstance,
   ServiceInstanceOf,
   ServiceRegistrationOptions,
+  ServiceState,
   ServiceSummary,
   StaticStore,
 } from './types.ts';

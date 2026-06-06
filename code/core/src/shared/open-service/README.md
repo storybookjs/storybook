@@ -82,7 +82,7 @@ Internal tests and implementation code may import from the individual modules di
 A service is a state container with:
 
 - a stable `id`
-- an `initialState`
+- an `initialState` — **must be a plain object** (see [State must be an object](#state-must-be-an-object))
 - a `queries` map
 - a `commands` map
 - optional descriptions on the service and each operation
@@ -297,6 +297,33 @@ When an **async** `load` body runs, it instead gets a *wrapped* `ctx.self.querie
 Cross-service `ctx.getService(id).queries.*` calls inside a load body are **not** wrapped; authors must use `.loaded()` explicitly when they need a cross-service dep awaited from inside a load. From a sync handler, cross-service queries are tracked because they consult the module-scoped session like any other call.
 
 ## State and reactivity
+
+### State must be an object
+
+A service's `initialState` (and therefore its whole state) **must be a plain object**. Primitives,
+`null`, `undefined`, and arrays are rejected at the `defineService` authoring boundary by the
+`ServiceState` type (see [types.ts](./types.ts)). This is enforced for two structural reasons, not as
+an arbitrary style choice:
+
+- **Reactivity.** State is wrapped in a `deepSignal` proxy for fine-grained per-field tracking, and
+  `deepSignal` throws (`"this object can't be observed"`) on scalars, `null`, and `undefined` — there
+  are no fields to track on a scalar.
+- **Sync.** Cross-peer reconciliation (`deepReconcile` in [service-sync.ts](./service-sync.ts)) merges
+  state by walking object keys; it has no concept of replacing a whole scalar.
+
+Arrays are a special case: `deepSignal` *can* observe them, but `deepReconcile` replaces arrays
+wholesale rather than merging by key, so a **top-level** array state would silently fail to sync
+between peers. They are therefore rejected too. Wrap collections in a field instead:
+
+```ts
+// ❌ not allowed
+initialState: [] as Item[],
+// ✅ wrap it
+initialState: { items: [] as Item[] },
+```
+
+Nested arrays *inside* the state object are completely fine — only the top-level state must be a
+keyed object. The `extends object` bound still accepts both `interface` and `type` state shapes.
 
 State is a **deep reactive proxy** (`deepSignal` from `deepsignal`, backed by `@preact/signals-core`)
 created in [service-runtime.ts](./service-runtime.ts). There is no top-level state atom and no Immer:
@@ -685,6 +712,7 @@ const ready = await exampleService.queries.getValue.loaded({ entryId: 'a' });
 
 ## Design Rules
 
+- State must be a plain object — no primitives, `null`, or top-level arrays (see [State must be an object](#state-must-be-an-object)). Wrap collections in a field: `{ items: [] }`.
 - Always declare both `input` and `output` schemas on every query and command.
 - Use `load` for read-side warming. The hook is async and must mutate via commands.
 - **Keep `load` bodies minimal — ideally one line that calls a command.** Push input resolution, side effects, and state mutation into the command itself so it stays callable, testable, and reusable on its own.

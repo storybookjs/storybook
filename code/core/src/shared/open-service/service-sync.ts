@@ -64,63 +64,6 @@ function isPlainObject(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
-/** Shape of a validated `services:patches` / `services:sync-start-reply` payload. */
-export type StampedSnapshot = {
-  serviceId: string;
-  state: Record<string, unknown>;
-  version: number;
-  clientId: string;
-};
-
-/**
- * Narrows an untrusted patches/sync-start-reply payload to a known shape before any field is trusted.
- *
- * Returns the typed payload, or `null` when it is malformed. Channel traffic is untrusted input, so
- * every field is checked (and `state` must be a plain object) before the snapshot is applied — and,
- * on a relay hub, before it is forwarded to other peers.
- */
-export function parseStampedSnapshot(payload: unknown): StampedSnapshot | null {
-  if (!isPlainObject(payload)) {
-    return null;
-  }
-
-  const { serviceId, state, version, clientId } = payload;
-
-  if (
-    typeof serviceId !== 'string' ||
-    typeof clientId !== 'string' ||
-    !isPlainObject(state) ||
-    typeof version !== 'number' ||
-    !Number.isSafeInteger(version) ||
-    version < 0
-  ) {
-    return null;
-  }
-
-  return { serviceId, state, version, clientId };
-}
-
-/** Shape of a validated `services:sync-start` payload. */
-export type SyncStart = {
-  serviceId: string;
-  clientId: string;
-};
-
-/** Narrows an untrusted sync-start payload, returning `null` when malformed. */
-export function parseSyncStart(payload: unknown): SyncStart | null {
-  if (!isPlainObject(payload)) {
-    return null;
-  }
-
-  const { serviceId, clientId } = payload;
-
-  if (typeof serviceId !== 'string' || typeof clientId !== 'string') {
-    return null;
-  }
-
-  return { serviceId, clientId };
-}
-
 /**
  * Deep-merges `source` onto `target` in place.
  *

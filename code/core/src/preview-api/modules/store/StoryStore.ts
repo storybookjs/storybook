@@ -1,5 +1,6 @@
 import type { CleanupCallback } from 'storybook/internal/csf';
 import { getCoreAnnotations } from 'storybook/internal/csf';
+
 import {
   CalledExtractOnStoreError,
   MissingStoryFromCsfFileError,
@@ -35,6 +36,7 @@ import {
   prepareStory,
   processCSFFile,
 } from './csf/index.ts';
+import { pushDocgenProjectCustomArgTypes } from '../../../shared/open-service/services/docgen/preview.ts';
 import { ReporterAPI } from './reporter-api.ts';
 
 export function picky<T extends Record<string, any>, K extends keyof T>(
@@ -94,6 +96,8 @@ export class StoryStore<TRenderer extends Renderer> {
     this.processCSFFileWithCache = memoize(CSF_CACHE_SIZE)(processCSFFile) as typeof processCSFFile;
     this.prepareMetaWithCache = memoize(CSF_CACHE_SIZE)(prepareMeta) as typeof prepareMeta;
     this.prepareStoryWithCache = memoize(STORY_CACHE_SIZE)(prepareStory) as typeof prepareStory;
+
+    pushDocgenProjectCustomArgTypes(this.projectAnnotations.argTypes);
   }
 
   setProjectAnnotations(projectAnnotations: ProjectAnnotations<TRenderer>) {
@@ -101,6 +105,8 @@ export class StoryStore<TRenderer extends Renderer> {
     this.projectAnnotations = normalizeProjectAnnotations(projectAnnotations);
     const { initialGlobals, globalTypes } = projectAnnotations;
     this.userGlobals.set({ globals: initialGlobals, globalTypes });
+
+    pushDocgenProjectCustomArgTypes(this.projectAnnotations.argTypes);
   }
 
   // This means that one of the CSF files has changed.

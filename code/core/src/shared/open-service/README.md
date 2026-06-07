@@ -158,13 +158,13 @@ Handlers resolve other registered services through `ctx.getService(serviceId)`. 
 parameter, the return type is `RuntimeService` — query and command results are erased to
 `unknown`.
 
-Pass the source service definition as a generic to recover the full typed runtime surface:
+Pass the source service instance type as a generic to recover the full typed runtime surface:
 
 ```ts
-import type { mutableRecordLookupServiceDef } from './mutable-record-lookup.ts';
+import type { MutableRecordLookupService } from './mutable-record-lookup.ts';
 
 handler: (input, ctx) => {
-  const lookup = ctx.getService<typeof mutableRecordLookupServiceDef>(
+  const lookup = ctx.getService<MutableRecordLookupService>(
     'internal-fixture/mutable-record-lookup'
   );
 

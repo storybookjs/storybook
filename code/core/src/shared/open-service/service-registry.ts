@@ -34,7 +34,6 @@ import type {
   ServiceDescriptor,
   ServiceId,
   ServiceInstance,
-  ServiceInstanceOf,
   ServiceRegistrationOptions,
   ServiceRegistryApi,
   ServiceSummary,
@@ -311,20 +310,16 @@ export async function describeService(serviceId: ServiceId): Promise<ServiceDesc
  * Query and command contexts delegate cross-service calls through this lookup so one service can reuse
  * another's runtime contract. Synchronous because callers need it inside sync query handlers.
  */
-export function getService(serviceId: ServiceId): RuntimeService;
-export function getService<TDefinition extends AnyServiceDefinition>(
+export function getService<TInstance extends RuntimeService = RuntimeService>(
   serviceId: ServiceId
-): ServiceInstanceOf<TDefinition>;
-export function getService<TDefinition extends AnyServiceDefinition>(
-  serviceId: ServiceId
-): RuntimeService | ServiceInstanceOf<TDefinition> {
+): TInstance {
   const entry = getRegistry().get(serviceId);
 
   if (!entry) {
     throw new OpenServiceMissingServiceError({ serviceId });
   }
 
-  return entry.instance as unknown as ServiceInstanceOf<TDefinition>;
+  return entry.instance as unknown as TInstance;
 }
 
 /**

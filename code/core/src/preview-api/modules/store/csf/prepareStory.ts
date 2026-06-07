@@ -22,6 +22,7 @@ import { global } from '@storybook/global';
 import { global as globalThis } from '@storybook/global';
 
 import { Tag } from '../../../../shared/constants/tags.ts';
+import { pushDocgenCustomArgTypes } from '../../../../shared/open-service/services/docgen/preview.ts';
 import { applyHooks } from '../../addons/index.ts';
 import { mountDestructured } from '../../preview-web/render/mount-utils.ts';
 import { UNTARGETED, groupArgsByTarget } from '../args.ts';
@@ -283,6 +284,14 @@ function preparePartialAnnotations<TRenderer extends Renderer>(
     }),
     initialArgsBeforeEnhancers
   );
+
+  if (storyAnnotations?.id) {
+    pushDocgenCustomArgTypes({
+      storyId: storyAnnotations.id,
+      metaArgTypes: componentAnnotations.argTypes,
+      storyArgTypes: storyAnnotations.argTypes,
+    });
+  }
 
   const { name, story, ...withoutStoryIdentifiers } = contextForEnhancers;
 

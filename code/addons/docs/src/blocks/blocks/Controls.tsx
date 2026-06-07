@@ -6,6 +6,7 @@ import { useId } from '@react-aria/utils';
 
 import type { Parameters, Renderer, StrictArgTypes } from 'storybook/internal/csf';
 import type { ArgTypesExtractor } from 'storybook/internal/docs-tools';
+import { getServiceSubcomponentArgTypes, mergeServiceArgTypes } from 'storybook/internal/docs-tools';
 import type { ModuleExports } from 'storybook/internal/types';
 
 import { filterArgTypes } from 'storybook/preview-api';
@@ -17,6 +18,7 @@ import { DocsContext } from './DocsContext';
 import { useArgs } from './useArgs';
 import { useGlobals } from './useGlobals';
 import { usePrimaryStory } from './usePrimaryStory';
+import { useServiceDocgen } from './useServiceDocgen';
 import { getComponentName } from './utils';
 import { withMdxComponentOverride } from './with-mdx-component-override';
 
@@ -41,22 +43,18 @@ function extractComponentArgTypes(
   return extractArgTypes(component) as StrictArgTypes;
 }
 
-const ControlsImpl: FC<ControlsProps> = (props) => {
-  const { of } = props;
-  const context = useContext(DocsContext);
-  const primaryStory = usePrimaryStory();
+const ControlsForStory: FC<ControlsProps & { story: any; context: any }> = ({
+  story,
+  context,
+  ...props
+}) => {
   // Disambiguate multiple <Controls /> blocks rendered for the same story on a single page.
   // React Aria's useId gives a stable id per component instance, with a polyfill for
   // React versions that lack the built-in useId.
   const controlsId = useId();
 
-  const story = of ? context.resolveOf(of, ['story']).story : primaryStory;
-
-  if (!story) {
-    return null;
-  }
-
   const { parameters, argTypes, component, subcomponents } = story;
+  const servicePayload = useServiceDocgen(story.id.split('--')[0]);
   const controlsParameters = parameters.docs?.controls || ({} as ControlsParameters);
 
   const include = props.include ?? controlsParameters.include;
@@ -65,10 +63,29 @@ const ControlsImpl: FC<ControlsProps> = (props) => {
 
   const [args, updateArgs, resetArgs] = useArgs(story, context);
   const [globals] = useGlobals(story, context);
+  const serviceRows = servicePayload
+    ? mergeServiceArgTypes({
+        payload: servicePayload,
+        storyId: story.id,
+        parameters,
+        initialArgs: story.initialArgs,
+      })
+    : undefined;
+  const rows = serviceRows ?? argTypes;
 
-  const filteredArgTypes = filterArgTypes(argTypes, include, exclude);
+  if (!rows) {
+    return null;
+  }
 
-  const hasSubcomponents = Boolean(subcomponents) && Object.keys(subcomponents || {}).length > 0;
+  const filteredArgTypes = filterArgTypes(rows, include, exclude);
+  const serviceSubcomponentArgTypes = servicePayload
+    ? getServiceSubcomponentArgTypes(servicePayload)
+    : {};
+
+  const hasSubcomponents =
+    globalThis.FEATURES?.experimentalDocgenServer && servicePayload
+      ? Object.keys(serviceSubcomponentArgTypes).length > 0
+      : Boolean(subcomponents) && Object.keys(subcomponents || {}).length > 0;
 
   if (!hasSubcomponents) {
     if (!(Object.keys(filteredArgTypes).length > 0 || Object.keys(args).length > 0)) {
@@ -88,16 +105,26 @@ const ControlsImpl: FC<ControlsProps> = (props) => {
     );
   }
 
-  const mainComponentName = getComponentName(component) || 'Story';
-  const subcomponentTabs = Object.fromEntries(
-    Object.entries(subcomponents || {}).map(([key, comp]) => [
-      key,
-      {
-        rows: filterArgTypes(extractComponentArgTypes(comp, parameters), include, exclude),
-        sort,
-      },
-    ])
-  );
+  const mainComponentName = servicePayload?.name || getComponentName(component) || 'Story';
+  const subcomponentTabs = globalThis.FEATURES?.experimentalDocgenServer
+    ? Object.fromEntries(
+        Object.entries(serviceSubcomponentArgTypes).map(([key, subcomponentArgTypes]) => [
+          key,
+          {
+            rows: filterArgTypes(subcomponentArgTypes, include, exclude),
+            sort,
+          },
+        ])
+      )
+    : Object.fromEntries(
+        Object.entries(subcomponents || {}).map(([key, comp]) => [
+          key,
+          {
+            rows: filterArgTypes(extractComponentArgTypes(comp, parameters), include, exclude),
+            sort,
+          },
+        ])
+      );
   const tabs = {
     [mainComponentName]: { rows: filteredArgTypes, sort },
     ...subcomponentTabs,
@@ -114,6 +141,19 @@ const ControlsImpl: FC<ControlsProps> = (props) => {
       controlsId={controlsId}
     />
   );
+};
+
+const ControlsImpl: FC<ControlsProps> = (props) => {
+  const { of } = props;
+  const context = useContext(DocsContext);
+  const primaryStory = usePrimaryStory();
+  const story = of ? context.resolveOf(of, ['story']).story : primaryStory;
+
+  if (!story) {
+    return null;
+  }
+
+  return <ControlsForStory {...props} story={story} context={context} />;
 };
 
 export const Controls = withMdxComponentOverride('Controls', ControlsImpl);

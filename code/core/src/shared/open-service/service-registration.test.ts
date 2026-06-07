@@ -7,6 +7,7 @@ import {
   awaitedPreloadValueServiceDef,
   createDerivedBooleanFromChildQueryServiceDef,
   entryIdInputSchema,
+  type MutableRecordLookupService,
   mutableRecordLookupServiceDef,
   recordFieldsOutputSchema,
   voidOutputSchema,
@@ -165,7 +166,7 @@ describe('service registration', () => {
         },
         assignFromLookup: {
           handler: async (input, ctx) => {
-            const lookup = ctx.getService<typeof mutableRecordLookupServiceDef>(
+            const lookup = ctx.getService<MutableRecordLookupService>(
               'internal-fixture/mutable-record-lookup'
             );
 

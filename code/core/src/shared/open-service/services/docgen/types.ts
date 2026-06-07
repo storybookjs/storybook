@@ -1,29 +1,69 @@
 import type { Options } from '../../../../types/modules/core-common.ts';
+import type { IndexEntry } from '../../../../types/modules/indexer.ts';
 
 /**
  * Caller-facing input to a docgen provider middleware.
  *
- * `importPath` is the value taken directly from the matching {@link IndexEntry.importPath} — a
- * relative path to a CSF story file (or an .mdx file for attached-docs entries). Providers that
- * only know how to read CSF should bail (return `undefined` or forward to `nextDocgen`) when the
- * path does not point at a story file they understand.
+ * `entry` is the authoritative story-index entry for the requested component, selected with the
+ * same rules as the React component manifest generator (`selectComponentEntriesByComponentId` in
+ * `storybook/internal/common`): eligible story entries and attached docs, with story entries
+ * preferred over attached docs for the same component id.
  */
 export interface DocgenProviderInput {
-  importPath: string;
+  entry: IndexEntry;
+}
+
+/** Free-form error attached to a payload, subcomponent, or story snippet. */
+export interface DocgenError {
+  name: string;
+  message: string;
+}
+
+/** Compact JSDoc tag map: tag name → list of tag values (e.g. `@example a` → `{ example: ['a'] }`). */
+export type DocgenJsDocTags = Record<string, string[]>;
+
+/** Snippet + metadata for one story under a component. */
+export interface DocgenStory {
+  id: string;
+  name: string;
+  snippet?: string;
+  description?: string;
+  summary?: string;
+  error?: DocgenError;
 }
 
 /**
- * Phase-1 docgen payload returned by `core/docgen`'s `getDocgen` query.
+ * Docgen payload returned by `core/docgen`'s `getDocgen` query.
  *
- * The schema is intentionally minimal so the first slice ships without committing to a final
- * props/subcomponent shape. Phase 3 will extend this with real `props`, `subcomponents`, and
- * `stories[]` fields backed by RCM output.
+ * Aligns with {@link ComponentManifest} plus integration-specific keys (for example
+ * `reactComponentMeta`, `reactDocgen`, `reactDocgenTypescript`) via the index signature.
  */
 export interface DocgenPayload {
-  componentId: string;
+  id: string;
   name: string;
-  description: string;
-  props: unknown[];
+  /** CSF story file import path from the index entry (same as component manifest `path`). */
+  path: string;
+  description?: string;
+  /** Suggested import statement(s) for the component (same as component manifest `import`). */
+  import?: string;
+  summary?: string;
+  jsDocTags: DocgenJsDocTags;
+  stories: DocgenStory[];
+  subcomponents?: Record<string, DocgenSubcomponent>;
+  error?: DocgenError;
+  [key: string]: unknown;
+}
+
+/** Component-level summary + docgen for one subcomponent. */
+export interface DocgenSubcomponent {
+  name: string;
+  path: string;
+  description?: string;
+  summary?: string;
+  import?: string;
+  jsDocTags: DocgenJsDocTags;
+  error?: DocgenError;
+  [key: string]: unknown;
 }
 
 /**

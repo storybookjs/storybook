@@ -97,6 +97,24 @@ describe('open-service type inference', () => {
     expectTypeOf(openService.queries.getCount).returns.toEqualTypeOf<number>();
     expectTypeOf(openService.queries.getCount.loaded).returns.toEqualTypeOf<Promise<number>>();
 
+    const voidService = registerService(
+      defineService({
+        id: 'internal-fixture/void-query-types',
+        initialState: {},
+        queries: {
+          getAll: {
+            input: v.void(),
+            output: v.number(),
+            handler: () => 1,
+          },
+        },
+        commands: {},
+      })
+    );
+    expectTypeOf(voidService.queries.getAll).returns.toEqualTypeOf<number>();
+    expectTypeOf(voidService.queries.getAll()).toEqualTypeOf<number>();
+    expectTypeOf(voidService.queries.getAll.loaded()).toEqualTypeOf<Promise<number>>();
+
     expectTypeOf(openService.queries.getValue).parameter(0).toEqualTypeOf<{
       entryId: string;
     }>();
@@ -153,5 +171,44 @@ describe('open-service type inference', () => {
       },
       commands: {},
     });
+  });
+
+  it('accepts both interface and type-alias object state', () => {
+    interface InterfaceState {
+      color: string;
+    }
+
+    // An `interface` (no implicit index signature) must still be a valid state shape.
+    defineService({
+      id: 'internal-fixture/interface-state',
+      initialState: { color: 'red' } as InterfaceState,
+      queries: {
+        getColor: {
+          input: v.void(),
+          output: v.string(),
+          handler: (_input, ctx) => {
+            expectTypeOf(ctx.self.state).toEqualTypeOf<InterfaceState>();
+            return ctx.self.state.color;
+          },
+        },
+      },
+      commands: {},
+    });
+  });
+
+  it('rejects non-object state (primitive, null, or array)', () => {
+    const base = { queries: {}, commands: {} } as const;
+
+    // @ts-expect-error state must be a plain object, not a number
+    defineService({ id: 'internal-fixture/number-state', initialState: 42, ...base });
+
+    // @ts-expect-error state must be a plain object, not a string
+    defineService({ id: 'internal-fixture/string-state', initialState: 'nope', ...base });
+
+    // @ts-expect-error state must be a plain object, not null
+    defineService({ id: 'internal-fixture/null-state', initialState: null, ...base });
+
+    // @ts-expect-error state must be a plain object, not an array
+    defineService({ id: 'internal-fixture/array-state', initialState: [1, 2, 3], ...base });
   });
 });

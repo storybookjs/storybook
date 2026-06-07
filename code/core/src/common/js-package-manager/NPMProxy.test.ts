@@ -1,3 +1,7 @@
+import { chmodSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { delimiter, join } from 'node:path';
+
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { prompt } from 'storybook/internal/node-logger';
@@ -234,6 +238,65 @@ describe('NPM Proxy', () => {
         );
         expect(executeCommandSpy).not.toHaveBeenCalled();
       });
+    });
+  });
+
+  describe('findInstallations', () => {
+    it('should find dependencies if npm ls writes warnings to stderr', async () => {
+      const actualCommand =
+        await vi.importActual<typeof import('../utils/command.ts')>('../utils/command.ts');
+      const tempDir = mkdtempSync(join(tmpdir(), 'storybook-npm-proxy-'));
+      const originalPath = process.env.PATH;
+
+      mockedExecuteCommand.mockImplementation(actualCommand.executeCommand);
+      writeFileSync(
+        join(tempDir, 'fake-npm.cjs'),
+        [
+          'const args = process.argv.slice(2);',
+          "console.error('npm warning peer dependency issue');",
+          "if (args.some((arg) => !['ls', '--json', '--depth=99'].includes(arg))) {",
+          '  process.exit(1);',
+          '}',
+          'process.stdout.write(JSON.stringify({',
+          '  dependencies: {',
+          "    '@storybook/react': { version: '1.2.3' },",
+          '  },',
+          '}));',
+          '',
+        ].join('\n')
+      );
+      writeFileSync(
+        join(tempDir, 'npm'),
+        [
+          '#!/bin/sh',
+          `exec "${process.execPath}" "${join(tempDir, 'fake-npm.cjs')}" "$@"`,
+          '',
+        ].join('\n')
+      );
+      writeFileSync(
+        join(tempDir, 'npm.cmd'),
+        ['@echo off', `"${process.execPath}" "%~dp0fake-npm.cjs" %*`, ''].join('\r\n')
+      );
+      chmodSync(join(tempDir, 'npm'), 0o755);
+      process.env.PATH = `${tempDir}${delimiter}${originalPath ?? ''}`;
+
+      try {
+        const tempNpmProxy = new NPMProxy({ cwd: tempDir });
+        const installations = await tempNpmProxy.findInstallations(['@storybook/*']);
+
+        expect(installations).toMatchObject({
+          dependencies: {
+            '@storybook/react': [{ version: '1.2.3' }],
+          },
+          duplicatedDependencies: {},
+          infoCommand: 'npm ls --depth=1',
+          dedupeCommand: 'npm dedupe',
+        });
+      } finally {
+        process.env.PATH = originalPath;
+        rmSync(tempDir, { recursive: true, force: true });
+        mockedExecuteCommand.mockReset();
+      }
     });
   });
 

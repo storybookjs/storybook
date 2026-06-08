@@ -18,22 +18,24 @@ const Mark = styled.mark(({ theme }) => ({
 // Render `text`, wrapping every case-insensitive occurrence of `query` in a
 // <Mark>. With no query the text renders untouched.
 export const Highlight: FC<{ text: string; query: string }> = ({ text, query }) => {
-  const needle = query.trim().toLowerCase();
-  if (!needle) {
+  const searchQuery = query.trim().toLowerCase();
+  if (!searchQuery) {
     return <>{text}</>;
   }
-  const haystack = text.toLowerCase();
+  const lowerCaseText = text.toLowerCase();
   const segments: ReactNode[] = [];
   let cursor = 0;
-  let match = haystack.indexOf(needle);
+  let matchIndex = lowerCaseText.indexOf(searchQuery);
   let key = 0;
-  while (match !== -1) {
-    if (match > cursor) {
-      segments.push(text.slice(cursor, match));
+  while (matchIndex !== -1) {
+    if (matchIndex > cursor) {
+      segments.push(text.slice(cursor, matchIndex));
     }
-    segments.push(<Mark key={key++}>{text.slice(match, match + needle.length)}</Mark>);
-    cursor = match + needle.length;
-    match = haystack.indexOf(needle, cursor);
+    segments.push(
+      <Mark key={key++}>{text.slice(matchIndex, matchIndex + searchQuery.length)}</Mark>
+    );
+    cursor = matchIndex + searchQuery.length;
+    matchIndex = lowerCaseText.indexOf(searchQuery, cursor);
   }
   if (cursor < text.length) {
     segments.push(text.slice(cursor));

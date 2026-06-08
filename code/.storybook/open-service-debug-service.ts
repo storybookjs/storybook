@@ -3,7 +3,7 @@ import * as v from 'valibot';
 import { logger } from 'storybook/internal/node-logger';
 import type { StoryIndexGenerator } from '../core/src/core-server/utils/StoryIndexGenerator.ts';
 
-import { defineService } from '../core/src/shared/open-service/index.ts';
+import { defineService } from 'storybook/open-service';
 import { describeService, registerService } from '../core/src/shared/open-service/server.ts';
 
 const DEBUG_SERVICE_ID = 'storybook/internal/open-service-debug';

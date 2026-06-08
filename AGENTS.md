@@ -243,6 +243,17 @@ When writing unit tests (utilities, hooks, non-React modules):
 - Use coverage when useful: `yarn vitest run --coverage <test-file>`
 - Mock external dependencies like file system access and loggers
 
+### Filesystem tests with `memfs`
+
+For unit tests that touch `node:fs` / `node:fs/promises`, use [`memfs`](https://github.com/streamich/memfs) instead of real temp directories or wholesale `node:fs` mocks:
+
+- Import `vol` from `memfs` and call `vol.reset()` in `beforeEach`
+- Seed virtual files with `vol.fromNestedJSON({ '/absolute/path/file.json': '...' })` or memfs `writeFile` after redirecting spies
+- Use `vi.mock('node:fs/promises', { spy: true })` and, in `beforeEach`, point `mkdir` / `writeFile` / `readFile` at `memfs.fs.promises` (see `code/core/src/shared/open-service/server.test.ts`)
+- Assert disk state with `vol.toJSON()` when helpful
+
+Do **not** use `/tmp` paths or replace `node:fs/promises` with a full async factory mock unless a test file already standardizes on the spy redirect pattern above.
+
 ## Quality and Logging
 
 After changing files:

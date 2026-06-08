@@ -1,7 +1,7 @@
+import { getChannel } from 'storybook/internal/channels';
 import { MANAGER_INERT_ATTRIBUTE_CHANGED, TELEMETRY_ERROR } from 'storybook/internal/core-events';
 
 import { global } from '@storybook/global';
-
 import { globalPackages, globalsNameReferenceMap } from './globals/globals.ts';
 import { globalsNameValueMap } from './globals/runtime.ts';
 import { maybeSetupPreviewNavigator } from './preview-navigator.ts';
@@ -35,7 +35,11 @@ export function setup() {
   });
 
   global.sendTelemetryError = (error: any) => {
-    const channel = global.__STORYBOOK_ADDONS_CHANNEL__;
+    const channel = getChannel();
+    if (!channel) {
+      return;
+    }
+
     channel.emit(TELEMETRY_ERROR, prepareForTelemetry(error));
   };
 
@@ -59,7 +63,11 @@ export function setup() {
       setInert(true);
     }
 
-    const channel = global.__STORYBOOK_ADDONS_CHANNEL__;
+    const channel = getChannel();
+    if (!channel) {
+      return;
+    }
+
     channel.on(MANAGER_INERT_ATTRIBUTE_CHANGED, (isInert: boolean) => {
       setInert(freeze || isInert);
     });

@@ -1,7 +1,7 @@
 import { selectComponentEntriesByComponentId } from '../../../../common/utils/select-component-entry.ts';
 import { OpenServiceDocgenMissingComponentError } from '../../../../server-errors.ts';
 import type { StoryIndex } from '../../../../types/modules/indexer.ts';
-import { registerService } from '../../service-registration.ts';
+import { registerService } from '../../server.ts';
 import { docgenServiceDef } from './definition.ts';
 import type { DocgenPayload, DocgenProvider } from './types.ts';
 
@@ -34,22 +34,10 @@ export function registerDocgenService(options: RegisterDocgenServiceOptions) {
   return registerService(docgenServiceDef, {
     queries: {
       getDocgen: {
-        load: async (input, ctx) => {
-          await ctx.self.commands.extractDocgen(input);
-        },
         staticInputs: async () => {
           const index = await options.getIndex();
           const eligible = selectComponentEntriesByComponentId(Object.values(index.entries));
           return Array.from(eligible.keys(), (id) => ({ id }));
-        },
-      },
-      getDocgenForAllComponents: {
-        load: async (_input, ctx) => {
-          const index = await options.getIndex();
-          const ids = Array.from(
-            selectComponentEntriesByComponentId(Object.values(index.entries)).keys()
-          );
-          await Promise.all(ids.map((id) => ctx.self.commands.extractDocgen({ id })));
         },
       },
     },
@@ -79,6 +67,15 @@ export function registerDocgenService(options: RegisterDocgenServiceOptions) {
             state.components[input.id] = payload;
           });
           return payload;
+        },
+      },
+      extractAllDocgen: {
+        handler: async (_input, ctx) => {
+          const index = await options.getIndex();
+          const ids = Array.from(
+            selectComponentEntriesByComponentId(Object.values(index.entries)).keys()
+          );
+          await Promise.all(ids.map((id) => ctx.self.commands.extractDocgen({ id })));
         },
       },
     },

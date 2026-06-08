@@ -38,6 +38,10 @@ const config = defineMain({
       titlePrefix: 'preview',
     },
     {
+      directory: '../core/src/shared',
+      titlePrefix: 'core/shared',
+    },
+    {
       directory: '../core/src/components/brand',
       titlePrefix: 'brand',
     },

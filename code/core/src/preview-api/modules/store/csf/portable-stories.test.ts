@@ -8,6 +8,8 @@ import type {
   StoryAnnotationsOrFn as Story,
 } from 'storybook/internal/types';
 
+import { getCoreAnnotations } from '../../../../csf/core-annotations.ts';
+import { definePreview } from '../../../../csf/csf-factories.ts';
 import { Tag } from '../../../../shared/constants/tags.ts';
 import * as defaultExportAnnotations from './__mocks__/defaultExportAnnotations.mockfile.ts';
 import * as namedExportAnnotations from './__mocks__/namedExportAnnotations.mockfile.ts';
@@ -64,6 +66,25 @@ describe('composeStory', () => {
         tags: [Tag.AUTODOCS],
       })
     );
+  });
+
+  it('injects the core annotations once for plain (CSF3) project annotations', () => {
+    const coreLoaderCount = getCoreAnnotations().flatMap((it) => (it as any).loaders ?? []).length;
+    const finalAnnotations = setProjectAnnotations([{ render: () => {} }]);
+
+    expect(coreLoaderCount).toBeGreaterThan(0);
+    expect(finalAnnotations.loaders).toHaveLength(coreLoaderCount);
+  });
+
+  it('does NOT double the core annotations for a CSF4 composed preview (addon-vitest path)', () => {
+    // addon-vitest's setup file calls setProjectAnnotations(getProjectAnnotations()), where the
+    // CSF4 codegen returns the already-core-composed `definePreview().composed`.
+    const composed = definePreview({ render: () => {} }).composed;
+    const coreLoaderCount = getCoreAnnotations().flatMap((it) => (it as any).loaders ?? []).length;
+
+    const finalAnnotations = setProjectAnnotations(composed);
+
+    expect(finalAnnotations.loaders).toHaveLength(coreLoaderCount);
   });
 
   it('should compose project annotations in all module formats', () => {

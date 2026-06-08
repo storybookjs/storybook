@@ -1133,6 +1133,55 @@ describe('transformer', () => {
     });
 
     describe('tags filtering mechanism', () => {
+      it('should pass skip tags to testStory call of child tests using tags.skip', async () => {
+        const code = `
+          import { config } from '#.storybook/preview';
+          const meta = config.meta({});
+          export const Primary = meta.story({});
+          Primary.test("foo", () => {});
+        `;
+
+        const result = await transform({
+          code,
+          tagsFilter: {
+            include: [],
+            exclude: [],
+            skip: ['skip', 'custom-skip'],
+          },
+        });
+
+        expect(result.code).toMatchInlineSnapshot(`
+          import { test as _test, expect as _expect, describe as _describe } from "vitest";
+          import { testStory as _testStory, convertToFilePath } from "@storybook/addon-vitest/internal/test-utils";
+          import { config } from '#.storybook/preview';
+          const meta = config.meta({
+            title: "automatic/calculated/title"
+          });
+          export const Primary = meta.story({});
+          Primary.test("foo", () => {});
+          const _isRunningFromThisFile = convertToFilePath(import.meta.url).includes(globalThis.__vitest_worker__.filepath ?? _expect.getState().testPath);
+          if (_isRunningFromThisFile) {
+            _describe("Primary  ", () => {
+              _test("base story", _testStory({
+                exportName: "Primary",
+                story: Primary,
+                meta: meta,
+                skipTags: ["skip","custom-skip"],
+                storyId: "automatic-calculated-title--primary"
+              }));
+              _test("foo", _testStory({
+                exportName: "Primary",
+                story: Primary,
+                meta: meta,
+                skipTags: ["skip","custom-skip"],
+                storyId: "automatic-calculated-title--primary:foo",
+                testName: "foo"
+              }));
+            });
+          }
+        `);
+      });
+
       it('should only include stories from tags.include', async () => {
         const code = `
         import { config } from '#.storybook/preview';

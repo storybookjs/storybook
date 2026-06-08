@@ -19,9 +19,6 @@ const Bar = styled.div(({ theme }) => ({
   minHeight: 32,
 }));
 
-// Prompt copied to the clipboard so a reviewer can paste it to their coding
-// agent to regenerate the review against the current working tree.
-
 /**
  * Attention bar shown at the top of the review screens when the cached review
  * has been marked stale (a source file changed after it was created).

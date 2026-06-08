@@ -112,8 +112,8 @@ describe('StoryStore', () => {
 
     // The number of loaders contributed by the core annotations (actions + test addons).
     // We use loaders as a deterministic, FEATURES-independent signal for "core was injected".
-    const coreLoaderCount = normalizeProjectAnnotations(composeConfigs(getCoreAnnotations())).loaders!
-      .length;
+    const coreLoaderCount = normalizeProjectAnnotations(composeConfigs(getCoreAnnotations()))
+      .loaders!.length;
 
     it('injects the core annotations exactly once for a plain (CSF1/2/3) preview', () => {
       // `projectAnnotations` here is what the Vite/Webpack codegen produces for a CSF3 preview:
@@ -127,7 +127,7 @@ describe('StoryStore', () => {
     it('does NOT double the core annotations for a CSF4 (definePreview) composed preview', () => {
       // `definePreview().composed` is what the codegen returns for a CSF4 preview. It already
       // contains the core annotations and is flagged as such.
-      const composed = definePreview({ render: () => {} }).composed;
+      const composed = definePreview({ renderToCanvas: () => {} }).composed;
       const store = new StoryStore(storyIndex, importFn, composed);
 
       // Core is present exactly once, matching the already-composed preview.
@@ -136,7 +136,7 @@ describe('StoryStore', () => {
     });
 
     it('regression guard: an un-flagged composed preview would double the core annotations', () => {
-      const composed = definePreview({ render: () => {} }).composed;
+      const composed = definePreview({ renderToCanvas: () => {} }).composed;
       // Strip the (non-enumerable) marker to simulate the pre-fix behavior.
       const unflagged = { ...composed };
       const store = new StoryStore(storyIndex, importFn, unflagged);
@@ -147,11 +147,11 @@ describe('StoryStore', () => {
 
     it('does NOT double the core annotations via setProjectAnnotations for a CSF4 preview (HMR)', () => {
       const store = new StoryStore(storyIndex, importFn, projectAnnotations);
-      const composed = definePreview({ render: () => {} }).composed;
+      const composed = definePreview({ renderToCanvas: () => {} }).composed;
 
       // The HMR path (setProjectAnnotations) only re-normalizes the incoming project annotations,
       // it never prepends core, so an already-core-composed CSF4 preview stays at core x1.
-      store.setProjectAnnotations(composed);
+      store.setProjectAnnotations(composed as unknown as ProjectAnnotations<any>);
 
       expect(store.projectAnnotations.loaders).toEqual(composed.loaders);
       expect(store.projectAnnotations.loaders).toHaveLength(coreLoaderCount);

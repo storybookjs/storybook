@@ -79,7 +79,7 @@ describe('composeStory', () => {
   it('does NOT double the core annotations for a CSF4 composed preview (addon-vitest path)', () => {
     // addon-vitest's setup file calls setProjectAnnotations(getProjectAnnotations()), where the
     // CSF4 codegen returns the already-core-composed `definePreview().composed`.
-    const composed = definePreview({ render: () => {} }).composed;
+    const composed = definePreview({ renderToCanvas: () => {} }).composed;
     const coreLoaderCount = getCoreAnnotations().flatMap((it) => (it as any).loaders ?? []).length;
 
     const finalAnnotations = setProjectAnnotations(composed);

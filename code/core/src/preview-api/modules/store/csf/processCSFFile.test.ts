@@ -139,9 +139,9 @@ it('filters exports using excludeStories regex', () => {
 
 describe('CSF4 factory files', () => {
   it('sets projectAnnotations to the core-composed preview exactly once', () => {
-    const preview = definePreview({ render: () => {} });
+    const preview = definePreview({ renderToCanvas: () => {} });
     const meta = preview.meta({ title: 'Component' });
-    const Primary = meta.story({});
+    const Primary = meta.story();
 
     const csfFile = processCSFFile(
       { default: meta, Primary },

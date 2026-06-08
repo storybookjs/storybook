@@ -1,19 +1,39 @@
-import { logger } from "storybook/internal/client-logger";
-import type { ArgTypes } from "storybook/internal/types";
+import { logger } from 'storybook/internal/client-logger';
+import { definePreviewAddon } from 'storybook/internal/csf';
+import type { ArgTypes } from 'storybook/internal/types';
 
-import type { ServiceInstanceOf } from "storybook/open-service";
+import type { ServiceInstanceOf } from 'storybook/open-service';
 
-import { getService, registerService } from "../../preview.ts";
-import { docgenServiceDef } from "./definition.ts";
+import { getService, registerService } from '../../preview.ts';
+import { docgenServiceDef } from './definition.ts';
 
 export type DocgenService = ServiceInstanceOf<typeof docgenServiceDef>;
+
+/**
+ * Core preview annotation that registers the `core/docgen` runtime.
+ *
+ * Added to `getCoreAnnotations` like every other core annotation, but registration happens in
+ * `beforeAll` rather than at module top-level. `beforeAll` is the one hook guaranteed to run after the
+ * addons channel is installed and only in a real preview lifecycle — core annotations themselves are
+ * evaluated in channel-less contexts (portable stories, pre-channel runtime boot) and composed
+ * multiple times per boot, so a top-level registration here would be unsafe. Addon/user services can
+ * register at top-level because their preview modules load after the channel; core cannot.
+ */
+export default () =>
+  definePreviewAddon({
+    beforeAll: async () => {
+      if (globalThis.FEATURES?.experimentalDocgenServer) {
+        registerPreviewDocgenService();
+      }
+    },
+  });
 
 /**
  * Registers the preview-side `core/docgen` runtime.
  *
  * The server owns extraction commands, while the preview owns `setCustomArgTypes` because only the
  * preview has access to normalized CSF annotations. Manager/docs consumers observe the resulting
- * state through open-service sync.
+ * state through open-service sync. Safe to call repeatedly: `registerService` is idempotent by id.
  */
 export function registerPreviewDocgenService(): DocgenService {
   return registerService(docgenServiceDef, {
@@ -27,19 +47,15 @@ export function registerPreviewDocgenService(): DocgenService {
       },
       setCustomArgTypes: {
         handler: async (input, ctx) => {
-          const componentId = input.storyId.split("--")[0];
+          const componentId = input.storyId.split('--')[0];
 
           ctx.self.setState((state) => {
-            const existing =
-              state.customArgTypes.byComponent[componentId] ?? {};
+            const existing = state.customArgTypes.byComponent[componentId] ?? {};
             state.customArgTypes.byComponent[componentId] = {
               meta: input.metaArgTypes ?? existing.meta,
               stories: {
                 ...existing.stories,
-                [input.storyId]:
-                  input.storyArgTypes ??
-                  existing.stories?.[input.storyId] ??
-                  {},
+                [input.storyId]: input.storyArgTypes ?? existing.stories?.[input.storyId] ?? {},
               },
             };
           });
@@ -58,16 +74,14 @@ export function registerPreviewDocgenService(): DocgenService {
 export function pushDocgenProjectCustomArgTypes(argTypes?: ArgTypes) {
   let service: DocgenService;
   try {
-    service = getService("core/docgen");
+    service = getService('core/docgen');
   } catch {
     return;
   }
 
-  void service.commands
-    .setProjectCustomArgTypes({ argTypes })
-    .catch((error) => {
-      logger.debug(`Failed to push docgen project custom argTypes: ${error}`);
-    });
+  void service.commands.setProjectCustomArgTypes({ argTypes }).catch((error) => {
+    logger.debug(`Failed to push docgen project custom argTypes: ${error}`);
+  });
 }
 
 /**
@@ -86,7 +100,7 @@ export function pushDocgenCustomArgTypes({
 }) {
   let service: DocgenService;
   try {
-    service = getService("core/docgen");
+    service = getService('core/docgen');
   } catch {
     return;
   }
@@ -98,8 +112,6 @@ export function pushDocgenCustomArgTypes({
       storyArgTypes,
     })
     .catch((error) => {
-      logger.debug(
-        `Failed to push docgen custom argTypes for ${storyId}: ${error}`,
-      );
+      logger.debug(`Failed to push docgen custom argTypes for ${storyId}: ${error}`);
     });
 }

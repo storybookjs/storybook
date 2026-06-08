@@ -34,7 +34,9 @@ type ReactDocgenPayload = DocgenPayload & {
 /** Converts one RCM `ComponentDoc` into the `StrictArgTypes` shape consumed by args tables. */
 function extractArgTypesFromComponentMeta(componentMeta: ComponentDoc | undefined) {
   return componentMeta
-    ? ((extractArgTypes({ __docgenInfo: componentMeta }) ?? undefined) as StrictArgTypes | undefined)
+    ? ((extractArgTypes({ __docgenInfo: componentMeta }) ?? undefined) as
+        | StrictArgTypes
+        | undefined)
     : undefined;
 }
 

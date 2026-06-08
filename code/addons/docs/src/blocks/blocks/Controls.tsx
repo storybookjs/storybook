@@ -6,7 +6,10 @@ import { useId } from '@react-aria/utils';
 
 import type { Parameters, Renderer, StrictArgTypes } from 'storybook/internal/csf';
 import type { ArgTypesExtractor } from 'storybook/internal/docs-tools';
-import { getServiceSubcomponentArgTypes, mergeServiceArgTypes } from 'storybook/internal/docs-tools';
+import {
+  getServiceSubcomponentArgTypes,
+  mergeServiceArgTypes,
+} from 'storybook/internal/docs-tools';
 import type { ModuleExports } from 'storybook/internal/types';
 
 import { filterArgTypes } from 'storybook/preview-api';

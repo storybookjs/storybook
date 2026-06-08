@@ -66,20 +66,12 @@ describe('service registration', () => {
     expect(descriptor.commands.assignRecordField.output).toBe(voidOutputSchema);
   });
 
-  it('throws when registering the same service id twice', () => {
-    registerService(mutableRecordLookupServiceDef);
+  it('is idempotent by id: re-registering returns the existing instance instead of throwing', () => {
+    const first = registerService(mutableRecordLookupServiceDef);
+    const second = registerService(mutableRecordLookupServiceDef);
 
-    try {
-      registerService(mutableRecordLookupServiceDef);
-      expect.unreachable('Expected duplicate registration to throw');
-    } catch (error) {
-      expect(error).toMatchObject({
-        fromStorybook: true,
-        code: 6,
-        message:
-          'A service with id "internal-fixture/mutable-record-lookup" is already registered.',
-      });
-    }
+    expect(second).toBe(first);
+    expect(getRegisteredServices()).toHaveLength(1);
   });
 
   it('throws a Storybook error when resolving a missing registered service id', () => {

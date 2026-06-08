@@ -1,33 +1,24 @@
-import type { FC } from "react";
-import React from "react";
+import type { FC } from 'react';
+import React from 'react';
 
-import type {
-  Args,
-  Parameters,
-  Renderer,
-  StrictArgTypes,
-} from "storybook/internal/csf";
-import type { ArgTypesExtractor } from "storybook/internal/docs-tools";
+import type { Args, Parameters, Renderer, StrictArgTypes } from 'storybook/internal/csf';
+import type { ArgTypesExtractor } from 'storybook/internal/docs-tools';
 import {
   getServiceSubcomponentArgTypes,
   mergeServiceArgTypes,
-} from "storybook/internal/docs-tools";
-import { InvalidBlockOfPropError } from "storybook/internal/preview-errors";
-import type { ModuleExports } from "storybook/internal/types";
+} from 'storybook/internal/docs-tools';
+import { InvalidBlockOfPropError } from 'storybook/internal/preview-errors';
+import type { ModuleExports } from 'storybook/internal/types';
 
-import type { PropDescriptor } from "storybook/preview-api";
-import { filterArgTypes } from "storybook/preview-api";
+import type { PropDescriptor } from 'storybook/preview-api';
+import { filterArgTypes } from 'storybook/preview-api';
 
-import type { SortType } from "../components";
-import {
-  ArgsTableError,
-  ArgsTable as PureArgsTable,
-  TabbedArgsTable,
-} from "../components";
-import { useOf } from "./useOf";
-import { useServiceDocgen } from "./useServiceDocgen";
-import { getComponentName } from "./utils";
-import { withMdxComponentOverride } from "./with-mdx-component-override";
+import type { SortType } from '../components';
+import { ArgsTableError, ArgsTable as PureArgsTable, TabbedArgsTable } from '../components';
+import { useOf } from './useOf';
+import { useServiceDocgen } from './useServiceDocgen';
+import { getComponentName } from './utils';
+import { withMdxComponentOverride } from './with-mdx-component-override';
 
 type ArgTypesParameters = {
   include?: PropDescriptor;
@@ -36,7 +27,7 @@ type ArgTypesParameters = {
 };
 
 type ArgTypesProps = ArgTypesParameters & {
-  of?: Renderer["component"] | ModuleExports;
+  of?: Renderer['component'] | ModuleExports;
 };
 
 type ResolvedArgTypes = {
@@ -45,17 +36,16 @@ type ResolvedArgTypes = {
   storyId?: string;
   initialArgs?: Args;
   argTypes?: StrictArgTypes;
-  component?: Renderer["component"];
-  subcomponents?: Record<string, Renderer["component"]>;
+  component?: Renderer['component'];
+  subcomponents?: Record<string, Renderer['component']>;
   filterProps: ArgTypesParameters;
 };
 
 function extractComponentArgTypes(
-  component: Renderer["component"],
-  parameters: Parameters,
+  component: Renderer['component'],
+  parameters: Parameters
 ): StrictArgTypes {
-  const { extractArgTypes }: { extractArgTypes: ArgTypesExtractor } =
-    parameters.docs || {};
+  const { extractArgTypes }: { extractArgTypes: ArgTypesExtractor } = parameters.docs || {};
   if (!extractArgTypes) {
     throw new Error(ArgsTableError.ARGS_UNSUPPORTED);
   }
@@ -64,13 +54,13 @@ function extractComponentArgTypes(
 
 function useResolveArgTypes(props: ArgTypesProps): ResolvedArgTypes {
   const { of } = props;
-  if ("of" in props && of === undefined) {
+  if ('of' in props && of === undefined) {
     throw new InvalidBlockOfPropError();
   }
-  const resolved = useOf(of || "meta");
+  const resolved = useOf(of || 'meta');
 
-  let resolvedArgTypes: Omit<ResolvedArgTypes, "filterProps">;
-  if (resolved.type === "component") {
+  let resolvedArgTypes: Omit<ResolvedArgTypes, 'filterProps'>;
+  if (resolved.type === 'component') {
     const {
       component,
       projectAnnotations: { parameters },
@@ -80,23 +70,22 @@ function useResolveArgTypes(props: ArgTypesProps): ResolvedArgTypes {
       argTypes: extractComponentArgTypes(component, parameters as Parameters),
       component,
     };
-  } else if (resolved.type === "meta") {
+  } else if (resolved.type === 'meta') {
     const { id, argTypes, parameters, initialArgs, component, subcomponents } =
       resolved.preparedMeta;
     resolvedArgTypes = {
       parameters,
-      componentId: id.split("--")[0],
+      componentId: id.split('--')[0],
       initialArgs,
       argTypes,
       component,
       subcomponents,
     };
   } else {
-    const { id, argTypes, parameters, initialArgs, component, subcomponents } =
-      resolved.story;
+    const { id, argTypes, parameters, initialArgs, component, subcomponents } = resolved.story;
     resolvedArgTypes = {
       parameters,
-      componentId: id.split("--")[0],
+      componentId: id.split('--')[0],
       storyId: id,
       initialArgs,
       argTypes,
@@ -119,7 +108,7 @@ function useResolveArgTypes(props: ArgTypesProps): ResolvedArgTypes {
 }
 
 function renderArgTypesTables({
-  mainName = "Main",
+  mainName = 'Main',
   mainRows,
   subcomponentRows,
   include,
@@ -148,7 +137,7 @@ function renderArgTypesTables({
           rows: filterArgTypes(rows, include, exclude),
           sort,
         },
-      ]),
+      ])
     ),
   };
 
@@ -157,8 +146,7 @@ function renderArgTypesTables({
 
 /** @internal Used by ArgTypes block stories to compare legacy and docgen service paths. */
 export const LegacyArgTypes: FC<ArgTypesProps> = (props) => {
-  const { argTypes, parameters, component, subcomponents, filterProps } =
-    useResolveArgTypes(props);
+  const { argTypes, parameters, component, subcomponents, filterProps } = useResolveArgTypes(props);
 
   if (!argTypes) {
     return null;
@@ -168,7 +156,7 @@ export const LegacyArgTypes: FC<ArgTypesProps> = (props) => {
     Object.entries(subcomponents || {}).map(([key, comp]) => [
       key,
       extractComponentArgTypes(comp, parameters),
-    ]),
+    ])
   );
 
   return renderArgTypesTables({
@@ -181,8 +169,7 @@ export const LegacyArgTypes: FC<ArgTypesProps> = (props) => {
 
 /** @internal Used by ArgTypes block stories to compare legacy and docgen service paths. */
 export const DocgenServiceArgTypes: FC<ArgTypesProps> = (props) => {
-  const { parameters, componentId, storyId, initialArgs, filterProps } =
-    useResolveArgTypes(props);
+  const { parameters, componentId, storyId, initialArgs, filterProps } = useResolveArgTypes(props);
   const servicePayload = useServiceDocgen(componentId);
 
   if (!servicePayload || !componentId) {
@@ -210,4 +197,4 @@ const ArgTypesImpl: FC<ArgTypesProps> = (props) => {
   );
 };
 
-export const ArgTypes = withMdxComponentOverride("ArgTypes", ArgTypesImpl);
+export const ArgTypes = withMdxComponentOverride('ArgTypes', ArgTypesImpl);

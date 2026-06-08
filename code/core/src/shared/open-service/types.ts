@@ -372,9 +372,7 @@ export type ServiceInstanceOf<TDefinition extends AnyServiceDefinition> =
 export interface ServiceRegistryApi {
   listServices(): Promise<ServiceSummary[]>;
   describeService(serviceId: ServiceId): Promise<ServiceDescriptor>;
-  getService<TInstance extends RuntimeService = RuntimeService>(
-    serviceId: ServiceId
-  ): TInstance;
+  getService<TInstance extends RuntimeService = RuntimeService>(serviceId: ServiceId): TInstance;
 }
 
 export type RuntimeService = ServiceInstance<unknown, Queries<unknown>, Commands<unknown>> &

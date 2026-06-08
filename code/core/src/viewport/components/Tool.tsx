@@ -20,8 +20,16 @@ const Dimensions = styled.div(({ theme }) => ({
 }));
 
 export const ViewportTool = () => {
-  const { name, value, isDefault, isCustom, isLocked, options: viewportMap, reset, select } =
-    useViewport();
+  const {
+    name,
+    value,
+    isDefault,
+    isCustom,
+    isLocked,
+    options: viewportMap,
+    reset,
+    select,
+  } = useViewport();
 
   const options = useMemo(() => {
     const presetOptions = Object.entries(viewportMap).map(([k, value]) => ({
@@ -47,7 +55,7 @@ export const ViewportTool = () => {
         {
           value,
           title: name,
-          icon: iconsMap['other'],
+          icon: iconsMap.other,
           right: null,
         },
       ];

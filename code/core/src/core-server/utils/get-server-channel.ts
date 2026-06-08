@@ -1,7 +1,7 @@
 import type { IncomingMessage } from 'node:http';
 
 import type { ChannelHandler } from 'storybook/internal/channels';
-import { Channel, HEARTBEAT_INTERVAL, setChannel } from 'storybook/internal/channels';
+import { Channel, HEARTBEAT_INTERVAL } from 'storybook/internal/channels';
 
 import { isJSON, parse, stringify } from 'telejson';
 import WebSocket, { WebSocketServer } from 'ws';
@@ -104,8 +104,6 @@ export function getServerChannel(server: Server, options: ServerChannelTransport
   const transports = [new ServerChannelTransport(server, options)];
 
   const channel = new Channel({ transports, async: true });
-
-  setChannel(channel);
 
   UniversalStore.__prepare(channel, UniversalStore.Environment.SERVER);
 

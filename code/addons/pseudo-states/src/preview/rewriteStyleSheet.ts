@@ -69,9 +69,6 @@ const extractPseudoStates = (selector: string) => {
       // If removing pseudo-state selectors from inside a functional selector left it empty (thus invalid), must fix it by adding '*'.
       // The negative lookbehind ensures we don't replace :is() with :is(*).
       .replaceAll(/(?<!is)\(\)/g, '(*)')
-      // If removing pseudo-state selectors left a combinator without a right-hand selector,
-      // keep the selector valid by targeting any child/sibling.
-      .replace(/([>+~])\s*(?=$|[,)])/g, '$1 *')
       // If a selector list was left with blank items (e.g. ", foo, , bar, "), remove the extra commas/spaces.
       .replace(/(?<=[\s(]),\s+|(,\s+)+(?=\))/g, '') || '*';
 

@@ -298,34 +298,6 @@ describe('renderJsx', () => {
     `);
   });
 
-  // arrow functions with an empty .name, so without help they rendered as <No Display Name>.
-  /* eslint-disable react/display-name */
-  it('resolves subcomponents attached as properties of a parent component', () => {
-    const Modal: any = ({ children }: { children?: React.ReactNode }) => <div>{children}</div>;
-    Modal.Title = ({ children }: { children?: React.ReactNode }) => <h2>{children}</h2>;
-    Modal.Content = ({ children }: { children?: React.ReactNode }) => <p>{children}</p>;
-
-    expect(
-      renderJsx(
-        <Modal>
-          <Modal.Title>Hi</Modal.Title>
-          <Modal.Content>Body</Modal.Content>
-        </Modal>,
-        { parentComponent: Modal }
-      )
-    ).toMatchInlineSnapshot(`
-      <Modal>
-        <Modal.Title>
-          Hi
-        </Modal.Title>
-        <Modal.Content>
-          Body
-        </Modal.Content>
-      </Modal>
-    `);
-  });
-  /* eslint-enable react/display-name */
-
   // Regression for #27127: react-element-to-jsx-string used to omit boolean
   // props explicitly set to `false`. Patched via algolia/react-element-to-jsx-string#733
   // so a `false` prop is rendered while a `true` prop keeps the shorthand syntax.

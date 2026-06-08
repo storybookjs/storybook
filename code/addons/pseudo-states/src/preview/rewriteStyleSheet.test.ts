@@ -390,22 +390,6 @@ describe('rewriteStyleSheet', () => {
     );
   });
 
-  it('keeps child-combinator pseudo-state selectors valid', () => {
-    const sheet = new Sheet('.ds-card > :focus-visible { outline: none }');
-    rewriteStyleSheet(sheet as any);
-    expect(sheet.cssRules[0].cssText).toEqual(
-      '.ds-card > :focus-visible, .ds-card > .pseudo-focus-visible, .pseudo-focus-visible-all .ds-card > * { outline: none }'
-    );
-  });
-
-  it('keeps pseudo-state selectors valid inside ":has" child combinators', () => {
-    const sheet = new Sheet('.ds-card:has(> :focus-visible) { outline: 4px solid blue }');
-    rewriteStyleSheet(sheet as any);
-    expect(sheet.cssRules[0].cssText).toEqual(
-      '.ds-card:has(> :focus-visible), .ds-card:has(> .pseudo-focus-visible), .pseudo-focus-visible-all .ds-card:has(> *) { outline: 4px solid blue }'
-    );
-  });
-
   it('supports ":has" inside and outside of ":not"', () => {
     const sheet = new Sheet(':has(:not(:hover, :has(:focus), :has(:active))) { color: red }');
     rewriteStyleSheet(sheet as any);

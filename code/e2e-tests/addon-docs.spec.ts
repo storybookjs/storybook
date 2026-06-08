@@ -288,25 +288,4 @@ test.describe('addon-docs', () => {
     const root = sbPage.previewRoot();
     await expect(root.getByText('children').first()).toBeVisible();
   });
-
-  test('should reset scroll position between pages', async ({ page }) => {
-    const sbPage = new SbPage(page, expect);
-
-    // Open a long docs page and scroll it down. The preview is rendered inside the iframe, so the
-    // scroll lives on the iframe's documentElement (see WebView.prepareForDocs).
-    await sbPage.navigateToStory('addons/docs/docspage/basic', 'docs');
-
-    const documentElement = sbPage.previewIframe().locator('html');
-    await documentElement.evaluate((el) => {
-      el.scrollTop = 100000;
-    });
-
-    // Confirm the page actually scrolled, otherwise the reset assertion below would be meaningless.
-    await expect.poll(() => documentElement.evaluate((el) => el.scrollTop)).toBeGreaterThan(0);
-
-    // Navigate to a different docs page by clicking its link in the sidebar.
-    await sbPage.navigateToStory('example/button', 'docs');
-
-    await expect.poll(() => documentElement.evaluate((el) => el.scrollTop)).toBe(0);
-  });
 });

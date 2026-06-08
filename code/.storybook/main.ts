@@ -38,10 +38,6 @@ const config = defineMain({
       titlePrefix: 'preview',
     },
     {
-      directory: '../core/src/shared',
-      titlePrefix: 'core/shared',
-    },
-    {
       directory: '../core/src/components/brand',
       titlePrefix: 'brand',
     },
@@ -156,8 +152,6 @@ const config = defineMain({
   features: {
     developmentModeForBuild: true,
     experimentalTestSyntax: true,
-    experimentalDocgenServer: true,
-    experimentalReactComponentMeta: true,
     changeDetection: true,
   },
   staticDirs: [{ from: './bench/bundle-analyzer', to: '/bundle-analyzer' }],

@@ -47,6 +47,7 @@ class ReactProvider extends Provider {
 
     this.addons = addons;
     this.channel = channel;
+    global.__STORYBOOK_ADDONS_CHANNEL__ = channel;
   }
 
   getElements(type: Addon_Types) {

@@ -30,6 +30,7 @@ const preview = new PreviewWeb(importFn, getProjectAnnotations);
 
 window.__STORYBOOK_PREVIEW__ = preview;
 window.__STORYBOOK_STORY_STORE__ = preview.storyStore;
+window.__STORYBOOK_ADDONS_CHANNEL__ = channel;
 
 if (import.meta.webpackHot) {
   import.meta.webpackHot.addStatusHandler((status) => {

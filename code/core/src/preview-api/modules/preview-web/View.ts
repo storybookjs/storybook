@@ -4,7 +4,7 @@ export interface View<TStorybookRoot> {
   // Get ready to render a story, returning the element to render to
   prepareForStory(story: PreparedStory<any>): TStorybookRoot;
 
-  prepareForDocs(options?: { scrollReset?: boolean }): TStorybookRoot;
+  prepareForDocs(): TStorybookRoot;
 
   showErrorDisplay(err: { message?: string; stack?: string }): void;
 

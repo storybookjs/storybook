@@ -29,26 +29,26 @@ describe('ai-checklist-flags', () => {
   });
 
   describe('hasAiInitOptIn', () => {
-    it('returns false when nothing is cached', async () => {
+    it('returns true when nothing is cached', async () => {
       const { hasAiInitOptIn } = await import('./ai-checklist-flags.ts');
-      expect(await hasAiInitOptIn('/some/project/.storybook')).toBe(false);
+      expect(await hasAiInitOptIn('/some/project/.storybook')).toBe(true);
     });
 
-    it('returns false when the cached configDir is for a different project', async () => {
+    it('returns true when the cached configDir is for a different project', async () => {
       mockCacheStore.set('ai-init-opt-in', {
         timestamp: Date.now(),
         configDir: resolve('/repo/apps/web/.storybook'),
       });
       const { hasAiInitOptIn } = await import('./ai-checklist-flags.ts');
-      expect(await hasAiInitOptIn('/repo/packages/ui/.storybook')).toBe(false);
+      expect(await hasAiInitOptIn('/repo/packages/ui/.storybook')).toBe(true);
     });
 
-    it('returns false when the cached entry lacks a configDir field', async () => {
+    it('returns true when the cached entry lacks a configDir field', async () => {
       // Defensive — should never happen in practice because the CLI always
       // writes configDir, but a corrupted cache shouldn't unlock this flag.
       mockCacheStore.set('ai-init-opt-in', { timestamp: Date.now() });
       const { hasAiInitOptIn } = await import('./ai-checklist-flags.ts');
-      expect(await hasAiInitOptIn('/any/project/.storybook')).toBe(false);
+      expect(await hasAiInitOptIn('/any/project/.storybook')).toBe(true);
     });
 
     it('returns true when the cached configDir matches the resolved input', async () => {

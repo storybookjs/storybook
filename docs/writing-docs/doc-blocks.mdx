@@ -1,7 +1,7 @@
 ---
 title: Doc blocks
 sidebar:
-  order: 3
+  order: 4
 ---
 
 Storybook offers several doc blocks to help document your components and other aspects of your project.
@@ -46,35 +46,7 @@ A button can be of secondary importance.
 {/* ... */}
 ```
 
-## Customizing the automatic docs page
-
-The blocks are also used to define the page template for [automatics docs](./autodocs.mdx). For example, here's the default template:
-
-![Screenshot of automatic docs template](../_assets/writing-docs/autodocs-default-template.png)
-
-```jsx
-import {
-  Title,
-  Subtitle,
-  Description,
-  Primary,
-  Controls,
-  Stories,
-} from '@storybook/addon-docs/blocks';
-
-export const autoDocsTemplate = () => (
-  <>
-    <Title />
-    <Subtitle />
-    <Description />
-    <Primary />
-    <Controls />
-    <Stories />
-  </>
-);
-```
-
-If you [override the default page template](./autodocs.mdx#write-a-custom-template), you can similarly use Doc Blocks to build the perfect documentation page for your project.
+The default page template is defined using Doc Blocks as well. For more information on how to customize it, see the [DocsPage documentation](./docs-page.mdx).
 
 Note that some doc blocks render other blocks. For example, the `<Stories />` block expands to:
 

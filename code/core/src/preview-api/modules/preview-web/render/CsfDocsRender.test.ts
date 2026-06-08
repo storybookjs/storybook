@@ -77,29 +77,3 @@ it('attached immediately', async () => {
 
   expect(context.storyById()).toEqual(story);
 });
-
-it('sets filterByAutodocs to true for autodocs pages', async () => {
-  const { story, csfFile, moduleExports } = csfFileParts();
-
-  const store = {
-    loadEntry: () => ({
-      entryExports: moduleExports,
-      csfFiles: [],
-    }),
-    processCSFFileWithCache: () => csfFile,
-    componentStoriesFromCSFFile: () => [story],
-    storyFromCSFFile: () => story,
-  } as unknown as StoryStore<Renderer>;
-
-  const render = new CsfDocsRender(
-    new Channel({}),
-    store,
-    entry,
-    {} as RenderContextCallbacks<Renderer>
-  );
-  await render.prepare();
-
-  const context = render.docsContext(vi.fn());
-
-  expect(context.filterByAutodocs).toBe(true);
-});

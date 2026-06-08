@@ -113,20 +113,6 @@ describe('attaching', () => {
 
     expect(context.storyById()).toEqual(story);
   });
-
-  it('sets filterByAutodocs to false for MDX pages', async () => {
-    const render = new MdxDocsRender(
-      new Channel({}),
-      store,
-      attachedEntry,
-      {} as RenderContextCallbacks<Renderer>
-    );
-    await render.prepare();
-
-    const context = render.docsContext(vi.fn());
-
-    expect(context.filterByAutodocs).toBe(false);
-  });
 });
 
 describe('docs parameters', () => {

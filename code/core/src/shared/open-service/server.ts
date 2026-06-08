@@ -10,9 +10,9 @@ import {
   getRegisteredServices,
   getService,
   listServices,
-  registerService as registerServiceCore,
+  registerService,
   serviceRegistryApi,
-} from './service-registry.ts';
+} from './service-registration.ts';
 import { createServiceRuntime, resolveStaticPath } from './service-runtime.ts';
 import { validateSchema } from './service-validation.ts';
 import type {
@@ -21,34 +21,20 @@ import type {
   Commands,
   Queries,
   ServiceDefinition,
-  ServiceInstance,
-  ServiceRegistrationOptions,
-  ServiceRegistryApi,
   StaticStore,
 } from './types.ts';
 
 type RuntimeServiceDefinition = ServiceDefinition<unknown, Queries<unknown>, Commands<unknown>>;
 type RuntimeQueryDefinition = AnyQueryDefinition<unknown>;
 
-export { clearRegistry, describeService, getRegisteredServices, getService, listServices };
-
-/**
- * Registers a service on the dev server and returns its runtime surface.
- *
- * The server is a relay hub: when a channel is installed (the `services` preset does this on a real
- * websocket transport) it bridges every connected manager tab. Without a channel — static builds and
- * the index builder — the runtime stays local-only.
- */
-export function registerService<
-  TState,
-  TQueries extends Queries<TState>,
-  TCommands extends Commands<TState>,
->(
-  definition: ServiceDefinition<TState, TQueries, TCommands>,
-  registration?: ServiceRegistrationOptions<TState, TQueries, TCommands>
-): ServiceInstance<TState, TQueries, TCommands> & ServiceRegistryApi {
-  return registerServiceCore(definition, registration, { relay: true });
-}
+export {
+  clearRegistry,
+  describeService,
+  getRegisteredServices,
+  getService,
+  listServices,
+  registerService,
+};
 
 /**
  * Builds serialized static-state snapshots for `load`-enabled queries across every service
@@ -102,7 +88,7 @@ export async function buildStaticFiles(): Promise<StaticStore> {
 
               await buildRuntime.runLoadOnce(queryName, validatedInput);
 
-              return { path, state: buildRuntime.getStateSnapshot() };
+              return { path, state: buildRuntime.stateSignal() };
             })
           );
         })()

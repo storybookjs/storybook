@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 import process from "process";
 
-import { SbPage } from "../../../../code/e2e-sandbox/util";
+import { SbPage } from "../../../../code/e2e-tests/util";
 
 const STORYBOOK_URL = "http://localhost:6006";
 const type = process.env.STORYBOOK_TYPE || "dev";

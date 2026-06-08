@@ -19,13 +19,8 @@ const stories: Record<string, Partial<PreparedStory>> = {
   story4: { name: 'Story Four', tags: [] },
 };
 
-const createMockContext = (
-  storyList: PreparedStory[],
-  overrides: Partial<DocsContextProps> = {}
-) => ({
+const createMockContext = (storyList: PreparedStory[]) => ({
   componentStories: vi.fn(() => storyList),
-  filterByAutodocs: true,
-  ...overrides,
 });
 
 const Wrapper: FC<PropsWithChildren<{ context: Partial<DocsContextProps> }>> = ({
@@ -33,7 +28,7 @@ const Wrapper: FC<PropsWithChildren<{ context: Partial<DocsContextProps> }>> = (
   context,
 }) => <DocsContext.Provider value={context as DocsContextProps}>{children}</DocsContext.Provider>;
 
-describe('usePrimaryStory — autodocs page (filterByAutodocs: true)', () => {
+describe('usePrimaryStory', () => {
   it('ignores !autodocs stories', () => {
     const mockContext = createMockContext([
       stories.story1,
@@ -54,7 +49,7 @@ describe('usePrimaryStory — autodocs page (filterByAutodocs: true)', () => {
     expect(result.current?.name).toBe('Story Two');
   });
 
-  it('returns undefined when no story has the autodocs tag', () => {
+  it('returns undefined if no story has "autodocs" tag', () => {
     const mockContext = createMockContext([stories.story1, stories.story4] as PreparedStory[]);
     const { result } = renderHook(() => usePrimaryStory(), {
       wrapper: ({ children }) => <Wrapper context={mockContext}>{children}</Wrapper>,
@@ -68,18 +63,5 @@ describe('usePrimaryStory — autodocs page (filterByAutodocs: true)', () => {
       wrapper: ({ children }) => <Wrapper context={mockContext}>{children}</Wrapper>,
     });
     expect(result.current).toBeUndefined();
-  });
-});
-
-describe('usePrimaryStory — MDX / custom page (filterByAutodocs: false)', () => {
-  it('returns the first story regardless of autodocs tag', () => {
-    const mockContext = createMockContext(
-      [stories.story1, stories.story2, stories.story3] as PreparedStory[],
-      { filterByAutodocs: false }
-    );
-    const { result } = renderHook(() => usePrimaryStory(), {
-      wrapper: ({ children }) => <Wrapper context={mockContext}>{children}</Wrapper>,
-    });
-    expect(result.current?.name).toBe('Story One');
   });
 });

@@ -3,7 +3,7 @@ import path from "node:path";
 
 import { expect, test, type Page } from "@playwright/test";
 
-import { SbPage } from "../../../../code/e2e-sandbox/util";
+import { SbPage } from "../../../../code/e2e-tests/util";
 
 const STORYBOOK_URL = "http://localhost:6006";
 const TEST_STORY_PATH = path.resolve(

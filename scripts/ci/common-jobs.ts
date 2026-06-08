@@ -2,7 +2,7 @@
 import glob from 'fast-glob';
 import { join } from 'path/posix';
 
-import { LINUX_ROOT_DIR, WINDOWS_ROOT_DIR, WORKING_DIR } from './utils/constants.ts';
+import { WINDOWS_ROOT_DIR, WORKING_DIR } from './utils/constants.ts';
 import {
   CACHE_KEYS,
   CACHE_PATHS,
@@ -161,42 +161,6 @@ export const storybookChromatic = defineJob(
   [commonJobsNoOpJob]
 );
 
-export const internalStorybookE2e = defineJob(
-  'Internal storybook E2E',
-  (workflowName) => ({
-    executor: {
-      name: 'sb_playwright',
-      class: 'medium+',
-    },
-    steps: [
-      ...workflow.restoreLinux(),
-      {
-        run: {
-          name: 'Run internal Storybook',
-          working_directory: 'code',
-          background: true,
-          command: 'yarn storybook:ui',
-        },
-      },
-      server.wait(['6006']),
-      {
-        run: {
-          name: 'Run internal Storybook E2E tests',
-          command: 'yarn task e2e-tests-internal --no-link -s e2e-tests-internal --junit',
-        },
-      },
-      artifact.persist(join(LINUX_ROOT_DIR, WORKING_DIR, 'test-results'), 'test-results'),
-      artifact.persist(
-        join(LINUX_ROOT_DIR, WORKING_DIR, 'code', 'playwright-results'),
-        'playwright-results'
-      ),
-      testResults.persist(join(LINUX_ROOT_DIR, WORKING_DIR, 'test-results')),
-      ...workflow.reportOnFailure(workflowName),
-    ],
-  }),
-  [commonJobsNoOpJob]
-);
-
 export const check = defineJob(
   'TypeScript validation',
   (workflowName) => ({
@@ -289,7 +253,7 @@ export const testsUnit_linux = defineJob(
         run: {
           name: 'Run tests',
           command: [
-            'TEST_FILES=$(circleci tests glob "code/**/*.{test,spec}.{ts,tsx,js,jsx,cjs}" "scripts/**/*.{test,spec}.{ts,tsx,js,jsx,cjs}" | sed "/e2e-sandbox\\//d" | sed "/e2e-internal\\//d" | sed "/node_modules\\//d")',
+            'TEST_FILES=$(circleci tests glob "code/**/*.{test,spec}.{ts,tsx,js,jsx,cjs}" "scripts/**/*.{test,spec}.{ts,tsx,js,jsx,cjs}" | sed "/e2e-tests\\//d" | sed "/node_modules\\//d")',
             'echo "$TEST_FILES" | circleci tests run --command="xargs yarn test --reporter=junit --reporter=default --outputFile=./test-results/junit.xml" --verbose',
           ].join('\n'),
         },
@@ -317,7 +281,7 @@ export const testsStories_linux = defineJob(
         run: {
           name: 'Run stories tests',
           command: [
-            'TEST_FILES=$(circleci tests glob "code/**/*.{stories}.{ts,tsx,js,jsx,cjs}" | sed "/e2e-sandbox\\//d" | sed "/e2e-internal\\//d" | sed "/node_modules\\//d")',
+            'TEST_FILES=$(circleci tests glob "code/**/*.{stories}.{ts,tsx,js,jsx,cjs}" | sed "/e2e-tests\\//d" | sed "/node_modules\\//d")',
             'echo "$TEST_FILES" | circleci tests run --command="xargs yarn test --reporter=junit --reporter=default --outputFile=./test-results/junit.xml" --verbose',
           ].join('\n'),
         },

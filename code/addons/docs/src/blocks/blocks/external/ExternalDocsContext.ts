@@ -16,11 +16,6 @@ export class ExternalDocsContext<TRenderer extends Renderer> extends DocsContext
       renderStoryToElement as DocsContextProps<TRenderer>['renderStoryToElement'],
       []
     );
-
-    // External docs are always an author-supplied page (`<ExternalDocs>` passes its children as the
-    // docs page), so `<Primary />` / `<Controls />` should respect the author's story selection
-    // rather than filtering to `autodocs`-tagged stories.
-    this.filterByAutodocs = false;
   }
 
   referenceMeta = (metaExports: ModuleExports, attach: boolean) => {

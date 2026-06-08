@@ -1,0 +1,50 @@
+---
+title: DocsPage
+sidebar:
+  order: 3
+---
+
+<Callout>
+DocsPage is the default documentation template that Storybook generates for your stories. It automatically renders a page with a title, subtitle, description, controls table, and stories.
+</Callout>
+
+## What is DocsPage?
+
+DocsPage is the default documentation template that Storybook uses to generate documentation pages for your stories. When you navigate to the Docs tab of a story, Storybook renders a DocsPage that is composed of a collection of [Doc Blocks](./doc-blocks.mdx). Both the DocsPage itself and the individual blocks within it can be overridden to suit your needs.
+
+The default DocsPage includes the following blocks:
+
+- **[Title](../api/doc-blocks/doc-block-title.mdx)** — The story's name
+- **[Subtitle](../api/doc-blocks/doc-block-subtitle.mdx)** — The component's description
+- **[Description](../api/doc-blocks/doc-block-description.mdx)** — A JSDoc comment or the story's description
+- **[Primary](../api/doc-blocks/doc-block-primary.mdx)** — The primary story rendered
+- **[Controls](../api/doc-blocks/doc-block-controls.mdx)** — An interactive controls table
+- **[Stories](../api/doc-blocks/doc-block-stories.mdx)** — All related stories
+
+## Customizing DocsPage
+
+You can customize the DocsPage template in several ways:
+
+### Using the `docs.page` parameter
+
+Set the `docs.page` parameter in your `.storybook/preview.js` to configure the DocsPage layout:
+
+<CodeSnippets path="storybook-preview-auto-docs-custom-template-function.md" />
+
+### Replacing DocsPage with a custom component
+
+You can replace the entire DocsPage with your own MDX file. See the [MDX documentation](./mdx.mdx) for details.
+
+<CodeSnippets path="custom-docs-page.md" />
+
+### Disabling DocsPage
+
+To disable DocsPage entirely, set `docs.page: null`:
+
+<CodeSnippets path="storybook-preview-docs-page-disable.md" />
+
+## Learn more
+
+- [Autodocs](./autodocs.mdx) — Enable automatic documentation for all stories
+- [Doc blocks](./doc-blocks.mdx) — Customize individual blocks within the docs page
+- [MDX](./mdx.mdx) — Write custom docs with MDX

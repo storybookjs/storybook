@@ -5,7 +5,6 @@ import { setProjectAnnotations } from '@storybook/react';
 import { userEvent as storybookEvent, expect as storybookExpect } from 'storybook/test';
 
 import '../core/src/shared/utils/toHaveLiveRegion.ts';
-
 import preview from './preview.tsx';
 
 vi.spyOn(console, 'warn').mockImplementation((...args) => console.log(...args));

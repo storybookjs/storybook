@@ -215,12 +215,6 @@ This is not a limitation of Storybook, but how `vue-component-meta` works. For m
 
 Otherwise, you might face missing component types/descriptions or unresolvable import aliases like `@/some/import`.
 
-### Using `vue-docgen-api`
-
-If you want to keep using `vue-docgen-api`, you can set it as your docgen tool in your `.storybook/main.js|ts` file:
-
-<CodeSnippets path="vue-vite-framework-options.md" />
-
 #### Troubleshooting
 
 ##### The Storybook UI freezes and the dev server crashes
@@ -236,6 +230,12 @@ To confirm this is happening, start your Storybook and look at the dev server co
 - Point docgen at the correct configuration with the [`docgen.tsconfig` option](#override-the-default-configuration), so the TypeScript program is scoped to your project's `include`/`exclude`.
 
 If the reported project root is already correct but the program is still too large, [disable docgen](#when-to-disable-docgen) or increase Node's memory limit with `NODE_OPTIONS=--max-old-space-size=8192`.
+
+### Using `vue-docgen-api`
+
+If you want to keep using `vue-docgen-api`, you can set it as your docgen tool in your `.storybook/main.js|ts` file:
+
+<CodeSnippets path="vue-vite-framework-options.md" />
 
 ## FAQ
 
@@ -273,7 +273,7 @@ Configure options for the [framework's builder](../../api/main-config/main-confi
 
 Type: `'vue-docgen-api' | 'vue-component-meta' | boolean`
 
-Default: `'vue-docgen-api'`
+Default: `'vue-component-meta'`
 
 Since: `8.0`
 

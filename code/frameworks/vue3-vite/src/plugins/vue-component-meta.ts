@@ -189,7 +189,7 @@ async function createVueComponentMetaChecker(tsconfigPath = 'tsconfig.json') {
   // exhaust memory, freezing the Storybook UI and crashing the dev server. Surface computed
   // directory to help users understand what to do in case of crashes.
   logger.info(
-    `vue-component-meta: extracting docgen using project root: \n\t${picocolors.cyan(projectRoot)}`
+    `vue-component-meta: extracting docgen using project root: ${picocolors.cyan(projectRoot)}`
   );
 
   const defaultChecker = createCheckerByJson(

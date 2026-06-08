@@ -34,9 +34,10 @@ export const StaleBanner: FC = () => (
       padding="small"
       ariaLabel="Copy prompt to refresh this review"
       tooltip="Copy prompt"
-      copyText="The Storybook review is stale. Generate a fresh review including my latest changes using the display-review tool."
+      content="The Storybook review is stale. Generate a fresh review including my latest changes using the display-review tool."
+      childrenOnCopy={<CheckIcon />}
     >
-      {(copied) => (copied ? <CheckIcon /> : <WandIcon />)}
+      <WandIcon />
     </CopyButton>
   </Bar>
 );

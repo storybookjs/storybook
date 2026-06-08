@@ -257,10 +257,15 @@ export const SummaryScreen: FC<SummaryScreenProps> = ({
           <CopyButton
             padding="small"
             ariaLabel="Copy prompt to refresh this review"
-            tooltip="Copy prompt"
-            copyText="Generate a Storybook review including my latest changes using the display-review tool."
+            ariaLabelOnCopy="Prompt copied to clipboard"
+            content="Generate a Storybook review including my latest changes using the display-review tool."
+            childrenOnCopy={
+              <>
+                <CheckIcon /> Copy prompt
+              </>
+            }
           >
-            {(copied) => <>{copied ? <CheckIcon /> : <WandIcon />} Copy prompt</>}
+            <WandIcon /> Copy prompt
           </CopyButton>
           <Button padding="small" asChild>
             <a href={storybookRootHref}>

@@ -1,4 +1,4 @@
-import { Channel } from 'storybook/internal/channels';
+import { Channel, setChannel } from 'storybook/internal/channels';
 import {
   getProjectRoot,
   loadAllPresets,
@@ -32,6 +32,10 @@ export async function loadStorybook(
   options.configDir = configDir;
   options.cacheKey = cacheKey;
 
+  // no-op channel, as it's only relevant in dev mode
+  const channel = new Channel({});
+  setChannel(channel);
+
   const config = await loadMainConfig(options);
   const { framework } = config;
   const corePresets = [];
@@ -49,10 +53,6 @@ export async function loadStorybook(
   // Load first pass: We need to determine the builder
   // We need to do this because builders might introduce 'overridePresets' which we need to take into account
   // We hope to remove this in SB8
-
-  // no-op channel, as it's only relevant in dev mode
-  const channel = new Channel({});
-
   let presets = await loadAllPresets({
     corePresets,
     overridePresets: [

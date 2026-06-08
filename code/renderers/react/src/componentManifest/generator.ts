@@ -10,7 +10,6 @@ import path from 'pathe';
 import {
   type DocgenEngine,
   buildReactComponentDocgenFromResolved,
-  toReactComponentManifest,
 } from './buildReactComponentDocgen.ts';
 import { getSharedComponentMetaManager } from './componentMetaManagerSingleton.ts';
 import { type ComponentRef, type TypescriptOptions } from './getComponentImports.ts';
@@ -27,6 +26,23 @@ export const manifests: PresetPropertyFn<
   const typescriptOptions =
     (await presets?.apply<Partial<TypescriptOptions>>('typescript', {})) ?? {};
   const features = await presets?.apply('features', {});
+
+  if (features?.experimentalDocgenServer) {
+    /**
+     * Docgen payloads live in the open service when this flag is on; core reads them via JSON refs
+     * and the HTML debugger. We still emit an empty `components` manifest so renderer-owned metadata
+     * (notably `meta.docgen` for the debugger UI) flows through `experimental_manifests` without
+     * core hardcoding engine identifiers.
+     */
+    return {
+      ...existingManifests,
+      components: {
+        v: 0,
+        components: {},
+        meta: { docgen: 'react-component-meta', durationMs: 0 },
+      },
+    };
+  }
 
   const docgenEngine: DocgenEngine = features?.experimentalReactComponentMeta
     ? 'react-component-meta'
@@ -94,21 +110,19 @@ export const manifests: PresetPropertyFn<
         allComponents,
         subcomponents,
       }) =>
-        toReactComponentManifest(
-          buildReactComponentDocgenFromResolved({
-            entry,
-            storyPath,
-            storyFilePath,
-            storyFile,
-            csf,
-            componentName,
-            component,
-            allComponents,
-            subcomponents,
-            docgenEngine,
-            filterStoryIds: manifestEntryIds,
-          })
-        )
+        buildReactComponentDocgenFromResolved({
+          entry,
+          storyPath,
+          storyFilePath,
+          storyFile,
+          csf,
+          componentName,
+          component,
+          allComponents,
+          subcomponents,
+          docgenEngine,
+          filterStoryIds: manifestEntryIds,
+        })
     )
     .filter((component) => component !== undefined);
 

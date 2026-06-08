@@ -55,3 +55,4 @@ export * from './node-version.ts';
 export { versions };
 
 export { createFileSystemCache, FileSystemCache } from './utils/file-cache.ts';
+export { registerService } from '../shared/open-service/server.ts';

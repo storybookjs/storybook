@@ -150,6 +150,21 @@ const isValidBaselineOrigin = (value: string): boolean => {
   }
 };
 
+/**
+ * Storybook preset hook that serves the review baseline on the dev server.
+ *
+ * The review UI compares the current story against a baseline Storybook in a
+ * side-by-side iframe. That baseline must be reachable from the same origin as
+ * the dev server (otherwise the iframe is blocked). This hook mounts it at
+ * `/__review-baseline` when `STORYBOOK_REVIEW_BASELINE` is set:
+ *
+ * - A project-relative static-build directory is served directly via sirv.
+ * - An `http:`/`https:` URL is proxied so a deployed Storybook can be used
+ *   without a local build.
+ *
+ * When the env var is unset or invalid, the hook is a no-op — review still
+ * works, but baseline comparison is unavailable.
+ */
 export const experimental_devServer = (app: ServerApp) => {
   if (!BASELINE) {
     return app;

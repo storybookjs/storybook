@@ -16,10 +16,17 @@ fit together, where behavior lives, and how to define new services correctly.
 
 ## Public Surface
 
-External callers should import from one of two entrypoints:
+External callers import from one of these entrypoints:
 
-- [index.ts](./index.ts) for environment-agnostic definition helpers and shared types
-- [server.ts](./server.ts) for server-only registration, discovery, and static snapshot writing
+- `storybook/open-service` for environment-agnostic service definitions — `defineService` and shared types (no React, no registration)
+- `storybook/manager-api` for manager addons — `registerService` (relay hub), `useServiceQuery`, `useServiceCommand`, and shared types
+- `storybook/preview-api` for preview code — `registerService` (leaf) and shared types (no React hooks)
+- [server.ts](./server.ts) for server-side registration, discovery, and static snapshot writing
+
+`registerService` is the **single** registration function across every runtime. It lives in
+[service-registry.ts](./service-registry.ts) and is re-exported from each entrypoint with the right
+`relay` default — server and manager are relay hubs, the preview is a leaf. There is no separate
+client/server registration API.
 
 The environment-agnostic API consists of:
 
@@ -36,20 +43,37 @@ The server-only API consists of:
 - `buildStaticFiles`
 - `writeOpenServiceStaticFiles`
 
+The browser API consists of:
+
+- `registerService` — creates a local runtime and joins the channel sync protocol
+- `unregisterService` — tears down one service's channel listeners and removes it from the registry
+- `clearRegistry` — removes all registrations (use in `afterEach` in tests)
+- `useServiceQuery` — React hook backed by `useSyncExternalStore` (manager entrypoint)
+- `useServiceCommand` — React hook returning a stable command reference (manager entrypoint)
+
 Internal tests and implementation code may import from the individual modules directly.
 
 ## File Layout
 
 - [index.ts](./index.ts): environment-agnostic barrel for definition helpers and shared types
-- [server.ts](./server.ts): server-only entrypoint that re-exports registration APIs and owns static snapshot building/writing
+- [server.ts](./server.ts): server entrypoint that re-exports registration APIs (relay hub) and owns static snapshot building/writing
+- [manager.ts](./manager.ts): manager entrypoint (`relay: true`) re-exported via `storybook/manager-api`; adds `useServiceQuery` and `useServiceCommand`
+- [preview.ts](./preview.ts): preview entrypoint (`relay: false`, leaf) re-exported via `storybook/preview-api`; registration only, no React hooks
 - [types.ts](./types.ts): core type model for definitions, contexts, runtime instances, and static build data
 - [service-definition.ts](./service-definition.ts): `defineService()` typing that preserves inline inference when declaring services
 - [service-validation.ts](./service-validation.ts): sync + async schema validation helpers and error wrapping
 - [errors.ts](./errors.ts): validation metadata formatting helpers
 - [service-runtime.ts](./service-runtime.ts): signal-backed runtime construction, in-flight load registry, drain logic, and subscriptions
-- [service-registration.ts](./service-registration.ts): server-side global registry implementation and the shared registry API passed into runtimes
+- [service-registry.ts](./service-registry.ts): the single `registerService`, the realm-global registry, and the shared registry API passed into runtimes — used identically by server, manager, and preview
+- [service-channel.ts](./service-channel.ts): `ServiceChannel` interface, event name constants, and payload types
+- [service-error-serialization.ts](./service-error-serialization.ts): transport-safe (de)serialization of thrown errors and their `cause` chains, used by remote command replies
+- [channel-slot.ts](../../channels/channel-slot.ts): `getChannel` / `setChannel` — the shared channel install surface
+- [service-transport.ts](./service-transport.ts): shared channel transport — wraps commands to broadcast, wires the sync-start initialization + patch listeners (hub or leaf), and runs the remote-command-execution protocol
+- [service-sync.ts](./service-sync.ts): last-write-wins ordering, the `deepReconcile` structural merge, and the per-service snapshot reconciler
+- [use-service-query.ts](./use-service-query.ts): `useServiceQuery` React hook backed by `useSyncExternalStore`
+- [use-service-command.ts](./use-service-command.ts): `useServiceCommand` React hook returning a stable command reference
 - [fixtures.ts](./fixtures.ts): scenario fixtures used by the test suite
-- `*.test.ts`: focused tests for runtime behavior, validation behavior, server registration, and server static builds
+- `*.test.ts` / `*.test.tsx`: focused tests for runtime behavior, validation, registration, static builds, channel sync, and React hooks
 
 ## Core Concepts
 
@@ -58,7 +82,7 @@ Internal tests and implementation code may import from the individual modules di
 A service is a state container with:
 
 - a stable `id`
-- an `initialState`
+- an `initialState` — **must be a plain object** (see [State must be an object](#state-must-be-an-object))
 - a `queries` map
 - a `commands` map
 - optional descriptions on the service and each operation
@@ -121,6 +145,12 @@ A command is:
 - validated on both input and output
 
 Commands receive a `CommandCtx` whose `self` includes `state`, `queries`, `commands`, and `setState`.
+
+A command handler may be implemented in only **some** runtimes — most often a handler supplied at
+server registration that needs Node APIs or server context. A runtime that lacks a local handler does
+not throw when the command is called; it requests **remote command execution** from a peer that does
+implement it (see [Remote Command Execution](#remote-command-execution)). Queries stay local-only and
+still throw `OpenServiceUnimplementedOperationError` when no handler exists.
 
 ### Cross-service composition
 
@@ -196,8 +226,9 @@ That split is intentional:
 
 - [index.ts](./index.ts) stays environment-agnostic so preview, manager, and server code can share
   one definition surface
-- [server.ts](./server.ts) owns the concrete registry and static snapshot writing for the current
-  server process
+- [server.ts](./server.ts) exposes server-side registration (a relay hub) and owns static snapshot
+  writing for the current server process; the registry itself lives in
+  [service-registry.ts](./service-registry.ts), shared with the browser entrypoints
 
 `registerService(definition)` throws `OpenServiceDuplicateRegistrationError` if a service with the
 same id is already registered. The default `services` preset hook in
@@ -211,15 +242,15 @@ and `yarn storybook:ui:build` runs do not register the debug service.
 
 ## Runtime Flow
 
-When a server registers a service definition:
+When any runtime registers a service definition:
 
-1. [service-registration.ts](./service-registration.ts) merges any registration-time handler overrides.
+1. [service-registry.ts](./service-registry.ts) merges any registration-time `staticInputs` overrides for queries and handler overrides for commands.
 2. It passes the shared registry API into [service-runtime.ts](./service-runtime.ts).
 3. [service-runtime.ts](./service-runtime.ts) creates a signal-backed state container from `initialState`.
 4. It builds a writable `commandSelf` reference around that state.
 5. It builds commands that validate input, run handlers, and validate output.
 6. It builds queries that validate input synchronously, fire any pending `load` in the background (deduped while in flight), run the handler synchronously, and validate the output.
-7. [service-registration.ts](./service-registration.ts) stores the resulting runtime behind the server registry entry for later lookup.
+7. [service-registry.ts](./service-registry.ts) wraps the commands to broadcast post-mutation snapshots, joins the channel sync protocol when a channel is present (as a hub or leaf), and stores the resulting instance behind the registry entry for later lookup.
 
 ## In-flight Load Registry
 
@@ -267,6 +298,33 @@ Cross-service `ctx.getService(id).queries.*` calls inside a load body are **not*
 
 ## State and reactivity
 
+### State must be an object
+
+A service's `initialState` (and therefore its whole state) **must be a plain object**. Primitives,
+`null`, `undefined`, and arrays are rejected at the `defineService` authoring boundary by the
+`ServiceState` type (see [types.ts](./types.ts)). This is enforced for two structural reasons, not as
+an arbitrary style choice:
+
+- **Reactivity.** State is wrapped in a `deepSignal` proxy for fine-grained per-field tracking, and
+  `deepSignal` throws (`"this object can't be observed"`) on scalars, `null`, and `undefined` — there
+  are no fields to track on a scalar.
+- **Sync.** Cross-peer reconciliation (`deepReconcile` in [service-sync.ts](./service-sync.ts)) merges
+  state by walking object keys; it has no concept of replacing a whole scalar.
+
+Arrays are a special case: `deepSignal` *can* observe them, but `deepReconcile` replaces arrays
+wholesale rather than merging by key, so a **top-level** array state would silently fail to sync
+between peers. They are therefore rejected too. Wrap collections in a field instead:
+
+```ts
+// ❌ not allowed
+initialState: [] as Item[],
+// ✅ wrap it
+initialState: { items: [] as Item[] },
+```
+
+Nested arrays *inside* the state object are completely fine — only the top-level state must be a
+keyed object. The `extends object` bound still accepts both `interface` and `type` state shapes.
+
 State is a **deep reactive proxy** (`deepSignal` from `deepsignal`, backed by `@preact/signals-core`)
 created in [service-runtime.ts](./service-runtime.ts). There is no top-level state atom and no Immer:
 
@@ -305,7 +363,7 @@ Tests should use `vi.waitFor(...)` when asserting the first emission or follow-u
 queries that define:
 
 - `staticPath` at definition time
-- `load` (definition or registration)
+- `load` on the definition
 - `staticInputs` (definition or registration)
 
 For each static input it:
@@ -358,6 +416,239 @@ flowchart TD
   J --> K[writeOpenServiceStaticFiles outputDir]
 ```
 
+## Client Architecture (Multi-Master)
+
+Browser processes (manager and preview) each run their own full `ServiceRuntime` — identical in shape to the server-side one. State is reconciled peer-to-peer through Storybook's existing manager↔preview channel using a sync-start initialization + patch-broadcast protocol.
+
+```text
+┌─────────────────────────┐     channel (services:*)     ┌─────────────────────────┐
+│  Manager process        │  ◄────────────────────────►  │  Preview process        │
+│                         │                               │                         │
+│  registerService        │                               │  registerService        │
+│  ┌─────────────────┐    │                               │  ┌─────────────────┐    │
+│  │  ServiceRuntime │    │                               │  │  ServiceRuntime │    │
+│  │  (deep signals) │    │                               │  │  (deep signals) │    │
+│  └─────────────────┘    │                               │  └─────────────────┘    │
+└─────────────────────────┘                               └─────────────────────────┘
+```
+
+### Channel setup
+
+There is no open-service-specific channel install step. `getChannel()` from `storybook/internal/channels`
+reads the live channel — the manager sets it via `addons.setChannel`, both builders inject it into the
+preview iframe, and the dev server installs it in the `services` preset before any service registers.
+
+Until a channel is installed, service runtimes operate in isolation — all reads and writes are local
+only. Unit tests can install a mock channel with `setChannel(mock)` (or `clearChannel()` to assert
+registration fails without one).
+
+### `registerService`
+
+Creates a local `ServiceRuntime` from the service definition (identical across runtimes) and wires it into the sync protocol:
+
+1. **On registration** — emits `services:sync-start` so any existing peer can reply with its current snapshot.
+2. **On sync-start-reply** — applies the received snapshot into the local runtime so the new peer bootstraps from existing state.
+3. **After each local command** — broadcasts the full post-mutation state as `services:patches` so all peers stay in sync.
+4. **On incoming patches** — applies the received state into the local runtime via `commandSelf.setState`, which triggers fine-grained signal updates and re-renders subscribed components.
+
+### Loop prevention
+
+Every channel event carries the emitter's `clientId` (generated per `registerService` call). Listeners silently ignore events whose `clientId` matches their own, so peers never re-apply state they just emitted.
+
+### State application without re-broadcast
+
+Incoming state (from sync-start-reply or patches) is applied via `serviceRuntime.commandSelf.setState(...)` directly — not through the wrapped commands — so no broadcast is triggered for received state.
+
+### `deepReconcile`
+
+Rather than replacing the entire state object on each patch (which would invalidate all signal subscriptions), `deepReconcile` (in [service-sync.ts](./service-sync.ts)) recursively merges plain-object values in place: arrays and primitives are replaced directly, keys absent from the snapshot are deleted so deletions propagate, and `__proto__`/`constructor`/`prototype` are skipped to block prototype pollution. This keeps fine-grained subscriptions on unaffected nested fields from firing spuriously.
+
+### State sync sequence
+
+```text
+Peer A (manager)            Channel              Peer B (preview)
+─────────────────────────────────────────────────────────────────
+registerService()
+  └─ emit sync-start ──────────────────────────────────────►
+                                                (no peer yet; silence)
+
+                                                registerService()
+◄─────────────────────────── emit sync-start ──────────────
+  └─ reply with snapshot ──────────────────────────────────────►
+                                                  └─ apply snapshot
+
+service.commands.foo()
+  └─ local runtime mutates
+  └─ emit patches ─────────────────────────────────────────────►
+                                                  └─ apply state
+```
+
+### Server participation
+
+The dev server is a full peer, not a passive observer. `registerService` on the server registers as a relay hub (`relay: true`): it wraps commands to broadcast their post-mutation snapshots, responds to sync-starts, applies incoming patches, and re-broadcasts every adopted snapshot so peers on its other transports (each connected manager tab) converge. This is wired automatically at registration once the `services` preset has installed the channel — there is no separate connect step.
+
+## Remote Command Execution
+
+Queries are local-only, but commands are not. A command's handler can be supplied in only **some**
+runtimes — the canonical case is a handler added at server registration that needs Node APIs or
+server context. The runtimes that lack the handler must still be able to invoke the command (from
+`useServiceCommand`, a test, or another service), so they ask a peer that can run it.
+
+`registerService` decides this **per command at registration time** by checking whether the resolved
+definition has a `handler`:
+
+- **Has a local handler** → the command runs locally and broadcasts its post-mutation state as usual
+  (the normal multi-master path), **and** the runtime listens for invoke requests so it can run the
+  command on behalf of peers that cannot.
+- **No local handler** → the command becomes a **remote invoker**: calling it sends a request over
+  the channel and returns a promise that settles when a peer answers.
+
+The protocol lives in [service-transport.ts](./service-transport.ts) (`connectCommandTransport`) and
+is covered by the command transport tests.
+
+### Roles
+
+Every registered runtime plays **both** roles at once, decided per command:
+
+- **Requester** (no local handler): calling the command emits `services:command-invoke` carrying a
+  freshly generated `callId` and returns a promise. The promise resolves with the `result` of the
+  first `services:command-result` for that `callId`, or rejects with the reconstructed error from the
+  first `services:command-error`.
+- **Responder** (has a local handler): on a matching `services:command-invoke` it emits
+  `services:command-ack` **immediately** (before running), executes the command locally — which
+  validates input, mutates state, and broadcasts the post-mutation snapshot through the normal command
+  wrappers so every peer converges — then emits `services:command-result` or `services:command-error`.
+
+A runtime never requests a command it implements (it runs that locally), so a responder never answers
+its own invoke echo: `onInvoke` only acts on commands in its `implementedCommandNames` set.
+
+### Events
+
+All four events are namespaced under `services:` and carry the `serviceId` so a runtime that hosts
+several services routes them correctly.
+
+| Event | Direction | Payload |
+| ------------------------- | ------------------------ | ----------------------------------------------------- |
+| `services:command-invoke` | requester → implementers | `{ serviceId, commandName, input, callId, clientId }` |
+| `services:command-ack`    | implementer → requester  | `{ serviceId, callId, clientId }`                     |
+| `services:command-result` | implementer → requester  | `{ serviceId, callId, result, clientId }`             |
+| `services:command-error`  | implementer → requester  | `{ serviceId, callId, error, clientId }`              |
+
+- `callId` is the per-invocation correlation id (see [Correlation and parallel calls](#correlation-and-parallel-calls)).
+- `clientId` is the id of the runtime that emitted the envelope — the requester on an invoke, the
+  responder on a reply.
+- `error` is a transport-safe serialization of the thrown value, including its full `cause` chain (and
+  arrays such as the `.loaded()` drain's `cause.aggregated`) plus Storybook fields like
+  `code`/`fromStorybook`. See [service-error-serialization.ts](./service-error-serialization.ts);
+  `Error` instances cannot cross a websocket (JSON) or postMessage (structured clone) boundary intact,
+  so they are flattened to a plain shape and rebuilt into a real `Error` on the requester.
+
+### Sequence
+
+One runtime calls a command implemented only on the dev server:
+
+```text
+Requester                        Channel               Server (responder)
+──────────────────────────────────────────────────────────────────────────
+service.commands.example(...)
+  └─ new callId
+  └─ emit command-invoke ───────────────────────────────────►
+                                                  └─ emit command-ack ──┐
+  ◄───────────────────────────────────────────────────────────────────┘
+                                                  └─ run command locally
+                                                       └─ mutate + emit patches ──►
+  ◄── apply patches (state converges) ───────────────────────────────────
+                                                  └─ emit command-result ──┐
+  ◄───────────────────────────────────────────────────────────────────────┘
+  └─ promise resolves with result
+```
+
+State still flows through the normal patch-broadcast path, so the requester gets the new state via
+`services:patches` and the resolved value via `services:command-result` — two independent channels of
+truth that both converge.
+
+### Awaiting
+
+A command can be awaited from any runtime, even when it runs remotely: the returned promise resolves
+on success and rejects on failure exactly as if the handler had been local. Callers never need to know
+where the handler lives.
+
+### Correlation and parallel calls
+
+`callId` is generated fresh (`generateClientId()`) for **every** call, so it is effectively a unique
+execution id. This is what makes concurrent calls safe:
+
+- Two parallel calls — even with identical input — get two distinct `callId`s, two `pending` promise
+  entries, and two independent invoke envelopes. Replies are matched strictly by `callId`, so they can
+  never cross-wire and resolving one call never settles the other.
+- A reply whose `callId` is unknown (already settled, or for a different runtime's call) or whose
+  `serviceId` does not match is ignored.
+
+`callId` correlates **replies**; it does not make a command idempotent. Each invoke triggers a real
+execution on every responder that receives it.
+
+### Multiple implementers (at-most-once is not guaranteed)
+
+If several peers implement the same command, each one runs it (side effects and all) and replies. The
+requester keeps the **first** reply per `callId` and ignores the rest — so the *promise* is deduped,
+but the *execution* is not. A command can therefore legitimately run in more than one runtime.
+
+This is intentional for now and constrained by convention, not enforced by the protocol: **implement a
+command in exactly one runtime when its effects must not be duplicated.** Guaranteeing at-most-once
+across implementers would require electing a single executor per call, which this slice does not do.
+
+### Topology limits and timeouts
+
+Replies travel back over the same channel the invoke went out on, and command events are **not**
+relayed across a hub's other transports (unlike `services:patches`, which a relay hub re-broadcasts).
+The manager is connected to both the dev server and the preview, so it can invoke a command implemented
+in either; but a preview cannot directly invoke a server-only command, and vice versa — route such
+calls through the manager, or implement the command on a directly-connected peer.
+
+There is **no timeout**. Invoking a command that no reachable peer implements leaves the promise
+pending forever, until the service is unregistered — `disconnect` rejects every outstanding call with
+`OpenServiceRemoteCommandDisconnectedError`.
+
+## React Hooks
+
+### `useServiceQuery`
+
+Subscribes to a service query and returns its current value, re-rendering when it changes.
+
+```tsx
+import { useServiceQuery } from 'storybook/manager-api';
+
+// With input
+const fields = useServiceQuery(service, 'getRecordFields', { entryId: 'a' });
+
+// Void-input query (no third argument)
+const summary = useServiceQuery(service, 'getSummary');
+```
+
+Backed by `useSyncExternalStore`. The subscription is torn down and recreated when `service`, `queryName`, or `input` changes.
+
+**Referential stability:** `getSnapshot` compares the new value with the previous via `isEqual` and returns the cached reference when they are deeply equal, so React bails out of re-rendering when the value hasn't logically changed.
+
+**Memoize complex inputs at the call site.** The input participates in the hook's React dependency array. Passing a new object literal on every render recreates the subscription each render. Wrap object inputs in `useMemo` or extract them to module scope.
+
+### `useServiceCommand`
+
+Returns a stable reference to a service command. The reference is stable as long as `service` and `commandName` do not change, so it is safe to pass to child components or include in effect dependency arrays.
+
+```tsx
+import { useServiceCommand } from 'storybook/manager-api';
+
+const assignField = useServiceCommand(service, 'assignRecordField');
+
+return (
+  <button onClick={() => assignField({ entryId: 'a', fieldKey: 'x', fieldValue: 'y' })}>
+    Update
+  </button>
+);
+```
+
+Fire-and-forget: the returned function returns a Promise. Callers manage their own loading and error state with `useState`, `useReducer`, TanStack Query, or whatever fits.
+
 ## How To Define A Service
 
 Define queries and commands inline inside `defineService()` so the service-level schema maps can contextually type every handler, load hook, and `ctx.self.commands.*` call:
@@ -365,7 +656,7 @@ Define queries and commands inline inside `defineService()` so the service-level
 ```ts
 import * as v from 'valibot';
 
-import { defineService } from './index.ts';
+import { defineService } from 'storybook/open-service';
 import { registerService } from './server.ts';
 
 type ExampleState = {
@@ -419,28 +710,42 @@ const ready = await exampleService.queries.getValue.loaded({ entryId: 'a' });
 
 ## Design Rules
 
+- State must be a plain object — no primitives, `null`, or top-level arrays (see [State must be an object](#state-must-be-an-object)). Wrap collections in a field: `{ items: [] }`.
 - Always declare both `input` and `output` schemas on every query and command.
 - Use `load` for read-side warming. The hook is async and must mutate via commands.
 - **Keep `load` bodies minimal — ideally one line that calls a command.** Push input resolution, side effects, and state mutation into the command itself so it stays callable, testable, and reusable on its own.
 - Query handlers are strict readers: sync, no commands, no `setState`.
 - Use commands for all state mutation.
-- Keep environment-agnostic imports on [index.ts](./index.ts) and server-only imports on [server.ts](./server.ts). Import internal modules directly only from tests or implementation code in this directory.
+- Manager addons import from `storybook/manager-api`; preview code imports from `storybook/preview-api`. Server presets use [server.ts](./server.ts). Import modules in this directory directly only from tests or implementation code.
 - Use `.loaded()` when a caller wants to await the full state; use the sync form when "current best" is fine.
+- No channel install is needed in manager/preview — `getChannel()` returns the channel `addons.setChannel` installed.
+- Call `clearRegistry()` in `afterEach` in tests that register services. Use `setChannel(mock)` before `registerService` when a test needs sync. Node bootstraps a noop channel at import; browser preview gets the real channel from builders before `preview.ts` loads.
 
 ## Testing Guidance
 
 - Runtime behavior belongs in [service-runtime.test.ts](./service-runtime.test.ts)
 - Validation behavior belongs in [service-validation.test.ts](./service-validation.test.ts)
 - Server registration and static snapshot behavior belong in [server.test.ts](./server.test.ts)
+- Leaf channel sync (`relay: false`, preview path) belongs in [service-transport-leaf.test.ts](./service-transport-leaf.test.ts); hub channel sync (dev server) in [service-registration-sync.test.ts](./service-registration-sync.test.ts)
+- Remote command execution (requester/responder protocol) belongs in [service-command-transport.test.ts](./service-command-transport.test.ts); error (de)serialization in [service-error-serialization.test.ts](./service-error-serialization.test.ts)
+- React hook behavior belongs in [use-service-query.test.tsx](./use-service-query.test.tsx) and [use-service-command.test.tsx](./use-service-command.test.tsx)
 - Reusable scenario definitions belong in [fixtures.ts](./fixtures.ts)
 
 When adding validation tests, prefer asserting the full exact error message. That keeps the tests useful as executable documentation for callers and agents.
 
+React hook tests must include `// @vitest-environment happy-dom` as the first line and add `clearRegistry()` in `afterEach`. Use `waitFor(...)` (not `act`) when asserting state changes that flow through preact signals — `act` only flushes React's scheduler and is unaware of the signal effect queue.
+
 ## Agent Notes
 
 - If you need to change runtime behavior, start in [service-runtime.ts](./service-runtime.ts).
-- If you need to change server registration, start in [service-registration.ts](./service-registration.ts).
+- If you need to change registration or the registry (any runtime), start in [service-registry.ts](./service-registry.ts).
 - If you need to change static snapshot building or writing, start in [server.ts](./server.ts).
 - If you need to change validation wording, start in [errors.ts](./errors.ts).
 - If you need to change schema handling, start in [service-validation.ts](./service-validation.ts).
 - If you need to change service authoring ergonomics, start in [service-definition.ts](./service-definition.ts) and [types.ts](./types.ts).
+- If you need to change channel transport, relay behavior, or remote command execution, start in [service-transport.ts](./service-transport.ts).
+- If you need to change how thrown errors cross the channel for remote commands, start in [service-error-serialization.ts](./service-error-serialization.ts).
+- If you need to change last-write-wins ordering or the structural merge, start in [service-sync.ts](./service-sync.ts).
+- If you need to change the channel protocol (event names, payloads, channel reader), start in [service-channel.ts](./service-channel.ts).
+- If you need to change the React query hook, start in [use-service-query.ts](./use-service-query.ts).
+- If you need to change the React command hook, start in [use-service-command.ts](./use-service-command.ts).

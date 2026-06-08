@@ -2,7 +2,11 @@ import { existsSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
 
 import type { Channel } from 'storybook/internal/channels';
-import { normalizeStories, optionalEnvToBoolean } from 'storybook/internal/common';
+import {
+  STORY_FILE_TEST_REGEXP,
+  normalizeStories,
+  optionalEnvToBoolean,
+} from 'storybook/internal/common';
 import {
   JsPackageManagerFactory,
   type RemoveAddonOptions,
@@ -224,7 +228,7 @@ export const features: PresetProperty<'features'> = async (existing) => ({
 });
 
 export const csfIndexer: Indexer = {
-  test: /(stories|story)\.(m?js|ts)x?$/,
+  test: STORY_FILE_TEST_REGEXP,
   createIndex: async (fileName, options) => {
     const code = (await readFile(fileName, 'utf-8')).toString();
     if (code.trim().length === 0) {

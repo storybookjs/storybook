@@ -131,7 +131,21 @@ const extractEnumValues = (compodocType: any) => {
   }
 
   try {
-    return compodocType.split('|').map((value) => JSON.parse(value));
+    return compodocType.split('|').map((value) => {
+      const trimmed = value.trim();
+      try {
+        return JSON.parse(trimmed);
+      } catch {
+        // Compodoc emits string-literal union members using single quotes
+        // (e.g. `'S' | 'M' | 'L'`), which are not valid JSON and throw above.
+        // Strip the matching single quotes and return the inner string literal.
+        const singleQuoted = trimmed.match(/^'(.*)'$/);
+        if (singleQuoted) {
+          return singleQuoted[1];
+        }
+        throw new Error(`Cannot parse union member: ${trimmed}`);
+      }
+    });
   } catch (e) {
     return null;
   }

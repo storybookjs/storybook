@@ -66,6 +66,14 @@ export interface SelectProps extends Omit<
   /** IDs of the preselected options. */
   defaultOptions?: Value | Value[];
 
+  /**
+   * If true, the Select renders in a "has selection" visual state even if the
+   * current value does not match any of the options. Useful when a consumer has
+   * an active selection that is not part of the option list (e.g. a custom
+   * viewport in the viewport toolbar). Does not change selection behavior.
+   */
+  hasSelection?: boolean;
+
   /** Whether the Select should render open. */
   defaultOpen?: boolean;
 
@@ -206,6 +214,7 @@ export const Select = forwardRef<HTMLButtonElement, SelectProps>(
       disabled = false,
       options: calleeOptions,
       defaultOptions,
+      hasSelection: hasSelectionOverride,
       multiSelect = false,
       onReset,
       padding = 'small',
@@ -509,7 +518,7 @@ export const Select = forwardRef<HTMLButtonElement, SelectProps>(
           ref={triggerRef}
           padding={padding}
           $isOpen={isOpen}
-          $hasSelection={!!selectedOptions.length}
+          $hasSelection={hasSelectionOverride ?? !!selectedOptions.length}
           // Can be removed once #32325 is fixed (Button will then provide aria-disabled)
           aria-disabled={disabled}
           disabled={disabled}

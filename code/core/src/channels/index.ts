@@ -1,4 +1,5 @@
 /// <reference path="../typings.d.ts" />
+import { global } from '@storybook/global';
 
 import { UniversalStore } from '../shared/universal-store/index.ts';
 import { Channel } from './main.ts';
@@ -6,15 +7,9 @@ import { PostMessageTransport } from './postmessage/index.ts';
 import type { ChannelTransport, Config } from './types.ts';
 import { WebsocketTransport } from './websocket/index.ts';
 
+const { CHANNEL_OPTIONS, CONFIG_TYPE } = global;
+
 export * from './main.ts';
-export {
-  clearChannel,
-  ensureChannel,
-  getChannel,
-  installNoopChannel,
-  requireChannel,
-  setChannel,
-} from './channel-slot.ts';
 
 export default Channel;
 
@@ -41,10 +36,10 @@ type Options = Config & {
 export function createBrowserChannel({ page, extraTransports = [] }: Options): Channel {
   const transports: ChannelTransport[] = [new PostMessageTransport({ page }), ...extraTransports];
 
-  if (globalThis.CONFIG_TYPE === 'DEVELOPMENT') {
+  if (CONFIG_TYPE === 'DEVELOPMENT') {
     const protocol = window.location.protocol === 'http:' ? 'ws' : 'wss';
     const { hostname, port } = window.location;
-    const { wsToken } = globalThis.CHANNEL_OPTIONS || {};
+    const { wsToken } = CHANNEL_OPTIONS || {};
     const channelUrl = `${protocol}://${hostname}:${port}/storybook-server-channel?token=${wsToken}`;
 
     transports.push(new WebsocketTransport({ url: channelUrl, onError: () => {}, page }));

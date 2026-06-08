@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, expect, it, vi } from 'vitest';
+import { beforeEach, expect, it, vi } from 'vitest';
 
 import { fetch } from './fetch.ts';
 import { sendTelemetry } from './telemetry.ts';
@@ -22,10 +22,6 @@ beforeEach(() => {
   fetchMock.mockResolvedValue({ status: 200 } as any);
 });
 
-afterEach(() => {
-  vi.restoreAllMocks();
-});
-
 it('makes a fetch request with name and data', async () => {
   await sendTelemetry({ eventType: 'dev', payload: { foo: 'bar' } });
 
@@ -35,45 +31,6 @@ it('makes a fetch request with name and data', async () => {
     eventType: 'dev',
     payload: { foo: 'bar' },
   });
-});
-
-it('abandons a request that never responds, instead of hanging the process', async () => {
-  const controller = new AbortController();
-  const timeoutSpy = vi.spyOn(AbortSignal, 'timeout').mockReturnValue(controller.signal);
-
-  // fetch that never settles on its own - it only rejects once its signal aborts, which we control via the timeoutSpy above.
-  fetchMock.mockImplementation(
-    (_url, init) =>
-      new Promise((_resolve, reject) => {
-        const signal = (init as RequestInit | undefined)?.signal;
-        if (signal?.aborted) {
-          reject(signal.reason);
-        } else {
-          signal?.addEventListener('abort', () => reject(signal.reason));
-        }
-      })
-  );
-
-  let settled = false;
-  const promise = sendTelemetry({ eventType: 'dev', payload: { foo: 'bar' } }).finally(() => {
-    settled = true;
-  });
-
-  // Let the request reach its in-flight state.
-  await vi.waitFor(() => expect(fetchMock).toHaveBeenCalled());
-  expect(timeoutSpy).toHaveBeenCalledWith(30_000);
-  expect(settled).toBe(false);
-
-  // Abort the request, simulating the timeout expiring. This should cause the promise to reject and the sendTelemetry
-  // call to settle, instead of hanging indefinitely.
-  controller.abort();
-
-  await promise;
-
-  expect(settled).toBe(true);
-
-  // Ensure the aborted request is not retried
-  expect(fetchMock).toHaveBeenCalledTimes(1);
 });
 
 it('retries if fetch fails with a 503', async () => {

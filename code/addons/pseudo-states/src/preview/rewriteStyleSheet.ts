@@ -46,38 +46,83 @@ const replacePseudoStatesWithAncestorSelector = (
   const selectors = `${additionalHostSelectors ?? ''}${extracted.states.map((s) => `.pseudo-${s}-all`).join('')}`;
 
   // If there was a :host-context() containing only pseudo-states, we will later add a :host selector that replaces it.
-  let { withoutPseudoStates } = extracted;
+  let { withoutPseudoStates, whereWrappedStates } = extracted;
   withoutPseudoStates = withoutPseudoStates.replace(':host-context(*)', '').trimStart();
 
   // If there is a :host-context() selector, we don't need to introduce a :host() selector.
   // We can just append the pseudo-state classes to the :host-context() selector.
-  return withoutPseudoStates.startsWith(':host-context(')
-    ? withoutPseudoStates.replace(/(?<=:host-context\(\S+)\)/, `)${selectors}`)
-    : forShadowDOM
-      ? `:host(${selectors}) ${withoutPseudoStates}`
-      : `${selectors} ${withoutPseudoStates}`;
+  if (withoutPseudoStates.startsWith(':host-context(')) {
+    return withoutPseudoStates.replace(/(?<=:host-context\(\S+)\)/, `)${selectors}`);
+  }
+
+  const ancestorPrefix = forShadowDOM
+    ? `:host(${selectors}) `
+    : (() => {
+        if (whereWrappedStates.size === 0) {
+          return `${selectors} `;
+        }
+        if (whereWrappedStates.size === extracted.states.length) {
+          return `:where(${selectors}) `;
+        }
+        // Mixed: some pseudo-states wrapped in :where(), some not.
+        // Wrap only the :where()-wrapped ones to preserve per-state specificity.
+        const wrappedParts = extracted.states
+          .filter((s) => whereWrappedStates.has(s))
+          .map((s) => `.pseudo-${s}-all`)
+          .join('');
+        const unwrappedParts = extracted.states
+          .filter((s) => !whereWrappedStates.has(s))
+          .map((s) => `.pseudo-${s}-all`)
+          .join('');
+        return `:where(${wrappedParts})${unwrappedParts} `;
+      })();
+
+  return `${ancestorPrefix}${withoutPseudoStates}`;
 };
 
 const extractPseudoStates = (selector: string) => {
-  const states = new Set();
+  const states = new Set<string>();
+  const whereWrappedStates = new Set<string>();
+
+  // Find all :where() block ranges to track per-state wrapping
+  const whereRanges: Array<{ start: number; end: number }> = [];
+  const wherePattern = /:where\(/g;
+  let whereMatch;
+  while ((whereMatch = wherePattern.exec(selector)) !== null) {
+    const start = whereMatch.index;
+    let depth = 1;
+    let i = start + whereMatch[0].length;
+    while (i < selector.length && depth > 0) {
+      if (selector[i] === '(') depth++;
+      if (selector[i] === ')') depth--;
+      i++;
+    }
+    whereRanges.push({ start, end: i });
+  }
+
   const withoutPseudoStates =
     selector
-      .replace(matchAll, (_, state) => {
+      .replace(matchAll, (match, state, offset) => {
         states.add(state);
+        if (whereRanges.some((r) => offset >= r.start && offset < r.end)) {
+          whereWrappedStates.add(state);
+        }
         return '';
       })
       // If removing pseudo-state selectors from inside a functional selector left it empty (thus invalid), must fix it by adding '*'.
       // The negative lookbehind ensures we don't replace :is() with :is(*).
       .replaceAll(/(?<!is)\(\)/g, '(*)')
-      // If removing pseudo-state selectors left a combinator without a right-hand selector,
-      // keep the selector valid by targeting any child/sibling.
-      .replace(/([>+~])\s*(?=$|[,)])/g, '$1 *')
       // If a selector list was left with blank items (e.g. ", foo, , bar, "), remove the extra commas/spaces.
-      .replace(/(?<=[\s(]),\s+|(,\s+)+(?=\))/g, '') || '*';
+      .replace(/(?<=[\s(]),\s+|(,\s+)+(?=\))/g, '')
+      // Remove empty :where() wrappers left after extracting all pseudo-states.
+      // :where(*) and :where() are semantically equivalent to nothing, so they can be safely removed.
+      .replace(/:where\(\s*\)/g, '')
+      .replace(/:where\(\s*\*\s*\)/g, '') || '*';
 
   return {
     states: Array.from(states),
     withoutPseudoStates,
+    whereWrappedStates,
   };
 };
 

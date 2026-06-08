@@ -30,8 +30,6 @@ export default defineProject({
   ],
   test: {
     name: 'storybook-ui',
-    // Playwright occasionally misses the vitest-iframe frame within 1s under full-suite load.
-    retry: process.env.CI ? 2 : 1,
     exclude: [
       ...defaultExclude,
       'node_modules/**',

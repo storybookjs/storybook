@@ -25,19 +25,20 @@ export const TabbedArgsTable: FC<TabbedArgsTableProps> = ({ tabs, ...props }) =>
     return <ArgsTable {...entries[0][1]} {...props} />;
   }
 
-  const tabsFromEntries = entries.map(([label, table], index) => {
-    // The first tab is the main component, controllable if in the Controls block. All other tabs
-    // are subcomponents, never controllable, so we filter out the props indicating
-    // controllability. Pass a stable element (not an inline function component) so React
-    // reconciles the tab panel instead of remounting it on every args update.
-    const argsTableProps = index === 0 ? props : { sort: props.sort };
+  const tabsFromEntries = entries.map(([label, table], index) => ({
+    id: `prop_table_div_${label}`,
+    title: label,
+    children: () => {
+      /**
+       * The first tab is the main component, controllable if in the Controls block All other tabs
+       * are subcomponents, never controllable, so we filter out the props indicating
+       * controllability Essentially all subcomponents always behave like ArgTypes, never Controls
+       */
+      const argsTableProps = index === 0 ? props : { sort: props.sort };
 
-    return {
-      id: `prop_table_div_${label}`,
-      title: label,
-      children: <ArgsTable inTabPanel {...table} {...argsTableProps} />,
-    };
-  });
+      return <ArgsTable inTabPanel key={`prop_table_${label}`} {...table} {...argsTableProps} />;
+    },
+  }));
 
   return <StyledTabsView tabs={tabsFromEntries} />;
 };

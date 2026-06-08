@@ -121,8 +121,8 @@ describe('server static builds', () => {
                 entryId: 'entry-a',
               });
 
-              ctx.self.setState((state) => {
-                state.value = record?.marker ?? null;
+              ctx.self.setState((draft) => {
+                draft.value = record?.marker ?? null;
               });
 
               return undefined;
@@ -167,8 +167,8 @@ describe('server static builds', () => {
             output: v.undefined(),
             handler: async (_input, ctx) => {
               readyEntryIds.splice(0, readyEntryIds.length, 'entry-a');
-              ctx.self.setState((state) => {
-                state.built = true;
+              ctx.self.setState((draft) => {
+                draft.built = true;
               });
 
               return undefined;
@@ -200,8 +200,8 @@ describe('server static builds', () => {
             input: v.object({ entryId: v.string() }),
             output: v.undefined(),
             handler: async (input, ctx) => {
-              ctx.self.setState((state) => {
-                state.value = input.entryId;
+              ctx.self.setState((draft) => {
+                draft.value = input.entryId;
               });
 
               return undefined;
@@ -281,8 +281,8 @@ describe('server static builds', () => {
             }),
             output: v.undefined(),
             handler: async (input, ctx) => {
-              ctx.self.setState((state) => {
-                state.value = input.value;
+              ctx.self.setState((draft) => {
+                draft.value = input.value;
               });
 
               return undefined;
@@ -370,8 +370,8 @@ describe('server static builds', () => {
             input: v.undefined(),
             output: v.undefined(),
             handler: async (_input, ctx) => {
-              ctx.self.setState((state) => {
-                state.value = 'invalid';
+              ctx.self.setState((draft) => {
+                draft.value = 'invalid';
               });
 
               return undefined;
@@ -427,8 +427,8 @@ describe('server static builds', () => {
             }),
             output: v.undefined(),
             handler: async (input, ctx) => {
-              ctx.self.setState((state) => {
-                state.value = input.value;
+              ctx.self.setState((draft) => {
+                draft.value = input.value;
               });
 
               return undefined;

@@ -87,13 +87,3 @@ export {
   waitForAnimations,
 } from './preview-web.ts';
 export type { SelectionStore, View } from './preview-web.ts';
-
-/** OPEN SERVICE API (preview leaf — register only; types on `storybook/open-service`) */
-export { registerService } from '../shared/open-service/preview.ts';
-export {
-  clearChannel,
-  ensureChannel,
-  getChannel,
-  installNoopChannel,
-  setChannel,
-} from '../channels/channel-slot.ts';

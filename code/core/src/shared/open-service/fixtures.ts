@@ -44,9 +44,9 @@ export const mutableRecordLookupServiceDef = defineService({
       input: assignEntryFieldInputSchema,
       output: voidOutputSchema,
       handler: (input, ctx) => {
-        ctx.self.setState((state) => {
-          state[input.entryId] ??= {};
-          state[input.entryId]![input.fieldKey] = input.fieldValue;
+        ctx.self.setState((draft) => {
+          draft[input.entryId] ??= {};
+          draft[input.entryId]![input.fieldKey] = input.fieldValue;
         });
       },
     },
@@ -82,8 +82,8 @@ export const awaitedPreloadValueServiceDef = defineService({
       output: voidOutputSchema,
       handler: async (input, ctx) => {
         await Promise.resolve();
-        ctx.self.setState((state) => {
-          state[input.entryId] = 'preloaded';
+        ctx.self.setState((draft) => {
+          draft[input.entryId] = 'preloaded';
         });
       },
     },
@@ -116,58 +116,9 @@ export const fireAndForgetPreloadValueServiceDef = defineService({
       output: voidOutputSchema,
       handler: async (input, ctx) => {
         await Promise.resolve();
-        ctx.self.setState((state) => {
-          state[input.entryId] = 'preloaded';
+        ctx.self.setState((draft) => {
+          draft[input.entryId] = 'preloaded';
         });
-      },
-    },
-  },
-});
-
-export type RebuiltValue = { marker: string; count: number };
-export type RebuiltValueState = Record<string, RebuiltValue | undefined>;
-
-/** Shared schema for the object value used by the rebuilt-equal-value fixture. */
-export const rebuiltValueOutputSchema = v.nullable(
-  v.object({ marker: v.string(), count: v.number() })
-);
-
-/**
- * Service fixture whose `load` rebuilds a deeply-equal but freshly-allocated object value every
- * time it runs, then writes it back via a command.
- *
- * It exercises the case where re-subscribing to an already-populated entry would emit a redundant
- * second value (the immediate emission plus a load-driven emission carrying an equal-but-not-
- * identical object) unless the runtime dedups by value.
- */
-export const rebuiltEqualValueOnLoadServiceDef = defineService({
-  id: 'internal-fixture/rebuilt-equal-value-on-load',
-  description: 'Rewrites a deeply-equal but freshly-allocated object value on every load.',
-  initialState: {} as RebuiltValueState,
-  queries: {
-    getRebuiltValue: {
-      description: 'Returns the value for an entry; load always rewrites a fresh-but-equal value.',
-      input: entryIdInputSchema,
-      output: rebuiltValueOutputSchema,
-      handler: (input, ctx) => ctx.self.state[input.entryId] ?? null,
-      load: async (input, ctx) => {
-        await ctx.self.commands.rebuildValue(input);
-      },
-    },
-  },
-  commands: {
-    rebuildValue: {
-      description: 'Allocates a brand-new object with a stable value and stores it.',
-      input: entryIdInputSchema,
-      output: rebuiltValueOutputSchema,
-      handler: async (input, ctx) => {
-        await Promise.resolve();
-        // A new object literal every call: deeply equal to any prior value, never `===` to it.
-        const value: RebuiltValue = { marker: 'stable', count: 1 };
-        ctx.self.setState((state) => {
-          state[input.entryId] = value;
-        });
-        return value;
       },
     },
   },
@@ -211,8 +162,8 @@ export function createSharedStaticFileServiceDef() {
         input: noInputSchema,
         output: voidOutputSchema,
         handler: (_input, ctx) => {
-          ctx.self.setState((state) => {
-            state.left = 'preloaded';
+          ctx.self.setState((draft) => {
+            draft.left = 'preloaded';
           });
         },
       },
@@ -221,8 +172,8 @@ export function createSharedStaticFileServiceDef() {
         input: noInputSchema,
         output: voidOutputSchema,
         handler: (_input, ctx) => {
-          ctx.self.setState((state) => {
-            state.right = 'preloaded';
+          ctx.self.setState((draft) => {
+            draft.right = 'preloaded';
           });
         },
       },
@@ -264,27 +215,6 @@ export function createDerivedBooleanFromChildQueryServiceDef() {
     commands: {},
   });
 }
-
-/**
- * Fixture exposing a query whose output type is legitimately `undefined` (a `void` output schema).
- *
- * Used to verify that consumers treat `undefined` as a real value rather than an "uninitialised"
- * sentinel — e.g. the `useServiceQuery` lazy-init must not recompute on every render here.
- */
-export const undefinedOutputQueryServiceDef = defineService({
-  id: 'internal-fixture/undefined-output-query',
-  description: 'Exposes a query that always returns undefined.',
-  initialState: {} as Record<string, never>,
-  queries: {
-    getNothing: {
-      description: 'Always returns undefined.',
-      input: noInputSchema,
-      output: voidOutputSchema,
-      handler: () => undefined,
-    },
-  },
-  commands: {},
-});
 
 /** Creates a fixture that intentionally returns an invalid query output. */
 export function createInvalidQueryOutputServiceDef() {

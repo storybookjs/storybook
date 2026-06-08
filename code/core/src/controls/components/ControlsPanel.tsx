@@ -65,21 +65,16 @@ export const ControlsPanel = ({ saveStory, createStory }: ControlsPanelProps) =>
     presetColors,
     disableSaveFromUI = false,
   } = useParameter<ControlsParameters>(PARAM_KEY, {});
-  const { path, refs, previewInitialized } = useStorybookState();
+  const { path, previewInitialized } = useStorybookState();
   const storyData = api.getCurrentStoryData();
 
-  // Stories from a composed ref track their own `previewInitialized` flag; the host's
-  // global flag stays false for them, so read the ref's flag when on a ref story (#34553).
-  const isPreviewInitialized = storyData?.refId
-    ? !!refs[storyData.refId]?.previewInitialized
-    : previewInitialized;
-
-  // If the story is prepared, then show the args table and reset the loading state
+  // If the story is prepared, then show the args table
+  // and reset the loading states
   useEffect(() => {
-    if (isPreviewInitialized) {
+    if (previewInitialized) {
       setIsLoading(false);
     }
-  }, [isPreviewInitialized]);
+  }, [previewInitialized]);
 
   const hasControls = Object.values(rows).some((arg) => arg?.control);
 

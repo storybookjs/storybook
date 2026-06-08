@@ -16,12 +16,10 @@ import type {
 } from 'storybook/internal/types';
 import { Addon_TypesEnum } from 'storybook/internal/types';
 
-import {
-  getChannel as readInstalledChannel,
-  setChannel as installStorybookChannel,
-} from '../../channels/channel-slot.ts';
-import { mockChannel } from '../../channels/mock-channel.ts';
+import { global } from '@storybook/global';
+
 import type { API } from '../root.tsx';
+import { mockChannel } from './storybook-channel-mock.ts';
 
 export type { Addon_Type as Addon };
 export { Addon_TypesEnum as types };
@@ -50,15 +48,9 @@ export class AddonStore {
   private resolve: any;
 
   getChannel = (): Channel => {
+    // this.channel should get overwritten by setChannel. If it wasn't called (e.g. in non-browser environment), set a mock instead.
     if (!this.channel) {
-      const installed = readInstalledChannel();
-      if (installed) {
-        this.channel = installed as Channel;
-        this.resolve();
-        return this.channel;
-      }
-
-      this.setChannel(mockChannel() as unknown as Channel);
+      this.setChannel(mockChannel());
     }
 
     return this.channel!;
@@ -66,11 +58,10 @@ export class AddonStore {
 
   ready = (): Promise<Channel> => this.promise;
 
-  hasChannel = (): boolean => !!this.channel || !!readInstalledChannel();
+  hasChannel = (): boolean => !!this.channel;
 
   setChannel = (channel: Channel): void => {
     this.channel = channel;
-    installStorybookChannel(channel);
     this.resolve();
   };
 
@@ -151,10 +142,10 @@ export class AddonStore {
 const KEY = '__STORYBOOK_ADDONS_MANAGER';
 
 function getAddonsStore(): AddonStore {
-  if (!globalThis[KEY]) {
-    globalThis[KEY] = new AddonStore();
+  if (!global[KEY]) {
+    global[KEY] = new AddonStore();
   }
-  return globalThis[KEY];
+  return global[KEY];
 }
 
 export const addons = getAddonsStore();

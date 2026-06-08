@@ -390,22 +390,6 @@ describe('rewriteStyleSheet', () => {
     );
   });
 
-  it('keeps child-combinator pseudo-state selectors valid', () => {
-    const sheet = new Sheet('.ds-card > :focus-visible { outline: none }');
-    rewriteStyleSheet(sheet as any);
-    expect(sheet.cssRules[0].cssText).toEqual(
-      '.ds-card > :focus-visible, .ds-card > .pseudo-focus-visible, .pseudo-focus-visible-all .ds-card > * { outline: none }'
-    );
-  });
-
-  it('keeps pseudo-state selectors valid inside ":has" child combinators', () => {
-    const sheet = new Sheet('.ds-card:has(> :focus-visible) { outline: 4px solid blue }');
-    rewriteStyleSheet(sheet as any);
-    expect(sheet.cssRules[0].cssText).toEqual(
-      '.ds-card:has(> :focus-visible), .ds-card:has(> .pseudo-focus-visible), .pseudo-focus-visible-all .ds-card:has(> *) { outline: 4px solid blue }'
-    );
-  });
-
   it('supports ":has" inside and outside of ":not"', () => {
     const sheet = new Sheet(':has(:not(:hover, :has(:focus), :has(:active))) { color: red }');
     rewriteStyleSheet(sheet as any);
@@ -540,6 +524,59 @@ describe('rewriteStyleSheet', () => {
     const media = layer.cssRules[1] as GroupingRule;
     const innerLayer = media.cssRules[0] as GroupingRule;
     expect(innerLayer.cssRules[0].getSelectors()).toContain('test.pseudo-hover');
+  });
+
+  it('preserves :where() wrapper in ancestor selector to maintain specificity', () => {
+    const sheet = new Sheet('.textLink:where(:focus-visible) { outline: 1px solid red; }');
+    rewriteStyleSheet(sheet as any);
+    const selectors = sheet.cssRules[0].getSelectors();
+    expect(selectors).toContain('.textLink:where(:focus-visible)');
+    expect(selectors).toContain('.textLink:where(.pseudo-focus-visible)');
+    // The ancestor selector should use :where() to maintain specificity at 0-1-0
+    expect(selectors).toContain(':where(.pseudo-focus-visible-all) .textLink');
+    // Should NOT use the higher-specificity form
+    expect(selectors).not.toContain('.pseudo-focus-visible-all .textLink:where(*)');
+  });
+
+  it('preserves :where() wrapper with combined pseudo selectors', () => {
+    const sheet = new Sheet('.textLink:where(:hover, :focus-visible) { outline: 1px solid red; }');
+    rewriteStyleSheet(sheet as any);
+    const selectors = sheet.cssRules[0].getSelectors();
+    expect(selectors).toContain('.textLink:where(:hover, :focus-visible)');
+    expect(selectors).toContain('.textLink:where(.pseudo-hover, .pseudo-focus-visible)');
+    expect(selectors).toContain(':where(.pseudo-hover-all.pseudo-focus-visible-all) .textLink');
+  });
+
+  it('handles mixed :where() wrapping per pseudo-state for specificity', () => {
+    const sheet = new Sheet('.textLink:where(:focus-visible):hover { outline: 1px solid red; }');
+    rewriteStyleSheet(sheet as any);
+    const selectors = sheet.cssRules[0].getSelectors();
+    expect(selectors).toContain('.textLink:where(:focus-visible):hover');
+    expect(selectors).toContain('.textLink:where(.pseudo-focus-visible).pseudo-hover');
+    // Only :focus-visible's ancestor class should be wrapped in :where()
+    expect(selectors).toContain(':where(.pseudo-focus-visible-all).pseudo-hover-all .textLink');
+    // Should NOT wrap both states in :where() — that would lose hover's specificity contribution
+    expect(selectors).not.toContain(':where(.pseudo-focus-visible-all.pseudo-hover-all)');
+  });
+
+  it('handles reversed mixed :where() wrapping', () => {
+    const sheet = new Sheet('.textLink:hover:where(:focus-visible) { outline: 1px solid red; }');
+    rewriteStyleSheet(sheet as any);
+    const selectors = sheet.cssRules[0].getSelectors();
+    expect(selectors).toContain('.textLink:hover:where(:focus-visible)');
+    expect(selectors).toContain('.textLink.pseudo-hover:where(.pseudo-focus-visible)');
+    // Only :focus-visible's ancestor class should be wrapped in :where()
+    expect(selectors).toContain(':where(.pseudo-focus-visible-all).pseudo-hover-all .textLink');
+    expect(selectors).not.toContain(':where(.pseudo-hover-all.pseudo-focus-visible-all)');
+  });
+
+  it('does not use :where() for ancestor selector when original has no :where()', () => {
+    const sheet = new Sheet('.textLink:focus-visible { outline: 1px solid red; }');
+    rewriteStyleSheet(sheet as any);
+    const selectors = sheet.cssRules[0].getSelectors();
+    // Without :where(), the ancestor selector should remain as-is
+    expect(selectors).toContain('.pseudo-focus-visible-all .textLink');
+    expect(selectors).not.toContain(':where(.pseudo-focus-visible-all)');
   });
 
   console.warn = () => {}; // suppress printing warnings about rewrite limit

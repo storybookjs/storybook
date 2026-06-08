@@ -119,10 +119,6 @@ const config: BuildEntries = {
         entryPoint: './src/actions/decorator.ts',
       },
       {
-        exportEntries: ['./backgrounds'],
-        entryPoint: './src/backgrounds/index.ts',
-      },
-      {
         exportEntries: ['./viewport'],
         entryPoint: './src/viewport/index.ts',
       },
@@ -189,10 +185,6 @@ const config: BuildEntries = {
       {
         exportEntries: ['./internal/types'],
         entryPoint: './src/types/index.ts',
-      },
-      {
-        exportEntries: ['./open-service'],
-        entryPoint: './src/shared/open-service/index.ts',
       },
     ],
     runtime: [

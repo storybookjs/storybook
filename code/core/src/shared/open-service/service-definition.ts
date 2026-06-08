@@ -8,6 +8,20 @@ import type {
   ServiceState,
 } from './types.ts';
 
+type InvalidInternalOperationName<TName extends string> = {
+  __internal_naming_error: `Operation "${TName}" has internal: true but must be prefixed with "_"`;
+};
+
+type InvalidUnderscoreWithoutInternal<TName extends string> = {
+  __internal_naming_error: `Operation "${TName}" is prefixed with "_" and must set internal: true`;
+};
+
+type InternalOperationNaming<TKey> = TKey extends string
+  ? TKey extends `_${string}`
+    ? { internal: true } | InvalidUnderscoreWithoutInternal<TKey>
+    : { internal?: false } | InvalidInternalOperationName<TKey>
+  : {};
+
 /**
  * Authoring-side query map derived from separate query input/output schema maps.
  *
@@ -30,7 +44,8 @@ type DefinedQueries<
     TQueryOutputSchemas[TKey],
     TCommandInputSchemas,
     TCommandOutputSchemas
-  >;
+  > &
+    InternalOperationNaming<TKey>;
 } & {
   [TKey in keyof TQueryOutputSchemas]: {
     output: TQueryOutputSchemas[TKey];
@@ -53,7 +68,8 @@ type DefinedCommands<
     TState,
     TCommandInputSchemas[TKey],
     TCommandOutputSchemas[TKey]
-  >;
+  > &
+    InternalOperationNaming<TKey>;
 } & {
   [TKey in keyof TCommandOutputSchemas]: {
     output: TCommandOutputSchemas[TKey];
@@ -80,6 +96,7 @@ export const defineService = <
 >(def: {
   id: ServiceId;
   description?: string;
+  internal?: boolean;
   initialState: ServiceState<TState>;
   queries: DefinedQueries<
     TState,

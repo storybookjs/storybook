@@ -2,9 +2,9 @@ import { expect, it, vi } from 'vitest';
 
 import { importPipeline } from './importPipeline.ts';
 
-const createGate = <T = void>(): [Promise<T>, (value?: T) => void] => {
-  let openGate: (value?: T) => void = () => {};
-  const gate = new Promise<T>((resolve) => {
+const createGate = (): [Promise<any | undefined>, (_?: any) => void] => {
+  let openGate = (_?: any) => {};
+  const gate = new Promise<any | undefined>((resolve) => {
     openGate = resolve;
   });
   return [gate, openGate];

@@ -151,9 +151,24 @@ export async function buildStaticStandalone(options: BuildStaticStandaloneOption
   const coreServerPublicDir = join(resolvePackageDir('storybook'), 'assets/browser');
   effects.push(cp(coreServerPublicDir, options.outputDir, { recursive: true, force: true }));
 
-  if (getRegisteredServices().length > 0) {
-    logger.info('Building open services..');
-    effects.push(writeOpenServiceStaticFiles(options.outputDir));
+  const hasRegisteredServices = getRegisteredServices().length > 0;
+  const shouldWriteManifests = !options.ignorePreview && features?.componentsManifest;
+
+  if (hasRegisteredServices || shouldWriteManifests) {
+    effects.push(
+      (async () => {
+        if (hasRegisteredServices) {
+          logger.info('Building open services..');
+          await writeOpenServiceStaticFiles(options.outputDir);
+        }
+
+        if (shouldWriteManifests) {
+          // Ref-based components.json reads docgen snapshots from outputDir/services/ — manifests
+          // must run after open-service static files are written.
+          await writeManifests(options.outputDir, presets);
+        }
+      })()
+    );
   }
 
   let storyIndexGeneratorPromise: Promise<StoryIndexGenerator | undefined> =
@@ -167,10 +182,6 @@ export async function buildStaticStandalone(options: BuildStaticStandaloneOption
         storyIndexGeneratorPromise as Promise<StoryIndexGenerator>
       )
     );
-
-    if (features?.componentsManifest) {
-      effects.push(writeManifests(options.outputDir, presets));
-    }
   }
 
   if (!core?.disableProjectJson) {

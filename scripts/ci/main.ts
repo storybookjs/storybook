@@ -13,6 +13,7 @@ import {
   knip,
   lint,
   fmt,
+  internalStorybookE2e,
   storybookChromatic,
   testUnit_windows,
   testsStories_linux,
@@ -25,6 +26,7 @@ import { executors } from './utils/executors.ts';
 import { ensureRequiredJobs } from './utils/helpers.ts';
 import { orbs } from './utils/orbs.ts';
 import { parameters } from './utils/parameters.ts';
+import { setTrustedAuthor } from './utils/runtime.ts';
 import type {
   JobImplementationObj,
   JobOrNoOpJob,
@@ -65,6 +67,7 @@ function generateConfig(workflow: Workflow) {
       knip,
 
       storybookChromatic,
+      internalStorybookE2e,
       benchmarkPackages,
 
       sandboxesNoOpJob,
@@ -149,11 +152,19 @@ console.log('--------------------------------');
 program
   .description('Generate CircleCI config')
   .requiredOption('-w, --workflow <string>', 'Workflow to generate config for')
+  .option(
+    '--gh-trusted-author <string>',
+    'Whether the pipeline can persist to shared caches',
+    'false'
+  )
   .parse(process.argv);
+
+const opts = program.opts();
+setTrustedAuthor(opts.ghTrustedAuthor === 'true');
 
 await fs.writeFile(
   join(dirname, '../../.circleci/config.generated.yml'),
-  yml.stringify(generateConfig(program.opts().workflow), null, {
+  yml.stringify(generateConfig(opts.workflow), null, {
     lineWidth: 1200,
     indent: 4,
   })

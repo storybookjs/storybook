@@ -1,25 +1,23 @@
-import { join } from 'pathe';
+import { join, normalize } from 'pathe';
 
+import { dequal } from 'dequal';
 import { logger } from 'storybook/internal/node-logger';
 import type {
-  Builder,
-  ModuleGraph,
-  ModuleGraphChangeEvent,
-  ModuleNode,
-  StatusValue,
-  StoryIndex,
   Status,
   StatusStoreByTypeId,
+  StatusValue,
+  StoryIndex,
 } from 'storybook/internal/types';
 import { CHANGE_DETECTION_STATUS_TYPE_ID } from 'storybook/internal/types';
 
-import { normalizePath } from '../../common/utils/normalize-path.ts';
 import type { StoryIndexGenerator } from '../utils/StoryIndexGenerator.ts';
+import type { ChangeDetectionAdapter } from './adapters/index.ts';
 import { ChangeDetectionFailureError, ChangeDetectionUnavailableError } from './errors.ts';
 import { GitDiffProvider } from './GitDiffProvider.ts';
-import { resetChangeDetectionReadiness, setChangeDetectionReadiness } from './readiness.ts';
 import { extractBaselineEntryIds, IndexBaselineService } from './IndexBaselineService.ts';
-import { findAffectedStoryFiles } from './trace-changed.ts';
+import { resetChangeDetectionReadiness, setChangeDetectionReadiness } from './readiness.ts';
+import { getStoryIdsByAbsolutePath } from './story-files.ts';
+import type { StoryDependencyGraphService } from './StoryDependencyGraphService.ts';
 
 const CHANGE_DETECTION_DEBOUNCE_MS = 200;
 
@@ -35,24 +33,8 @@ function isSameStatus(a: Status | undefined, b: Status): boolean {
     a.title === b.title &&
     a.description === b.description &&
     a.sidebarContextMenu === b.sidebarContextMenu &&
-    JSON.stringify(a.data) === JSON.stringify(b.data)
+    dequal(a.data, b.data)
   );
-}
-
-function getStoryIdsByAbsolutePath(
-  storyIndex: Awaited<ReturnType<StoryIndexGenerator['getIndex']>>,
-  workingDir: string
-): Map<string, Set<string>> {
-  const storyIdsByFile = new Map<string, Set<string>>();
-  Object.values(storyIndex.entries).forEach((entry) => {
-    if (entry.type === 'story' && !entry.importPath.startsWith('virtual:')) {
-      const filePath = join(workingDir, entry.importPath);
-      const storyIds = storyIdsByFile.get(filePath) ?? new Set<string>();
-      storyIds.add(entry.id);
-      storyIdsByFile.set(filePath, storyIds);
-    }
-  });
-  return storyIdsByFile;
 }
 
 export function mergeStatusValues(
@@ -115,19 +97,24 @@ export function buildIndexBaselineStatuses(
 }
 
 /**
- * Coordinates change detection by listening to builder module-graph updates, resolving changed
- * files from git, mapping those changes to affected stories, and publishing the resulting story
- * statuses to the status store.
+ * Publishes change-detection story statuses to the status store. It resolves git-changed files,
+ * maps them to affected stories through a shared {@link StoryDependencyGraphService}, and emits
+ * `modified`/`affected`/`new` statuses (plus index-baseline `new` entries).
+ *
+ * The module dependency graph itself — building the reverse index, watching builder file events,
+ * and incrementally patching — lives in {@link StoryDependencyGraphService}, which this class
+ * composes. The two responsibilities are independent: the graph never depends on git, the status
+ * store, or the readiness signal, and could be driven by other consumers in the future.
  */
 export class ChangeDetectionService {
   private disposed = false;
-  private unsubscribeModuleGraph: (() => void) | undefined;
   private debounceTimer: ReturnType<typeof setTimeout> | undefined;
-  private latestModuleGraph: ModuleGraph | undefined;
-  private hasReceivedModuleGraph = false;
   private scanInFlight = false;
   private rerunAfterCurrentScan = false;
   private readinessResolved = false;
+  private statusPipelineStarted = false;
+  private changeDetectionEnabled = false;
+  private readonly graph: StoryDependencyGraphService;
   private previousStatuses = new Map<string, Status>();
   private gitDiffProvider: GitDiffProvider | undefined;
   private indexBaselineService: IndexBaselineService | undefined;
@@ -136,6 +123,7 @@ export class ChangeDetectionService {
 
   constructor(
     private readonly options: {
+      graph: StoryDependencyGraphService;
       storyIndexGeneratorPromise: Promise<StoryIndexGenerator>;
       statusStore: StatusStoreByTypeId;
       gitDiffProvider?: GitDiffProvider;
@@ -148,13 +136,51 @@ export class ChangeDetectionService {
     this.indexBaselineService = options.indexBaselineService;
     this.workingDir = options.workingDir ?? process.cwd();
     this.debounceMs = options.debounceMs ?? CHANGE_DETECTION_DEBOUNCE_MS;
+    this.graph = options.graph;
     resetChangeDetectionReadiness();
   }
 
-  start(
-    onModuleGraphChange: Builder<unknown>['onModuleGraphChange'],
-    enabled: boolean | undefined
-  ): void {
+  /** True while the service is live and change-detection status publishing is enabled. */
+  private isActive(): boolean {
+    return !this.disposed && this.changeDetectionEnabled;
+  }
+
+  onGraphReady(): void {
+    if (!this.isActive()) {
+      return;
+    }
+
+    this.startStatusPipeline();
+  }
+
+  onGraphChange(): void {
+    if (!this.isActive()) {
+      return;
+    }
+
+    this.scheduleScan(this.debounceMs);
+  }
+
+  onGraphError(error: Error): void {
+    if (!this.isActive()) {
+      return;
+    }
+
+    this.resolveReadiness({ status: 'error', error });
+    void this.dispose().catch(() => undefined);
+  }
+
+  onGraphUnavailable(reason: string, error?: Error): void {
+    if (!this.isActive()) {
+      return;
+    }
+
+    logger.warn(`Change detection unavailable: ${reason}`);
+    this.resolveReadiness({ status: 'unavailable', reason, error });
+    void this.dispose();
+  }
+
+  start(adapter: ChangeDetectionAdapter | undefined, enabled: boolean | undefined): void {
     if (enabled === false) {
       logger.debug('Change detection disabled.');
       this.resolveReadiness({
@@ -164,31 +190,32 @@ export class ChangeDetectionService {
       return;
     }
 
-    if (!onModuleGraphChange) {
-      logger.warn('Change detection unavailable: Not supported by builder');
+    if (!adapter) {
+      logger.warn('Change detection unavailable: builder does not support change detection');
       this.resolveReadiness({
         status: 'unavailable',
-        reason: 'builder does not support module graph',
+        reason: 'builder does not support change detection',
       });
       return;
     }
 
     logger.debug('Change detection enabled.');
+    this.changeDetectionEnabled = true;
+    this.onGraphReady();
+  }
+
+  /**
+   * Wires the git-diff-driven status pipeline. Runs once the dependency graph is ready (so the
+   * initial scan and every git-state-change scan read a populated reverse index).
+   */
+  private startStatusPipeline(): void {
+    if (this.disposed || this.statusPipelineStarted) {
+      return;
+    }
+    this.statusPipelineStarted = true;
+
     void this.getIndexBaselineService().start();
-    this.unsubscribeModuleGraph = onModuleGraphChange((event) => {
-      if (this.disposed) {
-        return;
-      }
 
-      if (event.type === 'moduleGraph') {
-        this.latestModuleGraph = event.moduleGraph;
-        this.scheduleScan(this.hasReceivedModuleGraph ? this.debounceMs : 0);
-        this.hasReceivedModuleGraph = true;
-        return;
-      }
-
-      this.handleBuilderStartupEvent(event);
-    });
     this.getGitDiffProvider().onGitStateChange(() => {
       if (this.disposed) {
         return;
@@ -199,15 +226,15 @@ export class ChangeDetectionService {
         .handleGitStateChange()
         .catch(() => undefined);
     });
-  }
 
-  onStoryIndexInvalidated(): void {
-    if (!this.disposed) {
-      this.scheduleScan(this.debounceMs);
-    }
+    // Initial scan surfaces git-pending diffs immediately.
+    this.scheduleScan(0);
   }
 
   async dispose(): Promise<void> {
+    if (this.disposed) {
+      return;
+    }
     this.disposed = true;
     this.rerunAfterCurrentScan = false;
 
@@ -216,8 +243,7 @@ export class ChangeDetectionService {
       this.debounceTimer = undefined;
     }
 
-    this.unsubscribeModuleGraph?.();
-    this.unsubscribeModuleGraph = undefined;
+    this.gitDiffProvider?.dispose();
   }
 
   private scheduleScan(delayMs: number): void {
@@ -232,7 +258,16 @@ export class ChangeDetectionService {
   }
 
   private async scan(): Promise<void> {
-    if (this.disposed || !this.latestModuleGraph) {
+    if (this.disposed) {
+      return;
+    }
+
+    // Drain the graph's patch chain before reading it. Without this, a scan triggered mid-patch
+    // (between a story's removeStory and the re-walk's recordEdges) reads a transiently empty
+    // reverse index and publishes incorrect statuses.
+    await this.graph.whenSettled();
+
+    if (this.disposed || !this.graph.hasGraph()) {
       return;
     }
 
@@ -244,7 +279,7 @@ export class ChangeDetectionService {
     this.scanInFlight = true;
 
     try {
-      const nextStatuses = await this.buildStatuses(this.latestModuleGraph);
+      const nextStatuses = await this.buildStatuses();
       if (this.disposed) {
         return;
       }
@@ -291,7 +326,7 @@ export class ChangeDetectionService {
     }
   }
 
-  private async buildStatuses(moduleGraph: ModuleGraph): Promise<Map<string, Status>> {
+  private async buildStatuses(): Promise<Map<string, Status>> {
     const gitDiffProvider = this.getGitDiffProvider();
     const [changes, repoRoot, storyIndexGenerator, baselineEntryIds] = await Promise.all([
       gitDiffProvider.getChangedFiles(),
@@ -300,19 +335,13 @@ export class ChangeDetectionService {
       this.getIndexBaselineService().getBaselineEntryIds(),
     ]);
 
-    const changedFiles = new Set(Array.from(changes.changed).map((path) => join(repoRoot, path)));
-    const newFiles = new Set(Array.from(changes.new).map((path) => join(repoRoot, path)));
+    const changedFiles = new Set(
+      Array.from(changes.changed).map((path) => normalize(join(repoRoot, path)))
+    );
+    const newFiles = new Set(
+      Array.from(changes.new).map((path) => normalize(join(repoRoot, path)))
+    );
     const scannedFiles = new Set([...changedFiles, ...newFiles]);
-    const normalizedModuleGraph = new Map<string, Set<ModuleNode>>();
-    moduleGraph.forEach((nodes, filePath) => {
-      const normalizedPath = normalizePath(filePath);
-      const existingNodes = normalizedModuleGraph.get(normalizedPath);
-      if (existingNodes) {
-        nodes.forEach((node) => void existingNodes.add(node));
-      } else {
-        normalizedModuleGraph.set(normalizedPath, new Set(nodes));
-      }
-    });
 
     const storyIndex = await storyIndexGenerator.getIndex();
     const baselineStatuses = buildIndexBaselineStatuses(storyIndex, baselineEntryIds);
@@ -320,16 +349,23 @@ export class ChangeDetectionService {
     const statuses = new Map<string, Status>();
 
     for (const changedFile of scannedFiles) {
-      const affectedStoryFiles = findAffectedStoryFiles(
-        changedFile,
-        normalizedModuleGraph,
-        storyIdsByFile
-      );
-      const lowestDistance = Math.min(
-        ...Array.from(affectedStoryFiles.values(), ({ distance }) => distance)
-      );
+      const affectedStoryFiles = this.graph.lookup(changedFile);
+      // Include the changed file as a story-at-distance-0 if it IS a story.
+      const allEntries = new Map(affectedStoryFiles);
+      if (storyIdsByFile.has(changedFile)) {
+        allEntries.set(changedFile, 0);
+      }
+      if (allEntries.size === 0) {
+        continue;
+      }
+      let lowestDistance = Number.POSITIVE_INFINITY;
+      for (const distance of allEntries.values()) {
+        if (distance < lowestDistance) {
+          lowestDistance = distance;
+        }
+      }
 
-      for (const [storyFile, { distance }] of affectedStoryFiles.entries()) {
+      for (const [storyFile, distance] of allEntries.entries()) {
         const storyIds = storyIdsByFile.get(storyFile);
         if (!storyIds) {
           continue;
@@ -387,6 +423,10 @@ export class ChangeDetectionService {
       (status) => !isSameStatus(this.previousStatuses.get(status.storyId), status)
     );
 
+    if (removedStoryIds.length === 0 && changedStatuses.length === 0) {
+      return;
+    }
+
     if (removedStoryIds.length > 0) {
       this.options.statusStore.unset(removedStoryIds);
     }
@@ -410,26 +450,5 @@ export class ChangeDetectionService {
 
     this.readinessResolved = true;
     setChangeDetectionReadiness(readiness);
-  }
-
-  private handleBuilderStartupEvent(
-    event: Exclude<ModuleGraphChangeEvent, { type: 'moduleGraph' }>
-  ): void {
-    if (event.type === 'unavailable') {
-      logger.warn(`Change detection unavailable: ${event.reason}`);
-      this.resolveReadiness({
-        status: 'unavailable',
-        reason: event.reason,
-        error: event.error,
-      });
-    } else {
-      logger.error(`Change detection failed: ${event.error.message}`);
-      this.resolveReadiness({
-        status: 'error',
-        error: event.error,
-      });
-    }
-
-    void this.dispose();
   }
 }

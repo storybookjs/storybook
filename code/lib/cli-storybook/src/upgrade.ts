@@ -1,5 +1,10 @@
 import { PackageManagerName } from 'storybook/internal/common';
-import { HandledError, JsPackageManagerFactory, isCorePackage } from 'storybook/internal/common';
+import {
+  HandledError,
+  JsPackageManagerFactory,
+  isCI,
+  isCorePackage,
+} from 'storybook/internal/common';
 import {
   CLI_COLORS,
   createHyperlink,
@@ -9,6 +14,7 @@ import {
 } from 'storybook/internal/node-logger';
 import type { LogLevel } from 'storybook/internal/node-logger';
 import {
+  MinimumReleaseAgeHandledError,
   UpgradeStorybookToLowerVersionError,
   UpgradeStorybookUnknownCurrentVersionError,
 } from 'storybook/internal/server-errors';
@@ -116,6 +122,7 @@ export const checkVersionConsistency = () => {
 
 export type UpgradeOptions = {
   skipCheck: boolean;
+  skipAutomigrations?: boolean;
   packageManager?: PackageManagerName;
   dryRun: boolean;
   yes: boolean;
@@ -384,6 +391,24 @@ export async function upgrade(options: UpgradeOptions): Promise<void> {
 
     // Update dependencies in package.jsons for all projects
     if (!options.dryRun) {
+      for (const project of storybookProjects) {
+        try {
+          await project.packageManager.precheckStorybookPackageInstall({
+            storybookVersion: project.currentCLIVersion,
+            nonInteractive: !!options.yes || !process.stdout.isTTY || !!isCI(),
+            installContext: 'upgrade',
+          });
+        } catch (error) {
+          if (error instanceof MinimumReleaseAgeHandledError) {
+            throw error;
+          }
+
+          logger.debug(
+            `Skipping minimum-release-age precheck for ${project.configDir} after an unexpected failure: ${error}`
+          );
+        }
+      }
+
       const task = prompt.taskLog({
         id: 'upgrade-dependencies',
         title: `Fetching versions to update package.json files..`,
@@ -413,11 +438,17 @@ export async function upgrade(options: UpgradeOptions): Promise<void> {
       }
     }
 
-    // Run automigrations for all projects
-    const { automigrationResults, detectedAutomigrations } = await runAutomigrations(
-      storybookProjects,
-      options
-    );
+    // Run automigrations for all projects (unless explicitly skipped)
+    let automigrationResults: Record<string, AutomigrationResult> = {};
+    let detectedAutomigrations: AutomigrationCheckResult[] = [];
+    if (options.skipAutomigrations) {
+      logger.log('Skipping automigrations (--skip-automigrations).');
+    } else {
+      ({ automigrationResults, detectedAutomigrations } = await runAutomigrations(
+        storybookProjects,
+        options
+      ));
+    }
 
     // Install dependencies
     const rootPackageManager =

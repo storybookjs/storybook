@@ -1,20 +1,11 @@
 import { existsSync } from 'node:fs';
 import { extname } from 'node:path';
 
-import resolve from 'resolve';
+import { ResolverFactory } from 'oxc-resolver';
 
-export const supportedExtensions = [
-  '.js',
-  '.ts',
-  '.jsx',
-  '.tsx',
-  '.mjs',
-  '.mts',
-  '.mtsx',
-  '.cjs',
-  '.cts',
-  '.ctsx',
-] as const;
+import { storybookConfigExtensions } from '../../shared/constants/extensions.ts';
+
+export const supportedExtensions = storybookConfigExtensions;
 
 export function getInterpretedFile(pathToFile: string) {
   return supportedExtensions
@@ -22,21 +13,18 @@ export function getInterpretedFile(pathToFile: string) {
     .find((candidate) => existsSync(candidate));
 }
 
-export function resolveImport(id: string, options: resolve.SyncOpts): string {
-  const mergedOptions: resolve.SyncOpts = {
-    extensions: supportedExtensions,
-    packageFilter(pkg) {
-      // Prefer 'module' over 'main' if available
-      if (pkg.module) {
-        pkg.main = pkg.module;
-      }
-      return pkg;
-    },
-    ...options,
-  };
+const importResolver = new ResolverFactory({
+  extensions: [...supportedExtensions],
+  mainFields: ['module', 'main'],
+});
 
+export interface ResolveImportOptions {
+  basedir: string;
+}
+
+export function resolveImport(id: string, options: ResolveImportOptions): string {
   try {
-    return resolve.sync(id, { ...mergedOptions });
+    return resolveSync(id, options.basedir);
   } catch (error) {
     const ext = extname(id);
 
@@ -53,6 +41,14 @@ export function resolveImport(id: string, options: resolve.SyncOpts): string {
     if (!newId) {
       throw error;
     }
-    return resolve.sync(newId, { ...mergedOptions, extensions: [] });
+    return resolveSync(newId, options.basedir);
   }
+}
+
+function resolveSync(id: string, basedir: string): string {
+  const result = importResolver.sync(basedir, id);
+  if (result.path) {
+    return result.path;
+  }
+  throw new Error(result.error ?? `Cannot resolve module '${id}' from '${basedir}'`);
 }

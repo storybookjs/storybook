@@ -24,7 +24,7 @@ describe('telemetry-channel', () => {
         },
       } as any;
 
-      initTelemetryChannel(channel, { disableTelemetry: false } as any);
+      initTelemetryChannel(channel);
 
       const payload = {
         trigger: 'interaction' as const,

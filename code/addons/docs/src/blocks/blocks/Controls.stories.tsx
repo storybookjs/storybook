@@ -4,7 +4,7 @@ import type { PlayFunctionContext } from 'storybook/internal/csf';
 
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
-import { expect, within } from 'storybook/test';
+import { expect, userEvent, within } from 'storybook/test';
 
 import * as ExampleStories from '../examples/ControlsParameters.stories';
 import * as SubcomponentsExampleStories from '../examples/ControlsWithSubcomponentsParameters.stories';
@@ -120,6 +120,24 @@ export const SubcomponentsOfStory: Story = {
   },
 };
 
+/**
+ * When a component declares subcomponents, editing a control on the main component tab should not
+ * remount the input and drop focus. This verifies the fix for
+ * https://github.com/storybookjs/storybook/issues/29028
+ */
+export const SubcomponentsRetainControlFocus: Story = {
+  args: {
+    of: SubcomponentsExampleStories.NoParameters,
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const input = await canvas.findByDisplayValue('b');
+    await userEvent.click(input);
+    await userEvent.type(input, 'x');
+    await expect(document.activeElement).toBe(input);
+  },
+};
+
 export const SubcomponentsIncludeProp: Story = {
   args: {
     of: SubcomponentsExampleStories.NoParameters,
@@ -170,6 +188,28 @@ export const MultipleControlsOnSamePage: Story = {
     <>
       <Controls of={ExampleStories.NoParameters} />
       <Controls of={ExampleStories.Include} />
+    </>
+  ),
+  play: async ({ canvasElement }) => {
+    const allIds = Array.from(canvasElement.querySelectorAll('[id^="control-"]')).map(
+      (el) => el.id
+    );
+    const uniqueIds = new Set(allIds);
+    await expect(allIds.length).toBeGreaterThan(0);
+    await expect(uniqueIds.size).toBe(allIds.length);
+  },
+};
+
+/**
+ * When multiple Controls blocks for the SAME story are on the same docs page, each control should
+ * still have a unique id (and unique name across blocks, so that radio button groups remain
+ * independent). This verifies the fix for https://github.com/storybookjs/storybook/issues/29295.
+ */
+export const MultipleControlsForSameStoryOnSamePage: Story = {
+  render: () => (
+    <>
+      <Controls of={ExampleStories.NoParameters} />
+      <Controls of={ExampleStories.NoParameters} />
     </>
   ),
   play: async ({ canvasElement }) => {

@@ -10,10 +10,22 @@ import type { Server as NetServer } from 'net';
 import type { Options as TelejsonOptions } from 'telejson';
 import type { PackageJson as PackageJsonFromTypeFest } from 'type-fest';
 
+import type { DocgenProvider } from '../../shared/open-service/services/docgen/types.ts';
 import type { SupportedBuilder } from './builders.ts';
 import type { SupportedFramework } from './frameworks.ts';
 import type { Indexer, StoriesEntry } from './indexer.ts';
 import type { SupportedRenderer } from './renderers.ts';
+
+export type {
+  DocgenError,
+  DocgenJsDocTags,
+  DocgenPayload,
+  DocgenProvider,
+  DocgenProviderInput,
+  DocgenProviderPreset,
+  DocgenStory,
+  DocgenSubcomponent,
+} from '../../shared/open-service/services/docgen/types.ts';
 
 /** ⚠️ This file contains internal WIP types they MUST NOT be exported outside this package for now! */
 
@@ -113,6 +125,12 @@ export interface Presets {
     config?: StorybookConfigRaw['staticDirs'],
     args?: any
   ): Promise<StorybookConfigRaw['staticDirs']>;
+  apply(extension: 'services', config?: StorybookConfigRaw['services'], args?: any): Promise<void>;
+  apply(
+    extension: 'experimental_docgenProvider',
+    config: DocgenProvider,
+    args?: any
+  ): Promise<DocgenProvider>;
 
   /** The second and third parameter are not needed. And make type inference easier. */
   apply<T extends keyof StorybookConfigRaw>(extension: T): Promise<StorybookConfigRaw[T]>;
@@ -156,6 +174,29 @@ export interface Stats {
 export interface BuilderResult {
   totalTime?: ReturnType<typeof process.hrtime>;
   stats?: Stats;
+}
+
+/**
+ * Builder-supplied module resolution config consumed by Storybook's change-detection
+ * dependency graph (and any future module-resolver consumer in core).
+ *
+ * Shape mirrors a subset of Vite's `resolve.*` options and is intentionally
+ * builder-agnostic — webpack/rspack adapters surface the same fields.
+ */
+export interface ModuleResolveConfig {
+  /** Project root (where Storybook is started from). */
+  projectRoot: string;
+  /**
+   * Builder-supplied alias map. Accepts both Vite shapes:
+   *   - `Record<string, string>` (object form)
+   *   - `Array<{ find: string | RegExp; replacement: string }>` (array form, supports regex)
+   *
+   * Callers may treat unresolvable specifiers (including unsupported regex aliases) as
+   * terminal.
+   */
+  alias?: Record<string, string> | Array<{ find: string | RegExp; replacement: string }>;
+  /** Conditions for package `exports` resolution. */
+  conditions?: string[];
 }
 
 export type PackageJson = PackageJsonFromTypeFest & Record<string, any>;
@@ -276,26 +317,11 @@ export interface Builder<Config, BuilderStats extends Stats = Stats> {
   bail: (e?: Error) => Promise<void>;
   corePresets?: string[];
   overridePresets?: string[];
-  onModuleGraphChange?(cb: (event: ModuleGraphChangeEvent) => void): () => void;
-}
-
-/**
- * Builder-agnostic module graph for dependency tracking. Modeled after Vite's module graph.
- * The same file can be imported in multiple ways (e.g. based on query params or import context),
- * each representing a unique module identity, hence the value is a Set<ModuleNode>.
- */
-export type ModuleGraph = Map<ModuleNode['file'], Set<ModuleNode>>;
-
-export type ModuleGraphChangeEvent =
-  | { type: 'moduleGraph'; moduleGraph: ModuleGraph }
-  | { type: 'unavailable'; reason: string; error?: Error }
-  | { type: 'error'; error: Error };
-
-export interface ModuleNode {
-  file: string;
-  type: 'js' | 'css' | 'asset';
-  importers: Set<ModuleNode>;
-  importedModules: Set<ModuleNode>;
+  /**
+   * Returns a change-detection adapter the core change-detection service uses to (a) read
+   * builder resolve config (alias, root, conditions), and (b) subscribe to file-system events.
+   */
+  changeDetectionAdapter?(): import('../../core-server/change-detection/adapters/types.ts').ChangeDetectionAdapter;
 }
 
 /** Options for TypeScript usage within Storybook. */
@@ -387,6 +413,7 @@ export interface ComponentManifest {
   import?: string | undefined;
   summary?: string | undefined;
   stories: {
+    id: string;
     name: string;
     snippet?: string | undefined;
     description?: string | undefined;
@@ -428,6 +455,7 @@ export interface StorybookConfigRaw {
   core?: CoreConfig;
   experimental_manifests?: Manifests;
   experimental_enrichCsf?: CsfEnricher;
+  experimental_docgenProvider?: DocgenProvider;
   staticDirs?: (DirectoryMapping | string)[];
   logLevel?: string;
   features?: {
@@ -563,9 +591,20 @@ export interface StorybookConfigRaw {
     experimentalCodeExamples?: boolean;
 
     /**
-     * Enable change detection
-     * TODO: Turn to true before 10.4 release
+     * Enable the experimental docgen open service.
+     *
+     * When true, Storybook registers the `core/docgen` service in the open-service registry and
+     * generates per-component docgen JSON snapshots during static builds. Renderer and addon
+     * providers contribute through the `experimental_docgenProvider` preset.
+     *
      * @default false
+     * @experimental This feature is in early development and may change significantly in future releases.
+     */
+    experimentalDocgenServer?: boolean;
+
+    /**
+     * Enable change detection
+     * @default true
      */
     changeDetection?: boolean;
   };
@@ -594,6 +633,27 @@ export interface StorybookConfigRaw {
 
   experimental_indexers?: Indexer[];
 
+  /**
+   * Register parsers that extract import edges from non-JS/TS files (e.g. .vue, .svelte).
+   * Each parser claims one or more file extensions. Last registration wins on collision.
+   * Lazy-load heavy SFC compilers inside the parser body — the function is awaited on first
+   * use.
+   *
+   * Used by Storybook's change-detection dependency graph. May be reused by other consumers
+   * in the future (static build, dependency analysis CLIs).
+   *
+   * @experimental Subject to change before stable release.
+   */
+  experimental_importParsers?:
+    | import('../../core-server/change-detection/parser-registry/types.ts').ImportParser[]
+    | ((
+        existing: import('../../core-server/change-detection/parser-registry/types.ts').ImportParser[]
+      ) =>
+        | import('../../core-server/change-detection/parser-registry/types.ts').ImportParser[]
+        | Promise<
+            import('../../core-server/change-detection/parser-registry/types.ts').ImportParser[]
+          >);
+
   storyIndexGenerator?: StoryIndexGenerator;
 
   experimental_devServer?: ServerApp;
@@ -609,6 +669,8 @@ export interface StorybookConfigRaw {
   managerHead?: string;
 
   tags?: TagsOptions;
+
+  services?: void;
 }
 
 /**
@@ -714,6 +776,16 @@ export interface StorybookConfig {
 
   /** Configure non-standard tag behaviors */
   tags?: PresetValue<StorybookConfigRaw['tags']>;
+
+  /** Run open-service registration side effects for the server environment. */
+  services?: PresetValue<StorybookConfigRaw['services']>;
+
+  /**
+   * Middleware-style provider for the experimental docgen service. Each registrant receives the
+   * previously accumulated provider as its config argument and returns a wrapping provider that
+   * may delegate to it via the input forwarding pattern.
+   */
+  experimental_docgenProvider?: PresetValue<StorybookConfigRaw['experimental_docgenProvider']>;
 }
 
 export type PresetValue<T> = T | ((config: T, options: Options) => T | Promise<T>);

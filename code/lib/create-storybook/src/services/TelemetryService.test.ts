@@ -50,6 +50,7 @@ describe('TelemetryService', () => {
           docs: true,
           test: false,
           onboarding: true,
+          ai: false,
         },
         newUser: true,
         versionSpecifier: '8.0.0',
@@ -70,6 +71,36 @@ describe('TelemetryService', () => {
       await telemetryService.trackScaffolded(data);
 
       expect(telemetry).toHaveBeenCalledWith('scaffolded-empty', data);
+    });
+
+    it('should track ai-prompt-nudge event with context when prompt was shown', async () => {
+      await telemetryService.trackAiSetupNudge({ skipPrompt: false });
+
+      expect(telemetry).toHaveBeenCalledWith('ai-prompt-nudge', {
+        id: 'setup',
+        origin: 'init',
+        context: { skipPrompt: false },
+      });
+    });
+
+    it('should track ai-prompt-nudge event with context when prompt was skipped', async () => {
+      await telemetryService.trackAiSetupNudge({ skipPrompt: true });
+
+      expect(telemetry).toHaveBeenCalledWith('ai-prompt-nudge', {
+        id: 'setup',
+        origin: 'init',
+        context: { skipPrompt: true },
+      });
+    });
+
+    it('should track prompt cancellation', async () => {
+      await telemetryService.trackPromptCancel('new-user-check');
+
+      expect(telemetry).toHaveBeenCalledWith(
+        'canceled',
+        { eventType: 'init', prompt: 'new-user-check' },
+        { stripMetadata: true, immediate: true }
+      );
     });
   });
 
@@ -92,6 +123,7 @@ describe('TelemetryService', () => {
           docs: true,
           test: true,
           onboarding: false,
+          ai: false,
         },
         newUser: true,
         versionSpecifier: '8.0.5',
@@ -116,6 +148,7 @@ describe('TelemetryService', () => {
           docs: false,
           test: false,
           onboarding: false,
+          ai: false,
         },
         newUser: false,
         versionSpecifier: undefined,
@@ -137,6 +170,26 @@ describe('TelemetryService', () => {
           cliIntegration: 'sv create',
         })
       );
+    });
+
+    describe('when AI feature is selected', () => {
+      beforeEach(() => {
+        vi.mocked(getProcessAncestry).mockReturnValue([]);
+      });
+
+      it('should set ai: true when AI feature is selected', async () => {
+        const telemetryService = new TelemetryService();
+        const selectedFeatures = new Set([Feature.AI]);
+
+        await telemetryService.trackInitWithContext(ProjectType.REACT, selectedFeatures, true);
+
+        expect(telemetry).toHaveBeenCalledWith(
+          'init',
+          expect.objectContaining({
+            features: expect.objectContaining({ ai: true }),
+          })
+        );
+      });
     });
   });
 });

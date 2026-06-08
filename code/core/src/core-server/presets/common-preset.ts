@@ -2,7 +2,11 @@ import { existsSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
 
 import type { Channel } from 'storybook/internal/channels';
-import { normalizeStories, optionalEnvToBoolean } from 'storybook/internal/common';
+import {
+  STORY_FILE_TEST_REGEXP,
+  normalizeStories,
+  optionalEnvToBoolean,
+} from 'storybook/internal/common';
 import {
   JsPackageManagerFactory,
   type RemoveAddonOptions,
@@ -15,15 +19,18 @@ import {
 import { StoryIndexGenerator } from 'storybook/internal/core-server';
 import { loadCsf } from 'storybook/internal/csf-tools';
 import { logger } from 'storybook/internal/node-logger';
-import { setTelemetryEnabled, telemetry } from 'storybook/internal/telemetry';
+import { telemetry } from 'storybook/internal/telemetry';
 import type {
   CoreConfig,
+  DocgenProvider,
   Indexer,
   Options,
   PresetProperty,
   PresetPropertyFn,
   StorybookConfigRaw,
 } from 'storybook/internal/types';
+
+import { registerDocgenService } from '../../shared/open-service/services/docgen/server.ts';
 
 import { isAbsolute, join } from 'pathe';
 import * as pathe from 'pathe';
@@ -41,6 +48,7 @@ import { initializeSaveStory } from '../utils/save-story/save-story.ts';
 import { parseStaticDir } from '../utils/server-statics.ts';
 import { type OptionsWithRequiredCache, initializeWhatsNew } from '../utils/whats-new.ts';
 import { getWsToken } from './wsToken.ts';
+import { initAIAnalyticsChannel } from '../server-channel/ai-setup-channel.ts';
 
 const interpolate = (string: string, data: Record<string, string> = {}) =>
   Object.entries(data).reduce((acc, [k, v]) => acc.replace(new RegExp(`%${k}%`, 'g'), v), string);
@@ -206,7 +214,7 @@ export const features: PresetProperty<'features'> = async (existing) => ({
   actions: true,
   argTypeTargetsV7: true,
   backgrounds: true,
-  changeDetection: false,
+  changeDetection: true,
   componentsManifest: false,
   controls: true,
   disallowImplicitActionsInRenderV8: true,
@@ -220,7 +228,7 @@ export const features: PresetProperty<'features'> = async (existing) => ({
 });
 
 export const csfIndexer: Indexer = {
-  test: /(stories|story)\.(m?js|ts)x?$/,
+  test: STORY_FILE_TEST_REGEXP,
   createIndex: async (fileName, options) => {
     const code = (await readFile(fileName, 'utf-8')).toString();
     if (code.trim().length === 0) {
@@ -271,19 +279,15 @@ export const experimental_serverChannel = async (
   channel: Channel,
   options: OptionsWithRequiredCache
 ) => {
-  const coreOptions = await options.presets.apply('core');
-
-  await setTelemetryEnabled(!coreOptions?.disableTelemetry);
-
-  initializeChecklist();
+  initAIAnalyticsChannel(channel, options, () => storyIndexGeneratorPromise);
+  initializeChecklist(channel, () => storyIndexGeneratorPromise, options.configDir);
   initializeWhatsNew(channel, options);
   initializeSaveStory(channel, options);
-
   initFileSearchChannel(channel, options);
   initCreateNewStoryChannel(channel, options);
   initGhostStoriesChannel(channel, options);
   initOpenInEditorChannel(channel);
-  initTelemetryChannel(channel, options);
+  initTelemetryChannel(channel);
 
   return channel;
 };
@@ -311,6 +315,45 @@ export const managerEntries = async (existing: any) => {
     pathe.join(resolvePackageDir('storybook'), 'dist/core-server/presets/common-manager.js'),
     ...(existing || []),
   ];
+};
+
+globalThis.STORYBOOK_SERVICES_LOADED = globalThis.STORYBOOK_SERVICES_LOADED ?? false;
+
+export const services = async (_value: void, options: Options): Promise<void> => {
+  if (globalThis.STORYBOOK_SERVICES_LOADED) {
+    throw new Error(
+      'The "services" preset property was applied twice, but should only be applied once. Multiple code paths applying it will cause service registration to fail.'
+    );
+  }
+  globalThis.STORYBOOK_SERVICES_LOADED = true;
+
+  const features = await options.presets.apply('features');
+
+  // Skip when previewing is off — the docgen service's staticInputs depends on the story index,
+  // so registering it would force full story-index generation during manager-only builds (and
+  // produce docgen files that wouldn't be served anywhere). Mirrors the !options.ignorePreview
+  // gate around index.json and writeManifests in build-static.ts.
+  if (features?.experimentalDocgenServer && !options.ignorePreview) {
+    const generator =
+      await options.presets.apply<Promise<StoryIndexGenerator>>('storyIndexGenerator');
+
+    const provider = await options.presets.apply<DocgenProvider>(
+      'experimental_docgenProvider',
+      /**
+       * Seed provider for the experimental_docgenProvider middleware chain.
+       *
+       * Returns `undefined` so the bottom of the chain signals "no docgen here" — each upstream
+       * provider can either replace this with its own payload, return its own undefined, or call
+       * `nextDocgen` and merge with downstream output.
+       */
+      async () => undefined
+    );
+
+    registerDocgenService({
+      getIndex: () => generator.getIndex(),
+      provider,
+    });
+  }
 };
 
 // Store the promise (not the result) to prevent race conditions.

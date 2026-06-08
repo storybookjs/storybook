@@ -9,7 +9,7 @@ import {
   resolveAddonName,
 } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
-import { getPrecedingUpgrade, setTelemetryEnabled, telemetry } from 'storybook/internal/telemetry';
+import { getPrecedingUpgrade, telemetry } from 'storybook/internal/telemetry';
 import type { BuilderOptions, CLIOptions, LoadOptions, Options } from 'storybook/internal/types';
 
 import { global } from '@storybook/global';
@@ -17,6 +17,11 @@ import { global } from '@storybook/global';
 import { join, relative, resolve } from 'pathe';
 import picocolors from 'picocolors';
 
+import {
+  getRegisteredServices,
+  writeOpenServiceStaticFiles,
+} from '../shared/open-service/server.ts';
+import { applyServicesPresetOnce } from './utils/apply-services-preset-once.ts';
 import { resolvePackageDir } from '../shared/utils/module.ts';
 import type { StoryIndexGenerator } from './utils/StoryIndexGenerator.ts';
 import { buildOrThrow } from './utils/build-or-throw.ts';
@@ -111,8 +116,6 @@ export async function buildStaticStandalone(options: BuildStaticStandaloneOption
     presets.apply('staticDirs'),
   ]);
 
-  await setTelemetryEnabled(!core?.disableTelemetry);
-
   const invokedBy = process.env.STORYBOOK_INVOKED_BY;
   if (invokedBy) {
     // NOTE: we don't await this event to avoid slowing things down.
@@ -131,6 +134,7 @@ export async function buildStaticStandalone(options: BuildStaticStandaloneOption
   const effects: Promise<void>[] = [];
 
   global.FEATURES = features;
+  await applyServicesPresetOnce(presets);
 
   if (!options.previewOnly) {
     await buildOrThrow(async () =>
@@ -145,7 +149,27 @@ export async function buildStaticStandalone(options: BuildStaticStandaloneOption
   }
 
   const coreServerPublicDir = join(resolvePackageDir('storybook'), 'assets/browser');
-  effects.push(cp(coreServerPublicDir, options.outputDir, { recursive: true }));
+  effects.push(cp(coreServerPublicDir, options.outputDir, { recursive: true, force: true }));
+
+  const hasRegisteredServices = getRegisteredServices().length > 0;
+  const shouldWriteManifests = !options.ignorePreview && features?.componentsManifest;
+
+  if (hasRegisteredServices || shouldWriteManifests) {
+    effects.push(
+      (async () => {
+        if (hasRegisteredServices) {
+          logger.info('Building open services..');
+          await writeOpenServiceStaticFiles(options.outputDir);
+        }
+
+        if (shouldWriteManifests) {
+          // Ref-based components.json reads docgen snapshots from outputDir/services/ — manifests
+          // must run after open-service static files are written.
+          await writeManifests(options.outputDir, presets);
+        }
+      })()
+    );
+  }
 
   let storyIndexGeneratorPromise: Promise<StoryIndexGenerator | undefined> =
     Promise.resolve(undefined);
@@ -158,10 +182,6 @@ export async function buildStaticStandalone(options: BuildStaticStandaloneOption
         storyIndexGeneratorPromise as Promise<StoryIndexGenerator>
       )
     );
-
-    if (features?.componentsManifest) {
-      effects.push(writeManifests(options.outputDir, presets));
-    }
   }
 
   if (!core?.disableProjectJson) {

@@ -36,6 +36,7 @@ const Versions = {
 };
 
 const ciLabels = ['ci:normal', 'ci:merged', 'ci:daily', 'ci:docs'];
+const qaLabels = ['qa:needed', 'qa:skip', 'qa:success'];
 
 const { labels } = danger.github.issue;
 
@@ -44,6 +45,8 @@ const prLogConfig = pkg['pr-log'];
 const branchVersion = Versions.MINOR;
 const targetBranch = danger.github.pr.base.ref;
 const isReleasePr = ['latest-release', 'next-release'].includes(targetBranch);
+const author = danger.github.pr.user;
+const authorAssociation = danger.github.pr.author_association;
 
 /** @param {string[]} labels */
 const checkRequiredLabels = (labels) => {
@@ -90,6 +93,13 @@ const checkRequiredLabels = (labels) => {
       fail(`PR is not labeled with one of: ${JSON.stringify(ciLabels)}`);
     } else if (foundCILabels.length > 1) {
       fail(`Please choose only one of these labels: ${JSON.stringify(foundCILabels)}`);
+    }
+
+    const foundQALabels = intersection(qaLabels, labels);
+    if (foundQALabels.length === 0) {
+      fail(`PR is not labeled with one of: ${JSON.stringify(qaLabels)}`);
+    } else if (foundQALabels.length > 1) {
+      fail(`Please choose only one of these labels: ${JSON.stringify(foundQALabels)}`);
     }
   }
 };
@@ -162,10 +172,6 @@ const checkManualTestingSection = (body) => {
 };
 
 const checkTargetBranch = () => {
-  const targetBranch = danger.github.pr.base.ref;
-  const author = danger.github.pr.user;
-  const authorAssociation = danger.github.pr.author_association;
-
   // Only check for non-team members (not OWNER, MEMBER) and skip GitHub Actions bot
   if (
     ['OWNER', 'MEMBER'].includes(authorAssociation) ||

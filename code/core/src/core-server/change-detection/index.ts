@@ -6,3 +6,18 @@ export {
   type ChangeDetectionReadiness,
 } from './readiness.ts';
 export { ChangeDetectionService } from './ChangeDetectionService.ts';
+export { StoryDependencyGraphService } from './StoryDependencyGraphService.ts';
+export type { StoryDependencyGraphServiceOptions } from './StoryDependencyGraphService.ts';
+export { getDependencyGraphService, setDependencyGraphService } from './active-service-registry.ts';
+export type {
+  ChangeDetectionAdapter,
+  FileChangeEvent,
+  ModuleResolveConfig,
+} from './adapters/index.ts';
+export { ParserRegistry, builtinImportParsers } from './parser-registry/index.ts';
+export type {
+  ImportEdge,
+  ImportParser,
+  ImportParserContext,
+  ParseFileArgs,
+} from './parser-registry/index.ts';

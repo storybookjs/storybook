@@ -3,12 +3,16 @@ import { platform } from 'node:os';
 import { join } from 'node:path';
 
 import { logger, prompt } from 'storybook/internal/node-logger';
-import { FindPackageVersionsError } from 'storybook/internal/server-errors';
+import {
+  FindPackageVersionsError,
+  MinimumReleaseAgeHandledError,
+} from 'storybook/internal/server-errors';
 
 import * as find from 'empathic/find';
 // eslint-disable-next-line depend/ban-dependencies
 import type { ResultPromise } from 'execa';
 import sort from 'semver/functions/sort.js';
+import { dedent } from 'ts-dedent';
 
 import type { ExecuteCommandOptions } from '../utils/command.ts';
 import { executeCommand } from '../utils/command.ts';
@@ -16,6 +20,16 @@ import { getProjectRoot } from '../utils/paths.ts';
 import { JsPackageManager, PackageManagerName } from './JsPackageManager.ts';
 import type { PackageJson } from './PackageJson.ts';
 import type { InstallationMetadata, PackageMetadata } from './types.ts';
+import {
+  getAgeInMinutes,
+  getErrorLogs,
+  getLatestStableVersionAdheringToMinimumAgeGate,
+  getStorybookRerunCommand,
+  getStorybookRerunInstruction,
+  parsePackageTimeMap,
+  parsePositiveIntegerConfigValue,
+  parseReleaseTime,
+} from './util.ts';
 
 type NpmDependency = {
   version: string;
@@ -31,6 +45,9 @@ type NpmDependencies = {
 export type NpmListOutput = {
   dependencies: NpmDependencies;
 };
+
+const NPM_CONFIG_WORKSPACE_ARGS = ['--workspaces=false', '--include-workspace-root'] as const;
+
 const NPM_ERROR_REGEX = /npm (ERR!|error) (code|errno) (\w+)/i;
 
 const NPM_ERROR_CODES = {
@@ -71,6 +88,14 @@ export class NPMProxy extends JsPackageManager {
   readonly type = PackageManagerName.NPM;
 
   installArgs: string[] | undefined;
+
+  getCommandName(): string {
+    return 'npm';
+  }
+
+  getInstallCommand(deps: string[], dev: boolean): string {
+    return `npm install ${dev ? '-D ' : ''}${deps.join(' ')}`;
+  }
 
   getRunCommand(command: string): string {
     return `npm run ${command}`;
@@ -178,12 +203,89 @@ export class NPMProxy extends JsPackageManager {
     });
   }
 
+  async installDependencies(options?: { force?: boolean }) {
+    try {
+      await super.installDependencies(options);
+    } catch (error) {
+      const logs = getErrorLogs(error);
+
+      if (
+        logs.match(/npm\s+(ERR!|error)\s+code\s+ETARGET/i) &&
+        logs.includes('with a date before')
+      ) {
+        const handledError = new MinimumReleaseAgeHandledError({
+          packageManagerName: 'npm',
+          minimumReleaseAgeConfigName: 'min-release-age',
+          minimumReleaseAgeConfigDocs:
+            'https://docs.npmjs.com/cli/v11/using-npm/config#min-release-age',
+          failedPackage: this.extractMinimumReleaseAgePackage(logs),
+          cause: error,
+        });
+
+        logger.error(handledError.message);
+        throw handledError;
+      }
+
+      throw error;
+    }
+  }
+
+  async precheckStorybookPackageInstall({
+    storybookVersion,
+    installContext,
+  }: {
+    storybookVersion: string;
+    nonInteractive: boolean;
+    installContext: 'create' | 'upgrade';
+  }): Promise<void> {
+    const minimumReleaseAgeDays = await this.getMinimumReleaseAge();
+
+    if (!minimumReleaseAgeDays) {
+      return;
+    }
+
+    const timeMap = await this.getPackageTimeMap('storybook');
+    if (!timeMap) {
+      return;
+    }
+
+    const releaseTime = timeMap[storybookVersion];
+    if (!releaseTime) {
+      return;
+    }
+
+    const publishedAt = parseReleaseTime(releaseTime);
+    if (!publishedAt) {
+      return;
+    }
+
+    const ageDays = getAgeInMinutes(publishedAt, new Date()) / (24 * 60);
+    if (ageDays >= minimumReleaseAgeDays) {
+      return;
+    }
+
+    const compatibleVersion = getLatestStableVersionAdheringToMinimumAgeGate(
+      timeMap,
+      minimumReleaseAgeDays * 24 * 60
+    );
+    const error = new MinimumReleaseAgeHandledError({
+      message: this.createMinimumReleaseAgeRerunMessage({
+        currentVersion: storybookVersion,
+        compatibleVersion,
+        installContext,
+      }),
+    });
+
+    logger.error(error.message);
+    throw error;
+  }
+
   public async getRegistryURL() {
     const process = executeCommand({
       command: 'npm',
       // "npm config" commands are not allowed in workspaces per default
       // https://github.com/npm/cli/issues/6099#issuecomment-1847584792
-      args: ['config', 'get', 'registry', '-ws=false', '-iwr'],
+      args: ['config', 'get', 'registry', ...NPM_CONFIG_WORKSPACE_ARGS],
     });
     const result = await process;
     const url = (typeof result.stdout === 'string' ? result.stdout : '').trim();
@@ -283,22 +385,75 @@ export class NPMProxy extends JsPackageManager {
     };
   }
 
-  public parseErrorFromLogs(logs: string): string {
-    let finalMessage = 'NPM error';
-    const match = logs.match(NPM_ERROR_REGEX);
+  private async getMinimumReleaseAge(): Promise<number | null> {
+    const result = await executeCommand({
+      command: 'npm',
+      args: ['config', 'get', 'min-release-age', ...NPM_CONFIG_WORKSPACE_ARGS],
+      cwd: this.cwd,
+      stdio: 'pipe',
+    });
 
-    if (match) {
-      const errorCode = match[3] as keyof typeof NPM_ERROR_CODES;
-      if (errorCode) {
-        finalMessage = `${finalMessage} ${errorCode}`;
-      }
+    return parsePositiveIntegerConfigValue(
+      typeof result.stdout === 'string' ? result.stdout : undefined
+    );
+  }
 
-      const errorMessage = NPM_ERROR_CODES[errorCode];
-      if (errorMessage) {
-        finalMessage = `${finalMessage} - ${errorMessage}`;
-      }
+  private async getPackageTimeMap(packageName: string): Promise<Record<string, string> | null> {
+    const result = await executeCommand({
+      command: 'npm',
+      args: ['info', packageName, 'time', '--json'],
+      cwd: this.cwd,
+      stdio: 'pipe',
+    });
+
+    const normalizedValue = typeof result.stdout === 'string' ? result.stdout.trim() : '';
+    if (!normalizedValue) {
+      return null;
     }
 
-    return finalMessage.trim();
+    return parsePackageTimeMap(JSON.parse(normalizedValue));
+  }
+
+  private createMinimumReleaseAgeRerunMessage({
+    currentVersion,
+    compatibleVersion,
+    installContext,
+  }: {
+    currentVersion: string;
+    compatibleVersion: string | null;
+    installContext: 'create' | 'upgrade';
+  }) {
+    const rerunCommand = getStorybookRerunCommand(installContext, compatibleVersion);
+    const rerunInstruction = getStorybookRerunInstruction(installContext);
+
+    return dedent`
+      npm min-release-age blocked storybook@${currentVersion} from being installed.
+
+      ${rerunInstruction}
+      ${rerunCommand}
+
+      Read more:
+      - https://docs.npmjs.com/cli/v11/using-npm/config#min-release-age
+    `;
+  }
+
+  private extractMinimumReleaseAgePackage(logs: string): string | null {
+    const exactVersionMatch = logs.match(
+      /No matching version found for\s+((?:@[^/\s]+\/)?[^@\s]+)@([^\s]+)\s+with a date before/i
+    );
+
+    if (exactVersionMatch) {
+      const [, packageName, version] = exactVersionMatch;
+      return `${packageName}@${version}`;
+    }
+
+    const scopedMatch = logs.match(/((?:@[^/\s]+\/)?[^@\s]+)@([^\s"']+)/);
+
+    if (!scopedMatch) {
+      return null;
+    }
+
+    const [, packageName, version] = scopedMatch;
+    return `${packageName}@${version}`;
   }
 }

@@ -49,7 +49,7 @@ export const dev = async (cliOptions: CLIOptions) => {
     configType: 'DEVELOPMENT',
     ignorePreview: !!cliOptions.previewUrl && !cliOptions.forceBuildPreview,
     cache: cache as any,
-    packageJson: packageJson as unknown as PackageJson, // type-fest types are wrong here because we're on an outdated version of the package
+    packageJson: packageJson,
   } as Options;
 
   await withTelemetry(

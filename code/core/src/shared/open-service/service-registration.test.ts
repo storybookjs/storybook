@@ -1,5 +1,7 @@
+import * as v from 'valibot';
 import { afterEach, describe, expect, it } from 'vitest';
 
+import { defineService } from './service-definition.ts';
 import {
   awaitedPreloadValueServiceDef,
   assignEntryFieldInputSchema,
@@ -11,8 +13,6 @@ import {
   mutableRecordLookupServiceDef,
   recordFieldsOutputSchema,
   registeredCommandOverrideServiceDef,
-  registrationOnlyStaticBuildServiceDef,
-  unimplementedOperationsServiceDef,
   voidOutputSchema,
 } from './fixtures.ts';
 import {
@@ -91,18 +91,28 @@ describe('service registration', () => {
     );
   });
 
-  it('throws a Storybook error when a registered query or command is missing its handler', async () => {
-    const service = registerService(unimplementedOperationsServiceDef);
+  it('throws a Storybook error when a registered query is missing its handler', () => {
+    // A command without a local handler does NOT throw here — it requests remote execution from a
+    // peer that implements it (see service-command-transport.test.ts). Queries stay local-only.
+    const service = registerService(
+      defineService({
+        id: 'internal-fixture/unimplemented-operations',
+        description: 'Leaves the query handler undefined so registration can supply it later.',
+        initialState: {} as Record<string, never>,
+        queries: {
+          getValue: {
+            description: 'Reads a value that is not implemented in this environment.',
+            input: v.undefined(),
+            output: v.string(),
+          },
+        },
+        commands: {},
+      })
+    );
 
     expect(() => service.queries.getValue(undefined)).toThrow(
       'Query "internal-fixture/unimplemented-operations.getValue" is not implemented for this environment.'
     );
-    await expect(service.commands.run(undefined)).rejects.toMatchObject({
-      fromStorybook: true,
-      code: 8,
-      message:
-        'Command "internal-fixture/unimplemented-operations.run" is not implemented for this environment.',
-    });
   });
 
   it('lets handlers resolve another registered service by id through ctx.getService', async () => {
@@ -175,13 +185,36 @@ describe('service registration', () => {
     expect(descriptor.queries.getPreloadedValue.staticPath).toBe(true);
   });
 
-  it('allows load and staticInputs to be supplied only at registration time', async () => {
-    registerService(registrationOnlyStaticBuildServiceDef, {
+  it('allows staticInputs to be supplied only at registration time', async () => {
+    const serviceDef = defineService({
+      id: 'internal-fixture/registration-only-static-build',
+      description: 'Declares staticPath and load in the definition; staticInputs at registration.',
+      initialState: { value: null as string | null },
       queries: {
         getValue: {
+          description: 'Returns one statically built value.',
+          input: v.object({ build: v.literal('once') }),
+          output: v.nullable(v.string()),
+          handler: (_input, ctx) => ctx.self.state.value,
           load: async (_input, ctx) => {
             await ctx.self.commands.setValue(undefined);
           },
+          staticPath: () => 'state.json',
+        },
+      },
+      commands: {
+        setValue: {
+          description: 'Stores one value during static load.',
+          input: v.undefined(),
+          output: voidOutputSchema,
+        },
+      },
+    });
+
+    registerService(serviceDef, {
+      queries: {
+        getValue: {
+          staticInputs: async () => [{ build: 'once' as const }],
         },
       },
       commands: {
@@ -262,13 +295,6 @@ describe('service registration', () => {
 
   it('still builds static snapshots for internal queries', async () => {
     registerService(internalStaticBuildServiceDef, {
-      queries: {
-        _getValue: {
-          load: async (_input, ctx) => {
-            await ctx.self.commands._setValue(undefined);
-          },
-        },
-      },
       commands: {
         _setValue: {
           handler: async (_input, ctx) => {

@@ -265,6 +265,27 @@ export function createDerivedBooleanFromChildQueryServiceDef() {
   });
 }
 
+/**
+ * Fixture exposing a query whose output type is legitimately `undefined` (a `void` output schema).
+ *
+ * Used to verify that consumers treat `undefined` as a real value rather than an "uninitialised"
+ * sentinel — e.g. the `useServiceQuery` lazy-init must not recompute on every render here.
+ */
+export const undefinedOutputQueryServiceDef = defineService({
+  id: 'internal-fixture/undefined-output-query',
+  description: 'Exposes a query that always returns undefined.',
+  initialState: {} as Record<string, never>,
+  queries: {
+    getNothing: {
+      description: 'Always returns undefined.',
+      input: noInputSchema,
+      output: voidOutputSchema,
+      handler: () => undefined,
+    },
+  },
+  commands: {},
+});
+
 /** Creates a fixture that intentionally returns an invalid query output. */
 export function createInvalidQueryOutputServiceDef() {
   return defineService({
@@ -478,6 +499,9 @@ export const internalStaticBuildServiceDef = defineService({
       input: v.object({ build: v.literal('once') }),
       output: v.nullable(v.string()),
       handler: (_input, ctx) => ctx.self.state.value,
+      load: async (_input, ctx) => {
+        await ctx.self.commands._setValue(undefined);
+      },
       staticPath: () => 'state.json',
       staticInputs: async () => [{ build: 'once' as const }],
     },

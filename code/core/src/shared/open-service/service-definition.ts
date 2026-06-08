@@ -5,6 +5,7 @@ import type {
   QueryDefinition,
   ServiceDefinition,
   ServiceId,
+  ServiceState,
 } from './types.ts';
 
 type InvalidInternalOperationName<TName extends string> = {
@@ -84,7 +85,10 @@ type DefinedCommands<
  * before it has correlated each inline object's `input` and `output` properties.
  */
 export const defineService = <
-  TState,
+  // `extends object` rejects primitives, `null`, and `undefined` (while still accepting both
+  // `interface` and `type` state shapes); `ServiceState` additionally rejects arrays. State must be a
+  // plain object — see `ServiceState` for the deep-signal / deep-reconcile reasons.
+  TState extends object,
   const TQueryInputSchemas extends OperationInputSchemas,
   const TQueryOutputSchemas extends MatchingOutputSchemas<TQueryInputSchemas>,
   const TCommandInputSchemas extends OperationInputSchemas,
@@ -93,7 +97,7 @@ export const defineService = <
   id: ServiceId;
   description?: string;
   internal?: boolean;
-  initialState: TState;
+  initialState: ServiceState<TState>;
   queries: DefinedQueries<
     TState,
     TQueryInputSchemas,

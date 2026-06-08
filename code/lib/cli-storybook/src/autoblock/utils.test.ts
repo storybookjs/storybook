@@ -2,7 +2,7 @@ import type { JsPackageManager } from 'storybook/internal/common';
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { findOutdatedPackage } from './utils';
+import { findOutdatedPackage } from './utils.ts';
 
 describe('findOutdatedPackage', () => {
   const packageManager = {

@@ -283,6 +283,117 @@ describe('module-graph open service', () => {
     });
   });
 
+  describe('getLatestStoryChanges query', () => {
+    it('returns the current graph revision paired with the latest bumped story files', async () => {
+      const runtime = registerBareModuleGraph();
+
+      expect(runtime.queries.getLatestStoryChanges(undefined)).toEqual({
+        revision: 0,
+        storyFiles: [],
+      });
+
+      await runtime.commands.applyGraphUpdate({
+        storiesByFile: {},
+        bumpedStoryFiles: ['./src/Button.stories.tsx', './src/Card.stories.tsx'],
+      });
+
+      expect(runtime.queries.getLatestStoryChanges(undefined)).toEqual({
+        revision: 1,
+        storyFiles: ['./src/Button.stories.tsx', './src/Card.stories.tsx'],
+      });
+    });
+
+    it('replaces the previous change set when a newer update bumps different stories', async () => {
+      const runtime = registerBareModuleGraph();
+
+      await runtime.commands.applyGraphUpdate({
+        storiesByFile: {},
+        bumpedStoryFiles: ['./a.stories.tsx', './b.stories.tsx'],
+      });
+      await runtime.commands.applyGraphUpdate({
+        storiesByFile: {},
+        bumpedStoryFiles: ['./c.stories.tsx'],
+      });
+
+      expect(runtime.queries.getLatestStoryChanges(undefined)).toEqual({
+        revision: 2,
+        storyFiles: ['./c.stories.tsx'],
+      });
+    });
+
+    it('preserves the prior change set when an update bumps no stories', async () => {
+      const runtime = registerBareModuleGraph();
+
+      await runtime.commands.applyGraphUpdate({
+        storiesByFile: {},
+        bumpedStoryFiles: ['./src/Button.stories.tsx'],
+      });
+      await runtime.commands.applyGraphUpdate({
+        storiesByFile: { './src/Button.tsx': { './src/Button.stories.tsx': 1 } },
+        bumpedStoryFiles: [],
+      });
+
+      expect(runtime.queries.getLatestStoryChanges(undefined)).toEqual({
+        revision: 1,
+        storyFiles: ['./src/Button.stories.tsx'],
+      });
+    });
+
+    it('clears story files after a snapshot without resetting the graph revision', async () => {
+      const runtime = registerBareModuleGraph();
+
+      await runtime.commands.applyGraphUpdate({
+        storiesByFile: {},
+        bumpedStoryFiles: ['./src/Button.stories.tsx'],
+      });
+      await runtime.commands.applyGraphSnapshot({
+        storiesByFile: { './src/Button.tsx': { './src/Button.stories.tsx': 1 } },
+      });
+
+      expect(runtime.queries.getLatestStoryChanges(undefined)).toEqual({
+        revision: 1,
+        storyFiles: [],
+      });
+    });
+
+    it('clears story files but keeps the current revision after bumpGraphRevision', async () => {
+      const runtime = registerBareModuleGraph();
+
+      await runtime.commands.applyGraphUpdate({
+        storiesByFile: {},
+        bumpedStoryFiles: ['./src/Button.stories.tsx'],
+      });
+      await runtime.commands.bumpGraphRevision(undefined);
+
+      expect(runtime.queries.getLatestStoryChanges(undefined)).toEqual({
+        revision: 2,
+        storyFiles: [],
+      });
+    });
+
+    it('notifies subscribers when the latest change set updates', async () => {
+      const runtime = registerBareModuleGraph();
+      const seen: Array<{ revision: number; storyFiles: string[] }> = [];
+      runtime.queries.getLatestStoryChanges.subscribe(undefined, (value) => {
+        seen.push(value);
+      });
+
+      await runtime.commands.applyGraphUpdate({
+        storiesByFile: {},
+        bumpedStoryFiles: ['./a.stories.tsx'],
+      });
+      await runtime.commands.applyGraphUpdate({
+        storiesByFile: {},
+        bumpedStoryFiles: ['./b.stories.tsx'],
+      });
+
+      expect(seen.at(-1)).toEqual({
+        revision: 2,
+        storyFiles: ['./b.stories.tsx'],
+      });
+    });
+  });
+
   describe('getGraphRevision query scopes', () => {
     it('returns 0 for an empty watch list and ignores unknown stories', async () => {
       const runtime = registerBareModuleGraph();
@@ -321,21 +432,6 @@ describe('module-graph open service', () => {
         })
       ).toBe(1);
       expect(runtime.queries.getGraphRevision({ storyFiles: ['src/Button.stories.tsx'] })).toBe(1);
-    });
-
-    it('clears latest story changes when the revision bumps without a graph update', async () => {
-      const runtime = registerBareModuleGraph();
-
-      await runtime.commands.applyGraphUpdate({
-        storiesByFile: {},
-        bumpedStoryFiles: ['./src/Button.stories.tsx'],
-      });
-      await runtime.commands.bumpGraphRevision(undefined);
-
-      expect(runtime.queries.getLatestStoryChanges(undefined)).toEqual({
-        revision: 2,
-        storyFiles: [],
-      });
     });
 
     it('advances watch-all but not scoped reads on a bare revision bump', async () => {

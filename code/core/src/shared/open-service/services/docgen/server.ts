@@ -111,17 +111,27 @@ export function registerDocgenService(options: RegisterDocgenServiceOptions) {
     const index = await options.getIndex();
     const indexEntries = Object.values(index.entries);
     const bumpedComponentIds = new Set<string>();
-    for (const storyFile of storyFiles) {
-      const componentEntry = Array.from(selectComponentEntriesByComponentId(indexEntries)).find(
-        ([, candidate]) => {
-          const importPath = getStoryImportPathFromEntry(candidate);
-          return !!importPath && toStoryIndexPath(importPath, workingDir) === storyFile;
+    const componentEntryCandidates = Array.from(selectComponentEntriesByComponentId(indexEntries))
+      .map(([id, entry]) => {
+        const storyFilePath = getStoryImportPathFromEntry(entry);
+        if (!storyFilePath) {
+          return undefined;
         }
+        return {
+          id,
+          storyIndexPath: toStoryIndexPath(storyFilePath, workingDir),
+        };
+      })
+      .filter((candidate) => candidate !== undefined);
+
+    for (const storyFile of storyFiles) {
+      const componentEntry = componentEntryCandidates.find(
+        (candidate) => candidate.storyIndexPath === storyFile
       );
       if (!componentEntry) {
         continue;
       }
-      bumpedComponentIds.add(componentEntry[0]);
+      bumpedComponentIds.add(componentEntry.id);
     }
 
     // Only refresh components that already have extracted docgen in service state, so we never

@@ -17,7 +17,7 @@ import { PREVIEW_MODE_SESSION_KEY } from '../constants.ts';
 import { sessionStore } from '../session-store.ts';
 import { useBaselineComparison } from './useBaselineComparison.ts';
 
-import { StaleBanner } from '../components/StaleBanner.tsx';
+import { AttentionBanner } from '../components/AttentionBanner.tsx';
 
 const Page = styled.div(({ theme }) => ({
   display: 'flex',
@@ -154,6 +154,10 @@ export interface DetailsScreenProps {
   storyName?: string;
   /** When true, render the "this review may be stale" banner at the top. */
   isStale?: boolean;
+  /** When true, render the "updated review available" banner at the top. */
+  hasPendingUpdate?: boolean;
+  /** Accepts the pending review and navigates to the summary screen. */
+  onAcceptPendingUpdate?: () => void;
   /** Enables the baseline/latest comparison controls when a baseline exists. */
   hasBaseline?: boolean;
   /** Whether this story is newly added relative to the baseline Storybook. */
@@ -225,6 +229,8 @@ export const DetailsScreen = ({
   componentTitle,
   storyName,
   isStale = false,
+  hasPendingUpdate = false,
+  onAcceptPendingUpdate,
   hasBaseline = false,
   isNewlyAdded,
 }: DetailsScreenProps) => {
@@ -291,7 +297,11 @@ export const DetailsScreen = ({
 
   return (
     <Page>
-      {isStale ? <StaleBanner /> : null}
+      {hasPendingUpdate && onAcceptPendingUpdate ? (
+        <AttentionBanner kind="pending-update" onAccept={onAcceptPendingUpdate} />
+      ) : isStale ? (
+        <AttentionBanner kind="stale" />
+      ) : null}
       <ReviewHeader
         autoFocusTitle
         leading={

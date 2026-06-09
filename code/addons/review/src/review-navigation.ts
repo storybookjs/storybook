@@ -1,57 +1,76 @@
 import { REVIEW_CHANGES_URL } from './constants.ts';
+import type { ReviewState } from './review-state.ts';
 
-// A detail-screen target: a collection (indexed into state.collections) and,
-// optionally, the specific story within it that is being reviewed.
-export interface ReviewDetailLocation {
+/** A single navigable slot in the flattened review list (duplicates allowed). */
+export interface ReviewNavEntry {
+  storyId: string;
   collectionIndex: number;
-  storyId?: string;
 }
 
-const tryDecodeURIComponent = (value: string): string => {
-  try {
-    return decodeURIComponent(value);
-  } catch {
-    return value;
-  }
-};
+export const REVIEW_COLLECTION_QUERY_PARAM = 'collection';
 
-// Storybook's manager router keeps the active route in the `path` query param
-// (see core/src/router) — `Route`/`api.navigate` read `?path=…`, not
-// window.location.pathname. Hrefs therefore wrap the route in `?path=…`.
 export const buildReviewChangesSummaryHref = () => `?path=${REVIEW_CHANGES_URL}`;
 
-export const buildReviewChangesDetailHref = (location: ReviewDetailLocation): string => {
-  const base = `${REVIEW_CHANGES_URL}${location.collectionIndex}`;
-  const target = location.storyId ? `${base}/${encodeURIComponent(location.storyId)}` : base;
-  return `?path=${target}`;
+export const buildReviewStoryHref = (entry: ReviewNavEntry): string =>
+  `?path=/story/${entry.storyId}&${REVIEW_COLLECTION_QUERY_PARAM}=${entry.collectionIndex}`;
+
+/** Walk collections in order, pushing every story occurrence. */
+export const buildFlattenedNavEntries = (state: ReviewState): ReviewNavEntry[] => {
+  const entries: ReviewNavEntry[] = [];
+  state.collections.forEach((collection, collectionIndex) => {
+    for (const storyId of collection.storyIds) {
+      entries.push({ storyId, collectionIndex });
+    }
+  });
+  return entries;
 };
 
-// Parse a detail-screen target out of the URL. Returns null for the summary.
-export const parseReviewChangesDetailLocation = (search: string): ReviewDetailLocation | null => {
-  const params = new URLSearchParams(search);
-  const path = params.get('path') ?? '';
+export const isReviewSummaryPath = (path: string): boolean =>
+  path === REVIEW_CHANGES_URL || path === '/review';
 
-  if (!path.startsWith(REVIEW_CHANGES_URL)) {
+export const parseStoryIdFromPath = (path: string): string | null => {
+  if (!path.startsWith('/story/')) {
     return null;
   }
-
-  const segments = path.slice(REVIEW_CHANGES_URL.length).split('/').filter(Boolean);
-  if (segments.length === 0) {
-    return null;
-  }
-
-  const collectionIndex = Number(segments[0]);
-  if (!Number.isInteger(collectionIndex) || collectionIndex < 0) {
-    return null;
-  }
-  // Reject trailing junk (e.g. `0/story/extra`) so the route parses strictly.
-  if (segments.length > 2) {
-    return null;
-  }
-
-  const storySegment = segments[1];
-  return {
-    collectionIndex,
-    storyId: storySegment ? tryDecodeURIComponent(storySegment) : undefined,
-  };
+  const storyId = path.slice('/story/'.length);
+  return storyId || null;
 };
+
+export const parseCollectionIndex = (value: string | undefined): number | undefined => {
+  if (value === undefined) {
+    return undefined;
+  }
+  const parsed = Number(value);
+  return Number.isInteger(parsed) && parsed >= 0 ? parsed : undefined;
+};
+
+/**
+ * Resolve the active navigation slot from the current story and optional
+ * `collection` query param. Falls back to the first matching storyId.
+ */
+export const resolveActiveNavEntry = (
+  entries: ReviewNavEntry[],
+  storyId: string,
+  collectionIndex?: number
+): ReviewNavEntry | null => {
+  if (entries.length === 0) {
+    return null;
+  }
+  if (collectionIndex !== undefined) {
+    const exact = entries.find(
+      (entry) => entry.storyId === storyId && entry.collectionIndex === collectionIndex
+    );
+    if (exact) {
+      return exact;
+    }
+  }
+  return entries.find((entry) => entry.storyId === storyId) ?? null;
+};
+
+export const resolveNavIndex = (entries: ReviewNavEntry[], active: ReviewNavEntry): number =>
+  entries.findIndex(
+    (entry) => entry.storyId === active.storyId && entry.collectionIndex === active.collectionIndex
+  );
+
+export const isStoryInReview = (entries: ReviewNavEntry[], storyId: string): boolean =>
+  entries.some((entry) => entry.storyId === storyId);

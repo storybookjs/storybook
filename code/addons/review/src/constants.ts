@@ -15,10 +15,13 @@ export const BASELINE_INDEX_URL = `${BASELINE_PROXY_PATH}/index.json`;
 // full-reload navigations between review screens. Value: 'restore' | 'keep'.
 export const RESTORE_NAV_SESSION_KEY = `${ADDON_ID}/restore-nav`;
 
-// sessionStorage key remembering the detail screen's preview layout so it
-// persists as the user moves between the detail and summary screens (and
-// across the full-reload navigations between them). Value: '1up' | '2up'.
+// sessionStorage key remembering the compare mode for the tab session.
+// Value: 'latest' | 'baseline' | 'split' (legacy '1up'/'2up' are migrated on read).
 export const PREVIEW_MODE_SESSION_KEY = `${ADDON_ID}/preview-mode`;
+
+export type CompareMode = 'latest' | 'baseline' | 'split';
+
+export const DEFAULT_COMPARE_MODE: CompareMode = 'latest';
 
 // `@storybook/addon-mcp` display-review tool call emits this event with the raw agent payload.
 const PUSH_REVIEW = `${ADDON_ID}/push-review`;

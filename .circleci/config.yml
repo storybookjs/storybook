@@ -50,7 +50,7 @@ jobs:
           command: |
             yarn dlx jiti ./scripts/ci/main.ts \
               --workflow=<< pipeline.parameters.workflow >> \
-              --trusted-author=<< pipeline.parameters.ghTrustedAuthor >>
+              --gh-trusted-author=<< pipeline.parameters.ghTrustedAuthor >>
       - continuation/continue:
           configuration_path: .circleci/config.generated.yml
 workflows:

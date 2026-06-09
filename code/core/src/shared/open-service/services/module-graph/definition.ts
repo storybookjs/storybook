@@ -74,6 +74,7 @@ export const moduleGraphServiceDef = defineService({
     status: { value: 'booting' },
     graphRevision: 0,
     storiesByFile: {},
+    storyChangeRevisions: {},
     latestChangedStoryFiles: [],
   } as ModuleGraphServiceState,
   queries: {
@@ -128,10 +129,38 @@ export const moduleGraphServiceDef = defineService({
     },
     getGraphRevision: {
       description:
-        'Monotonic counter bumped on every graph update (patch or index reconciliation).',
-      input: noInputSchema,
+        'Monotonic revision counter for module graph changes, advanced only by in-graph file changes and story-index reconciliation (out-of-graph file changes never advance it). Omit the input to watch the entire graph. Provide `storyFiles` to scope the watch to specific stories: returns the highest revision at which any of those story subgraphs last changed (0 if none have changed yet, or for unknown stories).',
+      input: v.optional(
+        v.object({
+          storyFiles: v.array(
+            v.pipe(
+              v.string(),
+              v.description(
+                'Story file to scope the watch to. Accepts absolute paths, story-index-style relative paths with `./`, or relative paths without `./`. Pass an empty array to watch nothing (returns 0).'
+              )
+            )
+          ),
+        })
+      ),
       output: v.number(),
-      handler: (_input, ctx) => ctx.self.state.graphRevision,
+      handler: (input, ctx) => {
+        if (!input) {
+          return ctx.self.state.graphRevision;
+        }
+        if (input.storyFiles.length === 0) {
+          return 0;
+        }
+
+        let max = 0;
+        for (const file of input.storyFiles) {
+          const revision =
+            ctx.self.state.storyChangeRevisions[toStoryIndexPath(file, process.cwd())] ?? 0;
+          if (revision > max) {
+            max = revision;
+          }
+        }
+        return max;
+      },
     },
     getLatestStoryChanges: {
       description:
@@ -172,7 +201,15 @@ export const moduleGraphServiceDef = defineService({
         ctx.self.setState((state) => {
           state.status = { value: 'ready' };
           state.storiesByFile = input.storiesByFile;
-          state.graphRevision += 1;
+          // The snapshot is the baseline, not a change, so it does not advance the revision. Seed
+          // every known story to revision 0 so scoped `getGraphRevision` reads track existing keys
+          // and observe later per-story bumps.
+          state.storyChangeRevisions = {};
+          for (const stories of Object.values(input.storiesByFile)) {
+            for (const storyFile of Object.keys(stories)) {
+              state.storyChangeRevisions[storyFile] = 0;
+            }
+          }
         });
       },
     },
@@ -197,8 +234,16 @@ export const moduleGraphServiceDef = defineService({
       handler: async (input, ctx) => {
         ctx.self.setState((state) => {
           state.storiesByFile = input.storiesByFile;
+          // An out-of-graph file change recomputes the (unchanged) reverse index but bumps no
+          // stories; it must not advance the revision, so watch-all and scoped subscribers stay put.
+          if (input.bumpedStoryFiles.length === 0) {
+            return;
+          }
           state.graphRevision += 1;
           state.latestChangedStoryFiles = input.bumpedStoryFiles;
+          for (const storyFile of input.bumpedStoryFiles) {
+            state.storyChangeRevisions[storyFile] = state.graphRevision;
+          }
         });
       },
     },

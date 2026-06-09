@@ -56,7 +56,7 @@ describe('module-graph open service', () => {
   });
 
   describe('applyGraphSnapshot command', () => {
-    it('marks the service ready, stores the reverse index, and bumps the revision', async () => {
+    it('marks the service ready and stores the reverse index without advancing the revision', async () => {
       const runtime = registerBareModuleGraph();
 
       await runtime.commands.applyGraphSnapshot({
@@ -66,14 +66,31 @@ describe('module-graph open service', () => {
       });
 
       expect(runtime.queries.getStatus(undefined)).toEqual({ value: 'ready' });
-      expect(runtime.queries.getGraphRevision(undefined)).toBe(1);
+      // The snapshot is the baseline, not a change, so the revision stays at 0.
+      expect(runtime.queries.getGraphRevision(undefined)).toBe(0);
       expect(runtime.queries.getLatestStoryChanges(undefined)).toEqual({
-        revision: 1,
+        revision: 0,
         storyFiles: [],
       });
       expect(runtime.queries.getStoriesForFiles({ files: ['/repo/src/Button.tsx'] })).toEqual([
         [{ storyFile: './src/Button.stories.tsx', depth: 1 }],
       ]);
+    });
+
+    it('seeds every known story to revision 0 for scoped reads', async () => {
+      const runtime = registerBareModuleGraph();
+
+      await runtime.commands.applyGraphSnapshot({
+        storiesByFile: {
+          './src/Button.tsx': { './src/Button.stories.tsx': 1 },
+          './src/Card.tsx': { './src/Card.stories.tsx': 1 },
+        },
+      });
+
+      expect(
+        runtime.queries.getGraphRevision({ storyFiles: ['./src/Button.stories.tsx'] })
+      ).toBe(0);
+      expect(runtime.queries.getGraphRevision({ storyFiles: ['./src/Card.stories.tsx'] })).toBe(0);
     });
 
     it('replaces (not merges) the reverse index on a subsequent snapshot', async () => {
@@ -90,7 +107,7 @@ describe('module-graph open service', () => {
       expect(runtime.queries.getStoriesForFiles({ files: ['/repo/src/B.tsx'] })).toEqual([
         [{ storyFile: './src/B.stories.tsx', depth: 0 }],
       ]);
-      expect(runtime.queries.getGraphRevision(undefined)).toBe(2);
+      expect(runtime.queries.getGraphRevision(undefined)).toBe(0);
     });
   });
 
@@ -208,14 +225,39 @@ describe('module-graph open service', () => {
         bumpedStoryFiles: ['./src/Button.stories.tsx'],
       });
 
-      expect(runtime.queries.getGraphRevision(undefined)).toBe(2);
+      // Snapshot left the revision at 0; this is the first real change.
+      expect(runtime.queries.getGraphRevision(undefined)).toBe(1);
       expect(runtime.queries.getLatestStoryChanges(undefined)).toEqual({
-        revision: 2,
+        revision: 1,
         storyFiles: ['./src/Button.stories.tsx'],
       });
       expect(runtime.queries.getStoriesForFiles({ files: ['/repo/src/Icon.tsx'] })).toEqual([
         [{ storyFile: './src/Button.stories.tsx', depth: 2 }],
       ]);
+    });
+
+    it('stamps each bumped story with the new revision and leaves untouched stories at 0', async () => {
+      const runtime = registerBareModuleGraph();
+      await runtime.commands.applyGraphSnapshot({
+        storiesByFile: {
+          './src/Button.tsx': { './src/Button.stories.tsx': 1 },
+          './src/Card.tsx': { './src/Card.stories.tsx': 1 },
+        },
+      });
+
+      await runtime.commands.applyGraphUpdate({
+        storiesByFile: {
+          './src/Button.tsx': { './src/Button.stories.tsx': 1 },
+          './src/Card.tsx': { './src/Card.stories.tsx': 1 },
+        },
+        bumpedStoryFiles: ['./src/Button.stories.tsx'],
+      });
+
+      expect(runtime.queries.getGraphRevision({ storyFiles: ['./src/Button.stories.tsx'] })).toBe(
+        1
+      );
+      // Card was not bumped, so its scoped revision stays at the seeded 0.
+      expect(runtime.queries.getGraphRevision({ storyFiles: ['./src/Card.stories.tsx'] })).toBe(0);
     });
 
     it('replaces latest story changes with the newest revision payload', async () => {
@@ -237,16 +279,80 @@ describe('module-graph open service', () => {
       expect(runtime.queries.getGraphRevision(undefined)).toBe(2);
     });
 
-    it('bumps the revision even when no story files are listed', async () => {
+    it('does not advance the revision for an out-of-graph change (no bumped stories)', async () => {
       const runtime = registerBareModuleGraph();
+      await runtime.commands.applyGraphSnapshot({
+        storiesByFile: { './src/Button.tsx': { './src/Button.stories.tsx': 1 } },
+      });
 
-      await runtime.commands.applyGraphUpdate({ storiesByFile: {}, bumpedStoryFiles: [] });
+      await runtime.commands.applyGraphUpdate({
+        storiesByFile: { './src/Button.tsx': { './src/Button.stories.tsx': 1 } },
+        bumpedStoryFiles: [],
+      });
 
-      expect(runtime.queries.getGraphRevision(undefined)).toBe(1);
+      expect(runtime.queries.getGraphRevision(undefined)).toBe(0);
       expect(runtime.queries.getLatestStoryChanges(undefined)).toEqual({
-        revision: 1,
+        revision: 0,
         storyFiles: [],
       });
+    });
+  });
+
+  describe('getGraphRevision query scopes', () => {
+    it('returns 0 for an empty watch list and ignores unknown stories', async () => {
+      const runtime = registerBareModuleGraph();
+      await runtime.commands.applyGraphSnapshot({
+        storiesByFile: { './src/Button.tsx': { './src/Button.stories.tsx': 1 } },
+      });
+      await runtime.commands.applyGraphUpdate({
+        storiesByFile: { './src/Button.tsx': { './src/Button.stories.tsx': 1 } },
+        bumpedStoryFiles: ['./src/Button.stories.tsx'],
+      });
+
+      // Watch-all sees the bump.
+      expect(runtime.queries.getGraphRevision(undefined)).toBe(1);
+      // Watch nothing.
+      expect(runtime.queries.getGraphRevision({ storyFiles: [] })).toBe(0);
+      // Unknown story contributes 0.
+      expect(runtime.queries.getGraphRevision({ storyFiles: ['./src/Unknown.stories.tsx'] })).toBe(
+        0
+      );
+    });
+
+    it('accepts absolute and relative scope paths', async () => {
+      const runtime = registerBareModuleGraph();
+      await runtime.commands.applyGraphSnapshot({
+        storiesByFile: { './src/Button.tsx': { './src/Button.stories.tsx': 1 } },
+      });
+      await runtime.commands.applyGraphUpdate({
+        storiesByFile: { './src/Button.tsx': { './src/Button.stories.tsx': 1 } },
+        bumpedStoryFiles: ['./src/Button.stories.tsx'],
+      });
+
+      // The query handler normalizes scope paths against process.cwd(), so an absolute path must
+      // sit under it to resolve to the stored relative key.
+      expect(
+        runtime.queries.getGraphRevision({
+          storyFiles: [`${process.cwd()}/src/Button.stories.tsx`],
+        })
+      ).toBe(1);
+      expect(runtime.queries.getGraphRevision({ storyFiles: ['src/Button.stories.tsx'] })).toBe(1);
+    });
+
+    it('advances watch-all but not scoped reads on a bare revision bump', async () => {
+      const runtime = registerBareModuleGraph();
+      await runtime.commands.applyGraphSnapshot({
+        storiesByFile: { './src/Button.tsx': { './src/Button.stories.tsx': 1 } },
+      });
+
+      await runtime.commands.bumpGraphRevision(undefined);
+
+      // Index reconciliation advances the global (watch-all) revision...
+      expect(runtime.queries.getGraphRevision(undefined)).toBe(1);
+      // ...but is not attributed to any specific story.
+      expect(runtime.queries.getGraphRevision({ storyFiles: ['./src/Button.stories.tsx'] })).toBe(
+        0
+      );
     });
   });
 
@@ -259,9 +365,49 @@ describe('module-graph open service', () => {
       });
 
       await runtime.commands.applyGraphSnapshot({ storiesByFile: {} });
-      await runtime.commands.applyGraphUpdate({ storiesByFile: {}, bumpedStoryFiles: [] });
+      await runtime.commands.applyGraphUpdate({
+        storiesByFile: {},
+        bumpedStoryFiles: ['./a.stories.tsx'],
+      });
 
-      // The latest emitted revision reflects both writes.
+      // The snapshot is a no-op for the revision; the update advances it to 1.
+      expect(seen.at(-1)).toBe(1);
+    });
+
+    it('notifies a scoped subscriber only when its story is bumped', async () => {
+      const runtime = registerBareModuleGraph();
+      await runtime.commands.applyGraphSnapshot({
+        storiesByFile: {
+          './src/Button.tsx': { './src/Button.stories.tsx': 1 },
+          './src/Card.tsx': { './src/Card.stories.tsx': 1 },
+        },
+      });
+
+      const seen: number[] = [];
+      runtime.queries.getGraphRevision.subscribe(
+        { storyFiles: ['./src/Button.stories.tsx'] },
+        (revision) => {
+          seen.push(revision);
+        }
+      );
+
+      // Bump an unrelated story: the Button-scoped subscriber must not advance.
+      await runtime.commands.applyGraphUpdate({
+        storiesByFile: {
+          './src/Button.tsx': { './src/Button.stories.tsx': 1 },
+          './src/Card.tsx': { './src/Card.stories.tsx': 1 },
+        },
+        bumpedStoryFiles: ['./src/Card.stories.tsx'],
+      });
+      // Now bump Button itself.
+      await runtime.commands.applyGraphUpdate({
+        storiesByFile: {
+          './src/Button.tsx': { './src/Button.stories.tsx': 1 },
+          './src/Card.tsx': { './src/Card.stories.tsx': 1 },
+        },
+        bumpedStoryFiles: ['./src/Button.stories.tsx'],
+      });
+
       expect(seen.at(-1)).toBe(2);
     });
   });

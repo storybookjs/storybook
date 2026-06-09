@@ -84,14 +84,17 @@ export function installModuleGraphQueryMock(engine: ModuleGraphEngine) {
 
   return {
     applySnapshot: () => {
+      // The snapshot marks the graph ready but is the revision baseline, not a change.
       status = { value: 'ready' };
-      graphRevision += 1;
       emitStatus();
-      emitRevision();
     },
-    applyUpdate: () => {
+    applyUpdate: (bumpedStoryFiles: string[] = []) => {
+      // Out-of-graph changes bump no stories, so they must not advance the revision.
+      if (bumpedStoryFiles.length === 0) {
+        return;
+      }
       graphRevision += 1;
-      latestChangedStoryFiles = [];
+      latestChangedStoryFiles = bumpedStoryFiles;
       emitRevision();
     },
     bumpGraphRevision: () => {
@@ -133,7 +136,7 @@ export function createWiredChangeDetection(
     },
     workingDir: options.workingDir,
     onSnapshot: () => moduleGraphMockRef.current?.applySnapshot(),
-    onUpdate: () => moduleGraphMockRef.current?.applyUpdate(),
+    onUpdate: ({ bumpedStoryFiles }) => moduleGraphMockRef.current?.applyUpdate(bumpedStoryFiles),
     onStoryIndexInvalidated: () => moduleGraphMockRef.current?.bumpGraphRevision(),
     onError: (error) => moduleGraphMockRef.current?.applyError(error),
     onUnavailable: (reason, error) => moduleGraphMockRef.current?.applyUnavailable(reason, error),

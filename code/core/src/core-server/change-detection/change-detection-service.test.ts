@@ -556,7 +556,14 @@ describe('ChangeDetectionService', () => {
   });
 
   it('debounces consecutive file-change events into a single scan', async () => {
-    installDependencyGraphMocks(buildReverseIndex([]));
+    // The edited files must be in the graph (importers of Button.stories.tsx); out-of-graph
+    // changes bump no story and intentionally do not trigger a change-detection scan.
+    const reverseIndex = buildReverseIndex([
+      ['/repo/src/A.ts', '/repo/src/Button.stories.tsx', 1],
+      ['/repo/src/B.ts', '/repo/src/Button.stories.tsx', 1],
+      ['/repo/src/C.ts', '/repo/src/Button.stories.tsx', 1],
+    ]);
+    installDependencyGraphMocks(reverseIndex);
 
     const storyIndex = createStoryIndex([
       { storyId: 'button--primary', importPath: './src/Button.stories.tsx', title: 'Button' },
@@ -597,6 +604,47 @@ describe('ChangeDetectionService', () => {
     await vi.advanceTimersByTimeAsync(50);
 
     expect(gitDiffProvider.getChangedFilesMock).toHaveBeenCalledTimes(2);
+
+    await service.dispose();
+  });
+
+  it('does not rescan when an out-of-graph file changes', async () => {
+    // orphan.ts is not imported by any story, so the graph revision must not advance and no
+    // change-detection scan should run off the back of its file event.
+    const reverseIndex = buildReverseIndex([
+      ['/repo/src/Button.tsx', '/repo/src/Button.stories.tsx', 1],
+    ]);
+    installDependencyGraphMocks(reverseIndex);
+
+    const storyIndex = createStoryIndex([
+      { storyId: 'button--primary', importPath: './src/Button.stories.tsx', title: 'Button' },
+    ]);
+    const { getStatusStoreByTypeId } = createStatusStore({
+      universalStatusStore: new MockUniversalStore(UNIVERSAL_STATUS_STORE_OPTIONS),
+      environment: 'server',
+    });
+    const gitDiffProvider = createMockGitDiffProvider();
+    const { adapter, emitFileChange } = createMockAdapter();
+    const { service, graph } = createWiredChangeDetection({
+      storyIndexGeneratorPromise: Promise.resolve({
+        getIndex: vi.fn().mockResolvedValue(storyIndex),
+      } as never),
+      statusStore: getStatusStoreByTypeId(CHANGE_DETECTION_STATUS_TYPE_ID),
+      gitDiffProvider,
+      indexBaselineService: createMockStoryIndexBaselineService(),
+      workingDir,
+      debounceMs: 10,
+    });
+
+    graph.start(adapter);
+    service.start(true);
+    await vi.runAllTimersAsync();
+    expect(gitDiffProvider.getChangedFilesMock).toHaveBeenCalledTimes(1);
+
+    emitFileChange({ kind: 'change', path: '/repo/src/orphan.ts' });
+    await vi.runAllTimersAsync();
+
+    expect(gitDiffProvider.getChangedFilesMock).toHaveBeenCalledTimes(1);
 
     await service.dispose();
   });

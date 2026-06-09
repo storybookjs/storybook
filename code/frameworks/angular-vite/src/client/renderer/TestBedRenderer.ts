@@ -2,7 +2,7 @@ import type { ApplicationRef } from '@angular/core';
 
 import type { MountApplicationOptions } from './AbstractRenderer.ts';
 import { CanvasRenderer } from './CanvasRenderer.ts';
-import { mountWithTestBed } from './utils/TestBedMounting.ts';
+import { mountWithTestBed, resetTestBed } from './utils/TestBedMounting.ts';
 
 /**
  * Canvas renderer that creates the story through Angular's TestBed
@@ -15,6 +15,13 @@ import { mountWithTestBed } from './utils/TestBedMounting.ts';
  * different application configs, which cannot share the single TestBed environment injector.
  */
 export class TestBedRenderer extends CanvasRenderer {
+  override async beforeFullRender(): Promise<void> {
+    await super.beforeFullRender();
+    // Reset before render() creates the story's wrapper and declarations module — see
+    // resetTestBed() for why the order matters for the JIT module scoping queue.
+    resetTestBed();
+  }
+
   protected override async mountApplication(
     options: MountApplicationOptions
   ): Promise<ApplicationRef> {

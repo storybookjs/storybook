@@ -30,34 +30,21 @@ export class RendererFactory {
     }
 
     if (!this.rendererMap.has(targetId)) {
-      this.rendererMap.set(
-        targetId,
-        this.buildRenderer(renderType, useTestBedRenderer, targetDOMNode)
-      );
+      this.rendererMap.set(targetId, this.buildRenderer(renderType, useTestBedRenderer));
     }
 
     this.lastRenderType = renderType;
     return this.rendererMap.get(targetId);
   }
 
-  private buildRenderer(
-    renderType: RenderType,
-    useTestBedRenderer: boolean,
-    targetDOMNode: HTMLElement
-  ) {
+  private buildRenderer(renderType: RenderType, useTestBedRenderer: boolean) {
     if (renderType === 'docs') {
       // The TestBed strategy is canvas-only: a docs page renders multiple stories with
       // potentially different application configs, which cannot share the single TestBed
       // environment injector.
       return new DocsRenderer();
     }
-    // The TestBed strategy drives the single Storybook preview canvas. Under
-    // `@storybook/addon-vitest` browser mode stories mount on synthetic nodes while the
-    // TestBed singleton lifecycle is owned by the test runner (its per-test
-    // resetTestingModule restores component definitions compiled through our testing
-    // module) — fall back to bootstrapApplication there.
-    const isPreviewCanvas = targetDOMNode.id === 'storybook-root';
-    return useTestBedRenderer && isPreviewCanvas ? new TestBedRenderer() : new CanvasRenderer();
+    return useTestBedRenderer ? new TestBedRenderer() : new CanvasRenderer();
   }
 }
 

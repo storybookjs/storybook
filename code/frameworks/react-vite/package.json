@@ -45,11 +45,11 @@
   },
   "files": [
     "dist/**/*",
+    "src/**/*",
     "template/**/*",
     "README.md",
     "*.js",
-    "*.d.ts",
-    "!src/**/*"
+    "*.d.ts"
   ],
   "dependencies": {
     "@joshwooding/vite-plugin-react-docgen-typescript": "^0.7.0",

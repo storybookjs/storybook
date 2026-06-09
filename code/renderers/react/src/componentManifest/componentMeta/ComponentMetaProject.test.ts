@@ -1,16 +1,20 @@
-import * as fs from 'node:fs';
-
-import { loadCsf } from 'storybook/internal/csf-tools';
-
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it } from 'vitest';
 
 import { dedent } from 'ts-dedent';
 
 import type { StoryRef } from '../getComponentImports.ts';
-import { getComponents } from '../getComponentImports.ts';
 import { findMatchingComponent } from '../resolveComponents.ts';
-import { extractDeclaredSubcomponents, findExactComponentMatch } from '../subcomponents.ts';
-import { extractFromStory, withProject } from './componentMetaExtractor.test-helpers.ts';
+import { findExactComponentMatch } from '../subcomponents.ts';
+import {
+  extractFromStory,
+  loadDeclaredSubcomponentComponents,
+  resetProjectVolume,
+  withProject,
+} from './componentMetaExtractor.test-helpers.ts';
+
+afterEach(() => {
+  resetProjectVolume();
+});
 
 describe('compound component extraction', () => {
   it('extracts props for Accordion.Root, not Item or Trigger', async () => {
@@ -422,17 +426,10 @@ describe('compound component extraction', () => {
         `,
       },
       async (project, filePaths) => {
-        const storyPath = filePaths['button.stories.tsx'];
-        const storyFile = fs.readFileSync(storyPath, 'utf-8');
-        const csf = loadCsf(storyFile, { makeTitle: () => 'Example/Button' }).parse();
-        const declaredSubcomponents = extractDeclaredSubcomponents(csf);
-        const components = await getComponents({
-          csf,
-          storyFilePath: storyPath,
-          docgenEngine: 'react-component-meta',
-          additionalComponentNames: declaredSubcomponents.map(
-            (subcomponent) => subcomponent.componentName
-          ),
+        const { storyPath, csf, components } = await loadDeclaredSubcomponentComponents({
+          filePaths,
+          storyFileName: 'button.stories.tsx',
+          title: 'Example/Button',
         });
 
         const mainComponent = findMatchingComponent(components, csf._meta?.component, 'Button');
@@ -481,18 +478,12 @@ describe('compound component extraction', () => {
         `,
       },
       async (project, filePaths) => {
-        const storyPath = filePaths['controls-parameters.stories.tsx'];
-        const storyFile = fs.readFileSync(storyPath, 'utf-8');
-        const csf = loadCsf(storyFile, { makeTitle: () => 'Example/ControlsParameters' }).parse();
-        const declaredSubcomponents = extractDeclaredSubcomponents(csf);
-        const components = await getComponents({
-          csf,
-          storyFilePath: storyPath,
-          docgenEngine: 'react-component-meta',
-          additionalComponentNames: declaredSubcomponents.map(
-            (subcomponent) => subcomponent.componentName
-          ),
-        });
+        const { storyPath, csf, declaredSubcomponents, components } =
+          await loadDeclaredSubcomponentComponents({
+            filePaths,
+            storyFileName: 'controls-parameters.stories.tsx',
+            title: 'Example/ControlsParameters',
+          });
 
         const mainComponent = findMatchingComponent(
           components,
@@ -555,18 +546,12 @@ describe('compound component extraction', () => {
         `,
       },
       async (project, filePaths) => {
-        const storyPath = filePaths['controls-parameters.stories.tsx'];
-        const storyFile = fs.readFileSync(storyPath, 'utf-8');
-        const csf = loadCsf(storyFile, { makeTitle: () => 'Example/ControlsParameters' }).parse();
-        const declaredSubcomponents = extractDeclaredSubcomponents(csf);
-        const components = await getComponents({
-          csf,
-          storyFilePath: storyPath,
-          docgenEngine: 'react-component-meta',
-          additionalComponentNames: declaredSubcomponents.map(
-            (subcomponent) => subcomponent.componentName
-          ),
-        });
+        const { storyPath, csf, declaredSubcomponents, components } =
+          await loadDeclaredSubcomponentComponents({
+            filePaths,
+            storyFileName: 'controls-parameters.stories.tsx',
+            title: 'Example/ControlsParameters',
+          });
 
         const mainComponent = findMatchingComponent(
           components,

@@ -4,6 +4,7 @@ import { STORY_INDEX_INVALIDATED } from 'storybook/internal/core-events';
 
 import { clearRegistry, registerService } from '../../server.ts';
 import { moduleGraphServiceDef } from './definition.ts';
+import { resetModuleGraphWhenSettled } from './settlement.ts';
 import {
   buildReverseIndex,
   createMockAdapter,
@@ -17,6 +18,7 @@ vi.mock('./engine/dependency-graph/incremental-patcher.ts', { spy: true });
 
 afterEach(() => {
   clearRegistry();
+  resetModuleGraphWhenSettled();
   vi.restoreAllMocks();
 });
 

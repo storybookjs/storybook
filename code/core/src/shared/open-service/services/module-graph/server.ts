@@ -6,6 +6,7 @@ import { registerService } from '../../server.ts';
 import { moduleGraphServiceDef } from './definition.ts';
 import type { ChangeDetectionAdapter } from './engine/adapters/types.ts';
 import { ModuleGraphEngine, type ModuleGraphEngineOptions } from './engine/module-graph-engine.ts';
+import { setModuleGraphWhenSettled } from './settlement.ts';
 import { errorToErrorLike } from './types.ts';
 
 export type RegisterModuleGraphServiceOptions = {
@@ -48,26 +49,13 @@ export function resolveChangeDetectionAdapter(
 export function registerModuleGraphService(options: RegisterModuleGraphServiceOptions) {
   const workingDir = options.workingDir ?? process.cwd();
 
-  const runtime = registerService(
-    {
-      ...moduleGraphServiceDef,
-      initialState: {
-        ...moduleGraphServiceDef.initialState,
-        workingDir,
-      },
+  const runtime = registerService({
+    ...moduleGraphServiceDef,
+    initialState: {
+      ...moduleGraphServiceDef.initialState,
+      workingDir,
     },
-    {
-      queries: {
-        getStatus: {
-          // The graph builds (and patches) asynchronously, so `loaded()` callers await this barrier to
-          // read a settled reverse index rather than a half-built one.
-          load: async () => {
-            await engine.whenSettled();
-          },
-        },
-      },
-    }
-  );
+  });
 
   const engine = new ModuleGraphEngine({
     getIndex: options.getIndex,
@@ -93,6 +81,8 @@ export function registerModuleGraphService(options: RegisterModuleGraphServiceOp
       });
     },
   });
+
+  setModuleGraphWhenSettled(() => engine.whenSettled());
 
   options.channel.on(STORY_INDEX_INVALIDATED, () => {
     engine.onStoryIndexInvalidated();

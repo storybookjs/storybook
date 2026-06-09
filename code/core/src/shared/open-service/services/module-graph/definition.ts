@@ -2,6 +2,7 @@ import * as v from 'valibot';
 
 import { defineService } from '../../service-definition.ts';
 import type { ModuleGraphServiceState } from './types.ts';
+import { moduleGraphWhenSettled } from './settlement.ts';
 import { toStoryIndexPath } from './types.ts';
 
 const errorLikeSchema: v.GenericSchema = v.object({
@@ -127,6 +128,9 @@ export const moduleGraphServiceDef = defineService({
         'Current module graph lifecycle status. `booting` means the graph is still expected to become ready; `ready` means query state is populated; `error` means an unexpected graph failure; `unavailable` means the current builder/runtime cannot provide module graph functionality.',
       input: noInputSchema,
       output: moduleGraphStatusSchema,
+      load: async () => {
+        await moduleGraphWhenSettled();
+      },
       handler: (_input, ctx) => ctx.self.state.status,
     },
     getGraphRevision: {

@@ -8,7 +8,8 @@ import type { ComponentsManifest, Manifests, Presets, StoryIndex } from 'storybo
 import { vol } from 'memfs';
 import type { Polka } from 'polka';
 
-import { clearRegistry } from '../../../shared/open-service/server.ts';
+import { clearRegistry, registerService } from '../../../shared/open-service/server.ts';
+import { moduleGraphServiceDef } from '../../../shared/open-service/services/module-graph/definition.ts';
 import { registerDocgenService } from '../../../shared/open-service/services/docgen/server.ts';
 import type { DocgenProvider } from '../../../shared/open-service/services/docgen/types.ts';
 import { Tag } from '../../../shared/constants/tags.ts';
@@ -327,6 +328,7 @@ describe('manifests', () => {
         stories: [],
       }));
 
+      registerService(moduleGraphServiceDef);
       registerDocgenService({
         getIndex: () => mockGenerator.getIndex(),
         provider,

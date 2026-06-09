@@ -213,6 +213,7 @@ export const moduleGraphServiceDef = defineService({
               state.storyChangeRevisions[storyFile] = 0;
             }
           }
+          state.latestChangedStoryFiles = [];
         });
       },
     },
@@ -258,6 +259,7 @@ export const moduleGraphServiceDef = defineService({
       handler: async (_input, ctx) => {
         ctx.self.setState((state) => {
           state.graphRevision += 1;
+          state.latestChangedStoryFiles = [];
         });
       },
     },

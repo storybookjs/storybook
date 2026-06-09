@@ -329,6 +329,21 @@ describe('module-graph open service', () => {
       expect(runtime.queries.getGraphRevision({ storyFiles: ['src/Button.stories.tsx'] })).toBe(1);
     });
 
+    it('clears latest story changes when the revision bumps without a graph update', async () => {
+      const runtime = registerBareModuleGraph();
+
+      await runtime.commands.applyGraphUpdate({
+        storiesByFile: {},
+        bumpedStoryFiles: ['./src/Button.stories.tsx'],
+      });
+      await runtime.commands.bumpGraphRevision(undefined);
+
+      expect(runtime.queries.getLatestStoryChanges(undefined)).toEqual({
+        revision: 2,
+        storyFiles: [],
+      });
+    });
+
     it('advances watch-all but not scoped reads on a bare revision bump', async () => {
       const runtime = registerBareModuleGraph();
       await runtime.commands.applyGraphSnapshot({

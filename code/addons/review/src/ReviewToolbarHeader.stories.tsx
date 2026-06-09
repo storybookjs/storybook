@@ -11,8 +11,8 @@ import { MemoryRouter } from 'storybook/internal/router';
 import preview from '../../../.storybook/preview.tsx';
 import { EVENTS, RESTORE_NAV_SESSION_KEY } from './constants.ts';
 import { ReviewProvider } from './ReviewProvider.tsx';
-import { ReviewSummaryPortal } from './ReviewSummaryPortal.tsx';
-import { REVIEW_COLLECTION_QUERY_PARAM, buildReviewStoryHref } from './review-navigation.ts';
+import { ReviewToolbarHeader } from './ReviewToolbarHeader.tsx';
+import { buildReviewChangesSummaryHref, buildReviewStoryHref } from './review-navigation.ts';
 import type { ReviewState } from './review-state.ts';
 import { sessionStore } from './session-store.ts';
 
@@ -38,42 +38,6 @@ const emitMock = fn((eventName: string, payload?: unknown) => {
   });
 });
 const toggleNavMock = fn();
-const managerState: State = {
-  index: {
-    'manager-settings-checklist--default': {
-      type: 'story',
-      id: 'manager-settings-checklist--default',
-      title: 'Manager/Settings/Checklist',
-      name: 'Default',
-    },
-    'manager-settings-guidepage--default': {
-      type: 'story',
-      id: 'manager-settings-guidepage--default',
-      title: 'Manager/Settings/Guide Page',
-      name: 'Default',
-    },
-    'manager-settings-aboutscreen--default': {
-      type: 'story',
-      id: 'manager-settings-aboutscreen--default',
-      title: 'Manager/Settings/About Screen',
-      name: 'Default',
-    },
-  },
-  path: '/review/',
-  viewMode: 'review',
-  customQueryParams: {},
-} as unknown as State;
-const managerApi: API = {
-  on: onMock,
-  off: offMock,
-  emit: emitMock,
-  getIsNavShown: () => true,
-  toggleNav: toggleNavMock,
-  getStoryHrefs: (storyId: string, options?: { freeze?: boolean }) => ({
-    managerHref: `?path=/story/${storyId}`,
-    previewHref: `iframe.html?id=${storyId}&viewMode=story${options?.freeze ? '&freeze=finished' : ''}`,
-  }),
-} as unknown as API;
 
 const reviewState: ReviewState = {
   title: 'Manager settings polish',
@@ -128,33 +92,59 @@ const applyReviewState = () => {
   emitMock(EVENTS.DISPLAY_REVIEW, reviewState);
 };
 
-const ReviewHarness = () => (
-  <ReviewProvider>
-    <ReviewSummaryPortal />
-  </ReviewProvider>
-);
-
-const meta = preview.meta({
-  component: ReviewHarness,
-  parameters: {
-    layout: 'fullscreen',
-    chromatic: {
-      ignoreSelectors: ['[data-testid="review-collection-grid-cell"] iframe'],
+const managerStateBase: State = {
+  index: {
+    'manager-settings-checklist--default': {
+      type: 'story',
+      id: 'manager-settings-checklist--default',
+      title: 'Manager/Settings/Checklist',
+      name: 'Default',
+    },
+    'manager-settings-guidepage--default': {
+      type: 'story',
+      id: 'manager-settings-guidepage--default',
+      title: 'Manager/Settings/Guide Page',
+      name: 'Default',
+    },
+    'manager-settings-aboutscreen--default': {
+      type: 'story',
+      id: 'manager-settings-aboutscreen--default',
+      title: 'Manager/Settings/About Screen',
+      name: 'Default',
     },
   },
+} as unknown as State;
+
+const managerApi: API = {
+  on: onMock,
+  off: offMock,
+  emit: emitMock,
+  getIsNavShown: () => true,
+  toggleNav: toggleNavMock,
+  getStoryHrefs: (storyId: string, options?: { freeze?: boolean }) => ({
+    managerHref: `?path=/story/${storyId}`,
+    previewHref: `iframe.html?id=${storyId}&viewMode=story${options?.freeze ? '&freeze=finished' : ''}`,
+  }),
+} as unknown as API;
+
+const meta = preview.meta({
+  component: ReviewToolbarHeader,
+  parameters: { layout: 'fullscreen' },
   decorators: [
     (Story, { parameters }) => (
       <ManagerContext.Provider
         value={{
           state: {
-            ...managerState,
+            ...managerStateBase,
             ...(parameters?.managerState ?? {}),
           },
           api: managerApi,
         }}
       >
-        <MemoryRouter initialEntries={parameters?.routerInitialEntries ?? ['/?path=/review/']}>
-          <Story />
+        <MemoryRouter initialEntries={parameters?.routerInitialEntries ?? ['/']}>
+          <ReviewProvider>
+            <Story />
+          </ReviewProvider>
         </MemoryRouter>
       </ManagerContext.Provider>
     ),
@@ -169,39 +159,55 @@ const meta = preview.meta({
     sessionStore.remove(RESTORE_NAV_SESSION_KEY);
     internal_fullStatusStore.unset();
     globalThis.fetch = fetchMock as unknown as typeof globalThis.fetch;
-    document.getElementById('storybook-review-summary-portal')?.remove();
     return () => {
       globalThis.fetch = originalFetch;
-      document.getElementById('storybook-review-summary-portal')?.remove();
     };
   },
 });
 
-export const Collections = meta.story({
+export const OnReviewedStory = meta.story({
+  parameters: {
+    routerInitialEntries: ['/?path=/story/manager-settings-guidepage--default&collection=0'],
+    managerState: {
+      path: '/story/manager-settings-guidepage--default',
+      viewMode: 'story',
+      customQueryParams: { collection: '0' },
+    },
+  },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await expect(await canvas.findByText(/Waiting for the agent/i)).toBeInTheDocument();
-    await expect(emitMock).toHaveBeenCalledWith(EVENTS.REQUEST_REVIEW);
-
     applyReviewState();
 
-    await expect(await canvas.findByText('Manager settings polish')).toBeInTheDocument();
-    await expect(await canvas.findByText('Settings')).toBeInTheDocument();
+    await expect(await canvas.findByRole('button', { name: '2/3' })).toBeInTheDocument();
+    await expect(await canvas.findByRole('heading', { name: 'Settings' })).toBeInTheDocument();
+    await expect(await canvas.findByRole('link', { name: 'Back to review' })).toHaveAttribute(
+      'href',
+      buildReviewChangesSummaryHref()
+    );
+    await expect(canvas.queryByText('New')).not.toBeInTheDocument();
   },
 });
 
-export const StoryLinksUseCollectionParam = meta.story({
+export const NewStory = meta.story({
+  parameters: {
+    routerInitialEntries: ['/?path=/story/manager-settings-checklist--default&collection=0'],
+    managerState: {
+      path: '/story/manager-settings-checklist--default',
+      viewMode: 'story',
+      customQueryParams: { collection: '0' },
+    },
+  },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     applyReviewState();
 
-    const link = await canvas.findByRole('link', { name: /Guide Page/i });
-    expect(link.getAttribute('href')).toBe(
+    await expect(await canvas.findByText('New')).toBeInTheDocument();
+    await expect(await canvas.findByRole('link', { name: 'Next story' })).toHaveAttribute(
+      'href',
       buildReviewStoryHref({
         collectionIndex: 0,
         storyId: 'manager-settings-guidepage--default',
       })
     );
-    expect(link.getAttribute('href')).toContain(`${REVIEW_COLLECTION_QUERY_PARAM}=0`);
   },
 });

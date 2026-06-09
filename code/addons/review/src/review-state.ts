@@ -39,7 +39,7 @@ export interface ReviewState {
   stale?: boolean;
   /**
    * Whether a baseline is available to compare against. Enables the
-   * baseline/latest comparison controls on the detail screen. The baseline
+   * baseline/latest comparison controls on the story toolbar. The baseline
    * source itself is provided on a separate branch; until then this stays
    * unset and the controls are hidden.
    */

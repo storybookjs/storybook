@@ -17,7 +17,7 @@ import { CollectionGrid, type StoryInfo } from '../components/CollectionGrid.tsx
 import { CopyButton } from '../components/CopyButton.tsx';
 import { ReviewHeader } from '../components/ReviewHeader.tsx';
 import { StaleBanner } from '../components/StaleBanner.tsx';
-import { buildReviewChangesDetailHref } from '../review-navigation.ts';
+import { buildReviewStoryHref } from '../review-navigation.ts';
 import type { ReviewState } from '../review-state.ts';
 
 // `100dvh` fills the manager's page cell and also works in the addon's own
@@ -417,7 +417,7 @@ export const SummaryScreen: FC<SummaryScreenProps> = ({
                         storyInfo={storyInfo}
                         query={search}
                         getStoryHref={(storyId) =>
-                          buildReviewChangesDetailHref({ collectionIndex: index, storyId })
+                          buildReviewStoryHref({ collectionIndex: index, storyId })
                         }
                         getStoryPreviewHref={getStoryPreviewHref}
                       />

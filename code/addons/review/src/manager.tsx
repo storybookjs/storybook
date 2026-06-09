@@ -1,8 +1,12 @@
 import React from 'react';
 
 import { addons, types } from 'storybook/manager-api';
-import { Route } from 'storybook/internal/router';
 
+import { reviewCompareTool } from './ReviewCompareTool.tsx';
+import { ReviewProvider } from './ReviewProvider.tsx';
+import { reviewPreviewWrapper } from './ReviewPreviewWrapper.tsx';
+import { ReviewSummaryPortal } from './ReviewSummaryPortal.tsx';
+import { ReviewToolbarHeader } from './ReviewToolbarHeader.tsx';
 import {
   ADDON_ID,
   PAGE_ID,
@@ -10,34 +14,34 @@ import {
   RESTORE_NAV_SESSION_KEY,
   EVENTS,
 } from './constants.ts';
-import { ReviewPage } from './ReviewPage.tsx';
+import { isReviewPath } from './ReviewProvider.tsx';
 import { sessionStore } from './session-store.ts';
+import { useReviewNavigationInterceptor } from './useReviewNavigationInterceptor.ts';
+
+const ReviewPersistentLayer = () => (
+  <ReviewProvider>
+    <ReviewNavigationLayer />
+  </ReviewProvider>
+);
+
+const ReviewNavigationLayer = () => {
+  useReviewNavigationInterceptor();
+  return <ReviewSummaryPortal />;
+};
 
 addons.register(ADDON_ID, (api) => {
-  // Safety net: the review page hides the sidebar and has no in-app exit, so
-  // if the user left it via a full reload (typed URL, bookmark) the
-  // component cleanup never ran. On any manager load that is NOT the review
-  // route, restore a sidebar we hid. SPA exits (browser back) are already
-  // handled by ReviewPage's effect cleanup.
   const path = new URLSearchParams(window.location.search).get('path') ?? '';
   const restoreNav = sessionStore.read(RESTORE_NAV_SESSION_KEY);
   if (!path.startsWith(REVIEW_CHANGES_URL) && restoreNav !== null) {
-    // Clear both 'restore' and 'keep' so a stale marker can't block fresh
-    // nav-state capture on the next review visit.
     sessionStore.remove(RESTORE_NAV_SESSION_KEY);
     if (restoreNav === 'restore') {
       api.toggleNav(true);
     }
   }
 
-  // When the agent pushes a review, pull any open tab to the page — but only
-  // if it is not already there. The review page replays cached state on load
-  // (REQUEST_REVIEW), which echoes back as DISPLAY_REVIEW; without
-  // this guard that echo would re-navigate to the bare review URL, dropping
-  // the detail subpath and bouncing a detail page to the summary.
   api.getChannel()?.on(EVENTS.DISPLAY_REVIEW, () => {
     const currentPath = new URLSearchParams(window.location.search).get('path') ?? '';
-    if (!currentPath.startsWith(REVIEW_CHANGES_URL)) {
+    if (!isReviewPath(currentPath)) {
       api.navigate(REVIEW_CHANGES_URL);
     }
   });
@@ -46,10 +50,17 @@ addons.register(ADDON_ID, (api) => {
     type: types.experimental_PAGE,
     url: REVIEW_CHANGES_URL,
     title: 'Review changes',
-    render: () => (
-      <Route path={REVIEW_CHANGES_URL} startsWith>
-        <ReviewPage />
-      </Route>
-    ),
+    render: null,
+    persistentRender: ReviewPersistentLayer,
   });
+
+  addons.add(`${ADDON_ID}/toolbar-header`, {
+    type: types.TOOLBAR_HEADER,
+    title: 'Review navigation',
+    match: ({ viewMode }) => viewMode === 'story',
+    render: () => <ReviewToolbarHeader />,
+  });
+
+  addons.add(reviewCompareTool.id, reviewCompareTool);
+  addons.add(reviewPreviewWrapper.id, reviewPreviewWrapper);
 });

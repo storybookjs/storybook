@@ -1,3 +1,4 @@
+/** Custom docs page: {@link ./ArgTypes.mdx} (attached via `<Meta of={...} />`). */
 import type { PlayFunctionContext } from 'storybook/internal/csf';
 
 import type { Meta, StoryObj } from '@storybook/react-vite';

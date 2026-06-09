@@ -1,3 +1,4 @@
+/** Custom docs page: {@link ./Controls.mdx} (attached via `<Meta of={...} />`). */
 import React from 'react';
 
 import type { PlayFunctionContext } from 'storybook/internal/csf';

@@ -1,0 +1,77 @@
+import { Meta } from '@storybook/addon-docs/blocks';
+
+import * as ArgTypesStories from './ArgTypes.stories.tsx';
+import * as ExampleStories from '../examples/ArgTypesParameters.stories';
+import * as SubcomponentsExampleStories from '../examples/ArgTypesWithSubcomponentsParameters.stories';
+
+import { ArgTypes } from './ArgTypes';
+
+<Meta of={ArgTypesStories} />
+
+# ArgTypes block (MDX)
+
+Each section below uses the `ArgTypes` block the same way as the matching story in `ArgTypes.stories.tsx`.
+
+## OfComponent
+
+<ArgTypes of={ExampleStories.default.component} />
+
+## OfMeta
+
+<ArgTypes of={ExampleStories.default} />
+
+## OfStory
+
+<ArgTypes of={ExampleStories.NoParameters} />
+
+## OfStoryUnattached
+
+<ArgTypes of={ExampleStories.NoParameters} />
+
+## IncludeProp
+
+<ArgTypes of={ExampleStories.NoParameters} include={['a']} />
+
+## IncludeParameter
+
+<ArgTypes of={ExampleStories.Include} />
+
+## ExcludeProp
+
+<ArgTypes of={ExampleStories.NoParameters} exclude={['a']} />
+
+## ExcludeParameter
+
+<ArgTypes of={ExampleStories.Exclude} />
+
+## SortProp
+
+<ArgTypes of={ExampleStories.NoParameters} sort="alpha" />
+
+## SortParameter
+
+<ArgTypes of={ExampleStories.Sort} />
+
+## Categories
+
+<ArgTypes of={ExampleStories.Categories} />
+
+## SubcomponentsOfMeta
+
+<ArgTypes of={SubcomponentsExampleStories.default} />
+
+## SubcomponentsOfStory
+
+<ArgTypes of={SubcomponentsExampleStories.NoParameters} />
+
+## SubcomponentsIncludeProp
+
+<ArgTypes of={SubcomponentsExampleStories.NoParameters} include={['a', 'f']} />
+
+## SubcomponentsExcludeProp
+
+<ArgTypes of={SubcomponentsExampleStories.NoParameters} exclude={['a', 'c', 'f', 'g']} />
+
+## SubcomponentsSortProp
+
+<ArgTypes of={SubcomponentsExampleStories.NoParameters} sort="alpha" />

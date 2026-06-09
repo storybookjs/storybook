@@ -1,8 +1,16 @@
 import { useCallback, useEffect, useState } from 'react';
 
 import { DEFAULT_BOTTOM_PANEL_HEIGHT } from '../../../../core/src/manager-api/modules/layout.ts';
+import { TOOLBAR_HEIGHT_PX } from '../../../../core/src/manager/constants.ts';
 import { PANEL_HEIGHT_SESSION_KEY, PANEL_VISIBLE_SESSION_KEY } from '../constants.ts';
 import { sessionStore } from '../session-store.ts';
+
+const maxPanelHeight = () =>
+  typeof window === 'undefined'
+    ? DEFAULT_BOTTOM_PANEL_HEIGHT
+    : Math.max(window.innerHeight - TOOLBAR_HEIGHT_PX, 0);
+
+const clampPanelHeight = (height: number) => Math.min(Math.max(0, height), maxPanelHeight());
 
 const readPanelVisible = (): boolean => {
   const stored = sessionStore.read(PANEL_VISIBLE_SESSION_KEY);
@@ -15,7 +23,7 @@ const readPanelHeight = (): number => {
     return DEFAULT_BOTTOM_PANEL_HEIGHT;
   }
   const parsed = Number(stored);
-  return Number.isFinite(parsed) ? parsed : DEFAULT_BOTTOM_PANEL_HEIGHT;
+  return Number.isFinite(parsed) ? clampPanelHeight(parsed) : DEFAULT_BOTTOM_PANEL_HEIGHT;
 };
 
 export const useReviewPanelState = () => {

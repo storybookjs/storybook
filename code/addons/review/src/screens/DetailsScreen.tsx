@@ -285,7 +285,10 @@ export const DetailsScreen = ({
     (forceFocus?: boolean) => {
       togglePanel(true);
       if (forceFocus) {
-        void api.focusOnUIElement(focusableUIElements.addonPanel);
+        void api.focusOnUIElement(focusableUIElements.addonPanel, {
+          forceFocus: true,
+          poll: true,
+        });
       }
     },
     [api, togglePanel]

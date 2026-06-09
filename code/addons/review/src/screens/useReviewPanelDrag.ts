@@ -100,11 +100,12 @@ export const useReviewPanelDrag = ({
             clamp(current + step, MINIMUM_HORIZONTAL_PANEL_HEIGHT_PX, maxSize)
           );
           break;
-        case 'ArrowDown': {
-          const next = clamp(panelHeight - step, 0, maxSize);
-          setPanelHeight(next < MINIMUM_HORIZONTAL_PANEL_HEIGHT_PX ? 0 : next);
+        case 'ArrowDown':
+          setPanelHeight((current) => {
+            const next = clamp(current - step, 0, maxSize);
+            return next < MINIMUM_HORIZONTAL_PANEL_HEIGHT_PX ? 0 : next;
+          });
           break;
-        }
         case 'Home':
           setPanelHeight(0);
           break;

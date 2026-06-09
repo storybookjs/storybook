@@ -19,7 +19,6 @@ export const ReviewDetailToolbar: FC<ReviewDetailToolbarProps> = ({ storyId }) =
   const customisedShowToolbar = api.getShowToolbarWithCustomisations(showToolbar);
 
   const tabState = useTabsState({
-    selected: 'canvas',
     onSelectionChange: () => {},
     tabs: [],
   });

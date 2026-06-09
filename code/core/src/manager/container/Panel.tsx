@@ -70,7 +70,11 @@ const Panel: FC<PanelProps> = ({
     [api]
   );
 
-  const panelActions = actions ?? defaultActions;
+  const panelActions: PanelActions = {
+    onSelect: actions?.onSelect ?? defaultActions.onSelect,
+    toggleVisibility: actions?.toggleVisibility ?? defaultActions.toggleVisibility,
+    togglePosition: actions?.togglePosition ?? defaultActions.togglePosition,
+  };
 
   const panels = useMemo(() => {
     const allPanels = api.getElements(Addon_TypesEnum.PANEL);

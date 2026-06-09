@@ -47,7 +47,7 @@ export function resolveChangeDetectionAdapter(
  */
 export function registerModuleGraphService(options: RegisterModuleGraphServiceOptions) {
   const workingDir = options.workingDir ?? process.cwd();
-  const engineRef: { current?: ModuleGraphEngine } = {};
+  let engine: ModuleGraphEngine | undefined = undefined;
 
   const runtime = registerService(
     {
@@ -61,14 +61,14 @@ export function registerModuleGraphService(options: RegisterModuleGraphServiceOp
       commands: {
         waitForSettledEngine: {
           handler: async () => {
-            await engineRef.current!.whenSettled();
+            await engine!.whenSettled();
           },
         },
       },
     }
   );
 
-  const engine = new ModuleGraphEngine({
+  engine = new ModuleGraphEngine({
     getIndex: options.getIndex,
     workingDir,
     presets: options.presets,
@@ -93,10 +93,8 @@ export function registerModuleGraphService(options: RegisterModuleGraphServiceOp
     },
   });
 
-  engineRef.current = engine;
-
   options.channel.on(STORY_INDEX_INVALIDATED, () => {
-    engine.onStoryIndexInvalidated();
+    engine!.onStoryIndexInvalidated();
   });
 
   void changeDetectionAdapterPromise.then((adapter) => {
@@ -107,7 +105,7 @@ export function registerModuleGraphService(options: RegisterModuleGraphServiceOp
       });
       return;
     }
-    engine.start(adapter);
+    engine!.start(adapter);
   });
 
   return runtime;

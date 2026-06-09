@@ -28,38 +28,32 @@ working around it. Treat any shortcut as a failure of this workflow.
 
 ## Absolute rules
 
+- FOLLOW THE WORKFLOW SEQUENTIALLY
+- ALL TOOL CALLS MUST GO THROUGH STORYBOOK MCP PROXY
 - You MUST NOT write or edit a story from memory or existing patterns. The
   `get-storybook-story-instructions` output is the only acceptable source for
   imports, structure, and conventions.
-- You MUST NOT start Storybook with a Bash command or background task — not
-  `npm run storybook`, not `storybook dev`, not `run_in_background`, not a
-  detached process. A backgrounded dev server is not a verifiable preview and
-  does NOT satisfy this workflow.
-- You MUST NOT report a story as done until its preview link has been produced
-  and verified (Step 4) AND the review page has been published and opened
-  (Step 5). An unverified story, or a change with no review page, is not a
-  deliverable.
-- Any Storybook dev server URL you show the user (a `preview-stories` URL, a
-  story permalink, the Storybook root, an `iframe.html` link — any
-  `http(s)://…` pointing at the running Storybook) MUST first be navigated to in
-  the preview browser. Do NOT paste a URL you have not opened and confirmed
-  renders. If navigation fails, fix it or report the failure — never hand over
-  an unopened link.
+- YOU MUST USE THE PORT INPUT WHENEVER AVAILABLE FOR ANY TOOL CALL THAT SUPPORTS IT, to ensure your calls are routed through the Storybook MCP Proxy and not directly to the server.
+- IGNORE PROJECT LOCAL STORYBOOK MCP. ONLY USE THE STORYBOOK MCP PROXY SERVER FOR ALL STORYBOOK-RELATED TOOL CALLS, to ensure you are following the MCP's instructions and your calls are routed through the proxy for accurate port handling and preview integration.
 
-## Step 1 — Load the rules (before touching any story file)
+## Step 1 — Open the preview browser up front
 
+1. Inspect `.claude/launch.json` for a launch entry that starts this project's Storybook dev server.
+    If:
+      - the `.claude/launch.json` file does not exist
+      - no such entry exists
+      - the storybook entry does not use `autoPort`
+    repair it first: invoke the **storybook-setup-claude-launch** skill, which creates or repairs the `.claude/launch.json` Storybook entry.
+2. Start Storybook by launching that `.claude/launch.json` entry through the Claude launcher (never via Bash/background, per the Absolute rules).
+3. Open the Storybook preview in the preview browser. If the launch entry uses `autoPort`, wait for the terminal to show which port Storybook is running on and use that port to open the preview URL (e.g. `http://localhost:6006`) in the preview browser.
+4. Save the port being used by Storybook shown in the terminal in your working memory. USE THIS PORT FOR ALL TOOL CALLS in the following steps to ensure they are routed through the MCP Proxy.
 
-### Follow the MCP's own workflow first
+**Gate:** Do NOT proceed to Step 2 until the preview browser is open and has rendered the Storybook URL without
+error. If launch setup reports an error, surface it to the user and STOP.
 
-If the Storybook MCP is reachable through the MCP-proxy, it serves its own
-**server instructions** describing the authoritative tool workflow (routing,
-documentation lookup, previewing, working on stories, verification). When those
-instructions are available, read them and follow them **carefully and exactly** —
-they take precedence over any general assumption you might make about the tools.
-The gated steps below operate _within_ that MCP-provided workflow; they do not
-replace it. If the MCP exposes no instructions (proxy unavailable or Storybook
-not registered), fall back to the steps below.
+## Step 2 — Load the rules (before touching any story file)
 
+USE THE STORYBOOK MCP PROXY SERVER.
 
 Call **get-storybook-story-instructions** and read it fully. Look components up
 with **list-all-documentation** / **get-documentation** rather than assuming
@@ -69,38 +63,18 @@ props or APIs.
 returned and you are following its output. If you have not called it this task,
 you are not allowed to write a story yet — go back and call it now.
 
-## Step 2 — Guarantee a running preview
-
-The Storybook preview MUST be running so the story can be verified.
-
-If any MCP tool returns a "Storybook is not running" error, you MUST NOT ignore
-it and MUST NOT proceed to write the story. STOP and recover — without asking the
-user:
-
-1. Inspect `.claude/launch.json` for a launch entry that starts this project's
-   Storybook dev server.
-    If: 
-      - the `.claude/launch.json` file does not exist
-      - no such entry exists
-      - the storybook entry does not use `autoPort`
-    repair it first: invoke the **storybook-setup-claude-launch** skill, which creates or repairs the `.claude/launch.json` Storybook entry.     
-2. Start the preview by launching that `.claude/launch.json` entry through the
-   Claude launcher (never via Bash/background, per the Absolute rules).
-3. Retry the MCP tool call.
-
-**Gate:** Do NOT proceed to Step 3 until an MCP tool call succeeds against a
-running Storybook. If launch setup reports an error, surface it to the user and
-STOP.
 
 ## Step 3 — Write the story
 
-Create or edit the story strictly following the Step 1 instructions.
+Create or edit the story strictly following the Step 2 instructions.
 
 **Gate:** Every story you touched must conform to the
 `get-storybook-story-instructions` output. If anything is unclear, re-read it
 rather than guessing.
 
 ## Step 4 — Preview and verify
+
+USE THE STORYBOOK MCP PROXY SERVER.
 
 Produce a preview for every story you touched with **preview-stories** (prefer
 `{ storyId }` inputs). Before showing any returned URL to the user, navigate to
@@ -112,28 +86,13 @@ story as done until each preview link has been navigated and verified.
 
 ## Step 5 — Publish the review page
 
+USE THE STORYBOOK MCP PROXY SERVER.
+
 Once the stories render cleanly, call **display-review** so the user can review
 exactly what changed in one place. This tool does NOT just return a link — it
 publishes a curated **review page** inside the already-running Storybook and
 returns its `reviewUrl`. The review page IS the deliverable; the raw
 `preview-stories` URLs from Step 4 are for your own verification.
-
-- Group the stories you touched into `collections` covering the **visual
-  cascade** of the change: the changed component itself, the components that
-  import it, and the pages/containers that render them. Don't ship a
-  single-collection review unless the component is genuinely standalone.
-- Every `storyId` you pass MUST come from a tool result this session
-  (`get-changed-stories`, `get-stories-by-component`, or `list-all-documentation`).
-  `display-review` validates every ID against the live index and rejects the
-  whole review if any are unknown — never invent IDs.
-- Provide `title`, `description`, and `changedFiles` (the files you edited, most
-  central first).
-
-Because the `reviewUrl` is a page, you MUST navigate the preview browser to it
-(just like any other Storybook URL, per the Absolute rules) — do not merely
-print it. Then surface it to the user as the very last thing in your response,
-under its own heading (e.g. `## 👀 Review your changes`) as a markdown link, with
-nothing after it.
 
 **Gate:** Do NOT report the task as done until `display-review` has succeeded,
 you have opened the returned `reviewUrl` in the preview browser, and that link is

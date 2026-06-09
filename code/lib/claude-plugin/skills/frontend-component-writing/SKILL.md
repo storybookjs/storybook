@@ -17,19 +17,6 @@ description: >-
 
 # Frontend Component Writing
 
-Frontend components and their Storybook stories must stay in sync. This skill
-runs **before** you touch a component file — for ANY reason — so the workflow
-governs how the change is made. Whenever you create, edit, or delete a component,
-its stories MUST be created, updated, or removed to match. Do NOT decide for
-yourself that a change is "cosmetic", "internal", a "refactor", a "rename", a
-"deletion", or has "no behavior change" and skip the story step: that exemption
-does not exist. If a component is created, edited, or deleted, the story step
-runs.
-
-This is a MANDATORY companion step **when Storybook is already set up** in the
-project. If Storybook is not installed, do not force it — see "When Storybook is
-not installed" below.
-
 ## Absolute rules
 
 - This skill runs FIRST. The moment you know you are going to create, edit, or
@@ -45,21 +32,17 @@ not installed" below.
   producing a verifiable preview link).
 - You MUST NOT report a component change as complete until the corresponding
   story work has been handed off to the `stories` skill and finished.
+- FOLLOW THE WORKFLOW SEQUENTIALLY
 
 ## Workflow
 
 1. Determine whether the project has Storybook. If it does NOT, go to "When
    Storybook is not installed" and stop here unless the user opts in.
-2. Make the component change the user asked for — creating, editing, or deleting
-   the component — following the surrounding code's conventions.
-3. Identify the component's story file (`*.stories.tsx/.ts/.jsx/.js/.vue/.svelte`).
-   If one does not exist yet for a new component, it still needs stories. If the
-   component is being deleted, its stories must be removed too.
-4. Invoke the **`stories`** skill to create, update, or remove the stories for
+2. Invoke the **`stories`** skill to create, update, or remove the stories for
    the component you just touched. Tell it which component changed and what
    changed (new component, new props, new variants, renamed states, deleted
    component, etc.) so it can cover or clean up the affected surface.
-5. Let the `stories` skill run its full gated workflow — including producing the
+3. Let the `stories` skill run its full gated workflow — including producing the
    preview link — and surface that link in your final response.
 
 **Gate:** Do NOT consider the component task done until the `stories` skill has

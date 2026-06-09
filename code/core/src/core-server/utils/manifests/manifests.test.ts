@@ -8,7 +8,7 @@ import type { ComponentsManifest, Manifests, Presets, StoryIndex } from 'storybo
 import { vol } from 'memfs';
 import type { Polka } from 'polka';
 
-import { clearRegistry, registerService } from '../../../shared/open-service/server.ts';
+import { clearRegistry } from '../../../shared/open-service/server.ts';
 import { registerTestModuleGraphService } from '../../../shared/open-service/services/module-graph/module-graph.test-helpers.ts';
 import { registerDocgenService } from '../../../shared/open-service/services/docgen/server.ts';
 import type { DocgenProvider } from '../../../shared/open-service/services/docgen/types.ts';

@@ -47,7 +47,7 @@ export function resolveChangeDetectionAdapter(
  */
 export function registerModuleGraphService(options: RegisterModuleGraphServiceOptions) {
   const workingDir = options.workingDir ?? process.cwd();
-  let engine!: ModuleGraphEngine;
+  const engineRef: { current?: ModuleGraphEngine } = {};
 
   const runtime = registerService(
     {
@@ -61,14 +61,14 @@ export function registerModuleGraphService(options: RegisterModuleGraphServiceOp
       commands: {
         waitForSettledEngine: {
           handler: async () => {
-            await engine.whenSettled();
+            await engineRef.current!.whenSettled();
           },
         },
       },
     }
   );
 
-  engine = new ModuleGraphEngine({
+  const engine = new ModuleGraphEngine({
     getIndex: options.getIndex,
     workingDir,
     presets: options.presets,
@@ -92,6 +92,8 @@ export function registerModuleGraphService(options: RegisterModuleGraphServiceOp
       });
     },
   });
+
+  engineRef.current = engine;
 
   options.channel.on(STORY_INDEX_INVALIDATED, () => {
     engine.onStoryIndexInvalidated();

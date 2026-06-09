@@ -96,12 +96,27 @@ export class ModuleGraphEngine {
     );
   }
 
-  private mirrorUpdate(changedFile: string): void {
+  private collectBumpedStoryFiles(changedFile: string): Set<string> {
+    if (!this.reverseIndex) {
+      return new Set();
+    }
+    const normalized = normalize(changedFile);
+    const bumpedStoryFiles = new Set<string>();
+    for (const [storyFile] of this.reverseIndex.lookup(normalized)) {
+      bumpedStoryFiles.add(storyFile);
+    }
+    if (this.storyFiles.has(normalized)) {
+      bumpedStoryFiles.add(normalized);
+    }
+    return bumpedStoryFiles;
+  }
+
+  private mirrorUpdate(changedFile: string, prePatchBumped: Set<string> = new Set()): void {
     if (!this.reverseIndex) {
       return;
     }
     const normalized = normalize(changedFile);
-    const bumpedStoryFiles = new Set<string>();
+    const bumpedStoryFiles = new Set(prePatchBumped);
     for (const [storyFile] of this.reverseIndex.lookup(normalized)) {
       bumpedStoryFiles.add(storyFile);
     }
@@ -160,6 +175,10 @@ export class ModuleGraphEngine {
     if (!adapter) {
       return;
     }
+
+    adapter.onStartupFailure?.((event) => {
+      this.options.onUnavailable?.(event.reason, event.error);
+    });
 
     const resolveConfig = await adapter.getResolveConfig();
     const projectRoot = normalize(resolveConfig.projectRoot ?? this.workingDir);
@@ -232,10 +251,6 @@ export class ModuleGraphEngine {
       this.patchQueue = this.patchQueue
         .then(() => this.handleFileChange(event))
         .catch(() => undefined);
-    });
-
-    adapter.onStartupFailure?.((event) => {
-      this.options.onUnavailable?.(event.reason, event.error);
     });
 
     this.mirrorSnapshot();
@@ -371,6 +386,7 @@ export class ModuleGraphEngine {
     if (!this.incrementalPatcher) {
       return;
     }
+    const prePatchBumped = this.collectBumpedStoryFiles(event.path);
     try {
       await this.incrementalPatcher.patch(event);
     } catch (error) {
@@ -378,6 +394,6 @@ export class ModuleGraphEngine {
         `Change detection: failed to apply ${event.kind} for ${event.path}: ${error instanceof Error ? error.message : String(error)}`
       );
     }
-    this.mirrorUpdate(event.path);
+    this.mirrorUpdate(event.path, prePatchBumped);
   }
 }

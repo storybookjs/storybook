@@ -21,6 +21,8 @@ export type ModuleGraphStatus =
   | { value: 'unavailable'; reason: string; error?: ErrorLike };
 
 export type ModuleGraphServiceState = {
+  /** Project root used to normalize absolute file paths in query inputs. */
+  workingDir: string;
   status: ModuleGraphStatus;
   graphRevision: number;
   storiesByFile: StoriesByFileRecord;

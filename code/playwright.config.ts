@@ -57,6 +57,7 @@ export default defineConfig({
       // like fixtures, traces, and retries:
       // https://playwright.dev/docs/test-global-setup-teardown
       name: 'setup',
+      testDir: './e2e-sandbox',
       testMatch: /.*\.setup\.ts/,
     },
     {

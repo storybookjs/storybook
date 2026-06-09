@@ -10,7 +10,6 @@ import {
   installDependencyGraphMocks,
 } from './module-graph.test-helpers.ts';
 import { registerModuleGraphService, resolveChangeDetectionAdapter } from './server.ts';
-import { toStoryIndexPath } from './types.ts';
 
 vi.mock('./engine/dependency-graph/resolver-factory.ts', { spy: true });
 vi.mock('./engine/dependency-graph/dependency-graph-builder.ts', { spy: true });
@@ -23,19 +22,11 @@ afterEach(() => {
 
 /** Bare service registration (no engine), for exercising the query/command contract directly. */
 function registerBareModuleGraph(workingDir = '/repo') {
-  return registerService(moduleGraphServiceDef, {
-    queries: {
-      getStoriesForFiles: {
-        handler: (input, ctx) => {
-          return input.files.map((file) => {
-            const entries = ctx.self.state.storiesByFile[toStoryIndexPath(file, workingDir)];
-            if (!entries) {
-              return [];
-            }
-            return Object.entries(entries).map(([storyFile, depth]) => ({ storyFile, depth }));
-          });
-        },
-      },
+  return registerService({
+    ...moduleGraphServiceDef,
+    initialState: {
+      ...moduleGraphServiceDef.initialState,
+      workingDir,
     },
   });
 }
@@ -87,9 +78,9 @@ describe('module-graph open service', () => {
         },
       });
 
-      expect(
-        runtime.queries.getGraphRevision({ storyFiles: ['./src/Button.stories.tsx'] })
-      ).toBe(0);
+      expect(runtime.queries.getGraphRevision({ storyFiles: ['./src/Button.stories.tsx'] })).toBe(
+        0
+      );
       expect(runtime.queries.getGraphRevision({ storyFiles: ['./src/Card.stories.tsx'] })).toBe(0);
     });
 
@@ -329,11 +320,10 @@ describe('module-graph open service', () => {
         bumpedStoryFiles: ['./src/Button.stories.tsx'],
       });
 
-      // The query handler normalizes scope paths against process.cwd(), so an absolute path must
-      // sit under it to resolve to the stored relative key.
+      // The query handler normalizes scope paths against the service workingDir.
       expect(
         runtime.queries.getGraphRevision({
-          storyFiles: [`${process.cwd()}/src/Button.stories.tsx`],
+          storyFiles: ['/repo/src/Button.stories.tsx'],
         })
       ).toBe(1);
       expect(runtime.queries.getGraphRevision({ storyFiles: ['src/Button.stories.tsx'] })).toBe(1);

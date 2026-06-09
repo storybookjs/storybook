@@ -2,11 +2,11 @@ import type { ChannelLike } from 'storybook/internal/channels';
 import { STORY_INDEX_INVALIDATED } from 'storybook/internal/core-events';
 import type { Presets } from 'storybook/internal/types';
 
-import { registerService } from '../../service-registration.ts';
+import { registerService } from '../../server.ts';
 import { moduleGraphServiceDef } from './definition.ts';
 import type { ChangeDetectionAdapter } from './engine/adapters/types.ts';
 import { ModuleGraphEngine, type ModuleGraphEngineOptions } from './engine/module-graph-engine.ts';
-import { errorToErrorLike, toStoryIndexPath } from './types.ts';
+import { errorToErrorLike } from './types.ts';
 
 export type RegisterModuleGraphServiceOptions = {
   channel: ChannelLike;
@@ -48,31 +48,26 @@ export function resolveChangeDetectionAdapter(
 export function registerModuleGraphService(options: RegisterModuleGraphServiceOptions) {
   const workingDir = options.workingDir ?? process.cwd();
 
-  const runtime = registerService(moduleGraphServiceDef, {
-    queries: {
-      getStoriesForFiles: {
-        handler: (input, ctx) => {
-          return input.files.map((file) => {
-            const entries = ctx.self.state.storiesByFile[toStoryIndexPath(file, workingDir)];
-            if (!entries) {
-              return [];
-            }
-            return Object.entries(entries).map(([storyFile, depth]) => ({
-              storyFile,
-              depth,
-            }));
-          });
-        },
-      },
-      getStatus: {
-        // The graph builds (and patches) asynchronously, so `loaded()` callers await this barrier to
-        // read a settled reverse index rather than a half-built one.
-        load: async () => {
-          await engine.whenSettled();
-        },
+  const runtime = registerService(
+    {
+      ...moduleGraphServiceDef,
+      initialState: {
+        ...moduleGraphServiceDef.initialState,
+        workingDir,
       },
     },
-  });
+    {
+      queries: {
+        getStatus: {
+          // The graph builds (and patches) asynchronously, so `loaded()` callers await this barrier to
+          // read a settled reverse index rather than a half-built one.
+          load: async () => {
+            await engine.whenSettled();
+          },
+        },
+      },
+    }
+  );
 
   const engine = new ModuleGraphEngine({
     getIndex: options.getIndex,

@@ -71,6 +71,7 @@ export const moduleGraphServiceDef = defineService({
   description:
     'Story module dependency graph: reverse index from source files to story files, with reactive updates.',
   initialState: {
+    workingDir: process.cwd(),
     status: { value: 'booting' },
     graphRevision: 0,
     storiesByFile: {},
@@ -108,8 +109,9 @@ export const moduleGraphServiceDef = defineService({
         )
       ),
       handler: (input, ctx) => {
+        const { workingDir } = ctx.self.state;
         return input.files.map((file) => {
-          const entries = ctx.self.state.storiesByFile[toStoryIndexPath(file, process.cwd())];
+          const entries = ctx.self.state.storiesByFile[toStoryIndexPath(file, workingDir)];
           if (!entries) {
             return [];
           }
@@ -152,9 +154,10 @@ export const moduleGraphServiceDef = defineService({
         }
 
         let max = 0;
+        const { workingDir } = ctx.self.state;
         for (const file of input.storyFiles) {
           const revision =
-            ctx.self.state.storyChangeRevisions[toStoryIndexPath(file, process.cwd())] ?? 0;
+            ctx.self.state.storyChangeRevisions[toStoryIndexPath(file, workingDir)] ?? 0;
           if (revision > max) {
             max = revision;
           }

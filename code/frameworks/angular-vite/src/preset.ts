@@ -218,6 +218,7 @@ export const viteFinal = async (config: UserConfig, options?: StandaloneOptions)
       angularViteRedirectReapplyPlugin(options),
       angularOptionsPlugin(options, { normalizePath, zoneless }),
       storybookOxcPlugin(),
+      shortChunkNamesPlugin(),
     ],
     define: {
       STORYBOOK_ANGULAR_OPTIONS: JSON.stringify({
@@ -399,6 +400,30 @@ function angularViteRedirectReapplyPlugin(options?: StandaloneOptions): Plugin {
         }
       }
       return null;
+    },
+  };
+}
+
+// analogjs's JIT support emits virtual modules for inline component styles
+// whose module id embeds the whole base64-encoded stylesheet. The bundler
+// derives chunk file names from the module id, which can exceed the OS's
+// 255-byte file name limit. Trim the name and let the content hash keep it
+// unique. Implemented as an outputOptions hook (not vite config) so it
+// survives the rollupOptions/rolldownOptions config normalization across
+// vite versions.
+function shortChunkNamesPlugin(): Plugin {
+  return {
+    name: 'storybook-angular-vite-short-chunk-names',
+    outputOptions(outputOpts: any) {
+      const original = outputOpts.chunkFileNames ?? 'assets/[name]-[hash].js';
+      outputOpts.chunkFileNames = (chunkInfo: { name: string }) => {
+        const pattern = typeof original === 'function' ? original(chunkInfo) : (original as string);
+        if (chunkInfo.name && chunkInfo.name.length > 64) {
+          return pattern.replace('[name]', chunkInfo.name.slice(0, 64));
+        }
+        return pattern;
+      };
+      return outputOpts;
     },
   };
 }

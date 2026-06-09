@@ -74,6 +74,7 @@
     "@angular-devkit/build-angular": "^21.2.12",
     "@angular-devkit/core": "^21.2.12",
     "@angular/animations": "^21.2.14",
+    "@angular/build": "^21.2.12",
     "@angular/common": "^21.2.14",
     "@angular/compiler": "^21.2.14",
     "@angular/compiler-cli": "^21.2.14",

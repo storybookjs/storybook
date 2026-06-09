@@ -159,14 +159,15 @@ export const FilterPanel = ({
     includedStatusFilters.length === 0 &&
     excludedStatusFilters.length === 0;
 
-  const hasItems = builtInItems.length > 0 || tagItems.length > 0;
+  const hasTagItems = builtInItems.length > 0 || tagItems.length > 0;
+  const showActions = hasTagItems || !isNothingSelectedYet;
 
   return (
     <Wrapper>
-      {hasItems && (
+      {showActions && (
         <ActionList as="div">
           <ActionList.Item as="div">
-            {isNothingSelectedYet ? (
+            {isNothingSelectedYet && hasTagItems ? (
               <ActionList.Button
                 ariaLabel={false}
                 id="select-all"

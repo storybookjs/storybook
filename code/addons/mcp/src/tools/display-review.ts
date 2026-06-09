@@ -23,7 +23,9 @@ export const ReviewCollectionSchema = v.object({
 	),
 	rationale: v.pipe(
 		v.string(),
-		v.description('One sentence explaining why these stories are grouped together.'),
+		v.description(
+			'One sentence describing what these stories show — the component states, variants, or screens on display. Describe the content that appears on screen, not tasks for the reviewer. No imperatives ("verify", "check", "make sure", "ensure", "confirm"): say what is shown (e.g. "The default and error states across breakpoints"), not what to do (e.g. "Verify it still renders correctly").',
+		),
 	),
 	storyIds: v.pipe(
 		v.array(v.string()),
@@ -134,21 +136,23 @@ export async function addDisplayReviewTool(server: McpServer<any, AddonContext>)
 		{
 			name: DISPLAY_REVIEW_TOOL_NAME,
 			title: 'Display Storybook review',
-			description: `Push a curated review of the current change to Storybook's review page.
+			description: `Push a curated set of stories to Storybook's review page — either to review a UI change you just made, or to show the user stories/components they asked to see (e.g. "show me all badge components").
 
 **Every storyId you pass here must have come from a tool result in this session** — \`get-changed-stories\`, \`get-stories-by-component\`, or \`list-all-documentation\`. IDs derived from file paths, story-file naming conventions, feature names, or memory will not resolve. The tool validates every ID against the live Storybook index and rejects the whole review if any are unknown, so guessing is a hard failure, not a soft one. If you don't have a verified ID for a story you want to include, call \`get-stories-by-component\` first.
 
-After you finish a UI code change, call this to help the user spot-check it.
+Two triggers:
+- **After a UI code change** — call this to help the user spot-check it.
+- **When the user wants to see or browse stories/components** rather than change them — e.g. "show me all badge components", "what button variants do we have", "display the checkout stories". Render exactly those stories. There's no diff in this mode: describe what you're showing and omit \`changedFiles\`.
 
-Before composing collections, answer two questions:
+When reviewing a change, answer two questions before composing collections (skip this for a plain "show me X" request — just resolve the stories the user asked for and group them sensibly):
 - *Where is this change rendered?* Trace upward from the edited file through the import graph until you hit page-level or top-level story files.
 - *What would a reviewer want to spot-check in real context?* Include at least one story per layer of that chain.
 
 Provide:
 - title: a PR-style title for the change — short and specific.
 - description: a one-line summary of what changed and where to start reviewing.
-- collections: titled groups of stories covering the **visual cascade** of the change — not just where the code is read, but everywhere a reviewer will see it. For any non-trivial UI change, include the changed component itself, the components that directly import it, and the pages/containers that render them further up the tree. A single-collection review is a smell: only do it if the component is genuinely standalone (e.g. has no parents in the story graph). Theme tokens, shared styles, and layout primitives almost always need page-level coverage even when only one file imports them. Give each collection a concise, PR-dense title and a one-sentence rationale. Titles should describe *what stories the reviewer is looking at* (e.g. "Button — all variants", "Checkout pages"), not the collection's role in the cascade.
-- changedFiles: the files you edited (most central first).
+- collections: titled groups of stories covering the **visual cascade** of the change — not just where the code is read, but everywhere a reviewer will see it. For any non-trivial UI change, include the changed component itself, the components that directly import it, and the pages/containers that render them further up the tree. A single-collection review is a smell: only do it if the component is genuinely standalone (e.g. has no parents in the story graph). Theme tokens, shared styles, and layout primitives almost always need page-level coverage even when only one file imports them. Give each collection a concise, PR-dense title and a one-sentence rationale. Both should describe *what the reviewer is looking at* — the title names the stories (e.g. "Button — all variants", "Checkout pages"), the rationale says what's on screen in them. Describe the content, never instruct the reviewer, and avoid imperatives like "verify", "check", "ensure", "confirm".
+- changedFiles: the files you edited (most central first); omit when the user just wants to see stories rather than review a change.
 
 Anti-pattern: editing a theme token that only one component reads, then publishing a review with just that one component's story. The token change is visible on every page that renders the component — include those pages.
 
@@ -207,7 +211,11 @@ Always include the returned reviewUrl in your final user-facing response so the 
 					content: [
 						{
 							type: 'text' as const,
-							text: `Review applied: ${collectionCount} collection${collectionCount === 1 ? '' : 's'}, ${storyCount} stor${storyCount === 1 ? 'y' : 'ies'}. Next step: if a browser-preview tool is available in this session (e.g. preview_eval or an equivalent navigate tool), open ${reviewUrl} in it so the user sees the review immediately. Otherwise include the URL in your final response.`,
+							text: `Review applied: ${collectionCount} collection${collectionCount === 1 ? '' : 's'}, ${storyCount} stor${storyCount === 1 ? 'y' : 'ies'}. Storybook is already running at ${customContext.origin} — reuse it. Do NOT start another Storybook or change its port to view this review; the running instance already serves it.
+
+Two things you must do now, both of them:
+1. **Open ${reviewUrl} yourself in your preview browser.** If you have any browser-preview or navigate tool in this session (e.g. preview_eval or an equivalent), call it on this URL so the review opens in your preview window immediately. Don't merely print the link and stop — actually open it.
+2. **Show the link to the user too.** End your final response with a dedicated review section as the very last thing: its own heading on a line by itself (e.g. \`## 👀 Review your changes\`), then the review page as a markdown link \`[Open the Storybook review page](${reviewUrl})\`. Put nothing after it — not a trailing sentence the user has to hunt for. The user needs to see this link even after you've opened it yourself.`,
 						},
 					],
 					structuredContent: { reviewUrl },

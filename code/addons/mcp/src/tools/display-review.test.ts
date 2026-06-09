@@ -188,6 +188,29 @@ describe('displayReviewTool', () => {
 		expect(result?.content?.[0]?.text).toContain('http://localhost:6006/?path=/review/');
 	});
 
+	it('uses singular nouns for a single collection and story', async () => {
+		const response = await callTool(
+			{
+				title: 'Single',
+				description: 'One collection, one story',
+				collections: [
+					{
+						title: 'Button',
+						rationale: 'Just the primary button',
+						storyIds: ['button--primary'],
+					},
+				],
+			},
+			makeContext(),
+		);
+		const result = getResult(response);
+
+		expect(result?.isError).toBeFalsy();
+		expect(result?.content?.[0]?.text).toContain('1 collection, 1 story');
+		expect(result?.content?.[0]?.text).not.toContain('1 collections');
+		expect(result?.content?.[0]?.text).not.toContain('1 stories');
+	});
+
 	it('hands the payload off to addon-review via the PUSH_REVIEW channel event', async () => {
 		await callTool(sampleReview, makeContext());
 		expect(emitted).toEqual([{ event: PUSH_REVIEW_EVENT, payload: sampleReview }]);

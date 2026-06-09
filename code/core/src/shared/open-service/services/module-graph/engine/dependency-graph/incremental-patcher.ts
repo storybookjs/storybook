@@ -3,12 +3,12 @@ import { normalize } from 'pathe';
 import { logger as defaultLogger } from 'storybook/internal/node-logger';
 
 import type { FileChangeEvent } from '../adapters/types.ts';
-import type { ParserRegistry } from '../parser-registry/index.ts';
-import { ParseResolveCache } from './ParseResolveCache.ts';
-import type { ReverseIndexImpl } from './ReverseIndex.ts';
-import type { ChangeDetectionResolverFactory } from './ResolverFactory.ts';
+import type { ParserRegistry } from '../parser-registry/parser-registry.ts';
+import { ParseResolveCache } from './parse-resolve-cache.ts';
+import type { ReverseIndexImpl } from './reverse-index.ts';
+import type { ChangeDetectionResolverFactory } from './resolver-factory.ts';
 import type { DependencyGraph } from './types.ts';
-import { walkFromStory } from './walkFromStory.ts';
+import { walkFromStory } from './walk-from-story.ts';
 
 function setsEqual(a: Set<string>, b: Set<string>): boolean {
   if (a.size !== b.size) {

@@ -11,7 +11,7 @@ import { join } from 'node:path';
 
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
-import { ChangeDetectionResolverFactory } from './ResolverFactory.ts';
+import { ChangeDetectionResolverFactory } from './resolver-factory.ts';
 
 let dir: string;
 

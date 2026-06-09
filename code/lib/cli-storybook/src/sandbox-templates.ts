@@ -743,6 +743,11 @@ export const baseTemplates = {
       // Move this to latest or 22 once ng new creates v22 projects
       extraDependencies: ['@angular/forms@21.2.16', '@angular/animations@21.2.16'],
       useCsfFactory: true,
+      mainConfig: {
+        features: {
+          previewTestBedRenderer: true,
+        },
+      },
     },
     extraCiSteps: {
       ensureMinNodeVersion: true,

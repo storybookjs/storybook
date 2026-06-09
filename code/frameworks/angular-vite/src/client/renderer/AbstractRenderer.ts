@@ -1,4 +1,11 @@
-import type { ApplicationRef, NgModule } from '@angular/core';
+import type {
+  ApplicationConfig,
+  ApplicationRef,
+  EnvironmentProviders,
+  NgModule,
+  Provider,
+  Type,
+} from '@angular/core';
 import { provideZonelessChangeDetection } from '@angular/core';
 import { bootstrapApplication } from '@angular/platform-browser';
 import type { Subject } from 'rxjs';
@@ -15,6 +22,16 @@ type StoryRenderInfo = {
   storyFnAngular: StoryFnAngularReturnType;
   moduleMetadataSnapshot: string;
 };
+
+export interface MountApplicationOptions {
+  /** The standalone wrapper component that hosts the story. */
+  application: Type<unknown>;
+  providers: Array<Provider | EnvironmentProviders>;
+  applicationConfig?: ApplicationConfig;
+  targetDOMNode: HTMLElement;
+  /** CSS selector of the root element created by initAngularRootElement. */
+  componentSelector: string;
+}
 
 declare global {
   const STORYBOOK_ANGULAR_OPTIONS: {
@@ -133,14 +150,32 @@ export abstract class AbstractRenderer {
       providers.unshift(provideZonelessChangeDetection());
     }
 
-    const applicationRef = await queueBootstrapping(() => {
-      return bootstrapApplication(application, {
-        ...storyFnAngular.applicationConfig,
-        providers,
-      });
+    const applicationRef = await this.mountApplication({
+      application,
+      providers,
+      applicationConfig: storyFnAngular.applicationConfig,
+      targetDOMNode,
+      componentSelector,
     });
 
     applicationRefs.set(targetDOMNode, applicationRef);
+  }
+
+  /**
+   * Creates the running Angular application for the prepared story wrapper component. The default
+   * strategy bootstraps a standalone application; the TestBed strategy overrides this seam.
+   */
+  protected async mountApplication({
+    application,
+    providers,
+    applicationConfig,
+  }: MountApplicationOptions): Promise<ApplicationRef> {
+    return queueBootstrapping(() => {
+      return bootstrapApplication(application, {
+        ...applicationConfig,
+        providers,
+      });
+    });
   }
 
   /**

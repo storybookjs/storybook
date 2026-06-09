@@ -54,6 +54,7 @@ export {
   type ChangeDetectionReadiness as Experimental_ChangeDetectionReadiness,
   ChangeDetectionFailureError,
   ChangeDetectionUnavailableError,
+  subscribeToSourceFileChanges as experimental_subscribeToSourceFileChanges,
 } from './change-detection/index.ts';
 export type {
   ChangeDetectionAdapter,

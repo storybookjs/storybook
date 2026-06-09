@@ -5,6 +5,7 @@ export default {
   '@storybook/addon-links': '10.5.0-alpha.5',
   '@storybook/addon-onboarding': '10.5.0-alpha.5',
   'storybook-addon-pseudo-states': '10.5.0-alpha.5',
+  '@storybook/addon-review': '10.5.0-alpha.5',
   '@storybook/addon-themes': '10.5.0-alpha.5',
   '@storybook/addon-vitest': '10.5.0-alpha.5',
   '@storybook/builder-vite': '10.5.0-alpha.5',

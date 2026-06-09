@@ -163,6 +163,8 @@ export interface SubAPI {
    * @param {QueryParams} [options.queryParams] - Query params to add to the URL.
    * @param {string} [options.refId] - ID of the ref to get the URL for (for composed Storybooks)
    * @param {string} [options.viewMode] - The view mode to use, defaults to 'story'.
+   * @param {boolean} [options.freeze] - Append the `freeze=finished` preview contract so the
+   *   preview settles to a static end frame and blocks interaction. Affects `previewHref` only.
    * @returns {Object} Manager and preview hrefs for the story.
    */
   getStoryHrefs(
@@ -174,6 +176,7 @@ export interface SubAPI {
       queryParams?: QueryParams;
       refId?: string;
       viewMode?: API_ViewMode;
+      freeze?: boolean;
     }
   ): { managerHref: string; previewHref: string };
   /**
@@ -245,6 +248,7 @@ export const init: ModuleFn<SubAPI, SubState> = (moduleArgs) => {
         queryParams = {},
         refId,
         viewMode = 'story',
+        freeze = false,
       } = options;
 
       if (refId && !refs[refId]) {
@@ -283,9 +287,11 @@ export const init: ModuleFn<SubAPI, SubState> = (moduleArgs) => {
       customManagerParams = customManagerParams && `&${customManagerParams}`;
       customPreviewParams = customPreviewParams && `&${customPreviewParams}`;
 
+      const freezeParam = freeze ? '&freeze=finished' : '';
+
       return {
         managerHref: `${managerBase}?path=/${viewMode}/${refId ? `${refId}_` : ''}${storyId}${argsParam}${globalsParam}${customManagerParams}`,
-        previewHref: `${previewBase}?id=${storyId}&viewMode=${viewMode}${refParam}${argsParam}${refId ? '' : globalsParam}${customPreviewParams}`,
+        previewHref: `${previewBase}?id=${storyId}&viewMode=${viewMode}${refParam}${argsParam}${refId ? '' : globalsParam}${customPreviewParams}${freezeParam}`,
       };
     },
     getQueryParam(key) {

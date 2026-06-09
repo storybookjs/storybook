@@ -8318,6 +8318,20 @@ __metadata:
   languageName: unknown
   linkType: soft
 
+"@storybook/addon-review@workspace:*, @storybook/addon-review@workspace:code/addons/review":
+  version: 0.0.0-use.local
+  resolution: "@storybook/addon-review@workspace:code/addons/review"
+  dependencies:
+    http-proxy-middleware: "npm:^4.0.0"
+    react: "npm:^18.2.0"
+    react-dom: "npm:^18.2.0"
+    sirv: "npm:^2.0.4"
+    typescript: "npm:^5.9.3"
+  peerDependencies:
+    storybook: "workspace:^"
+  languageName: unknown
+  linkType: soft
+
 "@storybook/addon-themes@workspace:*, @storybook/addon-themes@workspace:code/addons/themes":
   version: 0.0.0-use.local
   resolution: "@storybook/addon-themes@workspace:code/addons/themes"
@@ -8533,6 +8547,7 @@ __metadata:
     "@storybook/addon-links": "workspace:*"
     "@storybook/addon-mcp": "npm:*"
     "@storybook/addon-onboarding": "workspace:*"
+    "@storybook/addon-review": "workspace:*"
     "@storybook/addon-themes": "workspace:*"
     "@storybook/addon-vitest": "workspace:*"
     "@storybook/angular": "workspace:*"
@@ -9924,8 +9939,8 @@ __metadata:
   linkType: hard
 
 "@tmcp/adapter-valibot@npm:^0.1.5":
-  version: 0.1.5
-  resolution: "@tmcp/adapter-valibot@npm:0.1.5"
+  version: 0.1.6
+  resolution: "@tmcp/adapter-valibot@npm:0.1.6"
   dependencies:
     "@standard-schema/spec": "npm:^1.0.0"
     "@valibot/to-json-schema": "npm:^1.3.0"
@@ -9933,24 +9948,24 @@ __metadata:
   peerDependencies:
     tmcp: ^1.17.0
     valibot: ^1.1.0
-  checksum: 10c0/176be80a74285f986ba8900116bf1ec2b97d249177b48127940b06bd08c70965a2e50d0aaa3785d4bdadd70f8e3f341fd881ce24c317a9d890cdb24ebf059399
+  checksum: 10c0/4261efa7318f335eb7a8787f16a4db285a3e38288c31bc3b21fe61808c7e0c2057e09675d7b86d14cbe3ba2babad2ffe1891c4498001b27f74cb22fa135eef02
   languageName: node
   linkType: hard
 
-"@tmcp/session-manager@npm:^0.2.1":
-  version: 0.2.1
-  resolution: "@tmcp/session-manager@npm:0.2.1"
+"@tmcp/session-manager@npm:^0.2.2":
+  version: 0.2.2
+  resolution: "@tmcp/session-manager@npm:0.2.2"
   peerDependencies:
     tmcp: ^1.16.3
-  checksum: 10c0/dadcfe6cf0e2be2536f0969aab3782355f2ff705d0a782ee9017e644b31c7eb57a593954676c252373a7d042ec6cd026e27db27460085b1c1036f7dcb1b37af5
+  checksum: 10c0/a29507e7e36568f4eb5f0e7525c651adf4ec16d11273499f538f2e5cc4071920294c08cc4771b11cb52bc9f999e3a1a32466bb6521f605fc482cc932139b5d25
   languageName: node
   linkType: hard
 
 "@tmcp/transport-http@npm:^0.8.5":
-  version: 0.8.5
-  resolution: "@tmcp/transport-http@npm:0.8.5"
+  version: 0.8.6
+  resolution: "@tmcp/transport-http@npm:0.8.6"
   dependencies:
-    "@tmcp/session-manager": "npm:^0.2.1"
+    "@tmcp/session-manager": "npm:^0.2.2"
     esm-env: "npm:^1.2.2"
   peerDependencies:
     "@tmcp/auth": ^0.3.3 || ^0.4.0
@@ -9958,7 +9973,7 @@ __metadata:
   peerDependenciesMeta:
     "@tmcp/auth":
       optional: true
-  checksum: 10c0/208ba54571188e69ec57a33cc316ece812f3013c2e5c2355be62cb17e90665b258e069bd7eadce7898612018a7bd0ce958db95357a409930ca7a119a00d3c28e
+  checksum: 10c0/da9a734cf15bcc84527194b2848ebcb33815fb9c26d579a90b2f0052eb193d764c1857f4c172f87167a51339f78cf7e17eba2b15f8a90459158b54a519291527
   languageName: node
   linkType: hard
 
@@ -11297,11 +11312,11 @@ __metadata:
   linkType: hard
 
 "@valibot/to-json-schema@npm:^1.3.0":
-  version: 1.6.0
-  resolution: "@valibot/to-json-schema@npm:1.6.0"
+  version: 1.7.0
+  resolution: "@valibot/to-json-schema@npm:1.7.0"
   peerDependencies:
-    valibot: ^1.3.0
-  checksum: 10c0/3dabbb9ed0f135c436a9f4a22ff1ad3df500e0bdff1b771eb9a03f4ba7a412bb1873a9cc1ff32c09ff47d10be8d1834a540705229380b9fc46fb65a9b41dbae2
+    valibot: ^1.4.0
+  checksum: 10c0/d354217270f5855ceea547bcf696546e30075b04016757603c9e826b4395aefecbd0f8a79bea4431838b28960e09a2b7543aa5c5f8672c9abb2ab7d39354f533
   languageName: node
   linkType: hard
 
@@ -15570,7 +15585,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"debug@npm:4, debug@npm:^4.0.0, debug@npm:^4.1.0, debug@npm:^4.1.1, debug@npm:^4.3.1, debug@npm:^4.3.2, debug@npm:^4.3.4, debug@npm:^4.3.6, debug@npm:^4.3.7, debug@npm:^4.4.0, debug@npm:^4.4.1":
+"debug@npm:4, debug@npm:^4.0.0, debug@npm:^4.1.0, debug@npm:^4.1.1, debug@npm:^4.3.1, debug@npm:^4.3.2, debug@npm:^4.3.4, debug@npm:^4.3.6, debug@npm:^4.3.7, debug@npm:^4.4.0, debug@npm:^4.4.1, debug@npm:^4.4.3":
   version: 4.4.3
   resolution: "debug@npm:4.4.3"
   dependencies:
@@ -20153,6 +20168,19 @@ __metadata:
   languageName: node
   linkType: hard
 
+"http-proxy-middleware@npm:^4.0.0":
+  version: 4.0.0
+  resolution: "http-proxy-middleware@npm:4.0.0"
+  dependencies:
+    debug: "npm:^4.4.3"
+    httpxy: "npm:^0.5.1"
+    is-glob: "npm:^4.0.3"
+    is-plain-obj: "npm:^4.1.0"
+    micromatch: "npm:^4.0.8"
+  checksum: 10c0/956cfec006b3619433e5c5ce24e9379bbe2e2ae885705df82c261530392c94c101205ef891845fe7d39b9d646a463c302b3b6d90125dc6e8dc42fbd7c6211c69
+  languageName: node
+  linkType: hard
+
 "http-proxy@npm:^1.18.1":
   version: 1.18.1
   resolution: "http-proxy@npm:1.18.1"
@@ -20247,6 +20275,13 @@ __metadata:
     agent-base: "npm:^7.1.2"
     debug: "npm:4"
   checksum: 10c0/f729219bc735edb621fa30e6e84e60ee5d00802b8247aac0d7b79b0bd6d4b3294737a337b93b86a0bd9e68099d031858a39260c976dc14cdbba238ba1f8779ac
+  languageName: node
+  linkType: hard
+
+"httpxy@npm:^0.5.1":
+  version: 0.5.3
+  resolution: "httpxy@npm:0.5.3"
+  checksum: 10c0/8120753638d1a50b13396d7c55536db076a04609dfb7eea19f5b461f9541acf4646fa6bfb8991f14bad62e0037b524481c5d625892b4ff94a6ab744149ed9387
   languageName: node
   linkType: hard
 
@@ -30712,15 +30747,15 @@ __metadata:
   linkType: hard
 
 "tmcp@npm:^1.19.3":
-  version: 1.19.3
-  resolution: "tmcp@npm:1.19.3"
+  version: 1.19.4
+  resolution: "tmcp@npm:1.19.4"
   dependencies:
     "@standard-schema/spec": "npm:^1.0.0"
     json-rpc-2.0: "npm:^1.7.1"
     sqids: "npm:^0.3.0"
     uri-template-matcher: "npm:^1.1.1"
     valibot: "npm:^1.1.0"
-  checksum: 10c0/c310c21b32aa6716037eebd126eb39a62e86ef99a9d95b8dc53b7e5d212b7109beefa56506a489193018e3caed471809da8d1b07de00e747b259d0396b9b49c3
+  checksum: 10c0/fcb275c74fe4dd80da3eb4702d7631423e73f2dd9ec537228457b997a9206ece899295035a492a9238184e28a46017034f63c6a4aa82d1fe0ee486fb7b33449a
   languageName: node
   linkType: hard
 

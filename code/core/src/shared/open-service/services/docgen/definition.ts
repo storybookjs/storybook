@@ -1,15 +1,26 @@
+import type { StrictArgTypes } from 'storybook/internal/types';
+
 import * as v from 'valibot';
 
 import { defineService } from 'storybook/open-service';
+import type { ServiceInstanceOf } from '../../types.ts';
 import type { DocgenPayload } from './types.ts';
 import { docgenQueryStaticPath } from './paths.ts';
 
 const docgenInputSchema = v.object({ id: v.string() });
+// Typed as `StrictArgTypes` (a static Storybook construct) but validated loosely: spelling out the
+// full recursive valibot shape is deferred, so this only checks "is a plain object" at runtime
+// while keeping the payload's `argTypes` typed for consumers.
+const argTypesSchema = v.custom<StrictArgTypes>(
+  (value) => typeof value === 'object' && value !== null && !Array.isArray(value)
+);
 
-export type DocgenServiceState = {
+type DocgenServiceState = {
   /** Extracted docgen keyed by component id. Populated by the `extractDocgen` command. */
   components: Record<string, DocgenPayload>;
 };
+
+export type DocgenService = ServiceInstanceOf<typeof docgenServiceDef>;
 
 const docgenErrorSchema = v.object({
   name: v.string(),
@@ -35,6 +46,7 @@ const docgenEntryBaseFields = {
   summary: v.optional(v.string()),
   import: v.optional(v.string()),
   jsDocTags: docgenJsDocTagsSchema,
+  argTypes: v.optional(argTypesSchema),
   error: v.optional(docgenErrorSchema),
 };
 
@@ -64,6 +76,11 @@ const docgenOutputSchema = v.optional(docgenPayloadSchema);
 /**
  * Definition for the `core/docgen` open service.
  *
+ * The service carries only provider-extracted docgen (component name, description, props, JSDoc
+ * tags, and the renderer-converted argTypes). Story/meta/project custom argTypes are NOT stored
+ * here — consumers layer those in from their own sources (the docs blocks resolve the prepared
+ * meta/story locally; the manager Controls panel reads them from the `STORY_PREPARED` channel).
+ *
  * The query is a thin synchronous read of `state.components[id]` — it returns undefined when
  * nothing has been extracted yet rather than throwing, matching the open-service convention for
  * sync reads. The real work — story index lookup, provider invocation, error handling — lives in
@@ -83,8 +100,7 @@ export const docgenServiceDef = defineService({
       description: 'Returns the docgen payload for one component id, or undefined when not loaded.',
       input: docgenInputSchema,
       output: docgenOutputSchema,
-      handler: (input, ctx) =>
-        input.id in ctx.self.state.components ? ctx.self.state.components[input.id] : undefined,
+      handler: (input, ctx): DocgenPayload | undefined => ctx.self.state.components[input.id],
       load: async (input, ctx) => {
         await ctx.self.commands.extractDocgen(input);
       },
@@ -94,7 +110,7 @@ export const docgenServiceDef = defineService({
       description: 'Returns docgen payloads for every component in the story index.',
       input: v.void(),
       output: v.record(v.string(), docgenPayloadSchema),
-      handler: (_input, ctx) => ctx.self.state.components,
+      handler: (_input, ctx): Record<string, DocgenPayload> => ctx.self.state.components,
       load: async (_input, ctx) => {
         await ctx.self.commands.extractAllDocgen(undefined);
       },

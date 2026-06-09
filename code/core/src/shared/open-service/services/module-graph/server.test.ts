@@ -2,13 +2,12 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { STORY_INDEX_INVALIDATED } from 'storybook/internal/core-events';
 
-import { clearRegistry, registerService } from '../../server.ts';
-import { moduleGraphServiceDef } from './definition.ts';
-import { resetModuleGraphWhenSettled } from './settlement.ts';
+import { clearRegistry } from '../../server.ts';
 import {
   buildReverseIndex,
   createMockAdapter,
   installDependencyGraphMocks,
+  registerTestModuleGraphService,
 } from './module-graph.test-helpers.ts';
 import { registerModuleGraphService, resolveChangeDetectionAdapter } from './server.ts';
 
@@ -18,19 +17,12 @@ vi.mock('./engine/dependency-graph/incremental-patcher.ts', { spy: true });
 
 afterEach(() => {
   clearRegistry();
-  resetModuleGraphWhenSettled();
   vi.restoreAllMocks();
 });
 
 /** Bare service registration (no engine), for exercising the query/command contract directly. */
 function registerBareModuleGraph(workingDir = '/repo') {
-  return registerService({
-    ...moduleGraphServiceDef,
-    initialState: {
-      ...moduleGraphServiceDef.initialState,
-      workingDir,
-    },
-  });
+  return registerTestModuleGraphService(workingDir);
 }
 
 describe('module-graph open service', () => {

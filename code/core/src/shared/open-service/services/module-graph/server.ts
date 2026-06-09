@@ -6,7 +6,6 @@ import { registerService } from '../../server.ts';
 import { moduleGraphServiceDef } from './definition.ts';
 import type { ChangeDetectionAdapter } from './engine/adapters/types.ts';
 import { ModuleGraphEngine, type ModuleGraphEngineOptions } from './engine/module-graph-engine.ts';
-import { setModuleGraphWhenSettled } from './settlement.ts';
 import { errorToErrorLike } from './types.ts';
 
 export type RegisterModuleGraphServiceOptions = {
@@ -48,16 +47,28 @@ export function resolveChangeDetectionAdapter(
  */
 export function registerModuleGraphService(options: RegisterModuleGraphServiceOptions) {
   const workingDir = options.workingDir ?? process.cwd();
+  let engine!: ModuleGraphEngine;
 
-  const runtime = registerService({
-    ...moduleGraphServiceDef,
-    initialState: {
-      ...moduleGraphServiceDef.initialState,
-      workingDir,
+  const runtime = registerService(
+    {
+      ...moduleGraphServiceDef,
+      initialState: {
+        ...moduleGraphServiceDef.initialState,
+        workingDir,
+      },
     },
-  });
+    {
+      commands: {
+        waitForSettledEngine: {
+          handler: async () => {
+            await engine.whenSettled();
+          },
+        },
+      },
+    }
+  );
 
-  const engine = new ModuleGraphEngine({
+  engine = new ModuleGraphEngine({
     getIndex: options.getIndex,
     workingDir,
     presets: options.presets,
@@ -81,8 +92,6 @@ export function registerModuleGraphService(options: RegisterModuleGraphServiceOp
       });
     },
   });
-
-  setModuleGraphWhenSettled(() => engine.whenSettled());
 
   options.channel.on(STORY_INDEX_INVALIDATED, () => {
     engine.onStoryIndexInvalidated();

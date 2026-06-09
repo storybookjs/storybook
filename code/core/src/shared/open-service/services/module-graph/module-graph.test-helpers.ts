@@ -2,6 +2,8 @@ import { vi } from 'vitest';
 
 import type { StoryIndex } from 'storybook/internal/types';
 
+import { registerService } from '../../server.ts';
+import { moduleGraphServiceDef } from './definition.ts';
 import type { ChangeDetectionAdapter, FileChangeEvent } from './engine/adapters/types.ts';
 import { DependencyGraphBuilder } from './engine/dependency-graph/dependency-graph-builder.ts';
 import { IncrementalPatcher } from './engine/dependency-graph/incremental-patcher.ts';
@@ -117,4 +119,24 @@ export function installDependencyGraphMocks(reverseIndex: ReverseIndexImpl): {
   } as unknown as new () => IncrementalPatcher);
 
   return { patchSpy, buildSpy };
+}
+
+/** Registers module-graph for unit tests without a live engine (no-op settlement command). */
+export function registerTestModuleGraphService(workingDir = process.cwd()) {
+  return registerService(
+    {
+      ...moduleGraphServiceDef,
+      initialState: {
+        ...moduleGraphServiceDef.initialState,
+        workingDir,
+      },
+    },
+    {
+      commands: {
+        waitForSettledEngine: {
+          handler: async () => undefined,
+        },
+      },
+    }
+  );
 }

@@ -100,7 +100,7 @@ export const docgenServiceDef = defineService({
       description: 'Returns the docgen payload for one component id, or undefined when not loaded.',
       input: docgenInputSchema,
       output: docgenOutputSchema,
-      handler: (input, ctx): DocgenPayload | undefined => ctx.self.state.components[input.id],
+      handler: (input, ctx) => ctx.self.state.components[input.id],
       load: async (input, ctx) => {
         await ctx.self.commands.extractDocgen(input);
       },
@@ -110,7 +110,7 @@ export const docgenServiceDef = defineService({
       description: 'Returns docgen payloads for every component in the story index.',
       input: v.void(),
       output: v.record(v.string(), docgenPayloadSchema),
-      handler: (_input, ctx): Record<string, DocgenPayload> => ctx.self.state.components,
+      handler: (_input, ctx) => ctx.self.state.components,
       load: async (_input, ctx) => {
         await ctx.self.commands.extractAllDocgen(undefined);
       },

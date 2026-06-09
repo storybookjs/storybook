@@ -35,13 +35,37 @@ class StorybookTestComponentRenderer extends TestComponentRenderer {
 }
 
 /**
+ * Resets the TestBed singleton for the next story render. `resetTestingModule()` destroys the
+ * previous fixture (including its `ngOnDestroy` lifecycle) and tears down the testing module.
+ *
+ * Must run BEFORE the next story's wrapper component and its declarations module are created:
+ * the reset also clears Angular's global JIT module scoping queue (`resetCompiledComponents`),
+ * and the freshly decorated module has to still be in that queue when the wrapper component
+ * compiles so its declared components get their transitive scope (directives/pipes) patched.
+ */
+export function resetTestBed() {
+  const testBed = getTestBed();
+
+  if (!testBed.platform) {
+    // The test environment was never initialized — nothing to reset.
+    return;
+  }
+
+  try {
+    testBed.resetTestingModule();
+  } catch {
+    // The previous testing module may already have been torn down externally (e.g. through
+    // ApplicationRef.destroy() in resetApplications). The next mount starts from scratch.
+  }
+}
+
+/**
  * Renders the story wrapper application with Angular's TestBed instead of bootstrapping a
  * standalone application per story.
  *
  * Uses the documented TestBed singleton lifecycle: the test environment is initialized once (or
- * reused when something else, e.g. a Vitest setup file, already initialized it), the testing
- * module is reset and reconfigured per story render, and `resetTestingModule()` takes care of
- * destroying the previous fixture including its `ngOnDestroy` lifecycle.
+ * reused when something else, e.g. a Vitest setup file, already initialized it) and the testing
+ * module is reconfigured per story render (after the `resetTestBed()` call in beforeFullRender).
  */
 export async function mountWithTestBed({
   application,
@@ -53,13 +77,6 @@ export async function mountWithTestBed({
 
   if (!testBed.platform) {
     testBed.initTestEnvironment(BrowserDynamicTestingModule, platformBrowserDynamicTesting());
-  }
-
-  try {
-    testBed.resetTestingModule();
-  } catch {
-    // The previous testing module may already have been torn down externally (e.g. through
-    // ApplicationRef.destroy() in resetApplications). Reconfiguring below starts from scratch.
   }
 
   testBed.configureTestingModule({

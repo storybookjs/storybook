@@ -604,9 +604,7 @@ Invalid key: Expected "components" but received undefined]`);
 
 describe('parseDocgenRef', () => {
 	it('resolves a `../`-prefixed ref relative to the component manifest location', () => {
-		expect(
-			parseDocgenRef('../services/core/docgen/button.json#/components/button'),
-		).toEqual({
+		expect(parseDocgenRef('../services/core/docgen/button.json#/components/button')).toEqual({
 			path: './services/core/docgen/button.json',
 			pointer: ['components', 'button'],
 		});

@@ -213,7 +213,10 @@ export function parseDocgenRef(ref: string): { path: string; pointer: string[] }
 	// Directory of the component manifest (e.g. "manifests/"), used as the base for
 	// resolving the (possibly `../`-prefixed) relative file path.
 	const manifestDir = COMPONENT_MANIFEST_PATH.replace(/^\.\//, '').replace(/[^/]+$/, '');
-	const resolved = new URL(filePath, `https://localhost/${manifestDir}`).pathname.replace(/^\//, '');
+	const resolved = new URL(filePath, `https://localhost/${manifestDir}`).pathname.replace(
+		/^\//,
+		'',
+	);
 
 	const pointer = hash
 		.split('/')

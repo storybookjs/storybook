@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useMemo, useSyncExternalStore } from 'react';
 
 import type { DocgenPayload } from 'storybook/internal/types';
 
@@ -7,6 +7,10 @@ import { getService } from 'storybook/preview-api';
 
 /**
  * Subscribes docs blocks to the preview's local `core/docgen` runtime.
+ *
+ * Backed by `useSyncExternalStore` for tear-free, concurrent-safe reads. `getDocgen` reads
+ * `state.components[id]` by reference, so a snapshot is `Object.is`-stable until the payload
+ * actually changes — no extra equality layer needed.
  */
 export function useServiceDocgen(id: string | undefined): DocgenPayload | undefined {
   const service = useMemo(() => {
@@ -16,15 +20,17 @@ export function useServiceDocgen(id: string | undefined): DocgenPayload | undefi
       return undefined;
     }
   }, []);
-  const [payload, setPayload] = useState<DocgenPayload | undefined>(undefined);
 
-  useEffect(() => {
-    if (!service || !id) {
-      return undefined;
-    }
+  const subscribe = useCallback(
+    (listener: () => void) =>
+      service && id ? service.queries.getDocgen.subscribe({ id }, listener) : () => {},
+    [service, id]
+  );
 
-    return service.queries.getDocgen.subscribe({ id }, setPayload);
-  }, [id, service]);
+  const getSnapshot = useCallback(
+    () => (service && id ? service.queries.getDocgen({ id }) : undefined),
+    [service, id]
+  );
 
-  return payload;
+  return useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
 }

@@ -128,9 +128,23 @@ export type Doc = v.InferOutput<typeof Doc>;
  */
 export type ComponentDocWithExportName = ComponentDoc & { exportName: string };
 
+/**
+ * A JSON Reference to externalized component data, e.g.
+ * `"../services/core/docgen/button.json#/components/button"`. Used by the
+ * externalized-docgen manifest format, where the top-level component manifest
+ * only carries lightweight stubs and the full data lives in a referenced file.
+ * The path is resolved relative to the component manifest's location.
+ */
+export const DocgenRef = v.object({
+	$ref: v.string(),
+});
+export type DocgenRef = v.InferOutput<typeof DocgenRef>;
+
 const BaseComponentProperties = v.object({
 	...BaseManifest.entries,
-	path: v.string(),
+	// Optional: stub entries in the externalized-docgen manifest format omit `path`
+	// (it lives in the referenced docgen file alongside the rest of the component data).
+	path: v.optional(v.string()),
 	summary: v.optional(v.string()),
 	import: v.optional(v.string()),
 	reactDocgen: v.optional(v.any()),
@@ -150,11 +164,16 @@ export const ComponentManifest = v.object({
 	stories: v.optional(v.array(Story)),
 	subcomponents: v.optional(v.record(v.string(), SubcomponentManifest)),
 	docs: v.optional(v.record(v.string(), Doc)),
+	// Present on stub entries in the externalized-docgen manifest format. When set,
+	// the full component data must be resolved from the referenced file.
+	docgen: v.optional(DocgenRef),
 });
 export type ComponentManifest = v.InferOutput<typeof ComponentManifest>;
 
 export const ComponentManifestMap = v.object({
-	v: v.number(),
+	// Optional: externalized docgen files (referenced via `docgen.$ref`) are shaped
+	// like a component manifest map but omit the top-level version field.
+	v: v.optional(v.number()),
 	components: v.record(v.string(), ComponentManifest),
 });
 export type ComponentManifestMap = v.InferOutput<typeof ComponentManifestMap>;

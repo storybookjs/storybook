@@ -3,8 +3,11 @@ import {
 	getManifests,
 	getMultiSourceManifests,
 	ManifestGetError,
+	parseDocgenRef,
+	resolveComponentDocgen,
 	RequiresOwnMcpError,
 } from './get-manifest.ts';
+import type { ComponentManifest } from '../types.ts';
 import type { ComponentManifestMap, DocsManifestMap, Source } from '../types.ts';
 
 global.fetch = vi.fn();
@@ -192,8 +195,8 @@ describe('getManifest', () => {
 				},
 				text: vi.fn().mockResolvedValue(
 					JSON.stringify({
-						// Missing required 'v' field
-						components: {},
+						// Missing required 'components' field
+						v: 1,
 					}),
 				),
 			});
@@ -201,7 +204,7 @@ describe('getManifest', () => {
 			const request = createMockRequest('https://example.com/mcp');
 			await expect(getManifests(request)).rejects
 				.toThrowErrorMatchingInlineSnapshot(`[ManifestGetError: Failed to parse component manifest:
-Invalid key: Expected "v" but received undefined]`);
+Invalid key: Expected "components" but received undefined]`);
 		});
 
 		it('should throw ManifestGetError when components object is empty', async () => {
@@ -596,5 +599,79 @@ Invalid key: Expected "v" but received undefined]`);
 				remoteSource,
 			);
 		});
+	});
+});
+
+describe('parseDocgenRef', () => {
+	it('resolves a `../`-prefixed ref relative to the component manifest location', () => {
+		expect(parseDocgenRef('../services/core/docgen/button.json#/components/button')).toEqual({
+			path: './services/core/docgen/button.json',
+			pointer: ['components', 'button'],
+		});
+	});
+
+	it('resolves a sibling ref within the manifests directory', () => {
+		expect(parseDocgenRef('./button.json#/components/button')).toEqual({
+			path: './manifests/button.json',
+			pointer: ['components', 'button'],
+		});
+	});
+
+	it('decodes JSON-pointer escape sequences', () => {
+		expect(parseDocgenRef('../x.json#/a~1b/c~0d')).toEqual({
+			path: './x.json',
+			pointer: ['a/b', 'c~d'],
+		});
+	});
+});
+
+describe('resolveComponentDocgen', () => {
+	const stub: ComponentManifest = {
+		id: 'button',
+		name: 'Button',
+		description: 'A button',
+		docgen: { $ref: '../services/core/docgen/button.json#/components/button' },
+	};
+
+	it('returns the component unchanged when it has no docgen $ref', async () => {
+		const plain: ComponentManifest = { id: 'button', name: 'Button', path: 'src/Button.tsx' };
+		const provider = vi.fn();
+		await expect(resolveComponentDocgen(plain, undefined, provider)).resolves.toBe(plain);
+		expect(provider).not.toHaveBeenCalled();
+	});
+
+	it('fetches the referenced file and merges the resolved entry over the stub', async () => {
+		const provider = vi.fn().mockResolvedValue(
+			JSON.stringify({
+				components: {
+					button: {
+						id: 'button',
+						name: 'Button',
+						path: 'src/Button.tsx',
+						stories: [{ name: 'Primary', snippet: '<Button />' }],
+					},
+				},
+			}),
+		);
+
+		const resolved = await resolveComponentDocgen(stub, undefined, provider);
+
+		// Provider is asked for the resolved (relative) path of the referenced file.
+		expect(provider).toHaveBeenCalledWith(
+			undefined,
+			'./services/core/docgen/button.json',
+			undefined,
+		);
+		expect(resolved.path).toBe('src/Button.tsx');
+		expect(resolved.stories).toEqual([{ name: 'Primary', snippet: '<Button />' }]);
+		// Stub identity fields are retained.
+		expect(resolved.id).toBe('button');
+	});
+
+	it('throws when the JSON pointer does not resolve', async () => {
+		const provider = vi.fn().mockResolvedValue(JSON.stringify({ components: {} }));
+		await expect(resolveComponentDocgen(stub, undefined, provider)).rejects.toThrow(
+			ManifestGetError,
+		);
 	});
 });

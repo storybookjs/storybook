@@ -2,7 +2,7 @@ import * as v from 'valibot';
 import type { McpServer } from 'tmcp';
 import type { ComponentManifest, Doc, StorybookContext } from '../types.ts';
 import { StorybookIdField } from '../types.ts';
-import { getManifests, errorToMCPContent } from '../utils/get-manifest.ts';
+import { getManifests, errorToMCPContent, resolveComponentDocgen } from '../utils/get-manifest.ts';
 import { LIST_TOOL_NAME } from './list-all-documentation.ts';
 import {
 	formatComponentManifest,
@@ -82,7 +82,7 @@ Example: id="button" returns Primary, Secondary, Large stories with code like <B
 					source,
 				);
 
-				const component = componentManifest.components[id];
+				let component = componentManifest.components[id];
 				const docsEntry = docsManifest?.docs[id];
 
 				if (!component && !docsEntry) {
@@ -101,6 +101,15 @@ Example: id="button" returns Primary, Secondary, Large stories with code like <B
 						],
 						isError: true,
 					};
+				}
+
+				if (component?.docgen?.$ref) {
+					component = await resolveComponentDocgen(
+						component,
+						ctx?.request,
+						ctx?.manifestProvider,
+						source,
+					);
 				}
 
 				const documentation = component ?? docsEntry!;

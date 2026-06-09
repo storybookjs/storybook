@@ -1,6 +1,7 @@
 import type { McpServer } from 'tmcp';
 import * as v from 'valibot';
 import type { AddonContext } from '../types.ts';
+import { collectTelemetry } from '../telemetry.ts';
 import { errorToMCPContent } from '../utils/errors.ts';
 import { getStoryIndex } from '../utils/get-story-index.ts';
 import type { Options } from 'storybook/internal/types';
@@ -190,6 +191,17 @@ Always include the returned reviewUrl in your final user-facing response so the 
 
 				const collectionCount = input.collections.length;
 				const storyCount = input.collections.reduce((n, c) => n + c.storyIds.length, 0);
+
+				if (!customContext.disableTelemetry) {
+					await collectTelemetry({
+						event: 'tool:displayReview',
+						server,
+						toolset: 'dev',
+						collectionCount,
+						storyCount,
+						changedFileCount: input.changedFiles?.length ?? 0,
+					});
+				}
 
 				return {
 					content: [

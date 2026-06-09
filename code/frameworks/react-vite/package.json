@@ -46,6 +46,11 @@
   "files": [
     "dist/**/*",
     "src/**/*",
+    "!src/**/*.test.*",
+    "!src/**/*.spec.*",
+    "!src/**/__tests__/**",
+    "!src/**/__mocks__/**",
+    "!src/**/__fixtures__/**",
     "template/**/*",
     "README.md",
     "*.js",

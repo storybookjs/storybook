@@ -8,6 +8,7 @@ import { platformBrowserDynamic } from '@angular/platform-browser-dynamic';
 import { CanvasRenderer } from './CanvasRenderer.ts';
 import { RendererFactory } from './RendererFactory.ts';
 import { DocsRenderer } from './DocsRenderer.ts';
+import { TestBedRenderer } from './TestBedRenderer.ts';
 
 vi.mock('@angular/platform-browser-dynamic');
 
@@ -44,6 +45,17 @@ describe('RendererFactory', () => {
     it('should get CanvasRenderer instance', async () => {
       const render = await rendererFactory.getRendererInstance(rootTargetDOMNode);
       expect(render).toBeInstanceOf(CanvasRenderer);
+    });
+
+    it('should get TestBedRenderer instance for canvas when the TestBed renderer is enabled', async () => {
+      const render = await rendererFactory.getRendererInstance(rootTargetDOMNode, true);
+      expect(render).toBeInstanceOf(TestBedRenderer);
+    });
+
+    it('should keep DocsRenderer for docs even when the TestBed renderer is enabled', async () => {
+      const render = await rendererFactory.getRendererInstance(rootDocstargetDOMNode, true);
+      expect(render).toBeInstanceOf(DocsRenderer);
+      expect(render).not.toBeInstanceOf(TestBedRenderer);
     });
 
     it('should render my-story for story template', async () => {

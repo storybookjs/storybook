@@ -78,6 +78,16 @@ export async function mountWithTestBed({
   // Attach the fixture to ApplicationRef so change detection keeps running after the initial
   // render — play functions and storyProps$ updates rely on it.
   fixture.autoDetectChanges();
+
+  // provideRouter() relies on the application bootstrap to trigger the initial navigation, but
+  // TestBed.createComponent never bootstraps. Kick the router off manually when one is provided.
+  try {
+    const { Router } = await import('@angular/router');
+    testBed.inject(Router, null, { optional: true })?.initialNavigation();
+  } catch {
+    // @angular/router is an optional dependency.
+  }
+
   await fixture.whenStable();
 
   return testBed.inject(ApplicationRef);

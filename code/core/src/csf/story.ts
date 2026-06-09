@@ -58,7 +58,8 @@ type ControlType =
 
 type ConditionalTest = { truthy?: boolean } | { exists: boolean } | { eq: any } | { neq: any };
 type ConditionalValue = { arg: string } | { global: string };
-export type Conditional = ConditionalValue & ConditionalTest;
+export type ConditionalFunction = (args: Args, globals: Globals) => boolean;
+export type Conditional = (ConditionalValue & ConditionalTest) | ConditionalFunction;
 
 interface ControlBase {
   [key: string]: any;

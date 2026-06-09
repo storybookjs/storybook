@@ -31,8 +31,8 @@ vi.mock('@storybook/global', async (importOriginal) => ({
 vi.mock('storybook/internal/client-logger');
 
 const componentOneExports = {
-  default: { title: 'Component One' },
-  a: { args: { foo: 'a' } },
+  default: { title: 'Component One', argTypes: { foo: { description: 'from meta' } } },
+  a: { args: { foo: 'a' }, argTypes: { foo: { control: 'text' } } },
   b: { args: { foo: 'b' } },
 };
 const componentTwoExports = {

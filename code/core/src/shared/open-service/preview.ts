@@ -21,7 +21,7 @@
  * ```
  */
 
-import { registerService as registerServiceCore } from './service-registry.ts';
+import { getService, registerService as registerServiceCore } from './service-registry.ts';
 import type {
   Commands,
   Queries,
@@ -30,6 +30,8 @@ import type {
   ServiceRegistrationOptions,
   ServiceRegistryApi,
 } from './types.ts';
+
+export { getService };
 
 /**
  * Registers a service in the preview and returns its runtime surface.

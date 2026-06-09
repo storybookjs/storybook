@@ -1,31 +1,36 @@
 import React, { useEffect, useRef, type FC } from 'react';
-import { createPortal } from 'react-dom';
 
 import { useNavigate } from 'storybook/internal/router';
+import { useStorybookState } from 'storybook/manager-api';
 
-import { REVIEW_CHANGES_URL } from './constants.ts';
+import { isReviewSummaryPath, isStoryInReview, parseStoryIdFromPath } from './review-navigation.ts';
 import { useReview } from './review-store.ts';
 import { SummaryScreen } from './screens/SummaryScreen.tsx';
 
 const PORTAL_HOST_ID = 'storybook-review-summary-portal';
 
-const ensurePortalHost = (): HTMLElement => {
-  const existing = document.getElementById(PORTAL_HOST_ID);
-  if (existing) {
-    return existing;
-  }
-  const host = document.createElement('div');
-  host.id = PORTAL_HOST_ID;
-  document.getElementById('root')?.appendChild(host);
-  return host;
+/** Remove a stale portal host left from earlier implementations. */
+const removeLegacyPortalHost = () => {
+  document.getElementById(PORTAL_HOST_ID)?.remove();
 };
 
 export const ReviewSummaryPortal: FC = () => {
-  const { isSummaryVisible, isInReviewSession, state, storyInfo, isStale, getStoryPreviewHref } =
-    useReview();
+  const { path, viewMode } = useStorybookState();
+  const { state, storyInfo, isStale, getStoryPreviewHref, flattenedEntries } = useReview();
   const navigate = useNavigate();
-  const hostRef = useRef(ensurePortalHost());
   const summaryRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    removeLegacyPortalHost();
+  }, []);
+
+  const isSummaryVisible = isReviewSummaryPath(path);
+  const storyIdFromPath = parseStoryIdFromPath(path);
+  const isOnReviewedStory =
+    viewMode === 'story' &&
+    storyIdFromPath !== null &&
+    isStoryInReview(flattenedEntries, storyIdFromPath);
+  const isInReviewSession = isSummaryVisible || isOnReviewedStory;
 
   // SPA navigation for in-page review links (summary → story, prev/next on summary grid).
   const containerRef = useRef<HTMLDivElement>(null);
@@ -65,10 +70,13 @@ export const ReviewSummaryPortal: FC = () => {
     }
   }, [isSummaryVisible]);
 
-  const host = hostRef.current;
-  const hiddenOnStory = isInReviewSession && !isSummaryVisible;
+  if (!isInReviewSession) {
+    return null;
+  }
 
-  return createPortal(
+  const hiddenOnStory = !isSummaryVisible;
+
+  return (
     <div
       ref={containerRef}
       style={{
@@ -77,8 +85,8 @@ export const ReviewSummaryPortal: FC = () => {
         left: 'var(--nav-width, 0px)',
         right: 0,
         bottom: 0,
-        zIndex: isSummaryVisible ? 5 : 0,
-        display: isInReviewSession ? 'flex' : 'none',
+        zIndex: isSummaryVisible ? 10 : 0,
+        display: 'flex',
         flexDirection: 'column',
         pointerEvents: isSummaryVisible ? 'auto' : 'none',
         visibility: hiddenOnStory ? 'hidden' : 'visible',
@@ -94,7 +102,6 @@ export const ReviewSummaryPortal: FC = () => {
           isStale={isStale}
         />
       </div>
-    </div>,
-    host
+    </div>
   );
 };

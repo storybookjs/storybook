@@ -1,4 +1,12 @@
-import React, { useCallback, useEffect, useMemo, useState, type FC, type ReactNode } from 'react';
+import React, {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useState,
+  type FC,
+  type ReactNode,
+} from 'react';
 
 import {
   experimental_useStatusStore,
@@ -212,7 +220,8 @@ export const ReviewProvider: FC<{ children: ReactNode }> = ({ children }) => {
     ]
   );
 
-  useEffect(() => {
+  // Sync before paint so toolbar/compare surfaces read current route on first frame.
+  useLayoutEffect(() => {
     reviewStore.setState(value);
   }, [value]);
 

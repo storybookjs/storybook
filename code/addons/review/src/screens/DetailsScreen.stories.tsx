@@ -27,7 +27,12 @@ const managerState = {} as State;
 
 const meta = preview.meta({
   component: DetailsScreen,
-  parameters: { layout: 'fullscreen' },
+  parameters: {
+    layout: 'fullscreen',
+    chromatic: {
+      ignoreSelectors: ['[data-testid="review-details-screen-preview"] iframe'],
+    },
+  },
   decorators: [
     (Story) => (
       <ManagerContext.Provider value={{ state: managerState, api: managerApi }}>

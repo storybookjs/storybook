@@ -133,7 +133,15 @@ const applyReviewState = () => {
 
 const meta = preview.meta({
   component: ReviewPage,
-  parameters: { layout: 'fullscreen' },
+  parameters: {
+    layout: 'fullscreen',
+    chromatic: {
+      ignoreSelectors: [
+        '[data-testid="review-collection-grid-cell"] iframe',
+        '[data-testid="review-details-screen-preview"] iframe',
+      ],
+    },
+  },
   decorators: [
     (Story, { parameters }) => (
       <ManagerContext.Provider

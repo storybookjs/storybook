@@ -338,7 +338,7 @@ export const DetailsScreen = ({
         secondRow={baselineBar}
       />
 
-      <PreviewFrameWrap $singleUp={isSingleUp}>
+      <PreviewFrameWrap $singleUp={isSingleUp} data-testid="review-details-screen-preview">
         {showBaseline ? (
           <>
             <PreviewPane $singleUp={isSingleUp} $active={!isSingleUp || activePane === 'baseline'}>

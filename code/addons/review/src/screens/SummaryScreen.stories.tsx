@@ -420,7 +420,12 @@ for (const state of [minimal, full, largeCascade, pagesAndBench, atomicChange, m
 
 const meta = preview.meta({
   component: SummaryScreen,
-  parameters: { layout: 'fullscreen' },
+  parameters: {
+    layout: 'fullscreen',
+    chromatic: {
+      ignoreSelectors: ['[data-testid="review-collection-grid-cell"] iframe'],
+    },
+  },
   args: { getStoryPreviewHref, storyInfo: demoStoryInfo },
 });
 

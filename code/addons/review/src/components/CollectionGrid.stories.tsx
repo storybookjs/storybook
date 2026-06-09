@@ -32,7 +32,12 @@ const demoStoryInfo: Record<string, StoryInfo> = Object.fromEntries(
 
 const meta = preview.meta({
   component: CollectionGrid,
-  parameters: { layout: 'fullscreen' },
+  parameters: {
+    layout: 'fullscreen',
+    chromatic: {
+      ignoreSelectors: ['[data-testid="review-collection-grid-cell"] iframe'],
+    },
+  },
   args: {
     storyIds: demoStoryIds,
     storyInfo: demoStoryInfo,

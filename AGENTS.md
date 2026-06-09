@@ -9,7 +9,7 @@ This file is the canonical instruction source for coding agents. Files like `CLA
 Storybook is a large TypeScript monorepo. The git root is the repo root, the main code lives in `code/`, and build tooling lives in `scripts/`. The default branch is `next`.
 
 - **Base branch**: `next` (all PRs should target `next`, not `main`)
-- **Node.js**: `22.12+` (see `.nvmrc`) — supports `.ts` natively via type stripping (no loader needed)
+- **Node.js**: `22.22.3` (see `.nvmrc`) — supports `.ts` natively via type stripping (no loader needed)
 - **Package Manager**: Yarn Berry
 - **Task orchestration**: NX plus the custom `yarn task` runner
 - **CI environment**: Linux and Windows
@@ -273,12 +273,12 @@ Avoid `console.log`, `console.warn`, and `console.error` unless the file is isol
 
 ## Environment Variables
 
-| Variable                      | Purpose                     |
-| ----------------------------- | --------------------------- |
-| `IN_STORYBOOK_SANDBOX`        | Set during sandbox creation |
-| `STORYBOOK_DISABLE_TELEMETRY` | Disable telemetry           |
-| `STORYBOOK_TELEMETRY_DEBUG`   | Log telemetry events        |
-| `DEBUG`                       | Enable debug logging        |
+| Variable                      | Purpose                                         |
+| ----------------------------- | ----------------------------------------------- |
+| `IN_STORYBOOK_SANDBOX`        | Set during sandbox creation                     |
+| `STORYBOOK_DISABLE_TELEMETRY` | Disable telemetry                               |
+| `STORYBOOK_TELEMETRY_DEBUG`   | Log telemetry events                            |
+| `DEBUG`                       | Enable debug logging                            |
 | `FIX_ON_COMMIT`               | Force autofix for fmt & lint in pre-commit hook |
 
 ## Commands To Avoid

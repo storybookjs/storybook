@@ -49,20 +49,71 @@ jobs:
         run: echo "workflow=merged" >> $GITHUB_ENV
       - if: github.event_name == 'pull_request_target' && (contains(github.event.pull_request.labels.*.name, 'ci:daily'))
         run: echo "workflow=daily" >> $GITHUB_ENV
+      - id: trusted-author
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          USER_TYPE: ${{ github.event.pull_request.user.type }}
+          USER_LOGIN: ${{ github.event.pull_request.user.login }}
+          GITHUB_API_TOKEN: ${{ github.token }}
+        run: |
+          # You can only push to `main` and `next` as a core team member, so the content is trustworthy.
+          if [ "$EVENT_NAME" = "push" ]; then
+            echo "result=true" >> $GITHUB_OUTPUT
+          # These commits are made by the release actions, which are gated to core team members.
+          elif [ "$USER_LOGIN" = "github-actions[bot]" ] && [ "$USER_TYPE" = "Bot" ]; then
+            echo "result=true" >> "$GITHUB_OUTPUT"
+          else
+            # Explicitly trust only members of specific Storybook teams.
+            # Team slugs for: Maintainers, Core, Developer Experience.
+            TRUSTED_TEAMS="maintainers core developer-experience"
+            IS_TRUSTED=false
+
+            for TEAM in $TRUSTED_TEAMS; do
+              STATE=$(curl -fsSL \
+                -H "Authorization: Bearer $GITHUB_API_TOKEN" \
+                -H "Accept: application/vnd.github+json" \
+                -H "X-GitHub-Api-Version: 2022-11-28" \
+                "https://api.github.com/orgs/storybookjs/teams/$TEAM/memberships/$USER_LOGIN" \
+                | jq -r '.state' 2>/dev/null || true)
+
+              if [ "$STATE" = "active" ]; then
+                IS_TRUSTED=true
+                break
+              fi
+            done
+
+            echo "result=$IS_TRUSTED" >> "$GITHUB_OUTPUT"
+          fi
     outputs:
       workflow: ${{ env.workflow }}
       ghBaseBranch: ${{ github.event.pull_request.base.ref }}
       ghPrNumber: ${{ github.event.pull_request.number }}
+      ghTrustedAuthor: ${{ steps.trusted-author.outputs.result }}
 
   trigger-circle-ci-workflow:
     runs-on: ubuntu-latest
     needs: [get-branch, get-parameters]
     if: github.repository_owner == 'storybookjs' && needs.get-parameters.outputs.workflow != ''
     steps:
-      - name: Trigger Normal tests
-        uses: fjogeleit/http-request-action@v1
-        with:
-          url: 'https://circleci.com/api/v2/project/gh/storybookjs/storybook/pipeline'
-          method: 'POST'
-          customHeaders: '{"Content-Type": "application/json", "Circle-Token": "${{ secrets.CIRCLE_CI_TOKEN }}"}'
-          data: '{ "branch": "${{needs.get-branch.outputs.branch}}", "parameters": ${{toJson(needs.get-parameters.outputs)}} }'
+      - name: Trigger CircleCI pipeline
+        env:
+          CIRCLE_CI_TOKEN: ${{ secrets.CIRCLE_CI_TOKEN }}
+          BRANCH: ${{ needs.get-branch.outputs.branch }}
+          WORKFLOW: ${{ needs.get-parameters.outputs.workflow }}
+          GH_BASE_BRANCH: ${{ needs.get-parameters.outputs.ghBaseBranch }}
+          GH_PR_NUMBER: ${{ needs.get-parameters.outputs.ghPrNumber }}
+          GH_TRUSTED_AUTHOR: ${{ needs.get-parameters.outputs.ghTrustedAuthor }}
+        run: |
+          PARAMETERS=$(jq -nc \
+            --arg workflow "$WORKFLOW" \
+            --arg ghBaseBranch "$GH_BASE_BRANCH" \
+            --arg ghPrNumber "$GH_PR_NUMBER" \
+            --arg ghTrustedAuthor "$GH_TRUSTED_AUTHOR" \
+            '{workflow: $workflow, ghBaseBranch: $ghBaseBranch, ghPrNumber: $ghPrNumber}')
+          PAYLOAD=$(jq -nc --arg branch "$BRANCH" --argjson parameters "$PARAMETERS" \
+            '{branch: $branch, parameters: $parameters}')
+          curl -sS --fail-with-body -X POST \
+            -H "Content-Type: application/json" \
+            -H "Circle-Token: $CIRCLE_CI_TOKEN" \
+            -d "$PAYLOAD" \
+            "https://circleci.com/api/v2/project/gh/storybookjs/storybook/pipeline"

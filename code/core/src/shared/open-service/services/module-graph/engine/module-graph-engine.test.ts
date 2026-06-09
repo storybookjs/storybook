@@ -1,7 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { logger } from 'storybook/internal/node-logger';
-import * as oxcParser from 'storybook/internal/oxc-parser';
 import type { StoryIndex } from 'storybook/internal/types';
 
 import {
@@ -10,33 +9,26 @@ import {
   createMockAdapter,
   createStoryIndex,
   installDependencyGraphMocks,
-} from './change-detection.test-helpers.ts';
-import { ChangeDetectionFailureError } from './errors.ts';
-import { StoryDependencyGraphService } from './StoryDependencyGraphService.ts';
+} from '../module-graph.test-helpers.ts';
+import { ModuleGraphFailureError } from '../errors.ts';
+import { ModuleGraphEngine } from './module-graph-engine.ts';
 
 vi.mock('storybook/internal/node-logger', { spy: true });
-vi.mock('./dependency-graph/index.ts', async (importOriginal) => {
-  // Keep ReverseIndexImpl + types real so tests can build synthetic indexes; replace the
-  // graph-building constructors with `vi.fn()`s so tests can override their behaviour per-case.
-  const actual = await importOriginal<typeof import('./dependency-graph/index.ts')>();
-  return {
-    ...actual,
-    ChangeDetectionResolverFactory: vi.fn(),
-    DependencyGraphBuilder: vi.fn(),
-    IncrementalPatcher: vi.fn(),
-  };
-});
+vi.mock('./dependency-graph/resolver-factory.ts', { spy: true });
+vi.mock('./dependency-graph/dependency-graph-builder.ts', { spy: true });
+vi.mock('./dependency-graph/incremental-patcher.ts', { spy: true });
 
 const workingDir = '/repo';
 
 function setup(options?: {
   storyIndex?: StoryIndex;
-  getIndex?: ReturnType<typeof vi.fn>;
+  getIndex?: () => Promise<StoryIndex>;
   withoutStartupFailure?: boolean;
 }) {
   const callbacks = {
-    onReady: vi.fn(),
-    onChange: vi.fn(),
+    onSnapshot: vi.fn(),
+    onUpdate: vi.fn(),
+    onStoryIndexInvalidated: vi.fn(),
     onError: vi.fn(),
     onUnavailable: vi.fn(),
   };
@@ -44,10 +36,10 @@ function setup(options?: {
     withoutStartupFailure: options?.withoutStartupFailure,
   });
   const getIndex =
-    options?.getIndex ?? vi.fn().mockResolvedValue(options?.storyIndex ?? createStoryIndex([]));
+    options?.getIndex ?? vi.fn(async () => options?.storyIndex ?? createStoryIndex([]));
 
-  const service = new StoryDependencyGraphService({
-    storyIndexGeneratorPromise: Promise.resolve({ getIndex } as never),
+  const service = new ModuleGraphEngine({
+    getIndex,
     workingDir,
     ...callbacks,
   });
@@ -55,7 +47,7 @@ function setup(options?: {
   return { service, getIndex, callbacks, ...adapterHandle };
 }
 
-describe('StoryDependencyGraphService', () => {
+describe('ModuleGraphEngine', () => {
   beforeEach(() => {
     vi.useFakeTimers();
     vi.mocked(logger.info).mockImplementation(() => undefined);
@@ -69,7 +61,7 @@ describe('StoryDependencyGraphService', () => {
     vi.resetAllMocks();
   });
 
-  it('builds the graph, fires onReady, and exposes the reverse index via lookup', async () => {
+  it('builds the graph, mirrors a snapshot, and exposes the reverse index via lookup', async () => {
     const reverseIndex = buildReverseIndex([
       ['/repo/src/Button.tsx', '/repo/src/Button.stories.tsx', 1],
     ]);
@@ -84,15 +76,13 @@ describe('StoryDependencyGraphService', () => {
     service.start(adapter);
     await vi.runAllTimersAsync();
 
-    expect(callbacks.onReady).toHaveBeenCalledTimes(1);
+    expect(callbacks.onSnapshot).toHaveBeenCalledTimes(1);
     expect(callbacks.onError).not.toHaveBeenCalled();
     expect(service.hasGraph()).toBe(true);
     expect(service.lookup('/repo/src/Button.tsx')).toEqual(
       new Map([['/repo/src/Button.stories.tsx', 1]])
     );
     expect(service.lookup('/repo/src/Unknown.tsx')).toEqual(new Map());
-
-    await service.dispose();
   });
 
   it('serialises concurrent file-change events through the patch chain', async () => {
@@ -125,8 +115,6 @@ describe('StoryDependencyGraphService', () => {
 
     expect(patchSpy).toHaveBeenCalledTimes(3);
     expect(maxConcurrent).toBe(1);
-
-    await service.dispose();
   });
 
   it('whenSettled resolves only after the in-flight patch settles, so a later lookup observes it', async () => {
@@ -166,11 +154,9 @@ describe('StoryDependencyGraphService', () => {
     expect(service.lookup('/repo/src/Button.stories.tsx')).toEqual(
       new Map([['/repo/src/Button.stories.tsx', 0]])
     );
-
-    await service.dispose();
   });
 
-  it('fires onChange after each file-change patch settles, but not for the initial build', async () => {
+  it('mirrors an update after each file-change patch settles, but not for the initial build', async () => {
     installDependencyGraphMocks(buildReverseIndex([]));
     const { service, adapter, emitFileChange, callbacks } = setup({
       storyIndex: createStoryIndex([
@@ -180,15 +166,13 @@ describe('StoryDependencyGraphService', () => {
 
     service.start(adapter);
     await vi.runAllTimersAsync();
-    expect(callbacks.onChange).not.toHaveBeenCalled();
+    expect(callbacks.onUpdate).not.toHaveBeenCalled();
 
     emitFileChange({ kind: 'change', path: '/repo/src/B.tsx' });
     emitFileChange({ kind: 'change', path: '/repo/src/C.tsx' });
     await vi.runAllTimersAsync();
 
-    expect(callbacks.onChange).toHaveBeenCalledTimes(2);
-
-    await service.dispose();
+    expect(callbacks.onUpdate).toHaveBeenCalledTimes(2);
   });
 
   it('buffers file events emitted during the build and applies them in order after build resolves', async () => {
@@ -220,8 +204,6 @@ describe('StoryDependencyGraphService', () => {
     expect(patchSpy).toHaveBeenNthCalledWith(1, { kind: 'change', path: '/repo/src/A.tsx' });
     expect(patchSpy).toHaveBeenNthCalledWith(2, { kind: 'change', path: '/repo/src/B.tsx' });
     expect(patchSpy).toHaveBeenNthCalledWith(3, { kind: 'unlink', path: '/repo/src/C.tsx' });
-
-    await service.dispose();
   });
 
   it('replays add through the patcher when onStoryIndexInvalidated reveals a new story', async () => {
@@ -248,10 +230,8 @@ describe('StoryDependencyGraphService', () => {
     await vi.runAllTimersAsync();
 
     expect(patchSpy).toHaveBeenCalledWith({ kind: 'add', path: '/repo/src/B.stories.tsx' });
-    // The index changed, so consumers are notified to recompute derived state.
-    expect(callbacks.onChange).toHaveBeenCalled();
-
-    await service.dispose();
+    // The index changed, so the service wrapper is notified to bump graph revision.
+    expect(callbacks.onStoryIndexInvalidated).toHaveBeenCalled();
   });
 
   it('guards duplicate onStoryIndexInvalidated so a newly-added story is replayed only once', async () => {
@@ -281,15 +261,13 @@ describe('StoryDependencyGraphService', () => {
       ([event]) => event.kind === 'add' && event.path === '/repo/src/B.stories.tsx'
     );
     expect(addPatches).toHaveLength(1);
-
-    await service.dispose();
   });
 
   it('whenSettled waits for an in-flight story-index reconciliation, so a later lookup is post-reconciliation', async () => {
-    // Regression guard for the onChange-before-reconciliation gap: onStoryIndexInvalidated starts
-    // an async refresh (getIndex + add/unlink) and fires onChange synchronously, before the
+    // Regression guard for the invalidation-before-reconciliation gap: onStoryIndexInvalidated starts
+    // an async refresh (getIndex + add/unlink) and notifies synchronously, before the
     // reconciliation patches exist. whenSettled() must await that in-flight reconciliation, not
-    // just the current patch tail, or a consumer reacting to onChange would read a pre-reconciliation
+    // just the current patch tail, or a consumer reacting to invalidation would read a pre-reconciliation
     // graph.
     const reverseIndex = buildReverseIndex([]);
     const getIndexDeferred = createDeferred<void>();
@@ -346,47 +324,37 @@ describe('StoryDependencyGraphService', () => {
     expect(service.lookup('/repo/src/B.stories.tsx')).toEqual(
       new Map([['/repo/src/B.stories.tsx', 0]])
     );
-
-    await service.dispose();
   });
 
-  it('fires onError, logs, and disposes the oxc pool when the eager build throws', async () => {
+  it('fires onError and logs when the eager build throws', async () => {
     const { buildSpy } = installDependencyGraphMocks(buildReverseIndex([]));
     buildSpy.mockImplementation(async () => {
-      throw new ChangeDetectionFailureError('graph build blew up');
+      throw new ModuleGraphFailureError('graph build blew up');
     });
-    const disposePoolSpy = vi.spyOn(oxcParser, 'disposeOxcParsePool').mockResolvedValue(undefined);
 
     const { service, adapter, callbacks } = setup({ storyIndex: createStoryIndex([]) });
 
     service.start(adapter);
     await vi.runAllTimersAsync();
 
-    expect(logger.error).toHaveBeenCalledWith(
-      'Change detection failed to start: graph build blew up'
-    );
+    expect(logger.error).toHaveBeenCalledWith('Module graph failed to start: graph build blew up');
     expect(callbacks.onError).toHaveBeenCalledWith(
       expect.objectContaining({ message: 'graph build blew up' })
     );
-    expect(callbacks.onReady).not.toHaveBeenCalled();
-    expect(disposePoolSpy).toHaveBeenCalledTimes(1);
+    expect(callbacks.onSnapshot).not.toHaveBeenCalled();
     expect(service.hasGraph()).toBe(false);
-
-    await service.dispose();
   });
 
-  it('fires onUnavailable and tears down when the adapter reports a startup failure', async () => {
+  it('fires onUnavailable when the adapter reports a startup failure', async () => {
     installDependencyGraphMocks(buildReverseIndex([]));
-    const disposePoolSpy = vi.spyOn(oxcParser, 'disposeOxcParsePool').mockResolvedValue(undefined);
 
-    const { service, adapter, emitStartupFailure, callbacks, hasFileChangeSubscriber } = setup({
+    const { service, adapter, emitStartupFailure, callbacks } = setup({
       storyIndex: createStoryIndex([]),
     });
 
     service.start(adapter);
     await vi.runAllTimersAsync();
-    expect(callbacks.onReady).toHaveBeenCalledTimes(1);
-    expect(hasFileChangeSubscriber()).toBe(true);
+    expect(callbacks.onSnapshot).toHaveBeenCalledTimes(1);
 
     emitStartupFailure({ reason: 'vite warmup failed', error: new Error('warmup failed') });
     await vi.runAllTimersAsync();
@@ -395,55 +363,5 @@ describe('StoryDependencyGraphService', () => {
       'vite warmup failed',
       expect.objectContaining({ message: 'warmup failed' })
     );
-    expect(disposePoolSpy).toHaveBeenCalledTimes(1);
-    // Disposal tears down the file-change subscription.
-    expect(hasFileChangeSubscriber()).toBe(false);
-
-    await service.dispose();
-  });
-
-  it('drains the in-flight patch before disposing the oxc pool, and dispose is idempotent', async () => {
-    const reverseIndex = buildReverseIndex([]);
-    const patchDeferred = createDeferred<void>();
-    const { patchSpy, buildSpy } = installDependencyGraphMocks(reverseIndex);
-    buildSpy.mockResolvedValue({ reverseIndex, graph: new Map() });
-    patchSpy.mockImplementationOnce(async () => {
-      await patchDeferred.promise;
-    });
-    const disposePoolSpy = vi.spyOn(oxcParser, 'disposeOxcParsePool').mockResolvedValue(undefined);
-
-    const { service, adapter, emitFileChange } = setup({
-      storyIndex: createStoryIndex([
-        { storyId: 'b--default', importPath: './src/B.stories.tsx', title: 'B' },
-      ]),
-    });
-
-    service.start(adapter);
-    await vi.runAllTimersAsync();
-
-    emitFileChange({ kind: 'change', path: '/repo/src/B.tsx' });
-    // Let the patch start and park inside patchSpy (now in-flight, past the disposed guard).
-    await Promise.resolve();
-    await Promise.resolve();
-    expect(patchSpy).toHaveBeenCalledTimes(1);
-
-    let disposed = false;
-    const disposePromise = service.dispose().then(() => {
-      disposed = true;
-    });
-    await Promise.resolve();
-    // Dispose must wait for the in-flight patch to settle before disposing the pool.
-    expect(disposed).toBe(false);
-    expect(disposePoolSpy).not.toHaveBeenCalled();
-
-    patchDeferred.resolve();
-    await disposePromise;
-
-    expect(disposed).toBe(true);
-    expect(disposePoolSpy).toHaveBeenCalledTimes(1);
-
-    // Idempotent: a second dispose is a no-op.
-    await service.dispose();
-    expect(disposePoolSpy).toHaveBeenCalledTimes(1);
   });
 });

@@ -69,6 +69,12 @@ const Actions = styled.div({
   flexShrink: 0,
 });
 
+const ToolbarRow = styled.div({
+  display: 'flex',
+  flexDirection: 'column',
+  flexShrink: 0,
+});
+
 const SecondRow = styled.div({
   display: 'flex',
   alignItems: 'center',
@@ -84,6 +90,8 @@ export interface ReviewHeaderProps {
   subtitle?: ReactNode;
   /** Trailing cluster on the right of the top row. */
   actions?: ReactNode;
+  /** Storybook preview toolbar rendered between the title row and the second row. */
+  toolbar?: ReactNode;
   /** Optional full-width second row (e.g. search or comparison controls). */
   secondRow?: ReactNode;
   /**
@@ -99,6 +107,7 @@ export const ReviewHeader: FC<ReviewHeaderProps> = ({
   title,
   subtitle,
   actions,
+  toolbar,
   secondRow,
   autoFocusTitle = false,
 }) => {
@@ -121,6 +130,7 @@ export const ReviewHeader: FC<ReviewHeaderProps> = ({
         </TextBlock>
         {actions ? <Actions>{actions}</Actions> : null}
       </TopRow>
+      {toolbar ? <ToolbarRow>{toolbar}</ToolbarRow> : null}
       {secondRow ? <SecondRow>{secondRow}</SecondRow> : null}
     </Root>
   );

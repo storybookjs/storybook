@@ -20,6 +20,12 @@ export const RESTORE_NAV_SESSION_KEY = `${ADDON_ID}/restore-nav`;
 // across the full-reload navigations between them). Value: '1up' | '2up'.
 export const PREVIEW_MODE_SESSION_KEY = `${ADDON_ID}/preview-mode`;
 
+// sessionStorage keys for review-local addon panel state on the detail screen.
+// Independent of the manager layout store so review tooling does not affect
+// regular story view. Values: 'true' | 'false' and a pixel height string.
+export const PANEL_VISIBLE_SESSION_KEY = `${ADDON_ID}/panel-visible`;
+export const PANEL_HEIGHT_SESSION_KEY = `${ADDON_ID}/panel-height`;
+
 // `@storybook/addon-mcp` display-review tool call emits this event with the raw agent payload.
 const PUSH_REVIEW = `${ADDON_ID}/push-review`;
 // Display agent review in the UI

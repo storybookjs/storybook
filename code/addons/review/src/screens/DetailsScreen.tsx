@@ -1,6 +1,7 @@
-import React, { useEffect, useState, type FC } from 'react';
+import React, { useCallback, useEffect, useState, type FC } from 'react';
 
 import { Badge, Button, IconButton } from 'storybook/internal/components';
+import { useStorybookApi } from 'storybook/manager-api';
 import { styled } from 'storybook/theming';
 
 import {
@@ -18,6 +19,17 @@ import { sessionStore } from '../session-store.ts';
 import { useBaselineComparison } from './useBaselineComparison.ts';
 
 import { StaleBanner } from '../components/StaleBanner.tsx';
+import { ReviewDetailPanel } from './ReviewDetailPanel.tsx';
+import { ReviewDetailToolbar } from './ReviewDetailToolbar.tsx';
+import { ReviewPanelProvider } from './ReviewPanelContext.tsx';
+import { ReviewStoryManagerBridge } from './ReviewStoryManagerBridge.tsx';
+import { usePreviewChannelRelay } from './usePreviewChannelRelay.ts';
+import { useReviewPanelState } from './useReviewPanelState.ts';
+import { focusableUIElements } from '../../../../core/src/manager-api/modules/layout.ts';
+import {
+  ZoomConsumer,
+  ZoomProvider,
+} from '../../../../core/src/manager/components/preview/tools/zoom.tsx';
 
 const Page = styled.div(({ theme }) => ({
   display: 'flex',
@@ -92,6 +104,31 @@ const PreviewFrame = styled.iframe({
   border: 0,
   display: 'block',
 });
+
+const Main = styled.div({
+  display: 'flex',
+  flexDirection: 'column',
+  flex: 1,
+  minHeight: 0,
+});
+
+const ScaledPreviewArea = styled.div<{ $scale: number }>(({ $scale }) => ({
+  flex: 1,
+  minHeight: 0,
+  display: 'flex',
+  flexDirection: 'column',
+  ...($scale !== 1
+    ? {
+        overflow: 'hidden',
+        '& > *': {
+          transform: `scale(${$scale})`,
+          transformOrigin: 'top left',
+          width: `${(1 / $scale) * 100}%`,
+          height: `${(1 / $scale) * 100}%`,
+        },
+      }
+    : {}),
+}));
 
 // The baseline comparison bar. A two-up (side-by-side) and one-up (single)
 // mode share a control cluster; the "switch" control only applies in one-up
@@ -228,6 +265,8 @@ export const DetailsScreen = ({
   hasBaseline = false,
   isNewlyAdded,
 }: DetailsScreenProps) => {
+  const api = useStorybookApi();
+  const { isPanelShown, panelHeight, setPanelHeight, togglePanel } = useReviewPanelState();
   const [mode, setMode] = useState<CompareMode>(readCompareMode);
   const [activePane, setActivePane] = useState<ComparePane>('latest');
 
@@ -239,6 +278,19 @@ export const DetailsScreen = ({
 
   const { baselineFrameRef, latestFrameRef, latestPreviewSrc, baselinePreviewSrc } =
     useBaselineComparison(previewHref, showBaseline);
+
+  usePreviewChannelRelay(baselineFrameRef, showBaseline);
+
+  const showPanel = useCallback(
+    (forceFocus?: boolean) => {
+      togglePanel(true);
+      if (forceFocus) {
+        void api.focusOnUIElement(focusableUIElements.addonPanel);
+      }
+    },
+    [api, togglePanel]
+  );
+  const hidePanel = useCallback(() => togglePanel(false), [togglePanel]);
 
   // Persist the user's layout choice so it carries across navigation between
   // the detail and summary screens.
@@ -289,77 +341,129 @@ export const DetailsScreen = ({
     )
   ) : undefined;
 
-  return (
-    <Page>
-      {isStale ? <StaleBanner /> : null}
-      <ReviewHeader
-        autoFocusTitle
-        leading={
-          <IconButton
-            variant="ghost"
-            size="small"
-            padding="small"
-            ariaLabel="Back to review"
-            asChild
-          >
-            <a href={backHref}>
-              <ChevronSmallLeftIcon />
-            </a>
-          </IconButton>
-        }
-        title={title}
-        subtitle={subtitle}
-        actions={
-          <>
-            <Counter variant="ghost" size="small" readOnly>
-              {storyIndex + 1}/{totalStories}
-            </Counter>
-            <IconButton
-              variant="ghost"
-              size="small"
-              padding="small"
-              ariaLabel="Previous story"
-              asChild
-            >
-              <a href={previousHref}>
-                <ChevronSmallLeftIcon />
-              </a>
-            </IconButton>
-            <IconButton variant="ghost" size="small" padding="small" ariaLabel="Next story" asChild>
-              <a href={nextHref}>
-                <ChevronSmallRightIcon />
-              </a>
-            </IconButton>
-            <IconButton size="small" padding="small" ariaLabel="View in Storybook" asChild>
-              <a href={storybookHref} target="_blank" rel="noreferrer">
-                <StorybookIcon />
-              </a>
-            </IconButton>
-          </>
-        }
-        secondRow={baselineBar}
-      />
+  const panelContextValue = {
+    isPanelShown,
+    showPanel,
+    hidePanel,
+  };
 
-      <PreviewFrameWrap $singleUp={isSingleUp} data-testid="review-details-screen-preview">
-        {showBaseline ? (
-          <>
-            <PreviewPane $singleUp={isSingleUp} $active={!isSingleUp || activePane === 'baseline'}>
-              <PreviewFrame
-                ref={baselineFrameRef}
-                title={`Baseline ${storyId}`}
-                src={baselinePreviewSrc}
-              />
-            </PreviewPane>
-            <PreviewDivider $singleUp={isSingleUp} />
-          </>
-        ) : null}
-        <PreviewPane
-          $singleUp={isSingleUp}
-          $active={!showBaseline || !isSingleUp || activePane === 'latest'}
-        >
-          <PreviewFrame ref={latestFrameRef} title={`Latest ${storyId}`} src={latestPreviewSrc} />
-        </PreviewPane>
-      </PreviewFrameWrap>
-    </Page>
+  return (
+    <ReviewStoryManagerBridge
+      storyId={storyId}
+      isPanelShown={isPanelShown}
+      togglePanel={togglePanel}
+    >
+      <ReviewPanelProvider value={panelContextValue}>
+        <Page>
+          {isStale ? <StaleBanner /> : null}
+          <ReviewHeader
+            autoFocusTitle
+            leading={
+              <IconButton
+                variant="ghost"
+                size="small"
+                padding="small"
+                ariaLabel="Back to review"
+                asChild
+              >
+                <a href={backHref}>
+                  <ChevronSmallLeftIcon />
+                </a>
+              </IconButton>
+            }
+            title={title}
+            subtitle={subtitle}
+            toolbar={<ReviewDetailToolbar storyId={storyId} />}
+            actions={
+              <>
+                <Counter variant="ghost" size="small" readOnly>
+                  {storyIndex + 1}/{totalStories}
+                </Counter>
+                <IconButton
+                  variant="ghost"
+                  size="small"
+                  padding="small"
+                  ariaLabel="Previous story"
+                  asChild
+                >
+                  <a href={previousHref}>
+                    <ChevronSmallLeftIcon />
+                  </a>
+                </IconButton>
+                <IconButton
+                  variant="ghost"
+                  size="small"
+                  padding="small"
+                  ariaLabel="Next story"
+                  asChild
+                >
+                  <a href={nextHref}>
+                    <ChevronSmallRightIcon />
+                  </a>
+                </IconButton>
+                <IconButton size="small" padding="small" ariaLabel="View in Storybook" asChild>
+                  <a href={storybookHref} target="_blank" rel="noreferrer">
+                    <StorybookIcon />
+                  </a>
+                </IconButton>
+              </>
+            }
+            secondRow={baselineBar}
+          />
+
+          <ZoomProvider shouldScale>
+            <Main>
+              <ZoomConsumer>
+                {({ value: scale }) => (
+                  <ScaledPreviewArea $scale={scale}>
+                    <PreviewFrameWrap
+                      $singleUp={isSingleUp}
+                      data-testid="review-details-screen-preview"
+                    >
+                      {showBaseline ? (
+                        <>
+                          <PreviewPane
+                            $singleUp={isSingleUp}
+                            $active={!isSingleUp || activePane === 'baseline'}
+                          >
+                            <PreviewFrame
+                              ref={baselineFrameRef}
+                              title={`Baseline ${storyId}`}
+                              src={baselinePreviewSrc}
+                            />
+                          </PreviewPane>
+                          <PreviewDivider $singleUp={isSingleUp} />
+                        </>
+                      ) : null}
+                      <PreviewPane
+                        $singleUp={isSingleUp}
+                        $active={!showBaseline || !isSingleUp || activePane === 'latest'}
+                      >
+                        <PreviewFrame
+                          ref={latestFrameRef}
+                          id="storybook-preview-iframe"
+                          title={`Latest ${storyId}`}
+                          src={latestPreviewSrc}
+                        />
+                      </PreviewPane>
+                    </PreviewFrameWrap>
+                  </ScaledPreviewArea>
+                )}
+              </ZoomConsumer>
+              {isPanelShown ? (
+                <ReviewDetailPanel
+                  storyId={storyId}
+                  isPanelShown={isPanelShown}
+                  panelHeight={panelHeight}
+                  setPanelHeight={setPanelHeight}
+                  hidePanel={hidePanel}
+                  previewFrameRef={latestFrameRef}
+                />
+              ) : null}
+            </Main>
+          </ZoomProvider>
+        </Page>
+      </ReviewPanelProvider>
+    </ReviewStoryManagerBridge>
   );
 };

@@ -36,16 +36,26 @@ export const ReviewStoryManagerBridge: FC<ReviewStoryManagerBridgeProps> = ({
 
   const value = useMemo(() => {
     const entry = parent.api.getData(storyId);
+    const storyPath = `/story/${storyId}`;
     return {
       state: {
         ...parent.state,
         storyId,
         viewMode: 'story' as const,
-        path: `/story/${storyId}`,
+        path: storyPath,
       },
       api: {
         ...parent.api,
         getCurrentStoryData: () => entry ?? parent.api.getData(storyId),
+        getUrlState: () => {
+          const urlState = parent.api.getUrlState();
+          return {
+            ...urlState,
+            path: storyPath,
+            storyId,
+            viewMode: 'story' as const,
+          };
+        },
         getIsPanelShown: () => isPanelShown,
         togglePanel: (next?: boolean) => togglePanel(next),
       },

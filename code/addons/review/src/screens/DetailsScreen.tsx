@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState, type FC } from 'react';
+import React, { useCallback, useEffect, useMemo, useState, type FC } from 'react';
 
 import { Badge, Button, IconButton } from 'storybook/internal/components';
 import { useStorybookApi } from 'storybook/manager-api';
@@ -21,6 +21,7 @@ import { useBaselineComparison } from './useBaselineComparison.ts';
 import { StaleBanner } from '../components/StaleBanner.tsx';
 import { ReviewDetailPanel } from './ReviewDetailPanel.tsx';
 import { ReviewDetailToolbar } from './ReviewDetailToolbar.tsx';
+import { ReviewDetailViewport } from './ReviewDetailViewport.tsx';
 import { ReviewPanelProvider } from './ReviewPanelContext.tsx';
 import { ReviewStoryManagerBridge } from './ReviewStoryManagerBridge.tsx';
 import { usePreviewChannelRelay } from './usePreviewChannelRelay.ts';
@@ -257,7 +258,7 @@ export const DetailsScreen = ({
   backHref,
   previousHref,
   nextHref,
-  previewHref,
+  previewHref: _previewHref,
   storybookHref,
   componentTitle,
   storyName,
@@ -276,8 +277,16 @@ export const DetailsScreen = ({
   const showBaseline = hasBaseline && !isNewlyAdded;
   const isSingleUp = mode === 'single' || !showBaseline;
 
+  // Globals and args are synced into the manager URL for shareable links, but the
+  // detail iframe should stay on a stable src and receive live updates over the
+  // channel — matching the main Storybook preview FramesRenderer behavior.
+  const stablePreviewHref = useMemo(
+    () => api.getStoryHrefs(storyId, { inheritGlobals: false, inheritArgs: false }).previewHref,
+    [api, storyId]
+  );
+
   const { baselineFrameRef, latestFrameRef, latestPreviewSrc, baselinePreviewSrc } =
-    useBaselineComparison(previewHref, showBaseline);
+    useBaselineComparison(stablePreviewHref, showBaseline);
 
   usePreviewChannelRelay(baselineFrameRef, showBaseline);
 
@@ -350,6 +359,10 @@ export const DetailsScreen = ({
     hidePanel,
   };
 
+  const handleLatestFrameLoad = useCallback((event: React.SyntheticEvent<HTMLIFrameElement>) => {
+    event.currentTarget.setAttribute('data-is-loaded', 'true');
+  }, []);
+
   return (
     <ReviewStoryManagerBridge
       storyId={storyId}
@@ -357,64 +370,64 @@ export const DetailsScreen = ({
       togglePanel={togglePanel}
     >
       <ReviewPanelProvider value={panelContextValue}>
-        <Page>
-          {isStale ? <StaleBanner /> : null}
-          <ReviewHeader
-            autoFocusTitle
-            leading={
-              <IconButton
-                variant="ghost"
-                size="small"
-                padding="small"
-                ariaLabel="Back to review"
-                asChild
-              >
-                <a href={backHref}>
-                  <ChevronSmallLeftIcon />
-                </a>
-              </IconButton>
-            }
-            title={title}
-            subtitle={subtitle}
-            toolbar={<ReviewDetailToolbar storyId={storyId} />}
-            actions={
-              <>
-                <Counter variant="ghost" size="small" readOnly>
-                  {storyIndex + 1}/{totalStories}
-                </Counter>
+        <ZoomProvider shouldScale>
+          <Page>
+            {isStale ? <StaleBanner /> : null}
+            <ReviewHeader
+              autoFocusTitle
+              leading={
                 <IconButton
                   variant="ghost"
                   size="small"
                   padding="small"
-                  ariaLabel="Previous story"
+                  ariaLabel="Back to review"
                   asChild
                 >
-                  <a href={previousHref}>
+                  <a href={backHref}>
                     <ChevronSmallLeftIcon />
                   </a>
                 </IconButton>
-                <IconButton
-                  variant="ghost"
-                  size="small"
-                  padding="small"
-                  ariaLabel="Next story"
-                  asChild
-                >
-                  <a href={nextHref}>
-                    <ChevronSmallRightIcon />
-                  </a>
-                </IconButton>
-                <IconButton size="small" padding="small" ariaLabel="View in Storybook" asChild>
-                  <a href={storybookHref} target="_blank" rel="noreferrer">
-                    <StorybookIcon />
-                  </a>
-                </IconButton>
-              </>
-            }
-            secondRow={baselineBar}
-          />
+              }
+              title={title}
+              subtitle={subtitle}
+              toolbar={<ReviewDetailToolbar storyId={storyId} />}
+              actions={
+                <>
+                  <Counter variant="ghost" size="small" readOnly>
+                    {storyIndex + 1}/{totalStories}
+                  </Counter>
+                  <IconButton
+                    variant="ghost"
+                    size="small"
+                    padding="small"
+                    ariaLabel="Previous story"
+                    asChild
+                  >
+                    <a href={previousHref}>
+                      <ChevronSmallLeftIcon />
+                    </a>
+                  </IconButton>
+                  <IconButton
+                    variant="ghost"
+                    size="small"
+                    padding="small"
+                    ariaLabel="Next story"
+                    asChild
+                  >
+                    <a href={nextHref}>
+                      <ChevronSmallRightIcon />
+                    </a>
+                  </IconButton>
+                  <IconButton size="small" padding="small" ariaLabel="View in Storybook" asChild>
+                    <a href={storybookHref} target="_blank" rel="noreferrer">
+                      <StorybookIcon />
+                    </a>
+                  </IconButton>
+                </>
+              }
+              secondRow={baselineBar}
+            />
 
-          <ZoomProvider shouldScale>
             <Main>
               <ZoomConsumer>
                 {({ value: scale }) => (
@@ -431,6 +444,7 @@ export const DetailsScreen = ({
                           >
                             <PreviewFrame
                               ref={baselineFrameRef}
+                              data-is-storybook="false"
                               title={`Baseline ${storyId}`}
                               src={baselinePreviewSrc}
                             />
@@ -442,12 +456,16 @@ export const DetailsScreen = ({
                         $singleUp={isSingleUp}
                         $active={!showBaseline || !isSingleUp || activePane === 'latest'}
                       >
-                        <PreviewFrame
-                          ref={latestFrameRef}
-                          id="storybook-preview-iframe"
-                          title={`Latest ${storyId}`}
-                          src={latestPreviewSrc}
-                        />
+                        <ReviewDetailViewport scale={scale}>
+                          <PreviewFrame
+                            ref={latestFrameRef}
+                            id="storybook-preview-iframe"
+                            data-is-storybook="true"
+                            onLoad={handleLatestFrameLoad}
+                            title={`Latest ${storyId}`}
+                            src={latestPreviewSrc}
+                          />
+                        </ReviewDetailViewport>
                       </PreviewPane>
                     </PreviewFrameWrap>
                   </ScaledPreviewArea>
@@ -464,8 +482,8 @@ export const DetailsScreen = ({
                 />
               ) : null}
             </Main>
-          </ZoomProvider>
-        </Page>
+          </Page>
+        </ZoomProvider>
       </ReviewPanelProvider>
     </ReviewStoryManagerBridge>
   );

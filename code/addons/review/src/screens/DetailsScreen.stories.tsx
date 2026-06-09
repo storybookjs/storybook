@@ -65,6 +65,14 @@ const managerApi = {
   updateStoryArgs: fn().mockName('api::updateStoryArgs'),
   resetStoryArgs: fn().mockName('api::resetStoryArgs'),
   getCurrentParameter: fn(() => ({})).mockName('api::getCurrentParameter'),
+  getUrlState: fn(() => ({
+    path: `/story/${storyId}`,
+    storyId,
+    viewMode: 'story',
+    hash: '',
+    queryParams: {},
+    url: `/?path=/story/${storyId}`,
+  })).mockName('api::getUrlState'),
   setAddonShortcut: fn().mockName('api::setAddonShortcut'),
 } as unknown as API;
 
@@ -145,6 +153,7 @@ export const Default = meta.story({
     await expect(canvas.queryByTitle('Baseline components-toolbar--basic')).not.toBeInTheDocument();
     const latestFrame = await canvas.findByTitle('Latest components-toolbar--basic');
     await expect(latestFrame).toHaveAttribute('id', 'storybook-preview-iframe');
+    await expect(latestFrame).toHaveAttribute('data-is-storybook', 'true');
   },
 });
 

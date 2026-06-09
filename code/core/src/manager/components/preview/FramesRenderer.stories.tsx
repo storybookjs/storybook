@@ -4,16 +4,19 @@ import { expect, fn } from 'storybook/test';
 import preview from '../../../../../.storybook/preview.tsx';
 import { FramesRenderer } from './FramesRenderer.tsx';
 
-const refId = 'composed-ref';
-const refUrl = 'https://composed-ref.example';
+// Use the `Icons` composed ref that this Storybook already references, so the active ref frame
+// renders a real story instead of a non-existent URL.
+const refId = 'icons';
+const refUrl = 'https://main--64b56e737c0aeefed9d5e675.chromatic.com';
+const storyId = 'icons-accessibilityicon--default';
 
 // getStoryHrefs returns the composed ref's iframe URL whenever a refId is passed, so we can
 // assert the local preview frame is requested without one (mirrors manager-api/url.ts).
-const getStoryHrefs = fn((storyId: string, opts?: { refId?: string }) => ({
+const getStoryHrefs = fn((id: string, opts?: { refId?: string }) => ({
   managerHref: '',
   previewHref: opts?.refId
-    ? `${refUrl}/iframe.html?id=${storyId}&refId=${opts.refId}`
-    : `iframe.html?id=${storyId}`,
+    ? `${refUrl}/iframe.html?id=${id}&refId=${opts.refId}`
+    : `iframe.html?id=${id}`,
 })).mockName('api::getStoryHrefs');
 
 const api: any = {
@@ -33,7 +36,7 @@ const api: any = {
 };
 
 const managerContext: any = {
-  state: { storyId: 'button--primary' },
+  state: { storyId },
   api,
 };
 
@@ -42,14 +45,14 @@ const meta = preview.meta({
   args: {
     api,
     refId,
-    storyId: 'button--primary',
+    storyId,
     viewMode: 'story',
     scale: 1,
     baseUrl: 'iframe.html',
     queryParams: {},
-    entry: { type: 'story', id: 'button--primary' } as any,
+    entry: { type: 'story', id: storyId } as any,
     refs: {
-      [refId]: { id: refId, url: refUrl, type: 'lazy', title: 'Composed ref' },
+      [refId]: { id: refId, url: refUrl, type: 'lazy', title: 'Icons' },
     } as any,
   },
   decorators: [
@@ -74,6 +77,6 @@ export const RefStoryKeepsLocalPreviewOnHost = meta.story({
 
     const src = localFrame?.getAttribute('src') ?? '';
     await expect(src).not.toContain(refUrl);
-    await expect(src).toContain('iframe.html?id=button--primary');
+    await expect(src).toContain(`iframe.html?id=${storyId}`);
   },
 });

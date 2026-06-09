@@ -2,68 +2,20 @@ import * as v from 'valibot';
 
 import { defineService } from 'storybook/open-service';
 import type { ServiceInstanceOf } from '../../types.ts';
-import type { DocgenCustomArgTypes, DocgenPayload, DocgenServiceCustomArgTypes } from './types.ts';
+import type { DocgenPayload } from './types.ts';
 import { docgenQueryStaticPath } from './paths.ts';
 
 const docgenInputSchema = v.object({ id: v.string() });
 // TODO: Replace this loose schema with the actual ArgTypes schema. ArgTypes are a static
 // Storybook construct, but spelling out the full recursive shape here is deferred for now.
 const argTypesSchema = v.record(v.string(), v.unknown());
-const setCustomArgTypesInputSchema = v.object({
-  storyId: v.string(),
-  metaArgTypes: v.optional(argTypesSchema),
-  storyArgTypes: v.optional(argTypesSchema),
-});
 
 type DocgenServiceState = {
   /** Extracted docgen keyed by component id. Populated by the `extractDocgen` command. */
   components: Record<string, DocgenPayload>;
-  /** Custom argTypes pushed by the preview. */
-  customArgTypes: DocgenServiceCustomArgTypes;
 };
 
 export type DocgenService = ServiceInstanceOf<typeof docgenServiceDef>;
-
-function customArgTypesForComponent(
-  stored: DocgenServiceCustomArgTypes,
-  componentId: string
-): DocgenCustomArgTypes | undefined {
-  const component = stored.byComponent[componentId];
-  if (!stored.project && !component) {
-    return undefined;
-  }
-
-  return {
-    project: stored.project,
-    meta: component?.meta,
-    stories: component?.stories,
-  };
-}
-
-function mergeDocgenQueryResult(
-  component: DocgenPayload | undefined,
-  storedCustomArgTypes: DocgenServiceCustomArgTypes,
-  componentId: string
-): DocgenPayload | undefined {
-  const customArgTypes = customArgTypesForComponent(storedCustomArgTypes, componentId);
-
-  if (!component && !customArgTypes) {
-    return undefined;
-  }
-
-  if (!component) {
-    return {
-      id: componentId,
-      name: '',
-      path: '',
-      jsDocTags: {},
-      stories: [],
-      customArgTypes,
-    };
-  }
-
-  return customArgTypes ? { ...component, customArgTypes } : component;
-}
 
 const docgenErrorSchema = v.object({
   name: v.string(),
@@ -119,6 +71,11 @@ const docgenOutputSchema = v.optional(docgenPayloadSchema);
 /**
  * Definition for the `core/docgen` open service.
  *
+ * The service carries only provider-extracted docgen (component name, description, props, JSDoc
+ * tags, and the renderer-converted argTypes). Story/meta/project custom argTypes are NOT stored
+ * here — consumers layer those in from their own sources (the docs blocks resolve the prepared
+ * meta/story locally; the manager Controls panel reads them from the `STORY_PREPARED` channel).
+ *
  * The query is a thin synchronous read of `state.components[id]` — it returns undefined when
  * nothing has been extracted yet rather than throwing, matching the open-service convention for
  * sync reads. The real work — story index lookup, provider invocation, error handling — lives in
@@ -132,18 +89,13 @@ export const docgenServiceDef = defineService({
   id: 'core/docgen',
   description:
     'Component documentation (name, description, props, JSDoc tags) keyed by component id.',
-  initialState: { components: {}, customArgTypes: { byComponent: {} } } as DocgenServiceState,
+  initialState: { components: {} } as DocgenServiceState,
   queries: {
     getDocgen: {
       description: 'Returns the docgen payload for one component id, or undefined when not loaded.',
       input: docgenInputSchema,
       output: docgenOutputSchema,
-      handler: (input, ctx) =>
-        mergeDocgenQueryResult(
-          ctx.self.state.components[input.id],
-          ctx.self.state.customArgTypes,
-          input.id
-        ),
+      handler: (input, ctx): DocgenPayload | undefined => ctx.self.state.components[input.id],
       load: async (input, ctx) => {
         await ctx.self.commands.extractDocgen(input);
       },
@@ -153,24 +105,7 @@ export const docgenServiceDef = defineService({
       description: 'Returns docgen payloads for every component in the story index.',
       input: v.void(),
       output: v.record(v.string(), docgenPayloadSchema),
-      handler: (_input, ctx) => {
-        const componentIds = new Set([
-          ...Object.keys(ctx.self.state.components),
-          ...Object.keys(ctx.self.state.customArgTypes.byComponent),
-        ]);
-
-        return Object.fromEntries(
-          [...componentIds].flatMap((id) => {
-            const merged = mergeDocgenQueryResult(
-              ctx.self.state.components[id],
-              ctx.self.state.customArgTypes,
-              id
-            );
-
-            return merged ? [[id, merged]] : [];
-          })
-        );
-      },
+      handler: (_input, ctx): Record<string, DocgenPayload> => ctx.self.state.components,
       load: async (_input, ctx) => {
         await ctx.self.commands.extractAllDocgen(undefined);
       },
@@ -191,19 +126,6 @@ export const docgenServiceDef = defineService({
       input: v.undefined(),
       output: v.void(),
       // Handler is supplied at registration time so it can close over the story index.
-    },
-    setProjectCustomArgTypes: {
-      description: 'Writes preview-level custom argTypes into docgen service state.',
-      input: v.object({ argTypes: v.optional(argTypesSchema) }),
-      output: v.void(),
-      // Handler is supplied by the preview runtime.
-    },
-    setCustomArgTypes: {
-      description:
-        'Writes custom argTypes from the preview into docgen state for one story, merging with any existing custom argTypes for the component.',
-      input: setCustomArgTypesInputSchema,
-      output: v.void(),
-      // Handler is supplied by the preview runtime.
     },
   },
 });

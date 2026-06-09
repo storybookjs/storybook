@@ -1,6 +1,6 @@
+import type { StrictArgTypes } from '../../../../types/modules/csf.ts';
 import type { Options } from '../../../../types/modules/core-common.ts';
 import type { IndexEntry } from '../../../../types/modules/indexer.ts';
-import type { ArgTypes, StrictArgTypes, StoryId } from '../../../../types/modules/story.ts';
 
 /**
  * Caller-facing input to a docgen provider middleware.
@@ -51,8 +51,6 @@ export interface DocgenPayload {
   jsDocTags: DocgenJsDocTags;
   /** Renderer-converted argTypes derived from integration-specific docgen data at write time. */
   argTypes?: StrictArgTypes;
-  /** Custom argTypes pushed by the preview and merged by consumers at read time. */
-  customArgTypes?: DocgenCustomArgTypes;
   stories: DocgenStory[];
   subcomponents?: Record<string, DocgenSubcomponent>;
   error?: DocgenError;
@@ -72,33 +70,6 @@ export interface DocgenSubcomponent {
   error?: DocgenError;
   [key: string]: unknown;
 }
-
-/**
- * Custom argTypes from CSF annotations, split by the same scope levels as `prepareStory`.
- *
- * - `project` — preview-level (`.storybook/preview.ts`)
- * - `meta` — component default export
- * - `stories` — per-story overrides keyed by story id
- *
- * On `getDocgen` payloads this shape is flattened for one component: `project` is copied from
- * service state and paired with that component's `meta` / `stories`.
- */
-export type DocgenCustomArgTypes = {
-  project?: ArgTypes;
-  meta?: ArgTypes;
-  stories?: Record<StoryId, ArgTypes>;
-};
-
-/**
- * How custom argTypes are stored on `core/docgen` service state.
- *
- * `project` lives once at the root because it is global. `byComponent` holds meta/story overrides
- * per component id — the only part that varies per component.
- */
-export type DocgenServiceCustomArgTypes = {
-  project?: ArgTypes;
-  byComponent: Record<string, Pick<DocgenCustomArgTypes, 'meta' | 'stories'>>;
-};
 
 /**
  * Middleware-style provider function registered through the `experimental_docgenProvider` preset.

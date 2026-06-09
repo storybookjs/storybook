@@ -1,64 +1,16 @@
-import React from 'react';
-
 import type { PlayFunctionContext } from 'storybook/internal/csf';
 
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
-import { expect, within } from 'storybook/test';
+import { within } from 'storybook/test';
 
 import * as ExampleStories from '../examples/ArgTypesParameters.stories';
 import * as SubcomponentsExampleStories from '../examples/ArgTypesWithSubcomponentsParameters.stories';
-import { DocgenServiceArgTypes, LegacyArgTypes } from './ArgTypes';
-
-type ArgTypesStoryProps = React.ComponentProps<typeof LegacyArgTypes>;
-
-const panelHeadingStyle: React.CSSProperties = {
-  fontSize: 14,
-  fontWeight: 600,
-  margin: '0 0 12px',
-};
-
-const comparisonGridStyle: React.CSSProperties = {
-  display: 'grid',
-  gap: 24,
-  gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr)',
-  width: '100%',
-};
-
-const comparisonPanelStyle: React.CSSProperties = {
-  minWidth: 0,
-};
-
-function ArgTypesComparison(props: ArgTypesStoryProps) {
-  return (
-    <div style={comparisonGridStyle}>
-      <section aria-label="Legacy arg types" style={comparisonPanelStyle}>
-        <h3 style={panelHeadingStyle}>Legacy</h3>
-        <LegacyArgTypes {...props} />
-      </section>
-      <section aria-label="Docgen service arg types" style={comparisonPanelStyle}>
-        <h3 style={panelHeadingStyle}>Docgen service</h3>
-        <DocgenServiceArgTypes {...props} />
-      </section>
-    </div>
-  );
-}
-
-type StoryCanvas = ReturnType<typeof within>;
-
-async function expectArgTypeRowInBothPanels(canvas: StoryCanvas, rowName: string) {
-  await expect(
-    await canvas.getByLabelText('Legacy arg types').findByText(rowName)
-  ).toBeInTheDocument();
-  await expect(
-    await canvas.getByLabelText('Docgen service arg types').findByText(rowName)
-  ).toBeInTheDocument();
-}
+import { ArgTypes } from './ArgTypes';
 
 const meta = {
   title: 'Blocks/ArgTypes',
-  component: LegacyArgTypes,
-  render: (args) => <ArgTypesComparison {...args} />,
+  component: ArgTypes,
   parameters: {
     layout: 'fullscreen',
     relativeCsfPaths: [
@@ -67,17 +19,13 @@ const meta = {
     ],
     docsStyles: true,
   },
-} satisfies Meta<typeof LegacyArgTypes>;
+} satisfies Meta<typeof ArgTypes>;
 
 export default meta;
 
 type Story = StoryObj<typeof meta>;
 
-export const Default: Story = {
-  play: async ({ canvas }) => {
-    await expectArgTypeRowInBothPanels(canvas, 'b');
-  },
-};
+export const Default: Story = {};
 
 export const OfComponent: Story = {
   args: {
@@ -159,29 +107,16 @@ export const Categories: Story = {
 };
 
 const findSubcomponentTabs = async (
-  canvas: StoryCanvas,
-  step: PlayFunctionContext['step'],
-  panelName: 'legacy' | 'docgen'
+  canvas: ReturnType<typeof within>,
+  step: PlayFunctionContext['step']
 ) => {
   let subcomponentATab: HTMLElement | null = null;
   let subcomponentBTab: HTMLElement | null = null;
-  await step(`should have tabs for the subcomponents in the ${panelName} panel`, async () => {
+  await step('should have tabs for the subcomponents', async () => {
     subcomponentATab = await canvas.findByText('SubcomponentA');
     subcomponentBTab = await canvas.findByText('SubcomponentB');
   });
   return { subcomponentATab, subcomponentBTab };
-};
-
-const findSubcomponentTabsInBothPanels = async (
-  canvas: StoryCanvas,
-  step: PlayFunctionContext['step']
-) => {
-  const { legacy, docgen } = comparisonCanvases(canvas);
-
-  return {
-    legacy: await findSubcomponentTabs(legacy, step, 'legacy'),
-    docgen: await findSubcomponentTabs(docgen, step, 'docgen'),
-  };
 };
 
 export const SubcomponentsOfMeta: Story = {
@@ -189,14 +124,16 @@ export const SubcomponentsOfMeta: Story = {
     of: SubcomponentsExampleStories.default,
   },
   play: async ({ canvas, step }) => {
-    await findSubcomponentTabsInBothPanels(canvas, step);
+    await findSubcomponentTabs(canvas, step);
   },
 };
 
 export const SubcomponentsOfStory: Story = {
-  ...SubcomponentsOfMeta,
   args: {
     of: SubcomponentsExampleStories.NoParameters,
+  },
+  play: async ({ canvas, step }) => {
+    await findSubcomponentTabs(canvas, step);
   },
 };
 
@@ -206,12 +143,9 @@ export const SubcomponentsIncludeProp: Story = {
     include: ['a', 'f'],
   },
   play: async ({ canvas, step }) => {
-    const { legacy, docgen } = await findSubcomponentTabsInBothPanels(canvas, step);
-
-    for (const { subcomponentBTab } of [legacy, docgen]) {
-      if (subcomponentBTab) {
-        await (subcomponentBTab as HTMLElement & { click: () => Promise<void> }).click();
-      }
+    const { subcomponentBTab } = await findSubcomponentTabs(canvas, step);
+    if (subcomponentBTab) {
+      await (subcomponentBTab as HTMLElement & { click: () => Promise<void> }).click();
     }
   },
 };

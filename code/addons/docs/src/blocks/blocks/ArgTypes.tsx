@@ -1,5 +1,5 @@
 import type { FC } from 'react';
-import React from 'react';
+import React, { useContext } from 'react';
 
 import type { Args, Parameters, Renderer, StrictArgTypes } from 'storybook/internal/csf';
 import type { ArgTypesExtractor } from 'storybook/internal/docs-tools';
@@ -15,6 +15,7 @@ import { filterArgTypes } from 'storybook/preview-api';
 
 import type { SortType } from '../components';
 import { ArgsTableError, ArgsTable as PureArgsTable, TabbedArgsTable } from '../components';
+import { DocsContext } from './DocsContext';
 import { useOf } from './useOf';
 import { useServiceDocgen } from './useServiceDocgen';
 import { getComponentName } from './utils';
@@ -57,6 +58,7 @@ function useResolveArgTypes(props: ArgTypesProps): ResolvedArgTypes {
   if ('of' in props && of === undefined) {
     throw new InvalidBlockOfPropError();
   }
+  const context = useContext(DocsContext);
   const resolved = useOf(of || 'meta');
 
   let resolvedArgTypes: Omit<ResolvedArgTypes, 'filterProps'>;
@@ -67,6 +69,9 @@ function useResolveArgTypes(props: ArgTypesProps): ResolvedArgTypes {
     } = resolved;
     resolvedArgTypes = {
       parameters: parameters as Parameters,
+      // Bare `of={Component}` has no story/meta annotations; the docgen service is addressed by
+      // component id, recovered from the CSF file that declares this component.
+      componentId: context.getComponentId(component),
       argTypes: extractComponentArgTypes(component, parameters as Parameters),
       component,
     };
@@ -144,8 +149,7 @@ function renderArgTypesTables({
   return <TabbedArgsTable tabs={tabs as any} sort={sort} />;
 }
 
-/** @internal Used by ArgTypes block stories to compare legacy and docgen service paths. */
-export const LegacyArgTypes: FC<ArgTypesProps> = (props) => {
+const LegacyArgTypes: FC<ArgTypesProps> = (props) => {
   const { argTypes, parameters, component, subcomponents, filterProps } = useResolveArgTypes(props);
 
   if (!argTypes) {
@@ -167,24 +171,29 @@ export const LegacyArgTypes: FC<ArgTypesProps> = (props) => {
   });
 };
 
-/** @internal Used by ArgTypes block stories to compare legacy and docgen service paths. */
-export const DocgenServiceArgTypes: FC<ArgTypesProps> = (props) => {
-  const { parameters, componentId, storyId, initialArgs, filterProps } = useResolveArgTypes(props);
+const DocgenServiceArgTypes: FC<ArgTypesProps> = (props) => {
+  const { argTypes, parameters, componentId, storyId, initialArgs, filterProps, component } =
+    useResolveArgTypes(props);
   const servicePayload = useServiceDocgen(componentId);
 
   if (!servicePayload || !componentId) {
     return null;
   }
 
+  const serviceSubcomponentRows = getServiceSubcomponentArgTypes(servicePayload);
+
   return renderArgTypesTables({
-    mainName: servicePayload.name,
+    mainName: getComponentName(component) ?? servicePayload.name,
     mainRows: mergeServiceArgTypes({
       payload: servicePayload,
       storyId: storyId ?? componentId,
       parameters,
       initialArgs,
+      // Custom argTypes come from the locally-prepared meta/story (the service only carries
+      // extracted component docgen), so the block works regardless of whether the story rendered.
+      customArgTypes: argTypes,
     }),
-    subcomponentRows: getServiceSubcomponentArgTypes(servicePayload),
+    subcomponentRows: serviceSubcomponentRows,
     ...filterProps,
   });
 };

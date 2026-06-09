@@ -12,7 +12,7 @@ export const viteFinal: NonNullable<StorybookConfig['viteFinal']> = async (confi
 
   if (features?.experimentalDocgenServer) {
     // The docgen service extracts React metadata on the server. Keep the preview bundle free of
-    // build-time `__docgenInfo` injection so author argTypes remain docgen-free.
+    // build-time `__docgenInfo` injection so custom argTypes remain docgen-free.
     return config;
   }
 

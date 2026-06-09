@@ -1,10 +1,8 @@
-import { logger } from 'storybook/internal/client-logger';
 import { definePreviewAddon } from 'storybook/internal/csf';
-import type { ArgTypes } from 'storybook/internal/types';
 
 import type { ServiceInstanceOf } from 'storybook/open-service';
 
-import { getService, registerService } from '../../preview.ts';
+import { registerService } from '../../preview.ts';
 import { docgenServiceDef } from './definition.ts';
 
 export type DocgenService = ServiceInstanceOf<typeof docgenServiceDef>;
@@ -31,87 +29,11 @@ export default () =>
 /**
  * Registers the preview-side `core/docgen` runtime.
  *
- * The server owns extraction commands, while the preview owns `setCustomArgTypes` because only the
- * preview has access to normalized CSF annotations. Manager/docs consumers observe the resulting
- * state through open-service sync. Safe to call repeatedly: `registerService` is idempotent by id.
+ * The server owns the extraction commands; the preview only needs a local handle so docs blocks can
+ * read the synced state via `getService('core/docgen')`. Custom argTypes are not pushed into the
+ * service — consumers layer those in from the prepared story. Safe to call repeatedly:
+ * `registerService` is idempotent by id.
  */
 export function registerPreviewDocgenService(): DocgenService {
-  return registerService(docgenServiceDef, {
-    commands: {
-      setProjectCustomArgTypes: {
-        handler: async (input, ctx) => {
-          ctx.self.setState((state) => {
-            state.customArgTypes.project = input.argTypes;
-          });
-        },
-      },
-      setCustomArgTypes: {
-        handler: async (input, ctx) => {
-          const componentId = input.storyId.split('--')[0];
-
-          ctx.self.setState((state) => {
-            const existing = state.customArgTypes.byComponent[componentId] ?? {};
-            state.customArgTypes.byComponent[componentId] = {
-              meta: input.metaArgTypes ?? existing.meta,
-              stories: {
-                ...existing.stories,
-                [input.storyId]: input.storyArgTypes ?? existing.stories?.[input.storyId] ?? {},
-              },
-            };
-          });
-        },
-      },
-    },
-  });
-}
-
-/**
- * Pushes preview-level custom argTypes into `core/docgen`.
- *
- * Called when normalized project annotations are installed on the preview `StoryStore` — the same
- * moment legacy `prepareStory` would start combining `projectAnnotations.argTypes`.
- */
-export function pushDocgenProjectCustomArgTypes(argTypes?: ArgTypes) {
-  let service: DocgenService;
-  try {
-    service = getService('core/docgen');
-  } catch {
-    return;
-  }
-
-  void service.commands.setProjectCustomArgTypes({ argTypes }).catch((error) => {
-    logger.debug(`Failed to push docgen project custom argTypes: ${error}`);
-  });
-}
-
-/**
- * Pushes custom argTypes for a prepared story into `core/docgen`.
- *
- * Called from story preparation. Merge logic lives in the `setCustomArgTypes` command handler.
- */
-export function pushDocgenCustomArgTypes({
-  storyId,
-  metaArgTypes,
-  storyArgTypes,
-}: {
-  storyId: string;
-  metaArgTypes?: ArgTypes;
-  storyArgTypes?: ArgTypes;
-}) {
-  let service: DocgenService;
-  try {
-    service = getService('core/docgen');
-  } catch {
-    return;
-  }
-
-  void service.commands
-    .setCustomArgTypes({
-      storyId,
-      metaArgTypes,
-      storyArgTypes,
-    })
-    .catch((error) => {
-      logger.debug(`Failed to push docgen custom argTypes for ${storyId}: ${error}`);
-    });
+  return registerService(docgenServiceDef);
 }

@@ -21,7 +21,9 @@ const serviceStoryData = {
   id: 'example-button--primary',
   args: { variant: 'primary' },
   initialArgs: { variant: 'primary' },
-  argTypes: {},
+  // Custom argTypes reach the panel via the STORY_PREPARED channel (read through `useArgTypes`),
+  // and are merged with the service's extracted component docgen.
+  argTypes: { variant: { name: 'variant', control: { type: 'radio' } } },
   parameters: { __isArgsStory: true },
 };
 
@@ -61,7 +63,7 @@ const serviceManagerContext: any = {
 };
 
 const serviceGetDocgen = Object.assign(
-  fn(() => ({
+  fn((_input?: { id: string }) => ({
     id: 'example-button',
     name: 'Button',
     path: './Button.stories.tsx',
@@ -72,13 +74,6 @@ const serviceGetDocgen = Object.assign(
         name: 'variant',
         description: 'Visual style',
         type: { name: 'enum', value: ['primary', 'secondary'] },
-      },
-    },
-    customArgTypes: {
-      meta: {
-        variant: {
-          control: { type: 'radio' },
-        },
       },
     },
   })).mockName('docgenService::getDocgen'),

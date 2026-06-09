@@ -336,9 +336,7 @@ describe('load bodies and command routing', () => {
     const service = registerService(loadInvokesRemoteCommandServiceDef);
     const promise = service.queries.getPreloadedValue.loaded({ entryId: 'entry-a' });
 
-    await vi.waitFor(() =>
-      expect(emittedCalls(channel, SERVICE_COMMAND_INVOKE)).toHaveLength(1)
-    );
+    await vi.waitFor(() => expect(emittedCalls(channel, SERVICE_COMMAND_INVOKE)).toHaveLength(1));
 
     expect(emittedCalls(channel, SERVICE_COMMAND_INVOKE)[0]?.[1]).toMatchObject({
       serviceId: loadInvokesRemoteCommandServiceDef.id,
@@ -348,7 +346,10 @@ describe('load bodies and command routing', () => {
       clientId: expect.any(String),
     });
 
-    const { callId } = emittedCalls(channel, SERVICE_COMMAND_INVOKE)[0]?.[1] as CommandInvokePayload;
+    const { callId } = emittedCalls(
+      channel,
+      SERVICE_COMMAND_INVOKE
+    )[0]?.[1] as CommandInvokePayload;
     channel.emitExternal(SERVICE_COMMAND_RESULT, {
       serviceId: loadInvokesRemoteCommandServiceDef.id,
       callId,

@@ -72,6 +72,9 @@ const ControlsForStory: FC<ControlsProps & { story: any; context: any }> = ({
         storyId: story.id,
         parameters,
         initialArgs: story.initialArgs,
+        // Custom argTypes come from the locally-prepared story (the service only carries extracted
+        // component docgen), so the block works regardless of whether the story rendered.
+        customArgTypes: argTypes,
       })
     : undefined;
   const rows = serviceRows ?? argTypes;

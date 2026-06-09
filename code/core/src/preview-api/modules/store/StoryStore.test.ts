@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 import type { ProjectAnnotations, Renderer, StoryIndex } from 'storybook/internal/types';
 
@@ -6,7 +6,6 @@ import { StoryStore } from './StoryStore.ts';
 import { composeConfigs } from './csf/composeConfigs.ts';
 import { prepareStory } from './csf/prepareStory.ts';
 import { processCSFFile } from './csf/processCSFFile.ts';
-import * as docgenPreview from '../../../shared/open-service/services/docgen/preview.ts';
 import type { HooksContext } from './hooks.ts';
 
 // Spy on prepareStory/processCSFFile
@@ -30,12 +29,6 @@ vi.mock('@storybook/global', async (importOriginal) => ({
 }));
 
 vi.mock('storybook/internal/client-logger');
-vi.mock('../../../shared/open-service/services/docgen/preview.ts', { spy: true });
-
-beforeEach(() => {
-  vi.mocked(docgenPreview.pushDocgenCustomArgTypes).mockImplementation(() => {});
-  vi.mocked(docgenPreview.pushDocgenProjectCustomArgTypes).mockImplementation(() => {});
-});
 
 const componentOneExports = {
   default: { title: 'Component One', argTypes: { foo: { description: 'from meta' } } },
@@ -94,10 +87,6 @@ describe('StoryStore', () => {
     it('normalizes on initialization', async () => {
       const store = new StoryStore(storyIndex, importFn, projectAnnotations);
 
-      expect(docgenPreview.pushDocgenProjectCustomArgTypes).toHaveBeenCalledWith({
-        a: { name: 'a', type: { name: 'string' } },
-      });
-
       expect(store.projectAnnotations!.globalTypes).toEqual({
         a: { name: 'a' },
       });
@@ -131,18 +120,6 @@ describe('StoryStore', () => {
         initialArgs: { foo: 'a' },
       });
       expect(importFn).toHaveBeenCalledWith('./src/ComponentOne.stories.js');
-    });
-
-    it('pushes custom argTypes for docgen service merging during story preparation', async () => {
-      const store = new StoryStore(storyIndex, importFn, projectAnnotations);
-
-      await store.loadStory({ storyId: 'component-one--a' });
-
-      expect(docgenPreview.pushDocgenCustomArgTypes).toHaveBeenCalledWith({
-        storyId: 'component-one--a',
-        metaArgTypes: { foo: { description: 'from meta' } },
-        storyArgTypes: { foo: { control: 'text' } },
-      });
     });
 
     it('uses a cache', async () => {

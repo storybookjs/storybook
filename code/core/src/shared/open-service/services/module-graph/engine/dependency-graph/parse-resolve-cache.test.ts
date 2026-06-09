@@ -7,10 +7,10 @@ import { readFile } from 'node:fs/promises';
 
 import * as oxcParser from 'storybook/internal/oxc-parser';
 
-import { ParserRegistry } from '../parser-registry/index.ts';
-import type { ImportEdge, ImportParser } from '../parser-registry/index.ts';
-import type { ChangeDetectionResolverFactory } from './ResolverFactory.ts';
-import { ParseResolveCache } from './ParseResolveCache.ts';
+import { ParserRegistry } from '../parser-registry/parser-registry.ts';
+import type { ImportEdge, ImportParser } from '../parser-registry/types.ts';
+import { ParseResolveCache } from './parse-resolve-cache.ts';
+import type { ChangeDetectionResolverFactory } from './resolver-factory.ts';
 
 vi.mock('node:fs/promises', { spy: true });
 vi.mock('storybook/internal/oxc-parser', { spy: true });

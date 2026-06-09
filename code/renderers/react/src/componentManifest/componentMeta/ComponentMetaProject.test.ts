@@ -1,8 +1,15 @@
+import * as fs from 'node:fs';
+
+import { loadCsf } from 'storybook/internal/csf-tools';
+
 import { describe, expect, it } from 'vitest';
 
 import { dedent } from 'ts-dedent';
 
 import type { StoryRef } from '../getComponentImports.ts';
+import { getComponents } from '../getComponentImports.ts';
+import { findMatchingComponent } from '../resolveComponents.ts';
+import { extractDeclaredSubcomponents, findExactComponentMatch } from '../subcomponents.ts';
 import { extractFromStory, withProject } from './componentMetaExtractor.test-helpers.ts';
 
 describe('compound component extraction', () => {
@@ -374,6 +381,83 @@ describe('compound component extraction', () => {
         expect(entries[1]?.component?.reactComponentMeta).toMatchObject({
           props: { label: expect.anything(), variant: expect.anything() },
         });
+      }
+    );
+  });
+
+  it('extracts declared subcomponents from meta without JSX', async () => {
+    await withProject(
+      {
+        'controls-parameters.tsx': dedent`
+          import React from 'react';
+
+          type MainProps = { a?: string; b: string };
+          export const ControlsParameters = ({ a = 'a', b }: MainProps) => <div>{a}{b}</div>;
+
+          type SubcomponentAProps = { e: boolean; c: boolean; d?: boolean };
+          export const SubcomponentA = ({ d = false }: SubcomponentAProps) => <div />;
+
+          type SubcomponentBProps = { g: number; h: number; f?: number };
+          export const SubcomponentB = ({ f = 42 }: SubcomponentBProps) => <div />;
+        `,
+        'controls-parameters.stories.tsx': dedent`
+          import type { Meta } from '@storybook/react';
+          import { ControlsParameters, SubcomponentA, SubcomponentB } from './controls-parameters';
+
+          const meta = {
+            title: 'Example/ControlsParameters',
+            component: ControlsParameters,
+            subcomponents: { SubcomponentA, SubcomponentB },
+          } satisfies Meta<typeof ControlsParameters>;
+
+          export default meta;
+        `,
+      },
+      async (project, filePaths) => {
+        const storyPath = filePaths['controls-parameters.stories.tsx'];
+        const storyFile = fs.readFileSync(storyPath, 'utf-8');
+        const csf = loadCsf(storyFile, { makeTitle: () => 'Example/ControlsParameters' }).parse();
+        const declaredSubcomponents = extractDeclaredSubcomponents(csf);
+        const components = await getComponents({
+          csf,
+          storyFilePath: storyPath,
+          docgenEngine: 'react-component-meta',
+          additionalComponentNames: declaredSubcomponents.map(
+            (subcomponent) => subcomponent.componentName
+          ),
+        });
+
+        const mainComponent = findMatchingComponent(
+          components,
+          csf._meta?.component,
+          'ControlsParameters'
+        );
+        const subcomponentEntries = declaredSubcomponents.map((declared) => ({
+          storyPath,
+          component: findExactComponentMatch(components, declared.componentName),
+        }));
+
+        project.extractPropsFromStories([
+          { storyPath, component: mainComponent },
+          ...subcomponentEntries,
+        ]);
+
+        expect(mainComponent?.reactComponentMeta?.props?.a).toBeDefined();
+        expect(mainComponent?.reactComponentMeta?.props?.b).toBeDefined();
+        expect(mainComponent?.reactComponentMeta?.props?.e).toBeUndefined();
+
+        const subcomponentA = subcomponentEntries[0].component;
+        const subcomponentB = subcomponentEntries[1].component;
+
+        expect(subcomponentA?.reactComponentMeta?.props?.e).toBeDefined();
+        expect(subcomponentA?.reactComponentMeta?.props?.c).toBeDefined();
+        expect(subcomponentA?.reactComponentMeta?.props?.d).toBeDefined();
+        expect(subcomponentA?.reactComponentMeta?.props?.a).toBeUndefined();
+
+        expect(subcomponentB?.reactComponentMeta?.props?.g).toBeDefined();
+        expect(subcomponentB?.reactComponentMeta?.props?.h).toBeDefined();
+        expect(subcomponentB?.reactComponentMeta?.props?.f).toBeDefined();
+        expect(subcomponentB?.reactComponentMeta?.props?.b).toBeUndefined();
       }
     );
   });

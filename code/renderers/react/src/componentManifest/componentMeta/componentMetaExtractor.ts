@@ -251,22 +251,19 @@ function resolveComponentSymbol(
  * @param importName - The export name of the component (e.g., 'Button', 'default')
  * @param memberAccess - For compound components (e.g., 'Root' in `<Accordion.Root />`)
  */
-export function resolvePropsFromStoryFile(
+/** Finds the story-local import binding for a {@link ComponentRef}. */
+export function findImportSymbolInStoryFile(
   typescript: typeof ts,
   checker: ts.TypeChecker,
   storySourceFile: ts.SourceFile,
   componentRef: ComponentRef
-): ResolvedComponentTarget | undefined {
+): ts.Symbol | undefined {
   const importSpecifier = componentRef.importId;
   const importName = componentRef.importName;
   const memberAccess = componentRef.member;
   if (!importSpecifier) {
     return undefined;
   }
-
-  // Step 1: Find the import binding symbol in the story file.
-  // This is the local symbol that the story uses in JSX (e.g., `Button` from `import { Button } from './Button'`).
-  let importSymbol: ts.Symbol | undefined;
 
   for (const stmt of storySourceFile.statements) {
     if (!typescript.isImportDeclaration(stmt)) {
@@ -285,12 +282,12 @@ export function resolvePropsFromStoryFile(
       continue;
     }
 
+    let importSymbol: ts.Symbol | undefined;
+
     if (importName === 'default') {
-      // Default import: import Button from '...'
       if (clause.name) {
         importSymbol = checker.getSymbolAtLocation(clause.name);
       }
-      // Also check named imports for `{ default as Button }` pattern
       if (
         !importSymbol &&
         clause.namedBindings &&
@@ -304,22 +301,16 @@ export function resolvePropsFromStoryFile(
           }
         }
       }
-    } else {
-      // Named import: import { Button } from '...' or import { Button as Btn } from '...'
-      if (clause.namedBindings && typescript.isNamedImports(clause.namedBindings)) {
-        for (const spec of clause.namedBindings.elements) {
-          const originalName = (spec.propertyName ?? spec.name).text;
-          if (originalName === importName) {
-            importSymbol = checker.getSymbolAtLocation(spec.name);
-            break;
-          }
+    } else if (clause.namedBindings && typescript.isNamedImports(clause.namedBindings)) {
+      for (const spec of clause.namedBindings.elements) {
+        const originalName = (spec.propertyName ?? spec.name).text;
+        if (originalName === importName) {
+          importSymbol = checker.getSymbolAtLocation(spec.name);
+          break;
         }
       }
     }
-    // Namespace import: import * as Ns from '...'
-    // Only applies when memberAccess is set (compound components accessed as <Ns.Member />).
-    // Without this guard, a namespace import from the same module could shadow a named
-    // import we're actually looking for (e.g. `import * as X from './m'; import { Y } from './m'`).
+
     if (
       !importSymbol &&
       memberAccess &&
@@ -330,9 +321,59 @@ export function resolvePropsFromStoryFile(
     }
 
     if (importSymbol) {
-      break;
+      return importSymbol;
     }
   }
+
+  return undefined;
+}
+
+/** Returns whether `componentRef` is the story meta's `component`, not a declared subcomponent. */
+export function metaComponentMatchesRef(
+  typescript: typeof ts,
+  checker: ts.TypeChecker,
+  storySourceFile: ts.SourceFile,
+  componentRef: ComponentRef,
+  metaComponentInitializer: ts.Expression
+): boolean {
+  const refSymbol = findImportSymbolInStoryFile(typescript, checker, storySourceFile, componentRef);
+  const metaSymbol = resolveComponentSymbolFromNode(typescript, checker, metaComponentInitializer);
+
+  if (refSymbol && metaSymbol) {
+    return (
+      resolveAliasedSymbol(typescript, checker, refSymbol) ===
+      resolveAliasedSymbol(typescript, checker, metaSymbol)
+    );
+  }
+
+  if (typescript.isIdentifier(metaComponentInitializer)) {
+    return componentRef.componentName === metaComponentInitializer.text;
+  }
+
+  if (
+    typescript.isPropertyAccessExpression(metaComponentInitializer) &&
+    typescript.isIdentifier(metaComponentInitializer.expression)
+  ) {
+    const metaName = `${metaComponentInitializer.expression.text}.${metaComponentInitializer.name.text}`;
+    return componentRef.componentName === metaName;
+  }
+
+  return false;
+}
+
+export function resolvePropsFromStoryFile(
+  typescript: typeof ts,
+  checker: ts.TypeChecker,
+  storySourceFile: ts.SourceFile,
+  componentRef: ComponentRef
+): ResolvedComponentTarget | undefined {
+  const memberAccess = componentRef.member;
+  const importSymbol = findImportSymbolInStoryFile(
+    typescript,
+    checker,
+    storySourceFile,
+    componentRef
+  );
 
   if (!importSymbol) {
     return undefined;
@@ -458,6 +499,80 @@ export function resolvePropsFromComponentType(
   }
 
   return undefined;
+}
+
+/**
+ * Path 3 fallback: resolve props from the component module export directly.
+ *
+ * Used for declared subcomponents that only appear in `meta.subcomponents` and have no JSX in the
+ * story file. Without this, Path 2 would incorrectly reuse `meta.component`'s props for every
+ * batch entry.
+ */
+export function resolvePropsFromComponentExport(
+  typescript: typeof ts,
+  checker: ts.TypeChecker,
+  componentSourceFile: ts.SourceFile,
+  componentRef: ComponentRef
+): ResolvedComponentTarget | undefined {
+  const moduleSymbol = checker.getSymbolAtLocation(componentSourceFile);
+  if (!moduleSymbol) {
+    return undefined;
+  }
+
+  const exports = checker.getExportsOfModule(checker.getMergedSymbol(moduleSymbol));
+  const exportName = componentRef.importName ?? componentRef.componentName.split('.').at(-1);
+  if (!exportName) {
+    return undefined;
+  }
+
+  let exportSymbol: ts.Symbol | undefined;
+  let componentType: ts.Type | undefined;
+
+  if (componentRef.namespace && componentRef.member) {
+    const namespaceSymbol = exports.find((symbol) => symbol.getName() === componentRef.namespace);
+    if (!namespaceSymbol) {
+      return undefined;
+    }
+    const namespaceType = checker.getTypeOfSymbol(namespaceSymbol);
+    const memberSymbol = namespaceType.getProperty(componentRef.member);
+    if (!memberSymbol) {
+      return undefined;
+    }
+    exportSymbol = memberSymbol;
+    componentType = checker.getTypeOfSymbol(memberSymbol);
+  } else {
+    exportSymbol =
+      exportName === 'default'
+        ? exports.find((symbol) => symbol.getName() === 'default')
+        : exports.find((symbol) => symbol.getName() === exportName);
+
+    if (!exportSymbol) {
+      return undefined;
+    }
+
+    componentType = checker.getTypeOfSymbol(exportSymbol);
+
+    if (componentRef.member) {
+      const memberSymbol = componentType.getProperty(componentRef.member);
+      if (!memberSymbol) {
+        return undefined;
+      }
+      exportSymbol = memberSymbol;
+      componentType = checker.getTypeOfSymbol(memberSymbol);
+    }
+  }
+
+  const propsType = resolvePropsFromComponentType(typescript, checker, componentType);
+  const contextNode = exportSymbol ? getSymbolContextNode(exportSymbol) : undefined;
+  if (!propsType || !exportSymbol || !contextNode) {
+    return undefined;
+  }
+
+  return {
+    componentRef,
+    propsType,
+    symbol: resolveComponentSymbol(typescript, checker, exportSymbol, contextNode),
+  };
 }
 
 // ---------------------------------------------------------------------------

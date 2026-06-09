@@ -61,6 +61,10 @@ const memoizedExtra = memoizerific(1)(
   (_, extraElements: Addon_Collection<Addon_BaseType>, filterProps: FilterProps) =>
     filterToolsSide([...defaultToolsExtra, ...Object.values(extraElements)], ...filterProps)
 );
+const memoizedToolbarHeaders = memoizerific(1)(
+  (_, headerElements: Addon_Collection<Addon_BaseType>, filterProps: FilterProps) =>
+    filterToolsSide(Object.values(headerElements), ...filterProps)
+);
 
 const memoizedWrapper = memoizerific(1)((_, previewElements: Addon_Collection) => [
   ...defaultWrappers,
@@ -98,6 +102,7 @@ const mapper = ({
   const wrapperList = Object.values(api.getElements(Addon_TypesEnum.PREVIEW));
   const toolsList = Object.values(api.getElements(Addon_TypesEnum.TOOL));
   const toolsExtraList = Object.values(api.getElements(Addon_TypesEnum.TOOLEXTRA));
+  const toolbarHeaderList = Object.values(api.getElements(Addon_TypesEnum.TOOLBAR_HEADER));
 
   const tabId = api.getQueryParam('tab');
 
@@ -128,6 +133,12 @@ const mapper = ({
     queryParams: customQueryParams,
     tools: tools,
     toolsExtra: toolsExtra,
+    toolbarHeaders: memoizedToolbarHeaders(
+      toolbarHeaderList.length,
+      api.getElements(Addon_TypesEnum.TOOLBAR_HEADER),
+      // @ts-expect-error (non strict)
+      [entry, viewMode, location, path, tabId]
+    ) as Addon_BaseType[],
     tabs: memoizedTabs(
       tabsList.length,
       api.getElements(Addon_TypesEnum.TAB),

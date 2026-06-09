@@ -1,15 +1,15 @@
 import { expect, fn, waitFor, within } from 'storybook/test';
 
+import { MemoryRouter } from 'storybook/internal/router';
 import {
+  internal_fullStatusStore,
   ManagerContext,
   type API,
   type State,
-  internal_fullStatusStore,
 } from 'storybook/manager-api';
-import { MemoryRouter } from 'storybook/internal/router';
 
 import preview from '../../../.storybook/preview.tsx';
-import { EVENTS, RESTORE_NAV_SESSION_KEY } from './constants.ts';
+import { ADDON_ID, EVENTS, RESTORE_NAV_SESSION_KEY } from './constants.ts';
 import type { ReviewState } from './review-state.ts';
 import { ReviewPage } from './ReviewPage.tsx';
 import { sessionStore } from './session-store.ts';
@@ -36,6 +36,7 @@ const emitMock = fn((eventName: string, payload?: unknown) => {
   });
 });
 const toggleNavMock = fn();
+const setAddonShortcutMock = fn();
 const managerState: State = {
   index: {
     'manager-settings-checklist--default': {
@@ -64,6 +65,7 @@ const managerApi: API = {
   emit: emitMock,
   getIsNavShown: () => true,
   toggleNav: toggleNavMock,
+  setAddonShortcut: setAddonShortcutMock,
   getStoryHrefs: (storyId: string, options?: { freeze?: boolean }) => ({
     managerHref: `?path=/story/${storyId}`,
     previewHref: `iframe.html?id=${storyId}&viewMode=story${options?.freeze ? '&freeze=finished' : ''}`,
@@ -162,6 +164,7 @@ const meta = preview.meta({
     offMock.mockReset();
     emitMock.mockReset();
     toggleNavMock.mockReset();
+    setAddonShortcutMock.mockReset();
     fetchMock.mockClear();
     sessionStore.remove(RESTORE_NAV_SESSION_KEY);
     // Reset change-detection statuses so a story marking one "new" doesn't leak
@@ -184,6 +187,15 @@ export const Collections = meta.story({
 
     await expect(await canvas.findByText('Manager settings polish')).toBeInTheDocument();
     await expect(await canvas.findByText('Settings')).toBeInTheDocument();
+
+    // The navigation keys are registered as customizable addon shortcuts.
+    await expect(setAddonShortcutMock).toHaveBeenCalledWith(
+      ADDON_ID,
+      expect.objectContaining({
+        actionName: 'reviewNextStory',
+        defaultShortcut: ['ArrowRight'],
+      })
+    );
   },
 });
 
@@ -204,6 +216,35 @@ export const Details = meta.story({
     ).toBeInTheDocument();
     // guidepage exists in the baseline index, so it must not be flagged "New".
     await expect(canvas.queryByText('New')).not.toBeInTheDocument();
+  },
+});
+
+export const DetailsShortcutActionNavigates = meta.story({
+  parameters: {
+    routerInitialEntries: ['/?path=/review/0/manager-settings-guidepage--default'],
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(emitMock).toHaveBeenCalledWith(EVENTS.REQUEST_REVIEW);
+
+    applyReviewState();
+
+    // Start on story 2/3.
+    await expect(await canvas.findByRole('button', { name: '2/3' })).toBeInTheDocument();
+
+    // The manager dispatches the registered shortcut by invoking its `action`
+    // (for both manager focus and the preview-iframe channel). Invoking the
+    // "next story" action should advance to 3/3, reading the live target.
+    const registration = setAddonShortcutMock.mock.calls.find(
+      (call) => call[1]?.actionName === 'reviewNextStory'
+    );
+    await expect(registration).toBeTruthy();
+    registration?.[1].action();
+
+    await expect(await canvas.findByRole('button', { name: '3/3' })).toBeInTheDocument();
+    await expect(
+      await canvas.findByTitle('Latest manager-settings-aboutscreen--default')
+    ).toBeInTheDocument();
   },
 });
 

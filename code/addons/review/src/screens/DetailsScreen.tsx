@@ -30,6 +30,30 @@ const Page = styled.div(({ theme }) => ({
   fontFamily: theme.typography.fonts.base,
 }));
 
+const HeaderWrap = styled.div({
+  position: 'relative',
+  flexShrink: 0,
+});
+
+const ProgressBar = styled.div(({ theme }) => ({
+  position: 'absolute',
+  top: 0,
+  left: 0,
+  zIndex: 1,
+  width: '100%',
+  height: 3,
+  overflow: 'hidden',
+  background: theme.background.hoverable,
+}));
+
+const ProgressFill = styled.div(({ theme }) => ({
+  position: 'absolute',
+  insetBlock: 0,
+  left: 0,
+  background: theme.color.secondary,
+  transition: 'width 200ms ease',
+}));
+
 const SubtitleStrong = styled.span({
   fontWeight: 700,
 });
@@ -289,56 +313,75 @@ export const DetailsScreen = ({
     )
   ) : undefined;
 
+  // Fill maps the current position across the sequence so the first story reads
+  // as 0% and the last as 100%. A lone story has no span to traverse, so it
+  // stays at 0%.
+  const progress = totalStories > 1 ? storyIndex / (totalStories - 1) : 0;
+
   return (
     <Page>
       {isStale ? <StaleBanner /> : null}
-      <ReviewHeader
-        autoFocusTitle
-        leading={
-          <IconButton
-            variant="ghost"
-            size="small"
-            padding="small"
-            ariaLabel="Back to review"
-            asChild
-          >
-            <a href={backHref}>
-              <ChevronSmallLeftIcon />
-            </a>
-          </IconButton>
-        }
-        title={title}
-        subtitle={subtitle}
-        actions={
-          <>
-            <Counter variant="ghost" size="small" readOnly>
-              {storyIndex + 1}/{totalStories}
-            </Counter>
+      <HeaderWrap>
+        <ProgressBar aria-hidden data-testid="review-progress">
+          <ProgressFill
+            data-testid="review-progress-fill"
+            style={{ width: `${progress * 100}%` }}
+          />
+        </ProgressBar>
+        <ReviewHeader
+          autoFocusTitle
+          leading={
             <IconButton
               variant="ghost"
               size="small"
               padding="small"
-              ariaLabel="Previous story"
+              ariaLabel="Back to review"
               asChild
             >
-              <a href={previousHref}>
+              <a href={backHref}>
                 <ChevronSmallLeftIcon />
               </a>
             </IconButton>
-            <IconButton variant="ghost" size="small" padding="small" ariaLabel="Next story" asChild>
-              <a href={nextHref}>
-                <ChevronSmallRightIcon />
-              </a>
-            </IconButton>
-            <IconButton size="small" padding="small" ariaLabel="View in Storybook" asChild>
-              <a href={storybookHref} target="_blank" rel="noreferrer">
-                <StorybookIcon />
-              </a>
-            </IconButton>
-          </>
-        }
-        secondRow={baselineBar}
-      />
+          }
+          title={title}
+          subtitle={subtitle}
+          actions={
+            <>
+              <Counter variant="ghost" size="small" readOnly>
+                {storyIndex + 1}/{totalStories}
+              </Counter>
+              <IconButton
+                variant="ghost"
+                size="small"
+                padding="small"
+                ariaLabel="Previous story"
+                asChild
+              >
+                <a href={previousHref}>
+                  <ChevronSmallLeftIcon />
+                </a>
+              </IconButton>
+              <IconButton
+                variant="ghost"
+                size="small"
+                padding="small"
+                ariaLabel="Next story"
+                asChild
+              >
+                <a href={nextHref}>
+                  <ChevronSmallRightIcon />
+                </a>
+              </IconButton>
+              <IconButton size="small" padding="small" ariaLabel="View in Storybook" asChild>
+                <a href={storybookHref} target="_blank" rel="noreferrer">
+                  <StorybookIcon />
+                </a>
+              </IconButton>
+            </>
+          }
+          secondRow={baselineBar}
+        />
+      </HeaderWrap>
 
       <PreviewFrameWrap $singleUp={isSingleUp} data-testid="review-details-screen-preview">
         {showBaseline ? (

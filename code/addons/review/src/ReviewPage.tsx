@@ -1,11 +1,11 @@
 import React, {
+  type FC,
+  type ReactNode,
   useCallback,
   useEffect,
   useMemo,
   useRef,
   useState,
-  type FC,
-  type ReactNode,
 } from 'react';
 
 import { Location, useNavigate } from 'storybook/internal/router';
@@ -31,7 +31,6 @@ import {
   flattenReviewStories,
   getAdjacentCollectionFirstStory,
   getReviewDetailNeighbors,
-  normalizeReviewStoryId,
   parseReviewChangesDetailLocation,
   type ReviewShortcutHrefs,
 } from './review-navigation.ts';
@@ -47,15 +46,13 @@ export const ReviewPage: FC = () => (
   <Location>{({ location }) => <ReviewPageContent search={location.search ?? ''} />}</Location>
 );
 
-// Change-detection status value marking a story as newly added.
-const NEW_STATUS_VALUE = 'status-value:new';
-
 const ReviewPageContent: FC<{ search: string }> = ({ search }) => {
   const [state, setState] = useState<ReviewState | null>(null);
   const [isStale, setIsStale] = useState(false);
   // Story IDs present in the baseline Storybook's index. `null` means the
   // baseline is unresolved or unavailable (no fetch yet, network/proxy error,
-  // or an unparseable index) — in which case no "New" badge is shown.
+  // or an unparseable index) — in which case it contributes nothing to "New"
+  // detection (a story can still be flagged "New" by change detection).
   const [baselineStoryIds, setBaselineStoryIds] = useState<Set<string> | null>(null);
 
   const api = useStorybookApi();
@@ -79,16 +76,16 @@ const ReviewPageContent: FC<{ search: string }> = ({ search }) => {
     [navigate]
   );
 
+  // Frozen preview thumbnails for the summary grid, built via the manager's
+  // canonical URL builder so they inherit globals like the rest of Storybook.
+  const getStoryPreviewHref = useCallback(
+    (storyId: string) => api.getStoryHrefs(storyId, { freeze: true }).previewHref,
+    [api]
+  );
+
   const emit = useChannel({
     [EVENTS.DISPLAY_REVIEW]: (next: ReviewState) => {
-      const normalizedState: ReviewState = {
-        ...next,
-        collections: next.collections.map((collection) => ({
-          ...collection,
-          storyIds: collection.storyIds.map((storyId) => normalizeReviewStoryId(storyId)),
-        })),
-      };
-      setState(normalizedState);
+      setState(next);
       // A fresh review resets staleness; a replayed (already-stale) one restores it.
       setIsStale(!!next.stale);
     },
@@ -128,7 +125,8 @@ const ReviewPageContent: FC<{ search: string }> = ({ search }) => {
         setBaselineStoryIds(new Set(Object.keys(entries)));
       })
       .catch(() => {
-        // Baseline unavailable — leave `null` so no "New" badge is shown.
+        // Baseline unavailable — leave `null` so it contributes nothing to
+        // "New" detection (change detection can still flag stories).
       });
     return () => {
       cancelled = true;
@@ -201,8 +199,8 @@ const ReviewPageContent: FC<{ search: string }> = ({ search }) => {
   }, [api, navigateToShortcut]);
 
   // Resolve each story's component title + name from the Storybook index.
-  // Drives the cell labels and the detail subtitle; falls back gracefully
-  // (per-consumer) when the index has not loaded.
+  // A story with no index entry is omitted: it has no resolvable metadata, so
+  // consumers treat it as invalid rather than guessing a label.
   const storyInfo = useMemo(() => {
     const info: Record<string, StoryInfo> = {};
     if (!state) {
@@ -237,7 +235,9 @@ const ReviewPageContent: FC<{ search: string }> = ({ search }) => {
       return ids;
     }
     const isChangeDetectedNew = (storyId: string) =>
-      Object.values(allStatuses[storyId] ?? {}).some((status) => status.value === NEW_STATUS_VALUE);
+      Object.values(allStatuses[storyId] ?? {}).some(
+        (status) => status.value === 'status-value:new'
+      );
     for (const collection of state.collections) {
       for (const storyId of collection.storyIds) {
         const absentFromBaseline = baselineStoryIds !== null && !baselineStoryIds.has(storyId);
@@ -335,12 +335,15 @@ const ReviewPageContent: FC<{ search: string }> = ({ search }) => {
       shortcutHrefsRef.current = shortcutHrefs;
 
       const currentStoryInfo = storyInfo[currentStoryId];
+      const currentStoryHrefs = api.getStoryHrefs(currentStoryId);
       detailScreen = (
         <DetailsScreen
           title={collection.title}
           storyId={currentStoryId}
           storyIndex={globalStoryIndex}
           totalStories={sequence.length}
+          previewHref={currentStoryHrefs.previewHref}
+          storybookHref={currentStoryHrefs.managerHref}
           componentTitle={currentStoryInfo?.title}
           storyName={currentStoryInfo?.name}
           isStale={isStale}
@@ -381,7 +384,12 @@ const ReviewPageContent: FC<{ search: string }> = ({ search }) => {
           aria-hidden={hasDetailScreen || undefined}
           style={hasDetailScreen ? { pointerEvents: 'none' } : undefined}
         >
-          <SummaryScreen state={state} storyInfo={storyInfo} isStale={isStale} />
+          <SummaryScreen
+            state={state}
+            storyInfo={storyInfo}
+            getStoryPreviewHref={getStoryPreviewHref}
+            isStale={isStale}
+          />
         </div>
         {hasDetailScreen ? (
           <div style={{ position: 'absolute', inset: 0, zIndex: 1 }}>{detailScreen}</div>

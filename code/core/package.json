@@ -1,6 +1,6 @@
 {
   "name": "storybook",
-  "version": "10.5.0-alpha.4",
+  "version": "10.5.0-alpha.5",
   "description": "Storybook: Develop, document, and test UI components in isolation",
   "keywords": [
     "storybook",
@@ -55,6 +55,11 @@
       "types": "./dist/actions/decorator.d.ts",
       "code": "./src/actions/decorator.ts",
       "default": "./dist/actions/decorator.js"
+    },
+    "./backgrounds": {
+      "types": "./dist/backgrounds/index.d.ts",
+      "code": "./src/backgrounds/index.ts",
+      "default": "./dist/backgrounds/index.js"
     },
     "./highlight": {
       "types": "./dist/highlight/index.d.ts",
@@ -197,6 +202,11 @@
       "code": "./src/manager-api/index.ts",
       "default": "./dist/manager-api/index.js"
     },
+    "./open-service": {
+      "types": "./dist/shared/open-service/index.d.ts",
+      "code": "./src/shared/open-service/index.ts",
+      "default": "./dist/shared/open-service/index.js"
+    },
     "./package.json": "./package.json",
     "./preview-api": {
       "types": "./dist/preview-api/index.d.ts",
@@ -268,6 +278,7 @@
     "@happy-dom/global-registrator": "^20.0.11",
     "@ngard/tiny-isequal": "^1.1.0",
     "@polka/compression": "^1.0.0-next.28",
+    "@preact/signals-core": "^1.14.2",
     "@radix-ui/react-scroll-area": "1.2.0-rc.7",
     "@radix-ui/react-slot": "^1.0.2",
     "@react-aria/interactions": "^3.25.5",
@@ -304,7 +315,6 @@
     "@yarnpkg/libzip": "2.3.0",
     "acorn": "^8.15.0",
     "acorn-jsx": "^5.3.2",
-    "alien-signals": "^3.2.0",
     "ansi-to-html": "^0.7.2",
     "browser-dtector": "^3.4.0",
     "bundle-require": "^5.1.0",
@@ -315,6 +325,7 @@
     "copy-to-clipboard": "^3.3.1",
     "cross-spawn": "^7.0.6",
     "deep-object-diff": "^1.1.0",
+    "deepsignal": "^1.6.0",
     "dequal": "^2.0.2",
     "detect-indent": "^7.0.1",
     "detect-port": "^1.6.1",

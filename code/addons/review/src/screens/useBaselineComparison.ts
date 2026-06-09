@@ -3,7 +3,6 @@ import { type RefObject, useCallback, useEffect, useRef, useState } from 'react'
 import { STORY_RENDERED } from 'storybook/internal/core-events';
 
 import { BASELINE_PROXY_PATH } from '../constants.ts';
-import { storyPreviewUrl } from '../review-navigation.ts';
 
 const toBaselinePreviewUrl = (latestUrlString: string) => {
   const latestUrl = new URL(latestUrlString, window.location.href);
@@ -41,10 +40,9 @@ export interface BaselineComparison {
  * each navigation. Returns the frame refs and both preview URLs to render.
  */
 export const useBaselineComparison = (
-  storyId: string,
+  latestPreviewSrc: string,
   showBaseline: boolean
 ): BaselineComparison => {
-  const latestPreviewSrc = storyPreviewUrl(storyId);
   const [baselinePreviewSrc, setBaselinePreviewSrc] = useState(() =>
     toBaselinePreviewUrl(latestPreviewSrc)
   );

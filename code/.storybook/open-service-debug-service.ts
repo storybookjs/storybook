@@ -3,7 +3,7 @@ import * as v from 'valibot';
 import { logger } from 'storybook/internal/node-logger';
 import type { StoryIndexGenerator } from '../core/src/core-server/utils/StoryIndexGenerator.ts';
 
-import { defineService } from '../core/src/shared/open-service/index.ts';
+import { defineService } from 'storybook/open-service';
 import { describeService, registerService } from '../core/src/shared/open-service/server.ts';
 
 const DEBUG_SERVICE_ID = 'storybook/internal/open-service-debug';
@@ -97,8 +97,8 @@ function createDebugServiceDef(storyIndexGeneratorPromise: Promise<StoryIndexGen
         output: v.undefined(),
         handler: async (input, ctx) => {
           logger.warn(`[open-service debug] command addActivity(${input.message})`);
-          ctx.self.setState((draft) => {
-            draft.activity.push(input.message);
+          ctx.self.setState((state) => {
+            state.activity.push(input.message);
           });
 
           return undefined;
@@ -115,10 +115,10 @@ function createDebugServiceDef(storyIndexGeneratorPromise: Promise<StoryIndexGen
           logger.warn(
             `[open-service debug] command syncStoryIndex(${input.reason}) => ${Object.keys(storyIndex.entries).length} entries`
           );
-          ctx.self.setState((draft) => {
-            draft.storyIndexEntryCount = Object.keys(storyIndex.entries).length;
-            draft.storyIndexSampleIds = sampleIds;
-            draft.activity.push(`syncStoryIndex:${input.reason}:${sampleIds.length}`);
+          ctx.self.setState((state) => {
+            state.storyIndexEntryCount = Object.keys(storyIndex.entries).length;
+            state.storyIndexSampleIds = sampleIds;
+            state.activity.push(`syncStoryIndex:${input.reason}:${sampleIds.length}`);
           });
 
           return undefined;
@@ -137,10 +137,10 @@ function createDebugServiceDef(storyIndexGeneratorPromise: Promise<StoryIndexGen
           logger.warn(
             `[open-service debug] command recordPreloadVisit(${input.entryId}, ${input.source}) => ${value}`
           );
-          ctx.self.setState((draft) => {
-            draft.preloadedByEntryId[input.entryId] = value;
-            draft.lastObservedValue = value;
-            draft.activity.push(`recordPreloadVisit:${input.entryId}:${input.source}`);
+          ctx.self.setState((state) => {
+            state.preloadedByEntryId[input.entryId] = value;
+            state.lastObservedValue = value;
+            state.activity.push(`recordPreloadVisit:${input.entryId}:${input.source}`);
           });
 
           return undefined;

@@ -2,11 +2,6 @@ import React, { type FC, type ReactNode, useEffect, useRef } from 'react';
 
 import { styled } from 'storybook/theming';
 
-// A fixed, white (content-background) heading shared by the summary and detail
-// screens so the two surfaces stay visually coherent. The first row carries an
-// optional leading control (e.g. a back button), the title + subtitle, and a
-// trailing actions cluster. An optional second row spans the full width for
-// controls like search or the baseline comparison bar.
 const Root = styled.header(({ theme }) => ({
   display: 'flex',
   flexDirection: 'column',
@@ -19,8 +14,6 @@ const Root = styled.header(({ theme }) => ({
 const TopRow = styled.div({
   display: 'flex',
   flexDirection: 'row',
-  // Top-align the leading control and actions with the title's first line
-  // (rather than centering against the taller title + subtitle block).
   alignItems: 'flex-start',
   gap: 8,
   padding: '16px 16px 8px 16px',
@@ -64,7 +57,6 @@ const Subtitle = styled.div(({ theme }) => ({
   display: 'flex',
   alignItems: 'center',
   gap: 5,
-  minWidth: 0,
   color: theme.textMutedColor,
   fontSize: theme.typography.size.s2,
   lineHeight: '20px',

@@ -1,7 +1,7 @@
 import { expect, within } from 'storybook/test';
 
 import preview from '../../../../.storybook/preview.tsx';
-import { CollectionGrid } from './CollectionGrid.tsx';
+import { CollectionGrid, type StoryInfo } from './CollectionGrid.tsx';
 
 const demoStoryIds = [
   'button-component--base',
@@ -14,11 +14,35 @@ const demoStoryIds = [
   'bench--es-build-analyzer',
 ];
 
+const titleCase = (value: string) =>
+  value
+    .split(/[-/]/)
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(' ');
+
+// Stand-in for the Storybook index: every demo story resolves to a title +
+// name so the grid renders it (stories with no index entry are skipped).
+const demoStoryInfo: Record<string, StoryInfo> = Object.fromEntries(
+  demoStoryIds.map((id) => {
+    const [componentId, ...rest] = id.split('--');
+    return [id, { title: titleCase(componentId), name: titleCase(rest.join('--')) || 'Story' }];
+  })
+);
+
 const meta = preview.meta({
   component: CollectionGrid,
-  parameters: { layout: 'fullscreen' },
+  parameters: {
+    layout: 'fullscreen',
+    chromatic: {
+      ignoreSelectors: ['[data-testid="review-collection-grid-cell"] iframe'],
+    },
+  },
   args: {
     storyIds: demoStoryIds,
+    storyInfo: demoStoryInfo,
+    getStoryPreviewHref: (storyId: string) =>
+      `iframe.html?id=${encodeURIComponent(storyId)}&viewMode=story&freeze=finished`,
   },
 });
 

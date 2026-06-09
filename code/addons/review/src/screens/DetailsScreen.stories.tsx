@@ -27,7 +27,12 @@ const managerState = {} as State;
 
 const meta = preview.meta({
   component: DetailsScreen,
-  parameters: { layout: 'fullscreen' },
+  parameters: {
+    layout: 'fullscreen',
+    chromatic: {
+      ignoreSelectors: ['[data-testid="review-details-screen-preview"] iframe'],
+    },
+  },
   decorators: [
     (Story) => (
       <ManagerContext.Provider value={{ state: managerState, api: managerApi }}>
@@ -47,6 +52,8 @@ const meta = preview.meta({
     storyId: 'components-toolbar--basic',
     storyIndex: 1,
     totalStories: 3,
+    previewHref: 'iframe.html?id=components-toolbar--basic&viewMode=story',
+    storybookHref: '?path=/story/components-toolbar--basic',
     backHref: buildReviewChangesSummaryHref(),
     previousHref: buildReviewChangesDetailHref({
       collectionIndex: 0,

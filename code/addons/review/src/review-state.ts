@@ -3,7 +3,7 @@
  *
  * Flow:
  *   MCP `display-review` tool → emit PUSH_REVIEW on the Storybook channel
- *   → this addon's server preset enriches with `branchName` and caches it
+ *   → this addon's server preset stamps `createdAt` and caches it
  *   → emits DISPLAY_REVIEW to all open tabs (or replays on REQUEST_REVIEW).
  *
  * This mirrors the canonical valibot schema in `@storybook/addon-mcp` →
@@ -26,11 +26,6 @@ export interface ReviewState {
   description: string;
   collections: ReviewCollection[];
   changedFiles?: string[];
-  /**
-   * Current git branch of the target repo, resolved server-side by this
-   * addon's preset; not part of the agent's MCP payload.
-   */
-  branchName?: string;
   /**
    * Server-side creation timestamp (unix ms) assigned when PUSH_REVIEW is
    * received; used for live "Created x minutes ago" UI in the summary.

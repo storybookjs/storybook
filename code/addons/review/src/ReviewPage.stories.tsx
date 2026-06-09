@@ -66,12 +66,15 @@ const managerApi: API = {
   getIsNavShown: () => true,
   toggleNav: toggleNavMock,
   setAddonShortcut: setAddonShortcutMock,
+  getStoryHrefs: (storyId: string, options?: { freeze?: boolean }) => ({
+    managerHref: `?path=/story/${storyId}`,
+    previewHref: `iframe.html?id=${storyId}&viewMode=story${options?.freeze ? '&freeze=finished' : ''}`,
+  }),
 } as unknown as API;
 
 const reviewState: ReviewState = {
   title: 'Manager settings polish',
   description: 'Updated settings views and spacing.',
-  branchName: 'feat/review-page',
   // A baseline exists, so the detail screen renders the baseline/latest
   // comparison for stories that aren't newly added.
   hasBaseline: true,
@@ -132,7 +135,15 @@ const applyReviewState = () => {
 
 const meta = preview.meta({
   component: ReviewPage,
-  parameters: { layout: 'fullscreen' },
+  parameters: {
+    layout: 'fullscreen',
+    chromatic: {
+      ignoreSelectors: [
+        '[data-testid="review-collection-grid-cell"] iframe',
+        '[data-testid="review-details-screen-preview"] iframe',
+      ],
+    },
+  },
   decorators: [
     (Story, { parameters }) => (
       <ManagerContext.Provider

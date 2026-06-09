@@ -563,4 +563,35 @@ describe('getStoryHrefs', () => {
     expect(managerHref).toEqual('/design-system/index.html?path=/story/test--story');
     expect(previewHref).toEqual('/design-system/iframe.html?id=test--story&viewMode=story');
   });
+
+  it('stays interactive by default (no freeze contract)', () => {
+    const { api, state } = initURL({
+      store,
+      provider: { channel: new EventEmitter() },
+      state: { location: { pathname: '/', search: '' } },
+      navigate: vi.fn(),
+      fullAPI: { getCurrentStoryData: () => ({ id: 'test--story' }) },
+    });
+    store.setState(state);
+
+    const { previewHref } = api.getStoryHrefs('test--story');
+    expect(previewHref).toEqual('/iframe.html?id=test--story&viewMode=story');
+    expect(previewHref).not.toContain('freeze');
+  });
+
+  it('opts the preview into the freeze contract when freeze is set', () => {
+    const { api, state } = initURL({
+      store,
+      provider: { channel: new EventEmitter() },
+      state: { location: { pathname: '/', search: '' } },
+      navigate: vi.fn(),
+      fullAPI: { getCurrentStoryData: () => ({ id: 'test--story' }) },
+    });
+    store.setState(state);
+
+    const { managerHref, previewHref } = api.getStoryHrefs('test--story', { freeze: true });
+    expect(previewHref).toEqual('/iframe.html?id=test--story&viewMode=story&freeze=finished');
+    // Freezing is a preview-only contract; the manager href must be unaffected.
+    expect(managerHref).toEqual('/?path=/story/test--story');
+  });
 });

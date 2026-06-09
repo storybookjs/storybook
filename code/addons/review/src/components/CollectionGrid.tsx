@@ -1,9 +1,9 @@
-import React, { useCallback, useEffect, useRef, useState, type FC, type ReactNode } from 'react';
+import React, { useCallback, useEffect, useRef, useState, type FC } from 'react';
 
 import { Button } from 'storybook/internal/components';
 import { styled } from 'storybook/theming';
 
-import { prettifyComponentId, storyPreviewUrl } from '../review-navigation.ts';
+import { Highlight } from './Highlight.tsx';
 
 const PREVIEW_SCALE = 0.5;
 
@@ -29,15 +29,12 @@ const MAX_CONCURRENT_PREVIEWS = 3;
  */
 const PREVIEW_SETTLE_TIMEOUT_MS = 1500;
 
-/**
- * Viewport-relative margins (as IntersectionObserver `rootMargin`) for the
- * preview lifecycle. A cell mounts its iframe once within one viewport of the
- * fold and is evicted (iframe unmounted, memory freed) only once roughly three
- * viewports away. The gap is hysteresis: a cell that briefly leaves the mount
- * zone isn't torn down until it's well offscreen, so scrolling near a boundary
- * doesn't thrash. This bounds live iframes to ~6–7 screens regardless of how
- * many stories the review has.
- */
+// IntersectionObserver `rootMargin`s for the preview lifecycle: mount a cell's
+// iframe within one root-height of the fold, evict it past two. The gap is
+// hysteresis so scrolling near a boundary doesn't thrash. These margins only
+// take effect when the observer's `root` is the real scroll container (see
+// `getScrollRoot`); `rootMargin` is not applied to intermediate scrollers, so
+// against the default viewport root they would be silently clipped to zero.
 const PREVIEW_MOUNT_ROOT_MARGIN = '100% 0px';
 const PREVIEW_EVICT_ROOT_MARGIN = '200% 0px';
 
@@ -51,7 +48,7 @@ interface PreviewTask {
 let activePreviewLoads = 0;
 const previewQueue: PreviewTask[] = [];
 
-function pumpPreviewQueue(): void {
+function startQueuedPreviews(): void {
   while (activePreviewLoads < MAX_CONCURRENT_PREVIEWS) {
     const task = previewQueue.shift();
     if (!task) {
@@ -68,7 +65,7 @@ function pumpPreviewQueue(): void {
 
 function enqueuePreview(task: PreviewTask): void {
   previewQueue.push(task);
-  pumpPreviewQueue();
+  startQueuedPreviews();
 }
 
 /** Mark a task done (load/error/settle/unmount) and let the next one start. */
@@ -85,7 +82,7 @@ function finishPreview(task: PreviewTask): void {
       previewQueue.splice(index, 1);
     }
   }
-  pumpPreviewQueue();
+  startQueuedPreviews();
 }
 
 /** Hover/focus: start a still-queued preview right away, bypassing the cap. */
@@ -102,18 +99,14 @@ function forceStartPreview(task: PreviewTask): void {
   task.start();
 }
 
-/** Component title + story name for a story, resolved from the Storybook index. */
 export interface StoryInfo {
   title: string;
   name: string;
 }
 
-// Column count is driven entirely by container width — 1 column on narrow
-// (mobile) widths up to 4 on wide screens — with each cell clamped to 400px so
-// a lone preview never stretches across the card. Each band also caps the grid
-// to two rows: once more stories exist than fit, the overflow cells are hidden
-// and a "Review all" cell takes the last visible slot. Both behaviors are pure
-// CSS (`:has()` + `:nth-child`), so no layout measurement runs in JS.
+// Per-breakpoint grid: `cols` columns (each cell clamped to 400px) capped at
+// two rows. Overflow beyond the cap is hidden and a "Review all" cell takes the
+// last slot — all via CSS (`:has()` + `:nth-child`), no JS measurement.
 const band = (cols: number) => {
   const cap = cols * 2;
   return {
@@ -142,7 +135,8 @@ const Grid = styled.div({
   // no two-row cap (every story is shown).
   gridTemplateColumns: 'minmax(0, 400px)',
   // Bands are mutually exclusive (ranged) so a narrower band's overflow rules
-  // never bleed into a wider one.
+  // never bleed into a wider one. The .98 upper bounds sit just below the next
+  // band's integer `min-width` so the two never both match at the boundary.
   '@container review-grid (max-width: 629.98px)': band(1),
   '@container review-grid (min-width: 630px) and (max-width: 844.98px)': band(2),
   '@container review-grid (min-width: 845px) and (max-width: 1259.98px)': band(3),
@@ -249,72 +243,59 @@ const ReviewAllCell = styled.div(({ theme }) => ({
   border: `1px dashed ${theme.appBorderColor}`,
 }));
 
-// Search matches are tinted with the accent colour; weight is inherited so a
-// match keeps the bold component / normal story styling.
-const Mark = styled.mark(({ theme }) => ({
-  background: 'transparent',
-  color: theme.color.secondary,
-  fontWeight: 'inherit',
-}));
+// The cell lives inside a scrollable container (the review page keeps a single
+// Radix ScrollArea as its scroller), not the document viewport. The lifecycle
+// observers must use that container as their `root`, otherwise `rootMargin` is
+// ignored and cells evict the moment they leave the scroller. Falls back to the
+// viewport (null) when there is no scroll container, e.g. fullscreen stories.
+const getScrollRoot = (element: HTMLElement): HTMLElement | null => {
+  const radixViewport = element.closest<HTMLElement>('[data-radix-scroll-area-viewport]');
+  if (radixViewport) {
+    return radixViewport;
+  }
+  let current = element.parentElement;
+  while (current) {
+    const { overflowY } = window.getComputedStyle(current);
+    if (overflowY === 'auto' || overflowY === 'scroll') {
+      return current;
+    }
+    current = current.parentElement;
+  }
+  return null;
+};
 
-const isWithinPreloadRange = (element: HTMLElement, margin: number): boolean => {
+const isWithinPreloadRange = (
+  element: HTMLElement,
+  root: HTMLElement | null,
+  margin: number
+): boolean => {
   const rect = element.getBoundingClientRect();
   // Hidden cells (e.g. overflow beyond the two-row cap) have a zero-size box;
   // don't seed them in-view or they'd boot iframes that never show.
   if (rect.width === 0 && rect.height === 0) {
     return false;
   }
+  if (root) {
+    const rootRect = root.getBoundingClientRect();
+    return rect.bottom >= rootRect.top - margin && rect.top <= rootRect.bottom + margin;
+  }
   const viewportHeight =
     typeof window === 'undefined' ? Number.POSITIVE_INFINITY : window.innerHeight || 0;
   return rect.bottom >= -margin && rect.top <= viewportHeight + margin;
 };
 
-// Render `text`, wrapping every case-insensitive occurrence of `query` in a
-// <Mark>. With no query the text renders untouched.
-const Highlight: FC<{ text: string; query: string }> = ({ text, query }) => {
-  const needle = query.trim().toLowerCase();
-  if (!needle) {
-    return <>{text}</>;
-  }
-  const haystack = text.toLowerCase();
-  const segments: ReactNode[] = [];
-  let cursor = 0;
-  let match = haystack.indexOf(needle);
-  let key = 0;
-  while (match !== -1) {
-    if (match > cursor) {
-      segments.push(text.slice(cursor, match));
-    }
-    segments.push(<Mark key={key++}>{text.slice(match, match + needle.length)}</Mark>);
-    cursor = match + needle.length;
-    match = haystack.indexOf(needle, cursor);
-  }
-  if (cursor < text.length) {
-    segments.push(text.slice(cursor));
-  }
-  return <>{segments}</>;
-};
-
-const deriveStoryInfo = (
-  storyId: string,
-  info?: StoryInfo
-): { component: string; name: string } => {
-  if (info) {
-    return { component: info.title.split('/').pop() ?? info.title, name: info.name };
-  }
-  const [componentId, ...rest] = storyId.split('--');
-  return {
-    component: prettifyComponentId(componentId),
-    name: prettifyComponentId(rest.join('--')) || 'Story',
-  };
-};
+const deriveStoryInfo = (info: StoryInfo): { component: string; name: string } => ({
+  component: info.title.split('/').pop() ?? info.title,
+  name: info.name,
+});
 
 const StoryPreviewCell: FC<{
   storyId: string;
   href?: string;
-  info?: StoryInfo;
+  info: StoryInfo;
   query: string;
-}> = ({ storyId, href, info, query }) => {
+  getPreviewHref: (storyId: string) => string;
+}> = ({ storyId, href, info, query, getPreviewHref }) => {
   const hostRef = useRef<HTMLElement>(null);
   const [isInView, setIsInView] = useState(false);
   // `src` stays unset until the scheduler starts this preview; the iframe only
@@ -331,19 +312,25 @@ const StoryPreviewCell: FC<{
       setIsInView(true);
       return undefined;
     }
+    const scrollRoot = getScrollRoot(host);
     // Snappy first paint for above-the-fold cells: the observers' initial
     // callbacks are deferred to the next frame, so seed the state synchronously.
-    if (isWithinPreloadRange(host, typeof window === 'undefined' ? 0 : window.innerHeight)) {
+    const seedMargin = scrollRoot
+      ? scrollRoot.clientHeight
+      : typeof window === 'undefined'
+        ? 0
+        : window.innerHeight;
+    if (isWithinPreloadRange(host, scrollRoot, seedMargin)) {
       setIsInView(true);
     }
-    // Mount when the cell comes within the mount margin of the viewport.
+    // Mount when the cell comes within the mount margin of the scroll root.
     const mountObserver = new IntersectionObserver(
       ([entry]) => {
         if (entry.isIntersecting) {
           setIsInView(true);
         }
       },
-      { rootMargin: PREVIEW_MOUNT_ROOT_MARGIN }
+      { root: scrollRoot, rootMargin: PREVIEW_MOUNT_ROOT_MARGIN }
     );
     // Evict once the cell moves beyond the (larger) evict margin, unmounting
     // its iframe to free the preview runtime. The margin gap is hysteresis.
@@ -353,7 +340,7 @@ const StoryPreviewCell: FC<{
           setIsInView(false);
         }
       },
-      { rootMargin: PREVIEW_EVICT_ROOT_MARGIN }
+      { root: scrollRoot, rootMargin: PREVIEW_EVICT_ROOT_MARGIN }
     );
     mountObserver.observe(host);
     evictObserver.observe(host);
@@ -377,7 +364,7 @@ const StoryPreviewCell: FC<{
       return undefined;
     }
     const task: PreviewTask = {
-      start: () => setSrc(storyPreviewUrl(storyId, { freeze: true })),
+      start: () => setSrc(getPreviewHref(storyId)),
       started: false,
       finished: false,
     };
@@ -388,7 +375,7 @@ const StoryPreviewCell: FC<{
       finishPreview(task);
       taskRef.current = null;
     };
-  }, [isInView, storyId]);
+  }, [isInView, storyId, getPreviewHref]);
 
   const finishCurrent = useCallback(() => {
     if (taskRef.current) {
@@ -413,14 +400,14 @@ const StoryPreviewCell: FC<{
     return () => clearTimeout(timer);
   }, [src, finishCurrent]);
 
-  const { component, name } = deriveStoryInfo(storyId, info);
+  const { component, name } = deriveStoryInfo(info);
 
   return (
     <Cell data-cell data-testid="review-collection-grid-cell">
       <Frame
         as={href ? 'a' : 'div'}
         href={href}
-        ref={hostRef}
+        ref={hostRef as React.RefObject<HTMLAnchorElement>}
         aria-label={href ? `Review story ${storyId}` : undefined}
         onMouseEnter={forceStartCurrent}
         onFocus={forceStartCurrent}
@@ -455,12 +442,14 @@ const StoryPreviewCell: FC<{
 export interface CollectionGridProps {
   storyIds: string[];
   getStoryHref?: (storyId: string, storyIndex: number) => string | undefined;
+  /** Builds the (frozen) preview iframe src for a story thumbnail. */
+  getStoryPreviewHref: (storyId: string) => string;
   /** Persisted "review all" state from the parent list. */
   showAll?: boolean;
   /** Called when the user expands to "Review all". */
   onShowAll?: () => void;
   /** Story id → component title + story name, for the cell label. */
-  storyInfo?: Record<string, StoryInfo>;
+  storyInfo: Record<string, StoryInfo>;
   /** Active search query — matches in the cell label are highlighted. */
   query?: string;
 }
@@ -468,6 +457,7 @@ export interface CollectionGridProps {
 export const CollectionGrid: FC<CollectionGridProps> = ({
   storyIds,
   getStoryHref,
+  getStoryPreviewHref,
   showAll = false,
   onShowAll,
   storyInfo,
@@ -475,15 +465,24 @@ export const CollectionGrid: FC<CollectionGridProps> = ({
 }) => (
   <GridContainer>
     <Grid data-show-all={showAll || undefined} data-testid="review-collection-grid">
-      {storyIds.map((storyId, storyIndex) => (
-        <StoryPreviewCell
-          key={storyId}
-          storyId={storyId}
-          href={getStoryHref?.(storyId, storyIndex)}
-          info={storyInfo?.[storyId]}
-          query={query}
-        />
-      ))}
+      {storyIds.map((storyId, storyIndex) => {
+        // A story with no index entry has no resolvable label and is treated as
+        // invalid, so it is skipped rather than rendered with a guessed name.
+        const info = storyInfo[storyId];
+        if (!info) {
+          return null;
+        }
+        return (
+          <StoryPreviewCell
+            key={storyId}
+            storyId={storyId}
+            href={getStoryHref?.(storyId, storyIndex)}
+            info={info}
+            query={query}
+            getPreviewHref={getStoryPreviewHref}
+          />
+        );
+      })}
       <ReviewAllCell data-review-all>
         <Button size="medium" onClick={() => onShowAll?.()}>
           Review all {storyIds.length}

@@ -14,7 +14,6 @@ import {
 
 import { ReviewHeader } from '../components/ReviewHeader.tsx';
 import { PREVIEW_MODE_SESSION_KEY } from '../constants.ts';
-import { buildStorybookStoryHref } from '../review-navigation.ts';
 import { sessionStore } from '../session-store.ts';
 import { useBaselineComparison } from './useBaselineComparison.ts';
 
@@ -153,12 +152,14 @@ const BarControls = styled.div({
 type CompareMode = 'split' | 'single';
 type ComparePane = 'baseline' | 'latest';
 
-const DEFAULT_COMPARE_MODE: CompareMode = 'split';
+const DEFAULT_COMPARE_MODE: CompareMode = 'single';
 
 // The persisted preview layout reuses the historical '1up'/'2up' values so the
 // choice carries across sessions; map them to the local split/single model.
-const readCompareMode = (): CompareMode =>
-  sessionStore.read(PREVIEW_MODE_SESSION_KEY) === '1up' ? 'single' : DEFAULT_COMPARE_MODE;
+const readCompareMode = (): CompareMode => {
+  const stored = sessionStore.read(PREVIEW_MODE_SESSION_KEY);
+  return stored === '2up' ? 'split' : DEFAULT_COMPARE_MODE;
+};
 
 export interface DetailsScreenProps {
   /** Fallback title shown when story metadata is unavailable. */
@@ -169,6 +170,10 @@ export interface DetailsScreenProps {
   backHref: string;
   previousHref: string;
   nextHref: string;
+  /** Preview iframe src for the latest (current) story. */
+  previewHref: string;
+  /** Manager href to open the story in the regular Storybook UI. */
+  storybookHref: string;
   componentTitle?: string;
   storyName?: string;
   /** When true, render the "this review may be stale" banner at the top. */
@@ -239,6 +244,8 @@ export const DetailsScreen = ({
   backHref,
   previousHref,
   nextHref,
+  previewHref,
+  storybookHref,
   componentTitle,
   storyName,
   isStale = false,
@@ -255,7 +262,7 @@ export const DetailsScreen = ({
   const isSingleUp = mode === 'single' || !showBaseline;
 
   const { baselineFrameRef, latestFrameRef, latestPreviewSrc, baselinePreviewSrc } =
-    useBaselineComparison(storyId, showBaseline);
+    useBaselineComparison(previewHref, showBaseline);
 
   // Persist the user's layout choice so it carries across navigation between
   // the detail and summary screens.
@@ -366,7 +373,7 @@ export const DetailsScreen = ({
                 </a>
               </IconButton>
               <IconButton size="small" padding="small" ariaLabel="View in Storybook" asChild>
-                <a href={buildStorybookStoryHref(storyId)} target="_blank" rel="noreferrer">
+                <a href={storybookHref} target="_blank" rel="noreferrer">
                   <StorybookIcon />
                 </a>
               </IconButton>
@@ -376,7 +383,7 @@ export const DetailsScreen = ({
         />
       </HeaderWrap>
 
-      <PreviewFrameWrap $singleUp={isSingleUp}>
+      <PreviewFrameWrap $singleUp={isSingleUp} data-testid="review-details-screen-preview">
         {showBaseline ? (
           <>
             <PreviewPane $singleUp={isSingleUp} $active={!isSingleUp || activePane === 'baseline'}>

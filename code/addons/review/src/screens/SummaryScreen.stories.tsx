@@ -1,12 +1,15 @@
 import { expect, within } from 'storybook/test';
 
 import preview from '../../../../.storybook/preview.tsx';
+import type { StoryInfo } from '../components/CollectionGrid.tsx';
 import type { ReviewState } from '../review-state.ts';
 import { SummaryScreen } from './SummaryScreen.tsx';
 
+const getStoryPreviewHref = (storyId: string) =>
+  `iframe.html?id=${encodeURIComponent(storyId)}&viewMode=story&freeze=finished`;
+
 const minimal: ReviewState = {
   title: 'Button prop rename',
-  branchName: 'update/button-styles',
   description:
     'Renamed the Button `appearance` prop to `variant` and updated all internal usages. No visual change is expected.',
   collections: [
@@ -20,7 +23,6 @@ const minimal: ReviewState = {
 
 const full: ReviewState = {
   title: 'Primary button visual refresh',
-  branchName: 'update/button-weight-and-padding',
   description:
     'Made the primary/solid Button bolder: font-weight 700 → 800 and larger padding. Outline and ghost variants are unchanged. Start with Variants and Sizes/Paddings, then sanity-check ToggleButton and ReviewChangesButton.',
   changedFiles: ['code/core/src/components/components/Button/Button.tsx'],
@@ -42,7 +44,6 @@ const full: ReviewState = {
 
 const largeCascade: ReviewState = {
   title: 'Theme token cascade review',
-  branchName: 'refactor/theme-tokens',
   description:
     'Refactored the shared theme tokens. Change-detection flagged a broad cascade; most consumers are transitive and unlikely to shift visibly. Spot-check the atomic and consumer tiers first.',
   changedFiles: ['code/core/src/theming/tokens.ts', 'code/core/src/theming/create.ts'],
@@ -115,7 +116,6 @@ const largeCascade: ReviewState = {
 
 const pagesAndBench: ReviewState = {
   title: 'Page components and bench analyzer',
-  branchName: 'chore/review-pages-and-bench',
   description:
     'Validating the review grid with manager page stories alongside the bench analyzer story.',
   collections: [
@@ -195,7 +195,6 @@ const atomicChange: ReviewState = {
 
 const manyCollections: ReviewState = {
   title: 'Large review surface: many collections and stories',
-  branchName: 'perf/review-large-dataset',
   description:
     'Stress-test the Summary screen with many collections and many story previews using real stories from the internal Storybook.',
   collections: [
@@ -395,10 +394,39 @@ const manyCollections: ReviewState = {
   ],
 };
 
+const titleCase = (value: string) =>
+  value
+    .split(/[-/]/)
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(' ');
+
+// Stand-in for the Storybook index: every story referenced by a fixture resolves
+// to a title + name so the grid renders it (stories with no entry are skipped).
+const demoStoryInfo: Record<string, StoryInfo> = {};
+for (const state of [minimal, full, largeCascade, pagesAndBench, atomicChange, manyCollections]) {
+  for (const collection of state.collections) {
+    for (const id of collection.storyIds) {
+      if (!demoStoryInfo[id]) {
+        const [componentId, ...rest] = id.split('--');
+        demoStoryInfo[id] = {
+          title: titleCase(componentId),
+          name: titleCase(rest.join('--')) || 'Story',
+        };
+      }
+    }
+  }
+}
+
 const meta = preview.meta({
   component: SummaryScreen,
-  parameters: { layout: 'fullscreen' },
-  args: {},
+  parameters: {
+    layout: 'fullscreen',
+    chromatic: {
+      ignoreSelectors: ['[data-testid="review-collection-grid-cell"] iframe'],
+    },
+  },
+  args: { getStoryPreviewHref, storyInfo: demoStoryInfo },
 });
 
 export const Empty = meta.story({

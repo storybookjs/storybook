@@ -8,7 +8,13 @@
 import * as v from 'valibot';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { mutableRecordLookupServiceDef } from './fixtures.ts';
+import {
+  awaitedPreloadValueServiceDef,
+  entryIdInputSchema,
+  mutableRecordLookupServiceDef,
+  preloadedValueOutputSchema,
+  voidOutputSchema,
+} from './fixtures.ts';
 import { defineService } from './service-definition.ts';
 import {
   SERVICE_COMMAND_ACK,
@@ -50,6 +56,29 @@ const throwingCommandServiceDef = defineService({
       handler: async () => {
         throw new Error('kaboom', { cause: new Error('root cause') });
       },
+    },
+  },
+});
+
+/** Query `load` invokes a command that has no handler in this runtime (peer-only). */
+const loadInvokesRemoteCommandServiceDef = defineService({
+  id: 'internal-fixture/load-invokes-remote-command',
+  description: 'Query load calls a command declared without a local handler.',
+  initialState: {} as Record<string, string | undefined>,
+  queries: {
+    getPreloadedValue: {
+      description: 'Populates state via a remote-only command inside load.',
+      input: entryIdInputSchema,
+      output: preloadedValueOutputSchema,
+      handler: (input, ctx) => ctx.self.state[input.entryId] ?? null,
+      load: (input, ctx) => ctx.self.commands.preloadValue(input).then(() => undefined),
+    },
+  },
+  commands: {
+    preloadValue: {
+      description: 'Populates one entry — implemented only on a peer in this test runtime.',
+      input: entryIdInputSchema,
+      output: voidOutputSchema,
     },
   },
 });
@@ -277,5 +306,57 @@ describe('remote command responder (has local handler)', () => {
 
     expect(emittedCalls(channel, SERVICE_COMMAND_ACK)).toHaveLength(0);
     expect(emittedCalls(channel, SERVICE_COMMAND_RESULT)).toHaveLength(0);
+  });
+});
+
+describe('load bodies and command routing', () => {
+  it('calls the local command handler from a load body without emitting command-invoke', async () => {
+    const channel = createTestChannel();
+    installTestChannel(channel);
+    const handlerSpy = vi.spyOn(awaitedPreloadValueServiceDef.commands.preloadValue, 'handler');
+
+    try {
+      const service = registerService(awaitedPreloadValueServiceDef);
+
+      await service.queries.getPreloadedValue.loaded({ entryId: 'entry-a' });
+
+      expect(handlerSpy).toHaveBeenCalledTimes(1);
+      expect(handlerSpy.mock.calls[0]?.[0]).toEqual({ entryId: 'entry-a' });
+      expect(emittedCalls(channel, SERVICE_COMMAND_INVOKE)).toHaveLength(0);
+      expect(service.queries.getPreloadedValue({ entryId: 'entry-a' })).toBe('preloaded');
+    } finally {
+      handlerSpy.mockRestore();
+    }
+  });
+
+  it('routes a load-body command through command-invoke when no local handler exists', async () => {
+    const channel = createTestChannel();
+    installTestChannel(channel);
+
+    const service = registerService(loadInvokesRemoteCommandServiceDef);
+    const promise = service.queries.getPreloadedValue.loaded({ entryId: 'entry-a' });
+
+    await vi.waitFor(() => expect(emittedCalls(channel, SERVICE_COMMAND_INVOKE)).toHaveLength(1));
+
+    expect(emittedCalls(channel, SERVICE_COMMAND_INVOKE)[0]?.[1]).toMatchObject({
+      serviceId: loadInvokesRemoteCommandServiceDef.id,
+      commandName: 'preloadValue',
+      input: { entryId: 'entry-a' },
+      callId: expect.any(String),
+      clientId: expect.any(String),
+    });
+
+    const { callId } = emittedCalls(
+      channel,
+      SERVICE_COMMAND_INVOKE
+    )[0]?.[1] as CommandInvokePayload;
+    channel.emitExternal(SERVICE_COMMAND_RESULT, {
+      serviceId: loadInvokesRemoteCommandServiceDef.id,
+      callId,
+      result: undefined,
+      clientId: 'peer',
+    });
+
+    await expect(promise).resolves.toBeNull();
   });
 });

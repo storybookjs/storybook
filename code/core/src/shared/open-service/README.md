@@ -158,13 +158,13 @@ Handlers resolve other registered services through `ctx.getService(serviceId)`. 
 parameter, the return type is `RuntimeService` — query and command results are erased to
 `unknown`.
 
-Pass the source service definition as a generic to recover the full typed runtime surface:
+Pass the source service instance type as a generic to recover the full typed runtime surface:
 
 ```ts
-import type { mutableRecordLookupServiceDef } from './mutable-record-lookup.ts';
+import type { MutableRecordLookupService } from './mutable-record-lookup.ts';
 
 handler: (input, ctx) => {
-  const lookup = ctx.getService<typeof mutableRecordLookupServiceDef>(
+  const lookup = ctx.getService<MutableRecordLookupService>(
     'internal-fixture/mutable-record-lookup'
   );
 
@@ -230,10 +230,12 @@ That split is intentional:
   writing for the current server process; the registry itself lives in
   [service-registry.ts](./service-registry.ts), shared with the browser entrypoints
 
-`registerService(definition)` throws `OpenServiceDuplicateRegistrationError` if a service with the
-same id is already registered. The default `services` preset hook in
-[common-preset.ts](../../../core-server/presets/common-preset.ts) also throws if the preset is applied
-more than once in the same process, which catches duplicate registration paths early.
+`registerService(definition)` is idempotent by id: registering an id that already exists returns the
+existing runtime instead of throwing. This keeps core services safe to register from a `beforeAll`
+annotation, which CSF4 composes twice (once in `definePreview`, once in `StoryStore`) and which also
+re-runs on HMR. The default `services` preset hook in
+[common-preset.ts](../../../core-server/presets/common-preset.ts) still throws if the preset is applied
+more than once in the same process, which catches misconfigured preset wiring early.
 
 The internal Storybook config registers an example debug service through a dedicated preset file
 ([`code/.storybook/services-preset.ts`](../../../../.storybook/services-preset.ts)), gated on

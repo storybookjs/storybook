@@ -30,7 +30,9 @@ export type ServiceId = string;
  */
 export type ServiceState<TState> = TState &
   (TState extends readonly unknown[]
-    ? { __openServiceStateError: 'Service state must be a plain object, not an array.' }
+    ? {
+        __openServiceStateError: 'Service state must be a plain object, not an array.';
+      }
     : unknown);
 
 /** Public schema shape exposed when describing a schema-backed service contract. */
@@ -372,10 +374,7 @@ export type ServiceInstanceOf<TDefinition extends AnyServiceDefinition> =
 export interface ServiceRegistryApi {
   listServices(): Promise<ServiceSummary[]>;
   describeService(serviceId: ServiceId): Promise<ServiceDescriptor>;
-  getService(serviceId: ServiceId): RuntimeService;
-  getService<TDefinition extends AnyServiceDefinition>(
-    serviceId: ServiceId
-  ): ServiceInstanceOf<TDefinition>;
+  getService<TInstance = RuntimeService>(serviceId: ServiceId): TInstance;
 }
 
 export type RuntimeService = ServiceInstance<unknown, Queries<unknown>, Commands<unknown>> &

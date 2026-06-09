@@ -41,7 +41,14 @@ const managerApi = {
   }),
   getData: fn((id: string) => (id === storyId ? storyData : undefined)).mockName('api::getData'),
   getCurrentStoryData: fn(() => storyData).mockName('api::getCurrentStoryData'),
+  getStoryHrefs: fn((id: string) => ({
+    managerHref: `?path=/story/${id}`,
+    previewHref: `iframe.html?id=${id}&viewMode=story`,
+  })).mockName('api::getStoryHrefs'),
   getElements: fn(() => ({})).mockName('api::getElements'),
+  getIsFullscreen: fn(() => false).mockName('api::getIsFullscreen'),
+  toggleFullscreen: fn().mockName('api::toggleFullscreen'),
+  getIsNavShown: fn(() => false).mockName('api::getIsNavShown'),
   getShowToolbarWithCustomisations: fn((showToolbar: boolean) => showToolbar).mockName(
     'api::getShowToolbarWithCustomisations'
   ),
@@ -127,8 +134,8 @@ export const Default = meta.story({
     await expect(
       await canvas.findByRole('heading', { name: 'Toolbar & direct consumers' })
     ).toBeInTheDocument();
-    await expect(await canvas.findByText('Toolbar')).toBeInTheDocument();
-    await expect(await canvas.findByText('Basic')).toBeInTheDocument();
+    const header = await canvas.findByRole('banner');
+    await expect(within(header).getByText('Basic')).toBeInTheDocument();
     await expect(
       await canvas.findByRole('link', { name: 'View in Storybook' })
     ).toBeInTheDocument();

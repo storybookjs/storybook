@@ -20,7 +20,6 @@ import type { ReverseIndexImpl } from './dependency-graph/reverse-index.ts';
 import { builtinImportParsers } from './parser-registry/builtins.ts';
 import { ParserRegistry } from './parser-registry/parser-registry.ts';
 import type { ImportParser } from './parser-registry/types.ts';
-import { notifySourceFileChange } from '../../../../../core-server/change-detection/source-changes.ts';
 
 export interface ModuleGraphEngineOptions {
   getIndex: () => Promise<StoryIndex>;
@@ -387,9 +386,6 @@ export class ModuleGraphEngine {
     if (!this.incrementalPatcher) {
       return;
     }
-    // Surface the raw change to external subscribers (e.g. addon-review's
-    // staleness check) before patching — they only care that a file changed.
-    notifySourceFileChange(event);
     const prePatchBumped = this.collectBumpedStoryFiles(event.path);
     try {
       await this.incrementalPatcher.patch(event);

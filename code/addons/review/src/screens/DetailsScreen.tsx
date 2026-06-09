@@ -128,12 +128,14 @@ const BarControls = styled.div({
 type CompareMode = 'split' | 'single';
 type ComparePane = 'baseline' | 'latest';
 
-const DEFAULT_COMPARE_MODE: CompareMode = 'split';
+const DEFAULT_COMPARE_MODE: CompareMode = 'single';
 
 // The persisted preview layout reuses the historical '1up'/'2up' values so the
 // choice carries across sessions; map them to the local split/single model.
-const readCompareMode = (): CompareMode =>
-  sessionStore.read(PREVIEW_MODE_SESSION_KEY) === '1up' ? 'single' : DEFAULT_COMPARE_MODE;
+const readCompareMode = (): CompareMode => {
+  const stored = sessionStore.read(PREVIEW_MODE_SESSION_KEY);
+  return stored === '2up' ? 'split' : DEFAULT_COMPARE_MODE;
+};
 
 export interface DetailsScreenProps {
   /** Fallback title shown when story metadata is unavailable. */

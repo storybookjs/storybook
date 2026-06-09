@@ -334,7 +334,9 @@ export function metaComponentMatchesRef(
   const refSymbol = findImportSymbolInStoryFile(typescript, checker, storySourceFile, componentRef);
   const metaSymbol = resolveComponentSymbolFromNode(typescript, checker, metaComponentInitializer);
 
-  if (refSymbol && metaSymbol) {
+  // Plain symbol equality only when the ref is not a member expression — otherwise
+  // `Button.Aligner` would match `meta.component: Button` because both resolve to the Button import.
+  if (refSymbol && metaSymbol && !componentRef.member) {
     return (
       resolveAliasedSymbol(typescript, checker, refSymbol) ===
       resolveAliasedSymbol(typescript, checker, metaSymbol)
@@ -538,17 +540,18 @@ export function resolvePropsFromComponentExport(
   let componentType: ts.Type | undefined;
 
   if (componentRef.namespace && componentRef.member) {
-    const namespaceSymbol = exports.find((symbol) => symbol.getName() === componentRef.namespace);
-    if (!namespaceSymbol) {
+    // `import * as UI` — importName is the module export, not the local namespace alias.
+    const namespaceExportName = componentRef.importName ?? componentRef.member;
+    exportSymbol =
+      namespaceExportName === 'default'
+        ? exports.find((symbol) => symbol.getName() === 'default')
+        : exports.find((symbol) => symbol.getName() === namespaceExportName);
+
+    if (!exportSymbol) {
       return undefined;
     }
-    const namespaceType = checker.getTypeOfSymbol(namespaceSymbol);
-    const memberSymbol = namespaceType.getProperty(componentRef.member);
-    if (!memberSymbol) {
-      return undefined;
-    }
-    exportSymbol = memberSymbol;
-    componentType = checker.getTypeOfSymbol(memberSymbol);
+
+    componentType = checker.getTypeOfSymbol(exportSymbol);
   } else {
     exportSymbol =
       exportName === 'default'

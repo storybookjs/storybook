@@ -5,8 +5,8 @@ import { loadCsf } from 'storybook/internal/csf-tools';
 
 import ts from 'typescript';
 
-import { findMatchingComponent } from '../generator.ts';
 import { type StoryRef, getComponents } from '../getComponentImports.ts';
+import { findMatchingComponent } from '../resolveComponents.ts';
 import { ComponentMetaProject } from './ComponentMetaProject.ts';
 import { createTempProject, writeFiles } from './test-helpers.ts';
 

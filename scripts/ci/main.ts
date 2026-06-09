@@ -13,6 +13,7 @@ import {
   knip,
   lint,
   fmt,
+  internalStorybookE2e,
   storybookChromatic,
   testUnit_windows,
   testsStories_linux,
@@ -66,6 +67,7 @@ function generateConfig(workflow: Workflow) {
       knip,
 
       storybookChromatic,
+      internalStorybookE2e,
       benchmarkPackages,
 
       sandboxesNoOpJob,

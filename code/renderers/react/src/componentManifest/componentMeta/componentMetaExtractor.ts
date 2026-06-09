@@ -237,20 +237,6 @@ function resolveComponentSymbol(
 // Story-based prop extraction (probe-free)
 // ---------------------------------------------------------------------------
 
-/**
- * Resolves the selected component symbol and props type by finding JSX usage of the target
- * component in a story file.
- *
- * Story files already contain JSX like `<Button />` that TypeScript has resolved. This function
- * walks the story AST to find a JSX element matching the target component and extracts the props
- * type via `getResolvedSignature()` — the same mechanism as autocomplete and the former probe
- * approach.
- *
- * @param importSpecifier - The import specifier as written in the story file (e.g., './Button',
- *   '@mantine/core')
- * @param importName - The export name of the component (e.g., 'Button', 'default')
- * @param memberAccess - For compound components (e.g., 'Root' in `<Accordion.Root />`)
- */
 /** Finds the story-local import binding for a {@link ComponentRef}. */
 export function findImportSymbolInStoryFile(
   typescript: typeof ts,
@@ -264,6 +250,9 @@ export function findImportSymbolInStoryFile(
   if (!importSpecifier) {
     return undefined;
   }
+
+  // Step 1: Find the import binding symbol in the story file.
+  // This is the local symbol that the story uses in JSX (e.g., `Button` from `import { Button } from './Button'`).
 
   for (const stmt of storySourceFile.statements) {
     if (!typescript.isImportDeclaration(stmt)) {
@@ -285,9 +274,11 @@ export function findImportSymbolInStoryFile(
     let importSymbol: ts.Symbol | undefined;
 
     if (importName === 'default') {
+      // Default import: import Button from '...'
       if (clause.name) {
         importSymbol = checker.getSymbolAtLocation(clause.name);
       }
+      // Also check named imports for `{ default as Button }` pattern
       if (
         !importSymbol &&
         clause.namedBindings &&
@@ -302,6 +293,7 @@ export function findImportSymbolInStoryFile(
         }
       }
     } else if (clause.namedBindings && typescript.isNamedImports(clause.namedBindings)) {
+      // Named import: import { Button } from '...' or import { Button as Btn } from '...'
       for (const spec of clause.namedBindings.elements) {
         const originalName = (spec.propertyName ?? spec.name).text;
         if (originalName === importName) {
@@ -310,7 +302,10 @@ export function findImportSymbolInStoryFile(
         }
       }
     }
-
+    // Namespace import: import * as Ns from '...'
+    // Only applies when memberAccess is set (compound components accessed as <Ns.Member />).
+    // Without this guard, a namespace import from the same module could shadow a named
+    // import we're actually looking for (e.g. `import * as X from './m'; import { Y } from './m'`).
     if (
       !importSymbol &&
       memberAccess &&
@@ -361,6 +356,20 @@ export function metaComponentMatchesRef(
   return false;
 }
 
+/**
+ * Resolves the selected component symbol and props type by finding JSX usage of the target
+ * component in a story file.
+ *
+ * Story files already contain JSX like `<Button />` that TypeScript has resolved. This function
+ * walks the story AST to find a JSX element matching the target component and extracts the props
+ * type via `getResolvedSignature()` — the same mechanism as autocomplete and the former probe
+ * approach.
+ *
+ * @param importSpecifier - The import specifier as written in the story file (e.g., './Button',
+ *   '@mantine/core')
+ * @param importName - The export name of the component (e.g., 'Button', 'default')
+ * @param memberAccess - For compound components (e.g., 'Root' in `<Accordion.Root />`)
+ */
 export function resolvePropsFromStoryFile(
   typescript: typeof ts,
   checker: ts.TypeChecker,

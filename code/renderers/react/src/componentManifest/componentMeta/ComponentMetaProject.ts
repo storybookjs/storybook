@@ -316,6 +316,7 @@ export class ComponentMetaProject {
         }
 
         // Path 2: Fallback — resolve from meta.component in the story file.
+        // Only fires when the user explicitly set `component:` in the meta object.
         // Only applies to the meta component itself, not declared subcomponents.
         if (!resolvedComponent) {
           resolvedComponent = this.resolveFromMetaComponent(

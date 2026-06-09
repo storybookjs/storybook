@@ -95,6 +95,18 @@ export const RetainControlFocusWithTabs: StoryObj<typeof meta> = {
       />
     );
   },
+  beforeEach: async ({ canvasElement }) => {
+    return async () => {
+      const canvas = within(canvasElement);
+      const input =
+        canvas.queryByDisplayValue('hellox') ?? canvas.queryByDisplayValue('hello');
+      if (!input) {
+        return;
+      }
+      await userEvent.clear(input);
+      await userEvent.type(input, 'hello');
+    };
+  },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     const input = await canvas.findByDisplayValue('hello');

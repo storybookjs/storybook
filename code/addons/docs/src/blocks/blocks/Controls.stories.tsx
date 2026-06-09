@@ -5,7 +5,7 @@ import type { PlayFunctionContext } from 'storybook/internal/csf';
 
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
-import { expect, userEvent, within } from 'storybook/test';
+import { expect, userEvent, waitFor, within } from 'storybook/test';
 
 import * as ExampleStories from '../examples/ControlsParameters.stories';
 import * as SubcomponentsExampleStories from '../examples/ControlsWithSubcomponentsParameters.stories';
@@ -130,12 +130,25 @@ export const SubcomponentsRetainControlFocus: Story = {
   args: {
     of: SubcomponentsExampleStories.NoParameters,
   },
+  beforeEach: async ({ canvasElement }) => {
+    return async () => {
+      const canvas = within(canvasElement);
+      const input = canvas.queryByDisplayValue('bx') ?? canvas.queryByDisplayValue('b');
+      if (!input) {
+        return;
+      }
+      await userEvent.clear(input);
+      await userEvent.type(input, 'b');
+    };
+  },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     const input = await canvas.findByDisplayValue('b');
     await userEvent.click(input);
     await userEvent.type(input, 'x');
-    await expect(document.activeElement).toBe(input);
+    await waitFor(() => {
+      expect(document.activeElement).toBe(input);
+    });
   },
 };
 

@@ -30,6 +30,8 @@ import type ts from 'typescript';
 import type { StoryRef } from '../getComponentImports.ts';
 import type { ComponentRef, ResolvedComponentTarget } from '../types.ts';
 import {
+  metaComponentMatchesRef,
+  resolvePropsFromComponentExport,
   resolvePropsFromComponentType,
   resolvePropsFromStoryFile,
   serializeComponentDoc,
@@ -314,11 +316,21 @@ export class ComponentMetaProject {
         }
 
         // Path 2: Fallback — resolve from meta.component in the story file.
-        // Only fires when the user explicitly set `component:` in the meta object.
+        // Only applies to the meta component itself, not declared subcomponents.
         if (!resolvedComponent) {
           resolvedComponent = this.resolveFromMetaComponent(
             checker,
             storySourceFile,
+            entryComponent
+          );
+        }
+
+        // Path 3: Resolve directly from the component module export (declared subcomponents).
+        if (!resolvedComponent) {
+          resolvedComponent = resolvePropsFromComponentExport(
+            this.typescript,
+            checker,
+            componentSourceFile,
             entryComponent
           );
         }
@@ -415,7 +427,24 @@ export class ComponentMetaProject {
 
     const metaType = checker.getTypeOfSymbol(defaultExport);
     const componentProp = metaType.getProperty('component');
-    if (!componentProp) {
+    if (
+      !componentProp?.valueDeclaration ||
+      !this.typescript.isPropertyAssignment(componentProp.valueDeclaration)
+    ) {
+      return undefined;
+    }
+
+    const metaComponentInitializer = componentProp.valueDeclaration.initializer;
+    if (
+      !metaComponentInitializer ||
+      !metaComponentMatchesRef(
+        this.typescript,
+        checker,
+        storySourceFile,
+        componentRef,
+        metaComponentInitializer
+      )
+    ) {
       return undefined;
     }
 

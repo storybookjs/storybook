@@ -4,13 +4,13 @@ import React, { useContext } from 'react';
 
 import { useId } from '@react-aria/utils';
 
-import type { Parameters, Renderer, StrictArgTypes } from 'storybook/internal/csf';
+import type { Args, Globals, Parameters, Renderer, StrictArgTypes } from 'storybook/internal/csf';
 import type { ArgTypesExtractor } from 'storybook/internal/docs-tools';
 import {
   getServiceSubcomponentArgTypes,
   mergeServiceArgTypes,
 } from 'storybook/internal/docs-tools';
-import type { ModuleExports } from 'storybook/internal/types';
+import type { DocsContextProps, ModuleExports, PreparedStory } from 'storybook/internal/types';
 
 import { filterArgTypes } from 'storybook/preview-api';
 import type { PropDescriptor } from 'storybook/preview-api';
@@ -35,6 +35,19 @@ type ControlsProps = ControlsParameters & {
   of?: Renderer['component'] | ModuleExports;
 };
 
+type ControlsStoryProps = ControlsProps & {
+  story: PreparedStory;
+  context: DocsContextProps;
+};
+
+type ControlsInteractiveState = {
+  controlsId: string;
+  args: Args;
+  globals: Globals;
+  updateArgs: ReturnType<typeof useArgs>[1];
+  resetArgs: ReturnType<typeof useArgs>[2];
+};
+
 function extractComponentArgTypes(
   component: Renderer['component'],
   parameters: Parameters
@@ -46,62 +59,77 @@ function extractComponentArgTypes(
   return extractArgTypes(component) as StrictArgTypes;
 }
 
-const ControlsForStory: FC<ControlsProps & { story: any; context: any }> = ({
-  story,
-  context,
-  ...props
-}) => {
+function useResolveControlsStory(props: ControlsProps): PreparedStory | null {
+  const { of } = props;
+  const context = useContext(DocsContext);
+  const primaryStory = usePrimaryStory();
+
+  return of ? context.resolveOf(of, ['story']).story : primaryStory;
+}
+
+function getControlsFilterProps(story: PreparedStory, props: ControlsProps): ControlsParameters {
+  const controlsParameters = story.parameters.docs?.controls || ({} as ControlsParameters);
+
+  return {
+    include: props.include ?? controlsParameters.include,
+    exclude: props.exclude ?? controlsParameters.exclude,
+    sort: props.sort ?? controlsParameters.sort,
+  };
+}
+
+function useControlsInteractiveState(
+  story: PreparedStory,
+  context: DocsContextProps
+): ControlsInteractiveState {
   // Disambiguate multiple <Controls /> blocks rendered for the same story on a single page.
   // React Aria's useId gives a stable id per component instance, with a polyfill for
   // React versions that lack the built-in useId.
   const controlsId = useId();
-
-  const { parameters, argTypes, component, subcomponents } = story;
-  const servicePayload = useServiceDocgen(story.id.split('--')[0]);
-  const controlsParameters = parameters.docs?.controls || ({} as ControlsParameters);
-
-  const include = props.include ?? controlsParameters.include;
-  const exclude = props.exclude ?? controlsParameters.exclude;
-  const sort = props.sort ?? controlsParameters.sort;
-
   const [args, updateArgs, resetArgs] = useArgs(story, context);
   const [globals] = useGlobals(story, context);
-  const serviceRows = servicePayload
-    ? mergeServiceArgTypes({
-        payload: servicePayload,
-        storyId: story.id,
-        parameters,
-        initialArgs: story.initialArgs,
-        // Custom argTypes come from the locally-prepared story (the service only carries extracted
-        // component docgen), so the block works regardless of whether the story rendered.
-        customArgTypes: argTypes,
-      })
-    : undefined;
-  const rows = serviceRows ?? argTypes;
 
-  if (!rows) {
-    return null;
-  }
+  return { controlsId, args, globals, updateArgs, resetArgs };
+}
 
-  const filteredArgTypes = filterArgTypes(rows, include, exclude);
-  const serviceSubcomponentArgTypes = servicePayload
-    ? getServiceSubcomponentArgTypes(servicePayload)
-    : {};
+function renderControlsTables({
+  mainName = 'Story',
+  mainRows,
+  subcomponentRows,
+  include,
+  exclude,
+  sort,
+  storyId,
+  controlsId,
+  args,
+  globals,
+  updateArgs,
+  resetArgs,
+}: {
+  mainName?: string;
+  mainRows: StrictArgTypes;
+  subcomponentRows: Record<string, StrictArgTypes>;
+  include?: PropDescriptor;
+  exclude?: PropDescriptor;
+  sort?: SortType;
+  storyId: string;
+  controlsId: string;
+  args: Args;
+  globals: Globals;
+  updateArgs: ControlsInteractiveState['updateArgs'];
+  resetArgs: ControlsInteractiveState['resetArgs'];
+}) {
+  const filteredMainRows = filterArgTypes(mainRows, include, exclude);
 
-  const hasSubcomponents =
-    globalThis.FEATURES?.experimentalDocgenServer && servicePayload
-      ? Object.keys(serviceSubcomponentArgTypes).length > 0
-      : Boolean(subcomponents) && Object.keys(subcomponents || {}).length > 0;
-
-  if (!hasSubcomponents) {
-    if (!(Object.keys(filteredArgTypes).length > 0 || Object.keys(args).length > 0)) {
+  if (Object.keys(subcomponentRows).length === 0) {
+    if (!(Object.keys(filteredMainRows).length > 0 || Object.keys(args).length > 0)) {
       return null;
     }
+
     return (
       <PureArgsTable
-        storyId={story.id}
+        storyId={storyId}
         controlsId={controlsId}
-        rows={filteredArgTypes as any}
+        rows={filteredMainRows as any}
         sort={sort}
         args={args}
         globals={globals}
@@ -111,30 +139,19 @@ const ControlsForStory: FC<ControlsProps & { story: any; context: any }> = ({
     );
   }
 
-  const mainComponentName = servicePayload?.name || getComponentName(component) || 'Story';
-  const subcomponentTabs = globalThis.FEATURES?.experimentalDocgenServer
-    ? Object.fromEntries(
-        Object.entries(serviceSubcomponentArgTypes).map(([key, subcomponentArgTypes]) => [
-          key,
-          {
-            rows: filterArgTypes(subcomponentArgTypes, include, exclude),
-            sort,
-          },
-        ])
-      )
-    : Object.fromEntries(
-        Object.entries(subcomponents || {}).map(([key, comp]) => [
-          key,
-          {
-            rows: filterArgTypes(extractComponentArgTypes(comp, parameters), include, exclude),
-            sort,
-          },
-        ])
-      );
   const tabs = {
-    [mainComponentName]: { rows: filteredArgTypes, sort },
-    ...subcomponentTabs,
+    [mainName]: { rows: filteredMainRows, sort },
+    ...Object.fromEntries(
+      Object.entries(subcomponentRows).map(([key, rows]) => [
+        key,
+        {
+          rows: filterArgTypes(rows, include, exclude),
+          sort,
+        },
+      ])
+    ),
   };
+
   return (
     <TabbedArgsTable
       tabs={tabs as any}
@@ -143,23 +160,84 @@ const ControlsForStory: FC<ControlsProps & { story: any; context: any }> = ({
       globals={globals}
       updateArgs={updateArgs}
       resetArgs={resetArgs}
-      storyId={story.id}
+      storyId={storyId}
       controlsId={controlsId}
     />
   );
+}
+
+const LegacyControls: FC<ControlsStoryProps> = ({ story, context, ...props }) => {
+  const { parameters, argTypes, component, subcomponents } = story;
+  const filterProps = getControlsFilterProps(story, props);
+  const interactiveState = useControlsInteractiveState(story, context);
+
+  if (!argTypes) {
+    return null;
+  }
+
+  const subcomponentRows = Object.fromEntries(
+    Object.entries(subcomponents || {}).map(([key, comp]) => [
+      key,
+      extractComponentArgTypes(comp, parameters),
+    ])
+  );
+
+  return renderControlsTables({
+    mainName: getComponentName(component) || 'Story',
+    mainRows: argTypes,
+    subcomponentRows,
+    ...filterProps,
+    storyId: story.id,
+    ...interactiveState,
+  });
+};
+
+const DocgenServiceControls: FC<ControlsStoryProps> = ({ story, context, ...props }) => {
+  const { parameters, argTypes, component } = story;
+  const componentId = story.id.split('--')[0];
+  const servicePayload = useServiceDocgen(componentId);
+  const filterProps = getControlsFilterProps(story, props);
+  const interactiveState = useControlsInteractiveState(story, context);
+
+  if (!servicePayload || !componentId) {
+    return null;
+  }
+
+  const serviceSubcomponentRows = getServiceSubcomponentArgTypes(servicePayload);
+
+  return renderControlsTables({
+    mainName: getComponentName(component) ?? servicePayload.name,
+    mainRows: mergeServiceArgTypes({
+      payload: servicePayload,
+      storyId: story.id,
+      parameters,
+      initialArgs: story.initialArgs,
+      // Custom argTypes come from the locally-prepared story (the service only carries extracted
+      // component docgen), so the block works regardless of whether the story rendered.
+      customArgTypes: argTypes,
+    }),
+    subcomponentRows: serviceSubcomponentRows,
+    ...filterProps,
+    storyId: story.id,
+    ...interactiveState,
+  });
 };
 
 const ControlsImpl: FC<ControlsProps> = (props) => {
-  const { of } = props;
   const context = useContext(DocsContext);
-  const primaryStory = usePrimaryStory();
-  const story = of ? context.resolveOf(of, ['story']).story : primaryStory;
+  const story = useResolveControlsStory(props);
 
   if (!story) {
     return null;
   }
 
-  return <ControlsForStory {...props} story={story} context={context} />;
+  const storyProps = { ...props, story, context };
+
+  return globalThis.FEATURES?.experimentalDocgenServer ? (
+    <DocgenServiceControls {...storyProps} />
+  ) : (
+    <LegacyControls {...storyProps} />
+  );
 };
 
 export const Controls = withMdxComponentOverride('Controls', ControlsImpl);

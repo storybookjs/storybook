@@ -39,11 +39,11 @@ working around it. Treat any shortcut as a failure of this workflow.
 ## Step 1 — Open the preview browser up front
 
 1. Inspect `.claude/launch.json` for a launch entry that starts this project's Storybook dev server.
-    If:
-      - the `.claude/launch.json` file does not exist
-      - no such entry exists
-      - the storybook entry does not use `autoPort`
-    repair it first: invoke the **storybook-setup-claude-launch** skill, which creates or repairs the `.claude/launch.json` Storybook entry.
+   If:
+   - the `.claude/launch.json` file does not exist
+   - no such entry exists
+   - the storybook entry does not use `autoPort`
+     repair it first: invoke the **storybook-setup-claude-launch** skill, which creates or repairs the `.claude/launch.json` Storybook entry.
 2. Start Storybook by launching that `.claude/launch.json` entry through the Claude launcher (never via Bash/background, per the Absolute rules).
 3. Open the Storybook preview in the preview browser. If the launch entry uses `autoPort`, wait for the terminal to show which port Storybook is running on and use that port to open the preview URL (e.g. `http://localhost:6006`) in the preview browser.
 4. Save the port being used by Storybook shown in the terminal in your working memory. USE THIS PORT FOR ALL TOOL CALLS in the following steps to ensure they are routed through the MCP Proxy.
@@ -62,7 +62,6 @@ props or APIs.
 **Gate:** Do NOT create or edit any `*.stories.*` file until this tool has
 returned and you are following its output. If you have not called it this task,
 you are not allowed to write a story yet — go back and call it now.
-
 
 ## Step 3 — Write the story
 

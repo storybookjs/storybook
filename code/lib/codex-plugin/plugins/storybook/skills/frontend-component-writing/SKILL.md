@@ -84,12 +84,13 @@ Before asking the user anything, check whether they have already declined:
 
    ```json
    {
-     "storybookOptOut": true,
-     "reason": "<short paraphrase of what the user said>"
+   	"storybookOptOut": true,
+   	"reason": "<short paraphrase of what the user said>"
    }
    ```
 
    Then finish the component change without any story work.
+
 4. **If the user opts in**, set Storybook up via the setup skills
    (`storybook-init` / `storybook-setup`), then resume the Workflow above from
    step 3. If an opt-out file existed from a previous "no", delete it.

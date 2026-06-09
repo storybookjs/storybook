@@ -1,4 +1,5 @@
 import {
+	ComponentManifest,
 	ComponentManifestMap,
 	DocsManifestMap,
 	type AllManifests,
@@ -9,6 +10,12 @@ import * as v from 'valibot';
 import { formatRequiresOwnMcpNotice, getSourceMcpEndpoint } from './requires-own-mcp.ts';
 
 type SourceWithUrl = Source & { url: string };
+
+type ManifestProvider = (
+	request: Request | undefined,
+	path: string,
+	source?: Source,
+) => Promise<string>;
 
 /**
  * The paths to the manifest files relative to the Storybook build
@@ -189,6 +196,88 @@ export async function getManifests(
 	});
 
 	return { componentManifest, docsManifest };
+}
+
+/**
+ * Resolves a docgen `$ref` into the provider path of the referenced file and the
+ * JSON-pointer segments into it.
+ *
+ * The `$ref` file path is relative to the component manifest's location, e.g.
+ * `"../services/core/docgen/button.json#/components/button"` from
+ * `./manifests/components.json` resolves to `./services/core/docgen/button.json`
+ * with pointer `["components", "button"]`.
+ */
+export function parseDocgenRef(ref: string): { path: string; pointer: string[] } {
+	const [filePath = '', hash = ''] = ref.split('#');
+
+	// Directory of the component manifest (e.g. "manifests/"), used as the base for
+	// resolving the (possibly `../`-prefixed) relative file path.
+	const manifestDir = COMPONENT_MANIFEST_PATH.replace(/^\.\//, '').replace(/[^/]+$/, '');
+	const resolved = new URL(filePath, `https://localhost/${manifestDir}`).pathname.replace(
+		/^\//,
+		'',
+	);
+
+	const pointer = hash
+		.split('/')
+		.filter(Boolean)
+		.map((segment) => segment.replace(/~1/g, '/').replace(/~0/g, '~'));
+
+	return { path: `./${resolved}`, pointer };
+}
+
+/**
+ * Resolves a stub component (externalized-docgen manifest format) into a full
+ * component manifest by fetching the referenced docgen file and reading the
+ * pointed-to entry. Components without a `docgen.$ref` are returned unchanged.
+ */
+export async function resolveComponentDocgen(
+	component: ComponentManifest,
+	request?: Request,
+	manifestProvider?: ManifestProvider,
+	source?: Source,
+): Promise<ComponentManifest> {
+	const ref = component.docgen?.$ref;
+	if (!ref) {
+		return component;
+	}
+
+	const { path, pointer } = parseDocgenRef(ref);
+	const provider = manifestProvider ?? defaultManifestProvider;
+	const jsonString = await provider(request, path, source);
+
+	let target: unknown;
+	try {
+		target = JSON.parse(jsonString);
+	} catch (error) {
+		throw new ManifestGetError(
+			`Failed to parse externalized docgen referenced by "${ref}"`,
+			path,
+			error instanceof Error ? error : undefined,
+		);
+	}
+
+	for (const key of pointer) {
+		if (target && typeof target === 'object' && key in (target as Record<string, unknown>)) {
+			target = (target as Record<string, unknown>)[key];
+		} else {
+			throw new ManifestGetError(
+				`Docgen reference "${ref}" could not be resolved: missing "${key}".`,
+				path,
+			);
+		}
+	}
+
+	const resolved = parseManifest({
+		jsonString: JSON.stringify(target),
+		schema: ComponentManifest,
+		name: 'component docgen',
+		url: path,
+	});
+
+	// Stub fields (id/name/description) are authoritative for identity; the resolved
+	// entry supplies path/stories/docgen data.
+	return { ...component, ...resolved };
 }
 
 /**

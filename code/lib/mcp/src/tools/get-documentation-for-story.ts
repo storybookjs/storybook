@@ -2,7 +2,7 @@ import * as v from 'valibot';
 import type { McpServer } from 'tmcp';
 import type { StorybookContext } from '../types.ts';
 import { StorybookIdField } from '../types.ts';
-import { errorToMCPContent, getManifests } from '../utils/get-manifest.ts';
+import { errorToMCPContent, getManifests, resolveComponentDocgen } from '../utils/get-manifest.ts';
 import { formatStoryDocumentation } from '../utils/manifest-formatter/markdown.ts';
 import { LIST_TOOL_NAME } from './list-all-documentation.ts';
 
@@ -71,7 +71,7 @@ export async function addGetStoryDocumentationTool(
 
 				const manifest = await getManifests(ctx?.request, ctx?.manifestProvider, source);
 
-				const component = manifest.componentManifest?.components[componentId];
+				let component = manifest.componentManifest?.components[componentId];
 
 				if (!component) {
 					return {
@@ -83,6 +83,16 @@ export async function addGetStoryDocumentationTool(
 						],
 						isError: true,
 					};
+				}
+
+				// Externalized-docgen manifests carry only a stub here; fetch the full data.
+				if (component.docgen?.$ref) {
+					component = await resolveComponentDocgen(
+						component,
+						ctx?.request,
+						ctx?.manifestProvider,
+						source,
+					);
 				}
 
 				const story = component.stories?.find((s) => s.name === storyName);

@@ -104,6 +104,18 @@ export interface StoryInfo {
   name: string;
 }
 
+/** Best-effort labels when the Storybook index has not resolved a story yet. */
+export const fallbackStoryInfo = (storyId: string): StoryInfo => {
+  const separator = storyId.indexOf('--');
+  if (separator === -1) {
+    return { title: storyId, name: 'Story' };
+  }
+  return {
+    title: storyId.slice(0, separator),
+    name: storyId.slice(separator + 2) || 'Story',
+  };
+};
+
 // Per-breakpoint grid: `cols` columns (each cell clamped to 400px) capped at
 // two rows. Overflow beyond the cap is hidden and a "Review all" cell takes the
 // last slot — all via CSS (`:has()` + `:nth-child`), no JS measurement.
@@ -289,14 +301,24 @@ const deriveStoryInfo = (info: StoryInfo): { component: string; name: string } =
   name: info.name,
 });
 
+const getPreloadMargin = (scrollRoot: HTMLElement | null): number => {
+  if (!scrollRoot) {
+    return typeof window === 'undefined' ? 0 : window.innerHeight;
+  }
+  return scrollRoot.clientHeight || window.innerHeight;
+};
+
 const StoryPreviewCell: FC<{
   storyId: string;
   href?: string;
   info: StoryInfo;
   query: string;
   getPreviewHref: (storyId: string) => string;
-}> = ({ storyId, href, info, query, getPreviewHref }) => {
+  previewsPaused?: boolean;
+}> = ({ storyId, href, info, query, getPreviewHref, previewsPaused = false }) => {
   const hostRef = useRef<HTMLElement>(null);
+  const previewsPausedRef = useRef(previewsPaused);
+  previewsPausedRef.current = previewsPaused;
   const [isInView, setIsInView] = useState(false);
   // `src` stays unset until the scheduler starts this preview; the iframe only
   // mounts (and starts requesting) once it does.
@@ -313,16 +335,20 @@ const StoryPreviewCell: FC<{
       return undefined;
     }
     const scrollRoot = getScrollRoot(host);
+    const effectiveRoot = scrollRoot && scrollRoot.clientHeight > 0 ? scrollRoot : null;
+    const markInViewIfClose = () => {
+      if (isWithinPreloadRange(host, effectiveRoot, getPreloadMargin(scrollRoot))) {
+        setIsInView(true);
+      }
+    };
     // Snappy first paint for above-the-fold cells: the observers' initial
     // callbacks are deferred to the next frame, so seed the state synchronously.
-    const seedMargin = scrollRoot
-      ? scrollRoot.clientHeight
-      : typeof window === 'undefined'
-        ? 0
-        : window.innerHeight;
-    if (isWithinPreloadRange(host, scrollRoot, seedMargin)) {
-      setIsInView(true);
-    }
+    markInViewIfClose();
+    const resizeObserver =
+      typeof ResizeObserver !== 'undefined'
+        ? new ResizeObserver(() => markInViewIfClose())
+        : undefined;
+    resizeObserver?.observe(host);
     // Mount when the cell comes within the mount margin of the scroll root.
     const mountObserver = new IntersectionObserver(
       ([entry]) => {
@@ -330,21 +356,22 @@ const StoryPreviewCell: FC<{
           setIsInView(true);
         }
       },
-      { root: scrollRoot, rootMargin: PREVIEW_MOUNT_ROOT_MARGIN }
+      { root: effectiveRoot, rootMargin: PREVIEW_MOUNT_ROOT_MARGIN }
     );
     // Evict once the cell moves beyond the (larger) evict margin, unmounting
     // its iframe to free the preview runtime. The margin gap is hysteresis.
     const evictObserver = new IntersectionObserver(
       ([entry]) => {
-        if (!entry.isIntersecting) {
+        if (!entry.isIntersecting && !previewsPausedRef.current) {
           setIsInView(false);
         }
       },
-      { root: scrollRoot, rootMargin: PREVIEW_EVICT_ROOT_MARGIN }
+      { root: effectiveRoot, rootMargin: PREVIEW_EVICT_ROOT_MARGIN }
     );
     mountObserver.observe(host);
     evictObserver.observe(host);
     return () => {
+      resizeObserver?.disconnect();
       mountObserver.disconnect();
       evictObserver.disconnect();
     };
@@ -353,10 +380,10 @@ const StoryPreviewCell: FC<{
   // Eviction: when the cell scrolls well out of range, drop the iframe so its
   // preview runtime is reclaimed. It re-enqueues (below) if it scrolls back.
   useEffect(() => {
-    if (!isInView) {
+    if (!isInView && !previewsPaused) {
       setSrc(undefined);
     }
-  }, [isInView]);
+  }, [isInView, previewsPaused]);
 
   // Once in view, enqueue a scheduler task; it sets `src` when a slot frees.
   useEffect(() => {
@@ -452,6 +479,8 @@ export interface CollectionGridProps {
   storyInfo: Record<string, StoryInfo>;
   /** Active search query — matches in the cell label are highlighted. */
   query?: string;
+  /** Keep loaded previews mounted while the summary overlay is hidden. */
+  previewsPaused?: boolean;
 }
 
 export const CollectionGrid: FC<CollectionGridProps> = ({
@@ -462,16 +491,12 @@ export const CollectionGrid: FC<CollectionGridProps> = ({
   onShowAll,
   storyInfo,
   query = '',
+  previewsPaused = false,
 }) => (
   <GridContainer>
     <Grid data-show-all={showAll || undefined} data-testid="review-collection-grid">
       {storyIds.map((storyId, storyIndex) => {
-        // A story with no index entry has no resolvable label and is treated as
-        // invalid, so it is skipped rather than rendered with a guessed name.
-        const info = storyInfo[storyId];
-        if (!info) {
-          return null;
-        }
+        const info = storyInfo[storyId] ?? fallbackStoryInfo(storyId);
         return (
           <StoryPreviewCell
             key={storyId}
@@ -480,6 +505,7 @@ export const CollectionGrid: FC<CollectionGridProps> = ({
             info={info}
             query={query}
             getPreviewHref={getStoryPreviewHref}
+            previewsPaused={previewsPaused}
           />
         );
       })}

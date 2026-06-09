@@ -40,6 +40,9 @@ const emptyStore: ReviewStoreState = {
 let currentStore: ReviewStoreState = emptyStore;
 const listeners = new Set<() => void>();
 
+/** Synchronously hide the summary overlay before SPA navigation to a story. */
+let summaryOverlaySuppressed = false;
+
 const notify = () => {
   listeners.forEach((listener) => listener());
 };
@@ -54,6 +57,19 @@ export const reviewStore = {
     listeners.add(listener);
     return () => listeners.delete(listener);
   },
+  suppressSummaryOverlay: () => {
+    if (!summaryOverlaySuppressed) {
+      summaryOverlaySuppressed = true;
+      notify();
+    }
+  },
+  releaseSummaryOverlaySuppression: () => {
+    if (summaryOverlaySuppressed) {
+      summaryOverlaySuppressed = false;
+      notify();
+    }
+  },
+  isSummaryOverlayShown: () => currentStore.isSummaryVisible && !summaryOverlaySuppressed,
 };
 
 export const useReview = (): ReviewStoreState =>

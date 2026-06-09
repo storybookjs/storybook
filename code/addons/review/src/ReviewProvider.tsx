@@ -16,7 +16,7 @@ import {
 } from 'storybook/manager-api';
 import type { StatusesByStoryIdAndTypeId } from 'storybook/internal/types';
 
-import type { StoryInfo } from './components/CollectionGrid.tsx';
+import { fallbackStoryInfo, type StoryInfo } from './components/CollectionGrid.tsx';
 import {
   BASELINE_INDEX_URL,
   DEFAULT_COMPARE_MODE,
@@ -124,14 +124,18 @@ export const ReviewProvider: FC<{ children: ReactNode }> = ({ children }) => {
         if (storyId in info) {
           continue;
         }
-        const entry = index?.[storyId];
-        if (entry && 'title' in entry && entry.title) {
+        const direct = index?.[storyId];
+        const entry =
+          direct?.type === 'story' ? direct : index ? api.findLeafEntry(index, storyId) : undefined;
+        if (entry?.type === 'story' && entry.title) {
           info[storyId] = { title: entry.title, name: entry.name };
+        } else {
+          info[storyId] = fallbackStoryInfo(storyId);
         }
       }
     }
     return info;
-  }, [index, state]);
+  }, [api, index, state]);
 
   const allStatuses = experimental_useStatusStore() as StatusesByStoryIdAndTypeId;
   const newlyAddedStoryIds = useMemo(() => {
@@ -224,6 +228,12 @@ export const ReviewProvider: FC<{ children: ReactNode }> = ({ children }) => {
   useLayoutEffect(() => {
     reviewStore.setState(value);
   }, [value]);
+
+  useLayoutEffect(() => {
+    if (isSummaryVisible) {
+      reviewStore.releaseSummaryOverlaySuppression();
+    }
+  }, [isSummaryVisible]);
 
   return children;
 };

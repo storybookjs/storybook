@@ -10,13 +10,12 @@ import { StaleBanner } from './components/StaleBanner.tsx';
 import { buildReviewChangesSummaryHref, buildReviewStoryHref } from './review-navigation.ts';
 import { useReview } from './review-store.ts';
 
-const Root = styled.div(({ theme }) => ({
+const Root = styled.div({
   display: 'flex',
   flexDirection: 'column',
   flexShrink: 0,
-  background: theme.background.content,
-  borderBottom: `1px solid ${theme.appBorderColor}`,
-}));
+  width: '100%',
+});
 
 const SubtitleStrong = styled.span({
   fontWeight: 700,
@@ -83,6 +82,7 @@ export const ReviewToolbarHeader: FC = () => {
     <Root data-testid="review-toolbar-header">
       {isStale ? <StaleBanner /> : null}
       <ReviewHeader
+        variant="toolbar"
         leading={
           <IconButton
             variant="ghost"

@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState, type FC } from 'react';
+import React, { useEffect, useLayoutEffect, useMemo, useState, type FC } from 'react';
 
 import { Button, Card, Collapsible, IconButton, ScrollArea } from 'storybook/internal/components';
 import { styled } from 'storybook/theming';
@@ -212,6 +212,8 @@ export interface SummaryScreenProps {
   getStoryPreviewHref: (storyId: string) => string;
   /** When true, render the "this review may be stale" banner at the top. */
   isStale?: boolean;
+  /** Keep summary preview iframes mounted while the overlay is hidden. */
+  previewsPaused?: boolean;
 }
 
 export const SummaryScreen: FC<SummaryScreenProps> = ({
@@ -219,6 +221,7 @@ export const SummaryScreen: FC<SummaryScreenProps> = ({
   storyInfo = {},
   getStoryPreviewHref,
   isStale = false,
+  previewsPaused = false,
 }) => {
   const [search, setSearch] = useState('');
   const [expandedCollections, setExpandedCollections] = useState<Set<number>>(() => new Set());
@@ -239,7 +242,7 @@ export const SummaryScreen: FC<SummaryScreenProps> = ({
     return () => window.clearInterval(intervalId);
   }, []);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (!state) {
       setExpandedCollections(new Set());
       setShowAllCollections(new Set());
@@ -420,6 +423,7 @@ export const SummaryScreen: FC<SummaryScreenProps> = ({
                           buildReviewStoryHref({ collectionIndex: index, storyId })
                         }
                         getStoryPreviewHref={getStoryPreviewHref}
+                        previewsPaused={previewsPaused}
                       />
                     </Collapsible>
                   </Card>

@@ -2,26 +2,24 @@ import React, { type FC, type ReactNode, useEffect, useRef } from 'react';
 
 import { styled } from 'storybook/theming';
 
-const Root = styled.header(({ theme }) => ({
+const Root = styled.header<{ $variant: 'page' | 'toolbar' }>(({ theme, $variant }) => ({
   display: 'flex',
   flexDirection: 'column',
   flexShrink: 0,
-  background: theme.background.content,
+  width: '100%',
+  background: $variant === 'toolbar' ? theme.barBg : theme.background.content,
   color: theme.color.defaultText,
-  borderBottom: `1px solid ${theme.appBorderColor}`,
+  ...($variant === 'page' ? { borderBottom: `1px solid ${theme.appBorderColor}` } : {}),
 }));
 
-const TopRow = styled.div({
+const TopRow = styled.div<{ $variant: 'page' | 'toolbar' }>(({ $variant }) => ({
   display: 'flex',
   flexDirection: 'row',
   alignItems: 'flex-start',
   gap: 8,
-  padding: '16px 16px 8px 16px',
+  padding: $variant === 'toolbar' ? '16px 10px 8px 10px' : '16px 16px 8px 16px',
   minHeight: 40,
-  '&:last-of-type': {
-    paddingBottom: 16,
-  },
-});
+}));
 
 const Leading = styled.div({
   display: 'flex',
@@ -73,8 +71,8 @@ const SecondRow = styled.div({
   display: 'flex',
   alignItems: 'center',
   gap: 8,
-  padding: '8px 12px 8px 16px',
-  minHeight: 40,
+  padding: '0 16px 2px 16px',
+  minHeight: 39,
 });
 
 export interface ReviewHeaderProps {
@@ -92,6 +90,8 @@ export interface ReviewHeaderProps {
    * heading instead of being left on the now-unmounted trigger.
    */
   autoFocusTitle?: boolean;
+  /** Compact layout for the preview toolbar header row. */
+  variant?: 'page' | 'toolbar';
 }
 
 export const ReviewHeader: FC<ReviewHeaderProps> = ({
@@ -101,6 +101,7 @@ export const ReviewHeader: FC<ReviewHeaderProps> = ({
   actions,
   secondRow,
   autoFocusTitle = false,
+  variant = 'page',
 }) => {
   const titleRef = useRef<HTMLHeadingElement>(null);
   useEffect(() => {
@@ -110,8 +111,8 @@ export const ReviewHeader: FC<ReviewHeaderProps> = ({
   }, [autoFocusTitle]);
 
   return (
-    <Root>
-      <TopRow>
+    <Root $variant={variant}>
+      <TopRow $variant={variant}>
         {leading ? <Leading>{leading}</Leading> : null}
         <TextBlock>
           <Title ref={titleRef} tabIndex={autoFocusTitle ? -1 : undefined}>

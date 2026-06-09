@@ -14,7 +14,7 @@ import { type Combo, Consumer, addons, merge, types } from 'storybook/manager-ap
 
 import { useLandmark } from '../../hooks/useLandmark.ts';
 import { FramesRenderer } from './FramesRenderer.tsx';
-import { ToolbarComp, Tools } from './Toolbar.tsx';
+import { ToolbarComp, ToolbarHeaders, Tools } from './Toolbar.tsx';
 import { ApplyWrappers } from './Wrappers.tsx';
 import { ZoomConsumer, ZoomProvider } from './tools/zoom.tsx';
 import * as S from './utils/components.ts';
@@ -130,7 +130,7 @@ const Preview = React.memo<PreviewProps>(function Preview(props) {
         <S.PreviewContainer>
           {customisedShowToolbar && toolbarHeaders.length > 0 ? (
             <S.ToolbarHeaderStack>
-              <Tools list={toolbarHeaders} />
+              <ToolbarHeaders list={toolbarHeaders} />
             </S.ToolbarHeaderStack>
           ) : null}
           <ToolbarComp

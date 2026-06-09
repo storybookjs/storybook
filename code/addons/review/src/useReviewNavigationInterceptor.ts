@@ -4,6 +4,7 @@ import { useNavigate } from 'storybook/internal/router';
 
 import { REVIEW_COLLECTION_QUERY_PARAM } from './review-navigation.ts';
 import { buildReviewChangesSummaryHref } from './review-navigation.ts';
+import { reviewStore } from './review-store.ts';
 
 const isReviewStoryHref = (href: string) =>
   href.startsWith('?path=/story/') && href.includes(`${REVIEW_COLLECTION_QUERY_PARAM}=`);
@@ -36,6 +37,9 @@ export const useReviewNavigationInterceptor = () => {
         return;
       }
       event.preventDefault();
+      if (isReviewStoryHref(href)) {
+        reviewStore.suppressSummaryOverlay();
+      }
       navigate(href, { plain: true });
     };
     document.addEventListener('click', onClick);

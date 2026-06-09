@@ -19,13 +19,13 @@ export const ToolbarHeaderStack = styled.div(({ theme }) => ({
   zIndex: 4,
 }));
 
-export const FrameWrap = styled.main({
+export const FrameWrap = styled.main(({ theme }) => ({
   overflow: 'auto',
   width: '100%',
   zIndex: 3,
-  background: 'transparent',
+  background: theme.background.app,
   flex: 1,
-});
+}));
 export const CanvasWrap = styled.div<{ show: boolean }>(
   {
     alignContent: 'center',

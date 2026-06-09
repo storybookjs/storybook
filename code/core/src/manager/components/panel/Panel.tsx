@@ -91,100 +91,114 @@ export const AddonPanel = React.memo<{
   shortcuts: State['shortcuts'];
   panelPosition?: 'bottom' | 'right';
   absolute?: boolean;
-}>(({ panels, shortcuts, actions, selectedPanel = null, panelPosition = 'right' }) => {
-  const { isDesktop, setMobilePanelOpen } = useLayout();
+  showPanelPositionToggle?: boolean;
+}>(
+  ({
+    panels,
+    shortcuts,
+    actions,
+    selectedPanel = null,
+    panelPosition = 'right',
+    showPanelPositionToggle = true,
+  }) => {
+    const { isDesktop, setMobilePanelOpen } = useLayout();
 
-  const emptyState = (
-    <EmptyTabContent
-      title="Storybook add-ons"
-      description={
-        <>Integrate your tools with Storybook to connect workflows and unlock advanced features.</>
-      }
-      footer={
-        <Link href={'https://storybook.js.org/addons?ref=ui'} target="_blank" withArrow>
-          <DocumentIcon /> Explore integrations catalog
-        </Link>
-      }
-    />
-  );
-
-  const tools = useMemo(
-    () => (
-      <ActionsWrapper>
-        {isDesktop ? (
+    const emptyState = (
+      <EmptyTabContent
+        title="Storybook add-ons"
+        description={
           <>
+            Integrate your tools with Storybook to connect workflows and unlock advanced features.
+          </>
+        }
+        footer={
+          <Link href={'https://storybook.js.org/addons?ref=ui'} target="_blank" withArrow>
+            <DocumentIcon /> Explore integrations catalog
+          </Link>
+        }
+      />
+    );
+
+    const tools = useMemo(
+      () => (
+        <ActionsWrapper>
+          {isDesktop ? (
+            <>
+              {showPanelPositionToggle ? (
+                <Button
+                  key="position"
+                  padding="small"
+                  variant="ghost"
+                  onClick={actions.togglePosition}
+                  ariaLabel={
+                    panelPosition === 'bottom'
+                      ? 'Move addon panel to right'
+                      : 'Move addon panel to bottom'
+                  }
+                  ariaDescription="Changes the location of the addon panel to the bottom or right of the screen, but does not have any effect on its content."
+                  shortcut={shortcuts.panelPosition}
+                >
+                  {panelPosition === 'bottom' ? <SidebarAltIcon /> : <BottomBarIcon />}
+                </Button>
+              ) : null}
+              <Button
+                key="visibility"
+                padding="small"
+                variant="ghost"
+                onClick={actions.toggleVisibility}
+                ariaLabel="Hide addon panel"
+                shortcut={shortcuts.togglePanel}
+              >
+                <CloseIcon />
+              </Button>
+            </>
+          ) : (
             <Button
-              key="position"
               padding="small"
               variant="ghost"
-              onClick={actions.togglePosition}
-              ariaLabel={
-                panelPosition === 'bottom'
-                  ? 'Move addon panel to right'
-                  : 'Move addon panel to bottom'
-              }
-              ariaDescription="Changes the location of the addon panel to the bottom or right of the screen, but does not have any effect on its content."
-              shortcut={shortcuts.panelPosition}
-            >
-              {panelPosition === 'bottom' ? <SidebarAltIcon /> : <BottomBarIcon />}
-            </Button>
-            <Button
-              key="visibility"
-              padding="small"
-              variant="ghost"
-              onClick={actions.toggleVisibility}
-              ariaLabel="Hide addon panel"
-              shortcut={shortcuts.togglePanel}
+              onClick={() => setMobilePanelOpen(false)}
+              ariaLabel="Close addon panel"
             >
               <CloseIcon />
             </Button>
-          </>
-        ) : (
-          <Button
-            padding="small"
-            variant="ghost"
-            onClick={() => setMobilePanelOpen(false)}
-            ariaLabel="Close addon panel"
-          >
-            <CloseIcon />
-          </Button>
-        )}
-      </ActionsWrapper>
-    ),
-    [actions, isDesktop, panelPosition, setMobilePanelOpen, shortcuts]
-  );
+          )}
+        </ActionsWrapper>
+      ),
+      [actions, isDesktop, panelPosition, setMobilePanelOpen, shortcuts, showPanelPositionToggle]
+    );
 
-  const asideRef = useRef<HTMLElement>(null);
-  const { landmarkProps } = useLandmark(
-    { 'aria-labelledby': 'storybook-panel-heading', role: 'region' },
-    asideRef
-  );
+    const asideRef = useRef<HTMLElement>(null);
+    const { landmarkProps } = useLandmark(
+      { 'aria-labelledby': 'storybook-panel-heading', role: 'region' },
+      asideRef
+    );
 
-  return (
-    <Aside ref={asideRef} id={focusableUIElements.addonPanel} {...landmarkProps}>
-      <h2 id="storybook-panel-heading" className="sb-sr-only">
-        Addon panel
-      </h2>
-      <StatelessTabsView
-        id={focusableUIElements.storyPanelRoot}
-        showToolsWhenEmpty
-        emptyState={emptyState}
-        selected={selectedPanel ?? undefined}
-        onSelectionChange={(id) => actions.onSelect(id)}
-        tools={tools}
-      >
-        <StatelessTabList aria-label="Available addons">
-          {Object.entries(panels).map(([k, v]) => (
-            <StatelessTab key={k} name={k}>
-              {typeof v.title === 'function' ? <v.title /> : v.title}
-            </StatelessTab>
-          ))}
-        </StatelessTabList>
-        {Object.keys(panels).length ? <PreRenderAddons panels={panels} /> : null}
-      </StatelessTabsView>
-    </Aside>
-  );
-});
+    return (
+      <Aside ref={asideRef} id={focusableUIElements.addonPanel} {...landmarkProps}>
+        <h2 id="storybook-panel-heading" className="sb-sr-only">
+          Addon panel
+        </h2>
+        <StatelessTabsView
+          id={focusableUIElements.storyPanelRoot}
+          showToolsWhenEmpty
+          emptyState={emptyState}
+          selected={selectedPanel ?? undefined}
+          onSelectionChange={(id) => actions.onSelect(id)}
+          tools={tools}
+        >
+          <StatelessTabList aria-label="Available addons">
+            {Object.entries(panels).map(([k, v]) => (
+              <StatelessTab key={k} name={k}>
+                {typeof v.title === 'function' ? <v.title /> : v.title}
+              </StatelessTab>
+            ))}
+          </StatelessTabList>
+          {Object.keys(panels).length ? <PreRenderAddons panels={panels} /> : null}
+        </StatelessTabsView>
+      </Aside>
+    );
+  }
+);
 
 AddonPanel.displayName = 'AddonPanel';
 

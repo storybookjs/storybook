@@ -1,5 +1,5 @@
 import type { FC } from 'react';
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 
 import { Addon_TypesEnum } from 'storybook/internal/types';
 
@@ -9,23 +9,50 @@ import { STORY_PREPARED } from '../../core-events/index.ts';
 import { focusableUIElements } from '../../manager-api/modules/layout.ts';
 import { AddonPanel } from '../components/panel/Panel.tsx';
 
-const Panel: FC<any> = (props) => {
+export interface PanelActions {
+  onSelect: (panel: string) => void;
+  toggleVisibility: () => void | Promise<void>;
+  togglePosition?: () => void;
+}
+
+export interface PanelProps {
+  /** When set, load story metadata from this id instead of the manager selection. */
+  storyId?: string;
+  panelPosition?: 'bottom' | 'right';
+  actions?: PanelActions;
+  showPanelPositionToggle?: boolean;
+}
+
+const Panel: FC<PanelProps> = ({
+  storyId,
+  panelPosition: panelPositionProp,
+  actions,
+  showPanelPositionToggle,
+  ...props
+}) => {
   const api = useStorybookApi();
   const state = useStorybookState();
-  const [story, setStory] = useState(api.getCurrentStoryData());
+
+  const resolveStory = () => (storyId ? api.getData(storyId) : api.getCurrentStoryData());
+
+  const [story, setStory] = useState(() => resolveStory());
+
+  useEffect(() => {
+    setStory(resolveStory());
+  }, [storyId, api, state.storyId, state.path]);
 
   useChannel(
     {
       [STORY_PREPARED]: () => {
-        setStory(api.getCurrentStoryData());
+        setStory(resolveStory());
       },
     },
-    []
+    [storyId]
   );
 
   const { parameters, type } = story ?? {};
 
-  const panelActions = useMemo(
+  const defaultActions = useMemo<PanelActions>(
     () => ({
       onSelect: (panel: string) => api.setSelectedPanel(panel),
       toggleVisibility: async () => {
@@ -33,7 +60,6 @@ const Panel: FC<any> = (props) => {
         api.togglePanel();
         if (wasPanelShown) {
           const success = await api.focusOnUIElement(focusableUIElements.showAddonPanel);
-          // Fallback to body for predictable behavior.
           if (success === false) {
             document.body.focus();
           }
@@ -43,6 +69,8 @@ const Panel: FC<any> = (props) => {
     }),
     [api]
   );
+
+  const panelActions = actions ?? defaultActions;
 
   const panels = useMemo(() => {
     const allPanels = api.getElements(Addon_TypesEnum.PANEL);
@@ -70,9 +98,10 @@ const Panel: FC<any> = (props) => {
     <AddonPanel
       panels={panels}
       selectedPanel={api.getSelectedPanel()}
-      panelPosition={state.layout.panelPosition}
+      panelPosition={panelPositionProp ?? state.layout.panelPosition}
       actions={panelActions}
       shortcuts={api.getShortcutKeys()}
+      showPanelPositionToggle={showPanelPositionToggle}
       {...props}
     />
   );

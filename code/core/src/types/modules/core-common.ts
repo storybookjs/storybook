@@ -577,6 +577,13 @@ export interface StorybookConfigRaw {
     angularFilterNonInputControls?: boolean;
 
     /**
+     * Use Angular's TestBed API to render stories in the preview instead of bootstrapping a
+     * standalone application per story. See:
+     * https://github.com/storybookjs/storybook/discussions/31088
+     */
+    previewTestBedRenderer?: boolean;
+
+    /**
      * Enable component manifest generation for MCP and other tooling integrations.
      *
      * @default false

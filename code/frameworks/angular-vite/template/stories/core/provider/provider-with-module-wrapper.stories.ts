@@ -1,0 +1,32 @@
+import type { Meta, StoryObj } from '@storybook/angular-vite';
+import { moduleMetadata } from '@storybook/angular-vite';
+
+import ProviderButtonComponent, { ApiService } from './test-component/provider-button';
+
+class MockService {
+  data: string = 'Mock Service';
+}
+
+const mockService = new MockService();
+
+const meta: Meta<ProviderButtonComponent> = {
+  component: ProviderButtonComponent,
+  tags: ['autodocs'],
+  decorators: [
+    moduleMetadata({
+      providers: [{ provide: ApiService, useValue: mockService }],
+    }),
+  ],
+};
+
+export default meta;
+
+type Story = StoryObj<ProviderButtonComponent>;
+
+export const ProviderTestWithoutArgs: Story = {};
+
+export const ProviderTestWithArgs: Story = {
+  args: {
+    label: 'Test',
+  },
+};

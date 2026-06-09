@@ -747,6 +747,11 @@ export const baseTemplates = {
       // leaves forms a patch behind core. Bump the range once ng new creates v22 projects.
       extraDependencies: ['@angular/forms@^21.2.0', '@angular/animations@^21.2.0'],
       useCsfFactory: true,
+      mainConfig: {
+        features: {
+          previewTestBedRenderer: true,
+        },
+      },
     },
     extraCiSteps: {
       ensureMinNodeVersion: true,

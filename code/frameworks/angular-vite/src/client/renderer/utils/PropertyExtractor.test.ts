@@ -108,6 +108,21 @@ describe('PropertyExtractor', () => {
       expect(providers.flat(Number.MAX_VALUE)).toEqual([]);
       expect(applicationProviders.flat(Number.MAX_VALUE)).toEqual([]);
     });
+
+    it('should hoist providers of a ModuleWithProviders import and keep the plain module', async () => {
+      const moduleWithProviders = {
+        ngModule: TestModuleWithDeclarations,
+        providers: [TestTokenProvider],
+      };
+      const metadata = {
+        imports: [moduleWithProviders],
+      };
+      const { imports, providers, applicationProviders } = await analyzeMetadata(metadata);
+      expect(imports.flat(Number.MAX_VALUE)).toEqual([CommonModule, TestModuleWithDeclarations]);
+      expect(providers.flat(Number.MAX_VALUE)).toEqual([]);
+      expect(applicationProviders).toHaveLength(1);
+      expect((applicationProviders[0] as any).ɵproviders).toContain(TestTokenProvider);
+    });
   });
 
   describe('extractImports', () => {

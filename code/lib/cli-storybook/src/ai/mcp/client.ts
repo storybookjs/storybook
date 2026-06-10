@@ -1,4 +1,12 @@
-import type { McpToolDescriptor, StorybookInstanceRecord, ToolCallResult } from './types.ts';
+import * as v from 'valibot';
+
+import {
+  type McpToolDescriptor,
+  McpToolDescriptorSchema,
+  type StorybookInstanceRecord,
+  type ToolCallResult,
+  ToolCallResultSchema,
+} from './types.ts';
 
 /**
  * Marks the request as coming from a trusted local Storybook client. `@storybook/addon-mcp` uses
@@ -29,13 +37,22 @@ export class McpJsonRpcError extends Error {
   }
 }
 
+const JsonRpcEnvelopeSchema = v.looseObject({
+  result: v.optional(v.unknown()),
+  error: v.optional(v.looseObject({ code: v.number(), message: v.string() })),
+});
+
+const ToolListResultSchema = v.looseObject({
+  tools: v.optional(v.array(McpToolDescriptorSchema)),
+});
+
 /** Forward an MCP `tools/call` JSON-RPC request to a local Storybook MCP server. */
 export async function callMcpTool(
   record: StorybookInstanceRecord,
   params: ToolCallParams,
   fetchImpl: typeof fetch = fetch
 ): Promise<ToolCallResult> {
-  return (await sendJsonRpcRequest(record, 'tools/call', params, fetchImpl)) as ToolCallResult;
+  return sendJsonRpcRequest(record, 'tools/call', params, ToolCallResultSchema, fetchImpl);
 }
 
 /** List the tools exposed by a local Storybook MCP server via `tools/list`. */
@@ -43,10 +60,14 @@ export async function listMcpTools(
   record: StorybookInstanceRecord,
   fetchImpl: typeof fetch = fetch
 ): Promise<McpToolDescriptor[]> {
-  const result = (await sendJsonRpcRequest(record, 'tools/list', {}, fetchImpl)) as {
-    tools?: McpToolDescriptor[];
-  } | null;
-  return result?.tools ?? [];
+  const result = await sendJsonRpcRequest(
+    record,
+    'tools/list',
+    {},
+    ToolListResultSchema,
+    fetchImpl
+  );
+  return result.tools ?? [];
 }
 
 /**
@@ -61,12 +82,13 @@ export async function listMcpTools(
  * tmcp hardcodes `text/event-stream` for any request with an id, so we accept both content-types
  * and parse the SSE envelope when needed.
  */
-async function sendJsonRpcRequest(
+async function sendJsonRpcRequest<TResult>(
   record: StorybookInstanceRecord,
   method: 'tools/call' | 'tools/list',
   params: unknown,
+  resultSchema: v.GenericSchema<unknown, TResult>,
   fetchImpl: typeof fetch
-): Promise<unknown> {
+): Promise<TResult> {
   const endpoint = record.mcp.endpoint;
   if (!endpoint) {
     throw new Error(`The Storybook instance at ${record.cwd} has no server endpoint registered`);
@@ -96,18 +118,28 @@ async function sendJsonRpcRequest(
     );
   }
 
-  const payload = (await readJsonRpcResponse(response, target)) as {
-    result?: unknown;
-    error?: { code: number; message: string };
-  };
+  const payload = await readJsonRpcResponse(response, target);
 
-  if (payload.error) {
-    throw new McpJsonRpcError(payload.error.code, payload.error.message);
+  const envelope = v.safeParse(JsonRpcEnvelopeSchema, payload);
+  if (!envelope.success) {
+    throw unexpectedShapeError(target);
   }
-  if (payload.result === undefined) {
+  if (envelope.output.error) {
+    throw new McpJsonRpcError(envelope.output.error.code, envelope.output.error.message);
+  }
+  if (envelope.output.result === undefined) {
     throw new Error('The Storybook server returned no result');
   }
-  return payload.result;
+
+  const result = v.safeParse(resultSchema, envelope.output.result);
+  if (!result.success) {
+    throw unexpectedShapeError(target);
+  }
+  return result.output;
+}
+
+function unexpectedShapeError(target: string): Error {
+  return new Error(`The Storybook server at ${target} returned an unexpected response shape`);
 }
 
 async function readJsonRpcResponse(response: Response, endpoint: string): Promise<unknown> {

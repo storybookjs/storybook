@@ -149,6 +149,35 @@ describe('callMcpTool', () => {
     await expect(promise).rejects.toThrow(/Storybook server error -32601: unknown tool/);
     await expect(promise).rejects.toBeInstanceOf(McpJsonRpcError);
   });
+
+  it.each([
+    ['a primitive result', { jsonrpc: '2.0', id: 1, result: 'hello' }],
+    ['a null result', { jsonrpc: '2.0', id: 1, result: null }],
+    [
+      'a content item without a type',
+      { jsonrpc: '2.0', id: 1, result: { content: [{ text: 'x' }] } },
+    ],
+    ['a malformed error object', { jsonrpc: '2.0', id: 1, error: { code: 'x' } }],
+  ])('rejects %s as an unexpected response shape', async (_label, body) => {
+    const fetchImpl = (async () => jsonResponse(body)) as typeof fetch;
+    await expect(
+      callMcpTool(record, { name: 'list-all-documentation' }, fetchImpl)
+    ).rejects.toThrow(/unexpected response shape/);
+  });
+
+  it('passes through extra content fields and result keys (loose validation)', async () => {
+    const fetchImpl = (async () =>
+      jsonResponse({
+        jsonrpc: '2.0',
+        id: 1,
+        result: {
+          content: [{ type: 'resource_link', uri: 'http://x' }],
+          _meta: { 'storybook.dev/foo': 1 },
+        },
+      })) as typeof fetch;
+    const result = await callMcpTool(record, { name: 'x' }, fetchImpl);
+    expect(result.content?.[0]).toMatchObject({ type: 'resource_link', uri: 'http://x' });
+  });
 });
 
 describe('listMcpTools', () => {
@@ -171,5 +200,15 @@ describe('listMcpTools', () => {
     const fetchImpl = (async () =>
       jsonResponse({ jsonrpc: '2.0', id: 'x', result: {} })) as typeof fetch;
     await expect(listMcpTools(record, fetchImpl)).resolves.toEqual([]);
+  });
+
+  it('rejects tool descriptors without a name as an unexpected response shape', async () => {
+    const fetchImpl = (async () =>
+      jsonResponse({
+        jsonrpc: '2.0',
+        id: 'x',
+        result: { tools: [{ description: 'nameless' }] },
+      })) as typeof fetch;
+    await expect(listMcpTools(record, fetchImpl)).rejects.toThrow(/unexpected response shape/);
   });
 });

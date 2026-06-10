@@ -45,25 +45,40 @@ export type InterceptReason =
   | 'mcp-error'
   | 'storybook-too-old';
 
-export interface ToolResultContentItem {
-  type: string;
-  text?: string;
-  [key: string]: unknown;
-}
+/**
+ * Result of an MCP `tools/call` request, as returned by `@storybook/addon-mcp`. Loose: servers may
+ * legally attach extra fields (`_meta`, `structuredContent`, image/audio content properties); we
+ * validate only what the CLI renders and pass the rest through.
+ */
+export const ToolResultContentItemSchema = v.looseObject({
+  type: v.string(),
+  text: v.optional(v.string()),
+});
+export type ToolResultContentItem = v.InferOutput<typeof ToolResultContentItemSchema>;
 
-/** Result of an MCP `tools/call` request, as returned by `@storybook/addon-mcp`. */
-export interface ToolCallResult {
-  content?: ToolResultContentItem[];
-  isError?: boolean;
-  _meta?: Record<string, unknown>;
-}
+export const ToolCallResultSchema = v.looseObject({
+  content: v.optional(v.array(ToolResultContentItemSchema)),
+  isError: v.optional(v.boolean()),
+});
+export type ToolCallResult = v.InferOutput<typeof ToolCallResultSchema>;
 
 /** A tool descriptor from an MCP `tools/list` response. */
-export interface McpToolDescriptor {
-  name: string;
-  description?: string;
-  inputSchema?: {
-    properties?: Record<string, { type?: string; description?: string }>;
-    required?: string[];
-  };
-}
+export const McpToolDescriptorSchema = v.looseObject({
+  name: v.string(),
+  description: v.optional(v.string()),
+  inputSchema: v.optional(
+    v.looseObject({
+      properties: v.optional(
+        v.record(
+          v.string(),
+          v.looseObject({
+            type: v.optional(v.string()),
+            description: v.optional(v.string()),
+          })
+        )
+      ),
+      required: v.optional(v.array(v.string())),
+    })
+  ),
+});
+export type McpToolDescriptor = v.InferOutput<typeof McpToolDescriptorSchema>;

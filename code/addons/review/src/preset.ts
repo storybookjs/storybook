@@ -59,7 +59,7 @@ export function __resetCache(): void {
 function prepareReview(payload: ReviewState): ReviewState {
   // Staleness is server-authoritative (set by the file-watch handler), so a
   // fresh push must never inherit a stale flag from the agent payload.
-  const { stale: _untrustedStale, ...rest } = payload;
+  const { stale: _untrustedStale, hasBaseline: _hasBaselineHint, ...rest } = payload;
   return {
     ...rest,
     // Server-side timestamp is authoritative for "Created x minutes ago".
@@ -99,6 +99,11 @@ export const experimental_serverChannel = async (
     if (cached) {
       channel.emit(EVENTS.DISPLAY_REVIEW, cached);
     }
+  });
+
+  channel.on(EVENTS.DISMISS_REVIEW, (returnSearch?: string | null) => {
+    cached = undefined;
+    channel.emit(EVENTS.REVIEW_DISMISSED, returnSearch ?? null);
   });
 
   // Mark the cached review stale on the first source change that lands after

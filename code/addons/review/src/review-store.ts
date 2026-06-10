@@ -19,6 +19,7 @@ export interface ReviewStoreState {
   showCompare: boolean;
   getStoryPreviewHref: (storyId: string) => string;
   setCompareMode: (mode: CompareMode) => void;
+  dismissReview: () => void;
 }
 
 const emptyStore: ReviewStoreState = {
@@ -35,6 +36,7 @@ const emptyStore: ReviewStoreState = {
   showCompare: false,
   getStoryPreviewHref: () => '',
   setCompareMode: () => {},
+  dismissReview: () => {},
 };
 
 let currentStore: ReviewStoreState = emptyStore;

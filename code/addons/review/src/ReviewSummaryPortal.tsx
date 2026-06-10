@@ -1,6 +1,5 @@
 import React, { useEffect, useRef, useSyncExternalStore, type FC } from 'react';
 
-import { useNavigate } from 'storybook/internal/router';
 import { useStorybookState } from 'storybook/manager-api';
 
 import { isReviewSummaryPath, isStoryInReview, parseStoryIdFromPath } from './review-navigation.ts';
@@ -23,9 +22,9 @@ const useSummaryOverlayShown = () =>
 
 export const ReviewSummaryPortal: FC = () => {
   const { path, viewMode } = useStorybookState();
-  const { state, storyInfo, isStale, getStoryPreviewHref, flattenedEntries } = useReview();
+  const { state, storyInfo, isStale, getStoryPreviewHref, flattenedEntries, dismissReview } =
+    useReview();
   const overlayShown = useSummaryOverlayShown();
-  const navigate = useNavigate();
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -39,39 +38,6 @@ export const ReviewSummaryPortal: FC = () => {
     storyIdFromPath !== null &&
     isStoryInReview(flattenedEntries, storyIdFromPath);
   const isInReviewSession = isSummaryVisible || isOnReviewedStory;
-
-  // SPA navigation for in-page review links (summary → story, prev/next on summary grid).
-  useEffect(() => {
-    const container = containerRef.current;
-    if (!container) {
-      return undefined;
-    }
-    const onClick = (event: MouseEvent) => {
-      if (
-        event.defaultPrevented ||
-        event.button !== 0 ||
-        event.metaKey ||
-        event.ctrlKey ||
-        event.shiftKey ||
-        event.altKey
-      ) {
-        return;
-      }
-      const { target } = event;
-      const anchor = target instanceof Element ? target.closest('a') : null;
-      const href = anchor?.getAttribute('href');
-      if (!href?.startsWith('?path=')) {
-        return;
-      }
-      event.preventDefault();
-      if (href.startsWith('?path=/story/')) {
-        reviewStore.suppressSummaryOverlay();
-      }
-      navigate(href, { plain: true });
-    };
-    container.addEventListener('click', onClick);
-    return () => container.removeEventListener('click', onClick);
-  }, [navigate, isInReviewSession]);
 
   useEffect(() => {
     const node = containerRef.current;
@@ -108,6 +74,7 @@ export const ReviewSummaryPortal: FC = () => {
         getStoryPreviewHref={getStoryPreviewHref}
         isStale={isStale}
         previewsPaused={!overlayShown}
+        onDismiss={dismissReview}
       />
     </div>
   );

@@ -38,10 +38,8 @@ export interface ReviewState {
    */
   stale?: boolean;
   /**
-   * Whether a baseline is available to compare against. Enables the
-   * baseline/latest comparison controls on the story toolbar. The baseline
-   * source itself is provided on a separate branch; until then this stays
-   * unset and the controls are hidden.
+   * Optional hint from the agent payload. Baseline availability is determined
+   * client-side by whether `/__review-baseline/index.json` loads successfully.
    */
   hasBaseline?: boolean;
 }

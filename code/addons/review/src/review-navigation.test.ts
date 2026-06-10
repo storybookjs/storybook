@@ -6,8 +6,10 @@ import {
   buildFlattenedNavEntries,
   buildReviewChangesSummaryHref,
   buildReviewStoryHref,
+  buildReviewStoryNavigationTarget,
   isReviewSummaryPath,
   parseCollectionIndex,
+  parseReviewStoryHref,
   parseStoryIdFromPath,
   resolveActiveNavEntry,
   resolveNavIndex,
@@ -35,6 +37,26 @@ describe('buildReviewStoryHref', () => {
     expect(buildReviewStoryHref({ storyId: 'story-a', collectionIndex: 1 })).toBe(
       `?path=/story/story-a&${REVIEW_COLLECTION_QUERY_PARAM}=1`
     );
+  });
+});
+
+describe('buildReviewStoryNavigationTarget', () => {
+  it('builds a manager navigate target without the query wrapper', () => {
+    expect(buildReviewStoryNavigationTarget({ storyId: 'story-a', collectionIndex: 1 })).toBe(
+      `/story/story-a&${REVIEW_COLLECTION_QUERY_PARAM}=1`
+    );
+  });
+});
+
+describe('parseReviewStoryHref', () => {
+  it('parses story hrefs built by buildReviewStoryHref', () => {
+    const entry = { storyId: 'button-component--sizes', collectionIndex: 0 };
+    expect(parseReviewStoryHref(buildReviewStoryHref(entry))).toEqual(entry);
+  });
+
+  it('returns null for malformed hrefs', () => {
+    expect(parseReviewStoryHref('?path=/review/')).toBeNull();
+    expect(parseReviewStoryHref('?path=/story/foo')).toBeNull();
   });
 });
 

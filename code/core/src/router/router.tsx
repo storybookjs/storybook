@@ -6,7 +6,7 @@ import { global } from '@storybook/global';
 import * as R from 'react-router-dom';
 
 import type { LinkProps, NavigateOptions, RenderData } from './types.ts';
-import { getMatch, parsePath, queryFromLocation } from './utils.ts';
+import { getMatch, parsePath, queryFromLocation, resolvePathQueryParam } from './utils.ts';
 
 const { document } = global;
 
@@ -80,7 +80,8 @@ Link.displayName = 'QueryLink';
  */
 export const Location = ({ children }: LocationProps) => {
   const location = R.useLocation();
-  const { path, singleStory } = queryFromLocation(location);
+  const { path: pathFromQuery, singleStory } = queryFromLocation(location);
+  const path = resolvePathQueryParam(location.search, pathFromQuery);
   const { viewMode, storyId, refId } = parsePath(path);
 
   return (

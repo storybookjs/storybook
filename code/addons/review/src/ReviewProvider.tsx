@@ -14,6 +14,7 @@ import {
   useStorybookApi,
   useStorybookState,
 } from 'storybook/manager-api';
+import { useNavigate } from 'storybook/internal/router';
 import type { StatusesByStoryIdAndTypeId } from 'storybook/internal/types';
 
 import { fallbackStoryInfo, type StoryInfo } from './components/CollectionGrid.tsx';
@@ -23,6 +24,7 @@ import {
   EVENTS,
   PREVIEW_MODE_SESSION_KEY,
   RESTORE_NAV_SESSION_KEY,
+  RETURN_PATH_SESSION_KEY,
   REVIEW_CHANGES_URL,
   type CompareMode,
 } from './constants.ts';
@@ -53,6 +55,12 @@ const readCompareMode = (): CompareMode => {
   return DEFAULT_COMPARE_MODE;
 };
 
+const isReviewReturnSearch = (search: string) => {
+  const path =
+    new URLSearchParams(search.startsWith('?') ? search.slice(1) : search).get('path') ?? '';
+  return isReviewSummaryPath(path) || path.startsWith(REVIEW_CHANGES_URL);
+};
+
 export const ReviewProvider: FC<{ children: ReactNode }> = ({ children }) => {
   const [state, setState] = useState<ReviewState | null>(null);
   const [isStale, setIsStale] = useState(false);
@@ -60,7 +68,8 @@ export const ReviewProvider: FC<{ children: ReactNode }> = ({ children }) => {
   const [compareMode, setCompareModeState] = useState<CompareMode>(readCompareMode);
 
   const api = useStorybookApi();
-  const { index, path, viewMode, customQueryParams } = useStorybookState();
+  const navigate = useNavigate();
+  const { index, path, viewMode, customQueryParams, location } = useStorybookState();
 
   const setCompareMode = useCallback((mode: CompareMode) => {
     setCompareModeState(mode);
@@ -72,6 +81,24 @@ export const ReviewProvider: FC<{ children: ReactNode }> = ({ children }) => {
     [api]
   );
 
+  const navigateToReturn = useCallback(
+    (returnSearch?: string | null) => {
+      api.setQueryParams({ [REVIEW_COLLECTION_QUERY_PARAM]: null });
+      reviewStore.releaseSummaryOverlaySuppression();
+
+      const target = returnSearch ?? sessionStore.read(RETURN_PATH_SESSION_KEY);
+      sessionStore.remove(RETURN_PATH_SESSION_KEY);
+
+      if (target && !isReviewReturnSearch(target)) {
+        navigate(target.startsWith('?') ? target : `?${target}`, { plain: true });
+        return;
+      }
+
+      api.selectFirstStory();
+    },
+    [api, navigate]
+  );
+
   const emit = useChannel({
     [EVENTS.DISPLAY_REVIEW]: (next: ReviewState) => {
       setState(next);
@@ -80,7 +107,18 @@ export const ReviewProvider: FC<{ children: ReactNode }> = ({ children }) => {
     [EVENTS.REVIEW_STALE]: () => {
       setIsStale(true);
     },
+    [EVENTS.REVIEW_DISMISSED]: (returnSearch?: string | null) => {
+      setState(null);
+      setIsStale(false);
+      setBaselineStoryIds(null);
+      navigateToReturn(returnSearch);
+    },
   });
+
+  const dismissReview = useCallback(() => {
+    const returnSearch = sessionStore.read(RETURN_PATH_SESSION_KEY);
+    emit(EVENTS.DISMISS_REVIEW, returnSearch);
+  }, [emit]);
 
   useEffect(() => {
     emit(EVENTS.REQUEST_REVIEW);
@@ -175,7 +213,23 @@ export const ReviewProvider: FC<{ children: ReactNode }> = ({ children }) => {
   const isInReviewSession = isSummaryVisible || isOnReviewedStory;
 
   const showCompare =
-    !!state?.hasBaseline && activeEntry !== null && !newlyAddedStoryIds.has(activeEntry.storyId);
+    baselineStoryIds !== null &&
+    activeEntry !== null &&
+    !newlyAddedStoryIds.has(activeEntry.storyId);
+
+  // Remember the last canvas URL outside a review session so dismiss can return there.
+  useEffect(() => {
+    if (isInReviewSession) {
+      return;
+    }
+    if (viewMode !== 'story' && viewMode !== 'docs') {
+      return;
+    }
+    const search = location?.search;
+    if (search && !isReviewReturnSearch(search)) {
+      sessionStore.write(RETURN_PATH_SESSION_KEY, search);
+    }
+  }, [isInReviewSession, viewMode, location?.search]);
 
   // Hide the sidebar on review entry; restore only when leaving the session.
   useEffect(() => {
@@ -206,6 +260,7 @@ export const ReviewProvider: FC<{ children: ReactNode }> = ({ children }) => {
       setCompareMode,
       showCompare,
       getStoryPreviewHref,
+      dismissReview,
     }),
     [
       state,
@@ -221,6 +276,7 @@ export const ReviewProvider: FC<{ children: ReactNode }> = ({ children }) => {
       setCompareMode,
       showCompare,
       getStoryPreviewHref,
+      dismissReview,
     ]
   );
 

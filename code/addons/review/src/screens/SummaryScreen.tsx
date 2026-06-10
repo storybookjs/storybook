@@ -1,4 +1,4 @@
-import React, { useEffect, useLayoutEffect, useMemo, useState, type FC } from 'react';
+import React, { useEffect, useLayoutEffect, useState, type FC } from 'react';
 
 import { Button, Card, Collapsible, IconButton, ScrollArea } from 'storybook/internal/components';
 import { styled } from 'storybook/theming';
@@ -6,10 +6,10 @@ import { styled } from 'storybook/theming';
 import {
   CheckIcon,
   ChevronSmallDownIcon,
+  CloseAltIcon,
   CollapseIcon,
   ExpandAltIcon,
   SearchIcon,
-  StorybookIcon,
   WandIcon,
 } from '@storybook/icons';
 
@@ -214,6 +214,8 @@ export interface SummaryScreenProps {
   isStale?: boolean;
   /** Keep summary preview iframes mounted while the overlay is hidden. */
   previewsPaused?: boolean;
+  /** Clears the active review and returns to the last viewed story. */
+  onDismiss?: () => void;
 }
 
 export const SummaryScreen: FC<SummaryScreenProps> = ({
@@ -222,18 +224,12 @@ export const SummaryScreen: FC<SummaryScreenProps> = ({
   getStoryPreviewHref,
   isStale = false,
   previewsPaused = false,
+  onDismiss,
 }) => {
   const [search, setSearch] = useState('');
   const [expandedCollections, setExpandedCollections] = useState<Set<number>>(() => new Set());
   const [showAllCollections, setShowAllCollections] = useState<Set<number>>(() => new Set());
   const [nowMs, setNowMs] = useState(() => Date.now());
-
-  const storybookRootHref = useMemo(() => {
-    const rootUrl = new URL(window.location.href);
-    rootUrl.searchParams.delete('path');
-    rootUrl.searchParams.set('statuses', 'modified;new;related');
-    return rootUrl.toString();
-  }, []);
 
   useEffect(() => {
     const intervalId = window.setInterval(() => {
@@ -270,11 +266,9 @@ export const SummaryScreen: FC<SummaryScreenProps> = ({
           >
             <WandIcon /> Copy prompt
           </CopyButton>
-          <Button padding="small" asChild>
-            <a href={storybookRootHref}>
-              <StorybookIcon />
-              View Storybook
-            </a>
+          <Button padding="small" onClick={onDismiss} disabled={!onDismiss}>
+            <CloseAltIcon />
+            Dismiss
           </Button>
         </div>
       </Empty>
@@ -331,11 +325,9 @@ export const SummaryScreen: FC<SummaryScreenProps> = ({
           </span>
         }
         actions={
-          <Button padding="small" asChild>
-            <a href={storybookRootHref} target="_blank" rel="noreferrer">
-              <StorybookIcon />
-              View Storybook
-            </a>
+          <Button padding="small" onClick={onDismiss}>
+            <CheckIcon />
+            Done
           </Button>
         }
         secondRow={

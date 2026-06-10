@@ -14,6 +14,30 @@ export const buildReviewChangesSummaryHref = () => `?path=${REVIEW_CHANGES_URL}`
 export const buildReviewStoryHref = (entry: ReviewNavEntry): string =>
   `?path=/story/${entry.storyId}&${REVIEW_COLLECTION_QUERY_PARAM}=${entry.collectionIndex}`;
 
+/** Storybook manager navigate target (without the leading `?path=` wrapper). */
+export const buildReviewStoryNavigationTarget = (entry: ReviewNavEntry): string =>
+  `/story/${entry.storyId}&${REVIEW_COLLECTION_QUERY_PARAM}=${entry.collectionIndex}`;
+
+export const parseReviewStoryHref = (href: string): ReviewNavEntry | null => {
+  if (!href.startsWith('?path=/story/')) {
+    return null;
+  }
+  const query = href.startsWith('?') ? href.slice(1) : href;
+  const params = new URLSearchParams(query);
+  const path = params.get('path');
+  if (!path?.startsWith('/story/')) {
+    return null;
+  }
+  const storyId = path.slice('/story/'.length);
+  const collectionIndex = parseCollectionIndex(
+    params.get(REVIEW_COLLECTION_QUERY_PARAM) ?? undefined
+  );
+  if (!storyId || collectionIndex === undefined) {
+    return null;
+  }
+  return { storyId, collectionIndex };
+};
+
 /** Walk collections in order, pushing every story occurrence. */
 export const buildFlattenedNavEntries = (state: ReviewState): ReviewNavEntry[] => {
   const entries: ReviewNavEntry[] = [];

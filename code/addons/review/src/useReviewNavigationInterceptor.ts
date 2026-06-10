@@ -1,9 +1,15 @@
 import { useEffect } from 'react';
 
 import { useNavigate } from 'storybook/internal/router';
+import { useStorybookApi } from 'storybook/manager-api';
 
-import { REVIEW_COLLECTION_QUERY_PARAM } from './review-navigation.ts';
-import { buildReviewChangesSummaryHref } from './review-navigation.ts';
+import { REVIEW_CHANGES_URL } from './constants.ts';
+import {
+  REVIEW_COLLECTION_QUERY_PARAM,
+  buildReviewChangesSummaryHref,
+  buildReviewStoryNavigationTarget,
+  parseReviewStoryHref,
+} from './review-navigation.ts';
 import { reviewStore } from './review-store.ts';
 
 const isReviewStoryHref = (href: string) =>
@@ -17,6 +23,7 @@ const isReviewSummaryHref = (href: string) => href === buildReviewChangesSummary
  */
 export const useReviewNavigationInterceptor = () => {
   const navigate = useNavigate();
+  const api = useStorybookApi();
 
   useEffect(() => {
     const onClick = (event: MouseEvent) => {
@@ -37,12 +44,25 @@ export const useReviewNavigationInterceptor = () => {
         return;
       }
       event.preventDefault();
-      if (isReviewStoryHref(href)) {
-        reviewStore.suppressSummaryOverlay();
+
+      if (isReviewSummaryHref(href)) {
+        api.setQueryParams({ [REVIEW_COLLECTION_QUERY_PARAM]: null });
+        navigate(REVIEW_CHANGES_URL);
+        return;
       }
-      navigate(href, { plain: true });
+
+      const entry = parseReviewStoryHref(href);
+      if (!entry) {
+        return;
+      }
+
+      reviewStore.suppressSummaryOverlay();
+      api.setQueryParams({
+        [REVIEW_COLLECTION_QUERY_PARAM]: String(entry.collectionIndex),
+      });
+      navigate(buildReviewStoryNavigationTarget(entry));
     };
     document.addEventListener('click', onClick);
     return () => document.removeEventListener('click', onClick);
-  }, [navigate]);
+  }, [api, navigate]);
 };

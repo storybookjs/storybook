@@ -426,7 +426,7 @@ const meta = preview.meta({
       ignoreSelectors: ['[data-testid="review-collection-grid-cell"] iframe'],
     },
   },
-  args: { getStoryPreviewHref, storyInfo: demoStoryInfo },
+  args: { getStoryPreviewHref, storyInfo: demoStoryInfo, onDismiss: () => {} },
 });
 
 export const Empty = meta.story({
@@ -452,7 +452,7 @@ export const Full = meta.story({
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await expect(await canvas.findByText('Primary button visual refresh')).toBeInTheDocument();
-    await expect(await canvas.findByRole('link', { name: 'View Storybook' })).toBeInTheDocument();
+    await expect(await canvas.findByRole('button', { name: 'Dismiss' })).toBeInTheDocument();
   },
 });
 

@@ -5,12 +5,12 @@ import { normalize } from 'pathe';
 
 import { logger as defaultLogger } from 'storybook/internal/node-logger';
 
-import type { ParserRegistry } from '../parser-registry/index.ts';
-import { ParseResolveCache } from './ParseResolveCache.ts';
-import { ReverseIndexImpl } from './ReverseIndex.ts';
-import type { ChangeDetectionResolverFactory } from './ResolverFactory.ts';
+import type { ParserRegistry } from '../parser-registry/parser-registry.ts';
+import { ParseResolveCache } from './parse-resolve-cache.ts';
+import { ReverseIndexImpl } from './reverse-index.ts';
+import type { ChangeDetectionResolverFactory } from './resolver-factory.ts';
 import type { DependencyGraph } from './types.ts';
-import { walkFromStory } from './walkFromStory.ts';
+import { walkFromStory } from './walk-from-story.ts';
 
 interface BuilderLogger {
   debug: (message: string) => void;
@@ -32,9 +32,9 @@ interface BuilderOptions {
 }
 
 /**
- * Eagerly builds a {@link ReverseIndexImpl} + {@link DependencyGraph} by BFS-walking forward
- * from each story file. Walks stop at workspace boundaries, non-JS extensions, or unresolved
- * specifiers. Per-file errors (read failure, parse failure, individual unresolved specifiers)
+ * Eagerly builds a {@link ReverseIndexImpl} + {@link DependencyGraph} by breadth-first-search
+ * walking forward from each story file. Walks stop at workspace boundaries, non-JS extensions, or
+ * unresolved specifiers. Per-file errors (read failure, parse failure, individual unresolved specifiers)
  * are swallowed and result in fewer recorded deps for that file — not a build failure.
  * Graceful degradation ensures one bad file cannot crash change-detection for all stories.
  */

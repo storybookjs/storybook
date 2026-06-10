@@ -9,6 +9,7 @@ import { vol } from 'memfs';
 import type { Polka } from 'polka';
 
 import { clearRegistry } from '../../../shared/open-service/server.ts';
+import { registerTestModuleGraphService } from '../../../shared/open-service/services/module-graph/module-graph.test-helpers.ts';
 import { registerDocgenService } from '../../../shared/open-service/services/docgen/server.ts';
 import type { DocgenProvider } from '../../../shared/open-service/services/docgen/types.ts';
 import { Tag } from '../../../shared/constants/tags.ts';
@@ -327,6 +328,7 @@ describe('manifests', () => {
         stories: [],
       }));
 
+      registerTestModuleGraphService();
       registerDocgenService({
         getIndex: () => mockGenerator.getIndex(),
         provider,

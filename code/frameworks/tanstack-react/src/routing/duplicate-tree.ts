@@ -62,10 +62,10 @@ function cloneChild(
   byId: Map<string, AnyRoute>
 ): AnyRoute {
   const options = (oldRoute as any).options ?? {};
-  // Strip identity / parent-link options so the cloned route gets its identity
-  // derived from the new parent + path, and its parent linked to the cloned
-  // parent below. Keeping the original `id` would cause TanStack to register
-  // two routes with the same generated id (e.g. `__root__/about`).
+  // Strip parent-link options so the cloned route gets linked to the cloned
+  // parent below. Path routes derive identity from the new parent + path, then
+  // preserve the source file-route id after creation. Pathless layout routes
+  // are id-only, so giving them a path would turn the layout into a URL route.
   const { id: _id, getParentRoute: _g, ...rest } = options;
   const override = getOverrideFor(overrides, oldRoute.id);
 
@@ -73,11 +73,16 @@ function cloneChild(
   // registers the route in TanStack's global file-route registry by path, so
   // re-running the duplication on every story re-render registers a duplicate
   // and TanStack throws `Duplicate routeIds found: __root__`.
-  const cloned = createRoute({
+  let cloned = createRoute({
+    ...(options.id && options.path === undefined ? { id: options.id } : {}),
     ...rest,
     ...override,
     getParentRoute: () => parent as any,
   } as any);
+
+  if (options.id && options.path !== undefined) {
+    cloned = cloned.update({ id: options.id } as any);
+  }
 
   byId.set(oldRoute.id, cloned as unknown as AnyRoute);
 

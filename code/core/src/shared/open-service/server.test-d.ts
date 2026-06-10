@@ -2,7 +2,7 @@ import * as v from 'valibot';
 import { describe, expectTypeOf, it } from 'vitest';
 
 import { defineService } from './index.ts';
-import { mutableRecordLookupServiceDef } from './fixtures.ts';
+import { type MutableRecordLookupService, mutableRecordLookupServiceDef } from './fixtures.ts';
 import { registerService } from './server.ts';
 import type { RuntimeService } from './types.ts';
 
@@ -130,7 +130,7 @@ describe('open-service registration types', () => {
     });
   });
 
-  it('types cross-service lookups when getService receives a definition generic', () => {
+  it('types cross-service lookups when getService receives an instance generic', () => {
     registerService(mutableRecordLookupServiceDef);
     registerService(
       defineService({
@@ -141,7 +141,7 @@ describe('open-service registration types', () => {
             input: entryIdInputSchema,
             output: v.nullable(v.string()),
             handler: (_input, ctx) => {
-              const lookup = ctx.getService<typeof mutableRecordLookupServiceDef>(
+              const lookup = ctx.getService<MutableRecordLookupService>(
                 'internal-fixture/mutable-record-lookup'
               );
 

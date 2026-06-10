@@ -1009,7 +1009,7 @@ async function prepareReactNativeWebSandbox(cwd: string) {
 }
 
 async function getConfigFile(names: string[], cwd: string) {
-  const firstPath = await findFirstPath(names, { cwd })
+  const firstPath = await findFirstPath(names, { cwd });
 
   if (!firstPath) {
     throw new Error(`No ${names.join(' or ')} found in sandbox: ${cwd}, cannot modify config.`);

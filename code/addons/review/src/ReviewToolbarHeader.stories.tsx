@@ -1,3 +1,5 @@
+import type { ReactNode } from 'react';
+
 import { expect, fn, within } from 'storybook/test';
 
 import {
@@ -9,12 +11,13 @@ import {
 import { MemoryRouter } from 'storybook/internal/router';
 
 import preview from '../../../.storybook/preview.tsx';
-import { EVENTS, RESTORE_NAV_SESSION_KEY } from './constants.ts';
+import { ADDON_ID, EVENTS, RESTORE_NAV_SESSION_KEY } from './constants.ts';
 import { ReviewProvider } from './ReviewProvider.tsx';
 import { ReviewToolbarHeader } from './ReviewToolbarHeader.tsx';
 import { buildReviewChangesSummaryHref, buildReviewStoryHref } from './review-navigation.ts';
 import type { ReviewState } from './review-state.ts';
 import { sessionStore } from './session-store.ts';
+import { useReviewShortcuts } from './useReviewShortcuts.ts';
 
 type EventListener = (payload?: unknown) => void;
 
@@ -38,6 +41,7 @@ const emitMock = fn((eventName: string, payload?: unknown) => {
   });
 });
 const toggleNavMock = fn();
+const setAddonShortcutMock = fn();
 
 const reviewState: ReviewState = {
   title: 'Manager settings polish',
@@ -121,6 +125,8 @@ const managerApi: API = {
   emit: emitMock,
   getIsNavShown: () => true,
   toggleNav: toggleNavMock,
+  setAddonShortcut: setAddonShortcutMock,
+  setQueryParams: fn(),
   getStoryHrefs: (storyId: string, options?: { freeze?: boolean }) => ({
     managerHref: `?path=/story/${storyId}`,
     previewHref: `iframe.html?id=${storyId}&viewMode=story${options?.freeze ? '&freeze=finished' : ''}`,
@@ -143,7 +149,9 @@ const meta = preview.meta({
       >
         <MemoryRouter initialEntries={parameters?.routerInitialEntries ?? ['/']}>
           <ReviewProvider>
-            <Story />
+            <ReviewShortcutsHarness>
+              <Story />
+            </ReviewShortcutsHarness>
           </ReviewProvider>
         </MemoryRouter>
       </ManagerContext.Provider>
@@ -155,6 +163,7 @@ const meta = preview.meta({
     offMock.mockReset();
     emitMock.mockReset();
     toggleNavMock.mockReset();
+    setAddonShortcutMock.mockReset();
     fetchMock.mockClear();
     sessionStore.remove(RESTORE_NAV_SESSION_KEY);
     internal_fullStatusStore.unset();
@@ -164,6 +173,11 @@ const meta = preview.meta({
     };
   },
 });
+
+const ReviewShortcutsHarness = ({ children }: { children: ReactNode }) => {
+  useReviewShortcuts();
+  return children;
+};
 
 export const OnReviewedStory = meta.story({
   parameters: {
@@ -179,12 +193,38 @@ export const OnReviewedStory = meta.story({
     applyReviewState();
 
     await expect(await canvas.findByRole('button', { name: '2/3' })).toBeInTheDocument();
+    await expect(setAddonShortcutMock).toHaveBeenCalledWith(
+      ADDON_ID,
+      expect.objectContaining({
+        actionName: 'reviewNextStory',
+        defaultShortcut: ['ArrowRight'],
+      })
+    );
     await expect(await canvas.findByRole('heading', { name: 'Settings' })).toBeInTheDocument();
     await expect(await canvas.findByRole('link', { name: 'Back to review' })).toHaveAttribute(
       'href',
       buildReviewChangesSummaryHref()
     );
     await expect(canvas.queryByText('New')).not.toBeInTheDocument();
+  },
+});
+
+export const Progress = meta.story({
+  parameters: {
+    routerInitialEntries: ['/?path=/story/manager-settings-aboutscreen--default&collection=0'],
+    managerState: {
+      path: '/story/manager-settings-aboutscreen--default',
+      viewMode: 'story',
+      customQueryParams: { collection: '0' },
+    },
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    applyReviewState();
+
+    await expect(await canvas.findByRole('button', { name: '3/3' })).toBeInTheDocument();
+    const fill = await canvas.findByTestId<HTMLElement>('review-progress-fill');
+    await expect(Math.round(parseFloat(fill.style.width))).toBe(100);
   },
 });
 

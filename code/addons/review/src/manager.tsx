@@ -17,6 +17,7 @@ import {
 import { isReviewPath } from './ReviewProvider.tsx';
 import { sessionStore } from './session-store.ts';
 import { useReviewNavigationInterceptor } from './useReviewNavigationInterceptor.ts';
+import { useReviewShortcuts } from './useReviewShortcuts.ts';
 
 const ReviewPersistentLayer = () => (
   <ReviewProvider>
@@ -26,6 +27,7 @@ const ReviewPersistentLayer = () => (
 
 const ReviewNavigationLayer = () => {
   useReviewNavigationInterceptor();
+  useReviewShortcuts();
   return <ReviewSummaryPortal />;
 };
 

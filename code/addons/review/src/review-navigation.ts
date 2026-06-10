@@ -98,3 +98,72 @@ export const resolveNavIndex = (entries: ReviewNavEntry[], active: ReviewNavEntr
 
 export const isStoryInReview = (entries: ReviewNavEntry[], storyId: string): boolean =>
   entries.some((entry) => entry.storyId === storyId);
+
+/** Previous/next targets in the flattened review sequence, wrapping at the ends. */
+export const getReviewDetailNeighbors = (
+  entries: readonly ReviewNavEntry[],
+  index: number
+): { previous: ReviewNavEntry; next: ReviewNavEntry } | null => {
+  const total = entries.length;
+  if (total === 0 || index < 0 || index >= total) {
+    return null;
+  }
+  return {
+    previous: entries[(index - 1 + total) % total],
+    next: entries[(index + 1) % total],
+  };
+};
+
+/** First story of the collection one step away, wrapping and skipping empty collections. */
+export const getAdjacentCollectionFirstStory = (
+  collections: readonly { storyIds: string[] }[],
+  collectionIndex: number,
+  direction: 1 | -1
+): ReviewNavEntry | null => {
+  const total = collections.length;
+  if (total === 0) {
+    return null;
+  }
+  for (let step = 1; step <= total; step += 1) {
+    const index = (((collectionIndex + direction * step) % total) + total) % total;
+    const candidate = collections[index];
+    if (candidate && candidate.storyIds.length > 0) {
+      return { collectionIndex: index, storyId: candidate.storyIds[0] };
+    }
+  }
+  return null;
+};
+
+/** Keyboard shortcut targets for the active reviewed story, as ready-to-navigate hrefs. */
+export interface ReviewShortcutHrefs {
+  back: string;
+  previous: string;
+  next: string;
+  previousCollection: string;
+  nextCollection: string;
+}
+
+export const buildReviewShortcutHrefs = (
+  collections: readonly { storyIds: string[] }[],
+  entries: readonly ReviewNavEntry[],
+  activeIndex: number
+): ReviewShortcutHrefs | null => {
+  if (activeIndex < 0 || entries.length === 0) {
+    return null;
+  }
+  const active = entries[activeIndex];
+  const neighbors = getReviewDetailNeighbors(entries, activeIndex);
+  const fallback = active;
+  const previousCollection =
+    getAdjacentCollectionFirstStory(collections, active.collectionIndex, -1) ?? fallback;
+  const nextCollection =
+    getAdjacentCollectionFirstStory(collections, active.collectionIndex, 1) ?? fallback;
+
+  return {
+    back: buildReviewChangesSummaryHref(),
+    previous: buildReviewStoryHref(neighbors?.previous ?? fallback),
+    next: buildReviewStoryHref(neighbors?.next ?? fallback),
+    previousCollection: buildReviewStoryHref(previousCollection),
+    nextCollection: buildReviewStoryHref(nextCollection),
+  };
+};

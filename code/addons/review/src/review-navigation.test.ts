@@ -7,6 +7,8 @@ import {
   buildReviewChangesSummaryHref,
   buildReviewStoryHref,
   buildReviewStoryNavigationTarget,
+  getAdjacentCollectionFirstStory,
+  getReviewDetailNeighbors,
   isReviewSummaryPath,
   parseCollectionIndex,
   parseReviewStoryHref,
@@ -118,5 +120,85 @@ describe('path helpers', () => {
 
   it('builds the summary href', () => {
     expect(buildReviewChangesSummaryHref()).toBe('?path=/review/');
+  });
+});
+
+describe('getReviewDetailNeighbors', () => {
+  const sequence = buildFlattenedNavEntries(reviewState);
+
+  it('crosses into the next collection at a collection boundary', () => {
+    expect(getReviewDetailNeighbors(sequence, 1)?.next).toEqual({
+      collectionIndex: 1,
+      storyId: 'story-a',
+    });
+  });
+
+  it('crosses into the previous collection at a collection boundary', () => {
+    expect(getReviewDetailNeighbors(sequence, 2)?.previous).toEqual({
+      collectionIndex: 0,
+      storyId: 'story-b',
+    });
+  });
+
+  it('wraps from the last story to the first and back', () => {
+    expect(getReviewDetailNeighbors(sequence, sequence.length - 1)?.next).toEqual({
+      collectionIndex: 0,
+      storyId: 'story-a',
+    });
+    expect(getReviewDetailNeighbors(sequence, 0)?.previous).toEqual({
+      collectionIndex: 1,
+      storyId: 'story-c',
+    });
+  });
+
+  it('returns null for an empty sequence or an out-of-range index', () => {
+    expect(getReviewDetailNeighbors([], 0)).toBeNull();
+    expect(getReviewDetailNeighbors(sequence, -1)).toBeNull();
+    expect(getReviewDetailNeighbors(sequence, sequence.length)).toBeNull();
+  });
+});
+
+describe('getAdjacentCollectionFirstStory', () => {
+  const collections = reviewState.collections;
+
+  it('jumps to the first story of the next collection', () => {
+    expect(getAdjacentCollectionFirstStory(collections, 0, 1)).toEqual({
+      collectionIndex: 1,
+      storyId: 'story-a',
+    });
+  });
+
+  it('jumps to the first story of the previous collection', () => {
+    expect(getAdjacentCollectionFirstStory(collections, 1, -1)).toEqual({
+      collectionIndex: 0,
+      storyId: 'story-a',
+    });
+  });
+
+  it('wraps from the last collection forward to the first', () => {
+    expect(getAdjacentCollectionFirstStory(collections, 1, 1)).toEqual({
+      collectionIndex: 0,
+      storyId: 'story-a',
+    });
+  });
+
+  it('wraps from the first collection backward to the last', () => {
+    expect(getAdjacentCollectionFirstStory(collections, 0, -1)).toEqual({
+      collectionIndex: 1,
+      storyId: 'story-a',
+    });
+  });
+
+  it('skips empty collections when stepping', () => {
+    const withEmpty = [{ storyIds: ['a--1'] }, { storyIds: [] }, { storyIds: ['c--1'] }];
+    expect(getAdjacentCollectionFirstStory(withEmpty, 0, 1)).toEqual({
+      collectionIndex: 2,
+      storyId: 'c--1',
+    });
+  });
+
+  it('returns null when no collection has stories', () => {
+    expect(getAdjacentCollectionFirstStory([{ storyIds: [] }], 0, 1)).toBeNull();
+    expect(getAdjacentCollectionFirstStory([], 0, 1)).toBeNull();
   });
 });

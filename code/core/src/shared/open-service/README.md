@@ -152,6 +152,29 @@ not throw when the command is called; it requests **remote command execution** f
 implement it (see [Remote Command Execution](#remote-command-execution)). Queries stay local-only and
 still throw `OpenServiceUnimplementedOperationError` when no handler exists.
 
+### Discovery visibility
+
+Services and operations can be hidden from discovery APIs without disabling them at runtime:
+
+- Set `internal: true` on a **service** to omit it from `listServices()`. `describeService(id)` and
+  `getService(id)` still work when the id is known.
+- Set `internal: true` on a **query or command** to omit it from `describeService()` output (and
+  therefore from `queryNames` / `commandNames` in `listServices()` summaries). Runtime callers can
+  still invoke the operation through a service handle, and TypeScript types remain available.
+
+`internal` defaults to `false` when omitted. It is part of the definition contract only — it cannot
+be overridden at `registerService()` time. Static snapshot building is unaffected.
+
+### Internal operation naming
+
+Internal queries and commands must use a `_` prefix (for example `_debugState`). `defineService()`
+enforces this bidirectionally at compile time:
+
+- `internal: true` requires a `_`-prefixed name
+- a `_`-prefixed name requires `internal: true`
+
+Public operations must not use a `_` prefix unless they are internal.
+
 ### Cross-service composition
 
 Handlers resolve other registered services through `ctx.getService(serviceId)`. Without a type
@@ -182,6 +205,11 @@ Guidelines:
 - Omit the generic when the target service is not known statically; the untyped `RuntimeService`
   surface is the correct fallback
 - Do **not** cast individual query or command results; type the service handle once instead
+- Prefer `await service.queries.foo.loaded(input)` for cross-service reads in operational code. A
+  direct `service.queries.foo(input)` read returns the current state immediately and only starts
+  that query's load in the background, so it can miss data that arrives during the load. Use the
+  direct sync form only when "current best effort" is the intended behavior, or when you are testing
+  the synchronous query contract itself.
 
 The exported `ServiceInstanceOf<typeof sourceDef>` alias is available for named handle types when
 a service is referenced from many call sites.

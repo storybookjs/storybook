@@ -288,7 +288,11 @@ export const init: Task['run'] = async (
       extra = { type: 'server' };
       break;
     case '@storybook/svelte':
-      await prepareSvelteSandbox(cwd);
+      if (template.expected.framework === '@storybook/sveltekit') {
+        await prepareSvelteKitSandbox(cwd);
+      } else {
+        await prepareSvelteSandbox(cwd);
+      }
       break;
   }
 
@@ -1004,23 +1008,36 @@ async function prepareReactNativeWebSandbox(cwd: string) {
   }
 }
 
-async function prepareSvelteSandbox(cwd: string) {
-  const svelteConfigJsPath = join(cwd, 'vite.config.js');
-  const svelteConfigTsPath = join(cwd, 'vite.config.ts');
-
-  // Check which config file exists
-  const configPath = (await pathExists(svelteConfigTsPath))
-    ? svelteConfigTsPath
-    : (await pathExists(svelteConfigJsPath))
-      ? svelteConfigJsPath
-      : null;
-
-  if (!configPath) {
-    throw new Error(
-      `No vite.config.js or vite.config.ts found in sandbox: ${cwd}, cannot modify config.`
-    );
+async function getConfigFile(names: string[], cwd: string) {
+  for (const name of names) {
+    const configPath = join(cwd, name);
+    if (await pathExists(configPath)) {
+      return configPath;
+    }
   }
 
+  throw new Error(
+    `No ${names.join(' or ')} found in sandbox: ${cwd}, cannot modify config.`
+  );
+}
+
+async function prepareSvelteSandbox(cwd: string) {
+  const configPath = await getConfigFile(['svelte.config.ts', 'svelte.config.js'], cwd);
+  const svelteConfig = await csfReadConfig(configPath);
+
+  // Enable async components
+  // see https://svelte.dev/docs/svelte/await-expressions
+  svelteConfig.setFieldValue(['compilerOptions', 'experimental', 'async'], true);
+
+  // Enable remote functions
+  // see https://svelte.dev/docs/kit/remote-functions
+  svelteConfig.setFieldValue(['kit', 'experimental', 'remoteFunctions'], true);
+
+  await writeConfig(svelteConfig);
+}
+
+async function prepareSvelteKitSandbox(cwd: string) {
+  const configPath = await getConfigFile(['vite.config.ts', 'vite.config.js'], cwd);
   const viteConfig = await csfReadConfig(configPath);
 
   // Enable async components

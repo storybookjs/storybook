@@ -587,17 +587,20 @@ export async function setupVitest(details: TemplateDetails, options: PassedOptio
 
   let fileContent = await readFile(join(sandboxDir, configFile), 'utf-8');
 
-  // Insert resolve: { preserveSymlinks: true } and optionally server.fs.allow as siblings to plugins
-  // Handles both defineConfig({ ... }) and defineWorkspace([ ... , { ... }])
-  fileContent = fileContent.replace(/(plugins\s*:\s*\[[^\]]*\],?)/, (match) => {
-    let replacement = `${match}\n  resolve: {\n    preserveSymlinks: true\n  },`;
+  // Insert resolve: { preserveSymlinks: true } and optionally server.fs.allow as siblings to
+  // plugins. Handles both defineConfig({ ... }) and defineWorkspace([ ... , { ... }]). Anchored
+  // on the `plugins:` key (injecting before it) instead of matching the whole array: plugin code
+  // may contain `]` (e.g. the regex literal in the sveltekit template), which a bracket-counting
+  // regex like `\[[^\]]*\]` would cut short, splicing the injection into the middle of it.
+  fileContent = fileContent.replace(/^([ \t]*)plugins\s*:/m, (match, indent) => {
+    let injected = `${indent}resolve: {\n${indent}  preserveSymlinks: true\n${indent}},\n`;
 
     // In linked mode, also add server.fs.allow to allow Vite to serve files from the monorepo root
     if (options.link) {
-      replacement += `\n  server: {\n    fs: {\n      allow: ['../../..']\n    }\n  },`;
+      injected += `${indent}server: {\n${indent}  fs: {\n${indent}    allow: ['../../..']\n${indent}  }\n${indent}},\n`;
     }
 
-    return replacement;
+    return `${injected}${match}`;
   });
 
   // search for storybookTest({...}) and place `tags: 'vitest'` into it but tags option doesn't exist yet in the config. Also consider multi line
@@ -1015,7 +1018,9 @@ async function getConfigFile(names: string[], cwd: string) {
     throw new Error(`No ${names.join(' or ')} found in sandbox: ${cwd}, cannot modify config.`);
   }
 
-  return firstPath;
+  // findFirstPath returns a path relative to `cwd`; resolve it so readConfig
+  // does not resolve it against the script's own working directory.
+  return join(cwd, firstPath);
 }
 
 async function prepareSvelteSandbox(cwd: string) {

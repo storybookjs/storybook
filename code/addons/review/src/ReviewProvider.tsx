@@ -152,29 +152,6 @@ export const ReviewProvider: FC<{ children: ReactNode }> = ({ children }) => {
 
   const flattenedEntries = useMemo(() => (state ? buildFlattenedNavEntries(state) : []), [state]);
 
-  const storyInfo = useMemo(() => {
-    const info: Record<string, StoryInfo> = {};
-    if (!state) {
-      return info;
-    }
-    for (const collection of state.collections) {
-      for (const storyId of collection.storyIds) {
-        if (storyId in info) {
-          continue;
-        }
-        const direct = index?.[storyId];
-        const entry =
-          direct?.type === 'story' ? direct : index ? api.findLeafEntry(index, storyId) : undefined;
-        if (entry?.type === 'story' && entry.title) {
-          info[storyId] = { title: entry.title, name: entry.name };
-        } else {
-          info[storyId] = fallbackStoryInfo(storyId);
-        }
-      }
-    }
-    return info;
-  }, [api, index, state]);
-
   const allStatuses = experimental_useStatusStore() as StatusesByStoryIdAndTypeId;
   const newlyAddedStoryIds = useMemo(() => {
     const ids = new Set<string>();
@@ -195,6 +172,36 @@ export const ReviewProvider: FC<{ children: ReactNode }> = ({ children }) => {
     }
     return ids;
   }, [allStatuses, baselineStoryIds, state]);
+
+  const storyInfo = useMemo(() => {
+    const info: Record<string, StoryInfo> = {};
+    if (!state) {
+      return info;
+    }
+    for (const collection of state.collections) {
+      for (const storyId of collection.storyIds) {
+        if (storyId in info) {
+          continue;
+        }
+        const direct = index?.[storyId];
+        const entry =
+          direct?.type === 'story' ? direct : index ? api.findLeafEntry(index, storyId) : undefined;
+        if (entry?.type === 'story' && entry.title) {
+          info[storyId] = {
+            title: entry.title,
+            name: entry.name,
+            isNew: newlyAddedStoryIds.has(storyId) || undefined,
+          };
+        } else {
+          info[storyId] = {
+            ...fallbackStoryInfo(storyId),
+            isNew: newlyAddedStoryIds.has(storyId) || undefined,
+          };
+        }
+      }
+    }
+    return info;
+  }, [api, index, newlyAddedStoryIds, state]);
 
   const collectionParam = customQueryParams?.[REVIEW_COLLECTION_QUERY_PARAM] as string | undefined;
   const collectionIndex = parseCollectionIndex(collectionParam);

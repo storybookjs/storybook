@@ -1,10 +1,11 @@
 import React, { type FC } from 'react';
 
-import { Badge, Button, IconButton } from 'storybook/internal/components';
+import { Badge, Button, IconButton, Popover, WithTooltip } from 'storybook/internal/components';
 import { styled } from 'storybook/theming';
 
 import { ChevronSmallLeftIcon, ChevronSmallRightIcon } from '@storybook/icons';
 
+import { ReviewCollectionPicker } from './ReviewCollectionPicker.tsx';
 import { ReviewHeader } from './components/ReviewHeader.tsx';
 import { StaleBanner } from './components/StaleBanner.tsx';
 import {
@@ -45,12 +46,17 @@ const ProgressFill = styled.div(({ theme }) => ({
   transition: 'width 200ms ease',
 }));
 
-const SubtitleStrong = styled.span({
+const SubtitleStrong = styled.span(({ theme }) => ({
   fontWeight: 700,
-});
+  color: theme.color.defaultText,
+}));
 
 const SubtitleSeparator = styled.span(({ theme }) => ({
-  color: theme.textMutedColor,
+  color: theme.color.defaultText,
+}));
+
+const SubtitleText = styled.span(({ theme }) => ({
+  color: theme.color.defaultText,
 }));
 
 const Counter = styled(Button)(({ theme }) => ({
@@ -75,6 +81,7 @@ export const ReviewToolbarHeader: FC = () => {
     newlyAddedStoryIds,
     activeEntry,
     activeIndex,
+    getStoryPreviewHref,
   } = useReview();
 
   if (!state || !activeEntry || activeIndex < 0) {
@@ -83,6 +90,7 @@ export const ReviewToolbarHeader: FC = () => {
 
   const collection = state.collections[activeEntry.collectionIndex];
   const collectionTitle = collection?.title ?? 'Review';
+  const collectionStoryIds = collection?.storyIds ?? [];
   const totalStories = flattenedEntries.length;
   const neighbors = getReviewDetailNeighbors(flattenedEntries, activeIndex);
   const previousEntry = neighbors?.previous ?? activeEntry;
@@ -96,7 +104,7 @@ export const ReviewToolbarHeader: FC = () => {
       <>
         <SubtitleStrong>{componentName(currentStoryInfo.title)}</SubtitleStrong>
         <SubtitleSeparator>/</SubtitleSeparator>
-        <span>{currentStoryInfo.name}</span>
+        <SubtitleText>{currentStoryInfo.name}</SubtitleText>
       </>
     ) : null;
 
@@ -108,11 +116,47 @@ export const ReviewToolbarHeader: FC = () => {
       </>
     ) : undefined;
 
+  const counter =
+    collectionStoryIds.length > 0 ? (
+      <WithTooltip
+        trigger="click"
+        closeOnOutsideClick
+        placement="bottom"
+        tooltip={({ onHide }) => (
+          <Popover hasChrome padding={0}>
+            <ReviewCollectionPicker
+              storyIds={collectionStoryIds}
+              storyInfo={storyInfo}
+              currentStoryId={activeEntry.storyId}
+              collectionIndex={activeEntry.collectionIndex}
+              getStoryPreviewHref={getStoryPreviewHref}
+              onClose={onHide}
+            />
+          </Popover>
+        )}
+      >
+        <Counter variant="ghost" size="small" ariaLabel="Open story list">
+          {activeIndex + 1}/{totalStories}
+        </Counter>
+      </WithTooltip>
+    ) : (
+      <Counter variant="ghost" size="small" ariaLabel={false} readOnly>
+        {activeIndex + 1}/{totalStories}
+      </Counter>
+    );
+
   return (
     <Root data-testid="review-toolbar-header">
       {isStale ? <StaleBanner /> : null}
       <HeaderWrap>
-        <ProgressBar aria-hidden data-testid="review-progress">
+        <ProgressBar
+          role="progressbar"
+          aria-label="Review progress"
+          aria-valuenow={activeIndex + 1}
+          aria-valuemin={1}
+          aria-valuemax={totalStories}
+          data-testid="review-progress"
+        >
           <ProgressFill
             data-testid="review-progress-fill"
             style={{ width: `${progress * 100}%` }}
@@ -137,9 +181,7 @@ export const ReviewToolbarHeader: FC = () => {
           subtitle={subtitle}
           actions={
             <>
-              <Counter variant="ghost" size="small" readOnly>
-                {activeIndex + 1}/{totalStories}
-              </Counter>
+              {counter}
               <IconButton
                 variant="ghost"
                 size="small"

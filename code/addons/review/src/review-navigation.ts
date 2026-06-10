@@ -1,6 +1,64 @@
 import { REVIEW_CHANGES_URL } from './constants.ts';
 import type { ReviewState } from './review-state.ts';
 
+/** Fallback display name when the Storybook index has not resolved a title. */
+export const prettifyComponentId = (componentId: string) =>
+  componentId
+    .split(/[-/]/)
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(' ');
+
+const tryDecodeURIComponent = (value: string): string => {
+  try {
+    return decodeURIComponent(value);
+  } catch {
+    return value;
+  }
+};
+
+/** Normalize preview URLs or encoded ids down to a plain story id. */
+export const normalizeReviewStoryId = (value: string): string => {
+  const trimmed = value.trim();
+  if (!trimmed) {
+    return trimmed;
+  }
+
+  const shouldTreatAsUrl =
+    trimmed.startsWith('http://') ||
+    trimmed.startsWith('https://') ||
+    trimmed.startsWith('/iframe.html') ||
+    trimmed.startsWith('iframe.html') ||
+    trimmed.startsWith('./iframe.html');
+
+  if (shouldTreatAsUrl) {
+    try {
+      const url = new URL(trimmed, 'https://storybook.local');
+      const id = url.searchParams.get('id');
+      if (id) {
+        return tryDecodeURIComponent(id);
+      }
+    } catch {
+      // Fall through to the regex-based extraction below.
+    }
+  }
+
+  const queryIdMatch = trimmed.match(/(?:^|[?&])id=([^&#]+)/);
+  if (queryIdMatch?.[1]) {
+    return tryDecodeURIComponent(queryIdMatch[1]);
+  }
+
+  return trimmed;
+};
+
+/** Preview iframe URL for a story thumbnail. */
+export const storyPreviewUrl = (storyId: string, { freeze = false }: { freeze?: boolean } = {}) =>
+  `iframe.html?id=${encodeURIComponent(storyId)}&viewMode=story${freeze ? '&freeze=finished' : ''}`;
+
+/** Link to a story in the regular Storybook manager. */
+export const buildStorybookStoryHref = (storyId: string): string =>
+  `?path=/story/${encodeURIComponent(normalizeReviewStoryId(storyId))}`;
+
 /** A single navigable slot in the flattened review list (duplicates allowed). */
 export interface ReviewNavEntry {
   storyId: string;

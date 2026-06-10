@@ -1,6 +1,14 @@
-import React, { useEffect, useLayoutEffect, useState, type FC } from 'react';
+import React, { useEffect, useLayoutEffect, useMemo, useState, type FC } from 'react';
 
-import { Button, Card, Collapsible, IconButton, ScrollArea } from 'storybook/internal/components';
+import {
+  Badge,
+  Button,
+  Card,
+  Collapsible,
+  IconButton,
+  ScrollArea,
+  ToggleButton,
+} from 'storybook/internal/components';
 import { styled } from 'storybook/theming';
 
 import {
@@ -10,6 +18,7 @@ import {
   CollapseIcon,
   ExpandAltIcon,
   SearchIcon,
+  StatusNewIcon,
   SweepIcon,
   WandIcon,
 } from '@storybook/icons';
@@ -166,15 +175,19 @@ const ToggleChevronIcon = styled(ChevronSmallDownIcon)({
   transition: 'transform 160ms ease',
 });
 
-const CardRationale = styled.p(({ theme }) => ({
-  color: theme.textMutedColor,
-  margin: '0 12px',
-}));
-
 const NoResults = styled.div(({ theme }) => ({
   color: theme.textMutedColor,
   padding: 16,
   fontSize: 14,
+}));
+
+// Temporary purple override until a shared "AI" badge variant is decided.
+// Light: purple-on-lavender. Dark: lighter purple text on a dark tinted base.
+const AICuratedBadge = styled(Badge)(({ theme }) => ({
+  color: theme.base === 'dark' ? '#b07fdc' : '#723aa6',
+  background: theme.base === 'dark' ? 'rgba(114,58,166,0.15)' : '#f5f0fa',
+  boxShadow: `inset 0 0 0 1px ${theme.base === 'dark' ? 'rgba(114,58,166,0.35)' : '#e1d2ef'}`,
+  svg: { marginTop: 0 },
 }));
 
 // A story matches the search if its id, component title, or story name
@@ -198,11 +211,13 @@ const storyMatchesQuery = (
 const formatCreatedAgo = (createdAt: number, nowMs: number): string => {
   const elapsedMs = Math.max(0, nowMs - createdAt);
   if (elapsedMs < 60_000) {
-    return 'Created just now.';
+    return 'just now';
   }
   const elapsedMinutes = Math.floor(elapsedMs / 60_000);
-  const minuteLabel = elapsedMinutes === 1 ? 'minute' : 'minutes';
-  return `Created ${elapsedMinutes} ${minuteLabel} ago.`;
+  if (elapsedMinutes < 60) {
+    return `${elapsedMinutes}m ago`;
+  }
+  return `${Math.floor(elapsedMinutes / 60)}h ago`;
 };
 
 export interface SummaryScreenProps {
@@ -230,6 +245,7 @@ export const SummaryScreen: FC<SummaryScreenProps> = ({
   const [search, setSearch] = useState('');
   const [expandedCollections, setExpandedCollections] = useState<Set<number>>(() => new Set());
   const [showAllCollections, setShowAllCollections] = useState<Set<number>>(() => new Set());
+  const [showNewOnly, setShowNewOnly] = useState(false);
   const [nowMs, setNowMs] = useState(() => Date.now());
 
   useEffect(() => {
@@ -248,6 +264,15 @@ export const SummaryScreen: FC<SummaryScreenProps> = ({
     setExpandedCollections(new Set(state.collections.map((_, index) => index)));
     setShowAllCollections(new Set());
   }, [state]);
+
+  // Must be computed before the early return — hooks cannot be called conditionally.
+  const newStoryCount = useMemo(
+    () =>
+      new Set(
+        (state?.collections ?? []).flatMap((c) => c.storyIds).filter((id) => storyInfo[id]?.isNew)
+      ).size,
+    [state, storyInfo]
+  );
 
   if (!state) {
     return (
@@ -300,19 +325,28 @@ export const SummaryScreen: FC<SummaryScreenProps> = ({
   const normalizedQuery = search.trim().toLowerCase();
   // Search narrows to the story level: a collection whose title matches keeps
   // all its stories, otherwise only the matching stories are shown. The
-  // original index is kept so expand state and detail links stay correct.
-  const visibleCollections = state.collections
-    .map((collection, index) => {
-      const titleMatch =
-        !normalizedQuery || collection.title.toLowerCase().includes(normalizedQuery);
-      const storyIds = titleMatch
-        ? collection.storyIds
-        : collection.storyIds.filter((storyId) =>
-            storyMatchesQuery(storyId, storyInfo, normalizedQuery)
-          );
-      return { collection, index, storyIds };
-    })
-    .filter((entry) => entry.storyIds.length > 0);
+  // "new only" filter is applied after search so both can be active together.
+  // The original index is kept so expand state and detail links stay correct.
+  // Memoized to avoid recomputing on unrelated re-renders (e.g. nowMs ticks).
+  const visibleCollections = useMemo(
+    () =>
+      state.collections
+        .map((collection, index) => {
+          const titleMatch =
+            !normalizedQuery || collection.title.toLowerCase().includes(normalizedQuery);
+          let storyIds = titleMatch
+            ? collection.storyIds
+            : collection.storyIds.filter((storyId) =>
+                storyMatchesQuery(storyId, storyInfo, normalizedQuery)
+              );
+          if (showNewOnly) {
+            storyIds = storyIds.filter((id) => storyInfo[id]?.isNew);
+          }
+          return { collection, index, storyIds };
+        })
+        .filter((entry) => entry.storyIds.length > 0),
+    [state.collections, normalizedQuery, showNewOnly, storyInfo]
+  );
 
   return (
     <Page>
@@ -320,10 +354,16 @@ export const SummaryScreen: FC<SummaryScreenProps> = ({
       <ReviewHeader
         title={state.title}
         subtitle={
-          <span>
-            Showing {storyCount} agent-curated {storyCount === 1 ? 'story' : 'stories'} for quick
-            review.{createdAgo ? ` ${createdAgo}` : ''}
-          </span>
+          <>
+            <AICuratedBadge>
+              <WandIcon />
+              AI-curated
+            </AICuratedBadge>
+            <span>
+              {storyCount} {storyCount === 1 ? 'story' : 'stories'} for quick review
+              {createdAgo ? ` • ${createdAgo}` : ''}
+            </span>
+          </>
         }
         actions={
           <Button padding="small" onClick={onDismiss} ariaLabel="Dismiss and close review">
@@ -345,6 +385,20 @@ export const SummaryScreen: FC<SummaryScreenProps> = ({
                 onChange={(event) => setSearch(event.target.value)}
               />
             </SearchField>
+            {newStoryCount > 0 ? (
+              <ToggleButton
+                variant="ghost"
+                size="small"
+                padding="small"
+                ariaLabel={false}
+                tooltip="Toggle filtering of new stories"
+                pressed={showNewOnly}
+                onClick={() => setShowNewOnly((v) => !v)}
+              >
+                <StatusNewIcon />
+                {newStoryCount} new
+              </ToggleButton>
+            ) : null}
             <IconButton
               variant="ghost"
               size="small"
@@ -367,7 +421,11 @@ export const SummaryScreen: FC<SummaryScreenProps> = ({
         <ScrollArea vertical>
           <List>
             {visibleCollections.length === 0 ? (
-              <NoResults>No collections match “{search.trim()}”.</NoResults>
+              <NoResults>
+                {showNewOnly && !search.trim()
+                  ? 'No new stories found.'
+                  : `No collections match “${search.trim()}”.`}
+              </NoResults>
             ) : (
               visibleCollections.map(({ collection, index, storyIds }) => {
                 const isExpanded = expandedCollections.has(index);
@@ -403,9 +461,6 @@ export const SummaryScreen: FC<SummaryScreenProps> = ({
                         </CardHead>
                       }
                     >
-                      {collection.rationale ? (
-                        <CardRationale>{collection.rationale}</CardRationale>
-                      ) : null}
                       <CollectionGrid
                         storyIds={storyIds}
                         showAll={showAllCollections.has(index)}

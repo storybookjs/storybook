@@ -8,7 +8,7 @@ import type { Command } from 'commander';
 
 import {
   type AiToolRunResult,
-  buildToolCommandsHelp,
+  buildStorybookCommandsHelp,
   runAiTool,
   runAiToolHelp,
 } from './run-tool.ts';
@@ -27,49 +27,51 @@ const PORT_DESCRIPTION =
   'Port of the target Storybook, to address one specific instance when several run at the same cwd';
 
 /**
- * Register the MCP passthrough on the `ai` command: a generic `[tool] [toolArgs...]` argument pair
- * that forwards any tool call to the running Storybook's MCP server. `passThroughOptions` hands
- * every token after the tool name to the tool untouched, which requires positional options on the
+ * Register the passthrough on the `ai` command: a generic `[command] [args...]` argument pair that
+ * forwards any command to the running Storybook's server (MCP under the hood, but that is an
+ * implementation detail — user-facing copy says "commands"). `passThroughOptions` hands every
+ * token after the command name to the command untouched, which requires positional options on the
  * program.
  *
  * Commander's built-in (synchronous) help is replaced with our own `-h, --help` option so the help
- * output can include the tool commands fetched from the running Storybook.
+ * output can include the commands fetched from the running Storybook.
  */
 export function registerAiMcpPassthrough(program: Command, aiCommand: Command): void {
   program.enablePositionalOptions();
 
   aiCommand
     .helpOption(false)
-    .argument('[tool]', 'Name of an MCP tool exposed by the running Storybook')
+    .usage('[options] [command] [args...]')
+    .argument('[command]', 'A command provided by the running Storybook')
     .argument(
-      '[toolArgs...]',
-      'Tool arguments as `--key value` flags; values are JSON-parsed when possible'
+      '[args...]',
+      'Command arguments as `--key value` flags; values are JSON-parsed when possible'
     )
     .option('--cwd <path>', CWD_DESCRIPTION)
     .option('--port <number>', PORT_DESCRIPTION)
     .option(
       '--json <object>',
-      'Raw JSON object with the tool arguments (escape hatch for complex values)'
+      'Raw JSON object with the command arguments (escape hatch for complex values)'
     )
-    .option('-h, --help', 'Show help, including the tool commands of the running Storybook')
+    .option('-h, --help', 'Show help, including the commands provided by the running Storybook')
     .passThroughOptions()
     .action(
       async (
-        tool: string | undefined,
-        toolArgs: string[],
+        command: string | undefined,
+        commandArgs: string[],
         options: { cwd?: string; port?: string; json?: string; output?: string; help?: boolean }
       ) => {
         const target = { cwd: options.cwd, port: options.port };
-        if (options.help && tool) {
-          await printResult(await runAiToolHelp(tool, target), options.output);
+        if (options.help && command) {
+          await printResult(await runAiToolHelp(command, target), options.output);
           return;
         }
-        if (options.help || !tool) {
-          const toolSection = await buildToolCommandsHelp(target);
-          process.stdout.write(`${aiCommand.helpInformation()}\n${toolSection}\n`);
+        if (options.help || !command) {
+          const commandsSection = await buildStorybookCommandsHelp(target);
+          process.stdout.write(`${aiCommand.helpInformation()}\n${commandsSection}\n`);
           return;
         }
-        const result = await runAiTool(tool, toolArgs, { ...target, json: options.json });
+        const result = await runAiTool(command, commandArgs, { ...target, json: options.json });
         await printResult(result, options.output);
       }
     );

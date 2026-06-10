@@ -24,7 +24,7 @@ export class McpJsonRpcError extends Error {
     public readonly code: number,
     message: string
   ) {
-    super(`Storybook MCP error ${code}: ${message}`);
+    super(`Storybook server error ${code}: ${message}`);
     this.name = 'McpJsonRpcError';
   }
 }
@@ -69,7 +69,7 @@ async function sendJsonRpcRequest(
 ): Promise<unknown> {
   const endpoint = record.mcp.endpoint;
   if (!endpoint) {
-    throw new Error(`Storybook MCP record for ${record.cwd} is missing mcp.endpoint`);
+    throw new Error(`The Storybook instance at ${record.cwd} has no server endpoint registered`);
   }
 
   const target = new URL(endpoint, record.url).href;
@@ -92,7 +92,7 @@ async function sendJsonRpcRequest(
 
   if (!response.ok) {
     throw new Error(
-      `Storybook MCP at ${target} responded with ${response.status} ${response.statusText}`
+      `The Storybook server at ${target} responded with ${response.status} ${response.statusText}`
     );
   }
 
@@ -105,7 +105,7 @@ async function sendJsonRpcRequest(
     throw new McpJsonRpcError(payload.error.code, payload.error.message);
   }
   if (payload.result === undefined) {
-    throw new Error('Storybook MCP returned no result');
+    throw new Error('The Storybook server returned no result');
   }
   return payload.result;
 }
@@ -122,7 +122,7 @@ async function readJsonRpcResponse(response: Response, endpoint: string): Promis
   }
 
   throw new Error(
-    `Storybook MCP at ${endpoint} returned unsupported content-type "${contentType}". Expected application/json or text/event-stream.`
+    `The Storybook server at ${endpoint} returned unsupported content-type "${contentType}". Expected application/json or text/event-stream.`
   );
 }
 
@@ -146,13 +146,15 @@ function parseSseEnvelope(body: string, endpoint: string): unknown {
     }
   }
   if (dataLines.length === 0) {
-    throw new Error(`Storybook MCP at ${endpoint} returned an SSE response with no data event`);
+    throw new Error(
+      `The Storybook server at ${endpoint} returned an SSE response with no data event`
+    );
   }
   try {
     return JSON.parse(dataLines.join('\n'));
   } catch (error) {
     throw new Error(
-      `Storybook MCP at ${endpoint} returned an SSE event whose data could not be parsed as JSON: ${
+      `The Storybook server at ${endpoint} returned an SSE event whose data could not be parsed as JSON: ${
         error instanceof Error ? error.message : String(error)
       }`
     );

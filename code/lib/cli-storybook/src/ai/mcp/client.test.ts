@@ -116,7 +116,7 @@ describe('callMcpTool', () => {
     const fetchImpl = vi.fn() as unknown as typeof fetch;
     await expect(
       callMcpTool(noEndpoint, { name: 'list-all-documentation' }, fetchImpl)
-    ).rejects.toThrow(/missing mcp\.endpoint/);
+    ).rejects.toThrow(/has no server endpoint registered/);
   });
 
   it('throws when the response is not ok', async () => {
@@ -146,7 +146,7 @@ describe('callMcpTool', () => {
         error: { code: -32601, message: 'unknown tool' },
       })) as typeof fetch;
     const promise = callMcpTool(record, { name: 'nope' }, fetchImpl);
-    await expect(promise).rejects.toThrow(/Storybook MCP error -32601: unknown tool/);
+    await expect(promise).rejects.toThrow(/Storybook server error -32601: unknown tool/);
     await expect(promise).rejects.toBeInstanceOf(McpJsonRpcError);
   });
 });

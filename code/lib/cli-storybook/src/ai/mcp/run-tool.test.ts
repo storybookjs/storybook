@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { McpJsonRpcError, callMcpTool, listMcpTools } from './client.ts';
 import { readRegistry } from './registry.ts';
-import { buildToolCommandsHelp, runAiTool, runAiToolHelp } from './run-tool.ts';
+import { buildStorybookCommandsHelp, runAiTool, runAiToolHelp } from './run-tool.ts';
 import type { StorybookInstanceRecord } from './types.ts';
 import { checkStorybookVersion } from './version-check.ts';
 
@@ -159,17 +159,17 @@ describe('runAiTool', () => {
   it('prints a placeholder when the tool returns no content', async () => {
     vi.mocked(callMcpTool).mockResolvedValue({ content: [] });
     const result = await runAiTool('list-all-documentation', [], { cwd: '/projects/foo' });
-    expect(result).toEqual({ exitCode: 0, output: '(the tool returned no content)' });
+    expect(result).toEqual({ exitCode: 0, output: '(the command returned no content)' });
   });
 
   it('surfaces a clean error when a ready record is missing its endpoint', async () => {
     vi.mocked(callMcpTool).mockRejectedValue(
-      new Error('Storybook MCP record for /projects/foo is missing mcp.endpoint')
+      new Error('The Storybook instance at /projects/foo has no server endpoint registered')
     );
     vi.mocked(readRegistry).mockResolvedValue([{ ...record, mcp: { status: 'ready' } }]);
     const result = await runAiTool('list-all-documentation', [], { cwd: '/projects/foo' });
     expect(result.exitCode).toBe(1);
-    expect(result.output).toContain('Failed to reach Storybook MCP at (no endpoint)');
+    expect(result.output).toContain('Failed to reach the Storybook server at (no endpoint)');
   });
 
   it('renders non-text content items as JSON blocks', async () => {
@@ -189,7 +189,7 @@ describe('runAiTool', () => {
     vi.mocked(callMcpTool).mockRejectedValue(new McpJsonRpcError(-32601, 'unknown tool'));
     const result = await runAiTool('no-such-tool', [], { cwd: '/projects/foo' });
     expect(result.exitCode).toBe(1);
-    expect(result.output).toContain('Unknown tool `no-such-tool`');
+    expect(result.output).toContain('Unknown command `no-such-tool`');
     expect(result.output).toContain('- `list-all-documentation`');
   });
 
@@ -201,7 +201,7 @@ describe('runAiTool', () => {
     });
     const result = await runAiTool('no-such-tool', [], { cwd: '/projects/foo' });
     expect(result.exitCode).toBe(1);
-    expect(result.output).toContain('Unknown tool `no-such-tool`');
+    expect(result.output).toContain('Unknown command `no-such-tool`');
     expect(result.output).toContain('- `list-all-documentation`');
   });
 
@@ -218,7 +218,7 @@ describe('runAiTool', () => {
     vi.mocked(callMcpTool).mockRejectedValue(new McpJsonRpcError(-32602, 'invalid arguments'));
     const result = await runAiTool('list-all-documentation', [], { cwd: '/projects/foo' });
     expect(result.exitCode).toBe(1);
-    expect(result.output).toContain('Storybook MCP error -32602: invalid arguments');
+    expect(result.output).toContain('Storybook server error -32602: invalid arguments');
   });
 
   it('prints the original JSON-RPC error when the tool list cannot be fetched', async () => {
@@ -226,14 +226,14 @@ describe('runAiTool', () => {
     vi.mocked(listMcpTools).mockRejectedValue(new Error('boom'));
     const result = await runAiTool('no-such-tool', [], { cwd: '/projects/foo' });
     expect(result.exitCode).toBe(1);
-    expect(result.output).toContain('Storybook MCP error -32601: unknown tool');
+    expect(result.output).toContain('Storybook server error -32601: unknown tool');
   });
 
   it('surfaces a friendly error when the MCP server is unreachable', async () => {
     vi.mocked(callMcpTool).mockRejectedValue(new Error('connection refused'));
     const result = await runAiTool('get-documentation', [], { cwd: '/projects/foo' });
     expect(result.exitCode).toBe(1);
-    expect(result.output).toContain('Failed to reach Storybook MCP at /mcp');
+    expect(result.output).toContain('Failed to reach the Storybook server at /mcp');
     expect(result.output).toContain('connection refused');
   });
 
@@ -250,7 +250,7 @@ describe('runAiTool', () => {
   });
 });
 
-describe('buildToolCommandsHelp', () => {
+describe('buildStorybookCommandsHelp', () => {
   it('lists each tool with the first line of its description', async () => {
     vi.mocked(listMcpTools).mockResolvedValue([
       {
@@ -260,32 +260,34 @@ describe('buildToolCommandsHelp', () => {
       { name: 'list-all-documentation' },
     ]);
 
-    const section = await buildToolCommandsHelp({ cwd: '/projects/foo' });
-    expect(section).toContain('Tool commands (from the Storybook at http://localhost:6006):');
+    const section = await buildStorybookCommandsHelp({ cwd: '/projects/foo' });
+    expect(section).toContain(
+      'Storybook commands (from the Storybook running at http://localhost:6006):'
+    );
     expect(section).toContain('get-documentation');
     expect(section).toContain('Get docs for a component.');
     expect(section).not.toContain('Long details');
-    expect(section).toContain("Run 'storybook ai <tool> --help'");
+    expect(section).toContain("Run 'storybook ai <command> --help'");
   });
 
   it('degrades to a note when no Storybook is running (help must not fail)', async () => {
     vi.mocked(readRegistry).mockResolvedValue([]);
-    const section = await buildToolCommandsHelp({ cwd: '/projects/foo' });
-    expect(section).toContain('Tool commands: (unavailable');
+    const section = await buildStorybookCommandsHelp({ cwd: '/projects/foo' });
+    expect(section).toContain('Storybook commands: (unavailable');
     expect(section).toContain('storybook dev');
   });
 
   it('degrades to a note when the MCP server is unreachable', async () => {
     vi.mocked(listMcpTools).mockRejectedValue(new Error('connection refused'));
-    const section = await buildToolCommandsHelp({ cwd: '/projects/foo' });
-    expect(section).toContain('Tool commands: (unavailable');
+    const section = await buildStorybookCommandsHelp({ cwd: '/projects/foo' });
+    expect(section).toContain('Storybook commands: (unavailable');
     expect(section).toContain('could not be reached');
   });
 
   it('degrades to a note when no tools are exposed', async () => {
     vi.mocked(listMcpTools).mockResolvedValue([]);
-    const section = await buildToolCommandsHelp({ cwd: '/projects/foo' });
-    expect(section).toContain('exposes no MCP tools');
+    const section = await buildStorybookCommandsHelp({ cwd: '/projects/foo' });
+    expect(section).toContain('provides no commands');
   });
 });
 
@@ -322,7 +324,7 @@ describe('runAiToolHelp', () => {
   it('lists the available tools for an unknown tool name', async () => {
     const result = await runAiToolHelp('no-such-tool', { cwd: '/projects/foo' });
     expect(result.exitCode).toBe(1);
-    expect(result.output).toContain('Unknown tool `no-such-tool`');
+    expect(result.output).toContain('Unknown command `no-such-tool`');
     expect(result.output).toContain('- `list-all-documentation`');
   });
 
@@ -346,6 +348,6 @@ describe('runAiToolHelp', () => {
     vi.mocked(listMcpTools).mockRejectedValue(new Error('connection refused'));
     const result = await runAiToolHelp('get-documentation', { cwd: '/projects/foo' });
     expect(result.exitCode).toBe(1);
-    expect(result.output).toContain('Failed to reach Storybook MCP at /mcp');
+    expect(result.output).toContain('Failed to reach the Storybook server at /mcp');
   });
 });

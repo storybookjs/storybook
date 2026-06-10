@@ -45,7 +45,7 @@ export function parseToolArgs(
     if (!token.startsWith('--') || token === '--') {
       return {
         ok: false,
-        error: `Unexpected argument \`${token}\`. Tool arguments must be passed as \`--key value\` flags (or via \`--json '<object>'\`).`,
+        error: `Unexpected argument \`${token}\`. Command arguments must be passed as \`--key value\` flags (or via \`--json '<object>'\`).`,
       };
     }
 

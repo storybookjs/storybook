@@ -17,7 +17,7 @@ const buildPortMismatch = (port: number | undefined, records: StorybookInstanceR
   `Storybook is running at this cwd, but not on port \`${port ?? 'unknown'}\`. Retry with one of the running ports below, or omit \`--port\` to route by cwd alone.
 
 Running Storybooks at this cwd:
-${records.map((r) => `- port \`${r.port}\` (${r.url}, mcp: \`${r.mcp.status}\`)`).join('\n')}`;
+${records.map((r) => `- port \`${r.port}\` (${r.url}, status: \`${r.mcp.status}\`)`).join('\n')}`;
 
 const buildStorybookTooOld = (version: string) =>
   `The Storybook installed at this cwd is version \`${version}\`, but this command requires \`${STORYBOOK_MIN_VERSION}\` or newer.
@@ -26,11 +26,11 @@ Ask the user whether they want to upgrade Storybook. If they agree, invoke the \
 \`\`\`
 npx storybook add @storybook/addon-mcp
 \`\`\`
-to install the MCP addon. Restart Storybook, then retry the command.`;
+to install the addon that provides these commands. Restart Storybook, then retry the command.`;
 
 const STORYBOOK_NOT_INSTALLED = `No Storybook is running at this cwd, and Storybook does not appear to be installed here (\`storybook\` could not be resolved from this project).
 
-Ask the user whether they want to add Storybook. If they agree, invoke the \`storybook-init\` skill to set it up, then install the MCP addon:
+Ask the user whether they want to add Storybook. If they agree, invoke the \`storybook-init\` skill to set it up, then install the addon that provides these commands:
 \`\`\`
 npx storybook add @storybook/addon-mcp
 \`\`\`
@@ -38,7 +38,7 @@ Start Storybook, then retry the command.
 
 If you believe Storybook is in fact installed (e.g. a monorepo where \`storybook\` resolves from a different location), start \`storybook dev\` from this exact cwd and retry — a running instance is always used regardless of this check.`;
 
-const ADDON_MISSING = `Storybook is running but does not expose an MCP server. The \`@storybook/addon-mcp\` addon is missing.
+const ADDON_MISSING = `Storybook is running but does not provide these commands. The \`@storybook/addon-mcp\` addon is missing.
 
 Install it:
 \`\`\`
@@ -47,9 +47,9 @@ npx storybook add @storybook/addon-mcp
 
 Restart Storybook, then retry the command.`;
 
-const MCP_STARTING = `Storybook is running but its MCP server is still starting up. Wait a moment and retry the command.`;
+const MCP_STARTING = `Storybook is running but its command server is still starting up. Wait a moment and retry the command.`;
 
-const MCP_ERROR = `Storybook is running but its MCP server reported an error. Inspect the Storybook terminal output, fix the underlying issue, then retry the command.`;
+const MCP_ERROR = `Storybook is running but its command server reported an error. Inspect the Storybook terminal output, fix the underlying issue, then retry the command.`;
 
 export type InterceptExtras = {
   records?: StorybookInstanceRecord[];

@@ -80,7 +80,7 @@ export async function runAiTool(
     }
     return {
       exitCode: 1,
-      output: `Failed to reach Storybook MCP at ${record.mcp.endpoint ?? '(no endpoint)'}: ${
+      output: `Failed to reach the Storybook server at ${record.mcp.endpoint ?? '(no endpoint)'}: ${
         error instanceof Error ? error.message : String(error)
       }`,
     };
@@ -88,15 +88,15 @@ export async function runAiTool(
 }
 
 /**
- * Build the "Tool commands" help section listing the tools of the running Storybook, appended to
- * `storybook ai --help`. Help must never fail, so any error degrades to a short note explaining
- * why no tools are listed.
+ * Build the "Storybook commands" help section listing the commands provided by the running
+ * Storybook, appended to `storybook ai --help`. Help must never fail, so any error degrades to a
+ * short note explaining why no commands are listed.
  */
-export async function buildToolCommandsHelp(
+export async function buildStorybookCommandsHelp(
   options: AiToolOptions = {},
   deps: AiToolRunDeps = {}
 ): Promise<string> {
-  const unavailable = (note: string) => `Tool commands: (unavailable — ${note})`;
+  const unavailable = (note: string) => `Storybook commands: (unavailable — ${note})`;
 
   const parsed = parseToolArgs([], { cwd: options.cwd, port: options.port });
   if (!parsed.ok) {
@@ -106,7 +106,7 @@ export async function buildToolCommandsHelp(
   const resolution = await resolveReadyInstance(parsed.cwd, parsed.port, deps);
   if (resolution.kind === 'error') {
     return unavailable(
-      `no running Storybook with MCP detected at this cwd; start \`storybook dev\` to list its tools`
+      `no running Storybook detected at this cwd; start \`storybook dev\` to list its commands`
     );
   }
   const { record } = resolution;
@@ -115,10 +115,10 @@ export async function buildToolCommandsHelp(
   try {
     tools = await listMcpTools(record, deps.fetchImpl);
   } catch {
-    return unavailable(`the Storybook MCP at ${record.url} could not be reached`);
+    return unavailable(`the Storybook at ${record.url} could not be reached`);
   }
   if (tools.length === 0) {
-    return unavailable(`the Storybook at ${record.url} exposes no MCP tools`);
+    return unavailable(`the Storybook at ${record.url} provides no commands`);
   }
 
   const width = Math.max(...tools.map((tool) => tool.name.length)) + 2;
@@ -127,10 +127,10 @@ export async function buildToolCommandsHelp(
     return `  ${tool.name.padEnd(width)}${summary}`;
   });
   return [
-    `Tool commands (from the Storybook at ${record.url}):`,
+    `Storybook commands (from the Storybook running at ${record.url}):`,
     ...lines,
     '',
-    `Run 'storybook ai <tool> --help' for a tool's description and arguments.`,
+    `Run 'storybook ai <command> --help' for a command's description and arguments.`,
   ].join('\n');
 }
 
@@ -157,7 +157,7 @@ export async function runAiToolHelp(
   } catch (error) {
     return {
       exitCode: 1,
-      output: `Failed to reach Storybook MCP at ${record.mcp.endpoint ?? '(no endpoint)'}: ${
+      output: `Failed to reach the Storybook server at ${record.mcp.endpoint ?? '(no endpoint)'}: ${
         error instanceof Error ? error.message : String(error)
       }`,
     };
@@ -245,18 +245,18 @@ function formatUnknownTool(
   tools: McpToolDescriptor[],
   record: StorybookInstanceRecord
 ): string {
-  return `Unknown tool \`${toolName}\`. The Storybook at ${record.url} exposes:
+  return `Unknown command \`${toolName}\`. The Storybook running at ${record.url} provides:
 
 ${tools.map((tool) => `- \`${tool.name}\``).join('\n')}
 
-Run \`storybook ai --help\` for all commands, or \`storybook ai <tool> --help\` for a tool's arguments.`;
+Run \`storybook ai --help\` for all commands, or \`storybook ai <command> --help\` for a command's arguments.`;
 }
 
 /** Render a tools/call result as markdown: text content verbatim, other content as JSON blocks. */
 function formatToolResult(result: ToolCallResult): string {
   const content = result.content ?? [];
   if (content.length === 0) {
-    return '(the tool returned no content)';
+    return '(the command returned no content)';
   }
   return content
     .map((item) =>

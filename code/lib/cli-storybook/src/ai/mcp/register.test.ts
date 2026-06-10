@@ -5,7 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { Command } from 'commander';
 
 import { isAiCliFeatureEnabled, registerAiMcpPassthrough } from './register.ts';
-import { buildToolCommandsHelp, runAiTool, runAiToolHelp } from './run-tool.ts';
+import { buildStorybookCommandsHelp, runAiTool, runAiToolHelp } from './run-tool.ts';
 
 vi.mock('./run-tool.ts', { spy: true });
 
@@ -61,7 +61,9 @@ function stdoutText(): string {
 beforeEach(() => {
   vi.mocked(runAiTool).mockResolvedValue({ exitCode: 0, output: 'ok' });
   vi.mocked(runAiToolHelp).mockResolvedValue({ exitCode: 0, output: 'tool help' });
-  vi.mocked(buildToolCommandsHelp).mockResolvedValue('Tool commands (from the Storybook):');
+  vi.mocked(buildStorybookCommandsHelp).mockResolvedValue(
+    'Storybook commands (from the running Storybook):'
+  );
   vi.mocked(writeFile).mockResolvedValue(undefined);
   vi.spyOn(process.stdout, 'write').mockImplementation(() => true);
 });
@@ -70,7 +72,7 @@ afterEach(() => {
   vi.restoreAllMocks();
   vi.mocked(runAiTool).mockReset();
   vi.mocked(runAiToolHelp).mockReset();
-  vi.mocked(buildToolCommandsHelp).mockReset();
+  vi.mocked(buildStorybookCommandsHelp).mockReset();
   process.exitCode = undefined;
 });
 
@@ -92,7 +94,7 @@ describe('without the feature flag (no registration)', () => {
     const { program, helpAction } = buildProgram({ withPassthrough: false });
     await parse(program, ['ai']);
     expect(helpAction).toHaveBeenCalled();
-    expect(buildToolCommandsHelp).not.toHaveBeenCalled();
+    expect(buildStorybookCommandsHelp).not.toHaveBeenCalled();
   });
 });
 
@@ -172,11 +174,11 @@ describe('with the feature flag (passthrough registered)', () => {
     async (argv) => {
       const { program } = buildProgram({ withPassthrough: true });
       await parse(program, argv);
-      expect(buildToolCommandsHelp).toHaveBeenCalledWith({ cwd: undefined, port: undefined });
+      expect(buildStorybookCommandsHelp).toHaveBeenCalledWith({ cwd: undefined, port: undefined });
       const output = stdoutText();
       expect(output).toContain('Usage:');
       expect(output).toContain('setup');
-      expect(output).toContain('Tool commands (from the Storybook):');
+      expect(output).toContain('Storybook commands (from the running Storybook):');
       expect(runAiTool).not.toHaveBeenCalled();
     }
   );
@@ -184,7 +186,7 @@ describe('with the feature flag (passthrough registered)', () => {
   it('passes --cwd and --port through to the tool commands section', async () => {
     const { program } = buildProgram({ withPassthrough: true });
     await parse(program, ['ai', '--cwd', '/x', '--port', '6006', '--help']);
-    expect(buildToolCommandsHelp).toHaveBeenCalledWith({ cwd: '/x', port: '6006' });
+    expect(buildStorybookCommandsHelp).toHaveBeenCalledWith({ cwd: '/x', port: '6006' });
   });
 
   it('shows single-tool help for `ai --help <tool>`', async () => {

@@ -1323,9 +1323,11 @@ export function createServiceRuntime<
   ): void => {
     loadCommands = channelCommands as CommandSelf<TState>['commands'];
     remoteCommandNames.clear();
-    remoteCommandNames.add(
-      ...Object.keys(def.commands).filter((name) => !implementedCommandNames.has(name))
-    );
+    for (const name of Object.keys(def.commands)) {
+      if (!implementedCommandNames.has(name)) {
+        remoteCommandNames.add(name);
+      }
+    }
   };
 
   return {

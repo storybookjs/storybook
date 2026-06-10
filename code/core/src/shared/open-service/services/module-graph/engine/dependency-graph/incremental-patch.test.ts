@@ -5,11 +5,11 @@ import { readFile } from 'node:fs/promises';
 
 import { logger } from 'storybook/internal/node-logger';
 
-import { ParserRegistry } from '../parser-registry/index.ts';
-import type { ImportEdge, ImportParser } from '../parser-registry/index.ts';
-import { IncrementalPatcher } from './IncrementalPatcher.ts';
-import type { ChangeDetectionResolverFactory } from './ResolverFactory.ts';
-import { ReverseIndexImpl } from './ReverseIndex.ts';
+import { ParserRegistry } from '../parser-registry/parser-registry.ts';
+import type { ImportEdge, ImportParser } from '../parser-registry/types.ts';
+import { IncrementalPatcher } from './incremental-patcher.ts';
+import type { ChangeDetectionResolverFactory } from './resolver-factory.ts';
+import { ReverseIndexImpl } from './reverse-index.ts';
 import type { DependencyGraph } from './types.ts';
 
 vi.mock('node:fs/promises', { spy: true });
@@ -235,7 +235,7 @@ describe('IncrementalPatcher', () => {
     expect(reverseIndex.lookup(story).get(story)).toBe(0);
   });
 
-  it('runs full BFS for an `add` event for a new story root', async () => {
+  it('runs a full breadth-first-search walk for an `add` event for a new story root', async () => {
     const story = '/repo/src/New.stories.tsx';
     const dep = '/repo/src/dep.ts';
     const world: PatcherWorld = {

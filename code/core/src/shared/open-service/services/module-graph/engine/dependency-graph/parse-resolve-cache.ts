@@ -5,9 +5,9 @@ import { normalize } from 'pathe';
 import { parseBarrelInfo } from 'storybook/internal/oxc-parser';
 import type { BarrelInfo } from 'storybook/internal/oxc-parser';
 
-import type { ParserRegistry } from '../parser-registry/index.ts';
+import type { ParserRegistry } from '../parser-registry/parser-registry.ts';
 import type { ImportEdge } from './types.ts';
-import type { ChangeDetectionResolverFactory } from './ResolverFactory.ts';
+import type { ChangeDetectionResolverFactory } from './resolver-factory.ts';
 import { isInScope } from './scope.ts';
 
 /** Maximum barrel-chain hops followed when tracing a named export to its source file. */

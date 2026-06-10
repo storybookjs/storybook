@@ -1,6 +1,7 @@
 import * as v from 'valibot';
 
 import { defineService } from 'storybook/open-service';
+import type { ServiceInstanceOf } from '../../types.ts';
 import type { DocgenPayload } from './types.ts';
 import { docgenQueryStaticPath } from './paths.ts';
 
@@ -118,3 +119,5 @@ export const docgenServiceDef = defineService({
     },
   },
 });
+
+export type DocgenService = ServiceInstanceOf<typeof docgenServiceDef>;

@@ -11,7 +11,7 @@ import { join, relative, resolve, sep } from 'path';
 // eslint-disable-next-line depend/ban-dependencies
 import slash from 'slash';
 
-import { babelParse, types as t } from '../../code/core/src/babel/index.ts';
+import { babelParse, traverse, types as t } from '../../code/core/src/babel/index.ts';
 import { JsPackageManagerFactory } from '../../code/core/src/common/js-package-manager/index.ts';
 import storybookPackages from '../../code/core/src/common/versions.ts';
 import type { ConfigFile } from '../../code/core/src/csf-tools/index.ts';
@@ -90,6 +90,114 @@ async function pathExists(path: string) {
   } catch {
     return false;
   }
+}
+
+const propKey = (p: t.ObjectProperty) => {
+  if (t.isIdentifier(p.key)) {
+    return p.key.name;
+  }
+
+  if (t.isStringLiteral(p.key)) {
+    return p.key.value;
+  }
+
+  return null;
+};
+
+const makeObjectExpression = (path: string[], value: t.Expression): t.Expression => {
+  if (path.length === 0) {
+    return value;
+  }
+
+  const [first, ...rest] = path;
+  return t.objectExpression([
+    t.objectProperty(t.identifier(first), makeObjectExpression(rest, value)),
+  ]);
+};
+
+const updateObjectExpression = (
+  path: string[],
+  expr: t.Expression,
+  existing: t.ObjectExpression
+) => {
+  const [first, ...rest] = path;
+  const existingField = (existing.properties as t.ObjectProperty[]).find(
+    (p) => propKey(p) === first
+  ) as t.ObjectProperty;
+
+  if (!existingField) {
+    existing.properties.push(
+      t.objectProperty(t.identifier(first), makeObjectExpression(rest, expr))
+    );
+  } else if (t.isObjectExpression(existingField.value) && rest.length > 0) {
+    updateObjectExpression(rest, expr, existingField.value);
+  } else {
+    existingField.value = makeObjectExpression(rest, expr);
+  }
+};
+
+const findPluginCall = (name: string, ast: t.File): t.CallExpression | undefined => {
+  let call: t.CallExpression | undefined;
+  traverse(ast, {
+    CallExpression: {
+      enter(path) {
+        if (call) {
+          return;
+        }
+
+        const { callee } = path.node;
+        if (t.isIdentifier(callee) && callee.name === name) {
+          call = path.node;
+          path.stop();
+        }
+      },
+    },
+  });
+  return call;
+};
+
+function setPluginParam(
+  config: ConfigFile,
+  {
+    pluginName,
+    paramPos,
+    paramPath,
+    paramValue,
+  }: {
+    pluginName: string;
+    paramPos: number;
+    paramPath: string[];
+    paramValue: unknown;
+  }
+) {
+  const call = findPluginCall(pluginName, config._ast);
+  if (!call) {
+    throw new Error(`Could not find a call to the "${pluginName}" plugin in this file.`);
+  }
+
+  if (paramPos > call.arguments.length) {
+    throw new Error(
+      `Cannot set argument ${paramPos} of "${pluginName}" as the call only has ${call.arguments.length} argument(s).`
+    );
+  }
+
+  if (paramPos === call.arguments.length) {
+    call.arguments.push(t.objectExpression([]));
+  }
+
+  const param = call.arguments[paramPos];
+  if (!t.isObjectExpression(param)) {
+    throw new Error(
+      `Expected argument ${paramPos} of "${pluginName}" to be an object, got '${param.type}'.`
+    );
+  }
+
+  const valueNode = config.valueToNode(paramValue);
+  if (!valueNode) {
+    throw new Error(`Unexpected value ${JSON.stringify(paramValue)}`);
+  }
+
+  updateObjectExpression(paramPath, valueNode, param);
 }
 
 const logger = console;
@@ -180,7 +288,11 @@ export const init: Task['run'] = async (
       extra = { type: 'server' };
       break;
     case '@storybook/svelte':
-      await prepareSvelteSandbox(cwd);
+      if (template.expected.framework === '@storybook/sveltekit') {
+        await prepareSvelteKitSandbox(cwd);
+      } else {
+        await prepareSvelteSandbox(cwd);
+      }
       break;
   }
 
@@ -896,34 +1008,50 @@ async function prepareReactNativeWebSandbox(cwd: string) {
   }
 }
 
-async function prepareSvelteSandbox(cwd: string) {
-  const svelteConfigJsPath = join(cwd, 'svelte.config.js');
-  const svelteConfigTsPath = join(cwd, 'svelte.config.ts');
+async function getConfigFile(names: string[], cwd: string) {
+  const firstPath = await findFirstPath(names, { cwd })
 
-  // Check which config file exists
-  const configPath = (await pathExists(svelteConfigTsPath))
-    ? svelteConfigTsPath
-    : (await pathExists(svelteConfigJsPath))
-      ? svelteConfigJsPath
-      : null;
-
-  if (!configPath) {
-    throw new Error(
-      `No svelte.config.js or svelte.config.ts found in sandbox: ${cwd}, cannot modify config.`
-    );
+  if (!firstPath) {
+    throw new Error(`No ${names.join(' or ')} found in sandbox: ${cwd}, cannot modify config.`);
   }
 
+  return firstPath;
+}
+
+async function prepareSvelteSandbox(cwd: string) {
+  const configPath = await getConfigFile(['svelte.config.ts', 'svelte.config.js'], cwd);
   const svelteConfig = await csfReadConfig(configPath);
 
   // Enable async components
   // see https://svelte.dev/docs/svelte/await-expressions
   svelteConfig.setFieldValue(['compilerOptions', 'experimental', 'async'], true);
 
+  await writeConfig(svelteConfig);
+}
+
+async function prepareSvelteKitSandbox(cwd: string) {
+  const configPath = await getConfigFile(['vite.config.ts', 'vite.config.js'], cwd);
+  const viteConfig = await csfReadConfig(configPath);
+
+  // Enable async components
+  // see https://svelte.dev/docs/svelte/await-expressions
+  setPluginParam(viteConfig, {
+    pluginName: 'sveltekit',
+    paramPos: 0,
+    paramPath: ['compilerOptions', 'experimental', 'async'],
+    paramValue: true,
+  });
+
   // Enable remote functions
   // see https://svelte.dev/docs/kit/remote-functions
-  svelteConfig.setFieldValue(['kit', 'experimental', 'remoteFunctions'], true);
+  setPluginParam(viteConfig, {
+    pluginName: 'sveltekit',
+    paramPos: 0,
+    paramPath: ['experimental', 'remoteFunctions'],
+    paramValue: true,
+  });
 
-  await writeConfig(svelteConfig);
+  await writeConfig(viteConfig);
 }
 
 /**

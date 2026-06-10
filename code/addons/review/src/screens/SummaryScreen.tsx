@@ -1,12 +1,10 @@
 import React, { useEffect, useLayoutEffect, useMemo, useState, type FC } from 'react';
 
 import {
-  Badge,
   Button,
   Card,
   Collapsible,
   IconButton,
-  Link,
   ScrollArea,
   ToggleButton,
 } from 'storybook/internal/components';
@@ -15,15 +13,14 @@ import { styled } from 'storybook/theming';
 import {
   CheckIcon,
   ChevronSmallDownIcon,
+  ChevronSmallLeftIcon,
   CloseAltIcon,
-  CollapseIcon,
-  ExpandAltIcon,
   SearchIcon,
   StatusNewIcon,
-  SweepIcon,
   WandIcon,
 } from '@storybook/icons';
 
+import { AIBadge } from '../components/AIBadge.tsx';
 import { CollectionGrid, type StoryInfo } from '../components/CollectionGrid.tsx';
 import { CopyButton } from '../components/CopyButton.tsx';
 import { ReviewHeader } from '../components/ReviewHeader.tsx';
@@ -73,6 +70,11 @@ const SearchField = styled.div(({ theme }) => ({
   boxShadow: `${theme.button.border} 0 0 0 1px inset`,
   padding: 2,
   paddingLeft: 6,
+  '@container review-header (max-width: 480px)': {
+    flex: '1 1 100%',
+    width: 'auto',
+    maxWidth: 'none',
+  },
   // Mirror the sidebar search field: the wrapper owns the focus ring while the
   // inner input stays outline-less, so the whole field reads as focused.
   '&:has(input:focus), &:has(input:active)': {
@@ -182,15 +184,6 @@ const NoResults = styled.div(({ theme }) => ({
   fontSize: 14,
 }));
 
-// Temporary purple override until a shared "AI" badge variant is decided.
-// Light: purple-on-lavender. Dark: lighter purple text on a dark tinted base.
-const AICuratedBadge = styled(Badge)(({ theme }) => ({
-  color: theme.base === 'dark' ? '#b07fdc' : '#723aa6',
-  background: theme.base === 'dark' ? 'rgba(114,58,166,0.15)' : '#f5f0fa',
-  boxShadow: `inset 0 0 0 1px ${theme.base === 'dark' ? 'rgba(114,58,166,0.35)' : '#e1d2ef'}`,
-  svg: { marginTop: 0 },
-}));
-
 // A story matches the search if its id, component title, or story name
 // contains the query. Search narrows results to this story level, so a
 // collection is shown with only its matching stories.
@@ -233,6 +226,8 @@ export interface SummaryScreenProps {
   previewsPaused?: boolean;
   /** Clears the active review (if any) and returns to the last viewed story. */
   onDismiss: () => void;
+  /** When set, the header shows a back button to this review story href. */
+  lastReviewedStoryHref?: string | null;
 }
 
 export const SummaryScreen: FC<SummaryScreenProps> = ({
@@ -242,6 +237,7 @@ export const SummaryScreen: FC<SummaryScreenProps> = ({
   isStale = false,
   previewsPaused = false,
   onDismiss,
+  lastReviewedStoryHref = null,
 }) => {
   const [search, setSearch] = useState('');
   const [expandedCollections, setExpandedCollections] = useState<Set<number>>(() => new Set());
@@ -347,13 +343,28 @@ export const SummaryScreen: FC<SummaryScreenProps> = ({
     <Page>
       {isStale ? <StaleBanner /> : null}
       <ReviewHeader
+        leading={
+          lastReviewedStoryHref ? (
+            <Button
+              variant="ghost"
+              size="small"
+              padding="small"
+              ariaLabel="Back to last story"
+              asChild
+            >
+              <a href={lastReviewedStoryHref}>
+                <ChevronSmallLeftIcon />
+              </a>
+            </Button>
+          ) : null
+        }
         title={state.title}
         subtitle={
           <>
-            <AICuratedBadge>
+            <AIBadge>
               <WandIcon />
               AI-curated
-            </AICuratedBadge>
+            </AIBadge>
             <span>
               {storyCount} {storyCount === 1 ? 'story' : 'stories'} for quick review
             </span>

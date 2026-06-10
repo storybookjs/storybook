@@ -503,6 +503,19 @@ export const Minimal = meta.story({
   },
 });
 
+export const WithBackButton = meta.story({
+  args: {
+    state: minimal,
+    lastReviewedStoryHref: '?path=/story/button-component--base&collection=0',
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(
+      await canvas.findByRole('button', { name: 'Back to last story' })
+    ).toBeInTheDocument();
+  },
+});
+
 export const Full = meta.story({
   args: {
     state: full,
@@ -523,7 +536,6 @@ export const Full = meta.story({
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await expect(await canvas.findByText('Primary button visual refresh')).toBeInTheDocument();
-    await expect(await canvas.findByRole('button', { name: 'Dismiss' })).toBeInTheDocument();
   },
 });
 

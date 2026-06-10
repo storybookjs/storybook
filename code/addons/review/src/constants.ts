@@ -19,6 +19,10 @@ export const RESTORE_NAV_SESSION_KEY = `${ADDON_ID}/restore-nav`;
 // review. Updated while browsing stories/docs outside a review session.
 export const RETURN_PATH_SESSION_KEY = `${ADDON_ID}/return-path`;
 
+// sessionStorage key for the last review story href visited before opening the
+// summary overlay. Used by the summary header back button.
+export const LAST_REVIEWED_STORY_SESSION_KEY = `${ADDON_ID}/last-reviewed-story`;
+
 // sessionStorage key remembering the compare mode for the tab session.
 // Value: 'latest' | 'baseline' | 'split' (legacy '1up'/'2up' are migrated on read).
 export const PREVIEW_MODE_SESSION_KEY = `${ADDON_ID}/preview-mode`;

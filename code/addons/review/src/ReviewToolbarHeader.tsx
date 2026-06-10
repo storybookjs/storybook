@@ -3,9 +3,10 @@ import React, { type FC } from 'react';
 import { Badge, Button, Popover, WithTooltip } from 'storybook/internal/components';
 import { styled } from 'storybook/theming';
 
-import { ChevronSmallLeftIcon, ChevronSmallRightIcon } from '@storybook/icons';
+import { ChevronSmallLeftIcon, ChevronSmallRightIcon, WandIcon } from '@storybook/icons';
 
 import { ReviewCollectionPicker } from './ReviewCollectionPicker.tsx';
+import { AIBadge } from './components/AIBadge.tsx';
 import { ReviewHeader } from './components/ReviewHeader.tsx';
 import { StaleBanner } from './components/StaleBanner.tsx';
 import {
@@ -172,7 +173,15 @@ export const ReviewToolbarHeader: FC = () => {
             </Button>
           }
           title={collectionTitle}
-          subtitle={subtitle}
+          subtitle={
+            <>
+              <AIBadge>
+                <WandIcon />
+                AI-curated
+              </AIBadge>
+              {subtitle}
+            </>
+          }
           actions={
             <>
               {counter}

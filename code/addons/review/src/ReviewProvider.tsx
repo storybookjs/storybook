@@ -23,6 +23,7 @@ import {
   DEFAULT_COMPARE_MODE,
   EVENTS,
   PREVIEW_MODE_SESSION_KEY,
+  LAST_REVIEWED_STORY_SESSION_KEY,
   RESTORE_NAV_SESSION_KEY,
   RETURN_PATH_SESSION_KEY,
   REVIEW_CHANGES_URL,
@@ -31,6 +32,7 @@ import {
 import {
   REVIEW_COLLECTION_QUERY_PARAM,
   buildFlattenedNavEntries,
+  buildReviewStoryHref,
   isReviewSummaryPath,
   isStoryInReview,
   parseCollectionIndex,
@@ -66,6 +68,9 @@ export const ReviewProvider: FC<{ children: ReactNode }> = ({ children }) => {
   const [isStale, setIsStale] = useState(false);
   const [baselineStoryIds, setBaselineStoryIds] = useState<Set<string> | null>(null);
   const [compareMode, setCompareModeState] = useState<CompareMode>(readCompareMode);
+  const [lastReviewedStoryHref, setLastReviewedStoryHref] = useState<string | null>(() =>
+    sessionStore.read(LAST_REVIEWED_STORY_SESSION_KEY)
+  );
 
   const api = useStorybookApi();
   const navigate = useNavigate();
@@ -111,6 +116,8 @@ export const ReviewProvider: FC<{ children: ReactNode }> = ({ children }) => {
       setState(null);
       setIsStale(false);
       setBaselineStoryIds(null);
+      sessionStore.remove(LAST_REVIEWED_STORY_SESSION_KEY);
+      setLastReviewedStoryHref(null);
       navigateToReturn(returnSearch);
     },
   });
@@ -224,6 +231,16 @@ export const ReviewProvider: FC<{ children: ReactNode }> = ({ children }) => {
     activeEntry !== null &&
     !newlyAddedStoryIds.has(activeEntry.storyId);
 
+  // Remember the last review story visited so the summary back button can return there.
+  useEffect(() => {
+    if (!isOnReviewedStory || !activeEntry) {
+      return;
+    }
+    const href = buildReviewStoryHref(activeEntry);
+    sessionStore.write(LAST_REVIEWED_STORY_SESSION_KEY, href);
+    setLastReviewedStoryHref(href);
+  }, [activeEntry, isOnReviewedStory]);
+
   // Remember the last canvas URL outside a review session so dismiss can return there.
   useEffect(() => {
     if (isInReviewSession) {
@@ -268,6 +285,7 @@ export const ReviewProvider: FC<{ children: ReactNode }> = ({ children }) => {
       showCompare,
       getStoryPreviewHref,
       dismissReview,
+      lastReviewedStoryHref,
     }),
     [
       state,
@@ -284,6 +302,7 @@ export const ReviewProvider: FC<{ children: ReactNode }> = ({ children }) => {
       showCompare,
       getStoryPreviewHref,
       dismissReview,
+      lastReviewedStoryHref,
     ]
   );
 

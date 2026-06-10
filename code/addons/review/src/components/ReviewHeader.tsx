@@ -2,7 +2,11 @@ import React, { type FC, type ReactNode, useEffect, useRef } from 'react';
 
 import { styled } from 'storybook/theming';
 
+const NARROW_HEADER_WIDTH = 870;
+
 const Root = styled.header<{ $variant: 'page' | 'toolbar' }>(({ theme, $variant }) => ({
+  containerType: 'inline-size',
+  containerName: 'review-header',
   display: 'flex',
   flexDirection: 'column',
   flexShrink: 0,
@@ -17,9 +21,22 @@ const TopRow = styled.div<{ $variant: 'page' | 'toolbar' }>(({ $variant }) => ({
   flexDirection: 'row',
   alignItems: 'center',
   gap: 8,
-  padding: $variant === 'toolbar' ? '16px 10px 8px 10px' : 16,
+  padding: $variant === 'toolbar' ? '16px 10px 8px 10px' : '16px 16px 16px 10px',
   minHeight: 40,
+  [`@container review-header (max-width: ${NARROW_HEADER_WIDTH}px)`]: {
+    flexDirection: 'column',
+    alignItems: 'stretch',
+  },
 }));
+
+const Main = styled.div({
+  display: 'flex',
+  flexDirection: 'row',
+  alignItems: 'center',
+  gap: 8,
+  flex: '1 1 auto',
+  minWidth: 0,
+});
 
 const Leading = styled.div({
   display: 'flex',
@@ -53,6 +70,7 @@ const Title = styled.h1(({ theme }) => ({
 
 const Subtitle = styled.div(({ theme }) => ({
   display: 'flex',
+  flexWrap: 'wrap',
   alignItems: 'center',
   gap: 8,
   color: theme.textMutedColor,
@@ -62,9 +80,14 @@ const Subtitle = styled.div(({ theme }) => ({
 
 const Actions = styled.div({
   display: 'flex',
+  flexWrap: 'wrap',
   alignItems: 'center',
   gap: 6,
   flexShrink: 0,
+  [`@container review-header (max-width: ${NARROW_HEADER_WIDTH}px)`]: {
+    width: '100%',
+    justifyContent: 'flex-end',
+  },
 });
 
 const SecondRow = styled.div({
@@ -113,13 +136,15 @@ export const ReviewHeader: FC<ReviewHeaderProps> = ({
   return (
     <Root $variant={variant}>
       <TopRow $variant={variant}>
-        {leading ? <Leading>{leading}</Leading> : null}
-        <TextBlock>
-          <Title ref={titleRef} tabIndex={autoFocusTitle ? -1 : undefined}>
-            {title}
-          </Title>
-          {subtitle ? <Subtitle>{subtitle}</Subtitle> : null}
-        </TextBlock>
+        <Main>
+          {leading ? <Leading>{leading}</Leading> : null}
+          <TextBlock>
+            <Title ref={titleRef} tabIndex={autoFocusTitle ? -1 : undefined}>
+              {title}
+            </Title>
+            {subtitle ? <Subtitle>{subtitle}</Subtitle> : null}
+          </TextBlock>
+        </Main>
         {actions ? <Actions>{actions}</Actions> : null}
       </TopRow>
       {secondRow ? <SecondRow>{secondRow}</SecondRow> : null}

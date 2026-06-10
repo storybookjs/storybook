@@ -22,8 +22,15 @@ const useSummaryOverlayShown = () =>
 
 export const ReviewSummaryPortal: FC = () => {
   const { path, viewMode } = useStorybookState();
-  const { state, storyInfo, isStale, getStoryPreviewHref, flattenedEntries, dismissReview } =
-    useReview();
+  const {
+    state,
+    storyInfo,
+    isStale,
+    getStoryPreviewHref,
+    flattenedEntries,
+    dismissReview,
+    lastReviewedStoryHref,
+  } = useReview();
   const overlayShown = useSummaryOverlayShown();
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -75,6 +82,7 @@ export const ReviewSummaryPortal: FC = () => {
         isStale={isStale}
         previewsPaused={!overlayShown}
         onDismiss={dismissReview}
+        lastReviewedStoryHref={lastReviewedStoryHref}
       />
     </div>
   );

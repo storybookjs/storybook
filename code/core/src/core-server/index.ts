@@ -57,12 +57,12 @@ export {
   getChangeDetectionReadiness as experimental_getChangeDetectionReadiness,
   type ChangeDetectionReadiness as Experimental_ChangeDetectionReadiness,
 } from './change-detection/readiness.ts';
-export { subscribeToSourceFileChanges as experimental_subscribeToSourceFileChanges } from './change-detection/source-changes.ts';
 export type {
   ChangeDetectionAdapter,
   FileChangeEvent,
   ModuleResolveConfig,
 } from '../shared/open-service/services/module-graph/engine/adapters/types.ts';
+export type { moduleGraphServiceDef } from '../shared/open-service/services/module-graph/definition.ts';
 export type {
   ImportEdge,
   ImportParser,

@@ -7,7 +7,6 @@ import { logger } from 'storybook/internal/node-logger';
 import type { Presets } from 'storybook/internal/types';
 
 import type { StoryIndex } from '../../../../../types/modules/indexer.ts';
-import { notifySourceFileChange } from '../../../../../core-server/change-detection/source-changes.ts';
 import { ModuleGraphFailureError } from '../errors.ts';
 import { getStoryIdsByAbsolutePath } from '../story-files.ts';
 import { reverseIndexToStoriesByFile, toStoryIndexPath } from '../types.ts';
@@ -387,9 +386,6 @@ export class ModuleGraphEngine {
     if (!this.incrementalPatcher) {
       return;
     }
-    // Surface the raw change to external subscribers (e.g. addon-review's
-    // staleness check) before patching — they only care that a file changed.
-    notifySourceFileChange(event);
     const prePatchBumped = this.collectBumpedStoryFiles(event.path);
     try {
       await this.incrementalPatcher.patch(event);

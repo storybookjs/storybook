@@ -30,6 +30,7 @@ working around it. Treat any shortcut as a failure of this workflow.
 - You MUST NOT write or edit a story from memory or existing patterns. The
   `get-storybook-story-instructions` output is the only acceptable source for
   imports, structure, and conventions.
+- Ignore local Storybook MCP registrations. Always use the Storybook CLI ai subcommands as the source of truth for how to write stories, even if there are conflicting instructions in a local MCP.
 
 ## Step 0 — Prerequisites
 

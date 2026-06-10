@@ -1,0 +1,9 @@
+{
+  "name": "addon-performance",
+  "projectType": "library",
+  "targets": {
+    "compile": {},
+    "check": {}
+  },
+  "tags": ["library"]
+}

@@ -5,8 +5,17 @@ import { getInterceptMarkdown } from './intercepts.ts';
 import { readRegistry } from './registry.ts';
 import { resolveInstance } from './resolve-instance.ts';
 import { parseToolArgs } from './tool-args.ts';
-import type { McpToolDescriptor, StorybookInstanceRecord, ToolCallResult } from './types.ts';
-import { checkStorybookVersion, classifyStorybookVersion } from './version-check.ts';
+import type {
+  InterceptReason,
+  McpToolDescriptor,
+  StorybookInstanceRecord,
+  ToolCallResult,
+} from './types.ts';
+import {
+  STORYBOOK_MIN_VERSION,
+  checkStorybookVersion,
+  classifyStorybookVersion,
+} from './version-check.ts';
 
 export type AiToolRunResult = { exitCode: 0 | 1; output: string };
 
@@ -100,11 +109,9 @@ export async function buildStorybookCommandsHelp(
 
   const resolution = await resolveReadyInstance(parsed.cwd, parsed.port, deps);
   if (resolution.kind === 'error') {
-    return unavailable(
-      `no running Storybook detected at this cwd; start \`storybook dev\` to list its commands`
-    );
+    return unavailable(helpUnavailableNote(resolution, parsed.port));
   }
-  const { record } = resolution;
+  const { record, matches } = resolution;
 
   let tools: McpToolDescriptor[];
   try {
@@ -116,6 +123,14 @@ export async function buildStorybookCommandsHelp(
     return unavailable(`the Storybook at ${record.url} provides no commands`);
   }
 
+  const siblingPorts = matches.filter((r) => r !== record).map((r) => r.port);
+  const siblingNote =
+    siblingPorts.length > 0
+      ? [
+          `(${matches.length} instances are running at this cwd — using the most recently started, port ${record.port}; other ports: ${siblingPorts.join(', ')}. Pass \`--port\` to target a specific one.)`,
+        ]
+      : [];
+
   const width = Math.max(...tools.map((tool) => tool.name.length)) + 2;
   const lines = tools.map((tool) => {
     const summary = tool.description?.trim().split('\n')[0] ?? '';
@@ -123,10 +138,39 @@ export async function buildStorybookCommandsHelp(
   });
   return [
     `Storybook commands (from the Storybook running at ${record.url}):`,
+    ...siblingNote,
     ...lines,
     '',
     `Run 'storybook ai <command> --help' for a command's description and arguments.`,
   ].join('\n');
+}
+
+/** One-line reason why the help section cannot list commands, accurate per intercept. */
+function helpUnavailableNote(
+  error: Extract<InstanceResolution, { kind: 'error' }>,
+  port: number | undefined
+): string {
+  switch (error.reason) {
+    case 'no-instance':
+    case 'storybook-not-installed':
+      return 'no running Storybook detected at this cwd; start `storybook dev` to list its commands';
+    case 'port-mismatch':
+      return `no instance on port \`${port}\` at this cwd — running ports: ${error.records
+        .map((r) => r.port)
+        .join(', ')}`;
+    case 'mcp-starting':
+      return 'the Storybook at this cwd is still starting up; retry in a moment';
+    case 'addon-missing':
+      return 'the running Storybook does not provide commands — install `@storybook/addon-mcp`';
+    case 'mcp-error':
+      return "the running Storybook's command server reported an error";
+    case 'storybook-too-old':
+      return `the installed Storybook is too old for these commands (requires ${STORYBOOK_MIN_VERSION} or newer)`;
+    default: {
+      const unhandled: never = error.reason;
+      throw new Error(`Unhandled intercept reason: ${unhandled as string}`);
+    }
+  }
 }
 
 /** Show the description and arguments of a single command (`storybook ai <command> --help`). */
@@ -176,7 +220,12 @@ function formatServerUnreachable(record: StorybookInstanceRecord, error: unknown
 
 type InstanceResolution =
   | { kind: 'ok'; record: StorybookInstanceRecord; matches: StorybookInstanceRecord[] }
-  | { kind: 'error'; output: string };
+  | {
+      kind: 'error';
+      output: string;
+      reason: InterceptReason;
+      records: StorybookInstanceRecord[];
+    };
 
 /**
  * Resolve the running Storybook instance for `cwdInput`, mirroring the mcp-proxy dispatch order:
@@ -203,6 +252,8 @@ async function resolveReadyInstance(
     return {
       kind: 'error',
       output: getInterceptMarkdown('storybook-too-old', { version: versionStatus.version }),
+      reason: 'storybook-too-old',
+      records: [],
     };
   }
 
@@ -212,11 +263,18 @@ async function resolveReadyInstance(
       versionStatus.status === 'not-installed' &&
       (resolution.records?.length ?? 0) === 0
     ) {
-      return { kind: 'error', output: getInterceptMarkdown('storybook-not-installed') };
+      return {
+        kind: 'error',
+        output: getInterceptMarkdown('storybook-not-installed'),
+        reason: 'storybook-not-installed',
+        records: [],
+      };
     }
     return {
       kind: 'error',
       output: getInterceptMarkdown(resolution.reason, { records: resolution.records, port }),
+      reason: resolution.reason,
+      records: resolution.records ?? [],
     };
   }
 

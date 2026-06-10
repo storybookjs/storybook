@@ -277,6 +277,37 @@ describe('buildStorybookCommandsHelp', () => {
     expect(section).toContain('storybook dev');
   });
 
+  it('lists the sibling ports when several instances run at the cwd', async () => {
+    const older = { ...record, instanceId: 'inst-2', pid: 2, port: 6007 };
+    const newest = { ...record, startedAt: '2026-06-10T12:00:00.000Z' };
+    vi.mocked(readRegistry).mockResolvedValue([newest, older]);
+    const section = await buildStorybookCommandsHelp({ cwd: '/projects/foo' });
+    expect(section).toContain('2 instances are running at this cwd');
+    expect(section).toContain('port 6006');
+    expect(section).toContain('other ports: 6007');
+    expect(section).toContain('`--port`');
+  });
+
+  it('names the port mismatch instead of claiming nothing is running', async () => {
+    const section = await buildStorybookCommandsHelp({ cwd: '/projects/foo', port: '9999' });
+    expect(section).toContain('Storybook commands: (unavailable');
+    expect(section).toContain('no instance on port `9999`');
+    expect(section).toContain('running ports: 6006');
+    expect(section).not.toContain('no running Storybook detected');
+  });
+
+  it('says the Storybook is starting up instead of claiming nothing is running', async () => {
+    vi.mocked(readRegistry).mockResolvedValue([{ ...record, mcp: { status: 'starting' } }]);
+    const section = await buildStorybookCommandsHelp({ cwd: '/projects/foo' });
+    expect(section).toContain('still starting up');
+  });
+
+  it('points at the missing addon instead of claiming nothing is running', async () => {
+    vi.mocked(readRegistry).mockResolvedValue([{ ...record, mcp: { status: 'not-installed' } }]);
+    const section = await buildStorybookCommandsHelp({ cwd: '/projects/foo' });
+    expect(section).toContain('install `@storybook/addon-mcp`');
+  });
+
   it('degrades to a note when the MCP server is unreachable', async () => {
     vi.mocked(listMcpTools).mockRejectedValue(new Error('connection refused'));
     const section = await buildStorybookCommandsHelp({ cwd: '/projects/foo' });

@@ -1,6 +1,7 @@
 import { resolve } from 'node:path';
 
 import { McpJsonRpcError, callMcpTool, listMcpTools } from './client.ts';
+import { isStorybookInstalled } from './installed-check.ts';
 import { getInterceptMarkdown } from './intercepts.ts';
 import { readRegistry } from './registry.ts';
 import { resolveInstance } from './resolve-instance.ts';
@@ -11,11 +12,6 @@ import type {
   StorybookInstanceRecord,
   ToolCallResult,
 } from './types.ts';
-import {
-  STORYBOOK_MIN_VERSION,
-  checkStorybookVersion,
-  classifyStorybookVersion,
-} from './version-check.ts';
 
 export type AiToolRunResult = { exitCode: 0 | 1; output: string };
 
@@ -36,8 +32,8 @@ export type AiToolOptions = {
 
 /**
  * Run a single MCP tool against the Storybook running at the target cwd and return its result as
- * markdown. Intercept conditions (no running instance, addon missing, version too old, ...) return
- * the same repair-instruction markdown as `@storybook/mcp-proxy`, with exit code 1.
+ * markdown. Intercept conditions (no running instance, addon missing, ...) return the same
+ * repair-instruction markdown as `@storybook/mcp-proxy`, with exit code 1.
  */
 export async function runAiTool(
   toolName: string,
@@ -165,8 +161,6 @@ function helpUnavailableNote(
       return 'the running Storybook does not provide commands — install `@storybook/addon-mcp`';
     case 'mcp-error':
       return "the running Storybook's command server reported an error";
-    case 'storybook-too-old':
-      return `the installed Storybook is version \`${error.version ?? 'unknown'}\`, but these commands require \`${STORYBOOK_MIN_VERSION}\` or newer`;
     default: {
       const unhandled: never = error.reason;
       throw new Error(`Unhandled intercept reason: ${unhandled as string}`);
@@ -226,14 +220,13 @@ type InstanceResolution =
       output: string;
       reason: InterceptReason;
       records: StorybookInstanceRecord[];
-      /** Detected Storybook version, set for the `storybook-too-old` reason. */
-      version?: string;
     };
 
 /**
- * Resolve the running Storybook instance for `cwdInput`, mirroring the mcp-proxy dispatch order:
- * registry lookup and cwd/port matching first, then the version check — preferring the version the
- * running instance reported in its registry record over resolving the installed version from disk.
+ * Resolve the running Storybook instance for `cwdInput` via the registry. No version check: the
+ * CLI is invoked as `npx storybook`, so it always runs the project's own Storybook version. Only
+ * when nothing is running anywhere do we probe whether Storybook is installed at all, to pick
+ * between the "start storybook dev" and "set up Storybook first" repairs.
  */
 async function resolveReadyInstance(
   cwdInput: string | undefined,
@@ -245,27 +238,11 @@ async function resolveReadyInstance(
   const records = await readRegistry(deps.registryDir);
   const resolution = resolveInstance(records, cwd, port);
 
-  const matchedRecord = resolution.kind === 'instance' ? resolution.record : resolution.matches[0];
-  const versionStatus =
-    matchedRecord?.storybookVersion !== undefined
-      ? classifyStorybookVersion(matchedRecord.storybookVersion)
-      : checkStorybookVersion(cwd);
-
-  if (versionStatus.status === 'too-old') {
-    return {
-      kind: 'error',
-      output: getInterceptMarkdown('storybook-too-old', { version: versionStatus.version }),
-      reason: 'storybook-too-old',
-      records: [],
-      version: versionStatus.version,
-    };
-  }
-
   if (resolution.kind === 'intercept') {
     if (
       resolution.reason === 'no-instance' &&
-      versionStatus.status === 'not-installed' &&
-      (resolution.records?.length ?? 0) === 0
+      (resolution.records?.length ?? 0) === 0 &&
+      !isStorybookInstalled(cwd)
     ) {
       return {
         kind: 'error',

@@ -39,14 +39,6 @@ describe('getInterceptMarkdown', () => {
     expect(markdown).toContain('omit `--port`');
   });
 
-  it('storybook-too-old names the detected and minimum versions and the upgrade skill', () => {
-    const markdown = getInterceptMarkdown('storybook-too-old', { version: '9.0.5' });
-    expect(markdown).toContain('`9.0.5`');
-    expect(markdown).toContain('`10.5.0`');
-    expect(markdown).toContain('storybook-upgrade');
-    expect(markdown).toContain('npx storybook add @storybook/addon-mcp');
-  });
-
   it('storybook-not-installed points at the init skill and the addon install', () => {
     const markdown = getInterceptMarkdown('storybook-not-installed');
     expect(markdown).toContain('storybook-init');

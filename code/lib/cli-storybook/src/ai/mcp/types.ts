@@ -42,8 +42,7 @@ export type InterceptReason =
   | 'storybook-not-installed'
   | 'addon-missing'
   | 'mcp-starting'
-  | 'mcp-error'
-  | 'storybook-too-old';
+  | 'mcp-error';
 
 /**
  * Result of an MCP `tools/call` request, as returned by `@storybook/addon-mcp`. Loose: servers may

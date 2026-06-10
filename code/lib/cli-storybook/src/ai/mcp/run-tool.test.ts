@@ -1,14 +1,14 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { McpJsonRpcError, callMcpTool, listMcpTools } from './client.ts';
+import { isStorybookInstalled } from './installed-check.ts';
 import { readRegistry } from './registry.ts';
 import { buildStorybookCommandsHelp, runAiTool, runAiToolHelp } from './run-tool.ts';
 import type { StorybookInstanceRecord } from './types.ts';
-import { checkStorybookVersion } from './version-check.ts';
 
 vi.mock('./registry.ts', { spy: true });
 vi.mock('./client.ts', { spy: true });
-vi.mock('./version-check.ts', { spy: true });
+vi.mock('./installed-check.ts', { spy: true });
 
 const record: StorybookInstanceRecord = {
   schemaVersion: 1,
@@ -22,7 +22,7 @@ const record: StorybookInstanceRecord = {
 
 beforeEach(() => {
   vi.mocked(readRegistry).mockReset().mockResolvedValue([record]);
-  vi.mocked(checkStorybookVersion).mockReset().mockReturnValue({ status: 'ok' });
+  vi.mocked(isStorybookInstalled).mockReset().mockReturnValue(true);
   vi.mocked(callMcpTool)
     .mockReset()
     .mockResolvedValue({ content: [{ type: 'text', text: 'upstream result' }] });
@@ -79,41 +79,18 @@ describe('runAiTool', () => {
   });
 
   it('prints the storybook-not-installed repair markdown when nothing runs and storybook is unresolvable', async () => {
-    vi.mocked(checkStorybookVersion).mockReturnValue({ status: 'not-installed' });
+    vi.mocked(isStorybookInstalled).mockReturnValue(false);
     vi.mocked(readRegistry).mockResolvedValue([]);
     const result = await runAiTool('get-documentation', [], { cwd: '/projects/foo' });
     expect(result.exitCode).toBe(1);
     expect(result.output).toContain('storybook-init');
   });
 
-  it('still forwards to a running instance when the version check reports not-installed (monorepo false negative)', async () => {
-    vi.mocked(checkStorybookVersion).mockReturnValue({ status: 'not-installed' });
+  it('still forwards to a running instance even when storybook is not resolvable from the cwd (monorepo false negative)', async () => {
+    vi.mocked(isStorybookInstalled).mockReturnValue(false);
     const result = await runAiTool('list-all-documentation', [], { cwd: '/projects/foo' });
     expect(result).toEqual({ exitCode: 0, output: 'upstream result' });
-  });
-
-  it('prints the storybook-too-old repair markdown when the disk version is too old', async () => {
-    vi.mocked(checkStorybookVersion).mockReturnValue({ status: 'too-old', version: '9.0.5' });
-    const result = await runAiTool('get-documentation', [], { cwd: '/projects/foo' });
-    expect(result.exitCode).toBe(1);
-    expect(result.output).toContain('`9.0.5`');
-  });
-
-  it('prefers the version reported in the registry record over the disk lookup', async () => {
-    vi.mocked(readRegistry).mockResolvedValue([{ ...record, storybookVersion: '9.0.5' }]);
-    const result = await runAiTool('get-documentation', [], { cwd: '/projects/foo' });
-    expect(result.exitCode).toBe(1);
-    expect(result.output).toContain('`9.0.5`');
-    expect(checkStorybookVersion).not.toHaveBeenCalled();
-  });
-
-  it('forwards to a canary instance even when the disk lookup reports too-old', async () => {
-    vi.mocked(readRegistry).mockResolvedValue([
-      { ...record, storybookVersion: '0.0.0-pr-1-sha-abc' },
-    ]);
-    vi.mocked(checkStorybookVersion).mockReturnValue({ status: 'too-old', version: '9.0.5' });
-    const result = await runAiTool('list-all-documentation', [], { cwd: '/projects/foo' });
-    expect(result).toEqual({ exitCode: 0, output: 'upstream result' });
+    expect(isStorybookInstalled).not.toHaveBeenCalled();
   });
 
   it('routes to the instance on the requested --port when several share the cwd', async () => {
@@ -314,13 +291,6 @@ describe('buildStorybookCommandsHelp', () => {
     expect(section).toContain(
       'Storybook commands (from the Storybook running at http://localhost:6006, Storybook 10.5.0):'
     );
-  });
-
-  it('names the detected version in the too-old note', async () => {
-    vi.mocked(readRegistry).mockResolvedValue([{ ...record, storybookVersion: '9.0.5' }]);
-    const section = await buildStorybookCommandsHelp({ cwd: '/projects/foo' });
-    expect(section).toContain('version `9.0.5`');
-    expect(section).toContain('require `10.5.0` or newer');
   });
 
   it('degrades to a note when the MCP server is unreachable', async () => {

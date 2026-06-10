@@ -45,7 +45,7 @@ export async function runAiTool(
     return { exitCode: 1, output: parsed.error };
   }
   if (parsed.help) {
-    return runAiToolHelp(toolName, { cwd: parsed.cwd, port: options.port }, deps);
+    return toolHelp(toolName, parsed.cwd, parsed.port, deps);
   }
 
   const resolution = await resolveReadyInstance(parsed.cwd, parsed.port, deps);
@@ -78,12 +78,7 @@ export async function runAiTool(
       const unknownTool = await describeUnknownTool(record, toolName, deps.fetchImpl);
       return { exitCode: 1, output: unknownTool ?? error.message };
     }
-    return {
-      exitCode: 1,
-      output: `Failed to reach the Storybook server at ${record.mcp.endpoint ?? '(no endpoint)'}: ${
-        error instanceof Error ? error.message : String(error)
-      }`,
-    };
+    return { exitCode: 1, output: formatServerUnreachable(record, error) };
   }
 }
 
@@ -134,7 +129,7 @@ export async function buildStorybookCommandsHelp(
   ].join('\n');
 }
 
-/** Show the description and arguments of a single MCP tool (`storybook ai <tool> --help`). */
+/** Show the description and arguments of a single command (`storybook ai <command> --help`). */
 export async function runAiToolHelp(
   toolName: string,
   options: AiToolOptions = {},
@@ -144,8 +139,16 @@ export async function runAiToolHelp(
   if (!parsed.ok) {
     return { exitCode: 1, output: parsed.error };
   }
+  return toolHelp(toolName, parsed.cwd, parsed.port, deps);
+}
 
-  const resolution = await resolveReadyInstance(parsed.cwd, parsed.port, deps);
+async function toolHelp(
+  toolName: string,
+  cwd: string | undefined,
+  port: number | undefined,
+  deps: AiToolRunDeps
+): Promise<AiToolRunResult> {
+  const resolution = await resolveReadyInstance(cwd, port, deps);
   if (resolution.kind === 'error') {
     return { exitCode: 1, output: resolution.output };
   }
@@ -155,12 +158,7 @@ export async function runAiToolHelp(
   try {
     tools = await listMcpTools(record, deps.fetchImpl);
   } catch (error) {
-    return {
-      exitCode: 1,
-      output: `Failed to reach the Storybook server at ${record.mcp.endpoint ?? '(no endpoint)'}: ${
-        error instanceof Error ? error.message : String(error)
-      }`,
-    };
+    return { exitCode: 1, output: formatServerUnreachable(record, error) };
   }
 
   const tool = tools.find((candidate) => candidate.name === toolName);
@@ -168,6 +166,12 @@ export async function runAiToolHelp(
     return { exitCode: 1, output: formatUnknownTool(toolName, tools, record) };
   }
   return { exitCode: 0, output: formatToolHelp(tool) };
+}
+
+function formatServerUnreachable(record: StorybookInstanceRecord, error: unknown): string {
+  return `Failed to reach the Storybook server at ${record.mcp.endpoint ?? '(no endpoint)'}: ${
+    error instanceof Error ? error.message : String(error)
+  }`;
 }
 
 type InstanceResolution =
@@ -297,7 +301,7 @@ function formatMultiInstanceWarning(
   const all = [chosen, ...siblings];
   const lines = all.map((r) => {
     const marker = r === chosen ? ' (used)' : '';
-    return `> - pid \`${r.pid}\` at ${r.url} (mcp: \`${r.mcp.status}\`)${marker}`;
+    return `> - pid \`${r.pid}\` at ${r.url} (status: \`${r.mcp.status}\`)${marker}`;
   });
   return `> Warning: Multiple Storybook instances are running at this cwd. This call was sent to pid \`${chosen.pid}\`.
 >

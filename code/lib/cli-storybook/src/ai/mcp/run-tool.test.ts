@@ -321,6 +321,14 @@ describe('runAiToolHelp', () => {
     expect(callMcpTool).not.toHaveBeenCalled();
   });
 
+  it('honors a --port token given after the command name on the help path', async () => {
+    const result = await runAiTool('get-documentation', ['--port', '9999', '--help'], {
+      cwd: '/projects/foo',
+    });
+    expect(result.exitCode).toBe(1);
+    expect(result.output).toContain('not on port `9999`');
+  });
+
   it('lists the available tools for an unknown tool name', async () => {
     const result = await runAiToolHelp('no-such-tool', { cwd: '/projects/foo' });
     expect(result.exitCode).toBe(1);

@@ -1,11 +1,12 @@
-import type { ImportEdge } from '../parser-registry/index.ts';
+import type { ImportEdge } from '../parser-registry/types.ts';
 
 export type { ImportEdge };
 
 /**
  * Reverse index from dep file path → story file → shortest forward-walk depth from that story.
- * Inner number preserves the BFS hop-count semantics used by `ChangeDetectionService.buildStatuses`
- * to distinguish `modified` (closest stories) from `affected` (farther stories).
+ * Inner number preserves the breadth-first-search hop-count semantics used by
+ * `ChangeDetectionService.buildStatuses` to distinguish `modified` (closest stories) from
+ * `affected` (farther stories).
  *
  * Keys are absolute paths normalised via `pathe.normalize`.
  */

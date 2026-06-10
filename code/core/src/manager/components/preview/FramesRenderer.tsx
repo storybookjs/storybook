@@ -69,9 +69,13 @@ export const FramesRenderer: FC<FramesRendererProps> = ({
   }, {});
 
   if (!frames['storybook-preview-iframe']) {
+    // The local preview iframe must always use the host's own URL, so pass `refId: undefined`
+    // explicitly. Passing the current story's `refId` makes getStoryHrefs return the composed
+    // ref's iframe URL, and since this is only set once, the local frame would stay stuck on
+    // the ref's Storybook when a ref story is loaded first (#34553).
     frames['storybook-preview-iframe'] = api.getStoryHrefs(storyId, {
       queryParams: { ...queryParams, ...(version && { version }) },
-      refId,
+      refId: undefined,
       viewMode,
     }).previewHref;
   }

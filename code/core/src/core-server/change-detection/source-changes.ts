@@ -1,6 +1,6 @@
 import { logger } from 'storybook/internal/node-logger';
 
-import type { FileChangeEvent } from './adapters/index.ts';
+import type { FileChangeEvent } from '../../shared/open-service/services/module-graph/engine/adapters/types.ts';
 
 /**
  * Lightweight process-wide notifier for raw source-file change events seen by
@@ -28,7 +28,7 @@ export function subscribeToSourceFileChanges(listener: SourceFileChangeListener)
   };
 }
 
-/** Published by {@link StoryDependencyGraphService} for each file-change event. */
+/** Published by the module graph engine for each file-change event. */
 export function notifySourceFileChange(event: FileChangeEvent): void {
   for (const listener of listeners) {
     try {

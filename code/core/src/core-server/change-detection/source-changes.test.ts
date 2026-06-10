@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import type { FileChangeEvent } from './adapters/index.ts';
+import type { FileChangeEvent } from '../../shared/open-service/services/module-graph/engine/adapters/types.ts';
 import {
   internal_resetSourceFileChangeListeners,
   notifySourceFileChange,

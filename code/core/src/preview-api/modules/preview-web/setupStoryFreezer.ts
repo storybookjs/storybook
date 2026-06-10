@@ -276,6 +276,22 @@ const createStoryFreezer = (windowRef: Window, documentRef: Document) => {
   return { freeze };
 };
 
+/**
+ * Prevents dev-server HMR fallbacks from reloading frozen review preview iframes. Webpack and some
+ * Vite update paths call `location.reload()` when they cannot hot-apply a change; noop that reload
+ * for the `freeze=finished` preview contract.
+ */
+export const setupFrozenPreviewHMRGuard = () => {
+  const locationRef = global.location;
+  if (!locationRef || !shouldFreeze({ search: locationRef.search ?? '' })) {
+    return false;
+  }
+
+  tryReplaceProperty(locationRef, 'reload', () => {});
+
+  return true;
+};
+
 export const setupStoryFreezer = (channel: Pick<Channel, 'on'>) => {
   const windowRef = global.window;
   const documentRef = global.document;

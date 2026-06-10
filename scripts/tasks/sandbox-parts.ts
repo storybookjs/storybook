@@ -1027,10 +1027,6 @@ async function prepareSvelteSandbox(cwd: string) {
   // see https://svelte.dev/docs/svelte/await-expressions
   svelteConfig.setFieldValue(['compilerOptions', 'experimental', 'async'], true);
 
-  // Enable remote functions
-  // see https://svelte.dev/docs/kit/remote-functions
-  svelteConfig.setFieldValue(['kit', 'experimental', 'remoteFunctions'], true);
-
   await writeConfig(svelteConfig);
 }
 

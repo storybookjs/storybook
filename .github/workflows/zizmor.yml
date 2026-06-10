@@ -6,13 +6,12 @@ on:
   pull_request:
     branches: ['**']
 
-permissions: {}
-
 jobs:
   zizmor:
     name: zizmor latest via PyPI
     runs-on: ubuntu-latest
     permissions:
+      contents: read
       security-events: write # Required for upload-sarif (used by zizmor-action) to upload SARIF files.
     steps:
       - name: Checkout repository
@@ -27,8 +26,6 @@ jobs:
 
       - name: Run zizmor 🌈
         run: uvx zizmor --format=sarif . > results.sarif
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Upload SARIF file
         uses: github/codeql-action/upload-sarif@7211b7c8077ea37d8641b6271f6a365a22a5fbfa # v4.36.0

@@ -4,44 +4,41 @@ import { join, normalize } from 'pathe';
 
 import { getProjectRoot } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
-import { disposeOxcParsePool } from 'storybook/internal/oxc-parser';
 import type { Presets } from 'storybook/internal/types';
 
-import type { StoryIndexGenerator } from '../utils/StoryIndexGenerator.ts';
-import type { ChangeDetectionAdapter, FileChangeEvent } from './adapters/index.ts';
-import {
-  ChangeDetectionResolverFactory,
-  DependencyGraphBuilder,
-  IncrementalPatcher,
-  ParseResolveCache,
-} from './dependency-graph/index.ts';
-import type { DependencyGraph, ReverseIndexImpl } from './dependency-graph/index.ts';
-import { ChangeDetectionFailureError } from './errors.ts';
-import type { ImportParser } from './parser-registry/index.ts';
-import { ParserRegistry, builtinImportParsers } from './parser-registry/index.ts';
-import { notifySourceFileChange } from './source-changes.ts';
-import { getStoryIdsByAbsolutePath } from './story-files.ts';
+import type { StoryIndex } from '../../../../../types/modules/indexer.ts';
+import { ModuleGraphFailureError } from '../errors.ts';
+import { getStoryIdsByAbsolutePath } from '../story-files.ts';
+import { reverseIndexToStoriesByFile, toStoryIndexPath } from '../types.ts';
+import type { ChangeDetectionAdapter, FileChangeEvent } from './adapters/types.ts';
+import { DependencyGraphBuilder } from './dependency-graph/dependency-graph-builder.ts';
+import { IncrementalPatcher } from './dependency-graph/incremental-patcher.ts';
+import { ParseResolveCache } from './dependency-graph/parse-resolve-cache.ts';
+import { ChangeDetectionResolverFactory } from './dependency-graph/resolver-factory.ts';
+import type { DependencyGraph } from './dependency-graph/types.ts';
+import type { ReverseIndexImpl } from './dependency-graph/reverse-index.ts';
+import { builtinImportParsers } from './parser-registry/builtins.ts';
+import { ParserRegistry } from './parser-registry/parser-registry.ts';
+import type { ImportParser } from './parser-registry/types.ts';
 
-export interface StoryDependencyGraphServiceOptions {
-  storyIndexGeneratorPromise: Promise<StoryIndexGenerator>;
+export interface ModuleGraphEngineOptions {
+  getIndex: () => Promise<StoryIndex>;
   workingDir?: string;
   /** Presets instance used to resolve `experimental_importParsers` contributions from plugins. */
   presets?: Presets;
-  /** Fired once the initial graph build succeeds and the reverse index is ready to be queried. */
-  onReady?: () => void;
-  /**
-   * Edge-triggered "the dependency graph may have changed; recompute derived state" signal. Fires
-   * after each settled file-change patch, and synchronously on a story-index invalidation (before
-   * its reconciliation patches are enqueued). It is a coalesce signal, NOT a settled read: do not
-   * call {@link StoryDependencyGraphService.lookup} synchronously inside the callback — schedule a
-   * (debounced) recompute whose first step is `await whenSettled()`. May fire more than once per
-   * logical change, so consumers must be idempotent.
-   */
-  onChange?: () => void;
   /** Fired when the eager build (or start pipeline) fails irrecoverably. */
   onError?: (error: Error) => void;
   /** Fired when the builder adapter reports a startup failure. */
   onUnavailable?: (reason: string, error?: Error) => void;
+  /** Fired when the story index invalidates, even if no graph edges changed. */
+  onStoryIndexInvalidated?: () => void;
+  /** Mirrors the built reverse index into the `core/module-graph` open service. */
+  onSnapshot?: (storiesByFile: ReturnType<typeof reverseIndexToStoriesByFile>) => void;
+  /** Mirrors state after each settled patch; includes story files whose graph may have changed. */
+  onUpdate?: (payload: {
+    storiesByFile: ReturnType<typeof reverseIndexToStoriesByFile>;
+    bumpedStoryFiles: string[];
+  }) => void;
 }
 
 /**
@@ -49,14 +46,12 @@ export interface StoryDependencyGraphServiceOptions {
  * eagerly builds a reverse-dependency index from story files at startup, applies file-system events
  * incrementally to that index, and reconciles the story-root set when the story index changes.
  *
- * It is deliberately independent of git diffing, the status store, and the change-detection
- * readiness signal — those belong to the {@link ChangeDetectionService} status publisher (and, in
- * the future, other consumers such as server-side docgen). Consumers observe the graph through a
- * narrow surface: {@link lookup} for `changedFile -> affected stories`, {@link whenSettled} as a
- * patch-settle barrier, and the lifecycle callbacks supplied at construction.
+ * It is deliberately independent of git diffing and the status store — those belong to the
+ * {@link ChangeDetectionService} status publisher. Consumers observe the graph through the
+ * `core/module-graph` open service; the direct engine surface is only for the service registration
+ * wrapper that mirrors engine state into open-service state.
  */
-export class StoryDependencyGraphService {
-  private disposed = false;
+export class ModuleGraphEngine {
   private readonly workingDir: string;
   private adapter: ChangeDetectionAdapter | undefined;
   private dependencyGraphBuilder: DependencyGraphBuilder | undefined;
@@ -77,10 +72,8 @@ export class StoryDependencyGraphService {
    * (each call's failure is logged in {@link handleFileChange}).
    */
   private patchQueue: Promise<void> = Promise.resolve();
-  private unsubscribeFileChange: (() => void) | undefined;
-  private unsubscribeStartupFailure: (() => void) | undefined;
 
-  constructor(private readonly options: StoryDependencyGraphServiceOptions) {
+  constructor(private readonly options: ModuleGraphEngineOptions) {
     this.workingDir = options.workingDir ?? process.cwd();
   }
 
@@ -88,18 +81,61 @@ export class StoryDependencyGraphService {
     this.adapter = adapter;
 
     void this.startInternal().catch((error) => {
-      if (this.disposed) {
-        return;
-      }
-      const failure =
-        error instanceof Error ? error : new ChangeDetectionFailureError(String(error));
-      logger.error(`Change detection failed to start: ${failure.message}`);
+      const failure = error instanceof Error ? error : new ModuleGraphFailureError(String(error));
+      logger.error(`Module graph failed to start: ${failure.message}`);
       this.options.onError?.(failure);
-      void this.dispose().catch(() => undefined);
     });
   }
 
-  /** Returns the per-story BFS-depth map for `dep`. EMPTY map if `dep` is unknown or unbuilt. */
+  private mirrorSnapshot(): void {
+    if (!this.reverseIndex) {
+      return;
+    }
+    this.options.onSnapshot?.(
+      reverseIndexToStoriesByFile(this.reverseIndex.asMap(), this.workingDir)
+    );
+  }
+
+  private collectBumpedStoryFiles(changedFile: string): Set<string> {
+    if (!this.reverseIndex) {
+      return new Set();
+    }
+    const normalized = normalize(changedFile);
+    const bumpedStoryFiles = new Set<string>();
+    for (const [storyFile] of this.reverseIndex.lookup(normalized)) {
+      bumpedStoryFiles.add(storyFile);
+    }
+    if (this.storyFiles.has(normalized)) {
+      bumpedStoryFiles.add(normalized);
+    }
+    return bumpedStoryFiles;
+  }
+
+  private mirrorUpdate(changedFile: string, prePatchBumped: Set<string> = new Set()): void {
+    if (!this.reverseIndex) {
+      return;
+    }
+    const normalized = normalize(changedFile);
+    const bumpedStoryFiles = new Set(prePatchBumped);
+    for (const [storyFile] of this.reverseIndex.lookup(normalized)) {
+      bumpedStoryFiles.add(storyFile);
+    }
+    if (this.storyFiles.has(normalized)) {
+      bumpedStoryFiles.add(normalized);
+    }
+    this.options.onUpdate?.({
+      storiesByFile: reverseIndexToStoriesByFile(this.reverseIndex.asMap(), this.workingDir),
+      bumpedStoryFiles: Array.from(bumpedStoryFiles, (storyFile) =>
+        toStoryIndexPath(storyFile, this.workingDir)
+      ),
+    });
+  }
+
+  /**
+   * Returns the per-story breadth-first-search depth map for `dep`. Depth is the shortest number of
+   * import edges from the changed file to each affected story. Empty map if `dep` is unknown or
+   * unbuilt.
+   */
   lookup(dep: string): Map<string, number> {
     return this.reverseIndex?.lookup(dep) ?? new Map<string, number>();
   }
@@ -119,8 +155,7 @@ export class StoryDependencyGraphService {
    * This is a point-in-time barrier, not a freeze: file events arriving after the snapshot enqueue
    * patches this call does not await, so a {@link lookup} taken after any further `await` may
    * observe a newer (still non-mid-patch) graph. For a read pinned to this barrier, call
-   * {@link lookup} immediately after this resolves with no intervening `await`. Each new event
-   * re-fires {@link onChange}, so coalescing consumers converge without holding this barrier open.
+   * {@link lookup} immediately after this resolves with no intervening `await`.
    */
   async whenSettled(): Promise<void> {
     // Phase 1: let any in-flight story-index reconciliation enqueue its add/unlink patches, so the
@@ -133,7 +168,7 @@ export class StoryDependencyGraphService {
 
   /**
    * Builds parser registry, resolver, dependency graph, and patcher; subscribes to file-change
-   * events queued behind {@link patchQueue}; then signals readiness via {@link onReady}.
+   * events queued behind {@link patchQueue}; then mirrors the initial snapshot to the service.
    */
   private async startInternal(): Promise<void> {
     const adapter = this.adapter;
@@ -141,9 +176,9 @@ export class StoryDependencyGraphService {
       return;
     }
 
-    if (this.disposed) {
-      return;
-    }
+    adapter.onStartupFailure?.((event) => {
+      this.options.onUnavailable?.(event.reason, event.error);
+    });
 
     const resolveConfig = await adapter.getResolveConfig();
     const projectRoot = normalize(resolveConfig.projectRoot ?? this.workingDir);
@@ -158,14 +193,9 @@ export class StoryDependencyGraphService {
     const resolver = new ChangeDetectionResolverFactory(resolveConfig);
     const workspaceRoots = new Set<string>([normalize(getProjectRoot())]);
 
-    const storyIndexGenerator = await this.options.storyIndexGeneratorPromise;
-    const storyIndex = await storyIndexGenerator.getIndex();
+    const storyIndex = await this.options.getIndex();
     const storyIdsByFile = getStoryIdsByAbsolutePath(storyIndex, this.workingDir);
     this.storyFiles = new Set(storyIdsByFile.keys());
-
-    if (this.disposed) {
-      return;
-    }
 
     // Shared parse/resolve cache so the patcher reuses cold-start results instead of
     // re-doing every file's parse + resolution on the first event after boot. The patcher
@@ -190,17 +220,11 @@ export class StoryDependencyGraphService {
 
     // Subscribe BEFORE build — buffer events until patcher is ready
     const eventBuffer: FileChangeEvent[] = [];
-    this.unsubscribeFileChange = adapter.onFileChange((event) => {
-      if (this.disposed) {
-        return;
-      }
+    const unsubscribeBuffer = adapter.onFileChange((event) => {
       eventBuffer.push(event);
     });
 
     const { reverseIndex, graph } = await this.dependencyGraphBuilder.build(this.storyFiles);
-    if (this.disposed) {
-      return;
-    }
     this.reverseIndex = reverseIndex;
     void this.dumpDebugSnapshot(reverseIndex, graph, projectRoot, workspaceRoots, cache);
 
@@ -216,42 +240,23 @@ export class StoryDependencyGraphService {
     });
 
     // Drain buffered events into patchQueue, then switch to live handler
-    this.unsubscribeFileChange?.();
+    unsubscribeBuffer();
     for (const event of eventBuffer) {
       this.patchQueue = this.patchQueue
         .then(() => this.handleFileChange(event))
         .catch(() => undefined);
     }
 
-    this.unsubscribeFileChange = adapter.onFileChange((event) => {
-      if (this.disposed) {
-        return;
-      }
+    adapter.onFileChange((event) => {
       this.patchQueue = this.patchQueue
         .then(() => this.handleFileChange(event))
         .catch(() => undefined);
     });
 
-    if (adapter.onStartupFailure) {
-      this.unsubscribeStartupFailure = adapter.onStartupFailure((event) => {
-        if (this.disposed) {
-          return;
-        }
-        this.options.onUnavailable?.(event.reason, event.error);
-        void this.dispose();
-      });
-    }
-
-    if (this.disposed) {
-      return;
-    }
-    this.options.onReady?.();
+    this.mirrorSnapshot();
   }
 
   onStoryIndexInvalidated(): void {
-    if (this.disposed) {
-      return;
-    }
     // Single-flight: a reconciliation already running will pick up this invalidation's changes when
     // its getIndex() reads the (already-nulled) index cache, so we don't start a second. Track the
     // running reconciliation in refreshSettled so whenSettled() can wait for it to enqueue its
@@ -268,7 +273,7 @@ export class StoryDependencyGraphService {
     }
     // The story index changed even when no story files were added/removed (e.g. a story renamed
     // within a file); signal consumers so derived state is recomputed.
-    this.options.onChange?.();
+    this.options.onStoryIndexInvalidated?.();
   }
 
   /**
@@ -283,11 +288,7 @@ export class StoryDependencyGraphService {
    * patches to be enqueued.
    */
   private async refreshStoryFiles(): Promise<void> {
-    const storyIndexGenerator = await this.options.storyIndexGeneratorPromise;
-    const storyIndex = await storyIndexGenerator.getIndex();
-    if (this.disposed) {
-      return;
-    }
+    const storyIndex = await this.options.getIndex();
     const storyIdsByFile = getStoryIdsByAbsolutePath(storyIndex, this.workingDir);
     const next = new Set(storyIdsByFile.keys());
     const previous = this.storyFiles;
@@ -382,12 +383,10 @@ export class StoryDependencyGraphService {
   }
 
   private async handleFileChange(event: FileChangeEvent): Promise<void> {
-    if (this.disposed || !this.incrementalPatcher) {
+    if (!this.incrementalPatcher) {
       return;
     }
-    // Surface the raw change to external subscribers (e.g. addon-review's
-    // staleness check) before patching — they only care that a file changed.
-    notifySourceFileChange(event);
+    const prePatchBumped = this.collectBumpedStoryFiles(event.path);
     try {
       await this.incrementalPatcher.patch(event);
     } catch (error) {
@@ -395,26 +394,6 @@ export class StoryDependencyGraphService {
         `Change detection: failed to apply ${event.kind} for ${event.path}: ${error instanceof Error ? error.message : String(error)}`
       );
     }
-    if (this.disposed) {
-      return;
-    }
-    this.options.onChange?.();
-  }
-
-  async dispose(): Promise<void> {
-    if (this.disposed) {
-      return;
-    }
-    this.disposed = true;
-
-    this.unsubscribeFileChange?.();
-    this.unsubscribeFileChange = undefined;
-    this.unsubscribeStartupFailure?.();
-    this.unsubscribeStartupFailure = undefined;
-
-    // Drain in-flight patches before tearing down the OXC parse pool so no
-    // patch reads the pool after it has been disposed.
-    await this.patchQueue.catch(() => undefined);
-    await disposeOxcParsePool().catch(() => undefined);
+    this.mirrorUpdate(event.path, prePatchBumped);
   }
 }

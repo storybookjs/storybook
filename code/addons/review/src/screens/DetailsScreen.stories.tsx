@@ -6,6 +6,8 @@ import {
   buildReviewChangesDetailHref,
   buildReviewChangesSummaryHref,
 } from '../review-navigation.ts';
+import { PREVIEW_MODE_SESSION_KEY } from '../constants.ts';
+import { sessionStore } from '../session-store.ts';
 import preview from '../../../../.storybook/preview.tsx';
 import { DetailsScreen } from './DetailsScreen.tsx';
 
@@ -44,6 +46,7 @@ const meta = preview.meta({
     for (const key of Object.keys(addonStateStore)) {
       delete addonStateStore[key];
     }
+    sessionStore.remove(PREVIEW_MODE_SESSION_KEY);
   },
   args: {
     title: 'Toolbar & direct consumers',
@@ -90,8 +93,13 @@ export const WithBaseline = meta.story({
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await expect(await canvas.findByText('Baseline')).toBeInTheDocument();
+    // Default is 1up with the latest pane active: only the "Latest" bar label is shown.
     await expect(await canvas.findByText('Latest')).toBeInTheDocument();
+    await expect(canvas.queryByText('Baseline')).not.toBeInTheDocument();
+    await expect(
+      await canvas.findByRole('button', { name: 'Switch baseline and latest' })
+    ).toBeInTheDocument();
+    // Both previews are mounted; the baseline iframe is hidden in 1up latest mode.
     await expect(
       await canvas.findByTitle('Baseline components-toolbar--basic')
     ).toBeInTheDocument();
@@ -100,6 +108,27 @@ export const WithBaseline = meta.story({
     await expect(
       await canvas.findByRole('button', { name: 'Side-by-side view' })
     ).toBeInTheDocument();
+  },
+});
+
+export const WithBaselineSplit = meta.story({
+  args: {
+    hasBaseline: true,
+  },
+  beforeEach: () => {
+    sessionStore.write(PREVIEW_MODE_SESSION_KEY, '2up');
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(await canvas.findByText('Baseline')).toBeInTheDocument();
+    await expect(await canvas.findByText('Latest')).toBeInTheDocument();
+    await expect(
+      await canvas.findByTitle('Baseline components-toolbar--basic')
+    ).toBeInTheDocument();
+    await expect(await canvas.findByTitle('Latest components-toolbar--basic')).toBeInTheDocument();
+    await expect(
+      canvas.queryByRole('button', { name: 'Switch baseline and latest' })
+    ).not.toBeInTheDocument();
   },
 });
 

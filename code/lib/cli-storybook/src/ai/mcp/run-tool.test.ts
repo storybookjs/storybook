@@ -308,6 +308,21 @@ describe('buildStorybookCommandsHelp', () => {
     expect(section).toContain('install `@storybook/addon-mcp`');
   });
 
+  it('shows the Storybook version reported by the running instance', async () => {
+    vi.mocked(readRegistry).mockResolvedValue([{ ...record, storybookVersion: '10.5.0' }]);
+    const section = await buildStorybookCommandsHelp({ cwd: '/projects/foo' });
+    expect(section).toContain(
+      'Storybook commands (from the Storybook running at http://localhost:6006, Storybook 10.5.0):'
+    );
+  });
+
+  it('names the detected version in the too-old note', async () => {
+    vi.mocked(readRegistry).mockResolvedValue([{ ...record, storybookVersion: '9.0.5' }]);
+    const section = await buildStorybookCommandsHelp({ cwd: '/projects/foo' });
+    expect(section).toContain('version `9.0.5`');
+    expect(section).toContain('require `10.5.0` or newer');
+  });
+
   it('degrades to a note when the MCP server is unreachable', async () => {
     vi.mocked(listMcpTools).mockRejectedValue(new Error('connection refused'));
     const section = await buildStorybookCommandsHelp({ cwd: '/projects/foo' });

@@ -136,8 +136,9 @@ export async function buildStorybookCommandsHelp(
     const summary = tool.description?.trim().split('\n')[0] ?? '';
     return `  ${tool.name.padEnd(width)}${summary}`;
   });
+  const version = record.storybookVersion ? `, Storybook ${record.storybookVersion}` : '';
   return [
-    `Storybook commands (from the Storybook running at ${record.url}):`,
+    `Storybook commands (from the Storybook running at ${record.url}${version}):`,
     ...siblingNote,
     ...lines,
     '',
@@ -165,7 +166,7 @@ function helpUnavailableNote(
     case 'mcp-error':
       return "the running Storybook's command server reported an error";
     case 'storybook-too-old':
-      return `the installed Storybook is too old for these commands (requires ${STORYBOOK_MIN_VERSION} or newer)`;
+      return `the installed Storybook is version \`${error.version ?? 'unknown'}\`, but these commands require \`${STORYBOOK_MIN_VERSION}\` or newer`;
     default: {
       const unhandled: never = error.reason;
       throw new Error(`Unhandled intercept reason: ${unhandled as string}`);
@@ -225,6 +226,8 @@ type InstanceResolution =
       output: string;
       reason: InterceptReason;
       records: StorybookInstanceRecord[];
+      /** Detected Storybook version, set for the `storybook-too-old` reason. */
+      version?: string;
     };
 
 /**
@@ -254,6 +257,7 @@ async function resolveReadyInstance(
       output: getInterceptMarkdown('storybook-too-old', { version: versionStatus.version }),
       reason: 'storybook-too-old',
       records: [],
+      version: versionStatus.version,
     };
   }
 

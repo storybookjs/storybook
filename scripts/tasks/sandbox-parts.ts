@@ -1016,9 +1016,7 @@ async function getConfigFile(names: string[], cwd: string) {
     }
   }
 
-  throw new Error(
-    `No ${names.join(' or ')} found in sandbox: ${cwd}, cannot modify config.`
-  );
+  throw new Error(`No ${names.join(' or ')} found in sandbox: ${cwd}, cannot modify config.`);
 }
 
 async function prepareSvelteSandbox(cwd: string) {

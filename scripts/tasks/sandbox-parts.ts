@@ -1015,7 +1015,9 @@ async function getConfigFile(names: string[], cwd: string) {
     throw new Error(`No ${names.join(' or ')} found in sandbox: ${cwd}, cannot modify config.`);
   }
 
-  return firstPath;
+  // findFirstPath returns a path relative to `cwd`; resolve it so readConfig
+  // does not resolve it against the script's own working directory.
+  return join(cwd, firstPath);
 }
 
 async function prepareSvelteSandbox(cwd: string) {

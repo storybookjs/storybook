@@ -24,7 +24,6 @@ import {
   EVENTS,
   PREVIEW_MODE_SESSION_KEY,
   LAST_REVIEWED_STORY_SESSION_KEY,
-  RESTORE_NAV_SESSION_KEY,
   RETURN_PATH_SESSION_KEY,
   REVIEW_CHANGES_URL,
   type CompareMode,
@@ -256,20 +255,6 @@ export const ReviewProvider: FC<{ children: ReactNode }> = ({ children }) => {
       sessionStore.write(RETURN_PATH_SESSION_KEY, search);
     }
   }, [isInReviewSession, viewMode, location?.search]);
-
-  // Hide the sidebar on review entry; restore only when leaving the session.
-  useEffect(() => {
-    if (isSummaryVisible && sessionStore.read(RESTORE_NAV_SESSION_KEY) === null) {
-      sessionStore.write(RESTORE_NAV_SESSION_KEY, api.getIsNavShown() ? 'restore' : 'keep');
-      api.toggleNav(false);
-    }
-    if (!isInReviewSession) {
-      if (sessionStore.read(RESTORE_NAV_SESSION_KEY) === 'restore') {
-        api.toggleNav(true);
-      }
-      sessionStore.remove(RESTORE_NAV_SESSION_KEY);
-    }
-  }, [api, isInReviewSession, isSummaryVisible]);
 
   const value = useMemo<ReviewStoreState>(
     () => ({

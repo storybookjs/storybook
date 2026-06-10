@@ -1,10 +1,14 @@
-import React, { useEffect, useRef, useSyncExternalStore, type FC } from 'react';
+import React, { useLayoutEffect, useRef, useState, useSyncExternalStore, type FC } from 'react';
+import { createPortal } from 'react-dom';
 
 import { useStorybookState } from 'storybook/manager-api';
 
 import { isReviewSummaryPath, isStoryInReview, parseStoryIdFromPath } from './review-navigation.ts';
 import { reviewStore, useReview } from './review-store.ts';
 import { SummaryScreen } from './screens/SummaryScreen.tsx';
+
+/** Matches `#main-content-wrapper` in core MainAreaContainer — the pages grid cell beside the sidebar. */
+export const REVIEW_SUMMARY_PORTAL_TARGET_ID = 'main-content-wrapper';
 
 const PORTAL_HOST_ID = 'storybook-review-summary-portal';
 
@@ -20,6 +24,48 @@ const useSummaryOverlayShown = () =>
     () => reviewStore.isSummaryOverlayShown()
   );
 
+const useMainContentPortalTarget = (enabled: boolean): HTMLElement | null => {
+  const [target, setTarget] = useState<HTMLElement | null>(() =>
+    enabled ? document.getElementById(REVIEW_SUMMARY_PORTAL_TARGET_ID) : null
+  );
+
+  useLayoutEffect(() => {
+    if (!enabled) {
+      setTarget(null);
+      return undefined;
+    }
+
+    const resolve = () => {
+      const node = document.getElementById(REVIEW_SUMMARY_PORTAL_TARGET_ID);
+      setTarget(node);
+      return node;
+    };
+
+    if (resolve()) {
+      return undefined;
+    }
+
+    const observer = new MutationObserver(() => {
+      if (resolve()) {
+        observer.disconnect();
+      }
+    });
+    observer.observe(document.body, { childList: true, subtree: true });
+    return () => observer.disconnect();
+  }, [enabled]);
+
+  return target;
+};
+
+const summaryPortalStyle: React.CSSProperties = {
+  display: 'flex',
+  flexDirection: 'column',
+  flex: 1,
+  minHeight: 0,
+  height: '100%',
+  overflow: 'hidden',
+};
+
 export const ReviewSummaryPortal: FC = () => {
   const { path, viewMode } = useStorybookState();
   const {
@@ -33,8 +79,9 @@ export const ReviewSummaryPortal: FC = () => {
   } = useReview();
   const overlayShown = useSummaryOverlayShown();
   const containerRef = useRef<HTMLDivElement>(null);
+  const portalTarget = useMainContentPortalTarget(overlayShown);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     removeLegacyPortalHost();
   }, []);
 
@@ -46,7 +93,7 @@ export const ReviewSummaryPortal: FC = () => {
     isStoryInReview(flattenedEntries, storyIdFromPath);
   const isInReviewSession = isSummaryVisible || isOnReviewedStory;
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const node = containerRef.current;
     if (node) {
       node.inert = !overlayShown;
@@ -57,33 +104,49 @@ export const ReviewSummaryPortal: FC = () => {
     return null;
   }
 
+  const summaryScreen = (
+    <SummaryScreen
+      state={state}
+      storyInfo={storyInfo}
+      getStoryPreviewHref={getStoryPreviewHref}
+      isStale={isStale}
+      previewsPaused={!overlayShown}
+      onDismiss={dismissReview}
+      lastReviewedStoryHref={lastReviewedStoryHref}
+    />
+  );
+
+  if (overlayShown) {
+    const portalContent = (
+      <div ref={containerRef} style={summaryPortalStyle} data-review-summary="visible">
+        {summaryScreen}
+      </div>
+    );
+
+    if (portalTarget) {
+      return createPortal(portalContent, portalTarget);
+    }
+
+    // Isolated stories and the first paint before Layout mounts: fill the viewport.
+    return (
+      <div
+        ref={containerRef}
+        style={{
+          ...summaryPortalStyle,
+          position: 'fixed',
+          inset: 0,
+          zIndex: 10,
+        }}
+        data-review-summary="visible"
+      >
+        {summaryScreen}
+      </div>
+    );
+  }
+
   return (
-    <div
-      ref={containerRef}
-      style={{
-        position: 'fixed',
-        top: 0,
-        left: 'var(--nav-width, 0px)',
-        right: 0,
-        bottom: 0,
-        zIndex: overlayShown ? 10 : -1,
-        display: 'flex',
-        flexDirection: 'column',
-        visibility: overlayShown ? 'visible' : 'hidden',
-        pointerEvents: overlayShown ? 'auto' : 'none',
-      }}
-      aria-hidden={!overlayShown || undefined}
-      data-review-summary={overlayShown ? 'visible' : 'hidden'}
-    >
-      <SummaryScreen
-        state={state}
-        storyInfo={storyInfo}
-        getStoryPreviewHref={getStoryPreviewHref}
-        isStale={isStale}
-        previewsPaused={!overlayShown}
-        onDismiss={dismissReview}
-        lastReviewedStoryHref={lastReviewedStoryHref}
-      />
+    <div ref={containerRef} aria-hidden style={{ display: 'none' }} data-review-summary="hidden">
+      {summaryScreen}
     </div>
   );
 };

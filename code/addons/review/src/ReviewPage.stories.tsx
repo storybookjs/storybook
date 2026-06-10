@@ -154,7 +154,12 @@ const meta = preview.meta({
         }}
       >
         <MemoryRouter initialEntries={parameters?.routerInitialEntries ?? ['/?path=/review/']}>
-          <Story />
+          <div
+            id="main-content-wrapper"
+            style={{ display: 'flex', flexDirection: 'column', height: '100vh', minHeight: 0 }}
+          >
+            <Story />
+          </div>
         </MemoryRouter>
       </ManagerContext.Provider>
     ),

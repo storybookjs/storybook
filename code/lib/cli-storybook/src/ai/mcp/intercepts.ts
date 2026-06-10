@@ -13,6 +13,12 @@ const buildNoInstanceWithCandidates = (records: StorybookInstanceRecord[]) =>
 Running Storybooks:
 ${records.map((r) => `- \`${r.cwd}\` (${r.url})`).join('\n')}`;
 
+const buildPortMismatch = (port: number | undefined, records: StorybookInstanceRecord[]) =>
+  `Storybook is running at this cwd, but not on port \`${port ?? 'unknown'}\`. Retry with one of the running ports below, or omit \`--port\` to route by cwd alone.
+
+Running Storybooks at this cwd:
+${records.map((r) => `- port \`${r.port}\` (${r.url}, mcp: \`${r.mcp.status}\`)`).join('\n')}`;
+
 const buildStorybookTooOld = (version: string) =>
   `The Storybook installed at this cwd is version \`${version}\`, but this command requires \`${STORYBOOK_MIN_VERSION}\` or newer.
 
@@ -48,18 +54,21 @@ const MCP_ERROR = `Storybook is running but its MCP server reported an error. In
 export type InterceptExtras = {
   records?: StorybookInstanceRecord[];
   version?: string;
+  port?: number;
 };
 
 export function getInterceptMarkdown(
   reason: InterceptReason,
   extras: InterceptExtras = {}
 ): string {
-  const { records, version } = extras;
+  const { records, version, port } = extras;
   switch (reason) {
     case 'no-instance':
       return records && records.length > 0
         ? buildNoInstanceWithCandidates(records)
         : NO_INSTANCE_EMPTY;
+    case 'port-mismatch':
+      return buildPortMismatch(port, records ?? []);
     case 'storybook-not-installed':
       return STORYBOOK_NOT_INSTALLED;
     case 'addon-missing':

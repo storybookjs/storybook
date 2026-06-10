@@ -35,6 +35,7 @@ export interface StorybookInstanceRecord {
 
 export type InterceptReason =
   | 'no-instance'
+  | 'port-mismatch'
   | 'storybook-not-installed'
   | 'addon-missing'
   | 'mcp-starting'

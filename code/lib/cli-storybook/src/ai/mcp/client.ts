@@ -7,6 +7,12 @@ import type { McpToolDescriptor, StorybookInstanceRecord, ToolCallResult } from 
 const STORYBOOK_MCP_PROXY_HEADER = 'X-Storybook-MCP-Proxy';
 const STORYBOOK_MCP_PROXY_HEADER_VALUE = 'true';
 
+/**
+ * Upper bound on a single request so a hung server cannot stall the CLI forever. Generous because
+ * `run-story-tests` on a full suite legitimately runs for minutes.
+ */
+const REQUEST_TIMEOUT_MS = 10 * 60 * 1000;
+
 export type ToolCallParams = {
   name: string;
   arguments?: Record<string, unknown>;
@@ -46,9 +52,14 @@ export async function listMcpTools(
 /**
  * Send a single JSON-RPC request to the instance's MCP endpoint over HTTP.
  *
- * The downstream is `@storybook/addon-mcp` at `record.mcp.endpoint`. tmcp's HttpTransport
- * hardcodes `text/event-stream` for any request with an id, so we accept both content-types and
- * parse the SSE envelope when needed. Every call is independent; no session bookkeeping needed.
+ * This is deliberately NOT a full MCP client: there is no `initialize` handshake, session, or
+ * protocol-version negotiation. The downstream is always `@storybook/addon-mcp`, whose tmcp
+ * HttpTransport is stateless and serves `tools/*` per-request — the same local shortcut
+ * `@storybook/mcp-proxy` takes in its proxy-client. If the CLI ever needs to talk to arbitrary
+ * MCP servers, replace this with a real client instead of extending it.
+ *
+ * tmcp hardcodes `text/event-stream` for any request with an id, so we accept both content-types
+ * and parse the SSE envelope when needed.
  */
 async function sendJsonRpcRequest(
   record: StorybookInstanceRecord,
@@ -76,6 +87,7 @@ async function sendJsonRpcRequest(
       method,
       params,
     }),
+    signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
   });
 
   if (!response.ok) {

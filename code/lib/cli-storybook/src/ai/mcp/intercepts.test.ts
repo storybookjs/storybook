@@ -29,6 +29,16 @@ describe('getInterceptMarkdown', () => {
     expect(markdown).toContain('--cwd');
   });
 
+  it('port-mismatch lists the ports running at the cwd', () => {
+    const markdown = getInterceptMarkdown('port-mismatch', {
+      port: 9999,
+      records: [record('/projects/foo', 'http://localhost:6006')],
+    });
+    expect(markdown).toContain('not on port `9999`');
+    expect(markdown).toContain('- port `6006`');
+    expect(markdown).toContain('omit `--port`');
+  });
+
   it('storybook-too-old names the detected and minimum versions and the upgrade skill', () => {
     const markdown = getInterceptMarkdown('storybook-too-old', { version: '9.0.5' });
     expect(markdown).toContain('`9.0.5`');

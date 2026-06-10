@@ -49,6 +49,7 @@ describe('callMcpTool', () => {
     const headers = init.headers as Record<string, string>;
     expect(headers.Accept).toBe('application/json, text/event-stream');
     expect(headers['X-Storybook-MCP-Proxy']).toBe('true');
+    expect(init.signal).toBeInstanceOf(AbortSignal);
     const body = JSON.parse(init.body as string);
     expect(body).toMatchObject({
       jsonrpc: '2.0',

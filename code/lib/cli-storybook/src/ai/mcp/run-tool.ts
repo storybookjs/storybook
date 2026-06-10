@@ -6,7 +6,7 @@ import { readRegistry } from './registry.ts';
 import { resolveInstance } from './resolve-instance.ts';
 import { parseToolArgs } from './tool-args.ts';
 import type { McpToolDescriptor, StorybookInstanceRecord, ToolCallResult } from './types.ts';
-import { checkStorybookVersion } from './version-check.ts';
+import { checkStorybookVersion, classifyStorybookVersion } from './version-check.ts';
 
 export type AiToolRunResult = { exitCode: 0 | 1; output: string };
 
@@ -19,6 +19,8 @@ export type AiToolRunDeps = {
 export type AiToolOptions = {
   /** Project directory of the target Storybook; defaults to `process.cwd()`. */
   cwd?: string;
+  /** Port of the target Storybook, to address one specific instance when several share the cwd. */
+  port?: string;
   /** Raw JSON object with tool arguments (escape hatch for complex values). */
   json?: string;
 };
@@ -34,12 +36,19 @@ export async function runAiTool(
   options: AiToolOptions = {},
   deps: AiToolRunDeps = {}
 ): Promise<AiToolRunResult> {
-  const parsed = parseToolArgs(toolArgTokens, { cwd: options.cwd, json: options.json });
+  const parsed = parseToolArgs(toolArgTokens, {
+    cwd: options.cwd,
+    port: options.port,
+    json: options.json,
+  });
   if (!parsed.ok) {
     return { exitCode: 1, output: parsed.error };
   }
+  if (parsed.help) {
+    return runAiToolHelp(toolName, { cwd: parsed.cwd, port: options.port }, deps);
+  }
 
-  const resolution = await resolveReadyInstance(parsed.cwd, deps);
+  const resolution = await resolveReadyInstance(parsed.cwd, parsed.port, deps);
   if (resolution.kind === 'error') {
     return { exitCode: 1, output: resolution.output };
   }
@@ -78,20 +87,73 @@ export async function runAiTool(
   }
 }
 
-/** List the MCP tools exposed by the Storybook running at the target cwd. */
-export async function runAiListTools(
+/**
+ * Build the "Tool commands" help section listing the tools of the running Storybook, appended to
+ * `storybook ai --help`. Help must never fail, so any error degrades to a short note explaining
+ * why no tools are listed.
+ */
+export async function buildToolCommandsHelp(
+  options: AiToolOptions = {},
+  deps: AiToolRunDeps = {}
+): Promise<string> {
+  const unavailable = (note: string) => `Tool commands: (unavailable — ${note})`;
+
+  const parsed = parseToolArgs([], { cwd: options.cwd, port: options.port });
+  if (!parsed.ok) {
+    return unavailable(parsed.error);
+  }
+
+  const resolution = await resolveReadyInstance(parsed.cwd, parsed.port, deps);
+  if (resolution.kind === 'error') {
+    return unavailable(
+      `no running Storybook with MCP detected at this cwd; start \`storybook dev\` to list its tools`
+    );
+  }
+  const { record } = resolution;
+
+  let tools: McpToolDescriptor[];
+  try {
+    tools = await listMcpTools(record, deps.fetchImpl);
+  } catch {
+    return unavailable(`the Storybook MCP at ${record.url} could not be reached`);
+  }
+  if (tools.length === 0) {
+    return unavailable(`the Storybook at ${record.url} exposes no MCP tools`);
+  }
+
+  const width = Math.max(...tools.map((tool) => tool.name.length)) + 2;
+  const lines = tools.map((tool) => {
+    const summary = tool.description?.trim().split('\n')[0] ?? '';
+    return `  ${tool.name.padEnd(width)}${summary}`;
+  });
+  return [
+    `Tool commands (from the Storybook at ${record.url}):`,
+    ...lines,
+    '',
+    `Run 'storybook ai <tool> --help' for a tool's description and arguments.`,
+  ].join('\n');
+}
+
+/** Show the description and arguments of a single MCP tool (`storybook ai <tool> --help`). */
+export async function runAiToolHelp(
+  toolName: string,
   options: AiToolOptions = {},
   deps: AiToolRunDeps = {}
 ): Promise<AiToolRunResult> {
-  const resolution = await resolveReadyInstance(options.cwd, deps);
+  const parsed = parseToolArgs([], { cwd: options.cwd, port: options.port });
+  if (!parsed.ok) {
+    return { exitCode: 1, output: parsed.error };
+  }
+
+  const resolution = await resolveReadyInstance(parsed.cwd, parsed.port, deps);
   if (resolution.kind === 'error') {
     return { exitCode: 1, output: resolution.output };
   }
   const { record } = resolution;
 
+  let tools: McpToolDescriptor[];
   try {
-    const tools = await listMcpTools(record, deps.fetchImpl);
-    return { exitCode: 0, output: formatToolList(tools, record) };
+    tools = await listMcpTools(record, deps.fetchImpl);
   } catch (error) {
     return {
       exitCode: 1,
@@ -100,6 +162,12 @@ export async function runAiListTools(
       }`,
     };
   }
+
+  const tool = tools.find((candidate) => candidate.name === toolName);
+  if (!tool) {
+    return { exitCode: 1, output: formatUnknownTool(toolName, tools, record) };
+  }
+  return { exitCode: 0, output: formatToolHelp(tool) };
 }
 
 type InstanceResolution =
@@ -108,24 +176,31 @@ type InstanceResolution =
 
 /**
  * Resolve the running Storybook instance for `cwdInput`, mirroring the mcp-proxy dispatch order:
- * version check first (fail fast on too-old), then registry lookup and cwd matching.
+ * registry lookup and cwd/port matching first, then the version check — preferring the version the
+ * running instance reported in its registry record over resolving the installed version from disk.
  */
 async function resolveReadyInstance(
   cwdInput: string | undefined,
+  port: number | undefined,
   deps: AiToolRunDeps
 ): Promise<InstanceResolution> {
   const cwd = resolve(cwdInput ?? process.cwd());
 
-  const versionStatus = checkStorybookVersion(cwd);
+  const records = await readRegistry(deps.registryDir);
+  const resolution = resolveInstance(records, cwd, port);
+
+  const matchedRecord = resolution.kind === 'instance' ? resolution.record : resolution.matches[0];
+  const versionStatus =
+    matchedRecord?.storybookVersion !== undefined
+      ? classifyStorybookVersion(matchedRecord.storybookVersion)
+      : checkStorybookVersion(cwd);
+
   if (versionStatus.status === 'too-old') {
     return {
       kind: 'error',
       output: getInterceptMarkdown('storybook-too-old', { version: versionStatus.version }),
     };
   }
-
-  const records = await readRegistry(deps.registryDir);
-  const resolution = resolveInstance(records, cwd);
 
   if (resolution.kind === 'intercept') {
     if (
@@ -137,7 +212,7 @@ async function resolveReadyInstance(
     }
     return {
       kind: 'error',
-      output: getInterceptMarkdown(resolution.reason, { records: resolution.records }),
+      output: getInterceptMarkdown(resolution.reason, { records: resolution.records, port }),
     };
   }
 
@@ -162,11 +237,19 @@ async function describeUnknownTool(
   if (tools.some((tool) => tool.name === toolName)) {
     return null;
   }
+  return formatUnknownTool(toolName, tools, record);
+}
+
+function formatUnknownTool(
+  toolName: string,
+  tools: McpToolDescriptor[],
+  record: StorybookInstanceRecord
+): string {
   return `Unknown tool \`${toolName}\`. The Storybook at ${record.url} exposes:
 
 ${tools.map((tool) => `- \`${tool.name}\``).join('\n')}
 
-Run \`storybook ai list-tools\` for descriptions and arguments.`;
+Run \`storybook ai --help\` for all commands, or \`storybook ai <tool> --help\` for a tool's arguments.`;
 }
 
 /** Render a tools/call result as markdown: text content verbatim, other content as JSON blocks. */
@@ -184,42 +267,34 @@ function formatToolResult(result: ToolCallResult): string {
     .join('\n\n');
 }
 
-function formatToolList(tools: McpToolDescriptor[], record: StorybookInstanceRecord): string {
-  if (tools.length === 0) {
-    return `The Storybook at ${record.url} exposes no MCP tools.`;
+function formatToolHelp(tool: McpToolDescriptor): string {
+  const lines = [`Usage: storybook ai ${tool.name} [--key value ...]`];
+  if (tool.description) {
+    lines.push('', tool.description.trim());
   }
-
-  const sections = tools.map((tool) => {
-    const lines = [`## ${tool.name}`];
-    if (tool.description) {
-      lines.push('', tool.description.trim());
-    }
-    const properties = Object.entries(tool.inputSchema?.properties ?? {});
-    if (properties.length > 0) {
-      const required = new Set(tool.inputSchema?.required ?? []);
-      lines.push(
-        '',
-        'Arguments:',
-        ...properties.map(([name, schema]) => {
-          const meta = [schema.type, required.has(name) ? 'required' : undefined]
-            .filter(Boolean)
-            .join(', ');
-          const description = schema.description ? `: ${schema.description}` : '';
-          return `- \`--${name}\`${meta ? ` (${meta})` : ''}${description}`;
-        })
-      );
-    }
-    return lines.join('\n');
-  });
-
-  return [`# MCP tools exposed by the Storybook at ${record.url}`, ...sections].join('\n\n');
+  const properties = Object.entries(tool.inputSchema?.properties ?? {});
+  if (properties.length > 0) {
+    const required = new Set(tool.inputSchema?.required ?? []);
+    lines.push(
+      '',
+      'Arguments:',
+      ...properties.map(([name, schema]) => {
+        const meta = [schema.type, required.has(name) ? 'required' : undefined]
+          .filter(Boolean)
+          .join(', ');
+        const description = schema.description ? `: ${schema.description}` : '';
+        return `- \`--${name}\`${meta ? ` (${meta})` : ''}${description}`;
+      })
+    );
+  }
+  return lines.join('\n');
 }
 
 function formatMultiInstanceWarning(
   chosen: StorybookInstanceRecord,
   siblings: StorybookInstanceRecord[]
 ): string {
-  const all = [chosen, ...siblings].sort((a, b) => a.pid - b.pid);
+  const all = [chosen, ...siblings];
   const lines = all.map((r) => {
     const marker = r === chosen ? ' (used)' : '';
     return `> - pid \`${r.pid}\` at ${r.url} (mcp: \`${r.mcp.status}\`)${marker}`;

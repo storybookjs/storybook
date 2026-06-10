@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { join } from 'node:path';
 
@@ -18,27 +19,37 @@ export type StorybookVersionStatus =
   | { status: 'too-old'; version: string }
   | { status: 'not-installed' };
 
-function readStorybookVersion(cwd: string): string | null {
-  try {
-    const requireFromCwd = createRequire(join(cwd, 'package.json'));
-    const { version } = requireFromCwd('storybook/package.json') as { version: string };
-    return version;
-  } catch {
-    return null;
+export function classifyStorybookVersion(version: string | undefined): StorybookVersionStatus {
+  if (version === undefined) {
+    return { status: 'not-installed' };
   }
-}
-
-export function checkStorybookVersion(cwd: string): StorybookVersionStatus {
-  const version = readStorybookVersion(cwd);
   // Storybook canary releases are published as `0.0.0-*`; semver considers these < any stable
   // version, but we still want to treat them as supported.
-  if (version?.startsWith('0.0.0-')) {
+  if (version.startsWith('0.0.0-')) {
     return { status: 'ok' };
-  }
-  if (version === null) {
-    return { status: 'not-installed' };
   }
   return lt(version, STORYBOOK_MIN_VERSION_FLOOR)
     ? { status: 'too-old', version }
     : { status: 'ok' };
+}
+
+export function checkStorybookVersion(cwd: string): StorybookVersionStatus {
+  return classifyStorybookVersion(readStorybookVersion(cwd));
+}
+
+function readStorybookVersion(cwd: string): string | undefined {
+  const requireFromCwd = createRequire(join(cwd, 'package.json'));
+  // require.resolve.paths is the only way to get the actual search paths without going through
+  // Node's module-resolution cache.
+  const searchPaths = requireFromCwd.resolve.paths('storybook') ?? [];
+  for (const base of searchPaths) {
+    try {
+      const raw = readFileSync(join(base, 'storybook', 'package.json'), 'utf8');
+      const { version } = JSON.parse(raw) as { version?: unknown };
+      return typeof version === 'string' ? version : undefined;
+    } catch {
+      // parse error or file not found.
+    }
+  }
+  return undefined;
 }

@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { parseToolArgs } from './tool-args.ts';
 
-function args(tokens: string[], defaults?: { cwd?: string; json?: string }) {
+function args(tokens: string[], defaults?: { cwd?: string; port?: string; json?: string }) {
   const result = parseToolArgs(tokens, defaults);
   if (!result.ok) {
     throw new Error(`expected ok, got error: ${result.error}`);
@@ -10,7 +10,7 @@ function args(tokens: string[], defaults?: { cwd?: string; json?: string }) {
   return result;
 }
 
-function error(tokens: string[], defaults?: { cwd?: string; json?: string }) {
+function error(tokens: string[], defaults?: { cwd?: string; port?: string; json?: string }) {
   const result = parseToolArgs(tokens, defaults);
   if (result.ok) {
     throw new Error(`expected error, got ok: ${JSON.stringify(result.args)}`);
@@ -20,7 +20,13 @@ function error(tokens: string[], defaults?: { cwd?: string; json?: string }) {
 
 describe('parseToolArgs', () => {
   it('returns empty args for no tokens', () => {
-    expect(args([])).toEqual({ ok: true, cwd: undefined, args: {} });
+    expect(args([])).toEqual({ ok: true, cwd: undefined, port: undefined, help: false, args: {} });
+  });
+
+  it('consumes --help and -h as a help request instead of forwarding them', () => {
+    expect(args(['--help'])).toMatchObject({ help: true, args: {} });
+    expect(args(['-h'])).toMatchObject({ help: true, args: {} });
+    expect(args(['--id', 'x', '--help'])).toMatchObject({ help: true, args: { id: 'x' } });
   });
 
   it('maps `--key value` pairs to tool arguments', () => {
@@ -77,6 +83,8 @@ describe('parseToolArgs', () => {
       expect(args(['--cwd', '/projects/foo', '--id', 'x'])).toEqual({
         ok: true,
         cwd: '/projects/foo',
+        port: undefined,
+        help: false,
         args: { id: 'x' },
       });
     });
@@ -91,6 +99,34 @@ describe('parseToolArgs', () => {
 
     it('errors when --cwd has no value', () => {
       expect(error(['--cwd'])).toContain('`--cwd` requires a value');
+    });
+  });
+
+  describe('--port', () => {
+    it('consumes --port as a number instead of forwarding it', () => {
+      expect(args(['--port', '6006', '--id', 'x'])).toEqual({
+        ok: true,
+        cwd: undefined,
+        port: 6006,
+        help: false,
+        args: { id: 'x' },
+      });
+    });
+
+    it('uses the commander-parsed default and lets a token override it', () => {
+      expect(args(['--id', 'x'], { port: '6006' }).port).toBe(6006);
+      expect(args(['--port', '6007'], { port: '6006' }).port).toBe(6007);
+    });
+
+    it('errors on non-numeric or out-of-range ports', () => {
+      expect(error(['--port', 'abc'])).toContain('`--port` must be a port number');
+      expect(error(['--port', '0'])).toContain('`--port` must be a port number');
+      expect(error(['--port', '65536'])).toContain('`--port` must be a port number');
+      expect(error(['--port', '6006.5'])).toContain('`--port` must be a port number');
+    });
+
+    it('errors when --port has no value', () => {
+      expect(error(['--port'])).toContain('`--port` requires a value');
     });
   });
 

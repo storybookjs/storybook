@@ -1,14 +1,19 @@
+import { writeFile } from 'node:fs/promises';
+
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { Command } from 'commander';
 
 import { isAiCliFeatureEnabled, registerAiMcpPassthrough } from './register.ts';
-import { runAiListTools, runAiTool } from './run-tool.ts';
+import { buildToolCommandsHelp, runAiTool, runAiToolHelp } from './run-tool.ts';
 
 vi.mock('./run-tool.ts', () => ({
   runAiTool: vi.fn(),
-  runAiListTools: vi.fn(),
+  runAiToolHelp: vi.fn(),
+  buildToolCommandsHelp: vi.fn(),
 }));
+
+vi.mock('node:fs/promises', { spy: true });
 
 describe('isAiCliFeatureEnabled', () => {
   it.each([
@@ -50,27 +55,33 @@ function parse(program: Command, argv: string[]) {
   return program.parseAsync(['node', 'storybook', ...argv]);
 }
 
+function stdoutText(): string {
+  return vi
+    .mocked(process.stdout.write)
+    .mock.calls.map(([chunk]) => String(chunk))
+    .join('');
+}
+
 beforeEach(() => {
   vi.mocked(runAiTool).mockResolvedValue({ exitCode: 0, output: 'ok' });
-  vi.mocked(runAiListTools).mockResolvedValue({ exitCode: 0, output: 'tools' });
+  vi.mocked(runAiToolHelp).mockResolvedValue({ exitCode: 0, output: 'tool help' });
+  vi.mocked(buildToolCommandsHelp).mockResolvedValue('Tool commands (from the Storybook):');
+  vi.mocked(writeFile).mockResolvedValue(undefined);
   vi.spyOn(process.stdout, 'write').mockImplementation(() => true);
 });
 
 afterEach(() => {
   vi.restoreAllMocks();
   vi.mocked(runAiTool).mockReset();
-  vi.mocked(runAiListTools).mockReset();
+  vi.mocked(runAiToolHelp).mockReset();
+  vi.mocked(buildToolCommandsHelp).mockReset();
   process.exitCode = undefined;
 });
 
 describe('without the feature flag (no registration)', () => {
-  it('does not expose list-tools', async () => {
-    const { program, aiCommand } = buildProgram({ withPassthrough: false });
+  it('keeps `setup` as the only subcommand', () => {
+    const { aiCommand } = buildProgram({ withPassthrough: false });
     expect(aiCommand.commands.map((c) => c.name())).toEqual(['setup']);
-    await expect(parse(program, ['ai', 'list-tools'])).rejects.toMatchObject({
-      code: 'commander.excessArguments',
-    });
-    expect(runAiListTools).not.toHaveBeenCalled();
   });
 
   it('rejects tool names like today (excess arguments)', async () => {
@@ -85,6 +96,7 @@ describe('without the feature flag (no registration)', () => {
     const { program, helpAction } = buildProgram({ withPassthrough: false });
     await parse(program, ['ai']);
     expect(helpAction).toHaveBeenCalled();
+    expect(buildToolCommandsHelp).not.toHaveBeenCalled();
   });
 });
 
@@ -94,14 +106,28 @@ describe('with the feature flag (passthrough registered)', () => {
     await parse(program, ['ai', 'get-documentation', '--id', 'button-docs']);
     expect(runAiTool).toHaveBeenCalledWith('get-documentation', ['--id', 'button-docs'], {
       cwd: undefined,
+      port: undefined,
       json: undefined,
     });
   });
 
-  it('parses --cwd and --json before the tool name as CLI options', async () => {
+  it('parses --cwd, --port and --json before the tool name as CLI options', async () => {
     const { program } = buildProgram({ withPassthrough: true });
-    await parse(program, ['ai', '--cwd', '/x', '--json', '{"a":1}', 'get-documentation']);
-    expect(runAiTool).toHaveBeenCalledWith('get-documentation', [], { cwd: '/x', json: '{"a":1}' });
+    await parse(program, [
+      'ai',
+      '--cwd',
+      '/x',
+      '--port',
+      '6006',
+      '--json',
+      '{"a":1}',
+      'get-documentation',
+    ]);
+    expect(runAiTool).toHaveBeenCalledWith('get-documentation', [], {
+      cwd: '/x',
+      port: '6006',
+      json: '{"a":1}',
+    });
   });
 
   it('passes tokens after the tool name through verbatim, even option-like ones', async () => {
@@ -109,8 +135,17 @@ describe('with the feature flag (passthrough registered)', () => {
     await parse(program, ['ai', 'tool-x', '--cwd', '/y', '--output', 'z']);
     expect(runAiTool).toHaveBeenCalledWith('tool-x', ['--cwd', '/y', '--output', 'z'], {
       cwd: undefined,
+      port: undefined,
       json: undefined,
     });
+  });
+
+  it('writes the result to the file given via --output instead of stdout', async () => {
+    const { program } = buildProgram({ withPassthrough: true });
+    vi.mocked(runAiTool).mockResolvedValue({ exitCode: 0, output: 'markdown result' });
+    await parse(program, ['ai', '-o', '/out/result.md', 'tool-x']);
+    expect(writeFile).toHaveBeenCalledWith('/out/result.md', 'markdown result\n', 'utf-8');
+    expect(process.stdout.write).not.toHaveBeenCalledWith('markdown result\n');
   });
 
   it('writes the result to stdout', async () => {
@@ -129,13 +164,6 @@ describe('with the feature flag (passthrough registered)', () => {
     expect(process.exitCode).toBe(1);
   });
 
-  it('dispatches `ai list-tools` to runAiListTools with the cwd option', async () => {
-    const { program } = buildProgram({ withPassthrough: true });
-    await parse(program, ['ai', 'list-tools', '--cwd', '/x']);
-    expect(runAiListTools).toHaveBeenCalledWith({ cwd: '/x' });
-    expect(runAiTool).not.toHaveBeenCalled();
-  });
-
   it('still dispatches `ai setup` to the setup subcommand', async () => {
     const { program, setupAction } = buildProgram({ withPassthrough: true });
     await parse(program, ['ai', 'setup']);
@@ -143,11 +171,44 @@ describe('with the feature flag (passthrough registered)', () => {
     expect(runAiTool).not.toHaveBeenCalled();
   });
 
-  it('shows help when `ai` is run without a tool', async () => {
-    const { program, aiCommand } = buildProgram({ withPassthrough: true });
-    const outputHelp = vi.spyOn(aiCommand, 'outputHelp').mockImplementation(() => '');
-    await parse(program, ['ai']);
-    expect(outputHelp).toHaveBeenCalled();
+  it.each([[['ai']], [['ai', '--help']], [['ai', '-h']]])(
+    'shows commander help plus the tool commands section for %j',
+    async (argv) => {
+      const { program } = buildProgram({ withPassthrough: true });
+      await parse(program, argv);
+      expect(buildToolCommandsHelp).toHaveBeenCalledWith({ cwd: undefined, port: undefined });
+      const output = stdoutText();
+      expect(output).toContain('Usage:');
+      expect(output).toContain('setup');
+      expect(output).toContain('Tool commands (from the Storybook):');
+      expect(runAiTool).not.toHaveBeenCalled();
+    }
+  );
+
+  it('passes --cwd and --port through to the tool commands section', async () => {
+    const { program } = buildProgram({ withPassthrough: true });
+    await parse(program, ['ai', '--cwd', '/x', '--port', '6006', '--help']);
+    expect(buildToolCommandsHelp).toHaveBeenCalledWith({ cwd: '/x', port: '6006' });
+  });
+
+  it('shows single-tool help for `ai --help <tool>`', async () => {
+    const { program } = buildProgram({ withPassthrough: true });
+    await parse(program, ['ai', '--help', 'get-documentation']);
+    expect(runAiToolHelp).toHaveBeenCalledWith('get-documentation', {
+      cwd: undefined,
+      port: undefined,
+    });
+    expect(process.stdout.write).toHaveBeenCalledWith('tool help\n');
     expect(runAiTool).not.toHaveBeenCalled();
+  });
+
+  it('passes a --help token after the tool name through to runAiTool', async () => {
+    const { program } = buildProgram({ withPassthrough: true });
+    await parse(program, ['ai', 'get-documentation', '--help']);
+    expect(runAiTool).toHaveBeenCalledWith('get-documentation', ['--help'], {
+      cwd: undefined,
+      port: undefined,
+      json: undefined,
+    });
   });
 });

@@ -51,6 +51,13 @@ export async function runAiTool(
       { name: toolName, arguments: parsed.args },
       deps.fetchImpl
     );
+    if (result.isError) {
+      // addon-mcp reports unknown tools as an error *result* rather than a JSON-RPC error.
+      const unknownTool = await describeUnknownTool(record, toolName, deps.fetchImpl);
+      if (unknownTool) {
+        return { exitCode: 1, output: unknownTool };
+      }
+    }
     const siblings = matches.filter((r) => r !== record);
     const sections = [
       ...(siblings.length > 0 ? [formatMultiInstanceWarning(record, siblings)] : []),

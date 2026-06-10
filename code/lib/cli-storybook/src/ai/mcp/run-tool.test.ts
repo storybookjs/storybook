@@ -124,15 +124,6 @@ describe('runAiTool', () => {
     expect(result.output).toContain(expected);
   });
 
-  it('exits non-zero when the tool result is an error', async () => {
-    vi.mocked(callMcpTool).mockResolvedValue({
-      content: [{ type: 'text', text: 'tool failed' }],
-      isError: true,
-    });
-    const result = await runAiTool('run-story-tests', [], { cwd: '/projects/foo' });
-    expect(result).toEqual({ exitCode: 1, output: 'tool failed' });
-  });
-
   it('renders non-text content items as JSON blocks', async () => {
     vi.mocked(callMcpTool).mockResolvedValue({
       content: [
@@ -152,6 +143,27 @@ describe('runAiTool', () => {
     expect(result.exitCode).toBe(1);
     expect(result.output).toContain('Unknown tool `no-such-tool`');
     expect(result.output).toContain('- `list-all-documentation`');
+  });
+
+  it('lists the available tools when the server reports the unknown tool as an error result', async () => {
+    // addon-mcp (tmcp) reports unknown tools as an isError result, not a JSON-RPC error.
+    vi.mocked(callMcpTool).mockResolvedValue({
+      content: [{ type: 'text', text: 'Tool no-such-tool not found' }],
+      isError: true,
+    });
+    const result = await runAiTool('no-such-tool', [], { cwd: '/projects/foo' });
+    expect(result.exitCode).toBe(1);
+    expect(result.output).toContain('Unknown tool `no-such-tool`');
+    expect(result.output).toContain('- `list-all-documentation`');
+  });
+
+  it('keeps the original error result when the failing tool does exist', async () => {
+    vi.mocked(callMcpTool).mockResolvedValue({
+      content: [{ type: 'text', text: 'tests failed' }],
+      isError: true,
+    });
+    const result = await runAiTool('list-all-documentation', [], { cwd: '/projects/foo' });
+    expect(result).toEqual({ exitCode: 1, output: 'tests failed' });
   });
 
   it('prints the original JSON-RPC error when the tool exists', async () => {

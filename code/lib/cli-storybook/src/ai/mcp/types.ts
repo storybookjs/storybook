@@ -5,33 +5,36 @@
  * this reader is intentionally more lenient (extra statuses, optional fields) so it
  * also accepts records written by other Storybook versions and wrappers.
  */
+import * as v from 'valibot';
 
 /**
  * The in-repo writer only emits `not-installed` and `ready`; `starting` and `error` are written by
  * external wrappers (e.g. the storybookjs/mcp launch script) and must keep being dispatched here.
  */
-export type McpStatus = 'not-installed' | 'starting' | 'ready' | 'error';
+export const McpStatusSchema = v.picklist(['not-installed', 'starting', 'ready', 'error']);
+export type McpStatus = v.InferOutput<typeof McpStatusSchema>;
 
 /**
  * A single Storybook runtime record written under the registry dir (default
  * `~/.storybook/instances`). One file per running `storybook dev` instance.
  * Spec: storybookjs/storybook#34826.
  */
-export interface StorybookInstanceRecord {
-  schemaVersion: 1;
-  instanceId: string;
-  pid: number;
-  cwd: string;
-  url: string;
-  port: number;
-  storybookVersion?: string;
-  startedAt?: string;
-  updatedAt?: string;
-  mcp: {
-    status: McpStatus;
-    endpoint?: string;
-  };
-}
+export const StorybookInstanceRecordSchema = v.object({
+  schemaVersion: v.literal(1),
+  instanceId: v.string(),
+  pid: v.pipe(v.number(), v.minValue(1), v.integer()),
+  cwd: v.string(),
+  url: v.string(),
+  port: v.pipe(v.number(), v.minValue(1), v.maxValue(65535), v.integer()),
+  storybookVersion: v.optional(v.string()),
+  startedAt: v.optional(v.string()),
+  updatedAt: v.optional(v.string()),
+  mcp: v.object({
+    status: McpStatusSchema,
+    endpoint: v.optional(v.string()),
+  }),
+});
+export type StorybookInstanceRecord = v.InferOutput<typeof StorybookInstanceRecordSchema>;
 
 export type InterceptReason =
   | 'no-instance'

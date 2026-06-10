@@ -8517,6 +8517,7 @@ __metadata:
     tinyclip: "npm:^0.1.12"
     ts-dedent: "npm:^2.0.0"
     typescript: "npm:^5.8.3"
+    valibot: "npm:^1.4.0"
   bin:
     cli: ./dist/bin/index.js
   languageName: unknown

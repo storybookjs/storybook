@@ -9072,6 +9072,7 @@ __metadata:
     escodegen: "npm:^2.1.0"
     expect-type: "npm:^0.15.0"
     html-tags: "npm:^3.1.0"
+    memfs: "npm:^4.11.1"
     prop-types: "npm:^15.7.2"
     react-docgen: "npm:^8.0.2"
     react-docgen-typescript: "npm:^2.2.2"

@@ -1,7 +1,7 @@
 import type { ReverseIndex } from './types.ts';
 
 /**
- * In-memory reverse index from dep file → story file → shortest BFS depth.
+ * In-memory reverse index from dep file → story file → shortest breadth-first-search depth.
  *
  * **Contract:** callers MUST pass already-normalised paths (`pathe.normalize`); the index
  * does not re-normalise on each mutation. Producers in `DependencyGraphBuilder` and

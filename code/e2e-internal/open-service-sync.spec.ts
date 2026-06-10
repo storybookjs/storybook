@@ -1,6 +1,8 @@
 import { expect, test } from '@playwright/test';
 import process from 'process';
 
+import { PREVIEW_STORY_TIMEOUT, waitForPreviewReady } from './helpers.ts';
+
 /**
  * E2E regression for the paired open-service sync demos
  * (`code/core/src/shared/open-service/sync-test`).
@@ -13,7 +15,7 @@ import process from 'process';
 const storybookUrl = process.env.STORYBOOK_URL || 'http://localhost:6006';
 
 const runsAgainstDevServer = !['build', 'static'].includes(process.env.STORYBOOK_TYPE || 'dev');
-const STORY_READY_TIMEOUT = 15_000;
+const STORY_READY_TIMEOUT = PREVIEW_STORY_TIMEOUT;
 
 test.describe('open-service sync example', () => {
   test.describe.configure({ mode: 'serial' });
@@ -35,6 +37,7 @@ test.describe('open-service sync example', () => {
       .getByLabel('Local command raw service state value');
 
     await expect(toolbarInput).toBeVisible({ timeout: STORY_READY_TIMEOUT });
+    await waitForPreviewReady(page);
     await expect(storyInput).toBeVisible({ timeout: STORY_READY_TIMEOUT });
 
     try {
@@ -70,6 +73,7 @@ test.describe('open-service sync example', () => {
       .getByLabel('Local command raw service state value');
 
     await expect(toolbarInput).toBeVisible({ timeout: STORY_READY_TIMEOUT });
+    await waitForPreviewReady(page);
     await expect(storyInput).toBeVisible({ timeout: STORY_READY_TIMEOUT });
 
     try {
@@ -120,8 +124,10 @@ test.describe('open-service sync example', () => {
       .getByLabel('Local command raw service state value');
 
     await expect(firstToolbarInput).toBeVisible({ timeout: STORY_READY_TIMEOUT });
-    await expect(firstStoryInput).toBeVisible({ timeout: STORY_READY_TIMEOUT });
+    await waitForPreviewReady(page);
     await expect(secondToolbarInput).toBeVisible({ timeout: STORY_READY_TIMEOUT });
+    await waitForPreviewReady(otherPage);
+    await expect(firstStoryInput).toBeVisible({ timeout: STORY_READY_TIMEOUT });
     await expect(secondStoryInput).toBeVisible({ timeout: STORY_READY_TIMEOUT });
 
     try {
@@ -164,6 +170,7 @@ test.describe('open-service sync example', () => {
       .getByLabel('Remote command raw service state value');
 
     await expect(toolbarInput).toBeVisible({ timeout: STORY_READY_TIMEOUT });
+    await waitForPreviewReady(page);
     await expect(storyInput).toBeVisible({ timeout: STORY_READY_TIMEOUT });
 
     try {
@@ -199,6 +206,7 @@ test.describe('open-service sync example', () => {
       .getByLabel('Remote command raw service state value');
 
     await expect(toolbarInput).toBeVisible({ timeout: STORY_READY_TIMEOUT });
+    await waitForPreviewReady(page);
     await expect(storyInput).toBeVisible({ timeout: STORY_READY_TIMEOUT });
 
     try {
@@ -249,8 +257,10 @@ test.describe('open-service sync example', () => {
       .getByLabel('Remote command raw service state value');
 
     await expect(firstToolbarInput).toBeVisible({ timeout: STORY_READY_TIMEOUT });
-    await expect(firstStoryInput).toBeVisible({ timeout: STORY_READY_TIMEOUT });
+    await waitForPreviewReady(page);
     await expect(secondToolbarInput).toBeVisible({ timeout: STORY_READY_TIMEOUT });
+    await waitForPreviewReady(otherPage);
+    await expect(firstStoryInput).toBeVisible({ timeout: STORY_READY_TIMEOUT });
     await expect(secondStoryInput).toBeVisible({ timeout: STORY_READY_TIMEOUT });
 
     try {

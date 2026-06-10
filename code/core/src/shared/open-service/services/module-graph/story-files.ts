@@ -1,8 +1,6 @@
 import { join, normalize } from 'pathe';
 
-import type { StoryIndexGenerator } from '../utils/StoryIndexGenerator.ts';
-
-type StoryIndex = Awaited<ReturnType<StoryIndexGenerator['getIndex']>>;
+import type { StoryIndex } from '../../../../types/modules/indexer.ts';
 
 /**
  * Maps each story index to its absolute-story-file -> story-id sets, keyed by the index object

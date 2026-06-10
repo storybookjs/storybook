@@ -9,7 +9,7 @@ import type { Polka } from 'polka';
 import invariant from 'tiny-invariant';
 
 import { getService } from '../../../shared/open-service/server.ts';
-import type { docgenServiceDef } from '../../../shared/open-service/services/docgen/definition.ts';
+import type { DocgenService } from '../../../shared/open-service/services/docgen/definition.ts';
 import { Tag } from '../../../shared/constants/tags.ts';
 import type { ComponentManifest, ComponentsManifest } from '../../../types/modules/core-common.ts';
 import type { DocgenPayload } from '../../../shared/open-service/services/docgen/types.ts';
@@ -111,7 +111,7 @@ async function renderComponentsHtmlFromService(
   manifestComponentIds: string[],
   docsManifest?: DocsManifest
 ) {
-  const docgenService = getService<typeof docgenServiceDef>('core/docgen');
+  const docgenService = getService<DocgenService>('core/docgen');
   const startTime = performance.now();
   const allPayloads = await docgenService.queries.getDocgenForAllComponents.loaded();
   const durationMs = Math.round(performance.now() - startTime);

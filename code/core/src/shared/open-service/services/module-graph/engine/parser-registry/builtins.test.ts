@@ -3,7 +3,7 @@
 // test the stub, not the extractor's mapping from oxc nodes to ImportEdge.
 import { describe, expect, it, vi } from 'vitest';
 
-import { ChangeDetectionFailureError } from '../errors.ts';
+import { ChangeDetectionFailureError } from '../../../../../../core-server/change-detection/errors.ts';
 import { mdxImportParser, oxcImportParser } from './builtins.ts';
 import type { ImportParserContext } from './types.ts';
 

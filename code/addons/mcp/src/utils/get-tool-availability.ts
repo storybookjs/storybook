@@ -50,19 +50,14 @@ export async function getToolAvailability(
 		features ??
 		((await options.presets.apply('features', {})) as { changeDetection?: boolean } | undefined);
 
-	const [
-		moduleGraphSupported,
-		reviewStatus,
-		manifestStatus,
-		addonVitestConstants,
-		a11yEnabled,
-	] = await Promise.all([
-		isModuleGraphSupported(),
-		getReviewStatus(options, { features: resolvedFeatures }),
-		getManifestStatus(options),
-		getAddonVitestConstants(),
-		isAddonA11yEnabled(options),
-	]);
+	const [moduleGraphSupported, reviewStatus, manifestStatus, addonVitestConstants, a11yEnabled] =
+		await Promise.all([
+			isModuleGraphSupported(),
+			getReviewStatus(options, { features: resolvedFeatures }),
+			getManifestStatus(options),
+			getAddonVitestConstants(),
+			isAddonA11yEnabled(options),
+		]);
 
 	return {
 		moduleGraphSupported,

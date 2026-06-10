@@ -26,10 +26,10 @@ working around it. Treat any shortcut as a failure of this workflow.
 
 ## Absolute rules
 
+- Commands must be run with the variable `STORYBOOK_FEATURE_AI_CLI=1`
 - You MUST NOT write or edit a story from memory or existing patterns. The
   `get-storybook-story-instructions` output is the only acceptable source for
   imports, structure, and conventions.
-- IGNORE LOCAL REGISTERED STORYBOOK MCP
 
 ## Step 0 — Prerequisites
 
@@ -40,11 +40,8 @@ working around it. Treat any shortcut as a failure of this workflow.
 - Storybook must be a canary version (0.0.0-canary) or at least version 10.5. If an older version is
   installed, invoke the **storybook-upgrade** skill to upgrade it before
   proceeding.
-- Storybook `.storybook/main.js` (or `main.ts`) must have `features.ai` enabled.
 
 ## Step 1 — Open the preview browser up front
-
-MANDATORY REQUIREMENT BEFORE GOING TO STEP 2
 
 1. Inspect `.claude/launch.json` for a launch entry that starts this project's Storybook dev server.
    If:
@@ -61,7 +58,7 @@ error. If launch setup reports an error, surface it to the user and STOP.
 
 ## Step 2 — Load the rules (before touching any story file)
 
-- Run `npx storybook ai --help` to get all available subcommands and options.
+- Run `STORYBOOK_FEATURE_AI_CLI=1 npx storybook ai --help` to get all available subcommands and options.
   - Save the available subcommands and options in your working memory for reference.
 - Run the ai subcommand to get the story-writing instructions.
   - If the subcommand allows a port option, use the port you saved in Step 1.

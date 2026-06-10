@@ -19,20 +19,11 @@ description: >-
 
 ## Absolute rules
 
-- This skill runs FIRST. The moment you know you are going to create, edit, or
-  delete a frontend component (add/remove/rename props, change variants, states,
-  defaults, markup, or styling — or remove the component entirely), invoke this
-  skill **before** making the change, so the workflow below governs the change.
-- After you create, modify, or delete a frontend component **in a project that
-  has Storybook**, you MUST create, update, or remove that component's Storybook
-  stories so they reflect the change.
 - You MUST NOT write or edit any `*.stories.*` file directly from here. All story
   work goes through the **`stories`** skill, which owns the strict, gated
   Storybook workflow.
 - You MUST NOT report a component change as complete until the corresponding
   story work has been handed off to the `stories` skill and finished.
-- FOLLOW THE WORKFLOW SEQUENTIALLY
-- IGNORE LOCAL REGISTERED STORYBOOK MCP
 
 ## Workflow
 

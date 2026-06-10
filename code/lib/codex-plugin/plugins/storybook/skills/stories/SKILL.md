@@ -16,10 +16,10 @@ working around it. Treat any shortcut as a failure of this workflow.
 
 ## Absolute rules
 
+- Commands must be run with the variable `STORYBOOK_FEATURE_AI_CLI=1`
 - You MUST NOT write or edit a story from memory or existing patterns. The
   `get-storybook-story-instructions` output is the only acceptable source for
   imports, structure, and conventions.
-- IGNORE LOCAL REGISTERED STORYBOOK MCP
 
 ## Step 0 — Prerequisites
 
@@ -35,7 +35,7 @@ working around it. Treat any shortcut as a failure of this workflow.
 
 The Storybook preview MUST be running so the story can be verified.
 
-Run `npx storybook ai instances ls` subcommand to check for running Storybook instances. If there is a running instance, note its port and open the preview URL in the preview browser.
+Run `STORYBOOK_FEATURE_AI_CLI=1 npx storybook ai instances ls` subcommand to check for running Storybook instances. If there is a running instance, note its port and open the preview URL in the preview browser.
 If there is no running instance, start it with the steps below:
   1. Start the project's existing Storybook dev script as a background task from
     the Storybook invocation directory
@@ -47,7 +47,7 @@ error. If launch setup reports an error, surface it to the user and STOP.
 
 ## Step 2 — Load the rules (before touching any story file)
 
-- Run `npx storybook ai --help` to get all available subcommands and options.
+- Run `STORYBOOK_FEATURE_AI_CLI=1 npx storybook ai --help` to get all available subcommands and options.
   - Save the available subcommands and options in your working memory for reference.
 - Run the ai subcommand to get the story-writing instructions.
 - Follow the instructions in the output, which will include the exact imports, structure, and conventions to use for the story you are writing or editing. The instructions are the ONLY acceptable source for how to write the story; do NOT rely on memory or existing patterns.
@@ -64,7 +64,7 @@ rather than guessing.
 
 ## Step 4 — Preview and verify
 
-Produce a preview for every story you touched with **preview-stories** (prefer
+Produce a preview for every story you touched with **STORYBOOK_FEATURE_AI_CLI=1 npx storybook ai preview-stories** (prefer
 `{ storyId }` inputs). Before showing any returned URL to the user, navigate to
 it in the preview browser and confirm the story renders without errors.
 

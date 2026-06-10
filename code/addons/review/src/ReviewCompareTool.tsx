@@ -1,6 +1,6 @@
 import React, { type FC } from 'react';
 
-import { ActionList, IconButton, PopoverProvider } from 'storybook/internal/components';
+import { ActionList, Button, PopoverProvider } from 'storybook/internal/components';
 import type { Addon_BaseType } from 'storybook/internal/types';
 
 import { SideBySideIcon, StopAltHollowIcon, TransferIcon } from '@storybook/icons';
@@ -59,14 +59,14 @@ const CompareMenu: FC = () => {
         </ActionList>
       }
     >
-      <IconButton
+      <Button
         variant="ghost"
         size="small"
         padding="small"
         ariaLabel={`Compare mode: ${modeLabel(compareMode)}`}
       >
         {modeIcon(compareMode)}
-      </IconButton>
+      </Button>
     </PopoverProvider>
   );
 };

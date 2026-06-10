@@ -1,11 +1,8 @@
 import React, { useCallback, useEffect, useRef, useState, type FC } from 'react';
 
-import { Badge, Button, IconButton } from 'storybook/internal/components';
+import { Badge, Button } from 'storybook/internal/components';
 import { styled } from 'storybook/theming';
 
-import { StorybookIcon } from '@storybook/icons';
-
-import { buildStorybookStoryHref } from '../review-navigation.ts';
 import { Highlight } from './Highlight.tsx';
 
 const PREVIEW_SCALE = 0.5;
@@ -240,22 +237,6 @@ const LabelStory = styled.span({
   textOverflow: 'ellipsis',
 });
 
-const ActionSlot = styled.div({
-  display: 'flex',
-  alignItems: 'center',
-  gap: 4,
-  flexShrink: 0,
-  whiteSpace: 'nowrap',
-  opacity: 0,
-  pointerEvents: 'none',
-  transition: 'opacity 120ms ease',
-  '@media (prefers-reduced-motion: reduce)': { transition: 'none' },
-  '[data-cell]:hover &, [data-cell]:focus-within &': {
-    opacity: 1,
-    pointerEvents: 'auto',
-  },
-});
-
 const ReviewAllCell = styled.div(({ theme }) => ({
   display: 'none',
   placeItems: 'center',
@@ -472,19 +453,6 @@ const StoryPreviewCell: FC<{
           </LabelStory>
           {info?.isNew ? <Badge status="positive">New</Badge> : null}
         </Label>
-        <ActionSlot>
-          <IconButton
-            variant="ghost"
-            size="small"
-            padding="small"
-            ariaLabel="View in Storybook"
-            asChild
-          >
-            <a href={buildStorybookStoryHref(storyId)} target="_blank" rel="noreferrer">
-              <StorybookIcon />
-            </a>
-          </IconButton>
-        </ActionSlot>
       </ActionBar>
     </Cell>
   );

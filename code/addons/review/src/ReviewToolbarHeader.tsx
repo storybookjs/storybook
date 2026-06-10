@@ -1,6 +1,6 @@
 import React, { type FC } from 'react';
 
-import { Badge, Button, IconButton, Popover, WithTooltip } from 'storybook/internal/components';
+import { Badge, Button, Popover, WithTooltip } from 'storybook/internal/components';
 import { styled } from 'storybook/theming';
 
 import { ChevronSmallLeftIcon, ChevronSmallRightIcon } from '@storybook/icons';
@@ -165,24 +165,18 @@ export const ReviewToolbarHeader: FC = () => {
         <ReviewHeader
           variant="toolbar"
           leading={
-            <IconButton
-              variant="ghost"
-              size="small"
-              padding="small"
-              ariaLabel="Back to review"
-              asChild
-            >
+            <Button variant="ghost" size="small" padding="small" ariaLabel="Back to review" asChild>
               <a href={buildReviewChangesSummaryHref()}>
                 <ChevronSmallLeftIcon />
               </a>
-            </IconButton>
+            </Button>
           }
           title={collectionTitle}
           subtitle={subtitle}
           actions={
             <>
               {counter}
-              <IconButton
+              <Button
                 variant="ghost"
                 size="small"
                 padding="small"
@@ -192,18 +186,12 @@ export const ReviewToolbarHeader: FC = () => {
                 <a href={buildReviewStoryHref(previousEntry)}>
                   <ChevronSmallLeftIcon />
                 </a>
-              </IconButton>
-              <IconButton
-                variant="ghost"
-                size="small"
-                padding="small"
-                ariaLabel="Next story"
-                asChild
-              >
+              </Button>
+              <Button variant="ghost" size="small" padding="small" ariaLabel="Next story" asChild>
                 <a href={buildReviewStoryHref(nextEntry)}>
                   <ChevronSmallRightIcon />
                 </a>
-              </IconButton>
+              </Button>
             </>
           }
         />

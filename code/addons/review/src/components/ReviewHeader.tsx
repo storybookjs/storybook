@@ -15,9 +15,9 @@ const Root = styled.header<{ $variant: 'page' | 'toolbar' }>(({ theme, $variant 
 const TopRow = styled.div<{ $variant: 'page' | 'toolbar' }>(({ $variant }) => ({
   display: 'flex',
   flexDirection: 'row',
-  alignItems: 'flex-start',
+  alignItems: 'center',
   gap: 8,
-  padding: $variant === 'toolbar' ? '16px 10px 8px 10px' : '16px 16px 8px 16px',
+  padding: $variant === 'toolbar' ? '16px 10px 8px 10px' : 16,
   minHeight: 40,
 }));
 
@@ -30,7 +30,7 @@ const Leading = styled.div({
 const TextBlock = styled.div({
   display: 'flex',
   flexDirection: 'column',
-  gap: 2,
+  gap: 4,
   flexGrow: 1,
   minWidth: 0,
 });
@@ -54,7 +54,7 @@ const Title = styled.h1(({ theme }) => ({
 const Subtitle = styled.div(({ theme }) => ({
   display: 'flex',
   alignItems: 'center',
-  gap: 5,
+  gap: 8,
   color: theme.textMutedColor,
   fontSize: theme.typography.size.s2,
   lineHeight: '20px',

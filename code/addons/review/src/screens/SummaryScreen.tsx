@@ -6,6 +6,7 @@ import {
   Card,
   Collapsible,
   IconButton,
+  Link,
   ScrollArea,
   ToggleButton,
 } from 'storybook/internal/components';
@@ -274,6 +275,27 @@ export const SummaryScreen: FC<SummaryScreenProps> = ({
     [state, storyInfo]
   );
 
+  const normalizedQuery = search.trim().toLowerCase();
+  const visibleCollections = useMemo(
+    () =>
+      (state?.collections ?? [])
+        .map((collection, index) => {
+          const titleMatch =
+            !normalizedQuery || collection.title.toLowerCase().includes(normalizedQuery);
+          let storyIds = titleMatch
+            ? collection.storyIds
+            : collection.storyIds.filter((storyId) =>
+                storyMatchesQuery(storyId, storyInfo, normalizedQuery)
+              );
+          if (showNewOnly) {
+            storyIds = storyIds.filter((id) => storyInfo[id]?.isNew);
+          }
+          return { collection, index, storyIds };
+        })
+        .filter((entry) => entry.storyIds.length > 0),
+    [state?.collections, normalizedQuery, showNewOnly, storyInfo]
+  );
+
   if (!state) {
     return (
       <Empty>
@@ -303,7 +325,6 @@ export const SummaryScreen: FC<SummaryScreenProps> = ({
 
   const storyCount = new Set(state.collections.flatMap((collection) => collection.storyIds)).size;
   const createdAgo = state.createdAt ? formatCreatedAgo(state.createdAt, nowMs) : null;
-  const areAllExpanded = state.collections.every((_, index) => expandedCollections.has(index));
 
   const toggleCollection = (index: number) => {
     setExpandedCollections((previous) => {
@@ -322,32 +343,6 @@ export const SummaryScreen: FC<SummaryScreenProps> = ({
     );
   };
 
-  const normalizedQuery = search.trim().toLowerCase();
-  // Search narrows to the story level: a collection whose title matches keeps
-  // all its stories, otherwise only the matching stories are shown. The
-  // "new only" filter is applied after search so both can be active together.
-  // The original index is kept so expand state and detail links stay correct.
-  // Memoized to avoid recomputing on unrelated re-renders (e.g. nowMs ticks).
-  const visibleCollections = useMemo(
-    () =>
-      state.collections
-        .map((collection, index) => {
-          const titleMatch =
-            !normalizedQuery || collection.title.toLowerCase().includes(normalizedQuery);
-          let storyIds = titleMatch
-            ? collection.storyIds
-            : collection.storyIds.filter((storyId) =>
-                storyMatchesQuery(storyId, storyInfo, normalizedQuery)
-              );
-          if (showNewOnly) {
-            storyIds = storyIds.filter((id) => storyInfo[id]?.isNew);
-          }
-          return { collection, index, storyIds };
-        })
-        .filter((entry) => entry.storyIds.length > 0),
-    [state.collections, normalizedQuery, showNewOnly, storyInfo]
-  );
-
   return (
     <Page>
       {isStale ? <StaleBanner /> : null}
@@ -361,30 +356,17 @@ export const SummaryScreen: FC<SummaryScreenProps> = ({
             </AICuratedBadge>
             <span>
               {storyCount} {storyCount === 1 ? 'story' : 'stories'} for quick review
-              {createdAgo ? ` • ${createdAgo}` : ''}
             </span>
+            {createdAgo ? (
+              <>
+                <span>&bull;</span>
+                <span>{createdAgo}</span>
+              </>
+            ) : null}
           </>
         }
         actions={
-          <Button padding="small" onClick={onDismiss} ariaLabel="Dismiss and close review">
-            <SweepIcon />
-            Dismiss
-          </Button>
-        }
-        secondRow={
           <>
-            <SearchField>
-              <SearchIconWrap>
-                <SearchIcon />
-              </SearchIconWrap>
-              <SearchInput
-                type="search"
-                aria-label="Find stories"
-                placeholder="Find stories"
-                value={search}
-                onChange={(event) => setSearch(event.target.value)}
-              />
-            </SearchField>
             {newStoryCount > 0 ? (
               <ToggleButton
                 variant="ghost"
@@ -399,20 +381,18 @@ export const SummaryScreen: FC<SummaryScreenProps> = ({
                 {newStoryCount} new
               </ToggleButton>
             ) : null}
-            <IconButton
-              variant="ghost"
-              size="small"
-              padding="small"
-              ariaLabel={areAllExpanded ? 'Collapse all collections' : 'Expand all collections'}
-              style={{ marginLeft: 'auto' }}
-              onClick={() => {
-                setExpandedCollections(
-                  new Set(areAllExpanded ? [] : state.collections.map((_, index) => index))
-                );
-              }}
-            >
-              {areAllExpanded ? <CollapseIcon /> : <ExpandAltIcon />}
-            </IconButton>
+            <SearchField>
+              <SearchIconWrap>
+                <SearchIcon />
+              </SearchIconWrap>
+              <SearchInput
+                type="search"
+                aria-label="Find stories"
+                placeholder="Find stories"
+                value={search}
+                onChange={(event) => setSearch(event.target.value)}
+              />
+            </SearchField>
           </>
         }
       />

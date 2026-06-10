@@ -5,19 +5,8 @@ description: Write, create, update, or review Storybook stories for a component 
 
 # Storybook Stories
 
-The Storybook MCP is the source of truth for _how_ to write stories. This skill
+The Storybook CLI ai subcommands is the source of truth for _how_ to write stories. This skill
 is the **mandatory, ordered process** for working on them.
-
-## Follow the MCP's own workflow first
-
-If the Storybook MCP is reachable through the MCP-proxy, it serves its own
-**server instructions** describing the authoritative tool workflow (routing,
-documentation lookup, previewing, working on stories, verification). When those
-instructions are available, read them and follow them **carefully and exactly** —
-they take precedence over any general assumption you might make about the tools.
-The gated steps below operate _within_ that MCP-provided workflow; they do not
-replace it. If the MCP exposes no instructions (proxy unavailable or Storybook
-not registered), fall back to the steps below.
 
 This is a STRICT, GATED workflow. You MUST execute the steps below in order and
 satisfy each step's **Gate** before moving to the next. Do NOT skip, reorder, or
@@ -30,76 +19,68 @@ working around it. Treat any shortcut as a failure of this workflow.
 - You MUST NOT write or edit a story from memory or existing patterns. The
   `get-storybook-story-instructions` output is the only acceptable source for
   imports, structure, and conventions.
-- You MUST NOT report a story as done until its preview link has been produced
-  (Step 4) AND the review page has been published and opened (Step 5). An
-  unverified story, or a change with no review page, is not a deliverable.
+- IGNORE LOCAL REGISTERED STORYBOOK MCP
 
-## Step 1 — Load the rules (before touching any story file)
+## Step 0 — Prerequisites
 
-Call **get-storybook-story-instructions** and read it fully. Look components up
-with **list-all-documentation** / **get-documentation** rather than assuming
-props or APIs.
+- Storybook must be installed in the project. If it is not, invoke the
+  **storybook-init** skill to set it up, or ask the user if they want to set it
+  up before proceeding. If the user declines, STOP and report that Storybook is
+  required for story work.
+- Storybook must be a canary version (0.0.0-canary) or at least version 10.5. If an older version is
+  installed, invoke the **storybook-upgrade** skill to upgrade it before
+  proceeding.
 
-**Gate:** Do NOT create or edit any `*.stories.*` file until this tool has
-returned and you are following its output. If you have not called it this task,
-you are not allowed to write a story yet — go back and call it now.
-
-## Step 2 — Guarantee a running preview
+## Step 1 — Guarantee a running preview browser
 
 The Storybook preview MUST be running so the story can be verified.
 
-If any MCP tool returns a "Storybook is not running" error, you MUST NOT ignore
-it and MUST NOT proceed to write the story. STOP and recover:
+Run `npx storybook ai instances ls` subcommand to check for running Storybook instances. If there is a running instance, note its port and open the preview URL in the preview browser.
+If there is no running instance, start it with the steps below:
+  1. Start the project's existing Storybook dev script as a background task from
+    the Storybook invocation directory
+  2. Wait for the terminal to show which port Storybook is running on and use that port to open the preview URL (e.g. `http://localhost:6006`) in the preview browser.
+  3. Save the port being used by Storybook shown in the terminal in your working memory. USE THIS PORT FOR ANY SUBCOMMAND THAT NEEDS TO KNOW THE PORT (e.g. `preview-stories`).
 
-1. Start the project's existing Storybook dev script as a background task from
-   the Storybook invocation directory, and open it in Codex's in-app browser.
-2. Use that invocation directory as the `cwd` for MCP tool calls.
-3. Retry the MCP tool call. If Storybook is not configured yet, use the `init`
-   skill; if it is outdated, use the `upgrade` skill.
+**Gate:** Do NOT proceed to Step 2 until the preview browser is open and has rendered the Storybook URL without
+error. If launch setup reports an error, surface it to the user and STOP.
 
-**Gate:** Do NOT proceed to Step 3 until an MCP tool call succeeds against a
-running Storybook.
+## Step 2 — Load the rules (before touching any story file)
+
+- Run `npx storybook ai --help` to get all available subcommands and options.
+  - Save the available subcommands and options in your working memory for reference.
+- Run the ai subcommand to get the story-writing instructions.
+- Follow the instructions in the output, which will include the exact imports, structure, and conventions to use for the story you are writing or editing. The instructions are the ONLY acceptable source for how to write the story; do NOT rely on memory or existing patterns.
+
+**Gate:** Do NOT create or edit any `*.stories.*` file until you are following its output. If you have not called it this task,
+you are not allowed to write a story yet — go back and call it now.
 
 ## Step 3 — Write the story
 
-Create or edit the story strictly following the Step 1 instructions.
+Create or edit the story strictly following the Step 2 instructions.
 
-**Gate:** Every story you touched must conform to the
-`get-storybook-story-instructions` output. If anything is unclear, re-read it
+**Gate:** Every story you touched must conform to the instruction output you received. If anything is unclear, re-read it
 rather than guessing.
 
-## Step 4 — Verify
+## Step 4 — Preview and verify
 
-After changes, call **preview-stories** and open the returned links in Codex's
-in-app browser to confirm the stories render without errors. These links are for
-your own verification.
+Produce a preview for every story you touched with **preview-stories** (prefer
+`{ storyId }` inputs). Before showing any returned URL to the user, navigate to
+it in the preview browser and confirm the story renders without errors.
 
-**Gate:** Do NOT proceed to Step 5 until preview links exist and render for the
-stories you created or changed.
+**Gate:** Every URL you put in your final response MUST have been opened in the
+preview browser first — no exceptions, per the Absolute rules. Do NOT report the
+story as done until each preview link has been navigated and verified.
 
 ## Step 5 — Publish the review page
 
 Once the stories render cleanly, call **display-review** so the user can review
 exactly what changed in one place. This tool does NOT just return a link — it
 publishes a curated **review page** inside the already-running Storybook and
-returns its `reviewUrl`. The review page IS the deliverable.
+returns its `reviewUrl`. The review page IS the deliverable; the raw
+`preview-stories` URLs from Step 4 are for your own verification.
 
-- Group the stories you touched into `collections` covering the **visual
-  cascade** of the change: the changed component itself, the components that
-  import it, and the pages/containers that render them. Don't ship a
-  single-collection review unless the component is genuinely standalone.
-- Every `storyId` you pass MUST come from a tool result this session
-  (`get-changed-stories`, `get-stories-by-component`, or `list-all-documentation`).
-  `display-review` validates every ID against the live index and rejects the
-  whole review if any are unknown — never invent IDs.
-- Provide `title`, `description`, and `changedFiles` (the files you edited, most
-  central first).
+**Gate:** Do NOT report the task as done until `display-review` has succeeded,
+you have opened the returned `reviewUrl` in the preview browser, and that link is
+the final element of your user-facing response.
 
-Because the `reviewUrl` is a page, open it in Codex's in-app browser — do not
-merely print it. Then surface it to the user as the very last thing in your
-response, under its own heading (e.g. `## 👀 Review your changes`) as a markdown
-link, with nothing after it.
-
-**Gate:** Do NOT claim the task is complete until `display-review` has succeeded,
-you have opened the returned `reviewUrl`, and that link is the final element of
-your user-facing response.

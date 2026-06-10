@@ -10,14 +10,12 @@ description: >-
   assets. Invoke this even if you believe the change is cosmetic-only, internal,
   a refactor, or has "no behavior change" — that judgment is not yours to make;
   the skill always runs. Also use before starting or previewing Storybook to
-  verify UI. Pulls story-writing guidance from the Storybook MCP, keeps the
-  preview running so stories can be verified, and repairs the Claude launch
-  config when Storybook is not running.
+  verify UI.
 ---
 
 # Storybook Stories
 
-The Storybook MCP is the source of truth for _how_ to write stories. This skill
+The Storybook CLI ai subcommands is the source of truth for _how_ to write stories. This skill
 is the **mandatory, ordered process** for working on them.
 
 This is a STRICT, GATED workflow. You MUST execute the steps below in order and
@@ -28,15 +26,25 @@ working around it. Treat any shortcut as a failure of this workflow.
 
 ## Absolute rules
 
-- FOLLOW THE WORKFLOW SEQUENTIALLY
-- ALL TOOL CALLS MUST GO THROUGH STORYBOOK MCP PROXY
 - You MUST NOT write or edit a story from memory or existing patterns. The
   `get-storybook-story-instructions` output is the only acceptable source for
   imports, structure, and conventions.
-- YOU MUST USE THE PORT INPUT WHENEVER AVAILABLE FOR ANY TOOL CALL THAT SUPPORTS IT, to ensure your calls are routed through the Storybook MCP Proxy and not directly to the server.
-- IGNORE PROJECT LOCAL STORYBOOK MCP. ONLY USE THE STORYBOOK MCP PROXY SERVER FOR ALL STORYBOOK-RELATED TOOL CALLS, to ensure you are following the MCP's instructions and your calls are routed through the proxy for accurate port handling and preview integration.
+- IGNORE LOCAL REGISTERED STORYBOOK MCP
+
+## Step 0 — Prerequisites
+
+- Storybook must be installed in the project. If it is not, invoke the
+  **storybook-init** skill to set it up, or ask the user if they want to set it
+  up before proceeding. If the user declines, STOP and report that Storybook is
+  required for story work.
+- Storybook must be a canary version (0.0.0-canary) or at least version 10.5. If an older version is
+  installed, invoke the **storybook-upgrade** skill to upgrade it before
+  proceeding.
+- Storybook `.storybook/main.js` (or `main.ts`) must have `features.ai` enabled.
 
 ## Step 1 — Open the preview browser up front
+
+MANDATORY REQUIREMENT BEFORE GOING TO STEP 2
 
 1. Inspect `.claude/launch.json` for a launch entry that starts this project's Storybook dev server.
    If:
@@ -46,18 +54,18 @@ working around it. Treat any shortcut as a failure of this workflow.
      repair it first: invoke the **storybook-setup-claude-launch** skill, which creates or repairs the `.claude/launch.json` Storybook entry.
 2. Start Storybook by launching that `.claude/launch.json` entry through the Claude launcher (never via Bash/background, per the Absolute rules).
 3. Open the Storybook preview in the preview browser. If the launch entry uses `autoPort`, wait for the terminal to show which port Storybook is running on and use that port to open the preview URL (e.g. `http://localhost:6006`) in the preview browser.
-4. Save the port being used by Storybook shown in the terminal in your working memory. USE THIS PORT FOR ALL TOOL CALLS in the following steps to ensure they are routed through the MCP Proxy.
+4. Save the port being used by Storybook shown in the terminal in your working memory. USE THIS PORT FOR ANY SUBCOMMAND THAT NEEDS TO KNOW THE PORT (e.g. `preview-stories`).
 
 **Gate:** Do NOT proceed to Step 2 until the preview browser is open and has rendered the Storybook URL without
 error. If launch setup reports an error, surface it to the user and STOP.
 
 ## Step 2 — Load the rules (before touching any story file)
 
-USE THE STORYBOOK MCP PROXY SERVER.
-
-Call **get-storybook-story-instructions** and read it fully. Look components up
-with **list-all-documentation** / **get-documentation** rather than assuming
-props or APIs.
+- Run `npx storybook ai --help` to get all available subcommands and options.
+  - Save the available subcommands and options in your working memory for reference.
+- Run the ai subcommand to get the story-writing instructions.
+  - If the subcommand allows a port option, use the port you saved in Step 1.
+- Follow the instructions in the output, which will include the exact imports, structure, and conventions to use for the story you are writing or editing. The instructions are the ONLY acceptable source for how to write the story; do NOT rely on memory or existing patterns.
 
 **Gate:** Do NOT create or edit any `*.stories.*` file until this tool has
 returned and you are following its output. If you have not called it this task,
@@ -67,13 +75,10 @@ you are not allowed to write a story yet — go back and call it now.
 
 Create or edit the story strictly following the Step 2 instructions.
 
-**Gate:** Every story you touched must conform to the
-`get-storybook-story-instructions` output. If anything is unclear, re-read it
+**Gate:** Every story you touched must conform to the instruction output you received. If anything is unclear, re-read it
 rather than guessing.
 
 ## Step 4 — Preview and verify
-
-USE THE STORYBOOK MCP PROXY SERVER.
 
 Produce a preview for every story you touched with **preview-stories** (prefer
 `{ storyId }` inputs). Before showing any returned URL to the user, navigate to
@@ -84,8 +89,6 @@ preview browser first — no exceptions, per the Absolute rules. Do NOT report t
 story as done until each preview link has been navigated and verified.
 
 ## Step 5 — Publish the review page
-
-USE THE STORYBOOK MCP PROXY SERVER.
 
 Once the stories render cleanly, call **display-review** so the user can review
 exactly what changed in one place. This tool does NOT just return a link — it

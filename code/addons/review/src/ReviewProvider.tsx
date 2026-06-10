@@ -32,7 +32,6 @@ import {
 import {
   REVIEW_COLLECTION_QUERY_PARAM,
   buildFlattenedNavEntries,
-  buildReviewStoryHref,
   isReviewSummaryPath,
   isStoryInReview,
   parseCollectionIndex,
@@ -116,8 +115,6 @@ export const ReviewProvider: FC<{ children: ReactNode }> = ({ children }) => {
       setState(null);
       setIsStale(false);
       setBaselineStoryIds(null);
-      sessionStore.remove(LAST_REVIEWED_STORY_SESSION_KEY);
-      setLastReviewedStoryHref(null);
       navigateToReturn(returnSearch);
     },
   });
@@ -231,15 +228,20 @@ export const ReviewProvider: FC<{ children: ReactNode }> = ({ children }) => {
     activeEntry !== null &&
     !newlyAddedStoryIds.has(activeEntry.storyId);
 
-  // Remember the last review story visited so the summary back button can return there.
+  // Remember the last story or docs URL visited so the summary back button can return there.
   useEffect(() => {
-    if (!isOnReviewedStory || !activeEntry) {
+    if (isSummaryVisible) {
       return;
     }
-    const href = buildReviewStoryHref(activeEntry);
-    sessionStore.write(LAST_REVIEWED_STORY_SESSION_KEY, href);
-    setLastReviewedStoryHref(href);
-  }, [activeEntry, isOnReviewedStory]);
+    if (viewMode !== 'story' && viewMode !== 'docs') {
+      return;
+    }
+    const search = location?.search;
+    if (search && !isReviewReturnSearch(search)) {
+      sessionStore.write(LAST_REVIEWED_STORY_SESSION_KEY, search);
+      setLastReviewedStoryHref(search);
+    }
+  }, [isSummaryVisible, viewMode, location?.search]);
 
   // Remember the last canvas URL outside a review session so dismiss can return there.
   useEffect(() => {

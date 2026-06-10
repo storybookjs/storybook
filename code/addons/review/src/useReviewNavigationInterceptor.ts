@@ -6,6 +6,8 @@ import { useStorybookApi } from 'storybook/manager-api';
 import { REVIEW_CHANGES_URL } from './constants.ts';
 import {
   REVIEW_COLLECTION_QUERY_PARAM,
+  REVIEW_SUMMARY_BACK_ATTR,
+  STORYBOOK_ROOT_HREF,
   buildReviewChangesSummaryHref,
   buildReviewStoryNavigationTarget,
   parseReviewStoryHref,
@@ -40,7 +42,23 @@ export const useReviewNavigationInterceptor = () => {
       const { target } = event;
       const anchor = target instanceof Element ? target.closest('a') : null;
       const href = anchor?.getAttribute('href');
-      if (!href || (!isReviewStoryHref(href) && !isReviewSummaryHref(href))) {
+      if (!href) {
+        return;
+      }
+
+      if (anchor?.hasAttribute(REVIEW_SUMMARY_BACK_ATTR)) {
+        event.preventDefault();
+        reviewStore.suppressSummaryOverlay();
+        api.setQueryParams({ [REVIEW_COLLECTION_QUERY_PARAM]: null });
+        if (href === STORYBOOK_ROOT_HREF || href === '/?') {
+          navigate(STORYBOOK_ROOT_HREF);
+          return;
+        }
+        navigate(href.startsWith('?') ? href : `?${href}`, { plain: true });
+        return;
+      }
+
+      if (!isReviewStoryHref(href) && !isReviewSummaryHref(href)) {
         return;
       }
       event.preventDefault();

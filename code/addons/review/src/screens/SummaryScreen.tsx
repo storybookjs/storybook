@@ -25,7 +25,11 @@ import { CollectionGrid, type StoryInfo } from '../components/CollectionGrid.tsx
 import { CopyButton } from '../components/CopyButton.tsx';
 import { ReviewHeader } from '../components/ReviewHeader.tsx';
 import { StaleBanner } from '../components/StaleBanner.tsx';
-import { buildReviewStoryHref } from '../review-navigation.ts';
+import {
+  REVIEW_SUMMARY_BACK_ATTR,
+  buildReviewStoryHref,
+  buildSummaryBackHref,
+} from '../review-navigation.ts';
 import type { ReviewState } from '../review-state.ts';
 
 // `100dvh` fills the manager's page cell and also works in the addon's own
@@ -226,7 +230,7 @@ export interface SummaryScreenProps {
   previewsPaused?: boolean;
   /** Clears the active review (if any) and returns to the last viewed story. */
   onDismiss: () => void;
-  /** When set, the header shows a back button to this review story href. */
+  /** Last visited story/docs manager search, or root when none is recorded yet. */
   lastReviewedStoryHref?: string | null;
 }
 
@@ -344,19 +348,20 @@ export const SummaryScreen: FC<SummaryScreenProps> = ({
       {isStale ? <StaleBanner /> : null}
       <ReviewHeader
         leading={
-          lastReviewedStoryHref ? (
-            <Button
-              variant="ghost"
-              size="small"
-              padding="small"
-              ariaLabel="Back to last story"
-              asChild
+          <Button
+            variant="ghost"
+            size="small"
+            padding="small"
+            ariaLabel="Back to last story"
+            asChild
+          >
+            <a
+              href={buildSummaryBackHref(lastReviewedStoryHref)}
+              {...{ [REVIEW_SUMMARY_BACK_ATTR]: '' }}
             >
-              <a href={lastReviewedStoryHref}>
-                <ChevronSmallLeftIcon />
-              </a>
-            </Button>
-          ) : null
+              <ChevronSmallLeftIcon />
+            </a>
+          </Button>
         }
         title={state.title}
         subtitle={

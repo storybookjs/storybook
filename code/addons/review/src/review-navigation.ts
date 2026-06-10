@@ -69,6 +69,15 @@ export const REVIEW_COLLECTION_QUERY_PARAM = 'collection';
 
 export const buildReviewChangesSummaryHref = () => `?path=${REVIEW_CHANGES_URL}`;
 
+/** Default back target when no story has been visited yet. */
+export const STORYBOOK_ROOT_HREF = '/';
+
+export const buildSummaryBackHref = (lastReviewedStoryHref: string | null | undefined): string =>
+  lastReviewedStoryHref || STORYBOOK_ROOT_HREF;
+
+/** Marks summary-header back links for SPA navigation in useReviewNavigationInterceptor. */
+export const REVIEW_SUMMARY_BACK_ATTR = 'data-review-summary-back';
+
 export const buildReviewStoryHref = (entry: ReviewNavEntry): string =>
   `?path=/story/${entry.storyId}&${REVIEW_COLLECTION_QUERY_PARAM}=${entry.collectionIndex}`;
 

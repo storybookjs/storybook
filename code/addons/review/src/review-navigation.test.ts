@@ -7,6 +7,7 @@ import {
   buildReviewChangesSummaryHref,
   buildReviewStoryHref,
   buildReviewStoryNavigationTarget,
+  buildSummaryBackHref,
   getAdjacentCollectionFirstStory,
   getReviewDetailNeighbors,
   isReviewSummaryPath,
@@ -200,5 +201,16 @@ describe('getAdjacentCollectionFirstStory', () => {
   it('returns null when no collection has stories', () => {
     expect(getAdjacentCollectionFirstStory([{ storyIds: [] }], 0, 1)).toBeNull();
     expect(getAdjacentCollectionFirstStory([], 0, 1)).toBeNull();
+  });
+});
+
+describe('buildSummaryBackHref', () => {
+  it('returns the last viewed search when recorded', () => {
+    expect(buildSummaryBackHref('?path=/story/foo')).toBe('?path=/story/foo');
+  });
+
+  it('falls back to the Storybook root when nothing is recorded', () => {
+    expect(buildSummaryBackHref(null)).toBe('/');
+    expect(buildSummaryBackHref(undefined)).toBe('/');
   });
 });

@@ -20,7 +20,7 @@ export interface ReviewStoreState {
   getStoryPreviewHref: (storyId: string) => string;
   setCompareMode: (mode: CompareMode) => void;
   dismissReview: () => void;
-  /** Href of the last story viewed in this review session, if any. */
+  /** Href of the last story or docs page viewed (anywhere in Storybook). */
   lastReviewedStoryHref: string | null;
 }
 

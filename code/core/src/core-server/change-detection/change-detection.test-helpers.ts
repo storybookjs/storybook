@@ -2,7 +2,7 @@ import { normalize } from 'pathe';
 import { vi } from 'vitest';
 
 import { getService } from '../../shared/open-service/server.ts';
-import type { moduleGraphServiceDef } from '../../shared/open-service/services/module-graph/definition.ts';
+import type { ModuleGraphService } from '../../shared/open-service/services/module-graph/definition.ts';
 import { ModuleGraphEngine } from '../../shared/open-service/services/module-graph/engine/module-graph-engine.ts';
 import type { ModuleGraphStatus } from '../../shared/open-service/services/module-graph/types.ts';
 import {
@@ -80,7 +80,7 @@ export function installModuleGraphQueryMock(engine: ModuleGraphEngine) {
         }
       ),
     },
-  } as unknown as ReturnType<typeof getService<typeof moduleGraphServiceDef>>);
+  } as unknown as ModuleGraphService);
 
   return {
     applySnapshot: () => {

@@ -5,7 +5,7 @@ import {
 import { OpenServiceDocgenMissingComponentError } from '../../../../server-errors.ts';
 import type { StoryIndex } from '../../../../types/modules/indexer.ts';
 import { getService, registerService } from '../../server.ts';
-import type { moduleGraphServiceDef } from '../module-graph/definition.ts';
+import type { ModuleGraphService } from '../module-graph/definition.ts';
 import { toStoryIndexPath } from '../module-graph/types.ts';
 import { docgenServiceDef } from './definition.ts';
 import type { DocgenPayload, DocgenProvider } from './types.ts';
@@ -96,7 +96,7 @@ export function registerDocgenService(options: RegisterDocgenServiceOptions) {
   // touched by the latest graph change; we react to that list and re-extract docgen for the affected
   // components — even when nobody is actively subscribed to them right now. Without this, an open
   // docgen consumer would keep serving stale output until it happened to re-query.
-  const moduleGraph = getService<typeof moduleGraphServiceDef>('core/module-graph');
+  const moduleGraph = getService<ModuleGraphService>('core/module-graph');
 
   moduleGraph.queries.getLatestStoryChanges.subscribe(undefined, async ({ storyFiles }) => {
     if (storyFiles.length === 0) {

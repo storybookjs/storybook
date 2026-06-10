@@ -85,7 +85,7 @@ export const Link = ({
 export function createFileRoute(path: string) {
   const normalizedPath = normalizeFileRoutePath(path);
   const segments = path.split('/').filter(Boolean);
-  const lastSegment = segments.at(-1);
+  const lastSegment = segments[segments.length - 1];
   const isPurePathlessLayoutRoute = (lastSegment?.startsWith('_') ?? false) && normalizedPath === '/';
 
   return (options: any) => {

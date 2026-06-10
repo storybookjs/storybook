@@ -44,7 +44,7 @@
   },
   "devDependencies": {
     "@types/node": "^22.19.1",
-    "typescript": "^5.9.3",
+    "typescript": "^6.0.3",
     "yaml": "^2.8.1"
   },
   "peerDependencies": {

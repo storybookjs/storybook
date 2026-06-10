@@ -76,7 +76,7 @@
     "pretty-hrtime": "^1.0.3",
     "sirv": "^2.0.4",
     "slash": "^5.0.0",
-    "typescript": "^5.9.3"
+    "typescript": "^6.0.3"
   },
   "peerDependencies": {
     "storybook": "workspace:^"

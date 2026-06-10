@@ -59,7 +59,7 @@
     "playwright-core": "1.58.2",
     "react": "^18.2.0",
     "react-joyride/type-fest": "~2.19",
-    "typescript": "^5.9.3"
+    "typescript": "^6.0.3"
   },
   "devDependencies": {
     "@nx/workspace": "^22.6.1",

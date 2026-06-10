@@ -73,7 +73,9 @@ export const beforeAll = async () => {
             }, 0);
 
             if (jestFakeTimersAreEnabled()) {
-              jest.advanceTimersByTime(0);
+              (
+                globalThis as { jest?: { advanceTimersByTime: (ms: number) => void } }
+              ).jest?.advanceTimersByTime(0);
             }
           });
 
@@ -99,6 +101,7 @@ export const beforeAll = async () => {
 
 /** The function is used to configure jest's fake timers in environments where React's act is enabled */
 function jestFakeTimersAreEnabled() {
+  const { jest } = globalThis as { jest?: { advanceTimersByTime: (ms: number) => void } };
   if (typeof jest !== 'undefined' && jest !== null) {
     return (
       // legacy timers

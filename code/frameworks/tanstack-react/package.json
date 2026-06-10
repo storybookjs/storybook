@@ -85,7 +85,7 @@
     "@tanstack/router-core": "^1.168.9",
     "@tanstack/start-client-core": "^1.167.9",
     "@types/node": "^22.19.1",
-    "typescript": "^5.9.3",
+    "typescript": "^6.0.3",
     "vite": "^7.0.4"
   },
   "peerDependencies": {

@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { logger } from 'storybook/internal/node-logger';
 
-import { ParserRegistry } from './ParserRegistry.ts';
+import { ParserRegistry } from './parser-registry.ts';
 import { builtinImportParsers } from './builtins.ts';
 import type { ImportParser } from './types.ts';
 

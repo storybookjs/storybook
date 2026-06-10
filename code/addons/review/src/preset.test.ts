@@ -1,7 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { Channel } from 'storybook/internal/channels';
-import type { FileChangeEvent } from 'storybook/internal/core-server';
 import type { Options } from 'storybook/internal/types';
 
 import { EVENTS } from './constants.ts';
@@ -9,18 +8,16 @@ import type { ReviewState } from './review-state.ts';
 import { __resetCache, experimental_serverChannel } from './preset.ts';
 
 function createMockSubscribe() {
-  let captured: ((event: FileChangeEvent) => void) | undefined;
-  const subscribeToSourceFileChanges = vi.fn((listener: (event: FileChangeEvent) => void) => {
-    captured = listener;
+  let captured: (() => void) | undefined;
+  const subscribeToModuleGraphChanges = vi.fn((onChange: () => void) => {
+    captured = onChange;
     return () => {
       captured = undefined;
     };
   });
   return {
-    subscribeToSourceFileChanges,
-    fireChange: (
-      event: FileChangeEvent = { kind: 'change', path: '/repo/src/Button.tsx' } as FileChangeEvent
-    ) => captured?.(event),
+    subscribeToModuleGraphChanges,
+    fireChange: () => captured?.(),
   };
 }
 
@@ -125,7 +122,7 @@ describe('addon-review experimental_serverChannel', () => {
     const { channel } = createMockChannel();
 
     await experimental_serverChannel(channel, {} as Options, {
-      subscribeToSourceFileChanges: vi.fn(() => () => {}),
+      subscribeToModuleGraphChanges: vi.fn(() => () => {}),
     });
 
     expect(channel.on).toHaveBeenCalledWith(EVENTS.PUSH_REVIEW, expect.any(Function));
@@ -152,9 +149,9 @@ describe('addon-review experimental_serverChannel', () => {
   describe('staleness', () => {
     const setup = async () => {
       const { channel, emitted } = createMockChannel();
-      const { subscribeToSourceFileChanges, fireChange } = createMockSubscribe();
+      const { subscribeToModuleGraphChanges, fireChange } = createMockSubscribe();
       await experimental_serverChannel(channel, {} as Options, {
-        subscribeToSourceFileChanges,
+        subscribeToModuleGraphChanges,
       });
       return { channel, emitted, fireChange };
     };

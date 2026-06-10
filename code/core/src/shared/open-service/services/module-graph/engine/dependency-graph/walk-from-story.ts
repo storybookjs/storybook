@@ -1,8 +1,8 @@
-import type { ParserRegistry } from '../parser-registry/index.ts';
-import type { ParseResolveCache } from './ParseResolveCache.ts';
-import type { ReverseIndexImpl } from './ReverseIndex.ts';
+import type { ParserRegistry } from '../parser-registry/parser-registry.ts';
+import type { ParseResolveCache } from './parse-resolve-cache.ts';
+import type { ReverseIndexImpl } from './reverse-index.ts';
 
-const MAX_BFS_DEPTH = 50;
+const MAX_BREADTH_FIRST_SEARCH_DEPTH = 50;
 
 export interface WalkFromStoryArgs {
   storyRoot: string;
@@ -14,8 +14,8 @@ export interface WalkFromStoryArgs {
 }
 
 /**
- * BFS forward-walk from `storyRoot`, parsing + resolving each file once via the shared
- * cache and recording (dep, story, depth) tuples on `reverseIndex`. Stops at non-walkable
+ * Breadth-first-search forward walk from `storyRoot`, parsing + resolving each file once via the
+ * shared cache and recording (dep, story, depth) tuples on `reverseIndex`. Stops at non-walkable
  * files (no parser registered).
  */
 export async function walkFromStory({
@@ -44,7 +44,7 @@ export async function walkFromStory({
 
     const nextDepth = depth + 1;
     for (const normalised of resolvedDeps) {
-      if (nextDepth > MAX_BFS_DEPTH) {
+      if (nextDepth > MAX_BREADTH_FIRST_SEARCH_DEPTH) {
         // Skip — prevents unbounded walks in pathological dep trees
         continue;
       }

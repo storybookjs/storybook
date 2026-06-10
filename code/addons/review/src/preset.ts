@@ -7,37 +7,49 @@ import type { Channel } from 'storybook/internal/channels';
 import { logger } from 'storybook/internal/node-logger';
 import type { Middleware, Options, ServerApp } from 'storybook/internal/types';
 
-import type { FileChangeEvent } from 'storybook/internal/core-server';
+import type { moduleGraphServiceDef } from 'storybook/internal/core-server';
 
 import { BASELINE_PROXY_PATH, EVENTS } from './constants.ts';
 import type { ReviewState } from './review-state.ts';
 
 /**
- * Window after a review's `createdAt` during which source changes are ignored.
+ * Window after a review's `createdAt` during which graph changes are ignored.
  * Absorbs the agent's own edits (which precede the display-review call) whose
  * file-system events may land a few milliseconds after the review is cached,
  * preventing a freshly-pushed review from being marked stale immediately.
  */
 const STALE_GRACE_MS = 1000;
 
-type SubscribeToSourceFileChanges = (listener: (event: FileChangeEvent) => void) => () => void;
+type SubscribeToModuleGraphChanges = (onChange: () => void) => () => void;
 
 /**
- * Default subscription to core's change-detection file-watch. Imported lazily
- * so merely loading this preset (e.g. in unit tests) does not pull in
- * core-server; failures degrade to "staleness never triggers".
+ * Default subscription to the `core/module-graph` open service. The review goes
+ * stale when any file in the story module graph changes (the service's revision
+ * only advances for in-graph changes, so unrelated file edits never trip it).
+ * The service is imported lazily so merely loading this preset (e.g. in unit
+ * tests) does not pull in core-server; if the service is unavailable (e.g. a
+ * builder without module-graph support), staleness simply never triggers.
  */
-const defaultSubscribeToSourceFileChanges: SubscribeToSourceFileChanges = (listener) => {
+const defaultSubscribeToModuleGraphChanges: SubscribeToModuleGraphChanges = (onChange) => {
   let unsubscribe: () => void = () => {};
   let cancelled = false;
   void import('storybook/internal/core-server')
-    .then((coreServer) => {
-      if (!cancelled) {
-        unsubscribe = coreServer.experimental_subscribeToSourceFileChanges(listener);
+    .then(({ getService }) => {
+      if (cancelled) {
+        return;
       }
+      const service = getService<typeof moduleGraphServiceDef>('core/module-graph');
+      // Omit the input to watch the entire graph. The initial emission carries
+      // revision 0 (or the current revision at subscribe time); only subsequent
+      // advances represent a change after the review was cached.
+      unsubscribe = service.queries.getGraphRevision.subscribe(undefined, (revision) => {
+        if (revision > 0) {
+          onChange();
+        }
+      });
     })
     .catch(() => {
-      // Change detection unavailable (e.g. builder without support); no staleness.
+      // Module graph unavailable (e.g. builder without support); no staleness.
     });
   return () => {
     cancelled = true;
@@ -68,8 +80,8 @@ function prepareReview(payload: ReviewState): ReviewState {
 }
 
 export interface ServerChannelOptions {
-  /** Override the source-file-change subscription. Used by tests. */
-  subscribeToSourceFileChanges?: SubscribeToSourceFileChanges;
+  /** Override the module-graph-change subscription. Used by tests. */
+  subscribeToModuleGraphChanges?: SubscribeToModuleGraphChanges;
 }
 
 /**
@@ -86,8 +98,8 @@ export const experimental_serverChannel = async (
   _options: Options,
   serverOptions: ServerChannelOptions = {}
 ) => {
-  const subscribeToSourceFileChanges =
-    serverOptions.subscribeToSourceFileChanges ?? defaultSubscribeToSourceFileChanges;
+  const subscribeToModuleGraphChanges =
+    serverOptions.subscribeToModuleGraphChanges ?? defaultSubscribeToModuleGraphChanges;
 
   channel.on(EVENTS.PUSH_REVIEW, (payload: ReviewState) => {
     // A fresh review starts non-stale; its new createdAt re-anchors staleness.
@@ -106,10 +118,10 @@ export const experimental_serverChannel = async (
     channel.emit(EVENTS.REVIEW_DISMISSED, returnSearch ?? null);
   });
 
-  // Mark the cached review stale on the first source change that lands after
-  // its createdAt (past the grace window). Staleness rides on the cached state
-  // so REQUEST_REVIEW replays it to tabs that open after the change.
-  subscribeToSourceFileChanges(() => {
+  // Mark the cached review stale on the first module-graph change that lands
+  // after its createdAt (past the grace window). Staleness rides on the cached
+  // state so REQUEST_REVIEW replays it to tabs that open after the change.
+  subscribeToModuleGraphChanges(() => {
     if (!cached || cached.stale || cached.createdAt === undefined) {
       return;
     }

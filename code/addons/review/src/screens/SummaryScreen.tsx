@@ -10,6 +10,7 @@ import {
   CollapseIcon,
   ExpandAltIcon,
   SearchIcon,
+  SweepIcon,
   WandIcon,
 } from '@storybook/icons';
 
@@ -214,8 +215,8 @@ export interface SummaryScreenProps {
   isStale?: boolean;
   /** Keep summary preview iframes mounted while the overlay is hidden. */
   previewsPaused?: boolean;
-  /** Clears the active review and returns to the last viewed story. */
-  onDismiss?: () => void;
+  /** Clears the active review (if any) and returns to the last viewed story. */
+  onDismiss: () => void;
 }
 
 export const SummaryScreen: FC<SummaryScreenProps> = ({
@@ -266,9 +267,9 @@ export const SummaryScreen: FC<SummaryScreenProps> = ({
           >
             <WandIcon /> Copy prompt
           </CopyButton>
-          <Button padding="small" onClick={onDismiss} disabled={!onDismiss}>
+          <Button padding="small" onClick={onDismiss} ariaLabel="Close review screen">
             <CloseAltIcon />
-            Dismiss
+            Close
           </Button>
         </div>
       </Empty>
@@ -325,9 +326,9 @@ export const SummaryScreen: FC<SummaryScreenProps> = ({
           </span>
         }
         actions={
-          <Button padding="small" onClick={onDismiss}>
-            <CheckIcon />
-            Done
+          <Button padding="small" onClick={onDismiss} ariaLabel="Dismiss and close review">
+            <SweepIcon />
+            Dismiss
           </Button>
         }
         secondRow={

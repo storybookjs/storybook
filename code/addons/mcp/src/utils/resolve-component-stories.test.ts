@@ -13,13 +13,17 @@ import type { ModuleGraphStatus, ModuleGraphStoryHit } from './module-graph.ts';
 // drives `existsSync` (barrel sibling probing) and `missingPaths` drives realpath ENOENT
 // (the "path not found" branch). Both default to empty so paths are their own canonical form
 // and have no barrel siblings unless a test opts in.
-const { existingPaths, missingPaths } = vi.hoisted(() => ({
+const { existingPaths, missingPaths, ioErrorPaths } = vi.hoisted(() => ({
 	existingPaths: new Set<string>(),
 	missingPaths: new Set<string>(),
+	ioErrorPaths: new Set<string>(),
 }));
 
 vi.mock('node:fs', () => {
 	const realpathSync: any = (p: string) => {
+		if (ioErrorPaths.has(p)) {
+			throw Object.assign(new Error(`EACCES: ${p}`), { code: 'EACCES' });
+		}
 		if (missingPaths.has(p)) {
 			throw Object.assign(new Error(`ENOENT: ${p}`), { code: 'ENOENT' });
 		}
@@ -86,6 +90,7 @@ beforeEach(() => {
 	vi.resetModules();
 	existingPaths.clear();
 	missingPaths.clear();
+	ioErrorPaths.clear();
 });
 
 afterEach(() => {
@@ -226,6 +231,18 @@ describe('resolveComponentStories', () => {
 		expect(res.available).toBe(true);
 		expect(res.results?.[0]?.pathNotFound).toBe(true);
 		expect(res.results?.[0]?.matches).toEqual([]);
+	});
+
+	it('rethrows non-ENOENT realpath failures instead of misreporting them as pathNotFound', async () => {
+		// A permission/IO error is a real failure, not a missing path — surfacing it as
+		// `pathNotFound` would hide the underlying cause, so the resolver must let it propagate.
+		const locked = path.join(FAKE_WORKING_DIR, 'src/components/Locked/Locked.tsx');
+		ioErrorPaths.add(locked);
+		setupService({ storiesByFile: {} });
+		const { resolveComponentStories } = await import('./resolve-component-stories.ts');
+		await expect(resolveComponentStories({ componentPaths: [locked] }, depsFor())).rejects.toThrow(
+			/EACCES/,
+		);
 	});
 
 	it('returns available:false when the module graph service is not registered', async () => {

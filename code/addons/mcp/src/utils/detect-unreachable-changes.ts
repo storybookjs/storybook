@@ -6,6 +6,12 @@ import { slash } from './slash.ts';
 const SOURCE_EXT_RE = /\.(?:tsx?|jsx?|mjs|cjs)$/i;
 
 /**
+ * Module-graph query batch size. Bounds the per-call file list so a large working tree doesn't
+ * issue one oversized reverse-index query; we early-exit between chunks once `maxFiles` is reached.
+ */
+const CHUNK_SIZE = 50;
+
+/**
  * git status --porcelain produces lines like `XY filename`, where XY are two
  * status characters (M, A, ?, etc). The pattern is rigid; we slice the prefix.
  * Rename lines are formatted as `R  old -> new` — keep only the new path.
@@ -57,18 +63,27 @@ export async function detectUnreachableChanges(maxFiles = 10): Promise<string[]>
 	const relFiles = parsePorcelain(porcelain).filter((f) => SOURCE_EXT_RE.test(f));
 	if (relFiles.length === 0) return [];
 
-	// The module graph accepts absolute paths but normalizes them with forward slashes; `path.resolve`
-	// emits backslashes on Windows, which would miss every key and wrongly flag reachable files.
-	const absFiles = relFiles.map((rel) => slash(path.resolve(workingDir, rel)));
-	// One batched lookup; output is positional (result `i` corresponds to `absFiles[i]`).
-	const hits = await moduleGraph.queries.getStoriesForFiles.loaded({ files: absFiles });
-
+	// Query in chunks and stop once we've collected `maxFiles` unreachable files, so a huge working
+	// tree doesn't build an oversized module-graph query for results we'd discard anyway.
 	const unreachable: string[] = [];
-	relFiles.forEach((rel, i) => {
-		if (unreachable.length >= maxFiles) return;
-		if ((hits[i]?.length ?? 0) === 0) unreachable.push(rel);
-	});
-	return unreachable.slice(0, maxFiles);
+	for (
+		let start = 0;
+		start < relFiles.length && unreachable.length < maxFiles;
+		start += CHUNK_SIZE
+	) {
+		const chunk = relFiles.slice(start, start + CHUNK_SIZE);
+		// The module graph accepts absolute paths but normalizes them with forward slashes;
+		// `path.resolve` emits backslashes on Windows, which would miss every key and wrongly flag
+		// reachable files.
+		const absChunk = chunk.map((rel) => slash(path.resolve(workingDir, rel)));
+		// One batched lookup per chunk; output is positional (result `i` corresponds to `absChunk[i]`).
+		const hits = await moduleGraph.queries.getStoriesForFiles.loaded({ files: absChunk });
+		for (const [i, rel] of chunk.entries()) {
+			if (unreachable.length >= maxFiles) break;
+			if ((hits[i]?.length ?? 0) === 0) unreachable.push(rel);
+		}
+	}
+	return unreachable;
 }
 
 /**

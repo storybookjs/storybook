@@ -51,8 +51,11 @@ function expandBarrelTargets(absoluteComponentPath: string): string[] {
 function canonicalise(absolutePath: string): string | undefined {
 	try {
 		return fs.realpathSync.native(absolutePath);
-	} catch {
-		return undefined;
+	} catch (err) {
+		// Only a missing path is "not found"; permission/IO errors are real failures and must not be
+		// silently misreported as `pathNotFound`, so rethrow anything that isn't ENOENT.
+		if ((err as NodeJS.ErrnoException).code === 'ENOENT') return undefined;
+		throw err;
 	}
 }
 
@@ -152,7 +155,7 @@ export async function resolveComponentStories(
 		return {
 			available: false,
 			reason:
-				"Storybook's story module graph is unavailable. This Storybook version may not ship the API, or the dev server is not running.",
+				"Storybook's story module graph is unavailable. This Storybook version may not ship the open-service API, the module-graph service isn't registered (e.g. a builder without change detection), or the dev server is not running.",
 		};
 	}
 

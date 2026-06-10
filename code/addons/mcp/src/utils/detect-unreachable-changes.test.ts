@@ -211,4 +211,22 @@ describe('detectUnreachableChanges', () => {
 		const { detectUnreachableChanges } = await import('./detect-unreachable-changes.ts');
 		expect(await detectUnreachableChanges(5)).toHaveLength(5);
 	});
+
+	it('queries in chunks and stops early once maxFiles unreachable files are found', async () => {
+		// 200 modified files, all unreachable. With a chunk size of 50 and maxFiles=5, the very
+		// first chunk already satisfies the cap, so we must not query the remaining ~150 files.
+		const queried: string[] = [];
+		mockService({
+			getStoriesForFiles: (files) => {
+				queried.push(...files);
+				return files.map(() => []);
+			},
+		});
+		const many = Array.from({ length: 200 }, (_, i) => ` M src/f${i}.ts\n`).join('');
+		mockGit(many);
+		const { detectUnreachableChanges } = await import('./detect-unreachable-changes.ts');
+		expect(await detectUnreachableChanges(5)).toHaveLength(5);
+		// Only the first chunk should have been queried, not the whole working tree.
+		expect(queried.length).toBeLessThanOrEqual(50);
+	});
 });

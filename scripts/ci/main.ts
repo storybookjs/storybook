@@ -7,21 +7,17 @@ import yml from 'yaml';
 import {
   benchmarkPackages,
   build_linux,
-  build_linux_docs_dummy,
   build_windows,
   check,
   commonJobsNoOpJob,
   knip,
   lint,
-  lint_docs_dummy,
   fmt,
   internalStorybookE2e,
   storybookChromatic,
   testUnit_windows,
   testsStories_linux,
-  testsStories_linux_docs_dummy,
   testsUnit_linux,
-  testsUnit_linux_docs_dummy,
 } from './common-jobs.ts';
 import { getInitEmpty, initEmptyNoOpJob } from './init-empty.ts';
 import { getSandboxes, sandboxesNoOpJob } from './sandboxes.ts';
@@ -49,13 +45,7 @@ const dirname = import.meta.dirname;
 function generateConfig(workflow: Workflow) {
   const jobs: JobOrNoOpJob[] = [];
   if (isWorkflowOrAbove(workflow, 'docs')) {
-    jobs.push(
-      fmt,
-      build_linux_docs_dummy,
-      lint_docs_dummy,
-      testsUnit_linux_docs_dummy,
-      testsStories_linux_docs_dummy
-    );
+    jobs.push(fmt);
   } else {
     const sandboxes = getSandboxes(workflow);
     const testStorybooks = getTestStorybooks(workflow);

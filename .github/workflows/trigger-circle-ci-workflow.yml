@@ -160,3 +160,47 @@ jobs:
             -H "Circle-Token: $CIRCLE_CI_TOKEN" \
             -d "$PAYLOAD" \
             "https://circleci.com/api/v2/project/gh/storybookjs/storybook/pipeline"
+
+  satisfy-docs-required-checks:
+    runs-on: ubuntu-latest
+    needs: [get-parameters]
+    # Only run for docs-only PRs (ci:docs label). All other workflows run the full CircleCI suite,
+    # which reports these checks itself. ci/circleci: format-check is excluded because it is
+    # covered by the real fmt job in the CircleCI docs workflow. Danger JS is excluded because
+    # it always runs for all PRs via its own workflow.
+    if: github.repository_owner == 'storybookjs' && needs.get-parameters.outputs.workflow == 'docs'
+    permissions:
+      statuses: write
+    steps:
+      - name: Report required checks as successful for docs-only PR
+        uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b # v7.1.0
+        with:
+          script: |
+            const sha = context.payload.pull_request?.head?.sha ?? context.sha;
+            const checks = [
+              'ci/circleci: build--linux',
+              'ci/circleci: eslint',
+              'ci/circleci: tests--linux',
+              'ci/circleci: tests-stories--linux',
+              'ci/circleci: typescript-validation',
+              'ci/circleci: react-latest--vite---typescript---e2e',
+              'ci/circleci: react-latest--vite---typescript---build',
+              'ci/circleci: react-latest--vite---typescript---create',
+              'ci/circleci: react-latest--vite---typescript---dev',
+              'ci/circleci: react-latest--vite---typescript---vitest',
+              'ci/circleci: internal-storybook-e2e',
+              'UI Tests: storybook-ui',
+              'UI Review: storybook-ui',
+              'Storybook Publish: react-vite/default-ts',
+              'Storybook Publish: storybook-ui',
+            ];
+            for (const check of checks) {
+              await github.rest.repos.createCommitStatus({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                sha,
+                state: 'success',
+                description: 'Not required for docs-only PR (ci:docs label)',
+                context: check,
+              });
+            }

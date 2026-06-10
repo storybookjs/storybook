@@ -6,8 +6,8 @@ import { getAddonVitestConstants } from '../tools/run-story-tests.ts';
 import { isAddonA11yEnabled } from './is-addon-a11y-enabled.ts';
 
 export interface ToolAvailability {
-	/** Storybook ships the `core/module-graph` open service. Gates `get-stories-by-component`. */
-	dependencyGraphSupported: boolean;
+	/** The `core/module-graph` open service is registered/resolvable. Gates `get-stories-by-component`. */
+	moduleGraphSupported: boolean;
 	/** The `changeDetection` feature flag is enabled. Gates `get-changed-stories`. */
 	changeDetectionEnabled: boolean;
 	/** `changeDetection` flag + `@storybook/addon-review` are both present. Gates `display-review`. */
@@ -51,7 +51,7 @@ export async function getToolAvailability(
 		((await options.presets.apply('features', {})) as { changeDetection?: boolean } | undefined);
 
 	const [
-		dependencyGraphSupported,
+		moduleGraphSupported,
 		reviewStatus,
 		manifestStatus,
 		addonVitestConstants,
@@ -65,7 +65,7 @@ export async function getToolAvailability(
 	]);
 
 	return {
-		dependencyGraphSupported,
+		moduleGraphSupported,
 		changeDetectionEnabled: resolvedFeatures?.changeDetection ?? false,
 		reviewEnabled: reviewStatus.available,
 		docsEnabled: manifestStatus.available,

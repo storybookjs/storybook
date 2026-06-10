@@ -111,7 +111,7 @@ export const experimental_devServer: PresetPropertyFn<
 	// Same gates the MCP server uses to register these tools, so the page can't
 	// claim a tool is available when it isn't (and vice versa).
 	const {
-		dependencyGraphSupported,
+		moduleGraphSupported,
 		changeDetectionEnabled,
 		reviewEnabled,
 		docsEnabled,
@@ -178,8 +178,8 @@ export const experimental_devServer: PresetPropertyFn<
 		const devNoticeLines = !isDevEnabled
 			? [`The <code>dev</code> toolset is disabled via addon options.`]
 			: [
-					!dependencyGraphSupported &&
-						`<code>get-stories-by-component</code> requires a dev server with a builder that supports the dependency graph (e.g. Vite).`,
+					!moduleGraphSupported &&
+						`<code>get-stories-by-component</code> requires a dev server with a builder that supports the module graph (e.g. Vite).`,
 					!changeDetectionEnabled &&
 						`<code>get-changed-stories</code> requires enabling the <code>changeDetection</code> feature flag.`,
 					!reviewEnabled &&
@@ -195,7 +195,7 @@ export const experimental_devServer: PresetPropertyFn<
 			.replaceAll('{{DEV_STATUS}}', isDevEnabled ? 'enabled' : 'disabled')
 			.replaceAll(
 				'{{STORIES_BY_COMPONENT_STATUS}}',
-				statusWord(isDevEnabled && dependencyGraphSupported),
+				statusWord(isDevEnabled && moduleGraphSupported),
 			)
 			.replaceAll('{{CHANGE_DETECTION_STATUS}}', statusWord(isDevEnabled && changeDetectionEnabled))
 			.replaceAll('{{REVIEW_STATUS}}', statusWord(isDevEnabled && reviewEnabled))

@@ -62,9 +62,14 @@ async function probe(): Promise<GetServiceFn | null> {
 	return probed;
 }
 
-/** True iff the loaded Storybook ships the open-service runtime (`getService`). */
+/**
+ * True iff the `core/module-graph` service is actually resolvable — i.e. Storybook ships the
+ * open-service runtime AND the service is registered in this process. Reflects registration rather
+ * than mere runtime presence so tool gating/badging can't drift from {@link getModuleGraphService}
+ * (a builder may ship the runtime but not register the service, e.g. without change detection).
+ */
 export async function isModuleGraphSupported(): Promise<boolean> {
-	return (await probe()) !== null;
+	return (await getModuleGraphService()) !== undefined;
 }
 
 /**

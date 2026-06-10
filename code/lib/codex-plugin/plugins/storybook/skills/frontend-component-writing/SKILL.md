@@ -28,8 +28,7 @@ description: >-
   stories so they reflect the change.
 - You MUST NOT write or edit any `*.stories.*` file directly from here. All story
   work goes through the **`stories`** skill, which owns the strict, gated
-  Storybook workflow (loading the MCP rules, guaranteeing a running preview, and
-  producing a verifiable preview link).
+  Storybook workflow.
 - You MUST NOT report a component change as complete until the corresponding
   story work has been handed off to the `stories` skill and finished.
 - FOLLOW THE WORKFLOW SEQUENTIALLY
@@ -37,8 +36,8 @@ description: >-
 
 ## Workflow
 
-1. Determine whether the project has Storybook. If it does NOT, go to "When
-   Storybook is not installed" and stop here unless the user opts in.
+1. Determine whether the project has Storybook.
+   - If not installed go to "When Storybook is not installed" and stop here unless the user opts in.
    - If < 10.5 is installed, consider it too old. Run the upgrade skill to get it to 10.5+ before proceeding.
    - If canary version (0.0.0-canary) of Storybook is installed, consider it compatible.
 2. Invoke the **`stories`** skill to create, update, or remove the stories for
@@ -80,6 +79,10 @@ Before asking the user anything, check whether they have already declined:
 4. **If the user opts in**, set Storybook up via the setup skills
    (`storybook-init` / `storybook-setup`), then resume the Workflow above from
    step 3. If an opt-out file existed from a previous "no", delete it.
+
+5. Once done, the user should have Storybook installed and configured, the component change
+   made, and the `stories` skill invoked to create/update/delete the relevant
+   stories with a verified preview link.
 
 **Gate:** Do NOT install Storybook, scaffold `.storybook/`, add Storybook
 dependencies, or invoke the setup skills unless the user has explicitly opted in

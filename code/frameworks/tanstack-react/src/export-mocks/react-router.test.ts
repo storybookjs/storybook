@@ -44,6 +44,14 @@ describe('createFileRoute', () => {
     expect(Route.options.fullPath).toBe('/page');
   });
 
+  it('keeps pure pathless `_layout` routes id-only', () => {
+    const Route = build('/_layout');
+
+    expect(Route.options.id).toBe('/_layout');
+    expect(Route.options.path).toBeUndefined();
+    expect(Route.options.fullPath).toBeUndefined();
+  });
+
   it('normalizes a mix of `_layout` and `(group)` segments', () => {
     const Route = build('/_layout/(group)/page');
 

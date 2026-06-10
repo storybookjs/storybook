@@ -20,8 +20,6 @@ type DocgenServiceState = {
   components: Record<string, DocgenPayload>;
 };
 
-export type DocgenService = ServiceInstanceOf<typeof docgenServiceDef>;
-
 const docgenErrorSchema = v.object({
   name: v.string(),
   message: v.string(),

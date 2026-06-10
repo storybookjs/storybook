@@ -39,12 +39,6 @@ describe('getInterceptMarkdown', () => {
     expect(markdown).toContain('omit `--port`');
   });
 
-  it('storybook-not-installed points at the init skill and the addon install', () => {
-    const markdown = getInterceptMarkdown('storybook-not-installed');
-    expect(markdown).toContain('storybook-init');
-    expect(markdown).toContain('npx storybook add @storybook/addon-mcp');
-  });
-
   it('addon-missing instructs installing the MCP addon', () => {
     const markdown = getInterceptMarkdown('addon-missing');
     expect(markdown).toContain('`@storybook/addon-mcp` addon is missing');

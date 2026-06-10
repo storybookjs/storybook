@@ -18,16 +18,6 @@ const buildPortMismatch = (port: number | undefined, records: StorybookInstanceR
 Running Storybooks at this cwd:
 ${records.map((r) => `- port \`${r.port}\` (${r.url}, status: \`${r.mcp.status}\`)`).join('\n')}`;
 
-const STORYBOOK_NOT_INSTALLED = `No Storybook is running at this cwd, and Storybook does not appear to be installed here (\`storybook\` could not be resolved from this project).
-
-Ask the user whether they want to add Storybook. If they agree, invoke the \`storybook-init\` skill to set it up, then install the addon that provides these commands:
-\`\`\`
-npx storybook add @storybook/addon-mcp
-\`\`\`
-Start Storybook, then retry the command.
-
-If you believe Storybook is in fact installed (e.g. a monorepo where \`storybook\` resolves from a different location), start \`storybook dev\` from this exact cwd and retry — a running instance is always used regardless of this check.`;
-
 const ADDON_MISSING = `Storybook is running but does not provide these commands. The \`@storybook/addon-mcp\` addon is missing.
 
 Install it:
@@ -58,8 +48,6 @@ export function getInterceptMarkdown(
         : NO_INSTANCE_EMPTY;
     case 'port-mismatch':
       return buildPortMismatch(port, records ?? []);
-    case 'storybook-not-installed':
-      return STORYBOOK_NOT_INSTALLED;
     case 'addon-missing':
       return ADDON_MISSING;
     case 'mcp-starting':

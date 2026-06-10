@@ -1,7 +1,6 @@
 import { resolve } from 'node:path';
 
 import { McpJsonRpcError, callMcpTool, listMcpTools } from './client.ts';
-import { isStorybookInstalled } from './installed-check.ts';
 import { getInterceptMarkdown } from './intercepts.ts';
 import { readRegistry } from './registry.ts';
 import { resolveInstance } from './resolve-instance.ts';
@@ -149,7 +148,6 @@ function helpUnavailableNote(
 ): string {
   switch (error.reason) {
     case 'no-instance':
-    case 'storybook-not-installed':
       return 'no running Storybook detected at this cwd; start `storybook dev` to list its commands';
     case 'port-mismatch':
       return `no instance on port \`${port}\` at this cwd — running ports: ${error.records
@@ -223,10 +221,9 @@ type InstanceResolution =
     };
 
 /**
- * Resolve the running Storybook instance for `cwdInput` via the registry. No version check: the
- * CLI is invoked as `npx storybook`, so it always runs the project's own Storybook version. Only
- * when nothing is running anywhere do we probe whether Storybook is installed at all, to pick
- * between the "start storybook dev" and "set up Storybook first" repairs.
+ * Resolve the running Storybook instance for `cwdInput` via the registry. No version or
+ * installed checks: the CLI is invoked as `npx storybook`, so the fact that it is executing
+ * already proves the project has a compatible Storybook.
  */
 async function resolveReadyInstance(
   cwdInput: string | undefined,
@@ -239,18 +236,6 @@ async function resolveReadyInstance(
   const resolution = resolveInstance(records, cwd, port);
 
   if (resolution.kind === 'intercept') {
-    if (
-      resolution.reason === 'no-instance' &&
-      (resolution.records?.length ?? 0) === 0 &&
-      !isStorybookInstalled(cwd)
-    ) {
-      return {
-        kind: 'error',
-        output: getInterceptMarkdown('storybook-not-installed'),
-        reason: 'storybook-not-installed',
-        records: [],
-      };
-    }
     return {
       kind: 'error',
       output: getInterceptMarkdown(resolution.reason, { records: resolution.records, port }),

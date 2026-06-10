@@ -1,14 +1,12 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { McpJsonRpcError, callMcpTool, listMcpTools } from './client.ts';
-import { isStorybookInstalled } from './installed-check.ts';
 import { readRegistry } from './registry.ts';
 import { buildStorybookCommandsHelp, runAiTool, runAiToolHelp } from './run-tool.ts';
 import type { StorybookInstanceRecord } from './types.ts';
 
 vi.mock('./registry.ts', { spy: true });
 vi.mock('./client.ts', { spy: true });
-vi.mock('./installed-check.ts', { spy: true });
 
 const record: StorybookInstanceRecord = {
   schemaVersion: 1,
@@ -22,7 +20,6 @@ const record: StorybookInstanceRecord = {
 
 beforeEach(() => {
   vi.mocked(readRegistry).mockReset().mockResolvedValue([record]);
-  vi.mocked(isStorybookInstalled).mockReset().mockReturnValue(true);
   vi.mocked(callMcpTool)
     .mockReset()
     .mockResolvedValue({ content: [{ type: 'text', text: 'upstream result' }] });
@@ -76,21 +73,6 @@ describe('runAiTool', () => {
     expect(result.exitCode).toBe(1);
     expect(result.output).toContain('No Storybook is running at this cwd');
     expect(result.output).toContain('/projects/foo');
-  });
-
-  it('prints the storybook-not-installed repair markdown when nothing runs and storybook is unresolvable', async () => {
-    vi.mocked(isStorybookInstalled).mockReturnValue(false);
-    vi.mocked(readRegistry).mockResolvedValue([]);
-    const result = await runAiTool('get-documentation', [], { cwd: '/projects/foo' });
-    expect(result.exitCode).toBe(1);
-    expect(result.output).toContain('storybook-init');
-  });
-
-  it('still forwards to a running instance even when storybook is not resolvable from the cwd (monorepo false negative)', async () => {
-    vi.mocked(isStorybookInstalled).mockReturnValue(false);
-    const result = await runAiTool('list-all-documentation', [], { cwd: '/projects/foo' });
-    expect(result).toEqual({ exitCode: 0, output: 'upstream result' });
-    expect(isStorybookInstalled).not.toHaveBeenCalled();
   });
 
   it('routes to the instance on the requested --port when several share the cwd', async () => {

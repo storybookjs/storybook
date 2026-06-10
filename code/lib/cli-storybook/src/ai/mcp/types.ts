@@ -39,7 +39,6 @@ export type StorybookInstanceRecord = v.InferOutput<typeof StorybookInstanceReco
 export type InterceptReason =
   | 'no-instance'
   | 'port-mismatch'
-  | 'storybook-not-installed'
   | 'addon-missing'
   | 'mcp-starting'
   | 'mcp-error';

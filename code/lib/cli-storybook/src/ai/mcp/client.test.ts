@@ -93,7 +93,7 @@ describe('callMcpTool', () => {
       id: 1,
       result: { content: [{ type: 'text', text: 'line\nwith newline' }] },
     };
-    const dataLines = JSON.stringify(envelope)
+    const dataLines = JSON.stringify(envelope, null, 2)
       .split('\n')
       .map((l) => `data: ${l}`)
       .join('\n');

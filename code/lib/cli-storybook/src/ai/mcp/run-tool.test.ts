@@ -6,22 +6,9 @@ import { buildToolCommandsHelp, runAiTool, runAiToolHelp } from './run-tool.ts';
 import type { StorybookInstanceRecord } from './types.ts';
 import { checkStorybookVersion } from './version-check.ts';
 
-vi.mock('./registry.ts', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('./registry.ts')>()),
-  readRegistry: vi.fn(),
-}));
-
-// Preserve the McpJsonRpcError class identity so `instanceof` checks keep working.
-vi.mock('./client.ts', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('./client.ts')>()),
-  callMcpTool: vi.fn(),
-  listMcpTools: vi.fn(),
-}));
-
-vi.mock('./version-check.ts', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('./version-check.ts')>()),
-  checkStorybookVersion: vi.fn(),
-}));
+vi.mock('./registry.ts', { spy: true });
+vi.mock('./client.ts', { spy: true });
+vi.mock('./version-check.ts', { spy: true });
 
 const record: StorybookInstanceRecord = {
   schemaVersion: 1,

@@ -7,11 +7,7 @@ import { Command } from 'commander';
 import { isAiCliFeatureEnabled, registerAiMcpPassthrough } from './register.ts';
 import { buildToolCommandsHelp, runAiTool, runAiToolHelp } from './run-tool.ts';
 
-vi.mock('./run-tool.ts', () => ({
-  runAiTool: vi.fn(),
-  runAiToolHelp: vi.fn(),
-  buildToolCommandsHelp: vi.fn(),
-}));
+vi.mock('./run-tool.ts', { spy: true });
 
 vi.mock('node:fs/promises', { spy: true });
 

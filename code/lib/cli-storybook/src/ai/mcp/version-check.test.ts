@@ -10,9 +10,7 @@ import {
   classifyStorybookVersion,
 } from './version-check.ts';
 
-vi.mock('node:module', () => ({
-  createRequire: vi.fn(),
-}));
+vi.mock('node:module', { spy: true });
 
 // Spy-only mock: redirect the version reader's readFileSync to memfs.
 vi.mock('node:fs', { spy: true });

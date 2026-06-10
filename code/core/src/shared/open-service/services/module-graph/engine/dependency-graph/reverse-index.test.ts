@@ -1,7 +1,7 @@
 // Covers the construction + mutation surface of ReverseIndexImpl.
 import { describe, expect, it } from 'vitest';
 
-import { ReverseIndexImpl } from './ReverseIndex.ts';
+import { ReverseIndexImpl } from './reverse-index.ts';
 
 describe('ReverseIndexImpl', () => {
   it('returns an empty Map (not undefined) when looking up an unknown dep', () => {

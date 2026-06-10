@@ -134,3 +134,5 @@ export const docgenServiceDef = defineService({
     },
   },
 });
+
+export type DocgenService = ServiceInstanceOf<typeof docgenServiceDef>;

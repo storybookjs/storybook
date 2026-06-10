@@ -109,6 +109,19 @@ export type ServiceRuntime<
   commands: ServiceInstance<TState, TQueries, TCommands>['commands'];
   queries: ServiceInstance<TState, TQueries, TCommands>['queries'];
   runLoadOnce(queryName: string, validatedInput: unknown): Promise<void>;
+  /**
+   * Installs the channel-routed command map produced once the runtime is wired to the channel.
+   *
+   * Load bodies use this map (not the raw local one) so a command implemented only on a peer — e.g. a
+   * server-only `extractDocgen` invoked from the manager's `getDocgen` load — is requested remotely
+   * instead of throwing `OpenServiceUnimplementedOperationError` locally. Command names not in
+   * `implementedCommandNames` are treated as remote and routed through this map even inside the
+   * stale-write-gated reactive load path (remote calls carry no local `setState` to gate).
+   */
+  attachChannelCommands(
+    commands: Record<string, (input: unknown) => Promise<unknown>>,
+    implementedCommandNames: ReadonlySet<string>
+  ): void;
 };
 
 /** Max number of drain iterations before `.loaded()` gives up to avoid infinite oscillation. */
@@ -391,9 +404,16 @@ type QueryRuntimeRefs<TState> = {
   queryDefinitions: Map<string, RuntimeQueryDefinition<TState>>;
   defaultQueries: Record<string, Query<unknown, unknown>>;
   /**
+   * Returns the command map load bodies should call. After the runtime is wired to the channel this
+   * is the channel-routed map, so a load can invoke a peer-implemented (remote) command; before that
+   * (and in channel-free contexts like the static build) it is the raw local map.
+   */
+  getLoadCommands: () => CommandSelf<TState>['commands'];
+  /**
    * Builds a command map whose `setState` writes are dropped once `isCurrent()` returns false.
    * Used by reactive subscription loads so a superseded (stale) re-run cannot overwrite the state
-   * produced by a newer run.
+   * produced by a newer run. Remote commands are routed through the channel map unchanged, since they
+   * carry no local `setState` to gate.
    */
   buildGatedCommands: (isCurrent: () => boolean) => CommandSelf<TState>['commands'];
 };
@@ -570,7 +590,7 @@ async function runLoadBody<TState>(
       return refs.state;
     },
     queries: wrappedQueries,
-    commands: refs.commandSelf.commands as LoadSelf<TState>['commands'],
+    commands: refs.getLoadCommands() as LoadSelf<TState>['commands'],
   };
   const loadCtx: LoadCtx<TState> = { self: loadSelf, getService: refs.registryApi.getService };
 
@@ -657,8 +677,13 @@ function buildLoadWrappedQueries<TState>(
 
   for (const [name, queryDef] of refs.queryDefinitions) {
     const defaultQuery = refs.defaultQueries[name];
-    const wrapped = ((input: unknown) => {
-      const validatedInput = validateQueryInput(refs, name, queryDef, input);
+    const wrapped = ((input?: unknown) => {
+      const validatedInput = validateQueryInput(
+        refs,
+        name,
+        queryDef,
+        arguments.length === 0 ? undefined : input
+      );
       const loadKey = makeLoadKey(refs.serviceId, name, validatedInput);
 
       if (queryDef.load) {
@@ -684,8 +709,15 @@ function buildLoadWrappedQueries<TState>(
       );
     }) as Query<unknown, unknown>;
 
-    wrapped.loaded = (input: unknown) =>
-      runLoaded(refs, name, queryDef, input, ancestorChain) as Promise<unknown>;
+    wrapped.loaded = function loaded(input?: unknown) {
+      return runLoaded(
+        refs,
+        name,
+        queryDef,
+        arguments.length === 0 ? undefined : input,
+        ancestorChain
+      ) as Promise<unknown>;
+    };
     wrapped.subscribe = defaultQuery.subscribe;
     wrappedQueries[name] = wrapped;
   }
@@ -885,8 +917,16 @@ function createDefaultQuery<TState>(
   queryName: string,
   queryDef: RuntimeQueryDefinition<TState>
 ): Query<unknown, unknown> {
-  const query = ((input: unknown) => {
-    const validatedInput = validateQueryInput(refs, queryName, queryDef, input);
+  const resolveInput = (input: unknown, argsLength: number) =>
+    argsLength === 0 ? undefined : input;
+
+  const query = ((input?: unknown) => {
+    const validatedInput = validateQueryInput(
+      refs,
+      queryName,
+      queryDef,
+      resolveInput(input, arguments.length)
+    );
     const loadKey = makeLoadKey(refs.serviceId, queryName, validatedInput);
 
     if (queryDef.load) {
@@ -938,20 +978,43 @@ function createDefaultQuery<TState>(
     );
   }) as Query<unknown, unknown>;
 
-  query.loaded = (input: unknown) => runLoaded(refs, queryName, queryDef, input);
-  query.subscribe = ((
-    input: unknown,
-    selectorOrCallback: ((value: unknown) => unknown) | ((value: unknown) => void),
-    maybeCallback?: (value: unknown) => void
-  ): (() => void) =>
-    subscribeToQuery(
+  query.loaded = function loaded(input?: unknown) {
+    return runLoaded(refs, queryName, queryDef, resolveInput(input, arguments.length));
+  };
+  query.subscribe = ((...args: unknown[]): (() => void) => {
+    if (args.length === 1 && typeof args[0] === 'function') {
+      return subscribeToQuery(
+        refs,
+        queryName,
+        queryDef,
+        undefined,
+        undefined,
+        args[0] as (value: unknown) => void
+      );
+    }
+
+    if (args.length === 2 && typeof args[0] === 'function' && typeof args[1] === 'function') {
+      return subscribeToQuery(
+        refs,
+        queryName,
+        queryDef,
+        undefined,
+        args[0] as (value: unknown) => unknown,
+        args[1] as (value: unknown) => void
+      );
+    }
+
+    const [input, selectorOrCallback, maybeCallback] = args;
+
+    return subscribeToQuery(
       refs,
       queryName,
       queryDef,
       input,
       maybeCallback ? (selectorOrCallback as (value: unknown) => unknown) : undefined,
-      maybeCallback ?? (selectorOrCallback as (value: unknown) => void)
-    )) as Query<unknown, unknown>['subscribe'];
+      (maybeCallback ?? selectorOrCallback) as (value: unknown) => void
+    );
+  }) as Query<unknown, unknown>['subscribe'];
 
   return query;
 }
@@ -1129,6 +1192,14 @@ export function createServiceRuntime<
   >['commands'];
   commandSelf.commands = commands as CommandSelf<TState>['commands'];
 
+  // The command map load bodies should call. Defaults to the raw local map (used by the static build
+  // and before the channel is wired); `attachChannelCommands` swaps in the channel-routed map so
+  // loads can invoke peer-implemented commands remotely. `remoteCommandNames` is the set of commands
+  // with no local handler in this runtime, which the gated reactive-load path routes through the
+  // channel map directly (they have no local `setState` to gate).
+  let loadCommands = commands as CommandSelf<TState>['commands'];
+  const remoteCommandNames = new Set<string>();
+
   const queryDefinitions = new Map<string, RuntimeQueryDefinition<TState>>(
     Object.entries(def.queries) as [string, RuntimeQueryDefinition<TState>][]
   );
@@ -1157,7 +1228,21 @@ export function createServiceRuntime<
       getService: registryApi.getService,
     }));
     gatedSelf.commands = gated as CommandSelf<TState>['commands'];
-    return gated as CommandSelf<TState>['commands'];
+
+    // Route remote commands through the channel map (so a reactive load can invoke a peer command);
+    // keep the gated local wrapper for locally-handled commands so stale-write protection holds.
+    if (remoteCommandNames.size === 0) {
+      return gated as CommandSelf<TState>['commands'];
+    }
+    const routed = Object.fromEntries(
+      Object.keys(def.commands).map((name) => [
+        name,
+        remoteCommandNames.has(name)
+          ? (loadCommands as Record<string, unknown>)[name]
+          : (gated as Record<string, unknown>)[name],
+      ])
+    );
+    return routed as CommandSelf<TState>['commands'];
   };
 
   const refs: QueryRuntimeRefs<TState> = {
@@ -1167,6 +1252,7 @@ export function createServiceRuntime<
     registryApi,
     queryDefinitions,
     defaultQueries,
+    getLoadCommands: () => loadCommands,
     buildGatedCommands,
   };
 
@@ -1231,6 +1317,19 @@ export function createServiceRuntime<
     await promise;
   };
 
+  const attachChannelCommands = (
+    channelCommands: Record<string, (input: unknown) => Promise<unknown>>,
+    implementedCommandNames: ReadonlySet<string>
+  ): void => {
+    loadCommands = channelCommands as CommandSelf<TState>['commands'];
+    remoteCommandNames.clear();
+    for (const name of Object.keys(def.commands)) {
+      if (!implementedCommandNames.has(name)) {
+        remoteCommandNames.add(name);
+      }
+    }
+  };
+
   return {
     getStateSnapshot,
     commandSelf,
@@ -1239,6 +1338,7 @@ export function createServiceRuntime<
     commands,
     queries,
     runLoadOnce,
+    attachChannelCommands,
   };
 }
 

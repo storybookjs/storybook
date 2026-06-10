@@ -21,3 +21,10 @@ export {
   fullTestProviderStore as internal_fullTestProviderStore,
   universalTestProviderStore as internal_universalTestProviderStore,
 } from './stores/__mocks__/test-provider.ts';
+
+/** Real open-service surface — not mocked; used by the internal sync-test demo. */
+export {
+  registerService,
+  useServiceCommand,
+  useServiceQuery,
+} from '../shared/open-service/manager.ts';

@@ -35,7 +35,7 @@ working around it. Treat any shortcut as a failure of this workflow.
 
 The Storybook preview MUST be running so the story can be verified.
 
-Run `STORYBOOK_FEATURE_AI_CLI=1 npx storybook ai instances ls` subcommand to check for running Storybook instances. If there is a running instance, note its port and open the preview URL in the preview browser.
+Run `STORYBOOK_FEATURE_AI_CLI=1 npx storybook ai --help` subcommand to check for running Storybook instances. If there is a running instance, note its port and open the preview URL in the preview browser.
 If there is no running instance, start it with the steps below:
   1. Start the project's existing Storybook dev script as a background task from
     the Storybook invocation directory

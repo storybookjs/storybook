@@ -60,7 +60,7 @@ error. If launch setup reports an error, surface it to the user and STOP.
 
 - Run `STORYBOOK_FEATURE_AI_CLI=1 npx storybook ai --help` to get all available subcommands and options.
   - Save the available subcommands and options in your working memory for reference.
-- Run the ai subcommand to get the story-writing instructions.
+- Run `STORYBOOK_FEATURE_AI_CLI=1 npx storybook ai <subcommand> --port <port>` to get the story-writing instructions.
   - If the subcommand allows a port option, use the port you saved in Step 1.
 - Follow the instructions in the output, which will include the exact imports, structure, and conventions to use for the story you are writing or editing. The instructions are the ONLY acceptable source for how to write the story; do NOT rely on memory or existing patterns.
 
@@ -77,7 +77,7 @@ rather than guessing.
 
 ## Step 4 — Preview and verify
 
-Produce a preview for every story you touched with **preview-stories** (prefer
+Produce a preview for every story you touched with **STORYBOOK_FEATURE_AI_CLI=1 npx storybook ai preview-stories** (prefer
 `{ storyId }` inputs). Before showing any returned URL to the user, navigate to
 it in the preview browser and confirm the story renders without errors.
 

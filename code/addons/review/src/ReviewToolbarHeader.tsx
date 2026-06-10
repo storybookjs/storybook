@@ -82,7 +82,6 @@ export const ReviewToolbarHeader: FC = () => {
     newlyAddedStoryIds,
     activeEntry,
     activeIndex,
-    getStoryPreviewHref,
   } = useReview();
 
   if (!state || !activeEntry || activeIndex < 0) {
@@ -91,7 +90,6 @@ export const ReviewToolbarHeader: FC = () => {
 
   const collection = state.collections[activeEntry.collectionIndex];
   const collectionTitle = collection?.title ?? 'Review';
-  const collectionStoryIds = collection?.storyIds ?? [];
   const totalStories = flattenedEntries.length;
   const neighbors = getReviewDetailNeighbors(flattenedEntries, activeIndex);
   const previousEntry = neighbors?.previous ?? activeEntry;
@@ -118,7 +116,7 @@ export const ReviewToolbarHeader: FC = () => {
     ) : undefined;
 
   const counter =
-    collectionStoryIds.length > 0 ? (
+    totalStories > 0 ? (
       <WithTooltip
         trigger="click"
         closeOnOutsideClick
@@ -126,11 +124,9 @@ export const ReviewToolbarHeader: FC = () => {
         tooltip={({ onHide }) => (
           <Popover hasChrome padding={0}>
             <ReviewCollectionPicker
-              storyIds={collectionStoryIds}
+              entries={flattenedEntries}
               storyInfo={storyInfo}
-              currentStoryId={activeEntry.storyId}
-              collectionIndex={activeEntry.collectionIndex}
-              getStoryPreviewHref={getStoryPreviewHref}
+              activeEntry={activeEntry}
               onClose={onHide}
             />
           </Popover>

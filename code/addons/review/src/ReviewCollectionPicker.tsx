@@ -1,9 +1,13 @@
-import React, { useEffect, useRef, useState, type FC } from 'react';
+import React, { useEffect, useRef, type FC } from 'react';
 
 import { styled } from 'storybook/theming';
 
 import { type StoryInfo } from './components/CollectionGrid.tsx';
-import { buildReviewStoryHref, prettifyComponentId } from './review-navigation.ts';
+import {
+  buildReviewStoryHref,
+  prettifyComponentId,
+  type ReviewNavEntry,
+} from './review-navigation.ts';
 
 const PopoverList = styled.div(({ theme }) => ({
   display: 'flex',
@@ -29,29 +33,6 @@ const PopoverItem = styled.a<{ $active: boolean }>(({ theme, $active }) => ({
     outlineOffset: -2,
   },
 }));
-
-const MiniPreviewWrap = styled.div(({ theme }) => ({
-  width: 72,
-  height: 48,
-  flexShrink: 0,
-  position: 'relative',
-  borderRadius: 6,
-  overflow: 'hidden',
-  background: theme.background.app,
-  border: `1px solid ${theme.appBorderColor}`,
-}));
-
-const MiniPreviewFrame = styled.iframe({
-  position: 'absolute',
-  top: 0,
-  left: 0,
-  width: '200%',
-  height: '200%',
-  border: 0,
-  transform: 'scale(0.5)',
-  transformOrigin: 'top left',
-  pointerEvents: 'none',
-});
 
 const PopoverItemText = styled.div({
   display: 'flex',
@@ -99,54 +80,17 @@ const derivePopoverLabel = (
   };
 };
 
-const MiniPreview: FC<{ previewHref: string; storyId: string }> = ({ previewHref, storyId }) => {
-  const wrapRef = useRef<HTMLDivElement>(null);
-  const [src, setSrc] = useState<string | undefined>(undefined);
-
-  useEffect(() => {
-    const el = wrapRef.current;
-    if (!el) {
-      return undefined;
-    }
-    if (typeof IntersectionObserver === 'undefined') {
-      setSrc(previewHref);
-      return undefined;
-    }
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          setSrc(previewHref);
-          observer.disconnect();
-        }
-      },
-      { rootMargin: '40px 0px' }
-    );
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, [previewHref]);
-
-  return (
-    <MiniPreviewWrap ref={wrapRef}>
-      {src ? <MiniPreviewFrame title={storyId} src={src} tabIndex={-1} scrolling="no" /> : null}
-    </MiniPreviewWrap>
-  );
-};
-
 export interface ReviewCollectionPickerProps {
-  storyIds: string[];
+  entries: ReviewNavEntry[];
   storyInfo: Record<string, StoryInfo>;
-  currentStoryId: string;
-  collectionIndex: number;
-  getStoryPreviewHref: (storyId: string) => string;
+  activeEntry: ReviewNavEntry;
   onClose: () => void;
 }
 
 export const ReviewCollectionPicker: FC<ReviewCollectionPickerProps> = ({
-  storyIds,
+  entries,
   storyInfo,
-  currentStoryId,
-  collectionIndex,
-  getStoryPreviewHref,
+  activeEntry,
   onClose,
 }) => {
   const activeRef = useRef<HTMLAnchorElement>(null);
@@ -156,20 +100,21 @@ export const ReviewCollectionPicker: FC<ReviewCollectionPickerProps> = ({
   }, []);
 
   return (
-    <PopoverList role="list" aria-label="Stories in this collection">
-      {storyIds.map((storyId) => {
-        const { component, story } = derivePopoverLabel(storyId, storyInfo[storyId]);
-        const href = buildReviewStoryHref({ collectionIndex, storyId });
-        const isActive = storyId === currentStoryId;
+    <PopoverList role="list" aria-label="Stories in this review">
+      {entries.map((entry, index) => {
+        const { component, story } = derivePopoverLabel(entry.storyId, storyInfo[entry.storyId]);
+        const href = buildReviewStoryHref(entry);
+        const isActive =
+          entry.storyId === activeEntry.storyId &&
+          entry.collectionIndex === activeEntry.collectionIndex;
         return (
           <PopoverItem
-            key={storyId}
+            key={`${entry.collectionIndex}-${entry.storyId}-${index}`}
             $active={isActive}
             ref={isActive ? activeRef : undefined}
             href={href}
             onClick={onClose}
           >
-            <MiniPreview storyId={storyId} previewHref={getStoryPreviewHref(storyId)} />
             <PopoverItemText>
               <PopoverItemComponent>{component}</PopoverItemComponent>
               <PopoverItemSep>/</PopoverItemSep>

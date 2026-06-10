@@ -1009,14 +1009,13 @@ async function prepareReactNativeWebSandbox(cwd: string) {
 }
 
 async function getConfigFile(names: string[], cwd: string) {
-  for (const name of names) {
-    const configPath = join(cwd, name);
-    if (await pathExists(configPath)) {
-      return configPath;
-    }
+  const firstPath = await findFirstPath(names, { cwd })
+
+  if (!firstPath) {
+    throw new Error(`No ${names.join(' or ')} found in sandbox: ${cwd}, cannot modify config.`);
   }
 
-  throw new Error(`No ${names.join(' or ')} found in sandbox: ${cwd}, cannot modify config.`);
+  return firstPath;
 }
 
 async function prepareSvelteSandbox(cwd: string) {

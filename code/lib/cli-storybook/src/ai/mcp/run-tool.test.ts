@@ -124,6 +124,22 @@ describe('runAiTool', () => {
     expect(result.output).toContain(expected);
   });
 
+  it('prints a placeholder when the tool returns no content', async () => {
+    vi.mocked(callMcpTool).mockResolvedValue({ content: [] });
+    const result = await runAiTool('list-all-documentation', [], { cwd: '/projects/foo' });
+    expect(result).toEqual({ exitCode: 0, output: '(the tool returned no content)' });
+  });
+
+  it('surfaces a clean error when a ready record is missing its endpoint', async () => {
+    vi.mocked(callMcpTool).mockRejectedValue(
+      new Error('Storybook MCP record for /projects/foo is missing mcp.endpoint')
+    );
+    vi.mocked(readRegistry).mockResolvedValue([{ ...record, mcp: { status: 'ready' } }]);
+    const result = await runAiTool('list-all-documentation', [], { cwd: '/projects/foo' });
+    expect(result.exitCode).toBe(1);
+    expect(result.output).toContain('Failed to reach Storybook MCP at (no endpoint)');
+  });
+
   it('renders non-text content items as JSON blocks', async () => {
     vi.mocked(callMcpTool).mockResolvedValue({
       content: [

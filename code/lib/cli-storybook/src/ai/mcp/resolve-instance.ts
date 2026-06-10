@@ -79,5 +79,10 @@ export function resolveInstance(
         reason: 'mcp-error',
         matches: sortedMatches,
       };
+
+    default: {
+      const unhandled: never = selected.mcp.status;
+      throw new Error(`Unhandled MCP status: ${unhandled as string}`);
+    }
   }
 }

@@ -39,8 +39,8 @@ export async function listMcpTools(
 ): Promise<McpToolDescriptor[]> {
   const result = (await sendJsonRpcRequest(record, 'tools/list', {}, fetchImpl)) as {
     tools?: McpToolDescriptor[];
-  };
-  return result.tools ?? [];
+  } | null;
+  return result?.tools ?? [];
 }
 
 /**
@@ -92,7 +92,7 @@ async function sendJsonRpcRequest(
   if (payload.error) {
     throw new McpJsonRpcError(payload.error.code, payload.error.message);
   }
-  if (!payload.result) {
+  if (payload.result === undefined) {
     throw new Error('Storybook MCP returned no result');
   }
   return payload.result;

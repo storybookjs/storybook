@@ -2,10 +2,8 @@ import type { InterceptReason, StorybookInstanceRecord } from './types.ts';
 import { STORYBOOK_MIN_VERSION } from './version-check.ts';
 
 /**
- * Repair-instruction markdown, copied from `@storybook/mcp-proxy` so agents get the same guidance
- * from the CLI as from the MCP proxy. Wording is adapted from "retry the tool call" to "retry the
- * command", and the proxy's version-cache instructions are dropped (the CLI is one-shot and
- * re-detects the version on every run).
+ * Repair-instruction markdown for agents, mirroring `@storybook/mcp-proxy` (storybookjs/mcp) so
+ * the CLI and the proxy give the same guidance — keep the two in sync when updating either.
  */
 const NO_INSTANCE_EMPTY = `Storybook is not running at this cwd. Start \`storybook dev\` from the project's cwd and retry the command.`;
 
@@ -72,5 +70,9 @@ export function getInterceptMarkdown(
       return MCP_ERROR;
     case 'storybook-too-old':
       return buildStorybookTooOld(version ?? 'unknown');
+    default: {
+      const unhandled: never = reason;
+      throw new Error(`Unhandled intercept reason: ${unhandled as string}`);
+    }
   }
 }

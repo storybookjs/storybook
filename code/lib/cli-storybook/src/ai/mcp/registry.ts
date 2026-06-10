@@ -4,6 +4,12 @@ import { join } from 'node:path';
 
 import type { McpStatus, StorybookInstanceRecord } from './types.ts';
 
+/**
+ * Must stay in sync with `getDefaultRuntimeInstanceRegistryDir` in
+ * `code/core/src/core-server/utils/runtime-instance-registry.ts` (the writer side). Duplicated
+ * here so this reader does not pull the core-server module graph into the CLI's unit tests; the
+ * path is specified in storybookjs/storybook#34826.
+ */
 export const DEFAULT_REGISTRY_DIR = join(homedir(), '.storybook', 'instances');
 
 /**

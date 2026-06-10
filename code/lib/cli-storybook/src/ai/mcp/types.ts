@@ -6,6 +6,10 @@
  * also accepts records written by other Storybook versions and wrappers.
  */
 
+/**
+ * The in-repo writer only emits `not-installed` and `ready`; `starting` and `error` are written by
+ * external wrappers (e.g. the storybookjs/mcp launch script) and must keep being dispatched here.
+ */
 export type McpStatus = 'not-installed' | 'starting' | 'ready' | 'error';
 
 /**

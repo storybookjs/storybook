@@ -171,7 +171,11 @@ Run \`storybook ai list-tools\` for descriptions and arguments.`;
 
 /** Render a tools/call result as markdown: text content verbatim, other content as JSON blocks. */
 function formatToolResult(result: ToolCallResult): string {
-  return (result.content ?? [])
+  const content = result.content ?? [];
+  if (content.length === 0) {
+    return '(the tool returned no content)';
+  }
+  return content
     .map((item) =>
       item.type === 'text' && typeof item.text === 'string'
         ? item.text

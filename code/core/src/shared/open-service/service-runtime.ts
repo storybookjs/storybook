@@ -1198,7 +1198,7 @@ export function createServiceRuntime<
   // with no local handler in this runtime, which the gated reactive-load path routes through the
   // channel map directly (they have no local `setState` to gate).
   let loadCommands = commands as CommandSelf<TState>['commands'];
-  let remoteCommandNames: ReadonlySet<string> = new Set();
+  const remoteCommandNames = new Set<string>();
 
   const queryDefinitions = new Map<string, RuntimeQueryDefinition<TState>>(
     Object.entries(def.queries) as [string, RuntimeQueryDefinition<TState>][]
@@ -1322,8 +1322,9 @@ export function createServiceRuntime<
     implementedCommandNames: ReadonlySet<string>
   ): void => {
     loadCommands = channelCommands as CommandSelf<TState>['commands'];
-    remoteCommandNames = new Set(
-      Object.keys(def.commands).filter((name) => !implementedCommandNames.has(name))
+    remoteCommandNames.clear();
+    remoteCommandNames.add(
+      ...Object.keys(def.commands).filter((name) => !implementedCommandNames.has(name))
     );
   };
 

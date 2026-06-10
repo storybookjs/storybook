@@ -6,7 +6,7 @@
  * Peers are simulated with the test channel's `emitExternal`, the same approach the sync tests use.
  */
 import * as v from 'valibot';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, onTestFinished, vi } from 'vitest';
 
 import {
   awaitedPreloadValueServiceDef,
@@ -314,19 +314,18 @@ describe('load bodies and command routing', () => {
     const channel = createTestChannel();
     installTestChannel(channel);
     const handlerSpy = vi.spyOn(awaitedPreloadValueServiceDef.commands.preloadValue, 'handler');
-
-    try {
-      const service = registerService(awaitedPreloadValueServiceDef);
-
-      await service.queries.getPreloadedValue.loaded({ entryId: 'entry-a' });
-
-      expect(handlerSpy).toHaveBeenCalledTimes(1);
-      expect(handlerSpy.mock.calls[0]?.[0]).toEqual({ entryId: 'entry-a' });
-      expect(emittedCalls(channel, SERVICE_COMMAND_INVOKE)).toHaveLength(0);
-      expect(service.queries.getPreloadedValue({ entryId: 'entry-a' })).toBe('preloaded');
-    } finally {
+    onTestFinished(() => {
       handlerSpy.mockRestore();
-    }
+    });
+
+    const service = registerService(awaitedPreloadValueServiceDef);
+
+    await service.queries.getPreloadedValue.loaded({ entryId: 'entry-a' });
+
+    expect(handlerSpy).toHaveBeenCalledTimes(1);
+    expect(handlerSpy.mock.calls[0]?.[0]).toEqual({ entryId: 'entry-a' });
+    expect(emittedCalls(channel, SERVICE_COMMAND_INVOKE)).toHaveLength(0);
+    expect(service.queries.getPreloadedValue({ entryId: 'entry-a' })).toBe('preloaded');
   });
 
   it('routes a load-body command through command-invoke when no local handler exists', async () => {

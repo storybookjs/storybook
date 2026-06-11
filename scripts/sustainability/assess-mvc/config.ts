@@ -1,5 +1,3 @@
-export const ORG = 'storybookjs';
-export const PRIMARY_REPO = 'storybook';
 export const MARKER = '<!-- mvc-check:v1 -->';
 
 export const VERDICT_LABELS = {

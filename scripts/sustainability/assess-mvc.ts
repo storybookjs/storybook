@@ -7,13 +7,23 @@
 import { Command, Option } from 'commander';
 import pc from 'picocolors';
 
+import {
+  createGithubClient,
+  requireToken,
+  type GithubClient,
+} from '../utils/github/client.ts';
+import { ORG } from '../utils/github/constants.ts';
+import { resolveLinkedIssues } from '../utils/github/linked-issues.ts';
+import { fetchPr, parsePrArg } from '../utils/github/pr.ts';
+import { teamMembership } from '../utils/github/teams.ts';
 import { checkDuplicate, githubDuplicateLookup } from './assess-mvc/checks/duplicate.ts';
 import { checkHumanMonitored } from './assess-mvc/checks/human-monitored.ts';
-import { MANAGED_LABELS, MARKER, VERDICT_LABELS } from './assess-mvc/config.ts';
-import { createGithubClient, requireToken, type GithubClient } from './assess-mvc/github/client.ts';
-import { resolveLinkedIssues } from './assess-mvc/github/linked-issues.ts';
-import { fetchPr, parsePrArg } from './assess-mvc/github/pr.ts';
-import { githubTeamMembership } from './assess-mvc/github/teams.ts';
+import {
+  MAINTAINER_TEAM_SLUGS,
+  MANAGED_LABELS,
+  MARKER,
+  VERDICT_LABELS,
+} from './assess-mvc/config.ts';
 import { renderSummary } from './assess-mvc/output.ts';
 import { evaluateSkip } from './assess-mvc/skip-rules.ts';
 import type { CheckId, CheckResult, PrContext } from './assess-mvc/types.ts';
@@ -145,7 +155,7 @@ function buildDeps(client: GithubClient): AssessDeps {
       return { ...partial, linkedIssues: issues, brokenLinkRefs: broken };
     },
     duplicateLookup: githubDuplicateLookup(client),
-    isMaintainer: githubTeamMembership(client).isMaintainer,
+    isMaintainer: teamMembership(client, ORG, MAINTAINER_TEAM_SLUGS).isMaintainer,
     async llmJudge(id) {
       return { id, status: 'deferred', evidence: 'LLM phase not yet wired (Phase 2).' };
     },
@@ -238,7 +248,7 @@ async function main(): Promise<void> {
   if (flags.skipInternalPrs) {
     const partial = await fetchPr(client, coords);
     const decision = await evaluateSkip(partial, {
-      isMaintainer: githubTeamMembership(client).isMaintainer,
+    isMaintainer: teamMembership(client, ORG, MAINTAINER_TEAM_SLUGS).isMaintainer,
     });
     if (decision.skip) {
       console.log(pc.dim(`Skipped: ${decision.reason}`));

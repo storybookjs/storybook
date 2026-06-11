@@ -1,6 +1,6 @@
-import { ORG, PRIMARY_REPO } from '../config.ts';
-import type { PrContext } from '../types.ts';
+import type { PrContext } from '../../sustainability/assess-mvc/types.ts';
 import type { GithubClient } from './client.ts';
+import { ORG, PRIMARY_REPO } from './constants.ts';
 
 export interface PrCoords {
   owner: string;

@@ -1,6 +1,6 @@
-import { ORG } from '../config.ts';
-import type { LinkedIssue } from '../types.ts';
+import type { LinkedIssue } from '../../sustainability/assess-mvc/types.ts';
 import type { GithubClient } from './client.ts';
+import { ORG } from './constants.ts';
 
 export interface IssueRef {
   owner: string;

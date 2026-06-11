@@ -1,4 +1,4 @@
-import type { GithubClient } from '../github/client.ts';
+import type { GithubClient } from '../../../utils/github/client.ts';
 import type { CheckResult, LinkedIssue } from '../types.ts';
 
 export interface CrossRefEvent {

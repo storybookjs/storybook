@@ -1,3 +1,11 @@
+/**
+ * Octokit factory + token resolution for every script that talks to GitHub.
+ *
+ * NOTE on duplication: `scripts/utils/githubClient.ts` (a fetch-based GraphQL
+ * client) is dead code at the time of writing; `scripts/release/utils/github-client.ts`
+ * uses a module-load-time static client tied to `process.env.GH_TOKEN`. Both
+ * predate this module; consolidate when those areas are next touched.
+ */
 import { graphql } from '@octokit/graphql';
 import { request } from '@octokit/request';
 

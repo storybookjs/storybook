@@ -1,6 +1,8 @@
 import type { McpServer } from 'tmcp';
 import { getAddonVitestConstants } from './run-story-tests.ts';
 import { collectTelemetry } from '../telemetry.ts';
+import { getFinalLinksGuidance } from '../instructions/build-server-instructions.ts';
+import { getReviewStatus } from '../utils/is-review-available.ts';
 import storyInstructionsTemplate from '../instructions/storybook-story-instructions.md';
 import storyTestingInstructionsTemplate from '../instructions/story-testing-instructions.md';
 import a11yInstructionsTemplate from '../instructions/a11y-instructions.md';
@@ -79,6 +81,8 @@ Even if you're familiar with Storybook, call this tool to ensure you're followin
 				const frameworkPreset = await options.presets.apply('framework');
 				const featuresPreset = await options.presets.apply('features', {});
 				const changeDetectionEnabled = featuresPreset?.changeDetection ?? false;
+				const reviewStatus = await getReviewStatus(options, { features: featuresPreset });
+				const reviewEnabled = reviewStatus.available;
 				const framework =
 					typeof frameworkPreset === 'string' ? frameworkPreset : frameworkPreset?.name;
 				const renderer = frameworkToRendererMap[framework!];
@@ -93,6 +97,7 @@ Even if you're familiar with Storybook, call this tool to ensure you're followin
 					.replace('{{FRAMEWORK}}', framework)
 					.replace('{{RENDERER}}', renderer ?? framework)
 					.replace('{{STORY_LINKING_WORKFLOW}}', storyLinkingWorkflow)
+					.replace('{{FINAL_LINKS_GUIDANCE}}', getFinalLinksGuidance(reviewEnabled))
 					.replace('{{CHANGED_STORY_FALLBACK_LINK_GUIDANCE}}', changedStoryFallbackLinkGuidance);
 
 				// Conditionally append story testing instructions if test toolset is enabled and addon-vitest is available

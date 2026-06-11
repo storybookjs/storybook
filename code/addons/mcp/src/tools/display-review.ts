@@ -24,7 +24,7 @@ export const ReviewCollectionSchema = v.object({
 	rationale: v.pipe(
 		v.string(),
 		v.description(
-			'One sentence describing what these stories show — the component states, variants, or screens on display. Describe the content that appears on screen, not tasks for the reviewer. No imperatives ("verify", "check", "make sure", "ensure", "confirm"): say what is shown (e.g. "The default and error states across breakpoints"), not what to do (e.g. "Verify it still renders correctly").',
+			'One sentence explaining why this collection is relevant to the change — what it shows and why a reviewer would look here. Describe the content on screen, not tasks for the reviewer. No imperatives ("verify", "check", "make sure", "ensure", "confirm"): say what is shown and why it matters (e.g. "The checkout pages where the Button appears in real context"), not what to do (e.g. "Verify it still renders correctly").',
 		),
 	),
 	storyIds: v.pipe(
@@ -151,7 +151,13 @@ When reviewing a change, answer two questions before composing collections (skip
 Provide:
 - title: a PR-style title for the change — short and specific.
 - description: a one-line summary of what changed and where to start reviewing.
-- collections: titled groups of stories covering the **visual cascade** of the change — not just where the code is read, but everywhere a reviewer will see it. For any non-trivial UI change, include the changed component itself, the components that directly import it, and the pages/containers that render them further up the tree. A single-collection review is a smell: only do it if the component is genuinely standalone (e.g. has no parents in the story graph). Theme tokens, shared styles, and layout primitives almost always need page-level coverage even when only one file imports them. Give each collection a concise, PR-dense title and a one-sentence rationale. Both should describe *what the reviewer is looking at* — the title names the stories (e.g. "Button — all variants", "Checkout pages"), the rationale says what's on screen in them. Describe the content, never instruct the reviewer, and avoid imperatives like "verify", "check", "ensure", "confirm".
+- collections: titled groups of stories covering the **visual cascade** of the change — not just where the code is read, but everywhere a reviewer will see it. Guidelines:
+    - For any non-trivial UI change, include the changed component itself, the components that directly import it, and the pages/containers that render them further up the tree.
+    - A single-collection review is a smell: only do it if the component is genuinely standalone (e.g. has no parents in the story graph).
+    - Theme tokens, shared styles, and layout primitives almost always need page-level coverage even when only one file imports them.
+    - Give each collection a concise title and a one-sentence rationale. The title describes **what** this collection consists of (e.g. "Button — all variants", "Checkout pages"); the rationale explains **why** this collection is relevant to the change (e.g. "The pages where the Button appears in real context").
+    - Never instruct the reviewer, and avoid imperatives like "verify", "check", "ensure", "confirm" — describe what's on screen and why it matters, not tasks to perform.
+    - When iterating on a review, keep collections and stories that also appeared in a previous review in the same order, so the reviewer isn't disoriented by reshuffling.
 - changedFiles: the files you edited (most central first); omit when the user just wants to see stories rather than review a change.
 
 Anti-pattern: editing a theme token that only one component reads, then publishing a review with just that one component's story. The token change is visible on every page that renders the component — include those pages.
@@ -215,7 +221,7 @@ Always include the returned reviewUrl in your final user-facing response so the 
 
 Two things you must do now, both of them:
 1. **Open ${reviewUrl} yourself in your preview browser.** If you have any browser-preview or navigate tool in this session (e.g. preview_eval or an equivalent), call it on this URL so the review opens in your preview window immediately. Don't merely print the link and stop — actually open it.
-2. **Show the link to the user too.** End your final response with a dedicated review section as the very last thing: its own heading on a line by itself (e.g. \`## 👀 Review your changes\`), then the review page as a markdown link \`[Open the Storybook review page](${reviewUrl})\`. Put nothing after it — not a trailing sentence the user has to hunt for. The user needs to see this link even after you've opened it yourself.`,
+2. **Show the link to the user too.** End your final response with a dedicated review section as the very last thing: its own heading on a line by itself (e.g. \`## 👀 Review your changes\`), then a one-line explanation of what the review is, then the review page as a markdown link \`[Open the Storybook review page](${reviewUrl})\`. For the explanation, use something like: "The review shows the ${storyCount} stor${storyCount === 1 ? 'y' : 'ies'} most relevant for you to review right now. Because this is AI-curated, results may be inaccurate or incomplete." Put nothing after the link — not a trailing sentence the user has to hunt for. The user needs to see this link even after you've opened it yourself.`,
 						},
 					],
 					structuredContent: { reviewUrl },

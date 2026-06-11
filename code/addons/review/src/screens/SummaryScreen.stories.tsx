@@ -500,6 +500,7 @@ export const Minimal = meta.story({
     await expect(await canvas.findByText('Button prop rename')).toBeInTheDocument();
     await expect(await canvas.findByText(/2 stories for quick review/i)).toBeInTheDocument();
     await expect(await canvas.findByText('Button')).toBeInTheDocument();
+    await expect(await canvas.findByText('The directly changed component.')).toBeInTheDocument();
     await expect(
       await canvas.findByRole('button', { name: 'Back to last story' })
     ).toBeInTheDocument();

@@ -182,6 +182,11 @@ const ToggleChevronIcon = styled(ChevronSmallDownIcon)({
   transition: 'transform 160ms ease',
 });
 
+const CardRationale = styled.p(({ theme }) => ({
+  color: theme.textMutedColor,
+  margin: '0 12px',
+}));
+
 const NoResults = styled.div(({ theme }) => ({
   color: theme.textMutedColor,
   padding: 16,
@@ -457,6 +462,9 @@ export const SummaryScreen: FC<SummaryScreenProps> = ({
                         </CardHead>
                       }
                     >
+                      {collection.rationale ? (
+                        <CardRationale>{collection.rationale}</CardRationale>
+                      ) : null}
                       <CollectionGrid
                         storyIds={storyIds}
                         showAll={showAllCollections.has(index)}

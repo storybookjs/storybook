@@ -15,14 +15,9 @@ vi.mock('./run-tool.ts', { spy: true });
 
 vi.mock('node:fs/promises', { spy: true });
 
-vi.mock('storybook/internal/core-server', () => ({
-  withTelemetry: vi.fn(),
-  sendTelemetryError: vi.fn(),
-}));
+vi.mock('storybook/internal/core-server', { spy: true });
 
-vi.mock('storybook/internal/telemetry', () => ({
-  telemetry: vi.fn(),
-}));
+vi.mock('storybook/internal/telemetry', { spy: true });
 
 describe('isAiCliFeatureEnabled', () => {
   it.each([

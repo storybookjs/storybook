@@ -79,7 +79,7 @@ pnpm --filter @storybook/codex-plugin run marketplace:add
 
 Then reinstall the Storybook plugin in the Codex app and restart Codex. Codex caches plugins under `~/.codex/plugins/cache/` and does not pick up file changes until you reinstall.
 
-The plugin points at the latest `@storybook/mcp-proxy` preview from pkg.pr.new.
+The plugin uses CLI-based skills and does not require a running MCP proxy.
 
 To test from a Git branch, install the repository-level marketplace and pin the
 branch:
@@ -117,15 +117,7 @@ Use `remove` for a full uninstall without manual config edits.
 
 ## MCP Runtime
 
-The plugin's `plugins/storybook/.mcp.json` configures Codex to run the latest `@storybook/mcp-proxy` preview from pkg.pr.new:
-
-```sh
-npx -y --prefer-online https://pkg.pr.new/storybookjs/mcp/@storybook/mcp-proxy@main
-```
-
-The `@main` ref tracks the latest preview build from the `main` branch.
-
-`@storybook/mcp-proxy` is ignored by Changesets in this milestone, so it is not on npm yet. PR previews use pkg.pr.new (`@main` tracks the default branch). When the proxy is ready for npm, remove it from the Changesets ignore list, switch `plugins/storybook/.mcp.json` to `@storybook/mcp-proxy@latest`, and add a changeset in that publishing PR.
+The plugin's `plugins/storybook/.mcp.json` contains no MCP servers. The plugin uses CLI-based skills and the `@storybook/mcp-proxy` package has been removed.
 
 ## Smoke Test
 

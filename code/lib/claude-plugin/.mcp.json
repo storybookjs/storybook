@@ -1,12 +1,3 @@
 {
-	"mcpServers": {
-		"storybook": {
-			"command": "npx",
-			"args": [
-				"-y",
-				"--prefer-online",
-				"https://pkg.pr.new/storybookjs/mcp/@storybook/mcp-proxy@main"
-			]
-		}
-	}
+	"mcpServers": {}
 }

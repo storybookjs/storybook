@@ -1,3 +1,8 @@
+import type { LinkedIssue } from '../../utils/github/linked-issues.ts';
+import type { PrSnapshot } from '../../utils/github/pr.ts';
+
+export type { LinkedIssue, PrSnapshot };
+
 export type CheckId =
   | 'human'
   | 'real-problem'
@@ -17,36 +22,12 @@ export interface CheckResult {
 
 export type Verdict = 'pass' | 'fail';
 
-export interface LinkedIssue {
-  owner: string;
-  repo: string;
-  number: number;
-  url: string;
-  title: string;
-  body: string;
-  state: 'open' | 'closed';
-  labels: string[];
-  reactions?: { plus1: number; minus1: number; tada: number };
-}
-
-export interface PrContext {
-  owner: string;
-  repo: string;
-  number: number;
-  url: string;
-  title: string;
-  body: string;
-  author: string;
-  isDraft: boolean;
-  headSha: string;
-  labels: string[];
-  files: Array<{
-    path: string;
-    additions: number;
-    deletions: number;
-    patch?: string;
-    status: string;
-  }>;
+/**
+ * PR + linked-issue context that every check consumes. Composed from the
+ * github-side `PrSnapshot` plus assess-mvc-specific fields (`linkedIssues`,
+ * `brokenLinkRefs`) resolved by `resolveLinkedIssues`.
+ */
+export interface PrContext extends PrSnapshot {
   linkedIssues: LinkedIssue[];
   brokenLinkRefs: string[];
 }

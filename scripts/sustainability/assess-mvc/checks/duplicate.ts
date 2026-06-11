@@ -1,11 +1,6 @@
 import { fetchCrossRefs } from '../../../utils/github/cross-refs.ts';
-import type { GithubClient } from '../../../utils/github/client.ts';
-import { fetchIssueTimeline, type TimelineEvent } from '../../../utils/github/timeline.ts';
+import { wasClosedThenReopened } from '../../../utils/github/timeline.ts';
 import type { CheckResult, PrContext } from '../types.ts';
-
-export interface DuplicateOpts {
-  client: GithubClient;
-}
 
 /**
  * Check 3 — Not a duplicate.
@@ -17,20 +12,21 @@ export interface DuplicateOpts {
  * abort on definitive structural failures without spending tokens.
  *
  * What we verify, per linked issue:
- *   - Any OTHER open PR cross-referencing the same issue → FAIL.
+ *   - An OLDER open PR (lower PR number) cross-referencing the same issue
+ *     wins → FAIL. A NEWER open PR doesn't displace this one — the first PR
+ *     to be opened for an issue takes precedence.
  *   - Any merged PR that already fixed the issue → FAIL, unless the issue was
  *     subsequently closed-then-reopened (in which case the prior fix didn't
  *     hold and a new attempt is warranted).
  *   - Closed-unmerged PRs and the PR-under-review itself are ignored.
  *
  * Why this shape: we want to fail loudly on duplicate effort but stay silent
- * on dead PRs (closed-unmerged) and resurrected work (reopened issues). The
- * memoized cross-ref/timeline utilities cache per (client, issue), so multi-
- * issue PRs only pay one network round-trip per issue per run.
+ * on dead PRs (closed-unmerged), resurrected work (reopened issues), and
+ * later attempts when an earlier PR is already in flight. PR numbers are
+ * monotonic per repo so "lower number = older" is a reliable proxy.
  */
 export async function checkDuplicate(
-  pr: Pick<PrContext, 'number' | 'linkedIssues'>,
-  opts: DuplicateOpts
+  pr: Pick<PrContext, 'number' | 'linkedIssues'>
 ): Promise<CheckResult> {
   if (pr.linkedIssues.length === 0) {
     return {
@@ -42,18 +38,19 @@ export async function checkDuplicate(
 
   const conflicts: string[] = [];
   for (const issue of pr.linkedIssues) {
-    const [crossRefs, timeline] = await Promise.all([
-      fetchCrossRefs(opts.client, issue),
-      fetchIssueTimeline(opts.client, issue),
+    const [crossRefs, reopened] = await Promise.all([
+      fetchCrossRefs(issue),
+      wasClosedThenReopened(issue),
     ]);
-    const wasReopened = isClosedThenReopened(timeline);
-    for (const ref of crossRefs) {
-      if (ref.prNumber === pr.number) continue;
-      if (ref.prState === 'open' && !ref.merged) {
+    const relevant = crossRefs.filter((ref) => ref.prNumber !== pr.number);
+    for (const ref of relevant) {
+      const isOlderOpenPr =
+        ref.prState === 'open' && !ref.merged && ref.prNumber < pr.number;
+      if (isOlderOpenPr) {
         conflicts.push(
-          `#${ref.prNumber} (open) references the same issue ${issue.owner}/${issue.repo}#${issue.number}`
+          `#${ref.prNumber} (open, predates this PR) references ${issue.owner}/${issue.repo}#${issue.number}`
         );
-      } else if (ref.merged && !wasReopened) {
+      } else if (ref.merged && !reopened) {
         conflicts.push(
           `#${ref.prNumber} (merged) already fixed ${issue.owner}/${issue.repo}#${issue.number}`
         );
@@ -76,13 +73,4 @@ export async function checkDuplicate(
     status: 'pass',
     evidence: 'No conflicting PRs found on the linked issue(s).',
   };
-}
-
-function isClosedThenReopened(timeline: TimelineEvent[]): boolean {
-  let sawClosed = false;
-  for (const event of timeline) {
-    if (event.type === 'closed') sawClosed = true;
-    if (event.type === 'reopened' && sawClosed) return true;
-  }
-  return false;
 }

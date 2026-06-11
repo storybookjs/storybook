@@ -1,14 +1,19 @@
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
-import { fetchPr, parsePrArg } from './pr.ts';
+import { setupMsw } from '../test-helpers/msw.ts';
+import { fetchPr, normalizeStorybookPr } from './pr.ts';
 
-describe('parsePrArg', () => {
+describe('normalizeStorybookPr', () => {
   it('accepts a bare number', () => {
-    expect(parsePrArg('12345')).toEqual({ owner: 'storybookjs', repo: 'storybook', number: 12345 });
+    expect(normalizeStorybookPr('12345')).toEqual({
+      owner: 'storybookjs',
+      repo: 'storybook',
+      number: 12345,
+    });
   });
 
   it('accepts a full GitHub URL on storybookjs/storybook', () => {
-    expect(parsePrArg('https://github.com/storybookjs/storybook/pull/12345')).toEqual({
+    expect(normalizeStorybookPr('https://github.com/storybookjs/storybook/pull/12345')).toEqual({
       owner: 'storybookjs',
       repo: 'storybook',
       number: 12345,
@@ -16,54 +21,48 @@ describe('parsePrArg', () => {
   });
 
   it('rejects URLs outside storybookjs', () => {
-    expect(() => parsePrArg('https://github.com/example/other/pull/1')).toThrowError(/storybookjs/);
+    expect(() => normalizeStorybookPr('https://github.com/example/other/pull/1')).toThrowError(
+      /storybookjs/
+    );
   });
 
   it('rejects garbage', () => {
-    expect(() => parsePrArg('not-a-pr')).toThrowError(/PR/);
-    expect(() => parsePrArg('')).toThrowError();
+    expect(() => normalizeStorybookPr('not-a-pr')).toThrowError(/PR/);
+    expect(() => normalizeStorybookPr('')).toThrowError();
   });
 });
 
 describe('fetchPr', () => {
-  it('returns a PrContext with files paginated', async () => {
-    const calls: string[] = [];
-    const client = {
-      graphql: vi.fn(),
-      rest: (async (route: string) => {
-        calls.push(route);
-        if (route === 'GET /repos/{owner}/{repo}/pulls/{pull_number}') {
-          return {
-            data: {
-              number: 1,
-              title: 'fix x',
-              body: 'closes #99',
-              user: { login: 'someone' },
-              draft: false,
-              head: { sha: 'deadbeef' },
-              labels: [{ name: 'bug' }],
-              html_url: 'https://github.com/storybookjs/storybook/pull/1',
-            },
-          };
-        }
-        if (route === 'GET /repos/{owner}/{repo}/pulls/{pull_number}/files') {
-          return {
-            data: [
-              { filename: 'a.ts', additions: 3, deletions: 1, patch: '@@ ...', status: 'modified' },
-            ],
-          };
-        }
-        throw new Error(`unexpected ${route}`);
-      }) as any,
-    };
-    const ctx = await fetchPr(client as any, { owner: 'storybookjs', repo: 'storybook', number: 1 });
-    expect(ctx.title).toBe('fix x');
-    expect(ctx.author).toBe('someone');
-    expect(ctx.isDraft).toBe(false);
-    expect(ctx.headSha).toBe('deadbeef');
-    expect(ctx.labels).toEqual(['bug']);
-    expect(ctx.files).toHaveLength(1);
-    expect(ctx.files[0]).toMatchObject({ path: 'a.ts', additions: 3, deletions: 1 });
-    expect(calls).toContain('GET /repos/{owner}/{repo}/pulls/{pull_number}/files');
+  const { server, http, HttpResponse } = setupMsw();
+
+  it('returns a PrSnapshot with files paginated', async () => {
+    server.use(
+      http.get('https://api.github.com/repos/storybookjs/storybook/pulls/1', () =>
+        HttpResponse.json({
+          number: 1,
+          title: 'fix x',
+          body: 'closes #99',
+          user: { login: 'someone' },
+          draft: false,
+          head: { sha: 'deadbeef' },
+          labels: [{ id: 1, name: 'bug', color: '', default: false, description: '', node_id: '', url: '' }],
+          html_url: 'https://github.com/storybookjs/storybook/pull/1',
+        })
+      ),
+      http.get('https://api.github.com/repos/storybookjs/storybook/pulls/1/files', () =>
+        HttpResponse.json([
+          { filename: 'a.ts', additions: 3, deletions: 1, patch: '@@ ...', status: 'modified' },
+        ])
+      )
+    );
+    const coords = { owner: 'storybookjs' as const, repo: 'storybook' as const, number: 1 };
+    const snapshot = await fetchPr(coords);
+    expect(snapshot.title).toBe('fix x');
+    expect(snapshot.author).toBe('someone');
+    expect(snapshot.isDraft).toBe(false);
+    expect(snapshot.headSha).toBe('deadbeef');
+    expect(snapshot.labels).toEqual(['bug']);
+    expect(snapshot.files).toHaveLength(1);
+    expect(snapshot.files[0]).toMatchObject({ path: 'a.ts', additions: 3, deletions: 1 });
   });
 });

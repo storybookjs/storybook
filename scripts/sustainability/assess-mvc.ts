@@ -6,41 +6,36 @@
  * Assesses a Storybook PR against the six MVC (Minimum Viable Contribution)
  * criteria and either coaches the author toward MVC status or blocks the PR
  * until it qualifies. The CLI is the first automated entry point for
- * community PRs: it runs before verification, before completion, and before a
- * human maintainer looks at the PR.
+ * community PRs: it runs before verification, before completion, and before
+ * a human maintainer looks at the PR.
  *
  * Flow:
- *   1. Parse args, resolve GitHub token, create octokit clients.
+ *   1. Parse args; the GitHub client is fetched lazily via `getGithubClient`
+ *      from anywhere it's needed. A missing token bubbles up as a thrown
+ *      error which the top-level `main().catch` decorates.
  *   2. Optionally short-circuit on skip rules (drafts, prior verdict labels,
  *      `mvc:skip`, maintainer-team authorship) when `--skip-internal-prs`.
  *   3. Fetch PR + linked issues into a single `PrContext`.
  *   4. Run the deterministic checks (Check 1: human-monitored; Check 3:
- *      duplicate). If either fails, the LLM phase is skipped — see the
- *      "early-abort" handling in `runAssessment`.
- *   5. Run the four LLM-judged checks (real problem, cost/benefit, explains-
- *      how-to-test, provides-context) — Phase 1 returns `deferred` placeholders.
+ *      duplicate). If either fails, the LLM phase is skipped (see early-
+ *      abort handling in `runAssessment`).
+ *   5. Run the four LLM-judged checks — Phase 1 returns `deferred` stubs.
  *   6. Compose the review body (Phase 1 stub) and compute label diff.
- *   7. Apply writes (only with `--no-dry-run`; Phase 1 elides writes entirely).
- *   8. Print the summary table to stdout.
- *
- * See `docs/superpowers/specs/2026-06-10-mvc-assessment-script-design.md` and
- * `docs/superpowers/plans/2026-06-11-mvc-assessment-script.md`.
+ *   7. Apply writes (only with `--no-dry-run`; Phase 1 elides writes).
+ *   8. Print the summary table.
  */
 import { Command, Option } from 'commander';
 import pc from 'picocolors';
 
-import {
-  createGithubClient,
-  requireToken,
-  type GithubClient,
-} from '../utils/github/client.ts';
 import { ORG } from '../utils/github/constants.ts';
+import { fetchPr, normalizeStorybookPr } from '../utils/github/pr.ts';
 import { resolveLinkedIssues } from '../utils/github/linked-issues.ts';
-import { fetchPr, parsePrArg } from '../utils/github/pr.ts';
 import { teamMembership } from '../utils/github/teams.ts';
+import { getGithubClient } from '../utils/github/client.ts';
 import { checkDuplicate } from './assess-mvc/checks/duplicate.ts';
 import { checkHumanMonitored } from './assess-mvc/checks/human-monitored.ts';
 import {
+  ASSESS_MVC_SCOPES,
   MAINTAINER_TEAM_SLUGS,
   MANAGED_LABELS,
   MARKER,
@@ -55,12 +50,10 @@ export type Model = 'sonnet-4.6' | 'opus-4.6' | 'haiku-4.5';
 export type Effort = 'low' | 'medium' | 'high' | 'max';
 
 /**
- * Runtime capabilities + flags every check function consumes. `client` is the
- * GitHub API client; `llm` will be added when Phase 2 lands. Other fields are
- * pure CLI flags.
+ * Runtime flags consumed by `runAssessment`. The GitHub client is no longer
+ * passed here — it's a process-wide singleton accessed via `getGithubClient`.
  */
 export interface RunOpts {
-  client: GithubClient;
   dryRun: boolean;
   dismissPrevious: boolean;
   model: Model;
@@ -88,16 +81,15 @@ export interface RunResult {
 const LLM_IDS: CheckId[] = ['real-problem', 'cost-benefit', 'explains-test', 'provides-context'];
 
 /**
- * Run the six-check pipeline against an already-fetched PrContext.
- *
- * Pure-ish: side effects (label writes, review submission) only fire when
- * `opts.dryRun` is false. Phase 1 stubs the LLM checks to `deferred` and elides
- * all write paths (Phase 3 wires them).
+ * Run the six-check pipeline against an already-fetched `PrContext`. Side
+ * effects (label writes, review submission) only fire when `opts.dryRun` is
+ * false. Phase 1 stubs the LLM checks to `deferred` and elides all write
+ * paths (Phase 3 wires them).
  */
 export async function runAssessment(pr: PrContext, opts: RunOpts): Promise<RunResult> {
   const det: CheckResult[] = [];
   det.push(checkHumanMonitored(pr));
-  det.push(await checkDuplicate(pr, { client: opts.client }));
+  det.push(await checkDuplicate(pr));
 
   const earlyAbort = isEarlyAbort(det);
 
@@ -118,7 +110,7 @@ export async function runAssessment(pr: PrContext, opts: RunOpts): Promise<RunRe
   const reviewBody = composeStubReview(results, earlyAbort);
   const { labelsToAdd, labelsToRemove } = diffLabels(pr.labels, verdict);
 
-  // Phase 3 will wire writes through `opts.client` here when !opts.dryRun.
+  // Phase 3 will wire writes here when !opts.dryRun.
 
   return {
     verdict,
@@ -193,29 +185,17 @@ async function main(): Promise<void> {
     verbose: boolean;
   }>();
 
-  let coords;
-  try {
-    coords = parsePrArg(arg);
-  } catch (err: any) {
-    console.error(pc.red(err.message));
-    process.exit(1);
-  }
+  const coords = normalizeStorybookPr(arg);
 
-  let token;
-  try {
-    token = requireToken();
-  } catch (err: any) {
-    console.error(pc.red(err.message));
-    process.exit(1);
-  }
+  // Eager-validate the token so a missing GH_TOKEN throws here (decorated by
+  // the top-level catch) instead of inside a check halfway through the run.
+  getGithubClient(ASSESS_MVC_SCOPES);
 
-  const client = createGithubClient(token);
-
-  const partial = await fetchPr(client, coords);
+  const partial = await fetchPr(coords);
 
   if (cliOpts.skipInternalPrs) {
     const decision = await evaluateSkip(partial, {
-      isMaintainer: teamMembership(client, ORG, MAINTAINER_TEAM_SLUGS).isMaintainer,
+      isMaintainer: teamMembership(ORG, MAINTAINER_TEAM_SLUGS).isMaintainer,
     });
     if (decision.skip) {
       console.log(pc.dim(`Skipped: ${decision.reason}`));
@@ -223,7 +203,7 @@ async function main(): Promise<void> {
     }
   }
 
-  const { issues, broken } = await resolveLinkedIssues(client, {
+  const { issues, broken } = await resolveLinkedIssues({
     owner: coords.owner,
     repo: coords.repo,
     number: coords.number,
@@ -232,7 +212,6 @@ async function main(): Promise<void> {
   const pr: PrContext = { ...partial, linkedIssues: issues, brokenLinkRefs: broken };
 
   const opts: RunOpts = {
-    client,
     dryRun: cliOpts.dryRun,
     dismissPrevious: cliOpts.dismissPrevious,
     model: cliOpts.model,
@@ -262,8 +241,9 @@ async function main(): Promise<void> {
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {
-  main().catch((err) => {
-    console.error(pc.red(err.stack ?? err.message));
-    process.exit(2);
+  main().catch((err: unknown) => {
+    const msg = err instanceof Error ? (err.stack ?? err.message) : String(err);
+    console.error(pc.red(msg));
+    process.exit(1);
   });
 }

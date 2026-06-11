@@ -1,5 +1,16 @@
 export const MARKER = '<!-- mvc-check:v1 -->';
 
+/**
+ * GitHub scopes required by the assess-mvc CLI. Surfaced in the missing-token
+ * error message; the actual scope enforcement happens at GitHub.
+ */
+export const ASSESS_MVC_SCOPES = Object.freeze([
+  'pull_requests:read+write',
+  'issues:read+write',
+  'contents:read',
+  'members:read (org)',
+]);
+
 export const VERDICT_LABELS = {
   pass: 'mvc:success',
   fail: 'mvc:failed',

@@ -1,6 +1,6 @@
 import memoize from 'memoizerific';
 
-import type { GithubClient } from './client.ts';
+import { getGithubClient } from './client.ts';
 
 export interface CrossRefEvent {
   prNumber: number;
@@ -14,11 +14,21 @@ interface IssueCoords {
   number: number;
 }
 
-async function fetchCrossRefsImpl(
-  client: GithubClient,
-  issue: IssueCoords
-): Promise<CrossRefEvent[]> {
-  const data = await client.graphql<any>(
+interface CrossRefsResponse {
+  repository?: {
+    issue?: {
+      timelineItems?: {
+        nodes?: Array<{
+          source?: { number?: number; state?: 'OPEN' | 'CLOSED'; merged?: boolean };
+        }>;
+      };
+    };
+  };
+}
+
+async function fetchCrossRefsImpl(issue: IssueCoords): Promise<CrossRefEvent[]> {
+  const client = getGithubClient();
+  const data = await client.graphql<CrossRefsResponse>(
     `query($owner:String!,$repo:String!,$num:Int!){
       repository(owner:$owner,name:$repo){
         issue(number:$num){
@@ -31,25 +41,19 @@ async function fetchCrossRefsImpl(
     { owner: issue.owner, repo: issue.repo, num: issue.number }
   );
   const nodes = data.repository?.issue?.timelineItems?.nodes ?? [];
-  const out: CrossRefEvent[] = [];
-  for (const node of nodes) {
-    const src = node?.source;
-    if (!src || typeof src.number !== 'number') continue;
-    out.push({
-      prNumber: src.number,
+  return nodes
+    .map((node) => node.source)
+    .filter((src): src is NonNullable<typeof src> => Boolean(src) && typeof src?.number === 'number')
+    .map((src) => ({
+      prNumber: src.number as number,
       prState: src.state === 'OPEN' ? 'open' : 'closed',
       merged: Boolean(src.merged),
-    });
-  }
-  return out;
+    }));
 }
 
 /**
  * Fetch every PR that references a given GitHub issue (the issue's
- * cross-referenced-event timeline). Memoized: a single (client, issue) pair
- * resolves to one network call per process for the cache's lifetime.
- *
- * Memoization key is by argument identity, so callers that pass a fresh client
- * (e.g., in tests) get a fresh cache slot — there's no cross-test leakage.
+ * cross-referenced-event timeline). Memoized by issue identity for the
+ * process lifetime.
  */
 export const fetchCrossRefs = memoize(1000)(fetchCrossRefsImpl);

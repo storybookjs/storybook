@@ -1,22 +1,56 @@
-import type { PrContext } from '../../sustainability/assess-mvc/types.ts';
-import type { GithubClient } from './client.ts';
+import memoize from 'memoizerific';
+
+import { getGithubClient } from './client.ts';
 import { ORG, PRIMARY_REPO } from './constants.ts';
 
-export interface PrCoords {
+/**
+ * Coordinates for a PR or an issue. The GitHub REST and GraphQL APIs use the
+ * same `{owner, repo, number}` shape for both — they share an ID space within
+ * a repo — so there's one type for both.
+ */
+export interface GithubRefCoords {
   owner: string;
   repo: string;
   number: number;
 }
 
+export interface PrFile {
+  path: string;
+  additions: number;
+  deletions: number;
+  patch?: string;
+  status: string;
+}
+
+/**
+ * The github-side shape of a fetched PR. Downstream tools compose this with
+ * domain-specific data (e.g., assess-mvc adds `linkedIssues` and
+ * `brokenLinkRefs`) to build a richer context.
+ */
+export interface PrSnapshot {
+  owner: string;
+  repo: string;
+  number: number;
+  url: string;
+  title: string;
+  body: string;
+  author: string;
+  isDraft: boolean;
+  headSha: string;
+  labels: string[];
+  files: PrFile[];
+}
+
 const URL_RE = /^https:\/\/github\.com\/([^/]+)\/([^/]+)\/pull\/(\d+)(?:[/?#].*)?$/;
 
 /**
- * Parse the CLI argument into PR coordinates. Accepts a bare PR number (which
- * defaults to `storybookjs/storybook`) or a full PR URL. URLs outside the
- * `storybookjs` org are rejected — we don't want a typo to point us at an
- * unrelated repo and produce a confusing review on the wrong PR.
+ * Normalize a CLI argument into PR coordinates and enforce that the PR
+ * belongs to the storybookjs org. Accepts a bare PR number (defaults to
+ * `storybookjs/storybook`) or a full PR URL. URLs outside the org are
+ * rejected — we don't want a typo to point us at an unrelated repo and
+ * produce a confusing review on the wrong PR.
  */
-export function parsePrArg(arg: string): PrCoords {
+export function normalizeStorybookPr(arg: string): GithubRefCoords {
   const trimmed = (arg ?? '').trim();
   if (trimmed === '') throw new Error('PR argument required (number or URL).');
   if (/^\d+$/.test(trimmed)) {
@@ -33,22 +67,15 @@ export function parsePrArg(arg: string): PrCoords {
   return { owner, repo, number: Number(number) };
 }
 
-/**
- * Fetch PR metadata + the full file list (paginated). Returns everything we
- * know about the PR before linked-issue resolution kicks in. Callers compose
- * this with `resolveLinkedIssues` to build a complete `PrContext`.
- */
-export async function fetchPr(
-  client: GithubClient,
-  coords: PrCoords
-): Promise<Omit<PrContext, 'linkedIssues' | 'brokenLinkRefs'>> {
+async function fetchPrImpl(coords: GithubRefCoords): Promise<PrSnapshot> {
+  const client = getGithubClient();
   const { data: pr } = await client.rest('GET /repos/{owner}/{repo}/pulls/{pull_number}', {
     owner: coords.owner,
     repo: coords.repo,
     pull_number: coords.number,
   });
 
-  const files: PrContext['files'] = [];
+  const files: PrFile[] = [];
   let page = 1;
   while (true) {
     const { data } = await client.rest('GET /repos/{owner}/{repo}/pulls/{pull_number}/files', {
@@ -82,7 +109,14 @@ export async function fetchPr(
     author: pr.user?.login ?? '',
     isDraft: Boolean(pr.draft),
     headSha: pr.head.sha,
-    labels: (pr.labels ?? []).map((l) => l.name),
+    labels: pr.labels.map((l) => l.name),
     files,
   };
 }
+
+/**
+ * Fetch PR metadata + the full file list (paginated). Memoized by `coords`
+ * identity for the process lifetime. Callers compose this with
+ * `resolveLinkedIssues` to build a richer PR context.
+ */
+export const fetchPr = memoize(1000)(fetchPrImpl);

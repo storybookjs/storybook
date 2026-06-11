@@ -1,5 +1,6 @@
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
+import { setupMsw } from '../test-helpers/msw.ts';
 import { parseBodyReferences, resolveLinkedIssues } from './linked-issues.ts';
 
 describe('parseBodyReferences', () => {
@@ -41,43 +42,43 @@ describe('parseBodyReferences', () => {
 });
 
 describe('resolveLinkedIssues', () => {
+  const { server, http, HttpResponse } = setupMsw();
+
   it('combines GraphQL closing refs with body refs, resolves each, and tracks broken links', async () => {
-    const graphql = vi.fn().mockResolvedValue({
-      repository: {
-        pullRequest: {
-          closingIssuesReferences: {
-            nodes: [
-              {
-                number: 42,
-                repository: { owner: { login: 'storybookjs' }, name: 'storybook' },
-              },
-            ],
-          },
-        },
-      },
-    });
-    const rest = vi.fn(async (_route: string, params: any) => {
-      if (params.issue_number === 42) {
-        return {
+    server.use(
+      http.post('https://api.github.com/graphql', () =>
+        HttpResponse.json({
           data: {
-            number: 42,
-            title: 'A',
-            body: 'b',
-            state: 'open',
-            labels: [{ name: 'bug' }],
-            html_url: 'u',
+            repository: {
+              pullRequest: {
+                closingIssuesReferences: {
+                  nodes: [
+                    {
+                      number: 42,
+                      repository: { owner: { login: 'storybookjs' }, name: 'storybook' },
+                    },
+                  ],
+                },
+              },
+            },
           },
-        };
-      }
-      if (params.issue_number === 99) {
-        const err: any = new Error('Not Found');
-        err.status = 404;
-        throw err;
-      }
-      throw new Error(`unexpected issue_number ${params.issue_number}`);
-    });
-    const client = { graphql, rest } as any;
-    const { issues, broken } = await resolveLinkedIssues(client, {
+        })
+      ),
+      http.get('https://api.github.com/repos/storybookjs/storybook/issues/42', () =>
+        HttpResponse.json({
+          number: 42,
+          title: 'A',
+          body: 'b',
+          state: 'open',
+          labels: [{ name: 'bug' }],
+          html_url: 'u',
+        })
+      ),
+      http.get('https://api.github.com/repos/storybookjs/storybook/issues/99', () =>
+        HttpResponse.json({ message: 'Not Found' }, { status: 404 })
+      )
+    );
+    const { issues, broken } = await resolveLinkedIssues({
       owner: 'storybookjs',
       repo: 'storybook',
       number: 1,

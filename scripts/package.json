@@ -127,6 +127,7 @@
     "knip": "^5.70.2",
     "memoizerific": "^1.11.3",
     "minimatch": "^10.0.1",
+    "msw": "^2.7.0",
     "node-gyp": "^12.1.0",
     "npm-registry-client": "^8.6.0",
     "ora": "^5.4.1",

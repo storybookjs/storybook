@@ -1,6 +1,6 @@
 import memoize from 'memoizerific';
 
-import type { GithubClient } from './client.ts';
+import { getGithubClient } from './client.ts';
 
 export interface TimelineEvent {
   type: 'closed' | 'reopened' | string;
@@ -13,10 +13,8 @@ interface IssueCoords {
   number: number;
 }
 
-async function fetchIssueTimelineImpl(
-  client: GithubClient,
-  issue: IssueCoords
-): Promise<TimelineEvent[]> {
+async function fetchIssueTimelineImpl(issue: IssueCoords): Promise<TimelineEvent[]> {
+  const client = getGithubClient();
   const { data } = await client.rest('GET /repos/{owner}/{repo}/issues/{issue_number}/timeline', {
     owner: issue.owner,
     repo: issue.repo,
@@ -28,6 +26,22 @@ async function fetchIssueTimelineImpl(
 
 /**
  * Fetch the lifecycle timeline of a GitHub issue (closed/reopened/etc).
- * Memoized like {@link fetchCrossRefs}: (client, issue) identity is the key.
+ * Memoized like {@link fetchCrossRefs}: issue identity is the key.
  */
 export const fetchIssueTimeline = memoize(1000)(fetchIssueTimelineImpl);
+
+/**
+ * True iff this issue was closed at least once and subsequently reopened.
+ * Useful for the duplicate-PR check: a previously merged fix that didn't
+ * hold (issue reopened) means the duplicate-of-merged rule should not apply
+ * to a fresh attempt.
+ */
+export async function wasClosedThenReopened(issue: IssueCoords): Promise<boolean> {
+  const events = await fetchIssueTimeline(issue);
+  let sawClosed = false;
+  for (const event of events) {
+    if (event.type === 'closed') sawClosed = true;
+    if (event.type === 'reopened' && sawClosed) return true;
+  }
+  return false;
+}

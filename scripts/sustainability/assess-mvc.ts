@@ -23,7 +23,7 @@
  *   5. Run the four LLM-judged checks in parallel.
  *   6. Synthesize the final review body (one more LLM call).
  *   7. Apply writes (only with `--no-dry-run`; Phase 3 wires them).
- *   8. Print the summary.
+ *   8. Print the verdict.
  */
 import * as p from '@clack/prompts';
 import { Command, Option } from 'commander';
@@ -40,12 +40,11 @@ import { computeDiffMetrics } from './assess-mvc/cost-benefit/utils/diff-metrics
 import { checkDuplicate } from './assess-mvc/duplicate/check.ts';
 import { checkExplainsHowToTest } from './assess-mvc/explains-test/check.ts';
 import { checkHumanMonitored } from './assess-mvc/human-monitored/check.ts';
-import { renderSummary } from './assess-mvc/output.ts';
 import { checkProvidesContext } from './assess-mvc/provides-context/check.ts';
 import { checkRealProblem } from './assess-mvc/real-problem/check.ts';
 import { evaluateSkip } from './assess-mvc/skip-rules.ts';
 import { synthesizeReview } from './assess-mvc/synthesize.ts';
-import type { CheckResult, PrContext } from './assess-mvc/types.ts';
+import type { CheckId, CheckResult, PrContext } from './assess-mvc/types.ts';
 import { computeVerdict, isEarlyAbort } from './assess-mvc/verdict.ts';
 
 export interface RunOpts {
@@ -76,6 +75,15 @@ const LLM_CHECK_IDS = [
   'explains-test',
   'provides-context',
 ] as const;
+
+const CHECK_LABELS: Record<CheckId, string> = {
+  human: 'Human-monitored',
+  'real-problem': 'Real problem',
+  duplicate: 'Not duplicate',
+  'cost-benefit': 'Cost/benefit',
+  'explains-test': 'Explains how to test',
+  'provides-context': 'Provides context',
+};
 
 /**
  * Run the deterministic phase: Check 1 (human-monitored) and Check 3
@@ -155,6 +163,25 @@ function summariseStatuses(results: CheckResult[]): string {
     .join(', ');
 }
 
+function logCheckResult(result: CheckResult): void {
+  const label = CHECK_LABELS[result.id];
+  const line = `${pc.bold(label)} · ${result.evidence}`;
+  switch (result.status) {
+    case 'pass':
+      p.log.success(line);
+      break;
+    case 'fail':
+      p.log.error(line);
+      break;
+    case 'warn':
+      p.log.warn(line);
+      break;
+    case 'deferred':
+      p.log.step(pc.dim(line));
+      break;
+  }
+}
+
 async function main(): Promise<void> {
   const program = new Command();
   program
@@ -212,6 +239,28 @@ async function main(): Promise<void> {
   const partial = await fetchPr(prId);
   fetchSpinner.stop(`Fetched: ${pc.bold(partial.title)} by @${partial.author}`);
 
+  // PR-level info: surface the basics so reviewers reading the log can spot
+  // anything obviously off (wrong URL, weird label set, surprising diff size,
+  // dep additions) before any check runs.
+  p.log.info(`URL: ${partial.url}`);
+  const statusTag = partial.isDraft ? pc.yellow('draft') : pc.green('open');
+  p.log.info(
+    `${statusTag} · ${partial.files.length} file(s) · head ${pc.dim(partial.headSha.slice(0, 8))}`
+  );
+  p.log.info(
+    `Labels: ${partial.labels.length > 0 ? partial.labels.join(', ') : pc.dim('(none)')}`
+  );
+  const diffMetrics = computeDiffMetrics(partial.files);
+  p.log.info(
+    `Diff: ${pc.bold(`+${diffMetrics.added}/-${diffMetrics.removed}`)} (net ${diffMetrics.net} LOC)`
+  );
+  const addedDeps = computeAddedDependencies(partial.files);
+  if (addedDeps.length > 0) {
+    const preview = addedDeps.slice(0, 5).join(', ');
+    const extra = addedDeps.length > 5 ? `, +${addedDeps.length - 5} more` : '';
+    p.log.info(`New deps (${addedDeps.length}): ${preview}${extra}`);
+  }
+
   const skipSpinner = p.spinner();
   skipSpinner.start('Evaluating skip rules');
   const decision = await evaluateSkip(partial, {
@@ -223,7 +272,12 @@ async function main(): Promise<void> {
     p.outro(pc.dim('No assessment performed.'));
     process.exit(0);
   }
-  skipSpinner.stop('Eligible for assessment');
+  const flagNote = cliOpts.force
+    ? ' (--force; skip rules bypassed)'
+    : cliOpts.reassess
+      ? ' (--reassess; prior verdict ignored)'
+      : '';
+  skipSpinner.stop(`Eligible for assessment${flagNote}`);
 
   const issuesSpinner = p.spinner();
   issuesSpinner.start('Resolving linked issues');
@@ -233,8 +287,6 @@ async function main(): Promise<void> {
   });
   const brokenSuffix = broken.length > 0 ? `, ${broken.length} broken ref(s)` : '';
   issuesSpinner.stop(`Resolved ${issues.length} issue(s)${brokenSuffix}`);
-  const pr: PrContext = { ...partial, linkedIssues: issues, brokenLinkRefs: broken };
-
   for (const issue of issues) {
     const src = issue.sources?.join('+') ?? 'unknown';
     const ref = pc.cyan(`${issue.owner}/${issue.repo}#${issue.number}`);
@@ -244,22 +296,13 @@ async function main(): Promise<void> {
   for (const ref of broken) {
     p.log.warn(`Broken ref: ${ref}`);
   }
-
-  const diffMetrics = computeDiffMetrics(pr.files);
-  const addedDeps = computeAddedDependencies(pr.files);
-  p.log.info(
-    `Diff: ${pc.bold(`+${diffMetrics.added}/-${diffMetrics.removed}`)} across ${diffMetrics.filesChanged} file(s) (net ${diffMetrics.net} LOC)`
-  );
-  if (addedDeps.length > 0) {
-    const preview = addedDeps.slice(0, 5).join(', ');
-    const extra = addedDeps.length > 5 ? `, +${addedDeps.length - 5} more` : '';
-    p.log.info(`New deps (${addedDeps.length}): ${preview}${extra}`);
-  }
+  const pr: PrContext = { ...partial, linkedIssues: issues, brokenLinkRefs: broken };
 
   const detSpinner = p.spinner();
   detSpinner.start('Deterministic checks (1 human-monitored, 3 duplicate)');
   const det = await runDeterministicPhase(pr);
   detSpinner.stop(`Deterministic: ${summariseStatuses(det.results)}`);
+  for (const r of det.results) logCheckResult(r);
 
   const humanResult = det.results.find((r) => r.id === 'human');
   if (humanResult?.status === 'deferred') {
@@ -275,6 +318,9 @@ async function main(): Promise<void> {
   );
   const llmResults = await runLlmPhase(pr, det.earlyAbort);
   llmSpinner.stop(`LLM: ${summariseStatuses(llmResults)}`);
+  if (!det.earlyAbort) {
+    for (const r of llmResults) logCheckResult(r);
+  }
 
   const synthSpinner = p.spinner();
   synthSpinner.start('Composing review body');
@@ -282,24 +328,20 @@ async function main(): Promise<void> {
   const verdict = computeVerdict(results);
   const reviewBody = await synthesizeReview({ results, earlyAbort: det.earlyAbort });
   const { labelsToAdd, labelsToRemove } = diffLabels(pr.labels, verdict);
-  synthSpinner.stop(`Review body composed`);
+  synthSpinner.stop('Review body composed');
 
-  p.note(
-    renderSummary({
-      pr,
-      verdict,
-      results,
-      reviewBody,
-      labelsToAdd,
-      labelsToRemove,
-      dryRun: cliOpts.dryRun,
-    }),
-    'Assessment'
-  );
+  if (labelsToRemove.length > 0) {
+    p.log.info(`Labels to remove: ${pc.red(labelsToRemove.join(', '))}`);
+  }
+  if (labelsToAdd.length > 0) {
+    p.log.info(`Labels to add: ${pc.green(labelsToAdd.join(', '))}`);
+  }
+
+  p.note(reviewBody, cliOpts.dryRun ? 'Review body (dry-run)' : 'Review body (submitted)');
 
   const verdictLine =
     verdict === 'pass'
-      ? pc.green(`Verdict: PASS`)
+      ? pc.green('Verdict: PASS')
       : pc.red(`Verdict: FAIL${det.earlyAbort ? ' (early-abort)' : ''}`);
   p.outro(verdictLine);
 }

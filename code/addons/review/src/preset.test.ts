@@ -79,7 +79,10 @@ describe('addon-review experimental_serverChannel', () => {
     await (channel as any).fire(EVENTS.PUSH_REVIEW, sampleReview);
 
     expect(emitted).toEqual([
-      { event: EVENTS.DISPLAY_REVIEW, payload: { ...sampleReview, createdAt: NOW } },
+      {
+        event: EVENTS.DISPLAY_REVIEW,
+        payload: { ...sampleReview, createdAt: NOW, collapseNavOnOpen: true },
+      },
     ]);
   });
 
@@ -91,7 +94,10 @@ describe('addon-review experimental_serverChannel', () => {
     await (channel as any).fire(EVENTS.PUSH_REVIEW, payloadWithStale);
 
     expect(emitted).toEqual([
-      { event: EVENTS.DISPLAY_REVIEW, payload: { ...sampleReview, createdAt: NOW } },
+      {
+        event: EVENTS.DISPLAY_REVIEW,
+        payload: { ...sampleReview, createdAt: NOW, collapseNavOnOpen: true },
+      },
     ]);
     expect((emitted[0].payload as ReviewState).stale).toBeUndefined();
   });

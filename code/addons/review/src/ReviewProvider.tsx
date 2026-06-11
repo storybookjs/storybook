@@ -3,12 +3,14 @@ import React, {
   useEffect,
   useLayoutEffect,
   useMemo,
+  useRef,
   useState,
   type FC,
   type ReactNode,
 } from 'react';
 
 import {
+  experimental_getStatusStore,
   experimental_useStatusStore,
   useChannel,
   useStorybookApi,
@@ -16,6 +18,7 @@ import {
 } from 'storybook/manager-api';
 import { useNavigate } from 'storybook/internal/router';
 import type { StatusesByStoryIdAndTypeId } from 'storybook/internal/types';
+import { REVIEW_STATUS_TYPE_ID } from 'storybook/internal/types';
 
 import { fallbackStoryInfo, type StoryInfo } from './components/CollectionGrid.tsx';
 import {
@@ -24,6 +27,7 @@ import {
   EVENTS,
   PREVIEW_MODE_SESSION_KEY,
   LAST_REVIEWED_STORY_SESSION_KEY,
+  RESTORE_NAV_SESSION_KEY,
   RETURN_PATH_SESSION_KEY,
   REVIEW_CHANGES_URL,
   type CompareMode,
@@ -41,7 +45,16 @@ import {
 } from './review-navigation.ts';
 import type { ReviewState } from './review-state.ts';
 import { reviewStore, type ReviewStoreState } from './review-store.ts';
+import {
+  REVIEWING_STATUS_VALUE,
+  clearReviewStatuses,
+  collectReviewStoryIds,
+  syncReviewStatuses,
+} from './review-status.ts';
+import { setReviewStatusFilters } from './review-status-filters.ts';
 import { sessionStore } from './session-store.ts';
+
+const reviewStatusStore = experimental_getStatusStore(REVIEW_STATUS_TYPE_ID);
 
 const readCompareMode = (): CompareMode => {
   const stored = sessionStore.read(PREVIEW_MODE_SESSION_KEY);
@@ -61,6 +74,9 @@ const isReviewReturnSearch = (search: string) => {
   return isReviewSummaryPath(path) || path.startsWith(REVIEW_CHANGES_URL);
 };
 
+/** Transient flag on DISPLAY_REVIEW after PUSH_REVIEW; not part of cached ReviewState. */
+type ReviewDisplayEvent = ReviewState & { collapseNavOnOpen?: boolean };
+
 export const ReviewProvider: FC<{ children: ReactNode }> = ({ children }) => {
   const [state, setState] = useState<ReviewState | null>(null);
   const [isStale, setIsStale] = useState(false);
@@ -69,6 +85,8 @@ export const ReviewProvider: FC<{ children: ReactNode }> = ({ children }) => {
   const [lastReviewedStoryHref, setLastReviewedStoryHref] = useState<string | null>(() =>
     sessionStore.read(LAST_REVIEWED_STORY_SESSION_KEY)
   );
+  const [pendingNavCollapse, setPendingNavCollapse] = useState(false);
+  const previousReviewStoryIdsRef = useRef<Set<string>>(new Set());
 
   const api = useStorybookApi();
   const navigate = useNavigate();
@@ -103,14 +121,21 @@ export const ReviewProvider: FC<{ children: ReactNode }> = ({ children }) => {
   );
 
   const emit = useChannel({
-    [EVENTS.DISPLAY_REVIEW]: (next: ReviewState) => {
-      setState(next);
-      setIsStale(!!next.stale);
+    [EVENTS.DISPLAY_REVIEW]: (next: ReviewDisplayEvent) => {
+      const { collapseNavOnOpen, ...review } = next;
+      setState(review);
+      setIsStale(!!review.stale);
+      if (collapseNavOnOpen) {
+        setPendingNavCollapse(true);
+      }
     },
     [EVENTS.REVIEW_STALE]: () => {
       setIsStale(true);
     },
     [EVENTS.REVIEW_DISMISSED]: (returnSearch?: string | null) => {
+      clearReviewStatuses(reviewStatusStore);
+      previousReviewStoryIdsRef.current = new Set();
+      void setReviewStatusFilters(api, [], []);
       setState(null);
       setIsStale(false);
       setBaselineStoryIds(null);
@@ -126,6 +151,21 @@ export const ReviewProvider: FC<{ children: ReactNode }> = ({ children }) => {
   useEffect(() => {
     emit(EVENTS.REQUEST_REVIEW);
   }, [emit]);
+
+  // Tag every story in the active review and filter the sidebar to them only.
+  useEffect(() => {
+    if (!state) {
+      return;
+    }
+
+    const storyIds = collectReviewStoryIds(state);
+    previousReviewStoryIdsRef.current = syncReviewStatuses(
+      reviewStatusStore,
+      storyIds,
+      previousReviewStoryIdsRef.current
+    );
+    void setReviewStatusFilters(api, [REVIEWING_STATUS_VALUE], []);
+  }, [api, state?.createdAt]);
 
   const reviewCreatedAt = state?.createdAt;
   useEffect(() => {
@@ -255,6 +295,29 @@ export const ReviewProvider: FC<{ children: ReactNode }> = ({ children }) => {
       sessionStore.write(RETURN_PATH_SESSION_KEY, search);
     }
   }, [isInReviewSession, viewMode, location?.search]);
+
+  // Collapse the sidebar the first time a freshly pushed review summary is opened.
+  useEffect(() => {
+    if (!isSummaryVisible || !pendingNavCollapse) {
+      return;
+    }
+    if (sessionStore.read(RESTORE_NAV_SESSION_KEY) === null) {
+      sessionStore.write(RESTORE_NAV_SESSION_KEY, api.getIsNavShown() ? 'restore' : 'keep');
+    }
+    api.toggleNav(false);
+    setPendingNavCollapse(false);
+  }, [api, isSummaryVisible, pendingNavCollapse]);
+
+  // Restore the sidebar when leaving the review session if we collapsed it on entry.
+  useEffect(() => {
+    if (isInReviewSession) {
+      return;
+    }
+    if (sessionStore.read(RESTORE_NAV_SESSION_KEY) === 'restore') {
+      api.toggleNav(true);
+    }
+    sessionStore.remove(RESTORE_NAV_SESSION_KEY);
+  }, [api, isInReviewSession]);
 
   const value = useMemo<ReviewStoreState>(
     () => ({

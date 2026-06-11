@@ -127,6 +127,10 @@ const managerApi: API = {
   toggleNav: toggleNavMock,
   setAddonShortcut: setAddonShortcutMock,
   setQueryParams: fn(),
+  setAllStatusFilters: fn().mockName('api::setAllStatusFilters'),
+  resetStatusFilters: fn().mockName('api::resetStatusFilters'),
+  addStatusFilters: fn().mockName('api::addStatusFilters'),
+  removeStatusFilters: fn().mockName('api::removeStatusFilters'),
   getStoryHrefs: (storyId: string, options?: { freeze?: boolean }) => ({
     managerHref: `?path=/story/${storyId}`,
     previewHref: `iframe.html?id=${storyId}&viewMode=story${options?.freeze ? '&freeze=finished' : ''}`,

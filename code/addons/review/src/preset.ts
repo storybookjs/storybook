@@ -104,7 +104,7 @@ export const experimental_serverChannel = async (
   channel.on(EVENTS.PUSH_REVIEW, (payload: ReviewState) => {
     // A fresh review starts non-stale; its new createdAt re-anchors staleness.
     cached = prepareReview(payload);
-    channel.emit(EVENTS.DISPLAY_REVIEW, cached);
+    channel.emit(EVENTS.DISPLAY_REVIEW, { ...cached, collapseNavOnOpen: true });
   });
 
   channel.on(EVENTS.REQUEST_REVIEW, () => {

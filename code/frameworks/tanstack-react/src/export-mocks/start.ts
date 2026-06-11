@@ -243,6 +243,16 @@ export function StartServer() {
   return null;
 }
 
+export const Hydrate = ({
+  children,
+}: {
+  state?: unknown;
+  children: React.ReactNode;
+  onPrefetchStrategy?: unknown;
+  when?: unknown;
+  onInteraction?: unknown;
+}) =&gt; React.createElement(React.Fragment, null, children);
+
 export const defineHandlerCallback = createNamedMock(
   'defineHandlerCallback',
   <TRouter = unknown>(handler: HandlerCallback<TRouter>) => handler

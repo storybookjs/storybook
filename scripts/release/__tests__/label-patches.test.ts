@@ -6,7 +6,7 @@ import type { LogResult } from 'simple-git';
 import { run } from '../label-patches.ts';
 import * as githubInfo_ from '../utils/get-github-info.ts';
 import * as gitClient_ from '../utils/git-client.ts';
-import * as github_ from '../utils/github-client.ts';
+import * as github_ from '../utils/pull-requests.ts';
 
 const { mockGraphql, mockRest } = vi.hoisted(() => ({
   mockGraphql: vi.fn(),
@@ -15,7 +15,7 @@ const { mockGraphql, mockRest } = vi.hoisted(() => ({
 
 vi.mock('uuid');
 vi.mock('../utils/get-github-info');
-vi.mock('../utils/github-client');
+vi.mock('../utils/pull-requests');
 vi.mock('../utils/git-client');
 vi.mock('../../utils/github/client', () => ({
   getGithubClient: () => ({ rest: mockRest, graphql: mockGraphql }),

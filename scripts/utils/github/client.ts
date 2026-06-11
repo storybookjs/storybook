@@ -11,6 +11,13 @@ import { request } from '@octokit/request';
 
 const TOKEN_VARS = ['GH_TOKEN', 'GITHUB_TOKEN'] as const;
 
+/**
+ * Resolve a GitHub token from the environment. Both `GH_TOKEN` (used by `gh`)
+ * and `GITHUB_TOKEN` (used by GitHub Actions) are accepted; `GH_TOKEN` wins
+ * when both are set so local `gh auth token` runs override workflow defaults.
+ * Throws with the required-scopes list rather than returning undefined — every
+ * caller treats no-token as a fatal usage error.
+ */
 export function requireToken(
   env: NodeJS.ProcessEnv | Record<string, string | undefined> = process.env
 ): string {
@@ -28,6 +35,12 @@ export interface GithubClient {
   rest: typeof request;
 }
 
+/**
+ * Build a `{ graphql, rest }` octokit client with the given token baked in as
+ * a default header. We expose both flavours because some queries (closing-
+ * issue references, cross-references) only exist in GraphQL while the REST
+ * API has better pagination ergonomics for files/timeline endpoints.
+ */
 export function createGithubClient(token: string): GithubClient {
   return {
     graphql: graphql.defaults({ headers: { authorization: `token ${token}` } }),

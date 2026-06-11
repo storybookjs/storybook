@@ -1,5 +1,19 @@
 import type { PrContext } from '../types.ts';
 
+/**
+ * Dependency-additions precompute for Check 4 (cost/benefit).
+ *
+ * Reports newly-added runtime + peer dependencies. We deliberately ignore
+ * devDependencies because Check 4 is about *runtime* maintenance cost — a new
+ * test dep is essentially free, whereas a new runtime dep affects every
+ * downstream consumer.
+ *
+ * Subtlety the test suite captures: a `+ "foo": "^1.0.0",` line on its own
+ * could be either (a) a genuinely new entry or (b) the SAME entry with a
+ * trailing comma added because a newer entry was inserted after it. We track
+ * removed names per section and skip additions whose name was also removed —
+ * that filters out comma-only modifications.
+ */
 export interface AddedDeps {
   runtime: string[];
   peer: string[];

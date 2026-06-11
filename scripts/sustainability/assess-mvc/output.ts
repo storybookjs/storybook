@@ -18,6 +18,14 @@ const STATUS_COLOR: Record<CheckResult['status'], (s: string) => string> = {
   deferred: pc.dim,
 };
 
+/**
+ * Render a human-readable summary of the assessment for stdout.
+ *
+ * In `--dry-run` this is the entire output; in `--no-dry-run` it acts as a
+ * transcript of what was applied to GitHub. The table format is deliberately
+ * stable so a maintainer can scan a dozen PRs in a batch run and pick out
+ * which criterion is failing at a glance.
+ */
 export interface SummaryInput {
   pr: { number: number; title: string; author: string; url: string };
   verdict: Verdict;

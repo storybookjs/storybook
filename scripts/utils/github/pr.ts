@@ -10,6 +10,12 @@ export interface PrCoords {
 
 const URL_RE = /^https:\/\/github\.com\/([^/]+)\/([^/]+)\/pull\/(\d+)(?:[/?#].*)?$/;
 
+/**
+ * Parse the CLI argument into PR coordinates. Accepts a bare PR number (which
+ * defaults to `storybookjs/storybook`) or a full PR URL. URLs outside the
+ * `storybookjs` org are rejected — we don't want a typo to point us at an
+ * unrelated repo and produce a confusing review on the wrong PR.
+ */
 export function parsePrArg(arg: string): PrCoords {
   const trimmed = (arg ?? '').trim();
   if (trimmed === '') throw new Error('PR argument required (number or URL).');
@@ -27,6 +33,11 @@ export function parsePrArg(arg: string): PrCoords {
   return { owner, repo, number: Number(number) };
 }
 
+/**
+ * Fetch PR metadata + the full file list (paginated). Returns everything we
+ * know about the PR before linked-issue resolution kicks in. Callers compose
+ * this with `resolveLinkedIssues` to build a complete `PrContext`.
+ */
 export async function fetchPr(
   client: GithubClient,
   coords: PrCoords

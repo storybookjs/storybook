@@ -12,6 +12,15 @@ const SAME_REPO_RE = /(?<![A-Za-z0-9_/-])#(\d+)\b/g;
 const CROSS_REPO_RE = /\b(storybookjs)\/([A-Za-z0-9_.-]+)#(\d+)\b/g;
 const URL_RE = /\bhttps:\/\/github\.com\/(storybookjs)\/([A-Za-z0-9_.-]+)\/issues\/(\d+)\b/g;
 
+/**
+ * Extract `storybookjs/*` issue references from a PR body.
+ *
+ * We accept three forms: `#NNN` (same-repo only, since `#NNN` in a PR body
+ * outside storybookjs would be ambiguous), `storybookjs/repo#NNN`, and full
+ * issue URLs. Anything outside the `storybookjs` org is filtered — we
+ * deliberately don't follow cross-org references because the rest of the
+ * pipeline (label management, team-membership checks) assumes storybookjs.
+ */
 export function parseBodyReferences(prOwner: string, prRepo: string, body: string): IssueRef[] {
   const refs: IssueRef[] = [];
   for (const m of body.matchAll(CROSS_REPO_RE)) {
@@ -66,6 +75,13 @@ async function fetchClosingRefs(
   }));
 }
 
+/**
+ * Resolve every linked issue for a PR: GraphQL `closingIssuesReferences`
+ * (which covers properly-formatted `Fixes #N` / `Closes org/repo#N` mentions)
+ * plus the looser body-text references. Issues that 404 or 410 are reported as
+ * `broken` rather than failing the check — a typo in a PR body shouldn't
+ * count as "no linked issue" for Check 2; we surface it as `warn` instead.
+ */
 export async function resolveLinkedIssues(
   client: GithubClient,
   pr: { owner: string; repo: string; number: number; body: string }

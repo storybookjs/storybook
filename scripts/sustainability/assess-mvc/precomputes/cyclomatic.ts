@@ -1,5 +1,23 @@
 import ts from 'typescript';
 
+/**
+ * Cyclomatic-complexity precompute for Check 4 (cost/benefit).
+ *
+ * Counts decision points per function in the changed JS/TS files: each `if`,
+ * loop, `case`, ternary, short-circuit (`&&` / `||` / `??`), and `catch` adds 1.
+ * A function with no branching is complexity 1.
+ *
+ * Why we built our own walker rather than pulling in `typhonjs-escomplex` or
+ * `ts-complex`: the TypeScript compiler API is already a direct dep here (we
+ * use it for `.ts`/`.tsx`), and the rule set is small and stable enough that an
+ * 80-line walker beats a 100kB dependency.
+ *
+ * Caveats:
+ *   - We don't descend into nested functions; each is reported separately.
+ *   - Anonymous arrow functions assigned to non-trivial expressions are reported
+ *     as `<anonymous>`. Good enough for Check 4's "is there a complexity hot-
+ *     spot" signal.
+ */
 export interface FunctionComplexity {
   name: string;
   complexity: number;

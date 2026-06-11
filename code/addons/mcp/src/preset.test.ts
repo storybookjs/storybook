@@ -1,8 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import type { Options } from 'storybook/internal/types';
-import { RequiresOwnMcpError } from '@storybook/mcp';
 import { experimental_devServer } from './preset.ts';
-import { STORYBOOK_MCP_PROXY_HEADER } from './auth/index.ts';
 import * as mcpHandlerModule from './mcp-handler.ts';
 import * as runStoryTests from './tools/run-story-tests.ts';
 import * as changeDetection from './utils/change-detection.ts';
@@ -295,37 +293,6 @@ describe('experimental_devServer', () => {
 		);
 		expect(mockRes.end).toHaveBeenCalledWith('401 - Unauthorized');
 		expect(mcpServerHandler).not.toHaveBeenCalled();
-	});
-
-	it('should let proxy requests reach MCP with a requires-own-mcp manifest provider', async () => {
-		const mcpServerHandler = vi
-			.spyOn(mcpHandlerModule, 'mcpServerHandler')
-			.mockResolvedValue(undefined);
-		stubPrivateRefDiscovery();
-
-		await (experimental_devServer as any)(mockApp, createOptionsWithPrivateRef());
-
-		const mockRes = { writeHead: vi.fn(), end: vi.fn() } as any;
-		await mcpHandler(
-			{
-				headers: { [STORYBOOK_MCP_PROXY_HEADER.toLowerCase()]: 'true' },
-			},
-			mockRes,
-		);
-
-		expect(mockRes.writeHead).not.toHaveBeenCalledWith(401, expect.anything());
-		expect(mcpServerHandler).toHaveBeenCalledTimes(1);
-
-		const { manifestProvider, sources } = mcpServerHandler.mock.calls[0]![0];
-		expect(manifestProvider).toBeDefined();
-		expect(sources).toBeDefined();
-		await expect(
-			manifestProvider!(
-				new Request('http://localhost:6006/mcp'),
-				'./manifests/components.json',
-				sources![1],
-			),
-		).rejects.toBeInstanceOf(RequiresOwnMcpError);
 	});
 
 	it('should serve HTML for browser GET requests', async () => {

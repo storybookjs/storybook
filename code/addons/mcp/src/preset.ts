@@ -7,9 +7,7 @@ import htmlTemplate from './template.html';
 import path from 'node:path';
 import {
 	CompositionAuth,
-	STORYBOOK_MCP_PROXY_HEADER,
 	extractBearerToken,
-	isStorybookMcpProxyRequest as hasStorybookMcpProxyHeader,
 	type ComposedRef,
 	type ManifestProvider,
 } from './auth/index.ts';
@@ -17,8 +15,6 @@ import { logger } from 'storybook/internal/node-logger';
 import type { Source } from '@storybook/mcp';
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import { DEFAULT_MCP_ENDPOINT } from './constants.ts';
-
-const STORYBOOK_MCP_PROXY_HEADER_KEY = STORYBOOK_MCP_PROXY_HEADER.toLowerCase();
 
 export const previewAnnotations: PresetPropertyFn<'previewAnnotations'> = async (
 	existingAnnotations = [],
@@ -61,10 +57,7 @@ export const experimental_devServer: PresetPropertyFn<
 		logger.info(`Sources: ${sources.map((s) => s.id).join(', ')}`);
 
 		// Create manifest provider that handles multi-source
-		createManifestProvider = (req) =>
-			compositionAuth.createManifestProvider(origin, {
-				requiresOwnMcpForUnauthenticatedRequests: isStorybookMcpProxyHttpRequest(req),
-			});
+		createManifestProvider = () => compositionAuth.createManifestProvider(origin);
 	}
 
 	// Serve .well-known/oauth-protected-resource for MCP auth
@@ -82,7 +75,7 @@ export const experimental_devServer: PresetPropertyFn<
 
 	const requireAuth = (req: IncomingMessage, res: ServerResponse): boolean => {
 		const token = extractBearerToken(req.headers['authorization']);
-		if (compositionAuth.requiresAuth && !token && !isStorybookMcpProxyHttpRequest(req)) {
+		if (compositionAuth.requiresAuth && !token) {
 			res.writeHead(401, {
 				'Content-Type': 'text/plain',
 				'WWW-Authenticate': compositionAuth.buildWwwAuthenticate(origin),
@@ -222,12 +215,6 @@ export const features: PresetPropertyFn<'features'> = async (existingFeatures) =
 		componentsManifest: true,
 	};
 };
-
-function isStorybookMcpProxyHttpRequest(req: IncomingMessage): boolean {
-	const headerValue =
-		req.headers[STORYBOOK_MCP_PROXY_HEADER_KEY] ?? req.headers[STORYBOOK_MCP_PROXY_HEADER];
-	return hasStorybookMcpProxyHeader(headerValue);
-}
 
 /**
  * Get composed Storybook refs from Storybook config.

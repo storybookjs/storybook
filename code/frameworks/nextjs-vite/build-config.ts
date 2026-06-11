@@ -25,6 +25,11 @@ const config: BuildEntries = {
         entryPoint: './src/export-mocks/headers/index.ts',
       },
       {
+        exportEntries: ['./image-context'],
+        entryPoint: './src/image-context.ts',
+        dts: false,
+      },
+      {
         exportEntries: ['./navigation.mock'],
         entryPoint: './src/export-mocks/navigation/index.ts',
       },

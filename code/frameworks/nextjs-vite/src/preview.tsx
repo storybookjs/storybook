@@ -33,25 +33,29 @@ function isAsyncClientComponentError(error: unknown) {
       error.includes('async/await is not yet supported in Client Components'))
   );
 }
-addNextHeadCount();
+if (typeof document !== 'undefined') {
+  addNextHeadCount();
+}
 
-// Copying Next patch of console.error:
-// https://github.com/vercel/next.js/blob/a74deb63e310df473583ab6f7c1783bc609ca236/packages/next/src/client/app-index.tsx#L15
-const origConsoleError = globalThis.console.error;
-globalThis.console.error = (...args: unknown[]) => {
-  const error = args[0];
-  if (isNextRouterError(error) || isAsyncClientComponentError(error)) {
-    return;
-  }
-  origConsoleError.apply(globalThis.console, args);
-};
+if (typeof globalThis.addEventListener === 'function') {
+  // Copying Next patch of console.error:
+  // https://github.com/vercel/next.js/blob/a74deb63e310df473583ab6f7c1783bc609ca236/packages/next/src/client/app-index.tsx#L15
+  const origConsoleError = globalThis.console.error;
+  globalThis.console.error = (...args: unknown[]) => {
+    const error = args[0];
+    if (isNextRouterError(error) || isAsyncClientComponentError(error)) {
+      return;
+    }
+    origConsoleError.apply(globalThis.console, args);
+  };
 
-globalThis.addEventListener('error', (ev: WindowEventMap['error']): void => {
-  if (isNextRouterError(ev.error) || isAsyncClientComponentError(ev.error)) {
-    ev.preventDefault();
-    return;
-  }
-});
+  globalThis.addEventListener('error', (ev: WindowEventMap['error']): void => {
+    if (isNextRouterError(ev.error) || isAsyncClientComponentError(ev.error)) {
+      ev.preventDefault();
+      return;
+    }
+  });
+}
 
 // Type assertion to handle the decorator type mismatch
 const asDecorator = (decorator: (Story: React.FC, context?: any) => React.ReactNode) =>

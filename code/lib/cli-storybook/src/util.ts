@@ -5,8 +5,6 @@ import {
   experimental_loadStorybook,
   getStoriesPathsFromConfig,
 } from 'storybook/internal/core-server';
-
-export { getStoriesPathsFromConfig };
 import { logTracker, logger, prompt } from 'storybook/internal/node-logger';
 import {
   UpgradeStorybookToLowerVersionError,
@@ -24,6 +22,8 @@ import { autoblock } from './autoblock/index.ts';
 import type { AutoblockerResult } from './autoblock/types.ts';
 import { getStorybookData } from './automigrate/helpers/mainConfigFile.ts';
 import { type UpgradeOptions } from './upgrade.ts';
+
+export { getStoriesPathsFromConfig };
 
 // ============================================================================
 // TYPES AND INTERFACES

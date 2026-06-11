@@ -15,7 +15,7 @@
  *      A missing token bubbles up as a thrown error which the top-level
  *      `main().catch` decorates.
  *   2. Optionally short-circuit on skip rules (drafts, prior verdict labels,
- *      `mvc:skip`, maintainer-team authorship) when `--skip-internal-prs`.
+ *      `mvc:skip`, maintainer-team authorship) when `--skip-internal`.
  *   3. Fetch PR + linked issues into a single `PrContext`.
  *   4. Run the deterministic checks (Check 1: human-monitored; Check 3:
  *      duplicate). If either fails, the LLM phase is skipped and the review
@@ -29,17 +29,10 @@ import { Command, Option } from 'commander';
 import pc from 'picocolors';
 
 import { getGithubClient } from '../utils/github/client.ts';
-import { ORG } from '../utils/github/constants.ts';
 import { resolveLinkedIssues } from '../utils/github/linked-issues.ts';
 import { fetchPr, normalizeStorybookPr } from '../utils/github/pr.ts';
-import { teamMembership } from '../utils/github/teams.ts';
 import { configureLlmClient, type Effort, type Model } from '../utils/llm/client.ts';
-import {
-  ASSESS_MVC_SCOPES,
-  MAINTAINER_TEAM_SLUGS,
-  MANAGED_LABELS,
-  VERDICT_LABELS,
-} from './assess-mvc/config.ts';
+import { ASSESS_MVC_SCOPES, MANAGED_LABELS, VERDICT_LABELS } from './assess-mvc/config.ts';
 import { checkCostBenefit } from './assess-mvc/cost-benefit/check.ts';
 import { checkDuplicate } from './assess-mvc/duplicate/check.ts';
 import { checkExplainsHowToTest } from './assess-mvc/explains-test/check.ts';
@@ -60,13 +53,6 @@ export interface RunOpts {
   verbose: boolean;
 }
 
-export interface PrSummary {
-  number: number;
-  title: string;
-  author: string;
-  url: string;
-}
-
 export interface RunResult {
   verdict: 'pass' | 'fail';
   results: CheckResult[];
@@ -74,7 +60,6 @@ export interface RunResult {
   reviewBody: string;
   labelsToAdd: string[];
   labelsToRemove: string[];
-  prSummary: PrSummary;
 }
 
 /**
@@ -83,13 +68,13 @@ export interface RunResult {
  * false; Phase 3 wires them.
  */
 export async function runAssessment(pr: PrContext, opts: RunOpts): Promise<RunResult> {
-  const det: CheckResult[] = [];
-  det.push(checkHumanMonitored(pr));
-  det.push(await checkDuplicate(pr));
+  const deterministicResults: CheckResult[] = [];
+  deterministicResults.push(checkHumanMonitored(pr));
+  deterministicResults.push(await checkDuplicate(pr));
 
-  const earlyAbort = isEarlyAbort(det);
+  const earlyAbort = isEarlyAbort(deterministicResults);
 
-  const llm: CheckResult[] = earlyAbort
+  const llmResults: CheckResult[] = earlyAbort
     ? (['real-problem', 'cost-benefit', 'explains-test', 'provides-context'] as const).map(
         (id) => ({ id, status: 'deferred' as const, evidence: 'Skipped due to early-abort.' })
       )
@@ -100,7 +85,7 @@ export async function runAssessment(pr: PrContext, opts: RunOpts): Promise<RunRe
         checkProvidesContext(pr),
       ]);
 
-  const results: CheckResult[] = [...det, ...llm];
+  const results: CheckResult[] = [...deterministicResults, ...llmResults];
   const verdict = computeVerdict(results);
   const reviewBody = await synthesizeReview({ results, earlyAbort });
   const { labelsToAdd, labelsToRemove } = diffLabels(pr.labels, verdict);
@@ -114,7 +99,6 @@ export async function runAssessment(pr: PrContext, opts: RunOpts): Promise<RunRe
     reviewBody,
     labelsToAdd,
     labelsToRemove,
-    prSummary: { number: pr.number, title: pr.title, author: pr.author, url: pr.url },
   };
 }
 
@@ -136,16 +120,12 @@ async function main(): Promise<void> {
     .name('assess-mvc')
     .description('Assess a Storybook PR against the six MVC criteria.')
     .argument('<pr>', 'PR number or GitHub URL')
-    .option('--dry-run', 'Print what would happen; never modify GitHub (default).', true)
+    // TODO: remove --no-dry-run and make --dry-run false by default
+    .option('--dry-run', 'Print what would happen; never modify GitHub.', true)
     .option('--no-dry-run', 'Apply changes (labels + review).')
     .option('--dismiss-previous', 'Dismiss prior bot reviews before posting.', false)
-    .option('--no-dismiss-previous', 'Do not dismiss prior bot reviews (default).')
-    .option(
-      '--skip-internal-prs',
-      'Skip ineligible PRs (drafts, maintainer-authored, already labeled).',
-      false
-    )
-    .option('--no-skip-internal-prs', 'Always assess, even ineligible PRs (default).')
+    .option('--force', 'Assess ineligible PRs (drafts, maintainer-made, `mvc:skip`).', false)
+    .option('--reassess', 'Reassess PRs with a `mvc:failed` or `mvc:success` label.', false)
     .addOption(
       new Option('--model <name>', 'Claude model')
         .choices(['sonnet-4.6', 'opus-4.6', 'haiku-4.5'])
@@ -163,13 +143,14 @@ async function main(): Promise<void> {
   const cliOpts = program.opts<{
     dryRun: boolean;
     dismissPrevious: boolean;
-    skipInternalPrs: boolean;
+    force: boolean;
+    reassess: boolean;
     model: Model;
     effort: Effort;
     verbose: boolean;
   }>();
 
-  const coords = normalizeStorybookPr(arg);
+  const prId = normalizeStorybookPr(arg);
 
   // Eager-validate the token so a missing GH_TOKEN throws here (decorated by
   // the top-level catch) instead of inside a check halfway through the run.
@@ -180,35 +161,24 @@ async function main(): Promise<void> {
     verbose: cliOpts.verbose,
   });
 
-  const partial = await fetchPr(coords);
+  const partial = await fetchPr(prId);
 
-  if (cliOpts.skipInternalPrs) {
-    const decision = await evaluateSkip(partial, {
-      isMaintainer: teamMembership(ORG, MAINTAINER_TEAM_SLUGS).isMaintainer,
-    });
-    if (decision.skip) {
-      console.log(pc.dim(`Skipped: ${decision.reason}`));
-      process.exit(0);
-    }
+  const decision = await evaluateSkip(partial, {
+    force: cliOpts.force,
+    reassess: cliOpts.reassess,
+  });
+  if (decision.skip) {
+    console.log(pc.dim(`Skipped: ${decision.reason}`));
+    process.exit(0);
   }
 
   const { issues, broken } = await resolveLinkedIssues({
-    owner: coords.owner,
-    repo: coords.repo,
-    number: coords.number,
+    ...prId,
     body: partial.body,
   });
   const pr: PrContext = { ...partial, linkedIssues: issues, brokenLinkRefs: broken };
 
-  const opts: RunOpts = {
-    dryRun: cliOpts.dryRun,
-    dismissPrevious: cliOpts.dismissPrevious,
-    model: cliOpts.model,
-    effort: cliOpts.effort,
-    verbose: cliOpts.verbose,
-  };
-
-  const result = await runAssessment(pr, opts);
+  const result = await runAssessment(pr, cliOpts);
 
   const humanResult = result.results.find((r) => r.id === 'human');
   if (humanResult?.status === 'deferred') {
@@ -218,7 +188,7 @@ async function main(): Promise<void> {
 
   console.log(
     renderSummary({
-      pr: result.prSummary,
+      pr,
       verdict: result.verdict,
       results: result.results,
       reviewBody: result.reviewBody,

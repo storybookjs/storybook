@@ -1,3 +1,7 @@
+import { ORG } from '../../utils/github/constants.ts';
+import { teamMembership } from '../../utils/github/teams.ts';
+import { MAINTAINER_TEAM_SLUGS } from './config.ts';
+
 /**
  * Skip-rule evaluation for `--skip-internal-prs`.
  *
@@ -27,19 +31,34 @@ export interface SkipDecision {
   reason?: SkipReason;
 }
 
-export interface SkipDeps {
-  isMaintainer(login: string): Promise<boolean>;
+export interface EvaluateSkipOpts {
+  force: boolean;
+  reassess: boolean;
 }
 
 export async function evaluateSkip(
   pr: { isDraft: boolean; labels: string[]; author: string },
-  deps: SkipDeps
+  opts: EvaluateSkipOpts
 ): Promise<SkipDecision> {
-  if (pr.isDraft) return { skip: true, reason: 'draft' };
-  if (pr.labels.includes('mvc:success') || pr.labels.includes('mvc:failed')) {
+  if (opts.force) {
+    return { skip: false };
+  }
+
+  if (!opts.reassess && (pr.labels.includes('mvc:success') || pr.labels.includes('mvc:failed'))) {
     return { skip: true, reason: 'already-assessed' };
   }
-  if (pr.labels.includes('mvc:skip')) return { skip: true, reason: 'explicit-skip' };
-  if (await deps.isMaintainer(pr.author)) return { skip: true, reason: 'maintainer' };
+
+  if (pr.isDraft) {
+    return { skip: true, reason: 'draft' };
+  }
+
+  if (pr.labels.includes('mvc:skip')) {
+    return { skip: true, reason: 'explicit-skip' };
+  }
+
+  if (await teamMembership(ORG, MAINTAINER_TEAM_SLUGS).isMaintainer(pr.author)) {
+    return { skip: true, reason: 'maintainer' };
+  }
+
   return { skip: false };
 }

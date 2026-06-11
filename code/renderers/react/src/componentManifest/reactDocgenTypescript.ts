@@ -1,4 +1,4 @@
-import { dirname } from 'node:path';
+import { dirname, resolve } from 'node:path';
 
 import {
   type ComponentDoc,
@@ -199,11 +199,39 @@ async function getParser(userOptions?: ParserOptions) {
 
     if (configPath) {
       const { config } = typescript.readConfigFile(configPath, typescript.sys.readFile);
-      const parsed = typescript.parseJsonConfigFileContent(
+      let parsed = typescript.parseJsonConfigFileContent(
         config,
         typescript.sys,
         dirname(configPath)
       );
+
+      // Vite-style project references: tsconfig.json has { files: [], references: [...] }
+      // which yields 0 file names. Follow the references to find a config with source files.
+      if (parsed.fileNames.length === 0 && Array.isArray(config.references)) {
+        for (const ref of config.references as { path: string }[]) {
+          const refPath = resolve(dirname(configPath), ref.path);
+          // A reference path can point to a directory (meaning <dir>/tsconfig.json)
+          // or directly to a config file.
+          const refConfigPath = refPath.endsWith('.json')
+            ? refPath
+            : resolve(refPath, 'tsconfig.json');
+          const refResult = typescript.readConfigFile(refConfigPath, typescript.sys.readFile);
+          if (refResult.error || !refResult.config) {
+            continue;
+          }
+
+          const refParsed = typescript.parseJsonConfigFileContent(
+            refResult.config,
+            typescript.sys,
+            dirname(refConfigPath)
+          );
+          if (refParsed.fileNames.length > 0) {
+            parsed = refParsed;
+            break;
+          }
+        }
+      }
+
       cachedCompilerOptions = { ...parsed.options, noErrorTruncation: true };
       cachedFileNames = parsed.fileNames;
     } else {

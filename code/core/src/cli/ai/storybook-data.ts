@@ -1,11 +1,7 @@
 import { dirname, isAbsolute, join } from 'node:path';
 
 import type { PackageManagerName } from 'storybook/internal/common';
-import {
-  JsPackageManagerFactory,
-  getStorybookInfo,
-  normalizeStories,
-} from 'storybook/internal/common';
+import { JsPackageManagerFactory, getStorybookInfo } from 'storybook/internal/common';
 import { getStoriesPathsFromConfig } from 'storybook/internal/core-server';
 import { isCsfFactoryPreview, readConfig } from 'storybook/internal/csf-tools';
 import { logger } from 'storybook/internal/node-logger';

@@ -6,7 +6,7 @@ import { checkExplainsHowToTest } from './check.ts';
 const { mockJudge } = vi.hoisted(() => ({ mockJudge: vi.fn() }));
 
 vi.mock('../../../utils/llm/client', () => ({
-  getLlmClient: () => ({ judge: mockJudge }),
+  getLlmClient: () => ({ judge: mockJudge, judgeText: vi.fn() }),
   configureLlmClient: vi.fn(),
   resetLlmClient: vi.fn(),
 }));

@@ -1,11 +1,7 @@
-import { z } from 'zod';
-
 import { getLlmClient } from '../../utils/llm/client.ts';
 import { CANNED, OVERALL } from './canned-responses.ts';
 import { MARKER } from './config.ts';
 import type { CheckResult } from './types.ts';
-
-const Schema = z.object({ reviewBody: z.string() });
 
 /**
  * Compose the final PR-review body from all six check results.
@@ -16,6 +12,10 @@ const Schema = z.object({ reviewBody: z.string() });
  * deterministic FAIL, this also lists the not-performed checks so the author
  * knows what other criteria they must satisfy after addressing the failing
  * deterministic ones.
+ *
+ * Uses `judgeText` (free-form markdown) rather than `judge` (JSON+schema):
+ * the only output is a single markdown blob, and forcing the LLM to keep
+ * JSON syntax intact while generating a long body hurts quality for no gain.
  *
  * The returned string is prefixed with the HTML marker so future tooling
  * (re-runs with `--dismiss-previous`, downstream verifiers) can identify bot
@@ -46,11 +46,11 @@ export async function synthesizeReview(input: {
       ? `IMPORTANT: deterministic checks failed. The following LLM-judged checks were NOT performed and must be listed in the body so the author knows they remain to be evaluated: ${notPerformed.join(', ')}.`
       : '',
     '',
-    'Return JSON: { "reviewBody": "<markdown>" }. Do NOT include the HTML marker; it is appended by the script.',
+    'Return ONLY the review body as markdown. Do NOT include the HTML marker (the script appends it). Do NOT wrap the output in code fences.',
   ]
     .filter(Boolean)
     .join('\n');
 
-  const { reviewBody } = await getLlmClient().judge(prompt, Schema);
+  const reviewBody = await getLlmClient().judgeText(prompt);
   return `${MARKER}\n${reviewBody}`;
 }

@@ -3,19 +3,25 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { MARKER } from './config.ts';
 import { synthesizeReview } from './synthesize.ts';
 
-const { mockJudge } = vi.hoisted(() => ({ mockJudge: vi.fn() }));
+const { mockJudge, mockJudgeText } = vi.hoisted(() => ({
+  mockJudge: vi.fn(),
+  mockJudgeText: vi.fn(),
+}));
 
 vi.mock('../../utils/llm/client', () => ({
-  getLlmClient: () => ({ judge: mockJudge }),
+  getLlmClient: () => ({ judge: mockJudge, judgeText: mockJudgeText }),
   configureLlmClient: vi.fn(),
   resetLlmClient: vi.fn(),
 }));
 
 describe('synthesizeReview', () => {
-  beforeEach(() => mockJudge.mockReset());
+  beforeEach(() => {
+    mockJudge.mockReset();
+    mockJudgeText.mockReset();
+  });
 
   it('prefixes the body with the HTML marker', async () => {
-    mockJudge.mockResolvedValueOnce({ reviewBody: 'composed body' });
+    mockJudgeText.mockResolvedValueOnce('composed body');
     const body = await synthesizeReview({
       results: [{ id: 'human', status: 'pass', evidence: 'ok' }],
       earlyAbort: false,
@@ -24,8 +30,18 @@ describe('synthesizeReview', () => {
     expect(body).toContain('composed body');
   });
 
+  it('uses judgeText (text mode), not judge (JSON mode)', async () => {
+    mockJudgeText.mockResolvedValueOnce('body');
+    await synthesizeReview({
+      results: [{ id: 'human', status: 'pass', evidence: 'ok' }],
+      earlyAbort: false,
+    });
+    expect(mockJudgeText).toHaveBeenCalledOnce();
+    expect(mockJudge).not.toHaveBeenCalled();
+  });
+
   it('tells the LLM which checks were not performed on early-abort', async () => {
-    mockJudge.mockResolvedValueOnce({ reviewBody: 'composed' });
+    mockJudgeText.mockResolvedValueOnce('composed');
     await synthesizeReview({
       results: [
         { id: 'human', status: 'pass', evidence: 'ok' },
@@ -35,7 +51,7 @@ describe('synthesizeReview', () => {
       ],
       earlyAbort: true,
     });
-    const prompt = mockJudge.mock.calls[0][0] as string;
+    const prompt = mockJudgeText.mock.calls[0][0] as string;
     expect(prompt).toContain('NOT performed');
     expect(prompt).toContain('real-problem');
     expect(prompt).toContain('cost-benefit');

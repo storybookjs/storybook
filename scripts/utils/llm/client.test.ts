@@ -24,6 +24,8 @@ function fakeStream(messages: FakeMessage[]): AsyncGenerator<FakeMessage> {
   })();
 }
 
+const client = createLlmClient({ model: 'sonnet-4.6', effort: 'medium', verbose: false });
+
 describe('LlmClient.judge', () => {
   it('parses structured JSON from assistant messages', async () => {
     vi.mocked(query).mockReturnValueOnce(
@@ -35,7 +37,6 @@ describe('LlmClient.judge', () => {
         { type: 'result' },
       ]) as unknown as ReturnType<typeof query>
     );
-    const client = createLlmClient({ model: 'sonnet-4.6', effort: 'medium', verbose: false });
     const result = await client.judge('analyze', z.object({ verdict: z.enum(['pass', 'fail']) }));
     expect(result).toEqual({ verdict: 'pass' });
   });
@@ -52,7 +53,6 @@ describe('LlmClient.judge', () => {
         { type: 'result' },
       ]) as unknown as ReturnType<typeof query>
     );
-    const client = createLlmClient({ model: 'sonnet-4.6', effort: 'medium', verbose: false });
     const result = await client.judge('x', z.object({ verdict: z.enum(['pass', 'fail']) }));
     expect(result).toEqual({ verdict: 'fail' });
   });
@@ -64,7 +64,6 @@ describe('LlmClient.judge', () => {
         { type: 'result' },
       ]) as unknown as ReturnType<typeof query>
     );
-    const client = createLlmClient({ model: 'sonnet-4.6', effort: 'medium', verbose: false });
     await expect(client.judge('x', z.object({ a: z.string() }))).rejects.toThrow(/JSON/);
   });
 
@@ -75,7 +74,55 @@ describe('LlmClient.judge', () => {
         { type: 'result' },
       ]) as unknown as ReturnType<typeof query>
     );
-    const client = createLlmClient({ model: 'sonnet-4.6', effort: 'medium', verbose: false });
     await expect(client.judge('x', z.object({ verdict: z.enum(['pass', 'fail']) }))).rejects.toThrow();
+  });
+});
+
+describe('LlmClient.judgeText', () => {
+  it('returns the raw assistant text untouched', async () => {
+    vi.mocked(query).mockReturnValueOnce(
+      fakeStream([
+        {
+          type: 'assistant',
+          message: {
+            content: [
+              { type: 'text', text: '## Hello\n\nThis is **markdown** with `code`.' },
+            ],
+          },
+        },
+        { type: 'result' },
+      ]) as unknown as ReturnType<typeof query>
+    );
+    const result = await client.judgeText('compose a review');
+    expect(result).toBe('## Hello\n\nThis is **markdown** with `code`.');
+  });
+
+  it('does not strip code fences (markdown may contain them legitimately)', async () => {
+    vi.mocked(query).mockReturnValueOnce(
+      fakeStream([
+        {
+          type: 'assistant',
+          message: {
+            content: [{ type: 'text', text: 'Run this:\n```bash\nyarn install\n```' }],
+          },
+        },
+        { type: 'result' },
+      ]) as unknown as ReturnType<typeof query>
+    );
+    const result = await client.judgeText('write instructions');
+    expect(result).toContain('```bash');
+    expect(result).toContain('yarn install');
+  });
+
+  it('concatenates text across multiple assistant messages', async () => {
+    vi.mocked(query).mockReturnValueOnce(
+      fakeStream([
+        { type: 'assistant', message: { content: [{ type: 'text', text: 'part one ' }] } },
+        { type: 'assistant', message: { content: [{ type: 'text', text: 'part two' }] } },
+        { type: 'result' },
+      ]) as unknown as ReturnType<typeof query>
+    );
+    const result = await client.judgeText('continue');
+    expect(result).toBe('part one part two');
   });
 });

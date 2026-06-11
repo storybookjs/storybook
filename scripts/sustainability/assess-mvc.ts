@@ -14,17 +14,18 @@
  *      `getGithubClient` / `getLlmClient` from anywhere they're needed.
  *      A missing token bubbles up as a thrown error which the top-level
  *      `main().catch` decorates.
- *   2. Optionally short-circuit on skip rules (drafts, prior verdict labels,
- *      `mvc:skip`, maintainer-team authorship) when `--skip-internal`.
+ *   2. Evaluate skip rules. `--force` bypasses them entirely; `--reassess`
+ *      re-runs on PRs that already have a verdict label.
  *   3. Fetch PR + linked issues into a single `PrContext`.
- *   4. Run the deterministic checks (Check 1: human-monitored; Check 3:
+ *   4. Run the deterministic phase (Check 1: human-monitored; Check 3:
  *      duplicate). If either fails, the LLM phase is skipped and the review
  *      body explicitly lists the not-performed checks.
  *   5. Run the four LLM-judged checks in parallel.
  *   6. Synthesize the final review body (one more LLM call).
  *   7. Apply writes (only with `--no-dry-run`; Phase 3 wires them).
- *   8. Print the summary table.
+ *   8. Print the summary.
  */
+import * as p from '@clack/prompts';
 import { Command, Option } from 'commander';
 import pc from 'picocolors';
 
@@ -53,6 +54,11 @@ export interface RunOpts {
   verbose: boolean;
 }
 
+export interface DeterministicPhaseResult {
+  results: CheckResult[];
+  earlyAbort: boolean;
+}
+
 export interface RunResult {
   verdict: 'pass' | 'fail';
   results: CheckResult[];
@@ -62,32 +68,57 @@ export interface RunResult {
   labelsToRemove: string[];
 }
 
+const LLM_CHECK_IDS = [
+  'real-problem',
+  'cost-benefit',
+  'explains-test',
+  'provides-context',
+] as const;
+
+/**
+ * Run the deterministic phase: Check 1 (human-monitored) and Check 3
+ * (duplicate). If either FAILs, `earlyAbort` is true and the caller should
+ * stub the LLM checks as deferred.
+ */
+export async function runDeterministicPhase(pr: PrContext): Promise<DeterministicPhaseResult> {
+  const results: CheckResult[] = [];
+  results.push(checkHumanMonitored(pr));
+  results.push(await checkDuplicate(pr));
+  return { results, earlyAbort: isEarlyAbort(results) };
+}
+
+/**
+ * Run the LLM phase: Checks 2, 4, 5, 6 in parallel. When `earlyAbort` is
+ * true, returns a deferred-status stub for each check without spending
+ * tokens.
+ */
+export async function runLlmPhase(pr: PrContext, earlyAbort: boolean): Promise<CheckResult[]> {
+  if (earlyAbort) {
+    return LLM_CHECK_IDS.map((id) => ({
+      id,
+      status: 'deferred' as const,
+      evidence: 'Skipped due to early-abort.',
+    }));
+  }
+  return Promise.all([
+    checkRealProblem(pr),
+    checkCostBenefit(pr),
+    checkExplainsHowToTest(pr),
+    checkProvidesContext(pr),
+  ]);
+}
+
 /**
  * Run the six-check pipeline against an already-fetched `PrContext`. Side
  * effects (label writes, review submission) only fire when `opts.dryRun` is
  * false; Phase 3 wires them.
  */
 export async function runAssessment(pr: PrContext, opts: RunOpts): Promise<RunResult> {
-  const deterministicResults: CheckResult[] = [];
-  deterministicResults.push(checkHumanMonitored(pr));
-  deterministicResults.push(await checkDuplicate(pr));
-
-  const earlyAbort = isEarlyAbort(deterministicResults);
-
-  const llmResults: CheckResult[] = earlyAbort
-    ? (['real-problem', 'cost-benefit', 'explains-test', 'provides-context'] as const).map(
-        (id) => ({ id, status: 'deferred' as const, evidence: 'Skipped due to early-abort.' })
-      )
-    : await Promise.all([
-        checkRealProblem(pr),
-        checkCostBenefit(pr),
-        checkExplainsHowToTest(pr),
-        checkProvidesContext(pr),
-      ]);
-
-  const results: CheckResult[] = [...deterministicResults, ...llmResults];
+  const det = await runDeterministicPhase(pr);
+  const llmResults = await runLlmPhase(pr, det.earlyAbort);
+  const results: CheckResult[] = [...det.results, ...llmResults];
   const verdict = computeVerdict(results);
-  const reviewBody = await synthesizeReview({ results, earlyAbort });
+  const reviewBody = await synthesizeReview({ results, earlyAbort: det.earlyAbort });
   const { labelsToAdd, labelsToRemove } = diffLabels(pr.labels, verdict);
 
   // Phase 3 will wire writes here when !opts.dryRun.
@@ -95,7 +126,7 @@ export async function runAssessment(pr: PrContext, opts: RunOpts): Promise<RunRe
   return {
     verdict,
     results,
-    earlyAbort,
+    earlyAbort: det.earlyAbort,
     reviewBody,
     labelsToAdd,
     labelsToRemove,
@@ -112,6 +143,14 @@ function diffLabels(
     (l) => (MANAGED_LABELS as readonly string[]).includes(l) && l !== target
   );
   return { labelsToAdd, labelsToRemove };
+}
+
+function summariseStatuses(results: CheckResult[]): string {
+  const counts: Record<string, number> = {};
+  for (const r of results) counts[r.status] = (counts[r.status] ?? 0) + 1;
+  return Object.entries(counts)
+    .map(([status, n]) => `${n} ${status}`)
+    .join(', ');
 }
 
 async function main(): Promise<void> {
@@ -152,51 +191,94 @@ async function main(): Promise<void> {
 
   const prId = normalizeStorybookPr(arg);
 
+  p.intro(pc.bgCyan(pc.black(` MVC Assessment — #${prId.number} `)));
+
   // Eager-validate the token so a missing GH_TOKEN throws here (decorated by
   // the top-level catch) instead of inside a check halfway through the run.
+  const credSpinner = p.spinner();
+  credSpinner.start('Validating credentials');
   getGithubClient(ASSESS_MVC_SCOPES);
   configureLlmClient({
     model: cliOpts.model,
     effort: cliOpts.effort,
     verbose: cliOpts.verbose,
   });
+  credSpinner.stop(`Credentials OK · model ${cliOpts.model} · effort ${cliOpts.effort}`);
 
+  const fetchSpinner = p.spinner();
+  fetchSpinner.start('Fetching PR');
   const partial = await fetchPr(prId);
+  fetchSpinner.stop(`Fetched: ${pc.bold(partial.title)} by @${partial.author}`);
 
+  const skipSpinner = p.spinner();
+  skipSpinner.start('Evaluating skip rules');
   const decision = await evaluateSkip(partial, {
     force: cliOpts.force,
     reassess: cliOpts.reassess,
   });
   if (decision.skip) {
-    console.log(pc.dim(`Skipped: ${decision.reason}`));
+    skipSpinner.stop(`Skipped: ${decision.reason}`);
+    p.outro(pc.dim('No assessment performed.'));
     process.exit(0);
   }
+  skipSpinner.stop('Eligible for assessment');
 
+  const issuesSpinner = p.spinner();
+  issuesSpinner.start('Resolving linked issues');
   const { issues, broken } = await resolveLinkedIssues({
     ...prId,
     body: partial.body,
   });
+  const brokenSuffix = broken.length > 0 ? `, ${broken.length} broken ref(s)` : '';
+  issuesSpinner.stop(`Resolved ${issues.length} issue(s)${brokenSuffix}`);
   const pr: PrContext = { ...partial, linkedIssues: issues, brokenLinkRefs: broken };
 
-  const result = await runAssessment(pr, cliOpts);
+  const detSpinner = p.spinner();
+  detSpinner.start('Deterministic checks (1 human-monitored, 3 duplicate)');
+  const det = await runDeterministicPhase(pr);
+  detSpinner.stop(`Deterministic: ${summariseStatuses(det.results)}`);
 
-  const humanResult = result.results.find((r) => r.id === 'human');
+  const humanResult = det.results.find((r) => r.id === 'human');
   if (humanResult?.status === 'deferred') {
-    console.log(pc.dim(`Deferred: ${humanResult.evidence}`));
+    p.outro(pc.dim(`Deferred: ${humanResult.evidence}`));
     process.exit(0);
   }
 
-  console.log(
+  const llmSpinner = p.spinner();
+  llmSpinner.start(
+    det.earlyAbort
+      ? 'LLM phase skipped (early-abort on deterministic FAIL)'
+      : 'LLM checks (2 real-problem, 4 cost/benefit, 5 explains-test, 6 provides-context)'
+  );
+  const llmResults = await runLlmPhase(pr, det.earlyAbort);
+  llmSpinner.stop(`LLM: ${summariseStatuses(llmResults)}`);
+
+  const synthSpinner = p.spinner();
+  synthSpinner.start('Composing review body');
+  const results: CheckResult[] = [...det.results, ...llmResults];
+  const verdict = computeVerdict(results);
+  const reviewBody = await synthesizeReview({ results, earlyAbort: det.earlyAbort });
+  const { labelsToAdd, labelsToRemove } = diffLabels(pr.labels, verdict);
+  synthSpinner.stop(`Review body composed`);
+
+  p.note(
     renderSummary({
       pr,
-      verdict: result.verdict,
-      results: result.results,
-      reviewBody: result.reviewBody,
-      labelsToAdd: result.labelsToAdd,
-      labelsToRemove: result.labelsToRemove,
+      verdict,
+      results,
+      reviewBody,
+      labelsToAdd,
+      labelsToRemove,
       dryRun: cliOpts.dryRun,
-    })
+    }),
+    'Assessment'
   );
+
+  const verdictLine =
+    verdict === 'pass'
+      ? pc.green(`Verdict: PASS`)
+      : pc.red(`Verdict: FAIL${det.earlyAbort ? ' (early-abort)' : ''}`);
+  p.outro(verdictLine);
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {

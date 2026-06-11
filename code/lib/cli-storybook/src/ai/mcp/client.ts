@@ -1,3 +1,5 @@
+import { versions } from 'storybook/internal/common';
+
 import * as v from 'valibot';
 
 import {
@@ -20,6 +22,22 @@ const STORYBOOK_MCP_PROXY_HEADER_VALUE = 'true';
  * `run-story-tests` on a full suite legitimately runs for minutes.
  */
 const REQUEST_TIMEOUT_MS = 10 * 60 * 1000;
+
+/**
+ * Identifies the CLI on the MCP connection, so `@storybook/addon-mcp`'s server-side `tool:*`
+ * telemetry can segment CLI-originated calls from agents connected over MCP directly
+ * (storybookjs/storybook#35131).
+ */
+export const MCP_CLIENT_INFO = { name: 'storybook-cli', version: versions.storybook };
+
+/** Protocol version sent on `initialize`; tmcp (the addon-mcp server library) supports it. */
+const MCP_PROTOCOL_VERSION = '2025-06-18';
+
+/**
+ * The handshake is telemetry garnish: it must never delay or fail the actual command, so it gets
+ * a short timeout instead of {@link REQUEST_TIMEOUT_MS}.
+ */
+const INITIALIZE_TIMEOUT_MS = 10 * 1000;
 
 export type ToolCallParams = {
   name: string;
@@ -70,14 +88,66 @@ export async function listMcpTools(
   return result.tools ?? [];
 }
 
+const REQUEST_HEADERS = {
+  'Content-Type': 'application/json',
+  Accept: 'application/json, text/event-stream',
+  [STORYBOOK_MCP_PROXY_HEADER]: STORYBOOK_MCP_PROXY_HEADER_VALUE,
+};
+
+/**
+ * Send a minimal MCP `initialize` request carrying {@link MCP_CLIENT_INFO} and return the session
+ * id the transport assigned, or null when the handshake fails in any way.
+ *
+ * Its only purpose is telemetry segmentation: tmcp's HttpTransport stores the clientInfo keyed by
+ * session id, and attaches it to later requests carrying that id in the `Mcp-Session-Id` header.
+ * The handshake is strictly best-effort — when it fails, the actual command request proceeds
+ * without a session and keeps working, so error reporting stays anchored on the real call.
+ *
+ * The response body is drained before returning because the transport produces it only after the
+ * server has processed the initialize message (and stored the clientInfo); returning on headers
+ * alone would race the follow-up request against that processing.
+ */
+async function initializeMcpSession(
+  target: string,
+  fetchImpl: typeof fetch
+): Promise<string | null> {
+  try {
+    const response = await fetchImpl(target, {
+      method: 'POST',
+      headers: REQUEST_HEADERS,
+      body: JSON.stringify({
+        jsonrpc: '2.0',
+        id: crypto.randomUUID(),
+        method: 'initialize',
+        params: {
+          protocolVersion: MCP_PROTOCOL_VERSION,
+          capabilities: {},
+          clientInfo: MCP_CLIENT_INFO,
+        },
+      }),
+      signal: AbortSignal.timeout(INITIALIZE_TIMEOUT_MS),
+    });
+    const sessionId = response.headers.get('mcp-session-id');
+    if (!response.ok || !sessionId) {
+      return null;
+    }
+    await response.text();
+    return sessionId;
+  } catch {
+    return null;
+  }
+}
+
 /**
  * Send a single JSON-RPC request to the instance's MCP endpoint over HTTP.
  *
- * This is deliberately NOT a full MCP client: there is no `initialize` handshake, session, or
- * protocol-version negotiation. The downstream is always `@storybook/addon-mcp`, whose tmcp
- * HttpTransport is stateless and serves `tools/*` per-request — the same local shortcut
- * `@storybook/mcp-proxy` takes in its proxy-client. If the CLI ever needs to talk to arbitrary
- * MCP servers, replace this with a real client instead of extending it.
+ * This is deliberately NOT a full MCP client: the `initialize` request exists solely to convey
+ * `clientInfo` for telemetry (see {@link initializeMcpSession}) — there is no protocol-version
+ * negotiation, capability handling, or session lifecycle beyond this one follow-up request. The
+ * downstream is always `@storybook/addon-mcp`, whose tmcp HttpTransport serves `tools/*`
+ * per-request — the same local shortcut `@storybook/mcp-proxy` takes in its proxy-client. If the
+ * CLI ever needs to talk to arbitrary MCP servers, replace this with a real client instead of
+ * extending it.
  *
  * tmcp hardcodes `text/event-stream` for any request with an id, so we accept both content-types
  * and parse the SSE envelope when needed.
@@ -96,12 +166,13 @@ async function sendJsonRpcRequest<TResult>(
 
   const target = new URL(endpoint, record.url).href;
 
+  const sessionId = await initializeMcpSession(target, fetchImpl);
+
   const response = await fetchImpl(target, {
     method: 'POST',
     headers: {
-      'Content-Type': 'application/json',
-      Accept: 'application/json, text/event-stream',
-      [STORYBOOK_MCP_PROXY_HEADER]: STORYBOOK_MCP_PROXY_HEADER_VALUE,
+      ...REQUEST_HEADERS,
+      ...(sessionId ? { 'Mcp-Session-Id': sessionId } : {}),
     },
     body: JSON.stringify({
       jsonrpc: '2.0',

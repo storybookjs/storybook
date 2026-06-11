@@ -2,11 +2,15 @@ import { writeFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 
 import { optionalEnvToBoolean } from 'storybook/internal/common';
+import { sendTelemetryError, withTelemetry } from 'storybook/internal/core-server';
 import { logger } from 'storybook/internal/node-logger';
+import { telemetry } from 'storybook/internal/telemetry';
+import type { CLIOptions } from 'storybook/internal/types';
 
 import type { Command } from 'commander';
 
 import {
+  type AiCommandOutcome,
   type AiToolRunResult,
   buildStorybookCommandsHelp,
   runAiTool,
@@ -26,6 +30,23 @@ const CWD_DESCRIPTION =
 const PORT_DESCRIPTION =
   'Port of the target Storybook, to address one specific instance when several run at the same cwd';
 
+type AiPassthroughOptions = {
+  cwd?: string;
+  port?: string;
+  json?: string;
+  output?: string;
+  help?: boolean;
+  /** From the shared command options in `bin/run.ts`; consumed by `withTelemetry`. */
+  disableTelemetry?: boolean;
+  /** From the shared command options in `bin/run.ts`; consumed by the failure handler. */
+  logfile?: string | boolean;
+};
+
+/** `handleCommandFailure` from `bin/run.ts`, passed in to avoid an import cycle. */
+export type CommandFailureHandler = (
+  logFilePath: string | boolean | undefined
+) => (error: unknown) => Promise<never>;
+
 /**
  * Register the passthrough on the `ai` command: a generic `[command] [args...]` argument pair that
  * forwards any command to the running Storybook's server (MCP under the hood, but that is an
@@ -36,7 +57,11 @@ const PORT_DESCRIPTION =
  * Commander's built-in (synchronous) help is replaced with our own `-h, --help` option so the help
  * output can include the commands fetched from the running Storybook.
  */
-export function registerAiMcpPassthrough(program: Command, aiCommand: Command): void {
+export function registerAiMcpPassthrough(
+  program: Command,
+  aiCommand: Command,
+  handleCommandFailure: CommandFailureHandler
+): void {
   program.enablePositionalOptions();
 
   aiCommand
@@ -56,25 +81,66 @@ export function registerAiMcpPassthrough(program: Command, aiCommand: Command): 
     .option('-h, --help', 'Show help, including the commands provided by the running Storybook')
     .passThroughOptions()
     .action(
-      async (
-        command: string | undefined,
-        commandArgs: string[],
-        options: { cwd?: string; port?: string; json?: string; output?: string; help?: boolean }
-      ) => {
-        const target = { cwd: options.cwd, port: options.port };
-        if (options.help && command) {
-          await printResult(await runAiToolHelp(command, target), options.output);
-          return;
-        }
-        if (options.help || !command) {
-          const commandsSection = await buildStorybookCommandsHelp(target);
-          process.stdout.write(`${aiCommand.helpInformation()}\n${commandsSection}\n`);
-          return;
-        }
-        const result = await runAiTool(command, commandArgs, { ...target, json: options.json });
-        await printResult(result, options.output);
-      }
+      async (command: string | undefined, commandArgs: string[], options: AiPassthroughOptions) =>
+        // Only the opt-out tier is consumed from cliOptions; the passthrough's own options (cwd,
+        // port, json) are deliberately not forwarded — they may contain paths.
+        withTelemetry('ai-command', { cliOptions: pickCliOptions(options) }, async () => {
+          const target = { cwd: options.cwd, port: options.port };
+          if (options.help && command) {
+            await printResult(await runAiToolHelp(command, target), options.output);
+            return;
+          }
+          if (options.help || !command) {
+            const commandsSection = await buildStorybookCommandsHelp(target);
+            process.stdout.write(`${aiCommand.helpInformation()}\n${commandsSection}\n`);
+            return;
+          }
+          const start = Date.now();
+          const result = await runAiTool(command, commandArgs, { ...target, json: options.json });
+          const duration = Date.now() - start;
+          await printResult(result, options.output);
+          await reportAiCommandTelemetry(command, result.outcome, duration, options);
+        }).catch(handleCommandFailure(options.logfile))
     );
+}
+
+function pickCliOptions(options: AiPassthroughOptions): CLIOptions {
+  return { disableTelemetry: options.disableTelemetry, logfile: options.logfile };
+}
+
+/**
+ * Command names are a fixed, server-defined vocabulary of short identifiers. Anything else is
+ * arbitrary agent input (a typo'd path, a stray flag value) that must not be sent verbatim, so it
+ * is collapsed to a placeholder. The intercept reason still tells the failure class apart.
+ */
+function sanitizeCommandName(command: string): string {
+  return /^[\w-]{1,64}$/.test(command) ? command : '(invalid)';
+}
+
+/**
+ * Fire the `ai-command` event, once per executed command (storybookjs/storybook#35131). Help
+ * lookups are excluded so they cannot skew command success rates. Server-side failures
+ * additionally go through the standard sanitized error path, like errors thrown under
+ * `withTelemetry`.
+ */
+async function reportAiCommandTelemetry(
+  command: string,
+  outcome: AiCommandOutcome,
+  duration: number,
+  options: AiPassthroughOptions
+): Promise<void> {
+  if (outcome.kind === 'help') {
+    return;
+  }
+  await telemetry('ai-command', {
+    command: sanitizeCommandName(command),
+    success: outcome.kind === 'success',
+    ...(outcome.kind === 'intercept' && { interceptReason: outcome.reason }),
+    duration,
+  });
+  if (outcome.kind === 'error') {
+    await sendTelemetryError(outcome.error, 'ai-command', { cliOptions: pickCliOptions(options) });
+  }
 }
 
 /** Print to stdout, or to the file given via the `ai` command's `-o, --output` option. */

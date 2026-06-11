@@ -333,7 +333,7 @@ aiCommand.action(() => {
 // Experimental `storybook ai <tool>` passthrough to the local Storybook MCP server
 // (storybookjs/storybook#35124). Overrides the help-only action above when enabled.
 if (isAiCliFeatureEnabled()) {
-  registerAiMcpPassthrough(program, aiCommand);
+  registerAiMcpPassthrough(program, aiCommand, handleCommandFailure);
 }
 
 program.on('command:*', ([invalidCmd]) => {

@@ -39,7 +39,11 @@ describe('runAiTool', () => {
       { name: 'list-all-documentation', arguments: { withStoryIds: true } },
       undefined
     );
-    expect(result).toEqual({ exitCode: 0, output: 'upstream result' });
+    expect(result).toEqual({
+      exitCode: 0,
+      output: 'upstream result',
+      outcome: { kind: 'success' },
+    });
   });
 
   it('defaults the cwd to process.cwd()', async () => {
@@ -65,6 +69,7 @@ describe('runAiTool', () => {
     const result = await runAiTool('get-documentation', ['positional'], { cwd: '/projects/foo' });
     expect(result.exitCode).toBe(1);
     expect(result.output).toContain('Unexpected argument');
+    expect(result.outcome).toEqual({ kind: 'intercept', reason: 'invalid-arguments' });
     expect(readRegistry).not.toHaveBeenCalled();
   });
 
@@ -73,6 +78,7 @@ describe('runAiTool', () => {
     expect(result.exitCode).toBe(1);
     expect(result.output).toContain('No Storybook is running at this cwd');
     expect(result.output).toContain('/projects/foo');
+    expect(result.outcome).toEqual({ kind: 'intercept', reason: 'no-instance' });
   });
 
   it('routes to the instance on the requested --port when several share the cwd', async () => {
@@ -93,6 +99,7 @@ describe('runAiTool', () => {
     expect(result.exitCode).toBe(1);
     expect(result.output).toContain('not on port `9999`');
     expect(result.output).toContain('- port `6006`');
+    expect(result.outcome).toEqual({ kind: 'intercept', reason: 'port-mismatch' });
   });
 
   it('rejects an invalid --port without contacting the registry', async () => {
@@ -105,20 +112,25 @@ describe('runAiTool', () => {
   });
 
   it.each([
-    ['starting', 'still starting up'],
-    ['not-installed', '`@storybook/addon-mcp` addon is missing'],
-    ['error', 'Inspect the Storybook terminal output'],
-  ] as const)('prints the repair markdown for mcp.status=%s', async (status, expected) => {
+    ['starting', 'still starting up', 'mcp-starting'],
+    ['not-installed', '`@storybook/addon-mcp` addon is missing', 'addon-missing'],
+    ['error', 'Inspect the Storybook terminal output', 'mcp-error'],
+  ] as const)('prints the repair markdown for mcp.status=%s', async (status, expected, reason) => {
     vi.mocked(readRegistry).mockResolvedValue([{ ...record, mcp: { status } }]);
     const result = await runAiTool('get-documentation', [], { cwd: '/projects/foo' });
     expect(result.exitCode).toBe(1);
     expect(result.output).toContain(expected);
+    expect(result.outcome).toEqual({ kind: 'intercept', reason });
   });
 
   it('prints a placeholder when the tool returns no content', async () => {
     vi.mocked(callMcpTool).mockResolvedValue({ content: [] });
     const result = await runAiTool('list-all-documentation', [], { cwd: '/projects/foo' });
-    expect(result).toEqual({ exitCode: 0, output: '(the command returned no content)' });
+    expect(result).toEqual({
+      exitCode: 0,
+      output: '(the command returned no content)',
+      outcome: { kind: 'success' },
+    });
   });
 
   it('surfaces a clean error when a ready record is missing its endpoint', async () => {
@@ -150,6 +162,7 @@ describe('runAiTool', () => {
     expect(result.exitCode).toBe(1);
     expect(result.output).toContain('Unknown command `no-such-tool`');
     expect(result.output).toContain('- `list-all-documentation`');
+    expect(result.outcome).toEqual({ kind: 'intercept', reason: 'unknown-command' });
   });
 
   it('lists the available tools when the server reports the unknown tool as an error result', async () => {
@@ -162,6 +175,7 @@ describe('runAiTool', () => {
     expect(result.exitCode).toBe(1);
     expect(result.output).toContain('Unknown command `no-such-tool`');
     expect(result.output).toContain('- `list-all-documentation`');
+    expect(result.outcome).toEqual({ kind: 'intercept', reason: 'unknown-command' });
   });
 
   it('keeps the original error result when the failing tool does exist', async () => {
@@ -170,30 +184,40 @@ describe('runAiTool', () => {
       isError: true,
     });
     const result = await runAiTool('list-all-documentation', [], { cwd: '/projects/foo' });
-    expect(result).toEqual({ exitCode: 1, output: 'tests failed' });
+    expect(result).toEqual({
+      exitCode: 1,
+      output: 'tests failed',
+      outcome: { kind: 'error', error: expect.objectContaining({ name: 'McpToolResultError' }) },
+    });
   });
 
   it('prints the original JSON-RPC error when the tool exists', async () => {
-    vi.mocked(callMcpTool).mockRejectedValue(new McpJsonRpcError(-32602, 'invalid arguments'));
+    const error = new McpJsonRpcError(-32602, 'invalid arguments');
+    vi.mocked(callMcpTool).mockRejectedValue(error);
     const result = await runAiTool('list-all-documentation', [], { cwd: '/projects/foo' });
     expect(result.exitCode).toBe(1);
     expect(result.output).toContain('Storybook server error -32602: invalid arguments');
+    expect(result.outcome).toEqual({ kind: 'error', error });
   });
 
   it('prints the original JSON-RPC error when the tool list cannot be fetched', async () => {
-    vi.mocked(callMcpTool).mockRejectedValue(new McpJsonRpcError(-32601, 'unknown tool'));
+    const error = new McpJsonRpcError(-32601, 'unknown tool');
+    vi.mocked(callMcpTool).mockRejectedValue(error);
     vi.mocked(listMcpTools).mockRejectedValue(new Error('boom'));
     const result = await runAiTool('no-such-tool', [], { cwd: '/projects/foo' });
     expect(result.exitCode).toBe(1);
     expect(result.output).toContain('Storybook server error -32601: unknown tool');
+    expect(result.outcome).toEqual({ kind: 'error', error });
   });
 
   it('surfaces a friendly error when the MCP server is unreachable', async () => {
-    vi.mocked(callMcpTool).mockRejectedValue(new Error('connection refused'));
+    const error = new Error('connection refused');
+    vi.mocked(callMcpTool).mockRejectedValue(error);
     const result = await runAiTool('get-documentation', [], { cwd: '/projects/foo' });
     expect(result.exitCode).toBe(1);
     expect(result.output).toContain('Failed to reach the Storybook server at /mcp');
     expect(result.output).toContain('connection refused');
+    expect(result.outcome).toEqual({ kind: 'error', error });
   });
 
   it('prepends a warning when multiple instances run at the same cwd', async () => {
@@ -307,6 +331,7 @@ describe('runAiToolHelp', () => {
     expect(result.output).toContain('Usage: storybook ai get-documentation');
     expect(result.output).toContain('Get docs for a component.');
     expect(result.output).toContain('- `--id` (string, required): Documentation id');
+    expect(result.outcome).toEqual({ kind: 'help' });
   });
 
   it('is reachable through runAiTool via a --help token after the tool name', async () => {
@@ -316,6 +341,7 @@ describe('runAiToolHelp', () => {
     const result = await runAiTool('get-documentation', ['--help'], { cwd: '/projects/foo' });
     expect(result.exitCode).toBe(0);
     expect(result.output).toContain('Usage: storybook ai get-documentation');
+    expect(result.outcome).toEqual({ kind: 'help' });
     expect(callMcpTool).not.toHaveBeenCalled();
   });
 
@@ -334,11 +360,12 @@ describe('runAiToolHelp', () => {
     expect(result.output).toContain('- `list-all-documentation`');
   });
 
-  it('prints repair markdown and exits non-zero on intercepts', async () => {
+  it('prints repair markdown and exits non-zero on intercepts, still classified as help', async () => {
     vi.mocked(readRegistry).mockResolvedValue([]);
     const result = await runAiToolHelp('get-documentation', { cwd: '/projects/foo' });
     expect(result.exitCode).toBe(1);
     expect(result.output).toContain('Storybook is not running at this cwd');
+    expect(result.outcome).toEqual({ kind: 'help' });
   });
 
   it('rejects an invalid --port', async () => {

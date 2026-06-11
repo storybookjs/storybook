@@ -9,8 +9,9 @@
  * adopted state.
  *
  * - {@link connectServiceToChannel} is the single entry point `registerService` uses. It wires all
- *   three halves below against one channel so they can never be assembled inconsistently, and returns
- *   the command map callers expose plus a combined teardown.
+ *   three halves below against one channel, installs the channel-routed command map on the runtime
+ *   (so load bodies can invoke peer-implemented commands), and returns the command map callers
+ *   expose plus a combined teardown.
  * - {@link wrapCommandsForBroadcast} wraps a runtime's commands so each local call, after it resolves,
  *   advances the last-write-wins stamp and broadcasts the full post-mutation snapshot.
  * - {@link connectRuntimeToChannel} attaches the sync-start initialization and patch listeners, emits
@@ -398,6 +399,14 @@ export function connectCommandTransport(context: {
   };
 }
 
+/** Runtime surface needed to install the channel-routed command map for load bodies. */
+type ChannelConnectedRuntime = {
+  attachChannelCommands(
+    commands: Record<string, RuntimeCommand>,
+    implementedCommandNames: ReadonlySet<string>
+  ): void;
+};
+
 /**
  * Wires one service runtime to the channel end to end and returns the command map callers expose plus
  * a single teardown.
@@ -405,6 +414,8 @@ export function connectCommandTransport(context: {
  * This is the one entry point `registerService` uses, so the three transport halves — command
  * broadcasting, the remote-command protocol, and the sync-start + patch listeners — are always
  * assembled together against the same `channel` and can never drift into using different channels.
+ * The channel-routed command map is also installed on the runtime so load bodies invoke
+ * peer-implemented commands remotely instead of throwing locally.
  */
 export function connectServiceToChannel(
   context: RuntimeTransportContext & {
@@ -416,6 +427,8 @@ export function connectServiceToChannel(
     implementedCommandNames: ReadonlySet<string>;
     /** Every command name declared by the service definition. */
     commandNames: readonly string[];
+    /** Runtime to wire with the channel-routed command map for load bodies. */
+    runtime: ChannelConnectedRuntime;
   }
 ): { commands: Record<string, RuntimeCommand>; disconnect: () => void } {
   const {
@@ -428,6 +441,7 @@ export function connectServiceToChannel(
     commands,
     implementedCommandNames,
     commandNames,
+    runtime,
   } = context;
 
   // Wrap commands so a local mutation broadcasts its post-mutation snapshot. State adopted from peers
@@ -459,6 +473,10 @@ export function connectServiceToChannel(
     channel,
     relay,
   });
+
+  // Load bodies call commands through the channel-routed map so a command implemented only on a peer
+  // is requested remotely instead of throwing locally.
+  runtime.attachChannelCommands(commandTransport.commands, implementedCommandNames);
 
   return {
     commands: commandTransport.commands,

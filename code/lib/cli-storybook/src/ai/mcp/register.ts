@@ -16,6 +16,7 @@ import {
   runAiTool,
   runAiToolHelp,
 } from './run-tool.ts';
+import { parseToolArgs } from './tool-args.ts';
 
 /**
  * The `storybook ai <tool>` MCP passthrough is experimental (storybookjs/storybook#35124) and only
@@ -81,15 +82,15 @@ export function registerAiMcpPassthrough(
     .option('-h, --help', 'Show help, including the commands provided by the running Storybook')
     .passThroughOptions()
     .action(
-      async (command: string | undefined, commandArgs: string[], options: AiPassthroughOptions) =>
-        // Only the opt-out tier is consumed from cliOptions; the passthrough's own options (cwd,
-        // port, json) are deliberately not forwarded — they may contain paths. Like `init`, the
-        // fallback keeps telemetry on when no main config is loadable: running from a cwd without
-        // a Storybook is the `no-instance` intercept this event exists to measure. The explicit
-        // opt-outs (env var, flag, loadable `core.disableTelemetry`) still apply.
-        withTelemetry(
+      async (command: string | undefined, commandArgs: string[], options: AiPassthroughOptions) => {
+        const cliOptions = pickCliOptions(options, commandArgs);
+        // Like `init`, the fallback keeps telemetry on when no main config is loadable: running
+        // from a cwd without a Storybook is the `no-instance` intercept this event exists to
+        // measure. The explicit opt-outs (env var, flag, loadable `core.disableTelemetry`)
+        // still apply.
+        return withTelemetry(
           'ai-command',
-          { cliOptions: pickCliOptions(options), fallbackTelemetryState: true },
+          { cliOptions, fallbackTelemetryState: true },
           async () => {
             const target = { cwd: options.cwd, port: options.port };
             if (options.help && command) {
@@ -104,15 +105,39 @@ export function registerAiMcpPassthrough(
             const start = Date.now();
             const result = await runAiTool(command, commandArgs, { ...target, json: options.json });
             const duration = Date.now() - start;
-            await printResult(result, options.output);
-            await reportAiCommandTelemetry(command, result.outcome, duration, options);
+            try {
+              await printResult(result, options.output);
+            } finally {
+              // The command has executed either way, so a failed `--output` write must not lose
+              // the event. Reporting after printing keeps a slow telemetry endpoint from ever
+              // delaying the user's result.
+              await reportAiCommandTelemetry(command, result.outcome, duration, cliOptions);
+            }
           }
-        ).catch(handleCommandFailure(options.logfile))
+        ).catch(handleCommandFailure(options.logfile));
+      }
     );
 }
 
-function pickCliOptions(options: AiPassthroughOptions): CLIOptions {
-  return { disableTelemetry: options.disableTelemetry, logfile: options.logfile };
+/**
+ * The cliOptions handed to the telemetry machinery. Only the opt-out tier is forwarded — the
+ * passthrough's own options (cwd, port, json) may contain paths and are never sent in payloads.
+ * `configDir` points at the default config location of the *target* Storybook so `withTelemetry`
+ * resolves `core.disableTelemetry` from the project the command is aimed at (`--cwd` is accepted
+ * both before and after the command name); it is read locally, never sent.
+ */
+function pickCliOptions(options: AiPassthroughOptions, commandArgs: string[]): CLIOptions {
+  const parsed = parseToolArgs(commandArgs, {
+    cwd: options.cwd,
+    port: options.port,
+    json: options.json,
+  });
+  const targetCwd = (parsed.ok ? parsed.cwd : options.cwd) ?? process.cwd();
+  return {
+    disableTelemetry: options.disableTelemetry,
+    logfile: options.logfile,
+    configDir: resolve(targetCwd, '.storybook'),
+  };
 }
 
 /**
@@ -134,7 +159,7 @@ async function reportAiCommandTelemetry(
   command: string,
   outcome: AiCommandOutcome,
   duration: number,
-  options: AiPassthroughOptions
+  cliOptions: CLIOptions
 ): Promise<void> {
   if (outcome.kind === 'help') {
     return;
@@ -146,7 +171,7 @@ async function reportAiCommandTelemetry(
     duration,
   });
   if (outcome.kind === 'error') {
-    await sendTelemetryError(outcome.error, 'ai-command', { cliOptions: pickCliOptions(options) });
+    await sendTelemetryError(outcome.error, 'ai-command', { cliOptions });
   }
 }
 

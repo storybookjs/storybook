@@ -1,4 +1,5 @@
 import { writeFile } from 'node:fs/promises';
+import { resolve } from 'node:path';
 
 import { optionalEnvToBoolean } from 'storybook/internal/common';
 import { sendTelemetryError, withTelemetry } from 'storybook/internal/core-server';
@@ -279,13 +280,38 @@ describe('ai-command telemetry', () => {
     expect(withTelemetry).toHaveBeenCalledWith(
       'ai-command',
       {
-        cliOptions: { disableTelemetry: undefined, logfile: undefined },
+        cliOptions: {
+          disableTelemetry: undefined,
+          logfile: undefined,
+          configDir: resolve(process.cwd(), '.storybook'),
+        },
         // Keeps the no-instance intercept reportable from a cwd without a loadable main config.
         fallbackTelemetryState: true,
       },
       expect.any(Function)
     );
   });
+
+  it.each([
+    ['before the command name', ['ai', '--cwd', '/target/project', 'tool-x']],
+    ['after the command name', ['ai', 'tool-x', '--cwd', '/target/project']],
+  ])(
+    'resolves the opt-out configDir from the target Storybook when --cwd is passed %s',
+    async (_position, argv) => {
+      const { program } = buildProgram({ withPassthrough: true });
+      await parse(program, argv);
+      // The target project's core.disableTelemetry must apply, not the invoking cwd's.
+      expect(withTelemetry).toHaveBeenCalledWith(
+        'ai-command',
+        expect.objectContaining({
+          cliOptions: expect.objectContaining({
+            configDir: resolve('/target/project', '.storybook'),
+          }),
+        }),
+        expect.any(Function)
+      );
+    }
+  );
 
   it('fires ai-command with a success payload and no interceptReason', async () => {
     const { program } = buildProgram({ withPassthrough: true });
@@ -343,8 +369,25 @@ describe('ai-command telemetry', () => {
       duration: expect.any(Number),
     });
     expect(sendTelemetryError).toHaveBeenCalledWith(error, 'ai-command', {
-      cliOptions: { disableTelemetry: undefined, logfile: undefined },
+      cliOptions: {
+        disableTelemetry: undefined,
+        logfile: undefined,
+        configDir: resolve(process.cwd(), '.storybook'),
+      },
     });
+  });
+
+  it('still fires ai-command when writing the --output file fails after the command executed', async () => {
+    const { program, failures } = buildProgram({ withPassthrough: true });
+    const writeError = new Error('EACCES: permission denied');
+    vi.mocked(writeFile).mockRejectedValue(writeError);
+    await parse(program, ['ai', '-o', '/readonly/out.md', 'tool-x']);
+    expect(telemetry).toHaveBeenCalledWith('ai-command', {
+      command: 'tool-x',
+      success: true,
+      duration: expect.any(Number),
+    });
+    expect(failures).toEqual([writeError]);
   });
 
   it('collapses non-command-shaped names to a placeholder (no paths in payloads)', async () => {

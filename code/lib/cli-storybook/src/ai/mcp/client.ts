@@ -34,10 +34,12 @@ export const MCP_CLIENT_INFO = { name: 'storybook-cli', version: versions.storyb
 const MCP_PROTOCOL_VERSION = '2025-06-18';
 
 /**
- * The handshake is telemetry garnish: it must never delay or fail the actual command, so it gets
- * a short timeout instead of {@link REQUEST_TIMEOUT_MS}.
+ * The handshake is telemetry garnish sitting on the critical path of every command, so its budget
+ * must stay small: a local tmcp `initialize` answers in milliseconds, and a few seconds is already
+ * generous headroom for a busy dev server. On timeout (or any other failure) the command simply
+ * proceeds without clientInfo.
  */
-const INITIALIZE_TIMEOUT_MS = 10 * 1000;
+const INITIALIZE_TIMEOUT_MS = 3 * 1000;
 
 export type ToolCallParams = {
   name: string;

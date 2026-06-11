@@ -82,7 +82,7 @@ export async function fetchPr(
     author: pr.user?.login ?? '',
     isDraft: Boolean(pr.draft),
     headSha: pr.head.sha,
-    labels: (pr.labels ?? []).map((l: any) => l.name),
+    labels: (pr.labels ?? []).map((l) => l.name),
     files,
   };
 }

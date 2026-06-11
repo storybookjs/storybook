@@ -106,7 +106,7 @@ export async function resolveLinkedIssues(
         title: data.title,
         body: data.body ?? '',
         state: data.state === 'open' ? 'open' : 'closed',
-        labels: (data.labels ?? []).map((l: any) => (typeof l === 'string' ? l : l.name)),
+        labels: (data.labels ?? []).map((l) => (typeof l === 'string' ? l : l.name)),
       });
     } catch (err: any) {
       if (err?.status === 404 || err?.status === 410) {

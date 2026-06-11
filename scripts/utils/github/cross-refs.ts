@@ -52,4 +52,4 @@ async function fetchCrossRefsImpl(
  * Memoization key is by argument identity, so callers that pass a fresh client
  * (e.g., in tests) get a fresh cache slot — there's no cross-test leakage.
  */
-export const fetchCrossRefs = memoize(50)(fetchCrossRefsImpl);
+export const fetchCrossRefs = memoize(1000)(fetchCrossRefsImpl);

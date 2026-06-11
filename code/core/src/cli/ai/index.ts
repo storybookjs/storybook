@@ -7,9 +7,9 @@ import { logger } from 'storybook/internal/node-logger';
 import { telemetry } from 'storybook/internal/telemetry';
 import { SupportedLanguage } from 'storybook/internal/types';
 
-import { ProjectTypeService } from '../../../create-storybook/src/services/ProjectTypeService.ts';
+import { ProjectTypeService } from '../../../../lib/create-storybook/src/services/ProjectTypeService.ts';
 
-import { getStorybookData } from '../automigrate/helpers/mainConfigFile.ts';
+import { getStorybookData } from './storybook-data.ts';
 import { getAiSetupMarkdownOutput } from './setup-prompts/index.ts';
 import type { ProjectInfo, AiSetupOptions } from './types.ts';
 

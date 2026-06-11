@@ -7,9 +7,10 @@ import {
   type API_HashEntry,
   type StatusByTypeId,
   type StatusesByStoryIdAndTypeId,
+  type StoryId,
 } from 'storybook/internal/types';
 
-import { CircleIcon } from '@storybook/icons';
+import { CircleIcon, StatusNewIcon } from '@storybook/icons';
 
 import memoizerific from 'memoizerific';
 import { transparentize } from 'polished';
@@ -42,6 +43,7 @@ export const statusPriority: StatusValue[] = [
   'status-value:pending',
   'status-value:success',
   'status-value:affected',
+  'status-value:reviewing',
   'status-value:modified',
   'status-value:new',
   'status-value:warning',
@@ -101,6 +103,11 @@ export const getStatus = memoizerific(10)((theme: Theme, status: StatusValue): S
           <UseSymbol type="affected" />
         </svg>
       ),
+      iconColor: theme.fgColor.accent,
+      textColor: null,
+    },
+    'status-value:reviewing': {
+      icon: <StatusNewIcon key="icon" />,
       iconColor: theme.fgColor.accent,
       textColor: null,
     },

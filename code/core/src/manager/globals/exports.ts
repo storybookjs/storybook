@@ -687,6 +687,7 @@ export default {
     'CHANGE_DETECTION_STATUS_TYPE_ID',
     'CoreWebpackCompiler',
     'Feature',
+    'REVIEW_STATUS_TYPE_ID',
     'SupportedBuilder',
     'SupportedFramework',
     'SupportedLanguage',

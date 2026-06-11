@@ -90,7 +90,50 @@ describe('resolveLinkedIssues', () => {
       repo: 'storybook',
       number: 42,
       state: 'open',
+      sources: ['api'],
     });
     expect(broken).toEqual(['storybookjs/storybook#99']);
+  });
+
+  it('tags body-only references with source ["body"], and api+body when both', async () => {
+    server.use(
+      http.post('https://api.github.com/graphql', () =>
+        HttpResponse.json({
+          data: {
+            repository: {
+              pullRequest: {
+                closingIssuesReferences: {
+                  nodes: [
+                    {
+                      number: 50,
+                      repository: { owner: { login: 'storybookjs' }, name: 'storybook' },
+                    },
+                  ],
+                },
+              },
+            },
+          },
+        })
+      ),
+      http.get('https://api.github.com/repos/storybookjs/storybook/issues/:n', ({ params }) => {
+        return HttpResponse.json({
+          number: Number(params.n),
+          title: 'I',
+          body: 'b',
+          state: 'open',
+          labels: [],
+          html_url: 'u',
+        });
+      })
+    );
+    const { issues } = await resolveLinkedIssues({
+      owner: 'storybookjs',
+      repo: 'storybook',
+      number: 1,
+      body: 'fixes #50 and references #51',
+    });
+    const byNumber = Object.fromEntries(issues.map((i) => [i.number, i]));
+    expect(byNumber[50].sources).toEqual(expect.arrayContaining(['api', 'body']));
+    expect(byNumber[51].sources).toEqual(['body']);
   });
 });

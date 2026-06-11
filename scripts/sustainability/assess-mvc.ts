@@ -35,6 +35,8 @@ import { fetchPr, normalizeStorybookPr } from '../utils/github/pr.ts';
 import { configureLlmClient, type Effort, type Model } from '../utils/llm/client.ts';
 import { ASSESS_MVC_SCOPES, MANAGED_LABELS, VERDICT_LABELS } from './assess-mvc/config.ts';
 import { checkCostBenefit } from './assess-mvc/cost-benefit/check.ts';
+import { computeAddedDependencies } from './assess-mvc/cost-benefit/utils/dependencies.ts';
+import { computeDiffMetrics } from './assess-mvc/cost-benefit/utils/diff-metrics.ts';
 import { checkDuplicate } from './assess-mvc/duplicate/check.ts';
 import { checkExplainsHowToTest } from './assess-mvc/explains-test/check.ts';
 import { checkHumanMonitored } from './assess-mvc/human-monitored/check.ts';
@@ -232,6 +234,27 @@ async function main(): Promise<void> {
   const brokenSuffix = broken.length > 0 ? `, ${broken.length} broken ref(s)` : '';
   issuesSpinner.stop(`Resolved ${issues.length} issue(s)${brokenSuffix}`);
   const pr: PrContext = { ...partial, linkedIssues: issues, brokenLinkRefs: broken };
+
+  for (const issue of issues) {
+    const src = issue.sources?.join('+') ?? 'unknown';
+    const ref = pc.cyan(`${issue.owner}/${issue.repo}#${issue.number}`);
+    const stateTag = issue.state === 'open' ? pc.green(issue.state) : pc.dim(issue.state);
+    p.log.info(`${ref} ${pc.dim(`[${src}]`)} · ${stateTag} · ${issue.title}`);
+  }
+  for (const ref of broken) {
+    p.log.warn(`Broken ref: ${ref}`);
+  }
+
+  const diffMetrics = computeDiffMetrics(pr.files);
+  const addedDeps = computeAddedDependencies(pr.files);
+  p.log.info(
+    `Diff: ${pc.bold(`+${diffMetrics.added}/-${diffMetrics.removed}`)} across ${diffMetrics.filesChanged} file(s) (net ${diffMetrics.net} LOC)`
+  );
+  if (addedDeps.length > 0) {
+    const preview = addedDeps.slice(0, 5).join(', ');
+    const extra = addedDeps.length > 5 ? `, +${addedDeps.length - 5} more` : '';
+    p.log.info(`New deps (${addedDeps.length}): ${preview}${extra}`);
+  }
 
   const detSpinner = p.spinner();
   detSpinner.start('Deterministic checks (1 human-monitored, 3 duplicate)');

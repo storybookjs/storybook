@@ -5,6 +5,18 @@ import { ORG } from './constants.ts';
 import type { GithubRefCoords } from './pr.ts';
 
 /**
+ * Where a linked-issue reference was found. `api` = the GitHub-recognized
+ * `closingIssuesReferences` GraphQL edge (i.e., a properly-formatted "Fixes
+ * #N" / "Closes org/repo#N" in the PR body that GitHub itself indexed); `body`
+ * = our looser body-text scan that catches references GitHub didn't pick up
+ * (other-section #N mentions, full URLs, cross-repo refs).
+ *
+ * Surfacing this in the CLI lets a reviewer tell at a glance whether a
+ * linked issue is "officially" tracked by GitHub or only inferred by us.
+ */
+export type LinkedIssueSource = 'api' | 'body';
+
+/**
  * A resolved GitHub issue, hydrated from `closingIssuesReferences` + PR body
  * parsing. We surface only the fields downstream checks actually consume.
  */
@@ -17,6 +29,7 @@ export interface LinkedIssue {
   body: string;
   state: 'open' | 'closed';
   labels: string[];
+  sources?: readonly LinkedIssueSource[];
 }
 
 const SAME_REPO_RE = /(?<![A-Za-z0-9_/-])#(\d+)\b/g;
@@ -94,19 +107,44 @@ async function fetchClosingRefs(owner: string, repo: string, number: number): Pr
 }
 
 function isHttpError(err: unknown, status: number): boolean {
-  return Boolean(err) && typeof err === 'object' && (err as { status?: number }).status === status;
+  if (!err || typeof err !== 'object' || !('status' in err)) return false;
+  return (err as { status: unknown }).status === status;
 }
+
+const canonical = (r: GithubRefCoords): string => `${r.owner}/${r.repo}#${r.number}`;
 
 async function resolveLinkedIssuesImpl(
   pr: { owner: string; repo: string; number: number; body: string }
 ): Promise<{ issues: LinkedIssue[]; broken: string[] }> {
   const client = getGithubClient();
-  const closing = await fetchClosingRefs(pr.owner, pr.repo, pr.number);
+  const apiRefs = (await fetchClosingRefs(pr.owner, pr.repo, pr.number)).filter(
+    (r) => r.owner === ORG
+  );
   const bodyRefs = parseBodyReferences(pr.owner, pr.repo, pr.body);
-  const candidates = dedupe([...closing, ...bodyRefs]).filter((r) => r.owner === ORG);
+
+  // Combine the two ref streams, tracking which source(s) each ref came from
+  // and preserving insertion order (API refs first, then body-only refs).
+  const sourceMap = new Map<string, Set<LinkedIssueSource>>();
+  const refByKey = new Map<string, GithubRefCoords>();
+  const orderedKeys: string[] = [];
+  const track = (ref: GithubRefCoords, source: LinkedIssueSource) => {
+    const key = canonical(ref);
+    if (!sourceMap.has(key)) {
+      sourceMap.set(key, new Set());
+      refByKey.set(key, ref);
+      orderedKeys.push(key);
+    }
+    sourceMap.get(key)?.add(source);
+  };
+  for (const ref of apiRefs) track(ref, 'api');
+  for (const ref of bodyRefs) track(ref, 'body');
+
   const issues: LinkedIssue[] = [];
   const broken: string[] = [];
-  for (const ref of candidates) {
+  for (const key of orderedKeys) {
+    const ref = refByKey.get(key);
+    const sources = sourceMap.get(key);
+    if (!ref || !sources) continue;
     try {
       const { data } = await client.rest('GET /repos/{owner}/{repo}/issues/{issue_number}', {
         owner: ref.owner,
@@ -122,10 +160,11 @@ async function resolveLinkedIssuesImpl(
         body: data.body ?? '',
         state: data.state === 'open' ? 'open' : 'closed',
         labels: data.labels.map((l) => (typeof l === 'string' ? l : (l.name ?? ''))),
+        sources: Array.from(sources),
       });
     } catch (err: unknown) {
       if (isHttpError(err, 404) || isHttpError(err, 410)) {
-        broken.push(`${ref.owner}/${ref.repo}#${ref.number}`);
+        broken.push(key);
       } else {
         throw err;
       }
@@ -140,6 +179,10 @@ async function resolveLinkedIssuesImpl(
  * plus the looser body-text references. Issues that 404/410 are reported as
  * `broken` rather than failing the resolution — a typo in a PR body shouldn't
  * count as "no linked issue" for Check 2; we surface it as `warn` instead.
- * Memoized by `pr` identity for the process lifetime.
+ *
+ * Each returned `LinkedIssue` carries a `sources` array describing where the
+ * reference was found — `api` (GitHub's `closingIssuesReferences`) and/or
+ * `body` (our body-text scan). Memoized by `pr` identity for the process
+ * lifetime.
  */
 export const resolveLinkedIssues = memoize(1000)(resolveLinkedIssuesImpl);

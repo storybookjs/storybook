@@ -16,10 +16,6 @@ description: >-
 
 # Storybook Stories
 
-The Storybook CLI ai subcommands is the source of truth for _how_ to write stories. This skill
-is the **mandatory, ordered process** for working on them, and for keeping
-stories in sync with every frontend component you create, modify, or delete.
-
 This is a STRICT, GATED workflow. You MUST execute the steps below in order and
 satisfy each step's **Gate** before moving to the next. Do NOT skip, reorder, or
 batch steps. Do NOT write or edit any `*.stories.*` file until Steps 1 and 2 are

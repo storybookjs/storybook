@@ -5,10 +5,6 @@ description: Invoke BEFORE you touch a frontend component, on EVERY change, with
 
 # Storybook Stories
 
-The Storybook CLI ai subcommands is the source of truth for _how_ to write stories. This skill
-is the **mandatory, ordered process** for working on them, and for keeping
-stories in sync with every frontend component you create, modify, or delete.
-
 This is a STRICT, GATED workflow. You MUST execute the steps below in order and
 satisfy each step's **Gate** before moving to the next. Do NOT skip, reorder, or
 batch steps. Do NOT write or edit any `*.stories.*` file until Steps 1 and 2 are
@@ -41,14 +37,14 @@ Never set it up on your own initiative as a side effect of a component change.
 
 Before asking the user anything, check whether they have already declined:
 
-1. **Read the saved decision** at `.claude/storybook-optout.json` (project-local).
+1. **Read the saved decision** at `.codex/storybook-optout.json` (project-local).
    If it exists with `{ "storybookOptOut": true }`, the user has ALREADY refused
    Storybook for this project. Do NOT ask again — silently skip all story work,
    finish the component change (if any), and move on.
 2. **If there is no opt-out file**, briefly tell the user the project has no
    Storybook and ask whether they want to set it up (and write stories) for it.
 3. **If the user declines**, persist that choice so future invocations don't
-   re-ask: write `.claude/storybook-optout.json` with:
+   re-ask: write `.codex/storybook-optout.json` with:
 
    ```json
    {

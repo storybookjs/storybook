@@ -2,13 +2,7 @@ import * as React from 'react';
 
 import type { Addon_StoryContext } from 'storybook/internal/types';
 
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-ignore-error (this only errors during compilation for production)
-import { ImageContext as ImageContextValue } from '@storybook/nextjs-vite/image-context';
-
-import { type ImageContext as ImageContextType } from '../image-context.ts';
-
-const ImageContext = ImageContextValue as typeof ImageContextType;
+import { ImageContext } from '@storybook/nextjs-vite/image-context';
 
 export const ImageDecorator = (
   Story: React.FC,

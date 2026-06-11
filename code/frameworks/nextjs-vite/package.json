@@ -43,7 +43,11 @@
       "code": "./src/export-mocks/headers/index.ts",
       "default": "./dist/export-mocks/headers/index.js"
     },
-    "./image-context": "./dist/image-context.js",
+    "./image-context": {
+      "types": "./dist/image-context.d.ts",
+      "code": "./src/image-context.ts",
+      "default": "./dist/image-context.js"
+    },
     "./link.mock": {
       "types": "./dist/export-mocks/link/index.d.ts",
       "code": "./src/export-mocks/link/index.tsx",

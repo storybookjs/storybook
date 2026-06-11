@@ -27,7 +27,6 @@ const config: BuildEntries = {
       {
         exportEntries: ['./image-context'],
         entryPoint: './src/image-context.ts',
-        dts: false,
       },
       {
         exportEntries: ['./navigation.mock'],

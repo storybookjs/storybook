@@ -196,7 +196,8 @@ export const OnReviewedStory = meta.story({
     const canvas = within(canvasElement);
     applyReviewState();
 
-    await expect(await canvas.findByRole('button', { name: '2/3' })).toBeInTheDocument();
+    const counter = await canvas.findByRole('button', { name: 'Open story list' });
+    await expect(counter).toHaveTextContent('2/3');
     await expect(setAddonShortcutMock).toHaveBeenCalledWith(
       ADDON_ID,
       expect.objectContaining({
@@ -226,7 +227,8 @@ export const Progress = meta.story({
     const canvas = within(canvasElement);
     applyReviewState();
 
-    await expect(await canvas.findByRole('button', { name: '3/3' })).toBeInTheDocument();
+    const counter = await canvas.findByRole('button', { name: 'Open story list' });
+    await expect(counter).toHaveTextContent('3/3');
     const fill = await canvas.findByTestId<HTMLElement>('review-progress-fill');
     await expect(Math.round(parseFloat(fill.style.width))).toBe(100);
   },

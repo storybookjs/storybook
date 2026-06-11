@@ -502,7 +502,7 @@ export const Minimal = meta.story({
     await expect(await canvas.findByText('Button')).toBeInTheDocument();
     await expect(await canvas.findByText('The directly changed component.')).toBeInTheDocument();
     await expect(
-      await canvas.findByRole('button', { name: 'Back to last story' })
+      await canvas.findByRole('link', { name: 'Back to last story' })
     ).toBeInTheDocument();
   },
 });
@@ -515,7 +515,7 @@ export const WithBackButton = meta.story({
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await expect(
-      await canvas.findByRole('button', { name: 'Back to last story' })
+      await canvas.findByRole('link', { name: 'Back to last story' })
     ).toBeInTheDocument();
   },
 });

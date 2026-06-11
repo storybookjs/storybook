@@ -7,7 +7,7 @@ import type { Channel } from 'storybook/internal/channels';
 import { logger } from 'storybook/internal/node-logger';
 import type { Middleware, Options, ServerApp } from 'storybook/internal/types';
 
-import type { moduleGraphServiceDef } from 'storybook/internal/core-server';
+import type { ModuleGraphService } from 'storybook/internal/core-server';
 
 import { BASELINE_PROXY_PATH, EVENTS } from './constants.ts';
 import type { ReviewState } from './review-state.ts';
@@ -38,7 +38,7 @@ const defaultSubscribeToModuleGraphChanges: SubscribeToModuleGraphChanges = (onC
       if (cancelled) {
         return;
       }
-      const service = getService<typeof moduleGraphServiceDef>('core/module-graph');
+      const service = getService<ModuleGraphService>('core/module-graph');
       // Omit the input to watch the entire graph. The initial emission carries
       // revision 0 (or the current revision at subscribe time); only subsequent
       // advances represent a change after the review was cached.

@@ -63,6 +63,6 @@ addons.register(ADDON_ID, (api) => {
     render: () => <ReviewToolbarHeader />,
   });
 
-  addons.add(reviewCompareTool.id, reviewCompareTool);
-  addons.add(reviewPreviewWrapper.id, reviewPreviewWrapper);
+  addons.add('storybook/addon-review/compare', reviewCompareTool);
+  addons.add('storybook/addon-review/preview', reviewPreviewWrapper);
 });

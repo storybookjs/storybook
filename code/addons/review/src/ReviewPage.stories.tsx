@@ -204,7 +204,9 @@ export const StoryLinksUseCollectionParam = meta.story({
     const canvas = within(canvasElement);
     applyReviewState();
 
-    const link = await canvas.findByRole('link', { name: /Guide Page/i });
+    const link = await canvas.findByRole('link', {
+      name: 'Review story manager-settings-guidepage--default',
+    });
     expect(link.getAttribute('href')).toBe(
       buildReviewStoryHref({
         collectionIndex: 0,

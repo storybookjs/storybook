@@ -135,7 +135,7 @@ function generateConfig(workflow: Workflow) {
       {} as Record<string, JobImplementationObj | NoOpJobImplementationObj>
     ),
     workflows: {
-      [`${workflow}-generated${isDebugging ? '-debug' : ''}`]: {
+      [`circleci-generated${isDebugging ? '-debug' : ''}`]: {
         jobs: sortedJobs.map((t) =>
           t.requires && t.requires.length > 0
             ? { [t.id]: { requires: t.requires.map((r) => r.id) } }

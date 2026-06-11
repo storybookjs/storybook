@@ -74,16 +74,7 @@ describe('runAssessment (Phase 2: deterministic + LLM)', () => {
 
   it('FAILs and early-aborts when human check fails; only synthesis runs', async () => {
     mockJudgeText.mockResolvedValueOnce('composed');
-    const result = await runAssessment(
-      { ...basePr, labels: ['agent-scan:automated'] },
-      {
-        dryRun: true,
-        dismissPrevious: false,
-        model: 'sonnet-4.6',
-        effort: 'medium',
-        verbose: false,
-      }
-    );
+    const result = await runAssessment({ ...basePr, labels: ['agent-scan:automated'] });
     expect(result.verdict).toBe('fail');
     expect(result.earlyAbort).toBe(true);
     // No LLM judgments on early-abort; only synthesis (judgeText) runs.
@@ -95,13 +86,7 @@ describe('runAssessment (Phase 2: deterministic + LLM)', () => {
   it('PASSes when deterministic checks pass; runs 4 LLM checks + synthesis', async () => {
     mockJudge.mockResolvedValue(allPassJudge);
     mockJudgeText.mockResolvedValueOnce('composed review body');
-    const result = await runAssessment(basePr, {
-      dryRun: true,
-      dismissPrevious: false,
-      model: 'sonnet-4.6',
-      effort: 'medium',
-      verbose: false,
-    });
+    const result = await runAssessment(basePr);
     expect(result.verdict).toBe('pass');
     expect(result.earlyAbort).toBe(false);
     // cost-benefit short-circuits to PASS for a 0-LOC diff so its judge call

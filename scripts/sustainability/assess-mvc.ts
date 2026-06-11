@@ -10,19 +10,17 @@
  * a human maintainer looks at the PR.
  *
  * Flow:
- *   1. Parse args; the GitHub and LLM clients are fetched lazily via
- *      `getGithubClient` / `getLlmClient` from anywhere they're needed.
- *      A missing token bubbles up as a thrown error which the top-level
- *      `main().catch` decorates.
+ *   1. Parse args; the GitHub and LLM clients are fetched lazily.
  *   2. Evaluate skip rules. `--force` bypasses them entirely; `--reassess`
  *      re-runs on PRs that already have a verdict label.
  *   3. Fetch PR + linked issues into a single `PrContext`.
- *   4. Run the deterministic phase (Check 1: human-monitored; Check 3:
- *      duplicate). If either fails, the LLM phase is skipped and the review
- *      body explicitly lists the not-performed checks.
+ *   4. Run the deterministic phase (Checks 1 + 3). If either fails, the LLM
+ *      phase is skipped and the review body lists the not-performed checks.
  *   5. Run the four LLM-judged checks in parallel.
  *   6. Synthesize the final review body (one more LLM call).
- *   7. Apply writes (only with `--no-dry-run`; Phase 3 wires them).
+ *   7. Apply writes when `--no-dry-run`: dismiss prior bot reviews (when
+ *      `--dismiss-previous`), remove stale managed labels, add the verdict
+ *      label, submit the review.
  *   8. Print the verdict.
  */
 import * as p from '@clack/prompts';
@@ -30,10 +28,17 @@ import { Command, Option } from 'commander';
 import pc from 'picocolors';
 
 import { getGithubClient } from '../utils/github/client.ts';
+import { addLabels, removeLabels } from '../utils/github/labels.ts';
 import { resolveLinkedIssues } from '../utils/github/linked-issues.ts';
 import { fetchPr, normalizeStorybookPr } from '../utils/github/pr.ts';
+import { dismissPriorReviews, submitReview, type ReviewEvent } from '../utils/github/reviews.ts';
 import { configureLlmClient, type Effort, type Model } from '../utils/llm/client.ts';
-import { ASSESS_MVC_SCOPES, MANAGED_LABELS, VERDICT_LABELS } from './assess-mvc/config.ts';
+import {
+  ASSESS_MVC_SCOPES,
+  MANAGED_LABELS,
+  MARKER,
+  VERDICT_LABELS,
+} from './assess-mvc/config.ts';
 import { checkCostBenefit } from './assess-mvc/cost-benefit/check.ts';
 import { computeAddedDependencies } from './assess-mvc/cost-benefit/utils/dependencies.ts';
 import { computeDiffMetrics } from './assess-mvc/cost-benefit/utils/diff-metrics.ts';
@@ -46,14 +51,6 @@ import { evaluateSkip } from './assess-mvc/skip-rules.ts';
 import { synthesizeReview } from './assess-mvc/synthesize.ts';
 import type { CheckId, CheckResult, PrContext } from './assess-mvc/types.ts';
 import { computeVerdict, isEarlyAbort } from './assess-mvc/verdict.ts';
-
-export interface RunOpts {
-  dryRun: boolean;
-  dismissPrevious: boolean;
-  model: Model;
-  effort: Effort;
-  verbose: boolean;
-}
 
 export interface DeterministicPhaseResult {
   results: CheckResult[];
@@ -119,20 +116,18 @@ export async function runLlmPhase(pr: PrContext, earlyAbort: boolean): Promise<C
 }
 
 /**
- * Run the six-check pipeline against an already-fetched `PrContext`. Side
- * effects (label writes, review submission) only fire when `opts.dryRun` is
- * false; Phase 3 wires them.
+ * Run the six-check pipeline against an already-fetched `PrContext` and
+ * compose the review body. This function is pure: it never writes to GitHub.
+ * The CLI (`main`) decides whether to apply the resulting labels and review
+ * based on `--no-dry-run`.
  */
-export async function runAssessment(pr: PrContext, opts: RunOpts): Promise<RunResult> {
+export async function runAssessment(pr: PrContext): Promise<RunResult> {
   const det = await runDeterministicPhase(pr);
   const llmResults = await runLlmPhase(pr, det.earlyAbort);
   const results: CheckResult[] = [...det.results, ...llmResults];
   const verdict = computeVerdict(results);
   const reviewBody = await synthesizeReview({ results, earlyAbort: det.earlyAbort });
   const { labelsToAdd, labelsToRemove } = diffLabels(pr.labels, verdict);
-
-  // Phase 3 will wire writes here when !opts.dryRun.
-
   return {
     verdict,
     results,
@@ -182,6 +177,40 @@ function logCheckResult(result: CheckResult): void {
   }
 }
 
+async function applyWrites(
+  pr: PrContext,
+  result: RunResult,
+  flags: { dismissPrevious: boolean }
+): Promise<void> {
+  const event: ReviewEvent = result.verdict === 'fail' ? 'REQUEST_CHANGES' : 'COMMENT';
+
+  if (flags.dismissPrevious) {
+    const s = p.spinner();
+    s.start('Dismissing prior bot reviews');
+    await dismissPriorReviews(pr, MARKER);
+    s.stop('Prior bot reviews dismissed');
+  }
+
+  if (result.labelsToRemove.length > 0) {
+    const s = p.spinner();
+    s.start(`Removing labels: ${result.labelsToRemove.join(', ')}`);
+    await removeLabels(pr, result.labelsToRemove);
+    s.stop(`Removed: ${pc.red(result.labelsToRemove.join(', '))}`);
+  }
+
+  if (result.labelsToAdd.length > 0) {
+    const s = p.spinner();
+    s.start(`Adding labels: ${result.labelsToAdd.join(', ')}`);
+    await addLabels(pr, result.labelsToAdd);
+    s.stop(`Added: ${pc.green(result.labelsToAdd.join(', '))}`);
+  }
+
+  const reviewSpinner = p.spinner();
+  reviewSpinner.start(`Submitting ${event} review`);
+  await submitReview(pr, { event, body: result.reviewBody });
+  reviewSpinner.stop(`Review submitted as ${pc.bold(event)}`);
+}
+
 async function main(): Promise<void> {
   const program = new Command();
   program
@@ -222,8 +251,6 @@ async function main(): Promise<void> {
 
   p.intro(pc.bgCyan(pc.black(` MVC Assessment — #${prId.number} `)));
 
-  // Eager-validate the token so a missing GH_TOKEN throws here (decorated by
-  // the top-level catch) instead of inside a check halfway through the run.
   const credSpinner = p.spinner();
   credSpinner.start('Validating credentials');
   getGithubClient(ASSESS_MVC_SCOPES);
@@ -239,9 +266,6 @@ async function main(): Promise<void> {
   const partial = await fetchPr(prId);
   fetchSpinner.stop(`Fetched: ${pc.bold(partial.title)} by @${partial.author}`);
 
-  // PR-level info: surface the basics so reviewers reading the log can spot
-  // anything obviously off (wrong URL, weird label set, surprising diff size,
-  // dep additions) before any check runs.
   p.log.info(`URL: ${partial.url}`);
   const statusTag = partial.isDraft ? pc.yellow('draft') : pc.green('open');
   p.log.info(
@@ -330,14 +354,27 @@ async function main(): Promise<void> {
   const { labelsToAdd, labelsToRemove } = diffLabels(pr.labels, verdict);
   synthSpinner.stop('Review body composed');
 
-  if (labelsToRemove.length > 0) {
-    p.log.info(`Labels to remove: ${pc.red(labelsToRemove.join(', '))}`);
-  }
-  if (labelsToAdd.length > 0) {
-    p.log.info(`Labels to add: ${pc.green(labelsToAdd.join(', '))}`);
-  }
+  const runResult: RunResult = {
+    verdict,
+    results,
+    earlyAbort: det.earlyAbort,
+    reviewBody,
+    labelsToAdd,
+    labelsToRemove,
+  };
 
-  p.note(reviewBody, cliOpts.dryRun ? 'Review body (dry-run)' : 'Review body (submitted)');
+  if (cliOpts.dryRun) {
+    if (labelsToRemove.length > 0) {
+      p.log.info(`Labels to remove: ${pc.red(labelsToRemove.join(', '))}`);
+    }
+    if (labelsToAdd.length > 0) {
+      p.log.info(`Labels to add: ${pc.green(labelsToAdd.join(', '))}`);
+    }
+    p.note(reviewBody, 'Review body (dry-run)');
+  } else {
+    await applyWrites(pr, runResult, { dismissPrevious: cliOpts.dismissPrevious });
+    p.note(reviewBody, 'Review body (submitted)');
+  }
 
   const verdictLine =
     verdict === 'pass'

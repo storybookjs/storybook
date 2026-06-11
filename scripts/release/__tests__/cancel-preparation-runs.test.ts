@@ -5,11 +5,15 @@ import {
   PREPARE_PATCH_WORKFLOW_PATH,
   run as cancelPreparationWorkflows,
 } from '../cancel-preparation-runs.ts';
-import * as github_ from '../utils/github-client.ts';
+const { mockRest, mockGraphql } = vi.hoisted(() => ({
+  mockRest: vi.fn(),
+  mockGraphql: vi.fn(),
+}));
 
-vi.mock('../utils/github-client');
-
-const github = vi.mocked(github_);
+vi.mock('../../utils/github/client', () => ({
+  getGithubClient: () => ({ rest: mockRest, graphql: mockGraphql }),
+  resetGithubClient: vi.fn(),
+}));
 
 vi.spyOn(console, 'log').mockImplementation(() => {});
 vi.spyOn(console, 'warn').mockImplementation(() => {});
@@ -18,7 +22,7 @@ vi.spyOn(console, 'error').mockImplementation(() => {});
 describe('Cancel preparation runs', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    github.githubRestClient.mockImplementation(((route: string, options: any) => {
+    mockRest.mockImplementation(((route: string, options: any) => {
       switch (route) {
         case 'GET /repos/{owner}/{repo}/actions/workflows':
           return {
@@ -70,8 +74,8 @@ describe('Cancel preparation runs', () => {
 
     await expect(cancelPreparationWorkflows()).resolves.toBeUndefined();
 
-    expect(github.githubRestClient).toHaveBeenCalledTimes(5);
-    expect(github.githubRestClient).toHaveBeenCalledWith(
+    expect(mockRest).toHaveBeenCalledTimes(5);
+    expect(mockRest).toHaveBeenCalledWith(
       'POST /repos/{owner}/{repo}/actions/runs/{run_id}/cancel',
       {
         owner: 'storybookjs',
@@ -79,7 +83,7 @@ describe('Cancel preparation runs', () => {
         run_id: 100,
       }
     );
-    expect(github.githubRestClient).toHaveBeenCalledWith(
+    expect(mockRest).toHaveBeenCalledWith(
       'POST /repos/{owner}/{repo}/actions/runs/{run_id}/cancel',
       {
         owner: 'storybookjs',
@@ -87,7 +91,7 @@ describe('Cancel preparation runs', () => {
         run_id: 200,
       }
     );
-    expect(github.githubRestClient).not.toHaveBeenCalledWith(
+    expect(mockRest).not.toHaveBeenCalledWith(
       'POST /repos/{owner}/{repo}/actions/runs/{run_id}/cancel',
       {
         owner: 'storybookjs',
@@ -95,7 +99,7 @@ describe('Cancel preparation runs', () => {
         run_id: 150,
       }
     );
-    expect(github.githubRestClient).not.toHaveBeenCalledWith(
+    expect(mockRest).not.toHaveBeenCalledWith(
       'POST /repos/{owner}/{repo}/actions/runs/{run_id}/cancel',
       {
         owner: 'storybookjs',

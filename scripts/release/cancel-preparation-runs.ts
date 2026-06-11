@@ -7,7 +7,8 @@ import picocolors from 'picocolors';
 import { dedent } from 'ts-dedent';
 
 import { esMain } from '../utils/esmain.ts';
-import { githubRestClient } from './utils/github-client.ts';
+import { getGithubClient } from '../utils/github/client.ts';
+import { RELEASE_SCOPES } from './utils/github-client.ts';
 
 program
   .name('cancel-preparation-workflows')
@@ -22,7 +23,7 @@ export const run = async () => {
   }
 
   console.log(`🔎 Looking for workflows to cancel...`);
-  const allWorkflows = await githubRestClient('GET /repos/{owner}/{repo}/actions/workflows', {
+  const allWorkflows = await getGithubClient(RELEASE_SCOPES).rest('GET /repos/{owner}/{repo}/actions/workflows', {
     owner: 'storybookjs',
     repo: 'storybook',
   });
@@ -49,12 +50,12 @@ export const run = async () => {
 
   console.log('🔍 Fetching patch and non-patch runs for preparation workflows...');
   const [patchRuns, nonPatchRuns] = await Promise.all([
-    githubRestClient('GET /repos/{owner}/{repo}/actions/workflows/{workflow_id}/runs', {
+    getGithubClient(RELEASE_SCOPES).rest('GET /repos/{owner}/{repo}/actions/workflows/{workflow_id}/runs', {
       owner: 'storybookjs',
       repo: 'storybook',
       workflow_id: preparePatchWorkflowId,
     }),
-    githubRestClient('GET /repos/{owner}/{repo}/actions/workflows/{workflow_id}/runs', {
+    getGithubClient(RELEASE_SCOPES).rest('GET /repos/{owner}/{repo}/actions/workflows/{workflow_id}/runs', {
       owner: 'storybookjs',
       repo: 'storybook',
       workflow_id: prepareNonPatchWorkflowId,
@@ -83,7 +84,7 @@ export const run = async () => {
 
   const result = await Promise.allSettled(
     runsToCancel.map((r) =>
-      githubRestClient('POST /repos/{owner}/{repo}/actions/runs/{run_id}/cancel', {
+      getGithubClient(RELEASE_SCOPES).rest('POST /repos/{owner}/{repo}/actions/runs/{run_id}/cancel', {
         owner: 'storybookjs',
         repo: 'storybook',
         run_id: r.id,

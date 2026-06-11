@@ -1,6 +1,12 @@
-import type { GraphQlQueryResponseData } from '@octokit/graphql';
-import { graphql } from '@octokit/graphql';
-import { request } from '@octokit/request';
+import { getGithubClient } from '../../utils/github/client.ts';
+
+/**
+ * GitHub scopes required by the release flow. Surfaced in the missing-token
+ * error; actual enforcement happens at GitHub. Release scripts manage labels,
+ * cancel workflow runs, and read PR/issue history, so they need `repo` +
+ * `workflow`.
+ */
+export const RELEASE_SCOPES = Object.freeze(['repo', 'workflow']);
 
 export interface PullRequest {
   number: number;
@@ -10,23 +16,34 @@ export interface PullRequest {
   mergeCommit: string;
 }
 
-export const githubGraphQlClient = graphql.defaults({
-  headers: { authorization: `token ${process.env.GH_TOKEN}` },
-});
+interface UnpickedPRNode {
+  id: string;
+  number: number;
+  title: string;
+  baseRefName: string;
+  mergeCommit: { oid: string };
+  labels: { nodes: Array<{ name: string }> };
+}
 
-export const githubRestClient = request.defaults({
-  request: {
-    fetch,
-  },
-  headers: { authorization: `token ${process.env.GH_TOKEN}`, 'X-GitHub-Api-Version': '2022-11-28' },
-});
+interface UnpickedPRsResponse {
+  repository: {
+    pullRequests: {
+      nodes: UnpickedPRNode[];
+    };
+  };
+}
+
+interface InternalPR extends PullRequest {
+  labels: string[];
+}
 
 export async function getUnpickedPRs(
   baseBranch: string,
   verbose?: boolean
-): Promise<Array<PullRequest>> {
+): Promise<PullRequest[]> {
   console.log(`💬 Getting unpicked patch pull requests...`);
-  const result = await githubGraphQlClient<GraphQlQueryResponseData>(
+  const client = getGithubClient(RELEASE_SCOPES);
+  const result = await client.graphql<UnpickedPRsResponse>(
     `
       query ($owner: String!, $repo: String!, $state: PullRequestState!, $order: IssueOrder!) {
         repository(owner: $owner, name: $repo) {
@@ -36,14 +53,8 @@ export async function getUnpickedPRs(
               number
               title
               baseRefName
-              mergeCommit { 
-                oid
-              }
-              labels(first: 20) {
-                nodes {
-                  name
-                }
-              }
+              mergeCommit { oid }
+              labels(first: 20) { nodes { name } }
             }
           }
         }
@@ -52,30 +63,23 @@ export async function getUnpickedPRs(
     {
       owner: 'storybookjs',
       repo: 'storybook',
-      order: {
-        field: 'UPDATED_AT',
-        direction: 'DESC',
-      },
+      order: { field: 'UPDATED_AT', direction: 'DESC' },
       state: 'MERGED',
     }
   );
 
-  const {
-    pullRequests: { nodes },
-  } = result.repository;
-
-  const prs = nodes.map((node: any) => ({
+  const prs: InternalPR[] = result.repository.pullRequests.nodes.map((node) => ({
     number: node.number,
     id: node.id,
     branch: node.baseRefName,
     title: node.title,
     mergeCommit: node.mergeCommit.oid,
-    labels: node.labels.nodes.map((l: any) => l.name),
+    labels: node.labels.nodes.map((l) => l.name),
   }));
 
   const unpickedPRs = prs
-    .filter((pr: any) => !pr.labels.includes('patch:done'))
-    .filter((pr: any) => pr.branch === baseBranch)
+    .filter((pr) => !pr.labels.includes('patch:done'))
+    .filter((pr) => pr.branch === baseBranch)
     .reverse();
 
   if (verbose) {
@@ -85,36 +89,39 @@ export async function getUnpickedPRs(
   return unpickedPRs;
 }
 
+interface LabelsResponse {
+  repository: {
+    labels: {
+      nodes: Array<{ id: string; name: string; description: string | null }>;
+    };
+  };
+}
+
 export async function getLabelIds({
   repo: fullRepo,
   labelNames,
 }: {
   labelNames: string[];
   repo: string;
-}) {
+}): Promise<Record<string, string>> {
+  const client = getGithubClient(RELEASE_SCOPES);
   const query = labelNames.join('+');
   const [owner, repo] = fullRepo.split('/');
-  const result = await githubGraphQlClient<GraphQlQueryResponseData>(
+  const result = await client.graphql<LabelsResponse>(
     `
       query ($owner: String!, $repo: String!, $q: String!) {
         repository(owner: $owner, name: $repo) {
           labels(query: $q, first: 10) {
-            nodes {
-              id
-              name
-              description
-            }
+            nodes { id name description }
           }
         }
       }
     `,
     { owner, repo, q: query }
   );
-
-  const { labels } = result.repository;
   const labelToId: Record<string, string> = {};
-  labels.nodes.forEach((label: { name: string; id: string }) => {
+  for (const label of result.repository.labels.nodes) {
     labelToId[label.name] = label.id;
-  });
+  }
   return labelToId;
 }

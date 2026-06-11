@@ -4,9 +4,10 @@ import ora from 'ora';
 import { v4 as uuidv4 } from 'uuid';
 
 import { esMain } from '../utils/esmain.ts';
+import { getGithubClient } from '../utils/github/client.ts';
 import { getPullInfoFromCommits, getRepo } from './utils/get-changes.ts';
 import { getLatestTag, git } from './utils/git-client.ts';
-import { getLabelIds, getUnpickedPRs, githubGraphQlClient } from './utils/github-client.ts';
+import { getLabelIds, getUnpickedPRs, RELEASE_SCOPES } from './utils/github-client.ts';
 
 program
   .name('label-patches')
@@ -18,7 +19,7 @@ program
   );
 
 async function labelPR(id: string, labelId: string) {
-  await githubGraphQlClient(
+  await getGithubClient(RELEASE_SCOPES).graphql(
     `
       mutation ($input: AddLabelsToLabelableInput!) {
         addLabelsToLabelable(input: $input) {

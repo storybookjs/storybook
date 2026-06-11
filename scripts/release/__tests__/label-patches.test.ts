@@ -8,10 +8,19 @@ import * as githubInfo_ from '../utils/get-github-info.ts';
 import * as gitClient_ from '../utils/git-client.ts';
 import * as github_ from '../utils/github-client.ts';
 
+const { mockGraphql, mockRest } = vi.hoisted(() => ({
+  mockGraphql: vi.fn(),
+  mockRest: vi.fn(),
+}));
+
 vi.mock('uuid');
 vi.mock('../utils/get-github-info');
 vi.mock('../utils/github-client');
 vi.mock('../utils/git-client');
+vi.mock('../../utils/github/client', () => ({
+  getGithubClient: () => ({ rest: mockRest, graphql: mockGraphql }),
+  resetGithubClient: vi.fn(),
+}));
 
 const gitClient = vi.mocked(gitClient_, true);
 const github = vi.mocked(github_, true);
@@ -107,7 +116,7 @@ it('should label the PR associated with cherry picks in the current branch', asy
   const writeStderr = vi.spyOn(process.stderr, 'write').mockImplementation((() => {}) as any);
 
   await run({});
-  expect(github.githubGraphQlClient.mock.calls).toMatchInlineSnapshot(`
+  expect(mockGraphql.mock.calls).toMatchInlineSnapshot(`
     [
       [
         "
@@ -167,7 +176,7 @@ it('should label all PRs when the --all flag is passed', async () => {
   const writeStderr = vi.spyOn(process.stderr, 'write').mockImplementation((() => {}) as any);
 
   await run({ all: true });
-  expect(github.githubGraphQlClient.mock.calls).toMatchInlineSnapshot(`
+  expect(mockGraphql.mock.calls).toMatchInlineSnapshot(`
     [
       [
         "

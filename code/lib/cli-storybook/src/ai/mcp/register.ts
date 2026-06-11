@@ -16,7 +16,7 @@ import {
   runAiTool,
   runAiToolHelp,
 } from './run-tool.ts';
-import { parseToolArgs } from './tool-args.ts';
+import { scanCwdToken } from './tool-args.ts';
 
 /**
  * The `storybook ai <tool>` MCP passthrough is experimental (storybookjs/storybook#35124) and only
@@ -124,15 +124,11 @@ export function registerAiMcpPassthrough(
  * passthrough's own options (cwd, port, json) may contain paths and are never sent in payloads.
  * `configDir` points at the default config location of the *target* Storybook so `withTelemetry`
  * resolves `core.disableTelemetry` from the project the command is aimed at (`--cwd` is accepted
- * both before and after the command name); it is read locally, never sent.
+ * both before and after the command name, and is scanned leniently so even invocations rejected
+ * as `invalid-arguments` honor the target's opt-out); it is read locally, never sent.
  */
 function pickCliOptions(options: AiPassthroughOptions, commandArgs: string[]): CLIOptions {
-  const parsed = parseToolArgs(commandArgs, {
-    cwd: options.cwd,
-    port: options.port,
-    json: options.json,
-  });
-  const targetCwd = (parsed.ok ? parsed.cwd : options.cwd) ?? process.cwd();
+  const targetCwd = scanCwdToken(commandArgs) ?? options.cwd ?? process.cwd();
   return {
     disableTelemetry: options.disableTelemetry,
     logfile: options.logfile,
@@ -164,12 +160,17 @@ async function reportAiCommandTelemetry(
   if (outcome.kind === 'help') {
     return;
   }
-  await telemetry('ai-command', {
-    command: sanitizeCommandName(command),
-    success: outcome.kind === 'success',
-    ...(outcome.kind === 'intercept' && { interceptReason: outcome.reason }),
-    duration,
-  });
+  await telemetry(
+    'ai-command',
+    {
+      command: sanitizeCommandName(command),
+      success: outcome.kind === 'success',
+      ...(outcome.kind === 'intercept' && { interceptReason: outcome.reason }),
+      duration,
+    },
+    // Metadata must describe the target project, consistent with the opt-out resolution.
+    { configDir: cliOptions.configDir }
+  );
   if (outcome.kind === 'error') {
     await sendTelemetryError(outcome.error, 'ai-command', { cliOptions });
   }

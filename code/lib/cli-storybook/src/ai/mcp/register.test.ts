@@ -313,17 +313,46 @@ describe('ai-command telemetry', () => {
     }
   );
 
+  it('honors the --cwd target opt-out even when the remaining args are malformed', async () => {
+    const { program } = buildProgram({ withPassthrough: true });
+    // `--json '{bad'` makes full arg parsing fail (invalid-arguments intercept), but the
+    // target project's core.disableTelemetry must still be the one consulted.
+    await parse(program, ['ai', 'tool-x', '--cwd', '/target/project', '--json', '{bad']);
+    expect(withTelemetry).toHaveBeenCalledWith(
+      'ai-command',
+      expect.objectContaining({
+        cliOptions: expect.objectContaining({
+          configDir: resolve('/target/project', '.storybook'),
+        }),
+      }),
+      expect.any(Function)
+    );
+  });
+
   it('fires ai-command with a success payload and no interceptReason', async () => {
     const { program } = buildProgram({ withPassthrough: true });
     await parse(program, ['ai', 'tool-x']);
-    expect(telemetry).toHaveBeenCalledWith('ai-command', {
-      command: 'tool-x',
-      success: true,
-      duration: expect.any(Number),
-    });
+    expect(telemetry).toHaveBeenCalledWith(
+      'ai-command',
+      {
+        command: 'tool-x',
+        success: true,
+        duration: expect.any(Number),
+      },
+      // Metadata is collected from the target project, like the opt-out resolution.
+      { configDir: resolve(process.cwd(), '.storybook') }
+    );
     expect(aiCommandPayloads()).toHaveLength(1);
     expect(aiCommandPayloads()[0]).not.toHaveProperty('interceptReason');
     expect(sendTelemetryError).not.toHaveBeenCalled();
+  });
+
+  it('collects the event metadata from the --cwd target project', async () => {
+    const { program } = buildProgram({ withPassthrough: true });
+    await parse(program, ['ai', '--cwd', '/target/project', 'tool-x']);
+    expect(telemetry).toHaveBeenCalledWith('ai-command', expect.anything(), {
+      configDir: resolve('/target/project', '.storybook'),
+    });
   });
 
   it.each([
@@ -344,12 +373,16 @@ describe('ai-command telemetry', () => {
         outcome: { kind: 'intercept', reason },
       });
       await parse(program, ['ai', 'tool-x']);
-      expect(telemetry).toHaveBeenCalledWith('ai-command', {
-        command: 'tool-x',
-        success: false,
-        interceptReason: reason,
-        duration: expect.any(Number),
-      });
+      expect(telemetry).toHaveBeenCalledWith(
+        'ai-command',
+        {
+          command: 'tool-x',
+          success: false,
+          interceptReason: reason,
+          duration: expect.any(Number),
+        },
+        expect.anything()
+      );
       expect(sendTelemetryError).not.toHaveBeenCalled();
     }
   );
@@ -363,11 +396,15 @@ describe('ai-command telemetry', () => {
       outcome: { kind: 'error', error },
     });
     await parse(program, ['ai', 'tool-x']);
-    expect(telemetry).toHaveBeenCalledWith('ai-command', {
-      command: 'tool-x',
-      success: false,
-      duration: expect.any(Number),
-    });
+    expect(telemetry).toHaveBeenCalledWith(
+      'ai-command',
+      {
+        command: 'tool-x',
+        success: false,
+        duration: expect.any(Number),
+      },
+      expect.anything()
+    );
     expect(sendTelemetryError).toHaveBeenCalledWith(error, 'ai-command', {
       cliOptions: {
         disableTelemetry: undefined,
@@ -382,11 +419,15 @@ describe('ai-command telemetry', () => {
     const writeError = new Error('EACCES: permission denied');
     vi.mocked(writeFile).mockRejectedValue(writeError);
     await parse(program, ['ai', '-o', '/readonly/out.md', 'tool-x']);
-    expect(telemetry).toHaveBeenCalledWith('ai-command', {
-      command: 'tool-x',
-      success: true,
-      duration: expect.any(Number),
-    });
+    expect(telemetry).toHaveBeenCalledWith(
+      'ai-command',
+      {
+        command: 'tool-x',
+        success: true,
+        duration: expect.any(Number),
+      },
+      expect.anything()
+    );
     expect(failures).toEqual([writeError]);
   });
 
@@ -400,7 +441,8 @@ describe('ai-command telemetry', () => {
     await parse(program, ['ai', './projects/secret-app']);
     expect(telemetry).toHaveBeenCalledWith(
       'ai-command',
-      expect.objectContaining({ command: '(invalid)' })
+      expect.objectContaining({ command: '(invalid)' }),
+      expect.anything()
     );
   });
 

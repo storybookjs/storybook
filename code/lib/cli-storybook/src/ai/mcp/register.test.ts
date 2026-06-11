@@ -283,7 +283,11 @@ describe('ai-command telemetry', () => {
     await parse(program, ['ai', 'tool-x']);
     expect(withTelemetry).toHaveBeenCalledWith(
       'ai-command',
-      { cliOptions: { disableTelemetry: undefined, logfile: undefined } },
+      {
+        cliOptions: { disableTelemetry: undefined, logfile: undefined },
+        // Keeps the no-instance intercept reportable from a cwd without a loadable main config.
+        fallbackTelemetryState: true,
+      },
       expect.any(Function)
     );
   });
@@ -392,7 +396,7 @@ describe('ai-command telemetry', () => {
     await parse(program, ['ai', '--disable-telemetry', 'tool-x']);
     expect(withTelemetry).toHaveBeenCalledWith(
       'ai-command',
-      { cliOptions: expect.objectContaining({ disableTelemetry: true }) },
+      expect.objectContaining({ cliOptions: expect.objectContaining({ disableTelemetry: true }) }),
       expect.any(Function)
     );
   });
@@ -403,7 +407,7 @@ describe('ai-command telemetry', () => {
     await parse(program, ['ai', 'tool-x']);
     expect(withTelemetry).toHaveBeenCalledWith(
       'ai-command',
-      { cliOptions: expect.objectContaining({ disableTelemetry: true }) },
+      expect.objectContaining({ cliOptions: expect.objectContaining({ disableTelemetry: true }) }),
       expect.any(Function)
     );
   });

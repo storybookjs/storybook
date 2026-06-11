@@ -83,24 +83,31 @@ export function registerAiMcpPassthrough(
     .action(
       async (command: string | undefined, commandArgs: string[], options: AiPassthroughOptions) =>
         // Only the opt-out tier is consumed from cliOptions; the passthrough's own options (cwd,
-        // port, json) are deliberately not forwarded — they may contain paths.
-        withTelemetry('ai-command', { cliOptions: pickCliOptions(options) }, async () => {
-          const target = { cwd: options.cwd, port: options.port };
-          if (options.help && command) {
-            await printResult(await runAiToolHelp(command, target), options.output);
-            return;
+        // port, json) are deliberately not forwarded — they may contain paths. Like `init`, the
+        // fallback keeps telemetry on when no main config is loadable: running from a cwd without
+        // a Storybook is the `no-instance` intercept this event exists to measure. The explicit
+        // opt-outs (env var, flag, loadable `core.disableTelemetry`) still apply.
+        withTelemetry(
+          'ai-command',
+          { cliOptions: pickCliOptions(options), fallbackTelemetryState: true },
+          async () => {
+            const target = { cwd: options.cwd, port: options.port };
+            if (options.help && command) {
+              await printResult(await runAiToolHelp(command, target), options.output);
+              return;
+            }
+            if (options.help || !command) {
+              const commandsSection = await buildStorybookCommandsHelp(target);
+              process.stdout.write(`${aiCommand.helpInformation()}\n${commandsSection}\n`);
+              return;
+            }
+            const start = Date.now();
+            const result = await runAiTool(command, commandArgs, { ...target, json: options.json });
+            const duration = Date.now() - start;
+            await printResult(result, options.output);
+            await reportAiCommandTelemetry(command, result.outcome, duration, options);
           }
-          if (options.help || !command) {
-            const commandsSection = await buildStorybookCommandsHelp(target);
-            process.stdout.write(`${aiCommand.helpInformation()}\n${commandsSection}\n`);
-            return;
-          }
-          const start = Date.now();
-          const result = await runAiTool(command, commandArgs, { ...target, json: options.json });
-          const duration = Date.now() - start;
-          await printResult(result, options.output);
-          await reportAiCommandTelemetry(command, result.outcome, duration, options);
-        }).catch(handleCommandFailure(options.logfile))
+        ).catch(handleCommandFailure(options.logfile))
     );
 }
 

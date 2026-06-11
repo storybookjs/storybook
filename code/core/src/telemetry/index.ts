@@ -48,16 +48,26 @@ export const isExampleStoryId = (storyId: string) =>
 
 type TelemetryState = undefined | 'enabled' | 'disabled';
 
-globalThis.SB_TELEMETRY_STATE = undefined as TelemetryState; // Start in uninitialized state until we know whether telemetry is enabled or disabled based on presets and CLI options. In the meantime, events are queued.
-
-type QueuedEvent = {
+export type QueuedEvent = {
   eventType: EventType;
   payload: PayloadInput;
   options: Partial<Options>;
   timestamp: number;
 };
 
-let _queue: QueuedEvent[] = [];
+// State and queue live on globalThis and are only initialized when absent, because this module
+// can load more than once in the same process (e.g. an addon resolving its own copy of the
+// storybook package, or dual CJS/ESM loading). An unconditional assignment would reset
+// already-resolved state back to uninitialized, silently queueing all subsequent events forever.
+if (!('SB_TELEMETRY_STATE' in globalThis)) {
+  // Start in uninitialized state until we know whether telemetry is enabled or disabled based on
+  // presets and CLI options. In the meantime, events are queued.
+  globalThis.SB_TELEMETRY_STATE = undefined as TelemetryState;
+}
+
+if (!('SB_TELEMETRY_QUEUE' in globalThis)) {
+  globalThis.SB_TELEMETRY_QUEUE = [];
+}
 
 const isPayloadFactory = (payload: PayloadInput): payload is PayloadFactory =>
   typeof payload === 'function';
@@ -75,8 +85,8 @@ export async function setTelemetryEnabled(enabled: boolean) {
 
   if (enabled && previousState === undefined) {
     // Flush the queue
-    const pending = _queue;
-    _queue = [];
+    const pending = globalThis.SB_TELEMETRY_QUEUE;
+    globalThis.SB_TELEMETRY_QUEUE = [];
     for (const event of pending) {
       try {
         await _processAndSend(event.eventType, event.payload, {
@@ -90,7 +100,7 @@ export async function setTelemetryEnabled(enabled: boolean) {
     }
   } else {
     // Clear the queue (disabled, or already resolved)
-    _queue = [];
+    globalThis.SB_TELEMETRY_QUEUE = [];
   }
 }
 
@@ -112,7 +122,12 @@ export function isTelemetryStateResolved() {
  * (presets, cache, error levels, sub-errors).
  */
 type PayloadErrorHandler = (error: Error, eventType: EventType) => Promise<void>;
-globalThis.PAYLOAD_ERROR_HANDLER = undefined as PayloadErrorHandler | undefined;
+
+// Guarded for the same reason as SB_TELEMETRY_STATE above: a second load of this module must not
+// clear a handler registered through the first one.
+if (!('PAYLOAD_ERROR_HANDLER' in globalThis)) {
+  globalThis.PAYLOAD_ERROR_HANDLER = undefined as PayloadErrorHandler | undefined;
+}
 
 /**
  * Register a handler for payload factory errors. When a telemetry payload factory
@@ -205,7 +220,7 @@ export const telemetry = async (
   }
 
   if (globalThis.SB_TELEMETRY_STATE === undefined && !options.force) {
-    _queue.push({ eventType, payload, options, timestamp: Date.now() });
+    globalThis.SB_TELEMETRY_QUEUE.push({ eventType, payload, options, timestamp: Date.now() });
     return;
   }
 

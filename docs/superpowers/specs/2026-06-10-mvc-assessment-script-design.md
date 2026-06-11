@@ -24,7 +24,7 @@ This script is the **first automated entry point** for community PRs. It runs be
 ### Out of scope (v1)
 
 - Approving PRs (a separate phase-2 workflow will APPROVE when both `mvc:success` and `verification:success` are present).
-- Verification of PR correctness (separate verification:* workflow).
+- Verification of PR correctness (separate verification:\* workflow).
 - PR completion (adding tests, stories, docs — separate finalization agent).
 - Semantic duplicate detection across all open PRs.
 - Media (screenshot/video) evaluation.
@@ -128,6 +128,7 @@ Options:
 ### Skip behavior (with `--respect-skip-rules`)
 
 The script exits 0 and prints `Skipped: <reason>` for:
+
 - Draft PRs.
 - PRs already labeled `mvc:success` or `mvc:failed`.
 - PRs labeled `mvc:skip`.
@@ -142,6 +143,7 @@ The script exits 0 and prints `Deferred: <reason>` when Check 1 returns "agent-s
 Before any other work, the script verifies `GH_TOKEN` or `GITHUB_TOKEN` is present in the environment. Missing token → exit 1 with a message listing required scopes (TODO: final copy in section 12).
 
 Required scopes (fine-grained PAT or app token):
+
 - **Pull requests: Read & Write** — fetch PRs, submit reviews.
 - **Issues: Read & Write** — fetch linked issues, edit labels.
 - **Contents: Read** — fetch diff content.
@@ -157,10 +159,16 @@ Each check returns a `CheckResult`:
 type CheckStatus = 'pass' | 'fail' | 'warn' | 'deferred';
 
 interface CheckResult {
-  id: 'human' | 'real-problem' | 'duplicate' | 'cost-benefit' | 'explains-test' | 'provides-context';
+  id:
+    | 'human'
+    | 'real-problem'
+    | 'duplicate'
+    | 'cost-benefit'
+    | 'explains-test'
+    | 'provides-context';
   status: CheckStatus;
-  evidence: string;     // short factual summary, for the review body
-  guidance?: string;    // canned-response-derived feedback for the author, on fail/warn
+  evidence: string; // short factual summary, for the review body
+  guidance?: string; // canned-response-derived feedback for the author, on fail/warn
 }
 ```
 
@@ -172,12 +180,12 @@ interface CheckResult {
 
 **Type:** Deterministic.
 
-| `agent-scan:*` label | Verdict |
-|---|---|
-| `agent-scan:human` | PASS |
-| `agent-scan:mixed` | FAIL (treated as automated) |
-| `agent-scan:automated` | FAIL |
-| (none) | DEFERRED — exit 0, no labels, no review |
+| `agent-scan:*` label   | Verdict                                 |
+| ---------------------- | --------------------------------------- |
+| `agent-scan:human`     | PASS                                    |
+| `agent-scan:mixed`     | FAIL (treated as automated)             |
+| `agent-scan:automated` | FAIL                                    |
+| (none)                 | DEFERRED — exit 0, no labels, no review |
 
 The deferred case is common because the agent-scan workflow and this workflow can race on new PRs. CI retries via `labeled` or `synchronize` events when agent-scan eventually lands.
 
@@ -196,6 +204,7 @@ The PR's category is classified before judgment:
 #### Linked-issue resolution
 
 Linked issues are gathered from:
+
 - GraphQL `closingIssuesReferences` (covers same-repo `Fixes #NNN` and cross-repo `org/repo#NNN`).
 - PR body parsing for `storybookjs/REPO#NNN` references, full issue URLs, and same-repo `#NNN` mentions.
 
@@ -209,6 +218,7 @@ De-duplicate; resolve each via `GET /repos/{owner}/{repo}/issues/{n}`. Accept on
 The same bar applies to bug fixes, features, cleanup, dependencies, docs, etc. PRs from maintainer/core/DX teams are skipped upstream (`--respect-skip-rules`), so this rule never applies to small internal cleanups.
 
 **Feature sub-rule:** For PRs classified as features, the LLM additionally judges whether the feature matches one of the three accepted categories:
+
 1. Augments an existing API for addon/framework authors.
 2. Adds support for popular / trending tech.
 3. Quality-of-life improvement.
@@ -221,13 +231,13 @@ If the feature fits none of these, FAIL with guidance pointing the contributor t
 
 For each linked issue (from Check 2's resolution), find other PRs that reference it via GraphQL `IssueTimelineItems` with `cross-referenced` events.
 
-| Situation | Verdict |
-|---|---|
-| Another **open** PR on the same linked issue | FAIL |
-| Another **merged** PR on the same linked issue, issue NOT closed-then-reopened | FAIL |
-| Another **merged** PR on the same linked issue, issue WAS closed-then-reopened | PASS |
-| Another **closed-unmerged** PR on the same linked issue | PASS (silent, not surfaced) |
-| No dupes found | PASS |
+| Situation                                                                      | Verdict                     |
+| ------------------------------------------------------------------------------ | --------------------------- |
+| Another **open** PR on the same linked issue                                   | FAIL                        |
+| Another **merged** PR on the same linked issue, issue NOT closed-then-reopened | FAIL                        |
+| Another **merged** PR on the same linked issue, issue WAS closed-then-reopened | PASS                        |
+| Another **closed-unmerged** PR on the same linked issue                        | PASS (silent, not surfaced) |
+| No dupes found                                                                 | PASS                        |
 
 **Closed-then-reopened detection:** Inspect the issue's timeline (`GET /repos/{o}/{r}/issues/{n}/timeline`) for at least one `closed` event followed by a `reopened` event, with current state open (Check 2 already requires open). This signals the prior merged fix did not hold; a new attempt is warranted.
 
@@ -239,23 +249,23 @@ FAIL message includes the offending PR number so the author knows which to follo
 
 #### Cost precomputes (deterministic)
 
-| Signal | Source |
-|---|---|
-| LOC added, removed, net | PR files API |
-| Files changed (count + paths) | PR files API |
-| Cyclomatic complexity per changed JS/TS function | AST walker (TypeScript compiler API — already in repo via csf-tools) |
-| New runtime dependencies | `package.json` diff (added entries in `dependencies` / `peerDependencies`) |
+| Signal                                           | Source                                                                     |
+| ------------------------------------------------ | -------------------------------------------------------------------------- |
+| LOC added, removed, net                          | PR files API                                                               |
+| Files changed (count + paths)                    | PR files API                                                               |
+| Cyclomatic complexity per changed JS/TS function | AST walker (TypeScript compiler API — already in repo via csf-tools)       |
+| New runtime dependencies                         | `package.json` diff (added entries in `dependencies` / `peerDependencies`) |
 
 **Dropped from v1:** cross-package edges (concern: noisy/poorly computed), test coverage signal (deferred to a separate completion agent), legacy-area path heuristics.
 
 #### Benefit precomputes (deterministic + LLM)
 
-| Signal | Source |
-|---|---|
-| `sev:S1`–`sev:S4` label on linked issue | Already fetched for Check 2 |
-| 👍 / 👎 / 🎉 reaction counts on linked issue | GitHub reactions API |
-| Comment count on linked issue | Issue API |
-| Breadth vs edge-case classification | LLM judgment (not deterministic) |
+| Signal                                       | Source                           |
+| -------------------------------------------- | -------------------------------- |
+| `sev:S1`–`sev:S4` label on linked issue      | Already fetched for Check 2      |
+| 👍 / 👎 / 🎉 reaction counts on linked issue | GitHub reactions API             |
+| Comment count on linked issue                | Issue API                        |
+| Breadth vs edge-case classification          | LLM judgment (not deterministic) |
 
 #### Rubric
 
@@ -283,11 +293,13 @@ WARN status surfaces concerns to human reviewers without blocking. FAIL message 
 #### Rubric
 
 **PASS** when:
+
 - PR body has concrete steps, OR linked issue's content reads as a valid verification recipe (LLM judges).
 - **Reproducibility framing**: steps tell a third-party how to validate the PR works — NOT the author's self-report ("I tested it locally").
 - **User-action framing**: steps are real-world user actions (CLI commands, UI navigation, project setup) demonstrating the issue is fixed — NOT unit-test invocations decoupled from user-facing behavior.
 
 **FAIL** when:
+
 - Section is missing, empty, or essentially placeholder text.
 - Instructions are author-centric self-reports.
 - Instructions are only unit tests with no user-facing validation.
@@ -308,10 +320,12 @@ Media (screenshots/videos) is **out of scope** for Check 5. LLMs cannot reliably
 #### Rubric
 
 **PASS** when:
+
 - PR body has any explanation of WHY the author chose their approach, OR
 - LLM judges the PR is simple enough / well-aligned enough with the linked issue that "why" is self-evident from the diff and issue alone.
 
 **FAIL** when:
+
 - No "why" in the body AND the "why" is not self-evident from the PR + issue.
 
 Low bar — the goal is to surface PRs where a reviewer would have to guess at the author's intent, not to demand essays for trivial fixes. Tiny / one-line / obviously-trivial PRs auto-PASS via the "self-evident" branch.
@@ -352,6 +366,7 @@ The synthesis prompt instructs the LLM to **start from the matching canned respo
 ### Cost estimate (rough)
 
 Per assessed PR with sonnet-4.6 / medium effort:
+
 - ~10k input tokens × 5 calls = ~50k input tokens
 - ~2k output tokens × 5 calls = ~10k output tokens
 - Estimated $0.10–$0.30 per PR.
@@ -453,7 +468,7 @@ jobs:
       - run: yarn install --immutable
         working-directory: ./scripts
       - env:
-          GH_TOKEN: ${{ secrets.GH_TOKEN }}  # Storybot app token swap planned later
+          GH_TOKEN: ${{ secrets.GH_TOKEN }} # Storybot app token swap planned later
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
         run: |
           PR_NUMBER="${{ github.event.inputs.pr_number || github.event.pull_request.number }}"

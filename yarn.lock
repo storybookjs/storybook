@@ -8521,6 +8521,7 @@ __metadata:
     globby: "npm:^14.1.0"
     jscodeshift: "npm:^0.15.1"
     leven: "npm:^4.0.0"
+    memfs: "npm:^4.11.1"
     p-limit: "npm:^7.2.0"
     picocolors: "npm:^1.1.0"
     semver: "npm:^7.7.3"
@@ -8530,6 +8531,7 @@ __metadata:
     tinyclip: "npm:^0.1.12"
     ts-dedent: "npm:^2.0.0"
     typescript: "npm:^5.8.3"
+    valibot: "npm:^1.4.0"
   bin:
     cli: ./dist/bin/index.js
   languageName: unknown

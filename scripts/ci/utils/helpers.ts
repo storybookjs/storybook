@@ -70,8 +70,17 @@ export const git = {
   check: () => {
     return {
       run: {
-        name: 'Ensure no changes pending',
-        command: 'git diff --exit-code',
+        name: 'Ensure no uncommitted changes',
+        command: [
+          'if [ -n "$(git status --porcelain)" ]; then',
+          '  echo ""',
+          '  echo "Uncommitted changes detected in the working tree. If the build generated files, run \`yarn task --task compile\` locally and commit them."',
+          '  echo ""',
+          '  git status --porcelain',
+          '  git diff',
+          '  exit 1',
+          'fi',
+        ].join('\n'),
       },
     };
   },

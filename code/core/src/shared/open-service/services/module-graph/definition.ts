@@ -1,6 +1,7 @@
 import * as v from 'valibot';
 
 import { defineService } from '../../service-definition.ts';
+import type { ServiceInstanceOf } from '../../types.ts';
 import type { ModuleGraphServiceState } from './types.ts';
 import { toStoryIndexPath } from './types.ts';
 
@@ -285,3 +286,5 @@ export const moduleGraphServiceDef = defineService({
     },
   },
 });
+
+export type ModuleGraphService = ServiceInstanceOf<typeof moduleGraphServiceDef>;

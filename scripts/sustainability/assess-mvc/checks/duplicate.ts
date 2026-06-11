@@ -1,30 +1,38 @@
+import { fetchCrossRefs } from '../../../utils/github/cross-refs.ts';
 import type { GithubClient } from '../../../utils/github/client.ts';
-import type { CheckResult, LinkedIssue } from '../types.ts';
+import { fetchIssueTimeline, type TimelineEvent } from '../../../utils/github/timeline.ts';
+import type { CheckResult, PrContext } from '../types.ts';
 
-export interface CrossRefEvent {
-  prNumber: number;
-  prState: 'open' | 'closed';
-  merged: boolean;
+export interface DuplicateOpts {
+  client: GithubClient;
 }
 
-export interface TimelineEvent {
-  type: 'closed' | 'reopened' | string;
-  at: string;
-}
-
-export type DuplicateLookup = (
-  issue: Pick<LinkedIssue, 'owner' | 'repo' | 'number'>
-) => Promise<{
-  crossRefs: CrossRefEvent[];
-  timeline: TimelineEvent[];
-}>;
-
+/**
+ * Check 3 — Not a duplicate.
+ *
+ * Purpose: a PR that addresses the same issue as another open or merged PR is
+ * not a Minimum Viable Contribution — the maintainer's time is better spent on
+ * whichever PR is already further along. This check is the second guardrail
+ * (alongside Check 1) that runs before any LLM-judged check, so we can early-
+ * abort on definitive structural failures without spending tokens.
+ *
+ * What we verify, per linked issue:
+ *   - Any OTHER open PR cross-referencing the same issue → FAIL.
+ *   - Any merged PR that already fixed the issue → FAIL, unless the issue was
+ *     subsequently closed-then-reopened (in which case the prior fix didn't
+ *     hold and a new attempt is warranted).
+ *   - Closed-unmerged PRs and the PR-under-review itself are ignored.
+ *
+ * Why this shape: we want to fail loudly on duplicate effort but stay silent
+ * on dead PRs (closed-unmerged) and resurrected work (reopened issues). The
+ * memoized cross-ref/timeline utilities cache per (client, issue), so multi-
+ * issue PRs only pay one network round-trip per issue per run.
+ */
 export async function checkDuplicate(
-  selfPrNumber: number,
-  linkedIssues: Array<Pick<LinkedIssue, 'owner' | 'repo' | 'number' | 'state' | 'url'>>,
-  lookup: DuplicateLookup
+  pr: Pick<PrContext, 'number' | 'linkedIssues'>,
+  opts: DuplicateOpts
 ): Promise<CheckResult> {
-  if (linkedIssues.length === 0) {
+  if (pr.linkedIssues.length === 0) {
     return {
       id: 'duplicate',
       status: 'pass',
@@ -33,11 +41,14 @@ export async function checkDuplicate(
   }
 
   const conflicts: string[] = [];
-  for (const issue of linkedIssues) {
-    const { crossRefs, timeline } = await lookup(issue);
+  for (const issue of pr.linkedIssues) {
+    const [crossRefs, timeline] = await Promise.all([
+      fetchCrossRefs(opts.client, issue),
+      fetchIssueTimeline(opts.client, issue),
+    ]);
     const wasReopened = isClosedThenReopened(timeline);
     for (const ref of crossRefs) {
-      if (ref.prNumber === selfPrNumber) continue;
+      if (ref.prNumber === pr.number) continue;
       if (ref.prState === 'open' && !ref.merged) {
         conflicts.push(
           `#${ref.prNumber} (open) references the same issue ${issue.owner}/${issue.repo}#${issue.number}`
@@ -74,46 +85,4 @@ function isClosedThenReopened(timeline: TimelineEvent[]): boolean {
     if (event.type === 'reopened' && sawClosed) return true;
   }
   return false;
-}
-
-export function githubDuplicateLookup(client: GithubClient): DuplicateLookup {
-  return async (issue) => {
-    const data = await client.graphql<any>(
-      `query($owner:String!,$repo:String!,$num:Int!){
-        repository(owner:$owner,name:$repo){
-          issue(number:$num){
-            timelineItems(first:100, itemTypes:[CROSS_REFERENCED_EVENT]){
-              nodes{ ... on CrossReferencedEvent { source { ... on PullRequest { number state merged } } } }
-            }
-          }
-        }
-      }`,
-      { owner: issue.owner, repo: issue.repo, num: issue.number }
-    );
-    const nodes = data.repository?.issue?.timelineItems?.nodes ?? [];
-    const crossRefs: CrossRefEvent[] = [];
-    for (const node of nodes) {
-      const src = node?.source;
-      if (!src || typeof src.number !== 'number') continue;
-      crossRefs.push({
-        prNumber: src.number,
-        prState: src.state === 'OPEN' ? 'open' : 'closed',
-        merged: Boolean(src.merged),
-      });
-    }
-    const { data: timeline } = await client.rest(
-      'GET /repos/{owner}/{repo}/issues/{issue_number}/timeline',
-      {
-        owner: issue.owner,
-        repo: issue.repo,
-        issue_number: issue.number,
-        per_page: 100,
-      }
-    );
-    const timelineEvents: TimelineEvent[] = (timeline as any[]).map((e: any) => ({
-      type: e.event,
-      at: e.created_at,
-    }));
-    return { crossRefs, timeline: timelineEvents };
-  };
 }

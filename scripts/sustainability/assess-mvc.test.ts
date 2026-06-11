@@ -1,70 +1,102 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
+import type { PrContext } from './assess-mvc/types.ts';
 import { runAssessment } from './assess-mvc.ts';
 
-const fakePr = {
+const basePr: PrContext = {
   owner: 'storybookjs',
   repo: 'storybook',
   number: 1,
   url: 'u',
   title: 't',
-  body: 'closes #2',
+  body: '',
   author: 'someone',
   isDraft: false,
   headSha: 'sha',
   labels: ['agent-scan:human'],
   files: [],
+  linkedIssues: [],
+  brokenLinkRefs: [],
 };
 
-const fakeIssue = {
-  owner: 'storybookjs',
-  repo: 'storybook',
-  number: 2,
-  url: 'u2',
-  title: 'I',
-  body: '',
-  state: 'open' as const,
-  labels: [],
-};
+describe('runAssessment (Phase 1: deterministic + LLM stubs)', () => {
+  it('PASSes when both deterministic checks pass and no linked issues', async () => {
+    const client = { graphql: vi.fn(), rest: vi.fn() } as any;
+    const result = await runAssessment(basePr, {
+      client,
+      dryRun: true,
+      dismissPrevious: false,
+      model: 'sonnet-4.6',
+      effort: 'medium',
+      verbose: false,
+    });
+    expect(result.verdict).toBe('pass');
+    expect(result.earlyAbort).toBe(false);
+    expect(result.labelsToAdd).toContain('mvc:success');
+    expect(result.prSummary.number).toBe(1);
+    expect(client.graphql).not.toHaveBeenCalled();
+    expect(client.rest).not.toHaveBeenCalled();
+  });
 
-describe('runAssessment (deterministic-only)', () => {
-  it('PASSes deterministic phase, defers LLM checks, dry-run produces no writes', async () => {
-    const writes: any[] = [];
-    const result = await runAssessment({
-      coords: { owner: 'storybookjs', repo: 'storybook', number: 1 },
-      flags: {
+  it('FAILs and early-aborts when human check fails', async () => {
+    const client = { graphql: vi.fn(), rest: vi.fn() } as any;
+    const result = await runAssessment(
+      { ...basePr, labels: ['agent-scan:automated'] },
+      {
+        client,
         dryRun: true,
         dismissPrevious: false,
-        skipInternalPrs: false,
         model: 'sonnet-4.6',
         effort: 'medium',
         verbose: false,
-      },
-      deps: {
-        fetchPrContext: async () => ({
-          ...fakePr,
-          linkedIssues: [fakeIssue],
-          brokenLinkRefs: [],
-        }),
-        duplicateLookup: async () => ({ crossRefs: [], timeline: [] }),
-        isMaintainer: async () => false,
-        llmJudge: async (id) => ({
-          id,
-          status: 'deferred' as const,
-          evidence: 'LLM phase not wired in Phase 1',
-        }),
-        synthesizeReview: async () => 'placeholder review body',
-        writes: {
-          addLabels: async (l) => writes.push({ kind: 'add', l }),
-          removeLabels: async (l) => writes.push({ kind: 'remove', l }),
-          submitReview: async (r) => writes.push({ kind: 'review', r }),
-          dismissPriorReviews: async () => writes.push({ kind: 'dismiss' }),
-        },
-      },
+      }
+    );
+    expect(result.verdict).toBe('fail');
+    expect(result.earlyAbort).toBe(true);
+    const llm = result.results.filter((r) =>
+      ['real-problem', 'cost-benefit', 'explains-test', 'provides-context'].includes(r.id)
+    );
+    expect(llm.every((r) => r.status === 'deferred')).toBe(true);
+    expect(result.labelsToAdd).toContain('mvc:failed');
+  });
+
+  it('queries github for linked-issue cross-refs when linked issues are present', async () => {
+    const graphql = vi.fn().mockResolvedValue({
+      repository: { issue: { timelineItems: { nodes: [] } } },
     });
-    expect(result.verdict).toBe('pass');
-    expect(writes).toEqual([]);
-    expect(result.labelsToAdd).toContain('mvc:success');
-    expect(result.prSummary.number).toBe(1);
+    const rest = vi.fn(async (route: string) => {
+      if (route === 'GET /repos/{owner}/{repo}/issues/{issue_number}/timeline') {
+        return { data: [] };
+      }
+      throw new Error(`unexpected ${route}`);
+    });
+    const client = { graphql, rest } as any;
+    await runAssessment(
+      {
+        ...basePr,
+        linkedIssues: [
+          {
+            owner: 'storybookjs',
+            repo: 'storybook',
+            number: 99,
+            url: 'u',
+            title: 'I',
+            body: '',
+            state: 'open',
+            labels: [],
+          },
+        ],
+      },
+      {
+        client,
+        dryRun: true,
+        dismissPrevious: false,
+        model: 'sonnet-4.6',
+        effort: 'medium',
+        verbose: false,
+      }
+    );
+    expect(graphql).toHaveBeenCalledOnce();
+    expect(rest).toHaveBeenCalledOnce();
   });
 });

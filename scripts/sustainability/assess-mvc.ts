@@ -2,7 +2,29 @@
  * MVC Assessment CLI.
  *
  * Usage: node scripts/sustainability/assess-mvc.ts <pr> [options]
- * See `docs/superpowers/specs/2026-06-10-mvc-assessment-script-design.md` for the full design.
+ *
+ * Assesses a Storybook PR against the six MVC (Minimum Viable Contribution)
+ * criteria and either coaches the author toward MVC status or blocks the PR
+ * until it qualifies. The CLI is the first automated entry point for
+ * community PRs: it runs before verification, before completion, and before a
+ * human maintainer looks at the PR.
+ *
+ * Flow:
+ *   1. Parse args, resolve GitHub token, create octokit clients.
+ *   2. Optionally short-circuit on skip rules (drafts, prior verdict labels,
+ *      `mvc:skip`, maintainer-team authorship) when `--skip-internal-prs`.
+ *   3. Fetch PR + linked issues into a single `PrContext`.
+ *   4. Run the deterministic checks (Check 1: human-monitored; Check 3:
+ *      duplicate). If either fails, the LLM phase is skipped — see the
+ *      "early-abort" handling in `runAssessment`.
+ *   5. Run the four LLM-judged checks (real problem, cost/benefit, explains-
+ *      how-to-test, provides-context) — Phase 1 returns `deferred` placeholders.
+ *   6. Compose the review body (Phase 1 stub) and compute label diff.
+ *   7. Apply writes (only with `--no-dry-run`; Phase 1 elides writes entirely).
+ *   8. Print the summary table to stdout.
+ *
+ * See `docs/superpowers/specs/2026-06-10-mvc-assessment-script-design.md` and
+ * `docs/superpowers/plans/2026-06-11-mvc-assessment-script.md`.
  */
 import { Command, Option } from 'commander';
 import pc from 'picocolors';
@@ -16,7 +38,7 @@ import { ORG } from '../utils/github/constants.ts';
 import { resolveLinkedIssues } from '../utils/github/linked-issues.ts';
 import { fetchPr, parsePrArg } from '../utils/github/pr.ts';
 import { teamMembership } from '../utils/github/teams.ts';
-import { checkDuplicate, githubDuplicateLookup } from './assess-mvc/checks/duplicate.ts';
+import { checkDuplicate } from './assess-mvc/checks/duplicate.ts';
 import { checkHumanMonitored } from './assess-mvc/checks/human-monitored.ts';
 import {
   MAINTAINER_TEAM_SLUGS,
@@ -32,40 +54,18 @@ import { computeVerdict, isEarlyAbort } from './assess-mvc/verdict.ts';
 export type Model = 'sonnet-4.6' | 'opus-4.6' | 'haiku-4.5';
 export type Effort = 'low' | 'medium' | 'high' | 'max';
 
-export interface Flags {
+/**
+ * Runtime capabilities + flags every check function consumes. `client` is the
+ * GitHub API client; `llm` will be added when Phase 2 lands. Other fields are
+ * pure CLI flags.
+ */
+export interface RunOpts {
+  client: GithubClient;
   dryRun: boolean;
   dismissPrevious: boolean;
-  skipInternalPrs: boolean;
   model: Model;
   effort: Effort;
   verbose: boolean;
-}
-
-export interface AssessDeps {
-  fetchPrContext(coords: { owner: string; repo: string; number: number }): Promise<PrContext>;
-  duplicateLookup: (issue: { owner: string; repo: string; number: number }) => Promise<{
-    crossRefs: any[];
-    timeline: any[];
-  }>;
-  isMaintainer(login: string): Promise<boolean>;
-  llmJudge(id: CheckId, ctx: PrContext): Promise<CheckResult>;
-  synthesizeReview(input: {
-    pr: PrContext;
-    results: CheckResult[];
-    earlyAbort: boolean;
-  }): Promise<string>;
-  writes: {
-    addLabels(labels: string[]): Promise<void>;
-    removeLabels(labels: string[]): Promise<void>;
-    submitReview(input: { event: 'COMMENT' | 'REQUEST_CHANGES'; body: string }): Promise<void>;
-    dismissPriorReviews(): Promise<void>;
-  };
-}
-
-export interface RunInput {
-  coords: { owner: string; repo: string; number: number };
-  flags: Flags;
-  deps: AssessDeps;
 }
 
 export interface PrSummary {
@@ -87,12 +87,17 @@ export interface RunResult {
 
 const LLM_IDS: CheckId[] = ['real-problem', 'cost-benefit', 'explains-test', 'provides-context'];
 
-export async function runAssessment(input: RunInput): Promise<RunResult> {
-  const ctx = await input.deps.fetchPrContext(input.coords);
-
+/**
+ * Run the six-check pipeline against an already-fetched PrContext.
+ *
+ * Pure-ish: side effects (label writes, review submission) only fire when
+ * `opts.dryRun` is false. Phase 1 stubs the LLM checks to `deferred` and elides
+ * all write paths (Phase 3 wires them).
+ */
+export async function runAssessment(pr: PrContext, opts: RunOpts): Promise<RunResult> {
   const det: CheckResult[] = [];
-  det.push(checkHumanMonitored(ctx.labels));
-  det.push(await checkDuplicate(ctx.number, ctx.linkedIssues, input.deps.duplicateLookup));
+  det.push(checkHumanMonitored(pr));
+  det.push(await checkDuplicate(pr, { client: opts.client }));
 
   const earlyAbort = isEarlyAbort(det);
 
@@ -102,22 +107,18 @@ export async function runAssessment(input: RunInput): Promise<RunResult> {
         status: 'deferred' as const,
         evidence: 'Skipped due to early-abort.',
       }))
-    : await Promise.all(LLM_IDS.map((id) => input.deps.llmJudge(id, ctx)));
+    : LLM_IDS.map((id) => ({
+        id,
+        status: 'deferred' as const,
+        evidence: 'LLM phase not yet wired (Phase 2).',
+      }));
 
   const results: CheckResult[] = [...det, ...llm];
   const verdict = computeVerdict(results);
-  const reviewBody = await input.deps.synthesizeReview({ pr: ctx, results, earlyAbort });
-  const { labelsToAdd, labelsToRemove } = diffLabels(ctx.labels, verdict);
+  const reviewBody = composeStubReview(results, earlyAbort);
+  const { labelsToAdd, labelsToRemove } = diffLabels(pr.labels, verdict);
 
-  if (!input.flags.dryRun) {
-    if (input.flags.dismissPrevious) await input.deps.writes.dismissPriorReviews();
-    if (labelsToRemove.length > 0) await input.deps.writes.removeLabels(labelsToRemove);
-    if (labelsToAdd.length > 0) await input.deps.writes.addLabels(labelsToAdd);
-    await input.deps.writes.submitReview({
-      event: verdict === 'fail' ? 'REQUEST_CHANGES' : 'COMMENT',
-      body: reviewBody,
-    });
-  }
+  // Phase 3 will wire writes through `opts.client` here when !opts.dryRun.
 
   return {
     verdict,
@@ -126,8 +127,19 @@ export async function runAssessment(input: RunInput): Promise<RunResult> {
     reviewBody,
     labelsToAdd,
     labelsToRemove,
-    prSummary: { number: ctx.number, title: ctx.title, author: ctx.author, url: ctx.url },
+    prSummary: { number: pr.number, title: pr.title, author: pr.author, url: pr.url },
   };
+}
+
+function composeStubReview(results: CheckResult[], earlyAbort: boolean): string {
+  const lines = [
+    MARKER,
+    '## MVC Assessment',
+    earlyAbort ? '> Early-abort: deterministic checks gated the LLM phase.' : '',
+    '',
+    ...results.map((r) => `- **${r.id}** — ${r.status.toUpperCase()}: ${r.evidence}`),
+  ].filter(Boolean);
+  return lines.join('\n');
 }
 
 function diffLabels(
@@ -140,42 +152,6 @@ function diffLabels(
     (l) => (MANAGED_LABELS as readonly string[]).includes(l) && l !== target
   );
   return { labelsToAdd, labelsToRemove };
-}
-
-function buildDeps(client: GithubClient): AssessDeps {
-  return {
-    async fetchPrContext(coords) {
-      const partial = await fetchPr(client, coords);
-      const { issues, broken } = await resolveLinkedIssues(client, {
-        owner: coords.owner,
-        repo: coords.repo,
-        number: coords.number,
-        body: partial.body,
-      });
-      return { ...partial, linkedIssues: issues, brokenLinkRefs: broken };
-    },
-    duplicateLookup: githubDuplicateLookup(client),
-    isMaintainer: teamMembership(client, ORG, MAINTAINER_TEAM_SLUGS).isMaintainer,
-    async llmJudge(id) {
-      return { id, status: 'deferred', evidence: 'LLM phase not yet wired (Phase 2).' };
-    },
-    async synthesizeReview({ results, earlyAbort }) {
-      const lines = [
-        MARKER,
-        '## MVC Assessment',
-        earlyAbort ? '> Early-abort: deterministic checks gated the LLM phase.' : '',
-        '',
-        ...results.map((r) => `- **${r.id}** — ${r.status.toUpperCase()}: ${r.evidence}`),
-      ].filter(Boolean);
-      return lines.join('\n');
-    },
-    writes: {
-      async addLabels() {},
-      async removeLabels() {},
-      async submitReview() {},
-      async dismissPriorReviews() {},
-    },
-  };
 }
 
 async function main(): Promise<void> {
@@ -208,7 +184,7 @@ async function main(): Promise<void> {
 
   program.parse();
   const arg = program.args[0];
-  const opts = program.opts<{
+  const cliOpts = program.opts<{
     dryRun: boolean;
     dismissPrevious: boolean;
     skipInternalPrs: boolean;
@@ -234,21 +210,12 @@ async function main(): Promise<void> {
   }
 
   const client = createGithubClient(token);
-  const flags: Flags = {
-    dryRun: opts.dryRun,
-    dismissPrevious: opts.dismissPrevious,
-    skipInternalPrs: opts.skipInternalPrs,
-    model: opts.model,
-    effort: opts.effort,
-    verbose: opts.verbose,
-  };
 
-  const deps = buildDeps(client);
+  const partial = await fetchPr(client, coords);
 
-  if (flags.skipInternalPrs) {
-    const partial = await fetchPr(client, coords);
+  if (cliOpts.skipInternalPrs) {
     const decision = await evaluateSkip(partial, {
-    isMaintainer: teamMembership(client, ORG, MAINTAINER_TEAM_SLUGS).isMaintainer,
+      isMaintainer: teamMembership(client, ORG, MAINTAINER_TEAM_SLUGS).isMaintainer,
     });
     if (decision.skip) {
       console.log(pc.dim(`Skipped: ${decision.reason}`));
@@ -256,7 +223,24 @@ async function main(): Promise<void> {
     }
   }
 
-  const result = await runAssessment({ coords, flags, deps });
+  const { issues, broken } = await resolveLinkedIssues(client, {
+    owner: coords.owner,
+    repo: coords.repo,
+    number: coords.number,
+    body: partial.body,
+  });
+  const pr: PrContext = { ...partial, linkedIssues: issues, brokenLinkRefs: broken };
+
+  const opts: RunOpts = {
+    client,
+    dryRun: cliOpts.dryRun,
+    dismissPrevious: cliOpts.dismissPrevious,
+    model: cliOpts.model,
+    effort: cliOpts.effort,
+    verbose: cliOpts.verbose,
+  };
+
+  const result = await runAssessment(pr, opts);
 
   const humanResult = result.results.find((r) => r.id === 'human');
   if (humanResult?.status === 'deferred') {
@@ -272,7 +256,7 @@ async function main(): Promise<void> {
       reviewBody: result.reviewBody,
       labelsToAdd: result.labelsToAdd,
       labelsToRemove: result.labelsToRemove,
-      dryRun: flags.dryRun,
+      dryRun: cliOpts.dryRun,
     })
   );
 }

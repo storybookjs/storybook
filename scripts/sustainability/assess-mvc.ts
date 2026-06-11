@@ -10,49 +10,48 @@
  * a human maintainer looks at the PR.
  *
  * Flow:
- *   1. Parse args; the GitHub client is fetched lazily via `getGithubClient`
- *      from anywhere it's needed. A missing token bubbles up as a thrown
- *      error which the top-level `main().catch` decorates.
+ *   1. Parse args; the GitHub and LLM clients are fetched lazily via
+ *      `getGithubClient` / `getLlmClient` from anywhere they're needed.
+ *      A missing token bubbles up as a thrown error which the top-level
+ *      `main().catch` decorates.
  *   2. Optionally short-circuit on skip rules (drafts, prior verdict labels,
  *      `mvc:skip`, maintainer-team authorship) when `--skip-internal-prs`.
  *   3. Fetch PR + linked issues into a single `PrContext`.
  *   4. Run the deterministic checks (Check 1: human-monitored; Check 3:
- *      duplicate). If either fails, the LLM phase is skipped (see early-
- *      abort handling in `runAssessment`).
- *   5. Run the four LLM-judged checks — Phase 1 returns `deferred` stubs.
- *   6. Compose the review body (Phase 1 stub) and compute label diff.
- *   7. Apply writes (only with `--no-dry-run`; Phase 1 elides writes).
+ *      duplicate). If either fails, the LLM phase is skipped and the review
+ *      body explicitly lists the not-performed checks.
+ *   5. Run the four LLM-judged checks in parallel.
+ *   6. Synthesize the final review body (one more LLM call).
+ *   7. Apply writes (only with `--no-dry-run`; Phase 3 wires them).
  *   8. Print the summary table.
  */
 import { Command, Option } from 'commander';
 import pc from 'picocolors';
 
-import { ORG } from '../utils/github/constants.ts';
-import { fetchPr, normalizeStorybookPr } from '../utils/github/pr.ts';
-import { resolveLinkedIssues } from '../utils/github/linked-issues.ts';
-import { teamMembership } from '../utils/github/teams.ts';
 import { getGithubClient } from '../utils/github/client.ts';
-import { checkDuplicate } from './assess-mvc/duplicate/check.ts';
-import { checkHumanMonitored } from './assess-mvc/human-monitored/check.ts';
+import { ORG } from '../utils/github/constants.ts';
+import { resolveLinkedIssues } from '../utils/github/linked-issues.ts';
+import { fetchPr, normalizeStorybookPr } from '../utils/github/pr.ts';
+import { teamMembership } from '../utils/github/teams.ts';
+import { configureLlmClient, type Effort, type Model } from '../utils/llm/client.ts';
 import {
   ASSESS_MVC_SCOPES,
   MAINTAINER_TEAM_SLUGS,
   MANAGED_LABELS,
-  MARKER,
   VERDICT_LABELS,
 } from './assess-mvc/config.ts';
+import { checkCostBenefit } from './assess-mvc/cost-benefit/check.ts';
+import { checkDuplicate } from './assess-mvc/duplicate/check.ts';
+import { checkExplainsHowToTest } from './assess-mvc/explains-test/check.ts';
+import { checkHumanMonitored } from './assess-mvc/human-monitored/check.ts';
 import { renderSummary } from './assess-mvc/output.ts';
+import { checkProvidesContext } from './assess-mvc/provides-context/check.ts';
+import { checkRealProblem } from './assess-mvc/real-problem/check.ts';
 import { evaluateSkip } from './assess-mvc/skip-rules.ts';
-import type { CheckId, CheckResult, PrContext } from './assess-mvc/types.ts';
+import { synthesizeReview } from './assess-mvc/synthesize.ts';
+import type { CheckResult, PrContext } from './assess-mvc/types.ts';
 import { computeVerdict, isEarlyAbort } from './assess-mvc/verdict.ts';
 
-export type Model = 'sonnet-4.6' | 'opus-4.6' | 'haiku-4.5';
-export type Effort = 'low' | 'medium' | 'high' | 'max';
-
-/**
- * Runtime flags consumed by `runAssessment`. The GitHub client is no longer
- * passed here — it's a process-wide singleton accessed via `getGithubClient`.
- */
 export interface RunOpts {
   dryRun: boolean;
   dismissPrevious: boolean;
@@ -78,13 +77,10 @@ export interface RunResult {
   prSummary: PrSummary;
 }
 
-const LLM_IDS: CheckId[] = ['real-problem', 'cost-benefit', 'explains-test', 'provides-context'];
-
 /**
  * Run the six-check pipeline against an already-fetched `PrContext`. Side
  * effects (label writes, review submission) only fire when `opts.dryRun` is
- * false. Phase 1 stubs the LLM checks to `deferred` and elides all write
- * paths (Phase 3 wires them).
+ * false; Phase 3 wires them.
  */
 export async function runAssessment(pr: PrContext, opts: RunOpts): Promise<RunResult> {
   const det: CheckResult[] = [];
@@ -94,20 +90,19 @@ export async function runAssessment(pr: PrContext, opts: RunOpts): Promise<RunRe
   const earlyAbort = isEarlyAbort(det);
 
   const llm: CheckResult[] = earlyAbort
-    ? LLM_IDS.map((id) => ({
-        id,
-        status: 'deferred' as const,
-        evidence: 'Skipped due to early-abort.',
-      }))
-    : LLM_IDS.map((id) => ({
-        id,
-        status: 'deferred' as const,
-        evidence: 'LLM phase not yet wired (Phase 2).',
-      }));
+    ? (['real-problem', 'cost-benefit', 'explains-test', 'provides-context'] as const).map(
+        (id) => ({ id, status: 'deferred' as const, evidence: 'Skipped due to early-abort.' })
+      )
+    : await Promise.all([
+        checkRealProblem(pr),
+        checkCostBenefit(pr),
+        checkExplainsHowToTest(pr),
+        checkProvidesContext(pr),
+      ]);
 
   const results: CheckResult[] = [...det, ...llm];
   const verdict = computeVerdict(results);
-  const reviewBody = composeStubReview(results, earlyAbort);
+  const reviewBody = await synthesizeReview({ results, earlyAbort });
   const { labelsToAdd, labelsToRemove } = diffLabels(pr.labels, verdict);
 
   // Phase 3 will wire writes here when !opts.dryRun.
@@ -121,17 +116,6 @@ export async function runAssessment(pr: PrContext, opts: RunOpts): Promise<RunRe
     labelsToRemove,
     prSummary: { number: pr.number, title: pr.title, author: pr.author, url: pr.url },
   };
-}
-
-function composeStubReview(results: CheckResult[], earlyAbort: boolean): string {
-  const lines = [
-    MARKER,
-    '## MVC Assessment',
-    earlyAbort ? '> Early-abort: deterministic checks gated the LLM phase.' : '',
-    '',
-    ...results.map((r) => `- **${r.id}** — ${r.status.toUpperCase()}: ${r.evidence}`),
-  ].filter(Boolean);
-  return lines.join('\n');
 }
 
 function diffLabels(
@@ -190,6 +174,11 @@ async function main(): Promise<void> {
   // Eager-validate the token so a missing GH_TOKEN throws here (decorated by
   // the top-level catch) instead of inside a check halfway through the run.
   getGithubClient(ASSESS_MVC_SCOPES);
+  configureLlmClient({
+    model: cliOpts.model,
+    effort: cliOpts.effort,
+    verbose: cliOpts.verbose,
+  });
 
   const partial = await fetchPr(coords);
 

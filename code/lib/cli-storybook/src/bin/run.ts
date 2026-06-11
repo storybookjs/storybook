@@ -24,6 +24,7 @@ import { link } from '../link.ts';
 import { migrate } from '../migrate.ts';
 import { sandbox } from '../sandbox.ts';
 import { aiSetup } from '../ai/index.ts';
+import { isAiCliFeatureEnabled, registerAiMcpPassthrough } from '../ai/mcp/register.ts';
 import { type UpgradeOptions, upgrade } from '../upgrade.ts';
 
 addToGlobalContext('cliVersion', versions.storybook);
@@ -328,6 +329,12 @@ aiCommand
 aiCommand.action(() => {
   aiCommand.outputHelp();
 });
+
+// Experimental `storybook ai <tool>` passthrough to the local Storybook MCP server
+// (storybookjs/storybook#35124). Overrides the help-only action above when enabled.
+if (isAiCliFeatureEnabled()) {
+  registerAiMcpPassthrough(program, aiCommand);
+}
 
 program.on('command:*', ([invalidCmd]) => {
   let errorMessage = ` Invalid command: ${picocolors.bold(invalidCmd)}.\n See --help for a list of available commands.`;

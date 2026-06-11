@@ -1,3 +1,22 @@
+## 10.5.0-alpha.6
+
+- Controls: Guard normalizeOptions against array labels and prototype chain lookups - [#34664](https://github.com/storybookjs/storybook/pull/34664), thanks @creazyfrog!
+- Core: Add ref-based components manifest index backed by docgen open service - [#35063](https://github.com/storybookjs/storybook/pull/35063), thanks @JReinhold!
+- Core: Fix resolveImport TSX fallback - [#34815](https://github.com/storybookjs/storybook/pull/34815), thanks @cyphercodes!
+- Core: Rework AI checklist feature gate - [#35053](https://github.com/storybookjs/storybook/pull/35053), thanks @Sidnioulz!
+- Docs: Deprecate ExternalDocs - [#35074](https://github.com/storybookjs/storybook/pull/35074), thanks @Sidnioulz!
+- Interactions: Prevent debugger controls from stealing focus - [#35073](https://github.com/storybookjs/storybook/pull/35073), thanks @BrenoSI03!
+- Manager: Keep local preview iframe on host URL when a ref story loads first - [#35078](https://github.com/storybookjs/storybook/pull/35078), thanks @TheSeydiCharyyev!
+- Module Graph: Refactor from StoryDependencyService to open service-based ModuleGraphService - [#35048](https://github.com/storybookjs/storybook/pull/35048), thanks @JReinhold!
+- Open Service: Add `internal` property to control visibility - [#35057](https://github.com/storybookjs/storybook/pull/35057), thanks @JReinhold!
+- Open Service: Add sync between server, manager and preview - [#35017](https://github.com/storybookjs/storybook/pull/35017), thanks @ndelangen!
+- Open Service: Call remote commands in load functions - [#35106](https://github.com/storybookjs/storybook/pull/35106), thanks @JReinhold!
+- Preview: Stop mixed CSF3+4 stories getting core annotations injected twice - [#35094](https://github.com/storybookjs/storybook/pull/35094), thanks @JReinhold!
+- React: Fix subcomponent prop extraction without JSX usage - [#35107](https://github.com/storybookjs/storybook/pull/35107), thanks @JReinhold!
+- Telemetry: Add timeout to event-log POST to prevent build hang - [#35085](https://github.com/storybookjs/storybook/pull/35085), thanks @badams!
+- Viewport: Highlight toolbar button when custom viewport is active - [#35075](https://github.com/storybookjs/storybook/pull/35075), thanks @derinbarutcu17!
+- Webpack: Gate lazy-compilation import pipeline on webpack version - [#34931](https://github.com/storybookjs/storybook/pull/34931), thanks @copilot-swe-agent!
+
 ## 10.5.0-alpha.5
 
 - Addon Docs: DocsContent not filling available width when TOC is enabled - [#35043](https://github.com/storybookjs/storybook/pull/35043), thanks @k-utsumi!

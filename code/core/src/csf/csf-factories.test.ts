@@ -2,6 +2,7 @@
 import { describe, expect, expectTypeOf, test, vi } from 'vitest';
 import { testType } from 'type-plus';
 
+import { getCoreAnnotations, hasCoreAnnotations } from './core-annotations.ts';
 import { definePreview, definePreviewAddon, getStoryChildren } from './csf-factories.ts';
 import type { Tag } from './story.ts';
 
@@ -79,6 +80,22 @@ describe('test function', () => {
   });
 });
 
+describe('definePreview composed', () => {
+  test('composes the core annotations exactly once and marks the result', () => {
+    const previewFactory = definePreview({ renderToCanvas: () => {} });
+    const { composed } = previewFactory;
+
+    // The composed result must be flagged so that the StoryStore / portable setProjectAnnotations
+    // do not prepend the core annotations a second time (which would double decorators/loaders).
+    expect(hasCoreAnnotations(composed)).toBe(true);
+
+    // The core annotations are present (the actions/test addons contribute loaders unconditionally).
+    const coreLoaderCount = getCoreAnnotations().flatMap((it) => (it as any).loaders ?? []).length;
+    expect(coreLoaderCount).toBeGreaterThan(0);
+    expect(composed.loaders).toHaveLength(coreLoaderCount);
+  });
+});
+
 describe('customize tags type', () => {
   // Customizing tags type enables autocompletion of tags.
   test('with addon', () => {
@@ -95,13 +112,13 @@ describe('customize tags type', () => {
       Array<'foo' | 'bar' | (string & {})>
     >(true);
     testType.canAssign<
-      Parameters<typeof meta.story>[0] extends Object
+      Parameters<typeof meta.story>[0] extends object
         ? Parameters<typeof meta.story>[0]['tags']
         : never,
       Array<'foo' | 'bar' | (string & {})>
     >(true);
     testType.canAssign<
-      Parameters<typeof meta.story>[0] extends Object
+      Parameters<typeof meta.story>[0] extends object
         ? Parameters<typeof meta.story>[0]['tags']
         : never,
       Tag[]
@@ -122,13 +139,13 @@ describe('customize tags type', () => {
       Array<'foo' | 'bar' | (string & {})>
     >(true);
     testType.canAssign<
-      Parameters<typeof meta.story>[0] extends Object
+      Parameters<typeof meta.story>[0] extends object
         ? Parameters<typeof meta.story>[0]['tags']
         : never,
       Array<'foo' | 'bar' | (string & {})>
     >(true);
     testType.canAssign<
-      Parameters<typeof meta.story>[0] extends Object
+      Parameters<typeof meta.story>[0] extends object
         ? Parameters<typeof meta.story>[0]['tags']
         : never,
       Tag[]

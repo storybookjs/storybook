@@ -1,6 +1,7 @@
 import * as v from 'valibot';
 
 import { defineService } from './service-definition.ts';
+import type { ServiceInstanceOf } from './types.ts';
 
 /** Shared schema used by fixtures that address one logical record by id. */
 export const entryIdInputSchema = v.object({ entryId: v.string() });
@@ -52,6 +53,8 @@ export const mutableRecordLookupServiceDef = defineService({
     },
   },
 });
+
+export type MutableRecordLookupService = ServiceInstanceOf<typeof mutableRecordLookupServiceDef>;
 
 export type PreloadedValueState = Record<string, string | undefined>;
 
@@ -250,7 +253,7 @@ export function createDerivedBooleanFromChildQueryServiceDef() {
         input: entryIdInputSchema,
         output: booleanOutputSchema,
         handler: (input, ctx) => {
-          const source = ctx.getService<typeof mutableRecordLookupServiceDef>(
+          const source = ctx.getService<MutableRecordLookupService>(
             mutableRecordLookupServiceDef.id
           );
           const record = source.queries.getRecordFields({

@@ -6,13 +6,14 @@ on:
   pull_request:
     branches: ['**']
 
+permissions:
+  contents: read
+  security-events: write # Required for upload-sarif (used by zizmor-action) to upload SARIF files.
+
 jobs:
   zizmor:
     name: zizmor latest via PyPI
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      security-events: write # Required for upload-sarif (used by zizmor-action) to upload SARIF files.
     steps:
       - name: Checkout repository
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -29,7 +30,7 @@ jobs:
 
       - name: Upload SARIF file
         uses: github/codeql-action/upload-sarif@7211b7c8077ea37d8641b6271f6a365a22a5fbfa # v4.36.0
-        if: github.repository_owner == 'storybookjs' && github.event_name == 'push'
+        if: github.repository_owner == 'storybookjs'
         with:
           sarif_file: results.sarif
           category: zizmor

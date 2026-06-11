@@ -179,9 +179,15 @@ export async function storybookDevServer(
     const [indexGenerator] = await Promise.all([storyIndexGeneratorPromise, listening]);
 
     if (indexGenerator && !options.ci && !options.smokeTest && options.open) {
-      const url = options.host ? options.networkAddress : options.localAddress;
-      openInBrowser(options.previewOnly ? `${url}iframe.html?navigator=true` : url!).catch(() => {
-        // the browser window could not be opened, this is non-critical, we just ignore the error
+      const defaultUrl = options.host ? options.networkAddress : options.localAddress;
+      const url =
+        options.openUrl ||
+        (options.previewOnly ? `${defaultUrl}iframe.html?navigator=true` : defaultUrl!);
+      // the browser window could not be opened, this is non-critical, we just ignore the error
+      openInBrowser(url).catch((err: Error) => {
+        if (options.openUrl) {
+          logger.warn(`Failed to open custom URL: ${url}\n  ${err.message}`);
+        }
       });
     }
   } catch (e) {

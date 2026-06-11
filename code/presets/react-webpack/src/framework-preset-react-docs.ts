@@ -8,14 +8,6 @@ export const webpackFinal: StorybookConfig['webpackFinal'] = async (
   config,
   options
 ): Promise<Configuration> => {
-  const features = await options.presets.apply('features', {});
-  if (features?.experimentalDocgenServer) {
-    // The docgen service owns React metadata extraction for this mode. Do not inject
-    // `Component.__docgenInfo` into the preview bundle, otherwise preview argTypes would include
-    // docgen data that the UI is now responsible for merging from the service.
-    return config;
-  }
-
   const typescriptOptions = await options.presets.apply('typescript', {} as any);
   const debug = options.loglevel === 'debug';
 

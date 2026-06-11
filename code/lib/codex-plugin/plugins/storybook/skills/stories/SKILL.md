@@ -1,23 +1,9 @@
 ---
 name: stories
-description: Write, create, update, or review Storybook stories for a component or a whole project. Use whenever the user asks to write, add, or generate stories, to write Storybook stories for a component or project, to cover a component with stories, or to create or edit any *.stories.* file (.stories.tsx/.ts/.jsx/.js/.svelte/.vue) — and on EVERY edit to a frontend component, with no exception: its props, variants, states, markup, layout, styling, CSS/Tailwind/styled, themes, tokens, icons, or assets. Invoke this even if you believe the change is cosmetic-only, internal, a refactor, or has "no behavior change" — that judgment is not yours to make; the skill always runs. Also use before starting or previewing Storybook to verify UI. Pulls story-writing guidance from the Storybook MCP and keeps the preview running so stories can be verified.
+description: Invoke BEFORE you touch a frontend component, on EVERY change, with no exception — call this FIRST, before writing, editing, or deleting, so the workflow governs how the change is made. Triggers on creating, editing, OR deleting any frontend component (React/Vue/Svelte and similar *.tsx/.jsx/.ts/.js/.vue/.svelte files) or anything it renders with. Invoke this even if you believe the change is cosmetic-only, internal, a refactor, a rename, a deletion, or has "no behavior change" — that judgment is NOT yours to make; the skill always runs first. Also use whenever the user asks to write, add, generate, update, or review Storybook stories, to cover a component or project with stories, or to create or edit any *.stories.* file (.stories.tsx/.ts/.jsx/.js/.svelte/.vue), and before starting or previewing Storybook to verify UI. Pulls story-writing guidance from the Storybook CLI ai subcommands and keeps the preview running so stories can be verified.
 ---
 
 # Storybook Stories
-
-The Storybook MCP is the source of truth for _how_ to write stories. This skill
-is the **mandatory, ordered process** for working on them.
-
-## Follow the MCP's own workflow first
-
-If the Storybook MCP is reachable through the MCP-proxy, it serves its own
-**server instructions** describing the authoritative tool workflow (routing,
-documentation lookup, previewing, working on stories, verification). When those
-instructions are available, read them and follow them **carefully and exactly** —
-they take precedence over any general assumption you might make about the tools.
-The gated steps below operate _within_ that MCP-provided workflow; they do not
-replace it. If the MCP exposes no instructions (proxy unavailable or Storybook
-not registered), fall back to the steps below.
 
 This is a STRICT, GATED workflow. You MUST execute the steps below in order and
 satisfy each step's **Gate** before moving to the next. Do NOT skip, reorder, or
@@ -27,79 +13,90 @@ working around it. Treat any shortcut as a failure of this workflow.
 
 ## Absolute rules
 
+- Commands must be run with the variable `STORYBOOK_FEATURE_AI_CLI=1`
 - You MUST NOT write or edit a story from memory or existing patterns. The
   `get-storybook-story-instructions` output is the only acceptable source for
   imports, structure, and conventions.
-- You MUST NOT report a story as done until its preview link has been produced
-  (Step 4) AND the review page has been published and opened (Step 5). An
-  unverified story, or a change with no review page, is not a deliverable.
+- When this skill runs because you created, modified, or deleted a component,
+  you MUST NOT report the component change as complete until this workflow has
+  finished for every component you touched. A component change without
+  matching, verified stories is not a deliverable.
 
-## Step 1 — Load the rules (before touching any story file)
+## Step 0 — Prerequisites
 
-Call **get-storybook-story-instructions** and read it fully. Look components up
-with **list-all-documentation** / **get-documentation** rather than assuming
-props or APIs.
+- Storybook must be installed in the project. If it is not, go to
+  "When Storybook is not installed" below and stop here unless the user opts in.
+- Storybook must be a canary version (0.0.0-canary) or at least version 10.5. If an older version is
+  installed, invoke the **upgrade** skill to upgrade it before
+  proceeding.
 
-**Gate:** Do NOT create or edit any `*.stories.*` file until this tool has
-returned and you are following its output. If you have not called it this task,
-you are not allowed to write a story yet — go back and call it now.
+### When Storybook is not installed
 
-## Step 2 — Guarantee a running preview
+Installing and configuring Storybook is invasive, so it is the **user's choice**.
+Never set it up on your own initiative as a side effect of a component change.
+
+Before asking the user anything, check whether they have already declined:
+
+1. **Read the saved decision** at `.codex/storybook-optout.json` (project-local).
+   If it exists with `{ "storybookOptOut": true }`, the user has ALREADY refused
+   Storybook for this project. Do NOT ask again — silently skip all story work,
+   finish the component change (if any), and move on.
+2. **If there is no opt-out file**, briefly tell the user the project has no
+   Storybook and ask whether they want to set it up (and write stories) for it.
+3. **If the user declines**, persist that choice so future invocations don't
+   re-ask: write `.codex/storybook-optout.json` with:
+
+   ```json
+   {
+   	"storybookOptOut": true,
+   	"reason": "<short paraphrase of what the user said>"
+   }
+   ```
+
+   Then finish the component change (if any) without any story work. If the
+   user explicitly asked for story work, STOP and report that Storybook is
+   required for it.
+
+4. **If the user opts in**, set Storybook up via the setup skills
+   (`init` / `setup`), then resume this workflow from
+   Step 1. If an opt-out file existed from a previous "no", delete it.
+
+**Gate:** Do NOT install Storybook, scaffold `.storybook/`, add Storybook
+dependencies, or invoke the setup skills unless the user has explicitly opted in
+this time. A saved opt-out MUST be respected on every later invocation without
+re-prompting.
+
+## Step 1 — Guarantee a running preview browser
 
 The Storybook preview MUST be running so the story can be verified.
 
-If any MCP tool returns a "Storybook is not running" error, you MUST NOT ignore
-it and MUST NOT proceed to write the story. STOP and recover:
+Run `STORYBOOK_FEATURE_AI_CLI=1 npx storybook ai --help` subcommand to check for running Storybook instances. If there is a running instance, note its port and open the preview URL in the preview browser.
+If there is no running instance, start it with the steps below:
 
 1. Start the project's existing Storybook dev script as a background task from
-   the Storybook invocation directory, and open it in Codex's in-app browser.
-2. Use that invocation directory as the `cwd` for MCP tool calls.
-3. Retry the MCP tool call. If Storybook is not configured yet, use the `init`
-   skill; if it is outdated, use the `upgrade` skill.
+   the Storybook invocation directory
+2. Wait for the terminal to show which port Storybook is running on and use that port to open the preview URL (e.g. `http://localhost:6006`) in the preview browser.
+3. Save the port being used by Storybook shown in the terminal in your working memory. USE THIS PORT FOR ANY SUBCOMMAND THAT NEEDS TO KNOW THE PORT (e.g. `preview-stories`).
 
-**Gate:** Do NOT proceed to Step 3 until an MCP tool call succeeds against a
-running Storybook.
+**Gate:** Do NOT proceed to Step 2 until the preview browser is open and has rendered the Storybook URL without
+error. If launch setup reports an error, surface it to the user and STOP.
+
+## Step 2 — Load the rules (before touching any story file)
+
+- Run `STORYBOOK_FEATURE_AI_CLI=1 npx storybook ai --help` to get all available subcommands and options.
+  - Save the available subcommands and options in your working memory for reference.
+- Run the ai subcommand to get the story-writing instructions.
+- Follow the instructions in the output, which will include the exact imports, structure, and conventions to use for the story you are writing or editing. The instructions are the ONLY acceptable source for how to write the story; do NOT rely on memory or existing patterns.
+
+**Gate:** Do NOT create or edit any `*.stories.*` file until you are following its output. If you have not called it this task,
+you are not allowed to write a story yet — go back and call it now.
 
 ## Step 3 — Write the story
 
-Create or edit the story strictly following the Step 1 instructions.
+Create or edit the story strictly following the Step 2 instructions. When this
+skill runs for a component change, cover the affected surface: new components
+get stories, new props/variants/states get covered, renamed states get
+updated, and deleted components get their stories removed.
 
-**Gate:** Every story you touched must conform to the
-`get-storybook-story-instructions` output. If anything is unclear, re-read it
+**Gate:** Every story you touched must conform to the instruction output you received. If anything is unclear, re-read it
 rather than guessing.
-
-## Step 4 — Verify
-
-After changes, call **preview-stories** and open the returned links in Codex's
-in-app browser to confirm the stories render without errors. These links are for
-your own verification.
-
-**Gate:** Do NOT proceed to Step 5 until preview links exist and render for the
-stories you created or changed.
-
-## Step 5 — Publish the review page
-
-Once the stories render cleanly, call **display-review** so the user can review
-exactly what changed in one place. This tool does NOT just return a link — it
-publishes a curated **review page** inside the already-running Storybook and
-returns its `reviewUrl`. The review page IS the deliverable.
-
-- Group the stories you touched into `collections` covering the **visual
-  cascade** of the change: the changed component itself, the components that
-  import it, and the pages/containers that render them. Don't ship a
-  single-collection review unless the component is genuinely standalone.
-- Every `storyId` you pass MUST come from a tool result this session
-  (`get-changed-stories`, `get-stories-by-component`, or `list-all-documentation`).
-  `display-review` validates every ID against the live index and rejects the
-  whole review if any are unknown — never invent IDs.
-- Provide `title`, `description`, and `changedFiles` (the files you edited, most
-  central first).
-
-Because the `reviewUrl` is a page, open it in Codex's in-app browser — do not
-merely print it. Then surface it to the user as the very last thing in your
-response, under its own heading (e.g. `## 👀 Review your changes`) as a markdown
-link, with nothing after it.
-
-**Gate:** Do NOT claim the task is complete until `display-review` has succeeded,
-you have opened the returned `reviewUrl`, and that link is the final element of
-your user-facing response.

@@ -5,9 +5,7 @@ description: >-
   exception — call this FIRST, before writing, editing, or deleting, so the
   workflow governs how the change is made. Triggers on creating, editing, OR
   deleting any frontend component (React/Vue/Svelte and similar
-  *.tsx/.jsx/.ts/.js/.vue/.svelte files) or anything it renders with: props,
-  variants, states, markup, layout, styling, CSS/Tailwind/styled-components,
-  themes, tokens, icons, or assets. Invoke this even if you believe the change
+  *.tsx/.jsx/.ts/.js/.vue/.svelte files) or anything it renders with. Invoke this even if you believe the change
   is cosmetic-only, internal, a refactor, a rename, a deletion, or has "no
   behavior change" — that judgment is NOT yours to make; the skill always runs
   first. Also use whenever the user asks to write, add, generate, update, or

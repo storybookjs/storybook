@@ -31,15 +31,19 @@ const pr = (overrides: Partial<PrContext> = {}): PrContext => ({
 describe('checkProvidesContext', () => {
   beforeEach(() => mockJudge.mockReset());
 
-  it('PASS for trivial diff via short-circuit (no LLM call)', async () => {
+  it('calls the LLM even for trivial diffs (small diffs can be high-impact)', async () => {
+    mockJudge.mockResolvedValueOnce({ verdict: 'fail', reasoning: 'flag flip without rationale' });
     const r = await checkProvidesContext(
-      pr({ files: [{ path: 'a.ts', additions: 3, deletions: 0, status: 'modified' }] })
+      pr({
+        body: 'change flag',
+        files: [{ path: 'core/feature-flags.ts', additions: 1, deletions: 1, status: 'modified' }],
+      })
     );
-    expect(r.status).toBe('pass');
-    expect(mockJudge).not.toHaveBeenCalled();
+    expect(mockJudge).toHaveBeenCalledOnce();
+    expect(r.status).toBe('fail');
   });
 
-  it('relays LLM PASS for non-trivial diff', async () => {
+  it('relays LLM PASS for diffs with rationale', async () => {
     mockJudge.mockResolvedValueOnce({ verdict: 'pass', reasoning: 'has rationale' });
     const r = await checkProvidesContext(
       pr({ files: [{ path: 'a.ts', additions: 200, deletions: 50, status: 'modified' }] })
@@ -47,7 +51,7 @@ describe('checkProvidesContext', () => {
     expect(r.status).toBe('pass');
   });
 
-  it('relays LLM FAIL for non-trivial diff with no rationale', async () => {
+  it('relays LLM FAIL with guidance', async () => {
     mockJudge.mockResolvedValueOnce({ verdict: 'fail', reasoning: 'no rationale' });
     const r = await checkProvidesContext(
       pr({ files: [{ path: 'a.ts', additions: 200, deletions: 50, status: 'modified' }] })

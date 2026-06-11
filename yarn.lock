@@ -9380,6 +9380,7 @@ __metadata:
     "@storybook/builder-vite": "workspace:*"
     "@storybook/vue3": "workspace:*"
     "@types/node": "npm:^22.19.1"
+    es-toolkit: "npm:^1.43.0"
     magic-string: "npm:^0.30.0"
     typescript: "npm:^5.9.3"
     vite: "npm:^7.0.4"

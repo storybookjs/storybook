@@ -1,4 +1,4 @@
-import type { PrContext } from '../types.ts';
+import type { PrContext } from '../../types.ts';
 
 const ENTRY_HEADER = /^\+"([^"]+)":\s*$/;
 const NAME = /^(@?[^@,]+)@/;

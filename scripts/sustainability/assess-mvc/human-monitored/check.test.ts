@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { checkHumanMonitored } from './human-monitored.ts';
+import { checkHumanMonitored } from './check.ts';
 
 describe('checkHumanMonitored', () => {
   it('PASS when agent-scan:human is present', () => {

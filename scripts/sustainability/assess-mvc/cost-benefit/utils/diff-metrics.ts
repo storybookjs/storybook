@@ -1,4 +1,4 @@
-import type { PrContext } from '../types.ts';
+import type { PrContext } from '../../types.ts';
 
 /**
  * Diff-size precompute for Check 4 (cost/benefit). Pure / cheap; no I/O.

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { setupMsw } from '../../../utils/test-helpers/msw.ts';
-import { checkDuplicate } from './duplicate.ts';
+import { checkDuplicate } from './check.ts';
 
 const ISSUE = {
   owner: 'storybookjs',

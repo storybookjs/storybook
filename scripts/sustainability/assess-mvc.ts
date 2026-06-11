@@ -32,8 +32,8 @@ import { fetchPr, normalizeStorybookPr } from '../utils/github/pr.ts';
 import { resolveLinkedIssues } from '../utils/github/linked-issues.ts';
 import { teamMembership } from '../utils/github/teams.ts';
 import { getGithubClient } from '../utils/github/client.ts';
-import { checkDuplicate } from './assess-mvc/checks/duplicate.ts';
-import { checkHumanMonitored } from './assess-mvc/checks/human-monitored.ts';
+import { checkDuplicate } from './assess-mvc/duplicate/check.ts';
+import { checkHumanMonitored } from './assess-mvc/human-monitored/check.ts';
 import {
   ASSESS_MVC_SCOPES,
   MAINTAINER_TEAM_SLUGS,

@@ -32,7 +32,6 @@ export const build_linux = defineJob('Build (linux)', (workflowName) => ({
     cache.attach(CACHE_KEYS()),
     npm.install('.'),
     ...(isTrustedAuthor() ? [cache.persist(CACHE_PATHS, CACHE_KEYS()[0])] : []),
-    git.check(),
     npm.check(),
     {
       run: {
@@ -48,6 +47,7 @@ export const build_linux = defineJob('Build (linux)', (workflowName) => ({
         command: 'yarn local-registry --publish',
       },
     },
+    git.check(),
     ...workflow.reportOnFailure(workflowName),
     artifact.persist(`code/bench/esbuild-metafiles`, 'bench'),
     workspace.persist([
@@ -111,6 +111,7 @@ export const build_windows = defineJob('Build (windows)', () => ({
         command: 'yarn task --task compile --start-from=auto --no-link --debug',
       },
     },
+    git.check(),
     verdaccio.start(),
     workspace.persist(
       [

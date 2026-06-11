@@ -380,7 +380,7 @@ describe('experimental_devServer', () => {
 	});
 
 	it('marks dev tools disabled on the landing page when the dev toolset is turned off', async () => {
-		// Dependency graph IS supported, so `get-stories-by-component` would otherwise badge
+		// Module graph IS supported, so `get-stories-by-component` would otherwise badge
 		// as enabled — proving the badge now also honors the `dev` toolset being disabled.
 		vi.spyOn(moduleGraph, 'isModuleGraphSupported').mockResolvedValue(true);
 

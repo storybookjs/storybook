@@ -5,7 +5,14 @@
  *
  * Older Storybook versions don't ship the open-service runtime; we dynamically import and treat a
  * missing `getService` export (or an unregistered service) as "unsupported".
+ *
+ * The generic open-service query type (`Query`) is imported from core. The
+ * module-graph-specific data shapes below (`ModuleGraphStatus`, `ModuleGraphStoryHit`, etc.) are
+ * baked into the service's runtime definition and aren't part of core's public type surface, so we
+ * mirror them here; keep them in sync with `core/module-graph` if it changes.
  */
+
+import type { Query } from 'storybook/internal/core-server';
 
 const MODULE_GRAPH_SERVICE_ID = 'core/module-graph';
 
@@ -31,18 +38,12 @@ export interface ModuleGraphStoryHit {
 	depth: number;
 }
 
-/** A runtime open-service query: callable synchronously, or awaitable in full via `loaded`. */
-interface RuntimeQuery<TInput, TOutput> {
-	(input: TInput): TOutput;
-	loaded(input: TInput): Promise<TOutput>;
-}
-
 /** The subset of the `core/module-graph` runtime service surface that addon-mcp consumes. */
 export interface ModuleGraphService {
 	queries: {
-		getStatus: RuntimeQuery<undefined, ModuleGraphStatus>;
+		getStatus: Query<undefined, ModuleGraphStatus>;
 		/** Positional: result `i` corresponds to input `files[i]`. */
-		getStoriesForFiles: RuntimeQuery<{ files: string[] }, ModuleGraphStoryHit[][]>;
+		getStoriesForFiles: Query<{ files: string[] }, ModuleGraphStoryHit[][]>;
 	};
 }
 

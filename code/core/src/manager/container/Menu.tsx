@@ -209,7 +209,7 @@ export const useMenu = ({
         id: actionName,
         title: label,
         onClick: () => action(),
-        right: enableShortcuts ? <Shortcut keys={keys[actionName]} /> : null,
+        right: enableShortcuts && keys[actionName] ? <Shortcut keys={keys[actionName]} /> : null,
       }));
   }, [api, enableShortcuts, shortcutKeys]);
 

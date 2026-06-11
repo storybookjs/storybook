@@ -104,38 +104,44 @@ const overlapContext: any = {
  * arg changes — reproduced here inside a short, scrollable host that mimics the addon panel.
  */
 export const SaveBarDoesNotCoverLastControl: Story = {
+  // The save bar only renders in development builds; set it for this story and restore after,
+  // so the mutation can't leak into other stories.
+  beforeEach: () => {
+    const original = global.CONFIG_TYPE;
+    global.CONFIG_TYPE = 'DEVELOPMENT';
+    return () => {
+      global.CONFIG_TYPE = original;
+    };
+  },
   decorators: [
-    (storyFn) => {
-      // The save bar is gated to DEVELOPMENT builds.
-      global.CONFIG_TYPE = 'DEVELOPMENT';
-      return (
-        <ManagerContext.Provider value={overlapContext}>
-          {/* relative parent = the bar's positioning context; inner div = the scroll container */}
-          <div style={{ position: 'relative', height: 200 }}>
-            <div data-testid="panel-scroll" style={{ height: '100%', overflowY: 'auto' }}>
-              {storyFn()}
-            </div>
+    (storyFn) => (
+      <ManagerContext.Provider value={overlapContext}>
+        {/* relative parent = the bar's positioning context; inner div = the scroll container */}
+        <div style={{ position: 'relative', height: 200 }}>
+          <div data-testid="panel-scroll" style={{ height: '100%', overflowY: 'auto' }}>
+            {storyFn()}
           </div>
-        </ManagerContext.Provider>
-      );
-    },
+        </div>
+      </ManagerContext.Provider>
+    ),
   ],
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await canvas.findByText(`prop${PROP_COUNT}`);
 
-    const scroller = canvasElement.querySelector<HTMLElement>('[data-testid="panel-scroll"]')!;
-    const saveBar = canvasElement.querySelector<HTMLElement>('#save-from-controls')!;
+    const scroller = canvasElement.querySelector<HTMLElement>('[data-testid="panel-scroll"]');
+    const saveBar = canvasElement.querySelector<HTMLElement>('#save-from-controls');
+    await expect(scroller).not.toBeNull();
     await expect(saveBar).not.toBeNull();
 
     // Scroll to the very bottom, where the last control would sit under the bar without the fix.
-    scroller.scrollTop = scroller.scrollHeight;
+    scroller!.scrollTop = scroller!.scrollHeight;
     await new Promise((r) => requestAnimationFrame(() => r(null)));
 
     const rows = canvasElement.querySelectorAll('.docblock-argstable tbody tr');
     const lastRow = rows[rows.length - 1];
     const lastRowRect = lastRow.getBoundingClientRect();
-    const barRect = saveBar.getBoundingClientRect();
+    const barRect = saveBar!.getBoundingClientRect();
 
     // The last control's bottom must clear the top of the save bar.
     await expect(lastRowRect.bottom).toBeLessThanOrEqual(barRect.top + 1);

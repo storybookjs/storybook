@@ -103,6 +103,11 @@ const REQUEST_HEADERS = {
  * The handshake is strictly best-effort — when it fails, the actual command request proceeds
  * without a session and keeps working, so error reporting stays anchored on the real call.
  *
+ * Sessions are deliberately one-shot: each JSON-RPC request gets its own handshake and the session
+ * is never reused or closed. A CLI invocation makes one request on the happy path (two on error
+ * paths that fetch the tool list), so against a localhost server the extra round-trip is
+ * negligible — not worth threading session state through the call sites.
+ *
  * The response body is drained before returning because the transport produces it only after the
  * server has processed the initialize message (and stored the clientInfo); returning on headers
  * alone would race the follow-up request against that processing.

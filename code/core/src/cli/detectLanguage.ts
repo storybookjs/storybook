@@ -1,15 +1,23 @@
 import { existsSync } from 'node:fs';
+import { join } from 'node:path';
 
 import type { JsPackageManager } from 'storybook/internal/common';
 import { SupportedLanguage } from 'storybook/internal/types';
 
 import semver from 'semver';
 
-/** Detect whether the project should be treated as TypeScript or JavaScript. */
-export async function detectLanguage(packageManager: JsPackageManager): Promise<SupportedLanguage> {
+/**
+ * Detect whether the project should be treated as TypeScript or JavaScript. The js/tsconfig lookup
+ * happens in `workingDir`, which defaults to the process cwd for callers (like `storybook init`)
+ * that already run from the project root.
+ */
+export async function detectLanguage(
+  packageManager: JsPackageManager,
+  workingDir: string = process.cwd()
+): Promise<SupportedLanguage> {
   let language = SupportedLanguage.JAVASCRIPT;
 
-  if (existsSync('jsconfig.json')) {
+  if (existsSync(join(workingDir, 'jsconfig.json'))) {
     return language;
   }
 
@@ -24,7 +32,7 @@ export async function detectLanguage(packageManager: JsPackageManager): Promise<
     // No direct dependency on TypeScript, but could be a transitive dependency
     // This is eg the case for Nuxt projects, which support a recent version of TypeScript
     // Check for tsconfig.json (https://www.typescriptlang.org/docs/handbook/tsconfig-json.html)
-    if (existsSync('tsconfig.json')) {
+    if (existsSync(join(workingDir, 'tsconfig.json'))) {
       language = SupportedLanguage.TYPESCRIPT;
     }
   }

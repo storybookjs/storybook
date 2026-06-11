@@ -6,7 +6,11 @@ import { getStoriesPathsFromConfig } from 'storybook/internal/core-server';
 import { isCsfFactoryPreview, readConfig } from 'storybook/internal/csf-tools';
 import { logger } from 'storybook/internal/node-logger';
 
-/** Gathers the project metadata `storybook ai setup` needs from the target Storybook. */
+/**
+ * Gathers the project metadata CLI commands need from the target Storybook: config, framework,
+ * package manager, installed version, and story paths. The canonical collector — `automigrate`,
+ * `doctor`, `add`, and `ai setup` all consume it.
+ */
 export const getStorybookData = async ({
   configDir: userDefinedConfigDir,
   packageManagerName,
@@ -17,8 +21,10 @@ export const getStorybookData = async ({
   logger.debug('Getting Storybook info...');
   const {
     mainConfig,
+    mainConfigPath,
     configDir: configDirFromScript,
     previewConfigPath,
+    versionSpecifier,
     frameworkPackage,
     rendererPackage,
     renderer,
@@ -59,7 +65,14 @@ export const getStorybookData = async ({
 
   return {
     configDir,
+    workingDir,
+    mainConfig,
+    /** The version specifier of Storybook from the user's package.json */
+    versionSpecifier,
+    /** The version of Storybook installed in the user's project */
     versionInstalled,
+    mainConfigPath,
+    previewConfigPath,
     packageManager,
     storiesPaths,
     hasCsfFactoryPreview,
@@ -70,3 +83,5 @@ export const getStorybookData = async ({
     addons,
   };
 };
+
+export type GetStorybookData = typeof getStorybookData;

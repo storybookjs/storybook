@@ -8,12 +8,12 @@ export type BuildServerInstructionsOptions = {
 	docsEnabled: boolean;
 	changeDetectionEnabled?: boolean;
 	/**
-	 * `get-stories-by-component` is registered whenever the dev-server exposes the dependency
+	 * `get-stories-by-component` is registered whenever the dev-server exposes the module
 	 * graph — even if `features.changeDetection` is off and `get-changed-stories` is unavailable.
 	 * When true and `changeDetectionEnabled` is false, the workflow falls back to manual lookup
 	 * via `get-stories-by-component` instead of the status-store-driven `get-changed-stories`.
 	 */
-	dependencyGraphSupported?: boolean;
+	moduleGraphSupported?: boolean;
 	reviewEnabled?: boolean;
 };
 
@@ -22,7 +22,7 @@ export function buildServerInstructions(options: BuildServerInstructionsOptions)
 
 	if (options.devEnabled) {
 		const changeDetection = options.changeDetectionEnabled ?? false;
-		const graphSupported = options.dependencyGraphSupported ?? false;
+		const graphSupported = options.moduleGraphSupported ?? false;
 		const reviewEnabled = options.reviewEnabled ?? false;
 		const previewStoriesStep = changeDetection
 			? 'After changing any component or story, call **get-changed-stories** to discover new/modified/related stories, then call **preview-stories** to retrieve preview URLs.'

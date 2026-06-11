@@ -1,13 +1,13 @@
 import type { Options } from 'storybook/internal/types';
-import { isDependencyGraphSupported } from './change-detection.ts';
+import { isModuleGraphSupported } from './module-graph.ts';
 import { getReviewStatus } from './is-review-available.ts';
 import { getManifestStatus } from '../tools/is-manifest-available.ts';
 import { getAddonVitestConstants } from '../tools/run-story-tests.ts';
 import { isAddonA11yEnabled } from './is-addon-a11y-enabled.ts';
 
 export interface ToolAvailability {
-	/** Dev-server builder supports the dependency-graph API. Gates `get-stories-by-component`. */
-	dependencyGraphSupported: boolean;
+	/** The `core/module-graph` open service is registered/resolvable. Gates `get-stories-by-component`. */
+	moduleGraphSupported: boolean;
 	/** The `changeDetection` feature flag is enabled. Gates `get-changed-stories`. */
 	changeDetectionEnabled: boolean;
 	/** `changeDetection` flag + `@storybook/addon-review` are both present. Gates `display-review`. */
@@ -50,22 +50,17 @@ export async function getToolAvailability(
 		features ??
 		((await options.presets.apply('features', {})) as { changeDetection?: boolean } | undefined);
 
-	const [
-		dependencyGraphSupported,
-		reviewStatus,
-		manifestStatus,
-		addonVitestConstants,
-		a11yEnabled,
-	] = await Promise.all([
-		isDependencyGraphSupported(),
-		getReviewStatus(options, { features: resolvedFeatures }),
-		getManifestStatus(options),
-		getAddonVitestConstants(),
-		isAddonA11yEnabled(options),
-	]);
+	const [moduleGraphSupported, reviewStatus, manifestStatus, addonVitestConstants, a11yEnabled] =
+		await Promise.all([
+			isModuleGraphSupported(),
+			getReviewStatus(options, { features: resolvedFeatures }),
+			getManifestStatus(options),
+			getAddonVitestConstants(),
+			isAddonA11yEnabled(options),
+		]);
 
 	return {
-		dependencyGraphSupported,
+		moduleGraphSupported,
 		changeDetectionEnabled: resolvedFeatures?.changeDetection ?? false,
 		reviewEnabled: reviewStatus.available,
 		docsEnabled: manifestStatus.available,

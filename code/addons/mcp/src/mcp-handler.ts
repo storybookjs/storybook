@@ -55,7 +55,7 @@ const initializeMCPServer = async (options: Options, multiSource?: boolean) => {
 				testEnabled: (server?.ctx.custom?.toolsets?.test ?? true) && availability.testSupported,
 				docsEnabled: (server?.ctx.custom?.toolsets?.docs ?? true) && availability.docsEnabled,
 				changeDetectionEnabled: availability.changeDetectionEnabled,
-				dependencyGraphSupported: availability.dependencyGraphSupported,
+				moduleGraphSupported: availability.moduleGraphSupported,
 				reviewEnabled: availability.reviewEnabled,
 			});
 		},
@@ -88,8 +88,8 @@ const initializeMCPServer = async (options: Options, multiSource?: boolean) => {
 		await addGetChangedStoriesTool(server);
 	}
 
-	// get-stories-by-component only needs the dependency graph, not the status pipeline.
-	if (availability.dependencyGraphSupported) {
+	// get-stories-by-component only needs the module graph, not the status pipeline.
+	if (availability.moduleGraphSupported) {
 		await addGetStoriesByComponentTool(server);
 	}
 

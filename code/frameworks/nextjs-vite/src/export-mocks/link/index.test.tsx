@@ -11,8 +11,6 @@ const renderHref = (props: Record<string, unknown>) => {
 };
 
 describe('next/link mock', () => {
-  // Regression for #35145: the `as` prop was destructured but never applied,
-  // so the anchor showed the unresolved route template instead of the final URL.
   it('renders the resolved `as` URL instead of the `href` template when `as` is provided', () => {
     expect(renderHref({ href: '/users/[id]', as: '/users/123' })).toBe('/users/123');
   });

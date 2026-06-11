@@ -7,7 +7,7 @@ const linkAction = fn().mockName('next/link::Link');
 const MockLink = React.forwardRef<HTMLAnchorElement, any>(function MockLink(
   {
     href,
-    as: _as,
+    as,
     replace,
     scroll,
     shallow,
@@ -21,10 +21,13 @@ const MockLink = React.forwardRef<HTMLAnchorElement, any>(function MockLink(
   },
   ref
 ) {
+  // Next.js renders the resolved `as` URL on the anchor when it is provided,
+  // falling back to `href` otherwise. Mirror that so links show the final URL.
+  const resolvedHref = as ?? href;
   const hrefString =
-    typeof href === 'object'
-      ? `${href.pathname || ''}${href.query ? '?' + new URLSearchParams(href.query).toString() : ''}${href.hash || ''}`
-      : href;
+    typeof resolvedHref === 'object'
+      ? `${resolvedHref.pathname || ''}${resolvedHref.query ? '?' + new URLSearchParams(resolvedHref.query).toString() : ''}${resolvedHref.hash || ''}`
+      : resolvedHref;
 
   const handleClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
     e.preventDefault();

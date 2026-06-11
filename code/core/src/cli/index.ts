@@ -7,3 +7,4 @@ export * from './NpmOptions.ts';
 export * from './eslintPlugin.ts';
 export * from './globalSettings.ts';
 export * from './AddonVitestService.ts';
+export * from './detectLanguage.ts';

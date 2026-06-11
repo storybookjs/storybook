@@ -6,37 +6,9 @@ import {
   getStorybookInfo,
   normalizeStories,
 } from 'storybook/internal/common';
+import { getStoriesPathsFromConfig } from 'storybook/internal/core-server';
 import { isCsfFactoryPreview, readConfig } from 'storybook/internal/csf-tools';
-import { StoryIndexGenerator } from 'storybook/internal/core-server';
 import { logger } from 'storybook/internal/node-logger';
-import type { StorybookConfigRaw } from 'storybook/internal/types';
-
-/** Resolves story file paths from a main config's `stories` field without evaluating story files. */
-export const getStoriesPathsFromConfig = async ({
-  stories,
-  configDir,
-  workingDir,
-}: {
-  stories: StorybookConfigRaw['stories'];
-  configDir: string;
-  workingDir: string;
-}) => {
-  if (stories.length === 0) {
-    return [];
-  }
-
-  const normalizedStories = normalizeStories(stories, { configDir, workingDir });
-
-  const matchingStoryFiles = await StoryIndexGenerator.findMatchingFilesForSpecifiers(
-    normalizedStories,
-    workingDir,
-    true
-  );
-
-  return matchingStoryFiles.flatMap(([specifier, cache]) =>
-    StoryIndexGenerator.storyFileNames(new Map([[specifier, cache]]))
-  );
-};
 
 /** Gathers the project metadata `storybook ai setup` needs from the target Storybook. */
 export const getStorybookData = async ({

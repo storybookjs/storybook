@@ -65,4 +65,29 @@ describe('fetchPr', () => {
     expect(snapshot.files).toHaveLength(1);
     expect(snapshot.files[0]).toMatchObject({ path: 'a.ts', additions: 3, deletions: 1 });
   });
+
+  it('strips HTML comments from the PR body so template examples are ignored', async () => {
+    server.use(
+      http.get('https://api.github.com/repos/storybookjs/storybook/pulls/2', () =>
+        HttpResponse.json({
+          number: 2,
+          title: 't',
+          body: 'Fixes #42.\n<!-- Template example: closes #1000 and #1001 -->\nMore notes.',
+          user: { login: 'someone' },
+          draft: false,
+          head: { sha: 'sha' },
+          labels: [],
+          html_url: 'u',
+        })
+      ),
+      http.get('https://api.github.com/repos/storybookjs/storybook/pulls/2/files', () =>
+        HttpResponse.json([])
+      )
+    );
+    const snapshot = await fetchPr({ owner: 'storybookjs', repo: 'storybook', number: 2 });
+    expect(snapshot.body).not.toContain('#1000');
+    expect(snapshot.body).not.toContain('#1001');
+    expect(snapshot.body).toContain('#42');
+    expect(snapshot.body).toContain('More notes');
+  });
 });

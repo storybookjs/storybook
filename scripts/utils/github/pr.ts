@@ -43,6 +43,20 @@ export interface PrSnapshot {
 
 const URL_RE = /^https:\/\/github\.com\/([^/]+)\/([^/]+)\/pull\/(\d+)(?:[/?#].*)?$/;
 
+const HTML_COMMENT_RE = /<!--[\s\S]*?-->/g;
+
+/**
+ * Strip `<!-- ... -->` blocks from a PR body. The Storybook PR template
+ * embeds example issue references (e.g. `#1000`, `#1001`) inside comment
+ * blocks; without stripping those, every assessment would attribute the
+ * template examples as real linked issues. Applied at the fetch boundary so
+ * every downstream consumer (linked-issue parser, LLM prompts) sees the
+ * cleaned body.
+ */
+function stripHtmlComments(body: string): string {
+  return body.replace(HTML_COMMENT_RE, '');
+}
+
 /**
  * Normalize a CLI argument into PR coordinates and enforce that the PR
  * belongs to the storybookjs org. Accepts a bare PR number (defaults to
@@ -105,7 +119,7 @@ async function fetchPrImpl(coords: GithubRefCoords): Promise<PrSnapshot> {
     number: pr.number,
     url: pr.html_url,
     title: pr.title,
-    body: pr.body ?? '',
+    body: stripHtmlComments(pr.body ?? ''),
     author: pr.user?.login ?? '',
     isDraft: Boolean(pr.draft),
     headSha: pr.head.sha,

@@ -119,6 +119,14 @@ export const buildFlattenedNavEntries = (state: ReviewState): ReviewNavEntry[] =
 export const isReviewSummaryPath = (path: string): boolean =>
   path === REVIEW_CHANGES_URL || path === '/review';
 
+/** True when the manager route is a review story (`/story/...` with `collection`). */
+export const isReviewStoryRoute = (path: string, collectionIndex: number | undefined): boolean =>
+  parseStoryIdFromPath(path) !== null && collectionIndex !== undefined;
+
+/** True for the review summary or an in-review story URL (before review state loads). */
+export const isReviewSessionPath = (path: string, collectionIndex: number | undefined): boolean =>
+  isReviewSummaryPath(path) || isReviewStoryRoute(path, collectionIndex);
+
 export const parseStoryIdFromPath = (path: string): string | null => {
   if (!path.startsWith('/story/')) {
     return null;
@@ -131,8 +139,11 @@ export const parseCollectionIndex = (value: string | undefined): number | undefi
   if (value === undefined) {
     return undefined;
   }
+  if (!/^\d+$/.test(value)) {
+    return undefined;
+  }
   const parsed = Number(value);
-  return Number.isInteger(parsed) && parsed >= 0 ? parsed : undefined;
+  return Number.isInteger(parsed) ? parsed : undefined;
 };
 
 /**

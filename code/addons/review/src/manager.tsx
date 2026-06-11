@@ -15,6 +15,11 @@ import {
   EVENTS,
 } from './constants.ts';
 import { isReviewPath } from './ReviewProvider.tsx';
+import {
+  REVIEW_COLLECTION_QUERY_PARAM,
+  isReviewSessionPath,
+  parseCollectionIndex,
+} from './review-navigation.ts';
 import { sessionStore } from './session-store.ts';
 import { useReviewNavigationInterceptor } from './useReviewNavigationInterceptor.ts';
 import { useReviewShortcuts } from './useReviewShortcuts.ts';
@@ -32,9 +37,13 @@ const ReviewNavigationLayer = () => {
 };
 
 addons.register(ADDON_ID, (api) => {
-  const path = new URLSearchParams(window.location.search).get('path') ?? '';
+  const query = new URLSearchParams(window.location.search);
+  const path = query.get('path') ?? '';
+  const collectionIndex = parseCollectionIndex(
+    query.get(REVIEW_COLLECTION_QUERY_PARAM) ?? undefined
+  );
   const restoreNav = sessionStore.read(RESTORE_NAV_SESSION_KEY);
-  if (!path.startsWith(REVIEW_CHANGES_URL) && restoreNav !== null) {
+  if (!isReviewSessionPath(path, collectionIndex) && restoreNav !== null) {
     sessionStore.remove(RESTORE_NAV_SESSION_KEY);
     if (restoreNav === 'restore') {
       api.toggleNav(true);

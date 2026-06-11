@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, type FC, type PropsWithChildren } from 'react';
+import React, { useRef, type FC, type PropsWithChildren } from 'react';
 
 import type { Addon_WrapperType } from 'storybook/internal/types';
 
@@ -78,22 +78,13 @@ const ReviewPreviewCompare: FC<PropsWithChildren> = ({ children }) => {
   const api = useStorybookApi();
   const { compareMode, showCompare, activeEntry } = useReview();
   const latestPaneRef = useRef<HTMLDivElement>(null);
-
   const storyId = activeEntry?.storyId ?? '';
   const previewHref = storyId ? api.getStoryHrefs(storyId).previewHref : '';
 
-  const { baselineFrameRef, latestFrameRef, latestPreviewSrc, baselinePreviewSrc } =
-    useBaselineComparison(previewHref, showCompare);
-
-  // Point the scroll-sync hook at the manager's preview iframe.
-  useEffect(() => {
-    const latestIframe = document.getElementById(
-      'storybook-preview-iframe'
-    ) as HTMLIFrameElement | null;
-    if (latestIframe && latestFrameRef.current !== latestIframe) {
-      (latestFrameRef as React.MutableRefObject<HTMLIFrameElement | null>).current = latestIframe;
-    }
-  });
+  const { baselineFrameRef, latestPreviewSrc, baselinePreviewSrc } = useBaselineComparison(
+    previewHref,
+    showCompare
+  );
 
   if (!showCompare || !activeEntry) {
     return <>{children}</>;

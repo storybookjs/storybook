@@ -35,6 +35,7 @@ import {
 import {
   REVIEW_COLLECTION_QUERY_PARAM,
   buildFlattenedNavEntries,
+  isReviewSessionPath,
   isReviewSummaryPath,
   isStoryInReview,
   parseCollectionIndex,
@@ -169,7 +170,7 @@ export const ReviewProvider: FC<{ children: ReactNode }> = ({ children }) => {
 
   const reviewCreatedAt = state?.createdAt;
   useEffect(() => {
-    if (reviewCreatedAt === undefined) {
+    if (reviewCreatedAt === undefined || !state?.hasBaseline) {
       setBaselineStoryIds(null);
       return undefined;
     }
@@ -191,7 +192,7 @@ export const ReviewProvider: FC<{ children: ReactNode }> = ({ children }) => {
     return () => {
       cancelled = true;
     };
-  }, [reviewCreatedAt]);
+  }, [reviewCreatedAt, state?.hasBaseline]);
 
   const flattenedEntries = useMemo(() => (state ? buildFlattenedNavEntries(state) : []), [state]);
 
@@ -260,7 +261,7 @@ export const ReviewProvider: FC<{ children: ReactNode }> = ({ children }) => {
     viewMode === 'story' &&
     storyIdFromPath !== null &&
     isStoryInReview(flattenedEntries, storyIdFromPath);
-  const isInReviewSession = isSummaryVisible || isOnReviewedStory;
+  const isInReviewSession = isReviewSessionPath(path, collectionIndex) || isOnReviewedStory;
 
   const showCompare =
     baselineStoryIds !== null &&

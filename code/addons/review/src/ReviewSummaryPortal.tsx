@@ -3,7 +3,13 @@ import { createPortal } from 'react-dom';
 
 import { useStorybookState } from 'storybook/manager-api';
 
-import { isReviewSummaryPath, isStoryInReview, parseStoryIdFromPath } from './review-navigation.ts';
+import {
+  isReviewSessionPath,
+  isReviewSummaryPath,
+  isStoryInReview,
+  parseCollectionIndex,
+  parseStoryIdFromPath,
+} from './review-navigation.ts';
 import { reviewStore, useReview } from './review-store.ts';
 import { SummaryScreen } from './screens/SummaryScreen.tsx';
 
@@ -67,7 +73,7 @@ const summaryPortalStyle: React.CSSProperties = {
 };
 
 export const ReviewSummaryPortal: FC = () => {
-  const { path, viewMode } = useStorybookState();
+  const { path, viewMode, customQueryParams } = useStorybookState();
   const {
     state,
     storyInfo,
@@ -86,12 +92,14 @@ export const ReviewSummaryPortal: FC = () => {
   }, []);
 
   const isSummaryVisible = isReviewSummaryPath(path);
+  const collectionParam = customQueryParams?.collection as string | undefined;
+  const collectionIndex = parseCollectionIndex(collectionParam);
   const storyIdFromPath = parseStoryIdFromPath(path);
   const isOnReviewedStory =
     viewMode === 'story' &&
     storyIdFromPath !== null &&
     isStoryInReview(flattenedEntries, storyIdFromPath);
-  const isInReviewSession = isSummaryVisible || isOnReviewedStory;
+  const isInReviewSession = isReviewSessionPath(path, collectionIndex) || isOnReviewedStory;
 
   useLayoutEffect(() => {
     const node = containerRef.current;

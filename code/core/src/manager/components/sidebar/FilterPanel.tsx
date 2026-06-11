@@ -84,12 +84,19 @@ export const FilterPanel = ({
 
   const toStatusFilterItem = useCallback(
     (entry: StatusFilterEntry): FilterItem => {
-      const shortName = entry.shortName === 'affected' ? 'related' : entry.shortName;
+      const isRelated = entry.statusValue === 'status-value:affected';
+      const shortName = isRelated ? 'related' : entry.shortName;
       const isIncluded = includedStatusFilters.includes(entry.statusValue);
       const isExcluded = excludedStatusFilters.includes(entry.statusValue);
       const isChecked = isIncluded || isExcluded;
       const { icon: statusIconEl, iconColor } = getStatus(theme, entry.statusValue);
-      const showIcon = statusIconEl && entry.statusValue !== 'status-value:affected';
+      // Related has no status icon, but ActionList only hides the checkbox until hover when a
+      // non-input sibling precedes it — an empty placeholder preserves that behavior.
+      const icon = isRelated ? (
+        <span aria-hidden="true" />
+      ) : statusIconEl ? (
+        <StatusIcon $iconColor={iconColor}>{statusIconEl}</StatusIcon>
+      ) : null;
 
       return {
         id: shortName,
@@ -97,7 +104,7 @@ export const FilterPanel = ({
         title: shortName.charAt(0).toUpperCase() + shortName.slice(1),
         tooltip: entry.description,
         count: entry.count,
-        icon: showIcon ? <StatusIcon $iconColor={iconColor}>{statusIconEl}</StatusIcon> : null,
+        icon,
         isIncluded,
         isExcluded,
         onCheckboxChange: () => {

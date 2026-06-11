@@ -251,7 +251,7 @@ export const Hydrate = ({
   onPrefetchStrategy?: unknown;
   when?: unknown;
   onInteraction?: unknown;
-}) =&gt; React.createElement(React.Fragment, null, children);
+}) => React.createElement(React.Fragment, null, children);
 
 export const defineHandlerCallback = createNamedMock(
   'defineHandlerCallback',

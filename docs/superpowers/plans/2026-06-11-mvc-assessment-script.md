@@ -204,7 +204,7 @@ export const MANAGED_LABELS = ['mvc:success', 'mvc:failed', 'mvc:skip', 'mvc:pen
 // Skip-rules: labels that, if present, halt the assessment.
 export const SKIP_LABELS = ['mvc:success', 'mvc:failed', 'mvc:skip'] as const;
 
-// Maintainer team slugs to query for `--respect-skip-rules`. Confirm with org admin
+// Maintainer team slugs to query for `--skip-internal-prs`. Confirm with org admin
 // before enabling triggers in the workflow (see spec section 12 open decisions).
 export const MAINTAINER_TEAM_SLUGS = ['core', 'dx', 'maintainers'] as const;
 ```
@@ -1840,7 +1840,7 @@ describe('runAssessment (deterministic-only)', () => {
       flags: {
         dryRun: true,
         dismissPrevious: false,
-        respectSkipRules: false,
+        skipInternalPrs: false,
         model: 'sonnet-4.6',
         effort: 'medium',
         verbose: false,
@@ -1903,7 +1903,7 @@ export type Effort = 'low' | 'medium' | 'high' | 'max';
 export interface Flags {
   dryRun: boolean;
   dismissPrevious: boolean;
-  respectSkipRules: boolean;
+  skipInternalPrs: boolean;
   model: Model;
   effort: Effort;
   verbose: boolean;
@@ -2005,8 +2005,8 @@ async function main() {
     .option('--no-dry-run', 'Apply changes (labels + review).')
     .option('--dismiss-previous', 'Dismiss prior bot reviews before posting.', false)
     .option('--no-dismiss-previous', 'Do not dismiss prior bot reviews (default).')
-    .option('--respect-skip-rules', 'Skip ineligible PRs (drafts, maintainers, …).', false)
-    .option('--no-respect-skip-rules', 'Always assess (default).')
+    .option('--skip-internal-prs', 'Skip ineligible PRs (drafts, maintainers, …).', false)
+    .option('--no-skip-internal-prs', 'Always assess (default).')
     .addOption(
       new Option('--model <name>', 'Claude model')
         .choices(['sonnet-4.6', 'opus-4.6', 'haiku-4.5'])
@@ -2024,7 +2024,7 @@ async function main() {
   const opts = program.opts<{
     dryRun: boolean;
     dismissPrevious: boolean;
-    respectSkipRules: boolean;
+    skipInternalPrs: boolean;
     model: Model;
     effort: Effort;
     verbose: boolean;
@@ -2051,7 +2051,7 @@ async function main() {
   const flags: Flags = {
     dryRun: opts.dryRun,
     dismissPrevious: opts.dismissPrevious,
-    respectSkipRules: opts.respectSkipRules,
+    skipInternalPrs: opts.skipInternalPrs,
     model: opts.model,
     effort: opts.effort,
     verbose: opts.verbose,
@@ -2059,8 +2059,8 @@ async function main() {
 
   const deps = buildDeps(client, flags);
 
-  // Skip evaluation (only when --respect-skip-rules).
-  if (flags.respectSkipRules) {
+  // Skip evaluation (only when --skip-internal-prs).
+  if (flags.skipInternalPrs) {
     const partial = await fetchPr(client, coords);
     const decision = await evaluateSkip(partial, {
       isMaintainer: githubTeamMembership(client).isMaintainer,
@@ -3220,7 +3220,7 @@ it('skips LLM phase on early-abort (Check 3 FAIL)', async () => {
     flags: {
       dryRun: true,
       dismissPrevious: false,
-      respectSkipRules: false,
+      skipInternalPrs: false,
       model: 'sonnet-4.6',
       effort: 'medium',
       verbose: false,
@@ -3642,7 +3642,7 @@ it('with --no-dry-run, applies labels and submits a review', async () => {
     flags: {
       dryRun: false,
       dismissPrevious: true,
-      respectSkipRules: false,
+      skipInternalPrs: false,
       model: 'sonnet-4.6',
       effort: 'medium',
       verbose: false,
@@ -3760,7 +3760,7 @@ jobs:
           PR_NUMBER="${{ github.event.inputs.pr_number || github.event.pull_request.number }}"
           node scripts/sustainability/assess-mvc.ts "$PR_NUMBER" \
             --no-dry-run \
-            --respect-skip-rules
+            --skip-internal-prs
 ```
 
 - [ ] **Step 2: Validate YAML locally**
@@ -3826,7 +3826,7 @@ While the workflow triggers are still commented out, you can sweep the open back
    ```bash
    for pr in $(gh search prs ... ); do
      GH_TOKEN=$(gh auth token) ANTHROPIC_API_KEY="$ANTHROPIC_API_KEY" \
-       node scripts/sustainability/assess-mvc.ts "$pr" --no-dry-run --respect-skip-rules
+       node scripts/sustainability/assess-mvc.ts "$pr" --no-dry-run --skip-internal-prs
    done
    ```
 
@@ -3867,7 +3867,7 @@ Exercise each row against a `sidnioulz/storybook` (or equivalent) mirror with mo
 
 | Condition                         | Expected                                       |
 | --------------------------------- | ---------------------------------------------- |
-| Draft PR + `--respect-skip-rules` | `Skipped: draft`; exit 0; no labels, no review |
+| Draft PR + `--skip-internal-prs` | `Skipped: draft`; exit 0; no labels, no review |
 | PR labeled `mvc:success`          | `Skipped: already-assessed`                    |
 | PR labeled `mvc:failed`           | `Skipped: already-assessed`                    |
 | PR labeled `mvc:skip`             | `Skipped: explicit-skip`                       |
@@ -3942,7 +3942,7 @@ Exercise each row against a `sidnioulz/storybook` (or equivalent) mirror with mo
 | `--dry-run` (default)                  | prints summary + body, no GitHub side effects |
 | `--no-dry-run`                         | labels + review applied                       |
 | `--no-dry-run --dismiss-previous`      | prior bot reviews dismissed before new one    |
-| `--respect-skip-rules` + ineligible PR | skip path                                     |
+| `--skip-internal-prs` + ineligible PR | skip path                                     |
 | `--model opus-4.6 --effort high`       | passes through to LLM client                  |
 | missing `GH_TOKEN` and `GITHUB_TOKEN`  | exit 1 with scopes message                    |
 

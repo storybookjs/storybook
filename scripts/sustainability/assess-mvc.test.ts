@@ -35,7 +35,7 @@ describe('runAssessment (deterministic-only)', () => {
       flags: {
         dryRun: true,
         dismissPrevious: false,
-        respectSkipRules: false,
+        skipInternalPrs: false,
         model: 'sonnet-4.6',
         effort: 'medium',
         verbose: false,

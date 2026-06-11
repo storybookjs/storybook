@@ -11,6 +11,6 @@ export const MANAGED_LABELS = ['mvc:success', 'mvc:failed', 'mvc:skip', 'mvc:pen
 
 export const SKIP_LABELS = ['mvc:success', 'mvc:failed', 'mvc:skip'] as const;
 
-// Maintainer team slugs queried for `--respect-skip-rules`. Confirm with org admin
+// Maintainer team slugs queried for `--skip-internal-prs`. Confirm with org admin
 // before enabling triggers in the workflow (spec section 12 open decision).
 export const MAINTAINER_TEAM_SLUGS = ['core', 'dx', 'maintainers'] as const;

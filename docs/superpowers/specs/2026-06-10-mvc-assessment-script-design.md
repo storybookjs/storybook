@@ -107,8 +107,8 @@ Options:
   --dismiss-previous /               Default: --no-dismiss-previous.
     --no-dismiss-previous            Dismiss prior mvc-check reviews from this bot
                                      before posting a new one.
-  --respect-skip-rules /             Default: --no-respect-skip-rules.
-    --no-respect-skip-rules          When on, skip ineligible PRs (drafts,
+  --skip-internal-prs /             Default: --no-skip-internal-prs.
+    --no-skip-internal-prs          When on, skip ineligible PRs (drafts,
                                      maintainer-authored, already labeled mvc:success/
                                      mvc:failed, labeled mvc:skip) and exit 0.
   --model <name>                     Claude model. Default: sonnet-4.6.
@@ -121,11 +121,11 @@ Options:
 
 ### Exit codes
 
-- `0` — assessment completed (PASS or FAIL — both fine), or skipped under `--respect-skip-rules`, or deferred (e.g., agent-scan label not yet present).
+- `0` — assessment completed (PASS or FAIL — both fine), or skipped under `--skip-internal-prs`, or deferred (e.g., agent-scan label not yet present).
 - `1` — usage error, missing token, PR not found.
 - `2` — GitHub API error during write (only possible with `--no-dry-run`).
 
-### Skip behavior (with `--respect-skip-rules`)
+### Skip behavior (with `--skip-internal-prs`)
 
 The script exits 0 and prints `Skipped: <reason>` for:
 
@@ -215,7 +215,7 @@ De-duplicate; resolve each via `GET /repos/{owner}/{repo}/issues/{n}`. Accept on
 - **PASS**: linked issue exists AND is open AND LLM judges that the PR substantively addresses the linked issue (not tangential, not a side concern, not a different problem).
 - **FAIL**: no linked issue, OR linked issue is closed, OR LLM judges the fix/feature does not match the issue.
 
-The same bar applies to bug fixes, features, cleanup, dependencies, docs, etc. PRs from maintainer/core/DX teams are skipped upstream (`--respect-skip-rules`), so this rule never applies to small internal cleanups.
+The same bar applies to bug fixes, features, cleanup, dependencies, docs, etc. PRs from maintainer/core/DX teams are skipped upstream (`--skip-internal-prs`), so this rule never applies to small internal cleanups.
 
 **Feature sub-rule:** For PRs classified as features, the LLM additionally judges whether the feature matches one of the three accepted categories:
 
@@ -383,7 +383,7 @@ Backfill of 150 open PRs ≈ $15–$45. Ongoing 5–15 PRs/day ≈ $0.50–$4.50
 - `GET /repos/{o}/{r}/issues/{n}` (per linked issue, possibly cross-repo within `storybookjs/*`) — issue body, state, labels.
 - `GET /repos/{o}/{r}/issues/{n}/timeline` (per linked issue) — for dupe detection and closed-then-reopened detection.
 - `GET /repos/{o}/{r}/issues/{n}/reactions` (per linked issue) — for Check 4 benefit signal.
-- `GET /orgs/storybookjs/teams/{team}/memberships/{user}` (under `--respect-skip-rules`) — maintainer team membership.
+- `GET /orgs/storybookjs/teams/{team}/memberships/{user}` (under `--skip-internal-prs`) — maintainer team membership.
 
 ### Writes (only with `--no-dry-run`)
 
@@ -474,7 +474,7 @@ jobs:
           PR_NUMBER="${{ github.event.inputs.pr_number || github.event.pull_request.number }}"
           node scripts/sustainability/assess-mvc.ts "$PR_NUMBER" \
             --no-dry-run \
-            --respect-skip-rules
+            --skip-internal-prs
 ```
 
 Note on the `mvc:pending` reference above: even though we don't manage `mvc:pending` as a state label, it's the natural name for a "please re-assess" trigger label that a maintainer can apply manually. The workflow listens for it but the script clears it on each run if present (already in the remove-set per section 10).
@@ -495,7 +495,7 @@ Two invocation modes documented in the skill body:
    -label:mvc:success -label:mvc:failed -label:mvc:skip
    ```
 
-   then for each PR invoke `node scripts/sustainability/assess-mvc.ts <PR> --no-dry-run --respect-skip-rules`. The script handles per-PR eligibility (drafts, maintainer authors).
+   then for each PR invoke `node scripts/sustainability/assess-mvc.ts <PR> --no-dry-run --skip-internal-prs`. The script handles per-PR eligibility (drafts, maintainer authors).
 
 ## 12. TODO
 

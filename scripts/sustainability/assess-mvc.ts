@@ -25,7 +25,7 @@ export type Effort = 'low' | 'medium' | 'high' | 'max';
 export interface Flags {
   dryRun: boolean;
   dismissPrevious: boolean;
-  respectSkipRules: boolean;
+  skipInternalPrs: boolean;
   model: Model;
   effort: Effort;
   verbose: boolean;
@@ -178,8 +178,12 @@ async function main(): Promise<void> {
     .option('--no-dry-run', 'Apply changes (labels + review).')
     .option('--dismiss-previous', 'Dismiss prior bot reviews before posting.', false)
     .option('--no-dismiss-previous', 'Do not dismiss prior bot reviews (default).')
-    .option('--respect-skip-rules', 'Skip ineligible PRs (drafts, maintainers, …).', false)
-    .option('--no-respect-skip-rules', 'Always assess (default).')
+    .option(
+      '--skip-internal-prs',
+      'Skip ineligible PRs (drafts, maintainer-authored, already labeled).',
+      false
+    )
+    .option('--no-skip-internal-prs', 'Always assess, even ineligible PRs (default).')
     .addOption(
       new Option('--model <name>', 'Claude model')
         .choices(['sonnet-4.6', 'opus-4.6', 'haiku-4.5'])
@@ -197,7 +201,7 @@ async function main(): Promise<void> {
   const opts = program.opts<{
     dryRun: boolean;
     dismissPrevious: boolean;
-    respectSkipRules: boolean;
+    skipInternalPrs: boolean;
     model: Model;
     effort: Effort;
     verbose: boolean;
@@ -223,7 +227,7 @@ async function main(): Promise<void> {
   const flags: Flags = {
     dryRun: opts.dryRun,
     dismissPrevious: opts.dismissPrevious,
-    respectSkipRules: opts.respectSkipRules,
+    skipInternalPrs: opts.skipInternalPrs,
     model: opts.model,
     effort: opts.effort,
     verbose: opts.verbose,
@@ -231,7 +235,7 @@ async function main(): Promise<void> {
 
   const deps = buildDeps(client);
 
-  if (flags.respectSkipRules) {
+  if (flags.skipInternalPrs) {
     const partial = await fetchPr(client, coords);
     const decision = await evaluateSkip(partial, {
       isMaintainer: githubTeamMembership(client).isMaintainer,

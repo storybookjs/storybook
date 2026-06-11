@@ -104,25 +104,3 @@ updated, and deleted components get their stories removed.
 
 **Gate:** Every story you touched must conform to the instruction output you received. If anything is unclear, re-read it
 rather than guessing.
-
-## Step 4 — Preview and verify
-
-Produce a preview for every story you touched with **STORYBOOK_FEATURE_AI_CLI=1 npx storybook ai preview-stories** (prefer
-`{ storyId }` inputs). Before showing any returned URL to the user, navigate to
-it in the preview browser and confirm the story renders without errors.
-
-**Gate:** Every URL you put in your final response MUST have been opened in the
-preview browser first — no exceptions, per the Absolute rules. Do NOT report the
-story as done until each preview link has been navigated and verified.
-
-## Step 5 — Publish the review page
-
-Once the stories render cleanly, call **display-review** so the user can review
-exactly what changed in one place. This tool does NOT just return a link — it
-publishes a curated **review page** inside the already-running Storybook and
-returns its `reviewUrl`. The review page IS the deliverable; the raw
-`preview-stories` URLs from Step 4 are for your own verification.
-
-**Gate:** Do NOT report the task as done until `display-review` has succeeded,
-you have opened the returned `reviewUrl` in the preview browser, and that link is
-the final element of your user-facing response.

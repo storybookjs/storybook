@@ -110,7 +110,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@angular-devkit/architect@npm:0.2102.12, @angular-devkit/architect@npm:^0.2102.12":
+"@angular-devkit/architect@npm:0.2102.12":
   version: 0.2102.12
   resolution: "@angular-devkit/architect@npm:0.2102.12"
   dependencies:
@@ -122,7 +122,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@angular-devkit/architect@npm:0.2102.14":
+"@angular-devkit/architect@npm:0.2102.14, @angular-devkit/architect@npm:^0.2102.12":
   version: 0.2102.14
   resolution: "@angular-devkit/architect@npm:0.2102.14"
   dependencies:
@@ -427,7 +427,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@angular-devkit/core@npm:21.2.12, @angular-devkit/core@npm:^21.2.12":
+"@angular-devkit/core@npm:21.2.12":
   version: 21.2.12
   resolution: "@angular-devkit/core@npm:21.2.12"
   dependencies:
@@ -446,7 +446,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@angular-devkit/core@npm:21.2.14":
+"@angular-devkit/core@npm:21.2.14, @angular-devkit/core@npm:^21.2.12":
   version: 21.2.14
   resolution: "@angular-devkit/core@npm:21.2.14"
   dependencies:

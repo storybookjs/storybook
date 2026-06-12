@@ -119,7 +119,7 @@ export const ServiceDocgenControlsLoad: Story = {
     ),
   ],
   play: async ({ canvas }) => {
-    await expect(await canvas.findByText('variant')).toBeInTheDocument();
+    await expect(await canvas.findByRole('radio', { name: 'primary' })).toBeInTheDocument();
     await expect(serviceGetDocgen).toHaveBeenCalledWith({ id: 'example-button' });
   },
 };

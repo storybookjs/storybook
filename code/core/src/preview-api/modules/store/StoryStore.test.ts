@@ -346,6 +346,11 @@ describe('StoryStore', () => {
                 },
               },
               "foo": {
+                "control": {
+                  "disable": false,
+                  "type": "text",
+                },
+                "description": "from meta",
                 "name": "foo",
                 "type": {
                   "name": "string",
@@ -539,6 +544,11 @@ describe('StoryStore', () => {
                 },
               },
               "foo": {
+                "control": {
+                  "disable": false,
+                  "type": "text",
+                },
+                "description": "from meta",
                 "name": "foo",
                 "type": {
                   "name": "string",
@@ -605,6 +615,7 @@ describe('StoryStore', () => {
                 },
               },
               "foo": {
+                "description": "from meta",
                 "name": "foo",
                 "type": {
                   "name": "string",

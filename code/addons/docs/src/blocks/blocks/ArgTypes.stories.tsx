@@ -3,8 +3,6 @@ import type { PlayFunctionContext } from 'storybook/internal/csf';
 
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
-import { within } from 'storybook/test';
-
 import * as ExampleStories from '../examples/ArgTypesParameters.stories';
 import * as SubcomponentsExampleStories from '../examples/ArgTypesWithSubcomponentsParameters.stories';
 import { ArgTypes } from './ArgTypes';
@@ -108,7 +106,7 @@ export const Categories: Story = {
 };
 
 const findSubcomponentTabs = async (
-  canvas: ReturnType<typeof within>,
+  canvas: Parameters<NonNullable<Story['play']>>[0]['canvas'],
   step: PlayFunctionContext['step']
 ) => {
   let subcomponentATab: HTMLElement | null = null;

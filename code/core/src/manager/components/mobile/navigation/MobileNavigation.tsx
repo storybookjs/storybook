@@ -69,6 +69,69 @@ const useFullStoryName = () => {
   return fullStoryName;
 };
 
+interface MobileBottomBarContentProps {
+  fullStoryName: string;
+  isMobileMenuOpen: boolean;
+  setMobileMenuOpen: (isOpen: boolean) => void;
+  isMobilePanelOpen: boolean;
+  setMobilePanelOpen: (isOpen: boolean) => void;
+  showPanel: boolean;
+}
+
+/**
+ * Keep `useLandmark` mounted only while the bottom bar DOM node exists. Otherwise the upstream
+ * landmark manager can retain a stale ref and crash when another landmark registers.
+ */
+const MobileBottomBarContent: FC<MobileBottomBarContentProps> = ({
+  fullStoryName,
+  isMobileMenuOpen,
+  setMobileMenuOpen,
+  isMobilePanelOpen,
+  setMobilePanelOpen,
+  showPanel,
+}) => {
+  const headingId = useId();
+  const sectionRef = useRef<HTMLElement>(null);
+  const { landmarkProps } = useLandmark(
+    { 'aria-labelledby': headingId, role: 'banner' },
+    sectionRef
+  );
+
+  return (
+    <MobileBottomBar className="sb-bar" {...landmarkProps} ref={sectionRef}>
+      <h2 id={headingId} className="sb-sr-only">
+        Navigation controls
+      </h2>
+      <BottomBarButton
+        padding="small"
+        variant="ghost"
+        onClick={() => setMobileMenuOpen(!isMobileMenuOpen)}
+        ariaLabel="Open navigation menu"
+        aria-expanded={isMobileMenuOpen}
+        aria-controls="storybook-mobile-menu"
+      >
+        <MenuIcon />
+        <Text>{fullStoryName}</Text>
+      </BottomBarButton>
+      <span className="sb-sr-only" aria-current="page">
+        {fullStoryName}
+      </span>
+      {showPanel && (
+        <BottomBarButton
+          padding="small"
+          variant="ghost"
+          onClick={() => setMobilePanelOpen(true)}
+          ariaLabel="Open addon panel"
+          aria-expanded={isMobilePanelOpen}
+          aria-controls="storybook-mobile-addon-panel"
+        >
+          <BottomBarToggleIcon />
+        </BottomBarButton>
+      )}
+    </MobileBottomBar>
+  );
+};
+
 export const MobileNavigation: FC<MobileNavigationProps & ComponentProps<typeof Container>> = ({
   menu,
   panel,
@@ -78,13 +141,6 @@ export const MobileNavigation: FC<MobileNavigationProps & ComponentProps<typeof 
   const { isMobileMenuOpen, isMobilePanelOpen, setMobileMenuOpen, setMobilePanelOpen } =
     useLayout();
   const fullStoryName = useFullStoryName();
-  const headingId = useId();
-
-  const sectionRef = useRef<HTMLElement>(null);
-  const { landmarkProps } = useLandmark(
-    { 'aria-labelledby': headingId, role: 'banner' },
-    sectionRef
-  );
 
   return (
     <Container {...props}>
@@ -105,37 +161,14 @@ export const MobileNavigation: FC<MobileNavigationProps & ComponentProps<typeof 
       </MobileAddonsDrawer>
 
       {!isMobilePanelOpen && (
-        <MobileBottomBar className="sb-bar" {...landmarkProps} ref={sectionRef}>
-          <h2 id={headingId} className="sb-sr-only">
-            Navigation controls
-          </h2>
-          <BottomBarButton
-            padding="small"
-            variant="ghost"
-            onClick={() => setMobileMenuOpen(!isMobileMenuOpen)}
-            ariaLabel="Open navigation menu"
-            aria-expanded={isMobileMenuOpen}
-            aria-controls="storybook-mobile-menu"
-          >
-            <MenuIcon />
-            <Text>{fullStoryName}</Text>
-          </BottomBarButton>
-          <span className="sb-sr-only" aria-current="page">
-            {fullStoryName}
-          </span>
-          {showPanel && (
-            <BottomBarButton
-              padding="small"
-              variant="ghost"
-              onClick={() => setMobilePanelOpen(true)}
-              ariaLabel="Open addon panel"
-              aria-expanded={isMobilePanelOpen}
-              aria-controls="storybook-mobile-addon-panel"
-            >
-              <BottomBarToggleIcon />
-            </BottomBarButton>
-          )}
-        </MobileBottomBar>
+        <MobileBottomBarContent
+          fullStoryName={fullStoryName}
+          isMobileMenuOpen={isMobileMenuOpen}
+          setMobileMenuOpen={setMobileMenuOpen}
+          isMobilePanelOpen={isMobilePanelOpen}
+          setMobilePanelOpen={setMobilePanelOpen}
+          showPanel={showPanel}
+        />
       )}
     </Container>
   );

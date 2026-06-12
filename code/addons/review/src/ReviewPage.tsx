@@ -41,9 +41,18 @@ export const ReviewPage: FC = () => (
   <Location>{({ location }) => <ReviewPageContent search={location.search ?? ''} />}</Location>
 );
 
+const isDeferredReviewUpdate = (current: ReviewState | null, next: ReviewState): boolean =>
+  current !== null &&
+  current.createdAt !== undefined &&
+  next.createdAt !== undefined &&
+  current.createdAt !== next.createdAt;
+
 const ReviewPageContent: FC<{ search: string }> = ({ search }) => {
   const [state, setState] = useState<ReviewState | null>(null);
+  const [pendingReview, setPendingReview] = useState<ReviewState | null>(null);
   const [isStale, setIsStale] = useState(false);
+  const displayedReviewRef = useRef<ReviewState | null>(null);
+  displayedReviewRef.current = state;
   // Story IDs present in the baseline Storybook's index. `null` means the
   // baseline is unresolved or unavailable (no fetch yet, network/proxy error,
   // or an unparseable index) — in which case it contributes nothing to "New"
@@ -61,8 +70,24 @@ const ReviewPageContent: FC<{ search: string }> = ({ search }) => {
     [api]
   );
 
+  const acceptPendingReview = useCallback(() => {
+    if (!pendingReview) {
+      return;
+    }
+    setState(pendingReview);
+    setIsStale(!!pendingReview.stale);
+    setPendingReview(null);
+    navigate(buildReviewChangesSummaryHref(), { plain: true });
+  }, [navigate, pendingReview]);
+
   const emit = useChannel({
     [EVENTS.DISPLAY_REVIEW]: (next: ReviewState) => {
+      const current = displayedReviewRef.current;
+      if (isDeferredReviewUpdate(current, next)) {
+        setPendingReview(next);
+        return;
+      }
+      setPendingReview(null);
       setState(next);
       // A fresh review resets staleness; a replayed (already-stale) one restores it.
       setIsStale(!!next.stale);
@@ -252,7 +277,9 @@ const ReviewPageContent: FC<{ search: string }> = ({ search }) => {
           storybookHref={currentStoryHrefs.managerHref}
           componentTitle={currentStoryInfo?.title}
           storyName={currentStoryInfo?.name}
-          isStale={isStale}
+          isStale={isStale && !pendingReview}
+          hasPendingUpdate={pendingReview !== null}
+          onAcceptPendingUpdate={acceptPendingReview}
           isNewlyAdded={newlyAddedStoryIds.has(currentStoryId)}
           backHref={buildReviewChangesSummaryHref()}
           previousHref={buildReviewChangesDetailHref({
@@ -282,9 +309,13 @@ const ReviewPageContent: FC<{ search: string }> = ({ search }) => {
     }
   }, [hasDetailScreen]);
 
+  // Remount the review surface when the displayed review changes so frozen
+  // preview iframes are torn down instead of reused across pushes.
+  const reviewSurfaceKey = state?.createdAt ?? 'empty';
+
   return (
     <div ref={containerRef} style={{ display: 'contents' }}>
-      <div style={{ position: 'relative', height: '100dvh' }}>
+      <div key={reviewSurfaceKey} style={{ position: 'relative', height: '100dvh' }}>
         <div
           ref={summaryWrapperRef}
           aria-hidden={hasDetailScreen || undefined}
@@ -294,7 +325,9 @@ const ReviewPageContent: FC<{ search: string }> = ({ search }) => {
             state={state}
             storyInfo={storyInfo}
             getStoryPreviewHref={getStoryPreviewHref}
-            isStale={isStale}
+            isStale={isStale && !pendingReview}
+            hasPendingUpdate={pendingReview !== null}
+            onAcceptPendingUpdate={acceptPendingReview}
           />
         </div>
         {hasDetailScreen ? (

@@ -1,4 +1,4 @@
-import { expect, fn, waitFor, within } from 'storybook/test';
+import { expect, fn, userEvent, waitFor, within } from 'storybook/test';
 
 import {
   ManagerContext,
@@ -131,6 +131,13 @@ const applyReviewState = () => {
   emitMock(EVENTS.DISPLAY_REVIEW, reviewState);
 };
 
+const updatedReviewState: ReviewState = {
+  ...reviewState,
+  title: 'Updated manager settings polish',
+  description: 'Refreshed review after more changes.',
+  createdAt: reviewState.createdAt! + 60_000,
+};
+
 const meta = preview.meta({
   component: ReviewPage,
   parameters: {
@@ -248,6 +255,83 @@ export const DetailsNewStory = meta.story({
     ).toBeInTheDocument();
     // checklist is absent from the baseline index, so it is newly added.
     await expect(await canvas.findByText('New')).toBeInTheDocument();
+  },
+});
+
+export const PendingUpdateDeferred = meta.story({
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(emitMock).toHaveBeenCalledWith(EVENTS.REQUEST_REVIEW);
+
+    applyReviewState();
+    await expect(await canvas.findByText('Manager settings polish')).toBeInTheDocument();
+
+    emitMock(EVENTS.DISPLAY_REVIEW, updatedReviewState);
+
+    await expect(await canvas.findByRole('status')).toBeInTheDocument();
+    await expect(await canvas.findByRole('button', { name: 'Switch' })).toBeInTheDocument();
+    expect(canvas.getByText('Manager settings polish')).toBeInTheDocument();
+    expect(canvas.queryByText('Updated manager settings polish')).not.toBeInTheDocument();
+  },
+});
+
+export const PendingUpdateAccept = meta.story({
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(emitMock).toHaveBeenCalledWith(EVENTS.REQUEST_REVIEW);
+
+    applyReviewState();
+    await expect(await canvas.findByText('Manager settings polish')).toBeInTheDocument();
+
+    emitMock(EVENTS.DISPLAY_REVIEW, updatedReviewState);
+
+    await expect(await canvas.findByRole('status')).toBeInTheDocument();
+    await userEvent.click(await canvas.findByRole('button', { name: 'Switch' }));
+
+    await expect(await canvas.findByText('Updated manager settings polish')).toBeInTheDocument();
+    expect(canvas.queryByText('An updated review is available.')).not.toBeInTheDocument();
+  },
+});
+
+export const PendingUpdateFromDetailNavigatesToSummary = meta.story({
+  parameters: {
+    routerInitialEntries: ['/?path=/review/0/manager-settings-guidepage--default'],
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(emitMock).toHaveBeenCalledWith(EVENTS.REQUEST_REVIEW);
+
+    applyReviewState();
+    await expect(await canvas.findByRole('button', { name: '2/3' })).toBeInTheDocument();
+
+    emitMock(EVENTS.DISPLAY_REVIEW, updatedReviewState);
+
+    await expect(await canvas.findByRole('status')).toBeInTheDocument();
+    await userEvent.click(await canvas.findByRole('button', { name: 'Switch' }));
+
+    await expect(await canvas.findByText('Updated manager settings polish')).toBeInTheDocument();
+    expect(canvas.queryByRole('button', { name: '2/3' })).not.toBeInTheDocument();
+  },
+});
+
+export const PendingUpdateSupersedesStale = meta.story({
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(emitMock).toHaveBeenCalledWith(EVENTS.REQUEST_REVIEW);
+
+    applyReviewState();
+    emitMock(EVENTS.REVIEW_STALE);
+    await expect(
+      await canvas.findByText('This review may be stale. Ask your agent to refresh it.')
+    ).toBeInTheDocument();
+
+    emitMock(EVENTS.DISPLAY_REVIEW, updatedReviewState);
+
+    await expect(await canvas.findByRole('status')).toBeInTheDocument();
+    await expect(await canvas.findByRole('button', { name: 'Switch' })).toBeInTheDocument();
+    expect(
+      canvas.queryByText('This review may be stale. Ask your agent to refresh it.')
+    ).not.toBeInTheDocument();
   },
 });
 

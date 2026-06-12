@@ -1,8 +1,42 @@
+###################################################################################################
+#                                                                                                 #
+#                                            ██                                                   #
+#                                          ██░░██                                                 #
+#  ░░          ░░                        ██░░░░░░██                            ░░░░               #
+#                                      ██░░░░░░░░░░██                                             #
+#                                      ██░░░░░░░░░░██                                             #
+#                                    ██░░░░░░░░░░░░░░██                                           #
+#                                  ██░░░░░░██████░░░░░░██                                         #
+#                                  ██░░░░░░██████░░░░░░██                                         #
+#                                ██░░░░░░░░██████░░░░░░░░██                                       #
+#                                ██░░░░░░░░██████░░░░░░░░██                                       #
+#                              ██░░░░░░░░░░██████░░░░░░░░░░██                                     #
+#                            ██░░░░░░░░░░░░██████░░░░░░░░░░░░██                                   #
+#                            ██░░░░░░░░░░░░██████░░░░░░░░░░░░██                                   #
+#                          ██░░░░░░░░░░░░░░██████░░░░░░░░░░░░░░██                                 #
+#                          ██░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░██                                 #
+#                        ██░░░░░░░░░░░░░░░░██████░░░░░░░░░░░░░░░░██                               #
+#                        ██░░░░░░░░░░░░░░░░██████░░░░░░░░░░░░░░░░██                               #
+#                      ██░░░░░░░░░░░░░░░░░░██████░░░░░░░░░░░░░░░░░░██                             #
+#        ░░            ██░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░██                             #
+#                        ██████████████████████████████████████████                               #
+#                                                                                                 #
+#                                                                                                 #
+#   SECURITY WARNING: Ensure your `pull_request_target` job respects the following rules:         #
+#                                                                                                 #
+# - Never write to GitHub Actions cache, as it would allow cache poisoning attacks                #
+# - Only call third-party systems that are aware the code passed to them could be untrustworthy   #
+# - Always set explicit permissions on your PR to limit the capabilities of secrets.GITHUB_TOKEN  #
+#                                                                                                 #
+###################################################################################################
+
 name: Trigger CircleCI workflow
 
+# Start with empty permissions on `pull_request_target`, then set permissions per job as needed.
+permissions: {}
+
 on:
-  # Use pull_request_target, as we don't need to check out the actual code of the fork in this script.
-  # And this is the only way to trigger the Circle CI API on forks as well.
+  # zizmor: ignore[dangerous-triggers]  # required for fork PRs; no fork code is checked out — only the Circle CI API is called
   pull_request_target:
     types: [opened, synchronize, labeled, reopened]
   push:
@@ -18,58 +52,82 @@ jobs:
   get-branch:
     if: github.repository_owner == 'storybookjs'
     runs-on: ubuntu-latest
+    permissions: {}
     steps:
       - id: get-branch
         env:
-          # Stored as environment variable to prevent script injection
           REF_NAME: ${{ github.ref_name }}
           PR_REF_NAME: ${{ github.event.pull_request.head.ref }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          IS_FORK: ${{ github.event.pull_request.head.repo.fork }}
+          EVENT_NAME: ${{ github.event_name }}
         run: |
-          if  [ "${{ github.event.pull_request.head.repo.fork }}" = "true" ]; then
-            export BRANCH=pull/${{ github.event.pull_request.number }}/head
-            elif [ "${{ github.event_name }}" = "push" ]; then
-            export BRANCH="$REF_NAME"
-            else
-            export BRANCH="$PR_REF_NAME"
+          if [ "$IS_FORK" = "true" ]; then
+            BRANCH="pull/${PR_NUMBER}/head"
+          elif [ "$EVENT_NAME" = "push" ]; then
+            BRANCH="$REF_NAME"
+          else
+            BRANCH="$PR_REF_NAME"
           fi
           echo "$BRANCH"
-          echo "branch=$BRANCH" >> $GITHUB_ENV
+          echo "branch=$BRANCH" >> "$GITHUB_OUTPUT"
     outputs:
-      branch: ${{ env.branch }}
+      branch: ${{ steps.get-branch.outputs.branch }}
 
   get-parameters:
     if: github.repository_owner == 'storybookjs'
     runs-on: ubuntu-latest
+    permissions: {}
     steps:
-      - if: github.event_name == 'pull_request_target' && (contains(github.event.pull_request.labels.*.name, 'ci:normal'))
-        run: echo "workflow=normal" >> $GITHUB_ENV
-      - if: github.event_name == 'pull_request_target' && (contains(github.event.pull_request.labels.*.name, 'ci:docs'))
-        run: echo "workflow=docs" >> $GITHUB_ENV
-      - if: github.event_name == 'push' || contains(github.event.pull_request.labels.*.name, 'ci:merged')
-        run: echo "workflow=merged" >> $GITHUB_ENV
-      - if: github.event_name == 'pull_request_target' && (contains(github.event.pull_request.labels.*.name, 'ci:daily'))
-        run: echo "workflow=daily" >> $GITHUB_ENV
+      - id: normal
+        if: github.event_name == 'pull_request_target' && (contains(github.event.pull_request.labels.*.name, 'ci:normal'))
+        run: echo "workflow=normal" >> "$GITHUB_OUTPUT"
+      - id: docs
+        if: github.event_name == 'pull_request_target' && (contains(github.event.pull_request.labels.*.name, 'ci:docs'))
+        run: echo "workflow=docs" >> "$GITHUB_OUTPUT"
+      - id: merged
+        if: github.event_name == 'push' || contains(github.event.pull_request.labels.*.name, 'ci:merged')
+        run: echo "workflow=merged" >> "$GITHUB_OUTPUT"
+      - id: daily
+        if: github.event_name == 'pull_request_target' && (contains(github.event.pull_request.labels.*.name, 'ci:daily'))
+        run: echo "workflow=daily" >> "$GITHUB_OUTPUT"
       - id: trusted-author
         env:
           EVENT_NAME: ${{ github.event_name }}
-          ASSOCIATION: ${{ github.event.pull_request.author_association }}
           USER_TYPE: ${{ github.event.pull_request.user.type }}
           USER_LOGIN: ${{ github.event.pull_request.user.login }}
+          GITHUB_API_TOKEN: ${{ secrets.STORYBOOKJS_ORG_MEMBERSHIP_TOKEN }}
         run: |
           # You can only push to `main` and `next` as a core team member, so the content is trustworthy.
           if [ "$EVENT_NAME" = "push" ]; then
-            echo "result=true" >> $GITHUB_OUTPUT
+            echo "result=true" >> "$GITHUB_OUTPUT"
           # These commits are made by the release actions, which are gated to core team members.
           elif [ "$USER_LOGIN" = "github-actions[bot]" ] && [ "$USER_TYPE" = "Bot" ]; then
-            echo "result=true" >> $GITHUB_OUTPUT
-          # Trusted members of the organization can also write to cache (core team, DX, and a few maintainers)
-          elif { [ "$ASSOCIATION" = "OWNER" ] || [ "$ASSOCIATION" = "MEMBER" ]; } && [ "$USER_TYPE" != "Bot" ]; then
-            echo "result=true" >> $GITHUB_OUTPUT
+            echo "result=true" >> "$GITHUB_OUTPUT"
           else
-            echo "result=false" >> $GITHUB_OUTPUT
+            # Explicitly trust only members of specific Storybook teams.
+            # Team slugs for: Maintainers, Core, Developer Experience.
+            TRUSTED_TEAMS="maintainers core developer-experience"
+            IS_TRUSTED=false
+
+            for TEAM in $TRUSTED_TEAMS; do
+              STATE=$(curl -fsSL \
+                -H "Authorization: Bearer $GITHUB_API_TOKEN" \
+                -H "Accept: application/vnd.github+json" \
+                -H "X-GitHub-Api-Version: 2022-11-28" \
+                "https://api.github.com/orgs/storybookjs/teams/$TEAM/memberships/$USER_LOGIN" \
+                | jq -r '.state' 2>/dev/null || true)
+
+              if [ "$STATE" = "active" ]; then
+                IS_TRUSTED=true
+                break
+              fi
+            done
+
+            echo "result=$IS_TRUSTED" >> "$GITHUB_OUTPUT"
           fi
     outputs:
-      workflow: ${{ env.workflow }}
+      workflow: ${{ steps.normal.outputs.workflow || steps.docs.outputs.workflow || steps.merged.outputs.workflow || steps.daily.outputs.workflow }}
       ghBaseBranch: ${{ github.event.pull_request.base.ref }}
       ghPrNumber: ${{ github.event.pull_request.number }}
       ghTrustedAuthor: ${{ steps.trusted-author.outputs.result }}
@@ -78,11 +136,27 @@ jobs:
     runs-on: ubuntu-latest
     needs: [get-branch, get-parameters]
     if: github.repository_owner == 'storybookjs' && needs.get-parameters.outputs.workflow != ''
+    permissions: {}
     steps:
-      - name: Trigger Normal tests
-        uses: fjogeleit/http-request-action@v1
-        with:
-          url: 'https://circleci.com/api/v2/project/gh/storybookjs/storybook/pipeline'
-          method: 'POST'
-          customHeaders: '{"Content-Type": "application/json", "Circle-Token": "${{ secrets.CIRCLE_CI_TOKEN }}"}'
-          data: '{ "branch": "${{needs.get-branch.outputs.branch}}", "parameters": ${{toJson(needs.get-parameters.outputs)}} }'
+      - name: Trigger CircleCI pipeline
+        env:
+          CIRCLE_CI_TOKEN: ${{ secrets.CIRCLE_CI_TOKEN }}
+          BRANCH: ${{ needs.get-branch.outputs.branch }}
+          WORKFLOW: ${{ needs.get-parameters.outputs.workflow }}
+          GH_BASE_BRANCH: ${{ needs.get-parameters.outputs.ghBaseBranch }}
+          GH_PR_NUMBER: ${{ needs.get-parameters.outputs.ghPrNumber }}
+          GH_TRUSTED_AUTHOR: ${{ needs.get-parameters.outputs.ghTrustedAuthor }}
+        run: |
+          PARAMETERS=$(jq -nc \
+            --arg workflow "$WORKFLOW" \
+            --arg ghBaseBranch "$GH_BASE_BRANCH" \
+            --arg ghPrNumber "$GH_PR_NUMBER" \
+            --arg ghTrustedAuthor "$GH_TRUSTED_AUTHOR" \
+            '{workflow: $workflow, ghBaseBranch: $ghBaseBranch, ghPrNumber: $ghPrNumber, ghTrustedAuthor: $ghTrustedAuthor}')
+          PAYLOAD=$(jq -nc --arg branch "$BRANCH" --argjson parameters "$PARAMETERS" \
+            '{branch: $branch, parameters: $parameters}')
+          curl -sS --fail-with-body -X POST \
+            -H "Content-Type: application/json" \
+            -H "Circle-Token: $CIRCLE_CI_TOKEN" \
+            -d "$PAYLOAD" \
+            "https://circleci.com/api/v2/project/gh/storybookjs/storybook/pipeline"

@@ -1,16 +1,28 @@
 import { fetchCrossRefs } from '../../../utils/github/cross-refs.ts';
-import { wasClosedThenReopened } from '../../../utils/github/timeline.ts';
 import type { CheckResult, PrContext } from '../types.ts';
 
 /**
- * PURPOSE: a PR that addresses the same issue as another open or merged PR is
- * not a Minimum Viable Contribution. This check runs before any LLM-judged
- * check, so we can early-abort on definitive failures without spending tokens.
+ * Check 3 — Not a duplicate.
  *
- * FAILS WHEN:
- * - There is an older open PR (lower PR number) cross-referencing the same issue
- * - There is a merged PR addressing the same issue (unless the issue was closed
- *   then reopened, indicating the merged PR wasn't sufficient)
+ * Purpose: an MVC contribution should not duplicate work already represented
+ * by an existing PR, and shouldn't address a problem that's already been
+ * solved. This check is the second deterministic guardrail (alongside Check
+ * 1) and runs before the LLM phase, so we can early-abort on definitive
+ * structural failures without spending tokens.
+ *
+ * What we verify, per linked issue:
+ *   - The linked issue is OPEN. A closed linked issue means the problem is
+ *     already resolved — the author should re-open it (or open a fresh one)
+ *     rather than push a new PR against a closed tracker.
+ *   - No OLDER open PR (lower PR number) references the same issue. PR
+ *     numbers are monotonic per repo, so "lower number = earlier" is a
+ *     reliable proxy for "first PR to address this issue". The earlier PR
+ *     wins; the newer one should comment on or contribute to it instead.
+ *
+ * Merged PRs and closed-unmerged PRs that reference the same issue are
+ * ignored — a merged fix that didn't hold is captured by the linked issue
+ * being re-opened (which makes it eligible again), and closed-unmerged PRs
+ * represent abandoned work that shouldn't block a fresh attempt.
  */
 export async function checkDuplicate(
   pr: Pick<PrContext, 'number' | 'linkedIssues'>
@@ -23,22 +35,26 @@ export async function checkDuplicate(
     };
   }
 
+  const closedIssues = pr.linkedIssues.filter((i) => i.state === 'closed');
+  if (closedIssues.length > 0) {
+    const list = closedIssues.map((i) => `${i.owner}/${i.repo}#${i.number}`).join(', ');
+    return {
+      id: 'duplicate',
+      status: 'fail',
+      evidence: `Linked issue(s) ${list} are already closed — the problem is resolved.`,
+      guidance:
+        'If this issue regressed, please re-open it (or open a fresh one) and link that.',
+    };
+  }
+
   const conflicts: string[] = [];
   for (const issue of pr.linkedIssues) {
-    const [crossRefs, reopened] = await Promise.all([
-      fetchCrossRefs(issue),
-      wasClosedThenReopened(issue),
-    ]);
-    const relevant = crossRefs.filter((ref) => ref.prNumber !== pr.number);
-    for (const ref of relevant) {
-      const isOlderOpenPr = ref.prState === 'open' && !ref.merged && ref.prNumber < pr.number;
-      if (isOlderOpenPr) {
+    const crossRefs = await fetchCrossRefs(issue);
+    for (const ref of crossRefs) {
+      if (ref.prNumber === pr.number) continue;
+      if (ref.prState === 'open' && !ref.merged && ref.prNumber < pr.number) {
         conflicts.push(
           `#${ref.prNumber} (open, predates this PR) references ${issue.owner}/${issue.repo}#${issue.number}`
-        );
-      } else if (ref.merged && !reopened) {
-        conflicts.push(
-          `#${ref.prNumber} (merged) already fixed ${issue.owner}/${issue.repo}#${issue.number}`
         );
       }
     }
@@ -50,13 +66,13 @@ export async function checkDuplicate(
       status: 'fail',
       evidence: conflicts.join('; '),
       guidance:
-        'Another PR is already addressing this issue. Consider commenting on / contributing to that PR instead.',
+        'An older open PR is already addressing this issue. Consider commenting on / contributing to that PR instead.',
     };
   }
 
   return {
     id: 'duplicate',
     status: 'pass',
-    evidence: 'No conflicting PRs found on the linked issue(s).',
+    evidence: 'No conflicting open PR found on the linked issue(s).',
   };
 }

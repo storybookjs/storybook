@@ -14,7 +14,6 @@ import { fetchCrossRefs } from '../github/cross-refs.ts';
 import { resolveLinkedIssues } from '../github/linked-issues.ts';
 import { resolveOperator } from '../github/operator.ts';
 import { fetchPr } from '../github/pr.ts';
-import { fetchIssueTimeline } from '../github/timeline.ts';
 
 const server = setupServer();
 
@@ -25,7 +24,6 @@ interface MemoizedFn {
 }
 const MEMOIZED_FNS: MemoizedFn[] = [
   fetchCrossRefs as unknown as MemoizedFn,
-  fetchIssueTimeline as unknown as MemoizedFn,
   fetchPr as unknown as MemoizedFn,
   resolveLinkedIssues as unknown as MemoizedFn,
   resolveOperator as unknown as MemoizedFn,

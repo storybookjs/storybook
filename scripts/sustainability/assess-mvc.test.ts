@@ -5,7 +5,6 @@ import {
   crossRefsHandler,
   mvcIssue,
   mvcPr,
-  timelineHandler,
 } from './assess-mvc/test-helpers/fixtures.ts';
 import { runAssessment } from './assess-mvc.ts';
 
@@ -37,10 +36,9 @@ describe('runAssessment (Phase 2: deterministic + LLM)', () => {
   beforeEach(() => {
     mockJudge.mockReset();
     mockJudgeText.mockReset();
-    // checkDuplicate hits cross-refs + timeline for each linked issue.
-    // Default to empty responses for any issue number; individual tests
-    // override when they care.
-    server.use(crossRefsHandler(), timelineHandler());
+    // checkDuplicate hits cross-refs for each linked issue. Default to empty
+    // responses; individual tests override when they care.
+    server.use(crossRefsHandler());
   });
 
   it('FAILs and early-aborts when human check fails; only synthesis runs', async () => {

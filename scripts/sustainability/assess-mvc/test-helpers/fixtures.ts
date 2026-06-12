@@ -12,7 +12,6 @@ import { http, HttpResponse } from 'msw';
 
 import type { CrossRefEvent } from '../../../utils/github/cross-refs.ts';
 import type { LinkedIssue } from '../../../utils/github/linked-issues.ts';
-import type { TimelineEvent } from '../../../utils/github/timeline.ts';
 import type { PrContext } from '../types.ts';
 
 /** Linked issue with sensible defaults. */
@@ -79,19 +78,4 @@ export function crossRefsHandler(refs: CrossRefEvent[] = []) {
   );
 }
 
-/**
- * msw handler for REST `/repos/{org}/storybook/issues/{n}/timeline`. Takes
- * our internal `TimelineEvent` ({ type, at }) and serializes as the API
- * shape ({ event, created_at }). Pass `'*'` (the default) to match any
- * issue number — useful as a catch-all in integration tests.
- */
-export function timelineHandler(
-  issueNumber: number | '*' = '*',
-  events: TimelineEvent[] = []
-) {
-  const segment = issueNumber === '*' ? ':n' : String(issueNumber);
-  return http.get(
-    `https://api.github.com/repos/storybookjs/storybook/issues/${segment}/timeline`,
-    () => HttpResponse.json(events.map((e) => ({ event: e.type, created_at: e.at })))
-  );
-}
+

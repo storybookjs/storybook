@@ -4,6 +4,7 @@ import {
   Button,
   Card,
   Collapsible,
+  DocumentWrapper,
   IconButton,
   ScrollArea,
   ToggleButton,
@@ -15,13 +16,13 @@ import {
   ChevronSmallDownIcon,
   ChevronSmallLeftIcon,
   CloseAltIcon,
+  PlusIcon,
   SearchIcon,
-  StatusNewIcon,
   StorybookIcon,
   WandIcon,
 } from '@storybook/icons';
 
-import { AIBadge } from '../components/AIBadge.tsx';
+import Markdown from 'markdown-to-jsx';
 import { CollectionGrid, type StoryInfo } from '../components/CollectionGrid.tsx';
 import { CopyButton } from '../components/CopyButton.tsx';
 import { ReviewHeader } from '../components/ReviewHeader.tsx';
@@ -143,19 +144,27 @@ const Description = styled.div(({ theme }) => ({
   alignItems: 'flex-start',
   gap: 10,
   padding: '8px 12px',
-  color: theme.base === 'dark' ? '#b07fdc' : '#723aa6',
-  background: theme.base === 'dark' ? 'rgba(114,58,166,0.15)' : '#f5f0fa',
-  boxShadow: `inset 0 0 0 1px ${theme.base === 'dark' ? 'rgba(114,58,166,0.35)' : '#e1d2ef'}`,
+  color: theme.fgColor.agentic,
+  background: theme.bgColor.agentic,
+  boxShadow: `inset 0 0 0 1px ${theme.borderColor.agentic}`,
   borderRadius: theme.appBorderRadius,
   svg: {
     flexShrink: 0,
     verticalAlign: 'top',
     marginTop: 3,
   },
-  p: {
-    margin: 0,
-  },
 }));
+
+const DescriptionContent = styled(DocumentWrapper)({
+  flex: 1,
+  minWidth: 0,
+  '& > *:first-child': {
+    marginTop: 0,
+  },
+  '& > *:last-child': {
+    marginBottom: 0,
+  },
+});
 
 // A plain clickable row, not a semantic control: making the whole header
 // toggle is just a convenience affordance for pointer users. The real
@@ -415,7 +424,7 @@ export const SummaryScreen: FC<SummaryScreenProps> = ({
                 pressed={showNewOnly}
                 onClick={() => setShowNewOnly((v) => !v)}
               >
-                <StatusNewIcon />
+                <PlusIcon />
                 {newStoryCount} new
               </ToggleButton>
             ) : null}
@@ -440,7 +449,9 @@ export const SummaryScreen: FC<SummaryScreenProps> = ({
           <List>
             <Description>
               <WandIcon />
-              <p>{state.description}</p>
+              <DescriptionContent>
+                <Markdown>{state.description}</Markdown>
+              </DescriptionContent>
             </Description>
             {visibleCollections.length === 0 ? (
               <NoResults>

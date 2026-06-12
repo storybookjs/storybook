@@ -18,9 +18,13 @@ import {
 } from 'storybook/manager-api';
 import { useNavigate } from 'storybook/internal/router';
 import type { StatusesByStoryIdAndTypeId } from 'storybook/internal/types';
-import { REVIEW_STATUS_TYPE_ID } from 'storybook/internal/types';
+import { CHANGE_DETECTION_STATUS_TYPE_ID, REVIEW_STATUS_TYPE_ID } from 'storybook/internal/types';
 
-import { fallbackStoryInfo, type StoryInfo } from './components/CollectionGrid.tsx';
+import {
+  fallbackStoryInfo,
+  type StoryChangeStatus,
+  type StoryInfo,
+} from './components/CollectionGrid.tsx';
 import {
   BASELINE_INDEX_URL,
   DEFAULT_COMPARE_MODE,
@@ -222,6 +226,18 @@ export const ReviewProvider: FC<{ children: ReactNode }> = ({ children }) => {
     if (!state) {
       return info;
     }
+    const getStoryChangeStatus = (storyId: string): StoryChangeStatus | undefined => {
+      const changeValue = Object.values(allStatuses[storyId] ?? {}).find(
+        (status) => status.typeId === CHANGE_DETECTION_STATUS_TYPE_ID
+      )?.value;
+      if (changeValue === 'status-value:new') {
+        return 'new';
+      }
+      if (changeValue === 'status-value:modified') {
+        return 'modified';
+      }
+      return undefined;
+    };
     for (const collection of state.collections) {
       for (const storyId of collection.storyIds) {
         if (storyId in info) {
@@ -230,22 +246,26 @@ export const ReviewProvider: FC<{ children: ReactNode }> = ({ children }) => {
         const direct = index?.[storyId];
         const entry =
           direct?.type === 'story' ? direct : index ? api.findLeafEntry(index, storyId) : undefined;
+        const shared = {
+          isNew: newlyAddedStoryIds.has(storyId) || undefined,
+          changeStatus: getStoryChangeStatus(storyId),
+        };
         if (entry?.type === 'story' && entry.title) {
           info[storyId] = {
             title: entry.title,
             name: entry.name,
-            isNew: newlyAddedStoryIds.has(storyId) || undefined,
+            ...shared,
           };
         } else {
           info[storyId] = {
             ...fallbackStoryInfo(storyId),
-            isNew: newlyAddedStoryIds.has(storyId) || undefined,
+            ...shared,
           };
         }
       }
     }
     return info;
-  }, [api, index, newlyAddedStoryIds, state]);
+  }, [allStatuses, api, index, newlyAddedStoryIds, state]);
 
   const collectionParam = customQueryParams?.[REVIEW_COLLECTION_QUERY_PARAM] as string | undefined;
   const collectionIndex = parseCollectionIndex(collectionParam);

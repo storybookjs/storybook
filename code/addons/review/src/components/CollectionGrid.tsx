@@ -1,7 +1,9 @@
 import React, { useCallback, useEffect, useRef, useState, type FC } from 'react';
 
-import { Badge, Button } from 'storybook/internal/components';
+import { Button, TooltipNote, WithTooltip } from 'storybook/internal/components';
 import { styled } from 'storybook/theming';
+
+import { CircleIcon, PlusIcon } from '@storybook/icons';
 
 import { Highlight } from './Highlight.tsx';
 
@@ -99,10 +101,13 @@ function forceStartPreview(task: PreviewTask): void {
   task.start();
 }
 
+export type StoryChangeStatus = 'new' | 'modified';
+
 export interface StoryInfo {
   title: string;
   name: string;
   isNew?: boolean;
+  changeStatus?: StoryChangeStatus;
 }
 
 /** Best-effort labels when the Storybook index has not resolved a story yet. */
@@ -217,6 +222,23 @@ const Label = styled.div({
   overflow: 'hidden',
 });
 
+const ChangeStatusIcon = styled.span(({ theme }) => ({
+  display: 'inline-flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  flexShrink: 0,
+  color: theme.fgColor.accent,
+  svg: {
+    width: 14,
+    height: 14,
+  },
+}));
+
+const ModifiedStatusIcon = styled(CircleIcon)({
+  width: 8,
+  height: 8,
+});
+
 const LabelComponent = styled.span({
   fontWeight: 700,
   whiteSpace: 'nowrap',
@@ -292,6 +314,21 @@ const deriveStoryInfo = (info: StoryInfo): { component: string; name: string } =
   component: info.title.split('/').pop() ?? info.title,
   name: info.name,
 });
+
+const changeStatusTooltip = (changeStatus: StoryChangeStatus) =>
+  changeStatus === 'new' ? 'New story' : 'Modified story';
+
+const StoryChangeStatusIndicator: FC<{ changeStatus: StoryChangeStatus }> = ({ changeStatus }) => (
+  <WithTooltip
+    placement="top"
+    trigger="hover"
+    tooltip={<TooltipNote note={changeStatusTooltip(changeStatus)} />}
+  >
+    <ChangeStatusIcon aria-hidden>
+      {changeStatus === 'new' ? <PlusIcon /> : <ModifiedStatusIcon />}
+    </ChangeStatusIcon>
+  </WithTooltip>
+);
 
 const getPreloadMargin = (scrollRoot: HTMLElement | null): number => {
   if (!scrollRoot) {
@@ -444,6 +481,9 @@ const StoryPreviewCell: FC<{
       </Frame>
       <ActionBar>
         <Label>
+          {info.changeStatus ? (
+            <StoryChangeStatusIndicator changeStatus={info.changeStatus} />
+          ) : null}
           <LabelComponent>
             <Highlight text={component} query={query} />
           </LabelComponent>
@@ -451,7 +491,6 @@ const StoryPreviewCell: FC<{
           <LabelStory>
             <Highlight text={name} query={query} />
           </LabelStory>
-          {info?.isNew ? <Badge status="positive">New</Badge> : null}
         </Label>
       </ActionBar>
     </Cell>

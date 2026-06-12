@@ -2,8 +2,6 @@ import React, { type FC, type ReactNode, useEffect, useRef } from 'react';
 
 import { styled } from 'storybook/theming';
 
-const NARROW_HEADER_WIDTH = 870;
-
 const Root = styled.header<{ $variant: 'page' | 'toolbar' }>(({ theme, $variant }) => ({
   containerType: 'inline-size',
   containerName: 'review-header',
@@ -18,15 +16,12 @@ const Root = styled.header<{ $variant: 'page' | 'toolbar' }>(({ theme, $variant 
 
 const TopRow = styled.div<{ $variant: 'page' | 'toolbar' }>(({ $variant }) => ({
   display: 'flex',
+  flexWrap: 'wrap',
   flexDirection: 'row',
   alignItems: 'center',
   gap: 8,
   padding: $variant === 'toolbar' ? '16px 10px 8px 10px' : '16px 16px 16px 10px',
   minHeight: 40,
-  [`@container review-header (max-width: ${NARROW_HEADER_WIDTH}px)`]: {
-    flexDirection: 'column',
-    alignItems: 'stretch',
-  },
 }));
 
 const Main = styled.div({
@@ -82,12 +77,10 @@ const Actions = styled.div({
   display: 'flex',
   flexWrap: 'wrap',
   alignItems: 'center',
+  justifyContent: 'flex-end',
   gap: 6,
-  flexShrink: 0,
-  [`@container review-header (max-width: ${NARROW_HEADER_WIDTH}px)`]: {
-    width: '100%',
-    justifyContent: 'flex-end',
-  },
+  flex: '0 1 auto',
+  marginLeft: 'auto',
 });
 
 const SecondRow = styled.div({

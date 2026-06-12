@@ -5504,6 +5504,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@preact/signals-core@npm:^1.14.2":
+  version: 1.14.2
+  resolution: "@preact/signals-core@npm:1.14.2"
+  checksum: 10c0/898e6e22a5d2a11bd3d5b109c8d9bacff0e9bc9f23c01455901b7feab8c441dc03fdd53cfd7b5f9275b0df052fcaeb8c8928f537cebb190d9e02a6f2a3ac441e
+  languageName: node
+  linkType: hard
+
 "@radix-ui/number@npm:1.1.0":
   version: 1.1.0
   resolution: "@radix-ui/number@npm:1.1.0"
@@ -8464,6 +8471,7 @@ __metadata:
     html-webpack-plugin: "npm:^5.5.0"
     magic-string: "npm:^0.30.5"
     pretty-hrtime: "npm:^1.0.3"
+    semver: "npm:^7.7.3"
     sirv: "npm:^2.0.4"
     slash: "npm:^5.0.0"
     style-loader: "npm:^4.0.0"
@@ -8499,6 +8507,7 @@ __metadata:
     globby: "npm:^14.1.0"
     jscodeshift: "npm:^0.15.1"
     leven: "npm:^4.0.0"
+    memfs: "npm:^4.11.1"
     p-limit: "npm:^7.2.0"
     picocolors: "npm:^1.1.0"
     semver: "npm:^7.7.3"
@@ -8508,6 +8517,7 @@ __metadata:
     tinyclip: "npm:^0.1.12"
     ts-dedent: "npm:^2.0.0"
     typescript: "npm:^5.8.3"
+    valibot: "npm:^1.4.0"
   bin:
     cli: ./dist/bin/index.js
   languageName: unknown
@@ -9064,10 +9074,11 @@ __metadata:
     escodegen: "npm:^2.1.0"
     expect-type: "npm:^0.15.0"
     html-tags: "npm:^3.1.0"
+    memfs: "npm:^4.11.1"
     prop-types: "npm:^15.7.2"
     react-docgen: "npm:^8.0.2"
     react-docgen-typescript: "npm:^2.2.2"
-    react-element-to-jsx-string: "npm:@7rulnik/react-element-to-jsx-string@15.0.1"
+    react-element-to-jsx-string: "patch:react-element-to-jsx-string@npm%3A@7rulnik/react-element-to-jsx-string@15.0.1#~/.yarn/patches/@7rulnik-react-element-to-jsx-string-npm-15.0.1-e53b67c4b3.patch"
     require-from-string: "npm:^2.0.2"
     ts-dedent: "npm:^2.0.0"
     type-fest: "npm:^5.6.0"
@@ -12543,9 +12554,9 @@ __metadata:
   linkType: hard
 
 "alien-signals@npm:^3.0.0":
-  version: 3.1.0
-  resolution: "alien-signals@npm:3.1.0"
-  checksum: 10c0/1d949a6a524b392ae0c3f9887f64f7e5e99fd7d9a2216b1392152c09d8fb15a7805e298aad38b37a26eb20ae0b5b6c0acc3b324bbf0a42d1056811011ecd4574
+  version: 3.2.1
+  resolution: "alien-signals@npm:3.2.1"
+  checksum: 10c0/4c4064faa208126177224d1ed6a2310687d452dec0771994e276d9af4c72e853fcb969ae4a7fcd034b1d1b9accb9500f4941178326eeea1cb8f64ec612853ef8
   languageName: node
   linkType: hard
 
@@ -15765,6 +15776,27 @@ __metadata:
   version: 4.3.1
   resolution: "deepmerge@npm:4.3.1"
   checksum: 10c0/e53481aaf1aa2c4082b5342be6b6d8ad9dfe387bc92ce197a66dea08bd4265904a087e75e464f14d1347cf2ac8afe1e4c16b266e0561cc5df29382d3c5f80044
+  languageName: node
+  linkType: hard
+
+"deepsignal@npm:^1.6.0":
+  version: 1.6.0
+  resolution: "deepsignal@npm:1.6.0"
+  peerDependencies:
+    "@preact/signals": ^1.1.4 || ^2.0.0
+    "@preact/signals-core": ^1.5.1
+    "@preact/signals-react": ^1.3.8 || ^2.0.0 || ^3.0.0
+    preact: ^10.16.0
+  peerDependenciesMeta:
+    "@preact/signals":
+      optional: true
+    "@preact/signals-core":
+      optional: true
+    "@preact/signals-react":
+      optional: true
+    preact:
+      optional: true
+  checksum: 10c0/76664442ba8b9e33d54bcbf6131e19712d4b0b9d5705213c27a09bff9fb32c7772053047f143450f158728d95de09ead31ed5fe6917a70c30b70fdd1e3c2e60b
   languageName: node
   linkType: hard
 
@@ -20337,6 +20369,13 @@ __metadata:
   bin:
     image-size: bin/image-size.js
   checksum: 10c0/655204163af06732f483a9fe7cce9dff4a29b7b2e88f5c957a5852e8143fa750f5e54b1955a2ca83de99c5220dbd680002d0d4e09140b01433520f4d5a0b1f4c
+  languageName: node
+  linkType: hard
+
+"immer@npm:11.1.8":
+  version: 11.1.8
+  resolution: "immer@npm:11.1.8"
+  checksum: 10c0/df971d8a8f6a5312c6dca4a8437e20b3185d6c9cd6830ad526c18ffd50f4037ef8db4f332b0adbcb9f8c5ee2fbe117cf0623e8554e24777105b3cc9faf866d34
   languageName: node
   linkType: hard
 
@@ -26986,6 +27025,20 @@ __metadata:
   languageName: node
   linkType: hard
 
+"react-element-to-jsx-string@patch:react-element-to-jsx-string@npm%3A@7rulnik/react-element-to-jsx-string@15.0.1#~/.yarn/patches/@7rulnik-react-element-to-jsx-string-npm-15.0.1-e53b67c4b3.patch":
+  version: 15.0.1
+  resolution: "react-element-to-jsx-string@patch:@7rulnik/react-element-to-jsx-string@npm%3A15.0.1#~/.yarn/patches/@7rulnik-react-element-to-jsx-string-npm-15.0.1-e53b67c4b3.patch::version=15.0.1&hash=a50fcc"
+  dependencies:
+    "@base2/pretty-print-object": "npm:1.0.1"
+    is-plain-object: "npm:5.0.0"
+    react-is: "npm:18.1.0"
+  peerDependencies:
+    react: ^0.14.8 || ^15.0.1 || ^16.0.0 || ^17.0.1 || ^18.0.0
+    react-dom: ^0.14.8 || ^15.0.1 || ^16.0.0 || ^17.0.1 || ^18.0.0
+  checksum: 10c0/33f06a86ad7f8ea81bcdc0dc1111f42a7030910b9c8d5deba0adbc79eaaa38618976211d928ee664142286108b7c2955a5ab7709288c86778d1077f21a8177c3
+  languageName: node
+  linkType: hard
+
 "react-fast-compare@npm:^3.0.1, react-fast-compare@npm:^3.2.0":
   version: 3.2.2
   resolution: "react-fast-compare@npm:3.2.2"
@@ -29578,6 +29631,7 @@ __metadata:
     "@happy-dom/global-registrator": "npm:^20.0.11"
     "@ngard/tiny-isequal": "npm:^1.1.0"
     "@polka/compression": "npm:^1.0.0-next.28"
+    "@preact/signals-core": "npm:^1.14.2"
     "@radix-ui/react-scroll-area": "npm:1.2.0-rc.7"
     "@radix-ui/react-slot": "npm:^1.0.2"
     "@react-aria/interactions": "npm:^3.25.5"
@@ -29591,6 +29645,7 @@ __metadata:
     "@react-stately/tabs": "npm:^3.8.5"
     "@react-types/shared": "npm:^3.32.0"
     "@rolldown/pluginutils": "npm:1.0.0-beta.18"
+    "@standard-schema/spec": "npm:^1.1.0"
     "@storybook/global": "npm:^5.0.0"
     "@storybook/icons": "npm:^2.0.2"
     "@tanstack/react-virtual": "npm:^3.3.0"
@@ -29631,6 +29686,7 @@ __metadata:
     copy-to-clipboard: "npm:^3.3.1"
     cross-spawn: "npm:^7.0.6"
     deep-object-diff: "npm:^1.1.0"
+    deepsignal: "npm:^1.6.0"
     dequal: "npm:^2.0.2"
     detect-indent: "npm:^7.0.1"
     detect-port: "npm:^1.6.1"
@@ -29651,6 +29707,7 @@ __metadata:
     globby: "npm:^14.1.0"
     hast-util-to-estree: "npm:^3.0.0"
     host-validation-middleware: "npm:^0.1.2"
+    immer: "npm:11.1.8"
     jiti: "npm:^2.6.1"
     js-yaml: "npm:^4.1.0"
     jsdoc-type-pratt-parser: "npm:^4.0.0"
@@ -29709,6 +29766,7 @@ __metadata:
     unique-string: "npm:^3.0.0"
     use-resize-observer: "npm:^9.1.0"
     use-sync-external-store: "npm:^1.5.0"
+    valibot: "npm:^1.4.0"
     watchpack: "npm:^2.5.0"
     wrap-ansi: "npm:^9.0.2"
     ws: "npm:^8.18.0"
@@ -31803,15 +31861,15 @@ __metadata:
   languageName: node
   linkType: hard
 
-"valibot@npm:^1.1.0":
-  version: 1.3.1
-  resolution: "valibot@npm:1.3.1"
+"valibot@npm:^1.1.0, valibot@npm:^1.4.0":
+  version: 1.4.0
+  resolution: "valibot@npm:1.4.0"
   peerDependencies:
     typescript: ">=5"
   peerDependenciesMeta:
     typescript:
       optional: true
-  checksum: 10c0/e20a4097fa726f57530da1e64558af47ddd2303129c77978fe93c522c66cf4c79540ea3af864523589283ea25e347c3d65b8044fa4913376208dde576b9f6382
+  checksum: 10c0/9eb9f02c1a4d685e0a76c312ae898b0012c2bdea24f75968c133fcf6019cde80c4d1d7e41f52e9a1189dde76a923baee05506fb412a0811d8d482d597bcfb4b9
   languageName: node
   linkType: hard
 

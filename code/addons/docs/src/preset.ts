@@ -225,3 +225,4 @@ const optimizeViteDeps = [
 
 export { webpackX as webpack, docsX as docs, optimizeViteDeps };
 export { manifests as experimental_manifests } from './manifest';
+export { experimental_docgenProvider } from './docgen';

@@ -23,6 +23,7 @@ import { compile } from './tasks/compile.ts';
 import { dev } from './tasks/dev.ts';
 import { e2eTestsBuild } from './tasks/e2e-tests-build.ts';
 import { e2eTestsDev } from './tasks/e2e-tests-dev.ts';
+import { e2eTestsInternal } from './tasks/e2e-tests-internal.ts';
 import { generate } from './tasks/generate.ts';
 import { install } from './tasks/install.ts';
 import { publish } from './tasks/publish.ts';
@@ -100,13 +101,22 @@ export const tasks = {
   chromatic,
   'e2e-tests': e2eTestsBuild,
   'e2e-tests-dev': e2eTestsDev,
+  'e2e-tests-internal': e2eTestsInternal,
   bench,
   'vitest-integration': vitestTests,
 };
 export type TaskKey = keyof typeof tasks;
 
 function isSandboxTask(taskKey: TaskKey) {
-  return !['install', 'compile', 'publish', 'run-registry', 'check', 'sync-docs'].includes(taskKey);
+  return ![
+    'install',
+    'compile',
+    'publish',
+    'run-registry',
+    'check',
+    'sync-docs',
+    'e2e-tests-internal',
+  ].includes(taskKey);
 }
 
 export const options = createOptions({

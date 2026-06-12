@@ -698,6 +698,16 @@ function serializeType(
       (t) => !(t.getFlags() & typescript.TypeFlags.Undefined)
     );
 
+    // `boolean` is modeled as the union `true | false`. For optional props the implicit
+    // `| undefined` keeps this a union, so `typeToString` would yield `boolean | undefined`
+    // (mapped to `other` downstream). Collapse the boolean-literal pair back to `boolean`.
+    const booleanLiterals = nonUndefinedTypes.filter(
+      (t) => t.getFlags() & typescript.TypeFlags.BooleanLiteral
+    );
+    if (booleanLiterals.length === 2 && booleanLiterals.length === nonUndefinedTypes.length) {
+      return { name: 'boolean' };
+    }
+
     const literalMembers = nonUndefinedTypes.filter(isLiteralType);
 
     if (literalMembers.length > 0 && literalMembers.length === nonUndefinedTypes.length) {

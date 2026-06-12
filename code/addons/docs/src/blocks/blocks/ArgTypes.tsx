@@ -15,10 +15,10 @@ import {
   extractSubcomponentArgTypes,
   useDocgenServiceRows,
 } from './argTypesShared';
-import { DocsContext } from './DocsContext';
-import { useOf } from './useOf';
-import { getComponentName } from './utils';
-import { withMdxComponentOverride } from './with-mdx-component-override';
+import { DocsContext } from './DocsContext.ts';
+import { useOf } from './useOf.ts';
+import { getComponentName } from './utils.ts';
+import { withMdxComponentOverride } from './with-mdx-component-override.tsx';
 
 type ArgTypesParameters = {
   include?: PropDescriptor;

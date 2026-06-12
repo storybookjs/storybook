@@ -55,6 +55,7 @@ const serviceManagerContext: any = {
   state: {
     ...managerContext.state,
     path: serviceStoryData.id,
+    previewInitialized: true,
   },
   api: {
     ...managerContext.api,

@@ -155,11 +155,15 @@ function ServiceControlsPanel({
   const api = useStorybookApi();
   const storyData = api.getCurrentStoryData();
   const [, , , initialArgs] = useArgs();
+  const { refs, previewInitialized } = useStorybookState();
   // Custom argTypes (project + meta + story, already inferred) for the selected story arrive over
   // the channel via STORY_PREPARED — the same source the legacy panel reads. The service only needs
   // to contribute server-extracted component props.
   const customArgTypes = useArgTypes();
   const id = storyData.id.split('--')[0];
+  const isPreviewInitialized = storyData?.refId
+    ? !!refs[storyData.refId]?.previewInitialized
+    : previewInitialized;
   // `useServiceQuery` mis-infers its types for services with more than one query (it unifies across
   // queries, breaking both the argument and the result). Cast until the hook's generics are fixed.
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -179,11 +183,11 @@ function ServiceControlsPanel({
             initialArgs,
             customArgTypes,
           })
-        : {},
+        : customArgTypes,
     [docgenPayload, initialArgs, storyData.id, storyData.parameters, customArgTypes]
   );
 
-  return <ControlsPanelTable {...props} rows={rows} isLoading={!docgenPayload} />;
+  return <ControlsPanelTable {...props} rows={rows} isLoading={!isPreviewInitialized} />;
 }
 
 export const ControlsPanel = ({ docgenService, ...props }: ControlsPanelProps) => {

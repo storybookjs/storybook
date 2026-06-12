@@ -4,8 +4,8 @@ import ansiRegex from 'ansi-regex';
 import type { LogResult } from 'simple-git';
 
 import { run } from '../label-patches.ts';
+import * as associatedPrs_ from '../../utils/github/associated-prs.ts';
 import * as labels_ from '../../utils/github/labels.ts';
-import * as githubInfo_ from '../utils/get-github-info.ts';
 import * as gitClient_ from '../utils/git-client.ts';
 import * as unpicked_ from '../utils/get-unpicked-prs.ts';
 
@@ -15,7 +15,7 @@ const { mockGraphql, mockRest } = vi.hoisted(() => ({
 }));
 
 vi.mock('uuid');
-vi.mock('../utils/get-github-info');
+vi.mock('../../utils/github/associated-prs');
 vi.mock('../utils/get-unpicked-prs');
 vi.mock('../utils/git-client');
 vi.mock('../../utils/github/labels');
@@ -27,7 +27,7 @@ vi.mock('../../utils/github/client', () => ({
 const gitClient = vi.mocked(gitClient_, true);
 const labels = vi.mocked(labels_, true);
 const unpicked = vi.mocked(unpicked_, true);
-const githubInfo = vi.mocked(githubInfo_, true);
+const associatedPrs = vi.mocked(associatedPrs_, true);
 
 const remoteMock = [
   {
@@ -66,19 +66,20 @@ const gitLogMock: LogResult = {
   total: 1,
 };
 
-const pullInfoMock = {
-  user: 'JReinhold',
-  id: 'pr_id',
-  pull: 55,
+const commitWithPrMock = {
   commit: '930b47f011f750c44a1782267d698ccdd3c04da3',
-  title: 'Legal: Fix license',
-  labels: ['documentation', 'patch:yes', 'patch:done'],
-  state: 'MERGED',
-  links: {
-    commit:
-      '[`930b47f011f750c44a1782267d698ccdd3c04da3`](https://github.com/storybookjs/storybook/commit/930b47f011f750c44a1782267d698ccdd3c04da3)',
-    pull: '[#55](https://github.com/storybookjs/storybook/pull/55)',
-    user: '[@JReinhold](https://github.com/JReinhold)',
+  commitUrl:
+    'https://github.com/storybookjs/storybook/commit/930b47f011f750c44a1782267d698ccdd3c04da3',
+  commitAuthor: { login: 'JReinhold', url: 'https://github.com/JReinhold' },
+  pr: {
+    id: 'pr_id',
+    number: 55,
+    title: 'Legal: Fix license',
+    state: 'MERGED',
+    url: 'https://github.com/storybookjs/storybook/pull/55',
+    mergedAt: '2025-01-01T00:00:00Z',
+    author: { login: 'JReinhold', url: 'https://github.com/JReinhold' },
+    labels: ['documentation', 'patch:yes', 'patch:done'],
   },
 };
 
@@ -86,7 +87,7 @@ beforeEach(() => {
   gitClient.getLatestTag.mockResolvedValue('v7.2.1');
   gitClient.git.log.mockResolvedValue(gitLogMock);
   gitClient.git.getRemotes.mockResolvedValue(remoteMock);
-  githubInfo.getPullInfoFromCommit.mockResolvedValue(pullInfoMock);
+  associatedPrs.getLatestMergedPrsFromCommits.mockResolvedValue([commitWithPrMock]);
   labels.getLabelIds.mockResolvedValue({ 'patch:done': 'pick-id' });
   unpicked.getUnpickedPRs.mockResolvedValue([
     {

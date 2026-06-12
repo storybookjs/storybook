@@ -34,14 +34,15 @@ export type AiCommandOutcome =
 export type AiToolRunResult = { exitCode: 0 | 1; output: string; outcome: AiCommandOutcome };
 
 /**
- * The server executed the command and reported an error result. The result text is deliberately
- * not part of the message: it is arbitrary tool output (often containing project paths), while
- * this error feeds the telemetry error path, which reports the message hash by default and the
- * sanitized message when crash reports are enabled.
+ * The server executed the command and reported an error result. The message is deliberately
+ * constant — the result text is arbitrary tool output (often containing project paths), and a
+ * constant message keeps the telemetry error hash stable and aggregatable. The tool's error text
+ * travels as `cause` instead, which the standard error path only uploads — path-sanitized — when
+ * the user opted into crash reports.
  */
 class McpToolResultError extends Error {
-  constructor() {
-    super('The Storybook MCP server returned an error result');
+  constructor(options?: ErrorOptions) {
+    super('The Storybook MCP server returned an error result', options);
     this.name = 'McpToolResultError';
   }
 }
@@ -116,13 +117,18 @@ export async function runAiTool(
       }
     }
     const siblings = matches.filter((r) => r !== record);
+    const toolOutput = formatToolResult(result);
     const sections = [
       ...(siblings.length > 0 ? [formatMultiInstanceWarning(record, siblings)] : []),
-      formatToolResult(result),
+      toolOutput,
     ];
     const output = sections.join('\n\n');
     if (result.isError) {
-      return { exitCode: 1, output, outcome: { kind: 'error', error: new McpToolResultError() } };
+      return {
+        exitCode: 1,
+        output,
+        outcome: { kind: 'error', error: new McpToolResultError({ cause: toolOutput }) },
+      };
     }
     return { exitCode: 0, output, outcome: { kind: 'success' } };
   } catch (error) {

@@ -100,10 +100,14 @@ const REQUEST_HEADERS = {
  * Send a minimal MCP `initialize` request carrying {@link MCP_CLIENT_INFO} and return the session
  * id the transport assigned, or null when the handshake fails in any way.
  *
- * Its only purpose is telemetry segmentation: tmcp's HttpTransport stores the clientInfo keyed by
- * session id, and attaches it to later requests carrying that id in the `Mcp-Session-Id` header.
- * The handshake is strictly best-effort — when it fails, the actual command request proceeds
- * without a session and keeps working, so error reporting stays anchored on the real call.
+ * Its only purpose is telemetry segmentation, and the flow is MCP Streamable HTTP spec behavior,
+ * not a tmcp implementation detail: the server assigns a session id during initialization,
+ * returns it in the `Mcp-Session-Id` response header, and associates the session's clientInfo
+ * with later requests echoing that header. Any spec-compliant server (e.g. the official MCP SDK
+ * transports) behaves the same, so addon-mcp can move off tmcp without breaking this client.
+ * The handshake is strictly best-effort — when it fails (or a future server ignores sessions),
+ * the actual command request proceeds without a session and keeps working; only the telemetry
+ * segmentation is lost, and error reporting stays anchored on the real call.
  *
  * Sessions are deliberately one-shot: each JSON-RPC request gets its own handshake and the session
  * is never reused or closed. A CLI invocation makes one request on the happy path (two on error

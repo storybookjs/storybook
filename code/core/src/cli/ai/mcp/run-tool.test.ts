@@ -189,6 +189,11 @@ describe('runAiTool', () => {
       output: 'tests failed',
       outcome: { kind: 'error', error: expect.objectContaining({ name: 'McpToolResultError' }) },
     });
+    // Constant message keeps the telemetry error hash aggregatable; the tool's error text only
+    // travels as `cause` (uploaded path-sanitized, and only with crash-reports consent).
+    const error = (result.outcome as { error: Error }).error;
+    expect(error.message).toBe('The Storybook MCP server returned an error result');
+    expect(error.cause).toBe('tests failed');
   });
 
   it('prints the original JSON-RPC error when the tool exists', async () => {

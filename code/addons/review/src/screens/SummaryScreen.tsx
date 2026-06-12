@@ -17,6 +17,7 @@ import {
   CloseAltIcon,
   SearchIcon,
   StatusNewIcon,
+  StorybookIcon,
   WandIcon,
 } from '@storybook/icons';
 
@@ -136,6 +137,25 @@ const List = styled.div({
     flexShrink: 0,
   },
 });
+
+const Description = styled.div(({ theme }) => ({
+  display: 'flex',
+  alignItems: 'flex-start',
+  gap: 10,
+  padding: '8px 12px',
+  color: theme.base === 'dark' ? '#b07fdc' : '#723aa6',
+  background: theme.base === 'dark' ? 'rgba(114,58,166,0.15)' : '#f5f0fa',
+  boxShadow: `inset 0 0 0 1px ${theme.base === 'dark' ? 'rgba(114,58,166,0.35)' : '#e1d2ef'}`,
+  borderRadius: theme.appBorderRadius,
+  svg: {
+    flexShrink: 0,
+    verticalAlign: 'top',
+    marginTop: 3,
+  },
+  p: {
+    margin: 0,
+  },
+}));
 
 // A plain clickable row, not a semantic control: making the whole header
 // toggle is just a convenience affordance for pointer users. The real
@@ -365,18 +385,15 @@ export const SummaryScreen: FC<SummaryScreenProps> = ({
               {...{ [REVIEW_SUMMARY_BACK_ATTR]: '' }}
             >
               <ChevronSmallLeftIcon />
+              <StorybookIcon />
             </a>
           </Button>
         }
         title={state.title}
         subtitle={
           <>
-            <AIBadge>
-              <WandIcon />
-              AI-curated
-            </AIBadge>
             <span>
-              {storyCount} {storyCount === 1 ? 'story' : 'stories'} for quick review
+              Showing {storyCount} {storyCount === 1 ? 'story' : 'stories'} for quick review
             </span>
             {createdAgo ? (
               <>
@@ -421,6 +438,10 @@ export const SummaryScreen: FC<SummaryScreenProps> = ({
       <ListScroll>
         <ScrollArea vertical>
           <List>
+            <Description>
+              <WandIcon />
+              <p>{state.description}</p>
+            </Description>
             {visibleCollections.length === 0 ? (
               <NoResults>
                 {showNewOnly && !search.trim()

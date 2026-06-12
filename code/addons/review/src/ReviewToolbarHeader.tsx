@@ -6,7 +6,6 @@ import { styled } from 'storybook/theming';
 import { ChevronSmallLeftIcon, ChevronSmallRightIcon, WandIcon } from '@storybook/icons';
 
 import { ReviewCollectionPicker } from './ReviewCollectionPicker.tsx';
-import { AIBadge } from './components/AIBadge.tsx';
 import { ReviewHeader } from './components/ReviewHeader.tsx';
 import { StaleBanner } from './components/StaleBanner.tsx';
 import {
@@ -36,7 +35,7 @@ const ProgressBar = styled.div(({ theme }) => ({
   width: '100%',
   height: 3,
   overflow: 'hidden',
-  background: theme.background.hoverable,
+  background: theme.background.app,
 }));
 
 const ProgressFill = styled.div(({ theme }) => ({
@@ -165,19 +164,12 @@ export const ReviewToolbarHeader: FC = () => {
             <Button variant="ghost" size="small" padding="small" ariaLabel="Back to review" asChild>
               <a href={buildReviewChangesSummaryHref()}>
                 <ChevronSmallLeftIcon />
+                <WandIcon />
               </a>
             </Button>
           }
           title={collectionTitle}
-          subtitle={
-            <>
-              <AIBadge>
-                <WandIcon />
-                AI-curated
-              </AIBadge>
-              {subtitle}
-            </>
-          }
+          subtitle={subtitle}
           actions={
             <>
               {counter}

@@ -143,7 +143,7 @@ const Description = styled.div(({ theme }) => ({
   display: 'flex',
   alignItems: 'flex-start',
   gap: 10,
-  padding: '8px 12px',
+  padding: '10px 12px',
   color: theme.fgColor.agentic,
   background: theme.bgColor.agentic,
   boxShadow: `inset 0 0 0 1px ${theme.borderColor.agentic}`,
@@ -155,16 +155,28 @@ const Description = styled.div(({ theme }) => ({
   },
 }));
 
-const DescriptionContent = styled(DocumentWrapper)({
+const DescriptionContent = styled(DocumentWrapper)(({ theme }) => ({
   flex: 1,
   minWidth: 0,
+  textWrap: 'balance',
   '& > *:first-child': {
     marginTop: 0,
   },
   '& > *:last-child': {
     marginBottom: 0,
   },
-});
+  code: {
+    color: theme.fgColor.agentic,
+    fontSize: theme.typography.size.s2 - 1,
+    lineHeight: '1.5em',
+    margin: 0,
+    padding: '0 4px',
+    background: theme.background.content,
+    border: 'none',
+    boxShadow: `inset 0 0 0 1px ${theme.borderColor.agentic}`,
+    borderRadius: theme.appBorderRadius,
+  },
+}));
 
 // A plain clickable row, not a semantic control: making the whole header
 // toggle is just a convenience affordance for pointer users. The real

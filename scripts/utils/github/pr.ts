@@ -26,7 +26,7 @@ export interface PrFile {
 /**
  * The github-side shape of a fetched PR. Downstream tools compose this with
  * domain-specific data (e.g., assess-mvc adds `linkedIssues` and
- * `brokenLinkRefs`) to build a richer context.
+ * `otherIssues`, `otherPrs`, `unresolved`) to build a richer context.
  */
 export interface PrSnapshot {
   owner: string;

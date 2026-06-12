@@ -36,7 +36,7 @@ const pr = (overrides: Partial<PrContext> = {}): PrContext => ({
   labels: [],
   files: [],
   linkedIssues: [],
-  brokenLinkRefs: [],
+  otherIssues: [], otherPrs: [], unresolved: [],
   ...overrides,
 });
 
@@ -107,7 +107,7 @@ describe('checkRealProblem', () => {
       reasoning: 'ok',
     });
     const r = await checkRealProblem(
-      pr({ linkedIssues: [issue()], brokenLinkRefs: ['storybookjs/storybook#999'] })
+      pr({ linkedIssues: [issue()], unresolved: ['storybookjs/storybook#999'] })
     );
     expect(r.status).toBe('warn');
     expect(r.evidence).toContain('#999');

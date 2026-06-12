@@ -81,12 +81,12 @@ export async function checkRealProblem(pr: PrContext): Promise<CheckResult> {
     };
   }
 
-  const hasBrokenRefs = pr.brokenLinkRefs.length > 0;
+  const hasUnresolved = pr.unresolved.length > 0;
   return {
     id: 'real-problem',
-    status: hasBrokenRefs ? 'warn' : 'pass',
-    evidence: hasBrokenRefs
-      ? `Matches linked issue (${judgment.category}): ${judgment.reasoning} (warn: broken refs ${pr.brokenLinkRefs.join(', ')})`
+    status: hasUnresolved ? 'warn' : 'pass',
+    evidence: hasUnresolved
+      ? `Matches linked issue (${judgment.category}): ${judgment.reasoning} (warn: unresolved refs ${pr.unresolved.join(', ')})`
       : `Matches linked issue (${judgment.category}): ${judgment.reasoning}`,
   };
 }

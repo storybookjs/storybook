@@ -24,7 +24,7 @@ const pr = (overrides: Partial<PrContext> = {}): PrContext => ({
   labels: [],
   files: [{ path: 'a.ts', additions: 1, deletions: 0, status: 'modified' }],
   linkedIssues: [],
-  brokenLinkRefs: [],
+  otherIssues: [], otherPrs: [], unresolved: [],
   ...overrides,
 });
 

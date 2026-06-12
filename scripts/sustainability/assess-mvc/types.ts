@@ -23,13 +23,23 @@ export interface CheckResult {
 export type Verdict = 'pass' | 'fail';
 
 /**
- * PR + linked-issue context that every check consumes. Composed from the
- * github-side `PrSnapshot` plus assess-mvc-specific fields (`linkedIssues`,
- * `brokenLinkRefs`) resolved by `resolveLinkedIssues`.
+ * PR + linked-references context that every check consumes. Composed from
+ * the github-side `PrSnapshot` plus the four-bucket result of
+ * `resolveLinkedIssues`:
+ *
+ *   - `linkedIssues` — strongest signal (GitHub's `closingIssuesReferences`).
+ *   - `otherIssues` — body-found refs that resolve to real issues but aren't
+ *     in the API list.
+ *   - `otherPrs` — body-found refs that turn out to be other PRs (mentions
+ *     for context; never drive the duplicate / real-problem checks).
+ *   - `unresolved` — body-found numbers that don't exist as either issue
+ *     or PR. Debug info; doesn't fail the run.
  */
 export interface PrContext extends PrSnapshot {
   linkedIssues: LinkedIssue[];
-  brokenLinkRefs: string[];
+  otherIssues: LinkedIssue[];
+  otherPrs: LinkedIssue[];
+  unresolved: string[];
 }
 
 export interface AssessmentResult {

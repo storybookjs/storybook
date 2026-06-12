@@ -314,23 +314,42 @@ async function main(): Promise<void> {
   skipSpinner.stop(`Eligible for assessment${flagNote}`);
 
   const issuesSpinner = p.spinner();
-  issuesSpinner.start('Resolving linked issues');
-  const { issues, broken } = await resolveLinkedIssues({
+  issuesSpinner.start('Resolving linked references');
+  const { linkedIssues, otherIssues, otherPrs, unresolved } = await resolveLinkedIssues({
     ...prId,
     body: partial.body,
   });
-  const brokenSuffix = broken.length > 0 ? `, ${broken.length} broken ref(s)` : '';
-  issuesSpinner.stop(`Resolved ${issues.length} issue(s)${brokenSuffix}`);
-  for (const issue of issues) {
+  issuesSpinner.stop(
+    `Linked: ${linkedIssues.length} · Other issues: ${otherIssues.length} · Other PRs: ${otherPrs.length} · Unresolved: ${unresolved.length}`
+  );
+
+  const renderRef = (issue: { owner: string; repo: string; number: number; url: string; state: 'open' | 'closed'; title: string; sources?: readonly string[] }) => {
     const src = issue.sources?.join('+') ?? 'unknown';
     const ref = pc.cyan(`${issue.owner}/${issue.repo}#${issue.number}`);
     const stateTag = issue.state === 'open' ? pc.green(issue.state) : pc.dim(issue.state);
-    p.log.info(`${ref} ${pc.dim(`[${src}]`)} · ${stateTag} · ${issue.title}`);
+    return `${ref} ${pc.dim(`[${src}]`)} · ${stateTag} · ${issue.title}`;
+  };
+
+  for (const issue of linkedIssues) {
+    p.log.info(`${pc.bold('linked')} · ${renderRef(issue)}`);
   }
-  for (const ref of broken) {
-    p.log.warn(`Broken ref: ${ref}`);
+  for (const issue of otherIssues) {
+    p.log.info(`${pc.dim('other issue')} · ${renderRef(issue)}`);
   }
-  const pr: PrContext = { ...partial, linkedIssues: issues, brokenLinkRefs: broken };
+  for (const issue of otherPrs) {
+    p.log.info(`${pc.dim('other PR')} · ${renderRef(issue)}`);
+  }
+  for (const ref of unresolved) {
+    p.log.warn(`Unresolved ref: ${pc.dim(ref)}`);
+  }
+
+  const pr: PrContext = {
+    ...partial,
+    linkedIssues,
+    otherIssues,
+    otherPrs,
+    unresolved,
+  };
 
   const detSpinner = p.spinner();
   detSpinner.start('Deterministic checks (1 human-monitored, 3 duplicate)');

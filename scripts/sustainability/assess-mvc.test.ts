@@ -39,7 +39,7 @@ const basePr: PrContext = {
       labels: [],
     },
   ],
-  brokenLinkRefs: [],
+  otherIssues: [], otherPrs: [], unresolved: [],
 };
 
 // Unified shape satisfies every check's schema (zod's default `.strip()`

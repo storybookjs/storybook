@@ -40,11 +40,11 @@ describe('module-graph open service', () => {
     });
   });
 
-  describe('applyGraphSnapshot command', () => {
+  describe('_applyGraphSnapshot command', () => {
     it('marks the service ready and stores the reverse index without advancing the revision', async () => {
       const runtime = registerBareModuleGraph();
 
-      await runtime.commands.applyGraphSnapshot({
+      await runtime.commands._applyGraphSnapshot({
         storiesByFile: {
           './src/Button.tsx': { './src/Button.stories.tsx': 1 },
         },
@@ -65,7 +65,7 @@ describe('module-graph open service', () => {
     it('seeds every known story to revision 0 for scoped reads', async () => {
       const runtime = registerBareModuleGraph();
 
-      await runtime.commands.applyGraphSnapshot({
+      await runtime.commands._applyGraphSnapshot({
         storiesByFile: {
           './src/Button.tsx': { './src/Button.stories.tsx': 1 },
           './src/Card.tsx': { './src/Card.stories.tsx': 1 },
@@ -81,10 +81,10 @@ describe('module-graph open service', () => {
     it('replaces (not merges) the reverse index on a subsequent snapshot', async () => {
       const runtime = registerBareModuleGraph();
 
-      await runtime.commands.applyGraphSnapshot({
+      await runtime.commands._applyGraphSnapshot({
         storiesByFile: { './src/A.tsx': { './src/A.stories.tsx': 0 } },
       });
-      await runtime.commands.applyGraphSnapshot({
+      await runtime.commands._applyGraphSnapshot({
         storiesByFile: { './src/B.tsx': { './src/B.stories.tsx': 0 } },
       });
 
@@ -100,7 +100,7 @@ describe('module-graph open service', () => {
     it('marks the graph failed with a serializable error', async () => {
       const runtime = registerBareModuleGraph();
 
-      await runtime.commands.setStatus({
+      await runtime.commands._setStatus({
         value: 'error',
         error: { message: 'graph build blew up', name: 'ModuleGraphFailureError' },
       });
@@ -114,7 +114,7 @@ describe('module-graph open service', () => {
     it('marks the graph unavailable with a reason and optional error', async () => {
       const runtime = registerBareModuleGraph();
 
-      await runtime.commands.setStatus({
+      await runtime.commands._setStatus({
         value: 'unavailable',
         reason: 'builder does not support change detection',
         error: { message: 'adapter missing' },
@@ -131,7 +131,7 @@ describe('module-graph open service', () => {
   describe('getStoriesForFiles query', () => {
     it('returns one result array per input file, positionally', async () => {
       const runtime = registerBareModuleGraph();
-      await runtime.commands.applyGraphSnapshot({
+      await runtime.commands._applyGraphSnapshot({
         storiesByFile: {
           './src/Button.tsx': { './src/Button.stories.tsx': 1 },
           './src/Card.tsx': {
@@ -157,7 +157,7 @@ describe('module-graph open service', () => {
 
     it('accepts absolute, relative-with-dot, and relative-without-dot input paths', async () => {
       const runtime = registerBareModuleGraph();
-      await runtime.commands.applyGraphSnapshot({
+      await runtime.commands._applyGraphSnapshot({
         storiesByFile: { './src/Button.tsx': { './src/Button.stories.tsx': 1 } },
       });
 
@@ -174,7 +174,7 @@ describe('module-graph open service', () => {
 
     it('accepts Windows-style absolute and relative input paths', async () => {
       const runtime = registerBareModuleGraph('C:\\repo');
-      await runtime.commands.applyGraphSnapshot({
+      await runtime.commands._applyGraphSnapshot({
         storiesByFile: { './src/Button.tsx': { './src/Button.stories.tsx': 1 } },
       });
 
@@ -195,14 +195,14 @@ describe('module-graph open service', () => {
     });
   });
 
-  describe('applyGraphUpdate command', () => {
+  describe('_applyGraphUpdate command', () => {
     it('replaces the reverse index, bumps the revision, and records latest changed stories', async () => {
       const runtime = registerBareModuleGraph();
-      await runtime.commands.applyGraphSnapshot({
+      await runtime.commands._applyGraphSnapshot({
         storiesByFile: { './src/Button.tsx': { './src/Button.stories.tsx': 1 } },
       });
 
-      await runtime.commands.applyGraphUpdate({
+      await runtime.commands._applyGraphUpdate({
         storiesByFile: {
           './src/Button.tsx': { './src/Button.stories.tsx': 1 },
           './src/Icon.tsx': { './src/Button.stories.tsx': 2 },
@@ -223,14 +223,14 @@ describe('module-graph open service', () => {
 
     it('stamps each bumped story with the new revision and leaves untouched stories at 0', async () => {
       const runtime = registerBareModuleGraph();
-      await runtime.commands.applyGraphSnapshot({
+      await runtime.commands._applyGraphSnapshot({
         storiesByFile: {
           './src/Button.tsx': { './src/Button.stories.tsx': 1 },
           './src/Card.tsx': { './src/Card.stories.tsx': 1 },
         },
       });
 
-      await runtime.commands.applyGraphUpdate({
+      await runtime.commands._applyGraphUpdate({
         storiesByFile: {
           './src/Button.tsx': { './src/Button.stories.tsx': 1 },
           './src/Card.tsx': { './src/Card.stories.tsx': 1 },
@@ -248,11 +248,11 @@ describe('module-graph open service', () => {
     it('replaces latest story changes with the newest revision payload', async () => {
       const runtime = registerBareModuleGraph();
 
-      await runtime.commands.applyGraphUpdate({
+      await runtime.commands._applyGraphUpdate({
         storiesByFile: {},
         bumpedStoryFiles: ['./a.stories.tsx', './b.stories.tsx'],
       });
-      await runtime.commands.applyGraphUpdate({
+      await runtime.commands._applyGraphUpdate({
         storiesByFile: {},
         bumpedStoryFiles: ['./a.stories.tsx'],
       });
@@ -266,11 +266,11 @@ describe('module-graph open service', () => {
 
     it('does not advance the revision for an out-of-graph change (no bumped stories)', async () => {
       const runtime = registerBareModuleGraph();
-      await runtime.commands.applyGraphSnapshot({
+      await runtime.commands._applyGraphSnapshot({
         storiesByFile: { './src/Button.tsx': { './src/Button.stories.tsx': 1 } },
       });
 
-      await runtime.commands.applyGraphUpdate({
+      await runtime.commands._applyGraphUpdate({
         storiesByFile: { './src/Button.tsx': { './src/Button.stories.tsx': 1 } },
         bumpedStoryFiles: [],
       });
@@ -292,7 +292,7 @@ describe('module-graph open service', () => {
         storyFiles: [],
       });
 
-      await runtime.commands.applyGraphUpdate({
+      await runtime.commands._applyGraphUpdate({
         storiesByFile: {},
         bumpedStoryFiles: ['./src/Button.stories.tsx', './src/Card.stories.tsx'],
       });
@@ -306,11 +306,11 @@ describe('module-graph open service', () => {
     it('replaces the previous change set when a newer update bumps different stories', async () => {
       const runtime = registerBareModuleGraph();
 
-      await runtime.commands.applyGraphUpdate({
+      await runtime.commands._applyGraphUpdate({
         storiesByFile: {},
         bumpedStoryFiles: ['./a.stories.tsx', './b.stories.tsx'],
       });
-      await runtime.commands.applyGraphUpdate({
+      await runtime.commands._applyGraphUpdate({
         storiesByFile: {},
         bumpedStoryFiles: ['./c.stories.tsx'],
       });
@@ -324,11 +324,11 @@ describe('module-graph open service', () => {
     it('preserves the prior change set when an update bumps no stories', async () => {
       const runtime = registerBareModuleGraph();
 
-      await runtime.commands.applyGraphUpdate({
+      await runtime.commands._applyGraphUpdate({
         storiesByFile: {},
         bumpedStoryFiles: ['./src/Button.stories.tsx'],
       });
-      await runtime.commands.applyGraphUpdate({
+      await runtime.commands._applyGraphUpdate({
         storiesByFile: { './src/Button.tsx': { './src/Button.stories.tsx': 1 } },
         bumpedStoryFiles: [],
       });
@@ -342,11 +342,11 @@ describe('module-graph open service', () => {
     it('clears story files after a snapshot without resetting the graph revision', async () => {
       const runtime = registerBareModuleGraph();
 
-      await runtime.commands.applyGraphUpdate({
+      await runtime.commands._applyGraphUpdate({
         storiesByFile: {},
         bumpedStoryFiles: ['./src/Button.stories.tsx'],
       });
-      await runtime.commands.applyGraphSnapshot({
+      await runtime.commands._applyGraphSnapshot({
         storiesByFile: { './src/Button.tsx': { './src/Button.stories.tsx': 1 } },
       });
 
@@ -356,14 +356,14 @@ describe('module-graph open service', () => {
       });
     });
 
-    it('clears story files but keeps the current revision after bumpGraphRevision', async () => {
+    it('clears story files but keeps the current revision after _bumpGraphRevision', async () => {
       const runtime = registerBareModuleGraph();
 
-      await runtime.commands.applyGraphUpdate({
+      await runtime.commands._applyGraphUpdate({
         storiesByFile: {},
         bumpedStoryFiles: ['./src/Button.stories.tsx'],
       });
-      await runtime.commands.bumpGraphRevision(undefined);
+      await runtime.commands._bumpGraphRevision(undefined);
 
       expect(runtime.queries.getLatestStoryChanges(undefined)).toEqual({
         revision: 2,
@@ -378,11 +378,11 @@ describe('module-graph open service', () => {
         seen.push(value);
       });
 
-      await runtime.commands.applyGraphUpdate({
+      await runtime.commands._applyGraphUpdate({
         storiesByFile: {},
         bumpedStoryFiles: ['./a.stories.tsx'],
       });
-      await runtime.commands.applyGraphUpdate({
+      await runtime.commands._applyGraphUpdate({
         storiesByFile: {},
         bumpedStoryFiles: ['./b.stories.tsx'],
       });
@@ -397,10 +397,10 @@ describe('module-graph open service', () => {
   describe('getGraphRevision query scopes', () => {
     it('returns 0 for an empty watch list and ignores unknown stories', async () => {
       const runtime = registerBareModuleGraph();
-      await runtime.commands.applyGraphSnapshot({
+      await runtime.commands._applyGraphSnapshot({
         storiesByFile: { './src/Button.tsx': { './src/Button.stories.tsx': 1 } },
       });
-      await runtime.commands.applyGraphUpdate({
+      await runtime.commands._applyGraphUpdate({
         storiesByFile: { './src/Button.tsx': { './src/Button.stories.tsx': 1 } },
         bumpedStoryFiles: ['./src/Button.stories.tsx'],
       });
@@ -417,10 +417,10 @@ describe('module-graph open service', () => {
 
     it('accepts absolute and relative scope paths', async () => {
       const runtime = registerBareModuleGraph();
-      await runtime.commands.applyGraphSnapshot({
+      await runtime.commands._applyGraphSnapshot({
         storiesByFile: { './src/Button.tsx': { './src/Button.stories.tsx': 1 } },
       });
-      await runtime.commands.applyGraphUpdate({
+      await runtime.commands._applyGraphUpdate({
         storiesByFile: { './src/Button.tsx': { './src/Button.stories.tsx': 1 } },
         bumpedStoryFiles: ['./src/Button.stories.tsx'],
       });
@@ -436,11 +436,11 @@ describe('module-graph open service', () => {
 
     it('advances watch-all but not scoped reads on a bare revision bump', async () => {
       const runtime = registerBareModuleGraph();
-      await runtime.commands.applyGraphSnapshot({
+      await runtime.commands._applyGraphSnapshot({
         storiesByFile: { './src/Button.tsx': { './src/Button.stories.tsx': 1 } },
       });
 
-      await runtime.commands.bumpGraphRevision(undefined);
+      await runtime.commands._bumpGraphRevision(undefined);
 
       // Index reconciliation advances the global (watch-all) revision...
       expect(runtime.queries.getGraphRevision(undefined)).toBe(1);
@@ -459,8 +459,8 @@ describe('module-graph open service', () => {
         seen.push(revision);
       });
 
-      await runtime.commands.applyGraphSnapshot({ storiesByFile: {} });
-      await runtime.commands.applyGraphUpdate({
+      await runtime.commands._applyGraphSnapshot({ storiesByFile: {} });
+      await runtime.commands._applyGraphUpdate({
         storiesByFile: {},
         bumpedStoryFiles: ['./a.stories.tsx'],
       });
@@ -471,7 +471,7 @@ describe('module-graph open service', () => {
 
     it('notifies a scoped subscriber only when its story is bumped', async () => {
       const runtime = registerBareModuleGraph();
-      await runtime.commands.applyGraphSnapshot({
+      await runtime.commands._applyGraphSnapshot({
         storiesByFile: {
           './src/Button.tsx': { './src/Button.stories.tsx': 1 },
           './src/Card.tsx': { './src/Card.stories.tsx': 1 },
@@ -487,7 +487,7 @@ describe('module-graph open service', () => {
       );
 
       // Bump an unrelated story: the Button-scoped subscriber must not advance.
-      await runtime.commands.applyGraphUpdate({
+      await runtime.commands._applyGraphUpdate({
         storiesByFile: {
           './src/Button.tsx': { './src/Button.stories.tsx': 1 },
           './src/Card.tsx': { './src/Card.stories.tsx': 1 },
@@ -495,7 +495,7 @@ describe('module-graph open service', () => {
         bumpedStoryFiles: ['./src/Card.stories.tsx'],
       });
       // Now bump Button itself.
-      await runtime.commands.applyGraphUpdate({
+      await runtime.commands._applyGraphUpdate({
         storiesByFile: {
           './src/Button.tsx': { './src/Button.stories.tsx': 1 },
           './src/Card.tsx': { './src/Card.stories.tsx': 1 },

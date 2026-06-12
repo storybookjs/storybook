@@ -1,6 +1,6 @@
 import { dedent } from 'ts-dedent';
 import type { SetupInstructionsContext } from '../../types.ts';
-import { getMonorepoType } from '../../../../../../core/src/shared/utils/get-monorepo-type.ts';
+import { getMonorepoType } from '../../../../shared/utils/get-monorepo-type.ts';
 
 export function toolsVsShellRule(ctx: SetupInstructionsContext): string {
   return dedent`**Discover with Glob/Grep/Read, not shell.** Never use \`ls\`, \`find\`, \`cat\`, \`head\`, \`tail\`, shell \`grep\`, \`sed\`, or \`node -e\` for discovery or for editing files in bulk — these are slower per call and violate caching. Substitute bash commands for the specific tool names listed below, or available tools with the closest semantics:

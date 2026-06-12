@@ -24,7 +24,7 @@ export interface TrialConfig {
   project: Project;
   /** Agent, model, and effort level. */
   variant: AgentVariant;
-  /** Prompt variant name — registered in `code/lib/cli-storybook/src/ai/prompts/` (e.g. "pattern-copy-play"). */
+  /** Prompt variant name — registered in `code/core/src/cli/ai/setup-prompts/` (e.g. "pattern-copy-play"). */
   prompt: string;
   /** Log agent messages to stdout. */
   verbose?: boolean;

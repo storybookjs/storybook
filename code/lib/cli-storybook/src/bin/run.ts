@@ -23,8 +23,6 @@ import { doctor } from '../doctor/index.ts';
 import { link } from '../link.ts';
 import { migrate } from '../migrate.ts';
 import { sandbox } from '../sandbox.ts';
-import { aiSetup } from '../ai/index.ts';
-import { isAiCliFeatureEnabled, registerAiMcpPassthrough } from '../ai/mcp/register.ts';
 import { type UpgradeOptions, upgrade } from '../upgrade.ts';
 
 addToGlobalContext('cliVersion', versions.storybook);
@@ -299,42 +297,6 @@ command('doctor')
       logger.outro('Done');
     }).catch(handleCommandFailure(options.logfile));
   });
-
-const aiCommand = command('ai')
-  .description('AI agent helpers for Storybook')
-  .option(
-    '-o, --output <path>',
-    'Write the prompt output to a file instead of printing it to stdout'
-  );
-
-aiCommand
-  .command('setup')
-  .description('Generate setup instructions to write stories for real components')
-  .addOption(
-    new Option('--package-manager <type>', 'Force package manager for installing deps').choices(
-      Object.values(PackageManagerName)
-    )
-  )
-  .option('-c, --config-dir <dir-name>', 'Directory of Storybook configuration')
-  .action(async (options, cmd) => {
-    const parentOptions = cmd.parent?.opts() ?? {};
-    const runId = Math.random().toString(36);
-    const mergedOptions = { ...parentOptions, ...options, runId };
-    await withTelemetry('ai-setup', { cliOptions: mergedOptions }, async () => {
-      await aiSetup(mergedOptions);
-    }).catch(handleCommandFailure(mergedOptions.logfile));
-  });
-
-// Show available subcommands when `storybook ai` is run without arguments
-aiCommand.action(() => {
-  aiCommand.outputHelp();
-});
-
-// Experimental `storybook ai <tool>` passthrough to the local Storybook MCP server
-// (storybookjs/storybook#35124). Overrides the help-only action above when enabled.
-if (isAiCliFeatureEnabled()) {
-  registerAiMcpPassthrough(program, aiCommand);
-}
 
 program.on('command:*', ([invalidCmd]) => {
   let errorMessage = ` Invalid command: ${picocolors.bold(invalidCmd)}.\n See --help for a list of available commands.`;

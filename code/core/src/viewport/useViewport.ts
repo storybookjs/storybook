@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef } from 'react';
 
+import { deprecate } from 'storybook/internal/client-logger';
 import type { Globals } from 'storybook/internal/csf';
 
 import { useGlobals, useParameter, useStorybookApi } from 'storybook/manager-api';
@@ -156,6 +157,17 @@ export const useViewport = () => {
 
   const parameter = useParameter<ViewportParameters['viewport']>(PARAM_KEY);
   const [globals, updateGlobals, storyGlobals, userGlobals] = useGlobals();
+
+  useEffect(() => {
+    if (parameter && 'defaultViewport' in parameter) {
+      const value = (parameter as { defaultViewport?: unknown }).defaultViewport;
+      deprecate(
+        `The \`viewport.defaultViewport\` parameter was removed in Storybook 10. ` +
+          `Use \`globals: { viewport: ${JSON.stringify(value)} }\` instead, ` +
+          `or run \`npx storybook automigrate\` to update your code automatically.`
+      );
+    }
+  }, [parameter]);
 
   const { options = MINIMAL_VIEWPORTS, disable = false } = parameter || {};
   const { name, type, width, height, value, option, isCustom, isDefault, isLocked, isRotated } =

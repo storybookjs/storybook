@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { MARKER } from './config.ts';
+import { MARKER, REVIEW_FOOTER } from './config.ts';
 import { synthesizeReview } from './synthesize.ts';
 
 const { mockJudge, mockJudgeText } = vi.hoisted(() => ({
@@ -20,7 +20,7 @@ describe('synthesizeReview', () => {
     mockJudgeText.mockReset();
   });
 
-  it('prefixes the body with the HTML marker', async () => {
+  it('prefixes the body with the HTML marker and appends the deterministic footer', async () => {
     mockJudgeText.mockResolvedValueOnce('composed body');
     const body = await synthesizeReview({
       results: [{ id: 'human', status: 'pass', evidence: 'ok' }],
@@ -28,6 +28,10 @@ describe('synthesizeReview', () => {
     });
     expect(body).toContain(MARKER);
     expect(body).toContain('composed body');
+    expect(body).toContain(REVIEW_FOOTER);
+    expect(body).toMatch(/discord\.gg\/invite\/storybook/);
+    expect(body).toMatch(/#contributing/);
+    expect(body.endsWith(REVIEW_FOOTER)).toBe(true);
   });
 
   it('uses judgeText (text mode), not judge (JSON mode)', async () => {

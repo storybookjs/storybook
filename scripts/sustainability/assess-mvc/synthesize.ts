@@ -1,6 +1,6 @@
 import { getLlmClient } from '../../utils/llm/client.ts';
 import { CANNED, OVERALL } from './canned-responses.ts';
-import { MARKER } from './config.ts';
+import { MARKER, REVIEW_FOOTER } from './config.ts';
 import type { CheckResult } from './types.ts';
 
 /**
@@ -52,5 +52,5 @@ export async function synthesizeReview(input: {
     .join('\n');
 
   const reviewBody = await getLlmClient().judgeText(prompt);
-  return `${MARKER}\n${reviewBody}`;
+  return `${MARKER}\n${reviewBody}\n\n${REVIEW_FOOTER}`;
 }

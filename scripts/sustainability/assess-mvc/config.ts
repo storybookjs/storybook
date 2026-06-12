@@ -1,6 +1,18 @@
 export const MARKER = '<!-- mvc-check:v1 -->';
 
 /**
+ * Deterministic footer appended to every submitted review. Tells the author
+ * the review was automated and where to appeal. Kept out of the LLM prompt
+ * so the wording never drifts — the author always sees the same disclaimer
+ * and the same appeal channel.
+ */
+export const REVIEW_FOOTER = [
+  '---',
+  '',
+  "_This review was performed automatically and partially uses AI. If you'd like to appeal the review, please reach out to the Storybook team on [Discord](https://discord.gg/invite/storybook) in the `#contributing` channel._",
+].join('\n');
+
+/**
  * GitHub scopes required by the assess-mvc CLI. Surfaced in the missing-token
  * error message; the actual scope enforcement happens at GitHub.
  */

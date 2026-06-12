@@ -10,7 +10,7 @@ import {
   type StoryId,
 } from 'storybook/internal/types';
 
-import { CircleIcon, StatusNewIcon } from '@storybook/icons';
+import { CircleIcon, PlusIcon, StatusNewIcon } from '@storybook/icons';
 
 import memoizerific from 'memoizerific';
 import { transparentize } from 'polished';
@@ -80,11 +80,7 @@ export const getStatus = memoizerific(10)((theme: Theme, status: StatusValue): S
       textColor: 'currentColor',
     },
     'status-value:new': {
-      icon: (
-        <svg key="icon" viewBox="0 0 14 14" width="14" height="14">
-          <UseSymbol type="new" />
-        </svg>
-      ),
+      icon: <PlusIcon key="icon" />,
       iconColor: theme.fgColor.accent,
       textColor: null,
     },
@@ -108,7 +104,7 @@ export const getStatus = memoizerific(10)((theme: Theme, status: StatusValue): S
     },
     'status-value:reviewing': {
       icon: <StatusNewIcon key="icon" />,
-      iconColor: theme.fgColor.accent,
+      iconColor: theme.fgColor.agentic,
       textColor: null,
     },
     'status-value:warning': {

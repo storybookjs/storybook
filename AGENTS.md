@@ -258,7 +258,7 @@ Do **not** use `/tmp` paths or replace `node:fs/promises` with a full async fact
 
 After changing files:
 
-1. Format with `yarn fmt:write` (run from the repo root)
+1. **Always** format with `yarn fmt:write`, run from the `code/` directory (`cd code && yarn fmt:write`), once you are done editing. The repo uses `oxfmt`, so hand-written formatting will frequently be wrong — do not skip this step.
 2. Lint with `yarn --cwd code lint:js:cmd <file-relative-to-code-folder> --fix` or `cd code && yarn lint:js:cmd <file-relative-to-code-folder>`
 3. Run relevant tests before submitting a PR
 
